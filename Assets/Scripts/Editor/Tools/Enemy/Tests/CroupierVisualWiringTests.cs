@@ -11,24 +11,11 @@ using Object = UnityEngine.Object;
 namespace Rollgeon.Editor.Tools.Enemy.Tests
 {
     /// <summary>
-    /// Valida cómo queda <b>vestido</b> el Croupier: la ficha del wrapper que produce
-    /// <see cref="CroupierAssetBuilder.BuildWrapperSpec"/>, y que el <c>ED_</c> se lleve prefab visual
-    /// y retrato.
+    /// Cómo queda <b>vestido</b> el Croupier: la ficha del wrapper y que el <c>ED_</c> se lleve
+    /// prefab visual y retrato. Casi todo in-memory; las dos excepciones (que el arte siga usando
+    /// los materiales del retinte y que el PNG del retrato exista) <b>leen</b> el AssetDatabase pero
+    /// no lo escriben — un rename silencioso ahí sólo deja un warning y colores de fábrica.
     /// </summary>
-    /// <remarks>
-    /// <para>
-    /// <b>Casi todo es in-memory.</b> La ficha visual es un objeto puro, así que se le puede afirmar
-    /// arte, retintes y transform del prop sin construir el prefab ni depender de que Unity haya
-    /// reimportado nada (el accidente que ya hizo fallar suites verdes acá).
-    /// </para>
-    /// <para>
-    /// <b>Las dos excepciones leen el AssetDatabase pero no lo escriben.</b> Que el arte siga usando
-    /// los materiales que el retinte apunta, y que el PNG del retrato exista, son justo los datos que
-    /// un rename silencioso rompe: el builder loguea un warning y el jefe sale con los colores de
-    /// fábrica o sin retrato. Ninguna de las dos reimporta nada — convertir el PNG a Sprite es efecto
-    /// del menú, y un test no tiene por qué dejarle un <c>.meta</c> cambiado a quien lo corra.
-    /// </para>
-    /// </remarks>
     [TestFixture]
     public class CroupierVisualWiringTests
     {
@@ -70,8 +57,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         [Test]
         public void Spec_UsesACapsuleCollider_SoThePawnIsPickable()
         {
-            // PawnPicker resuelve el pick con GetComponentInParent desde el collider: sin collider en el
-            // root, el cursor no puede targetear al jefe.
+            // PawnPicker resuelve el pick con GetComponentInParent desde el collider del root.
             Assert.AreEqual(ColliderKind.Capsule, _spec.Collider);
         }
 
@@ -94,8 +80,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         [Test]
         public void Spec_GivesExplicitColors_BecauseThePaletteLabelsAreMisaligned()
         {
-            // Los labels guardados en PA_MainPalette no coinciden con la tabla de PaletteSlots (Mat_Red
-            // apunta hoy al slot 7, que en la tabla es "Green"): un slot no dice qué color sale.
+            // Los labels de PA_MainPalette no coinciden con la tabla de PaletteSlots (Mat_Red apunta
+            // hoy al slot 7, que en la tabla es "Green"): un slot no dice qué color sale.
             foreach (var pair in _spec.Retints)
             {
                 Assert.IsNull(pair.Value.PaletteSlot,
@@ -109,8 +95,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         [Test]
         public void Spec_RampsGoFromLightToShadow_OnEveryRetintedMaterial()
         {
-            // El shader elige entre los tres colores por iluminación: si la sombra es más clara que la
-            // luz, el cel shading se ve invertido y el jefe queda plano.
+            // El shader elige entre los tres por iluminación: invertidos, el cel shading queda plano.
             foreach (var pair in _spec.Retints)
             {
                 float light = Luminance(pair.Value.LightColor.Value);
@@ -125,8 +110,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         [Test]
         public void Spec_KeepsTheTuxDarkerThanTheWine_AndTheBrassBrighterThanBoth()
         {
-            // La legibilidad del jefe depende de estos tres escalones: traje casi negro, capa borravino,
-            // vivos de latón. Sin la separación se convierte en una mancha oscura.
+            // Tres escalones: traje casi negro, capa borravino, vivos de latón. Sin la separación
+            // el jefe es una mancha oscura.
             float tux = Luminance(_spec.Retints["Mat_DarkGray"].MidColor.Value);
             float wine = Luminance(_spec.Retints["Mat_Red"].MidColor.Value);
             float brass = Luminance(_spec.Retints["Mat_Gold"].MidColor.Value);
@@ -166,8 +151,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         [Test]
         public void Spec_LeavesTheWheelFacingTheCamera()
         {
-            // El disco del prop mira a ±Z y el jefe encara -Z (ojos y moño están en -Z): sin rotarlo la
-            // cara de la rueda queda hacia la cámara y el giro se ve. Rotarlo la pondría de perfil.
+            // El disco mira a ±Z y el jefe encara -Z: rotarlo pondría la rueda de perfil.
             Assert.AreEqual(Vector3.zero, _spec.Props[0].LocalEuler);
         }
 
@@ -198,8 +182,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         [Test]
         public void Spec_KeepsThePropOutOfTheHitFlash()
         {
-            // La rueda es mobiliario, no cuerpo: si flasheara con cada golpe, el hit feedback dejaría de
-            // señalar dónde pegó el jugador.
+            // La rueda es mobiliario: si flasheara, el hit feedback dejaría de señalar el impacto.
             Assert.IsFalse(_spec.IncludePropRenderersInFeedback);
         }
 
@@ -254,8 +237,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         [Test]
         public void Art_StillUsesEveryMaterialTheRetintTargets()
         {
-            // Un rename del material fuente no rompe el build: sólo loguea un warning y el jefe sale con
-            // los colores de fábrica. Este test es el único lugar donde eso grita.
+            // Un rename del material fuente sólo loguea un warning: este test es donde grita.
             var art = AssetDatabase.LoadAssetAtPath<GameObject>(_spec.ArtPrefabPath);
             Assert.IsNotNull(art, $"Fixture roto: no existe '{_spec.ArtPrefabPath}'.");
 
@@ -281,8 +263,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         [Test]
         public void Portrait_TextureExistsAndIsImportable()
         {
-            // A propósito NO se llama a EnsureSpriteImport: convertir el PNG a Sprite es efecto del menú,
-            // y un test no debería dejarle un .meta cambiado a quien lo corra.
+            // No se llama a EnsureSpriteImport: dejaría un .meta cambiado a quien corra los tests.
             var importer = AssetImporter.GetAtPath(CroupierAssetBuilder.PortraitTexturePath)
                 as TextureImporter;
 

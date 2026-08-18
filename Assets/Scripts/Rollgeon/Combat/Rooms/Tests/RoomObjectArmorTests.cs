@@ -12,16 +12,8 @@ namespace Rollgeon.Combat.Rooms.Tests
     /// recibe se reduce, y romper uno se lo devuelve al jugador para siempre.
     /// </summary>
     /// <remarks>
-    /// <para>
-    /// Lo que protegen: que la reducción escale con las ranuras <b>nunca rotas</b> y no con las vivas
-    /// (progreso permanente), que baje en el mismo instante en que el objeto llega a 0 HP y no en el
-    /// próximo turno del jefe, que el techo impida un jefe invulnerable, y que sin
-    /// <c>AttributesManager</c> no se latchee nada.
-    /// </para>
-    /// <para>
-    /// Los números de La Generala (5 dados × 0.14 = 70%) se pinean en <c>GeneralaAssetBuilderTests</c>;
-    /// acá la mecánica se prueba con valores redondos.
-    /// </para>
+    /// Los números de La Generala (5 dados × 0.14 = 70%) se pinean en
+    /// <c>GeneralaAssetBuilderTests</c>; acá la mecánica se prueba con valores redondos.
     /// </remarks>
     [TestFixture]
     public class RoomObjectArmorTests
@@ -121,8 +113,7 @@ namespace Rollgeon.Combat.Rooms.Tests
             // Act
             foreach (var slot in slots) Break(slot);
 
-            // Assert — false y no "multiplicador 1": sin reducción el pipeline se saltea el stage
-            // entero, así que el jugador no ve un "-0%" colgado en pantalla.
+            // Assert — false y no "multiplicador 1": sin reducción el pipeline se saltea el stage.
             Assert.IsFalse(_armor.TryGetMultiplier(_boss, out float multiplier));
             Assert.AreEqual(1f, multiplier, 0.001f);
             Assert.AreEqual(0f, _armor.ReductionFor(_boss));
@@ -133,7 +124,7 @@ namespace Rollgeon.Combat.Rooms.Tests
         [Test]
         public void RespawnedObject_DoesNotGiveTheReductionBack()
         {
-            // Arrange — se rompe la ranura 0 y el jefe la repone: guid nuevo, misma ranura.
+            // Arrange — se rompe la ranura 0 y el jefe la repone con un guid nuevo.
             var slots = PublishTable(4);
             Break(slots[0]);
             Assert.AreEqual(0.6f, _armor.ReductionFor(_boss), 0.001f);
@@ -142,8 +133,7 @@ namespace Rollgeon.Combat.Rooms.Tests
             slots[0] = Spawn();
             _armor.Publish(_boss, slots, PerObject);
 
-            // Assert — es lo que hace que romper la mesa compre algo estable. Con la reducción
-            // reponiéndose sería una noria: limpiás cinco dados, se reponen, volvés a empezar.
+            // Assert
             Assert.AreEqual(0.6f, _armor.ReductionFor(_boss), 0.001f,
                 "El dado repuesto vuelve a bloquear y a darle la categoría, pero su parte de la " +
                 "armadura no vuelve.");
@@ -156,8 +146,7 @@ namespace Rollgeon.Combat.Rooms.Tests
             // Arrange — primer tick del jefe: las ranuras existen pero todavía no se llenaron.
             _armor.Publish(_boss, new[] { Guid.Empty, Guid.Empty }, PerObject);
 
-            // Assert — una ranura vacía por no haberse llenado nunca no es una ranura rota; si lo
-            // fuera, el jefe arrancaría la pelea sin armadura por un orden de tick.
+            // Assert — si contaran como rotas, el jefe arrancaría sin armadura por un orden de tick.
             Assert.AreEqual(2, _armor.IntactCountFor(_boss));
             Assert.AreEqual(0.4f, _armor.ReductionFor(_boss), 0.001f);
         }
@@ -167,15 +156,14 @@ namespace Rollgeon.Combat.Rooms.Tests
         [Test]
         public void BreakingAnObject_DropsTheReduction_WithoutWaitingForAPublish()
         {
-            // Arrange — el jugador rompe un dado en SU turno; el árbol del jefe no volvió a tickear.
+            // Arrange — el jugador rompe un dado en SU turno; el árbol del jefe no tickeó.
             var slots = PublishTable(5);
             float before = _armor.ReductionFor(_boss);
 
             // Act
             Break(slots[0]);
 
-            // Assert — si la cuenta se congelara en el publish, el golpe siguiente del jugador seguiría
-            // reducido y se leería como que el juego no registró el impacto.
+            // Assert
             Assert.Less(_armor.ReductionFor(_boss), before,
                 "La reducción tiene que bajar en el mismo instante en que el objeto llega a 0 HP.");
         }
@@ -230,9 +218,7 @@ namespace Rollgeon.Combat.Rooms.Tests
             ServiceLocator.AddService<IIncomingDamageMultiplierProvider>(_armor);
             Break(slots[1]);
 
-            // Assert — el latch de lo ya visto se conserva y lo nuevo no se latchea. Fallar hacia "el
-            // jefe conserva su armadura" y no hacia "la perdió": lo segundo le regalaría la pelea sin
-            // que nada lo explique.
+            // Assert — el latch de lo ya visto se conserva y lo nuevo no se latchea.
             Assert.AreEqual(0.6f, _armor.ReductionFor(_boss), 0.001f);
         }
 

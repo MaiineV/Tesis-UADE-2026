@@ -36,18 +36,9 @@ namespace Rollgeon.Combat.AI.Bosses.Tahur
     /// (piso 3).
     /// </summary>
     /// <remarks>
-    /// <para>
-    /// <b>Por qué un servicio propio y no <c>IThreatenedAreaService</c>.</b> Ese servicio se
-    /// indexa por el guid de la fuente, así que una segunda marca del mismo boss pisa la
-    /// primera: La Mesa (3×3, daño 0, cian) y el Castigo (la marca que sí pega) coexisten en
-    /// el mismo turno. El Castigo sigue viviendo en <c>IThreatenedAreaService</c> — el único
-    /// que pega — y La Mesa vive acá.
-    /// </para>
-    /// <para>
-    /// <b>Lifecycle.</b> Global vía <see cref="TahurWagerService.ResolveOrCreate"/> (lazy, sin
-    /// wiring manual en <c>ServiceBootstrap.ExtraServices</c>), con reset en
-    /// <c>OnCombatEnd</c> / <c>OnRunEnd</c>.
-    /// </para>
+    /// La Mesa vive acá y no en <c>IThreatenedAreaService</c>: ese se indexa por guid de fuente, así
+    /// que la segunda marca del mismo boss pisa la primera y La Mesa (3×3, daño 0) coexiste con el
+    /// Castigo en el mismo turno. Global y lazy, con reset en <c>OnCombatEnd</c> / <c>OnRunEnd</c>.
     /// </remarks>
     public interface ITahurWagerService
     {
@@ -61,10 +52,7 @@ namespace Rollgeon.Combat.AI.Bosses.Tahur
         /// <summary>Techo de fichas (la banca). Clampea <see cref="Chips"/>.</summary>
         int MaxChips { get; set; }
 
-        /// <summary>
-        /// Piso de fichas al cobrar: 0 en fase 1, 1 tras el volteo — con el rastrillo activo el
-        /// pozo nunca vuelve a 0 y estancarse deja de ser posible.
-        /// </summary>
+        /// <summary>Piso de fichas al cobrar: 0 en fase 1, 1 tras el volteo (el pozo nunca vuelve a 0).</summary>
         int ChipsFloor { get; }
 
         /// <summary>Pago por ficha al cobrar el pozo. Lo publica el nodo de liquidación para el HUD.</summary>
@@ -95,10 +83,7 @@ namespace Rollgeon.Combat.AI.Bosses.Tahur
         /// <summary>Fase 2: el cartel pasó de PIDE a LEE — la mano cantada es la que NO hay que armar.</summary>
         bool CallInverted { get; }
 
-        /// <summary>
-        /// Escalón que hay que armar para cobrar: el cantado en fase 1, el inmediatamente
-        /// inferior en fase 2. 0 si todavía no cantó.
-        /// </summary>
+        /// <summary>Escalón a armar para cobrar: el cantado en fase 1, el inferior en fase 2. 0 = no cantó.</summary>
         int TargetRank { get; }
 
         /// <summary>Publica el canto de esta ronda.</summary>
@@ -109,23 +94,15 @@ namespace Rollgeon.Combat.AI.Bosses.Tahur
         // -----------------------------------------------------------------
 
         /// <summary>
-        /// Fichas que el rastrillo suma por ronda, solo. Corre desde la fase 1 —lo escribe
-        /// <c>AINode_TahurSettleWager</c> en cada liquidación— y el volteo puede subirlo.
+        /// Fichas que el rastrillo suma por ronda, solo, desde la fase 1. Es lo que le pone reloj a
+        /// "no jugar": sin rastrillo el pozo sólo se mueve cuando el jugador falla.
         /// </summary>
-        /// <remarks>
-        /// Es lo que le pone reloj a "no jugar": sin rastrillo el pozo sólo se mueve cuando el
-        /// jugador falla, así que renunciar al pozo dejaba el Castigo clavado en su escalón más
-        /// barato y esquivable de a uno.
-        /// </remarks>
         int RakeChipsPerRound { get; set; }
 
         /// <summary>La próxima liquidación es de gracia (el canto se armó con las reglas viejas).</summary>
         bool GraceOnNextSettle { get; }
 
-        /// <summary>
-        /// Se voltea la carta: invierte el canto, fija el rastrillo de fase 2 y levanta el piso
-        /// del pozo.
-        /// </summary>
+        /// <summary>Voltea la carta: invierte el canto, fija el rastrillo de fase 2 y sube el piso del pozo.</summary>
         void FlipCard(int rakeChipsPerRound, int chipsFloor, bool graceNextSettle);
 
         /// <summary>Consume la gracia. <c>true</c> si esta liquidación era la de gracia.</summary>
@@ -157,18 +134,15 @@ namespace Rollgeon.Combat.AI.Bosses.Tahur
         /// <summary>Quién jugó la última mano — el settle solo lee las del jugador.</summary>
         Guid LastPlayedBy { get; }
 
-        /// <summary>
-        /// Devuelve la última mano jugada y la borra: una ronda sin jugar mano vale rank 0
-        /// (armar nada es el fallo más grande), no la mano de la ronda anterior.
-        /// </summary>
+        /// <summary>Devuelve la última mano jugada y la borra: una ronda sin jugar vale rank 0.</summary>
         string ConsumePlayedHand();
 
         /// <summary>Cómo terminó la última liquidación.</summary>
         TahurSettleOutcome LastOutcome { get; }
 
         /// <summary>
-        /// <c>true</c> si esta liquidación marcó Castigo. La rama del poke es exclusiva de la de
-        /// marcar: 12 + 45 rompería el techo de 45 por golpe del piso 3.
+        /// <c>true</c> si esta liquidación marcó Castigo. El poke es exclusivo de la rama sin marca:
+        /// 12 + 45 rompería el techo de 45 por golpe del piso 3.
         /// </summary>
         bool MarkedPunishmentThisTurn { get; }
 

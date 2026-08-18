@@ -8,23 +8,11 @@ using UnityEngine;
 
 namespace Rollgeon.Combat.AI.Tests
 {
-    /// <summary>
-    /// El overlay que pinta el lado del mostrador. Es el único consumidor de UI que tiene el peaje:
-    /// hasta ahora el servicio cobraba y animaba el golpe <b>después</b> de cobrar, así que el
-    /// jugador aprendía la regla perdiendo vida.
-    /// </summary>
+    /// <summary>El overlay que pinta el lado del mostrador.</summary>
     /// <remarks>
-    /// <para>
-    /// Acá sí se carga la sala con <c>LoadRoom</c> —a diferencia de <c>CajeroCounterTollTests</c>—
-    /// porque lo que se prueba es <b>qué casillas</b> se pintan, y eso necesita que la sala tenga
-    /// extensión real.
-    /// </para>
-    /// <para>
-    /// <b>Coordenadas 0..10 y no centradas en (0,0):</b> <c>NavGraph.Rect(11,11)</c> arranca en el
-    /// origen, así que el mostrador va en la fila 5 (el medio) y no en la 0. La regla que se prueba
-    /// es relativa a <c>CounterRow</c>, no absoluta — la sala real lo pone en <c>Y = 0</c> porque su
-    /// grafo está centrado, y al peaje eso le da igual.
-    /// </para>
+    /// Necesita <c>LoadRoom</c> porque lo que se prueba es qué casillas se pintan.
+    /// <c>NavGraph.Rect(11,11)</c> arranca en el origen, así que acá el mostrador va en la fila 5
+    /// y no en <c>Y = 0</c> como en la sala real; la regla es relativa a <c>CounterRow</c>.
     /// </remarks>
     [TestFixture]
     public class CajeroCounterTollOverlayTests
@@ -32,10 +20,7 @@ namespace Rollgeon.Combat.AI.Tests
         private const int CounterRow = 5;
         private const int TollDamage = 10;
 
-        /// <summary>Del lado de arriba del mostrador — el lado del jefe.</summary>
         private static readonly GridCoord BossCoord = new GridCoord(5, 7);
-
-        /// <summary>Del lado de abajo — donde entra el jugador.</summary>
         private static readonly GridCoord PlayerCoord = new GridCoord(5, 3);
 
         private GridManager _grid;
@@ -83,13 +68,9 @@ namespace Rollgeon.Combat.AI.Tests
 
         private void Arm() => _toll.Arm(_boss, _player, CounterRow, TollDamage);
 
-        /// <summary>Arma con la cadencia de la ficha: cobra una ronda de cada dos.</summary>
         private void ArmIntermittent() => _toll.Arm(_boss, _player, CounterRow, TollDamage, 2);
 
-        /// <summary>
-        /// Deja el combate en la ronda <paramref name="round"/> (1-based, como la ve el jugador):
-        /// <c>RoundIndex</c> es 0-based y el jugador abre cada ronda (CNF-006).
-        /// </summary>
+        /// <summary><paramref name="round"/> es 1-based; <c>RoundIndex</c> es 0-based.</summary>
         private void PutPlayerInRound(int round)
         {
             var turnOrder = new TurnOrderService();
@@ -104,8 +85,7 @@ namespace Rollgeon.Combat.AI.Tests
         [Test]
         public void Side_WithoutAnArmedToll_PaintsNothing()
         {
-            // Arrange — el peaje se arma en el primer tick del jefe; antes de eso no hay regla que
-            // anunciar y pintar sería mentirle al jugador.
+            // Arrange — el peaje se arma en el primer tick del jefe.
 
             // Act
             bool resolved = CashierCounterTollOverlay.TryResolveSide(out _, out _);
@@ -117,16 +97,14 @@ namespace Rollgeon.Combat.AI.Tests
         [Test]
         public void Side_OnTheFreeRound_PaintsNothing()
         {
-            // Arrange — el peaje cobra una ronda de cada dos; la impar es franca.
+            // Arrange — cobra una ronda de cada dos; la impar es franca.
             ArmIntermittent();
             PutPlayerInRound(1);
 
             // Act
             bool resolved = CashierCounterTollOverlay.TryResolveSide(out _, out _);
 
-            // Assert — se apaga entero en vez de atenuarse: "verde = cuesta, sin verde = pasá" se
-            // lee de un vistazo. Un lado pintado que a veces no cobra le enseña al jugador a
-            // desconfiar del overlay, que es peor que no tenerlo.
+            // Assert — se apaga entero en vez de atenuarse.
             Assert.IsFalse(resolved,
                 "En la ronda franca cruzar es gratis, y el overlay es lo único que lo dice.");
         }
@@ -170,8 +148,7 @@ namespace Rollgeon.Combat.AI.Tests
         [Test]
         public void Side_NeverPaintsTheCounterRow_BecauseStandingInAnOpeningIsFree()
         {
-            // Arrange — parado en una abertura estás en la puerta, no de un lado, y no pagás:
-            // IsSameSide devuelve false con side == 0.
+            // Arrange — IsSameSide devuelve false con side == 0.
             Arm();
 
             // Act
@@ -189,8 +166,7 @@ namespace Rollgeon.Combat.AI.Tests
         [Test]
         public void Side_CoversEveryWalkableCellOfTheBossHalf()
         {
-            // Arrange — un lado a medio pintar se lee como "estas casillas sí y estas no", que es
-            // una regla que el peaje no tiene.
+            // Arrange
             Arm();
 
             // Act
@@ -207,8 +183,7 @@ namespace Rollgeon.Combat.AI.Tests
         [Test]
         public void Side_FollowsTheBoss_WhenKitingCrossesHimToTheOtherHalf()
         {
-            // Arrange — el peaje lee posiciones vivas: si el jefe cruza por una abertura, el lado
-            // que cobra es el de abajo. Un overlay horneado al armar mentiría a partir de acá.
+            // Arrange — el peaje lee posiciones vivas, no las que tenía al armarse.
             Arm();
             Assert.IsTrue(_grid.Move(_boss, new GridCoord(5, 2)), "El jefe tenía que poder cruzar.");
 
@@ -223,8 +198,7 @@ namespace Rollgeon.Combat.AI.Tests
         [Test]
         public void Side_WithTheBossOffTheGrid_PaintsNothing()
         {
-            // Arrange — CombatDeathWatcher lo saca de la grilla al morir. Sin coordenada del jefe no
-            // hay lado, y es también lo que apaga el overlay solo al terminar la pelea.
+            // Arrange — CombatDeathWatcher lo saca de la grilla al morir.
             Arm();
             _grid.Unregister(_boss);
 
@@ -239,8 +213,7 @@ namespace Rollgeon.Combat.AI.Tests
         [Test]
         public void Repaint_PaintsUnderADerivedSource_NotUnderTheBossItself()
         {
-            // Arrange — el jefe marca su columna bajo su propio guid; compartir fuente haría que
-            // una cosa borrara a la otra.
+            // Arrange — el jefe ya marca su columna bajo su propio guid.
             Arm();
 
             // Act

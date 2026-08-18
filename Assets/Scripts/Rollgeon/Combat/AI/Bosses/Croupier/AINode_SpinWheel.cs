@@ -13,36 +13,19 @@ namespace Rollgeon.Combat.AI.Bosses.Croupier
 {
     /// <summary>
     /// "Hagan sus apuestas": el Croupier canta <see cref="ICroupierWheelService.NumbersPerTurn"/>
-    /// número(s) del 1 al 6 y los deja flotando sobre él. Cada número es dos cosas a la vez — el
-    /// sector del paño que va a caer el turno que viene y el dado de la bolsa que se confisca — así
-    /// que este nodo no hace nada más que elegirlo: marcar el sector y confiscar el dado son otros dos
-    /// nodos que leen de acá.
+    /// número(s) del 1 al 6 y los deja flotando sobre él. Sólo los elige — marcar el sector y
+    /// confiscar el dado son otros dos nodos que leen de acá.
     /// </summary>
     /// <remarks>
     /// <para>
-    /// Va inmediatamente antes del nodo de confiscación y del de marcado en el Sequence raíz. Abre el
-    /// windup: desde que este nodo corre hasta que el sector detona, cerrar el turno dentro del sector
-    /// cantado corre la rueda.
+    /// Va inmediatamente antes del nodo de confiscación y del de marcado en el Sequence raíz, y abre
+    /// el windup. El camino coroutine <b>retiene el turno</b> hasta que termina la animación, para que
+    /// el marcado no empiece a pintar tiles mientras el jefe todavía está cantando.
     /// </para>
     /// <para>
-    /// <b>El canto es el aviso.</b> Toda la pelea cuelga de que el jugador lea el número a tiempo, y
-    /// hasta ahora el número aparecía solo, sin que el jefe hiciera nada: era una etiqueta de UI, no
-    /// un acto del Croupier. La animación se corre en el camino coroutine y <b>retiene el turno</b>
-    /// hasta terminar, para que el marcado del sector no empiece a pintar tiles mientras el jefe
-    /// todavía está cantando.
-    /// </para>
-    /// <para>
-    /// <b>Elegir y publicar están separados.</b> El sorteo pasa antes de la animación (si no hay
-    /// número que cantar tampoco hay que animar nada ni retener el turno) y la publicación pasa en el
-    /// frame del canto — o al terminar, si el clip no publica su key. Un canto que ya mostró el número
-    /// antes de arrancar se lee como si el jefe reaccionara a la rueda en vez de moverla.
-    /// </para>
-    /// <para>
-    /// <b><see cref="CantoFeedbackId"/> vacío ⇒ el id canónico del jefe</b>
-    /// (<see cref="BossFeedbackIds"/>). No es una comodidad: Odin instancia el nodo sin correr field
-    /// initializers y los <c>ED_Boss_Croupier</c> ya autorados no traen el campo, así que un default
-    /// por inicializador nunca llegaría al asset y el canto seguiría mudo. Para silenciarlo se lo
-    /// apunta a otra entry, no se lo vacía.
+    /// <see cref="CantoFeedbackId"/> vacío ⇒ el id canónico (<see cref="BossFeedbackIds"/>): Odin no
+    /// corre field initializers, así que un <c>ED_Boss_Croupier</c> ya autorado no trae el campo. Para
+    /// silenciarlo se lo apunta a otra entry, no se lo vacía.
     /// </para>
     /// </remarks>
     [Serializable, HideReferenceObjectPicker]
@@ -104,8 +87,8 @@ namespace Rollgeon.Combat.AI.Bosses.Croupier
             var canto = PlayCanto(context, singOnce);
             while (canto.MoveNext()) yield return canto.Current;
 
-            // Red de seguridad: sin feedback service, con un id huérfano o con el watchdog cortando la
-            // secuencia, el número igual sale. Los nodos que siguen en el Sequence lo dan por hecho.
+            // Red de seguridad: sin feedback service o con la secuencia cortada, el número igual sale.
+            // Los nodos que siguen en el Sequence lo dan por hecho.
             singOnce();
             onResult?.Invoke(AIResult.Succeeded);
         }
@@ -114,8 +97,7 @@ namespace Rollgeon.Combat.AI.Bosses.Croupier
 
         /// <summary>
         /// Resuelve el servicio y sortea los números, sin publicar nada. Separado de
-        /// <see cref="Sing"/> para que el camino coroutine pueda fallar <b>antes</b> de animar: un
-        /// canto sin número que cantar retendría el turno para no decir nada.
+        /// <see cref="Sing"/> para que el camino coroutine pueda fallar <b>antes</b> de animar.
         /// </summary>
         private bool TryPrepare(AIContext context, out ICroupierWheelService wheel, out List<int> numbers)
         {
@@ -140,10 +122,8 @@ namespace Rollgeon.Combat.AI.Bosses.Croupier
         }
 
         /// <remarks>
-        /// Request de secuencia armado a mano en vez de un <c>EffPlaySequence</c>: el nodo no nace de
-        /// un effect pass, así que no tiene <c>EffectContext</c> que pasarle (mismo caso que la
-        /// secuencia de muerte del <c>CombatDeathWatcher</c>, y por eso <c>FeedbackRequest.Context</c>
-        /// admite null).
+        /// Request de secuencia a mano y no <c>EffPlaySequence</c>: el nodo no nace de un effect pass
+        /// y no tiene <c>EffectContext</c> que pasarle (por eso <c>FeedbackRequest.Context</c> admite null).
         /// </remarks>
         private IEnumerator PlayCanto(AIContext context, Action onCanto)
         {
@@ -172,15 +152,12 @@ namespace Rollgeon.Combat.AI.Bosses.Croupier
                 TargetGuid = context.PlayerGuid,
             }, () => turn?.OnFeedbackComplete());
 
-            // Sin TurnManager no hay gate que esperar — la anim igual corre, pero el número no queda
-            // sincronizado. Mismo degradado que EffPlaySequence.
+            // Sin TurnManager no hay gate que esperar: la anim corre igual, sin sincronizar el número.
             if (turn == null || !turn.IsWaitingForFeedback) yield break;
 
             bool cantoFired = string.IsNullOrEmpty(CantoEventKey);
 
-            // Se envuelve el wait canónico (trae su propio timeout + force-reset del depth) en vez de
-            // rehacer el loop: el bus es latched, así que pollear HasFired por frame alcanza para
-            // enganchar el Animation Event sin suscribirse a nada.
+            // El bus es latched: pollear HasFired por frame engancha el Animation Event.
             var wait = TurnManager.WaitForFeedbackCompletion(turn);
             while (wait.MoveNext())
             {
@@ -207,8 +184,7 @@ namespace Rollgeon.Combat.AI.Bosses.Croupier
             var pool = new List<int>(total);
             for (int n = 1; n <= total; n++)
             {
-                // El descarte del número anterior es del pool, no un re-sorteo: así todos los números
-                // restantes quedan equiprobables en vez de sesgar hacia el segundo intento.
+                // Descarte del pool y no re-sorteo: así los números restantes quedan equiprobables.
                 if (AvoidRepeatingLastNumber && n == _lastNumber && total > 1) continue;
                 pool.Add(n);
             }

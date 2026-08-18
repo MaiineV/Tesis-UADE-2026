@@ -13,14 +13,9 @@ namespace Rollgeon.Combat.Tests
 {
     /// <summary>
     /// La "tacha" de El Anotador (<see cref="AINode_ShiftComboToNeighbor"/>): a quién le corre el
-    /// combo, cuántos por turno, y cuándo deja de devolverlos.
+    /// combo, cuántos por turno y cuándo deja de devolverlos. La aritmética del vecino por daño
+    /// base la cubre <see cref="ContractModifierServiceTests"/>, de ahí el spy.
     /// </summary>
-    /// <remarks>
-    /// El <see cref="IContractModifierService"/> se reemplaza por un spy: lo que hay que testear son
-    /// las decisiones del nodo (qué combo elige, cuántos corrimientos, si limpia los anteriores), no
-    /// la aritmética del vecino por daño base, que ya cubre
-    /// <see cref="ContractModifierServiceTests"/>.
-    /// </remarks>
     [TestFixture]
     public class AnotadorComboShiftTests
     {
@@ -85,8 +80,7 @@ namespace Rollgeon.Combat.Tests
         [Test]
         public void Tick_NeverShiftsGeneralaNorTheNoComboMarker()
         {
-            // Arrange — Generala es lo más jugado, pero es la debilidad del jefe: cinco iguales son
-            // cinco iguales, se corra la hoja o no.
+            // Arrange — Generala es lo más jugado, pero está en ImmuneComboIds.
             _log.SetHistory(Generala, Generala, _log.NoComboMarker, Par);
 
             // Act
@@ -152,8 +146,7 @@ namespace Rollgeon.Combat.Tests
             // Act
             NewNode().Tick(Context());
 
-            // Assert — IContractModifierService no tiene expiración por modificador, así que "dura
-            // 1 turno" es ClearAll + volver a promulgar (igual que AINode_PromulgateRule).
+            // Assert — sin expiración por modificador, "dura 1 turno" es ClearAll + re-promulgar.
             Assert.AreEqual(1, _mods.ClearAllCalls, "Fase 1 debería devolver el corrimiento anterior.");
         }
 
@@ -240,7 +233,7 @@ namespace Rollgeon.Combat.Tests
         [Test]
         public void Tick_DirectionRandom_OnlyEverPicksAdjacentNeighbours()
         {
-            // Arrange — RNG inyectado: la dirección es sorteada pero acotada.
+            // Arrange
             _log.SetHistory(Par);
             var node = NewNode();
             var context = Context();
@@ -286,7 +279,7 @@ namespace Rollgeon.Combat.Tests
 
         private sealed class SpyContractModifiers : IContractModifierService
         {
-            /// <summary>Cada corrimiento como (comboId, dirección), en orden.</summary>
+            /// <summary>(comboId, dirección), en orden.</summary>
             public readonly List<KeyValuePair<string, int>> Shifts = new List<KeyValuePair<string, int>>();
 
             public int ClearAllCalls;

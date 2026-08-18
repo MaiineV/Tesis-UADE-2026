@@ -16,24 +16,13 @@ using Object = UnityEngine.Object;
 namespace Rollgeon.Combat.Tests
 {
     /// <summary>
-    /// Tests de <see cref="HazardDefinitionSO.PersistentVfxPrefab"/>: la llama que queda encendida
-    /// mientras el hazard dura, en vez del fogonazo de <c>TriggerVfxPrefab</c> que sólo aparece al
-    /// pisar.
+    /// <see cref="HazardDefinitionSO.PersistentVfxPrefab"/>: la llama que queda encendida mientras
+    /// el hazard dura, a diferencia del fogonazo de <c>TriggerVfxPrefab</c>.
     /// </summary>
     /// <remarks>
-    /// <para>
-    /// Sin esto, el sector del Croupier ardiendo y una casilla apagada se ven exactamente igual entre
-    /// pisada y pisada — sólo cambia el tinte del quad. El burst es el cobro; esto es el aviso.
-    /// </para>
-    /// <para>
     /// Mismo seam que <see cref="HazardTriggerVfxTests"/>: el efecto observable es el clon en la
-    /// escena, y el fixture pasa un marker en vez de un prefab real para no depender de cómo esté
-    /// autorado <c>VFX_Fire.prefab</c>.
-    /// </para>
-    /// <para>
-    /// <b>Lo que más importa acá es el apagado.</b> Un VFX persistente que no se destruye deja la
-    /// llama prendida sobre una casilla que ya no cobra — peor que no tener visual, porque miente.
-    /// </para>
+    /// escena, y se pasa un marker en vez de <c>VFX_Fire.prefab</c> para no depender de cómo esté
+    /// autorado.
     /// </remarks>
     [TestFixture]
     public class HazardPersistentVfxTests
@@ -59,9 +48,8 @@ namespace Rollgeon.Combat.Tests
             _walkerGuid = Guid.NewGuid();
             _grid.Register(_walkerGuid, new GridCoord(4, 4));
 
-            // El que camina es el jugador: los hazards son PlayerOnly por default, así que sin un
-            // IPlayerService que lo nombre el filtro corta el disparo y la llama de la casilla
-            // consumida nunca se apagaría. Este suite mide el visual, no a quién le cobra.
+            // Los hazards son PlayerOnly por default y el filtro es fail-closed: sin IPlayerService
+            // no hay disparo, y la llama de la casilla consumida nunca se apagaría.
             ServiceLocator.AddService<IPlayerService>(new StubPlayerService { PlayerGuid = _walkerGuid });
 
             _movement = new StubMovement();
@@ -125,12 +113,12 @@ namespace Rollgeon.Combat.Tests
             // Act
             _hazard.Activate(def, tiles);
 
-            // Assert — una por casilla: el fuego cubre el sector, no un punto.
+            // Assert
             Assert.AreEqual(tiles.Length, CountSpawned());
         }
 
         // ======================================================================
-        // Apagado — lo que realmente importa
+        // Apagado
         // ======================================================================
 
         [Test]
@@ -152,8 +140,7 @@ namespace Rollgeon.Combat.Tests
         [Test]
         public void ConsumingATile_DestroysOnlyThatTilesFlame()
         {
-            // Arrange — ConsumeOnTrigger es el caso del hielo y de la ficha: la casilla se gasta y el
-            // resto del hazard sigue vivo.
+            // Arrange
             var def = CreateDefinition(persistent: _markerPrefab, consumeOnTrigger: true);
             def.Trigger = HazardTriggerMode.OnEnter;
             _hazard.Activate(def, new[] { new GridCoord(2, 2), new GridCoord(2, 3) });
@@ -171,8 +158,7 @@ namespace Rollgeon.Combat.Tests
         [Test]
         public void CombatEnd_DestroysEveryFlame()
         {
-            // Arrange — el teardown no dispara OnHazardExpired a propósito, pero el GameObject
-            // sobrevive por su cuenta a menos que alguien lo destruya.
+            // Arrange — el teardown no dispara OnHazardExpired a propósito.
             var def = CreateDefinition(persistent: _markerPrefab);
             _hazard.Activate(def, new[] { new GridCoord(2, 2), new GridCoord(2, 3) });
             Assume.That(CountSpawned(), Is.EqualTo(2));
@@ -202,10 +188,7 @@ namespace Rollgeon.Combat.Tests
             return def;
         }
 
-        /// <summary>
-        /// Los clones se cuentan por nombre. <c>HazardService</c> le agrega la casilla al nombre, así
-        /// que se busca por prefijo y no por igualdad.
-        /// </summary>
+        /// <summary><c>HazardService</c> le agrega la casilla al nombre: se busca por prefijo.</summary>
         private static IEnumerable<GameObject> Spawned()
             => Object.FindObjectsByType<GameObject>(FindObjectsSortMode.None)
                 .Where(go => go != null

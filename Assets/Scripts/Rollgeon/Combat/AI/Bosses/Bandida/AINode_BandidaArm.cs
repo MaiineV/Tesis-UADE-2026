@@ -18,39 +18,10 @@ namespace Rollgeon.Combat.AI.Bosses.Bandida
     /// máquina. Sin marca y sin área. Ficha de diseño "La Bandida" (piso 1).
     /// </summary>
     /// <remarks>
-    /// <para>
-    /// <b>Por qué dejó de ser un <c>TelegraphMark</c>.</b> Como marca de 3×3 sobre el jefe, el brazo
-    /// avisaba un turno antes y se esquivaba con un paso: era daño que nunca entraba y una amenaza
-    /// más compitiendo por lectura con el número del jackpot. Como golpe directo es el precio fijo de
-    /// desarmar de cerca — los rodillos están en el anillo del jefe, así que romperlos es quedar a su
-    /// alcance, y esa es la decisión que la pelea quiere cobrar.
-    /// </para>
-    /// <para>
-    /// <b>"Termina el turno pegado" se resuelve mirando el presente.</b> El jefe actúa después del
-    /// jugador (CNF-006), así que la posición que se lee en su turno ES la posición en la que el
-    /// jugador cerró el suyo: no hace falta recordar nada. Mismo patrón que
-    /// <c>AINode_TahurPoke</c>.
-    /// </para>
-    /// <para>
-    /// <b>Se auto-gatea.</b> El árbol ya lo envuelve en un <c>If(PcTargetInRange)</c>, pero el nodo
-    /// vuelve a medir la distancia: un rewire que se olvide la condición no puede convertir el brazo
-    /// en un golpe a distancia, que es justo lo que el jefe atornillado a la pared no puede tener.
-    /// El <see cref="Metric"/> tiene que ser el mismo que el del gate o una de las dos mitades
-    /// miente sobre las diagonales.
-    /// </para>
-    /// <para>
-    /// <b>Sin <c>FaceTarget</c>, a diferencia de <c>AINode_CashierRangedShot</c>.</b> Los dos jefes
-    /// que giran hacia el jugador antes de pegar se mueven por la sala y pueden quedar de espaldas;
-    /// esta máquina está atornillada y su ataque es una palanca que baja, no un puño que apunta.
-    /// Girarla sería mueble rotando contra la pared.
-    /// </para>
-    /// <para>
-    /// <b>La presentación es media mecánica.</b> El brazo es el único cobro del jefe que no avisa: sin
-    /// palanca bajando ni impacto, el jugador ve aparecer un 12 y no tiene con qué atar ese 12 a
-    /// "estaba pegado a la máquina". La secuencia se corre en el camino coroutine y <b>retiene el
-    /// turno</b> hasta terminar, igual que <c>AINode_ExecuteTelegraph</c>: soltar antes dejaría al
-    /// jefe encadenando el resto del sequence con el brazo todavía en el aire.
-    /// </para>
+    /// "Termina el turno pegado" se lee del presente: el jefe actúa después del jugador (CNF-006). Se
+    /// auto-gatea aunque el árbol ya lo envuelva en un <c>If(PcTargetInRange)</c>, y el
+    /// <see cref="Metric"/> tiene que ser el mismo que el del gate o una de las dos mitades miente
+    /// sobre las diagonales.
     /// </remarks>
     [Serializable, HideReferenceObjectPicker]
     public sealed class AINode_BandidaArm : AIActionNode
@@ -97,8 +68,8 @@ namespace Rollgeon.Combat.AI.Bosses.Bandida
         public override string NodeName => $"Bandida — Arm ({Damage})";
 
         /// <summary>
-        /// Camino síncrono (EditMode / escenas sin <c>CoroutineHost</c>): el daño y nada más. No hay
-        /// dónde esperar una animación, y bloquear acá colgaría los tests.
+        /// Camino síncrono (EditMode / escenas sin <c>CoroutineHost</c>): el daño y nada más —
+        /// bloquear acá colgaría los tests.
         /// </summary>
         public override AIResult Tick(AIContext context)
         {
@@ -131,8 +102,7 @@ namespace Rollgeon.Combat.AI.Bosses.Bandida
             var swing = PlaySwing(context, strikeOnce);
             while (swing.MoveNext()) yield return swing.Current;
 
-            // Red de seguridad: sin feedback service, con un id huérfano o con el watchdog cortando
-            // la secuencia, el 12 igual se cobra. La presentación nunca es dueña del gameplay.
+            // Red de seguridad: sin feedback service o con la secuencia cortada, el golpe igual cobra.
             strikeOnce();
             onResult?.Invoke(AIResult.Succeeded);
         }
@@ -140,9 +110,8 @@ namespace Rollgeon.Combat.AI.Bosses.Bandida
         // ---- pasos compartidos por los dos caminos -------------------------
 
         /// <summary>
-        /// El gate completo del nodo. Se separa del golpe porque el camino coroutine tiene que
-        /// decidir <b>antes</b> de la animación: una palanca que baja sobre nadie es peor que no
-        /// animar, y además retendría el turno para nada.
+        /// El gate completo del nodo. Separado del golpe porque el camino coroutine tiene que decidir
+        /// <b>antes</b> de animar: si no, retendría el turno para bajar la palanca sobre nadie.
         /// </summary>
         private bool CanStrike(AIContext context)
         {
@@ -170,18 +139,15 @@ namespace Rollgeon.Combat.AI.Bosses.Bandida
         }
 
         /// <remarks>
-        /// Request de secuencia armado a mano en vez de un <c>EffPlaySequence</c>: el nodo no nace de
-        /// un effect pass, así que no tiene <c>EffectContext</c> que pasarle (mismo caso que la
-        /// secuencia de muerte del <c>CombatDeathWatcher</c>, y por eso <c>FeedbackRequest.Context</c>
-        /// admite null).
+        /// Request de secuencia a mano y no <c>EffPlaySequence</c>: el nodo no nace de un effect pass
+        /// y no tiene <c>EffectContext</c> que pasarle (por eso <c>FeedbackRequest.Context</c> admite null).
         /// </remarks>
         private IEnumerator PlaySwing(AIContext context, Action onImpact)
         {
             if (!ServiceLocator.TryGetService<IFeedbackService>(out var feedback) || feedback == null) yield break;
 
-            // Impacto encadenado al final de la palanca (AfterStep 0) y no gateado por evento: ningún
-            // clip del rig Mecha publica keys, así que un StartMode=OnEvent dejaría los dos steps
-            // esperando algo que no llega hasta que el watchdog mate la secuencia.
+            // Impacto encadenado al final de la palanca (AfterStep 0) y no por evento: ningún clip del
+            // rig Mecha publica keys, y un StartMode=OnEvent esperaría algo que nunca llega.
             var steps = new List<FeedbackSequenceStep>(3)
             {
                 new FeedbackSequenceStep
@@ -206,15 +172,12 @@ namespace Rollgeon.Combat.AI.Bosses.Bandida
                 TargetGuid = context.PlayerGuid,
             }, () => turn?.OnFeedbackComplete());
 
-            // Sin TurnManager no hay gate que esperar — la anim igual corre, pero el daño no queda
-            // sincronizado. Mismo degradado que EffPlaySequence.
+            // Sin TurnManager no hay gate que esperar: la anim corre igual, sin sincronizar el daño.
             if (turn == null || !turn.IsWaitingForFeedback) yield break;
 
             bool impactFired = string.IsNullOrEmpty(ImpactEventKey);
 
-            // Se envuelve el wait canónico (trae su propio timeout + force-reset del depth) en vez de
-            // rehacer el loop: el bus es latched, así que pollear HasFired por frame alcanza para
-            // enganchar el Animation Event sin suscribirse a nada.
+            // El bus es latched: pollear HasFired por frame engancha el Animation Event.
             var wait = TurnManager.WaitForFeedbackCompletion(turn);
             while (wait.MoveNext())
             {
@@ -243,11 +206,9 @@ namespace Rollgeon.Combat.AI.Bosses.Bandida
         };
 
         /// <summary>
-        /// Campo vacío ⇒ el id canónico del jefe. No es una comodidad: Odin instancia el nodo sin
-        /// correr field initializers y los <c>ED_Boss_Bandida</c> ya autorados no traen estos campos,
-        /// así que un default por inicializador nunca llegaría al asset y el brazo seguiría mudo.
-        /// Silenciar un canal se hace apuntándolo a otra entry, no vaciándolo — un ataque de jefe sin
-        /// momento en pantalla es exactamente el bug que este nodo arregla.
+        /// Campo vacío ⇒ el id canónico: Odin no corre field initializers, así que un
+        /// <c>ED_Boss_Bandida</c> ya autorado no trae estos campos. Para silenciar un canal se lo
+        /// apunta a otra entry, no se lo vacía.
         /// </summary>
         private static string Authored(string authored, string canonical)
             => string.IsNullOrEmpty(authored) ? canonical : authored;

@@ -9,22 +9,9 @@ namespace Rollgeon.Combat.Rooms
     /// being a combatant.
     /// </summary>
     /// <remarks>
-    /// <para>
-    /// <b>Why the type exists.</b> Those objects ship today as <c>EnemyDataSO</c> pushed through a
-    /// reinforcement-shaped spawn node, so they inherit an enemy portrait, an enemy health bar and a
-    /// slot in the turn queue. The design asks for none of that — it is what being an enemy happens
-    /// to drag along. This is the sibling of <see cref="HazardDefinitionSO"/> for the other half of
-    /// room state: a hazard owns tiles that <i>hurt</i>, this owns tiles that are <i>taken</i>.
-    /// </para>
-    /// <para>
-    /// <b>Not a <c>SerializedScriptableObject</c></b>, for the same reason
-    /// <see cref="HazardDefinitionSO"/> isn't: a flat data bag gains nothing from Odin polymorphism
-    /// and would force every <c>.asset</c> to carry Odin's binary blob on top of the readable YAML.
-    /// </para>
-    /// <para>
-    /// <b>No stats beyond <see cref="Hp"/>.</b> No Speed, no Attack, no AI tree. A room object that
-    /// needs to decide anything is an enemy wearing furniture, and belongs in <c>EnemyDataSO</c>.
-    /// </para>
+    /// Not a <c>SerializedScriptableObject</c>: a flat data bag gains nothing from Odin polymorphism
+    /// and would make every <c>.asset</c> carry a binary blob on top of the readable YAML. A room
+    /// object that needs to decide anything belongs in <c>EnemyDataSO</c> instead.
     /// </remarks>
     [CreateAssetMenu(menuName = "Rollgeon/Combat/Room Object Definition", fileName = "RoomObjectDefinition")]
     public class RoomObjectDefinitionSO : ScriptableObject
@@ -84,27 +71,18 @@ namespace Rollgeon.Combat.Rooms
         public float OwnerDamageReductionPerObject;
 
         /// <summary>
-        /// <c>true</c> when this definition's objects protect their owner at all — the flag the spawn
-        /// node checks before publishing slot state to <c>RoomObjectArmorService</c>.
+        /// Checked by the spawn node before publishing slot state to <c>RoomObjectArmorService</c>.
         /// </summary>
         public bool GrantsOwnerArmor => OwnerDamageReductionPerObject > 0f;
 
-        /// <summary>
-        /// <see cref="DisplayName"/>, falling back to the asset name when it was never authored, so
-        /// UI and logs always have something to print instead of an empty string.
-        /// </summary>
+        /// <summary><see cref="DisplayName"/>, falling back to the asset name.</summary>
         public string EffectiveDisplayName => string.IsNullOrWhiteSpace(DisplayName) ? name : DisplayName;
 
         /// <summary>
-        /// <see cref="Hp"/> floored at 1.
+        /// <see cref="Hp"/> floored at 1. <c>[Min]</c> only constrains the Inspector drawer, and an
+        /// object spawned at 0 HP is born dead: the spawner would break it, drop its
+        /// <see cref="OnDeathHazard"/> and respawn it, forever.
         /// </summary>
-        /// <remarks>
-        /// <c>[Min]</c> only constrains the Inspector drawer — an asset written by an editor builder
-        /// or by hand can still hold 0. An object spawned at 0 HP is born dead, so the spawner would
-        /// break it, drop its <see cref="OnDeathHazard"/> and respawn it, forever. Floor the value
-        /// instead: an unbreakable-looking object is a bug someone reports, an infinite fire loop is
-        /// a hang.
-        /// </remarks>
         public int EffectiveHp => Hp < 1 ? 1 : Hp;
 
         /// <summary><c>false</c> when <see cref="RespawnDelayTurns"/> is negative — the object is

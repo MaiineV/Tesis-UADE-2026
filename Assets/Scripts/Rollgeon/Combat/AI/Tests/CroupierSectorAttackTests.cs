@@ -15,10 +15,8 @@ using UnityEngine;
 namespace Rollgeon.Combat.AI.Tests
 {
     /// <summary>
-    /// Tests del ciclo de dos turnos del ataque del Croupier: <see cref="AINode_MarkSungSectors"/>
-    /// marca el sector cantado y <see cref="AINode_DetonateSungSectors"/> lo cobra al turno siguiente.
-    /// El caso que justifica que los dos nodos existan aparte de los genéricos es la columna de
-    /// costura: en fase 2 dos áreas se resuelven por separado y el jugador que está ahí cobra las dos.
+    /// El ciclo de dos turnos del ataque del Croupier: <see cref="AINode_MarkSungSectors"/> marca el
+    /// sector cantado y <see cref="AINode_DetonateSungSectors"/> lo cobra al turno siguiente.
     /// </summary>
     [TestFixture]
     public class CroupierSectorAttackTests
@@ -56,8 +54,7 @@ namespace Rollgeon.Combat.AI.Tests
             _grid.Register(_bossGuid, new GridCoord(5, 3));
             _grid.Register(_playerGuid, new GridCoord(0, 0));
 
-            // El corrimiento sale del cierre de turno del jugador, y quién es el jugador lo dice este
-            // servicio.
+            // El corrimiento sale del cierre de turno del jugador, y quién es el jugador lo dice esto.
             ServiceLocator.AddService<IPlayerService>(new StubPlayerService { PlayerGuid = _playerGuid });
 
             _wheel = (CroupierWheelService)CroupierWheelService.ResolveOrCreate();
@@ -101,7 +98,7 @@ namespace Rollgeon.Combat.AI.Tests
         [Test]
         public void Mark_UsesThePhase2Damage_WhenTheTableIsRigged()
         {
-            // Arrange — la fase no sube el daño por bloque: lo baja a 12 y canta dos.
+            // Arrange
             _wheel.SetMode(2, rigged: true, phaseIndex: 2);
             _wheel.Sing(new List<int> { 2, 3 });
 
@@ -116,8 +113,7 @@ namespace Rollgeon.Combat.AI.Tests
         [Test]
         public void Mark_WithNothingInTheAir_Fails()
         {
-            // Arrange — sin número cantado no hay nada que marcar. Falla, y por eso en el árbol va
-            // envuelto en Selector[.., Wait]: el turno tiene que seguir igual.
+            // Arrange — el Failed lo absorbe el Selector[.., Wait] del árbol.
             // Act + Assert
             Assert.AreEqual(AIResult.Failed, Mark());
         }
@@ -125,8 +121,7 @@ namespace Rollgeon.Combat.AI.Tests
         [Test]
         public void Mark_TwoNumbers_KeepsBothAreasAlive()
         {
-            // Arrange — el bug que motivó los guids por slot: IThreatenedAreaService guarda un área por
-            // fuente, así que marcar las dos bajo el guid del jefe dejaba sólo la segunda.
+            // Arrange — IThreatenedAreaService guarda un área por fuente: sin guid por slot se pisan.
             _wheel.SetMode(2, rigged: true, phaseIndex: 2);
             _wheel.Sing(new List<int> { 2, 3 });
 
@@ -164,9 +159,7 @@ namespace Rollgeon.Combat.AI.Tests
         [Test]
         public void Detonate_PlayerOnTheMiddleRow_TakesTheHit()
         {
-            // Arrange — la regresión del exploit: la fila del medio era "el pasillo" y no pertenecía a
-            // ningún sector, así que el jugador se paraba al costado del jefe y no lo alcanzaba nunca
-            // nada. Hoy es costura — la comparten el bloque de arriba y el de abajo de su columna.
+            // Arrange — la fila del medio es costura: la comparten el bloque de arriba y el de abajo.
             MovePlayer(new GridCoord(4, 3));
             _wheel.Sing(new List<int> { 2 });
             Mark();
@@ -182,8 +175,7 @@ namespace Rollgeon.Combat.AI.Tests
         [Test]
         public void Detonate_MiddleRow_AlsoFallsWithTheBlockBelowIt()
         {
-            // Arrange — la otra mitad de la costura: la misma casilla cae con el 2 (arriba) y con el 5
-            // (abajo). Es lo que la vuelve el peor lugar del paño en vez del mejor.
+            // Arrange — la misma casilla del test anterior, ahora con el número de abajo.
             MovePlayer(new GridCoord(4, 3));
             _wheel.Sing(new List<int> { 5 });
             Mark();
@@ -199,10 +191,8 @@ namespace Rollgeon.Combat.AI.Tests
         [Test]
         public void Detonate_ApproachingFromAboveOrBelow_IsNormalRisk()
         {
-            // Arrange — el contrapeso de subirle el riesgo a la fila del medio: llegar al melee por
-            // arriba o por abajo sigue costando lo mismo que cualquier otra casilla, así que el
-            // jugador conserva un camino de riesgo normal hasta el jefe. Acá canta el bloque de
-            // abajo y el jugador está en el de arriba, pegado al jefe.
+            // Arrange — canta el bloque de abajo y el jugador está en el de arriba, pegado al jefe:
+            // el contrapeso de la costura es que llegar al melee por arriba/abajo no cuesta doble.
             MovePlayer(new GridCoord(5, 4));
             _wheel.Sing(new List<int> { 5 });
             Mark();
@@ -217,8 +207,7 @@ namespace Rollgeon.Combat.AI.Tests
         [Test]
         public void Detonate_SeamColumnInPhase2_TakesBothHits()
         {
-            // Arrange — 12 + 12 = los 24 de la ficha, en dos golpes: cada uno queda debajo del techo
-            // de daño por golpe del piso y el escudo se aplica como en cualquier otro par.
+            // Arrange — son dos golpes separados, no uno de 24: el escudo se aplica a cada uno.
             _wheel.SetMode(2, rigged: true, phaseIndex: 2);
             MovePlayer(new GridCoord(7, 5)); // La costura, arriba.
             _wheel.Sing(new List<int> { 2, 3 });
@@ -254,7 +243,7 @@ namespace Rollgeon.Combat.AI.Tests
         [Test]
         public void Detonate_WithNothingMarked_SucceedsAnyway()
         {
-            // Arrange — turno 1. Devolver Failed acá le cancelaría al jefe el resto del turno.
+            // Arrange — turno 1: Failed acá le cancelaría al jefe el resto del turno.
             // Act + Assert
             Assert.AreEqual(AIResult.Succeeded, Detonate());
             Assert.IsEmpty(_pipeline.Resolved);
@@ -279,9 +268,7 @@ namespace Rollgeon.Combat.AI.Tests
         [Test]
         public void StandingInTheCalledSector_PushesTheBlastOffYou()
         {
-            // Arrange — el trato del jefe: mover el hacha es pararse bajo el hacha. El jugador cierra
-            // el turno dentro del bloque cantado, el número pasa al siguiente y el que cae ya no es
-            // el suyo.
+            // Arrange
             MovePlayer(new GridCoord(0, 0)); // Sector 4.
             _wheel.Sing(new List<int> { 4 });
             Mark();
@@ -297,8 +284,7 @@ namespace Rollgeon.Combat.AI.Tests
         [Test]
         public void NudgedNumber_DetonatesTheNewSector_NotTheOneItSang()
         {
-            // Arrange — el error típico del jugador: correr la rueda sin mirar a dónde la manda. Si el
-            // corrimiento no moviera el hacha, la palanca sería decorativa.
+            // Arrange
             MovePlayer(new GridCoord(0, 0)); // Sector 4.
             _wheel.Sing(new List<int> { 4 });
             Mark();
@@ -316,8 +302,7 @@ namespace Rollgeon.Combat.AI.Tests
         [Test]
         public void HittingTheBoss_DoesNotRedirectTheBlast()
         {
-            // Arrange — la regresión que motivó el cambio: pegarle corría la rueda, así que el único
-            // ataque del jugador venía con un reposicionamiento del hacha de regalo.
+            // Arrange
             MovePlayer(new GridCoord(0, 0)); // Sector 4.
             _wheel.Sing(new List<int> { 4 });
             Mark();

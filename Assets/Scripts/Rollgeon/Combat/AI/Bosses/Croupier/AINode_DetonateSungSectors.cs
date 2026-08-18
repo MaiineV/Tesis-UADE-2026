@@ -19,29 +19,14 @@ namespace Rollgeon.Combat.AI.Bosses.Croupier
     /// </summary>
     /// <remarks>
     /// <para>
-    /// Va primero en el Sequence raíz, igual que <c>AINode_ExecuteTelegraph</c>, y como él devuelve
-    /// siempre <see cref="AIResult.Succeeded"/>: "no había nada marcado" (turno 1) o "el jugador se
-    /// fue del sector" son resoluciones válidas, no fallos que deban cortarle el turno al jefe.
+    /// Va primero en el Sequence raíz y siempre devuelve <see cref="AIResult.Succeeded"/>: "no había
+    /// nada marcado" y "el jugador se fue del sector" son resoluciones válidas. Un golpe por sector y
+    /// no uno sumado, para que cada golpe quede bajo el techo de daño del piso.
     /// </para>
     /// <para>
-    /// <b>Un golpe por sector, no un golpe por casilla.</b> En fase 2 las dos áreas se resuelven una
-    /// por una, así que el jugador parado en la columna de costura recibe dos impactos de 12 (24 en el
-    /// turno) en vez de uno de 24. Dos hits mantienen cada golpe individual bajo el techo de daño del
-    /// piso y hacen que escudo/mitigación se apliquen como en cualquier otro par de golpes.
-    /// </para>
-    /// <para>
-    /// <b>El impacto se presenta, la explosión no.</b> El sector que cae es el daño grande del jefe y
-    /// hasta ahora se resolvía en silencio: los tiles se apagaban y aparecía un 20. El VFX + Feel van
-    /// sobre el <i>jugador</i> y sólo si el golpe entró — el paño detonando ya tiene su propia lectura
-    /// en el overlay, y celebrar un sector vacío le enseñaría al jugador a ignorar el efecto. Sin
-    /// animación de jefe: acá no hay gesto del Croupier, explota el paño.
-    /// </para>
-    /// <para>
-    /// <b>Campo de id vacío ⇒ el id canónico del jefe</b> (<see cref="BossFeedbackIds"/>). No es una
-    /// comodidad: Odin instancia el nodo sin correr field initializers y los <c>ED_Boss_Croupier</c>
-    /// ya autorados no traen estos campos, así que un default por inicializador nunca llegaría al
-    /// asset y el impacto seguiría invisible. Para silenciar un canal se lo apunta a otra entry, no
-    /// se lo vacía.
+    /// Campo de id vacío ⇒ el id canónico (<see cref="BossFeedbackIds"/>): Odin no corre field
+    /// initializers, así que un <c>ED_Boss_Croupier</c> ya autorado no trae estos campos. Para
+    /// silenciar un canal se lo apunta a otra entry, no se lo vacía.
     /// </para>
     /// </remarks>
     [Serializable, HideReferenceObjectPicker]
@@ -64,7 +49,7 @@ namespace Rollgeon.Combat.AI.Bosses.Croupier
 
         /// <summary>
         /// Camino síncrono (EditMode / escenas sin <c>CoroutineHost</c>): la resolución completa sin
-        /// presentación. No hay dónde esperar el impacto, y bloquear acá colgaría los tests.
+        /// presentación — bloquear acá colgaría los tests.
         /// </summary>
         public override AIResult Tick(AIContext context)
         {
@@ -120,10 +105,8 @@ namespace Rollgeon.Combat.AI.Bosses.Croupier
         }
 
         /// <remarks>
-        /// Request de secuencia armado a mano en vez de un <c>EffPlaySequence</c>: el nodo no nace de
-        /// un effect pass, así que no tiene <c>EffectContext</c> que pasarle (mismo caso que la
-        /// secuencia de muerte del <c>CombatDeathWatcher</c>, y por eso <c>FeedbackRequest.Context</c>
-        /// admite null).
+        /// Request de secuencia a mano y no <c>EffPlaySequence</c>: el nodo no nace de un effect pass
+        /// y no tiene <c>EffectContext</c> que pasarle (por eso <c>FeedbackRequest.Context</c> admite null).
         /// </remarks>
         private IEnumerator PlayImpact(AIContext context)
         {
@@ -145,8 +128,8 @@ namespace Rollgeon.Combat.AI.Bosses.Croupier
                 TargetGuid = context.PlayerGuid,
             }, () => turn?.OnFeedbackComplete());
 
-            // Sin TurnManager no hay gate que esperar — el impacto igual corre, pero el turno del jefe
-            // le pasa por encima. Mismo degradado que EffPlaySequence.
+            // Sin TurnManager no hay gate que esperar: el impacto corre igual, pero el turno del jefe
+            // le pasa por encima.
             if (turn == null || !turn.IsWaitingForFeedback) yield break;
 
             var wait = TurnManager.WaitForFeedbackCompletion(turn);

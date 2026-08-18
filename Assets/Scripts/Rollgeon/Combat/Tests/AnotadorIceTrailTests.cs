@@ -17,15 +17,9 @@ using UnityEngine;
 namespace Rollgeon.Combat.Tests
 {
     /// <summary>
-    /// Estela helada de El Anotador (piso 2): <see cref="AINode_IceTrail"/> +
-    /// <see cref="IceStunBinder"/> corriendo sobre el <see cref="HazardService"/> real
-    /// (mismo harness de grid + movement stub que <see cref="HazardServiceTests"/>).
+    /// Estela helada de El Anotador: <see cref="AINode_IceTrail"/> + <see cref="IceStunBinder"/>
+    /// sobre el <see cref="HazardService"/> real, con el harness de <see cref="HazardServiceTests"/>.
     /// </summary>
-    /// <remarks>
-    /// Lo que estos tests protegen: que la estela use las casillas que el boss <b>pisó de verdad</b>,
-    /// que el stun sea 1 turno y solo para instancias propias, que la casilla pisada se derrita, y
-    /// que dos disparos no encadenen turnos perdidos.
-    /// </remarks>
     [TestFixture]
     public class AnotadorIceTrailTests
     {
@@ -97,8 +91,7 @@ namespace Rollgeon.Combat.Tests
             if (_ice != null) UnityEngine.Object.DestroyImmediate(_ice);
             _ice = null;
 
-            // Activar una instancia pinta overlay ⇒ crea el GameObject del overlay y cachea un
-            // material por tint. Mismo cleanup que HazardServiceTests.
+            // Activar pinta overlay: GameObject + un material por tint. Ver HazardServiceTests.
             if (ServiceLocator.TryGetService<IThreatOverlayService>(out var overlay)
                 && overlay is IDisposable disposable)
             {
@@ -118,7 +111,7 @@ namespace Rollgeon.Combat.Tests
         [Test]
         public void Tick_AfterARetreat_FreezesExactlyTheTilesHeWalked()
         {
-            // Arrange — el repliegue real: 3 pasos por la fila.
+            // Arrange
             RetreatAlongRow();
 
             // Act
@@ -137,8 +130,7 @@ namespace Rollgeon.Combat.Tests
         [Test]
         public void Tick_PathLongerThanMaxTiles_KeepsTheTilesClosestToHim()
         {
-            // Arrange — 5 pasos con tope 3: las que importan son las pegadas a su casilla final,
-            // las que pisa quien lo persigue por el camino corto.
+            // Arrange — 5 pasos con tope 3.
             _movement.RaiseMoved(_bossGuid, new GridCoord(8, 0), new GridCoord(8, 5), Path(
                 new GridCoord(8, 0), new GridCoord(8, 1), new GridCoord(8, 2),
                 new GridCoord(8, 3), new GridCoord(8, 4), new GridCoord(8, 5)));
@@ -155,11 +147,7 @@ namespace Rollgeon.Combat.Tests
                 "Las casillas más viejas del recorrido quedan afuera del recorte.");
         }
 
-        /// <summary>
-        /// El boss solo se mueve si lo tienen a 3 casillas o menos, así que "no me repliegué" es la
-        /// mayoría de los turnos. Un <see cref="AIResult.Failed"/> ahí cortaría el Sequence del turno
-        /// y le comería la marca de fila — su único ataque.
-        /// </summary>
+        /// <summary>Un <see cref="AIResult.Failed"/> acá cortaría el Sequence y la marca de fila.</summary>
         [Test]
         public void Tick_WithoutRetreat_SucceedsAndFreezesNothing()
         {
@@ -175,8 +163,7 @@ namespace Rollgeon.Combat.Tests
         [Test]
         public void Tick_TwiceWithoutMovingAgain_DoesNotRefreezeTheOldPath()
         {
-            // Arrange — el path se consume al leerlo: un turno sin repliegue no debe reusar el
-            // camino del turno anterior.
+            // Arrange — el path se consume al leerlo.
             RetreatAlongRow();
             var node = NewTrailNode();
             node.Tick(BossContext());
@@ -218,7 +205,7 @@ namespace Rollgeon.Combat.Tests
             // Arrange
             ArmTrail();
 
-            // Act — el jugador persigue por el camino corto y pisa la primera casilla helada.
+            // Act
             _movement.RaiseMoved(_playerGuid, PlayerStart, Trail3, Path(PlayerStart, Trail3));
 
             // Assert
@@ -236,7 +223,7 @@ namespace Rollgeon.Combat.Tests
             // Arrange
             ArmTrail();
 
-            // Act — un movimiento que cruza dos casillas heladas: dos triggers, un solo turno perdido.
+            // Act — un movimiento que cruza dos casillas heladas.
             _movement.RaiseMoved(_playerGuid, PlayerStart, Trail2, Path(PlayerStart, Trail3, Trail2));
 
             // Assert
@@ -281,7 +268,7 @@ namespace Rollgeon.Combat.Tests
         [Test]
         public void ForeignOnEnterHazard_DoesNotStun()
         {
-            // Arrange — otra instancia OnEnter que NO es del Anotador (otro hazard cualquiera).
+            // Arrange — otra instancia OnEnter que NO es del Anotador.
             ArmTrail();
             var foreign = CreateIceDefinition();
             foreign.Damage = 4;
@@ -324,9 +311,8 @@ namespace Rollgeon.Combat.Tests
         // ======================================================================
 
         /// <summary>
-        /// El jugador tiene forzado el primer turno de cada ronda (CNF-006) y la duración se
-        /// descuenta en el wrap de ronda, así que <c>DurationRounds = 1</c> mataría la estela
-        /// <i>antes</i> de que pudiera pisarla. Con 2 vive exactamente un turno del jugador.
+        /// El jugador abre cada ronda (CNF-006) y la duración se descuenta en el wrap, así que
+        /// <c>DurationRounds = 1</c> mataría la estela antes de que pudiera pisarla.
         /// </summary>
         [Test]
         public void Trail_SurvivesTheRoundWrapAfterItWasLaid_AndDiesOnTheNext()

@@ -11,16 +11,9 @@ namespace Rollgeon.Editor.Tools.Enemy
     /// (<c>Rollgeon → Enemies → Apply Teleport Locomotion</c>). Idempotente.
     /// </summary>
     /// <remarks>
-    /// <para>
-    /// <b>El criterio sale del rig, no de una lista a mano.</b> Un prefab se marca Blink si su
-    /// <c>AnimatorController</c> declara algún clip de teletransporte: eso es precisamente lo que
-    /// significa "su animación de movimiento es un TP", y así el día que arte le autore un clip de
-    /// caminata a un rig, re-correr esto lo devuelve a Walk solo.
-    /// </para>
-    /// <para>
-    /// Hoy caen el Healer (<c>Anim_Healer_Teleport_1/_2</c>) y el Sunked Grand
-    /// (<c>Anim_SunkedGrand_Teleport_1/_2</c>) — y con él el Tahúr, que viste su mismo rig.
-    /// </para>
+    /// El criterio sale del rig y no de una lista a mano: se marca Blink si el
+    /// <c>AnimatorController</c> declara algún clip de teletransporte, así que el día que arte le
+    /// autore una caminata, re-correr esto lo devuelve a Walk solo.
     /// </remarks>
     public static class EnemyLocomotionInstaller
     {
@@ -30,21 +23,10 @@ namespace Rollgeon.Editor.Tools.Enemy
         public const string TeleportClipMarker = "Teleport";
 
         /// <summary>
-        /// Fichas que van en Blink <b>aunque su rig no tenga clip de teletransporte</b>. Es un
-        /// parche hasta que haya arte, no una decisión de diseño. Hoy está vacía.
+        /// Fichas que van en Blink <b>aunque su rig no tenga clip de teletransporte</b>: un parche
+        /// hasta que haya arte. Hoy vacía; se deja en pie para que el próximo rig sin ciclo de
+        /// caminata entre acá y no en una rama nueva.
         /// </summary>
-        /// <remarks>
-        /// <b>El Cajero salió de acá.</b> Estuvo forzado a Blink porque se repliega todos los turnos
-        /// (<c>AINode_KeepDistance</c>) y <c>AnimCon_GeneralDirector</c> sólo declara Idle y Attack:
-        /// sin ciclo de caminata, el lerp lo deslizaba por el piso en pose de idle. El tradeoff sigue
-        /// intacto —el rig no ganó el clip— pero el deslizamiento dejó de ser un defecto: el Cajero es
-        /// una figura alada y planear en pose quieta <b>es</b> lo que tiene que verse. Teletransportarse
-        /// era además el gesto del Crupier, y dos jefes con el mismo truco se confunden.
-        /// <para>
-        /// La lista se deja en pie (vacía) porque la regla que resuelve es real: el próximo rig sin
-        /// caminata que además no deba planear entra acá y no en una rama nueva.
-        /// </para>
-        /// </remarks>
         public static readonly HashSet<string> ForcedBlinkEntityIds = new HashSet<string>();
 
         [MenuItem("Rollgeon/Enemies/Apply Teleport Locomotion")]
@@ -79,10 +61,7 @@ namespace Rollgeon.Editor.Tools.Enemy
             Debug.Log(LogPrefix + $"Listo — {blink} prefab(s) en Blink, {walk} en Walk.");
         }
 
-        /// <summary>
-        /// <c>true</c> si el rig tiene algún clip de teletransporte. Público y estático para que el
-        /// test pueda afirmar la regla sin abrir prefabs.
-        /// </summary>
+        /// <summary>Público para que el test pueda afirmar la regla sin abrir prefabs.</summary>
         public static bool HasTeleportClip(RuntimeAnimatorController controller)
         {
             if (controller == null) return false;
@@ -108,16 +87,11 @@ namespace Rollgeon.Editor.Tools.Enemy
         public const float SnapBlinkHold = 0.05f;
 
         /// <summary>
-        /// Resuelve y escribe el estilo de locomoción de un prefab. La consume
-        /// <c>BossVisualWrapperBuilder</c> al final de cada armado, porque
-        /// <c>SaveAsPrefabAsset</c> reescribe el <see cref="EntityPawn"/> entero y devuelve el flag
-        /// a Walk: sin este llamado, cada <c>Build &lt;Jefe&gt;</c> deja al jefe deslizándose hasta
-        /// que alguien se acuerde de correr el menú.
+        /// Resuelve y escribe el estilo de locomoción. La consume <c>BossVisualWrapperBuilder</c> al
+        /// final de cada armado porque <c>SaveAsPrefabAsset</c> reescribe el <see cref="EntityPawn"/>
+        /// entero y devuelve el flag a Walk.
         /// </summary>
-        /// <param name="entityId">
-        /// Para consultar <see cref="ForcedBlinkEntityIds"/>. Vacío ⇒ manda sólo el rig, que es lo
-        /// correcto para un prefab que todavía no tiene ficha.
-        /// </param>
+        /// <param name="entityId">Consulta <see cref="ForcedBlinkEntityIds"/>; vacío ⇒ manda el rig.</param>
         /// <returns><c>true</c> si el prefab se reescribió.</returns>
         public static bool ApplyTo(string prefabPath, string entityId,
                                    out EntityPawn.LocomotionStyle style)
@@ -130,8 +104,7 @@ namespace Rollgeon.Editor.Tools.Enemy
                 ? EntityPawn.LocomotionStyle.Blink
                 : EntityPawn.LocomotionStyle.Walk;
 
-            // Sin clip de desvanecerse, un hold largo se lee como un tirón: el pawn se queda
-            // quieto y después aparece. Corto, se lee como un salto intencional.
+            // Sin clip de desvanecerse, un hold largo se lee como un tirón; corto, como un salto.
             return ApplyTo(prefabPath, style, rigTeleports ? ClipBlinkHold : SnapBlinkHold);
         }
 

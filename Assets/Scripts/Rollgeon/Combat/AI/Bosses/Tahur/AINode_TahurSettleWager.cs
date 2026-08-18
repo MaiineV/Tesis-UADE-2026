@@ -16,30 +16,11 @@ namespace Rollgeon.Combat.AI.Bosses.Tahur
     /// Ficha de diseño "El Tahúr" (piso 3).
     /// </summary>
     /// <remarks>
-    /// <para>
-    /// <b>Los cuatro resultados.</b> Exacto ⇒ 0 dmg y, si el jugador está en La Mesa, cobra el
-    /// pozo (12 × fichas contra el propio jefe) y el cobro <b>reemplaza su ataque</b>: no marca
-    /// Castigo. Codicia (mano mejor) ⇒ +2 fichas y el Castigo más ancho. Fallo (mano peor, o
-    /// ninguna: armar nada es el fallo más grande) ⇒ +1 ficha y la forma según la distancia.
-    /// Fase 2 con el canto invertido, armar el canto ⇒ te leyó, liquida como el peor resultado.
-    /// </para>
-    /// <para>
-    /// <b>El rastrillo.</b> Antes de liquidar, el pozo sube <see cref="RakeChipsPerRound"/> ficha
-    /// por ronda desde la fase 1. Es la línea que le saca la salida al jugador que renuncia al
-    /// pozo: sin rastrillo el Castigo se quedaba en 26 mientras esquivara, con rastrillo llega a 45
-    /// solo — y con el pozo lleno entra La Banca (<see cref="AINode_TahurMarkBanca"/>).
-    /// </para>
-    /// <para>
-    /// <b>Por qué no es un <c>AINode_TelegraphMark</c>.</b> La forma y el daño del Castigo se
-    /// eligen en runtime (dependen de la distancia al canto y del pozo); los del TelegraphMark
-    /// son campos fijos del inspector. El estado va al mismo <see cref="IThreatenedAreaService"/>,
-    /// así que lo detona el <c>AINode_ExecuteTelegraph</c> estándar el turno siguiente.
-    /// </para>
-    /// <para>
-    /// Puede devolver <see cref="AIResult.Failed"/> (sin contrato del jugador, sin grilla, área
-    /// vacía) ⇒ va envuelto en <c>Selector[SettleWager, Wait]</c> como el resto de los nodos que
-    /// pueden fallar, o el turno entero se aborta.
-    /// </para>
+    /// Los resultados posibles están en <see cref="TahurSettleOutcome"/>. El Castigo se marca en el
+    /// mismo <see cref="IThreatenedAreaService"/> de siempre, así que lo detona el
+    /// <c>AINode_ExecuteTelegraph</c> estándar el turno siguiente. Puede devolver
+    /// <see cref="AIResult.Failed"/> ⇒ <b>va envuelto en</b> <c>Selector[SettleWager, Wait]</c>, o el
+    /// turno entero se aborta.
     /// </remarks>
     [Serializable, HideReferenceObjectPicker]
     public sealed class AINode_TahurSettleWager : AIActionNode
@@ -119,19 +100,15 @@ namespace Rollgeon.Combat.AI.Bosses.Tahur
             wager.PayoutPerChip = PayoutPerChip;
             wager.BeginBossTurn();
 
-            // El rastrillo corre desde la fase 1 (antes lo encendía el volteo): mientras el pozo
-            // sólo se movía con los fallos del jugador, renunciar al pozo era una postura estable
-            // — el Castigo se quedaba en su escalón más barato y se esquivaba de a uno. Con el
-            // rastrillo el Castigo escala 26 → 45 solo y no jugar pasa a ser una cuenta regresiva.
-            // El volteo puede subirlo (ver AINode_TahurFlipCard); a partir de ahí el valor es suyo.
+            // Sólo mientras no se volteó la carta: a partir del volteo el valor lo fija
+            // AINode_TahurFlipCard y este nodo no puede pisárselo.
             if (!wager.CallInverted) wager.RakeChipsPerRound = RakeChipsPerRound;
 
             // Antes de liquidar: el Castigo que se marque esta ronda ya cuenta la ficha del rastrillo.
             if (wager.RakeChipsPerRound > 0) wager.AddChips(wager.RakeChipsPerRound);
 
-            // El canto que hay pendiente se armó con las reglas de antes del volteo: la primera
-            // liquidación después de invertir el cartel no puede castigar por un puzzle que
-            // cambió a mitad de camino.
+            // El canto pendiente se armó con las reglas de antes del volteo: la primera liquidación
+            // tras invertir el cartel no puede castigar por un puzzle que cambió a mitad de camino.
             if (wager.ConsumeGrace())
             {
                 wager.ConsumePlayedHand();
@@ -177,8 +154,8 @@ namespace Rollgeon.Combat.AI.Bosses.Tahur
         // -----------------------------------------------------------------
 
         /// <remarks>
-        /// El pozo no pega: paga. Y paga contra el jefe, no contra el jugador — el único daño
-        /// que el jugador recibe del Tahúr son el Castigo y el poke.
+        /// El pozo no pega: paga, y paga contra el jefe. El único daño que el jugador recibe del
+        /// Tahúr son el Castigo y el poke.
         /// </remarks>
         private AIResult SettleExact(AIContext context, ITahurWagerService wager)
         {
@@ -247,9 +224,8 @@ namespace Rollgeon.Combat.AI.Bosses.Tahur
         // -----------------------------------------------------------------
 
         /// <summary>
-        /// Daño del Castigo para un pozo de <paramref name="chips"/> fichas. Fichas por encima
-        /// de la tabla usan la última entrada, y nunca supera <see cref="DamageCeiling"/> —
-        /// el techo del piso 3 es 45 por golpe, sin excepción.
+        /// Daño del Castigo para un pozo de <paramref name="chips"/> fichas. Fichas por encima de la
+        /// tabla usan la última entrada, y nunca supera <see cref="DamageCeiling"/>.
         /// </summary>
         public int PunishmentDamageForChips(int chips)
         {

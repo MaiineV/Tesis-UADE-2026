@@ -15,33 +15,25 @@ using UnityEngine;
 namespace Rollgeon.Combat.AI.Decisions
 {
     /// <summary>
-    /// "Tirar la mano" de La Generala (piso 3): tira tantos dados como dados vivos le queden en la
-    /// mesa, corre la tirada por el <see cref="ComboResolver"/> — <b>el mismo detector de combos que
-    /// usa el jugador</b> — y publica el resultado en <see cref="IBossDiceHandService"/> para que las
-    /// ramas del árbol elijan el telegraph según el combo que salió.
+    /// "Tirar la mano" de La Generala: tira tantos dados como vivos le queden en la mesa, los corre
+    /// por el <see cref="ComboResolver"/> —el mismo detector que usa el jugador— y publica el
+    /// resultado en <see cref="IBossDiceHandService"/>.
     /// </summary>
     /// <remarks>
     /// <para>
-    /// <b>Romper un dado borra una categoría, sin código nuevo.</b> Los combos ya exigen un mínimo de
-    /// dados en el array (<c>Combo_Generala</c> ≥ 5, <c>Combo_Poker</c> ≥ 4, <c>Combo_Escalera</c> ≥ 5):
-    /// tirando solo los dados vivos, con 4 dados la Generala deja de existir y con 3 se cae el Póker.
+    /// <b>Romper un dado borra una categoría, sin código nuevo.</b> Los combos exigen un mínimo de
+    /// dados en el array (<c>Combo_Generala</c> ≥ 5, <c>Combo_Poker</c> ≥ 4,
+    /// <c>Combo_Escalera</c> ≥ 5): con 4 dados la Generala deja de existir y con 3 se cae el Póker.
     /// </para>
     /// <para>
-    /// <b>La ronda extra de aviso.</b> Un combo listado en <see cref="SlowCombos"/> se publica
-    /// <i>cantado pero no armado</i>: ese turno nadie marca (todas las ramas piden mano armada), y al
-    /// turno siguiente este nodo la arma <b>sin re-tirar</b>. Resultado: dos rondas entre la tirada y
-    /// el impacto en vez de una, que es exactamente el "+1 ronda de aviso" de la mano grande.
-    /// </para>
-    /// <para>
-    /// <b>Reroll (Fase 2).</b> Con rerolls habilitados (<c>AINode_SetHandReroll</c>) re-tira los dados
-    /// que no contribuyen al combo detectado y se queda con la mejor de las dos manos por
-    /// <c>BaseComboSO.Priority</c> — la misma mecánica que tiene el jugador.
+    /// <b>La ronda extra de aviso.</b> Un combo de <see cref="SlowCombos"/> se publica cantado pero
+    /// no armado: ese turno nadie marca (todas las ramas piden mano armada) y al siguiente este nodo
+    /// la arma <b>sin re-tirar</b>.
     /// </para>
     /// </remarks>
     [Serializable, HideReferenceObjectPicker]
     public sealed class AINode_RollHand : AIActionNode
     {
-        /// <summary>De dónde sale la cantidad de dados a tirar.</summary>
         public enum HandSizeSource
         {
             /// <summary>Tantos dados como aliados vivos tenga el boss (la mesa = sus dados).</summary>
@@ -68,10 +60,9 @@ namespace Rollgeon.Combat.AI.Decisions
         public List<string> SlowCombos = new List<string> { Rollgeon.Combos.ComboId.Generala };
 
         /// <remarks>
-        /// Vacío cae al id canónico de La Generala, no a "sin animación": Odin no corre los
-        /// inicializadores de campo al deserializar, así que un default por asignación llegaría en
-        /// null desde los <c>ED_Boss_*.asset</c> ya autorados y la tirada quedaría muda hasta que
-        /// alguien re-corriera el builder.
+        /// Vacío cae al id canónico, no a "sin animación": Odin no corre los inicializadores de
+        /// campo al deserializar, y un default por asignación llegaría null desde los
+        /// <c>ED_Boss_*.asset</c> ya autorados.
         /// </remarks>
         [Tooltip("Feedback de la tirada. Vacío = la animación de tirar dados de La Generala.")]
 #if UNITY_EDITOR
@@ -87,8 +78,7 @@ namespace Rollgeon.Combat.AI.Decisions
 
             var hands = BossDiceHandService.ResolveOrCreate();
 
-            // Mano cantada el turno pasado: se arma sin re-tirar. Los dados siguen a la vista, así
-            // que el jugador ve el mismo combo dos rondas antes de que caiga.
+            // Mano cantada el turno pasado: se arma sin re-tirar.
             if (hands.TryGetHand(context.SelfGuid, out var pending) && !pending.Armed)
             {
                 hands.ArmHand(context.SelfGuid);
@@ -98,8 +88,8 @@ namespace Rollgeon.Combat.AI.Decisions
             int diceCount = ResolveDiceCount(context);
             if (diceCount <= 0)
             {
-                // Mesa entera rota: no hay dados que tirar. Mano vacía = bust (la rama de bust del
-                // Selector cobra el mínimo), no un turno en blanco.
+                // Mesa entera rota. Mano vacía = bust (la rama de bust del Selector cobra el
+                // mínimo), no un turno en blanco.
                 hands.SetHand(context.SelfGuid, Array.Empty<int>(), BossDiceHand.NoCombo, armed: true);
                 return AIResult.Succeeded;
             }
@@ -115,23 +105,7 @@ namespace Rollgeon.Combat.AI.Decisions
             return AIResult.Succeeded;
         }
 
-        /// <summary>
-        /// La tirada, con el cubilete a la vista. La mano se resuelve primero y la animación va
-        /// después: los dados que caen ya son los definitivos, así que el jugador ve el mismo
-        /// resultado que va a leer en la mesa.
-        /// </summary>
-        /// <remarks>
-        /// <para>
-        /// Tirar los dados es <b>la</b> acción de La Generala y hasta acá no se veía: el jugador veía
-        /// aparecer un combo en la UI sin que ella hiciera nada. El rig de dados existe justamente
-        /// por este beat — <c>Roll</c> es la única animación del proyecto que es literalmente esto.
-        /// </para>
-        /// <para>
-        /// El request se arma a mano porque el nodo no nace de un effect pass y no tiene
-        /// <c>EffectContext</c> — el mismo caso que documenta <c>FeedbackRequest.Context</c> como
-        /// nullable, y la misma forma que usan los nodos de jefe ya cableados.
-        /// </para>
-        /// </remarks>
+        /// <summary>La mano se resuelve <b>antes</b> de animar: los dados que caen son definitivos.</summary>
         public override IEnumerator TickCoroutine(AIContext context, Action<AIResult> onResult)
         {
             var result = Tick(context);
@@ -173,8 +147,7 @@ namespace Rollgeon.Combat.AI.Decisions
                 TargetGuid = context.PlayerGuid,
             }, () => turn?.OnFeedbackComplete());
 
-            // Sin TurnManager no hay gate que esperar: la anim corre igual pero el turno no se
-            // retiene. Mismo degradado que el resto de los nodos de jefe.
+            // Sin TurnManager no hay gate: la anim corre igual pero el turno no se retiene.
             if (turn == null || !turn.IsWaitingForFeedback) yield break;
 
             var wait = TurnManager.WaitForFeedbackCompletion(turn);
@@ -194,8 +167,8 @@ namespace Rollgeon.Combat.AI.Decisions
         }
 
         /// <summary>
-        /// Corre la tirada por el catálogo de combos del jugador. <paramref name="priority"/> queda
-        /// en <see cref="int.MinValue"/> cuando no hay match, así cualquier combo le gana al bust.
+        /// <paramref name="priority"/> queda en <see cref="int.MinValue"/> sin match, así cualquier
+        /// combo le gana al bust.
         /// </summary>
         private static ComboDetectionResult Detect(IReadOnlyList<int> values, out int priority)
         {
@@ -215,8 +188,7 @@ namespace Rollgeon.Combat.AI.Decisions
         }
 
         /// <summary>
-        /// Re-tira los dados que no forman el combo detectado, tantas veces como rerolls tenga
-        /// habilitados, y se queda con la mejor mano por prioridad de combo.
+        /// Re-tira lo que no forma el combo detectado y se queda con la mejor mano por prioridad.
         /// </summary>
         private int[] ApplyRerolls(AIContext context, IBossDiceHandService hands, int[] values,
             ref ComboDetectionResult detected, ref int priority)
@@ -261,8 +233,7 @@ namespace Rollgeon.Combat.AI.Decisions
         // ======================================================================
 
         /// <summary>
-        /// Dados vivos en la mesa. Los dados son los aliados del boss, así que se cuentan igual que
-        /// <c>PcAllyAliveExists</c> (HP &gt; 0 en el <see cref="AttributesManager"/>). Sin roster
+        /// Los dados son los aliados del boss, contados como <c>PcAllyAliveExists</c>. Sin roster
         /// consultable cae permisivo a la mano completa: un servicio faltante no debe convertir al
         /// boss en un maniquí.
         /// </summary>
@@ -292,10 +263,8 @@ namespace Rollgeon.Combat.AI.Decisions
         }
 
 #if UNITY_EDITOR
-        /// <summary>
-        /// Los ids de feedback nunca se tipean a mano (§0): el dropdown los lee del propio
-        /// <see cref="FeedbackDBSO"/>, así un id renombrado se ve vacío en vez de fallar en silencio.
-        /// </summary>
+        // Los ids de feedback nunca se tipean a mano (§0): leídos del FeedbackDBSO, un id renombrado
+        // se ve vacío en vez de fallar en silencio.
         private static IEnumerable<string> GetFeedbackIdsForDropdown()
         {
             foreach (var guid in UnityEditor.AssetDatabase.FindAssets("t:FeedbackDBSO"))

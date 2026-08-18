@@ -17,19 +17,8 @@ namespace Rollgeon.Combat.AI.Tests
     /// <b>desde la fase 1</b>, y el lápiz colgado de la misma paridad que la fila.
     /// </summary>
     /// <remarks>
-    /// <para>
-    /// <b>Qué arregla.</b> Con un único eje amenazado —la fila del jugador— la esquiva era siempre el
-    /// mismo paso en Y, turno tras turno: la "diagonal eterna" que el catálogo marca como estrategia
-    /// dominante justo en este jefe. Alternando el eje, el paso que esquiva esta ronda no esquiva la
-    /// que viene (<see cref="TheStepThatDodgesTheRow_DoesNotDodgeTheColumnNextRound"/>).
-    /// </para>
-    /// <para>
-    /// <b>Qué se testea acá y qué no.</b> Este fixture arma el mismo fragmento que autorea
-    /// <c>AnotadorAssetBuilder</c> (hijo 6 del Sequence raíz + el gate del lápiz) y mide su
-    /// <i>comportamiento</i>: qué eje queda marcado en cada ronda, que nunca sean los dos, y en qué
-    /// rondas cobra el lápiz. Que el builder lo autoree así lo afirma <c>AnotadorPhaseWiringTests</c>,
-    /// que vive en el assembly de Editor y puede ver al builder — este no.
-    /// </para>
+    /// Se arma acá el mismo fragmento que <c>AnotadorAssetBuilder</c>; que el builder lo autoree
+    /// así lo afirma <c>AnotadorPhaseWiringTests</c>, en el assembly de Editor.
     /// </remarks>
     [TestFixture]
     public class AnotadorAxisAlternationTests
@@ -77,8 +66,7 @@ namespace Rollgeon.Combat.AI.Tests
         [TearDown]
         public void TearDown()
         {
-            // AINode_TelegraphMark crea el GameObject del overlay al marcar: sin limpiarlo queda
-            // huérfano entre tests.
+            // AINode_TelegraphMark crea el GameObject del overlay: sin limpiarlo queda huérfano.
             if (ServiceLocator.TryGetService<IThreatOverlayService>(out var overlay)
                 && overlay is IDisposable disposable)
             {
@@ -109,10 +97,7 @@ namespace Rollgeon.Combat.AI.Tests
                 Assert.AreEqual(PlayerStart.Y, tile.Y, "Una casilla marcada quedó fuera de la fila.");
         }
 
-        /// <summary>
-        /// La columna sale de la paridad y de nada más. Antes era la palanca de fase 2 (HP &lt; 35%) y
-        /// la fase 1 amenazaba un solo eje toda la primera mitad de la pelea.
-        /// </summary>
+        /// <summary>La columna sale de la paridad de la ronda y de nada más — ni de la fase.</summary>
         [Test]
         public void EvenRound_MarksTheColumn()
         {
@@ -142,18 +127,13 @@ namespace Rollgeon.Combat.AI.Tests
                 sizes.Add(area.Tiles.Count);
             }
 
-            // Assert — fila, columna, fila, columna. El tamaño delata el eje: 11 vs 7, y un turno que
-            // marcara los dos dejaría el área del segundo pisando a la del primero.
+            // Assert — el tamaño delata el eje: 11 vs 7.
             CollectionAssert.AreEqual(
                 new[] { RowDamage, ColumnDamage, RowDamage, ColumnDamage }, damages);
             CollectionAssert.AreEqual(
                 new[] { RoomWidth, RoomHeight, RoomWidth, RoomHeight }, sizes);
         }
 
-        /// <summary>
-        /// El precio de la esquiva: el paso que sale de la fila deja al jugador dentro de la columna
-        /// que viene, así que esquivar dos rondas seguidas cuesta un paso en cada eje.
-        /// </summary>
         [Test]
         public void TheStepThatDodgesTheRow_DoesNotDodgeTheColumnNextRound()
         {
@@ -185,7 +165,7 @@ namespace Rollgeon.Combat.AI.Tests
         [Test]
         public void Pencil_HitsOnOddRounds()
         {
-            // Arrange — el jugador cerró la distancia y le pegó.
+            // Arrange
             Assert.IsTrue(_grid.Move(_player, new GridCoord(8, 3)), "Arrange: no se pudo acercar.");
 
             // Act
@@ -200,8 +180,7 @@ namespace Rollgeon.Combat.AI.Tests
         [Test]
         public void Pencil_StaysQuietOnEvenRounds_EvenWithThePlayerGlued()
         {
-            // Arrange — misma posición pegada, ronda par: el jugador puede saber de antemano que
-            // acercarse este turno no cuesta 12.
+            // Arrange — misma posición pegada, ronda par.
             Assert.IsTrue(_grid.Move(_player, new GridCoord(8, 3)), "Arrange: no se pudo acercar.");
 
             // Act

@@ -22,23 +22,10 @@ using UnityEngine;
 namespace Rollgeon.Editor.Tools.Enemy.Tests
 {
     /// <summary>
-    /// Corre el árbol REAL de La Generala (el que arma <see cref="GeneralaAssetBuilder"/>) turno a
-    /// turno: la mano que tira es pública, el área que marca es la del combo que le salió, y el
-    /// cubilete le cobra <b>en el acto</b> a quien esté pegado cuando tira.
+    /// Corre el árbol REAL de La Generala turno a turno. Lo que cubre es la convivencia: el
+    /// cubilete devuelve <c>Failed</c> con el jugador lejos y no puede comerse el telegraph de la
+    /// mano, que se resuelve el mismo turno.
     /// </summary>
-    /// <remarks>
-    /// <para>
-    /// El cubilete es el precio de romperle la mesa de cerca (ficha "La Generala", piso 3: melee 18
-    /// a quien esté pegado). Sin él los cinco dados se rompen gratis, porque el resto de su daño se
-    /// avisa una ronda antes y se esquiva caminando.
-    /// </para>
-    /// <para>
-    /// El bug que cubre este fixture es de convivencia: el cubilete devuelve <c>Failed</c> con el
-    /// jugador lejos —que es la mitad de la pelea— y un Failed suelto en el Sequence raíz le
-    /// cancelaría al jefe el telegraph de la mano. Los dos ocurren en el mismo turno y ninguno
-    /// puede pisar al otro.
-    /// </para>
-    /// </remarks>
     [TestFixture]
     public class GeneralaTurnCycleTests
     {
@@ -82,10 +69,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             _threat = new ThreatenedAreaService();
             _threat.Register();
 
-            // El turno completo del jefe toca cuatro servicios más desde que congela el anillo de
-            // la mesa y tacha la mano repetida. Se montan los reales (no stubs): lo que este
-            // fixture protege es que su Sequence corra entero, y un stub que no falla nunca
-            // escondería justo el Failed que hay que aislar.
+            // Servicios reales y no stubs: lo que se protege es que el Sequence corra entero, y un
+            // stub que no falla nunca escondería justo el Failed que hay que aislar.
             _hazards = new HazardService();
             _hazards.Register();
 
@@ -123,8 +108,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             _boss = Guid.NewGuid();
             _player = Guid.NewGuid();
 
-            // Con vida completa el gate de Fase 2 evalúa false limpio (sin él, el lookup de un
-            // entity no registrado ensucia la consola con warnings).
+            // Con vida completa el gate de Fase 2 evalúa false limpio, sin warnings de lookup.
             var bossStats = new Rollgeon.Attributes.ModifiableAttributes();
             bossStats.EnsureInitialized();
             bossStats.SetAttribute<Rollgeon.Attributes.Stats.Health>(
@@ -145,8 +129,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             _hazards?.Dispose();
             _threat.Dispose();
 
-            // Publicar un anillo pinta overlay ⇒ crea el GameObject del overlay y cachea un
-            // material por tint. Mismo cleanup que AnotadorIceTrailTests.
+            // Publicar un anillo pinta overlay: crea su GameObject y cachea un material por tint.
             if (ServiceLocator.TryGetService<IThreatOverlayService>(out var overlay)
                 && overlay is IDisposable disposable)
             {
@@ -175,7 +158,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             // Act
             root.Tick(NewContext(roundIndex: 1));
 
-            // Assert — tirar ES bajar la copa: el golpe entra en el mismo turno, sin marca previa.
+            // Assert
             CollectionAssert.AreEqual(new[] { GeneralaAssetBuilder.CupSlamDamage }, DamageAmounts(),
                 "El único daño del primer turno tiene que ser el cubilete, y por lo que pide la ficha.");
             Assert.AreEqual(_boss, _pipeline.Resolved[0].SourceId);
@@ -185,7 +168,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         [Test]
         public void Turn_WithThePlayerTwoTilesFromTheTable_ChargesNothing()
         {
-            // Arrange — la distancia es el único aviso que tiene el cubilete, y la elige el jugador.
+            // Arrange
             MovePlayerTo(AwayTile);
             var root = GeneralaAssetBuilder.BuildAIRoot(_dice, _frost);
 
@@ -203,16 +186,15 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             // Arrange
             var root = GeneralaAssetBuilder.BuildAIRoot(_dice, _frost);
 
-            // Act — cinco rondas seguidas del mismo árbol (mismo instance state que en combate). La
-            // marca de la mano se limpia entre turnos para que lo único que llegue al pipeline sea
-            // el cubilete.
+            // Act — mismo árbol cinco rondas (mismo instance state que en combate); la marca se
+            // limpia entre turnos para que al pipeline sólo llegue el cubilete.
             for (int round = 1; round <= 5; round++)
             {
                 root.Tick(NewContext(round));
                 _threat.Clear(_boss);
             }
 
-            // Assert — no hay compás par/impar: quedarse en la mesa no tiene ronda franca.
+            // Assert
             CollectionAssert.AreEqual(
                 Enumerable.Repeat(GeneralaAssetBuilder.CupSlamDamage, 5), DamageAmounts(),
                 "Cinco tiradas pegado a la mesa son cinco cubiletes.");
@@ -227,7 +209,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             // Act
             root.Tick(NewContext(roundIndex: 1));
 
-            // Assert — el cubilete ya cobró y la mano quedó marcada por el canal del boss.
+            // Assert
             CollectionAssert.Contains(DamageAmounts(), GeneralaAssetBuilder.CupSlamDamage,
                 "El cubilete tiene que haber cobrado en este mismo turno.");
             Assert.IsTrue(_threat.HasPending(_boss),
@@ -240,8 +222,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         [Test]
         public void Turn_WithThePlayerOutOfTheCupsReach_StillMarksTheHand()
         {
-            // Arrange — lejos, el nodo del cubilete devuelve Failed. Sin su Selector de aislamiento
-            // ese Failed corta el Sequence raíz y el jefe se queda sin marcar la mano.
+            // Arrange — lejos el cubilete devuelve Failed; sin su Selector eso corta el Sequence raíz.
             MovePlayerTo(AwayTile);
             var root = GeneralaAssetBuilder.BuildAIRoot(_dice, _frost);
 
@@ -316,7 +297,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             // Act — múltiplo de FrostParityDivisor (3).
             root.Tick(NewContext(roundIndex: 3));
 
-            // Assert — el 3×3 macizo, su casilla incluida.
+            // Assert
             Assert.IsTrue(_hazards.TryGetHazardAt(GluedTile, out var frost),
                 "La casilla pegada a ella es donde vive su quinto dado, y es lo que el candado cierra.");
             Assert.IsTrue(_hazards.TryGetHazardAt(TableTile, out _),
@@ -335,9 +316,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         [Test]
         public void Turn_OnAFreeRound_LeavesTheTableClear_SoThereIsAWindowToBreakDice()
         {
-            // Arrange — la ronda franca es LA mecánica: el área tapa el dado caro, así que es la
-            // única en la que se puede entrar a buscarlo. Y como OnEnter no cobra a quien ya estaba
-            // adentro, entrar ahí te deja rompiéndolo hasta que decidas salir.
+            // Arrange
             var root = GeneralaAssetBuilder.BuildAIRoot(_dice, _frost);
 
             // Act — 2 no es múltiplo de FrostParityDivisor (3).
@@ -352,16 +331,14 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         [Test]
         public void Turn_TheFrostCostsATurnAndNotHp_SoTheFloorCeilingHolds()
         {
-            // Arrange — el jugador pegado: cobra el cubilete y la escarcha le cae encima sin stunearlo,
-            // porque OnEnter se dispara al pisar y él ya estaba adentro.
+            // Arrange — pegado: la escarcha le cae encima sin stunearlo, porque OnEnter se dispara
+            // al pisar y él ya estaba adentro.
             var root = GeneralaAssetBuilder.BuildAIRoot(_dice, _frost);
 
-            // Act — ronda de escarcha (múltiplo de FrostParityDivisor): si acá no cayera hielo el
-            // test no probaría nada.
+            // Act — ronda de escarcha (múltiplo de FrostParityDivisor).
             root.Tick(NewContext(roundIndex: 3));
 
-            // Assert — el único daño del turno sigue siendo el cubilete. La escarcha no suma HP
-            // porque el techo del piso 3 (45 por golpe, ≤65 anunciado) ya lo llenan la mano y la copa.
+            // Assert
             CollectionAssert.AreEqual(new[] { GeneralaAssetBuilder.CupSlamDamage }, DamageAmounts(),
                 "La escarcha no puede cobrar daño: paga en turnos.");
         }
@@ -396,8 +373,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             // Act — el jefe cierra su turno.
             root.Tick(NewContext(roundIndex: 1));
 
-            // Assert — la fila sale tachada (IsForbidden) y paga 0. La UI del Contrato lee estas
-            // dos cosas exactas (ContractRowStateResolver), así que el jugador lo ve antes de tirar.
+            // Assert — la UI del Contrato lee estas dos cosas exactas (ContractRowStateResolver).
             Assert.IsTrue(_contractMods.IsForbidden(Rollgeon.Combos.ComboId.Par),
                 "La mano que acaba de anotar tiene que quedar prohibida.");
             Assert.AreEqual(0, _contractMods.GetEffectiveBaseDamage(Rollgeon.Combos.ComboId.Par, 10),
@@ -417,8 +393,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             _threat.Clear(_boss);
             root.Tick(NewContext(roundIndex: 2));
 
-            // Assert — la regla prohíbe UNA mano, la última. Acumularlas le iría cerrando la hoja
-            // hasta dejarlo sin jugadas.
+            // Assert
             Assert.IsTrue(_contractMods.IsForbidden(Rollgeon.Combos.ComboId.Poker));
             Assert.IsFalse(_contractMods.IsForbidden(Rollgeon.Combos.ComboId.Par),
                 "El ban de la ronda pasada se levanta: sólo se prohíbe la última.");
@@ -447,9 +422,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         [Test]
         public void Turn_WithoutAMovementService_StillFinishesHerTurn()
         {
-            // Arrange — el nodo de reposicionamiento devuelve Failed sin IMovementService (y
-            // también en el caso benigno "ya estoy en la banda"). Va último, pero su Selector de
-            // aislamiento es lo que hace que mover el nodo de lugar siga siendo seguro.
+            // Arrange — sin IMovementService el reposicionamiento devuelve Failed.
             var root = GeneralaAssetBuilder.BuildAIRoot(_dice, _frost);
 
             // Act

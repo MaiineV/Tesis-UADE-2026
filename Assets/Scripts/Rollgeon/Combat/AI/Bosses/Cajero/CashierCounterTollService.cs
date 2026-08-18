@@ -15,22 +15,18 @@ namespace Rollgeon.Combat.Cashier
     /// </summary>
     /// <remarks>
     /// <para>
-    /// <b>Ventana ciega del primer turno.</b> El árbol del jefe arma el peaje recién en su primer
-    /// tick, y la cola es player-first: si el jugador cruza el mostrador en su turno de apertura,
-    /// ese cierre de turno sale gratis. Es un turno y se paga una sola vez por pelea; la
-    /// alternativa era que el servicio adivinara solo quién es el Cajero y dónde está su mostrador.
+    /// <b>Ventana ciega del primer turno:</b> el árbol arma el peaje recién en su primer tick y la
+    /// cola es player-first, así que cruzar el mostrador en la apertura sale gratis. Una vez por
+    /// pelea; la alternativa era que el servicio adivinara solo dónde está el mostrador.
     /// </para>
     /// <para>
-    /// <b>Lee posiciones vivas, no la foto del armado.</b> El lado se resuelve con las coordenadas
-    /// que tienen los dos en el momento del cobro. Así el peaje sigue al jefe si el kiteo lo mete
-    /// por una abertura, y se apaga solo cuando el jefe muere: <c>CombatDeathWatcher</c> lo saca de
-    /// la grilla y sin coordenada del jefe no hay lado que compartir.
+    /// Lee posiciones vivas y no la foto del armado, así el peaje sigue al jefe si el kiteo lo mueve
+    /// y se apaga solo cuando muere.
     /// </para>
     /// <para>
-    /// <b>Tests.</b> Queda suscripto a <c>EventManager</c>, que <c>ServiceLocator.Clear()</c> no
-    /// desengancha. Un fixture que lo cree (o que tickee el árbol del Cajero, que lo crea solo)
-    /// debe llamar <see cref="Dispose"/> en el teardown o el peaje sigue cobrando en el fixture
-    /// siguiente.
+    /// <b>Tests:</b> queda suscripto a <c>EventManager</c>, que <c>ServiceLocator.Clear()</c> no
+    /// desengancha. El fixture que lo cree debe llamar <see cref="Dispose"/> en el teardown o el
+    /// peaje sigue cobrando en el fixture siguiente.
     /// </para>
     /// </remarks>
     public sealed class CashierCounterTollService : ICashierCounterTollService, IDisposable
@@ -241,25 +237,18 @@ namespace Rollgeon.Combat.Cashier
         /// </summary>
         /// <remarks>
         /// <para>
-        /// <b>Va acá y no en <c>AINode_CashierCounterToll</c>.</b> El nodo sólo arma, y re-arma todos
-        /// los turnos: animarlo pondría un golpe en pantalla en turnos donde no se cobró nada y lo
-        /// dejaría mudo justo en el turno en que sí se cobra, que es al cerrar el del jugador —
-        /// después de que el árbol del jefe ya tickeó.
+        /// Va acá y no en <c>AINode_CashierCounterToll</c>: el nodo re-arma todos los turnos, así que
+        /// animarlo ahí pondría un golpe en turnos sin cobro y quedaría mudo justo en el turno en
+        /// que sí se cobra.
         /// </para>
         /// <para>
         /// <b>No bloquea el turno.</b> El cobro cae en <c>OnTurnFinished</c>, fuera de toda coroutine
-        /// que pueda esperarlo (el gate de <c>TurnManager</c> hoy sólo lo miran <c>EffectData</c> y
-        /// <c>AINode_ExecuteTelegraph</c>), así que un <c>BeginFeedbackWait</c> acá subiría el depth
-        /// sin que nadie lo espere. Y aunque hubiera quién: un peaje pasivo que frena la pelea un
-        /// segundo cada vez que el jugador cierra su turno cerca del mostrador se vuelve un impuesto
-        /// al ritmo, no una lectura.
+        /// que pueda esperarlo, así que un <c>BeginFeedbackWait</c> acá subiría el depth sin que
+        /// nadie lo baje.
         /// </para>
         /// <para>
-        /// <b>Todos los steps arrancan juntos</b>, sin colgarse del Animation Event de impacto: el
-        /// daño ya cayó (el número flotante está en pantalla), así que el chispazo tiene que ir ahí y
-        /// no 0.4s después. Además la secuencia del turno del jefe arranca pisando
-        /// <c>FeedbackSequenceRuntime.Current</c>, y un step esperando <c>"hit"</c> en el bus viejo no
-        /// se destrabaría nunca — lo levantaría el watchdog, tarde y con warning.
+        /// Todos los steps arrancan juntos, sin colgarse del Animation Event de impacto: el daño ya
+        /// cayó, y un step esperando <c>"hit"</c> no se destrabaría hasta el watchdog.
         /// </para>
         /// </remarks>
         private void PlayTollFeedback(Guid payerGuid)

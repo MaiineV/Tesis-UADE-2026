@@ -10,16 +10,10 @@ using UnityEngine.UI;
 namespace Rollgeon.UI.Tests
 {
     /// <summary>
-    /// Las marcas que los jefes le dejan a la tabla de combos: cómo se deducen del daño
-    /// efectivo (<see cref="ContractRowStateResolver"/>) y cómo las pinta la fila
-    /// (<see cref="ContractComboRowView"/>).
+    /// Las marcas que los jefes le dejan a la tabla de combos: cómo se deducen del daño efectivo
+    /// (<see cref="ContractRowStateResolver"/>) y cómo las pinta <see cref="ContractComboRowView"/>.
+    /// El resolver va aparte porque el corrimiento sólo se reconoce mirando la tabla entera.
     /// </summary>
-    /// <remarks>
-    /// El caso que justifica que el resolver exista aparte de la vista es
-    /// <see cref="Resolve_WhenTheValueLandsOnAnotherRow_ReadsAsShifted"/>: el servicio de
-    /// modificadores no dice QUÉ regla produjo el valor, así que el corrimiento se reconoce
-    /// mirando la tabla entera — algo que una fila sola no puede hacer.
-    /// </remarks>
     [TestFixture]
     public class ContractRuleMarkTests
     {
@@ -65,8 +59,7 @@ namespace Rollgeon.UI.Tests
         [Test]
         public void Resolve_WhenTheValueLandsOnAnotherRow_ReadsAsShifted()
         {
-            // Arrange — la tacha del Anotador copia el base del vecino tal cual: el Trío
-            // pasa a pagar 14, que es exactamente lo que dice la fila del Doble Par.
+            // Arrange — 14 es exactamente el base de la fila del Doble Par.
 
             // Act
             var state = ContractRowStateResolver.Resolve(Table, Trio, 14, forbidden: false, blockedTurns: 0);
@@ -100,8 +93,7 @@ namespace Rollgeon.UI.Tests
         [Test]
         public void Resolve_AShiftUpwards_ReadsAsFavorable()
         {
-            // Arrange + Act — el corrimiento sortea dirección: el Par pasa a pagar como el
-            // Doble Par. Esconder los corrimientos buenos haría ilegible medio jefe.
+            // Arrange + Act — el corrimiento sortea dirección, así que también puede subir.
             var up = ContractRowStateResolver.Resolve(Table, Pair, 14, forbidden: false, blockedTurns: 0);
             var down = ContractRowStateResolver.Resolve(Table, Trio, 14, forbidden: false, blockedTurns: 0);
 
@@ -142,8 +134,7 @@ namespace Rollgeon.UI.Tests
         [Test]
         public void Resolve_OutOfRangeIndex_DoesNotThrow()
         {
-            // Arrange + Act + Assert — una tabla más corta que las filas instanciadas no
-            // puede tirar en pleno combate.
+            // Arrange + Act + Assert
             Assert.DoesNotThrow(() => ContractRowStateResolver.Resolve(Table, 99, 10, false, 0));
             Assert.DoesNotThrow(() => ContractRowStateResolver.Resolve(null, 0, 10, false, 0));
         }
@@ -151,8 +142,7 @@ namespace Rollgeon.UI.Tests
         [Test]
         public void Resolve_WithASingleRowTable_FallsBackToBuffed()
         {
-            // Arrange — sin vecinos no hay a quién señalar; el mensaje pierde precisión pero
-            // no miente, y es lo que ve el caller que no tiene la tabla entera.
+            // Arrange — sin vecinos no hay a quién señalar.
             var lonely = new[] { new ContractRowBase("combo.trio", "Trío", 22) };
 
             // Act
@@ -170,8 +160,7 @@ namespace Rollgeon.UI.Tests
         [Test]
         public void Bind_ShowsTheEffectiveDamage_NotTheSheetValue()
         {
-            // Arrange — mientras el Anotador tenga la fila corrida, el número de la tabla
-            // tiene que ser el que va a cobrar el golpe.
+            // Arrange
             var row = MakeRow(out var damage, out _, out _);
             var combo = MakeCombo("combo.trio");
             var shifted = ContractRowStateResolver.Resolve(Table, Trio, 14, forbidden: false, blockedTurns: 0);
@@ -202,8 +191,7 @@ namespace Rollgeon.UI.Tests
         [Test]
         public void Bind_WithAnUnmarkedRow_LeavesTheRowClean()
         {
-            // Arrange — una fila sin regla encima no puede quedar con la tachadura de la
-            // anterior: los slots se reusan entre repintados.
+            // Arrange — los slots de fila se reusan entre repintados.
             var row = MakeRow(out var damage, out var strike, out var badge);
             var combo = MakeCombo("combo.trio");
             row.Bind(combo, null, ContractRowStateResolver.Resolve(Table, Trio, 14, false, 0));
@@ -245,7 +233,7 @@ namespace Rollgeon.UI.Tests
             // Act
             var text = state.BadgeText();
 
-            // Assert — el texto base viaja por la tabla UI; lo que no puede faltar es el número.
+            // Assert — el texto base viaja por la tabla de localización; sólo se fija el número.
             StringAssert.EndsWith("3", text);
         }
 
@@ -271,8 +259,7 @@ namespace Rollgeon.UI.Tests
             return combo;
         }
 
-        // Sin refs de dados: BindDice corta solo cuando no hay settings, así el test no
-        // depende del arte ni de las manos de ejemplo.
+        // Sin refs de dados: BindDice corta solo cuando no hay settings.
         private ContractComboRowView MakeRow(out TextMeshProUGUI damage, out Image strike,
             out GameObject badge)
         {

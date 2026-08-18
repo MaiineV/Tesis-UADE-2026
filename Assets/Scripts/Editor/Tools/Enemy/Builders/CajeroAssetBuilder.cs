@@ -21,20 +21,10 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
     /// diseño: stats, debilidad, drop de oro y el árbol de AI completo.
     /// </summary>
     /// <remarks>
-    /// <para>
-    /// <b>Dos capas.</b> <see cref="BuildAIRoot"/> y <see cref="PopulateEnemyData"/> son estáticas y
-    /// puras (no tocan <c>AssetDatabase</c>), así los tests validan el wiring en memoria sin
-    /// depender de que el asset exista ni de un reimport. El <see cref="MenuItem"/> es la única
-    /// parte que escribe en disco, y es idempotente: re-ejecutarlo actualiza el asset existente en
-    /// vez de duplicarlo (conserva su GUID y las referencias que ya lo apunten).
-    /// </para>
-    /// <para>
-    /// <b>El prefab visual lo genera el builder.</b> <see cref="EnsureVisualPrefab"/> arma el wrapper
-    /// de gameplay sobre el arte propio del jefe (ver <see cref="BossVisualWrapperBuilder"/>) y lo
-    /// deja en <see cref="VisualPrefabPath"/>. El placeholder del Security Boss sigue nombrado sólo
-    /// para poder migrar una ficha que todavía lo apunte; un prefab distinto de esos dos se considera
+    /// <see cref="BuildAIRoot"/> y <see cref="PopulateEnemyData"/> son estáticas y puras — se testean
+    /// en memoria sin tocar el <c>AssetDatabase</c>. El <see cref="MenuItem"/> es el único que
+    /// escribe, y es idempotente. Un prefab visual distinto de los dos conocidos se considera
     /// autorado a mano y no se pisa (ver <see cref="ResolveVisualPrefab"/>).
-    /// </para>
     /// </remarks>
     public static class CajeroAssetBuilder
     {
@@ -105,19 +95,10 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         /// Rondas que vive la ficha en el piso. Vale <c>D - 1</c> turnos del jugador.
         /// </summary>
         /// <remarks>
-        /// La duración se descuenta en el <c>OnTurnQueueBuilt</c> de la ronda siguiente y la ficha
-        /// nace en el turno del jefe, con el jugador ya jugado (CNF-006): con 1 se moría en ese wrap,
-        /// antes de que él pudiera volver a pisarla, y la moneda aparecía y desaparecía sin ser
-        /// levantable nunca. Mismo off-by-one que el fuego del Croupier documenta en
-        /// <c>AINode_IgniteDetonatedSectors</c>.
-        /// <para>
-        /// Subido de 2 a 3 — de un turno del jugador a dos. Con uno solo, agarrarla exigía que el
-        /// único paso disponible fuera exactamente ése, y la ficha cae <b>dentro de la columna
-        /// marcada</b>: el turno para levantarla es el mismo en el que pararse ahí cobra
-        /// <see cref="RichTierDamage"/>. Con dos, entrar a buscarla puede esperar a que la columna
-        /// haya detonado. Y es lo que permite ver más de una moneda a la vez, que era el síntoma:
-        /// con 2 la vieja expiraba antes de que naciera la siguiente.
-        /// </para>
+        /// Ojo con el off-by-one: el descuento va en el wrap de ronda y la ficha nace con el turno
+        /// del jugador ya jugado (CNF-006), así que con 1 se muere sin ser levantable nunca. Dos
+        /// turnos y no uno porque la ficha cae dentro de la columna marcada: hay que poder esperar
+        /// a que detone antes de entrar a buscarla.
         /// </remarks>
         public const int ChipDurationRounds = 3;
 
@@ -184,50 +165,19 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         /// abertura — sin peaje, elegir puerta no cuesta nada y el mostrador es decorado.
         /// </summary>
         /// <remarks>
-        /// Bajado de 20 a 12 al pasar el peaje a cobrar todas las rondas (ver
-        /// <see cref="CounterTollEveryNRounds"/>). Con la cadencia vieja, 20 cada dos rondas
-        /// promediaba 10 de daño por ronda y un viaje redondo completo —dos cierres de turno del
-        /// lado de él— salía 20 en total. A 12 por ronda el promedio sube a 12 y ese mismo viaje
-        /// redondo sale 24: más caro, no más barato. Lo que tiene que valer la pena no es el número
-        /// por golpe sino ese viaje redondo, y 24 alcanza de sobra.
-        /// <para>
-        /// Sigue por debajo del techo de daño por golpe del piso 2 (<see cref="RichTierDamage"/> =
-        /// 35) a propósito: el peaje es el precio de una posición, no su ataque.
-        /// </para>
+        /// Por debajo del techo de daño por golpe del piso a propósito: el peaje es el precio de una
+        /// posición, no su ataque.
         /// </remarks>
         public const int CounterTollDamage = 12;
 
         /// <summary>
-        /// Cada cuántas rondas cobra el peaje. 1 = cobra todas las rondas.
+        /// Cada cuántas rondas cobra el peaje. 1 = todas.
         /// </summary>
         /// <remarks>
-        /// Antes valía 2 (la par cobra, la impar es franca) para dejar una ronda de escape: la
-        /// lectura era que sin ella, pegarle al Cajero —que exige distancia 1, y distancia 1 está
-        /// de su lado— costaba <see cref="CounterTollDamage"/> por ronda para siempre, y con el
-        /// <see cref="ShotDamage">disparo</see> castigando quedarse lejos la tenaza no tenía salida.
-        /// <para>
-        /// Esa lectura tenía un agujero: la ronda franca nunca fue la válvula de escape real. La
-        /// válvula es que la fila del mostrador es neutral —
-        /// <c>CashierCounterTollService.IsSameSide</c> devuelve <c>false</c> cuando
-        /// <c>side == 0</c>—, así que pararse en una abertura no cuesta nunca nada: se pega y se
-        /// retrocede al hueco sin pagar un peso. La ronda franca sólo compensaba que esa regla es
-        /// invisible: el mostrador hoy son cuatro mesas sueltas repartidas en once celdas y ya no se
-        /// lee como mostrador, así que nadie descubre la fila neutral.
-        /// </para>
-        /// <para>
-        /// Con eso identificado, el peaje pasa a cobrar todas las rondas y <see
-        /// cref="CounterTollDamage"/> baja de 20 a 12: constante y legible, y el overlay verde deja
-        /// de titilar prendido/apagado, que era su propia fuente de confusión. La legibilidad del
-        /// mostrador en sí —volver a poner las mesas en <c>BossRoomBuilder.BlockerPlanCells</c> para
-        /// que se lea como una fila sola y no como cuatro props sueltos— queda pendiente y aparte:
-        /// no se toca en este cambio.
-        /// </para>
-        /// <para>
-        /// Sigue siendo un campo cableado desde la ficha y no un <c>1</c> hardcodeado en el nodo:
-        /// el mecanismo de cadencia queda intacto —<c>AINode_CashierCounterToll.Arm</c> clampea a un
-        /// mínimo de 1— así que la frecuencia se puede volver a bajar más adelante sin escribir
-        /// código nuevo.
-        /// </para>
+        /// No hay ronda franca porque la válvula de escape real es otra: la fila del mostrador es
+        /// neutral (<c>CashierCounterTollService.IsSameSide</c> devuelve <c>false</c> con
+        /// <c>side == 0</c>), así que pararse en una abertura no cuesta nunca. Sigue siendo un campo
+        /// y no un literal en el nodo para poder bajar la frecuencia sin escribir código.
         /// </remarks>
         public const int CounterTollEveryNRounds = 1;
 
@@ -237,12 +187,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         /// NavGraph, y un agujero en el grafo no dice "esto es un mostrador".
         /// </summary>
         /// <remarks>
-        /// El valor sale del plano de <c>Boss_Room_Cajero</c> (<c>BossRoomBuilder.Plans</c> +
-        /// <c>docs/setup/boss-rooms.md §3</c>): las nueve casillas del mostrador están en la fila
-        /// <c>y = 3</c> del plano, que <c>PlanToRoom</c> manda a <c>Y = 0</c> de la sala. El jefe
-        /// spawnea en <c>(0, 2)</c> ⇒ su lado es <c>Y &gt; 0</c> y el del jugador <c>Y &lt; 0</c>.
-        /// Si el mostrador se mueve de fila hay que mover esto con él —
-        /// <c>CajeroPhaseWiringTests</c> lo cruza contra el plano para que no se olvide.
+        /// Sale del plano de <c>Boss_Room_Cajero</c>: si el mostrador se mueve de fila hay que mover
+        /// esto con él. <c>CajeroPhaseWiringTests</c> lo cruza contra el plano para que no se olvide.
         /// </remarks>
         public const int CounterRow = 0;
 
@@ -267,25 +213,10 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         /// Lo que el Cajero invoca de verdad: el enemigo ranged común del juego.
         /// </summary>
         /// <remarks>
-        /// <para>
-        /// La Comisión mordía a distancia 1 —<c>AINode_CashierRangedShot</c> con <c>Range = 1</c>—
-        /// mientras usaba la malla del GeneralDirector, la misma que el ranged común. O sea: parecía
-        /// un personaje a distancia y se comportaba como un melee. En pantalla eso no se lee como "un
-        /// bicho distinto", se lee como el enemigo ranged andando mal.
-        /// </para>
-        /// <para>
-        /// Se resuelve invocando directamente <c>ED_RangedEnemy</c> en vez de retunear la Comisión:
-        /// look y kit quedan iguales al resto de los ranged por construcción, sin autorar nada nuevo
-        /// ni un árbol paralelo que después divergiría. <b>Cambia los números:</b> el ranged común
-        /// tiene 40 HP y 10 de ataque contra los 18/6 de la Comisión, así que los dos refuerzos
-        /// pegan y aguantan bastante más. Es deliberado, no un descuido de balance.
-        /// </para>
-        /// <para>
-        /// <b>La Comisión queda parkeada, no borrada.</b> Su asset, su prefab, sus materiales y las
-        /// funciones que la autoran (<see cref="PopulateCritterData"/>, <see cref="BuildCritterAIRoot"/>)
-        /// siguen acá y con tests: si vuelve, vuelve entera. Lo único que cambió es a quién referencia
-        /// el árbol del jefe.
-        /// </para>
+        /// Se invoca el ranged común en vez de la Comisión para que look y kit queden iguales al
+        /// resto por construcción. Los refuerzos pegan y aguantan más que la Comisión: es
+        /// deliberado. Ella queda parkeada —asset, prefab y funciones siguen acá con tests—, lo
+        /// único que cambió es a quién referencia el árbol.
         /// </remarks>
         public const string ReinforcementAssetPath = "Assets/Rollgeon/Enemies/ED_RangedEnemy.asset";
 
@@ -525,29 +456,14 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         /// Todo lo que puede devolver Failed va en <c>Selector[acción, Wait]</c>.
         /// </summary>
         /// <remarks>
-        /// <b>Desvío de la ficha:</b> el gate de fase está en el hijo 2 y no en el 4. La ficha lo
-        /// dibuja último, pero el patrón obligado (y el bug que dejó quieto al Sunken Grand) pide
-        /// las fases <b>antes</b> del ataque: en el path no-coroutine un Running del ataque aborta
-        /// lo que venga después, y el arqueo no puede depender de eso. Efecto lateral asumido: el
-        /// turno en que cruza el 50%, el arqueo se cobra antes de marcar, así que la columna de ese
-        /// turno ya usa el oro reducido — un alivio coherente con "te cobró, pega menos".
+        /// El orden importa. Los gates de fase y el peaje van <b>antes</b> del ataque porque en el
+        /// path no-coroutine un Running del ataque aborta todo lo que venga después. Las fichas van
+        /// después porque leen la columna de este turno.
         /// <para>
-        /// Las fichas van <b>después</b> del ciclo de ataque por contrato de la ficha: caen dentro
-        /// de la columna de este turno, que se leen de <c>IThreatenedAreaService</c>. En los turnos
-        /// de disparo no hay columna y el nodo sale por Failed sin gastar el flag de daño.
-        /// </para>
-        /// <para>
-        /// <b>El peaje también va antes del ataque</b>, y por el mismo motivo que el arqueo: es lo
-        /// que arma el cobro del cierre de turno del jugador, y un Running del ataque lo dejaría
-        /// sin armar justo en los turnos en que el jefe sí actuó.
-        /// </para>
-        /// <para>
-        /// <b>Las Comisiones tienen su propio gate y su propio <c>Once</c></b> aunque compartan
-        /// umbral con el arqueo. Colgarlas del Sequence de adentro del arqueo habría dejado los dos
-        /// efectos atados a un solo latch, y <c>AINode_SpawnReinforcements</c> devuelve Failed
-        /// cuando la sala no tiene tiles de borde libres: ese Failed cortaría el Sequence, el
-        /// <c>Once</c> no latchearía (sólo latchea con Succeeded) y el turno siguiente el arqueo se
-        /// cobraría de nuevo — 40% del oro y hasta 30 de cura, dos veces.
+        /// Las Comisiones tienen gate y <c>Once</c> propios aunque compartan umbral con el arqueo:
+        /// colgarlas del mismo Sequence ataría los dos a un solo latch, y como
+        /// <c>AINode_SpawnReinforcements</c> puede devolver Failed, el <c>Once</c> no latchearía y
+        /// el arqueo se cobraría dos veces.
         /// </para>
         /// </remarks>
         public static AINode_Sequence BuildAIRoot(
@@ -575,23 +491,10 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         /// El ciclo de ataque: un turno marca columna, el siguiente dispara, y así siempre.
         /// </summary>
         /// <remarks>
-        /// <para>
-        /// <b>Alternate y no Random.</b> La alternancia tiene que ser estricta y legible: el
-        /// jugador aprende que el turno después de la marca no hay marca nueva, y planta el
-        /// movimiento en consecuencia. Un <c>AINode_Random</c> puede dar tres columnas seguidas
-        /// por probabilidad y convierte la lectura en adivinanza.
-        /// </para>
-        /// <para>
-        /// <b>La columna va primera.</b> El índice del <c>Alternate</c> arranca en 0 y es
-        /// <c>[NonSerialized]</c> (copia fresca por combate), así que el primer turno del jefe
-        /// siempre marca. Abrir disparando sería 12 de daño sin que el jugador haya visto todavía
-        /// de qué se trata la pelea.
-        /// </para>
-        /// <para>
-        /// Cada rama va envuelta en su propio <c>Selector[…, Wait]</c>: el Alternate propaga el
-        /// resultado del hijo, y un Failed benigno del disparo (jugador fuera de rango) abortaría
-        /// el turno entero antes de las fichas y del repliegue.
-        /// </para>
+        /// Alternate y no Random: la alternancia tiene que ser estricta para que el jugador pueda
+        /// plantar el movimiento. La columna va primera —el índice arranca en 0— para no abrir la
+        /// pelea disparando. Cada rama va en su propio <c>Selector[…, Wait]</c> porque el Alternate
+        /// propaga el resultado del hijo y un Failed benigno abortaría el resto del turno.
         /// </remarks>
         public static AINode_Alternate BuildAttackCycle() => new AINode_Alternate
         {
@@ -642,24 +545,10 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         /// voladores, una sola vez en toda la pelea.
         /// </summary>
         /// <remarks>
-        /// <para>
-        /// <b><see cref="AINode_Once"/> y no el auto-gateo del nodo.</b> El
-        /// <c>AINode_SpawnReinforcements</c> sabe reponer oleadas solo (así lo usa La Generala para
-        /// su mesa de dados), y esa es exactamente la lectura que no queremos acá: el Cajero ya se
-        /// cura hasta 30 en el arqueo del mismo umbral, y sumarle refuerzos infinitos convierte el
-        /// tramo final en una pelea que no termina. Dos bichos, una vez, y el que los mata se los
-        /// saca de encima para siempre.
-        /// </para>
-        /// <para>
-        /// <b>El gesto de invocar es <see cref="BossFeedbackIds.CajeroMeleeAnim"/></b>, o sea el
-        /// trigger <c>Attack</c> — el único no-idle que declara <c>AnimCon_GeneralDirector</c>. No es
-        /// una animación de invocar y no la hay; la alternativa era dejarlo vacío y que dos bichos se
-        /// materialicen mientras el jefe está quieto, que es el síntoma que documenta el propio
-        /// <c>AINode_SpawnReinforcements</c> ("aparecían de la nada"). Un manotazo al aire en el
-        /// frame en que aparecen los ata a él. Es el mismo criterio con el que La Generala repone la
-        /// mesa usando su clip de <c>Heal</c>, y con el que este mismo id ya cubre el peaje y el
-        /// arqueo del Cajero.
-        /// </para>
+        /// <see cref="AINode_Once"/> y no el auto-gateo del nodo: el jefe ya se cura en el arqueo
+        /// del mismo umbral, y sumarle refuerzos infinitos hace una pelea que no termina. El gesto
+        /// es el trigger <c>Attack</c> porque es el único no-idle que declara su animator — sin él
+        /// los bichos se materializan con el jefe quieto.
         /// </remarks>
         public static AINode_If BuildCritterGate(EnemyDataSO critter = null) => new AINode_If
         {
@@ -840,23 +729,10 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         /// Árbol de la Comisión: si está pegada muerde, y si no vuela hacia el jugador.
         /// </summary>
         /// <remarks>
-        /// <para>
-        /// <b>Muerde primero y se mueve después</b>, no al revés. <see cref="AINode_Move"/> devuelve
-        /// Running cuando efectivamente se mueve, y un Running corta el Sequence: con el orden
-        /// invertido, el turno en que llega al jugador se le comería el mordisco. Con este orden el
-        /// bicho que ya está pegado muerde (y el Move sale por Failed benigno, "ya estoy en la
-        /// banda"), y el que está lejos falla el mordisco y vuela.
-        /// </para>
-        /// <para>
-        /// <b>El mordisco es <see cref="AINode_CashierRangedShot"/> con <c>Range = 1</c></b>, o sea
-        /// el disparo del Cajero a quemarropa. No es un rodeo: el nodo es "tantos de daño directo a
-        /// distancia ≤ Range, auto-gateado por rango", y con 1 eso <b>es</b> un melee. El camino
-        /// alternativo —<c>AINode_Behavior → EnemyActionBehavior → EffDealDamage</c>— no sirve acá
-        /// por lo que el propio nodo documenta: el daño base de <c>EffDealDamage</c> es un campo
-        /// privado sin setter, así que un builder no puede autorarlo y el mordisco quedaría clavado
-        /// en el default de 10. Y sin árbol propio el bicho caería al <c>BasicEnemyAI</c>, que pega
-        /// al jugador <b>desde cualquier distancia</b>: un impuesto inesquivable en vez de un bicho.
-        /// </para>
+        /// Muerde primero y se mueve después: <see cref="AINode_Move"/> devuelve Running cuando se
+        /// mueve, y un Running corta el Sequence, así que con el orden invertido el turno en que
+        /// llega se comería el mordisco. El mordisco usa el nodo de disparo con <c>Range = 1</c>
+        /// porque el daño de <c>EffDealDamage</c> es privado y un builder no puede autorarlo.
         /// </remarks>
         public static AINode_Sequence BuildCritterAIRoot() => new AINode_Sequence
         {
@@ -1146,18 +1022,9 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         /// regla, que es la que evita pisar trabajo ajeno.
         /// </summary>
         /// <remarks>
-        /// <para>
-        /// <b>Un prefab autorado a mano manda.</b> Si la ficha apunta a algo que no es ni el wrapper
-        /// de este builder ni el placeholder viejo, lo puso alguien a propósito y un rebuild no lo
-        /// tiene que revertir.
-        /// </para>
-        /// <para>
-        /// El placeholder <b>sí</b> se pisa: era el parche de "no hay arte todavía", no una decisión.
-        /// </para>
-        /// <para>
-        /// Si el wrapper no se pudo construir se devuelve lo que ya había: un build fallido no deja al
-        /// jefe sin cuerpo.
-        /// </para>
+        /// Un prefab que no es ni el wrapper de este builder ni el placeholder viejo lo puso alguien
+        /// a propósito y un rebuild no lo revierte. El placeholder sí se pisa. Y si el wrapper no se
+        /// pudo construir se devuelve lo que había: un build fallido no deja al jefe sin cuerpo.
         /// </remarks>
         public static GameObject ResolveVisualPrefab(
             GameObject current, GameObject wrapper, GameObject placeholder)

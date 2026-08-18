@@ -16,9 +16,8 @@ using UnityEngine;
 namespace Rollgeon.Combat.AI.Tests
 {
     /// <summary>
-    /// Tests de <see cref="AINode_RollHand"/> — la mano de dados de La Generala (piso 3): tira los
-    /// dados que le queden vivos, la corre por el mismo detector de combos que la del jugador, y la
-    /// publica en <see cref="IBossDiceHandService"/>.
+    /// La mano de dados de La Generala: tira los dados que le queden vivos, la corre por el mismo
+    /// detector de combos que la del jugador y la publica en <see cref="IBossDiceHandService"/>.
     /// </summary>
     [TestFixture]
     public class AINode_RollHandTests
@@ -99,8 +98,7 @@ namespace Rollgeon.Combat.AI.Tests
         [Test]
         public void Tick_WithFourAliveDice_CannotRollGenerala_AndFallsToPoker()
         {
-            // Arrange — cuatro dados vivos, todos en 6. Con 5 sería Generala; con 4 el combo
-            // más alto posible es Póker (Combo_Generala pide 5 dados en la tirada).
+            // Arrange — cuatro seis: Combo_Generala pide 5 dados en la tirada.
             RegisterAliveDice(4);
             var node = NewNode(AINode_RollHand.HandSizeSource.AliveAllies);
             var context = NewContext(new ScriptedRandom(6, 6, 6, 6));
@@ -136,7 +134,7 @@ namespace Rollgeon.Combat.AI.Tests
         [Test]
         public void Tick_WithTheWholeTableBroken_PublishesAnEmptyBustHand()
         {
-            // Arrange — cero aliados vivos: la mesa está rota entera.
+            // Arrange
             RegisterAliveDice(0);
             var node = NewNode(AINode_RollHand.HandSizeSource.AliveAllies);
 
@@ -158,7 +156,7 @@ namespace Rollgeon.Combat.AI.Tests
         [Test]
         public void Tick_Generala_IsCalledButNotArmed_SoNothingMarksThatTurn()
         {
-            // Arrange — cinco seis ⇒ Generala, que está en SlowCombos.
+            // Arrange — Generala está en SlowCombos.
             var node = NewNode(AINode_RollHand.HandSizeSource.Fixed);
 
             // Act
@@ -212,7 +210,7 @@ namespace Rollgeon.Combat.AI.Tests
         [Test]
         public void Tick_WithoutReroll_KeepsTheFirstRoll()
         {
-            // Arrange — sin rerolls habilitados la segunda tanda de caras no se usa.
+            // Arrange — la segunda tanda de caras no se usa.
             var node = NewNode(AINode_RollHand.HandSizeSource.Fixed);
             var context = NewContext(new ScriptedRandom(4, 4, 2, 5, 1, 4, 4, 4));
 
@@ -246,7 +244,6 @@ namespace Rollgeon.Combat.AI.Tests
         public void Tick_WithReroll_KeepsTheBetterHand_WhenTheRerollComesOutWorse()
         {
             // Arrange — [3,3,3,3,1] es Póker; re-tirando el quinto sale un 2 y sigue siendo Póker.
-            // La mano nunca puede empeorar porque los dados del combo se conservan.
             BossDiceHandService.ResolveOrCreate().SetRerollsPerRound(_boss, 1);
             var node = NewNode(AINode_RollHand.HandSizeSource.Fixed);
             var context = NewContext(new ScriptedRandom(3, 3, 3, 3, 1, 2));
@@ -320,18 +317,14 @@ namespace Rollgeon.Combat.AI.Tests
             return hand;
         }
 
-        /// <summary>
-        /// Registra <paramref name="alive"/> dados vivos + 1 roto, y un query service que los
-        /// reporta como aliados del boss (los dados de la mesa SON sus aliados).
-        /// </summary>
+        /// <summary><paramref name="alive"/> dados vivos + 1 roto, como aliados del boss.</summary>
         private void RegisterAliveDice(int alive)
         {
             var allies = new List<Guid>();
             for (int i = 0; i < alive; i++)
                 allies.Add(RegisterDie(hp: 4));
 
-            // Un dado roto en la mesa: sigue registrado con HP 0 (así lo deja CombatDeathWatcher)
-            // y no tiene que contar como dado tirable.
+            // CombatDeathWatcher deja el dado roto registrado con HP 0, y no es tirable.
             allies.Add(RegisterDie(hp: 0));
 
             ServiceLocator.AddService<IEntityQueryService>(new StubEntityQueryService(allies));
@@ -359,8 +352,7 @@ namespace Rollgeon.Combat.AI.Tests
             var combo = Create<T>();
             SetPrivateField(combo, "_comboId", comboId);
             SetPrivateField(combo, "_baseDamage", baseDamage);
-            // Priority ya no defaultea a _baseDamage (Fix#0047): sin esto todas las manos
-            // empatan en 0 y DetectBest elige la primera registrada, no la mejor.
+            // Priority ya no defaultea a _baseDamage (Fix#0047): sin esto todo empata en 0.
             SetPrivateField(combo, "_priority", baseDamage);
             _catalog.EditorAdd(combo);
         }
@@ -379,7 +371,7 @@ namespace Rollgeon.Combat.AI.Tests
             field.SetValue(target, value);
         }
 
-        /// <summary>RNG con las caras escriteadas — la tirada del boss tiene que ser determinística.</summary>
+        /// <summary>RNG con las caras escriteadas.</summary>
         private sealed class ScriptedRandom : System.Random
         {
             private readonly Queue<int> _faces;

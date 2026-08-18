@@ -18,33 +18,14 @@ namespace Rollgeon.Combat.AI.Bosses.Tahur
     /// </summary>
     /// <remarks>
     /// <para>
-    /// <b>Para qué existe.</b> Es la línea que le saca al jugador la salida de no jugar. Sin ella,
-    /// renunciar al pozo era gratis: el Castigo se esquiva caminando y el poke sólo entra si vas a
-    /// cobrar, así que quedarse lejos era una postura estable. Con el rastrillo corriendo desde la
-    /// fase 1 (<see cref="AINode_TahurSettleWager.RakeChipsPerRound"/>) el pozo se llena solo, y
-    /// cuando se llena la única casilla que no cobra es justo la que exige jugar su juego.
+    /// <b>Va último en el turno</b>, después del movimiento y de poner la mesa: el hueco se ancla en
+    /// el jefe, así que marcarlo antes lo dejaría centrado donde ya no está. Y devuelve
+    /// <see cref="AIResult.Failed"/> con el pozo a medio llenar ⇒ <c>Selector[Banca, Wait]</c>.
     /// </para>
     /// <para>
-    /// <b>Va último en el turno, después del movimiento y de poner la mesa.</b> El hueco se ancla
-    /// en el jefe, así que marcarlo antes de moverse lo dejaría centrado donde ya no está: el paño
-    /// cian diría una cosa y el hueco seguro otra. Marcado al final, el hueco y La Mesa son el
-    /// mismo 3×3 y siguen siéndolo hasta que detona, porque el jefe no se mueve entre el final de
-    /// su turno y el <c>AINode_ExecuteTelegraph</c> que abre el siguiente.
-    /// </para>
-    /// <para>
-    /// <b>Reemplaza al Castigo de la ronda.</b> Marca sobre el guid del jefe, el mismo canal que
-    /// usa <see cref="AINode_TahurSettleWager"/>, y <see cref="IThreatenedAreaService.Mark"/>
-    /// sobrescribe: nunca detonan los dos. Es lo correcto además de lo cómodo — 45 + 45 rompería
-    /// el techo de daño por golpe del piso 3, y con el pozo lleno el Castigo ya valía 45.
-    /// </para>
-    /// <para>
-    /// <b>El poke no se le suma.</b> El poke tiene alcance 1 Manhattan desde el jefe, así que todo
-    /// lo que puede alcanzar está dentro del 3×3 — o sea, dentro del hueco. Quien cobra los 45 está
-    /// fuera de rango del poke por construcción, y quien recibe el poke cobró 0 de La Banca.
-    /// </para>
-    /// <para>
-    /// Devuelve <see cref="AIResult.Failed"/> cuando el pozo todavía no está lleno (el caso normal)
-    /// ⇒ va envuelto en <c>Selector[Banca, Wait]</c> como el resto de los nodos que pueden fallar.
+    /// Reemplaza al Castigo de la ronda: marca sobre el guid del jefe, el mismo canal que
+    /// <see cref="AINode_TahurSettleWager"/>, y <see cref="IThreatenedAreaService.Mark"/> sobrescribe.
+    /// Nunca detonan los dos — 45 + 45 rompería el techo de daño por golpe del piso 3.
     /// </para>
     /// </remarks>
     [Serializable, HideReferenceObjectPicker]
@@ -83,9 +64,8 @@ namespace Rollgeon.Combat.AI.Bosses.Tahur
         public override string NodeName => $"Tahúr — La Banca ({Damage} en toda la sala menos La Mesa)";
 
         /// <remarks>
-        /// Vacío significa "el id canónico del nodo", no "sin animación": Odin puede deserializar
-        /// un <c>ED_Boss_*.asset</c> viejo sin correr los field initializers, así que un default en
-        /// el campo llegaría en null y el barrido volvería a marcarse sin que el jefe se mueva.
+        /// Vacío significa "el id canónico", no "sin animación": Odin deserializa un
+        /// <c>ED_Boss_*.asset</c> viejo sin correr los field initializers.
         /// </remarks>
         private string AnimFeedbackId => string.IsNullOrEmpty(AnimFeedbackIdOverride)
             ? BossFeedbackIds.TahurBancaAnim
@@ -104,9 +84,8 @@ namespace Rollgeon.Combat.AI.Bosses.Tahur
                 context.Grid, selfCoord, ThreatShape.AllExceptSquareAroundSelf,
                 TableRadius, HalfRoomAxis.Vertical);
 
-            // El hueco es La Mesa, no un cuadrado parecido: si el radio de acá y el Size del nodo
-            // de la mesa alguna vez divergen, la promesa que tiene que sobrevivir es la del paño
-            // cian — es la única que el jugador puede leer en pantalla.
+            // El hueco es La Mesa, no un cuadrado parecido: si TableRadius y el Size del nodo de la
+            // mesa divergen, la promesa que sobrevive es la del paño cian — la única que se ve.
             tiles.ExceptWith(wager.TableTiles);
 
             if (tiles.Count == 0)
@@ -138,16 +117,9 @@ namespace Rollgeon.Combat.AI.Bosses.Tahur
         /// el gesto termina.
         /// </summary>
         /// <remarks>
-        /// <para>
-        /// El orden importa: el rastrillo tiene que estar pintado mientras el jefe se levanta, o el
-        /// brazo barre una sala vacía y el gesto no explica de dónde salen los 45. Y como el nodo va
-        /// último en el turno, retener acá no le roba tiempo a nada — es el cierre.
-        /// </para>
-        /// <para>
-        /// <b>Sólo la animación, sin impacto.</b> La Banca no golpea este turno: los 45 caen en el
-        /// siguiente por el <c>AINode_ExecuteTelegraph</c>, que trae su propio windup y su propio
-        /// impacto. Meter VFX de golpe acá prometería un daño que todavía no existe.
-        /// </para>
+        /// El orden importa: la marca tiene que estar pintada mientras el jefe se levanta, o el brazo
+        /// barre una sala vacía. Sólo animación y sin impacto — La Banca no golpea este turno, el daño
+        /// cae en el siguiente por el <c>AINode_ExecuteTelegraph</c>.
         /// </remarks>
         public override IEnumerator TickCoroutine(AIContext context, Action<AIResult> onResult)
         {
@@ -165,10 +137,8 @@ namespace Rollgeon.Combat.AI.Bosses.Tahur
         }
 
         /// <remarks>
-        /// El request se arma a mano en vez de reusar <c>EffPlaySequence</c>: el nodo no nace de un
-        /// effect pass, así que no tiene <c>EffectContext</c> que pasarle (mismo caso que la
-        /// secuencia de muerte del <c>CombatDeathWatcher</c>, y por eso <c>FeedbackRequest.Context</c>
-        /// admite null).
+        /// Request de secuencia a mano y no <c>EffPlaySequence</c>: el nodo no nace de un effect pass
+        /// y no tiene <c>EffectContext</c> que pasarle (por eso <c>FeedbackRequest.Context</c> admite null).
         /// </remarks>
         private IEnumerator PlaySweep(AIContext context)
         {
@@ -193,8 +163,7 @@ namespace Rollgeon.Combat.AI.Bosses.Tahur
                 TargetGuid = context.PlayerGuid,
             }, () => turn?.OnFeedbackComplete());
 
-            // Sin TurnManager no hay gate que esperar — la anim igual corre, pero el turno no se
-            // retiene. Mismo degradado que EffPlaySequence.
+            // Sin TurnManager no hay gate que esperar: la anim corre igual, sin retener el turno.
             if (turn == null || !turn.IsWaitingForFeedback) yield break;
 
             var wait = TurnManager.WaitForFeedbackCompletion(turn);
@@ -202,14 +171,10 @@ namespace Rollgeon.Combat.AI.Bosses.Tahur
         }
 
         /// <summary>
-        /// Fichas a partir de las cuales barre la mesa, sin poder quedar por encima del techo del
-        /// pozo.
+        /// Fichas a partir de las cuales barre la mesa. Clampeado a
+        /// <see cref="ITahurWagerService.MaxChips"/>: un umbral por encima del techo del pozo dejaría
+        /// el nodo muerto sin que nada lo cante.
         /// </summary>
-        /// <remarks>
-        /// El pozo está clampeado a <see cref="ITahurWagerService.MaxChips"/>: un umbral por encima
-        /// de ese techo dejaría el nodo muerto sin que nada lo cante. "Pozo lleno" es la condición
-        /// de la ficha, y cuánto es lleno lo decide la banca.
-        /// </remarks>
         public int EffectiveThreshold(ITahurWagerService wager)
         {
             int threshold = Mathf.Max(1, ChipsThreshold);

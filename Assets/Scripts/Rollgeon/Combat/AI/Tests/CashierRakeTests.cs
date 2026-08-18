@@ -11,11 +11,7 @@ using UnityEngine;
 
 namespace Rollgeon.Combat.AI.Tests
 {
-    /// <summary>
-    /// Tabla de escalones de la ficha con los umbrales nuevos, compartida por los tres fixtures
-    /// del rastrillo. Se define acá y no se lee del builder porque el builder vive en un assembly
-    /// de Editor que este de tests no referencia.
-    /// </summary>
+    /// <summary>Tabla compartida por los tres fixtures; el builder vive en Editor.</summary>
     internal static class CashierFicha
     {
         /// <summary>&lt;40 ⇒ Size 1 / 14, 40-119 ⇒ Size 3 / 28, ≥120 ⇒ Size 3 / 35.</summary>
@@ -27,15 +23,7 @@ namespace Rollgeon.Combat.AI.Tests
         };
     }
 
-    /// <summary>
-    /// Matemática del <b>rastrillo</b>: el escalón de daño sube +1 cada 3 rondas solo, sin mirar
-    /// el oro, y el soborno es lo único que lo baja.
-    /// </summary>
-    /// <remarks>
-    /// Es el arreglo del jefe que no podía pegar: con los umbrales viejos (80/250) y el escalón
-    /// atado sólo al oro, el jugador llegaba al piso 2 con ~65-70 y se quedaba en el escalón más
-    /// barato la pelea entera — 0% de vida perdida en la mediana de 3000 peleas simuladas.
-    /// </remarks>
+    /// <summary>El escalón sube +1 cada 3 rondas sin mirar el oro; sólo el soborno lo baja.</summary>
     [TestFixture]
     public class CashierRakeTierTableTests
     {
@@ -94,7 +82,7 @@ namespace Rollgeon.Combat.AI.Tests
         [Test]
         public void test_bribeAppliesAfterTheRakeIsClamped_soItNeverStopsWorking()
         {
-            // Arrange — ronda 30: el reloj lleva 10 escalones sobre una tabla de 3.
+            // Arrange — el reloj lleva 10 escalones sobre una tabla de 3.
             var tiers = CashierFicha.Tiers();
 
             // Act
@@ -139,7 +127,7 @@ namespace Rollgeon.Combat.AI.Tests
         [Test]
         public void test_resolveWithoutStepUp_behavesLikeBefore()
         {
-            // Arrange — el overload viejo (oro + soborno) lo siguen usando otros call sites.
+            // Arrange — el overload sin rastrillo lo siguen usando otros call sites.
             var tiers = CashierFicha.Tiers();
 
             // Act
@@ -151,10 +139,7 @@ namespace Rollgeon.Combat.AI.Tests
         }
     }
 
-    /// <summary>
-    /// El reloj real: <see cref="CashierLedgerService"/> contando rondas de combate y la cuota
-    /// del soborno que lo compensa.
-    /// </summary>
+    /// <summary><see cref="CashierLedgerService"/> contando rondas, y la cuota que lo compensa.</summary>
     [TestFixture]
     public class CashierRakeClockTests
     {
@@ -167,8 +152,7 @@ namespace Rollgeon.Combat.AI.Tests
             TypedEvent<DamageResolvedPayload>.Clear();
             ServiceLocator.Clear();
 
-            // 200 de oro: alcanza para dos sobornos de 35, que es lo que necesita el test de
-            // renovación de la cuota.
+            // 200 de oro: dos sobornos de 35, lo que pide el test de renovación de la cuota.
             ServiceLocator.AddService<IEconomyService>(new FakeEconomyService(200));
             _ledger = new CashierLedgerService();
         }
@@ -221,8 +205,7 @@ namespace Rollgeon.Combat.AI.Tests
         [Test]
         public void test_rake_readsTheAbsoluteRoundIndex_soALateCreatedLedgerIsNotBehind()
         {
-            // Arrange — el servicio es lazy: nace en el primer tick del jefe y se perdió las rondas
-            // anteriores. Un contador incremental nunca las recuperaría.
+            // Arrange — el servicio es lazy: nace en el primer tick del jefe, tarde.
             FireRound(7);
 
             // Assert
@@ -246,7 +229,7 @@ namespace Rollgeon.Combat.AI.Tests
         [Test]
         public void test_rakeCadenceMatchesTheBribeWindow_soThePayoffIsAQuotaNotInsurance()
         {
-            // Assert — los tres números de la ficha que hacen que el soborno haya que renovarlo.
+            // Assert
             Assert.AreEqual(3, _ledger.RakeRoundsPerStep);
             Assert.AreEqual(3, _ledger.BribeRounds);
             Assert.AreEqual(35, _ledger.BribeCost);
@@ -262,7 +245,7 @@ namespace Rollgeon.Combat.AI.Tests
             // Act
             Assert.IsTrue(_ledger.TryBribe());
 
-            // Assert — la cuota deja el neto en cero durante toda su ventana…
+            // Assert
             Assert.AreEqual(0, Net(), "Pagar en la ronda 3 devuelve el escalón que puso el reloj.");
             FireRound(4);
             Assert.AreEqual(0, Net());
@@ -305,10 +288,7 @@ namespace Rollgeon.Combat.AI.Tests
         }
     }
 
-    /// <summary>
-    /// El nodo de la columna leyendo el rastrillo: es donde el reloj se convierte en casillas
-    /// marcadas y daño real.
-    /// </summary>
+    /// <summary>El nodo de la columna leyendo el rastrillo.</summary>
     [TestFixture]
     public class CashierRakeColumnNodeTests
     {
@@ -394,7 +374,7 @@ namespace Rollgeon.Combat.AI.Tests
         [Test]
         public void test_brokePlayerWithTheClockRunning_stillGetsThreatened()
         {
-            // Arrange — el caso que rompía al jefe: jugador sin un peso, ronda 3.
+            // Arrange — jugador sin un peso, ronda 3.
             _economy.ResetTo(0);
             _ledger.DamageStepUp = 1;
 

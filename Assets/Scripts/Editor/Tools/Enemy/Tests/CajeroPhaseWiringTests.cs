@@ -17,20 +17,12 @@ using UnityEngine;
 namespace Rollgeon.Editor.Tools.Enemy.Tests
 {
     /// <summary>
-    /// Valida el wiring del árbol de <b>El Cajero</b> (piso 2) construido por
-    /// <see cref="CajeroAssetBuilder"/>, <b>en memoria</b> — sin cargar el <c>.asset</c>.
+    /// Wiring del árbol de <b>El Cajero</b> (piso 2) <b>en memoria</b>: contra el builder y no
+    /// contra el <c>.asset</c>, que falla por reimports en vez de por diseño roto. Lo que se cuida
+    /// es el patrón de fase que ya rompió una vez (Sunken Grand): gates <b>antes</b> del ataque,
+    /// todo lo que puede devolver Failed aislado en <c>Selector[acción, Wait]</c>, y <c>Once</c>
+    /// sólo alrededor del one-shot real.
     /// </summary>
-    /// <remarks>
-    /// Deliberadamente contra el builder y no contra el asset: los seis jefes nuevos se autoran en
-    /// ramas paralelas y un test que dependa del <c>.asset</c> falla por reimports, deserialización
-    /// vieja o merges de YAML en vez de por diseño roto. El asset lo genera el mismo builder que se
-    /// testea acá, así que lo que se afirma es la fuente de verdad.
-    /// <para>
-    /// Lo que se cuida es el patrón de fase que ya rompió una vez (Sunken Grand): gates
-    /// <b>antes</b> del ataque, todo lo que puede devolver Failed aislado en
-    /// <c>Selector[acción, Wait]</c>, y <c>Once</c> sólo alrededor del one-shot real.
-    /// </para>
-    /// </remarks>
     [TestFixture]
     public class CajeroPhaseWiringTests
     {
@@ -77,8 +69,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                 "La columna tiene que salir del nodo escalado por oro, no de un TelegraphMark plano " +
                 "con daño fijo (sería el jefe sin su mecánica).");
 
-            // La ficha le dio un ataque directo — el disparo de los turnos sin columna — porque la
-            // columna sola se esquivaba con un paso. Es el único daño suyo que no pasa por el área.
+            // El disparo de los turnos sin columna es el único daño suyo que no pasa por el área.
             var shot = FindNode<AINode_CashierRangedShot>();
             Assert.AreEqual(12, shot.Damage, "El disparo pega 12 fijos, no escala con el oro.");
             Assert.AreEqual(4, shot.Range,
@@ -167,11 +158,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                 "El nodo tiene que salir cableado desde la constante de la ficha, no de su default.");
         }
 
-        /// <summary>
-        /// Sin <see cref="AINode_Once"/> el nodo se auto-gatea y repone la oleada cada vez que la
-        /// matan (así lo usa La Generala para su mesa de dados). Acá eso sería una pelea que no
-        /// termina: el jefe se cura hasta 30 en el arqueo del mismo umbral.
-        /// </summary>
+        /// <summary>Sin <see cref="AINode_Once"/> el nodo se auto-gatea y repone la oleada cada vez
+        /// que la matan, y el arqueo del mismo umbral cura hasta 30: la pelea no termina.</summary>
         [Test]
         public void CritterGate_IsLatchedOnce_SoTheWaveNeverRespawns()
         {
@@ -184,11 +172,9 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         }
 
         /// <summary>
-        /// Comparten umbral con el arqueo a propósito —cruzar la mitad es UN momento de la pelea—
-        /// pero no comparten latch: <c>AINode_SpawnReinforcements</c> devuelve Failed cuando la sala
-        /// no tiene tiles de borde libres, y un Failed adentro del Sequence del arqueo impediría que
-        /// su <c>Once</c> latcheara. El turno siguiente el arqueo volvería a cobrar el 40% del oro y
-        /// a curar hasta 30.
+        /// Comparten umbral con el arqueo pero no latch: el spawn devuelve Failed sin tiles de borde
+        /// libres, y adentro del Sequence del arqueo eso impediría que su <c>Once</c> latcheara —
+        /// el turno siguiente el arqueo volvería a cobrar el 40% y a curar hasta 30.
         /// </summary>
         [Test]
         public void CritterGate_HasItsOwnLatch_SoAFailedSpawnCannotRechargeTheAudit()
@@ -279,11 +265,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             }
         }
 
-        /// <summary>
-        /// El daño de la columna del Cajero escala con el oro que el jugador lleva encima (ver
-        /// <c>BuildGoldTiers</c>): una Comisión que pague al morir le sube el escalón al jefe, o sea
-        /// que matarlas haría la pelea <b>más</b> difícil.
-        /// </summary>
+        /// <summary>La columna escala con el oro que el jugador lleva encima: una Comisión que pague
+        /// al morir haría que matarlas ponga la pelea <b>más</b> difícil.</summary>
         [Test]
         public void CritterData_DropsNoGold_BecauseGoldIsWhatFeedsHisColumn()
         {
@@ -303,19 +286,9 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         }
 
         /// <summary>
-        /// Sin árbol propio el spawn cae al <c>BasicEnemyAI</c>, que le pega al jugador desde
-        /// cualquier distancia y sin moverse: un impuesto inesquivable en vez de un bicho que se
-        /// puede kitear o matar antes de que llegue.
+        /// Las funciones que autoran la Comisión siguen vivas y con tests (parkeada, no borrada),
+        /// así que sin este test nada impide que el árbol del jefe vuelva a apuntarle.
         /// </summary>
-        /// <summary>
-        /// El refuerzo del Cajero es el ranged común del juego, no la Comisión. La Comisión mordía a
-        /// distancia 1 con la malla del GeneralDirector —la misma que usa el ranged común—, así que en
-        /// pantalla se leía como el enemigo ranged andando mal, no como un bicho distinto.
-        /// </summary>
-        /// <remarks>
-        /// Las funciones que autoran la Comisión siguen vivas y con tests (parkeada, no borrada), así
-        /// que sin este test nada impide que el árbol del jefe vuelva a apuntarle sin que se note.
-        /// </remarks>
         [Test]
         public void Reinforcements_AreTheGameGenericRangedEnemy_NotTheComision()
         {
@@ -368,8 +341,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         {
             var root = CajeroAssetBuilder.BuildCritterAIRoot();
 
-            // El mordisco falla con el jugador lejos y el vuelo falla cuando ya está pegada: los dos
-            // Failed son normales y ninguno tiene que abortar el turno del bicho.
+            // El mordisco falla con el jugador lejos y el vuelo cuando ya está pegada: los dos
+            // Failed son normales.
             foreach (var child in root.Children)
             {
                 var selector = child as AINode_Selector;
@@ -384,11 +357,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         [Test]
         public void EveryFallibleChild_IsIsolatedInSelectorWithWaitFallback()
         {
-            // Todos los hijos salvo ExecuteTelegraph (que siempre sucede) pueden devolver Failed:
-            // KeepDistance cuando ya está lejos, DropChips cuando no le pegaron, la columna con área
-            // vacía, el disparo con el jugador fuera de rango, el peaje sin jugador en contexto, y
-            // el gate cuando su rama falla. Suelto en el Sequence, cualquiera de esos aborta el
-            // turno entero — el bug que dejó quieto al Sunken Grand.
+            // Todos los hijos salvo ExecuteTelegraph pueden devolver Failed en su caso benigno, y
+            // suelto en el Sequence cualquiera de esos aborta el turno entero.
             for (int i = 1; i < _root.Children.Count; i++)
             {
                 var selector = _root.Children[i] as AINode_Selector;
@@ -413,12 +383,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
 
         // ---- La columna que engorda ---------------------------------------
 
-        /// <summary>
-        /// Los umbrales son 40/120 y no los 80/250 de la primera pasada: el jugador llega al piso 2
-        /// con ~65-70 de oro, así que con 80/250 la columna vivía clavada en el escalón pobre y el
-        /// jefe medía 0% de vida perdida en la mediana de 3000 peleas simuladas. Con 40/120, 65 de
-        /// oro ya paga el escalón medio.
-        /// </summary>
+        /// <summary>Umbrales 40/120: el jugador llega al piso 2 con ~65-70 de oro, y más arriba la
+        /// columna vive clavada en el escalón pobre.</summary>
         [Test]
         public void Column_ScalesWithGold_AtFortyAndOneTwenty()
         {
@@ -481,10 +447,9 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         }
 
         /// <summary>
-        /// El jefe no puede leer el terreno (los blockers son agujeros en el NavGraph, no props
-        /// tipados), así que la fila del mostrador va autorada. Este cruce contra el plano que
-        /// hornea <see cref="BossRoomBuilder"/> es lo único que impide que mover el mostrador deje
-        /// el peaje cobrando sobre una fila vacía — que no rompe nada, sólo deja de cobrar.
+        /// El jefe no puede leer el terreno (los blockers son agujeros en el NavGraph), así que la
+        /// fila del mostrador va autorada: este cruce contra <see cref="BossRoomBuilder"/> es lo
+        /// único que impide que mover el mostrador deje el peaje cobrando sobre una fila vacía.
         /// </summary>
         [Test]
         public void Toll_UsesTheRowTheRoomBuilderBakesTheCounterOn()
@@ -562,11 +527,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         {
             var toll = FindNode<AINode_CashierCounterToll>();
 
-            // La ronda franca ya no hace falta porque nunca fue la válvula de escape real: la
-            // válvula es que la fila del mostrador es neutral (CashierCounterTollService.IsSameSide
-            // devuelve false con side == 0), así que pegar y retroceder al hueco no cuesta nunca
-            // nada. Cobrar todas las rondas vuelve al peaje constante y legible en vez de
-            // intermitente.
+            // La válvula de escape es la fila neutral del mostrador (IsSameSide devuelve false con
+            // side == 0), no una ronda franca.
             Assert.AreEqual(CajeroAssetBuilder.CounterTollEveryNRounds, toll.ChargesEveryNRounds);
             Assert.AreEqual(1, toll.ChargesEveryNRounds,
                 "Cobra todas las rondas: la válvula de escape es la fila neutral del mostrador, no " +
@@ -578,11 +540,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         [Test]
         public void ChipHazard_LastsLongEnoughForThePlayerToStepOnIt()
         {
-            // El guard que le faltaba al Cajero y sí tienen el Anotador, el Croupier y la Generala.
-            // La duración se descuenta una vez por wrap de ronda y la ficha nace en el turno del jefe,
-            // con el turno del jugador de esa ronda ya jugado (CNF-006): DurationRounds = D deja D-1
-            // turnos pisables. Con 1 la moneda aparecía y expiraba sin que el jugador pudiera nunca
-            // levantarla.
+            // La duración se descuenta en el wrap de ronda y la ficha nace con el turno del jugador
+            // ya jugado (CNF-006): DurationRounds = D deja D-1 turnos pisables.
             Assert.GreaterOrEqual(CajeroAssetBuilder.ChipDurationRounds - 1, 2,
                 $"Con DurationRounds = {CajeroAssetBuilder.ChipDurationRounds} la ficha vive " +
                 $"{CajeroAssetBuilder.ChipDurationRounds - 1} turnos pisables del jugador. Hacen falta " +
@@ -692,8 +651,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         [Test]
         public void PopulateEnemyData_DoesNotClearTheVisualsWhenCalledWithoutThem()
         {
-            // El builder se re-corre para refrescar números; si nulease el visual, cada rebuild dejaría
-            // al jefe sin cuerpo y sin cara hasta que alguien lo notara en un playtest.
+            // El builder se re-corre para refrescar números: nulear el visual dejaría al jefe sin
+            // cuerpo en cada rebuild.
             var data = ScriptableObject.CreateInstance<EnemyDataSO>();
             data.hideFlags = HideFlags.HideAndDontSave;
             var visual = new GameObject("PF_Boss_Cajero") { hideFlags = HideFlags.HideAndDontSave };
@@ -741,8 +700,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
 
         // ---- Helpers ------------------------------------------------------
 
-        /// <summary>Sprite in-memory de 4×4: alcanza para afirmar la asignación del retrato sin
-        /// tocar el AssetDatabase ni reimportar la textura compartida del pack de símbolos.</summary>
+        /// <summary>Sprite in-memory: no reimporta la textura compartida del pack de símbolos.</summary>
         private static Sprite NewPortrait()
         {
             var texture = new Texture2D(4, 4) { hideFlags = HideFlags.HideAndDontSave };
@@ -778,10 +736,9 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         }
 
         /// <summary>
-        /// El gate de HP del hijo raíz que además contiene un <typeparamref name="T"/> en su
-        /// subárbol. El tipo es lo que desambigua: el arqueo y las Comisiones comparten umbral
-        /// (50%) a propósito —cruzar la mitad es UN momento de la pelea— así que buscar sólo por
-        /// porcentaje devolvería el primero de los dos y los tests del otro pasarían por accidente.
+        /// El gate de HP del hijo raíz que además contiene un <typeparamref name="T"/>. El tipo
+        /// desambigua: el arqueo y las Comisiones comparten el 50%, así que buscar sólo por
+        /// porcentaje devolvería el primero y los tests del otro pasarían por accidente.
         /// </summary>
         private AINode_If FindGateAtPercent<T>(float percent) where T : class
         {
@@ -800,8 +757,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             return _root.Children.FindIndex(c => ReferenceEquals(Unwrap(c), gate));
         }
 
-        /// <summary>Tree-walker por reflexión: todo lo alcanzable desde <paramref name="root"/>, sin
-        /// descender en <see cref="Object"/> (no arrastra assets referenciados). Copiado de
+        /// <summary>Tree-walker por reflexión, sin descender en <see cref="Object"/>. Copiado de
         /// <c>SunkenGrandPhaseWiringTests</c> — vive en otro assembly, no se puede compartir.</summary>
         private static List<object> Descendants(object root)
         {

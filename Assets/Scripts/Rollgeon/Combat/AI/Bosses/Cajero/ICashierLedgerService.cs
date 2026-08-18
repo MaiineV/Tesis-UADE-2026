@@ -10,18 +10,10 @@ namespace Rollgeon.Combat.Cashier
     /// eventos del jugador (pisar una ficha, matar al jefe).
     /// </summary>
     /// <remarks>
-    /// <para>
-    /// <b>Sólo lectura sobre el oro del jugador, salvo lo que la ficha manda explícitamente.</b>
-    /// El servicio toca <c>IEconomyService</c> en exactamente tres lugares: el arqueo
-    /// (<see cref="CollectTax"/>, "guarda el 40% de tu oro"), el soborno
-    /// (<see cref="TryBribe"/>, "entregarle 35 de oro") y las devoluciones —
-    /// ficha cobrada + caja abierta al vencerlo. Ninguna otra ruta escribe oro.
-    /// </para>
-    /// <para>
-    /// <b>Scope.</b> Global (como <c>HazardService</c>), con reset propio en
-    /// <c>OnCombatEnd</c>/<c>OnRunEnd</c>: la caja no se filtra a la pelea siguiente. Si el
-    /// jugador muere con oro secuestrado, la banca gana — no hay devolución.
-    /// </para>
+    /// Escribe <c>IEconomyService</c> en exactamente tres lugares —arqueo, soborno y devoluciones—
+    /// y en ninguna otra ruta. Scope global con reset en <c>OnCombatEnd</c>/<c>OnRunEnd</c>, así que
+    /// la caja no se filtra a la pelea siguiente; si el jugador muere con oro secuestrado, la banca
+    /// gana.
     /// </remarks>
     public interface ICashierLedgerService
     {
@@ -92,17 +84,10 @@ namespace Rollgeon.Combat.Cashier
         /// Lo llama la acción del jugador — el jefe nunca se soborna solo.
         /// </summary>
         /// <remarks>
-        /// <para>
-        /// Es una de las dos palancas contra <see cref="DamageStepUp"/>, y por eso las dos
-        /// ventanas miden lo mismo (3 rondas): un soborno por ciclo de rastrillo mantiene el
-        /// escalón donde lo puso el oro, y dejar de pagar deja que el reloj gane terreno.
-        /// </para>
-        /// <para>
-        /// <b>Hoy no hay acción del jugador que lo llame.</b> El soborno que sí ocurre en la pelea
-        /// es el de <see cref="RegisterChip"/> — pisar una ficha. Este camino queda como el
-        /// "pagar el precio de lista" por si alguna vez entra un botón: sin él, la única forma de
-        /// sobornar dependería de que el jefe haya soltado una ficha.
-        /// </para>
+        /// Las dos ventanas miden lo mismo a propósito: un soborno por ciclo de rastrillo mantiene
+        /// el escalón donde lo puso el oro. <b>Hoy ninguna acción del jugador lo llama</b> — el
+        /// soborno real de la pelea es pisar una ficha (<see cref="RegisterChip"/>); esto queda como
+        /// el precio de lista por si entra un botón.
         /// </remarks>
         bool TryBribe();
 
@@ -114,12 +99,9 @@ namespace Rollgeon.Combat.Cashier
         /// sobre su propia columna), no se cobra.
         /// </summary>
         /// <remarks>
-        /// <b>Levantar una ficha también soborna</b> — abre la misma ventana que
-        /// <see cref="TryBribe"/>, sin cobrar los <see cref="BribeCost"/>. Sin eso la ficha era
-        /// una trampa sin salida: lo único que el jefe suelta te paga en oro, y el oro es
-        /// exactamente lo que le sube el escalón. Con el soborno encima, ir a buscarla es la
-        /// decisión del turno y no una recompensa envenenada — las fichas caen a 2-3 casillas y
-        /// el camino puede obligarte a cruzar el mostrador, que cuesta el peaje.
+        /// <b>Levantar una ficha también soborna</b>, sin cobrar <see cref="BribeCost"/>. Sin eso
+        /// sería una recompensa envenenada: lo único que el jefe suelta te paga en oro, y el oro es
+        /// justo lo que le sube el escalón.
         /// </remarks>
         void RegisterChip(Guid hazardInstanceId, int value, Guid ownerGuid);
 

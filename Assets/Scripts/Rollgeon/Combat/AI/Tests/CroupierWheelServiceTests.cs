@@ -15,15 +15,12 @@ using UnityEngine;
 namespace Rollgeon.Combat.AI.Tests
 {
     /// <summary>
-    /// Tests de <see cref="CroupierWheelService"/>: los dos hooks del jefe de piso 1, que ahora son
-    /// dos cosas distintas. Pegarle cuesta 8 siempre (Represalia), y correr la rueda +1 se paga con el
-    /// cuerpo — terminando el turno dentro del sector cantado, una sola vez por número, y nunca con la
-    /// rueda trucada.
+    /// Los dos hooks de <see cref="CroupierWheelService"/>: Represalia (8 por golpe) y el
+    /// corrimiento de la rueda (se paga cerrando el turno dentro del sector cantado).
     /// </summary>
     /// <remarks>
-    /// La sala canónica es 11×7, así que los sectores son de 4×3: 1 = x0-3/y4-6, 2 = x4-7/y4-6,
-    /// 3 = x7-10/y4-6, 4 = x0-3/y0-2, 5 = x4-7/y0-2, 6 = x7-10/y0-2. La columna x=7 es la costura:
-    /// pertenece a la vez al bloque del medio y al de la derecha.
+    /// Sala canónica 11×7 ⇒ sectores de 4×3: 1 = x0-3/y4-6, 2 = x4-7/y4-6, 3 = x7-10/y4-6,
+    /// 4 = x0-3/y0-2, 5 = x4-7/y0-2, 6 = x7-10/y0-2. La columna x=7 es costura: cae en dos sectores.
     /// </remarks>
     [TestFixture]
     public class CroupierWheelServiceTests
@@ -62,8 +59,7 @@ namespace Rollgeon.Combat.AI.Tests
             // El corrimiento sólo lo dispara el jugador, y quién es el jugador lo dice este servicio.
             ServiceLocator.AddService<IPlayerService>(new StubPlayerService { PlayerGuid = _playerGuid });
 
-            // Por el camino lazy real (registra Global y se suscribe al fin de combate), que es como
-            // nace en juego: el jefe entra por un asset y nadie agrega un bootstrap a mano.
+            // Por el camino lazy real: registra Global y se suscribe al fin de combate.
             _wheel = (CroupierWheelService)CroupierWheelService.ResolveOrCreate();
             _wheel.RetaliationDamage = Retaliation;
             _wheel.Bind(_bossGuid);
@@ -74,8 +70,8 @@ namespace Rollgeon.Combat.AI.Tests
         {
             _wheel.Dispose();
 
-            // Marcar pinta overlay, y el overlay crea un GameObject + materiales por tint: sin este
-            // teardown quedan huérfanos y contaminan cualquier test que los busque por nombre.
+            // Marcar crea un GameObject + materiales por tint: sin este teardown quedan huérfanos y
+            // contaminan cualquier test que los busque por nombre.
             if (ServiceLocator.TryGetService<IThreatOverlayService>(out var overlay) && overlay is IDisposable d)
                 d.Dispose();
             var leftover = GameObject.Find("ThreatTelegraphOverlay");
@@ -110,8 +106,7 @@ namespace Rollgeon.Combat.AI.Tests
         [Test]
         public void Hit_WithEvenNumberInTheAir_ChargesRetaliationToo()
         {
-            // Arrange — la paridad ya no descuenta: era la regla invisible que hacía que la mitad de
-            // los turnos pegarle fuera gratis sin que nada en pantalla lo dijera.
+            // Arrange
             _wheel.Sing(new List<int> { 4 });
 
             // Act
@@ -125,8 +120,7 @@ namespace Rollgeon.Combat.AI.Tests
         [Test]
         public void TwoHitsInTheSameTurn_ChargeTwice()
         {
-            // Arrange — el candado es del corrimiento, no del cobro: cada golpe es una decisión aparte
-            // y se paga aparte.
+            // Arrange — el candado por windup es del corrimiento, no del cobro.
             _wheel.Sing(new List<int> { 3 });
 
             // Act
@@ -141,8 +135,7 @@ namespace Rollgeon.Combat.AI.Tests
         [Test]
         public void RiggedWheel_StillChargesRetaliation()
         {
-            // Arrange — fase 2: la rueda trucada apaga la palanca, no el precio de la casilla de melee.
-            // Si también apagara el cobro, el jefe se quedaría sin daño directo justo en su fase fuerte.
+            // Arrange — la rueda trucada apaga la palanca, no el precio de la casilla de melee.
             _wheel.SetMode(numbersPerTurn: 2, rigged: true, phaseIndex: 2);
             _wheel.Sing(new List<int> { 3, 4 });
 
@@ -157,8 +150,7 @@ namespace Rollgeon.Combat.AI.Tests
         [Test]
         public void Hit_OutsideTheWindup_StillChargesRetaliation()
         {
-            // Arrange — "siempre" incluye el hueco entre detonar y volver a cantar. Atarlo al windup
-            // dejaría golpes gratis que el jugador no puede ver ni predecir.
+            // Arrange — el hueco entre detonar y volver a cantar.
             _wheel.Sing(new List<int> { 3 });
             _wheel.ConsumeWindup();
 
@@ -172,8 +164,7 @@ namespace Rollgeon.Combat.AI.Tests
         [Test]
         public void LethalHit_DoesNotCharge()
         {
-            // Arrange — un crupier muerto no manotea: sin esto la pelea se puede ganar y perder en el
-            // mismo intercambio.
+            // Arrange — sin esto la pelea se puede ganar y perder en el mismo intercambio.
             _wheel.Sing(new List<int> { 3 });
 
             // Act
@@ -229,8 +220,7 @@ namespace Rollgeon.Combat.AI.Tests
         [Test]
         public void Hit_DoesNotMoveTheWheel()
         {
-            // Arrange — la regresión que motivó el cambio: mover el número era un efecto secundario
-            // gratis del único ataque que el jugador tiene.
+            // Arrange
             _wheel.Sing(new List<int> { 3 });
 
             // Act
@@ -247,7 +237,7 @@ namespace Rollgeon.Combat.AI.Tests
         [Test]
         public void EndTurnInsideTheCalledSector_MovesTheWheel()
         {
-            // Arrange — el jugador está en el sector 4 y el jefe canta el 4: pararse bajo el hacha.
+            // Arrange — el jugador está en el sector 4 y el jefe canta el 4.
             _wheel.Sing(new List<int> { 4 });
 
             // Act
@@ -274,8 +264,7 @@ namespace Rollgeon.Combat.AI.Tests
         [Test]
         public void SecondTurnEndInsideTheSameWindup_DoesNotMoveItAgain()
         {
-            // Arrange — la costura (x=7) pertenece al sector 5 y al 6 a la vez, así que sin el candado
-            // el jugador parado ahí correría el número dos veces con el mismo cuerpo.
+            // Arrange — la costura x=7 cae en el sector 5 y en el 6, así que sin candado correría dos veces.
             MovePlayer(new GridCoord(7, 1));
             _wheel.Sing(new List<int> { 5 });
 
@@ -290,7 +279,7 @@ namespace Rollgeon.Combat.AI.Tests
         [Test]
         public void RiggedWheel_DoesNotMove()
         {
-            // Arrange — fase 2: la palanca desaparece aunque el jugador se pare adentro.
+            // Arrange
             _wheel.SetMode(numbersPerTurn: 2, rigged: true, phaseIndex: 2);
             _wheel.Sing(new List<int> { 4, 5 });
 
@@ -304,8 +293,7 @@ namespace Rollgeon.Combat.AI.Tests
         [Test]
         public void EndTurnInsideOneOfTwoSectors_MovesOnlyThatNumber()
         {
-            // Arrange — el criterio es por número, no por turno: el jugador corre el hacha bajo la que
-            // se paró, no las dos. (Hoy fase 2 va trucada; esto fija el criterio si se destruca.)
+            // Arrange — hoy fase 2 va trucada; esto fija el criterio por-número si se destruca.
             _wheel.SetMode(numbersPerTurn: 2, rigged: false, phaseIndex: 2);
             _wheel.Sing(new List<int> { 4, 3 });
 
@@ -319,8 +307,7 @@ namespace Rollgeon.Combat.AI.Tests
         [Test]
         public void TurnEndOfSomeoneElse_DoesNotMoveTheWheel()
         {
-            // Arrange — la rueda la corre el jugador con su cuerpo, no cualquier cosa que cierre turno
-            // dentro del bloque.
+            // Arrange
             var otherGuid = Guid.NewGuid();
             _grid.Register(otherGuid, new GridCoord(1, 1)); // Sector 4, igual que el jugador.
             _wheel.Sing(new List<int> { 4 });
@@ -349,7 +336,7 @@ namespace Rollgeon.Combat.AI.Tests
         [Test]
         public void Nudge_FromSix_WrapsToOne()
         {
-            // Arrange — es una rueda, no una escalera.
+            // Arrange
             MovePlayer(new GridCoord(9, 1)); // Sector 6.
             _wheel.Sing(new List<int> { 6 });
 
@@ -367,7 +354,7 @@ namespace Rollgeon.Combat.AI.Tests
         [Test]
         public void Nudge_MovesThePendingAreaToTheNewSector()
         {
-            // Arrange — si el área no se moviera, la palanca no cambiaría nada de lo que va a pasar.
+            // Arrange
             _wheel.Sing(new List<int> { 4 });
             Assert.IsTrue(CroupierSectorTelegraph.Mark(_bossGuid, slot: 0, sector: 4, damage: 20, kind: AttackKind.BasicAttack));
             _wheel.RecordMark(0, 20, AttackKind.BasicAttack);
@@ -396,7 +383,7 @@ namespace Rollgeon.Combat.AI.Tests
             // Act
             EndPlayerTurn();
 
-            // Assert — mover la rueda cambia a dónde cae el hacha, no cuánto pega.
+            // Assert
             var slotGuid = CroupierSectorTelegraph.SlotGuid(_bossGuid, 0);
             Assert.IsTrue(_threat.TryConsume(slotGuid, out var area));
             Assert.AreEqual(20, area.Damage);
@@ -428,8 +415,7 @@ namespace Rollgeon.Combat.AI.Tests
         [Test]
         public void SlotGuids_AreStableDistinctAndNeverTheBossGuid()
         {
-            // Arrange — dos áreas simultáneas necesitan dos fuentes distintas, y ninguna puede pisar
-            // la del propio jefe (ahí vive el área de cualquier otro sistema que marque por él).
+            // Arrange — dos áreas simultáneas necesitan dos fuentes distintas de la del propio jefe.
             var slot0 = CroupierSectorTelegraph.SlotGuid(_bossGuid, 0);
             var slot1 = CroupierSectorTelegraph.SlotGuid(_bossGuid, 1);
 
@@ -444,8 +430,7 @@ namespace Rollgeon.Combat.AI.Tests
         [Test]
         public void CombatEnd_ResetsTheTableToPhaseOne()
         {
-            // Arrange — el servicio es Global pero su estado es por combate: una pelea nueva no puede
-            // arrancar con la rueda trucada de la anterior.
+            // Arrange — el servicio es Global pero su estado es por combate.
             _wheel.SetMode(2, rigged: true, phaseIndex: 2);
             _wheel.Sing(new List<int> { 5 });
 
@@ -462,8 +447,7 @@ namespace Rollgeon.Combat.AI.Tests
         [Test]
         public void CombatEnd_UnhooksBothChannels()
         {
-            // Arrange — los dos hooks viven fuera del turno del jefe, así que si sobrevivieran al
-            // combate seguirían cobrando y corriendo una rueda que ya no existe.
+            // Arrange — los dos hooks viven fuera del turno del jefe.
             _wheel.Sing(new List<int> { 4 });
             EventManager.Trigger(EventName.OnCombatEnd);
 

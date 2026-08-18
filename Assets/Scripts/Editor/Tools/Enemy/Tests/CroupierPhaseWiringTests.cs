@@ -18,15 +18,10 @@ using UnityEngine;
 namespace Rollgeon.Editor.Tools.Enemy.Tests
 {
     /// <summary>
-    /// Valida el wiring del árbol del Croupier <b>en memoria</b>, armándolo con
-    /// <see cref="CroupierAssetBuilder.BuildAIRoot"/>. No carga el <c>.asset</c> a propósito: el
-    /// contrato que hay que proteger es el que produce el builder, y depender del asset ataría el
-    /// suite a que Unity lo haya reimportado (el accidente que ya hizo fallar tests verdes).
+    /// Wiring del árbol del Croupier <b>en memoria</b>: contra el builder y no contra el
+    /// <c>.asset</c>, que ataría el suite a que Unity lo haya reimportado. Cubre lo que un merge
+    /// puede romper sin que se note: orden de los gates, fallbacks y números de la ficha.
     /// </summary>
-    /// <remarks>
-    /// Cubre lo que un merge puede romper sin que se note: el orden de los gates de fase, los
-    /// fallbacks que evitan que un paso fallido le cancele el turno al jefe, y los números de la ficha.
-    /// </remarks>
     [TestFixture]
     public class CroupierPhaseWiringTests
     {
@@ -62,8 +57,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         [Test]
         public void Root_ResolvesLastTurnsBet_First()
         {
-            // El telegráfico se cobra al abrir el turno, como ExecuteTelegraph en el resto de los
-            // bosses. Va suelto (sin Selector) porque siempre devuelve Succeeded.
+            // Va suelto (sin Selector) porque siempre devuelve Succeeded.
             Assert.IsInstanceOf<AINode_DetonateSungSectors>(_root.Children[0],
                 "El primer hijo del Sequence raíz tiene que detonar lo cantado el turno pasado.");
         }
@@ -71,8 +65,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         [Test]
         public void Root_TicksThePhaseGate_BeforeTheAttack()
         {
-            // En el path no-coroutine un Running aborta el Sequence, y el ataque de este jefe es el
-            // marcado: una fase ubicada después no tickearía nunca en tests ni en simulación.
+            // En el path no-coroutine un Running aborta el Sequence: una fase después del marcado
+            // no tickearía nunca.
             int gateIdx = IndexOfGateAtPercent(CroupierAssetBuilder.Phase2HpThreshold);
             int attackIdx = _root.Children.FindIndex(c => Descendants(c).Any(n => n is AINode_MarkSungSectors));
 
@@ -106,8 +100,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         [Test]
         public void EveryFallibleStep_IsIsolatedInASelectorWithWaitFallback()
         {
-            // El Sequence corta en el primer Failed: sin el fallback, una sala sin bounds o un servicio
-            // sin registrar le cancela al jefe todo lo que viene después en el turno.
+            // El Sequence corta en el primer Failed: sin fallback, una sala sin bounds o un servicio
+            // sin registrar le cancela al jefe el resto del turno.
             var fallible = new[]
             {
                 typeof(AINode_SpinWheel),
@@ -164,8 +158,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
 
             Assert.IsNotNull(mode, "Falta el SetWheelMode: sin él la fase 2 no canta dos números.");
             Assert.AreEqual(2, mode.NumbersPerTurn, "Pleno y color: dos números.");
-            // Trucada apaga el corrimiento y nada más: la Represalia no mira la fase, y
-            // CroupierWheelService cobra los 8 en todo golpe con la rueda trabada igual.
+            // Trucada apaga el corrimiento y nada más: la Represalia no mira la fase.
             Assert.IsTrue(mode.Rigged,
                 "La rueda queda trucada: en fase 2 cerrar el turno dentro del sector cantado deja de " +
                 "correr el número, y el jugador se queda sin la única palanca sobre lo que cae.");
@@ -186,10 +179,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                 "de daño de la rueda, no por el árbol.");
         }
 
-        /// <summary>
-        /// La regresión del reporte "el crupier no se mueve": el árbol no tenía un solo nodo de
-        /// movimiento y el jefe era una estatua.
-        /// </summary>
+        /// <summary>Regresión de "el crupier no se mueve": el árbol no tenía ningún nodo de
+        /// movimiento.</summary>
         [Test]
         public void Tree_Repositions_ClosingInAndBackingOff()
         {
@@ -211,10 +202,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         }
 
         /// <summary>
-        /// El movimiento va <b>último</b> y aislado. Es el único paso del turno que puede devolver
-        /// <c>Running</c> (espera el blink), y un <c>Running</c> aborta el Sequence en el path
-        /// no-coroutine: con cualquier cosa detrás, el jefe perdería el resto del turno. El
-        /// <c>Selector[paso, Wait]</c> es el mismo idiom que documenta <c>SunkenGrandPhaseWiringTests</c>.
+        /// El movimiento es el único paso que puede devolver <c>Running</c> (espera el blink), y un
+        /// Running aborta el Sequence en el path no-coroutine: con algo detrás se pierde el turno.
         /// </summary>
         [Test]
         public void Reposition_IsTheLastStep_AndIsIsolated()
@@ -232,11 +221,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                 "fallback el paso propagaría ese Failed.");
         }
 
-        /// <summary>
-        /// El reacomodo va después de encender el paño: el fuego se prende sobre el sector que
-        /// detonó, que no depende de dónde termine parado el jefe, pero el orden fija que ningún paso
-        /// de mesa quede detrás del <c>Running</c> del blink.
-        /// </summary>
+        /// <summary>El orden fija que ningún paso de mesa quede detrás del <c>Running</c> del
+        /// blink.</summary>
         [Test]
         public void Reposition_RunsAfterEveryTableStep()
         {
@@ -254,11 +240,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         // Números de la ficha
         // =====================================================================
 
-        /// <summary>
-        /// La confiscación es del <b>número que cayó</b>, no de un dado al azar. Ese es todo el
-        /// motivo por el que puede existir: un sorteo silencioso es indistinguible del bloqueo del
-        /// Sunken Grand, y el jugador termina creyendo que pelea contra el jefe viejo.
-        /// </summary>
+        /// <summary>Del <b>número que cayó</b> y no de un dado al azar: un sorteo silencioso es
+        /// indistinguible del bloqueo del Sunken Grand.</summary>
         [Test]
         public void Confiscation_TakesTheNumberThatFell_NotARandomDie()
         {
@@ -278,11 +261,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                 "desde afuera se lee como un porcentaje.");
         }
 
-        /// <summary>
-        /// La confiscación lee después de que la ruleta cantó. Es lo que hace que el bloqueo exista
-        /// <b>todos</b> los turnos: <c>SungNumbers</c> se puebla en <c>AINode_SpinWheel</c>, así que
-        /// leer antes devolvería <c>-1</c> y dejaría el turno sin candado.
-        /// </summary>
+        /// <summary><c>SungNumbers</c> se puebla en <c>AINode_SpinWheel</c>: leer antes devolvería
+        /// <c>-1</c> y dejaría el turno sin candado.</summary>
         [Test]
         public void Confiscation_RunsAfterTheWheelHasSung_SoThereIsAlwaysANumberToTake()
         {
@@ -298,10 +278,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                 "SpinWheel, y leerlo antes deja el turno sin dado bloqueado.");
         }
 
-        /// <summary>
-        /// La otra mitad de la condición para que vuelva: que se vea. Los ids vacíos dejan el nodo
-        /// mudo (es un nodo compartido con los jefes viejos, ahí vacío = silencio a propósito).
-        /// </summary>
+        /// <summary>Los ids vacíos dejan el nodo mudo — en los jefes viejos eso es a propósito.</summary>
         [Test]
         public void Confiscation_IsPresented()
         {
@@ -312,15 +289,10 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         }
 
         /// <summary>
-        /// La otra mitad del orden que hace que el reader tenga algo que leer.
-        /// </summary>
-        /// <remarks>
         /// <c>AINode_DetonateSungSectors</c> llama a <c>ConsumeWindup()</c>, que vacía
-        /// <c>SungNumbers</c>. Tiene que correr <b>antes</b> de la tirada: detrás, se comería el
-        /// número que la ruleta acaba de cantar y la confiscación leería una lista vacía,
-        /// devolvería <c>-1</c> y no bloquearía nada — sin error, sin warning, sin nada en pantalla.
-        /// Este test es el que atrapa ese reordenamiento.
-        /// </remarks>
+        /// <c>SungNumbers</c>: detrás de la tirada se comería el número recién cantado y la
+        /// confiscación no bloquearía nada — sin error, sin warning, sin nada en pantalla.
+        /// </summary>
         [Test]
         public void TheWindupIsConsumedBeforeTheWheelSings_SoTheFreshNumberSurvives()
         {
@@ -358,14 +330,9 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         [Test]
         public void Fire_HasOneDefinitionPerPhase_AndTheDurationsDifferByTheRoundOffset()
         {
-            // La ficha cuenta rondas del JUGADOR (2 en fase 1, 3 en fase 2) y el asset autora rondas de
-            // hazard: no son el mismo número. HazardService.TickInstanceDurations descuenta una en cada
-            // OnTurnQueueBuilt — o sea en cada wrap de ronda — y el fuego nace en el turno del jefe, con
-            // el turno del jugador de esa ronda ya jugado (CNF-006 lo fuerza al frente de la cola). La
-            // ronda del encendido no le llega a cobrar nunca: DurationRounds = D deja D-1 cierres de
-            // turno que sí pegan. Ese es el corrimiento del nombre del test. Que queden 2 y no 1 es lo
-            // que hace que el bloque anterior siga ardiendo cuando cae el siguiente: el paño se gasta
-            // en vez de volver a foja cero cada turno.
+            // La ficha cuenta rondas del JUGADOR y el asset autora rondas de hazard: no son el
+            // mismo número. La duración se descuenta en el wrap de ronda y el fuego nace con el
+            // turno del jugador ya jugado (CNF-006): DurationRounds = D deja D-1 que sí pegan.
             const int IgnitionRound = 1;
             const int SheetBurnRounds = 2;
             const int SheetBurnRoundsPhase2 = 3;
@@ -395,8 +362,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
 
             try
             {
-                // Act — prefab visual y retrato van en null: son assets, y lo que se afirma acá son los
-                // números de la ficha. El wiring visual vive en CroupierVisualWiringTests.
+                // Act — visual y retrato en null: el wiring visual vive en CroupierVisualWiringTests.
                 CroupierAssetBuilder.PopulateEnemyData(data, _fire, _firePhase2, null, null);
 
                 // Assert
@@ -453,11 +419,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             return null;
         }
 
-        /// <summary>
-        /// Tree-walker por reflexión: todo lo alcanzable desde <paramref name="root"/>, sin descender en
-        /// <see cref="UnityEngine.Object"/> (no arrastra assets referenciados). Copiado del suite del
-        /// Sunken Grand, que es el patrón de este tipo de test.
-        /// </summary>
+        /// <summary>Tree-walker por reflexión, sin descender en <see cref="UnityEngine.Object"/>
+        /// (no arrastra assets referenciados). Copiado del suite del Sunken Grand.</summary>
         private static List<object> Descendants(object root)
         {
             var all = new List<object>();

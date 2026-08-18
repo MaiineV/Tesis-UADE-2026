@@ -9,33 +9,20 @@ using Rollgeon.Movement;
 using Rollgeon.Patterns.Bootstrap;
 using Rollgeon.Player;
 using UnityEngine;
-// Alias explícito (mismo criterio que ThreatTelegraphOverlay): sin él, `Object` en este archivo
-// resolvería a System.Object y los helpers de escena no compilarían.
+// Sin el alias, `Object` resolvería a System.Object y los helpers de escena no compilarían.
 using Object = UnityEngine.Object;
 
 namespace Rollgeon.Combat.Threat
 {
     /// <summary>
-    /// Generalization of the old <see cref="RainHazardService"/>: runs any number of active
-    /// <see cref="HazardDefinitionSO"/> in parallel, each on its own cadence and its own
-    /// <see cref="IThreatenedAreaService"/>/<see cref="IThreatOverlayService"/> source id. Adding a
-    /// new hazard type is "author a definition SO, point an <see cref="AINode_ActivateHazard"/> at
-    /// it" — no new service code required.
+    /// Runs any number of active <see cref="HazardDefinitionSO"/> in parallel, each on its own
+    /// cadence and source id.
     /// </summary>
     /// <remarks>
-    /// <para>
-    /// Same POCO + <see cref="IPreloadableService"/> pattern as <c>ThreatenedAreaService</c>.
-    /// Reuses <see cref="AINode_ExecuteTelegraph"/>/<see cref="AINode_TelegraphMark"/> as-is via a
-    /// hand-built <see cref="AIContext"/> per active hazard, once per <c>OnTurnQueueBuilt</c> —
-    /// zero telegraph logic duplicated.
-    /// </para>
-    /// <para>
-    /// <b>Two state buckets.</b> <see cref="_active"/> holds cycle-telegraph definitions keyed by
-    /// source id (the historical rain path, untouched). <see cref="_instances"/> holds dynamic-area
-    /// instances keyed by their own instance id, because <see cref="IThreatenedAreaService"/> stores
-    /// one pending area per source — routing several fires from the same SO through it would make
-    /// them silently overwrite each other.
-    /// </para>
+    /// <b>Two state buckets.</b> <see cref="_active"/> keys cycle-telegraph definitions by source
+    /// id; <see cref="_instances"/> keys dynamic-area instances by instance id, because
+    /// <see cref="IThreatenedAreaService"/> stores one pending area per source — several fires from
+    /// the same SO would silently overwrite each other there.
     /// </remarks>
     public sealed class HazardService : IHazardService, IPreloadableService, IDisposable
     {
@@ -48,13 +35,10 @@ namespace Rollgeon.Combat.Threat
         private EventManager.EventReceiver _onCombatEndHandler;
         private EventManager.EventReceiver _onRunEndHandler;
 
-        // The exact IMovementService we subscribed to, not just "are we subscribed". That service is
-        // run-scoped while this one is Global, so the registered instance can be swapped between
-        // runs: `-=` has to target the same object `+=` ran on, and re-resolving from the locator at
-        // unsubscribe time could hand us the new instance and leak the old subscription forever.
+        // The exact IMovementService we subscribed to: it is run-scoped while this service is Global,
+        // so re-resolving at unsubscribe time could hand us a newer instance and leak the old one.
         private IMovementService _movementSubscribedTo;
 
-        /// <summary>Latch for <see cref="WarnMissingPlayerServiceOnce"/>; see its remarks.</summary>
         private bool _warnedMissingPlayerService;
 
         /// <summary>Junto al resto de servicios de combate (ver <c>ThreatenedAreaService.Priority</c> = 80).</summary>
@@ -129,8 +113,8 @@ namespace Rollgeon.Combat.Threat
             var set = new HashSet<GridCoord>(tiles);
             if (set.Count == 0) return Guid.Empty;
 
-            // No SourceGuid check here on purpose: an instance is addressed by its own id, so a
-            // definition with an unparseable SourceId still works as a dynamic-area hazard.
+            // No SourceGuid check: an instance is addressed by its own id, so a definition with an
+            // unparseable SourceId still works as a dynamic-area hazard.
             var instance = new HazardInstance
             {
                 InstanceId = Guid.NewGuid(),
@@ -169,8 +153,8 @@ namespace Rollgeon.Combat.Threat
         /// <inheritdoc />
         public IEnumerable<HazardInstanceInfo> ActiveInstances()
         {
-            // Materialized, not lazy: callers routinely react to an instance by damaging/consuming
-            // it, which mutates the dictionary mid-enumeration.
+            // Materialized, not lazy: callers react to an instance by damaging/consuming it, which
+            // mutates the dictionary mid-enumeration.
             var snapshot = new List<HazardInstanceInfo>(_instances.Count);
             foreach (var instance in _instances.Values)
                 snapshot.Add(instance.ToInfo());
@@ -205,14 +189,12 @@ namespace Rollgeon.Combat.Threat
             }
             _active.Clear();
 
-            // No OnHazardExpired here: same call as ComboBlockService.Clear, which deliberately
-            // stays quiet on scope teardown so listeners don't run "the fire went out" reactions
+            // No OnHazardExpired on teardown: listeners must not run "the fire went out" reactions
             // while combat is already over.
             foreach (var pair in _instances)
             {
                 if (hasOverlay) overlay.Clear(pair.Key);
-                // El VFX sí se apaga aunque el evento no se dispare: es un GameObject en escena y
-                // sobrevive al teardown por su cuenta.
+                // El VFX sí se apaga: es un GameObject en escena y sobrevive al teardown solo.
                 ClearPersistentVfx(pair.Value);
             }
             _instances.Clear();
@@ -285,9 +267,8 @@ namespace Rollgeon.Combat.Threat
             if (!ServiceLocator.TryGetService<IPlayerService>(out var playerService) || playerService == null) return;
             if (!ServiceLocator.TryGetService<IDamagePipeline>(out var damagePipeline) || damagePipeline == null) return;
 
-            // Snapshot: nothing today activates/deactivates a hazard from inside this loop, but a
-            // future hazard could (e.g. one that deactivates itself on trigger) — iterating a copy
-            // avoids a "collection modified while enumerating" landmine down the line.
+            // Snapshot: a hazard that deactivates itself on trigger would otherwise modify the
+            // collection mid-enumeration.
             foreach (var definition in new List<HazardDefinitionSO>(_active.Values))
             {
                 int cycle = definition.CycleRounds < 1 ? 1 : definition.CycleRounds;
@@ -330,8 +311,8 @@ namespace Rollgeon.Combat.Threat
 
         private static void ClearOverlay(Guid key)
         {
-            // TryGet, not ResolveOrCreate: clearing must never be the reason an overlay (and its
-            // scene GameObject) springs into existence.
+            // TryGet, not ResolveOrCreate: clearing must never be the reason an overlay springs
+            // into existence.
             if (ServiceLocator.TryGetService<IThreatOverlayService>(out var overlay) && overlay != null)
                 overlay.Clear(key);
         }
@@ -351,34 +332,7 @@ namespace Rollgeon.Combat.Threat
             });
         }
 
-        /// <summary>
-        /// Applies one hazard hit: damage (if any), the trigger event, and tile consumption. The
-        /// event is what carries the effect other systems layer on top — the ice stun lives in
-        /// StunService listening to <c>OnHazardTriggered</c>, not here.
-        /// </summary>
-        /// <summary>
-        /// Spawns <see cref="HazardDefinitionSO.TriggerVfxPrefab"/> over <paramref name="coord"/>.
-        /// No-op — byte for byte the pre-VFX behaviour — when the definition carries no prefab.
-        /// </summary>
-        /// <remarks>
-        /// <para>
-        /// <b>The seam is the spawned GameObject itself.</b> This service is a POCO, so it has no
-        /// scene to hang the effect off; it already reaches for the scene the same way through
-        /// <see cref="ThreatTelegraphOverlay.ResolveOrCreate"/>. Rather than add a spawner interface
-        /// (a whole indirection for one <c>Instantiate</c>) the side effect stays observable: an
-        /// EditMode test hands a marker prefab, fires a trigger, and finds the clone in the scene.
-        /// </para>
-        /// <para>
-        /// <b>The delayed destroy is play-mode only.</b> <c>Object.Destroy(go, delay)</c> is a no-op
-        /// that logs in edit mode, so the lifetime is only armed while playing and the EditMode test
-        /// owns the cleanup of what it spawned. Hazards never trigger outside play mode in the game.
-        /// </para>
-        /// </remarks>
-        /// <summary>
-        /// Enciende un VFX persistente en cada casilla de la instancia. Es lo que hace legible
-        /// "esta casilla te quema si te quedás" entre pisada y pisada: el burst es el cobro, esto
-        /// es el aviso. No-op sin <see cref="HazardDefinitionSO.PersistentVfxPrefab"/>.
-        /// </summary>
+        /// <summary>No-op sin <see cref="HazardDefinitionSO.PersistentVfxPrefab"/>.</summary>
         private static void SpawnPersistentVfx(HazardInstance instance)
         {
             var prefab = instance?.Definition?.PersistentVfxPrefab;
@@ -403,10 +357,7 @@ namespace Rollgeon.Combat.Threat
             }
         }
 
-        /// <summary>
-        /// Apaga el VFX persistente de una casilla, o de todas con <paramref name="coord"/> en
-        /// <c>null</c>. Sin esto una instancia expirada deja la llama prendida para siempre.
-        /// </summary>
+        /// <summary>Apaga una casilla, o todas con <paramref name="coord"/> en <c>null</c>.</summary>
         private static void ClearPersistentVfx(HazardInstance instance, GridCoord? coord = null)
         {
             if (instance == null || instance.PersistentVfx.Count == 0) return;
@@ -425,11 +376,7 @@ namespace Rollgeon.Combat.Threat
             instance.PersistentVfx.Clear();
         }
 
-        /// <summary>
-        /// Destruye el clon de VFX. <c>Object.Destroy</c> fuera de play mode es diferido y no llega a
-        /// aplicarse dentro de un test, así que ahí se usa la variante inmediata — la destrucción es
-        /// justamente lo que estos tests afirman.
-        /// </summary>
+        /// <summary>Fuera de play mode <c>Destroy</c> es diferido y no llega a aplicarse en un test.</summary>
         private static void DestroyVfx(GameObject go)
         {
             if (go == null) return;
@@ -438,6 +385,7 @@ namespace Rollgeon.Combat.Threat
             else Object.DestroyImmediate(go);
         }
 
+        /// <summary>No-op sin <see cref="HazardDefinitionSO.TriggerVfxPrefab"/>.</summary>
         private static void SpawnTriggerVfx(HazardDefinitionSO definition, GridCoord coord)
         {
             var prefab = definition?.TriggerVfxPrefab;
@@ -454,21 +402,17 @@ namespace Rollgeon.Combat.Threat
             var instance = Object.Instantiate(prefab, world, Quaternion.identity);
             instance.name = $"{prefab.name} (hazard)";
 
+            // El destroy diferido es no-op (y loguea) fuera de play mode: sólo se arma jugando.
             if (Application.isPlaying && definition.TriggerVfxLifetime > 0f)
                 Object.Destroy(instance, definition.TriggerVfxLifetime);
         }
 
         /// <summary>
-        /// Whether <paramref name="entityGuid"/> is someone this hazard is allowed to bill. Guards
-        /// damage, the trigger event <i>and</i> tile consumption in one place, because all three are
-        /// "the hazard went off for this entity" — a boss that set off its own ice without paying
-        /// would still be burning the trap for the player.
+        /// Whether <paramref name="entityGuid"/> is someone this hazard may bill. Guards damage, the
+        /// trigger event <i>and</i> tile consumption together: a boss that set off its own ice
+        /// without paying would still be burning the trap for the player. Fail-closed on a missing
+        /// <see cref="IPlayerService"/> — a hazard that cannot name the player bills nobody.
         /// </summary>
-        /// <remarks>
-        /// <b>Fail-closed on a missing <see cref="IPlayerService"/>.</b> A <c>PlayerOnly</c> hazard
-        /// that cannot name the player bills nobody rather than falling back to billing everyone:
-        /// the fallback is exactly the bug this filter exists to kill, and it would land on the boss.
-        /// </remarks>
         private bool ShouldBill(HazardInstance instance, Guid entityGuid)
         {
             if (instance.Definition.Affects == HazardAffects.Everyone) return true;
@@ -482,10 +426,7 @@ namespace Rollgeon.Combat.Threat
             return entityGuid == playerService.PlayerGuid;
         }
 
-        /// <summary>
-        /// One warning per service instance, not per trigger: the miss recurs on every turn end of
-        /// every entity, and a per-call log would bury the console under the same line.
-        /// </summary>
+        /// <summary>Once per service instance: the miss recurs on every turn end of every entity.</summary>
         private void WarnMissingPlayerServiceOnce()
         {
             if (_warnedMissingPlayerService) return;
@@ -495,12 +436,15 @@ namespace Rollgeon.Combat.Threat
                              "no cobran a nadie. Revisá el orden de registro en ServiceBootstrap.");
         }
 
+        /// <summary>
+        /// One hazard hit: damage (if any), the trigger event, and tile consumption. The event is
+        /// what other systems layer on top — the ice stun lives in the stun binder.
+        /// </summary>
         private void TriggerInstance(HazardInstance instance, Guid entityGuid, GridCoord coord)
         {
             ApplyHazardDamage(instance, entityGuid);
 
-            // Antes del evento a propósito: un listener puede reaccionar expirando la instancia
-            // (o matando al que pisó), y el golpe ya ocurrió — el visual no debería depender de eso.
+            // Antes del evento: un listener puede expirar la instancia, y el golpe ya ocurrió.
             SpawnTriggerVfx(instance.Definition, coord);
 
             EventManager.Trigger(EventName.OnHazardTriggered, instance.InstanceId, entityGuid);
@@ -508,8 +452,7 @@ namespace Rollgeon.Combat.Threat
             if (!instance.Definition.ConsumeOnTrigger) return;
             if (!instance.Tiles.Remove(coord)) return;
 
-            // La casilla gastada apaga su llama: si no, el hielo derretido y el sector consumido
-            // seguirían ardiendo sobre una casilla que ya no cobra.
+            // La casilla gastada apaga su llama: si no, seguiría ardiendo una casilla que ya no cobra.
             ClearPersistentVfx(instance, coord);
 
             if (instance.Tiles.Count == 0)
@@ -531,8 +474,8 @@ namespace Rollgeon.Combat.Threat
             if (args == null || args.Length < 2 || !(args[1] is int roundIndex)) return;
             if (roundIndex <= 0) return;
 
-            // Retry here too: an OnEnter hazard can be activated before IMovementService is
-            // registered (or after a run swapped it out), and this is the cheapest recurring hook.
+            // Cheapest recurring retry: IMovementService may register after the hazard, or be
+            // swapped out between runs.
             EnsureMovementSubscription();
 
             TickInstanceDurations();
@@ -558,8 +501,8 @@ namespace Rollgeon.Combat.Threat
 
                 if (instance.SkipNextTick)
                 {
-                    // Consumed only by a tick that would actually have landed, so a boss can arm it
-                    // during its own turn without knowing yet whether anyone is standing in the fire.
+                    // Consumed only by a tick that would have landed, so a boss can arm it during
+                    // its own turn without knowing yet who is standing in the fire.
                     instance.SkipNextTick = false;
                     continue;
                 }
@@ -589,21 +532,18 @@ namespace Rollgeon.Combat.Threat
             }
         }
 
-        /// <summary>
-        /// Tiles the entity actually stepped <i>into</i>, in travel order — the whole path minus the
-        /// origin, so walking through a trap triggers it instead of only landing on one.
-        /// </summary>
+        /// <summary>The path minus the origin, so walking through a trap triggers it.</summary>
         private static IEnumerable<GridCoord> EnteredTiles(GridCoord from, GridCoord to, IReadOnlyList<GridCoord> path)
         {
             if (path == null || path.Count == 0)
             {
-                // Teleports / instant repositioning report no path, but the destination is still an entry.
+                // Teleports report no path, but the destination is still an entry.
                 if (!to.Equals(from)) yield return to;
                 yield break;
             }
 
-            // IMovementService paths include the origin (see IMovementService.FindPath). Dropping it
-            // by value rather than by index keeps this correct whichever end it is serialized at.
+            // IMovementService paths include the origin. Dropped by value, not by index, so this
+            // holds whichever end it is serialized at.
             foreach (var coord in path)
             {
                 if (!coord.Equals(from)) yield return coord;
@@ -614,17 +554,13 @@ namespace Rollgeon.Combat.Threat
         // Instance state
         // ======================================================================
 
-        /// <summary>Mutable runtime state of one dynamic-area hazard activation.</summary>
         private sealed class HazardInstance
         {
             public Guid InstanceId;
             public HazardDefinitionSO Definition;
             public HashSet<GridCoord> Tiles;
 
-            /// <summary>
-            /// Un VFX persistente por casilla, indexado por casilla para poder apagar sólo la que se
-            /// consume. Vacío cuando la definición no trae <c>PersistentVfxPrefab</c>.
-            /// </summary>
+            /// <summary>Indexado por casilla para poder apagar sólo la que se consume.</summary>
             public readonly Dictionary<GridCoord, GameObject> PersistentVfx =
                 new Dictionary<GridCoord, GameObject>();
 

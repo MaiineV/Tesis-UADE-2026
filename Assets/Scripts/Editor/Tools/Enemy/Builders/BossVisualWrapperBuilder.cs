@@ -10,30 +10,14 @@ using UnityEngine.UI;
 namespace Rollgeon.Editor.Tools.Enemy.Builders
 {
     /// <summary>
-    /// Fundación compartida para "vestir" un jefe: toma un prefab/FBX de <b>arte</b> y escupe el
-    /// prefab de <b>gameplay</b> que lo anida y le cuelga los componentes que el combate espera
-    /// (<see cref="EntityPawn"/>, <see cref="PawnRegistryBinding"/>, <see cref="HitImpulseConsumer"/>,
-    /// <see cref="PawnMaterialFeedback"/>, <see cref="AnimationFeedbackEvent"/> sobre el Animator,
-    /// collider y barra de vida world-space).
+    /// Fundación compartida para "vestir" un jefe: anida un prefab/FBX de <b>arte</b> en un prefab de
+    /// <b>gameplay</b> con los componentes que el combate espera (pawn, registro, hit impulse,
+    /// feedback de materiales y de animación, collider y barra de vida world-space).
     /// </summary>
     /// <remarks>
-    /// <para>
-    /// <b>Por qué existe.</b> Los prefabs de enemigos son dos capas: el de arte (rig + animator, lo
-    /// exporta el artista y se reimporta seguido) y el de gameplay que lo anida. Hacer el de gameplay
-    /// a mano por cada jefe es donde se filtran los errores que no explotan hasta el playtest — un
-    /// <c>PawnRegistryBinding</c> que falta y el jefe no recibe hit flash, un collider mal dimensionado
-    /// y el cursor no lo puede targetear. Esta utility centraliza ese armado.
-    /// </para>
-    /// <para>
-    /// <b>Sin <c>[MenuItem]</c> a propósito</b>: la consumen los builders de cada jefe, que son los que
-    /// saben qué arte, qué props y qué tinte le toca a cada uno.
-    /// </para>
-    /// <para>
-    /// <b>Idempotente</b>: si <see cref="BossWrapperSpec.OutputPrefabPath"/> ya existe, se reescribe
-    /// sobre el mismo path — <see cref="PrefabUtility.SaveAsPrefabAsset(GameObject, string)"/> preserva
-    /// el GUID del asset, así que las referencias de los <c>EnemyDataSO</c> a este prefab sobreviven al
-    /// rebuild. Lo mismo vale para los materiales clonados.
-    /// </para>
+    /// Idempotente: un <see cref="BossWrapperSpec.OutputPrefabPath"/> existente se reescribe sobre el
+    /// mismo path y <see cref="PrefabUtility.SaveAsPrefabAsset(GameObject, string)"/> preserva el
+    /// GUID, así que las referencias de los <c>EnemyDataSO</c> sobreviven al rebuild.
     /// </remarks>
     public static class BossVisualWrapperBuilder
     {
@@ -76,8 +60,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         // ======================================================================
 
         /// <summary>
-        /// Construye (o reconstruye) el prefab wrapper descrito por <paramref name="spec"/> y devuelve
-        /// el asset guardado. <c>null</c> si el spec es inválido o el arte no existe.
+        /// Construye (o reconstruye) el wrapper de <paramref name="spec"/>. <c>null</c> si el spec es
+        /// inválido o el arte no existe.
         /// </summary>
         public static GameObject BuildWrapper(BossWrapperSpec spec)
         {
@@ -138,15 +122,12 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
                 var saved = SavePrefab(root, spec.OutputPrefabPath);
                 if (saved == null) return null;
 
-                // El puente trabaja sobre el asset y no sobre el root en memoria: así la misma pasada
-                // idempotente sirve para el wrapper recién creado y para reparar uno que ya existía
-                // (que es como entró el del piso 1, con el componente puesto a mano).
+                // Sobre el asset y no sobre el root en memoria: la misma pasada sirve para el wrapper
+                // recién creado y para reparar uno preexistente.
                 var bridged = EnsureAnimationFeedbackBridge(spec.OutputPrefabPath) ?? saved;
 
-                // El EntityPawn se acaba de crear de cero, o sea con locomoción Walk. Para los rigs
-                // que se teletransportan eso es un jefe deslizándose por el piso mientras su clip
-                // dice que desapareció — y como no falla nada, el síntoma sobrevive hasta que
-                // alguien mira. Se re-deriva acá para que rebuildear un jefe no lo rompa.
+                // El EntityPawn nace con locomoción Walk: hay que re-derivarla o rebuildear un jefe
+                // de rig teletransportador lo deja deslizándose por el piso, sin fallar nada.
                 EnemyLocomotionInstaller.ApplyTo(spec.OutputPrefabPath, spec.EntityId, out _);
                 return bridged;
             }
@@ -191,8 +172,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         {
             if (!string.IsNullOrEmpty(spec.BossName)) return spec.BossName;
 
-            // "PF_Boss_Croupier.prefab" → "Croupier": el nombre sirve de carpeta y de prefijo de
-            // material, y arrastrar el "PF_Boss_" ahí sólo hace ruido.
+            // "PF_Boss_Croupier.prefab" → "Croupier": sirve de carpeta y de prefijo de material.
             var leaf = Path.GetFileNameWithoutExtension(spec.OutputPrefabPath);
             foreach (var prefix in new[] { "PF_Boss_", "PF_Enemy_", "PF_", "Boss_" })
             {
@@ -206,9 +186,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         // ======================================================================
 
         /// <summary>
-        /// Mesh y SkinnedMesh renderers del arte. Filtra a propósito los de partículas/trails: no
-        /// tienen bounds estables para dimensionar el collider ni materiales que valga la pena
-        /// clonar para el retinte.
+        /// Mesh y SkinnedMesh del arte. Los de partículas/trails se filtran: sin bounds estables para
+        /// el collider ni materiales que valga la pena clonar.
         /// </summary>
         private static List<Renderer> CollectRenderers(GameObject go)
         {
@@ -224,24 +203,12 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         // Retinte
         // ======================================================================
 
-        /// <summary>
-        /// Clona a assets nuevos los materiales listados en <see cref="BossWrapperSpec.Retints"/> y los
-        /// swapea en los renderers del arte.
-        /// </summary>
+        /// <summary>Clona los materiales de <see cref="BossWrapperSpec.Retints"/> y los swapea.</summary>
         /// <remarks>
-        /// <para>
-        /// <b>Nunca toca los materiales originales</b>: <c>Mat_Gold</c> y compañía los comparten todos
-        /// los enemigos del juego, así que retintarlos in-place repintaría medio casino.
-        /// </para>
-        /// <para>
-        /// <b>Un clon por material único, no por renderer.</b> El arte reusa el mismo material en varios
-        /// renderers y submeshes (en <c>Healer_Animated</c>, <c>Mat_Red</c> aparece en tres). Clonar por
-        /// slot dejaría N copias divergentes del mismo material y rompería el batching.
-        /// </para>
-        /// <para>
-        /// Los materiales que no están en el diccionario se dejan <b>compartidos</b>: clonar todo por si
-        /// acaso llenaría el proyecto de assets idénticos al original.
-        /// </para>
+        /// Nunca muta los originales: <c>Mat_Gold</c> y compañía los comparte todo el roster. Un clon
+        /// por material <b>único</b>, no por slot de renderer — clonar por slot deja N copias
+        /// divergentes del mismo material y rompe el batching. Lo que no está en el diccionario queda
+        /// compartido.
         /// </remarks>
         private static void Retint(List<Renderer> renderers, BossWrapperSpec spec, string bossName)
         {
@@ -318,10 +285,9 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
                 return existing;
             }
 
-            // El retinte se aplica ANTES de CreateAsset. Si el path se borró antes en la misma sesión
-            // —los fixtures de los *VisualWiringTests limpian su carpeta en el OneTimeTearDown—
-            // las mutaciones POSTERIORES a CreateAsset se pierden y el material queda con los valores
-            // del original: paleta prendida y sin retintar.
+            // El retinte va ANTES de CreateAsset: si el path se borró antes en la misma sesión (los
+            // fixtures de los *VisualWiringTests limpian su carpeta), las mutaciones posteriores a
+            // CreateAsset se pierden y el material queda con los valores del original.
             var clone = new Material(src) { name = Path.GetFileNameWithoutExtension(path) };
             ApplyRetint(clone, retint);
             AssetDatabase.CreateAsset(clone, path);
@@ -347,11 +313,9 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
                                  $"colores directos a la vez — ganan los colores directos.");
             }
 
-            // Los materiales origen (Mat_Gold y compañía) arrastran un `_USEPALETTE_ON` de cuando el
-            // shader usaba [Toggle]. El keyword no existe —el shader ramifica sobre el float— pero
-            // `new Material(src)` y `CopyPropertiesFromMaterial` lo copian igual al clon, y con el
-            // drawer viejo eso volvía a prender el float al reserializar. Se limpia al clonar para
-            // que ningún clon nazca con el estado inconsistente del original.
+            // Los materiales origen arrastran un `_USEPALETTE_ON` de cuando el shader usaba [Toggle].
+            // El keyword ya no existe, pero `new Material(src)`/`CopyPropertiesFromMaterial` lo copian
+            // al clon y con el drawer viejo eso reprendía el float al reserializar.
             material.DisableKeyword("_USEPALETTE_ON");
 
             if (hasDirect)
@@ -421,10 +385,9 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         // ======================================================================
 
         /// <summary>
-        /// Collider en el root dimensionado a los bounds del arte. Va en el root porque
-        /// <c>PawnPicker</c> resuelve el pick con <c>GetComponentInParent</c> desde el collider: el
-        /// cursor sólo puede targetear al jefe si hay un collider que cuelgue del mismo objeto que
-        /// tiene el <see cref="EntityPawn"/>.
+        /// Collider en el root dimensionado a los bounds del arte. Va en el root y no en el arte
+        /// porque <c>PawnPicker</c> resuelve el pick con <c>GetComponentInParent</c>: sin collider en
+        /// el mismo objeto que el <see cref="EntityPawn"/>, el cursor no puede targetear al jefe.
         /// </summary>
         private static void AddCollider(GameObject root, List<Renderer> renderers, ColliderKind kind)
         {
@@ -484,15 +447,13 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         // ======================================================================
 
         /// <summary>
-        /// Replica la barra world-space de GeneralDirector.prefab: canvas en World Space con
-        /// fondo + relleno (Image Filled horizontal) + marco + texto, y el
-        /// <see cref="WorldSpaceHealthBar"/> cableado a sus piezas.
+        /// Replica la barra world-space de GeneralDirector.prefab: fondo + relleno + marco + texto,
+        /// con el <see cref="WorldSpaceHealthBar"/> cableado a sus piezas.
         /// </summary>
         /// <remarks>
-        /// <b>Dos desvíos deliberados</b> respecto del prefab de referencia, ambos por el cursor:
-        /// no se agrega <c>GraphicRaycaster</c> y las Images van con <c>raycastTarget = false</c>.
-        /// En el original, la barra flota sobre la cabeza del jefe y es un raycast target válido, así
-        /// que se come el hover que <c>CursorService</c> necesita para el targeting del pawn.
+        /// Sin <c>GraphicRaycaster</c> y con <c>raycastTarget = false</c> en las Images, a diferencia
+        /// del prefab de referencia: la barra flota sobre la cabeza del jefe y como raycast target se
+        /// come el hover que <c>CursorService</c> necesita para targetear al pawn.
         /// </remarks>
         private static WorldSpaceHealthBar BuildHealthBar(GameObject root, Vector3 offset)
         {
@@ -702,23 +663,12 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         // Puente de Animation Events
         // ======================================================================
 
-        /// <summary>
-        /// Cuelga un <see cref="AnimationFeedbackEvent"/> del GameObject del <c>Animator</c> del arte
-        /// si falta, y devuelve el prefab guardado.
-        /// </summary>
+        /// <summary>Cuelga un <see cref="AnimationFeedbackEvent"/> del GameObject del Animator.</summary>
         /// <remarks>
-        /// <para>
-        /// <b>Por qué lo hace la utility y no cada builder.</b> Unity despacha los Animation Events
-        /// <b>sólo</b> al GameObject que tiene el <c>Animator</c>: sin el componente ahí, cada clip que
-        /// llama <c>PushFeedbackEvent</c> tira "AnimationEvent has no receiver" y los steps de feedback
-        /// con <c>EndMode: OnEvent</c> nunca se destraban — el golpe se ve sin su impacto. Ningún prefab
-        /// de arte lo trae (el del piso 1 lo tiene puesto a mano sobre el wrapper), así que con seis
-        /// jefes un call site por builder son seis lugares donde olvidarse, y el síntoma no aparece
-        /// hasta el playtest.
-        /// </para>
-        /// <para>
-        /// Idempotente: si el componente ya está, no se toca ni se reescribe el prefab.
-        /// </para>
+        /// Unity despacha los Animation Events <b>sólo</b> al GameObject del <c>Animator</c>: sin el
+        /// componente ahí, cada clip que llama <c>PushFeedbackEvent</c> tira "AnimationEvent has no
+        /// receiver" y los steps con <c>EndMode: OnEvent</c> nunca se destraban. Ningún prefab de arte
+        /// lo trae. Idempotente: si ya está, no se reescribe el prefab.
         /// </remarks>
         public static GameObject EnsureAnimationFeedbackBridge(string prefabPath)
         {
@@ -837,20 +787,13 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         /// <summary>Destino del wrapper, ej. <c>Assets/Prefabs/Enemies/Bosses/PF_Boss_Croupier.prefab</c>.</summary>
         public string OutputPrefabPath;
 
-        /// <summary>
-        /// Nombre para carpeta y prefijo de materiales. Si queda vacío se deriva del nombre del
-        /// output sacándole el prefijo (<c>PF_Boss_Croupier</c> → <c>Croupier</c>).
-        /// </summary>
+        /// <summary>Carpeta y prefijo de materiales. Vacío ⇒ <c>PF_Boss_Croupier</c> → <c>Croupier</c>.</summary>
         public string BossName;
 
         /// <summary>Nombre del hijo que envuelve el arte.</summary>
         public string ArtChildName = "Art";
 
-        /// <summary>
-        /// <c>EntityId</c> de la ficha que va a vestir este prefab. Sólo lo usa el reparche de
-        /// locomoción (<c>EnemyLocomotionInstaller.ForcedBlinkEntityIds</c>): vacío ⇒ el estilo lo
-        /// decide el rig y nada más.
-        /// </summary>
+        /// <summary>Sólo lo consulta <c>ForcedBlinkEntityIds</c>: vacío ⇒ la locomoción la decide el rig.</summary>
         public string EntityId;
 
         public bool AddHealthBar = true;
@@ -861,8 +804,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         public ColliderKind Collider = ColliderKind.Capsule;
 
         /// <summary>
-        /// Retinte por material: la key es el <b>nombre del material fuente</b> del arte
-        /// (ej. <c>"Mat_Gold"</c>). Los que no estén acá quedan compartidos, sin clonar.
+        /// Key = <b>nombre del material fuente</b> del arte (ej. <c>"Mat_Gold"</c>). Los ausentes
+        /// quedan compartidos, sin clonar.
         /// </summary>
         public Dictionary<string, MaterialRetint> Retints;
 
@@ -873,8 +816,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         public List<BossPropSpec> Props;
 
         /// <summary>
-        /// Si los renderers de los props entran al hit flash. Default false: el prefab de referencia
-        /// sólo tintea el cuerpo, y un prop con materiales ajenos al shader de paleta no reacciona igual.
+        /// Si los props entran al hit flash. Default false: con materiales ajenos al shader de
+        /// paleta no reaccionan igual que el cuerpo.
         /// </summary>
         public bool IncludePropRenderersInFeedback;
     }
@@ -892,14 +835,9 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
     }
 
     /// <summary>
-    /// Retinte de un material del arte. <b>Precedencia</b>: si hay colores directos, ganan sobre
-    /// <see cref="PaletteSlot"/>.
+    /// Retinte de un material. <b>Precedencia</b>: los colores directos ganan sobre
+    /// <see cref="PaletteSlot"/>. <c>Rollgeon/PaletteCelLit</c> no usa ramp textures.
     /// </summary>
-    /// <remarks>
-    /// El shader <c>Rollgeon/PaletteCelLit</c> <b>no usa ramp textures</b> (las
-    /// <c>Assets/Art/2D/Ramps/CelRamp_*.png</c> son de un shader viejo): el color sale de un slot de
-    /// la paleta global o de los tres colores directos del material.
-    /// </remarks>
     public sealed class MaterialRetint
     {
         /// <summary>Slot de <c>PA_MainPalette</c>. Ver <see cref="PaletteSlots"/>.</summary>
@@ -923,15 +861,13 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
     }
 
     /// <summary>
-    /// Índices canónicos de slot de paleta, en el orden de <c>PaletteAsset.Presets</c> — el mismo que
-    /// usan los <c>Mat_*.mat</c> del proyecto (<c>Mat_Gold</c> tiene <c>_PaletteSlot: 5</c> = Gold).
+    /// Índices canónicos de slot, en el orden de <c>PaletteAsset.Presets</c> — el mismo contra el que
+    /// están autorados los <c>Mat_*.mat</c> del proyecto.
     /// </summary>
     /// <remarks>
-    /// <b>Ojo</b>: los <c>label</c> guardados hoy en <c>PA_MainPalette.asset</c> están desalineados
-    /// respecto de esta tabla (el slot 0 dice "Black, DarkBlue, Navy, Charcoal"), porque el asset se
-    /// editó a mano después de generarse. Estas constantes siguen la tabla de presets del código, que
-    /// es contra la que están autorados los materiales; el color final que se ve sale del asset. Si un
-    /// retinte no da el color esperado, verificar el slot en el inspector del PaletteAsset.
+    /// <b>Ojo</b>: los <c>label</c> de <c>PA_MainPalette.asset</c> están desalineados respecto de esta
+    /// tabla porque el asset se editó a mano, y el color que se ve sale del asset. Si un retinte no da
+    /// el color esperado, verificar el slot en el inspector del PaletteAsset.
     /// </remarks>
     public static class PaletteSlots
     {

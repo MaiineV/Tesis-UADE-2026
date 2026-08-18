@@ -7,30 +7,13 @@ using UnityEngine;
 namespace Rollgeon.Combat.AI.Bosses.Croupier
 {
     /// <summary>
-    /// El número cantado, escrito en el centro de la ruleta. Es el "número enorme sobre el jefe" que
-    /// <see cref="ICroupierWheelService.SungNumbers"/> viene pidiendo desde que existe el servicio.
+    /// El número cantado (<see cref="ICroupierWheelService.SungNumbers"/>), escrito en el centro de la
+    /// ruleta.
     /// </summary>
     /// <remarks>
-    /// <para>
-    /// <b>Por qué hacía falta.</b> El número es el pivote del jefe entero — es el sector que detona y
-    /// también el dado que confisca — y hasta ahora no se dibujaba en ningún lado: sus únicos
-    /// consumidores eran tres nodos de IA y <see cref="CroupierWheelSpinVisual"/>, que lo convierte en
-    /// un ángulo. Un ángulo sobre un disco sin numerales no comunica nada, y por eso la ruleta se leía
-    /// como un obstáculo de escenografía en vez de como la mecánica central de la pelea.
-    /// </para>
-    /// <para>
-    /// <b>Va en el hub y no gira.</b> El disco gira detrás; el número se queda quieto. Es como se lee
-    /// una ruleta de verdad — la rueda se mueve, la ventana del resultado no. Por eso el label es hijo
-    /// del root del wrapper y no de <c>Wheel</c>: colgarlo de la rueda lo haría girar con ella y sería
-    /// ilegible justo en el momento del canto.
-    /// </para>
-    /// <para>
-    /// <b>Binding tardío, sin crear el servicio</b> — mismo criterio (y mismo motivo) que
-    /// <see cref="CroupierWheelSpinVisual"/>: el servicio lo crea el nodo que canta en su primer tick,
-    /// que puede caer después del <c>Awake</c> de este componente. Al enganchar se lee
-    /// <see cref="ICroupierWheelService.SungNumbers"/> para no perderse el primer canto, que viaja en
-    /// el mismo tick en el que el servicio nace.
-    /// </para>
+    /// El label es hijo del root del wrapper y no de <c>Wheel</c>: colgarlo de la rueda lo haría girar
+    /// con ella y sería ilegible justo en el momento del canto. Binding tardío al servicio, igual que
+    /// <see cref="CroupierWheelSpinVisual"/>.
     /// </remarks>
     [DisallowMultipleComponent]
     public sealed class CroupierWheelNumberView : MonoBehaviour
@@ -40,8 +23,7 @@ namespace Rollgeon.Combat.AI.Bosses.Croupier
 
         /// <summary>
         /// Separador entre los dos números de fase 2. Barra y no interpunto: la pixel font del HUD
-        /// (<c>m6x11plus</c>) no tiene <c>·</c> (U+00B7) en su atlas, y un glifo que falta sale como
-        /// cuadradito — justo en el dato del que cuelga toda la pelea.
+        /// (<c>m6x11plus</c>) no tiene <c>·</c> (U+00B7) en su atlas y el glifo saldría como cuadradito.
         /// </summary>
         public const string DefaultSeparator = " / ";
 
@@ -139,10 +121,7 @@ namespace Rollgeon.Combat.AI.Bosses.Croupier
         /// Los números en el aire, listos para escribir. Vacío si no hay ninguno — que es lo que pasa
         /// desde que el sector detona hasta el canto siguiente.
         /// </summary>
-        /// <remarks>
-        /// Puro y estático para poder testear el formato sin GameObject ni TMP: es la única parte de
-        /// esta vista que tiene una regla propia (fase 2 canta dos números y hay que unirlos).
-        /// </remarks>
+        /// <remarks>Puro y estático para poder testear el formato sin GameObject ni TMP.</remarks>
         public static string Format(IReadOnlyList<int> numbers, string separator)
         {
             if (numbers == null || numbers.Count == 0) return string.Empty;

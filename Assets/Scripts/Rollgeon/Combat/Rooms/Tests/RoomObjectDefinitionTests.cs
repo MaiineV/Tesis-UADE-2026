@@ -19,9 +19,8 @@ using UnityEngine;
 namespace Rollgeon.Combat.Rooms.Tests
 {
     /// <summary>
-    /// Hazard service fake: registra qué definición se activó y sobre qué casillas, sin overlays, sin
-    /// rondas y sin eventos. Lo que interesa del nodo es qué le PIDE al servicio; lo que el servicio
-    /// hace después ya lo cubren los tests de <see cref="HazardService"/>.
+    /// Registra qué definición se activó y sobre qué casillas, sin overlays, rondas ni eventos: lo
+    /// que hace el servicio después ya lo cubren los tests de <see cref="HazardService"/>.
     /// </summary>
     internal sealed class FakeHazardService : IHazardService
     {
@@ -62,9 +61,8 @@ namespace Rollgeon.Combat.Rooms.Tests
     }
 
     /// <summary>
-    /// Tests de <see cref="RoomObjectDefinitionSO"/>: los guards de la data, que son lo único con
-    /// lógica en un data bag. Cada uno cubre una definición que un builder de editor puede escribir
-    /// aunque el drawer del Inspector no la deje autorar a mano.
+    /// Los guards de <see cref="RoomObjectDefinitionSO"/>: cada caso cubre una definición que un
+    /// builder de editor puede escribir aunque el drawer del Inspector no la deje autorar a mano.
     /// </summary>
     [TestFixture]
     public class RoomObjectDefinitionTests
@@ -139,10 +137,7 @@ namespace Rollgeon.Combat.Rooms.Tests
         }
     }
 
-    /// <summary>
-    /// Tests de <see cref="AINode_SpawnRoomObjects"/>: coloca las ranuras según el patrón, mantiene
-    /// los objetos vivos, deja el hazard de muerte donde cayó el roto y lo repone en la misma casilla.
-    /// </summary>
+    /// <summary><see cref="AINode_SpawnRoomObjects"/>: colocación, rotura y reposición.</summary>
     [TestFixture]
     public class AINode_SpawnRoomObjectsTests
     {
@@ -463,8 +458,7 @@ namespace Rollgeon.Combat.Rooms.Tests
         [Test]
         public void Tick_WithoutArmorAuthored_PublishesNothing()
         {
-            // Arrange — el default de la definición es 0: un objeto es terreno hasta que alguien diga
-            // lo contrario, así que los rodillos de La Bandida no empiezan a blindarla de golpe.
+            // Arrange — el default de la definición es 0: un objeto es terreno salvo que se diga.
             _grid.LoadRoom(NavGraph.Rect(5, 5));
             ServiceLocator.AddService<AttributesManager>(_attributes);
             Assert.IsFalse(_definition.GrantsOwnerArmor);
@@ -483,12 +477,9 @@ namespace Rollgeon.Combat.Rooms.Tests
         [Test]
         public void Tick_SpawnedObjects_CountAsAlliesOfTheirOwner()
         {
-            // Arrange — es lo único que la migración de la mesa de La Generala puede romper en
-            // silencio: AINode_RollHand con SizeSource = AliveAllies resuelve el tamaño de su mano
-            // por IEntityQueryService, que itera AttributesManager.EnumerateEntries() y trata como
-            // aliado a toda entidad registrada que no sea el player. Si los objetos de sala dejaran
-            // de registrarse ahí, la jefa tiraría cero dados y su ataque desaparecería sin que
-            // ninguna excepción lo delate.
+            // Arrange — AINode_RollHand con SizeSource = AliveAllies saca el tamaño de su mano de
+            // IEntityQueryService. Si los objetos de sala dejaran de registrarse en
+            // AttributesManager, la jefa tiraría cero dados sin que nada lo delate.
             _grid.LoadRoom(NavGraph.Rect(7, 7));
             _grid.Register(_boss, new GridCoord(3, 3));
             _definition.HideFromTurnQueue = true;
@@ -522,8 +513,7 @@ namespace Rollgeon.Combat.Rooms.Tests
         [Test]
         public void Tick_BrokenObject_StopsCountingAsAnAlly_Immediately()
         {
-            // Arrange — y la cuenta tiene que bajar en el turno del jugador, no en el del jefe: la
-            // mano se arma con los dados vivos EN EL MOMENTO de tirar.
+            // Arrange
             _grid.LoadRoom(NavGraph.Rect(7, 7));
             _grid.Register(_boss, new GridCoord(3, 3));
             ServiceLocator.AddService<AttributesManager>(_attributes);
@@ -554,8 +544,7 @@ namespace Rollgeon.Combat.Rooms.Tests
         }
 
         /// <summary>
-        /// Sólo existe para que <see cref="EntityQueryService"/> pueda clasificar facciones: sin
-        /// player conocido devuelve listas vacías. Convención del repo — cada fixture declara el suyo.
+        /// <see cref="EntityQueryService"/> devuelve listas vacías sin un player conocido.
         /// </summary>
         private sealed class StubPlayerService : IPlayerService
         {
@@ -695,9 +684,8 @@ namespace Rollgeon.Combat.Rooms.Tests
         };
 
         /// <summary>
-        /// Rompe el objeto espejando el entierro de <c>CombatDeathWatcher</c> en lo único que el nodo
-        /// mira: Health en 0. Deja a propósito el registro del grid en pie para probar que el nodo
-        /// libera la casilla por su cuenta (el watcher no corre en EditMode).
+        /// Health en 0, que es lo único que el nodo mira. Deja el registro del grid en pie a
+        /// propósito: el nodo tiene que liberar la casilla solo (CombatDeathWatcher no corre acá).
         /// </summary>
         private void Break(Guid guid) => _attributes.SetAttributeValue<Health, int>(guid, 0);
     }

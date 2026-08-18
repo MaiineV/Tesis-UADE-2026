@@ -10,32 +10,10 @@ namespace Rollgeon.Combat.AI.Bosses.Croupier
     /// deja parada en el sector cantado: el ángulo de la rueda <b>es</b> el número.
     /// </summary>
     /// <remarks>
-    /// <para>
-    /// <b>Por qué el ángulo mapea al número y no es un giro decorativo.</b> El jefe canta un número que
-    /// hoy sólo se lee en el overlay del paño. Atar el ángulo al sector le da al prop una segunda
-    /// lectura del mismo dato (y gratis: el mismo tween sirve de feedback). Un giro random sería ruido
-    /// que compite con el telegraph en vez de reforzarlo.
-    /// </para>
-    /// <para>
-    /// <b>Canta vs. corrimiento.</b> <see cref="ICroupierWheelService.NumbersChanged"/> es un solo canal
-    /// para los dos, así que se clasifican por forma: si todos los números avanzaron exactamente +1
-    /// respecto del evento anterior, fue el corrimiento (un click corto); cualquier otra cosa es un
-    /// canto nuevo (giro largo con vueltas de floreo). Sin la distinción, correr la rueda daría el mismo
-    /// giro enorme que el canto y las dos cosas dejarían de diferenciarse.
-    /// </para>
-    /// <para>
-    /// <b>Nunca retrocede.</b> El objetivo siempre se busca hacia adelante: una rueda que vuelve atrás
-    /// se lee como un bug de tween, no como un sorteo — incluso cuando el número nuevo es menor.
-    /// </para>
-    /// <para>
-    /// <b>Binding tardío y sin crear el servicio.</b> El servicio lo crea el nodo que canta
-    /// (<see cref="CroupierWheelService.ResolveOrCreate"/>) en su primer tick, que puede caer después
-    /// del <c>Awake</c> de este componente. Se resuelve por <c>Update</c> (un lookup de diccionario) en
-    /// vez de crearlo desde acá: la vista no tiene por qué instanciar estado de combate, y si el jefe
-    /// nunca aparece este componente no deja un servicio registrado de más. Al enganchar se sincroniza
-    /// con <see cref="ICroupierWheelService.SungNumbers"/> para no perderse el primer canto, que ocurre
-    /// en el mismo tick en el que el servicio nace.
-    /// </para>
+    /// <see cref="ICroupierWheelService.NumbersChanged"/> es un solo canal para canto y corrimiento, así
+    /// que se clasifican por forma: todos los números exactamente +1 respecto del evento anterior es un
+    /// corrimiento (click corto); cualquier otra cosa, un canto nuevo (giro largo). Binding tardío: al
+    /// enganchar se lee <c>SungNumbers</c> para no perderse el primer canto.
     /// </remarks>
     [DisallowMultipleComponent]
     public sealed class CroupierWheelSpinVisual : MonoBehaviour
@@ -237,8 +215,7 @@ namespace Rollgeon.Combat.AI.Bosses.Croupier
 
         /// <summary>
         /// <c>true</c> si <paramref name="current"/> es <paramref name="previous"/> corrido un sector:
-        /// la firma del corrimiento. En fase 1 (el único momento en que la rueda se corre) hay un solo
-        /// número en el aire, así que "todos +1" y "el que se corrió" son lo mismo.
+        /// la firma del corrimiento.
         /// </summary>
         private bool IsSingleStepFrom(List<int> previous, IReadOnlyList<int> current)
         {

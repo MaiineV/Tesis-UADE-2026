@@ -16,11 +16,8 @@ using UnityEngine.TestTools;
 namespace Rollgeon.Combat.Tests
 {
     /// <summary>
-    /// Tests de <see cref="HazardService"/>: el runner genérico que reemplazó el loop hardcoded de
-    /// <see cref="RainHazardService"/>. Cualquier cantidad de <see cref="HazardDefinitionSO"/>
-    /// puede estar activa a la vez, cada una con su propia cadencia y su propio source id — este
-    /// suite cubre esa coexistencia (ver <see cref="RainHazardServiceTests"/> para el shim de rain
-    /// en sí, que debe seguir comportándose idéntico).
+    /// <see cref="HazardService"/> con varias <see cref="HazardDefinitionSO"/> activas a la vez,
+    /// cada una con su cadencia. El shim de rain lo cubre <see cref="RainHazardServiceTests"/>.
     /// </summary>
     [TestFixture]
     public class HazardServiceTests
@@ -59,8 +56,7 @@ namespace Rollgeon.Combat.Tests
             _pipeline = new SpyDamagePipeline();
             ServiceLocator.AddService<IDamagePipeline>(_pipeline);
 
-            // Registrado antes del service: la suscripción a OnEntityMoved es lazy pero se resuelve
-            // en el primer Activate con tiles, así que el stub tiene que existir ya.
+            // Antes del service: la suscripción a OnEntityMoved se resuelve en el primer Activate.
             _movement = new StubMovementService();
             ServiceLocator.AddService<IMovementService>(_movement);
 
@@ -83,11 +79,8 @@ namespace Rollgeon.Combat.Tests
         [TearDown]
         public void TearDown()
         {
-            // AINode_TelegraphMark dispara ThreatTelegraphOverlay.ResolveOrCreate() al marcar,
-            // que crea un GameObject "ThreatTelegraphOverlay" en la escena — limpiarlo, si no
-            // queda huérfano y contamina tests posteriores que lo buscan por nombre. El Dispose
-            // además destruye los materiales cacheados por tint (uno por color usado en el test):
-            // ahora son N y no uno, y cada uno que sobreviva es un Material leakeado.
+            // Marcar crea el GameObject del overlay y un material por tint: sin Dispose quedan
+            // huérfanos y contaminan los tests que los buscan por nombre.
             if (ServiceLocator.TryGetService<IThreatOverlayService>(out var overlay)
                 && overlay is IDisposable disposable)
             {
@@ -248,15 +241,14 @@ namespace Rollgeon.Combat.Tests
         [Test]
         public void ActivateWithTiles_SameDefinitionTwice_InstancesAreIndependent()
         {
-            // Arrange — misma definición, dos sectores detonados distintos.
+            // Arrange — misma definición, dos sectores distintos; la segunda nace una ronda después.
             var def = CreateInstanceDefinition(HazardTriggerMode.OnTurnEndInTile, damage: 7, durationRounds: 2);
             var first = _hazard.Activate(def, new[] { new GridCoord(1, 1) });
 
-            // La segunda nace una ronda después, así su duración corre por separado.
             FireRound(1);
             var second = _hazard.Activate(def, new[] { new GridCoord(6, 6) });
 
-            // Assert — dos instancias vivas del mismo SO, con identidad propia.
+            // Assert
             Assert.AreNotEqual(first, second, "Cada Activate con tiles debería crear una instancia nueva.");
             Assert.AreEqual(2, CountInstances(), "Las dos instancias del mismo SO deberían convivir.");
 
@@ -364,7 +356,7 @@ namespace Rollgeon.Combat.Tests
         [Test]
         public void OnTurnEndInTile_OnEnterHazard_DoesNotTickOnTurnEnd()
         {
-            // Arrange — el hielo no debería cobrar por quedarse parado, solo al pisar.
+            // Arrange
             var def = CreateInstanceDefinition(HazardTriggerMode.OnEnter, damage: 5);
             _hazard.Activate(def, new[] { new GridCoord(2, 2) });
             _grid.Move(_playerGuid, new GridCoord(2, 2));
@@ -379,7 +371,7 @@ namespace Rollgeon.Combat.Tests
         [Test]
         public void SkipNextTick_SuppressesExactlyOneTurnEndTick()
         {
-            // Arrange — regla de diseño: "la detonación consume la llama", pero solo ese turno.
+            // Arrange
             var def = CreateInstanceDefinition(HazardTriggerMode.OnTurnEndInTile, damage: 7);
             var instanceId = _hazard.Activate(def, new[] { new GridCoord(2, 2) });
             _grid.Move(_playerGuid, new GridCoord(2, 2));
@@ -440,7 +432,7 @@ namespace Rollgeon.Combat.Tests
         [Test]
         public void OnEnter_ZeroDamage_StillRaisesTriggeredEvent()
         {
-            // Arrange — el hielo puede no hacer daño: el stun lo aplica StunService escuchando el evento.
+            // Arrange — el stun lo aplica StunService escuchando el evento, no el daño.
             var def = CreateInstanceDefinition(HazardTriggerMode.OnEnter, damage: 0);
             var instanceId = _hazard.Activate(def, new[] { new GridCoord(3, 4) });
 
@@ -503,7 +495,7 @@ namespace Rollgeon.Combat.Tests
         [Test]
         public void OnEnter_NoPath_FallsBackToDestination()
         {
-            // Arrange — un reposicionamiento instantáneo no reporta path, pero el destino sí se pisa.
+            // Arrange — un reposicionamiento instantáneo no reporta path.
             var def = CreateInstanceDefinition(HazardTriggerMode.OnEnter, damage: 5);
             _hazard.Activate(def, new[] { new GridCoord(1, 1) });
 
@@ -517,7 +509,7 @@ namespace Rollgeon.Combat.Tests
         [Test]
         public void OnEnter_AfterCombatEnd_NoLongerTriggers()
         {
-            // Arrange — el cleanup de scope tiene que soltar también la suscripción a movimiento.
+            // Arrange — el cleanup tiene que soltar también la suscripción a movimiento.
             var def = CreateInstanceDefinition(HazardTriggerMode.OnEnter, damage: 5);
             _hazard.Activate(def, new[] { new GridCoord(3, 4) });
 
@@ -540,7 +532,7 @@ namespace Rollgeon.Combat.Tests
         [Test]
         public void CycleTelegraphAndInstances_CoexistWithoutInterfering()
         {
-            // Arrange — lluvia por ciclo + una llama de área dinámica.
+            // Arrange
             var rain = CreateDefinition(ThreatShape.ScatteredSquares, size: 1, count: 2, cycleRounds: 2,
                 damage: 6, kind: AttackKind.Environmental, sourceId: Guid.NewGuid());
             _hazard.Activate(rain);
@@ -561,15 +553,12 @@ namespace Rollgeon.Combat.Tests
 
         // ======================================================================
         // Affects — a quién le cobra el hazard
-        //
-        // Regresión del Croupier quemándose con su propio fuego: los sectores que él enciende
-        // incluyen su propia fila, cerraba el turno adentro y el hazard le cobraba 6 por turno.
         // ======================================================================
 
         [Test]
         public void OnTurnEndInTile_PlayerOnly_BossEndingTurnInTheFire_PaysNothing()
         {
-            // Arrange — el jefe parado sobre su propio sector encendido.
+            // Arrange
             var boss = Guid.NewGuid();
             _grid.Register(boss, new GridCoord(2, 2));
             var def = CreateInstanceDefinition(HazardTriggerMode.OnTurnEndInTile, damage: 6);
@@ -587,9 +576,8 @@ namespace Rollgeon.Combat.Tests
         [Test]
         public void OnTurnEndInTile_PlayerOnly_PlayerInTheSameFire_StillPays()
         {
-            // Arrange — el mismo fuego cubriendo dos casillas: el jefe en una, el jugador en la otra.
-            // Dos entidades no pueden compartir casilla, así que el contraste es "misma instancia de
-            // fuego", no "misma tile".
+            // Arrange — dos entidades no pueden compartir casilla, así que el fuego cubre dos:
+            // el contraste es "misma instancia de fuego", no "misma tile".
             var boss = Guid.NewGuid();
             _grid.Register(boss, new GridCoord(2, 2));
             _grid.Move(_playerGuid, new GridCoord(2, 3));
@@ -609,7 +597,7 @@ namespace Rollgeon.Combat.Tests
         [Test]
         public void OnEnter_PlayerOnly_BossWalkingItsOwnIce_DoesNotTriggerNorConsumeTheTile()
         {
-            // Arrange — el Anotador deja la estela caminando, así que pisa su propio hielo siempre.
+            // Arrange — el Anotador deja la estela caminando, así que pisa su propio hielo.
             var boss = Guid.NewGuid();
             _grid.Register(boss, new GridCoord(4, 4));
             var def = CreateInstanceDefinition(HazardTriggerMode.OnEnter, damage: 0, consumeOnTrigger: true);
@@ -637,7 +625,7 @@ namespace Rollgeon.Combat.Tests
         [Test]
         public void OnTurnEndInTile_AffectsEveryone_BillsTheBossToo()
         {
-            // Arrange — el opt-in explícito: el campo tiene que poder abrirse, no ser decorativo.
+            // Arrange
             var boss = Guid.NewGuid();
             _grid.Register(boss, new GridCoord(2, 2));
             var def = CreateInstanceDefinition(HazardTriggerMode.OnTurnEndInTile, damage: 6,
@@ -655,8 +643,7 @@ namespace Rollgeon.Combat.Tests
         [Test]
         public void OnTurnEndInTile_PlayerOnlyWithoutPlayerService_BillsNobody()
         {
-            // Arrange — fail-closed: sin poder nombrar al jugador, cobrarle a todos sería justamente
-            // el bug que este filtro mata, y caería sobre el jefe.
+            // Arrange — fail-closed: sin poder nombrar al jugador no se le cobra a nadie.
             var boss = Guid.NewGuid();
             _grid.Register(boss, new GridCoord(2, 2));
             _grid.Move(_playerGuid, new GridCoord(2, 3));
@@ -738,8 +725,6 @@ namespace Rollgeon.Combat.Tests
 
         private class SpyDamagePipeline : IDamagePipeline
         {
-            /// <summary>Todo lo que pasó por Resolve, en orden — los tests de hazard afirman sobre
-            /// SourceId/TargetId/BaseDamage/Kind, no solo sobre "hubo daño".</summary>
             public readonly List<DamageContext> Resolved = new List<DamageContext>();
 
             public DamageContext Resolve(DamageContext ctx)

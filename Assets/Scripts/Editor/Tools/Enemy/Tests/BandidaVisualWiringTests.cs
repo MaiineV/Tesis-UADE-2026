@@ -11,24 +11,11 @@ using Object = UnityEngine.Object;
 namespace Rollgeon.Editor.Tools.Enemy.Tests
 {
     /// <summary>
-    /// Pase visual de <b>La Bandida</b>: que el jefe y el rodillo tengan arte propio, retinte de
-    /// tragamonedas y retrato, y que los dos wrappers salgan del builder ya jugables.
+    /// Pase visual de <b>La Bandida</b>: jefe y rodillo con arte, retinte y retrato propios (antes
+    /// los dos <c>EnemyDataSO</c> apuntaban al mismo <c>SunkedGrand.prefab</c>). Toca el
+    /// <c>AssetDatabase</c> —lo que se afirma es el prefab escrito— pero construye en una carpeta
+    /// temporal que el teardown borra.
     /// </summary>
-    /// <remarks>
-    /// <para>
-    /// <b>El bug que fijan estos tests.</b> Los dos <c>EnemyDataSO</c> apuntaban al mismo
-    /// <c>SunkedGrand.prefab</c>: un humanoide gigante hacía de máquina atornillada a la pared y
-    /// también de cada uno de sus tres rodillos de 3 de vida. Si alguien vuelve a apuntar cualquiera
-    /// de los dos al placeholder, o los dos al mismo prefab, esto se pone rojo.
-    /// </para>
-    /// <para>
-    /// <b>Sí tocan el <c>AssetDatabase</c></b> (mismo criterio que
-    /// <c>BossVisualWrapperBuilderTests</c>): lo que se afirma es el prefab que queda escrito, y eso
-    /// no se puede verificar sobre una instancia in-memory. Los builds van a una carpeta temporal bajo
-    /// <c>Assets/</c> que se borra en el teardown, así que el wrapper real del proyecto no se toca al
-    /// correr los tests.
-    /// </para>
-    /// </remarks>
     [TestFixture]
     public class BandidaVisualWiringTests
     {
@@ -82,8 +69,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         [Test]
         public void AuthoredArt_IsNotThePlaceholderAnymore_ForBossNorReel()
         {
-            // Assert — SunkedGrand es un humanoide gigante: no lee ni como máquina atornillada a la
-            // pared ni como un rodillo de 3 de vida.
+            // Assert
             Assert.AreNotEqual(PlaceholderPrefabPath, BandidaAssetBuilder.BossArtPrefabPath,
                 "El arte del jefe volvió al placeholder.");
             Assert.AreNotEqual(PlaceholderPrefabPath, BandidaAssetBuilder.ReelArtPrefabPath,
@@ -93,8 +79,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         [Test]
         public void BossAndReel_DoNotShareArtPrefabNorPortrait()
         {
-            // Assert — con el mismo arte para los dos, la fila de rodillos se deja de distinguir de
-            // la máquina que los sostiene, que es lo que hacía ilegible la pinza.
+            // Assert
             Assert.AreNotEqual(BandidaAssetBuilder.BossArtPrefabPath,
                 BandidaAssetBuilder.ReelArtPrefabPath, "Jefe y rodillo comparten el arte.");
             Assert.AreNotEqual(BandidaAssetBuilder.BossVisualPrefabPath,
@@ -115,9 +100,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                 AssetDatabase.LoadAssetAtPath<GameObject>(BandidaAssetBuilder.ReelArtPrefabPath),
                 $"Falta el arte del rodillo en '{BandidaAssetBuilder.ReelArtPrefabPath}'.");
 
-            // Se chequean como Texture2D y no como Sprite a propósito: los símbolos de casino están
-            // importados como Default y recién EnsureSpriteImport (que corre en el MenuItem, no acá)
-            // los pasa a Sprite. Cargarlos como Sprite daría null sin que falte el archivo.
+            // Como Texture2D y no como Sprite: el import a Sprite lo hace el MenuItem, no este test,
+            // así que cargarlos como Sprite daría null sin que falte el archivo.
             Assert.IsNotNull(
                 AssetDatabase.LoadAssetAtPath<Texture2D>(BandidaAssetBuilder.BossPortraitPath),
                 $"Falta el retrato del jefe en '{BandidaAssetBuilder.BossPortraitPath}'.");
@@ -137,8 +121,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             var spec = BandidaAssetBuilder.BuildBossWrapperSpec();
             var artMaterials = MaterialNamesOf(BandidaAssetBuilder.BossArtPrefabPath);
 
-            // Assert — el builder compartido sólo tira un warning cuando una key no matchea, y el
-            // síntoma es que el jefe sale con el color de fábrica: nada que se note sin abrir la escena.
+            // Assert — una key que no matchea sólo tira un warning: el jefe sale de fábrica.
             foreach (var key in spec.Retints.Keys)
             {
                 CollectionAssert.Contains(artMaterials, key,
@@ -153,8 +136,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             // Arrange
             var spec = BandidaAssetBuilder.BuildBossWrapperSpec();
 
-            // Assert — los labels guardados en PA_MainPalette están desalineados respecto de la tabla
-            // de PaletteSlots: pedir "slot Red" no garantiza rojo, los colores directos sí.
+            // Assert — los labels de PA_MainPalette están desalineados: "slot Red" no garantiza rojo.
             foreach (var pair in spec.Retints)
             {
                 Assert.IsNull(pair.Value.PaletteSlot, $"'{pair.Key}' quedó pidiendo un slot de paleta.");
@@ -172,8 +154,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             var chassis = spec.Retints[ChassisSourceMaterialName].MidColor.Value;
             var hardware = spec.Retints[HardwareSourceMaterialName].MidColor.Value;
 
-            // Assert — Mat_Gold cubre torso, brazos y piernas: es la carcasa, y la carcasa de una
-            // tragamonedas es roja. El dorado se reserva para los herrajes.
+            // Assert — Mat_Gold cubre torso, brazos y piernas: es la carcasa, no los herrajes.
             AssertColorsMatch(BandidaAssetBuilder.CabinetMid, chassis,
                 "La carcasa del mech dejó de ser el rojo del gabinete.");
             AssertColorsMatch(BandidaAssetBuilder.TrimMid, hardware,
@@ -189,8 +170,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             var spec = BandidaAssetBuilder.BuildBossWrapperSpec();
             var artMaterials = MaterialNamesOf(BandidaAssetBuilder.BossArtPrefabPath);
 
-            // Assert — Mat_White es el punto de luz del torso: sobre gabinete rojo hace de "777"
-            // iluminado, así que se deja compartido en vez de clonarlo para dejarlo igual.
+            // Assert — Mat_White es el punto de luz del torso: se deja compartido a propósito.
             CollectionAssert.Contains(artMaterials, HighlightSourceMaterialName,
                 "Fixture roto: el arte ya no usa el material de highlight.");
             CollectionAssert.DoesNotContain(spec.Retints.Keys, HighlightSourceMaterialName,
@@ -203,8 +183,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             // Arrange
             var spec = BandidaAssetBuilder.BuildReelWrapperSpec();
 
-            // Assert — slotv02 ya es una tragamonedas autorada con 8 materiales por submalla; elegir
-            // colores sin ver el modelo repinta la pieza equivocada (el gabinete vs la palanca).
+            // Assert — slotv02 trae 8 materiales por submalla: retintar a ciegas repinta la pieza
+            // equivocada.
             Assert.IsTrue(spec.Retints == null || spec.Retints.Count == 0,
                 "Si se le agrega retinte al rodillo, verificar en el editor qué submalla es cuál.");
         }
@@ -238,8 +218,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             var art = _bossWrapper.transform.Find("Art");
             Assert.IsNotNull(art, "El arte tiene que quedar anidado en un hijo 'Art'.");
 
-            // Assert — el set de anims (AnimCon_Mecha) es la mitad del valor de este arte: si el
-            // wrapper deja de traer el Animator, el jefe se queda en T-pose toda la pelea.
+            // Assert — sin el Animator del arte, el jefe se queda en T-pose toda la pelea.
             Assert.IsNotNull(art.GetComponentInChildren<Animator>(true),
                 "El arte del jefe perdió el Animator.");
             Assert.Greater(art.GetComponentsInChildren<SkinnedMeshRenderer>(true).Length, 0,
@@ -252,9 +231,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             // Arrange
             var capsule = _bossWrapper.GetComponent<CapsuleCollider>();
 
-            // Assert — el mech está en T-pose: los bounds dan ~1.5 de radio y PawnPicker resuelve el
-            // pick por collider, así que sin el clamp el jefe se come los clicks de los rodillos
-            // vecinos, y romperlos es LA mecánica de esta pelea.
+            // Assert — el mech en T-pose da ~1.5 de radio y PawnPicker resuelve por collider: sin
+            // el clamp el jefe se come los clicks de los rodillos vecinos.
             Assert.IsNotNull(capsule, "El jefe necesita collider en el root para ser targeteable.");
             Assert.LessOrEqual(capsule.radius, BandidaAssetBuilder.BossColliderRadius,
                 "El capsule del jefe se pasa de su casilla y tapa la fila de rodillos.");
@@ -269,8 +247,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             // Arrange
             var clone = AssetDatabase.LoadAssetAtPath<Material>(ChassisCloneMaterialPath);
 
-            // Assert — el shader ramea `_UsePalette > 0.5 ? paleta : colores directos`: sin apagar el
-            // toggle el rojo queda escrito en el material pero invisible en pantalla.
+            // Assert — el shader ramea `_UsePalette > 0.5 ? paleta : colores directos`.
             Assert.IsNotNull(clone, $"No se clonó el material de la carcasa en '{ChassisCloneMaterialPath}'.");
             Assert.AreEqual(0f, clone.GetFloat("_UsePalette"));
             AssertColorsMatch(BandidaAssetBuilder.CabinetMid, clone.GetColor("_MidColor"),
@@ -291,8 +268,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             // Arrange
             var source = AssetDatabase.LoadAssetAtPath<Material>(ChassisSourceMaterialPath);
 
-            // Assert — Mat_Gold lo comparte medio casino de enemigos: retintarlo in-place los repinta
-            // a todos. El original tiene que seguir resolviendo por paleta.
+            // Assert — Mat_Gold lo comparte medio casino: retintarlo in-place los repinta a todos.
             Assert.IsNotNull(source, $"Fixture roto: no existe '{ChassisSourceMaterialPath}'.");
             Assert.AreEqual(1f, source.GetFloat("_UsePalette"),
                 "El builder pisó el material original en vez de clonarlo.");
@@ -309,8 +285,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             var art = _reelWrapper.transform.Find("Art");
             Assert.IsNotNull(art, "Falta el hijo 'Art' del rodillo.");
 
-            // Assert — un rodillo que respira como un enemigo se lee como un enemigo; el jugador
-            // tiene que ver un objeto rompible, no otro bicho en la cola de turnos.
+            // Assert
             Assert.IsEmpty(_reelWrapper.GetComponentsInChildren<Animator>(true),
                 "El rodillo salió con Animator: se confunde con un enemigo que actúa.");
             Assert.Greater(art.GetComponentsInChildren<MeshRenderer>(true).Length, 0,
@@ -324,14 +299,12 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             var box = _reelWrapper.GetComponent<BoxCollider>();
             var art = _reelWrapper.transform.Find("Art");
 
-            // Assert — Box y no capsule: la máquina es una caja y el pick de un blanco de 3 de vida
-            // tiene que cubrir su silueta entera.
+            // Assert — Box y no capsule: la máquina es una caja y el pick cubre la silueta entera.
             Assert.IsNotNull(box, "El rodillo quedó sin BoxCollider.");
             Assert.IsNull(_reelWrapper.GetComponent<CapsuleCollider>(),
                 "Quedaron dos colliders en el root del rodillo.");
 
-            // slotv02 trae su malla en un hijo a y = -0.5 (las salas lo compensan colocando la
-            // instancia a y = +1): sin el lift la máquina aparece medio tile hundida en el piso.
+            // slotv02 trae su malla en un hijo a y = -0.5: sin el lift queda medio tile hundida.
             Assert.AreEqual(BandidaAssetBuilder.ReelArtYLift, art.localPosition.y, 0.001f,
                 "El arte del rodillo perdió el lift que cancela el offset interno de slotv02.");
             Assert.Greater(box.center.y, 0f,
@@ -344,8 +317,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             // Arrange
             var canvas = _reelWrapper.transform.Find("Canvas");
 
-            // Assert — AINode_SpawnReels inicializa pawn.HealthBar cada vez que repone un rodillo:
-            // sin barra cableada, sus 3 de vida no se ven en ninguna parte.
+            // Assert — AINode_SpawnReels inicializa pawn.HealthBar al reponer cada rodillo.
             Assert.IsNotNull(canvas, "El rodillo quedó sin canvas de barra.");
             Assert.IsNotNull(canvas.GetComponent<WorldSpaceHealthBar>(),
                 "El canvas del rodillo quedó sin WorldSpaceHealthBar.");
@@ -356,8 +328,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         [Test]
         public void ReelWrapper_HangsItsBarLowerThanTheBossBar()
         {
-            // Assert — con las cuatro barras a la misma altura la fila queda una sopa de barras y no
-            // se distingue la del jefe de las de los rodillos.
+            // Assert
             Assert.Less(BandidaAssetBuilder.ReelHealthBarOffset.y,
                 BandidaAssetBuilder.BossHealthBarOffset.y,
                 "La barra del rodillo dejó de estar más abajo que la del jefe.");
@@ -377,8 +348,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             // Act
             var again = BandidaAssetBuilder.BuildBossVisual(BossWrapperPath, MaterialsFolder);
 
-            // Assert — los EnemyDataSO referencian el wrapper por GUID: si el rebuild lo cambia, el
-            // jefe queda sin VisualPrefab y el spawn tira error.
+            // Assert — los EnemyDataSO referencian el wrapper por GUID.
             Assert.IsNotNull(again, "El rebuild del jefe devolvió null.");
             Assert.AreEqual(guidBefore, AssetDatabase.AssetPathToGUID(BossWrapperPath),
                 "El rebuild cambió el GUID del wrapper.");
@@ -394,8 +364,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             // Act
             var again = BandidaAssetBuilder.BuildReelVisual(ReelWrapperPath, MaterialsFolder);
 
-            // Assert — el post-proceso setea la posición en absoluto, no suma un delta: dos corridas
-            // dan el mismo prefab.
+            // Assert — el post-proceso setea la posición en absoluto, no suma un delta.
             Assert.IsNotNull(again, "El rebuild del rodillo devolvió null.");
             Assert.AreEqual(BandidaAssetBuilder.ReelArtYLift,
                 again.transform.Find("Art").localPosition.y, 0.001f,
@@ -467,8 +436,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                 boss.VisualPrefab = _bossWrapper;
                 boss.Portrait = portrait;
 
-                // Act — los tests de wiring del árbol llaman al populate sin assets: no puede ser la
-                // vía por la que el jefe pierde su arte.
+                // Act — los tests de wiring del árbol llaman al populate sin assets.
                 BandidaAssetBuilder.PopulateEnemyData(boss, reel, null, null);
 
                 // Assert
@@ -487,10 +455,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         // Helpers
         // ======================================================================
 
-        /// <summary>
-        /// Comparación por canal con tolerancia: el color viaja del <c>Color32</c> del builder al YAML
-        /// del material y vuelve, así que comparar structs exactos rompería por el último bit.
-        /// </summary>
+        /// <summary>Por canal y con tolerancia: el color va y vuelve por el YAML del material, así
+        /// que comparar structs exactos rompería por el último bit.</summary>
         private static void AssertColorsMatch(Color expected, Color actual, string message)
         {
             Assert.AreEqual(expected.r, actual.r, 0.01f, message + " (r)");
@@ -515,10 +481,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             return names;
         }
 
-        /// <summary>
-        /// Sprite in-memory: los retratos reales son texturas importadas como Default, y forzarlas a
-        /// Sprite desde un test dejaría tocado el <c>.meta</c> de un asset del proyecto.
-        /// </summary>
+        /// <summary>Sprite in-memory: forzar a Sprite un retrato real dejaría tocado su
+        /// <c>.meta</c>.</summary>
         private static Sprite CreateRuntimeSprite()
         {
             var texture = new Texture2D(4, 4);

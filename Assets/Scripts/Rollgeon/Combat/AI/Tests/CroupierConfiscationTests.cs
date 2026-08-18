@@ -13,23 +13,13 @@ using UnityEngine;
 namespace Rollgeon.Combat.AI.Tests
 {
     /// <summary>
-    /// La confiscación del Croupier: el dado que se bloquea es el del número que <b>acaba de
-    /// caer</b>, leído por <see cref="AIReadCroupierWheelNumber"/> en modo
+    /// La confiscación del Croupier bloquea el dado del número que <b>acaba de caer</b>, en modo
     /// <see cref="AIReadCroupierWheelNumber.NumberSource.Detonated"/>.
     /// </summary>
     /// <remarks>
-    /// <para>
-    /// El sorteo al azar y el módulo de índices ya están cubiertos por
-    /// <c>AINode_RotateBlockDirectedTests</c>. Lo que se fija acá es lo específico del Croupier: de
-    /// cuál de las dos listas del paño sale el número, y qué pasa en la ventana en que una está
-    /// llena y la otra vacía.
-    /// </para>
-    /// <para>
-    /// <b>Por qué importa tanto la distinción.</b> <c>ConsumeWindup()</c> vacía el windup, así que
-    /// después de detonar <c>SungNumbers</c> ya no tiene el número que cayó. Un reader en modo
-    /// <c>Sung</c> en ese momento no falla: devuelve el número <i>siguiente</i>, o -1. Bloquear el
-    /// dado equivocado en silencio es peor que no bloquear ninguno.
-    /// </para>
+    /// El sorteo y el módulo de índices ya los cubre <c>AINode_RotateBlockDirectedTests</c>. Acá
+    /// importa de cuál lista sale el número: <c>ConsumeWindup()</c> vacía el windup, así que un
+    /// reader en modo <c>Sung</c> después de detonar devuelve el siguiente o -1, sin fallar.
     /// </remarks>
     [TestFixture]
     public class CroupierConfiscationTests
@@ -51,8 +41,7 @@ namespace Rollgeon.Combat.AI.Tests
 
             _bag = ScriptableObject.CreateInstance<DiceBagSO>();
             _bag.hideFlags = HideFlags.HideAndDontSave;
-            // Uno de cada tipo: es la bolsa canónica de 5 y ningún tipo pasa su MaxPerBag (una
-            // bolsa inválida sólo loguea warnings, pero ensucian el runner).
+            // Uno de cada tipo: ningún tipo pasa su MaxPerBag, que sólo loguearía warnings.
             _bag.Dice = new List<DiceType> { DiceType.D4, DiceType.D6, DiceType.D8, DiceType.D10, DiceType.D12 };
             Assert.AreEqual(BagSize, _bag.Dice.Count, "El módulo del índice se mide contra esta bolsa.");
 
@@ -102,8 +91,6 @@ namespace Rollgeon.Combat.AI.Tests
 
             var sung = Reader(AIReadCroupierWheelNumber.NumberSource.Sung);
 
-            // Este es el modo de fallo que motivó el enum: el número cantado ya no existe, y un
-            // nodo que leyera acá bloquearía otro dado (o ninguno) sin que nada lo avise.
             Assert.AreEqual(-1, sung.Read(Context()),
                 "Después de ConsumeWindup el windup está vacío: Sung no puede saber qué cayó.");
         }
@@ -174,8 +161,7 @@ namespace Rollgeon.Combat.AI.Tests
         [Test]
         public void Node_LabelsThePadlockWithTheNumberThatWasSung_NotTheSlotIndex()
         {
-            // Arrange — el reader devuelve base-0 para poder indexar la bolsa, pero lo que el jugador
-            // vio cantar es ese número más uno.
+            // Arrange — el reader devuelve base-0 para indexar la bolsa; el paño es 1-based.
             _wheel.Sing(new List<int> { 3 });
             _wheel.ConsumeWindup();
 
@@ -191,8 +177,7 @@ namespace Rollgeon.Combat.AI.Tests
         [Test]
         public void Node_LabelSurvivesTheModulo_SoTheSixStillSaysSix()
         {
-            // Arrange — el 6 confisca el dado 0 por el módulo, pero la etiqueta dice QUIÉN se lo
-            // llevó, no cuál es: el candado ya marca cuál.
+            // Arrange — el 6 confisca el dado 0 por el módulo, pero la etiqueta dice el número.
             _wheel.Sing(new List<int> { 6 });
             _wheel.ConsumeWindup();
 

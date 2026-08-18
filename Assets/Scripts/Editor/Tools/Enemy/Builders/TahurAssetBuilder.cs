@@ -19,25 +19,9 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
     /// diseño v2 (calibrada por simulación el 12/08).
     /// </summary>
     /// <remarks>
-    /// <para>
-    /// <b>Dos capas a propósito.</b> <see cref="BuildAIRoot"/> y <see cref="PopulateEnemyData"/>
-    /// son estáticos puros: no tocan <c>AssetDatabase</c>, así que los tests EditMode validan el
-    /// wiring en memoria sin depender de que el asset exista ni de un merge que lo pise.
-    /// <see cref="BuildTahurAsset"/> es la capa de assets, idempotente: crea el <c>.asset</c> si
-    /// falta y lo actualiza si ya está.
-    /// </para>
-    /// <para>
-    /// <b>Ojo con BaseHP.</b> El Tahúr son 650 — el HP más alto del juego. El <c>[Range]</c> de
-    /// <c>EnemyDataSO.BaseHP</c> se ensanchó a 1000 justamente por él: con el tope viejo el valor se
-    /// escribía bien por código pero el Inspector lo clampeaba al primer roce del slider.
-    /// </para>
-    /// <para>
-    /// <b>Tres capas desde el vestido visual.</b> A las dos de arriba se suma
-    /// <see cref="BuildVisualPrefab"/>, que arma <c>PF_Boss_Tahur.prefab</c> sobre el arte del
-    /// Sunken Grand vía <see cref="BossVisualWrapperBuilder"/>. <see cref="BuildWrapperSpec"/> y
-    /// <see cref="BuildRetints"/> quedan públicos y puros para que los tests validen la paleta sin
-    /// escribir el prefab real.
-    /// </para>
+    /// Ojo con BaseHP: el <c>[Range]</c> de <c>EnemyDataSO.BaseHP</c> se ensanchó a 1000 por este
+    /// jefe. Con el tope viejo el valor se escribía bien por código pero el Inspector lo clampeaba al
+    /// primer roce del slider.
     /// </remarks>
     public static class TahurAssetBuilder
     {
@@ -48,10 +32,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         public const string AssetPath = "Assets/Rollgeon/Enemies/ED_Boss_Tahur.asset";
 
         /// <summary>
-        /// Arte del jefe. <b>Compartido con el Sunken Grand del piso 1</b>, que sigue vivo en el pool
-        /// con su propio wrapper (<c>SunkedGrand.prefab</c>) sobre este mismo prefab: el humanoide con
-        /// abanico de 12 cartas es el tramposo de cartas que pide la ficha del Tahúr, y lo único que
-        /// los separa es el retinte de <see cref="BuildRetints"/>.
+        /// Arte del jefe, <b>compartido con el Sunken Grand del piso 1</b>: lo único que los separa
+        /// es <see cref="BuildRetints"/>.
         /// </summary>
         public const string ArtPrefabPath = "Assets/Prefabs/Enemies/SunkedGrand_Animated.prefab";
 
@@ -63,21 +45,13 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         public const string BossName = "Tahur";
         public const string MaterialsFolder = "Assets/Rollgeon/Enemies/Materials/Tahur";
 
-        /// <summary>
-        /// Altura de la barra de vida. El arte mide ~1,81 de alto (el collider a mano de
-        /// <c>SunkedGrand.prefab</c> lo confirma), así que el 3 del default de la utility —
-        /// dimensionado para el GeneralDirector, más alto — dejaría la barra flotando despegada.
-        /// </summary>
+        /// <summary>El arte mide ~1,81: con el default 3 de la utility la barra flota despegada.</summary>
         public const float HealthBarHeight = 2.4f;
 
         public const string EntityId = "boss.tahur";
         public const string DisplayName = "El Tahúr";
 
-        /// <summary>
-        /// Piso 3: ~8 turnos con el golpe base del piso (mediana 30) — el pozo entero se
-        /// juega en esa ventana. Mismo presupuesto que la Generala: es el otro jefe del
-        /// piso, no uno más largo.
-        /// </summary>
+        /// <summary>Piso 3: ~8 turnos con el golpe base del piso (mediana 30), igual que la Generala.</summary>
         public const int BaseHP = 240;
         public const int BaseAttack = 40;
         public const int BaseSpeed = 4;
@@ -103,9 +77,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         public const int DesiredRange = 1;
 
         /// <summary>
-        /// El rastrillo: fichas que el pozo sube por ronda, solo, <b>desde la fase 1</b>. Es lo que
-        /// le pone reloj a no jugar — sin él el Castigo se quedaba en 26 mientras el jugador
-        /// esquivara, y renunciar al pozo era una postura estable.
+        /// El rastrillo: fichas que el pozo sube solo por ronda, <b>desde la fase 1</b>. Sin él,
+        /// renunciar al pozo sería una postura estable.
         /// </summary>
         public const int RakeChipsPerRound = 1;
 
@@ -123,15 +96,13 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         // -----------------------------------------------------------------
 
         /// <summary>
-        /// El turno del Tahúr, en orden: cobra el Castigo marcado, voltea la carta si toca,
-        /// liquida y marca, poke si la ronda quedó limpia, canta, se acerca, pone la mesa y —con el
-        /// pozo lleno— barre la sala con La Banca.
+        /// El turno del Tahúr, en orden: cobra el Castigo marcado, voltea la carta si toca, liquida y
+        /// marca, poke, canta, se acerca, pone la mesa y —con el pozo lleno— barre con La Banca.
         /// </summary>
         /// <remarks>
-        /// Todo lo que puede fallar va en <c>Selector[nodo, Wait]</c>: en el path no-coroutine un
-        /// <c>Failed</c> aborta el Sequence y le come al jefe el resto del turno (el patrón
-        /// obligatorio de fases, ver <c>SunkenGrandPhaseWiringTests</c>). Y los gates de fase van
-        /// ANTES de la acción para que tickeen en los dos paths.
+        /// Todo lo que puede fallar va en <c>Selector[nodo, Wait]</c>: un <c>Failed</c> aborta el
+        /// Sequence y le come al jefe el resto del turno. Los gates de fase van ANTES de la acción
+        /// para que tickeen en el path coroutine y en el que no.
         /// </remarks>
         public static AINode_Sequence BuildAIRoot()
         {
@@ -139,8 +110,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
             {
                 Children = new List<AIDecisionNode>
                 {
-                    // 1 · Cobra: detona el Castigo marcado la ronda pasada. El Castigo cae sobre
-                    //     tiles lejos suyo, así que el gesto es el de rango.
+                    // 1 · Cobra el Castigo marcado la ronda pasada. Cae sobre tiles lejos suyo, así
+                    //     que el gesto es el de rango.
                     new AINode_ExecuteTelegraph { WindupFeedbackId = BossFeedbackIds.TahurRangeAnim },
 
                     // 2 · Se voltea la carta (40% de HP) — one-shot, antes de liquidar.
@@ -172,7 +143,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
                     // 5 · Canta el escalón de la próxima ronda (R03 + R01).
                     Isolate(BuildCallHand()),
 
-                    // 6 · Se acerca — nunca kitea: el que acorta es él.
+                    // 6 · Se acerca — nunca kitea.
                     Isolate(new AINode_Move
                     {
                         MaxSteps = new AIConstantInt { Value = MoveSteps },
@@ -185,9 +156,9 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
                     // 7 · Pone la mesa en su posición final.
                     Isolate(BuildMarkTable()),
 
-                    // 8 · La Banca, con el pozo lleno. Va DESPUÉS de la mesa: el hueco de la marca
-                    //     y el paño cian tienen que ser el mismo 3×3, y el paño se pinta recién
-                    //     cuando el jefe terminó de moverse.
+                    // 8 · La Banca, con el pozo lleno. Va DESPUÉS de la mesa: el hueco de la marca y
+                    //     el paño cian tienen que ser el mismo 3×3, y el paño se pinta recién cuando
+                    //     el jefe terminó de moverse.
                     Isolate(BuildBanca()),
                 },
             };
@@ -242,9 +213,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
             => new AINode_TahurMarkTable { Size = TableSize, Tint = new Color(0f, 0.85f, 1f, 1f) };
 
         /// <summary>
-        /// La Banca: con el pozo lleno, 45 en toda la sala menos La Mesa. El radio del hueco es el
-        /// mismo <see cref="TableSize"/> que pinta el paño cian — si se separan, el jugador lee una
-        /// zona segura que no lo es.
+        /// La Banca: con el pozo lleno, daño en toda la sala menos La Mesa. El hueco usa el mismo
+        /// <see cref="TableSize"/> que pinta el paño cian, o el jugador lee una zona segura falsa.
         /// </summary>
         public static AINode_TahurMarkBanca BuildBanca()
             => new AINode_TahurMarkBanca
@@ -270,15 +240,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         // -----------------------------------------------------------------
         // Paleta — "la banca": fieltro de mesa, dorado y sangre de toro
         // -----------------------------------------------------------------
-        //
-        // Por qué colores directos y no PaletteSlot: los Mat_* del arte apuntan a slots de
-        // PA_MainPalette que están desalineados respecto de sus nombres (Mat_LightGreen → slot 3,
-        // que es "Gray, LightGreen, Cyan…" y renderea gris verdoso). Con FromColors el color que se
-        // escribe es el color que se ve, y el Tahúr no depende de que nadie reordene la paleta.
-        //
-        // Por qué NO se retinta hacia naranja ni cian: la Mesa se pinta en cian y el Castigo en
-        // naranja. Un jefe que comparta esos tonos con sus propios telegraphs es ilegible por
-        // construcción (ver Table_IsAThreeByThreeAroundSelf_InItsOwnColour).
+        // Colores directos y no PaletteSlot: los slots de PA_MainPalette están desalineados respecto
+        // de sus nombres. Nada de naranja ni cian: son los de sus propios telegraphs.
 
         /// <summary>Fieltro de la mesa — levita, galera y moño. Es el área grande de la silueta.</summary>
         private static readonly Color FeltLight = new Color32(0x3C, 0x8A, 0x63, 0xFF);
@@ -300,10 +263,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         private static readonly Color GiltMid = new Color32(0xD4, 0xA4, 0x3C, 0xFF);
         private static readonly Color GiltShadow = new Color32(0x7A, 0x56, 0x19, 0xFF);
 
-        /// <summary>
-        /// Sangre de toro donde el arte pone negro (dorso de las cartas, copa de la galera). Casi
-        /// negro a propósito: la silueta sigue leyéndose negra y el carmesí sólo aparece de cerca.
-        /// </summary>
+        /// <summary>Sangre de toro donde el arte pone negro: dorso de las cartas y copa de la galera.</summary>
         private static readonly Color OxbloodLight = new Color32(0x4A, 0x19, 0x21, 0xFF);
         private static readonly Color OxbloodMid = new Color32(0x2D, 0x0E, 0x14, 0xFF);
         private static readonly Color OxbloodShadow = new Color32(0x13, 0x05, 0x08, 0xFF);
@@ -313,19 +273,14 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         private static readonly Color IvoryMid = new Color32(0xE0, 0xD4, 0xB4, 0xFF);
         private static readonly Color IvoryShadow = new Color32(0x96, 0x89, 0x6F, 0xFF);
 
-        /// <summary>
-        /// Piel cerosa de cara y manos. El Sunken Grand del piso 1 la muestra gris verdosa (de
-        /// ahogado); acá es amarillenta de tipo que vive bajo la lámpara. Es el tell de cerca más
-        /// rápido para no confundir los dos jefes.
-        /// </summary>
+        /// <summary>Piel cerosa: el tell que la separa del gris verdoso del Sunken Grand.</summary>
         private static readonly Color SallowLight = new Color32(0xE0, 0xC8, 0xA3, 0xFF);
         private static readonly Color SallowMid = new Color32(0xBE, 0x9F, 0x79, 0xFF);
         private static readonly Color SallowShadow = new Color32(0x79, 0x5C, 0x42, 0xFF);
 
         /// <summary>
-        /// Retinte por material del arte. Cubre <b>los siete</b> materiales que usa
-        /// <c>SunkedGrand_Animated</c>: cualquiera que quede afuera se comparte con el jefe del piso 1
-        /// y los vuelve gemelos en esa superficie.
+        /// Cubre <b>los siete</b> materiales de <c>SunkedGrand_Animated</c>: el que quede afuera se
+        /// comparte con el jefe del piso 1 y los vuelve gemelos en esa superficie.
         /// </summary>
         public static Dictionary<string, MaterialRetint> BuildRetints()
         {
@@ -352,17 +307,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         // Visual
         // -----------------------------------------------------------------
 
-        /// <summary>
-        /// Ficha del wrapper de gameplay del Tahúr. Pura: no toca el <c>AssetDatabase</c>.
-        /// </summary>
-        /// <remarks>
-        /// <b>Sin props.</b> La pila de fichas (<c>Assets/Prefabs/Props/Fichasv01.prefab</c>) se
-        /// evaluó como su pozo y se descartó por dos razones: el piso 3 ya tiene seis pilas idénticas
-        /// desparramadas en cada sala (la del jefe incluida), así que no aportaría silueta; y el pozo
-        /// es un contador de 0 a 5 que cambia todas las rondas — una pila fija que además se desliza
-        /// por el piso cuando el jefe camina miente sobre el estado. El pozo pide un visual que lea la
-        /// cuenta (VFX/telegraph), no set dressing parenteado al pawn.
-        /// </remarks>
+        /// <summary>Ficha del wrapper de gameplay. Pura: no toca el <c>AssetDatabase</c>.</summary>
         public static BossWrapperSpec BuildWrapperSpec()
         {
             return new BossWrapperSpec
@@ -377,26 +322,11 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
             };
         }
 
-        /// <summary>
-        /// Construye (o reconstruye) <c>PF_Boss_Tahur.prefab</c>. <c>null</c> si el arte no está.
-        /// </summary>
-        /// <remarks>
-        /// El puente de Animation Events lo pone <see cref="BossVisualWrapperBuilder.BuildWrapper"/>:
-        /// <c>Anim_SunkedGrand_Attack_Melee</c> y <c>Anim_SunkedGrand_Attack_Range</c> llaman
-        /// <c>PushFeedbackEvent</c>, pero eso dejó de ser un caso del Tahúr — los seis jefes lo
-        /// necesitan y por eso vive en la utility compartida.
-        /// </remarks>
+        /// <summary>Construye <c>PF_Boss_Tahur.prefab</c>. <c>null</c> si el arte no está.</summary>
         public static GameObject BuildVisualPrefab()
             => BossVisualWrapperBuilder.BuildWrapper(BuildWrapperSpec());
 
-        /// <summary>
-        /// Alias de <see cref="BossVisualWrapperBuilder.EnsureAnimationFeedbackBridge"/>, que es donde
-        /// vive ahora la lógica.
-        /// </summary>
-        /// <remarks>
-        /// Queda como reenvío y no se borra porque <c>TahurVisualWiringTests</c> entra por acá: era el
-        /// único builder con el puente propio, y su fixture lo llama por nombre.
-        /// </remarks>
+        /// <summary>Reenvío. No borrar: <c>TahurVisualWiringTests</c> lo llama por nombre.</summary>
         public static GameObject EnsureAnimationFeedbackBridge(string prefabPath)
             => BossVisualWrapperBuilder.EnsureAnimationFeedbackBridge(prefabPath);
 
@@ -404,15 +334,9 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         // Data
         // -----------------------------------------------------------------
 
-        /// <summary>
-        /// Escribe identidad, stats y árbol en <paramref name="data"/>. Puro: sin
-        /// <c>AssetDatabase</c>, así que corre en tests con un <c>EnemyDataSO</c> en memoria.
-        /// </summary>
-        /// <param name="visualPrefab">Pawn visual. Null = no toca el campo (el caller de assets
-        /// lo resuelve; en tests no hace falta).</param>
-        /// <param name="portrait">Retrato de la cola de turnos / barra de jefe. Null = no toca el
-        /// campo: si el arte todavía no está importado como Sprite, es mejor dejar el retrato que ya
-        /// tenía el asset que borrarlo.</param>
+        /// <summary>Escribe identidad, stats y árbol. Puro: sin <c>AssetDatabase</c>.</summary>
+        /// <param name="visualPrefab">Null = no toca el campo.</param>
+        /// <param name="portrait">Null = no toca el campo, así un arte sin importar no lo borra.</param>
         public static void PopulateEnemyData(
             EnemyDataSO data, GameObject visualPrefab = null, Sprite portrait = null)
         {
@@ -434,8 +358,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
             data.MinGoldDrop = MinGoldDrop;
             data.MaxGoldDrop = MaxGoldDrop;
 
-            // Sin debilidad, a propósito: el build que maximiza siempre es el peor posible contra
-            // él, y un ×1,5 encima de su ×2 de codicia apilaría dos multiplicadores.
+            // Sin debilidad: un ×1,5 encima de su ×2 de codicia apilaría dos multiplicadores.
             data.WeaknessComboId = string.Empty;
             data.WeaknessMultiplierOverride = 0f;
 
@@ -461,9 +384,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
                 AssetDatabase.CreateAsset(data, AssetPath);
             }
 
-            // El visual se construye antes de poblar para poder asignarlo en la misma pasada. Si el
-            // arte no está, PopulateEnemyData ignora el null y el asset conserva el prefab que ya
-            // tenía en vez de quedarse sin pawn.
+            // Antes de poblar, para asignarlo en la misma pasada. Con el arte ausente
+            // PopulateEnemyData ignora el null y el asset conserva el prefab que ya tenía.
             var prefab = BuildVisualPrefab();
             if (prefab == null)
             {
@@ -497,10 +419,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
 
         // -----------------------------------------------------------------
 
-        /// <summary>
-        /// Envuelve un nodo que puede fallar en <c>Selector[nodo, Wait]</c> para que su
-        /// <c>Failed</c> no aborte el turno entero.
-        /// </summary>
+        /// <summary><c>Selector[nodo, Wait]</c>: su <c>Failed</c> no aborta el turno entero.</summary>
         private static AINode_Selector Isolate(AIDecisionNode node)
             => new AINode_Selector
             {

@@ -52,22 +52,16 @@ namespace Rollgeon.Combat.AI.Bosses.Tahur
         public string AnimFeedbackIdOverride;
 
         /// <summary>
-        /// Key del Animation Event que marca el frame de impacto.
+        /// Key del Animation Event que marca el frame de impacto. No es autorable: es un hecho del
+        /// clip, no una decisión de diseño. Si el rig cambiara a uno sin eventos, el latch lo cubre.
         /// </summary>
-        /// <remarks>
-        /// No es autorable: es un hecho del clip, no una decisión de diseño.
-        /// <c>Anim_SunkedGrand_Attack_Melee</c> publica "hit" a los 0.467 s vía
-        /// <c>AnimationFeedbackEvent</c>, así que los 12 cobran cuando el pinche entra y no cuando
-        /// el clip termina. Si el rig cambiara a uno sin eventos, el latch de abajo lo cubre.
-        /// </remarks>
         private const string ImpactEventKey = "hit";
 
         public override string NodeName => $"Tahúr — Poke ({Damage})";
 
         /// <remarks>
-        /// Vacío significa "el id canónico del nodo", no "sin animación": Odin puede deserializar
-        /// un <c>ED_Boss_*.asset</c> viejo sin correr los field initializers, así que un default en
-        /// el campo llegaría en null y el pinche volvería a entrar invisible.
+        /// Vacío significa "el id canónico", no "sin animación": Odin deserializa un
+        /// <c>ED_Boss_*.asset</c> viejo sin correr los field initializers.
         /// </remarks>
         private string AnimFeedbackId => string.IsNullOrEmpty(AnimFeedbackIdOverride)
             ? BossFeedbackIds.TahurPokeAnim
@@ -86,7 +80,7 @@ namespace Rollgeon.Combat.AI.Bosses.Tahur
 
         /// <summary>
         /// Camino de play mode: aterriza el daño en el frame del pinche y <b>retiene el turno hasta
-        /// que el clip termina</b>. Soltar en el impacto dejaba al jefe poniendo la mesa con medio
+        /// que el clip termina</b> — soltar en el impacto deja al jefe poniendo la mesa con medio
         /// ataque todavía reproduciéndose.
         /// </summary>
         public override IEnumerator TickCoroutine(AIContext context, Action<AIResult> onResult)
@@ -110,8 +104,7 @@ namespace Rollgeon.Combat.AI.Bosses.Tahur
             var beat = PlayPoke(context, pokeOnce);
             while (beat.MoveNext()) yield return beat.Current;
 
-            // Red de seguridad: si el clip perdiera su Animation Event, o faltara el
-            // FeedbackService o el TurnManager, los 12 igual caen — tarde, pero caen.
+            // Red de seguridad: sin presentación el poke igual cobra — tarde, pero cobra.
             pokeOnce();
             onResult?.Invoke(AIResult.Succeeded);
         }
@@ -151,19 +144,16 @@ namespace Rollgeon.Combat.AI.Bosses.Tahur
         }
 
         /// <remarks>
-        /// El request se arma a mano en vez de reusar <c>EffPlaySequence</c>: el nodo no nace de un
-        /// effect pass, así que no tiene <c>EffectContext</c> que pasarle (mismo caso que la
-        /// secuencia de muerte del <c>CombatDeathWatcher</c>, y por eso <c>FeedbackRequest.Context</c>
-        /// admite null).
+        /// Request de secuencia a mano y no <c>EffPlaySequence</c>: el nodo no nace de un effect pass
+        /// y no tiene <c>EffectContext</c> que pasarle (por eso <c>FeedbackRequest.Context</c> admite null).
         /// </remarks>
         private IEnumerator PlayPoke(AIContext context, Action onImpact)
         {
             if (!ServiceLocator.TryGetService<IFeedbackService>(out var feedback) || feedback == null) yield break;
 
-            // Los tres steps arrancan juntos, como la secuencia de golpe autorada a mano de
-            // ED_MeleeCardEnemy. El impacto NO se cuelga de StartMode.OnEvent: un step esperando
-            // una key que el clip no publique queda girando para siempre, mientras que el daño sí
-            // puede engancharse al evento porque su latch tiene salida por tiempo.
+            // Los tres steps arrancan juntos. El impacto NO se cuelga de StartMode.OnEvent: un step
+            // esperando una key que el clip no publique gira para siempre; el daño sí puede, porque
+            // su latch tiene salida por tiempo.
             var steps = new List<FeedbackSequenceStep>
             {
                 Step(AnimFeedbackId),
@@ -181,15 +171,12 @@ namespace Rollgeon.Combat.AI.Bosses.Tahur
                 TargetGuid = context.PlayerGuid,
             }, () => turn?.OnFeedbackComplete());
 
-            // Sin TurnManager no hay gate que esperar — la anim igual corre, pero el daño no queda
-            // sincronizado. Mismo degradado que EffPlaySequence.
+            // Sin TurnManager no hay gate que esperar: la anim corre igual, sin sincronizar el daño.
             if (turn == null || !turn.IsWaitingForFeedback) yield break;
 
             bool impactFired = false;
 
-            // Se envuelve el wait canónico (trae su propio timeout + force-reset del depth) en vez
-            // de rehacer el loop: el bus es latched, así que pollear HasFired por frame alcanza para
-            // enganchar el Animation Event sin suscribirse a nada.
+            // El bus es latched: pollear HasFired por frame engancha el Animation Event.
             var wait = TurnManager.WaitForFeedbackCompletion(turn);
             while (wait.MoveNext())
             {

@@ -15,37 +15,22 @@ namespace Rollgeon.EditorTools
     /// </summary>
     /// <remarks>
     /// <para>
-    /// <b>Por qué un prefab por jefe y no una variante intercambiable.</b> El grafo de navegación se
-    /// hornea en el editor y queda serializado en <see cref="RoomLayout.NavGraph"/> — no hay bake en
-    /// runtime. Un blocker no "decora": mata el nodo de piso y corta sus aristas, así que alarga el
-    /// camino real, que es la moneda del presupuesto de pasos del jugador. Terreno distinto ⇒ grafo
-    /// distinto ⇒ prefab distinto.
+    /// Un prefab por jefe y no una variante: el <see cref="NavGraph"/> se hornea en el editor y queda
+    /// serializado, y un blocker no decora — mata el nodo y corta sus aristas. Terreno distinto ⇒
+    /// grafo distinto ⇒ prefab distinto.
     /// </para>
     /// <para>
-    /// <b>Idempotente por reconstrucción.</b> Cada corrida arranca de
-    /// <see cref="BossRoomPlan.BaseRoomPath"/> con <c>LoadPrefabContents</c> y escribe el resultado con
-    /// <c>SaveAsPrefabAsset</c> sobre el mismo path de salida — que preserva el GUID, así que las
-    /// referencias de los <c>RoomSO</c> sobreviven al rebuild. Como nunca se edita el output existente
-    /// sino que se lo reescribe entero, dos corridas dan la misma sala: los props no se acumulan y el
-    /// grafo no arrastra estado de la corrida anterior.
+    /// Idempotente por reconstrucción: cada corrida parte de la sala base y reescribe el output
+    /// entero sobre el mismo path, que preserva el GUID. <b>Pero no byte a byte</b> —
+    /// <c>SaveAsPrefabAsset</c> renumera los fileIDs internos en cada escritura, así que un rebuild
+    /// sin cambios reales igual aparece como diff enorme en git. Para saber si la sala cambió hay
+    /// que mirar el contenido, no el tamaño del diff. El precio es que lo editado a mano en una sala
+    /// derivada se pierde: la decoración compartida va en la sala base.
     /// </para>
     /// <para>
-    /// <b>Idempotente no quiere decir byte a byte.</b> <c>SaveAsPrefabAsset</c> renumera los fileIDs
-    /// internos del prefab en cada escritura, así que un rebuild sin cambios reales igual aparece como
-    /// diff en git. Es ruido esperable, no evidencia de que algo cambió — para saber si la sala cambió
-    /// de verdad hay que mirar el contenido (blockers, spawns, <see cref="NavGraph"/>), no el tamaño
-    /// del diff.
-    /// </para>
-    /// <para>
-    /// El precio de reconstruir es el contrato del §"Limitaciones" de <c>docs/setup/boss-rooms.md</c>:
-    /// lo que se edite a mano en una sala derivada se pierde en el próximo rebuild. La decoración
-    /// compartida va en la sala <b>base</b>, que sí propaga.
-    /// </para>
-    /// <para>
-    /// <b>Valida en vez de asumir.</b> El plano está dibujado sobre una grilla ideal de 11×7; la sala
-    /// real es 11×11 y ya trae muebles propios (la mesa de pool de piso 1/2, los barriles de las
-    /// esquinas). Por eso las tres reglas de autoría — jefe alcanzable, sala conexa, spawn del jugador
-    /// libre — se chequean contra el <b>grafo horneado</b> y no contra el plano.
+    /// Las tres reglas de autoría —jefe alcanzable, sala conexa, spawn libre— se chequean contra el
+    /// grafo horneado y no contra el plano: el plano es una grilla ideal de 11×7 y la sala real es
+    /// 11×11 con muebles propios.
     /// </para>
     /// </remarks>
     public static class BossRoomBuilder
@@ -107,26 +92,17 @@ namespace Rollgeon.EditorTools
         /// <summary>Tragamonedas — el único prop que el documento pide y que ya existe tal cual.</summary>
         private const string SlotMachineProp = "Assets/Prefabs/Props/slotv02.prefab";
 
-        /// <summary>Mesa: hace de escritorio (Anotador).</summary>
-        /// <remarks>
-        /// <b>Mide 1.805 × 1.009 × 3.017</b> (medido con <c>Rollgeon → Bosses → Dump Prop Bounds</c>):
-        /// tres casillas de <i>profundidad</i>. Sobresale una casilla y media hacia cada lado de la
-        /// fila donde se la planta, así que una hilera de mesas se ve como un muro macizo y no como
-        /// una fila de muebles. El Cajero salió de acá por eso (ver <see cref="ChipCrateProp"/>); el
-        /// Anotador la conserva porque su layout está tuneado sobre lo que se ve hoy y cambiarlo sin
-        /// playtest sería mover una sala que nadie reportó rota.
-        /// </remarks>
+        /// <summary>
+        /// Mesa: hace de escritorio (Anotador). <b>Mide 1.805 × 1.009 × 3.017</b> — tres casillas de
+        /// profundidad, así que una hilera se ve como un muro macizo. El Cajero salió de acá por eso.
+        /// </summary>
         private const string TableProp = "Assets/Prefabs/Props/Tablev02.prefab";
 
-        /// <summary>Caja de fichas: el mostrador del Cajero.</summary>
-        /// <remarks>
-        /// Mide 0.978 × 0.510 × 1.107 — <b>una casilla de huella en los dos ejes del piso</b>, que es
-        /// justo lo que la mesa no tenía. Sólo hay que corregirle la altura: con 0.510 no llega a la
-        /// banda de walk clearance del bake (<c>NavGraphBaker.WalkClearance = 0.5</c>) más que por un
-        /// centímetro, y un prop que bloquea por un centímetro es un prop que va a dejar de bloquear.
-        /// Se la escala ×2 en Y (ver el <c>PropScaleAxes</c> del plano): la huella no se toca, que es
-        /// el eje donde una deformación se vería.
-        /// </remarks>
+        /// <summary>
+        /// Caja de fichas: el mostrador del Cajero. Mide 0.978 × 0.510 × 1.107, o sea una casilla de
+        /// huella. Se le corrige sólo la altura (<c>PropScaleAxes</c> del plano): con 0.510 supera la
+        /// banda de walk clearance del bake por un centímetro, y así deja de bloquear a la primera.
+        /// </summary>
         private const string ChipCrateProp = "Assets/Prefabs/Props/CajaFichasv01.prefab";
 
         /// <summary>Barril: placeholder de las columnas hasta que haya una columna modelada.</summary>
@@ -199,30 +175,10 @@ namespace Rollgeon.EditorTools
                 PropPrefabPath = ChipCrateProp,
                 // Del lado de arriba del mostrador: elegir puerta te compromete con un lado.
                 BossPlanCell = new Vector2Int(5, 2),
-                // El mostrador, en la fila 5 — la única que cruza la sala entera sin tocar recorte ni
-                // mueble — como DOS cajas de dos casillas cada una, no como una hilera.
-                //
-                // Por qué dos y no seis. Con seis mesas la sala salió del playtest como "imposible,
-                // sólo se pasa por un lado". No era el conteo: era el prop. Tablev02 mide 3.017 de
-                // PROFUNDIDAD (Rollgeon → Bosses → Dump Prop Bounds), así que cada mesa sobresalía
-                // casilla y media hacia cada lado de la fila 5 y seis en hilera se veían como un muro
-                // de tres casillas de espesor cerrando la sala. Cambiar el prop por la caja de fichas
-                // (una casilla de huella real, ver ChipCrateProp) arregla el espesor; bajar a cuatro
-                // casillas arregla el ancho.
-                //
-                // El reparto: x=2-3 y x=7-8. Quedan tres pasos —x=0-1 al Oeste, x=4-6 en el centro,
-                // x=9-10 al Este— y el del medio mide tres casillas, que es el que se lee como puerta.
-                // Las puntas (plano x=0 y x=10 ⇒ sala x=∓5) siguen SIN prop: son los tiles-frente de
-                // las puertas Oeste y Este, y taparlas sella la sala.
-                //
-                // Sigue partiendo la sala en dos, que es lo que el peaje necesita: el mostrador es una
-                // línea legible aunque tenga huecos, y CashierCounterTollService cobra por el lado en
-                // el que cerrás el turno, no por dónde cruzaste. Ningún vano abarata cruzar: la fila
-                // del mostrador es neutral (IsSameSide devuelve false parado en ella, side == 0), así
-                // que asomarse nunca cobra y comprometerse con un lado siempre cuesta lo mismo. Esa
-                // es la regla que salva al jugador ahora que el peaje cobra todas las rondas
-                // (CajeroAssetBuilder.CounterTollEveryNRounds = 1), y con dos cajas alineadas en la
-                // misma fila se sigue viendo dónde está la línea.
+                // El mostrador va en la fila 5, la única que cruza la sala sin tocar recorte ni
+                // mueble, como dos cajas de dos casillas. Quedan tres pasos (x=0-1, x=4-6, x=9-10) y
+                // el del medio es el que se lee como puerta. Las puntas van SIN prop: son los
+                // tiles-frente de las puertas Oeste y Este y taparlas sella la sala.
                 BlockerPlanCells = new[]
                 {
                     new Vector2Int(2, 5),
@@ -896,16 +852,9 @@ namespace Rollgeon.EditorTools
         /// Vacío = la sala base se respeta tal cual.
         /// </summary>
         /// <remarks>
-        /// <para>
-        /// Es una palanca de sala, no de encuadre visual: los muebles de la base <b>bloquean</b> (ver
-        /// el warning de celda ya-bloqueada en <see cref="Build"/>), así que borrar uno también libera
-        /// las casillas que ocupaba. Se aplica antes del horneado para que el grafo salga con esas
-        /// casillas caminables en vez de quedar mintiendo.
-        /// </para>
-        /// <para>
-        /// Existe para poder sacar un mueble de una sola sala sin tocar la base, que es compartida:
-        /// la mesa de pool vive en las tres bases y editarla ahí se la saca a todos los jefes del piso.
-        /// </para>
+        /// Palanca de sala, no de encuadre: los muebles de la base bloquean, así que borrar uno
+        /// libera sus casillas. Se aplica antes del horneado. Existe para poder sacar un mueble de
+        /// una sola sala sin tocar la base, que es compartida por todos los jefes del piso.
         /// </remarks>
         public string[] RemoveBaseObjectNames = new string[0];
 
@@ -920,17 +869,9 @@ namespace Rollgeon.EditorTools
         /// para props cuyo arte no es cuadrado y desbordan la casilla en un solo eje.
         /// </summary>
         /// <remarks>
-        /// Nació con el mostrador del Cajero: <c>Tablev02</c> viene autorada a 1.508 × 1 × 1.805, así
-        /// que las mesas puestas a una casilla de paso se pisan entre sí y las aberturas del plano
-        /// (la más angosta es de una casilla) quedaban tapadas por el voladizo de las vecinas — el
-        /// mostrador se veía continuo de punta a punta y "elegir puerta", que es la decisión del
-        /// turno, no existía en pantalla.
-        /// <para>
-        /// Por qué no alcanzaba <see cref="PropScale"/>: es uniforme, así que llevar el ancho a una
-        /// casilla también bajaba la altura un 34% y el prop se caía de la banda de walk clearance
-        /// del bake — el mostrador dejaba de bloquear. Corregir sólo el eje que desborda deja la
-        /// altura (y el bloqueo) intactas.
-        /// </para>
+        /// <see cref="PropScale"/> no alcanza porque es uniforme: encoger el eje que desborda también
+        /// baja la altura, y por debajo de la banda de walk clearance del bake el prop deja de
+        /// bloquear. Medir con <c>Rollgeon → Bosses → Dump Prop Bounds</c>.
         /// </remarks>
         public Vector3 PropScaleAxes = Vector3.one;
     }

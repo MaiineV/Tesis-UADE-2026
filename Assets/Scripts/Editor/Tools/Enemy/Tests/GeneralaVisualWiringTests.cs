@@ -6,21 +6,10 @@ using UnityEngine;
 namespace Rollgeon.Editor.Tools.Enemy.Tests
 {
     /// <summary>
-    /// Tests de la capa visual de La Generala: los specs de wrapper, el fit del arte y la colocación
-    /// de los props.
+    /// Capa visual de La Generala. El fit y los props van con bounds <b>sintéticos</b> (son
+    /// funciones puras); lo único que mira el <c>AssetDatabase</c> es que el arte fuente exista,
+    /// que es la falla silenciosa del builder.
     /// </summary>
-    /// <remarks>
-    /// <para>
-    /// El fit y los props se testean con bounds <b>sintéticos</b>: son funciones puras, y pasarles
-    /// medidas a mano deja explícito qué se espera (apoyar en el piso, tocar el casco, no pasarse de
-    /// ancho) sin depender de que el artista no reexporte nada.
-    /// </para>
-    /// <para>
-    /// Lo único que sí mira el <c>AssetDatabase</c> es que el arte fuente exista: es la falla real y
-    /// silenciosa del builder — si alguien mueve <c>RangedMachine_Animated</c>, el jefe vuelve a salir
-    /// sin visual y nada lo grita hasta el playtest.
-    /// </para>
-    /// </remarks>
     [TestFixture]
     public class GeneralaVisualWiringTests
     {
@@ -43,7 +32,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         [Test]
         public void CupProp_Exists_BecauseTheCupIsHerSecondAttack()
         {
-            // Assert — el cubilete no es decorado: es el 3×3 de los turnos impares.
+            // Assert
             Assert.IsNotNull(
                 AssetDatabase.LoadAssetAtPath<GameObject>(GeneralaAssetBuilder.CupPropPrefabPath),
                 $"Falta la caja de dados en '{GeneralaAssetBuilder.CupPropPrefabPath}'.");
@@ -112,8 +101,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             // Act
             var spec = GeneralaAssetBuilder.BuildBossSpec(SampleBossFit(), null);
 
-            // Assert — Mat_White es el galón sobre el navy: retintarlo sería clonar un asset para
-            // dejarlo igual, y perder el único contraste claro del jefe.
+            // Assert — Mat_White es el galón sobre el navy: el único contraste claro del jefe.
             Assert.IsFalse(spec.Retints.ContainsKey("Mat_White"));
         }
 
@@ -137,7 +125,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             // Act
             var spec = GeneralaAssetBuilder.BuildBossSpec(fit, null);
 
-            // Assert — la barra sigue al arte medido, no a un offset fijo de humanoide.
+            // Assert
             Assert.AreEqual(fit.HealthBarOffset, spec.HealthBarOffset);
             Assert.Greater(spec.HealthBarOffset.y, fit.Bounds.max.y,
                 "La barra tiene que quedar sobre el jefe, no dentro.");
@@ -153,7 +141,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             // Act
             var spec = GeneralaAssetBuilder.BuildDiceSpec(SampleDiceFit());
 
-            // Assert — romper el dado es la mecánica: sin barra no se sabe cuánto falta.
+            // Assert
             Assert.AreEqual(GeneralaAssetBuilder.DiceArtPrefabPath, spec.ArtPrefabPath);
             Assert.AreEqual(GeneralaAssetBuilder.DiceVisualPrefabPath, spec.OutputPrefabPath);
             Assert.IsTrue(spec.AddHealthBar);
@@ -166,8 +154,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             // Act
             var spec = GeneralaAssetBuilder.BuildDiceSpec(SampleDiceFit());
 
-            // Assert — el prefab de la bandeja apunta a un material que no existe: el retinte por
-            // nombre no tiene nada que clonar, los materiales se asignan en el post-proceso.
+            // Assert — el prefab apunta a un material inexistente: no hay nada que clonar por
+            // nombre, los materiales se asignan en el post-proceso.
             Assert.IsTrue(spec.Retints == null || spec.Retints.Count == 0);
         }
 
@@ -210,7 +198,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             // Act
             var fit = GeneralaAssetBuilder.ArtFit.For(raw, 0.8f, 0.85f, 0.3f);
 
-            // Assert — sin la levantada, medio dado queda enterrado en el piso.
+            // Assert
             Assert.AreEqual(0f, fit.Bounds.min.y, 0.0001f);
             Assert.AreEqual(0f, raw.min.y * fit.Scale + fit.Lift, 0.0001f);
         }
@@ -224,7 +212,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             // Act
             var fit = GeneralaAssetBuilder.ArtFit.For(raw, 2f, 1.1f, 0.6f);
 
-            // Assert — un jefe más ancho que la casilla no se lee en qué tile está parado.
+            // Assert
             Assert.LessOrEqual(fit.Bounds.size.x, 1.1f + 0.0001f);
             Assert.Less(fit.Bounds.size.y, 2f, "Manda el ancho, no el alto.");
         }
@@ -250,7 +238,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             // Act — el fallback cuando el arte no reporta bounds usables.
             var fit = GeneralaAssetBuilder.ArtFit.Unmeasured(2.6f);
 
-            // Assert — escala 1 y sin levantar: lo que ya dejó el wrapper.
+            // Assert
             Assert.AreEqual(1f, fit.Scale, 0.0001f);
             Assert.AreEqual(0f, fit.Lift, 0.0001f);
             Assert.AreEqual(2.6f, fit.HealthBarOffset.y, 0.0001f);

@@ -19,24 +19,10 @@ namespace Rollgeon.Combat.AI.Decisions
     /// las fichas valen <see cref="ChipValueMultiplierAfterAudit"/> veces más.
     /// </summary>
     /// <remarks>
-    /// <para>
-    /// <b>No es un robo, es un secuestro.</b> El oro no desaparece: queda en
-    /// <c>ICashierLedgerService.VaultedGold</c> y vuelve completo al jugador cuando el jefe muere
-    /// (el servicio escucha <c>OnEntityDestroyed</c>). Si el jugador muere primero, gana la banca.
-    /// Es el único punto del kit del Cajero que escribe oro del jugador, y está en la ficha.
-    /// </para>
-    /// <para>
-    /// <b>Siempre Succeeded si pudo correr</b> (incluso cobrando 0 porque el jugador está seco):
-    /// va envuelto en <c>Once → Sequence[Audit, ApplyStatModifier]</c>, y un Failed acá abortaría
-    /// la secuencia y dejaría la Fase 2 sin su feedback — el jefe se quedaría sin anunciar el
-    /// cambio para siempre porque <c>Once</c> no latchea con Failed.
-    /// </para>
-    /// <para>
-    /// <b>Sólo animación, sin impacto.</b> El arqueo es el anuncio de la Fase 2 y pasa una única vez
-    /// en la pelea: sin un gesto que lo ocupe, la mitad más importante del kit del jefe entra como
-    /// un número de curación que aparece solo. Pero no lleva VFX ni Feel de impacto — el jugador
-    /// pierde oro, no vida, y el chispazo de golpe le haría leer un daño que no existe.
-    /// </para>
+    /// El oro no desaparece: queda en <c>ICashierLedgerService.VaultedGold</c> y vuelve completo al
+    /// jugador cuando el jefe muere. Siempre Succeeded si pudo correr, incluso cobrando 0 — va en
+    /// <c>Once → Sequence[Audit, ApplyStatModifier]</c> y <c>Once</c> no latchea con Failed, así que
+    /// un Failed acá dejaría la Fase 2 sin anunciar para siempre.
     /// </remarks>
     [Serializable, HideReferenceObjectPicker]
     public sealed class AINode_CashierAudit : AIActionNode
@@ -54,9 +40,8 @@ namespace Rollgeon.Combat.AI.Decisions
         public int ChipValueMultiplierAfterAudit = 2;
 
         /// <summary>
-        /// Event key del Animation Event del clip del jefe. Ver
-        /// <c>AINode_CashierRangedShot.ImpactEventKey</c>: no es campo autorable para que un
-        /// <c>ED_Boss_*</c> ya serializado no lo deserialice vacío.
+        /// Event key del Animation Event del clip del jefe. Const y no campo autorable: un
+        /// <c>ED_Boss_*</c> ya serializado lo deserializaría vacío.
         /// </summary>
         private const string ImpactEventKey = "hit";
 
@@ -97,8 +82,8 @@ namespace Rollgeon.Combat.AI.Decisions
             var gesture = PlayAudit(context, resolveOnce);
             while (gesture.MoveNext()) yield return gesture.Current;
 
-            // Red de seguridad: el arqueo es el pasaje a Fase 2 y corre una sola vez — si se perdiera
-            // por falta de presentación, el jefe se quedaría en Fase 1 el resto de la pelea.
+            // Red de seguridad: el arqueo corre una sola vez — si se perdiera por falta de
+            // presentación, el jefe se quedaría en Fase 1 el resto de la pelea.
             resolveOnce();
             onResult?.Invoke(AIResult.Succeeded);
         }
@@ -121,25 +106,11 @@ namespace Rollgeon.Combat.AI.Decisions
             if (heal > 0) ApplyHeal(attrs, context, heal);
         }
 
-        /// <summary>
-        /// Dice el trato completo: cuánto te sacó y que vuelve si lo vencés.
-        /// </summary>
+        /// <summary>Dice el trato completo: cuánto te sacó y que vuelve si lo vencés.</summary>
         /// <remarks>
-        /// <para>
-        /// <b>Sin esto la mitad más importante del kit del jefe era invisible.</b> Lo único que salía
-        /// en pantalla era el número de curación sobre el jefe, así que el arqueo se leía como "se
-        /// cura solo" — que fue literalmente la pregunta del playtest. El oro salía del bolsillo sin
-        /// un solo aviso.
-        /// </para>
-        /// <para>
-        /// <b>Dos avisos y no uno compuesto</b>, y sobre entidades distintas: el cobro va sobre el
-        /// jugador (es su oro) y la promesa de devolución sobre el jefe (es su caja). El stagger del
-        /// spawner los separa en el tiempo, así que se leen como una frase y no como un cartel.
-        /// </para>
-        /// <para>
-        /// <b>Con el jugador seco no se anuncia nada.</b> Un "-0 G" enseñaría una regla que en esa
-        /// pelea no se aplicó, y el jugador pobre ya tiene su propia lectura: el jefe no se curó.
-        /// </para>
+        /// Dos avisos sobre entidades distintas: el cobro va sobre el jugador (es su oro) y la
+        /// promesa de devolución sobre el jefe (es su caja). Con el jugador seco no se anuncia nada,
+        /// para no enseñar una regla que en esa pelea no se aplicó.
         /// </remarks>
         private static void Announce(AIContext context, int collected)
         {
@@ -160,11 +131,7 @@ namespace Rollgeon.Combat.AI.Decisions
                 Vector3.zero);
         }
 
-        /// <summary>
-        /// Lo que convierte el arqueo en secuestro y no en robo. Literal como
-        /// <c>FloatingNumberFormat.ShieldBlocked</c>: todavía no hay tabla de localización que cubra
-        /// los mensajes de jefe.
-        /// </summary>
+        /// <summary>Texto de la promesa de devolución. Literal: no hay tabla de localización de jefes.</summary>
         /// <remarks>
         /// "matas" y no "vencés": la pixel font del HUD (<c>m6x11plus</c>) no tiene <c>é</c>
         /// (U+00E9) ni <c>·</c> (U+00B7) en su atlas, y un glifo que falta sale como cuadradito.
@@ -172,9 +139,8 @@ namespace Rollgeon.Combat.AI.Decisions
         private const string VaultPromise = "Arqueo: vuelve si lo matas";
 
         /// <remarks>
-        /// Un solo step: el arqueo no golpea a nadie, así que no hay impacto que anclar sobre el
-        /// jugador. El request se arma a mano porque el nodo no nace de un effect pass y no tiene
-        /// <c>EffectContext</c> que pasarle — mismo caso que <c>CombatDeathWatcher</c>.
+        /// Un solo step: el arqueo no golpea a nadie, así que no hay impacto que anclar. El request
+        /// se arma a mano porque el nodo no nace de un effect pass y no tiene <c>EffectContext</c>.
         /// </remarks>
         private static IEnumerator PlayAudit(AIContext context, Action onImpact)
         {

@@ -42,20 +42,9 @@ namespace Rollgeon.Combat.AI.Bosses.Bandida
     /// Estado por-combate de La Bandida: la cuenta regresiva del jackpot y la fila de rodillos.
     /// </summary>
     /// <remarks>
-    /// <para>
-    /// <b>Por qué un servicio y no campos en los nodos.</b> Cinco piezas del árbol comparten el
-    /// mismo estado (tick de la cuenta, la PreCondition que la lee, el rearme, la reposición de
-    /// rodillos y el HOLD de fase), y el árbol se clona por combate: un nodo no puede alcanzar los
-    /// campos <c>[NonSerialized]</c> de otro. Acá vive el estado; los nodos son drivers finos.
-    /// </para>
-    /// <para>
-    /// <b>La cancelación es un hook de daño, no un chequeo de HP.</b> La ficha dice "se cancela
-    /// dañando cualquier rodillo", no rompiéndolo: con rodillos de 60 de vida contra un turno
-    /// mediano de 42, el caso normal es pegarle y que siga en pie, así que una PreCondition que
-    /// compare vidas dejaría al jugador sin la única palanca contra el jackpot hasta el segundo
-    /// golpe. El servicio se suscribe a <c>TypedEvent&lt;DamageResolvedPayload&gt;</c> y cancela al
-    /// primer punto de daño que entra en un rodillo.
-    /// </para>
+    /// La cancelación es un hook de daño, no un chequeo de HP: se cancela <b>dañando</b> cualquier
+    /// rodillo, no rompiéndolo. El servicio se suscribe a
+    /// <c>TypedEvent&lt;DamageResolvedPayload&gt;</c> y cancela al primer punto de daño que entra.
     /// </remarks>
     public interface IBandidaJackpotService
     {
@@ -101,9 +90,7 @@ namespace Rollgeon.Combat.AI.Bosses.Bandida
         /// </summary>
         void DetachReel(int index);
 
-        /// <summary>
-        /// Baja la cuenta un turno (mínimo 0) y publica el valor. No-op si está cancelada.
-        /// </summary>
+        /// <summary>Baja la cuenta un turno (mínimo 0) y publica el valor. No-op si está cancelada.</summary>
         int Tick();
 
         /// <summary>Rearma la cuenta en <paramref name="value"/> y la vuelve a poner a contar.</summary>

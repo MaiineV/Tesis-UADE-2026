@@ -10,16 +10,7 @@ using Rollgeon.PreConditions.Concretes;
 
 namespace Rollgeon.Combat.AI.Tests
 {
-    /// <summary>
-    /// Tests de <see cref="AINode_AnotadorPencil"/> — el lápiz del Anotador (piso 2): 12 melee
-    /// directos contra quien esté pegado cuando le toca el turno, sin marca y sin área.
-    /// </summary>
-    /// <remarks>
-    /// El caso que justifica que el nodo exista en vez de un <c>AINode_AuxTelegraph</c> con anillo
-    /// 3×3 es <see cref="Tick_MarksNothing_SoTheAxisTelegraphKeepsItsSlot"/>: al no tocar
-    /// <see cref="IThreatenedAreaService"/>, el lápiz no compite por el único área pendiente que el
-    /// servicio guarda por source guid, que es lo que obligaba al canal auxiliar.
-    /// </remarks>
+    /// <summary>El lápiz del Anotador: 12 melee directos contra quien esté pegado, sin área.</summary>
     [TestFixture]
     public class AnotadorPencilTests
     {
@@ -72,7 +63,7 @@ namespace Rollgeon.Combat.AI.Tests
         [Test]
         public void Tick_WithThePlayerAdjacent_HitsForTwelve()
         {
-            // Arrange — el jugador terminó su turno en la casilla desde la que le pega.
+            // Arrange
             PlacePlayer(new GridCoord(4, 3));
 
             // Act
@@ -90,7 +81,7 @@ namespace Rollgeon.Combat.AI.Tests
         [Test]
         public void Tick_ResolvesTheDamageNow_WithoutWaitingATurn()
         {
-            // Arrange — el lápiz dejó de telegrafiar: no hay "marca ahora, cobra el turno que viene".
+            // Arrange
             PlacePlayer(new GridCoord(5, 4));
 
             // Act
@@ -101,11 +92,7 @@ namespace Rollgeon.Combat.AI.Tests
                 "El golpe se resuelve en el mismo tick: si esperara un turno volvería a ser un telegraph.");
         }
 
-        /// <summary>
-        /// <see cref="IThreatenedAreaService"/> guarda <b>un</b> área pendiente por source guid. El
-        /// anillo del lápiz necesitaba un canal aparte para no pisar la marca de fila/columna; un
-        /// golpe sin área no toca el servicio y el problema desaparece con el nodo viejo.
-        /// </summary>
+        /// <summary><see cref="IThreatenedAreaService"/> guarda UN área pendiente por source guid.</summary>
         [Test]
         public void Tick_MarksNothing_SoTheAxisTelegraphKeepsItsSlot()
         {
@@ -131,7 +118,7 @@ namespace Rollgeon.Combat.AI.Tests
         [Test]
         public void Tick_WithThePlayerTwoTilesAway_FailsWithoutHitting()
         {
-            // Arrange — el caso mayoritario: el boss se replegó y el jugador todavía no llegó.
+            // Arrange
             PlacePlayer(new GridCoord(3, 3));
 
             // Act
@@ -143,10 +130,7 @@ namespace Rollgeon.Combat.AI.Tests
             CollectionAssert.IsEmpty(_pipeline.Resolved);
         }
 
-        /// <summary>
-        /// El rango del jugador se mide en Manhattan, así que la diagonal no es una casilla desde la
-        /// que se le pueda pegar al jefe: cobrarla sería castigar una posición que no ataca.
-        /// </summary>
+        /// <summary>El rango del jugador es Manhattan: desde la diagonal no llega al jefe.</summary>
         [Test]
         public void Tick_OnTheDiagonal_FailsBecauseTheMetricIsManhattan()
         {
@@ -161,7 +145,7 @@ namespace Rollgeon.Combat.AI.Tests
         [Test]
         public void Tick_WithChebyshev_TakesTheDiagonalToo()
         {
-            // Arrange — la métrica es un campo del nodo, no una constante escondida.
+            // Arrange
             PlacePlayer(new GridCoord(4, 2));
             var node = Pencil();
             node.Metric = DistanceMetric.Chebyshev;
@@ -191,7 +175,7 @@ namespace Rollgeon.Combat.AI.Tests
         [Test]
         public void Tick_WithoutADamagePipeline_FailsInsteadOfThrowing()
         {
-            // Arrange — el pipeline llega por el AIContext y en tests puede faltar.
+            // Arrange
             PlacePlayer(new GridCoord(4, 3));
             var context = NewContext();
             context.DamagePipeline = null;
@@ -226,7 +210,7 @@ namespace Rollgeon.Combat.AI.Tests
         [Test]
         public void Tick_WithZeroDamage_DoesNotResolveAnEmptyHit()
         {
-            // Arrange — un 0 autorado por error no debería disparar feedback ni evento de daño.
+            // Arrange — un 0 autorado por error no debe disparar feedback ni evento de daño.
             PlacePlayer(new GridCoord(4, 3));
             var node = Pencil();
             node.Damage = 0;
@@ -248,8 +232,7 @@ namespace Rollgeon.Combat.AI.Tests
             Kind = AttackKind.BasicAttack,
         };
 
-        /// <summary>Mover puede fallar en silencio (casilla ocupada / fuera de sala): se afirma acá
-        /// para que un arrange roto no se lea como un assert de comportamiento.</summary>
+        /// <summary>Mover puede fallar en silencio (casilla ocupada / fuera de sala).</summary>
         private void PlacePlayer(GridCoord coord) =>
             Assert.IsTrue(_grid.Move(_player, coord), $"Arrange: no se pudo poner al jugador en {coord}.");
 

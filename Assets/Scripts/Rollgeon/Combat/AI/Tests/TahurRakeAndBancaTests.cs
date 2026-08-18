@@ -15,10 +15,9 @@ using UnityEngine;
 namespace Rollgeon.Combat.AI.Tests
 {
     /// <summary>
-    /// Las dos líneas que le sacan al Tahúr la salida de no jugar: el rastrillo corriendo desde la
-    /// fase 1 (el pozo sube solo, así que el Castigo escala 26 → 45 sin que el jugador haga nada) y
-    /// La Banca (con el pozo lleno, 45 en toda la sala menos La Mesa). Sala real de la ficha —11×7
-    /// con las cuatro columnas— y servicios reales salvo el pipeline de daño y el overlay.
+    /// El rastrillo del Tahúr (el pozo sube solo, el Castigo escala 26 → 45) y La Banca (con el
+    /// pozo lleno, 45 en toda la sala menos La Mesa). Sala real 11×7 y servicios reales salvo el
+    /// pipeline de daño y el overlay.
     /// </summary>
     [TestFixture]
     public class TahurRakeAndBancaTests
@@ -119,7 +118,7 @@ namespace Rollgeon.Combat.AI.Tests
         [Test]
         public void Rake_StartsThePotAtOne_OnTheOpeningRound()
         {
-            // Arrange — primera ronda del combate: todavía no cantó, no hay nada que liquidar.
+            // Arrange — primera ronda: todavía no cantó, no hay nada que liquidar.
             // Act
             Assert.AreEqual(AIResult.Succeeded, Settle());
 
@@ -131,8 +130,7 @@ namespace Rollgeon.Combat.AI.Tests
         [Test]
         public void Rake_MovesThePotEveryRound_EvenWhenThePlayerNeverFails()
         {
-            // Arrange — la postura que el rastrillo viene a romper: armar el canto exacto desde
-            // lejos. Contiene el Castigo (0 fichas por resultado) y renuncia al pozo.
+            // Arrange — el jugador arma el canto exacto todas las rondas: 0 fichas por resultado.
             for (int round = 1; round <= 4; round++)
             {
                 Call(3);
@@ -152,7 +150,7 @@ namespace Rollgeon.Combat.AI.Tests
         [Test]
         public void Rake_WalksThePunishmentFromTwentySixToFortyFive_OnItsOwn()
         {
-            // Arrange — el jugador contiene todas las rondas; el Castigo escala igual.
+            // Arrange
             var expected = new[] { 26, 32, 38, 42, 45 };
 
             for (int round = 0; round < expected.Length; round++)
@@ -168,7 +166,7 @@ namespace Rollgeon.Combat.AI.Tests
                     $"Ronda {round + 1}: sin rastrillo el Castigo se quedaba clavado en 26.");
             }
 
-            // Assert — y de ahí no pasa: el pozo tiene techo y el daño también.
+            // Assert — y de ahí no pasa.
             for (int extra = 0; extra < 3; extra++) { Call(3); PlayHand(3); Settle(); }
             Assert.AreEqual(5, _wager.Chips, "La banca: el pozo tope es 5 fichas.");
             Assert.AreEqual(45, _settle.PunishmentDamageForChips(_wager.Chips));
@@ -177,8 +175,7 @@ namespace Rollgeon.Combat.AI.Tests
         [Test]
         public void Rake_DoesNotStompThePhaseTwoRhythm_OnceTheCardIsFlipped()
         {
-            // Arrange — la liquidación escribe el rastrillo de fase 1 en cada tick; después del
-            // volteo el ritmo es del volteo, o subirlo en fase 2 sería imposible.
+            // Arrange — la liquidación escribe el rastrillo de fase 1 en cada tick.
             new AINode_TahurFlipCard
             {
                 RakeChipsPerRound = 2,
@@ -250,7 +247,7 @@ namespace Rollgeon.Combat.AI.Tests
         [Test]
         public void Banca_NeverPaysMoreThanTheFloorCeiling()
         {
-            // Arrange — un balanceo futuro no puede pasar el techo del piso por accidente.
+            // Arrange
             _wager.SetChips(5);
             MarkTable();
 
@@ -270,7 +267,7 @@ namespace Rollgeon.Combat.AI.Tests
             MarkTable();
             Banca();
 
-            // Assert — la ronda del aviso no pega: el jugador todavía tiene su turno para caminar.
+            // Assert
             Assert.IsEmpty(_pipeline.Resolved, "La Banca se marca, no se cobra en el acto.");
 
             // Act — el jugador se queda afuera y la cobra al abrir el turno siguiente.
@@ -286,7 +283,7 @@ namespace Rollgeon.Combat.AI.Tests
         [Test]
         public void Banca_LeavesWhoeverIsStandingOnTheTableUntouched()
         {
-            // Arrange — la única salida es estar cobrando, o sea estar en su cara.
+            // Arrange
             MovePlayer(OnTheTable);
             _wager.SetChips(5);
             MarkTable();
@@ -302,8 +299,7 @@ namespace Rollgeon.Combat.AI.Tests
         [Test]
         public void Banca_NeverThreatensATileThePokeCanReach()
         {
-            // Arrange — el poke pega 12 y La Banca 45: si pudieran caer sobre la misma casilla, el
-            // jugador cobraría 57 y el techo de 45 por golpe del piso 3 sería mentira.
+            // Arrange — poke 12 + Banca 45 sobre la misma casilla romperían el techo de 45 del piso.
             _wager.SetChips(5);
             MarkTable();
             Banca();
@@ -322,8 +318,7 @@ namespace Rollgeon.Combat.AI.Tests
         [Test]
         public void Banca_CountsTheRoundAsMarked_SoAReorderedPokeStaysOff()
         {
-            // Arrange — hoy el poke resuelve antes que La Banca, pero el gate no puede depender del
-            // orden del árbol: un rewire que lo mueva no puede convertirlo en daño extra.
+            // Arrange — hoy el poke resuelve antes que La Banca; el gate no puede depender del orden.
             MovePlayer(OnTheTable);
             _wager.SetChips(5);
             MarkTable();
@@ -340,7 +335,7 @@ namespace Rollgeon.Combat.AI.Tests
         [Test]
         public void Banca_ReplacesThePunishmentOfTheSameRound()
         {
-            // Arrange — con el pozo lleno el Castigo ya vale 45: detonar los dos rompería el techo.
+            // Arrange — con el pozo lleno el Castigo ya vale 45: los dos juntos romperían el techo.
             _wager.SetChips(4); // el rastrillo lo deja en 5 al liquidar
             Call(6);
             PlayHand(1);
@@ -363,8 +358,7 @@ namespace Rollgeon.Combat.AI.Tests
         [Test]
         public void Banca_StandsDown_WhenThePlayerCollectsThePot()
         {
-            // Arrange — el bucle completo de la ficha: el pozo se llena solo, La Banca obliga a
-            // pisar La Mesa, y cobrar desde La Mesa es lo único que la apaga.
+            // Arrange — cobrar desde La Mesa es lo único que apaga La Banca.
             MovePlayer(OnTheTable);
             _wager.SetChips(4); // el rastrillo lo deja en 5 al liquidar
             MarkTable();
@@ -388,9 +382,8 @@ namespace Rollgeon.Combat.AI.Tests
         [Test]
         public void Banca_HoleFollowsTheTable_WhenTheTableIsWiderThanItsRadius()
         {
-            // Arrange — el radio del hueco y el Size de La Mesa se autorean por separado. Si alguna
-            // vez divergen, la promesa que tiene que sobrevivir es la del paño cian: es la única
-            // que el jugador puede leer en pantalla.
+            // Arrange — el radio del hueco y el Size de La Mesa se autorean por separado; si
+            // divergen, manda el paño cian, que es lo único que el jugador ve.
             _wager.SetChips(5);
             new AINode_TahurMarkTable { Size = 2 }.Tick(Context());
 

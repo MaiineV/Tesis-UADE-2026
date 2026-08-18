@@ -10,63 +10,21 @@ using UnityEngine;
 namespace Rollgeon.Combat.AI.Decisions
 {
     /// <summary>
-    /// "Suelta": en cada turno de columna el Cajero tira fichas de
-    /// <see cref="MinValue"/>-<see cref="MaxValue"/> de oro <b>dentro de la columna que acaba de
-    /// marcar</b>, a <see cref="MinDistanceFromPlayer"/>-<see cref="MaxDistanceFromPlayer"/> casillas
-    /// del jugador: <see cref="Count"/> si le pegaron desde su turno anterior,
-    /// <see cref="MinCount"/> si no. La ficha dura lo que su
-    /// <see cref="HazardDefinitionSO.DurationRounds"/>: se agarra ya o rueda de vuelta a la caja.
+    /// "Suelta": en cada turno de columna el Cajero tira fichas de oro dentro de la columna que acaba
+    /// de marcar, a <see cref="MinDistanceFromPlayer"/>-<see cref="MaxDistanceFromPlayer"/> del
+    /// jugador: <see cref="Count"/> si le pegaron desde su turno anterior, <see cref="MinCount"/> si no.
     /// </summary>
     /// <remarks>
     /// <para>
-    /// <b>La ficha es un hazard, no un pickup nuevo.</b> No existen pickups por tile, pero
-    /// <c>IHazardService</c> ya sabe hacer exactamente esto: un hazard con
-    /// <c>Trigger = OnEnter</c>, <c>Damage = 0</c>, <c>ConsumeOnTrigger = true</c> y
-    /// <c>DurationRounds = 2</c> se dispara cuando el jugador pisa la casilla (escaneando todo el
-    /// path, no sólo el destino), se consume y expira solo. El pago lo hace
-    /// <c>CashierLedgerService</c> escuchando <c>OnHazardTriggered</c>. Cero sistemas nuevos.
+    /// <b>Off-by-one de <c>DurationRounds</c>:</b> se descuenta en el <c>OnTurnQueueBuilt</c> de la
+    /// ronda siguiente y la ficha nace con el turno del jugador de esa ronda ya jugado (CNF-006).
+    /// Con <c>1</c> expira antes de que él pueda pisarla; "dura un turno del jugador" se autora
+    /// como <c>2</c>.
     /// </para>
     /// <para>
-    /// <b>La duración pide un turno más de lo que dice la ficha.</b> <c>DurationRounds</c> se
-    /// descuenta en el <c>OnTurnQueueBuilt</c> de la ronda siguiente, y la ficha nace en el turno del
-    /// jefe con el turno del jugador de esa ronda ya jugado (CNF-006). Con <c>1</c> la moneda moría en
-    /// ese wrap, antes de que el jugador pudiera volver a pisarla: aparecía en el piso y se iba sin
-    /// ser levantable nunca. "Dura un turno del jugador" se autora como <c>2</c>. Es el mismo
-    /// off-by-one que documenta <c>AINode_IgniteDetonatedSectors</c> para el fuego del Croupier.
-    /// </para>
-    /// <para>
-    /// <b>Va después del nodo de marca</b> en el Sequence: lee el área pendiente de
-    /// <c>IThreatenedAreaService</c>, que es justamente la columna de este turno. La plata cae donde
-    /// va a caer el hacha — eso es el diseño, no un bug.
-    /// </para>
-    /// <para>
-    /// <b>El piso de <see cref="MinCount"/> existe porque el bonus solo casi nunca caía.</b> Con
-    /// <c>RequireDamageTaken</c> como única puerta, la ficha pedía tres cosas a la vez: turno de
-    /// columna (uno de cada dos), golpe recibido en la ventana justa, y una casilla libre en la banda
-    /// de distancia. En el playtest el jugador vio <b>una</b> moneda en toda la pelea. Con el piso, la
-    /// columna siempre deja algo en el piso y pegarle sigue pagando: sube de
-    /// <see cref="MinCount"/> a <see cref="Count"/>. El personaje no cambia — te suelta plata cuando
-    /// lo lastimás—, deja de ser la única forma de ver una moneda.
-    /// </para>
-    /// <para>
-    /// <b>Devuelve Failed cuando no hay nada que soltar</b> (no hay columna, no hay casilla válida,
-    /// o no le pegaron y <see cref="MinCount"/> es 0). Es un Failed benigno: en el árbol va en
-    /// <c>Selector[DropChips, Wait]</c>, como el KeepDistance — suelto en el Sequence le abortaría el
-    /// turno al jefe.
-    /// </para>
-    /// <para>
-    /// <b>Corre todos los turnos, pero sólo paga en los de columna.</b> El jefe alterna marcar y
-    /// disparar, así que la mitad de los ticks encuentran el área vacía y salen por Failed sin
-    /// tocar el flag de daño. El golpe que el jugador metió en un turno de disparo se cobra en el
-    /// turno de columna siguiente: se pierde el timing, nunca la ficha.
-    /// </para>
-    /// <para>
-    /// <b>Sin presentación propia a propósito.</b> El hazard-ficha ya spawnea su prop de moneda, así
-    /// que el momento está en pantalla; un VFX extra lo duplicaría. Y un gesto de "tirar" del jefe
-    /// sólo funcionaría reproducido <i>antes</i> de que la moneda aparezca, lo que obliga a partir el
-    /// nodo en elegir-casillas y activar: el <c>ConsumeDamageTaken</c> es destructivo y no se puede
-    /// pre-chequear, así que animar primero y descubrir después que no había nada que soltar deja al
-    /// jefe tirando fichas invisibles. Se decidió no pagar ese refactor por un gesto secundario.
+    /// Va <b>después</b> del nodo de marca en el Sequence: lee el área pendiente de
+    /// <c>IThreatenedAreaService</c>, que es la columna de este turno. Su Failed es benigno y debe
+    /// ir en <c>Selector[DropChips, Wait]</c> — suelto en el Sequence abortaría el turno del jefe.
     /// </para>
     /// </remarks>
     [Serializable, HideReferenceObjectPicker]
@@ -118,9 +76,8 @@ namespace Rollgeon.Combat.AI.Decisions
             if (grid == null) return AIResult.Failed;
             if (!grid.TryGetPosition(context.PlayerGuid, out var playerCoord)) return AIResult.Failed;
 
-            // Se crea acá aunque todavía no vaya a soltar nada: es el nodo del Cajero que corre
-            // todos los turnos, y el reloj del rastrillo necesita al servicio escuchando rondas
-            // desde el principio, no recién cuando el jugador le pegue.
+            // Se crea acá aunque todavía no suelte nada: es el nodo que corre todos los turnos, y
+            // el reloj del rastrillo necesita al servicio escuchando rondas desde el principio.
             var ledger = CashierLedgerService.ResolveOrCreate();
 
             if (!ServiceLocator.TryGetService<IThreatenedAreaService>(out var threat) || threat == null)
@@ -132,9 +89,8 @@ namespace Rollgeon.Combat.AI.Decisions
                 return AIResult.Failed;
             }
 
-            // El flag se consume DESPUÉS de saber que hay columna: en los turnos de disparo el
-            // jefe no marca nada, y consumirlo antes se comía el golpe que el jugador acababa de
-            // pagar con su turno — una de cada dos fichas desaparecía sin caer al piso.
+            // El flag se consume DESPUÉS de saber que hay columna: en los turnos de disparo el jefe
+            // no marca nada, y consumirlo antes se comería el golpe que el jugador ya pagó.
             var column = threat.GetPendingTiles(context.SelfGuid);
             if (column == null || column.Count == 0) return AIResult.Failed;
 
@@ -178,9 +134,8 @@ namespace Rollgeon.Combat.AI.Decisions
 
         /// <summary>
         /// Elige casilla dentro de la columna: primero la banda [Min, Max] de distancia al jugador;
-        /// si está vacía, la casilla libre más cercana que igual respete el mínimo (mejor una ficha
-        /// un poco más lejos que un turno sin pagar). Nunca elige la casilla del jugador ni una
-        /// ocupada.
+        /// si está vacía, la casilla libre más cercana que igual respete el mínimo. Nunca elige la
+        /// casilla del jugador ni una ocupada.
         /// </summary>
         private bool TryPickTile(
             IGridManager grid,

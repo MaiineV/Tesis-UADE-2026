@@ -9,47 +9,30 @@ using UnityEngine;
 namespace Rollgeon.Combat.Rooms
 {
     /// <summary>
-    /// La armadura de la mesa: mientras los objetos de sala de un jefe sigan en pie, el daño que él
-    /// recibe se reduce. Cada objeto aporta
-    /// <see cref="RoomObjectDefinitionSO.OwnerDamageReductionPerObject"/>, y romper uno se lo devuelve
-    /// al jugador <b>para siempre</b>.
+    /// Mientras los objetos de sala de un jefe sigan en pie, el daño que él recibe se reduce en
+    /// <see cref="RoomObjectDefinitionSO.OwnerDamageReductionPerObject"/> por objeto. Romper uno se
+    /// lo devuelve al jugador <b>para siempre</b>.
     /// </summary>
     /// <remarks>
     /// <para>
-    /// <b>Qué agrega a la pelea.</b> Los cinco dados de La Generala hacían dos cosas invisibles:
-    /// bloquear el paso y borrarle una categoría de la mano. Ninguna aparece en pantalla, así que la
-    /// mesa se leía como decorado y romperla parecía una pérdida de turnos. La reducción le pone el
-    /// número adelante: el primer golpe hace 9 en vez de 30, y sube cada vez que rompés un dado.
+    /// El latch es monótono y va por <b>índice</b> de ranura, no por guid: el objeto repuesto vuelve
+    /// a bloquear el paso, pero su parte de la reducción no vuelve.
     /// </para>
     /// <para>
-    /// <b>Progreso permanente, por ranura.</b> El latch es monótono y va por <b>índice</b> de ranura,
-    /// no por guid: el dado repuesto vuelve a bloquear y a darle la categoría, pero su parte de la
-    /// reducción no vuelve. Sin eso la mesa sería una noria —limpiás cinco dados, se reponen, volvés a
-    /// empezar— y la inversión de romperlos no compraría nada estable.
+    /// <b>Se evalúa al consultar, no al publicar.</b> El nodo del jefe tickea en el turno del jefe,
+    /// y congelar la cuenta ahí haría que romper un objeto en el turno del jugador no bajara la
+    /// reducción hasta el turno siguiente. Un objeto enterrado conserva su <see cref="Health"/> en
+    /// &lt;= 0 (<c>CombatDeathWatcher</c> no lo desregistra de <see cref="AttributesManager"/>), así
+    /// que HP &lt;= 0 o sin registro = roto.
     /// </para>
     /// <para>
-    /// <b>El latch se evalúa al consultar, no al publicar.</b> El nodo del jefe tickea en el turno del
-    /// jefe; si la cuenta se congelara ahí, romper un dado en el turno del jugador no bajaría la
-    /// reducción hasta el turno siguiente y el golpe de después seguiría reducido. Eso se lee como que
-    /// el juego no registró el impacto. Así que <see cref="TryGetMultiplier"/> lee la
-    /// <see cref="Health"/> viva de cada guid publicado en ese momento. Un objeto enterrado conserva su
-    /// Health en &lt;= 0 (<c>CombatDeathWatcher</c> no lo desregistra de
-    /// <see cref="AttributesManager"/>), así que HP &lt;= 0 o sin registro = roto — misma fuente de
-    /// verdad que el alive-check de la AI de targeting.
-    /// </para>
-    /// <para>
-    /// <b>Techo.</b> <see cref="MaxReduction"/> impide que una definición mal autorada (o un jefe con
-    /// muchos objetos) lo vuelva invulnerable. Una reducción del 100% no es una mecánica dura, es una
-    /// pelea que no termina.
-    /// </para>
-    /// <para>
-    /// <b>Se suscribe a los scopes</b> para olvidar mesas al terminar la pelea: el servicio es Global y
-    /// una tabla que sobreviva le daría armadura a un guid que ya no existe.
+    /// Global, y olvida mesas al terminar la pelea: una tabla que sobreviva le daría armadura a un
+    /// guid que ya no existe.
     /// </para>
     /// </remarks>
     public sealed class RoomObjectArmorService : IIncomingDamageMultiplierProvider, IDisposable
     {
-        /// <summary>Reducción máxima, sin importar cuántos objetos aporten. 0.9 = pega el 10%.</summary>
+        /// <summary>Techo (0.9 = pega el 10%): ninguna definición puede volver al jefe invulnerable.</summary>
         public const float MaxReduction = 0.9f;
 
         private readonly Dictionary<Guid, Table> _tables = new Dictionary<Guid, Table>();
@@ -83,14 +66,11 @@ namespace Rollgeon.Combat.Rooms
         // ======================================================================
 
         /// <summary>
-        /// Registra el estado de las ranuras de <paramref name="ownerGuid"/>.
         /// <paramref name="slotGuids"/> va <b>por índice</b>: <see cref="Guid.Empty"/> en una ranura
-        /// vacía. Idempotente y pensado para llamarse todos los turnos del jefe.
+        /// vacía. Idempotente, pensado para llamarse todos los turnos del jefe.
         /// </summary>
-        /// <param name="reductionPerObject">
-        /// Cuánto descuenta cada ranura nunca rota. 0 o menos borra la mesa: una definición sin
-        /// armadura no tiene por qué dejar estado colgado.
-        /// </param>
+        /// <param name="reductionPerObject">Descuento de cada ranura nunca rota; 0 o menos borra la
+        /// mesa.</param>
         public void Publish(Guid ownerGuid, IReadOnlyList<Guid> slotGuids, float reductionPerObject)
         {
             if (ownerGuid == Guid.Empty) return;
@@ -132,14 +112,13 @@ namespace Rollgeon.Combat.Rooms
         }
 
         /// <summary>
-        /// Reducción viva de <paramref name="ownerGuid"/>, en 0..<see cref="MaxReduction"/>. 0 si no
-        /// tiene mesa publicada. Pública para la UI y para los asserts de tests: el número que el
-        /// jugador ve tiene que salir de la misma cuenta que el que le baja la vida.
+        /// En 0..<see cref="MaxReduction"/>. Pública para que el número que ve el jugador salga de
+        /// la misma cuenta que le baja la vida.
         /// </summary>
         public float ReductionFor(Guid ownerGuid) =>
             _tables.TryGetValue(ownerGuid, out var table) ? ResolveReduction(table) : 0f;
 
-        /// <summary>Ranuras que nunca se rompieron. Para la UI y los tests.</summary>
+        /// <summary>Ranuras que nunca se rompieron.</summary>
         public int IntactCountFor(Guid ownerGuid)
         {
             if (!_tables.TryGetValue(ownerGuid, out var table)) return 0;
@@ -182,14 +161,10 @@ namespace Rollgeon.Combat.Rooms
         }
 
         /// <summary>
-        /// Marca como rota —y para siempre— toda ranura cuyo objeto esté sin vida ahora mismo.
+        /// Marca como rota —para siempre— toda ranura sin vida. Sin <see cref="AttributesManager"/>
+        /// no se latchea nada: fallar hacia "el jefe conserva su armadura", no hacia regalar la
+        /// pelea.
         /// </summary>
-        /// <remarks>
-        /// Sin <see cref="AttributesManager"/> registrado no se puede saber qué está roto, así que no
-        /// se latchea nada: la reducción queda como estaba. Fallar hacia "el jefe conserva su
-        /// armadura" y no hacia "la perdió" es lo conservador — lo segundo le regalaría la pelea sin
-        /// que nada lo explique.
-        /// </remarks>
         private static void LatchBroken(Table table)
         {
             if (!ServiceLocator.TryGetService<AttributesManager>(out var attrs) || attrs == null) return;
@@ -207,8 +182,7 @@ namespace Rollgeon.Combat.Rooms
         }
 
         /// <summary>
-        /// Una mesa: el guid vivo de cada ranura y el latch monótono de cuáles se rompieron alguna vez.
-        /// Los arrays crecen pero nunca se encogen — perder el latch de una ranura le devolvería
+        /// Los arrays crecen pero nunca se encogen: perder el latch de una ranura le devolvería
         /// armadura ya pagada.
         /// </summary>
         private sealed class Table
@@ -229,8 +203,8 @@ namespace Rollgeon.Combat.Rooms
 
                 for (int i = 0; i < slotGuids.Count; i++) Slots[i] = slotGuids[i];
 
-                // Las ranuras que el publish nuevo ya no menciona quedan con su último guid: no se
-                // limpian, para que el latch pueda seguir viéndolas romperse.
+                // Las ranuras que el publish nuevo no menciona conservan su último guid, para que el
+                // latch pueda seguir viéndolas romperse.
             }
 
             public int IntactCount()

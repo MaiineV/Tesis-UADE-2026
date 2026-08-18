@@ -8,24 +8,9 @@ using Object = UnityEngine.Object;
 namespace Rollgeon.Combat.Threat
 {
     /// <summary>
-    /// Look completo de un <see cref="ThreatOverlayState"/>: color por defecto, textura de patrón y
-    /// banda de pulso.
+    /// Look de un <see cref="ThreatOverlayState"/>. Igualar <see cref="MinAlpha"/> con
+    /// <see cref="MaxAlpha"/>, o <see cref="PulseSpeed"/> en 0, apaga el latido.
     /// </summary>
-    /// <remarks>
-    /// <para>
-    /// La banda de alpha es parte del estado y no una constante global porque es la mitad del aviso
-    /// que se lee sin mirar el patrón: <see cref="ThreatOverlayState.Incoming"/> late tenue y lento,
-    /// <see cref="ThreatOverlayState.Marked"/> late en el rango de siempre y
-    /// <see cref="ThreatOverlayState.Detonating"/> se queda quieto y opaco. Igualar
-    /// <see cref="MinAlpha"/> con <see cref="MaxAlpha"/> (o poner <see cref="PulseSpeed"/> en 0)
-    /// apaga el latido — que es exactamente lo que quiere una zona segura.
-    /// </para>
-    /// <para>
-    /// <see cref="Pattern"/> es el punto de extensión que hoy queda abierto: sin textura autorada el
-    /// quad se pinta plano y el estado se distingue solo por alpha. Cuando arte entregue las cuatro
-    /// (rayado / sólido / punteado / damero) se cargan por acá y no hace falta tocar código.
-    /// </para>
-    /// </remarks>
     [Serializable]
     public sealed class ThreatOverlayStateStyle
     {
@@ -50,19 +35,15 @@ namespace Rollgeon.Combat.Threat
         [Tooltip("Velocidad del latido. 0 = sin latido, se pinta fijo en el alpha máximo.")]
         [Min(0f)] public float PulseSpeed = 2.5f;
 
-        /// <summary>Alpha que le toca al estado en <paramref name="time"/> segundos.</summary>
         public float AlphaAt(float time)
         {
             if (PulseSpeed <= 0f || Mathf.Approximately(MinAlpha, MaxAlpha)) return MaxAlpha;
             return Mathf.Lerp(MinAlpha, MaxAlpha, (Mathf.Sin(time * PulseSpeed) + 1f) * 0.5f);
         }
 
-        /// <summary>
-        /// Copia los campos de <paramref name="other"/> encima de este estilo.
-        /// </summary>
         /// <remarks>Copia en vez de reemplazar la instancia: los quads ya pintados guardan una
-        /// referencia a su estilo, así que sustituir el objeto dejaría a las amenazas vivas con el
-        /// look viejo hasta el próximo Show.</remarks>
+        /// referencia a su estilo, y sustituir el objeto dejaría a las amenazas vivas con el look
+        /// viejo hasta el próximo Show.</remarks>
         public void CopyFrom(ThreatOverlayStateStyle other)
         {
             if (other == null) return;
@@ -75,20 +56,13 @@ namespace Rollgeon.Combat.Threat
     }
 
     /// <summary>
-    /// Un quad activo del overlay con todo lo que hace falta para pintarlo.
+    /// El color y el patrón viven acá y se aplican por <see cref="MaterialPropertyBlock"/>, así que
+    /// dos amenazas simultáneas pueden verse distintas compartiendo el mismo material.
     /// </summary>
-    /// <remarks>
-    /// Es el registro que rompe el material compartido: el color y el patrón viven acá y se aplican
-    /// por <see cref="MaterialPropertyBlock"/>, así que dos amenazas simultáneas pueden verse
-    /// distintas aunque compartan el mismo <see cref="Material"/> (que ahora es solo una plantilla
-    /// para que el batching siga funcionando).
-    /// </remarks>
     public sealed class ThreatOverlayQuad
     {
-        // Sprites/Default lee el color por _Color y la textura por _MainTex. _BaseMap se setea
-        // también para que el día que arte reemplace la plantilla por un material URP (el canal que
-        // usa TileHighlightService) el patrón siga cayendo sin tocar esta clase: un property set
-        // sobre una propiedad que el shader no declara es no-op.
+        // Sprites/Default lee _Color y _MainTex; _BaseMap se setea además para que un reemplazo por
+        // material URP siga recibiendo el patrón (setear una propiedad no declarada es no-op).
         private static readonly int ColorId = Shader.PropertyToID("_Color");
         private static readonly int MainTexId = Shader.PropertyToID("_MainTex");
         private static readonly int BaseMapId = Shader.PropertyToID("_BaseMap");
@@ -96,19 +70,16 @@ namespace Rollgeon.Combat.Threat
         public GameObject Go;
         public Renderer Renderer;
 
-        /// <summary>Matiz de la fuente: el tint explícito del Show o, si no vino, el del estado.</summary>
+        /// <summary>El tint explícito del Show o, si no vino, el del estado.</summary>
         public Color Tint;
 
         public ThreatOverlayStateStyle Style;
 
         public ThreatOverlayState State => Style?.State ?? ThreatOverlayState.Marked;
 
-        /// <summary>
-        /// Vuelca color + patrón sobre el property block del renderer.
-        /// </summary>
-        /// <remarks><paramref name="block"/> lo trae el llamador para reusar una sola instancia, y se
-        /// limpia entero antes de escribir: los quads son pooled, así que sin el Clear la textura del
-        /// estado anterior se quedaría pegada al reciclar el quad para un estado sin patrón.</remarks>
+        /// <remarks>El bloque se limpia entero antes de escribir: los quads son pooled, y sin el
+        /// Clear la textura del estado anterior queda pegada al reciclar el quad para un estado sin
+        /// patrón.</remarks>
         public void Paint(MaterialPropertyBlock block, float alpha)
         {
             if (Renderer == null || block == null) return;
@@ -131,11 +102,9 @@ namespace Rollgeon.Combat.Threat
     }
 
     /// <summary>
-    /// Implementación pooled de <see cref="IThreatOverlayService"/>: un quad
-    /// semitransparente por casilla amenazada, parented a un root propio y con
-    /// pulso de alpha (ver <see cref="ThreatOverlayPulse"/>). Mismo ciclo de
-    /// vida que <see cref="ThreatenedAreaService"/>: Global, y los visuales se
-    /// apagan en <c>OnCombatEnd</c> / <c>OnRunEnd</c>.
+    /// Implementación pooled de <see cref="IThreatOverlayService"/>: un quad semitransparente por
+    /// casilla amenazada, con pulso de alpha (<see cref="ThreatOverlayPulse"/>). Global; los
+    /// visuales se apagan en <c>OnCombatEnd</c> / <c>OnRunEnd</c>.
     /// </summary>
     public sealed class ThreatTelegraphOverlay : IThreatOverlayService, IDisposable
     {
@@ -153,10 +122,8 @@ namespace Rollgeon.Combat.Threat
 
         private readonly MaterialPropertyBlock _block = new MaterialPropertyBlock();
 
-        // Un único material para todos los quads: la variación por amenaza ya no vive en él sino en
-        // el property block de cada renderer. Antes había uno por tint y el pulso escribía su color,
-        // así que dos hazards del mismo matiz latían atados y ningún par podía tener patrones
-        // distintos.
+        // Un único material para todos los quads: uno por tint ataría el latido de dos hazards del
+        // mismo matiz.
         private Material _material;
 
         private GameObject _root;
@@ -164,7 +131,6 @@ namespace Rollgeon.Combat.Threat
         private EventManager.EventReceiver _onCombatEndHandler;
         private EventManager.EventReceiver _onRunEndHandler;
 
-        /// <summary>Cantidad de quads visibles — para asserts de tests y debugging.</summary>
         public int ActiveQuadCount
         {
             get
@@ -177,10 +143,7 @@ namespace Rollgeon.Combat.Threat
             }
         }
 
-        /// <summary>
-        /// Los quads activos de <paramref name="sourceGuid"/>, vacío si no tiene overlay. Seam de
-        /// lectura para tests y debugging — mismo criterio que <see cref="ActiveQuadCount"/>.
-        /// </summary>
+        /// <summary>Los quads activos de <paramref name="sourceGuid"/>, vacío si no tiene overlay.</summary>
         public IReadOnlyList<ThreatOverlayQuad> ActiveQuadsOf(Guid sourceGuid) =>
             _activeBySource.TryGetValue(sourceGuid, out var quads)
                 ? (IReadOnlyList<ThreatOverlayQuad>)quads
@@ -191,19 +154,15 @@ namespace Rollgeon.Combat.Threat
         public ThreatOverlayStateStyle StyleOf(ThreatOverlayState state) =>
             _styles.TryGetValue(state, out var style) ? style : _styles[ThreatOverlayState.Marked];
 
-        /// <summary>
-        /// Pisa el estilo de <c>style.State</c> con los valores de <paramref name="style"/> — el
-        /// punto por el que un bootstrap carga las texturas de patrón y los colores de autoría.
-        /// </summary>
+        /// <summary>Pisa el estilo de <c>style.State</c> con los valores de autoría.</summary>
         public void ApplyStyle(ThreatOverlayStateStyle style)
         {
             if (style == null) return;
 
             StyleOf(style.State).CopyFrom(style);
 
-            // Repinta ya: un bootstrap que carga las texturas a mitad de un aviso no puede dejar esa
-            // amenaza con el look viejo hasta el próximo Show (y fuera de play mode no hay pulso que
-            // la alcance nunca).
+            // Repinta ya: fuera de play mode no hay pulso que alcance a una amenaza viva, y quedaría
+            // con el look viejo hasta el próximo Show.
             RepaintActive();
         }
 
@@ -227,10 +186,7 @@ namespace Rollgeon.Combat.Threat
                 }
         }
 
-        /// <summary>
-        /// Devuelve el service registrado o crea + registra uno (Global). Lazy
-        /// para no depender de wiring manual en <c>ServiceBootstrap.ExtraServices</c>.
-        /// </summary>
+        /// <summary>Lazy para no depender de wiring en <c>ServiceBootstrap.ExtraServices</c>.</summary>
         public static IThreatOverlayService ResolveOrCreate()
         {
             if (ServiceLocator.TryGetService<IThreatOverlayService>(out var existing) && existing != null)
@@ -310,12 +266,11 @@ namespace Rollgeon.Combat.Threat
                 quad.Style = style;
                 quad.Tint = resolvedTint;
 
-                // Asignado acá y no al crear el quad: los quads son pooled entre fuentes y el
-                // material puede haber muerto con un domain reload.
+                // Acá y no al crear el quad: el material puede haber muerto con un domain reload.
                 if (quad.Renderer != null) quad.Renderer.sharedMaterial = SharedMaterial;
 
-                // Se pinta ya, sin esperar al primer Update del pulso: si no, un Show fuera de play
-                // mode (o el frame en que se marca) mostraría el look del quad anterior.
+                // Sin esperar al primer Update del pulso: un Show fuera de play mode, o el frame en
+                // que se marca, mostraría el look del quad anterior.
                 quad.Paint(_block, alpha);
 
                 quad.Go.SetActive(true);
@@ -353,8 +308,8 @@ namespace Rollgeon.Combat.Threat
         {
             get
             {
-                // == null también cubre el fake-null de Unity tras un cambio de
-                // escena: el root murió con la escena y hay que rearmar el pool.
+                // == null cubre también el fake-null de Unity tras un cambio de escena: el root
+                // murió con ella y hay que rearmar el pool.
                 if (_root == null)
                 {
                     _activeBySource.Clear();
@@ -364,35 +319,24 @@ namespace Rollgeon.Combat.Threat
                     var pulse = _root.AddComponent<ThreatOverlayPulse>();
 
                     // La MISMA colección, no una copia: el pulso tiene que ver los quads que
-                    // aparezcan después de que este componente exista.
+                    // aparezcan después.
                     pulse.Targets = _activeBySource;
                 }
                 return _root;
             }
         }
 
-        /// <summary>El naranja de advertencia histórico — el look de todo telegraph antes de que los
-        /// hazards pudieran tintarse por separado, y el default del overload sin color.</summary>
+        /// <summary>Naranja de advertencia: el default del overload sin color.</summary>
         public static readonly Color DefaultTint = new Color(1f, 0.45f, 0.1f, 0.55f);
 
         /// <summary>Cian de la zona segura (paleta de las fichas de jefe).</summary>
         public static readonly Color SafeTint = new Color(0.227f, 0.525f, 0.784f, 0.5f);
 
         /// <summary>
-        /// Paleta de arranque de los cuatro estados.
+        /// Los tres avisos comparten matiz porque el <i>cuándo</i> lo lee la opacidad, así que las
+        /// bandas no se pueden solapar: Incoming (máx 0.30) &lt; Marked (mín 0.35), Marked
+        /// (máx 0.65) &lt; Detonating (0.85).
         /// </summary>
-        /// <remarks>
-        /// <para>
-        /// Marked conserva el naranja y la banda 0.35–0.65 exactos de antes de que existieran los
-        /// estados, así que ningún telegraph ya autorado cambia de look.
-        /// </para>
-        /// <para>
-        /// Los tres avisos comparten matiz a propósito: el matiz identifica la <i>fuente</i> (fuego
-        /// vs. hielo vs. canal auxiliar) y quien lee el <i>cuándo</i> es la opacidad — Incoming
-        /// siempre por debajo de Marked, y Marked siempre por debajo de Detonating, aun en el pico
-        /// del latido. Safe sí cambia de matiz porque no es una amenaza.
-        /// </para>
-        /// </remarks>
         private static Dictionary<ThreatOverlayState, ThreatOverlayStateStyle> DefaultStyles() =>
             new Dictionary<ThreatOverlayState, ThreatOverlayStateStyle>
             {
@@ -436,9 +380,7 @@ namespace Rollgeon.Combat.Threat
             {
                 if (_material != null) return _material;
 
-                // Sprites/Default: transparente y tinteable sin keywords de pipeline. El día que arte
-                // quiera un sprite/material propio, se reemplaza acá o se expone override por
-                // bootstrap; el color y el patrón ya no dependen de esta instancia.
+                // Sprites/Default: transparente y tinteable sin keywords de pipeline.
                 _material = new Material(Shader.Find("Sprites/Default"))
                 {
                     name = "ThreatTelegraphOverlay (runtime)",
@@ -488,23 +430,12 @@ namespace Rollgeon.Combat.Threat
     }
 
     /// <summary>
-    /// Pulso de alpha del overlay. Cada quad late según la banda de su
-    /// <see cref="ThreatOverlayState"/>, así que los avisos lejanos, los marcados y los que detonan
-    /// se distinguen por ritmo además de por patrón. Vive en el root del overlay; sin targets es
-    /// no-op.
+    /// Cada quad late según la banda de su <see cref="ThreatOverlayState"/>. Sin targets es no-op.
     /// </summary>
     /// <remarks>
-    /// <para>
     /// <see cref="Targets"/> es la <b>misma</b> colección que mantiene
-    /// <see cref="ThreatTelegraphOverlay"/>, no una copia: los quads aparecen y desaparecen por
-    /// demanda y el pulso tiene que agarrar también los que se muestren después de que este
-    /// componente exista.
-    /// </para>
-    /// <para>
-    /// Escribe por <see cref="MaterialPropertyBlock"/> y nunca sobre un <see cref="Material"/>:
-    /// mientras el color vivía en el material, latir una amenaza latía todas las que compartían
-    /// matiz.
-    /// </para>
+    /// <see cref="ThreatTelegraphOverlay"/>, no una copia. Escribe por
+    /// <see cref="MaterialPropertyBlock"/> y nunca sobre el <see cref="Material"/> compartido.
     /// </remarks>
     public sealed class ThreatOverlayPulse : MonoBehaviour
     {
@@ -516,7 +447,7 @@ namespace Rollgeon.Combat.Threat
         {
             if (Targets == null || Targets.Count == 0) return;
 
-            // Perezoso y no en el field initializer: los ctors de MonoBehaviour también corren desde
+            // Perezoso y no en el field initializer: los ctors de MonoBehaviour corren también desde
             // el thread de carga de escena, donde tocar recursos nativos es ilegal.
             if (_block == null) _block = new MaterialPropertyBlock();
 

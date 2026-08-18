@@ -7,27 +7,19 @@ using Rollgeon.Player;
 namespace Rollgeon.Combat.Status
 {
     /// <summary>
-    /// Implementación POCO de <see cref="IStunService"/>. Calca el lifecycle de
-    /// <c>DiceBlockService</c>: registro global vía <see cref="IPreloadableService"/>, estado
-    /// combat-scoped y limpieza por eventos de fin de combate / fin de run.
+    /// Implementación POCO de <see cref="IStunService"/>: registro global vía
+    /// <see cref="IPreloadableService"/>, estado combat-scoped. Sólo el contador — el glue que
+    /// traduce "pisó hielo" en <see cref="ApplyStun"/> vive en el subsistema de hazards.
     /// </summary>
     /// <remarks>
-    /// <para>
-    /// <b>Sin acople al disparador.</b> No escucha eventos de hazards ni de daño — el glue que
-    /// traduce "el jugador pisó hielo" en <see cref="ApplyStun"/> vive en el subsistema de
-    /// hazards. Acá solo existe el contador.
-    /// </para>
-    /// <para>
-    /// <b>Consumo del turno.</b> <see cref="ConsumeTurn"/> es el único decremento. Lo llama el
-    /// skip de turno (<see cref="StunTurnSkipper"/>) al saltear el turno que se pierde. A
-    /// propósito NO se decrementa en <c>OnTurnFinished</c>: ese evento también sale en los
-    /// turnos que el jugador juega normalmente, y el stun duraría menos de lo aplicado.
-    /// </para>
+    /// <see cref="ConsumeTurn"/> es el único decremento y lo llama <see cref="StunTurnSkipper"/> al
+    /// saltear el turno perdido. NO se decrementa en <c>OnTurnFinished</c>: ese evento también sale
+    /// en los turnos que el jugador juega normalmente, y el stun duraría menos de lo aplicado.
     /// </remarks>
     public sealed class StunService : IStunService, IPreloadableService, IDisposable
     {
-        // Lazy por la misma razón que ComboBlockService/DiceBlockService: si Odin deserializa
-        // este servicio desde una lista polimórfica bypassea el ctor y el dict queda null.
+        // Lazy: si Odin deserializa este servicio desde una lista polimórfica bypassea el ctor y el
+        // dict queda null.
         private Dictionary<Guid, int> _remainingTurns;
         private Dictionary<Guid, int> RemainingTurns
             => _remainingTurns ??= new Dictionary<Guid, int>();
@@ -35,11 +27,7 @@ namespace Rollgeon.Combat.Status
         private EventManager.EventReceiver _onCombatEndHandler;
         private EventManager.EventReceiver _onRunEndHandler;
 
-        /// <summary>
-        /// Resolver del PlayerGuid. Hoy solo se usa para diagnóstico
-        /// (<see cref="IsPlayerStunned"/>); el filtrado por entidad lo hace el caller. Se
-        /// mantiene para paridad con el resto de los servicios y para el hook de tests.
-        /// </summary>
+        /// <summary>Sólo para diagnóstico: el filtrado por entidad lo hace el caller.</summary>
         private Func<Guid> _playerGuidResolver;
 
         /// <summary>Después de core services, antes de behaviors — igual que DiceBlockService.</summary>
@@ -55,12 +43,12 @@ namespace Rollgeon.Combat.Status
             SubscribeHandlers();
 
             ServiceLocator.AddService<IStunService>(this, ServiceScope.Global);
-            // También por tipo concreto: los bootstraps de hazards/bosses que quieran el POCO
-            // sin pasar por la interfaz lo resuelven directo (mismo criterio que TurnOrderService).
+            // También por tipo concreto: los bootstraps que quieran el POCO sin pasar por la
+            // interfaz lo resuelven directo.
             ServiceLocator.AddService<StunService>(this, ServiceScope.Global);
         }
 
-        /// <summary>Hook para EditMode tests — suscribe handlers e inyecta el resolver del player guid.</summary>
+        /// <summary>Hook para EditMode tests.</summary>
         public void ConfigureForTests(Func<Guid> playerGuidResolver)
         {
             _playerGuidResolver = playerGuidResolver ?? DefaultPlayerGuidResolver;
@@ -69,8 +57,8 @@ namespace Rollgeon.Combat.Status
 
         private void SubscribeHandlers()
         {
-            // Idempotencia: si Register y ConfigureForTests corren sobre la misma instancia,
-            // desuscribimos antes de re-suscribir para no duplicar el ClearAll.
+            // Idempotencia: Register y ConfigureForTests pueden correr sobre la misma instancia, y
+            // re-suscribir sin desuscribir duplicaría el ClearAll.
             UnsubscribeHandlers();
 
             _onCombatEndHandler = OnScopeEndedExternal;
@@ -116,8 +104,8 @@ namespace Rollgeon.Combat.Status
             int applied = turns > current ? turns : current;
             map[entity] = applied;
 
-            // Dispara siempre, incluso si el max() no movió el contador — el feedback
-            // ("te volvió a pegar el hielo") es del disparo, no del delta.
+            // Dispara aunque el max() no haya movido el contador: el feedback es del disparo, no
+            // del delta.
             EventManager.Trigger(EventName.OnStunApplied, entity, applied);
         }
 
@@ -180,10 +168,9 @@ namespace Rollgeon.Combat.Status
         // Diagnóstico
         // ======================================================================
 
-        /// <summary>Conveniencia para debug/UI: <c>IsStunned(playerGuid)</c>.</summary>
         public bool IsPlayerStunned() => IsStunned(ResolvePlayerGuid());
 
-        /// <summary>Entidades con stun activo (vista read-only para debug / tests).</summary>
+        /// <summary>Vista read-only de las entidades con stun activo.</summary>
         public IReadOnlyDictionary<Guid, int> ActiveStuns => RemainingTurns;
 
         // ======================================================================

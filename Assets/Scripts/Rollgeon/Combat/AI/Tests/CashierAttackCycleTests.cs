@@ -14,23 +14,10 @@ using UnityEngine;
 namespace Rollgeon.Combat.AI.Tests
 {
     /// <summary>
-    /// El ciclo de dos turnos del Cajero: un turno marca columna, el siguiente dispara, y así
-    /// siempre. Se arma el mismo <c>Alternate</c> que autora <c>CajeroAssetBuilder.BuildAttackCycle</c>
-    /// — el builder vive en un assembly de Editor que este de tests no referencia, así que acá se
-    /// afirma el <b>comportamiento</b> y en <c>CajeroPhaseWiringTests</c> el cableado.
+    /// El ciclo de dos turnos del Cajero: un turno marca columna, el siguiente dispara. Se arma acá
+    /// el mismo <c>Alternate</c> que <c>CajeroAssetBuilder</c>, que vive en Editor; el cableado lo
+    /// cubre <c>CajeroPhaseWiringTests</c>.
     /// </summary>
-    /// <remarks>
-    /// <para>
-    /// La alternancia es lo que hace que el jefe pueda pegar. Sólo con columna, el jugador daba un
-    /// paso al costado y no cobraba nunca. Con el disparo en el medio, salir del área sigue siendo
-    /// gratis pero <b>acercarse a pegarle</b> cuesta 12 fijos: para golpear al jefe hay que estar a
-    /// distancia 1, y distancia 1 está dentro del rango del disparo.
-    /// </para>
-    /// <para>
-    /// Que sea estricta (y no un <c>Random</c>) es legibilidad: el jugador tiene que poder plantar
-    /// el movimiento sabiendo que el turno después de la marca no hay marca nueva.
-    /// </para>
-    /// </remarks>
     [TestFixture]
     public class CashierAttackCycleTests
     {
@@ -71,8 +58,7 @@ namespace Rollgeon.Combat.AI.Tests
             _hazards = new HazardService();
             _hazards.Register();
 
-            // Jugador sin oro: la columna sale en su escalón más barato (14, ancho 1), que es el
-            // número contra el que se afirman los golpes de abajo.
+            // Jugador sin oro: la columna sale en su escalón más barato (14, ancho 1).
             ServiceLocator.AddService<IEconomyService>(new FakeEconomyService());
 
             _ledger = new CashierLedgerService();
@@ -163,11 +149,7 @@ namespace Rollgeon.Combat.AI.Tests
             Rng = new System.Random(3),
         };
 
-        /// <summary>
-        /// Un turno del jefe con los tres hijos que le importan al ciclo: detona lo del turno
-        /// pasado, ataca (columna o disparo) y suelta ficha. Se saltean el gate del arqueo y el
-        /// repliegue: no participan de la alternancia.
-        /// </summary>
+        /// <summary>El arqueo y el repliegue se saltean: no participan de la alternancia.</summary>
         private void RunBossTurn()
         {
             var context = NewContext();
@@ -244,7 +226,7 @@ namespace Rollgeon.Combat.AI.Tests
         [Test]
         public void test_attackCycle_dodgingTheColumn_stillEatsTheShot()
         {
-            // Arrange — el jugador hace lo único que la columna sola le pedía: dar un paso al lado.
+            // Arrange — el jugador da un paso al lado, que es lo que la columna sola le pedía.
             RunBossTurn();
             Assert.IsTrue(_grid.Move(_player, new GridCoord(PlayerStart.X + 1, PlayerStart.Y)));
 
@@ -280,7 +262,7 @@ namespace Rollgeon.Combat.AI.Tests
         [Test]
         public void test_chips_hitLandedOnAShootingTurn_isPaidOnTheNextMarkingTurn()
         {
-            // Arrange — turno 1 marca sin que le hayan pegado todavía.
+            // Arrange
             RunBossTurn();
             Assert.AreEqual(0, LiveChips());
 

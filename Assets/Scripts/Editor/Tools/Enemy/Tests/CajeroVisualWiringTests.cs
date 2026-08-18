@@ -10,24 +10,11 @@ using Object = UnityEngine.Object;
 namespace Rollgeon.Editor.Tools.Enemy.Tests
 {
     /// <summary>
-    /// Valida el <b>vestuario</b> de El Cajero: la ficha de wrapper que arma
-    /// <see cref="CajeroAssetBuilder.BuildWrapperSpec"/>, el prefab que sale de construirla contra el
-    /// arte real, y la regla de <see cref="CajeroAssetBuilder.ResolveVisualPrefab"/>.
+    /// Vestuario de El Cajero: la ficha de wrapper, el prefab que sale de construirla contra el arte
+    /// real, y la regla de <see cref="CajeroAssetBuilder.ResolveVisualPrefab"/>. Construye en una
+    /// carpeta temporal que el teardown borra, y no llama a <c>EnsurePortrait</c> — reimportar
+    /// <c>Casino_0070.png</c> ensuciaría el <c>.meta</c> de un asset compartido.
     /// </summary>
-    /// <remarks>
-    /// <para>
-    /// El wrapper se construye en una carpeta temporal bajo <c>Assets/</c> que el teardown borra: el
-    /// prefab y los materiales de verdad los genera el <c>MenuItem</c> desde el editor, y un test que
-    /// los reescriba mete churn de YAML en cada corrida.
-    /// </para>
-    /// <para>
-    /// <b>Lo que estos tests no hacen</b> es llamar a <see cref="CajeroAssetBuilder.EnsurePortrait"/>:
-    /// esa función reimporta <c>Casino_0070.png</c> como Sprite, y un reimport disparado por un test
-    /// ensucia el <c>.meta</c> de un asset compartido. Se afirma que el path es una textura
-    /// importable (que es lo que puede romperse: un path mal escrito) y la asignación del retrato se
-    /// cubre in-memory sobre <see cref="CajeroAssetBuilder.PopulateEnemyData"/>.
-    /// </para>
-    /// </remarks>
     [TestFixture]
     public class CajeroVisualWiringTests
     {
@@ -94,8 +81,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         [Test]
         public void Spec_RetintsEveryMaterialTheArtUses_AndNothingElse()
         {
-            // Una key que no matchea deja al jefe con el color de fábrica y sólo loguea un warning;
-            // un material del arte sin retintar deja negro el cuerpo o gris los discos.
+            // Una key que no matchea sólo loguea un warning; un material sin retintar deja el
+            // cuerpo negro o los discos grises.
             var spec = CajeroAssetBuilder.BuildWrapperSpec();
             var artMaterials = CollectArtMaterialNames();
 
@@ -108,8 +95,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         [Test]
         public void Spec_UsesDirectColors_NotPaletteSlots()
         {
-            // Los slots guardados en PA_MainPalette están desalineados respecto de la tabla del
-            // código, así que un FromSlot acá daría un color que nadie eligió.
+            // Los slots de PA_MainPalette están desalineados: un FromSlot daría un color al azar.
             var spec = CajeroAssetBuilder.BuildWrapperSpec();
 
             foreach (var pair in spec.Retints)
@@ -218,8 +204,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         [Test]
         public void Wrapper_KeepsTheSteppedAnimatorOfTheArt()
         {
-            // EntityPawn resuelve el Animator con GetComponentInChildren: anidar el arte alcanza, pero
-            // si el prefab de arte perdiera su Animator el jefe quedaría en T-pose sin avisar.
+            // Si el prefab de arte perdiera su Animator el jefe quedaría en T-pose sin avisar.
             Assert.IsNotNull(_wrapper.GetComponentInChildren<Animator>(true),
                 "El arte tiene que aportar su Animator (AnimCon_GeneralDirector).");
             Assert.IsNotNull(_wrapper.GetComponentInChildren<global::SteppedAnimation>(true),
@@ -241,8 +226,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         [Test]
         public void Wrapper_PaintsEveryChipDiscWithTheClonedGold()
         {
-            // Cada disco trae tres submeshes (cara, canto, brillo): si alguno quedara con el material
-            // original, la pila saldría en dos oros distintos.
+            // Cada disco trae tres submeshes: uno con el material original deja la pila en dos oros.
             var art = _wrapper.transform.Find("Art");
             Assert.IsNotNull(art, "Fixture roto: no hay hijo 'Art'.");
 
@@ -266,9 +250,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         [Test]
         public void Wrapper_ClonesEveryRetintWithThePaletteOff()
         {
-            // No se afirma igualdad exacta del color: el ida y vuelta por el .mat puede pasar por
-            // conversión de color space, y lo que importa es que el retinte llegó (paleta apagada, que
-            // en los cinco originales está prendida) y que el tono cambió respecto del original.
+            // Sin igualdad exacta de color: el ida y vuelta por el .mat puede pasar por conversión
+            // de color space. Lo que importa es que el retinte llegó y la paleta quedó apagada.
             foreach (var name in SourceMaterialNames)
             {
                 var clone = LoadClone(name);
@@ -282,8 +265,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         [Test]
         public void Wrapper_TurnsTheBodyGreen_InsteadOfTheGrayOfTheOriginal()
         {
-            // Mat_Black viene gris parejo (r ≥ g ≥ b): si el clon sale verde, el retinte se aplicó de
-            // verdad y no quedó copiando el original.
+            // Mat_Black viene gris parejo (r ≥ g ≥ b): si el clon sale verde, el retinte se aplicó.
             var body = LoadClone(CajeroAssetBuilder.BodyMaterial).GetColor("_MidColor");
 
             Assert.Greater(body.g, body.r, "El cuerpo tiene que quedar verde fieltro, no gris.");
@@ -293,8 +275,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         [Test]
         public void Wrapper_DoesNotRepaintTheSharedSourceMaterials()
         {
-            // Mat_Yellow / Mat_Black / Mat_Bone los usa medio casino de enemigos: retintarlos in-place
-            // repintaría a todos. Siguen leyendo la paleta global.
+            // Los originales los usa medio casino: retintarlos in-place repintaría a todos.
             foreach (var name in SourceMaterialNames)
             {
                 var source = AssetDatabase.LoadAssetAtPath<Material>($"{SourceMaterialsFolder}/{name}.mat");
@@ -329,8 +310,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         [Test]
         public void Portrait_PointsAtAnImportableTexture()
         {
-            // EnsurePortrait flipea el importer a Sprite; lo único que puede estar mal escrito acá es
-            // el path, y su síntoma (jefe sin cara en la cola de turnos) no rompe nada.
+            // Lo único que puede estar mal acá es el path, y su síntoma no rompe nada.
             var importer = AssetImporter.GetAtPath(CajeroAssetBuilder.PortraitTexturePath) as TextureImporter;
 
             Assert.IsNotNull(importer,

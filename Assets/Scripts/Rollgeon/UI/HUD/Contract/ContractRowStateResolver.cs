@@ -21,8 +21,8 @@ namespace Rollgeon.UI.HUD.Contract
     /// El corrimiento se reconoce porque <c>SetComboToNeighbor</c> copia el base de otra fila tal
     /// cual: el valor efectivo cae exactamente sobre uno de la tabla. Un ×2 que caiga justo sobre
     /// otra fila se lee como corrimiento — el mensaje al jugador ("ahora paga como aquella") sigue
-    /// siendo cierto, así que la ambigüedad no miente. Ver <c>docs/setup/reglas-visibles.md</c>
-    /// para el cambio de servicio que la eliminaría.
+    /// siendo cierto, así que la ambigüedad no miente. Eliminarla pide que el servicio exponga qué
+    /// modificador produjo el valor.
     /// </para>
     /// <para>
     /// <b><see cref="Resolve"/> es puro</b> — no toca <see cref="ServiceLocator"/>. Los overloads

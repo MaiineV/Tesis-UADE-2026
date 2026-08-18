@@ -5,46 +5,31 @@ using Rollgeon.Grid;
 namespace Rollgeon.Combat.Threat
 {
     /// <summary>
-    /// Generic environmental-hazard runner (rain, fire, ice, falling debris, ...). Replaces the
-    /// rain-only <see cref="RainHazardService"/> loop with a data-driven one: any number of
+    /// Generic environmental-hazard runner (rain, fire, ice, falling debris, ...): any number of
     /// <see cref="HazardDefinitionSO"/> can be active at once, each ticking on its own
     /// <see cref="HazardDefinitionSO.CycleRounds"/> cadence via its own
     /// <see cref="HazardDefinitionSO.SourceGuid"/>.
     /// </summary>
     /// <remarks>
-    /// <para>
-    /// <b>Two flavours of "active".</b> <see cref="Activate(HazardDefinitionSO)"/> registers a
-    /// definition to run on its cycle using its own <c>Shape</c> — one per
-    /// <see cref="HazardDefinitionSO.SourceGuid"/>, which is what <see cref="IsActive(Guid)"/>
-    /// reports. <see cref="Activate(HazardDefinitionSO, IEnumerable{GridCoord})"/> instead creates an
-    /// independent <b>instance</b> over an explicit tile set, and any number of instances of the same
-    /// definition can coexist (one fire per detonated sector). Instances are addressed by the
-    /// <c>instanceId</c> the overload returns — never by source id.
-    /// </para>
-    /// <para>
-    /// <b>Instances don't go through <see cref="IThreatenedAreaService"/>.</b> That service holds one
-    /// pending area per source and is built around mark-now/consume-next-turn; instances need
-    /// persistent, per-instance tile membership instead. Keeping them in this service is what lets
-    /// two fires from the same SO stop overwriting each other.
-    /// </para>
+    /// <b>Two flavours of "active".</b> <see cref="Activate(HazardDefinitionSO)"/> registers one
+    /// cycle-run per <see cref="HazardDefinitionSO.SourceGuid"/> — what <see cref="IsActive(Guid)"/>
+    /// reports. <see cref="Activate(HazardDefinitionSO, IEnumerable{GridCoord})"/> creates an
+    /// independent <b>instance</b>, addressed only by the <c>instanceId</c> it returns.
     /// </remarks>
     public interface IHazardService
     {
         /// <summary>
-        /// Activates <paramref name="definition"/> (idempotent — activating an already-active
-        /// definition, or another instance sharing its <see cref="HazardDefinitionSO.SourceGuid"/>,
-        /// is a no-op). No-op if <paramref name="definition"/> is null or its SourceId doesn't
-        /// parse to a valid GUID.
+        /// Activates <paramref name="definition"/>. Idempotent per
+        /// <see cref="HazardDefinitionSO.SourceGuid"/>; no-op when the definition is null or its
+        /// SourceId doesn't parse to a valid GUID.
         /// </summary>
         void Activate(HazardDefinitionSO definition);
 
         /// <summary>
         /// Activates <paramref name="definition"/> over an explicit <paramref name="tiles"/> set,
-        /// <b>ignoring</b> its <see cref="HazardDefinitionSO.Shape"/>, and returns the id of the new
-        /// instance. Each call creates an independent instance with its own tiles and its own
-        /// remaining duration, so the same definition can be active several times over.
-        /// Returns <see cref="Guid.Empty"/> (and does nothing) if <paramref name="definition"/> is
-        /// null or <paramref name="tiles"/> is null/empty.
+        /// <b>ignoring</b> its <see cref="HazardDefinitionSO.Shape"/>, and returns the new instance
+        /// id. Each call creates an independent instance. Returns <see cref="Guid.Empty"/> and does
+        /// nothing when <paramref name="definition"/> is null or <paramref name="tiles"/> is empty.
         /// </summary>
         Guid Activate(HazardDefinitionSO definition, IEnumerable<GridCoord> tiles);
 
@@ -52,16 +37,15 @@ namespace Rollgeon.Combat.Threat
         bool IsActive(HazardDefinitionSO definition);
 
         /// <summary>
-        /// <c>true</c> if the hazard whose SourceGuid is <paramref name="sourceId"/> is active.
-        /// Source-keyed by design: this never answers for an <c>instanceId</c> — use
-        /// <see cref="ActiveInstances"/> or <see cref="TryGetHazardAt"/> for those.
+        /// Source-keyed: never answers for an <c>instanceId</c> — use <see cref="ActiveInstances"/>
+        /// or <see cref="TryGetHazardAt"/> for those.
         /// </summary>
         bool IsActive(Guid sourceId);
 
         /// <summary>
-        /// Finds an active instance covering <paramref name="coord"/>. Only reports dynamic-area
-        /// instances — cycle-telegraph definitions keep their tiles in
-        /// <see cref="IThreatenedAreaService"/>, not here. First match wins when areas overlap.
+        /// Finds an active instance covering <paramref name="coord"/>, first match wins. Only
+        /// dynamic-area instances: cycle-telegraph definitions keep their tiles in
+        /// <see cref="IThreatenedAreaService"/>.
         /// </summary>
         bool TryGetHazardAt(GridCoord coord, out HazardInstanceInfo info);
 
@@ -69,8 +53,7 @@ namespace Rollgeon.Combat.Threat
         IEnumerable<HazardInstanceInfo> ActiveInstances();
 
         /// <summary>
-        /// Kills the instance <paramref name="instanceId"/> early (clearing its overlay and raising
-        /// <c>OnHazardExpired</c>). No-op for an unknown id.
+        /// Kills the instance early, clearing its overlay and raising <c>OnHazardExpired</c>.
         /// </summary>
         void Deactivate(Guid instanceId);
 
@@ -79,21 +62,12 @@ namespace Rollgeon.Combat.Threat
         /// <i>would have</i> damaged someone is swallowed instead, and the flag clears itself.
         /// </summary>
         /// <remarks>
-        /// <para>
-        /// Exists for the design rule "the detonation consumes the flame" — a boss node that already
-        /// resolved damage over a tile this turn calls this so the standing fire doesn't bill the
-        /// player twice for the same turn. Deliberately does not suppress duration ticking: the
-        /// hazard still ages.
-        /// </para>
-        /// <para>
-        /// <b><see cref="HazardDefinitionSO.Affects"/> does not replace this, and deleting it is not a
-        /// cleanup.</b> That filter answers "is this entity billable at all"; this answers "did the
-        /// billable entity already pay for this tile this turn". Both are about the player and they
-        /// never overlap. Drop it and the Croupier's seam column goes back to charging the blast plus
-        /// the fire's 6 on one turn end — worst case 30 instead of 24, with
+        /// Does <b>not</b> suppress duration ticking: the hazard still ages.
+        /// <see cref="HazardDefinitionSO.Affects"/> is not a replacement — that filter answers "is
+        /// this entity billable at all", this one "did the billable entity already pay for this tile
+        /// this turn". Drop it and the Croupier's detonated sector charges the blast plus the fire on
+        /// one turn end: 26 instead of 20, with
         /// <c>CroupierIgnitionTests.PlayerCaughtByTheBlast_FirstFireTickIsSwallowed</c> as the alarm.
-        /// (The commit that added <c>Affects</c> claimed this had become redundant. It had not.)
-        /// </para>
         /// </remarks>
         void SkipNextTick(Guid instanceId);
     }

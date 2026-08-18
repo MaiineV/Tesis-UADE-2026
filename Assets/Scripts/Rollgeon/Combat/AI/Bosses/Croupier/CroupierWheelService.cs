@@ -15,29 +15,9 @@ namespace Rollgeon.Combat.AI.Bosses.Croupier
     /// (<c>OnTurnFinished</c> + la casilla en la que el jugador cerró su turno).
     /// </summary>
     /// <remarks>
-    /// <para>
-    /// <b>Cobrar y correr son dos cosas separadas.</b> Los disparaba el mismo golpe, y eso hacía que
-    /// mover el número fuera un efecto secundario gratis del único ataque que el jugador tiene:
-    /// atacar era siempre, además, correr la rueda. Ahora la palanca se paga con el cuerpo (terminar
-    /// el turno dentro del sector cantado) y el 8 se paga por pegar. Ninguna de las dos cosas puede
-    /// hacerse "de paso" mientras se hace la otra.
-    /// </para>
-    /// <para>
-    /// <b>Mover el hacha es pararse bajo el hacha.</b> El corrimiento pide cerrar el turno
-    /// <i>adentro</i> del bloque que va a caer: el jugador que quiere redirigir el número tiene que
-    /// aceptar el riesgo de que no lo consiga (aturdido, empujado, o simplemente equivocado de
-    /// sector). Pedirlo desde afuera lo volvería un botón gratis.
-    /// </para>
-    /// <para>
-    /// <b>Un corrimiento por número.</b> El candado es por slot y dura todo el windup: sin él, un
-    /// jugador que cierre dos turnos dentro del mismo número lo movería dos veces, y la lectura
-    /// "primero N+1, después decido" dejaría de ser verdad.
-    /// </para>
-    /// <para>
-    /// <b>El corrimiento mueve la marca.</b> Correr la rueda re-marca el área del slot en el sector
-    /// nuevo (y repinta el overlay): si el área quedara donde estaba, la palanca no cambiaría nada de
-    /// lo que va a pasar y el jugador no podría ver a dónde la mandó.
-    /// </para>
+    /// El candado de corrimiento es por slot y dura todo el windup: sin él, cerrar dos turnos dentro
+    /// del mismo número lo movería dos veces. Correr la rueda re-marca el área del slot en el sector
+    /// nuevo — si quedara donde estaba, la palanca no cambiaría nada de lo que va a pasar.
     /// </remarks>
     public sealed class CroupierWheelService : ICroupierWheelService, IDisposable
     {
@@ -74,9 +54,8 @@ namespace Rollgeon.Combat.AI.Bosses.Croupier
         public event Action<IReadOnlyList<int>> NumbersChanged;
 
         /// <summary>
-        /// Devuelve el servicio registrado o crea + registra uno (Global). Lazy, igual que
-        /// <see cref="ThreatTelegraphOverlay.ResolveOrCreate"/>: el jefe entra por un asset de datos y
-        /// no puede pedirle al usuario que agregue un bootstrap a mano para que su mecánica exista.
+        /// Devuelve el servicio registrado o crea + registra uno (Global). Lazy: el jefe entra por un
+        /// asset de datos y no puede depender de un bootstrap agregado a mano.
         /// </summary>
         public static ICroupierWheelService ResolveOrCreate()
         {
@@ -128,8 +107,8 @@ namespace Rollgeon.Combat.AI.Bosses.Croupier
             if (bossGuid == Guid.Empty) return;
             if (_hooked && _bossGuid == bossGuid) return;
 
-            // Combate nuevo (o instancia nueva del mismo jefe): el estado del anterior no puede
-            // sobrevivir, o el primer cierre de turno de esta pelea correría una rueda que ya no existe.
+            // Combate nuevo: si el estado del anterior sobrevive, el primer cierre de turno de esta
+            // pelea correría una rueda que ya no existe.
             if (_hooked && _bossGuid != bossGuid) ClearWindup(notify: true);
 
             _bossGuid = bossGuid;
@@ -231,14 +210,12 @@ namespace Rollgeon.Combat.AI.Bosses.Croupier
         }
 
         /// <summary>
-        /// Pegarle cuesta 8. No mira el número, ni la fase, ni si hay windup abierto: es el precio de
-        /// la casilla de melee, y para pegarle hay que ocuparla.
+        /// Cobra <see cref="RetaliationDamage"/> por golpe recibido. No mira el número, ni la fase, ni
+        /// si hay windup abierto.
         /// </summary>
         /// <remarks>
-        /// Se cobra por golpe y no por turno: cada impacto es una decisión aparte, y un jugador que
-        /// elige pegar tres veces está eligiendo pagar tres veces. El único cobro que no ocurre es el
-        /// del golpe que lo mata — un crupier muerto no manotea, y sin esa salvedad la pelea se puede
-        /// ganar y perder en el mismo intercambio.
+        /// El golpe letal no cobra: sin esa salvedad la pelea se puede ganar y perder en el mismo
+        /// intercambio.
         /// </remarks>
         private void OnDamageResolvedExternal(DamageResolvedPayload payload)
         {
@@ -257,14 +234,9 @@ namespace Rollgeon.Combat.AI.Bosses.Croupier
         // ======================================================================
 
         /// <summary>
-        /// El jugador que cierra su turno dentro de un sector cantado lo corre un lugar. Mismo patrón
-        /// que <c>HazardService</c>: <c>OnTurnFinished</c> + la casilla que reporta el grid.
+        /// El jugador que cierra su turno dentro de un sector cantado lo corre un lugar. Corre sólo
+        /// el número en cuyo sector está parado, nunca los dos a la vez.
         /// </summary>
-        /// <remarks>
-        /// Corre <b>sólo</b> el número en cuyo sector está parado. En fase 2 la rueda está trucada y
-        /// no corre ninguno, pero el criterio por slot es el que hace que la costura no mueva los dos
-        /// a la vez si alguna vez se destruca.
-        /// </remarks>
         private void OnTurnFinishedExternal(params object[] args)
         {
             if (_bossGuid == Guid.Empty || !WindupActive) return;
@@ -296,8 +268,8 @@ namespace Rollgeon.Combat.AI.Bosses.Croupier
         }
 
         /// <summary>
-        /// Sólo el jugador corre la rueda. Mismo resolver que <c>DiceBlockService</c>: sin
-        /// <see cref="IPlayerService"/> registrado no hay contra quién comparar y no se corre nada.
+        /// Sólo el jugador corre la rueda: sin <see cref="IPlayerService"/> registrado no hay contra
+        /// quién comparar y no se corre nada.
         /// </summary>
         private static Guid ResolvePlayerGuid()
             => ServiceLocator.TryGetService<IPlayerService>(out var player) && player != null

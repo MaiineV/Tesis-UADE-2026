@@ -15,9 +15,7 @@ using UnityEngine;
 namespace Rollgeon.Combat.AI.Tests
 {
     /// <summary>
-    /// Tests de <see cref="AINode_IgniteDetonatedSectors"/> contra el <see cref="HazardService"/> real:
-    /// el sector que acaba de caer queda en llamas, y la explosión consume la llama del turno en que
-    /// detonó (el peor caso de la columna de costura sigue siendo 24, no 30).
+    /// <see cref="AINode_IgniteDetonatedSectors"/> contra el <see cref="HazardService"/> real.
     /// </summary>
     [TestFixture]
     public class CroupierIgnitionTests
@@ -60,16 +58,14 @@ namespace Rollgeon.Combat.AI.Tests
             _grid.Register(_bossGuid, new GridCoord(5, 3));
             _grid.Register(_playerGuid, new GridCoord(0, 0)); // Sector 4.
 
-            // El fuego es PlayerOnly, así que el service tiene que poder nombrar al jugador para
-            // cobrarle: sin IPlayerService el filtro es fail-closed y no cobra a nadie.
+            // El fuego es PlayerOnly y el filtro es fail-closed: sin IPlayerService no cobra a nadie.
             ServiceLocator.AddService<IPlayerService>(new StubPlayerService { PlayerGuid = _playerGuid });
 
             _wheel = (CroupierWheelService)CroupierWheelService.ResolveOrCreate();
             _wheel.Bind(_bossGuid);
 
-            // 3 y 4 rondas de hazard = "arde 2 rondas" y "arde 3": el fuego nace en el turno del jefe y
-            // el jugador ya jugó esa ronda, así que la primera no le llega nunca. Ver los remarks de
-            // AINode_IgniteDetonatedSectors.
+            // 3 y 4 rondas de hazard = "arde 2" y "arde 3" para el jugador: el fuego nace en el turno
+            // del jefe, cuando el jugador ya jugó esa ronda.
             _fire = CreateFire("Fire P1", durationRounds: 3);
             _firePhase2 = CreateFire("Fire P2", durationRounds: 4);
         }
@@ -100,7 +96,7 @@ namespace Rollgeon.Combat.AI.Tests
         [Test]
         public void Ignite_OneFirePerDetonatedSector()
         {
-            // Arrange — fase 2: dos sectores caen, hasta dos bloques quemándose.
+            // Arrange
             Detonate(2, 3);
 
             // Act
@@ -119,7 +115,7 @@ namespace Rollgeon.Combat.AI.Tests
         [Test]
         public void Ignite_UsesThePhase2Fire_WhenTheTableIsRigged()
         {
-            // Arrange — en fase 2 el fuego dura un turno más, y la duración vive en la definición.
+            // Arrange
             _wheel.SetMode(2, rigged: true, phaseIndex: 2);
             Detonate(1);
 
@@ -152,7 +148,7 @@ namespace Rollgeon.Combat.AI.Tests
         [Test]
         public void Ignite_NothingDetonated_SucceedsWithoutIgniting()
         {
-            // Arrange — turno 1: cantó, pero todavía no detonó nada. No es un fallo.
+            // Arrange — turno 1: cantó, pero todavía no detonó nada.
             // Act
             var result = Ignite();
 
@@ -183,7 +179,7 @@ namespace Rollgeon.Combat.AI.Tests
         [Test]
         public void PlayerCaughtByTheBlast_FirstFireTickIsSwallowed()
         {
-            // Arrange — el jugador está en el sector que detona (ya pagó los 20 este turno).
+            // Arrange — el jugador está en el sector que detona: ya pagó los 20 este turno.
             MovePlayer(new GridCoord(0, 5)); // Sector 1.
             Detonate(1);
 
@@ -204,9 +200,7 @@ namespace Rollgeon.Combat.AI.Tests
         [Test]
         public void PlayerDodgedTheBlast_FireBillsTheFirstTurnEndInside()
         {
-            // Arrange — el jugador esquivó el sector: el fuego no le debe nada todavía, así que su
-            // primer cierre de turno adentro sí cobra. Es la lectura que reeduca al veterano — el
-            // bloque que acaba de caer ya no es el lugar seguro del paño.
+            // Arrange — esquivó el sector, así que no se armó el candado de la detonación.
             MovePlayer(new GridCoord(10, 0)); // Sector 6, lejos del que detona.
             Detonate(1);
 
@@ -244,9 +238,7 @@ namespace Rollgeon.Combat.AI.Tests
         [Test]
         public void Phase1Fire_BillsTwoPlayerTurnEnds_ThenGoesOut()
         {
-            // Arrange — "arde 2 rondas": quedarse cuesta 6 dos veces, y recién a la tercera el bloque
-            // vuelve a ser pisable. Con la duración vieja el fuego llegaba a cobrar una sola vez, así
-            // que salir del bloque nunca era una decisión: bastaba con no volver.
+            // Arrange
             MovePlayer(new GridCoord(10, 0)); // Sector 6: esquiva la detonación, no se arma el skip.
             Detonate(1);
             Ignite();
@@ -269,8 +261,7 @@ namespace Rollgeon.Combat.AI.Tests
         [Test]
         public void Ignite_DoesNotPutOutThePreviousBlock()
         {
-            // Arrange — encender el bloque nuevo no limpia el que todavía arde: el paño se gasta ronda
-            // a ronda en vez de volver a foja cero cada vez que cae un número.
+            // Arrange
             MovePlayer(new GridCoord(10, 0)); // Sector 6: lejos de los dos que caen.
             Detonate(1);
             Ignite();
@@ -293,8 +284,7 @@ namespace Rollgeon.Combat.AI.Tests
         [Test]
         public void SeamColumnInPhase2_BothFiresCoverIt()
         {
-            // Arrange — dos sectores contiguos: la costura queda cubierta por los dos fuegos, igual
-            // que la cobran las dos detonaciones. El paño se pudre entero, como pide la fase.
+            // Arrange — dos sectores contiguos comparten la columna de costura.
             _wheel.SetMode(2, rigged: true, phaseIndex: 2);
             Detonate(2, 3);
 

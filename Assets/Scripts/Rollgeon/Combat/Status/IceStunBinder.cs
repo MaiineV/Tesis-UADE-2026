@@ -9,59 +9,23 @@ using UnityEngine;
 namespace Rollgeon.Combat.Status
 {
     /// <summary>
-    /// Glue de <b>cualquier</b> hielo del juego. Dos trabajos que nadie más puede hacer:
-    /// <list type="number">
-    ///   <item><description><b>Traducir hazard → stun.</b> Escucha <c>OnHazardTriggered</c> y
-    ///   aplica <see cref="IStunService.ApplyStun"/> a quien pisó un parche de hielo
-    ///   <b>registrado acá</b>. El hazard no sabe nada de stun (su <c>Damage</c> es 0) — el hielo
-    ///   paga en turnos, no en HP.</description></item>
-    ///   <item><description><b>Grabar el último movimiento.</b> Escucha
-    ///   <see cref="IMovementService.OnEntityMoved"/> y guarda, por entidad, las casillas que
-    ///   <i>pisó</i>. Lo consume la estela del Anotador
-    ///   (<see cref="Rollgeon.Combat.AI.Decisions.AINode_IceTrail"/>) para congelar exactamente el
-    ///   camino que caminó, no una reconstrucción.</description></item>
-    /// </list>
+    /// Glue de <b>cualquier</b> hielo del juego. Dos trabajos: traducir <c>OnHazardTriggered</c> en
+    /// <see cref="IStunService.ApplyStun"/> para quien pisó un parche registrado acá (el hazard no
+    /// sabe nada de stun: su <c>Damage</c> es 0), y grabar por entidad las casillas del último
+    /// <see cref="IMovementService.OnEntityMoved"/>, que consume
+    /// <see cref="Rollgeon.Combat.AI.Decisions.AINode_IceTrail"/>.
     /// </summary>
     /// <remarks>
-    /// <para>
-    /// <b>Se llamaba <c>AnotadorIceStunBinder</c>.</b> Nunca tuvo nada del Anotador adentro —
-    /// todo su estado está keyeado por instancia de hazard y por dueño— pero el nombre hacía
-    /// creer que sí, y el segundo jefe con hielo (la escarcha de La Generala, piso 3) tenía que
-    /// elegir entre clonarlo o leer raro. El tipo se movió acá, junto a <see cref="IStunService"/>,
-    /// que es de quien depende de verdad.
-    /// </para>
-    /// <para>
-    /// <b>Por qué el path no se puede reconstruir después.</b> <see cref="IMovementService.Move"/>
-    /// resuelve el camino y lo publica en el evento; una vez ejecutado, el origen ya no existe en
-    /// ninguna parte. Un <c>FindPath(origen, destino)</c> a posteriori tampoco sirve: la ocupancia
-    /// cambió, así que podría devolver otro camino y la estela congelaría casillas por las que el
-    /// boss nunca pasó. De ahí que el grabador tenga que estar escuchando <b>antes</b> del
-    /// repliegue, y de ahí el auto-install de abajo.
-    /// </para>
-    /// <para>
-    /// <b>Auto-install.</b> El binder se instala solo en runtime
-    /// (<see cref="RuntimeInitializeOnLoadMethod"/>) en vez de pedir una entry en
-    /// <c>ServiceBootstrap.ExtraServices</c>: si esperara a que el nodo lo cree en su primer tick,
-    /// ese primer tick ya sería <i>después</i> del primer repliegue y el boss perdería la estela de
-    /// su primer turno. Sin hielo trackeado el costo es un dict vacío y un handler que retorna
-    /// en la primera línea.
-    /// </para>
-    /// <para>
-    /// <b>El dueño no se congela a sí mismo.</b> Cada parche recuerda quién lo puso y los triggers
-    /// de ese guid se ignoran: un turno después el boss puede cruzar su propio hielo y
-    /// auto-stunearse se leería como bug (y le regalaría al jugador un turno gratis). El derretido
-    /// de esa casilla lo decide <see cref="HazardDefinitionSO.ConsumeOnTrigger"/> y ocurre dentro
-    /// de <see cref="HazardService"/>.
-    /// </para>
-    /// <para>
-    /// <b>Sin cadenas de stun.</b> Dos disparos seguidos no suman:
-    /// <see cref="IStunService.ApplyStun"/> es <c>max(actual, nuevo)</c> y la casilla pisada se
-    /// derrite. El binder no agrega lógica de acumulación a propósito.
-    /// </para>
+    /// <b>El path hay que grabarlo en el momento.</b> El origen no sobrevive al movimiento, y un
+    /// <c>FindPath</c> a posteriori corre sobre otra ocupancia: la estela congelaría casillas por
+    /// las que el boss nunca pasó. De ahí el auto-install
+    /// (<see cref="RuntimeInitializeOnLoadMethod"/>) en vez de una entry en
+    /// <c>ServiceBootstrap.ExtraServices</c>: un binder creado en el primer tick del nodo llegaría
+    /// tarde al primer repliegue.
     /// </remarks>
     public sealed class IceStunBinder : IDisposable
     {
-        /// <summary>Datos con los que un parche vivo se cobra: a quién NO stunear y cuántos turnos.</summary>
+        /// <summary>A quién NO stunear, y cuántos turnos cuesta pisar el parche.</summary>
         private readonly struct IceInfo
         {
             public readonly Guid OwnerGuid;
@@ -76,18 +40,16 @@ namespace Rollgeon.Combat.Status
 
         private readonly Dictionary<Guid, IceInfo> _patches = new Dictionary<Guid, IceInfo>();
 
-        // Red de seguridad por definición: si el binder se recreó (ServiceLocator.Clear entre runs)
-        // y perdió los instanceId, una instancia cuya Definition es la de un hielo conocido sigue
-        // siendo suya.
+        // Red de seguridad: si el binder se recreó entre runs y perdió los instanceId, una instancia
+        // cuya Definition es la de un hielo conocido sigue siendo suya.
         private readonly Dictionary<HazardDefinitionSO, IceInfo> _byDefinition =
             new Dictionary<HazardDefinitionSO, IceInfo>();
 
         private readonly Dictionary<Guid, List<GridCoord>> _lastWalkedTiles =
             new Dictionary<Guid, List<GridCoord>>();
 
-        // Mismo criterio que HazardService: guardamos la instancia EXACTA a la que nos suscribimos.
-        // IMovementService es run-scoped y este binder no, así que un `-=` resuelto del locator
-        // podría apuntar a la instancia nueva y dejar la suscripción vieja viva para siempre.
+        // La instancia EXACTA a la que nos suscribimos: IMovementService es run-scoped y este binder
+        // no, así que un `-=` resuelto del locator podría dejar viva la suscripción vieja.
         private IMovementService _movementSubscribedTo;
 
         private EventManager.EventReceiver _onHazardTriggeredHandler;
@@ -102,8 +64,7 @@ namespace Rollgeon.Combat.Status
 
         /// <summary>
         /// Devuelve el binder registrado, creándolo si hace falta, y reintenta la suscripción a
-        /// movimiento (el servicio es run-scoped: puede no existir todavía la primera vez).
-        /// Mismo idiom que <c>ThreatTelegraphOverlay.ResolveOrCreate</c>.
+        /// movimiento: ese servicio es run-scoped y puede no existir todavía.
         /// </summary>
         public static IceStunBinder ResolveOrCreate()
         {
@@ -121,10 +82,7 @@ namespace Rollgeon.Combat.Status
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         private static void AutoInstall() => ResolveOrCreate();
 
-        /// <summary>
-        /// Suscribe handlers y se registra en el locator. Público para que los tests EditMode lo
-        /// instancien a mano (mismo patrón que <see cref="HazardService.Register"/>).
-        /// </summary>
+        /// <summary>Suscribe handlers y se registra en el locator.</summary>
         public void Register()
         {
             _onHazardTriggeredHandler = OnHazardTriggeredExternal;
@@ -178,11 +136,8 @@ namespace Rollgeon.Combat.Status
         // API para los nodos
         // ======================================================================
 
-        /// <summary>
-        /// Registra un parche de hielo recién activado: <paramref name="instanceId"/> es suyo, su
-        /// dueño (<paramref name="ownerGuid"/>) no se stunea, y pisarlo cuesta
-        /// <paramref name="stunTurns"/> turnos.
-        /// </summary>
+        /// <summary><paramref name="ownerGuid"/> no se stunea; pisarlo cuesta
+        /// <paramref name="stunTurns"/> turnos.</summary>
         public void TrackIce(Guid instanceId, HazardDefinitionSO definition, Guid ownerGuid, int stunTurns)
         {
             if (instanceId == Guid.Empty) return;
@@ -204,9 +159,8 @@ namespace Rollgeon.Combat.Status
         public bool IsTrackedIce(Guid instanceId) => _patches.ContainsKey(instanceId);
 
         /// <summary>
-        /// Entrega y descarta las casillas que <paramref name="entity"/> pisó en su último
-        /// movimiento (sin el origen, en orden de recorrido). Se descartan al leerlas para que un
-        /// turno sin movimiento no reutilice el camino del turno anterior.
+        /// Entrega y <b>descarta</b> las casillas del último movimiento de
+        /// <paramref name="entity"/>, para que un turno sin movimiento no reutilice el camino previo.
         /// </summary>
         public bool TryConsumeWalkedTiles(Guid entity, out List<GridCoord> tiles)
         {
@@ -250,9 +204,8 @@ namespace Rollgeon.Combat.Status
         }
 
         /// <summary>
-        /// Resuelve el parche de un instanceId: primero por id trackeado y, si no está, por su
-        /// definición (la instancia todavía vive cuando <c>OnHazardTriggered</c> se dispara —
-        /// <see cref="HazardService"/> consume la casilla después del evento).
+        /// Por id trackeado y, si no está, por definición: la instancia todavía vive cuando
+        /// <c>OnHazardTriggered</c> se dispara (la casilla se consume después del evento).
         /// </summary>
         private bool TryResolveIce(Guid instanceId, out IceInfo info)
         {
@@ -283,11 +236,9 @@ namespace Rollgeon.Combat.Status
 
             if (!TryResolveIce(instanceId, out var ice)) return;
 
-            // Con la data de hoy esta rama no se ejecuta: todos los hielos son PlayerOnly, así que
-            // HazardService ya filtró al dueño y OnHazardTriggered nunca llega con su guid. No es
-            // código muerto igual — es el único freno si alguien autora un hielo con
-            // HazardAffects.Everyone, donde el jefe sí vuelve a ser cobrable y se congelaría con su
-            // propio anillo. Barato de mantener, caro de reponer después del bug.
+            // Hoy no se ejecuta (todos los hielos son PlayerOnly y HazardService ya filtró al
+            // dueño), pero es el único freno si alguien autora uno con HazardAffects.Everyone: ahí
+            // el jefe vuelve a ser cobrable y se congelaría con su propio anillo.
             if (entityGuid == ice.OwnerGuid) return;
 
             if (!ServiceLocator.TryGetService<IStunService>(out var stun) || stun == null)
@@ -309,9 +260,8 @@ namespace Rollgeon.Combat.Status
 
         private void OnTurnQueueBuiltExternal(params object[] args)
         {
-            // Hook recurrente más barato para reintentar la suscripción: IMovementService es
-            // run-scoped y puede registrarse después que este binder (mismo reintento que
-            // HazardService hace acá).
+            // Hook recurrente más barato para reintentar: IMovementService es run-scoped y puede
+            // registrarse después que este binder.
             EnsureMovementSubscription();
         }
 
@@ -324,9 +274,8 @@ namespace Rollgeon.Combat.Status
         }
 
         /// <summary>
-        /// Casillas en las que la entidad <i>entró</i>, en orden de recorrido — el path sin el
-        /// origen. Calcado de <c>HazardService.EnteredTiles</c> a propósito: la estela tiene que
-        /// congelar exactamente el mismo conjunto que después el trigger <c>OnEnter</c> escanea.
+        /// El path sin el origen. Tiene que dar el mismo conjunto que
+        /// <c>HazardService.EnteredTiles</c>: la estela congela justo lo que escanea <c>OnEnter</c>.
         /// </summary>
         private static List<GridCoord> EnteredTiles(GridCoord from, GridCoord to, IReadOnlyList<GridCoord> path)
         {
@@ -334,7 +283,7 @@ namespace Rollgeon.Combat.Status
 
             if (path == null || path.Count == 0)
             {
-                // Un reposicionamiento instantáneo no reporta path, pero el destino sí se pisó.
+                // Un teleport no reporta path, pero el destino sí se pisó.
                 if (!to.Equals(from)) tiles.Add(to);
                 return tiles;
             }

@@ -9,35 +9,28 @@ using UnityEngine;
 namespace Rollgeon.Combat.AI.Decisions
 {
     /// <summary>
-    /// Telegraph de <b>canal secundario</b>: marca y ejecuta un área con la misma semántica de
-    /// <see cref="AINode_TelegraphMark"/> + <see cref="AINode_ExecuteTelegraph"/> (marco en el turno N,
-    /// cobro en el N+1), pero bajo un id de fuente propio derivado de <see cref="ChannelId"/>, así que
-    /// <b>no se pisa con el telegraph principal del boss</b>.
+    /// Telegraph de <b>canal secundario</b>: misma semántica que
+    /// <see cref="AINode_TelegraphMark"/> + <see cref="AINode_ExecuteTelegraph"/> (marco en el turno
+    /// N, cobro en el N+1) pero bajo un id de fuente derivado de <see cref="ChannelId"/>. Existe
+    /// porque <see cref="IThreatenedAreaService"/> guarda <i>un</i> área pendiente por fuente y
+    /// <see cref="IThreatenedAreaService.Mark"/> sobrescribe la anterior, así que un boss que
+    /// amenaza dos cosas el mismo turno perdería una de las dos marcas.
     /// </summary>
     /// <remarks>
     /// <para>
-    /// <b>Por qué existe.</b> <see cref="IThreatenedAreaService"/> guarda <i>un</i> área pendiente por
-    /// fuente y <see cref="IThreatenedAreaService.Mark"/> sobrescribe la anterior. Un boss que tiene
-    /// que amenazar dos cosas el mismo turno (La Generala: la mano de dados <i>y</i> el cubilete a su
-    /// alrededor) perdería una de las dos marcas. Este nodo resuelve el segundo aviso en su propio
-    /// canal en vez de tocar el servicio compartido.
-    /// </para>
-    /// <para>
     /// <b>Cómo se cablea.</b> Dos instancias con el mismo <see cref="ChannelId"/>: una en
-    /// <see cref="TelegraphStep.Execute"/> arriba del Sequence (al lado del ExecuteTelegraph
-    /// principal, <b>fuera</b> de cualquier gate — el aviso hay que cobrarlo el turno siguiente aunque
-    /// ese turno no se marque de nuevo) y una en <see cref="TelegraphStep.Mark"/> donde corresponda.
+    /// <see cref="TelegraphStep.Execute"/> arriba del Sequence, <b>fuera</b> de cualquier gate —el
+    /// aviso hay que cobrarlo el turno siguiente aunque ese turno no se marque de nuevo— y una en
+    /// <see cref="TelegraphStep.Mark"/> donde corresponda.
     /// </para>
     /// <para>
-    /// <b>Shapes soportadas.</b> Las centradas (SquareAroundSelf / SquareAroundPlayer / Row / Column /
-    /// HalfRoom). DirectionalBand y ScatteredSquares no: sus helpers son específicos del nodo
-    /// principal y el canal secundario no las necesita.
+    /// <b>Shapes soportadas.</b> Sólo las centradas (SquareAroundSelf / SquareAroundPlayer / Row /
+    /// Column / HalfRoom); DirectionalBand y ScatteredSquares no.
     /// </para>
     /// </remarks>
     [Serializable, HideReferenceObjectPicker]
     public sealed class AINode_AuxTelegraph : AIActionNode
     {
-        /// <summary>Mitad del ciclo que corre esta instancia.</summary>
         public enum TelegraphStep
         {
             /// <summary>Marca el área para cobrarla el próximo turno del boss.</summary>
@@ -135,10 +128,9 @@ namespace Rollgeon.Combat.AI.Decisions
         // ======================================================================
 
         /// <remarks>
-        /// Delega en el <see cref="AINode_ExecuteTelegraph"/> de siempre con un
-        /// <see cref="AIContext"/> armado a mano cuyo <c>SelfGuid</c> es el canal — el mismo truco que
-        /// usa <c>HazardService</c> para correr telegraphs que no pertenecen a una entidad. Cero
-        /// lógica de resolución duplicada.
+        /// Delega en <see cref="AINode_ExecuteTelegraph"/> con un <see cref="AIContext"/> armado a
+        /// mano cuyo <c>SelfGuid</c> es el canal — el mismo truco que usa <c>HazardService</c> para
+        /// correr telegraphs que no pertenecen a una entidad.
         /// </remarks>
         private static AIResult Execute(AIContext context, Guid channel)
         {
@@ -161,10 +153,9 @@ namespace Rollgeon.Combat.AI.Decisions
         // ======================================================================
 
         /// <summary>
-        /// Guid estable y derivado: mismo boss + mismo <paramref name="channel"/> ⇒ mismo id en todos
-        /// los turnos, sin necesidad de un servicio que reparta ids. Se pliega el hash del canal sobre
-        /// los últimos 4 bytes del guid del boss, así dos bosses nunca comparten canal y el canal
-        /// nunca coincide con el telegraph principal del propio boss.
+        /// Guid derivado: mismo boss + mismo <paramref name="channel"/> ⇒ mismo id en todos los
+        /// turnos, sin un servicio que reparta ids. El hash se pliega sobre los últimos 4 bytes del
+        /// guid del boss, así dos bosses nunca comparten canal ni chocan con su telegraph principal.
         /// </summary>
         public static Guid ChannelGuid(Guid self, string channel)
         {
@@ -179,9 +170,9 @@ namespace Rollgeon.Combat.AI.Decisions
         }
 
         /// <remarks>
-        /// Hash propio y no <see cref="string.GetHashCode()"/>: ese no está garantizado estable entre
-        /// procesos, y un id de canal que cambia entre sesiones rompería un resume a mitad de aviso.
-        /// El fallback distinto de cero evita que un canal sin nombre colisione con el guid del boss.
+        /// Hash propio y no <see cref="string.GetHashCode()"/>: ese no es estable entre procesos, y
+        /// un id de canal que cambia entre sesiones rompería un resume a mitad de aviso. El fallback
+        /// distinto de cero evita que un canal sin nombre colisione con el guid del boss.
         /// </remarks>
         private static int StableHash(string value)
         {

@@ -24,22 +24,11 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
     /// retintado a carmesí de crupier + la ruleta parenteada al costado).
     /// </summary>
     /// <remarks>
-    /// <para>
-    /// <b>Dos mitades a propósito.</b> <see cref="BuildAIRoot"/>, <see cref="BuildWrapperSpec"/> y
-    /// <see cref="PopulateEnemyData"/> son estáticos puros y no tocan <c>AssetDatabase</c>: los tests
-    /// de wiring arman el árbol y la ficha visual en memoria y les afirman orden de gates, fallbacks,
-    /// números y retintes sin depender de que el <c>.asset</c> esté generado ni de que Unity lo haya
-    /// reimportado. El <see cref="BuildCroupier"/> del menú es la capa que persiste, y es idempotente:
-    /// correrlo dos veces deja exactamente el mismo asset (el wrapper se reescribe sobre su path, que
-    /// preserva el GUID, así que la referencia del <c>ED_</c> sobrevive al rebuild).
-    /// </para>
-    /// <para>
-    /// <b>El arte es el del Healer</b> (<c>Healer_Animated</c>): mago con sombrero de copa, moño, capa
-    /// y bastón — literalmente un crupier con otro tinte. Se reusa en vez de pedir arte nuevo porque su
-    /// lectura la lleva el paño, no la silueta. Su desplazamiento es
-    /// <c>LocomotionStyle.Blink</c> —el clip del rig es un teleport— y está bien así: el crupier no
-    /// camina, reaparece del otro lado de la mesa.
-    /// </para>
+    /// <see cref="BuildAIRoot"/>, <see cref="BuildWrapperSpec"/> y <see cref="PopulateEnemyData"/>
+    /// son estáticos puros — se testean en memoria sin tocar el <c>AssetDatabase</c>.
+    /// <see cref="BuildCroupier"/> es la capa que persiste, y es idempotente. El arte es el del
+    /// Healer retintado: su lectura la lleva el paño, no la silueta, y su
+    /// <c>LocomotionStyle.Blink</c> le queda bien — el crupier no camina, reaparece.
     /// </remarks>
     public static class CroupierAssetBuilder
     {
@@ -377,17 +366,9 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         /// <see cref="CroupierWheelNumberView"/> al root del wrapper.
         /// </summary>
         /// <remarks>
-        /// <para>
-        /// <b>El label es hijo del root, no de la rueda.</b> Colgarlo de <c>Wheel</c> lo haría girar
-        /// con el disco y sería ilegible justo en el momento del canto, que es cuando importa. El
-        /// disco gira detrás; el número se queda quieto, como la ventana de resultado de una ruleta.
-        /// </para>
-        /// <para>
-        /// <b>La posición sale de los bounds del prop, no de un número cableado.</b> Se lee el centro
-        /// del disco de sus renderers y se lo pasa al espacio local del root. Así el label sigue a la
-        /// rueda si arte le cambia el tamaño, la escala o el offset de la malla — que es exactamente
-        /// el tipo de dato que en este builder ya vive como constante y hay que re-tunear a mano.
-        /// </para>
+        /// El label cuelga del root y no de <c>Wheel</c>: ahí giraría con el disco y sería ilegible
+        /// justo en el canto. La posición sale de los bounds del prop y no de un número cableado, así
+        /// sigue a la rueda si arte le cambia tamaño, escala u offset de la malla.
         /// </remarks>
         private static void EnsureWheelNumber(GameObject contents, Transform wheel)
         {
@@ -544,25 +525,10 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         /// Árbol del Croupier. Sequence raíz de siete pasos: seis de mesa y el reacomodo, último.
         /// </summary>
         /// <remarks>
-        /// <para>
-        /// <b>Orden.</b> Detonar va primero (resuelve lo cantado el turno pasado, como
-        /// <c>ExecuteTelegraph</c>). El gate de fase va <b>antes</b> del marcado, que es el "ataque" de
-        /// este jefe: en el path no-coroutine un <c>Running</c> aborta el Sequence, y una fase ubicada
-        /// después del ataque no tickearía nunca en tests ni en simulación.
-        /// </para>
-        /// <para>
-        /// <b>Se mueve, y se mueve último.</b> Era una estatua: el jugador reportaba que no se acerca
-        /// ni se aleja. Ahora sostiene una banda de <see cref="DesiredRange"/> con
-        /// <c>AINode_Move + Retreat</c> —el nodo cubre las dos mitades del reclamo: cierra cuando está
-        /// lejos y se corre cuando lo tienen encima—. Va al final porque es el único paso que devuelve
-        /// <c>Running</c> (espera el blink), y con algo detrás ese Running se comería el resto del turno.
-        /// </para>
-        /// <para>
-        /// <b>Cada paso que puede fallar va en <c>Selector[paso, Wait]</c>.</b> El Sequence corta en el
-        /// primer <c>Failed</c>: sin el fallback, una sala sin bounds (marcado) o un servicio no
-        /// registrado (marcado, fuego) le cancelaría al jefe todo lo que viene después en el
-        /// turno.
-        /// </para>
+        /// Detonar va primero, resolviendo lo cantado el turno pasado, y el gate de fase va antes del
+        /// marcado: en el path no-coroutine un <c>Running</c> aborta el Sequence. El reacomodo va
+        /// último por lo mismo — es el único paso que devuelve <c>Running</c> (espera el blink). Cada
+        /// paso que puede fallar va en <c>Selector[paso, Wait]</c>.
         /// </remarks>
         public static AINode_Sequence BuildAIRoot(HazardDefinitionSO fire, HazardDefinitionSO firePhase2)
         {
@@ -610,26 +576,13 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
                     // 3. Canta el número (o los dos) y abre el windup.
                     Guarded(new AINode_SpinWheel { RetaliationDamage = RetaliationDamage }),
 
-                    // 4. Confisca el dado del número que ACABA DE CANTAR. Se había sacado por leerse
-                    //    como el bloqueo al azar del Sunken Grand; vuelve con la presentación que
-                    //    faltaba y con el número a la vista: el sector marcado en el piso y el dado
-                    //    con candado son el mismo dato, leído en el mismo instante.
+                    // 4. Confisca el dado del número recién cantado: el sector marcado en el piso y
+                    //    el dado con candado son el mismo dato.
                     //
-                    //    Sung y no Detonated, por playtest. Con Detonated el bloqueo dependía de que
-                    //    hubiera algo resuelto: el turno 1 no tiene número caído todavía, el reader
-                    //    devolvía -1, y RotateDice ya había hecho dice.Clear() — el jugador arrancaba
-                    //    la pelea sin ningún dado bloqueado y veía aparecer y desaparecer el candado
-                    //    según el estado del paño, que desde afuera se lee como un porcentaje. Leído
-                    //    acá —después del paso 3, que canta— SungNumbers siempre tiene número, así
-                    //    que hay exactamente un dado bloqueado en todos los turnos desde el primero.
-                    //
-                    //    El precio es el turno de aviso: antes veías el sector en N y perdías el dado
-                    //    en N+1. Ahora lo perdés en el mismo turno en que se canta. A cambio la regla
-                    //    es una sola y siempre está puesta, que es lo que se pidió.
-                    //
-                    //    Sigue yendo ACÁ y no más abajo: el paso 3 tiene que haber cantado para que
-                    //    SungNumbers esté poblado, y el paso 1 del turno siguiente lo consume con
-                    //    ConsumeWindup(). Hay un test que fija el orden.
+                    //    Sung y no Detonated: con Detonated el turno 1 no tiene nada resuelto, el
+                    //    reader devuelve -1 y RotateDice ya hizo Clear(), así que la pelea abría sin
+                    //    dado bloqueado y el candado iba y venía. Va ACÁ y no más abajo porque el
+                    //    paso 3 tiene que haber poblado SungNumbers. Hay un test sobre el orden.
                     Guarded(new AINode_RotateBlock
                     {
                         Target = AINode_RotateBlock.BlockTarget.Dice,

@@ -189,17 +189,9 @@ namespace Rollgeon.Combat.Threat
         /// La Mesa, el 3×3 que el jefe arrastra consigo.
         /// </summary>
         /// <remarks>
-        /// <para>
-        /// <b>El hueco se recorta solo.</b> No se proyecta un cuadrado para restarlo: se filtran
-        /// las casillas de la sala por distancia Chebyshev al jefe. Contra una pared el hueco
-        /// queda del tamaño que entre —en una esquina son 4 casillas en vez de 9— sin ningún caso
-        /// especial, y la casilla del propio jefe nunca queda amenazada ni con radio 0.
-        /// </para>
-        /// <para>
-        /// Los obstáculos no se pintan: <see cref="RoomTiles"/> ya devuelve solo casillas
-        /// caminables. Sala sin bounds reales (grafo vacío) ⇒ vacío, igual que el resto de las
-        /// shapes que necesitan enumerar la sala.
-        /// </para>
+        /// El hueco se recorta solo: se filtra por distancia Chebyshev en vez de restar un cuadrado
+        /// proyectado, así contra una pared queda del tamaño que entre sin ningún caso especial.
+        /// Sala sin bounds ⇒ vacío, igual que el resto de las shapes que enumeran la sala.
         /// </remarks>
         public static HashSet<GridCoord> ComputeAllExceptSquareAroundSelf(
             IGridManager grid, GridCoord self, int radius)
@@ -226,29 +218,17 @@ namespace Rollgeon.Combat.Threat
         /// <remarks>
         /// <para>
         /// <b>Los seis bloques cubren la sala entera.</b> Es la invariante que sostiene la pelea:
-        /// una casilla que no pertenece a ningún sector no se prende fuego <i>nunca</i>, y pararse
-        /// ahí vuelve gratis todo el jefe. La versión anterior dejaba la fila central afuera a
-        /// propósito —"el pasillo"— y el jugador se quedaba parado en ella los ocho turnos: era un
-        /// santuario permanente de once casillas justo al lado del jefe, no un pasillo.
+        /// una casilla que no pertenece a ningún sector no se prende fuego nunca, y pararse ahí
+        /// vuelve gratis todo el jefe.
         /// </para>
         /// <para>
-        /// <b>Costuras, no huecos.</b> Cada banda mide <c>ceil(extensión/bandas)</c> y la última se
-        /// ancla al borde lejano, así que cuando la extensión no es múltiplo exacto las bandas se
-        /// <i>solapan</i> en una franja en vez de dejar un hueco. En la sala real (11×11, x e y de
-        /// -5 a 5) eso da columnas -5..-2 / -1..2 / 2..5 y filas -5..0 / 0..5: la columna 2 y la
-        /// fila 0 pertenecen cada una a dos bloques. Son las únicas franjas donde los dos números
-        /// de fase 2 pueden pegar los dos (12+12 = 24, el mismo techo de siempre — sólo se cantan
-        /// dos números, por más que la casilla pertenezca a cuatro bloques).
+        /// Costuras, no huecos: cada banda mide <c>ceil(extensión/bandas)</c> y la última se ancla
+        /// al borde lejano, así que con extensión no múltiplo las bandas se <i>solapan</i> en vez de
+        /// dejar hueco. Las franjas de solape caen con el doble de frecuencia — que la del jefe sea
+        /// una de ellas es deliberado, es lo que impide acampar a su lado.
         /// </para>
         /// <para>
-        /// Que la fila de costura sea justo la del jefe es deliberado: la casilla que antes era la
-        /// más segura del paño ahora es la que cae con el doble de frecuencia, mientras que
-        /// acercarse por arriba o por abajo sigue costando lo mismo que cualquier otra casilla. El
-        /// jugador conserva un camino de riesgo normal hasta el melee; lo que pierde es el campamento.
-        /// </para>
-        /// <para>
-        /// Salas sin bounds reales (grafo vacío) o índices fuera de 1..6 devuelven vacío, igual que
-        /// el resto de las shapes que necesitan extensión de sala.
+        /// Sala sin bounds o índice fuera de 1..6 ⇒ vacío.
         /// </para>
         /// </remarks>
         public static HashSet<GridCoord> ComputeRoomSector(IGridManager grid, int sector)

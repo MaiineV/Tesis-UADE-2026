@@ -16,25 +16,11 @@ using Object = UnityEngine.Object;
 namespace Rollgeon.Editor.Tools.Enemy.Tests
 {
     /// <summary>
-    /// Cierra el circuito animación ↔ ataque de los seis jefes: que cada entry <c>anim.boss.*</c>
-    /// nombre un trigger que el rig de ESE jefe declara, y que ningún ataque se resuelva sin gesto.
+    /// Cierra el circuito animación ↔ ataque de los seis jefes. Los dos bugs que atrapa son mudos:
+    /// un <c>SetTrigger</c> de un parámetro inexistente sólo loguea un warning que se pierde, y un
+    /// <see cref="AINode_ExecuteTelegraph"/> sin <c>WindupFeedbackId</c> cobra igual con el jefe en
+    /// idle. Los jefes visten rigs prestados, así que sus triggers cambian sin avisar.
     /// </summary>
-    /// <remarks>
-    /// <para>
-    /// <b>Los dos bugs que atrapa son mudos.</b> Un <c>AnimTrigger</c> con un nombre que el
-    /// <c>AnimatorController</c> no tiene no tira nada: <c>Animator.SetTrigger</c> de un parámetro
-    /// inexistente sólo loguea un warning que se pierde entre los cien de una pelea. Y un
-    /// <see cref="AINode_ExecuteTelegraph"/> sin <c>WindupFeedbackId</c> tampoco falla — el daño
-    /// sale igual, el jefe se queda en idle y aparece un número. Los dos se ven sólo mirando al
-    /// jefe pelear, que es exactamente lo que nadie hace en cada build.
-    /// </para>
-    /// <para>
-    /// Los jefes visten rigs prestados (el Croupier el del Healer, el Cajero el del General
-    /// Director), así que qué triggers tiene cada uno depende de arte y cambia sin avisar. Cuando
-    /// arte le autore clips propios a alguno, este test es el que dice qué quedó apuntando a un
-    /// trigger que ya no existe.
-    /// </para>
-    /// </remarks>
     [TestFixture]
     public class BossAnimationWiringTests
     {
@@ -122,15 +108,10 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         // ==================================================================
 
         /// <summary>
-        /// Cada jefe y su árbol. El Croupier no entra: no usa
-        /// <see cref="AINode_ExecuteTelegraph"/> — detona con su propio nodo, y ahí la ausencia de
-        /// animación es deliberada (explota el paño, no él).
+        /// Cada jefe y su árbol. El Croupier no entra: detona con su propio nodo y ahí la ausencia
+        /// de animación es deliberada. Los árboles se arman <b>dentro</b> del test — una excepción
+        /// al recolectar el source hace desaparecer el fixture entero en vez de reportar rojo.
         /// </summary>
-        /// <remarks>
-        /// Los árboles se arman <b>dentro</b> del test y no acá: NUnit evalúa el source al recolectar,
-        /// y una excepción en esa fase no se reporta como un test rojo sino como el fixture entero
-        /// desaparecido de la lista.
-        /// </remarks>
         private static IEnumerable<TestCaseData> TelegraphCases()
         {
             yield return Case("El Cajero", () => CajeroAssetBuilder.BuildAIRoot(null));
@@ -150,8 +131,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             var db = AssetDatabase.LoadAssetAtPath<FeedbackDBSO>(DbPath);
             Assert.IsNotNull(db, $"No se encontró el FeedbackDB en '{DbPath}'.");
 
-            // Act — la marca del turno pasado es el ataque que más veces ve el jugador; sin windup
-            // se cobra sola, con el jefe parado en idle.
+            // Act
             var executes = Descendants(buildRoot()).OfType<AINode_ExecuteTelegraph>().ToList();
 
             // Assert
@@ -170,10 +150,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         [Test]
         public void TheGeneralaRefillsHerTable_WithAGesture()
         {
-            // Arrange — los cinco dados aparecían de la nada con ella parada en idle: se leía como un
-            // evento de la sala y no como algo que hizo el jefe. Es además el único uso que tiene esa
-            // animación del rig de dados (ver BossFeedbackInstaller), así que el gesto tuvo que
-            // sobrevivir la migración de la mesa a AINode_SpawnRoomObjects.
+            // Arrange — es el único uso que tiene esa animación del rig (ver BossFeedbackInstaller).
             var db = AssetDatabase.LoadAssetAtPath<FeedbackDBSO>(DbPath);
             Assert.IsNotNull(db, $"No se encontró el FeedbackDB en '{DbPath}'.");
 
@@ -203,11 +180,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             return dot < 0 ? rest : rest.Substring(0, dot);
         }
 
-        /// <summary>
-        /// El controller que corre ese jefe, vía su <c>VisualPrefab</c>. Se pasa por el prefab y no
-        /// por el path del <c>.controller</c> porque el YAML del prefab miente: el arte va anidado y
-        /// sus componentes aparecen <c>stripped</c>.
-        /// </summary>
+        /// <summary>Por el <c>VisualPrefab</c> y no por el path del <c>.controller</c>: el YAML del
+        /// prefab miente, el arte va anidado y sus componentes aparecen <c>stripped</c>.</summary>
         private static AnimatorController ControllerOf(string entityId)
         {
             foreach (var guid in AssetDatabase.FindAssets("t:EnemyDataSO"))

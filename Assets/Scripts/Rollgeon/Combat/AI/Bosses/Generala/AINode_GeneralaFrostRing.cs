@@ -20,47 +20,23 @@ namespace Rollgeon.Combat.AI.Bosses.Generala
     /// </summary>
     /// <remarks>
     /// <para>
-    /// <b>Área maciza.</b> Fue un anillo de una casilla de grosor y en pantalla se leía como un bug:
-    /// un cuadrado dibujado cuyo centro no hacía nada. Y el motivo autorado del hueco —"desde ahí el
-    /// jugador le rompe los dados"— nunca se cumplió: los dados caían en el perímetro de la sala,
-    /// no pegados a ella. Ahora la mesa sí está en el anillo pegado a ella, y congelarla entera es
-    /// lo que la vuelve una decisión: <b><see cref="HazardTriggerMode.OnEnter"/> no dispara sobre
-    /// quien ya estaba adentro</b>, así que la ronda franca —la impar, ver el gate de paridad de su
-    /// árbol— es para meterte a la mesa, y desde adentro le pegás a ella y a sus dados sin pagar
-    /// nada. Salir cuesta el turno. La distancia sigue siendo la variable que elige el jugador,
-    /// pero ahora también elige <i>cuándo</i>.
-    /// </para>
-    /// <para>
-    /// <b>Cero daño, a propósito.</b> El techo de daño por turno del piso 3 es 45 (65 con aviso), y
-    /// su turno ya puede sumar 45 de la mano detonada + 18 del cubilete = 63. No queda presupuesto
-    /// para un golpe más, así que la escarcha cobra en <b>turnos</b>: el que se congela pierde el
-    /// suyo y come la mano de la ronda siguiente sin poder esquivarla — que es el golpe extra que
-    /// pide el diseño, ya presupuestado. Mismo criterio que la estela del Anotador
-    /// (<c>Damage = 0</c> en la definición del hazard).
+    /// Cero daño a propósito: el techo por turno del piso ya está lleno con la mano y el cubilete,
+    /// así que la escarcha cobra en <b>turnos</b> — el que se congela pierde el suyo y come la mano
+    /// siguiente sin poder esquivarla.
     /// </para>
     /// <para>
     /// <b>Ella no se congela.</b> El área se publica con ella como dueña y el binder ignora los
-    /// triggers del dueño: el nodo de reposicionamiento corre después en su turno y la haría cruzar
-    /// su propio hielo. Con <see cref="Solid"/> eso pasó de conveniente a necesario — su propia
-    /// casilla queda adentro. El área queda donde estaba la mesa cuando la puso: la escarcha es del
-    /// piso, no de ella. Sus dados tampoco se congelan, por la razón de siempre: los hazards son
-    /// <c>HazardAffects.PlayerOnly</c>.
+    /// triggers del dueño; con <see cref="Solid"/> eso es necesario, no cómodo, porque su propia
+    /// casilla queda adentro y el reposicionamiento corre después en el mismo turno. El área queda
+    /// donde la puso: la escarcha es del piso, no de ella.
     /// </para>
     /// <para>
-    /// <b>Un área viva por vez.</b> Con <see cref="ReplacePreviousRing"/> la nueva apaga la anterior
-    /// antes de publicarse: dos superpuestas duplicarían overlays y dejarían medio mapa helado, que
-    /// es lo contrario de una regla que se lee de un vistazo.
+    /// <b><see cref="Solid"/> en un asset viejo llega en false</b> — Odin no corre los
+    /// inicializadores de campo al deserializar. Re-correr el builder lo arregla.
     /// </para>
     /// <para>
-    /// <b><see cref="Solid"/> en un asset viejo llega en false.</b> Odin no corre los inicializadores
-    /// de campo al deserializar, así que un <c>ED_Boss_Generala.asset</c> autorado antes del campo
-    /// vuelve al anillo hueco. Es el comportamiento viejo, no un error nuevo; re-correr el builder lo
-    /// pone en su valor.
-    /// </para>
-    /// <para>
-    /// <b>Devuelve <c>Failed</c> cuando no hay anillo posible</b> (sala sin bounds, hazard sin
-    /// asignar, servicio ausente) ⇒ va SIEMPRE dentro de un <c>Selector[nodo, Wait]</c>, como el
-    /// resto de los nodos riesgosos de su árbol.
+    /// Devuelve <c>Failed</c> cuando no hay anillo posible ⇒ va SIEMPRE dentro de un
+    /// <c>Selector[nodo, Wait]</c>.
     /// </para>
     /// </remarks>
     [Serializable, HideReferenceObjectPicker]

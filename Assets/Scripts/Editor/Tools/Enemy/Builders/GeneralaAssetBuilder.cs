@@ -27,30 +27,9 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
     /// escribe assets.
     /// </summary>
     /// <remarks>
-    /// <para>
-    /// <b>El jefe.</b> Cinco dados propios sobre la mesa (objetos de <see cref="DiceHp"/> HP que
-    /// además bloquean el paso). Cada turno tira los que le queden vivos, los corre por el mismo
-    /// detector de combos que la mano del jugador, y el combo que sale <b>es</b> el ataque: la
-    /// Escalera una franja, el Full dos áreas, el Póker un 5×5, la Generala ocho parches de 3×3.
-    /// Romperle un dado le borra una categoría y le abre un hueco a la sala: un golpe, dos
-    /// consecuencias.
-    /// </para>
-    /// <para>
-    /// <b>La mesa se separó de ella</b> (<see cref="DiceDefinitionPath"/>, <c>AINode_SpawnRoomObjects</c>
-    /// con <c>DoorFronts</c>): cuatro dados en los marcos de puerta de la sala y el quinto pegado a
-    /// ella. Ya no es un detalle de spawn: es lo que hace que ignorar la mesa y pegarle a ella
-    /// directo, romperle el dado caro de al lado (cubilete de por medio), o caminar hasta un marco
-    /// mientras ella persigue con su correa (<see cref="RepositionRange"/>) sean tres jugadas con
-    /// tres precios distintos, no una sola mesa uniforme. Hasta la migración los cinco caían todos
-    /// en el anillo pegado a ella —o, antes de eso, en el perímetro de la sala— y ninguna pagaba
-    /// distinto de las otras.
-    /// </para>
-    /// <para>
-    /// <b>El cubilete.</b> Cada vez que tira, baja la copa sobre quien esté pegado:
-    /// <see cref="CupSlamDamage"/> de daño melee directo, sin aviso previo
-    /// (<see cref="AINode_GeneralaCupSlam"/>). Es el precio de romper de cerca — el resto de su daño
-    /// se avisa una ronda antes y se esquiva caminando.
-    /// </para>
+    /// Tira sus dados vivos por el mismo detector de combos que la mano del jugador, y el combo que
+    /// sale <b>es</b> el ataque. Romperle un dado le borra una categoría y le abre un hueco a la
+    /// sala.
     /// </remarks>
     public static class GeneralaAssetBuilder
     {
@@ -59,40 +38,19 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         private const string EnemiesFolder = "Assets/Rollgeon/Enemies";
         public const string BossAssetPath = EnemiesFolder + "/ED_Boss_Generala.asset";
 
-        /// <summary>
-        /// La mesa, como <see cref="RoomObjectDefinitionSO"/>.
-        /// </summary>
-        /// <remarks>
-        /// <para>
-        /// Hermano de la carpeta de hazards a propósito: el propio SO se describe como "the sibling
-        /// of <c>HazardDefinitionSO</c> for the other half of room state — a hazard owns tiles that
-        /// <i>hurt</i>, this owns tiles that are <i>taken</i>".
-        /// </para>
-        /// <para>
-        /// <b>Reemplazó a <see cref="DiceAssetPath"/> en el árbol.</b> Los dados viajaban como
-        /// <c>EnemyDataSO</c> por <c>AINode_SpawnReinforcements</c>, y ese nodo los ponía en
-        /// <c>PickEdgeSpawnTiles</c>: el <b>perímetro de la sala</b>, separados 3 casillas. O sea que
-        /// "los cinco dados de su mesa" eran cinco cajas contra las paredes, sin relación visible con
-        /// ella — y el hueco del anillo de escarcha se justificaba diciendo que las casillas pegadas a
-        /// ella son "desde donde el jugador le rompe los dados", que no pasaba. Encima reponía la
-        /// oleada entera de una sola vez, recién cuando los cinco estuvieran rotos.
-        /// </para>
-        /// </remarks>
+        /// <summary>La mesa, como <see cref="RoomObjectDefinitionSO"/>.</summary>
         public const string DiceDefinitionPath =
             "Assets/Rollgeon/Combat/RoomObjects/RO_Generala_Dado.asset";
 
         /// <summary>
-        /// El dado como enemigo. <b>Parkeado, no borrado</b> — el árbol ya no lo apunta (ver
-        /// <see cref="DiceDefinitionPath"/>) pero el asset, <see cref="PopulateDiceData"/> y sus tests
-        /// siguen acá: si hace falta un dado que actúe, vuelve entero.
+        /// El dado como enemigo. Parkeado, no borrado: el árbol ya no lo apunta pero el asset y sus
+        /// tests siguen acá por si hace falta un dado que actúe.
         /// </summary>
         public const string DiceAssetPath = EnemiesFolder + "/ED_Obj_DadoCasa.asset";
 
         /// <summary>
-        /// La escarcha de la mesa. <b>Asset propio y no el <c>IceTrailHazardDefinition</c> del
-        /// Anotador</b>: aquél está autorado en <c>DurationRounds = 4</c> (3 rondas pisables) porque
-        /// su diseño es tapar corredores durante varias rondas, y acá la ficha pide <b>1 turno</b>.
-        /// Retunearlo le cambiaría la pelea al jefe del piso 2, que no es de este trabajo.
+        /// La escarcha. Asset propio y no el del Anotador: aquél dura más a propósito y retunearlo
+        /// le cambiaría la pelea al jefe del piso 2.
         /// </summary>
         public const string FrostHazardAssetPath =
             "Assets/Rollgeon/Combat/Hazards/GeneralaFrostHazardDefinition.asset";
@@ -120,60 +78,29 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         public const int BossHp = 240;
         public const int BossAttack = 40;
 
-        /// <summary>
-        /// Vida de cada dado. Con el golpe mínimo del jugador en 6, un dado de 4 HP se rompe de
-        /// cualquier roce y desarmarle la mesa es un trámite de cinco turnos que no cuesta nada. A
-        /// 45 romper un dado cuesta un golpe entero: cinco dados son cinco golpes que no fueron al
-        /// jefe, y esa es la decisión.
-        /// </summary>
+        /// <summary>Vida de cada dado: romper uno cuesta un golpe entero, y esa es la decisión.</summary>
         public const int DiceHp = 45;
 
         public const int HandSize = 5;
 
         /// <summary>
-        /// Turnos del boss que tarda en reponer un dado roto. <b>Negativo = no se repone</b>
-        /// (<c>RoomObjectDefinitionSO.Respawns</c> es <c>RespawnDelayTurns &gt;= 0</c>).
+        /// Turnos que tarda en reponer un dado roto. <b>Negativo = no se repone</b>
+        /// (<c>RoomObjectDefinitionSO.Respawns</c> es <c>RespawnDelayTurns &gt;= 0</c>, así que el 0
+        /// es "vuelve enseguida"). No se repone porque <see cref="TableArmorMax"/> tampoco vuelve:
+        /// reponerlo devolvería el bloqueo y la categoría sin devolver la armadura.
         /// </summary>
-        /// <remarks>
-        /// Salió del playtest: los dados reaparecían y no tienen que hacerlo. Y la razón es más
-        /// fuerte que la molestia visual — con <see cref="TableArmorMax"/> ya establecido en que la
-        /// reducción rota <b>no vuelve</b>, reponer el dado le devolvía el bloqueo de casilla y la
-        /// categoría de la mano sin devolverle la armadura: el jugador pagaba 45 de HP por un
-        /// progreso que se deshacía a los cuatro turnos en dos de sus tres ejes. La mesa es un
-        /// recurso que se gasta, no una noria.
-        /// </remarks>
         public const int TableRefillTurns = -1;
 
         /// <summary>
-        /// Reducción de daño con la mesa entera en pie. Baja
-        /// <see cref="TableArmorPerDie"/> por cada dado roto, y <b>no vuelve</b> cuando se repone.
+        /// Reducción de daño con la mesa entera en pie. Baja <see cref="TableArmorPerDie"/> por cada
+        /// dado roto y <b>no vuelve</b>: es lo que hace que desarmarla compre algo estable. Ver
+        /// <c>RoomObjectArmorService</c>.
         /// </summary>
-        /// <remarks>
-        /// <para>
-        /// Es lo que le pone número a la mesa. Sus dados ya hacían dos cosas —bloquear el paso y
-        /// borrarle una categoría de la mano— pero ninguna se ve en pantalla, así que romperlos parecía
-        /// una pérdida de turnos. Con esto el primer golpe hace ~9 en vez de ~30 y sube visiblemente
-        /// cada vez que rompés uno: la mesa deja de ser decorado y pasa a ser la razón por la que le
-        /// pegás poco.
-        /// </para>
-        /// <para>
-        /// <b>El progreso es permanente.</b> El dado repuesto vuelve a bloquear y a darle la categoría,
-        /// pero su 14% ya no vuelve. Con la reducción reponiéndose, la mesa sería una noria —limpiás
-        /// cinco dados, se reponen, volvés a empezar— y los ~8 golpes que cuesta desarmarla no
-        /// comprarían nada estable. Ver <c>RoomObjectArmorService</c>.
-        /// </para>
-        /// <para>
-        /// <b><see cref="DiceHp"/> queda en 45.</b> A ~30 de golpe medio del piso 3, cada dado cuesta
-        /// golpe y medio: desarmarle la mesa es una inversión de unos 8 turnos que el resto de la pelea
-        /// paga. Si el playtest dice que es demasiado, el número lo decide diseño.
-        /// </para>
-        /// </remarks>
         public const float TableArmorMax = 0.7f;
 
         /// <summary>
-        /// Lo que descuenta cada dado en pie: <see cref="TableArmorMax"/> repartido entre los
-        /// <see cref="HandSize"/>. Sale de la división y no de un literal para que no puedan desfasarse
-        /// — un builder que autore 0.15 con cinco dados daría 75% y nadie lo notaría.
+        /// Lo que descuenta cada dado en pie. Sale de la división y no de un literal: autorar 0.15
+        /// con cinco dados daría 75% y nadie lo notaría.
         /// </summary>
         public const float TableArmorPerDie = TableArmorMax / HandSize;
 
@@ -191,105 +118,51 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         public const int GeneralaDamage = 45;
 
         /// <summary>
-        /// Daño del cubilete. Es un golpe melee directo contra quien esté pegado cuando ella tira
-        /// (<see cref="AINode_GeneralaCupSlam"/>), no un área avisada: el único aviso es la
-        /// distancia, y esa la elige el jugador.
+        /// Daño del cubilete: golpe melee directo contra quien esté pegado cuando ella tira, sin
+        /// aviso. El techo del turno queda en 45 (mano grande) + 12 = 57.
         /// </summary>
-        /// <remarks>
-        /// Bajó de 18 a 12 porque ahora ella persigue (<see cref="RepositionRange"/> = 2): te
-        /// alcanza más seguido que cuando huía, así que el peaje por golpe tiene que bajar para
-        /// que el turno siga entrando en el techo del piso. Y no bajó a 8 —lo mínimo que se
-        /// sentiría "gratis"— porque el dado que queda parqueado a su lado tiene que seguir
-        /// costando algo real: 12 es el punto en el que romperlo de cerca sigue siendo una
-        /// decisión y no un descuento. Techo por turno con esto: 45 (mano grande) + 12 = 57,
-        /// contra los 63 de antes.
-        /// </remarks>
         public const int CupSlamDamage = 12;
 
         /// <summary>
-        /// Alcance del cubilete, en Manhattan. 1 = las cuatro casillas desde las que el jugador
-        /// puede pegarle a ella o a un dado pegado a ella: la regla queda simétrica y se aprende en
-        /// un turno. Vive como constante porque el reposicionamiento tiene que quedar por fuera
-        /// (ver <see cref="RepositionRange"/>) y dos literales sueltos podrían desfasarse.
+        /// Alcance del cubilete, en Manhattan. Constante y no literal porque
+        /// <see cref="RepositionRange"/> tiene que quedar estrictamente por encima.
         /// </summary>
         public const int CupSlamRange = 1;
 
         // ---- La escarcha ----------------------------------------------------------------
 
         /// <summary>
-        /// Alcance Chebyshev de la escarcha. 1 = el 3×3 que la rodea. Con la mesa repartida en
-        /// <c>DoorFronts</c> ya no tapa los cinco dados —cuatro viven en los marcos de puerta,
-        /// lejos de acá— sino al quinto, el que queda pegado a ella, y su cubilete: es el candado
-        /// del dado caro, no de la mesa entera.
+        /// Alcance Chebyshev de la escarcha. 1 = el 3×3 que la rodea, o sea el anillo donde vive el
+        /// quinto dado: el candado es del dado caro, no de la mesa entera.
         /// </summary>
-        /// <remarks>
-        /// <b>1 y no 2, por playtest.</b> El 5×5 tapaba un quinto del ancho de la sala y se leía como
-        /// terreno prohibido en vez de como el cerrojo de una casilla. El 3×3 es exactamente el
-        /// anillo de casillas pegadas a ella — que es donde vive el quinto dado y desde donde se
-        /// cobra el cubilete—, así que el candado sigue cerrando lo mismo con un cuarto del área. Lo
-        /// que se perdió en tamaño se recupera en duración (<see cref="FrostDurationRounds"/>).
-        /// </remarks>
         public const int FrostRingRadius = 1;
 
         /// <summary>
-        /// La escarcha es un <b>área maciza</b>, no un anillo de una casilla de grosor.
+        /// Área maciza, no un anillo hueco. <c>OnEnter</c> no dispara sobre quien ya estaba adentro,
+        /// así que entrar en la ronda franca te deja pegándole gratis y salir cuesta el turno.
         /// </summary>
-        /// <remarks>
-        /// Como anillo se leía en pantalla como un bug: un cuadrado dibujado cuyo centro no hacía
-        /// nada. Y el motivo autorado del hueco —"desde ahí el jugador le rompe los dados"— nunca se
-        /// cumplió, porque los dados caían en el perímetro de la sala. Con el dado caro y su
-        /// cubilete adentro del radio, congelarlo entero es lo que vuelve el candado una decisión:
-        /// <c>OnEnter</c> no dispara sobre quien ya estaba adentro, así que la ronda franca (ver
-        /// <see cref="FrostParityDivisor"/>) es para meterte, adentro le pegás a ella y a su dado de
-        /// al lado gratis, y salir cuesta el turno. Con el radio en 1 el área es exactamente ese
-        /// anillo pegado a ella, así que "entrar a la mesa" y "entrar al hielo" son el mismo paso.
-        /// </remarks>
         public const bool FrostIsSolid = true;
 
         public const int FrostStunTurns = 1;
 
         /// <summary>
-        /// Vida del anillo en el SO del hazard. <c>HazardService</c> descuenta una vez por wrap de
-        /// ronda y la escarcha nace en el turno del jefe, con el turno del jugador de esa ronda ya
-        /// jugado (CNF-006): <c>DurationRounds = D</c> vale <c>D - 1</c> rondas pisables. Mismo
-        /// corrimiento de +1 que <c>AnotadorAssetBuilder.TrailDurationRounds</c> y
-        /// <c>CroupierAssetBuilder</c>.
+        /// Vida del anillo en el SO del hazard. Ojo con el corrimiento de +1:
+        /// <c>DurationRounds = D</c> vale <c>D - 1</c> rondas pisables, porque el descuento va por
+        /// wrap de ronda y la escarcha nace con el turno del jugador ya jugado (CNF-006).
         /// </summary>
         /// <remarks>
-        /// <b>3 y no 2, por playtest: el hielo dura un turno más.</b> Con el área bajada a 3×3
-        /// (<see cref="FrostRingRadius"/>) el candado tapaba menos y se derretía enseguida, así que
-        /// casi no había que planificar alrededor suyo. Dos rondas pisadas en un cuadrado chico se
-        /// leen mejor que una ronda en uno grande: la pregunta pasa de "¿me alcanza el hielo?" a
-        /// "¿cuándo entro?", que es la que el jefe quiere que te hagas.
-        /// <para>
-        /// Este número <b>no se puede mover solo</b>: ver <see cref="FrostParityDivisor"/>. Con el
-        /// hielo durando dos rondas y cayendo cada dos, no queda ninguna ronda franca.
-        /// </para>
+        /// No se puede mover solo: ver <see cref="FrostParityDivisor"/>.
         /// </remarks>
         public const int FrostDurationRounds = 3;
 
         /// <summary>
-        /// Cadencia de la escarcha: cae en las rondas múltiplo de este número. Las otras son la
-        /// ventana franca para entrar a la mesa y romper el dado caro — sin ellas el hielo se repone
-        /// antes de derretirse y la jugada que le borra categorías queda muerta.
+        /// Cadencia de la escarcha: cae en las rondas múltiplo de este número, y las otras son la
+        /// ventana para romperle el dado caro.
         /// </summary>
         /// <remarks>
-        /// <para>
-        /// Con la escarcha maciza (<see cref="FrostIsSolid"/>) esta cadencia pasó de deseable a ser
-        /// la mecánica: el área tapa el dado caro y su cubilete enteros, así que la ronda franca es
-        /// <b>la única</b> en la que se puede entrar a buscarlo. Y como <c>OnEnter</c> no dispara
-        /// sobre quien ya estaba adentro, entrar en la franca te deja pegándole gratis hasta que
-        /// decidas salir.
-        /// </para>
-        /// <para>
-        /// <b>3 y no 2, y es aritmética, no gusto.</b> Va atado a
-        /// <see cref="FrostDurationRounds"/>: el hielo ocupa <c>D - 1</c> rondas, así que la ventana
-        /// franca existe sólo si la cadencia es <b>estrictamente mayor</b> que eso. Con la duración
-        /// subida a 3 (dos rondas de hielo) y la cadencia en 2, la escarcha de la ronda 2 cubre 2 y
-        /// 3, la de la ronda 4 cubre 4 y 5, y no queda una sola ronda pisable en toda la pelea:
-        /// romperle la mesa se vuelve imposible y la pelea pierde su jugada. Con 3 el ciclo es
-        /// hielo-hielo-franca.
-        /// </para>
+        /// Atado a <see cref="FrostDurationRounds"/>: el hielo ocupa <c>D - 1</c> rondas, así que la
+        /// ventana existe sólo si la cadencia es estrictamente mayor. Con duración 3 y cadencia 2 no
+        /// queda una sola ronda pisable en toda la pelea.
         /// </remarks>
         public const int FrostParityDivisor = 3;
 
@@ -297,12 +170,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         public static readonly Color FrostOverlayTint = new Color(0.35f, 0.8f, 1f, 0.55f);
 
         /// <summary>
-        /// Burst de la pisada. Es el <c>VFX_IceBurst</c> que autora el builder del Anotador: el
-        /// hielo es el mismo efecto en los dos pisos y clonarle un prefab propio sería un asset más
-        /// para mantener sin nada distinto adentro. La ruta se repite acá —en vez de leer la
-        /// constante del otro builder— para no acoplar dos builders que se editan por separado; si
-        /// el Anotador nunca se construyó, el prefab no existe, el campo queda en null y el anillo
-        /// se ve igual con su quad celeste.
+        /// Burst de la pisada, compartido con el Anotador. La ruta se repite en vez de leer su
+        /// constante para no acoplar dos builders; si no existe el prefab el anillo se ve igual.
         /// </summary>
         public const string FrostVfxPrefabPath = "Assets/Prefabs/VFX/VFX_IceBurst.prefab";
 
@@ -312,46 +181,21 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         // ---- El reposicionamiento -------------------------------------------------------
 
         /// <summary>
-        /// Distancia Manhattan que intenta mantener. Es la correa de la persecución: se acerca hasta
-        /// acá y no más, así que romperle el dado de al lado sigue siendo algo que el jugador elige
-        /// pagar y no algo que ella le fuerza.
+        /// Distancia Manhattan que intenta mantener: la correa de la persecución. Se acerca hasta
+        /// acá y no más, así que acercarse lo elige el jugador.
         /// </summary>
         /// <remarks>
-        /// <para>
-        /// <b>3 y no 2, por el hielo.</b> Tiene que quedar estrictamente por encima de
-        /// <see cref="CupSlamRange"/> —si coincidieran se pegaría sola y cobraría cubilete cada
-        /// turno— pero también por encima de <see cref="FrostRingRadius"/>, que es el que casi se
-        /// nos escapa: con la correa en 2 ella frena justo sobre el borde de su propio anillo de
-        /// escarcha, y como el hielo es sólido y aturde
-        /// (<see cref="FrostIsSolid"/>/<see cref="FrostStunTurns"/>), el jugador se comía el stun
-        /// en cada ronda par sin haber elegido acercarse. Eso convierte la escarcha en un impuesto,
-        /// que es exactamente lo contrario de lo que la ronda franca del anillo existe para
-        /// proteger.
-        /// </para>
-        /// <para>
-        /// A 3 la persecución no pierde nada: sigue tapándole el camino a los dados de las puertas
-        /// y sigue trayendo el slash encima —la banda sale de ella, no del jugador—, pero el
-        /// jugador entra al hielo y al cubilete sólo cuando decide entrar.
-        /// </para>
+        /// Tiene que quedar estrictamente por encima de <see cref="CupSlamRange"/> (si no, se pega
+        /// sola y cobra cubilete todos los turnos) y de <see cref="FrostRingRadius"/> (si no, frena
+        /// sobre su propio hielo sólido y el stun deja de ser una elección del jugador). Hay tests
+        /// sobre las dos desigualdades.
         /// </remarks>
         public const int RepositionRange = 3;
 
         /// <summary>
-        /// Pasos por turno del reposicionamiento. Los 4 de su <c>BaseSpeed</c>: persigue de verdad.
+        /// Pasos por turno del reposicionamiento. Los 4 de su <c>BaseSpeed</c>: lo que la frena es
+        /// la correa, no la lentitud, así que perseguir rápido no le abarata nada al jugador.
         /// </summary>
-        /// <remarks>
-        /// <b>4 y no 2, por playtest — "se mueve muy poco hacia vos".</b> Con 2 pasos y una correa de
-        /// <see cref="RepositionRange"/> = 3, cualquier jugador que se alejara le sacaba distancia
-        /// más rápido de lo que ella la recuperaba: la persecución existía en el árbol pero no en
-        /// pantalla, y la amenaza de que te tape el camino a los dados de las puertas nunca llegaba
-        /// a pasar.
-        /// <para>
-        /// Lo que protege al jugador de que se le pegue no es la lentitud, es la correa: ella frena
-        /// a <see cref="RepositionRange"/> y no avanza más, así que darle 4 pasos la hace llegar
-        /// hasta donde ya tenía permitido llegar, más rápido. El cubilete y el hielo siguen
-        /// costando exactamente lo mismo — entrar los sigue eligiendo el jugador.
-        /// </para>
-        /// </remarks>
         public const int RepositionSteps = 4;
 
         // ---- La regla de la mano repetida ------------------------------------------------
@@ -371,18 +215,9 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
 
         // ---- Arte -----------------------------------------------------------------------
         //
-        // El rig de dados y no la torreta (RangedMachine), que era el arte anterior: lo que
-        // decide es el animator. AnimCon_DiceBoss expone Attack_Melee, Attack_Range, Heal y
-        // — sobre todo — Roll, que es literalmente el cubilete y el reroll de fase 2; el de la
-        // torreta tiene un solo trigger Attack, así que las dos acciones que la definen no
-        // tenían animación posible. Y el jefe de los dados llevando el rig de dados se explica
-        // solo, cosa que una batería militar no hacía.
-        //
-        // La jefa estuvo un tiempo sin paleta: DiceBoss_Model.fbx traía sus nueve materiales
-        // embebidos (Enemy__Base, Enemy__Trim, …) sobre URP/Lit, que no tiene los canales que
-        // escribe el retinte, y ninguna key de BuildRetints matcheaba. Se arregló donde
-        // correspondía —el arte remapeó el FBX a los Mat_* compartidos por externalObjects del
-        // importer— y no acá silenciando los warnings.
+        // El rig de dados y no la torreta: lo que decide es el animator. AnimCon_DiceBoss expone
+        // Roll, que es el cubilete y el reroll de fase 2; el de la torreta tiene un solo trigger
+        // Attack, así que las dos acciones que la definen no tenían animación posible.
 
         public const string BossName = "Generala";
 
@@ -1074,21 +909,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         /// en la cola de turnos.
         /// </summary>
         /// <remarks>
-        /// <para>
-        /// <b><c>HideFromTurnQueue</c>.</b> Como <c>EnemyDataSO</c> los dados entraban a la iniciativa:
-        /// cinco slots seguidos con retrato propio que sólo tickeaban un <c>AINode_Wait</c>. Es
-        /// exactamente lo que el doc de <see cref="RoomObjectDefinitionSO"/> llama "what being an enemy
-        /// happens to drag along" — la mesa es mobiliario y tiene que leerse como mobiliario.
-        /// </para>
-        /// <para>
-        /// <b>Sin <c>OnDeathHazard</c>.</b> Un dado roto abre camino y le borra una categoría; dejar
-        /// algo en su casilla convertiría romperlo en una decisión con costo, y romperlos es
-        /// justamente la jugada que la pelea quiere premiar.
-        /// </para>
-        /// <para>
-        /// <b>Y le blinda el daño</b> (<see cref="TableArmorPerDie"/>): es la tercera cosa que hace la
-        /// mesa y la única que el jugador puede ver. Ver <see cref="TableArmorMax"/>.
-        /// </para>
+        /// Sin <c>OnDeathHazard</c>: dejar algo en la casilla del dado roto convertiría romperlo en
+        /// una decisión con costo, y es la jugada que la pelea quiere premiar.
         /// </remarks>
         public static void PopulateDiceDefinition(RoomObjectDefinitionSO table, GameObject visualPrefab)
         {
@@ -1132,37 +954,15 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
                 Children = new List<AIDecisionNode>
                 {
                     // 1. La mano de la ronda pasada explota con la forma del combo que le salió.
-                    //    Con Attack_Range: la forma cae lejos, y hasta acá explotaba sin que ella
-                    //    hiciera nada. Es el único de sus cuatro clips que estaba sin usar.
                     new AINode_ExecuteTelegraph { WindupFeedbackId = BossFeedbackIds.GeneralaRangeAnim },
 
                     // 2. Fase 2 ANTES del ataque, para que el reroll aplique en el mismo turno en
-                    //    que cruza el umbral. En Selector[gate, Wait] para que un fallo del setup
-                    //    (sin ComboLog, sin registry) no le cancele el turno.
+                    //    que cruza el umbral.
                     Isolate(BuildPhaseTwoGate()),
 
-                    // 3. La mesa: cinco dados repartidos por la sala, y el que se rompe NO vuelve
-                    //    (TableRefillTurns = -1). Sin Once igual — el nodo se auto-gatea, y sin
-                    //    reposición el tick es barato: recoge los rotos y no repone nada.
-                    //
-                    //    DoorFronts y no el anillo pegado a ella: llena primero los marcos de puerta
-                    //    y manda el sobrante al anillo, así que Count = HandSize (5) en una sala de
-                    //    cuatro puertas cae 4 en los marcos + 1 al lado suyo — y se autoajusta si la
-                    //    sala tuviera otro número de marcos. Eso reparte el precio: los cuatro dados
-                    //    de puerta cuestan CAMINAR bajo persecución (ella los sigue con la correa de
-                    //    RepositionRange), y el quinto —el que queda pegado a ella— cuesta el
-                    //    cubilete. Dos peajes distintos por la misma jugada, y el jugador elige cuál
-                    //    paga. Con RingAroundSelf los cinco caían pegados a ella y las cuatro puertas
-                    //    no costaban nada; con AINode_SpawnReinforcements caían en el perímetro de la
-                    //    sala separados 3, cinco cajas contra las paredes sin relación con nada de
-                    //    esto. La mano sigue en 5 dados, así que Combo_Generala (que pide los cinco)
-                    //    sigue siendo alcanzable.
-                    //
-                    //    Las ranuras se resuelven una vez y se recuerdan: la mesa no la sigue cuando
-                    //    se reacomoda, igual que la escarcha se queda donde la puso. El anillo de
-                    //    escarcha (radio 2, ver FrostRingRadius) ahora tapa el quinto dado y su
-                    //    cubilete en vez de la mesa entera — es el candado del dado caro, no de los
-                    //    cinco.
+                    // 3. La mesa. Sin Once: el nodo se auto-gatea y necesita tickear para recoger
+                    //    los rotos. DoorFronts reparte el precio — los cuatro dados de puerta
+                    //    cuestan caminar bajo persecución y el quinto cuesta el cubilete.
                     Isolate(new AINode_SpawnRoomObjects
                     {
                         Definition = diceTable,
@@ -1189,16 +989,13 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
                     //    editar el TelegraphMark de su rama, no tocar código.
                     BuildHandTelegraphTable(),
 
-                    // 7. La escarcha, cada FrostParityDivisor rondas: el anillo pegado a ella se
-                    //    congela y cruzarlo cuesta el turno. Cero daño — el techo del piso ya está
-                    //    lleno con la mano (45) y el cubilete (12); lo que cobra el hielo es la
-                    //    ronda que perdés.
+                    // 7. La escarcha. Cero daño: el techo del piso ya está lleno con la mano y el
+                    //    cubilete, así que el hielo cobra en turnos.
                     Isolate(BuildFrostGate(frostHazard)),
 
-                    // 8. La regla de la casa: la mano que el jugador acaba de anotar queda
-                    //    prohibida (daño 0) para la ronda que viene. Se computa al cerrar SU turno
-                    //    para que el jugador la vea tachada en el Contrato al empezar el suyo, es
-                    //    decir antes de comprometer los dados.
+                    // 8. La mano que el jugador acaba de anotar queda prohibida para la ronda que
+                    //    viene. Se computa al cerrar SU turno para que el jugador la vea tachada
+                    //    antes de comprometer los dados.
                     Isolate(BuildRepeatBan()),
 
                     // 9. Y recién ahí se mueve. Último a propósito: el cubilete y la escarcha se
@@ -1215,31 +1012,9 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         /// armada, y el turno tiene que seguir igual.
         /// </summary>
         /// <remarks>
-        /// <para>
-        /// <b>Straight, Par y el bust pasaron de <c>Row</c> a <c>DirectionalBand</c>.</b> El slash
-        /// sale de ELLA, no de una línea centrada en el jugador — y tres cosas cambian de
-        /// significado al mover el Shape, fáciles de romper si se copia el <c>Size</c> tal cual:
-        /// </para>
-        /// <para>
-        /// <b><c>Size</c> no significa lo mismo en las dos shapes.</b> En <c>Row</c> es el ANCHO
-        /// TOTAL de la franja (1 ⇒ nada más que la línea del jugador). En <c>DirectionalBand</c> es
-        /// el MEDIO ancho (1 ⇒ banda de 3 casillas; 0 ⇒ una línea de 1 sola). Copiar el número de
-        /// una shape a la otra la triplicaría de ancho en silencio.
-        /// </para>
-        /// <para>
-        /// <b><c>Row</c> se centra en el jugador y siempre lo contiene; la banda se centra en
-        /// ELLA.</b> Un jugador desplazado del eje por más que <c>Size</c> simplemente no queda
-        /// marcado. Eso es correcto para un telegraph que se avisa una ronda antes —esquivarlo es
-        /// un paso al costado— pero es un cambio real de dificultad, no un reskin visual.
-        /// </para>
-        /// <para>
-        /// <b><c>Depth</c> hay que escribirlo explícito.</b> <c>ED_Boss_Generala.asset</c> ya tiene
-        /// <c>Depth = 2</c> serializado en estos nodos de una corrida vieja: cambiar sólo el
-        /// <c>Shape</c> dejaría un stub de 6 casillas. La sala mide 11×11 y ella tira desde el
-        /// centro, así que <c>Depth = 4</c> llega a 4 de las 5 casillas hasta la pared (referencia:
-        /// el slash del Sunken Grand usa <c>Size = 1, Depth = 3</c> en
-        /// <c>ED_Boss_Sunken_Grand.asset:567</c>, sala más chica).
-        /// </para>
+        /// Cuidado al tocar las ramas de <c>DirectionalBand</c>: ahí <c>Size</c> es el MEDIO ancho
+        /// (1 ⇒ 3 casillas), mientras que en <c>Row</c> es el ancho total. Y la banda se centra en
+        /// ELLA, no en el jugador, así que un jugador fuera del eje no queda marcado.
         /// </remarks>
         private static AINode_Selector BuildHandTelegraphTable()
         {
@@ -1372,12 +1147,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         /// las múltiplo de 3 y deja franca la tercera.
         /// </summary>
         /// <remarks>
-        /// La ronda franca no es tuning, es lo que mantiene viva la jugada del jefe. El dado caro se
-        /// rompe desde las casillas pegadas a ella, y el anillo tapa el único camino hasta ahí: si
-        /// se repusiera todos los turnos, el hielo nuevo caería antes de que se derrita el anterior
-        /// y desarmarle la mesa pasaría de "caro" a "imposible". Con la escarcha durando dos rondas
-        /// (<see cref="FrostDurationRounds"/>) la cuenta es justa — ver ahí por qué la cadencia no
-        /// se puede mover sin mover la duración.
+        /// El gate no es tuning: sin ronda franca el hielo nuevo cae antes de que se derrita el
+        /// anterior y desarmarle la mesa se vuelve imposible. Ver <see cref="FrostParityDivisor"/>.
         /// </remarks>
         public static AINode_If BuildFrostGate(HazardDefinitionSO frostHazard)
         {
@@ -1414,24 +1185,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         /// Contrato.
         /// </summary>
         /// <remarks>
-        /// <para>
-        /// Se reusa <see cref="AINode_RotateBlock"/> en modo Combo en vez de escribir un nodo nuevo:
-        /// ese nodo ya es exactamente esto —<c>ClearAll</c> + <c>ForbidCombo</c> sobre los últimos N
-        /// del log, con ventana deslizante— y lo estrenó el Jefe de Seguridad del piso 1 con
-        /// <c>Count = 1</c>/<c>2</c> por fase. La única diferencia con aquél es de quién es el
-        /// árbol.
-        /// </para>
-        /// <para>
-        /// <b>La UI ya está.</b> <c>ContractRowStateResolver</c> lee <c>IsForbidden</c> y devuelve
-        /// <c>ContractRowMark.Forbidden</c>; <c>ContractComboRowView</c> lo pinta tachado con el
-        /// badge y el 0. No hace falta código de UI nuevo — hace falta que el ban se promulgue
-        /// antes de que el jugador tire, y por eso este nodo va al cierre del turno del jefe.
-        /// </para>
-        /// <para>
-        /// Sin presentación (<c>BlockVfxId</c>/<c>BlockFeelId</c> vacíos): el modo Combo del nodo no
-        /// presenta nada por diseño —lo que se ve es la fila tachada en el Contrato, no un VFX sobre
-        /// el jugador— y el rig de dados no tiene un quinto gesto libre.
-        /// </para>
+        /// Sin presentación a propósito: lo que se ve es la fila tachada en el Contrato, no un VFX
+        /// sobre el jugador.
         /// </remarks>
         public static AINode_RotateBlock BuildRepeatBan()
         {
@@ -1443,30 +1198,12 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         }
 
         /// <summary>
-        /// El reposicionamiento. <see cref="AINode_Move"/> con <c>Retreat = false</c> y
-        /// <c>DesiredRange = 2</c>: cierra distancia hasta la correa y devuelve <c>Failed</c> (se
-        /// queda quieta) cuando ya está más cerca — eso es lo que la hace perseguir sin plantarse
-        /// nunca en melee.
+        /// El reposicionamiento: persigue hasta <see cref="RepositionRange"/> y frena ahí.
+        /// <c>Retreat = false</c> con <c>DesiredRange</c> devuelve <c>Failed</c> cuando ya está más
+        /// cerca, que es la correa — nunca cierra a melee por su cuenta.
         /// </summary>
         /// <remarks>
-        /// <para>
-        /// <b>Por qué ahora persigue.</b> Ella ya no huye: se acerca hasta
-        /// <see cref="RepositionRange"/> y frena ahí, nunca cierra a melee por su cuenta — así el
-        /// cubilete sigue siendo la elección del jugador y no un impuesto que ella le cobra sola.
-        /// Ese es el punto entero de la correa.
-        /// </para>
-        /// <para>
-        /// <b>La amenaza de la persecución no es su puño: es el camino.</b> Al seguir al jugador
-        /// bloquea el paso hacia los dados de las puertas (ver <see cref="AINode_SpawnRoomObjects"/>
-        /// en <see cref="BuildAIRoot"/>), y su slash (<see cref="ThreatShape.DirectionalBand"/>)
-        /// sale de ELLA — así que estar cerca suyo es estar delante de la banda cuando detona.
-        /// </para>
-        /// <para>
-        /// Va último en el Sequence y aislado: <see cref="AINode_Move"/> devuelve <c>Failed</c> en
-        /// el caso benigno "ya estoy en la banda", que es la mayoría de sus turnos, y suelto en el
-        /// Sequence raíz ese Failed no rompería nada por ir último — pero el idiom es el mismo para
-        /// todos y no depende del orden, que es justo lo que lo hace seguro de mover.
-        /// </para>
+        /// Aislado porque ese <c>Failed</c> es el caso benigno y pasa en la mayoría de sus turnos.
         /// </remarks>
         public static AINode_Move BuildReposition()
         {

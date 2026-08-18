@@ -20,15 +20,9 @@ namespace Rollgeon.Combat.AI.Tests
 {
     /// <summary>
     /// El rodillo roto de La Bandida contra el <see cref="HazardService"/> real: su casilla queda
-    /// ardiendo (6 por terminar el turno adentro, 2 rondas) y el rodillo aguanta lo que la ficha
-    /// pide antes de romperse.
+    /// ardiendo. El fuego es el asset del Croupier reusado, así que acá se verifica el cableado y
+    /// la casilla exacta, no los números de la sustancia.
     /// </summary>
-    /// <remarks>
-    /// Las dos mitades se testean juntas porque son la misma decisión: con 60 de vida romper un
-    /// rodillo cuesta casi un turno entero de daño, y lo que se compra con eso —la casilla desde la
-    /// que se desarma el siguiente— viene en llamas. El fuego es el asset del Croupier reusado, así
-    /// que acá se verifica el cableado y la casilla exacta, no los números de la sustancia.
-    /// </remarks>
     [TestFixture]
     public class BandidaReelFireTests
     {
@@ -96,8 +90,7 @@ namespace Rollgeon.Combat.AI.Tests
             _grid.Register(_boss, new GridCoord(5, 6));
             _grid.Register(_player, new GridCoord(1, 1));
 
-            // El fuego del carrete roto reusa la definición del Croupier, que es PlayerOnly: sin
-            // IPlayerService el filtro es fail-closed y no le cobra ni al jugador.
+            // El fuego es PlayerOnly y el filtro es fail-closed: sin IPlayerService no cobra a nadie.
             ServiceLocator.AddService<IPlayerService>(new StubPlayerService { PlayerGuid = _player });
             _attributes.Register(_boss, NewStats(140));
             _turnOrder.RestoreState(new[] { _player, _boss }, cursor: 1, roundIndex: 0);
@@ -156,7 +149,7 @@ namespace Rollgeon.Combat.AI.Tests
             BossTurn();
             var reel = FirstReelGuid();
 
-            // Act — el turno mediano real del jugador, entero contra un solo rodillo.
+            // Act — el turno mediano del jugador, entero contra un solo rodillo.
             Damage(reel, MedianPlayerTurn);
             BossTurn();
 
@@ -216,7 +209,7 @@ namespace Rollgeon.Combat.AI.Tests
         [Test]
         public void ReelFire_DoesNotBillTheTurnOfTheBreak()
         {
-            // Arrange — el jugador rompe el rodillo y se para en el hueco en el MISMO turno.
+            // Arrange — rompe el rodillo y se para en el hueco en el MISMO turno.
             BossTurn();
             var reel = FirstReelGuid();
             var slotCoord = CoordOf(reel);
@@ -258,7 +251,7 @@ namespace Rollgeon.Combat.AI.Tests
         [Test]
         public void BrokenReel_IgnitesOnce_NotEveryTurnTheSlotStaysEmpty()
         {
-            // Arrange — reposición larga para que la ranura siga vacía varios turnos seguidos.
+            // Arrange — reposición larga: la ranura queda vacía varios turnos seguidos.
             BossTurn();
             _jackpot.SetRespawnDelay(5);
             BreakReel(FirstReelGuid());
@@ -299,7 +292,7 @@ namespace Rollgeon.Combat.AI.Tests
         [Test]
         public void ReelRow_WithoutAHazard_StillDetachesAndRespawns()
         {
-            // Arrange — la ficha del jefe sin fuego autorado (o el asset del Croupier sin construir).
+            // Arrange — la ficha del jefe sin fuego autorado.
             _reels.OnBreakHazard = null;
             BossTurn();
             var reel = FirstReelGuid();
@@ -325,7 +318,7 @@ namespace Rollgeon.Combat.AI.Tests
             BossTurn();
             Assert.IsTrue(_jackpot.IsCounting);
 
-            // Act — un golpe que NO rompe: sigue siendo lo que desarma la bomba.
+            // Act — un golpe que NO rompe.
             Damage(FirstReelGuid(), MedianPlayerTurn);
 
             // Assert
@@ -355,7 +348,7 @@ namespace Rollgeon.Combat.AI.Tests
         // Harness
         // ======================================================================
 
-        /// <summary>Un turno del jefe reducido a lo que este test necesita: la fila de rodillos.</summary>
+        /// <summary>El turno del jefe reducido a la fila de rodillos.</summary>
         private void BossTurn() => _reels.Tick(NewContext());
 
         private AIContext NewContext() => new AIContext
@@ -424,7 +417,7 @@ namespace Rollgeon.Combat.AI.Tests
             return default;
         }
 
-        /// <summary>Golpe del jugador que el rodillo aguanta: baja vida y dispara el hook de daño.</summary>
+        /// <summary>Baja vida y dispara el hook de daño, como un golpe real del jugador.</summary>
         private void Damage(Guid reelGuid, int amount)
         {
             var health = _attributes.GetAttribute<Health>(reelGuid);
@@ -441,8 +434,8 @@ namespace Rollgeon.Combat.AI.Tests
         }
 
         /// <summary>
-        /// Rompe un rodillo como lo haría el jugador: el golpe letal y después el entierro que hace
-        /// <c>CombatDeathWatcher</c> — fuera de la cola y fuera del grid, con la casilla liberada.
+        /// Golpe letal más el entierro que hace <c>CombatDeathWatcher</c>: fuera de la cola y fuera
+        /// del grid, con la casilla liberada.
         /// </summary>
         private void BreakReel(Guid reelGuid)
         {

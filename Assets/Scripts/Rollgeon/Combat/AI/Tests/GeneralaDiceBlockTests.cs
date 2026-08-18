@@ -7,16 +7,13 @@ using Rollgeon.Movement;
 namespace Rollgeon.Combat.AI.Tests
 {
     /// <summary>
-    /// Pinea el invariante del que vive la sala de La Generala: <b>sus dados son las paredes</b>.
-    /// La sala del piso 3 arranca sin un solo obstáculo fijo y se llena con los cinco dados que
-    /// ella misma tira, así que la geometría de la pelea es la mesa.
+    /// Pinea el invariante de la sala de La Generala: sus dados son las paredes. La sala arranca sin
+    /// obstáculos fijos y se llena con los cinco dados que ella tira.
     /// </summary>
     /// <remarks>
-    /// No hay código nuevo acá: los dados se spawnean con <c>grid.Register</c> y
-    /// <see cref="MovementService"/> descarta las casillas ocupadas. El test existe porque ese
-    /// encadenado es el único motivo por el que romper un dado abre camino — si alguien hace que
-    /// los dados dejen de ocupar casilla (por ejemplo migrándolos a un objeto de sala que no
-    /// bloquea), la sala se vuelve un campo abierto y esto cae antes que el playtest.
+    /// No hay código nuevo acá — los dados se spawnean con <c>grid.Register</c> y
+    /// <see cref="MovementService"/> descarta las casillas ocupadas. El test cae si alguien hace que
+    /// los dados dejen de ocupar casilla.
     /// </remarks>
     [TestFixture]
     public class GeneralaDiceBlockTests
@@ -83,13 +80,13 @@ namespace Rollgeon.Combat.AI.Tests
         [Test]
         public void BreakingADie_OpensThePath_Through_ItsTile()
         {
-            // Arrange — el jugador le rompe el dado del medio: CombatDeathWatcher lo saca de la grilla.
+            // Arrange — CombatDeathWatcher saca el dado roto de la grilla.
             _grid.Unregister(_middleDie);
 
             // Act
             var path = _movement.FindPath(PlayerTile, FarSide);
 
-            // Assert — un golpe, dos consecuencias: le borra una categoría y le abre la sala.
+            // Assert
             CollectionAssert.IsNotEmpty(path);
             CollectionAssert.Contains(path, MiddleDieTile,
                 "El hueco que dejó el dado roto es el único paso al otro lado.");

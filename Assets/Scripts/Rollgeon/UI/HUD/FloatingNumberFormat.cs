@@ -112,8 +112,8 @@ namespace Rollgeon.UI.HUD
         /// </para>
         /// <para>
         /// Va por acá y no por un badge en <c>BossBarView</c> a propósito: el badge de debilidad se
-        /// cablea a mano prefab por prefab (<c>docs/setup/boss-weakness-badge.md</c>), y la
-        /// legibilidad de una mecánica no puede depender de un paso manual de setup.
+        /// cablea a mano prefab por prefab, y la legibilidad de una mecánica no puede depender de un
+        /// paso manual de setup.
         /// </para>
         /// <para>
         /// Tint de <see cref="FloatingNumberPalette.Shield"/>: es lo mismo que ya significa "algo

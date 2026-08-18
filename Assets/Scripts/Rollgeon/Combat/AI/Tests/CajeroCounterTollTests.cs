@@ -9,39 +9,20 @@ using Rollgeon.Grid;
 
 namespace Rollgeon.Combat.AI.Tests
 {
-    /// <summary>
-    /// El peaje del mostrador: 20 por terminar el turno del mismo lado que el Cajero. Ficha de
-    /// diseño "El Cajero" (piso 2), §El peaje.
-    /// </summary>
+    /// <summary>El peaje del mostrador: 20 por cerrar el turno del mismo lado que el Cajero.</summary>
     /// <remarks>
-    /// <para>
-    /// Es lo que le pone precio a la abertura. Sin peaje, cruzar el mostrador es gratis y la sala
-    /// —que es la mitad del jefe— no muerde: entrás por la puerta que te queda cómoda, le pegás y
-    /// salís. Con el peaje, quedarte de su lado cuesta todos los turnos.
-    /// </para>
-    /// <para>
-    /// <b>Coordenadas de la sala real</b> (<c>Boss_Room_Cajero</c>): 11×11 centrada en (0,0), el
-    /// mostrador en la fila <c>Y = 0</c> con aberturas en <c>(-3,0)</c> y <c>(3,0)</c>, el jefe
-    /// arriba en <c>(0,2)</c>. Las entidades se ubican con <c>Register</c> y sin
-    /// <c>LoadRoom</c>: al peaje sólo le importa la coordenada, y hornear el grafo acá ataría el
-    /// test a la sala en vez de a la regla.
-    /// </para>
+    /// Coordenadas de <c>Boss_Room_Cajero</c>: mostrador en <c>Y = 0</c>, aberturas en <c>(±3,0)</c>,
+    /// jefe en <c>(0,2)</c>. Sin <c>LoadRoom</c> — al peaje sólo le importa la coordenada.
     /// </remarks>
     [TestFixture]
     public class CajeroCounterTollTests
     {
         private const int CounterRow = 0;
-        // El número de la ficha (CajeroAssetBuilder.CounterTollDamage). No se referencia la
-        // constante porque vive en el assembly de Editor y este fixture es de runtime.
+        // Duplicado de CajeroAssetBuilder.CounterTollDamage, que vive en un assembly de Editor.
         private const int TollDamage = 20;
-
-        /// <summary>Cadencia de la ficha (<c>CajeroAssetBuilder.CounterTollEveryNRounds</c>).</summary>
         private const int EveryNRounds = 2;
 
-        /// <summary>Del lado de arriba del mostrador — el lado del jefe.</summary>
         private static readonly GridCoord BossCoord = new GridCoord(0, 2);
-
-        /// <summary>Del lado de abajo — donde entra el jugador.</summary>
         private static readonly GridCoord PlayerSide = new GridCoord(0, -2);
 
         /// <summary>Una de las dos aberturas: parado ahí estás en la puerta, no de un lado.</summary>
@@ -87,17 +68,12 @@ namespace Rollgeon.Combat.AI.Tests
 
         private void Arm() => _toll.Arm(_boss, _player, CounterRow, TollDamage);
 
-        /// <summary>Arma con la cadencia de la ficha (<c>CounterTollEveryNRounds</c> = 2).</summary>
         private void ArmIntermittent() => _toll.Arm(_boss, _player, CounterRow, TollDamage, EveryNRounds);
 
         private void EndTurnOf(Guid entityGuid) =>
             EventManager.Trigger(EventName.OnTurnFinished, entityGuid);
 
-        /// <summary>
-        /// Deja el combate en la ronda <paramref name="round"/> (1-based, como la ve el jugador).
-        /// <c>RoundIndex</c> es 0-based y el jugador abre cada ronda (CNF-006), así que su ronda N
-        /// tiene índice N-1.
-        /// </summary>
+        /// <summary><paramref name="round"/> es 1-based; <c>RoundIndex</c> es 0-based.</summary>
         private void PutPlayerInRound(int round)
         {
             var turnOrder = new TurnOrderService();
@@ -127,7 +103,7 @@ namespace Rollgeon.Combat.AI.Tests
         [Test]
         public void test_toll_playerEndsTurnOnHisSide_chargesTheSheetTen()
         {
-            // Arrange — cruzó por una abertura y se quedó del lado de él.
+            // Arrange
             Arm();
             _grid.Register(_player, new GridCoord(1, 1));
 
@@ -143,7 +119,7 @@ namespace Rollgeon.Combat.AI.Tests
         [Test]
         public void test_toll_playerEndsTurnAcrossTheCounter_chargesNothing()
         {
-            // Arrange — el jugador se queda de su lado.
+            // Arrange
             Arm();
 
             // Act
@@ -157,7 +133,7 @@ namespace Rollgeon.Combat.AI.Tests
         [Test]
         public void test_toll_playerEndsTurnInAnOpening_chargesNothing()
         {
-            // Arrange — parado en la puerta, sin comprometerse con ningún lado.
+            // Arrange
             Arm();
             _grid.Register(_player, Opening);
 
@@ -221,7 +197,7 @@ namespace Rollgeon.Combat.AI.Tests
         [Test]
         public void test_toll_afterTheBossCrossesToTheOtherSide_followsHim()
         {
-            // Arrange — el kiteo lo metió del lado del jugador; el que no se movió es el jugador.
+            // Arrange — el kiteo lo metió del lado del jugador.
             Arm();
             _grid.Register(_boss, new GridCoord(0, -3));
 
@@ -276,8 +252,7 @@ namespace Rollgeon.Combat.AI.Tests
             ServiceLocator.Clear();
             ServiceLocator.AddService<IGridManager>(_grid);
 
-            // Act — EventManager aísla y loguea lo que lance un subscriber, y un LogError hace
-            // fallar el test en el runner: alcanza con cerrar el turno para cubrir el degradado.
+            // Act — un LogError de subscriber hace fallar el test, así que cerrar el turno alcanza.
             EndTurnOf(_player);
 
             // Assert
@@ -286,10 +261,6 @@ namespace Rollgeon.Combat.AI.Tests
         }
 
         // ---- La ronda franca ---------------------------------------------
-        //
-        // Cobrando todas las rondas el peaje deja de ser el precio de una posición y pasa a ser un
-        // impuesto por intentar: pegarle al Cajero exige distancia 1, y distancia 1 está de su lado.
-        // La ronda intercalada es la ventana para entrar, pegar y volver.
 
         [Test]
         public void test_toll_onAChargingRound_charges()
@@ -329,7 +300,7 @@ namespace Rollgeon.Combat.AI.Tests
         [Test]
         public void test_toll_theFreeRoundIsNotADiscount_itAlternates()
         {
-            // Arrange — se queda plantado de su lado tres rondas seguidas.
+            // Arrange
             ArmIntermittent();
             StandOnHisSide();
 
@@ -351,7 +322,7 @@ namespace Rollgeon.Combat.AI.Tests
             // Arrange
             ArmIntermittent();
 
-            // Act + Assert — es lo único que le dice al jugador cuándo puede cruzar.
+            // Act + Assert
             PutPlayerInRound(1);
             Assert.IsFalse(_toll.ChargesThisRound, "Ronda impar: el overlay no pinta nada.");
 
@@ -380,8 +351,7 @@ namespace Rollgeon.Combat.AI.Tests
             // Act
             EndTurnOf(_player);
 
-            // Assert — permisivo, igual que PcRoundNumber: un peaje que se apaga porque falta un
-            // servicio se diagnostica mucho peor que uno que cobra siempre.
+            // Assert
             Assert.AreEqual(1, _pipeline.Resolved.Count,
                 "Sin ronda conocida cobra: degrada al comportamiento viejo, no a mudo.");
         }
@@ -408,8 +378,7 @@ namespace Rollgeon.Combat.AI.Tests
         [Test]
         public void test_toll_disarm_resetsTheCadence()
         {
-            // Arrange — el servicio es Global y sobrevive a la pelea; una cadencia pegada haría que
-            // el próximo jefe que lo arme sin pedirla heredara la intermitencia del Cajero.
+            // Arrange — el servicio es Global: una cadencia pegada la heredaría el próximo jefe.
             ArmIntermittent();
 
             // Act
@@ -453,7 +422,7 @@ namespace Rollgeon.Combat.AI.Tests
         [Test]
         public void test_tollNode_armsTheCadence_soTheFreeRoundComesFromTheSheet()
         {
-            // Arrange — la intermitencia se autora en el árbol, no la decide el servicio.
+            // Arrange
             var node = NewNode();
 
             // Act

@@ -6,26 +6,12 @@ namespace Rollgeon.Combat.AI.Bosses.Croupier
 {
     /// <summary>
     /// Estado de la rueda del Croupier durante un combate: el número (o los dos) que está cantando,
-    /// el candado de corrimiento por número, y el modo de mesa (fase 1 / fase 2 con la rueda
-    /// trucada). Es el único punto donde viven "el número en el aire" y sus consecuencias, porque
-    /// tres nodos del árbol y un hook de daño fuera del árbol necesitan leer/escribir lo mismo.
+    /// el candado de corrimiento por número, y el modo de mesa (fase 1 / fase 2 con la rueda trucada).
     /// </summary>
     /// <remarks>
-    /// <para>
-    /// <b>Por qué un servicio y no estado en un nodo.</b> La Represalia entra por
-    /// <c>TypedEvent&lt;DamageResolvedPayload&gt;</c> y el corrimiento por <c>OnTurnFinished</c> —
-    /// los dos fuera del turno del jefe y fuera de cualquier tick del árbol. Un <c>[NonSerialized]</c>
-    /// en un nodo (el patrón de <see cref="Decisions.AINode_Alternate"/>) alcanza cuando el estado lo
-    /// lee un solo nodo; acá lo comparten el que canta, el que marca, el que detona, el que enciende
-    /// el fuego, el reader que dirige la confiscación de dados y los dos hooks.
-    /// </para>
-    /// <para>
-    /// <b>Ciclo de vida.</b> Global y lazy (<see cref="CroupierWheelService.ResolveOrCreate"/>, mismo
-    /// patrón que <c>ThreatTelegraphOverlay</c> para no depender de wiring manual en
-    /// <c>ServiceBootstrap.ExtraServices</c>), pero su estado es por combate: se resetea en
-    /// <c>OnCombatEnd</c> / <c>OnRunEnd</c>, incluido el modo de mesa (una pelea nueva arranca
-    /// siempre en fase 1, aunque la anterior haya terminado con la rueda trucada).
-    /// </para>
+    /// Global y lazy (<see cref="CroupierWheelService.ResolveOrCreate"/>), pero su estado es por
+    /// combate: se resetea en <c>OnCombatEnd</c> / <c>OnRunEnd</c>, incluido el modo de mesa — una
+    /// pelea nueva arranca siempre en fase 1 aunque la anterior haya terminado con la rueda trucada.
     /// </remarks>
     public interface ICroupierWheelService
     {
@@ -37,8 +23,7 @@ namespace Rollgeon.Combat.AI.Bosses.Croupier
 
         /// <summary>
         /// Rueda trucada: terminar el turno dentro del sector cantado ya no corre la rueda. Es lo
-        /// único que apaga — la Represalia se cobra igual, porque no es el precio de la palanca sino
-        /// el de la casilla de melee, y esa casilla existe en las dos fases.
+        /// único que apaga — la Represalia se cobra igual en las dos fases.
         /// </summary>
         bool Rigged { get; }
 
@@ -68,8 +53,7 @@ namespace Rollgeon.Combat.AI.Bosses.Croupier
 
         /// <summary>
         /// Se dispara cada vez que cambia el contenido de <see cref="SungNumbers"/> (canta, corre la
-        /// rueda, detona). Canal C# y no <c>EventName</c> a propósito: hoy no hay UI que lo consuma y
-        /// no se agrega una entry al enum global por un evento sin suscriptores.
+        /// rueda, detona).
         /// </summary>
         event Action<IReadOnlyList<int>> NumbersChanged;
 

@@ -10,26 +10,12 @@ namespace Rollgeon.Combat.Cashier
     /// <summary>
     /// Implementación de <see cref="ICashierLedgerService"/>. POCO suscripto a eventos, sin
     /// MonoBehaviour ni bootstrap: se auto-registra vía <see cref="ResolveOrCreate"/> el primer
-    /// turno del jefe (mismo criterio que <c>ThreatTelegraphOverlay.ResolveOrCreate</c>).
+    /// turno del jefe.
     /// </summary>
     /// <remarks>
-    /// <para>
-    /// <b>Por qué lazy y no un bootstrap.</b> Agregar un bootstrap nuevo obliga a editar
-    /// <c>ServiceBootstrap.ExtraServices</c> (asset compartido por seis ramas de jefe en paralelo).
-    /// El servicio sólo hace falta cuando el Cajero está en la sala, así que se crea cuando su
-    /// primer nodo tickea y se limpia solo al cerrar el combate.
-    /// </para>
-    /// <para>
-    /// <b>El flag de daño no necesita binding.</b> Se anota por guid dañado (no "el jefe"),
-    /// porque en la cola player-first el jugador puede golpear antes de que ningún nodo del
-    /// jefe haya tickeado — un <c>BindBoss</c> previo se perdería el primer golpe y con él la
-    /// primera ficha.
-    /// </para>
-    /// <para>
-    /// <b>Tests.</b> Es global y suscripto a <c>TypedEvent&lt;DamageResolvedPayload&gt;</c>, que
-    /// <c>ServiceLocator.Clear()</c> no desengancha. Un fixture que lo cree debe llamar
-    /// <see cref="Dispose"/> (o <c>TypedEvent&lt;DamageResolvedPayload&gt;.Clear()</c>) en el teardown.
-    /// </para>
+    /// Es global y suscripto a <c>TypedEvent&lt;DamageResolvedPayload&gt;</c>, que
+    /// <c>ServiceLocator.Clear()</c> no desengancha: un fixture que lo cree debe llamar
+    /// <see cref="Dispose"/> en el teardown.
     /// </remarks>
     public sealed class CashierLedgerService : ICashierLedgerService, IDisposable
     {
@@ -102,12 +88,9 @@ namespace Rollgeon.Combat.Cashier
 
         /// <inheritdoc />
         /// <remarks>
-        /// Derivado del índice de ronda absoluto, no acumulado con un contador propio: el
-        /// servicio se crea perezosamente en el primer tick del jefe y por lo tanto se pierde
-        /// los <c>OnTurnQueueBuilt</c> anteriores. Con un contador incremental esas rondas no
-        /// contarían nunca; con la división el rastrillo queda igual de calibrado se haya
-        /// creado el servicio en la ronda 0 o en la 4, y sobrevive un restore de save
-        /// (<c>TurnOrderService.RestoreState</c> re-dispara el evento con el índice real).
+        /// Derivado del índice de ronda absoluto, no de un contador propio: el servicio se crea
+        /// perezosamente y se pierde los <c>OnTurnQueueBuilt</c> anteriores. Con la división el
+        /// rastrillo queda igual se haya creado en la ronda 0 o en la 4, y sobrevive un restore.
         /// </remarks>
         public int DamageStepUp
         {
@@ -167,17 +150,13 @@ namespace Rollgeon.Combat.Cashier
         }
 
         /// <summary>
-        /// Abre (o reinicia) la ventana de soborno. Es el paso compartido por las dos formas de
-        /// sobornar — pagar el precio de lista (<see cref="TryBribe"/>) y devolverle una ficha
-        /// (<see cref="OnHazardTriggeredExternal"/>) — para que no puedan divergir en cuánto dura
-        /// ni en si acumulan.
+        /// Abre (o reinicia) la ventana de soborno. Paso compartido por las dos formas de sobornar
+        /// — pagar el precio (<see cref="TryBribe"/>) y devolverle una ficha
+        /// (<see cref="OnHazardTriggeredExternal"/>) — para que no diverjan en duración.
         /// </summary>
         /// <remarks>
-        /// Se reinicia la ventana en vez de acumular: dos sobornos seguidos compran seis rondas de
-        /// un escalón abajo, no tres rondas de dos escalones. Con dos escalones de alivio el
-        /// soborno anularía el rastrillo de golpe y volvería a hacerlo opcional — la ficha lo
-        /// quiere como cuota que hay que renovar cada 3 rondas, no como un seguro. Vale igual para
-        /// el camino de las fichas, que si no bastaría con juntar tres seguidas para congelarlo.
+        /// La ventana se reinicia, no acumula: <see cref="DamageStepDown"/> está topeado en 1, así
+        /// que sobornar dos veces seguidas extiende la duración pero nunca da dos escalones.
         /// </remarks>
         private void ArmBribeWindow()
         {
@@ -292,17 +271,14 @@ namespace Rollgeon.Combat.Cashier
             _chips.Remove(instanceId);
             PayPlayer(entityGuid, chip.Value);
 
-            // Devolverle una ficha lo soborna, gratis. Sin esto la ficha era una trampa sin salida:
-            // lo único que el jefe suelta paga en oro, y el oro es justo lo que le sube el escalón.
+            // Levantar una ficha soborna gratis: el oro que paga es justo lo que sube el escalón.
             ArmBribeWindow();
             AnnounceBribe(chip.Owner);
         }
 
         /// <summary>
-        /// Avisa el soborno <b>sobre el jefe</b> y no sobre quien levantó la ficha: lo que cambió es
-        /// cuánto pega él. Sale como texto y no como número porque "−1 escalón" no es una cantidad
-        /// (ver <see cref="FloatingNumberFormat.ForText"/>), y va detrás del <c>+N G</c> de la ficha
-        /// — el stagger del spawner los separa, así que se leen como causa y efecto.
+        /// Avisa el soborno sobre el jefe y no sobre quien levantó la ficha: lo que cambió es
+        /// cuánto pega él.
         /// </summary>
         private void AnnounceBribe(Guid bossGuid)
         {
@@ -316,11 +292,7 @@ namespace Rollgeon.Combat.Cashier
                 Vector3.zero);
         }
 
-        /// <summary>
-        /// Lo que dice el aviso del soborno. Literal como <c>ShieldBlocked</c>/<c>ShieldBroken</c>:
-        /// el nombre del escalón es de este jefe y no hay tabla de localización de combate que lo
-        /// cubra todavía.
-        /// </summary>
+        /// <summary>Texto del aviso de soborno. Literal: todavía no hay tabla de localización de combate.</summary>
         /// <remarks>
         /// Sólo caracteres que están en el atlas de <c>m6x11plus</c>: la pixel font del HUD no tiene
         /// <c>·</c> (U+00B7) ni <c>é</c> (U+00E9), y un glifo que falta sale como cuadradito.

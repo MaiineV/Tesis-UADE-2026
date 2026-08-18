@@ -18,24 +18,10 @@ namespace Rollgeon.Combat.AI.Bosses.Generala
     /// cobra <see cref="Damage"/> directos. Ficha de diseño "La Generala" (piso 3).
     /// </summary>
     /// <remarks>
-    /// <para>
-    /// <b>Es el precio de romper de cerca.</b> Los cinco dados son la mano del jefe y romperlos es
-    /// la jugada que le borra categorías, pero romperlos es acercarse. Sin este golpe la mesa se
-    /// desarma gratis: el resto de su daño viaja por telegraphs avisados una ronda antes, o sea
-    /// esquivables sin renunciar a nada.
-    /// </para>
-    /// <para>
-    /// <b>Directo, no avisado.</b> No marca área ni pinta overlay — el aviso es la distancia, que el
-    /// jugador controla entero. Por eso el nodo tiene que ir envuelto en un <c>Selector[nodo, Wait]</c>:
-    /// con el jugador lejos devuelve <see cref="AIResult.Failed"/> y sin la envoltura le cancelaría
-    /// al jefe el resto del turno, el telegraph de la mano incluido.
-    /// </para>
-    /// <para>
-    /// <b>Manhattan por default.</b> Es el mismo alcance con el que el jugador la ataca a ella
-    /// (<c>Base Attack</c>: Range 1, RangeMode Manhattan), así que la regla se lee de una: si podés
-    /// pegarle, te alcanza. Con <see cref="DistanceMetric.Chebyshev"/> el cubilete recupera el 3×3
-    /// completo — incluidas las diagonales, desde donde el jugador no puede atacar.
-    /// </para>
+    /// Directo, no avisado. Con el jugador lejos devuelve <see cref="AIResult.Failed"/>, así que
+    /// <b>tiene que ir envuelto en</b> <c>Selector[nodo, Wait]</c> — suelto le cancelaría al jefe el
+    /// resto del turno, el telegraph de la mano incluido. Manhattan por default: el mismo alcance con
+    /// el que el jugador la ataca a ella; Chebyshev le devuelve el 3×3 con diagonales.
     /// </remarks>
     [Serializable, HideReferenceObjectPicker]
     public sealed class AINode_GeneralaCupSlam : AIActionNode
@@ -67,9 +53,8 @@ namespace Rollgeon.Combat.AI.Bosses.Generala
         public override string NodeName => $"Generala — Cubilete ({Damage} melee)";
 
         /// <remarks>
-        /// Vacío significa "el id canónico del nodo", no "sin animación": Odin puede deserializar
-        /// un <c>ED_Boss_*.asset</c> viejo sin correr los field initializers, así que un default en
-        /// el campo llegaría en null y el cubilete volvería a caer invisible.
+        /// Vacío significa "el id canónico", no "sin animación": Odin deserializa un
+        /// <c>ED_Boss_*.asset</c> viejo sin correr los field initializers.
         /// </remarks>
         private string AnimFeedbackId => string.IsNullOrEmpty(AnimFeedbackIdOverride)
             ? BossFeedbackIds.GeneralaCupSlamAnim
@@ -87,9 +72,8 @@ namespace Rollgeon.Combat.AI.Bosses.Generala
         }
 
         /// <summary>
-        /// Camino de play mode: baja la copa y <b>retiene el turno hasta que el clip termina</b>.
-        /// Sin la retención el siguiente hijo del sequence (el telegraph de la mano) marcaba encima
-        /// del cubilete todavía en el aire y los dos gestos se pisaban.
+        /// Camino de play mode: baja la copa y <b>retiene el turno hasta que el clip termina</b> — sin
+        /// eso el telegraph de la mano marca encima del cubilete todavía en el aire.
         /// </summary>
         public override IEnumerator TickCoroutine(AIContext context, Action<AIResult> onResult)
         {
@@ -112,8 +96,7 @@ namespace Rollgeon.Combat.AI.Bosses.Generala
             var beat = PlaySlam(context, slamOnce);
             while (beat.MoveNext()) yield return beat.Current;
 
-            // Red de seguridad: sin FeedbackService, sin TurnManager o con la entry mal autorada
-            // el golpe igual cae — tarde, pero cae. El daño nunca depende de que se vea.
+            // Red de seguridad: sin presentación el golpe igual cae — tarde, pero cae.
             slamOnce();
             onResult?.Invoke(AIResult.Succeeded);
         }
@@ -144,18 +127,15 @@ namespace Rollgeon.Combat.AI.Bosses.Generala
         }
 
         /// <remarks>
-        /// El request se arma a mano en vez de reusar <c>EffPlaySequence</c>: el nodo no nace de un
-        /// effect pass, así que no tiene <c>EffectContext</c> que pasarle (mismo caso que la
-        /// secuencia de muerte del <c>CombatDeathWatcher</c>, y por eso <c>FeedbackRequest.Context</c>
-        /// admite null).
+        /// Request de secuencia a mano y no <c>EffPlaySequence</c>: el nodo no nace de un effect pass
+        /// y no tiene <c>EffectContext</c> que pasarle (por eso <c>FeedbackRequest.Context</c> admite null).
         /// </remarks>
         private IEnumerator PlaySlam(AIContext context, Action onImpact)
         {
             if (!ServiceLocator.TryGetService<IFeedbackService>(out var feedback) || feedback == null) yield break;
 
-            // Los tres steps arrancan juntos, como la secuencia de golpe autorada a mano de
-            // ED_MeleeCardEnemy: un StartMode.OnEvent que el clip nunca publica deja el step
-            // girando para siempre, y los clips de DiceBoss_Animated tienen m_Events vacío.
+            // Los tres steps arrancan juntos: un StartMode.OnEvent que el clip nunca publica deja el
+            // step girando para siempre, y los clips de DiceBoss_Animated tienen m_Events vacío.
             var steps = new List<FeedbackSequenceStep>
             {
                 Step(AnimFeedbackId),
@@ -177,8 +157,7 @@ namespace Rollgeon.Combat.AI.Bosses.Generala
             // final del clip: diferirlo dejaba el número flotante casi un segundo detrás de la copa.
             onImpact?.Invoke();
 
-            // Sin TurnManager no hay gate que esperar — la anim igual corre, pero el turno no se
-            // retiene. Mismo degradado que EffPlaySequence.
+            // Sin TurnManager no hay gate que esperar: la anim corre igual, sin retener el turno.
             if (turn == null || !turn.IsWaitingForFeedback) yield break;
 
             var wait = TurnManager.WaitForFeedbackCompletion(turn);

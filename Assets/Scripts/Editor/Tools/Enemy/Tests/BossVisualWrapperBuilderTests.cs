@@ -13,16 +13,10 @@ using Object = UnityEngine.Object;
 namespace Rollgeon.Editor.Tools.Enemy.Tests
 {
     /// <summary>
-    /// Tests de <see cref="BossVisualWrapperBuilder"/> contra arte real del proyecto
-    /// (<c>Healer_Animated</c> + la ruleta), construyendo en una carpeta temporal bajo
-    /// <c>Assets/</c> que se borra en el teardown.
+    /// <see cref="BossVisualWrapperBuilder"/> contra arte real del proyecto, construyendo en una
+    /// carpeta temporal bajo <c>Assets/</c> que el teardown borra. Toca el <c>AssetDatabase</c>
+    /// porque lo que se verifica es el prefab escrito: componentes, jerarquía, clones y GUID.
     /// </summary>
-    /// <remarks>
-    /// A diferencia del resto de los tests de builders, estos <b>sí</b> tocan el
-    /// <c>AssetDatabase</c>: lo que se está verificando es precisamente el prefab que queda
-    /// escrito (componentes, jerarquía, materiales clonados, GUID estable), y eso no se puede
-    /// afirmar sobre una instancia in-memory.
-    /// </remarks>
     [TestFixture]
     public class BossVisualWrapperBuilderTests
     {
@@ -60,8 +54,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             Assert.IsNotNull(AssetDatabase.LoadAssetAtPath<GameObject>(ArtPrefabPath),
                 $"Fixture roto: no existe el arte '{ArtPrefabPath}'.");
 
-            // Se captura antes de construir para poder afirmar que el retinte no pisó el original,
-            // sin hardcodear el slot (que es dato de arte y puede cambiar).
+            // Capturado antes de construir: hardcodear el slot ataría el test a un dato de arte.
             var source = AssetDatabase.LoadAssetAtPath<Material>(SourceMaterialAssetPath);
             Assert.IsNotNull(source, $"Fixture roto: no existe '{SourceMaterialAssetPath}'.");
             _sourceSlotBeforeBuild = source.GetFloat("_PaletteSlot");
@@ -387,8 +380,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                 }
             }
 
-            // Assert — el arte reusa Mat_Red en varios renderers: tiene que haber UN clon, no uno
-            // por slot, o el batching se rompe y los clones divergen al tunear.
+            // Assert — un clon y no uno por slot: si no, se rompe el batching y los clones divergen.
             Assert.Greater(slotsPointingAtTheClone, 1,
                 "Fixture roto: se esperaba el material compartido en más de un slot.");
             Assert.AreEqual(1, distinctClones.Count,
@@ -462,8 +454,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             // Act
             BossVisualWrapperBuilder.BuildWrapper(spec);
 
-            // Assert — el shader ramea `_UsePalette > 0.5 ? paleta : colores directos`: sin apagar el
-            // toggle, los colores quedan escritos pero invisibles.
+            // Assert — el shader ramea `_UsePalette > 0.5 ? paleta : colores directos`.
             var clone = AssetDatabase.LoadAssetAtPath<Material>(clonePath);
             Assert.IsNotNull(clone, $"No se creó el clon en '{clonePath}'.");
             Assert.AreEqual(0f, clone.GetFloat("_UsePalette"));

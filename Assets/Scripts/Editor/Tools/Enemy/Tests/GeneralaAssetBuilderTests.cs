@@ -26,9 +26,8 @@ using UnityEngine;
 namespace Rollgeon.Editor.Tools.Enemy.Tests
 {
     /// <summary>
-    /// Tests del árbol de La Generala construido <b>en memoria</b> por
-    /// <see cref="GeneralaAssetBuilder"/> — sin tocar el <see cref="UnityEditor.AssetDatabase"/>, así
-    /// el wiring se valida aunque el <c>[MenuItem]</c> todavía no se haya corrido en el proyecto.
+    /// Árbol de La Generala armado en memoria: el wiring se valida sin depender de que el
+    /// <c>[MenuItem]</c> ya se haya corrido en el proyecto.
     /// </summary>
     [TestFixture]
     public class GeneralaAssetBuilderTests
@@ -59,8 +58,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         [Test]
         public void Root_OpensTheTurnByDetonatingTheHand_TheOnlyThingSheLeavesPending()
         {
-            // Assert — la mano de la ronda pasada es lo único que hay para cobrar al abrir el
-            // turno: desde que el cubilete es melee directo no queda un segundo aviso en cola.
+            // Assert
             Assert.IsInstanceOf<AINode_ExecuteTelegraph>(_root.Children[0],
                 "El primer hijo tiene que detonar la mano de la ronda pasada.");
 
@@ -118,11 +116,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             // Act
             var spawn = Descendants(_root).OfType<AINode_SpawnRoomObjects>().First();
 
-            // Assert — es lo que reparte la mesa en dos precios distintos: cuatro dados en los
-            // marcos de puerta cuestan caminar bajo persecución, y el quinto —pegado a ella— cuesta
-            // el cubilete. Con RingAroundSelf los cinco caían pegados a ella y las puertas no
-            // costaban nada; con AINode_SpawnReinforcements caían en PickEdgeSpawnTiles —el
-            // perímetro de la sala, separados 3— y ninguna se tocaba.
+            // Assert
             Assert.AreEqual(AINode_SpawnRoomObjects.Placement.DoorFronts, spawn.Pattern,
                 "La mesa tiene que repartirse por la sala, no apilarse pegada a ella.");
         }
@@ -144,10 +138,6 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                     "Romper un dado tiene que costar un golpe entero.");
                 Assert.IsTrue(table.Blocks, "Sus dados SON las paredes de la sala.");
 
-                // El dado roto NO vuelve. Con la armadura de la mesa establecida en que el porcentaje
-                // roto no se recupera (TableArmorMax), reponer el dado le devolvía el bloqueo de
-                // casilla y la categoría de la mano sin devolverle la armadura: el jugador pagaba
-                // DiceHp por un progreso que se deshacía en dos de sus tres ejes.
                 Assert.IsFalse(table.Respawns,
                     "La mesa es un recurso que se gasta, no una noria: el dado roto se queda roto.");
                 Assert.AreEqual(GeneralaAssetBuilder.TableRefillTurns, table.RespawnDelayTurns);
@@ -179,9 +169,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                 // Act
                 GeneralaAssetBuilder.PopulateDiceDefinition(table, null);
 
-                // Assert — es lo único que la mesa hace y el jugador puede ver: sus otros dos efectos
-                // (bloquear el paso, borrarle una categoría) no aparecen en pantalla, así que romper
-                // dados parecía una pérdida de turnos.
+                // Assert
                 Assert.IsTrue(table.GrantsOwnerArmor);
                 Assert.AreEqual(GeneralaAssetBuilder.TableArmorPerDie,
                     table.OwnerDamageReductionPerObject, 0.0001f);
@@ -206,17 +194,15 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             // Act
             var spawn = Descendants(_root).OfType<AINode_SpawnRoomObjects>().First();
 
-            // Assert — sin el gesto los dados aparecen de la nada mientras ella sigue en idle. Es
-            // además el único uso que tiene esa animación del rig (ver BossFeedbackInstaller).
+            // Assert — es el único uso que tiene esa animación del rig (ver BossFeedbackInstaller).
             Assert.AreEqual(BossFeedbackIds.GeneralaSummonAnim, spawn.SpawnFeedbackId);
         }
 
         [Test]
         public void Table_IsNotWrappedInOnce_SoTheHandComesBack()
         {
-            // Arrange — AINode_SpawnRoomObjects se auto-gatea y necesita tickear cada turno para
-            // correr los relojes de reposición; envuelto en Once queda latcheado tras el primer
-            // spawn y ningún dado vuelve nunca.
+            // Arrange — el spawn se auto-gatea y necesita tickear cada turno para correr los
+            // relojes de reposición.
             var owner = _root.Children.FirstOrDefault(c =>
                 Descendants(c).Any(n => n is AINode_SpawnRoomObjects));
 
@@ -246,8 +232,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                 .Where(s => Descendants(s).Any(n => RiskyNodeTypes.Contains(n.GetType())))
                 .ToList();
 
-            // Assert — uno por nodo riesgoso: si dos compartieran Selector, el Failed del primero
-            // saltearía al segundo en vez de aislarlo.
+            // Assert — uno por nodo: compartir Selector saltearía al segundo en vez de aislarlo.
             Assert.AreEqual(RiskyNodeTypes.Length, risky.Count,
                 "Cada nodo que puede devolver Failed va en su propio Selector de aislamiento: la " +
                 "mesa, el setup de fase, el cubilete, la escarcha, la regla de la mano repetida y " +
@@ -303,8 +288,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         [Test]
         public void HandTable_EveryBranchRequiresAnArmedHand()
         {
-            // Assert — sin esto, la Generala recién cantada marcaría el mismo turno y se perdería
-            // la ronda extra de aviso.
+            // Assert — sin mano armada se perdería la ronda extra de aviso.
             foreach (var branch in HandBranches())
                 Assert.IsTrue(branch.pc.RequireArmed,
                     $"La rama '{branch.pc.ConditionName}' marca sin exigir mano armada.");
@@ -331,8 +315,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             // Act
             var cup = FindCupSlam();
 
-            // Assert — el alcance es el mismo con el que el jugador le pega a ella (Base Attack:
-            // Range 1, Manhattan), así que la regla se lee de una: si le llegás, te llega.
+            // Assert — mismo alcance con el que el jugador le pega a ella: si le llegás, te llega.
             Assert.AreEqual(12, GeneralaAssetBuilder.CupSlamDamage,
                 "Bajó de 18 a 12: ahora persigue (ver RepositionRange), así que llega más seguido " +
                 "y el peaje por golpe tiene que bajar — el número vive en el builder, no en el nodo.");
@@ -349,8 +332,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             // Arrange
             var branch = FindCupBranch();
 
-            // Assert — mientras fue un área avisada en rondas impares había una ronda franca para
-            // romperle dados gratis. Ahora el único gate es la distancia, y esa la elige el jugador.
+            // Assert
             Assert.AreEqual(1, Descendants(_root).OfType<AINode_GeneralaCupSlam>().Count(),
                 "Un solo cubilete en el árbol: dos nodos serían dos golpes por tirada.");
             Assert.IsFalse(Descendants(branch).OfType<PcRoundNumber>().Any(),
@@ -365,8 +347,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             // Arrange
             var branch = FindCupBranch();
 
-            // Assert — un aviso acá significaría que el cubilete volvió a ser un área que se marca
-            // un turno y se cobra al siguiente, o sea dos golpes por una sola tirada.
+            // Assert
             Assert.IsFalse(Descendants(branch).OfType<AINode_AuxTelegraph>().Any(),
                 "El cubilete no ocupa canal de aviso: cobra en el acto.");
             Assert.IsFalse(Descendants(branch).OfType<AINode_TelegraphMark>().Any(),
@@ -383,9 +364,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             // Act
             var frost = Descendants(_root).OfType<AINode_GeneralaFrostRing>().FirstOrDefault();
 
-            // Assert — área maciza de radio 1 = el 3×3 que la rodea, que es exactamente donde vive
-            // el quinto dado y desde donde se cobra el cubilete. El 5×5 anterior tapaba un quinto
-            // del ancho de la sala y se leía como terreno prohibido en vez de como un cerrojo.
+            // Assert — radio 1 macizo = el 3×3 donde vive el quinto dado y desde donde se cobra
+            // el cubilete.
             Assert.IsNotNull(frost, "La Generala no congela nada.");
             Assert.AreEqual(GeneralaAssetBuilder.FrostRingRadius, frost.Radius);
             Assert.AreEqual(1, GeneralaAssetBuilder.FrostRingRadius,
@@ -398,11 +378,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                 "Dos anillos vivos duplicarían overlays y dejarían medio mapa helado.");
         }
 
-        /// <summary>
-        /// La cuenta que mantiene viva la jugada de romperle la mesa: el hielo ocupa
-        /// <c>DurationRounds - 1</c> rondas, así que la cadencia tiene que ser estrictamente mayor
-        /// que eso o no queda una sola ronda pisable en toda la pelea.
-        /// </summary>
+        /// <summary>El hielo ocupa <c>DurationRounds - 1</c> rondas — de ahí el ajuste de la cuenta.</summary>
         [Test]
         public void Frost_LeavesAFreeRound_BecauseTheCadenceOutlastsTheIce()
         {
@@ -438,9 +414,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         [Test]
         public void Frost_PaysInTurnsAndNotInHp_BecauseTheFloorCeilingIsAlreadyFull()
         {
-            // Arrange — su turno ya puede sumar la mano detonada (45) + el cubilete (12) = 57,
-            // contra un techo de 45 por golpe y ≤65 anunciado. No queda presupuesto para un
-            // tercer golpe: la escarcha cobra el turno, no HP.
+            // Arrange — la mano detonada (45) + el cubilete (12) ya llenan el techo del piso.
             var definition = ScriptableObject.CreateInstance<HazardDefinitionSO>();
             try
             {
@@ -468,9 +442,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         [Test]
         public void Frost_UsesItsOwnDefinition_AndDoesNotRetuneTheAnotadorsTrail()
         {
-            // Assert — la estela del piso 2 dura 3 rondas pisables a propósito (tapar corredores);
-            // la escarcha dura 2. Compartir asset obligaría a elegir, y el jefe del piso 2 no es
-            // de este trabajo.
+            // Assert
             Assert.AreNotEqual(AnotadorAssetBuilder.IceHazardAssetPath,
                 GeneralaAssetBuilder.FrostHazardAssetPath,
                 "La Generala tiene que tener su propio HazardDefinitionSO.");
@@ -489,8 +461,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             // Act
             var ban = Descendants(_root).OfType<AINode_RotateBlock>().FirstOrDefault();
 
-            // Assert — modo Combo: ClearAll + ForbidCombo sobre los últimos N del ComboLog. Con
-            // N = 1 es literalmente "no repitas la mano de la ronda pasada".
+            // Assert
             Assert.IsNotNull(ban, "Falta la regla de la mano repetida.");
             Assert.AreEqual(AINode_RotateBlock.BlockTarget.Combo, ban.Target,
                 "Modo Dice bloquearía dados de la build — eso es del jefe del piso 1.");
@@ -505,8 +476,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             int rollIdx = _root.Children.FindIndex(c => Descendants(c).Any(n => n is AINode_RollHand));
             int banIdx = _root.Children.FindIndex(c => Descendants(c).Any(n => n is AINode_RotateBlock));
 
-            // Assert — el jefe computa al cerrar su turno y el jugador lo lee al abrir el suyo: la
-            // fila sale tachada en el Contrato ANTES de que comprometa los dados.
+            // Assert — la fila sale tachada en el Contrato ANTES de que el jugador comprometa dados.
             Assert.Greater(banIdx, -1, "No se encontró la regla en el Sequence raíz.");
             Assert.Greater(banIdx, rollIdx, "La regla se promulga al cierre del turno, no al abrirlo.");
         }
@@ -521,9 +491,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             // Act
             var move = Descendants(_root).OfType<AINode_Move>().FirstOrDefault();
 
-            // Assert — el pedido es que la persiga sin plantarse nunca en melee. AINode_Move con
-            // Retreat = false cierra distancia hasta DesiredRange y devuelve Failed (se queda
-            // quieta) cuando ya está más cerca: eso es la correa.
+            // Assert — la correa: cierra distancia hasta DesiredRange y devuelve Failed (se queda
+            // quieta) cuando ya está más cerca.
             Assert.IsNotNull(move, "La Generala no se mueve: sin este nodo es una estatua.");
             Assert.IsFalse(move.Retreat,
                 "Retreat = true la haría huir otra vez — con la correa ella persigue, y quedarse " +
@@ -537,9 +506,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         [Test]
         public void RepositionRange_StaysStrictlyOutsideCupSlamRange_SoSheNeverParksInMelee()
         {
-            // Assert — el invariante del que depende toda la correa: si alguna vez coincidieran,
-            // perseguir hasta el borde de la correa la dejaría pegada al jugador y el cubilete
-            // dejaría de ser una elección para pasar a ser un impuesto por turno.
+            // Assert
             Assert.Greater(GeneralaAssetBuilder.RepositionRange, GeneralaAssetBuilder.CupSlamRange,
                 "Su banda tiene que quedar FUERA del alcance del cubilete: si se pegara sola, el " +
                 "peaje de acercarse dejaría de elegirlo el jugador.");
@@ -548,11 +515,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         [Test]
         public void RepositionRange_StaysStrictlyOutsideTheFrostRing_SoTheIceIsNeverForced()
         {
-            // Assert — el que casi se nos escapa. Con la correa dentro del radio de la escarcha ella
-            // frena parada sobre el borde de su propio hielo, y como el hielo es sólido y aturde, el
-            // jugador se come el stun cada vez que cae la escarcha sin haber elegido acercarse. La
-            // escarcha es el candado del dado caro: tiene que cobrarse cuando el jugador entra, no
-            // cuando ella llega.
+            // Assert
             Assert.Greater(GeneralaAssetBuilder.RepositionRange, GeneralaAssetBuilder.FrostRingRadius,
                 "La correa tiene que dejarla FUERA de su propio anillo de escarcha: si frena adentro, " +
                 "el hielo pasa de ser el precio de acercarse a ser un impuesto por ronda.");
@@ -561,8 +524,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         [Test]
         public void Reposition_GoesLast_SoTheCupAndTheFrostResolveFromWhereSheRolled()
         {
-            // Assert — moverse antes le cambiaría el centro al anillo y la distancia al cubilete
-            // respecto de lo que el jugador vio cuando decidió dónde pararse.
+            // Assert
             var last = _root.Children.Last();
             Assert.IsTrue(Descendants(last).OfType<AINode_Move>().Any(),
                 "El reposicionamiento tiene que ser el último hijo del Sequence raíz.");
@@ -588,8 +550,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                 Assert.LessOrEqual(mark.Damage, floorThreeCeiling,
                     $"Un TelegraphMark ({mark.Shape}) pega {mark.Damage}, sobre el techo del piso 3.");
 
-            // El cubilete no se avisa, así que su daño es el que más caro sale sostener: entra sí
-            // o sí por estar parado al lado.
+            // El cubilete no se avisa: entra sí o sí por estar parado al lado.
             foreach (var cup in Descendants(_root).OfType<AINode_GeneralaCupSlam>())
                 Assert.LessOrEqual(cup.Damage, floorThreeCeiling,
                     $"El cubilete pega {cup.Damage}, sobre el techo del piso 3.");
@@ -746,7 +707,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                 // Act
                 GeneralaAssetBuilder.PopulateDiceData(dice, visual, portrait);
 
-                // Assert — el dado tiene visual propio: con el del jefe no se leería como dado.
+                // Assert
                 Assert.AreSame(visual, dice.VisualPrefab);
                 Assert.AreSame(portrait, dice.Portrait);
             }

@@ -21,8 +21,7 @@ namespace Rollgeon.Editor.Tools
     /// el asset como sucio.
     /// </para>
     /// <para>
-    /// No cablea ninguna sala: el wiring de los <c>DecalProjector</c> es trabajo de escena y va
-    /// documentado en <c>docs/setup/boss-room-decals.md</c>.
+    /// No cablea ninguna sala: el wiring de los <c>DecalProjector</c> es trabajo de escena.
     /// </para>
     /// </remarks>
     public static class CasinoDecalMaterialBuilder

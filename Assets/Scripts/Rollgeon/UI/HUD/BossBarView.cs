@@ -31,7 +31,7 @@ namespace Rollgeon.UI.HUD
     /// la fila "La debilidad del jefe" de la tabla de reglas invisibles de
     /// <c>docs/design/bosses-seis-refinados.html</c>. El destello al conectarla ya lo hace
     /// <see cref="BossBarJuice"/>; el badge es la mitad persistente, la que se lee ANTES de tirar.
-    /// Cableado en <c>docs/setup/boss-weakness-badge.md</c>.
+    /// Se cablea a mano prefab por prefab.
     /// </para>
     /// </summary>
     [AddComponentMenu("Rollgeon/UI/HUD/Boss Bar View")]

@@ -11,22 +11,11 @@ using Object = UnityEngine.Object;
 namespace Rollgeon.Editor.Tools.Enemy.Tests
 {
     /// <summary>
-    /// Valida el vestido visual del Tahúr contra el arte real: que el retinte matchee los materiales
-    /// de <c>SunkedGrand_Animated</c>, que el wrapper no comparta paleta con el jefe del piso 1 y que
-    /// el puente de Animation Events quede colgado.
+    /// Vestido visual del Tahúr contra el arte real: retinte que matchee los materiales de
+    /// <c>SunkedGrand_Animated</c>, wrapper sin paleta compartida con el jefe del piso 1, y el
+    /// puente de Animation Events colgado. Toca el <c>AssetDatabase</c> —lo que se afirma es el
+    /// prefab escrito— pero construye en una carpeta temporal, no en el prefab del repo.
     /// </summary>
-    /// <remarks>
-    /// <para>
-    /// A diferencia de <see cref="TahurWiringTests"/>, esta fixture <b>sí</b> toca el
-    /// <c>AssetDatabase</c>: lo que se verifica es el prefab que queda escrito, y eso no se puede
-    /// afirmar sobre una spec en memoria.
-    /// </para>
-    /// <para>
-    /// <b>Construye en una carpeta temporal</b>, no en <c>TahurAssetBuilder.VisualPrefabPath</c>: un
-    /// test no debería reescribir el prefab que referencia el <c>ED_Boss_Tahur.asset</c> del repo
-    /// (aunque el rebuild preserve el GUID, dejaría el asset tocado en cada corrida del runner).
-    /// </para>
-    /// </remarks>
     [TestFixture]
     public class TahurVisualWiringTests
     {
@@ -94,8 +83,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             var artMaterials = MaterialNamesOf(TahurAssetBuilder.ArtPrefabPath);
             var retints = TahurAssetBuilder.BuildRetints();
 
-            // Assert — una key que no matchea es un typo silencioso: el jefe sale con el color de
-            // fábrica y nada lo grita en el editor.
+            // Assert — una key que no matchea es un typo silencioso: el jefe sale de fábrica.
             foreach (var key in retints.Keys)
             {
                 CollectionAssert.Contains(artMaterials, key,
@@ -113,8 +101,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         [Test]
         public void Wrapper_SwapsEveryBodyMaterialForItsOwnClone()
         {
-            // Assert — si algún material siguiera apuntando al asset compartido, el Tahúr y el
-            // Sunken Grand serían gemelos en esa superficie.
+            // Assert — un material compartido deja al Tahúr y al Sunken Grand gemelos ahí.
             foreach (var renderer in BodyRenderers(_wrapper))
             {
                 foreach (var material in renderer.sharedMaterials)
@@ -148,8 +135,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         [Test]
         public void Wrapper_DoesNotRepaintTheFloorOneBoss()
         {
-            // Assert — Mat_LightGreen es la piel del Sunken Grand y la comparten otros enemigos:
-            // retintarlo in-place repintaría medio casino.
+            // Assert — Mat_LightGreen es la piel del Sunken Grand: in-place repinta medio casino.
             var skin = AssetDatabase.LoadAssetAtPath<Material>(SharedSkinMaterialPath);
             Assert.AreEqual(_sharedSkinUsePaletteBeforeBuild, skin.GetFloat("_UsePalette"),
                 "El builder pisó el material compartido en vez de clonarlo.");
@@ -162,7 +148,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         [Test]
         public void Wrapper_KeepsTheTwelveCardFan()
         {
-            // Assert — el abanico es la razón de elegir este arte para el tramposo de cartas.
+            // Assert
             int cards = BodyRenderers(_wrapper).Count(r => r.name.Contains("Card_SunkenGrand"));
             Assert.AreEqual(12, cards,
                 "El abanico del Tahúr son 12 cartas (Card_SunkenGrand + 1..11).");
@@ -171,7 +157,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         [Test]
         public void Wrapper_IsTargetableAndFlashesOnHit()
         {
-            // Assert — smoke del cableado que el combate espera del pawn.
+            // Assert
             Assert.IsNotNull(_wrapper.GetComponent<EntityPawn>(), "Falta EntityPawn.");
             Assert.IsNotNull(_wrapper.GetComponent<Collider>(),
                 "Sin collider en el root, PawnPicker no lo puede targetear.");
@@ -185,8 +171,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         [Test]
         public void Art_StillFiresFeedbackEventsFromItsAttackClips()
         {
-            // Assert — si el artista re-exporta sin estos eventos, el puente pasa a ser peso muerto
-            // y este test es el que lo cuenta.
+            // Assert — un re-export sin estos eventos deja el puente en peso muerto.
             foreach (var clipPath in AttackClipPaths)
             {
                 var clip = AssetDatabase.LoadAssetAtPath<AnimationClip>(clipPath);
@@ -204,8 +189,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             // Arrange
             var animator = _wrapper.GetComponentInChildren<Animator>(includeInactive: true);
 
-            // Assert — los Animation Events se despachan al GameObject del Animator: en cualquier
-            // otro hijo el componente no recibe nada.
+            // Assert — los Animation Events se despachan al GameObject del Animator y a ningún otro.
             Assert.IsNotNull(animator, "El arte del Tahúr tiene que traer su Animator.");
             Assert.IsNotNull(animator.GetComponent<AnimationFeedbackEvent>(),
                 "Sin el puente, cada ataque tira 'AnimationEvent has no receiver' y los steps " +
@@ -232,8 +216,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         [Test]
         public void Portrait_ResolvesToASprite()
         {
-            // Act — la hoja de personajes está sliceada en Multiple, así que el retrato es un
-            // sub-sprite con nombre y no la textura entera.
+            // Act — la hoja está sliceada en Multiple: el retrato es un sub-sprite con nombre.
             var portrait = BossPortraitLibrary.Tahur();
 
             // Assert
@@ -270,10 +253,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             }
         }
 
-        /// <summary>
-        /// Mesh y SkinnedMesh renderers — el mismo filtro que usa la utility para el retinte, así los
-        /// dos lados de la comparación miran el mismo conjunto.
-        /// </summary>
+        /// <summary>Mismo filtro que usa la utility del retinte, así los dos lados de la
+        /// comparación miran el mismo conjunto.</summary>
         private static IEnumerable<Renderer> BodyRenderers(GameObject root)
             => root.GetComponentsInChildren<Renderer>(includeInactive: true)
                 .Where(r => r is MeshRenderer || r is SkinnedMeshRenderer);

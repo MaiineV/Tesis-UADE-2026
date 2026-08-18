@@ -10,22 +10,16 @@ using Rollgeon.Entities;
 using Rollgeon.PreConditions;
 using Rollgeon.PreConditions.Concretes;
 using UnityEngine;
-// Alias explícito (mismo criterio que HazardService): con `using System` en el archivo —lo pide
-// Func<> de los matchers— `Object` quedaría ambiguo contra System.Object y el teardown no compilaría.
+// Alias explícito: `using System` (lo pide Func<> de los matchers) haría ambiguo a `Object`.
 using Object = UnityEngine.Object;
 
 namespace Rollgeon.Editor.Tools.Enemy.Tests
 {
     /// <summary>
     /// Wiring del árbol de El Anotador (piso 2) validado <b>en memoria</b> vía
-    /// <see cref="AnotadorAssetBuilder"/>: gates, fallbacks, números y el orden
-    /// <c>tacha → lápiz → repliegue → estela → marca</c> que pide la ficha.
+    /// <see cref="AnotadorAssetBuilder"/>. Contra el builder y no contra el <c>.asset</c>: es la
+    /// fuente de verdad del árbol y no depende de un import.
     /// </summary>
-    /// <remarks>
-    /// Mismo objetivo que <c>SunkenGrandPhaseWiringTests</c> —que un merge no se lleve puesta la
-    /// estructura de fases— pero sin cargar el <c>.asset</c>: el builder es la fuente de verdad del
-    /// árbol, así que testearlo cubre también al asset que genera y no depende de un import.
-    /// </remarks>
     [TestFixture]
     public class AnotadorPhaseWiringTests
     {
@@ -102,10 +96,6 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                 "inmediatamente después del repliegue.");
         }
 
-        /// <summary>
-        /// "Estar a 1 cuando le toca" se mide sobre la casilla que el jugador eligió ocupar. Después
-        /// de <see cref="AINode_KeepDistance"/> el boss ya está a 4 y el lápiz no cobraría nunca.
-        /// </summary>
         [Test]
         public void Pencil_ComesBeforeTheRetreat_SoItChargesTheTileThePlayerChose()
         {
@@ -118,11 +108,6 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                 "de acercarse no se cobraría nunca.");
         }
 
-        /// <summary>
-        /// La franja es lo último que pasa en el turno: el jugador la lee sobre el tablero final —
-        /// con el jefe ya replegado y el hielo ya puesto—, no sobre uno que el jefe todavía va a
-        /// cambiar.
-        /// </summary>
         [Test]
         public void Marks_ComeAfterTheRetreat_SoTheStripeIsReadOnTheFinalBoard()
         {
@@ -139,11 +124,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         }
 
         /// <summary>
-        /// El bug que dejó quieto al Sunken Grand: <see cref="AINode_KeepDistance"/> devuelve
-        /// <c>Failed</c> en el caso benigno "ya estoy a distancia ideal", que en esta pelea es la
-        /// mayoría de los turnos (solo se mueve si lo tienen a 3 o menos). Suelto en el Sequence, ese
-        /// Failed le come la marca de fila — su único ataque. El lápiz falla igual de seguido (el
-        /// jugador casi nunca está pegado) y por eso comparte el idiom.
+        /// <see cref="AINode_KeepDistance"/> y el lápiz devuelven <c>Failed</c> en su caso benigno,
+        /// que acá es la mayoría de los turnos: sueltos en el Sequence le comen la marca de fila.
         /// </summary>
         [Test]
         public void EveryFailableChild_IsWrappedInSelectorWithWaitFallback()
@@ -187,12 +169,6 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             Assert.AreEqual(AnotadorAssetBuilder.MarkSize, row.Size, "Row Size 1 = la línea del jugador.");
         }
 
-        /// <summary>
-        /// La ficha sacó el gate de fase de la columna: <i>"Row y Column alternadas desde fase 1: la
-        /// esquiva cuesta 2 de 4 pasos"</i>. Con un solo eje amenazado, un paso en Y sacaba el turno
-        /// entero del boss — la diagonal eterna. Alternando, salir del eje de este turno y del que
-        /// viene cuesta 2 de los 4 pasos, y cuál toca se sabe de antemano.
-        /// </summary>
         [Test]
         public void ColumnMark_AlternatesByRoundParity_WithNoPhaseGate()
         {
@@ -212,7 +188,6 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             Assert.AreEqual(AnotadorAssetBuilder.ColumnDamage, column.Damage);
         }
 
-        /// <summary>La fila no lleva gate: es el fallback del Selector, o sea "toda ronda impar".</summary>
         [Test]
         public void RowMark_IsTheUngatedFallback_SoOneAxisIsAlwaysThreatened()
         {
@@ -225,10 +200,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         }
 
         /// <summary>
-        /// <i>"Fase 2 · Columna de 3 y dos corrimientos por turno"</i>. El ancho de franja de
-        /// <see cref="ThreatShape.Column"/> es <c>Size</c> en casillas (3 ⇒ ±1), y el gate de HP tiene
-        /// que quedar <b>adentro</b> del de paridad: envolviéndolo devolvería la columna a ser un
-        /// ataque de fase 2 y mataría la alternancia que la ficha pide desde la ronda 1.
+        /// El gate de HP tiene que quedar <b>adentro</b> del de paridad: envolviéndolo, la columna
+        /// vuelve a ser un ataque de fase 2 y muere la alternancia desde la ronda 1.
         /// </summary>
         [Test]
         public void Phase2_WidensTheColumnToThree_WithoutRegatingTheAlternation()
@@ -263,8 +236,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                     $"La marca {mark.Shape} pega {mark.Damage} — el techo de piso 2 es {Floor2DamageCeiling}.");
             }
 
-            // El lápiz cobra directo (sin telegraph), así que también entra en el techo: es daño
-            // por golpe que el jugador come el mismo turno.
+            // El lápiz cobra directo (sin telegraph), así que también entra en el techo.
             foreach (var pencil in Descendants(_root).OfType<AINode_AnotadorPencil>())
             {
                 Assert.LessOrEqual(pencil.Damage, Floor2DamageCeiling,
@@ -276,10 +248,6 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         // El lápiz
         // ======================================================================
 
-        /// <summary>
-        /// <i>"El lápiz · melee 12. Estar a 1 cuando le toca cuesta 12 directos"</i>. Era un anillo
-        /// 3×3 telegrafiado por canal auxiliar; ahora es un golpe sin marca ni área.
-        /// </summary>
         [Test]
         public void Pencil_IsDirectMelee_ForTwelve_AtRangeOne()
         {
@@ -294,11 +262,6 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                 "diagonal, desde donde nadie le puede pegar.");
         }
 
-        /// <summary>
-        /// <i>"Va dentro de la alternancia: se sabe qué turno cobra"</i> — comparte la paridad impar
-        /// de la fila. Sin gate de rango: el <c>Range</c> del nodo es el único que decide el alcance,
-        /// y una PC de rango encima podría no coincidir con él.
-        /// </summary>
         [Test]
         public void Pencil_SharesTheOddRoundParityOfTheRow_AndCarriesNoRangeGate()
         {
@@ -320,13 +283,6 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                 "El lápiz cobra desde la fase 1: es el peaje de la casilla de melee toda la pelea.");
         }
 
-        /// <summary>
-        /// El piso de esta pelea pinta dos overlays y nada más —la franja del eje y la estela— y cada
-        /// uno cobra distinto (30/32 de daño vs. perder el turno). El lápiz era el tercero, y era el
-        /// que menos decisión cambiaba: 12 que sólo cobran si el jugador sigue pegado. Cobrado en el
-        /// acto no necesita color, y con tres tintes en el piso "12 de daño" y "perdés el turno" se
-        /// decidían a ojo.
-        /// </summary>
         [Test]
         public void Pencil_PaintsNoOverlay_SoTheFloorKeepsTwoColors()
         {
@@ -369,10 +325,6 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             Assert.AreSame(_ice, trail.Hazard, "El nodo tiene que apuntar a la definición del hielo.");
         }
 
-        /// <summary>
-        /// El tope de la estela no puede pedir más casillas que las que el repliegue camina: sería
-        /// letra muerta y la estela quedaría más corta que la ficha sin que nada la contradiga.
-        /// </summary>
         [Test]
         public void IceTrail_NeverAsksForMoreTilesThanTheRetreatWalks()
         {
@@ -396,9 +348,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             Assert.IsTrue(_ice.ConsumeOnTrigger,
                 "La casilla pisada se derrite — sin eso dos estelas seguidas encadenan stuns.");
 
-            // La duración se descuenta una vez por wrap de ronda y la estela nace en el turno del
-            // jefe, con el turno del jugador de esa ronda ya jugado (CNF-006): DurationRounds = D
-            // deja D-1 rondas pisables, así que las 3 de la ficha piden 4.
+            // La duración se descuenta en el wrap de ronda y la estela nace con el turno del jugador
+            // ya jugado (CNF-006): DurationRounds = D deja D-1 rondas pisables.
             Assert.AreEqual(SheetTrailRounds + 1, _ice.DurationRounds,
                 $"Con DurationRounds = {_ice.DurationRounds} la estela vive " +
                 $"{_ice.DurationRounds - 1} rondas pisables y la ficha pide {SheetTrailRounds}: " +
@@ -409,10 +360,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             Assert.Greater(_ice.EffectiveOverlayTint.a, 0f, "Un tint transparente pintaría quads invisibles.");
         }
 
-        /// <summary>
-        /// El burst es decoración: la estela tiene que quedar jugable si el prefab de VFX no está
-        /// construido (o si el builder corre sin él).
-        /// </summary>
+        /// <summary>El burst es decoración: la estela queda jugable sin el prefab de VFX.</summary>
         [Test]
         public void IceHazard_TriggerVfx_IsOptional()
         {
@@ -485,11 +433,6 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                 "La fase 2 no sube el daño por golpe: lo que cambia es el eje de esquiva.");
         }
 
-        /// <summary>
-        /// Los dos efectos de fase 2 (el ancho de la columna y el feedback de "muestra la manga")
-        /// tienen que entrar juntos: con umbrales distintos el jefe ensancharía el eje sin anunciar
-        /// la fase, o al revés.
-        /// </summary>
         [Test]
         public void EveryPhase2Gate_UsesTheSameHpThreshold()
         {
@@ -540,18 +483,13 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             }
         }
 
-        /// <summary>
-        /// Arte y retrato entran por parámetro, con guarda de null: correr el builder en una copia del
-        /// repo a la que le falte el prefab no debería <b>borrar</b> el arte que el asset ya tiene.
-        /// </summary>
         [Test]
         public void PopulateEnemyData_AssignsArtAndPortrait_ButNeverClearsThem()
         {
             var data = ScriptableObject.CreateInstance<EnemyDataSO>();
             data.hideFlags = HideFlags.HideAndDontSave;
             var visual = new GameObject("PF_Boss_Anotador_Fake");
-            // La textura se guarda aparte: Sprite.Create no la adopta, y una Texture2D sin destruir
-            // la reporta el detector de leaks de EditMode.
+            // La textura se guarda aparte: Sprite.Create no la adopta y el detector de leaks la ve.
             var texture = new Texture2D(4, 4);
             var portrait = Sprite.Create(texture, new Rect(0, 0, 4, 4), Vector2.one * 0.5f);
             try
@@ -593,11 +531,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             return (wrapper as AINode_Selector)?.Children.OfType<T>().FirstOrDefault();
         }
 
-        /// <summary>
-        /// Primer nodo del árbol de tipo <typeparamref name="T"/> que cumple <paramref name="match"/>.
-        /// Se busca por tipo y no por índice para que reordenar el ciclo de turno rompa el test de
-        /// orden —que es donde se lee— y no los quince que miran números.
-        /// </summary>
+        /// <summary>Primer nodo de tipo <typeparamref name="T"/> que cumple <paramref name="match"/>.
+        /// Por tipo y no por índice: reordenar el turno rompe el test de orden y no los de números.</summary>
         private T Find<T>(Func<object, bool> match) where T : class =>
             Descendants(_root).OfType<T>().FirstOrDefault(n => match(n));
 
@@ -625,14 +560,9 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
 
         /// <summary>
         /// Condiciones de todos los <see cref="AINode_If"/> que hay que atravesar para llegar al
-        /// primer nodo que cumple <paramref name="match"/>, o <c>null</c> si no hay ninguno.
+        /// primer nodo que cumple <paramref name="match"/>, o <c>null</c> si no hay ninguno. Un
+        /// ancestro puede sumar un gate, así que mirar el gate suelto no alcanza.
         /// </summary>
-        /// <remarks>
-        /// Mirar las condiciones de un gate suelto no alcanza para afirmar "esto se gatea por X y por
-        /// nada más": un ancestro puede sumar otra. Justamente el bug que este fixture tiene que ver
-        /// es la alternancia de eje colgada de un gate de fase, que en el árbol vive un nivel arriba
-        /// de la marca.
-        /// </remarks>
         private List<BasePreCondition> GuardsOf(Func<object, bool> match)
         {
             var guards = new List<BasePreCondition>();
@@ -676,11 +606,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             return false;
         }
 
-        /// <summary>
-        /// Walker explícito del árbol (Sequence/Selector/If/Once). Se enumera por tipo conocido en
-        /// vez de por reflexión: son los cuatro composites que el builder usa, y así el test rompe si
-        /// alguien mete un composite nuevo sin actualizarlo, en vez de recorrerlo por accidente.
-        /// </summary>
+        /// <summary>Walker explícito (Sequence/Selector/If/Once) y no por reflexión: un composite
+        /// nuevo rompe el test en vez de recorrerse por accidente.</summary>
         private static IEnumerable<object> Descendants(object node)
         {
             if (node == null) yield break;

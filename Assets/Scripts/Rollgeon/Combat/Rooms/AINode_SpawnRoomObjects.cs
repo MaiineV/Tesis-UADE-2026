@@ -27,21 +27,14 @@ namespace Rollgeon.Combat.Rooms
     /// </summary>
     /// <remarks>
     /// <para>
-    /// <b>El nodo no sabe qué objeto es.</b> Mismo criterio que <c>AINode_ActivateHazard</c>: acá no
-    /// hay rodillos ni dados, hay una definición y una forma. Un jefe nuevo con objetos propios apunta
-    /// este nodo a otro <c>.asset</c> — cero código.
+    /// <b>NO envolver en <c>Once</c>.</b> El nodo se auto-gatea pero necesita tickear cada turno para
+    /// correr los relojes de reposición; envuelto en <c>Once</c> queda latcheado tras el primer
+    /// spawn y ningún objeto vuelve nunca. Devuelve <see cref="AIResult.Succeeded"/> en los ticks de
+    /// espera para no abortar el Sequence del jefe.
     /// </para>
     /// <para>
-    /// <b>NO envolver en <c>Once</c>.</b> El nodo se auto-gatea (coloca las ranuras una sola vez) pero
-    /// necesita tickear cada turno del jefe para correr los relojes de reposición. Envuelto en
-    /// <c>Once</c> queda latcheado tras el primer spawn y ningún objeto vuelve nunca — el mismo
-    /// accidente que ya documenta <c>SunkenGrandPhaseWiringTests</c> para los refuerzos. Devuelve
-    /// <see cref="AIResult.Succeeded"/> en los ticks de espera para no abortar el Sequence del jefe.
-    /// </para>
-    /// <para>
-    /// <b>Orden interno del tick</b>: recoger rotos → correr relojes → reponer. Las casillas se
-    /// resuelven una vez y se recuerdan: que el objeto vuelva donde estaba es lo que hace legible la
-    /// pinza (sabés dónde reaparece el que rompiste).
+    /// Orden del tick: recoger rotos → correr relojes → reponer. Las casillas se resuelven una vez y
+    /// se recuerdan, así el objeto vuelve donde estaba.
     /// </para>
     /// </remarks>
     [Serializable, HideReferenceObjectPicker]
@@ -576,20 +569,10 @@ namespace Rollgeon.Combat.Rooms
         /// y el remanente de <see cref="Count"/> repartido en anillo alrededor del jefe.
         /// </summary>
         /// <remarks>
-        /// <para>
-        /// Las cuatro tiles frente a puerta son la razón de ser del patrón: el jugador que quiere
-        /// romper esos dados tiene que cruzar la sala perseguido, en vez de plantarse junto al jefe.
-        /// El que sobra (el quinto dado con <c>Count = 5</c> en una sala de 4 puertas) va al anillo
-        /// de <see cref="RingAroundSelf"/> — ese es el que le cuesta el cubilete al jugador, porque
-        /// para llegar tiene que pagarle el melee a la jefa.
-        /// </para>
-        /// <para>
-        /// Caer al anillo completo también es lo que hace que <c>Count</c> mayor a la cantidad de
-        /// puertas degrade lindo en vez de tirar dados al piso: sin puertas resueltas (sala sin
-        /// <c>RoomLayout</c>, o directamente sin <see cref="IDungeonService"/> — el caso de los
-        /// fixtures de EditMode) el remanente es <see cref="Count"/> entero, o sea el mismo resultado
-        /// que pedir <see cref="Placement.RingAroundSelf"/> directamente.
-        /// </para>
+        /// El remanente al anillo es lo que hace que un <c>Count</c> mayor a la cantidad de puertas
+        /// degrade bien: sin puertas resueltas (sala sin <c>RoomLayout</c>, o sin
+        /// <see cref="IDungeonService"/> — el caso de los fixtures de EditMode) el resultado es el
+        /// mismo que pedir <see cref="Placement.RingAroundSelf"/> directamente.
         /// </remarks>
         private List<GridCoord> DoorFrontSlots(AIContext context, IGridManager grid)
             => BuildDoorFrontSlots(ResolveDoorFrontCoords(grid), context, grid);

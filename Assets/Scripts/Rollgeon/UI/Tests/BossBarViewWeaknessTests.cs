@@ -15,20 +15,14 @@ using UnityEngine.UI;
 namespace Rollgeon.UI.Tests
 {
     /// <summary>
-    /// Cubre el badge de debilidad de <see cref="BossBarView"/> — la fila "La debilidad del jefe"
-    /// de la tabla de reglas invisibles: icono del combo + multiplicador junto a la barra de vida.
-    /// <para>
-    /// Lo que estos tests fijan: el dato sale del <see cref="IWeaknessRegistry"/> (que es lo que la
-    /// IA puede reescribir mid-combate) y no del <c>EnemyDataSO</c>; el override de 0 cae al default
-    /// del <see cref="RulesetSO"/>; y sin refs cableadas o sin servicios la barra sigue andando.
-    /// </para>
+    /// El badge de debilidad de <see cref="BossBarView"/>. El dato sale del
+    /// <see cref="IWeaknessRegistry"/>, que la IA puede reescribir, y no del <c>EnemyDataSO</c>.
     /// </summary>
     [TestFixture]
     public class BossBarViewWeaknessTests
     {
-        // Ids de fixture, no los reales: 'combo.ladder' y compañía SÍ están en la tabla Content, así
-        // que el label saldría traducido y el assert dependería del locale activo del editor. Con
-        // ids inexistentes, LocalizedContent cae al DisplayName que pone el test.
+        // Ids inexistentes a propósito: con los reales el label saldría traducido por la tabla
+        // Content y el assert dependería del locale del editor. Así cae al DisplayName del fixture.
         private const string LadderId = "combo.test_ladder";
         private const string FullHouseId = "combo.test_full_house";
 
@@ -79,8 +73,8 @@ namespace Rollgeon.UI.Tests
             ServiceLocator.RemoveService<IWeaknessRegistry>();
             ServiceLocator.RemoveService<RulesetSO>();
 
-            // NUnit reusa la instancia del fixture entre tests: sin limpiar, un test que no cablea
-            // el badge vería las refs destruidas del anterior.
+            // NUnit reusa la instancia del fixture: un test que no cablea el badge vería las refs
+            // destruidas del anterior.
             if (_go != null) UnityEngine.Object.DestroyImmediate(_go);
             _badgeRoot = null;
             _icon = null;
@@ -104,7 +98,7 @@ namespace Rollgeon.UI.Tests
         [Test]
         public void Show_BossWithWeakness_ShowsIconAndMultiplier()
         {
-            // Arrange — el caso de La Bandida: escalera ×1,5, con el icono ya autorado.
+            // Arrange
             WireBadge();
             var sprite = CreateSprite();
             ComboTestUtils.SetField(_ladder, "_icon", sprite);
@@ -144,7 +138,7 @@ namespace Rollgeon.UI.Tests
         [Test]
         public void Show_ComboWithoutIcon_PutsComboNameInLabel()
         {
-            // Arrange — el pipeline de arte de combos puede dejar el icono sin autorar.
+            // Arrange
             WireBadge();
             var boss = Guid.NewGuid();
             _registry.SetWeakness(boss, LadderId, 1.5f);
@@ -183,7 +177,7 @@ namespace Rollgeon.UI.Tests
         [Test]
         public void Show_WeaknessRegisteredWithEmptyCombo_HidesBadge()
         {
-            // Arrange — entry presente pero sin combo: no es una debilidad, es ruido.
+            // Arrange — entry presente pero sin combo.
             WireBadge();
             var boss = Guid.NewGuid();
             _registry.SetWeakness(boss, string.Empty, 1.5f);
@@ -208,7 +202,7 @@ namespace Rollgeon.UI.Tests
             // Act
             _view.Hide();
 
-            // Assert — la barra vive persistente entre salas: un badge pegado mentiría en la próxima.
+            // Assert — la barra es persistente entre salas: un badge pegado mentiría en la próxima.
             Assert.IsFalse(_badgeRoot.activeSelf);
             Assert.IsNull(_view.WeaknessComboId);
             Assert.IsEmpty(_label.text);
@@ -221,7 +215,7 @@ namespace Rollgeon.UI.Tests
         [Test]
         public void TurnStarted_AfterWeaknessReassigned_RepaintsBadge()
         {
-            // Arrange — fase 2 de La Generala: AINode_AdoptWeakness reescribe el registry.
+            // Arrange — AINode_AdoptWeakness reescribe el registry a mitad de combate.
             WireBadge();
             var boss = Guid.NewGuid();
             _registry.SetWeakness(boss, LadderId, 1.5f);
@@ -267,8 +261,7 @@ namespace Rollgeon.UI.Tests
         [Test]
         public void Show_ComboMissingFromCatalog_StillShowsMultiplier()
         {
-            // Arrange — catálogo incompleto: el multiplicador es cierto igual, y el id crudo en el
-            // label es la pista de que falta autorar el combo.
+            // Arrange — catálogo incompleto: el id crudo en el label delata el combo sin autorar.
             WireBadge();
             ServiceLocator.RemoveService<ComboCatalogSO>();
             var boss = Guid.NewGuid();
@@ -285,7 +278,7 @@ namespace Rollgeon.UI.Tests
         [Test]
         public void Show_WithoutRuleset_FallsBackToBalanceDefaultNotToOne()
         {
-            // Arrange — un ×1 diría "pegarle acá no paga", que es lo contrario de lo autorado.
+            // Arrange
             WireBadge();
             ServiceLocator.RemoveService<RulesetSO>();
             var boss = Guid.NewGuid();
