@@ -144,10 +144,16 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                     "Romper un dado tiene que costar un golpe entero.");
                 Assert.IsTrue(table.Blocks, "Sus dados SON las paredes de la sala.");
 
-                // Cada ranura vacía corre su propio reloj y el dado vuelve a SU casilla. Como oleada
-                // de refuerzos había que romper los cinco para que volviera alguno.
-                Assert.IsTrue(table.Respawns);
+                // El dado roto NO vuelve. Con la armadura de la mesa establecida en que el porcentaje
+                // roto no se recupera (TableArmorMax), reponer el dado le devolvía el bloqueo de
+                // casilla y la categoría de la mano sin devolverle la armadura: el jugador pagaba
+                // DiceHp por un progreso que se deshacía en dos de sus tres ejes.
+                Assert.IsFalse(table.Respawns,
+                    "La mesa es un recurso que se gasta, no una noria: el dado roto se queda roto.");
                 Assert.AreEqual(GeneralaAssetBuilder.TableRefillTurns, table.RespawnDelayTurns);
+                Assert.Less(GeneralaAssetBuilder.TableRefillTurns, 0,
+                    "RoomObjectDefinitionSO.Respawns es 'RespawnDelayTurns >= 0' — el 0 es 'vuelve " +
+                    "enseguida', no 'no vuelve'. Sólo un negativo apaga la reposición.");
 
                 Assert.IsTrue(table.HideFromTurnQueue,
                     "Como EnemyDataSO los cinco dados ocupaban cinco slots seguidos de iniciativa " +
@@ -372,26 +378,45 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         // ======================================================================
 
         [Test]
-        public void Frost_FreezesTheRingAroundTheTable_LeavingTheAdjacentTilesFree()
+        public void Frost_FreezesExactlyTheTilesAdjacentToHer_AndNothingWider()
         {
             // Act
             var frost = Descendants(_root).OfType<AINode_GeneralaFrostRing>().FirstOrDefault();
 
-            // Assert — radio 2 = el BORDE del 5×5. Las cuatro casillas pegadas a ella quedan
-            // libres, que son desde donde el jugador le rompe los dados: con radio 1 el anillo las
-            // tapaba y desarmarle la mesa dejaba de ser posible.
+            // Assert — área maciza de radio 1 = el 3×3 que la rodea, que es exactamente donde vive
+            // el quinto dado y desde donde se cobra el cubilete. El 5×5 anterior tapaba un quinto
+            // del ancho de la sala y se leía como terreno prohibido en vez de como un cerrojo.
             Assert.IsNotNull(frost, "La Generala no congela nada.");
             Assert.AreEqual(GeneralaAssetBuilder.FrostRingRadius, frost.Radius);
-            Assert.AreEqual(2, GeneralaAssetBuilder.FrostRingRadius,
-                "El anillo tiene que dejar libre el anillo de distancia 1.");
+            Assert.AreEqual(1, GeneralaAssetBuilder.FrostRingRadius,
+                "El candado cierra el anillo pegado a ella, no un cuarto de la sala.");
+            Assert.IsTrue(frost.Solid,
+                "Maciza: como borde hueco el centro no hacía nada y se veía como un bug dibujado.");
             Assert.AreSame(_frost, frost.Hazard, "El anillo tiene que usar SU definición de hielo.");
             Assert.AreEqual(1, frost.StunTurns, "La ficha pide 1 turno de congelamiento.");
             Assert.IsTrue(frost.ReplacePreviousRing,
                 "Dos anillos vivos duplicarían overlays y dejarían medio mapa helado.");
         }
 
+        /// <summary>
+        /// La cuenta que mantiene viva la jugada de romperle la mesa: el hielo ocupa
+        /// <c>DurationRounds - 1</c> rondas, así que la cadencia tiene que ser estrictamente mayor
+        /// que eso o no queda una sola ronda pisable en toda la pelea.
+        /// </summary>
         [Test]
-        public void Frost_FallsOnEvenRoundsOnly_SoThereIsARoundToBreakDice()
+        public void Frost_LeavesAFreeRound_BecauseTheCadenceOutlastsTheIce()
+        {
+            int iceRounds = GeneralaAssetBuilder.FrostDurationRounds - 1;
+
+            Assert.Greater(GeneralaAssetBuilder.FrostParityDivisor, iceRounds,
+                $"El hielo ocupa {iceRounds} ronda(s) y cae cada " +
+                $"{GeneralaAssetBuilder.FrostParityDivisor}: sin cadencia mayor que la duración, la " +
+                "escarcha nueva entra antes de que se derrita la anterior y romperle el dado caro " +
+                "—la única jugada que baja su armadura— se vuelve imposible.");
+        }
+
+        [Test]
+        public void Frost_FallsOnACadenceOfRounds_SoThereIsARoundToBreakDice()
         {
             // Arrange
             var gate = _root.Children
@@ -406,7 +431,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             Assert.IsNotNull(parity, "Sin gate de ronda el hielo se repone antes de derretirse.");
             Assert.AreEqual(PcRoundNumber.CompareMode.Multiple, parity.Mode);
             Assert.AreEqual(GeneralaAssetBuilder.FrostParityDivisor, parity.Value,
-                "Rondas pares: la impar es la ventana franca para entrar a la mesa.");
+                "La cadencia del gate y la constante tienen que ser el mismo número: la ronda franca " +
+                "sale de esa cuenta (ver Frost_LeavesAFreeRound_BecauseTheCadenceOutlastsTheIce).");
         }
 
         [Test]
@@ -427,8 +453,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                     "Cobra al CRUZARLO — quedarse adentro o afuera del anillo no cuesta nada.");
                 Assert.IsTrue(definition.ConsumeOnTrigger,
                     "La casilla pisada se derrite: sin eso el mismo anillo encadena stuns.");
-                Assert.AreEqual(2, definition.DurationRounds,
-                    "'Dura 1 turno' se autora como 2: la duración se descuenta en el wrap de ronda " +
+                Assert.AreEqual(3, definition.DurationRounds,
+                    "'Dura 2 turnos' se autora como 3: la duración se descuenta en el wrap de ronda " +
                     "y la escarcha nace con el turno del jugador de esa ronda ya jugado.");
                 Assert.AreNotEqual(AnotadorAssetBuilder.IceHazardSourceId, definition.SourceId,
                     "Dos hazards con el mismo source id se pisan el estado.");
@@ -443,7 +469,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         public void Frost_UsesItsOwnDefinition_AndDoesNotRetuneTheAnotadorsTrail()
         {
             // Assert — la estela del piso 2 dura 3 rondas pisables a propósito (tapar corredores);
-            // la escarcha dura 1. Compartir asset obligaría a elegir, y el jefe del piso 2 no es
+            // la escarcha dura 2. Compartir asset obligaría a elegir, y el jefe del piso 2 no es
             // de este trabajo.
             Assert.AreNotEqual(AnotadorAssetBuilder.IceHazardAssetPath,
                 GeneralaAssetBuilder.FrostHazardAssetPath,
@@ -524,12 +550,12 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         {
             // Assert — el que casi se nos escapa. Con la correa dentro del radio de la escarcha ella
             // frena parada sobre el borde de su propio hielo, y como el hielo es sólido y aturde, el
-            // jugador se come el stun en cada ronda par sin haber elegido acercarse. La escarcha es
-            // el candado del dado caro: tiene que cobrarse cuando el jugador entra, no cuando ella
-            // llega.
+            // jugador se come el stun cada vez que cae la escarcha sin haber elegido acercarse. La
+            // escarcha es el candado del dado caro: tiene que cobrarse cuando el jugador entra, no
+            // cuando ella llega.
             Assert.Greater(GeneralaAssetBuilder.RepositionRange, GeneralaAssetBuilder.FrostRingRadius,
                 "La correa tiene que dejarla FUERA de su propio anillo de escarcha: si frena adentro, " +
-                "el hielo pasa de ser el precio de acercarse a ser un impuesto por ronda par.");
+                "el hielo pasa de ser el precio de acercarse a ser un impuesto por ronda.");
         }
 
         [Test]

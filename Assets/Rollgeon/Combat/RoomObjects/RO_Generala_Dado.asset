@@ -17,7 +17,7 @@ MonoBehaviour:
   Hp: 45
   Blocks: 1
   HideFromTurnQueue: 1
-  RespawnDelayTurns: 4
+  RespawnDelayTurns: -1
   VisualPrefab: {fileID: 191739518141893201, guid: 980e936c83588b3438314f35ab6eecd1, type: 3}
   Portrait: {fileID: 0}
   OnDeathHazard: {fileID: 0}

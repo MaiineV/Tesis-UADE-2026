@@ -804,7 +804,7 @@ MonoBehaviour:
       Data: 3
     - Name: Value
       Entry: 3
-      Data: 2
+      Data: 3
     - Name: 
       Entry: 8
       Data: 
@@ -822,7 +822,7 @@ MonoBehaviour:
       Data: 1
     - Name: Radius
       Entry: 3
-      Data: 2
+      Data: 1
     - Name: Solid
       Entry: 5
       Data: true
@@ -923,7 +923,7 @@ MonoBehaviour:
       Data: 68|Rollgeon.Combat.AI.Readers.AIConstantInt, Rollgeon
     - Name: Value
       Entry: 3
-      Data: 2
+      Data: 4
     - Name: 
       Entry: 8
       Data: 

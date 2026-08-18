@@ -130,8 +130,19 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
 
         public const int HandSize = 5;
 
-        /// <summary>Turnos del boss que tarda en reponer la mesa entera.</summary>
-        public const int TableRefillTurns = 4;
+        /// <summary>
+        /// Turnos del boss que tarda en reponer un dado roto. <b>Negativo = no se repone</b>
+        /// (<c>RoomObjectDefinitionSO.Respawns</c> es <c>RespawnDelayTurns &gt;= 0</c>).
+        /// </summary>
+        /// <remarks>
+        /// Salió del playtest: los dados reaparecían y no tienen que hacerlo. Y la razón es más
+        /// fuerte que la molestia visual — con <see cref="TableArmorMax"/> ya establecido en que la
+        /// reducción rota <b>no vuelve</b>, reponer el dado le devolvía el bloqueo de casilla y la
+        /// categoría de la mano sin devolverle la armadura: el jugador pagaba 45 de HP por un
+        /// progreso que se deshacía a los cuatro turnos en dos de sus tres ejes. La mesa es un
+        /// recurso que se gasta, no una noria.
+        /// </remarks>
+        public const int TableRefillTurns = -1;
 
         /// <summary>
         /// Reducción de daño con la mesa entera en pie. Baja
@@ -206,12 +217,19 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         // ---- La escarcha ----------------------------------------------------------------
 
         /// <summary>
-        /// Alcance Chebyshev de la escarcha. 2 = el 5×5 que la rodea. Con la mesa repartida en
+        /// Alcance Chebyshev de la escarcha. 1 = el 3×3 que la rodea. Con la mesa repartida en
         /// <c>DoorFronts</c> ya no tapa los cinco dados —cuatro viven en los marcos de puerta,
         /// lejos de acá— sino al quinto, el que queda pegado a ella, y su cubilete: es el candado
         /// del dado caro, no de la mesa entera.
         /// </summary>
-        public const int FrostRingRadius = 2;
+        /// <remarks>
+        /// <b>1 y no 2, por playtest.</b> El 5×5 tapaba un quinto del ancho de la sala y se leía como
+        /// terreno prohibido en vez de como el cerrojo de una casilla. El 3×3 es exactamente el
+        /// anillo de casillas pegadas a ella — que es donde vive el quinto dado y desde donde se
+        /// cobra el cubilete—, así que el candado sigue cerrando lo mismo con un cuarto del área. Lo
+        /// que se perdió en tamaño se recupera en duración (<see cref="FrostDurationRounds"/>).
+        /// </remarks>
+        public const int FrostRingRadius = 1;
 
         /// <summary>
         /// La escarcha es un <b>área maciza</b>, no un anillo de una casilla de grosor.
@@ -221,36 +239,59 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         /// nada. Y el motivo autorado del hueco —"desde ahí el jugador le rompe los dados"— nunca se
         /// cumplió, porque los dados caían en el perímetro de la sala. Con el dado caro y su
         /// cubilete adentro del radio, congelarlo entero es lo que vuelve el candado una decisión:
-        /// <c>OnEnter</c> no dispara sobre quien ya estaba adentro, así que la ronda impar (ver
+        /// <c>OnEnter</c> no dispara sobre quien ya estaba adentro, así que la ronda franca (ver
         /// <see cref="FrostParityDivisor"/>) es para meterte, adentro le pegás a ella y a su dado de
-        /// al lado gratis, y salir cuesta el turno.
+        /// al lado gratis, y salir cuesta el turno. Con el radio en 1 el área es exactamente ese
+        /// anillo pegado a ella, así que "entrar a la mesa" y "entrar al hielo" son el mismo paso.
         /// </remarks>
         public const bool FrostIsSolid = true;
 
         public const int FrostStunTurns = 1;
 
         /// <summary>
-        /// Vida del anillo en el SO del hazard. La ficha pide <b>1 turno</b> y acá va <b>2</b>:
-        /// <c>HazardService</c> descuenta una vez por wrap de ronda y la escarcha nace en el turno
-        /// del jefe, con el turno del jugador de esa ronda ya jugado (CNF-006). <c>DurationRounds =
-        /// D</c> vale <c>D - 1</c> rondas pisables. Mismo corrimiento de +1 que
-        /// <c>AnotadorAssetBuilder.TrailDurationRounds</c> y <c>CroupierAssetBuilder</c>.
-        /// </summary>
-        public const int FrostDurationRounds = 2;
-
-        /// <summary>
-        /// Paridad de la escarcha: cae en rondas pares. La ronda impar es la ventana franca para
-        /// entrar a la mesa y romper dados — sin ella el hielo se repone antes de derretirse y la
-        /// jugada que le borra categorías queda muerta.
+        /// Vida del anillo en el SO del hazard. <c>HazardService</c> descuenta una vez por wrap de
+        /// ronda y la escarcha nace en el turno del jefe, con el turno del jugador de esa ronda ya
+        /// jugado (CNF-006): <c>DurationRounds = D</c> vale <c>D - 1</c> rondas pisables. Mismo
+        /// corrimiento de +1 que <c>AnotadorAssetBuilder.TrailDurationRounds</c> y
+        /// <c>CroupierAssetBuilder</c>.
         /// </summary>
         /// <remarks>
-        /// Con la escarcha maciza (<see cref="FrostIsSolid"/>) esta paridad pasó de deseable a ser la
-        /// mecánica: el área tapa el dado caro y su cubilete enteros, así que la ronda impar es
-        /// <b>la única</b> en la que se puede entrar a buscarlo. Y como <c>OnEnter</c> no dispara
-        /// sobre quien ya estaba adentro, entrar en la impar te deja pegándole gratis hasta que
-        /// decidas salir.
+        /// <b>3 y no 2, por playtest: el hielo dura un turno más.</b> Con el área bajada a 3×3
+        /// (<see cref="FrostRingRadius"/>) el candado tapaba menos y se derretía enseguida, así que
+        /// casi no había que planificar alrededor suyo. Dos rondas pisadas en un cuadrado chico se
+        /// leen mejor que una ronda en uno grande: la pregunta pasa de "¿me alcanza el hielo?" a
+        /// "¿cuándo entro?", que es la que el jefe quiere que te hagas.
+        /// <para>
+        /// Este número <b>no se puede mover solo</b>: ver <see cref="FrostParityDivisor"/>. Con el
+        /// hielo durando dos rondas y cayendo cada dos, no queda ninguna ronda franca.
+        /// </para>
         /// </remarks>
-        public const int FrostParityDivisor = 2;
+        public const int FrostDurationRounds = 3;
+
+        /// <summary>
+        /// Cadencia de la escarcha: cae en las rondas múltiplo de este número. Las otras son la
+        /// ventana franca para entrar a la mesa y romper el dado caro — sin ellas el hielo se repone
+        /// antes de derretirse y la jugada que le borra categorías queda muerta.
+        /// </summary>
+        /// <remarks>
+        /// <para>
+        /// Con la escarcha maciza (<see cref="FrostIsSolid"/>) esta cadencia pasó de deseable a ser
+        /// la mecánica: el área tapa el dado caro y su cubilete enteros, así que la ronda franca es
+        /// <b>la única</b> en la que se puede entrar a buscarlo. Y como <c>OnEnter</c> no dispara
+        /// sobre quien ya estaba adentro, entrar en la franca te deja pegándole gratis hasta que
+        /// decidas salir.
+        /// </para>
+        /// <para>
+        /// <b>3 y no 2, y es aritmética, no gusto.</b> Va atado a
+        /// <see cref="FrostDurationRounds"/>: el hielo ocupa <c>D - 1</c> rondas, así que la ventana
+        /// franca existe sólo si la cadencia es <b>estrictamente mayor</b> que eso. Con la duración
+        /// subida a 3 (dos rondas de hielo) y la cadencia en 2, la escarcha de la ronda 2 cubre 2 y
+        /// 3, la de la ronda 4 cubre 4 y 5, y no queda una sola ronda pisable en toda la pelea:
+        /// romperle la mesa se vuelve imposible y la pelea pierde su jugada. Con 3 el ciclo es
+        /// hielo-hielo-franca.
+        /// </para>
+        /// </remarks>
+        public const int FrostParityDivisor = 3;
 
         /// <summary>Celeste del hielo, el mismo de la estela del Anotador: el hielo se lee igual en todo el juego.</summary>
         public static readonly Color FrostOverlayTint = new Color(0.35f, 0.8f, 1f, 0.55f);
@@ -296,11 +337,22 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         public const int RepositionRange = 3;
 
         /// <summary>
-        /// Pasos por turno del reposicionamiento. 2 sobre los 4 de su <c>BaseSpeed</c>: corrige la
-        /// distancia sin poder cruzarle la sala de punta a punta en un turno, que la volvería
-        /// imposible de despegar.
+        /// Pasos por turno del reposicionamiento. Los 4 de su <c>BaseSpeed</c>: persigue de verdad.
         /// </summary>
-        public const int RepositionSteps = 2;
+        /// <remarks>
+        /// <b>4 y no 2, por playtest — "se mueve muy poco hacia vos".</b> Con 2 pasos y una correa de
+        /// <see cref="RepositionRange"/> = 3, cualquier jugador que se alejara le sacaba distancia
+        /// más rápido de lo que ella la recuperaba: la persecución existía en el árbol pero no en
+        /// pantalla, y la amenaza de que te tape el camino a los dados de las puertas nunca llegaba
+        /// a pasar.
+        /// <para>
+        /// Lo que protege al jugador de que se le pegue no es la lentitud, es la correa: ella frena
+        /// a <see cref="RepositionRange"/> y no avanza más, así que darle 4 pasos la hace llegar
+        /// hasta donde ya tenía permitido llegar, más rápido. El cubilete y el hielo siguen
+        /// costando exactamente lo mismo — entrar los sigue eligiendo el jugador.
+        /// </para>
+        /// </remarks>
+        public const int RepositionSteps = 4;
 
         // ---- La regla de la mano repetida ------------------------------------------------
 
@@ -461,8 +513,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
             AssetDatabase.Refresh();
 
             Debug.Log(LogPrefix + $"Listo: '{BossAssetPath}' ({BossHp} HP) + su mesa en " +
-                      $"'{DiceDefinitionPath}' ({HandSize} × {DiceHp} HP en el anillo pegado a ella, " +
-                      $"reponiendo cada ranura a los {TableRefillTurns} turnos) + " +
+                      $"'{DiceDefinitionPath}' ({HandSize} × {DiceHp} HP repartidos por la sala, " +
+                      "sin reposición) + " +
                       $"'{FrostHazardAssetPath}', con wrappers '{BossVisualPrefabPath}' y " +
                       $"'{DiceVisualPrefabPath}'. Re-ejecutable sin duplicar nada.");
         }
@@ -1018,8 +1070,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
 
         /// <summary>
         /// Escribe la definición de la mesa: cinco dados de <see cref="DiceHp"/> HP que bloquean su
-        /// casilla, vuelven a la MISMA ranura a los <see cref="TableRefillTurns"/> turnos y no ocupan
-        /// slot en la cola de turnos.
+        /// casilla, <b>no se reponen</b> (<see cref="TableRefillTurns"/> negativo) y no ocupan slot
+        /// en la cola de turnos.
         /// </summary>
         /// <remarks>
         /// <para>
@@ -1089,9 +1141,9 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
                     //    (sin ComboLog, sin registry) no le cancele el turno.
                     Isolate(BuildPhaseTwoGate()),
 
-                    // 3. La mesa: cinco dados repartidos por la sala, cada ranura reponiéndose sola
-                    //    a los TableRefillTurns turnos. Sin Once — el nodo se auto-gatea y necesita
-                    //    tickear para correr los relojes de reposición.
+                    // 3. La mesa: cinco dados repartidos por la sala, y el que se rompe NO vuelve
+                    //    (TableRefillTurns = -1). Sin Once igual — el nodo se auto-gatea, y sin
+                    //    reposición el tick es barato: recoge los rotos y no repone nada.
                     //
                     //    DoorFronts y no el anillo pegado a ella: llena primero los marcos de puerta
                     //    y manda el sobrante al anillo, así que Count = HandSize (5) en una sala de
@@ -1137,9 +1189,10 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
                     //    editar el TelegraphMark de su rama, no tocar código.
                     BuildHandTelegraphTable(),
 
-                    // 7. La escarcha, en rondas pares: el anillo de la mesa se congela y cruzarlo
-                    //    cuesta el turno. Cero daño — el techo del piso ya está lleno con la mano
-                    //    (45) y el cubilete (18); lo que cobra el hielo es la ronda que perdés.
+                    // 7. La escarcha, cada FrostParityDivisor rondas: el anillo pegado a ella se
+                    //    congela y cruzarlo cuesta el turno. Cero daño — el techo del piso ya está
+                    //    lleno con la mano (45) y el cubilete (12); lo que cobra el hielo es la
+                    //    ronda que perdés.
                     Isolate(BuildFrostGate(frostHazard)),
 
                     // 8. La regla de la casa: la mano que el jugador acaba de anotar queda
@@ -1315,13 +1368,16 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         }
 
         /// <summary>
-        /// La escarcha, colgada de la paridad de ronda: cae en las pares y deja la impar franca.
+        /// La escarcha, colgada de la cadencia de ronda (<see cref="FrostParityDivisor"/>): cae en
+        /// las múltiplo de 3 y deja franca la tercera.
         /// </summary>
         /// <remarks>
-        /// La ronda franca no es tuning, es lo que mantiene viva la jugada del jefe. Sus cinco dados
-        /// se rompen desde las casillas pegadas a ella, y el anillo tapa el único camino hasta ahí:
-        /// si se repusiera todos los turnos, el hielo nuevo caería antes de que se derrita el
-        /// anterior y desarmarle la mesa pasaría de "caro" a "imposible".
+        /// La ronda franca no es tuning, es lo que mantiene viva la jugada del jefe. El dado caro se
+        /// rompe desde las casillas pegadas a ella, y el anillo tapa el único camino hasta ahí: si
+        /// se repusiera todos los turnos, el hielo nuevo caería antes de que se derrita el anterior
+        /// y desarmarle la mesa pasaría de "caro" a "imposible". Con la escarcha durando dos rondas
+        /// (<see cref="FrostDurationRounds"/>) la cuenta es justa — ver ahí por qué la cadencia no
+        /// se puede mover sin mover la duración.
         /// </remarks>
         public static AINode_If BuildFrostGate(HazardDefinitionSO frostHazard)
         {

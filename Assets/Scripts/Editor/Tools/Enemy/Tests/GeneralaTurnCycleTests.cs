@@ -308,44 +308,44 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         // ======================================================================
 
         [Test]
-        public void Turn_OnAnEvenRound_FreezesTheWholeTable_CenterIncluded()
+        public void Turn_OnAFrostRound_FreezesOnlyTheTilesAroundHer_CenterIncluded()
         {
             // Arrange
             var root = GeneralaAssetBuilder.BuildAIRoot(_dice, _frost);
 
-            // Act
-            root.Tick(NewContext(roundIndex: 2));
+            // Act — múltiplo de FrostParityDivisor (3).
+            root.Tick(NewContext(roundIndex: 3));
 
-            // Assert — el 5×5 entero queda helado, su casilla y la mesa incluidas.
-            Assert.IsTrue(_hazards.TryGetHazardAt(new GridCoord(7, 3), out var frost),
-                "La casilla a distancia 2 de la mesa tiene que quedar helada.");
-            Assert.IsTrue(_hazards.TryGetHazardAt(new GridCoord(3, 5), out _),
-                "La esquina también: es Chebyshev 2, no Manhattan.");
-            Assert.IsTrue(_hazards.TryGetHazardAt(GluedTile, out _),
-                "La casilla pegada a ella es donde vive su mesa de dados, y se congela con todo lo demás.");
+            // Assert — el 3×3 macizo, su casilla incluida.
+            Assert.IsTrue(_hazards.TryGetHazardAt(GluedTile, out var frost),
+                "La casilla pegada a ella es donde vive su quinto dado, y es lo que el candado cierra.");
             Assert.IsTrue(_hazards.TryGetHazardAt(TableTile, out _),
                 "Su propia casilla incluida: no se congela por ser la dueña del área, no por estar afuera.");
+            Assert.IsTrue(_hazards.TryGetHazardAt(new GridCoord(4, 2), out _),
+                "La esquina también: es Chebyshev 1, no Manhattan.");
 
-            Assert.AreEqual(25, frost.Tiles.Count,
-                "El 5×5 macizo son 25 casillas — la sala 11×7 las contiene todas. Como anillo eran 16 " +
-                "y el centro no hacía nada, que en pantalla se leía como un cuadrado dibujado de adorno.");
+            Assert.IsFalse(_hazards.TryGetHazardAt(AwayTile, out _),
+                "A distancia 2 ya NO hiela: el área bajó de 5×5 a 3×3 para dejar de leerse como " +
+                "terreno prohibido y volver a leerse como el cerrojo de una casilla.");
+
+            Assert.AreEqual(9, frost.Tiles.Count,
+                "El 3×3 macizo son 9 casillas — la sala 11×7 las contiene todas.");
         }
 
         [Test]
-        public void Turn_OnAnOddRound_LeavesTheTableClear_SoThereIsAWindowToBreakDice()
+        public void Turn_OnAFreeRound_LeavesTheTableClear_SoThereIsAWindowToBreakDice()
         {
-            // Arrange — la ronda impar es la ventana franca, y con la escarcha maciza es LA mecánica:
-            // el área tapa la mesa entera, así que la impar es la única en la que se puede entrar. Y
-            // como OnEnter no cobra a quien ya estaba adentro, entrar ahí te deja rompiendo dados
-            // hasta que decidas salir.
+            // Arrange — la ronda franca es LA mecánica: el área tapa el dado caro, así que es la
+            // única en la que se puede entrar a buscarlo. Y como OnEnter no cobra a quien ya estaba
+            // adentro, entrar ahí te deja rompiéndolo hasta que decidas salir.
             var root = GeneralaAssetBuilder.BuildAIRoot(_dice, _frost);
 
-            // Act
-            root.Tick(NewContext(roundIndex: 3));
+            // Act — 2 no es múltiplo de FrostParityDivisor (3).
+            root.Tick(NewContext(roundIndex: 2));
 
             // Assert
-            Assert.IsFalse(_hazards.TryGetHazardAt(new GridCoord(7, 3), out _),
-                "En ronda impar no cae escarcha.");
+            Assert.IsFalse(_hazards.TryGetHazardAt(GluedTile, out _),
+                "En ronda franca no cae escarcha.");
             CollectionAssert.IsEmpty(_hazards.ActiveInstances(), "Ni ninguna otra instancia.");
         }
 
@@ -356,8 +356,9 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             // porque OnEnter se dispara al pisar y él ya estaba adentro.
             var root = GeneralaAssetBuilder.BuildAIRoot(_dice, _frost);
 
-            // Act
-            root.Tick(NewContext(roundIndex: 2));
+            // Act — ronda de escarcha (múltiplo de FrostParityDivisor): si acá no cayera hielo el
+            // test no probaría nada.
+            root.Tick(NewContext(roundIndex: 3));
 
             // Assert — el único daño del turno sigue siendo el cubilete. La escarcha no suma HP
             // porque el techo del piso 3 (45 por golpe, ≤65 anunciado) ya lo llenan la mano y la copa.
@@ -371,10 +372,10 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             // Arrange
             var root = GeneralaAssetBuilder.BuildAIRoot(_dice, _frost);
 
-            // Act — dos ciclos de escarcha (rondas 2 y 4).
-            root.Tick(NewContext(roundIndex: 2));
+            // Act — dos ciclos de escarcha (rondas 3 y 6, múltiplos de FrostParityDivisor).
+            root.Tick(NewContext(roundIndex: 3));
             _threat.Clear(_boss);
-            root.Tick(NewContext(roundIndex: 4));
+            root.Tick(NewContext(roundIndex: 6));
 
             // Assert
             Assert.AreEqual(1, _hazards.ActiveInstances().Count(),
