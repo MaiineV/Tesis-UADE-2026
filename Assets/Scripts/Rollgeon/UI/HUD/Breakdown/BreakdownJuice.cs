@@ -109,8 +109,8 @@ namespace Rollgeon.UI.HUD.Breakdown
             float intensity = BreakdownFeelMath.ComboCelebrateIntensity(
                 breakdown.Final, t1, t2, dice.Count);
 
-            int countMin = _settings != null ? _settings.ComboBurstCountMin : 36;
-            int countMax = _settings != null ? _settings.ComboBurstCountMax : 80;
+            int countMin = _settings != null ? _settings.ComboBurstCountMin : 24;
+            int countMax = _settings != null ? _settings.ComboBurstCountMax : 56;
             int burst = Particles ? Mathf.RoundToInt(Mathf.Lerp(countMin, countMax, intensity)) : 0;
             float punch = ShakeOk
                 ? (_settings != null ? _settings.ComboPunchScale : 0.18f) * intensity : 0f;
