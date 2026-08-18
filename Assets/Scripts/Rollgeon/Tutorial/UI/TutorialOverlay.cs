@@ -5,6 +5,7 @@ using Rollgeon.Input;
 using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
+using UnityEngine.InputSystem;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 using LocalizedContent = Rollgeon.Localization.LocalizedContent;
@@ -64,6 +65,11 @@ namespace Rollgeon.Tutorial.UI
         private float _anchorLostAt = -1f;
         private Vector2 _smoothedPopupCenter;
         private bool _popupCenterInitialized;
+
+        // DismissOnClick: gracia post-Show para que el gesto que disparó el advice
+        // (ej. el release del tiro de dados) no lo cierre en el mismo instante.
+        private const float DismissGraceSeconds = 0.25f;
+        private float _shownAt;
 
         public bool IsVisible { get; private set; }
 
@@ -201,6 +207,7 @@ namespace Rollgeon.Tutorial.UI
             _hadAnchor = false;
             _anchorLostAt = -1f;
             _popupCenterInitialized = false;
+            _shownAt = Time.unscaledTime;
 
             if (request.InputPolicy == TutorialInputPolicy.BlockUntilContinue && onContinue == null)
             {
@@ -255,6 +262,17 @@ namespace Rollgeon.Tutorial.UI
         private void LateUpdate()
         {
             if (!IsVisible || _request == null) return;
+
+            // Advice descartable: cualquier click izquierdo lo cierra. El overlay no
+            // es raycast target en esta policy, así que el click pasa igual al juego.
+            if (_request.InputPolicy == TutorialInputPolicy.DismissOnClick
+                && Time.unscaledTime - _shownAt > DismissGraceSeconds
+                && Mouse.current != null && Mouse.current.leftButton.wasPressedThisFrame)
+            {
+                Hide();
+                return;
+            }
+
             UpdateLayout();
         }
 

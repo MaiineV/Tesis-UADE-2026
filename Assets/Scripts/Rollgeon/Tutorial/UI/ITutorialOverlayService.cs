@@ -25,6 +25,11 @@ namespace Rollgeon.Tutorial.UI
         /// <summary>Paso de texto puro: el dim captura el click y dispara el callback
         /// <c>onContinue</c> de <see cref="ITutorialOverlayService.Show"/>.</summary>
         BlockUntilContinue,
+
+        /// <summary>Advice descartable: pass-through total (como <see cref="PassThrough"/>),
+        /// pero cualquier click izquierdo — caiga donde caiga — oculta el overlay. El click
+        /// NO se consume: llega igual al HUD/mundo debajo.</summary>
+        DismissOnClick,
     }
 
     /// <summary>

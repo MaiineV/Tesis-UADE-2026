@@ -524,6 +524,9 @@ namespace Rollgeon.Tutorial
                       || _step == TutorialStep.EscapeTeach)
                      && roomId == _roomC && outcome == CombatOutcome.Victory)
             {
+                // La victoria puede llegar con la ventana exclusiva de una lección
+                // interceptada (curar) todavía abierta — restaurar (idempotente).
+                EndExclusiveStep();
                 ClearTurnDeferrals();
                 _step = TutorialStep.GoToE;
                 ShowStep(TutorialStep.GoToE, new TutorialStepDisplayRequest
@@ -974,11 +977,15 @@ namespace Rollgeon.Tutorial
                 return;
             }
 
-            // Segunda tirada de la misma acción = su primer re-roll.
+            // Segunda tirada de la misma acción = su primer re-roll. Es un advice,
+            // no un paso: cualquier click lo descarta (feedback playtest — quedaba
+            // pegado tapando el botón hasta el paso siguiente).
             _rerollTaught = true;
-            ShowStep(TutorialStep.DiceTeach, RollButtonRequest(
+            var rerollRequest = RollButtonRequest(
                 LocalizedContent.Ui(TutorialTextKeys.RerollTeach,
-                    "Tienes hasta 3 tiradas gratis por acción; las siguientes cuestan 1 de energía.")));
+                    "Tienes hasta 3 tiradas gratis por acción; las siguientes cuestan 1 de energía."));
+            rerollRequest.InputPolicy = TutorialInputPolicy.DismissOnClick;
+            ShowStep(TutorialStep.DiceTeach, rerollRequest);
         }
 
         // El chain siguió a su fase 2 (defensa post-ataque) — solo sucede si al
@@ -1041,9 +1048,15 @@ namespace Rollgeon.Tutorial
             {
                 if (_pendingHealTeach)
                 {
+                    // ShowHealTeach re-abre la ventana exclusiva; si venía una activa
+                    // (defensa interceptada durante la guía de curar) el snapshot
+                    // original se conserva — no hace falta cerrarla acá.
                     ShowHealTeach();
                     return;
                 }
+                // La defensa pudo interceptar el chain de la guía de curar — si esa
+                // ventana sigue abierta, restaurarla (no-op en el ataque libre común).
+                EndExclusiveStep();
                 _step = _freeLoopStep;
                 Overlay()?.Hide();
                 return;
@@ -1111,7 +1124,9 @@ namespace Rollgeon.Tutorial
             }
             else if (_step == TutorialStep.HealUnlocked)
             {
-                // Ejecutó una acción con la guía de curar visible — lección cerrada.
+                // Ejecutó una acción con la guía de curar visible — lección cerrada,
+                // restaurar la ventana exclusiva de la lección.
+                EndExclusiveStep();
                 _step = _freeLoopStep;
                 Overlay()?.Hide();
             }
@@ -1155,6 +1170,13 @@ namespace Rollgeon.Tutorial
             _healTaught = true;
             _step = TutorialStep.HealUnlocked;
             _gate?.Unlock(HeroBehaviorSlot.Healing);
+
+            // Mientras la guía de CURAR está visible, el resto de las acciones se
+            // lockea (mismo patrón BUG-019 que ataque/escape): apretar ATACAR acá
+            // rompía la step machine. FINALIZAR TURNO no es un slot — sigue libre,
+            // así que diferir la cura al próximo turno no softlockea.
+            BeginExclusiveStep(HeroBehaviorSlot.Healing);
+
             ShowStep(TutorialStep.HealUnlocked, ButtonStepRequest(HeroBehaviorSlot.Healing,
                 LocalizedContent.Ui(TutorialTextKeys.HealUnlocked,
                     "¡Te golpearon! Se desbloqueó CURAR ({0}): úsala en tu turno cuando te falte vida."),

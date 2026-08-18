@@ -1201,7 +1201,7 @@ MonoBehaviour:
   EntityId: enemy_tutorial_melee_b
   DisplayName: Recluta (Tutorial)
   Description: 
-  Portrait: {fileID: 789460272, guid: 5a7f23fe35c7c8649854515601cc938d, type: 3}
+  Portrait: {fileID: 1810877574, guid: 20ce88debfdaa06459d18ed604643892, type: 3}
   WeaknessComboId: 
   WeaknessMultiplierOverride: 0
   BaseHP: 60
@@ -1216,7 +1216,7 @@ MonoBehaviour:
     HP:
       Mode: 1
       Multiplier: 1
-      ManualValue: 150
+      ManualValue: 100
     Attack:
       Mode: 1
       Multiplier: 1
@@ -1242,7 +1242,7 @@ MonoBehaviour:
     HP:
       Mode: 1
       Multiplier: 1
-      ManualValue: 180
+      ManualValue: 135
     Attack:
       Mode: 1
       Multiplier: 1
