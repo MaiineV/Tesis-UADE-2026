@@ -203,13 +203,30 @@ namespace Rollgeon.EditorTools
                 //
                 // El vano del medio mide tres casillas, no dos: la mesa de plano x=4 (sala x=-1) salió
                 // por playtest — pegada al vano lo dejaba angosto de un lado y el paso seguía sin
-                // leerse. Quedan cuatro mesas y el mostrador sigue partiendo la sala, que es lo único
-                // que el peaje necesita.
+                // leerse.
+                //
+                // Seis mesas y no cuatro. Con cuatro (x=1,3,7,9) el mostrador tenía un hueco cada dos
+                // casillas y en pantalla no se leía como mostrador sino como cuatro mesas sueltas: el
+                // jugador no tenía forma de ver que la fila parte la sala, y por lo tanto tampoco de
+                // descubrir la regla que lo salva — que pararse EN la fila no cobra peaje nunca
+                // (CashierCounterTollService.IsSameSide devuelve false con side == 0). Esa regla
+                // invisible era lo que la ronda franca del peaje venía tapando; ahora que el peaje
+                // cobra todas las rondas (CajeroAssetBuilder.CounterTollEveryNRounds = 1), el
+                // mostrador tiene que decirla solo.
+                //
+                // Rellenar x=2 y x=8 deja dos tramos macizos de tres mesas y un único vano central de
+                // tres casillas: una puerta obvia en el medio en vez de siete huecos equivalentes.
+                // Perder el vano de x=8 no cuesta nada — sala (3,0) era un bolsillo sin salida, con el
+                // mueble de la sala base tapando la columna del lado del jefe. Las puntas (plano x=0 y
+                // x=10) siguen SIN mesa: son los tiles-frente de las puertas Oeste y Este, así que
+                // siguen existiendo dos cruces por los extremos, el camino largo.
                 BlockerPlanCells = new[]
                 {
                     new Vector2Int(1, 5),
+                    new Vector2Int(2, 5),
                     new Vector2Int(3, 5),
                     new Vector2Int(7, 5),
+                    new Vector2Int(8, 5),
                     new Vector2Int(9, 5),
                 },
                 // La mesa de pool del noreste se va sólo de esta sala. Vive en las tres salas base, así

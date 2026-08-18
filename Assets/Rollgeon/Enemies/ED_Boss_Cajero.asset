@@ -291,13 +291,13 @@ MonoBehaviour:
       Data: 29|Rollgeon.Combat.AI.Decisions.AINode_CashierCounterToll, Rollgeon
     - Name: Damage
       Entry: 3
-      Data: 20
+      Data: 12
     - Name: CounterRow
       Entry: 3
       Data: 0
     - Name: ChargesEveryNRounds
       Entry: 3
-      Data: 2
+      Data: 1
     - Name: 
       Entry: 8
       Data: 

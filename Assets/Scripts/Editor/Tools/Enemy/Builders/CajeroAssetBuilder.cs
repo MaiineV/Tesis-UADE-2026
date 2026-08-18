@@ -313,11 +313,18 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         public const int CritterHp = 18;
 
         /// <summary>
-        /// Mordisco. Los dos juntos pegan 12 por turno — menos que el peaje, y a propósito: la
+        /// Mordisco. Los dos juntos pegan 10 por turno — menos que el peaje, y a propósito: la
         /// Comisión es un impuesto por dejarlos vivos, no un segundo jefe. Suben el costo de
         /// quedarse quieto pegándole al Cajero justo cuando el arqueo lo acaba de curar.
         /// </summary>
-        public const int CritterDamage = 6;
+        /// <remarks>
+        /// Bajado de 6 a 5 al bajar el peaje a <see cref="CounterTollDamage"/> = 12. Con 6 los dos
+        /// juntos pegaban 12 clavados, o sea exactamente lo mismo que el peaje: la frase "menos que
+        /// el peaje" dejaba de ser cierta y las Comisiones pasaban a competir con la mecánica
+        /// principal de la sala en vez de encarecerla. La relación importa más que el número — si
+        /// el peaje se vuelve a mover, esto se mueve con él.
+        /// </remarks>
+        public const int CritterDamage = 5;
 
         /// <summary>Vuela: va antes que el jefe (4) en la cola, así el turno en que aparecen ya presionan.</summary>
         public const int CritterSpeed = 5;

@@ -264,10 +264,13 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                     "un golpe cada uno, y ese es todo el precio.");
                 Assert.Less(critter.BaseHP, CajeroAssetBuilder.BaseHP / 4,
                     "Es un bicho, no un segundo jefe.");
-                Assert.AreEqual(6, critter.BaseAttack, "Mordisco flojo: los dos juntos pegan 12.");
-                Assert.Less(2 * critter.BaseAttack, CajeroAssetBuilder.CounterTollDamage + 1,
-                    "Los dos juntos no pueden pegar más que el peaje: son un impuesto por dejarlos " +
-                    "vivos, no la amenaza principal.");
+                Assert.AreEqual(5, critter.BaseAttack, "Mordisco flojo: los dos juntos pegan 10.");
+                Assert.Less(2 * critter.BaseAttack, CajeroAssetBuilder.CounterTollDamage,
+                    "Los dos juntos tienen que pegar ESTRICTAMENTE menos que el peaje: son un " +
+                    "impuesto por dejarlos vivos, no la amenaza principal. La versión anterior " +
+                    "comparaba contra el peaje + 1, así que toleraba el empate — y al bajar el " +
+                    "peaje a 12 los dos bichos quedaron pegando 12 clavados, o sea compitiendo " +
+                    "con la mecánica central de la sala, sin que nada se pusiera rojo.");
                 Assert.AreEqual(1, critter.BaseAttackRange, "Muerden pegados.");
             }
             finally
@@ -352,7 +355,10 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             Assert.AreEqual(1, bite.Range,
                 "Range 1 es lo que convierte el disparo del jefe en un mordisco. Con más, la " +
                 "Comisión pega sin acercarse y deja de poder esquivarse caminando.");
-            Assert.AreEqual(6, bite.Damage);
+            Assert.AreEqual(5, bite.Damage,
+                "Bajado de 6 a 5 junto con el peaje: con 6 los dos bichos juntos pegaban 12, o sea " +
+                "exactamente el peaje, y dejaban de ser un impuesto para competir con la mecánica " +
+                "central de la sala.");
             Assert.AreEqual(CajeroAssetBuilder.CritterDamage, bite.Damage,
                 "Cableado desde la constante de la ficha, no del default de 12 del nodo.");
         }
