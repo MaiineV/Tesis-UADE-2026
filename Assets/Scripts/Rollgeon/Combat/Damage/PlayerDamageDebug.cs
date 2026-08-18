@@ -25,15 +25,16 @@ namespace Rollgeon.Combat.Damage
     public static class PlayerDamageDebug
     {
         /// <summary>
-        /// Valor de playtest: ×1.5 (bajado desde ×3 el 2026-08-17). Alcanza para llegar a los jefes
-        /// sin borrarlos antes de que muestren sus fases, que es justo lo que la palanca existe
-        /// para poder ver.
+        /// Valor de playtest: ×1 (bajó ×3 → ×1.5 el 2026-08-17 → ×1 el 2026-08-18). En ×1 la
+        /// palanca no altera nada: los jefes están medidos contra el kit real del jugador y ese es
+        /// el número contra el que se playtestea. Subirla es una decisión de sesión, no un default.
         /// </summary>
-        public const float PlaytestMultiplier = 1.5f;
+        public const float PlaytestMultiplier = 1f;
 
         /// <summary>
         /// El factor configurado. Se lee por <see cref="Multiplier"/>, que es el que decide si
-        /// llega a aplicarse.
+        /// llega a aplicarse. Para una sesión que necesite llegar lejos sin build, se sube a mano
+        /// desde acá y se vuelve a 1 al terminar — no se commitea prendida.
         /// </summary>
         public static float Configured = PlaytestMultiplier;
 
