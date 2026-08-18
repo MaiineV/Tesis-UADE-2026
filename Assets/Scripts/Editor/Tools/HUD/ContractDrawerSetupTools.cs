@@ -66,6 +66,18 @@ namespace Rollgeon.EditorTools.HUD
         private static readonly float NameX = RowPadding + DiceAreaSize.x + RowPadding;
         private static readonly float DamageX = NameX + NameWidth + 6f;
 
+        // Geometría de columnas compartida con el installer de selección de clase: sus
+        // headers de tabla se alinean contra las columnas de la fila que se construye acá.
+        internal static float ColumnExampleX => DiceAreaX;
+        internal static float ColumnExampleWidth => DiceAreaSize.x;
+        internal static float ColumnNameX => NameX;
+        internal static float ColumnNameWidth => NameWidth;
+        internal static float ColumnDamageX => DamageX;
+        internal static float ColumnDamageWidth => DamageBoxSize.x;
+        internal static float ColumnDescriptionX => DamageX + DamageBoxSize.x + 8f;
+        internal static float RowWidthWithDescription(float descriptionWidth)
+            => RowSize.x + 8f + descriptionWidth;
+
         // Tachadura y badge de regla (planilla del Anotador). El badge se dibuja ENCIMA de la
         // mano de ejemplo en vez de agregar una columna: una columna más ensancharía el drawer
         // entero por algo que casi siempre está apagado, y con la fila marcada el ejemplo es lo

@@ -37,9 +37,15 @@ namespace Rollgeon.UI.Screens
         [Required("Arrastrar el TextMeshProUGUI del titulo.")]
         [SerializeField] private TextMeshProUGUI _titleLabel;
 
+        [Tooltip("Telón que se cierra antes de volver al menú. Opcional — sin cablear, " +
+                 "el botón vuelve directo como siempre.")]
+        [SerializeField] private CurtainCloseTransition _curtainClose;
+
         // ---- State ----
         [ShowInInspector, ReadOnly]
         private bool _pushed;
+
+        private bool _returningToMenu;
 
         private EventManager.EventReceiver _onRunVictoryHandler;
 
@@ -97,10 +103,15 @@ namespace Rollgeon.UI.Screens
                 _returnToMenuButton.onClick.RemoveListener(OnReturnToMenuClicked);
 
             _pushed = false;
+            _returningToMenu = false;
         }
 
         private void OnReturnToMenuClicked()
         {
+            // El telón tarda en cerrarse — un segundo click no debe re-disparar nada.
+            if (_returningToMenu) return;
+            _returningToMenu = true;
+
             if (ServiceLocator.TryGetService<IRunContextService>(out var runCtx))
             {
                 RunBootstrapper.EndRun(runCtx.RunId, runCompleted: true);
@@ -110,7 +121,12 @@ namespace Rollgeon.UI.Screens
                 Debug.LogWarning(LogPrefix + "IRunContextService not available — skipping EndRun.", this);
             }
 
-            LoadMainMenu();
+            // Con telón cableado, el menú recién carga cuando las hojas terminaron de
+            // juntarse (inverso del intro del menú, que las abre al llegar).
+            if (_curtainClose != null)
+                _curtainClose.Play(LoadMainMenu);
+            else
+                LoadMainMenu();
         }
 
         /// <summary>

@@ -198,6 +198,7 @@ MonoBehaviour:
   _meshOpen: {fileID: 6239412490211918483}
   _meshClosed: {fileID: 7885622908541821795}
   _wallPlug: {fileID: 8148556867672521699}
+  _meshWallFill: {fileID: 0}
 --- !u!114 &9039400246614140391
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -226,8 +227,14 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Rollgeon::Rollgeon.UI.Tooltips.WorldTooltipTrigger
   _mode: 0
+  _placement:
+    Mode: 0
+    FixedAnchor: {fileID: 0}
+    FixedOffset: {x: 0, y: 0}
   _camera: {fileID: 0}
   _raycastDistance: 100
+  _previewText: "<b>Forzar Puerta</b>\nCosto: 2 de energ\xEDa\nPuntaje a superar:
+    25"
 --- !u!1 &1832780176720489718
 GameObject:
   m_ObjectHideFlags: 0
@@ -283,6 +290,7 @@ MonoBehaviour:
   _meshOpen: {fileID: 3900630819890260016}
   _meshClosed: {fileID: 6062442928660360250}
   _wallPlug: {fileID: 1142551355444977634}
+  _meshWallFill: {fileID: 0}
 --- !u!114 &2204056999710583314
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -311,8 +319,14 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Rollgeon::Rollgeon.UI.Tooltips.WorldTooltipTrigger
   _mode: 0
+  _placement:
+    Mode: 0
+    FixedAnchor: {fileID: 0}
+    FixedOffset: {x: 0, y: 0}
   _camera: {fileID: 0}
   _raycastDistance: 100
+  _previewText: "<b>Forzar Puerta</b>\nCosto: 2 de energ\xEDa\nPuntaje a superar:
+    25"
 --- !u!1 &2222674966285541325
 GameObject:
   m_ObjectHideFlags: 0
@@ -1126,6 +1140,7 @@ MonoBehaviour:
     Anchor: {fileID: 8719648427237489199}
     WallPlug: {fileID: 4718426743259561937}
     DoorRoot: {fileID: 4233233274997704069}
+  BossDoorPrefab: {fileID: 4349409642055064947, guid: d40ad2ec1ecd39d48bb1abf4ee3a72bb, type: 3}
   LocalBounds:
     m_Center: {x: 0.00000047683716, y: 0, z: 0.00000047683716}
     m_Extent: {x: 5.6000004, y: 2.5, z: 5.6000004}
@@ -1327,6 +1342,7 @@ MonoBehaviour:
   _meshOpen: {fileID: 7203183267797077655}
   _meshClosed: {fileID: 6994646405425380519}
   _wallPlug: {fileID: 4718426743259561937}
+  _meshWallFill: {fileID: 0}
 --- !u!114 &1967008115271362748
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1355,8 +1371,14 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Rollgeon::Rollgeon.UI.Tooltips.WorldTooltipTrigger
   _mode: 0
+  _placement:
+    Mode: 0
+    FixedAnchor: {fileID: 0}
+    FixedOffset: {x: 0, y: 0}
   _camera: {fileID: 0}
   _raycastDistance: 100
+  _previewText: "<b>Forzar Puerta</b>\nCosto: 2 de energ\xEDa\nPuntaje a superar:
+    25"
 --- !u!1 &4718426743259561937
 GameObject:
   m_ObjectHideFlags: 0
@@ -1895,6 +1917,7 @@ MonoBehaviour:
   _meshOpen: {fileID: 2222674966285541325}
   _meshClosed: {fileID: 3181487908822914695}
   _wallPlug: {fileID: 8149385025995213684}
+  _meshWallFill: {fileID: 0}
 --- !u!114 &898363860243239353
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1923,8 +1946,14 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Rollgeon::Rollgeon.UI.Tooltips.WorldTooltipTrigger
   _mode: 0
+  _placement:
+    Mode: 0
+    FixedAnchor: {fileID: 0}
+    FixedOffset: {x: 0, y: 0}
   _camera: {fileID: 0}
   _raycastDistance: 100
+  _previewText: "<b>Forzar Puerta</b>\nCosto: 2 de energ\xEDa\nPuntaje a superar:
+    25"
 --- !u!1 &7203183267797077655
 GameObject:
   m_ObjectHideFlags: 0

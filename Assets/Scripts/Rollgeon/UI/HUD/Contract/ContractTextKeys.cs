@@ -15,6 +15,9 @@ namespace Rollgeon.UI.HUD.Contract
         /// <summary>Columna del daño base.</summary>
         public const string HeaderDamage = "contract.header.damage";
 
+        /// <summary>Columna de la descripción (solo la tabla de selección de clase).</summary>
+        public const string HeaderDescription = "contract.header.description";
+
         // Los textos de marca se concatenan con el número o el nombre del combo destino, sin
         // placeholders: viajan por la tabla UI y un {0} mal autorado ahí tira en pantalla.
 

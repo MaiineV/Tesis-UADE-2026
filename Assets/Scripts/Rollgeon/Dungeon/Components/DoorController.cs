@@ -55,6 +55,12 @@ namespace Rollgeon.Dungeon.Components
 
         public DoorVisualState CurrentState { get; private set; } = DoorVisualState.Open;
 
+        /// <summary>
+        /// La reja de este door root — expuesta para que el swap de boss door del
+        /// <c>DungeonManager</c> pueda re-cablear <see cref="DoorSlotRef.WallPlug"/>.
+        /// </summary>
+        public GameObject WallPlugRef => _wallPlug;
+
 #if UNITY_EDITOR
         /// <summary>Editor-only: nombre del campo serializado de meshOpen (para SerializedObject).</summary>
         public const string EditorMeshOpenField     = nameof(_meshOpen);
@@ -123,6 +129,11 @@ namespace Rollgeon.Dungeon.Components
             if (_meshWallFill != null) _meshWallFill.SetActive(tapiada);
 
             ApplyTooltipGate();
+
+            // Cartel de salida (solo DoorBoss.prefab lo trae): aparece con drop-in + bob
+            // cuando esta puerta es la exit de piso y abre (boss derrotado).
+            var exitSign = GetComponent<DoorExitSignView>();
+            if (exitSign != null) exitSign.Apply(IsExit, state);
         }
 
         // CNF-012: una puerta tapiada (reja) no es una acción — el tooltip de
