@@ -15,8 +15,8 @@ de acá abajo. **El depot por sí solo no hace la app lanzable.**
 
 ## Antes de la primera corrida
 
-- [ ] Bajar el [Steamworks SDK](https://partner.steamgames.com/downloads/steamworks_sdk.zip)
-      y ubicar `sdk/tools/ContentBuilder/builder/steamcmd.exe`.
+- [x] steamcmd instalado en **`Tools/steamcmd/steamcmd.exe`** (standalone del CDN de
+      Valve, 2026-08-18; gitignoreado). No hace falta el SDK completo para subir builds.
 - [x] Depot ID: **4889851** (leído de partner site → App 4889850 → SteamPipe → Depots,
       2026-07-18). Ya está cableado en los dos vdf.
 - [ ] El depósito 4889851 tiene que estar en el **Dev Comp Package** (Asociaciones de
@@ -33,7 +33,7 @@ Las credenciales nunca van al repo.
 ## Correr
 
 ```
-steamcmd +login <cuenta> +run_app_build "C:\ruta\al\repo\SteamPipe\app_4889850.vdf" +quit
+D:\GitHub\TesisUade\Tools\steamcmd\steamcmd.exe +login <cuenta> +run_app_build "D:\GitHub\TesisUade\SteamPipe\app_4889850.vdf" +quit
 ```
 
 `run_app_build` necesita **ruta absoluta** en las versiones actuales de steamcmd.
