@@ -107,8 +107,27 @@ namespace Rollgeon.EditorTools
         /// <summary>Tragamonedas — el único prop que el documento pide y que ya existe tal cual.</summary>
         private const string SlotMachineProp = "Assets/Prefabs/Props/slotv02.prefab";
 
-        /// <summary>Mesa: hace de mostrador (Cajero) y de escritorio (Anotador).</summary>
+        /// <summary>Mesa: hace de escritorio (Anotador).</summary>
+        /// <remarks>
+        /// <b>Mide 1.805 × 1.009 × 3.017</b> (medido con <c>Rollgeon → Bosses → Dump Prop Bounds</c>):
+        /// tres casillas de <i>profundidad</i>. Sobresale una casilla y media hacia cada lado de la
+        /// fila donde se la planta, así que una hilera de mesas se ve como un muro macizo y no como
+        /// una fila de muebles. El Cajero salió de acá por eso (ver <see cref="ChipCrateProp"/>); el
+        /// Anotador la conserva porque su layout está tuneado sobre lo que se ve hoy y cambiarlo sin
+        /// playtest sería mover una sala que nadie reportó rota.
+        /// </remarks>
         private const string TableProp = "Assets/Prefabs/Props/Tablev02.prefab";
+
+        /// <summary>Caja de fichas: el mostrador del Cajero.</summary>
+        /// <remarks>
+        /// Mide 0.978 × 0.510 × 1.107 — <b>una casilla de huella en los dos ejes del piso</b>, que es
+        /// justo lo que la mesa no tenía. Sólo hay que corregirle la altura: con 0.510 no llega a la
+        /// banda de walk clearance del bake (<c>NavGraphBaker.WalkClearance = 0.5</c>) más que por un
+        /// centímetro, y un prop que bloquea por un centímetro es un prop que va a dejar de bloquear.
+        /// Se la escala ×2 en Y (ver el <c>PropScaleAxes</c> del plano): la huella no se toca, que es
+        /// el eje donde una deformación se vería.
+        /// </remarks>
+        private const string ChipCrateProp = "Assets/Prefabs/Props/CajaFichasv01.prefab";
 
         /// <summary>Barril: placeholder de las columnas hasta que haya una columna modelada.</summary>
         private const string BarrelProp = "Assets/Prefabs/Props/barrilv01.prefab";
@@ -177,68 +196,50 @@ namespace Rollgeon.EditorTools
                 BaseRoomPath = FloorTwoBaseRoom,
                 OutputRoomPath = "Assets/Prefabs/Rooms/FloorTwo/Boss_Room_Cajero.prefab",
                 OutputRoomSOPath = "Assets/Rollgeon/Rooms/Room_Boss_Cajero.asset",
-                PropPrefabPath = TableProp,
+                PropPrefabPath = ChipCrateProp,
                 // Del lado de arriba del mostrador: elegir puerta te compromete con un lado.
                 BossPlanCell = new Vector2Int(5, 2),
                 // El mostrador, en la fila 5 — la única que cruza la sala entera sin tocar recorte ni
-                // mueble — con un vano de tres casillas en el medio (plano x=4-6 ⇒ sala x=-1..1) además
-                // de las aberturas viejas de x=2 y x=8.
+                // mueble — como DOS cajas de dos casillas cada una, no como una hilera.
                 //
-                // Por qué el vano del medio. Sin él la sala se jugaba sellada: la abertura Este
-                // (sala (3,0)) es un bolsillo sin salida —el mueble de la sala base tapa la columna
-                // x=3-4 del lado del jefe—, y la mesa que iba en (0,0) horneaba el peor caso posible,
-                // dejando la casilla caminable pero cortándole las cuatro aristas: una isla que el
-                // pathfinding no puede pisar. Quedaba una sola manera real de cruzar por el centro
-                // (sala (-3,0)); el resto era caminar hasta una pared. Dos casillas y no una porque
-                // con una el vano mide exactamente un tile entre dos mesas y ni se lee como paso ni
-                // perdona un error de camino.
+                // Por qué dos y no seis. Con seis mesas la sala salió del playtest como "imposible,
+                // sólo se pasa por un lado". No era el conteo: era el prop. Tablev02 mide 3.017 de
+                // PROFUNDIDAD (Rollgeon → Bosses → Dump Prop Bounds), así que cada mesa sobresalía
+                // casilla y media hacia cada lado de la fila 5 y seis en hilera se veían como un muro
+                // de tres casillas de espesor cerrando la sala. Cambiar el prop por la caja de fichas
+                // (una casilla de huella real, ver ChipCrateProp) arregla el espesor; bajar a cuatro
+                // casillas arregla el ancho.
                 //
-                // Sigue partiendo la sala en dos, que es lo que el peaje necesita: quedan cuatro mesas
-                // y CashierCounterTollService cobra por el lado en el que cerrás el turno, no por
-                // dónde cruzaste. Las puntas (plano x=0 y x=10 ⇒ sala x=∓5) NO llevan mesa: son los
-                // tiles-frente de las puertas Oeste y Este, y con mesa encima la sala quedaba sellada
-                // por los dos lados. Ninguno de los vanos abarata cruzar: la fila del mostrador es
-                // neutral para el peaje (IsSameSide devuelve false parado en ella), así que asomarse
-                // nunca cobra y comprometerse con un lado siempre cuesta lo mismo.
+                // El reparto: x=2-3 y x=7-8. Quedan tres pasos —x=0-1 al Oeste, x=4-6 en el centro,
+                // x=9-10 al Este— y el del medio mide tres casillas, que es el que se lee como puerta.
+                // Las puntas (plano x=0 y x=10 ⇒ sala x=∓5) siguen SIN prop: son los tiles-frente de
+                // las puertas Oeste y Este, y taparlas sella la sala.
                 //
-                // El vano del medio mide tres casillas, no dos: la mesa de plano x=4 (sala x=-1) salió
-                // por playtest — pegada al vano lo dejaba angosto de un lado y el paso seguía sin
-                // leerse.
-                //
-                // Seis mesas y no cuatro. Con cuatro (x=1,3,7,9) el mostrador tenía un hueco cada dos
-                // casillas y en pantalla no se leía como mostrador sino como cuatro mesas sueltas: el
-                // jugador no tenía forma de ver que la fila parte la sala, y por lo tanto tampoco de
-                // descubrir la regla que lo salva — que pararse EN la fila no cobra peaje nunca
-                // (CashierCounterTollService.IsSameSide devuelve false con side == 0). Esa regla
-                // invisible era lo que la ronda franca del peaje venía tapando; ahora que el peaje
-                // cobra todas las rondas (CajeroAssetBuilder.CounterTollEveryNRounds = 1), el
-                // mostrador tiene que decirla solo.
-                //
-                // Rellenar x=2 y x=8 deja dos tramos macizos de tres mesas y un único vano central de
-                // tres casillas: una puerta obvia en el medio en vez de siete huecos equivalentes.
-                // Perder el vano de x=8 no cuesta nada — sala (3,0) era un bolsillo sin salida, con el
-                // mueble de la sala base tapando la columna del lado del jefe. Las puntas (plano x=0 y
-                // x=10) siguen SIN mesa: son los tiles-frente de las puertas Oeste y Este, así que
-                // siguen existiendo dos cruces por los extremos, el camino largo.
+                // Sigue partiendo la sala en dos, que es lo que el peaje necesita: el mostrador es una
+                // línea legible aunque tenga huecos, y CashierCounterTollService cobra por el lado en
+                // el que cerrás el turno, no por dónde cruzaste. Ningún vano abarata cruzar: la fila
+                // del mostrador es neutral (IsSameSide devuelve false parado en ella, side == 0), así
+                // que asomarse nunca cobra y comprometerse con un lado siempre cuesta lo mismo. Esa
+                // es la regla que salva al jugador ahora que el peaje cobra todas las rondas
+                // (CajeroAssetBuilder.CounterTollEveryNRounds = 1), y con dos cajas alineadas en la
+                // misma fila se sigue viendo dónde está la línea.
                 BlockerPlanCells = new[]
                 {
-                    new Vector2Int(1, 5),
                     new Vector2Int(2, 5),
                     new Vector2Int(3, 5),
                     new Vector2Int(7, 5),
                     new Vector2Int(8, 5),
-                    new Vector2Int(9, 5),
                 },
                 // La mesa de pool del noreste se va sólo de esta sala. Vive en las tres salas base, así
                 // que borrarla allá se la saca a todos los jefes del piso; acá es una decisión de la
                 // sala del Cajero. Libera además sus casillas, que la base tenía bloqueadas.
                 RemoveBaseObjectNames = new[] { "Poolv04" },
-                // La mesa viene autorada a 1.508 de ancho: a una casilla de paso, cada una se comía
-                // media casilla de sus vecinas y las aberturas quedaban en ~0.5 visibles. El
-                // mostrador se leía continuo de punta a punta y elegir puerta —la decisión del turno—
-                // no existía en pantalla. Se corrige SÓLO X: uniforme le bajaba también la altura y
-                // el prop se caía de la banda de walk clearance (dejaba de bloquear).
-                PropScaleAxes = new Vector3(1f / 1.5082955f, 1f, 1f),
+                // La caja de fichas ya mide una casilla en X y en Z (0.978 × 1.107): la huella no se
+                // toca. Lo único que se corrige es la altura — 0.510 pasa la banda de walk clearance
+                // del bake (NavGraphBaker.WalkClearance = 0.5) por un centímetro, y un prop que
+                // bloquea por un centímetro deja de bloquear con cualquier cambio de piso. ×2 la deja
+                // en ~1.02, con margen y sin deformarle la planta.
+                PropScaleAxes = new Vector3(1f, 2f, 1f),
             },
             new BossRoomPlan
             {
