@@ -490,7 +490,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         // ======================================================================
 
         [Test]
-        public void Reposition_ChasesWithATwoTileLeash()
+        public void Reposition_ChasesOnALeash_InsteadOfFleeing()
         {
             // Act
             var move = Descendants(_root).OfType<AINode_Move>().FirstOrDefault();
@@ -517,6 +517,19 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             Assert.Greater(GeneralaAssetBuilder.RepositionRange, GeneralaAssetBuilder.CupSlamRange,
                 "Su banda tiene que quedar FUERA del alcance del cubilete: si se pegara sola, el " +
                 "peaje de acercarse dejaría de elegirlo el jugador.");
+        }
+
+        [Test]
+        public void RepositionRange_StaysStrictlyOutsideTheFrostRing_SoTheIceIsNeverForced()
+        {
+            // Assert — el que casi se nos escapa. Con la correa dentro del radio de la escarcha ella
+            // frena parada sobre el borde de su propio hielo, y como el hielo es sólido y aturde, el
+            // jugador se come el stun en cada ronda par sin haber elegido acercarse. La escarcha es
+            // el candado del dado caro: tiene que cobrarse cuando el jugador entra, no cuando ella
+            // llega.
+            Assert.Greater(GeneralaAssetBuilder.RepositionRange, GeneralaAssetBuilder.FrostRingRadius,
+                "La correa tiene que dejarla FUERA de su propio anillo de escarcha: si frena adentro, " +
+                "el hielo pasa de ser el precio de acercarse a ser un impuesto por ronda par.");
         }
 
         [Test]

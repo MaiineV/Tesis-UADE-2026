@@ -208,7 +208,7 @@ MonoBehaviour:
       Data: 5
     - Name: Pattern
       Entry: 3
-      Data: 1
+      Data: 5
     - Name: Side
       Entry: 3
       Data: 0
@@ -294,7 +294,7 @@ MonoBehaviour:
       Data: 25|Rollgeon.Combat.AI.Bosses.Generala.AINode_GeneralaCupSlam, Rollgeon
     - Name: Damage
       Entry: 3
-      Data: 18
+      Data: 12
     - Name: Range
       Entry: 3
       Data: 1
@@ -587,13 +587,13 @@ MonoBehaviour:
       Data: 44|Rollgeon.Combat.AI.Decisions.AINode_TelegraphMark, Rollgeon
     - Name: Shape
       Entry: 3
-      Data: 1
+      Data: 4
     - Name: Size
       Entry: 3
-      Data: 3
+      Data: 1
     - Name: Depth
       Entry: 3
-      Data: 2
+      Data: 4
     - Name: Count
       Entry: 3
       Data: 3
@@ -657,13 +657,13 @@ MonoBehaviour:
       Data: 48|Rollgeon.Combat.AI.Decisions.AINode_TelegraphMark, Rollgeon
     - Name: Shape
       Entry: 3
-      Data: 1
+      Data: 4
     - Name: Size
       Entry: 3
       Data: 1
     - Name: Depth
       Entry: 3
-      Data: 2
+      Data: 3
     - Name: Count
       Entry: 3
       Data: 3
@@ -727,13 +727,13 @@ MonoBehaviour:
       Data: 52|Rollgeon.Combat.AI.Decisions.AINode_TelegraphMark, Rollgeon
     - Name: Shape
       Entry: 3
-      Data: 1
+      Data: 4
     - Name: Size
       Entry: 3
-      Data: 1
+      Data: 0
     - Name: Depth
       Entry: 3
-      Data: 2
+      Data: 3
     - Name: Count
       Entry: 3
       Data: 3
@@ -944,7 +944,7 @@ MonoBehaviour:
       Data: 
     - Name: Retreat
       Entry: 5
-      Data: true
+      Data: false
     - Name: StopAdjacent
       Entry: 5
       Data: false

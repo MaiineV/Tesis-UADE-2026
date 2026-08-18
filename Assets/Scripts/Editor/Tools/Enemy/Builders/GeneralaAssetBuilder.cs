@@ -271,13 +271,29 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         // ---- El reposicionamiento -------------------------------------------------------
 
         /// <summary>
-        /// Distancia Manhattan que intenta mantener. 2 y no 1: pegada le regalaría un cubilete por
-        /// turno sin que el jugador lo elija. Es la correa de la persecución — se acerca hasta acá
-        /// y no más, así que romperle el cubilete de cerca sigue siendo algo que el jugador elige
-        /// pagar y no algo que ella le fuerza. Sigue estrictamente por encima de
-        /// <see cref="CupSlamRange"/>: si algún día coincidieran, se pegaría sola en cada turno.
+        /// Distancia Manhattan que intenta mantener. Es la correa de la persecución: se acerca hasta
+        /// acá y no más, así que romperle el dado de al lado sigue siendo algo que el jugador elige
+        /// pagar y no algo que ella le fuerza.
         /// </summary>
-        public const int RepositionRange = 2;
+        /// <remarks>
+        /// <para>
+        /// <b>3 y no 2, por el hielo.</b> Tiene que quedar estrictamente por encima de
+        /// <see cref="CupSlamRange"/> —si coincidieran se pegaría sola y cobraría cubilete cada
+        /// turno— pero también por encima de <see cref="FrostRingRadius"/>, que es el que casi se
+        /// nos escapa: con la correa en 2 ella frena justo sobre el borde de su propio anillo de
+        /// escarcha, y como el hielo es sólido y aturde
+        /// (<see cref="FrostIsSolid"/>/<see cref="FrostStunTurns"/>), el jugador se comía el stun
+        /// en cada ronda par sin haber elegido acercarse. Eso convierte la escarcha en un impuesto,
+        /// que es exactamente lo contrario de lo que la ronda franca del anillo existe para
+        /// proteger.
+        /// </para>
+        /// <para>
+        /// A 3 la persecución no pierde nada: sigue tapándole el camino a los dados de las puertas
+        /// y sigue trayendo el slash encima —la banda sale de ella, no del jugador—, pero el
+        /// jugador entra al hielo y al cubilete sólo cuando decide entrar.
+        /// </para>
+        /// </remarks>
+        public const int RepositionRange = 3;
 
         /// <summary>
         /// Pasos por turno del reposicionamiento. 2 sobre los 4 de su <c>BaseSpeed</c>: corrige la
