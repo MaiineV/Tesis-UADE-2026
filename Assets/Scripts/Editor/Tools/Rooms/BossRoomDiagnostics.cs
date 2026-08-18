@@ -79,5 +79,50 @@ namespace Rollgeon.EditorTools
                 Debug.Log(sb.ToString());
             }
         }
+
+        /// <summary>
+        /// Vuelca el tamaño real de cada prop de <c>Assets/Prefabs/Props</c> en casillas
+        /// (<c>Rollgeon → Bosses → Dump Prop Bounds</c>).
+        /// </summary>
+        /// <remarks>
+        /// Elegir un prop de obstáculo pide saber cuántas casillas ocupa, y eso no se puede leer del
+        /// <c>.prefab</c>: el tamaño sale del mesh, no del transform. Sin esto la única forma de
+        /// medir es mirar la sala construida y contar a ojo — que es como el mostrador del Cajero
+        /// terminó ocupando el ancho de la sala.
+        /// <para>
+        /// Los bounds salen de los <c>Renderer</c> del prefab, en su escala autorada: es el mismo
+        /// número que <see cref="BossRoomPlan.PropScaleAxes"/> tiene que corregir.
+        /// </para>
+        /// </remarks>
+        [MenuItem("Rollgeon/Bosses/Dump Prop Bounds")]
+        public static void DumpPropBounds()
+        {
+            Debug.Log(LogPrefix + "Props (tamaño autorado en unidades = casillas, una casilla = 1):");
+
+            foreach (var guid in AssetDatabase.FindAssets("t:Prefab", new[] { "Assets/Prefabs/Props" }))
+            {
+                var path = AssetDatabase.GUIDToAssetPath(guid);
+                var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(path);
+                if (prefab == null) continue;
+
+                var renderers = prefab.GetComponentsInChildren<Renderer>(includeInactive: true);
+                if (renderers.Length == 0)
+                {
+                    Debug.Log(LogPrefix + $"{System.IO.Path.GetFileNameWithoutExtension(path),-24} (sin Renderer)");
+                    continue;
+                }
+
+                // Encapsulate desde el primero y no desde default(Bounds): un Bounds nuevo está
+                // centrado en el origen, así que arrancar ahí infla la caja hasta el (0,0,0) del
+                // prefab y todo mide de más.
+                var bounds = renderers[0].bounds;
+                for (int i = 1; i < renderers.Length; i++) bounds.Encapsulate(renderers[i].bounds);
+
+                var s = bounds.size;
+                Debug.Log(LogPrefix +
+                          $"{System.IO.Path.GetFileNameWithoutExtension(path),-24} " +
+                          $"X={s.x:F3}  Y={s.y:F3}  Z={s.z:F3}");
+            }
+        }
     }
 }
