@@ -427,7 +427,8 @@ namespace Rollgeon.UI.HUD.Breakdown
             {
                 _clashOutlineApplied = true;
                 _clashLabel.outlineWidth = 0.2f;
-                _clashLabel.outlineColor = Color.black;
+                // Outline oscuro de la paleta de la mesa (#0A0A0C) — mismo que ValueTextOutline.mat.
+                _clashLabel.outlineColor = new Color32(0x0A, 0x0A, 0x0C, 0xFF);
             }
             if (_clashRoll.isAlive) _clashRoll.Stop();
 
