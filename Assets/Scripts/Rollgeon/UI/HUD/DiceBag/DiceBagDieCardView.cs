@@ -38,6 +38,10 @@ namespace Rollgeon.UI.HUD.DiceBag
                                  "los slots de la zona de dados en combate.")]
         private Material _enchantMaterial;
 
+        [SerializeField, Tooltip("Material del dado maldito (EnchantCurseUI) — el mismo que usan " +
+                                 "los slots. Si falta, cae al material holo.")]
+        private Material _cursedMaterial;
+
         private Action _onClick;
         private EnchantmentSO _enchantment;
 
@@ -76,7 +80,8 @@ namespace Rollgeon.UI.HUD.DiceBag
         }
 
         /// <summary>
-        /// Muestra el visual de dado encantado sobre el ícono. <c>null</c> = sin encantamiento
+        /// Muestra el visual de dado encantado sobre el ícono: holo para bendiciones,
+        /// maldito (<c>CapCursed</c>) para curses. <c>null</c> = sin encantamiento
         /// (vuelve al material default de uGUI). Mismo contrato que
         /// <c>DiceSlotView.SetEnchantVisual</c>: el material es compartido y la variación por
         /// dado sale de la posición canvas-space dentro del shader.
@@ -84,11 +89,19 @@ namespace Rollgeon.UI.HUD.DiceBag
         public void SetEnchantVisual(EnchantmentSO enchantment)
         {
             // Idempotente: sin esto, escribir el material en cada rebuild dispara SetMaterialDirty.
+            // Válido con la elección holo/maldito: es función pura de la identidad del SO.
             if (_enchantment == enchantment) return;
             _enchantment = enchantment;
 
             if (_diceIcon == null) return;
-            _diceIcon.material = enchantment != null ? _enchantMaterial : null;
+            _diceIcon.material = ResolveMaterial(enchantment);
+        }
+
+        private Material ResolveMaterial(EnchantmentSO enchantment)
+        {
+            if (enchantment == null) return null;
+            if (enchantment.IsCursed() && _cursedMaterial != null) return _cursedMaterial;
+            return _enchantMaterial;
         }
 
         public void SetSelected(bool selected)

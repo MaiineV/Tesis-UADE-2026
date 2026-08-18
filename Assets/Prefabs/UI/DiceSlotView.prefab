@@ -5443,6 +5443,7 @@ MonoBehaviour:
   - {fileID: 3876111909684940474}
   - {fileID: 7414547771296183912}
   _enchantMaterial: {fileID: 2100000, guid: b27f14d3b08f66a478388b0247a5dea5, type: 2}
+  _cursedMaterial: {fileID: 2100000, guid: 5ce92ef3e1d74aba956e7caad8280d68, type: 2}
   _lockIcon: {fileID: 3187545307022097084}
   _contribution: {fileID: 1244573576108778533}
   OnToggled:
