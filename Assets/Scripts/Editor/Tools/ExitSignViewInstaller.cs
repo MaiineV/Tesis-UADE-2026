@@ -5,66 +5,83 @@ using UnityEngine;
 namespace Rollgeon.EditorTools
 {
     /// <summary>
-    /// Agrega <see cref="DoorExitSignView"/> al root del <c>DoorBoss.prefab</c> y le asigna
-    /// el hijo <c>ExitSign</c>. Un solo prefab cubre las 3 boss rooms y las puertas
-    /// swapeadas hacia la boss room (todas anidan DoorBoss). Re-ejecutable: skipea si la
-    /// view ya está wireada.
+    /// Agrega <see cref="DoorExitSignView"/> al root de los prefabs de puerta y les
+    /// wirea el sprite del cartel de salida (bake 2D del modelo <c>ExitSign.fbx</c>
+    /// vía <see cref="ExitSignSpriteBaker"/> — el indicador es UI pero el visual es
+    /// el cartel del juego, no la flecha del tutorial). Cubre <c>DoorBoss.prefab</c>
+    /// Y <c>Door.prefab</c>: hay boss rooms nuevas que usan puertas normales a
+    /// propósito, y <c>MarkBossExitDoor</c> designa la exit sobre el DoorController
+    /// que haya. En las puertas no-exit la view es inerte (Apply solo muestra con
+    /// IsExit && Open). El hijo 3D <c>ExitSign</c> del DoorBoss NO se toca: quedó
+    /// inactivo cuando el cartel pasó a ser screen-space. Re-ejecutable: re-bakea
+    /// y re-wirea siempre (idempotente en resultado).
     /// </summary>
     public static class ExitSignViewInstaller
     {
-        private const string BossDoorPath = "Assets/Prefabs/Tiles/DoorBoss.prefab";
-        private const string SignChildName = "ExitSign";
+        private static readonly string[] DoorPrefabPaths =
+        {
+            "Assets/Prefabs/Tiles/DoorBoss.prefab",
+            "Assets/Prefabs/Tiles/Door.prefab",
+        };
 
-        [MenuItem("Rollgeon/Tools/Wire Exit Sign View (DoorBoss)")]
+        /// <summary>Alto del cartel en unidades de canvas; el ancho sale del aspect del bake.</summary>
+        private const float SignHeightCanvas = 88f;
+
+        /// <summary>Separación casilla→base del cartel (feedback: que flote más arriba del tile).</summary>
+        private const float GapPx = 64f;
+
+        [MenuItem("Rollgeon/Tools/Wire Exit Sign View (Doors)")]
         public static void Install()
         {
-            var root = PrefabUtility.LoadPrefabContents(BossDoorPath);
+            var sprite = ExitSignSpriteBaker.Bake();
+            if (sprite == null) return; // el baker ya logueó el error
+
+            float aspect = sprite.rect.height > 0f ? sprite.rect.width / sprite.rect.height : 1f;
+            var size = new Vector2(Mathf.Round(SignHeightCanvas * aspect), SignHeightCanvas);
+
+            foreach (var path in DoorPrefabPaths)
+                WirePrefab(path, sprite, size);
+
+            AssetDatabase.SaveAssets();
+        }
+
+        private static void WirePrefab(string path, Sprite sprite, Vector2 size)
+        {
+            var root = PrefabUtility.LoadPrefabContents(path);
             if (root == null)
             {
-                Debug.LogError($"[ExitSignViewInstaller] No se pudo abrir '{BossDoorPath}'.");
+                Debug.LogError($"[ExitSignViewInstaller] No se pudo abrir '{path}'.");
                 return;
             }
 
             try
             {
-                var sign = FindChildByName(root.transform, SignChildName);
-                if (sign == null)
+                // La view va en el MISMO GO que el DoorController: SetState la busca
+                // con GetComponent sobre sí mismo.
+                var controller = root.GetComponentInChildren<DoorController>(includeInactive: true);
+                if (controller == null)
                 {
-                    Debug.LogError($"[ExitSignViewInstaller] '{BossDoorPath}' no tiene un hijo " +
-                                   $"'{SignChildName}' — agregarlo al prefab antes de correr el installer.");
+                    Debug.LogError($"[ExitSignViewInstaller] '{path}' no tiene DoorController.");
                     return;
                 }
 
-                var view = root.GetComponent<DoorExitSignView>();
-                if (view != null && view.EditorSign == sign.gameObject)
-                {
-                    Debug.Log("[ExitSignViewInstaller] DoorBoss ya tiene la view wireada — nada que hacer.");
-                    return;
-                }
-
-                if (view == null) view = root.AddComponent<DoorExitSignView>();
+                var view = controller.GetComponent<DoorExitSignView>();
+                if (view == null) view = controller.gameObject.AddComponent<DoorExitSignView>();
 
                 var so = new SerializedObject(view);
-                so.FindProperty(DoorExitSignView.EditorSignField).objectReferenceValue = sign.gameObject;
+                so.FindProperty(DoorExitSignView.EditorArrowSpriteField).objectReferenceValue = sprite;
+                so.FindProperty(DoorExitSignView.EditorArrowSizeField).vector2Value = size;
+                so.FindProperty(DoorExitSignView.EditorGapPxField).floatValue = GapPx;
                 so.ApplyModifiedPropertiesWithoutUndo();
 
-                PrefabUtility.SaveAsPrefabAsset(root, BossDoorPath);
-                AssetDatabase.SaveAssets();
-                Debug.Log($"[ExitSignViewInstaller] DoorExitSignView wireada en '{BossDoorPath}' " +
-                          $"(_sign → '{SignChildName}').");
+                PrefabUtility.SaveAsPrefabAsset(root, path);
+                Debug.Log($"[ExitSignViewInstaller] DoorExitSignView wireada en '{path}' " +
+                          $"(sprite bakeado, size {size.x}x{size.y}).");
             }
             finally
             {
                 PrefabUtility.UnloadPrefabContents(root);
             }
-        }
-
-        private static Transform FindChildByName(Transform root, string name)
-        {
-            foreach (var t in root.GetComponentsInChildren<Transform>(includeInactive: true))
-                if (t != root && t.name == name)
-                    return t;
-            return null;
         }
     }
 }

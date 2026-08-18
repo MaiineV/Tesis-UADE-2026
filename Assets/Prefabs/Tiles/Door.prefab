@@ -139,6 +139,7 @@ GameObject:
   - component: {fileID: 1425884830774788301}
   - component: {fileID: 8632470321080716172}
   - component: {fileID: 1637811577282799672}
+  - component: {fileID: 1293354858954827696}
   m_Layer: 0
   m_Name: Door
   m_TagString: Untagged
@@ -220,6 +221,26 @@ MonoBehaviour:
   _raycastDistance: 100
   _previewText: "<b>Forzar Puerta</b>\nCosto: 2 de energ\xEDa\nPuntaje a superar:
     25"
+--- !u!114 &1293354858954827696
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4349409642055064947}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9bfdf571f16aed54a8c96f3ca231187a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Rollgeon::Rollgeon.Dungeon.Components.DoorExitSignView
+  _arrowSprite: {fileID: 21300000, guid: 57181e761dc3a0f4899bca63d2063450, type: 3}
+  _arrowSize: {x: 21, y: 88}
+  _gapPx: 64
+  _dropPixels: 120
+  _dropDuration: 0.5
+  _dropEase: 27
+  _bobAmplitudePx: 10
+  _bobDuration: 0.6
 --- !u!1 &4359072751765702855
 GameObject:
   m_ObjectHideFlags: 0
