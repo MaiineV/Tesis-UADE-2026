@@ -61,7 +61,11 @@ namespace Rollgeon.Entities
 
         [Title("Base Stats")]
         [MinValue(1)]
-        [Range(1, 200)]
+        // 1000: la recalibración por simulación (3000 peleas) puso a los jefes de piso 3 arriba de
+        // 500 — el Tahúr son 650. Con el tope viejo el valor se escribía bien desde el builder pero
+        // el Inspector lo clampeaba en cuanto alguien rozaba el slider, y la ficha se perdía en
+        // silencio.
+        [Range(1, 1000)]
         [Tooltip("HP maximo. Usado como cap para heals y como valor inicial de Health runtime.")]
         public int BaseHP = 20;
 

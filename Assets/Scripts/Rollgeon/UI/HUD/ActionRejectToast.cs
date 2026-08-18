@@ -73,9 +73,14 @@ namespace Rollgeon.UI.HUD
 
             Tween.Position(rect, rect.position + new Vector3(0f, RiseDistancePx, 0f),
                 LifeSeconds, Ease.OutCubic, useUnscaledTime: true);
+            // El toast se reemplaza a sí mismo (tocar otro chip destruye el anterior con
+            // el fade a medio correr) y muere con el canvas al terminar el combate. En los
+            // dos casos el target se destruye con el callback pendiente, y PrimeTween lo
+            // loguea como error. Acá es cosmético: el callback solo destruye lo que ya se
+            // está destruyendo, así que se silencia el aviso para este tween puntual.
             Tween.Alpha(group, 0f, LifeSeconds * (1f - FadeStartFraction), Ease.InQuad,
                     startDelay: LifeSeconds * FadeStartFraction, useUnscaledTime: true)
-                .OnComplete(() => { if (go != null) Object.Destroy(go); });
+                .OnComplete(go, t => Object.Destroy(t), warnIfTargetDestroyed: false);
         }
     }
 }

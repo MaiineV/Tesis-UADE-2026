@@ -75,6 +75,15 @@ namespace Rollgeon.Combat.Damage
               .Append(Num(b.AbilityMultiplier)).Append(Col(Label, " (ability) = "))
               .Append(Col(Accent, "<b>" + F(b.M) + "</b>"));
 
+            // Una palanca de playtest olvidada prendida convierte cada número medido de acá en
+            // adelante en mentira, y no se nota mirando el resultado. Se canta en cada golpe.
+            if (PlayerDamageDebug.IsOn)
+            {
+                sb.Append('\n').Append(Col(WeakCol,
+                    $"  ⚠ PlayerDamageDebug ×{F(PlayerDamageDebug.Multiplier)} PRENDIDO — " +
+                    "este daño NO es el real. PlayerDamageDebug.Off() para apagarlo."));
+            }
+
             sb.Append('\n').Append(Col(isShield ? ShieldCol : BandCompose, "  ═ TOTAL = N × M = "))
               .Append(Col(Label, $"{b.N} × {F(b.M)} = "))
               .Append(Col(Accent, "<b>" + b.Final + "</b>"))

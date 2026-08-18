@@ -22,7 +22,28 @@ namespace Rollgeon.Combat.DiceBlock
     public interface IDiceBlockService
     {
         /// <summary>Bloquea el dado en <paramref name="index"/>. No-op si <paramref name="index"/> &lt; 0.</summary>
-        void Block(int index);
+        /// <param name="label">
+        /// Qué se llevó el dado, para escribirlo sobre el candado (el Croupier pasa el número que
+        /// cantó). <c>null</c> ⇒ candado pelado, que es lo que muestran los jefes que lo sortean al
+        /// azar: ahí no hay nada que explicar.
+        /// </param>
+        void Block(int index, string label = null);
+
+        /// <summary>
+        /// Etiqueta del bloqueo en <paramref name="index"/>, o <c>null</c> si no tiene o no está
+        /// bloqueado.
+        /// </summary>
+        /// <remarks>
+        /// Existe para que la UI pueda decir <b>por qué</b> se fue el dado. Con el Croupier, el
+        /// número que canta la ruleta es a la vez el sector que detona y el dado que confisca, y sin
+        /// esta etiqueta las dos mitades de esa frase no se tocan en pantalla.
+        /// <para>
+        /// <b>No es la posición del dado.</b> El índice sale de <c>número % dados</c>, así que con
+        /// seis sectores y cinco dados el 6 confisca el primero. La etiqueta dice <i>quién</i> se lo
+        /// llevó; <i>cuál</i> ya lo marca el candado.
+        /// </para>
+        /// </remarks>
+        string LabelOf(int index);
 
         /// <summary>Desbloquea un dado puntual. No-op si no estaba bloqueado.</summary>
         void Unblock(int index);

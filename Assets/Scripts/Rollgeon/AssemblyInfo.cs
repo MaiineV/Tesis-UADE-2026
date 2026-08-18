@@ -9,3 +9,11 @@ using System.Runtime.CompilerServices;
 [assembly: InternalsVisibleTo("Rollgeon.Meta.Tests")]
 [assembly: InternalsVisibleTo("Rollgeon.Feedback.Tests")]
 [assembly: InternalsVisibleTo("Rollgeon.Combat.Handoff.Tests")]
+// FloorTopologyPlanner.AssignBosses: el vínculo jefe→sala se testea sobre el paso solo,
+// sin tener que armar un piso entero para cada caso.
+[assembly: InternalsVisibleTo("Rollgeon.Dungeon.Tests")]
+// AINode_SpawnRoomObjects.BuildDoorFrontSlots: el reparto de DoorFronts (puertas primero,
+// remanente al anillo) se testea sin engine. Leer las puertas de un RoomLayout necesita un
+// prefab de sala instanciado; el orden y el presupuesto, que son lo que puede romperse en
+// silencio, no.
+[assembly: InternalsVisibleTo("Rollgeon.Combat.Rooms.Tests")]

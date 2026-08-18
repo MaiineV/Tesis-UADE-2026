@@ -634,6 +634,949 @@ MonoBehaviour:
     BehaviorValueKey: 0
     ValueTarget: 1
     FloatingNumberSourceKey: 1
+  - FeedbackId: anim.boss.croupier.melee
+    Type: 2
+    Position: 0
+    PositionReaderSO: {fileID: 0}
+    PlayerTarget: 0
+    PositionOffset: {x: 0, y: 0, z: 0}
+    Duration: 0.9
+    CompletionMode: 0
+    VfxPrefab: {fileID: 0}
+    ShouldDestroyOnParticleEnd: 0
+    AudioClip: {fileID: 0}
+    Volume: 1
+    AnimTrigger: Attack
+    TargetSourcePawn: 1
+    FeelPlayerPrefab: {fileID: 0}
+    FeelIntensity: 1
+    DeathSpinDegrees: 720
+    DeathEndScale: 0
+    DeathRiseHeight: 0.35
+    DeathHideHealthBar: 1
+    BehaviorValueKey: 0
+    ValueTarget: 1
+    FloatingNumberSourceKey: 1
+  - FeedbackId: anim.boss.croupier.canto
+    Type: 2
+    Position: 0
+    PositionReaderSO: {fileID: 0}
+    PlayerTarget: 0
+    PositionOffset: {x: 0, y: 0, z: 0}
+    Duration: 0.9
+    CompletionMode: 0
+    VfxPrefab: {fileID: 0}
+    ShouldDestroyOnParticleEnd: 0
+    AudioClip: {fileID: 0}
+    Volume: 1
+    AnimTrigger: Attack
+    TargetSourcePawn: 1
+    FeelPlayerPrefab: {fileID: 0}
+    FeelIntensity: 1
+    DeathSpinDegrees: 720
+    DeathEndScale: 0
+    DeathRiseHeight: 0.35
+    DeathHideHealthBar: 1
+    BehaviorValueKey: 0
+    ValueTarget: 1
+    FloatingNumberSourceKey: 1
+  - FeedbackId: vfx.boss.croupier.impact
+    Type: 0
+    Position: 1
+    PositionReaderSO: {fileID: 0}
+    PlayerTarget: 0
+    PositionOffset: {x: 0, y: 1, z: 0}
+    Duration: 0.55
+    CompletionMode: 0
+    VfxPrefab: {fileID: 5782198322582804353, guid: 10cbad05949260d499f3fffd03ae8d05, type: 3}
+    ShouldDestroyOnParticleEnd: 0
+    AudioClip: {fileID: 0}
+    Volume: 1
+    AnimTrigger: 
+    TargetSourcePawn: 1
+    FeelPlayerPrefab: {fileID: 0}
+    FeelIntensity: 1
+    DeathSpinDegrees: 720
+    DeathEndScale: 0
+    DeathRiseHeight: 0.35
+    DeathHideHealthBar: 1
+    BehaviorValueKey: 0
+    ValueTarget: 1
+    FloatingNumberSourceKey: 1
+  - FeedbackId: feel.boss.croupier.impact
+    Type: 6
+    Position: 1
+    PositionReaderSO: {fileID: 0}
+    PlayerTarget: 0
+    PositionOffset: {x: 0, y: 0, z: 0}
+    Duration: 0.3
+    CompletionMode: 0
+    VfxPrefab: {fileID: 0}
+    ShouldDestroyOnParticleEnd: 0
+    AudioClip: {fileID: 0}
+    Volume: 1
+    AnimTrigger: 
+    TargetSourcePawn: 1
+    FeelPlayerPrefab: {fileID: 4459121286212993976, guid: f7ea066fcdf40614a88aeed9ae294140, type: 3}
+    FeelIntensity: 1
+    DeathSpinDegrees: 720
+    DeathEndScale: 0
+    DeathRiseHeight: 0.35
+    DeathHideHealthBar: 1
+    BehaviorValueKey: 0
+    ValueTarget: 1
+    FloatingNumberSourceKey: 1
+  - FeedbackId: anim.boss.bandida.melee
+    Type: 2
+    Position: 0
+    PositionReaderSO: {fileID: 0}
+    PlayerTarget: 0
+    PositionOffset: {x: 0, y: 0, z: 0}
+    Duration: 0.9
+    CompletionMode: 0
+    VfxPrefab: {fileID: 0}
+    ShouldDestroyOnParticleEnd: 0
+    AudioClip: {fileID: 0}
+    Volume: 1
+    AnimTrigger: Attack_Melee
+    TargetSourcePawn: 1
+    FeelPlayerPrefab: {fileID: 0}
+    FeelIntensity: 1
+    DeathSpinDegrees: 720
+    DeathEndScale: 0
+    DeathRiseHeight: 0.35
+    DeathHideHealthBar: 1
+    BehaviorValueKey: 0
+    ValueTarget: 1
+    FloatingNumberSourceKey: 1
+  - FeedbackId: anim.boss.bandida.range
+    Type: 2
+    Position: 0
+    PositionReaderSO: {fileID: 0}
+    PlayerTarget: 0
+    PositionOffset: {x: 0, y: 0, z: 0}
+    Duration: 0.9
+    CompletionMode: 0
+    VfxPrefab: {fileID: 0}
+    ShouldDestroyOnParticleEnd: 0
+    AudioClip: {fileID: 0}
+    Volume: 1
+    AnimTrigger: Attack_Range
+    TargetSourcePawn: 1
+    FeelPlayerPrefab: {fileID: 0}
+    FeelIntensity: 1
+    DeathSpinDegrees: 720
+    DeathEndScale: 0
+    DeathRiseHeight: 0.35
+    DeathHideHealthBar: 1
+    BehaviorValueKey: 0
+    ValueTarget: 1
+    FloatingNumberSourceKey: 1
+  - FeedbackId: anim.boss.bandida.arm
+    Type: 2
+    Position: 0
+    PositionReaderSO: {fileID: 0}
+    PlayerTarget: 0
+    PositionOffset: {x: 0, y: 0, z: 0}
+    Duration: 0.9
+    CompletionMode: 0
+    VfxPrefab: {fileID: 0}
+    ShouldDestroyOnParticleEnd: 0
+    AudioClip: {fileID: 0}
+    Volume: 1
+    AnimTrigger: Attack_Melee
+    TargetSourcePawn: 1
+    FeelPlayerPrefab: {fileID: 0}
+    FeelIntensity: 1
+    DeathSpinDegrees: 720
+    DeathEndScale: 0
+    DeathRiseHeight: 0.35
+    DeathHideHealthBar: 1
+    BehaviorValueKey: 0
+    ValueTarget: 1
+    FloatingNumberSourceKey: 1
+  - FeedbackId: vfx.boss.bandida.impact
+    Type: 0
+    Position: 1
+    PositionReaderSO: {fileID: 0}
+    PlayerTarget: 0
+    PositionOffset: {x: 0, y: 1, z: 0}
+    Duration: 0.55
+    CompletionMode: 0
+    VfxPrefab: {fileID: 5782198322582804353, guid: 10cbad05949260d499f3fffd03ae8d05, type: 3}
+    ShouldDestroyOnParticleEnd: 0
+    AudioClip: {fileID: 0}
+    Volume: 1
+    AnimTrigger: 
+    TargetSourcePawn: 1
+    FeelPlayerPrefab: {fileID: 0}
+    FeelIntensity: 1
+    DeathSpinDegrees: 720
+    DeathEndScale: 0
+    DeathRiseHeight: 0.35
+    DeathHideHealthBar: 1
+    BehaviorValueKey: 0
+    ValueTarget: 1
+    FloatingNumberSourceKey: 1
+  - FeedbackId: vfx.boss.bandida.range_impact
+    Type: 0
+    Position: 1
+    PositionReaderSO: {fileID: 0}
+    PlayerTarget: 0
+    PositionOffset: {x: 0, y: 1, z: 0}
+    Duration: 0.55
+    CompletionMode: 0
+    VfxPrefab: {fileID: 6805049258681361692, guid: 561a1742688cb8e4ea8be7e0c9987057, type: 3}
+    ShouldDestroyOnParticleEnd: 0
+    AudioClip: {fileID: 0}
+    Volume: 1
+    AnimTrigger: 
+    TargetSourcePawn: 1
+    FeelPlayerPrefab: {fileID: 0}
+    FeelIntensity: 1
+    DeathSpinDegrees: 720
+    DeathEndScale: 0
+    DeathRiseHeight: 0.35
+    DeathHideHealthBar: 1
+    BehaviorValueKey: 0
+    ValueTarget: 1
+    FloatingNumberSourceKey: 1
+  - FeedbackId: feel.boss.bandida.impact
+    Type: 6
+    Position: 1
+    PositionReaderSO: {fileID: 0}
+    PlayerTarget: 0
+    PositionOffset: {x: 0, y: 0, z: 0}
+    Duration: 0.3
+    CompletionMode: 0
+    VfxPrefab: {fileID: 0}
+    ShouldDestroyOnParticleEnd: 0
+    AudioClip: {fileID: 0}
+    Volume: 1
+    AnimTrigger: 
+    TargetSourcePawn: 1
+    FeelPlayerPrefab: {fileID: 4459121286212993976, guid: f7ea066fcdf40614a88aeed9ae294140, type: 3}
+    FeelIntensity: 1
+    DeathSpinDegrees: 720
+    DeathEndScale: 0
+    DeathRiseHeight: 0.35
+    DeathHideHealthBar: 1
+    BehaviorValueKey: 0
+    ValueTarget: 1
+    FloatingNumberSourceKey: 1
+  - FeedbackId: feel.boss.bandida.range_impact
+    Type: 6
+    Position: 1
+    PositionReaderSO: {fileID: 0}
+    PlayerTarget: 0
+    PositionOffset: {x: 0, y: 0, z: 0}
+    Duration: 0.3
+    CompletionMode: 0
+    VfxPrefab: {fileID: 0}
+    ShouldDestroyOnParticleEnd: 0
+    AudioClip: {fileID: 0}
+    Volume: 1
+    AnimTrigger: 
+    TargetSourcePawn: 1
+    FeelPlayerPrefab: {fileID: 7642937712175414424, guid: 8fce38f5c03bb6e4da05e2d7f0df1c86, type: 3}
+    FeelIntensity: 1
+    DeathSpinDegrees: 720
+    DeathEndScale: 0
+    DeathRiseHeight: 0.35
+    DeathHideHealthBar: 1
+    BehaviorValueKey: 0
+    ValueTarget: 1
+    FloatingNumberSourceKey: 1
+  - FeedbackId: anim.boss.cajero.melee
+    Type: 2
+    Position: 0
+    PositionReaderSO: {fileID: 0}
+    PlayerTarget: 0
+    PositionOffset: {x: 0, y: 0, z: 0}
+    Duration: 0.9
+    CompletionMode: 0
+    VfxPrefab: {fileID: 0}
+    ShouldDestroyOnParticleEnd: 0
+    AudioClip: {fileID: 0}
+    Volume: 1
+    AnimTrigger: Attack
+    TargetSourcePawn: 1
+    FeelPlayerPrefab: {fileID: 0}
+    FeelIntensity: 1
+    DeathSpinDegrees: 720
+    DeathEndScale: 0
+    DeathRiseHeight: 0.35
+    DeathHideHealthBar: 1
+    BehaviorValueKey: 0
+    ValueTarget: 1
+    FloatingNumberSourceKey: 1
+  - FeedbackId: anim.boss.cajero.shot
+    Type: 2
+    Position: 0
+    PositionReaderSO: {fileID: 0}
+    PlayerTarget: 0
+    PositionOffset: {x: 0, y: 0, z: 0}
+    Duration: 0.9
+    CompletionMode: 0
+    VfxPrefab: {fileID: 0}
+    ShouldDestroyOnParticleEnd: 0
+    AudioClip: {fileID: 0}
+    Volume: 1
+    AnimTrigger: Attack
+    TargetSourcePawn: 1
+    FeelPlayerPrefab: {fileID: 0}
+    FeelIntensity: 1
+    DeathSpinDegrees: 720
+    DeathEndScale: 0
+    DeathRiseHeight: 0.35
+    DeathHideHealthBar: 1
+    BehaviorValueKey: 0
+    ValueTarget: 1
+    FloatingNumberSourceKey: 1
+  - FeedbackId: vfx.boss.cajero.impact
+    Type: 0
+    Position: 1
+    PositionReaderSO: {fileID: 0}
+    PlayerTarget: 0
+    PositionOffset: {x: 0, y: 1, z: 0}
+    Duration: 0.55
+    CompletionMode: 0
+    VfxPrefab: {fileID: 5782198322582804353, guid: 10cbad05949260d499f3fffd03ae8d05, type: 3}
+    ShouldDestroyOnParticleEnd: 0
+    AudioClip: {fileID: 0}
+    Volume: 1
+    AnimTrigger: 
+    TargetSourcePawn: 1
+    FeelPlayerPrefab: {fileID: 0}
+    FeelIntensity: 1
+    DeathSpinDegrees: 720
+    DeathEndScale: 0
+    DeathRiseHeight: 0.35
+    DeathHideHealthBar: 1
+    BehaviorValueKey: 0
+    ValueTarget: 1
+    FloatingNumberSourceKey: 1
+  - FeedbackId: vfx.boss.cajero.shot_impact
+    Type: 0
+    Position: 1
+    PositionReaderSO: {fileID: 0}
+    PlayerTarget: 0
+    PositionOffset: {x: 0, y: 1, z: 0}
+    Duration: 0.55
+    CompletionMode: 0
+    VfxPrefab: {fileID: 6805049258681361692, guid: 561a1742688cb8e4ea8be7e0c9987057, type: 3}
+    ShouldDestroyOnParticleEnd: 0
+    AudioClip: {fileID: 0}
+    Volume: 1
+    AnimTrigger: 
+    TargetSourcePawn: 1
+    FeelPlayerPrefab: {fileID: 0}
+    FeelIntensity: 1
+    DeathSpinDegrees: 720
+    DeathEndScale: 0
+    DeathRiseHeight: 0.35
+    DeathHideHealthBar: 1
+    BehaviorValueKey: 0
+    ValueTarget: 1
+    FloatingNumberSourceKey: 1
+  - FeedbackId: feel.boss.cajero.impact
+    Type: 6
+    Position: 1
+    PositionReaderSO: {fileID: 0}
+    PlayerTarget: 0
+    PositionOffset: {x: 0, y: 0, z: 0}
+    Duration: 0.3
+    CompletionMode: 0
+    VfxPrefab: {fileID: 0}
+    ShouldDestroyOnParticleEnd: 0
+    AudioClip: {fileID: 0}
+    Volume: 1
+    AnimTrigger: 
+    TargetSourcePawn: 1
+    FeelPlayerPrefab: {fileID: 4459121286212993976, guid: f7ea066fcdf40614a88aeed9ae294140, type: 3}
+    FeelIntensity: 1
+    DeathSpinDegrees: 720
+    DeathEndScale: 0
+    DeathRiseHeight: 0.35
+    DeathHideHealthBar: 1
+    BehaviorValueKey: 0
+    ValueTarget: 1
+    FloatingNumberSourceKey: 1
+  - FeedbackId: feel.boss.cajero.shot_impact
+    Type: 6
+    Position: 1
+    PositionReaderSO: {fileID: 0}
+    PlayerTarget: 0
+    PositionOffset: {x: 0, y: 0, z: 0}
+    Duration: 0.3
+    CompletionMode: 0
+    VfxPrefab: {fileID: 0}
+    ShouldDestroyOnParticleEnd: 0
+    AudioClip: {fileID: 0}
+    Volume: 1
+    AnimTrigger: 
+    TargetSourcePawn: 1
+    FeelPlayerPrefab: {fileID: 7642937712175414424, guid: 8fce38f5c03bb6e4da05e2d7f0df1c86, type: 3}
+    FeelIntensity: 1
+    DeathSpinDegrees: 720
+    DeathEndScale: 0
+    DeathRiseHeight: 0.35
+    DeathHideHealthBar: 1
+    BehaviorValueKey: 0
+    ValueTarget: 1
+    FloatingNumberSourceKey: 1
+  - FeedbackId: anim.boss.anotador.melee
+    Type: 2
+    Position: 0
+    PositionReaderSO: {fileID: 0}
+    PlayerTarget: 0
+    PositionOffset: {x: 0, y: 0, z: 0}
+    Duration: 0.9
+    CompletionMode: 0
+    VfxPrefab: {fileID: 0}
+    ShouldDestroyOnParticleEnd: 0
+    AudioClip: {fileID: 0}
+    Volume: 1
+    AnimTrigger: Attack
+    TargetSourcePawn: 1
+    FeelPlayerPrefab: {fileID: 0}
+    FeelIntensity: 1
+    DeathSpinDegrees: 720
+    DeathEndScale: 0
+    DeathRiseHeight: 0.35
+    DeathHideHealthBar: 1
+    BehaviorValueKey: 0
+    ValueTarget: 1
+    FloatingNumberSourceKey: 1
+  - FeedbackId: anim.boss.anotador.pencil
+    Type: 2
+    Position: 0
+    PositionReaderSO: {fileID: 0}
+    PlayerTarget: 0
+    PositionOffset: {x: 0, y: 0, z: 0}
+    Duration: 0.9
+    CompletionMode: 0
+    VfxPrefab: {fileID: 0}
+    ShouldDestroyOnParticleEnd: 0
+    AudioClip: {fileID: 0}
+    Volume: 1
+    AnimTrigger: Attack
+    TargetSourcePawn: 1
+    FeelPlayerPrefab: {fileID: 0}
+    FeelIntensity: 1
+    DeathSpinDegrees: 720
+    DeathEndScale: 0
+    DeathRiseHeight: 0.35
+    DeathHideHealthBar: 1
+    BehaviorValueKey: 0
+    ValueTarget: 1
+    FloatingNumberSourceKey: 1
+  - FeedbackId: vfx.boss.anotador.impact
+    Type: 0
+    Position: 1
+    PositionReaderSO: {fileID: 0}
+    PlayerTarget: 0
+    PositionOffset: {x: 0, y: 1, z: 0}
+    Duration: 0.55
+    CompletionMode: 0
+    VfxPrefab: {fileID: 5782198322582804353, guid: 10cbad05949260d499f3fffd03ae8d05, type: 3}
+    ShouldDestroyOnParticleEnd: 0
+    AudioClip: {fileID: 0}
+    Volume: 1
+    AnimTrigger: 
+    TargetSourcePawn: 1
+    FeelPlayerPrefab: {fileID: 0}
+    FeelIntensity: 1
+    DeathSpinDegrees: 720
+    DeathEndScale: 0
+    DeathRiseHeight: 0.35
+    DeathHideHealthBar: 1
+    BehaviorValueKey: 0
+    ValueTarget: 1
+    FloatingNumberSourceKey: 1
+  - FeedbackId: feel.boss.anotador.impact
+    Type: 6
+    Position: 1
+    PositionReaderSO: {fileID: 0}
+    PlayerTarget: 0
+    PositionOffset: {x: 0, y: 0, z: 0}
+    Duration: 0.3
+    CompletionMode: 0
+    VfxPrefab: {fileID: 0}
+    ShouldDestroyOnParticleEnd: 0
+    AudioClip: {fileID: 0}
+    Volume: 1
+    AnimTrigger: 
+    TargetSourcePawn: 1
+    FeelPlayerPrefab: {fileID: 4459121286212993976, guid: f7ea066fcdf40614a88aeed9ae294140, type: 3}
+    FeelIntensity: 1
+    DeathSpinDegrees: 720
+    DeathEndScale: 0
+    DeathRiseHeight: 0.35
+    DeathHideHealthBar: 1
+    BehaviorValueKey: 0
+    ValueTarget: 1
+    FloatingNumberSourceKey: 1
+  - FeedbackId: anim.boss.generala.melee
+    Type: 2
+    Position: 0
+    PositionReaderSO: {fileID: 0}
+    PlayerTarget: 0
+    PositionOffset: {x: 0, y: 0, z: 0}
+    Duration: 0.9
+    CompletionMode: 0
+    VfxPrefab: {fileID: 0}
+    ShouldDestroyOnParticleEnd: 0
+    AudioClip: {fileID: 0}
+    Volume: 1
+    AnimTrigger: Attack_Melee
+    TargetSourcePawn: 1
+    FeelPlayerPrefab: {fileID: 0}
+    FeelIntensity: 1
+    DeathSpinDegrees: 720
+    DeathEndScale: 0
+    DeathRiseHeight: 0.35
+    DeathHideHealthBar: 1
+    BehaviorValueKey: 0
+    ValueTarget: 1
+    FloatingNumberSourceKey: 1
+  - FeedbackId: anim.boss.generala.range
+    Type: 2
+    Position: 0
+    PositionReaderSO: {fileID: 0}
+    PlayerTarget: 0
+    PositionOffset: {x: 0, y: 0, z: 0}
+    Duration: 0.9
+    CompletionMode: 0
+    VfxPrefab: {fileID: 0}
+    ShouldDestroyOnParticleEnd: 0
+    AudioClip: {fileID: 0}
+    Volume: 1
+    AnimTrigger: Attack_Range
+    TargetSourcePawn: 1
+    FeelPlayerPrefab: {fileID: 0}
+    FeelIntensity: 1
+    DeathSpinDegrees: 720
+    DeathEndScale: 0
+    DeathRiseHeight: 0.35
+    DeathHideHealthBar: 1
+    BehaviorValueKey: 0
+    ValueTarget: 1
+    FloatingNumberSourceKey: 1
+  - FeedbackId: anim.boss.generala.roll
+    Type: 2
+    Position: 0
+    PositionReaderSO: {fileID: 0}
+    PlayerTarget: 0
+    PositionOffset: {x: 0, y: 0, z: 0}
+    Duration: 0.9
+    CompletionMode: 0
+    VfxPrefab: {fileID: 0}
+    ShouldDestroyOnParticleEnd: 0
+    AudioClip: {fileID: 0}
+    Volume: 1
+    AnimTrigger: Roll
+    TargetSourcePawn: 1
+    FeelPlayerPrefab: {fileID: 0}
+    FeelIntensity: 1
+    DeathSpinDegrees: 720
+    DeathEndScale: 0
+    DeathRiseHeight: 0.35
+    DeathHideHealthBar: 1
+    BehaviorValueKey: 0
+    ValueTarget: 1
+    FloatingNumberSourceKey: 1
+  - FeedbackId: anim.boss.generala.cup_slam
+    Type: 2
+    Position: 0
+    PositionReaderSO: {fileID: 0}
+    PlayerTarget: 0
+    PositionOffset: {x: 0, y: 0, z: 0}
+    Duration: 0.9
+    CompletionMode: 0
+    VfxPrefab: {fileID: 0}
+    ShouldDestroyOnParticleEnd: 0
+    AudioClip: {fileID: 0}
+    Volume: 1
+    AnimTrigger: Attack_Melee
+    TargetSourcePawn: 1
+    FeelPlayerPrefab: {fileID: 0}
+    FeelIntensity: 1
+    DeathSpinDegrees: 720
+    DeathEndScale: 0
+    DeathRiseHeight: 0.35
+    DeathHideHealthBar: 1
+    BehaviorValueKey: 0
+    ValueTarget: 1
+    FloatingNumberSourceKey: 1
+  - FeedbackId: vfx.boss.generala.impact
+    Type: 0
+    Position: 1
+    PositionReaderSO: {fileID: 0}
+    PlayerTarget: 0
+    PositionOffset: {x: 0, y: 1, z: 0}
+    Duration: 0.55
+    CompletionMode: 0
+    VfxPrefab: {fileID: 5782198322582804353, guid: 10cbad05949260d499f3fffd03ae8d05, type: 3}
+    ShouldDestroyOnParticleEnd: 0
+    AudioClip: {fileID: 0}
+    Volume: 1
+    AnimTrigger: 
+    TargetSourcePawn: 1
+    FeelPlayerPrefab: {fileID: 0}
+    FeelIntensity: 1
+    DeathSpinDegrees: 720
+    DeathEndScale: 0
+    DeathRiseHeight: 0.35
+    DeathHideHealthBar: 1
+    BehaviorValueKey: 0
+    ValueTarget: 1
+    FloatingNumberSourceKey: 1
+  - FeedbackId: vfx.boss.generala.range_impact
+    Type: 0
+    Position: 1
+    PositionReaderSO: {fileID: 0}
+    PlayerTarget: 0
+    PositionOffset: {x: 0, y: 1, z: 0}
+    Duration: 0.55
+    CompletionMode: 0
+    VfxPrefab: {fileID: 6805049258681361692, guid: 561a1742688cb8e4ea8be7e0c9987057, type: 3}
+    ShouldDestroyOnParticleEnd: 0
+    AudioClip: {fileID: 0}
+    Volume: 1
+    AnimTrigger: 
+    TargetSourcePawn: 1
+    FeelPlayerPrefab: {fileID: 0}
+    FeelIntensity: 1
+    DeathSpinDegrees: 720
+    DeathEndScale: 0
+    DeathRiseHeight: 0.35
+    DeathHideHealthBar: 1
+    BehaviorValueKey: 0
+    ValueTarget: 1
+    FloatingNumberSourceKey: 1
+  - FeedbackId: feel.boss.generala.impact
+    Type: 6
+    Position: 1
+    PositionReaderSO: {fileID: 0}
+    PlayerTarget: 0
+    PositionOffset: {x: 0, y: 0, z: 0}
+    Duration: 0.3
+    CompletionMode: 0
+    VfxPrefab: {fileID: 0}
+    ShouldDestroyOnParticleEnd: 0
+    AudioClip: {fileID: 0}
+    Volume: 1
+    AnimTrigger: 
+    TargetSourcePawn: 1
+    FeelPlayerPrefab: {fileID: 4459121286212993976, guid: f7ea066fcdf40614a88aeed9ae294140, type: 3}
+    FeelIntensity: 1
+    DeathSpinDegrees: 720
+    DeathEndScale: 0
+    DeathRiseHeight: 0.35
+    DeathHideHealthBar: 1
+    BehaviorValueKey: 0
+    ValueTarget: 1
+    FloatingNumberSourceKey: 1
+  - FeedbackId: feel.boss.generala.range_impact
+    Type: 6
+    Position: 1
+    PositionReaderSO: {fileID: 0}
+    PlayerTarget: 0
+    PositionOffset: {x: 0, y: 0, z: 0}
+    Duration: 0.3
+    CompletionMode: 0
+    VfxPrefab: {fileID: 0}
+    ShouldDestroyOnParticleEnd: 0
+    AudioClip: {fileID: 0}
+    Volume: 1
+    AnimTrigger: 
+    TargetSourcePawn: 1
+    FeelPlayerPrefab: {fileID: 7642937712175414424, guid: 8fce38f5c03bb6e4da05e2d7f0df1c86, type: 3}
+    FeelIntensity: 1
+    DeathSpinDegrees: 720
+    DeathEndScale: 0
+    DeathRiseHeight: 0.35
+    DeathHideHealthBar: 1
+    BehaviorValueKey: 0
+    ValueTarget: 1
+    FloatingNumberSourceKey: 1
+  - FeedbackId: anim.boss.tahur.melee
+    Type: 2
+    Position: 0
+    PositionReaderSO: {fileID: 0}
+    PlayerTarget: 0
+    PositionOffset: {x: 0, y: 0, z: 0}
+    Duration: 0.9
+    CompletionMode: 0
+    VfxPrefab: {fileID: 0}
+    ShouldDestroyOnParticleEnd: 0
+    AudioClip: {fileID: 0}
+    Volume: 1
+    AnimTrigger: Attack_Melee
+    TargetSourcePawn: 1
+    FeelPlayerPrefab: {fileID: 0}
+    FeelIntensity: 1
+    DeathSpinDegrees: 720
+    DeathEndScale: 0
+    DeathRiseHeight: 0.35
+    DeathHideHealthBar: 1
+    BehaviorValueKey: 0
+    ValueTarget: 1
+    FloatingNumberSourceKey: 1
+  - FeedbackId: anim.boss.tahur.range
+    Type: 2
+    Position: 0
+    PositionReaderSO: {fileID: 0}
+    PlayerTarget: 0
+    PositionOffset: {x: 0, y: 0, z: 0}
+    Duration: 0.9
+    CompletionMode: 0
+    VfxPrefab: {fileID: 0}
+    ShouldDestroyOnParticleEnd: 0
+    AudioClip: {fileID: 0}
+    Volume: 1
+    AnimTrigger: Attack_Range
+    TargetSourcePawn: 1
+    FeelPlayerPrefab: {fileID: 0}
+    FeelIntensity: 1
+    DeathSpinDegrees: 720
+    DeathEndScale: 0
+    DeathRiseHeight: 0.35
+    DeathHideHealthBar: 1
+    BehaviorValueKey: 0
+    ValueTarget: 1
+    FloatingNumberSourceKey: 1
+  - FeedbackId: anim.boss.tahur.poke
+    Type: 2
+    Position: 0
+    PositionReaderSO: {fileID: 0}
+    PlayerTarget: 0
+    PositionOffset: {x: 0, y: 0, z: 0}
+    Duration: 0.9
+    CompletionMode: 0
+    VfxPrefab: {fileID: 0}
+    ShouldDestroyOnParticleEnd: 0
+    AudioClip: {fileID: 0}
+    Volume: 1
+    AnimTrigger: Attack_Melee
+    TargetSourcePawn: 1
+    FeelPlayerPrefab: {fileID: 0}
+    FeelIntensity: 1
+    DeathSpinDegrees: 720
+    DeathEndScale: 0
+    DeathRiseHeight: 0.35
+    DeathHideHealthBar: 1
+    BehaviorValueKey: 0
+    ValueTarget: 1
+    FloatingNumberSourceKey: 1
+  - FeedbackId: anim.boss.tahur.banca
+    Type: 2
+    Position: 0
+    PositionReaderSO: {fileID: 0}
+    PlayerTarget: 0
+    PositionOffset: {x: 0, y: 0, z: 0}
+    Duration: 0.9
+    CompletionMode: 0
+    VfxPrefab: {fileID: 0}
+    ShouldDestroyOnParticleEnd: 0
+    AudioClip: {fileID: 0}
+    Volume: 1
+    AnimTrigger: Attack_Range
+    TargetSourcePawn: 1
+    FeelPlayerPrefab: {fileID: 0}
+    FeelIntensity: 1
+    DeathSpinDegrees: 720
+    DeathEndScale: 0
+    DeathRiseHeight: 0.35
+    DeathHideHealthBar: 1
+    BehaviorValueKey: 0
+    ValueTarget: 1
+    FloatingNumberSourceKey: 1
+  - FeedbackId: vfx.boss.tahur.impact
+    Type: 0
+    Position: 1
+    PositionReaderSO: {fileID: 0}
+    PlayerTarget: 0
+    PositionOffset: {x: 0, y: 1, z: 0}
+    Duration: 0.55
+    CompletionMode: 0
+    VfxPrefab: {fileID: 5782198322582804353, guid: 10cbad05949260d499f3fffd03ae8d05, type: 3}
+    ShouldDestroyOnParticleEnd: 0
+    AudioClip: {fileID: 0}
+    Volume: 1
+    AnimTrigger: 
+    TargetSourcePawn: 1
+    FeelPlayerPrefab: {fileID: 0}
+    FeelIntensity: 1
+    DeathSpinDegrees: 720
+    DeathEndScale: 0
+    DeathRiseHeight: 0.35
+    DeathHideHealthBar: 1
+    BehaviorValueKey: 0
+    ValueTarget: 1
+    FloatingNumberSourceKey: 1
+  - FeedbackId: vfx.boss.tahur.range_impact
+    Type: 0
+    Position: 1
+    PositionReaderSO: {fileID: 0}
+    PlayerTarget: 0
+    PositionOffset: {x: 0, y: 1, z: 0}
+    Duration: 0.55
+    CompletionMode: 0
+    VfxPrefab: {fileID: 6805049258681361692, guid: 561a1742688cb8e4ea8be7e0c9987057, type: 3}
+    ShouldDestroyOnParticleEnd: 0
+    AudioClip: {fileID: 0}
+    Volume: 1
+    AnimTrigger: 
+    TargetSourcePawn: 1
+    FeelPlayerPrefab: {fileID: 0}
+    FeelIntensity: 1
+    DeathSpinDegrees: 720
+    DeathEndScale: 0
+    DeathRiseHeight: 0.35
+    DeathHideHealthBar: 1
+    BehaviorValueKey: 0
+    ValueTarget: 1
+    FloatingNumberSourceKey: 1
+  - FeedbackId: feel.boss.tahur.impact
+    Type: 6
+    Position: 1
+    PositionReaderSO: {fileID: 0}
+    PlayerTarget: 0
+    PositionOffset: {x: 0, y: 0, z: 0}
+    Duration: 0.3
+    CompletionMode: 0
+    VfxPrefab: {fileID: 0}
+    ShouldDestroyOnParticleEnd: 0
+    AudioClip: {fileID: 0}
+    Volume: 1
+    AnimTrigger: 
+    TargetSourcePawn: 1
+    FeelPlayerPrefab: {fileID: 4459121286212993976, guid: f7ea066fcdf40614a88aeed9ae294140, type: 3}
+    FeelIntensity: 1
+    DeathSpinDegrees: 720
+    DeathEndScale: 0
+    DeathRiseHeight: 0.35
+    DeathHideHealthBar: 1
+    BehaviorValueKey: 0
+    ValueTarget: 1
+    FloatingNumberSourceKey: 1
+  - FeedbackId: feel.boss.tahur.range_impact
+    Type: 6
+    Position: 1
+    PositionReaderSO: {fileID: 0}
+    PlayerTarget: 0
+    PositionOffset: {x: 0, y: 0, z: 0}
+    Duration: 0.3
+    CompletionMode: 0
+    VfxPrefab: {fileID: 0}
+    ShouldDestroyOnParticleEnd: 0
+    AudioClip: {fileID: 0}
+    Volume: 1
+    AnimTrigger: 
+    TargetSourcePawn: 1
+    FeelPlayerPrefab: {fileID: 7642937712175414424, guid: 8fce38f5c03bb6e4da05e2d7f0df1c86, type: 3}
+    FeelIntensity: 1
+    DeathSpinDegrees: 720
+    DeathEndScale: 0
+    DeathRiseHeight: 0.35
+    DeathHideHealthBar: 1
+    BehaviorValueKey: 0
+    ValueTarget: 1
+    FloatingNumberSourceKey: 1
+  - FeedbackId: vfx.boss.croupier.confisca
+    Type: 0
+    Position: 1
+    PositionReaderSO: {fileID: 0}
+    PlayerTarget: 0
+    PositionOffset: {x: 0, y: 1, z: 0}
+    Duration: 0.55
+    CompletionMode: 0
+    VfxPrefab: {fileID: 6805049258681361692, guid: 561a1742688cb8e4ea8be7e0c9987057, type: 3}
+    ShouldDestroyOnParticleEnd: 0
+    AudioClip: {fileID: 0}
+    Volume: 1
+    AnimTrigger: 
+    TargetSourcePawn: 1
+    FeelPlayerPrefab: {fileID: 0}
+    FeelIntensity: 1
+    DeathSpinDegrees: 720
+    DeathEndScale: 0
+    DeathRiseHeight: 0.35
+    DeathHideHealthBar: 1
+    BehaviorValueKey: 0
+    ValueTarget: 1
+    FloatingNumberSourceKey: 1
+  - FeedbackId: feel.boss.croupier.confisca
+    Type: 6
+    Position: 1
+    PositionReaderSO: {fileID: 0}
+    PlayerTarget: 0
+    PositionOffset: {x: 0, y: 0, z: 0}
+    Duration: 0.3
+    CompletionMode: 0
+    VfxPrefab: {fileID: 0}
+    ShouldDestroyOnParticleEnd: 0
+    AudioClip: {fileID: 0}
+    Volume: 1
+    AnimTrigger: 
+    TargetSourcePawn: 1
+    FeelPlayerPrefab: {fileID: 7642937712175414424, guid: 8fce38f5c03bb6e4da05e2d7f0df1c86, type: 3}
+    FeelIntensity: 1
+    DeathSpinDegrees: 720
+    DeathEndScale: 0
+    DeathRiseHeight: 0.35
+    DeathHideHealthBar: 1
+    BehaviorValueKey: 0
+    ValueTarget: 1
+    FloatingNumberSourceKey: 1
+  - FeedbackId: anim.boss.generala.summon
+    Type: 2
+    Position: 0
+    PositionReaderSO: {fileID: 0}
+    PlayerTarget: 0
+    PositionOffset: {x: 0, y: 0, z: 0}
+    Duration: 0.9
+    CompletionMode: 0
+    VfxPrefab: {fileID: 0}
+    ShouldDestroyOnParticleEnd: 0
+    AudioClip: {fileID: 0}
+    Volume: 1
+    AnimTrigger: Heal
+    TargetSourcePawn: 1
+    FeelPlayerPrefab: {fileID: 0}
+    FeelIntensity: 1
+    DeathSpinDegrees: 720
+    DeathEndScale: 0
+    DeathRiseHeight: 0.35
+    DeathHideHealthBar: 1
+    BehaviorValueKey: 0
+    ValueTarget: 1
+    FloatingNumberSourceKey: 1
+  - FeedbackId: anim.boss.generala.frost
+    Type: 2
+    Position: 0
+    PositionReaderSO: {fileID: 0}
+    PlayerTarget: 0
+    PositionOffset: {x: 0, y: 0, z: 0}
+    Duration: 0.9
+    CompletionMode: 0
+    VfxPrefab: {fileID: 0}
+    ShouldDestroyOnParticleEnd: 0
+    AudioClip: {fileID: 0}
+    Volume: 1
+    AnimTrigger: Attack_Range
+    TargetSourcePawn: 1
+    FeelPlayerPrefab: {fileID: 0}
+    FeelIntensity: 1
+    DeathSpinDegrees: 720
+    DeathEndScale: 0
+    DeathRiseHeight: 0.35
+    DeathHideHealthBar: 1
+    BehaviorValueKey: 0
+    ValueTarget: 1
+    FloatingNumberSourceKey: 1
   _sequences:
   - SequenceId: death.enemy
     Steps:

@@ -369,7 +369,9 @@ namespace Rollgeon.UI.HUD
                     // raise explícitamente o el dado queda flotando bloqueado.
                     _animator?.SetRaised(i, false);
                 }
-                _resolvedSlots[i]?.SetBlocked(blocked);
+                // La etiqueta dice QUIÉN se llevó el dado (el número que cantó el Croupier). Sin
+                // ella, el jugador ve un candado y no tiene cómo atarlo al sector encendido del paño.
+                _resolvedSlots[i]?.SetBlocked(blocked, blocked ? db.LabelOf(i) : null);
             }
             PropagateHoldsToActionRoll();
             RunComboDetection();

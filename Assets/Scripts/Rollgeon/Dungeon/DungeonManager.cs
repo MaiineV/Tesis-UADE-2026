@@ -125,7 +125,11 @@ namespace Rollgeon.Dungeon
                     Template = template,
                     WorldPosition = worldPos,
                     GridCell = cell,
-                    State = initialState
+                    State = initialState,
+                    Boss = plan.BossByCell != null
+                           && plan.BossByCell.TryGetValue(cell, out var rolledBoss)
+                        ? rolledBoss
+                        : null,
                 };
 
                 _instances[id] = instance;

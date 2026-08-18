@@ -50,6 +50,10 @@ namespace Rollgeon.Combat.AI
         // ya tuvo una ronda para reaccionar.
         private readonly HashSet<Guid> _deferredFirstTurn = new HashSet<Guid>();
 
+        // La apertura corre una vez por pelea. OnTurnQueueBuilt vuelve a disparar en cada ronda y un
+        // restore de save puede re-armar la cola: sin esta guarda, la mesa se volvería a instalar.
+        private bool _openingDone;
+
         public TreeDrivenEnemyAI(
             IEnemyAIRegistry registry,
             AttributesManager attributes,
@@ -157,6 +161,7 @@ namespace Rollgeon.Combat.AI
             // mata al player, o Victory instantánea): las coroutines de AI en vuelo no
             // deben seguir tickeando contra un combate que ya no existe.
             StopAllRunning();
+            _openingDone = false;
         }
 
         private void StopAllRunning()
@@ -191,7 +196,74 @@ namespace Rollgeon.Combat.AI
         private void OnTurnQueueBuilt(params object[] args)
         {
             if (args == null || args.Length < 2) return;
-            if (args[1] is int idx) _roundIndex = idx + 1; // 1-based for condition UX
+            if (!(args[1] is int idx)) return;
+
+            _roundIndex = idx + 1; // 1-based for condition UX
+
+            // La cola se arma en CombatEnterState antes de pasar a PlayerTurnState, así que esta es la
+            // última rendija que queda antes de que el jugador juegue. Ronda 0 = la cola inicial; las
+            // rondas siguientes re-disparan el mismo evento y no vuelven a abrir.
+            if (idx == 0) RunCombatOpening(args[0] as IReadOnlyList<Guid>);
+        }
+
+        /// <summary>
+        /// Le da a cada enemigo la oportunidad de dejar instalado su estado de sala antes del primer
+        /// turno del jugador. Ver <see cref="Decisions.IAIOpeningNode"/>.
+        /// </summary>
+        private void RunCombatOpening(IReadOnlyList<Guid> queue)
+        {
+            if (_openingDone || queue == null) return;
+            _openingDone = true;
+
+            var nodes = new List<Decisions.IAIOpeningNode>();
+            foreach (var guid in queue)
+            {
+                if (guid == Guid.Empty || guid == _playerService.PlayerGuid) continue;
+                if (!_registry.TryGet(guid, out var root, out var maxHp) || root == null) continue;
+
+                nodes.Clear();
+                CollectOpeningNodes(root, nodes);
+                if (nodes.Count == 0) continue;
+
+                var ctx = BuildContext(guid, maxHp);
+                foreach (var node in nodes)
+                {
+                    // Un nodo que explota en la apertura no puede dejar la pelea sin arrancar: se
+                    // reporta y el resto igual instala lo suyo.
+                    try { node.Opening(ctx); }
+                    catch (Exception ex)
+                    {
+                        Debug.LogError($"[TreeDrivenEnemyAI] Exception opening {node.GetType().Name} for {guid}: {ex}");
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// Los <see cref="Decisions.IAIOpeningNode"/> del árbol, en orden de autorado.
+        /// </summary>
+        /// <remarks>
+        /// Baja sólo por los compuestos incondicionales. Un <c>AINode_If</c> o un <c>AINode_Once</c>
+        /// son la puerta de una fase o de una cadencia: abrirlos acá pondría en la mesa cosas que el
+        /// jefe todavía no se ganó.
+        /// </remarks>
+        private static void CollectOpeningNodes(Decisions.AIDecisionNode node, List<Decisions.IAIOpeningNode> into)
+        {
+            if (node == null) return;
+            if (node is Decisions.IAIOpeningNode opening) into.Add(opening);
+
+            switch (node)
+            {
+                case Decisions.AINode_Sequence seq: CollectChildren(seq.Children, into); break;
+                case Decisions.AINode_Selector sel: CollectChildren(sel.Children, into); break;
+                case Decisions.AINode_Alternate alt: CollectChildren(alt.Children, into); break;
+            }
+        }
+
+        private static void CollectChildren(List<Decisions.AIDecisionNode> children, List<Decisions.IAIOpeningNode> into)
+        {
+            if (children == null) return;
+            foreach (var child in children) CollectOpeningNodes(child, into);
         }
 
         private void OnReinforcementSpawned(params object[] args)

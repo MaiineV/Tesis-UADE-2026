@@ -9,6 +9,7 @@ using Rollgeon.Combat.Initiative;
 using Rollgeon.Dungeon;
 using Rollgeon.Dungeon.State;
 using Rollgeon.Entities;
+using Rollgeon.Entities.Bosses;
 using Rollgeon.Entities.Portraits;
 using Rollgeon.Grid;
 using Rollgeon.Heroes;
@@ -545,6 +546,213 @@ namespace Rollgeon.Combat.Handoff.Tests
             Assert.AreEqual(1, result.Count);
             Assert.AreNotEqual(savedGuid, result[0].id,
                 "sin resume el GUID es nuevo (no se preserva el guardado)");
+        }
+
+        // -------------------------------------------------------------------
+        // Boss pool por piso (BossPoolSO en FloorLayoutSO)
+        // -------------------------------------------------------------------
+
+        /// <summary>Fake mínimo de la progresión — solo CurrentLayout importa acá.</summary>
+        private sealed class FakeFloorProgression : IFloorProgressionService
+        {
+            public FloorLayoutSO CurrentLayout { get; set; }
+        }
+
+        private BossPoolSO CreateBossPool(params EnemyDataSO[] bosses)
+        {
+            var pool = ScriptableObject.CreateInstance<BossPoolSO>();
+            pool.name = "TestBossPool";
+            pool.Entries = new List<WeightedBoss>();
+            foreach (var boss in bosses)
+            {
+                pool.Entries.Add(new WeightedBoss { Boss = boss, Weight = 1f, Enabled = true });
+            }
+            _createdObjects.Add(pool);
+            return pool;
+        }
+
+        private FloorLayoutSO CreateLayout(BossPoolSO bossPool)
+        {
+            var layout = ScriptableObject.CreateInstance<FloorLayoutSO>();
+            layout.name = "TestFloorLayout";
+            layout.FloorId = "floor.test";
+            layout.BossPool = bossPool;
+            _createdObjects.Add(layout);
+            return layout;
+        }
+
+        [Test]
+        public void Resolve_BossRoomWithFloorPool_SpawnsExactlyOneBossFromPool()
+        {
+            // Arrange — la sala trae su propio EnemyPool con otro enemigo: el pool del
+            // piso tiene que ganarle (precedencia por código, sin vaciar la data vieja).
+            var poolBoss = CreateEnemy("PoolBoss", hp: 90);
+            var roomEnemy = CreateEnemy("RoomEnemy");
+            var instance = CreateInstance(CreatePool(roomEnemy), RoomType.Boss);
+            var resolver = new DefaultEnemySpawnResolver(
+                _registry, _attributes,
+                floorProgression: new FakeFloorProgression
+                {
+                    CurrentLayout = CreateLayout(CreateBossPool(poolBoss))
+                });
+
+            // Act
+            var result = resolver.Resolve(instance, new System.Random(42));
+
+            // Assert
+            Assert.AreEqual(1, result.Count, "la sala de boss spawnea exactamente 1 boss.");
+            Assert.AreSame(poolBoss, result[0].data,
+                "el boss debe venir del BossPool del piso, no del EnemyPool de la sala.");
+        }
+
+        [Test]
+        public void Resolve_BossRoomWithFloorPool_ResolvesTierForCurrentFloor()
+        {
+            // Arrange — boss con T2 (HP ×2) desde el piso 2, jugando el piso 2.
+            var boss = CreateTieredEnemy();
+            var instance = CreateInstance(CreatePool(CreateEnemy("RoomEnemy")), RoomType.Boss);
+            var resolver = new DefaultEnemySpawnResolver(
+                _registry, _attributes,
+                runContext: new FakeRunContext { FloorIndex = 1 },
+                floorProgression: new FakeFloorProgression
+                {
+                    CurrentLayout = CreateLayout(CreateBossPool(boss))
+                });
+
+            // Act
+            resolver.Resolve(instance, new System.Random(42));
+
+            // Assert
+            Assert.IsTrue(instance.ObjectStates.TryGet<EnemySpawnState>("enemy_0", out var state));
+            Assert.AreEqual(2, state.Tier, "el boss del pool resuelve su tier por piso");
+            Assert.AreEqual(40, state.CurrentHP, "HP ×2 del T2");
+        }
+
+        [Test]
+        public void Resolve_CombatRoomWithFloorPool_IgnoresBossPool()
+        {
+            // El pool es de la sala de boss: una Combat room no debe tocarlo.
+            var poolBoss = CreateEnemy("PoolBoss");
+            var instance = CreateInstance(
+                CreatePool(CreateEnemy("Goblin"), CreateEnemy("Orc")), RoomType.Combat);
+            var resolver = new DefaultEnemySpawnResolver(
+                _registry, _attributes,
+                floorProgression: new FakeFloorProgression
+                {
+                    CurrentLayout = CreateLayout(CreateBossPool(poolBoss))
+                });
+
+            var result = resolver.Resolve(instance, new System.Random(42));
+
+            Assert.AreEqual(2, result.Count, "Combat room sigue con su default de 2 enemigos.");
+            foreach (var (_, data) in result)
+            {
+                Assert.AreNotSame(poolBoss, data, "el boss del pool no debe entrar a un combate normal.");
+            }
+        }
+
+        [Test]
+        public void Resolve_BossRoomWithoutFloorPool_KeepsPreviousPath()
+        {
+            // Layout sin BossPool asignado (los 3 pisos actuales hasta que integración
+            // autoree los assets): el spawn sale del EnemyPool de la sala como siempre.
+            var roomBoss = CreateEnemy("RoomBoss", hp: 80);
+            var instance = CreateInstance(CreatePool(roomBoss), RoomType.Boss);
+            var resolver = new DefaultEnemySpawnResolver(
+                _registry, _attributes,
+                floorProgression: new FakeFloorProgression { CurrentLayout = CreateLayout(null) });
+
+            var result = resolver.Resolve(instance, new System.Random(42));
+
+            Assert.AreEqual(1, result.Count);
+            Assert.AreSame(roomBoss, result[0].data);
+        }
+
+        [Test]
+        public void Resolve_BossRoomWithEmptyFloorPool_KeepsPreviousPath()
+        {
+            // Pool asignado pero sin entries ⇒ Roll devuelve null ⇒ path de siempre.
+            var roomBoss = CreateEnemy("RoomBoss", hp: 80);
+            var instance = CreateInstance(CreatePool(roomBoss), RoomType.Boss);
+            var resolver = new DefaultEnemySpawnResolver(
+                _registry, _attributes,
+                floorProgression: new FakeFloorProgression
+                {
+                    CurrentLayout = CreateLayout(CreateBossPool())
+                });
+
+            var result = resolver.Resolve(instance, new System.Random(42));
+
+            Assert.AreEqual(1, result.Count);
+            Assert.AreSame(roomBoss, result[0].data);
+        }
+
+        [Test]
+        public void Resolve_BossRoomWithSelectionOverride_SpawnsForcedBoss()
+        {
+            // Arrange
+            var forcedBoss = CreateEnemy("ForcedBoss", hp: 70);
+            var poolBoss = CreateEnemy("PoolBoss", hp: 90);
+            var progression = new FakeFloorProgression
+            {
+                CurrentLayout = CreateLayout(CreateBossPool(poolBoss))
+            };
+            var bossOverride = new BossSelectionOverride();
+            bossOverride.ForceNext(forcedBoss);
+            ServiceLocator.AddService<IBossSelectionOverride>(bossOverride);
+            try
+            {
+                var resolver = new DefaultEnemySpawnResolver(
+                    _registry, _attributes, floorProgression: progression);
+                var instance = CreateInstance(CreatePool(CreateEnemy("RoomEnemy")), RoomType.Boss);
+
+                // Act
+                var result = resolver.Resolve(instance, new System.Random(42));
+
+                // Assert
+                Assert.AreEqual(1, result.Count);
+                Assert.AreSame(forcedBoss, result[0].data,
+                    "el override de la dev console le gana al roll del pool.");
+            }
+            finally
+            {
+                ServiceLocator.RemoveService<IBossSelectionOverride>();
+            }
+        }
+
+        [Test]
+        public void Resolve_BossRoomWithSelectionOverride_ConsumesItOneShot()
+        {
+            // El override no debe pegarse a todas las salas de boss de la run.
+            var forcedBoss = CreateEnemy("ForcedBoss");
+            var poolBoss = CreateEnemy("PoolBoss");
+            var progression = new FakeFloorProgression
+            {
+                CurrentLayout = CreateLayout(CreateBossPool(poolBoss))
+            };
+            var bossOverride = new BossSelectionOverride();
+            bossOverride.ForceNext(forcedBoss);
+            ServiceLocator.AddService<IBossSelectionOverride>(bossOverride);
+            try
+            {
+                var resolver = new DefaultEnemySpawnResolver(
+                    _registry, _attributes, floorProgression: progression);
+
+                var first = resolver.Resolve(
+                    CreateInstance(CreatePool(CreateEnemy("RoomEnemy")), RoomType.Boss),
+                    new System.Random(42));
+                var second = resolver.Resolve(
+                    CreateInstance(CreatePool(CreateEnemy("RoomEnemy")), RoomType.Boss),
+                    new System.Random(43));
+
+                Assert.AreSame(forcedBoss, first[0].data);
+                Assert.AreSame(poolBoss, second[0].data,
+                    "consumido el override, la segunda sala vuelve a rolear el pool.");
+            }
+            finally
+            {
+                ServiceLocator.RemoveService<IBossSelectionOverride>();
+            }
         }
     }
 }

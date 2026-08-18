@@ -1,10 +1,13 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using Patterns;
 using Rollgeon.Attributes;
 using Rollgeon.Attributes.Stats;
+using Rollgeon.Combat.Actions;
 using Rollgeon.Combat.Initiative;
 using Rollgeon.Entities;
+using Rollgeon.Feedback;
 using Rollgeon.Entities.Portraits;
 using Rollgeon.Grid;
 using Sirenix.OdinInspector;
@@ -52,6 +55,12 @@ namespace Rollgeon.Combat.AI.Decisions
         // Turns to wait after the wave is wiped before the next wave. 0 = respawn immediately next turn.
         public int RespawnDelayTurns = 2;
 
+#if UNITY_EDITOR
+        [ValueDropdown(nameof(GetFeedbackIdsForDropdown))]
+#endif
+        [Tooltip("Gesto de invocar, sólo en el turno que spawnea de verdad. Vacío = sin animación.")]
+        public string SpawnFeedbackId;
+
         // --- Runtime state (per-combat). NonSerialized: vive solo en la copia runtime del
         // árbol (EnemyDataSO.CreateRuntimeAIRoot → SerializationUtility.CreateCopy), nunca en
         // el asset. Mismo patrón que AINode_Once/_Alternate/_PromulgateRule: una pelea nueva
@@ -60,11 +69,19 @@ namespace Rollgeon.Combat.AI.Decisions
         [NonSerialized] private int _turnsSinceWaveDied;
         [NonSerialized] private bool _hasSpawnedOnce;
 
+        /// <summary>
+        /// Si el último <see cref="Tick"/> spawneó de verdad. El nodo devuelve
+        /// <see cref="AIResult.Succeeded"/> también en los turnos de espera, así que sin esto la
+        /// animación de invocar correría todos los turnos con la oleada en pie.
+        /// </summary>
+        [NonSerialized] private bool _spawnedThisTick;
+
         public override string NodeName =>
             $"Spawn Reinforcements ({Count}x {(EnemyToSpawn != null ? EnemyToSpawn.name : "?")})";
 
         public override AIResult Tick(AIContext context)
         {
+            _spawnedThisTick = false;
             if (context == null || EnemyToSpawn == null) return AIResult.Failed;
 
             var grid = context.Grid;
@@ -107,7 +124,73 @@ namespace Rollgeon.Combat.AI.Decisions
             _currentWave.AddRange(spawned);
             _hasSpawnedOnce = true;
             _turnsSinceWaveDied = 0;
+            _spawnedThisTick = true;
             return AIResult.Succeeded;
+        }
+
+        /// <remarks>
+        /// <para>
+        /// Los refuerzos aparecían de la nada: cinco bichos se materializaban en el borde de la
+        /// sala mientras el jefe seguía en idle, y no había nada que dijera que los había traído
+        /// él. Con el gesto, la reposición se lee como una acción suya y no como un evento de la
+        /// sala.
+        /// </para>
+        /// <para>
+        /// Sólo en el tick que spawnea: el nodo también devuelve <c>Succeeded</c> cuando está
+        /// esperando (oleada viva o delay corriendo), y animar esos turnos sería el jefe invocando
+        /// al aire.
+        /// </para>
+        /// </remarks>
+        public override IEnumerator TickCoroutine(AIContext context, Action<AIResult> onResult)
+        {
+            var result = Tick(context);
+            if (result != AIResult.Succeeded || !_spawnedThisTick || string.IsNullOrEmpty(SpawnFeedbackId))
+            {
+                onResult?.Invoke(result);
+                yield break;
+            }
+
+            var beat = PlaySpawn(context);
+            while (beat.MoveNext()) yield return beat.Current;
+
+            onResult?.Invoke(result);
+        }
+
+        /// <remarks>
+        /// Request armado a mano porque el nodo no nace de un effect pass y no tiene
+        /// <c>EffectContext</c> — el mismo caso que documenta <c>FeedbackRequest.Context</c> como
+        /// nullable, y la misma forma que usan los otros nodos de jefe.
+        /// </remarks>
+        private IEnumerator PlaySpawn(AIContext context)
+        {
+            if (!ServiceLocator.TryGetService<IFeedbackService>(out var feedback) || feedback == null)
+                yield break;
+
+            var step = new FeedbackSequenceStep
+            {
+                Source = StepSource.FeedbackRef,
+                FeedbackRefId = SpawnFeedbackId,
+                StartMode = StepStartMode.Immediate,
+                EndMode = StepEndMode.OnDuration,
+                BlockSequence = true,
+            };
+
+            ServiceLocator.TryGetService<TurnManager>(out var turn);
+            turn?.BeginFeedbackWait();
+            feedback.RequestFeedbackBlocking(new FeedbackRequest
+            {
+                IsSequence = true,
+                SequenceSteps = new List<FeedbackSequenceStep> { step },
+                SourceGuid = context.SelfGuid,
+                TargetGuid = context.PlayerGuid,
+            }, () => turn?.OnFeedbackComplete());
+
+            // Sin TurnManager no hay gate que esperar — la anim igual corre, pero el turno le pasa
+            // por encima. Mismo degradado que el resto de los nodos de jefe.
+            if (turn == null || !turn.IsWaitingForFeedback) yield break;
+
+            var wait = TurnManager.WaitForFeedbackCompletion(turn);
+            while (wait.MoveNext()) yield return wait.Current;
         }
 
         /// <summary>
@@ -278,5 +361,18 @@ namespace Rollgeon.Combat.AI.Decisions
                 (list[i], list[j]) = (list[j], list[i]);
             }
         }
+
+#if UNITY_EDITOR
+        private static IEnumerable<string> GetFeedbackIdsForDropdown()
+        {
+            foreach (var guid in UnityEditor.AssetDatabase.FindAssets("t:FeedbackDBSO"))
+            {
+                var path = UnityEditor.AssetDatabase.GUIDToAssetPath(guid);
+                var db = UnityEditor.AssetDatabase.LoadAssetAtPath<FeedbackDBSO>(path);
+                if (db == null) continue;
+                foreach (var id in db.GetAllFeedbackIds()) yield return id;
+            }
+        }
+#endif
     }
 }

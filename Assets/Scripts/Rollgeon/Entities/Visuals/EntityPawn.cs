@@ -38,6 +38,22 @@ namespace Rollgeon.Entities.Visuals
         [SerializeField, Tooltip("Barra de HP world-space. Null en heroes o pawns sin barra.")]
         private WorldSpaceHealthBar _healthBar;
 
+        [SerializeField]
+        [Tooltip("Cómo se desplaza. Walk = lerp casilla a casilla. Blink = desaparece y aparece en " +
+                 "el destino, sin pasar por el camino. Elegir Blink SOLO si el clip de movimiento " +
+                 "del rig es un teletransporte.")]
+        private LocomotionStyle _locomotion = LocomotionStyle.Walk;
+
+        [SerializeField, Min(0f)]
+        [Tooltip("Segundos que se queda en el origen antes de saltar — el tramo en que el clip lo " +
+                 "hace desaparecer. Solo para Blink.")]
+        private float _blinkOutSeconds = 0.14f;
+
+        [SerializeField, Min(0f)]
+        [Tooltip("Segundos que se queda en el destino después de saltar — el tramo en que el clip " +
+                 "lo hace aparecer. Solo para Blink.")]
+        private float _blinkInSeconds = 0.14f;
+
         private Coroutine _moveAnim;
 
         private Animator _animator;
@@ -153,7 +169,53 @@ namespace Rollgeon.Entities.Visuals
             }
 
             SetMovementAnim(true);
+
+            if (_locomotion == LocomotionStyle.Blink)
+            {
+                _moveAnim = StartCoroutine(BlinkCoroutine(grid, path[0], path[path.Count - 1]));
+                return;
+            }
+
             _moveAnim = StartCoroutine(AnimatePathCoroutine(grid, path, Mathf.Max(0.01f, secondsPerStep), movement));
+        }
+
+        /// <summary>
+        /// Desplazamiento por teletransporte: se queda en el origen mientras el clip lo hace
+        /// desaparecer, salta al destino, y se queda mientras el clip lo hace aparecer.
+        /// </summary>
+        /// <remarks>
+        /// <para>
+        /// <b>No recorre el camino.</b> Va del origen al destino y nada más — pasar por las casillas
+        /// intermedias es justamente lo que no hace un teletransporte. La posición lógica ya está en
+        /// el destino (la setea <c>MovementService.Move</c>), así que saltarse el path no desincroniza
+        /// nada.
+        /// </para>
+        /// <para>
+        /// <b>Por qué existe.</b> Hay rigs cuyo clip de movimiento ES un teletransporte —
+        /// <c>Anim_Healer_Teleport_1/_2</c> y <c>Anim_SunkedGrand_Teleport_1/_2</c>, un tramo para
+        /// desaparecer y otro para aparecer. Con el lerp de <see cref="AnimatePathCoroutine"/> el
+        /// cuerpo se deslizaba suave mientras la animación decía "me desvanecí", que es la peor
+        /// combinación posible: ni se lee como caminata ni como salto.
+        /// </para>
+        /// <para>
+        /// <b>Tampoco hay recalc por bloqueo.</b> El de la caminata existe porque el pawn puede
+        /// chocarse con alguien que se movió a mitad del trayecto; acá no hay trayecto que rodear.
+        /// </para>
+        /// </remarks>
+        private IEnumerator BlinkCoroutine(IGridManager grid, GridCoord from, GridCoord to)
+        {
+            FaceCoord(from, to);
+
+            if (_blinkOutSeconds > 0f) yield return new WaitForSeconds(_blinkOutSeconds);
+
+            var endPos = grid.GridToWorld(to);
+            endPos.y += PawnYOffset;
+            transform.position = endPos;
+
+            if (_blinkInSeconds > 0f) yield return new WaitForSeconds(_blinkInSeconds);
+
+            SetMovementAnim(false);
+            _moveAnim = null;
         }
 
         private IEnumerator AnimatePathCoroutine(
@@ -286,5 +348,18 @@ namespace Rollgeon.Entities.Visuals
         }
 
         public enum PawnKind { Hero, Enemy, Boss, Prop }
+
+        /// <summary>Cómo se ve moverse este pawn.</summary>
+        public enum LocomotionStyle
+        {
+            /// <summary>Lerp casilla a casilla por el camino. El default de todo el bestiario.</summary>
+            Walk,
+
+            /// <summary>
+            /// Desaparece en el origen y aparece en el destino, sin recorrer el camino. Para los
+            /// rigs cuyo clip de movimiento es un teletransporte (Healer, Sunked Grand).
+            /// </summary>
+            Blink,
+        }
     }
 }

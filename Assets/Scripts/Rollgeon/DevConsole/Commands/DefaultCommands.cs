@@ -19,6 +19,7 @@ namespace Rollgeon.DevConsole.Commands
             r.Register(new SetStatCommand());
 
             // Items
+            r.Register(new KitCommand());
             r.Register(new GiveItemCommand());
             r.Register(new ClearItemsCommand());
             r.Register(new PotionCommand());

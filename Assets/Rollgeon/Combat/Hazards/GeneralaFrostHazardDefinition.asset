@@ -1,0 +1,33 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b5ed3ec6fdb140a88c0b993c021df9f9, type: 3}
+  m_Name: GeneralaFrostHazardDefinition
+  m_EditorClassIdentifier: Rollgeon::Rollgeon.Combat.Threat.HazardDefinitionSO
+  Shape: 5
+  Size: 1
+  Depth: 2
+  Count: 3
+  HalfAxis: 0
+  Damage: 0
+  Kind: 3
+  CycleRounds: 2
+  Trigger: 2
+  Affects: 0
+  DurationRounds: 3
+  ConsumeOnTrigger: 1
+  OverlayTint: {r: 0.35, g: 0.8, b: 1, a: 0.55}
+  TriggerVfxPrefab: {fileID: 1316803763528841526, guid: 8e46d1d4907fe0d4da37cb6e6df0f963, type: 3}
+  TriggerVfxLifetime: 1.5
+  TriggerVfxYOffset: 0.1
+  PersistentVfxPrefab: {fileID: 0}
+  PersistentVfxYOffset: 0.1
+  SourceId: 3f1c9a52-84d7-4b60-9e13-2ac6f5d80b74

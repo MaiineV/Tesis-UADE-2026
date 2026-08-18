@@ -58,6 +58,11 @@ namespace Rollgeon.UI.HUD
                     // Motion.Arc: el oro "salta" en vez de subir derecho — lo distingue
                     // visualmente del resto de los floating numbers a simple vistazo.
                     return new FloatingNumberStyle($"+{rounded} G", FloatingNumberPalette.Gold, 0.9f, FloatingMotion.Arc);
+                case FloatingNumberType.GoldLost:
+                    // Mismo matiz y mismo salto que el oro que entra: es el mismo recurso, y lo que
+                    // distingue "te di" de "te saqué" es el signo. Se manda el valor en positivo y
+                    // el signo lo pone el formato, igual que hace ForDamage con el daño recibido.
+                    return new FloatingNumberStyle($"-{Mathf.Abs(rounded)} G", FloatingNumberPalette.Gold, 0.9f, FloatingMotion.Arc);
                 case FloatingNumberType.Shield:
                     return new FloatingNumberStyle($"+{rounded}", FloatingNumberPalette.Shield, 0.95f);
                 case FloatingNumberType.Status:
@@ -70,6 +75,23 @@ namespace Rollgeon.UI.HUD
             }
         }
 
+        /// <summary>
+        /// Texto literal con el look de <paramref name="type"/> — para lo que no es una cantidad:
+        /// "Soborno", "Escudo roto", el escalón que bajó. Hereda tint, escala y motion del tipo, así
+        /// que un mensaje de oro sigue saltando como el oro y uno de estado sigue subiendo derecho.
+        /// </summary>
+        /// <remarks>
+        /// Existe porque el canal legacy (<c>EventName.OnFloatingNumberRequested</c>) sólo transporta
+        /// un <c>float</c>, y hay avisos que no son un número: "−1 escalón" con el formato de
+        /// <see cref="FloatingNumberType.Status"/> saldría como <c>"+-1"</c>. El spawner acepta un
+        /// <c>string</c> en el slot del valor y cae acá.
+        /// </remarks>
+        public static FloatingNumberStyle ForText(FloatingNumberType type, string text)
+        {
+            var style = ForType(type, 0f);
+            return new FloatingNumberStyle(text, style.Tint, style.Scale, style.Motion);
+        }
+
         /// <summary>Shield absorbió todo el hit — un "0" rojo/crema confunde (parece daño real).</summary>
         public static FloatingNumberStyle ShieldBlocked() =>
             new FloatingNumberStyle("Bloqueado", FloatingNumberPalette.Shield, 0.9f);
@@ -77,5 +99,32 @@ namespace Rollgeon.UI.HUD
         /// <summary>Shield llegó a 0 en este hit y queda daño residual — se spawnea antes del número.</summary>
         public static FloatingNumberStyle ShieldBroken() =>
             new FloatingNumberStyle("Escudo roto", FloatingNumberPalette.Shield, 0.9f);
+
+        /// <summary>
+        /// El stage 3 del pipeline recortó el golpe: se spawnea <b>antes</b> del número, igual que
+        /// <see cref="ShieldBroken"/>, y el número que sigue ya es el reducido.
+        /// </summary>
+        /// <remarks>
+        /// <para>
+        /// Sin esto, la mesa de La Generala en pie es un golpe de 30 que hace 9 sin explicación en
+        /// pantalla: el jugador no aprende "rompé los dados", aprende "mis golpes no sirven". El
+        /// porcentaje es lo único que conecta la mesa con la barra del jefe.
+        /// </para>
+        /// <para>
+        /// Va por acá y no por un badge en <c>BossBarView</c> a propósito: el badge de debilidad se
+        /// cablea a mano prefab por prefab, y la legibilidad de una mecánica no puede depender de un
+        /// paso manual de setup.
+        /// </para>
+        /// <para>
+        /// Tint de <see cref="FloatingNumberPalette.Shield"/>: es lo mismo que ya significa "algo
+        /// frenó este golpe", y darle un color propio agregaría una convención nueva para la misma
+        /// idea.
+        /// </para>
+        /// </remarks>
+        public static FloatingNumberStyle DamageReduced(float incomingMultiplier)
+        {
+            int percent = Mathf.RoundToInt((1f - incomingMultiplier) * 100f);
+            return new FloatingNumberStyle($"-{percent}%", FloatingNumberPalette.Shield, 0.9f);
+        }
     }
 }

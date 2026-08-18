@@ -1,0 +1,60 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d35ab9bdc06b06940a12320c6ff63a49, type: 3}
+  m_Name: ED_Obj_DadoCasa
+  m_EditorClassIdentifier: Rollgeon::Rollgeon.Entities.EnemyDataSO
+  serializationData:
+    SerializedFormat: 2
+    SerializedBytes: 
+    ReferencedUnityObjects: []
+    SerializedBytesString: 
+    Prefab: {fileID: 0}
+    PrefabModificationsReferencedUnityObjects: []
+    PrefabModifications: []
+    SerializationNodes:
+    - Name: Behaviors
+      Entry: 7
+      Data: 0|System.Collections.Generic.List`1[[Rollgeon.Entities.Behaviors.BaseBehavior,
+        Rollgeon]], mscorlib
+    - Name: 
+      Entry: 12
+      Data: 0
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: AIRoot
+      Entry: 7
+      Data: 1|Rollgeon.Combat.AI.Decisions.AINode_Wait, Rollgeon
+    - Name: 
+      Entry: 8
+      Data: 
+  EntityId: obj.dado_casa
+  DisplayName: Dado de la Casa
+  Description: "One of the five dice the house rolls. No attack of its own \u2014
+    it sits on the table being part of her hand and blocking the way. Breaking one
+    costs you a full swing and erases a category from her sheet."
+  Portrait: {fileID: 21300000, guid: a9fc014b5dcab1641b66a088781b4ea1, type: 3}
+  WeaknessComboId: 
+  WeaknessMultiplierOverride: 0
+  BaseHP: 45
+  BaseAttack: 0
+  BaseHealStrength: 0
+  BaseSpeed: 1
+  MaxEnergy: 0
+  BaseAttackRange: 0
+  ExtraTiers: []
+  VisualPrefab: {fileID: 191739518141893201, guid: 980e936c83588b3438314f35ab6eecd1, type: 3}
+  MinGoldDrop: 0
+  MaxGoldDrop: 0

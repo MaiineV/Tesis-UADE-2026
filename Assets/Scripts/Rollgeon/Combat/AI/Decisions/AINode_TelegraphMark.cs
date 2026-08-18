@@ -77,7 +77,10 @@ namespace Rollgeon.Combat.AI.Decisions
                 var rng = context.Rng ?? new System.Random();
                 tiles = ThreatAreaShape.ComputeScatteredSquares(grid, rng, Count, Size);
             }
-            else if (Shape == ThreatShape.SquareAroundSelf)
+            // AnchorsOnSelf en vez de comparar contra una shape puntual: el criterio es de la forma,
+            // no del nodo, así que una shape nueva anclada en el jefe (ColumnAroundSelf) no depende
+            // de acordarse de agregar otra rama acá.
+            else if (ThreatAreaShape.AnchorsOnSelf(Shape))
             {
                 if (!grid.TryGetPosition(context.SelfGuid, out var selfCoord)) return AIResult.Failed;
                 tiles = ThreatAreaShape.Compute(grid, selfCoord, Shape, Size, HalfAxis);

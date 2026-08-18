@@ -121,6 +121,7 @@ Rollgeon/.obsidian/core-plugins.json
 
 # Estado del IDE
 .idea/.idea.Tesis-UADE-2026/.idea/workspace.xml
+.idea/.idea.Tesis-UADE-2026/.idea/copilot.data.migration.agent.xml
 
 # Docs de trabajo locales
 /docs/setup/tutorial.md
@@ -131,3 +132,17 @@ Rollgeon/.obsidian/core-plugins.json
 /SELECCION_DADOS.jpeg
 /class_selection_capture.png
 /build_selection_capture.png
+
+# Corridas del boss bot (tools/playtest/run-boss-bot.ps1): capturas + logs por corrida.
+# Fuera de Assets/ a proposito — ahi Unity importaria cada PNG y generaria .meta.
+/PlaytestRuns/
+
+# Capturas sueltas que caen dentro de Assets/. Misma razon que /PlaytestRuns/, pero acá
+# Unity ya las importó y les generó .meta: se ignoran las dos cosas.
+/Assets/Screenshots/
+/Assets/Screenshots.meta
+
+# Símbolos de debug del External Dependency Manager de Google. El plugin no vive en el
+# repo (ni una DLL trackeada) — esto es sólo lo que su VersionHandler deja tirado.
+/Assets/MobileDependencyResolver/
+/Assets/MobileDependencyResolver.meta

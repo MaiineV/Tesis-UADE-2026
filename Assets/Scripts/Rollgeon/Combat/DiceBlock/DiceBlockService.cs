@@ -13,9 +13,11 @@ namespace Rollgeon.Combat.DiceBlock
     /// </summary>
     public sealed class DiceBlockService : IDiceBlockService, IPreloadableService, IDisposable
     {
+        // Índice bloqueado → etiqueta de quién se lo llevó (null = candado pelado). Diccionario y no
+        // set porque la UI necesita poder decir POR QUÉ se fue el dado, no sólo que se fue.
         // Lazy por la misma razón que ComboBlockService (Odin bypassea ctor al deserializar).
-        private HashSet<int> _blocked;
-        private HashSet<int> Blocked => _blocked ??= new HashSet<int>();
+        private Dictionary<int, string> _blocked;
+        private Dictionary<int, string> Blocked => _blocked ??= new Dictionary<int, string>();
 
         private EventManager.EventReceiver _onTurnFinishedHandler;
         private EventManager.EventReceiver _onCombatEndHandler;
@@ -79,11 +81,18 @@ namespace Rollgeon.Combat.DiceBlock
         // ======================================================================
 
         /// <inheritdoc />
-        public void Block(int index)
+        public void Block(int index, string label = null)
         {
             if (index < 0) return;
-            if (Blocked.Add(index))
-                EventManager.Trigger(EventName.OnDiceBlockChanged, ResolvePlayerGuid());
+
+            // Re-bloquear el mismo dado con etiqueta distinta cuenta como cambio: en fase 2 el
+            // Croupier puede cantar un número nuevo que caiga en el mismo slot, y el candado tiene
+            // que pasar a decir el número de este turno y no el del anterior.
+            bool isNew = !Blocked.TryGetValue(index, out var current);
+            if (!isNew && current == label) return;
+
+            Blocked[index] = label;
+            EventManager.Trigger(EventName.OnDiceBlockChanged, ResolvePlayerGuid());
         }
 
         /// <inheritdoc />
@@ -94,10 +103,14 @@ namespace Rollgeon.Combat.DiceBlock
         }
 
         /// <inheritdoc />
-        public bool IsBlocked(int index) => index >= 0 && Blocked.Contains(index);
+        public bool IsBlocked(int index) => index >= 0 && Blocked.ContainsKey(index);
 
         /// <inheritdoc />
-        public IReadOnlyCollection<int> BlockedIndices => Blocked;
+        public string LabelOf(int index)
+            => index >= 0 && Blocked.TryGetValue(index, out var label) ? label : null;
+
+        /// <inheritdoc />
+        public IReadOnlyCollection<int> BlockedIndices => Blocked.Keys;
 
         /// <inheritdoc />
         public void Clear()
