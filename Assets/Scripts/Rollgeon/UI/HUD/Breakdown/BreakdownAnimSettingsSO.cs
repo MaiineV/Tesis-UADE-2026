@@ -160,10 +160,10 @@ namespace Rollgeon.UI.HUD.Breakdown
 
         [Title("Celebración de combo (dados contribuyentes)")]
         [MinValue(0), Tooltip("Partículas del burst por dado a intensidad mínima.")]
-        public int ComboBurstCountMin = 6;
+        public int ComboBurstCountMin = 10;
 
         [MinValue(0), Tooltip("Partículas del burst por dado a intensidad máxima.")]
-        public int ComboBurstCountMax = 22;
+        public int ComboBurstCountMax = 30;
 
         [MinValue(0f), Tooltip("Punch de escala del dado (magnitud a intensidad máxima).")]
         public float ComboPunchScale = 0.18f;
