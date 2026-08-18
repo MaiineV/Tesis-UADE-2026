@@ -81,7 +81,7 @@ namespace Rollgeon.UI.HUD
         private int _comboFlamePulseCount = 1;
 
         [SerializeField, Tooltip("Segundos entre pulsos de la llama sostenida.")]
-        private float _comboFlamePulseSeconds = 0.22f;
+        private float _comboFlamePulseSeconds = 0.9f;
 
         private DiceSlotAnimator _animator;
         private Tween _glowTween;
