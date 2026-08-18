@@ -24,8 +24,12 @@ namespace Rollgeon.Combat.Damage
     /// </remarks>
     public static class PlayerDamageDebug
     {
-        /// <summary>Valor de playtest que se pidió: ×3 alcanza para cruzar los tres pisos.</summary>
-        public const float PlaytestMultiplier = 3f;
+        /// <summary>
+        /// Valor de playtest: ×1.5 (bajado desde ×3 el 2026-08-17). Alcanza para llegar a los jefes
+        /// sin borrarlos antes de que muestren sus fases, que es justo lo que la palanca existe
+        /// para poder ver.
+        /// </summary>
+        public const float PlaytestMultiplier = 1.5f;
 
         /// <summary>
         /// El factor configurado. Se lee por <see cref="Multiplier"/>, que es el que decide si
