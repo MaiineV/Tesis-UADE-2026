@@ -32,7 +32,8 @@ namespace Rollgeon.DevConsole.UI
             var go = new GameObject("DevConsole");
             go.AddComponent<DevConsoleUI>();
             Object.DontDestroyOnLoad(go);
-            Debug.Log("[DevConsole] instalada (Editor/DevBuild). Abrí con ` (backquote) o F1.");
+            Debug.Log("[DevConsole] instalada (Editor/DevBuild). Toggle con ` (backquote), F1 o P " +
+                      "(la P cierra mientras el campo esté vacío; con texto tipeado vuelve a ser letra).");
         }
 #endif
     }

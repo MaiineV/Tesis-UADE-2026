@@ -37,12 +37,21 @@ namespace Rollgeon.DevConsole.UI
         private GameObject _consolePanel, _playerPanel, _dicePanel, _worldPanel;
 
         private bool _open;
+        private bool _openedWithP;
         private bool _suggestionsActive;
         private int _historyIndex = -1;
         private int _openedFrame = -1;
         private InputActionMap[] _disabledMaps;
 
         public bool IsOpen => _open;
+
+        /// <summary>
+        /// La P de este frame cierra la consola en vez de escribirse. Lo consultan el handler de
+        /// teclado y el filtro del campo, así que ambos deciden lo mismo y la letra nunca se cuela
+        /// en el input del frame en que cierra.
+        /// </summary>
+        private bool PIsTheToggle => DevConsoleToggleRule.PIsTheToggle(
+            _openedWithP, _input != null ? _input.text : null);
 
         private void Awake()
         {
@@ -78,16 +87,23 @@ namespace Rollgeon.DevConsole.UI
 
             if (kb.backquoteKey.wasPressedThisFrame || kb.f1Key.wasPressedThisFrame)
             {
+                // Abrir por acá no arma la regla de la P: en esta sesión la letra es sólo letra.
+                _openedWithP = false;
                 Toggle();
                 return;
             }
 
-            // La P solo ABRE: en teclados donde F1 exige Fn y el backquote es incómodo.
-            // No cierra — con la consola abierta la letra tiene que poder tipearse.
-            if (!_open && kb.pKey.wasPressedThisFrame)
+            // La P es el atajo para teclados donde F1 exige Fn y el backquote incomoda. Abre siempre;
+            // cierra sólo mientras el campo esté vacío (ver DevConsoleToggleRule).
+            if (kb.pKey.wasPressedThisFrame)
             {
-                Open();
-                return;
+                if (!_open)
+                {
+                    _openedWithP = true;
+                    Open();
+                    return;
+                }
+                if (PIsTheToggle) { Close(); return; }
             }
 
             if (!_open)
@@ -241,6 +257,8 @@ namespace Rollgeon.DevConsole.UI
             }
             else
             {
+                // La regla de la P vale por apertura: la próxima consola decide de nuevo.
+                _openedWithP = false;
                 RestoreGameplayInput();
                 if (_input != null) _input.DeactivateInputField();
                 _session.Autocomplete.Reset();
@@ -494,8 +512,15 @@ namespace Rollgeon.DevConsole.UI
             _input.onValueChanged.AddListener(OnInputChanged);
             // Evita que el backquote (toggle) y el Tab se inserten en el campo. El filtro por
             // frame traga la tecla que ABRIÓ la consola (ej. la P) para que no quede tipeada.
+            // La P que CIERRA se traga por la misma regla que la cierra: el filtro corre durante el
+            // EventSystem y el handler en Update, y el orden entre los dos no está garantizado —
+            // preguntando lo mismo, el campo sigue vacío cuando Update la lee y el cierre no depende
+            // de quién corrió primero.
             _input.onValidateInput += (text, index, added) =>
-                (added == '`' || added == '\t' || Time.frameCount - _openedFrame <= 1) ? '\0' : added;
+                (added == '`' || added == '\t'
+                 || ((added == 'p' || added == 'P')
+                     && DevConsoleToggleRule.PIsTheToggle(_openedWithP, text))
+                 || Time.frameCount - _openedFrame <= 1) ? '\0' : added;
         }
     }
 }
