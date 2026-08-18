@@ -28,7 +28,7 @@ namespace Rollgeon.Combat.AI.Decisions
     /// autorados sin estos campos.
     /// </remarks>
     [Serializable, HideReferenceObjectPicker]
-    public sealed class AINode_RotateBlock : AIActionNode
+    public sealed class AINode_RotateBlock : AIActionNode, IAIOpeningNode
     {
         public enum BlockTarget { Dice, Combo }
 
@@ -72,6 +72,21 @@ namespace Rollgeon.Combat.AI.Decisions
         {
             if (context == null) return AIResult.Failed;
             return Target == BlockTarget.Dice ? RotateDice(context) : RotateCombo(context);
+        }
+
+        /// <summary>
+        /// Sólo el candado del dado abre. La regla es "desde tu primer turno ya tenés un dado
+        /// confiscado", y sin esto el primer tiro salía con la bolsa entera.
+        /// </summary>
+        /// <remarks>
+        /// <see cref="BlockTarget.Combo"/> se queda afuera: prohíbe lo último que jugaste, y en la
+        /// apertura no jugaste nada. Correrlo sería un <c>ClearAll</c> sobre un log vacío — sin efecto
+        /// hoy, pero autoriza a que mañana prohíba algo que el jugador no eligió.
+        /// </remarks>
+        public void Opening(AIContext context)
+        {
+            if (Target != BlockTarget.Dice) return;
+            Tick(context);
         }
 
         /// <summary>

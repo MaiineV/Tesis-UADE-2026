@@ -44,7 +44,7 @@ namespace Rollgeon.Combat.AI.Decisions
     /// </para>
     /// </remarks>
     [Serializable, HideReferenceObjectPicker]
-    public sealed class AINode_CashierCounterToll : AIActionNode
+    public sealed class AINode_CashierCounterToll : AIActionNode, IAIOpeningNode
     {
         [Tooltip("Daño por terminar el turno del mismo lado del mostrador que él. Ficha: 10.")]
         [MinValue(0)]
@@ -74,5 +74,12 @@ namespace Rollgeon.Combat.AI.Decisions
 
             return AIResult.Succeeded;
         }
+
+        /// <summary>
+        /// Armar es justo lo que hay que tener puesto de entrada: el overlay del mostrador se crea
+        /// junto con el servicio, así que sin esto la línea que dice de qué lado no se puede parar
+        /// no se pinta hasta que el jefe juega, y el jugador cruza sin saber que hay peaje.
+        /// </summary>
+        public void Opening(AIContext context) => Tick(context);
     }
 }

@@ -29,7 +29,7 @@ namespace Rollgeon.Combat.AI.Bosses.Croupier
     /// </para>
     /// </remarks>
     [Serializable, HideReferenceObjectPicker]
-    public sealed class AINode_SpinWheel : AIActionNode
+    public sealed class AINode_SpinWheel : AIActionNode, IAIOpeningNode
     {
         [Tooltip("Daño de la Represalia de mesa: lo que cuesta pegarle. Se cobra siempre — cualquier " +
                  "número, cualquier fase, con o sin windup abierto. Es su único daño directo.")]
@@ -67,6 +67,18 @@ namespace Rollgeon.Combat.AI.Bosses.Croupier
             Sing(wheel, numbers);
             return AIResult.Succeeded;
         }
+
+        /// <summary>
+        /// Canta por el camino síncrono antes del primer turno. Dos cosas dependen de esto: el nodo
+        /// de confiscación lee el número cantado, y <c>Bind</c> —que pasa por acá— es lo que instala
+        /// la Represalia de mesa. Sin abrir, pegarle al Croupier en el turno de apertura era gratis.
+        /// </summary>
+        /// <remarks>
+        /// Sin animación a propósito: la apertura corre dentro del armado de la cola, y retener el
+        /// turno ahí es colgar el arranque del combate. El canto animado sigue siendo el del turno
+        /// del jefe.
+        /// </remarks>
+        public void Opening(AIContext context) => Tick(context);
 
         public override IEnumerator TickCoroutine(AIContext context, Action<AIResult> onResult)
         {

@@ -38,7 +38,7 @@ namespace Rollgeon.Combat.Rooms
     /// </para>
     /// </remarks>
     [Serializable, HideReferenceObjectPicker]
-    public sealed class AINode_SpawnRoomObjects : AIActionNode
+    public sealed class AINode_SpawnRoomObjects : AIActionNode, IAIOpeningNode
     {
         /// <summary>Cómo se eligen las casillas de las ranuras.</summary>
         public enum Placement
@@ -190,6 +190,17 @@ namespace Rollgeon.Combat.Rooms
             PublishArmor(context);
             return AIResult.Succeeded;
         }
+
+        /// <summary>
+        /// Mismo trabajo que el tick: la mesa es la referencia espacial de la pelea, y apareciendo
+        /// recién al cerrar el primer turno el jugador ya eligió por dónde entrar a ciegas.
+        /// </summary>
+        /// <remarks>
+        /// Si el jefe todavía no está en el grid, <see cref="ResolveSlotCoords"/> no encuentra
+        /// casillas y esto no coloca nada: la colocación vuelve a caer en el primer tick del jefe,
+        /// que es el comportamiento de antes.
+        /// </remarks>
+        public void Opening(AIContext context) => Tick(context);
 
         /// <summary>
         /// Le pasa el estado de las ranuras a <see cref="RoomObjectArmorService"/> cuando la definición
