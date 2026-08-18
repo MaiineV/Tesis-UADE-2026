@@ -118,11 +118,20 @@ namespace Rollgeon.UI.HUD
         /// <summary>Tap sobre el chip deshabilitado: shake + aviso del motivo. El
         /// Button no-interactable no filtra pointer events (mismo truco que
         /// <see cref="ActionButton.OnPointerDown"/>).</summary>
-        public void OnPointerDown(PointerEventData eventData)
+        public void OnPointerDown(PointerEventData eventData) => TryRejectPress();
+
+        /// <summary>
+        /// Camino compartido mouse/hotkey del press bloqueado: shake + SFX +
+        /// <see cref="OnBlockedPressed"/> (toast del view). No-op y false si el
+        /// botón está interactable.
+        /// </summary>
+        public bool TryRejectPress()
         {
-            if (_button.interactable) return;
+            if (_button == null) _button = GetComponent<Button>();
+            if (_button == null || _button.interactable) return false;
             PlayRejectShake();
             OnBlockedPressed?.Invoke(this);
+            return true;
         }
 
         private void Apply()

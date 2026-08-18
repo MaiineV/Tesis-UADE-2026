@@ -471,9 +471,10 @@ namespace Rollgeon.UI.HUD
         private void OnHotkeyForceDoor(InputAction.CallbackContext _) => TriggerSlotHotkey(HeroBehaviorSlot.ForceDoor);
 
         // Invoca el onClick del ActionButton cuyo Slot matchea (mismo path que un
-        // click real → HandleBehaviorClick con el index correcto). Si el botón no está
-        // interactable porque no alcanza la energía, la tecla responde con el mismo
-        // rechazo que el mouse en vez de no hacer nada.
+        // click real → HandleBehaviorClick con el index correcto). Si el botón está
+        // bloqueado (sin energía, locked, usado), la tecla responde con el MISMO
+        // rechazo completo que el mouse — shake + SFX + toast vía TryRejectPress,
+        // que es el camino de OnPointerDown.
         private void TriggerSlotHotkey(HeroBehaviorSlot slot)
         {
             for (int i = 0; i < _buttons.Length; i++)
@@ -482,8 +483,8 @@ namespace Rollgeon.UI.HUD
                 if (button == null || button.Slot != slot) continue;
                 if (button.Button != null && button.Button.interactable)
                     button.Button.onClick.Invoke();
-                else if (button.State == ActionButtonState.Unaffordable || !button.IsAffordable)
-                    button.PlayRejectFeedback();
+                else
+                    button.TryRejectPress();
                 return;
             }
         }

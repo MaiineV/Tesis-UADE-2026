@@ -494,17 +494,25 @@ namespace Rollgeon.UI.HUD
         /// contestar algo. Antes salia por Unaffordable, que es excluyente, y esos casos
         /// se sentian como un boton muerto.
         /// </remarks>
-        public void OnPointerDown(PointerEventData eventData)
+        public void OnPointerDown(PointerEventData eventData) => TryRejectPress();
+
+        /// <summary>
+        /// Camino compartido mouse/hotkey del intento de uso bloqueado: shake + SFX +
+        /// <see cref="OnBlockedPressed"/> (toast del view). No-op y false si el chip
+        /// no está bloqueado. El shake responde siempre; la pila de energía
+        /// (<see cref="OnRejected"/>) solo cuando el problema ES la energía —
+        /// sacudirla por un lock de rango confunde.
+        /// </summary>
+        public bool TryRejectPress()
         {
             bool energyProblem = !_affordable || _state == ActionButtonState.Unaffordable;
             bool blocked = energyProblem
                            || _state is ActionButtonState.Locked or ActionButtonState.Used;
-            if (!blocked) return;
+            if (!blocked) return false;
 
-            // El shake responde siempre; la pila de energía (OnRejected) solo cuando
-            // el problema ES la energía — sacudirla por un lock de rango confunde.
             PlayRejectFeedback(notifyEnergy: energyProblem);
             OnBlockedPressed?.Invoke(this);
+            return true;
         }
 
         // ======================================================================
@@ -536,8 +544,6 @@ namespace Rollgeon.UI.HUD
         /// parenteado), asi que escalarlo pulsaria el marco entero descentrado. El chip
         /// se mueve como una pieza y se lee mejor.
         /// </remarks>
-        public void PlayRejectFeedback() => PlayRejectFeedback(notifyEnergy: true);
-
         public void PlayRejectFeedback(bool notifyEnergy)
         {
             if (_rejectShake.isAlive) return;
