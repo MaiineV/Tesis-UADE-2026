@@ -316,9 +316,14 @@ namespace Rollgeon.UI.HUD
 
         private void HandleComboMatched(ComboMatchedPayload payload)
         {
+            string comboId = payload.ComboId ?? string.Empty;
+            // ANTES del dedupe: la llama sostenida sigue a la selección vigente, no al
+            // cambio de combo — sacar un dado del par tiene que apagar SU llama aunque
+            // el comboId no cambie a nada nuevo.
+            UpdateComboFlames(comboId.Length > 0 ? payload.ContributingDice : null);
+
             // Dispara solo cuando el combo CAMBIA a uno nuevo — el payload llega en
             // cada toggle de hold y repetir el flourish sería spam.
-            string comboId = payload.ComboId ?? string.Empty;
             if (comboId == _lastComboId) return;
             _lastComboId = comboId;
             if (comboId.Length == 0) return;
@@ -337,6 +342,23 @@ namespace Rollgeon.UI.HUD
             PlaySfx(_comboChimeClip, volume: 0.8f, pitch: chimePitch, isImportant: true);
             if (isActiveAndEnabled && _animator != null)
                 StartCoroutine(ComboPulseRoutine(payload.ContributingDice));
+        }
+
+        // Llama sostenida SOLO en los dados que arman el combo vigente — feedback de
+        // estado continuo mientras el jugador mira su selección (el burst grande del
+        // play lo dispara BreakdownJuice al confirmar). Null = todo apagado.
+        private void UpdateComboFlames(
+            System.Collections.Generic.IReadOnlyList<Rollgeon.Combat.Damage.ContributingDie> contributing)
+        {
+            if (_animator == null) return;
+            bool allow = Application.isPlaying && !DiceUiMotionPrefs.ReducedMotion;
+            for (int i = 0; i < _animator.SlotCount; i++)
+            {
+                var slot = _animator.GetSlotAnimator(i);
+                if (slot == null) continue;
+                bool on = allow && contributing != null && ContainsBagSlot(contributing, i);
+                slot.GetComponent<DiceSlotJuice>()?.SetComboFlame(on);
+            }
         }
 
         // Bumps escalonados SOLO sobre los dados que arman el combo: "estos cuentan".
