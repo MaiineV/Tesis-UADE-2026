@@ -15,11 +15,11 @@ namespace Rollgeon.Combat.Actions
     /// <see cref="IPreloadableService"/>. Tecnicamente podria vivir directo en la lista
     /// polimorfica <c>ExtraServices</c> via Odin, pero un <see cref="ScriptableObject"/>
     /// wrapper da una UX de authoring predecible (drag-and-drop del <c>.asset</c>) identica a
-    /// <c>EnergyServiceBootstrap</c> / <c>TurnOrderServiceBootstrap</c>.
+    /// <c>RollPoolServiceBootstrap</c> / <c>TurnOrderServiceBootstrap</c>.
     /// </para>
     /// <para>
     /// <b>Priority.</b> Hereda <see cref="TurnManager.Priority"/> (<c>60</c>) — despues del
-    /// <c>EnergyServiceBootstrap</c> (<c>50</c>). Ver plan §10 R9.
+    /// <c>RollPoolServiceBootstrap</c> (<c>50</c>). Ver plan §10 R9.
     /// </para>
     /// </remarks>
     [CreateAssetMenu(menuName = "Rollgeon/Combat/Turn Manager Bootstrap", fileName = "TurnManagerBootstrap")]

@@ -118,7 +118,7 @@ namespace Rollgeon.Analytics
             EventManager.Subscribe(EventName.OnCombatEnd, OnCombatEndHandler);
             EventManager.Subscribe(EventName.OnTurnStarted, OnTurnStartedHandler);
             EventManager.Subscribe(EventName.OnRerollStarted, OnRerollStartedHandler);
-            EventManager.Subscribe(EventName.OnPlayerEnergyChanged, OnPlayerEnergyChangedHandler);
+            EventManager.Subscribe(EventName.OnPlayerRollsChanged, OnPlayerRollsChangedHandler);
             EventManager.Subscribe(EventName.OnPlayerHealthChanged, OnPlayerHealthChangedHandler);
             EventManager.Subscribe(EventName.OnGoldChanged, OnGoldChangedHandler);
             EventManager.Subscribe(EventName.OnBossPhaseChanged, OnBossPhaseChangedHandler);
@@ -145,7 +145,7 @@ namespace Rollgeon.Analytics
             EventManager.UnSubscribe(EventName.OnCombatEnd, OnCombatEndHandler);
             EventManager.UnSubscribe(EventName.OnTurnStarted, OnTurnStartedHandler);
             EventManager.UnSubscribe(EventName.OnRerollStarted, OnRerollStartedHandler);
-            EventManager.UnSubscribe(EventName.OnPlayerEnergyChanged, OnPlayerEnergyChangedHandler);
+            EventManager.UnSubscribe(EventName.OnPlayerRollsChanged, OnPlayerRollsChangedHandler);
             EventManager.UnSubscribe(EventName.OnPlayerHealthChanged, OnPlayerHealthChangedHandler);
             EventManager.UnSubscribe(EventName.OnGoldChanged, OnGoldChangedHandler);
             EventManager.UnSubscribe(EventName.OnBossPhaseChanged, OnBossPhaseChangedHandler);
@@ -332,7 +332,7 @@ namespace Rollgeon.Analytics
                 [AnalyticsEvents.Params.DamageDealt] = Combat.DamageDealt,
                 [AnalyticsEvents.Params.DamageTaken] = Combat.DamageTaken,
                 [AnalyticsEvents.Params.RerollsUsed] = Combat.RerollsUsed,
-                [AnalyticsEvents.Params.EnergySpent] = Combat.EnergySpent,
+                [AnalyticsEvents.Params.RollsSpent] = Combat.RollsSpent,
                 [AnalyticsEvents.Params.HpRemaining] = _lastPlayerHp,
                 [AnalyticsEvents.Params.TopCombos] = Combat.BuildTopCombos(TopCombosMaxLength),
                 [AnalyticsEvents.Params.BossPhaseReached] = Combat.MaxBossPhase,
@@ -358,12 +358,12 @@ namespace Rollgeon.Analytics
             }
         }
 
-        // Schema EventName.OnPlayerEnergyChanged: args = [Guid entityGuid, int current, int max]
-        private void OnPlayerEnergyChangedHandler(params object[] args)
+        // Schema EventName.OnPlayerRollsChanged: args = [Guid entityGuid, int current, int max]
+        private void OnPlayerRollsChangedHandler(params object[] args)
         {
             if (_runActive && TryGetInt(args, 1, out var current))
             {
-                Combat.TrackEnergy(current);
+                Combat.TrackRolls(current);
             }
         }
 

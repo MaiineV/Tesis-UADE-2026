@@ -4,13 +4,13 @@ namespace Rollgeon.Attributes.Stats
 {
     /// <summary>
     /// Stat concreto de energia del jugador (int). Consumido por acciones de combate
-    /// (TECHNICAL.md §12.6) y regenerado por <c>EnergyService</c> al finalizar el turno.
+    /// (TECHNICAL.md §12.6). Feature#0050: es el presupuesto de acciones de la IA ENEMIGA;
     /// </summary>
     /// <remarks>
     /// <para>
     /// <b>Invariantes.</b> El <c>BaseAttribute&lt;int&gt;</c> subyacente permite <c>Value &lt; 0</c>
     /// si alguien setea directo (Foundation#0003 deliberadamente no clampea — ver plan §4.1).
-    /// El clamp canonico vive en <c>IEnergyService.SpendEnergy</c>.
+    /// el jugador ya no lo usa (su recurso es el Pool de Rolls, fuera de AttributesManager).
     /// </para>
     /// <para>
     /// <b>Duplicate.</b> Clona solo el <c>_rawValue</c>; los modificadores NO se clonan

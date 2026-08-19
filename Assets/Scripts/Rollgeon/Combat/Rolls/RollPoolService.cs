@@ -193,6 +193,19 @@ namespace Rollgeon.Combat.Rolls
             _perTurnGrantBonus += amount;
         }
 
+        /// <summary>
+        /// Bonus por turno acumulado (rewards "+1 Roll por turno"). Expuesto para el
+        /// snapshot de run (<c>RollPoolSaveable</c>) — no está en la interfaz porque
+        /// solo la persistencia lo necesita.
+        /// </summary>
+        public int PerTurnGrantBonus => _perTurnGrantBonus;
+
+        /// <summary>Restaura el bonus desde un save de run (pisa, no suma).</summary>
+        public void RestorePerTurnGrantBonus(int value)
+        {
+            _perTurnGrantBonus = value;
+        }
+
         public void RestoreCurrent(Guid entityId, int value)
         {
             if (!IsPlayer(entityId)) return;

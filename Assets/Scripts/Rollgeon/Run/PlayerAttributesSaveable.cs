@@ -10,19 +10,21 @@ using UnityEngine;
 namespace Rollgeon.Run
 {
     /// <summary>
-    /// <see cref="ISaveable"/> de los atributos del player (§15): HP/Energía/Attack/
-    /// Speed actuales + modifiers con lifetime <c>Run</c>/<c>Permanent</c> — ahí viven
+    /// <see cref="ISaveable"/> de los atributos del player (§15): HP/Attack/Speed
+    /// actuales + modifiers con lifetime <c>Run</c>/<c>Permanent</c> — ahí viven
     /// los stat grants de upgrades de personaje y pasivas, así que el resume los
     /// recupera por este único snapshot.
     /// <para>
     /// <b>Exclusiones.</b> <c>Shield</c> y los modifiers <c>Turns</c>/<c>Encounter</c>
     /// son combat-scoped: el resume arranca fuera de combate y no deben revivir.
+    /// El Pool de Rolls (Feature#0050) tampoco: es combat-only y su valor mid-combate
+    /// viaja en <c>CombatResumeSnapshot.PlayerRolls</c>. Entries Energy/MaxEnergy de
+    /// saves viejos se descartan con warning (path genérico de stat desconocida).
     /// </para>
     /// <para>
-    /// <b>Ordering.</b> Se registra al final de <c>RunController.RegisterPlayer</c>,
-    /// después de que Energy fue inicializada — el auto-restore de
-    /// <c>SaveSystem.Register</c> pisa los valores base con los guardados. Si Energy
-    /// aún no existe al restaurar (bag sin EnergyService), se crea defensivamente.
+    /// <b>Ordering.</b> Se registra al final de <c>RunController.RegisterPlayer</c> —
+    /// el auto-restore de <c>SaveSystem.Register</c> pisa los valores base con los
+    /// guardados.
     /// </para>
     /// </summary>
     public sealed class PlayerAttributesSaveable : ISaveable, IDisposable
@@ -45,13 +47,11 @@ namespace Rollgeon.Run
         {
             var snapshot = new PlayerAttributesSnapshot();
             CaptureStat<Health>(snapshot, nameof(Health));
-            CaptureStat<Energy>(snapshot, nameof(Energy));
             CaptureStat<Attack>(snapshot, nameof(Attack));
             CaptureStat<Speed>(snapshot, nameof(Speed));
             // BUG-022: los máximos llevan los grants del canal Character como modifiers Run.
             // Saves viejos sin estas entries siguen funcionando (queda el seed base).
             CaptureStat<MaxHealth>(snapshot, nameof(MaxHealth));
-            CaptureStat<MaxEnergy>(snapshot, nameof(MaxEnergy));
             return snapshot;
         }
 
@@ -140,23 +140,10 @@ namespace Rollgeon.Run
                 case nameof(Health): return _attrs.HasAttribute<Health>() ? _attrs.GetAttribute<Health>() : null;
                 case nameof(Attack): return _attrs.HasAttribute<Attack>() ? _attrs.GetAttribute<Attack>() : null;
                 case nameof(Speed): return _attrs.HasAttribute<Speed>() ? _attrs.GetAttribute<Speed>() : null;
-                case nameof(Energy):
-                    if (!_attrs.HasAttribute<Energy>())
-                    {
-                        // EnergyService puede no haber corrido todavía — crearla acá
-                        // es seguro: InitializeForEntity respeta la existente o el
-                        // restore posterior del value la pisa igual.
-                        _attrs.SetAttribute<Energy>(new Energy(0));
-                    }
-                    return _attrs.GetAttribute<Energy>();
                 case nameof(MaxHealth):
                     if (!_attrs.HasAttribute<MaxHealth>())
                         _attrs.SetAttribute<MaxHealth>(new MaxHealth(0));
                     return _attrs.GetAttribute<MaxHealth>();
-                case nameof(MaxEnergy):
-                    if (!_attrs.HasAttribute<MaxEnergy>())
-                        _attrs.SetAttribute<MaxEnergy>(new MaxEnergy(0));
-                    return _attrs.GetAttribute<MaxEnergy>();
                 default: return null;
             }
         }

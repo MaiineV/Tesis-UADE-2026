@@ -355,6 +355,12 @@ namespace Rollgeon.Run
             ServiceLocator.AddService<PlayerAttributesSaveable>(attrsSaveable, ServiceScope.Run);
             global::Patterns.Save.SaveSystem.Register(attrsSaveable);
 
+            // Snapshot del pool de rolls (bonus +N por turno de los rewards). Después
+            // de InitializeForEntity, por el mismo motivo que attrsSaveable.
+            var rollPoolSaveable = new RollPoolSaveable();
+            ServiceLocator.AddService<RollPoolSaveable>(rollPoolSaveable, ServiceScope.Run);
+            global::Patterns.Save.SaveSystem.Register(rollPoolSaveable);
+
             // En resume el inventario viene del save — regalar de nuevo duplicaría.
             if (!RunBootstrapper.IsResuming)
             {
