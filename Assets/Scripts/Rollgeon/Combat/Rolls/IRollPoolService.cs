@@ -45,6 +45,13 @@ namespace Rollgeon.Combat.Rolls
         /// <summary>Suma rolls al pool, clampeado a <see cref="GetMax"/>.</summary>
         void AddRolls(Guid entityId, int amount);
 
+        /// <summary>
+        /// <c>true</c> mientras hay un combate en curso (entre <c>OnCombatStart</c> y
+        /// <c>OnCombatEnd</c>). Los gates de affordability solo aplican acá: fuera de
+        /// combate el pool no existe y las acciones son gratis.
+        /// </summary>
+        bool IsCombatActive { get; }
+
         /// <summary>Rolls disponibles. 0 fuera de combate o para entidades ≠ jugador.</summary>
         int GetCurrent(Guid entityId);
 

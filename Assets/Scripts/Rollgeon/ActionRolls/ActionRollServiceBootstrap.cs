@@ -1,5 +1,5 @@
 using Patterns;
-using Rollgeon.Combat.EnergyLib;
+using Rollgeon.Combat.Rolls;
 using Rollgeon.Combos;
 using Rollgeon.Dice;
 using Rollgeon.Patterns.Bootstrap;
@@ -17,9 +17,8 @@ namespace Rollgeon.ActionRolls
     /// el run, sin estado persistente entre runs.
     /// </para>
     /// <para>
-    /// <b>Priority.</b> <c>74</c> — despues de <c>RerollBudgetService</c> (70),
-    /// <c>DiceRollerBootstrap</c> (72) y <c>EnergyService</c> (50). Necesita ambos
-    /// como prerequisito.
+    /// <b>Priority.</b> <c>74</c> — despues de <c>DiceRollerBootstrap</c> (72) y
+    /// <c>RollPoolService</c> (50). Necesita ambos como prerequisito.
     /// </para>
     /// </remarks>
     [CreateAssetMenu(menuName = "Rollgeon/Action Rolls/Action Roll Service Bootstrap",
@@ -48,10 +47,10 @@ namespace Rollgeon.ActionRolls
                 return;
             }
 
-            if (!ServiceLocator.TryGetService<IEnergyService>(out var energy) || energy == null)
+            if (!ServiceLocator.TryGetService<IRollPoolService>(out var rolls) || rolls == null)
             {
-                Debug.LogError("[ActionRollServiceBootstrap] IEnergyService no registrado — " +
-                               "agregar EnergyService con Priority < 74.");
+                Debug.LogError("[ActionRollServiceBootstrap] IRollPoolService no registrado — " +
+                               "agregar RollPoolServiceBootstrap con Priority < 74.");
                 return;
             }
 
@@ -64,7 +63,7 @@ namespace Rollgeon.ActionRolls
                                  "las tiradas de Force Door / Heal usaran suma cruda en vez de combos.");
             }
 
-            var instance = new ActionRollService(roller, energy, comboCatalog);
+            var instance = new ActionRollService(roller, rolls, comboCatalog);
             ServiceLocator.AddService<IActionRollService>(instance, ServiceScope.Run);
         }
     }

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using NUnit.Framework;
 using Patterns;
 using Rollgeon.Combat.Actions;
-using Rollgeon.Combat.EnergyLib;
+using Rollgeon.Combat.Rolls;
 using Rollgeon.Combat.Initiative;
 using Rollgeon.Combat.Status;
 using Rollgeon.Patterns.Bootstrap;
@@ -24,7 +24,7 @@ namespace Rollgeon.Combat.FSM.Tests
         private GameObject _host;
         private CombatController _controller;
 
-        private FakeEnergyService _energy;
+        private FakeRollPoolService _energy;
         private TurnOrderService _turnOrder;
         private TurnManager _turnManager;
         private FakeInitiativeProvider _provider;
@@ -45,19 +45,19 @@ namespace Rollgeon.Combat.FSM.Tests
 
             _provider = new FakeInitiativeProvider();
             _turnOrder = new TurnOrderService();
-            _energy = new FakeEnergyService();
+            _energy = new FakeRollPoolService();
             _turnManager = new TurnManager();
             _turnManager.ConfigureForTests(_energy, actions: null, ruleset: null);
 
             ServiceLocator.AddService<IInitiativeProvider>(_provider);
             ServiceLocator.AddService<TurnOrderService>(_turnOrder);
             ServiceLocator.AddService<TurnManager>(_turnManager);
-            ServiceLocator.AddService<IEnergyService>(_energy);
+            ServiceLocator.AddService<IRollPoolService>(_energy);
 
             _playerId = Guid.NewGuid();
             _enemyId = Guid.NewGuid();
-            _energy.Current[_playerId] = _energy.MaxPerEntity;
-            _energy.Current[_enemyId] = _energy.MaxPerEntity;
+            _energy.Current[_playerId] = _energy.RollsPerTurn;
+            _energy.Current[_enemyId] = _energy.RollsPerTurn;
 
             EventManager.Subscribe(EventName.OnTurnStarted,
                 args => _eventLog.Add($"OnTurnStarted:{args[0]}"));

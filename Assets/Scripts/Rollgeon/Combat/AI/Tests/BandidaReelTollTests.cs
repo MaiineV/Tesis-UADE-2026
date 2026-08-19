@@ -5,7 +5,7 @@ using NUnit.Framework;
 using Patterns;
 using Rollgeon.Combat.AI.Bosses.Bandida;
 using Rollgeon.Combat.AI.Decisions;
-using Rollgeon.Combat.EnergyLib;
+using Rollgeon.Combat.Rolls;
 using Rollgeon.Grid;
 using UnityEngine;
 using UnityEngine.TestTools;
@@ -13,27 +13,21 @@ using UnityEngine.TestTools;
 namespace Rollgeon.Combat.AI.Tests
 {
     /// <summary>
-    /// El peaje de la fila de La Bandida: cuánta energía cobra según cuántos rodillos rompibles
-    /// quedan en pie, y qué hace cuando no hay de dónde cobrar.
+    /// El peaje de la fila de La Bandida: cuántos rolls del pool drena según cuántos
+    /// rodillos rompibles quedan en pie, y qué hace cuando no hay de dónde cobrar.
     /// </summary>
     /// <remarks>
-    /// <para>
-    /// La energía va por un espía y no por el <c>EnergyService</c> real: lo que se está fijando es
-    /// la <b>política</b> del peaje —cuánto pide y cómo reacciona a un jugador seco— y montar
-    /// <c>AttributesManager</c> + <c>RulesetSO</c> para eso ataría estos tests al balance del
-    /// jugador, que es justo lo que el peaje no toca.
-    /// </para>
-    /// <para>
-    /// El espía cobra de a uno igual que el servicio real: <c>SpendEnergy</c> es todo-o-nada y
-    /// devuelve <c>false</c> sin mutar si no alcanza. Ese detalle es el que hace que el peaje cobre
-    /// "lo que haya" en vez de nada.
-    /// </para>
+    /// El pool va por un espía y no por el <c>RollPoolService</c> real: lo que se está
+    /// fijando es la <b>política</b> del peaje —cuánto pide y cómo reacciona a un jugador
+    /// seco. El espía drena con la misma semántica parcial del servicio real:
+    /// <c>Drain</c> flooréa en 0 y devuelve lo efectivamente cobrado — ese detalle es el
+    /// que hace que el peaje cobre "lo que haya" en vez de nada.
     /// </remarks>
     [TestFixture]
     public class BandidaReelTollTests
     {
         private BandidaJackpotService _jackpot;
-        private SpyEnergyService _energy;
+        private SpyRollPool _energy;
         private Guid _boss;
         private Guid _player;
 
@@ -46,8 +40,8 @@ namespace Rollgeon.Combat.AI.Tests
             _jackpot = new BandidaJackpotService();
             _jackpot.Register();
 
-            _energy = new SpyEnergyService { Current = 4 };
-            ServiceLocator.AddService<IEnergyService>(_energy);
+            _energy = new SpyRollPool { Current = 4 };
+            ServiceLocator.AddService<IRollPoolService>(_energy);
 
             _boss = Guid.NewGuid();
             _player = Guid.NewGuid();
@@ -79,8 +73,8 @@ namespace Rollgeon.Combat.AI.Tests
             Toll(cap: 1).Tick(Context());
 
             Assert.AreEqual(1, _energy.TotalSpent,
-                "Tres rodillos vivos con techo 1 cobran 1. Sin techo serían 3 contra un regen de 2, " +
-                "o sea energía neta negativa para siempre.");
+                "Tres rodillos vivos con techo 1 drenan 1 roll. Sin techo serían 3 por turno — " +
+                "una mordida enorme contra el grant de 5.");
         }
 
         [Test]
@@ -91,8 +85,8 @@ namespace Rollgeon.Combat.AI.Tests
             Toll(cap: 2).Tick(Context());
 
             Assert.AreEqual(2, _energy.TotalSpent,
-                "El techo de fase 2 empata el regen (EnergyRegenBase = 2): le saca el margen al " +
-                "jugador sin dejarlo nunca en neto negativo.");
+                "El techo de fase 2 drena 2 rolls — presión real pero muy por debajo del grant " +
+                "de 5 por turno, así el jugador nunca queda en economía negativa.");
         }
 
         [Test]
@@ -157,8 +151,8 @@ namespace Rollgeon.Combat.AI.Tests
 
             Toll(cap: 2).Tick(Context());
 
-            // SpendEnergy(2) habría devuelto false sin mutar: el jugador con 1 de energía habría
-            // pagado cero. De a uno el peaje cobra lo que hay.
+            // Un cobro todo-o-nada habría devuelto false sin mutar: el jugador con 1 roll habría
+            // pagado cero. Drain cobra lo que hay.
             Assert.AreEqual(1, _energy.TotalSpent);
             Assert.AreEqual(0, _energy.Current);
         }
@@ -181,7 +175,7 @@ namespace Rollgeon.Combat.AI.Tests
         // =====================================================================
 
         [Test]
-        public void MissingEnergyService_DoesNotCutTheBossTurn()
+        public void MissingRollPoolService_DoesNotCutTheBossTurn()
         {
             AttachAll();
             ServiceLocator.Clear();
@@ -189,7 +183,7 @@ namespace Rollgeon.Combat.AI.Tests
 
             // El error es parte del contrato: un peaje que no cobra en silencio deja la pelea sin
             // su presión principal y nadie se entera hasta el playtest.
-            LogAssert.Expect(LogType.Error, new Regex("IEnergyService no registrado"));
+            LogAssert.Expect(LogType.Error, new Regex("IRollPoolService no registrado"));
 
             var result = Toll(cap: 2).Tick(Context());
 
@@ -216,25 +210,37 @@ namespace Rollgeon.Combat.AI.Tests
             PlayerGuid = _player,
         };
 
-        /// <summary>Balance en memoria con la misma semántica todo-o-nada del servicio real.</summary>
-        private sealed class SpyEnergyService : IEnergyService
+        /// <summary>Pool en memoria con la misma semántica de drain parcial del servicio real.</summary>
+        private sealed class SpyRollPool : IRollPoolService
         {
             public int Current;
             public int TotalSpent;
 
+            public bool IsCombatActive => true;
             public void InitializeForEntity(Guid entityId) { }
 
-            public bool SpendEnergy(Guid entityId, int cost)
+            public bool TrySpendRolls(Guid entityId, int count)
             {
-                if (cost > Current) return false;
-                Current -= cost;
-                TotalSpent += cost;
+                if (count > Current) return false;
+                Current -= count;
+                TotalSpent += count;
                 return true;
             }
 
-            public void RegenerateAtTurnEnd(Guid entityId) { }
+            public int Drain(Guid entityId, int amount)
+            {
+                int drained = Math.Min(amount, Current);
+                Current -= drained;
+                TotalSpent += drained;
+                return drained;
+            }
+
+            public void AddRolls(Guid entityId, int amount) { }
             public int GetCurrent(Guid entityId) => Current;
-            public int GetMax(Guid entityId) => 4;
+            public int GetMax(Guid entityId) => 15;
+            public int GetRollsPerTurn(Guid entityId) => 5;
+            public void AddPerTurnGrantBonus(int amount) { }
+            public void RestoreCurrent(Guid entityId, int value) => Current = value;
         }
     }
 }

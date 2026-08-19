@@ -195,7 +195,7 @@ namespace Rollgeon.UI.Screens
         // Action delegates (wired by CombatController — setup doc §8.7)
         // ======================================================================
 
-        /// <summary>Delegate que dispara "energy reroll". Seteado por <c>CombatController</c>.</summary>
+        /// <summary>Delegate que dispara un reroll (1 roll del pool). Seteado por <c>CombatController</c>.</summary>
         public Action OnEnergyRerollRequested;
 
         /// <summary>Delegate que dispara "end turn". Seteado por <c>CombatController</c>.</summary>
@@ -216,7 +216,7 @@ namespace Rollgeon.UI.Screens
         /// <summary>
         /// Delegate que dispara el primer roll de la accion seleccionada. El HUD
         /// decide entre este y <see cref="OnEnergyRerollRequested"/> via
-        /// <c>InvokeRollOrReroll</c> segun el estado del budget.
+        /// <c>InvokeRollOrReroll</c> segun si la accion ya tiro sus dados.
         /// </summary>
         public Action OnRollRequested;
 
@@ -452,25 +452,6 @@ namespace Rollgeon.UI.Screens
         }
 
         /// <summary>
-        /// Muestra el prompt "X Roll (1E)" en el centro del tablero — entrada paga a una
-        /// fase de chain sin rolls sobrantes. No-op sin wiring.
-        /// </summary>
-        public void ShowChainRollPrompt(string phaseLabel)
-        {
-            if (_chainRollPrompt != null) _chainRollPrompt.Show(phaseLabel);
-            // El estado "fase paga pendiente" no viaja por el bus — el prompt y el
-            // modo Pass del botón contextual son la misma ventana.
-            if (_endTurnButtonView != null) _endTurnButtonView.SetChainPaidRollPending(true);
-        }
-
-        /// <summary>Esconde el prompt de roll pago del chain. No-op sin wiring.</summary>
-        public void HideChainRollPrompt()
-        {
-            if (_chainRollPrompt != null) _chainRollPrompt.Hide();
-            if (_endTurnButtonView != null) _endTurnButtonView.SetChainPaidRollPending(false);
-        }
-
-        /// <summary>
         /// Suelta todos los holds de la zona de dados (BUG-030: el forced reroll del
         /// Torpe re-tira la mano completa). No-op sin wiring.
         /// </summary>
@@ -516,17 +497,13 @@ namespace Rollgeon.UI.Screens
         }
 
         /// <summary>
-        /// Dispatch del boton compartido "Roll / Reroll" en el HUD. Si el budget
-        /// esta abierto y todavia no se rolo (FreeRollsRemaining == FreeRollCount,
-        /// PaidRollsUsed == 0) es el primer roll; sino es reroll.
+        /// Dispatch del boton compartido "Roll / Reroll" en el HUD. Si la accion en
+        /// curso todavia no tiro sus dados es el primer roll; sino es reroll (ambos
+        /// cuestan 1 roll del pool).
         /// </summary>
         private void InvokeRollOrReroll()
         {
-            if (ServiceLocator.TryGetService<IRerollBudgetService>(out var budget)
-                && budget?.Current != null
-                && budget.Current.Action != null
-                && budget.Current.FreeRollsRemaining == budget.Current.Action.FreeRollCount
-                && budget.Current.PaidRollsUsed == 0)
+            if (_rerollCount == null || _rerollCount.IsFirstRollPending)
             {
                 if (OnRollRequested == null)
                 {

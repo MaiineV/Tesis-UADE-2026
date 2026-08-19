@@ -19,7 +19,11 @@ namespace Rollgeon.Heroes
         public ComboDetectionResult? MatchedComboResult;
         public Guid TargetGuid;
         public TargetSelectionResult SelectionResult;
-        public bool EnergyPrepaid;
+        /// <summary>
+        /// True = el costo en rolls ya se cobró aguas arriba (handoff de dados);
+        /// false = cobro-al-ejecutar (Movement, BUG-013).
+        /// </summary>
+        public bool RollsPrepaid;
 
         /// <summary>
         /// Total efectivo pre-computado por <c>IActionRollService</c> sobre el subset

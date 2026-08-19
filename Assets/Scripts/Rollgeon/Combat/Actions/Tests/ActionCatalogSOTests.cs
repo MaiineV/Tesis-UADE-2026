@@ -50,13 +50,12 @@ namespace Rollgeon.Combat.Actions.Tests
 
         // --- Helpers -----------------------------------------------------
 
-        private ActionDefinitionSO MakeAction(string id, ActionType type, int energyCost = 0,
+        private ActionDefinitionSO MakeAction(string id, ActionType type,
                                               bool blockOnRepeat = true, ScriptableObject backing = null)
         {
             var def = ScriptableObject.CreateInstance<ActionDefinitionSO>();
             def.ActionId = id;
             def.Type = type;
-            def.EnergyCost = energyCost;
             def.BlockOnRepeat = blockOnRepeat;
             def.BackingAsset = backing;
             _created.Add(def);
@@ -106,13 +105,12 @@ namespace Rollgeon.Combat.Actions.Tests
         [Test]
         public void GetById_Exists_ReturnsEntry()
         {
-            var a = MakeAction("attack.basic", ActionType.Attack, energyCost: 1);
+            var a = MakeAction("attack.basic", ActionType.Attack);
             SetEntries(a);
 
             var found = _catalog.GetById("attack.basic");
 
             Assert.AreSame(a, found);
-            Assert.AreEqual(1, found.EnergyCost);
         }
 
         [Test]

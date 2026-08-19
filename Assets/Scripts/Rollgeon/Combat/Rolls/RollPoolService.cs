@@ -122,6 +122,8 @@ namespace Rollgeon.Combat.Rolls
         // IRollPoolService
         // ======================================================================
 
+        public bool IsCombatActive => _inCombat;
+
         public void InitializeForEntity(Guid entityId)
         {
             if (entityId == Guid.Empty) return;

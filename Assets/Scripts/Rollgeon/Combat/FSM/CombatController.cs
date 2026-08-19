@@ -4,7 +4,7 @@ using Patterns;
 using Rollgeon.Balance;
 using Rollgeon.Combat.Actions;
 using Rollgeon.Combat.AI;
-using Rollgeon.Combat.EnergyLib;
+using Rollgeon.Combat.Rolls;
 using Rollgeon.Combat.Handoff;
 using Rollgeon.Combat.Status;
 using Rollgeon.Patterns.Bootstrap;
@@ -59,7 +59,7 @@ namespace Rollgeon.Combat.FSM
 
         private TurnOrderService _turnOrder;
         private TurnManager _turnManager;
-        private IEnergyService _energy;
+        private IRollPoolService _rolls;
 
         private CombatTurnFSM _fsm;
         private CombatContext _context;
@@ -112,10 +112,10 @@ namespace Rollgeon.Combat.FSM
             {
                 Debug.LogWarning("[CombatController] TurnManager no registrado — action economy deshabilitado.", this);
             }
-            if (!ServiceLocator.TryGetService<IEnergyService>(out _energy))
+            if (!ServiceLocator.TryGetService<IRollPoolService>(out _rolls))
             {
-                Debug.LogError("[CombatController] IEnergyService no esta registrado. " +
-                               "Revisa que EnergyServiceBootstrap este en ServiceBootstrapSO.ExtraServices.",
+                Debug.LogError("[CombatController] IRollPoolService no esta registrado. " +
+                               "Revisa que RollPoolServiceBootstrap este en ServiceBootstrapSO.ExtraServices.",
                                this);
             }
 
@@ -221,7 +221,7 @@ namespace Rollgeon.Combat.FSM
             Guid roomInstanceId,
             Action<Guid> enemyActionHandler)
         {
-            if (_turnOrder == null || _energy == null)
+            if (_turnOrder == null || _rolls == null)
             {
                 Debug.LogError("[CombatController] StartCombat abortado: servicios no resueltos en Awake.", this);
                 return;
@@ -249,7 +249,7 @@ namespace Rollgeon.Combat.FSM
             _context = new CombatContext(
                 _turnOrder,
                 _turnManager,
-                _energy,
+                _rolls,
                 playerId,
                 roomInstanceId,
                 enemyActionHandler,

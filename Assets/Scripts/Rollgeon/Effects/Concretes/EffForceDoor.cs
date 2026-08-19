@@ -26,13 +26,13 @@ namespace Rollgeon.Effects.Concretes
     /// igual que <see cref="EffPassDoor"/> — el caller debe garantizar adjacencia
     /// vía <c>PCAdjacentToDoor</c>.
     /// <para>
-    /// - <b>Fuera de combate</b>: instantáneo. No tira dados ni gasta energía.
+    /// - <b>Fuera de combate</b>: instantáneo. No tira dados ni gasta rolls.
     /// </para>
     /// <para>
-    /// - <b>En combate</b>: cuesta <see cref="EnergyCostInCombat"/> + 1 tirada.
+    /// - <b>En combate</b>: cada tirada cuesta 1 roll del pool.
     /// Si la suma alcanza <see cref="RequiredValue"/>, los enemigos de la sala se
     /// curan <see cref="EnemyHealPercentOnSuccess"/>% del max HP y el jugador cruza.
-    /// Si no, la energía gastada se pierde y queda en la sala (con opción de reroll
+    /// Si no, los rolls gastados se pierden y queda en la sala (con opción de reroll
     /// vía <see cref="IActionRollService"/>).
     /// </para>
     /// </summary>
@@ -47,11 +47,6 @@ namespace Rollgeon.Effects.Concretes
         [Min(1)]
         public int RequiredValue = 25;
 
-        [Tooltip("Energía que cuesta intentar forzar la puerta dentro de combate. " +
-                 "Fuera de combate es 0.")]
-        [Min(0)]
-        public int EnergyCostInCombat = 2;
-
         [Tooltip("Porcentaje del max HP que se curan los enemigos de la sala cuando " +
                  "se fuerza la puerta exitosamente en combate.")]
         [Range(0, 100)]
@@ -62,7 +57,7 @@ namespace Rollgeon.Effects.Concretes
         // EffForceDoor auto-detecta la puerta adyacente (no consume context.SelectionResult).
         // Override para que CombatHandoffService NO entre al path de player-state-selection
         // — eso defería el effect hasta el final del combate (visto in-game). Sin selection,
-        // el behavior se ejecuta synchronously via TurnManager.TryExecuteEnergyPrepaid.
+        // el behavior se ejecuta synchronously via TurnManager.TryExecuteRollsPrepaid.
         protected override bool ShowSelection => false;
         public override bool HasSelectionRequirement() => false;
         public override bool RequiresSelectionAt(Selection.SelectionTiming timing) => false;
@@ -75,15 +70,14 @@ namespace Rollgeon.Effects.Concretes
 
             spec = new ActionRollSpec
             {
-                EnergyCost = EnergyCostInCombat,
+                CostsRolls = true,
                 Threshold = RequiredValue,
                 // RequireConfirm = false: ya no hay modal de confirm. El user ve threshold +
-                // combo en el DamageFormulaView; al clickear el botón se cobra energía y va
+                // combo en el DamageFormulaView; al clickear el botón se cobra 1 roll y va
                 // directo a Rolling.
                 RequireConfirm = false,
                 ActionLabel = "Forzar Puerta",
                 AllowReroll = true,
-                RerollEnergyCost = 1,
                 BoardType = DiceBoardType.Default,
             };
             return true;

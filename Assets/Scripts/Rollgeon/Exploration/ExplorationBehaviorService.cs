@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using System.Linq;
 using Patterns;
 using Rollgeon.ActionRolls;
-using Rollgeon.Combat.EnergyLib;
 using Rollgeon.Combos;
 using Rollgeon.Dungeon;
 using Rollgeon.Dungeon.Components;
@@ -66,7 +65,7 @@ namespace Rollgeon.Exploration
             Debug.LogWarning($"[ExplorationBehaviorService] OnBehaviorSelected(slot={slot}) — _state={_state}");
 
             // BUG-019: backstop del gate del tutorial. Esta ruta no pasa por
-            // TurnManager.CanExecute (cobra energía y arma selección directo), así
+            // TurnManager.CanExecute (arma selección directo), así
             // que sin este chequeo una acción lockeada podía ejecutarse igual vía
             // hotkey/ArmMovement. Primero de todo: un click en acción lockeada no
             // debe cancelar un flow en curso. Fuera del tutorial el service no está
@@ -138,25 +137,15 @@ namespace Rollgeon.Exploration
                 return;
             }
 
-            // Si algun effect del behavior implementa IActionRollEffect, este "owns" el cost
-            // (lo cobra el IActionRollService al confirmar el roll, o no se cobra nada en el
-            // path instantaneo). Skipeamos el static charge para evitar double-billing.
+            // Si algun effect del behavior implementa IActionRollEffect, va por el flow
+            // de tirada (el spec decide si cobra — en exploración no cobra: el pool de
+            // rolls no existe fuera de combate y las acciones de exploración son gratis).
             bool ownsCostViaActionRoll = TryFindActionRollEffect(behavior, out var rollEffect);
 
             if (ownsCostViaActionRoll && rollEffect.TryGetRollSpec(playerGuid, out var rollSpec))
             {
                 StartActionRoll(behavior, playerGuid, playerService, rollSpec);
                 return;
-            }
-
-            if (!ownsCostViaActionRoll && behavior.EnergyCost > 0)
-            {
-                if (!ServiceLocator.TryGetService<IEnergyService>(out var energy)
-                    || !energy.SpendEnergy(playerGuid, behavior.EnergyCost))
-                {
-                    Debug.Log($"[ExplorationBehaviorService] Not enough energy for '{behavior.ActionName}'.");
-                    return;
-                }
             }
 
             if (behavior.HasEffectsWithSelectionAt(SelectionTiming.BeforeRoll))
