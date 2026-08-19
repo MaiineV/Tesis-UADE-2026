@@ -18,7 +18,8 @@ namespace Rollgeon.UI.HUD
         [Tooltip("UI-Sheet-sheet_9 — fichas de escudo, van ENCIMA de las de vida.")]
         public Sprite ShieldChip;
 
-        [Tooltip("UI-Sheet-sheet_5 — una ficha por punto de energía.")]
+        [Tooltip("UI-Sheet-sheet_5 — una ficha por roll del pool (ex ficha de energía; " +
+                 "mismo sprite hasta el pase visual del Pool de Rolls).")]
         public Sprite EnergyChip;
 
         [Tooltip("CoinStyle1.1_0 — ficha plana de la pila de oro (hasta 4).")]

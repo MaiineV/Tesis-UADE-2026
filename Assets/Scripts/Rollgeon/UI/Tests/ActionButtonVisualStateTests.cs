@@ -416,7 +416,7 @@ namespace Rollgeon.UI.Tests
         }
 
         // ------------------------------------------------------------------
-        // Helpers (patrón de EnergyChipStackViewTests)
+        // Helpers (patrón de RollPoolChipStackViewTests)
         // ------------------------------------------------------------------
 
         private static void AssignPrivate(object target, string field, object value)

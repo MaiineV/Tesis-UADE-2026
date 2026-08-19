@@ -10,7 +10,7 @@ namespace Rollgeon.UI.Screens
 {
     /// <summary>
     /// Screen overlay persistente durante <c>GamePhase.Exploration</c>. Coordina las
-    /// sub-views (<see cref="HealthChipStackView"/>, <see cref="EnergyChipStackView"/>,
+    /// sub-views (<see cref="HealthChipStackView"/>,
     /// <see cref="ActiveItemsView"/>, <see cref="MinimapView"/>,
     /// <see cref="RoomNavigationView"/>) propagando el <c>playerGuid</c> resuelto via
     /// <see cref="IPlayerService"/>. El oro (<see cref="GoldChipStackView"/>) es
@@ -44,10 +44,6 @@ namespace Rollgeon.UI.Screens
         [Required("Arrastrar el HealthChipStackView del widget (pila vida+escudo).")]
         [SerializeField]
         private HealthChipStackView _healthChips;
-
-        [Required("Arrastrar el EnergyChipStackView del widget (pila de energía).")]
-        [SerializeField]
-        private EnergyChipStackView _energyChips;
 
         [Required("Arrastrar el ActiveItemsView del widget.")]
         [SerializeField]
@@ -182,7 +178,6 @@ namespace Rollgeon.UI.Screens
             // cross-prefab es imposible en el Inspector, así que se auto-resuelven
             // en escena igual que DiceZone/DamageFormula más abajo.
             if (_healthChips == null) _healthChips = UnityEngine.Object.FindFirstObjectByType<HealthChipStackView>(FindObjectsInactive.Include);
-            if (_energyChips == null) _energyChips = UnityEngine.Object.FindFirstObjectByType<EnergyChipStackView>(FindObjectsInactive.Include);
             if (_activeItems == null) _activeItems = UnityEngine.Object.FindFirstObjectByType<ActiveItemsView>(FindObjectsInactive.Include);
 
             // La fila de estados también vive en Canvas_PlayerStatus. La bindea esta screen
@@ -193,8 +188,6 @@ namespace Rollgeon.UI.Screens
             if (_healthChips != null) _healthChips.Bind(playerGuid);
             else Debug.LogWarning(LogPrefix + "_healthChips no esta cableado en el Inspector.", this);
 
-            if (_energyChips != null) _energyChips.Bind(playerGuid);
-            else Debug.LogWarning(LogPrefix + "_energyChips no esta cableado en el Inspector.", this);
 
             // El oro no se bindea: GoldChipStackView es autónomo (OnGoldChanged no
             // trae Guid) y vive siempre activo en Canvas_PlayerStatus.
@@ -237,7 +230,6 @@ namespace Rollgeon.UI.Screens
             if (_damageFormula != null) _damageFormula.Unbind();
             if (_rerollCount != null) _rerollCount.Unbind();
             if (_healthChips != null) _healthChips.Unbind();
-            if (_energyChips != null) _energyChips.Unbind();
             if (_activeItems != null) _activeItems.Unbind();
             if (_minimap != null) _minimap.Unbind();
             if (_roomNavigation != null) _roomNavigation.Unbind();

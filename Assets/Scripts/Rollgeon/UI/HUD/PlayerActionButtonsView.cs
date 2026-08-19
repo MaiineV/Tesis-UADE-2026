@@ -420,7 +420,7 @@ namespace Rollgeon.UI.HUD
                 ? rolls.GetCurrent(_playerGuid)
                 : 0;
 
-            TypedEvent<InsufficientEnergyPayload>.Raise(new InsufficientEnergyPayload
+            TypedEvent<InsufficientRollsPayload>.Raise(new InsufficientRollsPayload
             {
                 PlayerGuid = _playerGuid,
                 Cost = 1,

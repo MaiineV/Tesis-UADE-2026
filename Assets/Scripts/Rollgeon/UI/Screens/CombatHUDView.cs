@@ -66,9 +66,9 @@ namespace Rollgeon.UI.Screens
         [SerializeField]
         private HealthChipStackView _healthChips;
 
-        [Required("Arrastrar EnergyChipStackView (pila de fichas de energía).")]
+        [Required("Arrastrar RollPoolChipStackView (pila de fichas del pool de rolls).")]
         [SerializeField]
-        private EnergyChipStackView _energyChips;
+        private RollPoolChipStackView _energyChips;
 
         [Required("Arrastrar EndTurnButtonView.")]
         [SerializeField]
@@ -144,7 +144,7 @@ namespace Rollgeon.UI.Screens
             return rect != null;
         }
 
-        /// <summary>RectTransform de la pila de energía del jugador — anchor del overlay del tutorial.</summary>
+        /// <summary>RectTransform de la pila del pool de rolls — anchor del overlay del tutorial.</summary>
         public bool TryGetEnergyBarRect(out RectTransform rect)
         {
             rect = _energyChips != null ? _energyChips.transform as RectTransform : null;
@@ -351,7 +351,7 @@ namespace Rollgeon.UI.Screens
             // Viven en Canvas_PlayerStatus (otro prefab) — sin referencia posible en
             // el Inspector, se auto-resuelven en escena.
             if (_healthChips == null) _healthChips = UnityEngine.Object.FindFirstObjectByType<HealthChipStackView>(FindObjectsInactive.Include);
-            if (_energyChips == null) _energyChips = UnityEngine.Object.FindFirstObjectByType<EnergyChipStackView>(FindObjectsInactive.Include);
+            if (_energyChips == null) _energyChips = UnityEngine.Object.FindFirstObjectByType<RollPoolChipStackView>(FindObjectsInactive.Include);
             if (_activeItems == null) _activeItems = UnityEngine.Object.FindFirstObjectByType<ActiveItemsView>(FindObjectsInactive.Include);
             if (_playerBaseDamage == null) _playerBaseDamage = UnityEngine.Object.FindFirstObjectByType<Rollgeon.UI.HUD.Breakdown.PlayerBaseDamageView>(FindObjectsInactive.Include);
             if (_breakdownDirector == null) _breakdownDirector = UnityEngine.Object.FindFirstObjectByType<Rollgeon.UI.HUD.Breakdown.BreakdownSequenceDirector>(FindObjectsInactive.Include);

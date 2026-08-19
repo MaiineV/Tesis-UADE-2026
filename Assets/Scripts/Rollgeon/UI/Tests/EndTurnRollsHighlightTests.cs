@@ -8,16 +8,16 @@ using UnityEngine;
 namespace Rollgeon.UI.Tests
 {
     /// <summary>
-    /// Verifica el estado de <see cref="EndTurnEnergyHighlight"/>: se enciende con
-    /// energía 0 durante el turno del player y vuelve a reposo al recuperar energía,
+    /// Verifica el estado de <see cref="EndTurnRollsHighlight"/>: se enciende con el
+    /// pool en 0 durante el turno del player y vuelve a reposo al recuperar rolls,
     /// terminar el turno o desbindear. En EditMode los tweens se saltean — acá se
     /// testea solo la máquina de estados.
     /// </summary>
     [TestFixture]
-    public class EndTurnEnergyHighlightTests
+    public class EndTurnRollsHighlightTests
     {
         private GameObject _go;
-        private EndTurnEnergyHighlight _highlight;
+        private EndTurnRollsHighlight _highlight;
         private Guid _playerGuid;
 
         [SetUp]
@@ -25,10 +25,10 @@ namespace Rollgeon.UI.Tests
         {
             _playerGuid = Guid.NewGuid();
 
-            _go = new GameObject("EnergyHighlight", typeof(RectTransform));
-            _highlight = _go.AddComponent<EndTurnEnergyHighlight>();
+            _go = new GameObject("RollsHighlight", typeof(RectTransform));
+            _highlight = _go.AddComponent<EndTurnRollsHighlight>();
 
-            var awake = typeof(EndTurnEnergyHighlight).GetMethod("Awake",
+            var awake = typeof(EndTurnRollsHighlight).GetMethod("Awake",
                 BindingFlags.Instance | BindingFlags.NonPublic);
             awake?.Invoke(_highlight, null);
         }
@@ -43,11 +43,11 @@ namespace Rollgeon.UI.Tests
         private RectTransform _follow;
         private UnityEngine.UI.Image _glow;
 
-        private void EnterPlayerTurnWithZeroEnergy()
+        private void EnterPlayerTurnWithEmptyPool()
         {
             _highlight.Bind(_playerGuid);
             EventManager.Trigger(EventName.OnTurnStarted, _playerGuid);
-            EventManager.Trigger(EventName.OnPlayerEnergyChanged, _playerGuid, 0, 3);
+            EventManager.Trigger(EventName.OnPlayerRollsChanged, _playerGuid, 0, 3);
         }
 
         /// <summary>
@@ -75,7 +75,7 @@ namespace Rollgeon.UI.Tests
 
         private void AssignPrivate(string fieldName, object value)
         {
-            var field = typeof(EndTurnEnergyHighlight).GetField(fieldName,
+            var field = typeof(EndTurnRollsHighlight).GetField(fieldName,
                 BindingFlags.Instance | BindingFlags.NonPublic);
             Assert.IsNotNull(field, $"Campo privado '{fieldName}' no encontrado.");
             field.SetValue(_highlight, value);
@@ -90,51 +90,51 @@ namespace Rollgeon.UI.Tests
         }
 
         [Test]
-        public void ZeroEnergyDuringPlayerTurn_ActivatesHighlight()
+        public void EmptyPoolDuringPlayerTurn_ActivatesHighlight()
         {
-            EnterPlayerTurnWithZeroEnergy();
+            EnterPlayerTurnWithEmptyPool();
 
             Assert.IsTrue(_highlight.IsHighlightActive,
-                "Con energía 0 en el turno del player, el highlight debe encenderse.");
+                "Con el pool en 0 en el turno del player, el highlight debe encenderse.");
         }
 
         [Test]
-        public void ZeroEnergyWithoutPlayerTurn_KeepsHighlightOff()
+        public void EmptyPoolWithoutPlayerTurn_KeepsHighlightOff()
         {
             _highlight.Bind(_playerGuid);
-            EventManager.Trigger(EventName.OnPlayerEnergyChanged, _playerGuid, 0, 3);
+            EventManager.Trigger(EventName.OnPlayerRollsChanged, _playerGuid, 0, 3);
 
             Assert.IsFalse(_highlight.IsHighlightActive,
-                "Fuera del turno del player la energía 0 no debe resaltar el botón.");
+                "Fuera del turno del player el pool en 0 no debe resaltar el botón.");
         }
 
         [Test]
-        public void EnergyRecovered_DeactivatesHighlight()
+        public void RollsRecovered_DeactivatesHighlight()
         {
-            EnterPlayerTurnWithZeroEnergy();
+            EnterPlayerTurnWithEmptyPool();
             Assert.IsTrue(_highlight.IsHighlightActive, "Precondición: highlight activo.");
 
-            EventManager.Trigger(EventName.OnPlayerEnergyChanged, _playerGuid, 2, 3);
+            EventManager.Trigger(EventName.OnPlayerRollsChanged, _playerGuid, 2, 3);
 
             Assert.IsFalse(_highlight.IsHighlightActive,
-                "Al recuperar energía el botón debe volver al estado default.");
+                "Al recuperar rolls el botón debe volver al estado default.");
         }
 
         [Test]
-        public void OtherGuidEnergy_IsIgnored()
+        public void OtherGuidRolls_IsIgnored()
         {
             _highlight.Bind(_playerGuid);
             EventManager.Trigger(EventName.OnTurnStarted, _playerGuid);
-            EventManager.Trigger(EventName.OnPlayerEnergyChanged, Guid.NewGuid(), 0, 3);
+            EventManager.Trigger(EventName.OnPlayerRollsChanged, Guid.NewGuid(), 0, 3);
 
             Assert.IsFalse(_highlight.IsHighlightActive,
-                "La energía de otra entidad no debe activar el highlight.");
+                "El pool de otra entidad no debe activar el highlight.");
         }
 
         [Test]
         public void TurnFinished_DeactivatesHighlight()
         {
-            EnterPlayerTurnWithZeroEnergy();
+            EnterPlayerTurnWithEmptyPool();
             Assert.IsTrue(_highlight.IsHighlightActive, "Precondición: highlight activo.");
 
             EventManager.Trigger(EventName.OnTurnFinished, _playerGuid);
@@ -146,7 +146,7 @@ namespace Rollgeon.UI.Tests
         [Test]
         public void DiceRolled_SuppressesHighlightUntilResolved()
         {
-            EnterPlayerTurnWithZeroEnergy();
+            EnterPlayerTurnWithEmptyPool();
             Assert.IsTrue(_highlight.IsHighlightActive, "Precondición: highlight activo.");
 
             EventManager.Trigger(EventName.OnDiceRolled, _playerGuid);
@@ -155,13 +155,13 @@ namespace Rollgeon.UI.Tests
 
             EventManager.Trigger(EventName.OnRollResolved, _playerGuid);
             Assert.IsTrue(_highlight.IsHighlightActive,
-                "Resuelto el roll, la energía sigue en 0: el highlight vuelve.");
+                "Resuelto el roll, el pool sigue en 0: el highlight vuelve.");
         }
 
         [Test]
         public void CombatEnd_DeactivatesHighlight()
         {
-            EnterPlayerTurnWithZeroEnergy();
+            EnterPlayerTurnWithEmptyPool();
             Assert.IsTrue(_highlight.IsHighlightActive, "Precondición: highlight activo.");
 
             EventManager.Trigger(EventName.OnCombatEnd, _playerGuid);
@@ -175,7 +175,7 @@ namespace Rollgeon.UI.Tests
         {
             // Arrange
             WireFollowTargets();
-            EnterPlayerTurnWithZeroEnergy();
+            EnterPlayerTurnWithEmptyPool();
             Assert.IsTrue(_highlight.IsHighlightActive, "Precondición: highlight activo.");
 
             // Act — JuicyMenuButton agranda y corre el botón en hover; el espejo
@@ -192,17 +192,17 @@ namespace Rollgeon.UI.Tests
         }
 
         [Test]
-        public void EnergyRecoveredMidHover_RestoresGlowPose()
+        public void RollsRecoveredMidHover_RestoresGlowPose()
         {
             // Arrange — highlight activo y botón hovereado ya espejado.
             WireFollowTargets();
-            EnterPlayerTurnWithZeroEnergy();
+            EnterPlayerTurnWithEmptyPool();
             _follow.localScale = new Vector3(1.15f, 1.15f, 1f);
             _follow.anchoredPosition = new Vector2(-12f, 0f);
             InvokeNonPublic(_highlight, "LateUpdate");
 
             // Act
-            EventManager.Trigger(EventName.OnPlayerEnergyChanged, _playerGuid, 2, 3);
+            EventManager.Trigger(EventName.OnPlayerRollsChanged, _playerGuid, 2, 3);
 
             // Assert
             Assert.AreEqual(1f, _glow.rectTransform.localScale.x, 1e-4f,
@@ -214,7 +214,7 @@ namespace Rollgeon.UI.Tests
         [Test]
         public void Unbind_DeactivatesHighlight()
         {
-            EnterPlayerTurnWithZeroEnergy();
+            EnterPlayerTurnWithEmptyPool();
             Assert.IsTrue(_highlight.IsHighlightActive, "Precondición: highlight activo.");
 
             _highlight.Unbind();
@@ -224,7 +224,7 @@ namespace Rollgeon.UI.Tests
 
             // Post-unbind los eventos no deben pegar en el componente.
             EventManager.Trigger(EventName.OnTurnStarted, _playerGuid);
-            EventManager.Trigger(EventName.OnPlayerEnergyChanged, _playerGuid, 0, 3);
+            EventManager.Trigger(EventName.OnPlayerRollsChanged, _playerGuid, 0, 3);
             Assert.IsFalse(_highlight.IsHighlightActive,
                 "Después de Unbind los eventos deben ser ignorados.");
         }

@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using Patterns;
 using PrimeTween;
-using Rollgeon.Combat.EnergyLib;
+using Rollgeon.Combat.Rolls;
 using Sirenix.OdinInspector;
 using TMPro;
 using UnityEngine;
@@ -10,17 +10,18 @@ using UnityEngine;
 namespace Rollgeon.UI.HUD
 {
     /// <summary>
-    /// Pila de fichas de energía del jugador (una ficha por punto) con label
-    /// "actual/max" debajo. Reemplazo visual de la vieja <c>EnergyBarView</c> —
-    /// mismos eventos, misma fuente de datos.
+    /// Pila de fichas del Pool de Rolls del jugador (una ficha por roll) con label
+    /// "actual/max" debajo. Heredera directa de la pila de energía (Feature#0050):
+    /// mismo GUID de script, mismo prefab. Solo visible en combate — el pool no
+    /// existe en exploración.
     /// </summary>
-    [AddComponentMenu("Rollgeon/UI/HUD/Energy Chip Stack View")]
-    public class EnergyChipStackView : MonoBehaviour
+    [AddComponentMenu("Rollgeon/UI/HUD/Roll Pool Chip Stack View")]
+    public class RollPoolChipStackView : MonoBehaviour
     {
-        private const string LogPrefix = "[EnergyChipStackView] ";
+        private const string LogPrefix = "[RollPoolChipStackView] ";
 
-        [Title("Energy Chips — Widget refs")]
-        [Required("Arrastrar el ChipStackView de la pila de energía.")]
+        [Title("Roll Chips — Widget refs")]
+        [Required("Arrastrar el ChipStackView de la pila de rolls.")]
         [SerializeField]
         private ChipStackView _stack;
 
@@ -32,7 +33,7 @@ namespace Rollgeon.UI.HUD
         [SerializeField]
         private ChipStackSettingsSO _settings;
 
-        [Title("Feedback — energía insuficiente")]
+        [Title("Feedback — sin rolls")]
         [SerializeField, Tooltip("Color del flash del número cuando una acción no se puede pagar. " +
                  "Default = #D1365A, el rojo de UI de la paleta.")]
         private Color _insufficientColor = new Color(0.820f, 0.212f, 0.353f, 1f);
@@ -82,14 +83,14 @@ namespace Rollgeon.UI.HUD
 
             // Yoyo en vez de dos tweens encadenados: se auto-restaura al color base
             // aunque lo interrumpa un cambio de escena. Apply() reescribe el texto en
-            // cada cambio de energía pero nunca el color — si el flash quedara a medias,
+            // cada cambio del pool pero nunca el color — si el flash quedara a medias,
             // el número se quedaría rojo para siempre y nada lo repararía.
             _insufficientFlash = Tween.Color(_label, _insufficientColor,
                 _insufficientFlashDuration,
                 cycles: 2, cycleMode: CycleMode.Yoyo, useUnscaledTime: true);
 
             if (_insufficientPunch <= 0f) return;
-            // El Label de energía no tiene hijos, así que escalarlo es seguro.
+            // El Label del pool no tiene hijos, así que escalarlo es seguro.
             _insufficientPunchTween = Tween.PunchScale(_label.transform,
                 strength: Vector3.one * _insufficientPunch,
                 duration: _insufficientFlashDuration * 2f,
@@ -140,20 +141,20 @@ namespace Rollgeon.UI.HUD
         private void Subscribe()
         {
             if (_bound) return;
-            EventManager.Subscribe(EventName.OnPlayerEnergyChanged, HandleEnergyChanged);
-            TypedEvent<InsufficientEnergyPayload>.Subscribe(HandleInsufficientEnergy);
+            EventManager.Subscribe(EventName.OnPlayerRollsChanged, HandleRollsChanged);
+            TypedEvent<InsufficientRollsPayload>.Subscribe(HandleInsufficientRolls);
             _bound = true;
         }
 
         private void Unsubscribe()
         {
             if (!_bound) return;
-            EventManager.UnSubscribe(EventName.OnPlayerEnergyChanged, HandleEnergyChanged);
-            TypedEvent<InsufficientEnergyPayload>.Unsubscribe(HandleInsufficientEnergy);
+            EventManager.UnSubscribe(EventName.OnPlayerRollsChanged, HandleRollsChanged);
+            TypedEvent<InsufficientRollsPayload>.Unsubscribe(HandleInsufficientRolls);
             _bound = false;
         }
 
-        private void HandleInsufficientEnergy(InsufficientEnergyPayload payload)
+        private void HandleInsufficientRolls(InsufficientRollsPayload payload)
         {
             // Antes de que el Bind resuelva, _playerGuid está vacío: ahí el único
             // jugador posible es el del payload, así que no filtramos de más.
@@ -182,11 +183,11 @@ namespace Rollgeon.UI.HUD
             FetchInitialState();
         }
 
-        private void HandleEnergyChanged(params object[] args)
+        private void HandleRollsChanged(params object[] args)
         {
             if (args == null || args.Length < 3)
             {
-                Debug.LogWarning(LogPrefix + "OnPlayerEnergyChanged args malformed (len < 3).", this);
+                Debug.LogWarning(LogPrefix + "OnPlayerRollsChanged args malformed (len < 3).", this);
                 return;
             }
             if (!(args[0] is Guid guid) || guid != _playerGuid) return;
@@ -200,25 +201,33 @@ namespace Rollgeon.UI.HUD
         {
             // Silencioso sin datos: el Update reintenta (loguear acá spamearía).
             if (_playerGuid == Guid.Empty) return;
-            if (!ServiceLocator.TryGetService<IEnergyService>(out var energy) || energy == null) return;
+            if (!ServiceLocator.TryGetService<IRollPoolService>(out var rolls) || rolls == null) return;
 
-            int max = energy.GetMax(_playerGuid);
-            if (max <= 0) return; // ruleset/energía aún no inicializados
+            int max = rolls.GetMax(_playerGuid);
+            if (max <= 0) return; // ruleset aún no inicializado
 
             _hasData = true;
-            Apply(energy.GetCurrent(_playerGuid), max, animate: false);
+            Apply(rolls.GetCurrent(_playerGuid), max, animate: false);
         }
 
         private void Apply(int current, int max, bool animate)
         {
             if (_settings == null) return;
 
-            // Sin tope visual: una ficha por punto de energía.
+            // El pool solo existe en combate: fuera de él la pila y el número se
+            // ocultan (el GO raíz queda activo para seguir escuchando eventos).
+            bool inCombat = ServiceLocator.TryGetService<IRollPoolService>(out var rolls)
+                            && rolls != null && rolls.IsCombatActive;
+            if (_stack != null) _stack.gameObject.SetActive(inCombat);
+            if (_label != null) _label.gameObject.SetActive(inCombat);
+            if (!inCombat) return;
+
+            // Sin tope visual: una ficha por roll disponible.
             _chipBuffer.Clear();
             for (int i = 0; i < current; i++) _chipBuffer.Add(0);
 
             if (_stack != null) _stack.SetChips(_chipBuffer, animate);
-            if (_label != null) _label.text = ChipStackMath.FormatEnergyLabel(current, max);
+            if (_label != null) _label.text = ChipStackMath.FormatRollsLabel(current, max);
         }
     }
 }

@@ -1,7 +1,7 @@
 using System;
 using Patterns;
 using PrimeTween;
-using Rollgeon.Combat.EnergyLib;
+using Rollgeon.Combat.Rolls;
 using Sirenix.OdinInspector;
 using UnityEngine;
 using UnityEngine.UI;
@@ -9,10 +9,11 @@ using UnityEngine.UI;
 namespace Rollgeon.UI.HUD
 {
     /// <summary>
-    /// Aviso de "sin energía" sobre el botón End Turn: cuando el jugador queda en 0
-    /// durante su turno, el botón respira — glow radial con pulso de alpha y scale
-    /// yoyo del root, ambos con el mismo período. Al recuperar energía — o al
-    /// terminar el turno / combate — todo vuelve al reposo.
+    /// Aviso de "sin rolls" sobre el botón End Turn: cuando el pool queda en 0
+    /// durante el turno del jugador, el botón respira — glow radial con pulso de
+    /// alpha y scale yoyo del root, ambos con el mismo período ("terminá el turno
+    /// para recuperar rolls"). Al recuperar rolls — o al terminar el turno /
+    /// combate — todo vuelve al reposo.
     /// </summary>
     /// <remarks>
     /// Escala el ROOT del view y no el botón: <see cref="UiButtonJuice"/> (MMF) ya
@@ -21,8 +22,8 @@ namespace Rollgeon.UI.HUD
     /// aire el botón está deshabilitado y resaltarlo sería mentirle al jugador. El
     /// color del glow sale de la autoría de su Image; acá solo se maneja el alpha.
     /// </remarks>
-    [AddComponentMenu("Rollgeon/UI/HUD/End Turn Energy Highlight")]
-    public sealed class EndTurnEnergyHighlight : MonoBehaviour
+    [AddComponentMenu("Rollgeon/UI/HUD/End Turn Rolls Highlight")]
+    public sealed class EndTurnRollsHighlight : MonoBehaviour
     {
         [Title("Wiring")]
         [SerializeField, Tooltip("RectTransform que recibe el scale yoyo del breath. Debe ser el " +
@@ -62,7 +63,7 @@ namespace Rollgeon.UI.HUD
         private bool _isPlayerTurn;
         private bool _rollInFlight;
         // -1 = sin dato todavía: no resaltar hasta la primera lectura real.
-        private int _currentEnergy = -1;
+        private int _currentRolls = -1;
         private bool _active;
 
         private Vector3 _restScale = Vector3.one;
@@ -102,7 +103,7 @@ namespace Rollgeon.UI.HUD
             if (_bound) Unbind();
             _playerGuid = playerGuid;
 
-            EventManager.Subscribe(EventName.OnPlayerEnergyChanged, HandleEnergyChanged);
+            EventManager.Subscribe(EventName.OnPlayerRollsChanged, HandleRollsChanged);
             EventManager.Subscribe(EventName.OnTurnStarted, HandleTurnStarted);
             EventManager.Subscribe(EventName.OnTurnFinished, HandleTurnFinished);
             EventManager.Subscribe(EventName.OnDiceRolled, HandleDiceRolled);
@@ -111,14 +112,14 @@ namespace Rollgeon.UI.HUD
             _bound = true;
 
             CaptureFollowRest();
-            FetchInitialEnergy();
+            FetchInitialRolls();
             Reevaluate();
         }
 
         public void Unbind()
         {
             if (!_bound) return;
-            EventManager.UnSubscribe(EventName.OnPlayerEnergyChanged, HandleEnergyChanged);
+            EventManager.UnSubscribe(EventName.OnPlayerRollsChanged, HandleRollsChanged);
             EventManager.UnSubscribe(EventName.OnTurnStarted, HandleTurnStarted);
             EventManager.UnSubscribe(EventName.OnTurnFinished, HandleTurnFinished);
             EventManager.UnSubscribe(EventName.OnDiceRolled, HandleDiceRolled);
@@ -128,7 +129,7 @@ namespace Rollgeon.UI.HUD
 
             _isPlayerTurn = false;
             _rollInFlight = false;
-            _currentEnergy = -1;
+            _currentRolls = -1;
             _active = false;
             Deactivate(instant: true);
         }
@@ -137,19 +138,19 @@ namespace Rollgeon.UI.HUD
 
         private void Reevaluate()
         {
-            bool shouldBeActive = _bound && _isPlayerTurn && !_rollInFlight && _currentEnergy == 0;
+            bool shouldBeActive = _bound && _isPlayerTurn && !_rollInFlight && _currentRolls == 0;
             if (shouldBeActive == _active) return;
             _active = shouldBeActive;
             if (_active) Activate();
             else Deactivate(instant: false);
         }
 
-        private void HandleEnergyChanged(params object[] args)
+        private void HandleRollsChanged(params object[] args)
         {
             if (args == null || args.Length < 2) return;
             if (!(args[0] is Guid guid) || guid != _playerGuid) return;
             if (!(args[1] is int current)) return;
-            _currentEnergy = current;
+            _currentRolls = current;
             Reevaluate();
         }
 
@@ -194,16 +195,16 @@ namespace Rollgeon.UI.HUD
 
         /// <summary>
         /// Estado inicial silencioso: si el servicio/ruleset aún no existen, el primer
-        /// <c>OnPlayerEnergyChanged</c> corrige — el highlight solo importa mid-combate,
-        /// así que no hace falta el retry por frame de <see cref="EnergyChipStackView"/>.
+        /// <c>OnPlayerRollsChanged</c> corrige — el highlight solo importa mid-combate,
+        /// así que no hace falta el retry por frame de <see cref="RollPoolChipStackView"/>.
         /// </summary>
-        private void FetchInitialEnergy()
+        private void FetchInitialRolls()
         {
-            _currentEnergy = -1;
+            _currentRolls = -1;
             if (_playerGuid == Guid.Empty) return;
-            if (!ServiceLocator.TryGetService<IEnergyService>(out var energy) || energy == null) return;
-            if (energy.GetMax(_playerGuid) <= 0) return;
-            _currentEnergy = energy.GetCurrent(_playerGuid);
+            if (!ServiceLocator.TryGetService<IRollPoolService>(out var rolls) || rolls == null) return;
+            if (!rolls.IsCombatActive) return;
+            _currentRolls = rolls.GetCurrent(_playerGuid);
         }
 
         // ---- Efectos -----------------------------------------------------------
