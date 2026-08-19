@@ -261,7 +261,8 @@ namespace Rollgeon.UI.HUD
             group.blocksRaycasts = false;
 
             _ghostStack = go.AddComponent<ChipStackView>();
-            _ghostStack.Configure(_settings, new[] { _settings.HealthChip }, _settings.ChipSpacingY);
+            _ghostStack.Configure(_settings, new[] { _settings.HealthChip }, _settings.ChipSpacingY,
+                _settings.GhostChipTint);
         }
     }
 }

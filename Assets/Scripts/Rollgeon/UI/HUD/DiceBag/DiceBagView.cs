@@ -245,8 +245,10 @@ namespace Rollgeon.UI.HUD.DiceBag
 
         private static string DescribeEnchantment(EnchantmentSO ench)
         {
-            string name = LocalizedContent.Name(ench.UpgradeId,
-                !string.IsNullOrEmpty(ench.DisplayName) ? ench.DisplayName : ench.UpgradeId);
+            string name = $"<color=#{EnchantmentPalette.TitleHex(ench)}>" +
+                          LocalizedContent.Name(ench.UpgradeId,
+                              !string.IsNullOrEmpty(ench.DisplayName) ? ench.DisplayName : ench.UpgradeId) +
+                          "</color>";
             string body = LocalizedContent.Description(ench.UpgradeId, ench.Description ?? string.Empty);
             return string.IsNullOrEmpty(body) ? $"<b>{name}</b>" : $"<b>{name}</b>\n{body}";
         }

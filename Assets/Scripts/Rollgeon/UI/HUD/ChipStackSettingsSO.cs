@@ -75,6 +75,10 @@ namespace Rollgeon.UI.HUD
                  "de la pila real — la vida que falta se lee como fichas apagadas.")]
         public float GhostChipAlpha = 0.25f;
 
+        [Tooltip("Tinte multiplicativo de las fichas fantasma — oscurece la silueta " +
+                 "del máximo para que no compita con las fichas reales. Paleta: #A6A6A6.")]
+        public Color GhostChipTint = new Color32(0xA6, 0xA6, 0xA6, 0xFF);
+
         [Header("Colores")]
         [Tooltip("Hex (sin #) del numerador de vida cuando hay escudo. Paleta: Escudo #A3B3B1.")]
         public string ShieldHex = "A3B3B1";

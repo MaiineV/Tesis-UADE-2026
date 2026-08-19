@@ -226,6 +226,23 @@ namespace Rollgeon.UI.Tests
         }
 
         [Test]
+        public void Bind_GhostChips_TintedWithSettingsGhostTint()
+        {
+            _settings.GhostChipTint = new Color(0.2f, 0.1f, 0.3f, 1f);
+
+            _view.Bind(_playerGuid);
+
+            var ghost = _go.transform.Find("GhostChips");
+            var images = ghost.GetComponentsInChildren<UnityEngine.UI.Image>(includeInactive: true);
+            Assert.Greater(images.Length, 0, "La pila fantasma debe tener fichas con Image.");
+            foreach (var img in images)
+            {
+                Assert.AreEqual(_settings.GhostChipTint, img.color,
+                    "Cada ficha fantasma se oscurece con el tinte del settings SO.");
+            }
+        }
+
+        [Test]
         public void DamageEvent_GhostStackKeepsShowingTheMax()
         {
             _view.Bind(_playerGuid);

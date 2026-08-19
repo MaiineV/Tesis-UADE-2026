@@ -31,6 +31,7 @@ namespace Rollgeon.UI.HUD
         private ChipStackSettingsSO _settings;
         private Sprite[] _spritesById;
         private float _spacingY = 14f;
+        private Color _chipTint = Color.white;
 
         private sealed class Chip
         {
@@ -51,10 +52,16 @@ namespace Rollgeon.UI.HUD
         public int DisplayedCount => _ids.Count;
 
         public void Configure(ChipStackSettingsSO settings, Sprite[] spritesById, float spacingY)
+            => Configure(settings, spritesById, spacingY, Color.white);
+
+        /// <summary>Variante con tinte multiplicativo por ficha — lo usa la pila
+        /// fantasma del máximo de vida para oscurecer la silueta.</summary>
+        public void Configure(ChipStackSettingsSO settings, Sprite[] spritesById, float spacingY, Color chipTint)
         {
             _settings = settings;
             _spritesById = spritesById;
             _spacingY = spacingY;
+            _chipTint = chipTint;
             CaptureRestPos();
         }
 
@@ -159,6 +166,7 @@ namespace Rollgeon.UI.HUD
             var sprite = id >= 0 && id < _spritesById.Length ? _spritesById[id] : null;
 
             chip.Img.sprite = sprite;
+            chip.Img.color = _chipTint;
             if (sprite != null)
             {
                 chip.Rect.sizeDelta = sprite.rect.size * Mathf.Max(1f, _settings.ChipScale);

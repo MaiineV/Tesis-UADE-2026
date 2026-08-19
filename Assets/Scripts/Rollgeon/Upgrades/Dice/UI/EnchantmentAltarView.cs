@@ -463,7 +463,7 @@ namespace Rollgeon.Upgrades.Dice.UI
 
                 string label = $"{LocalizedContent.Ui("altar.slot", "Cupo")} {s + 1}";
                 string subLabel = existing != null
-                    ? $"{LocalizedContent.Ui("altar.enchantment", "Encantamiento")}:\n{LocalizedContent.Name(existing.UpgradeId, existing.DisplayName)}"
+                    ? $"{LocalizedContent.Ui("altar.enchantment", "Encantamiento")}:\n<color=#{EnchantmentPalette.TitleHex(existing)}>{LocalizedContent.Name(existing.UpgradeId, existing.DisplayName)}</color>"
                     : LocalizedContent.Ui("altar.empty", "Vacío");
 
                 // Capturamos el SO (no el índice) para el tooltip — los botones se
@@ -493,7 +493,7 @@ namespace Rollgeon.Upgrades.Dice.UI
         public static string BuildEnchantmentTooltip(EnchantmentSO ench)
         {
             if (ench == null) return string.Empty;
-            string name = LocalizedContent.Name(ench.UpgradeId, !string.IsNullOrEmpty(ench.DisplayName) ? ench.DisplayName : ench.UpgradeId);
+            string name = $"<color=#{EnchantmentPalette.TitleHex(ench)}>{LocalizedContent.Name(ench.UpgradeId, !string.IsNullOrEmpty(ench.DisplayName) ? ench.DisplayName : ench.UpgradeId)}</color>";
             string desc = LocalizedContent.Description(ench.UpgradeId, ench.Description);
             return string.IsNullOrEmpty(desc)
                 ? $"<b>{name}</b>"
@@ -514,7 +514,7 @@ namespace Rollgeon.Upgrades.Dice.UI
             {
                 var ench = slots[i];
                 if (ench == null) continue;
-                string name = LocalizedContent.Name(ench.UpgradeId, !string.IsNullOrEmpty(ench.DisplayName) ? ench.DisplayName : ench.UpgradeId);
+                string name = $"<color=#{EnchantmentPalette.TitleHex(ench)}>{LocalizedContent.Name(ench.UpgradeId, !string.IsNullOrEmpty(ench.DisplayName) ? ench.DisplayName : ench.UpgradeId)}</color>";
                 lines.Add($"• {name} — {LocalizedContent.Description(ench.UpgradeId, ench.Description)}");
             }
             return lines.Count > 0 ? string.Join("\n", lines) : none;
@@ -622,8 +622,7 @@ namespace Rollgeon.Upgrades.Dice.UI
                 var existing = enchSvc.Bag.GetEnchantmentAt(_selectedBagIndex, _selectedSlotIndex);
                 if (existing != null)
                 {
-                    string name = LocalizedContent.Name(existing.UpgradeId,
-                        !string.IsNullOrEmpty(existing.DisplayName) ? existing.DisplayName : existing.UpgradeId);
+                    string name = $"<color=#{EnchantmentPalette.TitleHex(existing)}>{LocalizedContent.Name(existing.UpgradeId, !string.IsNullOrEmpty(existing.DisplayName) ? existing.DisplayName : existing.UpgradeId)}</color>";
                     string desc = LocalizedContent.Description(existing.UpgradeId, existing.Description);
                     text = string.IsNullOrEmpty(desc)
                         ? $"<b>{name}</b>"
@@ -767,7 +766,9 @@ namespace Rollgeon.Upgrades.Dice.UI
                 return;
             }
             var rolled = result.RolledEnchantment;
-            string name = rolled != null ? LocalizedContent.Name(rolled.UpgradeId, rolled.DisplayName ?? rolled.UpgradeId) : "?";
+            string name = rolled != null
+                ? $"<color=#{EnchantmentPalette.TitleHex(rolled)}>{LocalizedContent.Name(rolled.UpgradeId, rolled.DisplayName ?? rolled.UpgradeId)}</color>"
+                : "?";
             string faces = FormatFaces(result.ProjectedFaces);
             // Descripción inline en el resultado (CNF-011) — el jugador ve qué hace el
             // encantamiento sin tener que ir a buscarlo de nuevo en la lista de slots.

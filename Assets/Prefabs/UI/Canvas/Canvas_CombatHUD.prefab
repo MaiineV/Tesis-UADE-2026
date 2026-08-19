@@ -2336,8 +2336,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Rollgeon::Rollgeon.UI.HUD.PassiveBadgeView
   _container: {fileID: 2711231839340872621}
   _text: {fileID: 1553533031354232835}
-  _activateClip: {fileID: 0}
-  _activateVolume: 0.9
 --- !u!1 &4267624581562163750
 GameObject:
   m_ObjectHideFlags: 0
@@ -3814,7 +3812,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 1, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: -50, y: -50}
+  m_AnchoredPosition: {x: -50, y: -28}
   m_SizeDelta: {x: 450, y: 120}
   m_Pivot: {x: 1, y: 1}
 --- !u!114 &5609443812509055921
@@ -4163,6 +4161,7 @@ MonoBehaviour:
     _normal: {fileID: 685109224, guid: c564ad6354066634a94445f646d2349a, type: 3}
     _hover: {fileID: -557252538, guid: c564ad6354066634a94445f646d2349a, type: 3}
     _disabled: {fileID: 1097625568, guid: c564ad6354066634a94445f646d2349a, type: 3}
+  _sinkSpeed: 900
   _onEndTurnPressed:
     m_PersistentCalls:
       m_Calls: []
