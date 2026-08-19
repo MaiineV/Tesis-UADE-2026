@@ -354,8 +354,8 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 7800251719905290
-    m_Localized: "You have rolls left: DEFENSE phase. Throw the dice and build a
-      combo \u2014 your SHIELD absorbs the next hit."
+    m_Localized: "You have Rolls left: DEFENSE unlocked ({0}). Throw the dice and
+      build a combo \u2014 it becomes SHIELD."
     m_Metadata:
       m_Items: []
   - m_Id: 7800251719905291
@@ -653,27 +653,32 @@ MonoBehaviour:
     m_Localized: Description
     m_Metadata:
       m_Items: []
-  - m_Id: 12923803442970624
+  - m_Id: 12926848403161088
+    m_Localized: 'Throw the dice: the better the combo, the more SHIELD. Confirm
+      and absorb the next hit.'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 12939077386862592
     m_Localized: 1 Turn
     m_Metadata:
       m_Items: []
-  - m_Id: 12923803493302272
+  - m_Id: 12939077424611328
     m_Localized: '{0} Turns'
     m_Metadata:
       m_Items: []
-  - m_Id: 12923803493302273
+  - m_Id: 12939077424611329
     m_Localized: 'Damage on enter: {0}'
     m_Metadata:
       m_Items: []
-  - m_Id: 12923803493302274
+  - m_Id: 12939077424611330
     m_Localized: 'Damage per turn standing: {0}'
     m_Metadata:
       m_Items: []
-  - m_Id: 12923803493302275
+  - m_Id: 12939077424611331
     m_Localized: 'Heals at end of turn: {0}'
     m_Metadata:
       m_Items: []
-  - m_Id: 12923803493302276
+  - m_Id: 12939077424611332
     m_Localized: Lasts {0} rounds
     m_Metadata:
       m_Items: []

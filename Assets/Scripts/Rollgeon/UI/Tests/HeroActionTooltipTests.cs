@@ -95,6 +95,31 @@ namespace Rollgeon.UI.Tests
             StringAssert.Contains("Escudo:", text);
         }
 
+        [Test]
+        public void BuildFor_DefenseShapedBehavior_ShowsShieldBody()
+        {
+            // Arrange — la acción Defense (Feature#0051): chain de UNA fase con solo
+            // EffAddShield. El tooltip del chip debe mostrar el body de escudo.
+            var shield = new EffAddShield(); // Constant default → "Escudo: +5"
+            var chain = new EffChain
+            {
+                Phases = new List<ChainPhase>
+                {
+                    new ChainPhase { Label = "Shield", Effects = MakeData(shield) },
+                },
+            };
+            var behavior = MakeBehavior("Defense", chain);
+
+            // Act
+            var text = HeroActionTooltip.BuildFor(behavior, _context);
+
+            // Assert
+            StringAssert.Contains("<b>Defense</b>", text);
+            StringAssert.Contains("Costo: 1 Roll por tirada", text);
+            StringAssert.Contains("Escudo:", text);
+            StringAssert.DoesNotContain("Daño:", text);
+        }
+
         private static EffectData MakeData(IEffect eff)
         {
             var data = new EffectData();

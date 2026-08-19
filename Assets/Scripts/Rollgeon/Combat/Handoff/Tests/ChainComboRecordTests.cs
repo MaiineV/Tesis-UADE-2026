@@ -77,6 +77,25 @@ namespace Rollgeon.Combat.Handoff.Tests
         }
 
         [Test]
+        public void DetectChainCombo_StandaloneDefenseAfterAttack_RecordsBothCombos()
+        {
+            // Arrange — el ataque (chain propio, fase 0) registró su combo.
+            CombatHandoffService.DetectChainCombo(_sheet, new[] { 3, 3 }, null, chainPhaseIndex: 0);
+
+            // Act — la Defensa es otro chain standalone: su tirada también es fase 0.
+            // Semántica de diseño (Feature#0051): el combo de la defensa TAMBIÉN
+            // cuenta como "combo del turno" — el jefe 2 puede prohibirlo.
+            var result = CombatHandoffService.DetectChainCombo(
+                _sheet, new[] { 5, 5 }, null, chainPhaseIndex: 0);
+
+            // Assert
+            Assert.IsTrue(result.HasValue && result.Value.IsMatch, "Par debe matchear [5,5].");
+            Assert.AreEqual(2, _comboLog.Last(5).Count,
+                "Ataque y Defensa del mismo turno registran cada uno su combo.");
+            Assert.AreEqual("combo.par", _comboLog.LastCombo);
+        }
+
+        [Test]
         public void DetectChainCombo_LaterPhases_DoNotRecord()
         {
             // Arrange: la fase 0 ya registró el combo del ataque.

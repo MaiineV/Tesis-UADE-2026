@@ -619,27 +619,31 @@ MonoBehaviour:
     m_Key: action.reject.no_rolls
     m_Metadata:
       m_Items: []
-  - m_Id: 12923803442970624
+  - m_Id: 12926848403161088
+    m_Key: tutorial.defense_dice
+    m_Metadata:
+      m_Items: []
+  - m_Id: 12939077386862592
     m_Key: status.badge.turn
     m_Metadata:
       m_Items: []
-  - m_Id: 12923803493302272
+  - m_Id: 12939077424611328
     m_Key: status.badge.turns
     m_Metadata:
       m_Items: []
-  - m_Id: 12923803493302273
+  - m_Id: 12939077424611329
     m_Key: tile.tooltip.enterdamage
     m_Metadata:
       m_Items: []
-  - m_Id: 12923803493302274
+  - m_Id: 12939077424611330
     m_Key: tile.tooltip.turndamage
     m_Metadata:
       m_Items: []
-  - m_Id: 12923803493302275
+  - m_Id: 12939077424611331
     m_Key: tile.tooltip.heal
     m_Metadata:
       m_Items: []
-  - m_Id: 12923803493302276
+  - m_Id: 12939077424611332
     m_Key: tile.tooltip.duration
     m_Metadata:
       m_Items: []
