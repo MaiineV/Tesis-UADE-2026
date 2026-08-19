@@ -112,6 +112,38 @@ namespace Rollgeon.Heroes.Tests
         }
 
         [Test]
+        public void GetBehaviorsForPhase_Combat_WithAllSixSlots_ReturnsDefenseAtIndexFive()
+        {
+            // El HUD indexa GetBehaviorsForPhase(Combat) con el índice del array de
+            // chips — Defense (slot 5) DEBE salir en la posición 5 con todos los
+            // slots base presentes, o el click ejecutaría otro behavior.
+            var so = ScriptableObject.CreateInstance<ClassHeroSO>();
+            try
+            {
+                var movement     = MakeBase(HeroBehaviorSlot.Movement,      GamePhaseMask.All);
+                var baseAttack   = MakeBase(HeroBehaviorSlot.BaseAttack,    GamePhaseMask.Combat);
+                var specialAttack= MakeBase(HeroBehaviorSlot.SpecialAttack, GamePhaseMask.Combat);
+                var healing      = MakeBase(HeroBehaviorSlot.Healing,       GamePhaseMask.All);
+                var forceDoor    = MakeBase(HeroBehaviorSlot.ForceDoor,     GamePhaseMask.Combat);
+                var defense      = MakeBase(HeroBehaviorSlot.Defense,       GamePhaseMask.Combat);
+                // Orden de inserción distinto al del enum a propósito: el orden de
+                // salida lo dicta el enum, no la lista.
+                so.PhaseBehaviors.AddRange(new[] { defense, movement, baseAttack, specialAttack, healing, forceDoor });
+
+                var result = so.GetBehaviorsForPhase(GamePhase.Combat);
+
+                Assert.AreEqual(6, result.Count);
+                Assert.AreSame(movement,      result[0]);
+                Assert.AreSame(baseAttack,    result[1]);
+                Assert.AreSame(specialAttack, result[2]);
+                Assert.AreSame(healing,       result[3]);
+                Assert.AreSame(forceDoor,     result[4]);
+                Assert.AreSame(defense,       result[5]);
+            }
+            finally { UnityEngine.Object.DestroyImmediate(so); }
+        }
+
+        [Test]
         public void GetBehaviorsForPhase_Exploration_ExcludesCombatOnly()
         {
             var so = ScriptableObject.CreateInstance<ClassHeroSO>();

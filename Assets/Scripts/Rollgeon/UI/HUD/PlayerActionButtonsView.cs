@@ -33,11 +33,12 @@ namespace Rollgeon.UI.HUD
         // Serialized fields — behavior buttons
         // ======================================================================
 
-        [Title("Behavior Buttons (orden fijo: Movement / BaseAttack / SpecialAttack / Healing)")]
-        [InfoBox("Cada ActionButton conoce su slot. El orden debe matchear el index 0-3 " +
-                 "que CombatHandoffService espera al disparar OnBehaviorSelected.")]
+        [Title("Behavior Buttons (orden fijo: Movement / BaseAttack / SpecialAttack / Healing / ForceDoor / Defense)")]
+        [InfoBox("Cada ActionButton conoce su slot. El orden debe matchear el index " +
+                 "que CombatHandoffService espera al disparar OnBehaviorSelected " +
+                 "(índice de array == valor de HeroBehaviorSlot).")]
         [SerializeField]
-        private ActionButton[] _buttons = new ActionButton[4];
+        private ActionButton[] _buttons = new ActionButton[6];
 
         // ======================================================================
         // Events
@@ -452,6 +453,7 @@ namespace Rollgeon.UI.HUD
                 _hotkeys.Subscribe(GameplayHotkey.SpecialAttack, OnHotkeySpecial);
                 _hotkeys.Subscribe(GameplayHotkey.Heal, OnHotkeyHeal);
                 _hotkeys.Subscribe(GameplayHotkey.ForceDoor, OnHotkeyForceDoor);
+                _hotkeys.Subscribe(GameplayHotkey.Defense, OnHotkeyDefense);
             }
             else
             {
@@ -460,6 +462,7 @@ namespace Rollgeon.UI.HUD
                 _hotkeys.Unsubscribe(GameplayHotkey.SpecialAttack, OnHotkeySpecial);
                 _hotkeys.Unsubscribe(GameplayHotkey.Heal, OnHotkeyHeal);
                 _hotkeys.Unsubscribe(GameplayHotkey.ForceDoor, OnHotkeyForceDoor);
+                _hotkeys.Unsubscribe(GameplayHotkey.Defense, OnHotkeyDefense);
                 _hotkeys = null;
             }
         }
@@ -469,6 +472,7 @@ namespace Rollgeon.UI.HUD
         private void OnHotkeySpecial(InputAction.CallbackContext _) => TriggerSlotHotkey(HeroBehaviorSlot.SpecialAttack);
         private void OnHotkeyHeal(InputAction.CallbackContext _) => TriggerSlotHotkey(HeroBehaviorSlot.Healing);
         private void OnHotkeyForceDoor(InputAction.CallbackContext _) => TriggerSlotHotkey(HeroBehaviorSlot.ForceDoor);
+        private void OnHotkeyDefense(InputAction.CallbackContext _) => TriggerSlotHotkey(HeroBehaviorSlot.Defense);
 
         // Invoca el onClick del ActionButton cuyo Slot matchea (mismo path que un
         // click real → HandleBehaviorClick con el index correcto). Si el botón está
