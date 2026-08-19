@@ -763,6 +763,31 @@ namespace Rollgeon.Combat.Handoff
                         });
                         return;
                     }
+
+                    // Chain SIN selección BeforeRoll en fase 0 (Defensa: fase Self).
+                    // El click del chip es el commit — cobramos y arrancamos el roll
+                    // ya mismo (los dados aparecen sin tirar, CNF-008), igual que
+                    // hacía StartNextChainPhase cuando el escudo era continuación.
+                    // Sin esto la acción quedaba en _awaitingFirstRoll esperando un
+                    // botón Roll que ninguna acción actual expone: el click parecía
+                    // no hacer nada.
+                    _chainPhaseSelectionResult = null;
+                    _rollIndexThisAction = 0;
+                    if (!SpendRollForThrow(playerGuid))
+                    {
+                        FinishChain(hud, playerGuid, false);
+                        return;
+                    }
+                    var chainBag = ResolvePlayerBag();
+                    var chainRoller = ResolveRoller();
+                    if (chainBag == null || chainRoller == null)
+                    {
+                        FinishChain(hud, playerGuid, false);
+                        return;
+                    }
+                    EventManager.Trigger(EventName.OnChainStarted, playerGuid);
+                    RollViaThrow(playerGuid, chainBag, chainRoller);
+                    return;
                 }
 
                 if (!behavior.NeedsDiceRoll)

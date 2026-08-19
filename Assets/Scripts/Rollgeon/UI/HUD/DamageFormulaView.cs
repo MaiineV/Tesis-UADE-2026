@@ -234,11 +234,17 @@ namespace Rollgeon.UI.HUD
             // (no se evalúa la fórmula de daño, que no aplica para Heal/ForceDoor).
             if (TryShowActionRollMode()) return;
 
-            // Fase de defensa del chain: la tirada activa genera ESCUDO, no daño. Se
-            // recomputa en vivo con la MISMA fórmula compartida que la aplicación real
-            // (anti-drift, igual que la rama de ataque). Misma nota de orden que abajo:
-            // Resolve lee LastComboScratch poblado por el mismo ComboMatchedPayload.
-            if (_inDefensePhase)
+            // Modo defensa: la tirada activa genera ESCUDO, no daño. Entra por dos
+            // caminos: fase >0 de un chain (evento OnChainPhaseStarted) o un behavior
+            // standalone sin daño y con escudo (la acción Defense — chain de 1 fase,
+            // que nunca emite OnChainPhaseStarted). Se recomputa en vivo con la MISMA
+            // fórmula compartida que la aplicación real (anti-drift, igual que la rama
+            // de ataque). Misma nota de orden que abajo: Resolve lee LastComboScratch
+            // poblado por el mismo ComboMatchedPayload.
+            bool standaloneDefense = _currentBehavior != null
+                && _currentBehavior.FindFirstDealDamageEffect() == null
+                && _currentBehavior.FindFirstAddShieldEffect() != null;
+            if (_inDefensePhase || standaloneDefense)
             {
                 HideThreshold();
                 if (string.IsNullOrEmpty(_lastComboId))

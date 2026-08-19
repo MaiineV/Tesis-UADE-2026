@@ -18,5 +18,6 @@ namespace Rollgeon.Input
         Confirm,
         EndTurn,
         ForceDoor,
+        Defense,
     }
 }
