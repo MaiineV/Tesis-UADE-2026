@@ -175,6 +175,10 @@ namespace Patterns
         OnPlayerHealthChanged,
         /// <summary>args: [Guid entityGuid, int current, int max]</summary>
         OnPlayerEnergyChanged,
+        /// <summary>args: [Guid entityGuid, int current, int max]. Pool de Rolls del
+        /// jugador (Feature#0050) — reemplaza a OnPlayerEnergyChanged, que muere
+        /// cuando el último subscriber migre.</summary>
+        OnPlayerRollsChanged,
         /// <summary>args: [int current, int delta]</summary>
         OnGoldChanged,
         /// <summary>args: [Guid targetGuid, FloatingNumberType type, float value, Vector3 offset]</summary>

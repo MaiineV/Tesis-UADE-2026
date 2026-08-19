@@ -65,6 +65,15 @@ namespace Rollgeon.Balance
         /// <summary>Knobs de energia (Max / AtRunStart / RegenBase). Lectura runtime.</summary>
         public EnergyConfig Energy => _energy;
 
+        [Title("Roll Pool (GDD Turn System — Feature#0050)")]
+        [InfoBox("Pool de Rolls que reemplaza a Energy: 1 roll por tirada de dado, " +
+                 "acumula entre turnos dentro del combate. Consumido por RollPoolService.")]
+        [OdinSerialize]
+        private RollPoolConfig _rollPool = new RollPoolConfig();
+
+        /// <summary>Knobs del pool de rolls (AtCombatStart / PerTurn / Cap). Lectura runtime.</summary>
+        public RollPoolConfig RollPool => _rollPool;
+
         [Title("Initiative / Turn Order (§12.7 — T100c)")]
         [OdinSerialize]
         [Tooltip("Config del orden de turno: rango del speed-die + fallback de initiative " +
@@ -93,6 +102,7 @@ namespace Rollgeon.Balance
         private void OnValidate()
         {
             _energy?.Validate();
+            _rollPool?.Validate();
             TurnOrder.OnValidate();
             _weakness?.Validate();
             _counters?.Validate();
