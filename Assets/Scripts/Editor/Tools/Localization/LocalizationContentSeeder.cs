@@ -123,10 +123,16 @@ namespace Rollgeon.EditorTools.Localization
                 "You can reroll without limit: each throw spends 1 Roll from your pool.");
 
             Ui(TutorialTextKeys.DefenseTeach,
-                "Te sobraron tiradas: fase de DEFENSA. Lanza los dados y arma un combo — " +
-                "tu ESCUDO absorbe el próximo golpe.",
-                "You have rolls left: DEFENSE phase. Throw the dice and build a combo — " +
-                "your SHIELD absorbs the next hit.");
+                "Te sobraron Rolls: se desbloqueó DEFENSA ({0}). Tira los dados y arma " +
+                "un combo — se convierte en ESCUDO.",
+                "You have Rolls left: DEFENSE unlocked ({0}). Throw the dice and build " +
+                "a combo — it becomes SHIELD.");
+
+            Ui(TutorialTextKeys.DefenseDice,
+                "Lanza los dados: cuanto mejor el combo, más ESCUDO. Confirma y absorbe " +
+                "el próximo golpe.",
+                "Throw the dice: the better the combo, the more SHIELD. Confirm and " +
+                "absorb the next hit.");
 
             Ui(TutorialTextKeys.EndTurnTeach,
                 "¡Golpe completado! Cuando no quieras hacer nada más, pulsa " +

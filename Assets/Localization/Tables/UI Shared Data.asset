@@ -619,6 +619,10 @@ MonoBehaviour:
     m_Key: action.reject.no_rolls
     m_Metadata:
       m_Items: []
+  - m_Id: 12926848403161088
+    m_Key: tutorial.defense_dice
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

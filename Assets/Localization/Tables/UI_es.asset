@@ -358,8 +358,8 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 7800251719905290
-    m_Localized: "Te sobraron tiradas: fase de DEFENSA. Lanza los dados y arma un
-      combo \u2014 tu ESCUDO absorbe el pr\xF3ximo golpe."
+    m_Localized: "Te sobraron Rolls: se desbloque\xF3 DEFENSA ({0}). Tira los dados
+      y arma un combo \u2014 se convierte en ESCUDO."
     m_Metadata:
       m_Items: []
   - m_Id: 7800251719905291
@@ -658,6 +658,11 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 11862063171076096
     m_Localized: "Descripci\xF3n"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 12926848403161088
+    m_Localized: "Lanza los dados: cuanto mejor el combo, m\xE1s ESCUDO. Confirma
+      y absorbe el pr\xF3ximo golpe."
     m_Metadata:
       m_Items: []
   references:

@@ -41,9 +41,9 @@ namespace Rollgeon.Tutorial
 
         /// <summary>
         /// Factory: crea el gate con el lock inicial del tutorial
-        /// ({BaseAttack, SpecialAttack, Healing, ForceDoor} — solo Movement libre;
-        /// ATACAR se desbloquea recién en su paso de enseñanza) y lo registra en
-        /// <see cref="ServiceScope.Run"/>.
+        /// ({BaseAttack, SpecialAttack, Healing, ForceDoor, Defense} — solo Movement
+        /// libre; cada acción se desbloquea recién en su paso de enseñanza) y lo
+        /// registra en <see cref="ServiceScope.Run"/>.
         /// </summary>
         public static TutorialActionGateService CreateAndRegister(ClassHeroSO hero)
         {
@@ -53,6 +53,7 @@ namespace Rollgeon.Tutorial
                 HeroBehaviorSlot.SpecialAttack,
                 HeroBehaviorSlot.Healing,
                 HeroBehaviorSlot.ForceDoor,
+                HeroBehaviorSlot.Defense,
             });
             ServiceLocator.AddService<ITutorialActionGateService>(service, ServiceScope.Run);
             return service;

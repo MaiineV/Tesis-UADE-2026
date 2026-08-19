@@ -354,8 +354,8 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 7800251719905290
-    m_Localized: "You have rolls left: DEFENSE phase. Throw the dice and build a
-      combo \u2014 your SHIELD absorbs the next hit."
+    m_Localized: "You have Rolls left: DEFENSE unlocked ({0}). Throw the dice and
+      build a combo \u2014 it becomes SHIELD."
     m_Metadata:
       m_Items: []
   - m_Id: 7800251719905291
@@ -651,6 +651,11 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 11862063171076096
     m_Localized: Description
+    m_Metadata:
+      m_Items: []
+  - m_Id: 12926848403161088
+    m_Localized: 'Throw the dice: the better the combo, the more SHIELD. Confirm
+      and absorb the next hit.'
     m_Metadata:
       m_Items: []
   references:
