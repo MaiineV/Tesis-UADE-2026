@@ -210,6 +210,40 @@ namespace Rollgeon.UI.Tests
             Assert.AreEqual("0/100", _label.text);
         }
 
+        [Test]
+        public void Bind_CreatesGhostStack_MaxHealthSilhouetteAtLowAlpha()
+        {
+            _view.Bind(_playerGuid);
+
+            var ghost = _go.transform.Find("GhostChips");
+            Assert.IsNotNull(ghost, "El Bind debe crear la pila fantasma del máximo.");
+            Assert.AreEqual(0, ghost.GetSiblingIndex(),
+                "La pila fantasma va primera para dibujar DETRÁS de las fichas reales.");
+            Assert.AreEqual(10, ghost.GetComponent<ChipStackView>().DisplayedCount,
+                "100 HP de máximo a 10 puntos por ficha = 10 fichas fantasma.");
+            Assert.AreEqual(_settings.GhostChipAlpha, ghost.GetComponent<CanvasGroup>().alpha,
+                "La opacidad de la pila fantasma sale del settings SO.");
+        }
+
+        [Test]
+        public void DamageEvent_GhostStackKeepsShowingTheMax()
+        {
+            _view.Bind(_playerGuid);
+
+            _attrs.SetAttributeValue<Health, int>(_playerGuid, 50);
+            TypedEvent<DamageResolvedPayload>.Raise(new DamageResolvedPayload
+            {
+                SourceGuid = Guid.NewGuid(),
+                TargetGuid = _playerGuid,
+                FinalDamage = 50,
+            });
+
+            var ghost = _go.transform.Find("GhostChips").GetComponent<ChipStackView>();
+            Assert.AreEqual(5, _stack.DisplayedCount, "La pila real sigue a la vida actual.");
+            Assert.AreEqual(10, ghost.DisplayedCount,
+                "Los fantasmas marcan el máximo constante, no la vida actual.");
+        }
+
         // ---------------- helpers ----------------
 
         private static void AssignPrivate(object target, string fieldName, object value)

@@ -85,6 +85,11 @@ namespace Rollgeon.UI.HUD
         [SerializeField]
         private ButtonSpriteSet _passSprites;
 
+        [SerializeField, Tooltip("Velocidad del hundimiento/regreso de la ficha cuando el " +
+                 "botón no se puede usar — mismo feel que la ficha usada de ActionButton. " +
+                 "Px de pantalla por segundo; <= 0 = instantáneo.")]
+        private float _sinkSpeed = 900f;
+
         [Title("Events")]
         [SerializeField]
         private UnityEvent _onEndTurnPressed = new UnityEvent();
@@ -149,6 +154,9 @@ namespace Rollgeon.UI.HUD
         private void Awake()
         {
             if (_endTurnButton != null) _endTurnButton.onClick.AddListener(HandleClick);
+            // La ficha se hunde a media asta mientras no se pueda usar (enemigo en
+            // turno, dados girando) — mismo lenguaje que las fichas de acción usadas.
+            HudButtonSink.Attach(_endTurnButton, _sinkSpeed);
         }
 
         private void OnDestroy()

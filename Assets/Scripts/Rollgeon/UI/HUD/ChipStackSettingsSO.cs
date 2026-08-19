@@ -69,6 +69,12 @@ namespace Rollgeon.UI.HUD
 
         public float ShakeFrequency = 20f;
 
+        [Header("Fichas fantasma (máximo de vida)")]
+        [Range(0f, 1f)]
+        [Tooltip("Opacidad de las fichas fantasma que marcan el máximo de vida detrás " +
+                 "de la pila real — la vida que falta se lee como fichas apagadas.")]
+        public float GhostChipAlpha = 0.25f;
+
         [Header("Colores")]
         [Tooltip("Hex (sin #) del numerador de vida cuando hay escudo. Paleta: Escudo #A3B3B1.")]
         public string ShieldHex = "A3B3B1";

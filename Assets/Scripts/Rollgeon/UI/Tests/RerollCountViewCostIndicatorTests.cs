@@ -184,65 +184,38 @@ namespace Rollgeon.UI.Tests
         }
 
         // ==================================================================
-        // Sink "sin rerolls" (media ficha bajo el borde, como la acción usada)
+        // Sink (media ficha bajo el borde, como la acción usada) — el hundimiento
+        // vive en HudButtonSink y sigue a Button.interactable: acá se cubre que
+        // los estados "sin próximo tiro" apaguen el botón (= lo hunden).
         // ==================================================================
 
         [Test]
-        public void test_reroll_button_sinks_when_out_of_free_rolls_and_energy()
+        public void test_reroll_button_disables_when_out_of_free_rolls_and_energy()
         {
             // Arrange
             _budget.NextQuery = RerollQueryResult.Blocked(RerollBudgetService.BlockedReasonNoEnergy);
+
+            // Act
             _view.Bind(_playerGuid);
 
-            // Act + Assert
-            Assert.IsTrue(InvokeIsOutOfRerolls(),
-                "Sin free rolls ni energía el botón debe hundirse a la mitad.");
+            // Assert — no-interactable es lo que HudButtonSink traduce en hundimiento.
+            Assert.IsFalse(_button.interactable,
+                "Sin free rolls ni energía el botón queda no usable (y hundido).");
         }
 
         [Test]
-        public void test_reroll_button_sinks_when_the_action_forbids_energy_rerolls()
+        public void test_reroll_button_disables_when_the_action_forbids_energy_rerolls()
         {
             // Arrange — sin free rolls y la acción no permite pagar: tampoco hay próximo tiro.
             _budget.NextQuery = RerollQueryResult.Blocked(
                 RerollBudgetService.BlockedReasonActionForbidsEnergyReroll);
+
+            // Act
             _view.Bind(_playerGuid);
 
-            // Act + Assert
-            Assert.IsTrue(InvokeIsOutOfRerolls(),
-                "Con la acción sin paid rerolls y sin free rolls el botón debe hundirse.");
-        }
-
-        [Test]
-        public void test_reroll_button_does_not_sink_between_actions()
-        {
-            // Arrange — sin budget abierto el botón es el "Roll" de la próxima acción.
-            _budget.NextQuery = RerollQueryResult.Blocked(
-                RerollBudgetService.BlockedReasonNoActiveBudget);
-            _view.Bind(_playerGuid);
-
-            // Act + Assert
-            Assert.IsFalse(InvokeIsOutOfRerolls(),
-                "Entre acciones no hay hundimiento: el botón espera el próximo Roll.");
-        }
-
-        [Test]
-        public void test_reroll_button_does_not_sink_while_a_reroll_is_available()
-        {
-            // Arrange
-            _budget.NextQuery = RerollQueryResult.Paid();
-            _view.Bind(_playerGuid);
-
-            // Act + Assert
-            Assert.IsFalse(InvokeIsOutOfRerolls(),
-                "Con un reroll pago disponible el botón queda en su lugar.");
-        }
-
-        private bool InvokeIsOutOfRerolls()
-        {
-            var method = typeof(RerollCountView).GetMethod("IsOutOfRerolls",
-                BindingFlags.Instance | BindingFlags.NonPublic);
-            Assert.IsNotNull(method, "Método 'IsOutOfRerolls' no encontrado.");
-            return (bool)method.Invoke(_view, null);
+            // Assert
+            Assert.IsFalse(_button.interactable,
+                "Con la acción sin paid rerolls y sin free rolls el botón queda no usable (y hundido).");
         }
 
         /// <summary>

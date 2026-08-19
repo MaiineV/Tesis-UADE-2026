@@ -60,6 +60,10 @@ namespace Rollgeon.UI.HUD
 
         private RectTransform ChipRoot => _chipRoot != null ? _chipRoot : (RectTransform)transform;
 
+        /// <summary>Padre real de las fichas — lo usa <see cref="HealthChipStackView"/>
+        /// para colgar la pila fantasma del máximo exactamente en el mismo origen.</summary>
+        public RectTransform Root => ChipRoot;
+
         private void CaptureRestPos()
         {
             if (_restPosCaptured) return;
