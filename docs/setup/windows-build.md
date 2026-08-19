@@ -29,7 +29,7 @@ player se genera igual y el problema aparece mucho después:
 | Chequeo | Qué rompe si pasa desapercibido |
 |---|---|
 | `productName == Rollgeon` | Nombre del `.exe` y carpeta de saves (`persistentDataPath`) |
-| `companyName == LetItRide` | Idem |
+| `companyName == 3AM Games` | Idem |
 | `applicationIdentifier` sin `Unity-Technologies` | Queda el ID del template URP |
 | Define `STEAMWORKS_NET` presente | El player shippea **sin Steam** y compila igual |
 | Define `DISABLESTEAMWORKS` ausente | `SteamServiceBootstrap` se compila vacío |
@@ -91,7 +91,7 @@ Build/Windows64/
 Con Steam abierto, correr el `.exe` y revisar el log:
 
 ```
-C:\Users\<user>\AppData\LocalLow\LetItRide\Rollgeon\Player.log
+C:\Users\<user>\AppData\LocalLow\3AM Games\Rollgeon\Player.log
 ```
 
 Tiene que aparecer `[Steam] Init OK — AppId 4889850, usuario '<nombre>'.`
