@@ -653,6 +653,30 @@ MonoBehaviour:
     m_Localized: Description
     m_Metadata:
       m_Items: []
+  - m_Id: 12923803442970624
+    m_Localized: 1 Turn
+    m_Metadata:
+      m_Items: []
+  - m_Id: 12923803493302272
+    m_Localized: '{0} Turns'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 12923803493302273
+    m_Localized: 'Damage on enter: {0}'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 12923803493302274
+    m_Localized: 'Damage per turn standing: {0}'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 12923803493302275
+    m_Localized: 'Heals at end of turn: {0}'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 12923803493302276
+    m_Localized: Lasts {0} rounds
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

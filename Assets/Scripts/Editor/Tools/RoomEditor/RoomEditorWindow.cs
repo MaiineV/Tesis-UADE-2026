@@ -21,6 +21,7 @@ namespace Rollgeon.Editor.Tools.RoomEditor
         private const string TabPalette = "Palette & Settings";
         private const string TabDoors = "Doors";
         private const string TabSpawn = "Spawn Points";
+        private const string TabSpecial = "Special Tiles";
 
         private const string GTool = Tabs + "/" + TabTool + "/Tool";
         private const string GShortcuts = Tabs + "/" + TabTool + "/Shortcuts";
@@ -33,6 +34,10 @@ namespace Rollgeon.Editor.Tools.RoomEditor
         private const string GSpawnSets = Tabs + "/" + TabSpawn + "/Sets";
         private const string GSpawnList = Tabs + "/" + TabSpawn + "/List";
         private const string GSpawnValidation = Tabs + "/" + TabSpawn + "/Validation";
+        private const string GSpecialTool = Tabs + "/" + TabSpecial + "/Tool";
+        private const string GSpecialPalette = Tabs + "/" + TabSpecial + "/Palette";
+        private const string GSpecialList = Tabs + "/" + TabSpecial + "/List";
+        private const string GSpecialValidation = Tabs + "/" + TabSpecial + "/Validation";
 
         // ============================ Section tints (used by header drawers) ============================
 
@@ -106,7 +111,11 @@ namespace Rollgeon.Editor.Tools.RoomEditor
             if (GUILayout.Button(label, style))
             {
                 _toolActive = !_toolActive;
-                if (_toolActive) _spawnToolActive = false; // mutually exclusive with spawn paint
+                if (_toolActive)
+                {
+                    _spawnToolActive = false; // mutually exclusive with spawn paint
+                    _specialToolActive = false; // mutually exclusive with special tiles paint
+                }
                 Repaint();
                 SceneView.RepaintAll();
             }
@@ -496,6 +505,7 @@ namespace Rollgeon.Editor.Tools.RoomEditor
             _ghost = new RoomEditorGhost();
             SyncFromActivePrefabStage();
             SyncNavGraphOverlay();
+            RefreshSpecialDefs();
         }
 
         protected override void OnDisable()
@@ -508,6 +518,7 @@ namespace Rollgeon.Editor.Tools.RoomEditor
             _ghost?.Dispose();
             _ghost = null;
             _navKeyHeld = false;
+            _pendingPortalA = null; // no dejar un par de portal a medio armar entre sesiones del editor
             SceneView.RepaintAll();
         }
 
@@ -629,6 +640,51 @@ namespace Rollgeon.Editor.Tools.RoomEditor
             if (e.type == EventType.Repaint)
             {
                 RoomEditorSpawnGizmos.Draw(_target, _previewSetIndex, _spawnGizmoMode, _selectedSpawnPoint);
+
+                if (!_specialGizmoHidden)
+                {
+                    // Línea al mouse solo mientras hay un extremo de portal a medio colocar —
+                    // raycast propio contra el piso, no depende de que la special tool esté activa.
+                    Vector3? pendingMouseWorld = null;
+                    if (_pendingPortalA.HasValue)
+                    {
+                        var pendingRay = HandleUtility.GUIPointToWorldRay(e.mousePosition);
+                        var pendingPlane = new Plane(Vector3.up, _target.GetOrigin());
+                        if (pendingPlane.Raycast(pendingRay, out var pendingDist))
+                            pendingMouseWorld = pendingRay.GetPoint(pendingDist);
+                    }
+                    RoomEditorSpecialTileGizmos.Draw(_target, _pendingPortalA, pendingMouseWorld, _selectedSpecialCoord);
+                }
+            }
+
+            // Special tiles tool short-circuits tile painting + spawn painting.
+            if (_specialToolActive)
+            {
+                int stControlId = GUIUtility.GetControlID(FocusType.Passive);
+                float ts = Mathf.Max(_target.TileSize, 0.01f);
+                if (_showGrid)
+                    RoomEditorGizmos.DrawGridPlane(_target.GetOrigin(), new Vector3(ts, ts, ts), 0, _gridExtent);
+                if (e.type == EventType.Repaint)
+                    RoomEditorGizmos.DrawDoorSlotArrows(_target);
+
+                UpdateSpecialHover(e);
+                HandleSpecialSceneInput(e, stControlId);
+
+                if (_specialHoverCoord.HasValue)
+                {
+                    var center = SpecialCellCenter(_specialHoverCoord.Value);
+                    bool free = SpecialTileOps.IsCellFree(_target, _specialHoverCoord.Value);
+                    var color = free
+                        ? new Color(0.4f, 1f, 0.5f, 0.9f)
+                        : new Color(1f, 0.55f, 0.55f, 0.9f);
+                    RoomEditorGizmos.DrawCellWire(center, new Vector3(ts, 0.02f, ts), Quaternion.identity, color);
+                }
+
+                if (e.type == EventType.Layout)
+                    HandleUtility.AddDefaultControl(stControlId);
+
+                sv.Repaint();
+                return;
             }
 
             // Spawn tool short-circuits tile painting.

@@ -124,6 +124,14 @@ namespace Rollgeon.Run
 
             grid.Register(playerService.PlayerGuid, spawnCoord);
 
+            // El player es terrestre y no-jefe: registrarlo explícito para que Casillas
+            // Especiales y pathing IA no dependan del default silencioso.
+            if (ServiceLocator.TryGetService<Rollgeon.Entities.Traits.IUnitTraitService>(out var traitService)
+                && traitService != null)
+            {
+                traitService.Register(playerService.PlayerGuid, Rollgeon.Entities.Traits.UnitTraits.DefaultGround);
+            }
+
             EntityPawn heroPawn = null;
             if (ServiceLocator.TryGetService<IEntityVisualService>(out var visuals))
             {

@@ -3346,6 +3346,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 2024317181}
     m_Modifications:
+    - target: {fileID: 698912786325053735, guid: 8bd03c0626252874eb3262ff54582f0a, type: 3}
+      propertyPath: _statusIconCatalog
+      value: 
+      objectReference: {fileID: 11400000, guid: c164b98d50506334dad8add443167107, type: 2}
     - target: {fileID: 1220478817224365075, guid: 8bd03c0626252874eb3262ff54582f0a, type: 3}
       propertyPath: m_TextStyleHashCode
       value: -1183493901

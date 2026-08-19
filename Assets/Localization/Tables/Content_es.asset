@@ -806,6 +806,123 @@ MonoBehaviour:
     m_Localized: "+50 de da\xF1o al armar un Par."
     m_Metadata:
       m_Items: []
+  - m_Id: 12914473343746048
+    m_Localized: Envenenado
+    m_Metadata:
+      m_Items: []
+  - m_Id: 12914473360523264
+    m_Localized: "Recib\xEDs da\xF1o al inicio de cada turno. Volver a pisar Veneno
+      refresca la duraci\xF3n."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 12914473360523265
+    m_Localized: Aturdido
+    m_Metadata:
+      m_Items: []
+  - m_Id: 12914473360523266
+    m_Localized: "Perd\xE9s tu pr\xF3ximo turno."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 12914473360523267
+    m_Localized: Pinchos
+    m_Metadata:
+      m_Items: []
+  - m_Id: 12914473360523268
+    m_Localized: 'Trampa armada: pincha al entrar o al ser empujado encima. Se rearma
+      cada ronda.'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 12914473360523269
+    m_Localized: Fuego
+    m_Metadata:
+      m_Items: []
+  - m_Id: 12914473360523270
+    m_Localized: "Quema al entrar y en cada inicio de turno parado encima. Afecta
+      tambi\xE9n a voladoras."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 12914473360523271
+    m_Localized: Fuego Temporal
+    m_Metadata:
+      m_Items: []
+  - m_Id: 12914473364717568
+    m_Localized: Fuego que se apaga solo tras unas rondas.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 12914473364717569
+    m_Localized: Hielo
+    m_Metadata:
+      m_Items: []
+  - m_Id: 12914473364717570
+    m_Localized: "Te desliz\xE1s en la direcci\xF3n en la que entraste hasta salir
+      del hielo o chocar."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 12914473364717571
+    m_Localized: Portal
+    m_Metadata:
+      m_Items: []
+  - m_Id: 12914473364717572
+    m_Localized: Te teletransporta al portal conectado y te deja en la casilla siguiente.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 12914473364717573
+    m_Localized: Veneno
+    m_Metadata:
+      m_Items: []
+  - m_Id: 12914473364717574
+    m_Localized: "Te envenena: da\xF1o al inicio de cada turno durante varios turnos."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 12914473364717575
+    m_Localized: "Curaci\xF3n"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 12914473364717576
+    m_Localized: "Cura si TERMIN\xC1S tu turno encima. Pasar de largo no cura."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 12914473364717577
+    m_Localized: Fortaleza
+    m_Metadata:
+      m_Items: []
+  - m_Id: 12914473364717578
+    m_Localized: "Tus combos ofensivos pegan m\xE1s fuerte mientras est\xE9s parado
+      ac\xE1."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 12914473364717579
+    m_Localized: Impulso
+    m_Metadata:
+      m_Items: []
+  - m_Id: 12914473364717580
+    m_Localized: "Bonifica tu pr\xF3xima tirada de movimiento desde esta casilla."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 12914473364717581
+    m_Localized: Advertencia
+    m_Metadata:
+      m_Items: []
+  - m_Id: 12914473364717582
+    m_Localized: "Algo va a pasar ac\xE1 cuando termine la ronda. Mejor no estar."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 12914473364717583
+    m_Localized: "Charco El\xE9ctrico"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 12914473364717584
+    m_Localized: Te aturde un turno al entrar o al ser empujado encima.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 12914473364717585
+    m_Localized: Zona de Seguridad
+    m_Metadata:
+      m_Items: []
+  - m_Id: 12914473364717586
+    m_Localized: "Protege de efectos espec\xEDficos a cualquier unidad adentro."
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

@@ -116,8 +116,10 @@ namespace Rollgeon.UI.Tests
         [Test]
         public void should_badge_only_what_has_a_duration()
         {
-            // Arrange + Act + Assert
-            Assert.AreEqual("3", StatusTooltipText.ResolveDurationBadge(Timed(3)));
+            // Arrange + Act + Assert — el badge dice la unidad ("N Turnos"), no el número pelado,
+            // y el caso 1 va en singular (spec de UI de estados de Casillas Especiales).
+            Assert.AreEqual("3 Turnos", StatusTooltipText.ResolveDurationBadge(Timed(3)));
+            Assert.AreEqual("1 Turno", StatusTooltipText.ResolveDurationBadge(Timed(1)));
             Assert.AreEqual(string.Empty, StatusTooltipText.ResolveDurationBadge(Passive(true)));
         }
     }

@@ -176,9 +176,24 @@ namespace Rollgeon.Combat.AI
             ServiceLocator.TryGetService<IGridManager>(out var grid);
             ServiceLocator.TryGetService<IMovementService>(out var movement);
             ServiceLocator.TryGetService<IEntityVisualService>(out var visuals);
+            ServiceLocator.TryGetService<Pathing.IAIPathPlanner>(out var pathPlanner);
+
+            // Personalidad de pathing: de los traits del spawn (default Normal). La tabla de
+            // tuning es opcional — sin ella rigen los umbrales del GDD.
+            var personality = Pathing.AIPersonalityProfile.Default;
+            if (ServiceLocator.TryGetService<Rollgeon.Entities.Traits.IUnitTraitService>(out var traitService)
+                && traitService != null)
+            {
+                var traits = traitService.Get(enemyId);
+                ServiceLocator.TryGetService<Pathing.AIPathTuningSO>(out var tuning);
+                personality = Pathing.AIPersonalityProfile.Resolve(
+                    traits.Personality, traits.KamikazeIgnoresSurvival, tuning);
+            }
 
             return new AIContext
             {
+                PathPlanner = pathPlanner,
+                Personality = personality,
                 SelfGuid = enemyId,
                 PlayerGuid = _playerService.PlayerGuid,
                 SelfMaxHp = maxHp,

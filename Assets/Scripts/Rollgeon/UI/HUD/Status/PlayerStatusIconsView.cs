@@ -31,6 +31,11 @@ namespace Rollgeon.UI.HUD.Status
         [Tooltip("Contenedor de la fila — lleva el HorizontalLayoutGroup.")]
         private RectTransform _container;
 
+        [SerializeField]
+        [Tooltip("Catálogo id → sprite para los estados sin asset propio (veneno, stun). " +
+                 "Null = los slots muestran solo el marco hasta que llegue el arte.")]
+        private StatusIconCatalogSO _statusIconCatalog;
+
         [SerializeField, Tooltip("SFX cuando un estado pasa de inactivo a ACTIVO (ej. la " +
                  "pasiva de clase prendiéndose). No suena en el primer Refresh de un Bind " +
                  "ni al apagarse. Null = mudo.")]
@@ -66,6 +71,13 @@ namespace Rollgeon.UI.HUD.Status
             EventManager.Subscribe(EventName.OnModifierRemoved, HandleOwnerEvent);
             EventManager.Subscribe(EventName.OnAttributeChanged, HandleOwnerEvent);
             EventManager.Subscribe(EventName.OnTurnStarted, HandleOwnerEvent);
+            // Estados con duración (veneno/stun): sus eventos de aplicar/tickear/expirar
+            // llevan el guid del afectado en args[0], igual que el resto.
+            EventManager.Subscribe(EventName.OnStunApplied, HandleOwnerEvent);
+            EventManager.Subscribe(EventName.OnStunExpired, HandleOwnerEvent);
+            EventManager.Subscribe(EventName.OnPoisonApplied, HandleOwnerEvent);
+            EventManager.Subscribe(EventName.OnPoisonTicked, HandleOwnerEvent);
+            EventManager.Subscribe(EventName.OnPoisonExpired, HandleOwnerEvent);
             _bound = true;
 
             // Primer repintado en silencio: si el estado ya venía activo (rebind, load
@@ -83,6 +95,11 @@ namespace Rollgeon.UI.HUD.Status
             EventManager.UnSubscribe(EventName.OnModifierRemoved, HandleOwnerEvent);
             EventManager.UnSubscribe(EventName.OnAttributeChanged, HandleOwnerEvent);
             EventManager.UnSubscribe(EventName.OnTurnStarted, HandleOwnerEvent);
+            EventManager.UnSubscribe(EventName.OnStunApplied, HandleOwnerEvent);
+            EventManager.UnSubscribe(EventName.OnStunExpired, HandleOwnerEvent);
+            EventManager.UnSubscribe(EventName.OnPoisonApplied, HandleOwnerEvent);
+            EventManager.UnSubscribe(EventName.OnPoisonTicked, HandleOwnerEvent);
+            EventManager.UnSubscribe(EventName.OnPoisonExpired, HandleOwnerEvent);
             _bound = false;
         }
 
@@ -162,6 +179,8 @@ namespace Rollgeon.UI.HUD.Status
         {
             _providers.Clear();
             _providers.Add(new ClassPassiveStatusProvider());
+            _providers.Add(new PoisonStatusProvider(_statusIconCatalog));
+            _providers.Add(new StunStatusProvider(_statusIconCatalog));
         }
     }
 }

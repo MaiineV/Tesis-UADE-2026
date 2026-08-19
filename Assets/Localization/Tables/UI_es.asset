@@ -660,6 +660,30 @@ MonoBehaviour:
     m_Localized: "Descripci\xF3n"
     m_Metadata:
       m_Items: []
+  - m_Id: 12923803442970624
+    m_Localized: 1 Turno
+    m_Metadata:
+      m_Items: []
+  - m_Id: 12923803493302272
+    m_Localized: '{0} Turnos'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 12923803493302273
+    m_Localized: "Da\xF1o al entrar: {0}"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 12923803493302274
+    m_Localized: "Da\xF1o por turno encima: {0}"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 12923803493302275
+    m_Localized: 'Cura al terminar el turno: {0}'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 12923803493302276
+    m_Localized: Dura {0} rondas
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

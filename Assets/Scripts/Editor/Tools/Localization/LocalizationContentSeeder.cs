@@ -35,6 +35,7 @@ namespace Rollgeon.EditorTools.Localization
             SeedMiscContent();
             SeedBuildHelp();
             SeedStatusIcons();
+            SeedSpecialTiles();
             SeedContractDrawer();
             SeedPlayerIcons();
             SeedDiceBag();
@@ -563,6 +564,84 @@ namespace Rollgeon.EditorTools.Localization
             // "1 turnos" — en inglés la diferencia es igual de visible.
             Ui(StatusTextKeys.Duration, "Dura {0} turnos", "Lasts {0} turns");
             Ui(StatusTextKeys.DurationLastTurn, "Último turno", "Last turn");
+
+            // Badge corto bajo el ícono (distinto del pie del tooltip de arriba).
+            Ui(StatusTextKeys.BadgeOneTurn, "1 Turno", "1 Turn");
+            Ui(StatusTextKeys.BadgeTurns, "{0} Turnos", "{0} Turns");
+
+            // Estados con duración (Casillas Especiales). Nombre + descripción del estado,
+            // que son SUYOS (los publica su provider), a diferencia del pie del sistema.
+            Content("status.poison.name", "Envenenado", "Poisoned");
+            Content("status.poison.desc",
+                "Recibís daño al inicio de cada turno. Volver a pisar Veneno refresca la duración.",
+                "You take damage at the start of each turn. Stepping on Poison again refreshes the duration.");
+            Content("status.stun.name", "Aturdido", "Stunned");
+            Content("status.stun.desc",
+                "Perdés tu próximo turno.",
+                "You lose your next turn.");
+        }
+
+        // ==================================================================
+        // Casillas Especiales — tooltips de tile (GDD §16)
+        // ==================================================================
+
+        private static void SeedSpecialTiles()
+        {
+            // Líneas del sistema (números duros del tooltip). {0} = valor.
+            Ui("tile.tooltip.enterdamage", "Daño al entrar: {0}", "Damage on enter: {0}");
+            Ui("tile.tooltip.turndamage", "Daño por turno encima: {0}", "Damage per turn standing: {0}");
+            Ui("tile.tooltip.heal", "Cura al terminar el turno: {0}", "Heals at end of turn: {0}");
+            Ui("tile.tooltip.duration", "Dura {0} rondas", "Lasts {0} rounds");
+
+            // Nombre + descripción por casilla del catálogo.
+            Content("tile.spikes.name", "Pinchos", "Spikes");
+            Content("tile.spikes.desc",
+                "Trampa armada: pincha al entrar o al ser empujado encima. Se rearma cada ronda.",
+                "Armed trap: stabs when entered or pushed onto. Rearms each round.");
+            Content("tile.fire.name", "Fuego", "Fire");
+            Content("tile.fire.desc",
+                "Quema al entrar y en cada inicio de turno parado encima. Afecta también a voladoras.",
+                "Burns on enter and at each turn start while standing on it. Affects flying units too.");
+            Content("tile.firetemp.name", "Fuego Temporal", "Temporary Fire");
+            Content("tile.firetemp.desc",
+                "Fuego que se apaga solo tras unas rondas.",
+                "Fire that burns out on its own after a few rounds.");
+            Content("tile.ice.name", "Hielo", "Ice");
+            Content("tile.ice.desc",
+                "Te deslizás en la dirección en la que entraste hasta salir del hielo o chocar.",
+                "You slide in the direction you entered until you leave the ice or hit something.");
+            Content("tile.portal.name", "Portal", "Portal");
+            Content("tile.portal.desc",
+                "Te teletransporta al portal conectado y te deja en la casilla siguiente.",
+                "Teleports you to the linked portal and drops you on the next tile.");
+            Content("tile.poison.name", "Veneno", "Poison");
+            Content("tile.poison.desc",
+                "Te envenena: daño al inicio de cada turno durante varios turnos.",
+                "Poisons you: damage at the start of each turn for several turns.");
+            Content("tile.heal.name", "Curación", "Healing");
+            Content("tile.heal.desc",
+                "Cura si TERMINÁS tu turno encima. Pasar de largo no cura.",
+                "Heals if you END your turn on it. Passing through does nothing.");
+            Content("tile.strength.name", "Fortaleza", "Strength");
+            Content("tile.strength.desc",
+                "Tus combos ofensivos pegan más fuerte mientras estés parado acá.",
+                "Your offensive combos hit harder while you stand here.");
+            Content("tile.boost.name", "Impulso", "Boost");
+            Content("tile.boost.desc",
+                "Bonifica tu próxima tirada de movimiento desde esta casilla.",
+                "Boosts your next movement roll from this tile.");
+            Content("tile.telegraph.name", "Advertencia", "Telegraph");
+            Content("tile.telegraph.desc",
+                "Algo va a pasar acá cuando termine la ronda. Mejor no estar.",
+                "Something will happen here when the round ends. Best not to be around.");
+            Content("tile.electricpuddle.name", "Charco Eléctrico", "Electric Puddle");
+            Content("tile.electricpuddle.desc",
+                "Te aturde un turno al entrar o al ser empujado encima.",
+                "Stuns you for a turn when entered or pushed onto.");
+            Content("tile.safezone.name", "Zona de Seguridad", "Safe Zone");
+            Content("tile.safezone.desc",
+                "Protege de efectos específicos a cualquier unidad adentro.",
+                "Shields any unit inside from specific effects.");
         }
 
         // ==================================================================

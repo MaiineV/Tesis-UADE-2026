@@ -1,0 +1,15 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 82f5f9a008069984d8fefc2623259099, type: 3}
+  m_Name: AIPathPlannerBootstrap
+  m_EditorClassIdentifier: Rollgeon::Rollgeon.Combat.AI.Pathing.AIPathPlannerBootstrap
+  _tuning: {fileID: 11400000, guid: 4460fa860aa97274f80b534d505780ae, type: 2}

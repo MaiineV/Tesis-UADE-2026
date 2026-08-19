@@ -41,6 +41,13 @@ namespace Rollgeon.Entities.Visuals
                 _subscribed = true;
             }
 
+            // Teleports (portales): posición autoritativa de un frame al otro — el pawn
+            // snapea, no lerpea el cruce del mapa.
+            if (_movement is IPathedMovementService pathed)
+            {
+                pathed.OnEntityTeleported += OnEntityTeleported;
+            }
+
             // Facing al atacar: el source rota hacia el target en el frame en que el daño
             // se resuelve. Suscribimos al TypedEvent porque DamagePipeline lo dispara
             // siempre, sin importar quién originó el ataque.
@@ -54,6 +61,10 @@ namespace Rollgeon.Entities.Visuals
             {
                 _movement.OnEntityMoved -= OnEntityMoved;
                 _subscribed = false;
+            }
+            if (_movement is IPathedMovementService pathedMovement)
+            {
+                pathedMovement.OnEntityTeleported -= OnEntityTeleported;
             }
             if (_onDamageResolved != null)
             {
@@ -175,6 +186,12 @@ namespace Rollgeon.Entities.Visuals
                 pawn.FaceCoord(from, to);
                 pawn.SnapToGrid(_grid, to);
             }
+        }
+
+        private void OnEntityTeleported(Guid guid, GridCoord from, GridCoord to)
+        {
+            if (!_byGuid.TryGetValue(guid, out var pawn) || pawn == null) return;
+            pawn.SnapToGrid(_grid, to);
         }
 
         private void OnDamageResolved(DamageResolvedPayload payload)

@@ -13,6 +13,7 @@ using Rollgeon.Entities;
 using Rollgeon.Entities.Behaviors;
 using Rollgeon.Entities.Bosses;
 using Rollgeon.Entities.Portraits;
+using Rollgeon.Entities.Traits;
 using Rollgeon.Entities.Visuals;
 using Rollgeon.Grid;
 using Rollgeon.Run;
@@ -398,8 +399,21 @@ namespace Rollgeon.Combat.Handoff
 
             ApplyComboImmunities(enemyData);
             RegisterWeakness(id, enemyData);
+            RegisterTraits(id, enemyData);
 
             return id;
+        }
+
+        /// <summary>
+        /// Registra los <see cref="UnitTraits"/> del enemigo (Flying/Boss/personalidad IA)
+        /// para Casillas Especiales y pathing. Tolerante a ausencia del servicio: sin él,
+        /// los consumidores caen al default terrestre/Normal.
+        /// </summary>
+        private static void RegisterTraits(Guid id, EnemyDataSO enemyData)
+        {
+            if (enemyData == null) return;
+            if (ServiceLocator.TryGetService<IUnitTraitService>(out var traits) && traits != null)
+                traits.Register(id, enemyData.CreateTraits());
         }
 
         /// <summary>

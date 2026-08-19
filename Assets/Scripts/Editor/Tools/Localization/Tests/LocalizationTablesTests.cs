@@ -36,6 +36,8 @@ namespace Rollgeon.Editor.Tools.Localization.Tests
             "combo.generala.name",
             "combo.full_house.name",
             "menu.tutorial",
+            // "Portal" es portal en los dos idiomas (Casillas Especiales).
+            "tile.portal.name",
             // "Combo" se escribe igual en los dos idiomas y es el término que el juego ya
             // usa sin traducir en el resto del HUD.
             Rollgeon.UI.HUD.Contract.ContractTextKeys.HeaderName,

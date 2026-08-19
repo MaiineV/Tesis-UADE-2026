@@ -803,6 +803,121 @@ MonoBehaviour:
     m_Localized: +50 damage when matching a Pair.
     m_Metadata:
       m_Items: []
+  - m_Id: 12914473343746048
+    m_Localized: Poisoned
+    m_Metadata:
+      m_Items: []
+  - m_Id: 12914473360523264
+    m_Localized: You take damage at the start of each turn. Stepping on Poison again
+      refreshes the duration.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 12914473360523265
+    m_Localized: Stunned
+    m_Metadata:
+      m_Items: []
+  - m_Id: 12914473360523266
+    m_Localized: You lose your next turn.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 12914473360523267
+    m_Localized: Spikes
+    m_Metadata:
+      m_Items: []
+  - m_Id: 12914473360523268
+    m_Localized: 'Armed trap: stabs when entered or pushed onto. Rearms each round.'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 12914473360523269
+    m_Localized: Fire
+    m_Metadata:
+      m_Items: []
+  - m_Id: 12914473360523270
+    m_Localized: Burns on enter and at each turn start while standing on it. Affects
+      flying units too.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 12914473360523271
+    m_Localized: Temporary Fire
+    m_Metadata:
+      m_Items: []
+  - m_Id: 12914473364717568
+    m_Localized: Fire that burns out on its own after a few rounds.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 12914473364717569
+    m_Localized: Ice
+    m_Metadata:
+      m_Items: []
+  - m_Id: 12914473364717570
+    m_Localized: You slide in the direction you entered until you leave the ice or
+      hit something.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 12914473364717571
+    m_Localized: Portal
+    m_Metadata:
+      m_Items: []
+  - m_Id: 12914473364717572
+    m_Localized: Teleports you to the linked portal and drops you on the next tile.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 12914473364717573
+    m_Localized: Poison
+    m_Metadata:
+      m_Items: []
+  - m_Id: 12914473364717574
+    m_Localized: 'Poisons you: damage at the start of each turn for several turns.'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 12914473364717575
+    m_Localized: Healing
+    m_Metadata:
+      m_Items: []
+  - m_Id: 12914473364717576
+    m_Localized: Heals if you END your turn on it. Passing through does nothing.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 12914473364717577
+    m_Localized: Strength
+    m_Metadata:
+      m_Items: []
+  - m_Id: 12914473364717578
+    m_Localized: Your offensive combos hit harder while you stand here.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 12914473364717579
+    m_Localized: Boost
+    m_Metadata:
+      m_Items: []
+  - m_Id: 12914473364717580
+    m_Localized: Boosts your next movement roll from this tile.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 12914473364717581
+    m_Localized: Telegraph
+    m_Metadata:
+      m_Items: []
+  - m_Id: 12914473364717582
+    m_Localized: Something will happen here when the round ends. Best not to be around.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 12914473364717583
+    m_Localized: Electric Puddle
+    m_Metadata:
+      m_Items: []
+  - m_Id: 12914473364717584
+    m_Localized: Stuns you for a turn when entered or pushed onto.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 12914473364717585
+    m_Localized: Safe Zone
+    m_Metadata:
+      m_Items: []
+  - m_Id: 12914473364717586
+    m_Localized: Shields any unit inside from specific effects.
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []
