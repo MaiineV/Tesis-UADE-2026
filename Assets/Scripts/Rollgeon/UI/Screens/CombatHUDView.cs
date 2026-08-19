@@ -105,12 +105,6 @@ namespace Rollgeon.UI.Screens
         [SerializeField]
         private DiceBoardSkinView _boardSkin;
 
-        [Tooltip("Opcional — prompt central del tablero para la entrada paga a una fase de " +
-                 "chain ('Shield Roll (1E)'). Ref cross-canvas a Canvas_ActionRoll, igual que " +
-                 "el board skin. Si null, la fase paga funciona sin prompt visual.")]
-        [SerializeField]
-        private ChainRollPromptView _chainRollPrompt;
-
         [Title("Combat HUD — Damage Flash")]
         [SerializeField]
         [Tooltip("CanvasGroup que flashea cuando el player recibe dano (rojo breve).")]
@@ -145,7 +139,7 @@ namespace Rollgeon.UI.Screens
         }
 
         /// <summary>RectTransform de la pila del pool de rolls — anchor del overlay del tutorial.</summary>
-        public bool TryGetEnergyBarRect(out RectTransform rect)
+        public bool TryGetRollPoolRect(out RectTransform rect)
         {
             rect = _energyChips != null ? _energyChips.transform as RectTransform : null;
             return rect != null;
@@ -244,12 +238,6 @@ namespace Rollgeon.UI.Screens
             if (_rerollCount != null)
                 _rerollCount.OnExtraRollPressed.AddListener(InvokeRollOrReroll);
 
-            // BUG-034: el prompt "X Roll (1E)" es la affordance visible del pago —
-            // clickearlo debe pagar igual que el botón Roll. Mismo entry point para
-            // conservar el dispatch roll/reroll y el warning de "no cableado".
-            if (_chainRollPrompt != null)
-                _chainRollPrompt.OnPromptClicked.AddListener(InvokeRollOrReroll);
-
             if (_playerActionButtons != null)
             {
                 _playerActionButtons.OnBehaviorSelected = InvokeBehaviorSelected;
@@ -269,9 +257,6 @@ namespace Rollgeon.UI.Screens
         {
             if (_rerollCount != null)
                 _rerollCount.OnExtraRollPressed.RemoveListener(InvokeRollOrReroll);
-
-            if (_chainRollPrompt != null)
-                _chainRollPrompt.OnPromptClicked.RemoveListener(InvokeRollOrReroll);
 
             if (_playerActionButtons != null)
             {

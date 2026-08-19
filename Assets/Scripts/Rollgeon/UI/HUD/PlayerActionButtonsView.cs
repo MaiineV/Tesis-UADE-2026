@@ -720,7 +720,7 @@ namespace Rollgeon.UI.HUD
                 return LocalizedContent.Ui(UiTextKeys.RejectNoRange, "Sin rango al objetivo.");
 
             if (!HasEnoughRolls())
-                return LocalizedContent.Ui(UiTextKeys.RejectNoEnergy, "No te quedan Rolls.");
+                return LocalizedContent.Ui(UiTextKeys.RejectNoRolls, "No te quedan Rolls.");
 
             return null;
         }

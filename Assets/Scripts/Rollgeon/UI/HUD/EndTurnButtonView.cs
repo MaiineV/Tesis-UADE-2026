@@ -37,7 +37,8 @@ namespace Rollgeon.UI.HUD
     /// ActionRoll activo (Heal en combate) manda <see cref="IActionRollService.CanConfirm"/>
     /// via polling (los holds no emiten evento en ese flow). El estado
     /// "fase paga pendiente" no viaja por el bus — lo empuja
-    /// <c>CombatHUDView.Show/HideChainRollPrompt</c> vía <see cref="SetChainPaidRollPending"/>.
+    /// <see cref="SetChainPaidRollPending"/> (sin llamadores desde Feature#0050 — el chain
+    /// corta solo al quedarse sin rolls; se conserva por si un flujo futuro lo necesita).
     /// </remarks>
     [AddComponentMenu("Rollgeon/UI/HUD/End Turn Button View")]
     public class EndTurnButtonView : MonoBehaviour
@@ -249,7 +250,7 @@ namespace Rollgeon.UI.HUD
 
         /// <summary>
         /// Fase de chain con entrada paga abierta (prompt "X Roll -1⚡" visible).
-        /// Lo empuja <c>CombatHUDView</c> desde Show/HideChainRollPrompt — el modo
+        /// Sin llamadores desde Feature#0050 — el modo
         /// pasa a Pass mientras dure.
         /// </summary>
         public void SetChainPaidRollPending(bool pending)

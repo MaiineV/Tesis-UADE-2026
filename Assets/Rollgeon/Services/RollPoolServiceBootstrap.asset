@@ -9,6 +9,6 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 090a60935e96f0645818325d860d6f32, type: 3}
-  m_Name: RerollBudgetServiceBootstrap
-  m_EditorClassIdentifier: Rollgeon::Rollgeon.Dice.RerollBudgetServiceBootstrap
+  m_Script: {fileID: 11500000, guid: 5ad12367822f81245a3a494cbfacfdde, type: 3}
+  m_Name: RollPoolServiceBootstrap
+  m_EditorClassIdentifier: Rollgeon::Rollgeon.Combat.Rolls.RollPoolServiceBootstrap

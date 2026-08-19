@@ -213,7 +213,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 5531895623681
-    m_Localized: Energy +1
+    m_Localized: +1 Roll per turn
     m_Metadata:
       m_Items: []
   - m_Id: 5531895623682
