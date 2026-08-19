@@ -56,8 +56,6 @@ namespace Patterns
         OnTurnStarted,
         /// <summary>args: [Guid entityGuid]. Quien cierra su turno — lo consume Modifier&lt;T&gt; para decrementar Duration.</summary>
         OnTurnFinished,
-        /// <summary>args: [Guid entityGuid, int current, int max]</summary>
-        OnEnergyChanged,
         /// <summary>args: [IReadOnlyList&lt;Guid&gt; orderForRound, int roundIndex]</summary>
         OnTurnQueueBuilt,
 
@@ -173,8 +171,9 @@ namespace Patterns
         // --- HUD bindings (le hablan al §D ScreenManager) ----------------------
         /// <summary>args: [Guid entityGuid, int current, int max]</summary>
         OnPlayerHealthChanged,
-        /// <summary>args: [Guid entityGuid, int current, int max]</summary>
-        OnPlayerEnergyChanged,
+        /// <summary>args: [Guid entityGuid, int current, int max]. Pool de Rolls del
+        /// jugador (Feature#0050) — reemplazó a OnPlayerEnergyChanged.</summary>
+        OnPlayerRollsChanged,
         /// <summary>args: [int current, int delta]</summary>
         OnGoldChanged,
         /// <summary>args: [Guid targetGuid, FloatingNumberType type, float value, Vector3 offset]</summary>

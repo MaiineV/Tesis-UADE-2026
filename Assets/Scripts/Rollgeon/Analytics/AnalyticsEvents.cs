@@ -69,7 +69,7 @@ namespace Rollgeon.Analytics
             public const string DamageDealt = "damage_dealt";   // INT
             public const string DamageTaken = "damage_taken";   // INT
             public const string RerollsUsed = "rerolls_used";   // INT
-            public const string EnergySpent = "energy_spent";   // INT
+            public const string RollsSpent = "rolls_spent";     // INT (ex energy_spent, Feature#0050)
             public const string HpRemaining = "hp_remaining";   // INT
             public const string TopCombos = "top_combos";       // STRING ("id:count,..." cap 100 chars)
             public const string BossPhaseReached = "boss_phase_reached"; // INT (0 = sin boss)

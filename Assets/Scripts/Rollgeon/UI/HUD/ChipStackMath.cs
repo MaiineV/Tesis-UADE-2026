@@ -93,7 +93,7 @@ namespace Rollgeon.UI.HUD
             return $"<color=#{shieldHex}>{hp + shield}</color>/{maxHp}";
         }
 
-        public static string FormatEnergyLabel(int current, int max) => $"{current}/{max}";
+        public static string FormatRollsLabel(int current, int max) => $"{current}/{max}";
 
         public static string FormatGoldLabel(int gold) => gold.ToString();
 

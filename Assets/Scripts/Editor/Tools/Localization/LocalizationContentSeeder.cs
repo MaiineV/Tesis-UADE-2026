@@ -33,7 +33,6 @@ namespace Rollgeon.EditorTools.Localization
             SeedEnchantments();
             SeedUnlockHints();
             SeedMiscContent();
-            SeedRollCost();
             SeedBuildHelp();
             SeedStatusIcons();
             SeedContractDrawer();
@@ -95,9 +94,9 @@ namespace Rollgeon.EditorTools.Localization
                 "Esta es tu VIDA: si llega a cero, la run se termina. Cuídala.",
                 "This is your HEALTH: if it hits zero, the run is over. Look after it.");
 
-            Ui(TutorialTextKeys.StatsEnergy,
-                "Esta es tu ENERGÍA: moverte, atacar y volver a tirar la consumen. Adminístrala en cada turno.",
-                "This is your ENERGY: moving, attacking and rerolling all spend it. Manage it every turn.");
+            Ui(TutorialTextKeys.StatsRolls,
+                "Este es tu POOL DE ROLLS: cada tirada de dados consume 1. Al terminar tu turno recuperas 5 (máximo 15).",
+                "This is your ROLL POOL: every dice throw spends 1. Ending your turn grants 5 back (15 max).");
 
             Ui(TutorialTextKeys.AttackTeach,
                 "Se desbloqueó ATACAR ({0}). Selecciónalo para elegir a quién golpear.",
@@ -114,14 +113,14 @@ namespace Rollgeon.EditorTools.Localization
                 "and throw with a quick flick.");
 
             Ui(TutorialTextKeys.DiceTeach,
-                "Arma combos (par, trío, escalera). Clic en un dado lo bloquea; vuelve a tirar el resto " +
-                "— máximo 3 tiradas. Luego CONFIRMA.",
-                "Build combos (pair, trio, straight). Click a die to lock it; reroll the rest " +
-                "— 3 rolls max. Then CONFIRM.");
+                "Arma combos (par, trío, escalera). Clic bloquea un dado; re-tira el resto " +
+                "por 1 Roll cada tirada. Luego CONFIRMA.",
+                "Build combos (pair, trio, straight). Click locks a die; reroll the rest " +
+                "for 1 Roll per throw. Then CONFIRM.");
 
             Ui(TutorialTextKeys.RerollTeach,
-                "Tienes hasta 3 tiradas gratis por acción; las siguientes cuestan 1 de energía.",
-                "You get up to 3 free rolls per action; the next ones cost 1 energy each.");
+                "Puedes volver a tirar sin tope: cada tirada consume 1 Roll de tu pool.",
+                "You can reroll without limit: each throw spends 1 Roll from your pool.");
 
             Ui(TutorialTextKeys.DefenseTeach,
                 "Te sobraron tiradas: fase de DEFENSA. Lanza los dados y arma un combo — " +
@@ -253,9 +252,9 @@ namespace Rollgeon.EditorTools.Localization
             Ui(UiTextKeys.RejectNoRange,
                 "Sin rango al objetivo.",
                 "No target in range.");
-            Ui(UiTextKeys.RejectNoEnergy,
-                "No tienes energía suficiente.",
-                "Not enough energy.");
+            Ui(UiTextKeys.RejectNoRolls,
+                "No te quedan Rolls.",
+                "No Rolls left.");
             Ui(UiTextKeys.RejectUsed,
                 "Ya la usaste este turno.",
                 "Already used this turn.");
@@ -490,7 +489,7 @@ namespace Rollgeon.EditorTools.Localization
         {
             // Recompensas de personaje — se veían en inglés incluso en español.
             Content("char_rew.attack_plus_3.name", "Ataque +3", "Attack +3");
-            Content("char_rew.energy_plus_1.name", "Energía +1", "Energy +1");
+            Content("char_rew.energy_plus_1.name", "+1 Roll por turno", "+1 Roll per turn");
             Content("char_rew.hp_plus_5.name", "Vida máxima +5", "Max Health +5");
             Content("char_rew.speed_plus_2.name", "Velocidad +2", "Speed +2");
 
@@ -513,40 +512,6 @@ namespace Rollgeon.EditorTools.Localization
             Content("Enchantment.name", "Sala de Encantamiento", "Enchantment Room");
             Content("room_tutorial_combat_b.name", "Tutorial — Combate 1", "Tutorial — Combat 1");
             Content("room_tutorial_combat_c.name", "Tutorial — Combate 2", "Tutorial — Combat 2");
-        }
-
-        // ==================================================================
-        // Costo en energía de los rolls extra (tabla UI)
-        // ==================================================================
-
-        /// <remarks>
-        /// El <c>{ENERGY}</c> lo expande <c>IconSpriteTags</c> al glifo del atlas
-        /// <b>después</b> de traducir, y el <c>{0}</c> del chain prompt lo reemplaza
-        /// <c>ChainRollPromptView.Show</c> con el nombre de la fase — los dos tokens
-        /// tienen que sobrevivir la traducción.
-        /// <para>
-        /// "Reroll" y "Roll" quedan iguales en ES y EN a propósito: son los términos que
-        /// el juego ya venía mostrando sin traducir. Están listados en
-        /// <c>LocalizationTablesTests.IdenticalByDesign</c> para que el guard de
-        /// "columna EN copiada del español" no los marque.
-        /// </para>
-        /// </remarks>
-        private static void SeedRollCost()
-        {
-            Ui(UiTextKeys.RerollPaid,
-                "Reroll  -1 {ENERGY}",
-                "Reroll  -1 {ENERGY}");
-
-            Ui(UiTextKeys.ChainRollPaid,
-                "{0} Roll  -1 {ENERGY}",
-                "{0} Roll  -1 {ENERGY}");
-
-            // Dos líneas: primero el por qué aparece el prompt, después la regla.
-            // El salto va en la traducción y no en la vista para que cada idioma
-            // pueda cortar donde le quede bien.
-            Ui(UiTextKeys.ChainRollPaidHint,
-                "¡No te quedan tiradas gratis!\nCada tirada adicional cuesta 1 de Energía.",
-                "You have no free rolls left!\nEach additional roll costs 1 Energy.");
         }
 
         // ==================================================================

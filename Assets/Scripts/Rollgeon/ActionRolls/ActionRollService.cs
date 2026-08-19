@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Patterns;
-using Rollgeon.Combat.EnergyLib;
+using Rollgeon.Combat.Rolls;
 using Rollgeon.Combos;
 using Rollgeon.Dice;
 using Rollgeon.Dice.Throw;
@@ -16,7 +16,7 @@ namespace Rollgeon.ActionRolls
     /// legacy (<see cref="EventName.OnDiceRolled"/> para el visual de los 5 dados).
     /// </summary>
     /// <remarks>
-    /// <b>Charge timing.</b> La energia base se cobra al entrar en
+    /// <b>Charge timing.</b> El roll base (si la spec cobra) se cobra al entrar en
     /// <see cref="ActionRollPhase.Rolling"/> — despues del confirm dialog si lo hubo,
     /// antes de la primera tirada. Si el cobro falla, la fase pasa a
     /// <see cref="ActionRollPhase.Cancelled"/> y el outcome reporta Cancelled.
@@ -25,7 +25,7 @@ namespace Rollgeon.ActionRolls
     public sealed class ActionRollService : IActionRollService, IDisposable
     {
         private readonly IDiceRoller _roller;
-        private readonly IEnergyService _energy;
+        private readonly IRollPoolService _rolls;
         private readonly ComboCatalogSO _comboCatalog;
 
         private ActionRollSpec _spec;
@@ -51,11 +51,11 @@ namespace Rollgeon.ActionRolls
         // SUBSET de dados con _currentHolds[i] == true (semantica del combate).
         private bool[] _currentHolds;
 
-        public ActionRollService(IDiceRoller roller, IEnergyService energy,
+        public ActionRollService(IDiceRoller roller, IRollPoolService rolls,
             ComboCatalogSO comboCatalog = null)
         {
             _roller = roller ?? throw new ArgumentNullException(nameof(roller));
-            _energy = energy ?? throw new ArgumentNullException(nameof(energy));
+            _rolls = rolls ?? throw new ArgumentNullException(nameof(rolls));
             _comboCatalog = comboCatalog;
         }
 
@@ -119,7 +119,7 @@ namespace Rollgeon.ActionRolls
             Action<ActionRollOutcome> onCompleted)
         {
             Debug.LogWarning($"[ActionRollService] StartFlow → label='{spec.ActionLabel}' " +
-                             $"threshold={spec.Threshold} cost={spec.EnergyCost} " +
+                             $"threshold={spec.Threshold} costsRolls={spec.CostsRolls} " +
                              $"requireConfirm={spec.RequireConfirm} allowReroll={spec.AllowReroll} " +
                              $"comboCatalog={(_comboCatalog != null ? "OK" : "NULL")}");
             if (IsActive)
@@ -164,7 +164,7 @@ namespace Rollgeon.ActionRolls
 
         private Func<bool[], bool> _prevGrabRerollHandler;
 
-        // Reroll iniciado por agarre: mismas reglas que el botón (fase, energía).
+        // Reroll iniciado por agarre: mismas reglas que el botón (fase, rolls).
         private bool TryGrabReroll(bool[] keep)
         {
             if (_phase != ActionRollPhase.AwaitingRerollDecision) return false;
@@ -207,7 +207,7 @@ namespace Rollgeon.ActionRolls
                 return;
             }
 
-            // Si cancelan despues del primer roll, ya gastaron la energia base + tienen
+            // Si cancelan despues del primer roll, ya gastaron el roll base + tienen
             // un resultado. La accion se considera fallida pero NO Cancelled — el outcome
             // refleja el roll real. Cancel-from-AwaitingConfirm si es un cancel limpio.
             if (_phase == ActionRollPhase.AwaitingRerollDecision)
@@ -242,7 +242,7 @@ namespace Rollgeon.ActionRolls
             keep = ForceKeepBlocked(keep, _currentRoll?.Length ?? 0);
 
             // BUG-014: keep all-true = ningún dado va a volar (invertido: nada
-            // seleccionado; clásico: todo lockeado o bloqueado) — cobrar energía
+            // seleccionado; clásico: todo lockeado o bloqueado) — cobrar un roll
             // sería un drain sin efecto. Bail sin mutar phase ni cobrar; el panel
             // debería haber deshabilitado el botón antes vía CanAffordReroll, esto
             // es solo el guard defensivo.
@@ -252,13 +252,12 @@ namespace Rollgeon.ActionRolls
                 return;
             }
 
-            // Multi-shot: la spec permite rerollear mientras haya energía. El único
-            // gate es SpendEnergy: si falla, resolvemos con la tirada actual (el
-            // panel debería haber deshabilitado el botón antes vía CanAffordReroll).
-            int cost = Mathf.Max(0, _spec.RerollEnergyCost);
-            if (cost > 0 && !_energy.SpendEnergy(_playerGuid, cost))
+            // Multi-shot: la spec permite rerollear mientras haya rolls en el pool.
+            // El único gate es TrySpendRolls: si falla, resolvemos con la tirada actual
+            // (el panel debería haber deshabilitado el botón antes vía CanAffordReroll).
+            if (_spec.CostsRolls && !_rolls.TrySpendRolls(_playerGuid, 1))
             {
-                Debug.Log("[ActionRollService] Reroll bloqueado — sin energia. Resolviendo con tirada actual.");
+                Debug.Log("[ActionRollService] Reroll bloqueado — pool vacío. Resolviendo con tirada actual.");
                 ResolveWithCurrentRoll();
                 return;
             }
@@ -387,10 +386,9 @@ namespace Rollgeon.ActionRolls
 
         private void BeginInitialRoll()
         {
-            int cost = Mathf.Max(0, _spec.EnergyCost);
-            if (cost > 0 && !_energy.SpendEnergy(_playerGuid, cost))
+            if (_spec.CostsRolls && !_rolls.TrySpendRolls(_playerGuid, 1))
             {
-                Debug.Log("[ActionRollService] Energia insuficiente al confirmar — cancelando.");
+                Debug.Log("[ActionRollService] Pool sin rolls al confirmar — cancelando.");
                 CompleteCancelled();
                 return;
             }
@@ -443,8 +441,8 @@ namespace Rollgeon.ActionRolls
             string comboTag = _currentCombo != null ? _currentCombo.DisplayName : "(no combo)";
             Debug.LogWarning($"[ActionRollService] Roll → dice=[{string.Join(",", faces)}] combo={comboTag} " +
                              $"effective={_currentEffectiveTotal} threshold={_spec.Threshold} " +
-                             $"allowReroll={_spec.AllowReroll} energy={_energy.GetCurrent(_playerGuid)} " +
-                             $"rerollCost={_spec.RerollEnergyCost}");
+                             $"allowReroll={_spec.AllowReroll} rolls={_rolls.GetCurrent(_playerGuid)} " +
+                             $"costsRolls={_spec.CostsRolls}");
         }
 
         // Detecta el mejor combo + effective total considerando SOLO los dados holdeados.
@@ -593,15 +591,14 @@ namespace Rollgeon.ActionRolls
                 if (_phase != ActionRollPhase.AwaitingRerollDecision) return false;
                 // Sin ningún dado que vaya a volar (los bloqueados por boss nunca
                 // vuelan) no hay nada que re-tirar, el botón queda deshabilitado
-                // aunque sobre energía. Qué dado vuela depende del modo: invertido
+                // aunque sobren rolls. Qué dado vuela depende del modo: invertido
                 // ⇒ los seleccionados; clásico ⇒ los no seleccionados.
                 bool anyRerollable = RerollSelectionPrefs.KeepSelected
                     ? AnyUnselectedRerollable()
                     : AnySelectedRerollable();
                 if (!anyRerollable) return false;
-                int cost = Mathf.Max(0, _spec.RerollEnergyCost);
-                if (cost <= 0) return true;
-                return _energy.GetCurrent(_playerGuid) >= cost;
+                if (!_spec.CostsRolls) return true;
+                return _rolls.GetCurrent(_playerGuid) >= 1;
             }
         }
 

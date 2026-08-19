@@ -34,9 +34,8 @@ namespace Rollgeon.Combat.Tests
             var a = new ModifiableAttributes();
             a.SetAttribute<Attack>(new Attack(0));
             a.SetAttribute<Health>(new Health(10));
-            // BUG-022: los grants de Health/Energy rutean a los stats de máximo.
+            // BUG-022: los grants de Health rutean al stat de máximo.
             a.SetAttribute<MaxHealth>(new MaxHealth(10));
-            a.SetAttribute<MaxEnergy>(new MaxEnergy(3));
             _attrs.Register(_player, a);
             ServiceLocator.AddService<AttributesManager>(_attrs, ServiceScope.Global);
 
@@ -128,12 +127,28 @@ namespace Rollgeon.Combat.Tests
         }
 
         [Test]
-        public void Apply_Energy_RoutesToMaxEnergy()
+        public void Apply_RollRegen_RaisesPerTurnGrant()
         {
-            bool ok = PlayerStatGrants.Apply(CharacterRewardTargetStat.Energy, 1);
+            // Feature#0050: el reward ex "Energía +1" suma +1 al grant por turno
+            // del Pool de Rolls (via IRollPoolService, no como modifier de atributo).
+            var pool = new Rollgeon.Combat.Rolls.RollPoolService();
+            var ruleset = UnityEngine.ScriptableObject.CreateInstance<Rollgeon.Balance.RulesetSO>();
+            try
+            {
+                pool.ConfigureForTests(ruleset);
+                ServiceLocator.AddService<Rollgeon.Combat.Rolls.IRollPoolService>(pool);
 
-            Assert.IsTrue(ok);
-            Assert.AreEqual(4, _attrs.GetAttribute<MaxEnergy>(_player).ModifiedValue);
+                bool ok = PlayerStatGrants.Apply(CharacterRewardTargetStat.RollRegen, 1);
+
+                Assert.IsTrue(ok);
+                Assert.AreEqual(6, pool.GetRollsPerTurn(_player),
+                    "El grant por turno debe pasar de 5 (ruleset) a 6.");
+            }
+            finally
+            {
+                pool.Dispose();
+                UnityEngine.Object.DestroyImmediate(ruleset);
+            }
         }
 
         private sealed class FakePlayerService : IPlayerService

@@ -415,15 +415,12 @@ namespace Rollgeon.Editor.Tools
             Prop($"{bp}.ActionName");
             Prop($"{bp}.IsBaseBehavior");
             Prop($"{bp}.Slot");
-            Prop($"{bp}.EnergyCost");
             Prop($"{bp}.BlockOnRepeat");
 
             EditorGUILayout.Space(8);
             Header("Dice");
             Prop($"{bp}.NeedsDiceRoll");
-            Prop($"{bp}.FreeRollCount");
             Prop($"{bp}.AllowsReroll");
-            Prop($"{bp}.AllowsEnergyReroll");
 
             EditorGUILayout.Space(8);
             Header("Show Conditions");

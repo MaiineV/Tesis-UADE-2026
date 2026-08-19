@@ -3710,7 +3710,6 @@ MonoBehaviour:
   _passiveBadge: {fileID: 6528147116408859551}
   _activeItems: {fileID: 0}
   _boardSkin: {fileID: 0}
-  _chainRollPrompt: {fileID: 0}
   _damageFlashGroup: {fileID: 5192322562382934387}
   _damageFlashSeconds: 0.18
   _damageFlashAlpha: 0.5

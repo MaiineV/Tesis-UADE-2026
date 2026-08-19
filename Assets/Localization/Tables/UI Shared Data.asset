@@ -323,10 +323,6 @@ MonoBehaviour:
     m_Key: tutorial.stats_hp
     m_Metadata:
       m_Items: []
-  - m_Id: 7800251719905285
-    m_Key: tutorial.stats_energy
-    m_Metadata:
-      m_Items: []
   - m_Id: 7800251719905286
     m_Key: tutorial.attack_teach
     m_Metadata:
@@ -421,18 +417,6 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 7867763907198976
     m_Key: class_select.locked_tooltip
-    m_Metadata:
-      m_Items: []
-  - m_Id: 8159026612039680
-    m_Key: roll.reroll_paid
-    m_Metadata:
-      m_Items: []
-  - m_Id: 8159026649788416
-    m_Key: roll.chain_paid
-    m_Metadata:
-      m_Items: []
-  - m_Id: 8187299979096064
-    m_Key: roll.chain_paid_hint
     m_Metadata:
       m_Items: []
   - m_Id: 8535671167614976
@@ -599,10 +583,6 @@ MonoBehaviour:
     m_Key: action.reject.no_range
     m_Metadata:
       m_Items: []
-  - m_Id: 10374649764216833
-    m_Key: action.reject.no_energy
-    m_Metadata:
-      m_Items: []
   - m_Id: 10374649764216834
     m_Key: action.reject.used
     m_Metadata:
@@ -629,6 +609,14 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 11862063171076096
     m_Key: contract.header.description
+    m_Metadata:
+      m_Items: []
+  - m_Id: 12873216341229568
+    m_Key: tutorial.stats_rolls
+    m_Metadata:
+      m_Items: []
+  - m_Id: 12873216408338432
+    m_Key: action.reject.no_rolls
     m_Metadata:
       m_Items: []
   m_Metadata:

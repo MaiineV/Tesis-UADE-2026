@@ -97,7 +97,7 @@ namespace Rollgeon.Analytics.Tests
         // ====================================================================
 
         [Test]
-        public void CombatEnd_AggregatesTurnsDamageRerollsEnergyFromEvents()
+        public void CombatEnd_AggregatesTurnsDamageRerollsRollsFromEvents()
         {
             EventManager.Trigger(EventName.OnCombatTriggered, _roomGuid, "room.boss", RoomType.Boss);
             EventManager.Trigger(EventName.OnCombatStart, _roomGuid);
@@ -116,10 +116,10 @@ namespace Rollgeon.Analytics.Tests
             EventManager.Trigger(EventName.OnRerollStarted, _enemyGuid, 0); // no cuenta
 
             // Energía: 3 (baseline) → 2 (gasto 1) → 0 (gasto 2) → 3 (refill, no cuenta)
-            EventManager.Trigger(EventName.OnPlayerEnergyChanged, _playerGuid, 3, 3);
-            EventManager.Trigger(EventName.OnPlayerEnergyChanged, _playerGuid, 2, 3);
-            EventManager.Trigger(EventName.OnPlayerEnergyChanged, _playerGuid, 0, 3);
-            EventManager.Trigger(EventName.OnPlayerEnergyChanged, _playerGuid, 3, 3);
+            EventManager.Trigger(EventName.OnPlayerRollsChanged, _playerGuid, 3, 15);
+            EventManager.Trigger(EventName.OnPlayerRollsChanged, _playerGuid, 2, 15);
+            EventManager.Trigger(EventName.OnPlayerRollsChanged, _playerGuid, 0, 15);
+            EventManager.Trigger(EventName.OnPlayerRollsChanged, _playerGuid, 3, 15);
 
             EventManager.Trigger(EventName.OnBossPhaseChanged, _enemyGuid, 2);
             EventManager.Trigger(EventName.OnPlayerHealthChanged, _playerGuid, 25, 60);
@@ -136,7 +136,7 @@ namespace Rollgeon.Analytics.Tests
             Assert.That(sent[AnalyticsEvents.Params.DamageDealt], Is.EqualTo(12));
             Assert.That(sent[AnalyticsEvents.Params.DamageTaken], Is.EqualTo(8));
             Assert.That(sent[AnalyticsEvents.Params.RerollsUsed], Is.EqualTo(2));
-            Assert.That(sent[AnalyticsEvents.Params.EnergySpent], Is.EqualTo(3));
+            Assert.That(sent[AnalyticsEvents.Params.RollsSpent], Is.EqualTo(3));
             Assert.That(sent[AnalyticsEvents.Params.HpRemaining], Is.EqualTo(25));
             Assert.That(sent[AnalyticsEvents.Params.BossPhaseReached], Is.EqualTo(2));
         }

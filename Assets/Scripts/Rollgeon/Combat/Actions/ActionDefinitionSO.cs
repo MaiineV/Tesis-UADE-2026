@@ -42,32 +42,15 @@ namespace Rollgeon.Combat.Actions
         [OdinSerialize]
         [InfoBox("Para Type = Combo -> referenciar el BaseComboSO. Para Type = UseItem -> el ItemSO. " +
                  "Para Attack/Ability/SkillCheck puro, vive el Effect abajo y este campo queda null. " +
-                 "Si BackingAsset != null y Effect.Effects esta vacio, TurnManager cobra energia + marca " +
+                 "Si BackingAsset != null y Effect.Effects esta vacio, TurnManager cobra 1 roll + marca " +
                  "usada, y el caller externo despacha al sistema especifico. Plan §10 R1.")]
         public ScriptableObject BackingAsset;
-
-        [Title("Cost")]
-        [MinValue(0)]
-        [Tooltip("Energia cobrada por IEnergyService.SpendEnergy antes de ejecutar el Effect. Rango tipico 0..5.")]
-        public int EnergyCost;
 
         [Title("Repetition")]
         [ToggleLeft]
         [InfoBox("Si true, esta ActionId no puede ejecutarse dos veces en el mismo turno. " +
                  "Default del GDD. Movement desactiva esto para permitir fuga.")]
         public bool BlockOnRepeat = true;
-
-        [Title("Reroll")]
-        [MinValue(0)]
-        [Tooltip("Tiradas TOTALES gratis (incluye el primer roll). Ej: ataque Generala = 3 " +
-                 "(primer roll + 2 rerolls); skill-check heal/force-door = 1. El RerollBudgetService " +
-                 "inicializa FreeRollsRemaining = FreeRollCount y descuenta uno por cada Roll/Reroll.")]
-        public int FreeRollCount = 1;
-
-        [ToggleLeft]
-        [Tooltip("Si true, la accion permite gastar re-rolls de energia (§12.2 / T104). " +
-                 "En este worktree el flag se declara; T104 lo consume.")]
-        public bool AllowsEnergyReroll = true;
 
         [Title("Effect (si no hay BackingAsset)")]
         [OdinSerialize]

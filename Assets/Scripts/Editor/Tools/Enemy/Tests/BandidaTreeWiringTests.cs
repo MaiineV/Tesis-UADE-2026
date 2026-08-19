@@ -200,10 +200,11 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                 new[] { BandidaAssetBuilder.ReelTollCapPhase1, BandidaAssetBuilder.ReelTollCapPhase2 },
                 caps);
 
-            // EnergyRegenBase del jugador. Un techo mayor lo deja en energía neta negativa para
-            // siempre, que deja de ser una palanca y pasa a ser un candado.
+            // Muy por debajo del grant de rolls del jugador (5 por turno). Un techo mayor
+            // lo dejaría en economía neta negativa, que deja de ser una palanca y pasa a
+            // ser un candado.
             Assert.LessOrEqual(BandidaAssetBuilder.ReelTollCapPhase2, 2,
-                "El peaje no puede superar el regen del jugador.");
+                "El peaje no puede acercarse al grant por turno del jugador.");
         }
 
         [Test]

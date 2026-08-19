@@ -679,7 +679,7 @@ namespace Rollgeon.Tutorial
         private static bool IsCombat1TeachStep(TutorialStep step) =>
             step is TutorialStep.EnemiesIntro or TutorialStep.TurnOrderIntro or TutorialStep.ContractTeach
                 or TutorialStep.MoveTeach or TutorialStep.MoveTiles
-                or TutorialStep.StatsHp or TutorialStep.StatsEnergy or TutorialStep.AttackTeach
+                or TutorialStep.StatsHp or TutorialStep.StatsRolls or TutorialStep.AttackTeach
                 or TutorialStep.TargetTeach or TutorialStep.ThrowTeach or TutorialStep.DiceTeach
                 or TutorialStep.DefenseTeach or TutorialStep.EndTurnTeach;
 
@@ -842,26 +842,26 @@ namespace Rollgeon.Tutorial
                 request.AnchorKind = TutorialAnchorKind.RectTransform;
                 request.UiTarget = rect;
             }
-            ShowStep(TutorialStep.StatsHp, request, ShowStatsEnergy);
+            ShowStep(TutorialStep.StatsHp, request, ShowStatsRolls);
         }
 
-        private void ShowStatsEnergy()
+        private void ShowStatsRolls()
         {
-            _step = TutorialStep.StatsEnergy;
+            _step = TutorialStep.StatsRolls;
             var request = new TutorialStepDisplayRequest
             {
                 AnchorKind = TutorialAnchorKind.None,
-                Text = LocalizedContent.Ui(TutorialTextKeys.StatsEnergy,
-                    "Esta es tu ENERGÍA: moverte, atacar y volver a tirar la consumen. Adminístrala en cada turno."),
+                Text = LocalizedContent.Ui(TutorialTextKeys.StatsRolls,
+                    "Este es tu POOL DE ROLLS: cada tirada de dados consume 1. Al terminar tu turno recuperas 5 (máximo 15)."),
                 InputPolicy = TutorialInputPolicy.BlockUntilContinue,
             };
             var hud = FindCombatHud();
-            if (hud != null && hud.TryGetEnergyBarRect(out var rect))
+            if (hud != null && hud.TryGetRollPoolRect(out var rect))
             {
                 request.AnchorKind = TutorialAnchorKind.RectTransform;
                 request.UiTarget = rect;
             }
-            ShowStep(TutorialStep.StatsEnergy, request, ShowAttackTeach);
+            ShowStep(TutorialStep.StatsRolls, request, ShowAttackTeach);
         }
 
         private void ShowAttackTeach()
@@ -972,8 +972,8 @@ namespace Rollgeon.Tutorial
                 OpenContractDrawerForRoll();
                 ShowStep(TutorialStep.DiceTeach, DiceZoneRequest(
                     LocalizedContent.Ui(TutorialTextKeys.DiceTeach,
-                        "Arma combos (par, trío, escalera). Clic en un dado lo bloquea; vuelve a tirar el resto " +
-                        "— máximo 3 tiradas. Luego CONFIRMA.")));
+                        "Arma combos (par, trío, escalera). Clic bloquea un dado; re-tira el resto " +
+                        "por 1 Roll cada tirada. Luego CONFIRMA.")));
                 return;
             }
 
@@ -983,7 +983,7 @@ namespace Rollgeon.Tutorial
             _rerollTaught = true;
             var rerollRequest = RollButtonRequest(
                 LocalizedContent.Ui(TutorialTextKeys.RerollTeach,
-                    "Tienes hasta 3 tiradas gratis por acción; las siguientes cuestan 1 de energía."));
+                    "Puedes volver a tirar sin tope: cada tirada consume 1 Roll de tu pool."));
             rerollRequest.InputPolicy = TutorialInputPolicy.DismissOnClick;
             ShowStep(TutorialStep.DiceTeach, rerollRequest);
         }

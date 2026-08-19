@@ -17,15 +17,15 @@ namespace Rollgeon.Analytics
         public int DamageDealt;
         public int DamageTaken;
         public int RerollsUsed;
-        public int EnergySpent;
+        public int RollsSpent;
         public double CombatStartTime;
 
         /// <summary>Fase máxima de boss vista este combate (1-based). 0 = sin boss.</summary>
         public int MaxBossPhase;
 
         /// <summary>Última energía conocida del player. -1 = sin baseline — el
-        /// primer <c>OnPlayerEnergyChanged</c> solo establece el punto de partida.</summary>
-        public int LastPlayerEnergy = -1;
+        /// primer <c>OnPlayerRollsChanged</c> solo establece el punto de partida.</summary>
+        public int LastPlayerRolls = -1;
 
         public readonly Dictionary<string, int> ComboCounts =
             new Dictionary<string, int>(StringComparer.Ordinal);
@@ -36,21 +36,21 @@ namespace Rollgeon.Analytics
             DamageDealt = 0;
             DamageTaken = 0;
             RerollsUsed = 0;
-            EnergySpent = 0;
+            RollsSpent = 0;
             CombatStartTime = now;
             MaxBossPhase = 0;
-            LastPlayerEnergy = -1;
+            LastPlayerRolls = -1;
             ComboCounts.Clear();
         }
 
         /// <summary>Solo cuenta decrementos: refills y subas no son gasto.</summary>
-        public void TrackEnergy(int current)
+        public void TrackRolls(int current)
         {
-            if (LastPlayerEnergy >= 0 && current < LastPlayerEnergy)
+            if (LastPlayerRolls >= 0 && current < LastPlayerRolls)
             {
-                EnergySpent += LastPlayerEnergy - current;
+                RollsSpent += LastPlayerRolls - current;
             }
-            LastPlayerEnergy = current;
+            LastPlayerRolls = current;
         }
 
         /// <summary>

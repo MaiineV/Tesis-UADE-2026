@@ -333,9 +333,8 @@ MonoBehaviour:
     m_Localized: "Esta es tu VIDA: si llega a cero, la run se termina. Cu\xEDdala."
     m_Metadata:
       m_Items: []
-  - m_Id: 7800251719905285
-    m_Localized: "Esta es tu ENERG\xCDA: moverte, atacar y volver a tirar la consumen.
-      Admin\xEDstrala en cada turno."
+  - m_Id: 12873216408338432
+    m_Localized: No te quedan Rolls.
     m_Metadata:
       m_Items: []
   - m_Id: 7800251719905286
@@ -354,8 +353,8 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 7800251719905289
-    m_Localized: "Arma combos (par, tr\xEDo, escalera). Clic en un dado lo bloquea;
-      vuelve a tirar el resto \u2014 m\xE1ximo 3 tiradas. Luego CONFIRMA."
+    m_Localized: "Arma combos (par, tr\xEDo, escalera). Clic bloquea un dado; re-tira
+      el resto por 1 Roll cada tirada. Luego CONFIRMA."
     m_Metadata:
       m_Items: []
   - m_Id: 7800251719905290
@@ -451,19 +450,6 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 7867763907198976
     m_Localized: "Pr\xF3ximamente"
-    m_Metadata:
-      m_Items: []
-  - m_Id: 8159026612039680
-    m_Localized: Reroll  -1 {ENERGY}
-    m_Metadata:
-      m_Items: []
-  - m_Id: 8159026649788416
-    m_Localized: '{0} Roll  -1 {ENERGY}'
-    m_Metadata:
-      m_Items: []
-  - m_Id: 8187299979096064
-    m_Localized: "\xA1No te quedan tiradas gratis!\nCada tirada adicional cuesta
-      1 de Energ\xEDa."
     m_Metadata:
       m_Items: []
   - m_Id: 8535671167614976
@@ -640,8 +626,9 @@ MonoBehaviour:
     m_Localized: Sin rango al objetivo.
     m_Metadata:
       m_Items: []
-  - m_Id: 10374649764216833
-    m_Localized: "No tienes energ\xEDa suficiente."
+  - m_Id: 12873216341229568
+    m_Localized: "Este es tu POOL DE ROLLS: cada tirada de dados consume 1. Al terminar
+      tu turno recuperas 5 (m\xE1ximo 15)."
     m_Metadata:
       m_Items: []
   - m_Id: 10374649764216834
@@ -665,8 +652,8 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 10403289960906752
-    m_Localized: "Tienes hasta 3 tiradas gratis por acci\xF3n; las siguientes cuestan
-      1 de energ\xEDa."
+    m_Localized: 'Puedes volver a tirar sin tope: cada tirada consume 1 Roll de tu
+      pool.'
     m_Metadata:
       m_Items: []
   - m_Id: 11862063171076096

@@ -21,18 +21,18 @@ MonoBehaviour:
     PrefabModificationsReferencedUnityObjects: []
     PrefabModifications: []
     SerializationNodes:
-    - Name: _energy
+    - Name: _rollPool
       Entry: 7
-      Data: 0|Rollgeon.Balance.EnergyConfig, Rollgeon
-    - Name: EnergyMax
+      Data: 0|Rollgeon.Balance.RollPoolConfig, Rollgeon
+    - Name: RollsAtCombatStart
       Entry: 3
-      Data: 4
-    - Name: EnergyAtRunStart
+      Data: 5
+    - Name: RollsPerTurn
       Entry: 3
-      Data: 2
-    - Name: EnergyRegenBase
+      Data: 5
+    - Name: RollPoolCap
       Entry: 3
-      Data: 2
+      Data: 15
     - Name: 
       Entry: 8
       Data: 
@@ -47,6 +47,9 @@ MonoBehaviour:
       Data: 6
     - Name: FallbackInitiativeForMissingSpeed
       Entry: 3
+      Data: 0
+    - Name: EnemyActionDelaySeconds
+      Entry: 4
       Data: 0
     - Name: 
       Entry: 8
@@ -79,3 +82,4 @@ MonoBehaviour:
     SpeedDieMin: 1
     SpeedDieMax: 6
     FallbackInitiativeForMissingSpeed: 0
+    EnemyActionDelaySeconds: 0

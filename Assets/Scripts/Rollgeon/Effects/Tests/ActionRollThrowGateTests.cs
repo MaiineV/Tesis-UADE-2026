@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using NUnit.Framework;
 using Patterns;
 using Rollgeon.ActionRolls;
-using Rollgeon.Combat.EnergyLib;
+using Rollgeon.Combat.Rolls;
 using Rollgeon.Dice;
 using Rollgeon.Dice.Throw;
 using UnityEngine;
@@ -35,13 +35,18 @@ namespace Rollgeon.Effects.Tests
             }
         }
 
-        private sealed class GateFakeEnergy : IEnergyService
+        private sealed class GateFakeRolls : IRollPoolService
         {
+            public bool IsCombatActive => true;
             public void InitializeForEntity(Guid entityId) { }
-            public bool SpendEnergy(Guid entityId, int cost) => true;
-            public void RegenerateAtTurnEnd(Guid entityId) { }
+            public bool TrySpendRolls(Guid entityId, int count) => true;
+            public int Drain(Guid entityId, int amount) => amount;
+            public void AddRolls(Guid entityId, int amount) { }
             public int GetCurrent(Guid entityId) => 99;
             public int GetMax(Guid entityId) => 99;
+            public int GetRollsPerTurn(Guid entityId) => 5;
+            public void AddPerTurnGrantBonus(int amount) { }
+            public void RestoreCurrent(Guid entityId, int value) { }
         }
 
         private GateFakeRoller _roller;
@@ -74,7 +79,7 @@ namespace Rollgeon.Effects.Tests
             _throwService.AttachPresenter(this);
             ServiceLocator.AddService<IDiceThrowService>(_throwService, ServiceScope.Global);
 
-            _service = new ActionRollService(_roller, new GateFakeEnergy());
+            _service = new ActionRollService(_roller, new GateFakeRolls());
 
             _bag = ScriptableObject.CreateInstance<DiceBagSO>();
             _bag.Dice = new List<DiceType>(5)
@@ -113,12 +118,11 @@ namespace Rollgeon.Effects.Tests
 
         private static ActionRollSpec SpecHealNoConfirm() => new ActionRollSpec
         {
-            EnergyCost = 1,
+            CostsRolls = true,
             Threshold = 15,
             RequireConfirm = false,
             ActionLabel = "Curarse",
             AllowReroll = true,
-            RerollEnergyCost = 1,
             AlwaysSucceeds = true,
         };
 

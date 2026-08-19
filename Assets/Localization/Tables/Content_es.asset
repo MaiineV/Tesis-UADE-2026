@@ -215,7 +215,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 5531895623681
-    m_Localized: "Energ\xEDa +1"
+    m_Localized: +1 Roll por turno
     m_Metadata:
       m_Items: []
   - m_Id: 5531895623682

@@ -99,14 +99,6 @@ namespace Rollgeon.Effects.Concretes
                  "Endgame 65) a valor absoluto según el HP esperado del jugador en esa fase.")]
         private int _healMaxCap = 0;
 
-        [SerializeField, MinValue(0)]
-        [FormerlySerializedAs("_energyCost")]
-        [ShowIf(nameof(_useBuildDice))]
-        [Tooltip("Energía que cuesta intentar curarse DENTRO de combate. Fuera de " +
-                 "combate es 0 (la poción no cuesta energía explorando). Cobrado por " +
-                 "IActionRollService al iniciar la tirada. Default 2.")]
-        private int _energyCostInCombat = 2;
-
         [Title("Generic Dice (legacy / alt)")]
         [SerializeField]
         [Tooltip("Si true (y UseBuildDice false), tira DiceCount × dDiceFaces vía Random. " +
@@ -142,18 +134,15 @@ namespace Rollgeon.Effects.Concretes
             spec = default;
             if (!_useBuildDice) return false;
 
-            // En combate cuesta _energyCostInCombat. Fuera de combate la poción no
-            // gasta energía (igual que EffForceDoor con su EnergyCostInCombat).
-            int cost = IsInCombat() ? _energyCostInCombat : 0;
-
+            // En combate cada tirada cuesta 1 roll del pool (GDD Turn System).
+            // Fuera de combate curarse es gratis — el pool no existe en exploración.
             spec = new ActionRollSpec
             {
-                EnergyCost = cost,
+                CostsRolls = IsInCombat(),
                 Threshold = _healThreshold,
                 RequireConfirm = false,
                 ActionLabel = "Curarse",
                 AllowReroll = true,
-                RerollEnergyCost = 1,
                 AlwaysSucceeds = true,
                 BoardType = DiceBoardType.Default,
             };

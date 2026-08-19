@@ -35,7 +35,7 @@ namespace Rollgeon.EditorTools
     public static class RollgeonBuild
     {
         private const string ExpectedProductName = "Rollgeon";
-        private const string ExpectedCompanyName = "LetItRide";
+        private const string ExpectedCompanyName = "3AM Games";
         private const string BootstrapScene = "Assets/Scenes/00_Bootstrap.unity";
         private const string SteamAppIdFile = "steam_appid.txt";
         private const string DefaultOutputDir = "Build/Windows64";

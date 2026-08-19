@@ -7,7 +7,7 @@ namespace Rollgeon.DevConsole.Commands
     public static class DefaultCommands
     {
         public static DevCommandRegistry CreateDefault(IDevConsoleContext ctx,
-            GodModeController god, InfiniteEnergyController infEnergy, FreeMoveController freeMove)
+            GodModeController god, InfiniteRollsController infRolls, FreeMoveController freeMove)
         {
             var r = new DevCommandRegistry();
 
@@ -48,7 +48,7 @@ namespace Rollgeon.DevConsole.Commands
             // Combate / extras
             r.Register(new KillAllCommand());
             r.Register(new SetEnemyHpCommand());
-            r.Register(new EnergyCommand(infEnergy));
+            r.Register(new RollsCommand(infRolls));
             r.Register(new SetDiceRollCommand());
 
             // Steam

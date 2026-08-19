@@ -27,7 +27,7 @@ namespace Rollgeon.UI.HUD
     /// <summary>
     /// Botón contextual de turno: End Turn por defecto, Confirm mientras hay un
     /// flujo de dados en curso (chain, tirada suelta o ActionRoll en combate) y
-    /// Pass cuando una fase de chain espera un roll que cuesta energía y todavía
+    /// Pass cuando una fase de chain espera un roll y todavía
     /// no se tiró (la salida sin pagar). Absorbe al viejo botón Confirm de la
     /// zona de dados — un solo botón, tres significados según el contexto.
     /// </summary>
@@ -37,7 +37,8 @@ namespace Rollgeon.UI.HUD
     /// ActionRoll activo (Heal en combate) manda <see cref="IActionRollService.CanConfirm"/>
     /// via polling (los holds no emiten evento en ese flow). El estado
     /// "fase paga pendiente" no viaja por el bus — lo empuja
-    /// <c>CombatHUDView.Show/HideChainRollPrompt</c> vía <see cref="SetChainPaidRollPending"/>.
+    /// <see cref="SetChainPaidRollPending"/> (sin llamadores desde Feature#0050 — el chain
+    /// corta solo al quedarse sin rolls; se conserva por si un flujo futuro lo necesita).
     /// </remarks>
     [AddComponentMenu("Rollgeon/UI/HUD/End Turn Button View")]
     public class EndTurnButtonView : MonoBehaviour
@@ -54,7 +55,7 @@ namespace Rollgeon.UI.HUD
         [Tooltip("Opcional — highlight de 'sin energía' (glow + dots por el contorno). " +
                  "Si null, el botón no reacciona a la energía.")]
         [SerializeField]
-        private EndTurnEnergyHighlight _energyHighlight;
+        private EndTurnRollsHighlight _energyHighlight;
 
         [Tooltip("Opcional — LocalizeStringEvent del label. El modo contextual le cambia " +
                  "la key (action.end_turn / screen.confirm / action.pass). Si null, el " +
@@ -249,7 +250,7 @@ namespace Rollgeon.UI.HUD
 
         /// <summary>
         /// Fase de chain con entrada paga abierta (prompt "X Roll -1⚡" visible).
-        /// Lo empuja <c>CombatHUDView</c> desde Show/HideChainRollPrompt — el modo
+        /// Sin llamadores desde Feature#0050 — el modo
         /// pasa a Pass mientras dure.
         /// </summary>
         public void SetChainPaidRollPending(bool pending)

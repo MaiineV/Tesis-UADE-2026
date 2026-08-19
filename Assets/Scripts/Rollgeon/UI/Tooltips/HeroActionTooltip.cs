@@ -10,7 +10,7 @@ namespace Rollgeon.UI.Tooltips
 {
     /// <summary>
     /// Builder compartido del texto de tooltip de una acción de hero: header con el
-    /// nombre + costo real de energía + body aportado por los effects
+    /// nombre + costo en rolls + body aportado por los effects
     /// (<see cref="IHasTooltipInfo"/>). Nunca devuelve vacío: sin body queda el
     /// header + costo como fallback genérico.
     /// </summary>
@@ -23,9 +23,8 @@ namespace Rollgeon.UI.Tooltips
             var sb = new StringBuilder();
             sb.Append("<b>").Append(behavior.ActionName).Append("</b>");
 
-            int cost = ResolveDisplayCost(behavior, context.OwnerGuid);
-            if (cost > 0)
-                sb.AppendLine().Append("Costo: ").Append(cost).Append(" de energía");
+            // Pool de Rolls: toda acción cuesta 1 roll por tirada — costo uniforme.
+            sb.AppendLine().Append("Costo: 1 Roll por tirada");
 
             var body = FirstEffectTooltip(behavior.Effects, context);
             if (!string.IsNullOrEmpty(body))
@@ -52,29 +51,6 @@ namespace Rollgeon.UI.Tooltips
                 }
             }
             return null;
-        }
-
-        /// <summary>
-        /// Costo que efectivamente se va a cobrar: el <c>ActionRollSpec</c> del effect
-        /// (cobrado por <c>IActionRollService</c>) pisa al <c>behavior.EnergyCost</c>
-        /// legacy — misma regla que el cost label de los botones del HUD.
-        /// </summary>
-        public static int ResolveDisplayCost(HeroActionBehavior behavior, Guid ownerGuid)
-        {
-            if (behavior?.Effects != null)
-            {
-                foreach (var group in behavior.Effects)
-                {
-                    if (group?.Effects == null) continue;
-                    foreach (var eff in group.Effects)
-                    {
-                        if (eff is IActionRollEffect rollEffect
-                            && rollEffect.TryGetRollSpec(ownerGuid, out var spec))
-                            return spec.EnergyCost;
-                    }
-                }
-            }
-            return behavior?.EnergyCost ?? 0;
         }
 
         private static string TooltipFrom(IEffect eff, in TooltipContext context)

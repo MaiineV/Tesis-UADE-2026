@@ -28,7 +28,7 @@ namespace Rollgeon.UI.Tests
             ServiceLocator.Clear();
         }
 
-        private static HeroActionBehavior MakeBehavior(string name, int energyCost,
+        private static HeroActionBehavior MakeBehavior(string name,
             params IEffect[] effects)
         {
             var data = new EffectData();
@@ -36,7 +36,6 @@ namespace Rollgeon.UI.Tests
             return new HeroActionBehavior
             {
                 ActionName = name,
-                EnergyCost = energyCost,
                 Effects = new List<EffectData> { data },
             };
         }
@@ -45,28 +44,14 @@ namespace Rollgeon.UI.Tests
         public void BuildFor_NoEffectsWithTooltip_FallsBackToHeaderAndCost()
         {
             // Arrange — ningún effect aporta body; el fallback nunca es vacío.
-            var behavior = MakeBehavior("Golpe Misterioso", 3);
+            var behavior = MakeBehavior("Golpe Misterioso");
 
             // Act
             var text = HeroActionTooltip.BuildFor(behavior, _context);
 
-            // Assert
+            // Assert — el costo es uniforme: 1 roll por tirada (Pool de Rolls).
             StringAssert.Contains("<b>Golpe Misterioso</b>", text);
-            StringAssert.Contains("Costo: 3 de energía", text);
-        }
-
-        [Test]
-        public void BuildFor_ZeroCost_OmitsCostLine()
-        {
-            // Arrange
-            var behavior = MakeBehavior("Moverse", 0);
-
-            // Act
-            var text = HeroActionTooltip.BuildFor(behavior, _context);
-
-            // Assert
-            StringAssert.Contains("<b>Moverse</b>", text);
-            StringAssert.DoesNotContain("Costo", text);
+            StringAssert.Contains("Costo: 1 Roll por tirada", text);
         }
 
         [Test]
@@ -76,7 +61,7 @@ namespace Rollgeon.UI.Tests
             var move = new EffMove();
             move.GetSelection().Range = 4;
             move.GetSelection().IsGlobal = false;
-            var behavior = MakeBehavior("Moverse", 0, move);
+            var behavior = MakeBehavior("Moverse", move);
 
             // Act
             var text = HeroActionTooltip.BuildFor(behavior, _context);
@@ -108,24 +93,6 @@ namespace Rollgeon.UI.Tests
             // Assert — ambas fases aportan al body.
             StringAssert.Contains("Daño:", text);
             StringAssert.Contains("Escudo:", text);
-        }
-
-        [Test]
-        public void ResolveDisplayCost_ActionRollEffect_OverridesBehaviorCost()
-        {
-            // Arrange — el spec del effect (cobrado por IActionRollService) pisa el
-            // EnergyCost legacy del behavior, igual que el cost label del HUD.
-            var heal = new EffHeal();
-            SetPrivateField(heal, "_useBuildDice", true);
-            SetPrivateField(heal, "_energyCostInCombat", 1);
-            var behavior = MakeBehavior("Curarse", 2, heal);
-            RegisterCombatPhase();
-
-            // Act
-            int cost = HeroActionTooltip.ResolveDisplayCost(behavior, Guid.NewGuid());
-
-            // Assert
-            Assert.AreEqual(1, cost, "El costo del ActionRollSpec debe pisar behavior.EnergyCost.");
         }
 
         private static EffectData MakeData(IEffect eff)
