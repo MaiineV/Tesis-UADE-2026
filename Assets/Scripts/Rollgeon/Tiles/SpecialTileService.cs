@@ -53,6 +53,11 @@ namespace Rollgeon.Tiles
         private readonly Dictionary<TileEffectCategory, ITileEffectHandler> _handlers =
             new Dictionary<TileEffectCategory, ITileEffectHandler>();
 
+        // Estado por servicio, no estático: dos servicios (producción + un fixture) no pueden
+        // repartirse los mismos clones. El pool no toca la escena hasta el primer alquiler, así
+        // que los tests que no autoran VisualPrefab siguen sin parir GameObjects.
+        private readonly Visuals.SpecialTileVisualPool _visualPool = new Visuals.SpecialTileVisualPool();
+
         private EventManager.EventReceiver _onTurnQueueBuiltHandler;
         private EventManager.EventReceiver _onTurnStartedHandler;
         private EventManager.EventReceiver _onTurnFinishedHandler;
@@ -153,6 +158,11 @@ namespace Rollgeon.Tiles
             UnsubscribeHandlers();
             ResetAll();
             _everCreatedInstanceIds.Clear();
+
+            // El UNICO destroy real de visuales. En producción nadie llama a Dispose
+            // (SpecialTileServiceBootstrap no lo hace), así que jugando los clones viven
+            // estacionados y acotados por el tope del pool; esto es para tests y shutdown.
+            _visualPool.Dispose();
         }
 
         // ======================================================================
@@ -1064,11 +1074,16 @@ namespace Rollgeon.Tiles
         // ======================================================================
 
         /// <summary>
-        /// Anchor de arte: instancia el <see cref="SpecialTileDefinitionSO.VisualPrefab"/> por
+        /// Anchor de arte: alquila un <see cref="SpecialTileDefinitionSO.VisualPrefab"/> por
         /// celda y bindea sus componentes opcionales (binding de eventos, tooltip). Sin
         /// prefab, cae al overlay de quads tintados — la casilla nunca queda invisible.
         /// </summary>
-        private static void SpawnVisuals(SpecialTileInstance instance)
+        /// <remarks>
+        /// Pasa por <see cref="Visuals.SpecialTileVisualPool"/>: un ataque de jefe enciende
+        /// ~112 casillas en un frame y las bandas repiten la ignición cada dos rondas — de la
+        /// segunda en adelante no se instancia nada.
+        /// </remarks>
+        private void SpawnVisuals(SpecialTileInstance instance)
         {
             var prefab = instance?.Definition?.VisualPrefab;
             if (prefab == null)
@@ -1083,15 +1098,16 @@ namespace Rollgeon.Tiles
                 if (instance.Visuals.ContainsKey(coord)) continue;
 
                 var world = grid.GridToWorld(coord) + Vector3.up * instance.Definition.VisualYOffset;
-                var go = Object.Instantiate(prefab, world, Quaternion.identity);
-                go.name = $"{prefab.name} (tile {coord})";
-                instance.Visuals[coord] = go;
+                var visual = _visualPool.Rent(prefab, world);
+                if (visual == null) continue;
 
-                var binding = go.GetComponentInChildren<Visuals.SpecialTileVisualBinding>(true);
-                if (binding != null) binding.Bind(instance.InstanceId, coord);
+                visual.Go.name = $"{prefab.name} (tile {coord})";
+                instance.Visuals[coord] = visual;
 
-                var tooltip = go.GetComponentInChildren<Visuals.SpecialTileTooltipInfo>(true);
-                if (tooltip != null) tooltip.Bind(instance.Definition, instance.RemainingRounds);
+                // Re-bindeo en CADA alquiler, no al crear el clon: uno reciclado viene atado a
+                // la instancia anterior y contestaría por una casilla que ya se apagó.
+                if (visual.Binding != null) visual.Binding.Bind(instance.InstanceId, coord);
+                if (visual.Tooltip != null) visual.Tooltip.Bind(instance.Definition, instance.RemainingRounds);
             }
         }
 
@@ -1116,7 +1132,12 @@ namespace Rollgeon.Tiles
             }
         }
 
-        private static void ClearVisuals(SpecialTileInstance instance, GridCoord? coord = null)
+        /// <summary>
+        /// Apaga una casilla, o todas con <paramref name="coord"/> en <c>null</c>. Los clones se
+        /// ESTACIONAN en el pool en vez de destruirse: la casilla que expira ahora es la misma
+        /// que se va a volver a encender dos rondas después.
+        /// </summary>
+        private void ClearVisuals(SpecialTileInstance instance, GridCoord? coord = null)
         {
             if (instance == null) return;
             if (!coord.HasValue) ClearOverlay(instance.InstanceId);
@@ -1126,22 +1147,14 @@ namespace Rollgeon.Tiles
             {
                 if (instance.Visuals.TryGetValue(coord.Value, out var one))
                 {
-                    DestroyVisual(one);
+                    _visualPool.Park(one);
                     instance.Visuals.Remove(coord.Value);
                 }
                 return;
             }
 
-            foreach (var go in instance.Visuals.Values) DestroyVisual(go);
+            foreach (var visual in instance.Visuals.Values) _visualPool.Park(visual);
             instance.Visuals.Clear();
-        }
-
-        /// <summary>Fuera de play mode <c>Destroy</c> es diferido y no llega a aplicarse en un test.</summary>
-        private static void DestroyVisual(GameObject go)
-        {
-            if (go == null) return;
-            if (Application.isPlaying) Object.Destroy(go);
-            else Object.DestroyImmediate(go);
         }
 
         /// <summary>No-op sin <see cref="SpecialTileDefinitionSO.TriggerVfxPrefab"/>.</summary>
@@ -1206,9 +1219,10 @@ namespace Rollgeon.Tiles
             /// <summary>Solo con DisarmOnTrigger: armado por celda (Pinchos).</summary>
             public Dictionary<GridCoord, bool> CellArmed;
 
-            /// <summary>Visual instanciado por celda (anchor de arte).</summary>
-            public readonly Dictionary<GridCoord, GameObject> Visuals =
-                new Dictionary<GridCoord, GameObject>();
+            /// <summary>Visual ALQUILADO por celda (anchor de arte). Se guarda el entry y no el
+            /// GameObject: para devolverlo hay que saber de qué balde del pool salió.</summary>
+            public readonly Dictionary<GridCoord, Visuals.PooledTileVisual> Visuals =
+                new Dictionary<GridCoord, Visuals.PooledTileVisual>();
 
             /// <summary>Copia las coords — el snapshot promete inmutabilidad.</summary>
             public SpecialTileInfo ToInfo()
