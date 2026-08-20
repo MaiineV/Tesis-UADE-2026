@@ -45,11 +45,11 @@ namespace Rollgeon.Combat.AI.Decisions
     /// <c>N + 1</c>.
     /// </para>
     /// <para>
-    /// <b>Este nodo no apaga las bandas anteriores</b>, así que la relación entre la duración y el
-    /// intervalo entre igniciones es toda la diferencia entre un fuego que se rodea y un piso que se
-    /// achica. Duración igual al intervalo: cada banda se apaga justo cuando nace la siguiente y
-    /// nunca conviven dos. Por encima: se apilan ronda a ronda hasta que no queda dónde plantarse.
-    /// Cuál de las dos se quiere es una decisión de diseño por jefe, no un default de este nodo.
+    /// <b>Este nodo no apaga las bandas anteriores, pero tampoco se les monta encima.</b> Planta
+    /// sólo donde todavía no arde la misma definición (ver <c>AlreadyBurning</c>), así que las
+    /// bandas se acumulan en superficie pero nunca se solapan: una casilla es un fuego. Sin ese
+    /// filtro, una casilla cubierta por dos instancias cobra dos veces, porque el motor de triggers
+    /// dispara una vez por instancia.
     /// </para>
     /// </remarks>
     [Serializable, HideReferenceObjectPicker]
@@ -119,15 +119,16 @@ namespace Rollgeon.Combat.AI.Decisions
                 return AIResult.Failed;
             }
 
-            // Se filtra contra la sala: la forma telegrafiada pudo marcar casillas que el grafo
-            // horneado no tiene, y plantar fuera de la grilla deja instancias que nadie puede pisar
-            // ni ver expirar.
+            // Dos filtros. El primero es la sala: la forma telegrafiada pudo marcar casillas que el
+            // grafo horneado no tiene, y plantar fuera de la grilla deja instancias que nadie puede
+            // pisar ni ver expirar.
             var placeable = new List<GridCoord>(tiles.Count);
             var grid = context.Grid;
             if (grid == null) ServiceLocator.TryGetService<IGridManager>(out grid);
             foreach (var coord in tiles)
             {
                 if (grid != null && !grid.IsWalkable(coord)) continue;
+                if (AlreadyBurning(special, coord)) continue;
                 placeable.Add(coord);
             }
             if (placeable.Count == 0) return AIResult.Succeeded;
@@ -142,6 +143,34 @@ namespace Rollgeon.Combat.AI.Decisions
 
             return instance == Guid.Empty ? AIResult.Failed : AIResult.Succeeded;
         }
+
+        /// <summary>
+        /// <c>true</c> si <paramref name="coord"/> ya está cubierta por una instancia de
+        /// <see cref="Definition"/>.
+        /// </summary>
+        /// <remarks>
+        /// <para>
+        /// Dos áreas del mismo jefe se pisan seguido — la banda apunta al jugador, así que la
+        /// siguiente suele caer encima de la anterior. Y una casilla cubierta por dos instancias
+        /// cobra <b>dos veces</b>: <c>ResolveStand</c> y <c>ResolveEntries</c> recorren todas las
+        /// instancias que contienen la casilla y disparan cada una. Eso nunca fue una decisión de
+        /// diseño, sólo que <c>Place</c> no valida solapamiento (a diferencia de
+        /// <c>CreateRuntime</c>). Se evita plantando únicamente sobre lo que todavía no arde.
+        /// </para>
+        /// <para>
+        /// <b>Sólo contra la misma definición.</b> Dos sustancias distintas conviviendo en una
+        /// casilla es legítimo — hielo encima de veneno son dos efectos, no uno duplicado. Filtrar
+        /// por cualquier casilla especial convertiría esto en una regla global sobre un servicio
+        /// que usan también las salas autoradas.
+        /// </para>
+        /// <para>
+        /// La instancia vieja <b>conserva su propio reloj</b> en las casillas compartidas: una banda
+        /// que vuelve a pasar por donde ya ardía no la renueva. Refrescarla dejaría el fuego
+        /// prácticamente eterno en el corredor por el que el jefe huye siempre.
+        /// </para>
+        /// </remarks>
+        private bool AlreadyBurning(ISpecialTileService special, GridCoord coord)
+            => special.TryGetTileAt(coord, out var existing) && existing.Definition == Definition;
 
         /// <summary>
         /// Cobra el <c>Damage</c> de la marca consumida a quien este dentro del area.

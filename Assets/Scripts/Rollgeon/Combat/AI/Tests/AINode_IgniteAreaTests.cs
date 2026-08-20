@@ -33,6 +33,7 @@ namespace Rollgeon.Combat.AI.Tests
         private SpecialTileService _tiles;
         private SpyDamagePipeline _pipeline;
         private SpecialTileDefinitionSO _fire;
+        private SpecialTileDefinitionSO _ice;
 
         private Guid _boss;
         private Guid _player;
@@ -78,6 +79,8 @@ namespace Rollgeon.Combat.AI.Tests
             _threat?.Dispose();
             if (_fire != null) UnityEngine.Object.DestroyImmediate(_fire);
             _fire = null;
+            if (_ice != null) UnityEngine.Object.DestroyImmediate(_ice);
+            _ice = null;
 
             ServiceLocator.Clear();
             EventManager.ResetEventDictionary();
@@ -211,6 +214,119 @@ namespace Rollgeon.Combat.AI.Tests
         }
 
         // =====================================================================
+        // Solapamiento: una casilla, un fuego
+        // =====================================================================
+
+        [Test]
+        public void ASecondAreaOverlappingTheFirst_PlantsOnlyWhatWasNotBurningYet()
+        {
+            // La banda apunta al jugador y este jefe la prende cada dos turnos, así que la
+            // siguiente cae encima de la anterior todo el tiempo. Lo compartido ya arde: plantarlo
+            // de nuevo no agrega fuego, agrega una segunda instancia que cobra por separado.
+            Mark(damage: 0, new GridCoord(4, 4), new GridCoord(5, 4), new GridCoord(6, 4));
+            Ignite(durationRounds: 3);
+            var firstId = Instances()[0].InstanceId;
+
+            Mark(damage: 0, new GridCoord(5, 4), new GridCoord(6, 4), new GridCoord(7, 4));
+            Ignite(durationRounds: 3);
+
+            var instances = Instances();
+            Assert.AreEqual(2, instances.Count,
+                "La segunda ignición no dejó instancia propia: la parte nueva de la banda quedó " +
+                "apagada y la telegrafía ya había prometido fuego ahí.");
+
+            CollectionAssert.AreEquivalent(new[] { new GridCoord(7, 4) },
+                new List<GridCoord>(InstanceOtherThan(firstId).Coords),
+                "La segunda banda replantó casillas que ya ardían. Cada instancia cobra aparte " +
+                "—ResolveStand y ResolveEntries recorren TODAS las instancias que contienen la " +
+                "casilla y disparan una por una—, así que esa casilla pega el doble y dibuja dos " +
+                "visuales encimados.");
+            CollectionAssert.AreEquivalent(
+                new[] { new GridCoord(4, 4), new GridCoord(5, 4), new GridCoord(6, 4) },
+                new List<GridCoord>(InstanceById(firstId).Coords),
+                "La segunda ignición le sacó casillas a la primera: el fuego que el jugador ya vio " +
+                "encendido no puede apagarse porque el jefe prendió la banda de al lado.");
+            AssertNoSameDefinitionOverlap();
+        }
+
+        [Test]
+        public void ASecondAreaFullyInsideTheFirst_PlantsNothingAndStillSucceeds()
+        {
+            Mark(damage: 0, new GridCoord(4, 4), new GridCoord(5, 4), new GridCoord(6, 4));
+            Ignite(durationRounds: 3);
+            Assert.AreEqual(1, Instances().Count, "Fixture roto: la primera ignición no plantó.");
+
+            Mark(damage: 0, new GridCoord(5, 4), new GridCoord(6, 4));
+            var result = Ignite(durationRounds: 3);
+
+            // Con el área nueva entera ardiendo la lista de plantables queda vacía y el nodo sale
+            // por el early return de placeable.Count == 0. Un Failed acá abortaría la Sequence
+            // entera del turno del jefe, y prender fuego donde ya hay fuego no es un fallo: es la
+            // geometría normal de una banda que apunta al jugador dos veces seguidas.
+            Assert.AreEqual(AIResult.Succeeded, result,
+                "Un área que ya ardía entera devolvió Failed: eso corta la Sequence y el jefe " +
+                "pierde el resto del turno (moverse, atacar) por no tener nada nuevo que encender.");
+            Assert.AreEqual(1, Instances().Count,
+                "Apareció una instancia duplicada encima de la primera. Place NO valida " +
+                "solapamiento (sólo CreateRuntime lo hace), así que el filtro del nodo es lo único " +
+                "que evita que esas casillas cobren dos veces.");
+        }
+
+        [Test]
+        public void NoCoordEverBurnsUnderTwoInstancesOfTheSameDefinition()
+        {
+            Mark(damage: 0, new GridCoord(3, 5), new GridCoord(4, 5), new GridCoord(5, 5));
+            Ignite(durationRounds: 3);
+
+            Mark(damage: 0, new GridCoord(4, 5), new GridCoord(5, 5), new GridCoord(6, 5));
+            Ignite(durationRounds: 4);
+
+            // El invariante, no el mecanismo: no importa si el filtro vive en el nodo, en Place o
+            // en otro lado; lo que no puede pasar es que una casilla termine bajo dos fuegos.
+            AssertNoSameDefinitionOverlap();
+        }
+
+        [Test]
+        public void ADifferentSubstance_StillPlantsOnGroundThatIsAlreadyBurning()
+        {
+            _ice = NewDefinition("TILE_TEST_ICE");
+
+            Mark(damage: 0, new GridCoord(4, 4), new GridCoord(5, 4));
+            Ignite(durationRounds: 3);
+
+            Mark(damage: 0, new GridCoord(5, 4));
+            Ignite(_ice, durationRounds: 3);
+
+            Assert.AreEqual(2, Instances().Count,
+                "La segunda sustancia no se plantó en ningún lado: el filtro dejó de mirar la " +
+                "definición y pasó a rechazar cualquier casilla especial.");
+            CollectionAssert.Contains(new List<GridCoord>(InstanceWith(_ice).Coords), new GridCoord(5, 4),
+                "El filtro se comió una sustancia distinta sobre una casilla que ya ardía. Dos " +
+                "sustancias en una misma casilla es legítimo —son dos efectos, no uno duplicado—; " +
+                "filtrar por cualquier casilla especial convierte esto en una regla global sobre el " +
+                "hielo y el veneno de las salas autoradas, que usan el mismo servicio.");
+        }
+
+        [Test]
+        public void ALaneCrossingOldGround_DoesNotRefreshTheFireThatWasAlreadyThere()
+        {
+            Mark(damage: 0, new GridCoord(4, 4), new GridCoord(5, 4));
+            Ignite(durationRounds: 2);
+            var oldId = Instances()[0].InstanceId;
+            Assert.AreEqual(2, InstanceById(oldId).RemainingRounds,
+                "Fixture roto: la primera instancia no arrancó con la duración pedida.");
+
+            // Casilla compartida y duración más larga, que es la tentación de pisar el reloj viejo.
+            Mark(damage: 0, new GridCoord(5, 4), new GridCoord(6, 4));
+            Ignite(durationRounds: 9);
+
+            Assert.AreEqual(2, InstanceById(oldId).RemainingRounds,
+                "La banda nueva le renovó el reloj a la vieja. El jefe huye siempre por el mismo " +
+                "corredor y lo vuelve a prender cada dos turnos, así que refrescar deja ese fuego " +
+                "prácticamente eterno y el corredor cerrado por el resto de la pelea.");
+        }
+
+        // =====================================================================
         // Helpers
         // =====================================================================
 
@@ -220,11 +336,13 @@ namespace Rollgeon.Combat.AI.Tests
         private void Mark(int damage, AttackKind kind, params GridCoord[] coords) =>
             _threat.Mark(_boss, coords, damage, kind);
 
-        private AIResult Ignite(int durationRounds)
+        private AIResult Ignite(int durationRounds) => Ignite(_fire, durationRounds);
+
+        private AIResult Ignite(SpecialTileDefinitionSO definition, int durationRounds)
         {
             var node = new AINode_IgniteArea
             {
-                Definition = _fire,
+                Definition = definition,
                 DurationRounds = durationRounds,
             };
             return node.Tick(new AIContext
@@ -237,6 +355,75 @@ namespace Rollgeon.Combat.AI.Tests
         }
 
         private List<SpecialTileInfo> Instances() => new List<SpecialTileInfo>(_tiles.ActiveInstances());
+
+        /// <summary>
+        /// El invariante: una casilla, un fuego. Compara sólo pares de la misma definición —dos
+        /// sustancias distintas conviviendo en una casilla es legítimo (ver
+        /// <see cref="ADifferentSubstance_StillPlantsOnGroundThatIsAlreadyBurning"/>).
+        /// </summary>
+        private void AssertNoSameDefinitionOverlap()
+        {
+            var instances = Instances();
+            for (var i = 0; i < instances.Count; i++)
+            {
+                for (var j = i + 1; j < instances.Count; j++)
+                {
+                    if (instances[i].Definition != instances[j].Definition) continue;
+
+                    var other = new HashSet<GridCoord>(instances[j].Coords);
+                    var shared = new List<GridCoord>();
+                    foreach (var coord in instances[i].Coords)
+                        if (other.Contains(coord)) shared.Add(coord);
+
+                    Assert.IsEmpty(shared,
+                        $"Casillas bajo dos instancias de {instances[i].Definition.TileId}: " +
+                        $"{string.Join(", ", shared)}. Cada instancia dispara sus triggers por " +
+                        "separado, así que ahí el jugador paga el doble de daño y ve dos visuales " +
+                        "encimados por un solo fuego.");
+                }
+            }
+        }
+
+        private SpecialTileInfo InstanceById(Guid instanceId)
+        {
+            foreach (var instance in Instances())
+                if (instance.InstanceId == instanceId) return instance;
+
+            Assert.Fail("La instancia plantada antes ya no existe: la ignición siguiente se llevó " +
+                        "puesto un fuego que el jugador ya tenía en pantalla.");
+            return default;
+        }
+
+        private SpecialTileInfo InstanceOtherThan(Guid instanceId)
+        {
+            foreach (var instance in Instances())
+                if (instance.InstanceId != instanceId) return instance;
+
+            Assert.Fail("No hay una segunda instancia: la ignición que tenía casillas nuevas para " +
+                        "prender no plantó nada.");
+            return default;
+        }
+
+        private SpecialTileInfo InstanceWith(SpecialTileDefinitionSO definition)
+        {
+            foreach (var instance in Instances())
+                if (instance.Definition == definition) return instance;
+
+            Assert.Fail($"No quedó ninguna instancia de {definition.TileId}: la sustancia no llegó " +
+                        "a plantarse.");
+            return default;
+        }
+
+        /// <summary>Otra sustancia, con el mismo tratamiento de vida que <c>_fire</c> en SetUp.</summary>
+        private static SpecialTileDefinitionSO NewDefinition(string tileId)
+        {
+            var definition = ScriptableObject.CreateInstance<SpecialTileDefinitionSO>();
+            definition.hideFlags = HideFlags.HideAndDontSave;
+            definition.TileId = tileId;
+            definition.Triggers = TileTrigger.OnEnter | TileTrigger.OnTurnStart;
+            definition.DefaultDurationRounds = 3;
+            return definition;
+        }
 
         private sealed class SpyDamagePipeline : IDamagePipeline
         {
