@@ -349,17 +349,10 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
                     { "Mat_DarkGray", MaterialRetint.FromColors(TuxLight, TuxMid, TuxShadow) },
                     { "Mat_Gold", MaterialRetint.FromColors(BrassLight, BrassMid, BrassShadow) },
                 },
-                Props = new List<BossPropSpec>
-                {
-                    new BossPropSpec
-                    {
-                        PrefabPath = WheelPropPrefabPath,
-                        Name = WheelChildName,
-                        LocalPosition = WheelLocalPosition,
-                        LocalEuler = WheelLocalEuler,
-                        LocalScale = WheelLocalScale,
-                    },
-                },
+                // Sin props. La ruleta que colgaba a su izquierda ya no representa nada: el jefe
+                // no canta numeros. Una rueda que gira sin significar nada se lee como si importara,
+                // y encima tapaba la vista de la mitad de la sala desde ese lado.
+                Props = new List<BossPropSpec>(),
             };
         }
 
@@ -373,11 +366,9 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
             var wrapper = BossVisualWrapperBuilder.BuildWrapper(BuildWrapperSpec());
             if (wrapper == null) return null;
 
-            AttachWheelSpinVisual(VisualPrefabPath);
-
-            // Re-load: AttachWheelSpinVisual reescribe el prefab, y la instancia devuelta por el
-            // wrapper apunta al contenido anterior.
-            return AssetDatabase.LoadAssetAtPath<GameObject>(VisualPrefabPath);
+            // Ya no se le cuelga CroupierWheelSpinVisual ni el label del numero: sin ruleta no hay
+            // nada que girar ni numero que mostrar.
+            return wrapper;
         }
 
         /// <summary>

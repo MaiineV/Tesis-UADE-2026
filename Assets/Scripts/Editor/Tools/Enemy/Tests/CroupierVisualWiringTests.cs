@@ -133,50 +133,19 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         }
 
         // =====================================================================
-        // La ruleta
+        // Sin props
         // =====================================================================
 
         [Test]
-        public void Spec_ParentsTheWheelWithTheNameTheSpinVisualLooksFor()
+        public void Spec_CarriesNoProps_SoNothingHangsOffHimWithoutMeaning()
         {
-            Assert.AreEqual(1, _spec.Props.Count, "El Croupier trae un solo prop: la ruleta.");
-
-            var wheel = _spec.Props[0];
-            Assert.AreEqual("Assets/Prefabs/Props/Ruletav03.prefab", wheel.PrefabPath);
-            Assert.AreEqual(CroupierWheelSpinVisual.DefaultWheelChildName, wheel.Name,
-                "El nombre del hijo es el contrato con CroupierWheelSpinVisual: si cambia, el builder no " +
-                "encuentra la rueda que cablear y el fallback por nombre tampoco.");
-        }
-
-        [Test]
-        public void Spec_LeavesTheWheelFacingTheCamera()
-        {
-            // El disco mira a ±Z y el jefe encara -Z: rotarlo pondría la rueda de perfil.
-            Assert.AreEqual(Vector3.zero, _spec.Props[0].LocalEuler);
-        }
-
-        [Test]
-        public void Spec_PutsTheWheelBesideTheBoss_ClearOfTheStaffAndOffTheFloor()
-        {
-            var wheel = _spec.Props[0];
-
-            Assert.Less(wheel.LocalPosition.x, 0f,
-                "El bastón lo lleva en +X: la rueda va del otro lado o lo atraviesa.");
-            Assert.Greater(Mathf.Abs(wheel.LocalPosition.x), 0.7f,
-                "Más cerca que esto y la rueda entra en el cuerpo del jefe (ancho ~±0.62).");
-            Assert.Greater(wheel.LocalPosition.y, 0.5f, "La rueda no puede quedar hundida en el piso.");
-            Assert.Less(wheel.LocalPosition.y, ArtHeight, "Ni flotando arriba del sombrero.");
-        }
-
-        [Test]
-        public void Spec_ScalesTheWheelUniformly_AndNoBiggerThanTheAuthoredSize()
-        {
-            var scale = _spec.Props[0].LocalScale;
-
-            Assert.AreEqual(scale.x, scale.y, 0.0001f, "Escala no uniforme: la rueda saldría ovalada.");
-            Assert.AreEqual(scale.x, scale.z, 0.0001f);
-            Assert.Greater(scale.x, 0f);
-            Assert.LessOrEqual(scale.x, 1f, "La rueda acompaña al jefe, no lo tapa.");
+            // La ruleta que colgaba a su izquierda se fue con la mecanica: el jefe ya no canta
+            // numeros, y una rueda girando sin representar nada se lee como si importara. Ademas
+            // tapaba media sala desde ese lado, que en un jefe que hay que perseguir es peor que
+            // decorativo.
+            Assert.IsEmpty(_spec.Props,
+                "Volvio a colgarsele un prop. Si es intencional, tiene que significar algo que el " +
+                "jugador pueda leer, y no puede taparle la vista de la sala.");
         }
 
         [Test]
@@ -224,14 +193,11 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         // =====================================================================
 
         [Test]
-        public void Art_AndTheWheelProp_ExistWhereTheSpecSaysTheyDo()
+        public void Art_ExistsWhereTheSpecSaysItDoes()
         {
             Assert.IsNotNull(AssetDatabase.LoadAssetAtPath<GameObject>(_spec.ArtPrefabPath),
                 $"No existe el arte '{_spec.ArtPrefabPath}': el wrapper devolvería null y el jefe " +
                 "quedaría sin VisualPrefab.");
-            Assert.IsNotNull(AssetDatabase.LoadAssetAtPath<GameObject>(_spec.Props[0].PrefabPath),
-                $"No existe la ruleta '{_spec.Props[0].PrefabPath}': el jefe sale sin rueda (el wrapper " +
-                "saltea el prop faltante).");
         }
 
         [Test]
@@ -273,7 +239,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         }
 
         [Test]
-        public void BuiltPrefab_CarriesTheWheelAndItsSpin()
+        public void BuiltPrefab_CarriesNoWheel_NorTheComponentThatSpunIt()
         {
             var built = AssetDatabase.LoadAssetAtPath<GameObject>(_spec.OutputPrefabPath);
             if (built == null)
@@ -282,10 +248,13 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                               "corré Tools → Rollgeon → Bosses → Build Croupier.");
             }
 
-            var wheel = built.transform.Find(CroupierWheelSpinVisual.DefaultWheelChildName);
-            Assert.IsNotNull(wheel, "El prefab construido no tiene el hijo 'Wheel'.");
-            Assert.IsNotNull(built.GetComponent<CroupierWheelSpinVisual>(),
-                "El prefab construido no tiene el componente que gira la rueda.");
+            // Se chequea sobre el prefab y no sobre el spec porque el prop viejo sobrevive en el
+            // asset hasta que alguien rebuildea: un spec limpio con un prefab sucio es exactamente
+            // el estado que se ve en juego y no en los tests.
+            Assert.IsNull(built.transform.Find(CroupierWheelSpinVisual.DefaultWheelChildName),
+                "El prefab construido todavía trae el hijo de la ruleta: falta un rebuild.");
+            Assert.IsNull(built.GetComponent<CroupierWheelSpinVisual>(),
+                "El prefab construido todavía trae el componente que hacía girar la rueda.");
         }
 
         // =====================================================================
