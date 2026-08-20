@@ -137,9 +137,14 @@ namespace Rollgeon.EditorTools
                 // suyo porque si no son refugio gratis fuera del alcance del fuego.
                 BlockerPlanCells = new[]
                 {
-                    new Vector2Int(2, 2), new Vector2Int(5, 2), new Vector2Int(8, 2),
+                    // Cruz, no latiz completo: las cuatro esquinas del cuadrado 3x3 estaban en la
+                    // diagonal del jefe, justo donde el jugador entra a rango 1, y le encarecian el
+                    // acercamiento por el unico lado por el que ya era caro.
+                    new Vector2Int(5, 2),
                     new Vector2Int(2, 5), new Vector2Int(8, 5),
-                    new Vector2Int(2, 8), new Vector2Int(5, 8), new Vector2Int(8, 8),
+                    new Vector2Int(5, 8),
+                    // Las dos esquinas de la izquierda ya las cubren las pilas de barriles de la
+                    // sala base, asi que solo estas dos generan blocker nuevo.
                     new Vector2Int(0, 0), new Vector2Int(10, 0),
                     new Vector2Int(0, 10), new Vector2Int(10, 10),
                 },
