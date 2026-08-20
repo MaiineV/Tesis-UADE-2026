@@ -18,12 +18,18 @@ namespace Rollgeon.Combat.AI.Tests
     [TestFixture]
     public class AINode_RangedShotTests
     {
-        private const int RoomWidth = 11;
+        private const int RoomWidth = 15;
         private const int RoomHeight = 7;
         private const int ShotDamage = 10;
         private const int ShotRange = 6;
 
-        /// <summary>Jefe al centro de la sala: deja 5 casillas libres a cada lado en X.</summary>
+        /// <summary>
+        /// Jefe en x=5 de una sala de 15: deja 9 casillas libres a su derecha. El test más ancho
+        /// dispara a 8 (<see cref="test_shot_damageAndRangeAreFullyConfigurable_independentOfCashierSheet"/>)
+        /// y el de fuera de rango se para a <see cref="ShotRange"/>+1, así que la sala tiene que
+        /// llegar hasta x=13 o el jugador cae fuera de la grilla y el test falla por eso en vez de
+        /// por el rango.
+        /// </summary>
         private static readonly GridCoord BossCoord = new GridCoord(5, 3);
 
         private GridManager _grid;
