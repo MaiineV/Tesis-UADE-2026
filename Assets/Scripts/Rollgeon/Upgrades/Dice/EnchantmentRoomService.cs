@@ -239,6 +239,8 @@ namespace Rollgeon.Upgrades.Dice
             Transform parent = room.SpawnedPrefab != null ? room.SpawnedPrefab.transform : null;
             var go = UnityEngine.Object.Instantiate(_altarPrefab, spawnPoint.position, spawnPoint.rotation, parent);
             go.name = "[EnchantmentAltar]";
+            // La mesa ocupa su celda — el jugador no la atraviesa caminando.
+            Rollgeon.Dungeon.Components.PropTileBlocker.Attach(go);
 
             var altar = go.GetComponent<EnchantmentAltarInteractable>();
             if (altar == null)

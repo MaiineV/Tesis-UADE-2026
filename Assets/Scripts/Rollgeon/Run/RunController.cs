@@ -4,7 +4,7 @@ using Rollgeon.Attributes;
 using Rollgeon.Attributes.Stats;
 using Rollgeon.Combat;
 using Rollgeon.Combat.AI;
-using Rollgeon.Combat.EnergyLib;
+using Rollgeon.Combat.Rolls;
 using Rollgeon.Combat.Handoff;
 using Rollgeon.Combat.Initiative;
 using Rollgeon.Combat.Pipelines;
@@ -340,19 +340,26 @@ namespace Rollgeon.Run
             if (hero.Passive != null)
                 _playerEntity.BindPassive(hero.Passive);
 
-            // Hidrata Energy: EnergyService.OnRunStartExternal solo resetea _playerId,
-            // y el caller (esta funcion) tiene que llamar InitializeForEntity con el
-            // Guid real. Ver EnergyService.InitializeForEntity doc-comment.
-            if (ServiceLocator.TryGetService<IEnergyService>(out var energy) && energy != null)
+            // Cachea el player en el pool de rolls: RollPoolService.OnRunStartExternal
+            // solo resetea _playerId, y el caller (esta funcion) tiene que llamar
+            // InitializeForEntity con el Guid real. El pool queda en 0 hasta el primer
+            // OnCombatStart.
+            if (ServiceLocator.TryGetService<IRollPoolService>(out var rollPool) && rollPool != null)
             {
-                energy.InitializeForEntity(playerService.PlayerGuid);
+                rollPool.InitializeForEntity(playerService.PlayerGuid);
             }
 
-            // Después de Energy: el auto-restore de Register (resume) debe ver todos
+            // Después del pool: el auto-restore de Register (resume) debe ver todos
             // los stats para pisar los valores base con los guardados.
             var attrsSaveable = new PlayerAttributesSaveable(playerAttrs);
             ServiceLocator.AddService<PlayerAttributesSaveable>(attrsSaveable, ServiceScope.Run);
             global::Patterns.Save.SaveSystem.Register(attrsSaveable);
+
+            // Snapshot del pool de rolls (bonus +N por turno de los rewards). Después
+            // de InitializeForEntity, por el mismo motivo que attrsSaveable.
+            var rollPoolSaveable = new RollPoolSaveable();
+            ServiceLocator.AddService<RollPoolSaveable>(rollPoolSaveable, ServiceScope.Run);
+            global::Patterns.Save.SaveSystem.Register(rollPoolSaveable);
 
             // En resume el inventario viene del save — regalar de nuevo duplicaría.
             if (!RunBootstrapper.IsResuming)

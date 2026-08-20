@@ -147,9 +147,9 @@ namespace Rollgeon.UI.Tests
             _view.Show(new StatusIconState("status.burn", "Quemadura", "Descripción", _stateIcon,
                                            active: true, remainingTurns: 3));
 
-            // Assert
+            // Assert — el badge lleva la unidad ("N Turnos"), spec de UI de estados.
             Assert.IsTrue(label.gameObject.activeSelf);
-            Assert.AreEqual("3", label.text);
+            Assert.AreEqual("3 Turnos", label.text);
         }
 
         [Test]

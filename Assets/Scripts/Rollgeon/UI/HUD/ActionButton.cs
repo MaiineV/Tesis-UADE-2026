@@ -434,7 +434,7 @@ namespace Rollgeon.UI.HUD
         }
 
         // Unaffordable sigue pintando rojo aunque nadie haya llamado SetAffordable —
-        // el estado ya implica que la unica traba es la energia.
+        // el estado ya implica que la unica traba es la falta de rolls en el pool.
         private void ApplyCostLabelColor()
         {
             if (_costLabel == null) return;
@@ -453,7 +453,8 @@ namespace Rollgeon.UI.HUD
             // corre en el Bind, y si el hero todavia no resolvio, vaciarlo borraba el
             // numero para siempre (nada vuelve a llamarlo en todo el combate).
             if (behavior == null) return;
-            RefreshCostLabel(behavior.EnergyCost);
+            // Pool de Rolls: toda accion cuesta 1 roll por tirada (o 1 flat sin dados).
+            RefreshCostLabel(1);
         }
 
         public void RefreshCostLabel(int cost)

@@ -4,7 +4,7 @@ using System.Linq;
 using NUnit.Framework;
 using Patterns;
 using Rollgeon.Combat.Actions;
-using Rollgeon.Combat.EnergyLib;
+using Rollgeon.Combat.Rolls;
 using Rollgeon.Combos;
 using Rollgeon.Effects;
 using Rollgeon.Entities.Behaviors;
@@ -107,6 +107,38 @@ namespace Rollgeon.Heroes.Tests
                 Assert.AreSame(baseAttack,    result[1]);
                 Assert.AreSame(specialAttack, result[2]);
                 Assert.AreSame(healing,       result[3]);
+            }
+            finally { UnityEngine.Object.DestroyImmediate(so); }
+        }
+
+        [Test]
+        public void GetBehaviorsForPhase_Combat_WithAllSixSlots_ReturnsDefenseAtIndexFive()
+        {
+            // El HUD indexa GetBehaviorsForPhase(Combat) con el índice del array de
+            // chips — Defense (slot 5) DEBE salir en la posición 5 con todos los
+            // slots base presentes, o el click ejecutaría otro behavior.
+            var so = ScriptableObject.CreateInstance<ClassHeroSO>();
+            try
+            {
+                var movement     = MakeBase(HeroBehaviorSlot.Movement,      GamePhaseMask.All);
+                var baseAttack   = MakeBase(HeroBehaviorSlot.BaseAttack,    GamePhaseMask.Combat);
+                var specialAttack= MakeBase(HeroBehaviorSlot.SpecialAttack, GamePhaseMask.Combat);
+                var healing      = MakeBase(HeroBehaviorSlot.Healing,       GamePhaseMask.All);
+                var forceDoor    = MakeBase(HeroBehaviorSlot.ForceDoor,     GamePhaseMask.Combat);
+                var defense      = MakeBase(HeroBehaviorSlot.Defense,       GamePhaseMask.Combat);
+                // Orden de inserción distinto al del enum a propósito: el orden de
+                // salida lo dicta el enum, no la lista.
+                so.PhaseBehaviors.AddRange(new[] { defense, movement, baseAttack, specialAttack, healing, forceDoor });
+
+                var result = so.GetBehaviorsForPhase(GamePhase.Combat);
+
+                Assert.AreEqual(6, result.Count);
+                Assert.AreSame(movement,      result[0]);
+                Assert.AreSame(baseAttack,    result[1]);
+                Assert.AreSame(specialAttack, result[2]);
+                Assert.AreSame(healing,       result[3]);
+                Assert.AreSame(forceDoor,     result[4]);
+                Assert.AreSame(defense,       result[5]);
             }
             finally { UnityEngine.Object.DestroyImmediate(so); }
         }
@@ -459,7 +491,7 @@ namespace Rollgeon.Heroes.Tests
     public class TurnManagerHeroBehaviorTests
     {
         private TurnManager _tm;
-        private FakeEnergyService _energy;
+        private FakeRollPoolService _energy;
         private Guid _actor;
 
         [SetUp]
@@ -468,7 +500,7 @@ namespace Rollgeon.Heroes.Tests
             EventManager.ResetEventDictionary();
             ServiceLocator.Clear();
 
-            _energy = new FakeEnergyService();
+            _energy = new FakeRollPoolService();
             _actor = Guid.NewGuid();
             _energy.Current[_actor] = 4;
 
@@ -492,33 +524,33 @@ namespace Rollgeon.Heroes.Tests
         }
 
         [Test]
-        public void CanExecute_EnoughEnergy_ReturnsTrue()
+        public void CanExecute_PoolWithRolls_ReturnsTrue()
         {
-            var behavior = new HeroActionBehavior { ActionName = "test", EnergyCost = 1 };
+            var behavior = new HeroActionBehavior { ActionName = "test" };
             Assert.IsTrue(_tm.CanExecute(behavior, _actor, out _));
         }
 
         [Test]
-        public void CanExecute_NotEnoughEnergy_ReturnsFalse()
+        public void CanExecute_EmptyPool_ReturnsFalse()
         {
-            var behavior = new HeroActionBehavior { ActionName = "test", EnergyCost = 10 };
+            var behavior = new HeroActionBehavior { ActionName = "test" };
+            _energy.Current[_actor] = 0;
             Assert.IsFalse(_tm.CanExecute(behavior, _actor, out var reason));
-            StringAssert.Contains("energy", reason.ToLowerInvariant());
+            StringAssert.Contains("rolls", reason.ToLowerInvariant());
         }
 
         [Test]
-        public void TryExecute_SpendsEnergy()
+        public void TryExecute_SpendsOneRoll()
         {
             var behavior = new HeroActionBehavior
             {
                 ActionName = "attack",
-                EnergyCost = 2,
                 Effects = new List<EffectData>(),
             };
 
             _tm.TryExecute(behavior, _actor, new TestBehaviorContext());
 
-            Assert.AreEqual(2, _energy.Current[_actor]);
+            Assert.AreEqual(3, _energy.Current[_actor]);
         }
 
         [Test]
@@ -527,7 +559,6 @@ namespace Rollgeon.Heroes.Tests
             var behavior = new HeroActionBehavior
             {
                 ActionName = "special",
-                EnergyCost = 1,
                 BlockOnRepeat = true,
                 Effects = new List<EffectData>(),
             };
@@ -542,7 +573,6 @@ namespace Rollgeon.Heroes.Tests
             var behavior = new HeroActionBehavior
             {
                 ActionName = "movement",
-                EnergyCost = 1,
                 BlockOnRepeat = false,
                 Effects = new List<EffectData>(),
             };
@@ -557,7 +587,6 @@ namespace Rollgeon.Heroes.Tests
             var behavior = new HeroActionBehavior
             {
                 ActionName = "blocked",
-                EnergyCost = 0,
                 BlockOnRepeat = true,
                 Effects = new List<EffectData>(),
             };
@@ -573,23 +602,36 @@ namespace Rollgeon.Heroes.Tests
 
         private class TestBehaviorContext : BehaviorContext { }
 
-        private sealed class FakeEnergyService : IEnergyService
+        private sealed class FakeRollPoolService : Rollgeon.Combat.Rolls.IRollPoolService
         {
             public readonly Dictionary<Guid, int> Current = new Dictionary<Guid, int>();
-            public int MaxPerEntity = 4;
+            public int Cap = 15;
 
-            public void InitializeForEntity(Guid entityId) => Current[entityId] = MaxPerEntity;
-            public bool SpendEnergy(Guid entityId, int cost)
+            public bool IsCombatActive => true;
+            public void InitializeForEntity(Guid entityId) => Current[entityId] = 5;
+            public bool TrySpendRolls(Guid entityId, int count)
             {
-                if (cost < 0) return false;
+                if (count < 0) return false;
+                if (count == 0) return true;
                 if (!Current.TryGetValue(entityId, out var have)) return false;
-                if (cost > have) return false;
-                Current[entityId] = have - cost;
+                if (count > have) return false;
+                Current[entityId] = have - count;
                 return true;
             }
-            public void RegenerateAtTurnEnd(Guid entityId) { }
+            public int Drain(Guid entityId, int amount)
+            {
+                if (amount <= 0 || !Current.TryGetValue(entityId, out var have)) return 0;
+                int drained = Math.Min(amount, have);
+                Current[entityId] = have - drained;
+                return drained;
+            }
+            public void AddRolls(Guid entityId, int amount) { }
             public int GetCurrent(Guid entityId) => Current.TryGetValue(entityId, out var v) ? v : 0;
-            public int GetMax(Guid entityId) => MaxPerEntity;
+            public int GetMax(Guid entityId) => Cap;
+            public int GetRollsPerTurn(Guid entityId) => 5;
+            public void AddPerTurnGrantBonus(int amount) { }
+            public void RestoreCurrent(Guid entityId, int value)
+                => Current[entityId] = Math.Clamp(value, 0, Cap);
         }
     }
 }

@@ -56,8 +56,6 @@ namespace Patterns
         OnTurnStarted,
         /// <summary>args: [Guid entityGuid]. Quien cierra su turno — lo consume Modifier&lt;T&gt; para decrementar Duration.</summary>
         OnTurnFinished,
-        /// <summary>args: [Guid entityGuid, int current, int max]</summary>
-        OnEnergyChanged,
         /// <summary>args: [IReadOnlyList&lt;Guid&gt; orderForRound, int roundIndex]</summary>
         OnTurnQueueBuilt,
 
@@ -173,8 +171,9 @@ namespace Patterns
         // --- HUD bindings (le hablan al §D ScreenManager) ----------------------
         /// <summary>args: [Guid entityGuid, int current, int max]</summary>
         OnPlayerHealthChanged,
-        /// <summary>args: [Guid entityGuid, int current, int max]</summary>
-        OnPlayerEnergyChanged,
+        /// <summary>args: [Guid entityGuid, int current, int max]. Pool de Rolls del
+        /// jugador (Feature#0050) — reemplazó a OnPlayerEnergyChanged.</summary>
+        OnPlayerRollsChanged,
         /// <summary>args: [int current, int delta]</summary>
         OnGoldChanged,
         /// <summary>args: [Guid targetGuid, FloatingNumberType type, float value, Vector3 offset]</summary>
@@ -338,5 +337,35 @@ namespace Patterns
         /// pegar la columna de este turno. Lo consume la lectura del HUD, que muestra el daño real
         /// en vez de recalcularlo con su propia copia de la tabla.</summary>
         OnCashierTierChanged,
+
+        // --- Casillas Especiales (Rollgeon.Tiles) --------------------------------
+        /// <summary>args: [Guid instanceId]. Una instancia de casilla especial quedó activa en la
+        /// sala (autoría de sala o creación runtime). El id es de la instancia, no de la
+        /// definición — mismo criterio que <see cref="OnHazardActivated"/>.</summary>
+        OnSpecialTilePlaced,
+        /// <summary>args: [Guid instanceId, Guid entityGuid, int trigger (TileTrigger)]. La casilla
+        /// resolvió su efecto sobre la entidad. El efecto (daño/heal/estado) ya pasó por su
+        /// pipeline cuando esto sale — es el hook de feedback/VFX y de sistemas que montan
+        /// encima sin que la casilla los conozca.</summary>
+        OnSpecialTileTriggered,
+        /// <summary>args: [Guid instanceId]. La instancia expiró (DurationRounds) o fue removida
+        /// explícitamente. NO se dispara en el teardown de OnCombatEnd/OnRunEnd/OnRoomEntered
+        /// (mismo criterio que <see cref="OnHazardExpired"/>).</summary>
+        OnSpecialTileExpired,
+        /// <summary>args: [Guid instanceId, GridCoord coord, bool armed]. Una celda de la instancia
+        /// cambió de estado armado/desarmado (Pinchos). Hook para el visual del tile.</summary>
+        OnSpecialTileStateChanged,
+
+        // --- Combat: poison -------------------------------------------------------
+        /// <summary>args: [Guid entityGuid, int turns]. Se aplicó (o refrescó) Envenenado. <c>turns</c>
+        /// es el total restante tras el refresh — <c>IPoisonService.ApplyPoison</c> no acumula:
+        /// re-pisar Veneno resetea la duración, nunca la suma.</summary>
+        OnPoisonApplied,
+        /// <summary>args: [Guid entityGuid, int damage, int remainingTurns]. Tick de veneno al
+        /// inicio del turno del envenenado. El daño ya pasó por el DamagePipeline.</summary>
+        OnPoisonTicked,
+        /// <summary>args: [Guid entityGuid]. El veneno de la entidad llegó a 0 turnos o se curó.
+        /// El teardown (ClearAll en OnCombatEnd/OnRunEnd) NO lo dispara.</summary>
+        OnPoisonExpired,
     }
 }

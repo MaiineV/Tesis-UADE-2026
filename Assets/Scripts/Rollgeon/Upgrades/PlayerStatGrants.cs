@@ -26,6 +26,12 @@ namespace Rollgeon.Upgrades
         public static bool Apply(CharacterRewardTargetStat stat, int amount)
         {
             if (amount == 0) return false;
+
+            // RollRegen no es un atributo: el bonus vive en el RollPoolService y lo
+            // persiste RollPoolSaveable (Feature#0050).
+            if (stat == CharacterRewardTargetStat.RollRegen)
+                return ApplyRollRegen(amount);
+
             if (!ServiceLocator.TryGetService<AttributesManager>(out var attrs) || attrs == null) return false;
             if (!ServiceLocator.TryGetService<IPlayerService>(out var ps) || ps == null || ps.PlayerGuid == Guid.Empty)
                 return false;
@@ -42,18 +48,22 @@ namespace Rollgeon.Upgrades
 
             if (!ApplyToStat(stat, attrs, ps.PlayerGuid, modifier)) return false;
 
-            // BUG-022 (decisión de diseño): subir un máximo también otorga la misma
+            // BUG-022 (decisión de diseño): subir el máximo también otorga la misma
             // cantidad del recurso actual — el pickup se siente al instante y el HUD
-            // refresca solo (HealResolvedPayload / OnPlayerEnergyChanged). El modifier
-            // del máximo ya está aplicado, así que el clamp usa el cap nuevo.
-            if (amount > 0)
-            {
-                if (stat == CharacterRewardTargetStat.Health)
-                    HealCurrentHp(attrs, ps.PlayerGuid, amount);
-                else if (stat == CharacterRewardTargetStat.Energy)
-                    RaiseCurrentEnergy(ps.PlayerGuid, amount);
-            }
+            // refresca solo (HealResolvedPayload). El modifier del máximo ya está
+            // aplicado, así que el clamp usa el cap nuevo.
+            if (amount > 0 && stat == CharacterRewardTargetStat.Health)
+                HealCurrentHp(attrs, ps.PlayerGuid, amount);
 
+            return true;
+        }
+
+        private static bool ApplyRollRegen(int amount)
+        {
+            if (!ServiceLocator.TryGetService<Rollgeon.Combat.Rolls.IRollPoolService>(out var rolls)
+                || rolls == null)
+                return false;
+            rolls.AddPerTurnGrantBonus(amount);
             return true;
         }
 
@@ -77,15 +87,6 @@ namespace Rollgeon.Upgrades
                 current => maxHp > 0 ? Math.Min(maxHp, current + amount) : current + amount);
         }
 
-        private static void RaiseCurrentEnergy(Guid playerGuid, int amount)
-        {
-            // RestoreCurrent no está en la interfaz — mismo downcast que CombatResumeService.
-            if (!ServiceLocator.TryGetService<Rollgeon.Combat.EnergyLib.IEnergyService>(out var energyIf)
-                || !(energyIf is Rollgeon.Combat.EnergyLib.EnergyService energy))
-                return;
-            energy.RestoreCurrent(playerGuid, energy.GetCurrent(playerGuid) + amount);
-        }
-
         /// <summary>Aplica una lista de grants. Devuelve cuántos se aplicaron efectivamente.</summary>
         public static int Apply(IEnumerable<StatGrant> grants)
         {
@@ -102,12 +103,9 @@ namespace Rollgeon.Upgrades
         {
             switch (target)
             {
-                // BUG-022: Health/Energy rutean a los stats de MÁXIMO. Antes iban a
-                // Health/Energy (valor actual): nadie leía esos ModifiedValue como cap
-                // (max HP era la constante BaseMaxHp, cap de energía el del ruleset) y
-                // encima inflaban el "HP actual" que la IA lee vía ModifiedValue.
+                // BUG-022: Health rutea al stat de MÁXIMO. RollRegen no pasa por acá
+                // (no es atributo — ver ApplyRollRegen).
                 case CharacterRewardTargetStat.Health: return attrs.AddModifier<MaxHealth, int>(playerGuid, modifier);
-                case CharacterRewardTargetStat.Energy: return attrs.AddModifier<MaxEnergy, int>(playerGuid, modifier);
                 case CharacterRewardTargetStat.Speed:  return attrs.AddModifier<Speed, int>(playerGuid, modifier);
                 case CharacterRewardTargetStat.Attack: return attrs.AddModifier<Attack, int>(playerGuid, modifier);
                 default: return false;

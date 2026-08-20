@@ -31,7 +31,7 @@ namespace Rollgeon.Combat.FSM.Tests
         private Guid _roomId;
         private StubGridManager _grid;
         private StubSelectionController _selection;
-        private FakeEnergyService _energy;
+        private FakeRollPoolService _energy;
         private TurnManager _turnManager;
         private TurnOrderService _turnOrder;
         private PlayerTurnState _playerState;
@@ -52,8 +52,8 @@ namespace Rollgeon.Combat.FSM.Tests
             _selection = new StubSelectionController();
             ServiceLocator.AddService<ISelectionController>(_selection, ServiceScope.Global);
 
-            _energy = new FakeEnergyService();
-            _energy.Current[_playerId] = _energy.MaxPerEntity;
+            _energy = new FakeRollPoolService();
+            _energy.Current[_playerId] = _energy.RollsPerTurn;
 
             // TurnManager real (sin catálogo/ruleset): PlayerExecutingSubState lo resuelve del
             // ServiceLocator y cobra la energía vía TryExecute cuando la acción NO es prepago
@@ -130,9 +130,9 @@ namespace Rollgeon.Combat.FSM.Tests
         [Test]
         public void RequestAction_MovementCompleted_ChargesEnergyOnExecute()
         {
-            // BUG-013 (cobrar al ejecutar): el Movement cobra su energía recién cuando se
-            // ejecuta, es decir al clickear la celda destino (EnergyPrepaid=false → TryExecute).
-            var move = BuildSelectionMove(); // EnergyCost = 1
+            // BUG-013 (cobrar al ejecutar): el Movement cobra su roll recién cuando se
+            // ejecuta, es decir al clickear la celda destino (RollsPrepaid=false → TryExecute).
+            var move = BuildSelectionMove(); // cuesta 1 roll
             int before = _energy.Current[_playerId];
 
             _playerState.RequestAction(move, MoveCtx(), () => { });
@@ -142,8 +142,8 @@ namespace Rollgeon.Combat.FSM.Tests
                 SelectedTargets = new List<TargetRef> { TargetRef.At(new GridCoord(3, 2)) },
             });
 
-            Assert.AreEqual(before - move.EnergyCost, _energy.Current[_playerId],
-                "Completar el movimiento (clickear la celda) debe cobrar su energía.");
+            Assert.AreEqual(before - 1, _energy.Current[_playerId],
+                "Completar el movimiento (clickear la celda) debe cobrar 1 roll.");
         }
 
         [Test]
@@ -151,14 +151,14 @@ namespace Rollgeon.Combat.FSM.Tests
         {
             // BUG-013 (cobrar al ejecutar): cancelar el Movement antes de clickear la celda
             // NO debe cobrar — la ejecución se skipea, así que TryExecute nunca corre.
-            var move = BuildSelectionMove(); // EnergyCost = 1
+            var move = BuildSelectionMove(); // cuesta 1 roll
             int before = _energy.Current[_playerId];
 
             _playerState.RequestAction(move, MoveCtx(), () => { });
             _selection.SimulateSelectionDone(new TargetSelectionResult { WasCancelled = true });
 
             Assert.AreEqual(before, _energy.Current[_playerId],
-                "Cancelar el movimiento no debe cobrar energía.");
+                "Cancelar el movimiento no debe cobrar rolls.");
         }
 
         [Test]
@@ -185,12 +185,12 @@ namespace Rollgeon.Combat.FSM.Tests
 
         // ----- Helpers ---------------------------------------------------------
 
-        // Contexto de un Movement con cobro-al-ejecutar: EnergyPrepaid=false hace que
+        // Contexto de un Movement con cobro-al-ejecutar: RollsPrepaid=false hace que
         // PlayerExecutingSubState cobre vía TurnManager.TryExecute al ejecutarse.
         private HeroBehaviorContext MoveCtx() => new HeroBehaviorContext
         {
             SourceEntity = new Entity { Guid = _playerId },
-            EnergyPrepaid = false,
+            RollsPrepaid = false,
         };
 
         private static HeroActionBehavior BuildSelectionMove()
@@ -200,7 +200,6 @@ namespace Rollgeon.Combat.FSM.Tests
                 ActionName = "Movement",
                 IsBaseBehavior = true,
                 Slot = HeroBehaviorSlot.Movement,
-                EnergyCost = 1,
                 NeedsDiceRoll = false,
                 BlockOnRepeat = false, // movimiento es repetible.
                 Effects = new List<EffectData>

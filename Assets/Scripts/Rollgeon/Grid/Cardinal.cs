@@ -47,6 +47,20 @@ namespace Rollgeon.Grid
         /// — arbitrario, pero consistente; el FP es 4-conexo así que no debería darse en
         /// movimiento normal, sí en facing hacia un target a distancia.
         /// </remarks>
+        /// <summary>Coord adyacente a <paramref name="from"/> en esta dirección.</summary>
+        public static GridCoord Step(this Cardinal dir, GridCoord from) => dir switch
+        {
+            Cardinal.North => new GridCoord(from.X, from.Y + 1),
+            Cardinal.East  => new GridCoord(from.X + 1, from.Y),
+            Cardinal.South => new GridCoord(from.X, from.Y - 1),
+            Cardinal.West  => new GridCoord(from.X - 1, from.Y),
+            _              => from,
+        };
+
+        /// <summary>Siguiente cardinal en sentido horario (N→E→S→W→N) — la regla de fallback
+        /// de reubicación del Portal usa este orden.</summary>
+        public static Cardinal Clockwise(this Cardinal dir) => (Cardinal)(((int)dir + 1) % 4);
+
         public static Cardinal FromDelta(GridCoord from, GridCoord to, Cardinal fallback = Cardinal.South)
         {
             int dx = to.X - from.X;

@@ -44,6 +44,22 @@ namespace Rollgeon.Dungeon.Components
                  "el DoorRoot del slot cuando el vecino de esa dirección es la boss room.")]
         public GameObject BossDoorPrefab;
 
+        [Header("Special Tiles")]
+        [Tooltip("Casillas permanentes exactas (Pinchos, Fuego, Hielo...). Sin randomización " +
+                 "de posición — autoría del Room Editor.")]
+        public List<Rollgeon.Tiles.Authoring.SpecialTilePlacement> SpecialTilePlacements =
+            new List<Rollgeon.Tiles.Authoring.SpecialTilePlacement>();
+
+        [Tooltip("Slots con variación controlada: posición fija, lista cerrada de opciones. " +
+                 "La elección se rolea determinista y se persiste en el save.")]
+        public List<Rollgeon.Tiles.Authoring.SpecialTileSlot> SpecialTileSlots =
+            new List<Rollgeon.Tiles.Authoring.SpecialTileSlot>();
+
+        [Tooltip("Pares de portales conectados — un registro por par, imposible dejar un " +
+                 "portal huérfano.")]
+        public List<Rollgeon.Tiles.Authoring.PortalPairPlacement> PortalPairs =
+            new List<Rollgeon.Tiles.Authoring.PortalPairPlacement>();
+
         [Header("Bounds")]
         [Tooltip("Bounding box local del prefab. Recalculado OnValidate desde Renderers children; consumido por el camera service para el clamp de pan y las shells del floor view.")]
         public Bounds LocalBounds = new Bounds(Vector3.zero, Vector3.one);

@@ -115,11 +115,22 @@ namespace Rollgeon.Combat
                 return;
             }
 
+            // Kill credit: una muerte causada por una casilla especial se acredita al player
+            // (regla de ownership del GDD). El resolver traduce solo los instanceIds de
+            // casillas; cualquier otro SourceGuid pasa intacto.
+            var creditGuid = payload.SourceGuid;
+            if (ServiceLocator.TryGetService<IKillCreditResolver>(out var killCredit)
+                && killCredit != null
+                && killCredit.TryResolveCredit(payload.SourceGuid, out var resolvedCredit))
+            {
+                creditGuid = resolvedCredit;
+            }
+
             // OnEntityDestroyed se dispara YA — los listeners deben saberlo de inmediato
             // (gold drop, achievements). DungeonManager también lo escucha y remueve al
             // enemigo de room.SpawnedEnemies, que es lo que chequeamos abajo para Victory.
             EventManager.Trigger(EventName.OnEntityDestroyed,
-                payload.TargetGuid, payload.SourceGuid);
+                payload.TargetGuid, creditGuid);
 
             var deadGuid = payload.TargetGuid;
 

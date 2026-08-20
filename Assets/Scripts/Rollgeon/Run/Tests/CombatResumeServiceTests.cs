@@ -108,7 +108,7 @@ namespace Rollgeon.Run.Tests
                 Cursor = 1,
                 RoundIndex = 2,
                 ActiveEntityId = "b",
-                PlayerEnergy = 5,
+                PlayerRolls = 5,
                 ActionsUsedThisTurn = new List<string> { "attack" },
             };
 
@@ -120,7 +120,7 @@ namespace Rollgeon.Run.Tests
             Assert.AreEqual(new[] { "a", "b" }, restored.Order.ToArray());
             Assert.AreEqual(1, restored.Cursor);
             Assert.AreEqual(2, restored.RoundIndex);
-            Assert.AreEqual(5, restored.PlayerEnergy);
+            Assert.AreEqual(5, restored.PlayerRolls);
             Assert.AreEqual(new[] { "attack" }, restored.ActionsUsedThisTurn.ToArray());
         }
 

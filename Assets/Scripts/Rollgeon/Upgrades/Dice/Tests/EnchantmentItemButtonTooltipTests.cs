@@ -58,6 +58,18 @@ namespace Rollgeon.Upgrades.Dice.Tests
             field.SetValue(target, value);
         }
 
+        private EnchantmentSO MakeCursedEnchantment(string id, string displayName, string description)
+        {
+            var ench = MakeEnchantment(id, displayName, description);
+            AssignPrivate(ench, "_capabilities",
+                new List<IEnchantmentCapability> { new CapCursed() });
+            return ench;
+        }
+
+        // Títulos por tipo (EnchantmentPalette): maldición roja, bendición dorada.
+        private const string BlessedHex = "D9A44E";
+        private const string CursedHex = "D1365A";
+
         // ---- Configure + UITooltipTrigger wiring ---------------------------
 
         [Test]
@@ -95,7 +107,17 @@ namespace Rollgeon.Upgrades.Dice.Tests
 
             string result = EnchantmentAltarView.BuildEnchantmentTooltip(ench);
 
-            Assert.AreEqual("<b>Foo</b>\n<size=80%>Hace cosas.</size>", result);
+            Assert.AreEqual($"<b><color=#{BlessedHex}>Foo</color></b>\n<size=80%>Hace cosas.</size>", result);
+        }
+
+        [Test]
+        public void BuildEnchantmentTooltip_CursedEnchantment_TitleInCursedRed()
+        {
+            var ench = MakeCursedEnchantment("ench.curse", "Oxidado", "Hace daño.");
+
+            string result = EnchantmentAltarView.BuildEnchantmentTooltip(ench);
+
+            Assert.AreEqual($"<b><color=#{CursedHex}>Oxidado</color></b>\n<size=80%>Hace daño.</size>", result);
         }
 
         [Test]
@@ -105,7 +127,7 @@ namespace Rollgeon.Upgrades.Dice.Tests
 
             string result = EnchantmentAltarView.BuildEnchantmentTooltip(ench);
 
-            Assert.AreEqual("<b>Foo</b>", result);
+            Assert.AreEqual($"<b><color=#{BlessedHex}>Foo</color></b>", result);
         }
 
         [Test]
@@ -115,7 +137,7 @@ namespace Rollgeon.Upgrades.Dice.Tests
 
             string result = EnchantmentAltarView.BuildEnchantmentTooltip(ench);
 
-            Assert.AreEqual("<b>ench.foo</b>\n<size=80%>Hace cosas.</size>", result);
+            Assert.AreEqual($"<b><color=#{BlessedHex}>ench.foo</color></b>\n<size=80%>Hace cosas.</size>", result);
         }
 
         [Test]
@@ -163,7 +185,23 @@ namespace Rollgeon.Upgrades.Dice.Tests
 
             string result = EnchantmentAltarView.BuildDiceTooltip(slots);
 
-            Assert.AreEqual("• Alpha — Hace A.\n• Beta — Hace B.", result);
+            Assert.AreEqual(
+                $"• <color=#{BlessedHex}>Alpha</color> — Hace A.\n• <color=#{BlessedHex}>Beta</color> — Hace B.",
+                result);
+        }
+
+        [Test]
+        public void BuildDiceTooltip_MixedSlots_EachTitleUsesItsOwnColor()
+        {
+            var blessed = MakeEnchantment("ench.a", "Alpha", "Hace A.");
+            var cursed = MakeCursedEnchantment("ench.b", "Beta", "Hace B.");
+            var slots = new[] { blessed, cursed };
+
+            string result = EnchantmentAltarView.BuildDiceTooltip(slots);
+
+            Assert.AreEqual(
+                $"• <color=#{BlessedHex}>Alpha</color> — Hace A.\n• <color=#{CursedHex}>Beta</color> — Hace B.",
+                result);
         }
     }
 }

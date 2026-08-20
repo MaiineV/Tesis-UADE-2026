@@ -56,6 +56,9 @@ MonoBehaviour:
     - Name: 
       Entry: 8
       Data: 
+    - Name: TargetSelector
+      Entry: 6
+      Data: 
     - Name: 
       Entry: 8
       Data: 
@@ -63,14 +66,15 @@ MonoBehaviour:
   Type: 0
   DisplayName: Base Attack
   BackingAsset: {fileID: 0}
-  EnergyCost: 1
   BlockOnRepeat: 1
-  FreeRollCount: 1
-  AllowsEnergyReroll: 1
   Effect:
     Label: Effect Group
     PreConditions: []
     Effects: []
+    TargetSelector:
+      rid: -2
   references:
     version: 2
-    RefIds: []
+    RefIds:
+    - rid: -2
+      type: {class: , ns: , asm: }

@@ -50,7 +50,7 @@ namespace Rollgeon.UI.Tests
         {
             _view.Bind(_playerGuid);
             Assert.IsFalse(_extraRoll.interactable,
-                "Sin IRerollBudgetService, el boton queda disabled.");
+                "Sin IRollPoolService, el boton queda disabled.");
         }
 
         [Test]
@@ -83,7 +83,7 @@ namespace Rollgeon.UI.Tests
             _view.Bind(_playerGuid);
             EventManager.Trigger(EventName.OnRollResolved, _playerGuid);
             Assert.IsFalse(_extraRoll.interactable,
-                "Tras OnRollResolved, el boton queda disabled (budget terminado).");
+                "Tras OnRollResolved, el boton queda disabled (accion terminada).");
         }
 
         [Test]
@@ -112,21 +112,25 @@ namespace Rollgeon.UI.Tests
         // nada que re-tirar.
         // -------------------------------------------------------------------
 
-        /// <summary>Budget de mentira con reroll disponible; Current=null ⇒ el view
-        /// no lo trata como "primer roll pendiente" (post-roll a efectos del gate).</summary>
-        private sealed class AvailableFakeBudget : Rollgeon.Dice.IRerollBudgetService
+        /// <summary>Pool de mentira con rolls disponibles.</summary>
+        private sealed class AvailableFakePool : Rollgeon.Combat.Rolls.IRollPoolService
         {
-            public Rollgeon.Dice.RerollBudget Current => null;
-#pragma warning disable CS0067
-            public event Action<Rollgeon.Dice.RerollStartedPayload> OnRerollStarted;
-            public event Action<Rollgeon.Dice.RerollBudget> OnBudgetStarted;
-#pragma warning restore CS0067
-            public void StartBudget(Rollgeon.Combat.Actions.ActionDefinitionSO action) { }
-            public void EndBudget() { }
-            public Rollgeon.Dice.RerollQueryResult QueryExtraRoll(Guid playerGuid)
-                => Rollgeon.Dice.RerollQueryResult.Free();
-            public bool TryExtraRoll(Guid playerGuid) => false;
+            public int CurrentRolls = 5;
+            public bool IsCombatActive => true;
+            public void InitializeForEntity(Guid entityId) { }
+            public bool TrySpendRolls(Guid entityId, int count) => true;
+            public int Drain(Guid entityId, int amount) => 0;
+            public void AddRolls(Guid entityId, int amount) { }
+            public int GetCurrent(Guid entityId) => CurrentRolls;
+            public int GetMax(Guid entityId) => 15;
+            public int GetRollsPerTurn(Guid entityId) => 5;
+            public void AddPerTurnGrantBonus(int amount) { }
+            public void RestoreCurrent(Guid entityId, int value) { }
         }
+
+        // Marca el estado post-roll: el gate de seleccion solo aplica despues del
+        // primer roll de la accion (antes, el boton es el Roll inicial).
+        private void MarkRolled() => EventManager.Trigger(EventName.OnDiceRolled, _playerGuid);
 
         private DiceZoneView MakeZoneWithHolds(bool[] holds)
         {
@@ -140,15 +144,16 @@ namespace Rollgeon.UI.Tests
         [Test]
         public void RefreshButtonInteractable_PostRollWithoutSelection_DisablesButton()
         {
-            // Arrange — budget con reroll disponible pero ningún dado seleccionado.
+            // Arrange — pool con rolls pero ningún dado seleccionado.
             ServiceLocator.Clear();
-            ServiceLocator.AddService<Rollgeon.Dice.IRerollBudgetService>(new AvailableFakeBudget());
+            ServiceLocator.AddService<Rollgeon.Combat.Rolls.IRollPoolService>(new AvailableFakePool());
             try
             {
                 MakeZoneWithHolds(new[] { false, false, false });
 
-                // Act — Bind corre RefreshButtonInteractable.
+                // Act — post-roll, RefreshButtonInteractable corre en el handler.
                 _view.Bind(_playerGuid);
+                MarkRolled();
 
                 // Assert
                 Assert.IsFalse(_extraRoll.interactable,
@@ -163,19 +168,45 @@ namespace Rollgeon.UI.Tests
         [Test]
         public void RefreshButtonInteractable_PostRollWithSelection_EnablesButton()
         {
-            // Arrange — mismo budget, pero con un dado seleccionado para re-tirar.
+            // Arrange — mismo pool, pero con un dado seleccionado para re-tirar.
             ServiceLocator.Clear();
-            ServiceLocator.AddService<Rollgeon.Dice.IRerollBudgetService>(new AvailableFakeBudget());
+            ServiceLocator.AddService<Rollgeon.Combat.Rolls.IRollPoolService>(new AvailableFakePool());
             try
             {
                 MakeZoneWithHolds(new[] { true, false, false });
 
                 // Act
                 _view.Bind(_playerGuid);
+                MarkRolled();
 
                 // Assert
                 Assert.IsTrue(_extraRoll.interactable,
-                    "Con ≥1 dado seleccionado y reroll disponible, el botón se habilita.");
+                    "Con ≥1 dado seleccionado y rolls en el pool, el botón se habilita.");
+            }
+            finally
+            {
+                ServiceLocator.Clear();
+            }
+        }
+
+        [Test]
+        public void RefreshButtonInteractable_PostRollEmptyPool_DisablesButton()
+        {
+            // Arrange — hay dados seleccionados pero el pool está vacío.
+            ServiceLocator.Clear();
+            ServiceLocator.AddService<Rollgeon.Combat.Rolls.IRollPoolService>(
+                new AvailableFakePool { CurrentRolls = 0 });
+            try
+            {
+                MakeZoneWithHolds(new[] { true, false, false });
+
+                // Act
+                _view.Bind(_playerGuid);
+                MarkRolled();
+
+                // Assert
+                Assert.IsFalse(_extraRoll.interactable,
+                    "Con el pool en 0 no se puede pagar la tirada — botón disabled.");
             }
             finally
             {
@@ -192,16 +223,17 @@ namespace Rollgeon.UI.Tests
         [Test]
         public void RefreshButtonInteractable_ClassicModePostRollWithoutSelection_EnablesButton()
         {
-            // Arrange — budget disponible, nada lockeado: vuela toda la mano.
+            // Arrange — pool con rolls, nada lockeado: vuela toda la mano.
             ServiceLocator.Clear();
             Rollgeon.Dice.RerollSelectionPrefs.KeepSelected = true;
-            ServiceLocator.AddService<Rollgeon.Dice.IRerollBudgetService>(new AvailableFakeBudget());
+            ServiceLocator.AddService<Rollgeon.Combat.Rolls.IRollPoolService>(new AvailableFakePool());
             try
             {
                 MakeZoneWithHolds(new[] { false, false, false });
 
-                // Act — Bind corre RefreshButtonInteractable.
+                // Act
                 _view.Bind(_playerGuid);
+                MarkRolled();
 
                 // Assert
                 Assert.IsTrue(_extraRoll.interactable,
@@ -219,13 +251,14 @@ namespace Rollgeon.UI.Tests
             // Arrange — todo lockeado: el reroll no movería ningún dado.
             ServiceLocator.Clear();
             Rollgeon.Dice.RerollSelectionPrefs.KeepSelected = true;
-            ServiceLocator.AddService<Rollgeon.Dice.IRerollBudgetService>(new AvailableFakeBudget());
+            ServiceLocator.AddService<Rollgeon.Combat.Rolls.IRollPoolService>(new AvailableFakePool());
             try
             {
                 MakeZoneWithHolds(new[] { true, true, true });
 
                 // Act
                 _view.Bind(_playerGuid);
+                MarkRolled();
 
                 // Assert
                 Assert.IsFalse(_extraRoll.interactable,

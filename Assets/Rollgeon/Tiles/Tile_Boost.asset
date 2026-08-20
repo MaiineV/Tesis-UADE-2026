@@ -1,0 +1,48 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6832fe6d91866cd45a01ae006873d323, type: 3}
+  m_Name: Tile_Boost
+  m_EditorClassIdentifier: Rollgeon::Rollgeon.Tiles.SpecialTileDefinitionSO
+  TileId: TILE_BOOST
+  DisplayName: Impulso
+  TileType: 8
+  Triggers: 64
+  Category: 4
+  Affinity: 0
+  DamageKind: 3
+  EnterDamage: 0
+  TurnStartDamage: 0
+  HealAmount: 0
+  StatusKind: 0
+  StatusTurns: 0
+  StatusTickDamage: 0
+  ComboDamageBonus: 0
+  MoveRangeBonus: 2
+  DefaultDurationRounds: 0
+  DisarmOnTrigger: 0
+  RearmOnRoundWrap: 0
+  OwnerBossImmune: 1
+  TelegraphPayload: {fileID: 0}
+  TelegraphRounds: 1
+  ProtectedTileTypes: 
+  VisualPrefab: {fileID: 0}
+  VisualYOffset: 0.02
+  OverlayTint: {r: 1, g: 1, b: 1, a: 0.35}
+  TriggerVfxPrefab: {fileID: 0}
+  TriggerVfxLifetime: 2
+  TriggerVfxYOffset: 0.1
+  AIVirtualEnterDamage: 0
+  AIAnnouncesLethal: 0
+  EditorIcon: {fileID: 0}
+  EditorColor: {r: 0.25, g: 0.5, b: 1, a: 1}
+  NameKey: tile.boost
+  DescriptionKey: tile.boost

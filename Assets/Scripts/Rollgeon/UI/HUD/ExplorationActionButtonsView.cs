@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using Patterns;
-using Rollgeon.Combat.EnergyLib;
 using Rollgeon.Exploration;
 using Rollgeon.Heroes;
 using Rollgeon.Input;
@@ -42,7 +41,6 @@ namespace Rollgeon.UI.HUD
         private List<HeroActionBehavior> _activeBehaviors;
         private EventManager.EventReceiver _onPhaseEnter;
         private EventManager.EventReceiver _onPhaseExit;
-        private EventManager.EventReceiver _onEnergyChanged;
         private EventManager.EventReceiver _onInventoryChanged;
         private IGameplayHotkeyService _hotkeys;
 
@@ -80,12 +78,10 @@ namespace Rollgeon.UI.HUD
 
             _onPhaseEnter = OnPhaseEnter;
             _onPhaseExit = OnPhaseExit;
-            _onEnergyChanged = OnEnergyChanged;
             _onInventoryChanged = OnInventoryChanged;
 
             EventManager.Subscribe(EventName.OnPhaseEnter, _onPhaseEnter);
             EventManager.Subscribe(EventName.OnPhaseExit, _onPhaseExit);
-            EventManager.Subscribe(EventName.OnEnergyChanged, _onEnergyChanged);
             // Heal depende de PCHasInventoryItem(potion.healing). Si la pocion se
             // consume, el button tiene que pasar a no-interactable inmediatamente.
             EventManager.Subscribe(EventName.OnItemObtained, _onInventoryChanged);
@@ -116,7 +112,6 @@ namespace Rollgeon.UI.HUD
 
             EventManager.UnSubscribe(EventName.OnPhaseEnter, _onPhaseEnter);
             EventManager.UnSubscribe(EventName.OnPhaseExit, _onPhaseExit);
-            EventManager.UnSubscribe(EventName.OnEnergyChanged, _onEnergyChanged);
             EventManager.UnSubscribe(EventName.OnItemObtained, _onInventoryChanged);
             EventManager.UnSubscribe(EventName.OnItemRemoved, _onInventoryChanged);
             EventManager.UnSubscribe(EventName.OnActiveItemUsed, _onInventoryChanged);
@@ -218,17 +213,15 @@ namespace Rollgeon.UI.HUD
                 && !HealAvailability.CanHealMore(_playerGuid))
                 return false;
 
-            // Combina dos chequeos: energia suficiente Y preconditions del behavior
-            // (ej. Heal requiere PCHasInventoryItem(potion.healing)). Sin esto el
-            // boton de Heal queda interactable despues de consumir la pocion.
+            // Preconditions del behavior (ej. Heal requiere
+            // PCHasInventoryItem(potion.healing)). Sin esto el boton de Heal queda
+            // interactable despues de consumir la pocion. En exploración las acciones
+            // son gratis — no hay gate de recursos.
             bool ok = behavior.HasUsableEffectGroup(_playerGuid, Guid.Empty, out var reason);
             if (behavior.ActionName == "Force Door")
             {
-                int energy = 0;
-                if (ServiceLocator.TryGetService<IEnergyService>(out var es) && es != null)
-                    energy = es.GetCurrent(_playerGuid);
                 Debug.Log($"[ExplorationActionButtonsView] Force Door interactable={ok} reason='{reason}' " +
-                          $"playerGuid={_playerGuid} energy={energy} EnergyCost={behavior.EnergyCost}");
+                          $"playerGuid={_playerGuid}");
             }
             return ok;
         }
@@ -261,7 +254,7 @@ namespace Rollgeon.UI.HUD
         /// <summary>
         /// Motivo del rechazo en exploración, resuelto al momento del tap. Espejo
         /// del gating de <see cref="IsBehaviorAvailable"/>: vida llena → poción →
-        /// energía → condiciones. Null = gate del tutorial (el overlay ya guía).
+        /// condiciones. Null = gate del tutorial (el overlay ya guía).
         /// </summary>
         private string ResolveRejectReason(int buttonIndex)
         {
@@ -275,14 +268,6 @@ namespace Rollgeon.UI.HUD
             if (behavior.Slot == HeroBehaviorSlot.Healing
                 && !HealAvailability.CanHealMore(_playerGuid))
                 return LocalizedContent.Ui(UiTextKeys.RejectFullHealth, "Tienes la vida completa.");
-
-            // Energía antes del chequeo genérico: HasUsableEffectGroup la incluye
-            // y taparía el motivo concreto.
-            int cost = Rollgeon.UI.Tooltips.HeroActionTooltip.ResolveDisplayCost(behavior, _playerGuid);
-            if (cost > 0
-                && ServiceLocator.TryGetService<IEnergyService>(out var energy)
-                && energy != null && energy.GetCurrent(_playerGuid) < cost)
-                return LocalizedContent.Ui(UiTextKeys.RejectNoEnergy, "No tienes energía suficiente.");
 
             if (!behavior.HasUsableEffectGroup(_playerGuid, Guid.Empty, out _))
             {
@@ -404,12 +389,6 @@ namespace Rollgeon.UI.HUD
                 _activeBehaviors = null;
                 SetVisible(false);
             }
-        }
-
-        private void OnEnergyChanged(params object[] args)
-        {
-            if (!_bound) return;
-            RefreshInteractable();
         }
 
         private void OnInventoryChanged(params object[] args)

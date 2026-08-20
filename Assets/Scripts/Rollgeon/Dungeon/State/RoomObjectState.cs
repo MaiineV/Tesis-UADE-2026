@@ -128,6 +128,19 @@ namespace Rollgeon.Dungeon.State
     }
 
     /// <summary>
+    /// Elección persistida de un slot de Casilla Especial (Sistema de Casillas Especiales).
+    /// Se escribe en el primer resolve de la sala: re-entrar o resumir hidratan de acá y
+    /// NUNCA re-rolean. Key en <c>ObjectStates</c>: <c>"stile." + SlotId</c>.
+    /// </summary>
+    [Serializable]
+    public class SpecialTileSlotState : RoomObjectState
+    {
+        /// <summary><c>TileId</c> de la opción elegida; vacío = el slot resolvió "nada"
+        /// (grupos opcionales con CanResolveEmpty).</summary>
+        public string ChosenTileId;
+    }
+
+    /// <summary>
     /// Estado de un pedestal de Character Reward — Canal Personaje. Cada pedestal
     /// es un slot que persiste su rolled reward + flag de claim. Cuando el player
     /// toma uno, el service marca TODOS los slots de la room como

@@ -9,7 +9,7 @@ using Rollgeon.Combat;
 using Rollgeon.Combat.Actions;
 using Rollgeon.Combat.ComboLog;
 using Rollgeon.Combat.DiceBlock;
-using Rollgeon.Combat.EnergyLib;
+using Rollgeon.Combat.Rolls;
 using Rollgeon.Combat.Resume;
 using Rollgeon.Combat.Threat;
 using Rollgeon.Dungeon;
@@ -93,8 +93,8 @@ namespace Rollgeon.Run
                 && player.PlayerGuid != Guid.Empty)
             {
                 snap.PlayerGuid = player.PlayerGuid.ToString();
-                if (ServiceLocator.TryGetService<IEnergyService>(out var energy) && energy != null)
-                    snap.PlayerEnergy = energy.GetCurrent(player.PlayerGuid);
+                if (ServiceLocator.TryGetService<IRollPoolService>(out var rolls) && rolls != null)
+                    snap.PlayerRolls = rolls.GetCurrent(player.PlayerGuid);
             }
 
             if (ServiceLocator.TryGetService<TurnManager>(out var tm) && tm != null)
@@ -194,13 +194,14 @@ namespace Rollgeon.Run
 
             turnOrder.RestoreState(order, cursor, snap.RoundIndex);
 
-            // Energía del player: sobrescribe el reset-a-max de OnCombatStart.
-            if (ServiceLocator.TryGetService<IPlayerService>(out var player) && player != null
+            // Pool de rolls del player: sobrescribe el arranque-en-5 de OnCombatStart.
+            // PlayerRolls == -1 = snapshot viejo sin el campo — no restaurar.
+            if (snap.PlayerRolls >= 0
+                && ServiceLocator.TryGetService<IPlayerService>(out var player) && player != null
                 && player.PlayerGuid != Guid.Empty
-                && ServiceLocator.TryGetService<IEnergyService>(out var energyIf)
-                && energyIf is EnergyService energy)
+                && ServiceLocator.TryGetService<IRollPoolService>(out var rollPool) && rollPool != null)
             {
-                energy.RestoreCurrent(player.PlayerGuid, snap.PlayerEnergy);
+                rollPool.RestoreCurrent(player.PlayerGuid, snap.PlayerRolls);
             }
 
             // Buffs/debuffs/shields por entidad (Fase 4): se aplican sobre las entidades ya

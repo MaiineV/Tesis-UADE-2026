@@ -331,9 +331,8 @@ MonoBehaviour:
       it.'
     m_Metadata:
       m_Items: []
-  - m_Id: 7800251719905285
-    m_Localized: 'This is your ENERGY: moving, attacking and rerolling all spend
-      it. Manage it every turn.'
+  - m_Id: 12873216408338432
+    m_Localized: No Rolls left.
     m_Metadata:
       m_Items: []
   - m_Id: 7800251719905286
@@ -350,13 +349,13 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 7800251719905289
-    m_Localized: "Build combos (pair, trio, straight). Click a die to lock it; reroll
-      the rest \u2014 3 rolls max. Then CONFIRM."
+    m_Localized: Build combos (pair, trio, straight). Click locks a die; reroll the
+      rest for 1 Roll per throw. Then CONFIRM.
     m_Metadata:
       m_Items: []
   - m_Id: 7800251719905290
-    m_Localized: "You have rolls left: DEFENSE phase. Throw the dice and build a
-      combo \u2014 your SHIELD absorbs the next hit."
+    m_Localized: "You have Rolls left: DEFENSE unlocked ({0}). Throw the dice and
+      build a combo \u2014 it becomes SHIELD."
     m_Metadata:
       m_Items: []
   - m_Id: 7800251719905291
@@ -445,21 +444,6 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 7867763907198976
     m_Localized: Coming soon
-    m_Metadata:
-      m_Items: []
-  - m_Id: 8159026612039680
-    m_Localized: Reroll  -1 {ENERGY}
-    m_Metadata:
-      m_Items: []
-  - m_Id: 8159026649788416
-    m_Localized: '{0} Roll  -1 {ENERGY}'
-    m_Metadata:
-      m_Items: []
-  - m_Id: 8187299979096064
-    m_Localized: 'You have no free rolls left!
-
-      Each additional roll costs
-      1 Energy.'
     m_Metadata:
       m_Items: []
   - m_Id: 8535671167614976
@@ -635,8 +619,9 @@ MonoBehaviour:
     m_Localized: No target in range.
     m_Metadata:
       m_Items: []
-  - m_Id: 10374649764216833
-    m_Localized: Not enough energy.
+  - m_Id: 12873216341229568
+    m_Localized: 'This is your ROLL POOL: every dice throw spends 1. Ending your
+      turn grants 5 back (15 max).'
     m_Metadata:
       m_Items: []
   - m_Id: 10374649764216834
@@ -660,12 +645,41 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 10403289960906752
-    m_Localized: You get up to 3 free rolls per action; the next ones cost 1 energy
-      each.
+    m_Localized: 'You can reroll without limit: each throw spends 1 Roll from your
+      pool.'
     m_Metadata:
       m_Items: []
   - m_Id: 11862063171076096
     m_Localized: Description
+    m_Metadata:
+      m_Items: []
+  - m_Id: 12926848403161088
+    m_Localized: 'Throw the dice: the better the combo, the more SHIELD. Confirm
+      and absorb the next hit.'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 12939077386862592
+    m_Localized: 1 Turn
+    m_Metadata:
+      m_Items: []
+  - m_Id: 12939077424611328
+    m_Localized: '{0} Turns'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 12939077424611329
+    m_Localized: 'Damage on enter: {0}'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 12939077424611330
+    m_Localized: 'Damage per turn standing: {0}'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 12939077424611331
+    m_Localized: 'Heals at end of turn: {0}'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 12939077424611332
+    m_Localized: Lasts {0} rounds
     m_Metadata:
       m_Items: []
   references:

@@ -125,9 +125,9 @@ namespace Rollgeon.UI.Tests
         }
 
         [Test]
-        public void FormatEnergyLabel_ReturnsFraction()
+        public void FormatRollsLabel_ReturnsFraction()
         {
-            Assert.AreEqual("4/4", ChipStackMath.FormatEnergyLabel(4, 4));
+            Assert.AreEqual("4/4", ChipStackMath.FormatRollsLabel(4, 4));
         }
 
         [Test]

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using NUnit.Framework;
 using Patterns;
 using Rollgeon.Combat.Actions;
-using Rollgeon.Combat.EnergyLib;
+using Rollgeon.Combat.Rolls;
 using Rollgeon.Effects;
 using UnityEngine;
 using UnityEngine.TestTools;
@@ -11,39 +11,63 @@ using UnityEngine.TestTools;
 namespace Rollgeon.Combat.Actions.Tests
 {
     /// <summary>
-    /// Fake minimalista de <see cref="IEnergyService"/> para EditMode tests —
-    /// in-memory dictionary, sin dependencias de <c>AttributesManager</c>.
+    /// Fake minimalista de <see cref="IRollPoolService"/> para EditMode tests —
+    /// in-memory dictionary, sin RulesetSO ni eventos.
     /// </summary>
-    internal sealed class FakeEnergyService : IEnergyService
+    internal sealed class FakeRollPoolService : IRollPoolService
     {
         public readonly Dictionary<Guid, int> Current = new Dictionary<Guid, int>();
-        public int MaxPerEntity = 4;
+        public int Cap = 15;
+        public bool InCombat = true;
         public int SpendCallCount { get; private set; }
 
-        public void InitializeForEntity(Guid entityId) => Current[entityId] = MaxPerEntity;
+        public bool IsCombatActive => InCombat;
 
-        public bool SpendEnergy(Guid entityId, int cost)
+        public void InitializeForEntity(Guid entityId) => Current[entityId] = 5;
+
+        public bool TrySpendRolls(Guid entityId, int count)
         {
             SpendCallCount++;
-            if (cost < 0) return false;
+            if (count < 0) return false;
+            if (count == 0) return true;
             if (!Current.TryGetValue(entityId, out var have)) return false;
-            if (cost > have) return false;
-            Current[entityId] = have - cost;
+            if (count > have) return false;
+            Current[entityId] = have - count;
             return true;
         }
 
-        public void RegenerateAtTurnEnd(Guid entityId) { /* no-op en tests */ }
+        public int Drain(Guid entityId, int amount)
+        {
+            if (amount <= 0 || !Current.TryGetValue(entityId, out var have)) return 0;
+            int drained = Math.Min(amount, have);
+            Current[entityId] = have - drained;
+            return drained;
+        }
+
+        public void AddRolls(Guid entityId, int amount)
+        {
+            if (amount <= 0) return;
+            Current.TryGetValue(entityId, out var have);
+            Current[entityId] = Math.Min(Cap, have + amount);
+        }
 
         public int GetCurrent(Guid entityId) => Current.TryGetValue(entityId, out var v) ? v : 0;
 
-        public int GetMax(Guid entityId) => MaxPerEntity;
+        public int GetMax(Guid entityId) => Cap;
+
+        public int GetRollsPerTurn(Guid entityId) => 5;
+
+        public void AddPerTurnGrantBonus(int amount) { }
+
+        public void RestoreCurrent(Guid entityId, int value)
+            => Current[entityId] = Math.Clamp(value, 0, Cap);
     }
 
     [TestFixture]
     public class TurnManagerTests
     {
         private TurnManager _tm;
-        private FakeEnergyService _energy;
+        private FakeRollPoolService _energy;
         private List<ActionDefinitionSO> _createdDefs;
         private Guid _actor;
 
@@ -53,7 +77,7 @@ namespace Rollgeon.Combat.Actions.Tests
             EventManager.ResetEventDictionary();
             ServiceLocator.Clear();
 
-            _energy = new FakeEnergyService();
+            _energy = new FakeRollPoolService();
             _actor = Guid.NewGuid();
             _energy.Current[_actor] = 4;
 
@@ -81,12 +105,11 @@ namespace Rollgeon.Combat.Actions.Tests
 
         // --- Helpers -----------------------------------------------------
 
-        private ActionDefinitionSO MakeAction(string id, int energyCost = 1, bool blockOnRepeat = true)
+        private ActionDefinitionSO MakeAction(string id, bool blockOnRepeat = true)
         {
             var def = ScriptableObject.CreateInstance<ActionDefinitionSO>();
             def.ActionId = id;
             def.Type = ActionType.Attack;
-            def.EnergyCost = energyCost;
             def.BlockOnRepeat = blockOnRepeat;
             def.Effect = new EffectData(); // listas vacias.
             _createdDefs.Add(def);
@@ -118,7 +141,7 @@ namespace Rollgeon.Combat.Actions.Tests
         [Test]
         public void CanExecute_HappyPath_TrueAndNullReason()
         {
-            var def = MakeAction("attack.basic", energyCost: 1);
+            var def = MakeAction("attack.basic");
 
             bool ok = _tm.CanExecute(def, _actor, out var reason);
 
@@ -127,21 +150,33 @@ namespace Rollgeon.Combat.Actions.Tests
         }
 
         [Test]
-        public void CanExecute_NotEnoughEnergy_FalseWithReason()
+        public void CanExecute_EmptyPool_FalseWithReason()
         {
-            var def = MakeAction("attack.big", energyCost: 99);
+            var def = MakeAction("attack.big");
+            _energy.Current[_actor] = 0;
 
             bool ok = _tm.CanExecute(def, _actor, out var reason);
 
             Assert.IsFalse(ok);
             Assert.IsNotNull(reason);
-            StringAssert.Contains("energy", reason.ToLowerInvariant());
+            StringAssert.Contains("rolls", reason.ToLowerInvariant());
+        }
+
+        [Test]
+        public void CanExecute_EmptyPoolOutsideCombat_True()
+        {
+            // Fuera de combate el pool no existe — items/acciones no se gatean.
+            var def = MakeAction("item.potion");
+            _energy.Current[_actor] = 0;
+            _energy.InCombat = false;
+
+            Assert.IsTrue(_tm.CanExecute(def, _actor, out _));
         }
 
         [Test]
         public void CanExecute_RepeatBlocked_FalseWithReason()
         {
-            var def = MakeAction("attack.basic", energyCost: 1, blockOnRepeat: true);
+            var def = MakeAction("attack.basic", blockOnRepeat: true);
             // Marcamos como usada via TryExecute.
             Assert.IsTrue(_tm.TryExecute(def, _actor, MakeCtx()));
 
@@ -155,7 +190,7 @@ namespace Rollgeon.Combat.Actions.Tests
         public void CanExecute_BlockOnRepeatFalse_CanRepeat()
         {
             // Movement pattern — BlockOnRepeat = false.
-            var def = MakeAction("move", energyCost: 1, blockOnRepeat: false);
+            var def = MakeAction("move", blockOnRepeat: false);
             Assert.IsTrue(_tm.TryExecute(def, _actor, MakeCtx()));
 
             bool ok = _tm.CanExecute(def, _actor, out var reason);
@@ -167,14 +202,14 @@ namespace Rollgeon.Combat.Actions.Tests
         // --- TryExecute --------------------------------------------------
 
         [Test]
-        public void TryExecute_HappyPath_SpendsEnergyAndMarksUsed()
+        public void TryExecute_HappyPath_SpendsOneRollAndMarksUsed()
         {
-            var def = MakeAction("attack.basic", energyCost: 1);
+            var def = MakeAction("attack.basic");
 
             bool ok = _tm.TryExecute(def, _actor, MakeCtx());
 
             Assert.IsTrue(ok);
-            Assert.AreEqual(3, _energy.Current[_actor], "Energia cobrada (4 -> 3).");
+            Assert.AreEqual(3, _energy.Current[_actor], "1 roll cobrado (4 -> 3).");
             Assert.AreEqual(1, _energy.SpendCallCount);
             Assert.IsTrue(_tm.WasUsedThisTurn("attack.basic"));
             Assert.AreEqual(1, _tm.UsedActionsCount);
@@ -183,7 +218,7 @@ namespace Rollgeon.Combat.Actions.Tests
         [Test]
         public void TryExecute_RepeatBlocked_DoesNotSpendOrMutate()
         {
-            var def = MakeAction("attack.basic", energyCost: 1);
+            var def = MakeAction("attack.basic");
             _tm.TryExecute(def, _actor, MakeCtx()); // primera — exitosa.
             int spendCountAfterFirst = _energy.SpendCallCount;
             int energyAfterFirst = _energy.Current[_actor];
@@ -192,19 +227,20 @@ namespace Rollgeon.Combat.Actions.Tests
 
             Assert.IsFalse(ok);
             Assert.AreEqual(spendCountAfterFirst, _energy.SpendCallCount,
-                "No debe intentar cobrar energia en un repeat bloqueado.");
+                "No debe intentar cobrar rolls en un repeat bloqueado.");
             Assert.AreEqual(energyAfterFirst, _energy.Current[_actor]);
         }
 
         [Test]
-        public void TryExecute_NotEnoughEnergy_FalseNoMutation()
+        public void TryExecute_EmptyPool_FalseNoMutation()
         {
-            var def = MakeAction("attack.big", energyCost: 99);
+            var def = MakeAction("attack.big");
+            _energy.Current[_actor] = 0;
 
             bool ok = _tm.TryExecute(def, _actor, MakeCtx());
 
             Assert.IsFalse(ok);
-            Assert.AreEqual(4, _energy.Current[_actor], "Energia no debe cambiar.");
+            Assert.AreEqual(0, _energy.Current[_actor], "El pool no debe cambiar.");
             Assert.IsFalse(_tm.WasUsedThisTurn("attack.big"));
         }
 
@@ -212,22 +248,22 @@ namespace Rollgeon.Combat.Actions.Tests
         public void TryExecute_EmptyEffect_PermitNoOp_ChargesAndMarks()
         {
             // Accion con EffectData vacia (Effects.Count = 0) — "permit no-op".
-            // TurnManager cobra energia + marca usada, delega el dispatch del
+            // TurnManager cobra 1 roll + marca usada, delega el dispatch del
             // BackingAsset a otro sistema.
-            var def = MakeAction("combo.full_house", energyCost: 2);
+            var def = MakeAction("combo.full_house");
             Assert.AreEqual(0, def.Effect.Effects.Count);
 
             bool ok = _tm.TryExecute(def, _actor, MakeCtx());
 
             Assert.IsTrue(ok);
-            Assert.AreEqual(2, _energy.Current[_actor]);
+            Assert.AreEqual(3, _energy.Current[_actor]);
             Assert.IsTrue(_tm.WasUsedThisTurn("combo.full_house"));
         }
 
         [Test]
         public void TryExecute_MovementCanRepeat_SetStaysAtZero()
         {
-            var move = MakeAction("move", energyCost: 1, blockOnRepeat: false);
+            var move = MakeAction("move", blockOnRepeat: false);
 
             Assert.IsTrue(_tm.TryExecute(move, _actor, MakeCtx()));
             Assert.IsTrue(_tm.TryExecute(move, _actor, MakeCtx()));
@@ -242,7 +278,7 @@ namespace Rollgeon.Combat.Actions.Tests
         [Test]
         public void OnTurnStarted_ClearsUsedSet()
         {
-            var def = MakeAction("attack.basic", energyCost: 1);
+            var def = MakeAction("attack.basic");
             _tm.TryExecute(def, _actor, MakeCtx());
             Assert.IsTrue(_tm.WasUsedThisTurn("attack.basic"));
 
@@ -255,9 +291,9 @@ namespace Rollgeon.Combat.Actions.Tests
         [Test]
         public void OnTurnStarted_AfterClear_CanRepeatSameAction()
         {
-            var def = MakeAction("attack.basic", energyCost: 1);
+            var def = MakeAction("attack.basic");
             _tm.TryExecute(def, _actor, MakeCtx()); // usada.
-            _energy.Current[_actor] = 4;            // restaurar energia manualmente.
+            _energy.Current[_actor] = 4;            // restaurar el pool manualmente.
 
             EventManager.Trigger(EventName.OnTurnStarted, Guid.NewGuid());
 
@@ -271,7 +307,7 @@ namespace Rollgeon.Combat.Actions.Tests
         [Test]
         public void Dispose_UnsubscribesFromOnTurnStarted()
         {
-            var def = MakeAction("attack.basic", energyCost: 1);
+            var def = MakeAction("attack.basic");
             _tm.TryExecute(def, _actor, MakeCtx());
 
             _tm.Dispose();
@@ -295,7 +331,7 @@ namespace Rollgeon.Combat.Actions.Tests
             var actorB = Guid.NewGuid();
             _energy.Current[actorB] = 4;
 
-            var def = MakeAction("attack.basic", energyCost: 1);
+            var def = MakeAction("attack.basic");
 
             Assert.IsTrue(_tm.TryExecute(def, _actor, MakeCtx()));
             // Actor B intenta la misma accion — bloqueada por repeat en el mismo slot.

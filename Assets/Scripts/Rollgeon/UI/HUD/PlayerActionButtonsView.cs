@@ -4,7 +4,7 @@ using Patterns;
 using Rollgeon.ActionRolls;
 using Rollgeon.Combat;
 using Rollgeon.Combat.Actions;
-using Rollgeon.Combat.EnergyLib;
+using Rollgeon.Combat.Rolls;
 using Rollgeon.Effects.Concretes;
 using Rollgeon.Grid;
 using Rollgeon.Heroes;
@@ -33,11 +33,12 @@ namespace Rollgeon.UI.HUD
         // Serialized fields — behavior buttons
         // ======================================================================
 
-        [Title("Behavior Buttons (orden fijo: Movement / BaseAttack / SpecialAttack / Healing)")]
-        [InfoBox("Cada ActionButton conoce su slot. El orden debe matchear el index 0-3 " +
-                 "que CombatHandoffService espera al disparar OnBehaviorSelected.")]
+        [Title("Behavior Buttons (orden fijo: Movement / BaseAttack / SpecialAttack / Healing / ForceDoor / Defense)")]
+        [InfoBox("Cada ActionButton conoce su slot. El orden debe matchear el index " +
+                 "que CombatHandoffService espera al disparar OnBehaviorSelected " +
+                 "(índice de array == valor de HeroBehaviorSlot).")]
         [SerializeField]
-        private ActionButton[] _buttons = new ActionButton[4];
+        private ActionButton[] _buttons = new ActionButton[6];
 
         // ======================================================================
         // Events
@@ -149,7 +150,7 @@ namespace Rollgeon.UI.HUD
             EventManager.Subscribe(EventName.OnItemObtained, HandleInventoryChanged);
             EventManager.Subscribe(EventName.OnItemRemoved, HandleInventoryChanged);
             EventManager.Subscribe(EventName.OnActiveItemUsed, HandleInventoryChanged);
-            EventManager.Subscribe(EventName.OnPlayerEnergyChanged, HandlePlayerEnergyChanged);
+            EventManager.Subscribe(EventName.OnPlayerRollsChanged, HandlePlayerRollsChanged);
             EventManager.Subscribe(EventName.OnTutorialActionUnlocked, HandleTutorialActionUnlocked);
             EventManager.Subscribe(EventName.OnPhaseEnter, HandlePhaseEnter);
 
@@ -212,7 +213,7 @@ namespace Rollgeon.UI.HUD
             EventManager.UnSubscribe(EventName.OnItemObtained, HandleInventoryChanged);
             EventManager.UnSubscribe(EventName.OnItemRemoved, HandleInventoryChanged);
             EventManager.UnSubscribe(EventName.OnActiveItemUsed, HandleInventoryChanged);
-            EventManager.UnSubscribe(EventName.OnPlayerEnergyChanged, HandlePlayerEnergyChanged);
+            EventManager.UnSubscribe(EventName.OnPlayerRollsChanged, HandlePlayerRollsChanged);
             EventManager.UnSubscribe(EventName.OnTutorialActionUnlocked, HandleTutorialActionUnlocked);
             EventManager.UnSubscribe(EventName.OnPhaseEnter, HandlePhaseEnter);
 
@@ -344,7 +345,7 @@ namespace Rollgeon.UI.HUD
             RecomputeButtonStates();
         }
 
-        private void HandlePlayerEnergyChanged(params object[] args)
+        private void HandlePlayerRollsChanged(params object[] args)
         {
             if (args == null || args.Length < 1 || !(args[0] is Guid guid)) return;
             if (guid != _playerGuid) return;
@@ -407,23 +408,23 @@ namespace Rollgeon.UI.HUD
                 EventManager.Trigger(EventName.OnHeroBehaviorClicked, _buttons[index].Slot);
         }
 
-        // El chip avisa que lo intentaron usar sin energia; nosotros somos los que
-        // sabemos de quien es y cuanto cuesta, asi que enriquecemos y publicamos. La
-        // pila de energia escucha el evento — vive en otro prefab y con otro ciclo de
-        // vida, asi que una ref directa seria fragil.
+        // El chip avisa que lo intentaron usar sin rolls; nosotros somos los que
+        // sabemos de quien es, asi que enriquecemos y publicamos. La pila de rolls
+        // escucha el evento — vive en otro prefab y con otro ciclo de vida, asi
+        // que una ref directa seria fragil.
         private void HandleBehaviorRejected(int index)
         {
             var behavior = ResolveBehaviorForSlot(index);
             if (behavior == null) return;
 
-            int current = ServiceLocator.TryGetService<IEnergyService>(out var energy) && energy != null
-                ? energy.GetCurrent(_playerGuid)
+            int current = ServiceLocator.TryGetService<IRollPoolService>(out var rolls) && rolls != null
+                ? rolls.GetCurrent(_playerGuid)
                 : 0;
 
-            TypedEvent<InsufficientEnergyPayload>.Raise(new InsufficientEnergyPayload
+            TypedEvent<InsufficientRollsPayload>.Raise(new InsufficientRollsPayload
             {
                 PlayerGuid = _playerGuid,
-                Cost = ResolveDisplayCost(behavior),
+                Cost = 1,
                 Current = current,
             });
         }
@@ -452,6 +453,7 @@ namespace Rollgeon.UI.HUD
                 _hotkeys.Subscribe(GameplayHotkey.SpecialAttack, OnHotkeySpecial);
                 _hotkeys.Subscribe(GameplayHotkey.Heal, OnHotkeyHeal);
                 _hotkeys.Subscribe(GameplayHotkey.ForceDoor, OnHotkeyForceDoor);
+                _hotkeys.Subscribe(GameplayHotkey.Defense, OnHotkeyDefense);
             }
             else
             {
@@ -460,6 +462,7 @@ namespace Rollgeon.UI.HUD
                 _hotkeys.Unsubscribe(GameplayHotkey.SpecialAttack, OnHotkeySpecial);
                 _hotkeys.Unsubscribe(GameplayHotkey.Heal, OnHotkeyHeal);
                 _hotkeys.Unsubscribe(GameplayHotkey.ForceDoor, OnHotkeyForceDoor);
+                _hotkeys.Unsubscribe(GameplayHotkey.Defense, OnHotkeyDefense);
                 _hotkeys = null;
             }
         }
@@ -469,6 +472,7 @@ namespace Rollgeon.UI.HUD
         private void OnHotkeySpecial(InputAction.CallbackContext _) => TriggerSlotHotkey(HeroBehaviorSlot.SpecialAttack);
         private void OnHotkeyHeal(InputAction.CallbackContext _) => TriggerSlotHotkey(HeroBehaviorSlot.Healing);
         private void OnHotkeyForceDoor(InputAction.CallbackContext _) => TriggerSlotHotkey(HeroBehaviorSlot.ForceDoor);
+        private void OnHotkeyDefense(InputAction.CallbackContext _) => TriggerSlotHotkey(HeroBehaviorSlot.Defense);
 
         // Invoca el onClick del ActionButton cuyo Slot matchea (mismo path que un
         // click real → HandleBehaviorClick con el index correcto). Si el botón está
@@ -505,7 +509,7 @@ namespace Rollgeon.UI.HUD
                 // Aparte del estado: el estado es excluyente y se queda con la PRIMERA
                 // razon de la cascada, asi que un chip Locked por rango o por vida llena
                 // ocultaba que ademas no lo podias pagar. Sin behavior no opinamos.
-                if (behavior != null) _buttons[i].SetAffordable(HasEnoughEnergy(behavior));
+                if (behavior != null) _buttons[i].SetAffordable(HasEnoughRolls());
             }
         }
 
@@ -581,21 +585,20 @@ namespace Rollgeon.UI.HUD
                 return ActionButtonState.Locked;
             }
 
-            // includeEnergyGate:false — HasUsableEffectGroup tiene su propio gate de
-            // energía contra behavior.EnergyCost, y al consultarlo antes que HasEnoughEnergy
-            // devolvía Locked para todo chip impagable: el Unaffordable de abajo era
-            // inalcanzable salvo cuando el costo del spec supera al legacy (Heal con
-            // exactamente 1 de energía). Sin ni outline ni shake, que es lo que se reportó.
+            // includeRollGate:false — HasUsableEffectGroup tiene su propio gate de
+            // pool, y al consultarlo antes que HasEnoughRolls devolvía Locked para
+            // todo chip impagable: el Unaffordable de abajo era inalcanzable. Sin ni
+            // outline ni shake, que es lo que se reportó.
             if (!behavior.HasUsableEffectGroup(_playerGuid, Guid.Empty, out var usableReason,
-                                               includeEnergyGate: false))
+                                               includeRollGate: false))
             {
                 return ActionButtonState.Locked;
             }
 
             // Ultimo gate de la cascada: si llegamos hasta aca todo lo demas esta
-            // listo y lo unico que falta es energia. Por eso Unaffordable puede
-            // decirle al jugador POR QUE no puede — los Locked de arriba no.
-            if (!HasEnoughEnergy(behavior))
+            // listo y lo unico que falta son rolls en el pool. Por eso Unaffordable
+            // puede decirle al jugador POR QUE no puede — los Locked de arriba no.
+            if (!HasEnoughRolls())
             {
                 return ActionButtonState.Unaffordable;
             }
@@ -626,19 +629,14 @@ namespace Rollgeon.UI.HUD
             return tm.WasUsedThisTurn(actionName);
         }
 
-        // Gatea contra el costo que REALMENTE se cobra, no contra behavior.EnergyCost.
-        // Cuando el behavior tiene un IActionRollEffect, el spec pisa al valor legacy
-        // (ej. Heal: EnergyCost=1 pero el spec cobra 2). Usar el legacy dejaba el chip
-        // Available con energia insuficiente: el jugador lo activaba, ActionRollService
-        // no podia cobrar y cancelaba con un Debug.Log — el rechazo silencioso que este
-        // feedback existe para eliminar. Misma fuente que el cost label y el tooltip.
-        private bool HasEnoughEnergy(HeroActionBehavior behavior)
+        // Pool de Rolls: toda accion cuesta 1 roll por tirada, asi que "afordable"
+        // es simplemente pool >= 1 (solo en combate; este view es del combat HUD).
+        private bool HasEnoughRolls()
         {
-            int cost = ResolveDisplayCost(behavior);
-            if (cost <= 0) return true;
-            if (!ServiceLocator.TryGetService<IEnergyService>(out var energy) || energy == null)
-                return true; // sin servicio de energia, no bloqueamos en UI
-            return energy.GetCurrent(_playerGuid) >= cost;
+            if (!ServiceLocator.TryGetService<IRollPoolService>(out var rolls) || rolls == null)
+                return true; // sin servicio del pool, no bloqueamos en UI
+            if (!rolls.IsCombatActive) return true;
+            return rolls.GetCurrent(_playerGuid) >= 1;
         }
 
         // ======================================================================
@@ -660,19 +658,9 @@ namespace Rollgeon.UI.HUD
             {
                 if (_buttons[i] == null) continue;
                 var behavior = hero.ResolveBaseBehavior(_buttons[i].Slot, GamePhase.Combat);
-                if (behavior == null)
-                    _buttons[i].RefreshCostLabel(behavior);
-                else
-                    _buttons[i].RefreshCostLabel(ResolveDisplayCost(behavior));
+                _buttons[i].RefreshCostLabel(behavior);
             }
         }
-
-        // Si el behavior tiene un IActionRollEffect, el cobro real lo hace el
-        // IActionRollService con el cost del spec — el behavior.EnergyCost queda
-        // enganoso (los wirings legacy lo ponen en 2 cuando el real es 1). Regla
-        // compartida con el texto de tooltips (HeroActionTooltip).
-        private int ResolveDisplayCost(HeroActionBehavior behavior)
-            => Rollgeon.UI.Tooltips.HeroActionTooltip.ResolveDisplayCost(behavior, _playerGuid);
 
         // ======================================================================
         // Toast de rechazo — "Esta acción no puede ser realizada" + motivo
@@ -732,11 +720,11 @@ namespace Rollgeon.UI.HUD
                 && !HealAvailability.CanHealMore(_playerGuid))
                 return LocalizedContent.Ui(UiTextKeys.RejectFullHealth, "Tienes la vida completa.");
 
-            if (!behavior.HasUsableEffectGroup(_playerGuid, Guid.Empty, out _, includeEnergyGate: false))
+            if (!behavior.HasUsableEffectGroup(_playerGuid, Guid.Empty, out _, includeRollGate: false))
                 return LocalizedContent.Ui(UiTextKeys.RejectNoRange, "Sin rango al objetivo.");
 
-            if (!HasEnoughEnergy(behavior))
-                return LocalizedContent.Ui(UiTextKeys.RejectNoEnergy, "No tienes energía suficiente.");
+            if (!HasEnoughRolls())
+                return LocalizedContent.Ui(UiTextKeys.RejectNoRolls, "No te quedan Rolls.");
 
             return null;
         }

@@ -75,6 +75,17 @@ namespace Rollgeon.Combat.Pipelines
             // float outMult = _attributes.GetAttributeModifiedValue<OutgoingDamageMultiplier, float>(ctx.SourceId);
             // damage = Mathf.RoundToInt(damage * outMult);
 
+            // ── 1b. Outgoing flat bonus (Fortaleza) ───────────────────────────
+            // Solo golpes ofensivos del atacante: DoT/ambiental/reacciones quedan afuera
+            // por diseño, y el gate por Kind acá evita que cada provider lo repita.
+            if ((ctx.Kind == AttackKind.ComboAttack || ctx.Kind == AttackKind.BasicAttack)
+                && ServiceLocator.TryGetService<IOutgoingFlatDamageBonusProvider>(out var flatBonus)
+                && flatBonus != null)
+            {
+                int bonus = flatBonus.GetFlatBonus(ctx);
+                if (bonus != 0) damage += bonus;
+            }
+
             EventManager.Trigger(EventName.OnDamageOutgoing,
                 ctx.SourceId, ctx.TargetId, damage);
 

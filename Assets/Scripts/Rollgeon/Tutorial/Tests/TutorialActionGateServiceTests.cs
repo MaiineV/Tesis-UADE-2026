@@ -44,6 +44,23 @@ namespace Rollgeon.Tutorial.Tests
             new TutorialActionGateService(_hero, locked);
 
         [Test]
+        public void CreateAndRegister_InitialLock_IncludesDefense()
+        {
+            // Arrange / Act — el lock inicial del tutorial: solo Movement libre.
+            // Defense entró con Feature#0051; si falta acá, el chip arranca
+            // desbloqueado en el tutorial antes de su lección.
+            var gate = TutorialActionGateService.CreateAndRegister(_hero);
+
+            // Assert
+            Assert.IsFalse(gate.IsSlotLocked(HeroBehaviorSlot.Movement));
+            Assert.IsTrue(gate.IsSlotLocked(HeroBehaviorSlot.BaseAttack));
+            Assert.IsTrue(gate.IsSlotLocked(HeroBehaviorSlot.SpecialAttack));
+            Assert.IsTrue(gate.IsSlotLocked(HeroBehaviorSlot.Healing));
+            Assert.IsTrue(gate.IsSlotLocked(HeroBehaviorSlot.ForceDoor));
+            Assert.IsTrue(gate.IsSlotLocked(HeroBehaviorSlot.Defense));
+        }
+
+        [Test]
         public void IsSlotLocked_InitialLock_LocksOnlyGivenSlots()
         {
             var gate = CreateGate(HeroBehaviorSlot.Healing, HeroBehaviorSlot.ForceDoor);
@@ -172,9 +189,9 @@ namespace Rollgeon.Tutorial.Tests
             // Act
             gate.LockAllExcept(HeroBehaviorSlot.BaseAttack);
 
-            // Assert — cambian Movement, SpecialAttack y ForceDoor (3), no Healing
-            // (ya locked) ni BaseAttack (permitido).
-            Assert.AreEqual(3, _unlockedEvents);
+            // Assert — cambian Movement, SpecialAttack, ForceDoor y Defense (4), no
+            // Healing (ya locked) ni BaseAttack (permitido).
+            Assert.AreEqual(4, _unlockedEvents);
         }
 
         [Test]

@@ -38,9 +38,18 @@ namespace Rollgeon.UI.HUD.Status
             return sb.ToString();
         }
 
-        /// <summary>Texto que va bajo el ícono. Vacío para lo que no tiene duración.</summary>
+        /// <summary>Texto que va bajo el ícono ("1 Turno" / "3 Turnos"). Vacío sin duración.</summary>
         public static string ResolveDurationBadge(in StatusIconState state)
-            => state.RemainingTurns.HasValue ? state.RemainingTurns.Value.ToString() : string.Empty;
+        {
+            if (!state.RemainingTurns.HasValue) return string.Empty;
+
+            int turns = state.RemainingTurns.Value;
+            if (turns <= 1)
+                return LocalizedContent.Ui(StatusTextKeys.BadgeOneTurn, "1 Turno");
+
+            return string.Format(
+                LocalizedContent.Ui(StatusTextKeys.BadgeTurns, "{0} Turnos"), turns);
+        }
 
         private static string ResolveFooter(in StatusIconState state)
         {

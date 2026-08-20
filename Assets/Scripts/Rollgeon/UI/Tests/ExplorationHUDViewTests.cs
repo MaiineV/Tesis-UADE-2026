@@ -41,9 +41,6 @@ namespace Rollgeon.UI.Tests
         private HealthChipStackView _hp;
         private ChipStackView _hpStack;
         private TMPro.TextMeshProUGUI _hpLabel;
-        private EnergyChipStackView _energy;
-        private ChipStackView _energyStack;
-        private TMPro.TextMeshProUGUI _energyLabel;
         private ChipStackSettingsSO _chipSettings;
         private ActiveItemsView _items;
         private MinimapView _minimap;
@@ -84,9 +81,6 @@ namespace Rollgeon.UI.Tests
             _hp = AttachChipStackView<HealthChipStackView>("HealthChips", _hudGO,
                 out _hpStack, out _hpLabel);
 
-            _energy = AttachChipStackView<EnergyChipStackView>("EnergyChips", _hudGO,
-                out _energyStack, out _energyLabel);
-
             _items = AttachChild<ActiveItemsView>("ActiveItems", _hudGO);
 
             _minimap = AttachChild<MinimapView>("Minimap", _hudGO);
@@ -94,7 +88,6 @@ namespace Rollgeon.UI.Tests
             _roomNavigation = AttachChild<RoomNavigationView>("RoomNavigation", _hudGO);
 
             AssignPrivate(_hud, "_healthChips", _hp);
-            AssignPrivate(_hud, "_energyChips", _energy);
             AssignPrivate(_hud, "_activeItems", _items);
             AssignPrivate(_hud, "_minimap", _minimap);
             AssignPrivate(_hud, "_roomNavigation", _roomNavigation);
@@ -129,17 +122,6 @@ namespace Rollgeon.UI.Tests
             });
 
             Assert.AreEqual("50/100", _hpLabel.text);
-        }
-
-        [Test]
-        public void BindAll_SubscribesEnergyChips_EventUpdatesChipsAndLabel()
-        {
-            _hud.BindAll(_playerGuid);
-
-            EventManager.Trigger(EventName.OnPlayerEnergyChanged, _playerGuid, 3, 4);
-
-            Assert.AreEqual(3, _energyStack.DisplayedCount);
-            Assert.AreEqual("3/4", _energyLabel.text);
         }
 
         [Test]

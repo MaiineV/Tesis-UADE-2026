@@ -30,7 +30,7 @@ namespace Rollgeon.ActionRolls
 
         /// <summary>
         /// <c>true</c> si la fase actual es <see cref="ActionRollPhase.AwaitingRerollDecision"/>
-        /// y el jugador tiene energía suficiente para pagar el reroll. La UI usa esto
+        /// y el jugador tiene rolls en el pool para pagar el reroll. La UI usa esto
         /// para habilitar/deshabilitar el botón de Reroll.
         /// </summary>
         bool CanAffordReroll { get; }
@@ -99,8 +99,8 @@ namespace Rollgeon.ActionRolls
         /// <summary>
         /// Re-tira solo los dados cuyo <paramref name="keep"/> es <c>false</c>; los
         /// <c>true</c> conservan su valor actual (igual que el reroll en combate).
-        /// Cobra <c>RerollEnergyCost</c> por cada invocación; el jugador puede
-        /// rerollear múltiples veces mientras tenga energía. Si <c>SpendEnergy</c>
+        /// Cobra 1 roll del pool por cada invocación (si la spec cobra); el jugador
+        /// puede rerollear múltiples veces mientras tenga rolls. Si el cobro
         /// falla, el flow se resuelve con la tirada actual.
         /// </summary>
         void RequestReroll(System.Collections.Generic.IReadOnlyList<bool> keep);

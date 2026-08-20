@@ -45,6 +45,15 @@ namespace Rollgeon.Combat.AI
         /// <summary>RNG inyectado — tests pueden proveer un System.Random con seed fijo.</summary>
         public System.Random Rng;
 
+        /// <summary>
+        /// Planner con conciencia de Casillas Especiales. Null = los nodos de movimiento
+        /// corren su scoring legacy intacto (tests, escenas sin bootstrap del planner).
+        /// </summary>
+        public Pathing.IAIPathPlanner PathPlanner;
+
+        /// <summary>Perfil de riesgo de Self (MinSurvivalHP + Caution). Default = Normal.</summary>
+        public Pathing.AIPersonalityProfile Personality = Pathing.AIPersonalityProfile.Default;
+
         /// <summary>Servicio visual — null en tests EditMode. Permite a action nodes esperar animaciones.</summary>
         public IEntityVisualService VisualService;
 

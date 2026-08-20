@@ -11,9 +11,12 @@ namespace Rollgeon.Movement
     /// A* con heurística Manhattan (point-to-point en 4-neighborhood, costo uniforme).
     /// TECHNICAL.md §17.§B.
     /// </summary>
-    public sealed class MovementService : IMovementService
+    public sealed class MovementService : IMovementService, IPathedMovementService
     {
         private readonly IGridManager _grid;
+
+        // Un solo filtro (el motor de Casillas Especiales). Ver IMovementPathFilter.
+        private IMovementPathFilter _pathFilter;
 
         public MovementService(IGridManager grid)
         {
@@ -21,6 +24,8 @@ namespace Rollgeon.Movement
         }
 
         public event Action<Guid, GridCoord, GridCoord, IReadOnlyList<GridCoord>> OnEntityMoved;
+
+        public event Action<Guid, GridCoord, GridCoord> OnEntityTeleported;
 
         public List<GridCoord> GetReachableTiles(GridCoord origin, int range, bool includeOrigin = false)
         {
@@ -133,10 +138,75 @@ namespace Rollgeon.Movement
             var path = FindPath(from, destination);
             if (path.Count == 0) return false;
 
-            if (!_grid.Move(entity, destination)) return false;
+            // El filtro puede truncar el path (Hielo/Portal terminan el movimiento ahí);
+            // el evento anuncia SOLO lo realmente caminado.
+            var effective = ApplyFilter(entity, path);
+            if (effective.Count < 2) return false;
 
-            OnEntityMoved?.Invoke(entity, from, destination, path);
+            var target = effective[effective.Count - 1];
+            if (!_grid.Move(entity, target)) return false;
+
+            OnEntityMoved?.Invoke(entity, from, target, effective);
             return true;
+        }
+
+        // ======================================================================
+        // IPathedMovementService
+        // ======================================================================
+
+        /// <inheritdoc />
+        public void SetPathFilter(IMovementPathFilter filter) => _pathFilter = filter;
+
+        /// <inheritdoc />
+        public bool CommitPath(Guid entity, IReadOnlyList<GridCoord> path, bool applyPathFilter = false)
+        {
+            if (path == null || path.Count == 0) return false;
+            if (!_grid.TryGetPosition(entity, out var from))
+            {
+                Debug.LogWarning($"[MovementService] CommitPath: entidad {entity} no registrada en grid.");
+                return false;
+            }
+            if (path[0] != from) return false;
+
+            var effective = applyPathFilter ? ApplyFilter(entity, path) : path;
+            // Solo el origen: no hay nada que caminar — no-op válido, sin evento.
+            if (effective.Count < 2) return effective.Count == 1;
+
+            for (int i = 1; i < effective.Count; i++)
+            {
+                var step = effective[i];
+                if (effective[i - 1].Manhattan(step) != 1) return false;
+                if (!_grid.IsWalkable(step)) return false;
+                if (_grid.IsOccupied(step)) return false;
+            }
+
+            var target = effective[effective.Count - 1];
+            if (!_grid.Move(entity, target)) return false;
+
+            OnEntityMoved?.Invoke(entity, from, target, effective);
+            return true;
+        }
+
+        /// <inheritdoc />
+        public bool Teleport(Guid entity, GridCoord to)
+        {
+            if (!_grid.TryGetPosition(entity, out var from))
+            {
+                Debug.LogWarning($"[MovementService] Teleport: entidad {entity} no registrada en grid.");
+                return false;
+            }
+            if (from == to) return true;
+            if (!_grid.IsWalkable(to) || _grid.IsOccupied(to)) return false;
+            if (!_grid.Move(entity, to)) return false;
+
+            OnEntityTeleported?.Invoke(entity, from, to);
+            return true;
+        }
+
+        private IReadOnlyList<GridCoord> ApplyFilter(Guid entity, IReadOnlyList<GridCoord> path)
+        {
+            if (_pathFilter == null) return path;
+            return _pathFilter.Filter(entity, path) ?? path;
         }
     }
 }

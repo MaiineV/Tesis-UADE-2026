@@ -33,9 +33,9 @@ namespace Rollgeon.EditorTools.Localization
             SeedEnchantments();
             SeedUnlockHints();
             SeedMiscContent();
-            SeedRollCost();
             SeedBuildHelp();
             SeedStatusIcons();
+            SeedSpecialTiles();
             SeedContractDrawer();
             SeedPlayerIcons();
             SeedDiceBag();
@@ -95,9 +95,9 @@ namespace Rollgeon.EditorTools.Localization
                 "Esta es tu VIDA: si llega a cero, la run se termina. Cuídala.",
                 "This is your HEALTH: if it hits zero, the run is over. Look after it.");
 
-            Ui(TutorialTextKeys.StatsEnergy,
-                "Esta es tu ENERGÍA: moverte, atacar y volver a tirar la consumen. Adminístrala en cada turno.",
-                "This is your ENERGY: moving, attacking and rerolling all spend it. Manage it every turn.");
+            Ui(TutorialTextKeys.StatsRolls,
+                "Este es tu POOL DE ROLLS: cada tirada de dados consume 1. Al terminar tu turno recuperas 5 (máximo 15).",
+                "This is your ROLL POOL: every dice throw spends 1. Ending your turn grants 5 back (15 max).");
 
             Ui(TutorialTextKeys.AttackTeach,
                 "Se desbloqueó ATACAR ({0}). Selecciónalo para elegir a quién golpear.",
@@ -114,20 +114,26 @@ namespace Rollgeon.EditorTools.Localization
                 "and throw with a quick flick.");
 
             Ui(TutorialTextKeys.DiceTeach,
-                "Arma combos (par, trío, escalera). Clic en un dado lo bloquea; vuelve a tirar el resto " +
-                "— máximo 3 tiradas. Luego CONFIRMA.",
-                "Build combos (pair, trio, straight). Click a die to lock it; reroll the rest " +
-                "— 3 rolls max. Then CONFIRM.");
+                "Arma combos (par, trío, escalera). Clic bloquea un dado; re-tira el resto " +
+                "por 1 Roll cada tirada. Luego CONFIRMA.",
+                "Build combos (pair, trio, straight). Click locks a die; reroll the rest " +
+                "for 1 Roll per throw. Then CONFIRM.");
 
             Ui(TutorialTextKeys.RerollTeach,
-                "Tienes hasta 3 tiradas gratis por acción; las siguientes cuestan 1 de energía.",
-                "You get up to 3 free rolls per action; the next ones cost 1 energy each.");
+                "Puedes volver a tirar sin tope: cada tirada consume 1 Roll de tu pool.",
+                "You can reroll without limit: each throw spends 1 Roll from your pool.");
 
             Ui(TutorialTextKeys.DefenseTeach,
-                "Te sobraron tiradas: fase de DEFENSA. Lanza los dados y arma un combo — " +
-                "tu ESCUDO absorbe el próximo golpe.",
-                "You have rolls left: DEFENSE phase. Throw the dice and build a combo — " +
-                "your SHIELD absorbs the next hit.");
+                "Te sobraron Rolls: se desbloqueó DEFENSA ({0}). Tira los dados y arma " +
+                "un combo — se convierte en ESCUDO.",
+                "You have Rolls left: DEFENSE unlocked ({0}). Throw the dice and build " +
+                "a combo — it becomes SHIELD.");
+
+            Ui(TutorialTextKeys.DefenseDice,
+                "Lanza los dados: cuanto mejor el combo, más ESCUDO. Confirma y absorbe " +
+                "el próximo golpe.",
+                "Throw the dice: the better the combo, the more SHIELD. Confirm and " +
+                "absorb the next hit.");
 
             Ui(TutorialTextKeys.EndTurnTeach,
                 "¡Golpe completado! Cuando no quieras hacer nada más, pulsa " +
@@ -253,9 +259,9 @@ namespace Rollgeon.EditorTools.Localization
             Ui(UiTextKeys.RejectNoRange,
                 "Sin rango al objetivo.",
                 "No target in range.");
-            Ui(UiTextKeys.RejectNoEnergy,
-                "No tienes energía suficiente.",
-                "Not enough energy.");
+            Ui(UiTextKeys.RejectNoRolls,
+                "No te quedan Rolls.",
+                "No Rolls left.");
             Ui(UiTextKeys.RejectUsed,
                 "Ya la usaste este turno.",
                 "Already used this turn.");
@@ -490,7 +496,7 @@ namespace Rollgeon.EditorTools.Localization
         {
             // Recompensas de personaje — se veían en inglés incluso en español.
             Content("char_rew.attack_plus_3.name", "Ataque +3", "Attack +3");
-            Content("char_rew.energy_plus_1.name", "Energía +1", "Energy +1");
+            Content("char_rew.energy_plus_1.name", "+1 Roll por turno", "+1 Roll per turn");
             Content("char_rew.hp_plus_5.name", "Vida máxima +5", "Max Health +5");
             Content("char_rew.speed_plus_2.name", "Velocidad +2", "Speed +2");
 
@@ -513,40 +519,6 @@ namespace Rollgeon.EditorTools.Localization
             Content("Enchantment.name", "Sala de Encantamiento", "Enchantment Room");
             Content("room_tutorial_combat_b.name", "Tutorial — Combate 1", "Tutorial — Combat 1");
             Content("room_tutorial_combat_c.name", "Tutorial — Combate 2", "Tutorial — Combat 2");
-        }
-
-        // ==================================================================
-        // Costo en energía de los rolls extra (tabla UI)
-        // ==================================================================
-
-        /// <remarks>
-        /// El <c>{ENERGY}</c> lo expande <c>IconSpriteTags</c> al glifo del atlas
-        /// <b>después</b> de traducir, y el <c>{0}</c> del chain prompt lo reemplaza
-        /// <c>ChainRollPromptView.Show</c> con el nombre de la fase — los dos tokens
-        /// tienen que sobrevivir la traducción.
-        /// <para>
-        /// "Reroll" y "Roll" quedan iguales en ES y EN a propósito: son los términos que
-        /// el juego ya venía mostrando sin traducir. Están listados en
-        /// <c>LocalizationTablesTests.IdenticalByDesign</c> para que el guard de
-        /// "columna EN copiada del español" no los marque.
-        /// </para>
-        /// </remarks>
-        private static void SeedRollCost()
-        {
-            Ui(UiTextKeys.RerollPaid,
-                "Reroll  -1 {ENERGY}",
-                "Reroll  -1 {ENERGY}");
-
-            Ui(UiTextKeys.ChainRollPaid,
-                "{0} Roll  -1 {ENERGY}",
-                "{0} Roll  -1 {ENERGY}");
-
-            // Dos líneas: primero el por qué aparece el prompt, después la regla.
-            // El salto va en la traducción y no en la vista para que cada idioma
-            // pueda cortar donde le quede bien.
-            Ui(UiTextKeys.ChainRollPaidHint,
-                "¡No te quedan tiradas gratis!\nCada tirada adicional cuesta 1 de Energía.",
-                "You have no free rolls left!\nEach additional roll costs 1 Energy.");
         }
 
         // ==================================================================
@@ -598,6 +570,84 @@ namespace Rollgeon.EditorTools.Localization
             // "1 turnos" — en inglés la diferencia es igual de visible.
             Ui(StatusTextKeys.Duration, "Dura {0} turnos", "Lasts {0} turns");
             Ui(StatusTextKeys.DurationLastTurn, "Último turno", "Last turn");
+
+            // Badge corto bajo el ícono (distinto del pie del tooltip de arriba).
+            Ui(StatusTextKeys.BadgeOneTurn, "1 Turno", "1 Turn");
+            Ui(StatusTextKeys.BadgeTurns, "{0} Turnos", "{0} Turns");
+
+            // Estados con duración (Casillas Especiales). Nombre + descripción del estado,
+            // que son SUYOS (los publica su provider), a diferencia del pie del sistema.
+            Content("status.poison.name", "Envenenado", "Poisoned");
+            Content("status.poison.desc",
+                "Recibís daño al inicio de cada turno. Volver a pisar Veneno refresca la duración.",
+                "You take damage at the start of each turn. Stepping on Poison again refreshes the duration.");
+            Content("status.stun.name", "Aturdido", "Stunned");
+            Content("status.stun.desc",
+                "Perdés tu próximo turno.",
+                "You lose your next turn.");
+        }
+
+        // ==================================================================
+        // Casillas Especiales — tooltips de tile (GDD §16)
+        // ==================================================================
+
+        private static void SeedSpecialTiles()
+        {
+            // Líneas del sistema (números duros del tooltip). {0} = valor.
+            Ui("tile.tooltip.enterdamage", "Daño al entrar: {0}", "Damage on enter: {0}");
+            Ui("tile.tooltip.turndamage", "Daño por turno encima: {0}", "Damage per turn standing: {0}");
+            Ui("tile.tooltip.heal", "Cura al terminar el turno: {0}", "Heals at end of turn: {0}");
+            Ui("tile.tooltip.duration", "Dura {0} rondas", "Lasts {0} rounds");
+
+            // Nombre + descripción por casilla del catálogo.
+            Content("tile.spikes.name", "Pinchos", "Spikes");
+            Content("tile.spikes.desc",
+                "Trampa armada: pincha al entrar o al ser empujado encima. Se rearma cada ronda.",
+                "Armed trap: stabs when entered or pushed onto. Rearms each round.");
+            Content("tile.fire.name", "Fuego", "Fire");
+            Content("tile.fire.desc",
+                "Quema al entrar y en cada inicio de turno parado encima. Afecta también a voladoras.",
+                "Burns on enter and at each turn start while standing on it. Affects flying units too.");
+            Content("tile.firetemp.name", "Fuego Temporal", "Temporary Fire");
+            Content("tile.firetemp.desc",
+                "Fuego que se apaga solo tras unas rondas.",
+                "Fire that burns out on its own after a few rounds.");
+            Content("tile.ice.name", "Hielo", "Ice");
+            Content("tile.ice.desc",
+                "Te deslizás en la dirección en la que entraste hasta salir del hielo o chocar.",
+                "You slide in the direction you entered until you leave the ice or hit something.");
+            Content("tile.portal.name", "Portal", "Portal");
+            Content("tile.portal.desc",
+                "Te teletransporta al portal conectado y te deja en la casilla siguiente.",
+                "Teleports you to the linked portal and drops you on the next tile.");
+            Content("tile.poison.name", "Veneno", "Poison");
+            Content("tile.poison.desc",
+                "Te envenena: daño al inicio de cada turno durante varios turnos.",
+                "Poisons you: damage at the start of each turn for several turns.");
+            Content("tile.heal.name", "Curación", "Healing");
+            Content("tile.heal.desc",
+                "Cura si TERMINÁS tu turno encima. Pasar de largo no cura.",
+                "Heals if you END your turn on it. Passing through does nothing.");
+            Content("tile.strength.name", "Fortaleza", "Strength");
+            Content("tile.strength.desc",
+                "Tus combos ofensivos pegan más fuerte mientras estés parado acá.",
+                "Your offensive combos hit harder while you stand here.");
+            Content("tile.boost.name", "Impulso", "Boost");
+            Content("tile.boost.desc",
+                "Bonifica tu próxima tirada de movimiento desde esta casilla.",
+                "Boosts your next movement roll from this tile.");
+            Content("tile.telegraph.name", "Advertencia", "Telegraph");
+            Content("tile.telegraph.desc",
+                "Algo va a pasar acá cuando termine la ronda. Mejor no estar.",
+                "Something will happen here when the round ends. Best not to be around.");
+            Content("tile.electricpuddle.name", "Charco Eléctrico", "Electric Puddle");
+            Content("tile.electricpuddle.desc",
+                "Te aturde un turno al entrar o al ser empujado encima.",
+                "Stuns you for a turn when entered or pushed onto.");
+            Content("tile.safezone.name", "Zona de Seguridad", "Safe Zone");
+            Content("tile.safezone.desc",
+                "Protege de efectos específicos a cualquier unidad adentro.",
+                "Shields any unit inside from specific effects.");
         }
 
         // ==================================================================

@@ -10,7 +10,7 @@ namespace Rollgeon.DevConsole.Tests
     {
         private static DevCommandRegistry BuildRealRegistry(FakeConsoleContext ctx)
             => DefaultCommands.CreateDefault(ctx,
-                new GodModeController(ctx), new InfiniteEnergyController(ctx), new FreeMoveController());
+                new GodModeController(ctx), new InfiniteRollsController(ctx), new FreeMoveController());
 
         [Test]
         public void should_suggest_command_names_by_prefix()

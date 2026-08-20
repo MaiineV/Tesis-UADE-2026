@@ -18,7 +18,8 @@ namespace Rollgeon.UI.HUD
         [Tooltip("UI-Sheet-sheet_9 — fichas de escudo, van ENCIMA de las de vida.")]
         public Sprite ShieldChip;
 
-        [Tooltip("UI-Sheet-sheet_5 — una ficha por punto de energía.")]
+        [Tooltip("UI-Sheet-sheet_5 — una ficha por roll del pool (ex ficha de energía; " +
+                 "mismo sprite hasta el pase visual del Pool de Rolls).")]
         public Sprite EnergyChip;
 
         [Tooltip("CoinStyle1.1_0 — ficha plana de la pila de oro (hasta 4).")]
@@ -68,6 +69,16 @@ namespace Rollgeon.UI.HUD
         public float ShakeStrengthX = 6f;
 
         public float ShakeFrequency = 20f;
+
+        [Header("Fichas fantasma (máximo de vida)")]
+        [Range(0f, 1f)]
+        [Tooltip("Opacidad de las fichas fantasma que marcan el máximo de vida detrás " +
+                 "de la pila real — la vida que falta se lee como fichas apagadas.")]
+        public float GhostChipAlpha = 0.25f;
+
+        [Tooltip("Tinte multiplicativo de las fichas fantasma — oscurece la silueta " +
+                 "del máximo para que no compita con las fichas reales. Paleta: #A6A6A6.")]
+        public Color GhostChipTint = new Color32(0xA6, 0xA6, 0xA6, 0xFF);
 
         [Header("Colores")]
         [Tooltip("Hex (sin #) del numerador de vida cuando hay escudo. Paleta: Escudo #A3B3B1.")]

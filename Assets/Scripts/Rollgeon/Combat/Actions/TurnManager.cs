@@ -3,7 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using Patterns;
 using Rollgeon.Balance;
-using Rollgeon.Combat.EnergyLib;
+using Rollgeon.Combat.Rolls;
 using Rollgeon.Effects;
 using Rollgeon.Entities.Behaviors;
 using Rollgeon.Heroes;
@@ -24,12 +24,14 @@ namespace Rollgeon.Combat.Actions
     /// </para>
     /// <list type="number">
     ///   <item>Repetition constraint (§12.6) — opt-in via <see cref="ActionDefinitionSO.BlockOnRepeat"/>.</item>
-    ///   <item>Energy cost — cobrado atomicamente por <see cref="IEnergyService.SpendEnergy"/>.</item>
+    ///   <item>Roll cost — las acciones directas (sin dados) cuestan 1 roll flat,
+    ///         cobrado atomicamente por <see cref="IRollPoolService.TrySpendRolls"/>;
+    ///         las acciones con dados se cobran por tirada en el handoff.</item>
     ///   <item>Ruleset override — hook para <c>RulesetSO.ForbiddenActionIds</c> (Balance#0101, stub hoy).</item>
     /// </list>
     /// <para>
     /// <b>Lifecycle.</b> <see cref="Register"/> lo invoca <c>ServiceBootstrapSO</c> en el
-    /// bootstrap global; resuelve <see cref="IEnergyService"/> y se registra a si mismo
+    /// bootstrap global; resuelve <see cref="IRollPoolService"/> y se registra a si mismo
     /// en el <see cref="ServiceLocator"/>. Tambien suscribe <c>EventName.OnTurnStarted</c>
     /// para limpiar el set entre turnos.
     /// </para>
@@ -42,14 +44,14 @@ namespace Rollgeon.Combat.Actions
     /// </remarks>
     public sealed class TurnManager : IPreloadableService, IDisposable
     {
-        private IEnergyService _energy;
+        private IRollPoolService _rolls;
         private ActionCatalogSO _actions;
         private RulesetSO _ruleset;
 
         private readonly HashSet<string> _actionsUsedThisTurn = new HashSet<string>();
         private EventManager.EventReceiver _onTurnStartedHandler;
 
-        /// <summary>Corre despues de <see cref="EnergyService"/> (<c>Priority=50</c>).</summary>
+        /// <summary>Corre despues de <see cref="RollPoolService"/> (<c>Priority=50</c>).</summary>
         public int Priority => 60;
 
         // ======================================================================
@@ -58,10 +60,10 @@ namespace Rollgeon.Combat.Actions
 
         public void Register()
         {
-            if (!ServiceLocator.TryGetService<IEnergyService>(out _energy) || _energy == null)
+            if (!ServiceLocator.TryGetService<IRollPoolService>(out _rolls) || _rolls == null)
             {
-                Debug.LogError("[TurnManager] IEnergyService no esta registrado en ServiceLocator. " +
-                               "Agregar EnergyServiceBootstrap a ServiceBootstrapSO.ExtraServices con Priority < 60.");
+                Debug.LogError("[TurnManager] IRollPoolService no esta registrado en ServiceLocator. " +
+                               "Agregar RollPoolServiceBootstrap a ServiceBootstrapSO.ExtraServices con Priority < 60.");
                 return;
             }
 
@@ -96,9 +98,9 @@ namespace Rollgeon.Combat.Actions
         /// <c>OnTurnStarted</c> (igual que <see cref="Register"/> — minus el
         /// <c>ServiceLocator.AddService</c>, que el test hace si lo necesita).
         /// </summary>
-        public void ConfigureForTests(IEnergyService energy, ActionCatalogSO actions, RulesetSO ruleset)
+        public void ConfigureForTests(IRollPoolService rolls, ActionCatalogSO actions, RulesetSO ruleset)
         {
-            _energy = energy;
+            _rolls = rolls;
             _actions = actions;
             _ruleset = ruleset;
 
@@ -112,7 +114,7 @@ namespace Rollgeon.Combat.Actions
 
         /// <summary>
         /// Valida que <paramref name="action"/> se puede ejecutar ahora: ruleset permit,
-        /// no es repeat bloqueado, y hay energia suficiente. No muta ningun estado.
+        /// no es repeat bloqueado, y hay al menos 1 roll en el pool. No muta ningun estado.
         /// </summary>
         /// <param name="action">Definicion del catalogo. Null = rechazo con reason.</param>
         /// <param name="playerGuid">Actor que intenta ejecutar la accion.</param>
@@ -139,24 +141,29 @@ namespace Rollgeon.Combat.Actions
                 return false;
             }
 
-            if (_energy == null)
+            if (_rolls == null)
             {
-                reason = "IEnergyService not available.";
+                reason = "IRollPoolService not available.";
                 return false;
             }
 
-            int available = _energy.GetCurrent(playerGuid);
-            if (available < action.EnergyCost)
+            // El pool solo existe en combate: fuera de combate (items en exploración)
+            // no se gatea ni se cobra.
+            if (_rolls.IsCombatActive)
             {
-                reason = $"Not enough energy ({available}/{action.EnergyCost}).";
-                return false;
+                int available = _rolls.GetCurrent(playerGuid);
+                if (available < 1)
+                {
+                    reason = $"Not enough rolls ({available}/1).";
+                    return false;
+                }
             }
 
             return true;
         }
 
         /// <summary>
-        /// Camino canonico de ejecucion: valida -> cobra energia -> ejecuta effect ->
+        /// Camino canonico de ejecucion: valida -> cobra 1 roll (en combate) -> ejecuta effect ->
         /// marca usada. Dispatch del <see cref="ActionDefinitionSO.BackingAsset"/> es
         /// responsabilidad del caller externo (plan §10 R1).
         /// </summary>
@@ -168,19 +175,19 @@ namespace Rollgeon.Combat.Actions
         /// </para>
         /// <para>
         /// Si <see cref="ActionDefinitionSO.Effect"/> esta vacio, es un "permit no-op":
-        /// se cobra energia, se marca usada, y se devuelve true — el dispatcher externo
+        /// se cobra 1 roll, se marca usada, y se devuelve true — el dispatcher externo
         /// (ComboExecutor T97b / ItemSystem / AI) corre el <c>BackingAsset</c>.
         /// </para>
         /// <para>
-        /// Si el effect retorna false, la energia <b>ya fue cobrada</b> (mismo patron del
+        /// Si el effect retorna false, el roll <b>ya fue cobrado</b> (mismo patron del
         /// pseudo-code del §12.6). La accion NO se marca como usada — el jugador puede
-        /// intentar otra accion pero perdio la energia.
+        /// intentar otra accion pero perdio el roll.
         /// </para>
         /// </remarks>
         public bool TryExecute(ActionDefinitionSO action, Guid playerGuid, EffectContext ctx)
         {
             if (!CanExecute(action, playerGuid, out _)) return false;
-            if (!_energy.SpendEnergy(playerGuid, action.EnergyCost)) return false;
+            if (_rolls.IsCombatActive && !_rolls.TrySpendRolls(playerGuid, 1)) return false;
 
             bool ok = true;
             if (action.Effect != null && action.Effect.Effects != null && action.Effect.Effects.Count > 0)
@@ -203,7 +210,7 @@ namespace Rollgeon.Combat.Actions
         /// Valida que <paramref name="behavior"/> se puede ejecutar ahora.
         /// Misma semantica que el overload de <see cref="ActionDefinitionSO"/>:
         /// ruleset, repetition (usa <see cref="HeroActionBehavior.ActionName"/> como key),
-        /// y energy check.
+        /// y roll-pool check.
         /// </summary>
         public bool CanExecute(HeroActionBehavior behavior, Guid playerGuid, out string reason)
         {
@@ -227,38 +234,41 @@ namespace Rollgeon.Combat.Actions
                 return false;
             }
 
-            if (_energy == null)
+            if (_rolls == null)
             {
-                reason = "IEnergyService not available.";
+                reason = "IRollPoolService not available.";
                 return false;
             }
 
-            // Las preconditions del behavior se evalúan antes del energy check para no
-            // cobrar energía cuando la cadena va a abortar igual (ej. Heal sin poción).
+            // Las preconditions del behavior se evalúan antes del roll check para no
+            // cobrar un roll cuando la cadena va a abortar igual (ej. Heal sin poción).
             if (!behavior.HasUsableEffectGroup(playerGuid, Guid.Empty, out var pcReason))
             {
                 reason = pcReason ?? $"Behavior '{behavior.ActionName}' has no usable effect group.";
                 return false;
             }
 
-            int available = _energy.GetCurrent(playerGuid);
-            if (available < behavior.EnergyCost)
+            if (_rolls.IsCombatActive)
             {
-                reason = $"Not enough energy ({available}/{behavior.EnergyCost}).";
-                return false;
+                int available = _rolls.GetCurrent(playerGuid);
+                if (available < 1)
+                {
+                    reason = $"Not enough rolls ({available}/1).";
+                    return false;
+                }
             }
 
             return true;
         }
 
         /// <summary>
-        /// Ejecuta un <see cref="HeroActionBehavior"/>: valida, cobra energia, ejecuta
+        /// Ejecuta un <see cref="HeroActionBehavior"/>: valida, cobra 1 roll, ejecuta
         /// via <see cref="HeroActionBehavior.Execute"/>, y trackea repeticion.
         /// </summary>
         public bool TryExecute(HeroActionBehavior behavior, Guid playerGuid, BehaviorContext ctx)
         {
             if (!CanExecute(behavior, playerGuid, out _)) return false;
-            if (!_energy.SpendEnergy(playerGuid, behavior.EnergyCost)) return false;
+            if (_rolls.IsCombatActive && !_rolls.TrySpendRolls(playerGuid, 1)) return false;
 
             behavior.Execute(ctx);
 
@@ -268,7 +278,11 @@ namespace Rollgeon.Combat.Actions
             return true;
         }
 
-        public bool TryExecuteEnergyPrepaid(HeroActionBehavior behavior, Guid playerGuid, BehaviorContext ctx)
+        /// <summary>
+        /// Ejecuta sin cobrar: el caller (handoff de dados) ya pagó el roll de la
+        /// tirada. Solo trackea la repetición.
+        /// </summary>
+        public bool TryExecuteRollsPrepaid(HeroActionBehavior behavior, Guid playerGuid, BehaviorContext ctx)
         {
             if (behavior == null) return false;
 
@@ -399,7 +413,7 @@ namespace Rollgeon.Combat.Actions
         /// <summary>
         /// Marca el behavior como usado este turno sin re-ejecutarlo. Lo usa el chain
         /// path de <see cref="Combat.Handoff.CombatHandoffService"/> que ejecuta los
-        /// effects directamente (sin pasar por <see cref="TryExecuteEnergyPrepaid"/>)
+        /// effects directamente (sin pasar por <see cref="TryExecuteRollsPrepaid"/>)
         /// y necesita registrar la repetición para que BlockOnRepeat aplique.
         /// </summary>
         public void MarkBehaviorUsed(string actionName)

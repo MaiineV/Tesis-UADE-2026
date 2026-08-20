@@ -156,10 +156,48 @@ namespace Rollgeon.Upgrades.Dice
             // y=1 vs y≈0.5 del centro de casilla) y ese delta vertical comía 0.25 del
             // presupuesto de rango, dejando las casillas diagonales EXACTAMENTE en el
             // borde (2.25 <= 2.25) — un wobble de float y F muere en silencio.
+            // Se mide al BORDE del visual, no al centro: la mesa ocupa 4x5 tiles y
+            // con sus celdas bloqueadas (PropTileBlocker) el jugador jamás se acerca
+            // al centro lo suficiente para un rango centro-a-centro.
             var playerWorld = grid.GridToWorld(playerCoord);
-            var delta = playerWorld - transform.position;
-            float distSq = delta.x * delta.x + delta.z * delta.z;
-            return distSq <= _interactRange * _interactRange;
+            var closest = ClosestVisualPointXZ(playerWorld);
+            float dx = playerWorld.x - closest.x;
+            float dz = playerWorld.z - closest.z;
+            return dx * dx + dz * dz <= _interactRange * _interactRange;
+        }
+
+        // AABB XZ de los renderers de la mesa, cacheado (el visual no se mueve).
+        // Sin renderers (tests, prefab pelado) degrada al transform: mismo
+        // comportamiento centro-a-centro de antes.
+        private Bounds _visualBounds;
+        private bool _visualBoundsResolved;
+
+        private Vector3 ClosestVisualPointXZ(Vector3 from)
+        {
+            if (!_visualBoundsResolved)
+            {
+                _visualBoundsResolved = true;
+                bool found = false;
+                foreach (var rend in GetComponentsInChildren<Renderer>())
+                {
+                    if (rend == null) continue;
+                    if (!found)
+                    {
+                        _visualBounds = rend.bounds;
+                        found = true;
+                    }
+                    else
+                    {
+                        _visualBounds.Encapsulate(rend.bounds);
+                    }
+                }
+                if (!found) _visualBounds = new Bounds(transform.position, Vector3.zero);
+            }
+
+            return new Vector3(
+                Mathf.Clamp(from.x, _visualBounds.min.x, _visualBounds.max.x),
+                0f,
+                Mathf.Clamp(from.z, _visualBounds.min.z, _visualBounds.max.z));
         }
 
         // ====================================================================

@@ -5,6 +5,7 @@ using Patterns;
 using Rollgeon.Combat.FSM;
 using Rollgeon.Combat.Initiative;
 using Rollgeon.Combat.Pipelines;
+using Rollgeon.Combat.Rolls;
 using Rollgeon.Dungeon;
 using Rollgeon.Dungeon.Components;
 using Rollgeon.Economy;
@@ -129,7 +130,6 @@ namespace Rollgeon.Tutorial
         private EventManager.EventReceiver _onChainTargetSelectionStarted;
         private EventManager.EventReceiver _onChainStarted;
         private EventManager.EventReceiver _onDiceRolled;
-        private EventManager.EventReceiver _onChainPhaseStarted;
         private EventManager.EventReceiver _onChainCompleted;
         private EventManager.EventReceiver _onTurnStarted;
         private EventManager.EventReceiver _onTurnFinished;
@@ -173,7 +173,6 @@ namespace Rollgeon.Tutorial
             if (_onChainTargetSelectionStarted != null) EventManager.UnSubscribe(EventName.OnChainTargetSelectionStarted, _onChainTargetSelectionStarted);
             if (_onChainStarted != null) EventManager.UnSubscribe(EventName.OnChainStarted, _onChainStarted);
             if (_onDiceRolled != null) EventManager.UnSubscribe(EventName.OnDiceRolled, _onDiceRolled);
-            if (_onChainPhaseStarted != null) EventManager.UnSubscribe(EventName.OnChainPhaseStarted, _onChainPhaseStarted);
             if (_onChainCompleted != null) EventManager.UnSubscribe(EventName.OnChainCompleted, _onChainCompleted);
             if (_onTurnStarted != null) EventManager.UnSubscribe(EventName.OnTurnStarted, _onTurnStarted);
             if (_onTurnFinished != null) EventManager.UnSubscribe(EventName.OnTurnFinished, _onTurnFinished);
@@ -297,7 +296,6 @@ namespace Rollgeon.Tutorial
             _onChainTargetSelectionStarted = OnChainTargetSelectionStarted;
             _onChainStarted = OnChainStarted;
             _onDiceRolled = OnDiceRolled;
-            _onChainPhaseStarted = OnChainPhaseStarted;
             _onChainCompleted = OnChainCompleted;
             _onTurnStarted = OnTurnStarted;
             _onTurnFinished = OnTurnFinished;
@@ -315,7 +313,6 @@ namespace Rollgeon.Tutorial
             EventManager.Subscribe(EventName.OnChainTargetSelectionStarted, _onChainTargetSelectionStarted);
             EventManager.Subscribe(EventName.OnChainStarted, _onChainStarted);
             EventManager.Subscribe(EventName.OnDiceRolled, _onDiceRolled);
-            EventManager.Subscribe(EventName.OnChainPhaseStarted, _onChainPhaseStarted);
             EventManager.Subscribe(EventName.OnChainCompleted, _onChainCompleted);
             EventManager.Subscribe(EventName.OnTurnStarted, _onTurnStarted);
             EventManager.Subscribe(EventName.OnTurnFinished, _onTurnFinished);
@@ -627,9 +624,8 @@ namespace Rollgeon.Tutorial
         {
             if (!TryGetPlayerGuid(out var playerGuid)) return;
 
-            // (El cierre de la lección de ataque NO va acá: después del daño puede
-            // venir la fase de defensa del chain — lo maneja OnChainPhaseStarted /
-            // OnRollResolved al final de la acción.)
+            // (El cierre de la lección de ataque NO va acá: lo maneja
+            // OnChainCompleted al final de la acción.)
 
             // Primer golpe recibido → se desbloquea Curar. Inmediato en el loop
             // libre; diferido si todavía corre la secuencia de enseñanza (el enemigo
@@ -679,7 +675,7 @@ namespace Rollgeon.Tutorial
         private static bool IsCombat1TeachStep(TutorialStep step) =>
             step is TutorialStep.EnemiesIntro or TutorialStep.TurnOrderIntro or TutorialStep.ContractTeach
                 or TutorialStep.MoveTeach or TutorialStep.MoveTiles
-                or TutorialStep.StatsHp or TutorialStep.StatsEnergy or TutorialStep.AttackTeach
+                or TutorialStep.StatsHp or TutorialStep.StatsRolls or TutorialStep.AttackTeach
                 or TutorialStep.TargetTeach or TutorialStep.ThrowTeach or TutorialStep.DiceTeach
                 or TutorialStep.DefenseTeach or TutorialStep.EndTurnTeach;
 
@@ -842,26 +838,26 @@ namespace Rollgeon.Tutorial
                 request.AnchorKind = TutorialAnchorKind.RectTransform;
                 request.UiTarget = rect;
             }
-            ShowStep(TutorialStep.StatsHp, request, ShowStatsEnergy);
+            ShowStep(TutorialStep.StatsHp, request, ShowStatsRolls);
         }
 
-        private void ShowStatsEnergy()
+        private void ShowStatsRolls()
         {
-            _step = TutorialStep.StatsEnergy;
+            _step = TutorialStep.StatsRolls;
             var request = new TutorialStepDisplayRequest
             {
                 AnchorKind = TutorialAnchorKind.None,
-                Text = LocalizedContent.Ui(TutorialTextKeys.StatsEnergy,
-                    "Esta es tu ENERGÍA: moverte, atacar y volver a tirar la consumen. Adminístrala en cada turno."),
+                Text = LocalizedContent.Ui(TutorialTextKeys.StatsRolls,
+                    "Este es tu POOL DE ROLLS: cada tirada de dados consume 1. Al terminar tu turno recuperas 5 (máximo 15)."),
                 InputPolicy = TutorialInputPolicy.BlockUntilContinue,
             };
             var hud = FindCombatHud();
-            if (hud != null && hud.TryGetEnergyBarRect(out var rect))
+            if (hud != null && hud.TryGetRollPoolRect(out var rect))
             {
                 request.AnchorKind = TutorialAnchorKind.RectTransform;
                 request.UiTarget = rect;
             }
-            ShowStep(TutorialStep.StatsEnergy, request, ShowAttackTeach);
+            ShowStep(TutorialStep.StatsRolls, request, ShowAttackTeach);
         }
 
         private void ShowAttackTeach()
@@ -901,6 +897,14 @@ namespace Rollgeon.Tutorial
                 ShowStep(TutorialStep.EscapeTeach, DiceZoneRequest(
                     LocalizedContent.Ui(TutorialTextKeys.EscapeDice,
                         "Forzar la puerta se resuelve con los dados: lánzalos y supera el umbral para escapar del combate.")));
+            }
+            else if (_step == TutorialStep.DefenseTeach && slot == HeroBehaviorSlot.Defense)
+            {
+                // Eligió DEFENSA con la lección visible: retargetear a los dados
+                // (Self no abre selección de objetivo — el chain arranca directo).
+                ShowStep(TutorialStep.DefenseTeach, DiceZoneRequest(
+                    LocalizedContent.Ui(TutorialTextKeys.DefenseDice,
+                        "Lanza los dados: cuanto mejor el combo, más ESCUDO. Confirma y absorbe el próximo golpe.")));
             }
             else if (_step == TutorialStep.Combat1)
             {
@@ -972,8 +976,8 @@ namespace Rollgeon.Tutorial
                 OpenContractDrawerForRoll();
                 ShowStep(TutorialStep.DiceTeach, DiceZoneRequest(
                     LocalizedContent.Ui(TutorialTextKeys.DiceTeach,
-                        "Arma combos (par, trío, escalera). Clic en un dado lo bloquea; vuelve a tirar el resto " +
-                        "— máximo 3 tiradas. Luego CONFIRMA.")));
+                        "Arma combos (par, trío, escalera). Clic bloquea un dado; re-tira el resto " +
+                        "por 1 Roll cada tirada. Luego CONFIRMA.")));
                 return;
             }
 
@@ -983,59 +987,47 @@ namespace Rollgeon.Tutorial
             _rerollTaught = true;
             var rerollRequest = RollButtonRequest(
                 LocalizedContent.Ui(TutorialTextKeys.RerollTeach,
-                    "Tienes hasta 3 tiradas gratis por acción; las siguientes cuestan 1 de energía."));
+                    "Puedes volver a tirar sin tope: cada tirada consume 1 Roll de tu pool."));
             rerollRequest.InputPolicy = TutorialInputPolicy.DismissOnClick;
             ShowStep(TutorialStep.DiceTeach, rerollRequest);
         }
 
-        // El chain siguió a su fase 2 (defensa post-ataque) — solo sucede si al
-        // jugador le SOBRARON tiradas libres del ataque → explicar el escudo
-        // sobre la zona de dados. Si no sobraron, el chain completa directo y
-        // OnChainCompleted muestra la lección de fin de turno. Se enseña la
-        // PRIMERA vez que sucede: puede ser en el ataque guiado o mucho después,
-        // en el loop libre de cualquiera de los dos combates.
-        private void OnChainPhaseStarted(params object[] args)
-        {
-            if (_defenseTaught) return;
-            bool guided = _step is TutorialStep.TargetTeach or TutorialStep.ThrowTeach or TutorialStep.DiceTeach;
-            bool freeLoop = _step is TutorialStep.Combat1 or TutorialStep.Combat2
-                or TutorialStep.HealUnlocked;
-            if (!guided && !freeLoop) return;
-            if (args == null || args.Length < 1 || args[0] is not Guid source) return;
-            if (!TryGetPlayerGuid(out var playerGuid) || source != playerGuid) return;
-
-            _defenseTaught = true;
-            _defenseFromFreeLoop = freeLoop;
-            _step = TutorialStep.DefenseTeach;
-            ShowStep(TutorialStep.DefenseTeach, DiceZoneRequest(
-                LocalizedContent.Ui(TutorialTextKeys.DefenseTeach,
-                    "Te sobraron tiradas: fase de DEFENSA. Lanza los dados y arma un combo — " +
-                    "tu ESCUDO absorbe el próximo golpe.")));
-        }
-
-        // La acción completa terminó (con o sin fase de defensa) → enseñar el fin
-        // de turno. OJO: OnRollResolved NO sirve acá — dispara al final de CADA
-        // fase del chain, así que con defensa pendiente pisaba esa lección
-        // (feedback playtest). OnChainCompleted dispara exactamente una vez, en
-        // FinishChain. phasesCompleted == 0 = pass total sin atacar (End Turn en
-        // medio de la lección de dados): no avanzamos, el jugador puede reintentar
-        // el ataque en su próximo turno.
+        // La acción completa terminó → enseñar defensa (si es la primera vez y
+        // sobran rolls) o el fin de turno. OJO: OnRollResolved NO sirve acá —
+        // dispara al final de CADA fase del chain (feedback playtest).
+        // OnChainCompleted dispara exactamente una vez, en FinishChain.
+        // phasesCompleted == 0 = pass total sin atacar (End Turn en medio de la
+        // lección de dados): no avanzamos, el jugador puede reintentar el ataque
+        // en su próximo turno.
         private void OnChainCompleted(params object[] args)
         {
-            if (_step != TutorialStep.DiceTeach && _step != TutorialStep.TargetTeach
-                && _step != TutorialStep.ThrowTeach && _step != TutorialStep.DefenseTeach) return;
             if (args == null || args.Length < 2 || args[0] is not Guid source) return;
             if (!TryGetPlayerGuid(out var playerGuid) || source != playerGuid) return;
             if (args[1] is int phasesCompleted && phasesCompleted == 0) return;
+
+            // Loop libre: la Defensa se enseña la PRIMERA vez que un ataque cierra
+            // con rolls sobrantes (antes era la fase 2 del chain; ahora es acción
+            // propia). Con la guía de curar visible no interceptamos — la defensa
+            // espera al próximo ataque con rolls.
+            if (!_defenseTaught
+                && _step is TutorialStep.Combat1 or TutorialStep.Combat2
+                && HasRollsLeft())
+            {
+                ShowDefenseTeach(fromFreeLoop: true);
+                return;
+            }
+
+            if (_step != TutorialStep.DiceTeach && _step != TutorialStep.TargetTeach
+                && _step != TutorialStep.ThrowTeach && _step != TutorialStep.DefenseTeach) return;
 
             HandleAttackChainDone();
         }
 
         /// <summary>
-        /// La acción de ataque cerró con alguna lección de la secuencia visible.
-        /// Guiado → sigue el fin de turno. Defensa interceptada en el loop libre →
-        /// la lección cierra y devuelve el paso subyacente (el fin de turno ya se
-        /// enseñó en la secuencia guiada), flusheando una lección de curar pendiente.
+        /// Una acción cerró con alguna lección de la secuencia visible. Ataque
+        /// guiado → enseña Defensa (primera vez con rolls sobrantes) o el fin de
+        /// turno. Defensa cerrada → fin de turno (guiado) o vuelta al paso
+        /// subyacente (loop libre), flusheando una lección de curar pendiente.
         /// </summary>
         private void HandleAttackChainDone()
         {
@@ -1044,34 +1036,97 @@ namespace Rollgeon.Tutorial
             if (_attackChainDoneHandled) return;
             _attackChainDoneHandled = true;
 
-            if (_step == TutorialStep.DefenseTeach && _defenseFromFreeLoop)
+            if (_step == TutorialStep.DefenseTeach)
             {
-                if (_pendingHealTeach)
+                if (_defenseFromFreeLoop)
                 {
-                    // ShowHealTeach re-abre la ventana exclusiva; si venía una activa
-                    // (defensa interceptada durante la guía de curar) el snapshot
-                    // original se conserva — no hace falta cerrarla acá.
-                    ShowHealTeach();
+                    if (_pendingHealTeach)
+                    {
+                        // ShowHealTeach re-abre la ventana exclusiva; si venía una activa
+                        // (defensa interceptada durante la guía de curar) el snapshot
+                        // original se conserva — no hace falta cerrarla acá.
+                        ShowHealTeach();
+                        return;
+                    }
+                    // Restaurar la ventana exclusiva de la lección de defensa.
+                    EndExclusiveStep();
+                    _step = _freeLoopStep;
+                    Overlay()?.Hide();
                     return;
                 }
-                // La defensa pudo interceptar el chain de la guía de curar — si esa
-                // ventana sigue abierta, restaurarla (no-op en el ataque libre común).
-                EndExclusiveStep();
-                _step = _freeLoopStep;
-                Overlay()?.Hide();
+                // Guiado: la defensa cerró — sigue el fin de turno (la ventana
+                // exclusiva la restaura CompleteAttackTeach al ceder el turno).
+                ShowEndTurnTeach();
+                return;
+            }
+
+            // El ataque guiado cerró: si es la primera defensa posible y sobran
+            // rolls, se enseña acá (antes era la fase 2 del mismo chain).
+            if (!_defenseTaught && HasRollsLeft())
+            {
+                ShowDefenseTeach(fromFreeLoop: false);
                 return;
             }
 
             ShowEndTurnTeach();
         }
 
+        /// <summary>
+        /// Enseña la acción DEFENSA anclada a su chip: la desbloquea de forma
+        /// permanente y abre una ventana exclusiva para que el jugador la pruebe.
+        /// El cierre llega por su OnChainCompleted (vía HandleAttackChainDone) o,
+        /// si el jugador la ignora y cede el turno, por OnTurnFinished.
+        /// </summary>
+        private void ShowDefenseTeach(bool fromFreeLoop)
+        {
+            _defenseTaught = true;
+            _defenseFromFreeLoop = fromFreeLoop;
+            // La lección "consume" el cierre del ataque que la disparó — sin esto el
+            // safety-net OnBehaviorExecuted de esa misma acción la cerraría al toque.
+            _attackChainDoneHandled = true;
+            _step = TutorialStep.DefenseTeach;
+
+            // Cerrar la ventana del ataque ANTES del unlock permanente: el snapshot
+            // de esa ventana tiene a Defense lockeada y el restore final la pisaría
+            // (regla de orden BUG-019).
+            EndExclusiveStep();
+            _gate?.Unlock(HeroBehaviorSlot.Defense);
+            BeginExclusiveStep(HeroBehaviorSlot.Defense);
+
+            ShowStep(TutorialStep.DefenseTeach, ButtonStepRequest(HeroBehaviorSlot.Defense,
+                LocalizedContent.Ui(TutorialTextKeys.DefenseTeach,
+                    "Te sobraron Rolls: se desbloqueó DEFENSA ({0}). Tira los dados y arma " +
+                    "un combo — se convierte en ESCUDO."),
+                GameplayHotkey.Defense));
+        }
+
+        // Gate de la lección de defensa: solo tiene sentido ofrecerla si queda al
+        // menos 1 roll para su tirada.
+        private bool HasRollsLeft()
+        {
+            if (!TryGetPlayerGuid(out var playerGuid)) return false;
+            return ServiceLocator.TryGetService<IRollPoolService>(out var rolls)
+                   && rolls != null
+                   && rolls.GetCurrent(playerGuid) >= 1;
+        }
+
         // El jugador cerró su turno con la lección de fin de turno visible —
-        // secuencia guiada completada.
+        // secuencia guiada completada. Si cerró con la lección de DEFENSA visible
+        // (la ignoró), la lección no puede quedar colgada: cierra por acá y la
+        // acción queda desbloqueada para cuando quiera probarla.
         private void OnTurnFinished(params object[] args)
         {
-            if (_step != TutorialStep.EndTurnTeach) return;
+            if (_step != TutorialStep.EndTurnTeach && _step != TutorialStep.DefenseTeach) return;
             if (args == null || args.Length < 1 || args[0] is not Guid source) return;
             if (!TryGetPlayerGuid(out var playerGuid) || source != playerGuid) return;
+
+            if (_step == TutorialStep.DefenseTeach && _defenseFromFreeLoop)
+            {
+                EndExclusiveStep();
+                _step = _freeLoopStep;
+                Overlay()?.Hide();
+                return;
+            }
 
             CompleteAttackTeach();
         }

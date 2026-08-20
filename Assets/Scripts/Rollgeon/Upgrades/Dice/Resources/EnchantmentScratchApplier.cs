@@ -61,6 +61,19 @@ namespace Rollgeon.Upgrades.Dice
         private static void ApplyStat(Guid playerGuid, StatType stat, ResourceAccumulator acc)
         {
             if (playerGuid == Guid.Empty) return;
+
+            // Feature#0050: el jugador ya no tiene atributo Energy — un scratch de
+            // Energy sobre el player opera sobre el Pool de Rolls (mismo RMW).
+            if (stat == StatType.Energy
+                && ServiceLocator.TryGetService<Rollgeon.Combat.Rolls.IRollPoolService>(out var rolls)
+                && rolls != null)
+            {
+                int cur = rolls.GetCurrent(playerGuid);
+                int res = acc.Resolve(cur);
+                rolls.RestoreCurrent(playerGuid, res < 0 ? 0 : res);
+                return;
+            }
+
             if (!ServiceLocator.TryGetService<AttributesManager>(out var attrs) || attrs == null) return;
 
             int current = ReadStat(attrs, playerGuid, stat);

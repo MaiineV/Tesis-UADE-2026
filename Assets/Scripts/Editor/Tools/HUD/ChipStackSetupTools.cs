@@ -113,7 +113,7 @@ namespace Rollgeon.EditorTools.HUD
                 var goldStack = EnsureStack(cluster, "GoldStack", GoldStackX, out var goldRoot, out var goldLabel);
 
                 var healthView = EnsureView<HealthChipStackView>(healthStack.gameObject, healthRoot, healthLabel, settings);
-                var energyView = EnsureView<EnergyChipStackView>(energyStack.gameObject, energyRoot, energyLabel, settings);
+                var energyView = EnsureView<RollPoolChipStackView>(energyStack.gameObject, energyRoot, energyLabel, settings);
                 var goldView = EnsureView<GoldChipStackView>(goldStack.gameObject, goldRoot, goldLabel, settings);
 
                 // -- Ficha inclinada del oro (hija del ChipRoot, arranca inactiva) --
@@ -172,9 +172,10 @@ namespace Rollgeon.EditorTools.HUD
                     Debug.LogWarning("[ChipStackSetup] PocionSlot no encontrado en Canvas_PlayerStatus.");
                 }
 
-                // -- Barras viejas: desactivadas (decisión: vuelta atrás rápida) --
+                // -- Barra vieja: desactivada (decisión: vuelta atrás rápida). La
+                // EnergyBarView legacy murió con el sistema de energía (Feature#0050);
+                // su GO huérfano se limpia del prefab en el pase de assets. --
                 DeactivateHolder<HealthBarView>(root);
-                DeactivateHolder<EnergyBarView>(root);
 
                 PrefabUtility.SaveAsPrefabAsset(root, PlayerStatusPrefabPath);
                 Debug.Log("[ChipStackSetup] Canvas_PlayerStatus cableado: cluster vida/energía/oro + poción.");
@@ -224,14 +225,14 @@ namespace Rollgeon.EditorTools.HUD
                 : EditorSceneManager.OpenScene(GameplayScenePath, OpenSceneMode.Single);
 
             HealthChipStackView healthView = null;
-            EnergyChipStackView energyView = null;
+            RollPoolChipStackView energyView = null;
             CombatHUDView combatHud = null;
             ExplorationHUDView explorationHud = null;
 
             foreach (var rootGo in scene.GetRootGameObjects())
             {
                 if (healthView == null) healthView = rootGo.GetComponentInChildren<HealthChipStackView>(true);
-                if (energyView == null) energyView = rootGo.GetComponentInChildren<EnergyChipStackView>(true);
+                if (energyView == null) energyView = rootGo.GetComponentInChildren<RollPoolChipStackView>(true);
                 if (combatHud == null) combatHud = rootGo.GetComponentInChildren<CombatHUDView>(true);
                 if (explorationHud == null) explorationHud = rootGo.GetComponentInChildren<ExplorationHUDView>(true);
             }
@@ -253,11 +254,14 @@ namespace Rollgeon.EditorTools.HUD
             Debug.Log("[ChipStackSetup] 02_Gameplay recableado (orquestadores → chip stacks).");
         }
 
-        private static void WireHud(Component hud, HealthChipStackView health, EnergyChipStackView energy)
+        private static void WireHud(Component hud, HealthChipStackView health, RollPoolChipStackView energy)
         {
             var so = new SerializedObject(hud);
             so.FindProperty("_healthChips").objectReferenceValue = health;
-            so.FindProperty("_energyChips").objectReferenceValue = energy;
+            // El ExplorationHUD ya no tiene pila de rolls (el pool es combat-only,
+            // Feature#0050) — solo el CombatHUD expone _energyChips.
+            var energyProp = so.FindProperty("_energyChips");
+            if (energyProp != null) energyProp.objectReferenceValue = energy;
             so.ApplyModifiedProperties();
         }
 

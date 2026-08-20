@@ -54,7 +54,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Rollgeon::Rollgeon.UI.Screens.ExplorationHUDView
   _screenStringIdOverride: 
   _healthChips: {fileID: 0}
-  _energyChips: {fileID: 0}
   _activeItems: {fileID: 0}
   _statusIcons: {fileID: 0}
   _minimap: {fileID: 7258762250288503781}

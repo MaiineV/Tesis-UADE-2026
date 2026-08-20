@@ -167,6 +167,14 @@ namespace Rollgeon.EditorTools.HUD
                 var rect = (RectTransform)view.transform;
                 rect.sizeDelta = new Vector2(450f, 120f);
 
+                // Centrado vertical con el marco del personaje (playtest 19/08): el
+                // centro visual de los slots cae en containerY - 60; el centro del
+                // CharacterFrame del PlayerStatus está en y = -88 canvas-space
+                // (cluster -24 + frame 128/2) → y = -28 alinea ambos ejes.
+                rect.anchorMin = rect.anchorMax = new Vector2(1f, 1f);
+                rect.pivot = new Vector2(1f, 1f);
+                rect.anchoredPosition = new Vector2(-50f, -28f);
+
                 var so = new SerializedObject(view);
                 so.FindProperty("_carousel.Spacing").floatValue = 24f;
                 so.FindProperty("_carousel.ActiveScale").floatValue = 0.7f;
@@ -174,7 +182,8 @@ namespace Rollgeon.EditorTools.HUD
                 so.ApplyModifiedProperties();
 
                 PrefabUtility.SaveAsPrefabAsset(root, CombatHudPrefabPath);
-                Debug.Log("[TurnQueueSetup] Canvas_CombatHUD: layout manual, área 450x120, spacing 24, escalas 0.7/0.6.");
+                Debug.Log("[TurnQueueSetup] Canvas_CombatHUD: layout manual, área 450x120, spacing 24, " +
+                          "escalas 0.7/0.6, y=-28 (centrado con el marco del personaje).");
             }
             finally
             {

@@ -10,20 +10,24 @@ namespace Rollgeon.ActionRolls
     /// </summary>
     public struct ActionRollSpec
     {
-        /// <summary>Energia que se cobra en el momento del roll inicial.</summary>
-        public int EnergyCost;
+        /// <summary>
+        /// True si cada tirada (inicial y rerolls) cobra 1 roll del pool
+        /// (Feature#0050 — GDD Turn System). False = flujo gratis: la variante
+        /// de exploracion de Heal/pocion no consume rolls.
+        /// </summary>
+        public bool CostsRolls;
 
         /// <summary>
         /// Suma minima de las caras que se considera "exito" o que activa el
         /// excedente (heal). Si la primera tirada queda por debajo, el servicio
         /// ofrece un reroll opcional (siempre que <see cref="AllowReroll"/> y
-        /// haya energia suficiente).
+        /// haya rolls en el pool).
         /// </summary>
         public int Threshold;
 
         /// <summary>
         /// True si la accion necesita un dialogo de confirmacion antes de cobrar
-        /// energia + tirar (Forzar Puerta muestra umbral + costo). False = roll
+        /// + tirar (Forzar Puerta muestra umbral + costo). False = roll
         /// directo (Curarse).
         /// </summary>
         public bool RequireConfirm;
@@ -33,9 +37,6 @@ namespace Rollgeon.ActionRolls
 
         /// <summary>Habilita el reroll extra cuando la tirada queda &lt; Threshold.</summary>
         public bool AllowReroll;
-
-        /// <summary>Energia que cuesta el reroll extra (default 1).</summary>
-        public int RerollEnergyCost;
 
         /// <summary>
         /// True si la accion no tiene estado de "fallo" — ej. Curarse: la primera
@@ -52,12 +53,11 @@ namespace Rollgeon.ActionRolls
 
         public static ActionRollSpec Default => new ActionRollSpec
         {
-            EnergyCost = 0,
+            CostsRolls = false,
             Threshold = 10,
             RequireConfirm = false,
             ActionLabel = string.Empty,
             AllowReroll = true,
-            RerollEnergyCost = 1,
             AlwaysSucceeds = false,
             BoardType = DiceBoardType.Default,
         };

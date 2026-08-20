@@ -52,6 +52,11 @@ namespace Rollgeon.UI.HUD
         private bool _hasData;
         private readonly List<int> _chipBuffer = new List<int>();
 
+        // Pila fantasma: la silueta del máximo de vida siempre visible detrás de la
+        // pila real, a baja opacidad — la vida que falta se lee sin mirar el label.
+        private ChipStackView _ghostStack;
+        private readonly List<int> _ghostBuffer = new List<int>();
+
         private Action<DamageResolvedPayload> _onDamageResolved;
         private Action<HealResolvedPayload> _onHealResolved;
 
@@ -204,6 +209,9 @@ namespace Rollgeon.UI.HUD
             // el recurso (el cap real lo pone el diseño del juego, no el HUD).
             ChipStackMath.BuildHealthChipIds(hp, shield, _chipBuffer);
 
+            // Fantasma antes que la pila real: el root fantasma queda primer sibling
+            // y las fichas reales (SetAsLastSibling) siempre dibujan encima.
+            RefreshGhostStack();
             if (_stack != null) _stack.SetChips(_chipBuffer, animate);
             if (_label != null)
             {
@@ -215,6 +223,46 @@ namespace Rollgeon.UI.HUD
         {
             int resolved = PlayerMaxHp.Resolve(_playerGuid);
             _maxHp = resolved > 0 ? resolved : 1;
+        }
+
+        /// <summary>
+        /// Pila fantasma del máximo: siempre muestra ceil(max/HpPerChip) fichas de vida
+        /// a baja opacidad. Solo cambia cuando cambia el máximo, y siempre instantáneo —
+        /// sin drop, sin SFX, sin competir con las animaciones de la pila real.
+        /// </summary>
+        private void RefreshGhostStack()
+        {
+            EnsureGhostStack();
+            if (_ghostStack == null) return;
+
+            ChipStackMath.BuildHealthChipIds(_maxHp, 0, _ghostBuffer);
+            _ghostStack.SetChips(_ghostBuffer, animate: false);
+        }
+
+        // Creada por código y no en el prefab: cuelga del mismo root que las fichas
+        // reales (zero-size, mismo anchor bottom-center) para que cada fantasma
+        // coincida 1:1 con la posición de la ficha real que la tapa.
+        private void EnsureGhostStack()
+        {
+            if (_ghostStack != null || _stack == null || _settings == null) return;
+
+            var go = new GameObject("GhostChips", typeof(RectTransform), typeof(CanvasGroup));
+            var rect = (RectTransform)go.transform;
+            rect.SetParent(_stack.Root, worldPositionStays: false);
+            rect.SetAsFirstSibling();
+            rect.anchorMin = rect.anchorMax = new Vector2(0.5f, 0f);
+            rect.pivot = new Vector2(0.5f, 0f);
+            rect.anchoredPosition = Vector2.zero;
+            rect.sizeDelta = Vector2.zero;
+
+            var group = go.GetComponent<CanvasGroup>();
+            group.alpha = _settings.GhostChipAlpha;
+            group.interactable = false;
+            group.blocksRaycasts = false;
+
+            _ghostStack = go.AddComponent<ChipStackView>();
+            _ghostStack.Configure(_settings, new[] { _settings.HealthChip }, _settings.ChipSpacingY,
+                _settings.GhostChipTint);
         }
     }
 }

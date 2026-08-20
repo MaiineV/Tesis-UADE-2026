@@ -160,7 +160,7 @@ namespace Rollgeon.Patterns.Save.Tests
         public void PlayerAttributes_CaptureRestore_RoundTripsValuesAndRunModifiers()
         {
             var carrier = Guid.NewGuid();
-            var attrs = MakePlayerAttributes(hp: 30, energy: 5);
+            var attrs = MakePlayerAttributes(hp: 30);
             var health = attrs.GetAttribute<Health>();
             health.Value = 17;
 
@@ -176,7 +176,7 @@ namespace Rollgeon.Patterns.Save.Tests
             var saveable = new PlayerAttributesSaveable(attrs);
             var captured = saveable.CaptureState();
 
-            var freshAttrs = MakePlayerAttributes(hp: 30, energy: 5);
+            var freshAttrs = MakePlayerAttributes(hp: 30);
             var rebornSaveable = new PlayerAttributesSaveable(freshAttrs);
             rebornSaveable.RestoreState(captured);
 
@@ -186,28 +186,31 @@ namespace Rollgeon.Patterns.Save.Tests
                 "solo el modifier Run sobrevive; Encounter queda afuera");
             Assert.AreEqual(4, rebornHealth.GetRawModifiers()[0].Amount);
             Assert.AreEqual(runMod.ModifierId, rebornHealth.GetRawModifiers()[0].ModifierId);
-
-            Assert.AreEqual(5, freshAttrs.GetAttribute<Energy>().Value);
         }
 
         [Test]
-        public void PlayerAttributes_Restore_EnergyMissing_CreatesIt()
+        public void PlayerAttributes_Restore_LegacyEnergyEntry_IsDiscardedGracefully()
         {
-            var attrs = MakePlayerAttributes(hp: 30, energy: 5);
-            attrs.GetAttribute<Energy>().Value = 2;
-            var captured = new PlayerAttributesSaveable(attrs).CaptureState();
+            // Feature#0050: los saves viejos traen entries Energy/MaxEnergy que el
+            // player actual ya no tiene — se descartan con warning, sin romper el
+            // resto del snapshot.
+            var captured = new PlayerAttributesSnapshot();
+            captured.Stats.Add(new PlayerStatEntry { Stat = "Health", Value = 17 });
+            captured.Stats.Add(new PlayerStatEntry { Stat = "Energy", Value = 2 });
+            captured.Stats.Add(new PlayerStatEntry { Stat = "MaxEnergy", Value = 4 });
 
-            // Player fresco sin Energy todavía (EnergyService no corrió).
-            var fresh = new ModifiableAttributes();
-            fresh.EnsureInitialized();
-            fresh.SetAttribute<Health>(new Health(30));
-            fresh.SetAttribute<Attack>(new Attack(0));
-            fresh.SetAttribute<Speed>(new Speed(3));
+            var fresh = MakePlayerAttributes(hp: 30);
+            UnityEngine.TestTools.LogAssert.ignoreFailingMessages = true;
+            try
+            {
+                new PlayerAttributesSaveable(fresh).RestoreState(captured);
+            }
+            finally
+            {
+                UnityEngine.TestTools.LogAssert.ignoreFailingMessages = false;
+            }
 
-            new PlayerAttributesSaveable(fresh).RestoreState(captured);
-
-            Assert.IsTrue(fresh.HasAttribute<Energy>());
-            Assert.AreEqual(2, fresh.GetAttribute<Energy>().Value);
+            Assert.AreEqual(17, fresh.GetAttribute<Health>().Value);
         }
 
         // ====================================================================
@@ -234,12 +237,11 @@ namespace Rollgeon.Patterns.Save.Tests
             return ench;
         }
 
-        private static ModifiableAttributes MakePlayerAttributes(int hp, int energy)
+        private static ModifiableAttributes MakePlayerAttributes(int hp)
         {
             var attrs = new ModifiableAttributes();
             attrs.EnsureInitialized();
             attrs.SetAttribute<Health>(new Health(hp));
-            attrs.SetAttribute<Energy>(new Energy(energy));
             attrs.SetAttribute<Attack>(new Attack(0));
             attrs.SetAttribute<Speed>(new Speed(3));
             return attrs;

@@ -46,7 +46,12 @@ namespace Rollgeon.Combat.Resume
         /// </summary>
         public string PlayerGuid;
 
-        public int PlayerEnergy;
+        /// <summary>
+        /// Rolls del pool del jugador al guardar (Feature#0050). -1 = snapshot viejo
+        /// sin el campo — el resume no restaura y queda el arranque-en-5 de
+        /// <c>OnCombatStart</c>.
+        /// </summary>
+        public int PlayerRolls = -1;
 
         /// <summary>Acciones ya usadas en el turno del player (se re-aplican tras el clear de OnTurnStarted).</summary>
         public List<string> ActionsUsedThisTurn = new List<string>();

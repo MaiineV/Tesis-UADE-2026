@@ -130,7 +130,7 @@ namespace Rollgeon.Effects.Tests
         [Test]
         public void BuildTooltip_BuildDiceOn_ShowsBaseAndThreshold()
         {
-            var heal = MakeHealWithBuildDice(energyCostInCombat: 2);
+            var heal = MakeHealWithBuildDice();
             SetPrivateField(heal, "_baseAmount", 5);
             SetPrivateField(heal, "_healThreshold", 15);
 
@@ -145,7 +145,7 @@ namespace Rollgeon.Effects.Tests
         [Test]
         public void BuildTooltip_BuildDiceOn_WithCap_ShowsTope()
         {
-            var heal = MakeHealWithBuildDice(energyCostInCombat: 2);
+            var heal = MakeHealWithBuildDice();
             SetPrivateField(heal, "_baseAmount", 5);
             SetPrivateField(heal, "_healThreshold", 15);
             SetPrivateField(heal, "_healMaxCap", 40);
@@ -156,9 +156,9 @@ namespace Rollgeon.Effects.Tests
         }
 
         [Test]
-        public void TryGetRollSpec_BuildDiceModeOn_InCombat_ChargesCombatCost()
+        public void TryGetRollSpec_BuildDiceModeOn_InCombat_CostsRolls()
         {
-            var heal = MakeHealWithBuildDice(energyCostInCombat: 2);
+            var heal = MakeHealWithBuildDice();
             RegisterPhase(GamePhase.Combat);
 
             bool got = heal.TryGetRollSpec(System.Guid.Empty, out var spec);
@@ -167,43 +167,41 @@ namespace Rollgeon.Effects.Tests
             Assert.IsTrue(spec.AlwaysSucceeds, "Heal no debe tratar 'sum < threshold' como fallo.");
             Assert.IsFalse(spec.RequireConfirm, "Heal va directo a roll, sin confirm dialog.");
             Assert.IsTrue(spec.AllowReroll);
-            Assert.AreEqual(1, spec.RerollEnergyCost);
-            Assert.AreEqual(2, spec.EnergyCost, "En combate Curarse debe cobrar _energyCostInCombat.");
+            Assert.IsTrue(spec.CostsRolls, "En combate Curarse debe cobrar 1 roll por tirada.");
         }
 
         [Test]
-        public void TryGetRollSpec_BuildDiceModeOn_OutOfCombat_CostIsZero()
+        public void TryGetRollSpec_BuildDiceModeOn_OutOfCombat_IsFree()
         {
-            var heal = MakeHealWithBuildDice(energyCostInCombat: 2);
+            var heal = MakeHealWithBuildDice();
             RegisterPhase(GamePhase.Exploration);
 
             bool got = heal.TryGetRollSpec(System.Guid.Empty, out var spec);
 
             Assert.IsTrue(got);
-            Assert.AreEqual(0, spec.EnergyCost, "Fuera de combate la poción no debe gastar energía.");
+            Assert.IsFalse(spec.CostsRolls, "Fuera de combate la poción no debe gastar rolls.");
         }
 
         [Test]
         public void TryGetRollSpec_BuildDiceModeOn_NoPhaseService_DefaultsToOutOfCombat()
         {
-            // Sin IPhaseService registrado → IsInCombat() = false → cost = 0.
-            var heal = MakeHealWithBuildDice(energyCostInCombat: 99);
+            // Sin IPhaseService registrado → IsInCombat() = false → gratis.
+            var heal = MakeHealWithBuildDice();
 
             bool got = heal.TryGetRollSpec(System.Guid.Empty, out var spec);
 
             Assert.IsTrue(got);
-            Assert.AreEqual(0, spec.EnergyCost);
+            Assert.IsFalse(spec.CostsRolls);
         }
 
         // ---------------------------------------------------------------
         // Helpers
         // ---------------------------------------------------------------
 
-        private static EffHeal MakeHealWithBuildDice(int energyCostInCombat)
+        private static EffHeal MakeHealWithBuildDice()
         {
             var heal = new EffHeal();
             SetPrivateField(heal, "_useBuildDice", true);
-            SetPrivateField(heal, "_energyCostInCombat", energyCostInCombat);
             return heal;
         }
 

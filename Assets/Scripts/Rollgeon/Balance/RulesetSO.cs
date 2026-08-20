@@ -8,14 +8,14 @@ namespace Rollgeon.Balance
     /// <summary>
     /// Hub de balance del ruleset (TECHNICAL.md §14.7). Config autoritativa de un
     /// "modo de juego" — todos los números del juego que pueden variar entre
-    /// rulesets (energy, initiative, rolls, scaling, etc.).
+    /// rulesets (roll pool, initiative, scaling, etc.).
     /// </summary>
     /// <remarks>
     /// <para>
     /// <b>Registro.</b> Se agrega a <c>ServiceBootstrapSO.SettingsAssets</c> — el
     /// <c>RegisterByRuntimeType</c> (Foundation#0005) lo registra en el
     /// <c>ServiceLocator</c> bajo su Type runtime (<c>RulesetSO</c>). Los servicios
-    /// (EnergyService, TurnOrderService, etc.) lo resuelven via
+    /// (RollPoolService, TurnOrderService, etc.) lo resuelven via
     /// <c>ServiceLocator.GetService&lt;RulesetSO&gt;()</c>.
     /// </para>
     /// <para>
@@ -47,7 +47,7 @@ namespace Rollgeon.Balance
 
         // ----------------------------------------------------------------
         // [Merge hook] — otros worktrees agregan sub-structs tipados acá.
-        // T100a: EnergyConfig Energy.           [OK] implementado abajo
+        // T100a: EnergyConfig Energy.           [RIP] murió con Feature#0050 (Pool de Rolls)
         // T100c: TurnOrderConfig TurnOrder.     [OK] implementado abajo
         // T97b:  WeaknessConfig Weakness.       [OK] implementado abajo
         // T97c:  ComboCountersConfig Counters.  [OK] implementado abajo
@@ -57,13 +57,14 @@ namespace Rollgeon.Balance
         // LootConfig, ShopConfig, CrapsConfig, ...).
         // ----------------------------------------------------------------
 
-        [Title("Energy (§12.6 — T100a)")]
-        [InfoBox("Configuracion de energia del FP. Consumido por EnergyService.")]
+        [Title("Roll Pool (GDD Turn System — Feature#0050)")]
+        [InfoBox("Pool de Rolls que reemplaza a Energy: 1 roll por tirada de dado, " +
+                 "acumula entre turnos dentro del combate. Consumido por RollPoolService.")]
         [OdinSerialize]
-        private EnergyConfig _energy = new EnergyConfig();
+        private RollPoolConfig _rollPool = new RollPoolConfig();
 
-        /// <summary>Knobs de energia (Max / AtRunStart / RegenBase). Lectura runtime.</summary>
-        public EnergyConfig Energy => _energy;
+        /// <summary>Knobs del pool de rolls (AtCombatStart / PerTurn / Cap). Lectura runtime.</summary>
+        public RollPoolConfig RollPool => _rollPool;
 
         [Title("Initiative / Turn Order (§12.7 — T100c)")]
         [OdinSerialize]
@@ -92,7 +93,7 @@ namespace Rollgeon.Balance
 
         private void OnValidate()
         {
-            _energy?.Validate();
+            _rollPool?.Validate();
             TurnOrder.OnValidate();
             _weakness?.Validate();
             _counters?.Validate();
