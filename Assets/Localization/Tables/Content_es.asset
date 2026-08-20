@@ -923,6 +923,15 @@ MonoBehaviour:
     m_Localized: "Protege de efectos espec\xEDficos a cualquier unidad adentro."
     m_Metadata:
       m_Items: []
+  - m_Id: 13172026588299264
+    m_Localized: Fuego de la Banca
+    m_Metadata:
+      m_Items: []
+  - m_Id: 13172026638630912
+    m_Localized: "Llamas de la banca: duran casi toda la mano y castigan fuerte a
+      quien se queda quieto. A su due\xF1o no lo tocan."
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

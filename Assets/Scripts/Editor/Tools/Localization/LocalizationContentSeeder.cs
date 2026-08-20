@@ -591,6 +591,21 @@ namespace Rollgeon.EditorTools.Localization
         // Casillas Especiales — tooltips de tile (GDD §16)
         // ==================================================================
 
+        /// <summary>
+        /// Re-siembra SOLO las claves de casillas especiales. Existe para autorear una
+        /// casilla nueva sin correr <see cref="SeedAll"/>: el seeder completo reescribe
+        /// las 3 tablas desde el código, así que si algún valor de tabla se editó a mano
+        /// alguna vez, un run completo lo revierte en silencio. Esto acota el blast radius.
+        /// </summary>
+        [MenuItem("Rollgeon/Localization/Seed Special Tiles")]
+        public static void SeedSpecialTilesOnly()
+        {
+            SeedSpecialTiles();
+            AssetDatabase.SaveAssets();
+            AssetDatabase.Refresh();
+            Debug.Log("[LocalizationContentSeeder] Claves de casillas especiales pobladas.");
+        }
+
         private static void SeedSpecialTiles()
         {
             // Líneas del sistema (números duros del tooltip). {0} = valor.
@@ -612,6 +627,10 @@ namespace Rollgeon.EditorTools.Localization
             Content("tile.firetemp.desc",
                 "Fuego que se apaga solo tras unas rondas.",
                 "Fire that burns out on its own after a few rounds.");
+            Content("tile.firecroupier.name", "Fuego de la Banca", "House Fire");
+            Content("tile.firecroupier.desc",
+                "Llamas de la banca: duran casi toda la mano y castigan fuerte a quien se queda quieto. A su dueño no lo tocan.",
+                "The house's flames: they last most of the hand and punish anyone who stands still. They never touch their owner.");
             Content("tile.ice.name", "Hielo", "Ice");
             Content("tile.ice.desc",
                 "Te deslizás en la dirección en la que entraste hasta salir del hielo o chocar.",

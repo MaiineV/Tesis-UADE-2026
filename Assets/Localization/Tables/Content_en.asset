@@ -918,6 +918,15 @@ MonoBehaviour:
     m_Localized: Shields any unit inside from specific effects.
     m_Metadata:
       m_Items: []
+  - m_Id: 13172026588299264
+    m_Localized: House Fire
+    m_Metadata:
+      m_Items: []
+  - m_Id: 13172026638630912
+    m_Localized: 'The house''s flames: they last most of the hand and punish anyone
+      who stands still. They never touch their owner.'
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []
