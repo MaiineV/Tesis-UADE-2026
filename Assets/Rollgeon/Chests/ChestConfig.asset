@@ -21,7 +21,7 @@ MonoBehaviour:
     PrefabModificationsReferencedUnityObjects: []
     PrefabModifications: []
     SerializationNodes: []
-  SpawnFrequency: 0.33
+  SpawnFrequency: 1
   MimicSpawnChance: 0.15
   MimicClampHP: 1
   ChestPrefab: {fileID: 4598999015062820065, guid: d9bdcbaf2b7578942a9d9412a9ec8b72, type: 3}
@@ -61,7 +61,7 @@ MonoBehaviour:
     MaxHP: 55
     BodyColor: {r: 0.8509804, g: 0.6431373, b: 0.30588236, a: 1}
     ChestPrefabOverride: {fileID: 0}
-    BodyMaterialOverride: {fileID: 0}
+    BodyMaterialOverride: {fileID: 2100000, guid: 2969ed3104515dd4bafedd8f6760be11, type: 2}
     FittingsMaterialOverride: {fileID: 2100000, guid: c21b38af8e45cc14fa64a82d0051917c, type: 2}
     MimicStatScale: 0.85
     MimicGoldMin: 28
