@@ -11,6 +11,7 @@ using Rollgeon.Entities.Behaviors;
 using Rollgeon.Feedback;
 using Rollgeon.PreConditions;
 using Rollgeon.PreConditions.Concretes;
+using Rollgeon.Tiles;
 using TMPro;
 using UnityEditor;
 using UnityEngine;
@@ -39,6 +40,13 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         public const string BossAssetPath = "Assets/Rollgeon/Enemies/ED_Boss_Croupier.asset";
         public const string FirePhase1Path = "Assets/Rollgeon/Combat/Hazards/HZ_Croupier_TableFire.asset";
         public const string FirePhase2Path = "Assets/Rollgeon/Combat/Hazards/HZ_Croupier_TableFire_Phase2.asset";
+
+        /// <summary>
+        /// La casilla de fuego del jefe. Propia y no <c>Tile_FireTemp</c>: sube el dano por turno a
+        /// 18 para superar el escudo del jugador y la duracion a 6 rondas para que las bandas se
+        /// acumulen. Tocar la generica se lo cambiaria al resto del juego.
+        /// </summary>
+        public const string CroupierFirePath = "Assets/Rollgeon/Tiles/Tile_Fire_Croupier.asset";
 
         /// <summary>
         /// Llama del paño. Vive acá y no en el builder de la Bandida porque el fuego es del Croupier
@@ -121,20 +129,78 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         public const int FireDamage = 6;
 
         /// <summary>
-        /// "Arde 2 rondas" = 3 rondas de hazard. El fuego nace en el turno del jefe y el jugador tiene
-        /// el primer turno de cada ronda (CNF-006), así que la ronda en la que se enciende ya no tiene
-        /// cierres de turno del jugador por delante: con 1 expiraría sin tickear nunca. Ver los remarks
-        /// de <see cref="AINode_IgniteDetonatedSectors"/>.
+        /// "Arde 5 rondas" = 6 rondas de casilla. El fuego nace en el turno del jefe y el jugador
+        /// tiene el primer turno de cada ronda (CNF-006), asi que la ronda en la que se enciende ya
+        /// no tiene cierres de turno del jugador por delante: con 1 expiraria sin tickear nunca.
         /// </summary>
         /// <remarks>
-        /// Con esta duración el bloque anterior sigue ardiendo cuando cae el siguiente: el jefe deja de
-        /// devolver el paño limpio cada turno y el mapa útil se achica sostenidamente. Ese solapamiento
-        /// es el efecto buscado, no un residuo del redondeo de rondas.
+        /// <b>Tiene que superar el intervalo entre igniciones o el efecto no existe.</b> El jefe
+        /// prende en T2, o sea cada 2 rondas. Con duracion 2 nunca conviven dos bandas y el pano
+        /// vuelve a estar limpio cada vez; con 6 conviven tres y el piso util se achica ronda a
+        /// ronda hasta que no queda donde plantarse a defender. Eso es todo el plan del jefe: no
+        /// romper el escudo de una, sino sacarle el lugar donde usarlo.
         /// </remarks>
-        public const int FireDurationRounds = 3;
+        public const int FireDurationRounds = 6;
 
-        /// <summary>"Arde 3 rondas" en fase 2 — mismo corrimiento de +1 ronda que en fase 1.</summary>
-        public const int FireDurationRoundsPhase2 = 4;
+        /// <summary>
+        /// Duracion del hazard de paño que este builder deja autorado para La Bandida (sus reels lo
+        /// consumen). El Croupier ya no lo usa: bajarlo o subirlo no le cambia nada a el, pero si a
+        /// ella. Era el "arde 2 rondas" original.
+        /// </summary>
+        public const int HazardDurationForBandida = 3;
+
+        // ======================================================================
+        // Rediseno: kiter de dos tiempos
+        // ======================================================================
+
+        /// <summary>
+        /// Disparo de T1. Chico a proposito: el jefe no gana por sus golpes directos sino por el
+        /// piso que va quemando, y un tiro grande a rango infinito volveria la persecucion injusta.
+        /// </summary>
+        public const int ShotDamage = 10;
+
+        /// <summary>
+        /// Alcance del disparo, en Manhattan. 20 cubre la diagonal entera de la sala 11x11 (max 20),
+        /// asi que en la practica es "a cualquier distancia" sin escribir un centinela.
+        /// </summary>
+        public const int ShotRange = 20;
+
+        /// <summary>Casillas que retrocede por turno de fuga.</summary>
+        public const int FleeSteps = 2;
+
+        /// <summary>
+        /// Mientras el jugador este a menos de esto, huye. Alto a proposito: KeepDistance no hace
+        /// nada en cuanto ya esta a la distancia ideal, y un ideal chico lo dejaria plantado a media
+        /// sala esperando. Con 8 huye practicamente siempre, que es lo que define al personaje.
+        /// </summary>
+        public const int FleeIdealDistance = 8;
+
+        /// <summary>Semi-ancho de la banda de fuego: 1 = 3 casillas de ancho.</summary>
+        public const int BandHalfWidth = 1;
+
+        /// <summary>
+        /// Profundidad de la banda. 11 = el largo de la sala, asi que la banda siempre llega a la
+        /// pared y no deja un pedazo del pasillo sin quemar por donde rodearla de una.
+        /// </summary>
+        public const int BandDepth = 11;
+
+        /// <summary>Umbral del candado: desde aca le queda un dado menos, y no vuelve.</summary>
+        public const float LockHpThreshold = 0.7f;
+
+        /// <summary>
+        /// Cual dado se traba. Fijo y no sorteado: el candado se tiene que leer como "me saco ESE",
+        /// y RotateBlock etiqueta el candado con el indice + 1, asi que 0 muestra "1".
+        /// </summary>
+        public const int LockedDieIndex = 0;
+
+        /// <summary>Umbral de "Pleno y color".</summary>
+        public const float PlenoHpThreshold = 0.5f;
+
+        /// <summary>
+        /// Radio del hueco que "Pleno y color" NO prende, centrado en el jefe. 1 = su 3x3. Ojo que
+        /// en <c>AllExceptSquareAroundSelf</c> el Size es el hueco, no el area amenazada.
+        /// </summary>
+        public const int PlenoHoleRadius = 1;
 
         /// <summary>Umbral de "Pleno y color".</summary>
         public const float Phase2HpThreshold = 0.5f;
@@ -229,15 +295,27 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         public static void BuildCroupier()
         {
             var flame = BuildFireVfx();
-            var fire = BuildFireDefinition(FirePhase1Path, FireDurationRounds, FirePhase1SourceId, flame);
-            var firePhase2 = BuildFireDefinition(
-                FirePhase2Path, FireDurationRoundsPhase2, FirePhase2SourceId, flame);
+
+            // El Croupier ya no usa este hazard --su fuego es una casilla especial-- pero se sigue
+            // autorando: HZ_Croupier_TableFire lo consume La Bandida para sus reels, y dejar de
+            // escribirlo la dejaria con la definicion vieja sin que nadie lo note. La de fase 2 se
+            // va porque no la referenciaba nadie mas.
+            BuildFireDefinition(FirePhase1Path, HazardDurationForBandida, FirePhase1SourceId, flame);
 
             var visual = BuildVisualPrefab();
             var portrait = BossPortraitLibrary.Croupier();
 
             var boss = LoadOrCreate<EnemyDataSO>(BossAssetPath);
-            PopulateEnemyData(boss, fire, firePhase2, visual, portrait);
+            // El fuego del jefe pasa a ser una casilla especial: trae visual propio, VFX al
+            // dispararse, tooltip localizado, y el planner de la IA la esquiva sola.
+            var croupierFire = AssetDatabase.LoadAssetAtPath<SpecialTileDefinitionSO>(CroupierFirePath);
+            if (croupierFire == null)
+            {
+                Debug.LogError($"[CroupierAssetBuilder] Falta {CroupierFirePath}. El jefe queda sin " +
+                               "fuego: el nodo de ignicion falla y sus turnos de quema no hacen nada.");
+            }
+
+            PopulateEnemyData(boss, croupierFire, visual, portrait);
 
             EditorUtility.SetDirty(boss);
             AssetDatabase.SaveAssets();
@@ -476,8 +554,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         /// </summary>
         public static void PopulateEnemyData(
             EnemyDataSO data,
-            HazardDefinitionSO fire,
-            HazardDefinitionSO firePhase2,
+            SpecialTileDefinitionSO fire,
             GameObject visualPrefab,
             Sprite portrait)
         {
@@ -502,6 +579,11 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
             data.MaxEnergy = 3;
             data.BaseAttackRange = 1;
 
+            // Sin esto su propio fuego lo quema: ShouldAffect exige
+            // OwnerBossImmune && IsBoss && el dueño sea este guid, y ningún builder venía
+            // escribiendo IsBoss, así que el jefe contaba como enemigo común.
+            data.IsBoss = true;
+
             // No cura ni tiene behaviors de curación: dejar 0 evita autorar un número que miente.
             data.BaseHealStrength = 0;
 
@@ -518,7 +600,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
             data.Behaviors = new List<BaseBehavior>();
             data.ExtraTiers = new List<EnemyTier>();
 
-            data.AIRoot = BuildAIRoot(fire, firePhase2);
+            data.AIRoot = BuildAIRoot(fire);
         }
 
         /// <summary>
@@ -530,22 +612,22 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         /// último por lo mismo — es el único paso que devuelve <c>Running</c> (espera el blink). Cada
         /// paso que puede fallar va en <c>Selector[paso, Wait]</c>.
         /// </remarks>
-        public static AINode_Sequence BuildAIRoot(HazardDefinitionSO fire, HazardDefinitionSO firePhase2)
+        public static AINode_Sequence BuildAIRoot(SpecialTileDefinitionSO fire)
         {
             return new AINode_Sequence
             {
                 Children = new List<AIDecisionNode>
                 {
-                    // 1. Detona lo que cantó el turno pasado. Siempre Succeeded — "nada marcado"
-                    //    (turno 1) o "el jugador se fue del sector" no son fallos.
-                    new AINode_DetonateSungSectors(),
-
-                    // 2. Pleno y color, una sola vez al cruzar el 50%.
+                    // 1. Pleno y color: una sola vez al cruzar el 50%, prende TODO el pano menos su
+                    //    propio 3x3. Marca y enciende en el mismo turno a proposito: el fuego es su
+                    //    propia telegrafia --se ve en el piso y solo cobra al pisarlo o al arrancar
+                    //    el turno adentro--, asi que no hace falta el turno de aviso que si necesita
+                    //    un golpe que cobra de una.
                     Guarded(new AINode_If
                     {
                         Conditions = new List<BasePreCondition>
                         {
-                            new PcOwnerHpBelow { Percent = Phase2HpThreshold },
+                            new PcOwnerHpBelow { Percent = PlenoHpThreshold },
                         },
                         Then = new AINode_Once
                         {
@@ -553,7 +635,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
                             {
                                 Children = new List<AIDecisionNode>
                                 {
-                                    // La fase no sube el daño: sólo anuncia (feedback + diálogo).
+                                    // No sube el dano: solo anuncia (feedback + dialogo de fase).
                                     new AINode_ApplyStatModifier
                                     {
                                         AttackDelta = 0,
@@ -561,11 +643,19 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
                                         PhaseIndex = 2,
                                         EmitPhaseChangedEvent = true,
                                     },
-                                    new AINode_SetWheelMode
+                                    new AINode_TelegraphMark
                                     {
-                                        NumbersPerTurn = Phase2NumbersPerTurn,
-                                        Rigged = true,
-                                        PhaseIndex = 2,
+                                        Shape = ThreatShape.AllExceptSquareAroundSelf,
+                                        // Size es el radio del HUECO que se salva, no del area
+                                        // amenazada: 1 = deja libre su 3x3 y prende el resto.
+                                        Size = PlenoHoleRadius,
+                                        Damage = 0,
+                                        Kind = AttackKind.Environmental,
+                                    },
+                                    new AINode_IgniteArea
+                                    {
+                                        Definition = fire,
+                                        DurationRounds = FireDurationRounds,
                                     },
                                 },
                             },
@@ -573,55 +663,86 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
                         Else = new AINode_Wait(),
                     }),
 
-                    // 3. Canta el número (o los dos) y abre el windup.
-                    Guarded(new AINode_SpinWheel { RetaliationDamage = RetaliationDamage }),
-
-                    // 4. Confisca el dado del número recién cantado: el sector marcado en el piso y
-                    //    el dado con candado son el mismo dato.
-                    //
-                    //    Sung y no Detonated: con Detonated el turno 1 no tiene nada resuelto, el
-                    //    reader devuelve -1 y RotateDice ya hizo Clear(), así que la pelea abría sin
-                    //    dado bloqueado y el candado iba y venía. Va ACÁ y no más abajo porque el
-                    //    paso 3 tiene que haber poblado SungNumbers. Hay un test sobre el orden.
-                    Guarded(new AINode_RotateBlock
+                    // 2. Desde el 70% le queda un dado con candado. SIN AINode_Once: RotateBlock
+                    //    hace Clear() antes de bloquear en cada tick y DiceBlockService se limpia
+                    //    solo al cerrar cada turno del jugador, asi que "permanente" se consigue
+                    //    re-emitiendolo todos los turnos. Con Once el candado duraria un turno.
+                    //    Y va FUERA del Alternate por lo mismo: adentro solo se emitiria uno de
+                    //    cada dos turnos y el dado parpadearia.
+                    Guarded(new AINode_If
                     {
-                        Target = AINode_RotateBlock.BlockTarget.Dice,
-                        DirectedIndex = new AIReadCroupierWheelNumber
+                        Conditions = new List<BasePreCondition>
                         {
-                            Source = AIReadCroupierWheelNumber.NumberSource.Sung,
-                            Slot = 0,
+                            new PcOwnerHpBelow { Percent = LockHpThreshold },
                         },
-                        BlockVfxId = BossFeedbackIds.CroupierConfiscaVfx,
-                        BlockFeelId = BossFeedbackIds.CroupierConfiscaFeel,
+                        Then = new AINode_RotateBlock
+                        {
+                            Target = AINode_RotateBlock.BlockTarget.Dice,
+                            // Indice fijo y no la ruleta: el candado tiene que caer siempre en el
+                            // mismo dado para que se lea como "me saco ese", no como un sorteo.
+                            DirectedIndex = new AIConstantInt { Value = LockedDieIndex },
+                            BlockVfxId = BossFeedbackIds.CroupierConfiscaVfx,
+                            BlockFeelId = BossFeedbackIds.CroupierConfiscaFeel,
+                        },
+                        Else = new AINode_Wait(),
                     }),
 
-                    // 5. Marca el/los sector(es) cantados: el "ataque" telegrafiado del jefe.
-                    Guarded(new AINode_MarkSungSectors
+                    // 3. Los dos tiempos. Alternate avanza el indice en cada tick pase lo que pase,
+                    //    asi que un beat que falla igual gasta su turno -- que es lo que queremos:
+                    //    el ciclo no se desincroniza nunca y el jugador puede contar los turnos.
+                    new AINode_Alternate
                     {
-                        SectorDamage = SectorDamage,
-                        SectorDamagePhase2 = SectorDamagePhase2,
-                        Kind = AttackKind.BasicAttack,
-                    }),
+                        Children = new List<AIDecisionNode>
+                        {
+                            // -- T1 "Reparte" --------------------------------------------------
+                            new AINode_Sequence
+                            {
+                                Children = new List<AIDecisionNode>
+                                {
+                                    // Dispara primero: si huyera antes, el tiro saldria desde la
+                                    // casilla nueva y el jugador veria el fogonazo salir de donde
+                                    // el jefe ya no esta.
+                                    Guarded(new AINode_RangedShot
+                                    {
+                                        Damage = ShotDamage,
+                                        Range = ShotRange,
+                                        Kind = AttackKind.BasicAttack,
+                                    }),
 
-                    // 6. El sector que detonó este turno queda en llamas.
-                    Guarded(new AINode_IgniteDetonatedSectors
-                    {
-                        Fire = fire,
-                        FirePhase2 = firePhase2,
-                        BlastConsumesFlame = true,
-                    }),
+                                    // Huye. KeepDistance y no Move{Retreat}: Move busca una banda
+                                    // ABSOLUTA y devuelve Failed en cuanto ya esta a esa distancia,
+                                    // asi que a distancia 2 se quedaba clavado. Esto se aleja
+                                    // mientras el jugador este dentro de FleeIdealDistance, y contra
+                                    // la pared se desliza al costado en vez de fallar.
+                                    Guarded(new AINode_KeepDistance
+                                    {
+                                        MaxSteps = new AIConstantInt { Value = FleeSteps },
+                                        IdealDistance = new AIConstantInt { Value = FleeIdealDistance },
+                                    }),
 
-                    // 7. Se reacomoda. ÚLTIMO y aislado: es el único paso que puede devolver
-                    //    Running (espera el visual del blink), y un Running aborta el Sequence en
-                    //    el path no-coroutine. Desde acá no hay nada que abortar.
-                    Guarded(new AINode_Move
-                    {
-                        MaxSteps = new AIConstantInt { Value = MoveSteps },
-                        TargetSelector = new TargetSelector_AlwaysPlayer(),
-                        DesiredRange = new AIConstantInt { Value = DesiredRange },
-                        Retreat = true,
-                        StopAdjacent = false,
-                    }),
+                                    // Marca la banda: anclada en el, apuntando al jugador.
+                                    // Size es el SEMI-ancho, asi que 1 = 3 casillas de ancho.
+                                    Guarded(new AINode_TelegraphMark
+                                    {
+                                        Shape = ThreatShape.DirectionalBand,
+                                        Size = BandHalfWidth,
+                                        Depth = BandDepth,
+                                        Damage = 0,
+                                        Kind = AttackKind.Environmental,
+                                    }),
+                                },
+                            },
+
+                            // -- T2 "Quema" ----------------------------------------------------
+                            // No se mueve ni dispara: es el unico turno en que se queda quieto, y
+                            // eso es lo que lo hace matable. Enciende lo que marco el turno pasado.
+                            Guarded(new AINode_IgniteArea
+                            {
+                                Definition = fire,
+                                DurationRounds = FireDurationRounds,
+                            }),
+                        },
+                    },
                 },
             };
         }

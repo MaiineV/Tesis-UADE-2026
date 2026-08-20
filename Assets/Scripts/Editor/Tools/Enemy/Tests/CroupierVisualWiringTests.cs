@@ -203,7 +203,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
 
             try
             {
-                CroupierAssetBuilder.PopulateEnemyData(data, null, null, visual, portrait);
+                CroupierAssetBuilder.PopulateEnemyData(data, null, visual, portrait);
 
                 Assert.AreSame(visual, data.VisualPrefab,
                     "El jefe tiene que llevarse el wrapper, no el placeholder del Sunken Grand.");
