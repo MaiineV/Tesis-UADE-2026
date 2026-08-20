@@ -467,9 +467,15 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                 Assert.AreEqual(20, data.BaseAttack);
                 Assert.AreEqual("combo.pair", data.WeaknessComboId,
                     "El id real del combo Par en el catálogo es combo.pair.");
-                Assert.AreEqual(1.2f, data.WeaknessMultiplierOverride, PercentTolerance,
-                    "Override propio del jefe, no el 1.5 global de WeaknessConfig: acá se ajusta " +
-                    "cuánto lo castiga el Par sin moverle la debilidad a ningún otro enemigo.");
+                // Es un override propio del jefe, no el global de WeaknessConfig, así que moverlo
+                // no le toca la debilidad a ningún otro enemigo.
+                Assert.GreaterOrEqual(data.WeaknessMultiplierOverride, 1.35f,
+                    "Por debajo de esto el Par deja de convenir y la debilidad se vuelve " +
+                    "decoración. La debilidad multiplica el golpe entero (fórmula v3), no el base " +
+                    "del combo: un Par vale N≈25, y recién desde ~1.35 el resultado empata al doble " +
+                    "par — que es lo que hace que valga jugar el combo barato (90,7% en la primera " +
+                    "tirada) en vez del trío (21,3%). Si hay que hacerlo aguantar más, subir BaseHP.");
+                Assert.AreEqual(1.5f, data.WeaknessMultiplierOverride, PercentTolerance);
                 Assert.AreEqual(15, data.MinGoldDrop, "Oro de piso 1.");
                 Assert.AreEqual(23, data.MaxGoldDrop);
                 Assert.IsEmpty(data.Behaviors,

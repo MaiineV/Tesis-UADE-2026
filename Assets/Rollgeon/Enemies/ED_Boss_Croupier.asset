@@ -593,7 +593,7 @@ MonoBehaviour:
     you."
   Portrait: {fileID: -2011244216, guid: 20ce88debfdaa06459d18ed604643892, type: 3}
   WeaknessComboId: combo.pair
-  WeaknessMultiplierOverride: 1.2
+  WeaknessMultiplierOverride: 1.5
   BaseHP: 170
   BaseAttack: 20
   BaseHealStrength: 0

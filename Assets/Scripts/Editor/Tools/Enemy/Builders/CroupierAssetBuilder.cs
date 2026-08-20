@@ -99,7 +99,23 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         public const string EntityId = "boss.croupier";
         public const string DisplayName = "The Croupier";
         public const string WeaknessComboId = "combo.pair";
-        public const float WeaknessMultiplier = 1.2f;
+        /// <summary>
+        /// Cuánto lo castiga el Par. <b>No es una perilla de dificultad: es si la debilidad existe
+        /// o no.</b> La debilidad multiplica el golpe entero ya resuelto (fórmula v3:
+        /// <c>N = base_combo + ATQ + Σcaras + bonos</c>), no el base del combo.
+        /// </summary>
+        /// <remarks>
+        /// Con ATQ 5 y holdeando alto, un Par vale N≈25. A ×1.5 son 38 de daño: empata al doble par
+        /// y queda a 4 del trío, y el Par sale en la primera tirada el 90,7% de las veces contra el
+        /// 21,3% del trío. O sea: el mismo daño que la jugada media, gratis, si conocés su
+        /// debilidad. Eso es la mecánica.
+        /// <para>
+        /// Por debajo de ~1.35 el Par cae abajo del doble par y no queda ninguna razón para jugarlo:
+        /// la debilidad pasa a ser una línea en la ficha que la jugada óptima ignora siempre. Si hay
+        /// que hacerlo aguantar más, la palanca es <see cref="MaxHp"/>.
+        /// </para>
+        /// </remarks>
+        public const float WeaknessMultiplier = 1.5f;
 
         /// <summary>
         /// Jefe de piso 1: ~6 turnos con el golpe base del piso (13-27, mediana 20).
