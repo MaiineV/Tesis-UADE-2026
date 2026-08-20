@@ -324,20 +324,31 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                 Assert.AreSame(_fire, ignite.Definition,
                     "Los dos tiempos que prenden plantan la MISMA definición, la propia del jefe: " +
                     "Tile_FireTemp es la genérica y tunearla ahí le cambiaría el fuego a todo el juego.");
-                Assert.AreEqual(CroupierAssetBuilder.FireDurationRounds, ignite.DurationRounds,
-                    "La duración se pasa explícita: un 0 en el nodo cae al default del SO, y en " +
-                    "ISpecialTileService.Place un 0 significa PERMANENTE.");
+                // No se compara contra una sola constante porque ahora hay dos duraciones: la
+                // base y la de fase 2. Lo que no puede pasar nunca es el 0 — en el nodo cae al
+                // default del SO y en ISpecialTileService.Place un 0 significa PERMANENTE.
+                Assert.Contains(ignite.DurationRounds,
+                    new[] { CroupierAssetBuilder.FireDurationRounds, CroupierAssetBuilder.FireDurationRoundsPhase2 },
+                    $"Una ignición pasa {ignite.DurationRounds} rondas, que no es ni la duración " +
+                    "base ni la de fase 2: o es un número suelto que nadie va a mantener, o es un " +
+                    "0 que deja el fuego encendido para siempre.");
             }
         }
 
         /// <summary>
-        /// La afirmación de la que cuelga todo el plan del jefe. Prende en uno de cada dos tiempos,
-        /// o sea cada 2 rondas, y las bandas se acumulan porque nadie apaga las anteriores: si la
-        /// duración no supera ese intervalo, nunca conviven dos bandas, el paño vuelve a estar
-        /// limpio cada vez y el jefe deja de sacarle el lugar donde plantarse a defender.
+        /// La relación entre cuánto arde una banda y cada cuánto prende una nueva. No es un detalle
+        /// de balance: es la diferencia entre un fuego que se esquiva y un piso que se achica.
         /// </summary>
+        /// <remarks>
+        /// El jefe prende en uno de cada dos tiempos, o sea cada 2 rondas, y nadie apaga las bandas
+        /// anteriores. Con la duración base <b>igual</b> al intervalo, una banda se apaga justo
+        /// cuando nace la siguiente: nunca conviven dos y el paño vuelve a estar limpio. Con la de
+        /// fase 2, un ronda más, conviven durante la ronda del relevo — el único momento en que el
+        /// piso útil se achica. Que la base <b>supere</b> el intervalo es el bug: las bandas se
+        /// apilan ronda a ronda hasta que no queda dónde plantarse a defender.
+        /// </remarks>
         [Test]
-        public void FireDuration_OutlivesTheIgnitionInterval_OrTheDesignEvaporates()
+        public void FireDuration_MatchesTheIgnitionInterval_AndOnlyPhaseTwoOverlaps()
         {
             var alternate = Alternate();
             int burningBeats = alternate.Children.Count(c => Descendants(c).Any(n => n is AINode_IgniteArea));
@@ -347,11 +358,53 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
 
             int ignitionIntervalRounds = alternate.Children.Count;
 
-            Assert.Greater(CroupierAssetBuilder.FireDurationRounds, ignitionIntervalRounds,
-                $"El fuego dura {CroupierAssetBuilder.FireDurationRounds} rondas y prende cada " +
-                $"{ignitionIntervalRounds}: tiene que superar el intervalo o el efecto no existe. " +
-                "Bajarlo a 2 hace que nunca convivan dos bandas — el paño se limpia entero entre " +
-                "ignición e ignición y el piso útil no se achica nunca.");
+            // "Arde N rondas" se autora como N + 1 (la ronda en que nace no le deja al jugador
+            // ningún arranque de turno por delante), así que lo que se compara contra el intervalo
+            // es la duración menos uno.
+            Assert.AreEqual(ignitionIntervalRounds, CroupierAssetBuilder.FireDurationRounds - 1,
+                $"La banda base arde {CroupierAssetBuilder.FireDurationRounds - 1} rondas y prende " +
+                $"cada {ignitionIntervalRounds}. Por encima del intervalo las bandas se apilan y la " +
+                "sala se queda sin piso; por debajo el paño está limpio la mitad de la pelea y el " +
+                "fuego deja de ser una amenaza que hay que rodear.");
+
+            Assert.AreEqual(CroupierAssetBuilder.FireDurationRounds + 1,
+                CroupierAssetBuilder.FireDurationRoundsPhase2,
+                "Fase 2 tiene que ser exactamente una ronda más: es lo que hace que dos bandas " +
+                "convivan durante el relevo. Dos rondas más y vuelve a apilarse sin techo.");
+        }
+
+        /// <summary>
+        /// Cuál de las dos duraciones usa cada ignición. El nodo no lee el HP: la elige un
+        /// <c>AINode_If</c>, así que si alguien colapsa las dos ramas en una la pelea pierde el
+        /// escalón de fase 2 sin que falle nada.
+        /// </summary>
+        [Test]
+        public void PhaseTwo_IsTheOnlyThingThatLengthensAFire()
+        {
+            var ignitions = Descendants(_root).OfType<AINode_IgniteArea>().ToList();
+
+            Assert.AreEqual(1, ignitions.Count(i => i.DurationRounds == CroupierAssetBuilder.FireDurationRounds),
+                "Tiene que haber exactamente una ignición con la duración base: la de la banda " +
+                "mientras el jefe está por encima del 50%.");
+            Assert.AreEqual(2, ignitions.Count(i => i.DurationRounds == CroupierAssetBuilder.FireDurationRoundsPhase2),
+                "Y dos con la de fase 2: la banda por debajo del 50% y el propio Pleno, que prende " +
+                "justo al cruzar el umbral y por lo tanto ya está en fase 2.");
+
+            // El If que ramifica: sin él las dos duraciones existirían en el árbol pero el jefe
+            // usaría siempre la misma.
+            var gates = Descendants(Alternate())
+                .OfType<AINode_If>()
+                .Where(g => Descendants(g.Then).Any(n => n is AINode_IgniteArea)
+                            && Descendants(g.Else).Any(n => n is AINode_IgniteArea))
+                .ToList();
+
+            Assert.AreEqual(1, gates.Count,
+                "El tiempo de quema dejó de ramificar por fase: las dos duraciones siguen escritas " +
+                "en el árbol pero el jefe usa una sola.");
+            Assert.IsTrue(gates[0].Conditions.OfType<PcOwnerHpBelow>()
+                    .Any(pc => Mathf.Approximately(pc.Percent, CroupierAssetBuilder.PlenoHpThreshold)),
+                "La banda se alarga en un umbral distinto al del Pleno: el jugador vería el fuego " +
+                "durar más sin que nada en pantalla se lo haya anunciado.");
         }
 
         // =====================================================================

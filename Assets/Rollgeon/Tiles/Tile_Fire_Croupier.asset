@@ -27,7 +27,7 @@ MonoBehaviour:
   StatusTickDamage: 0
   ComboDamageBonus: 0
   MoveRangeBonus: 0
-  DefaultDurationRounds: 6
+  DefaultDurationRounds: 3
   DisarmOnTrigger: 0
   RearmOnRoundWrap: 0
   OwnerBossImmune: 1

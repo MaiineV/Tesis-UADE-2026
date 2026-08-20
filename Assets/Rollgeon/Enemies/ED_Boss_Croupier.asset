@@ -158,7 +158,7 @@ MonoBehaviour:
       Data: 0
     - Name: DurationRounds
       Entry: 3
-      Data: 6
+      Data: 4
     - Name: 
       Entry: 8
       Data: 
@@ -490,19 +490,65 @@ MonoBehaviour:
       Data: 2
     - Name: 
       Entry: 7
-      Data: 45|Rollgeon.Combat.AI.Decisions.AINode_IgniteArea, Rollgeon
+      Data: 45|Rollgeon.Combat.AI.Decisions.AINode_If, Rollgeon
+    - Name: TargetSelector
+      Entry: 6
+      Data: 
+    - Name: Conditions
+      Entry: 7
+      Data: 46|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
+        Rollgeon]], mscorlib
+    - Name: 
+      Entry: 12
+      Data: 1
+    - Name: 
+      Entry: 7
+      Data: 47|Rollgeon.PreConditions.Concretes.PcOwnerHpBelow, Rollgeon
+    - Name: _isConstantValue
+      Entry: 5
+      Data: true
+    - Name: Percent
+      Entry: 4
+      Data: 0.5
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: Then
+      Entry: 7
+      Data: 48|Rollgeon.Combat.AI.Decisions.AINode_IgniteArea, Rollgeon
     - Name: Definition
       Entry: 10
       Data: 0
     - Name: DurationRounds
       Entry: 3
-      Data: 6
+      Data: 4
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: Else
+      Entry: 7
+      Data: 49|Rollgeon.Combat.AI.Decisions.AINode_IgniteArea, Rollgeon
+    - Name: Definition
+      Entry: 10
+      Data: 0
+    - Name: DurationRounds
+      Entry: 3
+      Data: 3
+    - Name: 
+      Entry: 8
+      Data: 
     - Name: 
       Entry: 8
       Data: 
     - Name: 
       Entry: 7
-      Data: 46|Rollgeon.Combat.AI.Decisions.AINode_Wait, Rollgeon
+      Data: 50|Rollgeon.Combat.AI.Decisions.AINode_Wait, Rollgeon
     - Name: 
       Entry: 8
       Data: 
@@ -537,11 +583,12 @@ MonoBehaviour:
   DisplayName: The Croupier
   Description: "\"The house never chases.\" He backs away every turn and shoots from
     anywhere on the table for 10. Every other turn he lights a 3-tile-wide lane of
-    fire that runs from him to the wall behind you, and each lane outlives the next
-    one \u2014 the floor keeps shrinking. Crossing a burning tile costs 6, once per
-    tile. Starting your turn on one costs 18. A lane burns for 5 rounds. At 70% he
-    padlocks one of your dice for the rest of the fight. At 50%, once, the whole
-    table burns except the 3\xD73 he is standing in."
+    fire that runs from him to the wall behind you. Crossing a burning tile costs
+    6, once per tile. Starting your turn on one costs 18. A lane burns for 2 rounds
+    \u2014 it clears just as the next one lights. Once the table has burned they
+    last 3 and two lanes overlap. At 70% he padlocks one of your dice for the rest
+    of the fight. At 50%, once, the whole table burns except the 3\xD73 he is standing
+    in."
   Portrait: {fileID: -2011244216, guid: 20ce88debfdaa06459d18ed604643892, type: 3}
   WeaknessComboId: combo.pair
   WeaknessMultiplierOverride: 1.5

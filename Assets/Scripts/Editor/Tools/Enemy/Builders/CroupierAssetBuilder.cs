@@ -129,18 +129,27 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         public const int FireDamage = 6;
 
         /// <summary>
-        /// "Arde 5 rondas" = 6 rondas de casilla. El fuego nace en el turno del jefe y el jugador
-        /// tiene el primer turno de cada ronda (CNF-006), asi que la ronda en la que se enciende ya
-        /// no tiene cierres de turno del jugador por delante: con 1 expiraria sin tickear nunca.
+        /// "Arde 2 rondas" = 3 rondas de casilla. La duración tickea en el wrap de ronda y el fuego
+        /// nace en el turno del jefe, o sea después del turno del jugador de esa ronda (CNF-006):
+        /// la ronda en la que se enciende no le queda ningún arranque de turno del jugador por
+        /// delante. Arrancar N turnos adentro pide autorar N + 1.
         /// </summary>
         /// <remarks>
-        /// <b>Tiene que superar el intervalo entre igniciones o el efecto no existe.</b> El jefe
-        /// prende en T2, o sea cada 2 rondas. Con duracion 2 nunca conviven dos bandas y el pano
-        /// vuelve a estar limpio cada vez; con 6 conviven tres y el piso util se achica ronda a
-        /// ronda hasta que no queda donde plantarse a defender. Eso es todo el plan del jefe: no
-        /// romper el escudo de una, sino sacarle el lugar donde usarlo.
+        /// <b>Esto es igual al intervalo entre igniciones, y es a propósito.</b> El jefe prende uno
+        /// de cada dos tiempos, así que una banda se apaga justo cuando se enciende la siguiente:
+        /// nunca conviven dos y el paño vuelve a estar limpio cada vez. El fuego pasa a ser una
+        /// amenaza que se esquiva, no un piso que se achica ronda a ronda. Lo segundo empezaba
+        /// legible y terminaba en una sala sin lugar donde plantarse.
         /// </remarks>
-        public const int FireDurationRounds = 6;
+        public const int FireDurationRounds = 3;
+
+        /// <summary>
+        /// Desde "Pleno y color" las bandas duran una ronda más: 4 de casilla = arde 3. Recién acá
+        /// el fuego supera el intervalo entre igniciones, así que en la ronda en que prende la
+        /// siguiente conviven dos bandas. Es el único momento de la pelea en que el piso se achica,
+        /// y dura lo que tarda la banda vieja en apagarse.
+        /// </summary>
+        public const int FireDurationRoundsPhase2 = 4;
 
         /// <summary>
         /// Duracion del hazard de paño que este builder deja autorado para La Bandida (sus reels lo
@@ -564,14 +573,17 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
             sb.Append("\"The house never chases.\" He backs away every turn and shoots from anywhere ")
               .Append("on the table for ").Append(ShotDamage).Append(". Every other turn he lights a ")
               .Append(bandWidth).Append("-tile-wide lane of fire that runs from him to the wall behind ")
-              .Append("you, and each lane outlives the next one — the floor keeps shrinking.");
+              .Append("you.");
 
             if (fire != null)
             {
                 sb.Append(" Crossing a burning tile costs ").Append(fire.EnterDamage)
                   .Append(", once per tile. Starting your turn on one costs ")
                   .Append(fire.TurnStartDamage).Append(". A lane burns for ")
-                  .Append(Mathf.Max(1, FireDurationRounds - 1)).Append(" rounds.");
+                  .Append(Mathf.Max(1, FireDurationRounds - 1))
+                  .Append(" rounds — it clears just as the next one lights. Once the table has ")
+                  .Append("burned they last ").Append(Mathf.Max(1, FireDurationRoundsPhase2 - 1))
+                  .Append(" and two lanes overlap.");
             }
 
             sb.Append(" At ").Append(lockPercent).Append("% he padlocks one of your dice for the rest ")
@@ -680,10 +692,12 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
                                         Damage = 0,
                                         Kind = AttackKind.Environmental,
                                     },
+                                    // Fase 2 y no la base: este nodo dispara justo al cruzar el
+                                    // umbral, o sea que ya esta en fase 2 cuando prende.
                                     new AINode_IgniteArea
                                     {
                                         Definition = fire,
-                                        DurationRounds = FireDurationRounds,
+                                        DurationRounds = FireDurationRoundsPhase2,
                                     },
                                 },
                             },
@@ -764,10 +778,25 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
                             // -- T2 "Quema" ----------------------------------------------------
                             // No se mueve ni dispara: es el unico turno en que se queda quieto, y
                             // eso es lo que lo hace matable. Enciende lo que marco el turno pasado.
-                            Guarded(new AINode_IgniteArea
+                            // La duracion la elige la fase. Se ramifica con un If en vez de
+                            // subirla con ApplyStatModifier porque DurationRounds es un int del
+                            // nodo, no un stat del jefe: no hay nada que modificar en runtime.
+                            Guarded(new AINode_If
                             {
-                                Definition = fire,
-                                DurationRounds = FireDurationRounds,
+                                Conditions = new List<BasePreCondition>
+                                {
+                                    new PcOwnerHpBelow { Percent = PlenoHpThreshold },
+                                },
+                                Then = new AINode_IgniteArea
+                                {
+                                    Definition = fire,
+                                    DurationRounds = FireDurationRoundsPhase2,
+                                },
+                                Else = new AINode_IgniteArea
+                                {
+                                    Definition = fire,
+                                    DurationRounds = FireDurationRounds,
+                                },
                             }),
                         },
                     },
