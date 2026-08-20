@@ -122,9 +122,16 @@ namespace Rollgeon.Audio
             // args: [Guid runId, int newFloorIndex]
             if (args == null || args.Length < 2 || args[1] is not int newFloor) return;
 
-            _floorIndex = newFloor;
-            if (_context != MusicContext.Combat && _context != MusicContext.Boss)
-                RequestContext(MusicContext.Exploration, newFloor);
+            // El estado (_floorIndex) lo actualiza RequestContext — asignarlo acá
+            // antes hacía que el guard de no-op viera el piso "sin cambios" y la
+            // pista nunca rotara al subir de piso.
+            if (_context == MusicContext.Combat || _context == MusicContext.Boss)
+            {
+                _floorIndex = newFloor;
+                return;
+            }
+
+            RequestContext(MusicContext.Exploration, newFloor);
         }
 
         // ====================================================================
