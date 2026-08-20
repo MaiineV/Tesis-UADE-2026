@@ -4,6 +4,7 @@ using NUnit.Framework;
 using Rollgeon.Combat.AI.Bosses.Croupier;
 using Rollgeon.Editor.Tools.Enemy.Builders;
 using Rollgeon.Entities;
+using Rollgeon.Tiles;
 using UnityEditor;
 using UnityEngine;
 using Object = UnityEngine.Object;
@@ -255,6 +256,79 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                 "El prefab construido todavía trae el hijo de la ruleta: falta un rebuild.");
             Assert.IsNull(built.GetComponent<CroupierWheelSpinVisual>(),
                 "El prefab construido todavía trae el componente que hacía girar la rueda.");
+        }
+
+        // =====================================================================
+        // La casilla de fuego — lectura del AssetDatabase, sin escritura
+        // =====================================================================
+
+        /// <summary>
+        /// El fuego del jefe. Se lee del asset y no del builder porque el builder sólo lo
+        /// <b>carga</b>: los números y el arte viven en el <c>.asset</c>, así que un test contra
+        /// constantes no vería nunca lo que ve el jugador.
+        /// </summary>
+        private static SpecialTileDefinitionSO LoadFireTile() =>
+            AssetDatabase.LoadAssetAtPath<SpecialTileDefinitionSO>(CroupierAssetBuilder.CroupierFirePath);
+
+        [Test]
+        public void FireTile_CarriesArt_OrTheBurningFloorIsJustTintedQuads()
+        {
+            var fire = LoadFireTile();
+            Assert.IsNotNull(fire,
+                $"No existe {CroupierAssetBuilder.CroupierFirePath}: el nodo de ignición falla y los " +
+                "turnos de quema del jefe no hacen nada.");
+
+            // SpecialTileService.SpawnVisuals cae al overlay de quads cuando no hay prefab, y el
+            // fallback no avisa: la casilla "funciona" (cobra el daño) y se ve como un highlight de
+            // UI. Así se fue a jugar una vez — el piso entero prendido y ni una llama en pantalla.
+            Assert.IsNotNull(fire.VisualPrefab,
+                "La casilla de fuego se quedó sin VisualPrefab. No es un fallo visible en consola: " +
+                "el servicio degrada solo a quads tintados y el fuego desaparece sin romper nada.");
+            Assert.Greater(fire.VisualYOffset, 0.05f,
+                "El visual quedó pegado al piso: con este mismo VFX el hazard viejo usaba 0.1 para " +
+                "no pelear z-fighting con el tinte del tile.");
+        }
+
+        [Test]
+        public void FireTile_IsNotTheDefaultWhite_SoItReadsAsFireAndNotAsAGlitch()
+        {
+            var fire = LoadFireTile();
+            Assert.IsNotNull(fire, "Falta la casilla de fuego.");
+
+            // Sin epsilon esto pasaría por un 0.999 invisible. El default sin tocar de
+            // SpecialTileDefinitionSO es blanco, y trece de las casillas del catálogo lo tienen.
+            bool isWhite = Mathf.Abs(fire.OverlayTint.r - 1f) < 0.01f
+                           && Mathf.Abs(fire.OverlayTint.g - 1f) < 0.01f
+                           && Mathf.Abs(fire.OverlayTint.b - 1f) < 0.01f;
+            Assert.IsFalse(isWhite,
+                "El tinte del fallback volvió al blanco de fábrica. Aunque haya prefab, el blanco es " +
+                "el color del highlight del jugador: si el prefab falta o falla, el jugador ve la " +
+                "sala marcada en blanco y lo lee como un bug, no como fuego.");
+        }
+
+        [Test]
+        public void FireTile_KeepsItsOwnNumbers_AndNotTheOnesOfTheGenericTemplate()
+        {
+            var fire = LoadFireTile();
+            Assert.IsNotNull(fire, "Falta la casilla de fuego.");
+
+            // Este asset nació como clon de Tile_FireTemp (10 / 6 / 2). Los tres números son el
+            // plan del jefe, no decoración: 18 por turno para que quedarse quieto cueste más que el
+            // escudo, 6 por casilla cruzada para que acercarse también cueste, y una duración que
+            // supera el intervalo entre igniciones para que las bandas se acumulen. Un rebuild
+            // descuidado desde la plantilla los devuelve sin que falle nada más.
+            Assert.AreEqual(18, fire.TurnStartDamage,
+                "Arrancar el turno adentro dejó de doler lo suficiente: por debajo de esto el escudo " +
+                "del jugador lo absorbe y plantarse en el fuego vuelve a ser gratis.");
+            Assert.AreEqual(6, fire.EnterDamage,
+                "Se cobra por casilla cruzada — es lo que hace que atravesar una banda para llegar al " +
+                "jefe tenga precio.");
+            Assert.AreEqual(CroupierAssetBuilder.FireDurationRounds, fire.DefaultDurationRounds,
+                "La duración del asset dejó de coincidir con la que autora el nodo de ignición: una " +
+                "de las dos manda y no se sabe cuál.");
+            Assert.IsTrue(fire.OwnerBossImmune,
+                "Sin esto el jefe se quema en su propio fuego, y es un jefe que huye pegado a la " +
+                "banda que acaba de prender.");
         }
 
         // =====================================================================
