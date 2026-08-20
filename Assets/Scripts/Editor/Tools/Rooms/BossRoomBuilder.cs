@@ -126,17 +126,27 @@ namespace Rollgeon.EditorTools
                 BaseRoomPath = FloorOneBaseRoom,
                 OutputRoomPath = "Assets/Prefabs/Rooms/FloorOne/Boss_Room_Croupier.prefab",
                 OutputRoomSOPath = "Assets/Rollgeon/Rooms/Room_Boss_Croupier.asset",
-                PropPrefabPath = null,
+                PropPrefabPath = BarrelProp,
                 BossPlanCell = new Vector2Int(5, 5),
-                // Sin blockers propios. Las dos columnas de las costuras del paño caían en (-2,0) y
-                // (2,0) de la sala: a dos casillas del jefe, en el medio exacto del mapa. En pantalla
-                // no se leían como el borde de un sector sino como dos barriles sueltos plantados al
-                // lado de la ruleta, tapando la fila por la que se lo encara de frente.
-                // Dónde empieza y termina cada sector ya lo dice CroupierSectorTelegraph pintando el
-                // piso, que es información que aparece cuando importa (el turno en que se canta el
-                // número) en vez de estar siempre puesta. Igual necesita prefab propio: el grafo
-                // horneado tiene que decir que esta sala no lleva los blockers del resto.
-                BlockerPlanCells = new Vector2Int[0],
+                // La sala estaba pelada, y contra un kiter eso la vuelve una pista de atletismo:
+                // el jefe huye en línea recta y al jugador cuerpo a cuerpo no le queda nada que
+                // usar para cortarle el paso. Doce barriles sueltos en látiz 3x3 —x/y en {2,5,8},
+                // sin el centro (5,5), que es su spawn— encarecen el movimiento en toda la sala
+                // sin abrir un solo rincón muerto: un obstáculo de una casilla se rodea por los
+                // dos lados, cosa que un mueble grande no permite. Las cuatro esquinas llevan el
+                // suyo porque si no son refugio gratis fuera del alcance del fuego.
+                BlockerPlanCells = new[]
+                {
+                    new Vector2Int(2, 2), new Vector2Int(5, 2), new Vector2Int(8, 2),
+                    new Vector2Int(2, 5), new Vector2Int(8, 5),
+                    new Vector2Int(2, 8), new Vector2Int(5, 8), new Vector2Int(8, 8),
+                    new Vector2Int(0, 0), new Vector2Int(10, 0),
+                    new Vector2Int(0, 10), new Vector2Int(10, 10),
+                },
+                // La mesa de pool del noreste se va sólo de esta sala, igual que en el Cajero: vive
+                // en las tres salas base y borrarla allá se la saca a todos los jefes del piso.
+                // Libera además sus casillas, que la base tenía bloqueadas.
+                RemoveBaseObjectNames = new[] { "Poolv04" },
             },
             new BossRoomPlan
             {
