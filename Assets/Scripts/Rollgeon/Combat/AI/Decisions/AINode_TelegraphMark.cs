@@ -30,8 +30,8 @@ namespace Rollgeon.Combat.AI.Decisions
 
         [Tooltip("Radio para Square/SquareAroundSelf (1 ⇒ 3×3), ancho en casillas de la franja para Row/Column " +
                  "(1 ⇒ línea del jugador), medio-ancho de la banda perpendicular para DirectionalBand " +
-                 "(1 ⇒ 3 casillas de ancho), o ancho de cada cuadrado para ScatteredSquares (2 ⇒ 2×2). " +
-                 "Ignorado en HalfRoom.")]
+                 "(1 ⇒ 3 casillas de ancho), ancho de cada cuadrado para ScatteredSquares (2 ⇒ 2×2), o el " +
+                 "índice de celda (1-based) para GridPartition. Ignorado en HalfRoom.")]
         [MinValue(0)]
         public int Size = 1;
 
@@ -44,6 +44,16 @@ namespace Rollgeon.Combat.AI.Decisions
         [MinValue(1)]
         [ShowIf(nameof(Shape), ThreatShape.ScatteredSquares)]
         public int Count = 3;
+
+        [Tooltip("Columnas de la partición. Solo para GridPartition.")]
+        [MinValue(1)]
+        [ShowIf(nameof(Shape), ThreatShape.GridPartition)]
+        public int Columns = 3;
+
+        [Tooltip("Filas de la partición. Solo para GridPartition.")]
+        [MinValue(1)]
+        [ShowIf(nameof(Shape), ThreatShape.GridPartition)]
+        public int Rows = 2;
 
         [Tooltip("Eje de corte para HalfRoom: Vertical ⇒ izquierda/derecha, Horizontal ⇒ abajo/arriba.")]
         [ShowIf(nameof(Shape), ThreatShape.HalfRoom)]
@@ -76,6 +86,14 @@ namespace Rollgeon.Combat.AI.Decisions
             {
                 var rng = context.Rng ?? new System.Random();
                 tiles = ThreatAreaShape.ComputeScatteredSquares(grid, rng, Count, Size);
+            }
+            // GridPartition necesita 3 parámetros (columnas, filas, índice de celda) y no entra
+            // en el `size` único de Compute — mismo motivo por el que DirectionalBand/ScatteredSquares
+            // tampoco pasan por ahí. Ni el jugador ni el boss son el centro, así que no hace falta
+            // resolver ninguna posición.
+            else if (Shape == ThreatShape.GridPartition)
+            {
+                tiles = ThreatAreaShape.ComputeGridPartition(grid, Columns, Rows, Size);
             }
             // AnchorsOnSelf en vez de comparar contra una shape puntual: el criterio es de la forma,
             // no del nodo, así que una shape nueva anclada en el jefe (ColumnAroundSelf) no depende

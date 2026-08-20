@@ -73,6 +73,22 @@ namespace Rollgeon.Combat.Threat
         /// bailar. La presión sigue viniendo del disparo, que es lo que castiga quedarse lejos.
         /// </remarks>
         ColumnAroundSelf,
+
+        /// <summary>
+        /// Partición genérica y reusable de la sala en una grilla de columnas × filas
+        /// configurable. A diferencia de <see cref="RoomSector"/> (fijo en 3×2, con costura
+        /// deliberada), acá ninguna casilla puede caer en dos celdas a la vez, sin importar si
+        /// la sala es múltiplo de la cantidad de bandas por eje — pensada para que otros jefes
+        /// partan su sala sin heredar ese doble-cobro. Ni el jugador ni el boss son el centro.
+        /// </summary>
+        /// <remarks>
+        /// Columnas, filas y el índice de celda no entran en el parámetro único <c>size</c> de
+        /// <see cref="ThreatAreaShape.Compute"/> (a diferencia del sector único de
+        /// <see cref="RoomSector"/>), así que esta shape no pasa por ahí: el caller llama
+        /// directo a <see cref="ThreatAreaShape.ComputeGridPartition"/>, igual que ya hacen
+        /// <see cref="ScatteredSquares"/> y <see cref="DirectionalBand"/>.
+        /// </remarks>
+        GridPartition,
     }
 
     /// <summary>Eje de corte para <see cref="ThreatShape.HalfRoom"/>.</summary>
@@ -337,6 +353,76 @@ namespace Rollgeon.Combat.Threat
                 if (c.Y < minY) minY = c.Y;
                 if (c.Y > maxY) maxY = c.Y;
             }
+        }
+
+        /// <summary>
+        /// Partición genérica de la sala en <paramref name="columns"/> × <paramref name="rows"/>
+        /// celdas: devuelve la celda <paramref name="cellIndex"/> (1-based, columna =
+        /// <c>(cellIndex-1) % columns</c>, fila = <c>(cellIndex-1) / columns</c>, fila 0 la
+        /// más cercana al borde de Y mínimo). Primitiva reusable para cualquier jefe que
+        /// necesite "la sala partida en N×M sin doble-cobro" — ver <see cref="PartitionBand"/>
+        /// para por qué no comparte la matemática de <see cref="ComputeRoomSector"/>.
+        /// </summary>
+        /// <remarks>
+        /// Columnas/filas ≤ 0, índice fuera de <c>1..columns*rows</c>, o sala sin bounds
+        /// reales ⇒ vacío, igual que el resto de las shapes que enumeran la sala.
+        /// </remarks>
+        public static HashSet<GridCoord> ComputeGridPartition(IGridManager grid, int columns, int rows, int cellIndex)
+        {
+            var result = new HashSet<GridCoord>();
+            if (grid == null || columns <= 0 || rows <= 0) return result;
+
+            int total = columns * rows;
+            if (cellIndex < 1 || cellIndex > total) return result;
+
+            var tiles = new List<GridCoord>(RoomTiles(grid));
+            if (tiles.Count == 0) return result;
+
+            RoomBounds(tiles, out int minX, out int maxX, out int minY, out int maxY);
+
+            int column = (cellIndex - 1) % columns;
+            int row = (cellIndex - 1) / columns;
+
+            PartitionBand(minX, maxX, column, columns, out int loX, out int hiX);
+            PartitionBand(minY, maxY, row, rows, out int loY, out int hiY);
+
+            foreach (var c in tiles)
+            {
+                if (c.X < loX || c.X > hiX) continue;
+                if (c.Y < loY || c.Y > hiY) continue;
+                result.Add(c);
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// Banda <paramref name="index"/> de <paramref name="count"/> sobre <c>[min,max]</c>,
+        /// sin la costura de <see cref="Band"/>.
+        /// </summary>
+        /// <remarks>
+        /// <see cref="Band"/> ancla la última banda al borde lejano y deja que las bandas se
+        /// solapen cuando la extensión no divide justo — deliberado para <see cref="ComputeRoomSector"/>,
+        /// pero es exactamente el bug que <see cref="ComputeGridPartition"/> tiene que evitar.
+        /// Acá el resto de la división se reparte entre las primeras <c>extent % count</c>
+        /// bandas (una casilla extra cada una) en vez de concentrarlo en la última: así el
+        /// tamaño de banda nunca difiere en más de una casilla entre sí, y la unión de las
+        /// <paramref name="count"/> bandas es <c>[min,max]</c> exacto — sin huecos ni costuras.
+        /// </remarks>
+        private static void PartitionBand(int min, int max, int index, int count, out int lo, out int hi)
+        {
+            int extent = max - min + 1;
+            int baseSize = extent / count;
+            int remainder = extent % count;
+
+            // Las primeras `remainder` bandas cargan la casilla extra; el resto mide `baseSize`.
+            int size = index < remainder ? baseSize + 1 : baseSize;
+
+            // Offset de las bandas anteriores: cada una de las que ya cargó el extra empuja el
+            // arranque de esta un paso más que `baseSize`.
+            int extraBefore = index < remainder ? index : remainder;
+            lo = min + index * baseSize + extraBefore;
+            hi = lo + size - 1; // Con size 0 (más bandas que extensión) queda hi < lo: banda vacía, no crashea.
         }
 
         /// <summary>
