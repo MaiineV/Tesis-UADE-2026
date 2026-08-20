@@ -36,6 +36,11 @@ namespace Rollgeon.Editor.Tools.Localization.Tests
             "combo.generala.name",
             "combo.full_house.name",
             "menu.tutorial",
+            // Tabs y canal de audio: "General", "Audio" y "Master" se escriben
+            // igual en los dos idiomas.
+            "menu.tab_general",
+            "menu.tab_audio",
+            "menu.audio_master",
             // "Portal" es portal en los dos idiomas (Casillas Especiales).
             "tile.portal.name",
             // "Combo" se escribe igual en los dos idiomas y es el término que el juego ya
