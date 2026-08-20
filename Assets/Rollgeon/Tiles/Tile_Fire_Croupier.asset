@@ -20,7 +20,7 @@ MonoBehaviour:
   Affinity: 0
   DamageKind: 3
   EnterDamage: 6
-  TurnStartDamage: 18
+  TurnStartDamage: 4
   HealAmount: 0
   StatusKind: 0
   StatusTurns: 0

@@ -313,13 +313,16 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             Assert.IsNotNull(fire, "Falta la casilla de fuego.");
 
             // Este asset nació como clon de Tile_FireTemp (10 / 6 / 2). Los tres números son el
-            // plan del jefe, no decoración: 18 por turno para que quedarse quieto cueste más que el
-            // escudo, 6 por casilla cruzada para que acercarse también cueste, y una duración que
-            // supera el intervalo entre igniciones para que las bandas se acumulen. Un rebuild
-            // descuidado desde la plantilla los devuelve sin que falle nada más.
-            Assert.AreEqual(18, fire.TurnStartDamage,
-                "Arrancar el turno adentro dejó de doler lo suficiente: por debajo de esto el escudo " +
-                "del jugador lo absorbe y plantarse en el fuego vuelve a ser gratis.");
+            // plan del jefe, no decoración, y el reparto entre ellos es deliberado: el peso está en
+            // cruzar el fuego (6 por casilla, sin escudo porque la acción se fue en moverse) y no en
+            // quedarse quieto adentro (4, que el escudo casi absorbe). Un rebuild descuidado desde
+            // la plantilla los devuelve sin que falle nada más.
+            Assert.AreEqual(4, fire.TurnStartDamage,
+                "Arrancar el turno adentro cambió de precio. Es el número chico a propósito: lo " +
+                "grande es cruzar el fuego, no pararse en él.");
+            Assert.Greater(fire.EnterDamage, fire.TurnStartDamage,
+                "Se invirtió el reparto: si pararse en el fuego cuesta más que cruzarlo, la jugada " +
+                "óptima pasa a ser correr por el paño encendido, que es lo contrario del plan.");
             Assert.AreEqual(6, fire.EnterDamage,
                 "Se cobra por casilla cruzada — es lo que hace que atravesar una banda para llegar al " +
                 "jefe tenga precio.");

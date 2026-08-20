@@ -211,6 +211,15 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         /// </summary>
         public const int PlenoHoleRadius = 1;
 
+        /// <summary>
+        /// Lo que cobra "Pleno y color" en el momento de prender, a quien este parado adentro. Es la
+        /// unica ignicion que pega en el acto y es porque es la unica que marca y enciende en el
+        /// mismo tick: el jugador no tuvo un turno para salirse, asi que el aviso no existio. La
+        /// banda deja este numero en 0 --se marca un turno antes y quedarse adentro ya es una
+        /// decision.
+        /// </summary>
+        public const int PlenoIgnitionDamage = 4;
+
         /// <summary>Umbral de "Pleno y color".</summary>
         public const float Phase2HpThreshold = 0.5f;
 
@@ -587,9 +596,10 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
             }
 
             sb.Append(" At ").Append(lockPercent).Append("% he padlocks one of your dice for the rest ")
-              .Append("of the fight. At ").Append(plenoPercent).Append("%, once, the whole table burns ")
-              .Append("except the ").Append(holeSide).Append("×").Append(holeSide)
-              .Append(" he is standing in.");
+              .Append("of the fight. At ").Append(plenoPercent).Append("%, once and with no warning, ")
+              .Append("the whole table burns except the ").Append(holeSide).Append("×")
+              .Append(holeSide).Append(" he is standing in — ").Append(PlenoIgnitionDamage)
+              .Append(" on the spot if it lights under you.");
 
             return sb.ToString();
         }
@@ -689,7 +699,11 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
                                         // Size es el radio del HUECO que se salva, no del area
                                         // amenazada: 1 = deja libre su 3x3 y prende el resto.
                                         Size = PlenoHoleRadius,
-                                        Damage = 0,
+                                        // Lo cobra AINode_IgniteArea al consumir la marca. El
+                                        // numero vive en la marca y no en el nodo que prende
+                                        // porque es de ESTE paso: la banda usa el mismo nodo con
+                                        // 0 porque ahi si hubo turno de aviso.
+                                        Damage = PlenoIgnitionDamage,
                                         Kind = AttackKind.Environmental,
                                     },
                                     // Fase 2 y no la base: este nodo dispara justo al cruzar el

@@ -132,6 +132,14 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             Assert.Greater(mark.Size, 0,
                 "Con hueco 0 se prende su propia casilla: el jefe queda parado en el fuego y " +
                 "cualquier regresión de OwnerBossImmune lo mata solo.");
+
+            // Esta marca SÍ cobra, al contrario de la banda: marca y enciende en el mismo tick, así
+            // que no hubo turno de aviso del que el jugador pudiera aprovecharse. Lo cobra
+            // AINode_IgniteArea al consumirla — un 0 acá deja el momento más grande de la pelea sin
+            // acuse de recibo para quien lo tenía debajo de los pies.
+            Assert.AreEqual(CroupierAssetBuilder.PlenoIgnitionDamage, mark.Damage,
+                "El Pleno dejó de cobrar al prender: quien estaba parado adentro no se entera hasta " +
+                "su próximo turno.");
         }
 
         /// <summary>
@@ -291,8 +299,9 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                 "La banda tiene que llegar a la pared: más corta deja un pedazo de pasillo sin " +
                 "quemar por donde rodearla de una.");
             Assert.AreEqual(0, mark.Damage,
-                "La marca no cobra nada: el daño lo cobran las casillas de fuego que planta el " +
-                "turno siguiente, y un Damage acá se anunciaría como un golpe que nunca llega.");
+                "La banda no puede cobrar al prender: se marca un turno antes, así que el jugador " +
+                "tuvo su turno para salirse y quedarse adentro ya es una decisión suya. El daño lo " +
+                "cobran las casillas que planta.");
         }
 
         /// <summary>

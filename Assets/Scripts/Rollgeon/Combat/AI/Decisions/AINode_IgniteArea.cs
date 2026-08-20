@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using Patterns;
+using Rollgeon.Combat.Pipelines;
 using Rollgeon.Combat.Threat;
 using Rollgeon.Grid;
 using Rollgeon.Tiles;
@@ -23,10 +24,12 @@ namespace Rollgeon.Combat.AI.Decisions
     /// coincide, la telegrafía deja de ser una promesa y pasa a ser una sugerencia.
     /// </para>
     /// <para>
-    /// <b>Contra <c>AINode_ExecuteTelegraph</c>:</b> ése cobra el golpe y se va. Este no pega nada
-    /// en el momento: deja el piso encendido y el daño lo cobran las casillas, con sus dos números
-    /// propios (<c>EnterDamage</c> por casilla pisada, <c>TurnStartDamage</c> por arrancar el turno
-    /// adentro). Por eso el jefe puede quemar sin tocar al jugador y el castigo llega igual.
+    /// <b>Contra <c>AINode_ExecuteTelegraph</c>:</b> ése cobra el golpe y se va. Este deja el piso
+    /// encendido, y el grueso del daño lo cobran las casillas con sus dos números propios
+    /// (<c>EnterDamage</c> por casilla pisada, <c>TurnStartDamage</c> por arrancar el turno adentro).
+    /// El <c>Damage</c> de la marca, si viene con algo, se cobra igual en el momento de prender — ver
+    /// <c>ChargeOnIgnition</c>. Por eso el jefe puede quemar sin tocar al jugador y el castigo llega
+    /// igual.
     /// </para>
     /// <para>
     /// <b><see cref="DurationRounds"/> = 0 significa PERMANENTE</b> en
@@ -42,10 +45,11 @@ namespace Rollgeon.Combat.AI.Decisions
     /// <c>N + 1</c>.
     /// </para>
     /// <para>
-    /// <b>Las bandas se acumulan.</b> Este nodo no apaga las anteriores. Si la duración supera el
-    /// intervalo entre igniciones, el piso libre se achica ronda a ronda — que es justamente para lo
-    /// que existe el fuego. Si la duración es menor o igual al intervalo, nunca conviven dos bandas
-    /// y el efecto se pierde.
+    /// <b>Este nodo no apaga las bandas anteriores</b>, así que la relación entre la duración y el
+    /// intervalo entre igniciones es toda la diferencia entre un fuego que se rodea y un piso que se
+    /// achica. Duración igual al intervalo: cada banda se apaga justo cuando nace la siguiente y
+    /// nunca conviven dos. Por encima: se apilan ronda a ronda hasta que no queda dónde plantarse.
+    /// Cuál de las dos se quiere es una decisión de diseño por jefe, no un default de este nodo.
     /// </para>
     /// </remarks>
     [Serializable, HideReferenceObjectPicker]
@@ -99,6 +103,12 @@ namespace Rollgeon.Combat.AI.Decisions
 
             ClearOverlay(context);
 
+            // El golpe de la ignicion, antes de plantar. La casilla cobra por pisarla y por
+            // arrancar el turno adentro, pero no por prenderse debajo de quien ya estaba parado
+            // ahi: sin este paso, prender el paño entero encima del jugador no le hace nada hasta
+            // su proximo turno, y el momento mas grande de la pelea pasa sin acuse de recibo.
+            ChargeOnIgnition(context, area);
+
             var tiles = area.Tiles;
             if (tiles == null || tiles.Count == 0) return AIResult.Succeeded;
 
@@ -131,6 +141,41 @@ namespace Rollgeon.Combat.AI.Decisions
             });
 
             return instance == Guid.Empty ? AIResult.Failed : AIResult.Succeeded;
+        }
+
+        /// <summary>
+        /// Cobra el <c>Damage</c> de la marca consumida a quien este dentro del area.
+        /// </summary>
+        /// <remarks>
+        /// <para>
+        /// El numero lo trae la marca, no este nodo: <see cref="AINode_TelegraphMark.Damage"/> ya
+        /// viaja dentro de <see cref="ThreatenedArea"/>, asi que cada ignicion decide si pega o no
+        /// desde el paso que la telegrafio. Una banda que se marco un turno antes puede dejarlo en
+        /// 0 --el jugador tuvo su turno para salirse-- y una que marca y prende en el mismo tick
+        /// puede cobrar, porque nadie tuvo la chance de moverse.
+        /// </para>
+        /// <para>
+        /// Solo el jugador. <c>AINode_ExecuteTelegraph</c> ademas rompe el cofre que caiga adentro
+        /// (GDD §22); esto no lo hace porque el fuego que planta ya cobra por su cuenta a todo lo
+        /// que pise o arranque el turno encima, y sumar el cofre aca lo cobraria dos veces.
+        /// </para>
+        /// </remarks>
+        private static void ChargeOnIgnition(AIContext context, ThreatenedArea area)
+        {
+            if (area.Damage <= 0 || context.DamagePipeline == null) return;
+
+            var grid = context.Grid;
+            if (grid == null) return;
+            if (!grid.TryGetPosition(context.PlayerGuid, out var playerCoord)) return;
+            if (!area.Contains(playerCoord)) return;
+
+            context.DamagePipeline.Resolve(new DamageContext
+            {
+                SourceId = context.SelfGuid,
+                TargetId = context.PlayerGuid,
+                BaseDamage = area.Damage,
+                Kind = area.Kind,
+            });
         }
 
         private static void ClearOverlay(AIContext context)
