@@ -313,16 +313,16 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             Assert.IsNotNull(fire, "Falta la casilla de fuego.");
 
             // Este asset nació como clon de Tile_FireTemp (10 / 6 / 2). Los tres números son el
-            // plan del jefe, no decoración, y el reparto entre ellos es deliberado: el peso está en
-            // cruzar el fuego (6 por casilla, sin escudo porque la acción se fue en moverse) y no en
-            // quedarse quieto adentro (4, que el escudo casi absorbe). Un rebuild descuidado desde
-            // la plantilla los devuelve sin que falle nada más.
-            Assert.AreEqual(4, fire.TurnStartDamage,
-                "Arrancar el turno adentro cambió de precio. Es el número chico a propósito: lo " +
-                "grande es cruzar el fuego, no pararse en él.");
-            Assert.Greater(fire.EnterDamage, fire.TurnStartDamage,
-                "Se invirtió el reparto: si pararse en el fuego cuesta más que cruzarlo, la jugada " +
-                "óptima pasa a ser correr por el paño encendido, que es lo contrario del plan.");
+            // plan del jefe, no decoración. Cruzar y quedarse cuestan lo mismo (6 y 6), pero no
+            // pesan igual: el 6 de cruzar se cobra POR CASILLA y sin escudo, porque la acción del
+            // turno se fue en moverse. Un rebuild descuidado desde la plantilla los devuelve sin
+            // que falle nada más.
+            Assert.AreEqual(6, fire.TurnStartDamage,
+                "Arrancar el turno adentro cambió de precio. Por debajo del escudo mediano del " +
+                "jugador (~13) el fuego deja de ser una amenaza y pasa a ser decoración.");
+            Assert.GreaterOrEqual(fire.EnterDamage, fire.TurnStartDamage,
+                "Cruzar el fuego pasó a costar MENOS que quedarse parado en él. Así la jugada " +
+                "óptima es correr por el paño encendido, que es lo contrario del plan del jefe.");
             Assert.AreEqual(6, fire.EnterDamage,
                 "Se cobra por casilla cruzada — es lo que hace que atravesar una banda para llegar al " +
                 "jefe tenga precio.");

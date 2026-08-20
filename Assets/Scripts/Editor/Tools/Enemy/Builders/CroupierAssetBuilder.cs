@@ -99,7 +99,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         public const string EntityId = "boss.croupier";
         public const string DisplayName = "The Croupier";
         public const string WeaknessComboId = "combo.pair";
-        public const float WeaknessMultiplier = 1.5f;
+        public const float WeaknessMultiplier = 1.2f;
 
         /// <summary>
         /// Jefe de piso 1: ~6 turnos con el golpe base del piso (13-27, mediana 20).
@@ -107,7 +107,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         /// daño de run avanzada y no el kit con el que se llega al primer jefe. Los tres
         /// jefes que ya estaban en el juego tienen 200: 350 era casi el doble del techo real.
         /// </summary>
-        public const int MaxHp = 120;
+        public const int MaxHp = 170;
         public const int Attack = 20;
         public const int Speed = 5;
         public const int MinGoldDrop = 15;
@@ -145,9 +145,10 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
 
         /// <summary>
         /// Desde "Pleno y color" las bandas duran una ronda más: 4 de casilla = arde 3. Recién acá
-        /// el fuego supera el intervalo entre igniciones, así que en la ronda en que prende la
-        /// siguiente conviven dos bandas. Es el único momento de la pelea en que el piso se achica,
-        /// y dura lo que tarda la banda vieja en apagarse.
+        /// el fuego supera el intervalo entre igniciones, así que cuando nace una banda la anterior
+        /// todavía está prendida y hay más piso encendido a la vez. No se pisan — la nueva sólo
+        /// enciende lo que no ardía (ver <c>AINode_IgniteArea.AlreadyBurning</c>) — así que lo que
+        /// crece es la superficie, no el daño por casilla.
         /// </summary>
         public const int FireDurationRoundsPhase2 = 4;
 
@@ -218,7 +219,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         /// banda deja este numero en 0 --se marca un turno antes y quedarse adentro ya es una
         /// decision.
         /// </summary>
-        public const int PlenoIgnitionDamage = 4;
+        public const int PlenoIgnitionDamage = 6;
 
         /// <summary>Umbral de "Pleno y color".</summary>
         public const float Phase2HpThreshold = 0.5f;
@@ -592,7 +593,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
                   .Append(Mathf.Max(1, FireDurationRounds - 1))
                   .Append(" rounds — it clears just as the next one lights. Once the table has ")
                   .Append("burned they last ").Append(Mathf.Max(1, FireDurationRoundsPhase2 - 1))
-                  .Append(" and two lanes overlap.");
+                  .Append(", so more of the floor is alight at once. Lanes never stack: a new one ")
+                  .Append("only lights what is not already burning.");
             }
 
             sb.Append(" At ").Append(lockPercent).Append("% he padlocks one of your dice for the rest ")
