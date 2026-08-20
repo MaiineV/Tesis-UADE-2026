@@ -30,6 +30,7 @@ MonoBehaviour:
     - {fileID: 11400000, guid: 07053593ce9c92a43b50aa4b59596e8d, type: 2}
     - {fileID: 11400000, guid: 770d23ca67712434fba66c1720131b74, type: 2}
     - {fileID: 11400000, guid: 497954e0bde12fa43bd6148abb7e0fc3, type: 2}
+    - {fileID: 11400000, guid: 9b670ef7d911f194a8eb2418e32e2730, type: 2}
     - {fileID: 11400000, guid: 7fbaf88a785d4494395960cd4249fd10, type: 2}
     - {fileID: 11400000, guid: 91d5f7c9ada44a74e8ca09f50ae3e062, type: 2}
     - {fileID: 11400000, guid: f4d93c0a5cf210a48b89d96a195b6b64, type: 2}
@@ -70,6 +71,12 @@ MonoBehaviour:
     - {fileID: 11400000, guid: 5e9a30023dcf2eb49bc59b5ae992e9e6, type: 2}
     - {fileID: 11400000, guid: e6f9bbc9aaf74a141bb269e9eaaeff7b, type: 2}
     - {fileID: 11400000, guid: 3a2289c3a3be9ec4392fb945437a3475, type: 2}
+    - {fileID: 11400000, guid: 181d3ae692209b24cb84e28b73b1b8e2, type: 2}
+    - {fileID: 11400000, guid: e8d318d87df60e6418b14c5c1027bc82, type: 2}
+    - {fileID: 11400000, guid: f32e3f905abc7f142a2cb320fdeceff4, type: 2}
+    - {fileID: 11400000, guid: f15e4c7e68c7b82488f6c433c069bf3a, type: 2}
+    - {fileID: 11400000, guid: 45b41d294773a9b4a877fc73b5f51462, type: 2}
+    - {fileID: 11400000, guid: 8ff1b074f5c9fa945ac1c4622dcd18b9, type: 2}
     - {fileID: 11400000, guid: 3a8f671bfc4e48a4990560bc7ea5f216, type: 2}
     - {fileID: 11400000, guid: c966d3c14cda25c2d9034a9ec3a28418, type: 2}
     SerializedBytesString: 
@@ -159,9 +166,6 @@ MonoBehaviour:
       Entry: 10
       Data: 13
     - Name: 
-      Entry: 6
-      Data: 
-    - Name: 
       Entry: 10
       Data: 14
     - Name: 
@@ -216,14 +220,14 @@ MonoBehaviour:
       Entry: 10
       Data: 31
     - Name: 
+      Entry: 10
+      Data: 32
+    - Name: 
       Entry: 7
       Data: 4|Rollgeon.Combat.ComboBlock.ComboBlockService, Rollgeon
     - Name: 
       Entry: 8
       Data: 
-    - Name: 
-      Entry: 10
-      Data: 32
     - Name: 
       Entry: 10
       Data: 33
@@ -258,6 +262,9 @@ MonoBehaviour:
       Entry: 10
       Data: 43
     - Name: 
+      Entry: 10
+      Data: 44
+    - Name: 
       Entry: 7
       Data: 5|Rollgeon.Meta.MetaProgressionService, Rollgeon
     - Name: 
@@ -271,9 +278,6 @@ MonoBehaviour:
       Data: 
     - Name: 
       Entry: 10
-      Data: 44
-    - Name: 
-      Entry: 10
       Data: 45
     - Name: 
       Entry: 10
@@ -281,6 +285,9 @@ MonoBehaviour:
     - Name: 
       Entry: 10
       Data: 47
+    - Name: 
+      Entry: 10
+      Data: 48
     - Name: 
       Entry: 7
       Data: 7|Rollgeon.Steam.SteamServiceBootstrap, Rollgeon.Steam
@@ -301,7 +308,7 @@ MonoBehaviour:
       Data: 
     - Name: 
       Entry: 10
-      Data: 48
+      Data: 49
     - Name: 
       Entry: 7
       Data: 10|Rollgeon.Localization.LocalizationServiceBootstrap, Rollgeon
@@ -325,46 +332,46 @@ MonoBehaviour:
       Data: 
     - Name: 
       Entry: 10
-      Data: 49
-    - Name: 
-      Entry: 10
       Data: 50
     - Name: 
       Entry: 10
       Data: 51
     - Name: 
-      Entry: 6
-      Data: 
-    - Name: 
       Entry: 10
       Data: 52
     - Name: 
+      Entry: 6
+      Data: 
+    - Name: 
       Entry: 10
       Data: 53
-    - Name: 
-      Entry: 6
-      Data: 
-    - Name: 
-      Entry: 6
-      Data: 
-    - Name: 
-      Entry: 6
-      Data: 
-    - Name: 
-      Entry: 6
-      Data: 
-    - Name: 
-      Entry: 6
-      Data: 
-    - Name: 
-      Entry: 6
-      Data: 
     - Name: 
       Entry: 10
       Data: 54
     - Name: 
       Entry: 10
       Data: 55
+    - Name: 
+      Entry: 10
+      Data: 56
+    - Name: 
+      Entry: 10
+      Data: 57
+    - Name: 
+      Entry: 10
+      Data: 58
+    - Name: 
+      Entry: 10
+      Data: 59
+    - Name: 
+      Entry: 10
+      Data: 60
+    - Name: 
+      Entry: 10
+      Data: 61
+    - Name: 
+      Entry: 10
+      Data: 62
     - Name: 
       Entry: 13
       Data: 
