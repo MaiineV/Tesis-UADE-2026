@@ -2,7 +2,7 @@ using System;
 using Patterns;
 using NUnit.Framework;
 using Rollgeon.ActionRolls;
-using Rollgeon.Combat.EnergyLib;
+using Rollgeon.Combat.Rolls;
 using Rollgeon.Dice;
 using UnityEngine;
 
@@ -37,7 +37,7 @@ namespace Rollgeon.Effects.Tests
             // Prerrequisitos del bootstrap (Priority < 74): roller + energy en Global,
             // así sobreviven al ClearScope(Run) igual que en runtime real.
             ServiceLocator.AddService<IDiceRoller>(new StubRoller(), ServiceScope.Global);
-            ServiceLocator.AddService<IEnergyService>(new StubEnergy(), ServiceScope.Global);
+            ServiceLocator.AddService<IRollPoolService>(new StubRolls(), ServiceScope.Global);
 
             _bootstrap = ScriptableObject.CreateInstance<ActionRollServiceBootstrap>();
         }
@@ -102,13 +102,18 @@ namespace Rollgeon.Effects.Tests
             public int[] Reroll(DiceBagSO bag, int[] previousResult, bool[] keep) => RollAll(bag);
         }
 
-        private sealed class StubEnergy : IEnergyService
+        private sealed class StubRolls : IRollPoolService
         {
-            public bool SpendEnergy(Guid id, int cost) => true;
+            public bool IsCombatActive => true;
+            public bool TrySpendRolls(Guid id, int count) => true;
+            public int Drain(Guid id, int amount) => amount;
+            public void AddRolls(Guid id, int amount) { }
             public int GetCurrent(Guid id) => 99;
             public int GetMax(Guid id) => 99;
+            public int GetRollsPerTurn(Guid id) => 5;
+            public void AddPerTurnGrantBonus(int amount) { }
             public void InitializeForEntity(Guid id) { }
-            public void RegenerateAtTurnEnd(Guid id) { }
+            public void RestoreCurrent(Guid id, int value) { }
         }
     }
 }

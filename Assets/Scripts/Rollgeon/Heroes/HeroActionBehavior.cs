@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Patterns;
-using Rollgeon.Combat.EnergyLib;
+using Rollgeon.Combat.Rolls;
 using Rollgeon.Combos.Play;
 using Rollgeon.Effects;
 using Rollgeon.Effects.Concretes;
@@ -32,10 +32,6 @@ namespace Rollgeon.Heroes
         [Tooltip("A cuál slot base corresponde.")]
         public HeroBehaviorSlot Slot;
 
-        [MinValue(0), Range(0, 5)]
-        [Tooltip("Energia cobrada al ejecutar este behavior.")]
-        public int EnergyCost;
-
         [ToggleLeft]
         [Tooltip("Si true, no puede ejecutarse dos veces en el mismo turno.")]
         public bool BlockOnRepeat = true;
@@ -46,19 +42,10 @@ namespace Rollgeon.Heroes
         public bool NeedsDiceRoll = true;
 
         [ShowIf(nameof(NeedsDiceRoll))]
-        [MinValue(1), Range(1, 5)]
-        [Tooltip("Tiradas totales incluida la inicial. Ej: 3 = 1 roll + 2 rerolls gratis.")]
-        public int FreeRollCount = 1;
-
-        [ShowIf(nameof(NeedsDiceRoll))]
         [ToggleLeft]
-        [Tooltip("Si false, el boton Reroll no aparece tras la tirada.")]
+        [Tooltip("Si false, el boton Reroll no aparece tras la tirada (acciones one-shot). " +
+                 "Con true, las retiradas no tienen tope: cada una consume 1 roll del pool.")]
         public bool AllowsReroll = true;
-
-        [ShowIf(nameof(NeedsDiceRoll))]
-        [ToggleLeft]
-        [Tooltip("Permite gastar energia para re-rolls extra mas alla del budget gratis.")]
-        public bool AllowsEnergyReroll = true;
 
         [ShowIf(nameof(NeedsDiceRoll))]
         [Tooltip("Skin del tablero de dados para esta tirada: Attack en ataques, Defense en " +
@@ -130,32 +117,31 @@ namespace Rollgeon.Heroes
             return null;
         }
 
-        /// <param name="includeEnergyGate">
-        /// <c>false</c> deja pasar la falta de energía para que el llamador la distinga del
+        /// <param name="includeRollGate">
+        /// <c>false</c> deja pasar la falta de rolls para que el llamador la distinga del
         /// resto. Lo usa la HUD de combate: necesita separar "no podés todavía" (Locked) de
         /// "no te alcanza" (Unaffordable), y con el gate adentro lo segundo era inalcanzable.
         /// Los caminos de EJECUCIÓN lo dejan en <c>true</c> — ahí el gate sigue siendo el
         /// backstop que impide correr una acción impagable.
         /// </param>
         public bool HasUsableEffectGroup(Guid ownerGuid, Guid opponentGuid, out string reason,
-                                         bool includeEnergyGate = true)
+                                         bool includeRollGate = true)
         {
             reason = null;
             if (Effects == null || Effects.Count == 0) return true;
 
-            // Gate por EnergyCost — independiente de los preconditions del inspector.
-            // Why: el campo EnergyCost ya declara el costo canónico del behavior; obligar
-            // al data setup a duplicarlo via PCHasIntAttribute era frágil (se olvidaba) y
-            // dejaba botones habilitados sin energía. Si IEnergyService no está registrado
+            // Gate por pool de rolls — toda acción cuesta al menos 1 roll (la tirada, o
+            // 1 flat si no tira dados). Solo aplica en combate: fuera de combate el pool
+            // no existe y las acciones son gratis. Si IRollPoolService no está registrado
             // (ej. EditMode tests), no gateamos — defensive default.
-            if (includeEnergyGate
-                && EnergyCost > 0
+            if (includeRollGate
                 && ownerGuid != Guid.Empty
-                && ServiceLocator.TryGetService<IEnergyService>(out var energySvc)
-                && energySvc != null
-                && energySvc.GetCurrent(ownerGuid) < EnergyCost)
+                && ServiceLocator.TryGetService<IRollPoolService>(out var rollSvc)
+                && rollSvc != null
+                && rollSvc.IsCombatActive
+                && rollSvc.GetCurrent(ownerGuid) < 1)
             {
-                reason = $"Not enough energy ({energySvc.GetCurrent(ownerGuid)} < {EnergyCost}).";
+                reason = $"Not enough rolls ({rollSvc.GetCurrent(ownerGuid)} < 1).";
                 return false;
             }
 

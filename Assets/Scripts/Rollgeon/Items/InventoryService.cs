@@ -155,7 +155,6 @@ namespace Rollgeon.Items
                     ActionId = item.ResolvedActionId,
                     Type = ActionType.UseItem,
                     BackingAsset = item,
-                    EnergyCost = 0,
                     BlockOnRepeat = true,
                     Effect = item.OnActivate,
                 };

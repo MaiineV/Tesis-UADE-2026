@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using Patterns;
 using Rollgeon.Attributes;
 using Rollgeon.Attributes.Stats;
-using Rollgeon.Combat.EnergyLib;
+using Rollgeon.Combat.Rolls;
 using Rollgeon.Combat.Pipelines;
 using Rollgeon.DevConsole.Cheats;
 using Rollgeon.DevConsole.Core;
@@ -68,43 +68,41 @@ namespace Rollgeon.DevConsole.Commands
         }
     }
 
-    public sealed class EnergyCommand : DevCommandBase
+    public sealed class RollsCommand : DevCommandBase
     {
-        private readonly InfiniteEnergyController _inf;
+        private readonly InfiniteRollsController _inf;
         private static readonly ArgSpec[] _args =
         {
             new ArgSpec("inf|<n>", ArgKind.Choice, optional: true, ArgProviders.Inf)
         };
 
-        public EnergyCommand(InfiniteEnergyController inf) => _inf = inf;
+        public RollsCommand(InfiniteRollsController inf) => _inf = inf;
 
-        public override string Name => "energy";
-        public override string Description => "Energía: 'energy <n>' setea, 'energy inf' toggle infinita, 'energy' muestra actual.";
+        public override string Name => "rolls";
+        public override string Description => "Pool de Rolls: 'rolls <n>' setea, 'rolls inf' toggle infinitos, 'rolls' muestra actual.";
         public override IReadOnlyList<ArgSpec> Args => _args;
 
         public override CommandResult Execute(IReadOnlyList<string> args, IDevConsoleContext ctx)
         {
             if (!RequireRun(ctx, out var e1)) return e1;
             if (!RequirePlayer(ctx, out var pid, out var e2)) return e2;
-            if (!RequireService<AttributesManager>(ctx, out var am, out var e3)) return e3;
+            if (!ctx.TryResolve<IRollPoolService>(out var rolls) || rolls == null)
+                return CommandResult.Fail("IRollPoolService no registrado.");
 
             if (args.Count == 0)
             {
-                int cur = am.GetAttributeValue<Energy, int>(pid);
-                return CommandResult.Ok($"Energy = {cur}. (infinita: {(_inf.Enabled ? "ON" : "OFF")})");
+                return CommandResult.Ok(
+                    $"Rolls = {rolls.GetCurrent(pid)}/{rolls.GetMax(pid)}. (infinitos: {(_inf.Enabled ? "ON" : "OFF")})");
             }
             if (string.Equals(args[0], "inf", StringComparison.OrdinalIgnoreCase))
             {
                 bool on = _inf.Toggle();
-                return CommandResult.Ok($"Energía infinita: {(on ? "ON" : "OFF")}.");
+                return CommandResult.Ok($"Rolls infinitos: {(on ? "ON" : "OFF")}.");
             }
-            if (!int.TryParse(args[0], out var n) || n < 0) return CommandResult.Fail("Usá 'energy <n>' o 'energy inf'.");
+            if (!int.TryParse(args[0], out var n) || n < 0) return CommandResult.Fail("Usá 'rolls <n>' o 'rolls inf'.");
 
-            int max = (ctx.TryResolve<IEnergyService>(out var es) && es != null) ? es.GetMax(pid) : n;
-            am.SetAttributeValue<Energy, int>(pid, n);
-            EventManager.Trigger(EventName.OnEnergyChanged, pid, n, max);
-            EventManager.Trigger(EventName.OnPlayerEnergyChanged, pid, n, max);
-            return CommandResult.Ok($"Energy = {n}.");
+            rolls.RestoreCurrent(pid, n);
+            return CommandResult.Ok($"Rolls = {rolls.GetCurrent(pid)}.");
         }
     }
 

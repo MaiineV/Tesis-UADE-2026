@@ -146,3 +146,7 @@ Rollgeon/.obsidian/core-plugins.json
 # repo (ni una DLL trackeada) — esto es sólo lo que su VersionHandler deja tirado.
 /Assets/MobileDependencyResolver/
 /Assets/MobileDependencyResolver.meta
+
+# steamcmd local (Tools/steamcmd). Nunca commitear: además de binarios pesados,
+# steamcmd cachea ahí el sentry/config de la cuenta de Steam tras el login.
+/Tools/steamcmd/

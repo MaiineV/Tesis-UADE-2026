@@ -18,5 +18,11 @@ namespace Rollgeon.UI.HUD.Status
 
         /// <summary>Último turno del efecto — evita el "1 turnos".</summary>
         public const string DurationLastTurn = "status.duration.last";
+
+        /// <summary>Badge bajo el ícono con 1 turno restante ("1 Turno").</summary>
+        public const string BadgeOneTurn = "status.badge.turn";
+
+        /// <summary>Badge bajo el ícono con varios turnos. Toma <c>{0}</c> = turnos.</summary>
+        public const string BadgeTurns = "status.badge.turns";
     }
 }

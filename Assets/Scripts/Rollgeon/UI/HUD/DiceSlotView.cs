@@ -39,6 +39,11 @@ namespace Rollgeon.UI.HUD
                  "dado sale de la posición, no de instanciarlo.")]
         private Material _enchantMaterial;
 
+        [SerializeField, Optional]
+        [Tooltip("Material del dado maldito (EnchantCurseUI). Compartido, igual que el holo; " +
+                 "si falta, cae al material holo para que el encantado nunca se pierda.")]
+        private Material _cursedMaterial;
+
         [Title("Dice block")]
         [SerializeField, Optional]
         [Tooltip("Ícono de candado que se muestra cuando el dado está bloqueado. Opcional.")]
@@ -173,24 +178,32 @@ namespace Rollgeon.UI.HUD
         }
 
         /// <summary>
-        /// Muestra el visual del dado encantado. <c>null</c> = sin encantamiento (vuelve al
+        /// Muestra el visual del dado encantado: holo para bendiciones, maldito
+        /// (<see cref="CapCursed"/>) para curses. <c>null</c> = sin encantamiento (vuelve al
         /// material default de uGUI).
         /// </summary>
         /// <remarks>
-        /// Toma el <see cref="EnchantmentSO"/> y no un bool: hoy cuesta lo mismo, pero cuando
-        /// llegue un segundo efecto cambia solo el cuerpo del método, sin tocar call-sites.
-        /// El material es compartido — la variación por dado sale de la posición canvas-space
-        /// dentro del shader, así que no hay que instanciar nada (uGUI ni siquiera soporta
-        /// MaterialPropertyBlock).
+        /// Toma el <see cref="EnchantmentSO"/> y no un bool: la elección holo/maldito sale
+        /// del SO, sin tocar call-sites. El material es compartido — la variación por dado
+        /// sale de la posición canvas-space dentro del shader, así que no hay que instanciar
+        /// nada (uGUI ni siquiera soporta MaterialPropertyBlock).
         /// </remarks>
         public void SetEnchantVisual(EnchantmentSO enchantment)
         {
             // Idempotente: sin esto, escribir el material cada frame dispara SetMaterialDirty.
+            // Válido con la elección holo/maldito: es función pura de la identidad del SO.
             if (_enchantment == enchantment) return;
             _enchantment = enchantment;
 
             if (_background == null) return;
-            _background.material = enchantment != null ? _enchantMaterial : null;
+            _background.material = ResolveMaterial(enchantment);
+        }
+
+        private Material ResolveMaterial(EnchantmentSO enchantment)
+        {
+            if (enchantment == null) return null;
+            if (enchantment.IsCursed() && _cursedMaterial != null) return _cursedMaterial;
+            return _enchantMaterial;
         }
 
         /// <summary>Última cara mostrada (0 = sin tirada). Lo lee el presenter de

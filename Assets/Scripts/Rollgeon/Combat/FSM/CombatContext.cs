@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Rollgeon.Combat.Actions;
-using Rollgeon.Combat.EnergyLib;
+using Rollgeon.Combat.Rolls;
 
 namespace Rollgeon.Combat.FSM
 {
@@ -30,8 +30,8 @@ namespace Rollgeon.Combat.FSM
         /// <summary>Servicio de action economy / repetition constraint (T100b). Puede ser null en tests sin action dispatch.</summary>
         public TurnManager TurnManager { get; }
 
-        /// <summary>Servicio de energia (T100a). Consumido por tests para validar regen / gasto.</summary>
-        public IEnergyService Energy { get; }
+        /// <summary>Pool de Rolls (Feature#0050). Consumido por tests para validar grants / gasto.</summary>
+        public IRollPoolService Rolls { get; }
 
         /// <summary>Guid del player activo.</summary>
         public Guid PlayerId { get; }
@@ -88,7 +88,7 @@ namespace Rollgeon.Combat.FSM
         public CombatContext(
             TurnOrderService turnOrder,
             TurnManager turnManager,
-            IEnergyService energy,
+            IRollPoolService rolls,
             Guid playerId,
             Guid roomInstanceId,
             Action<Guid> enemyActionHandler,
@@ -98,7 +98,7 @@ namespace Rollgeon.Combat.FSM
             TurnOrder = turnOrder ?? throw new ArgumentNullException(nameof(turnOrder));
             // TurnManager puede ser null en tests unitarios de la FSM.
             TurnManager = turnManager;
-            Energy = energy ?? throw new ArgumentNullException(nameof(energy));
+            Rolls = rolls ?? throw new ArgumentNullException(nameof(rolls));
 
             if (playerId == Guid.Empty)
             {

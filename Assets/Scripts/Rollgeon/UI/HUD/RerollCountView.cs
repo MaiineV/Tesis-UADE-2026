@@ -1,6 +1,6 @@
 using System;
 using Patterns;
-using Rollgeon.Dice;
+using Rollgeon.Combat.Rolls;
 using Rollgeon.Input;
 using Rollgeon.Localization;
 using Rollgeon.UI.Utility;
@@ -14,12 +14,12 @@ using UnityEngine.UI;
 namespace Rollgeon.UI.HUD
 {
     /// <summary>
-    /// Sub-view que muestra "{used}/{cap}" rerolls + un boton de roll cuyo label indica
-    /// el costo del proximo tiro ("Reroll  -1 [icono energia]" cuando se paga).
-    /// Consume <see cref="IRerollBudgetService"/> via <see cref="Patterns.ServiceLocator"/>
-    /// y escucha <see cref="EventName.OnDiceRolled"/> / <see cref="EventName.OnRollResolved"/>
-    /// + el evento tipado <see cref="IRerollBudgetService.OnRerollStarted"/>.
-    /// Plan §3.7.
+    /// Sub-view pegada a la dice zone: espeja el Pool de Rolls ("{current}/{max}")
+    /// y expone el boton de Roll/Reroll. Cada tirada cuesta 1 roll del pool
+    /// (Feature#0050) — ya no hay distincion free/paid ni budget por accion.
+    /// Consume <see cref="IRollPoolService"/> via <see cref="Patterns.ServiceLocator"/>
+    /// y escucha <see cref="EventName.OnPlayerRollsChanged"/> +
+    /// <see cref="EventName.OnDiceRolled"/> / <see cref="EventName.OnRollResolved"/>.
     /// </summary>
     /// <remarks>
     /// <para>
@@ -32,17 +32,13 @@ namespace Rollgeon.UI.HUD
     {
         private const string LogPrefix = "[RerollCountView] ";
 
-        /// <summary>Costo compacto del roll pago. Sin palabras — no hay nada que traducir.</summary>
-        private const string PaidCostBadge = "-1 {ENERGY}";
-
         [Title("Reroll Count — Widgets")]
         [SerializeField]
-        [Tooltip("Label '{used}/{cap}'. Fallback '-/-' si no hay IRerollBudgetService.")]
+        [Tooltip("Label '{current}/{max}' del pool. Fallback '-/-' si no hay IRollPoolService.")]
         private TextMeshProUGUI _countLabel;
 
         [SerializeField]
-        [Tooltip("Boton de roll/reroll. Mirrea ActionButtonsView._energyRerollButton " +
-                 "pero es una afordance separada pegada a la dice zone.")]
+        [Tooltip("Boton de roll/reroll pegado a la dice zone.")]
         private Button _extraRollButton;
 
         [Title("Reroll Count — Config")]
@@ -51,31 +47,41 @@ namespace Rollgeon.UI.HUD
         private string _countFormat = "{0}/{1}";
 
         [SerializeField]
-        [Tooltip("Texto fallback cuando no hay IRerollBudgetService.")]
+        [Tooltip("Texto fallback cuando no hay IRollPoolService.")]
         private string _fallbackText = "-/-";
 
         [SerializeField]
-        [Tooltip("Label opcional de costo del proximo reroll (ej. 'Free', '-1 {ENERGY}'). Null = skip.")]
+        [Tooltip("Label opcional de costo del proximo roll. Con el pool todas las tiradas " +
+                 "cuestan 1 roll — queda vacio. Null = skip.")]
         private TextMeshProUGUI _costLabel;
 
         [SerializeField]
-        [Tooltip("Label opcional del boton — cambia entre 'Roll', 'Reroll (Free)' y " +
-                 "'Reroll  -1 {ENERGY}' segun el estado del budget. Null = skip.")]
+        [Tooltip("Label opcional del boton — cambia entre 'Roll' y 'Reroll'. Null = skip.")]
         private TextMeshProUGUI _buttonLabel;
 
         [Title("Reroll Count — Button Texts")]
         [SerializeField]
-        [Tooltip("Texto del boton para el primer roll (antes de gastar ningun roll).")]
+        [Tooltip("Texto del boton para el primer roll de la accion.")]
         private string _firstRollText = "Roll";
 
         [SerializeField]
-        [Tooltip("Texto del boton para un reroll gratis.")]
-        private string _rerollFreeText = "Reroll (Free)";
+        [Tooltip("Texto del boton para los rerolls (1 roll del pool cada uno).")]
+        private string _rerollFreeText = "Reroll";
+
+        [Title("Reroll Count — Button Sprites")]
+        [SerializeField]
+        [Tooltip("Swap de sprites del botón por estado. Null = sin swap " +
+                 "(el botón conserva el estilo de texto).")]
+        private HudButtonSpriteSwap _buttonSprites;
 
         [SerializeField]
-        [Tooltip("Texto del boton para un reroll pago con energia. {ENERGY} se expande al " +
-                 "icono del atlas. Fallback si la tabla UI no tiene la key.")]
-        private string _rerollPaidText = "Reroll  -1 {ENERGY}";
+        [Tooltip("Sprites del boton Roll/Reroll (Roll2: _1 normal, _0 hover).")]
+        private ButtonSpriteSet _freeRollSprites;
+
+        [SerializeField, Tooltip("Velocidad del hundimiento/regreso del botón mientras no se " +
+                 "pueda usar — mismo feel que la ficha usada de ActionButton. " +
+                 "Px de pantalla por segundo; <= 0 = instantáneo.")]
+        private float _sinkSpeed = 900f;
 
         [Title("Reroll Count — Events")]
         [SerializeField]
@@ -89,9 +95,10 @@ namespace Rollgeon.UI.HUD
         [ShowInInspector, ReadOnly]
         private bool _bound;
 
-        private IRerollBudgetService _budget;
-        private Action<RerollStartedPayload> _onRerollStartedTyped;
-        private Action<RerollBudget> _onBudgetStartedTyped;
+        // True desde el primer OnDiceRolled de la accion hasta OnRollResolved —
+        // decide si el boton dice "Roll" o "Reroll" (antes lo decidia el budget).
+        private bool _hasRolledThisAction;
+
         private Rollgeon.ActionRolls.IActionRollService _actionRoll;
         private Action<Rollgeon.ActionRolls.ActionRollPhase> _onActionRollPhase;
         // BUG-014: cache de DiceZoneView para gatear el botón si todos los dados
@@ -109,9 +116,20 @@ namespace Rollgeon.UI.HUD
             return rect != null;
         }
 
+        /// <summary>
+        /// True mientras la accion en curso todavia no tiro sus dados — el boton
+        /// dispara el primer Roll. Publico: CombatHUDView lo usa para el dispatch
+        /// Roll vs Reroll (antes lo decidia el estado del budget).
+        /// </summary>
+        public bool IsFirstRollPending => !_hasRolledThisAction;
+
         private void Awake()
         {
             if (_extraRollButton != null) _extraRollButton.onClick.AddListener(HandleExtraRollClick);
+            // La ficha se hunde a media asta SIEMPRE que el botón no se pueda usar
+            // (sin rolls, dados girando, entre acciones) — antes solo se hundía
+            // sin rerolls y los demás estados se leían como un botón muerto.
+            HudButtonSink.Attach(_extraRollButton, _sinkSpeed);
         }
 
         private void OnDestroy()
@@ -132,24 +150,11 @@ namespace Rollgeon.UI.HUD
 
             EventManager.Subscribe(EventName.OnDiceRolled, HandleDiceRolled);
             EventManager.Subscribe(EventName.OnRollResolved, HandleRollResolved);
-
-            if (ServiceLocator.TryGetService<IRerollBudgetService>(out _budget) && _budget != null)
-            {
-                _onRerollStartedTyped = HandleRerollStartedTyped;
-                _budget.OnRerollStarted += _onRerollStartedTyped;
-
-                _onBudgetStartedTyped = HandleBudgetStartedTyped;
-                _budget.OnBudgetStarted += _onBudgetStartedTyped;
-            }
-            else
-            {
-                Debug.Log(LogPrefix + "IRerollBudgetService no registrado — label en fallback.", this);
-                _budget = null;
-            }
+            EventManager.Subscribe(EventName.OnPlayerRollsChanged, HandleRollsChanged);
 
             // Suscripción al ActionRollService: OnDiceRolled se dispara mientras la phase
             // todavía es Rolling — necesitamos refrescar también cuando entra a
-            // AwaitingRerollDecision para que el botón se habilite si hay energía.
+            // AwaitingRerollDecision para que el botón se habilite si hay rolls.
             if (ServiceLocator.TryGetService<Rollgeon.ActionRolls.IActionRollService>(out _actionRoll)
                 && _actionRoll != null)
             {
@@ -166,12 +171,13 @@ namespace Rollgeon.UI.HUD
             if (ServiceLocator.TryGetService<IGameplayHotkeyService>(out _hotkeys) && _hotkeys != null)
                 _hotkeys.Subscribe(GameplayHotkey.Roll, OnHotkeyRoll);
 
-            // Los textos de costo se setean por codigo, asi que el package no los repinta
+            // Los textos se setean por codigo, asi que el package no los repinta
             // solo al cambiar de idioma — hay que re-correr el render a mano.
             _onLanguageChanged = RefreshTexts;
             LocalizationRefresh.Subscribe(_onLanguageChanged);
 
             _bound = true;
+            _hasRolledThisAction = false;
             RefreshLabel();
             RefreshButtonInteractable();
             RefreshTexts();
@@ -183,17 +189,8 @@ namespace Rollgeon.UI.HUD
 
             EventManager.UnSubscribe(EventName.OnDiceRolled, HandleDiceRolled);
             EventManager.UnSubscribe(EventName.OnRollResolved, HandleRollResolved);
+            EventManager.UnSubscribe(EventName.OnPlayerRollsChanged, HandleRollsChanged);
 
-            if (_budget != null && _onRerollStartedTyped != null)
-            {
-                _budget.OnRerollStarted -= _onRerollStartedTyped;
-                _onRerollStartedTyped = null;
-            }
-            if (_budget != null && _onBudgetStartedTyped != null)
-            {
-                _budget.OnBudgetStarted -= _onBudgetStartedTyped;
-                _onBudgetStartedTyped = null;
-            }
             if (_actionRoll != null && _onActionRollPhase != null)
             {
                 _actionRoll.OnPhaseChanged -= _onActionRollPhase;
@@ -215,7 +212,6 @@ namespace Rollgeon.UI.HUD
                 LocalizationRefresh.Unsubscribe(_onLanguageChanged);
                 _onLanguageChanged = null;
             }
-            _budget = null;
             if (_diceZone != null && _diceAnimHooked)
                 _diceZone.DiceAnimationStateChanged -= RefreshButtonInteractable;
             _diceAnimHooked = false;
@@ -232,11 +228,11 @@ namespace Rollgeon.UI.HUD
         // API publica
         // ======================================================================
 
-        /// <summary>Pinta el contador "{used}/{cap}" manualmente. Publico para tooling / tests.</summary>
-        public void SetCount(int used, int cap)
+        /// <summary>Pinta el contador "{current}/{max}" manualmente. Publico para tooling / tests.</summary>
+        public void SetCount(int current, int max)
         {
             if (_countLabel == null) return;
-            _countLabel.text = string.Format(_countFormat, used, cap);
+            _countLabel.text = string.Format(_countFormat, current, max);
         }
 
         /// <summary>Pinta el label en fallback (servicio ausente).</summary>
@@ -256,7 +252,7 @@ namespace Rollgeon.UI.HUD
             // un reroll acá pisaría la animación (backstop del gate de interactable).
             if (ResolveDiceZone()?.IsDiceAnimating == true) return;
 
-            // Si hay un ActionRoll activo (Heal / Forzar Puerta), Reroll = pagar 1 energía
+            // Si hay un ActionRoll activo (Heal / Forzar Puerta), Reroll = pagar 1 roll
             // y rerollear via service. El service re-tira los dados SELECCIONADOS
             // (_currentHolds, seteado por DiceZoneView.ToggleHold → SetHolds) y
             // conserva el resto (reroll invertido).
@@ -270,7 +266,7 @@ namespace Rollgeon.UI.HUD
         }
 
         // R = click del botón Roll/Reroll, solo si está interactable (mismo gating de
-        // budget/energía/holds que aplica RefreshButtonInteractable).
+        // pool/holds que aplica RefreshButtonInteractable).
         private void OnHotkeyRoll(InputAction.CallbackContext _)
         {
             if (_extraRollButton != null && _extraRollButton.interactable)
@@ -281,59 +277,32 @@ namespace Rollgeon.UI.HUD
         {
             if (args == null || args.Length < 1 || !(args[0] is Guid guid)) return;
             if (guid != _playerGuid) return;
-            EnsureBudgetSubscribed();
+            _hasRolledThisAction = true;
             RefreshLabel();
             RefreshButtonInteractable();
             RefreshTexts();
-        }
-
-        // Si Bind() corrió antes de que el bootstrap registrara IRerollBudgetService,
-        // las suscripciones a OnBudgetStarted/OnRerollStarted nunca se hicieron y el
-        // botón nunca recibe los eventos para repintarse. Resuscribimos lazy desde
-        // cualquier handler que sepa que hubo actividad (un dado fue rolled).
-        private void EnsureBudgetSubscribed()
-        {
-            if (_budget != null) return;
-            if (!ServiceLocator.TryGetService<IRerollBudgetService>(out _budget) || _budget == null) return;
-
-            if (_onRerollStartedTyped == null)
-            {
-                _onRerollStartedTyped = HandleRerollStartedTyped;
-                _budget.OnRerollStarted += _onRerollStartedTyped;
-            }
-            if (_onBudgetStartedTyped == null)
-            {
-                _onBudgetStartedTyped = HandleBudgetStartedTyped;
-                _budget.OnBudgetStarted += _onBudgetStartedTyped;
-            }
         }
 
         private void HandleRollResolved(params object[] args)
         {
             if (args == null || args.Length < 1 || !(args[0] is Guid guid)) return;
             if (guid != _playerGuid) return;
-            SetFallback();
+            _hasRolledThisAction = false;
+            RefreshLabel();
             RefreshCostLabel();
             if (_buttonLabel != null) _buttonLabel.text = _firstRollText;
+            // Resuelto el roll el botón vuelve a "primer roll".
+            if (_buttonSprites != null) _buttonSprites.Apply(_freeRollSprites);
             if (_extraRollButton != null) _extraRollButton.interactable = false;
         }
 
-        private void HandleRerollStartedTyped(RerollStartedPayload payload)
+        // Schema OnPlayerRollsChanged: [Guid playerGuid, int current, int max].
+        private void HandleRollsChanged(params object[] args)
         {
-            if (payload.PlayerGuid != _playerGuid) return;
+            if (args == null || args.Length < 3 || !(args[0] is Guid guid)) return;
+            if (guid != _playerGuid) return;
             RefreshLabel();
             RefreshButtonInteractable();
-            RefreshTexts();
-        }
-
-        private void HandleBudgetStartedTyped(RerollBudget budget)
-        {
-            // Repinta el contador apenas se abre el budget (al seleccionar accion),
-            // sin esperar al primer OnDiceRolled. Hace que el "3/3" sea visible
-            // desde la seleccion como pide el flow manual de roll.
-            RefreshLabel();
-            RefreshButtonInteractable();
-            RefreshTexts();
         }
 
         // ======================================================================
@@ -342,43 +311,28 @@ namespace Rollgeon.UI.HUD
 
         private void RefreshLabel()
         {
-            if (_budget == null || _budget.Current == null || _budget.Current.Action == null)
+            if (!ServiceLocator.TryGetService<IRollPoolService>(out var rolls) || rolls == null)
             {
                 SetFallback();
                 return;
             }
-            int total = _budget.Current.Action.FreeRollCount;
-            int remaining = _budget.Current.FreeRollsRemaining;
-            if (remaining < 0) remaining = 0;
-            SetCount(remaining, total);
+            SetCount(rolls.GetCurrent(_playerGuid), rolls.GetMax(_playerGuid));
         }
 
-        /// <summary>
-        /// Repinta todo lo que depende del idioma y del costo del proximo roll. Van juntos
-        /// porque las dos piezas (texto del boton y costo) leen el mismo
-        /// <c>QueryExtraRoll</c> — separarlas invitaba a que una quedara desfasada.
-        /// </summary>
+        /// <summary>Repinta todo lo que depende del idioma.</summary>
         private void RefreshTexts()
         {
             RefreshCostLabel();
             RefreshButtonText();
+            if (_buttonSprites != null) _buttonSprites.Apply(_freeRollSprites);
         }
 
         private void RefreshCostLabel()
         {
-            if (_costLabel == null) return;
-            if (_budget == null)
-            {
-                _costLabel.text = "";
-                return;
-            }
-            var query = _budget.QueryExtraRoll(_playerGuid);
-            if (query.IsFreeRoll)
-                _costLabel.text = "Free";
-            else if (query.CostsEnergy)
-                _costLabel.text = IconSpriteTags.ReplacePlaceholders(PaidCostBadge);
-            else
-                _costLabel.text = "";
+            // Con el pool todas las tiradas cuestan 1 roll — no hay costo variable
+            // que anunciar. El label queda vacio (el widget sobrevive en el prefab
+            // hasta el pase visual del pool).
+            if (_costLabel != null) _costLabel.text = "";
         }
 
         /// <summary>
@@ -400,8 +354,8 @@ namespace Rollgeon.UI.HUD
                 return;
             }
 
-            // Si hay un ActionRoll activo (Heal / Forzar Puerta), el budget de Generala
-            // no aplica — el gating es por energía vía CanAffordReroll del service.
+            // Si hay un ActionRoll activo (Heal / Forzar Puerta), el gating es por
+            // pool vía CanAffordReroll del service.
             // CanAffordReroll ya incluye el guard de "todos holdeados" (BUG-014).
             if (ServiceLocator.TryGetService<Rollgeon.ActionRolls.IActionRollService>(out var rs)
                 && rs != null && rs.IsActive)
@@ -410,7 +364,7 @@ namespace Rollgeon.UI.HUD
                 return;
             }
 
-            if (_budget == null)
+            if (!ServiceLocator.TryGetService<IRollPoolService>(out var rolls) || rolls == null)
             {
                 _extraRollButton.interactable = false;
                 return;
@@ -418,35 +372,30 @@ namespace Rollgeon.UI.HUD
 
             // CNF-008 (grab-to-reroll): en modo 2D el botón solo dispara el PRIMER
             // roll — los rerolls se hacen agarrando los dados asentados y arrojándolos.
-            if (!IsFirstRollPending() && IsGrabRerollMode())
+            if (!IsFirstRollPending && IsGrabRerollMode())
             {
                 _extraRollButton.interactable = false;
                 return;
             }
 
-            var query = _budget.QueryExtraRoll(_playerGuid);
+            bool canAfford = rolls.GetCurrent(_playerGuid) >= 1;
+
             // Después del primer roll, si ningún dado va a volar no hay nada que
-            // re-tirar — deshabilitar para no quemar free rolls / energía en una
-            // tirada idéntica. Qué dado vuela depende del modo (RerollSelectionPrefs):
-            // invertido (Balatro) ⇒ vuelan los seleccionados: sin selección, nada;
-            // clásico ⇒ vuelan los NO seleccionados: con todo lockeado, nada.
-            // El primer roll queda exento (todavía no hay dados que seleccionar).
+            // re-tirar — deshabilitar para no quemar rolls en una tirada idéntica.
+            // Qué dado vuela depende del modo (RerollSelectionPrefs): invertido
+            // (Balatro) ⇒ vuelan los seleccionados: sin selección, nada; clásico ⇒
+            // vuelan los NO seleccionados: con todo lockeado, nada. El primer roll
+            // queda exento (todavía no hay dados que seleccionar).
             bool nothingToReroll = Rollgeon.Dice.RerollSelectionPrefs.KeepSelected
                 ? ResolveDiceZone()?.AllDiceHeld() == true
                 : ResolveDiceZone()?.AnyDieHeld() != true;
-            if (query.IsAvailable && !IsFirstRollPending() && nothingToReroll)
+            if (canAfford && !IsFirstRollPending && nothingToReroll)
             {
                 _extraRollButton.interactable = false;
                 return;
             }
-            _extraRollButton.interactable = query.IsAvailable;
+            _extraRollButton.interactable = canAfford;
         }
-
-        // Mismo criterio de "primer roll" que RefreshButtonText.
-        private bool IsFirstRollPending()
-            => _budget != null && _budget.Current != null && _budget.Current.Action != null
-               && _budget.Current.FreeRollsRemaining == _budget.Current.Action.FreeRollCount
-               && _budget.Current.PaidRollsUsed == 0;
 
         private static bool IsGrabRerollMode()
             => ServiceLocator.TryGetService<Rollgeon.Dice.Throw.IDiceThrowService>(out var t)
@@ -470,28 +419,7 @@ namespace Rollgeon.UI.HUD
         private void RefreshButtonText()
         {
             if (_buttonLabel == null) return;
-
-            // Si el budget arranco pero no se rolo nada → primer roll
-            // (mismo criterio que CombatHUDView.InvokeRollOrReroll para dispatch).
-            if (_budget != null && _budget.Current != null && _budget.Current.Action != null
-                && _budget.Current.FreeRollsRemaining == _budget.Current.Action.FreeRollCount
-                && _budget.Current.PaidRollsUsed == 0)
-            {
-                _buttonLabel.text = _firstRollText;
-                return;
-            }
-
-            if (_budget == null)
-            {
-                _buttonLabel.text = _firstRollText;
-                return;
-            }
-
-            // Sino, es reroll — gratis si quedan free, paid si toca energia.
-            var query = _budget.QueryExtraRoll(_playerGuid);
-            _buttonLabel.text = query.CostsEnergy && !query.IsFreeRoll
-                ? Localized(UiTextKeys.RerollPaid, _rerollPaidText)
-                : _rerollFreeText;
+            _buttonLabel.text = IsFirstRollPending ? _firstRollText : _rerollFreeText;
         }
     }
 }

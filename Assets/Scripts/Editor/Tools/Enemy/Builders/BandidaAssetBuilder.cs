@@ -93,9 +93,9 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         public const float ReelTollHpThreshold = 0.7f;
 
         /// <summary>
-        /// Techo de energía que la fila cobra por turno. Dimensionado contra el kit del jugador, que
-        /// no se toca (<c>EnergyMax</c> 4, <c>EnergyRegenBase</c> 2, reroll extra a 1): cobrar 2
-        /// empata el regen sin dejarlo nunca en neto negativo.
+        /// Techo de rolls que la fila drena del pool por turno (Feature#0050). Dimensionado
+        /// contra el grant del jugador (5 rolls por turno): drenar 1-2 presiona sin dejarlo
+        /// nunca en economía neta negativa. Revisar en el pase de balance del pool.
         /// </summary>
         public const int ReelTollCapPhase1 = 1;
         public const int ReelTollCapPhase2 = 2;

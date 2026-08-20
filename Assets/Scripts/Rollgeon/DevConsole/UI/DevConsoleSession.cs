@@ -18,7 +18,7 @@ namespace Rollgeon.DevConsole.UI
         public DevCommandRegistry Registry { get; }
         public AutocompleteEngine Autocomplete { get; }
         public GodModeController God { get; }
-        public InfiniteEnergyController Energy { get; }
+        public InfiniteRollsController Rolls { get; }
         public FreeMoveController FreeMove { get; }
 
         private readonly List<string> _history = new List<string>();
@@ -28,9 +28,9 @@ namespace Rollgeon.DevConsole.UI
             Log = new BufferLogSink();
             Ctx = new ServiceLocatorConsoleContext(Log);
             God = new GodModeController(Ctx);
-            Energy = new InfiniteEnergyController(Ctx);
+            Rolls = new InfiniteRollsController(Ctx);
             FreeMove = new FreeMoveController();
-            Registry = DefaultCommands.CreateDefault(Ctx, God, Energy, FreeMove);
+            Registry = DefaultCommands.CreateDefault(Ctx, God, Rolls, FreeMove);
             Autocomplete = new AutocompleteEngine(Registry);
 
             Log.Info("DevConsole lista. Escribí 'help' para ver los comandos.");

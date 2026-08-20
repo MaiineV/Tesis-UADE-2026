@@ -36,11 +36,8 @@ namespace Rollgeon.Editor.Tools.Localization.Tests
             "combo.generala.name",
             "combo.full_house.name",
             "menu.tutorial",
-            // "Reroll" / "Roll" son los términos que el HUD ya venía mostrando sin
-            // traducir; lo único traducible de estas dos entries es el "-1 {ENERGY}",
-            // que es idéntico en los dos idiomas por ser icono + número.
-            UiTextKeys.RerollPaid,
-            UiTextKeys.ChainRollPaid,
+            // "Portal" es portal en los dos idiomas (Casillas Especiales).
+            "tile.portal.name",
             // "Combo" se escribe igual en los dos idiomas y es el término que el juego ya
             // usa sin traducir en el resto del HUD.
             Rollgeon.UI.HUD.Contract.ContractTextKeys.HeaderName,
@@ -150,35 +147,6 @@ namespace Rollgeon.Editor.Tools.Localization.Tests
             // Assert
             Assert.IsEmpty(missing,
                 "Keys de BuildHelpTextKeys sin entry en la tabla UI:\n" + string.Join("\n", missing));
-        }
-
-        /// <summary>
-        /// El <c>{ENERGY}</c> es lo que <c>IconSpriteTags</c> convierte en el glifo del
-        /// atlas. Una traducción que lo pierda (o lo traduzca) deja el costo sin icono,
-        /// que es exactamente el bug que estos textos vinieron a arreglar.
-        /// </summary>
-        [Test]
-        public void test_localization_cost_keys_keep_the_energy_placeholder_in_both_locales()
-        {
-            // Arrange
-            var collection = RequireCollection("UI");
-            var costKeys = new[] { UiTextKeys.RerollPaid, UiTextKeys.ChainRollPaid };
-            var broken = new List<string>();
-
-            // Act
-            foreach (string key in costKeys)
-            {
-                foreach (string locale in new[] { EsCode, EnCode })
-                {
-                    string value = ValueOf(collection, locale, key);
-                    if (value == null || !value.Contains("{ENERGY}"))
-                        broken.Add($"UI/{key} [{locale}] = \"{value}\"");
-                }
-            }
-
-            // Assert
-            Assert.IsEmpty(broken,
-                "Keys de costo que perdieron el token {ENERGY}:\n" + string.Join("\n", broken));
         }
 
         [Test]

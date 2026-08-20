@@ -2,7 +2,6 @@ using System;
 using Patterns;
 using Rollgeon.Attributes;
 using Rollgeon.Attributes.Stats;
-using Rollgeon.Combat.EnergyLib;
 using Rollgeon.Entities;
 using Rollgeon.Entities.Bosses;
 using Sirenix.OdinInspector;
@@ -14,7 +13,7 @@ namespace Rollgeon.Entities.Behaviors
     /// Ataque self-contained del Boss Floor Manager. Plan §10.3.
     /// <list type="number">
     /// <item>Consulta la energia del boss — primero via <see cref="EnergyProbe"/> (si el spawner
-    /// lo inyecto), si no, cae al stat <c>Energy</c> via <see cref="IEnergyService"/>.</item>
+    /// lo inyecto), si no, cae al stat <c>Energy</c> propio del boss via <c>AttributesManager</c>.</item>
     /// <item>Si la energia esta llena, rodea <see cref="BossFloorManagerSO.DoubleDamageChanceWhenEnergyFull"/>;
     /// si no, rodea <see cref="BossFloorManagerSO.DoubleDamageChanceDefault"/>.</item>
     /// <item>Aplica <see cref="BaseAttackPower"/> (o 2x en caso de hit) al target via
@@ -48,8 +47,8 @@ namespace Rollgeon.Entities.Behaviors
         public Func<float> RandomSource;
 
         /// <summary>
-        /// Resolver opcional de la energia del boss. Si null, el behavior pregunta al
-        /// <see cref="IEnergyService"/> por el stat <c>Energy</c> del owner. El spawner del Boss
+        /// Resolver opcional de la energia del boss. Si null, el behavior lee el stat
+        /// <c>Energy</c> propio del owner via <c>AttributesManager</c>. El spawner del Boss
         /// suele asignar <c>() =&gt; energyBehavior.CurrentEnergy</c> para leer la energia
         /// self-contained del <see cref="BossEnergyBuildupBehavior"/>.
         /// </summary>
@@ -123,13 +122,18 @@ namespace Rollgeon.Entities.Behaviors
             }
             else
             {
-                if (!ServiceLocator.TryGetService<IEnergyService>(out var energy) || energy == null)
-                {
+                // Fallback sin probe: el stat Energy propio del boss (presupuesto de IA
+                // enemigo — NO el pool de rolls del jugador, que ya no es un atributo).
+                if (!ServiceLocator.TryGetService<AttributesManager>(out var attrsMgr) || attrsMgr == null)
                     return false;
-                }
+
                 var ownerGuid = ctx.SourceEntity.Guid;
-                current = energy.GetCurrent(ownerGuid);
-                max = energy.GetMax(ownerGuid);
+                if (!attrsMgr.IsRegistered(ownerGuid)) return false;
+                var ownerAttrs = attrsMgr.GetAttributes(ownerGuid);
+                if (ownerAttrs == null || !ownerAttrs.HasAttribute<Energy>()) return false;
+
+                current = attrsMgr.GetAttributeValue<Energy, int>(ownerGuid);
+                max = BossDataOverride != null ? BossDataOverride.BossEnergyMax : 0;
             }
 
             return max > 0 && current >= max;

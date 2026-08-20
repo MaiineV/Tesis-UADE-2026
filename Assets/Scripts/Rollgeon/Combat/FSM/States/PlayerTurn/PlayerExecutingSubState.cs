@@ -31,8 +31,7 @@ namespace Rollgeon.Combat.FSM.States.PlayerTurn
             Context.OnActionComplete = null;
 
             // Selección cancelada (ej. el jugador abortó el movimiento): no ejecutamos nada
-            // — no se mueve ni se marca usado. El reembolso de la energía lo hace el caller
-            // (CombatHandoffService.CancelPlayerSelection), BUG-013.
+            // — no se mueve ni se marca usado ni se cobra (cobro-al-ejecutar, BUG-013).
             bool cancelled = Context.SelectionResult != null && Context.SelectionResult.WasCancelled;
 
             if (action == null || cancelled)
@@ -58,11 +57,11 @@ namespace Rollgeon.Combat.FSM.States.PlayerTurn
                 UnityEngine.Debug.Log($"[PlayerExecutingSubState] Executing '{action.BehaviorName}' (no HeroBehaviorContext)");
             }
 
-            bool energyPrepaid = behaviorCtx is HeroBehaviorContext hbc && hbc.EnergyPrepaid;
+            bool rollsPrepaid = behaviorCtx is HeroBehaviorContext hbc && hbc.RollsPrepaid;
             if (ServiceLocator.TryGetService<TurnManager>(out var tm))
             {
-                if (energyPrepaid)
-                    tm.TryExecuteEnergyPrepaid(action, Context.ActingGuid, behaviorCtx);
+                if (rollsPrepaid)
+                    tm.TryExecuteRollsPrepaid(action, Context.ActingGuid, behaviorCtx);
                 else
                     tm.TryExecute(action, Context.ActingGuid, behaviorCtx);
             }

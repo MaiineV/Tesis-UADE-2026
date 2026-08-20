@@ -20,7 +20,7 @@ namespace Rollgeon.Combat.FSM.Tests
     {
         private TurnOrderService _turnOrder;
         private FakeInitiativeProvider _provider;
-        private FakeEnergyService _energy;
+        private FakeRollPoolService _energy;
         private TurnManager _turnManager;
 
         private Guid _playerId;
@@ -40,7 +40,7 @@ namespace Rollgeon.Combat.FSM.Tests
             ServiceLocator.AddService<IInitiativeProvider>(_provider);
 
             _turnOrder = new TurnOrderService();
-            _energy = new FakeEnergyService();
+            _energy = new FakeRollPoolService();
 
             _turnManager = new TurnManager();
             _turnManager.ConfigureForTests(_energy, actions: null, ruleset: null);
@@ -50,9 +50,9 @@ namespace Rollgeon.Combat.FSM.Tests
             _enemyBId = Guid.NewGuid();
             _roomId = Guid.NewGuid();
 
-            _energy.Current[_playerId] = _energy.MaxPerEntity;
-            _energy.Current[_enemyAId] = _energy.MaxPerEntity;
-            _energy.Current[_enemyBId] = _energy.MaxPerEntity;
+            _energy.Current[_playerId] = _energy.RollsPerTurn;
+            _energy.Current[_enemyAId] = _energy.RollsPerTurn;
+            _energy.Current[_enemyBId] = _energy.RollsPerTurn;
 
             _fakeDelta = 0.5f;
         }

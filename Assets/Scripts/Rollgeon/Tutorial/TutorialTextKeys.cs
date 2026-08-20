@@ -24,13 +24,14 @@ namespace Rollgeon.Tutorial
         public const string MoveTiles = "tutorial.move_tiles";
         public const string MoveTooFar = "tutorial.move_too_far";
         public const string StatsHp = "tutorial.stats_hp";
-        public const string StatsEnergy = "tutorial.stats_energy";
+        public const string StatsRolls = "tutorial.stats_rolls";
         public const string AttackTeach = "tutorial.attack_teach";
         public const string TargetTeach = "tutorial.target_teach";
         public const string ThrowTeach = "tutorial.throw_teach";
         public const string DiceTeach = "tutorial.dice_teach";
         public const string RerollTeach = "tutorial.reroll_teach";
         public const string DefenseTeach = "tutorial.defense_teach";
+        public const string DefenseDice = "tutorial.defense_dice";
         public const string EndTurnTeach = "tutorial.end_turn_teach";
         public const string Combat1Free = "tutorial.combat1_free";
         public const string HealUnlocked = "tutorial.heal_unlocked";
@@ -69,9 +70,9 @@ namespace Rollgeon.Tutorial
         {
             Movement,
             EnemiesIntro, TurnOrderIntro, ContractIcon, MoveTeach, MoveTiles, MoveTooFar,
-            StatsHp, StatsEnergy,
+            StatsHp, StatsRolls,
             AttackTeach, TargetTeach, ThrowTeach, DiceTeach, RerollTeach, DefenseTeach,
-            EndTurnTeach, Combat1Free, HealUnlocked, HealDice,
+            DefenseDice, EndTurnTeach, Combat1Free, HealUnlocked, HealDice,
             GoToC, EscapeTeach, EscapeDice, Combat2Door, Combat2,
             EscapeAftermath, CameraControls, MapRooms,
             ShopDoor, ShopPedestal, ShopPurchased, BackpackIcon,

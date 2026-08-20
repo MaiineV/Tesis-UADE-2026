@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using NUnit.Framework;
 using Patterns;
-using Rollgeon.Combat.EnergyLib;
 using Rollgeon.Dice;
 using Rollgeon.Effects;
 using Rollgeon.Effects.Selection;
@@ -21,7 +20,6 @@ namespace Rollgeon.Exploration.Tests
     {
         private StubPlayerService _playerService;
         private StubSelectionController _selectionController;
-        private StubEnergyService _energyService;
         private StubGridManager _gridManager;
         private ExplorationBehaviorService _service;
         private ClassHeroSO _heroSO;
@@ -49,9 +47,6 @@ namespace Rollgeon.Exploration.Tests
             _selectionController = new StubSelectionController();
             ServiceLocator.AddService<ISelectionController>(_selectionController, ServiceScope.Global);
 
-            _energyService = new StubEnergyService();
-            _energyService.Current[_playerGuid] = 5;
-            ServiceLocator.AddService<IEnergyService>(_energyService, ServiceScope.Global);
 
             _gridManager = new StubGridManager();
             _gridManager.Positions[_playerGuid] = new GridCoord(2, 2);
@@ -108,18 +103,6 @@ namespace Rollgeon.Exploration.Tests
         }
 
         [Test]
-        public void OnBehaviorSelected_InsufficientEnergy_Rejected()
-        {
-            var move = AddExplorationMovement(energyCost: 10);
-            EventManager.Trigger(EventName.OnPhaseEnter, GamePhase.Exploration);
-
-            _service.OnBehaviorSelected(0);
-
-            Assert.IsFalse(_selectionController.SelectionStarted);
-            Assert.AreEqual(5, _energyService.Current[_playerGuid]);
-        }
-
-        [Test]
         public void OnBehaviorSelected_WithSelection_BeginsSelection()
         {
             AddExplorationMovement();
@@ -131,14 +114,16 @@ namespace Rollgeon.Exploration.Tests
         }
 
         [Test]
-        public void OnBehaviorSelected_SpendsEnergy()
+        public void OnBehaviorSelected_ExplorationIsFree_NoResourceServiceNeeded()
         {
-            AddExplorationMovement(energyCost: 1);
+            // Feature#0050: las acciones de exploración son gratis — no hay pool
+            // de rolls fuera de combate ni servicio de recursos que consultar.
+            AddExplorationMovement();
             EventManager.Trigger(EventName.OnPhaseEnter, GamePhase.Exploration);
 
             _service.OnBehaviorSelected(0);
 
-            Assert.AreEqual(4, _energyService.Current[_playerGuid]);
+            Assert.IsTrue(_selectionController.SelectionStarted);
         }
 
         [Test]
@@ -155,7 +140,7 @@ namespace Rollgeon.Exploration.Tests
             Assert.IsTrue(_selectionController.CancelCalled);
         }
 
-        private HeroActionBehavior AddExplorationMovement(int energyCost = 1)
+        private HeroActionBehavior AddExplorationMovement()
         {
             var move = new HeroActionBehavior
             {
@@ -163,7 +148,6 @@ namespace Rollgeon.Exploration.Tests
                 IsBaseBehavior = true,
                 Slot = HeroBehaviorSlot.Movement,
                 AllowedPhases = GamePhaseMask.Exploration,
-                EnergyCost = energyCost,
                 NeedsDiceRoll = false,
                 Effects = new List<EffectData>
                 {
@@ -226,23 +210,6 @@ namespace Rollgeon.Exploration.Tests
             {
                 OnSelectionCompleted?.Invoke(result);
             }
-        }
-
-        private class StubEnergyService : IEnergyService
-        {
-            public readonly Dictionary<Guid, int> Current = new Dictionary<Guid, int>();
-            public int MaxPerEntity = 5;
-
-            public void InitializeForEntity(Guid entityId) => Current[entityId] = MaxPerEntity;
-            public bool SpendEnergy(Guid entityId, int cost)
-            {
-                if (!Current.TryGetValue(entityId, out var have) || cost > have) return false;
-                Current[entityId] = have - cost;
-                return true;
-            }
-            public void RegenerateAtTurnEnd(Guid entityId) { }
-            public int GetCurrent(Guid entityId) => Current.TryGetValue(entityId, out var v) ? v : 0;
-            public int GetMax(Guid entityId) => MaxPerEntity;
         }
 
         private class StubGridManager : IGridManager

@@ -6,6 +6,7 @@ using Rollgeon.Attributes.Stats;
 using Rollgeon.Combat.AI.Decisions;
 using Rollgeon.Combos;
 using Rollgeon.Entities.Behaviors;
+using Rollgeon.Entities.Traits;
 using Sirenix.OdinInspector;
 using Sirenix.Serialization;
 using UnityEngine;
@@ -135,6 +136,27 @@ namespace Rollgeon.Entities
         // AI Decision Tree (§7.5 — Sprint04).
         // -----------------------------------------------------------------
 
+        // -----------------------------------------------------------------
+        // Unit Traits — Casillas Especiales + Pathing IA.
+        // -----------------------------------------------------------------
+
+        [Title("Unit Traits (Casillas Especiales)")]
+        [Tooltip("Voladora: ignora las casillas especiales marcadas 'solo terrestres' (Pinchos, Hielo, Veneno). " +
+                 "Fuego afecta igual a voladoras.")]
+        public bool IsFlying;
+
+        [Tooltip("Jefe: inmune a las casillas especiales de las que es owner, salvo override en la definición " +
+                 "de la casilla. También cambia cómo el kill credit y la protección de SafeZone lo tratan.")]
+        public bool IsBoss;
+
+        [Tooltip("Perfil de riesgo del pathing IA frente a casillas peligrosas (MinSurvivalHP + Caution). " +
+                 "Todo el catálogo arranca en Normal.")]
+        public AIPersonality Personality = AIPersonality.Normal;
+
+        [ShowIf("@Personality == Rollgeon.Entities.Traits.AIPersonality.Kamikaze")]
+        [Tooltip("Flag narrativo: este kamikaze ignora por completo el filtro de supervivencia del pathing.")]
+        public bool KamikazeIgnoresSurvival;
+
         [Title("AI Decision Tree (§7.5)")]
         [InfoBox("Árbol polimórfico que decide qué hace el enemigo cada turno. " +
                  "Null/vacío = fallback al BasicEnemyAI (siempre ataca). " +
@@ -252,6 +274,12 @@ namespace Rollgeon.Entities
             var t = GetTier(tier);
             return t == null ? baseValue : pick(t).Resolve(baseValue);
         }
+
+        /// <summary>
+        /// Traits runtime de este enemigo, listos para <c>IUnitTraitService.Register</c>.
+        /// </summary>
+        public UnitTraits CreateTraits()
+            => new UnitTraits(IsFlying, IsBoss, Personality, KamikazeIgnoresSurvival);
 
         /// <summary>
         /// Devuelve copias deep de los <see cref="Behaviors"/> declarados en el SO.

@@ -228,6 +228,35 @@ namespace Rollgeon.Effects.Tests
             Assert.IsNotNull(reason);
         }
 
+        [Test]
+        public void HasUsableEffectGroup_SelfOnlyChainBehavior_UsableWithoutTargets()
+        {
+            // Arrange — el shape de la acción Defense (Feature#0051): chain de UNA
+            // fase con efecto Self. Sin selección efectiva pre-roll no hay gate de
+            // rango: el chip debe estar usable aunque no haya enemigos en rango.
+            var inner = new TestEffect
+            {
+                Selection = new SelectionSettings { SlotState = SlotState.Self },
+            };
+            var chain = new EffChain
+            {
+                Phases = new List<ChainPhase>
+                {
+                    new ChainPhase
+                    {
+                        Effects = new EffectData { Effects = new List<IEffect> { inner } },
+                    },
+                },
+            };
+            var behavior = BuildChainBehavior(chain);
+
+            // Act
+            var usable = behavior.HasUsableEffectGroup(_owner, Guid.Empty, out var reason);
+
+            // Assert
+            Assert.IsTrue(usable, $"Una acción Self (defensa pura) no gatea por targets: {reason}");
+        }
+
         // ── Semántica top-level intacta (FSM / handoff no-chain) ─────────────
 
         [Test]

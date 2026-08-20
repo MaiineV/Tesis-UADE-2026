@@ -81,7 +81,11 @@ namespace Rollgeon.Tutorial.UI
             return true;
         }
 
-        private static bool TryWorldToScreen(Vector3 worldPos, out Vector2 screenPos)
+        /// <summary>
+        /// Público porque es LA copia canónica del fix RT→Screen para anchors de
+        /// mundo — también lo consume <c>ExitSignIndicator</c> (flecha de salida).
+        /// </summary>
+        public static bool TryWorldToScreen(Vector3 worldPos, out Vector2 screenPos)
         {
             screenPos = default;
             var cam = UnityEngine.Camera.main;

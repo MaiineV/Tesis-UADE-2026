@@ -285,6 +285,9 @@ namespace Rollgeon.Shop
             Transform parent = room.SpawnedPrefab != null ? room.SpawnedPrefab.transform : null;
             var go = UnityEngine.Object.Instantiate(ActiveConfig.PedestalPrefab, spawnPoint.position, spawnPoint.rotation, parent);
             go.name = $"[ShopPedestal] {slot.Item?.DisplayName ?? slot.Item?.EntryId ?? "?"}";
+            // El pedestal ocupa su celda — al comprarse se destruye el visual y el
+            // OnDisable del blocker libera la celda.
+            Rollgeon.Dungeon.Components.PropTileBlocker.Attach(go);
 
             var pedestal = go.GetComponent<ShopItemPedestalInteractable>();
             if (pedestal == null)

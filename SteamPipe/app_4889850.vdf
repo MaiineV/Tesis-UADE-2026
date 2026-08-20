@@ -9,7 +9,7 @@
 "appbuild"
 {
 	"appid"			"4889850"
-	"desc"			"Rollgeon 0.2.0 — Development, develop @ ba01c62e (mecha boss anims + fix chain roll prompt)"
+	"desc"			"Rollgeon 0.3.2 — Release (no dev), develop @ 748f5241 (fix heal button + queue view center)"
 
 	// Ambos caen bajo Build/, que está gitignoreado.
 	"buildoutput"	"..\Build\SteamPipeOutput"

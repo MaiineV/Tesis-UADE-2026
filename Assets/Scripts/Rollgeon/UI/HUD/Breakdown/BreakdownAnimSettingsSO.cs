@@ -158,6 +158,22 @@ namespace Rollgeon.UI.HUD.Breakdown
         [MinValue(0f)] public float TierScaleMedium = 1f;
         [MinValue(0f)] public float TierScaleBig = 1.7f;
 
+        [Title("Celebración de combo (dados contribuyentes)")]
+        [MinValue(0), Tooltip("Partículas del burst por dado a intensidad mínima.")]
+        public int ComboBurstCountMin = 3;
+
+        [MinValue(0), Tooltip("Partículas del burst por dado a intensidad máxima.")]
+        public int ComboBurstCountMax = 6;
+
+        [MinValue(0f), Tooltip("Punch de escala del dado (magnitud a intensidad máxima).")]
+        public float ComboPunchScale = 0.18f;
+
+        [MinValue(0f), Tooltip("Shake de rotación del dado (grados a intensidad máxima).")]
+        public float ComboShakeRotation = 10f;
+
+        [MinValue(0f), Tooltip("Stagger entre dados contribuyentes (se divide por el game speed).")]
+        public float ComboCelebrateStagger = 0.05f;
+
         [MinValue(1f), Tooltip("M mínimo para que el total 'arda' (flaming number).")]
         public float FlamingNumberMinM = 2f;
 

@@ -71,28 +71,42 @@ namespace Rollgeon.Combat.AI.Decisions
             if (currentDist < desiredRange && !Retreat) return AIResult.Failed; // muy cerca, kite off
 
             int maxSteps = MaxSteps?.Read(context) ?? 3;
-            var reachable = context.Movement.GetReachableTiles(selfCoord, maxSteps, includeOrigin: false);
-            if (reachable == null || reachable.Count == 0) return AIResult.Failed;
 
-            // Score único: minimizar |dist(target) - desiredRange|. Cubre acercarse,
-            // frenar en la banda y alejar (kite) con la misma pasada. Strict '<' =>
-            // determinista y, ante empate con quedarse quieto, no se mueve.
-            var best = selfCoord;
-            int bestErr = Mathf.Abs(currentDist - desiredRange);
-            foreach (var candidate in reachable)
+            // Con planner en el contexto, la decisión es suya (conciencia de casillas
+            // especiales; con sala limpia su resultado es idéntico al scoring de abajo).
+            if (context.PathPlanner != null)
             {
-                int err = Mathf.Abs(candidate.Manhattan(targetCoord) - desiredRange);
-                if (err < bestErr)
+                if (!AIPathMoveExecutor.TryPlanAndMove(context, targetCoord, maxSteps, desiredRange,
+                        Pathing.MoveIntent.Approach))
                 {
-                    bestErr = err;
-                    best = candidate;
+                    return AIResult.Failed;
                 }
             }
+            else
+            {
+                var reachable = context.Movement.GetReachableTiles(selfCoord, maxSteps, includeOrigin: false);
+                if (reachable == null || reachable.Count == 0) return AIResult.Failed;
 
-            if (best == selfCoord) return AIResult.Failed;
+                // Score único: minimizar |dist(target) - desiredRange|. Cubre acercarse,
+                // frenar en la banda y alejar (kite) con la misma pasada. Strict '<' =>
+                // determinista y, ante empate con quedarse quieto, no se mueve.
+                var best = selfCoord;
+                int bestErr = Mathf.Abs(currentDist - desiredRange);
+                foreach (var candidate in reachable)
+                {
+                    int err = Mathf.Abs(candidate.Manhattan(targetCoord) - desiredRange);
+                    if (err < bestErr)
+                    {
+                        bestErr = err;
+                        best = candidate;
+                    }
+                }
 
-            if (!context.Movement.Move(context.SelfGuid, best))
-                return AIResult.Failed;
+                if (best == selfCoord) return AIResult.Failed;
+
+                if (!context.Movement.Move(context.SelfGuid, best))
+                    return AIResult.Failed;
+            }
 
             // Solo el movimiento efectivo consume la acción — los Failed de arriba
             // (ya en banda, sin tile mejor) dejan la acción disponible.

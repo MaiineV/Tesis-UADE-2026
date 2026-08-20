@@ -57,8 +57,8 @@ namespace Rollgeon.Dungeon.Tests
 
         /// <summary>
         /// Espejo del DoorBoss.prefab anidado: DoorRoot + DoorController + reja hija +
-        /// DoorExitSignView con su cartel (inactivo). Root inactivo para no disparar
-        /// Awakes de tooltips en EditMode.
+        /// DoorExitSignView (el display real es screen-space y no existe en EditMode).
+        /// Root inactivo para no disparar Awakes de tooltips en EditMode.
         /// </summary>
         private GameObject CreateRoomPrefab(string name)
         {
@@ -78,11 +78,7 @@ namespace Rollgeon.Dungeon.Tests
                 reja.transform.SetParent(doorRoot.transform, false);
                 SetPrivateField(ctrl, DoorController.EditorWallPlugField, reja);
 
-                var view = doorRoot.AddComponent<DoorExitSignView>();
-                var sign = new GameObject("ExitSign");
-                sign.transform.SetParent(doorRoot.transform, false);
-                sign.SetActive(false);
-                SetPrivateField(view, DoorExitSignView.EditorSignField, sign);
+                doorRoot.AddComponent<DoorExitSignView>();
 
                 layout.DoorSlots.Add(new DoorSlotRef
                 {
@@ -162,8 +158,8 @@ namespace Rollgeon.Dungeon.Tests
                 "La exit door debe MANTENERSE abierta al re-entrar con el boss ya muerto.");
 
             var view = exit.GetComponent<DoorExitSignView>();
-            Assert.IsTrue(view.EditorSign.activeSelf,
-                "El ExitSign debe seguir visible al re-entrar a la boss room cleared.");
+            Assert.IsTrue(view.IsShowing,
+                "El indicador de salida debe seguir marcado visible al re-entrar a la boss room cleared.");
         }
     }
 }

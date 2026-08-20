@@ -250,6 +250,14 @@ namespace Rollgeon.Combat.AI.Decisions
                 grid.Register(id, coord);
                 visuals?.SpawnEnemy(id, EnemyToSpawn, coord);
 
+                // Mismo registro de traits que DefaultEnemySpawnResolver: sin esto, un refuerzo
+                // volador pisaría pinchos y un refuerzo jefe se quemaría con su propia casilla.
+                if (ServiceLocator.TryGetService<Rollgeon.Entities.Traits.IUnitTraitService>(out var traitService)
+                    && traitService != null)
+                {
+                    traitService.Register(id, EnemyToSpawn.CreateTraits());
+                }
+
                 // Reinforcements spawn at full HP; the world-space bar is a caller-initialized
                 // widget, so mirror DefaultEnemySpawnResolver — otherwise the bar renders its
                 // default (0 HP) and never binds to damage events.

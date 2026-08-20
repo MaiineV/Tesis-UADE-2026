@@ -80,7 +80,11 @@ namespace Rollgeon.Editor.Tools.RoomEditor
             if (GUILayout.Button(label, style))
             {
                 _spawnToolActive = !_spawnToolActive;
-                if (_spawnToolActive) _toolActive = false; // mutually exclusive with tile paint
+                if (_spawnToolActive)
+                {
+                    _toolActive = false; // mutually exclusive with tile paint
+                    _specialToolActive = false; // mutually exclusive with special tiles paint
+                }
                 _draggingSpawnPoint = null;
                 _draggingFromCell = null;
                 Repaint();

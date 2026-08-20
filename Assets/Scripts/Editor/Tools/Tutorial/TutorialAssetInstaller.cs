@@ -82,7 +82,6 @@ namespace Rollgeon.Editor.Tools
                 h.EntityId = "warrior_tutorial";
                 h.DisplayName = "Guerrero (Tutorial)";
                 TuneForceDoor(h);
-                TuneAttackRolls(h);
             });
             EditorUtility.SetDirty(hero);
 
@@ -347,27 +346,6 @@ namespace Rollgeon.Editor.Tools
                                  "el escape del tutorial va a usar el threshold normal (25).");
         }
 
-        /// <summary>
-        /// El tutorial enseña "hasta 3 tiradas" en el ataque (generala: 1 roll +
-        /// 2 rerolls gratis) — se fuerza por data en el clone.
-        /// </summary>
-        private static void TuneAttackRolls(ClassHeroSO hero)
-        {
-            int patched = 0;
-            if (hero.PhaseBehaviors != null)
-            {
-                foreach (var behavior in hero.PhaseBehaviors)
-                {
-                    if (behavior == null || behavior.Slot != HeroBehaviorSlot.BaseAttack) continue;
-                    behavior.FreeRollCount = 3;
-                    patched++;
-                }
-            }
-
-            if (patched == 0)
-                Debug.LogWarning(LogPrefix + "El héroe clonado no tiene behaviors en el slot BaseAttack — " +
-                                 "la lección de dados va a prometer 3 tiradas que el data no da.");
-        }
 
         private static void SetPrivateField(ScriptableObject target, string fieldName, Object value)
         {

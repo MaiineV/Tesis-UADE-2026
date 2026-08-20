@@ -333,9 +333,8 @@ MonoBehaviour:
     m_Localized: "Esta es tu VIDA: si llega a cero, la run se termina. Cu\xEDdala."
     m_Metadata:
       m_Items: []
-  - m_Id: 7800251719905285
-    m_Localized: "Esta es tu ENERG\xCDA: moverte, atacar y volver a tirar la consumen.
-      Admin\xEDstrala en cada turno."
+  - m_Id: 12873216408338432
+    m_Localized: No te quedan Rolls.
     m_Metadata:
       m_Items: []
   - m_Id: 7800251719905286
@@ -354,13 +353,13 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 7800251719905289
-    m_Localized: "Arma combos (par, tr\xEDo, escalera). Clic en un dado lo bloquea;
-      vuelve a tirar el resto \u2014 m\xE1ximo 3 tiradas. Luego CONFIRMA."
+    m_Localized: "Arma combos (par, tr\xEDo, escalera). Clic bloquea un dado; re-tira
+      el resto por 1 Roll cada tirada. Luego CONFIRMA."
     m_Metadata:
       m_Items: []
   - m_Id: 7800251719905290
-    m_Localized: "Te sobraron tiradas: fase de DEFENSA. Lanza los dados y arma un
-      combo \u2014 tu ESCUDO absorbe el pr\xF3ximo golpe."
+    m_Localized: "Te sobraron Rolls: se desbloque\xF3 DEFENSA ({0}). Tira los dados
+      y arma un combo \u2014 se convierte en ESCUDO."
     m_Metadata:
       m_Items: []
   - m_Id: 7800251719905291
@@ -451,19 +450,6 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 7867763907198976
     m_Localized: "Pr\xF3ximamente"
-    m_Metadata:
-      m_Items: []
-  - m_Id: 8159026612039680
-    m_Localized: Reroll  -1 {ENERGY}
-    m_Metadata:
-      m_Items: []
-  - m_Id: 8159026649788416
-    m_Localized: '{0} Roll  -1 {ENERGY}'
-    m_Metadata:
-      m_Items: []
-  - m_Id: 8187299979096064
-    m_Localized: "\xA1No te quedan tiradas gratis!\nCada tirada adicional cuesta
-      1 de Energ\xEDa."
     m_Metadata:
       m_Items: []
   - m_Id: 8535671167614976
@@ -640,8 +626,9 @@ MonoBehaviour:
     m_Localized: Sin rango al objetivo.
     m_Metadata:
       m_Items: []
-  - m_Id: 10374649764216833
-    m_Localized: "No tienes energ\xEDa suficiente."
+  - m_Id: 12873216341229568
+    m_Localized: "Este es tu POOL DE ROLLS: cada tirada de dados consume 1. Al terminar
+      tu turno recuperas 5 (m\xE1ximo 15)."
     m_Metadata:
       m_Items: []
   - m_Id: 10374649764216834
@@ -665,12 +652,41 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 10403289960906752
-    m_Localized: "Tienes hasta 3 tiradas gratis por acci\xF3n; las siguientes cuestan
-      1 de energ\xEDa."
+    m_Localized: 'Puedes volver a tirar sin tope: cada tirada consume 1 Roll de tu
+      pool.'
     m_Metadata:
       m_Items: []
   - m_Id: 11862063171076096
     m_Localized: "Descripci\xF3n"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 12926848403161088
+    m_Localized: "Lanza los dados: cuanto mejor el combo, m\xE1s ESCUDO. Confirma
+      y absorbe el pr\xF3ximo golpe."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 12939077386862592
+    m_Localized: 1 Turno
+    m_Metadata:
+      m_Items: []
+  - m_Id: 12939077424611328
+    m_Localized: '{0} Turnos'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 12939077424611329
+    m_Localized: "Da\xF1o al entrar: {0}"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 12939077424611330
+    m_Localized: "Da\xF1o por turno encima: {0}"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 12939077424611331
+    m_Localized: 'Cura al terminar el turno: {0}'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 12939077424611332
+    m_Localized: Dura {0} rondas
     m_Metadata:
       m_Items: []
   references:

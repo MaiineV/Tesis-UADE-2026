@@ -14,7 +14,7 @@ namespace Rollgeon.Combat.FSM.Tests
     {
         private TurnOrderService _turnOrder;
         private FakeInitiativeProvider _provider;
-        private FakeEnergyService _energy;
+        private FakeRollPoolService _energy;
         private TurnManager _turnManager;
 
         private Guid _playerId;
@@ -39,7 +39,7 @@ namespace Rollgeon.Combat.FSM.Tests
             ServiceLocator.AddService<IInitiativeProvider>(_provider);
 
             _turnOrder = new TurnOrderService();
-            _energy = new FakeEnergyService();
+            _energy = new FakeRollPoolService();
 
             _turnManager = new TurnManager();
             _turnManager.ConfigureForTests(_energy, actions: null, ruleset: null);
@@ -49,9 +49,9 @@ namespace Rollgeon.Combat.FSM.Tests
             _enemyBId = Guid.NewGuid();
             _roomId = Guid.NewGuid();
 
-            _energy.Current[_playerId] = _energy.MaxPerEntity;
-            _energy.Current[_enemyAId] = _energy.MaxPerEntity;
-            _energy.Current[_enemyBId] = _energy.MaxPerEntity;
+            _energy.Current[_playerId] = _energy.RollsPerTurn;
+            _energy.Current[_enemyAId] = _energy.RollsPerTurn;
+            _energy.Current[_enemyBId] = _energy.RollsPerTurn;
 
             // Loggers globales — cada test puede leer _eventLog.
             _onTurnStartedLog = args => _eventLog.Add($"OnTurnStarted:{args[0]}");
@@ -299,20 +299,21 @@ namespace Rollgeon.Combat.FSM.Tests
         }
 
         // ======================================================================
-        // EnergyService suscribe OnTurnFinished - validado con fake
+        // RollPoolService suscribe OnTurnFinished - validado con fake
         // ======================================================================
 
         [Test]
-        public void EnergyService_RegenerateAtTurnEnd_HookedByExternalListener()
+        public void RollPool_TurnFinished_HookedByExternalListener()
         {
-            // En runtime el EnergyService real se suscribe a OnTurnFinished. Aqui
-            // validamos el contrato: un listener externo suscripto al evento
-            // recibe el callback con el Guid correcto cuando PlayerTurnState.Exit
-            // corre.
+            // En runtime el RollPoolService real se suscribe a OnTurnFinished y
+            // otorga el grant por turno. Aqui validamos el contrato: un listener
+            // externo suscripto al evento recibe el callback con el Guid correcto
+            // cuando PlayerTurnState.Exit corre.
             StackOrderPlayerFirst();
 
+            var granted = new System.Collections.Generic.List<Guid>();
             EventManager.Subscribe(EventName.OnTurnFinished,
-                args => _energy.RegenerateAtTurnEnd((Guid)args[0]));
+                args => granted.Add((Guid)args[0]));
 
             var ctx = BuildContext();
             var fsm = new CombatTurnFSM(ctx);
@@ -321,16 +322,16 @@ namespace Rollgeon.Combat.FSM.Tests
             fsm.SendInput(CombatInput.StartCombat);
             fsm.SendInput(CombatInput.PlayerEndTurn);
 
-            Assert.AreEqual(1, _energy.RegenerateCallCount);
-            Assert.AreEqual(_playerId, _energy.RegenerateCalledFor[0]);
+            Assert.AreEqual(1, granted.Count);
+            Assert.AreEqual(_playerId, granted[0]);
         }
 
         // ======================================================================
-        // REVISION 2: Energy == 0 does NOT auto-end turn
+        // REVISION 2: Rolls == 0 does NOT auto-end turn
         // ======================================================================
 
         [Test]
-        public void EnergyZero_DoesNotAutoEndTurn_FSMRemainsInPlayerTurnState()
+        public void RollsZero_DoesNotAutoEndTurn_FSMRemainsInPlayerTurnState()
         {
             StackOrderPlayerFirst();
             // Arrancamos combate con el player arriba.
@@ -342,7 +343,7 @@ namespace Rollgeon.Combat.FSM.Tests
             Assert.IsInstanceOf<PlayerTurnState>(fsm.Current,
                 "Pre: player deberia estar en PlayerTurn.");
 
-            // Forzamos energia 0.
+            // Forzamos pool 0.
             _energy.Current[_playerId] = 0;
             Assert.AreEqual(0, _energy.GetCurrent(_playerId));
 
@@ -351,7 +352,7 @@ namespace Rollgeon.Combat.FSM.Tests
 
             // FSM NO auto-transiciona: sigue en PlayerTurnState.
             Assert.IsInstanceOf<PlayerTurnState>(fsm.Current,
-                "Revision 2: Energy == 0 NO dispara auto-end; FSM permanece en PlayerTurnState.");
+                "Revision 2: pool == 0 NO dispara auto-end; FSM permanece en PlayerTurnState.");
 
             // Y sigue aceptando PlayerEndTurn explicito como unica via legitima.
             fsm.SendInput(CombatInput.PlayerEndTurn);

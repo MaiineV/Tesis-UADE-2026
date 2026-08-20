@@ -771,6 +771,118 @@ MonoBehaviour:
     m_Key: item.tutorial.par50.desc
     m_Metadata:
       m_Items: []
+  - m_Id: 12914473343746048
+    m_Key: status.poison.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 12914473360523264
+    m_Key: status.poison.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 12914473360523265
+    m_Key: status.stun.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 12914473360523266
+    m_Key: status.stun.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 12914473360523267
+    m_Key: tile.spikes.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 12914473360523268
+    m_Key: tile.spikes.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 12914473360523269
+    m_Key: tile.fire.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 12914473360523270
+    m_Key: tile.fire.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 12914473360523271
+    m_Key: tile.firetemp.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 12914473364717568
+    m_Key: tile.firetemp.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 12914473364717569
+    m_Key: tile.ice.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 12914473364717570
+    m_Key: tile.ice.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 12914473364717571
+    m_Key: tile.portal.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 12914473364717572
+    m_Key: tile.portal.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 12914473364717573
+    m_Key: tile.poison.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 12914473364717574
+    m_Key: tile.poison.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 12914473364717575
+    m_Key: tile.heal.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 12914473364717576
+    m_Key: tile.heal.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 12914473364717577
+    m_Key: tile.strength.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 12914473364717578
+    m_Key: tile.strength.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 12914473364717579
+    m_Key: tile.boost.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 12914473364717580
+    m_Key: tile.boost.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 12914473364717581
+    m_Key: tile.telegraph.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 12914473364717582
+    m_Key: tile.telegraph.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 12914473364717583
+    m_Key: tile.electricpuddle.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 12914473364717584
+    m_Key: tile.electricpuddle.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 12914473364717585
+    m_Key: tile.safezone.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 12914473364717586
+    m_Key: tile.safezone.desc
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

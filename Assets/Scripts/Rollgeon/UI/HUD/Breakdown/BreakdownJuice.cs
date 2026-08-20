@@ -1,7 +1,9 @@
+using System.Collections;
 using System.Collections.Generic;
 using Patterns;
 using PrimeTween;
 using Rollgeon.Audio;
+using Rollgeon.Combat.Damage;
 using Rollgeon.GameCamera;
 using Rollgeon.UI.HUD.DiceAnim;
 using Sirenix.OdinInspector;
@@ -88,6 +90,53 @@ namespace Rollgeon.UI.HUD.Breakdown
             _finalM = finalM;
             _nextRollupTickAt = 0f;
             StopResiduals();
+        }
+
+        /// <summary>
+        /// Celebración en el board al jugarse un combo: SOLO los dados contribuyentes
+        /// burstean partículas y se sacuden, escalado por la potencia (total final +
+        /// cantidad de dados). El fallback sin combo (ComboBase 0) no celebra — pero
+        /// los combos de 1 dado (Número Más Alto) SÍ: son el caso más común.
+        /// </summary>
+        public void OnComboPlayed(in DamageBreakdown breakdown, DiceZoneView zone)
+        {
+            if (!Active || zone == null) return;
+            var dice = breakdown.Dice;
+            if (dice == null || dice.Count == 0 || breakdown.ComboBase <= 0) return;
+
+            int t1 = _settings != null ? _settings.TierThreshold1 : 30;
+            int t2 = _settings != null ? _settings.TierThreshold2 : 80;
+            float intensity = BreakdownFeelMath.ComboCelebrateIntensity(
+                breakdown.Final, t1, t2, dice.Count);
+
+            int countMin = _settings != null ? _settings.ComboBurstCountMin : 3;
+            int countMax = _settings != null ? _settings.ComboBurstCountMax : 6;
+            int burst = Particles ? Mathf.RoundToInt(Mathf.Lerp(countMin, countMax, intensity)) : 0;
+            float punch = ShakeOk
+                ? (_settings != null ? _settings.ComboPunchScale : 0.18f) * intensity : 0f;
+            float shakeDeg = ShakeOk
+                ? (_settings != null ? _settings.ComboShakeRotation : 10f) * intensity : 0f;
+            if (burst <= 0 && punch <= 0f && shakeDeg <= 0f) return;
+
+            float stagger = (_settings != null ? _settings.ComboCelebrateStagger : 0.05f)
+                / Rollgeon.Timing.GameSpeedPrefs.Multiplier;
+            StartCoroutine(ComboCelebrateRoutine(dice, zone, burst, punch, shakeDeg, stagger));
+        }
+
+        private IEnumerator ComboCelebrateRoutine(IReadOnlyList<ContributingDie> dice,
+            DiceZoneView zone, int burst, float punch, float shakeDeg, float stagger)
+        {
+            for (int i = 0; i < dice.Count; i++)
+            {
+                var slot = zone.GetSlotView(dice[i].BagSlot);
+                if (slot != null)
+                {
+                    var juice = slot.GetComponent<DiceSlotJuice>();
+                    if (juice != null) juice.PlayComboCelebrate(burst, punch, shakeDeg);
+                }
+                if (stagger > 0f && i < dice.Count - 1)
+                    yield return new WaitForSecondsRealtime(stagger);
+            }
         }
 
         /// <summary>La espada carga antes de soltar su valor (el squash lo hace la view).</summary>

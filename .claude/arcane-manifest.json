@@ -1,5 +1,5 @@
 {
-  "arcane_version": "3fb45e0feaad",
+  "arcane_version": "ca092ff3113b",
   "cli": "npm",
   "profile_command": "unity-dev+unity-design+statusline",
   "profiles": [
@@ -84,7 +84,7 @@
     "game"
   ],
   "source": "C:\\Users\\agust\\.arcane\\cache\\3fb45e0feaad",
-  "source_version": "3fb45e0feaad",
+  "source_version": "ca092ff3113b",
   "worktree": {
     "is_worktree": false,
     "main_worktree": "C:\\Users\\agust\\Documents\\GitHub\\Tesis-UADE-2026",
@@ -94,7 +94,8 @@
     "skills": {
       "arcane-add": "64eb3c17fe5015f27ab4d24c24cd7457acea1d90b307ffcd75d0cf6d66a89d2b",
       "arcane-clean": "f0ad14835085574ad406d91c4cb25b2107daa28d31afa61ebc1618962d4227ca",
-      "arcane-list": "de2cd365f17f697026118a70b8d137ffd150286af01baf35cf80235a75e0e662",
+      "arcane-list": "0c920e180849fa8518ab04549cc87977b60358418f9f681f5edf3b286a96749d",
+      "arcane-list.bak": "d9f9a9ef85391a936d701726c99070aefd8034ff05d36262e324e4d0b815aed4",
       "arcane-remove": "3a121b2c3ffca72e30d2ee163d7bb0c58743723dd0aa2fa5b2ea5a662b1967f3",
       "arcane-status": "20b9f1c7baca36908f2d589f0cb28f3ebc253519ed7da6744e6bcca78283fccf",
       "art-bible": "69fb615f8fe42f406a32df4b7b8e0b0de7c9e17e1601e668a74d5bd7bbc35643",
@@ -121,7 +122,8 @@
       "game-docs": "b7367b59e2fae8e0f89c8e017817be9829f6452db6b59b51bc8b970a1440f075",
       "help": "dc97c6c8783ee59285b915f110019267d4cb889049af84634c6f83bc460040aa",
       "hotfix": "ae6fed49ca933cfdf742e297113cb1ee200a8d1e7b04d05c881ae601965eb30c",
-      "install-mcp": "7e7c826b33d5b3a69f4d5ee28034ac10aeb94243a035af856cc5710562647d9a",
+      "install-mcp": "6d64ca43954e51bc2b829d74d9dfad6124336fd7787f59619884a87c70df349f",
+      "install-mcp.bak": "95433ac90e1f354e9fe2b13ddc9a5426eded9a40bd99abbae40279178fc0387a",
       "kickoff": "7fd49443f13cf2d84fddcd6bc5d5643de803658fb8b1bde23063ca3d20453eb0",
       "map-systems": "9b626ced9a2739c2bd46953862b2fbf8c397dfc33c8e53ec2ace26b2c02c1351",
       "onboard": "82aafff7953e805825f9c37610eb9e3e711d9785ff9608737f34b6c93464a28c",
@@ -146,7 +148,7 @@
       "ux-design": "cb040d2eddf006d6755798c2ecae4c1da511d5ec8f1b285ab70749cc9ed9a668"
     },
     "rules": {
-      "ai-code.md": "77724351c28907af87630f98b6e38dcdbcabb4d74e02a4df17874b1cc1276a0b",
+      "ai-code.md": "130b64989d61de2a40d9ad332bd4928d6ee84ff989cfae82e238ac615446718d",
       "data-files.md": "e0f5ca44b833fae2b793ae23c433d873e4f97f36b3399c0392a56ebf20ff4385",
       "design-docs.md": "8e3ea21cd637f39b2fbca4ec1d660c97e0143f1b211466c7b03cf6447a59bfb4",
       "engine-code.md": "c4b2210d0947781735b2b456e73e370494a3403306ca320c7ae403d92c0ebee8",
@@ -160,13 +162,14 @@
       "ui-code.md": "be45904c33e72c717ac56ba2ee760d5a5ec1435a3b84ad4365ca513c91a7a68b"
     },
     "agents": {
-      "game": "c5931b0d93b0abd2173ce11c39a2cb12c9340ccbc6601109a748f16f5a961e63",
+      "game": "0387ea09f3ac479a884dd79b470e72b02b02facad82943e209192252a66eb110",
       "quality": "170924e36e6180dba51890c7f05e25383cf9b6d6649a0cd4ed4fc2154ef69f87"
     },
     "hooks": {
       "check-update.sh": "076050603ab48da7909607fbab41754fad60b26d02c71cd6b39356ed487097f7",
       "detect-division.sh": "2ab203d201d011afa5e426bf2f878d76024ac25bc392a6db909e2f8fb7dc95ce",
       "detect-gaps.sh": "f64f0b796af85c7048f85317c2a2ed4eb2aa67ab29d80213d03d78ef7ea81e64",
+      "detect-unreal.sh": "87c58273802bcc98f0fd37de90654024bdb587be9853c8f93cc8f4fd981cbc08",
       "log-agent-stop.sh": "517bfb07ac9fccc826c015228d76126cc3149159ce58483ae478a4c4e18c3a92",
       "log-agent.sh": "c8c2088615f1e138c348a86f7ae7e5a2cd0f03ea1e2d9581f9990caeff78e9b3",
       "notify.sh": "e61791dcb1454a54e340f5be3629b66bb6356dd88c48cc1058bc86b9b7f5cb28",
@@ -174,7 +177,7 @@
       "pre-compact.sh": "d3e015715fbdabac8acb9db42c3868739a5c1776b7eab01e327744eb140ecf0b",
       "session-start.sh": "2875afb86b212448bc2a4d538f44c19b231c9995b663dd21888640b1c9e32e89",
       "session-stop.sh": "261955eaa7249e770c8a75b8c3c26e7b4f76f82519c546729cb35bf14e06d624",
-      "statusline.sh": "3048c41cf030de6daa3dbb9e3a8fdbbdfc3940fb9c2e703fed49593542abaf19",
+      "statusline.sh": "1d835f730bf0c41e463a44369b0232360c02690163d2b7719e83a210eabd4237",
       "validate-assets.sh": "bb4877adc6ab469005d8db5a37acff89d148a87ed8a50c7e1aad01a3f7c6a151",
       "validate-commit.sh": "a6d66d0ce3e0c8890e51b120d4c56560ebc439b14ec754aceb991437f48778c3",
       "validate-push.sh": "86ff656f617e73fc118847f0ecf038c6c11a633d2d96e65676759d96c6defa3f",
@@ -182,5 +185,5 @@
       "validate-skill-change.sh": "fff75731d79c25041929fec75c43b02cbd74dedf0d6a7f247f63f4eec62dd370"
     }
   },
-  "updated_at": "2026-06-29T16:23:42Z"
+  "updated_at": "2026-08-14T04:58:03Z"
 }

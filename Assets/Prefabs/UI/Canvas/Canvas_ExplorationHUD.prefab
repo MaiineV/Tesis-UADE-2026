@@ -54,7 +54,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Rollgeon::Rollgeon.UI.Screens.ExplorationHUDView
   _screenStringIdOverride: 
   _healthChips: {fileID: 0}
-  _energyChips: {fileID: 0}
   _activeItems: {fileID: 0}
   _statusIcons: {fileID: 0}
   _minimap: {fileID: 7258762250288503781}
@@ -1208,6 +1207,8 @@ MonoBehaviour:
   _usedSprite: {fileID: -1401037328, guid: d9c8010d59b9fb840b4e32c323e48742, type: 3}
   _disabledAlpha: 0.5
   _sinkSpeed: 900
+  _rejectClip: {fileID: 8300000, guid: e6f216e1ceb348eeacf1b9359b914e92, type: 3}
+  _rejectVolume: 0.9
 --- !u!1 &3477973551267671920
 GameObject:
   m_ObjectHideFlags: 0
@@ -1483,6 +1484,8 @@ MonoBehaviour:
   _usedSprite: {fileID: -1401037328, guid: d9c8010d59b9fb840b4e32c323e48742, type: 3}
   _disabledAlpha: 0.5
   _sinkSpeed: 900
+  _rejectClip: {fileID: 8300000, guid: e6f216e1ceb348eeacf1b9359b914e92, type: 3}
+  _rejectVolume: 0.9
 --- !u!1 &4369657259479761301
 GameObject:
   m_ObjectHideFlags: 0
@@ -1944,6 +1947,8 @@ MonoBehaviour:
   _usedSprite: {fileID: -1401037328, guid: d9c8010d59b9fb840b4e32c323e48742, type: 3}
   _disabledAlpha: 0.5
   _sinkSpeed: 900
+  _rejectClip: {fileID: 8300000, guid: e6f216e1ceb348eeacf1b9359b914e92, type: 3}
+  _rejectVolume: 0.9
 --- !u!1 &5057359391340898608
 GameObject:
   m_ObjectHideFlags: 0

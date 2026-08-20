@@ -35,6 +35,7 @@ namespace Rollgeon.EditorTools.HUD
         private const string RuneSheetPath = "Assets/Art/UI/Rune/Rune.png";
         private const string FontPath = "Assets/Fonts/m6x11plus SDF.asset";
         private const string EnchantMaterialPath = "Assets/Art/2D/UI/Materials/EnchantHoloUI.mat";
+        private const string CursedMaterialPath = "Assets/Art/2D/UI/Materials/EnchantCurseUI.mat";
 
         private const string DieIdleSlice = "UI-sheet_7";
         private const string DieSelectedSlice = "UI-sheet_5";
@@ -49,8 +50,12 @@ namespace Rollgeon.EditorTools.HUD
         private const float DiceSpacing = 10f;
         private static readonly Vector2 SlotSize = new Vector2(72f, 72f);
         private const float SlotSpacing = 12f;
-        private static readonly Vector2 FaceCardSize = new Vector2(56f, 56f);
-        private const float FaceSpacing = 6f;
+        // Tamaño real del EnchantmentFaceCard.prefab (48x48). Con 528px útiles y
+        // spacing 4 el GridLayoutGroup arma 10 columnas → un D20 son 2 filas.
+        private static readonly Vector2 FaceCellSize = new Vector2(48f, 48f);
+        private static readonly Vector2 FaceGridSpacing = new Vector2(4f, 4f);
+        private static readonly float FacesSectionHeight =
+            2f * FaceCellSize.y + FaceGridSpacing.y + 16f;
 
         private const float PanelPadding = 16f;
 
@@ -93,6 +98,10 @@ namespace Rollgeon.EditorTools.HUD
             if (enchantMaterial == null)
                 Debug.LogWarning($"[DiceBag] {EnchantMaterialPath} no encontrado — las cards no van " +
                                  "a mostrar el holo de encantado.");
+            var cursedMaterial = AssetDatabase.LoadAssetAtPath<Material>(CursedMaterialPath);
+            if (cursedMaterial == null)
+                Debug.LogWarning($"[DiceBag] {CursedMaterialPath} no encontrado — las cards malditas " +
+                                 "van a caer al holo.");
 
             RebuildPrefab(DieCardPrefabPath, "DiceBagDieCard", root =>
             {
@@ -142,6 +151,7 @@ namespace Rollgeon.EditorTools.HUD
                 so.FindProperty("_idleFrame").objectReferenceValue = idle;
                 so.FindProperty("_selectedFrame").objectReferenceValue = selected;
                 so.FindProperty("_enchantMaterial").objectReferenceValue = enchantMaterial;
+                so.FindProperty("_cursedMaterial").objectReferenceValue = cursedMaterial;
                 so.ApplyModifiedPropertiesWithoutUndo();
 
                 var layout = Ensure<LayoutElement>(root);
@@ -301,14 +311,16 @@ namespace Rollgeon.EditorTools.HUD
                 y -= 10f;
 
                 // -- Caras --
-                var facesSection = EnsureSectionRect(panel, "FacesSection", ref y, FaceCardSize.y + 16f);
+                // Wrap en grid (mismo patrón que el FacesContainer del altar): un
+                // D20 pide 20 cards y no entra en una sola fila del panel.
+                var facesSection = EnsureSectionRect(panel, "FacesSection", ref y, FacesSectionHeight);
                 var facesSectionBg = Ensure<Image>(facesSection.gameObject);
                 facesSectionBg.sprite = sectionSprite;
                 facesSectionBg.type = Image.Type.Sliced;
                 facesSectionBg.raycastTarget = false;
                 var facesRow = EnsureChildRect(facesSection, "Faces", Vector2.zero, Vector2.zero);
                 Stretch(facesRow, 8f);
-                EnsureRowLayout(facesRow.gameObject, FaceSpacing);
+                EnsureWrapGridLayout(facesRow.gameObject, FaceCellSize, FaceGridSpacing);
                 y -= 10f;
 
                 // -- Descripción: ocupa lo que queda hasta el borde inferior --
@@ -401,6 +413,23 @@ namespace Rollgeon.EditorTools.HUD
             layout.childControlHeight = false;
             layout.childForceExpandWidth = false;
             layout.childForceExpandHeight = false;
+        }
+
+        // Grid con wrap para las mini-cards de caras — mismo approach que
+        // EnsureGridCardsContainer del installer del altar, sin ContentSizeFitter
+        // (acá las secciones se apilan a mano con EnsureSectionRect y la altura
+        // ya contempla el peor caso D20).
+        private static void EnsureWrapGridLayout(GameObject go, Vector2 cellSize, Vector2 spacing)
+        {
+            var row = go.GetComponent<HorizontalLayoutGroup>();
+            if (row != null) Object.DestroyImmediate(row, true);
+
+            var grid = Ensure<GridLayoutGroup>(go);
+            grid.cellSize = cellSize;
+            grid.spacing = spacing;
+            grid.startAxis = GridLayoutGroup.Axis.Horizontal;
+            grid.constraint = GridLayoutGroup.Constraint.Flexible;
+            grid.childAlignment = TextAnchor.MiddleCenter;
         }
 
         private static void RebuildPrefab(string path, string rootName, System.Action<GameObject> build)

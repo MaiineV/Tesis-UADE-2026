@@ -59,23 +59,36 @@ namespace Rollgeon.Combat.AI.Decisions
             if (currentDist >= idealDist) return AIResult.Failed;
 
             int maxSteps = MaxSteps?.Read(context) ?? 3;
-            var reachable = context.Movement.GetReachableTiles(selfCoord, maxSteps, includeOrigin: false);
-            if (reachable == null || reachable.Count == 0) return AIResult.Failed;
 
-            var best = selfCoord;
-            int bestScore = currentDist;
-            foreach (var candidate in reachable)
+            // Con planner en el contexto, kitea con conciencia de casillas especiales.
+            if (context.PathPlanner != null)
             {
-                int dist = Mathf.Min(candidate.Manhattan(playerCoord), idealDist);
-                if (dist <= bestScore) continue;
-                bestScore = dist;
-                best = candidate;
+                if (!AIPathMoveExecutor.TryPlanAndMove(context, playerCoord, maxSteps, idealDist,
+                        Pathing.MoveIntent.Kite))
+                {
+                    return AIResult.Failed;
+                }
             }
+            else
+            {
+                var reachable = context.Movement.GetReachableTiles(selfCoord, maxSteps, includeOrigin: false);
+                if (reachable == null || reachable.Count == 0) return AIResult.Failed;
 
-            if (best == selfCoord) return AIResult.Failed;
+                var best = selfCoord;
+                int bestScore = currentDist;
+                foreach (var candidate in reachable)
+                {
+                    int dist = Mathf.Min(candidate.Manhattan(playerCoord), idealDist);
+                    if (dist <= bestScore) continue;
+                    bestScore = dist;
+                    best = candidate;
+                }
 
-            if (!context.Movement.Move(context.SelfGuid, best))
-                return AIResult.Failed;
+                if (best == selfCoord) return AIResult.Failed;
+
+                if (!context.Movement.Move(context.SelfGuid, best))
+                    return AIResult.Failed;
+            }
 
             // Solo el movimiento efectivo consume la acción — los Failed de arriba
             // (ya a distancia ideal, sin tile mejor) dejan la acción disponible.

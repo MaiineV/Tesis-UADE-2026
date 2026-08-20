@@ -102,25 +102,25 @@ namespace Patterns
     }
 
     /// <summary>
-    /// Payload tipado para "el jugador intentó usar una acción que no puede pagar". Canalizado
-    /// únicamente vía <c>TypedEvent&lt;InsufficientEnergyPayload&gt;</c> — no existe entry legacy
+    /// Payload tipado para "el jugador intentó usar una acción sin rolls en el pool". Canalizado
+    /// únicamente vía <c>TypedEvent&lt;InsufficientRollsPayload&gt;</c> — no existe entry legacy
     /// en <see cref="EventName"/>.
     /// </summary>
     /// <remarks>
-    /// Lo emite el chip de la acción y lo consume la pila de energía del HUD, que vive en otro
-    /// prefab (<c>Canvas_PlayerStatus</c>) y tiene su propio ciclo de vida — la bindea tanto el
-    /// HUD de combate como el de exploración. Un evento evita la ref cruzada y deja que mañana
-    /// se enganchen audio o shake de cámara sin tocar a ninguno de los dos.
+    /// Lo emite el chip de la acción y lo consume la pila de rolls del HUD, que vive en otro
+    /// prefab (<c>Canvas_PlayerStatus</c>) y tiene su propio ciclo de vida. Un evento evita la
+    /// ref cruzada y deja que mañana se enganchen audio o shake de cámara sin tocar a ninguno
+    /// de los dos.
     /// </remarks>
-    public struct InsufficientEnergyPayload
+    public struct InsufficientRollsPayload
     {
         /// <summary>InstanceId del jugador que intentó la acción.</summary>
         public Guid PlayerGuid;
 
-        /// <summary>Costo real de la acción rechazada (el que se iba a cobrar, no el legacy).</summary>
+        /// <summary>Costo en rolls de la acción rechazada (1 por tirada).</summary>
         public int Cost;
 
-        /// <summary>Energía disponible al momento del rechazo.</summary>
+        /// <summary>Rolls disponibles al momento del rechazo.</summary>
         public int Current;
     }
 

@@ -66,9 +66,9 @@ namespace Rollgeon.UI.Screens
         [SerializeField]
         private HealthChipStackView _healthChips;
 
-        [Required("Arrastrar EnergyChipStackView (pila de fichas de energía).")]
+        [Required("Arrastrar RollPoolChipStackView (pila de fichas del pool de rolls).")]
         [SerializeField]
-        private EnergyChipStackView _energyChips;
+        private RollPoolChipStackView _energyChips;
 
         [Required("Arrastrar EndTurnButtonView.")]
         [SerializeField]
@@ -95,10 +95,6 @@ namespace Rollgeon.UI.Screens
         [SerializeField]
         private PassiveBadgeView _passiveBadge;
 
-        [Tooltip("Opcional — muestra la fase actual de un EffChain.")]
-        [SerializeField]
-        private ChainPhaseIndicatorView _chainPhaseIndicator;
-
         [Tooltip("Opcional — slots de items activos clickables (ej. poción de healing). " +
                  "Si null, no hay UI de items activos en el combate.")]
         [SerializeField]
@@ -108,12 +104,6 @@ namespace Rollgeon.UI.Screens
                  "behavior seleccionado (ataque/defensa). Si null, el tablero no cambia de skin.")]
         [SerializeField]
         private DiceBoardSkinView _boardSkin;
-
-        [Tooltip("Opcional — prompt central del tablero para la entrada paga a una fase de " +
-                 "chain ('Shield Roll (1E)'). Ref cross-canvas a Canvas_ActionRoll, igual que " +
-                 "el board skin. Si null, la fase paga funciona sin prompt visual.")]
-        [SerializeField]
-        private ChainRollPromptView _chainRollPrompt;
 
         [Title("Combat HUD — Damage Flash")]
         [SerializeField]
@@ -148,8 +138,8 @@ namespace Rollgeon.UI.Screens
             return rect != null;
         }
 
-        /// <summary>RectTransform de la pila de energía del jugador — anchor del overlay del tutorial.</summary>
-        public bool TryGetEnergyBarRect(out RectTransform rect)
+        /// <summary>RectTransform de la pila del pool de rolls — anchor del overlay del tutorial.</summary>
+        public bool TryGetRollPoolRect(out RectTransform rect)
         {
             rect = _energyChips != null ? _energyChips.transform as RectTransform : null;
             return rect != null;
@@ -171,11 +161,14 @@ namespace Rollgeon.UI.Screens
             return _rerollCount != null && _rerollCount.TryGetRollButtonRect(out rect);
         }
 
-        /// <summary>RectTransform del botón Confirmar — anchor del overlay del tutorial.</summary>
+        /// <summary>
+        /// RectTransform del botón que confirma — hoy es el mismo botón contextual de
+        /// turno (End Turn / Confirm / Pass). Anchor del overlay del tutorial.
+        /// </summary>
         public bool TryGetConfirmButtonRect(out RectTransform rect)
         {
             rect = null;
-            return _playerActionButtons != null && _playerActionButtons.TryGetConfirmRect(out rect);
+            return _endTurnButtonView != null && _endTurnButtonView.TryGetButtonRect(out rect);
         }
 
         /// <summary>RectTransform del botón Finalizar Turno — anchor del overlay del tutorial.</summary>
@@ -196,7 +189,7 @@ namespace Rollgeon.UI.Screens
         // Action delegates (wired by CombatController — setup doc §8.7)
         // ======================================================================
 
-        /// <summary>Delegate que dispara "energy reroll". Seteado por <c>CombatController</c>.</summary>
+        /// <summary>Delegate que dispara un reroll (1 roll del pool). Seteado por <c>CombatController</c>.</summary>
         public Action OnEnergyRerollRequested;
 
         /// <summary>Delegate que dispara "end turn". Seteado por <c>CombatController</c>.</summary>
@@ -208,13 +201,16 @@ namespace Rollgeon.UI.Screens
         /// <summary>Delegate que dispara "confirm" (generico, no solo attack).</summary>
         public Action OnConfirmRequested;
 
-        /// <summary>Delegate que dispara "chain pass" (saltear fases restantes del chain).</summary>
+        /// <summary>
+        /// Delegate que pasa la fase paga de un chain sin pagar (botón contextual en
+        /// modo Pass). A diferencia de End Turn, NO cierra el turno.
+        /// </summary>
         public Action OnChainPassRequested;
 
         /// <summary>
         /// Delegate que dispara el primer roll de la accion seleccionada. El HUD
         /// decide entre este y <see cref="OnEnergyRerollRequested"/> via
-        /// <c>InvokeRollOrReroll</c> segun el estado del budget.
+        /// <c>InvokeRollOrReroll</c> segun si la accion ya tiro sus dados.
         /// </summary>
         public Action OnRollRequested;
 
@@ -242,20 +238,19 @@ namespace Rollgeon.UI.Screens
             if (_rerollCount != null)
                 _rerollCount.OnExtraRollPressed.AddListener(InvokeRollOrReroll);
 
-            // BUG-034: el prompt "X Roll (1E)" es la affordance visible del pago —
-            // clickearlo debe pagar igual que el botón Roll. Mismo entry point para
-            // conservar el dispatch roll/reroll y el warning de "no cableado".
-            if (_chainRollPrompt != null)
-                _chainRollPrompt.OnPromptClicked.AddListener(InvokeRollOrReroll);
-
             if (_playerActionButtons != null)
             {
-                _playerActionButtons.OnConfirmPressed.AddListener(InvokeConfirmRequested);
                 _playerActionButtons.OnBehaviorSelected = InvokeBehaviorSelected;
             }
 
+            // Botón contextual: End Turn / Confirm / Pass salen del mismo Button y
+            // el view rutea el click según su modo.
             if (_endTurnButtonView != null)
+            {
                 _endTurnButtonView.OnEndTurnPressed.AddListener(InvokeEndTurnRequested);
+                _endTurnButtonView.OnConfirmPressed.AddListener(InvokeConfirmRequested);
+                _endTurnButtonView.OnPassPressed.AddListener(InvokePassRequested);
+            }
         }
 
         private void OnDestroy()
@@ -263,17 +258,17 @@ namespace Rollgeon.UI.Screens
             if (_rerollCount != null)
                 _rerollCount.OnExtraRollPressed.RemoveListener(InvokeRollOrReroll);
 
-            if (_chainRollPrompt != null)
-                _chainRollPrompt.OnPromptClicked.RemoveListener(InvokeRollOrReroll);
-
             if (_playerActionButtons != null)
             {
-                _playerActionButtons.OnConfirmPressed.RemoveListener(InvokeConfirmRequested);
                 _playerActionButtons.OnBehaviorSelected = null;
             }
 
             if (_endTurnButtonView != null)
+            {
                 _endTurnButtonView.OnEndTurnPressed.RemoveListener(InvokeEndTurnRequested);
+                _endTurnButtonView.OnConfirmPressed.RemoveListener(InvokeConfirmRequested);
+                _endTurnButtonView.OnPassPressed.RemoveListener(InvokePassRequested);
+            }
         }
 
         /// <inheritdoc/>
@@ -341,7 +336,7 @@ namespace Rollgeon.UI.Screens
             // Viven en Canvas_PlayerStatus (otro prefab) — sin referencia posible en
             // el Inspector, se auto-resuelven en escena.
             if (_healthChips == null) _healthChips = UnityEngine.Object.FindFirstObjectByType<HealthChipStackView>(FindObjectsInactive.Include);
-            if (_energyChips == null) _energyChips = UnityEngine.Object.FindFirstObjectByType<EnergyChipStackView>(FindObjectsInactive.Include);
+            if (_energyChips == null) _energyChips = UnityEngine.Object.FindFirstObjectByType<RollPoolChipStackView>(FindObjectsInactive.Include);
             if (_activeItems == null) _activeItems = UnityEngine.Object.FindFirstObjectByType<ActiveItemsView>(FindObjectsInactive.Include);
             if (_playerBaseDamage == null) _playerBaseDamage = UnityEngine.Object.FindFirstObjectByType<Rollgeon.UI.HUD.Breakdown.PlayerBaseDamageView>(FindObjectsInactive.Include);
             if (_breakdownDirector == null) _breakdownDirector = UnityEngine.Object.FindFirstObjectByType<Rollgeon.UI.HUD.Breakdown.BreakdownSequenceDirector>(FindObjectsInactive.Include);
@@ -377,7 +372,6 @@ namespace Rollgeon.UI.Screens
             // Canvas_PlayerStatus, que se ve también en exploración. Bindearlo lo haría
             // reaparecer (su Refresh hace SetActive(true)) encima del reemplazo. El
             // componente y su GameObject quedan, desactivados, como rollback.
-            if (_chainPhaseIndicator != null) _chainPhaseIndicator.Bind(playerGuid);
             if (_activeItems != null) _activeItems.Bind(playerGuid);
 
             _subViewsBound = true;
@@ -400,7 +394,6 @@ namespace Rollgeon.UI.Screens
             // Unbind sigue siendo seguro e idempotente: cubre el caso de haber quedado
             // bindeado por una versión anterior de la escena.
             if (_passiveBadge != null) _passiveBadge.Unbind();
-            if (_chainPhaseIndicator != null) _chainPhaseIndicator.Unbind();
             if (_activeItems != null) _activeItems.Unbind();
             _subViewsBound = false;
         }
@@ -441,21 +434,6 @@ namespace Rollgeon.UI.Screens
         {
             if (_boardSkin != null) _boardSkin.ApplyBoardType(type);
             if (_damageFormula != null) _damageFormula.SetBoardType(type);
-        }
-
-        /// <summary>
-        /// Muestra el prompt "X Roll (1E)" en el centro del tablero — entrada paga a una
-        /// fase de chain sin rolls sobrantes. No-op sin wiring.
-        /// </summary>
-        public void ShowChainRollPrompt(string phaseLabel)
-        {
-            if (_chainRollPrompt != null) _chainRollPrompt.Show(phaseLabel);
-        }
-
-        /// <summary>Esconde el prompt de roll pago del chain. No-op sin wiring.</summary>
-        public void HideChainRollPrompt()
-        {
-            if (_chainRollPrompt != null) _chainRollPrompt.Hide();
         }
 
         /// <summary>
@@ -504,17 +482,13 @@ namespace Rollgeon.UI.Screens
         }
 
         /// <summary>
-        /// Dispatch del boton compartido "Roll / Reroll" en el HUD. Si el budget
-        /// esta abierto y todavia no se rolo (FreeRollsRemaining == FreeRollCount,
-        /// PaidRollsUsed == 0) es el primer roll; sino es reroll.
+        /// Dispatch del boton compartido "Roll / Reroll" en el HUD. Si la accion en
+        /// curso todavia no tiro sus dados es el primer roll; sino es reroll (ambos
+        /// cuestan 1 roll del pool).
         /// </summary>
         private void InvokeRollOrReroll()
         {
-            if (ServiceLocator.TryGetService<IRerollBudgetService>(out var budget)
-                && budget?.Current != null
-                && budget.Current.Action != null
-                && budget.Current.FreeRollsRemaining == budget.Current.Action.FreeRollCount
-                && budget.Current.PaidRollsUsed == 0)
+            if (_rerollCount == null || _rerollCount.IsFirstRollPending)
             {
                 if (OnRollRequested == null)
                 {
@@ -557,7 +531,7 @@ namespace Rollgeon.UI.Screens
             OnConfirmRequested.Invoke();
         }
 
-        public void InvokeChainPassRequested()
+        private void InvokePassRequested()
         {
             if (OnChainPassRequested == null)
             {

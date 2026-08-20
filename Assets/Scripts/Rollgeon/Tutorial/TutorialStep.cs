@@ -30,7 +30,7 @@ namespace Rollgeon.Tutorial
         StatsHp,
 
         /// <summary>Sala B: explicar la barra de energía.</summary>
-        StatsEnergy,
+        StatsRolls,
 
         /// <summary>Sala B: se desbloqueó ATACAR — señalar el botón.</summary>
         AttackTeach,

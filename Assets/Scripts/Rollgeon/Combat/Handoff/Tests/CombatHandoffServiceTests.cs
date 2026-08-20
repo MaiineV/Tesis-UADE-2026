@@ -156,36 +156,32 @@ namespace Rollgeon.Combat.Handoff.Tests
             public void EndPlayerTurn() { }
         }
 
-        private class SpyRerollBudgetService : IRerollBudgetService
+        private sealed class CountingRollPool : Rollgeon.Combat.Rolls.IRollPoolService
         {
-            public RerollBudget Current { get; private set; }
-            public int StartBudgetCallCount { get; private set; }
-            public int EndBudgetCallCount { get; private set; }
+            public int CurrentRolls = 99;
+            public int TrySpendCallCount { get; private set; }
 
-#pragma warning disable 67 // event declared by interface; spy never raises it
-            public event Action<RerollStartedPayload> OnRerollStarted;
-#pragma warning restore 67
-            public event Action<RerollBudget> OnBudgetStarted;
-
-            public void StartBudget(ActionDefinitionSO action)
+            public bool IsCombatActive => true;
+            public void InitializeForEntity(Guid entityId) { }
+            public bool TrySpendRolls(Guid entityId, int count)
             {
-                StartBudgetCallCount++;
-                if (Current != null)
-                    throw new InvalidOperationException("budget already active");
-                // RerollBudget setters are internal to the main assembly; the spy
-                // only needs Current to be non-null for the regression test.
-                Current = new RerollBudget();
-                OnBudgetStarted?.Invoke(Current);
+                if (count > CurrentRolls) return false;
+                TrySpendCallCount++;
+                CurrentRolls -= count;
+                return true;
             }
-
-            public void EndBudget()
+            public int Drain(Guid entityId, int amount)
             {
-                EndBudgetCallCount++;
-                Current = null;
+                int drained = Math.Min(amount, CurrentRolls);
+                CurrentRolls -= drained;
+                return drained;
             }
-
-            public RerollQueryResult QueryExtraRoll(Guid playerGuid) => RerollQueryResult.Free();
-            public bool TryExtraRoll(Guid playerGuid) => false;
+            public void AddRolls(Guid entityId, int amount) => CurrentRolls += amount;
+            public int GetCurrent(Guid entityId) => CurrentRolls;
+            public int GetMax(Guid entityId) => 15;
+            public int GetRollsPerTurn(Guid entityId) => 5;
+            public void AddPerTurnGrantBonus(int amount) { }
+            public void RestoreCurrent(Guid entityId, int value) => CurrentRolls = value;
         }
 
         // -------------------------------------------------------------------
@@ -421,104 +417,32 @@ namespace Rollgeon.Combat.Handoff.Tests
         }
 
         // -------------------------------------------------------------------
-        // Regression: combat-end cleanup (bug Fix#0001 — enemy dies mid-chain,
-        // leftover reroll budget breaks the next combat with InvalidOperationException
-        // on StartBudget).
+        // Combat-end cleanup: el reset del estado de fase debe tolerar un
+        // ServiceLocator vacio y un Dispose previo (Feature#0050: el budget
+        // por accion murio; el pool se resetea solo via sus propios eventos).
         // -------------------------------------------------------------------
 
         [Test]
-        public void OnCombatEnd_WithActiveRerollBudget_EndsTheBudget()
+        public void OnCombatEnd_NoServicesRegistered_DoesNotThrow()
         {
-            // Arrange: simulate the state at the moment the enemy dies mid-chain —
-            // an active budget is open from the action that landed the killing blow.
-            var spyBudget = new SpyRerollBudgetService();
-            ServiceLocator.AddService<IRerollBudgetService>(spyBudget, ServiceScope.Global);
-
-            var wrapper = ScriptableObject.CreateInstance<ActionDefinitionSO>();
-            wrapper.ActionId = "test.action";
-            wrapper.FreeRollCount = 3;
-            _createdObjects.Add(wrapper);
-            spyBudget.StartBudget(wrapper);
-
-            Assert.IsNotNull(spyBudget.Current, "pre-condition: budget must be open");
-
-            // Act
-            EventManager.Trigger(EventName.OnCombatEnd, Guid.NewGuid(), CombatOutcome.Victory);
-
-            // Assert
-            Assert.AreEqual(1, spyBudget.EndBudgetCallCount,
-                "Combat end must end the active reroll budget so the next combat's " +
-                "StartBudget does not throw InvalidOperationException.");
-            Assert.IsNull(spyBudget.Current, "Current budget must be null after combat end");
-        }
-
-        [Test]
-        public void OnCombatEnd_WithNoActiveBudget_DoesNotThrow()
-        {
-            var spyBudget = new SpyRerollBudgetService();
-            ServiceLocator.AddService<IRerollBudgetService>(spyBudget, ServiceScope.Global);
-
+            // ServiceLocator stays empty. Reset must tolerate that.
             Assert.DoesNotThrow(() =>
                 EventManager.Trigger(EventName.OnCombatEnd, Guid.NewGuid(), CombatOutcome.Victory));
         }
 
         [Test]
-        public void OnCombatEnd_NoBudgetServiceRegistered_DoesNotThrow()
+        public void Dispose_ThenCombatEnd_DoesNotThrow()
         {
-            // ServiceLocator stays empty for this service. Reset must tolerate that.
-            Assert.DoesNotThrow(() =>
-                EventManager.Trigger(EventName.OnCombatEnd, Guid.NewGuid(), CombatOutcome.Victory));
-        }
-
-        [Test]
-        public void Dispose_UnsubscribesFromCombatEnd()
-        {
-            var spyBudget = new SpyRerollBudgetService();
-            ServiceLocator.AddService<IRerollBudgetService>(spyBudget, ServiceScope.Global);
-
-            var wrapper = ScriptableObject.CreateInstance<ActionDefinitionSO>();
-            wrapper.ActionId = "test.action";
-            wrapper.FreeRollCount = 1;
-            _createdObjects.Add(wrapper);
-            spyBudget.StartBudget(wrapper);
-
             _service.Dispose();
 
-            EventManager.Trigger(EventName.OnCombatEnd, Guid.NewGuid(), CombatOutcome.Victory);
-
-            Assert.AreEqual(0, spyBudget.EndBudgetCallCount,
-                "After Dispose the OnCombatEnd handler must be unsubscribed.");
-        }
-
-        // -------------------------------------------------------------------
-        // Regression PUL-016: el combate cierra con la entrada paga de una fase de
-        // chain pendiente (el enemigo muere antes de que el player consuma todas las
-        // fases). El reset apagaba el flag pero dejaba el prompt "… Roll (1E)" prendido,
-        // y reaparecía en el combate siguiente encima del roll de ataque.
-        // -------------------------------------------------------------------
-
-        [Test]
-        public void OnCombatEnd_WithChainPaidPromptVisible_HidesPrompt()
-        {
-            // Arrange — el prompt se prende SIN pasar por Show() a propósito: así no queda
-            // suscripto al bus por su cuenta y el único que puede apagarlo es el reset del
-            // servicio. Es lo que hace fallar este test contra el código viejo.
-            var prompt = MakeHudWithChainPrompt();
-            Assert.IsTrue(prompt.gameObject.activeSelf, "pre-condition: el prompt arranca visible");
-
-            // Act
-            EventManager.Trigger(EventName.OnCombatEnd, Guid.NewGuid(), CombatOutcome.Victory);
-
-            // Assert
-            Assert.IsFalse(prompt.gameObject.activeSelf,
-                "El fin de combate debe apagar el prompt de roll pago; si no, se filtra al " +
-                "combate siguiente porque desactivar el canvas no limpia el m_IsActive del hijo.");
+            Assert.DoesNotThrow(() =>
+                EventManager.Trigger(EventName.OnCombatEnd, Guid.NewGuid(), CombatOutcome.Victory));
         }
 
         [Test]
-        public void OnCombatEnd_WithoutChainPromptWired_DoesNotThrow()
+        public void OnCombatEnd_WithBareHudWired_DoesNotThrow()
         {
-            // Arrange — hud sin prompt wireado (el default del prefab).
+            // Arrange — hud sin sub-views wireadas (el default del prefab).
             var hudGo = new GameObject("CombatHUD");
             _createdObjects.Add(hudGo);
             _spyScreen.Current = hudGo.AddComponent<CombatHUDView>();
@@ -526,25 +450,6 @@ namespace Rollgeon.Combat.Handoff.Tests
             // Act / Assert
             Assert.DoesNotThrow(() =>
                 EventManager.Trigger(EventName.OnCombatEnd, Guid.NewGuid(), CombatOutcome.Victory));
-        }
-
-        /// <summary>
-        /// CombatHUDView real con un ChainRollPromptView hijo ya visible, plantado como
-        /// pantalla actual del screen manager. Devuelve el prompt.
-        /// </summary>
-        private ChainRollPromptView MakeHudWithChainPrompt()
-        {
-            var hudGo = new GameObject("CombatHUD");
-            _createdObjects.Add(hudGo);
-            var hud = hudGo.AddComponent<CombatHUDView>();
-
-            var promptGo = new GameObject("ChainRollPrompt");
-            promptGo.transform.SetParent(hudGo.transform);
-            var prompt = promptGo.AddComponent<ChainRollPromptView>();
-
-            SetPrivateField(hud, "_chainRollPrompt", prompt);
-            _spyScreen.Current = hud;
-            return prompt;
         }
 
         private static void SetPrivateField(object target, string fieldName, object value)
@@ -557,56 +462,21 @@ namespace Rollgeon.Combat.Handoff.Tests
 
         // -------------------------------------------------------------------
         // ResolveChainPhaseEntry — entrada a la fase siguiente del chain
-        // (bugs 2026-07-20: el shield roll debe consumir un roll sobrante, y
-        // sin sobrantes la energía habilita la entrada paga en vez de cancelar)
+        // (Feature#0050: alcanza con 1 roll en el pool; la distincion free/paid
+        // murio con el sistema de energia)
         // -------------------------------------------------------------------
 
         [Test]
-        public void ResolveChainPhaseEntry_ReturnsFree_WhenRollsRemain()
+        public void ResolveChainPhaseEntry_ReturnsTrue_WhenPoolHasRolls()
         {
-            // Arrange / Act — los rolls sobrantes ganan, con o sin energía.
-            var withEnergy = CombatHandoffService.ResolveChainPhaseEntry(
-                remainingFreeRolls: 2, energy: 3, allowsEnergyReroll: true);
-            var withoutEnergy = CombatHandoffService.ResolveChainPhaseEntry(
-                remainingFreeRolls: 1, energy: 0, allowsEnergyReroll: false);
-
-            // Assert
-            Assert.AreEqual(CombatHandoffService.ChainPhaseEntry.Free, withEnergy);
-            Assert.AreEqual(CombatHandoffService.ChainPhaseEntry.Free, withoutEnergy);
+            Assert.IsTrue(CombatHandoffService.ResolveChainPhaseEntry(rollsAvailable: 1));
+            Assert.IsTrue(CombatHandoffService.ResolveChainPhaseEntry(rollsAvailable: 5));
         }
 
         [Test]
-        public void ResolveChainPhaseEntry_ReturnsPaid_WhenNoRollsButEnergyAndAllowed()
+        public void ResolveChainPhaseEntry_ReturnsFalse_WhenPoolIsEmpty()
         {
-            // Arrange / Act
-            var entry = CombatHandoffService.ResolveChainPhaseEntry(
-                remainingFreeRolls: 0, energy: 1, allowsEnergyReroll: true);
-
-            // Assert
-            Assert.AreEqual(CombatHandoffService.ChainPhaseEntry.Paid, entry);
-        }
-
-        [Test]
-        public void ResolveChainPhaseEntry_ReturnsFinish_WhenNoRollsAndNoEnergy()
-        {
-            // Arrange / Act
-            var entry = CombatHandoffService.ResolveChainPhaseEntry(
-                remainingFreeRolls: 0, energy: 0, allowsEnergyReroll: true);
-
-            // Assert
-            Assert.AreEqual(CombatHandoffService.ChainPhaseEntry.Finish, entry);
-        }
-
-        [Test]
-        public void ResolveChainPhaseEntry_ReturnsFinish_WhenNoRollsAndEnergyButRerollForbidden()
-        {
-            // Arrange / Act — la energía sola no habilita si el behavior prohíbe
-            // energy-reroll (mismo gate que RerollBudgetService al cobrar).
-            var entry = CombatHandoffService.ResolveChainPhaseEntry(
-                remainingFreeRolls: 0, energy: 5, allowsEnergyReroll: false);
-
-            // Assert
-            Assert.AreEqual(CombatHandoffService.ChainPhaseEntry.Finish, entry);
+            Assert.IsFalse(CombatHandoffService.ResolveChainPhaseEntry(rollsAvailable: 0));
         }
 
         // -------------------------------------------------------------------
@@ -627,20 +497,6 @@ namespace Rollgeon.Combat.Handoff.Tests
                 LastKeep = (bool[])keep.Clone();
                 return (int[])previousResult.Clone();
             }
-        }
-
-        private sealed class CountingBudgetService : IRerollBudgetService
-        {
-            public int TryExtraRollCallCount { get; private set; }
-            public RerollBudget Current => null;
-#pragma warning disable 67
-            public event Action<RerollStartedPayload> OnRerollStarted;
-            public event Action<RerollBudget> OnBudgetStarted;
-#pragma warning restore 67
-            public void StartBudget(ActionDefinitionSO action) { }
-            public void EndBudget() { }
-            public RerollQueryResult QueryExtraRoll(Guid playerGuid) => RerollQueryResult.Free();
-            public bool TryExtraRoll(Guid playerGuid) { TryExtraRollCallCount++; return true; }
         }
 
         private sealed class FakeDiceBlockService : Rollgeon.Combat.DiceBlock.IDiceBlockService
@@ -692,12 +548,12 @@ namespace Rollgeon.Combat.Handoff.Tests
         }
 
         [Test]
-        public void TryScheduleForcedFullHandReroll_ActiveHand_RerollsAllDiceWithoutConsumingBudget()
+        public void TryScheduleForcedFullHandReroll_ActiveHand_RerollsAllDiceWithoutConsumingRolls()
         {
             // Arrange
             var roller = ArmActiveHand();
-            var budget = new CountingBudgetService();
-            ServiceLocator.AddService<IRerollBudgetService>(budget);
+            var pool = new CountingRollPool();
+            ServiceLocator.AddService<Rollgeon.Combat.Rolls.IRollPoolService>(pool);
             SetScheduler((d, cb) => cb());
 
             // Act
@@ -709,8 +565,8 @@ namespace Rollgeon.Combat.Handoff.Tests
             Assert.IsFalse(CombatHandoffService.AllDiceHeld(roller.LastKeep));
             foreach (var kept in roller.LastKeep)
                 Assert.IsFalse(kept, "El forced reroll debe re-tirar TODOS los dados (keep all-false).");
-            Assert.AreEqual(0, budget.TryExtraRollCallCount,
-                "El reroll del Torpe no debe consumir budget ni energía.");
+            Assert.AreEqual(0, pool.TrySpendCallCount,
+                "El reroll del Torpe no debe consumir rolls del pool.");
         }
 
         [Test]
@@ -884,7 +740,7 @@ namespace Rollgeon.Combat.Handoff.Tests
         }
 
         [Test]
-        public void EnergyReroll_ClassicMode_NothingSelected_RerollsWholeHandAndConsumesBudget()
+        public void PoolReroll_ClassicMode_NothingSelected_RerollsWholeHandAndSpendsOneRoll()
         {
             // Arrange — wiring real del HUD para obtener el delegate del reroll.
             Rollgeon.Dice.RerollSelectionPrefs.KeepSelected = true;
@@ -898,21 +754,21 @@ namespace Rollgeon.Combat.Handoff.Tests
             TriggerCombat(Guid.NewGuid(), "test_room", RoomType.Combat);
 
             var roller = ArmActiveHand();
-            var budget = new CountingBudgetService();
-            ServiceLocator.AddService<IRerollBudgetService>(budget);
+            var pool = new CountingRollPool();
+            ServiceLocator.AddService<Rollgeon.Combat.Rolls.IRollPoolService>(pool);
 
             // Act — sin dice zone cableada GetCurrentKeep() es null = nada lockeado.
             hud.OnEnergyRerollRequested?.Invoke();
 
-            // Assert — vuela toda la mano y el reroll SÍ consume budget.
+            // Assert — vuela toda la mano y el reroll SÍ consume 1 roll del pool.
             Assert.AreEqual(1, roller.RerollCallCount);
             foreach (var kept in roller.LastKeep)
                 Assert.IsFalse(kept, "En clásico sin selección debe volar toda la mano.");
-            Assert.AreEqual(1, budget.TryExtraRollCallCount);
+            Assert.AreEqual(1, pool.TrySpendCallCount);
         }
 
         [Test]
-        public void EnergyReroll_ClassicMode_AllDiceSelected_BailsWithoutConsumingBudget()
+        public void PoolReroll_ClassicMode_AllDiceSelected_BailsWithoutConsumingRolls()
         {
             // Arrange — todos lockeados ⇒ keep all-true ⇒ nada que re-tirar.
             Rollgeon.Dice.RerollSelectionPrefs.KeepSelected = true;
@@ -926,8 +782,8 @@ namespace Rollgeon.Combat.Handoff.Tests
             TriggerCombat(Guid.NewGuid(), "test_room", RoomType.Combat);
 
             var roller = ArmActiveHand();
-            var budget = new CountingBudgetService();
-            ServiceLocator.AddService<IRerollBudgetService>(budget);
+            var pool = new CountingRollPool();
+            ServiceLocator.AddService<Rollgeon.Combat.Rolls.IRollPoolService>(pool);
 
             var zone = hudGo.AddComponent<Rollgeon.UI.HUD.DiceZoneView>();
             SetPrivateField(zone, "_heldStates", new[] { true, true, true });
@@ -936,9 +792,9 @@ namespace Rollgeon.Combat.Handoff.Tests
             // Act
             hud.OnEnergyRerollRequested?.Invoke();
 
-            // Assert — guard defensivo: ni roller ni budget se tocan.
+            // Assert — guard defensivo: ni roller ni pool se tocan.
             Assert.AreEqual(0, roller.RerollCallCount);
-            Assert.AreEqual(0, budget.TryExtraRollCallCount);
+            Assert.AreEqual(0, pool.TrySpendCallCount);
         }
 
         // -------------------------------------------------------------------
