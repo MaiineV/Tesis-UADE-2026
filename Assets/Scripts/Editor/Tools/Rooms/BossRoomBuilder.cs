@@ -133,8 +133,8 @@ namespace Rollgeon.EditorTools
                 // usar para cortarle el paso. Doce barriles sueltos en látiz 3x3 —x/y en {2,5,8},
                 // sin el centro (5,5), que es su spawn— encarecen el movimiento en toda la sala
                 // sin abrir un solo rincón muerto: un obstáculo de una casilla se rodea por los
-                // dos lados, cosa que un mueble grande no permite. Las cuatro esquinas llevan el
-                // suyo porque si no son refugio gratis fuera del alcance del fuego.
+                // dos lados, cosa que un mueble grande no permite. Las esquinas llevan barril
+                // porque si no son refugio gratis fuera del alcance del fuego.
                 BlockerPlanCells = new[]
                 {
                     // Cruz apretada, a dos casillas del jefe. No es latiz completo porque las
@@ -145,10 +145,11 @@ namespace Rollgeon.EditorTools
                     new Vector2Int(5, 3),
                     new Vector2Int(3, 5), new Vector2Int(7, 5),
                     new Vector2Int(5, 7),
-                    // Las dos esquinas de la izquierda ya las cubren las pilas de barriles de la
-                    // sala base, asi que solo estas dos generan blocker nuevo.
-                    new Vector2Int(0, 0), new Vector2Int(10, 0),
-                    new Vector2Int(0, 10), new Vector2Int(10, 10),
+                    // Solo las dos esquinas de la derecha. Las de la izquierda ya las tapan las
+                    // pilas de barriles de la sala base, asi que autorarlas no generaba nada:
+                    // el codigo prometia cuatro esquinas y ponia dos.
+                    new Vector2Int(10, 0),
+                    new Vector2Int(10, 10),
                 },
                 // La mesa de pool del noreste se va sólo de esta sala, igual que en el Cajero: vive
                 // en las tres salas base y borrarla allá se la saca a todos los jefes del piso.
