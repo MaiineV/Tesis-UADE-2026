@@ -96,8 +96,8 @@ namespace Rollgeon.EditorTools.Localization
                 "This is your HEALTH: if it hits zero, the run is over. Look after it.");
 
             Ui(TutorialTextKeys.StatsRolls,
-                "Este es tu POOL DE ROLLS: cada tirada de dados consume 1. Al terminar tu turno recuperas 5 (máximo 15).",
-                "This is your ROLL POOL: every dice throw spends 1. Ending your turn grants 5 back (15 max).");
+                "Este es tu POOL DE ROLLS: cada tirada de dados consume 1. Al terminar tu turno recuperas {0} (máximo {1}).",
+                "This is your ROLL POOL: every dice throw spends 1. Ending your turn grants {0} back ({1} max).");
 
             Ui(TutorialTextKeys.AttackTeach,
                 "Se desbloqueó ATACAR ({0}). Selecciónalo para elegir a quién golpear.",

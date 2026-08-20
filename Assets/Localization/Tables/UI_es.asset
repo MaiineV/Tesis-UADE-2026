@@ -628,7 +628,7 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 12873216341229568
     m_Localized: "Este es tu POOL DE ROLLS: cada tirada de dados consume 1. Al terminar
-      tu turno recuperas 5 (m\xE1ximo 15)."
+      tu turno recuperas {0} (m\xE1ximo {1})."
     m_Metadata:
       m_Items: []
   - m_Id: 10374649764216834

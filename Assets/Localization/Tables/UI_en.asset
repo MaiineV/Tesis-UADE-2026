@@ -621,7 +621,7 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 12873216341229568
     m_Localized: 'This is your ROLL POOL: every dice throw spends 1. Ending your
-      turn grants 5 back (15 max).'
+      turn grants {0} back ({1} max).'
     m_Metadata:
       m_Items: []
   - m_Id: 10374649764216834
