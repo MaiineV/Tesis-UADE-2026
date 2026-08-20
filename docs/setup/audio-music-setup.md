@@ -50,8 +50,9 @@
 
 ## Notas
 
-- `Combat/Floor1` trae `Midnight Casino Duel.wav` y `Midnight Casino Duel (1).wav`
+- `Combat/Floor1` trae `Midnight Casino Duel.ogg` y `Midnight Casino Duel (1).ogg`
   — parecen el mismo track bajado dos veces. Si es así, borrar el `(1)` y
   sacarlo de `MusicLibrary.asset`.
-- Los 28 `.wav` (~875 MB) están **fuera de git** hasta decidir LFS vs. OGG
-  (regla de binarios >5 MB del CLAUDE.md) — ver conversación de Feature#0050.
+- Los audios se convirtieron de WAV (~875 MB) a **OGG q6 (~99 MB, ninguno >5 MB)**
+  con ffmpeg, renombrando los `.meta` para conservar los GUIDs — las referencias
+  de `MusicLibrary.asset` siguen válidas. Los WAV originales no se versionaron.
