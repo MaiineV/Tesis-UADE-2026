@@ -689,6 +689,42 @@ MonoBehaviour:
     m_Localized: Dura {0} rondas
     m_Metadata:
       m_Items: []
+  - m_Id: 12996722096635904
+    m_Localized: 'Reroll: vuelan los elegidos'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 12996722146967552
+    m_Localized: 'Reroll: se quedan los elegidos'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 12996722146967553
+    m_Localized: General
+    m_Metadata:
+      m_Items: []
+  - m_Id: 12996722146967554
+    m_Localized: Audio
+    m_Metadata:
+      m_Items: []
+  - m_Id: 12996722146967555
+    m_Localized: Master
+    m_Metadata:
+      m_Items: []
+  - m_Id: 12996722146967556
+    m_Localized: "M\xFAsica"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 12996722146967557
+    m_Localized: Efectos
+    m_Metadata:
+      m_Items: []
+  - m_Id: 12996722146967558
+    m_Localized: Muteado
+    m_Metadata:
+      m_Items: []
+  - m_Id: 12996722146967559
+    m_Localized: Sonando
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []
