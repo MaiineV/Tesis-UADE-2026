@@ -543,6 +543,45 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         /// <see cref="EnemyDataSO.AIRoot"/>. No toca <c>AssetDatabase</c>: sirve igual para el asset
         /// real y para una instancia in-memory de test.
         /// </summary>
+        /// <summary>
+        /// Texto de hover del jefe. Cuenta las tres cosas que el jugador no puede deducir mirando:
+        /// que nunca se acerca, que el fuego se acumula, y qué le pasa a su vida en los dos umbrales.
+        /// </summary>
+        /// <remarks>
+        /// Los números del fuego salen de <paramref name="fire"/> y no de constantes propias: viven
+        /// en el asset de la casilla, y duplicarlos acá es garantizar que un día digan distinto. La
+        /// duración se muestra con una ronda menos que la autorada — la ronda en la que se enciende
+        /// no tiene cierre de turno del jugador por delante (CNF-006), así que "6" se juega como 5.
+        /// </remarks>
+        public static string BuildDescription(SpecialTileDefinitionSO fire)
+        {
+            int bandWidth = BandHalfWidth * 2 + 1;
+            int holeSide = PlenoHoleRadius * 2 + 1;
+            int lockPercent = Mathf.RoundToInt(LockHpThreshold * 100f);
+            int plenoPercent = Mathf.RoundToInt(PlenoHpThreshold * 100f);
+
+            var sb = new System.Text.StringBuilder();
+            sb.Append("\"The house never chases.\" He backs away every turn and shoots from anywhere ")
+              .Append("on the table for ").Append(ShotDamage).Append(". Every other turn he lights a ")
+              .Append(bandWidth).Append("-tile-wide lane of fire that runs from him to the wall behind ")
+              .Append("you, and each lane outlives the next one — the floor keeps shrinking.");
+
+            if (fire != null)
+            {
+                sb.Append(" Crossing a burning tile costs ").Append(fire.EnterDamage)
+                  .Append(", once per tile. Starting your turn on one costs ")
+                  .Append(fire.TurnStartDamage).Append(". A lane burns for ")
+                  .Append(Mathf.Max(1, FireDurationRounds - 1)).Append(" rounds.");
+            }
+
+            sb.Append(" At ").Append(lockPercent).Append("% he padlocks one of your dice for the rest ")
+              .Append("of the fight. At ").Append(plenoPercent).Append("%, once, the whole table burns ")
+              .Append("except the ").Append(holeSide).Append("×").Append(holeSide)
+              .Append(" he is standing in.");
+
+            return sb.ToString();
+        }
+
         public static void PopulateEnemyData(
             EnemyDataSO data,
             SpecialTileDefinitionSO fire,
@@ -553,13 +592,11 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
 
             data.EntityId = EntityId;
             data.DisplayName = DisplayName;
-            data.Description =
-                "\"Place your bets.\" He calls one number per turn: the block of the table that falls " +
-                "next turn. Ending your turn inside the called block spins the wheel one step further " +
-                "— moving the axe means standing under it. Hitting him costs 8, always: the house " +
-                "charges for the melee tile. The six blocks cover the whole table — no tile sits out " +
-                "the fight — and the middle row is the seam, where two of them overlap. He drifts to " +
-                "keep the table between you and him.";
+            // Armada con las constantes y con los números de la casilla de fuego, no a mano: es el
+            // único texto de la pelea que el jugador puede leer sin morir primero, y una descripción
+            // que quedó de un rediseño anterior promete una pelea que no existe. Si se toca un
+            // número, el tooltip se corrige solo.
+            data.Description = BuildDescription(fire);
 
             data.WeaknessComboId = WeaknessComboId;
             data.WeaknessMultiplierOverride = WeaknessMultiplier;
