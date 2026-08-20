@@ -21,9 +21,8 @@ namespace Rollgeon.Combat.Threat
                  "acá lo que manda es el matiz.")]
         public Color Tint = Color.white;
 
-        [Tooltip("Textura de patrón del estado (rayado / sólido / punteado / damero). Se aplica por " +
-                 "MaterialPropertyBlock, mismo criterio que los estilos con textura de " +
-                 "TileHighlightService. Null = quad plano, sin patrón.")]
+        [Tooltip("Textura de patrón del estado (rayado / sólido / punteado / damero). Se aplica al " +
+                 "material compartido del par (estado, matiz). Null = quad plano, sin patrón.")]
         public Texture2D Pattern;
 
         [Tooltip("Alpha mínimo del latido.")]
@@ -56,17 +55,96 @@ namespace Rollgeon.Combat.Threat
     }
 
     /// <summary>
-    /// El color y el patrón viven acá y se aplican por <see cref="MaterialPropertyBlock"/>, así que
-    /// dos amenazas simultáneas pueden verse distintas compartiendo el mismo material.
+    /// El material que comparten todos los quads de un par (estado, matiz). Es la unidad del latido:
+    /// el alpha sale de <see cref="ThreatOverlayStateStyle.AlphaAt"/>, que depende solo del estilo,
+    /// así que dentro del grupo es idéntico para todos los quads y alcanza con escribir un float en
+    /// el material en vez de un <see cref="MaterialPropertyBlock"/> por renderer.
+    /// </summary>
+    public sealed class ThreatOverlayMaterialGroup
+    {
+        private static readonly int ColorId = Shader.PropertyToID("_Color");
+        private static readonly int MainTexId = Shader.PropertyToID("_MainTex");
+        private static readonly int PulseAlphaId = Shader.PropertyToID("_PulseAlpha");
+
+        /// <summary>El matiz que abrió el grupo. Su alpha no se dibuja: lo pisa el latido.</summary>
+        public Color Tint;
+
+        public ThreatOverlayStateStyle Style;
+
+        public Material Material { get; private set; }
+
+        // NaN y no 0: ningún alpha real es NaN, así que el primer Pulse siempre escribe.
+        private float _lastAlpha = float.NaN;
+
+        // Se resuelve al bindear y no por frame — ver Pulse.
+        private bool _alphaInColor;
+
+        public void Bind(Material material)
+        {
+            Material = material;
+
+            // La ruta degradada (Sprites/Default, cuando falta el shader del proyecto) no tiene
+            // _PulseAlpha, así que ahí el latido tiene que viajar en el alpha de _Color.
+            _alphaInColor = material != null && !material.HasProperty(PulseAlphaId);
+
+            _lastAlpha = float.NaN;
+        }
+
+        /// <summary>
+        /// Reescribe matiz, patrón y alpha. Hace falta además del latido porque el estilo se muta en
+        /// caliente (<see cref="ThreatTelegraphOverlay.ApplyStyle"/>) y porque un grupo que estuvo
+        /// parkeado puede venir con el patrón viejo.
+        /// </summary>
+        public void Repaint()
+        {
+            if (Material == null) return;
+
+            Material.SetColor(ColorId, Tint);
+
+            // El != null convierte el fake-null de una textura ya destruida en null real, que es lo
+            // que hace que el material caiga al default "white" del shader.
+            var pattern = Style != null && Style.Pattern != null ? Style.Pattern : null;
+            Material.SetTexture(MainTexId, pattern);
+
+            _lastAlpha = float.NaN;
+            Pulse(Time.time);
+        }
+
+        /// <summary>Escribe el alpha del latido si se movió.</summary>
+        /// <returns><c>true</c> si tocó el material.</returns>
+        public bool Pulse(float time)
+        {
+            if (Material == null || Style == null) return false;
+
+            float alpha = Style.AlphaAt(time);
+
+            // Comparación exacta a propósito: AlphaAt es determinista, así que un estilo sin latido
+            // (PulseSpeed 0) devuelve el mismo float siempre y el grupo deja de escribir del todo.
+            if (alpha == _lastAlpha) return false;
+            _lastAlpha = alpha;
+
+            if (_alphaInColor)
+            {
+                var color = Tint;
+                color.a = alpha;
+                Material.SetColor(ColorId, color);
+            }
+            else
+            {
+                Material.SetFloat(PulseAlphaId, alpha);
+            }
+            return true;
+        }
+    }
+
+    /// <summary>
+    /// Un quad del telegraph. El matiz y el patrón viven en el material de su <see cref="Group"/>,
+    /// compartido por todos los quads del mismo par (estado, matiz), así que dos amenazas
+    /// simultáneas pueden verse distintas sin que ningún renderer lleve un
+    /// <see cref="MaterialPropertyBlock"/> propio — que es lo que los sacaba del SRP Batcher.
     /// </summary>
     public sealed class ThreatOverlayQuad
     {
-        // Sprites/Default lee _Color y _MainTex; _BaseMap se setea además para que un reemplazo por
-        // material URP siga recibiendo el patrón (setear una propiedad no declarada es no-op).
-        private static readonly int ColorId = Shader.PropertyToID("_Color");
-        private static readonly int MainTexId = Shader.PropertyToID("_MainTex");
-        private static readonly int BaseMapId = Shader.PropertyToID("_BaseMap");
-
         public GameObject Go;
         public Renderer Renderer;
 
@@ -75,30 +153,10 @@ namespace Rollgeon.Combat.Threat
 
         public ThreatOverlayStateStyle Style;
 
+        /// <summary>El material compartido que le tocó por su par (estado, matiz).</summary>
+        public ThreatOverlayMaterialGroup Group;
+
         public ThreatOverlayState State => Style?.State ?? ThreatOverlayState.Marked;
-
-        /// <remarks>El bloque se limpia entero antes de escribir: los quads son pooled, y sin el
-        /// Clear la textura del estado anterior queda pegada al reciclar el quad para un estado sin
-        /// patrón.</remarks>
-        public void Paint(MaterialPropertyBlock block, float alpha)
-        {
-            if (Renderer == null || block == null) return;
-
-            var color = Tint;
-            color.a = alpha;
-
-            block.Clear();
-            block.SetColor(ColorId, color);
-
-            var pattern = Style != null ? Style.Pattern : null;
-            if (pattern != null)
-            {
-                block.SetTexture(MainTexId, pattern);
-                block.SetTexture(BaseMapId, pattern);
-            }
-
-            Renderer.SetPropertyBlock(block);
-        }
     }
 
     /// <summary>
@@ -120,11 +178,17 @@ namespace Rollgeon.Combat.Threat
 
         private readonly Dictionary<ThreatOverlayState, ThreatOverlayStateStyle> _styles = DefaultStyles();
 
-        private readonly MaterialPropertyBlock _block = new MaterialPropertyBlock();
+        /// <summary>
+        /// Un material por par (estado, matiz): ni uno por quad ni uno solo para todo. Dentro del par
+        /// los ~112 quads comparten material y entran en el mismo batch, y el latido es un único
+        /// float por grupo y por frame. En la práctica esto tiene 1-4 entradas.
+        /// </summary>
+        private readonly Dictionary<(ThreatOverlayState State, int Rgb), ThreatOverlayMaterialGroup> _groups =
+            new Dictionary<(ThreatOverlayState State, int Rgb), ThreatOverlayMaterialGroup>();
 
-        // Un único material para todos los quads: uno por tint ataría el latido de dos hazards del
-        // mismo matiz.
-        private Material _material;
+        /// <summary>Los grupos con al menos un quad activo: es lo único que recorre el pulso.</summary>
+        private readonly List<ThreatOverlayMaterialGroup> _liveGroups =
+            new List<ThreatOverlayMaterialGroup>();
 
         private GameObject _root;
 
@@ -175,15 +239,8 @@ namespace Rollgeon.Combat.Threat
 
         private void RepaintActive()
         {
-            float time = Time.time;
-            foreach (var quads in _activeBySource.Values)
-                for (int i = 0; i < quads.Count; i++)
-                {
-                    var quad = quads[i];
-                    if (quad?.Style == null) continue;
-
-                    quad.Paint(_block, quad.Style.AlphaAt(time));
-                }
+            for (int i = 0; i < _liveGroups.Count; i++)
+                _liveGroups[i].Repaint();
         }
 
         /// <summary>Lazy para no depender de wiring en <c>ServiceBootstrap.ExtraServices</c>.</summary>
@@ -225,8 +282,15 @@ namespace Rollgeon.Combat.Threat
             DestroyCompat(_root);
             _root = null;
 
-            DestroyCompat(_material);
-            _material = null;
+            // Todos los materiales del cache, no uno: cada par (estado, matiz) tiene el suyo, y
+            // dejarlos vivos leakea un material por par y por run.
+            foreach (var group in _groups.Values)
+            {
+                DestroyCompat(group.Material);
+                group.Bind(null);
+            }
+            _groups.Clear();
+            _liveGroups.Clear();
         }
 
         // ======================================================================
@@ -253,7 +317,11 @@ namespace Rollgeon.Combat.Threat
 
             var style = StyleOf(state);
             var resolvedTint = tint ?? style.Tint;
-            float alpha = style.AlphaAt(Time.time);
+
+            // Repinta el grupo acá y no en el primer Update del pulso: un Show fuera de play mode, o
+            // el frame en que se marca, mostraría el look del grupo anterior.
+            var group = GroupFor(style, resolvedTint);
+            group.Repaint();
 
             var quads = new List<ThreatOverlayQuad>();
             float scale = Mathf.Max(grid.TileSize, 0.01f) * QuadScale;
@@ -265,24 +333,38 @@ namespace Rollgeon.Combat.Threat
 
                 quad.Style = style;
                 quad.Tint = resolvedTint;
+                quad.Group = group;
 
-                // Acá y no al crear el quad: el material puede haber muerto con un domain reload.
-                if (quad.Renderer != null) quad.Renderer.sharedMaterial = SharedMaterial;
-
-                // Sin esperar al primer Update del pulso: un Show fuera de play mode, o el frame en
-                // que se marca, mostraría el look del quad anterior.
-                quad.Paint(_block, alpha);
+                // El quad sale del pool con el material de su grupo anterior.
+                if (quad.Renderer != null) quad.Renderer.sharedMaterial = group.Material;
 
                 quad.Go.SetActive(true);
                 quads.Add(quad);
             }
 
             if (quads.Count > 0) _activeBySource[sourceGuid] = quads;
+            RebuildLiveGroups();
         }
 
         public void Clear(Guid sourceGuid)
         {
-            if (!_activeBySource.TryGetValue(sourceGuid, out var quads)) return;
+            if (!ParkQuadsOf(sourceGuid)) return;
+            RebuildLiveGroups();
+        }
+
+        public void ClearAll()
+        {
+            var sources = new List<Guid>(_activeBySource.Keys);
+            foreach (var source in sources)
+                ParkQuadsOf(source);
+
+            RebuildLiveGroups();
+        }
+
+        /// <returns><c>false</c> si la fuente no tenía overlay.</returns>
+        private bool ParkQuadsOf(Guid sourceGuid)
+        {
+            if (!_activeBySource.TryGetValue(sourceGuid, out var quads)) return false;
 
             foreach (var quad in quads)
             {
@@ -291,13 +373,103 @@ namespace Rollgeon.Combat.Threat
                 _free.Push(quad);
             }
             _activeBySource.Remove(sourceGuid);
+            return true;
         }
 
-        public void ClearAll()
+        // ======================================================================
+        // Materiales
+        // ======================================================================
+
+        /// <summary>
+        /// Ruta en <c>Resources</c> del shader del overlay. Se carga por <c>Resources.Load</c> y no
+        /// por <c>Shader.Find</c> porque el shader no está en Always Included Shaders: en un build no
+        /// hay material serializado que lo referencie, se strippea, y el Find devolvería null.
+        /// </summary>
+        private const string QuadShaderResourcePath = "ThreatOverlayQuad";
+
+        // Cacheado por proceso: el Load es una búsqueda de asset, no algo para hacer por material.
+        private static Shader _quadShader;
+        private static bool _quadShaderMissingLogged;
+
+        private static Shader QuadShader
         {
-            var sources = new List<Guid>(_activeBySource.Keys);
-            foreach (var source in sources)
-                Clear(source);
+            get
+            {
+                if (_quadShader != null) return _quadShader;
+
+                _quadShader = Resources.Load<Shader>(QuadShaderResourcePath);
+                if (_quadShader != null) return _quadShader;
+
+                if (!_quadShaderMissingLogged)
+                {
+                    _quadShaderMissingLogged = true;
+                    Debug.LogError(
+                        "[ThreatTelegraphOverlay] No se encontró el shader en " +
+                        $"Resources/{QuadShaderResourcePath} — el overlay cae a Sprites/Default: " +
+                        "se sigue viendo igual pero deja de batchear (~112 SetPass calls por frame). " +
+                        "Revisar que Assets/Shaders/Resources/ThreatOverlayQuad.shader importe.");
+                }
+
+                // Ruta degradada, y a propósito la excepción: existe solo para que un shader faltante
+                // cueste frames y no el telegraph entero. No se cachea en _quadShader para que un
+                // import tardío todavía pueda recuperar la ruta buena.
+                return Shader.Find("Sprites/Default");
+            }
+        }
+
+        /// <summary>
+        /// Clave de matiz del cache: RGB a 8 bits, sin alpha.
+        /// <para>Sin alpha porque el latido lo pisa — dos tints que solo difieren ahí se ven idénticos
+        /// y no pueden abrir dos materiales.</para>
+        /// <para>A 8 bits, y no un <see cref="Color"/> crudo, porque una clave de floats exactos es un
+        /// cache sin techo indexado por la aritmética del llamador: un tint interpolado abriría un
+        /// material nuevo por frame, y este cache vive lo que dura la run. No volver a cambiarla por un
+        /// <see cref="Color"/>.</para>
+        /// </summary>
+        private static int RgbKey(Color tint)
+        {
+            var quantized = (Color32)tint;
+            return (quantized.r << 16) | (quantized.g << 8) | quantized.b;
+        }
+
+        private ThreatOverlayMaterialGroup GroupFor(ThreatOverlayStateStyle style, Color tint)
+        {
+            var key = (style.State, RgbKey(tint));
+            if (!_groups.TryGetValue(key, out var group))
+            {
+                group = new ThreatOverlayMaterialGroup { Tint = tint };
+                _groups[key] = group;
+            }
+
+            group.Style = style;
+
+            // El material se rehace acá y no al crear el grupo: un domain reload lo deja en fake-null
+            // sin tocar la entrada del cache, así que se recupera perezosamente en el próximo Show.
+            if (group.Material == null) group.Bind(NewOverlayMaterial(style.State, group.Tint));
+
+            return group;
+        }
+
+        private static Material NewOverlayMaterial(ThreatOverlayState state, Color tint) =>
+            new Material(QuadShader)
+            {
+                // El nombre sale en el Frame Debugger: es lo que deja ver de un vistazo que los quads
+                // de un par (estado, matiz) cayeron todos en el mismo batch.
+                name = $"ThreatOverlay {state} #{ColorUtility.ToHtmlStringRGB(tint)} (runtime)",
+            };
+
+        /// <remarks>Recorre los quads, pero solo en Show/Clear: es exactamente el recorrido que se le
+        /// saca al Update, que ahora itera grupos (1-4) en vez de quads (~112).</remarks>
+        private void RebuildLiveGroups()
+        {
+            _liveGroups.Clear();
+            foreach (var quads in _activeBySource.Values)
+                for (int i = 0; i < quads.Count; i++)
+                {
+                    var group = quads[i]?.Group;
+                    if (group == null || _liveGroups.Contains(group)) continue;
+                    _liveGroups.Add(group);
+                }
         }
 
         // ======================================================================
@@ -314,13 +486,14 @@ namespace Rollgeon.Combat.Threat
                 {
                     _activeBySource.Clear();
                     _free.Clear();
+                    _liveGroups.Clear();
 
                     _root = new GameObject("ThreatTelegraphOverlay");
                     var pulse = _root.AddComponent<ThreatOverlayPulse>();
 
-                    // La MISMA colección, no una copia: el pulso tiene que ver los quads que
+                    // La MISMA colección, no una copia: el pulso tiene que ver los grupos que
                     // aparezcan después.
-                    pulse.Targets = _activeBySource;
+                    pulse.Groups = _liveGroups;
                 }
                 return _root;
             }
@@ -374,21 +547,6 @@ namespace Rollgeon.Combat.Threat
                 },
             };
 
-        private Material SharedMaterial
-        {
-            get
-            {
-                if (_material != null) return _material;
-
-                // Sprites/Default: transparente y tinteable sin keywords de pipeline.
-                _material = new Material(Shader.Find("Sprites/Default"))
-                {
-                    name = "ThreatTelegraphOverlay (runtime)",
-                };
-                return _material;
-            }
-        }
-
         private ThreatOverlayQuad NextFreeQuad()
         {
             while (_free.Count > 0)
@@ -430,38 +588,26 @@ namespace Rollgeon.Combat.Threat
     }
 
     /// <summary>
-    /// Cada quad late según la banda de su <see cref="ThreatOverlayState"/>. Sin targets es no-op.
+    /// Late un material por par (estado, matiz) — no un <see cref="MaterialPropertyBlock"/> por quad.
+    /// Sin grupos es no-op.
     /// </summary>
     /// <remarks>
-    /// <see cref="Targets"/> es la <b>misma</b> colección que mantiene
-    /// <see cref="ThreatTelegraphOverlay"/>, no una copia. Escribe por
-    /// <see cref="MaterialPropertyBlock"/> y nunca sobre el <see cref="Material"/> compartido.
+    /// <see cref="Groups"/> es la <b>misma</b> colección que mantiene
+    /// <see cref="ThreatTelegraphOverlay"/>, no una copia. El trabajo por frame es proporcional a los
+    /// materiales vivos (1-4) y no a los quads (~112), y un estilo sin latido (<c>PulseSpeed</c> 0)
+    /// no escribe nada.
     /// </remarks>
     public sealed class ThreatOverlayPulse : MonoBehaviour
     {
-        public Dictionary<Guid, List<ThreatOverlayQuad>> Targets;
-
-        private MaterialPropertyBlock _block;
+        public List<ThreatOverlayMaterialGroup> Groups;
 
         private void Update()
         {
-            if (Targets == null || Targets.Count == 0) return;
-
-            // Perezoso y no en el field initializer: los ctors de MonoBehaviour corren también desde
-            // el thread de carga de escena, donde tocar recursos nativos es ilegal.
-            if (_block == null) _block = new MaterialPropertyBlock();
+            if (Groups == null || Groups.Count == 0) return;
 
             float time = Time.time;
-            foreach (var quads in Targets.Values)
-            {
-                for (int i = 0; i < quads.Count; i++)
-                {
-                    var quad = quads[i];
-                    if (quad?.Style == null || quad.Renderer == null) continue;
-
-                    quad.Paint(_block, quad.Style.AlphaAt(time));
-                }
-            }
+            for (int i = 0; i < Groups.Count; i++)
+                Groups[i].Pulse(time);
         }
     }
 }
