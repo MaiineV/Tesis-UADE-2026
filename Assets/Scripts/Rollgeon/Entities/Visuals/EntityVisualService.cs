@@ -93,7 +93,43 @@ namespace Rollgeon.Entities.Visuals
                 Debug.LogError($"[EntityVisualService] EnemyDataSO '{data.name}' no tiene VisualPrefab asignado.");
                 return null;
             }
-            return SpawnInternal(guid, data.VisualPrefab, coord, EntityPawn.PawnKind.Enemy);
+            var pawn = SpawnInternal(guid, data.VisualPrefab, coord, EntityPawn.PawnKind.Enemy);
+            AttachTooltip(pawn, data);
+            return pawn;
+        }
+
+        /// <summary>
+        /// Cuelga el tooltip de hover del enemigo en el pawn. Por código y no en cada prefab de
+        /// enemigo porque es información, no arte: un enemigo nuevo la trae por existir, y no hay
+        /// forma de olvidarse de cablearla.
+        /// </summary>
+        /// <remarks>
+        /// <b>Sin collider no se agrega nada.</b> El trigger resuelve el hover con un
+        /// <c>Physics.RaycastAll</c> propio en su Update, así que en un pawn sin collider sería un
+        /// Update por frame por enemigo que no puede acertar nunca.
+        /// </remarks>
+        private static void AttachTooltip(EntityPawn pawn, EnemyDataSO data)
+        {
+            if (pawn == null || data == null) return;
+            if (pawn.GetComponentInChildren<Collider>(includeInactive: true) == null) return;
+
+            var go = pawn.gameObject;
+
+            var info = go.GetComponent<EnemyTooltipInfo>();
+            if (info == null) info = go.AddComponent<EnemyTooltipInfo>();
+            info.Bind(data);
+
+            var trigger = go.GetComponent<Rollgeon.UI.Tooltips.WorldTooltipTrigger>();
+            if (trigger == null) trigger = go.AddComponent<Rollgeon.UI.Tooltips.WorldTooltipTrigger>();
+
+            // Hover y no Click: el click sobre una casilla ocupada por un enemigo ya es "atacar",
+            // y robarle ese click para abrir un panel rompería el input del combate.
+            trigger.Mode = Rollgeon.UI.Tooltips.WorldTooltipMode.Hover;
+
+            // Explícito en vez de dejar que el TooltipResolver lo busque: el pawn del jefe cuelga
+            // otros IHasTooltipInfo abajo (las casillas de sus props) y el auto-resolve devuelve el
+            // primero que encuentra.
+            trigger.TextProvider = info.BuildTooltip;
         }
 
         public EntityPawn SpawnProp(Guid guid, GameObject prefab, GridCoord coord)
