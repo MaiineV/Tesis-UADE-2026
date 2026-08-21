@@ -16,10 +16,19 @@ namespace Rollgeon.Combat.AI.Decisions
     /// daño este turno.</b> Sistemas prerequisito Bosses §1.
     /// </summary>
     /// <remarks>
+    /// <para>
     /// La <see cref="Shape"/> distingue a los tres Bosses: Boss 1 = <see cref="ThreatShape.SquareAroundPlayer"/>
     /// (3×3 con <see cref="Size"/>=1), Boss 2 = <see cref="ThreatShape.Row"/>/<see cref="ThreatShape.Column"/>
     /// (franja), Boss 3 = <see cref="ThreatShape.HalfRoom"/> (media sala). El daño y el ancho/radio
     /// salen del Inspector del nodo — nada hardcoded.
+    /// </para>
+    /// <para>
+    /// <b>Dos avisos del mismo jefe piden dos <see cref="ChannelId"/>.</b>
+    /// <see cref="IThreatenedAreaService"/> guarda <i>un</i> área por fuente y el overlay pinta
+    /// <i>un</i> área por fuente, así que dos marcas bajo el mismo guid no se suman: la segunda
+    /// borra a la primera en los dos lados. El canal es lo que las separa (ver
+    /// <see cref="SourceKey"/>).
+    /// </para>
     /// </remarks>
     [Serializable, HideReferenceObjectPicker]
     public sealed class AINode_TelegraphMark : AIActionNode
@@ -66,7 +75,39 @@ namespace Rollgeon.Combat.AI.Decisions
         [Tooltip("Tipo de ataque del DamageContext al ejecutar.")]
         public AttackKind Kind = AttackKind.BasicAttack;
 
-        public override string NodeName => $"Telegraph Mark ({Shape}, dmg {Damage})";
+        [Tooltip("Canal de la marca. Vacío = la fuente es el guid del propio jefe, como siempre. " +
+                 "Con nombre, la marca vive aparte de la principal del mismo jefe, y el paso que la " +
+                 "consume (AINode_IgniteArea) tiene que declarar el MISMO canal.")]
+        public string ChannelId;
+
+        public override string NodeName => string.IsNullOrEmpty(ChannelId)
+            ? $"Telegraph Mark ({Shape}, dmg {Damage})"
+            : $"Telegraph Mark [{ChannelId}] ({Shape}, dmg {Damage})";
+
+        /// <summary>
+        /// La fuente bajo la que vive una marca: el guid del jefe si no hay canal, uno derivado si
+        /// lo hay. Público porque el paso que consume la marca tiene que resolverla igual.
+        /// </summary>
+        /// <remarks>
+        /// <para>
+        /// <b>Un canal es un guid derivado, no una key aparte.</b> Delega en
+        /// <see cref="AINode_AuxTelegraph.ChannelGuid"/> —la derivación que ya usa el proyecto para
+        /// esto mismo— en vez de estrenar una segunda: dos derivaciones distintas para "otra marca
+        /// del mismo jefe" es lo que después divergiría. Así el área pendiente y el overlay quedan
+        /// separados sin tocar el servicio, que sigue guardando una marca por fuente.
+        /// </para>
+        /// <para>
+        /// <b>Sin canal devuelve el guid tal cual</b>, así que todo lo ya autorado (8 jefes y los
+        /// telegraphs que arma <c>HazardService</c>) sigue marcando exactamente donde marcaba.
+        /// <see cref="Guid.Empty"/> se conserva: es lo que hace que
+        /// <see cref="IThreatenedAreaService.Mark"/> siga siendo no-op sin dueño, y un canal
+        /// derivado de un guid vacío guardaría un área que nadie puede consumir.
+        /// </para>
+        /// </remarks>
+        public static Guid SourceKey(Guid selfGuid, string channelId)
+            => selfGuid == Guid.Empty || string.IsNullOrEmpty(channelId)
+                ? selfGuid
+                : AINode_AuxTelegraph.ChannelGuid(selfGuid, channelId);
 
         public override AIResult Tick(AIContext context)
         {
@@ -121,13 +162,18 @@ namespace Rollgeon.Combat.AI.Decisions
                 return AIResult.Failed;
             }
 
-            threat.Mark(context.SelfGuid, tiles, Damage, Kind);
+            // La misma fuente para el área y para el overlay: Show limpia por fuente antes de
+            // pintar, así que un canal que no coincidiera dejaría el aviso pendiente sin dibujo (o
+            // el dibujo de otro aviso apagado a medias).
+            var source = SourceKey(context.SelfGuid, ChannelId);
+
+            threat.Mark(source, tiles, Damage, Kind);
 
             // Overlay de sprites independiente del tinte del piso: el highlight de
             // move/path del jugador pinta y limpia sus tiles a su antojo y antes se
             // llevaba puesto el warning (quedaba azul y después default con el
             // telegraph todavía pendiente).
-            ThreatTelegraphOverlay.ResolveOrCreate().Show(context.SelfGuid, tiles);
+            ThreatTelegraphOverlay.ResolveOrCreate().Show(source, tiles);
 
             return AIResult.Succeeded;
         }

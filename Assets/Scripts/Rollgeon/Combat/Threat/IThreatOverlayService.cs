@@ -43,6 +43,19 @@ namespace Rollgeon.Combat.Threat
     /// move/path del jugador (que pinta y limpia sus tiles a su antojo) sin que
     /// ninguno pise al otro.
     /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <b>Por fuente, y un <c>Show</c> reemplaza al anterior de esa misma fuente.</b> Dos
+    /// avisos simultáneos del mismo jefe tienen que entrar por dos fuentes derivadas distintas (ver
+    /// <see cref="IThreatenedAreaService"/>), o el segundo apaga el dibujo del primero.
+    /// </para>
+    /// <para>
+    /// <b>Nada apaga un overlay por turno ni por ronda</b>: sólo lo saca un <see cref="Clear"/> de
+    /// su fuente, un <c>Show</c> de su fuente o el fin de combate/run. Es lo que permite que
+    /// un aviso se sostenga más de un turno; si alguna vez hace falta una limpieza periódica, tiene
+    /// que dejar afuera a las fuentes con área todavía pendiente.
+    /// </para>
+    /// </remarks>
     public interface IThreatOverlayService
     {
         /// <summary>Muestra (o reemplaza) el área amenazada de <paramref name="sourceGuid"/> con el

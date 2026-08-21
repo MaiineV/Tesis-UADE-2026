@@ -19,8 +19,21 @@ namespace Rollgeon.Combat.Threat
     /// bosses (o un boss + adds) no se pisan. En la práctica del FP hay un solo boss por combate.
     /// </para>
     /// <para>
+    /// <b>Una marca por fuente, y eso NO se arregla mergeando.</b> Un jefe que amenaza dos cosas el
+    /// mismo turno necesita <b>dos fuentes</b>, no una fuente con dos áreas: quien detona consume
+    /// por fuente y cobra el <c>Damage</c> de lo que consumió, así que dos áreas fundidas en una
+    /// entrada se resolverían como un solo golpe con un solo número, y el jugador parado en la
+    /// costura recibiría uno en vez de dos. El proyecto resuelve eso con guids derivados del jefe
+    /// (<c>AINode_TelegraphMark.SourceKey</c>, <c>AINode_AuxTelegraph.ChannelGuid</c>,
+    /// <c>CroupierSectorTelegraph.SlotGuid</c>), y el overlay se pinta bajo la misma fuente derivada
+    /// para que aviso y dibujo se prendan y se apaguen juntos.
+    /// </para>
+    /// <para>
     /// <b>Lifecycle.</b> Run-scoped vía limpieza en <c>OnCombatEnd</c> / <c>OnRunEnd</c>
-    /// (igual que <c>ComboBlockService</c>). No persiste a save.
+    /// (igual que <c>ComboBlockService</c>). No persiste a save. <b>Nada la limpia por turno ni por
+    /// ronda</b>, y eso es load-bearing: un aviso que se sostiene más de un turno (ver
+    /// <c>AINode_IgniteArea.AnnounceTurns</c>) depende de que sólo lo saquen el que lo consume o el
+    /// fin del combate.
     /// </para>
     /// </remarks>
     public interface IThreatenedAreaService
