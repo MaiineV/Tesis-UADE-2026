@@ -194,6 +194,31 @@
   .cell.burn { background: var(--fire-soft); box-shadow: inset 0 0 0 1px var(--fire); color: var(--fire); }
   .cell.player { background: var(--ink); color: var(--ground); font-size: .8rem; }
 
+  /* Terreno propio de esta sala. El CSS venia del Croupier, que no tiene ninguna de estas. */
+  .cell.spike {
+    background: var(--fire-soft);
+    box-shadow: inset 0 0 0 1px var(--fire);
+    color: var(--fire);
+  }
+  .cell.safe {
+    background: var(--blocker);
+    background-image: repeating-linear-gradient(45deg, transparent 0 3px, var(--rule-strong) 3px 4px);
+  }
+  .cell.spawn { box-shadow: inset 0 0 0 1px var(--rule-strong); color: var(--ink-faint); }
+  /* Gana sobre la .chip global de la barra de estado, que trae padding y borde de pastilla. */
+  .cell.chip {
+    padding: 0;
+    border: 0;
+    border-radius: 1px;
+    background: var(--brass-soft);
+    box-shadow: inset 0 0 0 1px var(--brass);
+    color: var(--brass);
+    font-size: .7rem;
+  }
+  .cell.path { background: var(--wine-soft); }
+  /* Encima del terreno, no en su lugar: un tumbo que cruza pinchos sigue leyendose como pinchos. */
+  .cell.on-path { box-shadow: inset 0 0 0 2px var(--wine); }
+
   .board-note { flex: 1 1 16rem; min-width: 15rem; }
   .board-note p:last-child { margin-bottom: 0; }
 
@@ -219,6 +244,11 @@
   .swatch.blocker { background: var(--blocker); background-image: repeating-linear-gradient(45deg, transparent 0 3px, var(--rule-strong) 3px 4px); }
   .swatch.boss    { background: var(--brass); }
   .swatch.player  { background: var(--ink); }
+  .swatch.spike   { background: var(--fire-soft); box-shadow: inset 0 0 0 1px var(--fire); }
+  .swatch.safe    { background: var(--blocker); background-image: repeating-linear-gradient(45deg, transparent 0 3px, var(--rule-strong) 3px 4px); }
+  .swatch.spawn   { box-shadow: inset 0 0 0 1px var(--rule-strong); }
+  .swatch.chip    { padding: 0; border: 0; background: var(--brass-soft); box-shadow: inset 0 0 0 1px var(--brass); }
+  .swatch.path    { background: var(--wine-soft); box-shadow: inset 0 0 0 2px var(--wine); }
 
   /* ---------- pasos del turno ---------- */
   .steps { display: grid; gap: 1px; background: var(--rule); border: 1px solid var(--rule); border-radius: 3px; overflow: hidden; }
