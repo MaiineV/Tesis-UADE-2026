@@ -1,0 +1,1525 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>El Cajero</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:opsz,wght@6..96,400;6..96,600&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+
+<style>
+  /* ---------- tokens: paleta sacada del propio builder del jefe ---------- */
+  :root {
+    --ground:      #F7F3F2;
+    --surface:     #FFFFFF;
+    --surface-alt: #EFE8E7;
+    --ink:         #1C1418;
+    --ink-soft:    #59484D;
+    --ink-faint:   #8A757B;
+    --rule:        #DFD3D2;
+    --rule-strong: #C3B2B2;
+
+    --wine:        #8C1F33;
+    --wine-soft:   #F0DEE1;
+    --brass:       #8A6412;
+    --brass-soft:  #F4E8CB;
+    --fire:        #BE1A0C;
+    --fire-soft:   #FADCD6;
+
+    --felt:        #E7DEDC;
+    --blocker:     #CFC4C2;
+
+    --shadow: 0 1px 2px rgba(28,20,24,.06), 0 8px 24px -12px rgba(28,20,24,.18);
+
+    --measure: 68ch;
+    --step--1: .82rem;
+    --step-0:  1rem;
+    --step-1:  1.24rem;
+    --step-2:  1.6rem;
+    --step-3:  2.1rem;
+    --step-4:  3.1rem;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground:      #14100F;
+      --surface:     #1D1717;
+      --surface-alt: #251D1E;
+      --ink:         #EFE5E2;
+      --ink-soft:    #B7A5A3;
+      --ink-faint:   #8B7873;
+      --rule:        #332727;
+      --rule-strong: #4A3A3A;
+
+      --wine:        #D9647A;
+      --wine-soft:   #3A1622;
+      --brass:       #D4A232;
+      --brass-soft:  #35280E;
+      --fire:        #F2634A;
+      --fire-soft:   #40170F;
+
+      --felt:        #2A2122;
+      --blocker:     #241D1D;
+
+      --shadow: 0 1px 2px rgba(0,0,0,.4), 0 8px 24px -12px rgba(0,0,0,.7);
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --ground:      #14100F;
+    --surface:     #1D1717;
+    --surface-alt: #251D1E;
+    --ink:         #EFE5E2;
+    --ink-soft:    #B7A5A3;
+    --ink-faint:   #8B7873;
+    --rule:        #332727;
+    --rule-strong: #4A3A3A;
+
+    --wine:        #D9647A;
+    --wine-soft:   #3A1622;
+    --brass:       #D4A232;
+    --brass-soft:  #35280E;
+    --fire:        #F2634A;
+    --fire-soft:   #40170F;
+
+    --felt:        #2A2122;
+    --blocker:     #241D1D;
+
+    --shadow: 0 1px 2px rgba(0,0,0,.4), 0 8px 24px -12px rgba(0,0,0,.7);
+  }
+
+  /* ---------- base ---------- */
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--ground);
+    color: var(--ink);
+    font-family: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+    font-size: var(--step-0);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap { max-width: 62rem; margin: 0 auto; padding: 0 1.5rem 6rem; }
+
+  p, ul, ol { max-width: var(--measure); }
+  p { margin: 0 0 1rem; }
+  a { color: var(--wine); }
+
+  h1, h2, h3 {
+    font-family: "Bodoni Moda", Georgia, "Times New Roman", serif;
+    font-weight: 400;
+    text-wrap: balance;
+    margin: 0;
+  }
+
+  .eyebrow {
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: var(--step--1);
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+  }
+
+  /* ---------- cabecera ---------- */
+  header { padding: 4.5rem 0 2.5rem; border-bottom: 1px solid var(--rule); }
+  header h1 { font-size: var(--step-4); line-height: 1.02; letter-spacing: -.01em; margin: .6rem 0 1.2rem; }
+
+  .thesis {
+    font-family: "Bodoni Moda", Georgia, serif;
+    font-size: var(--step-2);
+    line-height: 1.3;
+    color: var(--wine);
+    font-style: italic;
+    max-width: 24ch;
+    margin: 0 0 1.6rem;
+  }
+
+  .statusbar { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: 1.4rem; }
+
+  .chip {
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: var(--step--1);
+    padding: .28rem .6rem;
+    border: 1px solid var(--rule-strong);
+    border-radius: 2px;
+    color: var(--ink-soft);
+    background: var(--surface);
+  }
+  .chip.warn { border-color: var(--wine); color: var(--wine); background: var(--wine-soft); }
+
+  /* ---------- secciones ---------- */
+  section { padding: 3.2rem 0; border-bottom: 1px solid var(--rule); }
+  section:last-of-type { border-bottom: 0; }
+
+  .sec-head { margin-bottom: 1.6rem; }
+  .sec-head h2 { font-size: var(--step-3); line-height: 1.1; margin-top: .25rem; }
+  h3 { font-size: var(--step-1); margin: 2rem 0 .6rem; }
+
+  /* ---------- grilla de la sala ---------- */
+  .board-row { display: flex; flex-wrap: wrap; gap: 2rem; align-items: flex-start; }
+
+  .board {
+    --cell: 28px;
+    display: grid;
+    grid-template-columns: repeat(11, var(--cell));
+    grid-auto-rows: var(--cell);
+    gap: 2px;
+    padding: 10px;
+    background: var(--surface-alt);
+    border: 1px solid var(--rule-strong);
+    border-radius: 3px;
+    flex: 0 0 auto;
+  }
+  .board.sm { --cell: 19px; gap: 1px; padding: 7px; }
+
+  .cell {
+    display: grid;
+    place-items: center;
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: .7rem;
+    font-weight: 600;
+    color: var(--ink-faint);
+    background: var(--felt);
+    border-radius: 1px;
+  }
+  .cell.blocker {
+    background: var(--blocker);
+    background-image: repeating-linear-gradient(45deg, transparent 0 3px, var(--rule-strong) 3px 4px);
+  }
+  .cell.boss { background: var(--brass); color: var(--ground); font-size: .8rem; }
+  .cell.mark { background: var(--wine-soft); box-shadow: inset 0 0 0 2px var(--wine); color: var(--wine); }
+  .cell.burn { background: var(--fire-soft); box-shadow: inset 0 0 0 1px var(--fire); color: var(--fire); }
+  .cell.player { background: var(--ink); color: var(--ground); font-size: .8rem; }
+
+  .board-note { flex: 1 1 16rem; min-width: 15rem; }
+  .board-note p:last-child { margin-bottom: 0; }
+
+  figcaption {
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: var(--step--1);
+    color: var(--ink-faint);
+    margin-top: .7rem;
+    max-width: 42ch;
+  }
+  figure { margin: 0 0 1.5rem; }
+
+  /* ---------- leyenda ---------- */
+  .legend {
+    display: flex; flex-wrap: wrap; gap: .4rem 1.1rem;
+    padding: 0; margin: 1rem 0 0; list-style: none;
+    font-size: var(--step--1); color: var(--ink-soft); max-width: none;
+  }
+  .legend li { display: flex; align-items: center; gap: .45rem; }
+  .swatch { width: 13px; height: 13px; border-radius: 1px; background: var(--felt); flex: 0 0 auto; }
+  .swatch.mark    { background: var(--wine-soft); box-shadow: inset 0 0 0 2px var(--wine); }
+  .swatch.burn    { background: var(--fire-soft); box-shadow: inset 0 0 0 1px var(--fire); }
+  .swatch.blocker { background: var(--blocker); background-image: repeating-linear-gradient(45deg, transparent 0 3px, var(--rule-strong) 3px 4px); }
+  .swatch.boss    { background: var(--brass); }
+  .swatch.player  { background: var(--ink); }
+
+  /* ---------- pasos del turno ---------- */
+  .steps { display: grid; gap: 1px; background: var(--rule); border: 1px solid var(--rule); border-radius: 3px; overflow: hidden; }
+  .step { display: grid; grid-template-columns: 7.5rem 1fr; background: var(--surface); }
+  .step-n {
+    display: grid; place-items: center; text-align: center;
+    font-family: "Bodoni Moda", Georgia, serif;
+    font-size: var(--step-1);
+    color: var(--brass);
+    background: var(--surface-alt);
+    padding: .6rem;
+    line-height: 1.15;
+  }
+  .step-body { padding: 1rem 1.2rem; }
+  .step-body h4 { margin: 0 0 .2rem; font-family: "IBM Plex Sans", sans-serif; font-size: var(--step-0); font-weight: 600; }
+  .step-body p { margin: 0; color: var(--ink-soft); font-size: .94rem; }
+
+  /* ---------- tablas ---------- */
+  .tablebox { overflow-x: auto; border: 1px solid var(--rule); border-radius: 3px; background: var(--surface); }
+  table { border-collapse: collapse; width: 100%; font-size: .93rem; }
+  th, td { text-align: left; padding: .62rem .9rem; border-bottom: 1px solid var(--rule); vertical-align: top; }
+  thead th {
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: var(--step--1);
+    text-transform: uppercase; letter-spacing: .08em;
+    color: var(--ink-faint); font-weight: 500;
+    background: var(--surface-alt);
+  }
+  tbody tr:last-child td { border-bottom: 0; }
+  td.num, th.num { font-family: "IBM Plex Mono", monospace; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  code { font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: .88em; background: var(--surface-alt); padding: .1em .35em; border-radius: 2px; }
+
+  /* ---------- fases ---------- */
+  .phases { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr)); }
+  .phase {
+    border: 1px solid var(--rule); border-top: 3px solid var(--brass);
+    border-radius: 3px; background: var(--surface);
+    padding: 1.1rem 1.2rem 1.3rem; box-shadow: var(--shadow);
+  }
+  .phase.p2 { border-top-color: var(--wine); }
+  .phase.p3 { border-top-color: var(--fire); }
+  .phase .hp { font-family: "IBM Plex Mono", monospace; font-size: var(--step--1); letter-spacing: .08em; color: var(--ink-faint); }
+  .phase h3 { margin: .3rem 0 .5rem; font-size: var(--step-1); }
+  .phase p { font-size: .92rem; color: var(--ink-soft); margin-bottom: .5rem; }
+  .phase p:last-child { margin-bottom: 0; }
+
+  /* ---------- paneles a dos columnas ---------- */
+  .split { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr)); }
+  .panel { border: 1px solid var(--rule); border-radius: 3px; background: var(--surface); padding: 1.1rem 1.3rem 1.3rem; }
+  .panel h3 { margin: 0 0 .7rem; font-size: var(--step-1); }
+  .panel ul { margin: 0; padding-left: 1.1rem; font-size: .92rem; color: var(--ink-soft); }
+  .panel li { margin-bottom: .35rem; }
+  .panel.build h3 { color: var(--brass); }
+
+  /* ---------- preguntas ---------- */
+  .asks { list-style: none; padding: 0; margin: 0; display: grid; gap: .8rem; max-width: var(--measure); }
+  .asks li { border-left: 3px solid var(--wine); background: var(--surface); padding: .8rem 1rem; font-size: .95rem; }
+
+  .callout {
+    border: 1px solid var(--brass); background: var(--brass-soft);
+    border-radius: 3px; padding: 1rem 1.2rem;
+    max-width: var(--measure); margin: 1.5rem 0;
+  }
+  .callout p { margin: 0; }
+  .callout .eyebrow { color: var(--brass); display: block; margin-bottom: .3rem; }
+
+  footer { padding: 2.5rem 0 0; color: var(--ink-faint); font-size: var(--step--1); font-family: "IBM Plex Mono", monospace; }
+
+  @media (max-width: 640px) { .board { --cell: 22px; } header h1 { font-size: var(--step-3); } }
+  @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+</style>
+</head>
+<body>
+
+<style>
+  /* ---------- El Cajero: paleta de banca sobre el mismo sistema del Croupier ---------- */
+  :root {
+    --wine:        #1F5140;   /* verde caja: su color de identidad */
+    --wine-soft:   #DCE9E1;
+    --brass:       #8A6412;   /* oro: el escalón, las fichas */
+    --brass-soft:  #F4E8CB;
+    --fire:        #A8261B;   /* rojo: lo que cobra */
+    --fire-soft:   #F7DED9;
+    --counter:     #6E5B3E;   /* el mostrador */
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --wine:      #6FC0A0;
+      --wine-soft: #123329;
+      --brass:     #D4A232;
+      --brass-soft:#35280E;
+      --fire:      #E8735F;
+      --fire-soft: #3B1512;
+      --counter:   #9A8256;
+    }
+  }
+  :root[data-theme="dark"] {
+    --wine:      #6FC0A0;
+    --wine-soft: #123329;
+    --brass:     #D4A232;
+    --brass-soft:#35280E;
+    --fire:      #E8735F;
+    --fire-soft: #3B1512;
+    --counter:   #9A8256;
+  }
+
+  /* El mostrador no es un barril: es la pieza que parte la sala, y tiene que leerse aparte. */
+  .cell.counter {
+    background: var(--counter);
+    background-image: none;
+    box-shadow: inset 0 0 0 1px var(--ink);
+  }
+  .swatch.counter { background: var(--counter); background-image: none; }
+
+  /* Ficha: el único elemento del piso que te paga. */
+  .cell.chip {
+    background: var(--brass);
+    color: var(--ground);
+    font-size: .78rem;
+  }
+  .swatch.chip { background: var(--brass); }
+
+  /* El lado que cobra peaje — tinte plano, no borde: es una región, no una casilla. */
+  .cell.toll { background: var(--fire-soft); }
+  .swatch.toll { background: var(--fire-soft); }
+
+  /* Escalón de la tabla de oro: el que está activo hoy se marca. */
+  tr.tier-top td { background: var(--fire-soft); }
+
+  /* ---------- rediseño: el terreno del patovica ---------- */
+  /* Caja fuerte: bloquea, y además frena un empujón. Mismo marrón que el
+     mostrador — los dos son mobiliario macizo. */
+  .cell.safe {
+    background: var(--counter);
+    background-image: none;
+    box-shadow: inset 0 0 0 1px var(--ink);
+  }
+  .swatch.safe { background: var(--counter); background-image: none; }
+
+  /* Pinchos: cobran vida. Rojo, y con textura para que se lean como trampa
+     y no como un tinte de área. */
+  .cell.spike {
+    background: var(--fire-soft);
+    background-image: repeating-linear-gradient(45deg, transparent 0 3px, var(--fire) 3px 4px);
+    box-shadow: inset 0 0 0 1px var(--fire);
+    color: var(--fire);
+    font-size: .72rem;
+  }
+  .swatch.spike {
+    background: var(--fire-soft);
+    background-image: repeating-linear-gradient(45deg, transparent 0 3px, var(--fire) 3px 4px);
+  }
+
+  /* El tumbo: las casillas por las que te va a cruzar el empujón. Es el aviso,
+     así que usa el mismo lenguaje que cualquier otra marca del juego. */
+  .cell.path {
+    background: var(--wine-soft);
+    box-shadow: inset 0 0 0 2px var(--wine);
+    color: var(--wine);
+    font-size: .72rem;
+  }
+  .swatch.path { background: var(--wine-soft); box-shadow: inset 0 0 0 2px var(--wine); }
+
+  /* El tumbo también marca las casillas de terreno que va a cruzar. Va con
+     outline y no con box-shadow para que se componga con el anillo del hazard
+     en vez de reemplazarlo: la casilla tiene que decir "pinchos" Y "te cruzo
+     por acá" al mismo tiempo. */
+  .cell.on-path { outline: 2px solid var(--wine); outline-offset: -2px; }
+
+  /* Candidatas de spawn del jugador: 4, y sale una al azar. */
+  .cell.spawn {
+    background: var(--surface);
+    box-shadow: inset 0 0 0 1px var(--rule-strong);
+    color: var(--ink-faint);
+    font-size: .72rem;
+  }
+  .swatch.spawn { background: var(--surface); box-shadow: inset 0 0 0 1px var(--rule-strong); }
+
+  /* Fila de una tabla comparativa que describe el estado futuro. */
+  tr.after td { background: var(--wine-soft); }
+
+  .flag {
+    border-left: 3px solid var(--fire);
+    background: var(--surface);
+    padding: .9rem 1.1rem;
+    margin: 0 0 .8rem;
+    max-width: var(--measure);
+  }
+  .flag h4 {
+    margin: 0 0 .35rem;
+    font-family: "IBM Plex Sans", sans-serif;
+    font-size: var(--step-0);
+    font-weight: 600;
+  }
+  .flag p { margin: 0 0 .5rem; font-size: .94rem; color: var(--ink-soft); }
+  .flag p:last-child { margin-bottom: 0; }
+  .flag .tag {
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: var(--step--1);
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--fire);
+  }
+</style>
+
+<div class="wrap">
+
+<header>
+  <div class="eyebrow">Ficha de jefe · Piso 2 · En el juego</div>
+  <h1>El Cajero</h1>
+  <p class="thesis">Te cobra por ser rico — y te paga para que lo seas.</p>
+  <p>Alterna dos turnos: uno marca su columna de cobro, el otro la detona y encima dispara. El ancho y el daño de esa columna los decide <strong>el oro que llevás encima</strong>, y cada tanda de fichas que suelta te empuja al escalón siguiente. El mostrador parte la sala al medio: pegarle exige cruzar, y cruzar cuesta 12 al cerrar el turno.</p>
+  <div class="statusbar">
+    <span class="chip">rama <code>feature/improve-bosses</code></span>
+    <span class="chip">sala medida en engine · 11×11 · 105 casillas</span>
+    <span class="chip warn">vida 170 · debilidad Poker ×1,5</span>
+  </div>
+
+  <div class="callout">
+    <span class="eyebrow">Esto es el jefe que está en el juego</span>
+    <p>Después del playtest se rediseñó de cero: pasa a ser <strong>melee</strong>, se le saca el mostrador, y la sala pasa a ser su arma. Está en <a href="#rediseno"><strong>08 — El rediseño</strong></a>. Las siete secciones de acá abajo describen lo que hay hoy y el razonamiento que llevó al cambio; se conservan a propósito.</p>
+  </div>
+</header>
+
+<!-- ============================ EL REDISEÑO ============================ -->
+<section id="rediseno">
+  <div class="sec-head">
+    <div class="eyebrow">El rediseño · propuesta</div>
+    <h2>El patovica</h2>
+  </div>
+
+  <p class="thesis">No te lastima: te tira. Y donde caés, sí.</p>
+
+  <p>Melee. Te persigue por toda la sala, y cuando te alcanza <strong>te despacha</strong>: te empuja tres casillas y se te cae la plata encima del tumbo. Su ficha de ataque no tiene un número de daño — su daño es <strong>a dónde te manda</strong>.</p>
+
+  <p>El jefe de hoy tiene seis mecánicas —columna, escalones de oro, rastrillo, soborno, disparo, peaje— sobre un piso vacío, y ninguna se toca con las otras. Este tiene <strong>una</strong>: monedas en el piso con un reloj. Sus tres ataques son tres formas de presionar esa misma cosa, y el resto lo hace la sala.</p>
+
+  <h3>La sala</h3>
+
+  <p><strong>Los pinchos son el layout de esta sala.</strong> Dibujados a mano, en estas casillas exactas, iguales en todas las runs. No se sortean, no los pone él, no se mueven: son parte del mapa igual que las paredes. Van en <code>RoomLayout.SpecialTilePlacements</code>, que el proyecto define como "casilla permanente colocada exacta por el diseñador, sin randomización".</p>
+
+  <p>Se va el mostrador. <strong>Nada parte la sala</strong>, porque un cazador melee y un muro se pelean: o el muro lo frena y deja de ser amenaza, o no lo frena y es sólo un impuesto al cruzar. El mostrador era la respuesta a un jefe que huía, y ese jefe ya no existe.</p>
+
+  <figure>
+    <div class="board-row">
+      <div class="board" data-map="nueva"></div>
+      <div class="board-note">
+        <ul class="legend">
+          <li><span class="swatch"></span> caminable</li>
+          <li><span class="swatch safe"></span> caja fuerte</li>
+          <li><span class="swatch spike"></span> pinchos</li>
+          <li><span class="swatch boss"></span> Cajero</li>
+          <li><span class="swatch spawn"></span> spawn posible</li>
+        </ul>
+        <p style="margin-top:1rem"><strong>Ocho cajas fuertes, ninguna pegada a otra ni contra una pared.</strong> Es la regla que ya usa el Croupier: una sola cuesta un paso para rodearla, dos pegadas son un muro. Bloquean el paso <em>y frenan un empujón</em>, así que pelearlo de espaldas a una caja es pelearlo gratis.</p>
+        <p><strong>Diez casillas de pinchos, en pares.</strong> El par es la unidad: un blanco más grande que dos sueltos, pero concentrado, así que el área limpia sigue limpia. Y cruzar un par entero son <strong>24</strong>. Nunca tres en fila — eso ya es un muro con otro nombre.</p>
+        <p><strong>Un solo tipo de hazard, y sin estados.</strong> Los pinchos cobran 12 al pisarlos y nada más: quedarte parado encima es gratis. Es la diferencia exacta con el fuego, que cobra al entrar <em>y</em> cada turno que te quedás.</p>
+        <p><strong>El perímetro queda vacío a propósito:</strong> ahí spawnean los refuerzos de la fase 2, y taparlo la rompe.</p>
+        <p><strong>Vos aparecés en una de las cuatro esquinas, al azar.</strong> Robado de Mewgenics, donde el jugador cae en 1 de 4 casillas predeterminadas: la apertura no se memoriza.</p>
+      </div>
+    </div>
+    <figcaption>113 casillas caminables de 121, contra las 105 de hoy — y todo lo que hay en el piso lo puso el plano del Cajero, no la sala base.</figcaption>
+  </figure>
+
+  <div class="callout">
+    <span class="eyebrow">Por qué el terreno no puede depender de él</span>
+    <p>Un jefe que persigue <strong>no puede tener terreno definido respecto de su spawn</strong>. Un anillo de peligro alrededor del centro no significa nada en la ronda 3, porque él ya se fue de ahí. El terreno tiene que ser significativo en todas partes — eso es dispersar en vez de partir.</p>
+  </div>
+
+  <h3>Sus tres ataques</h3>
+
+  <p>Uno por turno, nunca dos. Y no son variedad decorativa: <strong>cada uno tapa una forma distinta de trivializar la pelea.</strong></p>
+
+  <div class="tablebox">
+    <table>
+      <thead><tr><th>Ataque</th><th>Qué hace</th><th class="num">Daño</th><th>Avisa</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><strong>El agarre</strong></td>
+          <td>Te empuja 3 casillas derecho y se te caen 2 monedas en el camino. Pega poco: lo que duele es a dónde te manda.</td>
+          <td class="num">8 <span style="color:var(--ink-faint)">+ terreno</span></td>
+          <td>No — es contacto</td>
+        </tr>
+        <tr>
+          <td><strong>El mandoble</strong></td>
+          <td>Un golpe y listo. Sin empujón y sin robo. Lo usa cuando el empujón no te llevaría a ninguna parte.</td>
+          <td class="num">12</td>
+          <td>No — es contacto</td>
+        </tr>
+        <tr>
+          <td><strong>La barrida</strong></td>
+          <td>Marca un radio de 2 a su alrededor. Al resolver, <strong>toda moneda adentro vuela hacia él y lo cura</strong>.</td>
+          <td class="num">0</td>
+          <td><strong>Sí — un turno</strong></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="callout">
+    <span class="eyebrow">Por qué tres y no uno</span>
+    <p>Con sólo el agarre, el jugador se planta en el <strong>25% de la sala que no tiene pinchos a menos de tres casillas</strong> y ahí el empujón no lo lleva a ninguno. El jefe deja de existir.</p>
+    <div class="tablebox" style="margin:.8rem 0 0; max-width:38rem">
+      <table>
+        <thead><tr><th>Si el jugador…</th><th>…lo castiga</th></tr></thead>
+        <tbody>
+          <tr><td>se planta lejos de los pinchos</td><td><strong>El mandoble</strong> — esa esquina cuesta vida en vez de posición</td></tr>
+          <tr><td>pelea cerca de los pinchos</td><td><strong>El agarre</strong> — te tira, y el terreno cobra</td></tr>
+          <tr><td>ignora las monedas del piso</td><td><strong>La barrida</strong> — va a buscarlas él</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <p style="margin-top:1.2rem">La barrida es la que más cambia la pelea, por tres razones. Le da <strong>agencia sobre la economía</strong> —hoy espera pasivamente a que las monedas expiren, con esto va a buscarlas—; se responde <strong>corriendo</strong>, porque tenés un turno para levantar lo que puedas de esa área; y <strong>se cancela empujándolo</strong>. Sacarlo del área que telegrafió le anula el ataque, y eso convierte tu propio Empuje en la respuesta a su mejor jugada en vez de un extra.</p>
+
+  <h3>Cuándo usa cada uno</h3>
+
+  <p>Todas las condiciones se ven en el tablero. Nada es oculto y nada es al azar: podés contar las monedas del piso y podés ver qué tenés detrás.</p>
+
+  <div class="steps">
+    <div class="step">
+      <div class="step-n">Si hay<br>3+ monedas</div>
+      <div class="step-body">
+        <h4>La barrida</h4>
+        <p>Telegrafía el área y la resuelve al turno siguiente. Tiene prioridad sobre todo lo demás: cuando el piso está lleno de plata, lo único que le importa es juntarla.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-n">Pegado, con<br>algo detrás</div>
+      <div class="step-body">
+        <h4>El agarre</h4>
+        <p>Si el empujón te cruzaría un pincho, te despacha. Es la jugada que usa el terreno.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-n">Pegado, sin<br>nada detrás</div>
+      <div class="step-body">
+        <h4>El mandoble</h4>
+        <p>Si tirarte no sirve de nada, te pega. 18, y nada más.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-n">Lejos</div>
+      <div class="step-body">
+        <h4>Camina</h4>
+        <p>Nada más. Un evento, cero ambigüedad.</p>
+      </div>
+    </div>
+  </div>
+
+  <h3>Ficha</h3>
+
+  <div class="tablebox">
+    <table>
+      <thead><tr><th>Campo</th><th class="num">Valor</th><th>Nota</th></tr></thead>
+      <tbody>
+        <tr><td>Vida</td><td class="num">170</td><td>Se mantiene. Ahora la sube él robando, no un contador.</td></tr>
+        <tr><td>Debilidad</td><td class="num">Poker ×1,5</td><td>Cambia. Era Full House — ver <em>Por qué Poker</em>.</td></tr>
+        <tr><td>Velocidad</td><td class="num">4</td><td>Se mantiene.</td></tr>
+        <tr><td>Oro que deja</td><td class="num">30 – 60</td><td>Se mantiene.</td></tr>
+        <tr><td><strong>Alcance de golpe</strong></td><td class="num">1</td><td><strong>Melee y nada más.</strong> Todo lo que hace exige estar pegado, salvo la barrida.</td></tr>
+        <tr><td><strong>Movimiento</strong></td><td class="num">persecución</td><td>Camina hacia vos y se detiene pegado (<code>AINode_Move</code>, <code>DesiredRange = 1</code>). No mantiene distancia, no retrocede, no kitea.</td></tr>
+        <tr><td>El agarre</td><td class="num">8 + terreno</td><td>Empuja 3 y te tira 2 monedas en el camino. Los pinchos suman 12 por casilla cruzada: 8 en limpio, 20 con un pincho, 32 con un par.</td></tr>
+        <tr><td>El mandoble</td><td class="num">12</td><td>Su golpe nominal, el que lee <code>BaseAttack</code>. Bajado de 18 para que plantarse lejos de los pinchos no salga más caro que arrimarse.</td></tr>
+        <tr><td>La barrida</td><td class="num">radio 2</td><td>Avisa un turno. Se lleva las monedas de adentro y se cura su valor. 0 de daño.</td></tr>
+        <tr><td>Monedas de la sala</td><td class="num">4 cada 3 rondas</td><td>Valen 10-15 y duran 3 rondas.</td></tr>
+        <tr><td>Curación</td><td class="num">= valor de la moneda</td><td>Sea porque expiró o porque la barrió. Sólo puede curarse lo que estaba en el piso.</td></tr>
+        <tr><td>Pinchos vs. él</td><td class="num">esquiva / come</td><td>Los esquiva caminando (flag de pathing). Empujado los come: 12 por casilla, igual que vos.</td></tr>
+        <tr><td>Al 50%</td><td class="num">2 refuerzos</td><td>A distancia, una sola vez. Con los números de la Comisión: 18 de vida y 5 de daño cada uno.</td></tr>
+        <tr><td><strong>Cuerpo</strong></td><td class="num">a definir</td><td>Se cambia. El actual (<code>GeneralDirector_Animated</code>) corre sobre un animator con <b>Idle y Attack solamente</b>: no tiene animación de movimiento, así que un melee que persigue es imposible con ese rig. Libre y con <code>Run</code>: <code>CardEnemy_Animated</code>.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="callout">
+    <span class="eyebrow">Lo que ya no tiene</span>
+    <div class="tablebox" style="margin:.6rem 0 0; max-width:40rem">
+      <table>
+        <thead><tr><th>Del jefe viejo</th><th>Por qué se va</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Disparo a rango</strong> — 12, alcance 4</td><td>Es melee. Un ataque a distancia le saca la razón de tener que llegar hasta vos.</td></tr>
+          <tr><td><strong>El peaje del mostrador</strong> — 12 por ronda</td><td>Era el precio de acercarte a alguien que no te quiere cerca. Este te busca.</td></tr>
+          <tr><td><strong>El repliegue</strong> — distancia 4, 3 pasos</td><td>Reemplazado por persecución. <code>AINode_KeepDistance</code> sólo retrocede; el nodo correcto es <code>AINode_Move</code>.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <h3>El agarre, en detalle</h3>
+
+  <p>Su ataque firma. Una animación, un movimiento, y todas las consecuencias son <strong>la misma historia física</strong>: te agarró, te tiró, se te cayó la plata.</p>
+
+  <div class="board-row">
+    <figure>
+      <div class="board sm" data-map="agarre"></div>
+      <figcaption><strong>El tumbo sale derecho, opuesto a él.</strong> Este diagrama explica la mecánica — en el juego no hay marca ninguna: es un golpe de contacto.</figcaption>
+    </figure>
+    <figure>
+      <div class="board sm" data-map="tumbo"></div>
+      <figcaption><strong>Te despacha.</strong> Cruzaste un par entero: <strong>24</strong>. Y tus dos monedas quedaron justo encima de los pinchos.</figcaption>
+    </figure>
+    <div class="board-note">
+      <ul class="legend">
+        <li><span class="swatch path"></span> el tumbo</li>
+        <li><span class="swatch chip"></span> tu plata</li>
+        <li><span class="swatch player"></span> vos</li>
+      </ul>
+      <p style="margin-top:1rem"><strong>El empujón no apunta.</strong> Va derecho, en la dirección opuesta a él. Lo que decide si caés en los pinchos es la geometría: dónde está él, dónde estás vos, qué hay detrás tuyo.</p>
+      <p>Él no elige el destino — elige <strong>por qué lado se te acerca</strong>, y eso sale de su pathing. Apunta sin apuntar, y de forma emergente.</p>
+      <p>Un empujón que buscara el hazard más cercano sería peor: convertiría los pinchos en <strong>zona prohibida</strong>. El jugador aprendería "no pelees a menos de tres de un pincho", pelearía en el medio vacío, y el terreno no se usaría nunca. <em>Estar cerca tiene que ser un riesgo, no una condena.</em></p>
+    </div>
+  </div>
+
+  <div class="tablebox" style="margin-top:1.5rem">
+    <table>
+      <thead><tr><th>Qué ve el jugador</th><th>Cuándo</th><th class="num">Eventos</th></tr></thead>
+      <tbody>
+        <tr><td>Corre hacia vos. Nada más.</td><td>Todos los turnos en que no te alcanza</td><td class="num">1</td></tr>
+        <tr><td>Te despacha: volás tres casillas y se te caen dos monedas en el camino</td><td>El turno que te alcanza</td><td class="num">1</td></tr>
+        <tr><td>Un número de daño, en una casilla que se ve que tiene pinchos</td><td>Sólo si el tumbo te cruzó uno</td><td class="num">1</td></tr>
+        <tr><td>Te pega y ya: un número, sin empujón ni monedas</td><td>El turno que te alcanza y no hay lugar para tirarte</td><td class="num">1</td></tr>
+        <tr><td>Se marca un área a su alrededor → al turno siguiente las monedas de adentro vuelan hacia él</td><td>Cuando hay 3 o más monedas en el piso</td><td class="num">1, con aviso</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p style="margin-top:1rem">Ese recuento es el punto. La versión anterior de este ataque —pegar, robar y empujar juntos— producía <strong>ocho</strong> eventos de una sola acción, en cuatro lugares distintos de la pantalla: dos números de daño, el contador de oro de la esquina, una moneda apareciendo, y tu pawn a tres casillas. Nadie lee eso. Es el mismo error que el <strong>turno de cobro que apila dos ataques</strong> del jefe actual (sección 07, hallazgo 3).</p>
+
+  <p><strong>Y el contador de oro deja de ser quien te informa del robo:</strong> ves la plata salir de vos y quedar en el piso.</p>
+
+  <div class="callout">
+    <span class="eyebrow">No avisa, y no tiene que avisar</span>
+    <p><strong>Los avisos son para AOE</strong> — áreas, lluvias, columnas: ataques donde el peligro no está donde está el bicho, así que hay que dibujarlo. Un agarre es <strong>contacto</strong>: lo ves pegado a vos y ya sabés lo que viene, igual que con cualquier melee del juego.</p>
+    <p style="margin-top:.6rem">Y ninguna de las dos formas de telegrafiarlo funcionaría. <strong>Marcar y empujar en el mismo turno</strong> deja el aviso en pantalla 0 frames — el bug del Pleno del Croupier, que marca y prende en el mismo tick. <strong>Marcar un turno y empujar al siguiente</strong> significa que no conecta nunca: el jugador camina 5 y sólo necesita salir 1 casilla.</p>
+    <p style="margin-top:.6rem">La información nunca está oculta igual: <strong>los pinchos están ahí desde que entraste</strong>, él está donde lo ves, y el empujón son siempre tres casillas en línea recta. La decisión no es "esquivo el empujón", es <em>desde qué casilla lo ataco</em>.</p>
+  </div>
+
+  <div class="callout">
+    <span class="eyebrow">Medido sobre la sala</span>
+    <p>Se recorrieron todas las configuraciones posibles de jugador y jefe adyacente sobre esta grilla, empujando tres casillas:</p>
+    <div class="tablebox" style="margin:.8rem 0 0; max-width:34rem">
+      <table>
+        <thead><tr><th>Parado…</th><th class="num">El empujón te cruza un pincho</th></tr></thead>
+        <tbody>
+          <tr><td>pegado a un par de pinchos</td><td class="num"><strong>26%</strong></td></tr>
+          <tr><td>a tres casillas o más de todo pincho</td><td class="num">1,5%</td></tr>
+          <tr><td>cruzando un par entero (24)</td><td class="num">4,8%</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p style="margin-top:.8rem">O sea: <strong>1 de cada 4 agarres cerca de un par te cobra 20 o 32 en vez de 8</strong>, y lejos de los pinchos eso casi no pasa. Es riesgo con forma de pico, no un promedio más alto — <strong>en media son 11,9 contra 8,2</strong>, apenas un 45% más caro. Los 8 fijos del agarre se comen buena parte de la varianza del terreno.</p>
+    <p style="margin-top:.6rem">Se probaron capas más densas —casillas sueltas, parches 2×2, parches 3×3, hasta 26 casillas— y todas suben el riesgo cerca pero <strong>ensucian el resto de la sala</strong>: la peor deja sólo 9% de piso limpio. Los <strong>pares</strong> son lo que gana: concentran el peligro sin ensuciar el resto, y abren el caso de los 32.</p>
+    <div class="tablebox" style="margin:.9rem 0 0; max-width:40rem">
+      <table>
+        <thead><tr><th>Desde dónde lo peleás</th><th class="num">Lo que te cuesta por turno</th></tr></thead>
+        <tbody>
+          <tr><td>Lejos de los pinchos</td><td class="num">12 seguros (mandoble)</td></tr>
+          <tr><td>Pegado a un par</td><td class="num">8 · 20 · 32 — media 10,5</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p style="margin-top:.8rem"><strong>Los dos cuestan casi lo mismo, y ahí está la decisión.</strong> Lejos de los pinchos cobra poco y siempre; cerca cobra menos de media pero con varianza — y encima te cobra en otra moneda: el empujón te tira lejos y tus monedas caen sobre los pinchos, así que recuperarlas sale 12 cada una. Cerca de los pinchos pagás menos vida y más economía, y la economía es lo que lo cura.</p>
+  </div>
+
+  <h3>Las monedas</h3>
+
+  <p>Vienen de dos fuentes y las dos se comportan igual.</p>
+
+  <div class="callout">
+    <span class="eyebrow">Decidido: el empujón te junta las monedas que cruza</span>
+    <p>Si el tumbo de tres casillas pasa sobre monedas tiradas, <strong>las levantás en el camino</strong>. El empujón ya es lo peor que te pasa en el turno; que a veces te deje algo es lo único bueno que puede tener, y hace que valga la pena elegir <em>de qué lado</em> te dejás agarrar.</p>
+    <p style="margin-top:.6rem">Sale gratis: <code>OnForcedMovementInto</code> ya está vivo y dispara casilla por casilla, así que es el comportamiento por defecto. Mismo mecanismo que el de los pinchos — el tumbo cobra y recoge en el mismo trayecto.</p>
+  </div>
+
+  <div class="steps">
+    <div class="step">
+      <div class="step-n">La sala<br>paga</div>
+      <div class="step-body">
+        <h4>Se desborda la caja</h4>
+        <p>Cada 3 rondas aparecen <strong>4 monedas</strong> repartidas por el piso, de 10 a 15 de oro. Es un evento <em>de la sala</em>, no una acción suya, con su propio aviso en el borde de ronda. Así él nunca hace dos cosas en un turno.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-n">Él<br>cobra</div>
+      <div class="step-body">
+        <h4>Se te cae en el tumbo</h4>
+        <p>Dos monedas por agarre, a lo largo del camino del empujón. <strong>Pueden quedar sobre pinchos</strong> — igual que las del desborde. A veces tu propia plata termina en el peor lugar de la sala.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="tablebox" style="margin-top:1.5rem">
+    <table>
+      <thead><tr><th>La moneda</th><th class="num">Valor</th><th>Qué hace</th></tr></thead>
+      <tbody>
+        <tr><td>Si la levantás</td><td class="num">10 – 15</td><td>Te paga. Nada más: no daña, no resbala, no aplica estados.</td></tr>
+        <tr><td>Si expira</td><td class="num">3 rondas</td><td>Vuela hacia él y <strong>se cura exactamente su valor</strong>. Una por vez, nunca todas juntas.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p style="margin-top:1rem"><strong>Su precio es dónde cayó.</strong> Una moneda en el medio abierto es gratis y la juntás de paso. Una sobre pinchos son 15 de oro por 12 de vida. Una en el medio de un par te cuesta entrar y salir. Eso reemplaza el peaje binario del mostrador por un espectro de rutas con precios distintos.</p>
+
+  <div class="callout">
+    <span class="eyebrow">La moneda no es una casilla especial</span>
+    <p>El GDD §9 prohíbe que una casilla tenga más de una categoría de efecto activa, y eso era un problema real. Mewgenics lo resuelve con <strong>capas</strong>: cada casilla tiene cinco, y <em>Pickups</em> —monedas y objetos levantables— es una capa aparte de <em>Tile-Type</em>. La moneda es un objeto sobre el piso, no un tipo de piso. Por eso puede estar encima de pinchos.</p>
+    <p style="margin-top:.6rem">Y no es una categoría nueva: <code>Resource gain/loss</code> ya figura en la lista de efectos que el GDD §7 dejó reservados sin usar.</p>
+  </div>
+
+  <h3>Dónde entra el empuje</h3>
+
+  <p>El primitivo <code>IForcedMovementService.Push</code> <strong>ya está construido, bootstrapeado global, y nada en el juego lo usa</strong> — el GDD lo declara como "consumidor futuro" de la habilidad Empuje del Guerrero. Acá trabaja en tres direcciones.</p>
+
+  <div class="split">
+    <div class="panel">
+      <h3>1 · Su daño es la sala</h3>
+      <ul>
+        <li>El empujón te cruza tres casillas <strong>de a una, aplicando lo que haya en cada una</strong>.</li>
+        <li>En el medio abierto: <strong>8</strong>. Cruzando un pincho: <strong>20</strong>. Cruzando un par entero: <strong>32</strong>.</li>
+        <li>Pega poco y te tira. Cuánto te sale el agarre lo decide dónde lo peleaste, no una stat.</li>
+      </ul>
+    </div>
+    <div class="panel">
+      <h3>2 · Te separa de tu plata</h3>
+      <ul>
+        <li>Quedás a tres casillas de la moneda que se te acaba de caer.</li>
+        <li>Tenés 3 rondas para volver antes de que se la coma.</li>
+        <li>Y volver significa volver <strong>hacia él</strong>.</li>
+      </ul>
+    </div>
+    <div class="panel build">
+      <h3>3 · Vos también empujás</h3>
+      <ul>
+        <li><strong>Empuje</strong> es la habilidad de clase del Guerrero, y la distancia sale del combo que armaste.</li>
+        <li>Contra él, empujar es la respuesta: no le cambiás golpes, <strong>lo apuntás vos</strong>.</li>
+        <li>Los pinchos <strong>le cobran igual que a vos</strong> — 12 por casilla. Él no los pisa caminando, pero empujado no elige.</li>
+        <li>Y es lo que <strong>cancela su barrida</strong>: sacarlo del área que telegrafió le anula el ataque.</li>
+        <li>El GDD ya lo contempla: pone como ejemplo textual <em>"un enemigo empujado a Pinchos"</em> al definir quién se lleva el crédito de la muerte.</li>
+      </ul>
+    </div>
+  </div>
+
+  <p style="margin-top:1.2rem"><strong>La sala es el arma, y los dos la usan.</strong> Es lo mismo que dice el objetivo #1 del GDD del sistema de casillas —<em>"convertir el posicionamiento y el empuje en decisiones tácticas reales"</em>— y lo que repiten todas las guías de Mewgenics: empujar a un enemigo a los pinchos pega más que atacarlo.</p>
+
+  <h3>Por qué Poker</h3>
+
+  <p>Simulado sobre 400.000 manos, jugando a buscar la debilidad con 2 rerolls (guardo lo que sirve, tiro el resto):</p>
+
+  <div class="tablebox">
+    <table>
+      <thead><tr><th>Debilidad</th><th class="num">EV</th><th class="num">Pega la debilidad</th><th class="num">Base media cuando falla</th></tr></thead>
+      <tbody>
+        <tr class="after"><td><strong>Poker</strong></td><td class="num"><strong>38,2</strong></td><td class="num">27,6%</td><td class="num">21,4</td></tr>
+        <tr><td>Full House</td><td class="num">31,6</td><td class="num">35,8%</td><td class="num">19,9</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p style="margin-top:1.2rem">Poker rinde <strong>21% más</strong> aunque conecte menos seguido. Y es mejor también <em>cuando falla</em>: buscar poker es una <strong>máquina de tríos</strong> —guardás una cara y tirás tres dados, y lo que sale seguido es trío, base 22— mientras que buscar full house te deja en doble par, base 15.</p>
+
+  <div class="tablebox" style="max-width:44rem">
+    <table>
+      <thead><tr><th>Cuando falla la búsqueda, qué sale</th><th>Manos</th></tr></thead>
+      <tbody>
+        <tr><td>Buscando <strong>poker</strong></td><td>trío 49% · par 18% · doble par 18%</td></tr>
+        <tr><td>Buscando full house</td><td>doble par 45% · trío 36% · par 11%</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p style="margin-top:1.2rem">Los otros dos argumentos apuntan igual. <strong>Tema:</strong> cuatro pesados iguales es una mano de matón; el full house es "la mano que paga fijo, la de la casa" — la ficción del cajero detrás del mostrador, que se murió con el mostrador. <strong>Elenco:</strong> nadie tiene poker, es el único hueco del rango alto en todo el cast.</p>
+
+  <div class="callout">
+    <span class="eyebrow">El costo, y por qué se paga</span>
+    <p>Es más swingy: la debilidad conecta el 28% de las veces en vez del 36%. Pero <strong>es un jefe que se cura</strong>, y un EV más alto le gana mejor a la curación que una lima consistente: 170 de vida a 38 por turno son ~4,5 turnos pegándole, contra 5,4 con full house. Cada turno extra es una ronda más de monedas expirando a su favor.</p>
+    <p style="margin-top:.6rem">Si el playtest muestra que es <em>demasiado</em> swingy —dos búsquedas falladas seguidas y se cura de vuelta— volver a Full House es una línea.</p>
+  </div>
+
+  <div class="callout">
+    <span class="eyebrow">Un problema del elenco que no es de este jefe</span>
+    <p>Al mirar el reparto completo: el <strong>Anotador y la Generala comparten <code>combo.generala</code></strong>, que sale <strong>0,077%</strong> por tirada — 1 en 1296. Dos jefes con la debilidad menos alcanzable del juego, y uno de los dos es del piso 2. Queda anotado acá porque salió de este análisis, pero se arregla en otra pasada.</p>
+    <div class="tablebox" style="margin:.7rem 0 0; max-width:38rem">
+      <table>
+        <thead><tr><th>Jefe</th><th>Debilidad</th><th class="num">Prob. 1 tirada</th></tr></thead>
+        <tbody>
+          <tr><td>Croupier</td><td>par</td><td class="num">46,3%</td></tr>
+          <tr class="after"><td>este jefe</td><td>poker</td><td class="num">1,9%</td></tr>
+          <tr><td>Bandida</td><td>escalera</td><td class="num">3,1%</td></tr>
+          <tr><td>Anotador</td><td>generala</td><td class="num">0,077%</td></tr>
+          <tr><td>Generala</td><td>generala</td><td class="num">0,077%</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <h3>Los pinchos y él</h3>
+
+  <p>La regla tiene dos mitades, y de las dos juntas sale todo lo interesante:</p>
+
+  <div class="steps">
+    <div class="step">
+      <div class="step-n">Caminando</div>
+      <div class="step-body">
+        <h4>Los esquiva siempre</h4>
+        <p>Su pathing trata los pinchos como intransitables. Nunca se mete solo en uno.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-n">Empujado</div>
+      <div class="step-body">
+        <h4>Los come igual</h4>
+        <p>El movimiento forzado no pasa por el pathing: 12 por casilla, lo mismo que a vos. <strong>Cuidadoso por decisión propia, vulnerable a que se lo fuerce.</strong></p>
+      </div>
+    </div>
+  </div>
+
+  <p style="margin-top:1.5rem">Eso convierte los pinchos en <strong>muro para él y piso para vos</strong>, que es la única herramienta defensiva real contra algo que te persigue: te acercás a un par y lo obligás a dar la vuelta. Y al mismo tiempo le deja dientes a tu Empuje, sin necesidad de hacerlo tonto.</p>
+
+  <div class="callout">
+    <span class="eyebrow">Medido: no abre exploits</span>
+    <div class="tablebox" style="margin:.6rem 0 0; max-width:40rem">
+      <table>
+        <tbody>
+          <tr><td>Casillas desde donde el jefe no podría ponerse al lado tuyo</td><td class="num"><strong>ninguna</strong></td></tr>
+          <tr><td>Peor desvío por esquivar</td><td class="num">+2 pasos</td></tr>
+          <tr><td>Casillas que le quedan inalcanzables</td><td class="num">ninguna — las 105</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p style="margin-top:.8rem">No hay rincón invulnerable, y ninguna parte de la sala se le sella. <strong>+2 pasos sobre un movimiento de 4 es medio turno de aproximación</strong>: alcanza para que la herramienta sirva, no para trabarlo.</p>
+  </div>
+
+  <div class="callout">
+    <span class="eyebrow">Esto no se hace tuneando Caution</span>
+    <p>La fórmula de pathing del GDD §18 es <code>HazardPenalty = ceil((Daño / HP Proyectado) × 10 × Caution)</code>. Con un pincho de 12 sobre un jefe de <strong>170</strong> de vida:</p>
+    <div class="tablebox" style="margin:.7rem 0 0; max-width:34rem">
+      <table>
+        <thead><tr><th>Personalidad</th><th class="num">Caution</th><th class="num">Pasos extra que le cuesta un pincho</th></tr></thead>
+        <tbody>
+          <tr><td>Normal</td><td class="num">1,0</td><td class="num">1</td></tr>
+          <tr><td>Support / Cobarde</td><td class="num">1,5</td><td class="num">2</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p style="margin-top:.8rem">12 sobre 170 es tan poco que <strong>ni en la personalidad más cobarde el pincho le cuesta más de 2 pasos</strong> — así que a veces lo pisaría igual. El otro freno del GDD tampoco sirve: el filtro de supervivencia pide <code>HP proyectado − daño &gt; MinSurvivalPct × HP máx</code>, o sea 34 para este jefe, y 170 − 12 = 158 pasa cómodo. <strong>Sólo lo frenaría estando casi muerto.</strong></p>
+    <p style="margin-top:.6rem">Para que un pincho le cueste más que el peor desvío (+2 pasos) haría falta <code>Caution &gt; 2,83</code>, y la escala del documento llega a 1,5. Y aun con 3 sería "casi siempre": si el desvío fuera de 4 pasos, tomaría el pincho. <strong>Para <em>siempre</em> va un flag por enemigo</strong> —"trata las casillas dañinas como intransitables"— y no un número de personalidad.</p>
+  </div>
+
+  <div class="callout">
+    <span class="eyebrow">Buena noticia: no hay algoritmo que escribir</span>
+    <p><code>AIPathPlanner</code> ya implementa el modelo entero del GDD §18: un Dijkstra label-correcting sobre <code>(celda, pasos, HP proyectado)</code> con dominancia de Pareto, con <code>ComputeHazardPenalty</code>, <code>ComputeTileCost</code> y <code>ComputeTacticalGainFinal</code> como helpers puros, y un <code>AIPathTuningSO</code> con las cuatro personalidades.</p>
+    <p style="margin-top:.6rem">Y devuelve <strong>la mejor casilla alcanzable dentro de <code>MaxSteps</code>, puntuada por cercanía al jugador</strong>. Eso significa que "rodear" y "avanzar hasta donde pueda" <strong>ya son su comportamiento normal</strong>, no casos especiales. Sacando los pinchos del conjunto transitable salen los tres comportamientos sin escribir lógica nueva:</p>
+    <div class="tablebox" style="margin:.8rem 0 0; max-width:42rem">
+      <table>
+        <tbody>
+          <tr><td>Hay camino limpio</td><td>Lo toma — rodea el par</td></tr>
+          <tr><td>No hay camino limpio hasta vos</td><td>Elige la casilla limpia más cercana a vos y avanza hasta ahí</td></tr>
+          <tr><td>Ninguna casilla mejora su posición</td><td>Se queda quieto</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p style="margin-top:.8rem">El flag entra en <code>ComputeTileCost</code>, que ya es un helper estático y testeable. <strong>Y no hace falta una pasada de reserva</strong>: "no hay camino hasta el jugador" nunca significó "no hay movimiento".</p>
+  </div>
+
+  <div class="callout">
+    <span class="eyebrow">Esquiva el pincho armado, no el desarmado</span>
+    <p><code>Tile_Spikes</code> trae <code>DisarmOnTrigger: 1</code> y <code>RearmOnRoundWrap: 1</code>: <strong>un pincho que ya se disparó esta ronda está desarmado</strong> y no hace nada hasta el wrap. El pathing lee ese estado — esquiva el armado, y por el desarmado pasa como por piso limpio.</p>
+    <p style="margin-top:.6rem">Es la lectura correcta de lo que la casilla <em>realmente es</em> en ese momento, y convierte los pinchos en un <strong>recurso que administrás</strong> en vez de terreno fijo: un campo de pinchos intacto es muro para él, y cada pincho que gastás le abre un pasillo. Disparar uno te sale doble — los 12 y la línea que le abrís.</p>
+  </div>
+
+  <div class="callout">
+    <span class="eyebrow">Decidido: el pincho se baja igual, lo haya disparado quien sea</span>
+    <p>Si él te empuja contra un par de pinchos, <strong>te clavan y se bajan</strong> — cuenta como que te pinchaste, sin importar que el empujón fuera suyo. Es una sola regla para el pincho y no una excepción por quién lo activó.</p>
+    <p style="margin-top:.6rem">La consecuencia es que <strong>su propio ataque le limpia la ruta</strong>: te cobra 24 y de paso convierte ese par en pasillo libre. Se rearman en el wrap de ronda, así que la ventaja le dura un turno. Es lo primero a mirar en el playtest; si compone demasiado, la palanca existe y es de una línea.</p>
+    <p style="margin-top:.6rem">Requisito de lectura: el estado armado/desarmado <strong>tiene que verse</strong>. El GDD ya lo pide para pinchos — "visibles-pero-inactivos, el jugador ve la trampa y sabe que está armada".</p>
+  </div>
+
+  <h3>El 50%</h3>
+
+  <p>Un solo umbral, un solo evento: al cruzar la mitad de la vida suelta <strong>dos enemigos a distancia</strong>, una vez en toda la pelea. El arqueo de caja se fue con el mostrador.</p>
+
+  <div class="callout">
+    <span class="eyebrow">Por qué a distancia</span>
+    <p>Todo lo demás de esta pelea pasa cuerpo a cuerpo. Dos bichos que te pegan desde lejos <strong>te obligan a mirar dos cosas a la vez</strong> justo cuando la sala ya está sembrada de monedas con reloj: no podés dedicarle el turno entero al jefe, ni a las monedas, ni a ellos.</p>
+  </div>
+
+  <div class="tablebox">
+    <table>
+      <thead><tr><th>Refuerzo</th><th class="num">Vida</th><th class="num">Daño</th><th>Cuenta total</th></tr></thead>
+      <tbody>
+        <tr><td>Lo que invoca el árbol <strong>hoy</strong> — <code>ED_RangedEnemy</code> ×2</td><td class="num">50 c/u</td><td class="num">10 c/u</td><td><strong>+100 de vida</strong> sobre un jefe de 170 y <strong>20 por turno</strong>, más que su propio mandoble.</td></tr>
+        <tr class="after"><td>La <strong>Comisión</strong>, ya autorada y parkeada — ×2</td><td class="num">18 c/u</td><td class="num">5 c/u</td><td>+36 de vida (una hostia y media) y 10 por turno, que empata al mandoble.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p style="margin-top:1.2rem">Van con los números de la <strong>Comisión</strong>. Con los del ranged común no es una amenaza a distancia, es un segundo jefe: duplica la barra que hay que bajar, y como matarlos cuesta unos cuatro turnos tuyos sin pegarle al jefe, <strong>le regalás cuatro rondas de monedas expirando</strong> — o sea curación. Ahí la pelea puede entrar en espiral y no cerrar nunca.</p>
+
+  <div class="callout">
+    <span class="eyebrow">Un desbloqueo del cambio de cuerpo</span>
+    <p>La Comisión estaba parkeada en parte porque viste <strong>el mismo rig que el jefe</strong> con un retinte plateado — "misma especie, rango menor". Con el <code>GeneralDirector</code> de jefe eso daba tres Cajeros de tamaños distintos en pantalla. <strong>Al cambiarle el cuerpo al jefe, el choque desaparece</strong> y la Comisión puede volver a usarse tal como está: asset, prefab y funciones siguen en el builder con sus tests.</p>
+  </div>
+
+  <h3>Una pelea</h3>
+
+  <div class="steps">
+    <div class="step">
+      <div class="step-n">R1</div>
+      <div class="step-body">
+        <h4>Se acerca</h4>
+        <p>Aparecés en una esquina, él en el centro, a nueve casillas. Caminás cinco: no llegás. Él camina cuatro: no llega.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-n">R2</div>
+      <div class="step-body">
+        <h4>Se desborda la caja, y te alcanza</h4>
+        <p>Cuatro monedas aparecen; una cae sobre pinchos. Le pegás con Poker ×1,5. Él te despacha: volás tres casillas cruzando pinchos (<strong>12</strong>) y se te caen dos monedas en el camino.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-n">R3</div>
+      <div class="step-body">
+        <h4>La decisión</h4>
+        <p>¿Volvés por tus dos monedas —que quedaron entre vos y él— o barrés las dos seguras del otro lado y lo dejás curarse? Él camina hacia vos igual.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-n">R4</div>
+      <div class="step-body">
+        <h4>Avisa la barrida</h4>
+        <p>Quedan tres monedas en el piso, así que telegrafía la barrida: en un turno se lleva todo lo que haya a dos casillas suyas. Una de esas monedas es la que te robó.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-n">R5</div>
+      <div class="step-body">
+        <h4>La carrera</h4>
+        <p>O corrés a levantar lo que está dentro del área —pisando los pinchos donde cayó tu plata— o usás Empuje para <strong>sacarlo del área y cancelarle la barrida</strong>. Las dos son buenas; no podés las dos.</p>
+      </div>
+    </div>
+  </div>
+
+  <h3>Qué muere y qué nace</h3>
+
+  <div class="tablebox">
+    <table>
+      <thead><tr><th>Hoy</th><th>Después</th><th>Por qué</th></tr></thead>
+      <tbody>
+        <tr><td>El mostrador y su peaje de 12</td><td class="num">—</td><td>Parte la sala, y un cazador melee no puede convivir con eso.</td></tr>
+        <tr><td>La columna y sus tres escalones de oro</td><td class="num">—</td><td>El rastrillo se los comía en 6 rondas: desde ahí el oro no decidía nada.</td></tr>
+        <tr><td>El rastrillo</td><td class="num">—</td><td>Era un reloj invisible. Lo reemplazan 4 monedas con cuenta atrás visible.</td></tr>
+        <tr><td>El soborno</td><td class="num">—</td><td>Sólo se veía en una línea del HUD. La mecánica más linda del jefe y la más escondida.</td></tr>
+        <tr><td>El disparo a rango de 12</td><td class="num">—</td><td>Es melee.</td></tr>
+        <tr><td>El arqueo del 50%</td><td class="num">—</td><td>Te cobraba el 40% del oro, que <em>bajaba</em> su propio escalón. Ahora se cura robando, todo el tiempo.</td></tr>
+        <tr class="after"><td>—</td><td><strong>El agarre</strong></td><td>Empuja 3, apuntando al hazard más cercano. 0 de daño propio.</td></tr>
+        <tr class="after"><td>—</td><td><strong>La sala con textura</strong></td><td>6 cajas fuertes y 10 pinchos en pares. Su daño sale de acá, no de una stat.</td></tr>
+        <tr class="after"><td>—</td><td><strong>Monedas con reloj</strong></td><td>Lo que no levantás lo cura. Su curación <strong>se la gana</strong>, no se la regala un contador.</td></tr>
+        <tr class="after"><td>—</td><td><strong>El mandoble</strong></td><td>12 de daño liso, para que plantarse lejos de los pinchos no sea gratis. Es lo único que usa <code>BaseAttack</code>.</td></tr>
+        <tr class="after"><td>—</td><td><strong>La barrida</strong></td><td>Su AOE, telegrafiada. Va a buscar las monedas él, y se le cancela empujándolo fuera del área.</td></tr>
+        <tr class="after"><td>Debilidad <strong>Full House</strong> ×1,5</td><td><strong>Poker</strong> ×1,5</td><td>Mejor EV, mejor premio consuelo, y la ficción del full house era la del cajero. Ver abajo.</td></tr>
+        <tr class="after"><td>Refuerzos con los números del ranged común</td><td><strong>Los mismos, con los números de la Comisión</strong></td><td>18 de vida y 5 de daño en vez de 50 y 10. La amenaza a distancia se queda; el segundo jefe no.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p style="margin-top:1.2rem">Se mantiene <strong>vida 170</strong>; la debilidad pasa de Full House a <strong>Poker ×1,5</strong>. Y los cinco problemas de la sección 07 se van con el rediseño: el rastrillo desaparece, el arqueo deja de invertirse, el turno que apila dos ataques deja de existir, los refuerzos se quedan pero con los números de la Comisión, y <code>BaseAttack</code> <strong>deja de estar muerto</strong>: pasa de 30 a <strong>12</strong> y es el número del mandoble. Los 30 nunca los leyó nadie, y como golpe garantizado por turno eran casi un tercio de la barra del jugador.</p>
+
+  <h3>Qué hay que construir</h3>
+
+  <div class="split">
+    <div class="panel build">
+      <h3>Ya existe</h3>
+      <ul>
+        <li><code>IForcedMovementService.Push</code> — empuja N celdas, frena en obstáculos, dispara los triggers de cada celda cruzada y resuelve las continuaciones. Sin usar por nadie.</li>
+        <li><strong>Pinchos</strong>: <code>EnterDamage 12</code>, <code>TurnStartDamage 0</code>, <code>StatusKind None</code>, y declara <code>OnForcedMovementInto</code> — ya cobra si te empujan encima. Con <code>DisarmOnTrigger</code> + <code>RearmOnRoundWrap</code> muerde una vez por ronda, no una por paso. El fuego no sirve acá: ni declara el trigger de empuje.</li>
+        <li><code>AINode_Move</code> con <code>DesiredRange = 1</code> persigue y se detiene pegado. <code>AINode_KeepDistance</code> no sirve: sólo retrocede.</li>
+        <li>Monedas con duración, valor y expiración: <code>HZ_Cashier_Chip</code> y <code>OnHazardExpired</code>, que hoy sólo descarta la ficha en una línea.</li>
+        <li>Curar al jefe con número flotante: <code>ApplyHeal</code>, del nodo del arqueo.</li>
+      </ul>
+    </div>
+    <div class="panel">
+      <h3>Falta</h3>
+      <ul>
+        <li><strong>Arte para los pinchos.</strong> <code>VisualPrefab: 0</code> y <code>OverlayTint</code> blanco: hoy se ven como cuadrados blancos. <b>Sin ese arte la sala no se entiende</b>, y es el trabajo real de esta dirección.</li>
+        <li><strong>La barrida</strong>: área telegrafiada que se lleva las monedas de adentro. El telegraph ya existe; lo nuevo es que consuma monedas y cure.</li>
+        <li><strong>El mandoble</strong>: un golpe melee liso — un <code>EnemyActionBehavior</code> con un <code>EffDealDamage</code>. Es lo que finalmente le da uso a <code>BaseAttack</code>.</li>
+        <li>El cuerpo: <code>GeneralDirector_Animated</code> corre sobre un animator con <b>Idle y Attack solamente</b> — no tiene animación de movimiento. Un melee es imposible con ese rig. Libre y con <code>Run</code>: <code>CardEnemy_Animated</code>.</li>
+        <li>Que la moneda caiga a lo largo del empujón, repartida entre las casillas del tumbo.</li>
+        <li>Cuatro spawns de jugador: hoy <code>RoomLayout.PlayerSpawnPoint</code> es uno solo.</li>
+        <li><strong>El flag de pathing</strong> "trata las casillas dañinas como intransitables", dentro de <code>ComputeTileCost</code>. Es lo único que falta: el planner, el modelo de costos y el scoring de destino ya están. Ni <code>Caution</code> ni <code>MinSurvivalPct</code> pueden expresar "siempre" con 12 de daño sobre 170 de vida.</li>
+        <li>Los dos campos nuevos de <code>BossRoomPlan</code> para que el builder coloque los pinchos: hoy sólo sabe de blockers, y el destino (<code>RoomLayout.SpecialTilePlacements</code>) ya existe.</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>Sin decidir</h3>
+
+  <ul class="asks">
+    <li><strong>¿4 monedas cada 3 rondas es el ritmo?</strong> Es la palanca que decide si la pelea es un barrido de compras o una decisión. Sólo lo contesta jugarlo.</li>
+  </ul>
+</section>
+
+<!-- ==================== CORTE: DE ACÁ ABAJO, LO QUE HAY HOY ==================== -->
+<section>
+  <div class="sec-head">
+    <div class="eyebrow">De acá abajo · el jefe implementado</div>
+    <h2>Lo que hay hoy, y por qué se cambia</h2>
+  </div>
+
+  <p class="thesis">Todo lo que sigue se reemplaza.</p>
+
+  <p>Las siete secciones que vienen describen <strong>el Cajero que está en el juego</strong>: el mostrador que parte la sala, la columna que escala con tu oro, el rastrillo, el soborno, el disparo y el peaje. Se conservan por dos razones: son la referencia de lo que hay que desarmar, y la sección final —<em>Lo que no cierra</em>— es el razonamiento que produjo el rediseño de arriba.</p>
+
+  <div class="callout">
+    <span class="eyebrow">Nada de esto sobrevive</span>
+    <p>Si estás leyendo para implementar, <strong>el diseño vigente es el de arriba</strong>. El peaje del mostrador, los tres escalones de oro, el rastrillo, el soborno y el disparo a rango están todos descartados; la tabla <em>Qué muere y qué nace</em> del rediseño los lista uno por uno con el motivo.</p>
+  </div>
+</section>
+
+
+<!-- ============================ 01 LA SALA ============================ -->
+<section>
+  <div class="sec-head">
+    <div class="eyebrow">01 — Terreno</div>
+    <h2>El mostrador parte la sala</h2>
+  </div>
+
+  <p><strong>11 × 11</strong>, medida en engine. Su sala tiene una sola idea, y es una línea: cuatro cajas en la fila del medio que convierten "acercarme" en "elegir puerta y pagar".</p>
+
+  <figure>
+    <div class="board-row">
+      <div class="board" data-map="sala"></div>
+      <div class="board-note">
+        <ul class="legend">
+          <li><span class="swatch"></span> caminable</li>
+          <li><span class="swatch counter"></span> mostrador</li>
+          <li><span class="swatch blocker"></span> mueble heredado</li>
+          <li><span class="swatch boss"></span> Cajero</li>
+          <li><span class="swatch player"></span> jugador</li>
+        </ul>
+        <p style="margin-top:1rem"><strong>El mostrador</strong> son cuatro cajas de fichas en la fila central, en dos pares. Deja tres aberturas: dos de dos casillas contra las paredes —que son los frentes de las puertas Oeste y Este, y por eso van sin prop— y una de tres en el centro, que es la que se lee como puerta.</p>
+        <p><strong>Arrancan enfrentados.</strong> Él aparece tres casillas arriba de la línea, vos tres abajo, los dos en la columna del medio. La primera decisión de la pelea es por qué abertura entrás.</p>
+        <p><strong>La fila del mostrador es neutral.</strong> Pararte sobre la línea misma no cobra peaje nunca: es la única casilla franca de la sala.</p>
+      </div>
+    </div>
+    <figcaption>105 casillas caminables de 121. Las 16 bloqueadas son 4 de mostrador y 12 de mobiliario que viene de la sala base: tres montones en las esquinas y el borde sur.</figcaption>
+  </figure>
+
+  <div class="callout">
+    <span class="eyebrow">Lo que no es diseño</span>
+    <p>La sala <strong>no es simétrica</strong>, y no por decisión: su lado tiene 3 casillas bloqueadas y el tuyo 9. Los montones de las esquinas y del borde sur son mobiliario de la sala base del piso 2, no del plano del Cajero. El plano propio son sólo las cuatro cajas del mostrador.</p>
+  </div>
+</section>
+
+<!-- ============================ 02 EL CICLO ============================ -->
+<section>
+  <div class="sec-head">
+    <div class="eyebrow">02 — Ciclo</div>
+    <h2>Marca, y al turno siguiente cobra</h2>
+  </div>
+
+  <p>Alternancia estricta, nunca al azar, y arranca marcando: la pelea no abre con un disparo. Lo que <em>no</em> alterna es el peaje — ese cobra todas las rondas, al cerrar tu turno.</p>
+
+  <div class="steps">
+    <div class="step">
+      <div class="step-n">T1<br>Marca</div>
+      <div class="step-body">
+        <h4>Traza la columna y siembra fichas</h4>
+        <p>Marca en naranja una franja vertical <strong>centrada en él, de pared a pared</strong>. No te persigue: sale de él, así que salirse es moverse de columna, no correr. Dentro de esa misma franja tira fichas de oro, a dos o tres casillas tuyas.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-n">T2<br>Cobra</div>
+      <div class="step-body">
+        <h4>Detona la columna <em>y</em> dispara</h4>
+        <p>Lo marcado el turno pasado explota sobre quien esté adentro. Y en el mismo turno dispara 12 a cualquiera que esté a 4 o menos. <strong>Los dos golpes caen juntos.</strong></p>
+      </div>
+    </div>
+  </div>
+
+  <div class="board-row" style="margin-top:2rem">
+    <figure>
+      <div class="board sm" data-map="marca"></div>
+      <figcaption>T1 — la columna sale de él, y las fichas caen adentro.</figcaption>
+    </figure>
+    <figure>
+      <div class="board sm" data-map="cobra"></div>
+      <figcaption>T2 — detona, y encima dispara si estás a ≤4.</figcaption>
+    </figure>
+    <div class="board-note">
+      <ul class="legend">
+        <li><span class="swatch mark"></span> avisado</li>
+        <li><span class="swatch burn"></span> cobrando</li>
+        <li><span class="swatch chip"></span> ficha</li>
+      </ul>
+      <p style="margin-top:1rem">La columna se esquiva con <strong>un paso al costado</strong>: es vertical y vos te movés 5. Esquivarla no es el problema — el problema es que la ficha que querés levantar está adentro, y él se queda a 4 para que el disparo te alcance igual.</p>
+      <p>Entre turno y turno se repliega hasta distancia 4, hasta 3 pasos por vez.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ 03 EL PEAJE ============================ -->
+<section>
+  <div class="sec-head">
+    <div class="eyebrow">03 — La decisión</div>
+    <h2>De qué lado terminás el turno</h2>
+  </div>
+
+  <p>Su alcance de golpe es 1: para pegarle hay que estar pegado a él, y él vive del otro lado del mostrador. <strong>Terminar el turno de su lado cuesta 12</strong>, todas las rondas, sin aviso y sin excepción.</p>
+
+  <div class="board-row">
+    <figure>
+      <div class="board sm" data-map="peaje"></div>
+      <figcaption>Cruzaste. Al cerrar tu turno, 12.</figcaption>
+    </figure>
+    <div class="board-note">
+      <ul class="legend">
+        <li><span class="swatch toll"></span> su lado — cobra</li>
+        <li><span class="swatch counter"></span> la línea — franca</li>
+      </ul>
+      <p style="margin-top:1rem">No es un ataque suyo: lo cobra el mostrador. Se cobra aunque él esté aturdido, y cuenta como <strong>daño de entorno</strong> — pero el escudo lo absorbe igual que a cualquier otro golpe, porque la absorción no mira de qué tipo es.</p>
+      <p><strong>La válvula es la línea.</strong> Pararte sobre el mostrador mismo no es "ningún lado": no cobra. Es la casilla desde la que se mira sin pagar.</p>
+      <p><strong>El primer turno es gratis.</strong> El peaje se arma recién en el primer turno del jefe y la cola arranca por el jugador, así que la apertura no se cobra. Una vez por pelea.</p>
+      <p>El peaje sigue al jefe: si el kiteo lo manda del otro lado, el lado caro cambia con él.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ 04 LA ECONOMÍA ============================ -->
+<section>
+  <div class="sec-head">
+    <div class="eyebrow">04 — El anzuelo</div>
+    <h2>El oro es el arma</h2>
+  </div>
+
+  <p>Es lo único que hace distinto a este jefe: <strong>no tiene un daño propio</strong>. La columna pega lo que dice tu bolsillo.</p>
+
+  <div class="tablebox" style="max-width:44rem">
+    <table>
+      <thead><tr><th>Oro encima</th><th class="num">Ancho</th><th class="num">Daño</th><th>Escalón</th></tr></thead>
+      <tbody>
+        <tr><td>0 – 39</td><td class="num">1</td><td class="num">14</td><td>Pobre</td></tr>
+        <tr><td>40 – 119</td><td class="num">3</td><td class="num">28</td><td>Medio — con el que se entra al piso (~65-70)</td></tr>
+        <tr class="tier-top"><td>120 o más</td><td class="num">3</td><td class="num">35</td><td>Rico — techo de daño del piso 2</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p style="margin-top:1.2rem">Pero la tabla es sólo <strong>desde dónde arranca</strong>. Encima corren dos fuerzas opuestas:</p>
+
+  <div class="split">
+    <div class="panel">
+      <h3>El rastrillo — sube solo</h3>
+      <ul>
+        <li><strong>+1 escalón cada 3 rondas</strong>, mire lo que mire tu oro.</li>
+        <li>No baja nunca. Sólo lo contrarresta el soborno.</li>
+        <li>Existe para que un jugador pobre no lo deje clavado en 14 toda la pelea.</li>
+      </ul>
+    </div>
+    <div class="panel build">
+      <h3>La ficha — te baja uno</h3>
+      <ul>
+        <li>Levantar una ficha te paga <strong>6 – 9 de oro</strong> (el doble después del arqueo)…</li>
+        <li>…y además <strong>soborna gratis</strong>: un escalón menos durante 3 rondas.</li>
+        <li>Sin eso la ficha sería veneno puro: lo único que suelta te paga en la moneda que le sube el golpe.</li>
+        <li>Suelta 1 por turno de columna, o <strong>2 si le pegaste</strong>. Duran 3 rondas y caen a 2-3 casillas tuyas, siempre dentro de la columna marcada.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="callout">
+    <span class="eyebrow">El bucle</span>
+    <p>Te pega con tu propio oro → te tira oro al piso → juntarlo te sube el escalón, pero levantarlo le baja uno por tres rondas. <strong>Juntar fichas deja de ser codicia y pasa a ser mantenimiento.</strong> Dejar de pagar te hunde.</p>
+  </div>
+</section>
+
+<!-- ============================ 05 FASES ============================ -->
+<section>
+  <div class="sec-head">
+    <div class="eyebrow">05 — Fases</div>
+    <h2>Cómo escala</h2>
+  </div>
+
+  <p>Una sola fase, y no le sube el daño: le sube el <em>ritmo</em> al que tenés que pagarle.</p>
+
+  <div class="phases">
+    <div class="phase">
+      <div class="hp">100% → 50%</div>
+      <h3>Atiende</h3>
+      <p>El ciclo de dos tiempos y el peaje. El jugador aprende que su daño sale del propio bolsillo, y que las fichas son las dos cosas a la vez.</p>
+    </div>
+    <div class="phase p2">
+      <div class="hp">50% — una sola vez</div>
+      <h3>Arqueo de caja</h3>
+      <p>Se queda con el <strong>40% de tu oro</strong> y se cura lo mismo, hasta <strong>30</strong>. Lo secuestrado vuelve si lo matás; si perdés, gana la banca.</p>
+      <p>Desde ahí <strong>las fichas valen el doble</strong>.</p>
+    </div>
+    <div class="phase p3">
+      <div class="hp">50% — el mismo turno</div>
+      <h3>Comisiones</h3>
+      <p>Suelta <strong>dos refuerzos a distancia</strong> en el mismo cruce de umbral. El 50% es un momento, no dos.</p>
+      <p>Sirven para encarecer quedarte quieto pegándole justo cuando el arqueo lo acaba de curar.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ 06 NÚMEROS ============================ -->
+<section>
+  <div class="sec-head">
+    <div class="eyebrow">06 — Números</div>
+    <h2>Con qué te pega</h2>
+  </div>
+
+  <div class="tablebox">
+    <table>
+      <thead><tr><th>Acción</th><th>Qué hace</th><th class="num">Daño</th><th>Se esquiva</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><strong>La columna</strong></td>
+          <td>Franja vertical centrada en él, de pared a pared. Marca un turno, cobra al siguiente. Su ancho y su daño salen del escalón de oro.</td>
+          <td class="num">14 / 28 / 35</td>
+          <td>Sí — un paso al costado, con un turno de aviso</td>
+        </tr>
+        <tr>
+          <td><strong>El disparo</strong></td>
+          <td>En los turnos de cobro, a cualquiera a distancia 4 o menos. Su alcance es exactamente la distancia a la que se repliega.</td>
+          <td class="num">12</td>
+          <td>Sólo alejándote a 5+, que es dejar de pegarle</td>
+        </tr>
+        <tr>
+          <td><strong>El peaje</strong></td>
+          <td>Al cerrar tu turno del mismo lado del mostrador que él. Todas las rondas. La fila del mostrador no cuenta como lado.</td>
+          <td class="num">12</td>
+          <td>Sí — terminando el turno del lado tuyo o sobre la línea</td>
+        </tr>
+        <tr>
+          <td><strong>El arqueo</strong></td>
+          <td>Al 50%, una vez: se queda con el 40% de tu oro y se cura lo mismo.</td>
+          <td class="num">cura 30</td>
+          <td>No — pero cuanto menos oro lleves, menos se lleva</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>Ficha</h3>
+
+  <div class="tablebox">
+    <table>
+      <thead><tr><th>Campo</th><th class="num">Valor</th><th>Nota</th></tr></thead>
+      <tbody>
+        <tr><td>Vida</td><td class="num">170</td><td>~7 turnos con el golpe mediano del piso 2 (24), sin contar los 30 que se cura.</td></tr>
+        <tr><td>Debilidad</td><td class="num">Full House ×1,5</td><td>"La mano que paga fijo, la de la casa". Multiplica el golpe entero.</td></tr>
+        <tr><td>Velocidad</td><td class="num">4</td><td>Los refuerzos son más rápidos que él.</td></tr>
+        <tr><td>Oro que deja</td><td class="num">30 – 60</td><td>Más lo secuestrado en el arqueo, que vuelve al matarlo.</td></tr>
+        <tr><td>Columna</td><td class="num">1 ó 3 de ancho</td><td>Ancho 1 sólo en el escalón pobre. De pared a pared siempre.</td></tr>
+        <tr><td>Disparo</td><td class="num">12 · alcance 4</td><td>Manhattan. Igual a su distancia de repliegue, a propósito.</td></tr>
+        <tr><td>Peaje</td><td class="num">12 · cada ronda</td><td>Daño de entorno. Fila del mostrador = franca.</td></tr>
+        <tr><td>Repliegue</td><td class="num">distancia 4 · 3 pasos</td><td>Se aleja hasta 4 y ahí se planta.</td></tr>
+        <tr><td>Fichas</td><td class="num">1 – 2 por columna</td><td>2 si le pegaste. Valen 6-9 (12-18 tras el arqueo) y duran 3 rondas.</td></tr>
+        <tr><td>Rastrillo</td><td class="num">+1 cada 3 rondas</td><td>No baja nunca.</td></tr>
+        <tr><td>Soborno</td><td class="num">−1 por 3 rondas</td><td>Lo compra pisar una ficha. Topeado en 1: sobornar dos veces alarga, no acumula.</td></tr>
+        <tr><td>Refuerzos</td><td class="num">2 · al 50%</td><td>Una sola vez en toda la pelea.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="callout">
+    <span class="eyebrow">Presupuesto de daño</span>
+    <p>Sobre 100 de vida del jugador, por ciclo de dos turnos:</p>
+    <p><strong>Piso — 24.</strong> Los dos peajes del ciclo si te quedás de su lado pegándole, esquivando la columna y sin entrar en rango de disparo. Que es imposible: su rango de disparo es 4 y pegarle exige 1.</p>
+    <p><strong>Real — 36.</strong> Dos peajes más el disparo. Es lo que cuesta un ciclo de estar encima suyo esquivando la columna bien.</p>
+    <p><strong>Techo — 71.</strong> Columna en escalón rico (35) + disparo (12) + los dos peajes (24), todo en un ciclo. <strong>Más de dos tercios de tu vida en dos turnos.</strong></p>
+  </div>
+</section>
+
+<!-- ============================ 07 QUÉ MIRAR ============================ -->
+<section>
+  <div class="sec-head">
+    <div class="eyebrow">07 — Iteración</div>
+    <h2>Lo que no cierra</h2>
+  </div>
+
+  <p>Cinco cosas que salen de leer el código contra el diseño, en orden de cuánto rompen la premisa del jefe. Ninguna está resuelta — son la lista para la próxima pasada.</p>
+
+  <div class="flag">
+    <span class="tag">1 · rompe la premisa</span>
+    <h4>El rastrillo se come la tabla en 6 rondas</h4>
+    <p>Sube +1 escalón cada 3 rondas y la tabla tiene <strong>tres</strong>. En la ronda 6 cualquier jugador está en el techo, venga con 10 de oro o con 400. Desde ahí <strong>el oro deja de decidir nada</strong> — y el oro decidiendo el daño es todo el jefe.</p>
+    <p>La pelea dura ~7 turnos suyos. O sea que la mecánica que lo define gobierna aproximadamente <strong>la primera mitad</strong>, y la segunda es un jefe de daño fijo 35.</p>
+    <p>El soborno tampoco lo arregla: compra un escalón (35 → 28) por 3 rondas, y como el rastrillo se topea <em>antes</em> del descuento, volvés a 35 en cuanto se vence.</p>
+  </div>
+
+  <div class="flag">
+    <span class="tag">2 · el número no es el que se diseñó</span>
+    <h4>Los refuerzos no son las Comisiones</h4>
+    <p>La Comisión está autorada con cuidado —18 de vida, 5 de daño, "los dos juntos pegan 10, menos que el peaje, es un impuesto y no un segundo jefe"— y <strong>el árbol no la invoca</strong>. Invoca el enemigo a distancia común: <strong>50 de vida y 10 de ataque cada uno</strong>.</p>
+    <p><strong>Resuelto en el rediseño:</strong> los dos refuerzos se quedan —la amenaza a distancia es deseada— pero con los números de la Comisión. Lo que sigue valiendo es el diagnóstico: los dos juntos son <strong>100 de vida extra sobre un jefe de 170</strong> —un 59% más de barra que matar— y pegan 20 por turno, casi el doble del peaje. La frase "menos que el peaje" describe un bicho que no aparece.</p>
+  </div>
+
+  <div class="flag">
+    <span class="tag">3 · pico</span>
+    <h4>El turno de cobro apila dos ataques</h4>
+    <p>La detonación y el disparo caen en el <strong>mismo</strong> turno, porque el nodo que detona lo marcado corre al principio del árbol y el ciclo de ataque dispara después. Con los dos peajes del ciclo eso da <strong>71 sobre 100 de vida</strong>.</p>
+    <p>El aviso existe —un turno entero— así que no es injusto. La pregunta es si se <em>lee</em> como dos cosas o como "me mató de un turno".</p>
+  </div>
+
+  <div class="flag">
+    <span class="tag">4 · el castigo premia</span>
+    <h4>El arqueo te puede bajar el escalón</h4>
+    <p>Se queda con el 40% de tu oro. Pero tu oro <strong>es</strong> su daño: llevando 130 quedás en 78, o sea del escalón rico al medio. El momento más dramático de la pelea puede terminar <strong>bajándole el golpe</strong>.</p>
+    <p>Hoy queda tapado por el punto 1 —al 50% el rastrillo ya te tiene en el techo igual— pero si el rastrillo se arregla, esto queda a la vista.</p>
+  </div>
+
+  <div class="flag">
+    <span class="tag">5 · dato muerto</span>
+    <h4><code>BaseAttack: 30</code> no lo usa nadie</h4>
+    <p>Su lista de <code>Behaviors</code> está vacía y todo su daño sale de los nodos del árbol. El 30 de la ficha no lo lee nada: exactamente el mismo caso que el 20 del Croupier.</p>
+  </div>
+
+  <h3>Preguntas de diseño</h3>
+
+  <ul class="asks">
+    <li><strong>¿El rastrillo debería tener techo, o la tabla más escalones?</strong> Un cuarto y un quinto escalón dejarían al oro decidiendo toda la pelea; un techo de +1 lo dejaría decidiendo casi todo pero con presión.</li>
+    <li><strong>¿El peaje debería tener ronda franca?</strong> Hoy cobra todas. La válvula es pararse en la línea, pero la línea son 7 casillas de 105 y no está señalizada como algo distinto.</li>
+    <li><strong>¿Las fichas se leen como sobornos?</strong> Pagan oro <em>y</em> bajan un escalón, pero lo segundo sólo se ve en la línea del HUD. Es la mecánica más linda del jefe y la más escondida.</li>
+    <li><strong>¿Vale la pena la asimetría heredada?</strong> 9 casillas bloqueadas de tu lado contra 3 del suyo, y ninguna la puso el plano del Cajero.</li>
+  </ul>
+</section>
+
+<footer>
+  Números leídos de <code>CajeroAssetBuilder.cs</code>, <code>ED_Boss_Cajero.asset</code> y <code>HZ_Cashier_Chip.asset</code> · sala medida sobre el NavGraph horneado de <code>Boss_Room_Cajero.prefab</code> · Unity 6000.3.11f1 · Tesis-UADE-2026
+</footer>
+
+</div>
+
+<script>
+  // Grilla real de Boss_Room_Cajero, leída del NavGraph horneado.
+  // Fila 0 = y+5, columna 0 = x-5. '#' = bloqueada, 'M' = mostrador.
+  const SALA = [
+    "##.........",
+    "#..........",
+    "...........",
+    "...........",
+    "...........",
+    "..MM...MM..",
+    "...........",
+    "...........",
+    "#..........",
+    "##.........",
+    "###....###.",
+  ];
+
+  const key = (r, c) => r + "," + c;
+  const walkable = (r, c) => SALA[r][c] === ".";
+
+  // Fila del mostrador: la línea neutral que parte la sala.
+  const COUNTER_ROW = 5;
+
+  // ColumnAroundSelf: franja vertical anclada en la X del jefe, de pared a pared.
+  function column(boss, width) {
+    const half = (width - 1) >> 1;
+    const s = new Set();
+    for (let r = 0; r < 11; r++)
+      for (let c = 0; c < 11; c++)
+        if (walkable(r, c) && Math.abs(c - boss[1]) <= half) s.add(key(r, c));
+    return s;
+  }
+
+  // Lado del mostrador donde parar cuesta 12. La fila misma nunca cuenta.
+  function tollSide(boss) {
+    const side = Math.sign(boss[0] - COUNTER_ROW);
+    const s = new Set();
+    for (let r = 0; r < 11; r++) {
+      if (Math.sign(r - COUNTER_ROW) !== side) continue;
+      for (let c = 0; c < 11; c++) if (walkable(r, c)) s.add(key(r, c));
+    }
+    return s;
+  }
+
+  const BOSS = [2, 5];
+  const PLAYER = [8, 5];
+
+  // ====================================================================
+  // El rediseño (§08): la misma sala 11x11, sin mostrador y con textura.
+  // 'S' = caja fuerte (lo único que bloquea), 'X' = pinchos.
+  // Los pinchos son caminables: 121 - 6 cajas = 115.
+  // Van en PARES: mismo peligro concentrado, resto de la sala limpio. Se midió contra
+  // casillas sueltas y contra parches 2x2/3x3 — los pares dan el mejor
+  // contraste entre "pegado a un pincho" y "en el medio limpio".
+  // ====================================================================
+  const SALA2 = [
+    "...........",
+    ".S..XX..S..",
+    "...........",
+    "...X...X...",
+    "......XX...",
+    ".XX........",
+    "...........",
+    "..S....S...",
+    "....XX.....",
+    ".S......S..",
+    "...........",
+  ];
+
+  // Las cuatro esquinas: sale una al azar (Mewgenics reparte entre 4 casillas).
+  const SPAWNS = [[0, 0], [0, 10], [10, 0], [10, 10]];
+
+  const VIEWS = {
+    sala:   { boss: BOSS, player: PLAYER },
+    marca:  { boss: BOSS, player: PLAYER, markFn: (b) => column(b, 3),
+              chips: [[6, 4], [7, 6]] },
+    cobra:  { boss: BOSS, player: PLAYER, burnFn: (b) => column(b, 3) },
+    peaje:  { boss: BOSS, player: [4, 5], tollFn: (b) => tollSide(b) },
+
+    // Rediseño. El agarre se ilustra con el jefe a la izquierda del jugador: el
+    // empujón de 3 lo cruza por el par de (4,6)-(4,7) —24 de daño— y las dos
+    // monedas quedan justo encima de los pinchos.
+    nueva:  { grid: SALA2, boss: [5, 5], spawns: SPAWNS },
+    agarre: { grid: SALA2, boss: [4, 4], player: [4, 5],
+              path: [[4, 6], [4, 7], [4, 8]] },
+    tumbo:  { grid: SALA2, boss: [4, 4], player: [4, 8],
+              chips: [[4, 6], [4, 7]] },
+  };
+
+  function build(el) {
+    const view = VIEWS[el.dataset.map];
+    if (!view) return;
+
+    const grid  = view.grid || SALA;
+    const mark  = view.markFn ? view.markFn(view.boss) : new Set();
+    const burn  = view.burnFn ? view.burnFn(view.boss) : new Set();
+    const toll  = view.tollFn ? view.tollFn(view.boss) : new Set();
+    const chips = new Set((view.chips || []).map((p) => key(p[0], p[1])));
+    const path  = new Set((view.path || []).map((p) => key(p[0], p[1])));
+    const spawns = new Set((view.spawns || []).map((p) => key(p[0], p[1])));
+
+    for (let r = 0; r < 11; r++) {
+      for (let c = 0; c < 11; c++) {
+        const cell = document.createElement("div");
+        cell.className = "cell";
+        const k = key(r, c);
+        const ch = grid[r][c];
+
+        // El terreno va primero y gana: una moneda sobre pinchos tiene que
+        // seguir leyéndose como pinchos, que es de dónde sale su precio.
+        if (ch === "X") {
+          cell.classList.add("spike");
+          cell.textContent = "▲";
+          cell.title = "Pinchos — 12 al entrar, incluso empujado";
+        } else if (ch === "S") {
+          cell.classList.add("safe");
+          cell.title = "Caja fuerte — bloquea, y frena un empujón";
+        } else if (ch === "M") {
+          cell.classList.add("counter");
+          cell.title = "Mostrador";
+        } else if (ch !== ".") {
+          cell.classList.add("blocker");
+        } else if (path.has(k)) {
+          cell.classList.add("path");
+          cell.title = "El tumbo";
+        } else if (spawns.has(k)) {
+          cell.classList.add("spawn");
+          cell.textContent = "·";
+          cell.title = "Spawn posible del jugador (1 de 4, al azar)";
+        } else if (chips.has(k)) {
+          cell.classList.add("chip");
+          cell.textContent = "$";
+          cell.title = "Moneda — te paga si la levantás, lo cura si expira";
+        } else if (burn.has(k)) {
+          cell.classList.add("burn");
+          cell.textContent = "^";
+        } else if (mark.has(k)) {
+          cell.classList.add("mark");
+        } else if (toll.has(k)) {
+          cell.classList.add("toll");
+        }
+
+        // Encima del terreno, no en su lugar: ver .cell.on-path.
+        if (path.has(k)) cell.classList.add("on-path");
+
+        if (view.boss[0] === r && view.boss[1] === c) {
+          cell.className = "cell boss";
+          cell.textContent = "C";
+          cell.title = "El Cajero";
+        }
+        if (view.player && view.player[0] === r && view.player[1] === c) {
+          cell.className = "cell player";
+          cell.textContent = "P";
+          cell.title = "Jugador";
+        }
+
+        el.appendChild(cell);
+      }
+    }
+  }
+
+  document.querySelectorAll(".board").forEach(build);
+</script>
+</body>
+</html>
