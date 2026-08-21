@@ -30,6 +30,9 @@ namespace Rollgeon.EditorTools
             (ComboId.Straight, 45),
             (ComboId.Poker, 60),
             (ComboId.Generala, 90),
+            // En el contrato del warrior y con base de escudo (5) desde el balance del
+            // 21/08 — sin entrada acá, el gate lo dejaba curando 0.
+            (ComboId.BruteForce, 5),
         };
 
         [MenuItem("Rollgeon/Tools/Seed Heal Base Table (CH_Warrior)")]
