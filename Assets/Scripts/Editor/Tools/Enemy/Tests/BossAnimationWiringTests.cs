@@ -108,13 +108,15 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         // ==================================================================
 
         /// <summary>
-        /// Cada jefe y su árbol. El Croupier no entra: detona con su propio nodo y ahí la ausencia
-        /// de animación es deliberada. Los árboles se arman <b>dentro</b> del test — una excepción
-        /// al recolectar el source hace desaparecer el fixture entero en vez de reportar rojo.
+        /// Cada jefe que cobra un área marcada, y su árbol. Dos no entran, por razones distintas:
+        /// el Croupier detona con su propio nodo, y <b>el Cajero no telegrafía nada</b> — es melee
+        /// puro de alcance 1, así que no tiene área que avisar. Sus gestos los cubre
+        /// <see cref="TheCajeroHitsWithAGesture"/>. Los árboles se arman <b>dentro</b> del test —
+        /// una excepción al recolectar el source hace desaparecer el fixture entero en vez de
+        /// reportar rojo.
         /// </summary>
         private static IEnumerable<TestCaseData> TelegraphCases()
         {
-            yield return Case("El Cajero", () => CajeroAssetBuilder.BuildAIRoot(null));
             yield return Case("La Generala", () => GeneralaAssetBuilder.BuildAIRoot(null));
             yield return Case("El Anotador", () => AnotadorAssetBuilder.BuildAIRoot(null));
             yield return Case("La Bandida", () => BandidaAssetBuilder.BuildAIRoot(null, null));
@@ -143,6 +145,38 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                     "Setear WindupFeedbackId en su builder.");
                 Assert.IsTrue(db.HasFeedback(node.WindupFeedbackId),
                     $"{bossName} pide el feedback '{node.WindupFeedbackId}', que no está en el " +
+                    "FeedbackDB. Correr 'Tools → Rollgeon → Bosses → Build Boss Feedback'.");
+            }
+        }
+
+        /// <summary>
+        /// El Cajero no marca áreas, pega. Lo que en los demás cubre el telegraph, acá lo tienen
+        /// que cubrir sus dos golpes: si uno pierde el gesto, el daño sale y el jefe no se mueve,
+        /// y eso no falla en runtime — simplemente no se ve.
+        /// </summary>
+        [Test]
+        public void TheCajeroHitsWithAGesture()
+        {
+            // Arrange
+            var db = AssetDatabase.LoadAssetAtPath<FeedbackDBSO>(DbPath);
+            Assert.IsNotNull(db, $"No se encontró el FeedbackDB en '{DbPath}'.");
+
+            // Act — sus dos golpes son nodos de daño directo, no de marca. El empujón hereda de
+            // AINode_RangedShot, así que un solo filtro agarra el mandoble y el empujón.
+            var hits = Descendants(CajeroAssetBuilder.BuildAIRoot(null))
+                .OfType<AINode_RangedShot>()
+                .ToList();
+
+            // Assert
+            CollectionAssert.IsNotEmpty(hits,
+                "El Cajero se quedó sin golpes: su pelea entera son dos ataques melee que se " +
+                "intercalan.");
+            foreach (var hit in hits)
+            {
+                Assert.IsNotEmpty(hit.AnimFeedbackId ?? string.Empty,
+                    "Un golpe del Cajero cobra sin animación: el daño sale y él no se mueve.");
+                Assert.IsTrue(db.HasFeedback(hit.AnimFeedbackId),
+                    $"El Cajero pide el feedback '{hit.AnimFeedbackId}', que no está en el " +
                     "FeedbackDB. Correr 'Tools → Rollgeon → Bosses → Build Boss Feedback'.");
             }
         }

@@ -7,6 +7,7 @@ using NUnit.Framework;
 using Rollgeon.Combat.AI.Decisions;
 using Rollgeon.Combat.AI.Readers;
 using Rollgeon.Combat.Threat;
+using Rollgeon.Combos;
 using Rollgeon.Editor.Tools.Enemy.Builders;
 using Rollgeon.Entities;
 using Rollgeon.Feedback;
@@ -21,7 +22,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
     /// <c>.asset</c>, que ataría el suite a que Unity lo haya reimportado. El jefe es un kiter de
     /// dos tiempos, y lo que se cubre acá es lo que un merge puede romper sin que se note: el
     /// candado que tiene que re-emitirse todos los turnos, el tiempo de quema que tiene que
-    /// quedarse quieto, y la duración del fuego de la que cuelga todo el plan del jefe.
+    /// quedarse quieto, la duración del fuego de la que cuelga todo el plan del jefe, y el orden
+    /// del bloque de "Pleno y color" — donde mover un nodo un lugar le cambia el efecto entero.
     /// </summary>
     [TestFixture]
     public class CroupierPhaseWiringTests
@@ -52,26 +54,56 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         // =====================================================================
 
         /// <summary>
-        /// El primer paso del ciclo que devuelve <c>Running</c> (el blink de la fuga) aborta el
-        /// Sequence raíz en el path no-coroutine, así que todo lo que quede detrás del Alternate no
-        /// tickea nunca. Los dos gates de HP son justamente lo que no se puede perder.
+        /// El orden de los cuatro pasos de la raíz, que es el que define el turno: <b>detonar lo
+        /// avisado → candado → la acción normal del turno → armar el Pleno</b>.
         /// </summary>
+        /// <remarks>
+        /// <para>
+        /// El armado del Pleno va <b>último, después</b> del Alternate, y no es un detalle de
+        /// prolijidad: es lo que hace que el turno del aviso no sea un turno perdido para el jefe
+        /// —dispara o prende su banda igual— y lo que le deja al jugador el turno entero para cruzar
+        /// la sala. Adelante del ciclo, el aviso y la acción del turno se pisarían en el mismo tick.
+        /// </para>
+        /// <para>
+        /// La detonación va <b>primera</b> por dos razones distintas, las dos load-bearing: arriba del
+        /// marcado es lo que separa el marcar del prender por un turno (ver
+        /// <see cref="PlenoGate_IgnitesTheTurnAfterItMarked"/>), y arriba del Alternate es lo que
+        /// evita que le pase el trapo al overlay de la banda que T1 acaba de levantar —
+        /// <c>Show</c>/<c>Clear</c> del overlay son por fuente y la ignición limpia la de su canal.
+        /// </para>
+        /// <para>
+        /// El candado, en cambio, sí tiene que estar <b>delante</b> del Alternate: el primer paso del
+        /// ciclo que devuelve <c>Running</c> (el blink de la fuga) aborta el Sequence raíz en el path
+        /// no-coroutine, y un candado que se saltea un turno se ve parpadear.
+        /// </para>
+        /// </remarks>
         [Test]
-        public void PhaseGates_TickBeforeTheTwoBeatCycle()
+        public void TurnOrder_DetonatesFirst_ThenLocks_ThenActs_AndArmsThePlenoLast()
         {
-            int alternateIdx = _root.Children.FindIndex(c => c is AINode_Alternate);
-            int plenoIdx = IndexOfGateAtPercent(CroupierAssetBuilder.PlenoHpThreshold);
+            int detonationIdx = IndexOfStep<AINode_IgniteArea>();
             int lockIdx = IndexOfGateAtPercent(CroupierAssetBuilder.LockHpThreshold);
+            int alternateIdx = IndexOfStep<AINode_Alternate>();
+            int armIdx = IndexOfGateAtPercent(CroupierAssetBuilder.PlenoHpThreshold);
 
-            Assert.Greater(alternateIdx, -1, "No hay ciclo de dos tiempos en la raíz del árbol.");
-            Assert.Greater(plenoIdx, -1, "No hay gate de HP al 50% (Pleno y color) en el árbol.");
+            Assert.Greater(detonationIdx, -1,
+                "No hay paso de ignición en la raíz: lo que 'Pleno y color' marca no lo prende nadie.");
             Assert.Greater(lockIdx, -1, "No hay gate de HP al 70% (el candado) en el árbol.");
+            Assert.Greater(alternateIdx, -1, "No hay ciclo de dos tiempos en la raíz del árbol.");
+            Assert.Greater(armIdx, -1, "No hay gate de HP al 50% (Pleno y color) en el árbol.");
 
-            Assert.Less(plenoIdx, alternateIdx,
-                "Pleno y color quedó detrás del Alternate: el turno de fuga devuelve Running y le " +
-                "corta el Sequence, así que el gate no se evaluaría.");
+            Assert.AreEqual(0, detonationIdx,
+                "La detonación de lo avisado dejó de ser el primer paso del turno. Detrás del " +
+                "Alternate le apaga el overlay a la banda que T1 acaba de levantar (Clear y Show son " +
+                "por fuente), y detrás del armado marca y prende en el mismo tick.");
             Assert.Less(lockIdx, alternateIdx,
                 "El candado quedó detrás del Alternate: el Running de la fuga le corta el Sequence.");
+            Assert.Greater(armIdx, alternateIdx,
+                "El armado del Pleno se adelantó al ciclo. Ahí el jefe se planta en el centro y marca " +
+                "el paño en vez de repartir o quemar, y el turno del aviso pasa a ser un turno " +
+                "regalado — con el agregado de que el jugador ya no tiene el turno entero para cruzar.");
+            Assert.AreEqual(_root.Children.Count - 1, armIdx,
+                "El armado del Pleno tiene que ser el último paso: es el único que puede quedar " +
+                "detrás del Alternate porque prende al turno siguiente, no en este.");
         }
 
         /// <summary>
@@ -120,8 +152,13 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         /// salva, no del área amenazada: leerlo al revés le prende debajo de los pies y le deja el
         /// resto del paño limpio, que es exactamente el efecto contrario.
         /// </summary>
+        /// <remarks>
+        /// El tamaño del hueco no se escribe acá: sale de <c>PlenoHoleRadius</c> (hoy 1, o sea el 3×3
+        /// que describe la ficha). El nombre del test se quedó genérico a propósito — cruzarlo contra
+        /// la constante es lo que hace que mover el radio no deje el nombre mintiendo.
+        /// </remarks>
         [Test]
-        public void PlenoGate_BurnsTheWholeTableExceptHisOwn3x3()
+        public void PlenoGate_BurnsTheWholeTableExceptTheSquareAroundHim()
         {
             var gate = FindGateAtPercent(CroupierAssetBuilder.PlenoHpThreshold);
             var mark = Descendants(gate.Then).OfType<AINode_TelegraphMark>().Single();
@@ -133,33 +170,151 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                 "Con hueco 0 se prende su propia casilla: el jefe queda parado en el fuego y " +
                 "cualquier regresión de OwnerBossImmune lo mata solo.");
 
-            // Esta marca SÍ cobra, al contrario de la banda: marca y enciende en el mismo tick, así
-            // que no hubo turno de aviso del que el jugador pudiera aprovecharse. Lo cobra
-            // AINode_IgniteArea al consumirla — un 0 acá deja el momento más grande de la pelea sin
-            // acuse de recibo para quien lo tenía debajo de los pies.
+            // Esta marca SÍ cobra y la banda no, y las dos avisan un turno antes: lo que las
+            // diferencia es cuánto cuesta obedecer el aviso. Salirse de la banda es un paso al
+            // costado; salirse de esto es cruzar media sala hasta el hueco. El número lo cobra
+            // AINode_IgniteArea al consumir la marca, y un 0 acá deja el momento más grande de la
+            // pelea sin acuse de recibo para quien no se movió.
             Assert.AreEqual(CroupierAssetBuilder.PlenoIgnitionDamage, mark.Damage,
                 "El Pleno dejó de cobrar al prender: quien estaba parado adentro no se entera hasta " +
                 "su próximo turno.");
         }
 
         /// <summary>
-        /// Marca y enciende en el mismo turno: el fuego <i>es</i> su propia telegrafía (se ve en el
-        /// piso y sólo cobra al pisarlo o al arrancar el turno adentro), así que no hace falta el
-        /// turno de aviso que sí necesita un golpe que cobra de una.
+        /// El hueco a salvo se calcula desde la casilla del jefe <b>en el momento del tick</b>, así
+        /// que el teleport tiene que correr <b>antes</b> del marcado. Detrás, el hueco vuelve a caer
+        /// donde el jefe había terminado de huir —contra una pared— y el 50% es el mecanismo viejo
+        /// con un nodo de más.
         /// </summary>
         [Test]
-        public void PlenoGate_MarksAndIgnitesInTheSameTurn()
+        public void PlenoGate_TeleportsToTheCentreBeforeItRaisesTheTelegraph()
         {
             var gate = FindGateAtPercent(CroupierAssetBuilder.PlenoHpThreshold);
             var order = Descendants(gate.Then);
 
+            int teleport = order.FindIndex(n => n is AINode_TeleportToRoomCenter);
             int mark = order.FindIndex(n => n is AINode_TelegraphMark);
-            int ignite = order.FindIndex(n => n is AINode_IgniteArea);
 
-            Assert.Greater(mark, -1, "Pleno y color no marca nada: IgniteArea consume la marca, no la calcula.");
-            Assert.Greater(ignite, mark,
-                "La ignición va después del marcado: consume el área telegrafiada, así que antes no " +
-                "tendría nada que plantar y el 50% pasaría en silencio.");
+            Assert.Greater(teleport, -1,
+                "El Pleno dejó de plantar al jefe en el centro: el hueco cae donde haya terminado " +
+                "de huir, así que la figura sale distinta cada pelea y a veces no hay sala que cruzar.");
+            Assert.Greater(mark, teleport,
+                "El teleport quedó DESPUÉS del marcado. AINode_TelegraphMark ancla la forma en la " +
+                "casilla del jefe al tickear, y AINode_IgniteArea consume esa marca sin recalcularla: " +
+                "moverlo después deja el cuadrado a salvo vacío en el medio de la sala.");
+        }
+
+        /// <summary>
+        /// El teleport consume el movimiento del turno. Sin eso el jefe se va del hueco que acaba
+        /// de plantar, y el área ya quedó anclada donde estaba: el cuadrado a salvo se queda vacío
+        /// en el medio de la sala y deja de leerse como "donde está el jefe".
+        /// </summary>
+        [Test]
+        public void PlenoTeleport_SpendsTheTurnsMovement_SoHeStaysInHisOwnHole()
+        {
+            var gate = FindGateAtPercent(CroupierAssetBuilder.PlenoHpThreshold);
+            var teleport = Descendants(gate.Then).OfType<AINode_TeleportToRoomCenter>().Single();
+
+            Assert.IsTrue(teleport.ConsumeMoveAction,
+                "El mismo turno en que cruza el 50% el Alternate puede caer en T1, y ese beat tiene " +
+                "un KeepDistance con FleeIdealDistance 8 que huye casi siempre: sin gastarle el " +
+                "movimiento, lo saca del centro justo después de plantarlo ahí.");
+        }
+
+        /// <summary>
+        /// <b>Marca en el turno N y prende en el N+1.</b> Era el bug reportado: marcaba y prendía en
+        /// el mismo tick, y como no hay yield entre el <c>Show</c> del telegraph y el <c>Clear</c> de
+        /// la ignición, el aviso no se dibujaba <i>ni un frame</i> — el paño se prendía entero sin
+        /// aviso ninguno.
+        /// </summary>
+        /// <remarks>
+        /// <para>
+        /// El turno de separación lo da el <b>orden de los hijos de la raíz</b>, no un contador: el
+        /// paso que prende está <b>arriba</b> del que marca, así que en el turno N pasa primero y no
+        /// encuentra nada, la marca se levanta después y queda pendiente con su overlay puesto todo
+        /// el turno del jugador, y recién la encuentra en el N+1.
+        /// </para>
+        /// <para>
+        /// Por eso <c>AnnounceTurns</c> tiene que quedarse en <b>0</b>: el nodo cuenta sus propias
+        /// activaciones, así que un 1 le sumaría SU turno de espera arriba del que ya da el orden y
+        /// la detonación caería en N+2 — el paño quedaría avisado dos turnos y el jugador dejaría de
+        /// creerle a la telegrafía.
+        /// </para>
+        /// <para>
+        /// Y por eso el paso que prende <b>no</b> puede quedar latcheado ni gateado: el turno en que
+        /// tickea con algo pendiente es el siguiente al del aviso, y ahí ya cruzó el umbral hace un
+        /// turno. Un <c>Once</c> o un gate encima y la marca se queda pintada para siempre.
+        /// </para>
+        /// </remarks>
+        [Test]
+        public void PlenoGate_IgnitesTheTurnAfterItMarked()
+        {
+            var gate = FindGateAtPercent(CroupierAssetBuilder.PlenoHpThreshold);
+            var arm = Descendants(gate.Then);
+
+            Assert.IsNotEmpty(arm.OfType<AINode_TelegraphMark>(),
+                "Pleno y color no marca nada: AINode_IgniteArea consume la marca, no la calcula.");
+            Assert.IsEmpty(arm.OfType<AINode_IgniteArea>(),
+                "La ignición volvió adentro del bloque que marca: eso es marcar y prender en el " +
+                "mismo tick, o sea prender el paño entero sin que el aviso llegue a dibujarse un " +
+                "solo frame. Es el bug que este orden arregla.");
+
+            int detonationIdx = IndexOfStep<AINode_IgniteArea>();
+            var detonationStep = _root.Children[detonationIdx];
+            var detonation = Unwrap<AINode_IgniteArea>(detonationStep);
+
+            Assert.Less(detonationIdx, IndexOfGateAtPercent(CroupierAssetBuilder.PlenoHpThreshold),
+                "El paso que prende quedó DEBAJO del que marca: en el mismo turno encuentra la marca " +
+                "que se acaba de levantar y vuelven a caer en el mismo tick.");
+
+            Assert.AreEqual(0, detonation.AnnounceTurns,
+                "El turno de espera ya lo da el orden de los hijos. Con AnnounceTurns en 1 el nodo " +
+                "suma su propia espera encima y el paño prende en N+2, dos turnos después del aviso.");
+            Assert.IsEmpty(Descendants(detonationStep).OfType<AINode_Once>(),
+                "El paso que prende quedó latcheado. Tickea con algo pendiente el turno DESPUÉS del " +
+                "aviso, así que un Once (o un gate de HP) lo saltea justo entonces y la marca se " +
+                "queda pintada para siempre.");
+        }
+
+        /// <summary>
+        /// Las dos marcas del jefe conviven: el Pleno marca en su propio canal y la banda de T1 en el
+        /// guid pelado. Los dos avisos se levantan en el <b>mismo</b> turno —el que cruza el 50%— y
+        /// <c>IThreatenedAreaService</c> guarda un área por fuente <b>sobrescribiendo</b>, así que sin
+        /// canal el segundo marcado del turno destruye al primero, en el estado lógico y en el overlay.
+        /// </summary>
+        /// <remarks>
+        /// Y el que consume tiene que pedir el mismo canal: la ignición del tiempo de quema va sin
+        /// canal porque consume la banda, y la del paso 1 va con el del Pleno. Cruzados, cada uno
+        /// prende el área del otro con la duración del otro.
+        /// </remarks>
+        [Test]
+        public void ThePlenoMarkAndTheBandMark_LiveOnDifferentChannels()
+        {
+            var plenoMark = Descendants(FindGateAtPercent(CroupierAssetBuilder.PlenoHpThreshold).Then)
+                .OfType<AINode_TelegraphMark>().Single();
+            var bandMark = Descendants(DealBeat()).OfType<AINode_TelegraphMark>().Single();
+
+            Assert.AreEqual(CroupierAssetBuilder.PlenoChannelId, plenoMark.ChannelId,
+                "La marca del Pleno perdió su canal: cae bajo el guid pelado del jefe, o sea encima " +
+                "de la banda que T1 marcó este mismo turno — y la que sobrevive es una sola.");
+            Assert.IsTrue(string.IsNullOrEmpty(bandMark.ChannelId),
+                "La banda estrenó canal. El tiempo de quema la consume por el guid pelado, así que " +
+                "un canal acá deja la banda avisada y sin prender para siempre.");
+            Assert.AreNotEqual(plenoMark.ChannelId, bandMark.ChannelId,
+                "Los dos avisos comparten canal: se pisan igual que si ninguno lo tuviera.");
+
+            var detonation = Unwrap<AINode_IgniteArea>(
+                _root.Children[IndexOfStep<AINode_IgniteArea>()]);
+            Assert.AreEqual(plenoMark.ChannelId, detonation.ChannelId,
+                "El paso que prende busca en un canal distinto del que marca el Pleno: nunca " +
+                "encuentra nada y el 50% no prende jamás.");
+
+            foreach (var burn in Descendants(Alternate()).OfType<AINode_IgniteArea>())
+            {
+                Assert.IsTrue(string.IsNullOrEmpty(burn.ChannelId),
+                    "Una ignición del ciclo pasó a buscar en un canal: la banda se marca en el guid " +
+                    "pelado, así que el tiempo de quema deja de prender nada.");
+            }
         }
 
         /// <summary>
@@ -349,12 +504,22 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         /// de balance: es la diferencia entre un fuego que se esquiva y un piso que se achica.
         /// </summary>
         /// <remarks>
+        /// <para>
         /// El jefe prende en uno de cada dos tiempos, o sea cada 2 rondas, y nadie apaga las bandas
-        /// anteriores. Con la duración base <b>igual</b> al intervalo, una banda se apaga justo
-        /// cuando nace la siguiente: nunca conviven dos y el paño vuelve a estar limpio. Con la de
-        /// fase 2, un ronda más, conviven durante la ronda del relevo — el único momento en que el
-        /// piso útil se achica. Que la base <b>supere</b> el intervalo es el bug: las bandas se
-        /// apilan ronda a ronda hasta que no queda dónde plantarse a defender.
+        /// anteriores. Con la duración base <b>igual</b> al intervalo, una banda se apaga justo cuando
+        /// nace la siguiente: nunca conviven dos y el paño vuelve a estar limpio. Con la de fase 2,
+        /// una ronda más, conviven durante la ronda del relevo — el único momento en que el piso útil
+        /// se achica. Que la base <b>supere</b> el intervalo es el bug: las bandas se apilan ronda a
+        /// ronda hasta que no queda dónde plantarse a defender.
+        /// </para>
+        /// <para>
+        /// <b>Convivir no es cobrar doble.</b> Es lo único que cambió en esta corrida: donde se pisan,
+        /// la banda nueva sólo prende lo que no ardía, y si la vieja queda <b>entera</b> adentro del
+        /// área nueva la retira (<c>AINode_IgniteArea.RetireFullyReplaced</c>, que este jefe prende;
+        /// ver <see cref="Ignitions_RelayTheBandTheyReplace"/>). O sea que una casilla es siempre un
+        /// fuego. Lo que sigue creciendo con la ronda de convivencia es la <b>superficie</b>, y eso es
+        /// exactamente el escalón de fase 2 — no una excusa para pasarse del intervalo.
+        /// </para>
         /// </remarks>
         [Test]
         public void FireDuration_MatchesTheIgnitionInterval_AndOnlyPhaseTwoOverlaps()
@@ -379,7 +544,38 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             Assert.AreEqual(CroupierAssetBuilder.FireDurationRounds + 1,
                 CroupierAssetBuilder.FireDurationRoundsPhase2,
                 "Fase 2 tiene que ser exactamente una ronda más: es lo que hace que dos bandas " +
-                "convivan durante el relevo. Dos rondas más y vuelve a apilarse sin techo.");
+                "convivan durante el relevo, y ése es el único escalón de dificultad del umbral. " +
+                "Dos rondas más y vuelve a apilarse sin techo.");
+        }
+
+        /// <summary>
+        /// Las tres igniciones relevan lo que reemplazan: una banda vieja que quede <b>entera</b>
+        /// adentro del área nueva se retira en vez de quedarse con su reloj.
+        /// </summary>
+        /// <remarks>
+        /// <para>
+        /// Es el caso normal de este jefe, no un borde: huye sobre el mismo eje y la banda le sale de
+        /// atrás con la profundidad de la sala, así que cada banda nueva contiene a la anterior. Sin
+        /// el relevo, el terreno compartido se queda con el reloj más viejo —el más corto— y la banda
+        /// que el jugador acaba de ver avisada se apaga en el wrap siguiente sin haber ardido: el
+        /// tiempo de quema no muestra nada.
+        /// </para>
+        /// <para>
+        /// Va cableado y no por default porque el default es "no retirar" (ver
+        /// <c>AINode_IgniteArea.RetireFullyReplaced</c>): el nodo lo monta cada jefe que prende piso,
+        /// y apagar fuego que el jugador ya tiene en pantalla es una decisión de <b>esta</b> pelea.
+        /// </para>
+        /// </remarks>
+        [Test]
+        public void Ignitions_RelayTheBandTheyReplace()
+        {
+            foreach (var ignite in Descendants(_root).OfType<AINode_IgniteArea>())
+            {
+                Assert.IsTrue(ignite.RetireFullyReplaced,
+                    "Una ignición dejó de relevar la banda que tapa por completo. Ese terreno se " +
+                    "queda con el reloj de la banda vieja, así que la recién avisada se apaga en el " +
+                    "wrap siguiente y el turno de quema pasa en blanco.");
+            }
         }
 
         /// <summary>
@@ -459,29 +655,71 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
 
                 // Assert
                 Assert.AreEqual("boss.croupier", data.EntityId);
-                Assert.AreEqual(170, data.BaseHP,
-                    "Jefe de piso 1. Con la mediana del piso (20) y su debilidad en x1.2 son ~8 " +
-                    "golpes conectados, y es un jefe que huye: no todos los turnos conectan. La " +
-                    "vida es larga a propósito — el fuego necesita rondas para ser el motivo por " +
-                    "el que perdés, y con 120 la pelea se moría antes de que eso pasara.");
-                Assert.AreEqual(20, data.BaseAttack);
-                Assert.AreEqual("combo.pair", data.WeaknessComboId,
-                    "El id real del combo Par en el catálogo es combo.pair.");
+                Assert.AreEqual(200, data.BaseHP,
+                    "Es el número que ya usan los otros tres jefes del juego. Los 170 de antes eran " +
+                    "un descuento por una debilidad que se cobraba casi todos los turnos (el Par); " +
+                    "con la debilidad movida al Poker ese descuento se quedó sin motivo. Si hay que " +
+                    "hacerlo aguantar más, la palanca es ésta y no el multiplicador.");
+                Assert.AreEqual(24, data.BaseAttack);
+                Assert.AreEqual(ComboId.Poker, data.WeaknessComboId,
+                    "La debilidad es el Poker (cuatro dados iguales), no el Par. El id canónico del " +
+                    "catálogo es combo.poker.");
                 // Es un override propio del jefe, no el global de WeaknessConfig, así que moverlo
                 // no le toca la debilidad a ningún otro enemigo.
-                Assert.GreaterOrEqual(data.WeaknessMultiplierOverride, 1.35f,
-                    "Por debajo de esto el Par deja de convenir y la debilidad se vuelve " +
-                    "decoración. La debilidad multiplica el golpe entero (fórmula v3), no el base " +
-                    "del combo: un Par vale N≈25, y recién desde ~1.35 el resultado empata al doble " +
-                    "par — que es lo que hace que valga jugar el combo barato (90,7% en la primera " +
-                    "tirada) en vez del trío (21,3%). Si hay que hacerlo aguantar más, subir BaseHP.");
-                Assert.AreEqual(1.5f, data.WeaknessMultiplierOverride, PercentTolerance);
+                Assert.AreEqual(2.0f, data.WeaknessMultiplierOverride, PercentTolerance,
+                    "El ×2 no es una perilla de dificultad: es si la debilidad existe o no. El Par " +
+                    "salía 9 de cada 10 primeras tiradas —era un piso que se cobraba todos los " +
+                    "turnos, y ahí un ×1.5 ya se sentía—; el Poker sale ~2 de cada 10 gastando el " +
+                    "pozo entero, así que con el mismo ×1.5 el bono casi desaparece del daño de la " +
+                    "pelea. A ×2 el Poker (55 de base) sale a 110 y vale ir a buscarlo. Si el jefe " +
+                    "queda blando, la palanca es BaseHP.");
                 Assert.AreEqual(15, data.MinGoldDrop, "Oro de piso 1.");
                 Assert.AreEqual(23, data.MaxGoldDrop);
                 Assert.IsEmpty(data.Behaviors,
                     "Sin behaviors: su único golpe directo es el disparo del árbol, y un behavior de " +
                     "melee le sumaría un ataque más por turno además del ciclo.");
                 Assert.IsNotNull(data.AIRoot);
+            }
+            finally
+            {
+                Object.DestroyImmediate(data);
+            }
+        }
+
+        /// <summary>
+        /// La debilidad es el <b>Poker</b>, y el multiplicador es la mitad de esa decisión. Era el
+        /// Par a ×1.5: el Par salía 9 de cada 10 tiradas, así que la debilidad era un piso que el
+        /// jugador cobraba todos los turnos. El Poker sale ~2 de cada 10 gastando el pozo entero —
+        /// el bono pasa de aplicarse siempre a aplicarse a veces, y el ×2 es lo que compensa en la
+        /// otra dirección para que siga valiendo ir a buscarlo.
+        /// </summary>
+        /// <remarks>
+        /// Cruza las dos constantes contra lo escrito porque el modo de romper esto es tipear el
+        /// valor en <c>PopulateEnemyData</c>: ahí la ficha y el asset se van cada uno para su lado y
+        /// el <c>ED_</c> queda con una debilidad que ningún comentario del builder menciona. Y van
+        /// juntas en un test porque son <b>una</b> decisión: mover la mano sin mover el multiplicador
+        /// (o al revés) es lo que deja la debilidad en decoración o en daño gratis.
+        /// </remarks>
+        [Test]
+        public void Weakness_IsThePokerFromTheSheet_NotAHardcodedId()
+        {
+            var data = ScriptableObject.CreateInstance<EnemyDataSO>();
+            data.hideFlags = HideFlags.HideAndDontSave;
+
+            try
+            {
+                CroupierAssetBuilder.PopulateEnemyData(data, _fire, null, null);
+
+                Assert.AreEqual(ComboId.Poker, CroupierAssetBuilder.WeaknessComboId,
+                    "La ficha volvió a colgar la debilidad de otra mano. Si el cambio es a propósito, " +
+                    "mover también el multiplicador: el ×2 está calibrado contra una mano que sale " +
+                    "poco, y sobre una frecuente es daño gratis todos los turnos.");
+                Assert.AreEqual(CroupierAssetBuilder.WeaknessComboId, data.WeaknessComboId,
+                    "PopulateEnemyData escribe un id que no es el de la ficha: el asset del jefe y " +
+                    "la constante quedaron diciendo cosas distintas.");
+                Assert.AreEqual(CroupierAssetBuilder.WeaknessMultiplier,
+                    data.WeaknessMultiplierOverride, PercentTolerance,
+                    "PopulateEnemyData escribe un multiplicador que no es el de la ficha.");
             }
             finally
             {
@@ -571,7 +809,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         /// <summary>Gate de HP por su umbral, venga suelto o envuelto en el Selector de aislamiento.</summary>
         private AINode_If FindGateAtPercent(float percent)
         {
-            var gate = _root.Children.Select(Unwrap).FirstOrDefault(g =>
+            var gate = _root.Children.Select(Unwrap<AINode_If>).FirstOrDefault(g =>
                 g?.Conditions != null && g.Conditions.OfType<PcOwnerHpBelow>()
                     .Any(p => Mathf.Abs(p.Percent - percent) < PercentTolerance));
             Assert.IsNotNull(gate, $"No hay gate de HP al {percent:P0} en el árbol.");
@@ -581,14 +819,23 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         private int IndexOfGateAtPercent(float percent)
         {
             var gate = FindGateAtPercent(percent);
-            return _root.Children.FindIndex(c => ReferenceEquals(Unwrap(c), gate));
+            return _root.Children.FindIndex(c => ReferenceEquals(Unwrap<AINode_If>(c), gate));
         }
 
-        private static AINode_If Unwrap(AIDecisionNode child)
+        /// <summary>
+        /// Índice del paso de la raíz que <b>es</b> un <typeparamref name="T"/>. Deliberadamente
+        /// superficial: con una búsqueda en profundidad, la ignición del tiempo de quema haría que el
+        /// paso del Alternate contara como "el paso que prende", y el orden que este archivo cuida
+        /// —quién detona lo avisado y dónde está— se volvería incomprobable.
+        /// </summary>
+        private int IndexOfStep<T>() where T : class =>
+            _root.Children.FindIndex(c => Unwrap<T>(c) != null);
+
+        private static T Unwrap<T>(AIDecisionNode child) where T : class
         {
-            if (child is AINode_If direct) return direct;
+            if (child is T direct) return direct;
             if (child is AINode_Selector sel && sel.Children != null)
-                return sel.Children.OfType<AINode_If>().FirstOrDefault();
+                return sel.Children.OfType<T>().FirstOrDefault();
             return null;
         }
 

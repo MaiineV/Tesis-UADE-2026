@@ -312,18 +312,23 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             var fire = LoadFireTile();
             Assert.IsNotNull(fire, "Falta la casilla de fuego.");
 
-            // Este asset nació como clon de Tile_FireTemp (10 / 6 / 2). Los tres números son el
-            // plan del jefe, no decoración. Cruzar y quedarse cuestan lo mismo (6 y 6), pero no
-            // pesan igual: el 6 de cruzar se cobra POR CASILLA y sin escudo, porque la acción del
-            // turno se fue en moverse. Un rebuild descuidado desde la plantilla los devuelve sin
-            // que falle nada más.
-            Assert.AreEqual(6, fire.TurnStartDamage,
+            // Este asset nació como clon de Tile_FireTemp (10 / 6 / 2) y NINGÚN código lo escribe:
+            // es autoría a mano, así que este test es lo único que lo ata a la ficha. Cruzar y
+            // quedarse cuestan lo mismo (7 y 7), pero no pesan igual: el 7 de cruzar se cobra POR
+            // CASILLA y sin escudo, porque la acción del turno se fue en moverse. Un rebuild
+            // descuidado desde la plantilla los devuelve sin que falle nada más.
+            //
+            // OJO: no hay constante en el builder que mueva estos dos números. La que se parece
+            // —CroupierAssetBuilder.BandidaReelFireDamage— alimenta el HazardDefinitionSO que el
+            // builder autora para los reels de La Bandida, y hoy vale otra cosa. Subir el fuego del
+            // Croupier es UNA edición y es en este .asset.
+            Assert.AreEqual(7, fire.TurnStartDamage,
                 "Arrancar el turno adentro cambió de precio. Por debajo del escudo mediano del " +
                 "jugador (~13) el fuego deja de ser una amenaza y pasa a ser decoración.");
             Assert.GreaterOrEqual(fire.EnterDamage, fire.TurnStartDamage,
                 "Cruzar el fuego pasó a costar MENOS que quedarse parado en él. Así la jugada " +
                 "óptima es correr por el paño encendido, que es lo contrario del plan del jefe.");
-            Assert.AreEqual(6, fire.EnterDamage,
+            Assert.AreEqual(7, fire.EnterDamage,
                 "Se cobra por casilla cruzada — es lo que hace que atravesar una banda para llegar al " +
                 "jefe tenga precio.");
             Assert.AreEqual(CroupierAssetBuilder.FireDurationRounds, fire.DefaultDurationRounds,
