@@ -367,7 +367,7 @@
   <div class="board-row" style="margin-top:2rem">
     <figure>
       <div class="board sm" data-map="empujon"></div>
-      <figcaption>El tumbo sale derecho para el lado opuesto a él. Acá cruza un pincho: 8 + 12 = <strong>20</strong>.</figcaption>
+      <figcaption>El tumbo sale derecho para el lado opuesto a él. Acá cruza un pincho: 10 + 14 = <strong>24</strong>.</figcaption>
     </figure>
     <figure>
       <div class="board sm" data-map="tumbo"></div>
@@ -460,7 +460,7 @@
       <div class="step-n">Empujado</div>
       <div class="step-body">
         <h4>Los come igual</h4>
-        <p>El movimiento forzado no pasa por el pathing: <strong>12 por casilla</strong>, lo mismo que a vos. Cuidadoso por decisión propia, vulnerable a que se lo fuerce — y ahí es donde tu Empuje tiene dientes.</p>
+        <p>El movimiento forzado no pasa por el pathing: <strong>14 por casilla</strong>, lo mismo que a vos. Cuidadoso por decisión propia, vulnerable a que se lo fuerce — y ahí es donde tu Empuje tiene dientes.</p>
       </div>
     </div>
   </div>
@@ -469,7 +469,7 @@
 
   <div class="callout">
     <span class="eyebrow">Armado sí, bajado no</span>
-    <p>Un pincho que se disparó <strong>queda bajado hasta el cierre de ronda</strong>, y el pathing lo lee: esquiva el armado, pisa el bajado. Así que un campo intacto es muro para él y <strong>cada pincho que gastás le abre un pasillo</strong> — disparar uno te sale doble, los 12 y la línea.</p>
+    <p>Un pincho que se disparó <strong>queda bajado hasta el cierre de ronda</strong>, y el pathing lo lee: esquiva el armado, pisa el bajado. Así que un campo intacto es muro para él y <strong>cada pincho que gastás le abre un pasillo</strong> — disparar uno te sale doble, los 14 y la línea.</p>
     <p style="margin-top:.6rem">Incluido cuando lo dispara él: tirarte contra un pincho le limpia la ruta por un turno. Es lo primero a mirar en el playtest.</p>
   </div>
 </section>
@@ -610,7 +610,7 @@
     nueva:  { boss: [5, 5], spawns: SPAWNS },
 
     // El empujon: el jefe a la izquierda del jugador, asi el tumbo va hacia la
-    // derecha y cruza el pincho de la fila 6, columna 5 -> 8 + 12 = 20.
+    // derecha y cruza el pincho de la fila 6, columna 5 -> 10 + 14 = 24.
     empujon: { boss: [6, 3], player: [6, 4], path: [[6, 5], [6, 6], [6, 7]] },
     tumbo:  { boss: [6, 3], player: [6, 7], chips: [[6, 5], [6, 6]] },
   };
@@ -635,7 +635,7 @@
         if (ch === "X") {
           cell.classList.add("spike");
           cell.textContent = "▲";
-          cell.title = "Pinchos — 12 al entrar, tambien empujado";
+          cell.title = "Pinchos — 14 al entrar, tambien empujado";
         } else if (ch === "S") {
           cell.classList.add("safe");
           cell.title = "Caja fuerte — bloquea, y frena un empujon";
