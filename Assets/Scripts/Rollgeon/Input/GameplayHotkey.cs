@@ -19,5 +19,6 @@ namespace Rollgeon.Input
         EndTurn,
         ForceDoor,
         Defense,
+        ToggleMinimap,
     }
 }

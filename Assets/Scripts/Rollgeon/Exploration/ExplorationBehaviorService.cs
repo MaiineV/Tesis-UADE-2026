@@ -469,12 +469,31 @@ namespace Rollgeon.Exploration
             if (!ServiceLocator.TryGetService<IPlayerService>(out var playerService)) return;
             var playerGuid = playerService.PlayerGuid;
 
+            var picked = result.FirstSelectedCoord;
+
+            // Clickear la casilla en la que ya estás parado es no-op. Sin este guard el
+            // bug era real: el spawn al entrar a una sala te deja SOBRE la casilla
+            // frente-a-puerta; ese click "caminaba" cero pasos (MovementService no-op,
+            // sin animación) y el cruce salía instantáneo — encadenando dos salas con
+            // un solo click sin quererlo.
+            if (picked.HasValue
+                && ServiceLocator.TryGetService<IGridManager>(out var gridForGuard)
+                && gridForGuard.TryGetPosition(playerGuid, out var currentPos)
+                && picked.Value == currentPos)
+            {
+                // Next-frame y no inline: acá seguimos dentro del callback de Complete()
+                // del SelectionController — re-armar la selección en el mismo stack se
+                // pisaría con su propio cleanup.
+                Debug.Log("[ExplorationBehaviorService] Click en la casilla propia — no-op, re-armar movimiento.");
+                CoroutineHost.Run(ArmMovementNextFrame());
+                return;
+            }
+
             // Ejecutar el movimiento normal: el player camina hasta la casilla elegida.
             ExecuteBehavior(behavior, playerGuid, result, null);
 
             // Si esa casilla es una "frente a puerta", cruzar a la sala vecina recién
             // cuando el pawn termine de caminar hasta ahí (no de forma instantánea).
-            var picked = result.FirstSelectedCoord;
             if (picked.HasValue && doorTiles != null
                 && doorTiles.TryGetValue(picked.Value, out var dir))
             {

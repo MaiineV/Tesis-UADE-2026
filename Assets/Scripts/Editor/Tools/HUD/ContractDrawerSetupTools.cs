@@ -314,15 +314,17 @@ namespace Rollgeon.EditorTools.HUD
                 if (withDescription)
                 {
                     float descriptionX = DamageX + DamageBoxSize.x + 8f;
-                    var descriptionSize = new Vector2(descriptionWidth, 48f);
+                    // 54 de alto (la fila mide 60): dos líneas a 20pt. Feedback de playtest:
+                    // a 13-17pt la explicación del contrato no se leía en selección de clase.
+                    var descriptionSize = new Vector2(descriptionWidth, 54f);
                     var descriptionRect = EnsureChildRect(rootRect, "Description",
                         new Vector2(descriptionX, 0f), descriptionSize);
                     AnchorLeftMiddle(descriptionRect, new Vector2(descriptionX, 0f), descriptionSize);
-                    descriptionLabel = EnsureLabel(descriptionRect.gameObject, font, 17f,
+                    descriptionLabel = EnsureLabel(descriptionRect.gameObject, font, 20f,
                         TextAlignmentOptions.MidlineLeft);
                     descriptionLabel.enableAutoSizing = true;
-                    descriptionLabel.fontSizeMin = 13f;
-                    descriptionLabel.fontSizeMax = 17f;
+                    descriptionLabel.fontSizeMin = 16f;
+                    descriptionLabel.fontSizeMax = 20f;
                     descriptionLabel.textWrappingMode = TextWrappingModes.Normal;
                     descriptionLabel.overflowMode = TextOverflowModes.Ellipsis;
                     // Tinta oscura: la fila (UI-sheet_9) es naranja y el gris del ComboRow

@@ -167,22 +167,12 @@ namespace Rollgeon.Dungeon
             }
         }
 
+        // Reglas de fog of war extraídas a RoomDiscovery — compartidas con el minimapa.
         private static bool IsVisited(Guid id, IReadOnlyDictionary<Guid, RoomInstance> rooms)
-            => rooms != null && rooms.TryGetValue(id, out var room) && room != null && room.Visited;
+            => RoomDiscovery.IsVisited(id, rooms);
 
-        /// <summary>
-        /// Descubierta = visitada O vecina conectada por puerta a una sala visitada.
-        /// La adyacencia sale de <see cref="RoomInstance.Connections"/> (solo conexiones reales).
-        /// </summary>
         private static bool IsDiscovered(Guid id, IReadOnlyDictionary<Guid, RoomInstance> rooms)
-        {
-            if (rooms == null || !rooms.TryGetValue(id, out var room) || room == null) return false;
-            if (room.Visited) return true;
-            foreach (var neighborId in room.Connections.Values)
-                if (rooms.TryGetValue(neighborId, out var neighbor) && neighbor != null && neighbor.Visited)
-                    return true;
-            return false;
-        }
+            => RoomDiscovery.IsDiscovered(id, rooms);
 
         private void MaterializeShellsIfNeeded()
         {
