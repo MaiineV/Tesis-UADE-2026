@@ -692,7 +692,7 @@ PrefabInstance:
     m_AddedComponents:
     - targetCorrespondingSourceObject: {fileID: 7299804447967837579, guid: 7f89c9145564f3447973b07bcb3a38c9, type: 3}
       insertIndex: -1
-      addedObject: {fileID: 7082407057721634006}
+      addedObject: {fileID: 4204951097050835360}
   m_SourcePrefab: {fileID: 100100000, guid: 7f89c9145564f3447973b07bcb3a38c9, type: 3}
 --- !u!137 &1564592436959804221 stripped
 SkinnedMeshRenderer:
@@ -734,7 +734,7 @@ GameObject:
   m_CorrespondingSourceObject: {fileID: 7299804447967837579, guid: 7f89c9145564f3447973b07bcb3a38c9, type: 3}
   m_PrefabInstance: {fileID: 1006947776020186960}
   m_PrefabAsset: {fileID: 0}
---- !u!114 &7082407057721634006
+--- !u!114 &4204951097050835360
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
