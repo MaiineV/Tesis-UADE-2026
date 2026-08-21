@@ -429,9 +429,8 @@
   <p style="margin-top:1.2rem">Medido sobre la sala entera, recorriendo todas las posiciones posibles de jugador y jefe adyacente: <strong>el empujón cruza un pincho el 18% de las veces</strong>, y el agarre sale a <strong>10,3 de media</strong>. Con los pinchos sueltos el resultado es casi binario —8 o 20— y ésa es la virtud: <strong>hay una sola pregunta por turno y tiene una sola respuesta visible</strong>, en vez de un cálculo de zonas.</p>
 
   <div class="callout">
-    <span class="eyebrow">Por qué el mandoble pega más que el agarre limpio</span>
-    <p>12 contra 8, y es a propósito. Si plantarse contra una pared fuera lo barato, la respuesta óptima sería arrinconarse y no moverse nunca, y el jefe dejaría de existir. Con el mandoble arriba, <strong>quedarse quieto cuesta vida y moverse cuesta posición</strong>, que son dos monedas distintas.</p>
-    <p style="margin-top:.6rem">Los dos salen parecido, y ahí está la decisión: el mandoble cobra poco y siempre; el agarre cobra menos de media pero con varianza — y encima te cobra en la otra moneda, porque te tira lejos de tus monedas y de él.</p>
+    <span class="eyebrow">Riesgo: arrinconarse sale casi gratis</span>
+    <p>El mandoble pega 12 y el agarre sale a 10,2 de media. O sea que <strong>pegarse a una pared cuesta 1,8 de daño extra por turno y a cambio no te desplazan nunca</strong>. Si en el playtest la jugada óptima resulta ser meterse en un rincón y no moverse, el mandoble tiene que subir.</p>
   </div>
 </section>
 
@@ -506,9 +505,8 @@
 
   <div class="callout">
     <span class="eyebrow">Armado sí, bajado no</span>
-    <p>Un pincho que ya se disparó esta ronda <strong>queda bajado</strong> y no hace nada hasta el cierre de ronda. El pathing lee ese estado: esquiva el armado, y por el bajado pasa como por piso limpio.</p>
-    <p style="margin-top:.6rem">Eso convierte el terreno en un <strong>recurso que administrás</strong> en vez de decorado fijo. Un campo intacto es muro para él; cada pincho que gastás le abre un pasillo. Disparar uno te sale doble: los 12 y la línea que le abrís.</p>
-    <p style="margin-top:.6rem">Con una consecuencia que se acepta: cuando él te tira contra un pincho, ese pincho se baja — <strong>su propio ataque le limpia la ruta</strong>. Le dura un turno, hasta que se rearma. Es lo primero a mirar en el playtest.</p>
+    <p>Un pincho que se disparó <strong>queda bajado hasta el cierre de ronda</strong>, y el pathing lo lee: esquiva el armado, pisa el bajado. Así que un campo intacto es muro para él y <strong>cada pincho que gastás le abre un pasillo</strong> — disparar uno te sale doble, los 12 y la línea.</p>
+    <p style="margin-top:.6rem">Incluido cuando lo dispara él: tirarte contra un pincho le limpia la ruta por un turno. Es lo primero a mirar en el playtest.</p>
   </div>
 </section>
 
@@ -581,7 +579,7 @@
       <thead><tr><th>Campo</th><th class="num">Valor</th><th>Nota</th></tr></thead>
       <tbody>
         <tr><td>Vida</td><td class="num">170</td><td>Y se cura con las monedas que dejes vencer.</td></tr>
-        <tr><td>Debilidad</td><td class="num">Poker ×1,5</td><td>Ver <em>Por qué Poker</em>, abajo.</td></tr>
+        <tr><td>Debilidad</td><td class="num">Poker ×1,5</td><td>Multiplica el golpe entero. Cambia: era Full House.</td></tr>
         <tr><td>Oro</td><td class="num">30 – 60</td><td></td></tr>
         <tr><td>Alcance</td><td class="num">1</td><td>Melee puro. No tiene nada a distancia.</td></tr>
         <tr><td>Movimiento</td><td class="num">4 pasos</td><td>Persigue, esquivando pinchos armados.</td></tr>
@@ -596,95 +594,9 @@
     </table>
   </div>
 
-  <div class="callout">
-    <span class="eyebrow">Presupuesto de daño</span>
-    <p>Contra 100 de vida, con un escudo mediano que absorbe ~13 por turno:</p>
-    <p><strong>Piso — 8 por turno.</strong> El agarre limpio, y el escudo se lo come entero. Un jugador que elige bien de qué lado se acerca casi no recibe daño directo.</p>
-    <p><strong>Techo — 20 por turno.</strong> El agarre cruzando un pincho, que pasa el 18% de las veces. Es lo que cuesta acercarse sin mirar atrás.</p>
-    <p style="margin-top:.6rem"><strong>Pero su daño no es donde se pierde la pelea.</strong> Cuatro monedas vencidas le devuelven ~50 de vida cada 3 rondas: más que todo lo que él te pega en ese tiempo. Ignorar la economía alarga la pelea cerca de un 70%, y la pelea larga es la que te mata, porque cada ronda extra es otra oleada de monedas.</p>
-  </div>
 
-  <h3>Por qué Poker</h3>
-
-  <p>Simulado sobre 300.000 manos, buscando la debilidad con el presupuesto real de tiradas del Ruleset —<code>RollsPerTurn: 3</code>, la tirada inicial más dos rerolls, guardando lo que sirve y tirando el resto:</p>
-
-  <div class="tablebox" style="max-width:44rem">
-    <table>
-      <thead><tr><th>Debilidad</th><th class="num">EV</th><th class="num">Pega la debilidad</th><th class="num">Base media cuando falla</th></tr></thead>
-      <tbody>
-        <tr class="after"><td><strong>Poker</strong></td><td class="num"><strong>40,2</strong></td><td class="num">27,5%</td><td class="num">24,2</td></tr>
-        <tr><td>Full House</td><td class="num">33,6</td><td class="num">36,1%</td><td class="num">23,0</td></tr>
-      </tbody>
-    </table>
-  </div>
-
-  <p style="margin-top:1.2rem">Poker rinde <strong>20% más</strong> aunque conecte menos seguido, y es mejor también <em>cuando falla</em>: buscar poker es una máquina de tríos —guardás una cara y tirás tres dados— mientras que buscar full house te deja en doble par. Y la ventaja <strong>crece con las tiradas</strong>: +11% con 2, +20% con 3, +28% si ahorrás el pool para un turno de 6. Buscar la mano rara es lo que convierte tiradas extra en daño, y le da al jugador una jugada explícita: <strong>ahorrar rolls para un turno de cacería</strong>.</p>
-
-  <p>Contra un jefe que se cura, el EV alto le gana a la lima consistente: 170 de vida a 40 por turno son ~4,2 turnos, contra 5,1 con full house — y cada turno extra es otra ronda de monedas venciéndose a su favor. Si el playtest muestra que es demasiado swingy, volver a Full House es una línea.</p>
-
-  <div class="callout">
-    <span class="eyebrow">Un problema del elenco que no es de este jefe</span>
-    <p>El <strong>Anotador y la Generala comparten <code>combo.generala</code></strong>, que sale <strong>0,077%</strong> por tirada — 1 en 1296. Dos jefes con la debilidad menos alcanzable del juego, y uno de los dos es del piso 2. Queda anotado acá porque salió de este análisis; se arregla en otra pasada.</p>
-  </div>
 </section>
 
-<!-- ============================ 08 CONSTRUCCIÓN ============================ -->
-<section>
-  <div class="sec-head">
-    <div class="eyebrow">08 — Construcción</div>
-    <h2>Con qué está armado</h2>
-  </div>
-
-  <div class="split">
-    <div class="panel">
-      <h3>Ya existe</h3>
-      <ul>
-        <li><strong>El empujón entero</strong> — <code>IForcedMovementService.Push</code>: empuja N celdas, frena en obstáculos y dispara los triggers de cada celda cruzada. Está bootstrapeado y <strong>nadie lo usa todavía</strong>.</li>
-        <li><strong>Los pinchos</strong> — 12 al entrar, y declaran el trigger de movimiento forzado, así que ya cobran si te empujan encima. Se bajan al dispararse y se rearman al cierre de ronda: muerden una vez por ronda, no una por paso.</li>
-        <li><strong>Que esquive los armados</strong> — un número en el asset, no código: <code>AIVirtualEnterDamage</code> encarece la ruta sin ser daño real y sin entrar al filtro de supervivencia.</li>
-        <li><strong>Que el bajado le salga gratis</strong> — el mismo filtro que descuenta el costo de IA ya ignora una celda desarmada. Cero trabajo.</li>
-        <li><strong>La persecución</strong> — nodo de movimiento con distancia deseada 1: persigue y se detiene pegado.</li>
-        <li><strong>Monedas con valor, duración y vencimiento</strong>, y el evento de expiración — que hoy sólo descarta la ficha en una línea.</li>
-        <li><strong>Curarlo con número flotante</strong>, y el <strong>área telegrafiada</strong> de la barrida.</li>
-      </ul>
-    </div>
-    <div class="panel build">
-      <h3>Falta</h3>
-      <ul>
-        <li><strong>Enchufar el arte de los pinchos, y el estado.</strong> El mesh ya está en el repo pero nadie lo referencia: la casilla sigue dibujando cuadrados blancos. Y falta lo que el mesh solo no da — que se distinga <strong>armado de bajado</strong>, que es de lo que depende por dónde puede caminar él.</li>
-        <li><strong>El cuerpo.</strong> El prefab que usa hoy corre sobre un animator con Idle y Attack solamente: no tiene animación de movimiento, y un melee es imposible con ese rig.</li>
-        <li><strong>La barrida</strong> — que el área consuma las monedas de adentro y lo cure.</li>
-        <li><strong>El mandoble</strong> — un golpe melee liso.</li>
-        <li><strong>Que la moneda caiga a lo largo del empujón</strong>, repartida entre las casillas del tumbo.</li>
-        <li><strong>Cuatro spawns de jugador</strong> — hoy la sala tiene uno solo.</li>
-        <li><strong>Los pinchos en el plano de la sala</strong> — el builder hoy sólo sabe colocar bloqueadores; el destino de las casillas permanentes ya existe.</li>
-      </ul>
-    </div>
-  </div>
-
-  <h3>Qué se reemplaza</h3>
-
-  <p>El jefe que está en el juego hoy es otro: se aleja de vos, dispara, cobra peaje por cruzar un mostrador que parte la sala, suelta fichas y al 50% te saca un porcentaje del oro. Casi nada de eso sobrevive.</p>
-
-  <div class="tablebox">
-    <table>
-      <thead><tr><th>Lo que hay hoy</th><th>Qué pasa</th><th>Por qué</th></tr></thead>
-      <tbody>
-        <tr><td><strong>Mostrador</strong> que parte la sala en dos</td><td>Muere</td><td>Contra un melee que te persigue, un muro o lo frena y deja de ser amenaza, o no lo frena y es un peaje. Y partir la sala es rebuscado: uno se mueve por toda la sala.</td></tr>
-        <tr><td><strong>Peaje</strong> por terminar el turno del lado equivocado</td><td>Muere</td><td>Era la razón de ser del mostrador.</td></tr>
-        <tr><td><strong>Disparo</strong> a distancia</td><td>Muere</td><td>Es melee. Un melee con ataque a rango no se lee como melee.</td></tr>
-        <tr><td><strong>Repliegue</strong> — se alejaba a distancia 4</td><td>Muere</td><td>Ahora persigue.</td></tr>
-        <tr><td><strong>Arqueo de caja</strong> al 50%: te quitaba 40% del oro y se curaba</td><td>Muere</td><td>La curación pasa a ser las monedas del piso, que el jugador puede impedir.</td></tr>
-        <tr><td><strong>Soborno</strong></td><td>Muere</td><td>Nadie entendía qué era.</td></tr>
-        <tr><td><strong>Daño por tramos de oro</strong> — 14 / 28 / 35 según cuánto llevabas</td><td>Muere</td><td>Castigaba tener plata sin decirlo en pantalla.</td></tr>
-        <tr><td><strong>Fichas en el piso</strong></td><td class="num">Se queda</td><td>Es la buena idea del jefe original, y ahora es el reloj de la pelea.</td></tr>
-        <tr><td><strong>Vida 170</strong></td><td class="num">Se queda</td><td></td></tr>
-        <tr><td><strong>Debilidad Full House</strong></td><td>Pasa a <strong>Poker</strong></td><td>Mejor EV, mejor premio consuelo, y es el único hueco del rango alto en todo el elenco.</td></tr>
-        <tr><td><strong>Refuerzos al 50%</strong></td><td class="num">Se quedan</td><td>Con números propios: 18 de vida, 5 de daño.</td></tr>
-      </tbody>
-    </table>
-  </div>
-</section>
 
 <!-- ============================ ABIERTO ============================ -->
 <section>
