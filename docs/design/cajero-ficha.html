@@ -339,39 +339,34 @@
 <section>
   <div class="sec-head">
     <div class="eyebrow">02 — Ciclo</div>
-    <h2>Una cosa por turno</h2>
+    <h2>Dos golpes que se intercalan</h2>
   </div>
 
-  <p>No tiene ciclo fijo: tiene <strong>tres ataques y hace exactamente uno por turno</strong>. Eso es deliberado — un jefe que encadena golpe, empujón y robo en el mismo turno produce ocho números en pantalla y el jugador no aprende nada. Acá cada turno cuenta una sola cosa.</p>
+  <p>Tiene <strong>dos ataques melee y los alterna</strong>: uno pega fuerte y te deja donde estás, el otro pega menos y te tira tres casillas. Ninguno de los dos avisa, y no tienen que avisar — <strong>los avisos son para áreas</strong>, ataques donde el peligro no está donde está el bicho. Éstos son contacto: lo ves pegado a vos y ya sabés lo que viene.</p>
 
   <div class="steps">
     <div class="step">
-      <div class="step-n">A<br>Agarre</div>
+      <div class="step-n">1<br>Mandoble</div>
       <div class="step-body">
-        <h4>Te levanta y te tira tres casillas</h4>
-        <p>El empujón <strong>es</strong> el ataque: no hay puñetazo antes. Te manda <strong>3 casillas en línea recta, derecho para el lado opuesto al suyo</strong> — no apunta a nada, sólo te saca de encima. Cobra <strong>8</strong> de daño propio, y <strong>12 más</strong> por cada casilla de pinchos que el tumbo te cruce. Frena en seco contra una caja fuerte o contra la pared.</p>
+        <h4>Pega fuerte y te deja ahí</h4>
+        <p><strong>12 de daño liso.</strong> No te mueve, no te saca nada. Es su piso: el turno que no podés evitar de ninguna manera si estás a su alcance.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-n">2<br>Empujón</div>
+      <div class="step-body">
+        <h4>Pega menos y te tira tres casillas</h4>
+        <p><strong>8 de daño</strong>, y te manda <strong>3 casillas en línea recta, derecho para el lado opuesto al suyo</strong> — no apunta a nada, sólo te saca de encima. Cada casilla de pinchos que el tumbo te cruce suma <strong>12</strong>. Frena en seco contra una caja fuerte o contra la pared.</p>
         <p>Y en el camino se te caen <strong>2 monedas</strong>, repartidas a lo largo del tumbo. No hay contador que te avise del robo: ves la plata salir de vos y quedar en el piso.</p>
-      </div>
-    </div>
-    <div class="step">
-      <div class="step-n">B<br>Mandoble</div>
-      <div class="step-body">
-        <h4>Te pega y listo</h4>
-        <p><strong>12 de daño liso</strong>, sin empujón y sin robo. Lo usa cuando el tumbo no te llevaría a ninguna parte: estás contra una pared, contra una caja fuerte, o pegado a él sin espacio detrás. Es lo que hace que arrinconarse no sea gratis, y lo único que usa su <code>BaseAttack</code>.</p>
-      </div>
-    </div>
-    <div class="step">
-      <div class="step-n">C<br>Barrida</div>
-      <div class="step-body">
-        <h4>Se lleva las monedas del piso</h4>
-        <p><strong>Cero daño.</strong> Marca un área de radio 2 a su alrededor y al turno siguiente todas las monedas que quedaron adentro <strong>vuelan hacia él y le curan lo que valían</strong>. Es el único de los tres que se avisa, porque es el único que no pasa por contacto — y el único que podés cancelar: <strong>sacándolo del área con tu Empuje</strong> el ataque se anula.</p>
       </div>
     </div>
   </div>
 
+  <p style="margin-top:1.5rem">Se alternan estrictamente: mandoble, empujón, mandoble, empujón. <strong>El jugador siempre sabe cuál viene</strong>, y ahí está el juego — el turno del empujón es el único que podés preparar, eligiendo desde qué casilla lo atacás.</p>
+
   <div class="board-row" style="margin-top:2rem">
     <figure>
-      <div class="board sm" data-map="agarre"></div>
+      <div class="board sm" data-map="empujon"></div>
       <figcaption>El tumbo sale derecho para el lado opuesto a él. Acá cruza un pincho: 8 + 12 = <strong>20</strong>.</figcaption>
     </figure>
     <figure>
@@ -384,60 +379,29 @@
         <li><span class="swatch chip"></span> moneda</li>
         <li><span class="swatch player"></span> jugador</li>
       </ul>
-      <p style="margin-top:1rem"><strong>El agarre no avisa, y no tiene que avisar.</strong> Los avisos son para áreas: ataques donde el peligro no está donde está el bicho, así que hay que dibujarlo. Un agarre es contacto — lo ves pegado a vos y ya sabés lo que viene, igual que cualquier melee del juego.</p>
-      <p>Y la información nunca está oculta: los pinchos están ahí desde que entraste, él está donde lo ves, y el tumbo son siempre tres casillas en línea recta. La decisión no es "esquivo el empujón", es <em>desde qué casilla lo ataco</em>.</p>
+      <p style="margin-top:1rem">La información nunca está oculta: los pinchos están ahí desde que entraste, él está donde lo ves, el tumbo son siempre tres casillas en línea recta, y sabés de antemano qué golpe toca. <strong>La decisión no es "esquivo el empujón", es desde qué casilla lo ataco.</strong></p>
     </div>
   </div>
 
-  <h3>Cuándo usa cada uno</h3>
+  <h3>Cuándo hace qué</h3>
 
   <div class="tablebox">
     <table>
       <thead><tr><th>Si…</th><th>Hace</th></tr></thead>
       <tbody>
-        <tr><td>Hay <strong>3 monedas o más</strong> tiradas en la sala</td><td><strong>Barrida</strong> — la plata en el piso le importa más que vos</td></tr>
-        <tr><td>Está pegado a vos y hay lugar detrás</td><td><strong>Agarre</strong></td></tr>
-        <tr><td>Está pegado a vos y no hay lugar detrás</td><td><strong>Mandoble</strong></td></tr>
+        <tr><td>Está pegado a vos, y el último fue el empujón</td><td><strong>Mandoble</strong> — 12</td></tr>
+        <tr><td>Está pegado a vos, y el último fue el mandoble</td><td><strong>Empujón</strong> — 8 y te tira</td></tr>
         <tr><td>Está lejos</td><td><strong>Camina</strong> — 4 pasos, esquivando los pinchos armados</td></tr>
       </tbody>
     </table>
   </div>
 
-  <p style="margin-top:1.2rem">Ese orden es la lectura del jefe: <strong>si dejás monedas en el piso, deja de perseguirte y va a buscarlas</strong>. Es la señal de que ignorar la economía tiene un costo, dicha con su comportamiento y no con un número.</p>
 </section>
 
-<!-- ============================ 03 LA DECISIÓN ============================ -->
+<!-- ============================ 03 LAS MONEDAS ============================ -->
 <section>
   <div class="sec-head">
-    <div class="eyebrow">03 — La decisión</div>
-    <h2>Desde qué casilla lo atacás</h2>
-  </div>
-
-  <p>El tumbo va siempre <strong>derecho para el lado contrario al que él está</strong>. Así que el jugador controla el empujón sin controlarlo: eligiendo de qué lado se le pone, elige qué tres casillas va a cruzar. Mirar atrás antes de acercarse es toda la pelea.</p>
-
-  <div class="tablebox" style="max-width:42rem">
-    <table>
-      <thead><tr><th>Con qué te sale el agarre</th><th class="num">Daño</th></tr></thead>
-      <tbody>
-        <tr><td>El tumbo no cruza pinchos</td><td class="num">8</td></tr>
-        <tr class="after"><td>El tumbo cruza un pincho</td><td class="num">20</td></tr>
-        <tr><td>Cruza dos <span style="opacity:.6">— pasa el 0,8% de las veces</span></td><td class="num">32</td></tr>
-      </tbody>
-    </table>
-  </div>
-
-  <p style="margin-top:1.2rem">Medido sobre la sala entera, recorriendo todas las posiciones posibles de jugador y jefe adyacente: <strong>el empujón cruza un pincho el 18% de las veces</strong>, y el agarre sale a <strong>10,3 de media</strong>. Con los pinchos sueltos el resultado es casi binario —8 o 20— y ésa es la virtud: <strong>hay una sola pregunta por turno y tiene una sola respuesta visible</strong>, en vez de un cálculo de zonas.</p>
-
-  <div class="callout">
-    <span class="eyebrow">Riesgo: arrinconarse sale casi gratis</span>
-    <p>El mandoble pega 12 y el agarre sale a 10,2 de media. O sea que <strong>pegarse a una pared cuesta 1,8 de daño extra por turno y a cambio no te desplazan nunca</strong>. Si en el playtest la jugada óptima resulta ser meterse en un rincón y no moverse, el mandoble tiene que subir.</p>
-  </div>
-</section>
-
-<!-- ============================ 04 LAS MONEDAS ============================ -->
-<section>
-  <div class="sec-head">
-    <div class="eyebrow">04 — Las monedas</div>
+    <div class="eyebrow">03 — Las monedas</div>
     <h2>Lo que se te cae y lo que lo cura</h2>
   </div>
 
@@ -455,7 +419,7 @@
       <div class="step-n">2</div>
       <div class="step-body">
         <h4>Él te las saca</h4>
-        <p>Cada agarre te tira <strong>2 monedas</strong> a lo largo del tumbo. Ésas eran tuyas: perderlas duele dos veces.</p>
+        <p>Cada empujón te tira <strong>2 monedas</strong> a lo largo del tumbo. Ésas eran tuyas: perderlas duele dos veces.</p>
       </div>
     </div>
     <div class="step">
@@ -471,14 +435,14 @@
 
   <div class="callout">
     <span class="eyebrow">Y el empujón te junta las que cruza</span>
-    <p>Si el tumbo pasa sobre monedas tiradas, <strong>las levantás en el camino</strong>. El agarre ya es lo peor que te pasa en el turno; que a veces te deje algo es lo único bueno que puede tener, y le agrega una razón más para elegir de qué lado te dejás agarrar. El tumbo cobra y recoge en el mismo trayecto.</p>
+    <p>Si el tumbo pasa sobre monedas tiradas, <strong>las levantás en el camino</strong>. El empujón ya es lo peor que te pasa en el turno; que a veces te deje algo es lo único bueno que puede tener, y le agrega una razón más para elegir de qué lado te dejás empujar. El tumbo cobra y recoge en el mismo trayecto.</p>
   </div>
 </section>
 
-<!-- ============================ 05 EL TERRENO Y ÉL ============================ -->
+<!-- ============================ 04 EL TERRENO Y ÉL ============================ -->
 <section>
   <div class="sec-head">
-    <div class="eyebrow">05 — El terreno y él</div>
+    <div class="eyebrow">04 — El terreno y él</div>
     <h2>Los esquiva, pero se los come</h2>
   </div>
 
@@ -510,16 +474,16 @@
   </div>
 </section>
 
-<!-- ============================ 06 FASES ============================ -->
+<!-- ============================ 05 FASES ============================ -->
 <section>
   <div class="sec-head">
-    <div class="eyebrow">06 — Fases</div>
+    <div class="eyebrow">05 — Fases</div>
     <h2>El 50%</h2>
   </div>
 
   <p>Un solo umbral y un solo evento: al cruzar la mitad de la vida suelta <strong>dos enemigos a distancia</strong>, una vez en toda la pelea. Nada más cambia — ni sus números, ni sus ataques, ni el ritmo de las monedas.</p>
 
-  <p>El sentido es tapar su único agujero. Es melee y esquiva los pinchos, así que un jugador que entiende la sala puede mantenerlo a raya con el terreno. Dos tiradores <strong>hacen que quedarse quieto en una casilla cómoda deje de ser gratis</strong>, sin darle a él una herramienta a distancia que rompería su lectura de melee.</p>
+  <p>El sentido es tapar su único agujero: <strong>el jugador camina 5 y él 4</strong>, así que se le puede escapar indefinidamente para juntar monedas sin recibir un golpe. Dos tiradores hacen que huir tenga precio, sin darle a él una herramienta a distancia que rompería su lectura de melee.</p>
 
   <div class="tablebox" style="max-width:38rem">
     <table>
@@ -533,10 +497,10 @@
   <p style="margin-top:1.2rem">Números propios, no los del enemigo a distancia común —que trae 50 de vida y 10 de daño— porque a esa altura de la pelea dos de ésos son otro jefe. <strong>18 de vida es un golpe cualquiera</strong>: molestan, se limpian si te ocupás, y no te obligan a dejar de pelear con él.</p>
 </section>
 
-<!-- ============================ 07 NÚMEROS ============================ -->
+<!-- ============================ 06 NÚMEROS ============================ -->
 <section>
   <div class="sec-head">
-    <div class="eyebrow">07 — Números</div>
+    <div class="eyebrow">06 — Números</div>
     <h2>Con qué te pega</h2>
   </div>
 
@@ -545,22 +509,16 @@
       <thead><tr><th>Acción</th><th>Qué hace</th><th class="num">Daño</th><th>Se esquiva</th></tr></thead>
       <tbody>
         <tr>
-          <td><strong>Agarre</strong></td>
-          <td>Te tira 3 casillas derecho para el lado opuesto al suyo. Se te caen 2 monedas en el camino. Frena contra caja fuerte o pared.</td>
-          <td class="num">8 <span style="opacity:.6">+12 por pincho</span></td>
-          <td>Eligiendo de qué lado lo atacás</td>
-        </tr>
-        <tr>
           <td><strong>Mandoble</strong></td>
-          <td>Golpe liso, cuando el tumbo no te llevaría a ninguna parte.</td>
+          <td>Golpe liso. Uno de cada dos turnos, alternado con el empujón.</td>
           <td class="num">12</td>
           <td>No — es su piso de daño</td>
         </tr>
         <tr>
-          <td><strong>Barrida</strong></td>
-          <td>Área de radio 2 avisada un turno antes: las monedas de adentro vuelan hacia él y le curan lo que valían.</td>
-          <td class="num">0</td>
-          <td>Sí — sacándolo del área con tu Empuje</td>
+          <td><strong>Empujón</strong></td>
+          <td>Te tira 3 casillas derecho para el lado opuesto al suyo. Se te caen 2 monedas en el camino. Frena en seco contra una caja fuerte o contra la pared.</td>
+          <td class="num">8 <span style="opacity:.6">+12 por pincho</span></td>
+          <td>Eligiendo de qué lado lo atacás</td>
         </tr>
         <tr>
           <td><strong>Pinchos</strong></td>
@@ -583,11 +541,11 @@
         <tr><td>Oro</td><td class="num">30 – 60</td><td></td></tr>
         <tr><td>Alcance</td><td class="num">1</td><td>Melee puro. No tiene nada a distancia.</td></tr>
         <tr><td>Movimiento</td><td class="num">4 pasos</td><td>Persigue, esquivando pinchos armados.</td></tr>
-        <tr><td>Agarre</td><td class="num">8</td><td>Empuje de 3 casillas, más 12 por cada pincho cruzado.</td></tr>
         <tr><td>Mandoble</td><td class="num">12</td><td>Su <code>BaseAttack</code>. Baja de 30.</td></tr>
-        <tr><td>Barrida</td><td class="num">0 · radio 2</td><td>Avisada un turno antes. Cancelable empujándolo afuera.</td></tr>
+        <tr><td>Empujón</td><td class="num">8</td><td>3 casillas, más 12 por pincho cruzado.</td></tr>
+        <tr><td>Ciclo</td><td class="num">11,1 / turno</td><td>Alternan estrictamente: 22,3 cada dos turnos.</td></tr>
         <tr><td>Monedas de sala</td><td class="num">4 cada 3 rondas</td><td>Valor 10 – 15, duran 3 rondas.</td></tr>
-        <tr><td>Monedas por agarre</td><td class="num">2</td><td>Repartidas a lo largo del tumbo.</td></tr>
+        <tr><td>Monedas por empujón</td><td class="num">2</td><td>Repartidas a lo largo del tumbo.</td></tr>
         <tr><td>Pinchos</td><td class="num">10</td><td>Sueltos, ninguno pegado a otro. 12 al entrar.</td></tr>
         <tr><td>Al 50%</td><td class="num">2 refuerzos</td><td>18 de vida, 5 de daño. Una sola vez.</td></tr>
       </tbody>
@@ -650,9 +608,9 @@
   const VIEWS = {
     nueva:  { boss: [5, 5], spawns: SPAWNS },
 
-    // El agarre: el jefe a la izquierda del jugador, asi el tumbo va hacia la
+    // El empujon: el jefe a la izquierda del jugador, asi el tumbo va hacia la
     // derecha y cruza el pincho de la fila 6, columna 5 -> 8 + 12 = 20.
-    agarre: { boss: [6, 3], player: [6, 4], path: [[6, 5], [6, 6], [6, 7]] },
+    empujon: { boss: [6, 3], player: [6, 4], path: [[6, 5], [6, 6], [6, 7]] },
     tumbo:  { boss: [6, 3], player: [6, 7], chips: [[6, 5], [6, 6]] },
   };
 
