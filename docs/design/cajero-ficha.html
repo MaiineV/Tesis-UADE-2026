@@ -426,7 +426,7 @@
       <div class="step-n">3</div>
       <div class="step-body">
         <h4>Si se vencen, se cura</h4>
-        <p>La moneda que nadie levantó en 3 rondas <strong>se va con él y le cura exactamente lo que valía</strong>. Se vencen de a una, no todas juntas: la presión es constante, no un golpe.</p>
+        <p>La moneda que nadie levantó en 3 rondas <strong>se va con él y lo cura 12</strong>. Se vencen de a una, no todas juntas: la presión es constante, no un golpe. Pero no puede recuperarse indefinidamente: <strong>60 de curación en toda la pelea</strong>, y después las monedas vencidas dejan de curarlo.</p>
       </div>
     </div>
   </div>
@@ -536,7 +536,7 @@
     <table>
       <thead><tr><th>Campo</th><th class="num">Valor</th><th>Nota</th></tr></thead>
       <tbody>
-        <tr><td>Vida</td><td class="num">350</td><td>Y se cura con las monedas que dejes vencer.</td></tr>
+        <tr><td>Vida</td><td class="num">350</td><td>Se cura con las monedas que dejes vencer, hasta 60 en toda la pelea.</td></tr>
         <tr><td>Debilidad</td><td class="num">Poker ×1,5</td><td>Multiplica el golpe entero. Cambia: era Full House.</td></tr>
         <tr><td>Oro</td><td class="num">30 – 60</td><td></td></tr>
         <tr><td>Alcance</td><td class="num">1</td><td>Melee puro. No tiene nada a distancia.</td></tr>
@@ -544,7 +544,8 @@
         <tr><td>Mandoble</td><td class="num">14</td><td>Su <code>BaseAttack</code>. Baja de 30.</td></tr>
         <tr><td>Empujón</td><td class="num">10</td><td>3 casillas, más 14 por pincho cruzado.</td></tr>
         <tr><td>Ciclo</td><td class="num">13,3 / turno</td><td>Alternan estrictamente: 26,5 cada dos turnos.</td></tr>
-        <tr><td>Monedas de sala</td><td class="num">4 cada 3 rondas</td><td>Duran 3 rondas. Cuánto curan: sin decidir.</td></tr>
+        <tr><td>Monedas de sala</td><td class="num">4 cada 3 rondas</td><td>Duran 3 rondas. Cada una lo cura 12 al vencerse.</td></tr>
+        <tr><td>Tope de curación</td><td class="num">60</td><td>Por pelea. Alcanzado, las monedas vencidas ya no lo curan.</td></tr>
         <tr><td>Monedas por empujón</td><td class="num">2</td><td>Repartidas a lo largo del tumbo.</td></tr>
         <tr><td>Pinchos</td><td class="num">10</td><td>Sueltos, ninguno pegado a otro. 14 al entrar.</td></tr>
         <tr><td>Al 50%</td><td class="num">2 refuerzos</td><td>18 de vida, 6 de daño. Una sola vez.</td></tr>
@@ -564,7 +565,7 @@
   </div>
 
   <ul class="asks">
-    <li><strong>El ritmo de monedas no funciona con estos números.</strong> Simulada la pelea entera sobre esta grilla, con el pool de rolls como recurso: <strong>ignorar las monedas gana en todas las configuraciones probadas</strong>, por entre 6 y 24 puntos de win rate. Juntar una moneda evita ~12 de curación y cuesta un reroll, que vale más que eso. Para que juntar sea una decisión, la moneda tiene que valer mucho más — o son sólo un reloj y no una elección.</li>
+    <li><strong>Si 350 aguanta el escudo por combo.</strong> Simulada la pelea sobre esta grilla con el pool de rolls como recurso, el tope de 60 hace que <strong>juntar monedas sea la jugada ganadora</strong> (+3,9 puntos de win rate sobre ignorarlas), que es exactamente lo que se buscaba. Pero el modelo no tiene el escudo por combo que entró en develop, y ese escudo absorbe por turno más de lo que él pega. La vida se cierra en playtest, no en la simulación.</li>
     <li><strong>El nombre.</strong> "Cajero" venía del mostrador, y el mostrador ya no existe. Se decide al final, cuando el jefe esté armado.</li>
   </ul>
 </section>
