@@ -75,5 +75,17 @@ namespace Rollgeon.Audio
 
         /// <summary>Devuelve el último valor lineal seteado (no lee el mixer).</summary>
         float GetVolume(AudioChannel channel);
+
+        /// <summary>
+        /// Mutea/desmutea un canal sin pisar el volumen seteado — al desmutear
+        /// se restaura el último valor de <see cref="SetVolume"/>. Default no-op
+        /// para stubs.
+        /// </summary>
+        void SetMuted(AudioChannel channel, bool muted)
+        {
+        }
+
+        /// <summary>Estado de mute del canal. Default <c>false</c> para stubs.</summary>
+        bool IsMuted(AudioChannel channel) => false;
     }
 }

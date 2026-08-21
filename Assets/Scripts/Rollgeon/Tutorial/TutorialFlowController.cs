@@ -844,11 +844,14 @@ namespace Rollgeon.Tutorial
         private void ShowStatsRolls()
         {
             _step = TutorialStep.StatsRolls;
+            ResolveRollPoolNumbers(out int perTurn, out int cap);
             var request = new TutorialStepDisplayRequest
             {
                 AnchorKind = TutorialAnchorKind.None,
-                Text = LocalizedContent.Ui(TutorialTextKeys.StatsRolls,
-                    "Este es tu POOL DE ROLLS: cada tirada de dados consume 1. Al terminar tu turno recuperas 5 (máximo 15)."),
+                Text = string.Format(
+                    LocalizedContent.Ui(TutorialTextKeys.StatsRolls,
+                        "Este es tu POOL DE ROLLS: cada tirada de dados consume 1. Al terminar tu turno recuperas {0} (máximo {1})."),
+                    perTurn, cap),
                 InputPolicy = TutorialInputPolicy.BlockUntilContinue,
             };
             var hud = FindCombatHud();
@@ -858,6 +861,20 @@ namespace Rollgeon.Tutorial
                 request.UiTarget = rect;
             }
             ShowStep(TutorialStep.StatsRolls, request, ShowAttackTeach);
+        }
+
+        // Los números del cuadro salen del pool vivo (ruleset + bonus por rewards):
+        // el texto hardcodeado quedó stale cuando el balance pasó de 5/15 a 2/6.
+        private void ResolveRollPoolNumbers(out int perTurn, out int cap)
+        {
+            perTurn = 0;
+            cap = 0;
+            if (TryGetPlayerGuid(out var playerGuid)
+                && ServiceLocator.TryGetService<IRollPoolService>(out var rolls) && rolls != null)
+            {
+                perTurn = rolls.GetRollsPerTurn(playerGuid);
+                cap = rolls.GetMax(playerGuid);
+            }
         }
 
         private void ShowAttackTeach()

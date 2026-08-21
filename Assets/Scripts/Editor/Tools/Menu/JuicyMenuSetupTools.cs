@@ -299,6 +299,13 @@ namespace Rollgeon.EditorTools.Menu
             LocalizationSetupTools.UpsertEntry("UI", "menu.game_speed", "Velocidad: x{0}", "Speed: x{0}");
             LocalizationSetupTools.UpsertEntry("UI", "menu.reroll_discard", "Reroll: vuelan los elegidos", "Reroll: rerolls selected dice");
             LocalizationSetupTools.UpsertEntry("UI", "menu.reroll_keep", "Reroll: se quedan los elegidos", "Reroll: keeps selected dice");
+            LocalizationSetupTools.UpsertEntry("UI", "menu.tab_general", "General", "General");
+            LocalizationSetupTools.UpsertEntry("UI", "menu.tab_audio", "Audio", "Audio");
+            LocalizationSetupTools.UpsertEntry("UI", "menu.audio_master", "Master", "Master");
+            LocalizationSetupTools.UpsertEntry("UI", "menu.audio_music", "Música", "Music");
+            LocalizationSetupTools.UpsertEntry("UI", "menu.audio_sfx", "Efectos", "Sound FX");
+            LocalizationSetupTools.UpsertEntry("UI", "menu.audio_muted", "Muteado", "Muted");
+            LocalizationSetupTools.UpsertEntry("UI", "menu.audio_unmuted", "Sonando", "Playing");
             AssetDatabase.SaveAssets();
         }
 
@@ -338,8 +345,8 @@ namespace Rollgeon.EditorTools.Menu
             panel.anchorMin = panel.anchorMax = new Vector2(0.5f, 0.5f);
             panel.pivot = new Vector2(0.5f, 0.5f);
             panel.anchoredPosition = Vector2.zero;
-            // 800 de alto desde que entró la fila del modo de reroll (antes 720).
-            panel.sizeDelta = new Vector2(560f, 800f);
+            // 860 de alto desde que entró el header de tabs General|Audio (antes 800).
+            panel.sizeDelta = new Vector2(560f, 860f);
             var panelImage = panel.GetComponent<Image>();
             panelImage.color = new Color(0x1F / 255f, 0x23 / 255f, 0x2E / 255f, 0.95f);
             var panelOutline = panel.GetComponent<Outline>();
@@ -347,7 +354,7 @@ namespace Rollgeon.EditorTools.Menu
             panelOutline.effectDistance = new Vector2(3f, -3f);
 
             // -- Título (Text Animator para el <wave> del texto code-set) --
-            var title = EnsureTmpLabel(panel, "TitleLabel", "Opciones", 54f, new Vector2(0f, 330f),
+            var title = EnsureTmpLabel(panel, "TitleLabel", "Opciones", 54f, new Vector2(0f, 360f),
                 new Vector2(500f, 70f), outlineMat, new Color32(0xE7, 0xE3, 0xE2, 0xFF));
             if (title.GetComponent<TextAnimator_TMP>() == null)
                 title.gameObject.AddComponent<TextAnimator_TMP>();
@@ -361,32 +368,71 @@ namespace Rollgeon.EditorTools.Menu
             }
             divider.anchorMin = divider.anchorMax = new Vector2(0.5f, 0.5f);
             divider.pivot = new Vector2(0.5f, 0.5f);
-            divider.anchoredPosition = new Vector2(0f, 290f);
+            divider.anchoredPosition = new Vector2(0f, 322f);
             divider.sizeDelta = new Vector2(300f, 3f);
             var dividerImage = divider.GetComponent<Image>();
             dividerImage.color = AccentColor;
             dividerImage.raycastTarget = false;
 
+            // -- Tabs General | Audio: header común + un container por tab --
+            var generalTabButton = EnsureSecondaryButton(canvas, panel, "GeneralTabButton", "General", outlineMat);
+            var audioTabButton = EnsureSecondaryButton(canvas, panel, "AudioTabButton", "Audio", outlineMat);
+            Place(generalTabButton, panel, new Vector2(-80f, 285f), new Vector2(150f, 50f));
+            Place(audioTabButton, panel, new Vector2(80f, 285f), new Vector2(150f, 50f));
+
+            // GeneralTab baja 15px el stack heredado para despejar el header;
+            // las filas conservan sus posiciones locales históricas.
+            var generalTab = EnsureTabContainer(panel, "GeneralTab", new Vector2(0f, -15f));
+            var audioTab = EnsureTabContainer(panel, "AudioTab", Vector2.zero);
+
             // -- Botones secundarios: reparentar los existentes o crearlos --
             // (los textos definitivos los setea OptionsScreen.RefreshLabels por código)
-            var tutorialToggle = EnsureSecondaryButton(canvas, panel, "TutorialToggleButton", "Tutorial: ON", outlineMat);
-            var analyticsToggle = EnsureSecondaryButton(canvas, panel, "AnalyticsToggleButton", "Telemetría: ON", outlineMat);
-            var gameSpeed = EnsureSecondaryButton(canvas, panel, "GameSpeedButton", "Velocidad: x1", outlineMat);
-            var rerollMode = EnsureSecondaryButton(canvas, panel, "RerollModeButton", "Reroll: vuelan los elegidos", outlineMat);
-            var spanish = EnsureSecondaryButton(canvas, panel, "SpanishButton", "Español", outlineMat);
-            var english = EnsureSecondaryButton(canvas, panel, "EnglishButton", "English", outlineMat);
-            var deleteSave = EnsureSecondaryButton(canvas, panel, "DeleteProgressButton", "Borrar partida", outlineMat);
+            var tutorialToggle = EnsureSecondaryButton(canvas, generalTab, "TutorialToggleButton", "Tutorial: ON", outlineMat);
+            var analyticsToggle = EnsureSecondaryButton(canvas, generalTab, "AnalyticsToggleButton", "Telemetría: ON", outlineMat);
+            var gameSpeed = EnsureSecondaryButton(canvas, generalTab, "GameSpeedButton", "Velocidad: x1", outlineMat);
+            var rerollMode = EnsureSecondaryButton(canvas, generalTab, "RerollModeButton", "Reroll: vuelan los elegidos", outlineMat);
+            var spanish = EnsureSecondaryButton(canvas, generalTab, "SpanishButton", "Español", outlineMat);
+            var english = EnsureSecondaryButton(canvas, generalTab, "EnglishButton", "English", outlineMat);
+            var deleteSave = EnsureSecondaryButton(canvas, generalTab, "DeleteProgressButton", "Borrar partida", outlineMat);
 
-            Place(tutorialToggle, panel, new Vector2(0f, 230f), new Vector2(300f, 70f));
-            Place(analyticsToggle, panel, new Vector2(0f, 150f), new Vector2(300f, 70f));
-            Place(gameSpeed, panel, new Vector2(0f, 70f), new Vector2(300f, 70f));
-            Place(rerollMode, panel, new Vector2(0f, -10f), new Vector2(300f, 70f));
-            Place(spanish, panel, new Vector2(-90f, -140f), new Vector2(150f, 60f));
-            Place(english, panel, new Vector2(90f, -140f), new Vector2(150f, 60f));
-            Place(deleteSave, panel, new Vector2(0f, -240f), new Vector2(300f, 70f));
+            Place(tutorialToggle, generalTab, new Vector2(0f, 230f), new Vector2(300f, 70f));
+            Place(analyticsToggle, generalTab, new Vector2(0f, 150f), new Vector2(300f, 70f));
+            Place(gameSpeed, generalTab, new Vector2(0f, 70f), new Vector2(300f, 70f));
+            Place(rerollMode, generalTab, new Vector2(0f, -10f), new Vector2(300f, 70f));
+            Place(spanish, generalTab, new Vector2(-90f, -140f), new Vector2(150f, 60f));
+            Place(english, generalTab, new Vector2(90f, -140f), new Vector2(150f, 60f));
+            Place(deleteSave, generalTab, new Vector2(0f, -240f), new Vector2(300f, 70f));
 
-            var languageLabel = EnsureTmpLabel(panel, "LanguageLabel", "Idioma", 30f, new Vector2(0f, -80f),
+            // El LanguageLabel de instalaciones previas vivía suelto en el panel:
+            // migrarlo al container antes del find-or-create para no duplicarlo.
+            var legacyLanguageLabel = FindAnywhere(canvas, "LanguageLabel");
+            if (legacyLanguageLabel != null && legacyLanguageLabel.parent != generalTab)
+                legacyLanguageLabel.SetParent(generalTab, worldPositionStays: false);
+            var languageLabel = EnsureTmpLabel(generalTab, "LanguageLabel", "Idioma", 30f, new Vector2(0f, -80f),
                 new Vector2(300f, 40f), outlineMat, new Color32(0x5F, 0x73, 0x7A, 0xFF));
+
+            // -- Tab de audio: label + slider + mute por canal --
+            var mutedGray = new Color32(0x5F, 0x73, 0x7A, 0xFF);
+            var masterLabel = EnsureTmpLabel(audioTab, "MasterLabel", "Master", 30f, new Vector2(0f, 195f),
+                new Vector2(300f, 40f), outlineMat, mutedGray);
+            var masterSlider = EnsureSlider(canvas, audioTab, "MasterVolumeSlider");
+            Place((RectTransform)masterSlider.transform, audioTab, new Vector2(0f, 148f), new Vector2(360f, 36f));
+            var masterMute = EnsureSecondaryButton(canvas, audioTab, "MasterMuteButton", "Sonando", outlineMat);
+            Place(masterMute, audioTab, new Vector2(0f, 95f), new Vector2(200f, 50f));
+
+            var musicLabel = EnsureTmpLabel(audioTab, "MusicLabel", "Música", 30f, new Vector2(0f, 10f),
+                new Vector2(300f, 40f), outlineMat, mutedGray);
+            var musicSlider = EnsureSlider(canvas, audioTab, "MusicVolumeSlider");
+            Place((RectTransform)musicSlider.transform, audioTab, new Vector2(0f, -37f), new Vector2(360f, 36f));
+            var musicMute = EnsureSecondaryButton(canvas, audioTab, "MusicMuteButton", "Sonando", outlineMat);
+            Place(musicMute, audioTab, new Vector2(0f, -90f), new Vector2(200f, 50f));
+
+            var sfxLabel = EnsureTmpLabel(audioTab, "SfxLabel", "Efectos", 30f, new Vector2(0f, -175f),
+                new Vector2(300f, 40f), outlineMat, mutedGray);
+            var sfxSlider = EnsureSlider(canvas, audioTab, "SfxVolumeSlider");
+            Place((RectTransform)sfxSlider.transform, audioTab, new Vector2(0f, -222f), new Vector2(360f, 36f));
+            var sfxMute = EnsureSecondaryButton(canvas, audioTab, "SfxMuteButton", "Sonando", outlineMat);
+            Place(sfxMute, audioTab, new Vector2(0f, -275f), new Vector2(200f, 50f));
 
             // -- Botón Volver (clon del delete para heredar estructura/label) --
             var back = FindChild(panel, "BackButton");
@@ -400,13 +446,19 @@ namespace Rollgeon.EditorTools.Menu
                 var backText = go.GetComponentInChildren<TMP_Text>(true);
                 if (backText != null) backText.text = "Volver";
             }
-            Place(back, panel, new Vector2(0f, -320f), new Vector2(300f, 70f));
+            Place(back, panel, new Vector2(0f, -350f), new Vector2(300f, 70f));
 
             // -- Juice: mismos efectos que el stack del menú, stagger en cada apertura --
-            var buttons = new[] { tutorialToggle, analyticsToggle, gameSpeed, rerollMode, spanish, english, deleteSave, back }
+            // Los botones del tab de audio quedan FUERA del group: al abrirse el
+            // panel su container está inactivo y el stagger los dejaría en alpha 0.
+            var buttons = new[] { generalTabButton, audioTabButton, tutorialToggle, analyticsToggle, gameSpeed, rerollMode, spanish, english, deleteSave, back }
                 .Select(rect => rect.GetComponent<Button>()).ToArray();
             var juicyButtons = buttons.Select(b => EnsureJuicyButton(b, settings, outlineMat)).ToArray();
             EnsureGroup(optionsGo, juicyButtons, settings);
+
+            var masterMuteJuice = EnsureJuicyButton(masterMute.GetComponent<Button>(), settings, outlineMat);
+            var musicMuteJuice = EnsureJuicyButton(musicMute.GetComponent<Button>(), settings, outlineMat);
+            var sfxMuteJuice = EnsureJuicyButton(sfxMute.GetComponent<Button>(), settings, outlineMat);
 
             // -- LanguageSelector vive en el propio panel --
             if (!optionsGo.TryGetComponent<LanguageSelector>(out var selector))
@@ -437,8 +489,34 @@ namespace Rollgeon.EditorTools.Menu
             so.FindProperty("_resetSaveJuice").objectReferenceValue = deleteSave.GetComponent<JuicyMenuButton>();
             so.FindProperty("_backButton").objectReferenceValue = back.GetComponent<Button>();
             so.FindProperty("_backLabel").objectReferenceValue = back.GetComponentInChildren<TMP_Text>(true);
+            so.FindProperty("_generalTabButton").objectReferenceValue = generalTabButton.GetComponent<Button>();
+            so.FindProperty("_generalTabLabel").objectReferenceValue = generalTabButton.GetComponentInChildren<TMP_Text>(true);
+            so.FindProperty("_audioTabButton").objectReferenceValue = audioTabButton.GetComponent<Button>();
+            so.FindProperty("_audioTabLabel").objectReferenceValue = audioTabButton.GetComponentInChildren<TMP_Text>(true);
+            so.FindProperty("_generalTabRoot").objectReferenceValue = generalTab.gameObject;
+            so.FindProperty("_audioTabRoot").objectReferenceValue = audioTab.gameObject;
+            so.FindProperty("_masterLabel").objectReferenceValue = masterLabel;
+            so.FindProperty("_masterSlider").objectReferenceValue = masterSlider;
+            so.FindProperty("_masterMuteButton").objectReferenceValue = masterMute.GetComponent<Button>();
+            so.FindProperty("_masterMuteLabel").objectReferenceValue = masterMute.GetComponentInChildren<TMP_Text>(true);
+            so.FindProperty("_masterMuteJuice").objectReferenceValue = masterMuteJuice;
+            so.FindProperty("_musicLabel").objectReferenceValue = musicLabel;
+            so.FindProperty("_musicSlider").objectReferenceValue = musicSlider;
+            so.FindProperty("_musicMuteButton").objectReferenceValue = musicMute.GetComponent<Button>();
+            so.FindProperty("_musicMuteLabel").objectReferenceValue = musicMute.GetComponentInChildren<TMP_Text>(true);
+            so.FindProperty("_musicMuteJuice").objectReferenceValue = musicMuteJuice;
+            so.FindProperty("_sfxLabel").objectReferenceValue = sfxLabel;
+            so.FindProperty("_sfxSlider").objectReferenceValue = sfxSlider;
+            so.FindProperty("_sfxMuteButton").objectReferenceValue = sfxMute.GetComponent<Button>();
+            so.FindProperty("_sfxMuteLabel").objectReferenceValue = sfxMute.GetComponentInChildren<TMP_Text>(true);
+            so.FindProperty("_sfxMuteJuice").objectReferenceValue = sfxMuteJuice;
             so.FindProperty("_settings").objectReferenceValue = settings;
             so.ApplyModifiedProperties();
+
+            // El tab de audio arranca oculto (OptionsScreen abre en General);
+            // dejarlo así en el asset evita el flash de un frame con los dos
+            // tabs superpuestos.
+            audioTab.gameObject.SetActive(false);
 
             // El overlay arranca desactivado; ScreenHost lo registra igual
             // (_includeInactive) y PushOverlay lo activa.
@@ -472,6 +550,118 @@ namespace Rollgeon.EditorTools.Menu
         private static RectTransform FindChild(Transform parent, string name)
         {
             return parent.Find(name) as RectTransform;
+        }
+
+        /// <summary>
+        /// Container full-stretch para el contenido de un tab. <paramref name="offset"/>
+        /// desplaza todo el bloque sin tocar las posiciones locales de las filas.
+        /// </summary>
+        private static RectTransform EnsureTabContainer(RectTransform panel, string name, Vector2 offset)
+        {
+            var rect = FindChild(panel, name);
+            if (rect == null)
+            {
+                var go = new GameObject(name, typeof(RectTransform));
+                rect = (RectTransform)go.transform;
+                rect.SetParent(panel, worldPositionStays: false);
+            }
+            Stretch(rect);
+            rect.anchoredPosition = offset;
+            return rect;
+        }
+
+        /// <summary>
+        /// Find-or-create de un slider UGUI con la estructura estándar
+        /// Background / Fill Area / Handle Slide Area, en la paleta del panel.
+        /// Rango [0, 1] continuo — el valor real lo sincroniza
+        /// <see cref="OptionsScreen"/> desde <c>IAudioService</c> al abrir.
+        /// </summary>
+        private static Slider EnsureSlider(RectTransform searchRoot, RectTransform parent, string name)
+        {
+            var rect = FindAnywhere(searchRoot, name);
+            if (rect == null)
+            {
+                var go = new GameObject(name, typeof(RectTransform), typeof(Slider));
+                rect = (RectTransform)go.transform;
+                rect.SetParent(parent, worldPositionStays: false);
+            }
+
+            var background = FindChild(rect, "Background");
+            if (background == null)
+            {
+                var go = new GameObject("Background", typeof(RectTransform), typeof(Image));
+                background = (RectTransform)go.transform;
+                background.SetParent(rect, worldPositionStays: false);
+            }
+            Stretch(background);
+            var backgroundImage = background.GetComponent<Image>();
+            backgroundImage.color = new Color(0x14 / 255f, 0x17 / 255f, 0x1F / 255f, 1f);
+            backgroundImage.raycastTarget = false;
+
+            var fillArea = FindChild(rect, "Fill Area");
+            if (fillArea == null)
+            {
+                var go = new GameObject("Fill Area", typeof(RectTransform));
+                fillArea = (RectTransform)go.transform;
+                fillArea.SetParent(rect, worldPositionStays: false);
+            }
+            Stretch(fillArea);
+            // Margen para que el fill no asome por detrás del handle en los extremos.
+            fillArea.offsetMin = new Vector2(6f, 6f);
+            fillArea.offsetMax = new Vector2(-6f, -6f);
+
+            var fill = FindChild(fillArea, "Fill");
+            if (fill == null)
+            {
+                var go = new GameObject("Fill", typeof(RectTransform), typeof(Image));
+                fill = (RectTransform)go.transform;
+                fill.SetParent(fillArea, worldPositionStays: false);
+            }
+            fill.anchorMin = Vector2.zero;
+            fill.anchorMax = new Vector2(0f, 1f);
+            fill.pivot = new Vector2(0.5f, 0.5f);
+            fill.anchoredPosition = Vector2.zero;
+            fill.sizeDelta = Vector2.zero;
+            var fillImage = fill.GetComponent<Image>();
+            fillImage.color = AccentColor;
+            fillImage.raycastTarget = false;
+
+            var handleArea = FindChild(rect, "Handle Slide Area");
+            if (handleArea == null)
+            {
+                var go = new GameObject("Handle Slide Area", typeof(RectTransform));
+                handleArea = (RectTransform)go.transform;
+                handleArea.SetParent(rect, worldPositionStays: false);
+            }
+            Stretch(handleArea);
+            handleArea.offsetMin = new Vector2(10f, 0f);
+            handleArea.offsetMax = new Vector2(-10f, 0f);
+
+            var handle = FindChild(handleArea, "Handle");
+            if (handle == null)
+            {
+                var go = new GameObject("Handle", typeof(RectTransform), typeof(Image));
+                handle = (RectTransform)go.transform;
+                handle.SetParent(handleArea, worldPositionStays: false);
+            }
+            handle.anchorMin = new Vector2(0f, 0f);
+            handle.anchorMax = new Vector2(0f, 1f);
+            handle.pivot = new Vector2(0.5f, 0.5f);
+            handle.anchoredPosition = Vector2.zero;
+            handle.sizeDelta = new Vector2(20f, 8f);
+            var handleImage = handle.GetComponent<Image>();
+            handleImage.color = new Color32(0xE7, 0xE3, 0xE2, 0xFF);
+
+            var slider = rect.GetComponent<Slider>();
+            slider.direction = Slider.Direction.LeftToRight;
+            slider.minValue = 0f;
+            slider.maxValue = 1f;
+            slider.wholeNumbers = false;
+            slider.fillRect = fill;
+            slider.handleRect = handle;
+            slider.targetGraphic = handleImage;
+            EditorUtility.SetDirty(slider);
+            return slider;
         }
 
         private static RectTransform FindAnywhere(Transform root, string name)

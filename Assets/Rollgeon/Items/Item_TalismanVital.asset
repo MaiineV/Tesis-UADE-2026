@@ -36,7 +36,7 @@ MonoBehaviour:
       Data: 0
     - Name: TriggerEvent
       Entry: 3
-      Data: 9
+      Data: 3
     - Name: ComboFilter
       Entry: 7
       Data: 2|Rollgeon.Upgrades.Dice.ComboFilter, Rollgeon
@@ -179,7 +179,7 @@ MonoBehaviour:
       Data: 0
     - Name: _baseAmount
       Entry: 3
-      Data: 10
+      Data: 5
     - Name: _comboMultiplier
       Entry: 4
       Data: 1
@@ -269,13 +269,13 @@ MonoBehaviour:
       Data: 
   ItemId: talisman.vital
   DisplayName: "Talism\xE1n Vital"
-  Description: "Recuper\xE1s 1 HP al iniciar combate."
+  Description: "Recuper\xE1s 5 HP al iniciar combate."
   Icon: {fileID: 1808964844, guid: ee12da05509c7a74686b1e1cc11cbd3e, type: 3}
   Rarity: 3
   Type: 0
   PassiveHooks:
   - Kind: 0
-    TriggerEvent: 9
+    TriggerEvent: 3
     ComboFilter:
       Mode: 1
       ComboIds: []
@@ -283,7 +283,7 @@ MonoBehaviour:
       Label: Effect Group
       PreConditions: []
       Effects:
-      - rid: 144068159907823891
+      - rid: 3216492003629990204
       TargetSelector:
         rid: -2
     PersistentModifiers: []
@@ -303,7 +303,7 @@ MonoBehaviour:
     RefIds:
     - rid: -2
       type: {class: , ns: , asm: }
-    - rid: 144068159907823891
+    - rid: 3216492003629990204
       type: {class: EffModifyIntAttribute, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
       data:
         Selection:
@@ -329,7 +329,7 @@ MonoBehaviour:
         TargetStat: 0
         Operation: 0
         _amountSource: 0
-        _baseAmount: 10
+        _baseAmount: 5
         _comboMultiplier: 1
         _reader:
           rid: -2

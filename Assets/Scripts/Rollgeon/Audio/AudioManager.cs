@@ -31,6 +31,7 @@ namespace Rollgeon.Audio
         private AudioSource _idleMusic;
 
         private readonly Dictionary<AudioChannel, float> _volumes = new Dictionary<AudioChannel, float>();
+        private readonly HashSet<AudioChannel> _muted = new HashSet<AudioChannel>();
 
         private Tween _crossfadeInTween;
         private Tween _crossfadeOutTween;
@@ -222,22 +223,29 @@ namespace Rollgeon.Audio
             next.volume = 0f;
             next.Play();
 
-            float targetMusicVolume = GetVolume(AudioChannel.Music);
+            // El volumen del usuario vive SOLO en el mixer (SetVolume) — el volumen
+            // del source es crossfadeWeight × duckFactor, así el slider afecta la
+            // pista sonando y el duck no pelea con el crossfade (ambos escritores
+            // recomputan el mismo producto).
             float safeFade = Mathf.Max(0f, fadeSeconds);
 
             if (safeFade <= 0f)
             {
-                next.volume = targetMusicVolume;
+                _activeMusicWeight = 1f;
+                ApplyActiveMusicVolume();
                 if (prev != null) { prev.Stop(); prev.volume = 0f; }
                 return;
             }
 
-            var nextSrc = next;
             _crossfadeInTween = Tween.Custom(
                 startValue: 0f,
-                endValue: targetMusicVolume,
+                endValue: 1f,
                 duration: safeFade,
-                onValueChange: v => { if (nextSrc != null) nextSrc.volume = v; });
+                onValueChange: v =>
+                {
+                    _activeMusicWeight = v;
+                    ApplyActiveMusicVolume();
+                });
 
             if (prev != null && prev.isPlaying)
             {
@@ -277,16 +285,21 @@ namespace Rollgeon.Audio
             var src = _activeMusic;
             if (safeFade <= 0f)
             {
+                _activeMusicWeight = 0f;
                 src.Stop();
                 src.volume = 0f;
                 return;
             }
 
             _crossfadeOutTween = Tween.Custom(
-                startValue: src.volume,
+                startValue: _activeMusicWeight,
                 endValue: 0f,
                 duration: safeFade,
-                onValueChange: v => { if (src != null) src.volume = v; })
+                onValueChange: v =>
+                {
+                    _activeMusicWeight = v;
+                    ApplyActiveMusicVolume();
+                })
                 .OnComplete(() => { if (src != null) src.Stop(); });
         }
 
@@ -301,12 +314,12 @@ namespace Rollgeon.Audio
                 _activeMusic.UnPause();
         }
 
-        // Duck multiplicativo sobre el volumen del canal — NO toca el valor que
-        // seteó el usuario (SetVolume), solo atenúa el source activo. Si un duck
-        // coincide con un crossfade (raro: la ventana es <1s), el último tween en
-        // escribir el frame gana — jitter menor y momentáneo, aceptado.
+        // Duck multiplicativo — NO toca el valor que seteó el usuario (mixer),
+        // solo atenúa el source activo. Duck y crossfade escriben el mismo
+        // producto weight × duckFactor, así que pueden solaparse sin pisarse.
         private Tween _duckTween;
         private float _duckFactor = 1f;
+        private float _activeMusicWeight;
 
         public void DuckMusic(float factor, float fadeSeconds = 0.25f)
         {
@@ -328,10 +341,12 @@ namespace Rollgeon.Audio
                 });
         }
 
-        private void ApplyDuck()
+        private void ApplyDuck() => ApplyActiveMusicVolume();
+
+        private void ApplyActiveMusicVolume()
         {
-            if (_activeMusic != null && _activeMusic.isPlaying)
-                _activeMusic.volume = GetVolume(AudioChannel.Music) * _duckFactor;
+            if (_activeMusic != null)
+                _activeMusic.volume = _activeMusicWeight * _duckFactor;
         }
 
         // ====================================================================
@@ -340,25 +355,46 @@ namespace Rollgeon.Audio
 
         public void SetVolume(AudioChannel channel, float value)
         {
-            float linear = Mathf.Clamp01(value);
-            _volumes[channel] = linear;
-
-            if (_settings == null || _settings.Mixer == null) return;
-            string param = _settings.GetParamFor(channel);
-            if (string.IsNullOrEmpty(param)) return;
-
-            float db = AudioSettingsSO.LinearToDecibels(linear);
-            if (!_settings.Mixer.SetFloat(param, db))
-            {
-                Debug.LogWarning($"[AudioManager] El parámetro '{param}' no está expuesto en el mixer — " +
-                                 "verificar que el AudioMixerGroup lo tenga expuesto como 'Exposed Parameter'.");
-            }
+            _volumes[channel] = Mathf.Clamp01(value);
+            ApplyChannelToMixer(channel);
+            SaveSystem.MarkDirty(this);
         }
 
         public float GetVolume(AudioChannel channel)
         {
             if (_volumes.TryGetValue(channel, out var v)) return v;
             return _settings != null ? _settings.GetDefaultFor(channel) : 1f;
+        }
+
+        public void SetMuted(AudioChannel channel, bool muted)
+        {
+            bool changed = muted ? _muted.Add(channel) : _muted.Remove(channel);
+            if (!changed) return;
+
+            ApplyChannelToMixer(channel);
+            SaveSystem.MarkDirty(this);
+        }
+
+        public bool IsMuted(AudioChannel channel) => _muted.Contains(channel);
+
+        /// <summary>
+        /// Volumen efectivo al mixer: 0 (−80 dB) si el canal está muteado, si no
+        /// el último valor del usuario. El mute no pisa <see cref="_volumes"/> —
+        /// al desmutear se restaura solo.
+        /// </summary>
+        private void ApplyChannelToMixer(AudioChannel channel)
+        {
+            if (_settings == null || _settings.Mixer == null) return;
+            string param = _settings.GetParamFor(channel);
+            if (string.IsNullOrEmpty(param)) return;
+
+            float linear = _muted.Contains(channel) ? 0f : GetVolume(channel);
+            float db = AudioSettingsSO.LinearToDecibels(linear);
+            if (!_settings.Mixer.SetFloat(param, db))
+            {
+                Debug.LogWarning($"[AudioManager] El parámetro '{param}' no está expuesto en el mixer — " +
+                                 "verificar que el AudioMixerGroup lo tenga expuesto como 'Exposed Parameter'.");
+            }
         }
 
         // ====================================================================
@@ -369,14 +405,45 @@ namespace Rollgeon.Audio
 
         public object CaptureState()
         {
-            return new Dictionary<AudioChannel, float>(_volumes);
+            return new AudioSaveState
+            {
+                Volumes = new Dictionary<AudioChannel, float>(_volumes),
+                Muted = new List<AudioChannel>(_muted),
+            };
         }
 
         public void RestoreState(object state)
         {
-            if (state is not Dictionary<AudioChannel, float> dict) return;
-            foreach (var kv in dict)
-                SetVolume(kv.Key, kv.Value);
+            switch (state)
+            {
+                case AudioSaveState s:
+                    if (s.Volumes != null)
+                        foreach (var kv in s.Volumes)
+                            SetVolume(kv.Key, kv.Value);
+
+                    _muted.Clear();
+                    if (s.Muted != null)
+                        foreach (var ch in s.Muted)
+                            _muted.Add(ch);
+
+                    foreach (AudioChannel ch in Enum.GetValues(typeof(AudioChannel)))
+                        ApplyChannelToMixer(ch);
+                    break;
+
+                // Formato previo a los mutes — saves existentes en disco.
+                case Dictionary<AudioChannel, float> legacy:
+                    foreach (var kv in legacy)
+                        SetVolume(kv.Key, kv.Value);
+                    break;
+            }
+        }
+
+        /// <summary>Estado persistido bajo <c>audio.volumes</c>. Público para el round-trip de tests.</summary>
+        [Serializable]
+        public sealed class AudioSaveState
+        {
+            public Dictionary<AudioChannel, float> Volumes;
+            public List<AudioChannel> Muted;
         }
 
         // ====================================================================

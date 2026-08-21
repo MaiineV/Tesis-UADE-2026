@@ -176,7 +176,7 @@ MonoBehaviour:
       Data: 0
     - Name: _baseAmount
       Entry: 3
-      Data: 150
+      Data: 30
     - Name: _comboMultiplier
       Entry: 4
       Data: 1
@@ -201,9 +201,6 @@ MonoBehaviour:
     - Name: _healMaxCap
       Entry: 3
       Data: 0
-    - Name: _energyCostInCombat
-      Entry: 3
-      Data: 2
     - Name: _useDiceRoll
       Entry: 5
       Data: false
@@ -299,7 +296,7 @@ MonoBehaviour:
       Data: 
   ItemId: bendicion.destinoo.generala
   DisplayName: Bendicion del Destino
-  Description: Cada Generala cura 15HP
+  Description: Cada Generala cura 30HP
   Icon: {fileID: 1808964844, guid: ee12da05509c7a74686b1e1cc11cbd3e, type: 3}
   Rarity: 2
   Type: 0
@@ -314,7 +311,7 @@ MonoBehaviour:
       Label: Effect Group
       PreConditions: []
       Effects:
-      - rid: 144068159907823894
+      - rid: 3216492003629990234
       TargetSelector:
         rid: -2
     PersistentModifiers: []
@@ -334,7 +331,7 @@ MonoBehaviour:
     RefIds:
     - rid: -2
       type: {class: , ns: , asm: }
-    - rid: 144068159907823894
+    - rid: 3216492003629990234
       type: {class: EffHeal, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
       data:
         Selection:
@@ -358,7 +355,7 @@ MonoBehaviour:
           AutoResolve: 0
           AutoAccept: 1
         _healSource: 0
-        _baseAmount: 150
+        _baseAmount: 30
         _comboMultiplier: 1
         _reader:
           rid: -2
@@ -368,7 +365,6 @@ MonoBehaviour:
         _healThreshold: 30
         _healScaleFactor: 1
         _healMaxCap: 0
-        _energyCostInCombat: 2
         _useDiceRoll: 0
         _diceCount: 1
         _diceFaces: 10

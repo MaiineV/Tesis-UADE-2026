@@ -120,7 +120,7 @@ MonoBehaviour:
       Data: 0
     - Name: Amount
       Entry: 4
-      Data: 2
+      Data: 20
     - Name: Direction
       Entry: 3
       Data: 2
@@ -200,7 +200,7 @@ MonoBehaviour:
         rid: -2
     PersistentModifiers:
     - Operation: 0
-      Amount: 2
+      Amount: 20
       Direction: 2
   OnActivate:
     Label: Effect Group
