@@ -29,7 +29,7 @@ MonoBehaviour:
       Data: 6
     - Name: RollsPerTurn
       Entry: 3
-      Data: 2
+      Data: 3
     - Name: RollPoolCap
       Entry: 3
       Data: 6

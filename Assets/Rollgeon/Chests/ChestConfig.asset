@@ -21,7 +21,7 @@ MonoBehaviour:
     PrefabModificationsReferencedUnityObjects: []
     PrefabModifications: []
     SerializationNodes: []
-  SpawnFrequency: 1
+  SpawnFrequency: 0.25
   MimicSpawnChance: 0.15
   MimicClampHP: 1
   ChestPrefab: {fileID: 4598999015062820065, guid: d9bdcbaf2b7578942a9d9412a9ec8b72, type: 3}
