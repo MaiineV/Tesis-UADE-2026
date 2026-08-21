@@ -527,6 +527,93 @@ namespace Rollgeon.Effects.Tests
                 "Con todos los dados lockeados el reroll no tendría efecto.");
         }
 
+        // -------------------------------------------------------------------------
+        // Outcome enriquecido (Spec Heal N×M): el outcome transporta la detección
+        // REAL del combo + snapshot del subset holdeado, para que los effects que
+        // usan la fórmula compartida (heal) resuelvan tabla + Σcaras.
+        // -------------------------------------------------------------------------
+
+        [Test]
+        public void Outcome_WithCombo_CarriesRealDetection_AndEffectiveTotalInvariant()
+        {
+            // Arrange — Generala con base 100; se holdea la mano entera.
+            var catalog = MakeCatalogWithGenerala(baseDamage: 100);
+            var service = new ActionRollService(_roller, _energy, catalog);
+            try
+            {
+                _roller.NextRoll = new[] { 4, 4, 4, 4, 4 };
+                ActionRollOutcome captured = default;
+                service.StartFlow(SpecForceDoorNoConfirm(threshold: 30), _player, _bag, o => captured = o);
+                service.SetHolds(new[] { true, true, true, true, true });
+
+                // Act
+                service.Confirm();
+
+                // Assert — detección real (no el sintético sin id/índices).
+                Assert.IsTrue(captured.Combo.HasValue, "El outcome debe traer la detección real.");
+                var combo = captured.Combo.Value;
+                Assert.AreEqual("combo.generala", combo.ComboId);
+                Assert.AreEqual(5, combo.ContributingIndices.Count);
+                Assert.AreEqual(captured.EffectiveTotal, combo.EffectiveTotal,
+                    "Invariante: el EffectiveTotal del combo real debe coincidir con el del outcome.");
+            }
+            finally
+            {
+                service.Dispose();
+                if (catalog != null) UnityEngine.Object.DestroyImmediate(catalog);
+            }
+        }
+
+        [Test]
+        public void Outcome_PartialHolds_HeldSnapshotMapsSubsetToBagSlots()
+        {
+            // Arrange — se holdean solo los slots 0 y 2 (caras 3 y 5), sin combo posible.
+            _roller.NextRoll = new[] { 3, 4, 5, 1, 2 };
+            ActionRollOutcome captured = default;
+            _service.StartFlow(SpecForceDoorNoConfirm(), _player, _bag, o => captured = o);
+            _service.SetHolds(new[] { true, false, true, false, false });
+
+            // Act
+            _service.Confirm();
+
+            // Assert — snapshot alineado subset→slot.
+            CollectionAssert.AreEqual(new[] { 3, 5 }, captured.HeldDice,
+                "HeldDice debe contener solo las caras holdeadas, en orden de slot.");
+            CollectionAssert.AreEqual(new[] { 0, 2 }, captured.HeldDiceOriginalIndices,
+                "Los índices originales deben mapear cada cara held a su slot de bag.");
+            Assert.IsFalse(captured.Combo.HasValue, "Sin match del contrato, Combo debe ser null.");
+            Assert.AreEqual(8, captured.EffectiveTotal, "Sin combo, effective = suma de held.");
+        }
+
+        [Test]
+        public void Outcome_NoCombo_HeldSnapshotStillPopulated_ForHighestDieFallback()
+        {
+            // Arrange — el fallback del heal (dado más alto) necesita el snapshot
+            // aunque no haya combo.
+            var catalog = MakeCatalogWithGenerala(baseDamage: 100);
+            var service = new ActionRollService(_roller, _energy, catalog);
+            try
+            {
+                _roller.NextRoll = new[] { 3, 4, 5, 1, 2 };
+                ActionRollOutcome captured = default;
+                service.StartFlow(SpecForceDoorNoConfirm(threshold: 30), _player, _bag, o => captured = o);
+                service.SetHolds(new[] { true, true, true, true, true });
+
+                // Act
+                service.DeclineReroll();
+
+                // Assert
+                Assert.IsFalse(captured.Combo.HasValue);
+                CollectionAssert.AreEqual(new[] { 3, 4, 5, 1, 2 }, captured.HeldDice);
+                CollectionAssert.AreEqual(new[] { 0, 1, 2, 3, 4 }, captured.HeldDiceOriginalIndices);
+            }
+            finally
+            {
+                service.Dispose();
+                if (catalog != null) UnityEngine.Object.DestroyImmediate(catalog);
+            }
+        }
+
         // ----- helpers para tests con combo ---------------------------------
 
         private static ComboCatalogSO MakeCatalogWithGenerala(int baseDamage)

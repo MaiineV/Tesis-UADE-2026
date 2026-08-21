@@ -890,7 +890,7 @@ namespace Rollgeon.Tutorial
             {
                 ShowStep(TutorialStep.HealUnlocked, DiceZoneRequest(
                     LocalizedContent.Ui(TutorialTextKeys.HealDice,
-                        "Curar también usa los dados: lánzalos y supera el umbral para recuperar vida. Bloquea los altos y confirma.")));
+                        "Curar también usa los dados: arma un combo y recuperas más vida. Sin combo, cura tu dado más alto. Bloquea y confirma.")));
             }
             else if (_step == TutorialStep.EscapeTeach && slot == HeroBehaviorSlot.ForceDoor)
             {

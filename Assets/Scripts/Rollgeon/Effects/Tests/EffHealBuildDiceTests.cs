@@ -1,82 +1,202 @@
+using System;
+using System.Collections.Generic;
+using System.Reflection;
 using NUnit.Framework;
 using Patterns;
-using Rollgeon.ActionRolls;
+using Rollgeon.Attributes;
+using Rollgeon.Attributes.Stats;
+using Rollgeon.Combat.Pipelines;
+using Rollgeon.Combos;
+using Rollgeon.Combos.Concretes;
 using Rollgeon.Effects.Concretes;
+using Rollgeon.Heroes;
 using Rollgeon.Phase;
+using Rollgeon.Player;
+using UnityEngine;
 
 namespace Rollgeon.Effects.Tests
 {
+    /// <summary>
+    /// Tests del modo build dice de <see cref="EffHeal"/> (Spec Heal N×M): la curación
+    /// usa la fórmula compartida daño/escudo — base desde la HealBaseTable del sheet +
+    /// ATQ + Σcaras, gate sin entrada, y fallback sin combo = dado holdeado más alto
+    /// (espejo de EffDealDamage). También cubre el spec del ActionRoll y la poción
+    /// (<see cref="EffHeal.ComputeDiceRollHeal"/>, camino independiente).
+    /// </summary>
     [TestFixture]
     public class EffHealBuildDiceTests
     {
+        private const int MaxHp = 100;
+
+        private AttributesManager _attrManager;
+        private ModifiableAttributes _sourceAttrs;
+        private Guid _sourceId;
+        private readonly List<ScriptableObject> _createdObjects = new List<ScriptableObject>();
+
+        [SetUp]
+        public void SetUp()
+        {
+            EventManager.ResetEventDictionary();
+            ServiceLocator.Clear();
+
+            _attrManager = new AttributesManager();
+            _sourceId = Guid.NewGuid();
+
+            _sourceAttrs = new ModifiableAttributes();
+            _sourceAttrs.EnsureInitialized();
+            _sourceAttrs.SetAttribute<Health>(new Health(50));
+            _attrManager.Register(_sourceId, _sourceAttrs);
+
+            ServiceLocator.AddService<AttributesManager>(_attrManager, ServiceScope.Run);
+            ServiceLocator.AddService<IHealPipeline>(
+                new HealPipeline(_attrManager, _ => MaxHp), ServiceScope.Run);
+        }
+
         [TearDown]
         public void TearDown()
         {
+            _attrManager.Dispose();
             ServiceLocator.Clear();
+            EventManager.ResetEventDictionary();
+            foreach (var so in _createdObjects)
+                if (so != null) UnityEngine.Object.DestroyImmediate(so);
+            _createdObjects.Clear();
         }
 
-        // Factor 1.0 (legacy / fórmula lineal). Spec base: HP = base + (score - threshold) × 1.
-        [TestCase(5, 15, 14, 5)]
-        [TestCase(5, 15, 16, 6)]
-        [TestCase(5, 15, 17, 7)]
-        [TestCase(5, 15, 15, 5)]   // sum == threshold → base + 0
-        [TestCase(10, 15, 30, 25)] // bonus alto
-        [TestCase(10, 15, 5, 10)]  // bien por debajo → base
-        [TestCase(0, 15, 20, 5)]   // base 0 + 5 bonus → 5
-        public void ComputeBuildDiceHeal_FactorOne_AppliesThresholdFormula(
-            int baseAmount, int threshold, int score, int expected)
-        {
-            Assert.AreEqual(expected,
-                EffHeal.ComputeBuildDiceHeal(baseAmount, threshold, score, scaleFactor: 1f, maxCap: 0));
-        }
+        // ── Fórmula N×M (combo real) ─────────────────────────────────────
 
-        // Tabla de la spec (valores de referencia por fase):
-        // Early base 5, umbral 10, factor 0.8. Score 20 → 5 + floor(10 * 0.8) = 5 + 8 = 13.
-        // Mid base 12, umbral 30, factor 0.3. Score 50 → 12 + floor(20 * 0.3) = 12 + 6 = 18.
-        // Late base 20, umbral 80, factor 0.08. Score 200 → 20 + floor(120 * 0.08) = 20 + 9 = 29.
-        // Endgame base 30, umbral 200, factor 0.02. Score 500 → 30 + floor(300 * 0.02) = 30 + 6 = 36.
-        [TestCase(5, 10, 20, 0.8f, 0, 13, TestName = "Early phase reference")]
-        [TestCase(12, 30, 50, 0.3f, 0, 18, TestName = "Mid phase reference")]
-        [TestCase(20, 80, 200, 0.08f, 0, 29, TestName = "Late phase reference")]
-        [TestCase(30, 200, 500, 0.02f, 0, 36, TestName = "Endgame phase reference")]
-        public void ComputeBuildDiceHeal_FactorScalesBonus(
-            int baseAmount, int threshold, int score, float factor, int cap, int expected)
+        [Test]
+        public void BuildDice_ComboWithTableEntry_UsesSharedFormula()
         {
-            Assert.AreEqual(expected,
-                EffHeal.ComputeBuildDiceHeal(baseAmount, threshold, score, factor, cap));
-        }
+            // Arrange — HealBase 8 en tabla; ATQ 5; sin bag → Σcaras 0.
+            // Ruido: las tablas de daño (99) y escudo (50) presentes — no deben leerse.
+            _sourceAttrs.SetAttribute<Attack>(new Attack(5));
+            RegisterHeroWithHealTable(healBase: 8);
+            var eff = CreateBuildDiceEffect();
+            var ctx = MakeBuildDiceCtx(ComboDetectionResult.Match("combo.par", 99, 2, null));
 
-        // Floor abajo: el spec exige redondeo hacia abajo. Score=25, threshold=15, factor=0.7 →
-        // 5 + floor(10 * 0.7) = 5 + floor(7.0) = 12. Score=26 → 5 + floor(11 * 0.7) = 5 + 7 = 12.
-        // Score=27 → 5 + floor(12 * 0.7) = 5 + 8 = 13. Score=28 → 5 + floor(13 * 0.7) = 5 + 9 = 14.
-        [TestCase(5, 15, 25, 0.7f, 12)]
-        [TestCase(5, 15, 26, 0.7f, 12)]
-        [TestCase(5, 15, 27, 0.7f, 13)]
-        [TestCase(5, 15, 28, 0.7f, 14)]
-        public void ComputeBuildDiceHeal_FloorsBonus(
-            int baseAmount, int threshold, int score, float factor, int expected)
-        {
-            Assert.AreEqual(expected,
-                EffHeal.ComputeBuildDiceHeal(baseAmount, threshold, score, factor, maxCap: 0));
+            // Act
+            eff.ApplyEffect(ctx);
+
+            // Assert — N = 8 + 5 = 13; M = 1 → 50 + 13 = 63.
+            Assert.AreEqual(63, _attrManager.GetAttribute<Health>(_sourceId).Value);
         }
 
         [Test]
-        public void ComputeBuildDiceHeal_CapClampsHigh()
+        public void BuildDice_ComboMultiplier_ScalesWholeN()
         {
-            // Sin cap, score 100 + base 5 + factor 1 + threshold 15 → 5 + 85 = 90.
-            // Con cap 30, el resultado se clampea a 30.
-            int withoutCap = EffHeal.ComputeBuildDiceHeal(5, 15, 100, 1f, maxCap: 0);
-            int withCap = EffHeal.ComputeBuildDiceHeal(5, 15, 100, 1f, maxCap: 30);
-            Assert.AreEqual(90, withoutCap);
-            Assert.AreEqual(30, withCap);
+            // Arrange — perilla por habilidad: escala el N entero (igual que en daño).
+            _sourceAttrs.SetAttribute<Attack>(new Attack(5));
+            RegisterHeroWithHealTable(healBase: 8);
+            var eff = CreateBuildDiceEffect(comboMultiplier: 2f);
+            var ctx = MakeBuildDiceCtx(ComboDetectionResult.Match("combo.par", 99, 2, null));
+
+            // Act
+            eff.ApplyEffect(ctx);
+
+            // Assert — N = 13; M = 2 → 50 + 26 = 76.
+            Assert.AreEqual(76, _attrManager.GetAttribute<Health>(_sourceId).Value);
         }
 
         [Test]
-        public void ComputeBuildDiceHeal_CapZeroMeansNoCap()
+        public void BuildDice_ComboWithoutTableEntry_HealsZero()
         {
-            // cap = 0 es la convención para "sin cap" — un heal alto pasa intacto.
-            Assert.AreEqual(90, EffHeal.ComputeBuildDiceHeal(5, 15, 100, 1f, maxCap: 0));
+            // Arrange — gate: combo matcheado pero la clase no define heal para ese combo.
+            _sourceAttrs.SetAttribute<Attack>(new Attack(5));
+            RegisterHeroWithHealTable(healBase: null);
+            var eff = CreateBuildDiceEffect();
+            var ctx = MakeBuildDiceCtx(ComboDetectionResult.Match("combo.par", 99, 2, null));
+
+            // Act
+            bool result = eff.ApplyEffect(ctx);
+
+            // Assert — sin entrada = 0 heal, ni siquiera el término de ATQ; no-op exitoso.
+            Assert.IsTrue(result);
+            Assert.AreEqual(50, _attrManager.GetAttribute<Health>(_sourceId).Value);
         }
+
+        [Test]
+        public void BuildDice_NoPlayerService_HealsZero()
+        {
+            // Arrange — sin IPlayerService no hay sheet → no hay tabla → 0.
+            var eff = CreateBuildDiceEffect();
+            var ctx = MakeBuildDiceCtx(ComboDetectionResult.Match("combo.par", 99, 2, null));
+
+            // Act
+            bool result = eff.ApplyEffect(ctx);
+
+            // Assert
+            Assert.IsTrue(result);
+            Assert.AreEqual(50, _attrManager.GetAttribute<Health>(_sourceId).Value);
+        }
+
+        [Test]
+        public void BuildDice_HealClampedToMaxHp_ByPipeline()
+        {
+            // Arrange — heal grande: el freno es el clamp del HealPipeline, no un cap propio.
+            RegisterHeroWithHealTable(healBase: 90);
+            var eff = CreateBuildDiceEffect();
+            var ctx = MakeBuildDiceCtx(ComboDetectionResult.Match("combo.par", 99, 2, null));
+
+            // Act
+            eff.ApplyEffect(ctx);
+
+            // Assert — 50 + 90 = 140 → clamp a 100.
+            Assert.AreEqual(MaxHp, _attrManager.GetAttribute<Health>(_sourceId).Value);
+        }
+
+        // ── Fallback sin combo (espejo del ataque) ───────────────────────
+
+        [Test]
+        public void BuildDice_NoCombo_HealsWithHighestKeptDie()
+        {
+            // Arrange — sin combo: el dado holdeado más alto entra a la fórmula,
+            // sin pasar por el gate de la tabla.
+            _sourceAttrs.SetAttribute<Attack>(new Attack(5));
+            RegisterHeroWithHealTable(healBase: 8);
+            var eff = CreateBuildDiceEffect();
+            var ctx = MakeBuildDiceCtx(comboResult: null);
+            ctx.KeptDice = new[] { 3, 5 };
+
+            // Act
+            eff.ApplyEffect(ctx);
+
+            // Assert — sin bag el dado más alto entra como comboBase: N = 5 + 5 (ATQ) = 10.
+            Assert.AreEqual(60, _attrManager.GetAttribute<Health>(_sourceId).Value);
+        }
+
+        [Test]
+        public void BuildDice_SyntheticComboWithoutId_FallsBackToHighestDie()
+        {
+            // Arrange — resultado sintético (ComboId vacío = contexto degradado): no hay
+            // lookup posible en la tabla, cae al fallback del dado más alto.
+            RegisterHeroWithHealTable(healBase: 8);
+            var eff = CreateBuildDiceEffect();
+            var ctx = MakeBuildDiceCtx(ComboDetectionResult.Match(30, 2));
+
+            // Act
+            eff.ApplyEffect(ctx);
+
+            // Assert — DiceResult [4,4,4,4,4], sin KeptDice → max 4; sin ATQ → 50 + 4 = 54.
+            Assert.AreEqual(54, _attrManager.GetAttribute<Health>(_sourceId).Value);
+        }
+
+        [Test]
+        public void BuildDice_NoDiceResult_FallsBackToBaseAmount()
+        {
+            // Arrange — wiring roto (sin DiceResult): warning + _baseAmount como red.
+            var eff = CreateBuildDiceEffect(baseAmount: 10);
+            var ctx = MakeCtx();
+            ctx.DiceResult = null;
+
+            // Act
+            eff.ApplyEffect(ctx);
+
+            // Assert
+            Assert.AreEqual(60, _attrManager.GetAttribute<Health>(_sourceId).Value);
+        }
+
+        // ── Poción (dice roll genérico — camino independiente, sobrevive N×M) ──
 
         // Escala 100: la poción 1d10 con multiplicador 10 cura {10..100} preservando
         // la distribución uniforme del d10 original.
@@ -90,81 +210,27 @@ namespace Rollgeon.Effects.Tests
             Assert.AreEqual(expected, EffHeal.ComputeDiceRollHeal(sum, multiplier));
         }
 
-        [Test]
-        public void ComputeBuildDiceHeal_CapDoesNotApplyBelowThreshold()
-        {
-            // Score bajo el umbral → heal = base. Si base < cap, el cap es inerte.
-            Assert.AreEqual(5, EffHeal.ComputeBuildDiceHeal(5, 15, 10, 1f, maxCap: 100));
-        }
-
-        [Test]
-        public void ComputeBuildDiceHeal_NegativeFactorClampsToZero()
-        {
-            // Defensa: un factor negativo no debe restar HP (no hay daño desde heal).
-            // Sin escalado → solo base.
-            Assert.AreEqual(5, EffHeal.ComputeBuildDiceHeal(5, 15, 100, -0.5f, maxCap: 0));
-        }
+        // ── ActionRollSpec ───────────────────────────────────────────────
 
         [Test]
         public void TryGetRollSpec_BuildDiceModeOff_ReturnsFalse()
         {
             var heal = new EffHeal(); // _useBuildDice default false
-            bool got = heal.TryGetRollSpec(System.Guid.Empty, out _);
+            bool got = heal.TryGetRollSpec(Guid.Empty, out _);
             Assert.IsFalse(got);
-        }
-
-        [Test]
-        public void BuildTooltip_BuildDiceOff_ConstantSource_ShowsFlatHeal()
-        {
-            // Sin _useBuildDice el tooltip describe la fuente del heal (Constant default).
-            // El header/costo los agrega HeroActionTooltip.BuildFor, acá solo el body.
-            var heal = new EffHeal();
-            SetPrivateField(heal, "_baseAmount", 12);
-
-            var text = heal.BuildTooltip();
-
-            Assert.IsNotNull(text);
-            StringAssert.Contains("Curación: 12 HP", text);
-        }
-
-        [Test]
-        public void BuildTooltip_BuildDiceOn_ShowsBaseAndThreshold()
-        {
-            var heal = MakeHealWithBuildDice();
-            SetPrivateField(heal, "_baseAmount", 5);
-            SetPrivateField(heal, "_healThreshold", 15);
-
-            var text = heal.BuildTooltip();
-            Assert.IsNotNull(text);
-            StringAssert.Contains("HP Base: 5", text);
-            StringAssert.Contains("Umbral Mínimo: 15", text);
-            // Sin cap configurado, no debe mencionar Tope.
-            StringAssert.DoesNotContain("Tope Máximo", text);
-        }
-
-        [Test]
-        public void BuildTooltip_BuildDiceOn_WithCap_ShowsTope()
-        {
-            var heal = MakeHealWithBuildDice();
-            SetPrivateField(heal, "_baseAmount", 5);
-            SetPrivateField(heal, "_healThreshold", 15);
-            SetPrivateField(heal, "_healMaxCap", 40);
-
-            var text = heal.BuildTooltip();
-            Assert.IsNotNull(text);
-            StringAssert.Contains("Tope Máximo: 40", text);
         }
 
         [Test]
         public void TryGetRollSpec_BuildDiceModeOn_InCombat_CostsRolls()
         {
-            var heal = MakeHealWithBuildDice();
+            var heal = CreateBuildDiceEffect();
             RegisterPhase(GamePhase.Combat);
 
-            bool got = heal.TryGetRollSpec(System.Guid.Empty, out var spec);
+            bool got = heal.TryGetRollSpec(Guid.Empty, out var spec);
 
             Assert.IsTrue(got);
-            Assert.IsTrue(spec.AlwaysSucceeds, "Heal no debe tratar 'sum < threshold' como fallo.");
+            Assert.AreEqual(0, spec.Threshold, "N×M no tiene umbral — la acción siempre cura algo.");
+            Assert.IsTrue(spec.AlwaysSucceeds, "Heal no debe tratar la tirada como fallo.");
             Assert.IsFalse(spec.RequireConfirm, "Heal va directo a roll, sin confirm dialog.");
             Assert.IsTrue(spec.AllowReroll);
             Assert.IsTrue(spec.CostsRolls, "En combate Curarse debe cobrar 1 roll por tirada.");
@@ -173,44 +239,131 @@ namespace Rollgeon.Effects.Tests
         [Test]
         public void TryGetRollSpec_BuildDiceModeOn_OutOfCombat_IsFree()
         {
-            var heal = MakeHealWithBuildDice();
+            var heal = CreateBuildDiceEffect();
             RegisterPhase(GamePhase.Exploration);
 
-            bool got = heal.TryGetRollSpec(System.Guid.Empty, out var spec);
+            bool got = heal.TryGetRollSpec(Guid.Empty, out var spec);
 
             Assert.IsTrue(got);
-            Assert.IsFalse(spec.CostsRolls, "Fuera de combate la poción no debe gastar rolls.");
+            Assert.IsFalse(spec.CostsRolls, "Fuera de combate curarse no debe gastar rolls.");
         }
 
         [Test]
         public void TryGetRollSpec_BuildDiceModeOn_NoPhaseService_DefaultsToOutOfCombat()
         {
             // Sin IPhaseService registrado → IsInCombat() = false → gratis.
-            var heal = MakeHealWithBuildDice();
+            var heal = CreateBuildDiceEffect();
 
-            bool got = heal.TryGetRollSpec(System.Guid.Empty, out var spec);
+            bool got = heal.TryGetRollSpec(Guid.Empty, out var spec);
 
             Assert.IsTrue(got);
             Assert.IsFalse(spec.CostsRolls);
+        }
+
+        // ── Tooltip ──────────────────────────────────────────────────────
+
+        [Test]
+        public void BuildTooltip_BuildDiceOff_ConstantSource_ShowsFlatHeal()
+        {
+            // Sin _useBuildDice el tooltip describe la fuente del heal (Constant default).
+            // El header/costo los agrega HeroActionTooltip.BuildFor, acá solo el body.
+            var heal = new EffHeal();
+            SetField(heal, "_baseAmount", 12);
+
+            var text = heal.BuildTooltip();
+
+            Assert.IsNotNull(text);
+            StringAssert.Contains("Curación: 12 HP", text);
+        }
+
+        [Test]
+        public void BuildTooltip_BuildDiceOn_DescribesSharedFormula()
+        {
+            // El tooltip espeja el de daño/escudo: ATQ + base del combo, con el
+            // fallback sin combo explícito. Nada de "umbral".
+            var heal = CreateBuildDiceEffect();
+
+            var text = heal.BuildTooltip();
+
+            Assert.IsNotNull(text);
+            StringAssert.Contains("Curación: ATQ (", text);
+            StringAssert.Contains("base del combo", text);
+            StringAssert.Contains("Sin combo: ATQ + dado más alto", text);
+            StringAssert.DoesNotContain("Umbral", text);
         }
 
         // ---------------------------------------------------------------
         // Helpers
         // ---------------------------------------------------------------
 
-        private static EffHeal MakeHealWithBuildDice()
+        // Hero con contrato mínimo [Par] y (opcional) entrada de heal para combo.par.
+        // Ruido deliberado: tablas de daño y escudo SIEMPRE presentes y altas, para que
+        // cualquier regresión que derive el heal de otra tabla reviente estos tests.
+        private void RegisterHeroWithHealTable(int? healBase)
+        {
+            var par = ScriptableObject.CreateInstance<Combo_Par>();
+            SetField(par, "_comboId", "combo.par");
+            _createdObjects.Add(par);
+
+            var sheet = new ContractSheet();
+            sheet.Combos.Add(par);
+            sheet.BaseDamageTable.Add(new ComboBaseDamageEntry
+            {
+                ComboId = "combo.par", BaseDamage = 99,
+            });
+            sheet.ShieldBaseTable.Add(new ComboShieldBaseEntry
+            {
+                ComboId = "combo.par", ShieldBase = 50,
+            });
+            if (healBase.HasValue)
+            {
+                sheet.HealBaseTable.Add(new ComboHealBaseEntry
+                {
+                    ComboId = "combo.par", HealBase = healBase.Value,
+                });
+            }
+
+            var hero = ScriptableObject.CreateInstance<ClassHeroSO>();
+            hero.Sheet = sheet;
+            _createdObjects.Add(hero);
+
+            ServiceLocator.AddService<IPlayerService>(
+                new StubPlayerService { CurrentHero = hero }, ServiceScope.Run);
+        }
+
+        private static EffHeal CreateBuildDiceEffect(float comboMultiplier = 1f, int baseAmount = 0)
         {
             var heal = new EffHeal();
-            SetPrivateField(heal, "_useBuildDice", true);
+            SetField(heal, "_useBuildDice", true);
+            SetField(heal, "_comboMultiplier", comboMultiplier);
+            SetField(heal, "_baseAmount", baseAmount);
             return heal;
         }
 
-        private static void SetPrivateField(object instance, string name, object value)
+        private EffectContext MakeCtx()
         {
-            var field = instance.GetType().GetField(name,
-                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            Assert.IsNotNull(field, $"Reflection layout cambió: '{name}' no encontrado.");
-            field.SetValue(instance, value);
+            return new EffectContext
+            {
+                SourceGuid = _sourceId,
+                TargetGuid = Guid.Empty,
+                lastResult = true,
+            };
+        }
+
+        private EffectContext MakeBuildDiceCtx(ComboDetectionResult? comboResult)
+        {
+            var ctx = MakeCtx();
+            ctx.DiceResult = new[] { 4, 4, 4, 4, 4 };
+            ctx.ComboResult = comboResult;
+            return ctx;
+        }
+
+        private static void SetField(object obj, string fieldName, object value)
+        {
+            var field = obj.GetType().GetField(fieldName,
+                BindingFlags.NonPublic | BindingFlags.Instance);
+            Assert.IsNotNull(field, $"Field '{fieldName}' not found on {obj.GetType().Name}");
+            field.SetValue(obj, value);
         }
 
         private static void RegisterPhase(GamePhase phase)
@@ -226,6 +379,21 @@ namespace Rollgeon.Effects.Tests
             public void ReplacePhase(GamePhase next) => CurrentBase = next;
             public void PushOverlay(PhaseOverlay overlay) { }
             public void PopOverlay() { }
+        }
+
+        private sealed class StubPlayerService : IPlayerService
+        {
+            public Guid PlayerGuid { get; set; } = Guid.NewGuid();
+            public Guid RunId { get; set; } = Guid.NewGuid();
+            public ClassHeroSO CurrentHero { get; set; }
+            public Rollgeon.Dice.DiceBagSO DiceBag { get; set; }
+            public void SetPlayer(ClassHeroSO hero, Guid runId) { }
+            public void SetDiceBag(Rollgeon.Dice.DiceBagSO bag) { DiceBag = bag; }
+            public void ClearPlayer() { }
+#pragma warning disable 67
+            public event Action<ClassHeroSO> OnPlayerSet;
+            public event Action OnPlayerCleared;
+#pragma warning restore 67
         }
     }
 }

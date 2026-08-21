@@ -664,18 +664,18 @@ namespace Rollgeon.Combat.Handoff
                             return;
                         }
 
-                        Combos.ComboDetectionResult? combo = outcome.HasCombo
-                            ? Combos.ComboDetectionResult.Match(outcome.EffectiveTotal,
-                                outcome.FinalRoll != null ? outcome.FinalRoll.Length : 0)
-                            : (Combos.ComboDetectionResult?)null;
-
+                        // Detección REAL del service (ComboId + ContributingIndices sobre el
+                        // subset holdeado) — los effects N×M (heal) leen tabla y Σcaras de acá.
+                        // El threshold no la mira: usa ActionRollEffectiveTotal, siempre seteado.
                         var behaviorCtx = new HeroBehaviorContext
                         {
                             SourceEntity = new Entity { Guid = playerGuid },
                             SelectionResult = null,
                             DiceResult = outcome.FinalRoll,
-                            MatchedComboResult = combo,
+                            MatchedComboResult = outcome.Combo,
                             ActionRollEffectiveTotal = outcome.EffectiveTotal,
+                            KeptDice = outcome.HeldDice,
+                            KeptDiceOriginalIndices = outcome.HeldDiceOriginalIndices,
                         };
 
                         // Rolls ya cobrados por IActionRollService — TryExecuteRollsPrepaid

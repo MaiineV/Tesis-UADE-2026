@@ -34,6 +34,7 @@ namespace Rollgeon.Combat.Damage
         private const string Accent = "ffd166";      // amarillo — números destacados
         private const string WeakCol = "c678dd";     // violeta — weakness
         private const string ShieldCol = "56b6c2";   // cyan — escudo
+        private const string HealCol = "5fd068";     // verde — curación
 
         /// <summary>
         /// Desglosa la fórmula v3 compartida del combo del jugador desde el
@@ -46,17 +47,31 @@ namespace Rollgeon.Combat.Damage
         {
             if (!Enabled) return;
 
-            bool isShield = b.Kind == PlayerComboFormulaKind.Shield;
+            string kindCol = b.Kind switch
+            {
+                PlayerComboFormulaKind.Shield => ShieldCol,
+                PlayerComboFormulaKind.Heal => HealCol,
+                _ => BandCompose,
+            };
+            string kindNoun = b.Kind switch
+            {
+                PlayerComboFormulaKind.Shield => "escudo",
+                PlayerComboFormulaKind.Heal => "curación",
+                _ => "daño",
+            };
             var sb = new StringBuilder(640);
-            sb.Append(isShield
-                ? Band(ShieldCol, "SHIELD · COMPOSICIÓN — escudo base del PLAYER")
-                : Band(BandCompose, "DMG · COMPOSICIÓN — daño base del PLAYER"));
+            sb.Append(b.Kind switch
+            {
+                PlayerComboFormulaKind.Shield => Band(ShieldCol, "SHIELD · COMPOSICIÓN — escudo base del PLAYER"),
+                PlayerComboFormulaKind.Heal => Band(HealCol, "HEAL · COMPOSICIÓN — curación base del PLAYER"),
+                _ => Band(BandCompose, "DMG · COMPOSICIÓN — daño base del PLAYER"),
+            });
             sb.Append("  ").Append(Col(Label, "src=" + Short(sourceId)));
 
             if (b.Blocked)
             {
                 sb.Append('\n').Append(Col(BandApply,
-                    $"  ⛔ BLOQUEADO por scratch (BlockComboDamage) → {(isShield ? "escudo" : "daño")} base = 0"));
+                    $"  ⛔ BLOQUEADO por scratch (BlockComboDamage) → {kindNoun} base = 0"));
                 Debug.Log(sb.ToString());
                 return;
             }
@@ -84,12 +99,15 @@ namespace Rollgeon.Combat.Damage
                     "este daño NO es el real. PlayerDamageDebug.Off() para apagarlo."));
             }
 
-            sb.Append('\n').Append(Col(isShield ? ShieldCol : BandCompose, "  ═ TOTAL = N × M = "))
+            sb.Append('\n').Append(Col(kindCol, "  ═ TOTAL = N × M = "))
               .Append(Col(Label, $"{b.N} × {F(b.M)} = "))
               .Append(Col(Accent, "<b>" + b.Final + "</b>"))
-              .Append(Col(Label, isShield
-                  ? "   → se suma al atributo Shield (EffAddShield)"
-                  : "   → entra al DamagePipeline como BaseDamage"));
+              .Append(Col(Label, b.Kind switch
+              {
+                  PlayerComboFormulaKind.Shield => "   → se suma al atributo Shield (EffAddShield)",
+                  PlayerComboFormulaKind.Heal => "   → entra al HealPipeline como BaseHeal",
+                  _ => "   → entra al DamagePipeline como BaseDamage",
+              }));
 
             Debug.Log(sb.ToString());
         }

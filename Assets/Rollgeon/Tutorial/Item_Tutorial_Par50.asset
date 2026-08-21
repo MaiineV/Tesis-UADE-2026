@@ -272,7 +272,7 @@ MonoBehaviour:
       Label: Tutorial Par +50
       PreConditions: []
       Effects:
-      - rid: 6878115282854085191
+      - rid: 144068364426019179
       TargetSelector:
         rid: -2
     PersistentModifiers: []
@@ -292,7 +292,7 @@ MonoBehaviour:
     RefIds:
     - rid: -2
       type: {class: , ns: , asm: }
-    - rid: 6878115282854085191
+    - rid: 144068364426019179
       type: {class: EffAddComboBonus, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
       data:
         Selection:
@@ -316,8 +316,8 @@ MonoBehaviour:
           AutoResolve: 0
           AutoAccept: 1
         _amount:
-          rid: 6878115282854085192
-    - rid: 6878115282854085192
+          rid: 144068364426019180
+    - rid: 144068364426019180
       type: {class: ReadConstantInt, ns: Rollgeon.Effects.Readers, asm: Rollgeon}
       data:
         Value: 50

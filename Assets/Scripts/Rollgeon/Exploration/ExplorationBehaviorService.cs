@@ -318,15 +318,12 @@ namespace Rollgeon.Exploration
 
                 if (outcome.Cancelled || resolvedBehavior == null) return;
 
-                // Reconstruir el ComboDetectionResult del outcome para que los effects
-                // (EffForceDoor, EffHeal) puedan leer EffectiveTotal via ComboResult.
-                ComboDetectionResult? combo = outcome.HasCombo
-                    ? ComboDetectionResult.Match(outcome.EffectiveTotal,
-                        outcome.FinalRoll != null ? outcome.FinalRoll.Length : 0)
-                    : (ComboDetectionResult?)null;
-
-                ExecuteBehavior(resolvedBehavior, playerGuid, null, outcome.FinalRoll, combo,
-                    outcome.EffectiveTotal);
+                // Detección REAL del service (ComboId + ContributingIndices sobre el subset
+                // holdeado) — los effects N×M (EffHeal) leen tabla y Σcaras; EffForceDoor
+                // sigue usando ActionRollEffectiveTotal, siempre seteado.
+                ExecuteBehavior(resolvedBehavior, playerGuid, null, outcome.FinalRoll,
+                    outcome.Combo, outcome.EffectiveTotal,
+                    outcome.HeldDice, outcome.HeldDiceOriginalIndices);
                 // Acción con tirada terminada (ej. Force Door) — re-armar movimiento.
                 ArmMovement();
             });
@@ -540,7 +537,9 @@ namespace Rollgeon.Exploration
         private void ExecuteBehavior(HeroActionBehavior behavior, Guid playerGuid,
             TargetSelectionResult selectionResult, IReadOnlyList<int> diceResult,
             ComboDetectionResult? matchedCombo = null,
-            int? actionRollEffectiveTotal = null)
+            int? actionRollEffectiveTotal = null,
+            IReadOnlyList<int> keptDice = null,
+            IReadOnlyList<int> keptDiceOriginalIndices = null)
         {
             var ctx = new HeroBehaviorContext
             {
@@ -549,6 +548,8 @@ namespace Rollgeon.Exploration
                 DiceResult = diceResult,
                 MatchedComboResult = matchedCombo,
                 ActionRollEffectiveTotal = actionRollEffectiveTotal,
+                KeptDice = keptDice,
+                KeptDiceOriginalIndices = keptDiceOriginalIndices,
             };
 
             behavior.Execute(ctx);

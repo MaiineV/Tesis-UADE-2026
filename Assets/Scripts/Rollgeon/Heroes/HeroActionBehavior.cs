@@ -213,9 +213,17 @@ namespace Rollgeon.Heroes
             // de defensa pura) anuncian la variante de escudo — misma secuencia.
             var announceDmg = FindFirstDealDamageEffect();
             if (announceDmg != null)
+            {
                 Rollgeon.Combat.Damage.DamageBreakdownAnnouncer.Announce(effCtx, announceDmg);
+            }
             else
-                Rollgeon.Combat.Damage.DamageBreakdownAnnouncer.AnnounceShield(effCtx, FindFirstAddShieldEffect());
+            {
+                var announceShield = FindFirstAddShieldEffect();
+                if (announceShield != null)
+                    Rollgeon.Combat.Damage.DamageBreakdownAnnouncer.AnnounceShield(effCtx, announceShield);
+                else
+                    Rollgeon.Combat.Damage.DamageBreakdownAnnouncer.AnnounceHeal(effCtx, FindFirstHealEffect());
+            }
             try
             {
                 foreach (var group in Effects)
@@ -302,6 +310,32 @@ namespace Rollgeon.Heroes
                     var found = FindAddShieldIn(eff);
                     if (found != null) return found;
                 }
+            }
+            return null;
+        }
+
+        public EffHeal FindFirstHealEffect()
+        {
+            if (Effects == null) return null;
+            foreach (var group in Effects)
+            {
+                if (group?.Effects == null) continue;
+                foreach (var eff in group.Effects)
+                {
+                    var found = FindHealIn(eff);
+                    if (found != null) return found;
+                }
+            }
+            return null;
+        }
+
+        private static EffHeal FindHealIn(IEffect eff)
+        {
+            if (eff is EffHeal heal) return heal;
+            foreach (var child in EffectTree.DirectChildren(eff))
+            {
+                var found = FindHealIn(child);
+                if (found != null) return found;
             }
             return null;
         }

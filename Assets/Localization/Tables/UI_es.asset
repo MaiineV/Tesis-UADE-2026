@@ -378,8 +378,8 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 7800251719905294
-    m_Localized: "Curar tambi\xE9n usa los dados: l\xE1nzalos y supera el umbral
-      para recuperar vida. Bloquea los altos y confirma."
+    m_Localized: "Curar tambi\xE9n usa los dados: arma un combo y recuperas m\xE1s
+      vida. Sin combo, cura tu dado m\xE1s alto. Bloquea y confirma."
     m_Metadata:
       m_Items: []
   - m_Id: 7800251719905295

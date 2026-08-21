@@ -16,7 +16,8 @@ namespace Rollgeon.Combat.Damage
     public enum PlayerComboFormulaKind
     {
         Damage,
-        Shield
+        Shield,
+        Heal
     }
 
     /// <summary>
