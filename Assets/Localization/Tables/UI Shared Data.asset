@@ -647,6 +647,42 @@ MonoBehaviour:
     m_Key: tile.tooltip.duration
     m_Metadata:
       m_Items: []
+  - m_Id: 12996722096635904
+    m_Key: menu.reroll_discard
+    m_Metadata:
+      m_Items: []
+  - m_Id: 12996722146967552
+    m_Key: menu.reroll_keep
+    m_Metadata:
+      m_Items: []
+  - m_Id: 12996722146967553
+    m_Key: menu.tab_general
+    m_Metadata:
+      m_Items: []
+  - m_Id: 12996722146967554
+    m_Key: menu.tab_audio
+    m_Metadata:
+      m_Items: []
+  - m_Id: 12996722146967555
+    m_Key: menu.audio_master
+    m_Metadata:
+      m_Items: []
+  - m_Id: 12996722146967556
+    m_Key: menu.audio_music
+    m_Metadata:
+      m_Items: []
+  - m_Id: 12996722146967557
+    m_Key: menu.audio_sfx
+    m_Metadata:
+      m_Items: []
+  - m_Id: 12996722146967558
+    m_Key: menu.audio_muted
+    m_Metadata:
+      m_Items: []
+  - m_Id: 12996722146967559
+    m_Key: menu.audio_unmuted
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

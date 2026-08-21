@@ -4,6 +4,7 @@ using NUnit.Framework;
 using Patterns;
 using Patterns.Save;
 using Rollgeon.Analytics;
+using Rollgeon.Audio;
 using Rollgeon.Localization;
 using Rollgeon.Timing;
 using Rollgeon.UI.Screens;
@@ -31,6 +32,18 @@ namespace Rollgeon.UI.Tests
         private TMP_Text _speedLabel;
         private Button _rerollModeButton;
         private TMP_Text _rerollModeLabel;
+        private GameObject _generalTabRoot;
+        private GameObject _audioTabRoot;
+        private Button _generalTabButton;
+        private Button _audioTabButton;
+        private Slider _masterSlider;
+        private Slider _musicSlider;
+        private Slider _sfxSlider;
+        private Button _musicMuteButton;
+        private TMP_Text _musicMuteLabel;
+        private Button _sfxMuteButton;
+        private TMP_Text _sfxMuteLabel;
+        private FakeAudioService _audio;
         private InMemoryStore _store;
         private SaveSettingsSO _settings;
         private int _savedSpeed;
@@ -44,6 +57,38 @@ namespace Rollgeon.UI.Tests
             public byte[] Read(string path) => Files[path];
             public void Write(string path, byte[] bytes) => Files[path] = bytes;
             public void Delete(string path) => Files.Remove(path);
+        }
+
+        private sealed class FakeAudioService : IAudioService
+        {
+            public readonly Dictionary<AudioChannel, float> Volumes = new();
+            public readonly HashSet<AudioChannel> Muted = new();
+            public readonly List<(AudioChannel channel, float value)> SetVolumeCalls = new();
+
+            public void PlaySfx(AudioClip clip, Vector3 worldPos, float volume = 1f, float pitch = 1f, bool isImportant = false) { }
+            public void PlaySfx2D(AudioClip clip, float volume = 1f, float pitch = 1f, bool isImportant = false) { }
+            public void PlayMusic(AudioClip clip, float fadeSeconds = 1f) { }
+            public void PlayMusicForBiome(string biomeId, float fadeSeconds = 1f) { }
+            public void StopMusic(float fadeSeconds = 1f) { }
+            public void PauseMusic() { }
+            public void ResumeMusic() { }
+
+            public void SetVolume(AudioChannel channel, float value)
+            {
+                Volumes[channel] = value;
+                SetVolumeCalls.Add((channel, value));
+            }
+
+            public float GetVolume(AudioChannel channel) =>
+                Volumes.TryGetValue(channel, out var v) ? v : 1f;
+
+            public void SetMuted(AudioChannel channel, bool muted)
+            {
+                if (muted) Muted.Add(channel);
+                else Muted.Remove(channel);
+            }
+
+            public bool IsMuted(AudioChannel channel) => Muted.Contains(channel);
         }
 
         private sealed class FakeConsent : IAnalyticsConsentService
@@ -83,6 +128,32 @@ namespace Rollgeon.UI.Tests
             AssignPrivate(_screen, "_gameSpeedLabel", _speedLabel);
             AssignPrivate(_screen, "_rerollModeButton", _rerollModeButton);
             AssignPrivate(_screen, "_rerollModeLabel", _rerollModeLabel);
+
+            _audio = new FakeAudioService();
+            ServiceLocator.AddService<IAudioService>(_audio, ServiceScope.Global);
+
+            _generalTabRoot = new GameObject("GeneralTab");
+            _generalTabRoot.transform.SetParent(_screenGO.transform, false);
+            _audioTabRoot = new GameObject("AudioTab");
+            _audioTabRoot.transform.SetParent(_screenGO.transform, false);
+            _generalTabButton = AttachButton("GeneralTabButton", out _);
+            _audioTabButton = AttachButton("AudioTabButton", out _);
+            _masterSlider = AttachSlider("MasterVolumeSlider");
+            _musicSlider = AttachSlider("MusicVolumeSlider");
+            _sfxSlider = AttachSlider("SfxVolumeSlider");
+            _musicMuteButton = AttachButton("MusicMuteButton", out _musicMuteLabel);
+            _sfxMuteButton = AttachButton("SfxMuteButton", out _sfxMuteLabel);
+            AssignPrivate(_screen, "_generalTabRoot", _generalTabRoot);
+            AssignPrivate(_screen, "_audioTabRoot", _audioTabRoot);
+            AssignPrivate(_screen, "_generalTabButton", _generalTabButton);
+            AssignPrivate(_screen, "_audioTabButton", _audioTabButton);
+            AssignPrivate(_screen, "_masterSlider", _masterSlider);
+            AssignPrivate(_screen, "_musicSlider", _musicSlider);
+            AssignPrivate(_screen, "_sfxSlider", _sfxSlider);
+            AssignPrivate(_screen, "_musicMuteButton", _musicMuteButton);
+            AssignPrivate(_screen, "_musicMuteLabel", _musicMuteLabel);
+            AssignPrivate(_screen, "_sfxMuteButton", _sfxMuteButton);
+            AssignPrivate(_screen, "_sfxMuteLabel", _sfxMuteLabel);
 
             // Los setters de GameSpeedPrefs / RerollSelectionPrefs escriben
             // PlayerPrefs reales incluso en EditMode — backup acá, restore en TearDown.
@@ -238,6 +309,110 @@ namespace Rollgeon.UI.Tests
                 _rerollModeLabel.text);
         }
 
+        [Test]
+        public void AudioSliders_OnPushed_SyncFromServiceWithoutWritingBack()
+        {
+            // Arrange
+            _audio.Volumes[AudioChannel.Master] = 0.7f;
+            _audio.Volumes[AudioChannel.Music] = 0.3f;
+            _audio.Volumes[AudioChannel.Sfx] = 0.5f;
+
+            // Act
+            Push();
+
+            // Assert: sliders reflejan el servicio y abrir el panel no re-setea nada.
+            Assert.AreEqual(0.7f, _masterSlider.value);
+            Assert.AreEqual(0.3f, _musicSlider.value);
+            Assert.AreEqual(0.5f, _sfxSlider.value);
+            Assert.IsEmpty(_audio.SetVolumeCalls,
+                "SyncAudioControls debe usar SetValueWithoutNotify — sin writes al abrir.");
+        }
+
+        [Test]
+        public void MusicSlider_Change_SetsMusicChannelVolume()
+        {
+            // Arrange
+            Push();
+
+            // Act
+            _musicSlider.value = 0.25f;
+
+            // Assert
+            Assert.AreEqual(0.25f, _audio.GetVolume(AudioChannel.Music));
+        }
+
+        [Test]
+        public void SfxSlider_Change_SetsSfxAndUiChannels()
+        {
+            // Arrange
+            Push();
+
+            // Act
+            _sfxSlider.value = 0.4f;
+
+            // Assert: un solo control gobierna todos los efectos (Sfx + Ui).
+            Assert.AreEqual(0.4f, _audio.GetVolume(AudioChannel.Sfx));
+            Assert.AreEqual(0.4f, _audio.GetVolume(AudioChannel.Ui));
+        }
+
+        [Test]
+        public void MusicMute_Clicks_ToggleMuteAndLabel()
+        {
+            // Arrange
+            Push();
+
+            // Act
+            _musicMuteButton.onClick.Invoke();
+
+            // Assert
+            Assert.IsTrue(_audio.IsMuted(AudioChannel.Music));
+            Assert.AreEqual(LocalizedContent.Ui("menu.audio_muted", "Muteado"), _musicMuteLabel.text);
+
+            // Act: segundo click desmutea.
+            _musicMuteButton.onClick.Invoke();
+
+            // Assert
+            Assert.IsFalse(_audio.IsMuted(AudioChannel.Music));
+            Assert.AreEqual(LocalizedContent.Ui("menu.audio_unmuted", "Sonando"), _musicMuteLabel.text);
+        }
+
+        [Test]
+        public void SfxMute_Click_MutesSfxAndUiChannels()
+        {
+            // Arrange
+            Push();
+
+            // Act
+            _sfxMuteButton.onClick.Invoke();
+
+            // Assert
+            Assert.IsTrue(_audio.IsMuted(AudioChannel.Sfx));
+            Assert.IsTrue(_audio.IsMuted(AudioChannel.Ui));
+        }
+
+        [Test]
+        public void Tabs_Clicks_SwitchVisibleRoot()
+        {
+            // Arrange: el panel abre en General.
+            Push();
+            Assert.IsTrue(_generalTabRoot.activeSelf);
+            Assert.IsFalse(_audioTabRoot.activeSelf);
+
+            // Act
+            _audioTabButton.onClick.Invoke();
+
+            // Assert
+            Assert.IsFalse(_generalTabRoot.activeSelf);
+            Assert.IsTrue(_audioTabRoot.activeSelf);
+
+            // Act: volver a General.
+            _generalTabButton.onClick.Invoke();
+
+            // Assert
+            Assert.IsTrue(_generalTabRoot.activeSelf);
+            Assert.IsFalse(_audioTabRoot.activeSelf);
+        }
+
         // ---------------- helpers ----------------
 
         /// <summary>
@@ -261,6 +436,17 @@ namespace Rollgeon.UI.Tests
             labelGo.transform.SetParent(go.transform, false);
             label = labelGo.AddComponent<TextMeshProUGUI>();
             return button;
+        }
+
+        private Slider AttachSlider(string name)
+        {
+            var go = new GameObject(name);
+            go.transform.SetParent(_screenGO.transform, false);
+            var slider = go.AddComponent<Slider>();
+            slider.minValue = 0f;
+            slider.maxValue = 1f;
+            slider.wholeNumbers = false;
+            return slider;
         }
 
         private static void AssignPrivate(object target, string fieldName, object value)

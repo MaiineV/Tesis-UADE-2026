@@ -2,6 +2,7 @@ using Patterns;
 using Patterns.Save;
 using PrimeTween;
 using Rollgeon.Analytics;
+using Rollgeon.Audio;
 using Rollgeon.Localization;
 using Rollgeon.Meta;
 using Rollgeon.Timing;
@@ -41,6 +42,31 @@ namespace Rollgeon.UI.Screens
 
         [SerializeField, Optional] private RectTransform _panel;
         [SerializeField, Optional] private CanvasGroup _rootCanvasGroup;
+
+        [Title("Tabs")]
+        [SerializeField, Optional] private Button _generalTabButton;
+        [SerializeField, Optional] private TMP_Text _generalTabLabel;
+        [SerializeField, Optional] private Button _audioTabButton;
+        [SerializeField, Optional] private TMP_Text _audioTabLabel;
+        [SerializeField, Optional] private GameObject _generalTabRoot;
+        [SerializeField, Optional] private GameObject _audioTabRoot;
+
+        [Title("Audio")]
+        [SerializeField, Optional] private TMP_Text _masterLabel;
+        [SerializeField, Optional] private Slider _masterSlider;
+        [SerializeField, Optional] private Button _masterMuteButton;
+        [SerializeField, Optional] private TMP_Text _masterMuteLabel;
+        [SerializeField, Optional] private JuicyMenuButton _masterMuteJuice;
+        [SerializeField, Optional] private TMP_Text _musicLabel;
+        [SerializeField, Optional] private Slider _musicSlider;
+        [SerializeField, Optional] private Button _musicMuteButton;
+        [SerializeField, Optional] private TMP_Text _musicMuteLabel;
+        [SerializeField, Optional] private JuicyMenuButton _musicMuteJuice;
+        [SerializeField, Optional] private TMP_Text _sfxLabel;
+        [SerializeField, Optional] private Slider _sfxSlider;
+        [SerializeField, Optional] private Button _sfxMuteButton;
+        [SerializeField, Optional] private TMP_Text _sfxMuteLabel;
+        [SerializeField, Optional] private JuicyMenuButton _sfxMuteJuice;
 
         [Title("Toggles")]
         [SerializeField, Optional] private Button _tutorialToggleButton;
@@ -89,11 +115,22 @@ namespace Rollgeon.UI.Screens
             if (_resetSaveButton != null) _resetSaveButton.onClick.AddListener(OnResetSaveClicked);
             if (_backButton != null) _backButton.onClick.AddListener(OnBackClicked);
 
+            if (_generalTabButton != null) _generalTabButton.onClick.AddListener(OnGeneralTabClicked);
+            if (_audioTabButton != null) _audioTabButton.onClick.AddListener(OnAudioTabClicked);
+            if (_masterSlider != null) _masterSlider.onValueChanged.AddListener(OnMasterVolumeChanged);
+            if (_musicSlider != null) _musicSlider.onValueChanged.AddListener(OnMusicVolumeChanged);
+            if (_sfxSlider != null) _sfxSlider.onValueChanged.AddListener(OnSfxVolumeChanged);
+            if (_masterMuteButton != null) _masterMuteButton.onClick.AddListener(OnMasterMuteClicked);
+            if (_musicMuteButton != null) _musicMuteButton.onClick.AddListener(OnMusicMuteClicked);
+            if (_sfxMuteButton != null) _sfxMuteButton.onClick.AddListener(OnSfxMuteClicked);
+
             // Los botones ES/EN viven en este mismo panel: sin esto, cambiar el idioma
             // dejaba todo el panel con el texto del idioma anterior hasta reabrirlo.
             LocalizationRefresh.Subscribe(RefreshLabels);
 
             DisarmReset();
+            ShowTab(audio: false);
+            SyncAudioControls();
             RefreshLabels();
             PlayEntrance();
         }
@@ -106,6 +143,15 @@ namespace Rollgeon.UI.Screens
             if (_rerollModeButton != null) _rerollModeButton.onClick.RemoveListener(OnRerollModeClicked);
             if (_resetSaveButton != null) _resetSaveButton.onClick.RemoveListener(OnResetSaveClicked);
             if (_backButton != null) _backButton.onClick.RemoveListener(OnBackClicked);
+
+            if (_generalTabButton != null) _generalTabButton.onClick.RemoveListener(OnGeneralTabClicked);
+            if (_audioTabButton != null) _audioTabButton.onClick.RemoveListener(OnAudioTabClicked);
+            if (_masterSlider != null) _masterSlider.onValueChanged.RemoveListener(OnMasterVolumeChanged);
+            if (_musicSlider != null) _musicSlider.onValueChanged.RemoveListener(OnMusicVolumeChanged);
+            if (_sfxSlider != null) _sfxSlider.onValueChanged.RemoveListener(OnSfxVolumeChanged);
+            if (_masterMuteButton != null) _masterMuteButton.onClick.RemoveListener(OnMasterMuteClicked);
+            if (_musicMuteButton != null) _musicMuteButton.onClick.RemoveListener(OnMusicMuteClicked);
+            if (_sfxMuteButton != null) _sfxMuteButton.onClick.RemoveListener(OnSfxMuteClicked);
 
             LocalizationRefresh.Unsubscribe(RefreshLabels);
             DisarmReset();
@@ -159,11 +205,22 @@ namespace Rollgeon.UI.Screens
                 _backLabel.text = LocalizedContent.Ui("menu.back", "Volver");
             }
 
+            if (_generalTabLabel != null)
+            {
+                _generalTabLabel.text = LocalizedContent.Ui("menu.tab_general", "General");
+            }
+
+            if (_audioTabLabel != null)
+            {
+                _audioTabLabel.text = LocalizedContent.Ui("menu.tab_audio", "Audio");
+            }
+
             RefreshTutorialToggleLabel();
             RefreshAnalyticsToggleLabel();
             RefreshGameSpeedLabel();
             RefreshRerollModeLabel();
             RefreshResetSaveLabel();
+            RefreshAudioLabels();
         }
 
         /// <summary>
@@ -284,6 +341,128 @@ namespace Rollgeon.UI.Screens
             _rerollModeLabel.text = Rollgeon.Dice.RerollSelectionPrefs.KeepSelected
                 ? LocalizedContent.Ui("menu.reroll_keep", "Reroll: se quedan los elegidos")
                 : LocalizedContent.Ui("menu.reroll_discard", "Reroll: vuelan los elegidos");
+        }
+
+        // ================================================================
+        // Tabs (General | Audio)
+        // ================================================================
+
+        private void OnGeneralTabClicked() => ShowTab(audio: false);
+        private void OnAudioTabClicked() => ShowTab(audio: true);
+
+        /// <summary>
+        /// Alterna el contenido del panel. Título, tabs y Volver son comunes;
+        /// el resto vive en uno de los dos roots.
+        /// </summary>
+        private void ShowTab(bool audio)
+        {
+            if (_generalTabRoot != null) _generalTabRoot.SetActive(!audio);
+            if (_audioTabRoot != null) _audioTabRoot.SetActive(audio);
+
+            // El tab activo se lee por opacidad — sin esto los dos botones
+            // parecen igualmente "apretables" y no se sabe dónde estás parado.
+            SetTabLabelEmphasis(_generalTabLabel, selected: !audio);
+            SetTabLabelEmphasis(_audioTabLabel, selected: audio);
+        }
+
+        private static void SetTabLabelEmphasis(TMP_Text label, bool selected)
+        {
+            if (label == null) return;
+            var color = label.color;
+            color.a = selected ? 1f : 0.45f;
+            label.color = color;
+        }
+
+        // ================================================================
+        // Audio — sliders + mutes
+        // ================================================================
+
+        private static IAudioService AudioService =>
+            ServiceLocator.TryGetService<IAudioService>(out IAudioService audio) ? audio : null;
+
+        /// <summary>
+        /// Pone sliders y mutes en el estado actual del servicio sin disparar los
+        /// handlers (<c>SetValueWithoutNotify</c>) — abrir el panel no re-setea nada.
+        /// </summary>
+        private void SyncAudioControls()
+        {
+            var audio = AudioService;
+            if (audio == null) return;
+
+            if (_masterSlider != null) _masterSlider.SetValueWithoutNotify(audio.GetVolume(AudioChannel.Master));
+            if (_musicSlider != null) _musicSlider.SetValueWithoutNotify(audio.GetVolume(AudioChannel.Music));
+            if (_sfxSlider != null) _sfxSlider.SetValueWithoutNotify(audio.GetVolume(AudioChannel.Sfx));
+        }
+
+        private void OnMasterVolumeChanged(float value) => AudioService?.SetVolume(AudioChannel.Master, value);
+
+        private void OnMusicVolumeChanged(float value) => AudioService?.SetVolume(AudioChannel.Music, value);
+
+        /// <summary>El slider de SFX gobierna Sfx y Ui — un solo control para todos los efectos.</summary>
+        private void OnSfxVolumeChanged(float value)
+        {
+            var audio = AudioService;
+            if (audio == null) return;
+
+            audio.SetVolume(AudioChannel.Sfx, value);
+            audio.SetVolume(AudioChannel.Ui, value);
+        }
+
+        private void OnMasterMuteClicked() => ToggleMute(AudioChannel.Master);
+
+        private void OnMusicMuteClicked() => ToggleMute(AudioChannel.Music);
+
+        private void OnSfxMuteClicked()
+        {
+            var audio = AudioService;
+            if (audio == null) return;
+
+            bool muted = !audio.IsMuted(AudioChannel.Sfx);
+            audio.SetMuted(AudioChannel.Sfx, muted);
+            audio.SetMuted(AudioChannel.Ui, muted);
+            RefreshAudioLabels();
+        }
+
+        private void ToggleMute(AudioChannel channel)
+        {
+            var audio = AudioService;
+            if (audio == null) return;
+
+            audio.SetMuted(channel, !audio.IsMuted(channel));
+            RefreshAudioLabels();
+        }
+
+        private void RefreshAudioLabels()
+        {
+            if (_masterLabel != null) _masterLabel.text = LocalizedContent.Ui("menu.audio_master", "Master");
+            if (_musicLabel != null) _musicLabel.text = LocalizedContent.Ui("menu.audio_music", "Música");
+            if (_sfxLabel != null) _sfxLabel.text = LocalizedContent.Ui("menu.audio_sfx", "Efectos");
+
+            var audio = AudioService;
+            RefreshMuteVisual(_masterMuteLabel, _masterMuteJuice, audio != null && audio.IsMuted(AudioChannel.Master));
+            RefreshMuteVisual(_musicMuteLabel, _musicMuteJuice, audio != null && audio.IsMuted(AudioChannel.Music));
+            RefreshMuteVisual(_sfxMuteLabel, _sfxMuteJuice, audio != null && audio.IsMuted(AudioChannel.Sfx));
+        }
+
+        /// <summary>
+        /// El botón de mute muestra el estado ("Sonando"/"Muteado") y cuando está
+        /// muteado usa el color de alerta del settings — mismo lenguaje visual que
+        /// el borrar partida armado.
+        /// </summary>
+        private void RefreshMuteVisual(TMP_Text label, JuicyMenuButton juice, bool muted)
+        {
+            if (label != null)
+            {
+                label.text = muted
+                    ? LocalizedContent.Ui("menu.audio_muted", "Muteado")
+                    : LocalizedContent.Ui("menu.audio_unmuted", "Sonando");
+            }
+
+            if (juice != null && _settings != null)
+            {
+                if (muted) juice.SetColorOverride(_settings.AlertColor);
+                else juice.ClearColorOverride();
+            }
         }
 
         // ================================================================

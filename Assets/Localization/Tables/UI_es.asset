@@ -628,7 +628,7 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 12873216341229568
     m_Localized: "Este es tu POOL DE ROLLS: cada tirada de dados consume 1. Al terminar
-      tu turno recuperas 5 (m\xE1ximo 15)."
+      tu turno recuperas {0} (m\xE1ximo {1})."
     m_Metadata:
       m_Items: []
   - m_Id: 10374649764216834
@@ -687,6 +687,42 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 12939077424611332
     m_Localized: Dura {0} rondas
+    m_Metadata:
+      m_Items: []
+  - m_Id: 12996722096635904
+    m_Localized: 'Reroll: vuelan los elegidos'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 12996722146967552
+    m_Localized: 'Reroll: se quedan los elegidos'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 12996722146967553
+    m_Localized: General
+    m_Metadata:
+      m_Items: []
+  - m_Id: 12996722146967554
+    m_Localized: Audio
+    m_Metadata:
+      m_Items: []
+  - m_Id: 12996722146967555
+    m_Localized: Master
+    m_Metadata:
+      m_Items: []
+  - m_Id: 12996722146967556
+    m_Localized: "M\xFAsica"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 12996722146967557
+    m_Localized: Efectos
+    m_Metadata:
+      m_Items: []
+  - m_Id: 12996722146967558
+    m_Localized: Muteado
+    m_Metadata:
+      m_Items: []
+  - m_Id: 12996722146967559
+    m_Localized: Sonando
     m_Metadata:
       m_Items: []
   references:

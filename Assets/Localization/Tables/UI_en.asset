@@ -621,7 +621,7 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 12873216341229568
     m_Localized: 'This is your ROLL POOL: every dice throw spends 1. Ending your
-      turn grants 5 back (15 max).'
+      turn grants {0} back ({1} max).'
     m_Metadata:
       m_Items: []
   - m_Id: 10374649764216834
@@ -680,6 +680,42 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 12939077424611332
     m_Localized: Lasts {0} rounds
+    m_Metadata:
+      m_Items: []
+  - m_Id: 12996722096635904
+    m_Localized: 'Reroll: rerolls selected dice'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 12996722146967552
+    m_Localized: 'Reroll: keeps selected dice'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 12996722146967553
+    m_Localized: General
+    m_Metadata:
+      m_Items: []
+  - m_Id: 12996722146967554
+    m_Localized: Audio
+    m_Metadata:
+      m_Items: []
+  - m_Id: 12996722146967555
+    m_Localized: Master
+    m_Metadata:
+      m_Items: []
+  - m_Id: 12996722146967556
+    m_Localized: Music
+    m_Metadata:
+      m_Items: []
+  - m_Id: 12996722146967557
+    m_Localized: Sound FX
+    m_Metadata:
+      m_Items: []
+  - m_Id: 12996722146967558
+    m_Localized: Muted
+    m_Metadata:
+      m_Items: []
+  - m_Id: 12996722146967559
+    m_Localized: Playing
     m_Metadata:
       m_Items: []
   references:

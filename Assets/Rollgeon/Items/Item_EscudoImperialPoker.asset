@@ -176,7 +176,7 @@ MonoBehaviour:
       Data: 0
     - Name: _baseAmount
       Entry: 3
-      Data: 20
+      Data: 10
     - Name: _comboMultiplier
       Entry: 4
       Data: 1
@@ -263,7 +263,7 @@ MonoBehaviour:
       Data: 
   ItemId: escudo.imperial.poker
   DisplayName: Escudo Imperial
-  Description: Cada Poker genera +2 escudo
+  Description: Cada Poker genera +10 escudo
   Icon: {fileID: 1808964844, guid: ee12da05509c7a74686b1e1cc11cbd3e, type: 3}
   Rarity: 2
   Type: 0
@@ -278,7 +278,7 @@ MonoBehaviour:
       Label: Effect Group
       PreConditions: []
       Effects:
-      - rid: 144068159907823916
+      - rid: 3216492003629990222
       TargetSelector:
         rid: -2
     PersistentModifiers: []
@@ -298,7 +298,7 @@ MonoBehaviour:
     RefIds:
     - rid: -2
       type: {class: , ns: , asm: }
-    - rid: 144068159907823916
+    - rid: 3216492003629990222
       type: {class: EffAddShield, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
       data:
         Selection:
@@ -322,7 +322,7 @@ MonoBehaviour:
           AutoResolve: 0
           AutoAccept: 1
         _shieldSource: 0
-        _baseAmount: 20
+        _baseAmount: 10
         _comboMultiplier: 1
         _reader:
           rid: -2
