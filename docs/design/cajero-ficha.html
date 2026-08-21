@@ -767,19 +767,35 @@
 
   <h3>Por qué Poker</h3>
 
-  <p>Simulado sobre 400.000 manos, jugando a buscar la debilidad con 2 rerolls (guardo lo que sirve, tiro el resto):</p>
+  <p>Simulado sobre 300.000 manos, jugando a buscar la debilidad con el presupuesto real de tiradas del Ruleset —<code>RollsPerTurn: 3</code>, o sea la tirada inicial más dos rerolls, guardando lo que sirve y tirando el resto:</p>
 
   <div class="tablebox">
     <table>
       <thead><tr><th>Debilidad</th><th class="num">EV</th><th class="num">Pega la debilidad</th><th class="num">Base media cuando falla</th></tr></thead>
       <tbody>
-        <tr class="after"><td><strong>Poker</strong></td><td class="num"><strong>38,2</strong></td><td class="num">27,6%</td><td class="num">21,4</td></tr>
-        <tr><td>Full House</td><td class="num">31,6</td><td class="num">35,8%</td><td class="num">19,9</td></tr>
+        <tr class="after"><td><strong>Poker</strong></td><td class="num"><strong>40,2</strong></td><td class="num">27,5%</td><td class="num">24,2</td></tr>
+        <tr><td>Full House</td><td class="num">33,6</td><td class="num">36,1%</td><td class="num">23,0</td></tr>
       </tbody>
     </table>
   </div>
 
-  <p style="margin-top:1.2rem">Poker rinde <strong>21% más</strong> aunque conecte menos seguido. Y es mejor también <em>cuando falla</em>: buscar poker es una <strong>máquina de tríos</strong> —guardás una cara y tirás tres dados, y lo que sale seguido es trío, base 22— mientras que buscar full house te deja en doble par, base 15.</p>
+  <p style="margin-top:1.2rem">Poker rinde <strong>20% más</strong> aunque conecte menos seguido. Y es mejor también <em>cuando falla</em>: buscar poker es una <strong>máquina de tríos</strong> —guardás una cara y tirás tres dados, y lo que sale seguido es trío, base 22— mientras que buscar full house te deja en doble par, base 15.</p>
+
+  <div class="callout">
+    <span class="eyebrow">Y cuantas más tiradas, mejor le va al Poker</span>
+    <p>El Ruleset de <code>develop</code> acaba de subir <code>RollsPerTurn</code> de <strong>2 a 3</strong>. Como un roll es una tirada entera —todos los call sites cobran <code>TrySpendRolls(…, 1)</code>, no uno por dado— eso es una tirada más por turno para buscar la mano. Y el pool acumula hasta <code>RollPoolCap: 6</code> arrancando en 6, así que se puede ahorrar y quemar un turno largo:</p>
+    <div class="tablebox" style="margin:.8rem 0 0; max-width:38rem">
+      <table>
+        <thead><tr><th>Tiradas en el turno</th><th class="num">Poker</th><th class="num">Full House</th><th class="num">Ventaja</th></tr></thead>
+        <tbody>
+          <tr><td>2 — el Ruleset viejo</td><td class="num">28,0</td><td class="num">25,3</td><td class="num">+11%</td></tr>
+          <tr class="after"><td>3 — el Ruleset de hoy</td><td class="num"><strong>40,2</strong></td><td class="num">33,6</td><td class="num">+20%</td></tr>
+          <tr><td>6 — turno ahorrado</td><td class="num">50,8</td><td class="num">39,7</td><td class="num">+28%</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p style="margin-top:.8rem">La ventaja del Poker <strong>crece con el presupuesto</strong>, porque buscar la mano rara es lo que aprovecha las tiradas extra: el full house ya conectaba seguido y saturá antes. El cambio de balance no puso en duda la decisión — la reforzó, y le da al jugador una jugada explícita: <strong>ahorrar rolls para un turno de cacería</strong>.</p>
+  </div>
 
   <div class="tablebox" style="max-width:44rem">
     <table>
@@ -795,7 +811,7 @@
 
   <div class="callout">
     <span class="eyebrow">El costo, y por qué se paga</span>
-    <p>Es más swingy: la debilidad conecta el 28% de las veces en vez del 36%. Pero <strong>es un jefe que se cura</strong>, y un EV más alto le gana mejor a la curación que una lima consistente: 170 de vida a 38 por turno son ~4,5 turnos pegándole, contra 5,4 con full house. Cada turno extra es una ronda más de monedas expirando a su favor.</p>
+    <p>Es más swingy: la debilidad conecta el 28% de las veces en vez del 36%. Pero <strong>es un jefe que se cura</strong>, y un EV más alto le gana mejor a la curación que una lima consistente: 170 de vida a 40 por turno son ~4,2 turnos pegándole, contra 5,1 con full house. Cada turno extra es una ronda más de monedas expirando a su favor.</p>
     <p style="margin-top:.6rem">Si el playtest muestra que es <em>demasiado</em> swingy —dos búsquedas falladas seguidas y se cura de vuelta— volver a Full House es una línea.</p>
   </div>
 
