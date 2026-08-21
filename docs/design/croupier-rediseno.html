@@ -302,7 +302,7 @@
   <div class="statusbar">
     <span class="chip">rama <code>feature/improve-bosses</code></span>
     <span class="chip">sala medida en engine · 11×11 · 103 casillas</span>
-    <span class="chip warn">vida 170 · debilidad Par ×1.5</span>
+    <span class="chip warn">vida 200 · debilidad Poker ×2</span>
   </div>
 </header>
 
@@ -467,7 +467,7 @@
     <div class="phase p3">
       <div class="hp">50% — una sola vez</div>
       <h3>Pleno y color</h3>
-      <p>Enciende <strong>todo el paño menos el 3×3 que lo rodea</strong>, y <strong>sin turno de aviso</strong>: marca y prende en el mismo turno. A quien esté fuera de ese 3×3 le cobra <strong>6 en el acto</strong>.</p>
+      <p>El turno del aviso <strong>no es un turno perdido para él</strong>: hace su acción normal primero — prende una banda o dispara — y <em>recién después</em> <strong>se teletransporta al centro de la sala y marca todo el paño menos el 3×3 que lo rodea</strong>. Al turno siguiente eso prende, cobra <strong>7</strong> a todo el que no esté en el hueco, y deja fuego.</p>
       <p>Lo que prende dura <strong>3 rondas</strong>, y desde ahí las bandas también. El ciclo continúa.</p>
     </div>
   </div>
@@ -476,8 +476,8 @@
     <div class="board-row">
       <div class="board" data-map="pleno"></div>
       <div class="board-note">
-        <p><strong>Pleno y color.</strong> Es el único momento de la pelea en que estar pegado a él es lo seguro, y es el único golpe de la pelea que llega sin aviso previo.</p>
-        <p>Invierte la regla que el jugador viene aprendiendo desde el primer ciclo: toda la pelea el problema fue acercarse, y de golpe acercarse es la salvación. Después, con el paño entero encendido, cada paso de vuelta hacia afuera se paga por casilla.</p>
+        <p><strong>Pleno y color.</strong> Es el único momento de la pelea en que estar pegado a él es lo seguro. Y el refugio no aparece donde estás vos: aparece en el centro, porque él se pone en el centro.</p>
+        <p>Invierte la regla que el jugador viene aprendiendo desde el primer ciclo: toda la pelea el problema fue acercarse, y de golpe acercarse es la salvación. Desde una esquina el centro está a <strong>8 pasos</strong> — dos acciones de movimiento, el turno entero. Después, con el paño encendido, cada paso de vuelta hacia afuera se paga por casilla.</p>
       </div>
     </div>
   </figure>
@@ -497,7 +497,7 @@
         <tr>
           <td><strong>Proyectil</strong></td>
           <td>Alcanza al jugador en cualquier parte de la sala, en cada turno Reparte.</td>
-          <td class="num">10</td>
+          <td class="num">12</td>
           <td>No — es su piso de daño</td>
         </tr>
         <tr>
@@ -509,14 +509,14 @@
         <tr>
           <td><strong>Fuego de paño</strong></td>
           <td>La banda queda ardiendo. Cobra <strong>por cada casilla encendida que pisás</strong>, y otra vez si arrancás el turno parado en una. Él es inmune al suyo.</td>
-          <td class="num">6</td>
+          <td class="num">7</td>
           <td>Sí — no entrando, o entrando por menos casillas</td>
         </tr>
         <tr>
           <td><strong>Pleno y color</strong></td>
-          <td>Al 50%, una sola vez: prende todo el paño menos su 3×3 y cobra en el acto a quien esté afuera de ese 3×3.</td>
-          <td class="num">6</td>
-          <td>No — es el único sin turno de aviso</td>
+          <td>Al 50%, una sola vez. Después de su acción normal del turno se teletransporta al centro y marca todo el paño menos su 3×3; al turno siguiente prende y deja fuego.</td>
+          <td class="num">7</td>
+          <td>Sí — llegando al hueco del centro antes de que prenda</td>
         </tr>
       </tbody>
     </table>
@@ -528,12 +528,12 @@
     <table>
       <thead><tr><th>Campo</th><th class="num">Valor</th><th>Nota</th></tr></thead>
       <tbody>
-        <tr><td>Vida</td><td class="num">170</td><td>Y sólo se lo puede golpear en uno de cada dos turnos.</td></tr>
-        <tr><td>Debilidad</td><td class="num">Par ×1.5</td><td>Multiplica el golpe entero, no el base del combo: un Par vale ~25 y sale a ~38, que empata al doble par. Y el Par sale en la primera tirada 9 de cada 10 veces, contra 2 de cada 10 del trío — el mismo daño que la jugada media, gratis, si conocés su debilidad. Valor propio del jefe, no la debilidad estándar.</td></tr>
+        <tr><td>Vida</td><td class="num">200</td><td>Y sólo se lo puede golpear en uno de cada dos turnos.</td></tr>
+        <tr><td>Debilidad</td><td class="num">Poker ×2</td><td>Multiplica el golpe entero, no el base del combo: un Poker vale 55 y sale a 110. Cambia: era Par ×1,5. El Par salía 9 de cada 10 tiradas, así que la debilidad era un piso que se cobraba siempre; el Poker sale ~2 de cada 10 tirando todo el pool, así que ahora es un premio que hay que ir a buscar. Valor propio del jefe, no la debilidad estándar.</td></tr>
         <tr><td>Oro</td><td class="num">15 – 23</td><td></td></tr>
-        <tr><td>Proyectil</td><td class="num">10</td><td>Garantizado, alcance a toda la sala.</td></tr>
+        <tr><td>Proyectil</td><td class="num">12</td><td>Garantizado, alcance a toda la sala.</td></tr>
         <tr><td>Marca</td><td class="num">0</td><td>El aviso no golpea.</td></tr>
-        <tr><td>Fuego</td><td class="num">6</td><td>Por cada casilla encendida que pisás, y al arrancar el turno en una.</td></tr>
+        <tr><td>Fuego</td><td class="num">7</td><td>Por cada casilla encendida que pisás, y al arrancar el turno en una.</td></tr>
         <tr><td>Duración fuego</td><td class="num">2 → 3</td><td>Rondas. Fase 1 → después del 50%.</td></tr>
         <tr><td>Dado bloqueado</td><td class="num">1 permanente</td><td>Al 70%, siempre el mismo, para el resto de la pelea.</td></tr>
         <tr><td>Movimiento</td><td class="num">2 pasos</td><td>Sólo en el turno Reparte. En el turno Quema no se mueve.</td></tr>
@@ -546,9 +546,9 @@
   <div class="callout">
     <span class="eyebrow">Presupuesto de daño</span>
     <p>Contra 100 de vida, con un escudo mediano que absorbe ~13 por turno:</p>
-    <p><strong>Piso — 10 por ciclo de dos turnos.</strong> Es el proyectil del turno Reparte, y nada más: el turno Quema no dispara. Si te quedás fuera del fuego y gastás la acción en defender, los 13 del escudo se comen los 10 y el ciclo te sale en 0 — pero tampoco le pegaste.</p>
-    <p><strong>Techo — 28 por ciclo.</strong> 10 del proyectil más 18 de cruzar la banda: 3 casillas encendidas a 6 cada una, y sin escudo, porque la acción del turno se fue en moverte. Ese es el precio de acercarte por el camino corto.</p>
-    <p><strong>El peso del fuego está en cruzarlo, no en pararse en él.</strong> Quedarte quieto en una casilla encendida cuesta 6 al arrancar el turno: menos que el proyectil. Atravesar la banda cuesta 6 tres veces en un solo movimiento. La decisión caro/barato es siempre cuántas casillas encendidas pisás, no cuánto tiempo pasás adentro.</p>
+    <p><strong>Piso — 12 por ciclo de dos turnos.</strong> Es el proyectil del turno Reparte, y nada más: el turno Quema no dispara. Si te quedás fuera del fuego y gastás la acción en defender, los 13 del escudo se comen los 12 y el ciclo te sale en 0 — pero tampoco le pegaste.</p>
+    <p><strong>Techo — 33 por ciclo.</strong> 12 del proyectil más 21 de cruzar la banda: 3 casillas encendidas a 7 cada una, y sin escudo, porque la acción del turno se fue en moverte. Ese es el precio de acercarte por el camino corto.</p>
+    <p><strong>El peso del fuego está en cruzarlo, no en pararse en él.</strong> Quedarte quieto en una casilla encendida cuesta 7 al arrancar el turno: menos que el proyectil. Atravesar la banda cuesta 7 tres veces en un solo movimiento. La decisión caro/barato es siempre cuántas casillas encendidas pisás, no cuánto tiempo pasás adentro.</p>
   </div>
 </section>
 
