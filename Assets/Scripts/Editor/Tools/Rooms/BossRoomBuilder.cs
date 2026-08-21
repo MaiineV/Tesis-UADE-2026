@@ -2,7 +2,10 @@ using System.Collections.Generic;
 using System.IO;
 using Rollgeon.Dungeon;
 using Rollgeon.Dungeon.Components;
+using Rollgeon.Editor.Tools.Enemy.Builders;
 using Rollgeon.Grid;
+using Rollgeon.Tiles;
+using Rollgeon.Tiles.Authoring;
 using UnityEditor;
 using UnityEngine;
 
@@ -10,8 +13,8 @@ namespace Rollgeon.EditorTools
 {
     /// <summary>
     /// Construye una sala propia por jefe (<c>Rollgeon → Bosses → Build Boss Rooms</c>): clona la sala
-    /// base del piso, le pone los blockers del plano de <c>docs/design/bosses-seis-refinados.html</c>,
-    /// mueve el spawn del jefe a su casilla y hornea el <see cref="NavGraph"/>.
+    /// base del piso, le pone los blockers y las casillas especiales del plano, mueve el spawn del
+    /// jefe a su casilla y hornea el <see cref="NavGraph"/>.
     /// </summary>
     /// <remarks>
     /// <para>
@@ -29,8 +32,8 @@ namespace Rollgeon.EditorTools
     /// </para>
     /// <para>
     /// Las tres reglas de autoría —jefe alcanzable, sala conexa, spawn libre— se chequean contra el
-    /// grafo horneado y no contra el plano: el plano es una grilla ideal de 11×7 y la sala real es
-    /// 11×11 con muebles propios.
+    /// grafo horneado y no contra el plano: el plano es la grilla ideal de 11×11 y la sala real trae
+    /// además los muebles de la sala base del piso.
     /// </para>
     /// </remarks>
     public static class BossRoomBuilder
@@ -86,8 +89,8 @@ namespace Rollgeon.EditorTools
         // ======================================================================
 
         // Placeholders elegidos entre lo que ya existe y ya se usa como blocker en estas mismas salas.
-        // El arte que pide el documento (mármol bajo, mostrador con reja de latón, escritorios con
-        // lámpara) no está modelado: cuando esté, se cambia el path acá y se re-corre el menú.
+        // El arte que piden las fichas (mármol bajo, cajas fuertes, escritorios con lámpara) no está
+        // modelado: cuando esté, se cambia el path acá y se re-corre el menú de esa sala.
 
         /// <summary>Tragamonedas — el único prop que el documento pide y que ya existe tal cual.</summary>
         private const string SlotMachineProp = "Assets/Prefabs/Props/slotv02.prefab";
@@ -99,9 +102,10 @@ namespace Rollgeon.EditorTools
         private const string TableProp = "Assets/Prefabs/Props/Tablev02.prefab";
 
         /// <summary>
-        /// Caja de fichas: el mostrador del Cajero. Mide 0.978 × 0.510 × 1.107, o sea una casilla de
-        /// huella. Se le corrige sólo la altura (<c>PropScaleAxes</c> del plano): con 0.510 supera la
-        /// banda de walk clearance del bake por un centímetro, y así deja de bloquear a la primera.
+        /// Caja de fichas: hace de caja fuerte del Cajero. Mide 0.978 × 0.510 × 1.107, o sea una
+        /// casilla de huella — que es lo que la ficha pide, seis bultos sueltos y no un mueble largo.
+        /// Se le corrige sólo la altura (<c>PropScaleAxes</c> del plano): con 0.510 supera la banda de
+        /// walk clearance del bake por un centímetro, y así deja de bloquear a la primera.
         /// </summary>
         private const string ChipCrateProp = "Assets/Prefabs/Props/CajaFichasv01.prefab";
 
@@ -113,9 +117,9 @@ namespace Rollgeon.EditorTools
         // ======================================================================
 
         /// <summary>
-        /// Un plano por jefe, en coordenadas del documento: 11 × 7, origen arriba-izquierda, <c>y</c>
-        /// creciendo hacia abajo. La traducción a la grilla de la sala la hace
-        /// <see cref="PlanToRoom"/>.
+        /// Un plano por jefe, en coordenadas del documento: <see cref="PlanWidth"/> ×
+        /// <see cref="PlanHeight"/>, origen arriba-izquierda, <c>y</c> creciendo hacia abajo. La
+        /// traducción a la grilla de la sala la hace <see cref="PlanToRoom"/>.
         /// </summary>
         public static readonly BossRoomPlan[] Plans =
         {
@@ -191,23 +195,33 @@ namespace Rollgeon.EditorTools
                 OutputRoomPath = "Assets/Prefabs/Rooms/FloorTwo/Boss_Room_Cajero.prefab",
                 OutputRoomSOPath = "Assets/Rollgeon/Rooms/Room_Boss_Cajero.asset",
                 PropPrefabPath = ChipCrateProp,
-                // Del lado de arriba del mostrador: elegir puerta te compromete con un lado.
-                BossPlanCell = new Vector2Int(5, 2),
-                // El mostrador va en la fila 5, la única que cruza la sala sin tocar recorte ni
-                // mueble, como dos cajas de dos casillas. Quedan tres pasos (x=0-1, x=4-6, x=9-10) y
-                // el del medio es el que se lee como puerta. Las puntas van SIN prop: son los
-                // tiles-frente de las puertas Oeste y Este y taparlas sella la sala.
-                BlockerPlanCells = new[]
-                {
-                    new Vector2Int(2, 5),
-                    new Vector2Int(3, 5),
-                    new Vector2Int(7, 5),
-                    new Vector2Int(8, 5),
-                },
+                // El centro exacto. Nada parte la sala al medio, así que el jefe no tiene lado: la
+                // primera decisión de la pelea es por qué esquina entra el jugador, y para que las
+                // cuatro sean equivalentes él tiene que arrancar equidistante de todas.
+                BossPlanCell = new Vector2Int(PlanWidth / 2, PlanHeight / 2),
+                // Las seis cajas fuertes: lo único que bloquea, y lo único que frena un empujón en
+                // seco. Contra los costados, para que el centro quede abierto — la pelea pasa en el
+                // medio porque es donde hay lugar para que te tire.
+                //
+                // El layout no se transcribe acá: es el mismo array que el builder del jefe usa para
+                // verificar la regla de separación, y dos copias del mismo dibujo se separan sin que
+                // nada se ponga rojo.
+                BlockerPlanCells = CajeroAssetBuilder.SafeBoxPlanCells,
                 // La mesa de pool del noreste se va sólo de esta sala. Vive en las tres salas base, así
                 // que borrarla allá se la saca a todos los jefes del piso; acá es una decisión de la
-                // sala del Cajero. Libera además sus casillas, que la base tenía bloqueadas.
+                // sala del Cajero. Libera además sus casillas, que la base tenía bloqueadas — dos de
+                // ellas son celdas del plano (un pincho y una caja fuerte).
                 RemoveBaseObjectNames = new[] { "Poolv04" },
+                // Los diez pinchos, en las casillas exactas del dibujo. Van por la lista de
+                // permanentes y no por slots: la posición ES la autoría, y un slot la rolearía.
+                SpecialTiles = new[]
+                {
+                    new BossRoomSpecialTilePlan
+                    {
+                        DefinitionAssetPath = CajeroAssetBuilder.SpikeTilePath,
+                        PlanCells = CajeroAssetBuilder.SpikePlanCells,
+                    },
+                },
                 // La caja de fichas ya mide una casilla en X y en Z (0.978 × 1.107): la huella no se
                 // toca. Lo único que se corrige es la altura — 0.510 pasa la banda de walk clearance
                 // del bake (NavGraphBaker.WalkClearance = 0.5) por un centímetro, y un prop que
@@ -274,12 +288,52 @@ namespace Rollgeon.EditorTools
         // ======================================================================
 
         [MenuItem("Rollgeon/Bosses/Build Boss Rooms")]
-        public static void BuildBossRooms()
+        public static void BuildBossRooms() => Run(Plans);
+
+        // Una entrada por jefe. No es comodidad: SaveAsPrefabAsset renumera los fileIDs internos de
+        // cada prefab que escribe, así que reconstruir las seis para cambiar el plano de una deja las
+        // otras cinco con todas sus referencias internas movidas y sin una sola diferencia de
+        // contenido. Tocar un plano tiene que poder rebuildear SOLO su sala.
+        [MenuItem("Rollgeon/Bosses/Build Boss Room/Croupier")]
+        private static void BuildCroupierRoom() => BuildOne("Croupier");
+
+        [MenuItem("Rollgeon/Bosses/Build Boss Room/Bandida")]
+        private static void BuildBandidaRoom() => BuildOne("Bandida");
+
+        [MenuItem("Rollgeon/Bosses/Build Boss Room/Cajero")]
+        private static void BuildCajeroRoom() => BuildOne("Cajero");
+
+        [MenuItem("Rollgeon/Bosses/Build Boss Room/Anotador")]
+        private static void BuildAnotadorRoom() => BuildOne("Anotador");
+
+        [MenuItem("Rollgeon/Bosses/Build Boss Room/Generala")]
+        private static void BuildGeneralaRoom() => BuildOne("Generala");
+
+        [MenuItem("Rollgeon/Bosses/Build Boss Room/Tahur")]
+        private static void BuildTahurRoom() => BuildOne("Tahur");
+
+        /// <summary>
+        /// Reconstruye la sala de un solo jefe, por <see cref="BossRoomPlan.BossName"/>.
+        /// </summary>
+        public static void BuildOne(string bossName)
+        {
+            foreach (var plan in Plans)
+            {
+                if (plan.BossName != bossName) continue;
+                Run(new[] { plan });
+                return;
+            }
+
+            Debug.LogError(LogPrefix + $"no hay ningún plano llamado '{bossName}'. " +
+                                       $"Los que hay: {string.Join(", ", PlanNames())}.");
+        }
+
+        private static void Run(IReadOnlyList<BossRoomPlan> plans)
         {
             int built = 0;
             var failures = new List<string>();
 
-            foreach (var plan in Plans)
+            foreach (var plan in plans)
             {
                 if (Build(plan, failures)) built++;
             }
@@ -287,7 +341,7 @@ namespace Rollgeon.EditorTools
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
 
-            Debug.Log(LogPrefix + $"{built}/{Plans.Length} sala(s) de jefe construida(s).");
+            Debug.Log(LogPrefix + $"{built}/{plans.Count} sala(s) de jefe construida(s).");
 
             if (failures.Count > 0)
             {
@@ -300,6 +354,13 @@ namespace Rollgeon.EditorTools
             }
         }
 
+        private static List<string> PlanNames()
+        {
+            var names = new List<string>(Plans.Length);
+            foreach (var plan in Plans) names.Add(plan.BossName);
+            return names;
+        }
+
         // ======================================================================
         // Coordenadas
         // ======================================================================
@@ -308,11 +369,11 @@ namespace Rollgeon.EditorTools
         /// Traduce una celda del plano del documento a la grilla de la sala.
         /// </summary>
         /// <remarks>
-        /// El plano es 11 × 7 con <c>y</c> hacia abajo; la sala real es 11 × 11 centrada en (0,0). El
-        /// plano se centra: su celda central (5,3) es la (0,0) de la sala, y el eje <c>y</c> se da
-        /// vuelta porque en la grilla <c>+Y</c> es <c>+Z</c> del mundo — el "arriba" del dibujo. Las
-        /// dos filas de más arriba y de más abajo de la sala (y = ±4, ±5) quedan fuera del plano y
-        /// llegan como estén en la sala base.
+        /// El plano es 11 × 11 con <c>y</c> hacia abajo; la sala real es 11 × 11 centrada en (0,0). El
+        /// plano se centra: su celda central (5,5) es la (0,0) de la sala, y el eje <c>y</c> se da
+        /// vuelta porque en la grilla <c>+Y</c> es <c>+Z</c> del mundo — el "arriba" del dibujo. Como
+        /// las dos grillas miden lo mismo, el plano cubre la sala entera: no queda ninguna fila que
+        /// llegue sólo como esté en la sala base.
         /// </remarks>
         public static GridCoord PlanToRoom(Vector2Int planCell)
         {
@@ -408,6 +469,8 @@ namespace Rollgeon.EditorTools
 
                 ReportPlanCellsEatenByBase(plan, baseWalkable);
 
+                var specialCells = ApplySpecialTiles(plan, layout, failures);
+
                 var bossCell = PlanToRoom(plan.BossPlanCell);
                 if (!MoveBossSpawn(plan, layout, bossCell, failures)) return false;
 
@@ -420,7 +483,8 @@ namespace Rollgeon.EditorTools
                 var plannedBlockers = new List<GridCoord>();
                 foreach (var planCell in plan.BlockerPlanCells) plannedBlockers.Add(PlanToRoom(planCell));
 
-                foreach (var finding in ValidateRoomRules(layout.NavGraph, bossCell, playerCell, plannedBlockers))
+                foreach (var finding in ValidateRoomRules(
+                             layout.NavGraph, bossCell, playerCell, plannedBlockers, specialCells))
                     failures.Add($"{plan.BossName}: {finding}");
 
                 // Las puertas las valida el mismo chequeo que corre el rebaker: un tile-frente que se
@@ -434,7 +498,8 @@ namespace Rollgeon.EditorTools
                 if (!Save(contents, plan, failures)) return false;
 
                 Debug.Log(LogPrefix + $"{plan.BossName} (piso {plan.Floor}) → '{plan.OutputRoomPath}': " +
-                          $"{placed.Count}/{plan.BlockerPlanCells.Length} blocker(s), jefe en {bossCell}, " +
+                          $"{placed.Count}/{plan.BlockerPlanCells.Length} blocker(s), " +
+                          $"{specialCells.Count} casilla(s) especial(es), jefe en {bossCell}, " +
                           $"{layout.NavGraph.NodeCount} nodos y {layout.NavGraph.Edges.Count} aristas.");
                 return true;
             }
@@ -461,14 +526,32 @@ namespace Rollgeon.EditorTools
 
             foreach (var cell in plan.BlockerPlanCells)
             {
-                if (cell.x >= 0 && cell.x < PlanWidth && cell.y >= 0 && cell.y < PlanHeight) continue;
+                if (InsidePlan(cell)) continue;
                 failures.Add($"{plan.BossName}: blocker ({cell.x},{cell.y}) fuera del plano " +
                              $"{PlanWidth}×{PlanHeight}.");
                 return false;
             }
 
+            if (plan.SpecialTiles != null)
+            {
+                foreach (var group in plan.SpecialTiles)
+                {
+                    if (group?.PlanCells == null) continue;
+                    foreach (var cell in group.PlanCells)
+                    {
+                        if (InsidePlan(cell)) continue;
+                        failures.Add($"{plan.BossName}: casilla especial ({cell.x},{cell.y}) fuera " +
+                                     $"del plano {PlanWidth}×{PlanHeight}.");
+                        return false;
+                    }
+                }
+            }
+
             return true;
         }
+
+        private static bool InsidePlan(Vector2Int planCell) =>
+            planCell.x >= 0 && planCell.x < PlanWidth && planCell.y >= 0 && planCell.y < PlanHeight;
 
         /// <summary>
         /// Deja el grupo de props del plano vacío y devuelve su transform. Existe por defensa: cada
@@ -556,14 +639,87 @@ namespace Rollgeon.EditorTools
             if (marker == null) marker = instance.AddComponent<TileMarker>();
             marker.Coord = cell;
             marker.Layer = BlockerLayer;
-            // Footprint de una celda: un prop por casilla del plano. Un prop largo con footprint 9×1
-            // para el mostrador leería igual, pero ataría el bloqueo al pivot y a la rotación del arte.
+            // Footprint de una celda: un prop por casilla del plano. Un mueble largo con footprint
+            // 9×1 leería igual, pero ataría el bloqueo al pivot y a la rotación del arte.
             marker.Footprint = Vector3Int.one;
             marker.FootprintOffset = Vector3Int.zero;
             marker.Type = TileType.Decoration;
             marker.IsBlocker = true;
 
             return instance;
+        }
+
+        /// <summary>
+        /// Escribe las casillas especiales del plano en el <see cref="RoomLayout"/> y devuelve las
+        /// celdas que quedaron colocadas.
+        /// </summary>
+        /// <remarks>
+        /// <para>
+        /// Van por <see cref="RoomLayout.SpecialTilePlacements"/> —la lista de permanentes— y no por
+        /// <see cref="RoomLayout.SpecialTileSlots"/>: un slot tiene la posición fija y rolea el tipo,
+        /// y en estos planos el tipo y la posición son los dos autoría. Un pincho dibujado a mano en
+        /// una casilla exacta no puede salir "fuego" en la mitad de las runs.
+        /// </para>
+        /// <para>
+        /// <b>Agrega, no reemplaza.</b> Cada corrida parte de la sala base, así que lo que ya está en
+        /// la lista vino de la base y es autoría de la sala compartida del piso — vaciarla la
+        /// borraría en la sala derivada nada más. Por la misma razón no hace falta limpiar lo de la
+        /// corrida anterior: nunca llega.
+        /// </para>
+        /// <para>
+        /// Una celda que ya tiene casilla especial no se pisa. Dos placements en la misma coord
+        /// <b>cobran los dos</b>: los triggers disparan una vez por instancia y <c>Place</c> no valida
+        /// el solape, así que un pincho duplicado pegaría el doble sin que nada lo diga.
+        /// </para>
+        /// </remarks>
+        private static List<GridCoord> ApplySpecialTiles(
+            BossRoomPlan plan, RoomLayout layout, List<string> failures)
+        {
+            var placed = new List<GridCoord>();
+            if (plan.SpecialTiles == null || plan.SpecialTiles.Length == 0) return placed;
+
+            if (layout.SpecialTilePlacements == null)
+                layout.SpecialTilePlacements = new List<SpecialTilePlacement>();
+
+            var taken = new HashSet<GridCoord>();
+            foreach (var existing in layout.SpecialTilePlacements)
+                if (existing != null) taken.Add(existing.Coord);
+
+            foreach (var group in plan.SpecialTiles)
+            {
+                if (group?.PlanCells == null || group.PlanCells.Length == 0) continue;
+
+                var definition = AssetDatabase.LoadAssetAtPath<SpecialTileDefinitionSO>(
+                    group.DefinitionAssetPath);
+                if (definition == null)
+                {
+                    failures.Add($"{plan.BossName}: falta la definición de casilla especial " +
+                                 $"'{group.DefinitionAssetPath}' — sus {group.PlanCells.Length} " +
+                                 "celda(s) quedan como piso pelado.");
+                    continue;
+                }
+
+                foreach (var planCell in group.PlanCells)
+                {
+                    var cell = PlanToRoom(planCell);
+                    if (!taken.Add(cell))
+                    {
+                        failures.Add($"{plan.BossName}: {cell} (plano {planCell.x},{planCell.y}) ya " +
+                                     $"tiene una casilla especial — '{definition.name}' no se apila " +
+                                     "encima: las dos cobrarían.");
+                        continue;
+                    }
+
+                    layout.SpecialTilePlacements.Add(new SpecialTilePlacement
+                    {
+                        Definition = definition,
+                        Coord = cell,
+                    });
+                    placed.Add(cell);
+                }
+            }
+
+            return placed;
         }
 
         /// <summary>
@@ -692,17 +848,23 @@ namespace Rollgeon.EditorTools
         // ======================================================================
 
         /// <summary>
-        /// Las tres reglas de autoría más el chequeo de que los blockers del plano realmente hayan
-        /// caído del grafo. Devuelve un finding por violación; vacío = sala válida.
+        /// Las tres reglas de autoría más los dos chequeos del plano: que los blockers realmente hayan
+        /// caído del grafo, y que las casillas especiales hayan caído sobre piso. Devuelve un finding
+        /// por violación; vacío = sala válida.
         /// </summary>
         /// <param name="playerCell">
         /// <c>null</c> si la sala no tiene <c>PlayerSpawnPoint</c> — es un finding en sí mismo.
+        /// </param>
+        /// <param name="plannedSpecialTiles">
+        /// Celdas que <see cref="ApplySpecialTiles"/> dejó escritas. <c>null</c> = plano sin casillas
+        /// especiales.
         /// </param>
         public static List<string> ValidateRoomRules(
             NavGraph graph,
             GridCoord bossCell,
             GridCoord? playerCell,
-            IReadOnlyList<GridCoord> plannedBlockers)
+            IReadOnlyList<GridCoord> plannedBlockers,
+            IReadOnlyList<GridCoord> plannedSpecialTiles = null)
         {
             var findings = new List<string>();
 
@@ -724,6 +886,19 @@ namespace Rollgeon.EditorTools
                     findings.Add($"el blocker del plano en {cell} sigue caminable después del bake. " +
                                  "El prop no llega a la banda de walk clearance: revisar su altura o su " +
                                  "PropScale.");
+                }
+            }
+
+            if (plannedSpecialTiles != null)
+            {
+                // Una casilla especial se dispara al PISARLA, así que sobre piso que no existe es
+                // contenido invisible: no la puede cruzar nadie, ni el jugador ni un empujón. Y falla
+                // en silencio — el placement queda escrito y el layout se ve completo.
+                foreach (var cell in plannedSpecialTiles)
+                {
+                    if (walkable.Contains(cell)) continue;
+                    findings.Add($"la casilla especial en {cell} no es caminable: la tapa un mueble de " +
+                                 "la sala base o un blocker del plano, así que nunca se va a disparar.");
                 }
             }
 
@@ -859,11 +1034,22 @@ namespace Rollgeon.EditorTools
         /// <summary>Prop que se instancia en cada celda bloqueada. <c>null</c> = plano sin blockers.</summary>
         public string PropPrefabPath;
 
-        /// <summary>Celda del jefe, en coordenadas del plano (11 × 7, y hacia abajo).</summary>
+        /// <summary>Celda del jefe, en coordenadas del plano (11 × 11, y hacia abajo).</summary>
         public Vector2Int BossPlanCell;
 
         /// <summary>Celdas bloqueadas, en coordenadas del plano.</summary>
         public Vector2Int[] BlockerPlanCells = new Vector2Int[0];
+
+        /// <summary>
+        /// Casillas especiales permanentes del plano (pinchos, fuego, hielo). Vacío = sala sin
+        /// terreno especial autorado.
+        /// </summary>
+        /// <remarks>
+        /// Es una palanca de contenido y no de encuadre: una casilla especial no bloquea —no toca el
+        /// <see cref="NavGraph"/>— pero cobra al pisarla y el pathing la lee por su
+        /// <c>AIVirtualEnterDamage</c>, así que cambia la pelea tanto como un blocker.
+        /// </remarks>
+        public BossRoomSpecialTilePlan[] SpecialTiles = new BossRoomSpecialTilePlan[0];
 
         /// <summary>
         /// Muebles de la sala base a borrar en <b>esta</b> sala, por nombre de hijo directo de la raíz.
@@ -892,5 +1078,25 @@ namespace Rollgeon.EditorTools
         /// bloquear. Medir con <c>Rollgeon → Bosses → Dump Prop Bounds</c>.
         /// </remarks>
         public Vector3 PropScaleAxes = Vector3.one;
+    }
+
+    /// <summary>
+    /// Un tipo de casilla especial y las celdas exactas que ocupa en el plano.
+    /// </summary>
+    /// <remarks>
+    /// Agrupado por definición y no una entrada por celda porque el layout de un tipo es UNA decisión
+    /// de diseño: los diez pinchos del Cajero se leen juntos (ninguno toca a otro) y separarlos en
+    /// diez registros escondería la regla que los ordena.
+    /// </remarks>
+    public sealed class BossRoomSpecialTilePlan
+    {
+        /// <summary>
+        /// <c>SpecialTileDefinitionSO</c> de la casilla. El asset lo autora el builder del jefe, no
+        /// éste: un jefe cuyos pinchos pegan distinto que los genéricos necesita su propia definición.
+        /// </summary>
+        public string DefinitionAssetPath;
+
+        /// <summary>Celdas que ocupa, en coordenadas del plano.</summary>
+        public Vector2Int[] PlanCells = new Vector2Int[0];
     }
 }
