@@ -8,18 +8,14 @@ using UnityEngine;
 namespace Rollgeon.Editor.Tools
 {
     /// <summary>
-    /// Instalador de las entries de feedback de los seis jefes de casino
+    /// Instalador de las entries de feedback de los jefes de casino
     /// (<c>Tools → Rollgeon → Bosses → Build Boss Feedback</c>). El <c>FeedbackDB</c> se
     /// autora a mano en el Inspector, así que el instalador hace upsert por
-    /// <c>FeedbackId</c>: las 26 entries viejas quedan intactas y correrlo dos veces deja
-    /// el asset igual.
+    /// <c>FeedbackId</c>: las entries que no nombra quedan intactas y correrlo dos veces
+    /// deja el asset igual.
     ///
     /// Los ids se exponen como <c>const</c> para que los nodos de IA los referencien sin
     /// escribir strings: un id mal tipeado no rompe nada, simplemente no suena.
-    ///
-    /// NO se autoran entries de SFX: el proyecto no tiene ni un clip de jefe, y una entry
-    /// apuntando al clip genérico equivocado es peor que el silencio — se cuela en el mix
-    /// y nadie la busca. Cuando lleguen los clips, agregar acá las <c>sfx.boss.*</c>.
     /// </summary>
     public static class BossFeedbackInstaller
     {
@@ -30,15 +26,6 @@ namespace Rollgeon.Editor.Tools
         private const string RangedImpactVfxPath = "Assets/Prefabs/VFX/VFX_RangedImpact.prefab";
         private const string MeleeImpactFeelPath = "Assets/Prefabs/Feedbacks/MMF_EnemyMeleeImpact.prefab";
         private const string RangedImpactFeelPath = "Assets/Prefabs/Feedbacks/MMF_EnemyRangedImpact.prefab";
-
-        // ================================================================
-        // Ids — <channel>.boss.<jefe>.<acción>
-        // ================================================================
-
-
-
-
-
 
         [MenuItem("Tools/Rollgeon/Bosses/Build Boss Feedback")]
         public static void Install()
@@ -75,26 +62,36 @@ namespace Rollgeon.Editor.Tools
             AssetDatabase.SaveAssets();
 
             Debug.Log(LogPrefix + $"Feedback de jefes instalado: {created} entries nuevas, " +
-                      $"{updated} re-escritas. Sin entries de SFX (no hay clips de jefe).");
+                      $"{updated} re-escritas. Sin entries de SFX.");
         }
 
         private static IEnumerable<Spec> BuildSpecs()
         {
-            // Los seis usan rigs prestados: cada AnimTrigger de acá existe en el Animator que
-            // le tocó al jefe. Un trigger inventado no tira error, simplemente no pasa nada.
+            // Los jefes usan rigs prestados, y cada AnimTrigger de acá tiene que existir en el
+            // Animator que le tocó: un trigger que el Animator no declara no tira error — el jefe
+            // cobra el daño y no se mueve.
 
-            // Croupier — Healer_Animated, sólo 'Attack'. Por eso el canto reusa el mismo golpe.
-            yield return Spec.Anim(CroupierMeleeAnim, "Attack");
-            yield return Spec.Anim(CroupierCantoAnim, "Attack");
+            // Croupier — SunkedGrand_Animated, que declara 'Attack_Melee', 'Attack_Range' y
+            // 'Teleport'.
+            yield return Spec.Anim(CroupierRangeAnim, "Attack_Range");
+            yield return Spec.Vfx(CroupierRangeImpactVfx, RangedImpactVfxPath);
+            yield return Spec.Feel(CroupierRangeImpactFeel, RangedImpactFeelPath);
+
+            // Un solo trigger para los dos tramos del rig: 'Teleport' encadena a 'Teleport_2', que
+            // es la mitad de reaparecer.
+            yield return Spec.Anim(CroupierTeleportAnim, "Teleport");
+
+            // AINode_SpinWheel y AINode_DetonateSungSectors nombran estos ids por default: sacarlos
+            // del DB los deja pidiendo entries inexistentes.
+            yield return Spec.Anim(CroupierMeleeAnim, "Attack_Melee");
+            yield return Spec.Anim(CroupierCantoAnim, "Attack_Range");
             yield return Spec.Vfx(CroupierImpactVfx, MeleeImpactVfxPath);
             yield return Spec.Feel(CroupierImpactFeel, MeleeImpactFeelPath);
 
-            // La confiscación reusa el impacto a distancia: el dado no lo agarra una mano, se lo
-            // lleva el paño desde lejos, y ranged es el único de los dos que lee como "algo viajó".
             yield return Spec.Vfx(CroupierConfiscaVfx, RangedImpactVfxPath);
             yield return Spec.Feel(CroupierConfiscaFeel, RangedImpactFeelPath);
 
-            // Bandida — MechaBoss_Animated. El brazo de la tragamonedas se lee como melee.
+            // Bandida — MechaBoss_Animated.
             yield return Spec.Anim(BandidaMeleeAnim, "Attack_Melee");
             yield return Spec.Anim(BandidaRangeAnim, "Attack_Range");
             yield return Spec.Anim(BandidaArmAnim, "Attack_Melee");
@@ -103,38 +100,39 @@ namespace Rollgeon.Editor.Tools
             yield return Spec.Feel(BandidaImpactFeel, MeleeImpactFeelPath);
             yield return Spec.Feel(BandidaRangeImpactFeel, RangedImpactFeelPath);
 
-            // Cajero — GeneralDirector_Animated, sólo 'Attack'. El disparo es a distancia en
-            // fiction pero comparte la animación; lo que lo distingue es el impacto ranged.
-            yield return Spec.Anim(CajeroMeleeAnim, "Attack");
-            yield return Spec.Anim(CajeroShotAnim, "Attack");
+            // Cajero — MechaBoss_Animated, el mismo rig que la Bandida.
+            yield return Spec.Anim(CajeroMeleeAnim, "Attack_Melee");
+            yield return Spec.Anim(CajeroShotAnim, "Attack_Range");
             yield return Spec.Vfx(CajeroImpactVfx, MeleeImpactVfxPath);
             yield return Spec.Vfx(CajeroShotImpactVfx, RangedImpactVfxPath);
             yield return Spec.Feel(CajeroImpactFeel, MeleeImpactFeelPath);
             yield return Spec.Feel(CajeroShotImpactFeel, RangedImpactFeelPath);
 
-            // Anotador — ChestMimic, sólo 'Attack' y 'Awaken'. El lápiz reusa 'Attack'.
+            // La Comisión viste GeneralDirector_Animated, que declara un solo 'Attack': por eso no
+            // puede reusar los ids del Cajero, que piden 'Attack_Range'.
+            yield return Spec.Anim(ComisionBiteAnim, "Attack");
+
+            // Anotador — ChestMimic, que sólo declara 'Attack' y 'Awaken'.
             yield return Spec.Anim(AnotadorMeleeAnim, "Attack");
             yield return Spec.Anim(AnotadorPencilAnim, "Attack");
             yield return Spec.Vfx(AnotadorImpactVfx, MeleeImpactVfxPath);
             yield return Spec.Feel(AnotadorImpactFeel, MeleeImpactFeelPath);
 
-            // Generala — DiceBoss_Animated, el único rig con 'Roll' propio para la tirada.
+            // Generala — DiceBoss_Animated, que declara 'Roll' además de los dos ataques.
             yield return Spec.Anim(GeneralaMeleeAnim, "Attack_Melee");
             yield return Spec.Anim(GeneralaRangeAnim, "Attack_Range");
             yield return Spec.Anim(GeneralaRollAnim, "Roll");
             yield return Spec.Anim(GeneralaCupSlamAnim, "Attack_Melee");
-            // 'Heal' no cura a nadie acá: es el gesto de brazos en alto, y era el único clip del
-            // DiceBoss que no usaba nadie. Reponer la mesa es lo más cerca de invocar que hace.
+            // 'Heal' no cura a nadie acá: en el DiceBoss es el gesto de brazos en alto.
             yield return Spec.Anim(GeneralaSummonAnim, "Heal");
-            // La escarcha comparte 'Attack_Range' con la mano: los cuatro triggers del DiceBoss ya
-            // están tomados y el anillo de hielo cae lejos, que es lo que ese clip empuja.
+            // La escarcha comparte 'Attack_Range' con la mano: el DiceBoss no declara más triggers.
             yield return Spec.Anim(GeneralaFrostAnim, "Attack_Range");
             yield return Spec.Vfx(GeneralaImpactVfx, MeleeImpactVfxPath);
             yield return Spec.Vfx(GeneralaRangeImpactVfx, RangedImpactVfxPath);
             yield return Spec.Feel(GeneralaImpactFeel, MeleeImpactFeelPath);
             yield return Spec.Feel(GeneralaRangeImpactFeel, RangedImpactFeelPath);
 
-            // Tahúr — SunkedGrand_Animated. La banca tira a distancia, el pinche es de cerca.
+            // Tahúr — SunkedGrand_Animated.
             yield return Spec.Anim(TahurMeleeAnim, "Attack_Melee");
             yield return Spec.Anim(TahurRangeAnim, "Attack_Range");
             yield return Spec.Anim(TahurPokeAnim, "Attack_Melee");

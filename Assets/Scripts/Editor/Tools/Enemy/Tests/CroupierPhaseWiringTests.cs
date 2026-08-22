@@ -21,9 +21,9 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
     /// Wiring del árbol del Croupier <b>en memoria</b>: contra el builder y no contra el
     /// <c>.asset</c>, que ataría el suite a que Unity lo haya reimportado. El jefe es un kiter de
     /// dos tiempos, y lo que se cubre acá es lo que un merge puede romper sin que se note: el
-    /// candado que tiene que re-emitirse todos los turnos, el tiempo de quema que tiene que
-    /// quedarse quieto, la duración del fuego de la que cuelga todo el plan del jefe, y el orden
-    /// del bloque de "Pleno y color" — donde mover un nodo un lugar le cambia el efecto entero.
+    /// candado que tiene que re-emitirse todos los turnos, el tope del salto del tiempo de quema,
+    /// la duración del fuego de la que cuelga todo el plan del jefe, y el orden del bloque de
+    /// "Pleno y color" — donde mover un nodo un lugar le cambia el efecto entero.
     /// </summary>
     [TestFixture]
     public class CroupierPhaseWiringTests
@@ -153,9 +153,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         /// resto del paño limpio, que es exactamente el efecto contrario.
         /// </summary>
         /// <remarks>
-        /// El tamaño del hueco no se escribe acá: sale de <c>PlenoHoleRadius</c> (hoy 1, o sea el 3×3
-        /// que describe la ficha). El nombre del test se quedó genérico a propósito — cruzarlo contra
-        /// la constante es lo que hace que mover el radio no deje el nombre mintiendo.
+        /// El tamaño del hueco sale de <c>PlenoHoleRadius</c> y no de un literal acá.
         /// </remarks>
         [Test]
         public void PlenoGate_BurnsTheWholeTableExceptTheSquareAroundHim()
@@ -216,16 +214,15 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             var teleport = Descendants(gate.Then).OfType<AINode_TeleportToRoomCenter>().Single();
 
             Assert.IsTrue(teleport.ConsumeMoveAction,
-                "El mismo turno en que cruza el 50% el Alternate puede caer en T1, y ese beat tiene " +
-                "un KeepDistance con FleeIdealDistance 8 que huye casi siempre: sin gastarle el " +
-                "movimiento, lo saca del centro justo después de plantarlo ahí.");
+                "Reubicarse ES el movimiento del turno: sin gastarlo, cualquier paso de movimiento " +
+                "que quede detrás lo saca del centro justo después de plantarlo ahí, y el área ya " +
+                "quedó anclada donde estaba.");
         }
 
         /// <summary>
-        /// <b>Marca en el turno N y prende en el N+1.</b> Era el bug reportado: marcaba y prendía en
-        /// el mismo tick, y como no hay yield entre el <c>Show</c> del telegraph y el <c>Clear</c> de
-        /// la ignición, el aviso no se dibujaba <i>ni un frame</i> — el paño se prendía entero sin
-        /// aviso ninguno.
+        /// <b>Marca en el turno N y prende en el N+1.</b> Marcando y prendiendo en el mismo tick el
+        /// aviso no se dibuja <i>ni un frame</i> —no hay yield entre el <c>Show</c> del telegraph y
+        /// el <c>Clear</c> de la ignición— y el paño se prende entero sin aviso ninguno.
         /// </summary>
         /// <remarks>
         /// <para>
@@ -277,10 +274,13 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         }
 
         /// <summary>
-        /// Las dos marcas del jefe conviven: el Pleno marca en su propio canal y la banda de T1 en el
-        /// guid pelado. Los dos avisos se levantan en el <b>mismo</b> turno —el que cruza el 50%— y
-        /// <c>IThreatenedAreaService</c> guarda un área por fuente <b>sobrescribiendo</b>, así que sin
-        /// canal el segundo marcado del turno destruye al primero, en el estado lógico y en el overlay.
+        /// El Pleno marca en su propio canal y la banda de T1 en el guid pelado, y el canal es lo
+        /// que las hace direccionables por separado. Los dos avisos se levantan en el <b>mismo</b>
+        /// turno —el que cruza el 50%— y <c>IThreatenedAreaService</c> guarda un área por fuente
+        /// <b>sobrescribiendo</b>, así que sin canal el segundo marcado del turno destruye al
+        /// primero, en el estado lógico y en el overlay. Y sin canal tampoco habría a qué apuntar
+        /// para descartar sólo uno de los dos (ver
+        /// <see cref="ThePleno_DropsTheCyclesPendingMark_BeforeRaisingItsOwn"/>).
         /// </summary>
         /// <remarks>
         /// Y el que consume tiene que pedir el mismo canal: la ignición del tiempo de quema va sin
@@ -318,6 +318,51 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         }
 
         /// <summary>
+        /// El Pleno <b>reemplaza</b> el aviso del ciclo, no se le suma: descarta la banda antes de
+        /// encolar el suyo.
+        /// </summary>
+        /// <remarks>
+        /// <para>
+        /// El armado corre en el mismo turno que el Alternate, así que cuando el 50% se cruza sobre
+        /// un tiempo de reparto quedan <b>dos</b> áreas marcadas a la vez: el jugador ve dos avisos
+        /// prendidos y al turno siguiente detonan los dos. Y la banda ni tiene dónde caer —el Pleno
+        /// prende todo menos el hueco, así que su terreno ya arde—, con lo cual su beat se absorbe
+        /// en silencio y el jefe se ve congelado.
+        /// </para>
+        /// <para>
+        /// El canal es lo que hace la puntería: el descarte va sin canal porque la banda vive en el
+        /// guid pelado. Con el canal del Pleno se cancelaría a sí mismo y el 50% no prendería nunca.
+        /// </para>
+        /// </remarks>
+        [Test]
+        public void ThePleno_DropsTheCyclesPendingMark_BeforeRaisingItsOwn()
+        {
+            var arm = Descendants(FindGateAtPercent(CroupierAssetBuilder.PlenoHpThreshold).Then);
+
+            var cancel = arm.OfType<AINode_CancelTelegraph>().SingleOrDefault();
+            Assert.IsNotNull(cancel,
+                "El armado del Pleno no descarta nada: la banda que T1 marcó este mismo turno queda " +
+                "pendiente, así que el jugador ve dos avisos y al turno siguiente detonan los dos.");
+
+            Assert.IsTrue(string.IsNullOrEmpty(cancel.ChannelId),
+                "El descarte estrenó canal. La banda del ciclo se marca en el guid pelado del jefe: " +
+                "con un canal acá no descarta nada, y si el canal es el del Pleno se cancela a sí " +
+                "mismo y el 50% no prende jamás.");
+
+            int cancelIdx = arm.FindIndex(n => n is AINode_CancelTelegraph);
+            int markIdx = arm.FindIndex(n => n is AINode_TelegraphMark);
+            int teleportIdx = arm.FindIndex(n => n is AINode_TeleportToRoomCenter);
+
+            Assert.Less(cancelIdx, markIdx,
+                "El descarte quedó DESPUÉS del marcado. Hoy funciona porque los canales difieren, " +
+                "pero deja el orden load-bearing: un canal repetido por error se apagaría a sí mismo.");
+            Assert.Greater(cancelIdx, teleportIdx,
+                "El descarte quedó ANTES del teleport, que es el único paso de acá que falla de " +
+                "verdad. Con el teleport fallado el Pleno no se arma, así que la banda tiene que " +
+                "conservar su aviso en vez de desaparecer sin nada que la reemplace.");
+        }
+
+        /// <summary>
         /// Los pasos de adentro van <b>desnudos</b> a propósito, al revés del resto del árbol: el
         /// bloque entero ya está envuelto en <c>Selector[If, Wait]</c>, y un Wait de fallback acá
         /// haría que el Sequence devuelva Succeeded aunque no haya marcado ni prendido nada —
@@ -344,7 +389,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         // =====================================================================
 
         /// <summary>
-        /// La de más valor del archivo: el candado es "permanente" por re-emisión, no por latch.
+        /// El candado es "permanente" por re-emisión, no por latch.
         /// <c>AINode_RotateBlock</c> hace <c>dice.Clear()</c> antes de bloquear en cada tick y
         /// <c>DiceBlockService</c> se limpia solo al cerrar cada turno del jugador.
         /// </summary>
@@ -404,7 +449,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         // =====================================================================
 
         /// <summary>
-        /// Dispara <b>antes</b> de huir: al revés, el tiro saldría desde la casilla nueva y el
+        /// Dispara <b>antes</b> de saltar: al revés, el tiro saldría desde la casilla nueva y el
         /// jugador vería el fogonazo salir de donde el jefe ya no está.
         /// </summary>
         [Test]
@@ -413,37 +458,47 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             var order = Descendants(DealBeat());
 
             int shot = order.FindIndex(n => n is AINode_RangedShot);
-            int flee = order.FindIndex(n => n is AINode_KeepDistance);
+            int flee = order.FindIndex(n => n is AINode_TeleportAwayToEdge);
             int mark = order.FindIndex(n => n is AINode_TelegraphMark);
 
             Assert.Greater(shot, -1, "El tiempo de reparto no dispara.");
-            Assert.Greater(flee, shot, "La fuga va después del disparo.");
+            Assert.Greater(flee, shot, "El salto va después del disparo.");
             Assert.Greater(mark, flee,
-                "La banda está anclada en el jefe: marcarla antes de huir la dejaría apuntando desde " +
-                "la casilla vieja y el fuego no caería donde se anunció.");
+                "La banda está anclada en el jefe: marcarla antes de saltar la dejaría apuntando " +
+                "desde la casilla vieja y el fuego no caería donde se anunció.");
         }
 
         /// <summary>
-        /// El disparo se auto-gatea por rango. Si el alcance no cubriera la distancia que él mismo
-        /// sostiene, se kitearía fuera de su propio rango y el tiempo de reparto quedaría mudo.
+        /// El disparo se auto-gatea por rango. Si el alcance no cubriera la distancia a la que él
+        /// mismo salta, se sacaría de su propio rango y el tiempo de reparto quedaría mudo.
         /// </summary>
         [Test]
         public void DealBeat_ShotOutrangesHisOwnFlight()
         {
             var shot = Descendants(_root).OfType<AINode_RangedShot>().Single();
+            var flight = Descendants(DealBeat()).OfType<AINode_TeleportAwayToEdge>().Single();
 
             Assert.AreEqual(CroupierAssetBuilder.ShotDamage, shot.Damage);
             Assert.AreEqual(CroupierAssetBuilder.ShotRange, shot.Range);
             Assert.AreEqual(DistanceMetric.Manhattan, shot.Metric,
-                "Misma métrica que AINode_KeepDistance: con otra, la distancia que sostiene y la " +
-                "que alcanza el tiro dejan de ser el mismo número.");
-            Assert.GreaterOrEqual(shot.Range, CroupierAssetBuilder.FleeIdealDistance,
-                "Huye hasta FleeIdealDistance: con un alcance menor se sale solo de rango y el " +
-                "tiempo de reparto no hace nada.");
+                "Misma métrica que la distancia al jugador del salto: con otra, la distancia a la " +
+                "que aterriza y la que alcanza el tiro dejan de ser el mismo número.");
+            Assert.AreEqual(0, flight.MaxDistanceFromPlayer,
+                "El salto de reparto estrenó tope. El único tope de la pelea es el del tiempo de " +
+                "quema, que es la ventana en la que se le puede entrar.");
+
+            Assert.GreaterOrEqual(shot.Range, flight.MinPlayerDistance,
+                "El salto se lleva al jefe hasta MinPlayerDistance del jugador, y sin tope puede " +
+                "aterrizar aún más lejos: con un alcance menor se sale solo de rango y el tiempo " +
+                "de reparto no hace nada.");
         }
 
+        /// <summary>
+        /// La banda sale de la ficha, y su profundidad se cuenta desde el borde al que el jefe
+        /// acaba de saltar — no desde el medio de la sala.
+        /// </summary>
         [Test]
-        public void DealBeat_MarksAFullDepthBandFromTheSheet()
+        public void DealBeat_MarksTheAuthoredBandFromTheSheet()
         {
             var mark = Descendants(DealBeat()).OfType<AINode_TelegraphMark>().Single();
 
@@ -451,8 +506,10 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             Assert.AreEqual(CroupierAssetBuilder.BandHalfWidth, mark.Size,
                 "Size es el SEMI-ancho de la banda, y sale de la ficha.");
             Assert.AreEqual(CroupierAssetBuilder.BandDepth, mark.Depth,
-                "La banda tiene que llegar a la pared: más corta deja un pedazo de pasillo sin " +
-                "quemar por donde rodearla de una.");
+                "La profundidad del nodo dejó de ser la de la ficha. Es cuánto paño quema cada " +
+                "turno de reparto: más corta y la banda no llega a cruzarse en el camino del " +
+                "jugador, más larga y barre la sala de punta a punta desde el borde en el que el " +
+                "jefe aterrizó.");
             Assert.AreEqual(0, mark.Damage,
                 "La banda no puede cobrar al prender: se marca un turno antes, así que el jugador " +
                 "tuvo su turno para salirse y quedarse adentro ya es una decisión suya. El daño lo " +
@@ -460,21 +517,32 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         }
 
         /// <summary>
-        /// El tiempo de quema es el único turno en que se queda quieto, y eso es lo que lo hace
-        /// matable: sin este turno el jefe es un kiter perpetuo.
+        /// El tiempo de quema prende y recién entonces salta, y su salto es el único con tope: ése
+        /// es el turno en el que el jefe queda al alcance, y es lo que lo hace matable.
         /// </summary>
         [Test]
-        public void BurnBeat_NeitherMovesNorShoots()
+        public void BurnBeat_IgnitesThenTeleports_AndDoesNotShoot()
         {
             var burn = Descendants(BurnBeat());
 
-            Assert.IsNotEmpty(burn.OfType<AINode_IgniteArea>(), "El tiempo de quema no prende nada.");
+            int ignite = burn.FindIndex(n => n is AINode_IgniteArea);
+            int flight = burn.FindIndex(n => n is AINode_TeleportAwayToEdge);
+
+            Assert.Greater(ignite, -1, "El tiempo de quema no prende nada.");
+            Assert.Greater(flight, ignite,
+                "El salto se adelantó a la ignición. El fuego cae en las casillas guardadas el turno " +
+                "anterior, así que el área no cambia — pero el jefe se va antes de prender lo suyo.");
             Assert.IsEmpty(burn.OfType<AINode_RangedShot>(),
-                "Un disparo en el turno de quema le saca la ventana en la que se le puede entrar.");
-            Assert.IsEmpty(burn.OfType<AINode_KeepDistance>(),
-                "Si también huye en el turno de quema no hay turno en que se lo pueda alcanzar.");
-            Assert.IsEmpty(burn.OfType<AINode_Move>(),
-                "Ídem con un Move: quedarse quieto es lo que lo hace matable.");
+                "Un disparo en el turno de quema le suma un golpe al único turno que lo deja al " +
+                "alcance del jugador.");
+
+            var jump = burn.OfType<AINode_TeleportAwayToEdge>().Single();
+            Assert.AreEqual(CroupierAssetBuilder.QuemaTeleportMaxDistance, jump.MaxDistanceFromPlayer,
+                "El salto del tiempo de quema perdió su tope: sin él aterriza fuera del alcance del " +
+                "jugador igual que el de reparto, y no queda ningún turno en que se lo pueda tocar.");
+            Assert.IsTrue(jump.ConsumeMoveAction,
+                "Sin gastar el movimiento del turno, cualquier paso de reacomodo posterior lo saca " +
+                "del borde en el mismo turno en que saltó.");
         }
 
         [Test]
@@ -511,14 +579,6 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         /// una ronda más, conviven durante la ronda del relevo — el único momento en que el piso útil
         /// se achica. Que la base <b>supere</b> el intervalo es el bug: las bandas se apilan ronda a
         /// ronda hasta que no queda dónde plantarse a defender.
-        /// </para>
-        /// <para>
-        /// <b>Convivir no es cobrar doble.</b> Es lo único que cambió en esta corrida: donde se pisan,
-        /// la banda nueva sólo prende lo que no ardía, y si la vieja queda <b>entera</b> adentro del
-        /// área nueva la retira (<c>AINode_IgniteArea.RetireFullyReplaced</c>, que este jefe prende;
-        /// ver <see cref="Ignitions_RelayTheBandTheyReplace"/>). O sea que una casilla es siempre un
-        /// fuego. Lo que sigue creciendo con la ronda de convivencia es la <b>superficie</b>, y eso es
-        /// exactamente el escalón de fase 2 — no una excusa para pasarse del intervalo.
         /// </para>
         /// </remarks>
         [Test]
@@ -656,10 +716,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                 // Assert
                 Assert.AreEqual("boss.croupier", data.EntityId);
                 Assert.AreEqual(200, data.BaseHP,
-                    "Es el número que ya usan los otros tres jefes del juego. Los 170 de antes eran " +
-                    "un descuento por una debilidad que se cobraba casi todos los turnos (el Par); " +
-                    "con la debilidad movida al Poker ese descuento se quedó sin motivo. Si hay que " +
-                    "hacerlo aguantar más, la palanca es ésta y no el multiplicador.");
+                    "La vida del jefe cambió: son los mismos 200 que los otros tres jefes del juego, " +
+                    "y su debilidad (el Poker) no se cobra seguido como para descontarle nada.");
                 Assert.AreEqual(24, data.BaseAttack);
                 Assert.AreEqual(ComboId.Poker, data.WeaknessComboId,
                     "La debilidad es el Poker (cuatro dados iguales), no el Par. El id canónico del " +
@@ -667,12 +725,9 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                 // Es un override propio del jefe, no el global de WeaknessConfig, así que moverlo
                 // no le toca la debilidad a ningún otro enemigo.
                 Assert.AreEqual(2.0f, data.WeaknessMultiplierOverride, PercentTolerance,
-                    "El ×2 no es una perilla de dificultad: es si la debilidad existe o no. El Par " +
-                    "salía 9 de cada 10 primeras tiradas —era un piso que se cobraba todos los " +
-                    "turnos, y ahí un ×1.5 ya se sentía—; el Poker sale ~2 de cada 10 gastando el " +
-                    "pozo entero, así que con el mismo ×1.5 el bono casi desaparece del daño de la " +
-                    "pelea. A ×2 el Poker (55 de base) sale a 110 y vale ir a buscarlo. Si el jefe " +
-                    "queda blando, la palanca es BaseHP.");
+                    "El multiplicador de la debilidad cambió: el Poker sale ~2 de cada 10 tiradas " +
+                    "gastando el pozo entero, así que por debajo del ×2 el bono casi no aparece en " +
+                    "el daño de la pelea.");
                 Assert.AreEqual(15, data.MinGoldDrop, "Oro de piso 1.");
                 Assert.AreEqual(23, data.MaxGoldDrop);
                 Assert.IsEmpty(data.Behaviors,
@@ -687,18 +742,13 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         }
 
         /// <summary>
-        /// La debilidad es el <b>Poker</b>, y el multiplicador es la mitad de esa decisión. Era el
-        /// Par a ×1.5: el Par salía 9 de cada 10 tiradas, así que la debilidad era un piso que el
-        /// jugador cobraba todos los turnos. El Poker sale ~2 de cada 10 gastando el pozo entero —
-        /// el bono pasa de aplicarse siempre a aplicarse a veces, y el ×2 es lo que compensa en la
-        /// otra dirección para que siga valiendo ir a buscarlo.
+        /// La debilidad es el <b>Poker</b> y el multiplicador es la otra mitad de esa decisión: el
+        /// Poker sale ~2 de cada 10 tiradas gastando el pozo entero, así que el ×2 es lo que hace
+        /// que valga ir a buscarlo.
         /// </summary>
         /// <remarks>
         /// Cruza las dos constantes contra lo escrito porque el modo de romper esto es tipear el
-        /// valor en <c>PopulateEnemyData</c>: ahí la ficha y el asset se van cada uno para su lado y
-        /// el <c>ED_</c> queda con una debilidad que ningún comentario del builder menciona. Y van
-        /// juntas en un test porque son <b>una</b> decisión: mover la mano sin mover el multiplicador
-        /// (o al revés) es lo que deja la debilidad en decoración o en daño gratis.
+        /// valor en <c>PopulateEnemyData</c>: ahí la ficha y el asset se van cada uno para su lado.
         /// </remarks>
         [Test]
         public void Weakness_IsThePokerFromTheSheet_NotAHardcodedId()
@@ -840,7 +890,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         }
 
         /// <summary>Tree-walker por reflexión, sin descender en <see cref="UnityEngine.Object"/>
-        /// (no arrastra assets referenciados). Copiado del suite del Sunken Grand.</summary>
+        /// (no arrastra assets referenciados).</summary>
         private static List<object> Descendants(object root)
         {
             var all = new List<object>();

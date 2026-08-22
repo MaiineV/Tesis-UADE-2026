@@ -25,6 +25,30 @@ namespace Rollgeon.Feedback
     public static class BossFeedbackIds
     {
         // ---- El Croupier ----
+
+        /// <summary>
+        /// El único ataque directo que le queda: el tiro del abanico de cartas
+        /// (<c>AINode_RangedShot</c> del beat "Reparte"). Id propio y no reusar
+        /// <see cref="CroupierCantoAnim"/> —que ya apunta al mismo <c>Attack_Range</c>— porque
+        /// "canto" nombra la ruleta que se retiró: un id que miente sobre lo que hace el nodo es
+        /// justo lo que hizo que este ataque quedara mudo un rediseño entero. Además es la
+        /// convención de los otros cuatro jefes con ataque a distancia (<c>.range</c> /
+        /// <c>.range_impact</c>).
+        /// </summary>
+        public const string CroupierRangeAnim       = "anim.boss.croupier.range";
+        public const string CroupierRangeImpactVfx  = "vfx.boss.croupier.range_impact";
+        public const string CroupierRangeImpactFeel = "feel.boss.croupier.range_impact";
+
+        /// <summary>
+        /// El salto de <c>AINode_TeleportAwayToEdge</c>. Sin gesto, la reubicación es un cambio de
+        /// posición seco que se lee como un bug y no como un teletransporte.
+        /// </summary>
+        public const string CroupierTeleportAnim = "anim.boss.croupier.teleport";
+
+        // Sin llamador desde que se retiraron la ruleta y el golpe cuerpo a cuerpo: los únicos que
+        // los piden son AINode_SpinWheel / AINode_DetonateSungSectors, que ya no están en el árbol.
+        // Se dejan porque esos nodos siguen compilando y borrar la entry los dejaría pidiendo una
+        // que no existe.
         public const string CroupierMeleeAnim  = "anim.boss.croupier.melee";
         public const string CroupierCantoAnim  = "anim.boss.croupier.canto";
         public const string CroupierImpactVfx  = "vfx.boss.croupier.impact";
@@ -52,6 +76,15 @@ namespace Rollgeon.Feedback
         public const string CajeroShotImpactVfx  = "vfx.boss.cajero.shot_impact";
         public const string CajeroImpactFeel     = "feel.boss.cajero.impact";
         public const string CajeroShotImpactFeel = "feel.boss.cajero.shot_impact";
+
+        /// <summary>
+        /// El mordisco de la Comisión, el minion volador del Cajero. Va fuera del namespace
+        /// <c>anim.boss.*</c> a propósito: el bicho NO viste el rig del jefe —se quedó con
+        /// <c>GeneralDirector_Animated</c>, el único rig alado del proyecto— y ese animator declara
+        /// un solo trigger, <c>Attack</c>. Sin este id el nodo caía al fallback del disparo del
+        /// Cajero, que pide <c>Attack_Range</c>: un trigger que su animator no tiene, o sea silencio.
+        /// </summary>
+        public const string ComisionBiteAnim = "anim.enemy.comision.bite";
 
         // ---- El Anotador ----
         public const string AnotadorMeleeAnim  = "anim.boss.anotador.melee";
