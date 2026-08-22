@@ -193,6 +193,8 @@
   .cell.mark { background: var(--wine-soft); box-shadow: inset 0 0 0 2px var(--wine); color: var(--wine); }
   .cell.burn { background: var(--fire-soft); box-shadow: inset 0 0 0 1px var(--fire); color: var(--fire); }
   .cell.player { background: var(--ink); color: var(--ground); font-size: .8rem; }
+  .cell.zone { background: var(--wine-soft); box-shadow: inset 0 0 0 1px var(--rule-strong); }
+  .cell.land { background: var(--brass-soft); box-shadow: inset 0 0 0 2px var(--brass); color: var(--brass); }
 
   .board-note { flex: 1 1 16rem; min-width: 15rem; }
   .board-note p:last-child { margin-bottom: 0; }
@@ -219,6 +221,8 @@
   .swatch.blocker { background: var(--blocker); background-image: repeating-linear-gradient(45deg, transparent 0 3px, var(--rule-strong) 3px 4px); }
   .swatch.boss    { background: var(--brass); }
   .swatch.player  { background: var(--ink); }
+  .swatch.zone    { background: var(--wine-soft); box-shadow: inset 0 0 0 1px var(--rule-strong); }
+  .swatch.land    { background: var(--brass-soft); box-shadow: inset 0 0 0 2px var(--brass); }
 
   /* ---------- pasos del turno ---------- */
   .steps { display: grid; gap: 1px; background: var(--rule); border: 1px solid var(--rule); border-radius: 3px; overflow: hidden; }
@@ -298,11 +302,11 @@
   <div class="eyebrow">Rediseño de jefe · Piso 1 · Especificación</div>
   <h1>El Croupier</h1>
   <p class="thesis">No te deja llegar — hasta que se queda sin paño.</p>
-  <p>Salta al borde, dispara a distancia y quema el camino corto para que no lo alcances. Cada banda que enciende le compra un turno, y le saca una parte de la sala. No se lo persigue: se lo espera en el turno en que su salto tiene tope.</p>
+  <p>Dispara desde cualquier parte de la sala y quema el paño que tiene delante &mdash; que es exactamente el único paño desde el que se le puede pegar. Mientras estés lejos no se mueve: te obliga a venir. Y cuando llegás, se va al borde opuesto. No se lo persigue: se le cobra de a un golpe por acercada, y cada acercada se paga con fuego.</p>
   <div class="statusbar">
     <span class="chip">rama <code>feature/improve-bosses</code></span>
     <span class="chip">sala medida en engine · 11×11 · 103 casillas</span>
-    <span class="chip warn">vida 200 · debilidad Poker ×2</span>
+    <span class="chip warn">vida 300 · debilidad Poker ×1,3</span>
   </div>
 </header>
 
@@ -335,25 +339,25 @@
 <!-- ============================ 02 EL CICLO ============================ -->
 <section>
   <div class="sec-head">
-    <div class="eyebrow">02 — Ciclo</div>
+    <div class="eyebrow">02 &mdash; Ciclo</div>
     <h2>Dos tiempos</h2>
   </div>
 
-  <p>Alterna dos tiempos y no sale nunca de ese ciclo. Un tiempo es amenaza a distancia; el otro es terreno. Los dos terminan igual: <strong>golpea y se teletransporta al borde del paño</strong>. Nunca se queda quieto. Lo que cambia entre los dos es <strong>cuán lejos cae</strong>, y ahí está tu única ventana.</p>
+  <p>Alterna dos tiempos y no sale nunca de ese ciclo. Un tiempo es amenaza a distancia; el otro es terreno. Lo que cambió es que <strong>el jefe ya no se mueve por reloj</strong>: los dos tiempos terminan preguntando a qué distancia estás, y sólo salta si lo tenés encima.</p>
 
   <div class="steps">
     <div class="step">
       <div class="step-n">T1<br>Reparte</div>
       <div class="step-body">
-        <h4>Dispara, salta lejos, marca</h4>
-        <p>Proyectil garantizado de <strong>12</strong> contra el jugador, con alcance a toda la sala. Después se teletransporta <strong>lo más lejos que puede</strong>, contra el borde del paño — este es el tiempo que abre distancia, y no tiene tope. Y recién ahí marca una banda de 3 casillas de ancho que sale <strong>de donde aterrizó</strong>, apuntándote, y avanza 6 casillas. La marca en sí <strong>no hace daño</strong>: es el aviso, y salir de ella durante tu turno es gratis.</p>
+        <h4>Dispara, huye si hace falta, marca</h4>
+        <p>Proyectil garantizado de <strong>18</strong> contra el jugador, con alcance a toda la sala. Después mira la distancia: si estás a <strong>5 o menos</strong> se teletransporta al borde, a 8 o más de vos; si estás más lejos <strong>se queda donde está</strong>. Y recién ahí marca un cono que sale <strong>de su casilla</strong>, apuntándote, con <strong>4 de fondo</strong> y boca de 7. La marca en sí <strong>no hace daño</strong>: es el aviso, y salir de ella durante tu turno es gratis.</p>
       </div>
     </div>
     <div class="step">
       <div class="step-n">T2<br>Quema</div>
       <div class="step-body">
-        <h4>Enciende y salta cerca</h4>
-        <p>Lo que marcó el turno anterior se prende. No dispara, y encender no golpea a nadie: lo que queda es la casilla ardiendo. Después salta igual, pero <strong>sin pasar de 5 pasos tuyos</strong>: cae dentro de lo que alcanzás en un turno. Esta es tu ventana, y es la única del ciclo — no porque se quede quieto, sino porque el salto corto te lo deja al alcance.</p>
+        <h4>Enciende y huye si hace falta</h4>
+        <p>Lo que marcó el turno anterior se prende. No dispara, y encender no golpea a nadie: lo que queda es la casilla ardiendo, cobrando <strong>10</strong> al pisarla y 10 más al arrancar el turno en ella. Después la misma pregunta: a 5 o menos salta, más lejos se queda. Este es el turno en el que se lo alcanza &mdash; no porque su salto tenga tope, sino porque el que decide si salta sos vos.</p>
       </div>
     </div>
   </div>
@@ -361,11 +365,11 @@
   <div class="board-row" style="margin-top:2rem">
     <figure>
       <div class="board sm" data-map="reparte"></div>
-      <figcaption>T1 — la marca sale de él, te cruza y llega a la pared.</figcaption>
+      <figcaption>T1 &mdash; el jugador está a 6, así que el jefe no se movió. El cono sale de él y muere antes de llegar.</figcaption>
     </figure>
     <figure>
       <div class="board sm" data-map="quema"></div>
-      <figcaption>T2 — arde, y él se queda adentro.</figcaption>
+      <figcaption>T2 &mdash; arde el paño de adelante, y él sigue ahí.</figcaption>
     </figure>
     <div class="board-note">
       <ul class="legend">
@@ -373,37 +377,39 @@
         <li><span class="swatch burn"></span> ardiendo</li>
         <li><span class="swatch player"></span> jugador</li>
       </ul>
-      <p style="margin-top:1rem">El fuego no lo toca a él: es inmune a lo suyo. Lo que la banda hace es <strong>cerrar el camino corto</strong> justo cuando ibas a usarlo.</p>
-      <p><strong>Las bandas no se apilan.</strong> Una banda nueva enciende sólo lo que todavía no ardía; donde se cruzan sigue habiendo un fuego, no dos. Una casilla encendida es una casilla encendida, cobre lo que cobre.</p>
+      <p style="margin-top:1rem">El fuego no lo toca a él: es inmune a lo suyo. Lo que el cono hace es <strong>cerrar el paño de adelante</strong> &mdash; el único desde el que se le puede pegar.</p>
+      <p><strong>Los conos no se apilan, pero sí se refrescan.</strong> Sigue habiendo una sola instancia por casilla, así que dos conos cruzados no cobran doble. Lo que cambió es quién gana el paño compartido: ahora el fuego nuevo, con su duración entera. Antes esa casilla se quedaba con el reloj del fuego viejo y se apagaba enseguida.</p>
     </div>
   </div>
 
   <h3>El pergamino</h3>
-  <p>Pasando el mouse por encima del jefe sale un pergamino con su nombre y la descripción de lo que hace. Es la única explicación de la pelea que el jugador puede leer <em>antes</em> de comérsela: el ciclo de dos tiempos, la banda y el fuego se anuncian ahí. Sin eso, el primer aprendizaje del ciclo cuesta una run.</p>
+  <p>Pasando el mouse por encima del jefe sale un pergamino con su nombre y la descripción de lo que hace. Es la única explicación de la pelea que el jugador puede leer <em>antes</em> de comérsela: el ciclo de dos tiempos, el cono y su fondo se anuncian ahí. Sin eso, el primer aprendizaje del ciclo cuesta una run.</p>
 </section>
 
-<!-- ============================ 03 LA BANDA ============================ -->
+<!-- ============================ 03 EL CONO ============================ -->
 <section>
   <div class="sec-head">
-    <div class="eyebrow">03 — La decisión</div>
-    <h2>De qué lado entrás</h2>
+    <div class="eyebrow">03 &mdash; El cono</div>
+    <h2>No te quema a vos, te quema el camino</h2>
   </div>
 
-  <p>La banda apunta siempre a donde estabas, así que <strong>el camino corto es siempre el que arde</strong>. Cada turno elegís con qué pagás.</p>
+  <p>El cono sale <strong>de su casilla</strong>, no de la tuya. Avanza <strong>4 casillas de frente</strong> y se abre 1 por lado en cada paso, así que la boca mide 7 y sus esquinas quedan a 7 de él en diagonal. Lo que hace no es golpearte: es <strong>sacar de circulación el paño desde el que se le puede pegar</strong>.</p>
+
+  <p>Y el aviso es gratis de dejar. Mientras es marca no cobra nada, y salir cuesta uno o dos pasos desde casi cualquier casilla: la boca es lo más ancho, pero también lo que tiene el paño limpio a un paso para atrás. Nunca te encierra.</p>
 
   <div class="board-row">
     <figure>
-      <div class="board sm" data-map="frontal"></div>
-      <figcaption><strong>De frente.</strong> Llegás y pegás este turno, pero cada casilla encendida que pisás en el camino cobra 6.</figcaption>
+      <div class="board sm" data-map="salir"></div>
+      <figcaption><strong>Salir es barato.</strong> El jugador está en la boca, lo más ancho del cono &mdash; y el paño limpio está a un paso para atrás.</figcaption>
     </figure>
     <figure>
-      <div class="board sm" data-map="flanco"></div>
-      <figcaption><strong>Rodeando.</strong> Salís de la línea antes de que prenda y llegás limpio, pero un turno más tarde — y él ya marcó otra banda.</figcaption>
+      <div class="board sm" data-map="acumula"></div>
+      <figcaption><strong>Quedarse es lo caro.</strong> Dos Repartes con el jugador en distinto cuadrante y el frente del jefe queda cubierto. El fuego dura 3 rondas; el cono se remarca cada 2 turnos.</figcaption>
     </figure>
     <div class="board-note">
-      <p>Pagás con vida o pagás con tempo. Nunca es gratis y nunca es imposible.</p>
-      <p>El fuego <strong>cobra al pisar, y por cada casilla encendida que cruzás</strong>. Atravesar una banda de 3 de ancho son tres cobros, no uno. Arrancar el turno parado adentro cobra 6 más.</p>
-      <p>Por eso el aviso importa tanto: mientras es marca no hace nada, y salir de ella durante tu turno no cuesta vida. Lo que cuesta es volver a entrar después.</p>
+      <p>Por eso el cono no se mide por lo que cobra de una, sino por lo que <strong>acumula</strong>: 16 casillas cada dos turnos, apuntadas siempre al cuadrante donde estás, y durando más de lo que tarda en volver a marcar.</p>
+      <p><strong>Y ahora el fuego nuevo gana el paño compartido.</strong> Antes, cuando un cono nuevo pisaba casillas que ya ardían, esas casillas se quedaban con el reloj viejo &mdash; casi vencido &mdash; y se apagaban al turno siguiente: en la práctica el segundo fuego <em>limpiaba</em> el primero. Ahora la casilla compartida se planta de nuevo, con la duración entera. Es lo que hace que la acumulación sea real y no una ilusión.</p>
+      <p>El fuego no lo toca a él: es inmune a lo suyo. Y sigue habiendo <strong>una instancia por casilla</strong> &mdash; dos conos cruzados no cobran doble.</p>
     </div>
   </div>
 </section>
@@ -411,41 +417,54 @@
 <!-- ============================ 04 EL CERCO ============================ -->
 <section>
   <div class="sec-head">
-    <div class="eyebrow">04 — El cerco</div>
-    <h2>Se teletransporta, pero te deja una ventana</h2>
+    <div class="eyebrow">04 &mdash; La fuga</div>
+    <h2>Sólo corre si lo acorralás</h2>
   </div>
 
-  <p>Salta <strong>todos los turnos</strong>, siempre lejos tuyo y contra el borde del paño. Nunca se queda quieto y nunca se lo encajona: no hay esquina que lo atrape, porque no camina hasta ahí, aparece. Lo único que lo hace alcanzable es que <strong>el salto del turno de fuego tiene tope</strong>.</p>
+  <p>Antes saltaba todos los turnos, pasara lo que pasara, y eso hacía que la pelea se jugara sola: el jugador se quedaba quieto, el jefe se teletransportaba por su cuenta, se volvía a acomodar lejos y prendía fuego en un rincón que a nadie le importaba. Su movimiento no respondía a nada.</p>
 
-  <div class="tablebox" style="max-width:40rem">
+  <p>Ahora el salto está <strong>detrás de una pregunta</strong>: antes de saltar mira a qué distancia está el jugador. A <strong>5 o menos</strong> salta. A 6 o más <strong>se queda donde está</strong> &mdash; dispara, marca, y espera. La consecuencia es que el jugador ya no puede administrar la pelea desde lejos: si no se acerca no pasa nada, y el jefe le cobra 18 por ciclo gratis.</p>
+
+  <div class="board-row" style="margin-top:1.5rem">
+    <figure>
+      <div class="board sm" data-map="radio"></div>
+      <figcaption><strong>A 6, se queda.</strong> La zona marcada es todo lo que está a 5 o menos de él. El jugador está justo afuera, así que el jefe no se mueve.</figcaption>
+    </figure>
+    <figure>
+      <div class="board sm" data-map="salto"></div>
+      <figcaption><strong>Pegado, se va lejos.</strong> Los puntos son sus casillas posibles: contra el borde y a 8 o más del jugador. Elige una al azar.</figcaption>
+    </figure>
+    <div class="board-note">
+      <ul class="legend">
+        <li><span class="swatch zone"></span> radio de fuga</li>
+        <li><span class="swatch land"></span> aterrizaje posible</li>
+      </ul>
+      <p style="margin-top:1rem"><strong>Y cuando huye, huye.</strong> El salto le exige caer a <strong>8 o más</strong> del jugador y ya no tiene techo. Antes había un tope de 5 pasos en el turno de fuego, y el resultado era que se teletransportaba para quedarse al lado tuyo: la fuga no significaba nada.</p>
+      <p>Tampoco cae siempre en el mismo lado. Entre todas las casillas que están a 8 o más y pegadas al borde elige una al azar, así que no se puede memorizar dónde va a estar el turno que viene.</p>
+    </div>
+  </div>
+
+  <div class="tablebox" style="max-width:44rem; margin-top:2rem">
     <table>
-      <thead><tr><th>Su turno</th><th class="num">Cuánto se aleja</th><th class="num">Dispara</th><th>Se lo alcanza</th></tr></thead>
+      <thead><tr><th>Dónde terminás tu turno</th><th class="num">Él huye</th><th>Le pegás</th></tr></thead>
       <tbody>
-        <tr><td>Reparte</td><td class="num">Sin tope</td><td class="num">12</td><td>No — cae fuera de tu alcance</td></tr>
-        <tr><td>Quema</td><td class="num">5 pasos</td><td class="num">0</td><td>Sí — es la ventana</td></tr>
-        <tr><td><strong>Por ciclo</strong></td><td class="num">2 saltos</td><td class="num">12</td><td><strong>Uno de cada dos turnos</strong></td></tr>
+        <tr><td>Pegado, a 1</td><td class="num">Sí</td><td>Sí, con los dos ataques</td></tr>
+        <tr><td>A 2 &ndash; 4</td><td class="num">Sí</td><td>Sí, con el especial</td></tr>
+        <tr><td>A 5</td><td class="num">Sí</td><td>No &mdash; una casilla corto</td></tr>
+        <tr><td>A 6 o más</td><td class="num">No</td><td>No</td></tr>
       </tbody>
     </table>
   </div>
 
-  <p style="margin-top:1.2rem">El tope no es un detalle de balance: es <strong>toda la pelea</strong>. Sin él el jefe se va siempre más lejos de lo que cubrís en un turno —movés 4 y golpeás a 4, así que amenazás 8— y la distancia no se cierra nunca mientras él te sigue cobrando 12 desde cualquier lado. Con el tope, el turno de fuego lo baja a tu alcance y te da la única ventana del ciclo.</p>
+  <p style="margin-top:1.2rem">La tabla dice la cosa incómoda: <strong>no existe la casilla desde la que le pegás sin espantarlo</strong>. Movés 4 y el ataque especial alcanza 4, así que amenazás 8 &mdash; pero para atacar tenés que <em>terminar</em> el turno a 4 o menos, y eso está adentro de su radio. El golpe base es peor: alcanza 1, así que hay que terminar pegado. Y la fila de 5 es la peor de todas &mdash; lo espantás sin haberle pegado.</p>
 
-  <figure style="margin-top:1.5rem">
-    <div class="board-row">
-      <div class="board" data-map="cerco"></div>
-      <div class="board-note">
-        <p><strong>Nunca se queda sin salida.</strong> No camina hacia el borde: aparece ahí. No hay pared que lo frene ni esquina que lo demore, y no existe la jugada de encajonarlo.</p>
-        <p>Tampoco cae siempre en el mismo lado. Entre todas las casillas que están lejos tuyo y pegadas al borde, elige una al azar, así que no se puede memorizar dónde va a estar el turno que viene.</p>
-        <p>Lo que se agota no es su espacio sino el tuyo: las bandas quedan donde cayeron, y ahora salen <strong>del borde</strong> en vez de del medio, así que el paño se llena desde los costados. Alcanzarlo pasa a significar <strong>cruzar el fuego hasta él</strong>: 7 por cada casilla encendida que pises, sin escudo, porque el turno se te fue en caminar.</p>
-      </div>
-    </div>
-  </figure>
+  <p>Eso es a propósito. Cada golpe que le metés le compra un salto, y cada salto te compra a vos uno o dos turnos de caminata de vuelta. La pelea no es perseguirlo: es aceptar que se va a ir, y no gastar la acercada en falso.</p>
 </section>
 
 <!-- ============================ 05 FASES ============================ -->
 <section>
   <div class="sec-head">
-    <div class="eyebrow">05 — Fases</div>
+    <div class="eyebrow">05 &mdash; Fases</div>
     <h2>Cómo escala</h2>
   </div>
 
@@ -455,21 +474,26 @@
     <div class="phase">
       <div class="hp">100% → 70%</div>
       <h3>Reparte</h3>
-      <p>El ciclo de dos tiempos. El jugador aprende que el camino corto siempre arde.</p>
-      <p>Fuego dura <strong>2 rondas</strong>.</p>
+      <p>El ciclo de dos tiempos. El jugador aprende que el paño de adelante del jefe es el que arde.</p>
+      <p>Fuego dura <strong>3 rondas</strong>.</p>
     </div>
     <div class="phase p2">
-      <div class="hp">70% — una sola vez</div>
+      <div class="hp">70% &mdash; una sola vez</div>
       <h3>Confisca</h3>
       <p>Al cruzar el umbral te bloquea <strong>un dado, y queda bloqueado el resto de la pelea</strong>. Siempre el mismo, y el candado encima muestra el <strong>1</strong>.</p>
       <p>El ciclo sigue igual. Lo que se achica es tu mano.</p>
     </div>
     <div class="phase p3">
-      <div class="hp">50% — una sola vez</div>
+      <div class="hp">50% &mdash; una sola vez</div>
       <h3>Pleno y color</h3>
-      <p>El turno del aviso <strong>no es un turno perdido para él</strong>: hace su acción normal primero — prende una banda o dispara — y <em>recién después</em> <strong>se teletransporta al centro de la sala y marca todo el paño menos el 3×3 que lo rodea</strong>. Al turno siguiente eso prende, cobra <strong>7</strong> a todo el que no esté en el hueco, y deja fuego.</p>
-      <p>Lo que prende dura <strong>3 rondas</strong>, y desde ahí las bandas también. El ciclo continúa.</p>
+      <p>El turno del aviso <strong>no es un turno perdido para él</strong>: hace su acción normal primero &mdash; prende un cono o dispara &mdash; y <em>recién después</em> <strong>se teletransporta al centro de la sala y marca todo el paño menos el 3×3 que lo rodea</strong>. Al turno siguiente eso prende, cobra <strong>7</strong> a todo el que no esté en el hueco, y deja fuego de 10.</p>
+      <p>Lo que prende dura <strong>4 rondas</strong>, y desde ahí los conos también. El ciclo continúa.</p>
     </div>
+  </div>
+
+  <div class="callout" style="margin-top:2rem">
+    <span class="eyebrow">La excepción</span>
+    <p>Este es <strong>el único salto que no pregunta nada</strong>. Los dos del ciclo están detrás del radio de 5: si estás lejos, no se mueve. El del pleno se ejecuta siempre, esté el jugador donde esté, porque no es una fuga &mdash; es la puesta en escena del ataque. Se pone en el centro justamente para que el refugio quede en el centro.</p>
   </div>
 
   <figure style="margin-top:2rem">
@@ -486,7 +510,7 @@
 <!-- ============================ 06 NÚMEROS ============================ -->
 <section>
   <div class="sec-head">
-    <div class="eyebrow">06 — Números</div>
+    <div class="eyebrow">06 &mdash; Números</div>
     <h2>Con qué te pega</h2>
   </div>
 
@@ -496,27 +520,27 @@
       <tbody>
         <tr>
           <td><strong>Proyectil</strong></td>
-          <td>Alcanza al jugador en cualquier parte de la sala, en cada turno Reparte. Que se vaya al borde no le baja el daño.</td>
-          <td class="num">12</td>
-          <td>No — es su piso de daño</td>
+          <td>Alcanza al jugador en cualquier parte de la sala, en cada turno Reparte. Su alcance es 24 y la sala mide 20 de esquina a esquina: no existe la casilla desde donde no te llega.</td>
+          <td class="num">18</td>
+          <td>No &mdash; es su piso de daño</td>
         </tr>
         <tr>
           <td><strong>La marca</strong></td>
-          <td>El aviso de la banda: 3 de ancho y 6 de largo, desde donde aterrizó hacia vos. Sólo dice dónde va a arder.</td>
+          <td>El aviso del cono: 16 casillas que salen de su casilla hacia vos, 4 de fondo. Sólo dice dónde va a arder.</td>
           <td class="num">0</td>
-          <td>No hace falta — no golpea</td>
+          <td>No hace falta &mdash; no golpea</td>
         </tr>
         <tr>
           <td><strong>Fuego de paño</strong></td>
-          <td>La banda queda ardiendo. Cobra <strong>por cada casilla encendida que pisás</strong>, y otra vez si arrancás el turno parado en una. Él es inmune al suyo.</td>
-          <td class="num">7</td>
-          <td>Sí — no entrando, o entrando por menos casillas</td>
+          <td>El cono queda ardiendo. Cobra <strong>por cada casilla encendida que pisás</strong>, y otra vez si arrancás el turno parado en una. No se gasta al dispararse: la misma casilla cobra cada vez que la cruzás. Él es inmune al suyo.</td>
+          <td class="num">10</td>
+          <td>Sí &mdash; el aviso es gratis de dejar</td>
         </tr>
         <tr>
           <td><strong>Pleno y color</strong></td>
-          <td>Al 50%, una sola vez. Después de su acción normal del turno se teletransporta al centro y marca todo el paño menos su 3×3; al turno siguiente prende y deja fuego.</td>
-          <td class="num">7</td>
-          <td>Sí — llegando al hueco del centro antes de que prenda</td>
+          <td>Al 50%, una sola vez. Después de su acción normal del turno se teletransporta al centro y marca todo el paño menos su 3×3; al turno siguiente prende. La ignición cobra 7 a quien esté afuera, y el fuego que deja cobra 10 como cualquier otro.</td>
+          <td class="num">7 + 10</td>
+          <td>Sí &mdash; llegando al hueco del centro antes de que prenda</td>
         </tr>
       </tbody>
     </table>
@@ -528,17 +552,18 @@
     <table>
       <thead><tr><th>Campo</th><th class="num">Valor</th><th>Nota</th></tr></thead>
       <tbody>
-        <tr><td>Vida</td><td class="num">200</td><td>Sólo se lo alcanza en el turno de fuego, que es cuando su salto tiene tope.</td></tr>
-        <tr><td>Debilidad</td><td class="num">Poker ×2</td><td>Multiplica el golpe entero, no el base del combo: un Poker vale 55 y sale a 110. Cambia: era Par ×1,5. El Par salía 9 de cada 10 tiradas, así que la debilidad era un piso que se cobraba siempre; el Poker sale ~2 de cada 10 tirando todo el pool, así que ahora es un premio que hay que ir a buscar. Valor propio del jefe, no la debilidad estándar.</td></tr>
-        <tr><td>Oro</td><td class="num">15 – 23</td><td></td></tr>
-        <tr><td>Proyectil</td><td class="num">12</td><td>Garantizado, alcance a toda la sala.</td></tr>
+        <tr><td>Vida</td><td class="num">300</td><td>Era 200. Se le pega de a un golpe por acercada, así que la vida es sobre todo cuántas veces hay que cruzarle el paño.</td></tr>
+        <tr><td>Debilidad</td><td class="num">Poker ×1,3</td><td>Multiplica el golpe entero, no el base del combo. Era ×2. El Poker sale ~2 de cada 10 tirando todo el pool: sigue siendo el premio que hay que ir a buscar, pero ya no es media barra de vida en una mano. Valor propio del jefe, no la debilidad estándar.</td></tr>
+        <tr><td>Oro</td><td class="num">15 &ndash; 23</td><td></td></tr>
+        <tr><td>Proyectil</td><td class="num">18</td><td>Garantizado. Alcance 24, Manhattan &mdash; toda la sala.</td></tr>
+        <tr><td>Cuerpo a cuerpo</td><td class="num">&mdash;</td><td>No tiene. El árbol no lleva ningún nodo de melee: el <code>BaseAttack 24</code> y el <code>BaseAttackRange 1</code> de su ficha son datos muertos que nadie lee. Es 100% a distancia.</td></tr>
         <tr><td>Marca</td><td class="num">0</td><td>El aviso no golpea.</td></tr>
-        <tr><td>Fuego</td><td class="num">7</td><td>Por cada casilla encendida que pisás, y al arrancar el turno en una.</td></tr>
-        <tr><td>Duración fuego</td><td class="num">2 → 3</td><td>Rondas. Fase 1 → después del 50%.</td></tr>
+        <tr><td>Fuego</td><td class="num">10</td><td>Era 7. Por cada casilla encendida que pisás, y al arrancar el turno en una.</td></tr>
+        <tr><td>Duración fuego</td><td class="num">3 → 4</td><td>Rondas. Fase 1 → después del 50%. Con el cono marcándose cada dos turnos, esto es lo que hace que el paño se llene en vez de reciclarse.</td></tr>
+        <tr><td>Cono</td><td class="num">4 de fondo</td><td>Apex de 1 casilla pegado a él, +1 por lado en cada paso: anchos 1-3-5-7, boca de 7, <strong>16 casillas</strong>. Antes era una banda de 3 de ancho por 6 de largo, 18 casillas: casi la misma cobertura, dibujo distinto.</td></tr>
         <tr><td>Dado bloqueado</td><td class="num">1 permanente</td><td>Al 70%, siempre el mismo, para el resto de la pelea.</td></tr>
-        <tr><td>Salto</td><td class="num">Todos los turnos</td><td>Aparece lejos del jugador y pegado al borde. Entre las casillas que cumplen las dos cosas, elige al azar.</td></tr>
-        <tr><td>Tope del salto</td><td class="num">5</td><td>Sólo en el turno Quema; en Reparte no tiene tope. Es lo que abre la única ventana del ciclo.</td></tr>
-        <tr><td>Ancho de banda</td><td class="num">3</td><td>De ancho. Sale de donde aterrizó y avanza 6 casillas: ya no cruza la sala entera, así que se la puede rodear.</td></tr>
+        <tr><td>Radio de fuga</td><td class="num">5</td><td>Manhattan, inclusivo. A 5 o menos salta; a 6 o más se queda. Es la única condición que mueve al jefe.</td></tr>
+        <tr><td>Piso del salto</td><td class="num">8</td><td>Cuando salta cae a 8 o más del jugador, contra el borde, y elige al azar entre las casillas que cumplen las dos cosas. <strong>Sin techo</strong> &mdash; puede caer a 8 o a 16.</td></tr>
       </tbody>
     </table>
   </div>
@@ -546,16 +571,16 @@
   <div class="callout">
     <span class="eyebrow">Presupuesto de daño</span>
     <p>Contra 100 de vida, con un escudo mediano que absorbe ~13 por turno:</p>
-    <p><strong>Piso — 12 por ciclo de dos turnos.</strong> Es el proyectil del turno Reparte, y nada más: el turno Quema no dispara. Si te quedás fuera del fuego y gastás la acción en defender, los 13 del escudo se comen los 12 y el ciclo te sale en 0 — pero tampoco le pegaste.</p>
-    <p><strong>Techo — 33 por ciclo.</strong> 12 del proyectil más 21 de cruzar la banda: 3 casillas encendidas a 7 cada una, y sin escudo, porque la acción del turno se fue en moverte. Ese es el precio de acercarte por el camino corto.</p>
-    <p><strong>El peso del fuego está en cruzarlo, no en pararse en él.</strong> Quedarte quieto en una casilla encendida cuesta 7 al arrancar el turno: menos que el proyectil. Atravesar la banda cuesta 7 tres veces en un solo movimiento. La decisión caro/barato es siempre cuántas casillas encendidas pisás, no cuánto tiempo pasás adentro.</p>
+    <p><strong>Piso &mdash; 18 por ciclo de dos turnos.</strong> Es el proyectil del turno Reparte, y nada más: el turno Quema no dispara. Si te quedás fuera del fuego y gastás la acción en defender, los 13 del escudo dejan pasar 5 &mdash; pero tampoco le pegaste, y él tampoco se movió.</p>
+    <p><strong>Golpe pago &mdash; 38 por ciclo.</strong> 18 del proyectil, 10 por la casilla encendida en la que terminás para tenerlo a tiro, y 10 más al arrancar el turno siguiente parado ahí. Sin escudo, porque la acción se fue en el ataque. Ese es el precio de una acercada cuando el paño de adelante ya está prendido.</p>
+    <p><strong>El aviso es gratis de dejar.</strong> Mientras es marca no cobra nada, y salir del cono cuesta uno o dos pasos desde casi cualquier casilla. Lo que cuesta no es escapar del cono: es <strong>volver a entrar</strong> cuando ya está ardiendo.</p>
   </div>
 </section>
 
 <!-- ============================ 07 CONSTRUCCIÓN ============================ -->
 <section>
   <div class="sec-head">
-    <div class="eyebrow">07 — Construcción</div>
+    <div class="eyebrow">07 &mdash; Construcción</div>
     <h2>Con qué está armado</h2>
   </div>
 
@@ -563,25 +588,27 @@
     <div class="panel build">
       <h3>Piezas propias del jefe</h3>
       <ul>
-        <li><strong>Ciclo alternado</strong> — dispara y salta lejos en un turno, enciende y salta cerca en el otro.</li>
-        <li><strong>Proyectil</strong> — daño garantizado a cualquier distancia, sin condiciones.</li>
-        <li><strong>Salto al borde</strong> — todos los turnos, lejos del jugador y contra la pared; con tope de 5 pasos en el turno de fuego.</li>
-        <li><strong>Gate de confisca</strong> — al 70%, un dado bloqueado permanente.</li>
-        <li><strong>Gate de pleno y color</strong> — al 50%, se teletransporta al centro y marca todo menos su 3×3; prende al turno siguiente.</li>
-        <li><strong>Pergamino de hover</strong> — nombre y descripción de la pelea al pasar el mouse por encima.</li>
+        <li><strong>Ciclo alternado</strong> &mdash; dispara y marca en un turno, enciende en el otro.</li>
+        <li><strong>Proyectil</strong> &mdash; daño garantizado a cualquier distancia, sin condiciones.</li>
+        <li><strong>Cono de fuego</strong> &mdash; sale de su casilla hacia el jugador, apex de 1 y fondo 4.</li>
+        <li><strong>Gate de fuga</strong> &mdash; el salto al borde envuelto en una pregunta de distancia: a 5 o menos salta, más lejos se queda quieto. Es lo único que decide si se mueve.</li>
+        <li><strong>Gate de confisca</strong> &mdash; al 70%, un dado bloqueado permanente.</li>
+        <li><strong>Gate de pleno y color</strong> &mdash; al 50%, se teletransporta al centro y marca todo menos su 3×3; prende al turno siguiente. Es el único salto que no pregunta nada.</li>
+        <li><strong>Pergamino de hover</strong> &mdash; nombre y descripción de la pelea al pasar el mouse por encima.</li>
       </ul>
     </div>
     <div class="panel">
       <h3>Piezas compartidas</h3>
       <ul>
-        <li>La banda dirigida que sale del jefe hacia el jugador (<code>DirectionalBand</code>).</li>
+        <li>El cono dirigido que sale del jefe hacia el jugador (<code>DirectionalCone</code>).</li>
         <li>La sala entera menos un área centrada en el jefe (<code>AllExceptSquareAroundSelf</code>).</li>
-        <li>Las definiciones de fuego de paño, con su VFX, y la regla de que una casilla ya encendida no se vuelve a encender.</li>
+        <li>La pregunta de distancia al objetivo (<code>PcTargetInRange</code>), Manhattan e inclusiva.</li>
+        <li>Las definiciones de fuego de paño, con su VFX, y la regla de una instancia por casilla &mdash; con el fuego nuevo ganando el paño compartido.</li>
         <li>El nodo de ignición y el de salto al borde.</li>
         <li>El candado de dado y su asset.</li>
         <li>El arte del jefe y su retinte.</li>
         <li>El aislamiento de fallos <code>Selector[paso, Wait]</code> del árbol.</li>
-        <li>La partición en cuadrantes: forma genérica disponible para cualquier jefe. El Croupier no la usa.</li>
+        <li>La banda dirigida (<code>DirectionalBand</code>) y la partición en cuadrantes: formas genéricas disponibles para cualquier jefe. El Croupier ya no usa ninguna de las dos.</li>
       </ul>
     </div>
   </div>
@@ -598,7 +625,7 @@
 <script>
   // Mapa caminable real, medido del prefab. Fila 0 = y+5, columna 0 = x-5.
   // 18 casillas bloqueadas: la cruz de 4 barriles a distancia 2 del centro,
-  // más el mobiliario heredado de la sala base (esquinas y ruleta de piso).
+  // mas el mobiliario heredado de la sala base (esquinas y ruleta de piso).
   const SALA = [
     "##WWWWWWWW#",
     "#WWWWWWWWWW",
@@ -613,65 +640,132 @@
     "###WWWW####",
   ];
 
-  const key = (r, c) => r + "," + c;
+  const CONO_FONDO  = 4;   // ConeDepth
+  const CONO_APEX   = 0;   // ConeApexHalfWidth
+  const RADIO_FUGA  = 5;   // FleeTriggerRange, Manhattan, inclusivo
+  const PISO_SALTO  = 8;   // MinPlayerDistance del salto al borde
+  const BANDA_BORDE = 1;   // EdgeBandDepth
 
-  function rect(r0, c0, r1, c1) {
-    const s = new Set();
-    for (let r = r0; r <= r1; r++) for (let c = c0; c <= c1; c++) s.add(key(r, c));
-    return s;
-  }
+  const key  = (r, c) => r + "," + c;
+  const walk = (r, c) => r >= 0 && r < 11 && c >= 0 && c < 11 && SALA[r][c] === "W";
+  const manh = (a, b) => Math.abs(a[0] - b[0]) + Math.abs(a[1] - b[1]);
+
   function union(...sets) {
     const s = new Set();
     for (const x of sets) for (const v of x) s.add(v);
     return s;
   }
+
+  // Replica de ThreatAreaShape.ComputeDirectionalCone: arranca en el paso 1, asi que
+  // la casilla del jefe nunca entra, y suma 1 por lado en cada paso. Con apex 0 y
+  // fondo 4 los anchos son 1-3-5-7 = 16 casillas antes de recortar contra la sala.
+  function cone(boss, player, depth = CONO_FONDO, apex = CONO_APEX) {
+    const dRow = player[0] - boss[0];
+    const dCol = player[1] - boss[1];
+    // Cardinal.FromDelta compara |dx| >= |dy|, asi que el empate diagonal se va al eje X.
+    const horiz = Math.abs(dCol) >= Math.abs(dRow);
+    const sr = horiz ? 0 : Math.sign(dRow);
+    const sc = horiz ? Math.sign(dCol) : 0;
+
+    const s = new Set();
+    for (let step = 1; step <= depth; step++) {
+      const r0 = boss[0] + sr * step;
+      const c0 = boss[1] + sc * step;
+      const hw = apex + step - 1;
+      for (let off = -hw; off <= hw; off++) {
+        const r = horiz ? r0 + off : r0;
+        const c = horiz ? c0 : c0 + off;
+        if (walk(r, c)) s.add(key(r, c));
+      }
+    }
+    return s;
+  }
+
   // Toda la sala caminable menos el anillo de radio `rad` alrededor del jefe.
   function allExceptRing(boss, rad) {
     const s = new Set();
     for (let r = 0; r < 11; r++) for (let c = 0; c < 11; c++) {
-      if (SALA[r][c] !== "W") continue;
+      if (!walk(r, c)) continue;
       if (Math.abs(r - boss[0]) <= rad && Math.abs(c - boss[1]) <= rad) continue;
       s.add(key(r, c));
     }
     return s;
   }
 
-  // 3 de ancho, del jefe hasta la pared que el jugador tiene detrás.
-  const BANDA = rect(3, 2, 5, 10);
+  // Donde tiene que estar el jugador para que el jefe decida huir.
+  function fleeZone(boss, rad = RADIO_FUGA) {
+    const s = new Set();
+    for (let r = 0; r < 11; r++) for (let c = 0; c < 11; c++) {
+      if (!walk(r, c)) continue;
+      if (manh([r, c], boss) <= rad) s.add(key(r, c));
+    }
+    return s;
+  }
+
+  // Candidatas de aterrizaje: anillo del borde, y a PISO_SALTO o mas del jugador.
+  function landingSpots(player, floor = PISO_SALTO, band = BANDA_BORDE) {
+    const s = new Set();
+    for (let r = 0; r < 11; r++) for (let c = 0; c < 11; c++) {
+      if (!walk(r, c)) continue;
+      const edge = r < band || r > 10 - band || c < band || c > 10 - band;
+      if (!edge) continue;
+      if (manh([r, c], player) >= floor) s.add(key(r, c));
+    }
+    return s;
+  }
 
   const VIEWS = {
-    sala:       { boss: [5, 5] },
-    reparte:    { boss: [4, 2], player: [4, 7], mark: BANDA },
-    quema:      { boss: [4, 2], burn: BANDA },
-    frontal:    { boss: [4, 2], player: [4, 3], burn: BANDA },
-    flanco:     { boss: [4, 2], player: [2, 4], burn: BANDA },
-    cerco:      { boss: [4, 10], player: [4, 9],
-                  burn: union(rect(2, 1, 6, 8), rect(6, 3, 8, 7)) },
+    sala:     { boss: [5, 5] },
+
+    // A 6 casillas el jefe no se mueve: dispara y marca desde donde esta.
+    reparte:  { boss: [4, 2], player: [4, 8], markFn: (b, p) => cone(b, p) },
+    quema:    { boss: [4, 2], player: [4, 8], burnFn: (b, p) => cone(b, p) },
+
+    // La boca es lo mas ancho del cono y tambien lo que tiene el paño limpio a un paso.
+    salir:    { boss: [4, 2], player: [4, 6], burnFn: (b) => cone(b, [b[0], 10]) },
+    // Dos Repartes con el jugador en distinto cuadrante: se le apaga el frente entero.
+    acumula:  { boss: [4, 2], player: [1, 9],
+                burnFn: (b) => union(cone(b, [b[0], 10]), cone(b, [0, b[1] + 2])) },
+
+    // El jugador a 6: fuera del radio, asi que el jefe se queda.
+    radio:    { boss: [4, 5], player: [5, 10], zoneFn: (b) => fleeZone(b) },
+    // El jugador pegado: el jefe huye, y estas son sus casillas posibles.
+    salto:    { boss: [4, 5], player: [5, 6], landFn: (b, p) => landingSpots(p) },
+
     // Pleno y color prende sin turno de aviso: se dibuja ardiendo, no marcado.
-    pleno:      { boss: [5, 5], burnFn: (b) => allExceptRing(b, 1) },
+    pleno:    { boss: [5, 5], burnFn: (b) => allExceptRing(b, 1) },
   };
 
   function build(el) {
     const view = VIEWS[el.dataset.map];
     if (!view) return;
 
-    const mark = view.markFn ? view.markFn(view.boss) : (view.mark || new Set());
-    const burn = view.burnFn ? view.burnFn(view.boss) : (view.burn || new Set());
+    const call = (fn, fallback) =>
+      fn ? fn(view.boss, view.player) : (fallback || new Set());
+
+    const mark = call(view.markFn, view.mark);
+    const burn = call(view.burnFn, view.burn);
+    const zone = call(view.zoneFn, view.zone);
+    const land = call(view.landFn, view.land);
 
     for (let r = 0; r < 11; r++) {
       for (let c = 0; c < 11; c++) {
         const cell = document.createElement("div");
         cell.className = "cell";
         const k = key(r, c);
-        const walkable = SALA[r][c] === "W";
 
-        if (!walkable) {
+        if (!walk(r, c)) {
           cell.classList.add("blocker");
+        } else if (land.has(k)) {
+          cell.classList.add("land");
+          cell.textContent = "\u00b7";
         } else if (burn.has(k)) {
           cell.classList.add("burn");
           cell.textContent = "^";
         } else if (mark.has(k)) {
           cell.classList.add("mark");
+        } else if (zone.has(k)) {
+          cell.classList.add("zone");
         }
 
         if (view.boss[0] === r && view.boss[1] === c) {
