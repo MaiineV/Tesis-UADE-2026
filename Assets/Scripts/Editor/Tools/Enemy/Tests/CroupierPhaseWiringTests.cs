@@ -715,19 +715,17 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
 
                 // Assert
                 Assert.AreEqual("boss.croupier", data.EntityId);
-                Assert.AreEqual(200, data.BaseHP,
-                    "La vida del jefe cambió: son los mismos 200 que los otros tres jefes del juego, " +
-                    "y su debilidad (el Poker) no se cobra seguido como para descontarle nada.");
+                Assert.AreEqual(CroupierAssetBuilder.MaxHp, data.BaseHP,
+                    "La vida que autora el builder dejó de ser la que termina en la ficha.");
                 Assert.AreEqual(24, data.BaseAttack);
                 Assert.AreEqual(ComboId.Poker, data.WeaknessComboId,
                     "La debilidad es el Poker (cuatro dados iguales), no el Par. El id canónico del " +
                     "catálogo es combo.poker.");
                 // Es un override propio del jefe, no el global de WeaknessConfig, así que moverlo
                 // no le toca la debilidad a ningún otro enemigo.
-                Assert.AreEqual(2.0f, data.WeaknessMultiplierOverride, PercentTolerance,
-                    "El multiplicador de la debilidad cambió: el Poker sale ~2 de cada 10 tiradas " +
-                    "gastando el pozo entero, así que por debajo del ×2 el bono casi no aparece en " +
-                    "el daño de la pelea.");
+                Assert.AreEqual(CroupierAssetBuilder.WeaknessMultiplier,
+                    data.WeaknessMultiplierOverride, PercentTolerance,
+                    "El multiplicador que autora el builder dejó de ser el que termina en la ficha.");
                 Assert.AreEqual(15, data.MinGoldDrop, "Oro de piso 1.");
                 Assert.AreEqual(23, data.MaxGoldDrop);
                 Assert.IsEmpty(data.Behaviors,

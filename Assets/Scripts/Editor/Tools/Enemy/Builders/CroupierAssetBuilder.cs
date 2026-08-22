@@ -85,10 +85,10 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         /// Cuánto lo castiga el Poker. Multiplica el golpe entero ya resuelto (fórmula v3:
         /// <c>N = base_combo + ATQ + Σcaras + bonos</c>), no el base del combo.
         /// </summary>
-        public const float WeaknessMultiplier = 2.0f;
+        public const float WeaknessMultiplier = 1.3f;
 
         /// <summary>Vida del jefe de piso 1.</summary>
-        public const int MaxHp = 200;
+        public const int MaxHp = 300;
         public const int Attack = 24;
         public const int Speed = 5;
         public const int MinGoldDrop = 15;
@@ -132,13 +132,13 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         // ======================================================================
 
         /// <summary>Disparo de T1.</summary>
-        public const int ShotDamage = 12;
+        public const int ShotDamage = 18;
 
         /// <summary>
-        /// Alcance del disparo, en Manhattan. 20 cubre la diagonal entera de la sala 11x11: en la
+        /// Alcance del disparo, en Manhattan. 24 cubre la diagonal entera de la sala 11x11: en la
         /// practica es "a cualquier distancia" sin escribir un centinela.
         /// </summary>
-        public const int ShotRange = 20;
+        public const int ShotRange = 24;
 
         /// <summary>
         /// Tope del salto del tiempo de quema, medido en pasos del grafo.
