@@ -31,14 +31,16 @@ namespace Rollgeon.Combat.AI.Decisions
 
         [Tooltip("Radio para Square/SquareAroundSelf (1 ⇒ 3×3), ancho en casillas de la franja para Row/Column " +
                  "(1 ⇒ línea del jugador), medio-ancho de la banda perpendicular para DirectionalBand " +
-                 "(1 ⇒ 3 casillas de ancho), ancho de cada cuadrado para ScatteredSquares (2 ⇒ 2×2), o el " +
+                 "(1 ⇒ 3 casillas de ancho), semi-ancho del APEX para DirectionalCone (0 ⇒ arranca en " +
+                 "1 casilla y se abre 1 por lado por paso), ancho de cada cuadrado para ScatteredSquares " +
+                 "(2 ⇒ 2×2), o el " +
                  "índice de celda (1-based) para GridPartition. Ignorado en HalfRoom.")]
         [MinValue(0)]
         public int Size = 1;
 
-        [Tooltip("Profundidad (en casillas) de la banda direccional, arrancando pegada al boss. Solo para DirectionalBand.")]
+        [Tooltip("Profundidad (en casillas) de la banda o el cono, arrancando pegada al boss. Solo para DirectionalBand y DirectionalCone.")]
         [MinValue(1)]
-        [ShowIf(nameof(Shape), ThreatShape.DirectionalBand)]
+        [ShowIf("@Shape == ThreatShape.DirectionalBand || Shape == ThreatShape.DirectionalCone")]
         public int Depth = 2;
 
         [Tooltip("Cantidad de cuadrados independientes, anclados al azar en la sala. Solo para ScatteredSquares.")]
@@ -100,11 +102,16 @@ namespace Rollgeon.Combat.AI.Decisions
             if (grid == null) return AIResult.Failed;
 
             HashSet<GridCoord> tiles;
-            if (Shape == ThreatShape.DirectionalBand)
+            // NeedsSelfAndPlayer en vez de comparar contra DirectionalBand: sin esto una forma
+            // direccional nueva cae al else final, que la centra en el jugador y la manda a
+            // Compute —que no la conoce— y sale vacia. El jefe pierde el turno con un warning.
+            if (ThreatAreaShape.NeedsSelfAndPlayer(Shape))
             {
                 if (!grid.TryGetPosition(context.PlayerGuid, out var playerCoord)) return AIResult.Failed;
                 if (!grid.TryGetPosition(context.SelfGuid, out var selfCoord)) return AIResult.Failed;
-                tiles = ThreatAreaShape.ComputeDirectionalBand(grid, selfCoord, playerCoord, Size, Depth);
+                tiles = Shape == ThreatShape.DirectionalCone
+                    ? ThreatAreaShape.ComputeDirectionalCone(grid, selfCoord, playerCoord, Size, Depth)
+                    : ThreatAreaShape.ComputeDirectionalBand(grid, selfCoord, playerCoord, Size, Depth);
             }
             else if (Shape == ThreatShape.ScatteredSquares)
             {

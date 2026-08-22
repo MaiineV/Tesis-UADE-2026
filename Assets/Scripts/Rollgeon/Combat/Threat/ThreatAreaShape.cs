@@ -78,6 +78,14 @@ namespace Rollgeon.Combat.Threat
         /// llama directo a <see cref="ThreatAreaShape.ComputeGridPartition"/>.
         /// </remarks>
         GridPartition,
+
+        /// <summary>
+        /// Cono que sale del propio boss hacia el jugador y se abre una casilla por lado en cada
+        /// paso de fondo — el fuego del Croupier. Comparte origen y cardinales con
+        /// <see cref="DirectionalBand"/>, pero el ancho crece con la distancia: pegado al boss es
+        /// una sola casilla. Ver <see cref="ThreatAreaShape.ComputeDirectionalCone"/>.
+        /// </summary>
+        DirectionalCone,
     }
 
     /// <summary>Eje de corte para <see cref="ThreatShape.HalfRoom"/>.</summary>
@@ -180,6 +188,15 @@ namespace Rollgeon.Combat.Threat
             shape == ThreatShape.SquareAroundSelf ||
             shape == ThreatShape.AllExceptSquareAroundSelf ||
             shape == ThreatShape.ColumnAroundSelf;
+
+        /// <summary>
+        /// Formas que salen del boss <b>hacia</b> el jugador. El caller tiene que resolver las dos
+        /// posiciones y llamar al Compute propio de cada una: no pasan por <see cref="Compute"/>,
+        /// que recibe un solo centro y las devolveria vacias sin avisar.
+        /// </summary>
+        public static bool NeedsSelfAndPlayer(ThreatShape shape) =>
+            shape == ThreatShape.DirectionalBand ||
+            shape == ThreatShape.DirectionalCone;
 
         /// <summary>
         /// Toda la sala caminable menos el cuadrado de radio <paramref name="radius"/> (1 ⇒ 3×3)
@@ -413,6 +430,43 @@ namespace Rollgeon.Combat.Threat
             {
                 int originX = self.X + stepX * step;
                 int originY = self.Y + stepY * step;
+
+                for (int off = -hw; off <= hw; off++)
+                {
+                    var c = advancesOnX
+                        ? new GridCoord(originX, originY + off)
+                        : new GridCoord(originX + off, originY);
+                    if (IsValidTile(grid, c)) result.Add(c);
+                }
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// Cono anclado en <paramref name="self"/> y apuntado a <paramref name="player"/>: en el
+        /// paso <c>n</c> el semi-ancho es <paramref name="apexHalfWidth"/> + n - 1, asi que con
+        /// apex 0 sale 1-3-5-7 casillas. Igual que <see cref="ComputeDirectionalBand"/> arranca en
+        /// el paso 1 —la casilla del boss no entra— y sólo mira los cuatro cardinales.
+        /// </summary>
+        public static HashSet<GridCoord> ComputeDirectionalCone(
+            IGridManager grid, GridCoord self, GridCoord player, int apexHalfWidth, int depth)
+        {
+            var result = new HashSet<GridCoord>();
+            if (grid == null) return result;
+
+            int apex = apexHalfWidth < 0 ? 0 : apexHalfWidth;
+            int d = depth < 1 ? 1 : depth;
+
+            var dir = CardinalExtensions.FromDelta(self, player);
+            var (stepX, stepY) = DirectionStep(dir);
+            bool advancesOnX = stepX != 0;
+
+            for (int step = 1; step <= d; step++)
+            {
+                int originX = self.X + stepX * step;
+                int originY = self.Y + stepY * step;
+                int hw = apex + step - 1;
 
                 for (int off = -hw; off <= hw; off++)
                 {

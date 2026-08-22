@@ -5,9 +5,10 @@ using Rollgeon.Grid;
 namespace Rollgeon.Combat.Tests
 {
     /// <summary>
-    /// Tests de <see cref="ThreatAreaShape.ComputeDirectionalBand"/>: la banda direccional
-    /// que sale del boss (piso 1) hacia el jugador, en las 4 direcciones cardinales, más
-    /// recorte contra el borde de la grilla.
+    /// Tests de las dos formas que salen del boss hacia el jugador:
+    /// <see cref="ThreatAreaShape.ComputeDirectionalBand"/> (ancho uniforme) y
+    /// <see cref="ThreatAreaShape.ComputeDirectionalCone"/> (se abre con la distancia), en las 4
+    /// direcciones cardinales, más recorte contra el borde de la grilla.
     /// </summary>
     [TestFixture]
     public class ThreatAreaShapeTests
@@ -152,6 +153,119 @@ namespace Rollgeon.Combat.Tests
 
             Assert.AreEqual(0, tiles.Count);
         }
+
+        // =====================================================================
+        // Cono direccional — el fuego del Croupier
+        // =====================================================================
+
+        [Test]
+        public void ComputeDirectionalCone_PlayerNorth_WidensOneTilePerStep()
+        {
+            // Arrange
+            _grid.LoadRoom(NavGraph.Rect(11, 11));
+            var self = new GridCoord(5, 5);
+            var player = new GridCoord(5, 9);
+
+            // Act
+            var tiles = ThreatAreaShape.ComputeDirectionalCone(_grid, self, player, apexHalfWidth: 0, depth: 4);
+
+            // Assert — 1 + 3 + 5 + 7: el apex es una sola casilla y abre 1 por lado por paso.
+            Assert.AreEqual(16, tiles.Count);
+            Assert.IsTrue(tiles.Contains(new GridCoord(5, 6)), "El apex va pegado al boss.");
+            Assert.IsFalse(tiles.Contains(new GridCoord(4, 6)), "El paso 1 es una sola casilla.");
+            Assert.IsTrue(tiles.Contains(new GridCoord(4, 7)));
+            Assert.IsTrue(tiles.Contains(new GridCoord(6, 7)));
+            Assert.IsFalse(tiles.Contains(new GridCoord(3, 7)), "El paso 2 abre 1 por lado, no 2.");
+            Assert.IsTrue(tiles.Contains(new GridCoord(3, 8)));
+            Assert.IsTrue(tiles.Contains(new GridCoord(7, 8)));
+            Assert.IsTrue(tiles.Contains(new GridCoord(2, 9)));
+            Assert.IsTrue(tiles.Contains(new GridCoord(8, 9)));
+        }
+
+        [Test]
+        public void ComputeDirectionalCone_PlayerEast_WidensOneTilePerStep()
+        {
+            // Arrange
+            _grid.LoadRoom(NavGraph.Rect(11, 11));
+            var self = new GridCoord(5, 5);
+            var player = new GridCoord(9, 5);
+
+            // Act
+            var tiles = ThreatAreaShape.ComputeDirectionalCone(_grid, self, player, apexHalfWidth: 0, depth: 4);
+
+            // Assert — mismo cono, girado: el eje perpendicular pasa a ser Y.
+            Assert.AreEqual(16, tiles.Count);
+            Assert.IsTrue(tiles.Contains(new GridCoord(6, 5)));
+            Assert.IsFalse(tiles.Contains(new GridCoord(6, 4)));
+            Assert.IsTrue(tiles.Contains(new GridCoord(7, 4)));
+            Assert.IsTrue(tiles.Contains(new GridCoord(7, 6)));
+            Assert.IsTrue(tiles.Contains(new GridCoord(9, 2)));
+            Assert.IsTrue(tiles.Contains(new GridCoord(9, 8)));
+        }
+
+        [TestCase(5, 9, TestName = "ComputeDirectionalCone_Norte_Cubre16")]
+        [TestCase(5, 1, TestName = "ComputeDirectionalCone_Sur_Cubre16")]
+        [TestCase(9, 5, TestName = "ComputeDirectionalCone_Este_Cubre16")]
+        [TestCase(1, 5, TestName = "ComputeDirectionalCone_Oeste_Cubre16")]
+        public void ComputeDirectionalCone_EveryCardinal_CoversTheSameTileCount(int playerX, int playerY)
+        {
+            // Arrange — sala con lugar de sobra: sin recorte, las 4 direcciones son la misma forma.
+            _grid.LoadRoom(NavGraph.Rect(11, 11));
+            var self = new GridCoord(5, 5);
+
+            // Act
+            var tiles = ThreatAreaShape.ComputeDirectionalCone(
+                _grid, self, new GridCoord(playerX, playerY), apexHalfWidth: 0, depth: 4);
+
+            // Assert
+            Assert.AreEqual(16, tiles.Count);
+            Assert.IsFalse(tiles.Contains(self), "El cono nunca incluye la casilla del boss.");
+        }
+
+        [Test]
+        public void ComputeDirectionalCone_BiggerApex_WidensTheWholeMouth()
+        {
+            // Arrange
+            _grid.LoadRoom(NavGraph.Rect(11, 11));
+            var self = new GridCoord(5, 5);
+            var player = new GridCoord(5, 9);
+
+            // Act
+            var tiles = ThreatAreaShape.ComputeDirectionalCone(_grid, self, player, apexHalfWidth: 1, depth: 4);
+
+            // Assert — el apex corre la serie entera: 3 + 5 + 7 + 9.
+            Assert.AreEqual(24, tiles.Count);
+            Assert.IsTrue(tiles.Contains(new GridCoord(4, 6)), "Con apex 1 el primer paso ya son 3 casillas.");
+        }
+
+        [Test]
+        public void ComputeDirectionalCone_NearGridEdge_ClipsOutOfBoundsTiles()
+        {
+            // Arrange — boss en la esquina (0,0): el cono se abre hacia X negativa, que no existe.
+            _grid.LoadRoom(NavGraph.Rect(5, 5));
+            var self = new GridCoord(0, 0);
+            var player = new GridCoord(0, 3);
+
+            // Act
+            var tiles = ThreatAreaShape.ComputeDirectionalCone(_grid, self, player, apexHalfWidth: 0, depth: 4);
+
+            // Assert — de 1+3+5+7 sólo sobrevive la mitad derecha: 1 + 2 + 3 + 4.
+            Assert.AreEqual(10, tiles.Count);
+            Assert.IsTrue(tiles.Contains(new GridCoord(0, 1)));
+            Assert.IsTrue(tiles.Contains(new GridCoord(3, 4)));
+            Assert.IsFalse(tiles.Contains(new GridCoord(-1, 2)));
+            Assert.IsFalse(tiles.Contains(new GridCoord(-3, 4)));
+        }
+
+        [Test]
+        public void ComputeDirectionalCone_NullGrid_ReturnsEmpty()
+        {
+            var tiles = ThreatAreaShape.ComputeDirectionalCone(
+                null, new GridCoord(0, 0), new GridCoord(0, 1), apexHalfWidth: 0, depth: 4);
+
+            Assert.AreEqual(0, tiles.Count);
+        }
+
 
         [Test]
         public void ComputeScatteredSquares_ReturnsAtMostCountTimesWidthSquaredTiles()

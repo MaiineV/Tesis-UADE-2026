@@ -21,9 +21,10 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
     /// Wiring del árbol del Croupier <b>en memoria</b>: contra el builder y no contra el
     /// <c>.asset</c>, que ataría el suite a que Unity lo haya reimportado. El jefe es un kiter de
     /// dos tiempos, y lo que se cubre acá es lo que un merge puede romper sin que se note: el
-    /// candado que tiene que re-emitirse todos los turnos, el tope del salto del tiempo de quema,
-    /// la duración del fuego de la que cuelga todo el plan del jefe, y el orden del bloque de
-    /// "Pleno y color" — donde mover un nodo un lugar le cambia el efecto entero.
+    /// candado que tiene que re-emitirse todos los turnos, el gate de cercanía que decide si cada
+    /// salto de fuga corre, la duración del fuego de la que cuelga todo el plan del jefe, y el
+    /// orden del bloque de "Pleno y color" — donde mover un nodo un lugar le cambia el efecto
+    /// entero.
     /// </summary>
     [TestFixture]
     public class CroupierPhaseWiringTests
@@ -484,8 +485,9 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                 "Misma métrica que la distancia al jugador del salto: con otra, la distancia a la " +
                 "que aterriza y la que alcanza el tiro dejan de ser el mismo número.");
             Assert.AreEqual(0, flight.MaxDistanceFromPlayer,
-                "El salto de reparto estrenó tope. El único tope de la pelea es el del tiempo de " +
-                "quema, que es la ventana en la que se le puede entrar.");
+                "El salto de reparto estrenó tope de aterrizaje. Ninguno de los dos saltos de " +
+                "fuga lo lleva: con el gate de cercanía, la ventana en la que se le puede entrar " +
+                "la abre el jugador acercándose, no un techo a dónde cae el salto.");
 
             Assert.GreaterOrEqual(shot.Range, flight.MinPlayerDistance,
                 "El salto se lleva al jefe hasta MinPlayerDistance del jugador, y sin tope puede " +
@@ -498,17 +500,19 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         /// acaba de saltar — no desde el medio de la sala.
         /// </summary>
         [Test]
-        public void DealBeat_MarksTheAuthoredBandFromTheSheet()
+        public void DealBeat_MarksTheAuthoredConeFromTheSheet()
         {
             var mark = Descendants(DealBeat()).OfType<AINode_TelegraphMark>().Single();
 
-            Assert.AreEqual(ThreatShape.DirectionalBand, mark.Shape);
-            Assert.AreEqual(CroupierAssetBuilder.BandHalfWidth, mark.Size,
-                "Size es el SEMI-ancho de la banda, y sale de la ficha.");
-            Assert.AreEqual(CroupierAssetBuilder.BandDepth, mark.Depth,
+            Assert.AreEqual(ThreatShape.DirectionalCone, mark.Shape,
+                "El reparto dejó de marcar un cono. La banda uniforme cobraba igual pegado al " +
+                "jefe que en el fondo; el cono deja su casilla como refugio.");
+            Assert.AreEqual(CroupierAssetBuilder.ConeApexHalfWidth, mark.Size,
+                "Size es el semi-ancho del APEX, y sale de la ficha.");
+            Assert.AreEqual(CroupierAssetBuilder.ConeDepth, mark.Depth,
                 "La profundidad del nodo dejó de ser la de la ficha. Es cuánto paño quema cada " +
-                "turno de reparto: más corta y la banda no llega a cruzarse en el camino del " +
-                "jugador, más larga y barre la sala de punta a punta desde el borde en el que el " +
+                "turno de reparto: más corto y el cono no llega a cruzarse en el camino del " +
+                "jugador, más largo y barre la sala de punta a punta desde el borde en el que el " +
                 "jefe aterrizó.");
             Assert.AreEqual(0, mark.Damage,
                 "La banda no puede cobrar al prender: se marca un turno antes, así que el jugador " +
@@ -517,8 +521,9 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         }
 
         /// <summary>
-        /// El tiempo de quema prende y recién entonces salta, y su salto es el único con tope: ése
-        /// es el turno en el que el jefe queda al alcance, y es lo que lo hace matable.
+        /// El tiempo de quema prende y recién entonces salta. Igual que el de reparto, ese salto
+        /// va sin tope de aterrizaje: la ventana en la que se le puede entrar ya no depende de
+        /// dónde cae, sino de que el jugador vuelva a acercarse dentro del gate de cercanía.
         /// </summary>
         [Test]
         public void BurnBeat_IgnitesThenTeleports_AndDoesNotShoot()
@@ -537,12 +542,86 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                 "alcance del jugador.");
 
             var jump = burn.OfType<AINode_TeleportAwayToEdge>().Single();
-            Assert.AreEqual(CroupierAssetBuilder.QuemaTeleportMaxDistance, jump.MaxDistanceFromPlayer,
-                "El salto del tiempo de quema perdió su tope: sin él aterriza fuera del alcance del " +
-                "jugador igual que el de reparto, y no queda ningún turno en que se lo pueda tocar.");
+            Assert.AreEqual(0, jump.MaxDistanceFromPlayer,
+                "El salto del tiempo de quema volvió a tener tope de aterrizaje. Con el gate de " +
+                "cercanía activo, un techo acá ya no hace ganable la pelea: sólo hace que el jefe " +
+                "aterrice más cerca de lo que la fuga tendría que dejarlo.");
             Assert.IsTrue(jump.ConsumeMoveAction,
                 "Sin gastar el movimiento del turno, cualquier paso de reacomodo posterior lo saca " +
                 "del borde en el mismo turno en que saltó.");
+        }
+
+        /// <summary>
+        /// El jefe sólo se toma la molestia de huir si el jugador está cerca: más lejos, el
+        /// disparo no tiene techo y el cono se marca desde donde esté parado, así que tepearse
+        /// igual no le compra nada.
+        /// </summary>
+        [Test]
+        public void BothFlights_AreGatedByProximity_UsingTheSheetThreshold()
+        {
+            foreach (var gate in new[] { FleeGateOf(DealBeat()), FleeGateOf(BurnBeat()) })
+            {
+                var proximity = gate.Conditions.OfType<PcTargetInRange>().SingleOrDefault();
+
+                Assert.IsNotNull(proximity,
+                    "El salto de fuga dejó de estar gateado por distancia al jugador.");
+                Assert.AreEqual(CroupierAssetBuilder.FleeTriggerRange, proximity.Range,
+                    "El umbral del gate no sale de la constante de la ficha: quedó un número " +
+                    "suelto que puede desincronizarse de lo que documenta el builder.");
+                Assert.AreEqual(DistanceMetric.Manhattan, proximity.Metric,
+                    "El umbral se decidió en Manhattan; otra métrica cambia a qué distancia real " +
+                    "el jefe deja de huir.");
+            }
+        }
+
+        /// <summary>
+        /// Un <c>If</c> sin <c>Else</c> devuelve <c>Failed</c> cuando la condición no pasa, y ese
+        /// <c>Failed</c> le cortaría el resto del tiempo (dispara y marca, o prende) al jefe cada
+        /// vez que el jugador esté lejos.
+        /// </summary>
+        [Test]
+        public void BothFlights_GateHasAWaitElse_SoBeingFarNeverAbortsTheBeat()
+        {
+            Assert.IsInstanceOf<AINode_Wait>(FleeGateOf(DealBeat()).Else,
+                "El gate del salto de reparto no tiene Wait de Else: con el jugador lejos, corta " +
+                "el tiempo entero y el jefe ni dispara.");
+            Assert.IsInstanceOf<AINode_Wait>(FleeGateOf(BurnBeat()).Else,
+                "El gate del salto de quema no tiene Wait de Else: con el jugador lejos, corta el " +
+                "tiempo entero y el jefe ni prende lo marcado.");
+        }
+
+        /// <summary>
+        /// Ninguno de los dos saltos de fuga lleva tope de aterrizaje: con el gate de cercanía, la
+        /// pelea sigue siendo ganable porque el jugador maneja el tempo de cuándo se vuelve a
+        /// acercar, no porque el salto tenga un techo a dónde cae.
+        /// </summary>
+        [Test]
+        public void NeitherFlight_HasALandingCap()
+        {
+            var dealFlight = Descendants(DealBeat()).OfType<AINode_TeleportAwayToEdge>().Single();
+            var burnFlight = Descendants(BurnBeat()).OfType<AINode_TeleportAwayToEdge>().Single();
+
+            Assert.AreEqual(0, dealFlight.MaxDistanceFromPlayer,
+                "El salto de reparto volvió a tener tope de aterrizaje.");
+            Assert.AreEqual(0, burnFlight.MaxDistanceFromPlayer,
+                "El salto de quema volvió a tener tope de aterrizaje.");
+        }
+
+        /// <summary>
+        /// El armado de "Pleno y color" se planta en el centro <b>siempre</b> al cruzar el 50%,
+        /// sin el gate de cercanía: usa <c>AINode_TeleportToRoomCenter</c>, un nodo distinto de
+        /// los dos <c>AINode_TeleportAwayToEdge</c> del ciclo.
+        /// </summary>
+        [Test]
+        public void PlenoTeleport_IsNeverGated_AndIsADifferentNodeFromTheFleeTeleports()
+        {
+            var arm = Descendants(FindGateAtPercent(CroupierAssetBuilder.PlenoHpThreshold).Then);
+
+            Assert.IsNotEmpty(arm.OfType<AINode_TeleportToRoomCenter>(),
+                "El Pleno dejó de plantarse en el centro.");
+            Assert.IsEmpty(arm.OfType<AINode_TeleportAwayToEdge>(),
+                "El armado del Pleno pasó a compartir nodo con los saltos de fuga: quedaría " +
+                "gateado por cercanía y a veces no se plantaría en el centro al cruzar el 50%.");
         }
 
         [Test]
@@ -811,6 +890,15 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                 .FirstOrDefault(c => Descendants(c).Any(n => n is AINode_IgniteArea));
             Assert.IsNotNull(beat, "Ningún tiempo prende el paño.");
             return beat;
+        }
+
+        /// <summary>El <c>If</c> de cercanía que gatea el salto de fuga de un tiempo del ciclo.</summary>
+        private static AINode_If FleeGateOf(AIDecisionNode beat)
+        {
+            var gate = Descendants(beat).OfType<AINode_If>()
+                .SingleOrDefault(g => g.Then is AINode_TeleportAwayToEdge);
+            Assert.IsNotNull(gate, "No hay gate de cercanía envolviendo el salto de fuga.");
+            return gate;
         }
 
         /// <summary>

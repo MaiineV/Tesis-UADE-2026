@@ -93,7 +93,7 @@ namespace Rollgeon.Combat.AI.Decisions
             var grid = context.Grid;
             if (grid == null) return AIResult.Failed;
 
-            if (Shape == ThreatShape.DirectionalBand || Shape == ThreatShape.ScatteredSquares)
+            if (ThreatAreaShape.NeedsSelfAndPlayer(Shape) || Shape == ThreatShape.ScatteredSquares)
             {
                 Debug.LogWarning($"[AINode_AuxTelegraph] Shape {Shape} no soportada en el canal " +
                                  "secundario — usá el TelegraphMark principal para esas formas.");

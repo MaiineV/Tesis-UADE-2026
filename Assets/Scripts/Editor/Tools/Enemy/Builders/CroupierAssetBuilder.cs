@@ -141,28 +141,32 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         public const int ShotRange = 24;
 
         /// <summary>
-        /// Tope del salto del tiempo de quema, medido en pasos del grafo.
+        /// Distancia Manhattan al jugador desde la que el jefe se toma la molestia de huir. A esta
+        /// distancia o menos, los dos saltos del ciclo (T1 y T2) corren; más lejos, se quedan
+        /// plantados.
         /// </summary>
         /// <remarks>
-        /// El jugador amenaza 8 casillas por turno (4 de movimiento mas 4 de alcance del especial,
-        /// una vez cada uno y sin gap-closer). El jefe salta en los dos tiempos, asi que sin un tope
-        /// por debajo de eso aterriza siempre fuera de alcance y no queda ningun turno en el que se
-        /// le pueda entrar.
+        /// Más allá de este umbral huir no le compra nada: el disparo no tiene techo
+        /// (<see cref="ShotRange"/>) y el cono se marca desde donde esté parado, así que tepearse
+        /// igual sólo le gasta el turno y a veces lo hace aterrizar más cerca de lo que estaba. Sin
+        /// tope de aterrizaje (ver los dos <c>AINode_TeleportAwayToEdge</c>) porque la garantía de
+        /// que la pelea sea ganable ya no depende de dónde cae el salto: si huye lejos, el jugador
+        /// camina hacia él y el jefe no vuelve a huir hasta estar de nuevo dentro de este radio.
         /// </remarks>
-        public const int QuemaTeleportMaxDistance = 5;
+        public const int FleeTriggerRange = 5;
 
-        /// <summary>Semi-ancho de la banda de fuego: 1 = 3 casillas de ancho.</summary>
-        public const int BandHalfWidth = 1;
+        /// <summary>Semi-ancho del apex del cono: 0 = arranca en una sola casilla.</summary>
+        public const int ConeApexHalfWidth = 0;
 
         /// <summary>
-        /// Profundidad de la banda, contada desde la casilla del jefe hacia el jugador.
+        /// Profundidad del cono, contada desde la casilla del jefe hacia el jugador.
         /// </summary>
         /// <remarks>
-        /// El jefe marca desde el borde al que acaba de saltar, no desde el medio de la sala: a la
-        /// profundidad del lado entero la banda barre el pano de punta a punta y el piso quemado por
-        /// turno de reparto se duplica.
+        /// El jefe marca desde el borde al que acaba de saltar, no desde el medio de la sala, y el
+        /// cono se abre una casilla por lado en cada paso: el fondo no escala el area en linea sino
+        /// al cuadrado. En 4 cubre 16 casillas, casi las mismas 18 que barria la banda de 3x6.
         /// </remarks>
-        public const int BandDepth = 6;
+        public const int ConeDepth = 4;
 
         /// <summary>Umbral del candado: desde aca le queda un dado menos, y no vuelve.</summary>
         public const float LockHpThreshold = 0.7f;
@@ -396,15 +400,15 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         /// </remarks>
         public static string BuildDescription(SpecialTileDefinitionSO fire)
         {
-            int bandWidth = BandHalfWidth * 2 + 1;
+            int coneMouth = (ConeApexHalfWidth + ConeDepth - 1) * 2 + 1;
             int holeSide = PlenoHoleRadius * 2 + 1;
             int lockPercent = Mathf.RoundToInt(LockHpThreshold * 100f);
             int plenoPercent = Mathf.RoundToInt(PlenoHpThreshold * 100f);
 
             var sb = new System.Text.StringBuilder();
             sb.Append("Warps to the edge of the table every turn and shoots for ").Append(ShotDamage)
-              .Append(" at any range. Every other turn he lights a ").Append(bandWidth)
-              .Append("-tile lane of fire");
+              .Append(" at any range. Every other turn he lights a cone of fire ").Append(ConeDepth)
+              .Append(" deep, widening to ").Append(coneMouth).Append(" tiles");
 
             if (fire != null)
             {
@@ -562,25 +566,28 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
                                         ImpactFeelFeedbackId = BossFeedbackIds.CroupierRangeImpactFeel,
                                     }),
 
-                                    // Se va al borde, y ANTES de marcar: AINode_TelegraphMark ancla
-                                    // la banda en la casilla del jefe al tickear y AINode_IgniteArea
-                                    // la consume sin recalcularla, asi que marcando primero el fuego
-                                    // sale de donde el jefe ya no esta.
-                                    Guarded(new AINode_TeleportAwayToEdge
+                                    // Se va al borde SI el jugador esta cerca, y ANTES de marcar:
+                                    // AINode_TelegraphMark ancla la banda en la casilla del jefe al
+                                    // tickear y AINode_IgniteArea la consume sin recalcularla, asi
+                                    // que marcando primero el fuego sale de donde el jefe ya no esta.
+                                    Guarded(FleeIfClose(new AINode_TeleportAwayToEdge
                                     {
-                                        // 0 = sin tope. Este es el tiempo que sostiene la distancia;
-                                        // el que la devuelve es el de quema.
+                                        // 0 = sin tope de aterrizaje. Que la fuga valga la pena
+                                        // (aterrizar lejos de verdad) importa mas que acotarla: el
+                                        // gate de cercania es lo que ahora sostiene que la pelea sea
+                                        // ganable, no donde cae el salto.
                                         MaxDistanceFromPlayer = 0,
                                         ConsumeMoveAction = true,
-                                    }),
+                                    })),
 
-                                    // Marca la banda: anclada en el, apuntando al jugador.
-                                    // Size es el SEMI-ancho, asi que 1 = 3 casillas de ancho.
+                                    // Marca el cono: anclado en el, apuntando al jugador. Size es
+                                    // el semi-ancho del APEX, asi que 0 arranca en una casilla y se
+                                    // abre 1 por lado en cada paso.
                                     Guarded(new AINode_TelegraphMark
                                     {
-                                        Shape = ThreatShape.DirectionalBand,
-                                        Size = BandHalfWidth,
-                                        Depth = BandDepth,
+                                        Shape = ThreatShape.DirectionalCone,
+                                        Size = ConeApexHalfWidth,
+                                        Depth = ConeDepth,
                                         Damage = 0,
                                         Kind = AttackKind.Environmental,
                                     }),
@@ -619,13 +626,17 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
                                         },
                                     }),
 
-                                    // Se va detras de prender: el fuego cae en las casillas guardadas
-                                    // el turno anterior, asi que el orden no le cambia el area.
-                                    Guarded(new AINode_TeleportAwayToEdge
+                                    // Se va detras de prender (el fuego cae en las casillas guardadas
+                                    // el turno anterior, asi que el orden no le cambia el area) y
+                                    // SI el jugador esta cerca: el mismo gate que T1, sin tope de
+                                    // aterrizaje. Con el jugador manejando el tempo de cuando se
+                                    // vuelve a acercar, un tope acá ya no hace falta para que la
+                                    // pelea sea ganable.
+                                    Guarded(FleeIfClose(new AINode_TeleportAwayToEdge
                                     {
-                                        MaxDistanceFromPlayer = QuemaTeleportMaxDistance,
+                                        MaxDistanceFromPlayer = 0,
                                         ConsumeMoveAction = true,
-                                    }),
+                                    })),
                                 },
                             },
                         },
@@ -712,6 +723,25 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
             return new AINode_Selector
             {
                 Children = new List<AIDecisionNode> { step, new AINode_Wait() },
+            };
+        }
+
+        /// <summary>
+        /// Gatea un salto de fuga por cercanía: sólo corre <paramref name="teleport"/> si el
+        /// jugador está a <see cref="FleeTriggerRange"/> o menos (Manhattan). <c>Else = Wait</c> y
+        /// no vacío: un <c>If</c> sin <c>Else</c> devuelve <c>Failed</c> cuando la condición no
+        /// pasa, y ese <c>Failed</c> aborta el <c>Sequence</c> del tiempo entero.
+        /// </summary>
+        private static AINode_If FleeIfClose(AINode_TeleportAwayToEdge teleport)
+        {
+            return new AINode_If
+            {
+                Conditions = new List<BasePreCondition>
+                {
+                    new PcTargetInRange { Range = FleeTriggerRange, Metric = DistanceMetric.Manhattan },
+                },
+                Then = teleport,
+                Else = new AINode_Wait(),
             };
         }
 

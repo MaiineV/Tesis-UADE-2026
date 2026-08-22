@@ -17,6 +17,7 @@ using Rollgeon.Grid;
 using Rollgeon.Heroes;
 using Rollgeon.Movement;
 using Rollgeon.Player;
+using Rollgeon.PreConditions.Concretes;
 using Rollgeon.Tiles;
 using UnityEngine;
 using UnityEngine.TestTools;
@@ -58,11 +59,12 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         private static readonly GridCoord BossTile = new GridCoord(8, 5);
 
         /// <summary>
-        /// Manhattan 6 del jefe: dentro del alcance del disparo, así que T1 corre entero — dispara,
-        /// salta al borde y marca la banda. Y queda fuera del hueco del Pleno, así que la ignición
-        /// del paño le cobra.
+        /// Manhattan 5 del jefe, o sea justo el <see cref="CroupierAssetBuilder.FleeTriggerRange"/>:
+        /// el gate de cercanía pasa (es inclusivo) y T1 corre entero — dispara, salta al borde y
+        /// marca el cono. En la fila del jefe es la única X que además cae fuera del hueco 3×3 del
+        /// Pleno, así que la ignición del paño le sigue cobrando.
         /// </summary>
-        private static readonly GridCoord PlayerTile = new GridCoord(2, 5);
+        private static readonly GridCoord PlayerTile = new GridCoord(3, 5);
 
         /// <summary>HP con el que los dos gates (70% y 50%) evalúan true.</summary>
         private const int PhaseTwoHp = 80;
@@ -324,39 +326,94 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         /// lo puede tocar.
         /// </remarks>
         [Test]
-        public void BothBeats_TeleportHimAway_AndOnlyTheBurnOneIsCapped()
+        public void BothBeats_GateTheirJumpOnProximity_AndNeitherIsCapped()
         {
             var root = CroupierAssetBuilder.BuildAIRoot(_fire);
             var beats = Alternate(root).Children;
 
             foreach (var beat in beats)
             {
-                Assert.AreEqual(1, BeatSteps(beat).OfType<AINode_TeleportAwayToEdge>().Count(),
-                    "Un tiempo del ciclo dejó de tener exactamente un salto: o el jefe se queda " +
-                    "quieto ese turno, o salta dos veces y el segundo pisa al primero.");
+                Assert.AreEqual(1, BeatSteps(beat).OfType<AINode_If>()
+                        .Count(g => g.Then is AINode_TeleportAwayToEdge),
+                    "Un tiempo del ciclo dejó de tener exactamente un salto gateado: o el jefe se " +
+                    "queda quieto ese turno, o salta dos veces y el segundo pisa al primero.");
+
+                Assert.AreEqual(0, FleeJumpOf(beat).MaxDistanceFromPlayer,
+                    "El salto volvió a tener tope de aterrizaje. Con el gate de cercanía decidiendo " +
+                    "si corre, el tope sólo lo hace aterrizar al lado del jugador y huir no compra nada.");
+
+                var gate = FleeGateOf(beat);
+                Assert.IsInstanceOf<AINode_Wait>(gate.Else,
+                    "El gate perdió su Else: un If sin Else devuelve Failed con el jugador lejos, y " +
+                    "ese Failed le corta al jefe el resto del tiempo y desincroniza el ciclo.");
+
+                var proximity = gate.Conditions.OfType<PcTargetInRange>().Single();
+                Assert.AreEqual(CroupierAssetBuilder.FleeTriggerRange, proximity.Range,
+                    "El radio de fuga dejó de salir de la ficha.");
+                Assert.AreEqual(DistanceMetric.Manhattan, proximity.Metric,
+                    "El radio se mide en Manhattan, igual que el alcance de los ataques.");
             }
 
-            // Por descarte y no por el nodo que prende: la ignición cuelga de un If que ramifica
-            // por fase, así que no es un paso suelto del beat.
-            var burn = beats.Single(b => !BeatSteps(b).Any(n => n is AINode_RangedShot));
-            var capped = BeatSteps(burn).OfType<AINode_TeleportAwayToEdge>().Single();
-            Assert.AreEqual(CroupierAssetBuilder.QuemaTeleportMaxDistance, capped.MaxDistanceFromPlayer,
-                "El salto del tiempo de quema perdió su tope.");
-
-            // Y salta de verdad los dos turnos, no sólo en la forma del árbol.
+            // Y salta de verdad los dos turnos, no sólo en la forma del árbol. El jugador se vuelve
+            // a acercar entre tiempos porque el salto de T1 lo deja fuera del radio: sin eso, T2 se
+            // quedaría quieto y estaríamos midiendo el gate en vez del salto.
             var start = PositionOf(_boss);
             root.Tick(NewContext(roundIndex: 1));
             var afterDeal = PositionOf(_boss);
             Assert.AreNotEqual(start, afterDeal, "El tiempo de reparto dejó al jefe donde estaba.");
 
+            MovePlayerNextTo(afterDeal);
             root.Tick(NewContext(roundIndex: 2));
             Assert.AreNotEqual(afterDeal, PositionOf(_boss),
                 "El tiempo de quema dejó al jefe donde estaba.");
         }
 
         /// <summary>
-        /// El tope del salto de quema tiene que caber dentro de lo que el jugador alcanza en un
-        /// turno.
+        /// Con el jugador fuera del radio el jefe se queda, pero el resto del tiempo tiene que
+        /// correr igual: el <c>Else</c> de Wait está justamente para que no se coma el turno.
+        /// </summary>
+        [Test]
+        public void WithThePlayerFarAway_TheBossHoldsHisGround_AndStillShoots()
+        {
+            var root = CroupierAssetBuilder.BuildAIRoot(_fire);
+            MovePlayerBeyondFleeRadius();
+            var start = PositionOf(_boss);
+
+            root.Tick(NewContext(roundIndex: 1));
+
+            Assert.AreEqual(start, PositionOf(_boss),
+                "El jefe saltó con el jugador fuera del radio: el turno se le va en huir de nadie y " +
+                "a veces aterriza más cerca de lo que estaba.");
+            Assert.Greater(ShotCount(), 0,
+                "Quedarse quieto le comió el resto del tiempo. El disparo va antes del salto y tiene " +
+                "que cobrar igual — si no, el Else del gate está devolviendo Failed.");
+        }
+
+        /// <summary>
+        /// El ciclo no se desincroniza cuando el gate no pasa. Un <c>Failed</c> abortaría el
+        /// <c>Sequence</c> del tiempo mientras el <c>Alternate</c> avanza el índice igual, y el jefe
+        /// pasaría a repartir dos veces seguidas.
+        /// </summary>
+        [Test]
+        public void WithThePlayerFarAway_TheCycleKeepsAlternating()
+        {
+            var root = CroupierAssetBuilder.BuildAIRoot(_fire);
+            MovePlayerBeyondFleeRadius();
+
+            root.Tick(NewContext(roundIndex: 1));
+            int afterDeal = ShotCount();
+            Assert.Greater(afterDeal, 0, "El tiempo de reparto no disparó.");
+
+            root.Tick(NewContext(roundIndex: 2));
+
+            Assert.AreEqual(afterDeal, ShotCount(),
+                "El tiempo de quema disparó: el ciclo se desincronizó y el jefe repartió dos veces " +
+                "seguidas en vez de prender lo que había marcado.");
+        }
+
+        /// <summary>
+        /// El radio que dispara la fuga tiene que quedar por debajo de lo que el jugador alcanza en
+        /// un turno: es lo que hace ganable la pelea ahora que el salto no tiene tope.
         /// </summary>
         /// <remarks>
         /// Es una comparación de constantes y no un tick a propósito: el número del kit del jugador
@@ -364,17 +421,17 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         /// relación.
         /// </remarks>
         [Test]
-        public void TheBurnJumpStaysInsideWhatThePlayerCanReachInATurn()
+        public void TheFleeRadius_StaysBelowWhatThePlayerCanReachInATurn()
         {
             // 4 de movimiento (BFS) + 4 de alcance del ataque especial (Manhattan), una vez cada
             // uno y sin gap-closer.
             const int playerReachPerTurn = 8;
 
-            Assert.LessOrEqual(CroupierAssetBuilder.QuemaTeleportMaxDistance, playerReachPerTurn,
-                $"El jefe salta en los dos tiempos y el de quema es el único con tope. Por encima " +
-                $"de {playerReachPerTurn} aterriza fuera de alcance todos los turnos: no queda " +
-                "ninguno en el que el jugador pueda llegar a golpearlo y los 200 de vida del jefe " +
-                "pasan a ser infinitos.");
+            Assert.Less(CroupierAssetBuilder.FleeTriggerRange, playerReachPerTurn,
+                $"El jefe huye en cuanto el jugador entra a {CroupierAssetBuilder.FleeTriggerRange} " +
+                $"casillas, y el salto ya no tiene tope de aterrizaje. Con un radio de " +
+                $"{playerReachPerTurn} o más se va antes de que el jugador pueda golpearlo desde " +
+                "afuera del radio, y la vida del jefe pasa a ser infinita.");
         }
 
         /// <summary>
@@ -525,6 +582,45 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             }
             return steps;
         }
+
+        /// <summary>
+        /// El gate de cercanía que envuelve el salto de fuga del tiempo. Se filtra por lo que
+        /// cuelga del <c>Then</c> y no por el primer <c>If</c> del beat: el tiempo de quema tiene
+        /// además el <c>If</c> que ramifica la duración del fuego por fase.
+        /// </summary>
+        private static AINode_If FleeGateOf(AIDecisionNode beat) =>
+            BeatSteps(beat).OfType<AINode_If>().Single(g => g.Then is AINode_TeleportAwayToEdge);
+
+        private static AINode_TeleportAwayToEdge FleeJumpOf(AIDecisionNode beat) =>
+            (AINode_TeleportAwayToEdge)FleeGateOf(beat).Then;
+
+        /// <summary>Deja al jugador fuera del radio de fuga, sin sacarlo de la sala.</summary>
+        private void MovePlayerBeyondFleeRadius()
+        {
+            var far = new GridCoord(BossTile.X - CroupierAssetBuilder.FleeTriggerRange - 2, BossTile.Y);
+            Assert.IsTrue(_grid.Move(_player, far),
+                $"La sala del fixture no llega hasta {far} para alejar al jugador.");
+            Assert.Greater(BossTile.Manhattan(far), CroupierAssetBuilder.FleeTriggerRange,
+                "El destino elegido sigue dentro del radio de fuga: el escenario no prueba nada.");
+        }
+
+        /// <summary>Acerca al jugador a una casilla pegada a <paramref name="bossCoord"/>.</summary>
+        private void MovePlayerNextTo(GridCoord bossCoord)
+        {
+            var offsets = new[] { (1, 0), (-1, 0), (0, 1), (0, -1) };
+            foreach (var (dx, dy) in offsets)
+            {
+                var candidate = new GridCoord(bossCoord.X + dx, bossCoord.Y + dy);
+                if (!_grid.IsWalkable(candidate) || _grid.IsOccupied(candidate)) continue;
+                if (_grid.Move(_player, candidate)) return;
+            }
+
+            Assert.Fail($"No quedó casilla libre pegada a {bossCoord} para acercar al jugador.");
+        }
+
+        /// <summary>Golpes que NO son del paño: sirve para contar disparos del tiempo de reparto.</summary>
+        private int ShotCount() =>
+            _pipeline.Resolved.Count(c => c.Kind != AttackKind.Environmental);
 
         private void SetBossHp(int value) =>
             _bossStats.SetAttribute<Health>(new Health(value));
