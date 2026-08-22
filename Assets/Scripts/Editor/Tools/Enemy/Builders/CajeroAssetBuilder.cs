@@ -50,9 +50,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         /// </remarks>
         public const string ArtPrefabPath = "Assets/Prefabs/Enemies/MechaBoss_Animated.prefab";
 
-        /// <summary>Arte de la Comisión: el rig alado <c>GeneralDirector_Animated</c>.</summary>
-        public const string CritterArtPrefabPath =
-            "Assets/Prefabs/Enemies/GeneralDirector_Animated.prefab";
+        /// <summary>Arte de la Comisión: el mismo rig que su jefe.</summary>
+        public const string CritterArtPrefabPath = ArtPrefabPath;
 
         /// <summary>Wrapper de gameplay que arma <see cref="BossVisualWrapperBuilder"/>.</summary>
         public const string VisualPrefabPath = "Assets/Prefabs/Enemies/Bosses/PF_Boss_Cajero.prefab";
@@ -275,11 +274,11 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         public const float CritterArtScale = 0.45f;
 
         /// <summary>
-        /// Altura a la que flota el arte sobre su casilla. Se levanta el hijo <c>Art</c> del wrapper
+        /// Altura a la que se levanta el arte sobre su casilla. En 0 apoya, que es lo que pide un rig que camina. Se levanta el hijo <c>Art</c> del wrapper
         /// y no <c>EntityPawn.PawnYOffset</c>, que es un <c>const</c> privado compartido por héroe y
         /// enemigos: levantarlo de ahí levantaría a todo el bestiario.
         /// </summary>
-        public const float CritterHoverHeight = 0.7f;
+        public const float CritterHoverHeight = 0f;
 
         /// <summary>Aire entre la punta del bicho y su barra de vida.</summary>
         private const float CritterBarClearance = 0.35f;
@@ -296,14 +295,13 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         /// <summary>Nombre del hijo con la barra de vida world-space que arma el wrapper.</summary>
         private const string HealthBarChildName = "Canvas";
 
-        // Materiales del arte de la Comisión, que es OTRO rig que el del jefe: los seis discos de
-        // fichas del GeneralDirector comparten los tres amarillos como cara / canto / brillo, el
-        // cuerpo skinneado usa Mat_Black y las alas Mat_Bone.
-        public const string CritterChipFaceMaterial = "Mat_Yellow";
-        public const string CritterChipEdgeMaterial = "Mat_DarkYellow";
-        public const string CritterChipShineMaterial = "Mat_LightYellow";
-        public const string CritterBodyMaterial = "Mat_Black";
-        public const string CritterWingMaterial = "Mat_Bone";
+        // Los mismos cinco slots del mech que viste el jefe, pero retintados en plata: comparten
+        // malla y no paleta. Sus clones van a Materials/Comision, no a la carpeta del jefe.
+        public const string CritterChipFaceMaterial = "Mat_Gold";
+        public const string CritterChipEdgeMaterial = "Mat_DarkGray";
+        public const string CritterChipShineMaterial = "Mat_White";
+        public const string CritterBodyMaterial = "Mat_Gray";
+        public const string CritterAccentMaterial = "Mat_Brown";
 
         // Plata y no oro: los discos en plata leen "cambio chico" contra el oro fuerte del jefe.
         private static readonly MaterialRetint CritterChipShineRetint = MaterialRetint.FromColors(
@@ -326,7 +324,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
             new Color(0.07f, 0.20f, 0.14f),
             new Color(0.03f, 0.09f, 0.07f));
 
-        private static readonly MaterialRetint CritterWingRetint = MaterialRetint.FromColors(
+        private static readonly MaterialRetint CritterAccentRetint = MaterialRetint.FromColors(
             new Color(0.88f, 0.89f, 0.92f),
             new Color(0.63f, 0.65f, 0.70f),
             new Color(0.31f, 0.33f, 0.38f));
@@ -781,9 +779,12 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
             var critter = LoadOrCreate<EnemyDataSO>(ReinforcementAssetPath);
 
             // Load antes que Ensure: reconstruir el wrapper en cada rebuild de números le churnea el
-            // prefab y los materiales clonados sin cambiar nada.
+            // prefab y los materiales clonados sin cambiar nada. Pero uno que ya no anida el arte
+            // que pide el spec quedó viejo, y cargarlo dejaría al bicho en el rig anterior para
+            // siempre: un cambio de ArtPrefabPath no llegaría nunca al asset.
             var critterWrapper = AssetDatabase.LoadAssetAtPath<GameObject>(CritterVisualPrefabPath);
-            if (critterWrapper == null) critterWrapper = EnsureCritterVisualPrefab();
+            if (critterWrapper == null || !NestsArt(CritterVisualPrefabPath, CritterArtPrefabPath))
+                critterWrapper = EnsureCritterVisualPrefab();
 
             PopulateCritterData(critter, critterWrapper, portrait);
             EditorUtility.SetDirty(critter);
@@ -916,7 +917,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
                     { CritterChipFaceMaterial, CritterChipFaceRetint },
                     { CritterChipEdgeMaterial, CritterChipEdgeRetint },
                     { CritterBodyMaterial, CritterBodyRetint },
-                    { CritterWingMaterial, CritterWingRetint },
+                    { CritterAccentMaterial, CritterAccentRetint },
                 },
             };
         }
@@ -925,6 +926,13 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         /// Construye (o reconstruye) el wrapper de la Comisión y lo devuelve, ya encogido y flotando.
         /// <c>null</c> + warning si el arte falta.
         /// </summary>
+        /// <summary>Si el prefab ya construido anida el arte de <paramref name="artPath"/>.</summary>
+        private static bool NestsArt(string prefabPath, string artPath)
+        {
+            var deps = AssetDatabase.GetDependencies(prefabPath, recursive: true);
+            return System.Array.IndexOf(deps, artPath) >= 0;
+        }
+
         public static GameObject EnsureCritterVisualPrefab()
         {
             var wrapper = BossVisualWrapperBuilder.BuildWrapper(BuildCritterWrapperSpec());

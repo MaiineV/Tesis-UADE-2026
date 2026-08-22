@@ -419,10 +419,9 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             }
 
             // Assert
-            CollectionAssert.AreEquivalent(
-                new[] { CajeroAssetBuilder.CritterEntityId },
+            CollectionAssert.IsEmpty(
                 sliding,
-                "Cambió quién se desliza sin ciclo de caminata. Un rig que no declara el bool " +
+                "Alguien quedó deslizándose sin ciclo de caminata. Un rig que no declara el bool " +
                 $"'{MovementParam}' hace que EntityPawn traslade el cuerpo con el Animator en Idle: " +
                 "no tira ningún error, sólo se ve mal.");
         }
