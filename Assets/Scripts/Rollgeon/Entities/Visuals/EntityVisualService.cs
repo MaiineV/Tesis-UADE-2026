@@ -227,6 +227,17 @@ namespace Rollgeon.Entities.Visuals
         private void OnEntityTeleported(Guid guid, GridCoord from, GridCoord to)
         {
             if (!_byGuid.TryGetValue(guid, out var pawn) || pawn == null) return;
+
+            // Un rig que blinkea trae el salto autorado en dos tramos —desaparecer y aparecer— y
+            // quien los reproduce es AnimatePath. Snapear acá se los saltea y el cuerpo llega antes
+            // que el clip. Los demás siguen snapeando: un portal cruza media sala, y lerpear eso
+            // arrastraría al pawn por encima del mapa.
+            if (pawn.Locomotion == EntityPawn.LocomotionStyle.Blink)
+            {
+                pawn.AnimatePath(_grid, new[] { from, to });
+                return;
+            }
+
             pawn.SnapToGrid(_grid, to);
         }
 

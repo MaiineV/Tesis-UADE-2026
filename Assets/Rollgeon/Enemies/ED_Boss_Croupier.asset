@@ -294,8 +294,8 @@ MonoBehaviour:
       Entry: 5
       Data: true
     - Name: TeleportFeedbackId
-      Entry: 1
-      Data: anim.boss.croupier.teleport
+      Entry: 6
+      Data: 
     - Name: 
       Entry: 8
       Data: 
@@ -527,8 +527,8 @@ MonoBehaviour:
       Entry: 5
       Data: true
     - Name: TeleportFeedbackId
-      Entry: 1
-      Data: anim.boss.croupier.teleport
+      Entry: 6
+      Data: 
     - Name: 
       Entry: 8
       Data: 

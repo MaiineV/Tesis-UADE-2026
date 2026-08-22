@@ -572,7 +572,6 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
                                         // el que la devuelve es el de quema.
                                         MaxDistanceFromPlayer = 0,
                                         ConsumeMoveAction = true,
-                                        TeleportFeedbackId = BossFeedbackIds.CroupierTeleportAnim,
                                     }),
 
                                     // Marca la banda: anclada en el, apuntando al jugador.
@@ -626,7 +625,6 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
                                     {
                                         MaxDistanceFromPlayer = QuemaTeleportMaxDistance,
                                         ConsumeMoveAction = true,
-                                        TeleportFeedbackId = BossFeedbackIds.CroupierTeleportAnim,
                                     }),
                                 },
                             },
