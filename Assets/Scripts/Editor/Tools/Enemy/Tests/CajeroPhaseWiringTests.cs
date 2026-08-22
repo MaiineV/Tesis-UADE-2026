@@ -601,11 +601,11 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         /// </summary>
         /// <remarks>
         /// <c>AIPathPlanner.ComputeHazardPenalty</c> es <c>ceil(daño / HP × 10 × Caution)</c> y el
-        /// costo de casilla es <c>1 + penalty</c>. Con los 17 reales sobre 450 el penalty da 1 y la
+        /// costo de casilla es <c>1 + penalty</c>. Con los 20 reales sobre 450 el penalty da 1 y la
         /// casilla cuesta 2: rodea un desvío de un paso y se come el pincho si el desvío es de dos.
         /// Con el virtual sumado el penalty llega a 10 y la casilla cuesta 11 — más que cualquier
         /// desvío alcanzable dentro de un movimiento de <c>ChaseSteps</c>. <b>No es daño</b>: el
-        /// filtro de supervivencia sólo mira los 17 reales, así que "empujado se los come igual"
+        /// filtro de supervivencia sólo mira los 20 reales, así que "empujado se los come igual"
         /// sigue en pie.
         /// </remarks>
         [Test]

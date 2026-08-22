@@ -59,7 +59,7 @@ MonoBehaviour:
       Data: 5|Rollgeon.Combat.AI.Decisions.AINode_CashierRangedShot, Rollgeon
     - Name: Damage
       Entry: 3
-      Data: 7
+      Data: 8
     - Name: Range
       Entry: 3
       Data: 5
@@ -170,7 +170,7 @@ MonoBehaviour:
   WeaknessComboId: 
   WeaknessMultiplierOverride: 0
   BaseHP: 18
-  BaseAttack: 7
+  BaseAttack: 8
   BaseHealStrength: 0
   BaseSpeed: 5
   MaxEnergy: 1
