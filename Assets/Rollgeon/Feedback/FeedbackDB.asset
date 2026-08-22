@@ -1658,7 +1658,7 @@ MonoBehaviour:
     ShouldDestroyOnParticleEnd: 0
     AudioClip: {fileID: 0}
     Volume: 1
-    AnimTrigger: Attack_Range
+    AnimTrigger: Attack
     TargetSourcePawn: 1
     FeelPlayerPrefab: {fileID: 0}
     FeelIntensity: 1

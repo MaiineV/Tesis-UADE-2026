@@ -84,16 +84,18 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         }
 
         [Test]
-        public void CritterSpec_WalksOnTheSameRigAsItsBoss()
+        public void CritterSpec_DoesNotWalkOnTheSameRigAsItsBoss()
         {
             var boss = CajeroAssetBuilder.BuildWrapperSpec();
             var critter = CajeroAssetBuilder.BuildCritterWrapperSpec();
 
-            Assert.AreEqual("Assets/Prefabs/Enemies/MechaBoss_Animated.prefab",
+            Assert.AreEqual("Assets/Prefabs/Enemies/GeneralDirector_Animated.prefab",
                 critter.ArtPrefabPath,
-                "La Comisión se mueve por la sala: sin un rig que declare el bool de movimiento se " +
-                "traslada en T-pose, sin animarse.");
-            Assert.AreEqual(boss.ArtPrefabPath, critter.ArtPrefabPath);
+                "La Comisión tiene rig propio: compartir el mech del jefe la volvía \"el jefe en " +
+                "chico\", y lo único que los separaba era la escala y el tinte.");
+            Assert.AreNotEqual(boss.ArtPrefabPath, critter.ArtPrefabPath,
+                "El jefe y su refuerzo no pueden anidar el mismo arte: la Comisión se separó del " +
+                "mech justamente para dejar de ser una copia en miniatura del Cajero.");
             // La carpeta de clones sale del BossName cuando MaterialsFolder viene vacío.
             Assert.AreNotEqual(boss.BossName, critter.BossName,
                 "Comparten malla, no paleta: con el mismo nombre los clones del bicho pisan los " +

@@ -655,8 +655,9 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             var spawn = FindNode<AINode_SpawnReinforcements>();
 
             Assert.AreEqual(BossFeedbackIds.CajeroMeleeAnim, spawn.SpawnFeedbackId,
-                "Es el trigger 'Attack', el único no-idle de AnimCon_GeneralDirector. Sin gesto, " +
-                "dos bichos se materializan con el jefe quieto y no se leen como cosa suya.");
+                "El que se agita al invocar es el propio Cajero (trigger 'Attack_Melee' de " +
+                "AnimCon_Mecha), no la Comisión que recién va a aparecer. Sin gesto, los dos bichos " +
+                "se materializan con el jefe quieto y no se leen como cosa suya.");
         }
 
         [Test]

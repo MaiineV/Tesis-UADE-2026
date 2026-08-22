@@ -78,11 +78,11 @@ namespace Rollgeon.Feedback
         public const string CajeroShotImpactFeel = "feel.boss.cajero.shot_impact";
 
         /// <summary>
-        /// El mordisco de la Comisión, el minion volador del Cajero. Va fuera del namespace
-        /// <c>anim.boss.*</c> a propósito: el bicho NO viste el rig del jefe —se quedó con
-        /// <c>GeneralDirector_Animated</c>, el único rig alado del proyecto— y ese animator declara
-        /// un solo trigger, <c>Attack</c>. Sin este id el nodo caía al fallback del disparo del
-        /// Cajero, que pide <c>Attack_Range</c>: un trigger que su animator no tiene, o sea silencio.
+        /// El mordisco de la Comisión, el minion del Cajero. Va fuera del namespace
+        /// <c>anim.boss.*</c> a propósito: el bicho viste <c>GeneralDirector_Animated</c>, cuyo
+        /// animator declara un solo trigger, <c>Attack</c>. Sin este id el nodo cae al fallback del
+        /// disparo del Cajero, que pide <c>Attack_Range</c>: un trigger que su animator no tiene, o
+        /// sea silencio.
         /// </summary>
         public const string ComisionBiteAnim = "anim.enemy.comision.bite";
 

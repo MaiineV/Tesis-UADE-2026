@@ -50,8 +50,16 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         /// </remarks>
         public const string ArtPrefabPath = "Assets/Prefabs/Enemies/MechaBoss_Animated.prefab";
 
-        /// <summary>Arte de la Comisión: el mismo rig que su jefe.</summary>
-        public const string CritterArtPrefabPath = ArtPrefabPath;
+        /// <summary>
+        /// Arte de la Comisión: rig propio, no el del jefe. Compartir el mech hacía que el minion
+        /// fuera el jefe en chico, y lo único que los separaba era la escala y el tinte.
+        /// </summary>
+        /// <remarks>
+        /// Su animator declara un solo trigger, <c>Attack</c> — ver <c>ComisionBiteAnim</c> — y no
+        /// tiene ciclo de caminata, así que la ficha entra en
+        /// <c>EnemyLocomotionInstaller.ForcedBlinkEntityIds</c>.
+        /// </remarks>
+        public const string CritterArtPrefabPath = "Assets/Prefabs/Enemies/GeneralDirector_Animated.prefab";
 
         /// <summary>Wrapper de gameplay que arma <see cref="BossVisualWrapperBuilder"/>.</summary>
         public const string VisualPrefabPath = "Assets/Prefabs/Enemies/Bosses/PF_Boss_Cajero.prefab";
@@ -270,6 +278,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
 
         /// <summary>
         /// Escala del arte dentro de su wrapper: el rig alado mide ~2 de alto y a 0.45 queda en ~0.9.
+        /// ApplyCritterFit reajusta el collider y la barra contra los bounds reales, así que esto es
+        /// lo único que hay que tocar si el bicho queda chico o grande en la sala.
         /// </summary>
         public const float CritterArtScale = 0.45f;
 
@@ -295,13 +305,14 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         /// <summary>Nombre del hijo con la barra de vida world-space que arma el wrapper.</summary>
         private const string HealthBarChildName = "Canvas";
 
-        // Los mismos cinco slots del mech que viste el jefe, pero retintados en plata: comparten
-        // malla y no paleta. Sus clones van a Materials/Comision, no a la carpeta del jefe.
-        public const string CritterChipFaceMaterial = "Mat_Gold";
-        public const string CritterChipEdgeMaterial = "Mat_DarkGray";
-        public const string CritterChipShineMaterial = "Mat_White";
-        public const string CritterBodyMaterial = "Mat_Gray";
-        public const string CritterAccentMaterial = "Mat_Brown";
+        // Los cinco slots del rig alado, nombrados por FUNCIÓN y no por material fuente porque el
+        // retinte cruza colores: los tres amarillos son los discos que lleva encima, Mat_Black es la
+        // masa del cuerpo y Mat_Bone son las alas.
+        public const string CritterChipFaceMaterial = "Mat_Yellow";
+        public const string CritterChipEdgeMaterial = "Mat_DarkYellow";
+        public const string CritterChipShineMaterial = "Mat_LightYellow";
+        public const string CritterBodyMaterial = "Mat_Black";
+        public const string CritterAccentMaterial = "Mat_Bone";
 
         // Plata y no oro: los discos en plata leen "cambio chico" contra el oro fuerte del jefe.
         private static readonly MaterialRetint CritterChipShineRetint = MaterialRetint.FromColors(

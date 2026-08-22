@@ -110,7 +110,7 @@ namespace Rollgeon.Editor.Tools
 
             // La Comisión viste GeneralDirector_Animated, que declara un solo 'Attack': por eso no
             // puede reusar los ids del Cajero, que piden 'Attack_Range'.
-            yield return Spec.Anim(ComisionBiteAnim, "Attack_Range");
+            yield return Spec.Anim(ComisionBiteAnim, "Attack");
 
             // Anotador — ChestMimic, que sólo declara 'Attack' y 'Awaken'.
             yield return Spec.Anim(AnotadorMeleeAnim, "Attack");
