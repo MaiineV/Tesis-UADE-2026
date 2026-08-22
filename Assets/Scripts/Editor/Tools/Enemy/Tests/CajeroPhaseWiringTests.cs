@@ -733,6 +733,44 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             }
         }
 
+        /// <summary>
+        /// El espejo de <see cref="PopulateEnemyData_KeepsHimGrounded_SoTheSpikesStillBillHim"/>:
+        /// el jefe camina y la Comisión vuela, y son los dos lados de la misma regla.
+        /// <c>IsFlying</c> gatea <c>SpecialTileService.ShouldAffect</c>, y esa misma guarda es la que
+        /// filtra <c>TryGetTileFor</c>, o sea la vista que el planner tiene del terreno: sin el flag
+        /// el bicho cobra 14 de un pincho teniendo 18 de vida <b>y</b> gasta movimiento rodeándolos.
+        /// </summary>
+        [Test]
+        public void CritterData_KeepsHerFlying_SoTheSpikesDoNotBillHer()
+        {
+            var critter = ScriptableObject.CreateInstance<EnemyDataSO>();
+            critter.hideFlags = HideFlags.HideAndDontSave;
+            var spikes = AssetDatabase.LoadAssetAtPath<SpecialTileDefinitionSO>(
+                CajeroAssetBuilder.SpikeTilePath);
+            try
+            {
+                critter.IsFlying = false;
+
+                CajeroAssetBuilder.PopulateCritterData(critter);
+
+                Assert.IsTrue(critter.IsFlying,
+                    "PopulateCritterData dejó de escribir IsFlying: un asset sin el tick queda a " +
+                    "ras del piso y los pinchos GroundOnly la borran de un toque.");
+
+                Assert.IsNotNull(spikes, $"No se encontró el pincho en '{CajeroAssetBuilder.SpikeTilePath}'.");
+                Assert.AreEqual(TileAffinity.GroundOnly, spikes.Affinity,
+                    "Volar no la salva de nada si el pincho deja de ser GroundOnly: las dos mitades " +
+                    "de la inmunidad viven en archivos distintos y se rompen por separado.");
+                Assert.Greater(spikes.EnterDamage, critter.BaseHP - CajeroAssetBuilder.CritterDamage,
+                    "El pincho le saca más de lo que le queda después de un golpe cualquiera: por eso " +
+                    "esto no es un detalle cosmético sino la diferencia entre existir y no.");
+            }
+            finally
+            {
+                Object.DestroyImmediate(critter);
+            }
+        }
+
         /// <summary>Las monedas del piso son un reloj, no un botín: un refuerzo que paga al morir le
         /// daría al jugador una fuente de oro que la sala no controla.</summary>
         [Test]

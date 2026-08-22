@@ -284,11 +284,17 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         public const float CritterArtScale = 0.45f;
 
         /// <summary>
-        /// Altura a la que se levanta el arte sobre su casilla. En 0 apoya, que es lo que pide un rig que camina. Se levanta el hijo <c>Art</c> del wrapper
-        /// y no <c>EntityPawn.PawnYOffset</c>, que es un <c>const</c> privado compartido por héroe y
-        /// enemigos: levantarlo de ahí levantaría a todo el bestiario.
+        /// Altura a la que se levanta la BASE del arte sobre su casilla. Despegada porque el bicho
+        /// tiene <c>IsFlying</c>: es la única pista en pantalla de por qué cruza los pinchos sin
+        /// cobrar. Apoyada, la inmunidad se ve como un bug.
         /// </summary>
-        public const float CritterHoverHeight = 0f;
+        /// <remarks>
+        /// Se levanta el hijo <c>Art</c> del wrapper y no <c>EntityPawn.PawnYOffset</c>, que es un
+        /// <c>const</c> privado compartido por héroe y enemigos: levantarlo de ahí levantaría a todo
+        /// el bestiario. <c>ApplyCritterFit</c> recalcula collider y barra contra los bounds ya
+        /// levantados, así que este número es lo único que hay que tocar.
+        /// </remarks>
+        public const float CritterHoverHeight = 0.35f;
 
         /// <summary>Aire entre la punta del bicho y su barra de vida.</summary>
         private const float CritterBarClearance = 0.35f;
@@ -723,6 +729,12 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
             data.BaseHealStrength = 0;
             data.BaseAttackRange = CritterRange;
 
+            // Al revés que su jefe: los pinchos son GroundOnly y la Comisión los sobrevuela. La
+            // misma guarda alimenta al planner (ISpecialTileAIQuery.TryGetTileFor), así que no los
+            // cobra Y tampoco los rodea — es la diferencia de movilidad que tiene contra el Cajero,
+            // que sí tiene que esquivarlos. Con 18 de vida un pinchazo de 14 la borraba de una.
+            data.IsFlying = true;
+
             data.WeaknessComboId = string.Empty;
             data.WeaknessMultiplierOverride = 0f;
 
@@ -795,7 +807,17 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
             // siempre: un cambio de ArtPrefabPath no llegaría nunca al asset.
             var critterWrapper = AssetDatabase.LoadAssetAtPath<GameObject>(CritterVisualPrefabPath);
             if (critterWrapper == null || !NestsArt(CritterVisualPrefabPath, CritterArtPrefabPath))
+            {
                 critterWrapper = EnsureCritterVisualPrefab();
+            }
+            else
+            {
+                // El guard de arriba sólo mira el rig, y la escala y el despegue viven en
+                // constantes aparte: sin esta pasada un cambio de CritterArtScale o de
+                // CritterHoverHeight no llegaría nunca al prefab. ApplyCritterFit no reescribe
+                // si ya estaban bien, así que no reintroduce churn.
+                ApplyCritterFit(CritterVisualPrefabPath);
+            }
 
             PopulateCritterData(critter, critterWrapper, portrait);
             EditorUtility.SetDirty(critter);
@@ -995,6 +1017,11 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
                     return;
                 }
 
+                // Se leen antes de medir, porque medir pisa las dos: son la referencia contra
+                // la que se decide si hay algo que guardar.
+                var hadScale = art.localScale;
+                var hadPosition = art.localPosition;
+
                 // Los bounds se miden con el arte en identidad, que es como lo dejó el wrapper.
                 art.localScale = Vector3.one;
                 art.localPosition = Vector3.zero;
@@ -1007,6 +1034,10 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
                 float baseY = measured ? raw.min.y * CritterArtScale : 0f;
                 art.localPosition = new Vector3(0f, CritterHoverHeight - baseY, 0f);
 
+                // Vector3 == compara con epsilon, que es la tolerancia que quiere un valor
+                // serializado en el prefab.
+                bool changed = hadScale != art.localScale || hadPosition != art.localPosition;
+
                 if (measured)
                 {
                     var flying = new Bounds(
@@ -1016,6 +1047,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
                     var box = contents.GetComponent<BoxCollider>();
                     if (box != null)
                     {
+                        changed |= box.center != flying.center || box.size != flying.size;
                         box.center = flying.center;
                         box.size = flying.size;
                     }
@@ -1023,12 +1055,17 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
                     var bar = contents.transform.Find(HealthBarChildName);
                     if (bar != null)
                     {
-                        bar.localPosition = new Vector3(0f, flying.max.y + CritterBarClearance, 0f);
-                        bar.localScale = Vector3.one * CritterBarScale;
+                        var barPosition = new Vector3(0f, flying.max.y + CritterBarClearance, 0f);
+                        var barScale = Vector3.one * CritterBarScale;
+                        changed |= bar.localPosition != barPosition || bar.localScale != barScale;
+                        bar.localPosition = barPosition;
+                        bar.localScale = barScale;
                     }
                 }
 
-                PrefabUtility.SaveAsPrefabAsset(contents, prefabPath);
+                // Sin cambio no se reescribe: SaveAsPrefabAsset renumera fileIDs internos y
+                // ensuciaría el diff del prefab en cada corrida del builder.
+                if (changed) PrefabUtility.SaveAsPrefabAsset(contents, prefabPath);
             }
             finally
             {
