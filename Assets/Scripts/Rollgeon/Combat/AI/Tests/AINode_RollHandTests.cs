@@ -352,7 +352,7 @@ namespace Rollgeon.Combat.AI.Tests
             var combo = Create<T>();
             SetPrivateField(combo, "_comboId", comboId);
             SetPrivateField(combo, "_baseDamage", baseDamage);
-            // Priority ya no defaultea a _baseDamage (Fix#0047): sin esto todo empata en 0.
+            // Priority no defaultea a _baseDamage: sin esto todo empata en 0.
             SetPrivateField(combo, "_priority", baseDamage);
             _catalog.EditorAdd(combo);
         }

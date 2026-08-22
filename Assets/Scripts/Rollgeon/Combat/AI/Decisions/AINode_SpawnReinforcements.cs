@@ -20,23 +20,13 @@ namespace Rollgeon.Combat.AI.Decisions
     /// Acción de "refuerzos": spawnea <see cref="Count"/> copias de <see cref="EnemyToSpawn"/>
     /// en tiles del borde de la sala (perímetro del bounding box, walkable y libres) y los
     /// suma a la ronda de combate en curso vía <see cref="TurnOrderService.Append"/> — los
-    /// nuevos combatientes actúan recién cuando termine la ronda actual, y desde ahí quedan
-    /// rotando de forma regular y estable.
+    /// nuevos combatientes actúan recién cuando termine la ronda actual.
     /// </summary>
     /// <remarks>
-    /// <para>
-    /// Loop de refuerzos (piso 1). El nodo se tickea CADA turno del boss (va en el Sequence
-    /// sin envoltura <c>Once</c>) y se auto-gatea: spawnea la primera oleada al cruzar el
-    /// umbral de HP, no vuelve a spawnear mientras quede algún refuerzo vivo, y cuando la
-    /// oleada entera muere espera <see cref="RespawnDelayTurns"/> turnos del boss antes de
-    /// spawnear la siguiente. Repite mientras el boss viva y siga bajo el umbral.
-    /// </para>
-    /// <para>
-    /// Pensado para ir envuelto en <c>If(PcOwnerHpBelow) → SpawnReinforcements</c> (SIN
-    /// <c>Once</c>): el gate de HP decide cuándo el loop está activo; el propio nodo decide
-    /// cuándo spawnea. Devuelve <see cref="AIResult.Succeeded"/> en los ticks de espera para
-    /// no abortar el Sequence del boss.
-    /// </para>
+    /// El nodo se tickea CADA turno del boss (va en el Sequence sin envoltura <c>Once</c>) y se
+    /// auto-gatea: no vuelve a spawnear mientras quede algún refuerzo vivo, y cuando la oleada entera
+    /// muere espera <see cref="RespawnDelayTurns"/> turnos del boss. Devuelve
+    /// <see cref="AIResult.Succeeded"/> en los ticks de espera para no abortar el Sequence del boss.
     /// </remarks>
     [Serializable, HideReferenceObjectPicker]
     public sealed class AINode_SpawnReinforcements : AIActionNode
@@ -52,7 +42,6 @@ namespace Rollgeon.Combat.AI.Decisions
         [Tooltip("Turnos del boss a esperar tras aniquilar la oleada antes de spawnear la " +
                  "siguiente. 0 = respawnea de inmediato el próximo turno.")]
         [MinValue(0)]
-        // Turns to wait after the wave is wiped before the next wave. 0 = respawn immediately next turn.
         public int RespawnDelayTurns = 2;
 
 #if UNITY_EDITOR
@@ -61,10 +50,9 @@ namespace Rollgeon.Combat.AI.Decisions
         [Tooltip("Gesto de invocar, sólo en el turno que spawnea de verdad. Vacío = sin animación.")]
         public string SpawnFeedbackId;
 
-        // --- Runtime state (per-combat). NonSerialized: vive solo en la copia runtime del
-        // árbol (EnemyDataSO.CreateRuntimeAIRoot → SerializationUtility.CreateCopy), nunca en
-        // el asset. Mismo patrón que AINode_Once/_Alternate/_PromulgateRule: una pelea nueva
-        // arranca con estos campos en su default (lista null ⇒ re-creada lazy; contadores 0).
+        // Estado por pelea. NonSerialized: vive sólo en la copia runtime del árbol
+        // (EnemyDataSO.CreateRuntimeAIRoot), nunca en el asset, así que una pelea nueva arranca con
+        // estos campos en su default.
         [NonSerialized] private List<Guid> _currentWave;
         [NonSerialized] private int _turnsSinceWaveDied;
         [NonSerialized] private bool _hasSpawnedOnce;
@@ -95,11 +83,9 @@ namespace Rollgeon.Combat.AI.Decisions
 
             _currentWave ??= new List<Guid>();
 
-            // ¿Queda algún refuerzo vivo de la oleada actual?
             if (CountAliveInWave(context.Attributes) > 0)
             {
-                // Oleada en pie: no spawnear y resetear el contador de respawn (el delay solo
-                // corre desde que la oleada queda limpia, no acumula durante su vida).
+                // El delay sólo corre desde que la oleada queda limpia, no acumula durante su vida.
                 _turnsSinceWaveDied = 0;
                 return AIResult.Succeeded;
             }
@@ -129,17 +115,9 @@ namespace Rollgeon.Combat.AI.Decisions
         }
 
         /// <remarks>
-        /// <para>
-        /// Los refuerzos aparecían de la nada: cinco bichos se materializaban en el borde de la
-        /// sala mientras el jefe seguía en idle, y no había nada que dijera que los había traído
-        /// él. Con el gesto, la reposición se lee como una acción suya y no como un evento de la
-        /// sala.
-        /// </para>
-        /// <para>
-        /// Sólo en el tick que spawnea: el nodo también devuelve <c>Succeeded</c> cuando está
-        /// esperando (oleada viva o delay corriendo), y animar esos turnos sería el jefe invocando
+        /// El gesto sale sólo en el tick que spawnea: el nodo también devuelve <c>Succeeded</c> cuando
+        /// está esperando (oleada viva o delay corriendo), y animar esos turnos sería el jefe invocando
         /// al aire.
-        /// </para>
         /// </remarks>
         public override IEnumerator TickCoroutine(AIContext context, Action<AIResult> onResult)
         {
@@ -158,8 +136,7 @@ namespace Rollgeon.Combat.AI.Decisions
 
         /// <remarks>
         /// Request armado a mano porque el nodo no nace de un effect pass y no tiene
-        /// <c>EffectContext</c> — el mismo caso que documenta <c>FeedbackRequest.Context</c> como
-        /// nullable, y la misma forma que usan los otros nodos de jefe.
+        /// <c>EffectContext</c> que pasarle.
         /// </remarks>
         private IEnumerator PlaySpawn(AIContext context)
         {
@@ -186,7 +163,7 @@ namespace Rollgeon.Combat.AI.Decisions
             }, () => turn?.OnFeedbackComplete());
 
             // Sin TurnManager no hay gate que esperar — la anim igual corre, pero el turno le pasa
-            // por encima. Mismo degradado que el resto de los nodos de jefe.
+            // por encima.
             if (turn == null || !turn.IsWaitingForFeedback) yield break;
 
             var wait = TurnManager.WaitForFeedbackCompletion(turn);
@@ -194,11 +171,9 @@ namespace Rollgeon.Combat.AI.Decisions
         }
 
         /// <summary>
-        /// Cuenta los guids de la oleada actual que siguen vivos. "Vivo" = misma fuente de
-        /// verdad que la AI de targeting (<c>TargetSelector_Nearest.IsDead</c>): tiene
-        /// <see cref="Health"/> registrada y &gt; 0. Un refuerzo enterrado por
-        /// <c>CombatDeathWatcher</c> conserva su Health en &lt;= 0 (no lo desregistra de
-        /// <see cref="AttributesManager"/>), así que HP &lt;= 0 o sin registro = muerto.
+        /// Cuenta los guids de la oleada actual que siguen vivos. "Vivo" = tiene <see cref="Health"/>
+        /// registrada y &gt; 0: un refuerzo enterrado por <c>CombatDeathWatcher</c> conserva su Health
+        /// en &lt;= 0 sin desregistrarse de <see cref="AttributesManager"/>.
         /// </summary>
         private int CountAliveInWave(AttributesManager attrs)
         {
@@ -237,8 +212,7 @@ namespace Rollgeon.Combat.AI.Decisions
                 context.Attributes.Register(id, attrs);
 
                 // Sin esto el slot del refuerzo en la cola de turnos sale en blanco:
-                // IEntityPortraitResolver resuelve por guid contra un dict que puebla quien
-                // spawnea (ver DefaultEnemySpawnResolver), y el player es el único con fallback.
+                // IEntityPortraitResolver resuelve por guid contra un dict que puebla quien spawnea.
                 portraits?.Register(id, EnemyToSpawn.Portrait);
 
                 if (aiRegistry != null)
@@ -250,17 +224,16 @@ namespace Rollgeon.Combat.AI.Decisions
                 grid.Register(id, coord);
                 visuals?.SpawnEnemy(id, EnemyToSpawn, coord);
 
-                // Mismo registro de traits que DefaultEnemySpawnResolver: sin esto, un refuerzo
-                // volador pisaría pinchos y un refuerzo jefe se quemaría con su propia casilla.
+                // Sin registrar los traits, un refuerzo volador pisaría pinchos y un refuerzo jefe se
+                // quemaría con su propia casilla.
                 if (ServiceLocator.TryGetService<Rollgeon.Entities.Traits.IUnitTraitService>(out var traitService)
                     && traitService != null)
                 {
                     traitService.Register(id, EnemyToSpawn.CreateTraits());
                 }
 
-                // Reinforcements spawn at full HP; the world-space bar is a caller-initialized
-                // widget, so mirror DefaultEnemySpawnResolver — otherwise the bar renders its
-                // default (0 HP) and never binds to damage events.
+                // La barra world-space la inicializa quien spawnea: sin esto renderiza su default
+                // (0 HP) y nunca se bindea a los eventos de daño.
                 if (visuals != null && visuals.TryGetPawn(id, out var pawn) && pawn.HealthBar != null)
                 {
                     int maxHp = EnemyToSpawn.ResolveMaxHP(tier);
@@ -269,11 +242,9 @@ namespace Rollgeon.Combat.AI.Decisions
 
                 turnOrder.Append(id);
 
-                // El refuerzo se appendea a la ronda EN CURSO, así que actúa antes de que el
-                // jugador vuelva a jugar. Sin este aviso pegaría de una en su turno de aparición
-                // (daño gratis, imposible de esquivar). TreeDrivenEnemyAI difiere esa primera
-                // activación al recibir el evento — el refuerzo "aparece" sin actuar y recién
-                // pega cuando el jugador ya tuvo un turno para reaccionar.
+                // El refuerzo se appendea a la ronda EN CURSO, así que actúa antes de que el jugador
+                // vuelva a jugar. TreeDrivenEnemyAI difiere esa primera activación al recibir el
+                // evento; sin el aviso pegaría de una en su turno de aparición, imposible de esquivar.
                 EventManager.Trigger(EventName.OnReinforcementSpawned, id);
 
                 spawned.Add(id);
@@ -286,12 +257,9 @@ namespace Rollgeon.Combat.AI.Decisions
         /// del mismo lado queden pegados uno al lado del otro.</summary>
         private const int MinSpawnSeparation = 3;
 
-        // Tiles del perímetro del bounding box de la sala (X==min/max o Y==min/max),
-        // walkable y libres. Agrupados por lado (W/E/S/N — una esquina puede pertenecer
-        // a 2 lados) y repartidos en orden aleatorio de lado para que, con Count>=2, los
-        // refuerzos caigan en lados distintos u opuestos en vez de todos apilados en el
-        // mismo lado. Sala sin bounds reales (grafo vacío) o sin tiles de borde
-        // disponibles ⇒ lista vacía (no crashea).
+        // Los tiles del perímetro se agrupan por lado y se reparten en orden aleatorio de lado para
+        // que, con Count>=2, los refuerzos caigan en lados distintos en vez de apilados en uno solo.
+        // Sala sin bounds reales o sin tiles de borde disponibles ⇒ lista vacía.
         private static List<GridCoord> PickEdgeSpawnTiles(IGridManager grid, System.Random rng, int count)
         {
             var result = new List<GridCoord>();

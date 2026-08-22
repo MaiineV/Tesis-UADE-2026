@@ -6,20 +6,8 @@ namespace Rollgeon.Combat.Cashier
 {
     /// <summary>
     /// Un escalón de la columna del Cajero: desde cuánto oro aplica, qué ancho tiene la
-    /// franja y cuánto pega al detonar. La ficha del jefe define tres
-    /// (&lt;40 ⇒ Size 1 / 14, 40-119 ⇒ Size 3 / 28, ≥120 ⇒ Size 3 / 35).
+    /// franja y cuánto pega al detonar.
     /// </summary>
-    /// <remarks>
-    /// <para>
-    /// Es data pura y serializable inline en el árbol (<c>AINode_TelegraphMarkGoldScaled.Tiers</c>):
-    /// re-balancear el anzuelo económico es editar el asset del jefe, sin tocar código.
-    /// </para>
-    /// <para>
-    /// Los umbrales se miden contra el oro real con el que se entra al piso 2 (~65-70), no contra
-    /// un ideal: con 80/250 el jugador caía en el escalón pobre prácticamente siempre y el jefe
-    /// medía 0% de vida perdida en la mediana de 3000 peleas simuladas.
-    /// </para>
-    /// </remarks>
     [Serializable, HideReferenceObjectPicker]
     public sealed class CashierGoldTier
     {

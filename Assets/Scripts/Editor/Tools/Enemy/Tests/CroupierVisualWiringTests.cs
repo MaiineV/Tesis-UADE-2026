@@ -4,6 +4,7 @@ using NUnit.Framework;
 using Rollgeon.Combat.AI.Bosses.Croupier;
 using Rollgeon.Editor.Tools.Enemy.Builders;
 using Rollgeon.Entities;
+using Rollgeon.Tiles;
 using UnityEditor;
 using UnityEngine;
 using Object = UnityEngine.Object;
@@ -19,8 +20,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
     [TestFixture]
     public class CroupierVisualWiringTests
     {
-        /// <summary>Alto aproximado del arte del Healer en unidades (bastón incluido).</summary>
-        private const float ArtHeight = 1.95f;
+        /// <summary>Alto aproximado del arte en unidades (galera incluida).</summary>
+        private const float ArtHeight = 1.81f;
 
         private BossWrapperSpec _spec;
 
@@ -36,12 +37,52 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         // =====================================================================
 
         [Test]
-        public void Spec_DressesTheHealerArtIntoTheBossPrefab()
+        public void Spec_DressesTheSunkenGrandRigIntoTheBossPrefab()
         {
-            Assert.AreEqual("Assets/Prefabs/Enemies/Healer_Animated.prefab", _spec.ArtPrefabPath,
-                "El arte del Croupier es el Healer: copa, moño, capa y bastón.");
+            // Ojo con el nombre del archivo: es "SunkedGrand" (sic), no "SunkenGrand".
+            Assert.AreEqual("Assets/Prefabs/Enemies/SunkedGrand_Animated.prefab", _spec.ArtPrefabPath,
+                "El arte del Croupier es el rig del Sunken Grand: galera, levita y abanico de cartas. " +
+                "Ya vistió Healer_Animated y volver ahí le cambia el modelo Y las animaciones — el rig " +
+                "del Healer declara un solo trigger ('Attack') y este dos.");
             Assert.AreEqual("Assets/Prefabs/Enemies/Bosses/PF_Boss_Croupier.prefab", _spec.OutputPrefabPath,
-                "El wrapper tiene que salir en PF_Boss_Croupier — el placeholder del Sunken Grand ya no va.");
+                "El wrapper tiene que salir en PF_Boss_Croupier, no encima del prefab del rig prestado.");
+        }
+
+        /// <summary>
+        /// El <c>*_Animated</c> es load-bearing: es el que trae el <c>Animator</c>. Apuntar al FBX o
+        /// al prefab crudo deja al jefe con malla y sin gestos, y eso no falla en ningún lado.
+        /// </summary>
+        [Test]
+        public void Spec_DressesTheAnimatedWrapper_NotTheRawModel()
+        {
+            Assert.IsTrue(_spec.ArtPrefabPath.EndsWith("_Animated.prefab"),
+                $"'{_spec.ArtPrefabPath}' no es un wrapper *_Animated: sin él el jefe entra sin Animator.");
+
+            var art = AssetDatabase.LoadAssetAtPath<GameObject>(_spec.ArtPrefabPath);
+            Assert.IsNotNull(art, $"Fixture roto: no existe '{_spec.ArtPrefabPath}'.");
+            Assert.IsNotNull(art.GetComponentInChildren<Animator>(true),
+                $"'{_spec.ArtPrefabPath}' no trae Animator: el jefe pelea en T-pose.");
+        }
+
+        /// <summary>
+        /// El spec puede decir una cosa y el <c>.prefab</c> serializado tener otra: hasta que
+        /// alguien corre el builder, el asset se queda con el rig viejo.
+        /// </summary>
+        [Test]
+        public void BuiltPrefab_ActuallyNestsTheArtTheSpecAsksFor()
+        {
+            var built = AssetDatabase.LoadAssetAtPath<GameObject>(_spec.OutputPrefabPath);
+            if (built == null)
+            {
+                Assert.Ignore($"'{_spec.OutputPrefabPath}' todavía no está construido — " +
+                              "corré Tools → Rollgeon → Bosses → Build Croupier.");
+            }
+
+            var deps = AssetDatabase.GetDependencies(_spec.OutputPrefabPath, recursive: false);
+            Assert.Contains(_spec.ArtPrefabPath, deps,
+                $"'{_spec.OutputPrefabPath}' no anida '{_spec.ArtPrefabPath}'. El spec y el asset " +
+                "dicen cosas distintas: falta correr Tools → Rollgeon → Bosses → Build Croupier. " +
+                $"Anida: {string.Join(", ", deps)}.");
         }
 
         [Test]
@@ -66,15 +107,28 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         // =====================================================================
 
         [Test]
-        public void Spec_RetintsOnlyTheFabricsThatCarryTheSilhouette()
+        public void Spec_RetintsEverySurfaceThatWouldOtherwiseTwinTheTahur()
         {
             var keys = _spec.Retints.Keys.OrderBy(k => k).ToArray();
 
             CollectionAssert.AreEqual(
-                new[] { "Mat_DarkGray", "Mat_Gold", "Mat_Red" }, keys,
-                "Se retintan capa/moño (Mat_Red), traje y copa (Mat_DarkGray) y vivos (Mat_Gold). " +
-                "Mat_White, Mat_Bone y Mat_Black quedan compartidos a propósito: los guantes blancos son " +
-                "media lectura de 'crupier', y retintar el blanco también le cambiaría el ojo.");
+                new[] { "Mat_Black", "Mat_Bone", "Mat_Brown", "Mat_Green", "Mat_LightBrown",
+                        "Mat_LightGreen" },
+                keys,
+                "El Tahúr viste este mismo rig: el material que el Croupier no retinta se lo queda " +
+                "compartido y los vuelve gemelos en esa superficie. Mat_White queda afuera a " +
+                "propósito (camisa y caras de los naipes: media lectura de 'crupier') y " +
+                "Mat_Particle_Red también (no es superficie del cuerpo).");
+        }
+
+        /// <summary>
+        /// La camisa blanca es la única superficie que se comparte, y es una decisión: si alguien la
+        /// mete al diccionario, el jefe pierde el único punto claro de la silueta.
+        /// </summary>
+        [Test]
+        public void Spec_LeavesTheWhiteShared_BecauseTheShirtIsHalfTheRead()
+        {
+            CollectionAssert.DoesNotContain(_spec.Retints.Keys, "Mat_White");
         }
 
         [Test]
@@ -112,9 +166,9 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         {
             // Tres escalones: traje casi negro, capa borravino, vivos de latón. Sin la separación
             // el jefe es una mancha oscura.
-            float tux = Luminance(_spec.Retints["Mat_DarkGray"].MidColor.Value);
-            float wine = Luminance(_spec.Retints["Mat_Red"].MidColor.Value);
-            float brass = Luminance(_spec.Retints["Mat_Gold"].MidColor.Value);
+            float tux = Luminance(_spec.Retints["Mat_LightBrown"].MidColor.Value);
+            float wine = Luminance(_spec.Retints["Mat_Brown"].MidColor.Value);
+            float brass = Luminance(_spec.Retints["Mat_Green"].MidColor.Value);
 
             Assert.Less(tux, wine, "El traje tiene que ser más oscuro que la capa.");
             Assert.Less(wine, brass, "Los vivos dorados tienen que saltar de la capa.");
@@ -124,7 +178,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         public void Spec_KeepsTheWineAndTheTuxOnTheRedSideOfTheWheel()
         {
             // Carmesí/borravino, no un rojo cualquiera: el canal rojo tiene que dominar en los dos.
-            foreach (var key in new[] { "Mat_Red", "Mat_DarkGray" })
+            // Mat_Brown lleva el vino (paneles y solapas) y Mat_LightBrown el traje (levita y galera).
+            foreach (var key in new[] { "Mat_Brown", "Mat_LightBrown" })
             {
                 var mid = _spec.Retints[key].MidColor.Value;
                 Assert.Greater(mid.r, mid.g, $"'{key}' no tira a rojo.");
@@ -133,50 +188,15 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         }
 
         // =====================================================================
-        // La ruleta
+        // Sin props
         // =====================================================================
 
         [Test]
-        public void Spec_ParentsTheWheelWithTheNameTheSpinVisualLooksFor()
+        public void Spec_CarriesNoProps_SoNothingHangsOffHimWithoutMeaning()
         {
-            Assert.AreEqual(1, _spec.Props.Count, "El Croupier trae un solo prop: la ruleta.");
-
-            var wheel = _spec.Props[0];
-            Assert.AreEqual("Assets/Prefabs/Props/Ruletav03.prefab", wheel.PrefabPath);
-            Assert.AreEqual(CroupierWheelSpinVisual.DefaultWheelChildName, wheel.Name,
-                "El nombre del hijo es el contrato con CroupierWheelSpinVisual: si cambia, el builder no " +
-                "encuentra la rueda que cablear y el fallback por nombre tampoco.");
-        }
-
-        [Test]
-        public void Spec_LeavesTheWheelFacingTheCamera()
-        {
-            // El disco mira a ±Z y el jefe encara -Z: rotarlo pondría la rueda de perfil.
-            Assert.AreEqual(Vector3.zero, _spec.Props[0].LocalEuler);
-        }
-
-        [Test]
-        public void Spec_PutsTheWheelBesideTheBoss_ClearOfTheStaffAndOffTheFloor()
-        {
-            var wheel = _spec.Props[0];
-
-            Assert.Less(wheel.LocalPosition.x, 0f,
-                "El bastón lo lleva en +X: la rueda va del otro lado o lo atraviesa.");
-            Assert.Greater(Mathf.Abs(wheel.LocalPosition.x), 0.7f,
-                "Más cerca que esto y la rueda entra en el cuerpo del jefe (ancho ~±0.62).");
-            Assert.Greater(wheel.LocalPosition.y, 0.5f, "La rueda no puede quedar hundida en el piso.");
-            Assert.Less(wheel.LocalPosition.y, ArtHeight, "Ni flotando arriba del sombrero.");
-        }
-
-        [Test]
-        public void Spec_ScalesTheWheelUniformly_AndNoBiggerThanTheAuthoredSize()
-        {
-            var scale = _spec.Props[0].LocalScale;
-
-            Assert.AreEqual(scale.x, scale.y, 0.0001f, "Escala no uniforme: la rueda saldría ovalada.");
-            Assert.AreEqual(scale.x, scale.z, 0.0001f);
-            Assert.Greater(scale.x, 0f);
-            Assert.LessOrEqual(scale.x, 1f, "La rueda acompaña al jefe, no lo tapa.");
+            Assert.IsEmpty(_spec.Props,
+                "El spec le cuelga un prop: cualquier cosa colgada de el le tapa al jugador la " +
+                "vista de la sala y se lee como si significara algo.");
         }
 
         [Test]
@@ -203,7 +223,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
 
             try
             {
-                CroupierAssetBuilder.PopulateEnemyData(data, null, null, visual, portrait);
+                CroupierAssetBuilder.PopulateEnemyData(data, null, visual, portrait);
 
                 Assert.AreSame(visual, data.VisualPrefab,
                     "El jefe tiene que llevarse el wrapper, no el placeholder del Sunken Grand.");
@@ -224,14 +244,11 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         // =====================================================================
 
         [Test]
-        public void Art_AndTheWheelProp_ExistWhereTheSpecSaysTheyDo()
+        public void Art_ExistsWhereTheSpecSaysItDoes()
         {
             Assert.IsNotNull(AssetDatabase.LoadAssetAtPath<GameObject>(_spec.ArtPrefabPath),
                 $"No existe el arte '{_spec.ArtPrefabPath}': el wrapper devolvería null y el jefe " +
                 "quedaría sin VisualPrefab.");
-            Assert.IsNotNull(AssetDatabase.LoadAssetAtPath<GameObject>(_spec.Props[0].PrefabPath),
-                $"No existe la ruleta '{_spec.Props[0].PrefabPath}': el jefe sale sin rueda (el wrapper " +
-                "saltea el prop faltante).");
         }
 
         [Test]
@@ -273,7 +290,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         }
 
         [Test]
-        public void BuiltPrefab_CarriesTheWheelAndItsSpin()
+        public void BuiltPrefab_CarriesNoWheel_NorTheComponentThatSpunIt()
         {
             var built = AssetDatabase.LoadAssetAtPath<GameObject>(_spec.OutputPrefabPath);
             if (built == null)
@@ -282,10 +299,93 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                               "corré Tools → Rollgeon → Bosses → Build Croupier.");
             }
 
-            var wheel = built.transform.Find(CroupierWheelSpinVisual.DefaultWheelChildName);
-            Assert.IsNotNull(wheel, "El prefab construido no tiene el hijo 'Wheel'.");
-            Assert.IsNotNull(built.GetComponent<CroupierWheelSpinVisual>(),
-                "El prefab construido no tiene el componente que gira la rueda.");
+            // Se chequea sobre el prefab y no sobre el spec: un spec limpio con un prefab sucio
+            // es lo que ve el jugador y no lo que ven los tests.
+            Assert.IsNull(built.transform.Find(CroupierWheelSpinVisual.DefaultWheelChildName),
+                "El prefab construido todavía trae el hijo de la ruleta: falta un rebuild.");
+            Assert.IsNull(built.GetComponent<CroupierWheelSpinVisual>(),
+                "El prefab construido todavía trae el componente que hacía girar la rueda.");
+        }
+
+        // =====================================================================
+        // La casilla de fuego — lectura del AssetDatabase, sin escritura
+        // =====================================================================
+
+        /// <summary>
+        /// El fuego del jefe. Se lee del asset y no del builder porque el builder sólo lo
+        /// <b>carga</b>: los números y el arte viven en el <c>.asset</c>, así que un test contra
+        /// constantes no vería nunca lo que ve el jugador.
+        /// </summary>
+        private static SpecialTileDefinitionSO LoadFireTile() =>
+            AssetDatabase.LoadAssetAtPath<SpecialTileDefinitionSO>(CroupierAssetBuilder.CroupierFirePath);
+
+        [Test]
+        public void FireTile_CarriesArt_OrTheBurningFloorIsJustTintedQuads()
+        {
+            var fire = LoadFireTile();
+            Assert.IsNotNull(fire,
+                $"No existe {CroupierAssetBuilder.CroupierFirePath}: el nodo de ignición falla y los " +
+                "turnos de quema del jefe no hacen nada.");
+
+            // SpecialTileService.SpawnVisuals cae al overlay de quads cuando no hay prefab, y el
+            // fallback no avisa: la casilla "funciona" (cobra el daño) y se ve como un highlight
+            // de UI — el piso entero prendido y ni una llama en pantalla.
+            Assert.IsNotNull(fire.VisualPrefab,
+                "La casilla de fuego se quedó sin VisualPrefab. No es un fallo visible en consola: " +
+                "el servicio degrada solo a quads tintados y el fuego desaparece sin romper nada.");
+            Assert.Greater(fire.VisualYOffset, 0.05f,
+                "El visual quedó pegado al piso: con este mismo VFX el hazard viejo usaba 0.1 para " +
+                "no pelear z-fighting con el tinte del tile.");
+        }
+
+        [Test]
+        public void FireTile_IsNotTheDefaultWhite_SoItReadsAsFireAndNotAsAGlitch()
+        {
+            var fire = LoadFireTile();
+            Assert.IsNotNull(fire, "Falta la casilla de fuego.");
+
+            // Sin epsilon esto pasaría por un 0.999 invisible. El default sin tocar de
+            // SpecialTileDefinitionSO es blanco, y trece de las casillas del catálogo lo tienen.
+            bool isWhite = Mathf.Abs(fire.OverlayTint.r - 1f) < 0.01f
+                           && Mathf.Abs(fire.OverlayTint.g - 1f) < 0.01f
+                           && Mathf.Abs(fire.OverlayTint.b - 1f) < 0.01f;
+            Assert.IsFalse(isWhite,
+                "El tinte del fallback volvió al blanco de fábrica. Aunque haya prefab, el blanco es " +
+                "el color del highlight del jugador: si el prefab falta o falla, el jugador ve la " +
+                "sala marcada en blanco y lo lee como un bug, no como fuego.");
+        }
+
+        [Test]
+        public void FireTile_KeepsItsOwnNumbers_AndNotTheOnesOfTheGenericTemplate()
+        {
+            var fire = LoadFireTile();
+            Assert.IsNotNull(fire, "Falta la casilla de fuego.");
+
+            // NINGÚN código escribe este asset: es autoría a mano, así que este test es lo único
+            // que lo ata a la ficha, y un rebuild descuidado desde la plantilla le devuelve los
+            // números de la plantilla sin que falle nada más. Cruzar y quedarse cuestan lo mismo
+            // (10 y 10) pero no pesan igual: el 10 de cruzar se cobra POR CASILLA y sin escudo,
+            // porque la acción del turno se fue en moverse.
+            //
+            // OJO: no hay constante en el builder que mueva estos dos números. La que se parece
+            // —CroupierAssetBuilder.BandidaReelFireDamage— alimenta el HazardDefinitionSO que el
+            // builder autora para los reels de La Bandida, y hoy vale otra cosa. Subir el fuego del
+            // Croupier es UNA edición y es en este .asset.
+            Assert.AreEqual(10, fire.TurnStartDamage,
+                "Arrancar el turno adentro cambió de precio. Por debajo del escudo mediano del " +
+                "jugador (~13) el fuego deja de ser una amenaza y pasa a ser decoración.");
+            Assert.GreaterOrEqual(fire.EnterDamage, fire.TurnStartDamage,
+                "Cruzar el fuego pasó a costar MENOS que quedarse parado en él. Así la jugada " +
+                "óptima es correr por el paño encendido, que es lo contrario del plan del jefe.");
+            Assert.AreEqual(10, fire.EnterDamage,
+                "Se cobra por casilla cruzada — es lo que hace que atravesar una banda para llegar al " +
+                "jefe tenga precio.");
+            Assert.AreEqual(CroupierAssetBuilder.FireDurationRounds, fire.DefaultDurationRounds,
+                "La duración del asset dejó de coincidir con la que autora el nodo de ignición: una " +
+                "de las dos manda y no se sabe cuál.");
+            Assert.IsTrue(fire.OwnerBossImmune,
+                "Sin esto el jefe se quema en su propio fuego, y es un jefe que huye pegado a la " +
+                "banda que acaba de prender.");
         }
 
         // =====================================================================

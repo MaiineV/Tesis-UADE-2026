@@ -9,20 +9,18 @@ namespace Rollgeon.Combat.AI.Bosses.Croupier
 {
     /// <summary>
     /// Marca / limpia el área telegráfica de <b>un</b> número cantado. Código puro compartido por el
-    /// nodo que marca y por el servicio de la rueda (que re-marca cuando el jugador corre la rueda),
-    /// para que las dos rutas no puedan divergir en cómo se llama el área ni en qué se pinta.
+    /// nodo que marca y por el servicio de la rueda (que re-marca cuando el jugador corre la rueda).
     /// </summary>
     /// <remarks>
     /// <para>
-    /// <b>Un source guid por slot, no el del jefe.</b> <see cref="IThreatenedAreaService"/> guarda
-    /// <i>una</i> área pendiente por fuente y sobrescribe al re-marcar: con los dos números de fase 2
-    /// marcados bajo el guid del jefe, el segundo se comía al primero y la columna de costura pegaba
-    /// 12 en vez de 24. Cada slot marca bajo un guid derivado del jefe, así que las dos áreas
-    /// coexisten y se resuelven por separado — el jugador en la costura recibe los dos golpes.
+    /// Cada slot marca bajo un guid derivado del jefe, no bajo el del jefe:
+    /// <see cref="IThreatenedAreaService"/> guarda <i>una</i> área pendiente por fuente y sobrescribe
+    /// al re-marcar, así que con un solo guid el segundo número de fase 2 se come al primero y la
+    /// columna de costura cobra un golpe en vez de dos.
     /// </para>
     /// <para>
-    /// El guid derivado no se usa como <c>SourceId</c> del daño: el que detona resuelve siempre con el
-    /// guid real del jefe, para que atribución, debilidad y feedback sigan apuntando al Croupier.
+    /// El guid derivado no se usa como <c>SourceId</c> del daño: el que detona resuelve con el guid
+    /// real del jefe, para que atribución, debilidad y feedback sigan apuntando al Croupier.
     /// </para>
     /// </remarks>
     public static class CroupierSectorTelegraph
@@ -31,21 +29,14 @@ namespace Rollgeon.Combat.AI.Bosses.Croupier
         public const int MaxSlots = 2;
 
         /// <summary>
-        /// Latón del sector cantado. Es el mismo matiz que el número de la ruleta (<c>BrassLight</c>
-        /// del builder), y por eso no usa el naranja genérico de <c>ThreatOverlayState.Marked</c>:
-        /// con el naranja de fábrica, el bloque que va a caer se veía igual que el telegraph de
-        /// cualquier otro jefe y nada lo ataba a la rueda.
+        /// Latón del aviso: el mismo matiz que el número de la ruleta (<c>BrassLight</c> del builder),
+        /// distinto del rojo del fuego (<c>CroupierAssetBuilder.FireOverlayTint</c>).
         /// </summary>
-        /// <remarks>
-        /// Latón para el aviso, rojo para el fuego (<c>CroupierAssetBuilder.FireOverlayTint</c>): el
-        /// paño cuenta dos cosas distintas —"acá va a caer" y "acá está ardiendo"— y compartir matiz
-        /// las volvía una sola.
-        /// </remarks>
         public static readonly Color SectorTint = new Color(0.831f, 0.635f, 0.196f, 0.55f);
 
         // XOR sobre el último byte del guid del jefe: determinístico, distinto por slot y nunca igual
-        // al guid original (el XOR es con un valor != 0), así que no puede pisar el área que marque
-        // otro sistema bajo la fuente del propio jefe (ej. un hazard de ciclo).
+        // al guid original (el salt es != 0), así que no puede pisar el área que marque otro sistema
+        // bajo la fuente del propio jefe.
         private const int SlotSalt = 0xC0;
 
         /// <summary>Fuente derivada del slot <paramref name="slot"/> del jefe <paramref name="bossGuid"/>.</summary>

@@ -646,7 +646,7 @@ MonoBehaviour:
     ShouldDestroyOnParticleEnd: 0
     AudioClip: {fileID: 0}
     Volume: 1
-    AnimTrigger: Attack
+    AnimTrigger: Attack_Melee
     TargetSourcePawn: 1
     FeelPlayerPrefab: {fileID: 0}
     FeelIntensity: 1
@@ -669,7 +669,7 @@ MonoBehaviour:
     ShouldDestroyOnParticleEnd: 0
     AudioClip: {fileID: 0}
     Volume: 1
-    AnimTrigger: Attack
+    AnimTrigger: Attack_Range
     TargetSourcePawn: 1
     FeelPlayerPrefab: {fileID: 0}
     FeelIntensity: 1
@@ -899,7 +899,7 @@ MonoBehaviour:
     ShouldDestroyOnParticleEnd: 0
     AudioClip: {fileID: 0}
     Volume: 1
-    AnimTrigger: Attack
+    AnimTrigger: Attack_Melee
     TargetSourcePawn: 1
     FeelPlayerPrefab: {fileID: 0}
     FeelIntensity: 1
@@ -922,7 +922,7 @@ MonoBehaviour:
     ShouldDestroyOnParticleEnd: 0
     AudioClip: {fileID: 0}
     Volume: 1
-    AnimTrigger: Attack
+    AnimTrigger: Attack_Range
     TargetSourcePawn: 1
     FeelPlayerPrefab: {fileID: 0}
     FeelIntensity: 1
@@ -1567,6 +1567,121 @@ MonoBehaviour:
     AudioClip: {fileID: 0}
     Volume: 1
     AnimTrigger: Attack_Range
+    TargetSourcePawn: 1
+    FeelPlayerPrefab: {fileID: 0}
+    FeelIntensity: 1
+    DeathSpinDegrees: 720
+    DeathEndScale: 0
+    DeathRiseHeight: 0.35
+    DeathHideHealthBar: 1
+    BehaviorValueKey: 0
+    ValueTarget: 1
+    FloatingNumberSourceKey: 1
+  - FeedbackId: anim.boss.croupier.range
+    Type: 2
+    Position: 0
+    PositionReaderSO: {fileID: 0}
+    PlayerTarget: 0
+    PositionOffset: {x: 0, y: 0, z: 0}
+    Duration: 0.9
+    CompletionMode: 0
+    VfxPrefab: {fileID: 0}
+    ShouldDestroyOnParticleEnd: 0
+    AudioClip: {fileID: 0}
+    Volume: 1
+    AnimTrigger: Attack_Range
+    TargetSourcePawn: 1
+    FeelPlayerPrefab: {fileID: 0}
+    FeelIntensity: 1
+    DeathSpinDegrees: 720
+    DeathEndScale: 0
+    DeathRiseHeight: 0.35
+    DeathHideHealthBar: 1
+    BehaviorValueKey: 0
+    ValueTarget: 1
+    FloatingNumberSourceKey: 1
+  - FeedbackId: vfx.boss.croupier.range_impact
+    Type: 0
+    Position: 1
+    PositionReaderSO: {fileID: 0}
+    PlayerTarget: 0
+    PositionOffset: {x: 0, y: 1, z: 0}
+    Duration: 0.55
+    CompletionMode: 0
+    VfxPrefab: {fileID: 6805049258681361692, guid: 561a1742688cb8e4ea8be7e0c9987057, type: 3}
+    ShouldDestroyOnParticleEnd: 0
+    AudioClip: {fileID: 0}
+    Volume: 1
+    AnimTrigger: 
+    TargetSourcePawn: 1
+    FeelPlayerPrefab: {fileID: 0}
+    FeelIntensity: 1
+    DeathSpinDegrees: 720
+    DeathEndScale: 0
+    DeathRiseHeight: 0.35
+    DeathHideHealthBar: 1
+    BehaviorValueKey: 0
+    ValueTarget: 1
+    FloatingNumberSourceKey: 1
+  - FeedbackId: feel.boss.croupier.range_impact
+    Type: 6
+    Position: 1
+    PositionReaderSO: {fileID: 0}
+    PlayerTarget: 0
+    PositionOffset: {x: 0, y: 0, z: 0}
+    Duration: 0.3
+    CompletionMode: 0
+    VfxPrefab: {fileID: 0}
+    ShouldDestroyOnParticleEnd: 0
+    AudioClip: {fileID: 0}
+    Volume: 1
+    AnimTrigger: 
+    TargetSourcePawn: 1
+    FeelPlayerPrefab: {fileID: 7642937712175414424, guid: 8fce38f5c03bb6e4da05e2d7f0df1c86, type: 3}
+    FeelIntensity: 1
+    DeathSpinDegrees: 720
+    DeathEndScale: 0
+    DeathRiseHeight: 0.35
+    DeathHideHealthBar: 1
+    BehaviorValueKey: 0
+    ValueTarget: 1
+    FloatingNumberSourceKey: 1
+  - FeedbackId: anim.enemy.comision.bite
+    Type: 2
+    Position: 0
+    PositionReaderSO: {fileID: 0}
+    PlayerTarget: 0
+    PositionOffset: {x: 0, y: 0, z: 0}
+    Duration: 0.9
+    CompletionMode: 0
+    VfxPrefab: {fileID: 0}
+    ShouldDestroyOnParticleEnd: 0
+    AudioClip: {fileID: 0}
+    Volume: 1
+    AnimTrigger: Attack
+    TargetSourcePawn: 1
+    FeelPlayerPrefab: {fileID: 0}
+    FeelIntensity: 1
+    DeathSpinDegrees: 720
+    DeathEndScale: 0
+    DeathRiseHeight: 0.35
+    DeathHideHealthBar: 1
+    BehaviorValueKey: 0
+    ValueTarget: 1
+    FloatingNumberSourceKey: 1
+  - FeedbackId: anim.boss.croupier.teleport
+    Type: 2
+    Position: 0
+    PositionReaderSO: {fileID: 0}
+    PlayerTarget: 0
+    PositionOffset: {x: 0, y: 0, z: 0}
+    Duration: 0.9
+    CompletionMode: 0
+    VfxPrefab: {fileID: 0}
+    ShouldDestroyOnParticleEnd: 0
+    AudioClip: {fileID: 0}
+    Volume: 1
+    AnimTrigger: Teleport
     TargetSourcePawn: 1
     FeelPlayerPrefab: {fileID: 0}
     FeelIntensity: 1

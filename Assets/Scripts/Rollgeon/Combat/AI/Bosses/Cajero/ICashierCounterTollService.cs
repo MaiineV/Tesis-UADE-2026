@@ -4,13 +4,12 @@ namespace Rollgeon.Combat.Cashier
 {
     /// <summary>
     /// El peaje del mostrador: cobra <see cref="TollDamage"/> al jugador que termina su turno del
-    /// mismo lado del mostrador que el Cajero. Ficha de diseño "El Cajero" (piso 2), §El peaje.
+    /// mismo lado del mostrador que el Cajero.
     /// </summary>
     /// <remarks>
-    /// Servicio y no nodo del árbol: el peaje se cobra al cerrar el turno del <b>jugador</b>, y desde
-    /// el árbol quedaría atado a que el jefe llegue a actuar. Se arma, no se configura: es inerte
-    /// hasta que <c>AINode_CashierCounterToll</c> se lo dice, y <c>OnCombatEnd</c> lo desarma solo
-    /// para que no cobre en la sala siguiente.
+    /// El cobro cae al cerrar el turno del <b>jugador</b>, fuera del árbol. Es inerte hasta que
+    /// <c>AINode_CashierCounterToll</c> lo arma, y <c>OnCombatEnd</c> lo desarma para que no cobre
+    /// en la sala siguiente.
     /// </remarks>
     public interface ICashierCounterTollService
     {
@@ -43,7 +42,7 @@ namespace Rollgeon.Combat.Cashier
 
         /// <summary>
         /// Arma el peaje para esta pelea. Idempotente y pensado para re-llamarse todos los turnos
-        /// del jefe: así el cobro se recupera solo de un reset de combate o de un restore de save.
+        /// del jefe: así el cobro se recupera solo si algo deja el servicio en blanco.
         /// </summary>
         /// <param name="bossGuid">El Cajero: define el lado que se cobra y firma el daño.</param>
         /// <param name="payerGuid">Único que paga: si no, un refuerzo de su lado también pagaría.</param>

@@ -7,21 +7,17 @@ using Rollgeon.Grid;
 namespace Rollgeon.Combat.Threat
 {
     /// <summary>
-    /// Estado persistente de "ataque telegráfico" entre turnos (Sistemas prerequisito Bosses §1).
-    /// Guarda, por fuente (el Boss), el conjunto de casillas marcadas en el turno N que van a
-    /// recibir daño al inicio del turno N+1 del Boss. El highlight visual lo hace
-    /// <see cref="ITileHighlightService"/>; este servicio solo retiene el <b>estado lógico</b>
-    /// (qué casillas, cuánto daño, qué tipo) para poder ejecutarlo el turno siguiente.
+    /// Estado persistente de "ataque telegráfico" entre turnos: guarda, por fuente, el conjunto de
+    /// casillas marcadas que van a recibir daño cuando esa fuente lo ejecute. Solo retiene el
+    /// <b>estado lógico</b> (qué casillas, cuánto daño, qué tipo); el highlight visual lo hace
+    /// <see cref="ITileHighlightService"/>.
     /// </summary>
     /// <remarks>
-    /// <para>
-    /// <b>Por fuente.</b> La key es el <c>Guid</c> de la entidad que marcó el área — así dos
-    /// bosses (o un boss + adds) no se pisan. En la práctica del FP hay un solo boss por combate.
-    /// </para>
-    /// <para>
-    /// <b>Lifecycle.</b> Run-scoped vía limpieza en <c>OnCombatEnd</c> / <c>OnRunEnd</c>
-    /// (igual que <c>ComboBlockService</c>). No persiste a save.
-    /// </para>
+    /// Una marca por fuente, y no se arregla mergeando: quien detona consume por fuente y cobra el
+    /// <c>Damage</c> de lo que consumió, así que dos áreas fundidas en una entrada se resuelven como
+    /// un solo golpe con un solo número. Nada limpia el estado por turno ni por ronda — sólo el que
+    /// lo consume o el fin de combate/run —, y de eso depende un aviso que se sostiene más de un
+    /// turno.
     /// </remarks>
     public interface IThreatenedAreaService
     {

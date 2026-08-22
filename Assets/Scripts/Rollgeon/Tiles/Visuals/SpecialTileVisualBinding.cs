@@ -54,7 +54,18 @@ namespace Rollgeon.Tiles.Visuals
 
         private void OnDestroy() => Unbind();
 
-        private void Unbind()
+        /// <remarks>Red de seguridad para el visual que alguien apague por fuera del pool.
+        /// <b>El pool no se apoya en esto:</b> llama <see cref="Unbind"/> explícito al estacionar,
+        /// porque en EditMode Unity no dispara OnEnable/OnDisable en clones instanciados en runtime
+        /// y el desenganche quedaría sin ocurrir justo donde se lo testea.</remarks>
+        private void OnDisable() => Unbind();
+
+        /// <summary>
+        /// Suelta los eventos. Público porque el pool tiene que poder soltarlos <b>determinísticamente</b>
+        /// al estacionar el clon: <c>SetActive(false)</c> no llama <c>OnDestroy</c>, y el
+        /// <c>OnDisable</c> no corre en EditMode. Idempotente — <see cref="Bind"/> arranca llamándolo.
+        /// </summary>
+        public void Unbind()
         {
             if (!_bound) return;
             EventManager.UnSubscribe(EventName.OnSpecialTileStateChanged, _onStateChanged);

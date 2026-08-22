@@ -39,17 +39,13 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         public const string BossEntityId = "boss.one_armed";
         public const string ReelEntityId = "obj.reel";
 
-        /// <summary>
-        /// Piso 1: ~6 turnos con el golpe base del piso (13-27, mediana 20), la misma vida que el
-        /// Croupier. No es el presupuesto de la pelea — como los rodillos reaparecen, la palanca de
-        /// duración real es <see cref="RespawnDelayPhase1"/>.
-        /// </summary>
+        /// <summary>Vida del jefe de piso 1.</summary>
         public const int BossHp = 120;
         public const int BossAttack = 20;
         public const int BossSpeed = 4;
         public const int BossEnergy = 3;
 
-        /// <summary>Piso 1, tipo 15-23 (mismo rango que ED_Boss_Sunken_Grand).</summary>
+        /// <summary>Drop de oro de piso 1.</summary>
         public const int MinGold = 15;
         public const int MaxGold = 23;
 
@@ -62,8 +58,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         public const int JackpotSize = 3;
 
         /// <summary>
-        /// Brazo: melee directo, sin marca ni área, a quien cerró el turno pegado a la máquina. Es
-        /// el precio de desarmar de cerca — los rodillos viven en su anillo.
+        /// Brazo: melee directo, sin marca ni área, a quien cerró el turno pegado a la máquina.
         /// </summary>
         public const int ArmDamage = 12;
         public const int ArmRange = 1;
@@ -74,9 +69,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         public const int ReelCount = 3;
 
         /// <summary>
-        /// Vida del rodillo. La ficha pide 50-70: a 60, con el turno mediano del jugador en 42,
-        /// romper uno cuesta casi un turno entero. La cancelación del jackpot es por daño y no por
-        /// rotura (ver <c>IBandidaJackpotService</c>), así que el caso normal es que siga en pie.
+        /// Vida del rodillo. La cancelación del jackpot es por daño y no por rotura (ver
+        /// <c>IBandidaJackpotService</c>).
         /// </summary>
         public const int ReelHp = 60;
 
@@ -86,17 +80,10 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         public const float Phase2HpThreshold = 0.5f;
         public const int Phase2Index = 2;
 
-        /// <summary>
-        /// Desde qué vida del jefe la fila cobra peaje. Separado de <see cref="Phase2HpThreshold"/>
-        /// a propósito: en el mismo umbral caerían tres cosas de un salto.
-        /// </summary>
+        /// <summary>Desde qué vida del jefe la fila cobra peaje.</summary>
         public const float ReelTollHpThreshold = 0.7f;
 
-        /// <summary>
-        /// Techo de rolls que la fila drena del pool por turno (Feature#0050). Dimensionado
-        /// contra el grant del jugador (5 rolls por turno): drenar 1-2 presiona sin dejarlo
-        /// nunca en economía neta negativa. Revisar en el pase de balance del pool.
-        /// </summary>
+        /// <summary>Techo de rolls que la fila drena del pool por turno.</summary>
         public const int ReelTollCapPhase1 = 1;
         public const int ReelTollCapPhase2 = 2;
 
@@ -106,7 +93,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
 
         /// <summary>
         /// Mech humanoide con tres cañones en el pecho: los tres rodillos leídos como parte del
-        /// cuerpo. Trae el set de anims más completo del proyecto (<c>AnimCon_Mecha</c>).
+        /// cuerpo. Animado por <c>AnimCon_Mecha</c>.
         /// </summary>
         public const string BossArtPrefabPath = "Assets/Prefabs/Enemies/MechaBoss_Animated.prefab";
 
@@ -409,7 +396,6 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
             reel.WeaknessComboId = string.Empty;
             reel.WeaknessMultiplierOverride = 0f;
 
-            // Pregunta abierta de la ficha: hasta que se conteste, romperlo cuesta tempo y no paga.
             reel.MinGoldDrop = 0;
             reel.MaxGoldDrop = 0;
 
@@ -456,10 +442,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
             };
         }
 
-        /// <summary>
-        /// Ficha del wrapper del rodillo. <b>Sin retinte</b>: el prop trae ocho materiales por
-        /// submalla y desde el YAML no se sabe cuál es cuál — pendiente de una pasada con el editor.
-        /// </summary>
+        /// <summary>Ficha del wrapper del rodillo, sin retinte.</summary>
         /// <remarks>Box y no capsule: la máquina es una caja y el pick cubre la silueta entera.</remarks>
         public static BossWrapperSpec BuildReelWrapperSpec(
             string outputPrefabPath = ReelVisualPrefabPath,
@@ -553,9 +536,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
 
             Debug.Log($"[BandidaAssetBuilder] Listo: '{BossAssetPath}' + '{ReelAssetPath}' con " +
                       $"'{BossVisualPrefabPath}' + '{ReelVisualPrefabPath}'. " +
-                      "Falta a mano: la UI del número gigante " +
-                      "(TypedEvent<JackpotCountdownPayload>) y el alta del jefe en el " +
-                      "BossFloorManagerSO de su piso.");
+                      $"jackpot {JackpotDamage} y {ReelCount} rodillos de {ReelHp} HP.");
         }
 
         /// <summary>El fuego del Croupier. <c>null</c> con aviso si ese builder no corrió.</summary>

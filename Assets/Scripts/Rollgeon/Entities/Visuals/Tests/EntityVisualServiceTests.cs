@@ -5,6 +5,7 @@ using NUnit.Framework;
 using Rollgeon.Grid;
 using Rollgeon.Heroes;
 using Rollgeon.Movement;
+using Rollgeon.UI.Tooltips;
 using UnityEngine;
 using UnityEngine.TestTools;
 
@@ -61,6 +62,21 @@ namespace Rollgeon.Entities.Visuals.Tests
             var data = ScriptableObject.CreateInstance<EnemyDataSO>();
             data.VisualPrefab = MakePrefab(prefabName);
             _created.Add(data);
+            return data;
+        }
+
+        /// <summary>
+        /// Enemigo cuyo arte trae collider — la única condición bajo la que <c>AttachTooltip</c>
+        /// cuelga algo. <c>EntityId</c> vacío a propósito: así <c>EnemyTooltipInfo</c> lee el
+        /// <c>DisplayName</c> del SO derecho y ningún assert de acá depende de Localization.
+        /// </summary>
+        private EnemyDataSO MakeEnemyWithCollider(string prefabName, string displayName = "Enemigo")
+        {
+            var data = MakeEnemy(prefabName);
+            data.hideFlags = HideFlags.HideAndDontSave;
+            data.EntityId = string.Empty;
+            data.DisplayName = displayName;
+            data.VisualPrefab.AddComponent<BoxCollider>();
             return data;
         }
 
@@ -158,6 +174,93 @@ namespace Rollgeon.Entities.Visuals.Tests
         {
             Assert.Throws<ArgumentNullException>(
                 () => _service.SpawnEnemy(Guid.NewGuid(), null, GridCoord.Zero));
+        }
+
+        [Test]
+        public void SpawnEnemy_AttachesTooltipInfoAndTrigger_WhenVisualHasCollider()
+        {
+            // Arrange
+            var data = MakeEnemyWithCollider("EnemyVisual_WithCollider");
+
+            // Act
+            var pawn = _service.SpawnEnemy(Guid.NewGuid(), data, GridCoord.Zero);
+            _created.Add(pawn.gameObject);
+
+            // Assert
+            Assert.IsNotNull(pawn.GetComponent<EnemyTooltipInfo>(),
+                "El pawn quedó sin EnemyTooltipInfo: el enemigo no tiene con qué describirse y el " +
+                "jugador pierde la única explicación de la pelea que puede leer sin morir primero.");
+            Assert.IsNotNull(pawn.GetComponent<WorldTooltipTrigger>(),
+                "El pawn quedó sin WorldTooltipTrigger: el texto existe pero nada lo abre.");
+
+            // El collider puede vivir en el hijo del modelo, como en los prefabs de arte reales:
+            // AttachTooltip lo busca con GetComponentInChildren, no solo en el root.
+            var nested = MakeEnemy("EnemyVisual_ChildCollider");
+            var model = new GameObject("Model");
+            model.transform.SetParent(nested.VisualPrefab.transform);
+            model.AddComponent<BoxCollider>();
+
+            var nestedPawn = _service.SpawnEnemy(Guid.NewGuid(), nested, new GridCoord(1, 0));
+            _created.Add(nestedPawn.gameObject);
+
+            Assert.IsNotNull(nestedPawn.GetComponent<EnemyTooltipInfo>(),
+                "Un collider en el hijo del modelo dejó al pawn sin tooltip: así vienen los prefabs " +
+                "de arte, así que esto apagaría el tooltip de casi todo el catálogo.");
+        }
+
+        [Test]
+        public void SpawnEnemy_LeavesTheTriggerOnHover_NotOnClick()
+        {
+            // Arrange
+            var data = MakeEnemyWithCollider("EnemyVisual_WithCollider");
+
+            // Act
+            var pawn = _service.SpawnEnemy(Guid.NewGuid(), data, GridCoord.Zero);
+            _created.Add(pawn.gameObject);
+
+            // Assert
+            var trigger = pawn.GetComponent<WorldTooltipTrigger>();
+            Assert.IsNotNull(trigger, "Fixture roto: el pawn no tiene WorldTooltipTrigger.");
+            Assert.AreEqual(WorldTooltipMode.Hover, trigger.Mode,
+                "El trigger quedó en Click, que es el default serializado del componente: el click " +
+                "sobre una casilla ocupada por un enemigo ya significa 'atacar a este enemigo', y " +
+                "abrir el panel se lo robaría.");
+        }
+
+        [Test]
+        public void SpawnEnemy_AttachesNothing_WhenVisualHasNoCollider()
+        {
+            // Arrange
+            var data = MakeEnemy("EnemyVisual_NoCollider");
+
+            // Act
+            var pawn = _service.SpawnEnemy(Guid.NewGuid(), data, GridCoord.Zero);
+            _created.Add(pawn.gameObject);
+
+            // Assert
+            string why = "El trigger raycastea en su Update todos los frames y en un pawn sin " +
+                         "collider no puede acertar nunca: es costo por frame por enemigo sin " +
+                         "ningún resultado posible.";
+            Assert.IsNull(pawn.GetComponentInChildren<WorldTooltipTrigger>(true), why);
+            Assert.IsNull(pawn.GetComponentInChildren<EnemyTooltipInfo>(true), why);
+        }
+
+        [Test]
+        public void SpawnEnemy_BindsTheDataIntoTheTooltip_NotJustTheComponent()
+        {
+            // Arrange
+            var data = MakeEnemyWithCollider("EnemyVisual_WithCollider", "El Croupier");
+
+            // Act
+            var pawn = _service.SpawnEnemy(Guid.NewGuid(), data, GridCoord.Zero);
+            _created.Add(pawn.gameObject);
+
+            // Assert
+            var info = pawn.GetComponent<EnemyTooltipInfo>();
+            Assert.IsNotNull(info, "Fixture roto: el pawn no tiene EnemyTooltipInfo.");
+            Assert.IsTrue(info.BuildTooltip().Contains("El Croupier"),
+                "El componente está colgado pero sin Bind: un AddComponent que se olvida del Bind " +
+                "deja el tooltip mudo, y eso solo se ve pasando el mouse en juego.");
         }
 
         [Test]

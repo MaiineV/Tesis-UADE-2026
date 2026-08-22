@@ -37,8 +37,7 @@ namespace Rollgeon.Editor.Tools
         private const string GeneralaPath = "Assets/Rollgeon/Enemies/ED_Boss_Generala.asset";
         private const string TahurPath = "Assets/Rollgeon/Enemies/ED_Boss_Tahur.asset";
 
-        // Salas propias, las genera 'Rollgeon → Bosses → Build Boss Rooms'. Los jefes viejos no
-        // tienen: se quedan con la sala compartida del piso.
+        // Salas propias, las genera 'Rollgeon → Bosses → Build Boss Rooms'.
         private const string CroupierRoom = "Assets/Rollgeon/Rooms/Room_Boss_Croupier.asset";
         private const string BandidaRoom = "Assets/Rollgeon/Rooms/Room_Boss_Bandida.asset";
         private const string CajeroRoom = "Assets/Rollgeon/Rooms/Room_Boss_Cajero.asset";
@@ -49,24 +48,7 @@ namespace Rollgeon.Editor.Tools
         [MenuItem("Tools/Rollgeon/Bosses/Build Floor Pools")]
         public static void Install()
         {
-            // UN jefe activo por piso: Croupier, Cajero y Generala. Los otros cinco quedan en el
-            // pool con Enabled = off, que es 0% de chance de salir.
-            //
-            // Por qué uno solo y no una rotación. Tres jefes terminados se pueden mirar de punta a
-            // punta: animación que matchea el ataque, sala, UI, diálogo. Seis a medias no — y un
-            // jefe a medias saliendo 1 de cada 10 peleas es exactamente el bug que no se encuentra,
-            // porque hay que jugar diez runs para verlo una vez. El costo es que la run se aprende
-            // de memoria; se paga a gusto hasta que los otros tres estén al mismo nivel.
-            //
-            // Los tres viejos (Sunken Grand, Security Boss, General Director) están apagados por
-            // otro motivo: 'Rollgeon → Enemies → Audit Rigs' los mostró sin rig — cero skinned
-            // meshes, cero animaciones. Son arte estático.
-            //
-            // Los tres nuevos en banco (Bandida, Anotador, Tahúr) conservan peso y sala: re-activar
-            // es poner Enabled = on en la entry, sin volver a cablear nada.
-            //
-            // La Bandida es de piso 1 y no del 2, que es donde estuvo por error: su vida, su oro y
-            // sus builders siempre dijeron piso 1.
+            // Enabled = off es 0% de chance de salir: el peso de una entry en banco no se usa.
             const float MainWeight = 9f;
             const float BenchedWeight = 1f;
 
@@ -142,10 +124,7 @@ namespace Rollgeon.Editor.Tools
 
         /// <param name="roomSOPath">
         /// Sala propia del jefe. <c>null</c> o inexistente ⇒ la entry queda sin <c>Room</c> y la sala
-        /// se sortea del pool del piso, que es el comportamiento previo al vínculo jefe→sala. Los
-        /// jefes viejos (Sunken Grand y compañía) van así a propósito: no tienen sala propia, y
-        /// ahora que volvieron al pool activo esa es su forma normal de spawnear — pelean en la
-        /// sala compartida del piso, sin terreno autorado.
+        /// se sortea del pool del piso.
         /// </param>
         private static WeightedBoss Entry(string path, float weight, bool enabled,
                                           string roomSOPath = null)

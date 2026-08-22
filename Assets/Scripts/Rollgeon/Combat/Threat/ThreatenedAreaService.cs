@@ -8,13 +8,13 @@ using Rollgeon.Patterns.Bootstrap;
 namespace Rollgeon.Combat.Threat
 {
     /// <summary>
-    /// Implementación POCO de <see cref="IThreatenedAreaService"/> (Sistemas prerequisito Bosses §1).
-    /// Mismo patrón que <c>ComboBlockService</c>: se registra como <see cref="IPreloadableService"/>
-    /// global, la state interna es run-scoped (se limpia en <c>OnCombatEnd</c> / <c>OnRunEnd</c>).
+    /// Implementación POCO de <see cref="IThreatenedAreaService"/>: se registra como
+    /// <see cref="IPreloadableService"/> global y la state interna es run-scoped (se limpia en
+    /// <c>OnCombatEnd</c> / <c>OnRunEnd</c>).
     /// </summary>
     public sealed class ThreatenedAreaService : IThreatenedAreaService, IPreloadableService, IDisposable
     {
-        // Lazy: Odin puede deserializar el servicio bypaseando el ctor (ver ComboBlockService).
+        // Lazy: Odin puede deserializar el servicio bypaseando el ctor.
         private Dictionary<Guid, ThreatenedArea> _pending;
         private Dictionary<Guid, ThreatenedArea> Pending => _pending ??= new Dictionary<Guid, ThreatenedArea>();
 
@@ -111,9 +111,8 @@ namespace Rollgeon.Combat.Threat
         public void ClearAll() => Pending.Clear();
 
         /// <summary>
-        /// Snapshot de las áreas pendientes para persistencia (Feature#0028 Fase 4). Se restaura
-        /// vía <see cref="Mark"/> con los mismos datos (el <c>SourceGuid</c> del boss se preserva
-        /// en resume). No consume.
+        /// Snapshot de las áreas pendientes para persistencia. Se restaura vía <see cref="Mark"/>
+        /// con los mismos datos. No consume.
         /// </summary>
         public IReadOnlyList<ThreatenedArea> SnapshotPending() => new List<ThreatenedArea>(Pending.Values);
 

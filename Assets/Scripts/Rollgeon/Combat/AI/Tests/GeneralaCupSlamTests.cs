@@ -14,11 +14,6 @@ namespace Rollgeon.Combat.AI.Tests
     /// Tests del cubilete de La Generala (<see cref="AINode_GeneralaCupSlam"/>): el golpe melee
     /// directo con el que cobra estar pegado a ella cuando tira.
     /// </summary>
-    /// <remarks>
-    /// El caso que justifica que el nodo exista es que su árbol no tiene Move ni ataque cuerpo a
-    /// cuerpo: sin este golpe, romperle los cinco dados no cuesta nada y la pelea se gana apretando
-    /// un botón desde una casilla segura. Lo que se pinea acá es el precio y su alcance.
-    /// </remarks>
     [TestFixture]
     public class GeneralaCupSlamTests
     {
@@ -117,7 +112,7 @@ namespace Rollgeon.Combat.AI.Tests
         [Test]
         public void CupSlam_WithChebyshev_CoversTheWholeThreeByThree()
         {
-            // Arrange — la palanca de data que recupera el 3×3 completo del cubilete viejo.
+            // Arrange — con la métrica Chebyshev el cubilete cubre el 3×3 entero.
             PlacePlayer(6, 4);
             var node = NewNode();
             node.Metric = DistanceMetric.Chebyshev;

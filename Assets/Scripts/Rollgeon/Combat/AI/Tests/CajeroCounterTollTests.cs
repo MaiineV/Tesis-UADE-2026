@@ -18,7 +18,6 @@ namespace Rollgeon.Combat.AI.Tests
     public class CajeroCounterTollTests
     {
         private const int CounterRow = 0;
-        // Duplicado de CajeroAssetBuilder.CounterTollDamage, que vive en un assembly de Editor.
         private const int TollDamage = 20;
         private const int EveryNRounds = 2;
 
@@ -444,7 +443,7 @@ namespace Rollgeon.Combat.AI.Tests
             // Act
             node.Tick(NewContext());
 
-            // Assert — degrada al comportamiento viejo, no a un peaje apagado.
+            // Assert — degrada a cobrar todas las rondas, no a un peaje apagado.
             Assert.AreEqual(1, _toll.ChargesEveryNRounds);
             Assert.IsTrue(_toll.IsArmed);
         }

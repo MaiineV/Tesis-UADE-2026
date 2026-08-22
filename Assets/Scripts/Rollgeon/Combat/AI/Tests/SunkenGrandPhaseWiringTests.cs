@@ -13,15 +13,9 @@ using UnityEngine;
 namespace Rollgeon.Combat.AI.Tests
 {
     /// <summary>
-    /// Carga el asset REAL del boss de piso 1 y valida las fases por HP que se le re-wirearon
-    /// después de sincronizar con develop: lluvia (vía la abstracción de hazards) y refuerzos.
+    /// Carga el asset REAL del boss de piso 1 y valida sus fases por HP: lluvia (vía la abstracción
+    /// de hazards) y refuerzos.
     /// </summary>
-    /// <remarks>
-    /// Cubre solo ese wiring — el resto del árbol (ataque anim-synced, KeepDistance, candado) es
-    /// diseño de develop y se deja libre de aserciones para no frenar su iteración. Un test que
-    /// falla acá significa que las fases se perdieron en un merge, que es exactamente el accidente
-    /// que ya ocurrió una vez.
-    /// </remarks>
     [TestFixture]
     public class SunkenGrandPhaseWiringTests
     {
@@ -43,7 +37,7 @@ namespace Rollgeon.Combat.AI.Tests
         [Test]
         public void Boss_ActivatesRainHazard_At85Percent_ThroughTheGenericNode()
         {
-            // Act — la lluvia entra por AINode_ActivateHazard (la abstracción), no por el shim viejo.
+            // Act
             var gate = FindGateAtPercent(0.85f);
 
             // Assert
@@ -69,8 +63,6 @@ namespace Rollgeon.Combat.AI.Tests
                 "SpawnReinforcements.EnemyToSpawn está en null — no invocaría nada.");
             Assert.AreEqual(2, spawn.Count, "El boss debería invocar 2 refuerzos por oleada.");
 
-            // Reportado en playtest: con 0 la oleada siguiente entra al turno siguiente de morir
-            // la anterior, y se sentía como "1 turno". 2 = espera dos turnos del boss.
             Assert.AreEqual(2, spawn.RespawnDelayTurns,
                 "Tras aniquilar la oleada el boss debe esperar 2 turnos antes de la siguiente.");
 
@@ -81,8 +73,8 @@ namespace Rollgeon.Combat.AI.Tests
         }
 
         /// <summary>
-        /// El caso que ya rompió una vez: en Play mode el árbol corre por <c>TickCoroutine</c> y
-        /// <see cref="AINode_Sequence"/> aborta el turno con <see cref="AIResult.Failed"/>.
+        /// En Play mode el árbol corre por <c>TickCoroutine</c> y <see cref="AINode_Sequence"/>
+        /// aborta el turno con <see cref="AIResult.Failed"/>.
         /// <see cref="AINode_SpawnReinforcements"/> falla cuando no hay tiles de borde libres y
         /// <see cref="AINode_ActivateHazard"/> si su servicio no está registrado — sin aislar, ese
         /// fallo le cancela al boss el ataque y el candado, que van después en la secuencia.
@@ -117,9 +109,7 @@ namespace Rollgeon.Combat.AI.Tests
         }
 
         /// <summary>
-        /// Reportado en playtest: a vida baja del boss aparecía un segundo dado bloqueado, sin
-        /// nada en pantalla que lo explicara. Venía de un <c>If(HP&lt;10%)</c> que escalaba el
-        /// candado a 2 dados. El boss bloquea siempre 1, sin escalada.
+        /// El boss bloquea siempre 1 dado, sin escalada por HP.
         /// </summary>
         [Test]
         public void Boss_LocksExactlyOneDie_WithNoHpEscalation()

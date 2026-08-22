@@ -19,10 +19,8 @@ namespace Rollgeon.Combat.AI.Decisions
     /// las fichas valen <see cref="ChipValueMultiplierAfterAudit"/> veces más.
     /// </summary>
     /// <remarks>
-    /// El oro no desaparece: queda en <c>ICashierLedgerService.VaultedGold</c> y vuelve completo al
-    /// jugador cuando el jefe muere. Siempre Succeeded si pudo correr, incluso cobrando 0 — va en
-    /// <c>Once → Sequence[Audit, ApplyStatModifier]</c> y <c>Once</c> no latchea con Failed, así que
-    /// un Failed acá dejaría la Fase 2 sin anunciar para siempre.
+    /// Siempre Succeeded si pudo correr, incluso cobrando 0: va dentro de un <c>Once</c>, que no
+    /// latchea con Failed, así que un Failed acá dejaría la Fase 2 sin anunciar para siempre.
     /// </remarks>
     [Serializable, HideReferenceObjectPicker]
     public sealed class AINode_CashierAudit : AIActionNode
@@ -107,11 +105,6 @@ namespace Rollgeon.Combat.AI.Decisions
         }
 
         /// <summary>Dice el trato completo: cuánto te sacó y que vuelve si lo vencés.</summary>
-        /// <remarks>
-        /// Dos avisos sobre entidades distintas: el cobro va sobre el jugador (es su oro) y la
-        /// promesa de devolución sobre el jefe (es su caja). Con el jugador seco no se anuncia nada,
-        /// para no enseñar una regla que en esa pelea no se aplicó.
-        /// </remarks>
         private static void Announce(AIContext context, int collected)
         {
             if (collected <= 0) return;
@@ -133,15 +126,11 @@ namespace Rollgeon.Combat.AI.Decisions
 
         /// <summary>Texto de la promesa de devolución. Literal: no hay tabla de localización de jefes.</summary>
         /// <remarks>
-        /// "matas" y no "vencés": la pixel font del HUD (<c>m6x11plus</c>) no tiene <c>é</c>
-        /// (U+00E9) ni <c>·</c> (U+00B7) en su atlas, y un glifo que falta sale como cuadradito.
+        /// "matas" y no "vencés": la pixel font del HUD (<c>m6x11plus</c>) no tiene <c>é</c> en su
+        /// atlas y un glifo que falta sale como cuadradito.
         /// </remarks>
         private const string VaultPromise = "Arqueo: vuelve si lo matas";
 
-        /// <remarks>
-        /// Un solo step: el arqueo no golpea a nadie, así que no hay impacto que anclar. El request
-        /// se arma a mano porque el nodo no nace de un effect pass y no tiene <c>EffectContext</c>.
-        /// </remarks>
         private static IEnumerator PlayAudit(AIContext context, Action onImpact)
         {
             if (!ServiceLocator.TryGetService<IFeedbackService>(out var feedback) || feedback == null)
@@ -194,8 +183,8 @@ namespace Rollgeon.Combat.AI.Decisions
                 return;
             }
 
-            // SelfMaxHp es el cap del spawn (misma fuente que PcOwnerHpBelow). Sin baseline no se
-            // clampea: preferimos curar de más que perder la curación del arqueo entero.
+            // Sin baseline de SelfMaxHp no se clampea: preferimos curar de más que perder la
+            // curación entera del arqueo.
             int maxHp = context.SelfMaxHp > 0 ? context.SelfMaxHp : int.MaxValue;
             attrs.Modify<Health, int>(context.SelfGuid, current =>
             {

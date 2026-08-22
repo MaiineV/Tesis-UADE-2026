@@ -12,9 +12,8 @@ namespace Rollgeon.Combat.AI.Bosses.Tahur
     /// la rama del poke.
     /// </summary>
     /// <remarks>
-    /// Sin el servicio del pozo registrado devuelve <c>true</c> — semántica permisiva del catálogo
-    /// ("sin servicio no veta"): el nodo del poke se auto-gatea igual, así que el techo de daño no
-    /// depende de esta condición.
+    /// Sin el servicio del pozo registrado devuelve <c>true</c>: semántica permisiva del catálogo
+    /// ("sin servicio no veta").
     /// </remarks>
     [Serializable, HideReferenceObjectPicker]
     public sealed class PcTahurCleanRound : BasePreCondition

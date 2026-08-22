@@ -5,29 +5,15 @@ namespace Rollgeon.Combat.Cashier
     /// <summary>
     /// Resolución pura de escalones: dado el oro del jugador, los escalones que le sumó el
     /// rastrillo (el reloj del jefe) y los que le descontó el soborno, devuelve el
-    /// <see cref="CashierGoldTier"/> que corresponde. Sin estado y sin servicios — para que el
-    /// nodo de AI y los tests compartan exactamente la misma matemática.
+    /// <see cref="CashierGoldTier"/> que corresponde. Sin estado y sin servicios.
     /// </summary>
     /// <remarks>
-    /// <para>
-    /// <b>Orden.</b> No asume que la lista venga ordenada: rankea los escalones por
-    /// <see cref="CashierGoldTier.MinGold"/> ascendente (empate ⇒ orden de autoría) y trabaja
-    /// sobre ese ranking. Así "bajar un escalón" es una operación bien definida aunque el
-    /// designer los haya arrastrado en el inspector.
-    /// </para>
-    /// <para>
-    /// <b>Bordes.</b> El umbral es inclusive (<c>gold &gt;= MinGold</c>): con la tabla de la
-    /// ficha, 39 de oro paga 14 y 40 paga 28. Oro por debajo del escalón más bajo cae igual
-    /// en él (nunca "sin escalón"), y el descuento del soborno se clampea a 0 — no existe
-    /// pagar dos veces para llegar abajo del escalón más barato.
-    /// </para>
-    /// <para>
-    /// <b>El rastrillo se clampea ANTES que el soborno</b>, y ese orden es la razón de que el
-    /// soborno siga sirviendo en la ronda 20. El reloj no para de sumar: a los 30 turnos lleva
-    /// +10 escalones sobre una tabla de 3. Si se restara el soborno del crudo (<c>hit+10−1</c>)
-    /// el descuento sería invisible para siempre. Topeando el rastrillo al escalón más caro
-    /// primero, el soborno siempre compra exactamente un escalón desde donde el jefe está parado.
-    /// </para>
+    /// No asume que la lista venga ordenada: rankea por <see cref="CashierGoldTier.MinGold"/>
+    /// ascendente (empate ⇒ orden de autoría), y sobre ese ranking "bajar un escalón" está bien
+    /// definido. El umbral es inclusive (<c>gold &gt;= MinGold</c>); el oro por debajo del escalón
+    /// más bajo cae igual en él y el descuento del soborno se clampea a 0. El rastrillo se topea al
+    /// escalón más caro ANTES de restar el soborno: al revés, con el reloj sumando +1 cada N rondas
+    /// el descuento sería invisible desde la primera decena de rondas.
     /// </remarks>
     public static class CashierGoldTierTable
     {

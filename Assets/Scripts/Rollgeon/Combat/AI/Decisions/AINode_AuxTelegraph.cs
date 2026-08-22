@@ -18,14 +18,13 @@ namespace Rollgeon.Combat.AI.Decisions
     /// </summary>
     /// <remarks>
     /// <para>
-    /// <b>Cómo se cablea.</b> Dos instancias con el mismo <see cref="ChannelId"/>: una en
-    /// <see cref="TelegraphStep.Execute"/> arriba del Sequence, <b>fuera</b> de cualquier gate —el
-    /// aviso hay que cobrarlo el turno siguiente aunque ese turno no se marque de nuevo— y una en
-    /// <see cref="TelegraphStep.Mark"/> donde corresponda.
+    /// Se cablea como dos instancias con el mismo <see cref="ChannelId"/>: la de
+    /// <see cref="TelegraphStep.Execute"/> va <b>fuera</b> de cualquier gate, porque el aviso hay que
+    /// cobrarlo el turno siguiente aunque ese turno no se marque de nuevo.
     /// </para>
     /// <para>
-    /// <b>Shapes soportadas.</b> Sólo las centradas (SquareAroundSelf / SquareAroundPlayer / Row /
-    /// Column / HalfRoom); DirectionalBand y ScatteredSquares no.
+    /// Shapes soportadas: sólo las centradas (SquareAroundSelf / SquareAroundPlayer / Row / Column /
+    /// HalfRoom); DirectionalBand y ScatteredSquares no.
     /// </para>
     /// </remarks>
     [Serializable, HideReferenceObjectPicker]
@@ -94,7 +93,7 @@ namespace Rollgeon.Combat.AI.Decisions
             var grid = context.Grid;
             if (grid == null) return AIResult.Failed;
 
-            if (Shape == ThreatShape.DirectionalBand || Shape == ThreatShape.ScatteredSquares)
+            if (ThreatAreaShape.NeedsSelfAndPlayer(Shape) || Shape == ThreatShape.ScatteredSquares)
             {
                 Debug.LogWarning($"[AINode_AuxTelegraph] Shape {Shape} no soportada en el canal " +
                                  "secundario — usá el TelegraphMark principal para esas formas.");
@@ -129,8 +128,7 @@ namespace Rollgeon.Combat.AI.Decisions
 
         /// <remarks>
         /// Delega en <see cref="AINode_ExecuteTelegraph"/> con un <see cref="AIContext"/> armado a
-        /// mano cuyo <c>SelfGuid</c> es el canal — el mismo truco que usa <c>HazardService</c> para
-        /// correr telegraphs que no pertenecen a una entidad.
+        /// mano cuyo <c>SelfGuid</c> es el canal.
         /// </remarks>
         private static AIResult Execute(AIContext context, Guid channel)
         {

@@ -4,15 +4,8 @@ namespace Rollgeon.Combat.AI.Bosses.Bandida
 {
     /// <summary>
     /// Estado publicado de la cuenta regresiva del jackpot de La Bandida — el "número gigante"
-    /// sobre la máquina. Canal tipado (<c>TypedEvent&lt;JackpotCountdownPayload&gt;</c>) en vez de
-    /// una entry nueva en <c>EventName</c>: el enum es compartido por seis ramas de jefes en
-    /// paralelo y no hace falta tocarlo para esto.
+    /// sobre la máquina, por canal tipado (<c>TypedEvent&lt;JackpotCountdownPayload&gt;</c>).
     /// </summary>
-    /// <remarks>
-    /// El riesgo #1 de este jefe es que la cuenta no se vea: sin el número en pantalla el jackpot
-    /// es un golpe sorpresa de 25. Este payload es el único contrato que necesita la UI —
-    /// <see cref="IsCounting"/> <c>false</c> significa "cuenta cancelada, no mostrar número".
-    /// </remarks>
     public readonly struct JackpotCountdownPayload
     {
         /// <summary>Jefe dueño de la cuenta (una sola Bandida por combate, pero se publica igual).</summary>

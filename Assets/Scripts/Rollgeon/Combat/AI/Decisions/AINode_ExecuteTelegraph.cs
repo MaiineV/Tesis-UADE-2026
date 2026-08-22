@@ -33,7 +33,7 @@ namespace Rollgeon.Combat.AI.Decisions
         [ValueDropdown(nameof(GetFeedbackIdsForDropdown))]
 #endif
         [Tooltip("Feedback que corre al cobrar la marca, antes de resolver el daño. " +
-                 "Vacío = se resuelve sin animación (comportamiento previo a Feature#0038).")]
+                 "Vacío = se resuelve sin animación.")]
         public string WindupFeedbackId;
 
         [ShowIf(nameof(HasWindup))]
@@ -115,10 +115,8 @@ namespace Rollgeon.Combat.AI.Decisions
         }
 
         /// <remarks>
-        /// Se arma un request de secuencia de un solo step en vez de reusar
-        /// <c>EffPlaySequence</c>: este nodo no nace de un effect pass, así que no tiene
-        /// <c>EffectContext</c> que pasarle (mismo caso que la secuencia de muerte del
-        /// <c>CombatDeathWatcher</c>, y por eso <c>FeedbackRequest.Context</c> admite null).
+        /// Request armado a mano porque el nodo no nace de un effect pass y no tiene
+        /// <c>EffectContext</c> que pasarle.
         /// </remarks>
         private IEnumerator PlayWindup(AIContext context, Action onImpact)
         {
@@ -148,14 +146,13 @@ namespace Rollgeon.Combat.AI.Decisions
             }, () => turn?.OnFeedbackComplete());
 
             // Sin TurnManager no hay gate que esperar — la anim igual corre, pero el daño
-            // no queda sincronizado. Mismo degradado que EffPlaySequence.
+            // no queda sincronizado.
             if (turn == null || !turn.IsWaitingForFeedback) yield break;
 
             bool impactFired = string.IsNullOrEmpty(ImpactEventKey);
 
-            // Se envuelve el wait canónico (trae su propio timeout + force-reset del depth) en
-            // vez de rehacer el loop: el bus es latched, así que pollear HasFired por frame
-            // alcanza para enganchar el Animation Event sin suscribirse a nada.
+            // El bus es latched: pollear HasFired por frame alcanza para enganchar el Animation
+            // Event sin suscribirse a nada.
             var wait = TurnManager.WaitForFeedbackCompletion(turn);
             while (wait.MoveNext())
             {
@@ -187,11 +184,9 @@ namespace Rollgeon.Combat.AI.Decisions
         }
 
         /// <remarks>
-        /// El overlay se apaga acá y no al consumir la marca: con el windup de por medio,
-        /// apagarlo antes dejaba medio segundo de tiles muertos mientras el boss carga el
-        /// golpe. Se apaga siempre que ejecutemos, haya o no impacto. (Antes esto era
-        /// <c>TileHighlightService.ClearAll()</c>, que además se llevaba puesto cualquier
-        /// highlight ajeno al telegraph.)
+        /// El overlay se apaga acá y no al consumir la marca: con el windup de por medio, apagarlo
+        /// antes deja medio segundo de tiles muertos mientras el boss carga el golpe. Se apaga
+        /// siempre que ejecutemos, haya o no impacto.
         /// </remarks>
         private static void Resolve(AIContext context, ThreatenedArea area)
         {
@@ -216,10 +211,8 @@ namespace Rollgeon.Combat.AI.Decisions
                 }
             }
 
-            // Daño incidental al cofre (Feature#0046, GDD §22): un AoE que cubre su
-            // tile lo golpea con el mismo daño y source no-jugador (⇒ rama "se rompe"
-            // si es letal; en un Mimic el pipeline clampea a 1). Deliberadamente SOLO
-            // el cofre — no se itera al resto de los ocupantes para no introducir
+            // Daño incidental al cofre (GDD §22): un AoE que cubre su tile lo golpea con el mismo
+            // daño y source no-jugador. Sólo el cofre: iterar al resto de los ocupantes sería
             // friendly fire entre enemigos.
             if (grid != null
                 && context.DamagePipeline != null

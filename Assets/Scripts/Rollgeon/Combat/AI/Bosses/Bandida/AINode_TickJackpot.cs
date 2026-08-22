@@ -9,10 +9,8 @@ namespace Rollgeon.Combat.AI.Bosses.Bandida
     /// gigante sobre la máquina. No-op si la cuenta está cancelada (rodillo roto).
     /// </summary>
     /// <remarks>
-    /// Va suelto en el <c>Sequence</c> raíz, antes del pool de acción: devuelve siempre
-    /// <see cref="AIResult.Succeeded"/> para no abortar el turno del jefe. Quien decide si en 0 se
-    /// marca el jackpot es el <c>Selector</c> del pool vía <c>PcJackpotCountdown</c> — este nodo
-    /// solo lleva la cuenta.
+    /// Devuelve <see cref="AIResult.Succeeded"/> incluso cuando no hay nada que bajar: un
+    /// <c>Failed</c> acá abortaría el turno del jefe.
     /// </remarks>
     [Serializable, HideReferenceObjectPicker]
     public sealed class AINode_TickJackpot : AIActionNode

@@ -14,18 +14,15 @@ namespace Rollgeon.Combat.AI.Bosses.Tahur
     /// acción confirmada y no en cada preview de hold).
     /// </summary>
     /// <remarks>
-    /// Mismo lifecycle que los otros servicios de boss: registro Global, reset en
-    /// <c>OnCombatEnd</c> / <c>OnRunEnd</c>. Se resuelve con
-    /// <see cref="ResolveOrCreate"/> (patrón de <c>ThreatTelegraphOverlay</c>) para no
-    /// depender de wiring manual en <c>ServiceBootstrapSO.ExtraServices</c> — el asset del
-    /// boss se autorea desde el builder y el combate tiene que funcionar sin tocar la escena.
+    /// Registro Global con reset en <c>OnCombatEnd</c> / <c>OnRunEnd</c>; se resuelve con
+    /// <see cref="ResolveOrCreate"/> para no depender de wiring manual en el bootstrap de
+    /// servicios.
     /// </remarks>
     public sealed class TahurWagerService : ITahurWagerService, IDisposable
     {
         /// <summary>
-        /// Key del overlay de La Mesa. NO es el guid del boss a propósito: esa key la usa el
-        /// overlay del Castigo (<c>AINode_TahurSettleWager</c> → <c>AINode_ExecuteTelegraph</c>),
-        /// y compartirla haría que la mesa y el castigo se pisen el uno al otro.
+        /// Key del overlay de La Mesa: no es el guid del boss porque esa key la usa el overlay del
+        /// Castigo, y compartirla haría que la mesa y el castigo se pisen.
         /// </summary>
         public static readonly Guid TableOverlayGuid = new Guid("7a4c8f10-0000-4000-8000-000000000001");
 
@@ -211,8 +208,7 @@ namespace Rollgeon.Combat.AI.Bosses.Tahur
             _chipsFloor = Mathf.Clamp(chipsFloor, 0, Mathf.Max(1, _maxChips));
             _graceOnNextSettle = graceNextSettle;
 
-            // El piso NO se aplica acá: el volteo no regala fichas. Es el rastrillo el que sube el
-            // pozo por ronda, y el piso solo entra al cobrar (ver AINode_TahurSettleWager).
+            // El piso no se aplica acá: el volteo no regala fichas, el piso sólo entra al cobrar.
         }
 
         public bool ConsumeGrace()

@@ -195,7 +195,7 @@ BoxCollider:
   m_Enabled: 1
   serializedVersion: 3
   m_Size: {x: 0.8244078, y: 0.91421527, z: 0.44377783}
-  m_Center: {x: 0, y: 1.1571076, z: -0.016490502}
+  m_Center: {x: 0, y: 0.45710763, z: -0.016490502}
 --- !u!114 &2958740771233861565
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -209,9 +209,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Rollgeon::Rollgeon.Entities.Visuals.EntityPawn
   _healthBar: {fileID: 3928266964889834604}
-  _locomotion: 0
-  _blinkOutSeconds: 0.14
-  _blinkInSeconds: 0.14
+  _locomotion: 1
+  _blinkOutSeconds: 0.05
+  _blinkInSeconds: 0.05
 --- !u!114 &4544335031319168298
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -535,7 +535,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 0, y: 1.9642153}
+  m_AnchoredPosition: {x: 0, y: 1.2642152}
   m_SizeDelta: {x: 3, y: 1}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!223 &2593418082042194216
@@ -600,7 +600,7 @@ MonoBehaviour:
   _hpText: {fileID: 2982414157159706003}
   _textFormat: '{0}/{1}'
   _barRoot: {fileID: 5560955087220937444}
-  _offset: {x: 0, y: 1.05, z: 0}
+  _offset: {x: 0, y: 0.35, z: 0}
 --- !u!1001 &1170975987048487460
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -715,7 +715,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7459629987945177530, guid: ff002614e5af1c94aaddc2387cd94450, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 0.7392502
+      value: 0.039250214
       objectReference: {fileID: 0}
     - target: {fileID: 7459629987945177530, guid: ff002614e5af1c94aaddc2387cd94450, type: 3}
       propertyPath: m_LocalPosition.z
@@ -755,7 +755,7 @@ PrefabInstance:
     m_AddedComponents:
     - targetCorrespondingSourceObject: {fileID: 4029041739363568695, guid: ff002614e5af1c94aaddc2387cd94450, type: 3}
       insertIndex: -1
-      addedObject: {fileID: 812400228831275113}
+      addedObject: {fileID: 5169050636297856161}
   m_SourcePrefab: {fileID: 100100000, guid: ff002614e5af1c94aaddc2387cd94450, type: 3}
 --- !u!23 &425648384189772324 stripped
 MeshRenderer:
@@ -787,7 +787,7 @@ GameObject:
   m_CorrespondingSourceObject: {fileID: 4029041739363568695, guid: ff002614e5af1c94aaddc2387cd94450, type: 3}
   m_PrefabInstance: {fileID: 1170975987048487460}
   m_PrefabAsset: {fileID: 0}
---- !u!114 &812400228831275113
+--- !u!114 &5169050636297856161
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}

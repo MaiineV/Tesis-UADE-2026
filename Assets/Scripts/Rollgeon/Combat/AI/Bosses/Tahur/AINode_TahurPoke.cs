@@ -14,14 +14,11 @@ using UnityEngine;
 namespace Rollgeon.Combat.AI.Bosses.Tahur
 {
     /// <summary>
-    /// El poke del Tahúr: 12 de daño melee, solo en ronda limpia. Es el precio fijo de cobrar,
-    /// porque cobrar es estar en su cara. Ficha de diseño "El Tahúr" (piso 3).
+    /// El poke del Tahúr: daño melee corto, sólo en ronda limpia.
     /// </summary>
     /// <remarks>
-    /// <b>Exclusivo de la rama de marcar.</b> El poke y el Castigo nunca resuelven la misma ronda:
-    /// 12 + 45 rompe el techo de 45 por golpe del piso 3. El árbol ya lo gatea con
-    /// <c>PcTahurCleanRound</c>, pero el nodo se auto-gatea igual — un rewire que se olvide la
-    /// condición no puede convertirse en un golpe de 57.
+    /// El poke y el Castigo nunca resuelven la misma ronda: sumados rompen el techo de daño por
+    /// golpe del piso 3. El nodo se auto-gatea además del <c>PcTahurCleanRound</c> del árbol.
     /// </remarks>
     [Serializable, HideReferenceObjectPicker]
     public sealed class AINode_TahurPoke : AIActionNode
@@ -52,8 +49,8 @@ namespace Rollgeon.Combat.AI.Bosses.Tahur
         public string AnimFeedbackIdOverride;
 
         /// <summary>
-        /// Key del Animation Event que marca el frame de impacto. No es autorable: es un hecho del
-        /// clip, no una decisión de diseño. Si el rig cambiara a uno sin eventos, el latch lo cubre.
+        /// Key del Animation Event que marca el frame de impacto: es un hecho del clip, no un
+        /// campo autorable.
         /// </summary>
         private const string ImpactEventKey = "hit";
 
@@ -79,9 +76,8 @@ namespace Rollgeon.Combat.AI.Bosses.Tahur
         }
 
         /// <summary>
-        /// Camino de play mode: aterriza el daño en el frame del pinche y <b>retiene el turno hasta
-        /// que el clip termina</b> — soltar en el impacto deja al jefe poniendo la mesa con medio
-        /// ataque todavía reproduciéndose.
+        /// Camino de play mode: aterriza el daño en el frame del pinche y retiene el turno hasta
+        /// que el clip termina.
         /// </summary>
         public override IEnumerator TickCoroutine(AIContext context, Action<AIResult> onResult)
         {
@@ -143,17 +139,12 @@ namespace Rollgeon.Combat.AI.Bosses.Tahur
             });
         }
 
-        /// <remarks>
-        /// Request de secuencia a mano y no <c>EffPlaySequence</c>: el nodo no nace de un effect pass
-        /// y no tiene <c>EffectContext</c> que pasarle (por eso <c>FeedbackRequest.Context</c> admite null).
-        /// </remarks>
         private IEnumerator PlayPoke(AIContext context, Action onImpact)
         {
             if (!ServiceLocator.TryGetService<IFeedbackService>(out var feedback) || feedback == null) yield break;
 
-            // Los tres steps arrancan juntos. El impacto NO se cuelga de StartMode.OnEvent: un step
-            // esperando una key que el clip no publique gira para siempre; el daño sí puede, porque
-            // su latch tiene salida por tiempo.
+            // El impacto no se cuelga de StartMode.OnEvent: un step esperando una key que el clip
+            // no publique gira para siempre.
             var steps = new List<FeedbackSequenceStep>
             {
                 Step(AnimFeedbackId),
@@ -202,10 +193,7 @@ namespace Rollgeon.Combat.AI.Bosses.Tahur
             BlockSequence = true,
         };
 
-        /// <summary>
-        /// Gira al Tahúr hacia el jugador antes del pinche. Sin esto pincha de espaldas cuando el
-        /// jugador se le metió en la mesa por detrás.
-        /// </summary>
+        /// <summary>Gira al Tahúr hacia el jugador antes del pinche.</summary>
         private static void FaceTarget(AIContext context)
         {
             if (!ServiceLocator.TryGetService<Entities.Visuals.IEntityVisualService>(out var visuals) || visuals == null) return;

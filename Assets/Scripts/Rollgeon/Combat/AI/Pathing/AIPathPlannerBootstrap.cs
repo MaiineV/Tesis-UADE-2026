@@ -19,7 +19,7 @@ namespace Rollgeon.Combat.AI.Pathing
 
         private AIPathPlanner _instance;
 
-        /// <summary>Después de Grid/Movement/Tiles — lo consumen los nodos de IA (80+).</summary>
+        /// <summary>Después de Grid/Movement/Tiles, que es lo que el planner consulta.</summary>
         public int Priority => 82;
 
         public void Register()

@@ -9,17 +9,8 @@ namespace Rollgeon.Combat.Threat
     /// Qué le está por pasar a una casilla amenazada.
     /// </summary>
     /// <remarks>
-    /// <para>
-    /// Lo que el jugador tiene que resolver de un vistazo no es <i>de quién</i> es la amenaza sino
-    /// <i>cuándo</i> cobra. Hasta ahora "se marcó" y "detona ahora" entraban por la misma puerta
-    /// (<c>Show</c> + un color), así que la única diferencia posible entre ambas era el matiz — y el
-    /// matiz ya estaba ocupado distinguiendo fuentes (fuego vs. hielo vs. canal auxiliar). El estado
-    /// viaja aparte del tint justamente para que el patrón quede libre para el <i>cuándo</i>.
-    /// </para>
-    /// <para>
     /// Se serializa por índice (styles de bootstrap, campos de assets de jefe): <b>los valores nuevos
     /// van al final</b>. Reordenar reasigna el estado de todo lo ya autorado.
-    /// </para>
     /// </remarks>
     public enum ThreatOverlayState
     {
@@ -43,6 +34,12 @@ namespace Rollgeon.Combat.Threat
     /// move/path del jugador (que pinta y limpia sus tiles a su antojo) sin que
     /// ninguno pise al otro.
     /// </summary>
+    /// <remarks>
+    /// Es por fuente y un <c>Show</c> reemplaza al anterior de esa misma fuente: dos avisos
+    /// simultáneos del mismo jefe tienen que entrar por dos fuentes derivadas distintas o el segundo
+    /// apaga el dibujo del primero. Sólo lo saca un <see cref="Clear"/> o un <c>Show</c> de su
+    /// fuente, o el fin de combate/run — nada por turno ni por ronda.
+    /// </remarks>
     public interface IThreatOverlayService
     {
         /// <summary>Muestra (o reemplaza) el área amenazada de <paramref name="sourceGuid"/> con el
@@ -63,8 +60,7 @@ namespace Rollgeon.Combat.Threat
         /// momento del aviso está: el <paramref name="state"/> elige patrón y banda de pulso, el
         /// <paramref name="tint"/> sigue siendo la identidad de la fuente.
         /// </summary>
-        /// <param name="tint">Null ⇒ el color por defecto del estado. Pasarlo explícito es lo que
-        /// permite que dos fuentes distintas compartan estado sin confundirse entre ellas.</param>
+        /// <param name="tint">Null ⇒ el color por defecto del estado.</param>
         void Show(Guid sourceGuid, IEnumerable<GridCoord> tiles, ThreatOverlayState state, Color? tint = null);
 
         /// <summary>Apaga el overlay de <paramref name="sourceGuid"/> (telegraph resuelto/cancelado).</summary>

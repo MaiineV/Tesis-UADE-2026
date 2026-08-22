@@ -10,7 +10,7 @@ using Rollgeon.Heroes;
 namespace Rollgeon.Combat.AI.Tests
 {
     /// <summary>
-    /// EditMode tests for <see cref="BasicEnemyAI"/> (S#0012b).
+    /// EditMode tests for <see cref="BasicEnemyAI"/>.
     /// </summary>
     [TestFixture]
     public class BasicEnemyAITests

@@ -5,8 +5,7 @@ namespace Rollgeon.Combat.Threat
 {
     /// <summary>
     /// Wrapper <see cref="ScriptableObject"/> que arrastra el <see cref="ThreatenedAreaService"/>
-    /// al <c>ServiceBootstrapSO.ExtraServices</c>. Mismo patrón thin que
-    /// <c>RerollBudgetServiceBootstrap</c>: instancia + delega <see cref="IPreloadableService.Register"/>.
+    /// al <c>ServiceBootstrapSO.ExtraServices</c>.
     /// </summary>
     [CreateAssetMenu(menuName = "Rollgeon/Combat/Threatened Area Service Bootstrap",
         fileName = "ThreatenedAreaServiceBootstrap")]

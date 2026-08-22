@@ -10,28 +10,8 @@ namespace Rollgeon.Combat.AI.Bosses.Tahur
 {
     /// <summary>
     /// "Canta" del Tahúr: elige un escalón de la escalera del contrato del jugador y lo publica
-    /// como el canto de la próxima ronda. Ficha de diseño "El Tahúr" (piso 3).
+    /// como el canto de la próxima ronda.
     /// </summary>
-    /// <remarks>
-    /// <para>
-    /// <b>No inventa mecánicas nuevas.</b> El canto se expresa con las dos reglas del Contrato que
-    /// ya existen: <see cref="IContractModifierService.ForbidCombo"/> (R03) sobre la mano cantada
-    /// — armarla hace 0, cobrar te cuesta el ataque y no la vida — y
-    /// <see cref="IContractModifierService.MultiplyCombo"/> (R01) ×2 sobre todo lo que esté por
-    /// encima del escalón a armar: la codicia paga el doble en el golpe y el doble en el pozo.
-    /// </para>
-    /// <para>
-    /// <b>La válvula.</b> Nunca canta dos escalones altos seguidos, y por default rota con memoria
-    /// (no repite hasta agotar el conjunto) porque un canto rotativo se aprende más rápido que uno
-    /// libre. <see cref="UseRotationMemory"/> en false vuelve al sorteo libre con los mismos
-    /// filtros — la pregunta abierta de la ficha queda como data, no como código.
-    /// </para>
-    /// <para>
-    /// <b>Fase 2 (LEE).</b> Con el canto invertido el escalón a armar es el inmediatamente
-    /// inferior, así que el canto nunca sale en el escalón 1: no habría escalón debajo desde el
-    /// que cobrar.
-    /// </para>
-    /// </remarks>
     [Serializable, HideReferenceObjectPicker]
     public sealed class AINode_TahurCallHand : AIActionNode
     {
@@ -67,8 +47,7 @@ namespace Rollgeon.Combat.AI.Bosses.Tahur
                  "acumularían ronda a ronda y el Contrato quedaría ilegible.")]
         public bool ClearPreviousRules = true;
 
-        // Memoria de rotación: estado por pelea. El árbol se clona por combate, así que se
-        // resetea solo (mismo criterio que AINode_Alternate).
+        // Estado por pelea: el árbol se clona por combate, así que se resetea solo.
         [NonSerialized] private List<int> _calledSinceRefill;
 
         public override string NodeName => "Tahúr — Call Hand (canta el escalón)";

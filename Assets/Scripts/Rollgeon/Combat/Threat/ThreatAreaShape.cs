@@ -3,11 +3,10 @@ using Rollgeon.Grid;
 
 namespace Rollgeon.Combat.Threat
 {
-    /// <summary>Forma del área telegráfica. Cada Boss usa una distinta (Sistemas prerequisito Bosses §1).</summary>
+    /// <summary>Forma del área telegráfica.</summary>
     /// <remarks>
     /// Los índices viajan serializados en los <c>.asset</c> de los jefes: las formas nuevas se
-    /// appendean al final. Reordenar o insertar en el medio le cambia la forma a jefes ya
-    /// autorados sin tocar ningún asset.
+    /// appendean al final. Reordenar o insertar en el medio le cambia la forma a jefes ya autorados.
     /// </remarks>
     public enum ThreatShape
     {
@@ -66,13 +65,27 @@ namespace Rollgeon.Combat.Threat
         /// Franja vertical centrada en el propio boss — la columna del Cajero. Misma matemática que
         /// <see cref="Column"/>, pero el centro es la coordenada del boss.
         /// </summary>
-        /// <remarks>
-        /// No es sólo de dónde sale el visual: cambia la lectura de la pelea. Anclada en el jugador
-        /// la columna lo persigue y se esquiva con un paso al costado; anclada en el jefe es una
-        /// franja fija que él ocupa, así que el jugador elige acercarse por otra columna en vez de
-        /// bailar. La presión sigue viniendo del disparo, que es lo que castiga quedarse lejos.
-        /// </remarks>
         ColumnAroundSelf,
+
+        /// <summary>
+        /// Partición genérica de la sala en una grilla de columnas × filas configurable. A
+        /// diferencia de <see cref="RoomSector"/> (fijo en 3×2, con costura deliberada), ninguna
+        /// casilla puede caer en dos celdas a la vez. Ni el jugador ni el boss son el centro.
+        /// </summary>
+        /// <remarks>
+        /// Columnas, filas y el índice de celda no entran en el parámetro único <c>size</c> de
+        /// <see cref="ThreatAreaShape.Compute"/>, así que esta shape no pasa por ahí: el caller
+        /// llama directo a <see cref="ThreatAreaShape.ComputeGridPartition"/>.
+        /// </remarks>
+        GridPartition,
+
+        /// <summary>
+        /// Cono que sale del propio boss hacia el jugador y se abre una casilla por lado en cada
+        /// paso de fondo — el fuego del Croupier. Comparte origen y cardinales con
+        /// <see cref="DirectionalBand"/>, pero el ancho crece con la distancia: pegado al boss es
+        /// una sola casilla. Ver <see cref="ThreatAreaShape.ComputeDirectionalCone"/>.
+        /// </summary>
+        DirectionalCone,
     }
 
     /// <summary>Eje de corte para <see cref="ThreatShape.HalfRoom"/>.</summary>
@@ -88,7 +101,7 @@ namespace Rollgeon.Combat.Threat
     /// <summary>
     /// Calcula el conjunto de casillas de un área telegráfica a partir de la posición del jugador
     /// y la forma elegida. Solo devuelve casillas que existen en la grilla (<c>InBounds</c> +
-    /// <c>IsWalkable</c>). Es código puro — sin estado — para que los nodos de AI y los tests lo reusen.
+    /// <c>IsWalkable</c>). Código puro, sin estado.
     /// </summary>
     public static class ThreatAreaShape
     {
@@ -151,10 +164,8 @@ namespace Rollgeon.Combat.Threat
 
                 case ThreatShape.RoomSector:
                 {
-                    // El índice del sector viaja en `size` — mismo criterio que el resto de las
-                    // shapes, donde ese parámetro ya significa cosas distintas según la forma
-                    // (radio / ancho de franja / lado del cuadrado). `center` no se usa: el
-                    // sector no está centrado en nadie.
+                    // El índice del sector viaja en `size`; `center` no se usa: el sector no está
+                    // centrado en nadie.
                     result.UnionWith(ComputeRoomSector(grid, size));
                     break;
                 }
@@ -173,26 +184,27 @@ namespace Rollgeon.Combat.Threat
         /// <c>true</c> si la shape se ancla en la coordenada del propio boss en vez de la del
         /// jugador.
         /// </summary>
-        /// <remarks>
-        /// El caller resuelve el <c>center</c> antes de llamar a <see cref="Compute"/>, pero el
-        /// criterio es de la forma, no del nodo: vive acá para que agregar una shape anclada en el
-        /// boss no dependa de acordarse de tocar cada call site.
-        /// </remarks>
         public static bool AnchorsOnSelf(ThreatShape shape) =>
             shape == ThreatShape.SquareAroundSelf ||
             shape == ThreatShape.AllExceptSquareAroundSelf ||
             shape == ThreatShape.ColumnAroundSelf;
 
         /// <summary>
+        /// Formas que salen del boss <b>hacia</b> el jugador. El caller tiene que resolver las dos
+        /// posiciones y llamar al Compute propio de cada una: no pasan por <see cref="Compute"/>,
+        /// que recibe un solo centro y las devolveria vacias sin avisar.
+        /// </summary>
+        public static bool NeedsSelfAndPlayer(ThreatShape shape) =>
+            shape == ThreatShape.DirectionalBand ||
+            shape == ThreatShape.DirectionalCone;
+
+        /// <summary>
         /// Toda la sala caminable menos el cuadrado de radio <paramref name="radius"/> (1 ⇒ 3×3)
         /// centrado en <paramref name="self"/> — La Banca del Tahúr: cobra en todos lados salvo
         /// La Mesa, el 3×3 que el jefe arrastra consigo.
         /// </summary>
-        /// <remarks>
-        /// El hueco se recorta solo: se filtra por distancia Chebyshev en vez de restar un cuadrado
-        /// proyectado, así contra una pared queda del tamaño que entre sin ningún caso especial.
-        /// Sala sin bounds ⇒ vacío, igual que el resto de las shapes que enumeran la sala.
-        /// </remarks>
+        /// <remarks>Sala sin bounds ⇒ vacío, igual que el resto de las shapes que enumeran la
+        /// sala.</remarks>
         public static HashSet<GridCoord> ComputeAllExceptSquareAroundSelf(
             IGridManager grid, GridCoord self, int radius)
         {
@@ -216,20 +228,10 @@ namespace Rollgeon.Combat.Threat
         /// de los dos ejes salen de la misma regla (<see cref="Band"/>).
         /// </summary>
         /// <remarks>
-        /// <para>
-        /// <b>Los seis bloques cubren la sala entera.</b> Es la invariante que sostiene la pelea:
-        /// una casilla que no pertenece a ningún sector no se prende fuego nunca, y pararse ahí
-        /// vuelve gratis todo el jefe.
-        /// </para>
-        /// <para>
-        /// Costuras, no huecos: cada banda mide <c>ceil(extensión/bandas)</c> y la última se ancla
-        /// al borde lejano, así que con extensión no múltiplo las bandas se <i>solapan</i> en vez de
-        /// dejar hueco. Las franjas de solape caen con el doble de frecuencia — que la del jefe sea
-        /// una de ellas es deliberado, es lo que impide acampar a su lado.
-        /// </para>
-        /// <para>
-        /// Sala sin bounds o índice fuera de 1..6 ⇒ vacío.
-        /// </para>
+        /// Los seis bloques cubren la sala entera: una casilla que no pertenece a ningún sector no
+        /// se prende fuego nunca. Costuras, no huecos: cada banda mide <c>ceil(extensión/bandas)</c>
+        /// con la última anclada al borde lejano, así que con extensión no múltiplo las bandas se
+        /// <i>solapan</i> en vez de dejar hueco. Sala sin bounds o índice fuera de 1..6 ⇒ vacío.
         /// </remarks>
         public static HashSet<GridCoord> ComputeRoomSector(IGridManager grid, int sector)
         {
@@ -264,11 +266,8 @@ namespace Rollgeon.Combat.Threat
         /// o si la sala no tiene bounds reales.
         /// </summary>
         /// <remarks>
-        /// Expuesto porque la costura es una lectura de diseño en sí misma (la franja que cae con
-        /// el doble de frecuencia, y donde vivía el viejo pasillo seguro): lo consumen los tests de
-        /// invariante y cualquier feedback que quiera pintarla. Sale de las mismas
-        /// <see cref="Band"/> que <see cref="ComputeRoomSector"/> para que las dos definiciones no
-        /// puedan divergir.
+        /// Sale de las mismas <see cref="Band"/> que <see cref="ComputeRoomSector"/> para que las
+        /// dos definiciones no puedan divergir.
         /// </remarks>
         public static HashSet<GridCoord> ComputeSeamRow(IGridManager grid)
         {
@@ -340,6 +339,73 @@ namespace Rollgeon.Combat.Threat
         }
 
         /// <summary>
+        /// Partición genérica de la sala en <paramref name="columns"/> × <paramref name="rows"/>
+        /// celdas: devuelve la celda <paramref name="cellIndex"/> (1-based, columna =
+        /// <c>(cellIndex-1) % columns</c>, fila = <c>(cellIndex-1) / columns</c>, fila 0 la
+        /// más cercana al borde de Y mínimo). Primitiva reusable para cualquier jefe que
+        /// necesite "la sala partida en N×M sin doble-cobro" — ver <see cref="PartitionBand"/>
+        /// para por qué no comparte la matemática de <see cref="ComputeRoomSector"/>.
+        /// </summary>
+        /// <remarks>
+        /// Columnas/filas ≤ 0, índice fuera de <c>1..columns*rows</c>, o sala sin bounds
+        /// reales ⇒ vacío, igual que el resto de las shapes que enumeran la sala.
+        /// </remarks>
+        public static HashSet<GridCoord> ComputeGridPartition(IGridManager grid, int columns, int rows, int cellIndex)
+        {
+            var result = new HashSet<GridCoord>();
+            if (grid == null || columns <= 0 || rows <= 0) return result;
+
+            int total = columns * rows;
+            if (cellIndex < 1 || cellIndex > total) return result;
+
+            var tiles = new List<GridCoord>(RoomTiles(grid));
+            if (tiles.Count == 0) return result;
+
+            RoomBounds(tiles, out int minX, out int maxX, out int minY, out int maxY);
+
+            int column = (cellIndex - 1) % columns;
+            int row = (cellIndex - 1) / columns;
+
+            PartitionBand(minX, maxX, column, columns, out int loX, out int hiX);
+            PartitionBand(minY, maxY, row, rows, out int loY, out int hiY);
+
+            foreach (var c in tiles)
+            {
+                if (c.X < loX || c.X > hiX) continue;
+                if (c.Y < loY || c.Y > hiY) continue;
+                result.Add(c);
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// Banda <paramref name="index"/> de <paramref name="count"/> sobre <c>[min,max]</c>,
+        /// sin la costura de <see cref="Band"/>.
+        /// </summary>
+        /// <remarks>
+        /// El resto de la división se reparte entre las primeras <c>extent % count</c> bandas (una
+        /// casilla extra cada una) en vez de concentrarlo en la última, así la unión de las
+        /// <paramref name="count"/> bandas es <c>[min,max]</c> exacto — sin huecos ni costuras, a
+        /// diferencia de <see cref="Band"/>.
+        /// </remarks>
+        private static void PartitionBand(int min, int max, int index, int count, out int lo, out int hi)
+        {
+            int extent = max - min + 1;
+            int baseSize = extent / count;
+            int remainder = extent % count;
+
+            // Las primeras `remainder` bandas cargan la casilla extra; el resto mide `baseSize`.
+            int size = index < remainder ? baseSize + 1 : baseSize;
+
+            // Offset de las bandas anteriores: cada una de las que ya cargó el extra empuja el
+            // arranque de esta un paso más que `baseSize`.
+            int extraBefore = index < remainder ? index : remainder;
+            lo = min + index * baseSize + extraBefore;
+            hi = lo + size - 1; // Con size 0 (más bandas que extensión) queda hi < lo: banda vacía, no crashea.
+        }
+
+        /// <summary>
         /// Banda direccional que sale de <paramref name="self"/> (el boss) hacia
         /// <paramref name="player"/>: <paramref name="depth"/> pasos de profundidad en la
         /// dirección cardinal dominante (<see cref="Cardinal.FromDelta"/>), cada uno una
@@ -364,6 +430,43 @@ namespace Rollgeon.Combat.Threat
             {
                 int originX = self.X + stepX * step;
                 int originY = self.Y + stepY * step;
+
+                for (int off = -hw; off <= hw; off++)
+                {
+                    var c = advancesOnX
+                        ? new GridCoord(originX, originY + off)
+                        : new GridCoord(originX + off, originY);
+                    if (IsValidTile(grid, c)) result.Add(c);
+                }
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// Cono anclado en <paramref name="self"/> y apuntado a <paramref name="player"/>: en el
+        /// paso <c>n</c> el semi-ancho es <paramref name="apexHalfWidth"/> + n - 1, asi que con
+        /// apex 0 sale 1-3-5-7 casillas. Igual que <see cref="ComputeDirectionalBand"/> arranca en
+        /// el paso 1 —la casilla del boss no entra— y sólo mira los cuatro cardinales.
+        /// </summary>
+        public static HashSet<GridCoord> ComputeDirectionalCone(
+            IGridManager grid, GridCoord self, GridCoord player, int apexHalfWidth, int depth)
+        {
+            var result = new HashSet<GridCoord>();
+            if (grid == null) return result;
+
+            int apex = apexHalfWidth < 0 ? 0 : apexHalfWidth;
+            int d = depth < 1 ? 1 : depth;
+
+            var dir = CardinalExtensions.FromDelta(self, player);
+            var (stepX, stepY) = DirectionStep(dir);
+            bool advancesOnX = stepX != 0;
+
+            for (int step = 1; step <= d; step++)
+            {
+                int originX = self.X + stepX * step;
+                int originY = self.Y + stepY * step;
+                int hw = apex + step - 1;
 
                 for (int off = -hw; off <= hw; off++)
                 {
@@ -413,10 +516,8 @@ namespace Rollgeon.Combat.Threat
             return result;
         }
 
-        // Elige hasta count anclas del pool. Prueba niveles de separación decrecientes
-        // (gap visible de 3 casillas → 2 → 1 → apenas sin solapar → libre) y se queda con el
-        // primero que logre juntar count anclas — así el resultado se ve "prolijo" cuando
-        // la sala da lugar, y solo se degrada a solapar si de verdad no entra.
+        // Elige hasta count anclas del pool probando niveles de separación decrecientes (gap de 3
+        // casillas → 2 → 1 → apenas sin solapar → libre) y se queda con el primero que las junte.
         private static List<GridCoord> PickSeparatedAnchors(List<GridCoord> pool, System.Random rng, int count, int squareWidth)
         {
             foreach (var gap in new[] { 3, 2, 1, 0 })
@@ -431,10 +532,8 @@ namespace Rollgeon.Combat.Threat
             return free;
         }
 
-        // Greedy: baraja el pool y va aceptando anclas cuya distancia Chebyshev a TODAS
-        // las ya elegidas sea >= minDist (garantiza el gap en cualquier dirección, ya que
-        // los cuadrados son... cuadrados). Puede devolver menos de count si el pool no
-        // alcanza a ese nivel de separación — el caller decide si degradar el gap.
+        // Greedy: baraja el pool y acepta anclas cuya distancia Chebyshev a TODAS las ya elegidas
+        // sea >= minDist. Puede devolver menos de count si el pool no alcanza a esa separación.
         private static List<GridCoord> TryPickWithMinDistance(List<GridCoord> pool, System.Random rng, int count, int minDist)
         {
             var shuffled = new List<GridCoord>(pool);
@@ -549,11 +648,6 @@ namespace Rollgeon.Combat.Threat
         /// extensión que enumerar → vacío; las formas Row/Column/HalfRoom requieren una sala con
         /// bounds reales (siempre el caso en combate).
         /// </summary>
-        /// <remarks>
-        /// Pública porque no es sólo de las shapes: cualquier sistema que necesite "toda la sala
-        /// menos X" —el overlay del mostrador del Cajero, por ejemplo— tiene que enumerarla igual, y
-        /// duplicar el manejo del grafo vacío es exactamente donde divergen.
-        /// </remarks>
         public static IEnumerable<GridCoord> RoomTiles(IGridManager grid)
         {
             var graph = grid.Graph;

@@ -15,13 +15,12 @@ namespace Rollgeon.Combat.AI.Bosses.Generala
 {
     /// <summary>
     /// El cubilete de La Generala: cuando tira, baja la copa sobre quien esté pegado a ella y le
-    /// cobra <see cref="Damage"/> directos. Ficha de diseño "La Generala" (piso 3).
+    /// cobra <see cref="Damage"/> directos.
     /// </summary>
     /// <remarks>
-    /// Directo, no avisado. Con el jugador lejos devuelve <see cref="AIResult.Failed"/>, así que
-    /// <b>tiene que ir envuelto en</b> <c>Selector[nodo, Wait]</c> — suelto le cancelaría al jefe el
-    /// resto del turno, el telegraph de la mano incluido. Manhattan por default: el mismo alcance con
-    /// el que el jugador la ataca a ella; Chebyshev le devuelve el 3×3 con diagonales.
+    /// Con el jugador lejos devuelve <see cref="AIResult.Failed"/>, así que tiene que ir envuelto en
+    /// <c>Selector[nodo, Wait]</c>: suelto le cancelaría al jefe el resto del turno, el telegraph de
+    /// la mano incluido.
     /// </remarks>
     [Serializable, HideReferenceObjectPicker]
     public sealed class AINode_GeneralaCupSlam : AIActionNode
@@ -53,8 +52,8 @@ namespace Rollgeon.Combat.AI.Bosses.Generala
         public override string NodeName => $"Generala — Cubilete ({Damage} melee)";
 
         /// <remarks>
-        /// Vacío significa "el id canónico", no "sin animación": Odin deserializa un
-        /// <c>ED_Boss_*.asset</c> viejo sin correr los field initializers.
+        /// Vacío significa "el id canónico", no "sin animación": Odin no corre los field
+        /// initializers al deserializar un <c>ED_Boss_*.asset</c>.
         /// </remarks>
         private string AnimFeedbackId => string.IsNullOrEmpty(AnimFeedbackIdOverride)
             ? BossFeedbackIds.GeneralaCupSlamAnim
@@ -126,10 +125,6 @@ namespace Rollgeon.Combat.AI.Bosses.Generala
             });
         }
 
-        /// <remarks>
-        /// Request de secuencia a mano y no <c>EffPlaySequence</c>: el nodo no nace de un effect pass
-        /// y no tiene <c>EffectContext</c> que pasarle (por eso <c>FeedbackRequest.Context</c> admite null).
-        /// </remarks>
         private IEnumerator PlaySlam(AIContext context, Action onImpact)
         {
             if (!ServiceLocator.TryGetService<IFeedbackService>(out var feedback) || feedback == null) yield break;
@@ -153,8 +148,8 @@ namespace Rollgeon.Combat.AI.Bosses.Generala
                 TargetGuid = context.PlayerGuid,
             }, () => turn?.OnFeedbackComplete());
 
-            // Sin Animation Event al que atarse, el daño cae con el VFX de impacto en vez de al
-            // final del clip: diferirlo dejaba el número flotante casi un segundo detrás de la copa.
+            // Sin Animation Event al que atarse, el daño cae con el VFX de impacto y no al final del
+            // clip: diferirlo deja el número flotante casi un segundo detrás de la copa.
             onImpact?.Invoke();
 
             // Sin TurnManager no hay gate que esperar: la anim corre igual, sin retener el turno.

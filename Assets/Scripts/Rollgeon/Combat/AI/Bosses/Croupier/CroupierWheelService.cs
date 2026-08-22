@@ -16,8 +16,7 @@ namespace Rollgeon.Combat.AI.Bosses.Croupier
     /// </summary>
     /// <remarks>
     /// El candado de corrimiento es por slot y dura todo el windup: sin él, cerrar dos turnos dentro
-    /// del mismo número lo movería dos veces. Correr la rueda re-marca el área del slot en el sector
-    /// nuevo — si quedara donde estaba, la palanca no cambiaría nada de lo que va a pasar.
+    /// del mismo número lo movería dos veces.
     /// </remarks>
     public sealed class CroupierWheelService : ICroupierWheelService, IDisposable
     {

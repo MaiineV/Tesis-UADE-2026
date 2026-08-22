@@ -6,24 +6,13 @@ namespace Rollgeon.Combat.Threat
 {
     /// <summary>
     /// Data-driven definition of one environmental hazard type (rain, fire, falling debris, ...).
-    /// Every field here used to be a hardcoded constant on <see cref="RainHazardService"/>;
-    /// pulling them out lets <see cref="HazardService"/> run any number of hazard types from the
-    /// same generic turn-cycle loop — adding a new one is "author a SO, point a boss node at it."
+    /// <see cref="HazardService"/> runs any number of them off the same generic turn-cycle loop.
     /// </summary>
     /// <remarks>
-    /// <para>
-    /// <b>Not a <c>SerializedScriptableObject</c>.</b> Odin polymorphic serialization is overkill
-    /// for a flat data bag and would force every hand-authored <c>.asset</c> to carry Odin's
-    /// binary blob — plain Unity fields keep the YAML readable and editable without the editor.
-    /// </para>
-    /// <para>
-    /// <b><see cref="SourceId"/> is a string, not a <see cref="Guid"/>.</b> Unity's built-in
-    /// serializer has no native support for <see cref="Guid"/> (no drawer, no YAML-friendly
-    /// representation), so the field is authored as a string and parsed on demand via
-    /// <see cref="SourceGuid"/>. Each definition needs a stable, unique id because
+    /// <see cref="SourceId"/> is authored as a string because Unity's serializer has no native
+    /// support for <see cref="Guid"/>, and it must be stable and unique per definition:
     /// <see cref="IThreatenedAreaService"/>/<see cref="IThreatOverlayService"/> key their state by
-    /// source — two active hazards must never collide.
-    /// </para>
+    /// source, so two active hazards sharing an id overwrite each other.
     /// </remarks>
     [CreateAssetMenu(menuName = "Rollgeon/Combat/Hazard Definition", fileName = "HazardDefinition")]
     public class HazardDefinitionSO : ScriptableObject
@@ -76,9 +65,9 @@ namespace Rollgeon.Combat.Threat
                  "cualquier entidad que pise o cierre turno en una casilla, jugador incluido.")]
         public HazardAffects Affects = HazardAffects.PlayerOnly;
 
-        [Tooltip("Rounds the hazard survives once activated. 0 = never expires on its own (the " +
-                 "historical rain behavior). Counted on round wrap, so a value of 1 means \"gone " +
-                 "at the start of the next round\".")]
+        [Tooltip("Rounds the hazard survives once activated. 0 = never expires on its own. " +
+                 "Counted on round wrap, so a value of 1 means \"gone at the start of the next " +
+                 "round\".")]
         [Min(0)]
         public int DurationRounds;
 
@@ -120,11 +109,9 @@ namespace Rollgeon.Combat.Threat
                  "Generate a fresh one per definition; never reuse another hazard's id.")]
         public string SourceId = Guid.NewGuid().ToString();
 
-        /// <summary>Alias of <see cref="ThreatTelegraphOverlay.DefaultTint"/> — the orange painted for
-        /// every threat before hazards could be tinted individually, and the default for
-        /// <see cref="OverlayTint"/> so definitions authored before that field existed keep their exact
-        /// look. Points at the overlay's constant rather than re-declaring the colour so the two can't
-        /// drift apart.</summary>
+        /// <summary>Alias of <see cref="ThreatTelegraphOverlay.DefaultTint"/> and the default for
+        /// <see cref="OverlayTint"/>. Points at the overlay's constant rather than re-declaring the
+        /// colour so the two can't drift apart.</summary>
         public static readonly Color DefaultOverlayTint = ThreatTelegraphOverlay.DefaultTint;
 
         /// <summary>
@@ -132,11 +119,8 @@ namespace Rollgeon.Combat.Threat
         /// fully transparent.
         /// </summary>
         /// <remarks>
-        /// Guards the one case the field initializer can't: a hand-edited <c>.asset</c> that carries
-        /// an explicit all-zero <c>OverlayTint</c> (or one written by a tool that serialized the
-        /// struct default) would otherwise paint invisible quads and read as "the hazard is broken".
-        /// The trade-off is that an intentionally invisible hazard isn't authorable — no design
-        /// wants one today, and a silently missing telegraph is the far worse failure.
+        /// A hand-edited <c>.asset</c> carrying an all-zero <c>OverlayTint</c> would otherwise paint
+        /// invisible quads.
         /// </remarks>
         public Color EffectiveOverlayTint => OverlayTint.a <= 0f ? DefaultOverlayTint : OverlayTint;
 

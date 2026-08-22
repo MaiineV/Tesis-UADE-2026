@@ -6,13 +6,8 @@ using UnityEngine;
 namespace Rollgeon.Combat.AI.Bosses.Bandida
 {
     /// <summary>
-    /// Pisa el delay de reposición de los rodillos. Fase 2 lo baja a 1 turno: la cuenta arranca de
-    /// nuevo cada ronda en vez de cada dos.
+    /// Pisa el delay de reposición de los rodillos (Fase 2 lo baja a 1 turno).
     /// </summary>
-    /// <remarks>
-    /// Va dentro del <c>Once</c> del gate de fase, junto al HOLD. Solo cambia frecuencia — ningún
-    /// número de daño de la Fase 1 se mueve (jackpot sigue en 25, brazo en 12).
-    /// </remarks>
     [Serializable, HideReferenceObjectPicker]
     public sealed class AINode_SetReelRespawnDelay : AIActionNode
     {

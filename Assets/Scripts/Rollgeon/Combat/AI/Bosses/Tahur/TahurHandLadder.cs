@@ -12,12 +12,9 @@ namespace Rollgeon.Combat.AI.Bosses.Tahur
     /// con escalones 1-based. Es lo que el Tahúr canta y contra lo que mide la mano jugada.
     /// </summary>
     /// <remarks>
-    /// <b>Ordena por <see cref="BaseComboSO.Priority"/>, no por daño base.</b> Priority es el
-    /// criterio con el que <c>ContractSheet.MatchBest</c> resuelve qué mano ganó, así que es el
-    /// único orden en el que "una mano mejor" significa lo mismo para el jefe y para el juego:
-    /// <c>higher_number</c> tiene Priority 5 y pega 14, y con la escalera ordenada por daño las
-    /// distancias mienten. Desempate por <c>ComboId</c> ordinal para que el canto sea
-    /// determinístico entre runs.
+    /// Ordena por <see cref="BaseComboSO.Priority"/> y no por daño base, porque Priority es el
+    /// criterio con el que <c>ContractSheet.MatchBest</c> resuelve qué mano ganó. Desempata por
+    /// <c>ComboId</c> ordinal para que el canto sea determinístico entre runs.
     /// </remarks>
     public readonly struct TahurHandLadder
     {
@@ -38,8 +35,8 @@ namespace Rollgeon.Combat.AI.Bosses.Tahur
         public IReadOnlyList<string> ComboIds => (IReadOnlyList<string>)_comboIds ?? Array.Empty<string>();
 
         /// <summary>
-        /// Escalón (1-based) del combo, o 0 si no está en el contrato — que es también el valor
-        /// de "no armó nada": armar nada es el fallo más grande posible.
+        /// Escalón (1-based) del combo, o 0 si no está en el contrato — el mismo valor que
+        /// "no armó nada".
         /// </summary>
         public int RankOf(string comboId)
         {

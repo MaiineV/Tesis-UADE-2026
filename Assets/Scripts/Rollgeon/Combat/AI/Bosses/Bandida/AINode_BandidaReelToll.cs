@@ -15,10 +15,8 @@ namespace Rollgeon.Combat.AI.Bosses.Bandida
     /// uno por cada rodillo vivo que todavía se pueda romper, hasta <see cref="Cap"/>.
     /// </summary>
     /// <remarks>
-    /// El rodillo trabado por <c>AINode_LockReel</c> queda fuera del conteo: es inrompible, así que
-    /// cobrar por él sería cobrar por algo que el jugador no puede contestar. <b><see cref="Cap"/>
-    /// debe quedar muy por debajo del grant por turno</b> (<c>RollsPerTurn</c> = 5), o el jugador
-    /// entra en economía neta negativa para siempre. Siempre <see cref="AIResult.Succeeded"/>: un
+    /// <see cref="Cap"/> tiene que quedar muy por debajo del grant de rolls por turno, o el jugador
+    /// entra en economía neta negativa. Siempre devuelve <see cref="AIResult.Succeeded"/>: un
     /// <c>Failed</c> acá le cortaría al jefe el resto del turno.
     /// </remarks>
     [Serializable, HideReferenceObjectPicker]
@@ -72,9 +70,8 @@ namespace Rollgeon.Combat.AI.Bosses.Bandida
         /// <summary>Número flotante sobre el jugador + el manotazo de la máquina.</summary>
         /// <remarks>
         /// <see cref="FloatingNumberType.Status"/> y no <c>Damage</c>: el jugador pierde rolls, no
-        /// vida. El drain parcial lo maneja <see cref="IRollPoolService.Drain"/> (floor en 0, devuelve
-        /// lo efectivamente cobrado). No bloquea el turno (sin <c>BeginFeedbackWait</c>) porque es un
-        /// cobro pasivo que pasa todos los turnos.
+        /// vida. No bloquea el turno (sin <c>BeginFeedbackWait</c>): es un cobro pasivo que pasa
+        /// todos los turnos.
         /// </remarks>
         private static void Announce(AIContext context, int drained)
         {

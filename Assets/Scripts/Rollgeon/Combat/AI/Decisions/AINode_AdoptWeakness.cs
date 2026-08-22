@@ -19,10 +19,9 @@ namespace Rollgeon.Combat.AI.Decisions
     /// "sin combo" del log se ignora — el daño mínimo no es una mano que el jugador esté eligiendo.
     /// </para>
     /// <para>
-    /// Pensado para ir dentro de <c>If(PcOwnerHpBelow) → Once(...)</c>: es un cambio de una sola vez.
-    /// Devuelve <see cref="AIResult.Succeeded"/> también cuando el log está vacío (nada que adoptar,
-    /// pero tampoco es un fallo que deba abortar el turno) salvo que
-    /// <see cref="FailWhenLogEmpty"/> esté en true.
+    /// Devuelve <see cref="AIResult.Succeeded"/> también cuando el log está vacío —nada que adoptar
+    /// no es un fallo que deba abortar el turno— salvo que <see cref="FailWhenLogEmpty"/> esté en
+    /// true.
     /// </para>
     /// </remarks>
     [Serializable, HideReferenceObjectPicker]

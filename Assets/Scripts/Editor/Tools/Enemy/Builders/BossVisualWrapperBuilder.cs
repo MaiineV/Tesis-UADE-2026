@@ -313,9 +313,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
                                  $"colores directos a la vez — ganan los colores directos.");
             }
 
-            // Los materiales origen arrastran un `_USEPALETTE_ON` de cuando el shader usaba [Toggle].
-            // El keyword ya no existe, pero `new Material(src)`/`CopyPropertiesFromMaterial` lo copian
-            // al clon y con el drawer viejo eso reprendía el float al reserializar.
+            // Los materiales origen arrastran un `_USEPALETTE_ON` que ya no existe en el shader, y
+            // `new Material(src)`/`CopyPropertiesFromMaterial` lo copian al clon.
             material.DisableKeyword("_USEPALETTE_ON");
 
             if (hasDirect)
@@ -359,7 +358,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
                 var asset = AssetDatabase.LoadAssetAtPath<GameObject>(prop.PrefabPath);
                 if (asset == null)
                 {
-                    // Un prop que falta no invalida al jefe: sale sin la ruleta pero jugable.
+                    // Un prop que falta no invalida al jefe: sale sin él pero jugable.
                     Debug.LogWarning($"[BossVisualWrapperBuilder] Prop no encontrado en " +
                                      $"'{prop.PrefabPath}' — se saltea.");
                     continue;
@@ -812,7 +811,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         /// <summary>Carpeta de los clones. Default: <c>Assets/Rollgeon/Enemies/Materials/&lt;BossName&gt;</c>.</summary>
         public string MaterialsFolder;
 
-        /// <summary>Props parenteados al root del wrapper (la ruleta del Croupier, etc.).</summary>
+        /// <summary>Props parenteados al root del wrapper.</summary>
         public List<BossPropSpec> Props;
 
         /// <summary>

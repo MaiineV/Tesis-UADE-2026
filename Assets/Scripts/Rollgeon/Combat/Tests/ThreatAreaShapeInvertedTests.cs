@@ -216,7 +216,10 @@ namespace Rollgeon.Combat.Tests
             Assert.AreEqual(5, (int)ThreatShape.ScatteredSquares);
             Assert.AreEqual(6, (int)ThreatShape.SquareAroundSelf);
             Assert.AreEqual(7, (int)ThreatShape.RoomSector);
-            Assert.AreEqual(8, (int)ThreatShape.AllExceptSquareAroundSelf,
+            Assert.AreEqual(8, (int)ThreatShape.AllExceptSquareAroundSelf);
+            Assert.AreEqual(9, (int)ThreatShape.ColumnAroundSelf);
+            Assert.AreEqual(10, (int)ThreatShape.GridPartition);
+            Assert.AreEqual(11, (int)ThreatShape.DirectionalCone,
                 "La forma nueva va al final de la lista.");
         }
 

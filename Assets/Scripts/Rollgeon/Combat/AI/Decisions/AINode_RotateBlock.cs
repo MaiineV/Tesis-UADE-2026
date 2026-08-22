@@ -23,9 +23,8 @@ namespace Rollgeon.Combat.AI.Decisions
     /// ventana deslizante.
     /// </summary>
     /// <remarks>
-    /// <b>Acá un id de feedback vacío significa silencio</b>, al revés que en los nodos propios de
-    /// un jefe (donde vacío ⇒ el id canónico): el nodo lo comparten tres jefes y dos fueron
-    /// autorados sin estos campos.
+    /// Acá un id de feedback vacío significa silencio, al revés que en los nodos propios de un jefe
+    /// (donde vacío ⇒ el id canónico).
     /// </remarks>
     [Serializable, HideReferenceObjectPicker]
     public sealed class AINode_RotateBlock : AIActionNode, IAIOpeningNode
@@ -44,7 +43,7 @@ namespace Rollgeon.Combat.AI.Decisions
         [Tooltip("Opcional — sólo para Target = Dice. Si está seteado, el dado bloqueado no se sortea: " +
                  "el índice sale de este reader (ej. el número que canta el Croupier), y Count se " +
                  "ignora. Un índice mayor que la build da la vuelta (módulo); negativo = no bloquea " +
-                 "nada. Vacío = comportamiento histórico (sorteo al azar de Count dados).")]
+                 "nada. Vacío = sorteo al azar de Count dados.")]
         public AIIntReader DirectedIndex;
 
         [Title("Presentación")]
@@ -75,13 +74,12 @@ namespace Rollgeon.Combat.AI.Decisions
         }
 
         /// <summary>
-        /// Sólo el candado del dado abre. La regla es "desde tu primer turno ya tenés un dado
-        /// confiscado", y sin esto el primer tiro salía con la bolsa entera.
+        /// Sólo el candado del dado abre: la regla es "desde tu primer turno ya tenés un dado
+        /// confiscado".
         /// </summary>
         /// <remarks>
         /// <see cref="BlockTarget.Combo"/> se queda afuera: prohíbe lo último que jugaste, y en la
-        /// apertura no jugaste nada. Correrlo sería un <c>ClearAll</c> sobre un log vacío — sin efecto
-        /// hoy, pero autoriza a que mañana prohíba algo que el jugador no eligió.
+        /// apertura no jugaste nada.
         /// </remarks>
         public void Opening(AIContext context)
         {

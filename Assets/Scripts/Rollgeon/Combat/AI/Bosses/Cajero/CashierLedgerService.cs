@@ -56,10 +56,7 @@ namespace Rollgeon.Combat.Cashier
             EventManager.Subscribe(EventName.OnRunEnd, _onScopeEnded);
         }
 
-        /// <summary>
-        /// Devuelve el servicio registrado o crea y registra uno nuevo (Global). Lo llaman los
-        /// nodos del Cajero — nunca debería crearlo un sistema que sólo quiera leer.
-        /// </summary>
+        /// <summary>Devuelve el servicio registrado o crea y registra uno nuevo (Global).</summary>
         public static ICashierLedgerService ResolveOrCreate()
         {
             if (ServiceLocator.TryGetService<ICashierLedgerService>(out var existing) && existing != null)
@@ -88,9 +85,8 @@ namespace Rollgeon.Combat.Cashier
 
         /// <inheritdoc />
         /// <remarks>
-        /// Derivado del índice de ronda absoluto, no de un contador propio: el servicio se crea
-        /// perezosamente y se pierde los <c>OnTurnQueueBuilt</c> anteriores. Con la división el
-        /// rastrillo queda igual se haya creado en la ronda 0 o en la 4, y sobrevive un restore.
+        /// Derivado del índice de ronda absoluto y no de un contador propio: el servicio se crea
+        /// perezosamente y se pierde los <c>OnTurnQueueBuilt</c> anteriores.
         /// </remarks>
         public int DamageStepUp
         {
@@ -150,9 +146,8 @@ namespace Rollgeon.Combat.Cashier
         }
 
         /// <summary>
-        /// Abre (o reinicia) la ventana de soborno. Paso compartido por las dos formas de sobornar
-        /// — pagar el precio (<see cref="TryBribe"/>) y devolverle una ficha
-        /// (<see cref="OnHazardTriggeredExternal"/>) — para que no diverjan en duración.
+        /// Abre (o reinicia) la ventana de soborno. Compartido por las dos formas de sobornar
+        /// —pagar el precio y levantar una ficha— para que no diverjan en duración.
         /// </summary>
         /// <remarks>
         /// La ventana se reinicia, no acumula: <see cref="DamageStepDown"/> está topeado en 1, así
@@ -250,7 +245,6 @@ namespace Rollgeon.Combat.Cashier
             if (args == null || args.Length < 1 || !(args[0] is Guid guid)) return;
             if (guid == Guid.Empty || guid != _vaultOwner) return;
 
-            // "Al vencerlo la caja se abre": la devolución es total y de una vez.
             int amount = _vaultedGold;
             _vaultedGold = 0;
             _vaultOwner = Guid.Empty;
@@ -292,10 +286,10 @@ namespace Rollgeon.Combat.Cashier
                 Vector3.zero);
         }
 
-        /// <summary>Texto del aviso de soborno. Literal: todavía no hay tabla de localización de combate.</summary>
+        /// <summary>Texto del aviso de soborno. Literal: no hay tabla de localización de combate.</summary>
         /// <remarks>
         /// Sólo caracteres que están en el atlas de <c>m6x11plus</c>: la pixel font del HUD no tiene
-        /// <c>·</c> (U+00B7) ni <c>é</c> (U+00E9), y un glifo que falta sale como cuadradito.
+        /// <c>é</c> ni <c>·</c>, y un glifo que falta sale como cuadradito.
         /// </remarks>
         private const string BribeAnnouncement = "Soborno: -1 escalón";
 
@@ -303,8 +297,8 @@ namespace Rollgeon.Combat.Cashier
         {
             if (args == null || args.Length < 1 || !(args[0] is Guid instanceId)) return;
 
-            // Ficha no levantada: se descarta. No entra a la caja a propósito — la caja se
-            // devuelve al vencer al jefe, y eso convertiría "ignorar las fichas" en oro gratis.
+            // Ficha no levantada: se descarta y no entra a la caja. La caja se devuelve al vencer al
+            // jefe, así que sumarla ahí convertiría "ignorar las fichas" en oro gratis.
             _chips.Remove(instanceId);
         }
 

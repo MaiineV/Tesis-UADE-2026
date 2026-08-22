@@ -8,15 +8,12 @@ namespace Rollgeon.Combat.AI.Bosses.Croupier
 {
     /// <summary>
     /// Lee un número que el Croupier tiene en juego y lo devuelve como índice de slot de la bolsa
-    /// (número 1 → índice 0), o <c>-1</c> si no hay ninguno. Con este reader en
-    /// <c>AINode_RotateBlock.DirectedIndex</c>, el sector que cae y el dado que se confisca son el
-    /// mismo dato.
+    /// (número 1 → índice 0), o <c>-1</c> si no hay ninguno.
     /// </summary>
     /// <remarks>
-    /// Las dos fuentes no son intercambiables y el orden dentro del turno importa:
-    /// <c>AINode_DetonateSungSectors</c> vacía el windup, así que leer <c>Sung</c> después de la
-    /// detonación devuelve el número siguiente sin fallar; y <c>AINode_IgniteDetonatedSectors</c>
-    /// consume <c>DetonatedSectors</c>, así que un reader en ese modo tiene que correr antes.
+    /// El orden dentro del turno importa: <c>AINode_DetonateSungSectors</c> vacía el windup y
+    /// <c>AINode_IgniteDetonatedSectors</c> consume <c>DetonatedSectors</c>, así que un reader en modo
+    /// <c>Detonated</c> tiene que correr antes de la ignición.
     /// </remarks>
     [Serializable, HideReferenceObjectPicker]
     public sealed class AIReadCroupierWheelNumber : AIIntReader

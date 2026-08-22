@@ -14,7 +14,8 @@ namespace Rollgeon.Combat.AI.Pathing
         [Range(0f, 1f)] public float NormalMinSurvivalPct = 0.20f;
         [Min(0f)] public float NormalCaution = 1.0f;
 
-        [Tooltip("El GDD define Caution 1.5 pero no MinSurvival para Support/Cobarde — 20% propuesto.")]
+        [Tooltip("HP mínimo (% del máximo) por debajo del cual la personalidad Support/Cobarde deja " +
+                 "de arriesgarse.")]
         [Range(0f, 1f)] public float SupportMinSurvivalPct = 0.20f;
         [Min(0f)] public float SupportCaution = 1.5f;
 
@@ -34,8 +35,8 @@ namespace Rollgeon.Combat.AI.Pathing
         [Min(0)] public int HealDetourMaxTiles = 2;
         [Min(1)] public int HealBenefitScale = 4;
         [Min(0)] public int FortressBenefit = 2;
-        [Tooltip("Impulso está INERTE (sin tirada de movimiento real): el planner lo ignora " +
-                 "aunque este valor esté cargado. Queda listo para cuando se active.")]
+        [Tooltip("Beneficio de una casilla de Impulso en el DestinationScore. El planner lo ignora: " +
+                 "Impulso no tiene tirada de movimiento real.")]
         [Min(0)] public int ImpulseBenefit = 1;
         [Min(0)] public int SafeZoneBenefit = 3;
 

@@ -14,10 +14,9 @@ namespace Rollgeon.Combat.AI.Decisions
     /// de recorrer todo el ciclo.
     /// </summary>
     /// <remarks>
-    /// El índice es <c>[NonSerialized]</c> — mismo patrón que
-    /// <see cref="AINode_PromulgateRule"/>: vive en la instancia runtime (copia fresca
-    /// por combate vía <c>EnemyDataSO.CreateRuntimeAIRoot</c>), nunca se serializa al
-    /// asset y arranca en 0 en cada pelea nueva.
+    /// El índice es <c>[NonSerialized]</c>: vive en la instancia runtime (copia fresca por combate
+    /// vía <c>EnemyDataSO.CreateRuntimeAIRoot</c>), nunca se serializa al asset y arranca en 0 en
+    /// cada pelea nueva.
     /// </remarks>
     [Serializable, HideReferenceObjectPicker]
     public sealed class AINode_Alternate : AIQuestionNode

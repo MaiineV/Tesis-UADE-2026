@@ -34,9 +34,9 @@ MonoBehaviour:
   TelegraphPayload: {fileID: 0}
   TelegraphRounds: 1
   ProtectedTileTypes: 
-  VisualPrefab: {fileID: 0}
+  VisualPrefab: {fileID: 1508115570389179148, guid: f9b4763d566a93b499fc44e1bba810fc, type: 3}
   VisualYOffset: 0.02
-  OverlayTint: {r: 1, g: 1, b: 1, a: 0.35}
+  OverlayTint: {r: 0, g: 0, b: 0, a: 0}
   TriggerVfxPrefab: {fileID: 0}
   TriggerVfxLifetime: 2
   TriggerVfxYOffset: 0.1

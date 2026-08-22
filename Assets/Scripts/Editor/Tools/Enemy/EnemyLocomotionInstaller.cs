@@ -24,10 +24,21 @@ namespace Rollgeon.Editor.Tools.Enemy
 
         /// <summary>
         /// Fichas que van en Blink <b>aunque su rig no tenga clip de teletransporte</b>: un parche
-        /// hasta que haya arte. Hoy vacía; se deja en pie para que el próximo rig sin ciclo de
-        /// caminata entre acá y no en una rama nueva.
+        /// hasta que haya arte.
         /// </summary>
-        public static readonly HashSet<string> ForcedBlinkEntityIds = new HashSet<string>();
+        /// <remarks>
+        /// La Comisión viste <c>GeneralDirector_Animated</c>, que declara Idle y Attack y nada más.
+        /// En Walk el bicho se desliza en pose de Idle, que es peor que un salto.
+        /// <para>
+        /// Literal y no <c>CajeroAssetBuilder.CritterEntityId</c>: el instalador es genérico y no
+        /// tiene por qué conocer los builders de cada jefe. Que el literal siga coincidiendo lo
+        /// cuida un test.
+        /// </para>
+        /// </remarks>
+        public static readonly HashSet<string> ForcedBlinkEntityIds = new HashSet<string>
+        {
+            "minion.cajero_comision",
+        };
 
         [MenuItem("Rollgeon/Enemies/Apply Teleport Locomotion")]
         public static void Apply()

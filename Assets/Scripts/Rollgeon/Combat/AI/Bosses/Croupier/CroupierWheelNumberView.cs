@@ -12,8 +12,7 @@ namespace Rollgeon.Combat.AI.Bosses.Croupier
     /// </summary>
     /// <remarks>
     /// El label es hijo del root del wrapper y no de <c>Wheel</c>: colgarlo de la rueda lo haría girar
-    /// con ella y sería ilegible justo en el momento del canto. Binding tardío al servicio, igual que
-    /// <see cref="CroupierWheelSpinVisual"/>.
+    /// con ella y sería ilegible justo en el momento del canto.
     /// </remarks>
     [DisallowMultipleComponent]
     public sealed class CroupierWheelNumberView : MonoBehaviour
@@ -118,10 +117,8 @@ namespace Rollgeon.Combat.AI.Bosses.Croupier
         }
 
         /// <summary>
-        /// Los números en el aire, listos para escribir. Vacío si no hay ninguno — que es lo que pasa
-        /// desde que el sector detona hasta el canto siguiente.
+        /// Los números en el aire, listos para escribir. Vacío si no hay ninguno.
         /// </summary>
-        /// <remarks>Puro y estático para poder testear el formato sin GameObject ni TMP.</remarks>
         public static string Format(IReadOnlyList<int> numbers, string separator)
         {
             if (numbers == null || numbers.Count == 0) return string.Empty;

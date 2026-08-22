@@ -13,20 +13,15 @@ using UnityEngine;
 namespace Rollgeon.Combat.AI.Bosses.Tahur
 {
     /// <summary>
-    /// "La Banca" del Tahúr: con el pozo lleno se levanta y barre la mesa — marca toda la sala
-    /// menos La Mesa, su 3×3, y cobra 45 al turno siguiente. Ficha de diseño "El Tahúr" (piso 3).
+    /// "La Banca" del Tahúr: con el pozo lleno marca toda la sala menos La Mesa, su 3×3, y cobra
+    /// al turno siguiente.
     /// </summary>
     /// <remarks>
-    /// <para>
-    /// <b>Va último en el turno</b>, después del movimiento y de poner la mesa: el hueco se ancla en
-    /// el jefe, así que marcarlo antes lo dejaría centrado donde ya no está. Y devuelve
-    /// <see cref="AIResult.Failed"/> con el pozo a medio llenar ⇒ <c>Selector[Banca, Wait]</c>.
-    /// </para>
-    /// <para>
-    /// Reemplaza al Castigo de la ronda: marca sobre el guid del jefe, el mismo canal que
-    /// <see cref="AINode_TahurSettleWager"/>, y <see cref="IThreatenedAreaService.Mark"/> sobrescribe.
-    /// Nunca detonan los dos — 45 + 45 rompería el techo de daño por golpe del piso 3.
-    /// </para>
+    /// Va último en el turno, después del movimiento y de poner la mesa: el hueco se ancla en el
+    /// jefe. Marca sobre el guid del jefe — el mismo canal que
+    /// <see cref="AINode_TahurSettleWager"/>, donde <see cref="IThreatenedAreaService.Mark"/>
+    /// sobrescribe — así que el Castigo y La Banca nunca detonan juntos; y puede devolver
+    /// <see cref="AIResult.Failed"/>, así que va envuelto en <c>Selector[Banca, Wait]</c>.
     /// </remarks>
     [Serializable, HideReferenceObjectPicker]
     public sealed class AINode_TahurMarkBanca : AIActionNode
@@ -84,8 +79,8 @@ namespace Rollgeon.Combat.AI.Bosses.Tahur
                 context.Grid, selfCoord, ThreatShape.AllExceptSquareAroundSelf,
                 TableRadius, HalfRoomAxis.Vertical);
 
-            // El hueco es La Mesa, no un cuadrado parecido: si TableRadius y el Size del nodo de la
-            // mesa divergen, la promesa que sobrevive es la del paño cian — la única que se ve.
+            // El hueco es La Mesa, no un cuadrado parecido: si TableRadius y el Size del nodo de
+            // la mesa divergen, gana el paño cian.
             tiles.ExceptWith(wager.TableTiles);
 
             if (tiles.Count == 0)
@@ -106,8 +101,7 @@ namespace Rollgeon.Combat.AI.Bosses.Tahur
             ThreatTelegraphOverlay.ResolveOrCreate()
                 .Show(context.SelfGuid, tiles, ThreatOverlayState.Marked);
 
-            // La ronda queda contada como ronda con marca aunque el poke ya haya pasado: si alguien
-            // reordena el turno y el poke termina después, el gate de PcTahurCleanRound lo ataja.
+            // La ronda queda contada como ronda con marca: el poke es exclusivo de la rama limpia.
             wager.ReportOutcome(wager.LastOutcome, markedPunishment: true);
             return AIResult.Succeeded;
         }
@@ -117,9 +111,8 @@ namespace Rollgeon.Combat.AI.Bosses.Tahur
         /// el gesto termina.
         /// </summary>
         /// <remarks>
-        /// El orden importa: la marca tiene que estar pintada mientras el jefe se levanta, o el brazo
-        /// barre una sala vacía. Sólo animación y sin impacto — La Banca no golpea este turno, el daño
-        /// cae en el siguiente por el <c>AINode_ExecuteTelegraph</c>.
+        /// La Banca no golpea este turno: el daño cae en el siguiente por el
+        /// <c>AINode_ExecuteTelegraph</c>.
         /// </remarks>
         public override IEnumerator TickCoroutine(AIContext context, Action<AIResult> onResult)
         {
@@ -136,10 +129,6 @@ namespace Rollgeon.Combat.AI.Bosses.Tahur
             onResult?.Invoke(result);
         }
 
-        /// <remarks>
-        /// Request de secuencia a mano y no <c>EffPlaySequence</c>: el nodo no nace de un effect pass
-        /// y no tiene <c>EffectContext</c> que pasarle (por eso <c>FeedbackRequest.Context</c> admite null).
-        /// </remarks>
         private IEnumerator PlaySweep(AIContext context)
         {
             if (!ServiceLocator.TryGetService<IFeedbackService>(out var feedback) || feedback == null) yield break;
@@ -171,9 +160,8 @@ namespace Rollgeon.Combat.AI.Bosses.Tahur
         }
 
         /// <summary>
-        /// Fichas a partir de las cuales barre la mesa. Clampeado a
-        /// <see cref="ITahurWagerService.MaxChips"/>: un umbral por encima del techo del pozo dejaría
-        /// el nodo muerto sin que nada lo cante.
+        /// Fichas a partir de las cuales barre la mesa, clampeado a
+        /// <see cref="ITahurWagerService.MaxChips"/>.
         /// </summary>
         public int EffectiveThreshold(ITahurWagerService wager)
         {

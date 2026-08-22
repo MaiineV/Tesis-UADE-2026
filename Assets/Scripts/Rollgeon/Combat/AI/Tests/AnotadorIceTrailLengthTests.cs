@@ -13,8 +13,8 @@ using UnityEngine;
 namespace Rollgeon.Combat.AI.Tests
 {
     /// <summary>
-    /// Largo de la estela helada del Anotador (piso 2): la ficha la subió a 4 casillas para que cada
-    /// repliegue tape un tramo de corredor en vez de dejar una molestia de 3.
+    /// Largo de la estela helada del Anotador (piso 2): cada repliegue deja 4 casillas congeladas,
+    /// las suficientes para tapar un tramo de corredor.
     /// </summary>
     /// <remarks>
     /// Corre <see cref="AINode_IceTrail"/> contra un <see cref="IHazardService"/> falso: acá se mide
@@ -133,7 +133,7 @@ namespace Rollgeon.Combat.AI.Tests
 
         /// <summary>
         /// El default del campo es el que usa cualquier árbol autorado a mano en el inspector, así que
-        /// tiene que ser el número de la ficha y no el 3 viejo.
+        /// tiene que ser el número de la ficha.
         /// </summary>
         [Test]
         public void TheNodeDefault_IsTheSheetsFourTiles()
@@ -143,8 +143,7 @@ namespace Rollgeon.Combat.AI.Tests
 
         /// <summary>
         /// Una sola estela viva por vez: el repliegue nuevo mata al anterior. Es lo que hace que el
-        /// hielo NO se acumule pelea adentro — si alguna vez diseño quiere el muro que crece, la
-        /// palanca es este flag y no la duración.
+        /// hielo NO se acumule pelea adentro.
         /// </summary>
         [Test]
         public void Tick_OnTheNextRetreat_ReplacesThePreviousTrailInsteadOfStacking()

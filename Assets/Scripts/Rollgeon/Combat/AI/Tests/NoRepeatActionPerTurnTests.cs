@@ -23,8 +23,6 @@ namespace Rollgeon.Combat.AI.Tests
     /// del enemigo, pero cada acción (behavior por nombre, move, kite) corre a lo sumo
     /// una vez por turno — como el player. Los behaviors de bookkeeping de energía
     /// (Reset/Remove Energy) quedan exentos para que el While drene el presupuesto.
-    /// Regresión de: enemigos pegando 2-3 veces por turno (pre-b842beed) y enemigos
-    /// haciendo una sola acción total (post-b842beed).
     /// </summary>
     /// <remarks>
     /// Usa <see cref="GridManager"/> + <see cref="MovementService"/> reales sobre grilla
@@ -179,7 +177,7 @@ namespace Rollgeon.Combat.AI.Tests
         [Test]
         public void Tick_MeleeTree_PlayerAdjacent_Energy3_AttacksExactlyOnce()
         {
-            // Arrange — bug original: con energía 3 y player al lado, pegaba 3 veces.
+            // Arrange — energía 3 y player al lado: el presupuesto no compra ataques extra.
             _grid.Register(_enemy, new GridCoord(0, 0));
             _grid.Register(_player, new GridCoord(1, 0));
             SetEnergy(3);
@@ -197,7 +195,7 @@ namespace Rollgeon.Combat.AI.Tests
         [Test]
         public void Tick_MeleeTree_PlayerThreeTilesAway_MovesAndAttacksSameTurn()
         {
-            // Arrange — regresión del fix anterior: con energía 1 el enemigo movía O pegaba.
+            // Arrange — mover y pegar son acciones distintas: las dos entran en el mismo turno.
             _grid.Register(_enemy, new GridCoord(0, 0));
             _grid.Register(_player, new GridCoord(3, 0));
             SetEnergy(3);

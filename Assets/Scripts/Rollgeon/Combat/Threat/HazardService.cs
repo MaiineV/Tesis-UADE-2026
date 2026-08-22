@@ -436,10 +436,7 @@ namespace Rollgeon.Combat.Threat
                              "no cobran a nadie. Revisá el orden de registro en ServiceBootstrap.");
         }
 
-        /// <summary>
-        /// One hazard hit: damage (if any), the trigger event, and tile consumption. The event is
-        /// what other systems layer on top — the ice stun lives in the stun binder.
-        /// </summary>
+        /// <summary>One hazard hit: damage (if any), the trigger event, and tile consumption.</summary>
         private void TriggerInstance(HazardInstance instance, Guid entityGuid, GridCoord coord)
         {
             ApplyHazardDamage(instance, entityGuid);

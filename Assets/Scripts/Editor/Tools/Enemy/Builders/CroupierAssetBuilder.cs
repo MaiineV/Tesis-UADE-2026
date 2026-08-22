@@ -1,34 +1,32 @@
 using System.Collections.Generic;
 using System.IO;
-using Rollgeon.Combat.AI.Bosses.Croupier;
 using Rollgeon.Combat.AI.Decisions;
 using Rollgeon.Combat.AI.Readers;
 using Rollgeon.Combat.AI.Targeting;
 using Rollgeon.Combat.Pipelines;
 using Rollgeon.Combat.Threat;
+using Rollgeon.Combos;
 using Rollgeon.Entities;
 using Rollgeon.Entities.Behaviors;
 using Rollgeon.Feedback;
 using Rollgeon.PreConditions;
 using Rollgeon.PreConditions.Concretes;
-using TMPro;
+using Rollgeon.Tiles;
 using UnityEditor;
 using UnityEngine;
-using Object = UnityEngine.Object;
 
 namespace Rollgeon.Editor.Tools.Enemy.Builders
 {
     /// <summary>
     /// Arma por código el jefe de piso 1 <b>El Croupier</b>: su <see cref="EnemyDataSO"/> con el árbol
-    /// de AI inline, las dos definiciones de fuego de paño y su prefab visual (arte del Healer
-    /// retintado a carmesí de crupier + la ruleta parenteada al costado).
+    /// de AI inline y su prefab visual (arte del Sunken Grand retintado a carmesí de crupier). El fuego que
+    /// usa <b>no</b> lo escribe: es la casilla especial de <see cref="CroupierFirePath"/>, autorada a
+    /// mano. El único hazard que sí autora es el de La Bandida (ver <see cref="BandidaReelFireDamage"/>).
     /// </summary>
     /// <remarks>
     /// <see cref="BuildAIRoot"/>, <see cref="BuildWrapperSpec"/> y <see cref="PopulateEnemyData"/>
     /// son estáticos puros — se testean en memoria sin tocar el <c>AssetDatabase</c>.
-    /// <see cref="BuildCroupier"/> es la capa que persiste, y es idempotente. El arte es el del
-    /// Healer retintado: su lectura la lleva el paño, no la silueta, y su
-    /// <c>LocomotionStyle.Blink</c> le queda bien — el crupier no camina, reaparece.
+    /// <see cref="BuildCroupier"/> es la capa que persiste, y es idempotente.
     /// </remarks>
     public static class CroupierAssetBuilder
     {
@@ -41,9 +39,17 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         public const string FirePhase2Path = "Assets/Rollgeon/Combat/Hazards/HZ_Croupier_TableFire_Phase2.asset";
 
         /// <summary>
-        /// Llama del paño. Vive acá y no en el builder de la Bandida porque el fuego es del Croupier
-        /// y ella lo reusa — un solo asset, un solo lugar donde cambiarlo.
+        /// La casilla de fuego del jefe —y el único fuego que este jefe usa—. Propia y no
+        /// <c>Tile_FireTemp</c>: sus números de daño y duración se tunean para esta pelea, y tocar la
+        /// genérica se los cambiaría al resto del juego.
         /// </summary>
+        /// <remarks>
+        /// Este builder no la escribe: el asset es autoría a mano, y sus números de daño no salen de
+        /// ninguna constante de acá.
+        /// </remarks>
+        public const string CroupierFirePath = "Assets/Rollgeon/Tiles/Tile_Fire_Croupier.asset";
+
+        /// <summary>Llama del paño, compartida con La Bandida.</summary>
         public const string FireVfxPrefabPath = "Assets/Prefabs/VFX/VFX_Fire.prefab";
 
         /// <summary>Mesh de fuego que trajo el arte; es un MeshRenderer con luces, no un sistema de partículas.</summary>
@@ -52,36 +58,17 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         /// <summary>Segundos que dura el fogonazo de pisar una casilla encendida.</summary>
         private const float FireBurstLifetime = 0.9f;
 
-        /// <summary>Arte a vestir: el Healer ya viene con copa, moño, capa y bastón.</summary>
-        public const string ArtPrefabPath = "Assets/Prefabs/Enemies/Healer_Animated.prefab";
+        /// <summary>
+        /// Arte a vestir: <c>SunkedGrand_Animated</c>, compartido con el Tahúr del piso 3
+        /// (<c>TahurAssetBuilder</c>), que lo separa por retinte. Es el wrapper del rig, no el FBX:
+        /// saltearlo se lleva el <c>Animator</c> y el jefe entra a la pelea en T-pose.
+        /// </summary>
+        public const string ArtPrefabPath = "Assets/Prefabs/Enemies/SunkedGrand_Animated.prefab";
 
         /// <summary>Prefab de gameplay que sale del wrapper y va a <c>EnemyData.VisualPrefab</c>.</summary>
         public const string VisualPrefabPath = "Assets/Prefabs/Enemies/Bosses/PF_Boss_Croupier.prefab";
 
-        /// <summary>Ruleta parenteada al wrapper — la mesa del jefe, y lo que gira al cantar.</summary>
-        public const string WheelPropPrefabPath = "Assets/Prefabs/Props/Ruletav03.prefab";
-
-        /// <summary>Nombre del hijo de la ruleta. Lo busca <c>CroupierWheelSpinVisual</c> por fallback.</summary>
-        public const string WheelChildName = CroupierWheelSpinVisual.DefaultWheelChildName;
-
-        /// <summary>Nombre del label del número cantado. Lo busca <c>CroupierWheelNumberView</c>.</summary>
-        public const string WheelNumberChildName = CroupierWheelNumberView.DefaultLabelChildName;
-
-        /// <summary>
-        /// Fuente del número. La pixel font del HUD y no la decorativa <c>Casino.ttf</c>: el número
-        /// tiene que leerse de un vistazo a la distancia de la cámara, y ahí una tipografía de
-        /// fantasía cuesta legibilidad justo en el dato del que cuelga toda la pelea.
-        /// </summary>
-        public const string WheelNumberFontPath = "Assets/Fonts/m6x11plus SDF.asset";
-
-        /// <summary>
-        /// Cuánto del disco ocupa el número, en diámetros. El label se autoescala a esta caja, así
-        /// que el tamaño sale del prop y no de un font size cableado — si arte cambia la ruleta por
-        /// una más grande, el número la sigue.
-        /// </summary>
-        public const float WheelNumberFillRatio = 0.62f;
-
-        /// <summary>Retrato del rig que viste (<c>Healer_Animated</c>). Ver <see cref="BossPortraitLibrary"/>.</summary>
+        /// <summary>Retrato de la cola de turnos. Ver <see cref="BossPortraitLibrary"/>.</summary>
         public const string PortraitTexturePath = BossPortraitLibrary.SheetPath;
 
         // ======================================================================
@@ -90,93 +77,156 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
 
         public const string EntityId = "boss.croupier";
         public const string DisplayName = "The Croupier";
-        public const string WeaknessComboId = "combo.pair";
-        public const float WeaknessMultiplier = 1.5f;
+
+        /// <summary>Su debilidad es el Poker (cuatro dados iguales).</summary>
+        public const string WeaknessComboId = ComboId.Poker;
 
         /// <summary>
-        /// Jefe de piso 1: ~6 turnos con el golpe base del piso (13-27, mediana 20).
-        /// La simulación que había subido esto a 350 asumía un golpe mediano de 42, que es
-        /// daño de run avanzada y no el kit con el que se llega al primer jefe. Los tres
-        /// jefes que ya estaban en el juego tienen 200: 350 era casi el doble del techo real.
+        /// Cuánto lo castiga el Poker. Multiplica el golpe entero ya resuelto (fórmula v3:
+        /// <c>N = base_combo + ATQ + Σcaras + bonos</c>), no el base del combo.
         /// </summary>
-        public const int MaxHp = 120;
-        public const int Attack = 20;
+        public const float WeaknessMultiplier = 1.3f;
+
+        /// <summary>Vida del jefe de piso 1.</summary>
+        public const int MaxHp = 300;
+        public const int Attack = 24;
         public const int Speed = 5;
         public const int MinGoldDrop = 15;
         public const int MaxGoldDrop = 23;
 
-        /// <summary>Daño del sector en fase 1: 20% de la vida del jugador.</summary>
-        public const int SectorDamage = 20;
-
-        /// <summary>Daño de cada sector en fase 2 — 24 para quien esté en la columna de costura.</summary>
-        public const int SectorDamagePhase2 = 12;
-
         /// <summary>
-        /// Represalia de mesa: el precio de la casilla de melee. Se cobra en todo golpe que le entre,
-        /// sin mirar el número ni la fase — es el único daño directo del jefe.
-        /// </summary>
-        public const int RetaliationDamage = 8;
-
-        /// <summary>Fuego de paño: lo que cuesta terminar el turno en el sector que acaba de caer.</summary>
-        public const int FireDamage = 6;
-
-        /// <summary>
-        /// "Arde 2 rondas" = 3 rondas de hazard. El fuego nace en el turno del jefe y el jugador tiene
-        /// el primer turno de cada ronda (CNF-006), así que la ronda en la que se enciende ya no tiene
-        /// cierres de turno del jugador por delante: con 1 expiraría sin tickear nunca. Ver los remarks
-        /// de <see cref="AINode_IgniteDetonatedSectors"/>.
+        /// Daño del <see cref="HazardDefinitionSO"/> de paño que este builder autora en
+        /// <see cref="FirePhase1Path"/>. <b>No es el fuego del Croupier.</b>
         /// </summary>
         /// <remarks>
-        /// Con esta duración el bloque anterior sigue ardiendo cuando cae el siguiente: el jefe deja de
-        /// devolver el paño limpio cada turno y el mapa útil se achica sostenidamente. Ese solapamiento
-        /// es el efecto buscado, no un residuo del redondeo de rondas.
+        /// Ese asset lo consume <b>La Bandida</b> para sus reels reventados
+        /// (<c>BandidaAssetBuilder.ReelFireHazardPath</c> apunta ahí), y este builder es el único que
+        /// lo escribe — de ahí el nombre. El fuego del Croupier es la casilla especial de
+        /// <see cref="CroupierFirePath"/>.
         /// </remarks>
+        public const int BandidaReelFireDamage = 6;
+
+        /// <summary>
+        /// "Arde 2 rondas" = 3 rondas de casilla. La duración tickea en el wrap de ronda y el fuego
+        /// nace en el turno del jefe, o sea después del turno del jugador de esa ronda (CNF-006):
+        /// la ronda en la que se enciende no le queda ningún arranque de turno del jugador por
+        /// delante. Arrancar N turnos adentro pide autorar N + 1.
+        /// </summary>
         public const int FireDurationRounds = 3;
 
-        /// <summary>"Arde 3 rondas" en fase 2 — mismo corrimiento de +1 ronda que en fase 1.</summary>
+        /// <summary>
+        /// Duración de las bandas desde "Pleno y color": 4 de casilla = arde 3. Dos bandas pueden
+        /// convivir, pero no se pisan — la nueva sólo enciende lo que no ardía (ver
+        /// <c>AINode_IgniteArea.AlreadyBurning</c>).
+        /// </summary>
         public const int FireDurationRoundsPhase2 = 4;
 
-        /// <summary>Umbral de "Pleno y color".</summary>
-        public const float Phase2HpThreshold = 0.5f;
+        /// <summary>
+        /// Duracion del hazard de paño que este builder autora para La Bandida (sus reels lo
+        /// consumen). El Croupier no lo usa.
+        /// </summary>
+        public const int HazardDurationForBandida = 3;
 
-        public const int Phase2NumbersPerTurn = 2;
+        // ======================================================================
+        // Kiteo y fuego
+        // ======================================================================
+
+        /// <summary>Disparo de T1.</summary>
+        public const int ShotDamage = 18;
 
         /// <summary>
-        /// Distancia Manhattan que el crupier trata de sostener con el jugador.
+        /// Alcance del disparo, en Manhattan. 24 cubre la diagonal entera de la sala 11x11: en la
+        /// practica es "a cualquier distancia" sin escribir un centinela.
+        /// </summary>
+        public const int ShotRange = 24;
+
+        /// <summary>
+        /// Distancia Manhattan al jugador desde la que el jefe se toma la molestia de huir. A esta
+        /// distancia o menos, los dos saltos del ciclo (T1 y T2) corren; más lejos, se quedan
+        /// plantados.
         /// </summary>
         /// <remarks>
-        /// 2 y no 1: su único daño directo es la Represalia, que es <i>el precio de la casilla de
-        /// melee</i>. Si se plantara pegado al jugador estaría regalando esa casilla, y si kiteara a
-        /// 4 como el Cajero —que sí tiene un disparo con ese alcance— sería infinito, porque su daño
-        /// no depende de dónde esté parado. A 2 el jugador siempre puede cerrar con un paso, y ese
-        /// paso es lo que cuesta llegar a la mesa.
+        /// Más allá de este umbral huir no le compra nada: el disparo no tiene techo
+        /// (<see cref="ShotRange"/>) y el cono se marca desde donde esté parado, así que tepearse
+        /// igual sólo le gasta el turno y a veces lo hace aterrizar más cerca de lo que estaba. Sin
+        /// tope de aterrizaje (ver los dos <c>AINode_TeleportAwayToEdge</c>) porque la garantía de
+        /// que la pelea sea ganable ya no depende de dónde cae el salto: si huye lejos, el jugador
+        /// camina hacia él y el jefe no vuelve a huir hasta estar de nuevo dentro de este radio.
         /// </remarks>
-        public const int DesiredRange = 2;
+        public const int FleeTriggerRange = 5;
+
+        /// <summary>Semi-ancho del apex del cono: 0 = arranca en una sola casilla.</summary>
+        public const int ConeApexHalfWidth = 0;
 
         /// <summary>
-        /// Casillas que se corre por turno. Menos que el presupuesto de movimiento del jugador a
-        /// propósito: el reposicionamiento tiene que ser un peaje, no una persecución que no termina.
+        /// Profundidad del cono, contada desde la casilla del jefe hacia el jugador.
         /// </summary>
-        public const int MoveSteps = 2;
+        /// <remarks>
+        /// El jefe marca desde el borde al que acaba de saltar, no desde el medio de la sala, y el
+        /// cono se abre una casilla por lado en cada paso: el fondo no escala el area en linea sino
+        /// al cuadrado. En 4 cubre 16 casillas, casi las mismas 18 que barria la banda de 3x6.
+        /// </remarks>
+        public const int ConeDepth = 4;
+
+        /// <summary>Umbral del candado: desde aca le queda un dado menos, y no vuelve.</summary>
+        public const float LockHpThreshold = 0.7f;
+
+        /// <summary>
+        /// Cual dado se traba. RotateBlock etiqueta el candado con el indice + 1, asi que 0
+        /// muestra "1".
+        /// </summary>
+        public const int LockedDieIndex = 0;
+
+        /// <summary>Umbral de "Pleno y color".</summary>
+        public const float PlenoHpThreshold = 0.5f;
+
+        /// <summary>
+        /// Radio del hueco que "Pleno y color" NO prende, centrado en el jefe. 1 = su 3x3. Ojo que
+        /// en <c>AllExceptSquareAroundSelf</c> el Size es el hueco, no el area amenazada.
+        /// </summary>
+        public const int PlenoHoleRadius = 1;
+
+        /// <summary>
+        /// Lo que cobra "Pleno y color" en el momento de prender, a quien este parado afuera del
+        /// hueco.
+        /// </summary>
+        public const int PlenoIgnitionDamage = 7;
+
+        /// <summary>
+        /// Canal de la marca de "Pleno y color" (<c>AINode_TelegraphMark.ChannelId</c>).
+        /// </summary>
+        /// <remarks>
+        /// El Pleno y la banda de T1 pueden estar marcados en el mismo turno, y tanto
+        /// <c>IThreatenedAreaService</c> como el overlay guardan un área por fuente: sin canal propio
+        /// la segunda marca borra la primera. El paso que la consume tiene que declarar este mismo
+        /// string.
+        /// </remarks>
+        public const string PlenoChannelId = "pleno";
 
         /// <summary>Rojo de brasa — se tiene que leer distinto del naranja del telegraph.</summary>
         public static readonly Color FireOverlayTint = new Color(0.85f, 0.10f, 0.05f, 0.60f);
 
         // ======================================================================
-        // Ficha visual — paleta y transform del prop, en un solo lugar
+        // Ficha visual — paleta
         // ======================================================================
 
-        // Los tres materiales que dominan la silueta del Healer y qué visten:
-        //   Mat_Red      → capa, moño, banda del sombrero y mango del bastón.
-        //   Mat_DarkGray → copa del sombrero y traje.
-        //   Mat_Gold     → vivos del traje y cabeza del bastón.
-        // Mat_White (camisa, guantes, esclerótica), Mat_Bone (piel) y Mat_Black (pupila) quedan
-        // sin clonar a propósito: los guantes blancos son la mitad de la lectura "crupier", y
-        // retintar el blanco también le cambiaría el ojo.
+        // Los ocho materiales de SunkedGrand_Animated y qué visten (mismo mapa que usa el Tahúr,
+        // que viste el mismo rig — ver TahurAssetBuilder.BuildRetints):
+        //   Mat_LightBrown → levita, galera y moño. Es el área grande de la silueta.
+        //   Mat_Brown      → paneles y solapas del cuerpo.
+        //   Mat_Green      → cinta de la galera.
+        //   Mat_Bone       → canto de las 12 cartas del abanico.
+        //   Mat_Black      → dorso de las cartas y detalles oscuros.
+        //   Mat_LightGreen → piel (cabeza y manos).
+        //   Mat_White      → caras de las cartas y camisa.
+        //   Mat_Particle_Red → partícula del rig, no superficie.
+        //
+        // El Tahúr viste este mismo rig, y el material que un jefe no retinta se lo queda
+        // compartido: los vuelve gemelos en esa superficie.
         //
         // Todos los colores van explícitos y no por PaletteSlot: los labels guardados en
-        // PA_MainPalette están desalineados respecto de la tabla de PaletteSlots (Mat_Red hoy
-        // apunta al slot 7, que en la tabla es "Green"), así que un slot no dice qué color sale.
+        // PA_MainPalette están desalineados respecto de la tabla de PaletteSlots, así que un slot no
+        // dice qué color sale.
 
         /// <summary>Carmesí de terciopelo del paño — el color que el jefe le presta a la mesa.</summary>
         public static readonly Color WineLight = new Color(0.647f, 0.157f, 0.251f);
@@ -188,33 +238,31 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         public static readonly Color TuxMid = new Color(0.129f, 0.090f, 0.110f);
         public static readonly Color TuxShadow = new Color(0.063f, 0.043f, 0.055f);
 
-        /// <summary>Latón más brillante que el Mat_Gold de fábrica: los vivos tienen que saltar del vino.</summary>
+        /// <summary>Latón: la cinta de la galera y el canto de los naipes tienen que saltar del vino.</summary>
         public static readonly Color BrassLight = new Color(0.980f, 0.855f, 0.529f);
         public static readonly Color BrassMid = new Color(0.831f, 0.635f, 0.196f);
         public static readonly Color BrassShadow = new Color(0.439f, 0.310f, 0.078f);
 
         /// <summary>
-        /// La ruleta a su derecha (el bastón lo lleva en +X, así que el prop va en -X para no
-        /// atravesarlo) y a la altura del pecho. El prop mide ~0.9 de diámetro y su malla cuelga
-        /// -0.5 de su root, así que este Y es casi el centro del disco.
+        /// Piel de cera. Existe sólo porque el rig la trae en <c>Mat_LightGreen</c>: sin retintarla el
+        /// jefe hereda el gris verdoso de ahogado del Sunken Grand.
         /// </summary>
-        public static readonly Vector3 WheelLocalPosition = new Vector3(-1.15f, 1.15f, 0f);
+        public static readonly Color WaxLight = new Color32(0xEE, 0xE2, 0xCF, 0xFF);
+        public static readonly Color WaxMid = new Color32(0xCF, 0xBB, 0x9E, 0xFF);
+        public static readonly Color WaxShadow = new Color32(0x87, 0x71, 0x59, 0xFF);
 
         /// <summary>
-        /// Euler cero <b>a propósito</b>: el disco del prop mira a ±Z y el jefe también encara -Z
-        /// (ojos y moño están en -Z), así que sin rotarlo la cara de la rueda queda hacia la cámara y
-        /// el giro se ve. Rotarlo la pondría de perfil.
-        /// </summary>
-        public static readonly Vector3 WheelLocalEuler = Vector3.zero;
-
-        /// <summary>0.85 uniforme: acompaña al jefe (~1.95 de alto) sin taparlo.</summary>
-        public static readonly Vector3 WheelLocalScale = new Vector3(0.85f, 0.85f, 0.85f);
-
-        /// <summary>
-        /// Barra de vida más baja que el default de 3: el arte del Healer mide ~1.95 con bastón, y a 3
-        /// la barra quedaba flotando con un hueco de una unidad sobre el sombrero.
+        /// Barra de vida más baja que el default de 3: el arte mide ~1.81 con galera, y a 3 quedaba
+        /// flotando sobre el sombrero.
         /// </summary>
         public static readonly Vector3 HealthBarOffset = new Vector3(0f, 2.4f, 0f);
+
+        /// <summary>
+        /// Tope del radio del capsule. Los bounds de este rig dan ~0.95, que se come casi todo el
+        /// tile vecino: el jugador tiene que poder clickear esas cuatro casillas para salir del
+        /// fuego.
+        /// </summary>
+        public const float ColliderRadiusCap = 0.5f;
 
         // Ids fijos y escritos a mano (no Guid.NewGuid): el builder es idempotente, y un id nuevo por
         // corrida haría que el asset cambie en cada build y que un fuego ya activo quede huérfano.
@@ -229,22 +277,29 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         public static void BuildCroupier()
         {
             var flame = BuildFireVfx();
-            var fire = BuildFireDefinition(FirePhase1Path, FireDurationRounds, FirePhase1SourceId, flame);
-            var firePhase2 = BuildFireDefinition(
-                FirePhase2Path, FireDurationRoundsPhase2, FirePhase2SourceId, flame);
+
+            // Este hazard lo consume La Bandida para sus reels, no el Croupier.
+            BuildFireDefinition(FirePhase1Path, HazardDurationForBandida, FirePhase1SourceId, flame);
 
             var visual = BuildVisualPrefab();
             var portrait = BossPortraitLibrary.Croupier();
 
             var boss = LoadOrCreate<EnemyDataSO>(BossAssetPath);
-            PopulateEnemyData(boss, fire, firePhase2, visual, portrait);
+            var croupierFire = AssetDatabase.LoadAssetAtPath<SpecialTileDefinitionSO>(CroupierFirePath);
+            if (croupierFire == null)
+            {
+                Debug.LogError($"[CroupierAssetBuilder] Falta {CroupierFirePath}. El jefe queda sin " +
+                               "fuego: el nodo de ignicion falla y sus turnos de quema no hacen nada.");
+            }
+
+            PopulateEnemyData(boss, croupierFire, visual, portrait);
 
             EditorUtility.SetDirty(boss);
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
 
-            Debug.Log($"[CroupierAssetBuilder] Listo: '{BossAssetPath}' + fuego de paño (fase 1 y 2) + " +
-                      $"'{VisualPrefabPath}'.");
+            Debug.Log($"[CroupierAssetBuilder] Listo: '{BossAssetPath}' + '{VisualPrefabPath}' + el " +
+                      $"hazard de paño de La Bandida ('{FirePhase1Path}').");
             Selection.activeObject = boss;
         }
 
@@ -254,7 +309,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
 
         /// <summary>
         /// Ficha de armado del wrapper. Pura (no toca <c>AssetDatabase</c>) para que los tests puedan
-        /// afirmar arte, retintes y transform del prop sin construir el prefab.
+        /// afirmar arte y retintes sin construir el prefab.
         /// </summary>
         public static BossWrapperSpec BuildWrapperSpec()
         {
@@ -267,92 +322,61 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
                 HealthBarOffset = HealthBarOffset,
                 Retints = new Dictionary<string, MaterialRetint>
                 {
-                    { "Mat_Red", MaterialRetint.FromColors(WineLight, WineMid, WineShadow) },
-                    { "Mat_DarkGray", MaterialRetint.FromColors(TuxLight, TuxMid, TuxShadow) },
-                    { "Mat_Gold", MaterialRetint.FromColors(BrassLight, BrassMid, BrassShadow) },
+                    // Levita, galera y moño: el smoking.
+                    { "Mat_LightBrown", MaterialRetint.FromColors(TuxLight, TuxMid, TuxShadow) },
+                    // Paneles y solapas: el paño carmesí que el jefe le presta a la mesa.
+                    { "Mat_Brown", MaterialRetint.FromColors(WineLight, WineMid, WineShadow) },
+                    // Cinta de la galera y canto de los naipes: los dos vivos de latón.
+                    { "Mat_Green", MaterialRetint.FromColors(BrassLight, BrassMid, BrassShadow) },
+                    { "Mat_Bone", MaterialRetint.FromColors(BrassLight, BrassMid, BrassShadow) },
+                    // Dorso de las cartas y detalles oscuros: el tono del traje.
+                    { "Mat_Black", MaterialRetint.FromColors(TuxLight, TuxMid, TuxShadow) },
+                    // Piel. Ver WaxLight: sin esto queda con la cara del Sunken Grand.
+                    { "Mat_LightGreen", MaterialRetint.FromColors(WaxLight, WaxMid, WaxShadow) },
                 },
-                Props = new List<BossPropSpec>
-                {
-                    new BossPropSpec
-                    {
-                        PrefabPath = WheelPropPrefabPath,
-                        Name = WheelChildName,
-                        LocalPosition = WheelLocalPosition,
-                        LocalEuler = WheelLocalEuler,
-                        LocalScale = WheelLocalScale,
-                    },
-                },
+                Props = new List<BossPropSpec>(),
             };
         }
 
         /// <summary>
-        /// Construye el wrapper y le cuelga el giro de la rueda. Devuelve <c>null</c> (con warning ya
-        /// logueado por el wrapper) si el arte no está: el jefe queda sin <c>VisualPrefab</c>, que es
-        /// exactamente lo que hay que ver en consola en vez de un prefab a medias.
+        /// Construye el wrapper. Devuelve <c>null</c> (con warning ya logueado por el wrapper) si el
+        /// arte no está: el jefe queda sin <c>VisualPrefab</c>, que es exactamente lo que hay que ver
+        /// en consola en vez de un prefab a medias.
         /// </summary>
         private static GameObject BuildVisualPrefab()
         {
             var wrapper = BossVisualWrapperBuilder.BuildWrapper(BuildWrapperSpec());
             if (wrapper == null) return null;
 
-            AttachWheelSpinVisual(VisualPrefabPath);
-
-            // Re-load: AttachWheelSpinVisual reescribe el prefab, y la instancia devuelta por el
-            // wrapper apunta al contenido anterior.
+            ClampColliderRadius(VisualPrefabPath);
             return AssetDatabase.LoadAssetAtPath<GameObject>(VisualPrefabPath);
         }
 
         /// <summary>
-        /// Agrega (idempotente) el <see cref="CroupierWheelSpinVisual"/> al root del wrapper y le cablea
-        /// la ruleta.
+        /// Segunda pasada sobre el wrapper ya guardado: recorta el radio del capsule a
+        /// <see cref="ColliderRadiusCap"/>.
         /// </summary>
         /// <remarks>
-        /// Va acá y no en <c>BossVisualWrapperBuilder</c> porque es específico de este jefe: la
-        /// fundación compartida no tiene por qué saber que existe una rueda. Se edita por
-        /// <c>LoadPrefabContents</c> + <c>SaveAsPrefabAsset</c>, que reescribe sobre el mismo path y
-        /// preserva el GUID.
+        /// Pasada aparte porque el wrapper dimensiona el collider contra los bounds del arte.
+        /// Reescribir sobre el mismo path conserva el GUID, así que la ficha que ya apunta al
+        /// wrapper sobrevive.
         /// </remarks>
-        private static void AttachWheelSpinVisual(string prefabPath)
+        private static void ClampColliderRadius(string prefabPath)
         {
             var contents = PrefabUtility.LoadPrefabContents(prefabPath);
             if (contents == null)
             {
                 Debug.LogWarning($"[CroupierAssetBuilder] No se pudo abrir '{prefabPath}' para " +
-                                 $"colgarle el giro de la rueda.");
+                                 "recortar el collider — queda envolviendo las casillas vecinas.");
                 return;
             }
 
             try
             {
-                var wheel = contents.transform.Find(WheelChildName);
-                if (wheel == null)
-                {
-                    Debug.LogWarning($"[CroupierAssetBuilder] '{prefabPath}' no tiene un hijo " +
-                                     $"'{WheelChildName}' — ¿faltó el prop '{WheelPropPrefabPath}'? " +
-                                     $"El jefe queda sin rueda que gire.");
-                    return;
-                }
+                var capsule = contents.GetComponent<CapsuleCollider>();
+                if (capsule == null || capsule.radius <= ColliderRadiusCap) return;
 
-                var spin = contents.GetComponent<CroupierWheelSpinVisual>();
-                if (spin == null) spin = contents.AddComponent<CroupierWheelSpinVisual>();
-
-                // Explícito y no por el fallback de Awake: así el prefab queda inspeccionable y el giro
-                // no depende de que nadie renombre el hijo.
-                var so = new SerializedObject(spin);
-                var wheelProp = so.FindProperty("_wheel");
-                if (wheelProp != null)
-                {
-                    wheelProp.objectReferenceValue = wheel;
-                    so.ApplyModifiedPropertiesWithoutUndo();
-                }
-                else
-                {
-                    Debug.LogWarning("[CroupierAssetBuilder] CroupierWheelSpinVisual no expone '_wheel' " +
-                                     "— ¿se renombró el campo? Queda el fallback por nombre de hijo.");
-                }
-
-                EnsureWheelNumber(contents, wheel);
-
+                capsule.radius = ColliderRadiusCap;
                 PrefabUtility.SaveAsPrefabAsset(contents, prefabPath);
             }
             finally
@@ -361,113 +385,47 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
             }
         }
 
-        /// <summary>
-        /// Crea (idempotente) el label del número cantado en el centro de la ruleta y le cuelga el
-        /// <see cref="CroupierWheelNumberView"/> al root del wrapper.
-        /// </summary>
-        /// <remarks>
-        /// El label cuelga del root y no de <c>Wheel</c>: ahí giraría con el disco y sería ilegible
-        /// justo en el canto. La posición sale de los bounds del prop y no de un número cableado, así
-        /// sigue a la rueda si arte le cambia tamaño, escala u offset de la malla.
-        /// </remarks>
-        private static void EnsureWheelNumber(GameObject contents, Transform wheel)
-        {
-            if (!TryMeasure(wheel, out var hubWorld, out float diameter, out float depth))
-            {
-                Debug.LogWarning($"[CroupierAssetBuilder] '{WheelChildName}' no tiene renderers — no se " +
-                                 "puede ubicar el número cantado. El jefe queda con la rueda muda.");
-                return;
-            }
-
-            var label = FindOrCreateLabel(contents);
-            if (label == null) return;
-
-            var font = AssetDatabase.LoadAssetAtPath<TMP_FontAsset>(WheelNumberFontPath);
-            if (font != null) label.font = font;
-            else
-                Debug.LogWarning($"[CroupierAssetBuilder] No está la fuente '{WheelNumberFontPath}' — " +
-                                 "el número sale con la fuente default de TMP.");
-
-            label.color = BrassLight;
-            label.alignment = TextAlignmentOptions.Center;
-            label.text = string.Empty;
-
-            // Autosize contra una caja derivada del disco en vez de un fontSize fijo: el tamaño en
-            // unidades de mundo de TMP depende de la fuente, así que cablearlo obliga a re-tunear con
-            // cada cambio de tipografía.
-            label.enableAutoSizing = true;
-            label.fontSizeMin = 1f;
-            label.fontSizeMax = 300f;
-
-            float box = Mathf.Max(diameter * WheelNumberFillRatio, 0.01f);
-            label.rectTransform.sizeDelta = new Vector2(box, box);
-
-            // Al frente del disco (-Z local, que es hacia donde encara el jefe y por lo tanto hacia la
-            // cámara) más un margen: apoyado en el plano del disco haría z-fighting con él.
-            var hubLocal = contents.transform.InverseTransformPoint(hubWorld);
-            hubLocal.z -= depth * 0.5f + 0.05f;
-            label.rectTransform.localPosition = hubLocal;
-            label.rectTransform.localRotation = Quaternion.identity;
-            label.rectTransform.localScale = Vector3.one;
-
-            var view = contents.GetComponent<CroupierWheelNumberView>();
-            if (view == null) view = contents.AddComponent<CroupierWheelNumberView>();
-
-            var so = new SerializedObject(view);
-            var labelProp = so.FindProperty("_label");
-            if (labelProp != null)
-            {
-                labelProp.objectReferenceValue = label;
-                so.ApplyModifiedPropertiesWithoutUndo();
-            }
-            else
-            {
-                Debug.LogWarning("[CroupierAssetBuilder] CroupierWheelNumberView no expone '_label' — " +
-                                 "¿se renombró el campo? Queda el fallback por nombre de hijo.");
-            }
-        }
-
-        /// <summary>Centro y tamaño del disco, de los bounds de sus renderers.</summary>
-        private static bool TryMeasure(Transform wheel, out Vector3 center, out float diameter, out float depth)
-        {
-            center = Vector3.zero;
-            diameter = 0f;
-            depth = 0f;
-
-            var renderers = wheel.GetComponentsInChildren<Renderer>();
-            if (renderers.Length == 0) return false;
-
-            var bounds = renderers[0].bounds;
-            for (int i = 1; i < renderers.Length; i++) bounds.Encapsulate(renderers[i].bounds);
-
-            center = bounds.center;
-            // El diámetro es el lado ancho de la cara del disco (X/Y); Z es el canto.
-            diameter = Mathf.Max(bounds.size.x, bounds.size.y);
-            depth = bounds.size.z;
-            return diameter > 0f;
-        }
-
-        private static TMP_Text FindOrCreateLabel(GameObject contents)
-        {
-            var existing = contents.transform.Find(WheelNumberChildName);
-            if (existing != null)
-            {
-                var found = existing.GetComponent<TMP_Text>();
-                if (found != null) return found;
-
-                // Un hijo con ese nombre pero sin TMP es basura de un build viejo (o un rename a
-                // mano): se reemplaza en vez de dejar dos objetos peleando por el mismo nombre.
-                Object.DestroyImmediate(existing.gameObject);
-            }
-
-            var go = new GameObject(WheelNumberChildName);
-            go.transform.SetParent(contents.transform, worldPositionStays: false);
-            return go.AddComponent<TextMeshPro>();
-        }
 
         // ======================================================================
         // Datos del jefe (puro — sin AssetDatabase)
         // ======================================================================
+
+        /// <summary>
+        /// Texto de hover del jefe: qué hace y con qué números, en tres oraciones.
+        /// </summary>
+        /// <remarks>
+        /// Los números salen de las constantes de la ficha o de <paramref name="fire"/>, nunca
+        /// escritos a mano. La duración se muestra con una ronda menos que la autorada: la ronda en
+        /// la que se enciende no tiene cierre de turno del jugador por delante.
+        /// </remarks>
+        public static string BuildDescription(SpecialTileDefinitionSO fire)
+        {
+            int coneMouth = (ConeApexHalfWidth + ConeDepth - 1) * 2 + 1;
+            int holeSide = PlenoHoleRadius * 2 + 1;
+            int lockPercent = Mathf.RoundToInt(LockHpThreshold * 100f);
+            int plenoPercent = Mathf.RoundToInt(PlenoHpThreshold * 100f);
+
+            var sb = new System.Text.StringBuilder();
+            sb.Append("Warps to the edge of the table every turn and shoots for ").Append(ShotDamage)
+              .Append(" at any range. Every other turn he lights a cone of fire ").Append(ConeDepth)
+              .Append(" deep, widening to ").Append(coneMouth).Append(" tiles");
+
+            if (fire != null)
+            {
+                sb.Append(" — ").Append(fire.EnterDamage).Append(" to cross, ")
+                  .Append(fire.TurnStartDamage).Append(" to start a turn on it");
+            }
+
+            sb.Append(", burning ").Append(Mathf.Max(1, FireDurationRounds - 1)).Append(" rounds (")
+              .Append(Mathf.Max(1, FireDurationRoundsPhase2 - 1)).Append(" under ").Append(plenoPercent)
+              .Append("%). At ").Append(lockPercent).Append("% he padlocks one die; at ")
+              .Append(plenoPercent).Append("% he warps to the centre and marks the whole table ")
+              .Append("except the ").Append(holeSide).Append("×").Append(holeSide)
+              .Append(" square around him — it burns on his next turn for ")
+              .Append(PlenoIgnitionDamage).Append(".");
+
+            return sb.ToString();
+        }
 
         /// <summary>
         /// Escribe la ficha completa del Croupier en <paramref name="data"/>, incluido su
@@ -476,8 +434,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         /// </summary>
         public static void PopulateEnemyData(
             EnemyDataSO data,
-            HazardDefinitionSO fire,
-            HazardDefinitionSO firePhase2,
+            SpecialTileDefinitionSO fire,
             GameObject visualPrefab,
             Sprite portrait)
         {
@@ -485,13 +442,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
 
             data.EntityId = EntityId;
             data.DisplayName = DisplayName;
-            data.Description =
-                "\"Place your bets.\" He calls one number per turn: the block of the table that falls " +
-                "next turn. Ending your turn inside the called block spins the wheel one step further " +
-                "— moving the axe means standing under it. Hitting him costs 8, always: the house " +
-                "charges for the melee tile. The six blocks cover the whole table — no tile sits out " +
-                "the fight — and the middle row is the seam, where two of them overlap. He drifts to " +
-                "keep the table between you and him.";
+            data.Description = BuildDescription(fire);
 
             data.WeaknessComboId = WeaknessComboId;
             data.WeaknessMultiplierOverride = WeaknessMultiplier;
@@ -502,50 +453,206 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
             data.MaxEnergy = 3;
             data.BaseAttackRange = 1;
 
-            // No cura ni tiene behaviors de curación: dejar 0 evita autorar un número que miente.
+            // Sin esto su propio fuego lo quema: ShouldAffect exige
+            // OwnerBossImmune && IsBoss && que el dueño sea este guid.
+            data.IsBoss = true;
+
             data.BaseHealStrength = 0;
 
             data.MinGoldDrop = MinGoldDrop;
             data.MaxGoldDrop = MaxGoldDrop;
             data.VisualPrefab = visualPrefab;
 
-            // Sin retrato la cola de turnos y la barra de jefe caen a su visual default: no rompe, pero
-            // el jefe se ve como cualquier otro enemigo del piso.
             data.Portrait = portrait;
 
-            // Sin behaviors: el Croupier no tiene melee ni rango. Su único daño directo es la
-            // Represalia, y esa entra por el hook de daño de la rueda, no por el árbol.
             data.Behaviors = new List<BaseBehavior>();
             data.ExtraTiers = new List<EnemyTier>();
 
-            data.AIRoot = BuildAIRoot(fire, firePhase2);
+            data.AIRoot = BuildAIRoot(fire);
         }
 
         /// <summary>
-        /// Árbol del Croupier. Sequence raíz de siete pasos: seis de mesa y el reacomodo, último.
+        /// Árbol del Croupier: la detonación de lo avisado, los dos gates de HP y el ciclo de dos
+        /// tiempos.
         /// </summary>
         /// <remarks>
-        /// Detonar va primero, resolviendo lo cantado el turno pasado, y el gate de fase va antes del
-        /// marcado: en el path no-coroutine un <c>Running</c> aborta el Sequence. El reacomodo va
-        /// último por lo mismo — es el único paso que devuelve <c>Running</c> (espera el blink). Cada
-        /// paso que puede fallar va en <c>Selector[paso, Wait]</c>.
+        /// <para>
+        /// El turno de aviso lo da el <i>orden de los hijos</i>: el paso que prende está arriba del
+        /// que marca, así que en el turno en que se marca pasa sin encontrar nada y recién lo
+        /// encuentra al siguiente. Mover la ignición debajo del marcado deja las dos cosas en el
+        /// mismo tick: el overlay se muestra y se limpia en el mismo frame y el jugador no ve nada.
+        /// </para>
+        /// <para>
+        /// La ignición también va antes del <c>Alternate</c>: <c>Clear</c> y <c>Show</c> del overlay
+        /// son por fuente, así que detrás de T1 le pasaría el trapo al aviso de la banda que T1
+        /// acaba de levantar.
+        /// </para>
+        /// <para>
+        /// Cada paso que puede fallar va en <c>Selector[paso, Wait]</c> porque el Sequence raíz corta
+        /// en el primer <c>Failed</c> y hay un paso después del ciclo que no se puede perder. En el
+        /// path coroutine un <c>Running</c> se drena y se promueve a <c>Succeeded</c>, así que el
+        /// blink de la fuga no corta el Sequence.
+        /// </para>
         /// </remarks>
-        public static AINode_Sequence BuildAIRoot(HazardDefinitionSO fire, HazardDefinitionSO firePhase2)
+        public static AINode_Sequence BuildAIRoot(SpecialTileDefinitionSO fire)
         {
             return new AINode_Sequence
             {
                 Children = new List<AIDecisionNode>
                 {
-                    // 1. Detona lo que cantó el turno pasado. Siempre Succeeded — "nada marcado"
-                    //    (turno 1) o "el jugador se fue del sector" no son fallos.
-                    new AINode_DetonateSungSectors(),
+                    // 1. Prende lo que "Pleno y color" marco el turno pasado. Suelto y sin gate de HP:
+                    //    el aviso hay que cobrarlo al turno siguiente exista o no la condicion que lo
+                    //    levanto, y sin nada marcado en el canal es un no-op (TryConsume sin nada
+                    //    pendiente devuelve Succeeded). La duracion no se ramifica porque este canal
+                    //    solo se marca al cruzar el 50%.
+                    Guarded(new AINode_IgniteArea
+                    {
+                        Definition = fire,
+                        DurationRounds = FireDurationRoundsPhase2,
+                        ChannelId = PlenoChannelId,
+                        // 0 y no 1: el turno de aviso ya lo da el orden de los hijos. Con 1 el nodo
+                        // sumaria SU turno de espera arriba del que ya da el orden y prenderia en
+                        // N+2.
+                        AnnounceTurns = 0,
+                        // El pano entero tapa a cualquier banda vieja: sin esto ese terreno se queda
+                        // con el reloj de la banda --el mas corto-- y se apaga en el wrap siguiente.
+                        RetireFullyReplaced = true,
+                    }),
 
-                    // 2. Pleno y color, una sola vez al cruzar el 50%.
+                    // 2. Desde el 70% le queda un dado con candado. SIN AINode_Once: DiceBlockService
+                    //    se limpia solo al cerrar cada turno del jugador, asi que "permanente" se
+                    //    consigue re-emitiendolo todos los turnos; con Once duraria un turno. Y va
+                    //    FUERA del Alternate por lo mismo: adentro se emitiria uno de cada dos.
                     Guarded(new AINode_If
                     {
                         Conditions = new List<BasePreCondition>
                         {
-                            new PcOwnerHpBelow { Percent = Phase2HpThreshold },
+                            new PcOwnerHpBelow { Percent = LockHpThreshold },
+                        },
+                        Then = new AINode_RotateBlock
+                        {
+                            Target = AINode_RotateBlock.BlockTarget.Dice,
+                            DirectedIndex = new AIConstantInt { Value = LockedDieIndex },
+                            BlockVfxId = BossFeedbackIds.CroupierConfiscaVfx,
+                            BlockFeelId = BossFeedbackIds.CroupierConfiscaFeel,
+                        },
+                        Else = new AINode_Wait(),
+                    }),
+
+                    // 3. Los dos tiempos: la accion normal del turno. Alternate avanza el indice en
+                    //    cada tick pase lo que pase, asi que un beat que falla igual gasta su turno y
+                    //    el ciclo no se desincroniza.
+                    Guarded(new AINode_Alternate
+                    {
+                        Children = new List<AIDecisionNode>
+                        {
+                            // -- T1 "Reparte" --------------------------------------------------
+                            new AINode_Sequence
+                            {
+                                Children = new List<AIDecisionNode>
+                                {
+                                    // Dispara primero: si huyera antes, el tiro saldria desde la
+                                    // casilla nueva y el jugador veria el fogonazo salir de donde
+                                    // el jefe ya no esta.
+                                    Guarded(new AINode_RangedShot
+                                    {
+                                        Damage = ShotDamage,
+                                        Range = ShotRange,
+                                        Kind = AttackKind.BasicAttack,
+                                        // Los tres ids explicitos: vacios el nodo degrada a silencio
+                                        // sin dar rojo, y el ataque sale sin gesto.
+                                        AnimFeedbackId = BossFeedbackIds.CroupierRangeAnim,
+                                        ImpactVfxFeedbackId = BossFeedbackIds.CroupierRangeImpactVfx,
+                                        ImpactFeelFeedbackId = BossFeedbackIds.CroupierRangeImpactFeel,
+                                    }),
+
+                                    // Se va al borde SI el jugador esta cerca, y ANTES de marcar:
+                                    // AINode_TelegraphMark ancla la banda en la casilla del jefe al
+                                    // tickear y AINode_IgniteArea la consume sin recalcularla, asi
+                                    // que marcando primero el fuego sale de donde el jefe ya no esta.
+                                    Guarded(FleeIfClose(new AINode_TeleportAwayToEdge
+                                    {
+                                        // 0 = sin tope de aterrizaje. Que la fuga valga la pena
+                                        // (aterrizar lejos de verdad) importa mas que acotarla: el
+                                        // gate de cercania es lo que ahora sostiene que la pelea sea
+                                        // ganable, no donde cae el salto.
+                                        MaxDistanceFromPlayer = 0,
+                                        ConsumeMoveAction = true,
+                                    })),
+
+                                    // Marca el cono: anclado en el, apuntando al jugador. Size es
+                                    // el semi-ancho del APEX, asi que 0 arranca en una casilla y se
+                                    // abre 1 por lado en cada paso.
+                                    Guarded(new AINode_TelegraphMark
+                                    {
+                                        Shape = ThreatShape.DirectionalCone,
+                                        Size = ConeApexHalfWidth,
+                                        Depth = ConeDepth,
+                                        Damage = 0,
+                                        Kind = AttackKind.Environmental,
+                                    }),
+                                },
+                            },
+
+                            // -- T2 "Quema" ----------------------------------------------------
+                            new AINode_Sequence
+                            {
+                                Children = new List<AIDecisionNode>
+                                {
+                                    // Enciende lo que marco el turno pasado. La duracion la elige la
+                                    // fase con un If porque DurationRounds es un int del nodo, no un
+                                    // stat que se pueda modificar en runtime.
+                                    Guarded(new AINode_If
+                                    {
+                                        Conditions = new List<BasePreCondition>
+                                        {
+                                            new PcOwnerHpBelow { Percent = PlenoHpThreshold },
+                                        },
+                                        // RetireFullyReplaced en los dos: cada banda nueva contiene a
+                                        // la anterior, y sin esto el terreno compartido se queda con
+                                        // el reloj de la vieja --el mas corto-- y la banda recien
+                                        // avisada se apaga en el wrap siguiente sin haber ardido.
+                                        Then = new AINode_IgniteArea
+                                        {
+                                            Definition = fire,
+                                            DurationRounds = FireDurationRoundsPhase2,
+                                            RetireFullyReplaced = true,
+                                        },
+                                        Else = new AINode_IgniteArea
+                                        {
+                                            Definition = fire,
+                                            DurationRounds = FireDurationRounds,
+                                            RetireFullyReplaced = true,
+                                        },
+                                    }),
+
+                                    // Se va detras de prender (el fuego cae en las casillas guardadas
+                                    // el turno anterior, asi que el orden no le cambia el area) y
+                                    // SI el jugador esta cerca: el mismo gate que T1, sin tope de
+                                    // aterrizaje. Con el jugador manejando el tempo de cuando se
+                                    // vuelve a acercar, un tope acá ya no hace falta para que la
+                                    // pelea sea ganable.
+                                    Guarded(FleeIfClose(new AINode_TeleportAwayToEdge
+                                    {
+                                        MaxDistanceFromPlayer = 0,
+                                        ConsumeMoveAction = true,
+                                    })),
+                                },
+                            },
+                        },
+                    }),
+
+                    // 4. El armado de "Pleno y color", una sola vez al cruzar el 50%: se planta en el
+                    //    CENTRO de la sala y marca TODO el pano menos el cuadrado que lo rodea.
+                    //    Prende al turno siguiente, arriba (paso 1). Va ULTIMO, despues de la accion
+                    //    normal del turno: eso es lo que le da al jugador el turno entero para llegar
+                    //    al hueco. El centro pone el hueco a la misma distancia de las cuatro
+                    //    esquinas.
+                    Guarded(new AINode_If
+                    {
+                        Conditions = new List<BasePreCondition>
+                        {
+                            new PcOwnerHpBelow { Percent = PlenoHpThreshold },
                         },
                         Then = new AINode_Once
                         {
@@ -553,7 +660,23 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
                             {
                                 Children = new List<AIDecisionNode>
                                 {
-                                    // La fase no sube el daño: sólo anuncia (feedback + diálogo).
+                                    // PRIMERO, y desnudo (sin Guarded). Dos razones:
+                                    // 1) La marca ancla en la casilla del jefe en el momento del
+                                    //    tick, asi que el teleport tiene que estar hecho antes de
+                                    //    marcar o el hueco cae donde estaba parado.
+                                    // 2) Es el unico paso de aca que puede fallar (pide una casilla
+                                    //    libre en el centro) y AINode_Once NO latchea con Failed:
+                                    //    guardarlo con un Selector[paso, Wait] se tragaria el Failed
+                                    //    y dejaria la fase 2 anunciada sin teleport.
+                                    new AINode_TeleportToRoomCenter
+                                    {
+                                        // Explicito y no por el default: consume la accion de
+                                        // movimiento para que ningun paso posterior lo saque del
+                                        // centro.
+                                        ConsumeMoveAction = true,
+                                    },
+                                    // No sube el dano: solo anuncia (feedback + dialogo de fase).
+                                    // Detras del teleport porque el evento no se puede "des-emitir".
                                     new AINode_ApplyStatModifier
                                     {
                                         AttackDelta = 0,
@@ -561,66 +684,31 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
                                         PhaseIndex = 2,
                                         EmitPhaseChangedEvent = true,
                                     },
-                                    new AINode_SetWheelMode
+                                    // Saca de la cola el aviso del ciclo antes de encolar este: el
+                                    // Alternate ya corrio en este mismo turno y pudo dejar la banda
+                                    // de T1 marcada, y sin esto el jugador ve DOS areas prendidas a
+                                    // la vez y al turno siguiente detonan las dos. Se descarta la
+                                    // telegrafia, no el turno: el disparo de T1 ya se cobro.
+                                    new AINode_CancelTelegraph(),
+                                    new AINode_TelegraphMark
                                     {
-                                        NumbersPerTurn = Phase2NumbersPerTurn,
-                                        Rigged = true,
-                                        PhaseIndex = 2,
+                                        Shape = ThreatShape.AllExceptSquareAroundSelf,
+                                        // Size es el radio del HUECO que se salva, no del area
+                                        // amenazada: 1 = deja libre su 3x3 y prende el resto.
+                                        Size = PlenoHoleRadius,
+                                        // Canal propio: la banda de T1 puede estar marcada en este
+                                        // mismo turno y el servicio guarda un area por fuente.
+                                        ChannelId = PlenoChannelId,
+                                        // Lo cobra AINode_IgniteArea al consumir la marca: el numero
+                                        // vive en la marca, no en el nodo que prende, porque es de
+                                        // ESTE aviso.
+                                        Damage = PlenoIgnitionDamage,
+                                        Kind = AttackKind.Environmental,
                                     },
                                 },
                             },
                         },
                         Else = new AINode_Wait(),
-                    }),
-
-                    // 3. Canta el número (o los dos) y abre el windup.
-                    Guarded(new AINode_SpinWheel { RetaliationDamage = RetaliationDamage }),
-
-                    // 4. Confisca el dado del número recién cantado: el sector marcado en el piso y
-                    //    el dado con candado son el mismo dato.
-                    //
-                    //    Sung y no Detonated: con Detonated el turno 1 no tiene nada resuelto, el
-                    //    reader devuelve -1 y RotateDice ya hizo Clear(), así que la pelea abría sin
-                    //    dado bloqueado y el candado iba y venía. Va ACÁ y no más abajo porque el
-                    //    paso 3 tiene que haber poblado SungNumbers. Hay un test sobre el orden.
-                    Guarded(new AINode_RotateBlock
-                    {
-                        Target = AINode_RotateBlock.BlockTarget.Dice,
-                        DirectedIndex = new AIReadCroupierWheelNumber
-                        {
-                            Source = AIReadCroupierWheelNumber.NumberSource.Sung,
-                            Slot = 0,
-                        },
-                        BlockVfxId = BossFeedbackIds.CroupierConfiscaVfx,
-                        BlockFeelId = BossFeedbackIds.CroupierConfiscaFeel,
-                    }),
-
-                    // 5. Marca el/los sector(es) cantados: el "ataque" telegrafiado del jefe.
-                    Guarded(new AINode_MarkSungSectors
-                    {
-                        SectorDamage = SectorDamage,
-                        SectorDamagePhase2 = SectorDamagePhase2,
-                        Kind = AttackKind.BasicAttack,
-                    }),
-
-                    // 6. El sector que detonó este turno queda en llamas.
-                    Guarded(new AINode_IgniteDetonatedSectors
-                    {
-                        Fire = fire,
-                        FirePhase2 = firePhase2,
-                        BlastConsumesFlame = true,
-                    }),
-
-                    // 7. Se reacomoda. ÚLTIMO y aislado: es el único paso que puede devolver
-                    //    Running (espera el visual del blink), y un Running aborta el Sequence en
-                    //    el path no-coroutine. Desde acá no hay nada que abortar.
-                    Guarded(new AINode_Move
-                    {
-                        MaxSteps = new AIConstantInt { Value = MoveSteps },
-                        TargetSelector = new TargetSelector_AlwaysPlayer(),
-                        DesiredRange = new AIConstantInt { Value = DesiredRange },
-                        Retreat = true,
-                        StopAdjacent = false,
                     }),
                 },
             };
@@ -638,14 +726,34 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
             };
         }
 
+        /// <summary>
+        /// Gatea un salto de fuga por cercanía: sólo corre <paramref name="teleport"/> si el
+        /// jugador está a <see cref="FleeTriggerRange"/> o menos (Manhattan). <c>Else = Wait</c> y
+        /// no vacío: un <c>If</c> sin <c>Else</c> devuelve <c>Failed</c> cuando la condición no
+        /// pasa, y ese <c>Failed</c> aborta el <c>Sequence</c> del tiempo entero.
+        /// </summary>
+        private static AINode_If FleeIfClose(AINode_TeleportAwayToEdge teleport)
+        {
+            return new AINode_If
+            {
+                Conditions = new List<BasePreCondition>
+                {
+                    new PcTargetInRange { Range = FleeTriggerRange, Metric = DistanceMetric.Manhattan },
+                },
+                Then = teleport,
+                Else = new AINode_Wait(),
+            };
+        }
+
         // ======================================================================
         // Hazards
         // ======================================================================
 
         /// <summary>
-        /// Crea/actualiza una definición de fuego de paño. Dos assets (uno por fase) y no un campo del
-        /// nodo porque <see cref="IHazardService"/> toma la duración de la definición al activar:
-        /// cambiarla desde el nodo pediría tocar el servicio, que es fundación compartida.
+        /// Crea/actualiza el <see cref="HazardDefinitionSO"/> de fuego de paño en
+        /// <paramref name="path"/>. La duración va en el asset y no en un campo del nodo porque
+        /// <see cref="IHazardService"/> la toma de la definición al activar: cambiarla desde el nodo
+        /// pediría tocar el servicio, que es fundación compartida.
         /// </summary>
         /// <param name="flame">
         /// Llama persistente y burst de pisada. <c>null</c> deja el fuego como estaba —sólo el quad
@@ -659,8 +767,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
 
             if (flame != null)
             {
-                // Las dos mitades del fuego: la llama dice "esta casilla está ardiendo" mientras dura,
-                // el burst dice "y te acaba de cobrar". Sin la primera, entre pisada y pisada el
+                // Las dos mitades del fuego: sin la llama persistente, entre pisada y pisada el
                 // sector encendido se ve igual que uno apagado.
                 fire.PersistentVfxPrefab = flame;
                 fire.TriggerVfxPrefab = flame;
@@ -668,11 +775,12 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
             }
 
             fire.Trigger = HazardTriggerMode.OnTurnEndInTile;
-            // Explícito y no por default: el Croupier enciende sus propios sectores y su fila es
-            // costura de dos bloques, así que arde bajo sus pies todos los turnos. Es el jefe al que
-            // un rebuild silencioso le costaría la vida.
+            // Explícito y no por default: el jefe enciende sus propios sectores y arde bajo sus pies
+            // todos los turnos.
             fire.Affects = HazardAffects.PlayerOnly;
-            fire.Damage = FireDamage;
+            // El único consumidor de este asset es La Bandida (ver BandidaReelFireDamage): el número
+            // que se escribe acá es el de ELLA, no el del fuego del Croupier.
+            fire.Damage = BandidaReelFireDamage;
             fire.Kind = AttackKind.Environmental;
             fire.DurationRounds = durationRounds;
             fire.ConsumeOnTrigger = false; // El fuego quema el bloque entero, no una casilla y se apaga.
@@ -693,15 +801,10 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         /// Deja <see cref="FireVfxPrefabPath"/> listo clonando el mesh de fuego del arte.
         /// </summary>
         /// <remarks>
-        /// <para>
         /// Se clona en vez de referenciar <see cref="FireMeshPrefabPath"/> directo porque el hazard
-        /// instancia y destruye el objeto por casilla: apuntar al prefab del arte lo ataría a un uso
-        /// que no es el suyo, y cualquier ajuste de escala para la grilla se le volcaría encima.
-        /// </para>
-        /// <para>
-        /// A diferencia del burst de hielo, esto <b>no</b> es un ParticleSystem: es un mesh con luces.
-        /// Por eso no se retinta el <c>startColor</c> de nada — el color ya viene en <c>Mat_Fire</c>.
-        /// </para>
+        /// instancia y destruye el objeto por casilla, y cualquier ajuste de escala para la grilla se
+        /// le volcaría al prefab del arte. No es un ParticleSystem sino un mesh con luces: no hay
+        /// <c>startColor</c> que retintar, el color viene en <c>Mat_Fire</c>.
         /// </remarks>
         public static GameObject BuildFireVfx()
         {

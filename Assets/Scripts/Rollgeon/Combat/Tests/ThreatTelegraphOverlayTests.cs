@@ -48,6 +48,15 @@ namespace Rollgeon.Combat.Tests
             return list;
         }
 
+        private static List<GridCoord> WholeRoom(int width, int height)
+        {
+            var list = new List<GridCoord>();
+            for (int x = 0; x < width; x++)
+                for (int y = 0; y < height; y++)
+                    list.Add(new GridCoord(x, y));
+            return list;
+        }
+
         [Test]
         public void Show_CreatesActiveQuadsOverThreatenedTiles()
         {
@@ -131,6 +140,98 @@ namespace Rollgeon.Combat.Tests
             Assert.AreEqual(0, ((ThreatTelegraphOverlay)service).ActiveQuadCount);
 
             ((ThreatTelegraphOverlay)service).Dispose();
+        }
+
+        // =====================================================================
+        // Costo por frame: el telegraph de sala entera
+        // =====================================================================
+
+        [Test]
+        public void Show_WholeRoom_SharesOneMaterialAndCarriesNoPropertyBlock()
+        {
+            // Arrange — el caso que se midió: un ataque que telegrafía la sala entera.
+            var wholeRoom = WholeRoom(5, 5);
+
+            // Act
+            _overlay.Show(_boss, wholeRoom);
+
+            // Assert
+            var quads = _overlay.ActiveQuadsOf(_boss);
+            Assume.That(quads.Count, Is.EqualTo(wholeRoom.Count));
+
+            var shared = quads[0].Renderer.sharedMaterial;
+            Assert.IsNotNull(shared, "Sin material los quads no se dibujan.");
+
+            foreach (var quad in quads)
+            {
+                Assert.AreSame(shared, quad.Renderer.sharedMaterial,
+                    "Un material por quad multiplica los SetPass calls del telegraph por la cantidad " +
+                    "de casillas amenazadas.");
+                Assert.IsFalse(quad.Renderer.HasPropertyBlock(),
+                    "Un MaterialPropertyBlock por renderer lo saca del SRP Batcher sin importar el " +
+                    "shader, que es exactamente el costo que se vino a sacar.");
+            }
+        }
+
+        [Test]
+        public void Pulse_OnAStyleWithoutHeartbeat_StopsWritingAfterTheShow()
+        {
+            // Arrange — Detonating tiene PulseSpeed 0: su alpha es constante, así que repintarlo por
+            // frame era trabajo puro.
+            _overlay.Show(_boss, Tiles((1, 1)), ThreatOverlayState.Detonating);
+            var group = _overlay.ActiveQuadsOf(_boss)[0].Group;
+            Assume.That(group, Is.Not.Null);
+
+            // Act / Assert
+            Assert.IsFalse(group.Pulse(Time.time),
+                "El Show ya dejó el alpha escrito: repetirlo el mismo frame es una escritura de más.");
+            Assert.IsFalse(group.Pulse(Time.time + 10f),
+                "Un estado sin latido no puede seguir escribiendo su material cada frame.");
+        }
+
+        [Test]
+        public void Pulse_OnAPulsingStyle_KeepsReachingTheMaterialWhenTheAlphaMoves()
+        {
+            // Arrange
+            _overlay.Show(_boss, Tiles((1, 1)), ThreatOverlayState.Marked);
+            var group = _overlay.ActiveQuadsOf(_boss)[0].Group;
+            var marked = _overlay.StyleOf(ThreatOverlayState.Marked);
+
+            // Un cuarto de período por paso: el seno no puede quedarse quieto en cuatro pasos, así
+            // que el test no depende de en qué punto del latido arrancó Time.time.
+            float quarter = Mathf.PI * 0.5f / marked.PulseSpeed;
+
+            // Act
+            bool wrote = false;
+            for (int step = 1; step <= 4 && !wrote; step++)
+                wrote = group.Pulse(Time.time + quarter * step);
+
+            // Assert
+            Assert.IsTrue(wrote,
+                "El skip es por alpha igual, no por estado: si el latido deja de llegar al material, " +
+                "el telegraph queda congelado.");
+        }
+
+        [Test]
+        public void Dispose_DestroysEveryCachedMaterial_NotJustOne()
+        {
+            // Arrange — dos pares (estado, matiz) = dos materiales en el cache.
+            var hazard = Guid.NewGuid();
+            _overlay.Show(_boss, Tiles((1, 1)), ThreatOverlayState.Marked, Color.red);
+            _overlay.Show(hazard, Tiles((3, 3)), ThreatOverlayState.Safe, Color.cyan);
+
+            var first = _overlay.ActiveQuadsOf(_boss)[0].Renderer.sharedMaterial;
+            var second = _overlay.ActiveQuadsOf(hazard)[0].Renderer.sharedMaterial;
+            Assume.That(first, Is.Not.SameAs(second));
+
+            // Act
+            _overlay.Dispose();
+
+            // Assert — el fake-null de Unity es la única señal de que el nativo se fue, así que hay
+            // que pasar por el == de UnityEngine.Object y no por Is.Null de NUnit.
+            Assert.IsTrue(first == null, "Dispose dejó colgado el material del primer par.");
+            Assert.IsTrue(second == null,
+                "Dispose bajó un solo material: el resto leakea un material por par y por run.");
         }
     }
 }

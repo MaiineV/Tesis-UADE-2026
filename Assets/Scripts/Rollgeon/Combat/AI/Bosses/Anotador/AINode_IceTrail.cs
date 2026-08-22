@@ -12,42 +12,17 @@ namespace Rollgeon.Combat.AI.Decisions
     /// <summary>
     /// Estela helada del Anotador (piso 2): congela las casillas que el boss <b>acaba de pisar</b>
     /// en su repliegue. Pisarlas no hace daño — cuesta el turno (stun 1) y derrite la casilla.
-    /// Va inmediatamente <b>después</b> del nodo de repliegue en el Sequence del turno.
     /// </summary>
     /// <remarks>
     /// <para>
-    /// <b>Por qué existe.</b> La marca de fila cae sobre la fila del jugador y el boss no está
-    /// obligado a salirse de ella, así que el camino corto hasta él suele estar entero adentro de
-    /// la marca. La estela cobra ese camino corto en la moneda que más duele: quedarse quieto
-    /// adentro de la fila marcada, donde los 30 conectan garantizado. El zigzag la esquiva gratis
-    /// porque nunca camina por donde caminó el boss.
+    /// Las casillas salen de <see cref="IceStunBinder"/>, que graba el path real que publicó
+    /// <c>IMovementService.OnEntityMoved</c>. No se reconstruye con <c>FindPath</c>: después de moverse
+    /// la ocupancia cambió y el camino recalculado podría no ser el que caminó.
     /// </para>
     /// <para>
-    /// <b>De dónde salen las casillas.</b> De <see cref="IceStunBinder"/>, que graba el
-    /// path real que publicó <c>IMovementService.OnEntityMoved</c>. No se reconstruye con
-    /// <c>FindPath</c>: después de moverse la ocupancia cambió y el camino recalculado podría no
-    /// ser el que caminó, congelando casillas mentirosas.
-    /// </para>
-    /// <para>
-    /// <b>No abortar el turno.</b> "No me repliegué este turno" es el caso mayoritario (el boss solo
-    /// se mueve si lo tienen a 3 casillas o menos) y devuelve <see cref="AIResult.Succeeded"/> como
-    /// no-op transparente: un <see cref="AIResult.Failed"/> ahí cortaría el <see cref="AINode_Sequence"/>
-    /// del turno y el boss perdería la marca de fila, que es su único ataque — el mismo bug que dejó
-    /// quieto al Sunken Grand. Los <c>Failed</c> que quedan son de configuración (sin
-    /// <see cref="Hazard"/>, sin <see cref="IHazardService"/>), y aun así el árbol lo cuelga de un
-    /// <c>Selector[IceTrail, Wait]</c>.
-    /// </para>
-    /// <para>
-    /// <b>Estela única.</b> Con <see cref="ReplacePreviousTrail"/> el repliegue de este turno mata la
-    /// estela del turno pasado antes de publicar la nueva: dos estelas vivas superpondrían overlays y
-    /// duplicarían las casillas congeladas de un boss que "deja una estela", en singular.
-    /// </para>
-    /// <para>
-    /// <b>Sin presentación propia a propósito.</b> El hazard ya trae su <c>VFX_IceBurst</c>, así que
-    /// las casillas se ven al congelarse. Del lado del jefe no hay gesto que agregar: la estela es
-    /// consecuencia pasiva del repliegue —cae en el mismo tick, justo después de que se movió— y el
-    /// rig del Anotador (<c>ChestMimic</c>) sólo tiene <c>Attack</c> y <c>Awaken</c>. Reproducir
-    /// <c>Attack</c> acá haría leer un ataque que no existe y bloquearía el turno detrás de él.
+    /// "No me repliegué este turno" devuelve <see cref="AIResult.Succeeded"/> como no-op: un
+    /// <see cref="AIResult.Failed"/> ahí cortaría el <see cref="AINode_Sequence"/> del turno y el boss
+    /// perdería la marca de fila, que es su único ataque.
     /// </para>
     /// </remarks>
     [Serializable, HideReferenceObjectPicker]
@@ -56,9 +31,8 @@ namespace Rollgeon.Combat.AI.Decisions
         [Tooltip("Definición del hielo. Debe tener Trigger = OnEnter, Damage = 0, " +
                  "ConsumeOnTrigger = true (la casilla se derrite al pisarla, así no hay cadenas de " +
                  "stun) y DurationRounds = 4. Ojo con ese último: la estela nace en el turno del " +
-                 "jefe, cuando el jugador ya jugó el suyo (CNF-006), y la duración se descuenta en " +
-                 "el wrap de ronda — DurationRounds = D deja D-1 rondas pisables, así que las 3 de " +
-                 "la ficha piden 4. Ver HazardDefinitionSO.")]
+                 "jefe, cuando el jugador ya jugó el suyo, y la duración se descuenta en el wrap de " +
+                 "ronda — DurationRounds = D deja D-1 rondas pisables. Ver HazardDefinitionSO.")]
         public HazardDefinitionSO Hazard;
 
         [Tooltip("Tope de casillas congeladas por repliegue. El repliegue camina como máximo " +
@@ -124,10 +98,8 @@ namespace Rollgeon.Combat.AI.Decisions
         }
 
         /// <summary>
-        /// Últimas <paramref name="max"/> casillas del recorrido. Se recorta por el final y no por
-        /// el principio: si alguna vez el repliegue camina más de <paramref name="max"/> pasos, las
-        /// casillas que importan son las pegadas a su posición final — las que pisa quien lo
-        /// persigue por el camino corto.
+        /// Últimas <paramref name="max"/> casillas del recorrido: se recorta por el final porque las
+        /// que importan son las pegadas a su posición final.
         /// </summary>
         private static List<GridCoord> TrimToLast(List<GridCoord> walked, int max)
         {

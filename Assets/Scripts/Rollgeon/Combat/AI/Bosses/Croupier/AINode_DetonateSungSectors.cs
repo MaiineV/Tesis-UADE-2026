@@ -14,20 +14,11 @@ namespace Rollgeon.Combat.AI.Bosses.Croupier
 {
     /// <summary>
     /// Detona los sectores que el Croupier cantó el turno pasado: consume el área pendiente de cada
-    /// slot y, si el jugador está adentro, aplica su daño. Cierra el windup — a partir de acá pegarle
-    /// al jefe ya no corre la rueda hasta que vuelva a cantar.
+    /// slot y, si el jugador está adentro, aplica su daño.
     /// </summary>
     /// <remarks>
-    /// <para>
-    /// Va primero en el Sequence raíz y siempre devuelve <see cref="AIResult.Succeeded"/>: "no había
-    /// nada marcado" y "el jugador se fue del sector" son resoluciones válidas. Un golpe por sector y
-    /// no uno sumado, para que cada golpe quede bajo el techo de daño del piso.
-    /// </para>
-    /// <para>
     /// Campo de id vacío ⇒ el id canónico (<see cref="BossFeedbackIds"/>): Odin no corre field
-    /// initializers, así que un <c>ED_Boss_Croupier</c> ya autorado no trae estos campos. Para
-    /// silenciar un canal se lo apunta a otra entry, no se lo vacía.
-    /// </para>
+    /// initializers, así que un <c>ED_Boss_Croupier</c> ya autorado no trae estos campos.
     /// </remarks>
     [Serializable, HideReferenceObjectPicker]
     public sealed class AINode_DetonateSungSectors : AIActionNode
@@ -58,8 +49,8 @@ namespace Rollgeon.Combat.AI.Bosses.Croupier
         }
 
         /// <summary>
-        /// Camino de play mode. El daño cae primero y el impacto se reproduce después, en el mismo
-        /// frame: la presentación nunca puede quedar entre el jugador y el golpe que ya se decidió.
+        /// Camino de play mode: el daño cae primero y el impacto se reproduce después, en el mismo
+        /// frame.
         /// </summary>
         public override IEnumerator TickCoroutine(AIContext context, Action<AIResult> onResult)
         {
@@ -82,9 +73,8 @@ namespace Rollgeon.Combat.AI.Bosses.Croupier
             var wheel = CroupierWheelService.ResolveOrCreate();
             if (wheel == null) return false;
 
-            // Se cierra el windup ANTES de resolver el daño: el golpe que detona puede matar al
-            // jugador y disparar el fin del combate, y con el windup abierto la rueda quedaría
-            // esperando un corrimiento de una pelea que ya terminó.
+            // Se cierra el windup ANTES de resolver el daño: el golpe puede matar al jugador y
+            // terminar el combate, y con el windup abierto la rueda queda esperando un corrimiento.
             var slots = wheel.ConsumeWindup();
             if (slots == null || slots.Count == 0) return false;
 
@@ -104,10 +94,6 @@ namespace Rollgeon.Combat.AI.Bosses.Croupier
             return anyHit;
         }
 
-        /// <remarks>
-        /// Request de secuencia a mano y no <c>EffPlaySequence</c>: el nodo no nace de un effect pass
-        /// y no tiene <c>EffectContext</c> que pasarle (por eso <c>FeedbackRequest.Context</c> admite null).
-        /// </remarks>
         private IEnumerator PlayImpact(AIContext context)
         {
             if (!ServiceLocator.TryGetService<IFeedbackService>(out var feedback) || feedback == null) yield break;
@@ -136,7 +122,6 @@ namespace Rollgeon.Combat.AI.Bosses.Croupier
             while (wait.MoveNext()) yield return wait.Current;
         }
 
-        /// <summary>VFX y Feel arrancan juntos: son las dos mitades del mismo instante.</summary>
         private static FeedbackSequenceStep Impact(string feedbackId) => new FeedbackSequenceStep
         {
             Source = StepSource.FeedbackRef,
@@ -157,8 +142,8 @@ namespace Rollgeon.Combat.AI.Bosses.Croupier
             {
                 context.DamagePipeline.Resolve(new DamageContext
                 {
-                    // El source es el jefe, no el guid derivado del slot: la atribución del daño, la
-                    // debilidad y el feedback siguen apuntando al Croupier.
+                    // El source es el jefe, no el guid derivado del slot: atribución, debilidad y
+                    // feedback tienen que seguir apuntando al Croupier.
                     SourceId = context.SelfGuid,
                     TargetId = context.PlayerGuid,
                     BaseDamage = area.Damage,
@@ -169,7 +154,6 @@ namespace Rollgeon.Combat.AI.Bosses.Croupier
         }
 
 #if UNITY_EDITOR
-        // Dropdown obligatorio (§0): los ids de feedback nunca se tipean a mano.
         private static IEnumerable<string> GetFeedbackIdsForDropdown()
         {
             foreach (var guid in UnityEditor.AssetDatabase.FindAssets("t:FeedbackDBSO"))

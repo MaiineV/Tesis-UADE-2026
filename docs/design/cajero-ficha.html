@@ -1,0 +1,707 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>El Cajero</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:opsz,wght@6..96,400;6..96,600&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+
+<style>
+  /* ---------- tokens: paleta sacada del propio builder del jefe ---------- */
+  :root {
+    --ground:      #F7F3F2;
+    --surface:     #FFFFFF;
+    --surface-alt: #EFE8E7;
+    --ink:         #1C1418;
+    --ink-soft:    #59484D;
+    --ink-faint:   #8A757B;
+    --rule:        #DFD3D2;
+    --rule-strong: #C3B2B2;
+
+    --wine:        #8C1F33;
+    --wine-soft:   #F0DEE1;
+    --brass:       #8A6412;
+    --brass-soft:  #F4E8CB;
+    --fire:        #BE1A0C;
+    --fire-soft:   #FADCD6;
+
+    --felt:        #E7DEDC;
+    --blocker:     #CFC4C2;
+
+    --shadow: 0 1px 2px rgba(28,20,24,.06), 0 8px 24px -12px rgba(28,20,24,.18);
+
+    --measure: 68ch;
+    --step--1: .82rem;
+    --step-0:  1rem;
+    --step-1:  1.24rem;
+    --step-2:  1.6rem;
+    --step-3:  2.1rem;
+    --step-4:  3.1rem;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground:      #14100F;
+      --surface:     #1D1717;
+      --surface-alt: #251D1E;
+      --ink:         #EFE5E2;
+      --ink-soft:    #B7A5A3;
+      --ink-faint:   #8B7873;
+      --rule:        #332727;
+      --rule-strong: #4A3A3A;
+
+      --wine:        #D9647A;
+      --wine-soft:   #3A1622;
+      --brass:       #D4A232;
+      --brass-soft:  #35280E;
+      --fire:        #F2634A;
+      --fire-soft:   #40170F;
+
+      --felt:        #2A2122;
+      --blocker:     #241D1D;
+
+      --shadow: 0 1px 2px rgba(0,0,0,.4), 0 8px 24px -12px rgba(0,0,0,.7);
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --ground:      #14100F;
+    --surface:     #1D1717;
+    --surface-alt: #251D1E;
+    --ink:         #EFE5E2;
+    --ink-soft:    #B7A5A3;
+    --ink-faint:   #8B7873;
+    --rule:        #332727;
+    --rule-strong: #4A3A3A;
+
+    --wine:        #D9647A;
+    --wine-soft:   #3A1622;
+    --brass:       #D4A232;
+    --brass-soft:  #35280E;
+    --fire:        #F2634A;
+    --fire-soft:   #40170F;
+
+    --felt:        #2A2122;
+    --blocker:     #241D1D;
+
+    --shadow: 0 1px 2px rgba(0,0,0,.4), 0 8px 24px -12px rgba(0,0,0,.7);
+  }
+
+  /* ---------- base ---------- */
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--ground);
+    color: var(--ink);
+    font-family: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+    font-size: var(--step-0);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap { max-width: 62rem; margin: 0 auto; padding: 0 1.5rem 6rem; }
+
+  p, ul, ol { max-width: var(--measure); }
+  p { margin: 0 0 1rem; }
+  a { color: var(--wine); }
+
+  h1, h2, h3 {
+    font-family: "Bodoni Moda", Georgia, "Times New Roman", serif;
+    font-weight: 400;
+    text-wrap: balance;
+    margin: 0;
+  }
+
+  .eyebrow {
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: var(--step--1);
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+  }
+
+  /* ---------- cabecera ---------- */
+  header { padding: 4.5rem 0 2.5rem; border-bottom: 1px solid var(--rule); }
+  header h1 { font-size: var(--step-4); line-height: 1.02; letter-spacing: -.01em; margin: .6rem 0 1.2rem; }
+
+  .thesis {
+    font-family: "Bodoni Moda", Georgia, serif;
+    font-size: var(--step-2);
+    line-height: 1.3;
+    color: var(--wine);
+    font-style: italic;
+    max-width: 24ch;
+    margin: 0 0 1.6rem;
+  }
+
+  .statusbar { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: 1.4rem; }
+
+  .chip {
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: var(--step--1);
+    padding: .28rem .6rem;
+    border: 1px solid var(--rule-strong);
+    border-radius: 2px;
+    color: var(--ink-soft);
+    background: var(--surface);
+  }
+  .chip.warn { border-color: var(--wine); color: var(--wine); background: var(--wine-soft); }
+
+  /* ---------- secciones ---------- */
+  section { padding: 3.2rem 0; border-bottom: 1px solid var(--rule); }
+  section:last-of-type { border-bottom: 0; }
+
+  .sec-head { margin-bottom: 1.6rem; }
+  .sec-head h2 { font-size: var(--step-3); line-height: 1.1; margin-top: .25rem; }
+  h3 { font-size: var(--step-1); margin: 2rem 0 .6rem; }
+
+  /* ---------- grilla de la sala ---------- */
+  .board-row { display: flex; flex-wrap: wrap; gap: 2rem; align-items: flex-start; }
+
+  .board {
+    --cell: 28px;
+    display: grid;
+    grid-template-columns: repeat(11, var(--cell));
+    grid-auto-rows: var(--cell);
+    gap: 2px;
+    padding: 10px;
+    background: var(--surface-alt);
+    border: 1px solid var(--rule-strong);
+    border-radius: 3px;
+    flex: 0 0 auto;
+  }
+  .board.sm { --cell: 19px; gap: 1px; padding: 7px; }
+
+  .cell {
+    display: grid;
+    place-items: center;
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: .7rem;
+    font-weight: 600;
+    color: var(--ink-faint);
+    background: var(--felt);
+    border-radius: 1px;
+  }
+  .cell.blocker {
+    background: var(--blocker);
+    background-image: repeating-linear-gradient(45deg, transparent 0 3px, var(--rule-strong) 3px 4px);
+  }
+  .cell.boss { background: var(--brass); color: var(--ground); font-size: .8rem; }
+  .cell.mark { background: var(--wine-soft); box-shadow: inset 0 0 0 2px var(--wine); color: var(--wine); }
+  .cell.burn { background: var(--fire-soft); box-shadow: inset 0 0 0 1px var(--fire); color: var(--fire); }
+  .cell.player { background: var(--ink); color: var(--ground); font-size: .8rem; }
+
+  /* Terreno propio de esta sala. El CSS venia del Croupier, que no tiene ninguna de estas. */
+  .cell.spike {
+    background: var(--fire-soft);
+    box-shadow: inset 0 0 0 1px var(--fire);
+    color: var(--fire);
+  }
+  .cell.safe {
+    background: var(--blocker);
+    background-image: repeating-linear-gradient(45deg, transparent 0 3px, var(--rule-strong) 3px 4px);
+  }
+  .cell.spawn { box-shadow: inset 0 0 0 1px var(--rule-strong); color: var(--ink-faint); }
+  /* Gana sobre la .chip global de la barra de estado, que trae padding y borde de pastilla. */
+  .cell.chip {
+    padding: 0;
+    border: 0;
+    border-radius: 1px;
+    background: var(--brass-soft);
+    box-shadow: inset 0 0 0 1px var(--brass);
+    color: var(--brass);
+    font-size: .7rem;
+  }
+  .cell.path { background: var(--wine-soft); }
+  /* Encima del terreno, no en su lugar: un tumbo que cruza pinchos sigue leyendose como pinchos. */
+  .cell.on-path { box-shadow: inset 0 0 0 2px var(--wine); }
+
+  .board-note { flex: 1 1 16rem; min-width: 15rem; }
+  .board-note p:last-child { margin-bottom: 0; }
+
+  figcaption {
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: var(--step--1);
+    color: var(--ink-faint);
+    margin-top: .7rem;
+    max-width: 42ch;
+  }
+  figure { margin: 0 0 1.5rem; }
+
+  /* ---------- leyenda ---------- */
+  .legend {
+    display: flex; flex-wrap: wrap; gap: .4rem 1.1rem;
+    padding: 0; margin: 1rem 0 0; list-style: none;
+    font-size: var(--step--1); color: var(--ink-soft); max-width: none;
+  }
+  .legend li { display: flex; align-items: center; gap: .45rem; }
+  .swatch { width: 13px; height: 13px; border-radius: 1px; background: var(--felt); flex: 0 0 auto; }
+  .swatch.mark    { background: var(--wine-soft); box-shadow: inset 0 0 0 2px var(--wine); }
+  .swatch.burn    { background: var(--fire-soft); box-shadow: inset 0 0 0 1px var(--fire); }
+  .swatch.blocker { background: var(--blocker); background-image: repeating-linear-gradient(45deg, transparent 0 3px, var(--rule-strong) 3px 4px); }
+  .swatch.boss    { background: var(--brass); }
+  .swatch.player  { background: var(--ink); }
+  .swatch.spike   { background: var(--fire-soft); box-shadow: inset 0 0 0 1px var(--fire); }
+  .swatch.safe    { background: var(--blocker); background-image: repeating-linear-gradient(45deg, transparent 0 3px, var(--rule-strong) 3px 4px); }
+  .swatch.spawn   { box-shadow: inset 0 0 0 1px var(--rule-strong); }
+  .swatch.chip    { padding: 0; border: 0; background: var(--brass-soft); box-shadow: inset 0 0 0 1px var(--brass); }
+  .swatch.path    { background: var(--wine-soft); box-shadow: inset 0 0 0 2px var(--wine); }
+
+  /* ---------- pasos del turno ---------- */
+  .steps { display: grid; gap: 1px; background: var(--rule); border: 1px solid var(--rule); border-radius: 3px; overflow: hidden; }
+  .step { display: grid; grid-template-columns: 7.5rem 1fr; background: var(--surface); }
+  .step-n {
+    display: grid; place-items: center; text-align: center;
+    font-family: "Bodoni Moda", Georgia, serif;
+    font-size: var(--step-1);
+    color: var(--brass);
+    background: var(--surface-alt);
+    padding: .6rem;
+    line-height: 1.15;
+  }
+  .step-body { padding: 1rem 1.2rem; }
+  .step-body h4 { margin: 0 0 .2rem; font-family: "IBM Plex Sans", sans-serif; font-size: var(--step-0); font-weight: 600; }
+  .step-body p { margin: 0; color: var(--ink-soft); font-size: .94rem; }
+
+  /* ---------- tablas ---------- */
+  .tablebox { overflow-x: auto; border: 1px solid var(--rule); border-radius: 3px; background: var(--surface); }
+  table { border-collapse: collapse; width: 100%; font-size: .93rem; }
+  th, td { text-align: left; padding: .62rem .9rem; border-bottom: 1px solid var(--rule); vertical-align: top; }
+  thead th {
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: var(--step--1);
+    text-transform: uppercase; letter-spacing: .08em;
+    color: var(--ink-faint); font-weight: 500;
+    background: var(--surface-alt);
+  }
+  tbody tr:last-child td { border-bottom: 0; }
+  td.num, th.num { font-family: "IBM Plex Mono", monospace; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  code { font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: .88em; background: var(--surface-alt); padding: .1em .35em; border-radius: 2px; }
+
+  /* ---------- fases ---------- */
+  .phases { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr)); }
+  .phase {
+    border: 1px solid var(--rule); border-top: 3px solid var(--brass);
+    border-radius: 3px; background: var(--surface);
+    padding: 1.1rem 1.2rem 1.3rem; box-shadow: var(--shadow);
+  }
+  .phase.p2 { border-top-color: var(--wine); }
+  .phase.p3 { border-top-color: var(--fire); }
+  .phase .hp { font-family: "IBM Plex Mono", monospace; font-size: var(--step--1); letter-spacing: .08em; color: var(--ink-faint); }
+  .phase h3 { margin: .3rem 0 .5rem; font-size: var(--step-1); }
+  .phase p { font-size: .92rem; color: var(--ink-soft); margin-bottom: .5rem; }
+  .phase p:last-child { margin-bottom: 0; }
+
+  /* ---------- paneles a dos columnas ---------- */
+  .split { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr)); }
+  .panel { border: 1px solid var(--rule); border-radius: 3px; background: var(--surface); padding: 1.1rem 1.3rem 1.3rem; }
+  .panel h3 { margin: 0 0 .7rem; font-size: var(--step-1); }
+  .panel ul { margin: 0; padding-left: 1.1rem; font-size: .92rem; color: var(--ink-soft); }
+  .panel li { margin-bottom: .35rem; }
+  .panel.build h3 { color: var(--brass); }
+
+  /* ---------- preguntas ---------- */
+  .asks { list-style: none; padding: 0; margin: 0; display: grid; gap: .8rem; max-width: var(--measure); }
+  .asks li { border-left: 3px solid var(--wine); background: var(--surface); padding: .8rem 1rem; font-size: .95rem; }
+
+  .callout {
+    border: 1px solid var(--brass); background: var(--brass-soft);
+    border-radius: 3px; padding: 1rem 1.2rem;
+    max-width: var(--measure); margin: 1.5rem 0;
+  }
+  .callout p { margin: 0; }
+  .callout .eyebrow { color: var(--brass); display: block; margin-bottom: .3rem; }
+
+  footer { padding: 2.5rem 0 0; color: var(--ink-faint); font-size: var(--step--1); font-family: "IBM Plex Mono", monospace; }
+
+  @media (max-width: 640px) { .board { --cell: 22px; } header h1 { font-size: var(--step-3); } }
+  @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <div class="eyebrow">Rediseño de jefe · Piso 2 · Especificación</div>
+  <h1>El Cajero</h1>
+  <p class="thesis">No te mata: te sobrevive con tu plata.</p>
+  <p>Te persigue, te agarra y te tira tres casillas — y en el tumbo se te cae el oro. Lo que quede en el piso cuando se venza se lo lleva él, y le cura exactamente lo que valía. La pelea no se gana pegándole más fuerte: se gana no dejándole nada.</p>
+  <div class="statusbar">
+    <span class="chip">rama <code>feature/improve-bosses</code></span>
+    <span class="chip">sala 11×11 · 115 casillas caminables</span>
+    <span class="chip warn">vida 350 · debilidad Full House ×1,5</span>
+  </div>
+</header>
+
+<!-- ============================ 01 TERRENO ============================ -->
+<section>
+  <div class="sec-head">
+    <div class="eyebrow">01 — Terreno</div>
+    <h2>La sala</h2>
+  </div>
+
+  <p><strong>11 × 11</strong>, el tamaño no se toca. Nada la parte al medio: contra un melee que te persigue, un muro o lo frena y deja de ser amenaza, o no lo frena y es sólo un peaje al cruzar. Lo que la sala tiene en cambio es <strong>textura</strong>, y la textura es de la sala, no del jefe.</p>
+
+  <figure>
+    <div class="board-row">
+      <div class="board" data-map="nueva"></div>
+      <div class="board-note">
+        <ul class="legend">
+          <li><span class="swatch"></span> caminable</li>
+          <li><span class="swatch safe"></span> caja fuerte</li>
+          <li><span class="swatch spike"></span> pinchos</li>
+          <li><span class="swatch boss"></span> Cajero</li>
+          <li><span class="swatch spawn"></span> spawn posible</li>
+        </ul>
+        <p style="margin-top:1rem"><strong>Diez pinchos sueltos.</strong> Éste es el layout de la sala, dibujado a mano y en estas casillas exactas: no se sortean, no los pone él, no se mueven. La regla que los coloca es <strong>ninguno tocando a otro, ni en diagonal</strong> — dos pegados leen como una mancha y se vuelven zona prohibida; sueltos leen como lo que son, casillas que mirás de a una.</p>
+        <p><strong>Seis cajas fuertes</strong> son lo único que bloquea, y lo único que frena un empujón en seco. Están contra los costados para que el centro quede abierto: la pelea pasa en el medio porque es donde hay lugar para que te tire.</p>
+        <p>El borde queda limpio y las cuatro esquinas también. El jugador arranca en <strong>una de esas cuatro, al azar</strong>, y el jefe siempre en el centro: la primera decisión de la pelea —por dónde entrás— cambia cada run sin que la sala cambie.</p>
+      </div>
+    </div>
+    <figcaption>115 casillas caminables de 121. Los pinchos son caminables: son peligro, no pared. Ninguno está a menos de dos casillas de otro.</figcaption>
+  </figure>
+</section>
+
+<!-- ============================ 02 CICLO ============================ -->
+<section>
+  <div class="sec-head">
+    <div class="eyebrow">02 — Ciclo</div>
+    <h2>Dos golpes que se intercalan</h2>
+  </div>
+
+  <p>Tiene <strong>dos ataques melee y los alterna</strong>: uno pega fuerte y te deja donde estás, el otro pega menos y te tira tres casillas. Ninguno de los dos avisa, y no tienen que avisar — <strong>los avisos son para áreas</strong>, ataques donde el peligro no está donde está el bicho. Éstos son contacto: lo ves pegado a vos y ya sabés lo que viene.</p>
+
+  <div class="steps">
+    <div class="step">
+      <div class="step-n">1<br>Mandoble</div>
+      <div class="step-body">
+        <h4>Pega fuerte y te deja ahí</h4>
+        <p><strong>14 de daño liso.</strong> No te mueve, no te saca nada. Es su piso: el turno que no podés evitar de ninguna manera si estás a su alcance.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-n">2<br>Empujón</div>
+      <div class="step-body">
+        <h4>Pega menos y te tira tres casillas</h4>
+        <p><strong>10 de daño</strong>, y te manda <strong>3 casillas en línea recta, derecho para el lado opuesto al suyo</strong> — no apunta a nada, sólo te saca de encima. Cada casilla de pinchos que el tumbo te cruce suma <strong>14</strong>. Frena en seco contra una caja fuerte o contra la pared.</p>
+        <p>Y en el camino se te caen <strong>2 monedas</strong>, repartidas a lo largo del tumbo. No hay contador que te avise del robo: ves la plata salir de vos y quedar en el piso.</p>
+      </div>
+    </div>
+  </div>
+
+  <p style="margin-top:1.5rem">Se alternan estrictamente: mandoble, empujón, mandoble, empujón. <strong>El jugador siempre sabe cuál viene</strong>, y ahí está el juego — el turno del empujón es el único que podés preparar, eligiendo desde qué casilla lo atacás.</p>
+
+  <div class="board-row" style="margin-top:2rem">
+    <figure>
+      <div class="board sm" data-map="empujon"></div>
+      <figcaption>El tumbo sale derecho para el lado opuesto a él. Acá cruza un pincho: 10 + 14 = <strong>24</strong>.</figcaption>
+    </figure>
+    <figure>
+      <div class="board sm" data-map="tumbo"></div>
+      <figcaption>Y quedan dos monedas tiradas a lo largo del recorrido.</figcaption>
+    </figure>
+    <div class="board-note">
+      <ul class="legend">
+        <li><span class="swatch path"></span> el tumbo</li>
+        <li><span class="swatch chip"></span> moneda</li>
+        <li><span class="swatch player"></span> jugador</li>
+      </ul>
+      <p style="margin-top:1rem">La información nunca está oculta: los pinchos están ahí desde que entraste, él está donde lo ves, el tumbo son siempre tres casillas en línea recta, y sabés de antemano qué golpe toca. <strong>La decisión no es "esquivo el empujón", es desde qué casilla lo ataco.</strong></p>
+    </div>
+  </div>
+
+  <h3>Cuándo hace qué</h3>
+
+  <div class="tablebox">
+    <table>
+      <thead><tr><th>Si…</th><th>Hace</th></tr></thead>
+      <tbody>
+        <tr><td>Está pegado a vos, y el último fue el empujón</td><td><strong>Mandoble</strong> — 14</td></tr>
+        <tr><td>Está pegado a vos, y el último fue el mandoble</td><td><strong>Empujón</strong> — 10 y te tira</td></tr>
+        <tr><td>Está lejos</td><td><strong>Camina</strong> — 4 pasos, esquivando los pinchos armados</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+</section>
+
+<!-- ============================ 03 LAS MONEDAS ============================ -->
+<section>
+  <div class="sec-head">
+    <div class="eyebrow">03 — Las monedas</div>
+    <h2>Lo que se te cae y lo que lo cura</h2>
+  </div>
+
+  <p>Vienen de dos fuentes y las dos se comportan igual: quedan en el piso, valen lo que valen, y <strong>duran 3 rondas</strong>.</p>
+
+  <div class="steps">
+    <div class="step">
+      <div class="step-n">1</div>
+      <div class="step-body">
+        <h4>La sala las suelta</h4>
+        <p><strong>4 monedas cada 3 rondas</strong>, repartidas por la sala. Pueden caer sobre pinchos — y entonces levantarlas cuesta 14.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-n">2</div>
+      <div class="step-body">
+        <h4>Él te las saca</h4>
+        <p>Cada empujón te tira <strong>2 monedas</strong> a lo largo del tumbo. Ésas eran tuyas: perderlas duele dos veces.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-n">3</div>
+      <div class="step-body">
+        <h4>Si se vencen, se cura</h4>
+        <p>La moneda que nadie levantó en 3 rondas <strong>se va con él y lo cura 12</strong>. Se vencen de a una, no todas juntas: la presión es constante, no un golpe. Pero no puede recuperarse indefinidamente: <strong>60 de curación en toda la pelea</strong>, y después las monedas vencidas dejan de curarlo.</p>
+      </div>
+    </div>
+  </div>
+
+  <p style="margin-top:1.5rem"><strong>Eso es el reloj de la pelea.</strong> Levantarlas te obliga a caminar la sala con él persiguiéndote, y cada paso que das juntando plata es un paso que no das pegándole.</p>
+
+  <div class="callout">
+    <span class="eyebrow">Y el empujón te junta las que cruza</span>
+    <p>Si el tumbo pasa sobre monedas tiradas, <strong>las levantás en el camino</strong>. El empujón ya es lo peor que te pasa en el turno; que a veces te deje algo es lo único bueno que puede tener, y le agrega una razón más para elegir de qué lado te dejás empujar. El tumbo cobra y recoge en el mismo trayecto.</p>
+  </div>
+</section>
+
+<!-- ============================ 04 EL TERRENO Y ÉL ============================ -->
+<section>
+  <div class="sec-head">
+    <div class="eyebrow">04 — El terreno y él</div>
+    <h2>Los esquiva, pero se los come</h2>
+  </div>
+
+  <p>La regla tiene dos mitades, y de las dos juntas sale la única herramienta defensiva real contra algo que te persigue.</p>
+
+  <div class="steps">
+    <div class="step">
+      <div class="step-n">Caminando</div>
+      <div class="step-body">
+        <h4>Los esquiva siempre</h4>
+        <p>Su pathing trata los pinchos armados como intransitables: nunca se mete solo en uno. Si hay camino limpio lo rodea; si no hay, <strong>avanza hasta la casilla limpia más cercana a vos</strong> y espera ahí.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-n">Empujado</div>
+      <div class="step-body">
+        <h4>Los come igual</h4>
+        <p>El movimiento forzado no pasa por el pathing: <strong>14 por casilla</strong>, lo mismo que a vos. Cuidadoso por decisión propia, vulnerable a que se lo fuerce — y ahí es donde tu Empuje tiene dientes.</p>
+      </div>
+    </div>
+  </div>
+
+  <p style="margin-top:1.5rem">Los pinchos son entonces <strong>muro para él y piso para vos</strong>: te arrimás a uno y lo obligás a dar la vuelta. Medido, el peor desvío es de <strong>+2 pasos</strong> sobre un movimiento de 4, y no queda ninguna casilla desde la cual no pueda alcanzarte. Alcanza para que la herramienta sirva, no para trabarlo.</p>
+
+  <div class="callout">
+    <span class="eyebrow">Armado sí, bajado no</span>
+    <p>Un pincho que se disparó <strong>queda bajado hasta el cierre de ronda</strong>, y el pathing lo lee: esquiva el armado, pisa el bajado. Así que un campo intacto es muro para él y <strong>cada pincho que gastás le abre un pasillo</strong> — disparar uno te sale doble, los 14 y la línea.</p>
+    <p style="margin-top:.6rem">Incluido cuando lo dispara él: tirarte contra un pincho le limpia la ruta por un turno. Es lo primero a mirar en el playtest.</p>
+  </div>
+</section>
+
+<!-- ============================ 05 FASES ============================ -->
+<section>
+  <div class="sec-head">
+    <div class="eyebrow">05 — Fases</div>
+    <h2>El 50%</h2>
+  </div>
+
+  <p>Un solo umbral y un solo evento: al cruzar la mitad de la vida suelta <strong>dos enemigos a distancia</strong>, una vez en toda la pelea. Nada más cambia — ni sus números, ni sus ataques, ni el ritmo de las monedas.</p>
+
+  <p>El sentido es tapar su único agujero: <strong>el jugador camina 5 y él 4</strong>, así que se le puede escapar indefinidamente para juntar monedas sin recibir un golpe. Dos tiradores hacen que huir tenga precio, sin darle a él una herramienta a distancia que rompería su lectura de melee.</p>
+
+  <div class="tablebox" style="max-width:38rem">
+    <table>
+      <thead><tr><th>Refuerzo</th><th class="num">Vida</th><th class="num">Daño</th></tr></thead>
+      <tbody>
+        <tr><td>Dos tiradores</td><td class="num">18</td><td class="num">6</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p style="margin-top:1.2rem">Números propios, no los del enemigo a distancia común —que trae 50 de vida y 10 de daño— porque a esa altura de la pelea dos de ésos son otro jefe. <strong>18 de vida es un golpe cualquiera</strong>: molestan, se limpian si te ocupás, y no te obligan a dejar de pelear con él.</p>
+</section>
+
+<!-- ============================ 06 NÚMEROS ============================ -->
+<section>
+  <div class="sec-head">
+    <div class="eyebrow">06 — Números</div>
+    <h2>Con qué te pega</h2>
+  </div>
+
+  <div class="tablebox">
+    <table>
+      <thead><tr><th>Acción</th><th>Qué hace</th><th class="num">Daño</th><th>Se esquiva</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><strong>Mandoble</strong></td>
+          <td>Golpe liso. Uno de cada dos turnos, alternado con el empujón.</td>
+          <td class="num">14</td>
+          <td>No — es su piso de daño</td>
+        </tr>
+        <tr>
+          <td><strong>Empujón</strong></td>
+          <td>Te tira 3 casillas derecho para el lado opuesto al suyo. Se te caen 2 monedas en el camino. Frena en seco contra una caja fuerte o contra la pared.</td>
+          <td class="num">10 <span style="opacity:.6">+14 por pincho</span></td>
+          <td>Eligiendo de qué lado lo atacás</td>
+        </tr>
+        <tr>
+          <td><strong>Pinchos</strong></td>
+          <td>Terreno de la sala, no suyo. Cobran al entrar, también empujado, y se bajan hasta el cierre de ronda.</td>
+          <td class="num">14</td>
+          <td>Sí — mirando las tres casillas de atrás</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>Ficha</h3>
+
+  <div class="tablebox">
+    <table>
+      <thead><tr><th>Campo</th><th class="num">Valor</th><th>Nota</th></tr></thead>
+      <tbody>
+        <tr><td>Vida</td><td class="num">350</td><td>Se cura con las monedas que dejes vencer, hasta 60 en toda la pelea.</td></tr>
+        <tr><td>Debilidad</td><td class="num">Full House ×1,5</td><td>Multiplica el golpe entero. El Poker queda para el Croupier.</td></tr>
+        <tr><td>Oro</td><td class="num">30 – 60</td><td></td></tr>
+        <tr><td>Alcance</td><td class="num">1</td><td>Melee puro. No tiene nada a distancia.</td></tr>
+        <tr><td>Movimiento</td><td class="num">4 pasos</td><td>Persigue, esquivando pinchos armados.</td></tr>
+        <tr><td>Mandoble</td><td class="num">14</td><td>Su <code>BaseAttack</code>. Baja de 30.</td></tr>
+        <tr><td>Empujón</td><td class="num">10</td><td>3 casillas, más 14 por pincho cruzado.</td></tr>
+        <tr><td>Ciclo</td><td class="num">13,3 / turno</td><td>Alternan estrictamente: 26,5 cada dos turnos.</td></tr>
+        <tr><td>Monedas de sala</td><td class="num">4 cada 3 rondas</td><td>Duran 3 rondas. Cada una lo cura 12 al vencerse.</td></tr>
+        <tr><td>Tope de curación</td><td class="num">60</td><td>Por pelea. Alcanzado, las monedas vencidas ya no lo curan.</td></tr>
+        <tr><td>Monedas por empujón</td><td class="num">2</td><td>Repartidas a lo largo del tumbo.</td></tr>
+        <tr><td>Pinchos</td><td class="num">10</td><td>Sueltos, ninguno pegado a otro. 14 al entrar.</td></tr>
+        <tr><td>Al 50%</td><td class="num">2 refuerzos</td><td>18 de vida, 6 de daño. Una sola vez.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+
+</section>
+
+
+<!-- ============================ ABIERTO ============================ -->
+<section>
+  <div class="sec-head">
+    <div class="eyebrow">Abierto</div>
+    <h2>Sin decidir</h2>
+  </div>
+
+  <ul class="asks">
+    <li><strong>Si 350 aguanta el escudo por combo.</strong> Simulada la pelea sobre esta grilla con el pool de rolls como recurso, el tope de 60 hace que <strong>juntar monedas sea la jugada ganadora</strong> (+3,9 puntos de win rate sobre ignorarlas), que es exactamente lo que se buscaba. Pero el modelo no tiene el escudo por combo que entró en develop, y ese escudo absorbe por turno más de lo que él pega. La vida se cierra en playtest, no en la simulación.</li>
+    <li><strong>El nombre.</strong> "Cajero" venía del mostrador, y el mostrador ya no existe. Se decide al final, cuando el jefe esté armado.</li>
+  </ul>
+</section>
+
+<footer>
+  Sala medida con <code>Tools/Rollgeon/Debug/Measure Boss Rooms</code> · Unity 6000.3.11f1 · Tesis-UADE-2026
+</footer>
+
+</div>
+
+<script>
+  // ====================================================================
+  // La sala del rediseño: 11x11, sin mostrador.
+  // 'S' = caja fuerte (lo unico que bloquea, y lo unico que frena un empujon)
+  // 'X' = pinchos (caminables: 121 - 6 cajas = 115)
+  //
+  // Los pinchos van SUELTOS: ninguno tocando a otro, ni en diagonal. Dos
+  // pegados leen como una mancha y se vuelven zona prohibida; sueltos leen
+  // como casillas que se miran de a una. Perimetro limpio y esquinas libres,
+  // asi ningun spawn arranca en peligro.
+  // ====================================================================
+  const SALA = [
+    "...........",
+    ".SX.....S..",
+    "......X..X.",
+    "...........",
+    "..X...X....",
+    "...........",
+    ".....X.....",
+    "..S....S.X.",
+    ".X.........",
+    ".S...X..SX.",
+    "...........",
+  ];
+
+  const key = (r, c) => r + "," + c;
+
+  // Las cuatro esquinas: sale una al azar.
+  const SPAWNS = [[0, 0], [0, 10], [10, 0], [10, 10]];
+
+  const VIEWS = {
+    nueva:  { boss: [5, 5], spawns: SPAWNS },
+
+    // El empujon: el jefe a la izquierda del jugador, asi el tumbo va hacia la
+    // derecha y cruza el pincho de la fila 6, columna 5 -> 10 + 14 = 24.
+    empujon: { boss: [6, 3], player: [6, 4], path: [[6, 5], [6, 6], [6, 7]] },
+    tumbo:  { boss: [6, 3], player: [6, 7], chips: [[6, 5], [6, 6]] },
+  };
+
+  function build(el) {
+    const view = VIEWS[el.dataset.map];
+    if (!view) return;
+
+    const chips  = new Set((view.chips  || []).map((p) => key(p[0], p[1])));
+    const path   = new Set((view.path   || []).map((p) => key(p[0], p[1])));
+    const spawns = new Set((view.spawns || []).map((p) => key(p[0], p[1])));
+
+    for (let r = 0; r < 11; r++) {
+      for (let c = 0; c < 11; c++) {
+        const cell = document.createElement("div");
+        cell.className = "cell";
+        const k = key(r, c);
+        const ch = SALA[r][c];
+
+        // El terreno va primero y gana: una moneda sobre pinchos tiene que
+        // seguir leyendose como pinchos, que es de donde sale su precio.
+        if (ch === "X") {
+          cell.classList.add("spike");
+          cell.textContent = "▲";
+          cell.title = "Pinchos — 14 al entrar, tambien empujado";
+        } else if (ch === "S") {
+          cell.classList.add("safe");
+          cell.title = "Caja fuerte — bloquea, y frena un empujon";
+        } else if (spawns.has(k)) {
+          cell.classList.add("spawn");
+          cell.textContent = "·";
+          cell.title = "Spawn posible del jugador (1 de 4, al azar)";
+        } else if (chips.has(k)) {
+          cell.classList.add("chip");
+          cell.textContent = "$";
+          cell.title = "Moneda — te paga si la levantas, lo cura si se vence";
+        } else if (path.has(k)) {
+          cell.classList.add("path");
+          cell.title = "El tumbo";
+        }
+
+        // Encima del terreno, no en su lugar: ver .cell.on-path.
+        if (path.has(k)) cell.classList.add("on-path");
+
+        if (view.boss[0] === r && view.boss[1] === c) {
+          cell.className = "cell boss";
+          cell.textContent = "C";
+          cell.title = "El Cajero";
+        }
+        if (view.player && view.player[0] === r && view.player[1] === c) {
+          cell.className = "cell player";
+          cell.textContent = "P";
+          cell.title = "Jugador";
+        }
+
+        el.appendChild(cell);
+      }
+    }
+  }
+
+  document.querySelectorAll(".board").forEach(build);
+</script>
+</body>
+</html>

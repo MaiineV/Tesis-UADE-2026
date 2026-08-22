@@ -14,12 +14,6 @@ namespace Rollgeon.Combat.AI.Tests
     /// El brazo de La Bandida como golpe melee directo: 12 a quien haya cerrado el turno pegado a la
     /// máquina, sin marca previa y sin área.
     /// </summary>
-    /// <remarks>
-    /// Lo que fija esta suite es el cambio de naturaleza del ataque. Antes era un
-    /// <c>TelegraphMark</c> de 3×3 sobre el jefe: avisaba un turno antes y un paso lo esquivaba
-    /// entero. Un test rojo acá casi siempre significa que alguien lo volvió a convertir en área o
-    /// en telegraph, y con eso el jefe pierde su único daño garantizado.
-    /// </remarks>
     [TestFixture]
     public class BandidaArmMeleeTests
     {
@@ -208,7 +202,7 @@ namespace Rollgeon.Combat.AI.Tests
         [Test]
         public void Arm_WithManhattanMetric_SparesTheDiagonals()
         {
-            // Arrange — la métrica es autorable, y cambiarla cambia el alcance real del brazo.
+            // Arrange — con Manhattan la diagonal queda a 2 y el brazo no llega.
             MovePlayer(new GridCoord(4, 2));
             var node = Arm();
             node.Metric = DistanceMetric.Manhattan;

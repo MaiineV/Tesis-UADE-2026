@@ -11,21 +11,16 @@ namespace Rollgeon.Editor.Tools
     /// </summary>
     /// <remarks>
     /// <para>
-    /// El pack de símbolos entró al repo como texturas Default: un campo <c>Sprite</c> no puede
-    /// referenciarlas, así que los builders de jefe no tienen retrato que asignar hasta que esto
-    /// corra. Sin retrato la cola de turnos y la barra de jefe caen a su visual default — no rompe,
-    /// pero los seis jefes nuevos se ven iguales.
+    /// Una textura Default no la puede referenciar un campo <c>Sprite</c>: hasta que esto corra los
+    /// builders de jefe no tienen retrato que asignar.
     /// </para>
     /// <para>
-    /// <b>Idempotente y sin reimports gratis.</b> Solo llama a <see cref="AssetImporter.SaveAndReimport"/>
-    /// cuando algún campo difiere del target: reimportar 14 texturas por gusto cuesta segundos de
-    /// editor y ensucia el diff de los <c>.meta</c>.
+    /// Solo llama a <see cref="AssetImporter.SaveAndReimport"/> cuando algún campo difiere del
+    /// target: reimportar por gusto cuesta segundos de editor y ensucia el diff de los <c>.meta</c>.
     /// </para>
     /// <para>
-    /// Filtro / PPU / alpha copiados de <c>Assets/Art/UI/Chips/ChipAccions.png</c> — el sprite de UI
-    /// de referencia del proyecto (Point, 100 PPU, alphaIsTransparency, sin mipmaps). El wrapMode NO
-    /// se toca: varias de estas texturas también alimentan materiales de decal, y pasar de Repeat a
-    /// Clamp les cambiaría el sampleo.
+    /// El wrapMode NO se toca: varias de estas texturas también alimentan materiales de decal, y
+    /// pasar de Repeat a Clamp les cambiaría el sampleo.
     /// </para>
     /// </remarks>
     public static class CasinoSpriteImporter
@@ -37,8 +32,8 @@ namespace Rollgeon.Editor.Tools
         private const FilterMode TargetFilterMode = FilterMode.Point;
 
         /// <summary>
-        /// Los símbolos que los jefes nuevos usan como retrato, más los que alimentan los
-        /// materiales de decal temáticos. Agregar acá cuando un jefe nuevo tome otro símbolo.
+        /// Los símbolos que los jefes usan como retrato, más los que alimentan los materiales de
+        /// decal temáticos.
         /// </summary>
         private static readonly string[] PortraitSpriteNames =
         {

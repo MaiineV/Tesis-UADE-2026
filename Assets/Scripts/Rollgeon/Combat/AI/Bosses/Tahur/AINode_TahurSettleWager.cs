@@ -13,21 +13,17 @@ namespace Rollgeon.Combat.AI.Bosses.Tahur
     /// <summary>
     /// "Liquida" del Tahúr: lee la mano que el jugador jugó, la mide contra el canto de la ronda
     /// pasada, mueve las fichas del pozo y marca el Castigo con la forma que dice cuánto faltó.
-    /// Ficha de diseño "El Tahúr" (piso 3).
     /// </summary>
     /// <remarks>
-    /// Los resultados posibles están en <see cref="TahurSettleOutcome"/>. El Castigo se marca en el
-    /// mismo <see cref="IThreatenedAreaService"/> de siempre, así que lo detona el
-    /// <c>AINode_ExecuteTelegraph</c> estándar el turno siguiente. Puede devolver
-    /// <see cref="AIResult.Failed"/> ⇒ <b>va envuelto en</b> <c>Selector[SettleWager, Wait]</c>, o el
-    /// turno entero se aborta.
+    /// Puede devolver <see cref="AIResult.Failed"/>, así que va envuelto en
+    /// <c>Selector[SettleWager, Wait]</c>: un <c>Failed</c> suelto aborta el turno entero.
     /// </remarks>
     [Serializable, HideReferenceObjectPicker]
     public sealed class AINode_TahurSettleWager : AIActionNode
     {
         [Title("El pozo")]
-        [Tooltip("Daño del Castigo por cantidad de fichas (index 0 = 1 ficha). Calibrado por " +
-                 "simulación el 12/08: 26/32/38/42/45. El último valor es el techo del piso 3.")]
+        [Tooltip("Daño del Castigo por cantidad de fichas (index 0 = 1 ficha). El último valor es " +
+                 "el techo del piso 3.")]
         public List<int> PotDamageTable = new List<int> { 26, 32, 38, 42, 45 };
 
         [Tooltip("Techo duro de daño por golpe del piso 3. El Castigo nunca pega más que esto.")]
@@ -107,8 +103,8 @@ namespace Rollgeon.Combat.AI.Bosses.Tahur
             // Antes de liquidar: el Castigo que se marque esta ronda ya cuenta la ficha del rastrillo.
             if (wager.RakeChipsPerRound > 0) wager.AddChips(wager.RakeChipsPerRound);
 
-            // El canto pendiente se armó con las reglas de antes del volteo: la primera liquidación
-            // tras invertir el cartel no puede castigar por un puzzle que cambió a mitad de camino.
+            // El canto pendiente se armó con las reglas de antes del volteo: la primera
+            // liquidación tras invertir el cartel no castiga.
             if (wager.ConsumeGrace())
             {
                 wager.ConsumePlayedHand();
@@ -153,10 +149,7 @@ namespace Rollgeon.Combat.AI.Bosses.Tahur
         // Resultados
         // -----------------------------------------------------------------
 
-        /// <remarks>
-        /// El pozo no pega: paga, y paga contra el jefe. El único daño que el jugador recibe del
-        /// Tahúr son el Castigo y el poke.
-        /// </remarks>
+        /// <remarks>El pozo no pega: paga, y el daño va contra el jefe.</remarks>
         private AIResult SettleExact(AIContext context, ITahurWagerService wager)
         {
             wager.ReportOutcome(TahurSettleOutcome.Exact, false);

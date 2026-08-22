@@ -28,11 +28,11 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         /// <summary>Los cinco materiales del arte, en el orden en que los pinta el retinte.</summary>
         private static readonly string[] SourceMaterialNames =
         {
-            CajeroAssetBuilder.ChipShineMaterial,
-            CajeroAssetBuilder.ChipFaceMaterial,
-            CajeroAssetBuilder.ChipEdgeMaterial,
+            CajeroAssetBuilder.ShellMaterial,
+            CajeroAssetBuilder.TrimMaterial,
+            CajeroAssetBuilder.HighlightMaterial,
             CajeroAssetBuilder.BodyMaterial,
-            CajeroAssetBuilder.WingMaterial,
+            CajeroAssetBuilder.AccentMaterial,
         };
 
         private GameObject _wrapper;
@@ -50,8 +50,9 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
 
             BossVisualWrapperBuilder.EnsureFolder(TestRoot);
 
-            _wrapper = BossVisualWrapperBuilder.BuildWrapper(
-                CajeroAssetBuilder.BuildWrapperSpec(WrapperPath, MaterialsFolder));
+            // Por el builder y no por BuildWrapper pelado: el recorte del collider es una segunda
+            // pasada sobre el prefab guardado, y saltearla dejaría ese paso sin cobertura.
+            _wrapper = CajeroAssetBuilder.EnsureVisualPrefab(WrapperPath, MaterialsFolder);
             Assert.IsNotNull(_wrapper, "El build del wrapper del Cajero devolvió null.");
         }
 
@@ -72,10 +73,33 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             var spec = CajeroAssetBuilder.BuildWrapperSpec();
 
             Assert.AreEqual(CajeroAssetBuilder.ArtPrefabPath, spec.ArtPrefabPath);
+            Assert.AreEqual("Assets/Prefabs/Enemies/MechaBoss_Animated.prefab",
+                CajeroAssetBuilder.ArtPrefabPath,
+                "El Cajero viste el mech. Es el path literal a propósito: si el builder se mueve a " +
+                "otro rig, esto se tiene que ver en el diff del test y no sólo en el del prefab.");
             Assert.AreEqual(CajeroAssetBuilder.VisualPrefabPath, spec.OutputPrefabPath,
                 "El default del builder tiene que ser el wrapper propio del jefe.");
             Assert.AreNotEqual(CajeroAssetBuilder.PlaceholderVisualPrefabPath, spec.ArtPrefabPath,
                 "El Cajero ya no viste el prefab del Security Boss.");
+        }
+
+        [Test]
+        public void CritterSpec_DoesNotWalkOnTheSameRigAsItsBoss()
+        {
+            var boss = CajeroAssetBuilder.BuildWrapperSpec();
+            var critter = CajeroAssetBuilder.BuildCritterWrapperSpec();
+
+            Assert.AreEqual("Assets/Prefabs/Enemies/GeneralDirector_Animated.prefab",
+                critter.ArtPrefabPath,
+                "La Comisión tiene rig propio: compartir el mech del jefe la volvía \"el jefe en " +
+                "chico\", y lo único que los separaba era la escala y el tinte.");
+            Assert.AreNotEqual(boss.ArtPrefabPath, critter.ArtPrefabPath,
+                "El jefe y su refuerzo no pueden anidar el mismo arte: la Comisión se separó del " +
+                "mech justamente para dejar de ser una copia en miniatura del Cajero.");
+            // La carpeta de clones sale del BossName cuando MaterialsFolder viene vacío.
+            Assert.AreNotEqual(boss.BossName, critter.BossName,
+                "Comparten malla, no paleta: con el mismo nombre los clones del bicho pisan los " +
+                "del jefe y los dos salen del mismo color.");
         }
 
         [Test]
@@ -108,15 +132,15 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         }
 
         [Test]
-        public void Spec_PaintsTheChipsGold_SoTheGoldScalingReadsAtAGlance()
+        public void Spec_PaintsTheShellGold_SoTheGoldScalingReadsAtAGlance()
         {
             var spec = CajeroAssetBuilder.BuildWrapperSpec();
 
             foreach (var name in new[]
                      {
-                         CajeroAssetBuilder.ChipShineMaterial,
-                         CajeroAssetBuilder.ChipFaceMaterial,
-                         CajeroAssetBuilder.ChipEdgeMaterial,
+                         CajeroAssetBuilder.ShellMaterial,
+                         CajeroAssetBuilder.TrimMaterial,
+                         CajeroAssetBuilder.HighlightMaterial,
                      })
             {
                 var mid = spec.Retints[name].MidColor.Value;
@@ -126,16 +150,16 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         }
 
         [Test]
-        public void Spec_KeepsTheBodyDarkerThanTheChips_SoTheStackPops()
+        public void Spec_KeepsTheBodyDarkerThanTheShell_SoTheGoldPops()
         {
             var spec = CajeroAssetBuilder.BuildWrapperSpec();
 
             var body = spec.Retints[CajeroAssetBuilder.BodyMaterial].MidColor.Value;
-            var chip = spec.Retints[CajeroAssetBuilder.ChipFaceMaterial].MidColor.Value;
+            var shell = spec.Retints[CajeroAssetBuilder.ShellMaterial].MidColor.Value;
 
-            Assert.Greater(Luminance(chip), Luminance(body),
-                "Las fichas tienen que leerse más claras que el cuerpo: son la mecánica del jefe.");
-            Assert.Greater(body.g, body.r, "El cuerpo va verde fieltro de mesa.");
+            Assert.Greater(Luminance(shell), Luminance(body),
+                "El oro tiene que leerse más claro que las placas: es la mecánica del jefe.");
+            Assert.Greater(body.g, body.r, "Las placas van verde fieltro de mesa.");
             Assert.Greater(body.g, body.b);
         }
 
@@ -206,7 +230,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         {
             // Si el prefab de arte perdiera su Animator el jefe quedaría en T-pose sin avisar.
             Assert.IsNotNull(_wrapper.GetComponentInChildren<Animator>(true),
-                "El arte tiene que aportar su Animator (AnimCon_GeneralDirector).");
+                "El arte tiene que aportar su Animator (AnimCon_Mecha).");
             Assert.IsNotNull(_wrapper.GetComponentInChildren<global::SteppedAnimation>(true),
                 "El look stepped a 8 FPS lo da SteppedAnimation en la raíz del arte.");
         }
@@ -224,27 +248,41 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         }
 
         [Test]
-        public void Wrapper_PaintsEveryChipDiscWithTheClonedGold()
+        public void Wrapper_PaintsEveryPieceOfTheMechWithItsOwnClone()
         {
-            // Cada disco trae tres submeshes: uno con el material original deja la pila en dos oros.
+            // El mech reparte sus cinco materiales entre 12 renderers, varios con más de un submesh:
+            // un solo slot con el material original deja un pedazo del jefe con el gris de fábrica.
             var art = _wrapper.transform.Find("Art");
             Assert.IsNotNull(art, "Fixture roto: no hay hijo 'Art'.");
 
-            int discs = 0;
+            int slots = 0;
             foreach (var renderer in art.GetComponentsInChildren<Renderer>(true))
             {
-                if (!renderer.name.Contains("Coin_Chips")) continue;
-                discs++;
+                if (!(renderer is MeshRenderer || renderer is SkinnedMeshRenderer)) continue;
 
                 foreach (var material in renderer.sharedMaterials)
                 {
+                    slots++;
                     Assert.IsNotNull(material, $"Slot vacío en '{renderer.name}'.");
                     StringAssert.StartsWith(ClonePrefix, material.name,
                         $"'{renderer.name}' quedó con el material original '{material.name}'.");
                 }
             }
 
-            Assert.Greater(discs, 1, "Fixture roto: el arte tiene varios discos de fichas.");
+            Assert.Greater(slots, 1, "Fixture roto: el arte no reporta slots de material.");
+        }
+
+        [Test]
+        public void Wrapper_KeepsItsColliderInsideItsOwnTile()
+        {
+            // El mech está en T-pose: sus bounds dan ~1.5 de radio y el capsule saldría tapando las
+            // cuatro casillas vecinas, que con un jefe melee son justo las que el jugador necesita
+            // poder clickear (las monedas del piso, los pinchos de la sala).
+            var capsule = _wrapper.GetComponent<CapsuleCollider>();
+            Assert.IsNotNull(capsule, "El wrapper del jefe nace con capsule.");
+
+            Assert.LessOrEqual(capsule.radius, CajeroAssetBuilder.ColliderRadiusCap + 0.001f,
+                "El collider se pasa de su casilla: ¿corrió el recorte de EnsureVisualPrefab?");
         }
 
         [Test]
@@ -265,10 +303,10 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         [Test]
         public void Wrapper_TurnsTheBodyGreen_InsteadOfTheGrayOfTheOriginal()
         {
-            // Mat_Black viene gris parejo (r ≥ g ≥ b): si el clon sale verde, el retinte se aplicó.
+            // Mat_Gray viene gris parejo (r ≥ g ≥ b): si el clon sale verde, el retinte se aplicó.
             var body = LoadClone(CajeroAssetBuilder.BodyMaterial).GetColor("_MidColor");
 
-            Assert.Greater(body.g, body.r, "El cuerpo tiene que quedar verde fieltro, no gris.");
+            Assert.Greater(body.g, body.r, "Las placas tienen que quedar verde fieltro, no grises.");
             Assert.Greater(body.g, body.b);
         }
 
@@ -291,8 +329,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             string guidBefore = AssetDatabase.AssetPathToGUID(WrapperPath);
             Assert.IsNotEmpty(guidBefore);
 
-            var second = BossVisualWrapperBuilder.BuildWrapper(
-                CajeroAssetBuilder.BuildWrapperSpec(WrapperPath, MaterialsFolder));
+            var second = CajeroAssetBuilder.EnsureVisualPrefab(WrapperPath, MaterialsFolder);
 
             Assert.IsNotNull(second, "El rebuild devolvió null.");
             Assert.AreEqual(guidBefore, AssetDatabase.AssetPathToGUID(WrapperPath),

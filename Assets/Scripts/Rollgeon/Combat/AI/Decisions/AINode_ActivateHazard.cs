@@ -8,10 +8,8 @@ namespace Rollgeon.Combat.AI.Decisions
 {
     /// <summary>
     /// Activa un <see cref="HazardDefinitionSO"/> vía <see cref="IHazardService"/> (idempotente).
-    /// Genérico sucesor de <see cref="AINode_ActivateRainHazard"/>: la definición sale del
-    /// Inspector en vez de estar hardcoded, así que un boss nuevo (o uno con varios hazards) solo
-    /// necesita apuntar este nodo a otro <c>.asset</c> — nada de código nuevo. Pensado para
-    /// envolver en <c>If(PcOwnerHpBelow) → Once(...)</c>, igual que el trigger de refuerzos.
+    /// La definición sale del Inspector, así que un boss con varios hazards sólo necesita apuntar
+    /// otra instancia del nodo a otro <c>.asset</c>.
     /// </summary>
     [Serializable, HideReferenceObjectPicker]
     public sealed class AINode_ActivateHazard : AIActionNode

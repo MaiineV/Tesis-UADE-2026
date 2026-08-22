@@ -6,17 +6,9 @@ using UnityEngine;
 namespace Rollgeon.Combat.AI.Bosses.Croupier
 {
     /// <summary>
-    /// Cambia el modo de mesa del Croupier: cuántos números canta por turno y si la rueda queda
-    /// trucada. Es el setup de "Pleno y color" (fase 2) — va envuelto en
-    /// <c>If(PcOwnerHpBelow) → Once</c>, al lado del <c>ApplyStatModifier</c> que dispara el feedback
-    /// de fase.
+    /// Cambia el modo de mesa del Croupier: cuántos números canta por turno, si la rueda queda trucada
+    /// y el <see cref="ICroupierWheelService.PhaseIndex"/> que leen los nodos con valores por fase.
     /// </summary>
-    /// <remarks>
-    /// Un solo nodo para las cuatro palancas de la fase en vez de cuatro setters: los valores que
-    /// dependen de la fase y no viven en la rueda (daño por sector, duración del fuego) los resuelven
-    /// sus propios nodos leyendo <see cref="ICroupierWheelService.PhaseIndex"/>, que se setea acá. Así
-    /// hay un único lugar del árbol que decide "estamos en fase 2".
-    /// </remarks>
     [Serializable, HideReferenceObjectPicker]
     public sealed class AINode_SetWheelMode : AIActionNode
     {
@@ -25,8 +17,8 @@ namespace Rollgeon.Combat.AI.Bosses.Croupier
         [MinValue(1)]
         public int NumbersPerTurn = 2;
 
-        [Tooltip("Rueda trucada: terminar el turno en el sector cantado ya no lo corre. La Represalia " +
-                 "se sigue cobrando — lo que la fase te saca es la palanca, no el precio de pegarle.")]
+        [Tooltip("Rueda trucada: terminar el turno en el sector cantado no lo corre. La Represalia " +
+                 "se sigue cobrando igual.")]
         public bool Rigged = true;
 
         [Tooltip("Índice de fase que leen los nodos con valores por fase (daño de sector, fuego).")]

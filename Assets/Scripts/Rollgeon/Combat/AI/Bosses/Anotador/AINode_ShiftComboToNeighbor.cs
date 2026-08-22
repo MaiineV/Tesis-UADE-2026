@@ -12,36 +12,12 @@ namespace Rollgeon.Combat.AI.Decisions
 {
     /// <summary>
     /// "Tacha" del Anotador (piso 2): corre el combo que el jugador más viene usando al vecino de la
-    /// hoja, así su Escalera paga como Doble Par (o al revés). Efecto de inicio de turno — va como
-    /// hijo del Sequence raíz, no consume la acción del boss.
+    /// hoja, así su Escalera paga como Doble Par (o al revés). No consume la acción del boss.
     /// </summary>
     /// <remarks>
-    /// <para>
-    /// <b>Elige el más jugado, no uno al azar.</b> Lee <see cref="IComboLogService"/> en una ventana
-    /// de <see cref="ComboLogWindow"/> ataques y corre el combo más frecuente. Es lo que hace que la
-    /// pelea castigue la memoria: el jugador que tiene la tabla aprendida es el que la usa siempre
-    /// igual, y eso es exactamente lo que el Anotador corrompe.
-    /// </para>
-    /// <para>
-    /// <b>Fases sin ramificar el árbol</b> (mismo criterio que <see cref="AINode_PromulgateRule"/>,
-    /// que resuelve su intervalo leyendo su propia vida). Bajo
-    /// <see cref="Phase2HpThreshold"/> pasa a <see cref="ShiftsPerTurnPhase2"/> corrimientos por
-    /// turno y deja de devolverlos (<see cref="Phase2ShiftsArePermanent"/>): se acumulan hasta el
-    /// final del combate. Un único nodo = un único lugar donde vive ese estado; partirlo en
-    /// "SetShiftCount"/"SetShiftPermanent" bajo el gate de fase obligaría a coordinar dos nodos
-    /// distintos del mismo árbol.
-    /// </para>
-    /// <para>
-    /// <b>Duración = 1 turno en fase 1.</b> <see cref="IContractModifierService"/> no tiene
-    /// expiración por modificador (solo <c>ClearAll</c>), así que "dura 1 turno" se implementa como
-    /// "limpio todo al empezar mi turno y vuelvo a promulgar" — idéntico a lo que ya hace
-    /// <see cref="AINode_PromulgateRule"/>. En fase 2 no limpia, y ahí está el acumulado.
-    /// </para>
-    /// <para>
-    /// <b>Generala es inmune</b> (<see cref="ImmuneComboIds"/>): cinco iguales son cinco iguales, se
-    /// corra la hoja o no. Es la debilidad del jefe y la única mano que no depende de la tabla; si el
-    /// corrimiento pudiera caerle encima, la salida de diseño de la pelea desaparece.
-    /// </para>
+    /// <see cref="IContractModifierService"/> no tiene expiración por modificador (sólo
+    /// <c>ClearAll</c>), así que "dura 1 turno" se implementa limpiando todo al empezar el turno y
+    /// volviendo a promulgar; en fase 2 no limpia y los corrimientos se acumulan.
     /// </remarks>
     [Serializable, HideReferenceObjectPicker]
     public sealed class AINode_ShiftComboToNeighbor : AIActionNode

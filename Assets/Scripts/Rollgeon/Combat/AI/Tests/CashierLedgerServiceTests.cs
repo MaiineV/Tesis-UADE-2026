@@ -284,9 +284,6 @@ namespace Rollgeon.Combat.AI.Tests
         }
 
         // ---- La ficha soborna ---------------------------------------------
-        //
-        // Es la única forma de sobornar que existe en la pelea: TryBribe no lo llama ningún código
-        // de producción, así que sin esto el rastrillo sube para siempre sin contrapartida.
 
         [Test]
         public void Chip_PickedUpByThePlayer_AlsoBribesTheBoss_ForThreeRounds()

@@ -28,7 +28,21 @@ namespace Rollgeon.Combat.AI.Tests
     {
         private const int ReelHp = 60;
         private const int MedianPlayerTurn = 42;
+        /// <summary>
+        /// Espejo de <c>CroupierAssetBuilder.BandidaReelFireDamage</c>, que vive en un assembly de
+        /// Editor.
+        /// </summary>
+        /// <remarks>
+        /// El nombre del original importa: <b>este hazard es de ella</b>. Lo autora el builder del
+        /// Croupier —de ahí que el asset se llame <c>HZ_Croupier_TableFire</c>— pero el único que lo
+        /// consume es <c>BandidaAssetBuilder.ReelFireHazardPath</c>. El fuego del Croupier es otra
+        /// cosa (la casilla especial <c>Tile_Fire_Croupier</c>, autorada a mano), así que subirle el
+        /// fuego a él no mueve este número y moverlo acá le cambia el daño a ella. Ya pasó una vez.
+        /// </remarks>
         private const int FireDamage = 6;
+
+        /// <summary>Número del fixture, no de la ficha: el hazard autorado dura más, y acortarlo acá
+        /// es lo que deja los tests en dos wraps en vez de tres.</summary>
         private const int FireDurationRounds = 2;
         private const int RespawnDelayPhase1 = 2;
         private const int CountdownStart = 2;
@@ -372,7 +386,8 @@ namespace Rollgeon.Combat.AI.Tests
 
         private static HazardDefinitionSO CreateFire()
         {
-            // Copia en memoria de HZ_Croupier_TableFire: mismos campos que autora CroupierAssetBuilder.
+            // Copia en memoria de HZ_Croupier_TableFire, el hazard que autora CroupierAssetBuilder.
+            // El daño se sigue del builder (ver FireDamage); la duración es del fixture.
             var def = ScriptableObject.CreateInstance<HazardDefinitionSO>();
             def.name = "Table Fire";
             def.hideFlags = HideFlags.HideAndDontSave;

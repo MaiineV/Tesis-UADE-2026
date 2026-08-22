@@ -7,17 +7,13 @@ using UnityEngine;
 namespace Rollgeon.Combat.Threat
 {
     /// <summary>
-    /// Back-compat shim over <see cref="HazardService"/>. This used to be a standalone
-    /// "rain of zones" hazard with its own <c>OnTurnQueueBuilt</c> loop and hardcoded constants;
-    /// that loop is now generic (<see cref="HazardService"/>) and rain is just one
-    /// <see cref="HazardDefinitionSO"/> among many. The type, its public API, and
-    /// <see cref="RainSourceId"/> are kept unchanged on purpose: <c>ED_Boss_Sunken_Grand.asset</c>
-    /// references <see cref="AI.Decisions.AINode_ActivateRainHazard"/> by full type name (Odin
-    /// polymorphic serialization), and <c>RainHazardServiceBootstrap.asset</c> references this
-    /// class by script GUID — renaming or removing either would desync those assets outside of
-    /// Unity, where we can't re-author them. Rain's behavior is unchanged: same constants, same
-    /// cadence, same source id, just routed through the generic service instead of owning its own
-    /// event loop.
+    /// Back-compat shim over <see cref="HazardService"/>: rain is one
+    /// <see cref="HazardDefinitionSO"/> like any other and the generic service owns the turn loop.
+    /// The type name and <see cref="RainSourceId"/> are load-bearing —
+    /// <c>ED_Boss_Sunken_Grand.asset</c> references
+    /// <see cref="AI.Decisions.AINode_ActivateRainHazard"/> by full type name (Odin polymorphic
+    /// serialization) and <c>RainHazardServiceBootstrap.asset</c> references this class by script
+    /// GUID.
     /// </summary>
     public sealed class RainHazardService : IPreloadableService, IDisposable
     {
@@ -45,10 +41,8 @@ namespace Rollgeon.Combat.Threat
 
         public void Register()
         {
-            // El bootstrap histórico (RainHazardServiceBootstrap.asset) solo conoce este tipo — si
-            // nadie más registró el HazardService genérico todavía, lo hacemos nosotros acá.
-            // Idempotente: ServiceLocator.AddService hace upsert y HazardService.Register no tiene
-            // estado que duplicar por una segunda invocación externa.
+            // RainHazardServiceBootstrap.asset solo conoce este tipo: si nadie registró el
+            // HazardService genérico todavía, lo hacemos acá.
             if (!ServiceLocator.TryGetService<IHazardService>(out var hazard) || hazard == null)
             {
                 var service = new HazardService();
@@ -81,9 +75,8 @@ namespace Rollgeon.Combat.Threat
         // Internals
         // ======================================================================
 
-        // Instancia en memoria (no el .asset RainHazardDefinition.asset) — el shim no depende de
-        // que ese asset de ejemplo exista ni esté bien wireado; reproduce sus mismos valores en
-        // código para que el comportamiento sea idéntico al de antes del refactor.
+        // Instancia en memoria: el shim no depende de que RainHazardDefinition.asset exista ni
+        // esté bien wireado.
         private static HazardDefinitionSO BuildDefinition()
         {
             var def = ScriptableObject.CreateInstance<HazardDefinitionSO>();

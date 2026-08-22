@@ -12,14 +12,16 @@ namespace Rollgeon.Combat.Tests
     /// <summary>
     /// Contrato de <see cref="ThreatOverlayState"/>: dos amenazas simultáneas tienen que poder
     /// leerse distinto (color <i>y</i> patrón), y el estado tiene que sobrevivir a que la otra
-    /// fuente se apague. Antes esto era imposible: el color vivía en un Material por tint que
-    /// compartían todos los quads del juego y que el pulso reescribía cada frame.
+    /// fuente se apague. El aislamiento lo da el cache de materiales por par (estado, matiz): dos
+    /// amenazas que se ven distinto tienen material propio, y dos que se ven igual comparten uno
+    /// solo — que es lo que las deja entrar en el mismo batch.
     /// </summary>
     [TestFixture]
     public sealed class ThreatOverlayStateTests
     {
         private static readonly int ColorId = Shader.PropertyToID("_Color");
         private static readonly int MainTexId = Shader.PropertyToID("_MainTex");
+        private static readonly int PulseAlphaId = Shader.PropertyToID("_PulseAlpha");
 
         private ThreatTelegraphOverlay _overlay;
         private GridManager _grid;
@@ -71,21 +73,20 @@ namespace Rollgeon.Combat.Tests
             return quads[0];
         }
 
-        /// <remarks>Bloque nuevo por lectura: lo que se está verificando es justamente que cada
-        /// renderer tenga el suyo, así que reusar uno entre asserts escondería el bug.</remarks>
+        /// <remarks>Se lee del material compartido del par (estado, matiz) y ya no de un property
+        /// block por renderer. El alpha efectivo vive en _PulseAlpha; en la ruta degradada (sin el
+        /// shader del proyecto) viaja en el alpha de _Color, así que se leen las dos: lo que se está
+        /// verificando es la semántica, no cuál de las dos rutas está activa.</remarks>
         private static Color PaintedColor(ThreatOverlayQuad quad)
         {
-            var block = new MaterialPropertyBlock();
-            quad.Renderer.GetPropertyBlock(block);
-            return block.GetColor(ColorId);
+            var material = quad.Renderer.sharedMaterial;
+            var color = material.GetColor(ColorId);
+            if (material.HasProperty(PulseAlphaId)) color.a = material.GetFloat(PulseAlphaId);
+            return color;
         }
 
-        private static Texture PaintedPattern(ThreatOverlayQuad quad)
-        {
-            var block = new MaterialPropertyBlock();
-            quad.Renderer.GetPropertyBlock(block);
-            return block.GetTexture(MainTexId);
-        }
+        private static Texture PaintedPattern(ThreatOverlayQuad quad) =>
+            quad.Renderer.sharedMaterial.GetTexture(MainTexId);
 
         private static void AssertRgb(Color expected, Color actual, string message)
         {
@@ -113,32 +114,73 @@ namespace Rollgeon.Combat.Tests
         }
 
         [Test]
-        public void Show_TwoSources_ShareTheMaterialButNotTheColor()
+        public void Show_TwoSourcesWithDifferentTints_GetTheirOwnMaterial()
         {
             // Arrange / Act
             _overlay.Show(_boss, Tiles((1, 1)), ThreatOverlayState.Marked, Color.red);
             _overlay.Show(_hazard, Tiles((3, 3)), ThreatOverlayState.Marked, Color.blue);
 
-            // Assert — el material puede seguir siendo uno solo (batching); lo que dejó de ser
-            // compartido es el color, que ahora vive en el property block de cada renderer.
+            // Assert — el matiz vive en el _Color del material compartido, así que acá compartirlo
+            // sería el bug.
             var bossQuad = OnlyQuadOf(_boss);
             var hazardQuad = OnlyQuadOf(_hazard);
-            Assert.AreSame(bossQuad.Renderer.sharedMaterial, hazardQuad.Renderer.sharedMaterial);
+            Assert.AreNotSame(bossQuad.Renderer.sharedMaterial, hazardQuad.Renderer.sharedMaterial,
+                "Dos tints sobre un mismo material significa que uno de los dos no está en pantalla.");
             AssertRgb(Color.red, PaintedColor(bossQuad), "El quad del boss quedó pintado de rojo.");
             AssertRgb(Color.blue, PaintedColor(hazardQuad), "El quad del hazard quedó pintado de azul.");
         }
 
         [Test]
-        public void Show_TwoSourcesWithDifferentStates_KeepTheirOwnUrgency()
+        public void Show_SamePairOfStateAndTint_SharesOneMaterialAcrossSources()
         {
-            // Arrange / Act — mismo matiz a propósito: acá lo único que separa a las dos amenazas
-            // es el estado.
+            // Arrange / Act — dos fuentes distintas que se ven exactamente igual.
+            _overlay.Show(_boss, Tiles((1, 1)), ThreatOverlayState.Marked, Color.red);
+            _overlay.Show(_hazard, Tiles((3, 3)), ThreatOverlayState.Marked, Color.red);
+
+            // Assert
+            Assert.AreSame(OnlyQuadOf(_boss).Renderer.sharedMaterial,
+                OnlyQuadOf(_hazard).Renderer.sharedMaterial,
+                "Un material por fuente en vez de por par (estado, matiz) devuelve los SetPass calls " +
+                "que se vinieron a sacar: dos amenazas idénticas no pueden costar dos binds.");
+        }
+
+        [Test]
+        public void Show_SameTintButDifferentState_GetsItsOwnMaterial()
+        {
+            // Arrange / Act — mismo matiz, distinta urgencia: el alpha del latido vive en el
+            // material, así que compartirlo mezclaría las dos bandas.
             _overlay.Show(_boss, Tiles((1, 1)), ThreatOverlayState.Detonating, Color.red);
             _overlay.Show(_hazard, Tiles((3, 3)), ThreatOverlayState.Incoming, Color.red);
 
             // Assert
-            Assert.Greater(PaintedColor(OnlyQuadOf(_boss)).a, PaintedColor(OnlyQuadOf(_hazard)).a,
-                "Lo que detona ahora tiene que leerse más sólido que lo que cae en dos turnos.");
+            Assert.AreNotSame(OnlyQuadOf(_boss).Renderer.sharedMaterial,
+                OnlyQuadOf(_hazard).Renderer.sharedMaterial,
+                "Compartir material entre estados haría que lo que detona late con la banda de lo " +
+                "que recién viene.");
+        }
+
+        [Test]
+        public void Show_TintsThatDifferOnlyInAlpha_ShareOneMaterial()
+        {
+            // Arrange — el alpha del tint no llega a pantalla (lo pisa el latido), así que dos tints
+            // que solo difieren ahí se ven idénticos.
+            var opaque = new Color(1f, 0.45f, 0.1f, 1f);
+            var faint = new Color(1f, 0.45f, 0.1f, 0.2f);
+
+            // Act
+            _overlay.Show(_boss, Tiles((1, 1)), ThreatOverlayState.Marked, opaque);
+            _overlay.Show(_hazard, Tiles((3, 3)), ThreatOverlayState.Marked, faint);
+
+            // Assert
+            Assert.AreSame(OnlyQuadOf(_boss).Renderer.sharedMaterial,
+                OnlyQuadOf(_hazard).Renderer.sharedMaterial,
+                "Dos matices que se dibujan idénticos no pueden abrir dos materiales: el alpha del " +
+                "tint no se dibuja.");
+
+            var marked = _overlay.StyleOf(ThreatOverlayState.Marked);
+            Assert.That(PaintedColor(OnlyQuadOf(_hazard)).a,
+                Is.InRange(marked.MinAlpha, marked.MaxAlpha),
+                "El alpha en pantalla lo tiene que seguir poniendo el latido del estado, no el tint.");
         }
 
         [Test]
@@ -154,6 +196,19 @@ namespace Rollgeon.Combat.Tests
             // Assert
             Assert.Less(incoming.MaxAlpha, marked.MinAlpha);
             Assert.Less(marked.MaxAlpha, detonating.MinAlpha);
+        }
+
+        [Test]
+        public void Show_TwoSourcesWithDifferentStates_KeepTheirOwnUrgency()
+        {
+            // Arrange / Act — mismo matiz a propósito: acá lo único que separa a las dos amenazas
+            // es el estado.
+            _overlay.Show(_boss, Tiles((1, 1)), ThreatOverlayState.Detonating, Color.red);
+            _overlay.Show(_hazard, Tiles((3, 3)), ThreatOverlayState.Incoming, Color.red);
+
+            // Assert
+            Assert.Greater(PaintedColor(OnlyQuadOf(_boss)).a, PaintedColor(OnlyQuadOf(_hazard)).a,
+                "Lo que detona ahora tiene que leerse más sólido que lo que cae en dos turnos.");
         }
 
         // =====================================================================
@@ -182,8 +237,9 @@ namespace Rollgeon.Combat.Tests
         [Test]
         public void Show_ReusingAPooledQuad_DropsThePreviousStatePattern()
         {
-            // Arrange — Marked con patrón autorado, Detonating sin él (el caso que el Clear del
-            // property block tiene que cubrir: los quads se reciclan entre fuentes).
+            // Arrange — Marked con patrón autorado, Detonating sin él (el caso que el cache por par
+            // (estado, matiz) tiene que cubrir: los quads se reciclan entre fuentes, así que un quad
+            // pooled tiene que quedar apuntando al material de su estado nuevo).
             _pattern = new Texture2D(2, 2);
             _overlay.ApplyStyle(new ThreatOverlayStateStyle
             {

@@ -15,17 +15,10 @@ namespace Rollgeon.Combat.AI.Decisions
     /// jugador: <see cref="Count"/> si le pegaron desde su turno anterior, <see cref="MinCount"/> si no.
     /// </summary>
     /// <remarks>
-    /// <para>
-    /// <b>Off-by-one de <c>DurationRounds</c>:</b> se descuenta en el <c>OnTurnQueueBuilt</c> de la
-    /// ronda siguiente y la ficha nace con el turno del jugador de esa ronda ya jugado (CNF-006).
-    /// Con <c>1</c> expira antes de que él pueda pisarla; "dura un turno del jugador" se autora
-    /// como <c>2</c>.
-    /// </para>
-    /// <para>
-    /// Va <b>después</b> del nodo de marca en el Sequence: lee el área pendiente de
-    /// <c>IThreatenedAreaService</c>, que es la columna de este turno. Su Failed es benigno y debe
-    /// ir en <c>Selector[DropChips, Wait]</c> — suelto en el Sequence abortaría el turno del jefe.
-    /// </para>
+    /// <c>DurationRounds = 1</c> expira antes de que el jugador pueda pisar la ficha; "dura un turno
+    /// del jugador" se autora como <c>2</c>. Va después del nodo de marca en el Sequence porque lee
+    /// el área pendiente de <c>IThreatenedAreaService</c>, y va dentro de
+    /// <c>Selector[DropChips, Wait]</c>: suelto en el Sequence su Failed abortaría el turno del jefe.
     /// </remarks>
     [Serializable, HideReferenceObjectPicker]
     public sealed class AINode_CashierDropChips : AIActionNode
@@ -76,8 +69,8 @@ namespace Rollgeon.Combat.AI.Decisions
             if (grid == null) return AIResult.Failed;
             if (!grid.TryGetPosition(context.PlayerGuid, out var playerCoord)) return AIResult.Failed;
 
-            // Se crea acá aunque todavía no suelte nada: es el nodo que corre todos los turnos, y
-            // el reloj del rastrillo necesita al servicio escuchando rondas desde el principio.
+            // Se crea acá aunque todavía no suelte nada: el reloj del rastrillo necesita al
+            // servicio escuchando rondas desde el principio.
             var ledger = CashierLedgerService.ResolveOrCreate();
 
             if (!ServiceLocator.TryGetService<IThreatenedAreaService>(out var threat) || threat == null)
@@ -89,13 +82,13 @@ namespace Rollgeon.Combat.AI.Decisions
                 return AIResult.Failed;
             }
 
-            // El flag se consume DESPUÉS de saber que hay columna: en los turnos de disparo el jefe
-            // no marca nada, y consumirlo antes se comería el golpe que el jugador ya pagó.
+            // El flag se consume DESPUÉS de saber que hay columna: en los turnos de disparo no hay
+            // marca, y consumirlo antes se comería el golpe que el jugador ya pagó.
             var column = threat.GetPendingTiles(context.SelfGuid);
             if (column == null || column.Count == 0) return AIResult.Failed;
 
-            // El flag se consume igual cuando hay piso: es destructivo y no se puede pre-chequear, y
-            // dejarlo puesto haría que el próximo turno de columna cobrara un golpe que ya se pagó.
+            // Se consume aunque no llegue a soltar nada: dejarlo puesto haría que el próximo turno
+            // de columna cobrara un golpe que ya se pagó.
             bool paid = !RequireDamageTaken || ledger.ConsumeDamageTaken(context.SelfGuid);
             int toDrop = paid ? Count : MinCount;
             if (toDrop <= 0) return AIResult.Failed;

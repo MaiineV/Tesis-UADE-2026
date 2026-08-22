@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using NUnit.Framework;
 using Rollgeon.Editor.Tools.Enemy;
+using Rollgeon.Editor.Tools.Enemy.Builders;
 using Rollgeon.Entities;
 using Rollgeon.Entities.Visuals;
 using UnityEditor;
@@ -83,12 +84,12 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             foreach (var prefab in VisualPrefabs())
                 if (StyleOf(prefab) == EntityPawn.LocomotionStyle.Blink) blinking.Add(prefab.name);
 
-            // Assert — Croupier y Tahúr entran porque visten el rig del Healer y del Sunked Grand.
-            // El Cajero YA NO: su rig sigue sin ciclo de caminata, así que se desliza, pero es una
-            // figura alada y planear es justo lo que tiene que leerse. Además el salto seco era el
-            // gesto del Crupier, y dos jefes con el mismo truco se confunden.
+            // Assert — el Croupier entra porque viste el rig del Healer. El Cajero no:
+            // MechaBoss_Animated trae ciclo de caminata (AnimCon_Mecha → Movement). La Comisión sí
+            // entra, pero por el parche de ForcedBlinkEntityIds: GeneralDirector_Animated no tiene
+            // ciclo de caminata propio.
             CollectionAssert.AreEquivalent(
-                new[] { "PF_Boss_Croupier", "PF_Boss_Tahur", "SunkedGrand", "Healer" },
+                new[] { "PF_Boss_Croupier", "SunkedGrand", "Healer", "PF_Min_Comision" },
                 blinking,
                 "Cambió quién se teletransporta. Si es a propósito, actualizá esta lista; si no, " +
                 "alguien reconstruyó un prefab y se llevó puesto el flag.");
@@ -100,6 +101,22 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             // Arrange / Act / Assert — los prefabs sin Animator (props, jefes viejos sin rig) pasan
             // por acá en cada corrida del instalador.
             Assert.IsFalse(EnemyLocomotionInstaller.HasTeleportClip(null));
+        }
+
+        [Test]
+        public void ForcedBlinkRoster_MatchesTheComisionEntityId()
+        {
+            // Arrange / Act / Assert — el literal es a propósito (el instalador es genérico y no
+            // conoce los builders de cada jefe), y este test es lo único que lo mantiene sincronizado
+            // con la ficha real: el mismo idiom que BossPortraitLibraryTests usa para
+            // CajeroAssetBuilder.PortraitTexturePath.
+            // Assert.Contains pide un ICollection no genérico y HashSet<string> no lo implementa;
+            // CollectionAssert.Contains sí acepta el IEnumerable que HashSet<string> sí es.
+            CollectionAssert.Contains(EnemyLocomotionInstaller.ForcedBlinkEntityIds,
+                CajeroAssetBuilder.CritterEntityId,
+                $"El literal de ForcedBlinkEntityIds dejó de coincidir con " +
+                $"'{CajeroAssetBuilder.CritterEntityId}': la Comisión volvería a caminar en pose de " +
+                "Idle sobre GeneralDirector_Animated.");
         }
     }
 }

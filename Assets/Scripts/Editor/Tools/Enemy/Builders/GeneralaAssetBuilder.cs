@@ -42,10 +42,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         public const string DiceDefinitionPath =
             "Assets/Rollgeon/Combat/RoomObjects/RO_Generala_Dado.asset";
 
-        /// <summary>
-        /// El dado como enemigo. Parkeado, no borrado: el árbol ya no lo apunta pero el asset y sus
-        /// tests siguen acá por si hace falta un dado que actúe.
-        /// </summary>
+        /// <summary>El dado como enemigo. El árbol del jefe no lo apunta.</summary>
         public const string DiceAssetPath = EnemiesFolder + "/ED_Obj_DadoCasa.asset";
 
         /// <summary>
@@ -70,15 +67,11 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
 
         // ---- Números de la ficha ------------------------------------------------------
 
-        /// <summary>
-        /// Piso 3: ~8 turnos con el golpe base del piso (mediana 30) — alcanza para que la
-        /// mesa se arme, se rompa y se reponga. Los cinco dados de <see cref="DiceHp"/> no
-        /// se descuentan de acá: son terreno, y romperlos es opcional.
-        /// </summary>
+        /// <summary>Vida del jefe de piso 3.</summary>
         public const int BossHp = 240;
         public const int BossAttack = 40;
 
-        /// <summary>Vida de cada dado: romper uno cuesta un golpe entero, y esa es la decisión.</summary>
+        /// <summary>Vida de cada dado de la mesa.</summary>
         public const int DiceHp = 45;
 
         public const int HandSize = 5;
@@ -86,15 +79,13 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         /// <summary>
         /// Turnos que tarda en reponer un dado roto. <b>Negativo = no se repone</b>
         /// (<c>RoomObjectDefinitionSO.Respawns</c> es <c>RespawnDelayTurns &gt;= 0</c>, así que el 0
-        /// es "vuelve enseguida"). No se repone porque <see cref="TableArmorMax"/> tampoco vuelve:
-        /// reponerlo devolvería el bloqueo y la categoría sin devolver la armadura.
+        /// es "vuelve enseguida").
         /// </summary>
         public const int TableRefillTurns = -1;
 
         /// <summary>
         /// Reducción de daño con la mesa entera en pie. Baja <see cref="TableArmorPerDie"/> por cada
-        /// dado roto y <b>no vuelve</b>: es lo que hace que desarmarla compre algo estable. Ver
-        /// <c>RoomObjectArmorService</c>.
+        /// dado roto y <b>no vuelve</b>. Ver <c>RoomObjectArmorService</c>.
         /// </summary>
         public const float TableArmorMax = 0.5f;
 
@@ -111,15 +102,13 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         public const int PokerDamage = 45;
 
         /// <summary>
-        /// Daño de la mano grande. <b>La ficha pide 65, pero el techo de daño por golpe del piso 3
-        /// es 45</b> — se clampea acá y queda pendiente que diseño confirme cuál gana. Lo que hace
-        /// grande a la mano igual se mantiene: ocho cuadrados de 3×3 y una ronda extra de aviso.
+        /// Daño de la mano grande: ocho cuadrados de 3×3 y una ronda extra de aviso.
         /// </summary>
         public const int GeneralaDamage = 45;
 
         /// <summary>
         /// Daño del cubilete: golpe melee directo contra quien esté pegado cuando ella tira, sin
-        /// aviso. El techo del turno queda en 45 (mano grande) + 12 = 57.
+        /// aviso.
         /// </summary>
         public const int CupSlamDamage = 12;
 
@@ -133,7 +122,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
 
         /// <summary>
         /// Alcance Chebyshev de la escarcha. 1 = el 3×3 que la rodea, o sea el anillo donde vive el
-        /// quinto dado: el candado es del dado caro, no de la mesa entera.
+        /// quinto dado.
         /// </summary>
         public const int FrostRingRadius = 1;
 
@@ -151,7 +140,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         /// wrap de ronda y la escarcha nace con el turno del jugador ya jugado (CNF-006).
         /// </summary>
         /// <remarks>
-        /// No se puede mover solo: ver <see cref="FrostParityDivisor"/>.
+        /// Atado a <see cref="FrostParityDivisor"/>: el hielo tiene que ocupar menos rondas que la
+        /// cadencia.
         /// </remarks>
         public const int FrostDurationRounds = 3;
 
@@ -180,22 +170,15 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
 
         // ---- El reposicionamiento -------------------------------------------------------
 
-        /// <summary>
-        /// Distancia Manhattan que intenta mantener: la correa de la persecución. Se acerca hasta
-        /// acá y no más, así que acercarse lo elige el jugador.
-        /// </summary>
+        /// <summary>Distancia Manhattan que intenta mantener: se acerca hasta acá y no más.</summary>
         /// <remarks>
         /// Tiene que quedar estrictamente por encima de <see cref="CupSlamRange"/> (si no, se pega
         /// sola y cobra cubilete todos los turnos) y de <see cref="FrostRingRadius"/> (si no, frena
-        /// sobre su propio hielo sólido y el stun deja de ser una elección del jugador). Hay tests
-        /// sobre las dos desigualdades.
+        /// sobre su propio hielo sólido).
         /// </remarks>
         public const int RepositionRange = 3;
 
-        /// <summary>
-        /// Pasos por turno del reposicionamiento. Los 4 de su <c>BaseSpeed</c>: lo que la frena es
-        /// la correa, no la lentitud, así que perseguir rápido no le abarata nada al jugador.
-        /// </summary>
+        /// <summary>Pasos por turno del reposicionamiento: los 4 de su <c>BaseSpeed</c>.</summary>
         public const int RepositionSteps = 4;
 
         // ---- La regla de la mano repetida ------------------------------------------------
@@ -215,9 +198,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
 
         // ---- Arte -----------------------------------------------------------------------
         //
-        // El rig de dados y no la torreta: lo que decide es el animator. AnimCon_DiceBoss expone
-        // Roll, que es el cubilete y el reroll de fase 2; el de la torreta tiene un solo trigger
-        // Attack, así que las dos acciones que la definen no tenían animación posible.
+        // El rig lo decide el animator: AnimCon_DiceBoss expone Roll, que es el cubilete y el
+        // reroll de fase 2.
 
         public const string BossName = "Generala";
 
@@ -281,11 +263,6 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         //
         // Los materiales del arte son compartidos (Mat_Brown y compañía los usa medio casino),
         // así que el retinte los clona: ver BossVisualWrapperBuilder.
-        // Mat_White queda SIN retintar a propósito — es el galón/insignia y el blanco es
-        // justo el contraste que necesita el navy.
-        //
-        // Todo esto describe el arte viejo (la torreta): con el rig de dados las keys ya no
-        // matchean. Ver la nota del diccionario Retints en BuildBossSpec.
 
         /// <summary>Casaca/chasis: azul navy militar (sale del <c>Mat_Brown</c> del cuerpo).</summary>
         public static readonly MaterialRetint NavyRetint = MaterialRetint.FromColors(
@@ -321,13 +298,9 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
             var bossVisual = BuildBossVisual();
             var diceVisual = BuildDiceVisual();
 
-            // El dado de la casa conserva el símbolo del pack: es una pieza de la mesa, no un
-            // personaje, y compartir cara con la Generala los haría indistinguibles en la cola.
             var bossPortrait = BossPortraitLibrary.Generala();
             var dicePortrait = SpriteImportUtility.EnsureSpriteImport(DicePortraitTexturePath);
 
-            // El dado como enemigo se sigue autorando aunque el árbol ya no lo apunte: está parkeado,
-            // no borrado (ver DiceAssetPath).
             var dice = LoadOrCreate<EnemyDataSO>(DiceAssetPath);
             PopulateDiceData(dice, diceVisual, dicePortrait);
             EditorUtility.SetDirty(dice);
@@ -402,10 +375,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
                 BossName = BossName,
                 MaterialsFolder = MaterialsFolder,
 
-                // Box y no Capsule: venía de la torreta, que era una caja ancha y baja donde el
-                // capsule dejaba el cursor picando aire en las esquinas. Con el rig de dados hay
-                // que volver a mirarlo — es un humanoide, pero con manos y dado que se salen de
-                // la silueta.
+                // Box y no Capsule: con manos y dado saliéndose de la silueta, el capsule deja el
+                // cursor picando aire en las esquinas.
                 Collider = ColliderKind.Box,
 
                 AddHealthBar = true,
@@ -439,8 +410,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
                 MaterialsFolder = MaterialsFolder,
                 Collider = ColliderKind.Box,
 
-                // Romperlo es la mecánica y cuesta un golpe entero: sin barra no hay forma de saber
-                // cuánto falta, y el jugador no puede decidir si le conviene seguir.
+                // Sin barra no hay forma de saber cuánto le falta al dado.
                 AddHealthBar = true,
                 HealthBarOffset = fit.HealthBarOffset,
 
@@ -498,9 +468,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
 
         /// <summary>
         /// Estandarte a la espalda. Devuelve false — y no cuelga nada — si para llegar al alto
-        /// pedido hay que escalar el prop fuera de rango: un banner de pared reexportado con otra
-        /// medida se vería flotando, y un jefe sin estandarte es mejor que un jefe con un trapo en
-        /// el aire.
+        /// pedido hay que escalar el prop fuera de rango.
         /// </summary>
         public static bool TryBuildBannerProp(ArtFit fit, Bounds bannerBounds, out BossPropSpec prop)
         {
@@ -535,12 +503,11 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         /// Escala, levantada y bounds finales de un prefab de arte dentro de su wrapper.
         /// </summary>
         /// <remarks>
-        /// <b>Por qué existe.</b> <see cref="BossVisualWrapperBuilder"/> anida el arte a escala 1 en el
-        /// origen del wrapper, que es lo correcto para un rig humanoide autorado con el pivot en los
-        /// pies y la altura de un jefe. Ni la torreta ni el dado cumplen eso: la torreta es más chica
-        /// que los jefes que ya están en el juego y el dado tiene el pivot en el centro del cubo, así
-        /// que apoyado en el origen queda medio enterrado en el piso. Este struct calcula la corrección
-        /// a partir de los bounds reales del arte, y <see cref="ApplyArtFit"/> la escribe en el prefab.
+        /// <see cref="BossVisualWrapperBuilder"/> anida el arte a escala 1 en el origen del wrapper,
+        /// que es lo correcto para un rig con el pivot en los pies y la altura de un jefe. El dado
+        /// tiene el pivot en el centro del cubo, así que apoyado en el origen queda medio enterrado.
+        /// Este struct calcula la corrección a partir de los bounds reales del arte, y
+        /// <see cref="ApplyArtFit"/> la escribe en el prefab.
         /// </remarks>
         public readonly struct ArtFit
         {
@@ -755,8 +722,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         /// <remarks>
         /// El dado de la bandeja apunta a un material cuyo asset ya no está en el proyecto y los puntos
         /// usan la <c>Default-Material</c> built-in: las dos cosas salen magenta bajo URP. Se asignan
-        /// materiales compartidos y no clones retintados porque un cubo con seis esferas no justifica
-        /// dos assets más — el vínculo con la Generala lo hace la mesa, no el color.
+        /// materiales compartidos y no clones retintados.
         /// </remarks>
         private static void AssignDieMaterials(Transform art)
         {
@@ -837,8 +803,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         /// <summary>
         /// Configura la definición de la escarcha. Área dinámica: <see cref="HazardDefinitionSO.Shape"/>
         /// se ignora (las casillas del anillo las pasa el nodo), el daño es 0 —el hielo cobra en
-        /// turnos, no en HP: el techo del piso 3 ya está lleno con la mano y el cubilete— y la
-        /// casilla pisada se derrite, que es lo que impide encadenar stuns.
+        /// turnos, no en HP— y la casilla pisada se derrite, que es lo que impide encadenar stuns.
         /// </summary>
         /// <param name="triggerVfx">
         /// Burst opcional. Con <c>null</c> el anillo queda con el quad celeste solo: el visual no es
@@ -888,7 +853,6 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
             dice.WeaknessComboId = string.Empty;
             dice.WeaknessMultiplierOverride = 0f;
 
-            // Los dados no dropean oro: el premio de romperlos es la categoría que le borrás.
             dice.MinGoldDrop = 0;
             dice.MaxGoldDrop = 0;
 
@@ -908,10 +872,6 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         /// casilla, <b>no se reponen</b> (<see cref="TableRefillTurns"/> negativo) y no ocupan slot
         /// en la cola de turnos.
         /// </summary>
-        /// <remarks>
-        /// Sin <c>OnDeathHazard</c>: dejar algo en la casilla del dado roto convertiría romperlo en
-        /// una decisión con costo, y es la jugada que la pelea quiere premiar.
-        /// </remarks>
         public static void PopulateDiceDefinition(RoomObjectDefinitionSO table, GameObject visualPrefab)
         {
             if (table == null) return;
@@ -961,8 +921,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
                     Isolate(BuildPhaseTwoGate()),
 
                     // 3. La mesa. Sin Once: el nodo se auto-gatea y necesita tickear para recoger
-                    //    los rotos. DoorFronts reparte el precio — los cuatro dados de puerta
-                    //    cuestan caminar bajo persecución y el quinto cuesta el cubilete.
+                    //    los rotos.
                     Isolate(new AINode_SpawnRoomObjects
                     {
                         Definition = diceTable,
@@ -985,12 +944,10 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
                     //    la marca de la mano.
                     Isolate(BuildCupSlam()),
 
-                    // 6. La tabla combo → telegraph. Es data: cambiar cuánto pega una mano es
-                    //    editar el TelegraphMark de su rama, no tocar código.
+                    // 6. La tabla combo → telegraph.
                     BuildHandTelegraphTable(),
 
-                    // 7. La escarcha. Cero daño: el techo del piso ya está lleno con la mano y el
-                    //    cubilete, así que el hielo cobra en turnos.
+                    // 7. La escarcha. Cero daño: el hielo cobra en turnos, no en HP.
                     Isolate(BuildFrostGate(frostHazard)),
 
                     // 8. La mano que el jugador acaba de anotar queda prohibida para la ronda que
@@ -1122,14 +1079,11 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         }
 
         /// <summary>
-        /// El cubilete: melee directo, sin ronda de aviso y sin gate de paridad. Cae en cada tirada
-        /// porque tirar <b>es</b> bajar la copa; el jugador lo esquiva con la única variable que
-        /// controla, que es dónde está parado.
+        /// El cubilete: melee directo, sin ronda de aviso y sin gate de paridad. Cae en cada tirada.
         /// </summary>
         /// <remarks>
-        /// Manhattan 1 a propósito: son las cuatro casillas desde las que él puede pegarle a ella o
-        /// a un dado pegado a ella. La regla queda simétrica y se aprende en un turno — si le
-        /// llegás, te llega.
+        /// Manhattan 1: son las cuatro casillas desde las que él puede pegarle a ella o a un dado
+        /// pegado a ella.
         /// </remarks>
         public static AINode_GeneralaCupSlam BuildCupSlam()
         {
@@ -1147,8 +1101,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         /// las múltiplo de 3 y deja franca la tercera.
         /// </summary>
         /// <remarks>
-        /// El gate no es tuning: sin ronda franca el hielo nuevo cae antes de que se derrita el
-        /// anterior y desarmarle la mesa se vuelve imposible. Ver <see cref="FrostParityDivisor"/>.
+        /// Sin ronda franca el hielo nuevo cae antes de que se derrita el anterior y no queda ventana
+        /// para romperle la mesa. Ver <see cref="FrostParityDivisor"/>.
         /// </remarks>
         public static AINode_If BuildFrostGate(HazardDefinitionSO frostHazard)
         {
@@ -1184,10 +1138,6 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         /// <c>IContractModifierService</c>: armarlo otra vez paga 0 y la fila sale tachada en el
         /// Contrato.
         /// </summary>
-        /// <remarks>
-        /// Sin presentación a propósito: lo que se ve es la fila tachada en el Contrato, no un VFX
-        /// sobre el jugador.
-        /// </remarks>
         public static AINode_RotateBlock BuildRepeatBan()
         {
             return new AINode_RotateBlock

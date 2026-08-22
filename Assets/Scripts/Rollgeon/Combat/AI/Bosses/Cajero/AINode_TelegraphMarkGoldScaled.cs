@@ -13,36 +13,12 @@ namespace Rollgeon.Combat.AI.Decisions
 {
     /// <summary>
     /// La columna que engorda: marca un área telegráfica cuyo <b>ancho y daño salen del oro que
-    /// lleva el jugador</b>. Es el nodo central del Cajero (piso 2) — su único vector de daño y
-    /// su anzuelo económico: cada ficha que levantás lo acerca al escalón siguiente.
+    /// lleva el jugador</b>.
     /// </summary>
     /// <remarks>
-    /// <para>
-    /// <b>Composición, no herencia.</b> Delega en un <see cref="AINode_TelegraphMark"/> armado en
-    /// el momento con el Size/Damage del escalón resuelto — el mismo truco que usa
-    /// <c>HazardService</c> para reusar los nodos de telegraph. Así el nodo compartido no se toca
-    /// y cualquier arreglo de shapes/overlay llega gratis.
-    /// </para>
-    /// <para>
-    /// <b>Tres <c>If(PcGoldCompare)</c> harían lo mismo… hasta el soborno.</b> El escalón efectivo
-    /// es <c>clamp(rank(oro) + DamageStepUp) − DamageStepDown</c>: oro, más lo que sumó el
-    /// rastrillo por el paso de las rondas, menos lo que compró el soborno. Con Ifs sueltos cada
-    /// rama necesitaría además saber en qué ronda va y si hay soborno activo (3 gates × N × 2).
-    /// Un nodo con la tabla adentro deja el árbol en un solo hijo legible y la matemática en
-    /// <see cref="CashierGoldTierTable"/>, testeable sin grilla ni servicios.
-    /// </para>
-    /// <para>
-    /// <b>El rastrillo es lo que lo mantiene vivo con un jugador pobre.</b> Los umbrales están
-    /// calibrados para el oro que se lleva al piso 2 (~65-70), así que sin el reloj un jugador
-    /// que gasta todo antes de entrar dejaría al Cajero clavado en el escalón más barato la pelea
-    /// entera. <c>ApplyRakeStepUp = false</c> reproduce exactamente ese jefe inofensivo — sirve
-    /// para aislar la tabla en un test, no para autorar.
-    /// </para>
-    /// <para>
-    /// <b>Sin economía registrada</b> asume 0 de oro (escalón más barato) en vez de fallar: el
-    /// jefe sin este nodo no ataca, y un combate donde nadie amenaza es peor bug que un golpe
-    /// flojo. <c>PcGoldCompare</c> es no-permisivo por la razón inversa (no habilitar gastos).
-    /// </para>
+    /// El escalón efectivo es <c>clamp(rank(oro) + DamageStepUp) − DamageStepDown</c>. Sin
+    /// <c>IEconomyService</c> registrado asume 0 de oro (escalón más barato) en vez de fallar: sin
+    /// este nodo el jefe no ataca.
     /// </remarks>
     [Serializable, HideReferenceObjectPicker]
     public sealed class AINode_TelegraphMarkGoldScaled : AIActionNode
@@ -69,16 +45,13 @@ namespace Rollgeon.Combat.AI.Decisions
                  "la tabla cruda.")]
         public bool ApplyRakeStepUp = true;
 
-        /// <summary>Último escalón resuelto (0-based por MinGold ascendente); -1 si nunca tickeó.
-        /// Estado de debug por pelea — el árbol se clona por combate.</summary>
+        /// <summary>Último escalón resuelto (0-based por MinGold ascendente); -1 si nunca tickeó.</summary>
         [NonSerialized] public int LastRank = -1;
 
         /// <summary>Oro leído en el último tick — para el inspector de AI y logs.</summary>
         [NonSerialized] public int LastGold;
 
-        /// <summary>Escalones que puso el rastrillo en el último tick — separado de
-        /// <see cref="LastRank"/> para poder leer de un vistazo cuánto del daño viene del reloj
-        /// y cuánto del bolsillo del jugador.</summary>
+        /// <summary>Escalones que puso el rastrillo en el último tick.</summary>
         [NonSerialized] public int LastStepUp;
 
         public override string NodeName => $"Telegraph Mark Gold-Scaled ({Shape}, {Tiers?.Count ?? 0} tiers)";
@@ -117,9 +90,8 @@ namespace Rollgeon.Combat.AI.Decisions
             LastRank = rank;
             LastStepUp = stepUp;
 
-            // Se publica el escalón resuelto para que la lectura del HUD muestre el daño REAL en vez
-            // de recalcularlo con su propia copia de la tabla. Duplicar la cuenta es donde la UI y el
-            // golpe se separan, y una lectura que miente es peor que no tener lectura.
+            // Se publica el escalón resuelto para que la lectura del HUD muestre el daño real en vez
+            // de recalcularlo con su propia copia de la tabla.
             if (ServiceLocator.TryGetService<ICashierLedgerService>(out var reportTo) && reportTo != null)
                 reportTo.ReportTier(rank, tier.Damage, gold, stepUp, stepDown);
 

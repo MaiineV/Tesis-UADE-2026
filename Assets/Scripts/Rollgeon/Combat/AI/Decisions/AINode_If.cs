@@ -10,9 +10,8 @@ using UnityEngine;
 namespace Rollgeon.Combat.AI.Decisions
 {
     /// <summary>
-    /// Ramifica según una lista AND-evaluada de <see cref="BasePreCondition"/>. Reemplaza
-    /// al monolítico <c>AICondition</c> usando el catálogo central de PC.
-    /// TECHNICAL.md §7.5.
+    /// Ramifica según una lista AND-evaluada de <see cref="BasePreCondition"/>, usando el catálogo
+    /// central de PC. TECHNICAL.md §7.5.
     /// </summary>
     /// <remarks>
     /// El target del context PC se resuelve via <see cref="TargetSelector"/>; null cae

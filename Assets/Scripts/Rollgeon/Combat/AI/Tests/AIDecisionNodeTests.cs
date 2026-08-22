@@ -129,9 +129,8 @@ namespace Rollgeon.Combat.AI.Tests
         [Test]
         public void If_EmptyConditions_TreatsAsTrue()
         {
-            // Plan: List<BasePreCondition> empty/null sigue la semántica AND-empty=true
-            // de BasePreCondition.EvaluateAll. Diferencia con el viejo AICondition que
-            // trataba null como "false → else".
+            // List<BasePreCondition> empty/null sigue la semántica AND-empty=true de
+            // BasePreCondition.EvaluateAll.
             var thenNode = new CountingNode { ResultToReturn = AIResult.Succeeded };
             var elseNode = new CountingNode { ResultToReturn = AIResult.Succeeded };
             var node = new AINode_If { Then = thenNode, Else = elseNode };
@@ -241,8 +240,7 @@ namespace Rollgeon.Combat.AI.Tests
         public void Alternate_NeverRepeatsConsecutively()
         {
             // A diferencia de Random (azar independiente, puede repetir por pura
-            // probabilidad), Alternate garantiza que nunca toca el mismo hijo dos
-            // veces seguidas — es la regresión que este nodo existe para resolver.
+            // probabilidad), Alternate nunca toca el mismo hijo dos veces seguidas.
             var a = new CountingNode { ResultToReturn = AIResult.Succeeded };
             var b = new CountingNode { ResultToReturn = AIResult.Succeeded };
             var node = new AINode_Alternate { Children = { a, b } };
@@ -342,7 +340,7 @@ namespace Rollgeon.Combat.AI.Tests
             // Act
             var result = node.Tick(new AIContext());
 
-            // Assert — cap señala bug de configuración → Failed (regression guard)
+            // Assert — cap señala bug de configuración → Failed
             Assert.AreEqual(AIResult.Failed, result);
             Assert.AreEqual(5, body.TickCount);
         }

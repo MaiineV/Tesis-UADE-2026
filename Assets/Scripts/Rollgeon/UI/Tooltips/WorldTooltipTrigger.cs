@@ -41,6 +41,29 @@ namespace Rollgeon.UI.Tooltips
 
         [SerializeField] private WorldTooltipMode _mode = WorldTooltipMode.Click;
 
+        /// <summary>
+        /// Modo de activación. Escribible para los triggers que se agregan por código: el default
+        /// serializado es <see cref="WorldTooltipMode.Click"/> (la puerta), y un
+        /// <c>AddComponent</c> no puede elegir otro desde el Inspector.
+        /// </summary>
+        public WorldTooltipMode Mode
+        {
+            get => _mode;
+            set
+            {
+                if (_mode == value) return;
+                _mode = value;
+
+                // El hover activo muere con el cambio de modo: si se pasa a Click quedaría un
+                // tooltip abierto que ningún Update va a cerrar.
+                if (_hoverActive)
+                {
+                    _hoverActive = false;
+                    HideTooltip();
+                }
+            }
+        }
+
         [SerializeField] private TooltipPlacementSettings _placement = new TooltipPlacementSettings();
 
         [Tooltip("Cámara usada para raycast + WorldToScreenPoint. Null = Camera.main en runtime.")]

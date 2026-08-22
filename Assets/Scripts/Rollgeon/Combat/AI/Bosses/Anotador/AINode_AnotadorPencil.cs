@@ -13,14 +13,12 @@ using UnityEngine;
 namespace Rollgeon.Combat.AI.Decisions
 {
     /// <summary>
-    /// El lápiz del Anotador (piso 2): 12 de daño melee <b>directo</b> —sin marca y sin área— contra
-    /// el jugador que esté pegado cuando le toca el turno. Ficha de diseño "El Anotador".
+    /// El lápiz del Anotador (piso 2): daño melee <b>directo</b> —sin marca y sin área— contra el
+    /// jugador que esté pegado cuando le toca el turno.
     /// </summary>
     /// <remarks>
-    /// <b>Va antes del repliegue</b> y dentro de un <c>Selector[…, Wait]</c>: la distancia se mide al
-    /// empezar el turno del jefe, y después de <see cref="AINode_KeepDistance"/> el lápiz no cobraría
-    /// nunca. Manhattan y no Chebyshev, porque el rango del jugador también es Manhattan
-    /// (<c>SelectionSettings</c>) y el lápiz cobra el peaje de las casillas desde las que él pega.
+    /// Va antes del repliegue en el Sequence: la distancia se mide al empezar el turno del jefe, y
+    /// después de <see cref="AINode_KeepDistance"/> el lápiz no cobraría nunca.
     /// </remarks>
     [Serializable, HideReferenceObjectPicker]
     public sealed class AINode_AnotadorPencil : AIActionNode
@@ -43,7 +41,7 @@ namespace Rollgeon.Combat.AI.Decisions
         /// <summary>
         /// Event key del Animation Event que marca el frame en que el lápiz entra. Const y no campo
         /// autorable: un campo nuevo nace vacío en los <c>ED_Boss_*</c> ya serializados (Odin no corre
-        /// field initializers al deserializar) y el golpe se quedaría mudo.
+        /// field initializers).
         /// </summary>
         private const string ImpactEventKey = "hit";
 
@@ -124,10 +122,6 @@ namespace Rollgeon.Combat.AI.Decisions
             });
         }
 
-        /// <remarks>
-        /// Request de secuencia a mano y no <c>EffPlaySequence</c>: el nodo no nace de un effect pass
-        /// y no tiene <c>EffectContext</c> que pasarle (por eso <c>FeedbackRequest.Context</c> admite null).
-        /// </remarks>
         private static IEnumerator PlayStab(AIContext context, Action onImpact)
         {
             if (!ServiceLocator.TryGetService<IFeedbackService>(out var feedback) || feedback == null)

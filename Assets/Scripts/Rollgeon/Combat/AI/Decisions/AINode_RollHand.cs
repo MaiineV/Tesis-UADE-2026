@@ -21,14 +21,12 @@ namespace Rollgeon.Combat.AI.Decisions
     /// </summary>
     /// <remarks>
     /// <para>
-    /// <b>Romper un dado borra una categoría, sin código nuevo.</b> Los combos exigen un mínimo de
-    /// dados en el array (<c>Combo_Generala</c> ≥ 5, <c>Combo_Poker</c> ≥ 4,
-    /// <c>Combo_Escalera</c> ≥ 5): con 4 dados la Generala deja de existir y con 3 se cae el Póker.
+    /// Romper un dado borra una categoría sin código nuevo: los combos exigen un mínimo de dados en
+    /// el array, así que con 4 la Generala deja de existir y con 3 se cae el Póker.
     /// </para>
     /// <para>
-    /// <b>La ronda extra de aviso.</b> Un combo de <see cref="SlowCombos"/> se publica cantado pero
-    /// no armado: ese turno nadie marca (todas las ramas piden mano armada) y al siguiente este nodo
-    /// la arma <b>sin re-tirar</b>.
+    /// Un combo de <see cref="SlowCombos"/> se publica cantado pero no armado: ese turno nadie marca
+    /// (todas las ramas piden mano armada) y al siguiente este nodo la arma <b>sin re-tirar</b>.
     /// </para>
     /// </remarks>
     [Serializable, HideReferenceObjectPicker]

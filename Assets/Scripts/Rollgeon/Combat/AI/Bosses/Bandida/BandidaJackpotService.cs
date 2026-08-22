@@ -11,20 +11,6 @@ namespace Rollgeon.Combat.AI.Bosses.Bandida
     /// <c>StunService</c>: registro global vía <see cref="IPreloadableService"/>, estado
     /// combat-scoped y limpieza por <c>OnCombatEnd</c> / <c>OnRunEnd</c>.
     /// </summary>
-    /// <remarks>
-    /// <para>
-    /// <b>Nace lazy.</b> No hay bootstrap en escena para este jefe (el setup de engine lo hace el
-    /// usuario a mano): el primer nodo del árbol que corre lo crea vía
-    /// <see cref="ResolveOrCreate"/>, igual que <c>ThreatTelegraphOverlay</c>. Si más adelante se
-    /// agrega un bootstrap, <see cref="ResolveOrCreate"/> encuentra el existente y no duplica.
-    /// </para>
-    /// <para>
-    /// <b>Asimetría deliberada del ciclo.</b> La cuenta que llega a 0 y dispara se rearma en el
-    /// acto (el árbol llama <see cref="ResetCountdown"/> en el mismo turno que marca el jackpot);
-    /// la ronda muerta solo existe cuando el jugador rompe un rodillo. La pausa es el premio de
-    /// cancelar — tanquear el jackpot no la recibe.
-    /// </para>
-    /// </remarks>
     public sealed class BandidaJackpotService : IBandidaJackpotService, IPreloadableService, IDisposable
     {
         private readonly List<ReelSlot> _slots = new List<ReelSlot>();
@@ -55,8 +41,8 @@ namespace Rollgeon.Combat.AI.Bosses.Bandida
         // ======================================================================
 
         /// <summary>
-        /// Devuelve el servicio registrado, o crea y registra uno. Único camino que usan los nodos
-        /// del árbol — así el jefe funciona sin bootstrap en escena.
+        /// Devuelve el servicio registrado, o crea y registra uno: es el único camino que usan los
+        /// nodos del árbol, así el jefe funciona sin bootstrap en escena.
         /// </summary>
         public static IBandidaJackpotService ResolveOrCreate()
         {
@@ -81,8 +67,8 @@ namespace Rollgeon.Combat.AI.Bosses.Bandida
 
         private void SubscribeHandlers()
         {
-            // Idempotente: si Register y ConfigureForTests corren sobre la misma instancia, no
-            // queremos dos suscripciones al canal de daño (cancelaría dos veces y sumaría ruido).
+            // Idempotente: dos suscripciones al canal de daño sobre la misma instancia
+            // cancelarían dos veces.
             UnsubscribeHandlers();
 
             _damageHandler = OnDamageResolved;
@@ -205,8 +191,7 @@ namespace Rollgeon.Combat.AI.Bosses.Bandida
                 var slot = _slots[i];
                 if (slot.ReelGuid != reelGuid) continue;
 
-                // El rodillo trabado (HOLD) no cancela: en Fase 2 quedan los dos de la punta como
-                // únicos blancos válidos, y pegarle al del medio es tempo perdido.
+                // El rodillo trabado (HOLD) no cancela la cuenta.
                 if (slot.Locked) return false;
                 if (!_isCounting) return false;
 

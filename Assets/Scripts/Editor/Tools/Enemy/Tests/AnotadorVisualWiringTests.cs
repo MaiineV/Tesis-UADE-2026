@@ -11,11 +11,6 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
     /// materiales del arte a la paleta de hielo, y que los tres colores que pueden convivir en el
     /// piso de esta pelea se lean distinto.
     /// </summary>
-    /// <remarks>
-    /// Nada acá toca <c>AssetDatabase</c> ni pide que el prefab esté construido: el builder es la
-    /// fuente de verdad de qué arte usa el jefe, así que testear sus tablas cubre también al asset que
-    /// genera y el suite corre sin depender de un import.
-    /// </remarks>
     [TestFixture]
     public class AnotadorVisualWiringTests
     {

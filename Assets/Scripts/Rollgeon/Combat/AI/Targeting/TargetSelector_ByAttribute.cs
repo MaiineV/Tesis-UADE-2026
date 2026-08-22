@@ -13,8 +13,7 @@ namespace Rollgeon.Combat.AI.Targeting
     /// <summary>
     /// Selector polimorfico que elige una entidad por valor extremo (min / max) de un
     /// <see cref="StatType"/>, filtrando candidatos por <see cref="EntityFilterMask"/>
-    /// relativo al owner (Allies, Enemies, Player...). Generaliza el algoritmo manual de
-    /// <c>SupportHealBehavior.PickLowestHpWoundedAlly</c>.
+    /// relativo al owner (Allies, Enemies, Player...).
     /// </summary>
     /// <remarks>
     /// <para>

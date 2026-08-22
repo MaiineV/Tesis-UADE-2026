@@ -44,6 +44,9 @@ namespace Rollgeon.Entities.Visuals
                  "del rig es un teletransporte.")]
         private LocomotionStyle _locomotion = LocomotionStyle.Walk;
 
+        /// <summary>Cómo se ve moverse este pawn.</summary>
+        public LocomotionStyle Locomotion => _locomotion;
+
         [SerializeField, Min(0f)]
         [Tooltip("Segundos que se queda en el origen antes de saltar — el tramo en que el clip lo " +
                  "hace desaparecer. Solo para Blink.")]
