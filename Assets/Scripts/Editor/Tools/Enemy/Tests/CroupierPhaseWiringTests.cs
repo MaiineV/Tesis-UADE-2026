@@ -608,20 +608,89 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         }
 
         /// <summary>
-        /// El armado de "Pleno y color" se planta en el centro <b>siempre</b> al cruzar el 50%,
-        /// sin el gate de cercanía: usa <c>AINode_TeleportToRoomCenter</c>, un nodo distinto de
-        /// los dos <c>AINode_TeleportAwayToEdge</c> del ciclo.
+        /// El armado de "Pleno y color" se planta en el centro <b>siempre</b> al cruzar el 50%, sin
+        /// el gate de cercanía.
         /// </summary>
+        /// <remarks>
+        /// El sorteo de la fuga también tiene un <c>AINode_TeleportToRoomCenter</c>, así que el tipo
+        /// de nodo ya no alcanza para distinguirlos: lo que hay que garantizar es que sean
+        /// <b>instancias distintas</b>. Compartir el objeto dejaría el plantado del Pleno colgando del
+        /// gate de cercanía, y al cruzar el 50% con el jugador lejos no se plantaría en el centro —
+        /// el hueco del Pleno caería donde el jefe estuviera parado.
+        /// </remarks>
         [Test]
         public void PlenoTeleport_IsNeverGated_AndIsADifferentNodeFromTheFleeTeleports()
         {
             var arm = Descendants(FindGateAtPercent(CroupierAssetBuilder.PlenoHpThreshold).Then);
 
-            Assert.IsNotEmpty(arm.OfType<AINode_TeleportToRoomCenter>(),
-                "El Pleno dejó de plantarse en el centro.");
+            var plenoTeleport = arm.OfType<AINode_TeleportToRoomCenter>().SingleOrDefault();
+            Assert.IsNotNull(plenoTeleport, "El Pleno dejó de plantarse en el centro.");
+
             Assert.IsEmpty(arm.OfType<AINode_TeleportAwayToEdge>(),
                 "El armado del Pleno pasó a compartir nodo con los saltos de fuga: quedaría " +
                 "gateado por cercanía y a veces no se plantaría en el centro al cruzar el 50%.");
+
+            foreach (var beat in new[] { DealBeat(), BurnBeat() })
+            {
+                foreach (var fromRoulette in Descendants(FleeRouletteOf(beat))
+                             .OfType<AINode_TeleportToRoomCenter>())
+                {
+                    Assert.AreNotSame(plenoTeleport, fromRoulette,
+                        "El plantado del Pleno y el aterrizaje al centro del sorteo son la MISMA " +
+                        "instancia: el del Pleno quedó colgado del gate de cercanía y deja de " +
+                        "plantarse al cruzar el 50% si el jugador está lejos.");
+                }
+            }
+        }
+
+        /// <summary>
+        /// El sorteo de la fuga: los dos tiempos apuestan con los pesos de la ficha, y el orden de
+        /// las opciones es contrato — <c>AINode_Random</c> acumula pesos y devuelve la primera que
+        /// pasa el corte, así que reordenarlas cambia qué resultado sale con cada tirada.
+        /// </summary>
+        [Test]
+        public void BothBeats_RollTheAuthoredFleeOdds_InTheAuthoredOrder()
+        {
+            foreach (var beat in new[] { DealBeat(), BurnBeat() })
+            {
+                var options = FleeRouletteOf(beat).Options;
+
+                Assert.AreEqual(3, options.Count,
+                    "El sorteo de la fuga dejó de tener tres salidas.");
+
+                Assert.AreEqual(CroupierAssetBuilder.FleeWeightEdge, options[0].Weight,
+                    "El peso de irse al borde no sale de la constante de la ficha.");
+                Assert.AreEqual(CroupierAssetBuilder.FleeWeightCenter, options[1].Weight,
+                    "El peso de saltar al centro no sale de la constante de la ficha.");
+                Assert.AreEqual(CroupierAssetBuilder.FleeWeightStay, options[2].Weight,
+                    "El peso de quedarse no sale de la constante de la ficha.");
+
+                Assert.IsInstanceOf<AINode_TeleportAwayToEdge>(options[0].Node,
+                    "La primera salida del sorteo dejó de ser el salto al borde.");
+                Assert.IsInstanceOf<AINode_TeleportToRoomCenter>(options[1].Node,
+                    "La segunda salida del sorteo dejó de ser el salto al centro.");
+                Assert.IsInstanceOf<AINode_Wait>(options[2].Node,
+                    "La tercera salida del sorteo tiene que ser un Wait explícito: un Node null " +
+                    "devuelve Failed y se comería el resto del tiempo del jefe.");
+            }
+        }
+
+        /// <summary>
+        /// El aterrizaje al centro gasta el movimiento del turno, igual que los otros dos teleports
+        /// del jefe: sin eso, cualquier paso de reacomodo posterior lo saca del centro en el mismo
+        /// turno en que se plantó ahí.
+        /// </summary>
+        [Test]
+        public void TheCentreLanding_ConsumesTheTurnMovement()
+        {
+            foreach (var beat in new[] { DealBeat(), BurnBeat() })
+            {
+                var landing = Descendants(FleeRouletteOf(beat))
+                    .OfType<AINode_TeleportToRoomCenter>().Single();
+
+                Assert.IsTrue(landing.ConsumeMoveAction,
+                    "El aterrizaje al centro dejó de gastar el movimiento del turno.");
+            }
         }
 
         [Test]
@@ -892,14 +961,23 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             return beat;
         }
 
-        /// <summary>El <c>If</c> de cercanía que gatea el salto de fuga de un tiempo del ciclo.</summary>
+        /// <summary>
+        /// El <c>If</c> de cercanía que gatea el sorteo de la fuga de un tiempo del ciclo. Se filtra
+        /// por el <c>AINode_Random</c> del <c>Then</c> y no por el primer <c>If</c> del tiempo: el
+        /// tiempo de quema tiene además el <c>If</c> que ramifica la duración del fuego por fase, y
+        /// ése cuelga un <c>AINode_IgniteArea</c>.
+        /// </summary>
         private static AINode_If FleeGateOf(AIDecisionNode beat)
         {
             var gate = Descendants(beat).OfType<AINode_If>()
-                .SingleOrDefault(g => g.Then is AINode_TeleportAwayToEdge);
-            Assert.IsNotNull(gate, "No hay gate de cercanía envolviendo el salto de fuga.");
+                .SingleOrDefault(g => g.Then is AINode_Random);
+            Assert.IsNotNull(gate, "No hay gate de cercanía envolviendo el sorteo de la fuga.");
             return gate;
         }
+
+        /// <summary>El sorteo de la fuga de un tiempo del ciclo.</summary>
+        private static AINode_Random FleeRouletteOf(AIDecisionNode beat) =>
+            (AINode_Random)FleeGateOf(beat).Then;
 
         /// <summary>
         /// Todo hijo de un contenedor que la raíz tickea tiene que ser <c>Selector[paso, Wait]</c>.

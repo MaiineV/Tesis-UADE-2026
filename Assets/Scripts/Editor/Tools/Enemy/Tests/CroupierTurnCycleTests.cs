@@ -318,12 +318,14 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         // =====================================================================
 
         /// <summary>
-        /// El jefe salta en los <b>dos</b> tiempos, y sólo el de quema lleva tope.
+        /// Los <b>dos</b> tiempos sortean su fuga con el mismo gate de cercanía, y ninguna de las
+        /// dos salidas que mueven al jefe lleva tope de aterrizaje.
         /// </summary>
         /// <remarks>
-        /// El tope es la ventana entera de la pelea: el jugador amenaza 8 casillas por turno, así
-        /// que el tiempo sin tope siempre lo deja fuera de alcance y el otro es el único en que se
-        /// lo puede tocar.
+        /// Sin tope, cuando el sorteo dice borde el jefe aterriza de verdad lejos. Lo que sostiene
+        /// que la pelea sea ganable no es un techo a dónde cae, sino que el sorteo a veces no diga
+        /// borde: el jugador amenaza 8 casillas por turno, así que un salto sin tope siempre lo deja
+        /// fuera de alcance.
         /// </remarks>
         [Test]
         public void BothBeats_GateTheirJumpOnProximity_AndNeitherIsCapped()
@@ -334,9 +336,9 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             foreach (var beat in beats)
             {
                 Assert.AreEqual(1, BeatSteps(beat).OfType<AINode_If>()
-                        .Count(g => g.Then is AINode_TeleportAwayToEdge),
-                    "Un tiempo del ciclo dejó de tener exactamente un salto gateado: o el jefe se " +
-                    "queda quieto ese turno, o salta dos veces y el segundo pisa al primero.");
+                        .Count(g => g.Then is AINode_Random),
+                    "Un tiempo del ciclo dejó de tener exactamente un sorteo gateado: o el jefe se " +
+                    "queda quieto ese turno, o sortea dos veces y el segundo pisa al primero.");
 
                 Assert.AreEqual(0, FleeJumpOf(beat).MaxDistanceFromPlayer,
                     "El salto volvió a tener tope de aterrizaje. Con el gate de cercanía decidiendo " +
@@ -462,6 +464,77 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         }
 
         // =====================================================================
+        // Las otras dos salidas del sorteo
+        // =====================================================================
+
+        /// <summary>
+        /// Cuando el sorteo dice centro, el jefe termina el turno <b>en el centro de la sala</b> —
+        /// dentro de lo que el jugador amenaza, que es el punto de esa salida.
+        /// </summary>
+        [Test]
+        public void WhenTheRouletteSaysCentre_TheBossLandsInTheMiddleOfTheRoom()
+        {
+            var root = CroupierAssetBuilder.BuildAIRoot(_fire);
+
+            root.Tick(NewContext(roundIndex: 1, roll: RollCentre));
+
+            Assert.AreEqual(RoomCentre, PositionOf(_boss),
+                "El sorteo dio centro y el jefe no terminó en el centro: la salida que lo deja al " +
+                "alcance del jugador no está moviéndolo.");
+        }
+
+        /// <summary>
+        /// Cuando el sorteo dice que se queda, el jefe no se mueve <b>y el resto del tiempo corre
+        /// igual</b>.
+        /// </summary>
+        /// <remarks>
+        /// Es el caso que protege el <c>AINode_Wait</c> de la tercera opción: con un <c>Node</c> nulo
+        /// el sorteo devolvería <c>Failed</c>, y ese <c>Failed</c> se comería el marcado del cono que
+        /// viene después. Quedarse tiene que exponerlo, no regalarle un turno mudo.
+        /// </remarks>
+        [Test]
+        public void WhenTheRouletteSaysStay_TheBossHoldsHisGround_AndStillWorksTheBeat()
+        {
+            var root = CroupierAssetBuilder.BuildAIRoot(_fire);
+            var start = PositionOf(_boss);
+
+            root.Tick(NewContext(roundIndex: 1, roll: RollStay));
+
+            Assert.AreEqual(start, PositionOf(_boss),
+                "El sorteo dio quedarse y el jefe se movió igual.");
+            Assert.Greater(ShotCount(), 0,
+                "Quedarse le comió el disparo del tiempo de reparto.");
+            Assert.IsNotEmpty(_threat.GetPendingTiles(_boss),
+                "Quedarse le comió el marcado del cono: la tercera opción del sorteo está " +
+                "devolviendo Failed y abortando el resto del tiempo.");
+        }
+
+        /// <summary>
+        /// Y el cono queda anclado donde el sorteo lo dejó: aterrizar en el centro le cambia qué
+        /// parte del paño amenaza, que es el canje de esa salida.
+        /// </summary>
+        /// <remarks>
+        /// El marcado va detrás del sorteo justamente por esto. Marcando primero, el cono saldría de
+        /// la casilla vieja y el jugador leería un aviso que no corresponde a dónde está el jefe.
+        /// </remarks>
+        [Test]
+        public void TheConeIsAnchoredWhereTheRouletteLeftHim()
+        {
+            var root = CroupierAssetBuilder.BuildAIRoot(_fire);
+
+            root.Tick(NewContext(roundIndex: 1, roll: RollCentre));
+
+            var announced = _threat.GetPendingTiles(_boss).ToList();
+            Assert.IsNotEmpty(announced, "Precondición: el tiempo de reparto tenía que marcar el cono.");
+
+            int nearest = announced.Min(t =>
+                Math.Abs(t.X - RoomCentre.X) + Math.Abs(t.Y - RoomCentre.Y));
+            Assert.AreEqual(1, nearest,
+                "El cono no arranca pegado al centro, así que quedó anclado en la casilla vieja: " +
+                "el jefe aterrizó en el medio y el aviso salió de donde ya no está.");
+        }
+
+        // =====================================================================
         // El cruce del 50% y el hueco del Pleno
         // =====================================================================
 
@@ -584,15 +657,21 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         }
 
         /// <summary>
-        /// El gate de cercanía que envuelve el salto de fuga del tiempo. Se filtra por lo que
+        /// El gate de cercanía que envuelve el sorteo de la fuga del tiempo. Se filtra por lo que
         /// cuelga del <c>Then</c> y no por el primer <c>If</c> del beat: el tiempo de quema tiene
-        /// además el <c>If</c> que ramifica la duración del fuego por fase.
+        /// además el <c>If</c> que ramifica la duración del fuego por fase, y ése cuelga un
+        /// <c>AINode_IgniteArea</c>.
         /// </summary>
         private static AINode_If FleeGateOf(AIDecisionNode beat) =>
-            BeatSteps(beat).OfType<AINode_If>().Single(g => g.Then is AINode_TeleportAwayToEdge);
+            BeatSteps(beat).OfType<AINode_If>().Single(g => g.Then is AINode_Random);
 
+        private static AINode_Random FleeRouletteOf(AIDecisionNode beat) =>
+            (AINode_Random)FleeGateOf(beat).Then;
+
+        /// <summary>El salto al borde, que ahora es una de las tres salidas del sorteo.</summary>
         private static AINode_TeleportAwayToEdge FleeJumpOf(AIDecisionNode beat) =>
-            (AINode_TeleportAwayToEdge)FleeGateOf(beat).Then;
+            FleeRouletteOf(beat).Options
+                .Select(o => o.Node).OfType<AINode_TeleportAwayToEdge>().Single();
 
         /// <summary>Deja al jugador fuera del radio de fuga, sin sacarlo de la sala.</summary>
         private void MovePlayerBeyondFleeRadius()
@@ -631,7 +710,45 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         private List<DamageContext> EnvironmentalHits() =>
             _pipeline.Resolved.Where(c => c.Kind == AttackKind.Environmental).ToList();
 
-        private AIContext NewContext(int roundIndex) => new AIContext
+        /// <summary>
+        /// Tirada del sorteo que fuerza el salto al borde. Es el resultado que la mayoría de estos
+        /// tests asume, porque son los que estaban escritos cuando el jefe huía siempre.
+        /// </summary>
+        private const double RollEdge = 0.0;
+
+        /// <summary>Tirada que fuerza el aterrizaje en el centro de la sala.</summary>
+        private const double RollCentre = 0.6;
+
+        /// <summary>Tirada que fuerza que se quede donde está.</summary>
+        private const double RollStay = 0.9;
+
+        /// <summary>
+        /// RNG que devuelve siempre la misma tirada, para fijar qué salida del sorteo de la fuga
+        /// sale en un test.
+        /// </summary>
+        /// <remarks>
+        /// <para>
+        /// Un <c>Random(seed)</c> fijo no sirve: cuál de las tres opciones cae depende de cuántos
+        /// draws se hayan consumido antes en el mismo tick, así que agregar o mover un nodo en el
+        /// árbol le voltea el resultado al test sin que nada del test cambie. Devolviendo siempre lo
+        /// mismo, el resultado es <b>independiente del orden de evaluación</b>.
+        /// </para>
+        /// <para>
+        /// Hereda con la seed que usaba el contexto antes para no cambiarle nada al resto: el sorteo
+        /// de la casilla de aterrizaje pasa por <c>Sample()</c>, no por <c>NextDouble()</c>, así que
+        /// overridear una no toca la otra.
+        /// </para>
+        /// </remarks>
+        private sealed class FixedRoll : System.Random
+        {
+            private readonly double _value;
+            public FixedRoll(double value) : base(1) { _value = value; }
+            public override double NextDouble() => _value;
+        }
+
+        private AIContext NewContext(int roundIndex) => NewContext(roundIndex, RollEdge);
+
+        private AIContext NewContext(int roundIndex, double roll) => new AIContext
         {
             SelfGuid = _boss,
             PlayerGuid = _player,
@@ -642,9 +759,10 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             DamagePipeline = _pipeline,
             PlayerService = _playerService,
             RoundIndex = roundIndex,
-            // Fijo: el candado del 70% es dirigido, pero el nodo igual pide RNG para el sorteo que
-            // no usa, y un turno del jefe tiene que ser reproducible.
-            Rng = new System.Random(1),
+            // El RNG decide una rama real: el sorteo de la fuga elige entre irse al borde, saltar al
+            // centro y quedarse. Fijo para que el turno sea reproducible, y con la tirada explícita
+            // para que cada test diga qué salida está midiendo.
+            Rng = new FixedRoll(roll),
         };
 
         private AIContext NewContextWithoutMovement(int roundIndex)

@@ -155,6 +155,31 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         /// </remarks>
         public const int FleeTriggerRange = 5;
 
+        /// <summary>
+        /// Pesos del sorteo de la fuga: adentro del radio no huye siempre, apuesta. Se va al borde,
+        /// salta al centro de la sala, o se queda.
+        /// </summary>
+        /// <remarks>
+        /// <para>
+        /// El borde se lleva el peso más alto porque desaparecer <b>es</b> el personaje, no una
+        /// preferencia de balance: tiene que seguir siendo el resultado que el jugador espera. El
+        /// centro es el que tiene textura —lo alcanzás, pero desde el medio el cono no se recorta
+        /// contra ninguna pared, así que amenaza sus 16 casillas enteras: es un canje y no un
+        /// premio—. Quedarse es el premio gordo.
+        /// </para>
+        /// <para>
+        /// Son <b>pesos</b>, no porcentajes: <c>AINode_Random</c> normaliza contra la suma. Suman 100
+        /// para que se lean como porcentajes, no porque el nodo lo pida.
+        /// </para>
+        /// <para>
+        /// Ojo con el vocabulario: <c>BossFeedbackIds</c> usa "la ruleta" para el mecanismo retirado
+        /// del número cantado que giraba un rodillo. Este sorteo no tiene nada que ver con eso.
+        /// </para>
+        /// </remarks>
+        public const float FleeWeightEdge = 50f;
+        public const float FleeWeightCenter = 30f;
+        public const float FleeWeightStay = 20f;
+
         /// <summary>Semi-ancho del apex del cono: 0 = arranca en una sola casilla.</summary>
         public const int ConeApexHalfWidth = 0;
 
@@ -405,11 +430,11 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
 
             data.EntityId = EntityId;
             data.DisplayName = DisplayName;
-            // Una línea y sin números: el tooltip es un adelanto, no la ficha. Los números lo
-            // estiraban y además se ponían viejos solos — el párrafo anterior seguía prometiendo
-            // un salto por turno cuando el salto ya dependía de la distancia.
+            // Una línea, sin números y sin prometer un resultado: el tooltip es un adelanto, no la
+            // ficha, y la fuga es un sorteo — nombrar una sola de las tres salidas miente la mitad
+            // de los turnos.
             data.Description =
-                "Burns the ground in front of him and bolts for the edge when you crowd him.";
+                "Burns the ground in front of him and rolls for the exit when you crowd him.";
 
             data.WeaknessComboId = WeaknessComboId;
             data.WeaknessMultiplierOverride = WeaknessMultiplier;
@@ -533,19 +558,14 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
                                         ImpactFeelFeedbackId = BossFeedbackIds.CroupierRangeImpactFeel,
                                     }),
 
-                                    // Se va al borde SI el jugador esta cerca, y ANTES de marcar:
-                                    // AINode_TelegraphMark ancla la banda en la casilla del jefe al
-                                    // tickear y AINode_IgniteArea la consume sin recalcularla, asi
-                                    // que marcando primero el fuego sale de donde el jefe ya no esta.
-                                    Guarded(FleeIfClose(new AINode_TeleportAwayToEdge
-                                    {
-                                        // 0 = sin tope de aterrizaje. Que la fuga valga la pena
-                                        // (aterrizar lejos de verdad) importa mas que acotarla: el
-                                        // gate de cercania es lo que ahora sostiene que la pelea sea
-                                        // ganable, no donde cae el salto.
-                                        MaxDistanceFromPlayer = 0,
-                                        ConsumeMoveAction = true,
-                                    })),
+                                    // Sortea la fuga SI el jugador esta cerca, y ANTES de marcar:
+                                    // AINode_TelegraphMark ancla el cono en la casilla del jefe al
+                                    // tickear y AINode_IgniteArea lo consume sin recalcularlo, asi
+                                    // que marcando primero el fuego saldria de donde el jefe ya no
+                                    // esta. Con el sorteo eso pesa MAS que antes: una de las tres
+                                    // salidas lo deja en el centro de la sala, y desde ahi el cono
+                                    // no se recorta contra ninguna pared.
+                                    Guarded(FleeIfClose(FleeRoulette())),
 
                                     // Marca el cono: anclado en el, apuntando al jugador. Size es
                                     // el semi-ancho del APEX, asi que 0 arranca en una casilla y se
@@ -593,17 +613,12 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
                                         },
                                     }),
 
-                                    // Se va detras de prender (el fuego cae en las casillas guardadas
-                                    // el turno anterior, asi que el orden no le cambia el area) y
-                                    // SI el jugador esta cerca: el mismo gate que T1, sin tope de
-                                    // aterrizaje. Con el jugador manejando el tempo de cuando se
-                                    // vuelve a acercar, un tope acá ya no hace falta para que la
-                                    // pelea sea ganable.
-                                    Guarded(FleeIfClose(new AINode_TeleportAwayToEdge
-                                    {
-                                        MaxDistanceFromPlayer = 0,
-                                        ConsumeMoveAction = true,
-                                    })),
+                                    // Sortea detras de prender (el fuego cae en las casillas
+                                    // guardadas el turno anterior, asi que el orden no le cambia el
+                                    // area) y con el mismo gate de cercania que T1: los dos tiempos
+                                    // apuestan, no solo el de reparto. Instancia propia del sorteo
+                                    // --ver FleeRoulette--, no la de T1.
+                                    Guarded(FleeIfClose(FleeRoulette())),
                                 },
                             },
                         },
@@ -694,12 +709,12 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         }
 
         /// <summary>
-        /// Gatea un salto de fuga por cercanía: sólo corre <paramref name="teleport"/> si el
+        /// Gatea la reacción de fuga por cercanía: sólo corre <paramref name="reaction"/> si el
         /// jugador está a <see cref="FleeTriggerRange"/> o menos (Manhattan). <c>Else = Wait</c> y
         /// no vacío: un <c>If</c> sin <c>Else</c> devuelve <c>Failed</c> cuando la condición no
         /// pasa, y ese <c>Failed</c> aborta el <c>Sequence</c> del tiempo entero.
         /// </summary>
-        private static AINode_If FleeIfClose(AINode_TeleportAwayToEdge teleport)
+        private static AINode_If FleeIfClose(AIDecisionNode reaction)
         {
             return new AINode_If
             {
@@ -707,8 +722,65 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
                 {
                     new PcTargetInRange { Range = FleeTriggerRange, Metric = DistanceMetric.Manhattan },
                 },
-                Then = teleport,
+                Then = reaction,
                 Else = new AINode_Wait(),
+            };
+        }
+
+        /// <summary>
+        /// El sorteo de la fuga: adentro del radio el jefe apuesta en vez de huir siempre. Se va al
+        /// borde, se planta en el centro de la sala, o se queda donde está.
+        /// </summary>
+        /// <remarks>
+        /// <para>
+        /// <b>Devuelve una instancia nueva por llamada, y eso es obligatorio.</b> Los dos tiempos del
+        /// ciclo piden su propio sorteo: compartir el objeto los haría compartir nodo en el árbol, y
+        /// un nodo con estado por instancia (o un consumidor que lo busque por identidad) empezaría a
+        /// ver los dos tiempos como uno.
+        /// </para>
+        /// <para>
+        /// <b>El orden de las opciones es contrato.</b> <c>AINode_Random</c> acumula pesos y devuelve
+        /// la primera que pasa el corte, así que quedarse/irse dependen de en qué lugar está cada una
+        /// — los tests que fuerzan un resultado por RNG asumen este orden exacto.
+        /// </para>
+        /// <para>
+        /// El "se queda" es un <c>AINode_Wait</c> y <b>no</b> <c>null</c>: un <c>Option.Node</c> nulo
+        /// devuelve <c>Failed</c>, y ese <c>Failed</c> se comería el resto del tiempo (el disparo ya
+        /// cobrado no, pero sí el marcado del cono que viene después).
+        /// </para>
+        /// </remarks>
+        private static AINode_Random FleeRoulette()
+        {
+            return new AINode_Random
+            {
+                Options = new List<AINode_Random.Option>
+                {
+                    new AINode_Random.Option
+                    {
+                        Weight = FleeWeightEdge,
+                        // Sin tope de aterrizaje: cuando le sale huir, huye de verdad. Que la pelea
+                        // sea ganable ya no depende de dónde cae, sino de que el sorteo a veces no
+                        // salga borde.
+                        Node = new AINode_TeleportAwayToEdge
+                        {
+                            MaxDistanceFromPlayer = 0,
+                            ConsumeMoveAction = true,
+                        },
+                    },
+                    new AINode_Random.Option
+                    {
+                        Weight = FleeWeightCenter,
+                        // El mismo nodo que usa el armado del Pleno, pero OTRA instancia: la del
+                        // Pleno no puede quedar colgada de este gate de cercanía o dejaría de
+                        // plantarse en el centro al cruzar el 50%.
+                        Node = new AINode_TeleportToRoomCenter { ConsumeMoveAction = true },
+                    },
+                    new AINode_Random.Option
+                    {
+                        Weight = FleeWeightStay,
+                        Node = new AINode_Wait(),
+                    },
+                },
             };
         }
 
