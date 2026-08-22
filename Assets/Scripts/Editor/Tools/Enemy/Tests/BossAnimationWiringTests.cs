@@ -43,6 +43,11 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                 { "tahur",    TahurAssetBuilder.EntityId },
             };
 
+        /// <summary>Los jefes que hoy tienen rig. El resto conserva sus entries en el FeedbackDB
+        /// pero no un prefab contra el cual verificarlas.</summary>
+        private static readonly HashSet<string> SlugsInUse =
+            new HashSet<string> { "croupier", "cajero", "generala" };
+
         // ==================================================================
         // El trigger existe en el rig del jefe
         // ==================================================================
@@ -69,6 +74,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                     problems.Add($"'{entry.FeedbackId}': '{slug}' no es ninguno de los seis jefes.");
                     continue;
                 }
+
+                if (!SlugsInUse.Contains(slug)) continue;
 
                 if (string.IsNullOrEmpty(entry.AnimTrigger))
                 {

@@ -83,10 +83,10 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             foreach (var prefab in VisualPrefabs())
                 if (StyleOf(prefab) == EntityPawn.LocomotionStyle.Blink) blinking.Add(prefab.name);
 
-            // Assert — Croupier y Tahúr entran porque visten el rig del Healer y del Sunked Grand.
-            // El Cajero no: MechaBoss_Animated trae ciclo de caminata (AnimCon_Mecha → Movement).
+            // Assert — el Croupier entra porque viste el rig del Healer. El Cajero no:
+            // MechaBoss_Animated trae ciclo de caminata (AnimCon_Mecha → Movement).
             CollectionAssert.AreEquivalent(
-                new[] { "PF_Boss_Croupier", "PF_Boss_Tahur", "SunkedGrand", "Healer" },
+                new[] { "PF_Boss_Croupier", "SunkedGrand", "Healer" },
                 blinking,
                 "Cambió quién se teletransporta. Si es a propósito, actualizá esta lista; si no, " +
                 "alguien reconstruyó un prefab y se llevó puesto el flag.");
