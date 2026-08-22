@@ -391,43 +391,6 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         // ======================================================================
 
         /// <summary>
-        /// Texto de hover del jefe: qué hace y con qué números, en tres oraciones.
-        /// </summary>
-        /// <remarks>
-        /// Los números salen de las constantes de la ficha o de <paramref name="fire"/>, nunca
-        /// escritos a mano. La duración se muestra con una ronda menos que la autorada: la ronda en
-        /// la que se enciende no tiene cierre de turno del jugador por delante.
-        /// </remarks>
-        public static string BuildDescription(SpecialTileDefinitionSO fire)
-        {
-            int coneMouth = (ConeApexHalfWidth + ConeDepth - 1) * 2 + 1;
-            int holeSide = PlenoHoleRadius * 2 + 1;
-            int lockPercent = Mathf.RoundToInt(LockHpThreshold * 100f);
-            int plenoPercent = Mathf.RoundToInt(PlenoHpThreshold * 100f);
-
-            var sb = new System.Text.StringBuilder();
-            sb.Append("Warps to the edge of the table every turn and shoots for ").Append(ShotDamage)
-              .Append(" at any range. Every other turn he lights a cone of fire ").Append(ConeDepth)
-              .Append(" deep, widening to ").Append(coneMouth).Append(" tiles");
-
-            if (fire != null)
-            {
-                sb.Append(" — ").Append(fire.EnterDamage).Append(" to cross, ")
-                  .Append(fire.TurnStartDamage).Append(" to start a turn on it");
-            }
-
-            sb.Append(", burning ").Append(Mathf.Max(1, FireDurationRounds - 1)).Append(" rounds (")
-              .Append(Mathf.Max(1, FireDurationRoundsPhase2 - 1)).Append(" under ").Append(plenoPercent)
-              .Append("%). At ").Append(lockPercent).Append("% he padlocks one die; at ")
-              .Append(plenoPercent).Append("% he warps to the centre and marks the whole table ")
-              .Append("except the ").Append(holeSide).Append("×").Append(holeSide)
-              .Append(" square around him — it burns on his next turn for ")
-              .Append(PlenoIgnitionDamage).Append(".");
-
-            return sb.ToString();
-        }
-
-        /// <summary>
         /// Escribe la ficha completa del Croupier en <paramref name="data"/>, incluido su
         /// <see cref="EnemyDataSO.AIRoot"/>. No toca <c>AssetDatabase</c>: sirve igual para el asset
         /// real y para una instancia in-memory de test.
@@ -442,7 +405,11 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
 
             data.EntityId = EntityId;
             data.DisplayName = DisplayName;
-            data.Description = BuildDescription(fire);
+            // Una línea y sin números: el tooltip es un adelanto, no la ficha. Los números lo
+            // estiraban y además se ponían viejos solos — el párrafo anterior seguía prometiendo
+            // un salto por turno cuando el salto ya dependía de la distancia.
+            data.Description =
+                "Burns the ground in front of him and bolts for the edge when you crowd him.";
 
             data.WeaknessComboId = WeaknessComboId;
             data.WeaknessMultiplierOverride = WeaknessMultiplier;

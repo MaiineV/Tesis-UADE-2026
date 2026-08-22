@@ -768,13 +768,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
 
             boss.EntityId = BossEntityId;
             boss.DisplayName = "La Generala";
-            boss.Description =
-                "The house playing your own game. Five dice of her own on the table, the same combo " +
-                "sheet you use, and one hand per round. Her roll is public before it detonates: you " +
-                "see the five numbers and you know what is coming. Break a die and you erase a " +
-                "category — with four she cannot roll Generala, with three she loses Poker — and you " +
-                "open a hole in a room made of her own dice. Walking up to the table is not free: " +
-                "every roll brings the cup down on whoever is standing next to her.";
+            boss.Description = "Rolls her own hand in the open. Break a die and you erase a category.";
 
             boss.BaseHP = BossHp;
             boss.BaseAttack = BossAttack;
@@ -838,10 +832,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
 
             dice.EntityId = DiceEntityId;
             dice.DisplayName = "Dado de la Casa";
-            dice.Description =
-                "One of the five dice the house rolls. No attack of its own — it sits on the table " +
-                "being part of her hand and blocking the way. Breaking one costs you a full swing " +
-                "and erases a category from her sheet.";
+            dice.Description = "Part of her hand, and in your way. Break it to erase a category.";
 
             dice.BaseHP = DiceHp;
             dice.BaseAttack = 0;

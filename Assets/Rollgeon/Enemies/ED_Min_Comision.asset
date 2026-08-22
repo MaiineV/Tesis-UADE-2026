@@ -165,8 +165,7 @@ MonoBehaviour:
       Data: 
   EntityId: minion.cajero_comision
   DisplayName: "Comisi\xF3n"
-  Description: Lo que el Cajero manda a cobrar cuando se le empieza a escapar. Vuela,
-    tira de lejos y hace que huir tenga precio.
+  Description: Vuela, tira de lejos, y le pone precio a huir.
   Portrait: {fileID: 133841030, guid: 7354be46d5bce5b44ae3fc20ec0cb47f, type: 3}
   WeaknessComboId: 
   WeaknessMultiplierOverride: 0

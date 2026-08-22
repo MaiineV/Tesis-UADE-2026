@@ -42,9 +42,7 @@ MonoBehaviour:
       Data: 
   EntityId: obj.dado_casa
   DisplayName: Dado de la Casa
-  Description: "One of the five dice the house rolls. No attack of its own \u2014
-    it sits on the table being part of her hand and blocking the way. Breaking one
-    costs you a full swing and erases a category from her sheet."
+  Description: Part of her hand, and in your way. Break it to erase a category.
   Portrait: {fileID: 21300000, guid: a9fc014b5dcab1641b66a088781b4ea1, type: 3}
   WeaknessComboId: 
   WeaknessMultiplierOverride: 0
@@ -58,3 +56,7 @@ MonoBehaviour:
   VisualPrefab: {fileID: 191739518141893201, guid: 980e936c83588b3438314f35ab6eecd1, type: 3}
   MinGoldDrop: 0
   MaxGoldDrop: 0
+  IsFlying: 0
+  IsBoss: 0
+  Personality: 0
+  KamikazeIgnoresSurvival: 0

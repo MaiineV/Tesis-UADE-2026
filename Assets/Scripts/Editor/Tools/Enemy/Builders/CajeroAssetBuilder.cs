@@ -667,10 +667,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
             data.DisplayName = DisplayName;
             // Interpolado y no escrito a mano: un literal acá se queda viejo cuando se tunea la
             // constante.
-            data.Description =
-                "Cortés, contable, imperturbable. No te mata: te sobrevive con tu plata. Te " +
-                $"persigue, te agarra y te tira {ShovePushTiles} casillas, y lo que se te caiga y " +
-                "no levantes se lo lleva él.";
+            data.Description = "Te agarra, te tira lejos, y se queda con lo que se te cayó.";
 
             data.BaseHP = BaseHP;
             data.BaseAttack = BaseAttack;
@@ -714,9 +711,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
 
             data.EntityId = CritterEntityId;
             data.DisplayName = CritterDisplayName;
-            data.Description =
-                "Lo que el Cajero manda a cobrar cuando se le empieza a escapar. Vuela, tira de " +
-                "lejos y hace que huir tenga precio.";
+            data.Description = "Vuela, tira de lejos, y le pone precio a huir.";
 
             data.BaseHP = CritterHp;
 

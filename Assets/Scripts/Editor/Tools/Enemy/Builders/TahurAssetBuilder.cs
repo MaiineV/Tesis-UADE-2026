@@ -342,9 +342,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
 
             data.EntityId = EntityId;
             data.DisplayName = DisplayName;
-            data.Description =
-                "The bank calls your hand before you play it. Building it exactly pays out; " +
-                "overshooting is greed — and the pot keeps count of greed.";
+            data.Description = "Calls your hand before you play it. Match it exactly; going over costs.";
 
             data.BaseHP = BaseHP;
             data.BaseAttack = BaseAttack;
