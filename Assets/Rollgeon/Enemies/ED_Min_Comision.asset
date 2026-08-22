@@ -180,7 +180,7 @@ MonoBehaviour:
   VisualPrefab: {fileID: 1453312193095082628, guid: 65b4e9aba2ad03946bc8d8c65fb39e85, type: 3}
   MinGoldDrop: 0
   MaxGoldDrop: 0
-  IsFlying: 0
+  IsFlying: 1
   IsBoss: 0
   Personality: 0
   KamikazeIgnoresSurvival: 0

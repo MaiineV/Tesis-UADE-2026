@@ -723,6 +723,12 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
             data.BaseHealStrength = 0;
             data.BaseAttackRange = CritterRange;
 
+            // Al revés que su jefe: los pinchos son GroundOnly y la Comisión los sobrevuela. La
+            // misma guarda alimenta al planner (ISpecialTileAIQuery.TryGetTileFor), así que no los
+            // cobra Y tampoco los rodea — es la diferencia de movilidad que tiene contra el Cajero,
+            // que sí tiene que esquivarlos. Con 18 de vida un pinchazo de 14 la borraba de una.
+            data.IsFlying = true;
+
             data.WeaknessComboId = string.Empty;
             data.WeaknessMultiplierOverride = 0f;
 
