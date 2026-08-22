@@ -83,6 +83,53 @@ namespace Rollgeon.Feedback.Tests
             Assert.IsFalse(bus.HasFired("hit"));
         }
 
+        // ── Espera de eventos ───────────────────────────────────────────
+
+        [Test]
+        public void EventWait_ResumesWhenTheKeyFires()
+        {
+            var bus = new FeedbackEventBus();
+            float now = 0f;
+            var wait = FeedbackManager.WaitForEvent(bus, "hit", 2f, () => now);
+
+            Assert.IsTrue(wait.MoveNext(), "Sin el evento, la espera sigue.");
+
+            bus.Publish("hit");
+
+            Assert.IsFalse(wait.MoveNext(), "Publicada la key, la espera termina.");
+        }
+
+        [Test]
+        public void EventWait_GivesUpAtTheDeadline_WhenTheKeyNeverFires()
+        {
+            var bus = new FeedbackEventBus();
+            float now = 0f;
+            var wait = FeedbackManager.WaitForEvent(bus, "hit", 2f, () => now);
+
+            Assert.IsTrue(wait.MoveNext());
+
+            // Un clip con m_Events vacío no publica nunca. Sin la cota esto no termina, y como el
+            // step es blocking se lleva la secuencia entera puesta: el turno queda colgado hasta
+            // que lo mata el watchdog.
+            now = 2f;
+
+            Assert.IsFalse(wait.MoveNext());
+            Assert.IsFalse(bus.HasFired("hit"),
+                "Se rinde por deadline, no porque el evento haya llegado.");
+        }
+
+        [Test]
+        public void EventWait_WithTheKeyAlreadyLatched_NeverYields()
+        {
+            var bus = new FeedbackEventBus();
+            bus.Publish("hit");
+
+            var wait = FeedbackManager.WaitForEvent(bus, "hit", 2f, () => 0f);
+
+            // El bus es latched: un step que pregunta después del frame del golpe no paga un frame.
+            Assert.IsFalse(wait.MoveNext());
+        }
+
         // ── FeedbackSequenceRuntime ─────────────────────────────────────
 
         [Test]
