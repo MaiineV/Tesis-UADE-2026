@@ -10,37 +10,25 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
     /// </summary>
     /// <remarks>
     /// <para>
-    /// Hasta que llegó el arte de personaje los seis vestían un glifo del pack de casino
-    /// (<c>Casino_00XX.png</c>): una carta, una mano con monedas, un set de dados. Eran
-    /// marcadores de posición honestos pero no identificaban al jefe — dos jefes distintos se
-    /// leían igual de "genérico" en la cola de turnos.
+    /// El retrato sigue al rig: cada jefe hereda la cara del arte 3D que viste, así que si un jefe
+    /// cambia de rig su retrato tiene que moverse con él o la cola de turnos pasa a mentir.
     /// </para>
     /// <para>
-    /// <b>El retrato sigue al rig, no al nombre.</b> Cada jefe hereda el retrato del arte 3D que
-    /// viste, así que lo que el jugador ve en la cola es la misma silueta que tiene enfrente. Si
-    /// un jefe cambia de rig —como la Generala, que pasó a <c>DiceBoss_Animated</c>— su retrato
-    /// tiene que moverse con él o la cola pasa a mentir.
-    /// </para>
-    /// <para>
-    /// Tres salen de la hoja compartida <c>RollGeonSprites.png</c> (sliceada en Multiple, un
-    /// sub-sprite por personaje) y tres de PNGs sueltos que igual están en modo Multiple con un
-    /// único sub-sprite <c>&lt;Nombre&gt;_0</c>. Por eso todo pasa por
+    /// Las texturas están en modo Multiple (la hoja compartida trae un sub-sprite por personaje,
+    /// los PNGs sueltos uno solo <c>&lt;Nombre&gt;_0</c>), así que todo pasa por
     /// <see cref="SpriteImportUtility.FindSubSprite"/> y no por <c>EnsureSpriteImport</c>: forzar
     /// la hoja a Single borraría los sub-sprites y dejaría en null a los enemigos que ya la usan.
     /// </para>
     /// </remarks>
     public static class BossPortraitLibrary
     {
-        /// <summary>Hoja compartida con los personajes que ya tenían retrato en <c>develop</c>.</summary>
+        /// <summary>Hoja compartida, en modo Multiple con un sub-sprite por personaje.</summary>
         public const string SheetPath = "Assets/Art/UI/CharactersSprites/RollGeonSprites.png";
 
-        /// <summary>Croupier — hereda el retrato de <c>Healer_Animated</c>, el rig que viste.</summary>
-        public const string CroupierSpriteName = "RollGeonSprites_2";
+        /// <summary>Croupier — la cara de <c>SunkedGrand_Animated</c>, el rig que viste.</summary>
+        public const string CroupierSpriteName = "RollGeonSprites_4";
 
-        /// <summary>Cajero — hereda el retrato de <c>GeneralDirector_Animated</c>.</summary>
-        public const string CajeroSpriteName = "RollGeonSprites_0";
-
-        /// <summary>Tahúr — hereda el retrato de <c>SunkedGrand_Animated</c>.</summary>
+        /// <summary>Tahúr — el mismo rig y la misma cara que el Croupier.</summary>
         public const string TahurSpriteName = "RollGeonSprites_4";
 
         /// <summary>Generala — <c>DiceBoss_Animated</c>.</summary>
@@ -51,21 +39,26 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         public const string BandidaPath = "Assets/Art/UI/CharactersSprites/MechaBoss.png";
         public const string BandidaSpriteName = "MechaBoss_0";
 
+        /// <summary>
+        /// Cajero — la cara de <c>MechaBoss_Animated</c>, el rig que viste (la misma que la Bandida).
+        /// </summary>
+        public const string CajeroPath = BandidaPath;
+        public const string CajeroSpriteName = BandidaSpriteName;
+
         /// <summary>Anotador — el rig <c>ChestMimic</c>.</summary>
         public const string AnotadorPath = "Assets/Art/UI/CharactersSprites/Mimic.png";
         public const string AnotadorSpriteName = "Mimic_0";
 
         public static Sprite Croupier() => Resolve(SheetPath, CroupierSpriteName);
-        public static Sprite Cajero() => Resolve(SheetPath, CajeroSpriteName);
+        public static Sprite Cajero() => Resolve(CajeroPath, CajeroSpriteName);
         public static Sprite Tahur() => Resolve(SheetPath, TahurSpriteName);
         public static Sprite Generala() => Resolve(GeneralaPath, GeneralaSpriteName);
         public static Sprite Bandida() => Resolve(BandidaPath, BandidaSpriteName);
         public static Sprite Anotador() => Resolve(AnotadorPath, AnotadorSpriteName);
 
         /// <summary>
-        /// Sub-sprite por nombre, con el aviso explícito de qué se pierde si falta: un
-        /// <c>Portrait</c> en null no rompe nada visible en el editor, así que sin este warning el
-        /// jefe llegaría a Play sin cara y sin rastro de por qué.
+        /// Sub-sprite por nombre. Un <c>Portrait</c> en null no rompe nada visible en el editor:
+        /// sin el warning el jefe llega a Play sin cara y sin rastro de por qué.
         /// </summary>
         private static Sprite Resolve(string texturePath, string spriteName)
         {

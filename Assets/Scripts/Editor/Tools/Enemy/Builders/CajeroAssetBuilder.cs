@@ -40,11 +40,19 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         private const float CoinYOffset = 0.12f;
 
         /// <summary>
-        /// Arte del jefe: figura alada con seis discos de fichas modelados en el propio mesh
-        /// (<c>Coin_Chips_1..6</c>) más las alas, animada por <c>SteppedAnimation</c> a 8 FPS sobre
-        /// <c>AnimCon_GeneralDirector</c> (Idle / Attack).
+        /// Arte del jefe: mech humanoide con tres cañones en el pecho, animado por
+        /// <c>SteppedAnimation</c> sobre <c>AnimCon_Mecha</c>.
         /// </summary>
-        public const string ArtPrefabPath = "Assets/Prefabs/Enemies/GeneralDirector_Animated.prefab";
+        /// <remarks>
+        /// Es el mismo rig que viste la Bandida (<c>BandidaAssetBuilder.BossArtPrefabPath</c>).
+        /// Comparten malla, no materiales: cada builder clona y retinta la suya en
+        /// <c>Assets/Rollgeon/Enemies/Materials/&lt;Jefe&gt;</c>.
+        /// </remarks>
+        public const string ArtPrefabPath = "Assets/Prefabs/Enemies/MechaBoss_Animated.prefab";
+
+        /// <summary>Arte de la Comisión: el rig alado <c>GeneralDirector_Animated</c>.</summary>
+        public const string CritterArtPrefabPath =
+            "Assets/Prefabs/Enemies/GeneralDirector_Animated.prefab";
 
         /// <summary>Wrapper de gameplay que arma <see cref="BossVisualWrapperBuilder"/>.</summary>
         public const string VisualPrefabPath = "Assets/Prefabs/Enemies/Bosses/PF_Boss_Cajero.prefab";
@@ -55,12 +63,14 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
 
         public const string ChipsBoxPropName = "ChipsBox";
 
-        /// <summary>Retrato del rig que viste (<c>GeneralDirector_Animated</c>). Ver <see cref="BossPortraitLibrary"/>.</summary>
-        public const string PortraitTexturePath = BossPortraitLibrary.SheetPath;
+        /// <summary>
+        /// Retrato del jefe: la cara de <c>MechaBoss_Animated</c>, el rig que viste. Ver
+        /// <see cref="BossPortraitLibrary"/> y <see cref="EnsurePortrait"/>.
+        /// </summary>
+        public const string PortraitTexturePath = BossPortraitLibrary.CajeroPath;
 
         /// <summary>
-        /// Prefab que usaba el jefe mientras no tenía arte propio. Se sigue conociendo para poder
-        /// migrarlo: una ficha que todavía lo apunte se actualiza al wrapper sin preguntar.
+        /// Placeholder viejo: una ficha que todavía lo apunte se actualiza al wrapper sin preguntar.
         /// </summary>
         public const string PlaceholderVisualPrefabPath = "Assets/Prefabs/Enemies/SecurityGuardBoss.prefab";
 
@@ -70,14 +80,12 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         public const string DisplayName = "El Cajero";
 
         /// <summary>
-        /// Piso 2. Aguanta la pelea larga que pide la ficha: el jugador tiene que poder elegir
-        /// varias veces entre pegarle y juntar monedas, y con 170 la elección no llegaba a
-        /// aparecer. Lo que se cura con monedas vencidas es presupuesto aparte
+        /// Vida del jefe de piso 2. Lo que se cura con monedas vencidas es presupuesto aparte
         /// (<see cref="MaxHealPerFight"/>): suma turnos sin figurar acá.
         /// </summary>
         public const int BaseHP = 350;
 
-        /// <summary>Mandoble. Baja de 30: el techo de daño por turno ahora lo pone el tumbo.</summary>
+        /// <summary>Mandoble.</summary>
         public const int BaseAttack = 14;
 
         public const int BaseSpeed = 4;
@@ -90,9 +98,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         public const int MeleeRange = 1;
 
         /// <summary>
-        /// Pasos por turno cuando persigue. Atado a <see cref="BaseSpeed"/> en el mismo archivo a
-        /// propósito: la ficha dice "camina 4" y ese 4 es su velocidad, no un segundo número que
-        /// pueda separarse. Va como constante y no como lectura del stat porque
+        /// Pasos por turno cuando persigue. Va como constante y no como lectura del stat porque
         /// <c>AIReadSelfStat</c> devuelve 0 sin <c>AttributesManager</c> (EditMode) y un MaxSteps
         /// de 0 deja al jefe clavado, sin caer a ningún default.
         /// </summary>
@@ -100,15 +106,11 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
 
         // ---- Los dos golpes ----------------------------------------------
 
-        /// <summary>
-        /// Mandoble: su <see cref="BaseAttack"/> y nada más. Es su piso de daño — el turno que no
-        /// se puede evitar de ninguna manera estando a su alcance.
-        /// </summary>
+        /// <summary>Mandoble: su <see cref="BaseAttack"/> y nada más.</summary>
         public const int HeavyDamage = BaseAttack;
 
         /// <summary>
-        /// Empujón. Pega menos que el mandoble porque lo que cobra de verdad es el tumbo: cada
-        /// casilla de pinchos que cruce suma <see cref="SpikeDamage"/>.
+        /// Empujón. Cada casilla de pinchos que cruce el tumbo suma <see cref="SpikeDamage"/>.
         /// </summary>
         public const int ShoveDamage = 10;
 
@@ -126,20 +128,15 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         /// <summary>Rondas entre tandas de la sala.</summary>
         public const int CoinRainEveryNRounds = 3;
 
-        /// <summary>
-        /// Distancia Chebyshev mínima entre dos monedas de la misma tanda. "Repartidas por la
-        /// sala" es media mecánica: cada moneda tiene que ser un punto al que ir, y cuatro pegadas
-        /// serían un solo viaje.
-        /// </summary>
+        /// <summary>Distancia Chebyshev mínima entre dos monedas de la misma tanda.</summary>
         public const int CoinRainMinSeparation = 2;
 
         /// <summary>HP que le devuelve al jefe cada moneda que el jugador deja vencer.</summary>
         public const int HealPerExpiredCoin = 12;
 
         /// <summary>
-        /// Techo de curación en toda la pelea. Es lo que hace que juntar monedas sea la jugada
-        /// ganadora en vez de una carrera imposible: alcanzado el techo las monedas vencidas
-        /// siguen desapareciendo, pero ya no lo curan.
+        /// Techo de curación en toda la pelea: alcanzado el techo las monedas vencidas siguen
+        /// desapareciendo, pero ya no lo curan.
         /// </summary>
         public const int MaxHealPerFight = 60;
 
@@ -147,14 +144,10 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         /// Rondas que vive una moneda en el piso.
         /// </summary>
         /// <remarks>
-        /// Ya no es el <c>DurationRounds</c> del hazard: el reloj lo lleva
-        /// <c>AINode_CajeroCoinVault</c>, el único que puede distinguir una moneda levantada de una
-        /// vencida (el servicio de hazards expira las dos igual). La moneda nace permanente y ese
-        /// nodo la mata — ver <see cref="EnsureChipHazard"/>.
-        /// <para>
-        /// Es el vencimiento de cada moneda, no el de la tanda: el nodo se cobra <b>una por turno</b>,
-        /// así que las cuatro que nacen juntas salen del piso en cuatro turnos y no en uno.
-        /// </para>
+        /// No es el <c>DurationRounds</c> del hazard: la moneda nace permanente y la mata
+        /// <c>AINode_CajeroCoinVault</c>, el único que puede distinguir una levantada de una vencida
+        /// (el servicio de hazards expira las dos igual). Es el vencimiento de cada moneda y no el de
+        /// la tanda: el nodo se cobra <b>una por turno</b>.
         /// </remarks>
         public const int ChipDurationRounds = 3;
 
@@ -168,9 +161,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         // ---- Los pinchos de la sala --------------------------------------
 
         /// <summary>
-        /// Pinchos propios y no <c>Tile_Spikes</c>: el genérico pega 12 y no encarece la ruta de la
-        /// IA, y tocarlo se lo cambiaría a todas las salas del juego. Mismo criterio que
-        /// <c>Tile_Fire_Croupier</c>.
+        /// Pinchos propios y no <c>Tile_Spikes</c>: tocar el genérico se lo cambiaría a todas las
+        /// salas del juego.
         /// </summary>
         public const string SpikeTilePath = "Assets/Rollgeon/Tiles/Tile_Spikes_Cajero.asset";
 
@@ -185,12 +177,10 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         /// </summary>
         /// <remarks>
         /// <c>AIPathPlanner.ComputeHazardPenalty</c> es <c>ceil(daño / HP × 10 × Caution)</c> y
-        /// <c>ComputeTileCost</c> es <c>1 + penalty</c>. Con los 14 reales sobre 350 de vida el
-        /// penalty da 1 y la casilla cuesta 2: rodea si el desvío es de un paso y se la come si es
-        /// de dos. Sumando esto, <c>14 + 336 = 350</c> sobre 350 da penalty 10 y la casilla cuesta
-        /// 11 — más que cualquier desvío posible dentro de un movimiento de
+        /// <c>ComputeTileCost</c> es <c>1 + penalty</c>: con <c>14 + 336 = 350</c> sobre 350 de vida
+        /// la casilla cuesta 11, más que cualquier desvío posible en un movimiento de
         /// <see cref="ChaseSteps"/> pasos. <b>No es daño</b>: el filtro de supervivencia sólo mira
-        /// los 14 reales, así que la mitad "empujado se los come igual" no se toca.
+        /// los 14 reales, así que empujado se los come igual.
         /// </remarks>
         public const int SpikeAIVirtualDamage = 336;
 
@@ -205,13 +195,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         /// <remarks>
         /// <b>Fuente única del layout</b>, no una copia: el plano del Cajero en
         /// <c>BossRoomBuilder.Plans</c> lee este array y lo escribe en
-        /// <c>RoomLayout.SpecialTilePlacements</c> de <c>Boss_Room_Cajero</c>. Vive acá y no allá
-        /// porque la regla que lo gobierna —<b>ninguno toca a otro, ni en diagonal</b>— es de la
-        /// ficha del jefe, y es lo que los tests de esta ficha verifican.
-        /// <para>
-        /// La definición de la casilla es <see cref="SpikeTilePath"/>: este builder la crea, el de
-        /// salas la coloca. Ninguno de los dos duplica lo del otro.
-        /// </para>
+        /// <c>RoomLayout.SpecialTilePlacements</c> de <c>Boss_Room_Cajero</c>. La regla que lo
+        /// gobierna es que ninguno toca a otro, ni en diagonal.
         /// </remarks>
         public static readonly Vector2Int[] SpikePlanCells =
         {
@@ -226,10 +211,9 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         /// Mismas coordenadas de plano que <see cref="SpikePlanCells"/>.
         /// </summary>
         /// <remarks>
-        /// Contra los costados para que el centro quede abierto: la pelea pasa en el medio porque es
-        /// donde hay lugar para que te tire. Entran como <c>BlockerPlanCells</c> del plano del Cajero
-        /// en <c>BossRoomBuilder</c> y no como casillas especiales: lo suyo es <b>bloquear</b>, y una
-        /// casilla especial no toca el grafo de navegación.
+        /// Entran como <c>BlockerPlanCells</c> del plano del Cajero en <c>BossRoomBuilder</c> y no
+        /// como casillas especiales: lo suyo es <b>bloquear</b>, y una casilla especial no toca el
+        /// grafo de navegación.
         /// </remarks>
         public static readonly Vector2Int[] SafeBoxPlanCells =
         {
@@ -243,22 +227,14 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         /// <summary>
         /// Ficha de la Comisión: el tirador volador que el Cajero suelta al cruzar el 50%.
         /// </summary>
-        /// <remarks>
-        /// Va en <c>ED_Min_</c> y no en <c>ED_Obj_</c> porque pega. Los otros dos acompañantes
-        /// autorados por un builder de jefe (<c>ED_Obj_DadoCasa</c>, <c>ED_Obj_Rodillo</c>) son
-        /// terreno con vida: Attack 0, no actúan. Esta sí, y meterla en la misma familia haría que
-        /// "obj." dejara de querer decir nada.
-        /// </remarks>
         public const string CritterAssetPath = "Assets/Rollgeon/Enemies/ED_Min_Comision.asset";
 
         /// <summary>
         /// Lo que el Cajero invoca: su propia Comisión, no el ranged común del juego.
         /// </summary>
         /// <remarks>
-        /// El ranged común trae 50 de vida y 10 de daño, y a la altura del 50% dos de ésos son otro
-        /// jefe. La ficha pide 18 y 6: molestan, se limpian si te ocupás, y no te obligan a dejar de
-        /// pelear con él. Ese kit no se puede autorar sobre <c>ED_RangedEnemy</c> —es el asset
-        /// compartido de todos los encuentros normales— así que vive en su propia ficha.
+        /// Su kit no se puede autorar sobre <c>ED_RangedEnemy</c> —es el asset compartido de todos
+        /// los encuentros normales— así que vive en su propia ficha.
         /// </remarks>
         public const string ReinforcementAssetPath = CritterAssetPath;
 
@@ -273,66 +249,35 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         /// <summary>Dos, y una sola vez. Ver <see cref="BuildCritterGate"/>.</summary>
         public const int CritterCount = 2;
 
-        /// <summary>
-        /// Único umbral y único evento de la pelea: al cruzar la mitad de la vida suelta las dos
-        /// Comisiones y nada más cambia — ni sus números, ni sus ataques, ni el ritmo de las monedas.
-        /// </summary>
+        /// <summary>Al cruzar la mitad de la vida suelta las dos Comisiones.</summary>
         public const float CritterHpThreshold = 0.5f;
 
-        /// <summary>
-        /// Muere de un golpe cualquiera y sobrevive a uno flojo. Es la medida de lo que cuesta
-        /// sacárselos de encima: un golpe cada uno, dos golpes que no fueron al jefe.
-        /// </summary>
+        /// <summary>Vida de la Comisión.</summary>
         public const int CritterHp = 18;
 
-        /// <summary>
-        /// Su disparo. Los dos juntos pegan 12 por turno, menos que el mandoble del jefe: son el
-        /// precio de huir, no una segunda amenaza principal.
-        /// </summary>
+        /// <summary>Su disparo.</summary>
         public const int CritterDamage = 6;
 
-        /// <summary>
-        /// Alcance del disparo.
-        /// </summary>
-        /// <remarks>
-        /// <b>La ficha no da alcance</b>: da 18 de vida y 6 de daño y nada más. Así que el número no
-        /// se elige, se hereda del bicho del que la Comisión es una variante — el ranged común del
-        /// juego, <c>Assets/Rollgeon/Enemies/ED_RangedEnemy.asset</c>, que gatea su disparo con
-        /// <c>PcTargetInRange { Range = 5, Metric = Manhattan }</c> y se acerca con
-        /// <c>AINode_Move { DesiredRange = 5 }</c>. Lo que la ficha sí decide —vida y daño— es lo
-        /// único que se aparta de ese asset.
-        /// </remarks>
+        /// <summary>Alcance del disparo.</summary>
         public const int CritterRange = 5;
 
-        /// <summary>Vuela: va antes que el jefe (4) en la cola, así el turno en que aparecen ya presionan.</summary>
+        /// <summary>Va antes que el jefe (4) en la cola de turnos.</summary>
         public const int CritterSpeed = 5;
 
-        /// <summary>
-        /// Alcance de vuelo por turno. Tres cubre media sala, y con el disparo a
-        /// <see cref="CritterRange"/> alcanza para tapar el único agujero del jefe: el jugador
-        /// camina 5 y él 4, así que sin ellas se le escapa indefinidamente juntando monedas.
-        /// </summary>
+        /// <summary>Alcance de vuelo por turno.</summary>
         public const int CritterMoveSteps = 3;
 
         // ---- Vestuario de la Comisión ------------------------------------
 
         /// <summary>
-        /// Escala del arte dentro de su wrapper. El rig mide ~2 de alto (es el del jefe); a 0.45
-        /// queda en ~0.9, que es "bicho" al lado de un Cajero de cuerpo entero y sigue leyéndose en
-        /// qué casilla está.
+        /// Escala del arte dentro de su wrapper: el rig alado mide ~2 de alto y a 0.45 queda en ~0.9.
         /// </summary>
         public const float CritterArtScale = 0.45f;
 
         /// <summary>
-        /// Altura a la que flota el arte sobre su casilla. <b>Es el único recurso que hay</b>: la
-        /// única elevación de pawn del proyecto (<c>EntityPawn.PawnYOffset</c>) es un <c>const</c>
-        /// privado de 0.1 compartido por héroe y enemigos, así que levantarlo de ahí levantaría a
-        /// todo el bestiario. Se levanta el hijo <c>Art</c> del wrapper, que es lo que ya hacen
-        /// <c>GeneralaAssetBuilder.ApplyArtFit</c> y el lift del rodillo de la Bandida.
-        /// <para>
-        /// 0.7 ≈ tres cuartos de su propio alto: suficiente para que se vea aire abajo desde la
-        /// cámara iso sin que quede fuera del encuadre de su casilla.
-        /// </para>
+        /// Altura a la que flota el arte sobre su casilla. Se levanta el hijo <c>Art</c> del wrapper
+        /// y no <c>EntityPawn.PawnYOffset</c>, que es un <c>const</c> privado compartido por héroe y
+        /// enemigos: levantarlo de ahí levantaría a todo el bestiario.
         /// </summary>
         public const float CritterHoverHeight = 0.7f;
 
@@ -341,7 +286,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
 
         /// <summary>
         /// La barra está autorada en unidades de mundo para un jefe de 2 de alto: sobre un bicho de
-        /// 0.9 tapa la entidad entera. Mismo encogimiento que el dado de la Generala.
+        /// 0.9 tapa la entidad entera.
         /// </summary>
         private const float CritterBarScale = 0.4f;
 
@@ -351,10 +296,16 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         /// <summary>Nombre del hijo con la barra de vida world-space que arma el wrapper.</summary>
         private const string HealthBarChildName = "Canvas";
 
-        // Plata y no oro. La Comisión viste el MISMO rig que el jefe (es el único alado del
-        // proyecto), así que sin un corte de color fuerte el jugador ve tres Cajeros de tamaños
-        // distintos. Los discos en plata dicen "cambio chico" de un vistazo y el cuerpo se va a un
-        // verde más apagado que el del jefe: misma especie, rango menor.
+        // Materiales del arte de la Comisión, que es OTRO rig que el del jefe: los seis discos de
+        // fichas del GeneralDirector comparten los tres amarillos como cara / canto / brillo, el
+        // cuerpo skinneado usa Mat_Black y las alas Mat_Bone.
+        public const string CritterChipFaceMaterial = "Mat_Yellow";
+        public const string CritterChipEdgeMaterial = "Mat_DarkYellow";
+        public const string CritterChipShineMaterial = "Mat_LightYellow";
+        public const string CritterBodyMaterial = "Mat_Black";
+        public const string CritterWingMaterial = "Mat_Bone";
+
+        // Plata y no oro: los discos en plata leen "cambio chico" contra el oro fuerte del jefe.
         private static readonly MaterialRetint CritterChipShineRetint = MaterialRetint.FromColors(
             new Color(0.97f, 0.98f, 1.00f),
             new Color(0.82f, 0.85f, 0.90f),
@@ -382,53 +333,58 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
 
         // ---- Vestuario ---------------------------------------------------
 
-        // Materiales del arte (Assets/Art/3D/Materials). Los seis discos comparten los tres amarillos
-        // como cara / canto / brillo, el cuerpo skinneado usa Mat_Black y las alas Mat_Bone.
-        public const string ChipFaceMaterial = "Mat_Yellow";
-        public const string ChipEdgeMaterial = "Mat_DarkYellow";
-        public const string ChipShineMaterial = "Mat_LightYellow";
-        public const string BodyMaterial = "Mat_Black";
-        public const string WingMaterial = "Mat_Bone";
+        // Materiales del arte (Assets/Art/3D/Materials). Los cinco que usa el mech, nombrados por
+        // FUNCIÓN y no por material fuente porque el retinte cruza colores: Mat_Gold, que cubre la
+        // carcasa, es lo que queda dorado, pero Mat_Gray —las placas— se va a verde fieltro.
+        public const string ShellMaterial = "Mat_Gold";
+        public const string TrimMaterial = "Mat_DarkGray";
+        public const string HighlightMaterial = "Mat_White";
+        public const string BodyMaterial = "Mat_Gray";
+        public const string AccentMaterial = "Mat_Brown";
 
         /// <summary>
-        /// Altura de la barra de vida. Misma que <c>GeneralDirector.prefab</c>, que anida este mismo
-        /// personaje: cambiarla la mete dentro de las alas.
+        /// Altura de la barra de vida: con el jefe a ~2 de alto, bajarla la mete dentro de la
+        /// silueta.
         /// </summary>
         public static readonly Vector3 HealthBarOffset = new Vector3(0f, 3f, 0f);
 
-        // La caja va al costado derecho y algo atrás para no tapar la silueta. Escala 0.65 (en las
-        // salas la caja va a 1 y ocupa un tile entero) para que no se meta en la casilla vecina: con
-        // un jefe melee, las cuatro casillas de al lado son justo las que el jugador tiene que leer.
+        /// <summary>
+        /// Tope del radio del capsule. El mech está en T-pose y sus bounds dan ~1.5, que taparía las
+        /// cuatro casillas vecinas — y el jugador tiene que poder clickearlas (las monedas del piso
+        /// y los pinchos de la sala).
+        /// </summary>
+        public const float ColliderRadiusCap = 0.5f;
+
+        // La caja va al costado derecho y algo atrás para no tapar la silueta, y a escala 0.65 para
+        // que no se meta en la casilla vecina (en las salas va a 1 y ocupa un tile entero).
         public static readonly Vector3 ChipsBoxLocalPosition = new Vector3(0.45f, 0f, -0.2f);
         public static readonly Vector3 ChipsBoxLocalEuler = new Vector3(0f, -25f, 0f);
         public static readonly Vector3 ChipsBoxLocalScale = new Vector3(0.65f, 0.65f, 0.65f);
 
-        // Oro de banca. El Cajero escala con el oro que llevás encima, así que lo que tiene que leerse
-        // a primera vista es la pila de fichas: los discos van a oro fuerte con su propio ramp por tono
-        // (si los tres materiales compartieran colores, el disco saldría plano), el cuerpo a verde
-        // fieltro de mesa para que no compita, y las alas a latón viejo para enmarcar sin brillar más
-        // que las fichas.
-        private static readonly MaterialRetint ChipShineRetint = MaterialRetint.FromColors(
-            new Color(1.00f, 0.98f, 0.80f),
-            new Color(1.00f, 0.91f, 0.55f),
-            new Color(0.85f, 0.66f, 0.24f));
-
-        private static readonly MaterialRetint ChipFaceRetint = MaterialRetint.FromColors(
+        // Oro de banca: la carcasa —la superficie más grande del mech— se lo queda entera, con canto
+        // y brillo en su propio ramp por tono (si los tres compartieran colores el volumen saldría
+        // plano). Las placas van a verde fieltro para cortar el bloque dorado.
+        private static readonly MaterialRetint ShellRetint = MaterialRetint.FromColors(
             new Color(1.00f, 0.91f, 0.52f),
             new Color(0.97f, 0.76f, 0.24f),
             new Color(0.60f, 0.42f, 0.11f));
 
-        private static readonly MaterialRetint ChipEdgeRetint = MaterialRetint.FromColors(
+        private static readonly MaterialRetint TrimRetint = MaterialRetint.FromColors(
             new Color(0.86f, 0.64f, 0.22f),
             new Color(0.63f, 0.45f, 0.14f),
             new Color(0.33f, 0.22f, 0.07f));
+
+        private static readonly MaterialRetint HighlightRetint = MaterialRetint.FromColors(
+            new Color(1.00f, 0.98f, 0.80f),
+            new Color(1.00f, 0.91f, 0.55f),
+            new Color(0.85f, 0.66f, 0.24f));
 
         private static readonly MaterialRetint BodyRetint = MaterialRetint.FromColors(
             new Color(0.17f, 0.44f, 0.29f),
             new Color(0.09f, 0.28f, 0.19f),
             new Color(0.04f, 0.13f, 0.09f));
 
-        private static readonly MaterialRetint WingRetint = MaterialRetint.FromColors(
+        private static readonly MaterialRetint AccentRetint = MaterialRetint.FromColors(
             new Color(0.82f, 0.70f, 0.42f),
             new Color(0.58f, 0.46f, 0.25f),
             new Color(0.29f, 0.22f, 0.12f));
@@ -455,11 +411,11 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
                 HealthBarOffset = HealthBarOffset,
                 Retints = new Dictionary<string, MaterialRetint>
                 {
-                    { ChipShineMaterial, ChipShineRetint },
-                    { ChipFaceMaterial, ChipFaceRetint },
-                    { ChipEdgeMaterial, ChipEdgeRetint },
+                    { ShellMaterial, ShellRetint },
+                    { TrimMaterial, TrimRetint },
+                    { HighlightMaterial, HighlightRetint },
                     { BodyMaterial, BodyRetint },
-                    { WingMaterial, WingRetint },
+                    { AccentMaterial, AccentRetint },
                 },
                 Props = new List<BossPropSpec>
                 {
@@ -489,18 +445,11 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         /// Todo lo que puede devolver Failed va en <c>Selector[acción, Wait]</c>.
         /// </summary>
         /// <remarks>
-        /// <para>
-        /// El orden es la mitad del diseño. La <b>caja va después del ataque y de la lluvia</b>
-        /// porque descubre las monedas barriendo las instancias vivas: si fuera antes, cada moneda
-        /// soltada este turno viviría una ronda de más. Y la <b>persecución va última</b> porque
-        /// <c>AINode_Move</c> devuelve Running al moverse y en el path no-coroutine un Running corta
-        /// el Sequence — con el movimiento en el medio, las monedas dejarían de vencerse justo en
-        /// los turnos en que camina.
-        /// </para>
-        /// <para>
-        /// El gate de fase va primero, como en todos los jefes: es lo único que no puede perderse un
-        /// turno.
-        /// </para>
+        /// La <b>caja va después del ataque y de la lluvia</b> porque descubre las monedas barriendo
+        /// las instancias vivas: si fuera antes, cada moneda soltada este turno viviría una ronda de
+        /// más. Y la <b>persecución va última</b> porque <c>AINode_Move</c> devuelve Running al
+        /// moverse y en el path no-coroutine un Running corta el Sequence, así que con el movimiento
+        /// en el medio las monedas dejarían de vencerse en los turnos en que camina.
         /// </remarks>
         public static AINode_Sequence BuildAIRoot(
             HazardDefinitionSO chip = null, EnemyDataSO critter = null)
@@ -522,11 +471,10 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         /// El ciclo de ataque, con el gate de rango <b>por fuera</b> del <c>Alternate</c>.
         /// </summary>
         /// <remarks>
-        /// El gate no es decoración: <c>AINode_Alternate</c> avanza el índice ANTES de tickear y no
-        /// lo devuelve si el hijo falla, así que con los dos golpes auto-gateados por rango cada
-        /// turno que el jefe pasa caminando le quemaría un turno del ciclo — y la ficha promete que
-        /// "el jugador siempre sabe cuál viene". Con el <c>If</c> afuera, el índice sólo avanza en
-        /// los turnos en que de verdad pega, y la alternancia que se ve es estricta.
+        /// <c>AINode_Alternate</c> avanza el índice ANTES de tickear y no lo devuelve si el hijo
+        /// falla, así que con los golpes auto-gateados por rango cada turno que el jefe pasa
+        /// caminando le quemaría un turno del ciclo. Con el <c>If</c> afuera el índice sólo avanza en
+        /// los turnos en que pega.
         /// </remarks>
         public static AINode_If BuildAttackGate(HazardDefinitionSO chip = null) => new AINode_If
         {
@@ -543,11 +491,9 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         /// Mandoble, empujón, mandoble, empujón.
         /// </summary>
         /// <remarks>
-        /// Alternate y no Random: la alternancia tiene que ser estricta para que el jugador pueda
-        /// plantar el movimiento — el turno del empujón es el único que se puede preparar, eligiendo
-        /// desde qué casilla atacarlo. El mandoble va primero —el índice arranca en 0— para que la
-        /// pelea abra con el golpe que no se puede hacer nada para evitar. Cada rama va en su propio
-        /// <c>Selector[…, Wait]</c> porque el Alternate propaga el resultado del hijo.
+        /// Alternate y no Random: la alternancia es estricta y el mandoble va primero (el índice
+        /// arranca en 0). Cada rama va en su propio <c>Selector[…, Wait]</c> porque el Alternate
+        /// propaga el resultado del hijo.
         /// </remarks>
         public static AINode_Alternate BuildAttackCycle(HazardDefinitionSO chip = null) =>
             new AINode_Alternate
@@ -564,9 +510,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         /// </summary>
         /// <remarks>
         /// Usa el nodo de disparo con <c>Range = 1</c>, el mismo idiom que el mordisco de la
-        /// Comisión: el daño de <c>EffDealDamage</c> es privado y un builder no puede autorarlo.
-        /// Los tres ids son los del gesto melee, no los del disparo — el disparo del diseño viejo ya
-        /// no existe.
+        /// Comisión: el daño de <c>EffDealDamage</c> es privado y un builder no puede autorarlo. Los
+        /// tres ids son los del gesto melee.
         /// </remarks>
         public static AINode_RangedShot BuildHeavyBlow() => new AINode_RangedShot
         {
@@ -583,11 +528,6 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         /// El empujón: <see cref="ShoveDamage"/> y <see cref="ShovePushTiles"/> casillas de tumbo,
         /// con <see cref="ChipCount"/> monedas tiradas en el camino.
         /// </summary>
-        /// <remarks>
-        /// Sin telegráfico, igual que el mandoble: los avisos son para áreas, ataques donde el
-        /// peligro no está donde está el bicho. Éste es contacto — se lo ve pegado y ya se sabe lo
-        /// que viene.
-        /// </remarks>
         public static AINode_CajeroShove BuildShove(HazardDefinitionSO chip = null) =>
             new AINode_CajeroShove
             {
@@ -634,12 +574,11 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         /// <remarks>
         /// El esquive no está acá: sale del planner, que lee el costo de cada casilla especial. Lo
         /// que lo hace tratar un pincho armado como intransitable es
-        /// <see cref="SpikeAIVirtualDamage"/> en la definición de la casilla — un pincho ya
-        /// disparado queda desarmado hasta el cierre de ronda y el planner lo pisa sin problema, que
-        /// es justo la mitad interesante de la regla.
+        /// <see cref="SpikeAIVirtualDamage"/>; uno ya disparado queda desarmado hasta el cierre de
+        /// ronda y el planner lo pisa.
         /// <para>
-        /// <c>Retreat = false</c>: no kitea nunca. Es melee puro y lejos no tiene nada que hacer; si
-        /// ya está pegado, el nodo sale por Failed y el Selector lo absorbe.
+        /// <c>Retreat = false</c>: no kitea nunca. Si ya está pegado el nodo sale por Failed y el
+        /// Selector lo absorbe.
         /// </para>
         /// </remarks>
         public static AINode_Move BuildChase() => new AINode_Move
@@ -654,9 +593,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         /// voladores, una sola vez en toda la pelea.
         /// </summary>
         /// <remarks>
-        /// <see cref="AINode_Once"/> y no el auto-gateo del nodo: reponerlas para siempre haría una
-        /// pelea que no termina justo cuando el jefe ya se está curando con las monedas que se
-        /// vencen. El gesto es el trigger <c>Attack</c> porque es el único no-idle que declara su
+        /// <see cref="AINode_Once"/> y no el auto-gateo del nodo: con el auto-gateo las repone para
+        /// siempre. El gesto es el trigger <c>Attack</c> porque es el único no-idle que declara su
         /// animator — sin él los bichos se materializan con el jefe quieto.
         /// </remarks>
         public static AINode_If BuildCritterGate(EnemyDataSO critter = null) => new AINode_If
@@ -673,8 +611,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
                     EnemyToSpawn = critter,
                     Count = CritterCount,
 
-                    // Inerte bajo el Once: el nodo no vuelve a tickear después del primer
-                    // Succeeded. Va en 0 igual, para que no diga algo que no pasa.
+                    // Inerte bajo el Once: el nodo no vuelve a tickear después del primer Succeeded.
                     RespawnDelayTurns = 0,
                     SpawnFeedbackId = BossFeedbackIds.CajeroMeleeAnim,
                 },
@@ -713,8 +650,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
 
             data.EntityId = EntityId;
             data.DisplayName = DisplayName;
-            // Interpolado y no escrito: el tooltip es lo único que el jugador lee sobre el jefe, y
-            // un número a mano acá se queda viejo el día que se tunea la constante.
+            // Interpolado y no escrito a mano: un literal acá se queda viejo cuando se tunea la
+            // constante.
             data.Description =
                 "Cortés, contable, imperturbable. No te mata: te sobrevive con tu plata. Te " +
                 $"persigue, te agarra y te tira {ShovePushTiles} casillas, y lo que se te caiga y " +
@@ -727,10 +664,9 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
             data.BaseHealStrength = 0;
             data.BaseAttackRange = MeleeRange;
 
-            // Explícito y no por default: el arte tiene alas, y con IsFlying en true los pinchos
-            // (GroundOnly) dejarían de cobrarle. "Los esquiva caminando pero los come empujado" es
-            // la única herramienta defensiva real que la sala le da al jugador — sin esto, un tick
-            // en el Inspector la borra sin que nada se ponga rojo.
+            // Explícito y no por default: con IsFlying en true los pinchos (GroundOnly) dejarían de
+            // cobrarle, y "los esquiva caminando pero los come empujado" es la herramienta
+            // defensiva que la sala le da al jugador.
             data.IsFlying = false;
 
             // "La mano que paga fijo, la de la casa": combo.full ⇒ el id canónico del full house.
@@ -770,8 +706,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
             data.BaseHP = CritterHp;
 
             // Su daño real sale del nodo del árbol, no de este stat (el árbol autorado saltea el
-            // BasicEnemyAI). Se escribe igual y con el mismo número porque es lo que leen el
-            // tooltip y los TargetSelector_ByAttribute: dejarlo en 0 la marcaría como support.
+            // BasicEnemyAI). Se escribe igual porque lo leen el tooltip y los
+            // TargetSelector_ByAttribute: en 0 la marcarían como support.
             data.BaseAttack = CritterDamage;
             data.BaseSpeed = CritterSpeed;
             data.MaxEnergy = 1;
@@ -781,9 +717,6 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
             data.WeaknessComboId = string.Empty;
             data.WeaknessMultiplierOverride = 0f;
 
-            // Cero oro: la única plata de esta pelea son las monedas del piso, y son un reloj, no
-            // un botín. Un refuerzo que paga al morir le daría al jugador una fuente de oro que la
-            // sala no controla, justo en la mecánica donde el oro es la unidad de medida.
             data.MinGoldDrop = 0;
             data.MaxGoldDrop = 0;
 
@@ -810,23 +743,24 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
             },
         };
 
-        /// <summary>
-        /// El disparo de la Comisión. Se sigue llamando <c>Bite</c> por compatibilidad de callers:
-        /// lo que cambió con el rediseño es el alcance, no quién lo hace.
-        /// </summary>
+        /// <summary>El disparo de la Comisión.</summary>
+        /// <remarks>
+        /// El gesto va explícito y NO por el fallback del nodo: ese resuelve al disparo del jefe
+        /// (<c>Attack_Range</c> del mech), y el animator de la Comisión declara un solo trigger. Con
+        /// el fallback pediría un trigger que no tiene y dispararía muda.
+        /// </remarks>
         public static AINode_CashierRangedShot BuildCritterBite() => new AINode_CashierRangedShot
         {
             Damage = CritterDamage,
             Range = CritterRange,
             Metric = DistanceMetric.Manhattan,
             Kind = AttackKind.BasicAttack,
+            AnimFeedbackId = BossFeedbackIds.ComisionBiteAnim,
         };
 
         /// <remarks>
-        /// <c>DesiredRange</c> = su propio alcance y no 1: es un tirador, y caminar hasta el
-        /// contacto la pondría al lado del jugador —donde muere de un golpe cualquiera— para pegar
-        /// exactamente lo mismo que pega desde lejos. Sin kite: si ya está a tiro el nodo sale por
-        /// Failed y el Selector lo absorbe.
+        /// <c>DesiredRange</c> = su propio alcance y no 1: es un tirador y pega lo mismo de lejos.
+        /// Sin kite: si ya está a tiro el nodo sale por Failed y el Selector lo absorbe.
         /// </remarks>
         public static AINode_Move BuildCritterApproach() => new AINode_Move
         {
@@ -844,13 +778,10 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
             var spikes = EnsureSpikeTile();
             var portrait = EnsurePortrait();
 
-            // El refuerzo es SU Comisión, no el ranged común: 18/6 no se puede autorar sobre
-            // ED_RangedEnemy sin pisarle los stats a todos los encuentros normales del juego.
             var critter = LoadOrCreate<EnemyDataSO>(ReinforcementAssetPath);
 
-            // Load antes que Ensure: el wrapper de la Comisión ya existe y reconstruirlo en cada
-            // rebuild de números le churnea el prefab (y los materiales clonados) sin cambiar nada.
-            // Sólo se arma si falta.
+            // Load antes que Ensure: reconstruir el wrapper en cada rebuild de números le churnea el
+            // prefab y los materiales clonados sin cambiar nada.
             var critterWrapper = AssetDatabase.LoadAssetAtPath<GameObject>(CritterVisualPrefabPath);
             if (critterWrapper == null) critterWrapper = EnsureCritterVisualPrefab();
 
@@ -880,9 +811,6 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
                       $"'{NameOf(critter)}' ({critter.BaseHP} HP, {critter.BaseAttack} a " +
                       $"≤{CritterRange}) al {CritterHpThreshold:P0}.");
 
-            // Este builder crea la definición; las casillas las coloca el builder de salas leyendo
-            // SpikePlanCells. El log lo dice porque son dos menús distintos: cambiar el daño acá no
-            // reescribe la sala, y mover una casilla en SpikePlanCells no sirve hasta rebuildearla.
             Debug.Log($"[CajeroAssetBuilder] Pinchos de la sala en '{SpikeTilePath}' " +
                       $"({NameOf(spikes)}: {SpikeDamage} al entrar, +{SpikeAIVirtualDamage} de costo " +
                       $"IA). Las {SpikeCount} casillas las coloca " +
@@ -905,38 +833,69 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         /// Idempotente por delegación: <see cref="BossVisualWrapperBuilder"/> reescribe el prefab sobre
         /// el mismo path preservando el GUID, así que la referencia de la ficha sobrevive al rebuild.
         /// </remarks>
-        public static GameObject EnsureVisualPrefab()
+        /// <param name="outputPath">Destino del wrapper. Default: <see cref="VisualPrefabPath"/>.</param>
+        /// <param name="materialsFolder">
+        /// Carpeta de los materiales clonados. <c>null</c> deja el default del wrapper builder.
+        /// </param>
+        public static GameObject EnsureVisualPrefab(
+            string outputPath = VisualPrefabPath, string materialsFolder = null)
         {
-            var wrapper = BossVisualWrapperBuilder.BuildWrapper(BuildWrapperSpec());
+            var wrapper = BossVisualWrapperBuilder.BuildWrapper(
+                BuildWrapperSpec(outputPath, materialsFolder));
             if (wrapper == null)
             {
                 Debug.LogWarning($"[CajeroAssetBuilder] No se pudo construir el wrapper visual en " +
-                                 $"'{VisualPrefabPath}' — se deja el VisualPrefab que ya tenga la ficha.");
+                                 $"'{outputPath}' — se deja el VisualPrefab que ya tenga la ficha.");
+                return null;
             }
-            return wrapper;
+
+            ClampColliderRadius(outputPath);
+            return AssetDatabase.LoadAssetAtPath<GameObject>(outputPath);
+        }
+
+        /// <summary>
+        /// Segunda pasada sobre el wrapper ya guardado: recorta el radio del capsule a
+        /// <see cref="ColliderRadiusCap"/>.
+        /// </summary>
+        /// <remarks>
+        /// Pasada aparte porque el wrapper dimensiona el collider contra los bounds del arte, y los
+        /// del mech en T-pose dan ~1.5. Reescribir sobre el mismo path conserva el GUID, así que la
+        /// ficha que ya apunta al wrapper sobrevive.
+        /// </remarks>
+        private static void ClampColliderRadius(string prefabPath)
+        {
+            var contents = PrefabUtility.LoadPrefabContents(prefabPath);
+            if (contents == null)
+            {
+                Debug.LogWarning($"[CajeroAssetBuilder] No se pudo abrir '{prefabPath}' para " +
+                                 "recortar el collider — queda envolviendo las casillas vecinas.");
+                return;
+            }
+
+            try
+            {
+                var capsule = contents.GetComponent<CapsuleCollider>();
+                if (capsule == null || capsule.radius <= ColliderRadiusCap) return;
+
+                capsule.radius = ColliderRadiusCap;
+                PrefabUtility.SaveAsPrefabAsset(contents, prefabPath);
+            }
+            finally
+            {
+                PrefabUtility.UnloadPrefabContents(contents);
+            }
         }
 
         /// <summary>
         /// Ficha de armado del wrapper de la Comisión. Pura, por el mismo motivo que
         /// <see cref="BuildWrapperSpec"/>.
         /// </summary>
-        /// <remarks>
-        /// <b>Viste el mismo arte que el jefe</b> (<see cref="ArtPrefabPath"/>) porque
-        /// <c>GeneralDirector_Animated</c> es <b>el único rig alado del proyecto</b> — no hay ningún
-        /// otro modelo con alas, ni siquiera un murciélago o una moneda flotante. Lo que las separa
-        /// es el tamaño (<see cref="CritterArtScale"/>), la altura de vuelo
-        /// (<see cref="CritterHoverHeight"/>) y la paleta de plata.
-        /// <para>
-        /// Sin props: la caja de fichas es del jefe, y colgársela a un bicho de 0.9 lo convertiría en
-        /// un Cajero chiquito con la misma silueta.
-        /// </para>
-        /// </remarks>
         public static BossWrapperSpec BuildCritterWrapperSpec(
             string outputPath = CritterVisualPrefabPath, string materialsFolder = null)
         {
             return new BossWrapperSpec
             {
-                ArtPrefabPath = ArtPrefabPath,
+                ArtPrefabPath = CritterArtPrefabPath,
                 OutputPrefabPath = outputPath,
                 EntityId = CritterEntityId,
                 BossName = CritterName,
@@ -953,11 +912,11 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
 
                 Retints = new Dictionary<string, MaterialRetint>
                 {
-                    { ChipShineMaterial, CritterChipShineRetint },
-                    { ChipFaceMaterial, CritterChipFaceRetint },
-                    { ChipEdgeMaterial, CritterChipEdgeRetint },
-                    { BodyMaterial, CritterBodyRetint },
-                    { WingMaterial, CritterWingRetint },
+                    { CritterChipShineMaterial, CritterChipShineRetint },
+                    { CritterChipFaceMaterial, CritterChipFaceRetint },
+                    { CritterChipEdgeMaterial, CritterChipEdgeRetint },
+                    { CritterBodyMaterial, CritterBodyRetint },
+                    { CritterWingMaterial, CritterWingRetint },
                 },
             };
         }
@@ -987,15 +946,13 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         /// </summary>
         /// <remarks>
         /// <para>
-        /// Es una pasada aparte y no un campo del spec por lo mismo que en
-        /// <c>GeneralaAssetBuilder.ApplyArtFit</c>: <see cref="BossVisualWrapperBuilder"/> fija el
-        /// arte en identidad a propósito y dimensiona el collider asumiendo eso. Reescribir sobre el
-        /// mismo path conserva el GUID, así que la ficha que ya apunta al wrapper sobrevive.
+        /// Pasada aparte porque <see cref="BossVisualWrapperBuilder"/> fija el arte en identidad y
+        /// dimensiona el collider asumiendo eso. Reescribir sobre el mismo path conserva el GUID, así
+        /// que la ficha que ya apunta al wrapper sobrevive.
         /// </para>
         /// <para>
-        /// El collider hay que reescribirlo sí o sí: el wrapper lo dimensionó alrededor del arte a
-        /// escala 1 y apoyado, y después de encogerlo a 0.45 y subirlo 0.7 quedaría envolviendo aire
-        /// — el cursor picaría el piso y no al bicho.
+        /// El collider hay que reescribirlo sí o sí: dimensionado alrededor del arte a escala 1 y
+        /// apoyado, después de encoger y subir queda envolviendo aire y el cursor pica el piso.
         /// </para>
         /// </remarks>
         private static void ApplyCritterFit(string prefabPath)
@@ -1026,9 +983,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
 
                 art.localScale = Vector3.one * CritterArtScale;
 
-                // El lift lleva la BASE del arte a CritterHoverHeight, no su pivot: el rig está
-                // autorado con el pivot en los pies, pero eso es una convención del arte y no algo
-                // que este builder pueda asumir de un prefab que alguien reexporte.
+                // El lift lleva la BASE del arte a CritterHoverHeight y no su pivot: dónde cae el
+                // pivot es una convención del arte que este builder no puede asumir.
                 float baseY = measured ? raw.min.y * CritterArtScale : 0f;
                 art.localPosition = new Vector3(0f, CritterHoverHeight - baseY, 0f);
 
@@ -1082,16 +1038,9 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         }
 
         /// <summary>
-        /// Retrato del jefe. Sigue siendo un método y no una constante porque el sub-sprite hay que
-        /// resolverlo contra el AssetDatabase, y <c>BuildContractCard</c> lo pide por separado.
+        /// Retrato del jefe. Es un método y no una constante porque el sub-sprite hay que resolverlo
+        /// contra el AssetDatabase, y <c>BuildContractCard</c> lo pide por separado.
         /// </summary>
-        /// <remarks>
-        /// La Comisión comparte este mismo retrato. <c>BossPortraitLibrary</c> tiene la regla
-        /// explícita —"el retrato sigue al rig, no al nombre"— y las dos visten
-        /// <c>GeneralDirector_Animated</c>: mostrar otra cara en la cola de turnos sería mentir sobre
-        /// lo que el jugador tiene enfrente. El día que la Comisión tenga arte propio, se le hace su
-        /// entrada en la library y se corta acá.
-        /// </remarks>
         public static Sprite EnsurePortrait()
         {
             var portrait = BossPortraitLibrary.Cajero();
@@ -1137,10 +1086,9 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
             chip.Damage = 0;
             chip.Kind = AttackKind.Environmental;
 
-            // 0 = no vence sola. El reloj lo lleva AINode_CajeroCoinVault, y tiene que ser el ÚNICO
-            // que la mate: el servicio de hazards expira igual una moneda cobrada y una vencida, así
-            // que si venciera sola nadie podría saber cuál de las dos pasó — y sólo la vencida cura
-            // al jefe. Ver ChipDurationRounds para la vida real de la moneda.
+            // 0 = no vence sola. AINode_CajeroCoinVault tiene que ser el ÚNICO que la mate: el
+            // servicio de hazards expira igual una moneda cobrada y una vencida, y sólo la vencida
+            // cura al jefe. Ver ChipDurationRounds para la vida real de la moneda.
             chip.DurationRounds = 0;
 
             chip.Shape = ThreatShape.Column; // Inerte: las monedas se activan con la overload de tiles.
@@ -1148,9 +1096,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
             chip.OverlayTint = new Color(1f, 0.84f, 0.25f, 0.55f); // oro
             chip.SourceId = ChipHazardSourceId;
 
-            // La ficha es un pickup, no una amenaza: lo que tiene que verse es la moneda esperando en
-            // el piso, y el quad dorado solo la acompaña. Sin el prefab persistente, "hay una ficha
-            // acá" y "esta casilla está marcada" se ven exactamente igual.
+            // Sin el prefab persistente, "hay una ficha acá" y "esta casilla está marcada" se ven
+            // exactamente igual.
             var coin = AssetDatabase.LoadAssetAtPath<GameObject>(CoinModelPath);
             if (coin == null)
             {
@@ -1173,20 +1120,15 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         /// </summary>
         /// <remarks>
         /// <para>
-        /// Propios y no <c>Tile_Spikes</c>: el genérico pega 12 y no encarece la ruta de la IA, y
-        /// subírselos ahí se lo cambiaría a todas las salas del juego. Mismo criterio que
-        /// <c>Tile_Fire_Croupier</c>.
-        /// </para>
-        /// <para>
-        /// <b>Este builder crea la definición, no las coloca.</b> Las diez casillas las escribe
+        /// <b>Este builder crea la definición, no las coloca.</b> Las casillas las escribe
         /// <c>BossRoomBuilder</c> en <c>RoomLayout.SpecialTilePlacements</c> de
-        /// <c>Boss_Room_Cajero</c>, leyendo <see cref="SpikePlanCells"/>. Van por la lista de
-        /// permanentes y no por un slot: la posición exacta es la autoría, no algo que se rolee.
+        /// <c>Boss_Room_Cajero</c>, leyendo <see cref="SpikePlanCells"/>, y van por la lista de
+        /// permanentes y no por un slot.
         /// </para>
         /// <para>
         /// Al venir de la sala el owner queda vacío, y eso es lo que hace que el jefe <b>no</b> sea
         /// inmune: <c>SpecialTileService.ShouldAffect</c> exime a un jefe sólo de las casillas cuyo
-        /// owner es un jefe. Es la mitad "empujado se los come igual" de la regla.
+        /// owner es un jefe.
         /// </para>
         /// </remarks>
         public static SpecialTileDefinitionSO EnsureSpikeTile()
@@ -1197,8 +1139,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
             spikes.DisplayName = "Pinchos de la Caja";
             spikes.TileType = SpecialTileType.Spikes;
 
-            // OnForcedMovementInto es la mitad del diseño: es lo que hace que el tumbo del empujón
-            // cobre las casillas que cruza, y que el Empuje del jugador se los cobre a él.
+            // OnForcedMovementInto es lo que hace que el tumbo del empujón cobre las casillas que
+            // cruza, y que el Empuje del jugador se los cobre a él.
             spikes.Triggers = TileTrigger.OnEnter | TileTrigger.OnForcedMovementInto;
             spikes.Category = TileEffectCategory.Damage;
             spikes.Affinity = TileAffinity.GroundOnly;
@@ -1210,7 +1152,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
             spikes.DefaultDurationRounds = 0;
 
             // "Armado sí, bajado no": un pincho disparado queda bajado hasta el cierre de ronda, y el
-            // pathing lo lee. Cada pincho que el jugador gasta le abre un pasillo al jefe.
+            // pathing lo lee.
             spikes.DisarmOnTrigger = true;
             spikes.RearmOnRoundWrap = true;
 
@@ -1221,7 +1163,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
             spikes.DescriptionKey = "tile.spikes";
 
             // Mismo arte y mismo color de paleta que el pincho genérico: para el jugador es el mismo
-            // objeto, y darle un look propio enseñaría una diferencia que no existe.
+            // objeto.
             var generic = AssetDatabase.LoadAssetAtPath<SpecialTileDefinitionSO>(
                 "Assets/Rollgeon/Tiles/Tile_Spikes.asset");
             if (generic == null)

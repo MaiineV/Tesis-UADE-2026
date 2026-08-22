@@ -70,8 +70,8 @@ MonoBehaviour:
       Entry: 3
       Data: 1
     - Name: AnimFeedbackId
-      Entry: 6
-      Data: 
+      Entry: 1
+      Data: anim.enemy.comision.bite
     - Name: ImpactVfxFeedbackId
       Entry: 6
       Data: 
@@ -167,7 +167,7 @@ MonoBehaviour:
   DisplayName: "Comisi\xF3n"
   Description: Lo que el Cajero manda a cobrar cuando se le empieza a escapar. Vuela,
     tira de lejos y hace que huir tenga precio.
-  Portrait: {fileID: -172214914, guid: 20ce88debfdaa06459d18ed604643892, type: 3}
+  Portrait: {fileID: 133841030, guid: 7354be46d5bce5b44ae3fc20ec0cb47f, type: 3}
   WeaknessComboId: 
   WeaknessMultiplierOverride: 0
   BaseHP: 18
