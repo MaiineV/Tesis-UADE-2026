@@ -421,11 +421,13 @@ namespace Rollgeon.UI.HUD
             if (_actionRollService == null || !_actionRollService.IsActive) return false;
             var spec = _actionRollService.CurrentSpec;
 
-            // Threshold label visible con el puntaje a superar.
+            // Threshold label visible con el puntaje a superar. Acciones sin umbral
+            // (Curarse N×M usa Threshold 0) no muestran un "Necesitas >= 0" fantasma.
             if (_thresholdLabel != null)
             {
-                _thresholdLabel.gameObject.SetActive(true);
-                _thresholdLabel.text = $"Necesitas >= {spec.Threshold}";
+                bool hasThreshold = spec.Threshold > 0;
+                _thresholdLabel.gameObject.SetActive(hasThreshold);
+                if (hasThreshold) _thresholdLabel.text = $"Necesitas >= {spec.Threshold}";
             }
 
             // Formula label: combo actual seleccionado del action roll service.

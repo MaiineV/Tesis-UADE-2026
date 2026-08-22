@@ -37,5 +37,25 @@ namespace Rollgeon.ActionRolls
 
         /// <summary>True si la tirada matcheo algun combo.</summary>
         public bool HasCombo;
+
+        /// <summary>
+        /// Detección REAL del combo ganador sobre el subset holdeado: ComboId, base plano
+        /// (post contract-mods), CountUsed y ContributingIndices — índices relativos a
+        /// <see cref="HeldDice"/>. Null si no hubo combo. Invariante:
+        /// <c>Combo.Value.EffectiveTotal == EffectiveTotal</c> cuando no es null.
+        /// </summary>
+        public Rollgeon.Combos.ComboDetectionResult? Combo;
+
+        /// <summary>
+        /// Caras del subset holdeado que entró a la detección (excluye dados bloqueados
+        /// y no holdeados). Null si Cancelled; vacío si no se holdeó nada.
+        /// </summary>
+        public int[] HeldDice;
+
+        /// <summary>
+        /// Mapeo subset → slot de bag, alineado 1:1 con <see cref="HeldDice"/> (misma
+        /// semántica que <c>EffectContext.KeptDiceOriginalIndices</c>).
+        /// </summary>
+        public int[] HeldDiceOriginalIndices;
     }
 }

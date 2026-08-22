@@ -35,8 +35,6 @@ namespace Rollgeon.Run
         public string SaveKey => SaveKeyConst;
 
         private CombatResumeSnapshot _pending;
-        private List<string> _pendingActions;
-        private EventManager.EventReceiver _actionsRestoreHandler;
 
         // Último snapshot de combate válido — se reusa si el capture corre con el player ya
         // limpiado (EndRun llama ClearPlayer antes del capture de OnRunEnd, #0028).
@@ -96,9 +94,6 @@ namespace Rollgeon.Run
                 if (ServiceLocator.TryGetService<IRollPoolService>(out var rolls) && rolls != null)
                     snap.PlayerRolls = rolls.GetCurrent(player.PlayerGuid);
             }
-
-            if (ServiceLocator.TryGetService<TurnManager>(out var tm) && tm != null)
-                foreach (var a in tm.UsedActionsThisTurn) snap.ActionsUsedThisTurn.Add(a);
 
             // Buffs/debuffs/shields por entidad (Fase 4): player + enemigos vivos de la cola.
             if (ServiceLocator.TryGetService<AttributesManager>(out var attrsMgr) && attrsMgr != null)
@@ -223,37 +218,12 @@ namespace Rollgeon.Run
 
             RestoreBossState(snap);
 
-            // Acciones ya usadas: el OnTurnStarted del primer turno las va a limpiar, así
-            // que re-aplicamos DESPUÉS vía un one-shot suscripto ahora (corre después del
-            // handler de TurnManager, suscripto en bootstrap).
-            if (snap.ActionsUsedThisTurn != null && snap.ActionsUsedThisTurn.Count > 0)
-            {
-                _pendingActions = new List<string>(snap.ActionsUsedThisTurn);
-                _actionsRestoreHandler = _ => ApplyPendingActions();
-                EventManager.Subscribe(EventName.OnTurnStarted, _actionsRestoreHandler);
-            }
-
             return true;
         }
 
         // ================================================================
         // Helpers
         // ================================================================
-
-        private void ApplyPendingActions()
-        {
-            if (_actionsRestoreHandler != null)
-            {
-                EventManager.UnSubscribe(EventName.OnTurnStarted, _actionsRestoreHandler);
-                _actionsRestoreHandler = null;
-            }
-            if (_pendingActions != null
-                && ServiceLocator.TryGetService<TurnManager>(out var tm) && tm != null)
-            {
-                foreach (var a in _pendingActions) tm.MarkBehaviorUsed(a);
-            }
-            _pendingActions = null;
-        }
 
         private static int IndexOf(IReadOnlyList<Guid> list, Guid g)
         {
@@ -391,11 +361,6 @@ namespace Rollgeon.Run
 
         public void Dispose()
         {
-            if (_actionsRestoreHandler != null)
-            {
-                EventManager.UnSubscribe(EventName.OnTurnStarted, _actionsRestoreHandler);
-                _actionsRestoreHandler = null;
-            }
             SaveSystem.Unregister(this);
         }
     }

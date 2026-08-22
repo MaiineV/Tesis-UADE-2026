@@ -1918,6 +1918,41 @@ MonoBehaviour:
   _label: {fileID: 8506911511710303167}
   _format: '{0}'
   _hideWhenEmpty: 1
+--- !u!1 &2451403926725997133
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1304541428093945286}
+  m_Layer: 0
+  m_Name: Cells
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!224 &1304541428093945286
+RectTransform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2451403926725997133}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1022418621554777571}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 0.5, y: 0.5}
+  m_AnchorMax: {x: 0.5, y: 0.5}
+  m_AnchoredPosition: {x: 0, y: 0}
+  m_SizeDelta: {x: 0, y: 0}
+  m_Pivot: {x: 0.5, y: 0.5}
 --- !u!1 &2553957669773673349
 GameObject:
   m_ObjectHideFlags: 0
@@ -3955,6 +3990,7 @@ GameObject:
   - component: {fileID: 8149724462929154279}
   - component: {fileID: 7775218021333068928}
   - component: {fileID: 5222347368315487107}
+  - component: {fileID: 7956440335264363958}
   m_Layer: 0
   m_Name: CombatHUDView
   m_TagString: Untagged
@@ -3982,6 +4018,7 @@ RectTransform:
   - {fileID: 3395243537577699225}
   - {fileID: 6313941340399891649}
   - {fileID: 6369586495731773594}
+  - {fileID: 1022418621554777571}
   m_Father: {fileID: 3196878298086821650}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
@@ -4016,6 +4053,8 @@ MonoBehaviour:
   _passiveBadge: {fileID: 6528147116408859551}
   _activeItems: {fileID: 0}
   _boardSkin: {fileID: 0}
+  _combatMinimap: {fileID: 6807804313320696837}
+  _rightPanelSwitcher: {fileID: 7956440335264363958}
   _damageFlashGroup: {fileID: 5192322562382934387}
   _damageFlashSeconds: 0.18
   _damageFlashAlpha: 0.5
@@ -4083,6 +4122,24 @@ MonoBehaviour:
   _breathHalfSeconds: 0.6
   _punchStrength: 0.12
   _punchSeconds: 0.25
+--- !u!114 &7956440335264363958
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6551697031020173880}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 05f0b1565c3b0434d8dec6e5a7f391e1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Rollgeon::Rollgeon.UI.HUD.CombatRightPanelSwitcher
+  _carouselPanel: {fileID: 4209319296404721839}
+  _carouselGroup: {fileID: 308415581457784691}
+  _minimapPanel: {fileID: 1022418621554777571}
+  _minimapGroup: {fileID: 7312882933957174849}
+  _slideSeconds: 0.28
+  _slideDistance: 220
 --- !u!1 &6563654194539949530
 GameObject:
   m_ObjectHideFlags: 0
@@ -4094,6 +4151,7 @@ GameObject:
   - component: {fileID: 4209319296404721839}
   - component: {fileID: 5609443812509055921}
   - component: {fileID: 474383615655035639}
+  - component: {fileID: 308415581457784691}
   m_Layer: 0
   m_Name: TurnQueueView
   m_TagString: Untagged
@@ -4169,6 +4227,18 @@ MonoBehaviour:
   m_ChildScaleWidth: 0
   m_ChildScaleHeight: 0
   m_ReverseArrangement: 0
+--- !u!225 &308415581457784691
+CanvasGroup:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6563654194539949530}
+  m_Enabled: 1
+  m_Alpha: 1
+  m_Interactable: 1
+  m_BlocksRaycasts: 1
+  m_IgnoreParentGroups: 0
 --- !u!1 &6579392394976680234
 GameObject:
   m_ObjectHideFlags: 0
@@ -5523,6 +5593,85 @@ RectTransform:
   m_AnchoredPosition: {x: 130, y: 300}
   m_SizeDelta: {x: 100, y: 100}
   m_Pivot: {x: 0.5, y: 0.5}
+--- !u!1 &7966033815866751470
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1022418621554777571}
+  - component: {fileID: 4306534941772128233}
+  - component: {fileID: 7312882933957174849}
+  - component: {fileID: 6807804313320696837}
+  m_Layer: 0
+  m_Name: Minimap
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!224 &1022418621554777571
+RectTransform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7966033815866751470}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 1304541428093945286}
+  m_Father: {fileID: 7076151365498808311}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 1, y: 1}
+  m_AnchorMax: {x: 1, y: 1}
+  m_AnchoredPosition: {x: -50, y: -28}
+  m_SizeDelta: {x: 450, y: 120}
+  m_Pivot: {x: 1, y: 1}
+--- !u!114 &4306534941772128233
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7966033815866751470}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3312d7739989d2b4e91e6319e9a96d76, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.RectMask2D
+  m_Padding: {x: 0, y: 0, z: 0, w: 0}
+  m_Softness: {x: 0, y: 0}
+--- !u!225 &7312882933957174849
+CanvasGroup:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7966033815866751470}
+  m_Enabled: 1
+  m_Alpha: 0
+  m_Interactable: 0
+  m_BlocksRaycasts: 0
+  m_IgnoreParentGroups: 0
+--- !u!114 &6807804313320696837
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7966033815866751470}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 485a366074e9d974881862360381c207, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Rollgeon::Rollgeon.UI.HUD.MinimapView
+  _settings: {fileID: 11400000, guid: 8204ea0f363c4b64daf07364abeec975, type: 2}
+  _cellRoot: {fileID: 1304541428093945286}
 --- !u!1 &8461352205471350977
 GameObject:
   m_ObjectHideFlags: 0

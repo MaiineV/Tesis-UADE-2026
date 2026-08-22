@@ -318,15 +318,12 @@ namespace Rollgeon.Exploration
 
                 if (outcome.Cancelled || resolvedBehavior == null) return;
 
-                // Reconstruir el ComboDetectionResult del outcome para que los effects
-                // (EffForceDoor, EffHeal) puedan leer EffectiveTotal via ComboResult.
-                ComboDetectionResult? combo = outcome.HasCombo
-                    ? ComboDetectionResult.Match(outcome.EffectiveTotal,
-                        outcome.FinalRoll != null ? outcome.FinalRoll.Length : 0)
-                    : (ComboDetectionResult?)null;
-
-                ExecuteBehavior(resolvedBehavior, playerGuid, null, outcome.FinalRoll, combo,
-                    outcome.EffectiveTotal);
+                // Detección REAL del service (ComboId + ContributingIndices sobre el subset
+                // holdeado) — los effects N×M (EffHeal) leen tabla y Σcaras; EffForceDoor
+                // sigue usando ActionRollEffectiveTotal, siempre seteado.
+                ExecuteBehavior(resolvedBehavior, playerGuid, null, outcome.FinalRoll,
+                    outcome.Combo, outcome.EffectiveTotal,
+                    outcome.HeldDice, outcome.HeldDiceOriginalIndices);
                 // Acción con tirada terminada (ej. Force Door) — re-armar movimiento.
                 ArmMovement();
             });
@@ -472,12 +469,31 @@ namespace Rollgeon.Exploration
             if (!ServiceLocator.TryGetService<IPlayerService>(out var playerService)) return;
             var playerGuid = playerService.PlayerGuid;
 
+            var picked = result.FirstSelectedCoord;
+
+            // Clickear la casilla en la que ya estás parado es no-op. Sin este guard el
+            // bug era real: el spawn al entrar a una sala te deja SOBRE la casilla
+            // frente-a-puerta; ese click "caminaba" cero pasos (MovementService no-op,
+            // sin animación) y el cruce salía instantáneo — encadenando dos salas con
+            // un solo click sin quererlo.
+            if (picked.HasValue
+                && ServiceLocator.TryGetService<IGridManager>(out var gridForGuard)
+                && gridForGuard.TryGetPosition(playerGuid, out var currentPos)
+                && picked.Value == currentPos)
+            {
+                // Next-frame y no inline: acá seguimos dentro del callback de Complete()
+                // del SelectionController — re-armar la selección en el mismo stack se
+                // pisaría con su propio cleanup.
+                Debug.Log("[ExplorationBehaviorService] Click en la casilla propia — no-op, re-armar movimiento.");
+                CoroutineHost.Run(ArmMovementNextFrame());
+                return;
+            }
+
             // Ejecutar el movimiento normal: el player camina hasta la casilla elegida.
             ExecuteBehavior(behavior, playerGuid, result, null);
 
             // Si esa casilla es una "frente a puerta", cruzar a la sala vecina recién
             // cuando el pawn termine de caminar hasta ahí (no de forma instantánea).
-            var picked = result.FirstSelectedCoord;
             if (picked.HasValue && doorTiles != null
                 && doorTiles.TryGetValue(picked.Value, out var dir))
             {
@@ -540,7 +556,9 @@ namespace Rollgeon.Exploration
         private void ExecuteBehavior(HeroActionBehavior behavior, Guid playerGuid,
             TargetSelectionResult selectionResult, IReadOnlyList<int> diceResult,
             ComboDetectionResult? matchedCombo = null,
-            int? actionRollEffectiveTotal = null)
+            int? actionRollEffectiveTotal = null,
+            IReadOnlyList<int> keptDice = null,
+            IReadOnlyList<int> keptDiceOriginalIndices = null)
         {
             var ctx = new HeroBehaviorContext
             {
@@ -549,6 +567,8 @@ namespace Rollgeon.Exploration
                 DiceResult = diceResult,
                 MatchedComboResult = matchedCombo,
                 ActionRollEffectiveTotal = actionRollEffectiveTotal,
+                KeptDice = keptDice,
+                KeptDiceOriginalIndices = keptDiceOriginalIndices,
             };
 
             behavior.Execute(ctx);

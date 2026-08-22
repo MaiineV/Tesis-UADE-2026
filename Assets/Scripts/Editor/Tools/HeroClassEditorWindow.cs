@@ -195,6 +195,7 @@ namespace Rollgeon.Editor.Tools
 
                 ValidateBaseDamageTable(_selected.Sheet);
                 ValidateShieldBaseTable(_selected.Sheet);
+                ValidateHealBaseTable(_selected.Sheet);
             }
 
             if (_issues.Count == 0)
@@ -256,6 +257,36 @@ namespace Rollgeon.Editor.Tools
                 if (entry.ShieldBase <= 0)
                     _issues.Add((MessageType.Warning,
                         $"ShieldBaseTable: '{entry.ComboId}' con ShieldBase={entry.ShieldBase} — " +
+                        "entrada redundante, sin entrada ya es 0."));
+            }
+        }
+
+        void ValidateHealBaseTable(ContractSheet sheet)
+        {
+            var table = sheet.HealBaseTable;
+            if (table == null || table.Count == 0) return;
+
+            var seen = new HashSet<string>();
+            foreach (var entry in table)
+            {
+                if (string.IsNullOrEmpty(entry.ComboId))
+                {
+                    _issues.Add((MessageType.Error, "HealBaseTable: entrada con ComboId vacío."));
+                    continue;
+                }
+                if (!seen.Add(entry.ComboId))
+                    _issues.Add((MessageType.Error,
+                        $"HealBaseTable: ComboId duplicado '{entry.ComboId}' — gana la primera entrada."));
+
+                bool inContract = sheet.Combos != null
+                    && sheet.Combos.Exists(c => c != null && c.ComboId == entry.ComboId);
+                if (!inContract)
+                    _issues.Add((MessageType.Warning,
+                        $"HealBaseTable: '{entry.ComboId}' no está en el contrato de esta clase — la entrada no tiene efecto."));
+
+                if (entry.HealBase <= 0)
+                    _issues.Add((MessageType.Warning,
+                        $"HealBaseTable: '{entry.ComboId}' con HealBase={entry.HealBase} — " +
                         "entrada redundante, sin entrada ya es 0."));
             }
         }
@@ -415,7 +446,6 @@ namespace Rollgeon.Editor.Tools
             Prop($"{bp}.ActionName");
             Prop($"{bp}.IsBaseBehavior");
             Prop($"{bp}.Slot");
-            Prop($"{bp}.BlockOnRepeat");
 
             EditorGUILayout.Space(8);
             Header("Dice");

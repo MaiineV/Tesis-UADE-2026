@@ -99,10 +99,9 @@ namespace Patterns
         /// (BUG-013). El lock se libera con el <see cref="OnBehaviorExecuted"/> que dispara
         /// la accion al completarse.</summary>
         OnActionSelectionStarted,
-        /// <summary>args: [Guid sourceGuid, string actionName, bool blockOnRepeat].
+        /// <summary>args: [Guid sourceGuid, string actionName].
         /// El behavior termino de ejecutarse en el turno (sea simple o chain). La UI
-        /// lo usa para transicionar el boton del slot a Used/Available segun
-        /// blockOnRepeat.</summary>
+        /// lo usa para liberar el slot seleccionado y recomputar los botones.</summary>
         OnBehaviorExecuted,
 
         // --- Combat resolve -----------------------------------------------------

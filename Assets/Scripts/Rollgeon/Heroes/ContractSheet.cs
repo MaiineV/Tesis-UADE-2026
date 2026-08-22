@@ -56,6 +56,14 @@ namespace Rollgeon.Heroes
                  "multi × scratch), sin cap — el freno es el reset de escudo por turno.")]
         public List<ComboShieldBaseEntry> ShieldBaseTable = new List<ComboShieldBaseEntry>();
 
+        [Title("Curación por clase (Spec Heal N×M)")]
+        [InfoBox("curacion_combo_base por clase: tabla FIJA, independiente de BaseDamageTable " +
+                 "y ShieldBaseTable. Sin entrada = 0: esta clase no cura con ese combo " +
+                 "(el fallback sin combo — dado más alto — no pasa por esta tabla). " +
+                 "Fórmula completa en PlayerComboHeal: misma que el daño (ATQ + base + Σcaras " +
+                 "× multi × scratch), clampeada al max HP por el HealPipeline.")]
+        public List<ComboHealBaseEntry> HealBaseTable = new List<ComboHealBaseEntry>();
+
         /// <summary>Etiqueta legible para UI (screen #98).</summary>
         public string DisplayLabel => _displayLabel;
 
@@ -99,6 +107,23 @@ namespace Rollgeon.Heroes
             for (int i = 0; i < ShieldBaseTable.Count; i++)
             {
                 if (ShieldBaseTable[i].ComboId == comboId) return ShieldBaseTable[i].ShieldBase;
+            }
+            return 0;
+        }
+
+        // ---- Curación por clase (Spec Heal N×M) ---------------------------
+
+        /// <summary>
+        /// <c>curacion_combo_base</c> de esta clase para <paramref name="comboId"/>. Sin entrada
+        /// ⇒ 0 — la clase no cura con ese combo (fallback explícito, sin default global).
+        /// Scan lineal — la tabla es chica (una entrada por combo del contrato).
+        /// </summary>
+        public int GetHealBase(string comboId)
+        {
+            if (string.IsNullOrEmpty(comboId) || HealBaseTable == null) return 0;
+            for (int i = 0; i < HealBaseTable.Count; i++)
+            {
+                if (HealBaseTable[i].ComboId == comboId) return HealBaseTable[i].HealBase;
             }
             return 0;
         }
@@ -245,6 +270,9 @@ namespace Rollgeon.Heroes
                 ShieldBaseTable = ShieldBaseTable != null
                     ? new List<ComboShieldBaseEntry>(ShieldBaseTable)
                     : new List<ComboShieldBaseEntry>(),
+                HealBaseTable = HealBaseTable != null
+                    ? new List<ComboHealBaseEntry>(HealBaseTable)
+                    : new List<ComboHealBaseEntry>(),
             };
             return copy;
         }
@@ -285,5 +313,25 @@ namespace Rollgeon.Heroes
                  "compartida daño/escudo como término base del combo, sin cap. " +
                  "Escala 100: calibrado a la par de las bases de daño (Par 8 … Generala 90).")]
         public int ShieldBase;
+    }
+
+    /// <summary>
+    /// Entrada de la tabla <c>curacion_combo_base</c> por clase (Spec Heal N×M). Struct plano
+    /// — mismo criterio de serialización que <see cref="ComboBaseDamageEntry"/>. Tabla
+    /// independiente de las de daño y escudo: la entrada decide si el combo cura y con qué
+    /// base; la fórmula (compartida con el daño) decide cuánto.
+    /// </summary>
+    [Serializable]
+    public struct ComboHealBaseEntry
+    {
+        [ValueDropdown("@Rollgeon.Combos.BaseComboSO.GetKnownComboIds()", AppendNextDrawer = true)]
+        [Tooltip("ComboId del combo (ej. 'combo.par').")]
+        public string ComboId;
+
+        [Range(0, 200)]
+        [Tooltip("curacion_combo_base de esta clase para el combo. Entra a la fórmula " +
+                 "compartida daño/escudo/heal como término base del combo; el clamp lo pone " +
+                 "el HealPipeline (max HP). Escala 100: calibrado a la par de las bases de daño.")]
+        public int HealBase;
     }
 }

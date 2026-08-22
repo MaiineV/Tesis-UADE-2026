@@ -177,7 +177,7 @@ namespace Rollgeon.UI.Tests
         // ------------------------------------------------------------------
         //
         // Regresión: el rojo y el shake colgaban del estado Unaffordable, que es
-        // EXCLUYENTE con Locked y Used. Un chip bloqueado por otra razón (Heal a vida
+        // EXCLUYENTE con Locked. Un chip bloqueado por otra razón (Heal a vida
         // llena) y encima impagable no mostraba nada y no contestaba al click.
 
         [Test]
@@ -193,20 +193,6 @@ namespace Rollgeon.UI.Tests
             // Assert
             Assert.AreEqual(expected, _costLabel.color, "el costo tiene que quedar rojo aunque esté Locked");
             Assert.IsFalse(_outline.enabled, "el outline sigue siendo del estado, no de la plata");
-        }
-
-        [Test]
-        public void test_actionButton_usedAndUnaffordable_stillPaintsCostRed()
-        {
-            // Arrange
-            var expected = (Color)GetPrivate(_button, "_unaffordableColor");
-            _button.SetAffordable(false);
-
-            // Act
-            _button.SetState(ActionButtonState.Used);
-
-            // Assert — el cambio de estado no debe pisar el rojo de la plata.
-            Assert.AreEqual(expected, _costLabel.color);
         }
 
         [Test]
@@ -341,25 +327,6 @@ namespace Rollgeon.UI.Tests
         }
 
         [Test]
-        public void test_actionButton_used_showsDedicatedSpriteAtFullAlpha()
-        {
-            // Arrange — la ficha usada NO se atenúa: sprite propio + hundimiento.
-            var (_, _, image) = SetupSprites();
-            var tex = new Texture2D(4, 4);
-            var usedSprite = Sprite.Create(tex, new Rect(0, 0, 4, 4), new Vector2(0.5f, 0.5f));
-            _spawned.Add(tex);
-            _spawned.Add(usedSprite);
-            AssignPrivate(_button, "_usedSprite", usedSprite);
-
-            // Act
-            _button.SetState(ActionButtonState.Used);
-
-            // Assert
-            Assert.AreSame(usedSprite, image.sprite);
-            Assert.AreEqual(1f, image.color.a, 0.001f, "Used no atenúa el alpha");
-        }
-
-        [Test]
         public void test_actionButton_pointerDownWhileLocked_raisesBlockedPressed()
         {
             // Arrange — el tap sobre cualquier chip no usable avisa al view para que
@@ -384,7 +351,7 @@ namespace Rollgeon.UI.Tests
         {
             // Arrange
             var (baseSprite, _, image) = SetupSprites();
-            _button.SetState(ActionButtonState.Used);
+            _button.SetState(ActionButtonState.Locked);
 
             // Act
             _button.SetState(ActionButtonState.Available);
@@ -409,7 +376,7 @@ namespace Rollgeon.UI.Tests
 
             // Act
             _button.SetState(ActionButtonState.Selected);
-            _button.SetState(ActionButtonState.Used);
+            _button.SetState(ActionButtonState.Locked);
 
             // Assert
             Assert.AreSame(authored, image.sprite);

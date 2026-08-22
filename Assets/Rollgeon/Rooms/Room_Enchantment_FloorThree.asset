@@ -29,4 +29,4 @@ MonoBehaviour:
   PossibleSetups: []
   ForcePossibleSetups: 0
   EnemyPool: {fileID: 0}
-  ShellIcon: {fileID: -625916436, guid: d0519c555a7c798478bdee304e31724e, type: 3}
+  ShellIcon: {fileID: -721510280, guid: 3540b8d5b128721449e0d1a506296293, type: 3}

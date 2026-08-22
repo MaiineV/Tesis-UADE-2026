@@ -29,7 +29,6 @@ public class HeroActionBehavior : BaseBehavior {
     public HeroBehaviorSlot Slot;       // when IsBaseBehavior
 
     public int  EnergyCost;
-    public bool BlockOnRepeat = true;
 
     public bool NeedsDiceRoll = true;
     public int  FreeRollCount = 1;       // total rolls including initial

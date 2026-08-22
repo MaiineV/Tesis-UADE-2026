@@ -20,9 +20,6 @@ namespace Rollgeon.UI.HUD
         /// o eligiendo target con esta accion. Visual: scale + glow.</summary>
         Selected,
 
-        /// <summary>Ya se ejecuto en este turno y tiene BlockOnRepeat=true.</summary>
-        Used,
-
         /// <summary>Todo lo demas esta listo (es tu turno, no hay chain, esta en
         /// rango, no la usaste) pero no alcanza la energia. Se separa de
         /// <see cref="Locked"/> para poder decirle al jugador POR QUE no puede:

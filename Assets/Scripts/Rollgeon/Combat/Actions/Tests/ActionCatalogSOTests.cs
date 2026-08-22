@@ -51,12 +51,11 @@ namespace Rollgeon.Combat.Actions.Tests
         // --- Helpers -----------------------------------------------------
 
         private ActionDefinitionSO MakeAction(string id, ActionType type,
-                                              bool blockOnRepeat = true, ScriptableObject backing = null)
+                                              ScriptableObject backing = null)
         {
             var def = ScriptableObject.CreateInstance<ActionDefinitionSO>();
             def.ActionId = id;
             def.Type = type;
-            def.BlockOnRepeat = blockOnRepeat;
             def.BackingAsset = backing;
             _created.Add(def);
             return def;

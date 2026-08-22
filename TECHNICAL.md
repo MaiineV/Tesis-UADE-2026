@@ -4302,11 +4302,6 @@ public class ActionDefinitionSO : SerializedScriptableObject
     [Title("Cost")]
     [MinValue(0)] public int EnergyCost;
 
-    [Title("Repetition")]
-    [ToggleLeft]
-    [InfoBox("Si true, esta ActionId no puede ejecutarse dos veces en el mismo turno. Default del GDD.")]
-    public bool BlockOnRepeat = true;
-
     [Title("Reroll")]
     [ToggleLeft] public bool AllowsEnergyReroll = true;
 
@@ -4349,22 +4344,14 @@ public class ActionCatalogSO : SerializedScriptableObject
 }
 ```
 
-**Enforcement** — el `TurnManager` mantiene el set de acciones usadas en el turno actual, tagueadas por `ActionId`:
+**Enforcement** — el `TurnManager` es el gate uniforme de ejecución. **No hay límite de acciones por turno**: el único presupuesto es el pool de rolls — mientras queden rolls, cualquier acción (movimiento incluido) puede repetirse. Pseudo-código (la versión con energía es histórica; hoy el costo es 1 roll del pool):
 
 ```csharp
 public class TurnManager
 {
-    private readonly HashSet<string> _actionsUsedThisTurn = new();
-
     public bool CanExecute(ActionDefinitionSO action, Guid playerGuid, out string reason)
     {
         reason = null;
-
-        if (action.BlockOnRepeat && _actionsUsedThisTurn.Contains(action.ActionId))
-        {
-            reason = $"Action '{action.ActionId}' already used this turn.";
-            return false;
-        }
 
         var energy = AttributesManager.GetAttributeModifiedValue<Energy, int>(playerGuid);
         if (energy < action.EnergyCost)
@@ -4383,21 +4370,16 @@ public class TurnManager
         // Cobrar energía antes de ejecutar.
         AttributesManager.Modify<Energy, int>(playerGuid, e => e - action.EnergyCost);
 
-        if (!action.Effect.TryExecute(ctx, ctx.BuildPreConditionContext())) return false;
-
-        _actionsUsedThisTurn.Add(action.ActionId);
-        return true;
+        return action.Effect.TryExecute(ctx, ctx.BuildPreConditionContext());
     }
-
-    private void OnTurnStarted(params object[] args) => _actionsUsedThisTurn.Clear();
 }
 ```
 
 **Consecuencias del diseño**:
 
-- **Movement** y **defense** son acciones normales con su propio `ActionDefinitionSO`. Movement suele setear `BlockOnRepeat = false` para que el jugador pueda moverse varias veces si tiene energía (única manera de escapar según el GDD).
+- **Movement** y **defense** son acciones normales con su propio `ActionDefinitionSO`. Como toda acción, el jugador puede moverse varias veces por turno mientras le queden rolls (única manera de escapar según el GDD).
 - **Skill checks** (§12.5) también son `ActionDefinitionSO` — la diferencia con un ataque es el efecto que resuelven, no la forma.
-- El constraint es **opt‑in por acción** via el flag, no una regla global. Si algún modo de juego quiere permitir repeticiones, un `RulesetSO` (§14.7) puede overridear el flag por `ActionId` via `ForbiddenActionIds`.
+- No existe constraint de repetición por acción (el flag `BlockOnRepeat` y el set `_actionsUsedThisTurn` se eliminaron en agosto 2026). Si algún modo de juego quiere prohibir acciones, un `RulesetSO` (§14.7) puede hacerlo por `ActionId` via `ForbiddenActionIds`.
 - El `EnergyCost` y el `AllowsEnergyReroll` viven en el SO, no en el código — cualquier ajuste de balance es data, no rebuild.
 
 ### 12.7 Turn order con velocidad oculta
@@ -5992,7 +5974,7 @@ El jugador mueve invocando un `EffMove : BaseEffect, IUsesSelection`. El efecto:
 1. Resuelve el budget actual leyendo el stat.
 2. Pide una selección al `SelectionController` (§11) con un `TargetQuery = TQ_ReachableTiles` (§11.2b) que internamente llama `IMovementService.GetReachableTiles` via `ServiceLocator`. El highlight visual es un `IUsesGridSelection` normal.
 3. Con el tile elegido, llama `IMovementService.FindPath` y luego `MoveAlongPath`.
-4. El movimiento es una acción registrada en §12.6 con `BlockOnRepeat = false` — el jugador puede mover varias veces en el mismo turno (única manera de escapar según el GDD).
+4. El movimiento es una acción registrada en §12.6 — como toda acción, el jugador puede moverse varias veces en el mismo turno mientras le queden rolls (única manera de escapar según el GDD).
 
 #### B.5 Animación vía feedback
 
@@ -7644,12 +7626,11 @@ public bool ActivateItem(int activeSlotIndex, EffectContext ctx)
             Type = ActionType.UseItem,
             BackingAsset = item,
             EnergyCost = 0,             // los activos no cobran energy — si hace falta, hooks específicos
-            BlockOnRepeat = true,
             Effect = item.OnActivate,
         };
         var tm = ServiceLocator.GetService<TurnManager>();
         if (!tm.CanExecute(action, ctx.SourceGuid, out _)) return false;
-        var ok = tm.TryExecute(action, ctx.SourceGuid, ctx);  // registra en _actionsUsedThisTurn
+        var ok = tm.TryExecute(action, ctx.SourceGuid, ctx);  // cobra 1 roll y ejecuta
         if (!ok) return false;
     }
     else
@@ -9105,7 +9086,7 @@ su efecto; marcarlos sería mentir. El test es si el jugador nota la diferencia.
   - §5.6: **Strike combos** — `IStrikableCombo` marker, `RunStrikeState : ISaveable`, `EffStrikeCombo`; `ContractSheet.EvaluateRoll` filtra combos strikados.
   - §6.5: **Reroll budget (energy re‑roll)** — `IRerollBudget`, `IDiceRoller.QueryReroll`, `RerollAvailability`. Aplicable a ataque, defensa y skill checks. Números en `RulesetSO`.
   - §7.5: **AI Decision Trees** — árbol polimórfico inline con `[SerializeReference]` (no SOs). Nodos action/question/sequence/selector/if/random, condiciones polimórficas, clonado del árbol al spawn via `SerializationUtility`. Los enums `EnemyBehavior` quedan descartados — cada enemigo tiene su propio árbol con overrides per‑enemigo.
-  - §12.6: **Action economy y repetition constraint** — `ActionDefinitionSO` con `ActionTag`, `BlockOnRepeat`, `AllowsEnergyReroll`; `TurnManager` mantiene `_actionsUsedThisTurn` y lo limpia `OnTurnStarted`. Constraint es opt‑in por acción.
+  - §12.6: **Action economy** — `ActionDefinitionSO` con `ActionTag`, `AllowsEnergyReroll`; `TurnManager` gatea solo por ruleset + pool de rolls. Sin límite de acciones por turno (el repetition constraint se eliminó en agosto 2026).
   - §12.7: **Turn order con velocidad oculta** — `IInitiativeProvider` + `TurnOrderService`, `Speed` marcado hidden, UI solo muestra orden vía `OnTurnQueueBuilt`.
   - §13.6: **Room runtime state granular** — `RoomInstance : ISaveable` con `Dictionary<string, RoomObjectState>` indexado por spawn point id. Subtipos `ChestState`, `PotionState`, `ShopItemState`, `DoorState`, `EnemySpawnState`. Re‑entrar a una sala consulta estos flags.
   - §14.7: **`RulesetSO`** — encarna "modo de juego". Contiene MaxEnergy, StartingEnergy, BaseEnergyRegenPerTurn, BaseRollsPerAttack, MaxExtraRerollsByEnergy, DefenseFromUnusedRolls, SpeedDie{Min,Max}, AnimationCurves de scaling (EnemyHP, EnemyDamage, Gold, EnemyCount, ObstacleCount), ForbiddenActionTags, ComboCounterThresholds. Absorbe toda la numerología del juego.

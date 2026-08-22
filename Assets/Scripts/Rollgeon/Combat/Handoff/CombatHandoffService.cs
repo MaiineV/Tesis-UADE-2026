@@ -478,7 +478,6 @@ namespace Rollgeon.Combat.Handoff
                 // Capturamos info del behavior antes de nullarlo, para emitir el evento
                 // OnBehaviorExecuted con payload consistente en todos los paths.
                 var executedActionName = _selectedBehavior.ActionName;
-                var executedBlockOnRepeat = _selectedBehavior.BlockOnRepeat;
 
                 if (hasBeforeRoll
                     && ServiceLocator.TryGetService<ICombatStarter>(out var starter))
@@ -512,7 +511,7 @@ namespace Rollgeon.Combat.Handoff
                         playerState.RequestAction(_selectedBehavior, behaviorCtx, () =>
                         {
                             _awaitingPlayerSelection = false;
-                            EventManager.Trigger(EventName.OnBehaviorExecuted, playerGuid, executedActionName, executedBlockOnRepeat);
+                            EventManager.Trigger(EventName.OnBehaviorExecuted, playerGuid, executedActionName);
                             _lastFaces = null;
                             _selectedBehavior = null;
                             hud.ClearBehaviorForFormula();
@@ -527,7 +526,7 @@ namespace Rollgeon.Combat.Handoff
 
                 var resolved = _lastFaces ?? Array.Empty<int>();
                 EventManager.Trigger(EventName.OnRollResolved, playerGuid, (IReadOnlyList<int>)resolved);
-                EventManager.Trigger(EventName.OnBehaviorExecuted, playerGuid, executedActionName, executedBlockOnRepeat);
+                EventManager.Trigger(EventName.OnBehaviorExecuted, playerGuid, executedActionName);
 
                 _lastFaces = null;
                 _selectedBehavior = null;
@@ -647,7 +646,6 @@ namespace Rollgeon.Combat.Handoff
                     // OnBehaviorExecuted (que emitimos abajo en el outcome handler).
                     EventManager.Trigger(EventName.OnActionSelectionStarted, playerGuid);
                     var executedActionName = behavior.ActionName;
-                    var executedBlockOnRepeat = behavior.BlockOnRepeat;
 
                     actionRollService.StartFlow(rollSpec, playerGuid, rollBag, outcome =>
                     {
@@ -659,41 +657,30 @@ namespace Rollgeon.Combat.Handoff
                         {
                             // BUG-015: incluso en Cancelled, soltar el lock de la UI —
                             // si no la screen queda gateada con los slots Locked.
-                            EventManager.Trigger(EventName.OnBehaviorExecuted, playerGuid,
-                                executedActionName, executedBlockOnRepeat);
+                            EventManager.Trigger(EventName.OnBehaviorExecuted, playerGuid, executedActionName);
                             return;
                         }
 
-                        Combos.ComboDetectionResult? combo = outcome.HasCombo
-                            ? Combos.ComboDetectionResult.Match(outcome.EffectiveTotal,
-                                outcome.FinalRoll != null ? outcome.FinalRoll.Length : 0)
-                            : (Combos.ComboDetectionResult?)null;
-
+                        // Detección REAL del service (ComboId + ContributingIndices sobre el
+                        // subset holdeado) — los effects N×M (heal) leen tabla y Σcaras de acá.
+                        // El threshold no la mira: usa ActionRollEffectiveTotal, siempre seteado.
                         var behaviorCtx = new HeroBehaviorContext
                         {
                             SourceEntity = new Entity { Guid = playerGuid },
                             SelectionResult = null,
                             DiceResult = outcome.FinalRoll,
-                            MatchedComboResult = combo,
+                            MatchedComboResult = outcome.Combo,
                             ActionRollEffectiveTotal = outcome.EffectiveTotal,
+                            KeptDice = outcome.HeldDice,
+                            KeptDiceOriginalIndices = outcome.HeldDiceOriginalIndices,
                         };
 
                         // Rolls ya cobrados por IActionRollService — TryExecuteRollsPrepaid
-                        // solo ejecuta + trackea repeticion.
+                        // solo ejecuta.
                         if (ServiceLocator.TryGetService<TurnManager>(out var tmgr) && tmgr != null)
-                        {
                             tmgr.TryExecuteRollsPrepaid(resolvedBehavior, playerGuid, behaviorCtx);
-                            // BUG-018: en combate, TODA acción que entra al ActionRoll flow
-                            // (Heal, Forzar Puerta) consumió rolls y debe ser once-per-turn,
-                            // tenga éxito o falle el threshold. TryExecuteRollsPrepaid solo
-                            // marca usado si el behavior.BlockOnRepeat=true en el asset; algunos
-                            // assets legacy lo tienen en 0 y permitían retry tras fallo. Forzamos
-                            // la marca acá para que el gate de WasUsedThisTurn aplique siempre.
-                            tmgr.MarkBehaviorUsed(executedActionName);
-                        }
 
-                        EventManager.Trigger(EventName.OnBehaviorExecuted, playerGuid,
-                            executedActionName, executedBlockOnRepeat);
+                        EventManager.Trigger(EventName.OnBehaviorExecuted, playerGuid, executedActionName);
                     });
                     return;
                 }
@@ -1261,7 +1248,6 @@ namespace Rollgeon.Combat.Handoff
             // valido. Si fue un pass total (wasPass && phasesCompleted==0) la accion no se
             // considera ejecutada — la UI debe poder rehabilitar el slot.
             string executedActionName = _selectedBehavior?.ActionName;
-            bool executedBlockOnRepeat = _selectedBehavior?.BlockOnRepeat ?? false;
 
             _activeChain = null;
             _chainPhaseIndex = 0;
@@ -1285,18 +1271,7 @@ namespace Rollgeon.Combat.Handoff
             // [DIAG temporal] bug "botón sigue activo tras usar".
 
             if (!string.IsNullOrEmpty(executedActionName) && phasesCompleted > 0)
-            {
-                // El chain path ejecuta effects via phase.Effects.TryExecute (línea ~666)
-                // sin pasar por TurnManager.TryExecuteRollsPrepaid → BlockOnRepeat nunca
-                // se trackeaba para attacks. Lo marcamos acá para que el slot bloquee.
-                if (executedBlockOnRepeat
-                    && ServiceLocator.TryGetService<TurnManager>(out var tm) && tm != null)
-                {
-                    tm.MarkBehaviorUsed(executedActionName);
-                }
-
-                EventManager.Trigger(EventName.OnBehaviorExecuted, playerGuid, executedActionName, executedBlockOnRepeat);
-            }
+                EventManager.Trigger(EventName.OnBehaviorExecuted, playerGuid, executedActionName);
         }
 
         // ======================================================================
@@ -1741,11 +1716,10 @@ namespace Rollgeon.Combat.Handoff
             // Defensa: si no había una selección activa que cancelar, liberamos el estado
             // a mano para no dejar la UI lockeada.
             var name = _selectedBehavior?.ActionName ?? "Movement";
-            var block = _selectedBehavior?.BlockOnRepeat ?? false;
             _awaitingPlayerSelection = false;
             _selectedBehavior = null;
             _lastFaces = null;
-            EventManager.Trigger(EventName.OnBehaviorExecuted, _player.PlayerGuid, name, block);
+            EventManager.Trigger(EventName.OnBehaviorExecuted, _player.PlayerGuid, name);
         }
 
         /// <summary>

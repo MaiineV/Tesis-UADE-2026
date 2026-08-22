@@ -210,19 +210,140 @@ MonoBehaviour:
     - Name: 
       Entry: 8
       Data: 
+    - Name: HealBaseTable
+      Entry: 7
+      Data: 4|System.Collections.Generic.List`1[[Rollgeon.Heroes.ComboHealBaseEntry,
+        Rollgeon]], mscorlib
+    - Name: 
+      Entry: 12
+      Data: 9
+    - Name: 
+      Entry: 7
+      Data: Rollgeon.Heroes.ComboHealBaseEntry, Rollgeon
+    - Name: ComboId
+      Entry: 1
+      Data: combo.pair
+    - Name: HealBase
+      Entry: 3
+      Data: 8
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: Rollgeon.Heroes.ComboHealBaseEntry, Rollgeon
+    - Name: ComboId
+      Entry: 1
+      Data: combo.higher_number
+    - Name: HealBase
+      Entry: 3
+      Data: 5
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: Rollgeon.Heroes.ComboHealBaseEntry, Rollgeon
+    - Name: ComboId
+      Entry: 1
+      Data: combo.double_pair
+    - Name: HealBase
+      Entry: 3
+      Data: 15
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: Rollgeon.Heroes.ComboHealBaseEntry, Rollgeon
+    - Name: ComboId
+      Entry: 1
+      Data: combo.trio
+    - Name: HealBase
+      Entry: 3
+      Data: 22
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: Rollgeon.Heroes.ComboHealBaseEntry, Rollgeon
+    - Name: ComboId
+      Entry: 1
+      Data: combo.full_house
+    - Name: HealBase
+      Entry: 3
+      Data: 35
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: Rollgeon.Heroes.ComboHealBaseEntry, Rollgeon
+    - Name: ComboId
+      Entry: 1
+      Data: combo.ladder
+    - Name: HealBase
+      Entry: 3
+      Data: 45
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: Rollgeon.Heroes.ComboHealBaseEntry, Rollgeon
+    - Name: ComboId
+      Entry: 1
+      Data: combo.poker
+    - Name: HealBase
+      Entry: 3
+      Data: 60
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: Rollgeon.Heroes.ComboHealBaseEntry, Rollgeon
+    - Name: ComboId
+      Entry: 1
+      Data: combo.generala
+    - Name: HealBase
+      Entry: 3
+      Data: 90
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: Rollgeon.Heroes.ComboHealBaseEntry, Rollgeon
+    - Name: ComboId
+      Entry: 1
+      Data: combo.brute_force
+    - Name: HealBase
+      Entry: 3
+      Data: 5
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
     - Name: 
       Entry: 8
       Data: 
     - Name: PhaseBehaviors
       Entry: 7
-      Data: 4|System.Collections.Generic.List`1[[Rollgeon.Heroes.HeroActionBehavior,
+      Data: 5|System.Collections.Generic.List`1[[Rollgeon.Heroes.HeroActionBehavior,
         Rollgeon]], mscorlib
     - Name: 
       Entry: 12
       Data: 8
     - Name: 
       Entry: 7
-      Data: 5|Rollgeon.Heroes.HeroActionBehavior, Rollgeon
+      Data: 6|Rollgeon.Heroes.HeroActionBehavior, Rollgeon
     - Name: Trigger
       Entry: 3
       Data: 0
@@ -252,7 +373,7 @@ MonoBehaviour:
       Data: 0
     - Name: ShowConditions
       Entry: 7
-      Data: 6|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
+      Data: 7|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
         Rollgeon]], mscorlib
     - Name: 
       Entry: 12
@@ -265,20 +386,20 @@ MonoBehaviour:
       Data: 
     - Name: Effects
       Entry: 7
-      Data: 7|System.Collections.Generic.List`1[[Rollgeon.Effects.EffectData, Rollgeon]],
+      Data: 8|System.Collections.Generic.List`1[[Rollgeon.Effects.EffectData, Rollgeon]],
         mscorlib
     - Name: 
       Entry: 12
       Data: 1
     - Name: 
       Entry: 7
-      Data: 8|Rollgeon.Effects.EffectData, Rollgeon
+      Data: 9|Rollgeon.Effects.EffectData, Rollgeon
     - Name: Label
       Entry: 1
       Data: Effect Group
     - Name: PreConditions
       Entry: 7
-      Data: 9|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
+      Data: 10|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
         Rollgeon]], mscorlib
     - Name: 
       Entry: 12
@@ -291,17 +412,17 @@ MonoBehaviour:
       Data: 
     - Name: Effects
       Entry: 7
-      Data: 10|System.Collections.Generic.List`1[[Rollgeon.Effects.IEffect, Rollgeon]],
+      Data: 11|System.Collections.Generic.List`1[[Rollgeon.Effects.IEffect, Rollgeon]],
         mscorlib
     - Name: 
       Entry: 12
       Data: 1
     - Name: 
       Entry: 7
-      Data: 11|Rollgeon.Effects.Concretes.EffMove, Rollgeon
+      Data: 12|Rollgeon.Effects.Concretes.EffMove, Rollgeon
     - Name: Selection
       Entry: 7
-      Data: 12|Rollgeon.Effects.Selection.SelectionSettings, Rollgeon
+      Data: 13|Rollgeon.Effects.Selection.SelectionSettings, Rollgeon
     - Name: SlotState
       Entry: 3
       Data: 2
@@ -349,7 +470,7 @@ MonoBehaviour:
       Data: 
     - Name: PatternFlat
       Entry: 7
-      Data: 13|System.Boolean[], mscorlib
+      Data: 14|System.Boolean[], mscorlib
     - Name: 
       Entry: 14
       Data: 0
@@ -403,7 +524,7 @@ MonoBehaviour:
       Data: 
     - Name: 
       Entry: 7
-      Data: 14|Rollgeon.Heroes.HeroActionBehavior, Rollgeon
+      Data: 15|Rollgeon.Heroes.HeroActionBehavior, Rollgeon
     - Name: Trigger
       Entry: 3
       Data: 0
@@ -433,7 +554,7 @@ MonoBehaviour:
       Data: 0
     - Name: ShowConditions
       Entry: 7
-      Data: 15|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
+      Data: 16|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
         Rollgeon]], mscorlib
     - Name: 
       Entry: 12
@@ -446,20 +567,20 @@ MonoBehaviour:
       Data: 
     - Name: Effects
       Entry: 7
-      Data: 16|System.Collections.Generic.List`1[[Rollgeon.Effects.EffectData, Rollgeon]],
+      Data: 17|System.Collections.Generic.List`1[[Rollgeon.Effects.EffectData, Rollgeon]],
         mscorlib
     - Name: 
       Entry: 12
       Data: 1
     - Name: 
       Entry: 7
-      Data: 17|Rollgeon.Effects.EffectData, Rollgeon
+      Data: 18|Rollgeon.Effects.EffectData, Rollgeon
     - Name: Label
       Entry: 1
       Data: Effect Group
     - Name: PreConditions
       Entry: 7
-      Data: 18|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
+      Data: 19|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
         Rollgeon]], mscorlib
     - Name: 
       Entry: 12
@@ -472,17 +593,17 @@ MonoBehaviour:
       Data: 
     - Name: Effects
       Entry: 7
-      Data: 19|System.Collections.Generic.List`1[[Rollgeon.Effects.IEffect, Rollgeon]],
+      Data: 20|System.Collections.Generic.List`1[[Rollgeon.Effects.IEffect, Rollgeon]],
         mscorlib
     - Name: 
       Entry: 12
       Data: 1
     - Name: 
       Entry: 7
-      Data: 20|Rollgeon.Effects.Concretes.EffMove, Rollgeon
+      Data: 21|Rollgeon.Effects.Concretes.EffMove, Rollgeon
     - Name: Selection
       Entry: 7
-      Data: 21|Rollgeon.Effects.Selection.SelectionSettings, Rollgeon
+      Data: 22|Rollgeon.Effects.Selection.SelectionSettings, Rollgeon
     - Name: SlotState
       Entry: 3
       Data: 2
@@ -530,7 +651,7 @@ MonoBehaviour:
       Data: 
     - Name: PatternFlat
       Entry: 7
-      Data: 22|System.Boolean[], mscorlib
+      Data: 23|System.Boolean[], mscorlib
     - Name: 
       Entry: 14
       Data: 0
@@ -584,7 +705,7 @@ MonoBehaviour:
       Data: 
     - Name: 
       Entry: 7
-      Data: 23|Rollgeon.Heroes.HeroActionBehavior, Rollgeon
+      Data: 24|Rollgeon.Heroes.HeroActionBehavior, Rollgeon
     - Name: Trigger
       Entry: 3
       Data: 0
@@ -614,7 +735,7 @@ MonoBehaviour:
       Data: 1
     - Name: ShowConditions
       Entry: 7
-      Data: 24|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
+      Data: 25|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
         Rollgeon]], mscorlib
     - Name: 
       Entry: 12
@@ -627,20 +748,20 @@ MonoBehaviour:
       Data: 
     - Name: Effects
       Entry: 7
-      Data: 25|System.Collections.Generic.List`1[[Rollgeon.Effects.EffectData, Rollgeon]],
+      Data: 26|System.Collections.Generic.List`1[[Rollgeon.Effects.EffectData, Rollgeon]],
         mscorlib
     - Name: 
       Entry: 12
       Data: 1
     - Name: 
       Entry: 7
-      Data: 26|Rollgeon.Effects.EffectData, Rollgeon
+      Data: 27|Rollgeon.Effects.EffectData, Rollgeon
     - Name: Label
       Entry: 1
       Data: Effect Group
     - Name: PreConditions
       Entry: 7
-      Data: 27|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
+      Data: 28|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
         Rollgeon]], mscorlib
     - Name: 
       Entry: 12
@@ -653,17 +774,17 @@ MonoBehaviour:
       Data: 
     - Name: Effects
       Entry: 7
-      Data: 28|System.Collections.Generic.List`1[[Rollgeon.Effects.IEffect, Rollgeon]],
+      Data: 29|System.Collections.Generic.List`1[[Rollgeon.Effects.IEffect, Rollgeon]],
         mscorlib
     - Name: 
       Entry: 12
       Data: 4
     - Name: 
       Entry: 7
-      Data: 29|Rollgeon.Effects.Concretes.EffChain, Rollgeon
+      Data: 30|Rollgeon.Effects.Concretes.EffChain, Rollgeon
     - Name: Selection
       Entry: 7
-      Data: 30|Rollgeon.Effects.Selection.SelectionSettings, Rollgeon
+      Data: 31|Rollgeon.Effects.Selection.SelectionSettings, Rollgeon
     - Name: SlotState
       Entry: 3
       Data: 1
@@ -711,7 +832,7 @@ MonoBehaviour:
       Data: 
     - Name: PatternFlat
       Entry: 7
-      Data: 31|System.Boolean[], mscorlib
+      Data: 32|System.Boolean[], mscorlib
     - Name: 
       Entry: 14
       Data: 0
@@ -741,26 +862,26 @@ MonoBehaviour:
       Data: 
     - Name: Phases
       Entry: 7
-      Data: 32|System.Collections.Generic.List`1[[Rollgeon.Effects.ChainPhase, Rollgeon]],
+      Data: 33|System.Collections.Generic.List`1[[Rollgeon.Effects.ChainPhase, Rollgeon]],
         mscorlib
     - Name: 
       Entry: 12
       Data: 1
     - Name: 
       Entry: 7
-      Data: 33|Rollgeon.Effects.ChainPhase, Rollgeon
+      Data: 34|Rollgeon.Effects.ChainPhase, Rollgeon
     - Name: Label
       Entry: 1
       Data: Attack
     - Name: Effects
       Entry: 7
-      Data: 34|Rollgeon.Effects.EffectData, Rollgeon
+      Data: 35|Rollgeon.Effects.EffectData, Rollgeon
     - Name: Label
       Entry: 1
       Data: Effect Group
     - Name: PreConditions
       Entry: 7
-      Data: 35|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
+      Data: 36|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
         Rollgeon]], mscorlib
     - Name: 
       Entry: 12
@@ -773,17 +894,17 @@ MonoBehaviour:
       Data: 
     - Name: Effects
       Entry: 7
-      Data: 36|System.Collections.Generic.List`1[[Rollgeon.Effects.IEffect, Rollgeon]],
+      Data: 37|System.Collections.Generic.List`1[[Rollgeon.Effects.IEffect, Rollgeon]],
         mscorlib
     - Name: 
       Entry: 12
       Data: 1
     - Name: 
       Entry: 7
-      Data: 37|Rollgeon.Effects.Concretes.EffPlaySequence, Rollgeon
+      Data: 38|Rollgeon.Effects.Concretes.EffPlaySequence, Rollgeon
     - Name: Selection
       Entry: 7
-      Data: 38|Rollgeon.Effects.Selection.SelectionSettings, Rollgeon
+      Data: 39|Rollgeon.Effects.Selection.SelectionSettings, Rollgeon
     - Name: SlotState
       Entry: 3
       Data: 1
@@ -831,7 +952,7 @@ MonoBehaviour:
       Data: 
     - Name: PatternFlat
       Entry: 7
-      Data: 39|System.Boolean[], mscorlib
+      Data: 40|System.Boolean[], mscorlib
     - Name: 
       Entry: 14
       Data: 0
@@ -861,14 +982,14 @@ MonoBehaviour:
       Data: 
     - Name: _steps
       Entry: 7
-      Data: 40|System.Collections.Generic.List`1[[Rollgeon.Feedback.FeedbackSequenceStep,
+      Data: 41|System.Collections.Generic.List`1[[Rollgeon.Feedback.FeedbackSequenceStep,
         Rollgeon]], mscorlib
     - Name: 
       Entry: 12
       Data: 6
     - Name: 
       Entry: 7
-      Data: 41|Rollgeon.Feedback.FeedbackSequenceStep, Rollgeon
+      Data: 42|Rollgeon.Feedback.FeedbackSequenceStep, Rollgeon
     - Name: Source
       Entry: 3
       Data: 0
@@ -892,13 +1013,13 @@ MonoBehaviour:
       Data: 1
     - Name: InlineEffects
       Entry: 7
-      Data: 42|Rollgeon.Effects.EffectData, Rollgeon
+      Data: 43|Rollgeon.Effects.EffectData, Rollgeon
     - Name: Label
       Entry: 1
       Data: Effect Group
     - Name: PreConditions
       Entry: 7
-      Data: 43|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
+      Data: 44|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
         Rollgeon]], mscorlib
     - Name: 
       Entry: 12
@@ -911,7 +1032,7 @@ MonoBehaviour:
       Data: 
     - Name: Effects
       Entry: 7
-      Data: 44|System.Collections.Generic.List`1[[Rollgeon.Effects.IEffect, Rollgeon]],
+      Data: 45|System.Collections.Generic.List`1[[Rollgeon.Effects.IEffect, Rollgeon]],
         mscorlib
     - Name: 
       Entry: 12
@@ -957,7 +1078,7 @@ MonoBehaviour:
       Data: 
     - Name: 
       Entry: 7
-      Data: 45|Rollgeon.Feedback.FeedbackSequenceStep, Rollgeon
+      Data: 46|Rollgeon.Feedback.FeedbackSequenceStep, Rollgeon
     - Name: Source
       Entry: 3
       Data: 4
@@ -981,13 +1102,13 @@ MonoBehaviour:
       Data: 1
     - Name: InlineEffects
       Entry: 7
-      Data: 46|Rollgeon.Effects.EffectData, Rollgeon
+      Data: 47|Rollgeon.Effects.EffectData, Rollgeon
     - Name: Label
       Entry: 1
       Data: Damage on impact
     - Name: PreConditions
       Entry: 7
-      Data: 47|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
+      Data: 48|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
         Rollgeon]], mscorlib
     - Name: 
       Entry: 12
@@ -1000,17 +1121,17 @@ MonoBehaviour:
       Data: 
     - Name: Effects
       Entry: 7
-      Data: 48|System.Collections.Generic.List`1[[Rollgeon.Effects.IEffect, Rollgeon]],
+      Data: 49|System.Collections.Generic.List`1[[Rollgeon.Effects.IEffect, Rollgeon]],
         mscorlib
     - Name: 
       Entry: 12
       Data: 1
     - Name: 
       Entry: 7
-      Data: 49|Rollgeon.Effects.Concretes.EffDealDamage, Rollgeon
+      Data: 50|Rollgeon.Effects.Concretes.EffDealDamage, Rollgeon
     - Name: Selection
       Entry: 7
-      Data: 50|Rollgeon.Effects.Selection.SelectionSettings, Rollgeon
+      Data: 51|Rollgeon.Effects.Selection.SelectionSettings, Rollgeon
     - Name: SlotState
       Entry: 3
       Data: 1
@@ -1058,7 +1179,7 @@ MonoBehaviour:
       Data: 
     - Name: PatternFlat
       Entry: 9
-      Data: 39
+      Data: 40
     - Name: IsConstantSelectionCount
       Entry: 5
       Data: true
@@ -1139,7 +1260,7 @@ MonoBehaviour:
       Data: 
     - Name: 
       Entry: 7
-      Data: 51|Rollgeon.Feedback.FeedbackSequenceStep, Rollgeon
+      Data: 52|Rollgeon.Feedback.FeedbackSequenceStep, Rollgeon
     - Name: Source
       Entry: 3
       Data: 0
@@ -1163,13 +1284,13 @@ MonoBehaviour:
       Data: 1
     - Name: InlineEffects
       Entry: 7
-      Data: 52|Rollgeon.Effects.EffectData, Rollgeon
+      Data: 53|Rollgeon.Effects.EffectData, Rollgeon
     - Name: Label
       Entry: 1
       Data: Effect Group
     - Name: PreConditions
       Entry: 7
-      Data: 53|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
+      Data: 54|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
         Rollgeon]], mscorlib
     - Name: 
       Entry: 12
@@ -1182,7 +1303,7 @@ MonoBehaviour:
       Data: 
     - Name: Effects
       Entry: 7
-      Data: 54|System.Collections.Generic.List`1[[Rollgeon.Effects.IEffect, Rollgeon]],
+      Data: 55|System.Collections.Generic.List`1[[Rollgeon.Effects.IEffect, Rollgeon]],
         mscorlib
     - Name: 
       Entry: 12
@@ -1228,7 +1349,7 @@ MonoBehaviour:
       Data: 
     - Name: 
       Entry: 7
-      Data: 55|Rollgeon.Feedback.FeedbackSequenceStep, Rollgeon
+      Data: 56|Rollgeon.Feedback.FeedbackSequenceStep, Rollgeon
     - Name: Source
       Entry: 3
       Data: 0
@@ -1252,13 +1373,13 @@ MonoBehaviour:
       Data: 1
     - Name: InlineEffects
       Entry: 7
-      Data: 56|Rollgeon.Effects.EffectData, Rollgeon
+      Data: 57|Rollgeon.Effects.EffectData, Rollgeon
     - Name: Label
       Entry: 1
       Data: Effect Group
     - Name: PreConditions
       Entry: 7
-      Data: 57|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
+      Data: 58|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
         Rollgeon]], mscorlib
     - Name: 
       Entry: 12
@@ -1271,7 +1392,7 @@ MonoBehaviour:
       Data: 
     - Name: Effects
       Entry: 7
-      Data: 58|System.Collections.Generic.List`1[[Rollgeon.Effects.IEffect, Rollgeon]],
+      Data: 59|System.Collections.Generic.List`1[[Rollgeon.Effects.IEffect, Rollgeon]],
         mscorlib
     - Name: 
       Entry: 12
@@ -1317,7 +1438,7 @@ MonoBehaviour:
       Data: 
     - Name: 
       Entry: 7
-      Data: 59|Rollgeon.Feedback.FeedbackSequenceStep, Rollgeon
+      Data: 60|Rollgeon.Feedback.FeedbackSequenceStep, Rollgeon
     - Name: Source
       Entry: 3
       Data: 0
@@ -1341,13 +1462,13 @@ MonoBehaviour:
       Data: 1
     - Name: InlineEffects
       Entry: 7
-      Data: 60|Rollgeon.Effects.EffectData, Rollgeon
+      Data: 61|Rollgeon.Effects.EffectData, Rollgeon
     - Name: Label
       Entry: 1
       Data: Effect Group
     - Name: PreConditions
       Entry: 7
-      Data: 61|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
+      Data: 62|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
         Rollgeon]], mscorlib
     - Name: 
       Entry: 12
@@ -1360,7 +1481,7 @@ MonoBehaviour:
       Data: 
     - Name: Effects
       Entry: 7
-      Data: 62|System.Collections.Generic.List`1[[Rollgeon.Effects.IEffect, Rollgeon]],
+      Data: 63|System.Collections.Generic.List`1[[Rollgeon.Effects.IEffect, Rollgeon]],
         mscorlib
     - Name: 
       Entry: 12
@@ -1406,7 +1527,7 @@ MonoBehaviour:
       Data: 
     - Name: 
       Entry: 7
-      Data: 63|Rollgeon.Feedback.FeedbackSequenceStep, Rollgeon
+      Data: 64|Rollgeon.Feedback.FeedbackSequenceStep, Rollgeon
     - Name: Source
       Entry: 3
       Data: 0
@@ -1430,13 +1551,13 @@ MonoBehaviour:
       Data: 1
     - Name: InlineEffects
       Entry: 7
-      Data: 64|Rollgeon.Effects.EffectData, Rollgeon
+      Data: 65|Rollgeon.Effects.EffectData, Rollgeon
     - Name: Label
       Entry: 1
       Data: Effect Group
     - Name: PreConditions
       Entry: 7
-      Data: 65|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
+      Data: 66|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
         Rollgeon]], mscorlib
     - Name: 
       Entry: 12
@@ -1449,7 +1570,7 @@ MonoBehaviour:
       Data: 
     - Name: Effects
       Entry: 7
-      Data: 66|System.Collections.Generic.List`1[[Rollgeon.Effects.IEffect, Rollgeon]],
+      Data: 67|System.Collections.Generic.List`1[[Rollgeon.Effects.IEffect, Rollgeon]],
         mscorlib
     - Name: 
       Entry: 12
@@ -1534,10 +1655,10 @@ MonoBehaviour:
       Data: 
     - Name: 
       Entry: 7
-      Data: 67|Rollgeon.Effects.Concretes.EffPlayFeedback, Rollgeon
+      Data: 68|Rollgeon.Effects.Concretes.EffPlayFeedback, Rollgeon
     - Name: Selection
       Entry: 7
-      Data: 68|Rollgeon.Effects.Selection.SelectionSettings, Rollgeon
+      Data: 69|Rollgeon.Effects.Selection.SelectionSettings, Rollgeon
     - Name: SlotState
       Entry: 3
       Data: 0
@@ -1585,7 +1706,7 @@ MonoBehaviour:
       Data: 
     - Name: PatternFlat
       Entry: 7
-      Data: 69|System.Boolean[], mscorlib
+      Data: 70|System.Boolean[], mscorlib
     - Name: 
       Entry: 14
       Data: 0
@@ -1621,10 +1742,10 @@ MonoBehaviour:
       Data: 
     - Name: 
       Entry: 7
-      Data: 70|Rollgeon.Effects.Concretes.EffPlayFeedback, Rollgeon
+      Data: 71|Rollgeon.Effects.Concretes.EffPlayFeedback, Rollgeon
     - Name: Selection
       Entry: 7
-      Data: 71|Rollgeon.Effects.Selection.SelectionSettings, Rollgeon
+      Data: 72|Rollgeon.Effects.Selection.SelectionSettings, Rollgeon
     - Name: SlotState
       Entry: 3
       Data: 0
@@ -1672,7 +1793,7 @@ MonoBehaviour:
       Data: 
     - Name: PatternFlat
       Entry: 7
-      Data: 72|System.Boolean[], mscorlib
+      Data: 73|System.Boolean[], mscorlib
     - Name: 
       Entry: 14
       Data: 0
@@ -1708,10 +1829,10 @@ MonoBehaviour:
       Data: 
     - Name: 
       Entry: 7
-      Data: 73|Rollgeon.Effects.Concretes.EffPlayFeedback, Rollgeon
+      Data: 74|Rollgeon.Effects.Concretes.EffPlayFeedback, Rollgeon
     - Name: Selection
       Entry: 7
-      Data: 74|Rollgeon.Effects.Selection.SelectionSettings, Rollgeon
+      Data: 75|Rollgeon.Effects.Selection.SelectionSettings, Rollgeon
     - Name: SlotState
       Entry: 3
       Data: 0
@@ -1759,7 +1880,7 @@ MonoBehaviour:
       Data: 
     - Name: PatternFlat
       Entry: 7
-      Data: 75|System.Boolean[], mscorlib
+      Data: 76|System.Boolean[], mscorlib
     - Name: 
       Entry: 14
       Data: 0
@@ -1816,7 +1937,7 @@ MonoBehaviour:
       Data: 
     - Name: 
       Entry: 7
-      Data: 76|Rollgeon.Heroes.HeroActionBehavior, Rollgeon
+      Data: 77|Rollgeon.Heroes.HeroActionBehavior, Rollgeon
     - Name: Trigger
       Entry: 3
       Data: 0
@@ -1846,7 +1967,7 @@ MonoBehaviour:
       Data: 1
     - Name: ShowConditions
       Entry: 7
-      Data: 77|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
+      Data: 78|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
         Rollgeon]], mscorlib
     - Name: 
       Entry: 12
@@ -1859,20 +1980,20 @@ MonoBehaviour:
       Data: 
     - Name: Effects
       Entry: 7
-      Data: 78|System.Collections.Generic.List`1[[Rollgeon.Effects.EffectData, Rollgeon]],
+      Data: 79|System.Collections.Generic.List`1[[Rollgeon.Effects.EffectData, Rollgeon]],
         mscorlib
     - Name: 
       Entry: 12
       Data: 1
     - Name: 
       Entry: 7
-      Data: 79|Rollgeon.Effects.EffectData, Rollgeon
+      Data: 80|Rollgeon.Effects.EffectData, Rollgeon
     - Name: Label
       Entry: 1
       Data: Effect Group
     - Name: PreConditions
       Entry: 7
-      Data: 80|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
+      Data: 81|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
         Rollgeon]], mscorlib
     - Name: 
       Entry: 12
@@ -1885,17 +2006,17 @@ MonoBehaviour:
       Data: 
     - Name: Effects
       Entry: 7
-      Data: 81|System.Collections.Generic.List`1[[Rollgeon.Effects.IEffect, Rollgeon]],
+      Data: 82|System.Collections.Generic.List`1[[Rollgeon.Effects.IEffect, Rollgeon]],
         mscorlib
     - Name: 
       Entry: 12
       Data: 4
     - Name: 
       Entry: 7
-      Data: 82|Rollgeon.Effects.Concretes.EffChain, Rollgeon
+      Data: 83|Rollgeon.Effects.Concretes.EffChain, Rollgeon
     - Name: Selection
       Entry: 7
-      Data: 83|Rollgeon.Effects.Selection.SelectionSettings, Rollgeon
+      Data: 84|Rollgeon.Effects.Selection.SelectionSettings, Rollgeon
     - Name: SlotState
       Entry: 3
       Data: 1
@@ -1943,7 +2064,7 @@ MonoBehaviour:
       Data: 
     - Name: PatternFlat
       Entry: 7
-      Data: 84|System.Boolean[], mscorlib
+      Data: 85|System.Boolean[], mscorlib
     - Name: 
       Entry: 14
       Data: 0
@@ -1973,26 +2094,26 @@ MonoBehaviour:
       Data: 
     - Name: Phases
       Entry: 7
-      Data: 85|System.Collections.Generic.List`1[[Rollgeon.Effects.ChainPhase, Rollgeon]],
+      Data: 86|System.Collections.Generic.List`1[[Rollgeon.Effects.ChainPhase, Rollgeon]],
         mscorlib
     - Name: 
       Entry: 12
       Data: 1
     - Name: 
       Entry: 7
-      Data: 86|Rollgeon.Effects.ChainPhase, Rollgeon
+      Data: 87|Rollgeon.Effects.ChainPhase, Rollgeon
     - Name: Label
       Entry: 1
       Data: Attack
     - Name: Effects
       Entry: 7
-      Data: 87|Rollgeon.Effects.EffectData, Rollgeon
+      Data: 88|Rollgeon.Effects.EffectData, Rollgeon
     - Name: Label
       Entry: 1
       Data: Effect Group
     - Name: PreConditions
       Entry: 7
-      Data: 88|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
+      Data: 89|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
         Rollgeon]], mscorlib
     - Name: 
       Entry: 12
@@ -2005,17 +2126,17 @@ MonoBehaviour:
       Data: 
     - Name: Effects
       Entry: 7
-      Data: 89|System.Collections.Generic.List`1[[Rollgeon.Effects.IEffect, Rollgeon]],
+      Data: 90|System.Collections.Generic.List`1[[Rollgeon.Effects.IEffect, Rollgeon]],
         mscorlib
     - Name: 
       Entry: 12
       Data: 1
     - Name: 
       Entry: 7
-      Data: 90|Rollgeon.Effects.Concretes.EffPlaySequence, Rollgeon
+      Data: 91|Rollgeon.Effects.Concretes.EffPlaySequence, Rollgeon
     - Name: Selection
       Entry: 7
-      Data: 91|Rollgeon.Effects.Selection.SelectionSettings, Rollgeon
+      Data: 92|Rollgeon.Effects.Selection.SelectionSettings, Rollgeon
     - Name: SlotState
       Entry: 3
       Data: 1
@@ -2063,7 +2184,7 @@ MonoBehaviour:
       Data: 
     - Name: PatternFlat
       Entry: 7
-      Data: 92|System.Boolean[], mscorlib
+      Data: 93|System.Boolean[], mscorlib
     - Name: 
       Entry: 14
       Data: 0
@@ -2093,14 +2214,14 @@ MonoBehaviour:
       Data: 
     - Name: _steps
       Entry: 7
-      Data: 93|System.Collections.Generic.List`1[[Rollgeon.Feedback.FeedbackSequenceStep,
+      Data: 94|System.Collections.Generic.List`1[[Rollgeon.Feedback.FeedbackSequenceStep,
         Rollgeon]], mscorlib
     - Name: 
       Entry: 12
       Data: 6
     - Name: 
       Entry: 7
-      Data: 94|Rollgeon.Feedback.FeedbackSequenceStep, Rollgeon
+      Data: 95|Rollgeon.Feedback.FeedbackSequenceStep, Rollgeon
     - Name: Source
       Entry: 3
       Data: 0
@@ -2124,13 +2245,13 @@ MonoBehaviour:
       Data: 1
     - Name: InlineEffects
       Entry: 7
-      Data: 95|Rollgeon.Effects.EffectData, Rollgeon
+      Data: 96|Rollgeon.Effects.EffectData, Rollgeon
     - Name: Label
       Entry: 1
       Data: Effect Group
     - Name: PreConditions
       Entry: 7
-      Data: 96|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
+      Data: 97|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
         Rollgeon]], mscorlib
     - Name: 
       Entry: 12
@@ -2143,7 +2264,7 @@ MonoBehaviour:
       Data: 
     - Name: Effects
       Entry: 7
-      Data: 97|System.Collections.Generic.List`1[[Rollgeon.Effects.IEffect, Rollgeon]],
+      Data: 98|System.Collections.Generic.List`1[[Rollgeon.Effects.IEffect, Rollgeon]],
         mscorlib
     - Name: 
       Entry: 12
@@ -2189,7 +2310,7 @@ MonoBehaviour:
       Data: 
     - Name: 
       Entry: 7
-      Data: 98|Rollgeon.Feedback.FeedbackSequenceStep, Rollgeon
+      Data: 99|Rollgeon.Feedback.FeedbackSequenceStep, Rollgeon
     - Name: Source
       Entry: 3
       Data: 4
@@ -2213,13 +2334,13 @@ MonoBehaviour:
       Data: 1
     - Name: InlineEffects
       Entry: 7
-      Data: 99|Rollgeon.Effects.EffectData, Rollgeon
+      Data: 100|Rollgeon.Effects.EffectData, Rollgeon
     - Name: Label
       Entry: 1
       Data: Damage on impact
     - Name: PreConditions
       Entry: 7
-      Data: 100|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
+      Data: 101|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
         Rollgeon]], mscorlib
     - Name: 
       Entry: 12
@@ -2232,17 +2353,17 @@ MonoBehaviour:
       Data: 
     - Name: Effects
       Entry: 7
-      Data: 101|System.Collections.Generic.List`1[[Rollgeon.Effects.IEffect, Rollgeon]],
+      Data: 102|System.Collections.Generic.List`1[[Rollgeon.Effects.IEffect, Rollgeon]],
         mscorlib
     - Name: 
       Entry: 12
       Data: 1
     - Name: 
       Entry: 7
-      Data: 102|Rollgeon.Effects.Concretes.EffDealDamage, Rollgeon
+      Data: 103|Rollgeon.Effects.Concretes.EffDealDamage, Rollgeon
     - Name: Selection
       Entry: 7
-      Data: 103|Rollgeon.Effects.Selection.SelectionSettings, Rollgeon
+      Data: 104|Rollgeon.Effects.Selection.SelectionSettings, Rollgeon
     - Name: SlotState
       Entry: 3
       Data: 1
@@ -2290,7 +2411,7 @@ MonoBehaviour:
       Data: 
     - Name: PatternFlat
       Entry: 9
-      Data: 92
+      Data: 93
     - Name: IsConstantSelectionCount
       Entry: 5
       Data: true
@@ -2371,7 +2492,7 @@ MonoBehaviour:
       Data: 
     - Name: 
       Entry: 7
-      Data: 104|Rollgeon.Feedback.FeedbackSequenceStep, Rollgeon
+      Data: 105|Rollgeon.Feedback.FeedbackSequenceStep, Rollgeon
     - Name: Source
       Entry: 3
       Data: 0
@@ -2395,13 +2516,13 @@ MonoBehaviour:
       Data: 1
     - Name: InlineEffects
       Entry: 7
-      Data: 105|Rollgeon.Effects.EffectData, Rollgeon
+      Data: 106|Rollgeon.Effects.EffectData, Rollgeon
     - Name: Label
       Entry: 1
       Data: Effect Group
     - Name: PreConditions
       Entry: 7
-      Data: 106|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
+      Data: 107|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
         Rollgeon]], mscorlib
     - Name: 
       Entry: 12
@@ -2414,7 +2535,7 @@ MonoBehaviour:
       Data: 
     - Name: Effects
       Entry: 7
-      Data: 107|System.Collections.Generic.List`1[[Rollgeon.Effects.IEffect, Rollgeon]],
+      Data: 108|System.Collections.Generic.List`1[[Rollgeon.Effects.IEffect, Rollgeon]],
         mscorlib
     - Name: 
       Entry: 12
@@ -2460,7 +2581,7 @@ MonoBehaviour:
       Data: 
     - Name: 
       Entry: 7
-      Data: 108|Rollgeon.Feedback.FeedbackSequenceStep, Rollgeon
+      Data: 109|Rollgeon.Feedback.FeedbackSequenceStep, Rollgeon
     - Name: Source
       Entry: 3
       Data: 0
@@ -2484,13 +2605,13 @@ MonoBehaviour:
       Data: 1
     - Name: InlineEffects
       Entry: 7
-      Data: 109|Rollgeon.Effects.EffectData, Rollgeon
+      Data: 110|Rollgeon.Effects.EffectData, Rollgeon
     - Name: Label
       Entry: 1
       Data: Effect Group
     - Name: PreConditions
       Entry: 7
-      Data: 110|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
+      Data: 111|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
         Rollgeon]], mscorlib
     - Name: 
       Entry: 12
@@ -2503,7 +2624,7 @@ MonoBehaviour:
       Data: 
     - Name: Effects
       Entry: 7
-      Data: 111|System.Collections.Generic.List`1[[Rollgeon.Effects.IEffect, Rollgeon]],
+      Data: 112|System.Collections.Generic.List`1[[Rollgeon.Effects.IEffect, Rollgeon]],
         mscorlib
     - Name: 
       Entry: 12
@@ -2549,7 +2670,7 @@ MonoBehaviour:
       Data: 
     - Name: 
       Entry: 7
-      Data: 112|Rollgeon.Feedback.FeedbackSequenceStep, Rollgeon
+      Data: 113|Rollgeon.Feedback.FeedbackSequenceStep, Rollgeon
     - Name: Source
       Entry: 3
       Data: 0
@@ -2573,13 +2694,13 @@ MonoBehaviour:
       Data: 1
     - Name: InlineEffects
       Entry: 7
-      Data: 113|Rollgeon.Effects.EffectData, Rollgeon
+      Data: 114|Rollgeon.Effects.EffectData, Rollgeon
     - Name: Label
       Entry: 1
       Data: Effect Group
     - Name: PreConditions
       Entry: 7
-      Data: 114|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
+      Data: 115|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
         Rollgeon]], mscorlib
     - Name: 
       Entry: 12
@@ -2592,7 +2713,7 @@ MonoBehaviour:
       Data: 
     - Name: Effects
       Entry: 7
-      Data: 115|System.Collections.Generic.List`1[[Rollgeon.Effects.IEffect, Rollgeon]],
+      Data: 116|System.Collections.Generic.List`1[[Rollgeon.Effects.IEffect, Rollgeon]],
         mscorlib
     - Name: 
       Entry: 12
@@ -2638,7 +2759,7 @@ MonoBehaviour:
       Data: 
     - Name: 
       Entry: 7
-      Data: 116|Rollgeon.Feedback.FeedbackSequenceStep, Rollgeon
+      Data: 117|Rollgeon.Feedback.FeedbackSequenceStep, Rollgeon
     - Name: Source
       Entry: 3
       Data: 0
@@ -2662,13 +2783,13 @@ MonoBehaviour:
       Data: 1
     - Name: InlineEffects
       Entry: 7
-      Data: 117|Rollgeon.Effects.EffectData, Rollgeon
+      Data: 118|Rollgeon.Effects.EffectData, Rollgeon
     - Name: Label
       Entry: 1
       Data: Effect Group
     - Name: PreConditions
       Entry: 7
-      Data: 118|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
+      Data: 119|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
         Rollgeon]], mscorlib
     - Name: 
       Entry: 12
@@ -2681,7 +2802,7 @@ MonoBehaviour:
       Data: 
     - Name: Effects
       Entry: 7
-      Data: 119|System.Collections.Generic.List`1[[Rollgeon.Effects.IEffect, Rollgeon]],
+      Data: 120|System.Collections.Generic.List`1[[Rollgeon.Effects.IEffect, Rollgeon]],
         mscorlib
     - Name: 
       Entry: 12
@@ -2766,10 +2887,10 @@ MonoBehaviour:
       Data: 
     - Name: 
       Entry: 7
-      Data: 120|Rollgeon.Effects.Concretes.EffPlayFeedback, Rollgeon
+      Data: 121|Rollgeon.Effects.Concretes.EffPlayFeedback, Rollgeon
     - Name: Selection
       Entry: 7
-      Data: 121|Rollgeon.Effects.Selection.SelectionSettings, Rollgeon
+      Data: 122|Rollgeon.Effects.Selection.SelectionSettings, Rollgeon
     - Name: SlotState
       Entry: 3
       Data: 0
@@ -2817,7 +2938,7 @@ MonoBehaviour:
       Data: 
     - Name: PatternFlat
       Entry: 7
-      Data: 122|System.Boolean[], mscorlib
+      Data: 123|System.Boolean[], mscorlib
     - Name: 
       Entry: 14
       Data: 0
@@ -2853,10 +2974,10 @@ MonoBehaviour:
       Data: 
     - Name: 
       Entry: 7
-      Data: 123|Rollgeon.Effects.Concretes.EffPlayFeedback, Rollgeon
+      Data: 124|Rollgeon.Effects.Concretes.EffPlayFeedback, Rollgeon
     - Name: Selection
       Entry: 7
-      Data: 124|Rollgeon.Effects.Selection.SelectionSettings, Rollgeon
+      Data: 125|Rollgeon.Effects.Selection.SelectionSettings, Rollgeon
     - Name: SlotState
       Entry: 3
       Data: 0
@@ -2904,7 +3025,7 @@ MonoBehaviour:
       Data: 
     - Name: PatternFlat
       Entry: 7
-      Data: 125|System.Boolean[], mscorlib
+      Data: 126|System.Boolean[], mscorlib
     - Name: 
       Entry: 14
       Data: 0
@@ -2940,10 +3061,10 @@ MonoBehaviour:
       Data: 
     - Name: 
       Entry: 7
-      Data: 126|Rollgeon.Effects.Concretes.EffPlayFeedback, Rollgeon
+      Data: 127|Rollgeon.Effects.Concretes.EffPlayFeedback, Rollgeon
     - Name: Selection
       Entry: 7
-      Data: 127|Rollgeon.Effects.Selection.SelectionSettings, Rollgeon
+      Data: 128|Rollgeon.Effects.Selection.SelectionSettings, Rollgeon
     - Name: SlotState
       Entry: 3
       Data: 0
@@ -2991,7 +3112,7 @@ MonoBehaviour:
       Data: 
     - Name: PatternFlat
       Entry: 7
-      Data: 128|System.Boolean[], mscorlib
+      Data: 129|System.Boolean[], mscorlib
     - Name: 
       Entry: 14
       Data: 0
@@ -3048,7 +3169,7 @@ MonoBehaviour:
       Data: 
     - Name: 
       Entry: 7
-      Data: 129|Rollgeon.Heroes.HeroActionBehavior, Rollgeon
+      Data: 130|Rollgeon.Heroes.HeroActionBehavior, Rollgeon
     - Name: Trigger
       Entry: 3
       Data: 0
@@ -3078,7 +3199,7 @@ MonoBehaviour:
       Data: 0
     - Name: ShowConditions
       Entry: 7
-      Data: 130|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
+      Data: 131|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
         Rollgeon]], mscorlib
     - Name: 
       Entry: 12
@@ -3091,27 +3212,27 @@ MonoBehaviour:
       Data: 
     - Name: Effects
       Entry: 7
-      Data: 131|System.Collections.Generic.List`1[[Rollgeon.Effects.EffectData, Rollgeon]],
+      Data: 132|System.Collections.Generic.List`1[[Rollgeon.Effects.EffectData, Rollgeon]],
         mscorlib
     - Name: 
       Entry: 12
       Data: 1
     - Name: 
       Entry: 7
-      Data: 132|Rollgeon.Effects.EffectData, Rollgeon
+      Data: 133|Rollgeon.Effects.EffectData, Rollgeon
     - Name: Label
       Entry: 1
       Data: Effect Group
     - Name: PreConditions
       Entry: 7
-      Data: 133|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
+      Data: 134|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
         Rollgeon]], mscorlib
     - Name: 
       Entry: 12
       Data: 1
     - Name: 
       Entry: 7
-      Data: 134|Rollgeon.PreConditions.Concretes.PCHasInventoryItem, Rollgeon
+      Data: 135|Rollgeon.PreConditions.Concretes.PCHasInventoryItem, Rollgeon
     - Name: _isConstantValue
       Entry: 5
       Data: true
@@ -3129,17 +3250,17 @@ MonoBehaviour:
       Data: 
     - Name: Effects
       Entry: 7
-      Data: 135|System.Collections.Generic.List`1[[Rollgeon.Effects.IEffect, Rollgeon]],
+      Data: 136|System.Collections.Generic.List`1[[Rollgeon.Effects.IEffect, Rollgeon]],
         mscorlib
     - Name: 
       Entry: 12
       Data: 3
     - Name: 
       Entry: 7
-      Data: 136|Rollgeon.Effects.Concretes.EffRemoveInventoryItem, Rollgeon
+      Data: 137|Rollgeon.Effects.Concretes.EffRemoveInventoryItem, Rollgeon
     - Name: Selection
       Entry: 7
-      Data: 137|Rollgeon.Effects.Selection.SelectionSettings, Rollgeon
+      Data: 138|Rollgeon.Effects.Selection.SelectionSettings, Rollgeon
     - Name: SlotState
       Entry: 3
       Data: 0
@@ -3187,7 +3308,7 @@ MonoBehaviour:
       Data: 
     - Name: PatternFlat
       Entry: 7
-      Data: 138|System.Boolean[], mscorlib
+      Data: 139|System.Boolean[], mscorlib
     - Name: 
       Entry: 14
       Data: 0
@@ -3223,10 +3344,10 @@ MonoBehaviour:
       Data: 
     - Name: 
       Entry: 7
-      Data: 139|Rollgeon.Effects.Concretes.EffHeal, Rollgeon
+      Data: 140|Rollgeon.Effects.Concretes.EffHeal, Rollgeon
     - Name: Selection
       Entry: 7
-      Data: 140|Rollgeon.Effects.Selection.SelectionSettings, Rollgeon
+      Data: 141|Rollgeon.Effects.Selection.SelectionSettings, Rollgeon
     - Name: SlotState
       Entry: 3
       Data: 0
@@ -3274,7 +3395,7 @@ MonoBehaviour:
       Data: 
     - Name: PatternFlat
       Entry: 7
-      Data: 141|System.Boolean[], mscorlib
+      Data: 142|System.Boolean[], mscorlib
     - Name: 
       Entry: 14
       Data: 0
@@ -3355,10 +3476,10 @@ MonoBehaviour:
       Data: 
     - Name: 
       Entry: 7
-      Data: 142|Rollgeon.Effects.Concretes.EffPlayFeedback, Rollgeon
+      Data: 143|Rollgeon.Effects.Concretes.EffPlayFeedback, Rollgeon
     - Name: Selection
       Entry: 7
-      Data: 143|Rollgeon.Effects.Selection.SelectionSettings, Rollgeon
+      Data: 144|Rollgeon.Effects.Selection.SelectionSettings, Rollgeon
     - Name: SlotState
       Entry: 3
       Data: 0
@@ -3406,7 +3527,7 @@ MonoBehaviour:
       Data: 
     - Name: PatternFlat
       Entry: 7
-      Data: 144|System.Boolean[], mscorlib
+      Data: 145|System.Boolean[], mscorlib
     - Name: 
       Entry: 14
       Data: 0
@@ -3463,7 +3584,7 @@ MonoBehaviour:
       Data: 
     - Name: 
       Entry: 7
-      Data: 145|Rollgeon.Heroes.HeroActionBehavior, Rollgeon
+      Data: 146|Rollgeon.Heroes.HeroActionBehavior, Rollgeon
     - Name: Trigger
       Entry: 3
       Data: 0
@@ -3493,14 +3614,14 @@ MonoBehaviour:
       Data: 0
     - Name: ShowConditions
       Entry: 7
-      Data: 146|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
+      Data: 147|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
         Rollgeon]], mscorlib
     - Name: 
       Entry: 12
       Data: 1
     - Name: 
       Entry: 7
-      Data: 147|Rollgeon.PreConditions.Concretes.PCAdjacentToDoor, Rollgeon
+      Data: 148|Rollgeon.PreConditions.Concretes.PCAdjacentToDoor, Rollgeon
     - Name: _isConstantValue
       Entry: 5
       Data: true
@@ -3515,20 +3636,20 @@ MonoBehaviour:
       Data: 
     - Name: Effects
       Entry: 7
-      Data: 148|System.Collections.Generic.List`1[[Rollgeon.Effects.EffectData, Rollgeon]],
+      Data: 149|System.Collections.Generic.List`1[[Rollgeon.Effects.EffectData, Rollgeon]],
         mscorlib
     - Name: 
       Entry: 12
       Data: 1
     - Name: 
       Entry: 7
-      Data: 149|Rollgeon.Effects.EffectData, Rollgeon
+      Data: 150|Rollgeon.Effects.EffectData, Rollgeon
     - Name: Label
       Entry: 1
       Data: Effect Group
     - Name: PreConditions
       Entry: 7
-      Data: 150|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
+      Data: 151|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
         Rollgeon]], mscorlib
     - Name: 
       Entry: 12
@@ -3541,17 +3662,17 @@ MonoBehaviour:
       Data: 
     - Name: Effects
       Entry: 7
-      Data: 151|System.Collections.Generic.List`1[[Rollgeon.Effects.IEffect, Rollgeon]],
+      Data: 152|System.Collections.Generic.List`1[[Rollgeon.Effects.IEffect, Rollgeon]],
         mscorlib
     - Name: 
       Entry: 12
       Data: 1
     - Name: 
       Entry: 7
-      Data: 152|Rollgeon.Effects.Concretes.EffPassDoor, Rollgeon
+      Data: 153|Rollgeon.Effects.Concretes.EffPassDoor, Rollgeon
     - Name: Selection
       Entry: 7
-      Data: 153|Rollgeon.Effects.Selection.SelectionSettings, Rollgeon
+      Data: 154|Rollgeon.Effects.Selection.SelectionSettings, Rollgeon
     - Name: SlotState
       Entry: 3
       Data: 2
@@ -3599,7 +3720,7 @@ MonoBehaviour:
       Data: 
     - Name: PatternFlat
       Entry: 7
-      Data: 154|System.Boolean[], mscorlib
+      Data: 155|System.Boolean[], mscorlib
     - Name: 
       Entry: 14
       Data: 0
@@ -3653,7 +3774,7 @@ MonoBehaviour:
       Data: 
     - Name: 
       Entry: 7
-      Data: 155|Rollgeon.Heroes.HeroActionBehavior, Rollgeon
+      Data: 156|Rollgeon.Heroes.HeroActionBehavior, Rollgeon
     - Name: Trigger
       Entry: 3
       Data: 0
@@ -3683,14 +3804,14 @@ MonoBehaviour:
       Data: 0
     - Name: ShowConditions
       Entry: 7
-      Data: 156|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
+      Data: 157|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
         Rollgeon]], mscorlib
     - Name: 
       Entry: 12
       Data: 1
     - Name: 
       Entry: 7
-      Data: 157|Rollgeon.PreConditions.Concretes.PCAdjacentToDoor, Rollgeon
+      Data: 158|Rollgeon.PreConditions.Concretes.PCAdjacentToDoor, Rollgeon
     - Name: _isConstantValue
       Entry: 5
       Data: true
@@ -3705,20 +3826,20 @@ MonoBehaviour:
       Data: 
     - Name: Effects
       Entry: 7
-      Data: 158|System.Collections.Generic.List`1[[Rollgeon.Effects.EffectData, Rollgeon]],
+      Data: 159|System.Collections.Generic.List`1[[Rollgeon.Effects.EffectData, Rollgeon]],
         mscorlib
     - Name: 
       Entry: 12
       Data: 1
     - Name: 
       Entry: 7
-      Data: 159|Rollgeon.Effects.EffectData, Rollgeon
+      Data: 160|Rollgeon.Effects.EffectData, Rollgeon
     - Name: Label
       Entry: 1
       Data: Effect Group
     - Name: PreConditions
       Entry: 7
-      Data: 160|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
+      Data: 161|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
         Rollgeon]], mscorlib
     - Name: 
       Entry: 12
@@ -3731,17 +3852,17 @@ MonoBehaviour:
       Data: 
     - Name: Effects
       Entry: 7
-      Data: 161|System.Collections.Generic.List`1[[Rollgeon.Effects.IEffect, Rollgeon]],
+      Data: 162|System.Collections.Generic.List`1[[Rollgeon.Effects.IEffect, Rollgeon]],
         mscorlib
     - Name: 
       Entry: 12
       Data: 1
     - Name: 
       Entry: 7
-      Data: 162|Rollgeon.Effects.Concretes.EffForceDoor, Rollgeon
+      Data: 163|Rollgeon.Effects.Concretes.EffForceDoor, Rollgeon
     - Name: Selection
       Entry: 7
-      Data: 163|Rollgeon.Effects.Selection.SelectionSettings, Rollgeon
+      Data: 164|Rollgeon.Effects.Selection.SelectionSettings, Rollgeon
     - Name: SlotState
       Entry: 3
       Data: 1
@@ -3789,7 +3910,7 @@ MonoBehaviour:
       Data: 
     - Name: PatternFlat
       Entry: 7
-      Data: 164|System.Boolean[], mscorlib
+      Data: 165|System.Boolean[], mscorlib
     - Name: 
       Entry: 14
       Data: 0
@@ -3849,7 +3970,7 @@ MonoBehaviour:
       Data: 
     - Name: 
       Entry: 7
-      Data: 165|Rollgeon.Heroes.HeroActionBehavior, Rollgeon
+      Data: 166|Rollgeon.Heroes.HeroActionBehavior, Rollgeon
     - Name: Trigger
       Entry: 3
       Data: 1
@@ -3879,7 +4000,7 @@ MonoBehaviour:
       Data: 2
     - Name: ShowConditions
       Entry: 7
-      Data: 166|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
+      Data: 167|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
         Rollgeon]], mscorlib
     - Name: 
       Entry: 12
@@ -3892,20 +4013,20 @@ MonoBehaviour:
       Data: 
     - Name: Effects
       Entry: 7
-      Data: 167|System.Collections.Generic.List`1[[Rollgeon.Effects.EffectData, Rollgeon]],
+      Data: 168|System.Collections.Generic.List`1[[Rollgeon.Effects.EffectData, Rollgeon]],
         mscorlib
     - Name: 
       Entry: 12
       Data: 1
     - Name: 
       Entry: 7
-      Data: 168|Rollgeon.Effects.EffectData, Rollgeon
+      Data: 169|Rollgeon.Effects.EffectData, Rollgeon
     - Name: Label
       Entry: 1
       Data: Defense
     - Name: PreConditions
       Entry: 7
-      Data: 169|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
+      Data: 170|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
         Rollgeon]], mscorlib
     - Name: 
       Entry: 12
@@ -3918,17 +4039,17 @@ MonoBehaviour:
       Data: 
     - Name: Effects
       Entry: 7
-      Data: 170|System.Collections.Generic.List`1[[Rollgeon.Effects.IEffect, Rollgeon]],
+      Data: 171|System.Collections.Generic.List`1[[Rollgeon.Effects.IEffect, Rollgeon]],
         mscorlib
     - Name: 
       Entry: 12
       Data: 1
     - Name: 
       Entry: 7
-      Data: 171|Rollgeon.Effects.Concretes.EffChain, Rollgeon
+      Data: 172|Rollgeon.Effects.Concretes.EffChain, Rollgeon
     - Name: Selection
       Entry: 7
-      Data: 172|Rollgeon.Effects.Selection.SelectionSettings, Rollgeon
+      Data: 173|Rollgeon.Effects.Selection.SelectionSettings, Rollgeon
     - Name: SlotState
       Entry: 3
       Data: 1
@@ -3976,7 +4097,7 @@ MonoBehaviour:
       Data: 
     - Name: PatternFlat
       Entry: 7
-      Data: 173|System.Boolean[], mscorlib
+      Data: 174|System.Boolean[], mscorlib
     - Name: 
       Entry: 14
       Data: 1
@@ -4009,26 +4130,26 @@ MonoBehaviour:
       Data: 
     - Name: Phases
       Entry: 7
-      Data: 174|System.Collections.Generic.List`1[[Rollgeon.Effects.ChainPhase, Rollgeon]],
+      Data: 175|System.Collections.Generic.List`1[[Rollgeon.Effects.ChainPhase, Rollgeon]],
         mscorlib
     - Name: 
       Entry: 12
       Data: 1
     - Name: 
       Entry: 7
-      Data: 175|Rollgeon.Effects.ChainPhase, Rollgeon
+      Data: 176|Rollgeon.Effects.ChainPhase, Rollgeon
     - Name: Label
       Entry: 1
       Data: Shield
     - Name: Effects
       Entry: 7
-      Data: 176|Rollgeon.Effects.EffectData, Rollgeon
+      Data: 177|Rollgeon.Effects.EffectData, Rollgeon
     - Name: Label
       Entry: 1
       Data: Effect Group
     - Name: PreConditions
       Entry: 7
-      Data: 177|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
+      Data: 178|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
         Rollgeon]], mscorlib
     - Name: 
       Entry: 12
@@ -4041,17 +4162,17 @@ MonoBehaviour:
       Data: 
     - Name: Effects
       Entry: 7
-      Data: 178|System.Collections.Generic.List`1[[Rollgeon.Effects.IEffect, Rollgeon]],
+      Data: 179|System.Collections.Generic.List`1[[Rollgeon.Effects.IEffect, Rollgeon]],
         mscorlib
     - Name: 
       Entry: 12
       Data: 2
     - Name: 
       Entry: 7
-      Data: 179|Rollgeon.Effects.Concretes.EffAddShield, Rollgeon
+      Data: 180|Rollgeon.Effects.Concretes.EffAddShield, Rollgeon
     - Name: Selection
       Entry: 7
-      Data: 180|Rollgeon.Effects.Selection.SelectionSettings, Rollgeon
+      Data: 181|Rollgeon.Effects.Selection.SelectionSettings, Rollgeon
     - Name: SlotState
       Entry: 3
       Data: 0
@@ -4099,7 +4220,7 @@ MonoBehaviour:
       Data: 
     - Name: PatternFlat
       Entry: 7
-      Data: 181|System.Boolean[], mscorlib
+      Data: 182|System.Boolean[], mscorlib
     - Name: 
       Entry: 14
       Data: 0
@@ -4147,10 +4268,10 @@ MonoBehaviour:
       Data: 
     - Name: 
       Entry: 7
-      Data: 182|Rollgeon.Effects.Concretes.EffPlayFeedback, Rollgeon
+      Data: 183|Rollgeon.Effects.Concretes.EffPlayFeedback, Rollgeon
     - Name: Selection
       Entry: 7
-      Data: 183|Rollgeon.Effects.Selection.SelectionSettings, Rollgeon
+      Data: 184|Rollgeon.Effects.Selection.SelectionSettings, Rollgeon
     - Name: SlotState
       Entry: 3
       Data: 0
@@ -4198,7 +4319,7 @@ MonoBehaviour:
       Data: 
     - Name: PatternFlat
       Entry: 7
-      Data: 184|System.Boolean[], mscorlib
+      Data: 185|System.Boolean[], mscorlib
     - Name: 
       Entry: 14
       Data: 0
@@ -4324,6 +4445,25 @@ MonoBehaviour:
       ShieldBase: 90
     - ComboId: combo.brute_force
       ShieldBase: 5
+    HealBaseTable:
+    - ComboId: combo.pair
+      HealBase: 8
+    - ComboId: combo.higher_number
+      HealBase: 5
+    - ComboId: combo.double_pair
+      HealBase: 15
+    - ComboId: combo.trio
+      HealBase: 22
+    - ComboId: combo.full_house
+      HealBase: 35
+    - ComboId: combo.ladder
+      HealBase: 45
+    - ComboId: combo.poker
+      HealBase: 60
+    - ComboId: combo.generala
+      HealBase: 90
+    - ComboId: combo.brute_force
+      HealBase: 5
   VisualPrefab: {fileID: 34603293247297731, guid: 3df3062a618028c41961bcdaffb0c069, type: 3}
   PhaseBehaviors:
   - Trigger: 0
@@ -4337,7 +4477,7 @@ MonoBehaviour:
     BoardType: 0
     ShowConditions: []
     Effects:
-    - rid: 3216492003629990165
+    - rid: 144068399694086650
   - Trigger: 0
     AllowedPhases: -5
     ActionName: ExpMovement
@@ -4349,7 +4489,7 @@ MonoBehaviour:
     BoardType: 0
     ShowConditions: []
     Effects:
-    - rid: 3216492003629990166
+    - rid: 144068399694086651
   - Trigger: 0
     AllowedPhases: -3
     ActionName: Base Attack
@@ -4361,7 +4501,7 @@ MonoBehaviour:
     BoardType: 1
     ShowConditions: []
     Effects:
-    - rid: 3216492003629990167
+    - rid: 144068399694086652
   - Trigger: 0
     AllowedPhases: -3
     ActionName: Special Attack
@@ -4373,7 +4513,7 @@ MonoBehaviour:
     BoardType: 1
     ShowConditions: []
     Effects:
-    - rid: 3216492003629990168
+    - rid: 144068399694086653
   - Trigger: 0
     AllowedPhases: -1
     ActionName: Healing
@@ -4385,7 +4525,7 @@ MonoBehaviour:
     BoardType: 0
     ShowConditions: []
     Effects:
-    - rid: 3216492003629990169
+    - rid: 144068399694086654
   - Trigger: 0
     AllowedPhases: -5
     ActionName: Pass door
@@ -4396,9 +4536,9 @@ MonoBehaviour:
     AllowsReroll: 0
     BoardType: 0
     ShowConditions:
-    - rid: 3216492003629990170
+    - rid: 144068399694086655
     Effects:
-    - rid: 3216492003629990171
+    - rid: 144068399694086656
   - Trigger: 0
     AllowedPhases: -3
     ActionName: Force Door
@@ -4409,9 +4549,9 @@ MonoBehaviour:
     AllowsReroll: 1
     BoardType: 0
     ShowConditions:
-    - rid: 3216492003629990172
+    - rid: 144068399694086657
     Effects:
-    - rid: 3216492003629990173
+    - rid: 144068399694086658
   - Trigger: 1
     AllowedPhases: -3
     ActionName: Defense
@@ -4423,7 +4563,7 @@ MonoBehaviour:
     BoardType: 2
     ShowConditions: []
     Effects:
-    - rid: 3216492003629990174
+    - rid: 144068399694086659
   BaseMaxHp: 100
   BaseSpeed: 5
   BaseAttack: 5
@@ -4439,96 +4579,96 @@ MonoBehaviour:
     RefIds:
     - rid: -2
       type: {class: , ns: , asm: }
-    - rid: 3216492003629990165
+    - rid: 144068399694086650
       type: {class: EffectData, ns: Rollgeon.Effects, asm: Rollgeon}
       data:
         Label: Effect Group
         PreConditions: []
         Effects:
-        - rid: 3216492003629990175
+        - rid: 144068399694086660
         TargetSelector:
           rid: -2
-    - rid: 3216492003629990166
+    - rid: 144068399694086651
       type: {class: EffectData, ns: Rollgeon.Effects, asm: Rollgeon}
       data:
         Label: Effect Group
         PreConditions: []
         Effects:
-        - rid: 3216492003629990176
+        - rid: 144068399694086661
         TargetSelector:
           rid: -2
-    - rid: 3216492003629990167
+    - rid: 144068399694086652
       type: {class: EffectData, ns: Rollgeon.Effects, asm: Rollgeon}
       data:
         Label: Effect Group
         PreConditions: []
         Effects:
-        - rid: 3216492003629990177
-        - rid: 3216492003629990178
-        - rid: 3216492003629990179
-        - rid: 3216492003629990180
+        - rid: 144068399694086662
+        - rid: 144068399694086663
+        - rid: 144068399694086664
+        - rid: 144068399694086665
         TargetSelector:
           rid: -2
-    - rid: 3216492003629990168
+    - rid: 144068399694086653
       type: {class: EffectData, ns: Rollgeon.Effects, asm: Rollgeon}
       data:
         Label: Effect Group
         PreConditions: []
         Effects:
-        - rid: 3216492003629990181
-        - rid: 3216492003629990182
-        - rid: 3216492003629990183
-        - rid: 3216492003629990184
+        - rid: 144068399694086666
+        - rid: 144068399694086667
+        - rid: 144068399694086668
+        - rid: 144068399694086669
         TargetSelector:
           rid: -2
-    - rid: 3216492003629990169
+    - rid: 144068399694086654
       type: {class: EffectData, ns: Rollgeon.Effects, asm: Rollgeon}
       data:
         Label: Effect Group
         PreConditions:
-        - rid: 3216492003629990185
+        - rid: 144068399694086670
         Effects:
-        - rid: 3216492003629990186
-        - rid: 3216492003629990187
-        - rid: 3216492003629990188
+        - rid: 144068399694086671
+        - rid: 144068399694086672
+        - rid: 144068399694086673
         TargetSelector:
           rid: -2
-    - rid: 3216492003629990170
+    - rid: 144068399694086655
       type: {class: PCAdjacentToDoor, ns: Rollgeon.PreConditions.Concretes, asm: Rollgeon}
       data:
         _isConstantValue: 1
-    - rid: 3216492003629990171
+    - rid: 144068399694086656
       type: {class: EffectData, ns: Rollgeon.Effects, asm: Rollgeon}
       data:
         Label: Effect Group
         PreConditions: []
         Effects:
-        - rid: 3216492003629990189
+        - rid: 144068399694086674
         TargetSelector:
           rid: -2
-    - rid: 3216492003629990172
+    - rid: 144068399694086657
       type: {class: PCAdjacentToDoor, ns: Rollgeon.PreConditions.Concretes, asm: Rollgeon}
       data:
         _isConstantValue: 1
-    - rid: 3216492003629990173
+    - rid: 144068399694086658
       type: {class: EffectData, ns: Rollgeon.Effects, asm: Rollgeon}
       data:
         Label: Effect Group
         PreConditions: []
         Effects:
-        - rid: 3216492003629990190
+        - rid: 144068399694086675
         TargetSelector:
           rid: -2
-    - rid: 3216492003629990174
+    - rid: 144068399694086659
       type: {class: EffectData, ns: Rollgeon.Effects, asm: Rollgeon}
       data:
         Label: Defense
         PreConditions: []
         Effects:
-        - rid: 3216492003629990191
+        - rid: 144068399694086676
         TargetSelector:
           rid: -2
-    - rid: 3216492003629990175
+    - rid: 144068399694086660
       type: {class: EffMove, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
       data:
         Selection:
@@ -4551,7 +4691,7 @@ MonoBehaviour:
             rid: -2
           AutoResolve: 0
           AutoAccept: 1
-    - rid: 3216492003629990176
+    - rid: 144068399694086661
       type: {class: EffMove, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
       data:
         Selection:
@@ -4574,7 +4714,7 @@ MonoBehaviour:
             rid: -2
           AutoResolve: 0
           AutoAccept: 1
-    - rid: 3216492003629990177
+    - rid: 144068399694086662
       type: {class: EffChain, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
       data:
         Selection:
@@ -4598,8 +4738,8 @@ MonoBehaviour:
           AutoResolve: 0
           AutoAccept: 1
         Phases:
-        - rid: 3216492003629990192
-    - rid: 3216492003629990178
+        - rid: 144068399694086677
+    - rid: 144068399694086663
       type: {class: EffPlayFeedback, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
       data:
         Selection:
@@ -4623,7 +4763,7 @@ MonoBehaviour:
           AutoResolve: 0
           AutoAccept: 0
         _feedbackId: hit.basic
-    - rid: 3216492003629990179
+    - rid: 144068399694086664
       type: {class: EffPlayFeedback, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
       data:
         Selection:
@@ -4647,7 +4787,7 @@ MonoBehaviour:
           AutoResolve: 0
           AutoAccept: 0
         _feedbackId: hit.impulse
-    - rid: 3216492003629990180
+    - rid: 144068399694086665
       type: {class: EffPlayFeedback, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
       data:
         Selection:
@@ -4671,7 +4811,7 @@ MonoBehaviour:
           AutoResolve: 0
           AutoAccept: 0
         _feedbackId: sfx.hit
-    - rid: 3216492003629990181
+    - rid: 144068399694086666
       type: {class: EffChain, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
       data:
         Selection:
@@ -4695,8 +4835,8 @@ MonoBehaviour:
           AutoResolve: 0
           AutoAccept: 1
         Phases:
-        - rid: 3216492003629990193
-    - rid: 3216492003629990182
+        - rid: 144068399694086678
+    - rid: 144068399694086667
       type: {class: EffPlayFeedback, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
       data:
         Selection:
@@ -4720,7 +4860,7 @@ MonoBehaviour:
           AutoResolve: 0
           AutoAccept: 0
         _feedbackId: hit.basic
-    - rid: 3216492003629990183
+    - rid: 144068399694086668
       type: {class: EffPlayFeedback, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
       data:
         Selection:
@@ -4744,7 +4884,7 @@ MonoBehaviour:
           AutoResolve: 0
           AutoAccept: 0
         _feedbackId: hit.impulse
-    - rid: 3216492003629990184
+    - rid: 144068399694086669
       type: {class: EffPlayFeedback, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
       data:
         Selection:
@@ -4768,12 +4908,12 @@ MonoBehaviour:
           AutoResolve: 0
           AutoAccept: 0
         _feedbackId: sfx.hit
-    - rid: 3216492003629990185
+    - rid: 144068399694086670
       type: {class: PCHasInventoryItem, ns: Rollgeon.PreConditions.Concretes, asm: Rollgeon}
       data:
         _isConstantValue: 1
         ItemId: potion.healing
-    - rid: 3216492003629990186
+    - rid: 144068399694086671
       type: {class: EffRemoveInventoryItem, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
       data:
         Selection:
@@ -4797,7 +4937,7 @@ MonoBehaviour:
           AutoResolve: 0
           AutoAccept: 1
         ItemId: potion.healing
-    - rid: 3216492003629990187
+    - rid: 144068399694086672
       type: {class: EffHeal, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
       data:
         Selection:
@@ -4837,7 +4977,7 @@ MonoBehaviour:
         _diceResultMultiplier: 0
         _sourceTag: 
         _selfHealOnNoTarget: 1
-    - rid: 3216492003629990188
+    - rid: 144068399694086673
       type: {class: EffPlayFeedback, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
       data:
         Selection:
@@ -4861,7 +5001,7 @@ MonoBehaviour:
           AutoResolve: 0
           AutoAccept: 0
         _feedbackId: heal.basic
-    - rid: 3216492003629990189
+    - rid: 144068399694086674
       type: {class: EffPassDoor, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
       data:
         Selection:
@@ -4884,7 +5024,7 @@ MonoBehaviour:
             rid: -2
           AutoResolve: 1
           AutoAccept: 1
-    - rid: 3216492003629990190
+    - rid: 144068399694086675
       type: {class: EffForceDoor, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
       data:
         Selection:
@@ -4909,7 +5049,7 @@ MonoBehaviour:
           AutoAccept: 1
         RequiredValue: 25
         EnemyHealPercentOnSuccess: 25
-    - rid: 3216492003629990191
+    - rid: 144068399694086676
       type: {class: EffChain, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
       data:
         Selection:
@@ -4933,60 +5073,60 @@ MonoBehaviour:
           AutoResolve: 0
           AutoAccept: 1
         Phases:
-        - rid: 3216492003629990194
-    - rid: 3216492003629990192
+        - rid: 144068399694086679
+    - rid: 144068399694086677
       type: {class: ChainPhase, ns: Rollgeon.Effects, asm: Rollgeon}
       data:
         Label: Attack
         Effects:
-          rid: 3216492003629990195
+          rid: 144068399694086680
         OverrideBoardType: 0
         BoardType: 0
-    - rid: 3216492003629990193
+    - rid: 144068399694086678
       type: {class: ChainPhase, ns: Rollgeon.Effects, asm: Rollgeon}
       data:
         Label: Attack
         Effects:
-          rid: 3216492003629990196
+          rid: 144068399694086681
         OverrideBoardType: 0
         BoardType: 0
-    - rid: 3216492003629990194
+    - rid: 144068399694086679
       type: {class: ChainPhase, ns: Rollgeon.Effects, asm: Rollgeon}
       data:
         Label: Shield
         Effects:
-          rid: 3216492003629990197
+          rid: 144068399694086682
         OverrideBoardType: 1
         BoardType: 2
-    - rid: 3216492003629990195
+    - rid: 144068399694086680
       type: {class: EffectData, ns: Rollgeon.Effects, asm: Rollgeon}
       data:
         Label: Effect Group
         PreConditions: []
         Effects:
-        - rid: 3216492003629990198
+        - rid: 144068399694086683
         TargetSelector:
           rid: -2
-    - rid: 3216492003629990196
+    - rid: 144068399694086681
       type: {class: EffectData, ns: Rollgeon.Effects, asm: Rollgeon}
       data:
         Label: Effect Group
         PreConditions: []
         Effects:
-        - rid: 3216492003629990199
+        - rid: 144068399694086684
         TargetSelector:
           rid: -2
-    - rid: 3216492003629990197
+    - rid: 144068399694086682
       type: {class: EffectData, ns: Rollgeon.Effects, asm: Rollgeon}
       data:
         Label: Effect Group
         PreConditions: []
         Effects:
-        - rid: 3216492003629990200
-        - rid: 3216492003629990201
+        - rid: 144068399694086685
+        - rid: 144068399694086686
         TargetSelector:
           rid: -2
-    - rid: 3216492003629990198
+    - rid: 144068399694086683
       type: {class: EffPlaySequence, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
       data:
         Selection:
@@ -5042,7 +5182,7 @@ MonoBehaviour:
             Label: Damage on impact
             PreConditions: []
             Effects:
-            - rid: 3216492003629990202
+            - rid: 144068399694086687
             TargetSelector:
               rid: -2
           StartMode: 3
@@ -5137,7 +5277,7 @@ MonoBehaviour:
           DurationOverride: 0
           EndOnEventKey: 
           BlockSequence: 1
-    - rid: 3216492003629990199
+    - rid: 144068399694086684
       type: {class: EffPlaySequence, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
       data:
         Selection:
@@ -5193,7 +5333,7 @@ MonoBehaviour:
             Label: Damage on impact
             PreConditions: []
             Effects:
-            - rid: 3216492003629990203
+            - rid: 144068399694086688
             TargetSelector:
               rid: -2
           StartMode: 3
@@ -5288,7 +5428,7 @@ MonoBehaviour:
           DurationOverride: 0
           EndOnEventKey: 
           BlockSequence: 1
-    - rid: 3216492003629990200
+    - rid: 144068399694086685
       type: {class: EffAddShield, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
       data:
         Selection:
@@ -5317,7 +5457,7 @@ MonoBehaviour:
         _reader:
           rid: -2
         _readerMultiplier: 1
-    - rid: 3216492003629990201
+    - rid: 144068399694086686
       type: {class: EffPlayFeedback, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
       data:
         Selection:
@@ -5341,7 +5481,7 @@ MonoBehaviour:
           AutoResolve: 0
           AutoAccept: 1
         _feedbackId: shield.basic
-    - rid: 3216492003629990202
+    - rid: 144068399694086687
       type: {class: EffDealDamage, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
       data:
         Selection:
@@ -5371,7 +5511,7 @@ MonoBehaviour:
           rid: -2
         _readerMultiplier: 0
         _attackKind: 1
-    - rid: 3216492003629990203
+    - rid: 144068399694086688
       type: {class: EffDealDamage, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
       data:
         Selection:

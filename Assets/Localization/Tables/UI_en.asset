@@ -374,8 +374,8 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 7800251719905294
-    m_Localized: 'Healing uses the dice too: throw them and beat the threshold to
-      recover health. Lock the high ones and confirm.'
+    m_Localized: 'Healing uses the dice too: form a combo to recover more health.
+      No combo? Your highest die heals you. Lock and confirm.'
     m_Metadata:
       m_Items: []
   - m_Id: 7800251719905295

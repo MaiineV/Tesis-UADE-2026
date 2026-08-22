@@ -29,6 +29,7 @@ namespace Rollgeon.Upgrades.Dice.Tests
         [TestCase(typeof(ComboExecutedTimesCondition), nameof(ComboExecutedTimesCondition.ComboId))]
         [TestCase(typeof(ComboBaseDamageEntry), nameof(ComboBaseDamageEntry.ComboId))]
         [TestCase(typeof(ComboShieldBaseEntry), nameof(ComboShieldBaseEntry.ComboId))]
+        [TestCase(typeof(ComboHealBaseEntry), nameof(ComboHealBaseEntry.ComboId))]
         public void AuthorableComboIdFields_CarryTheSharedDropdown(Type host, string fieldName)
         {
             var dropdown = host.GetField(fieldName)?.GetCustomAttribute<ValueDropdownAttribute>();

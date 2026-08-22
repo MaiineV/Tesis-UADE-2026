@@ -105,6 +105,15 @@ namespace Rollgeon.UI.Screens
         [SerializeField]
         private DiceBoardSkinView _boardSkin;
 
+        [Tooltip("Opcional — minimapa del panel derecho (oculto por default, Tab lo trae). " +
+                 "Se bindea aunque arranque oculto para estar fresco al togglear.")]
+        [SerializeField]
+        private MinimapView _combatMinimap;
+
+        [Tooltip("Opcional — switcher carrusel ↔ minimapa por Tab. Si null, no hay toggle.")]
+        [SerializeField]
+        private CombatRightPanelSwitcher _rightPanelSwitcher;
+
         [Title("Combat HUD — Damage Flash")]
         [SerializeField]
         [Tooltip("CanvasGroup que flashea cuando el player recibe dano (rojo breve).")]
@@ -374,6 +383,9 @@ namespace Rollgeon.UI.Screens
             // componente y su GameObject quedan, desactivados, como rollback.
             if (_activeItems != null) _activeItems.Bind(playerGuid);
 
+            if (_combatMinimap != null) _combatMinimap.Bind(playerGuid);
+            if (_rightPanelSwitcher != null) _rightPanelSwitcher.Bind();
+
             _subViewsBound = true;
         }
 
@@ -395,6 +407,8 @@ namespace Rollgeon.UI.Screens
             // bindeado por una versión anterior de la escena.
             if (_passiveBadge != null) _passiveBadge.Unbind();
             if (_activeItems != null) _activeItems.Unbind();
+            if (_combatMinimap != null) _combatMinimap.Unbind();
+            if (_rightPanelSwitcher != null) _rightPanelSwitcher.Unbind();
             _subViewsBound = false;
         }
 

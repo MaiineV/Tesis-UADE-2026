@@ -19,27 +19,23 @@ namespace Rollgeon.Combat.Actions
     /// </summary>
     /// <remarks>
     /// <para>
-    /// Mantiene el set de <see cref="ActionDefinitionSO.ActionId"/> ya usados en el
-    /// turno actual, y actua como gate uniforme para:
+    /// Gate uniforme de ejecucion de acciones:
     /// </para>
     /// <list type="number">
-    ///   <item>Repetition constraint (§12.6) — opt-in via <see cref="ActionDefinitionSO.BlockOnRepeat"/>.</item>
     ///   <item>Roll cost — las acciones directas (sin dados) cuestan 1 roll flat,
     ///         cobrado atomicamente por <see cref="IRollPoolService.TrySpendRolls"/>;
     ///         las acciones con dados se cobran por tirada en el handoff.</item>
     ///   <item>Ruleset override — hook para <c>RulesetSO.ForbiddenActionIds</c> (Balance#0101, stub hoy).</item>
     /// </list>
     /// <para>
-    /// <b>Lifecycle.</b> <see cref="Register"/> lo invoca <c>ServiceBootstrapSO</c> en el
-    /// bootstrap global; resuelve <see cref="IRollPoolService"/> y se registra a si mismo
-    /// en el <see cref="ServiceLocator"/>. Tambien suscribe <c>EventName.OnTurnStarted</c>
-    /// para limpiar el set entre turnos.
+    /// <b>Sin limite de acciones por turno.</b> Mientras queden rolls en el pool, cualquier
+    /// accion (incluido el movimiento) puede repetirse en el mismo turno. El unico
+    /// presupuesto del turno es el pool de rolls.
     /// </para>
     /// <para>
-    /// <b>Semantica del clear.</b> "Mismo turno" = entre dos <c>OnTurnStarted</c>
-    /// consecutivos. El TurnManager es unico global y no trackea per-actor; con el
-    /// ciclo player->enemy->player el set se limpia 2x por round, que es la semantica
-    /// correcta de "slot individual del actor activo". Ver plan §10 R4.
+    /// <b>Lifecycle.</b> <see cref="Register"/> lo invoca <c>ServiceBootstrapSO</c> en el
+    /// bootstrap global; resuelve <see cref="IRollPoolService"/> y se registra a si mismo
+    /// en el <see cref="ServiceLocator"/>.
     /// </para>
     /// </remarks>
     public sealed class TurnManager : IPreloadableService, IDisposable
@@ -47,9 +43,6 @@ namespace Rollgeon.Combat.Actions
         private IRollPoolService _rolls;
         private ActionCatalogSO _actions;
         private RulesetSO _ruleset;
-
-        private readonly HashSet<string> _actionsUsedThisTurn = new HashSet<string>();
-        private EventManager.EventReceiver _onTurnStartedHandler;
 
         /// <summary>Corre despues de <see cref="RollPoolService"/> (<c>Priority=50</c>).</summary>
         public int Priority => 60;
@@ -72,20 +65,13 @@ namespace Rollgeon.Combat.Actions
             ServiceLocator.TryGetService<ActionCatalogSO>(out _actions);
             ServiceLocator.TryGetService<RulesetSO>(out _ruleset);
 
-            _onTurnStartedHandler = OnTurnStartedExternal;
-            EventManager.Subscribe(EventName.OnTurnStarted, _onTurnStartedHandler);
-
             ServiceLocator.AddService<TurnManager>(this, ServiceScope.Global);
         }
 
         public void Dispose()
         {
-            if (_onTurnStartedHandler != null)
-            {
-                EventManager.UnSubscribe(EventName.OnTurnStarted, _onTurnStartedHandler);
-                _onTurnStartedHandler = null;
-            }
-            _actionsUsedThisTurn.Clear();
+            _feedbackWaitDepth = 0;
+            _feedbackContinuations.Clear();
         }
 
         // ======================================================================
@@ -94,8 +80,7 @@ namespace Rollgeon.Combat.Actions
 
         /// <summary>
         /// Constructor-like hook para EditMode tests: inyecta dependencias sin pasar
-        /// por <see cref="ServiceLocator"/>. Tambien suscribe el handler de
-        /// <c>OnTurnStarted</c> (igual que <see cref="Register"/> — minus el
+        /// por <see cref="ServiceLocator"/> (igual que <see cref="Register"/> — minus el
         /// <c>ServiceLocator.AddService</c>, que el test hace si lo necesita).
         /// </summary>
         public void ConfigureForTests(IRollPoolService rolls, ActionCatalogSO actions, RulesetSO ruleset)
@@ -103,9 +88,6 @@ namespace Rollgeon.Combat.Actions
             _rolls = rolls;
             _actions = actions;
             _ruleset = ruleset;
-
-            _onTurnStartedHandler = OnTurnStartedExternal;
-            EventManager.Subscribe(EventName.OnTurnStarted, _onTurnStartedHandler);
         }
 
         // ======================================================================
@@ -113,8 +95,8 @@ namespace Rollgeon.Combat.Actions
         // ======================================================================
 
         /// <summary>
-        /// Valida que <paramref name="action"/> se puede ejecutar ahora: ruleset permit,
-        /// no es repeat bloqueado, y hay al menos 1 roll en el pool. No muta ningun estado.
+        /// Valida que <paramref name="action"/> se puede ejecutar ahora: ruleset permit
+        /// y hay al menos 1 roll en el pool. No muta ningun estado.
         /// </summary>
         /// <param name="action">Definicion del catalogo. Null = rechazo con reason.</param>
         /// <param name="playerGuid">Actor que intenta ejecutar la accion.</param>
@@ -132,12 +114,6 @@ namespace Rollgeon.Combat.Actions
             if (IsForbiddenByRuleset(action.ActionId))
             {
                 reason = $"Action '{action.ActionId}' is forbidden by the active ruleset.";
-                return false;
-            }
-
-            if (action.BlockOnRepeat && _actionsUsedThisTurn.Contains(action.ActionId))
-            {
-                reason = $"Action '{action.ActionId}' already used this turn.";
                 return false;
             }
 
@@ -163,25 +139,23 @@ namespace Rollgeon.Combat.Actions
         }
 
         /// <summary>
-        /// Camino canonico de ejecucion: valida -> cobra 1 roll (en combate) -> ejecuta effect ->
-        /// marca usada. Dispatch del <see cref="ActionDefinitionSO.BackingAsset"/> es
+        /// Camino canonico de ejecucion: valida -> cobra 1 roll (en combate) -> ejecuta effect.
+        /// Dispatch del <see cref="ActionDefinitionSO.BackingAsset"/> es
         /// responsabilidad del caller externo (plan §10 R1).
         /// </summary>
         /// <remarks>
         /// <para>
         /// Si <see cref="ActionDefinitionSO.Effect"/> tiene efectos, los ejecuta via
-        /// <see cref="EffectData.TryExecute"/>; la accion se marca como usada solo si
-        /// el effect retorno true.
+        /// <see cref="EffectData.TryExecute"/> y devuelve su resultado.
         /// </para>
         /// <para>
         /// Si <see cref="ActionDefinitionSO.Effect"/> esta vacio, es un "permit no-op":
-        /// se cobra 1 roll, se marca usada, y se devuelve true — el dispatcher externo
+        /// se cobra 1 roll y se devuelve true — el dispatcher externo
         /// (ComboExecutor T97b / ItemSystem / AI) corre el <c>BackingAsset</c>.
         /// </para>
         /// <para>
         /// Si el effect retorna false, el roll <b>ya fue cobrado</b> (mismo patron del
-        /// pseudo-code del §12.6). La accion NO se marca como usada — el jugador puede
-        /// intentar otra accion pero perdio el roll.
+        /// pseudo-code del §12.6) — el jugador puede intentar otra accion pero perdio el roll.
         /// </para>
         /// </remarks>
         public bool TryExecute(ActionDefinitionSO action, Guid playerGuid, EffectContext ctx)
@@ -189,17 +163,11 @@ namespace Rollgeon.Combat.Actions
             if (!CanExecute(action, playerGuid, out _)) return false;
             if (_rolls.IsCombatActive && !_rolls.TrySpendRolls(playerGuid, 1)) return false;
 
-            bool ok = true;
-            if (action.Effect != null && action.Effect.Effects != null && action.Effect.Effects.Count > 0)
-            {
-                var preCtx = BuildPreCtx(ctx);
-                ok = action.Effect.TryExecute(ctx, preCtx);
-            }
+            if (action.Effect == null || action.Effect.Effects == null || action.Effect.Effects.Count == 0)
+                return true;
 
-            // Solo trackear acciones con BlockOnRepeat=true — las repetibles (movement,
-            // §12.6) no entran al set para que UsedActionsCount refleje las "consumidas".
-            if (ok && action.BlockOnRepeat) _actionsUsedThisTurn.Add(action.ActionId);
-            return ok;
+            var preCtx = BuildPreCtx(ctx);
+            return action.Effect.TryExecute(ctx, preCtx);
         }
 
         // ======================================================================
@@ -209,8 +177,7 @@ namespace Rollgeon.Combat.Actions
         /// <summary>
         /// Valida que <paramref name="behavior"/> se puede ejecutar ahora.
         /// Misma semantica que el overload de <see cref="ActionDefinitionSO"/>:
-        /// ruleset, repetition (usa <see cref="HeroActionBehavior.ActionName"/> como key),
-        /// y roll-pool check.
+        /// ruleset, preconditions del behavior y roll-pool check.
         /// </summary>
         public bool CanExecute(HeroActionBehavior behavior, Guid playerGuid, out string reason)
         {
@@ -225,12 +192,6 @@ namespace Rollgeon.Combat.Actions
             if (IsForbiddenByRuleset(behavior.ActionName))
             {
                 reason = $"Behavior '{behavior.ActionName}' is forbidden by the active ruleset.";
-                return false;
-            }
-
-            if (behavior.BlockOnRepeat && _actionsUsedThisTurn.Contains(behavior.ActionName))
-            {
-                reason = $"Behavior '{behavior.ActionName}' already used this turn.";
                 return false;
             }
 
@@ -262,8 +223,8 @@ namespace Rollgeon.Combat.Actions
         }
 
         /// <summary>
-        /// Ejecuta un <see cref="HeroActionBehavior"/>: valida, cobra 1 roll, ejecuta
-        /// via <see cref="HeroActionBehavior.Execute"/>, y trackea repeticion.
+        /// Ejecuta un <see cref="HeroActionBehavior"/>: valida, cobra 1 roll y ejecuta
+        /// via <see cref="HeroActionBehavior.Execute"/>.
         /// </summary>
         public bool TryExecute(HeroActionBehavior behavior, Guid playerGuid, BehaviorContext ctx)
         {
@@ -271,26 +232,18 @@ namespace Rollgeon.Combat.Actions
             if (_rolls.IsCombatActive && !_rolls.TrySpendRolls(playerGuid, 1)) return false;
 
             behavior.Execute(ctx);
-
-            if (behavior.BlockOnRepeat)
-                _actionsUsedThisTurn.Add(behavior.ActionName);
-
             return true;
         }
 
         /// <summary>
         /// Ejecuta sin cobrar: el caller (handoff de dados) ya pagó el roll de la
-        /// tirada. Solo trackea la repetición.
+        /// tirada.
         /// </summary>
         public bool TryExecuteRollsPrepaid(HeroActionBehavior behavior, Guid playerGuid, BehaviorContext ctx)
         {
             if (behavior == null) return false;
 
             behavior.Execute(ctx);
-
-            if (behavior.BlockOnRepeat)
-                _actionsUsedThisTurn.Add(behavior.ActionName);
-
             return true;
         }
 
@@ -397,51 +350,6 @@ namespace Rollgeon.Combat.Actions
             // El force-reset saltea OnFeedbackComplete, así que las continuaciones encoladas
             // quedarían huérfanas — y en el chain del héroe eso es un turno colgado.
             manager.FlushFeedbackContinuations();
-        }
-
-        // ======================================================================
-        // Introspection hooks (tests / tools)
-        // ======================================================================
-
-        /// <summary>
-        /// <c>true</c> si <paramref name="actionId"/> fue ejecutada con exito en el turno
-        /// actual. Expuesto para tests y para tools de debug; el runtime gameplay usa
-        /// <see cref="CanExecute"/>.
-        /// </summary>
-        public bool WasUsedThisTurn(string actionId) => _actionsUsedThisTurn.Contains(actionId);
-
-        /// <summary>
-        /// Marca el behavior como usado este turno sin re-ejecutarlo. Lo usa el chain
-        /// path de <see cref="Combat.Handoff.CombatHandoffService"/> que ejecuta los
-        /// effects directamente (sin pasar por <see cref="TryExecuteRollsPrepaid"/>)
-        /// y necesita registrar la repetición para que BlockOnRepeat aplique.
-        /// </summary>
-        public void MarkBehaviorUsed(string actionName)
-        {
-            if (string.IsNullOrEmpty(actionName)) return;
-            _actionsUsedThisTurn.Add(actionName);
-        }
-
-        /// <summary>Cantidad de acciones unicas marcadas usadas en el turno actual.</summary>
-        public int UsedActionsCount => _actionsUsedThisTurn.Count;
-
-        /// <summary>
-        /// Snapshot de las acciones usadas en el turno actual (Feature#0028 Fase 3) — read-side
-        /// para capturar el estado de combate. El restore usa <see cref="MarkBehaviorUsed"/>.
-        /// </summary>
-        public IReadOnlyCollection<string> UsedActionsThisTurn => _actionsUsedThisTurn;
-
-        // ======================================================================
-        // Event handlers
-        // ======================================================================
-
-        /// <summary>
-        /// <c>OnTurnStarted</c> schema: <c>[Guid entityGuid]</c>. Limpia el set sin
-        /// importar el payload — "turno nuevo = acciones nuevas".
-        /// </summary>
-        private void OnTurnStartedExternal(params object[] args)
-        {
-            _actionsUsedThisTurn.Clear();
         }
 
         // ======================================================================

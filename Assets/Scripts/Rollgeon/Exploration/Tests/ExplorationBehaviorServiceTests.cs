@@ -140,6 +140,53 @@ namespace Rollgeon.Exploration.Tests
             Assert.IsTrue(_selectionController.CancelCalled);
         }
 
+        // -------------------------------------------------------------------------
+        // Guard "click en la casilla propia" (bug de puerta encadenada): el spawn al
+        // entrar a una sala deja al player SOBRE la casilla frente-a-puerta; clickear
+        // esa misma casilla cruzaba la puerta al instante. Ahora es no-op.
+        // -------------------------------------------------------------------------
+
+        [Test]
+        public void OnSelectionCompleted_ClickOnOwnTile_DoesNotExecuteBehavior()
+        {
+            // Arrange — player parado en (2,2); clickea (2,2).
+            var move = AddExplorationMovement();
+            var effect = (FakeMoveEffect)move.Effects[0].Effects[0];
+            EventManager.Trigger(EventName.OnPhaseEnter, GamePhase.Exploration);
+            _service.OnBehaviorSelected(0);
+
+            // Act
+            _selectionController.SimulateSelectionDone(new TargetSelectionResult
+            {
+                WasCompleted = true,
+                SelectedTargets = new List<TargetRef> { TargetRef.At(new GridCoord(2, 2)) },
+            });
+
+            // Assert — no-op: ni el movimiento ni (aguas abajo) el cruce de puerta.
+            Assert.AreEqual(0, effect.ApplyCalls,
+                "Clickear la casilla en la que ya estás parado no debe ejecutar el behavior.");
+        }
+
+        [Test]
+        public void OnSelectionCompleted_ClickOnOtherTile_ExecutesBehavior()
+        {
+            // Arrange — player en (2,2); clickea (3,2).
+            var move = AddExplorationMovement();
+            var effect = (FakeMoveEffect)move.Effects[0].Effects[0];
+            EventManager.Trigger(EventName.OnPhaseEnter, GamePhase.Exploration);
+            _service.OnBehaviorSelected(0);
+
+            // Act
+            _selectionController.SimulateSelectionDone(new TargetSelectionResult
+            {
+                WasCompleted = true,
+                SelectedTargets = new List<TargetRef> { TargetRef.At(new GridCoord(3, 2)) },
+            });
+
+            // Assert — el guard no debe comerse el movimiento normal.
+            Assert.AreEqual(1, effect.ApplyCalls);
+        }
+
         private HeroActionBehavior AddExplorationMovement()
         {
             var move = new HeroActionBehavior
@@ -257,6 +304,8 @@ namespace Rollgeon.Exploration.Tests
 
         private class FakeMoveEffect : IEffect
         {
+            public int ApplyCalls;
+
             public string GetEffectName() => "FakeMove";
 
             public SelectionSettings GetSelection() => new SelectionSettings
@@ -275,7 +324,11 @@ namespace Rollgeon.Exploration.Tests
                 return true;
             }
 
-            public bool Apply(EffectContext context) => true;
+            public bool Apply(EffectContext context)
+            {
+                ApplyCalls++;
+                return true;
+            }
         }
     }
 }

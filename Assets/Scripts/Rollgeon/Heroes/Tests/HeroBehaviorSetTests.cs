@@ -554,50 +554,21 @@ namespace Rollgeon.Heroes.Tests
         }
 
         [Test]
-        public void TryExecute_BlockOnRepeat_PreventsSecondExecution()
+        public void TryExecute_SameBehavior_RepeatsWhileRollsRemain()
         {
+            // Sin limite de acciones por turno: el unico presupuesto es el pool.
             var behavior = new HeroActionBehavior
             {
                 ActionName = "special",
-                BlockOnRepeat = true,
                 Effects = new List<EffectData>(),
             };
-
-            Assert.IsTrue(_tm.TryExecute(behavior, _actor, new TestBehaviorContext()));
-            Assert.IsFalse(_tm.TryExecute(behavior, _actor, new TestBehaviorContext()));
-        }
-
-        [Test]
-        public void TryExecute_AllowsRepeat_WhenBlockOnRepeatFalse()
-        {
-            var behavior = new HeroActionBehavior
-            {
-                ActionName = "movement",
-                BlockOnRepeat = false,
-                Effects = new List<EffectData>(),
-            };
+            _energy.Current[_actor] = 2;
 
             Assert.IsTrue(_tm.TryExecute(behavior, _actor, new TestBehaviorContext()));
             Assert.IsTrue(_tm.TryExecute(behavior, _actor, new TestBehaviorContext()));
-        }
-
-        [Test]
-        public void TryExecute_OnTurnStarted_ClearsRepeatTracking()
-        {
-            var behavior = new HeroActionBehavior
-            {
-                ActionName = "blocked",
-                BlockOnRepeat = true,
-                Effects = new List<EffectData>(),
-            };
-
-            Assert.IsTrue(_tm.TryExecute(behavior, _actor, new TestBehaviorContext()));
-            Assert.IsFalse(_tm.TryExecute(behavior, _actor, new TestBehaviorContext()));
-
-            EventManager.Trigger(EventName.OnTurnStarted, _actor);
-            _energy.Current[_actor] = 4;
-
-            Assert.IsTrue(_tm.TryExecute(behavior, _actor, new TestBehaviorContext()));
+            Assert.IsFalse(_tm.TryExecute(behavior, _actor, new TestBehaviorContext()),
+                "Con el pool en 0 la accion deja de poder ejecutarse.");
+            Assert.AreEqual(0, _energy.Current[_actor]);
         }
 
         private class TestBehaviorContext : BehaviorContext { }

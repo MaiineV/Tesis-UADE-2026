@@ -1203,6 +1203,15 @@
                     "processors": "",
                     "interactions": "",
                     "initialStateCheck": false
+                },
+                {
+                    "name": "ToggleMinimap",
+                    "type": "Button",
+                    "id": "b0a1e900-0000-4000-8000-00000000000a",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
                 }
             ],
             "bindings": [
@@ -1302,6 +1311,17 @@
                     "processors": "",
                     "groups": "Keyboard&Mouse",
                     "action": "Defense",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "b0a1e900-0000-4000-8000-00000000010a",
+                    "path": "<Keyboard>/tab",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "Keyboard&Mouse",
+                    "action": "ToggleMinimap",
                     "isComposite": false,
                     "isPartOfComposite": false
                 }

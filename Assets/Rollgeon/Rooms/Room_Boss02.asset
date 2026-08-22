@@ -27,5 +27,6 @@ MonoBehaviour:
   RoomPrefab: {fileID: 3358072774779011347, guid: 5cc6921941e609d4da48810e00b3fafa, type: 3}
   GridSize: {x: 1, y: 1}
   PossibleSetups: []
+  ForcePossibleSetups: 0
   EnemyPool: {fileID: 11400000, guid: 9ed1672bcc8a483e8b164e26dc1efa85, type: 2}
-  ShellIcon: {fileID: 995867419, guid: 0e83ef559e7126e4d89b611c7be3f0df, type: 3}
+  ShellIcon: {fileID: 2128625162, guid: 3540b8d5b128721449e0d1a506296293, type: 3}

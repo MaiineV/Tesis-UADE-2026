@@ -84,6 +84,45 @@ namespace Rollgeon.Combat.Damage
         }
 
         /// <summary>
+        /// Variante de curación: mismo guion N×M con la fórmula de heal (base de la
+        /// HealBaseTable del sheet — espejo de <c>EffHeal.ResolveBuildDiceAmount</c>).
+        /// Solo anuncia el camino con combo real; el fallback sin combo (dado más alto)
+        /// no tiene desglose que animar. Payload sin target: el heal no pasa por el
+        /// DamagePipeline, así el director no muestra paso de mitigación.
+        /// </summary>
+        public static void AnnounceHeal(EffectContext effCtx, EffHeal healEff)
+        {
+            if (effCtx == null || healEff == null) return;
+            if (!healEff.UseBuildDice) return;
+            if (effCtx.ComboResult is not { IsMatch: true } combo
+                || string.IsNullOrEmpty(combo.ComboId)) return;
+
+            if (ServiceLocator.TryGetService<IComboPlayService>(out var play)
+                && play != null && play.IsPlayWindowOpen && play.CurrentComboId != combo.ComboId)
+                return;
+
+            var sheet = ServiceLocator.TryGetService<IPlayerService>(out var player)
+                ? player?.CurrentHero?.Sheet
+                : null;
+            if (sheet == null) return;
+
+            var dice = ContributingDiceResolver.ResolveFromContext(effCtx, combo.ContributingIndices);
+            Guid sourceId = effCtx.SourceEntity != null ? effCtx.SourceEntity.Guid : effCtx.SourceGuid;
+
+            PlayerComboHeal.Resolve(sourceId, sheet.GetHealBase(combo.ComboId), dice,
+                healEff.ComboMultiplier, out var breakdown);
+            if (breakdown.Final <= 0) return; // sin entrada en tabla o bloqueado: nada que animar
+
+            TypedEvent<DamageBreakdownComputedPayload>.Raise(new DamageBreakdownComputedPayload
+            {
+                SourceGuid = sourceId,
+                TargetGuid = Guid.Empty,
+                ComboId = combo.ComboId,
+                Breakdown = breakdown,
+            });
+        }
+
+        /// <summary>
         /// Busca el <see cref="EffDealDamage"/> dentro de UN grupo de efectos (fase de chain),
         /// bajando por <see cref="EffectTree"/> — mismo criterio que
         /// <c>HeroActionBehavior.FindFirstDealDamageEffect</c> pero acotado a la fase que se
@@ -96,6 +135,10 @@ namespace Rollgeon.Combat.Damage
         /// <summary>El <see cref="EffAddShield"/> de la fase (defensa del chain).</summary>
         public static EffAddShield FindAddShield(EffectData group)
             => FindIn<EffAddShield>(group);
+
+        /// <summary>El <see cref="EffHeal"/> de la fase (curación del chain).</summary>
+        public static EffHeal FindHeal(EffectData group)
+            => FindIn<EffHeal>(group);
 
         private static T FindIn<T>(EffectData group) where T : class
         {

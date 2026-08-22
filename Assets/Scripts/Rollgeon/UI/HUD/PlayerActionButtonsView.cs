@@ -332,9 +332,10 @@ namespace Rollgeon.UI.HUD
             if (args == null || args.Length < 1 || !(args[0] is Guid guid)) return;
             if (guid != _playerGuid) return;
 
-            // Limpia la seleccion: el slot que se ejecuto ahora sera Used o Available
-            // (segun BlockOnRepeat) en el proximo RecomputeButtonStates. Tambien libera el
-            // lock de seleccion pendiente (BUG-013) — la accion async ya termino.
+            // Limpia la seleccion: el slot que se ejecuto vuelve a la cascada normal en el
+            // proximo RecomputeButtonStates (sin limite de acciones por turno — solo gatea
+            // el pool de rolls). Tambien libera el lock de seleccion pendiente (BUG-013) —
+            // la accion async ya termino.
             _awaitingSelection = false;
             _selectedSlot = null;
             RecomputeButtonStates();
@@ -540,15 +541,6 @@ namespace Rollgeon.UI.HUD
                 return ActionButtonState.Locked;
             }
 
-            // BUG-018: en COMBATE TODA acción es once-per-turn. El asset legacy de
-            // Forzar Puerta tenía BlockOnRepeat=0 (permitía retry tras fallo); el
-            // resto del flow ya hace MarkBehaviorUsed via CombatHandoffService, así
-            // que acá ignoramos BlockOnRepeat y gateamos sólo por WasUsedThisTurn.
-            if (WasUsedThisTurn(behavior.ActionName))
-            {
-                return ActionButtonState.Used;
-            }
-
             // Chain o roll en curso: los demas slots quedan lockeados para no dejar al
             // jugador iniciar una accion en paralelo — la accion ya esta comprometida.
             if (_inChain)
@@ -620,13 +612,6 @@ namespace Rollgeon.UI.HUD
                 return null;
 
             return ps.CurrentHero.ResolveBaseBehavior(button.Slot, GamePhase.Combat);
-        }
-
-        private static bool WasUsedThisTurn(string actionName)
-        {
-            if (string.IsNullOrEmpty(actionName)) return false;
-            if (!ServiceLocator.TryGetService<TurnManager>(out var tm) || tm == null) return false;
-            return tm.WasUsedThisTurn(actionName);
         }
 
         // Pool de Rolls: toda accion cuesta 1 roll por tirada, asi que "afordable"
@@ -701,9 +686,6 @@ namespace Rollgeon.UI.HUD
 
             var behavior = ResolveBehaviorForSlot(System.Array.IndexOf(_buttons, button));
             if (behavior == null) return null;
-
-            if (WasUsedThisTurn(behavior.ActionName))
-                return LocalizedContent.Ui(UiTextKeys.RejectUsed, "Ya la usaste este turno.");
 
             // Acción en curso: lock transitorio, sin cartel.
             if (_inChain || _rolled) return null;

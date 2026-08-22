@@ -150,8 +150,8 @@ namespace Rollgeon.EditorTools.Localization
                 "You got hit! HEAL ({0}) is unlocked: use it on your turn when you're low on health.");
 
             Ui(TutorialTextKeys.HealDice,
-                "Curar también usa los dados: lánzalos y supera el umbral para recuperar vida. Bloquea los altos y confirma.",
-                "Healing uses the dice too: throw them and beat the threshold to recover health. Lock the high ones and confirm.");
+                "Curar también usa los dados: arma un combo y recuperas más vida. Sin combo, cura tu dado más alto. Bloquea y confirma.",
+                "Healing uses the dice too: form a combo to recover more health. No combo? Your highest die heals you. Lock and confirm.");
 
             Ui(TutorialTextKeys.GoToC,
                 "¡Bien hecho! Sigue por la puerta señalada. La otra está bloqueada — la abrirás más adelante.",

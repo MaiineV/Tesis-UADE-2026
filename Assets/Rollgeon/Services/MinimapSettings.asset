@@ -1,0 +1,28 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1fb96c6451cdcc04a98033586b6cd352, type: 3}
+  m_Name: MinimapSettings
+  m_EditorClassIdentifier: Rollgeon::Rollgeon.UI.HUD.MinimapSettingsSO
+  _cellSprites:
+  - {fileID: -1702845860, guid: e6ce57a580de6a943b0ed839abf313c8, type: 3}
+  - {fileID: 1091275778, guid: e6ce57a580de6a943b0ed839abf313c8, type: 3}
+  - {fileID: -279967964, guid: e6ce57a580de6a943b0ed839abf313c8, type: 3}
+  - {fileID: -1158872635, guid: e6ce57a580de6a943b0ed839abf313c8, type: 3}
+  - {fileID: -1118857289, guid: e6ce57a580de6a943b0ed839abf313c8, type: 3}
+  - {fileID: 1103956529, guid: e6ce57a580de6a943b0ed839abf313c8, type: 3}
+  - {fileID: 1406065473, guid: e6ce57a580de6a943b0ed839abf313c8, type: 3}
+  - {fileID: -1912457164, guid: e6ce57a580de6a943b0ed839abf313c8, type: 3}
+  - {fileID: -1908912581, guid: e6ce57a580de6a943b0ed839abf313c8, type: 3}
+  CellSize: 32
+  CellGap: 3
+  ExtraYawDegrees: 0
+  Clockwise: 1

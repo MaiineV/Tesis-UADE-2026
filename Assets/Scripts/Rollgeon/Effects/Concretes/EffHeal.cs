@@ -27,8 +27,10 @@ namespace Rollgeon.Effects.Concretes
     /// </para>
     /// <list type="number">
     ///   <item><b>Build dice</b> (<see cref="_useBuildDice"/>): tira los 5 dados de la build
-    ///   vía <see cref="IActionRollService"/>. Si <c>sum &gt;= </c><see cref="_healThreshold"/>
-    ///   → heal = <see cref="_baseAmount"/> + (sum - threshold). Si no → heal = base.</item>
+    ///   vía <see cref="IActionRollService"/> y resuelve con la fórmula N×M compartida
+    ///   daño/escudo (<c>PlayerComboHeal</c>): base desde la <c>HealBaseTable</c> del
+    ///   ContractSheet + ATQ + Σcaras contribuyentes × scratch × <see cref="_comboMultiplier"/>.
+    ///   Sin combo, el dado holdeado más alto entra a la misma fórmula (espejo del ataque).</item>
     ///   <item><b>Dice roll genérico</b> (<see cref="_useDiceRoll"/>): NdM con
     ///   <see cref="UnityEngine.Random"/>.</item>
     ///   <item><b>Constante</b>: <see cref="_baseAmount"/> tal cual (o como % del max si
@@ -51,9 +53,10 @@ namespace Rollgeon.Effects.Concretes
                  "Es el piso del heal cuando se usa build dice.")]
         private int _baseAmount = 10;
 
-        [SerializeField, ShowIf("_healSource", DamageSource.ComboValue)]
+        [SerializeField, ShowIf("@_healSource == Rollgeon.Effects.Concretes.DamageSource.ComboValue || _useBuildDice")]
         [MinValue(0.01f)]
-        [Tooltip("Multiplicador aplicado al EffectiveTotal del combo resuelto (piso + parte dinámica).")]
+        [Tooltip("Perilla por habilidad: en build dice escala el N entero de la fórmula N×M " +
+                 "(igual que en EffDealDamage); en ComboValue multiplica el EffectiveTotal.")]
         private float _comboMultiplier = 1f;
 
         [OdinSerialize, SerializeReference]
@@ -71,33 +74,26 @@ namespace Rollgeon.Effects.Concretes
                  "Ignorado cuando UseBuildDice está activo.")]
         private bool _isPercentOfMax;
 
-        [Title("Build Dice (poción)")]
+        [Title("Build Dice (acción Curarse)")]
         [SerializeField]
-        [Tooltip("Si true, el heal usa los 5 dados de la build del player y aplica la fórmula " +
-                 "de umbral (heal = base + max(0, sum - threshold)). Ruta el flujo a través " +
-                 "de IActionRollService cuando se invoca como acción de hero.")]
+        [Tooltip("Si true, el heal usa los 5 dados de la build del player vía IActionRollService " +
+                 "y resuelve con la fórmula N×M compartida (HealBaseTable + ATQ + Σcaras). " +
+                 "Sin combo, cura con el dado holdeado más alto (espejo del ataque).")]
         private bool _useBuildDice;
 
-        [SerializeField, MinValue(0)]
-        [ShowIf(nameof(_useBuildDice))]
-        [Tooltip("Threshold del 'effective total' de la tirada (formula B: combo.EffectiveTotal " +
-                 "si hay combo, sino suma cruda). Si lo alcanza, el excedente se suma al heal " +
-                 "base. Default 30 — alineado con Force Door para que requiera al menos un Trio.")]
+        // DEPRECATED (Spec Heal N×M): la fórmula de umbral se reemplazó por N×M. Los tres
+        // campos quedan serializados para no romper los blobs Odin de los assets existentes,
+        // pero el código ya no los lee.
+#pragma warning disable 0414
+        [SerializeField, HideInInspector]
         private int _healThreshold = 30;
 
-        [SerializeField, MinValue(0f)]
-        [ShowIf(nameof(_useBuildDice))]
-        [Tooltip("Factor de escala: HP ganados por cada punto del puntaje por encima del " +
-                 "umbral. Referencias por fase: Early 0.8, Mid 0.3, Late 0.08, Endgame 0.02. " +
-                 "Default 1.0 mantiene la fórmula lineal simple.")]
+        [SerializeField, HideInInspector]
         private float _healScaleFactor = 1f;
 
-        [SerializeField, MinValue(0)]
-        [ShowIf(nameof(_useBuildDice))]
-        [Tooltip("Tope máximo absoluto de curación (red de seguridad ante puntajes altos). " +
-                 "0 = sin cap. El designer convierte el % HP máx (Early 25, Mid 40, Late 55, " +
-                 "Endgame 65) a valor absoluto según el HP esperado del jugador en esa fase.")]
+        [SerializeField, HideInInspector]
         private int _healMaxCap = 0;
+#pragma warning restore 0414
 
         [Title("Generic Dice (legacy / alt)")]
         [SerializeField]
@@ -127,6 +123,9 @@ namespace Rollgeon.Effects.Concretes
         [Tooltip("Si true y no hay SelectionResult, cura al SourceGuid (self-heal).")]
         private bool _selfHealOnNoTarget = true;
 
+        public bool UseBuildDice => _useBuildDice;
+        public float ComboMultiplier => _comboMultiplier;
+
         public override string GetEffectName() => "Heal";
 
         public bool TryGetRollSpec(Guid playerGuid, out ActionRollSpec spec)
@@ -136,10 +135,12 @@ namespace Rollgeon.Effects.Concretes
 
             // En combate cada tirada cuesta 1 roll del pool (GDD Turn System).
             // Fuera de combate curarse es gratis — el pool no existe en exploración.
+            // Threshold 0: la fórmula N×M no tiene umbral — la acción siempre cura algo
+            // (con combo, tabla + ATQ + Σcaras; sin combo, el dado más alto).
             spec = new ActionRollSpec
             {
                 CostsRolls = IsInCombat(),
-                Threshold = _healThreshold,
+                Threshold = 0,
                 RequireConfirm = false,
                 ActionLabel = "Curarse",
                 AllowReroll = true,
@@ -168,15 +169,15 @@ namespace Rollgeon.Effects.Concretes
         {
             if (_useBuildDice)
             {
+                // Mismo criterio que EffDealDamage/EffAddShield: la fórmula compartida,
+                // con el ATQ del owner resuelto en hover-time.
+                int attack = ResolveOwnerAttack(context.OwnerGuid);
                 var sb = new System.Text.StringBuilder();
-                sb.Append("HP Base: ").Append(_baseAmount);
+                sb.Append("Curación: ATQ (").Append(attack).Append(") + base del combo × multi de dados");
+                if (!Mathf.Approximately(_comboMultiplier, 1f))
+                    sb.Append(" × ").Append(_comboMultiplier.ToString("0.##"));
                 sb.AppendLine();
-                sb.Append("Umbral Mínimo: ").Append(_healThreshold);
-                if (_healMaxCap > 0)
-                {
-                    sb.AppendLine();
-                    sb.Append("Tope Máximo: ").Append(_healMaxCap).Append(" HP");
-                }
+                sb.Append("Sin combo: ATQ + dado más alto elegido");
                 return sb.ToString();
             }
 
@@ -309,8 +310,8 @@ namespace Rollgeon.Effects.Concretes
         }
 
         // Build dice: lee context.DiceResult (populado por IActionRollService antes de
-        // ejecutar el effect chain). Si no hay DiceResult, fallback al base — log
-        // warning porque indica wiring roto.
+        // ejecutar el effect chain) y resuelve con la fórmula N×M compartida daño/escudo.
+        // Si no hay DiceResult, fallback al base — log warning porque indica wiring roto.
         private int ResolveBuildDiceAmount(EffectContext context)
         {
             if (context?.DiceResult == null || context.DiceResult.Count == 0)
@@ -320,25 +321,70 @@ namespace Rollgeon.Effects.Concretes
                 return _baseAmount;
             }
 
-            // Prioridad: el ActionRollService ya computó el effective sobre los held dice.
-            // Si viene pre-computado, usarlo — sino caemos al cálculo legacy (combo o suma
-            // cruda de los 5), que sobrestima el heal cuando el user holdeó pocos dados.
-            int effectiveTotal = context.ActionRollEffectiveTotal
-                ?? ActionRollTotals.ResolveEffectiveTotal(context.DiceResult, context.ComboResult);
+            // Combo real (con ComboId — el sintético de action rolls viejos viene vacío):
+            // base desde la HealBaseTable del sheet, gate incluido (sin entrada ⇒ 0).
+            if (context.ComboResult is { IsMatch: true } combo && !string.IsNullOrEmpty(combo.ComboId))
+            {
+                var sheet = ServiceLocator.TryGetService<IPlayerService>(out var player)
+                    ? player?.CurrentHero?.Sheet
+                    : null;
+                if (sheet == null) return 0;
 
-            return ComputeBuildDiceHeal(_baseAmount, _healThreshold, effectiveTotal,
-                _healScaleFactor, _healMaxCap);
+                return Rollgeon.Combat.Damage.PlayerComboHeal.Resolve(
+                    ResolveSourceId(context),
+                    sheet.GetHealBase(combo.ComboId),
+                    ResolveContributingDice(context, combo.ContributingIndices),
+                    _comboMultiplier);
+            }
+
+            return ResolveNoComboFallback(context);
         }
 
-        /// <summary>
-        /// Fórmula expuesta para tests:
-        /// <list type="bullet">
-        ///   <item><c>score &lt; healThreshold</c> → <c>heal = base</c> (sin escalado).</item>
-        ///   <item><c>score &gt;= healThreshold</c> → <c>heal = base + floor((score - threshold) × scaleFactor)</c>.</item>
-        ///   <item>Si <paramref name="maxCap"/> &gt; 0, el resultado se clampea a <paramref name="maxCap"/>.</item>
-        /// </list>
-        /// Spec: HP = HP_Base + ((Puntaje - Umbral_Mínimo) × Factor_de_Escala), floor abajo, cap por Tope_Máximo.
-        /// </summary>
+        // Sin combo el heal NO es 0 — espejo de EffDealDamage.ResolveNoComboFallback:
+        // el dado holdeado más alto entra UNA sola vez a la fórmula N×M (vía Σcaras con
+        // detalle de bag, como comboBase sin él), sin pasar por el gate de la tabla.
+        private int ResolveNoComboFallback(EffectContext context)
+        {
+            var dice = context?.KeptDice ?? context?.DiceResult;
+            if (dice == null || dice.Count == 0) return 0;
+
+            int max = 0;
+            int maxIndex = -1;
+            for (int i = 0; i < dice.Count; i++)
+                if (dice[i] > max) { max = dice[i]; maxIndex = i; }
+            if (max <= 0) return 0;
+
+            var contributingDice = maxIndex >= 0
+                ? ResolveContributingDice(context, new[] { maxIndex })
+                : null;
+
+            return Rollgeon.Combat.Damage.PlayerComboDamage.Resolve(
+                ResolveSourceId(context), contributingDice != null ? 0 : max,
+                contributingDice, _comboMultiplier,
+                Rollgeon.Combat.Damage.PlayerComboFormulaKind.Heal);
+        }
+
+        // Guid del que cura para leer su stat Attack (término base de la fórmula
+        // compartida) — mismo criterio que EffDealDamage.ResolveSourceId.
+        private static Guid ResolveSourceId(EffectContext context)
+            => context.SourceEntity != null ? context.SourceEntity.Guid : context.SourceGuid;
+
+        private static int ResolveOwnerAttack(Guid ownerGuid)
+        {
+            if (ownerGuid == Guid.Empty) return 0;
+            if (!ServiceLocator.TryGetService<Rollgeon.Attributes.AttributesManager>(out var attributes)
+                || attributes == null)
+                return 0;
+            return attributes.GetAttribute<Rollgeon.Attributes.Stats.Attack>(ownerGuid)?.ModifiedValue ?? 0;
+        }
+
+        // Mismo mecanismo que EffDealDamage: dados reales de la bag (slot + cara + tipo)
+        // para los índices que formaron el combo — la fórmula pondera ESOS dados.
+        private static System.Collections.Generic.IReadOnlyList<Rollgeon.Combat.Damage.ContributingDie>
+            ResolveContributingDice(EffectContext context,
+                System.Collections.Generic.IReadOnlyList<int> contributingIndices)
+            => Rollgeon.Combat.Damage.ContributingDiceResolver.ResolveFromContext(context, contributingIndices);
+
         /// <summary>
         /// Heal del dice roll genérico, expuesto para tests (el roll en sí es Random):
         /// <c>suma × max(1, multiplicador)</c>. Escala 100: la poción 1d10 usa
@@ -346,23 +392,5 @@ namespace Rollgeon.Effects.Concretes
         /// </summary>
         public static int ComputeDiceRollHeal(int sum, int multiplier)
             => sum * Mathf.Max(1, multiplier);
-
-        public static int ComputeBuildDiceHeal(int baseAmount, int healThreshold, int score,
-            float scaleFactor, int maxCap)
-        {
-            int heal;
-            if (score < healThreshold)
-            {
-                heal = baseAmount;
-            }
-            else
-            {
-                int bonus = Mathf.FloorToInt((score - healThreshold) * Mathf.Max(0f, scaleFactor));
-                heal = baseAmount + bonus;
-            }
-
-            if (maxCap > 0 && heal > maxCap) heal = maxCap;
-            return heal;
-        }
     }
 }

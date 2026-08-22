@@ -51,6 +51,13 @@ namespace Rollgeon.ActionRolls
         // SUBSET de dados con _currentHolds[i] == true (semantica del combate).
         private bool[] _currentHolds;
 
+        // Snapshot del subset holdeado + detección real, para que el outcome transporte
+        // ComboId/ContributingIndices y el mapeo subset→bag slot (los effects N×M — heal —
+        // los necesitan; el sintético de antes los perdía).
+        private int[] _currentHeldFaces;
+        private int[] _currentHeldIndices;
+        private ComboDetectionResult? _currentComboResult;
+
         public ActionRollService(IDiceRoller roller, IRollPoolService rolls,
             ComboCatalogSO comboCatalog = null)
         {
@@ -457,6 +464,9 @@ namespace Rollgeon.ActionRolls
                 _currentComboFlatBase = 0;
                 _currentComboDynamicBonus = 0;
                 _currentEffectiveTotal = 0;
+                _currentComboResult = null;
+                _currentHeldFaces = null;
+                _currentHeldIndices = null;
                 return;
             }
 
@@ -473,6 +483,7 @@ namespace Rollgeon.ActionRolls
                 slotTypes = _bag.Dice;
 
             var heldDice = new List<int>(_currentRoll.Length);
+            var heldIndices = new List<int>(_currentRoll.Length);
             var heldTypes = slotTypes != null ? new List<DiceType>(_currentRoll.Length) : null;
             if (_currentHolds != null)
             {
@@ -482,9 +493,15 @@ namespace Rollgeon.ActionRolls
                     if (diceBlock != null && diceBlock.IsBlocked(i)) continue;
                     if (!_currentHolds[i]) continue;
                     heldDice.Add(_currentRoll[i]);
+                    heldIndices.Add(i);
                     heldTypes?.Add(i < slotTypes.Count ? slotTypes[i] : DiceType.D6);
                 }
             }
+
+            // El snapshot sobrevive al path "sin combo" — el fallback del heal (dado más
+            // alto) necesita saber qué dados quedaron holdeados aunque no haya match.
+            _currentHeldFaces = heldDice.ToArray();
+            _currentHeldIndices = heldIndices.ToArray();
 
             int heldSum = 0;
             for (int i = 0; i < heldDice.Count; i++) heldSum += heldDice[i];
@@ -495,6 +512,7 @@ namespace Rollgeon.ActionRolls
                 _currentComboFlatBase = 0;
                 _currentComboDynamicBonus = 0;
                 _currentEffectiveTotal = 0;
+                _currentComboResult = null;
                 EmitComboMatched();
                 return;
             }
@@ -535,6 +553,7 @@ namespace Rollgeon.ActionRolls
             _currentComboFlatBase = 0;
             _currentComboDynamicBonus = 0;
             _currentEffectiveTotal = heldSum;
+            _currentComboResult = null;
             EmitComboMatched();
         }
 
@@ -567,6 +586,13 @@ namespace Rollgeon.ActionRolls
             _currentComboFlatBase = flatBase;
             _currentComboDynamicBonus = dynamicBonus;
             _currentEffectiveTotal = flatBase + dynamicBonus;
+
+            // Detección REAL para el outcome — índices relativos al subset holdeado
+            // (_currentHeldFaces). Invariante: EffectiveTotal del result == _currentEffectiveTotal
+            // porque ambos son flatBase + dynamicBonus.
+            _currentComboResult = ComboDetectionResult.Match(
+                combo.ComboId, flatBase, detected.CountUsed,
+                detected.IsMatch ? detected.ContributingIndices : null, dynamicBonus);
         }
 
         // Publica el combo actual en el bus tipado para que el DamageFormulaView (y
@@ -628,6 +654,9 @@ namespace Rollgeon.ActionRolls
                 ComboId = _currentCombo != null ? _currentCombo.ComboId : string.Empty,
                 ComboDisplayName = _currentCombo != null ? Rollgeon.Localization.LocalizedContent.Name(_currentCombo.ComboId, _currentCombo.DisplayName) : string.Empty,
                 HasCombo = _currentCombo != null,
+                Combo = _currentComboResult,
+                HeldDice = _currentHeldFaces,
+                HeldDiceOriginalIndices = _currentHeldIndices,
             };
 
             EventManager.Trigger(EventName.OnRollResolved, _playerGuid,
@@ -674,6 +703,9 @@ namespace Rollgeon.ActionRolls
             _currentComboDynamicBonus = 0;
             _currentEffectiveTotal = 0;
             _currentHolds = null;
+            _currentComboResult = null;
+            _currentHeldFaces = null;
+            _currentHeldIndices = null;
             // Phase queda en Resolved/Cancelled hasta el proximo StartFlow para que la UI
             // pueda leer el outcome final antes de que reseteemos a Inactive.
         }

@@ -330,8 +330,8 @@ MonoBehaviour:
   EnableFloorView: 1
   FloorViewZoomThreshold: 18
   FloorViewTweenSeconds: 0.3
-  ShellIconWorldSize: 0.5
-  ShellIconHeightOffset: 0.75
+  ShellIconWorldSize: 5
+  ShellIconHeightOffset: 1.75
   ShellVisitedMaterial: {fileID: 0}
   ShellVisitedColor: {r: 0.38, g: 0.38, b: 0.44, a: 0.9}
   ShellAdjacentMaterial: {fileID: 2100000, guid: bcdf48e9f2104bd4092a7f9c7ef98717, type: 2}

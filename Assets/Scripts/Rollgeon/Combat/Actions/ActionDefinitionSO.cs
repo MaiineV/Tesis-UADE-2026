@@ -42,15 +42,9 @@ namespace Rollgeon.Combat.Actions
         [OdinSerialize]
         [InfoBox("Para Type = Combo -> referenciar el BaseComboSO. Para Type = UseItem -> el ItemSO. " +
                  "Para Attack/Ability/SkillCheck puro, vive el Effect abajo y este campo queda null. " +
-                 "Si BackingAsset != null y Effect.Effects esta vacio, TurnManager cobra 1 roll + marca " +
-                 "usada, y el caller externo despacha al sistema especifico. Plan §10 R1.")]
+                 "Si BackingAsset != null y Effect.Effects esta vacio, TurnManager cobra 1 roll " +
+                 "y el caller externo despacha al sistema especifico. Plan §10 R1.")]
         public ScriptableObject BackingAsset;
-
-        [Title("Repetition")]
-        [ToggleLeft]
-        [InfoBox("Si true, esta ActionId no puede ejecutarse dos veces en el mismo turno. " +
-                 "Default del GDD. Movement desactiva esto para permitir fuga.")]
-        public bool BlockOnRepeat = true;
 
         [Title("Effect (si no hay BackingAsset)")]
         [OdinSerialize]
