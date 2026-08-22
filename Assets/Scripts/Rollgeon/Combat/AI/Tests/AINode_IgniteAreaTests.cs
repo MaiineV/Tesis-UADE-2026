@@ -416,6 +416,135 @@ namespace Rollgeon.Combat.AI.Tests
         }
 
         /// <summary>
+        /// El caso que rompía con el cono del Croupier: dos áreas casi nunca se contienen entre sí,
+        /// así que la vieja asoma afuera de la nueva en vez de quedar tapada entera. Tiene que
+        /// encogerse, no sobrevivir intacta ni desaparecer.
+        /// </summary>
+        [Test]
+        public void ALaneThatOnlyGrazesTheOldOne_ShrinksTheOldInstance_KeepingItsClockOnWhatEscapes()
+        {
+            Mark(damage: 0, new GridCoord(4, 4), new GridCoord(5, 4), new GridCoord(6, 4));
+            IgniteRelaying(durationRounds: 5);
+            var oldId = Instances()[0].InstanceId;
+
+            Mark(damage: 0, new GridCoord(6, 4), new GridCoord(7, 4), new GridCoord(8, 4));
+            IgniteRelaying(durationRounds: 3);
+
+            var instances = Instances();
+            Assert.AreEqual(2, instances.Count,
+                "La vieja que asoma afuera del área nueva tenía que sobrevivir encogida, no " +
+                "desaparecer ni quedarse entera al lado de la nueva.");
+            CollectionAssert.AreEquivalent(new[] { new GridCoord(4, 4), new GridCoord(5, 4) },
+                new List<GridCoord>(InstanceById(oldId).Coords),
+                "La instancia vieja no se encogió a lo que le queda afuera del área nueva: (6,4) es " +
+                "de la nueva ignición ahora.");
+            Assert.AreEqual(5, InstanceById(oldId).RemainingRounds,
+                "Encoger la instancia vieja le tocó el reloj: las casillas que le quedan afuera " +
+                "tienen que seguir ardiendo con la cuenta que ya traían.");
+            CollectionAssert.AreEquivalent(
+                new[] { new GridCoord(6, 4), new GridCoord(7, 4), new GridCoord(8, 4) },
+                new List<GridCoord>(InstanceOtherThan(oldId).Coords),
+                "La casilla compartida (6,4) se quedó afuera de la ignición nueva: el fuego nuevo " +
+                "tiene que ganar la casilla en disputa.");
+            Assert.AreEqual(3, InstanceOtherThan(oldId).RemainingRounds,
+                "La casilla compartida no arrancó con el reloj nuevo.");
+            AssertNoSameDefinitionOverlap();
+        }
+
+        /// <summary>
+        /// El síntoma reportado: la vieja llega a la ignición siguiente casi agotada (reloj corto)
+        /// y, sin encogerla, la casilla compartida heredaba ese reloj y se apagaba en el wrap
+        /// siguiente aunque la ignición nueva le hubiera prometido más rondas.
+        /// </summary>
+        [Test]
+        public void ALaneThatOnlyGrazesTheOldOne_TheSharedTileOutlivesTheOldsShorterClock()
+        {
+            const int oldDuration = 2;
+            const int newDuration = 4;
+            var shared = new GridCoord(6, 4);
+
+            Mark(damage: 0, new GridCoord(4, 4), new GridCoord(5, 4), shared);
+            IgniteRelaying(durationRounds: oldDuration);
+
+            Mark(damage: 0, shared, new GridCoord(7, 4));
+            IgniteRelaying(durationRounds: newDuration);
+
+            WrapRound(1);
+            WrapRound(2); // oldDuration rondas: si (6,4) siguiera bajo la vieja, ya se habría apagado.
+
+            Assert.IsTrue(TryFindInstanceCovering(shared, out var covering),
+                "La casilla compartida se apagó en el wrap: heredó el reloj de la vieja —el más " +
+                "corto— en vez de arrancar con el de la ignición que la acaba de prender.");
+            Assert.AreEqual(newDuration - 2, covering.RemainingRounds,
+                "La casilla compartida no está corriendo el reloj de la ignición nueva.");
+        }
+
+        /// <summary>
+        /// El filtro de owner se mantiene con el encogido: apagar o encoger fuego que plantó otra
+        /// entidad no es asunto de esta ignición, aunque su área lo tape.
+        /// </summary>
+        [Test]
+        public void RetireFullyReplaced_DoesNotShrinkOrRemoveFireFromAnotherOwner()
+        {
+            var otherOwner = Guid.NewGuid();
+            var otherOwnersCoords = new[] { new GridCoord(4, 4), new GridCoord(5, 4), new GridCoord(6, 4) };
+            _tiles.Place(_fire, otherOwnersCoords, new TilePlacementOptions
+            {
+                Owner = otherOwner,
+                DurationRounds = 5,
+            });
+
+            Mark(damage: 0, new GridCoord(5, 4), new GridCoord(6, 4), new GridCoord(7, 4));
+            IgniteRelaying(durationRounds: 3);
+
+            var instances = Instances();
+            Assert.AreEqual(2, instances.Count,
+                "El relevo tocó fuego de otro dueño: apagar o encoger lo que plantó otra entidad no " +
+                "es asunto de esta ignición.");
+            var untouched = InstanceOwnedBy(otherOwner);
+            CollectionAssert.AreEquivalent(otherOwnersCoords, new List<GridCoord>(untouched.Coords),
+                "La instancia de otro dueño perdió casillas: el filtro de owner tiene que dejarla " +
+                "intacta.");
+            Assert.AreEqual(5, untouched.RemainingRounds, "El reloj de otro dueño se tocó.");
+            CollectionAssert.AreEquivalent(new[] { new GridCoord(7, 4) },
+                new List<GridCoord>(InstanceOtherThan(untouched.InstanceId).Coords),
+                "La ignición del jefe sólo puede prender lo que no ardía: (5,4) y (6,4) ya ardían " +
+                "con el fuego de otro dueño.");
+        }
+
+        /// <summary>
+        /// El filtro de definición se mantiene con el encogido: dos sustancias en una casilla son
+        /// dos efectos, no un duplicado, así que el hielo no se toca cuando prende el fuego.
+        /// </summary>
+        [Test]
+        public void RetireFullyReplaced_DoesNotShrinkOrRemoveAnotherDefinitionsInstance()
+        {
+            _ice = NewDefinition("TILE_TEST_ICE");
+            var iceCoords = new[] { new GridCoord(4, 4), new GridCoord(5, 4), new GridCoord(6, 4) };
+            Mark(damage: 0, iceCoords);
+            Tick(new AINode_IgniteArea
+            {
+                Definition = _ice,
+                DurationRounds = 5,
+                RetireFullyReplaced = true,
+            });
+
+            Mark(damage: 0, new GridCoord(5, 4), new GridCoord(6, 4), new GridCoord(7, 4));
+            IgniteRelaying(durationRounds: 3);
+
+            var ice = InstanceWith(_ice);
+            CollectionAssert.AreEquivalent(iceCoords, new List<GridCoord>(ice.Coords),
+                "El relevo de fuego encogió una instancia de otra definición: dos sustancias en una " +
+                "casilla son dos efectos, no un duplicado.");
+            Assert.AreEqual(5, ice.RemainingRounds, "El reloj del hielo se tocó por una ignición de fuego.");
+            CollectionAssert.AreEquivalent(
+                new[] { new GridCoord(5, 4), new GridCoord(6, 4), new GridCoord(7, 4) },
+                new List<GridCoord>(InstanceWith(_fire).Coords),
+                "El fuego nuevo tiene que plantar donde avisó: el hielo no cuenta como 'ya ardiendo' " +
+                "para otra definición.");
+        }
+
+        /// <summary>
         /// <b>El relevo es opt-in y arranca apagado.</b> Sin tocar el flag, una banda vieja que el
         /// área nueva tapa por completo se queda donde está, con su propio reloj, y la nueva sólo
         /// prende lo que no ardía.
@@ -829,6 +958,33 @@ namespace Rollgeon.Combat.AI.Tests
             Assert.Fail($"No quedó ninguna instancia de {definition.TileId}: la sustancia no llegó " +
                         "a plantarse.");
             return default;
+        }
+
+        private SpecialTileInfo InstanceOwnedBy(Guid owner)
+        {
+            foreach (var instance in Instances())
+                if (instance.OwnerGuid == owner) return instance;
+
+            Assert.Fail("No quedó ninguna instancia de ese dueño: se apagó o se encogió por una " +
+                        "ignición que no era suya.");
+            return default;
+        }
+
+        /// <summary>Busca sin fallar: a diferencia de <see cref="InstanceById"/>, acá "no está" es
+        /// justo lo que un test de regresión necesita poder afirmar.</summary>
+        private bool TryFindInstanceCovering(GridCoord coord, out SpecialTileInfo covering)
+        {
+            foreach (var instance in Instances())
+            {
+                foreach (var tile in instance.Coords)
+                {
+                    if (!tile.Equals(coord)) continue;
+                    covering = instance;
+                    return true;
+                }
+            }
+            covering = default;
+            return false;
         }
 
         /// <summary>Otra sustancia, con el mismo tratamiento de vida que <c>_fire</c> en SetUp.</summary>

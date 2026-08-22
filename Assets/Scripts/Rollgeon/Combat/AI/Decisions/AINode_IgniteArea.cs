@@ -71,8 +71,9 @@ namespace Rollgeon.Combat.AI.Decisions
         public int AnnounceTurns;
 
         [Tooltip("Apaga las instancias PROPIAS de esta definición que el área nueva tapa por " +
-                 "completo, para que el terreno compartido arranque con el reloj nuevo. Off = la " +
-                 "instancia vieja se queda con su reloj y el área nueva sólo prende lo que no ardía.")]
+                 "completo, y encoge las que asoman afuera para liberar lo compartido — así el " +
+                 "terreno compartido arranca con el reloj nuevo. Off = las instancias viejas se " +
+                 "quedan intactas con su reloj y el área nueva sólo prende lo que no ardía.")]
         public bool RetireFullyReplaced;
 
         [Tooltip("Devuelve Failed cuando la ignición no tenía NADA nuevo que prender, para que el " +
@@ -218,15 +219,19 @@ namespace Rollgeon.Combat.AI.Decisions
         }
 
         /// <summary>
-        /// Retira las instancias de <see cref="Definition"/> plantadas por <paramref name="owner"/>
-        /// que <paramref name="area"/> reemplaza por completo — las que no cubren ni una casilla
-        /// fuera de ella.
+        /// Retira o encoge las instancias de <see cref="Definition"/> plantadas por
+        /// <paramref name="owner"/> que <paramref name="area"/> pisa: las que quedan enteras
+        /// adentro se remueven, las que asoman afuera se encogen a lo que les queda fuera del
+        /// área nueva.
         /// </summary>
         /// <remarks>
-        /// Se retira en vez de plantar encima porque dos instancias sobre una casilla cobran dos veces
-        /// (<c>ResolveStand</c> y <c>ResolveEntries</c> disparan una por instancia y <c>Place</c> no
-        /// valida solapamiento). Sólo las que quedan enteras adentro: una que asoma afuera conserva su
-        /// reloj, o el corredor por el que el jefe huye quedaría encendido para siempre.
+        /// Se retira/encoge en vez de plantar encima porque dos instancias sobre una casilla
+        /// cobran dos veces (<c>ResolveStand</c> y <c>ResolveEntries</c> disparan una por
+        /// instancia y <c>Place</c> no valida solapamiento). Encoger en vez de dejar sobrevivir
+        /// entera a la que asoma: dejarla intacta le regala las casillas compartidas a su reloj
+        /// viejo —casi siempre el más corto, porque ya viene corriendo hace rondas— y la banda
+        /// recién avisada se apaga en el wrap siguiente sin haber ardido ahí. Encogerla libera
+        /// esas casillas para <c>AlreadyBurning</c> sin tocar el reloj de lo que le queda afuera.
         /// </remarks>
         private void RetireReplaced(ISpecialTileService special, Guid owner, List<GridCoord> area)
         {
@@ -234,7 +239,8 @@ namespace Rollgeon.Combat.AI.Decisions
 
             var covered = new HashSet<GridCoord>(area);
 
-            // ActiveInstances viene materializado, así que Remove a mitad de la enumeración es seguro.
+            // ActiveInstances viene materializado, así que Remove/MoveInstance a mitad de la
+            // enumeración es seguro.
             foreach (var existing in special.ActiveInstances())
             {
                 if (existing.Definition != Definition || existing.Coords == null) continue;
@@ -243,14 +249,20 @@ namespace Rollgeon.Combat.AI.Decisions
                 // este paso.
                 if (existing.OwnerGuid != owner) continue;
 
-                bool intersects = false, escapes = false;
+                bool intersects = false;
+                List<GridCoord> surviving = null;
                 foreach (var coord in existing.Coords)
                 {
                     if (covered.Contains(coord)) intersects = true;
-                    else escapes = true;
+                    else (surviving ??= new List<GridCoord>()).Add(coord);
                 }
 
-                if (intersects && !escapes) special.Remove(existing.InstanceId);
+                if (!intersects) continue; // sin solape con el área nueva: no es asunto de esta ignición.
+
+                if (surviving == null || surviving.Count == 0)
+                    special.Remove(existing.InstanceId);
+                else
+                    special.MoveInstance(existing.InstanceId, surviving);
             }
         }
 
