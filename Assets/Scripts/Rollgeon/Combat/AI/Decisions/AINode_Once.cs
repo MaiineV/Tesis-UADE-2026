@@ -13,10 +13,9 @@ namespace Rollgeon.Combat.AI.Decisions
     /// re-ejecutar al hijo). Si el hijo falla, NO latchea — se reintenta el próximo tick.
     /// </summary>
     /// <remarks>
-    /// Pieza del esquema ad-hoc de Fase 2 (decisión de diseño): se combina con
-    /// <c>AINode_If(PcOwnerHpBelow)</c> para disparar el setup de fase una única vez al cruzar el
-    /// umbral — p.ej. <c>If(HP&lt;umbral) Then Once(ApplyStatModifier)</c> — sin que el cambio
-    /// permanente se vuelva a aplicar (y stackee) cada turno mientras el HP siga bajo.
+    /// Combinado con <c>AINode_If(PcOwnerHpBelow)</c> dispara el setup de fase una única vez al
+    /// cruzar el umbral, sin que el cambio permanente se vuelva a aplicar (y stackee) cada turno
+    /// mientras el HP siga bajo.
     /// </remarks>
     [Serializable, HideReferenceObjectPicker]
     public sealed class AINode_Once : AIDecisionNode

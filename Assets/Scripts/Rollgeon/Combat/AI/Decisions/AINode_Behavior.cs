@@ -9,9 +9,7 @@ namespace Rollgeon.Combat.AI.Decisions
 {
     /// <summary>
     /// Acción hoja: invoca un <see cref="EnemyActionBehavior"/> envolviendo el
-    /// <see cref="AIContext"/> en un <see cref="EnemyAIBehaviorContext"/>. Reemplaza
-    /// a <c>AINode_Attack</c>: la "acción de atacar" pasa a ser un behavior con un
-    /// <c>EffDealDamage</c> en su pipeline.
+    /// <see cref="AIContext"/> en un <see cref="EnemyAIBehaviorContext"/>.
     /// </summary>
     [Serializable, HideReferenceObjectPicker]
     public sealed class AINode_Behavior : AIActionNode

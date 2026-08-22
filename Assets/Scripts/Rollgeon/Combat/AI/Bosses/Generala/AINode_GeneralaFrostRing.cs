@@ -19,25 +19,11 @@ namespace Rollgeon.Combat.AI.Bosses.Generala
     /// <see cref="IceStunBinder"/>); ya estar adentro cuando cae, no.
     /// </summary>
     /// <remarks>
-    /// <para>
-    /// Cero daño a propósito: el techo por turno del piso ya está lleno con la mano y el cubilete,
-    /// así que la escarcha cobra en <b>turnos</b> — el que se congela pierde el suyo y come la mano
-    /// siguiente sin poder esquivarla.
-    /// </para>
-    /// <para>
-    /// <b>Ella no se congela.</b> El área se publica con ella como dueña y el binder ignora los
-    /// triggers del dueño; con <see cref="Solid"/> eso es necesario, no cómodo, porque su propia
-    /// casilla queda adentro y el reposicionamiento corre después en el mismo turno. El área queda
-    /// donde la puso: la escarcha es del piso, no de ella.
-    /// </para>
-    /// <para>
-    /// <b><see cref="Solid"/> en un asset viejo llega en false</b> — Odin no corre los
-    /// inicializadores de campo al deserializar. Re-correr el builder lo arregla.
-    /// </para>
-    /// <para>
-    /// Devuelve <c>Failed</c> cuando no hay anillo posible ⇒ va SIEMPRE dentro de un
-    /// <c>Selector[nodo, Wait]</c>.
-    /// </para>
+    /// El área se publica con ella como dueña y el binder ignora los triggers del dueño: con
+    /// <see cref="Solid"/> su propia casilla queda adentro, así que sin eso se congelaría a sí misma.
+    /// <see cref="Solid"/> llega en false en un asset viejo — Odin no corre los inicializadores de
+    /// campo al deserializar. Devuelve <c>Failed</c> cuando no hay anillo posible, así que va siempre
+    /// dentro de un <c>Selector[nodo, Wait]</c>.
     /// </remarks>
     [Serializable, HideReferenceObjectPicker]
     public sealed class AINode_GeneralaFrostRing : AIActionNode
@@ -78,9 +64,8 @@ namespace Rollgeon.Combat.AI.Bosses.Generala
             $"Generala — Escarcha ({(Solid ? "área" : "anillo")} r{Radius})";
 
         /// <remarks>
-        /// Vacío significa "el id canónico del nodo", no "sin animación": Odin puede deserializar un
-        /// <c>ED_Boss_*.asset</c> viejo sin correr los field initializers, y un default en el campo
-        /// llegaría en null. Mismo criterio que <see cref="AINode_GeneralaCupSlam"/>.
+        /// Vacío significa "el id canónico del nodo", no "sin animación": Odin no corre los field
+        /// initializers al deserializar un <c>ED_Boss_*.asset</c>.
         /// </remarks>
         private string AnimFeedbackId => string.IsNullOrEmpty(AnimFeedbackIdOverride)
             ? BossFeedbackIds.GeneralaFrostAnim
@@ -136,8 +121,8 @@ namespace Rollgeon.Combat.AI.Bosses.Generala
         }
 
         /// <summary>
-        /// Camino de play mode: congela primero y recién después presenta. El estado del turno nunca
-        /// queda esperando un VFX (mismo criterio que <see cref="AINode_RotateBlock"/>).
+        /// Camino de play mode: congela primero y recién después presenta, así el estado del turno
+        /// nunca queda esperando un VFX.
         /// </summary>
         public override IEnumerator TickCoroutine(AIContext context, Action<AIResult> onResult)
         {
@@ -156,11 +141,6 @@ namespace Rollgeon.Combat.AI.Bosses.Generala
         /// Casillas a distancia Chebyshev <b>exactamente</b> <paramref name="radius"/> de
         /// <paramref name="center"/>, caminables y dentro de la sala: el borde hueco. Pura y estática.
         /// </summary>
-        /// <remarks>
-        /// No vive en <c>ThreatAreaShape</c> porque no es una <c>ThreatShape</c>: no se marca ni se
-        /// telegrafía, se publica como área de hazard. El día que un segundo jefe quiera un anillo
-        /// avisado, ahí sí conviene subirla.
-        /// </remarks>
         public static List<GridCoord> ComputeRing(IGridManager grid, GridCoord center, int radius) =>
             Compute(grid, center, radius, solid: false);
 
@@ -173,8 +153,7 @@ namespace Rollgeon.Combat.AI.Bosses.Generala
 
         /// <summary>
         /// La forma, en un solo lugar. <paramref name="solid"/> es lo único que cambia: <c>==</c>
-        /// contra <c>&lt;=</c> en la comparación de distancia. Dos loops separados terminarían
-        /// divergiendo en el filtro de sala, que es la mitad que importa.
+        /// contra <c>&lt;=</c> en la comparación de distancia.
         /// </summary>
         private static List<GridCoord> Compute(IGridManager grid, GridCoord center, int radius, bool solid)
         {
@@ -195,11 +174,6 @@ namespace Rollgeon.Combat.AI.Bosses.Generala
             return tiles;
         }
 
-        /// <remarks>
-        /// Request armado a mano en vez de un <c>EffPlaySequence</c>: el nodo no nace de un effect
-        /// pass, así que no tiene <c>EffectContext</c> que pasarle — mismo caso que
-        /// <see cref="AINode_GeneralaCupSlam"/>.
-        /// </remarks>
         private IEnumerator PlayFrost(AIContext context)
         {
             if (!ServiceLocator.TryGetService<IFeedbackService>(out var feedback) || feedback == null) yield break;
@@ -226,8 +200,8 @@ namespace Rollgeon.Combat.AI.Bosses.Generala
                 TargetGuid = context.PlayerGuid,
             }, () => turn?.OnFeedbackComplete());
 
-            // Sin TurnManager no hay gate que esperar — la anim igual corre, pero el turno no se
-            // retiene. Mismo degradado que EffPlaySequence.
+            // Sin TurnManager no hay gate que esperar: la anim igual corre, pero el turno no se
+            // retiene.
             if (turn == null || !turn.IsWaitingForFeedback) yield break;
 
             var wait = TurnManager.WaitForFeedbackCompletion(turn);

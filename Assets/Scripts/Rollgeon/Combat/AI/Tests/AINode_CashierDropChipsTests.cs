@@ -197,10 +197,6 @@ namespace Rollgeon.Combat.AI.Tests
         }
 
         // ---- El piso garantizado -------------------------------------------
-        //
-        // Con RequireDamageTaken como única puerta la ficha pedía tres cosas a la vez: turno de
-        // columna (uno de cada dos), golpe recibido en la ventana justa, y casilla libre en la banda.
-        // En el playtest se vio UNA moneda en toda la pelea.
 
         [Test]
         public void Tick_WithoutDamageTaken_StillDropsTheGuaranteedFloor()

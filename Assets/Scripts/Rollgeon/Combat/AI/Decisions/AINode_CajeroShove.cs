@@ -20,8 +20,7 @@ namespace Rollgeon.Combat.AI.Decisions
     /// <para>
     /// Hereda de <see cref="AINode_RangedShot"/> con <c>Range = 1</c>: el gate de rango, el daño,
     /// el giro hacia el jugador y la secuencia de presentación ya viven ahí y no dependen de que el
-    /// golpe sea a distancia. Es el mismo idiom que el mordisco de la Comisión — el daño de
-    /// <c>EffDealDamage</c> es privado y un builder no puede autorarlo.
+    /// golpe sea a distancia.
     /// </para>
     /// <para>
     /// El tumbo no lo camina este nodo: lo delega en <see cref="IForcedMovementService"/>, que es
@@ -143,9 +142,8 @@ namespace Rollgeon.Combat.AI.Decisions
         /// <remarks>
         /// <para>
         /// La casilla FINAL nunca entra: el jugador termina parado ahí y la moneda dispara al
-        /// entrar, así que sería plata que no se puede levantar sin salir y volver. Con un tumbo
-        /// completo de 3 las dos intermedias ya alcanzan y la de partida no se usa; existe para el
-        /// tumbo corto contra una caja fuerte, donde si no el empujón no le sacaría nada.
+        /// entrar, así que sería plata que no se puede levantar sin salir y volver. La de partida es
+        /// el último recurso, para el tumbo que frena en seco antes de tener intermedias.
         /// </para>
         /// <para>
         /// Las monedas se colocan DESPUÉS de que el empuje resolvió: el servicio de movimiento
@@ -155,9 +153,8 @@ namespace Rollgeon.Combat.AI.Decisions
         /// <para>
         /// El recorrido se reconstruye a mano porque <c>ForcedMoveResult</c> devuelve la celda final
         /// y el conteo de pasos, no el camino. Va clampeado a <paramref name="pushTiles"/>: si una
-        /// continuación de casilla (Hielo, Portal) siguió empujando, esos pasos extra ya no están
-        /// sobre esta línea recta y adivinarlos pondría monedas en casillas por las que el jugador
-        /// nunca pasó.
+        /// continuación de casilla siguió empujando, esos pasos extra ya no están sobre esta línea
+        /// recta y pondrían monedas en casillas por las que el jugador nunca pasó.
         /// </para>
         /// </remarks>
         private static IEnumerable<GridCoord> TumbleTiles(

@@ -7,22 +7,14 @@ using UnityEngine;
 namespace Rollgeon.Combat.AI.Bosses.Bandida
 {
     /// <summary>
-    /// HOLD (Fase 2): traba una ranura de la fila. El rodillo trabado deja de cancelar la cuenta y
-    /// se vuelve inrompible, así que quedan dos blancos válidos — los dos de la punta, los que
-    /// están más lejos.
+    /// HOLD (Fase 2): traba una ranura de la fila — su rodillo deja de cancelar la cuenta y se
+    /// vuelve inrompible.
     /// </summary>
     /// <remarks>
-    /// <para>
-    /// Va dentro del <c>Once</c> del gate de fase: es un one-shot. Devuelve
-    /// <see cref="AIResult.Failed"/> si la fila todavía no está armada, para que el <c>Once</c> no
-    /// latchee en falso y lo reintente al turno siguiente.
-    /// </para>
-    /// <para>
-    /// <b>Invulnerabilidad = pool de vida inagotable.</b> El <c>DamagePipeline</c> no expone un
-    /// canal de inmunidad y agregarlo sería cambiar una fundación. Con <see cref="LockedHp"/> muy
-    /// por encima del techo de daño del jugador el rodillo no se rompe en toda la pelea, y su barra
-    /// se queda visualmente llena — que es exactamente cómo se lee "trabado".
-    /// </para>
+    /// Devuelve <see cref="AIResult.Failed"/> si la fila todavía no está armada, para que el
+    /// <c>Once</c> que lo envuelve no se consuma y lo reintente al turno siguiente. La
+    /// invulnerabilidad se simula con vida inagotable: el <c>DamagePipeline</c> no expone un canal
+    /// de inmunidad.
     /// </remarks>
     [Serializable, HideReferenceObjectPicker]
     public sealed class AINode_LockReel : AIActionNode
@@ -50,7 +42,7 @@ namespace Rollgeon.Combat.AI.Bosses.Bandida
             service.LockSlot(Side, LockedHp);
 
             // Si la ranura está rota justo ahora, el HOLD se aplica cuando AINode_SpawnReels la
-            // repone (lee Slot.Locked). Acá solo blindamos al rodillo que ya está en la fila.
+            // repone (lee Slot.Locked).
             for (int i = 0; i < slots.Count; i++)
             {
                 if (slots[i].Side != Side || !slots[i].IsAlive) continue;

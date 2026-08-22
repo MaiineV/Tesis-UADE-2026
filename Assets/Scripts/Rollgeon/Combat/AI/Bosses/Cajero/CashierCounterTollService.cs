@@ -14,27 +14,16 @@ namespace Rollgeon.Combat.Cashier
     /// <see cref="CashierLedgerService"/>.
     /// </summary>
     /// <remarks>
-    /// <para>
-    /// <b>Ventana ciega del primer turno:</b> el árbol arma el peaje recién en su primer tick y la
-    /// cola es player-first, así que cruzar el mostrador en la apertura sale gratis. Una vez por
-    /// pelea; la alternativa era que el servicio adivinara solo dónde está el mostrador.
-    /// </para>
-    /// <para>
     /// Lee posiciones vivas y no la foto del armado, así el peaje sigue al jefe si el kiteo lo mueve
-    /// y se apaga solo cuando muere.
-    /// </para>
-    /// <para>
-    /// <b>Tests:</b> queda suscripto a <c>EventManager</c>, que <c>ServiceLocator.Clear()</c> no
-    /// desengancha. El fixture que lo cree debe llamar <see cref="Dispose"/> en el teardown o el
-    /// peaje sigue cobrando en el fixture siguiente.
-    /// </para>
+    /// y se apaga solo cuando muere. Queda suscripto a <c>EventManager</c>, que
+    /// <c>ServiceLocator.Clear()</c> no desengancha: el fixture que lo cree debe llamar
+    /// <see cref="Dispose"/> en el teardown o el peaje sigue cobrando en el fixture siguiente.
     /// </remarks>
     public sealed class CashierCounterTollService : ICashierCounterTollService, IDisposable
     {
         /// <summary>
-        /// Clasificación del daño del peaje. Es <see cref="AttackKind.Environmental"/> y no un
-        /// ataque suyo porque no lo tira él: lo cobra el mostrador por quedarte de su lado, como
-        /// una trampa de piso — el jefe puede estar aturdido y el peaje se cobra igual.
+        /// Clasificación del daño del peaje: <see cref="AttackKind.Environmental"/> porque lo cobra
+        /// el mostrador y no el jefe, así que se cobra incluso con el jefe aturdido.
         /// </summary>
         public const AttackKind TollKind = AttackKind.Environmental;
 
@@ -58,10 +47,7 @@ namespace Rollgeon.Combat.Cashier
             EventManager.Subscribe(EventName.OnRunEnd, _onScopeEnded);
         }
 
-        /// <summary>
-        /// Devuelve el servicio registrado o crea y registra uno nuevo (Global). Lo llama el nodo
-        /// del peaje — un sistema que sólo quiera leer el estado debería usar <c>TryGetService</c>.
-        /// </summary>
+        /// <summary>Devuelve el servicio registrado o crea y registra uno nuevo (Global).</summary>
         public static ICashierCounterTollService ResolveOrCreate()
         {
             if (ServiceLocator.TryGetService<ICashierCounterTollService>(out var existing) && existing != null)
@@ -70,8 +56,7 @@ namespace Rollgeon.Combat.Cashier
             var created = new CashierCounterTollService();
             ServiceLocator.AddService<ICashierCounterTollService>(created, ServiceScope.Global);
 
-            // El overlay nace con el peaje y no por su cuenta: es lo único que lo dibuja, y crearlo
-            // acá garantiza que exista exactamente cuando hay un peaje que anunciar.
+            // El overlay nace con el peaje: es lo único que lo dibuja.
             CashierCounterTollOverlay.ResolveOrCreate();
             return created;
         }
@@ -132,19 +117,9 @@ namespace Rollgeon.Combat.Cashier
         /// local quedaría desfasado justo después de cargar una partida.
         /// </summary>
         /// <remarks>
-        /// <para>
-        /// El <c>RoundIndex</c> es 0-based y el jugador abre cada ronda (CNF-006), así que su ronda
-        /// N tiene índice N-1 — la misma conversión que documenta
-        /// <c>ForcedRerollCapabilityService</c>. Con cadencia 2 eso deja la ronda 1 franca, que es
-        /// la que el peaje ya regalaba de todos modos por la ventana ciega del primer turno: la
-        /// intermitencia no agrega un caso raro al arranque.
-        /// </para>
-        /// <para>
-        /// Sin <see cref="TurnOrderService"/> registrado cobra, no perdona. Es el mismo criterio
-        /// permisivo de <c>PcRoundNumber</c> ("no sabemos la ronda ⇒ no vetamos") y falla del lado
-        /// del comportamiento viejo: un peaje que se apaga solo porque falta un servicio se
-        /// diagnostica mucho peor que uno que cobra siempre.
-        /// </para>
+        /// El <c>RoundIndex</c> es 0-based y el jugador abre cada ronda, así que su ronda N tiene
+        /// índice N-1 — de ahí el <c>+1</c>. Sin <see cref="TurnOrderService"/> registrado cobra,
+        /// no perdona.
         /// </remarks>
         private bool IsChargingRound()
         {
@@ -158,8 +133,7 @@ namespace Rollgeon.Combat.Cashier
 
         /// <summary>
         /// Si <paramref name="row"/> y <paramref name="otherRow"/> caen del mismo lado de
-        /// <paramref name="counterRow"/>. La fila del mostrador no es lado: parado en una abertura
-        /// estás en la puerta, y la ficha cobra por comprometerte con un lado, no por asomarte.
+        /// <paramref name="counterRow"/>. La fila del mostrador no cuenta como lado.
         /// </summary>
         public static bool IsSameSide(int row, int otherRow, int counterRow)
         {
@@ -201,9 +175,6 @@ namespace Rollgeon.Combat.Cashier
             if (args == null || args.Length == 0) return;
             if (!(args[0] is Guid entityGuid) || entityGuid != _payerGuid) return;
 
-            // La ronda franca se chequea ANTES de la geometría: es la ronda en la que el jugador
-            // tiene permitido plantarse del lado de él, así que estar ahí no es información que el
-            // peaje necesite mirar.
             if (!IsChargingRound()) return;
 
             if (!ServiceLocator.TryGetService<IGridManager>(out var grid) || grid == null) return;
@@ -230,26 +201,12 @@ namespace Rollgeon.Combat.Cashier
         // Presentación
         // ======================================================================
 
-        /// <summary>
-        /// Manotazo del Cajero + impacto sobre el que pagó, al cobrar. Sin esto los 10 salen como un
-        /// número flotante huérfano al cerrar el turno y el peaje se lee como daño aleatorio de la
-        /// sala en vez de como el precio de quedarse de su lado.
-        /// </summary>
+        /// <summary>Manotazo del Cajero + impacto sobre el que pagó, en el momento del cobro.</summary>
         /// <remarks>
-        /// <para>
-        /// Va acá y no en <c>AINode_CashierCounterToll</c>: el nodo re-arma todos los turnos, así que
-        /// animarlo ahí pondría un golpe en turnos sin cobro y quedaría mudo justo en el turno en
-        /// que sí se cobra.
-        /// </para>
-        /// <para>
-        /// <b>No bloquea el turno.</b> El cobro cae en <c>OnTurnFinished</c>, fuera de toda coroutine
-        /// que pueda esperarlo, así que un <c>BeginFeedbackWait</c> acá subiría el depth sin que
-        /// nadie lo baje.
-        /// </para>
-        /// <para>
-        /// Todos los steps arrancan juntos, sin colgarse del Animation Event de impacto: el daño ya
-        /// cayó, y un step esperando <c>"hit"</c> no se destrabaría hasta el watchdog.
-        /// </para>
+        /// No bloquea el turno: el cobro cae en <c>OnTurnFinished</c>, fuera de toda coroutine que
+        /// pueda esperarlo, así que un <c>BeginFeedbackWait</c> acá subiría el depth sin que nadie lo
+        /// baje. Todos los steps arrancan juntos: un step esperando el Animation Event <c>"hit"</c>
+        /// no se destrabaría hasta el watchdog.
         /// </remarks>
         private void PlayTollFeedback(Guid payerGuid)
         {

@@ -7,41 +7,15 @@ namespace Rollgeon.Combat.AI.Decisions
 {
     /// <summary>
     /// Arma el peaje del mostrador: a partir de este turno, el jugador que cierre su turno del
-    /// mismo lado del mostrador que el Cajero paga <see cref="Damage"/>. Ficha de diseño
-    /// "El Cajero" (piso 2), §El peaje.
+    /// mismo lado del mostrador que el Cajero paga <see cref="Damage"/>.
     /// </summary>
     /// <remarks>
-    /// <para>
-    /// <b>El nodo arma; el cobro lo hace <see cref="ICashierCounterTollService"/>.</b> El peaje se
-    /// paga al terminar el turno del jugador, no en el del jefe, así que no puede resolverse en un
-    /// tick del árbol. Lo que el nodo aporta es lo único que el servicio no puede deducir: quién es
-    /// el Cajero, quién es el que paga y en qué fila está su mostrador.
-    /// </para>
-    /// <para>
-    /// <b>Re-arma todos los turnos a propósito.</b> Es barato e idempotente, y es lo que hace que
-    /// el peaje se recupere solo si algo dejó el servicio en blanco a mitad de pelea (fin de
-    /// combate mal disparado, restore de save). Un armado único al primer tick dejaría el
-    /// mostrador mudo el resto de la pelea sin que nada lo delate.
-    /// </para>
-    /// <para>
-    /// <b>Va antes del ciclo de ataque en el árbol.</b> Mismo motivo que el gate del arqueo: en el
-    /// path no-coroutine un Running del ataque aborta lo que venga después, y el peaje no puede
-    /// depender de que el jefe llegue a atacar.
-    /// </para>
-    /// <para>
-    /// <b><see cref="ChargesEveryNRounds"/> en un asset viejo llega en 0.</b> Odin no corre los
-    /// inicializadores de campo al deserializar, así que un <c>ED_Boss_Cajero.asset</c> autorado
-    /// antes de que el campo existiera lo trae en 0. <c>Arm</c> clampea a 1 ⇒ cobra todas las
-    /// rondas, que es el comportamiento viejo: degradar hacia lo que ya funcionaba y no hacia un
-    /// peaje apagado. Re-correr el builder lo pone en su valor.
-    /// </para>
-    /// <para>
-    /// <b>Sin presentación a propósito.</b> El manotazo y el impacto del peaje los dispara
-    /// <see cref="CashierCounterTollService"/> en el momento del cobro. Acá no hay nada que mostrar:
-    /// armar es idempotente y corre todos los turnos, así que una animación en este tick sería un
-    /// golpe en pantalla en turnos donde nadie pagó — y faltaría en el único momento que importa,
-    /// que cae al cerrar el turno del jugador, fuera del árbol.
-    /// </para>
+    /// El nodo sólo arma; el cobro lo hace <see cref="ICashierCounterTollService"/> al cerrar el
+    /// turno del jugador, fuera del árbol. Re-arma todos los turnos porque es idempotente y un
+    /// armado único al primer tick dejaría el mostrador mudo si algo deja el servicio en blanco a
+    /// mitad de pelea. Va antes del ciclo de ataque en el árbol: en el path no-coroutine un Running
+    /// del ataque aborta lo que venga después. <see cref="ChargesEveryNRounds"/> llega en 0 en un
+    /// asset viejo (Odin no corre los inicializadores de campo) y <c>Arm</c> lo clampea a 1.
     /// </remarks>
     [Serializable, HideReferenceObjectPicker]
     public sealed class AINode_CashierCounterToll : AIActionNode, IAIOpeningNode
@@ -76,9 +50,8 @@ namespace Rollgeon.Combat.AI.Decisions
         }
 
         /// <summary>
-        /// Armar es justo lo que hay que tener puesto de entrada: el overlay del mostrador se crea
-        /// junto con el servicio, así que sin esto la línea que dice de qué lado no se puede parar
-        /// no se pinta hasta que el jefe juega, y el jugador cruza sin saber que hay peaje.
+        /// Arma en la apertura: el overlay del mostrador nace junto con el servicio, así que sin
+        /// esto el lado que cobra no se pinta hasta que el jefe juega.
         /// </summary>
         public void Opening(AIContext context) => Tick(context);
     }

@@ -137,8 +137,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         public static readonly Color IceOverlayTint = new Color(0.35f, 0.8f, 1f, 0.55f);
 
         /// <summary>
-        /// Grafito del lápiz. <b>Hoy no pinta nada</b> (el lápiz es golpe directo), pero no se borra:
-        /// <c>AnotadorVisualWiringTests</c> lo afirma legible contra los otros dos tintes.
+        /// Grafito del lápiz. <c>AnotadorVisualWiringTests</c> lo afirma legible contra los otros dos
+        /// tintes.
         /// </summary>
         public static readonly Color PencilOverlayTint = new Color(0.42f, 0.45f, 0.58f, 0.6f);
 
@@ -334,8 +334,6 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         {
             return new AINode_ShiftComboToNeighbor
             {
-                // Pregunta abierta de la ficha; RandomNeighbor es lo único consistente con sus dos
-                // mitades ("nunca a tu favor" y "hay corrimientos que te mejoran").
                 Direction = AINode_ShiftComboToNeighbor.ShiftDirection.RandomNeighbor,
                 ComboLogWindow = 5,
                 ShiftsPerTurnPhase1 = ShiftsPerTurnPhase1,
@@ -507,8 +505,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
             AssetDatabase.Refresh();
 
             Debug.Log($"[AnotadorAssetBuilder] Listo: '{EnemyAssetPath}' + '{IceHazardAssetPath}' + " +
-                      $"'{VisualPrefabPath}' + '{IceVfxPrefabPath}'. " +
-                      "Falta a mano: sumarlo al EnemyCatalog / BossFloorManager del piso 2.");
+                      $"'{VisualPrefabPath}' + '{IceVfxPrefabPath}'.");
             Selection.activeObject = boss;
         }
 

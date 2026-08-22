@@ -25,9 +25,8 @@ namespace Rollgeon.Combat.AI.Readers
                 StatType.Health => Get<Health>(context, context.PlayerGuid),
                 StatType.Attack => Get<Attack>(context, context.PlayerGuid),
                 StatType.Speed => Get<Speed>(context, context.PlayerGuid),
-                // Feature#0050: el jugador ya no tiene atributo Energy (el pool de rolls
-                // vive en IRollPoolService, no en AttributesManager) — esto lee 0. La rama
-                // queda por compat de trees serializados; ningún builder la autorea.
+                // El jugador no tiene atributo Energy (el pool de rolls vive en
+                // IRollPoolService, no en AttributesManager), así que esta rama lee 0.
                 StatType.Energy => Get<Energy>(context, context.PlayerGuid),
                 StatType.Shield => Get<Shield>(context, context.PlayerGuid),
                 StatType.HealStrength => Get<HealStrength>(context, context.PlayerGuid),

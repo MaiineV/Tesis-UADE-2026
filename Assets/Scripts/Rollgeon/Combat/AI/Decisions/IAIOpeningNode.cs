@@ -5,16 +5,10 @@ namespace Rollgeon.Combat.AI.Decisions
     /// jugador: la mesa en el piso, el peaje armado, el dado confiscado.
     /// </summary>
     /// <remarks>
-    /// <para>
-    /// Existe porque el estado de sala de un jefe no es estado de sala: está autorado como nodos de
-    /// acción dentro de su árbol, y el árbol sólo tickea en el turno del jefe. Como la cola pone al
-    /// jugador en el índice 0 sin condición (CNF-006), su primer turno se jugaba contra una sala
-    /// vacía y todo aparecía junto al cerrarlo.
-    /// </para>
-    /// <para>
-    /// Es un opt-in y no un barrido del árbol entero a propósito: la apertura instala amenaza, no la
-    /// ejecuta. Un ataque que corriera acá sería daño antes de que el jugador toque un dado.
-    /// </para>
+    /// El estado de sala de un jefe está autorado como nodos de acción de su árbol, y el árbol sólo
+    /// tickea en el turno del jefe, que va después del del jugador (CNF-006). Sólo lo implementan
+    /// los nodos que instalan amenaza: un ataque que corriera acá sería daño antes de que el jugador
+    /// toque un dado.
     /// </remarks>
     public interface IAIOpeningNode
     {

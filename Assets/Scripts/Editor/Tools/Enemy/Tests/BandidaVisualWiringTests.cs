@@ -11,10 +11,9 @@ using Object = UnityEngine.Object;
 namespace Rollgeon.Editor.Tools.Enemy.Tests
 {
     /// <summary>
-    /// Pase visual de <b>La Bandida</b>: jefe y rodillo con arte, retinte y retrato propios (antes
-    /// los dos <c>EnemyDataSO</c> apuntaban al mismo <c>SunkedGrand.prefab</c>). Toca el
-    /// <c>AssetDatabase</c> —lo que se afirma es el prefab escrito— pero construye en una carpeta
-    /// temporal que el teardown borra.
+    /// Pase visual de <b>La Bandida</b>: jefe y rodillo con arte, retinte y retrato propios. Toca
+    /// el <c>AssetDatabase</c> —lo que se afirma es el prefab escrito— pero construye en una
+    /// carpeta temporal que el teardown borra.
     /// </summary>
     [TestFixture]
     public class BandidaVisualWiringTests
@@ -178,7 +177,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         }
 
         [Test]
-        public void ReelSpec_ShipsWithoutRetint_UntilSomeoneChecksTheSubmeshesInTheEditor()
+        public void ReelSpec_CarriesNoRetints()
         {
             // Arrange
             var spec = BandidaAssetBuilder.BuildReelWrapperSpec();
@@ -186,7 +185,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             // Assert — slotv02 trae 8 materiales por submalla: retintar a ciegas repinta la pieza
             // equivocada.
             Assert.IsTrue(spec.Retints == null || spec.Retints.Count == 0,
-                "Si se le agrega retinte al rodillo, verificar en el editor qué submalla es cuál.");
+                "El spec del rodillo trae retintes: con 8 materiales por submalla, retintar a " +
+                "ciegas repinta la pieza equivocada.");
         }
 
         // ======================================================================

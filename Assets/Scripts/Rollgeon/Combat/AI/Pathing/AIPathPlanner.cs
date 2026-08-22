@@ -100,7 +100,7 @@ namespace Rollgeon.Combat.AI.Pathing
             }
 
             if (best == r.Origin) return AIPathPlanResult.NoMove;
-            // Path null: el ejecutor usa el Move clásico — mismo A* y mismos eventos que hoy.
+            // Path null: el ejecutor usa el Move clásico, con el mismo A* y los mismos eventos.
             return new AIPathPlanResult(true, best, null);
         }
 
@@ -390,8 +390,8 @@ namespace Rollgeon.Combat.AI.Pathing
                         : 0;
 
                 case BeneficialTileKind.Impulse:
-                    // INERTE por decisión de diseño: sin tirada real de movimiento, la casilla
-                    // no otorga nada — la IA no debe valorarla hasta que se active.
+                    // Sin tirada real de movimiento la casilla no otorga nada, así que no suma
+                    // score.
                     return 0;
 
                 case BeneficialTileKind.SafeZone:

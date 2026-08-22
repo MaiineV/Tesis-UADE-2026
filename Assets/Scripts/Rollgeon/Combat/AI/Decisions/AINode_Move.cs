@@ -14,10 +14,8 @@ namespace Rollgeon.Combat.AI.Decisions
     /// retrocede (kite) si está demasiado cerca. TECHNICAL.md §7.5 + §17.§B.
     /// </summary>
     /// <remarks>
-    /// Generaliza el viejo "Move Toward Player": con <see cref="TargetSelector"/> null el
-    /// resolver usa <c>TargetSelector_AlwaysPlayer</c>, y con <see cref="DesiredRange"/> null
-    /// se cae al legacy <see cref="StopAdjacent"/> (rango 1). Con <see cref="Retreat"/> activo
-    /// subsume también el comportamiento de <c>AINode_KeepDistance</c>.
+    /// Con <see cref="TargetSelector"/> null el resolver usa <c>TargetSelector_AlwaysPlayer</c>, y
+    /// con <see cref="DesiredRange"/> null se cae a <see cref="StopAdjacent"/> (rango 1).
     /// </remarks>
     [Serializable, HideReferenceObjectPicker]
     public sealed class AINode_Move : AIActionNode

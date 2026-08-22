@@ -18,42 +18,26 @@ namespace Rollgeon.Combat.AI.Decisions
     /// </summary>
     /// <remarks>
     /// <para>
-    /// <b>Por qué de a una:</b> la ficha lo pide con esas palabras — "se vencen de a una, no todas
-    /// juntas: la presión es constante, no un golpe". Y la cuenta lo explica: la sala suelta las
-    /// cuatro monedas de la tanda juntas y las cuatro nacen con el mismo reloj, así que cobrarlas
-    /// juntas sería casi todo el <see cref="MaxHealPerFight"/> de la pelea en un solo turno. De a
-    /// una, la misma tanda se paga a lo largo de cuatro turnos y el jugador ve subir la barra
-    /// despacio en vez de un salto que ya no puede contestar. El intervalo no es un número aparte:
-    /// el nodo tickea una vez por turno del jefe, así que "una por tick" ya es "una por ronda" y el
-    /// reloj sigue siendo uno solo.
+    /// De a una y no una tanda entera: el nodo tickea una vez por turno del jefe, así que "una por
+    /// tick" ya es "una por ronda" y las cuatro monedas de una tanda —que nacen con el mismo
+    /// reloj— se pagan a lo largo de cuatro turnos en vez de casi todo el
+    /// <see cref="MaxHealPerFight"/> de golpe.
     /// </para>
     /// <para>
-    /// El vencimiento cumplido no se pierde: una moneda que ya venció y no le tocó turno se queda en
-    /// el piso —todavía levantable— y sale en el siguiente. Con cola pendiente eso es exactamente
-    /// una moneda por ronda, que es la presión constante que la ficha describe.
+    /// El reloj es de este nodo y no del <c>DurationRounds</c> de la moneda porque el servicio de
+    /// hazards expira igual una moneda cobrada y una vencida (las dos terminan en
+    /// <c>OnHazardExpired</c>) y desde afuera no se puede distinguir. Las monedas nacen permanentes
+    /// (<c>DurationRounds = 0</c>) justamente para que este nodo sea el único que las mata.
     /// </para>
     /// <para>
-    /// <b>Por qué el reloj es de este nodo y no del <c>DurationRounds</c> de la moneda:</b> el
-    /// servicio de hazards expira igual una moneda cobrada y una vencida (las dos terminan en
-    /// <c>OnHazardExpired</c>), así que desde afuera no se puede saber cuál de las dos pasó — y la
-    /// diferencia es toda la pelea. Acá se ve: una moneda que desaparece antes de su vencimiento la
-    /// levantó el jugador y se olvida sin curar; una que sigue viva pasado el vencimiento la cobra
-    /// él. Las monedas nacen permanentes (<c>DurationRounds = 0</c>) justamente para que este nodo
-    /// sea el único que las mata.
+    /// Descubre por barrido de las instancias vivas de <see cref="Coin"/>, sin que quien la suelta le
+    /// avise, así que va <b>después</b> de los nodos que sueltan monedas en el Sequence: si fuera
+    /// antes, cada moneda viviría una ronda de más.
     /// </para>
     /// <para>
-    /// <b>Descubrimiento por barrido, no por registro:</b> el nodo no necesita que quien suelta la
-    /// moneda le avise. Barre las instancias vivas de <see cref="Coin"/> y le pone vencimiento a la
-    /// que no conoce, así que sirve igual para las monedas de sala, las del empujón y cualquier
-    /// fuente futura. Por eso va <b>después</b> de los nodos que sueltan monedas en el Sequence: si
-    /// fuera antes, cada moneda viviría una ronda de más.
-    /// </para>
-    /// <para>
-    /// <b>Estado de pelea:</b> vencimientos y curación acumulada son <c>[NonSerialized]</c>, o sea
-    /// que viven en la copia runtime del árbol (<c>EnemyDataSO.CreateRuntimeAIRoot</c>) y no en el
-    /// asset — el techo de curación arranca en cero en cada pelea nueva sin depender de ningún
-    /// evento de teardown. Mismo patrón que <see cref="AINode_Alternate"/> y
-    /// <see cref="AINode_SpawnReinforcements"/>.
+    /// Vencimientos y curación acumulada son <c>[NonSerialized]</c>: viven en la copia runtime del
+    /// árbol y no en el asset, así que el techo de curación arranca en cero en cada pelea nueva sin
+    /// depender de ningún evento de teardown.
     /// </para>
     /// </remarks>
     [Serializable, HideReferenceObjectPicker]
@@ -116,9 +100,8 @@ namespace Rollgeon.Combat.AI.Decisions
         /// </summary>
         /// <remarks>
         /// Las nuevas entran ordenadas por casilla y no en el orden en que las devuelve el servicio
-        /// de hazards, que no garantiza ninguno. Sin esto, cuál de las cuatro monedas de una tanda se
-        /// lleva —o sea qué oro le queda al jugador en el piso— cambiaría entre corridas de la misma
-        /// pelea. Mismo motivo que el sort de <see cref="AINode_CajeroCoinRain"/>.
+        /// de hazards, que no garantiza ninguno: sin esto, cuál de las monedas de una tanda se lleva
+        /// cambiaría entre corridas de la misma pelea.
         /// </remarks>
         private void Discover(IHazardService hazards, int roundIndex)
         {

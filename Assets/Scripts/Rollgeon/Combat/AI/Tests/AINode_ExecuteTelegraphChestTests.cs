@@ -11,7 +11,7 @@ using Rollgeon.Grid;
 namespace Rollgeon.Combat.AI.Tests
 {
     /// <summary>
-    /// Tests del daño AoE incidental al cofre (Feature#0046): un telegraph que cubre
+    /// Tests del daño AoE incidental al cofre: un telegraph que cubre
     /// la tile del cofre lo golpea; otros enemigos en el área NO reciben daño
     /// (sin friendly fire).
     /// </summary>

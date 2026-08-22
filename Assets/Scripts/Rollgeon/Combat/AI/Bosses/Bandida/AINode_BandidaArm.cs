@@ -14,14 +14,12 @@ using UnityEngine;
 namespace Rollgeon.Combat.AI.Bosses.Bandida
 {
     /// <summary>
-    /// El brazo de La Bandida: 12 de daño melee directo a quien haya terminado su turno pegado a la
-    /// máquina. Sin marca y sin área. Ficha de diseño "La Bandida" (piso 1).
+    /// El brazo de La Bandida: daño melee directo, sin marca y sin área, a quien haya terminado su
+    /// turno pegado a la máquina.
     /// </summary>
     /// <remarks>
-    /// "Termina el turno pegado" se lee del presente: el jefe actúa después del jugador (CNF-006). Se
-    /// auto-gatea aunque el árbol ya lo envuelva en un <c>If(PcTargetInRange)</c>, y el
-    /// <see cref="Metric"/> tiene que ser el mismo que el del gate o una de las dos mitades miente
-    /// sobre las diagonales.
+    /// El <see cref="Metric"/> tiene que ser el mismo que el del <c>PcTargetInRange</c> que gatea
+    /// el nodo, o una de las dos mitades miente sobre las diagonales.
     /// </remarks>
     [Serializable, HideReferenceObjectPicker]
     public sealed class AINode_BandidaArm : AIActionNode
@@ -60,9 +58,8 @@ namespace Rollgeon.Combat.AI.Bosses.Bandida
         [Tooltip("Feel (hitstop/shake) del impacto. Vacío = el id canónico.")]
         public string ImpactFeelId = BossFeedbackIds.BandidaImpactFeel;
 
-        [Tooltip("Event key del Animation Event que marca el frame del golpe. Hoy ningún clip del rig " +
-                 "Mecha publica eventos, así que vacío es lo correcto: el daño cae al terminar la " +
-                 "secuencia. Cuando el clip tenga su evento, ponerlo acá adelanta el número al golpe.")]
+        [Tooltip("Event key del Animation Event que marca el frame del golpe. Vacío = el daño cae al " +
+                 "terminar la secuencia; con el event key puesto, el número sale en el frame del golpe.")]
         public string ImpactEventKey;
 
         public override string NodeName => $"Bandida — Arm ({Damage})";
@@ -110,8 +107,8 @@ namespace Rollgeon.Combat.AI.Bosses.Bandida
         // ---- pasos compartidos por los dos caminos -------------------------
 
         /// <summary>
-        /// El gate completo del nodo. Separado del golpe porque el camino coroutine tiene que decidir
-        /// <b>antes</b> de animar: si no, retendría el turno para bajar la palanca sobre nadie.
+        /// El gate completo del nodo: el camino coroutine tiene que decidir antes de animar, o
+        /// retiene el turno para bajar la palanca sobre nadie.
         /// </summary>
         private bool CanStrike(AIContext context)
         {
@@ -138,16 +135,12 @@ namespace Rollgeon.Combat.AI.Bosses.Bandida
             });
         }
 
-        /// <remarks>
-        /// Request de secuencia a mano y no <c>EffPlaySequence</c>: el nodo no nace de un effect pass
-        /// y no tiene <c>EffectContext</c> que pasarle (por eso <c>FeedbackRequest.Context</c> admite null).
-        /// </remarks>
         private IEnumerator PlaySwing(AIContext context, Action onImpact)
         {
             if (!ServiceLocator.TryGetService<IFeedbackService>(out var feedback) || feedback == null) yield break;
 
-            // Impacto encadenado al final de la palanca (AfterStep 0) y no por evento: ningún clip del
-            // rig Mecha publica keys, y un StartMode=OnEvent esperaría algo que nunca llega.
+            // Impacto encadenado al final de la palanca (AfterStep 0) y no por evento: un
+            // StartMode=OnEvent esperaría una key que el clip no publica.
             var steps = new List<FeedbackSequenceStep>(3)
             {
                 new FeedbackSequenceStep
@@ -207,8 +200,7 @@ namespace Rollgeon.Combat.AI.Bosses.Bandida
 
         /// <summary>
         /// Campo vacío ⇒ el id canónico: Odin no corre field initializers, así que un
-        /// <c>ED_Boss_Bandida</c> ya autorado no trae estos campos. Para silenciar un canal se lo
-        /// apunta a otra entry, no se lo vacía.
+        /// <c>ED_Boss_Bandida</c> ya autorado no trae estos campos.
         /// </summary>
         private static string Authored(string authored, string canonical)
             => string.IsNullOrEmpty(authored) ? canonical : authored;

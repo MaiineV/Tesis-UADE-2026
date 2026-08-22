@@ -7,12 +7,11 @@ namespace Rollgeon.Combat.AI.Decisions
 {
     /// <summary>
     /// Le habilita (o le quita) el reroll a la mano de dados del propio boss —
-    /// <see cref="IBossDiceHandService.SetRerollsPerRound"/>. Setup de Fase 2 de La Generala: "le
-    /// dan reroll", exactamente la mecánica que tiene el jugador.
+    /// <see cref="IBossDiceHandService.SetRerollsPerRound"/>.
     /// </summary>
     /// <remarks>
-    /// Pensado para ir dentro de <c>If(PcOwnerHpBelow) → Once(...)</c>: el flag vive en el servicio
-    /// (run-scoped), así que aplicarlo una vez alcanza y re-aplicarlo es idempotente.
+    /// El flag vive en el servicio (run-scoped), así que aplicarlo una vez alcanza y re-aplicarlo es
+    /// idempotente.
     /// </remarks>
     [Serializable, HideReferenceObjectPicker]
     public sealed class AINode_SetHandReroll : AIActionNode

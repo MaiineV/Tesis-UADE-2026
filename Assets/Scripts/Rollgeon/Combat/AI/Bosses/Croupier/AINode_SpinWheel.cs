@@ -17,16 +17,8 @@ namespace Rollgeon.Combat.AI.Bosses.Croupier
     /// confiscar el dado son otros dos nodos que leen de acá.
     /// </summary>
     /// <remarks>
-    /// <para>
-    /// Va inmediatamente antes del nodo de confiscación y del de marcado en el Sequence raíz, y abre
-    /// el windup. El camino coroutine <b>retiene el turno</b> hasta que termina la animación, para que
-    /// el marcado no empiece a pintar tiles mientras el jefe todavía está cantando.
-    /// </para>
-    /// <para>
     /// <see cref="CantoFeedbackId"/> vacío ⇒ el id canónico (<see cref="BossFeedbackIds"/>): Odin no
-    /// corre field initializers, así que un <c>ED_Boss_Croupier</c> ya autorado no trae el campo. Para
-    /// silenciarlo se lo apunta a otra entry, no se lo vacía.
-    /// </para>
+    /// corre field initializers, así que un <c>ED_Boss_Croupier</c> ya autorado no trae el campo.
     /// </remarks>
     [Serializable, HideReferenceObjectPicker]
     public sealed class AINode_SpinWheel : AIActionNode, IAIOpeningNode
@@ -49,7 +41,7 @@ namespace Rollgeon.Combat.AI.Bosses.Croupier
 
         [Tooltip("Event key del Animation Event en el que el número aparece sobre el jefe. El clip de " +
                  "ataque del rig Healer publica 'cast'. Vacío = el número se publica al terminar la " +
-                 "animación, que es el degradado correcto: el timing es una preferencia, no la mecánica.")]
+                 "animación.")]
         public string CantoEventKey;
 
         [NonSerialized] private int _lastNumber;
@@ -69,14 +61,12 @@ namespace Rollgeon.Combat.AI.Bosses.Croupier
         }
 
         /// <summary>
-        /// Canta por el camino síncrono antes del primer turno. Dos cosas dependen de esto: el nodo
-        /// de confiscación lee el número cantado, y <c>Bind</c> —que pasa por acá— es lo que instala
-        /// la Represalia de mesa. Sin abrir, pegarle al Croupier en el turno de apertura era gratis.
+        /// Canta por el camino síncrono antes del primer turno: el nodo de confiscación lee el número
+        /// cantado y <c>Bind</c> —que pasa por acá— es lo que instala la Represalia de mesa.
         /// </summary>
         /// <remarks>
-        /// Sin animación a propósito: la apertura corre dentro del armado de la cola, y retener el
-        /// turno ahí es colgar el arranque del combate. El canto animado sigue siendo el del turno
-        /// del jefe.
+        /// Sin animación: la apertura corre dentro del armado de la cola y retener el turno ahí cuelga
+        /// el arranque del combate.
         /// </remarks>
         public void Opening(AIContext context) => Tick(context);
 
@@ -99,18 +89,15 @@ namespace Rollgeon.Combat.AI.Bosses.Croupier
             var canto = PlayCanto(context, singOnce);
             while (canto.MoveNext()) yield return canto.Current;
 
-            // Red de seguridad: sin feedback service o con la secuencia cortada, el número igual sale.
-            // Los nodos que siguen en el Sequence lo dan por hecho.
+            // Red de seguridad: sin feedback service o con la secuencia cortada, el número igual sale
+            // — los nodos que siguen en el Sequence lo dan por hecho.
             singOnce();
             onResult?.Invoke(AIResult.Succeeded);
         }
 
         // ---- pasos compartidos por los dos caminos -------------------------
 
-        /// <summary>
-        /// Resuelve el servicio y sortea los números, sin publicar nada. Separado de
-        /// <see cref="Sing"/> para que el camino coroutine pueda fallar <b>antes</b> de animar.
-        /// </summary>
+        /// <summary>Resuelve el servicio y sortea los números, sin publicar nada.</summary>
         private bool TryPrepare(AIContext context, out ICroupierWheelService wheel, out List<int> numbers)
         {
             wheel = null;
@@ -133,10 +120,6 @@ namespace Rollgeon.Combat.AI.Bosses.Croupier
             _lastNumber = numbers[0];
         }
 
-        /// <remarks>
-        /// Request de secuencia a mano y no <c>EffPlaySequence</c>: el nodo no nace de un effect pass
-        /// y no tiene <c>EffectContext</c> que pasarle (por eso <c>FeedbackRequest.Context</c> admite null).
-        /// </remarks>
         private IEnumerator PlayCanto(AIContext context, Action onCanto)
         {
             if (!ServiceLocator.TryGetService<IFeedbackService>(out var feedback) || feedback == null) yield break;
@@ -187,8 +170,8 @@ namespace Rollgeon.Combat.AI.Bosses.Croupier
         }
 
         /// <summary>
-        /// <paramref name="count"/> números distintos entre sí de 1..6. Distintos porque dos números
-        /// iguales en fase 2 harían caer un solo sector y el turno se leería como fase 1.
+        /// <paramref name="count"/> números distintos entre sí de 1..6: dos números iguales en fase 2
+        /// harían caer un solo sector.
         /// </summary>
         private List<int> PickNumbers(AIContext context, int count)
         {
@@ -223,7 +206,6 @@ namespace Rollgeon.Combat.AI.Bosses.Croupier
         }
 
 #if UNITY_EDITOR
-        // Dropdown obligatorio (§0): los ids de feedback nunca se tipean a mano.
         private static IEnumerable<string> GetFeedbackIdsForDropdown()
         {
             foreach (var guid in UnityEditor.AssetDatabase.FindAssets("t:FeedbackDBSO"))

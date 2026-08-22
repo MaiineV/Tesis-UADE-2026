@@ -20,10 +20,6 @@ namespace Rollgeon.Combat.AI.Decisions
     /// hay disponible, y colgarlo de un servicio propio duplicaría el reloj.
     /// </para>
     /// <para>
-    /// Las monedas pueden caer sobre pinchos a propósito: levantarlas ahí cuesta el daño de la
-    /// casilla, y ése es justamente el precio que hace que juntar plata sea una decisión.
-    /// </para>
-    /// <para>
     /// El vencimiento no es de este nodo: cada moneda nace permanente y la expira
     /// <see cref="AINode_CajeroCoinVault"/>, que es el único que puede distinguir una cobrada de
     /// una vencida. Su Failed (todavía no toca tanda) es benigno y va en
@@ -57,10 +53,8 @@ namespace Rollgeon.Combat.AI.Decisions
         [MinValue(0)]
         public int MinSeparation = 2;
 
-        // Estado de pelea. NonSerialized: vive sólo en la copia runtime del árbol
-        // (EnemyDataSO.CreateRuntimeAIRoot), nunca en el asset — mismo patrón que
-        // AINode_Alternate/_Once/_SpawnReinforcements, así que una pelea nueva arranca con la
-        // primera tanda pendiente.
+        // Estado de pelea. NonSerialized: vive sólo en la copia runtime del árbol, nunca en el
+        // asset, así que una pelea nueva arranca con la primera tanda pendiente.
         [NonSerialized] private int _nextRound;
         [NonSerialized] private bool _rained;
 
@@ -140,8 +134,7 @@ namespace Rollgeon.Combat.AI.Decisions
             var picked = new List<GridCoord>(Count);
 
             // Dos pasadas: la primera respeta la separación mínima, la segunda rellena si la sala
-            // no tiene lugar para tanta distancia. Sin la segunda, una sala apretada soltaría menos
-            // monedas de las que dice la ficha.
+            // no tiene lugar para tanta distancia.
             for (int pass = 0; pass < 2 && picked.Count < Count; pass++)
             {
                 int separation = pass == 0 ? MinSeparation : 0;

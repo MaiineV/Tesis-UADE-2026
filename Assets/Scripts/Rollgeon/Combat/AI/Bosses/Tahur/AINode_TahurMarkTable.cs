@@ -7,28 +7,13 @@ using UnityEngine;
 namespace Rollgeon.Combat.AI.Bosses.Tahur
 {
     /// <summary>
-    /// "Pone la mesa": pinta el 3×3 alrededor del Tahúr, daño 0, en cian. Es el único lugar
-    /// desde donde el jugador cobra el pozo. Ficha de diseño "El Tahúr" (piso 3).
+    /// "Pone la mesa": pinta el 3×3 alrededor del Tahúr en cian, daño 0 — el único lugar desde
+    /// donde el jugador cobra el pozo.
     /// </summary>
     /// <remarks>
-    /// <para>
-    /// Va <b>después</b> del movimiento: la mesa de esta ronda no está donde estaba la anterior,
-    /// así que hasta la ronda perfecta pide un paso.
-    /// </para>
-    /// <para>
-    /// <b>No es un segundo TelegraphMark.</b> <see cref="IThreatenedAreaService"/> se indexa por el
-    /// guid de la fuente y la segunda marca pisaría al Castigo. La mesa vive en
-    /// <see cref="ITahurWagerService.TableTiles"/> y su overlay usa una key propia
-    /// (<see cref="TahurWagerService.TableOverlayGuid"/>), así que el cian de la mesa y el naranja
-    /// del castigo coexisten sin pisarse.
-    /// </para>
-    /// <para>
-    /// <b>Va en <see cref="ThreatOverlayState.Safe"/>.</b> El paño no es una amenaza que late: es
-    /// una zona segura declarada, y con La Banca encima (<see cref="AINode_TahurMarkBanca"/>) es
-    /// literalmente el hueco del telegraph invertido. El estado le da el damero quieto que pide la
-    /// ficha en vez del rayado pulsante del Castigo — dos amenazas del mismo jefe que sólo se
-    /// distinguían por matiz.
-    /// </para>
+    /// La mesa vive en <see cref="ITahurWagerService.TableTiles"/> y su overlay usa una key propia
+    /// (<see cref="TahurWagerService.TableOverlayGuid"/>): <see cref="IThreatenedAreaService"/> se
+    /// indexa por el guid de la fuente y una segunda marca del mismo jefe pisaría al Castigo.
     /// </remarks>
     [Serializable, HideReferenceObjectPicker]
     public sealed class AINode_TahurMarkTable : AIActionNode

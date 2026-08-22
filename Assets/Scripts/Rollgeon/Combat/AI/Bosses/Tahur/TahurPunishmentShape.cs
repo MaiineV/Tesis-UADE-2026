@@ -8,15 +8,9 @@ using UnityEngine;
 namespace Rollgeon.Combat.AI.Bosses.Tahur
 {
     /// <summary>
-    /// Una forma del Castigo del Tahúr. La forma dice cuánto le faltó al jugador para armar
-    /// el canto: Column 1 → Row 1 → Column 3 → Scattered 4×2 según la distancia, y
-    /// Scattered 6×2 para la codicia.
+    /// Una forma del Castigo del Tahúr: la forma dice cuánto le faltó al jugador para armar el
+    /// canto.
     /// </summary>
-    /// <remarks>
-    /// Envuelve a <see cref="ThreatAreaShape"/> en vez de agregar shapes nuevas: el jefe no
-    /// necesita geometría nueva, solo elegir en runtime cuál de las existentes usar — que es
-    /// justo lo que <c>AINode_TelegraphMark</c> no puede hacer (su shape es un campo fijo).
-    /// </remarks>
     [Serializable, HideReferenceObjectPicker]
     public class TahurPunishmentShape
     {
@@ -53,7 +47,7 @@ namespace Rollgeon.Combat.AI.Bosses.Tahur
             if (Shape == ThreatShape.DirectionalBand)
             {
                 // La banda direccional necesita origen + destino y el Castigo no sale del jefe:
-                // degradar a la columna del jugador mantiene la lectura "esto se centra en vos".
+                // degrada a la columna del jugador.
                 return ThreatAreaShape.Compute(grid, playerCoord, ThreatShape.Column, Size, HalfRoomAxis.Vertical);
             }
 

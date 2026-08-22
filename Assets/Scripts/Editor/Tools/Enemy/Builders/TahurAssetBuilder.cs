@@ -15,18 +15,17 @@ using UnityEngine;
 namespace Rollgeon.Editor.Tools.Enemy.Builders
 {
     /// <summary>
-    /// Autorea <c>ED_Boss_Tahur.asset</c> — El Tahúr, jefe del piso 3. Números de la ficha de
-    /// diseño v2 (calibrada por simulación el 12/08).
+    /// Autorea <c>ED_Boss_Tahur.asset</c> — El Tahúr, jefe del piso 3.
     /// </summary>
     /// <remarks>
-    /// Ojo con BaseHP: el <c>[Range]</c> de <c>EnemyDataSO.BaseHP</c> se ensanchó a 1000 por este
-    /// jefe. Con el tope viejo el valor se escribía bien por código pero el Inspector lo clampeaba al
-    /// primer roce del slider.
+    /// Ojo con BaseHP: el <c>[Range]</c> de <c>EnemyDataSO.BaseHP</c> tiene que llegar a 1000 por
+    /// este jefe. Con un tope menor el valor se escribe bien por código, pero el Inspector lo
+    /// clampea al primer roce del slider.
     /// </remarks>
     public static class TahurAssetBuilder
     {
         // -----------------------------------------------------------------
-        // Identidad + stats (ficha v2)
+        // Identidad + stats
         // -----------------------------------------------------------------
 
         public const string AssetPath = "Assets/Rollgeon/Enemies/ED_Boss_Tahur.asset";
@@ -51,7 +50,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         public const string EntityId = "boss.tahur";
         public const string DisplayName = "El Tahúr";
 
-        /// <summary>Piso 3: ~8 turnos con el golpe base del piso (mediana 30), igual que la Generala.</summary>
+        /// <summary>Vida del jefe de piso 3.</summary>
         public const int BaseHP = 240;
         public const int BaseAttack = 40;
         public const int BaseSpeed = 4;
@@ -60,7 +59,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         public const int MaxGoldDrop = 80;
 
         // -----------------------------------------------------------------
-        // Números del pozo y del turno (ficha v2)
+        // Números del pozo y del turno
         // -----------------------------------------------------------------
 
         /// <summary>Castigo por cantidad de fichas. La última entrada es el techo del piso 3.</summary>
@@ -77,8 +76,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         public const int DesiredRange = 1;
 
         /// <summary>
-        /// El rastrillo: fichas que el pozo sube solo por ronda, <b>desde la fase 1</b>. Sin él,
-        /// renunciar al pozo sería una postura estable.
+        /// El rastrillo: fichas que el pozo sube solo por ronda, <b>desde la fase 1</b>.
         /// </summary>
         public const int RakeChipsPerRound = 1;
 
@@ -326,7 +324,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         public static GameObject BuildVisualPrefab()
             => BossVisualWrapperBuilder.BuildWrapper(BuildWrapperSpec());
 
-        /// <summary>Reenvío. No borrar: <c>TahurVisualWiringTests</c> lo llama por nombre.</summary>
+        /// <summary>Reenvío que <c>TahurVisualWiringTests</c> llama por nombre.</summary>
         public static GameObject EnsureAnimationFeedbackBridge(string prefabPath)
             => BossVisualWrapperBuilder.EnsureAnimationFeedbackBridge(prefabPath);
 
@@ -410,8 +408,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
                       $"— HP {BaseHP}, castigos {string.Join("/", PotDamageTable)}, poke {PokeDamage}, " +
                       $"rastrillo +{RakeChipsPerRound}/ronda desde fase 1, " +
                       $"Banca {BancaDamage} con el pozo en {BancaChipsThreshold}, " +
-                      $"visual '{(prefab != null ? VisualPrefabPath : "sin cambios")}'. " +
-                      "Falta sumarlo al EnemyCatalog / pool de jefes del piso 3 (wiring de data, a mano).");
+                      $"visual '{(prefab != null ? VisualPrefabPath : "sin cambios")}'.");
 
             Selection.activeObject = data;
             EditorGUIUtility.PingObject(data);

@@ -22,21 +22,15 @@ namespace Rollgeon.Combat.AI.Bosses.Bandida
     /// rodillo.
     /// </summary>
     /// <remarks>
-    /// <para>
-    /// <b>NO envolver en <c>Once</c>.</b> El nodo se auto-gatea (arma la fila una sola vez) pero
-    /// necesita tickear cada turno del jefe para correr los relojes de reposición. Envuelto en
-    /// <c>Once</c> queda latcheado tras el primer spawn y ningún rodillo vuelve nunca.
-    /// </para>
-    /// <para>
-    /// Orden interno del tick: detectar rotos → correr relojes → reponer. Con
-    /// <see cref="RespawnDelayTurns"/> = 2 el rodillo vuelve en el segundo turno del jefe posterior
-    /// a la rotura; con 1 (Fase 2) vuelve en el primero.
-    /// </para>
+    /// El nodo se auto-gatea (arma la fila una sola vez) pero necesita tickear cada turno del jefe
+    /// para correr los relojes de reposición: envuelto en un <c>Once</c> queda latcheado tras el
+    /// primer spawn y ningún rodillo vuelve. Orden interno del tick: detectar rotos → correr
+    /// relojes → reponer.
     /// </remarks>
     [Serializable, HideReferenceObjectPicker]
     public sealed class AINode_SpawnReels : AIActionNode
     {
-        /// <summary>Dirección de la fila respecto del jefe. La máquina está atornillada a la pared.</summary>
+        /// <summary>Dirección de la fila respecto del jefe.</summary>
         public enum RowDirection
         {
             /// <summary>Elige el lado con más tiles válidos — el que no da a la pared.</summary>
@@ -117,8 +111,7 @@ namespace Rollgeon.Combat.AI.Bosses.Bandida
 
         /// <summary>
         /// Tiles de la fila: <see cref="Count"/> casillas consecutivas centradas en la coordenada
-        /// del jefe, un paso hacia el lado elegido — arranca en su anillo, así que pegarle a un
-        /// rodillo obliga a entrar en el alcance del brazo. <c>null</c> si ningún lado tiene tiles.
+        /// del jefe, un paso hacia el lado elegido. <c>null</c> si ningún lado tiene tiles.
         /// </summary>
         private List<GridCoord> BuildRow(IGridManager grid, Guid selfGuid)
         {
@@ -179,9 +172,8 @@ namespace Rollgeon.Combat.AI.Bosses.Bandida
         // ======================================================================
 
         /// <summary>
-        /// Pasa a "roto" toda ranura cuyo rodillo ya no tenga vida y prende su casilla. No hay evento
-        /// de objeto destruido al que colgarse: la rotura se descubre acá comparando vidas, así que el
-        /// fuego prende recién en el turno del jefe posterior al golpe.
+        /// Pasa a "roto" toda ranura cuyo rodillo ya no tenga vida y prende su casilla. No hay
+        /// evento de objeto destruido al que colgarse: la rotura se descubre comparando vidas.
         /// </summary>
         private void MarkBrokenReels(IBandidaJackpotService service, AttributesManager attrs)
         {
@@ -204,8 +196,8 @@ namespace Rollgeon.Combat.AI.Bosses.Bandida
         /// dos rodillos rotos sean dos llamas con su propia duración.
         /// </summary>
         /// <remarks>
-        /// Overload de tiles y no el de definición: la forma autorada en el asset del fuego es la del
-        /// Croupier (un sector entero) y acá el fuego es exactamente una casilla.
+        /// Overload de tiles y no el de definición: la forma autorada en el asset es un sector
+        /// entero y acá el fuego es exactamente una casilla.
         /// </remarks>
         private void IgniteBrokenSlot(GridCoord coord)
         {
@@ -253,8 +245,8 @@ namespace Rollgeon.Combat.AI.Bosses.Bandida
         }
 
         /// <summary>
-        /// HOLD: el rodillo trabado vuelve con un pool de vida inagotable. El <c>DamagePipeline</c> no
-        /// tiene canal de inmunidad, así que se simula con una vida imposible de bajar en una pelea.
+        /// HOLD: el rodillo trabado vuelve con un pool de vida inagotable (el
+        /// <c>DamagePipeline</c> no tiene canal de inmunidad).
         /// </summary>
         private static void ApplyHold(AttributesManager attrs, Guid reelGuid, int lockedHp)
         {
@@ -263,9 +255,8 @@ namespace Rollgeon.Combat.AI.Bosses.Bandida
         }
 
         /// <summary>
-        /// Espeja el spawn de <c>AINode_SpawnReinforcements</c>. Los rodillos entran a la cola de
-        /// turnos aunque su árbol sea un no-op: es lo que hace que <c>CombatDeathWatcher</c> los
-        /// limpie al morir el jefe en vez de dejar pawns huérfanos en la sala ganada.
+        /// Spawnea un rodillo. Entra a la cola de turnos aunque su árbol sea un no-op: es lo que
+        /// hace que <c>CombatDeathWatcher</c> lo limpie al morir el jefe.
         /// </summary>
         private Guid SpawnReel(AIContext context, IGridManager grid, InMemoryEntityRegistry registry,
             TurnOrderService turnOrder, GridCoord coord)
@@ -296,8 +287,7 @@ namespace Rollgeon.Combat.AI.Bosses.Bandida
 
             turnOrder.Append(id);
 
-            // Mismo diferido que un refuerzo: aparece en la ronda en curso sin actuar, en vez de
-            // depender de que su árbol sea inofensivo.
+            // Mismo diferido que un refuerzo: aparece en la ronda en curso sin actuar.
             EventManager.Trigger(EventName.OnReinforcementSpawned, id);
 
             return id;

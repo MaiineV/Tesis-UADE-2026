@@ -10,11 +10,6 @@ namespace Rollgeon.Combat.AI.Tests
     /// Pinea el invariante de la sala de La Generala: sus dados son las paredes. La sala arranca sin
     /// obstáculos fijos y se llena con los cinco dados que ella tira.
     /// </summary>
-    /// <remarks>
-    /// No hay código nuevo acá — los dados se spawnean con <c>grid.Register</c> y
-    /// <see cref="MovementService"/> descarta las casillas ocupadas. El test cae si alguien hace que
-    /// los dados dejen de ocupar casilla.
-    /// </remarks>
     [TestFixture]
     public class GeneralaDiceBlockTests
     {

@@ -33,8 +33,6 @@ namespace Rollgeon.Combat.AI.Decisions
                 Intent = intent,
                 CurrentHp = currentHp,
                 MaxHp = Mathf.Max(1, context.SelfMaxHp),
-                // #158: BaseAttackRange sigue reservado — wirearlo cuando el targeting con
-                // rango exista. Hoy todo el combate es melee-adyacente.
                 AttackRange = 1,
                 TargetHpPct = -1,
                 Personality = context.Personality,
@@ -46,7 +44,7 @@ namespace Rollgeon.Combat.AI.Decisions
             if (plan.Path != null && context.Movement is IPathedMovementService pathed)
                 return pathed.CommitPath(context.SelfGuid, plan.Path, applyPathFilter: true);
 
-            // Sin path explícito (fast-path legacy): el Move clásico, mismos eventos que hoy.
+            // Sin path explícito: el Move clásico, con los mismos eventos.
             return context.Movement.Move(context.SelfGuid, plan.Destination);
         }
     }

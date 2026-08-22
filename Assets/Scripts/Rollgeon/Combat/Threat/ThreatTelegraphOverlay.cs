@@ -57,8 +57,7 @@ namespace Rollgeon.Combat.Threat
     /// <summary>
     /// El material que comparten todos los quads de un par (estado, matiz). Es la unidad del latido:
     /// el alpha sale de <see cref="ThreatOverlayStateStyle.AlphaAt"/>, que depende solo del estilo,
-    /// así que dentro del grupo es idéntico para todos los quads y alcanza con escribir un float en
-    /// el material en vez de un <see cref="MaterialPropertyBlock"/> por renderer.
+    /// así que dentro del grupo es idéntico para todos los quads.
     /// </summary>
     public sealed class ThreatOverlayMaterialGroup
     {
@@ -140,8 +139,7 @@ namespace Rollgeon.Combat.Threat
     /// <summary>
     /// Un quad del telegraph. El matiz y el patrón viven en el material de su <see cref="Group"/>,
     /// compartido por todos los quads del mismo par (estado, matiz), así que dos amenazas
-    /// simultáneas pueden verse distintas sin que ningún renderer lleve un
-    /// <see cref="MaterialPropertyBlock"/> propio — que es lo que los sacaba del SRP Batcher.
+    /// simultáneas pueden verse distintas.
     /// </summary>
     public sealed class ThreatOverlayQuad
     {
@@ -169,7 +167,7 @@ namespace Rollgeon.Combat.Threat
         // Levantado apenas del piso para no pelear z con el tinte del tile.
         public float YOffset = 0.06f;
 
-        // < 1 para que se lea la grilla (mismo criterio que el ghost del editor).
+        // < 1 para que se lea la grilla.
         public float QuadScale = 0.92f;
 
         private readonly Dictionary<Guid, List<ThreatOverlayQuad>> _activeBySource =
@@ -178,11 +176,7 @@ namespace Rollgeon.Combat.Threat
 
         private readonly Dictionary<ThreatOverlayState, ThreatOverlayStateStyle> _styles = DefaultStyles();
 
-        /// <summary>
-        /// Un material por par (estado, matiz): ni uno por quad ni uno solo para todo. Dentro del par
-        /// los ~112 quads comparten material y entran en el mismo batch, y el latido es un único
-        /// float por grupo y por frame. En la práctica esto tiene 1-4 entradas.
-        /// </summary>
+        /// <summary>Un material por par (estado, matiz): ni uno por quad ni uno solo para todo.</summary>
         private readonly Dictionary<(ThreatOverlayState State, int Rgb), ThreatOverlayMaterialGroup> _groups =
             new Dictionary<(ThreatOverlayState State, int Rgb), ThreatOverlayMaterialGroup>();
 
@@ -410,21 +404,16 @@ namespace Rollgeon.Combat.Threat
                         "Revisar que Assets/Shaders/Resources/ThreatOverlayQuad.shader importe.");
                 }
 
-                // Ruta degradada, y a propósito la excepción: existe solo para que un shader faltante
-                // cueste frames y no el telegraph entero. No se cachea en _quadShader para que un
-                // import tardío todavía pueda recuperar la ruta buena.
+                // No se cachea en _quadShader para que un import tardío todavía pueda recuperar la
+                // ruta buena.
                 return Shader.Find("Sprites/Default");
             }
         }
 
         /// <summary>
-        /// Clave de matiz del cache: RGB a 8 bits, sin alpha.
-        /// <para>Sin alpha porque el latido lo pisa — dos tints que solo difieren ahí se ven idénticos
-        /// y no pueden abrir dos materiales.</para>
-        /// <para>A 8 bits, y no un <see cref="Color"/> crudo, porque una clave de floats exactos es un
-        /// cache sin techo indexado por la aritmética del llamador: un tint interpolado abriría un
-        /// material nuevo por frame, y este cache vive lo que dura la run. No volver a cambiarla por un
-        /// <see cref="Color"/>.</para>
+        /// Clave de matiz del cache: RGB a 8 bits, sin alpha. Sin alpha porque el latido lo pisa; a 8
+        /// bits porque una clave de floats exactos hace que un tint interpolado abra un material
+        /// nuevo por frame en un cache que vive lo que dura la run.
         /// </summary>
         private static int RgbKey(Color tint)
         {
@@ -453,13 +442,9 @@ namespace Rollgeon.Combat.Threat
         private static Material NewOverlayMaterial(ThreatOverlayState state, Color tint) =>
             new Material(QuadShader)
             {
-                // El nombre sale en el Frame Debugger: es lo que deja ver de un vistazo que los quads
-                // de un par (estado, matiz) cayeron todos en el mismo batch.
                 name = $"ThreatOverlay {state} #{ColorUtility.ToHtmlStringRGB(tint)} (runtime)",
             };
 
-        /// <remarks>Recorre los quads, pero solo en Show/Clear: es exactamente el recorrido que se le
-        /// saca al Update, que ahora itera grupos (1-4) en vez de quads (~112).</remarks>
         private void RebuildLiveGroups()
         {
             _liveGroups.Clear();
@@ -587,15 +572,10 @@ namespace Rollgeon.Combat.Threat
         private void OnScopeEndedExternal(params object[] args) => ClearAll();
     }
 
-    /// <summary>
-    /// Late un material por par (estado, matiz) — no un <see cref="MaterialPropertyBlock"/> por quad.
-    /// Sin grupos es no-op.
-    /// </summary>
+    /// <summary>Late el material de cada par (estado, matiz) vivo. Sin grupos es no-op.</summary>
     /// <remarks>
     /// <see cref="Groups"/> es la <b>misma</b> colección que mantiene
-    /// <see cref="ThreatTelegraphOverlay"/>, no una copia. El trabajo por frame es proporcional a los
-    /// materiales vivos (1-4) y no a los quads (~112), y un estilo sin latido (<c>PulseSpeed</c> 0)
-    /// no escribe nada.
+    /// <see cref="ThreatTelegraphOverlay"/>, no una copia.
     /// </remarks>
     public sealed class ThreatOverlayPulse : MonoBehaviour
     {

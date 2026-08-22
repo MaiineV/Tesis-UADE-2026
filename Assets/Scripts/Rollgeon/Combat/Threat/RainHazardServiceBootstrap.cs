@@ -5,8 +5,7 @@ namespace Rollgeon.Combat.Threat
 {
     /// <summary>
     /// Wrapper <see cref="ScriptableObject"/> que arrastra el <see cref="RainHazardService"/>
-    /// al <c>ServiceBootstrapSO.ExtraServices</c>. Mismo patrón thin que
-    /// <c>ThreatenedAreaServiceBootstrap</c>.
+    /// al <c>ServiceBootstrapSO.ExtraServices</c>.
     /// </summary>
     [CreateAssetMenu(menuName = "Rollgeon/Combat/Rain Hazard Service Bootstrap",
         fileName = "RainHazardServiceBootstrap")]

@@ -11,10 +11,10 @@ namespace Rollgeon.Combat.Threat
     /// <see cref="HazardDefinitionSO.SourceGuid"/>.
     /// </summary>
     /// <remarks>
-    /// <b>Two flavours of "active".</b> <see cref="Activate(HazardDefinitionSO)"/> registers one
-    /// cycle-run per <see cref="HazardDefinitionSO.SourceGuid"/> — what <see cref="IsActive(Guid)"/>
-    /// reports. <see cref="Activate(HazardDefinitionSO, IEnumerable{GridCoord})"/> creates an
-    /// independent <b>instance</b>, addressed only by the <c>instanceId</c> it returns.
+    /// <see cref="Activate(HazardDefinitionSO)"/> registers one cycle-run per
+    /// <see cref="HazardDefinitionSO.SourceGuid"/> — what <see cref="IsActive(Guid)"/> reports;
+    /// <see cref="Activate(HazardDefinitionSO, IEnumerable{GridCoord})"/> creates an independent
+    /// <b>instance</b>, addressed only by the <c>instanceId</c> it returns.
     /// </remarks>
     public interface IHazardService
     {
@@ -62,12 +62,8 @@ namespace Rollgeon.Combat.Threat
         /// <i>would have</i> damaged someone is swallowed instead, and the flag clears itself.
         /// </summary>
         /// <remarks>
-        /// Does <b>not</b> suppress duration ticking: the hazard still ages.
-        /// <see cref="HazardDefinitionSO.Affects"/> is not a replacement — that filter answers "is
-        /// this entity billable at all", this one "did the billable entity already pay for this tile
-        /// this turn". Drop it and the Croupier's detonated sector charges the blast plus the fire on
-        /// one turn end: 26 instead of 20, with
-        /// <c>CroupierIgnitionTests.PlayerCaughtByTheBlast_FirstFireTickIsSwallowed</c> as the alarm.
+        /// Does <b>not</b> suppress duration ticking: the hazard still ages. Without it, a blast that
+        /// ignites the tile it just hit charges both the blast and the first fire tick on one turn end.
         /// </remarks>
         void SkipNextTick(Guid instanceId);
     }

@@ -10,25 +10,15 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
     /// </summary>
     /// <remarks>
     /// <para>
-    /// <b>El problema que resuelve.</b> Un FBX sin <c>externalObjects</c> genera sus materiales como
-    /// sub-assets propios, y los prefabs armados sobre él guardan esos sub-assets por
-    /// <c>fileID</c> interno. Cuando el arte remapea el FBX a los <c>Mat_*</c> compartidos del
-    /// proyecto, el importer deja de generar los sub-assets y esos <c>fileID</c> quedan colgando:
-    /// Unity no repunta las referencias viejas, las resuelve a <c>null</c>. El prefab no se rompe
-    /// —sigue abriendo, sigue animando— simplemente pierde todos sus materiales, y el síntoma
-    /// aparece recién en Play como un modelo sin color.
-    /// </para>
-    /// <para>
-    /// <b>Por qué una herramienta y no un arreglo a mano.</b> El remap es una operación de arte que
-    /// se va a repetir cada vez que un FBX prestado pase a los materiales del proyecto —
-    /// <c>SunkedGrand_Animated.prefab</c> ya está en el estado destino, <c>DiceBoss_Animated</c> lo
-    /// necesitaba. Reasignar doce slots a ojo en el inspector no deja rastro de qué se decidió;
-    /// esto copia la asignación que el importer ya resolvió y la deja reproducible.
+    /// Cuando un FBX deja de generar sus materiales como sub-assets y pasa a los <c>Mat_*</c> del
+    /// proyecto, los prefabs armados sobre él siguen guardando esos sub-assets por <c>fileID</c> y
+    /// Unity los resuelve a <c>null</c> sin avisar: el prefab abre y anima, pero llega a Play sin
+    /// materiales.
     /// </para>
     /// <para>
     /// El match es por <i>ruta de jerarquía</i> desde la raíz y con fallback a nombre suelto: los
     /// prefabs animados suelen tener un padre extra sobre la jerarquía cruda del FBX. Un renderer
-    /// que no matchea se reporta y se deja intacto — se prefiere un material viejo a uno inventado.
+    /// que no matchea se reporta y se deja intacto.
     /// </para>
     /// </remarks>
     public static class ArtPrefabMaterialRepointer

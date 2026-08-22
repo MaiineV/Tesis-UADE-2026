@@ -32,8 +32,7 @@ namespace Rollgeon.Combat.AI.Bosses.Tahur
 
     /// <summary>
     /// Estado persistente del Tahúr entre turnos: el pozo (fichas), la mano cantada, La Mesa
-    /// y la lectura de la mano que el jugador jugó en la ronda. Ficha de diseño "El Tahúr"
-    /// (piso 3).
+    /// y la lectura de la mano que el jugador jugó en la ronda.
     /// </summary>
     /// <remarks>
     /// La Mesa vive acá y no en <c>IThreatenedAreaService</c>: ese se indexa por guid de fuente, así
@@ -61,7 +60,7 @@ namespace Rollgeon.Combat.AI.Bosses.Tahur
         /// <summary>Lo que pagaría cobrar ahora (<see cref="Chips"/> × <see cref="PayoutPerChip"/>).</summary>
         int PendingPayout { get; }
 
-        /// <summary>Cambió el pozo. Para el HUD — no hay <c>EventName</c> apropiado y no se agrega uno.</summary>
+        /// <summary>Cambió el pozo — canal para el HUD.</summary>
         event Action<int> ChipsChanged;
 
         /// <summary>Suma (o resta) fichas y devuelve el valor final ya clampeado.</summary>
@@ -93,10 +92,7 @@ namespace Rollgeon.Combat.AI.Bosses.Tahur
         // La fase (el volteo de la carta)
         // -----------------------------------------------------------------
 
-        /// <summary>
-        /// Fichas que el rastrillo suma por ronda, solo, desde la fase 1. Es lo que le pone reloj a
-        /// "no jugar": sin rastrillo el pozo sólo se mueve cuando el jugador falla.
-        /// </summary>
+        /// <summary>Fichas que el rastrillo suma por ronda, solo, desde la fase 1.</summary>
         int RakeChipsPerRound { get; set; }
 
         /// <summary>La próxima liquidación es de gracia (el canto se armó con las reglas viejas).</summary>

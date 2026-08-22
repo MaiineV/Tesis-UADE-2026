@@ -85,9 +85,6 @@ namespace Rollgeon.Combat.AI.Tests
         }
 
         // ---- El anuncio --------------------------------------------------
-        //
-        // Sin esto, lo único que salía en pantalla era el número de curación sobre el jefe y el
-        // arqueo se leía como "se cura solo" — que fue literalmente la pregunta del playtest.
 
         [Test]
         public void Tick_AnnouncesTheGoldItTook_OnThePlayer()

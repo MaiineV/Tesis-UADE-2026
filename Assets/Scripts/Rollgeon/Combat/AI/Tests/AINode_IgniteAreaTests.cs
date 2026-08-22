@@ -362,28 +362,14 @@ namespace Rollgeon.Combat.AI.Tests
         }
 
         /// <summary>
-        /// El "loop que se estanca", con el reloj de rondas de verdad: el jefe prende cada dos
-        /// rondas una banda que contiene a la anterior, y lo que se veía en juego era que el turno
-        /// de quema no dejaba nada encendido y el paño nunca se acumulaba.
+        /// El jefe prende cada dos rondas una banda que contiene a la anterior: después del wrap
+        /// siguiente el paño de la banda nueva tiene que estar encendido entero.
         /// </summary>
         /// <remarks>
-        /// <para>
-        /// <b>La cuenta.</b> Una banda plantada en la ronda <c>r</c> con <c>DurationRounds = D</c>
-        /// está viva durante <c>r … r+D-1</c> — la duración baja en el wrap de ronda. Con D = 3 y una
-        /// ignición cada 2 rondas, la banda vieja <b>llega viva</b> a la ignición siguiente, con una
-        /// sola ronda de reloj encima.
-        /// </para>
-        /// <para>
-        /// <b>El bug.</b> Con el filtro de solape a secas, la banda nueva no plantaba nada sobre el
-        /// terreno que la vieja ya cubría —y es casi todo, porque el jefe huye sobre el mismo eje y
-        /// la banda le sale de atrás con la profundidad de la sala—, así que ese terreno se quedaba
-        /// con el reloj viejo y se apagaba en el wrap siguiente. La banda recién avisada no ardía, y
-        /// eso no es un borde: es el caso normal de este jefe, una vez por ciclo.
-        /// </para>
-        /// <para>
-        /// Este test no mira el mecanismo (retirar, refrescar, replantar): mira que después del wrap
-        /// siguiente el piso que la telegrafía prometió esté encendido.
-        /// </para>
+        /// Una banda plantada en la ronda <c>r</c> con <c>DurationRounds = D</c> está viva durante
+        /// <c>r … r+D-1</c> — la duración baja en el wrap de ronda. Con D = 3 y una ignición cada 2
+        /// rondas, la banda vieja <b>llega viva</b> a la ignición siguiente, con una sola ronda de
+        /// reloj encima.
         /// </remarks>
         [Test]
         public void TwoRelayedBands_LeaveTheWholeNewBandLitAfterTheNextRoundWrap()
@@ -432,14 +418,14 @@ namespace Rollgeon.Combat.AI.Tests
         /// <summary>
         /// <b>El relevo es opt-in y arranca apagado.</b> Sin tocar el flag, una banda vieja que el
         /// área nueva tapa por completo se queda donde está, con su propio reloj, y la nueva sólo
-        /// prende lo que no ardía — exactamente lo que hacía el nodo antes de que el flag existiera.
+        /// prende lo que no ardía.
         /// </summary>
         /// <remarks>
-        /// Es la regresión que protege a todos los demás. Este nodo lo monta cada jefe que prende
-        /// piso —La Bandida entre ellos— y los <c>ED_Boss_*.asset</c> ya están serializados: Odin no
-        /// corre field initializers al deserializar, así que el default de un campo nuevo es el que
-        /// esos assets van a tener. Un default en <c>true</c> haría desaparecer, sin que nadie lo
-        /// pidiera, fuego que el jugador ya tiene en pantalla en peleas que nadie tocó.
+        /// Este nodo lo monta cada jefe que prende piso —La Bandida entre ellos— y los
+        /// <c>ED_Boss_*.asset</c> ya están serializados: Odin no corre field initializers al
+        /// deserializar, así que el default de un campo nuevo es el que esos assets van a tener. Un
+        /// default en <c>true</c> haría desaparecer, sin que nadie lo pidiera, fuego que el jugador
+        /// ya tiene en pantalla en peleas que nadie tocó.
         /// </remarks>
         [Test]
         public void RetireFullyReplaced_IsOffByDefault_SoNobodyElsesFireDisappears()
@@ -477,13 +463,6 @@ namespace Rollgeon.Combat.AI.Tests
         /// Consumió la marca y no plantó nada porque la sala no tiene esas casillas: sale con
         /// Succeeded —el default— pero <b>deja dicho en el log</b> que se comió el turno.
         /// </summary>
-        /// <remarks>
-        /// El silencio era el bug. Este camino se lleva el turno de quema entero —ni fuego, ni
-        /// movimiento, ni ataque— y desde afuera un turno absorbido y un turno resuelto se veían
-        /// idénticos: en juego eran varios beats seguidos sin una sola línea y se leía como un jefe
-        /// congelado. El texto nombra la causa porque las dos mandan a mirar lugares distintos: ésta
-        /// apunta a la forma telegrafiada o al grafo horneado de la sala.
-        /// </remarks>
         [Test]
         public void AMarkedAreaTheRoomDoesNotHave_LogsWhyTheBurnTurnWentBlank()
         {
@@ -750,8 +729,7 @@ namespace Rollgeon.Combat.AI.Tests
 
         /// <summary>
         /// Ignición con todo lo opcional en su default, o sea el nodo tal como lo tienen serializado
-        /// los <c>ED_Boss_*.asset</c> que nadie tocó. Los campos nuevos son opt-in justamente para
-        /// que esto siga siendo el comportamiento de siempre.
+        /// los <c>ED_Boss_*.asset</c> que nadie tocó.
         /// </summary>
         private AIResult Ignite(SpecialTileDefinitionSO definition, int durationRounds) =>
             Tick(new AINode_IgniteArea
@@ -884,8 +862,7 @@ namespace Rollgeon.Combat.AI.Tests
 
         /// <summary>
         /// El overlay no se inspecciona: el test que lo registra sólo necesita que el servicio
-        /// exista, porque el nodo lo resuelve para apagar el dibujo y sin servicio ese paso no
-        /// corre. Los otros fixtures lo tienen anidado y privado, así que no se puede reusar.
+        /// exista, porque el nodo lo resuelve para apagar el dibujo y sin servicio ese paso no corre.
         /// </summary>
         private sealed class SpyThreatOverlay : IThreatOverlayService
         {

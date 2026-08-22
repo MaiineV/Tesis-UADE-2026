@@ -38,13 +38,6 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
     /// consumidores de monedas hablen de la misma definición, y el <b>terreno</b>: la mitad de la
     /// pelea es la sala, así que el plano que la construye se verifica acá y no en la ficha suelta.
     /// </para>
-    /// <para>
-    /// <b>Lo que ya no está.</b> El mostrador, el peaje, la columna escalada por oro, el arqueo de
-    /// caja y el disparo a distancia salieron con el rediseño. Sus nodos siguen existiendo en
-    /// runtime (y con tests propios en <c>Combat/AI/Tests</c>), pero el árbol del Cajero no los monta
-    /// más, así que los asserts que los buscaban se fueron con ellos: un test verde sobre una
-    /// mecánica que no existe es peor que no tenerlo.
-    /// </para>
     /// </remarks>
     [TestFixture]
     public class CajeroPhaseWiringTests
@@ -87,9 +80,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         }
 
         /// <summary>
-        /// Melee puro: el disparo a distancia y el peaje del mostrador salieron con el rediseño, y
-        /// volver a montarlos le devuelve al jefe un daño que no exige acercarse — que es justo lo
-        /// que la pelea pide.
+        /// Melee puro: cualquier daño a distancia le devuelve un golpe que no exige acercarse, y
+        /// la persecución deja de ser la pelea.
         /// </summary>
         [Test]
         public void Boss_HasNoRangedAttackAndNoCounter()
@@ -251,11 +243,6 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             Assert.AreEqual(BossFeedbackIds.CajeroImpactFeel, heavy.ImpactFeelFeedbackId);
         }
 
-        /// <summary>
-        /// El empujón pega <b>menos</b> que el mandoble a propósito: lo que cobra de verdad es el
-        /// tumbo contra los pinchos. Si pegara más, elegir la casilla desde la que atacarlo dejaría
-        /// de ser una decisión y sería sólo el turno malo.
-        /// </summary>
         [Test]
         public void Shove_HitsForLessThanTheHeavyBlow_AndThrowsHimAcrossTheSheetsTiles()
         {
@@ -311,9 +298,6 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             Assert.AreEqual(CajeroAssetBuilder.HealPerExpiredCoin, vault.HealPerCoin);
             Assert.AreEqual(CajeroAssetBuilder.MaxHealPerFight, vault.MaxHealPerFight);
 
-            // El techo es lo que hace que juntar monedas sea la jugada ganadora en vez de una carrera
-            // imposible. Sin techo, cada tanda que se le escapa le devuelve HealPerCoin × CoinsPerRain
-            // (48) cada CoinRainEveryNRounds rondas y la pelea no cierra.
             Assert.Greater(vault.MaxHealPerFight, 0,
                 "Techo 0 apaga la curación entera: las monedas dejan de tener consecuencia y la " +
                 "mecánica central de la sala se queda sin apuesta.");
@@ -358,18 +342,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         /// nadie mira y la sala sale pelada.
         /// </summary>
         /// <remarks>
-        /// <para>
-        /// La versión anterior de estos tests cruzaba <c>SpikePlanCells</c> contra sí mismo y contra
-        /// los bordes del plano, así que pasaba en verde con la sala shippeada sin un solo pincho.
-        /// Todo lo que se compara acá cruza <b>dos archivos</b>: la ficha del jefe y el plano de la
-        /// sala.
-        /// </para>
-        /// <para>
-        /// Lo que estos tests <b>no</b> pueden ver es el prefab ya escrito: <c>Boss_Room_Cajero</c> lo
-        /// reescribe el menú <c>Rollgeon/Bosses/Build Boss Room/Cajero</c>, y hasta que alguien lo
-        /// corra el plano y el prefab dicen cosas distintas. Un assert sobre el prefab quedaría rojo
-        /// por trabajo pendiente y no por diseño roto, que es justo lo que este archivo evita.
-        /// </para>
+        /// Todo lo que se compara acá cruza <b>dos archivos</b>, la ficha del jefe y el plano de la
+        /// sala: cruzar el plano contra sí mismo pasa en verde con la sala sin un solo pincho.
         /// </remarks>
         [Test]
         public void CajeroRoomPlan_CarriesTheTenSpikesAndTheSixSafeBoxes()
@@ -406,9 +380,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         }
 
         /// <summary>
-        /// El jefe arranca en el <b>centro exacto</b>. Nada parte la sala al medio, así que él no
-        /// tiene lado: la primera decisión de la pelea es por qué esquina entra el jugador, y para
-        /// que las cuatro sean equivalentes él tiene que estar equidistante de todas.
+        /// El jefe arranca en el <b>centro exacto</b>: descentrarlo hace que las cuatro esquinas
+        /// por las que puede entrar el jugador dejen de ser equivalentes.
         /// </summary>
         [Test]
         public void CajeroRoomPlan_StartsHimOnTheExactCentreOfTheRoom()
@@ -509,12 +482,6 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         /// <c>PlanToRoom</c>, y sin borrar lo que la sala base ya traía.
         /// </summary>
         /// <remarks>
-        /// <para>
-        /// Corre con un plano sintético y una definición que ya existe en el proyecto, no con el del
-        /// Cajero: <c>Tile_Spikes_Cajero</c> lo crea el menú del jefe y todavía no está en disco, así
-        /// que un test contra el plano real fallaría por trabajo pendiente en vez de por el
-        /// mecanismo. Lo que se prueba es el mecanismo.
-        /// </para>
         /// <para>
         /// La lista importa: <c>SpecialTilePlacements</c> es la permanente y <c>SpecialTileSlots</c>
         /// rolea el tipo. En estos planos la posición y el tipo son <b>los dos</b> autoría — un pincho
@@ -624,8 +591,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             Assert.AreEqual(CajeroAssetBuilder.BaseHP,
                 CajeroAssetBuilder.SpikeDamage + CajeroAssetBuilder.SpikeAIVirtualDamage,
                 "El daño real más el virtual dejó de dar la vida entera del jefe, así que el penalty " +
-                "del planner ya no satura en 10 y el pincho armado vuelve a ser sólo caro. Si se " +
-                "movió BaseHP, este número se mueve con él.");
+                "del planner ya no satura en 10 y el pincho armado vuelve a ser sólo caro.");
             Assert.Greater(CajeroAssetBuilder.SpikeDamage, 0,
                 "Sin daño real el pincho es un cartel: el planner lo rodea y al jugador no le cuesta nada.");
         }
@@ -857,13 +823,12 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                 Assert.AreEqual("boss.cashier", data.EntityId);
                 Assert.AreEqual("El Cajero", data.DisplayName);
                 Assert.AreEqual(350, data.BaseHP,
-                    "Piso 2, y la pelea es larga a propósito: el jugador tiene que poder elegir " +
-                    "varias veces entre pegarle y juntar monedas, y con 170 la elección no llegaba " +
-                    "a aparecer. Lo que se cura con monedas vencidas es presupuesto aparte " +
-                    "(MaxHealPerFight) y no figura acá.");
+                    "La vida del jefe cambió: la pelea es larga a propósito, el jugador tiene que " +
+                    "poder elegir varias veces entre pegarle y juntar monedas. Lo que se cura con " +
+                    "monedas vencidas es presupuesto aparte (MaxHealPerFight) y no figura acá.");
                 Assert.AreEqual(14, data.BaseAttack,
-                    "Baja de 30: el techo de daño por turno ahora lo pone el tumbo contra los " +
-                    "pinchos, no el golpe directo.");
+                    "El golpe directo cambió de daño: el techo de daño por turno lo pone el tumbo " +
+                    "contra los pinchos, no el golpe directo.");
                 Assert.AreEqual(CajeroAssetBuilder.MeleeRange, data.BaseAttackRange,
                     "Melee puro: no tiene nada a distancia.");
                 Assert.AreEqual(30, data.MinGoldDrop, "Drop de piso 2: 30-60.");
@@ -1025,8 +990,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         /// Por reflexión porque el paso es privado, y en un solo lugar por lo mismo: si se renombra o
         /// cambia de firma, rompe acá con un mensaje que lo dice, en vez de en cada test. Vale la
         /// incomodidad: es el único paso que escribe las casillas especiales de la sala, y cuando no
-        /// se llama la sala se construye pelada <b>sin que falle nada</b> — que es exactamente el
-        /// estado que se shippeó.
+        /// se llama la sala se construye pelada <b>sin que falle nada</b>.
         /// </remarks>
         private static List<string> ApplySpecialTiles(RoomLayout layout, params Vector2Int[] planCells)
         {
@@ -1132,8 +1096,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             return _root.Children.FindIndex(c => ReferenceEquals(Unwrap<AINode_If>(c), gate));
         }
 
-        /// <summary>Tree-walker por reflexión, sin descender en <see cref="Object"/>. Copiado de
-        /// <c>SunkenGrandPhaseWiringTests</c> — vive en otro assembly, no se puede compartir.</summary>
+        /// <summary>Tree-walker por reflexión, sin descender en <see cref="Object"/>.</summary>
         private static List<object> Descendants(object root)
         {
             var all = new List<object>();

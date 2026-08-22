@@ -9,11 +9,9 @@ using UnityEngine;
 namespace Rollgeon.Combat.AI.Decisions
 {
     /// <summary>
-    /// Aplica un cambio de stats <b>permanente</b> al propio Boss (Sistemas prerequisito Bosses §6;
-    /// decisión de diseño: cambio real vía modifier permanente). Pensado para envolverse en
-    /// <see cref="AINode_Once"/> bajo un <c>AINode_If(PcOwnerHpBelow)</c> para disparar Fase 2 una
-    /// sola vez al cruzar el umbral de HP. Emite <see cref="EventName.OnBossPhaseChanged"/> para
-    /// que el feedback visual + diálogo (wireado en engine) reaccione.
+    /// Aplica un cambio de stats <b>permanente</b> al propio Boss y emite
+    /// <see cref="EventName.OnBossPhaseChanged"/> para que el feedback visual y el diálogo
+    /// reaccionen.
     /// </summary>
     /// <remarks>
     /// <b>Velocidad.</b> El cambio de <c>Speed</c> reordena la cola de turnos recién en la próxima

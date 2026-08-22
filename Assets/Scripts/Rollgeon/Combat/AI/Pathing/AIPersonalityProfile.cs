@@ -29,7 +29,7 @@ namespace Rollgeon.Combat.AI.Pathing
             IsKamikaze = isKamikaze;
         }
 
-        /// <summary>Normal 20% / 1.0 — el perfil de todo el catálogo hoy.</summary>
+        /// <summary>Normal: 20% de HP como umbral de supervivencia, cautela 1.0.</summary>
         public static AIPersonalityProfile Default => new AIPersonalityProfile(0.20f, 1.0f);
 
         public static AIPersonalityProfile Resolve(AIPersonality personality,

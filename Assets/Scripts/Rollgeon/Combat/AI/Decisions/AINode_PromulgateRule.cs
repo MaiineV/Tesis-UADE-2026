@@ -21,10 +21,9 @@ namespace Rollgeon.Combat.AI.Decisions
     /// Sistemas prerequisito Bosses §4.
     /// </summary>
     /// <remarks>
-    /// <b>Fases (ad-hoc, sin tocar stats).</b> El intervalo de cambio se acorta al cruzar
-    /// <see cref="Phase2HpThreshold"/> — leído de la vida del Boss en cada tick. Mantener un único
-    /// nodo (un único contador) evita el desincronizado que provocaría ramificar el árbol en dos
-    /// instancias con contadores separados.
+    /// El intervalo de cambio se acorta al cruzar <see cref="Phase2HpThreshold"/>, leído de la vida
+    /// del Boss en cada tick: un único nodo es un único contador, y ramificar el árbol en dos
+    /// instancias los desincronizaría.
     /// </remarks>
     [Serializable, HideReferenceObjectPicker]
     public sealed class AINode_PromulgateRule : AIActionNode

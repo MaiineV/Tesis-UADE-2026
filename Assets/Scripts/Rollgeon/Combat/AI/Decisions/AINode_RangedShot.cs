@@ -14,10 +14,7 @@ namespace Rollgeon.Combat.AI.Decisions
 {
     /// <summary>
     /// Disparo a distancia genérico: <see cref="Damage"/> directos al jugador a distancia
-    /// <see cref="Range"/> o menos, sin área y sin telegráfico. Extraído de
-    /// <c>AINode_CashierRangedShot</c> (el disparo del Cajero) para que cualquier jefe con un beat
-    /// de "tirar desde lejos" —el Croupier kiteando, por ejemplo— lo use sin heredar tiers de oro
-    /// ni servicios de otro jefe.
+    /// <see cref="Range"/> o menos, sin área y sin telegráfico.
     /// </summary>
     /// <remarks>
     /// Se auto-gatea por rango en vez de depender de un <c>PcTargetInRange</c> en el árbol: devuelve
@@ -73,11 +70,8 @@ namespace Rollgeon.Combat.AI.Decisions
         public override string NodeName => $"Ranged Shot ({Damage} a ≤ {Range})";
 
         /// <summary>
-        /// Hook de subclase: un jefe migrado a este nodo (ej. <see cref="Bosses"/>… el Cajero) puede
-        /// resolver un default propio cuando el campo autorado quedó vacío. Mismo idiom que
-        /// <c>AINode_TahurPoke.AnimFeedbackIdOverride</c>, con los roles de "vacío" invertidos: acá
-        /// vacío es el caso común (jefe nuevo, autora sus propios ids) y el fallback hardcodeado es
-        /// la excepción (jefe migrado, cubriendo un asset ya serializado sin estos campos).
+        /// Hook de subclase para que un jefe resuelva un id propio cuando el campo autorado quedó
+        /// vacío.
         /// </summary>
         protected virtual string ResolvedAnimFeedbackId => AnimFeedbackId;
 
@@ -163,9 +157,7 @@ namespace Rollgeon.Combat.AI.Decisions
 
         /// <remarks>
         /// Request de secuencia a mano y no <c>EffPlaySequence</c>: el nodo no nace de un effect pass
-        /// y no tiene <c>EffectContext</c> que pasarle (por eso <c>FeedbackRequest.Context</c> admite
-        /// null). Los tres steps son opcionales: un jefe puede autorar sólo VFX y Feel sin anim, o
-        /// nada en absoluto mientras arte todavía no le dio clips.
+        /// y no tiene <c>EffectContext</c> que pasarle. Los tres steps son opcionales.
         /// </remarks>
         private IEnumerator PlayShot(AIContext context, Action onImpact)
         {

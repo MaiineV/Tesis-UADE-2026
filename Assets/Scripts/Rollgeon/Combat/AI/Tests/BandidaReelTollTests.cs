@@ -182,7 +182,7 @@ namespace Rollgeon.Combat.AI.Tests
             ServiceLocator.AddService<IBandidaJackpotService>(_jackpot);
 
             // El error es parte del contrato: un peaje que no cobra en silencio deja la pelea sin
-            // su presión principal y nadie se entera hasta el playtest.
+            // su presión principal y nada lo delata.
             LogAssert.Expect(LogType.Error, new Regex("IRollPoolService no registrado"));
 
             var result = Toll(cap: 2).Tick(Context());

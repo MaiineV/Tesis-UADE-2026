@@ -157,9 +157,8 @@ namespace Rollgeon.Combat.AI.Tests
         [Test]
         public void BehaviorNode_DealsDamageThroughPipeline()
         {
-            // Reemplaza el viejo AINode_Attack por la composición canónica:
-            // AINode_Behavior → EnemyActionBehavior → EffDealDamage. El damage
-            // pipeline llega via ServiceLocator (lectura del EffDealDamage).
+            // Composición canónica del ataque: AINode_Behavior → EnemyActionBehavior →
+            // EffDealDamage. El damage pipeline llega via ServiceLocator (lectura del EffDealDamage).
             ServiceLocator.AddService<IDamagePipeline>(_pipeline);
 
             var behavior = new EnemyActionBehavior
@@ -222,8 +221,8 @@ namespace Rollgeon.Combat.AI.Tests
 
         /// <summary>
         /// La cola se arma en <c>CombatEnterState</c> antes de pasar a <c>PlayerTurnState</c>, así que
-        /// el estado de sala del jefe tiene que quedar puesto acá. Era la ventana ciega que hacía que
-        /// la mesa, el peaje y el dado confiscado aparecieran recién al cerrar el primer turno.
+        /// el estado de sala del jefe tiene que quedar puesto acá: si no, la mesa, el peaje y el dado
+        /// confiscado aparecen recién al cerrar el primer turno.
         /// </summary>
         [Test]
         public void QueueBuilt_OnTheOpeningRound_InstallsBossStateWithoutTickingTheTree()

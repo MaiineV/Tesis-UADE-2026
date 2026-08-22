@@ -13,16 +13,12 @@ namespace Rollgeon.Combat.Cashier
     /// </summary>
     /// <remarks>
     /// Lee posiciones vivas, igual que el cobro: un overlay horneado al armar mentiría en cuanto el
-    /// kiteo mete al jefe por una abertura. La fila del mostrador no se pinta —
-    /// <see cref="CashierCounterTollService.IsSameSide"/> devuelve <c>false</c> con <c>side == 0</c>,
-    /// así que pararse en una abertura no cuesta nunca.
+    /// jefe se mueve. La fila del mostrador no se pinta porque
+    /// <see cref="CashierCounterTollService.IsSameSide"/> devuelve <c>false</c> con <c>side == 0</c>.
     /// </remarks>
     public sealed class CashierCounterTollOverlay : IDisposable
     {
-        /// <summary>
-        /// Verde fieltro de mesa. Distinto del naranja del telegraph: esto no es un golpe que viene,
-        /// es una regla del terreno.
-        /// </summary>
+        /// <summary>Verde fieltro de mesa, distinto del naranja del telegraph.</summary>
         public static readonly Color TollTint = new Color(0.17f, 0.44f, 0.29f, 0.45f);
 
         // XOR sobre el último byte del guid del jefe: fuente derivada y estable que no pisa el área
@@ -43,7 +39,7 @@ namespace Rollgeon.Combat.Cashier
             _onScopeEnded = ClearExternal;
 
             // Por turno y por ronda, no por movimiento: el jefe cambia de lado dentro de su propio
-            // turno, y el OnTurnStarted del jugador —el siguiente— ya lo agarra actualizado.
+            // turno y el OnTurnStarted del jugador ya lo agarra actualizado.
             EventManager.Subscribe(EventName.OnTurnQueueBuilt, _onTurnQueueBuilt);
             EventManager.Subscribe(EventName.OnTurnStarted, _onTurnStarted);
             EventManager.Subscribe(EventName.OnCombatEnd, _onScopeEnded);
@@ -110,10 +106,6 @@ namespace Rollgeon.Combat.Cashier
         /// Las casillas del lado del jefe, o <c>false</c> si no hay nada que pintar (peaje sin armar,
         /// jefe muerto, sala sin bounds).
         /// </summary>
-        /// <remarks>
-        /// Separado del pintado para poder testear la geometría sin overlay ni GameObjects: la regla
-        /// del lado es lo único que este componente decide.
-        /// </remarks>
         public static bool TryResolveSide(out Guid bossGuid, out HashSet<GridCoord> tiles)
         {
             bossGuid = Guid.Empty;
@@ -121,8 +113,7 @@ namespace Rollgeon.Combat.Cashier
 
             if (!ServiceLocator.TryGetService<ICashierCounterTollService>(out var toll) || toll == null) return false;
 
-            // ChargesThisRound y no IsArmed: si la cadencia deja una ronda franca, un lado verde que
-            // no cobra enseña a desconfiar del overlay.
+            // ChargesThisRound y no IsArmed: en la ronda franca el lado no cobra y no debe pintarse.
             if (!toll.ChargesThisRound) return false;
 
             if (!ServiceLocator.TryGetService<IGridManager>(out var grid) || grid == null) return false;

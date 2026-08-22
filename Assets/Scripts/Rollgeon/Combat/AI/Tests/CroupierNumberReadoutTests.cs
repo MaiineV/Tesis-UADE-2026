@@ -14,11 +14,6 @@ namespace Rollgeon.Combat.AI.Tests
     /// Tests de cómo se lee el número del Croupier: el que se escribe en el centro de la ruleta
     /// (<see cref="CroupierWheelNumberView"/>) y el latón con que el paño marca el sector que anuncia.
     /// </summary>
-    /// <remarks>
-    /// El número es el pivote del jefe entero — el sector que detona y el dado que confisca — y hasta
-    /// ahora no se dibujaba en ningún lado: sus únicos consumidores eran nodos de IA. Estos tests
-    /// fijan que la ruleta lo diga y que el bloque del paño quede atado a ella por el matiz.
-    /// </remarks>
     [TestFixture]
     public class CroupierNumberReadoutTests
     {
@@ -110,8 +105,8 @@ namespace Rollgeon.Combat.AI.Tests
         [Test]
         public void SectorQuads_UseTheCroupierBrass_NotTheGenericWarningOrange()
         {
-            // Arrange — con el naranja de fábrica, el bloque del Croupier se veía igual que el
-            // telegraph de cualquier otro jefe y nada lo ataba a la rueda.
+            // Arrange — con el naranja de fábrica el bloque se ve igual que el telegraph de
+            // cualquier otro jefe y nada lo ata a la rueda.
             CroupierSectorTelegraph.Mark(_bossGuid, slot: 0, sector: 2, damage: 12, kind: AttackKind.BasicAttack);
 
             // Act

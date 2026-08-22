@@ -10,8 +10,8 @@ namespace Rollgeon.Combat.AI.Bosses.Croupier
     /// </summary>
     /// <remarks>
     /// Global y lazy (<see cref="CroupierWheelService.ResolveOrCreate"/>), pero su estado es por
-    /// combate: se resetea en <c>OnCombatEnd</c> / <c>OnRunEnd</c>, incluido el modo de mesa — una
-    /// pelea nueva arranca siempre en fase 1 aunque la anterior haya terminado con la rueda trucada.
+    /// combate: se resetea en <c>OnCombatEnd</c> / <c>OnRunEnd</c>, incluido el modo de mesa, así que
+    /// una pelea nueva arranca siempre en fase 1.
     /// </remarks>
     public interface ICroupierWheelService
     {
@@ -81,8 +81,7 @@ namespace Rollgeon.Combat.AI.Bosses.Croupier
 
         /// <summary>
         /// Cierra el windup: devuelve los slots que estaban en el aire (para detonarlos) y los
-        /// publica en <see cref="DetonatedSectors"/>. Después de esto cerrar el turno en cualquier
-        /// sector ya no mueve nada hasta que vuelva a cantar.
+        /// publica en <see cref="DetonatedSectors"/>.
         /// </summary>
         IReadOnlyList<CroupierWheelSlot> ConsumeWindup();
 

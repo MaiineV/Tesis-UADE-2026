@@ -18,22 +18,9 @@ namespace Rollgeon.Combat.AI.Tests
     /// </summary>
     /// <remarks>
     /// <para>
-    /// El techo es la mecánica, no un tope de seguridad: es lo que hace que juntar monedas sea la
-    /// jugada ganadora en vez de una carrera imposible. Sin él, cada tanda que se le escapa le
-    /// devuelve vida cada pocas rondas y la pelea no cierra.
-    /// </para>
-    /// <para>
     /// Los tres números están duplicados de <c>CajeroAssetBuilder</c>, que vive en un assembly de
     /// Editor y no se puede referenciar desde acá. Que el builder los cablee de verdad en el nodo lo
     /// cubre <c>CajeroPhaseWiringTests.CoinVault_CarriesTheClockAndTheHealCeilingFromTheSheet</c>.
-    /// </para>
-    /// <para>
-    /// <b>Por qué varios tests drenan con un <c>for</c> de ticks.</b> La caja vence <b>una</b> moneda
-    /// por tick, nunca la tanda entera (lo pide la ficha con esas palabras: "se vencen de a una, no
-    /// todas juntas"). El nodo tickea una vez por turno del jefe, así que "una por tick" ya es "una
-    /// por ronda" y una tanda de cuatro se paga a lo largo de cuatro turnos. Un solo tick sobre seis
-    /// monedas vencidas cobra 12, no 72: para llegar al techo hay que darle los turnos, y las rondas
-    /// van creciendo porque el vencimiento se compara contra <c>RoundIndex</c>.
     /// </para>
     /// </remarks>
     [TestFixture]
@@ -158,21 +145,6 @@ namespace Rollgeon.Combat.AI.Tests
         /// <summary>
         /// Una tanda entera vencida se cobra <b>de a una por turno</b>, no de un saque.
         /// </summary>
-        /// <remarks>
-        /// <para>
-        /// Es la ficha con esas palabras: "se vencen de a una, no todas juntas: la presión es
-        /// constante, no un golpe". Y la cuenta la fuerza: la sala suelta las cuatro monedas de la
-        /// tanda en el mismo barrido y las cuatro nacen con el mismo reloj, así que cobrarlas juntas
-        /// sería 4 × 12 = 48 del techo de 60 <b>de toda la pelea</b> en un solo turno — un salto que
-        /// el jugador ya no puede contestar. De a una, la misma tanda se paga a lo largo de cuatro
-        /// turnos y la barra sube despacio.
-        /// </para>
-        /// <para>
-        /// El intervalo no es un número aparte: el nodo tickea una vez por turno del jefe, así que
-        /// "una por tick" ya es "una por ronda". Y la que ya venció pero no le tocó turno <b>sigue en
-        /// el piso</b> y sigue siendo levantable: la carrera por juntarlas no se cierra de golpe.
-        /// </para>
-        /// </remarks>
         [Test]
         public void ARainOfCoins_ExpiresOnePerTurn_NotTheWholeBatchInOneBeat()
         {

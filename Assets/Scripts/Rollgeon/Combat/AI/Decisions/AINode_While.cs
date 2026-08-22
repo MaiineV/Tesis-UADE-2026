@@ -15,16 +15,12 @@ namespace Rollgeon.Combat.AI.Decisions
     /// Análogo a <see cref="AINode_If"/> pero con un único child y semántica de loop.
     /// </summary>
     /// <remarks>
-    /// Decisiones:
     /// <list type="bullet">
     /// <item>Lista de conditions vacía/null → permisiva (true), MaxIterations queda como único safeguard.</item>
     /// <item>Body returns Failed mid-loop → propaga Failed (la falla del child es señal de error).</item>
     /// <item>Cap alcanzado sin que la condición se vuelva false → retorna Failed + warning log
     ///       (cap señala bug de configuración, no éxito).</item>
     /// </list>
-    /// Stat-mutation timing: si una acción descuenta su recurso solo al final de la animación
-    /// (no sincrónicamente en Tick), la siguiente iteración puede ver el valor stale. Considerar
-    /// al diseñar el árbol — preferir actions que muten sincrónicamente como child del While.
     /// </remarks>
     [Serializable, HideReferenceObjectPicker]
     public sealed class AINode_While : AIQuestionNode

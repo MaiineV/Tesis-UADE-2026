@@ -146,8 +146,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                     "enseguida', no 'no vuelve'. Sólo un negativo apaga la reposición.");
 
                 Assert.IsTrue(table.HideFromTurnQueue,
-                    "Como EnemyDataSO los cinco dados ocupaban cinco slots seguidos de iniciativa " +
-                    "con retrato propio para tickear un Wait. La mesa es mobiliario.");
+                    "Sin esto los cinco dados ocupan cinco slots seguidos de iniciativa con " +
+                    "retrato propio para tickear un Wait. La mesa es mobiliario.");
                 Assert.IsNull(table.OnDeathHazard,
                     "Romper un dado tiene que ser puro premio: algo en su casilla lo volvería una " +
                     "decisión con costo, y romperlos es la jugada que la pelea quiere premiar.");
@@ -317,8 +317,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
 
             // Assert — mismo alcance con el que el jugador le pega a ella: si le llegás, te llega.
             Assert.AreEqual(12, GeneralaAssetBuilder.CupSlamDamage,
-                "Bajó de 18 a 12: ahora persigue (ver RepositionRange), así que llega más seguido " +
-                "y el peaje por golpe tiene que bajar — el número vive en el builder, no en el nodo.");
+                "El mazazo cambió de daño: persigue (ver RepositionRange), así que llega seguido y " +
+                "el peaje por golpe tiene que ser bajo. El número vive en el builder, no en el nodo.");
             Assert.AreEqual(GeneralaAssetBuilder.CupSlamDamage, cup.Damage);
             Assert.AreEqual(1, cup.Range, "Range 1: solo cobra a quien esté pegado.");
             Assert.AreEqual(DistanceMetric.Manhattan, cup.Metric,

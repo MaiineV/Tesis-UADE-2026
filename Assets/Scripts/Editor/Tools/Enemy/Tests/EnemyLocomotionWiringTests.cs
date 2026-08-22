@@ -84,9 +84,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                 if (StyleOf(prefab) == EntityPawn.LocomotionStyle.Blink) blinking.Add(prefab.name);
 
             // Assert — Croupier y Tahúr entran porque visten el rig del Healer y del Sunked Grand.
-            // El Cajero YA NO: su rig sigue sin ciclo de caminata, así que se desliza, pero es una
-            // figura alada y planear es justo lo que tiene que leerse. Además el salto seco era el
-            // gesto del Crupier, y dos jefes con el mismo truco se confunden.
+            // El Cajero no: MechaBoss_Animated trae ciclo de caminata (AnimCon_Mecha → Movement).
             CollectionAssert.AreEquivalent(
                 new[] { "PF_Boss_Croupier", "PF_Boss_Tahur", "SunkedGrand", "Healer" },
                 blinking,

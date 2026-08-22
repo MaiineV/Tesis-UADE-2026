@@ -18,9 +18,6 @@ namespace Rollgeon.Combat.AI.Tests
     public class CajeroCounterTollTests
     {
         private const int CounterRow = 0;
-        // Números del fixture, no de ninguna ficha: el mostrador y su peaje salieron del diseño del
-        // Cajero, así que el árbol del jefe ya no monta este nodo. Lo que se sigue cubriendo acá es
-        // el comportamiento del nodo, que existe y podría volver a usarse.
         private const int TollDamage = 20;
         private const int EveryNRounds = 2;
 
@@ -446,7 +443,7 @@ namespace Rollgeon.Combat.AI.Tests
             // Act
             node.Tick(NewContext());
 
-            // Assert — degrada al comportamiento viejo, no a un peaje apagado.
+            // Assert — degrada a cobrar todas las rondas, no a un peaje apagado.
             Assert.AreEqual(1, _toll.ChargesEveryNRounds);
             Assert.IsTrue(_toll.IsArmed);
         }

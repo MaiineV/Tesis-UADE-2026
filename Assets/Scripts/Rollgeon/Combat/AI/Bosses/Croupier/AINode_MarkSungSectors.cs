@@ -12,18 +12,8 @@ namespace Rollgeon.Combat.AI.Bosses.Croupier
     /// (<see cref="AINode_DetonateSungSectors"/>). No hace daño este turno.
     /// </summary>
     /// <remarks>
-    /// <para>
-    /// Es el equivalente de <c>AINode_TelegraphMark</c> para este jefe, y existe por dos razones que el
-    /// nodo genérico no cubre: el área sale de un número decidido en runtime (no de un <c>Size</c>
-    /// autorado) y en fase 2 hay <b>dos</b> áreas simultáneas, que tienen que resolverse por separado
-    /// para que la columna de costura cobre los dos golpes. Ver
-    /// <see cref="CroupierSectorTelegraph"/>.
-    /// </para>
-    /// <para>
-    /// <b>El daño se congela al marcar.</b> Cada área guarda el daño con el que se marcó, así que un
-    /// sector marcado en fase 1 detona por 20 aunque el jefe cruce el umbral en el medio. La fase
-    /// cambia lo que canta de ahí en adelante, no lo que ya está en la mesa.
-    /// </para>
+    /// Cada slot marca su área por separado (ver <see cref="CroupierSectorTelegraph"/>): en fase 2 las
+    /// dos áreas tienen que resolverse aparte para que la columna de costura cobre los dos golpes.
     /// </remarks>
     [Serializable, HideReferenceObjectPicker]
     public sealed class AINode_MarkSungSectors : AIActionNode
