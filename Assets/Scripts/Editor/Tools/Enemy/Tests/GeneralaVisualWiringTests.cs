@@ -1,3 +1,4 @@
+using System.Linq;
 using NUnit.Framework;
 using Rollgeon.Editor.Tools.Enemy.Builders;
 using UnityEditor;
@@ -27,6 +28,23 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             Assert.IsNotNull(
                 AssetDatabase.LoadAssetAtPath<GameObject>(GeneralaAssetBuilder.DiceArtPrefabPath),
                 $"Falta el dado 3D en '{GeneralaAssetBuilder.DiceArtPrefabPath}'.");
+        }
+
+        [Test]
+        public void SourceArt_FiresTheImpactEventFromItsAttackClips()
+        {
+            // Assert — el windup de su ataque telegrafiado ancla el daño en esta key. Sin ella cobra
+            // al cerrar el step en vez de en el golpe, y cualquier nodo futuro que la espere para
+            // arrancar se colgaría.
+            foreach (var clipPath in GeneralaAssetBuilder.AttackClipPaths)
+            {
+                var clip = AssetDatabase.LoadAssetAtPath<AnimationClip>(clipPath);
+                Assert.IsNotNull(clip, $"No existe el clip '{clipPath}'.");
+                Assert.IsTrue(
+                    AnimationUtility.GetAnimationEvents(clip)
+                        .Any(e => e.functionName == "PushFeedbackEvent" && e.stringParameter == "hit"),
+                    $"'{clipPath}' no publica 'hit'.");
+            }
         }
 
         [Test]

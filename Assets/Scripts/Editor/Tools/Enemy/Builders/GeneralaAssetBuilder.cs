@@ -204,6 +204,22 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         public const string BossName = "Generala";
 
         public const string BossArtPrefabPath = "Assets/Prefabs/Enemies/DiceBoss_Animated.prefab";
+
+        /// <summary>
+        /// Los gestos de ataque del rig, los que tienen que publicar el frame del golpe.
+        /// </summary>
+        /// <remarks>
+        /// El que cambia algo hoy es <c>AttackRange</c>: es el trigger de
+        /// <c>BossFeedbackIds.GeneralaRangeAnim</c>, el windup de su <c>AINode_ExecuteTelegraph</c>,
+        /// y con el evento el daño pasa a caer en el golpe en vez de al cerrar el step. El cubilete
+        /// (<c>AttackMelee</c>) ignora el evento a propósito —ver <c>AINode_GeneralaCupSlam</c>— pero
+        /// va igual: un rig a medias es el que se rompe cuando alguien cambia de nodo.
+        /// </remarks>
+        public static readonly string[] AttackClipPaths =
+        {
+            "Assets/Art/3D/Animations/Enemies/DiceBoss/Anim_DiceBoss_AttackMelee.anim",
+            "Assets/Art/3D/Animations/Enemies/DiceBoss/Anim_DiceBoss_AttackRange.anim",
+        };
         public const string BossVisualPrefabPath = "Assets/Prefabs/Enemies/Bosses/PF_Boss_Generala.prefab";
         /// <summary>Retrato del rig que viste (<c>DiceBoss_Animated</c>). Ver <see cref="BossPortraitLibrary"/>.</summary>
         public const string BossPortraitTexturePath = BossPortraitLibrary.GeneralaPath;
@@ -295,6 +311,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         [MenuItem("Tools/Rollgeon/Bosses/Build Generala")]
         public static void Run()
         {
+            BossVisualWrapperBuilder.EnsureAttackHitEvents(AttackClipPaths);
+
             var bossVisual = BuildBossVisual();
             var diceVisual = BuildDiceVisual();
 

@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using NUnit.Framework;
 using Rollgeon.Editor.Tools.Enemy.Builders;
 using Rollgeon.Entities.Visuals;
@@ -233,6 +234,33 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                 "El arte tiene que aportar su Animator (AnimCon_Mecha).");
             Assert.IsNotNull(_wrapper.GetComponentInChildren<global::SteppedAnimation>(true),
                 "El look stepped a 8 FPS lo da SteppedAnimation en la raíz del arte.");
+        }
+
+        [Test]
+        public void Wrapper_HangsTheFeedbackBridgeOnTheAnimator()
+        {
+            var animator = _wrapper.GetComponentInChildren<Animator>(includeInactive: true);
+
+            // Unity despacha los Animation Events sólo al GameObject del Animator.
+            Assert.IsNotNull(animator, "El arte del Cajero tiene que traer su Animator.");
+            Assert.IsNotNull(animator.GetComponent<AnimationFeedbackEvent>(),
+                "Sin el puente, el frame del golpe no llega al secuenciador.");
+        }
+
+        [Test]
+        public void Art_FiresTheImpactEventFromItsAttackClips()
+        {
+            // El puente sin eventos es peso muerto, y el mandoble y el empujón esperan la key para
+            // arrancar su impacto: sin ella el golpe cobra recién cuando el watchdog corta.
+            foreach (var clipPath in CajeroAssetBuilder.AttackClipPaths)
+            {
+                var clip = AssetDatabase.LoadAssetAtPath<AnimationClip>(clipPath);
+                Assert.IsNotNull(clip, $"No existe el clip '{clipPath}'.");
+                Assert.IsTrue(
+                    AnimationUtility.GetAnimationEvents(clip)
+                        .Any(e => e.functionName == "PushFeedbackEvent" && e.stringParameter == "hit"),
+                    $"'{clipPath}' no publica 'hit' — el golpe vuelve a cobrar tarde.");
+            }
         }
 
         [Test]

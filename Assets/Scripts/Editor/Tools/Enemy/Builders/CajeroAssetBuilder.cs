@@ -51,6 +51,21 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         public const string ArtPrefabPath = "Assets/Prefabs/Enemies/MechaBoss_Animated.prefab";
 
         /// <summary>
+        /// Los gestos de ataque del rig, los que tienen que publicar el frame del golpe.
+        /// </summary>
+        /// <remarks>
+        /// El mandoble y el empujón heredan de <c>AINode_RangedShot</c>, que arranca su VFX y su feel
+        /// de impacto con <c>StartMode: OnEvent</c>. Sin el evento en el clip esos steps se quedan
+        /// esperando y el golpe entero —daño, tumbo y monedas— cae recién cuando el watchdog mata la
+        /// secuencia, unos tres segundos después del gesto.
+        /// </remarks>
+        public static readonly string[] AttackClipPaths =
+        {
+            "Assets/Art/3D/Animations/Enemies/Mecha/Anim_Mecha_AttackMelee.anim",
+            "Assets/Art/3D/Animations/Enemies/Mecha/Anim_Mecha_AttackRange.anim",
+        };
+
+        /// <summary>
         /// Arte de la Comisión: rig propio, no el del jefe. Compartir el mech hacía que el minion
         /// fuera el jefe en chico, y lo único que los separaba era la escala y el tinte.
         /// </summary>
@@ -793,6 +808,10 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
             var chip = EnsureChipHazard();
             var spikes = EnsureSpikeTile();
             var portrait = EnsurePortrait();
+
+            // Va afuera del guard de churn del wrapper: los eventos viven en los clips, no en el
+            // prefab, así que un wrapper que no hace falta reconstruir igual los necesita.
+            BossVisualWrapperBuilder.EnsureAttackHitEvents(AttackClipPaths);
 
             var critter = LoadOrCreate<EnemyDataSO>(ReinforcementAssetPath);
 
