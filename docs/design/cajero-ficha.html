@@ -387,6 +387,7 @@
       <div class="step-body">
         <h4>Pega menos y te tira tres casillas</h4>
         <p><strong>10 de daño</strong>, y te manda <strong>3 casillas en línea recta, derecho para el lado opuesto al suyo</strong> — no apunta a nada, sólo te saca de encima. Cada casilla de pinchos que el tumbo te cruce suma <strong>14</strong>. Frena en seco contra una caja fuerte o contra la pared.</p>
+        <p><strong>Y el tumbo queda.</strong> No te sigue el mismo turno: si arranca pegado, empuja y se queda donde está. Terminás a 3 casillas de él de verdad, y volver a pegarte es tu decisión, no un trámite.</p>
         <p>Y en el camino se te caen <strong>2 monedas</strong>, repartidas a lo largo del tumbo. No hay contador que te avise del robo: ves la plata salir de vos y quedar en el piso.</p>
       </div>
     </div>
@@ -419,12 +420,17 @@
     <table>
       <thead><tr><th>Si…</th><th>Hace</th></tr></thead>
       <tbody>
-        <tr><td>Está pegado a vos, y el último fue el empujón</td><td><strong>Mandoble</strong> — 14</td></tr>
-        <tr><td>Está pegado a vos, y el último fue el mandoble</td><td><strong>Empujón</strong> — 10 y te tira</td></tr>
-        <tr><td>Está lejos</td><td><strong>Camina</strong> — 4 pasos, esquivando los pinchos armados</td></tr>
+        <tr><td>Está pegado a vos, y el último fue el empujón</td><td><strong>Mandoble</strong> — 14. No se mueve.</td></tr>
+        <tr><td>Está pegado a vos, y el último fue el mandoble</td><td><strong>Empujón</strong> — 10, te tira 3, y se queda donde está</td></tr>
+        <tr><td>Está lejos, y llega</td><td><strong>Camina y pega</strong> — 4 pasos esquivando los pinchos armados, y el golpe que toque</td></tr>
+        <tr><td>Está lejos y no llega</td><td><strong>Camina</strong> — se queda a mitad de camino sin pegar</td></tr>
       </tbody>
     </table>
   </div>
+
+  <p style="margin-top:1.2rem"><strong>Camina primero y pega después, nunca al revés</strong>, y de eso depende que el empujón signifique algo. Al revés, el jefe te tumbaba 3 y en el mismo turno caminaba 4 para volver a pegarse: viajaban juntos y el tumbo no cambiaba nada. Con la caminata primero, el turno que arranca pegado no tiene caminata que hacer — ya está en su banda — así que el empujón te deja donde te dejó.</p>
+
+  <p><strong>Y el tumbo no paga en distancia, paga en daño.</strong> El jugador camina 5, así que volver de 3 casillas cuesta tres pasos de cinco: nunca le cuesta un turno. Subir el empujón a 6 para que costara uno sería media sala. Lo que el empujón cobra son los 10 del golpe más 14 por cada pincho que te cruza el tumbo — <strong>y la sala tiene diez</strong>. Es un ataque de posicionamiento en el sentido de que te mete adonde duele, no de que te aleje.</p>
 
 </section>
 
@@ -570,7 +576,7 @@
         <tr><td>Debilidad</td><td class="num">Full House ×1,5</td><td>Multiplica el golpe entero. El Poker queda para el Croupier.</td></tr>
         <tr><td>Oro</td><td class="num">30 – 60</td><td></td></tr>
         <tr><td>Alcance</td><td class="num">1</td><td>Melee puro. No tiene nada a distancia.</td></tr>
-        <tr><td>Movimiento</td><td class="num">4 pasos</td><td>Persigue, esquivando pinchos armados.</td></tr>
+        <tr><td>Movimiento</td><td class="num">4 pasos</td><td>Persigue esquivando pinchos armados, y frena en el rango del golpe: si llega, pega el mismo turno. Corre <strong>antes</strong> del golpe, así que el turno que arranca pegado no camina.</td></tr>
         <tr><td>Mandoble</td><td class="num">14</td><td>Su <code>BaseAttack</code>. Baja de 30.</td></tr>
         <tr><td>Empujón</td><td class="num">10</td><td>3 casillas, más 14 por pincho cruzado.</td></tr>
         <tr><td>Ciclo</td><td class="num">13,3 / turno</td><td>Alternan estrictamente: 26,5 cada dos turnos.</td></tr>

@@ -357,7 +357,7 @@
       <div class="step-n">T2<br>Quema</div>
       <div class="step-body">
         <h4>Enciende y huye si hace falta</h4>
-        <p>Lo que marcó el turno anterior se prende. No dispara, y encender no golpea a nadie: lo que queda es la casilla ardiendo, cobrando <strong>10</strong> al pisarla y 10 más al arrancar el turno en ella. Después la misma pregunta: a 5 o menos salta, más lejos se queda. Este es el turno en el que se lo alcanza &mdash; no porque su salto tenga tope, sino porque el que decide si salta sos vos.</p>
+        <p>Lo que marcó el turno anterior se prende. No dispara, y encender no golpea a nadie: lo que queda es la casilla ardiendo, cobrando <strong>10</strong> al pisarla y 10 más al arrancar el turno en ella. Después el mismo sorteo: a 5 o menos tira, más lejos no. Este es el turno en el que se lo alcanza &mdash; no porque su salto tenga tope, sino porque el que decide si tira sos vos.</p>
       </div>
     </div>
   </div>
@@ -418,35 +418,57 @@
 <section>
   <div class="sec-head">
     <div class="eyebrow">04 &mdash; La fuga</div>
-    <h2>Sólo corre si lo acorralás</h2>
+    <h2>Acorralarlo es apostar</h2>
   </div>
 
   <p>Antes saltaba todos los turnos, pasara lo que pasara, y eso hacía que la pelea se jugara sola: el jugador se quedaba quieto, el jefe se teletransportaba por su cuenta, se volvía a acomodar lejos y prendía fuego en un rincón que a nadie le importaba. Su movimiento no respondía a nada.</p>
 
-  <p>Ahora el salto está <strong>detrás de una pregunta</strong>: antes de saltar mira a qué distancia está el jugador. A <strong>5 o menos</strong> salta. A 6 o más <strong>se queda donde está</strong> &mdash; dispara, marca, y espera. La consecuencia es que el jugador ya no puede administrar la pelea desde lejos: si no se acerca no pasa nada, y el jefe le cobra 18 por ciclo gratis.</p>
+  <p>Después el salto pasó a estar detrás de una pregunta de distancia, y eso arregló la mitad del problema: a <strong>6 o más se queda donde está</strong> &mdash; dispara, marca, y espera. El jugador ya no puede administrar la pelea desde lejos, porque si no se acerca no pasa nada y el jefe le cobra 18 por ciclo gratis. Eso sigue igual.</p>
 
-  <div class="board-row" style="margin-top:1.5rem">
+  <p>Lo que cambió es lo que pasa <strong>adentro</strong> del radio. Antes ahí la respuesta era una sola y siempre la misma, así que acercarse tenía un precio fijo y conocido: un golpe, y a caminar. Ahora, a <strong>5 o menos, el jefe no huye &mdash; sortea</strong>. En un juego de dados la ventana no se gana: se juega.</p>
+
+  <div class="tablebox" style="max-width:46rem; margin-top:1.8rem">
+    <table>
+      <thead><tr><th>Cuando lo acorralás</th><th class="num">Chance</th><th>Qué te queda</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Se va al borde</strong></td><td class="num">50%</td><td>Lo de siempre: cae a 8 o más, contra la pared. Uno o dos turnos de caminata.</td></tr>
+        <tr><td><strong>Salta al centro</strong></td><td class="num">30%</td><td>Lo alcanzás &mdash; pero desde el medio su cono no choca contra ninguna pared.</td></tr>
+        <tr><td><strong>Se queda</strong></td><td class="num">20%</td><td>Expuesto. Le pegás de nuevo sin caminar.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p style="margin-top:1.2rem">Los pesos no son arbitrarios y el orden importa. El <strong>borde se queda con el peso más alto porque desaparecer <em>es</em> el personaje</strong>, no una preferencia de balance: tiene que seguir siendo el resultado que el jugador espera, o deja de ser él. El <strong>centro es el que tiene textura</strong> &mdash; no es un premio, es un canje. Y <strong>quedarse es el premio gordo</strong>, justamente porque es el más raro.</p>
+
+  <div class="board-row" style="margin-top:1.8rem">
     <figure>
       <div class="board sm" data-map="radio"></div>
-      <figcaption><strong>A 6, se queda.</strong> La zona marcada es todo lo que está a 5 o menos de él. El jugador está justo afuera, así que el jefe no se mueve.</figcaption>
+      <figcaption><strong>A 6, no sortea nada.</strong> La zona es todo lo que está a 5 o menos. El jugador está justo afuera, así que el jefe ni tira.</figcaption>
     </figure>
     <figure>
       <div class="board sm" data-map="salto"></div>
-      <figcaption><strong>Pegado, se va lejos.</strong> Los puntos son sus casillas posibles: contra el borde y a 8 o más del jugador. Elige una al azar.</figcaption>
+      <figcaption><strong>50% &mdash; se va al borde.</strong> Los puntos son sus casillas posibles: contra el borde y a 8 o más. Elige una al azar.</figcaption>
+    </figure>
+    <figure>
+      <div class="board sm" data-map="centro"></div>
+      <figcaption><strong>30% &mdash; salta al centro.</strong> Queda a tiro, y marca desde ahí: el cono le entra casi completo.</figcaption>
     </figure>
     <div class="board-note">
       <ul class="legend">
         <li><span class="swatch zone"></span> radio de fuga</li>
         <li><span class="swatch land"></span> aterrizaje posible</li>
+        <li><span class="swatch mark"></span> cono marcado</li>
       </ul>
-      <p style="margin-top:1rem"><strong>Y cuando huye, huye.</strong> El salto le exige caer a <strong>8 o más</strong> del jugador y ya no tiene techo. Antes había un tope de 5 pasos en el turno de fuego, y el resultado era que se teletransportaba para quedarse al lado tuyo: la fuga no significaba nada.</p>
-      <p>Tampoco cae siempre en el mismo lado. Entre todas las casillas que están a 8 o más y pegadas al borde elige una al azar, así que no se puede memorizar dónde va a estar el turno que viene.</p>
+      <p style="margin-top:1rem"><strong>Y cuando huye, huye.</strong> El salto al borde le exige caer a <strong>8 o más</strong> del jugador y no tiene techo &mdash; puede caer a 8 o a 16. Tampoco cae siempre del mismo lado: entre todas las casillas que cumplen las dos cosas elige una al azar, así que no se puede memorizar dónde va a estar el turno que viene.</p>
+      <p><strong>El centro es el resultado incómodo</strong>, y por eso es el interesante. Pegado a una pared, la mitad de su cono se come el borde de la sala y se desperdicia. Desde el medio no choca con nada: de sus 16 casillas le entran <strong>15</strong> &mdash; la que pierde es la del barril que le queda enfrente, porque los cuatro están en cruz a distancia 2 y siempre hay exactamente uno tapándole el segundo paso. Lo alcanzaste, sí, y el paño que amenaza es el más grande de la pelea.</p>
     </div>
   </div>
 
-  <div class="tablebox" style="max-width:44rem; margin-top:2rem">
+  <h3>Y qué casilla te conviene</h3>
+
+  <div class="tablebox" style="max-width:44rem">
     <table>
-      <thead><tr><th>Dónde terminás tu turno</th><th class="num">Él huye</th><th>Le pegás</th></tr></thead>
+      <thead><tr><th>Dónde terminás tu turno</th><th class="num">Sortea</th><th>Le pegás</th></tr></thead>
       <tbody>
         <tr><td>Pegado, a 1</td><td class="num">Sí</td><td>Sí, con los dos ataques</td></tr>
         <tr><td>A 2 &ndash; 4</td><td class="num">Sí</td><td>Sí, con el especial</td></tr>
@@ -456,9 +478,9 @@
     </table>
   </div>
 
-  <p style="margin-top:1.2rem">La tabla dice la cosa incómoda: <strong>no existe la casilla desde la que le pegás sin espantarlo</strong>. Movés 4 y el ataque especial alcanza 4, así que amenazás 8 &mdash; pero para atacar tenés que <em>terminar</em> el turno a 4 o menos, y eso está adentro de su radio. El golpe base es peor: alcanza 1, así que hay que terminar pegado. Y la fila de 5 es la peor de todas &mdash; lo espantás sin haberle pegado.</p>
+  <p style="margin-top:1.2rem">La tabla sigue diciendo la cosa incómoda: <strong>no existe la casilla desde la que le pegás sin hacerlo tirar</strong>. Movés 4 y el ataque especial alcanza 4, así que amenazás 8 &mdash; pero para atacar tenés que <em>terminar</em> el turno a 4 o menos, y eso está adentro de su radio. El golpe base es peor: alcanza 1, así que hay que terminar pegado. Y la fila de 5 sigue siendo la peor de todas &mdash; lo hacés tirar sin haberle pegado.</p>
 
-  <p>Eso es a propósito. Cada golpe que le metés le compra un salto, y cada salto te compra a vos uno o dos turnos de caminata de vuelta. La pelea no es perseguirlo: es aceptar que se va a ir, y no gastar la acercada en falso.</p>
+  <p>La diferencia es que <strong>hacerlo tirar ya no es lo mismo que perderlo</strong>. Antes, cada golpe que le metías compraba un salto garantizado, y la pelea era aceptar que se iba a ir. Ahora la mitad de las veces se va igual &mdash; pero una de cada dos acercadas termina con el jefe todavía al alcance, y ésa es la que hay que estar listo para cobrar.</p>
 </section>
 
 <!-- ============================ 05 FASES ============================ -->
@@ -562,8 +584,9 @@
         <tr><td>Duración fuego</td><td class="num">3 → 4</td><td>Rondas. Fase 1 → después del 50%. Con el cono marcándose cada dos turnos, esto es lo que hace que el paño se llene en vez de reciclarse.</td></tr>
         <tr><td>Cono</td><td class="num">4 de fondo</td><td>Apex de 1 casilla pegado a él, +1 por lado en cada paso: anchos 1-3-5-7, boca de 7, <strong>16 casillas</strong>. Antes era una banda de 3 de ancho por 6 de largo, 18 casillas: casi la misma cobertura, dibujo distinto.</td></tr>
         <tr><td>Dado bloqueado</td><td class="num">1 permanente</td><td>Al 70%, siempre el mismo, para el resto de la pelea.</td></tr>
-        <tr><td>Radio de fuga</td><td class="num">5</td><td>Manhattan, inclusivo. A 5 o menos salta; a 6 o más se queda. Es la única condición que mueve al jefe.</td></tr>
-        <tr><td>Piso del salto</td><td class="num">8</td><td>Cuando salta cae a 8 o más del jugador, contra el borde, y elige al azar entre las casillas que cumplen las dos cosas. <strong>Sin techo</strong> &mdash; puede caer a 8 o a 16.</td></tr>
+        <tr><td>Radio de fuga</td><td class="num">5</td><td>Manhattan, inclusivo. A 5 o menos sortea; a 6 o más no se mueve. Es la única condición que lo hace tirar.</td></tr>
+        <tr><td>Sorteo de la fuga</td><td class="num">50 / 30 / 20</td><td>Borde, centro de la sala, se queda. Cada uno de los dos turnos del ciclo tira el suyo, así que un ciclo puede salir borde y después quedarse. Son <strong>pesos</strong>, no porcentajes: suman 100 para leerse como tales.</td></tr>
+        <tr><td>Piso del salto</td><td class="num">8</td><td>Sólo el resultado de borde. Cae a 8 o más del jugador, contra el borde, y elige al azar entre las casillas que cumplen las dos cosas. <strong>Sin techo</strong> &mdash; puede caer a 8 o a 16.</td></tr>
       </tbody>
     </table>
   </div>
@@ -591,7 +614,7 @@
         <li><strong>Ciclo alternado</strong> &mdash; dispara y marca en un turno, enciende en el otro.</li>
         <li><strong>Proyectil</strong> &mdash; daño garantizado a cualquier distancia, sin condiciones.</li>
         <li><strong>Cono de fuego</strong> &mdash; sale de su casilla hacia el jugador, apex de 1 y fondo 4.</li>
-        <li><strong>Gate de fuga</strong> &mdash; el salto al borde envuelto en una pregunta de distancia: a 5 o menos salta, más lejos se queda quieto. Es lo único que decide si se mueve.</li>
+        <li><strong>Gate de fuga</strong> &mdash; una pregunta de distancia con un sorteo adentro: a 6 o más se queda quieto, y a 5 o menos tira 50/30/20 entre borde, centro y no moverse. Es lo único que decide si se mueve.</li>
         <li><strong>Gate de confisca</strong> &mdash; al 70%, un dado bloqueado permanente.</li>
         <li><strong>Gate de pleno y color</strong> &mdash; al 50%, se teletransporta al centro y marca todo menos su 3×3; prende al turno siguiente. Es el único salto que no pregunta nada.</li>
         <li><strong>Pergamino de hover</strong> &mdash; nombre y descripción de la pelea al pasar el mouse por encima.</li>
@@ -604,7 +627,8 @@
         <li>La sala entera menos un área centrada en el jefe (<code>AllExceptSquareAroundSelf</code>).</li>
         <li>La pregunta de distancia al objetivo (<code>PcTargetInRange</code>), Manhattan e inclusiva.</li>
         <li>Las definiciones de fuego de paño, con su VFX, y la regla de una instancia por casilla &mdash; con el fuego nuevo ganando el paño compartido.</li>
-        <li>El nodo de ignición y el de salto al borde.</li>
+        <li>El nodo de ignición, el de salto al borde y el de salto al centro &mdash; este último lo comparten el sorteo de la fuga y la puesta en escena del pleno, con una instancia propia cada uno.</li>
+        <li>El sorteo con pesos (<code>AINode_Random</code>). Es la <strong>primera vez que un jefe lo usa</strong>: existía en el motor y ningún builder lo había autorado.</li>
         <li>El candado de dado y su asset.</li>
         <li>El arte del jefe y su retinte.</li>
         <li>El aislamiento de fallos <code>Selector[paso, Wait]</code> del árbol.</li>
@@ -645,6 +669,11 @@
   const RADIO_FUGA  = 5;   // FleeTriggerRange, Manhattan, inclusivo
   const PISO_SALTO  = 8;   // MinPlayerDistance del salto al borde
   const BANDA_BORDE = 1;   // EdgeBandDepth
+  const CENTRO      = [5, 5];  // destino del sorteo del 30%: AINode_TeleportToRoomCenter
+
+  // Pesos del sorteo de la fuga: FleeWeightEdge / Center / Stay. Suman 100 para leerse como
+  // porcentajes, pero AINode_Random normaliza contra la suma — son pesos, no porcentajes.
+  const SORTEO = { borde: 50, centro: 30, queda: 20 };
 
   const key  = (r, c) => r + "," + c;
   const walk = (r, c) => r >= 0 && r < 11 && c >= 0 && c < 11 && SALA[r][c] === "W";
@@ -727,10 +756,14 @@
     acumula:  { boss: [4, 2], player: [1, 9],
                 burnFn: (b) => union(cone(b, [b[0], 10]), cone(b, [0, b[1] + 2])) },
 
-    // El jugador a 6: fuera del radio, asi que el jefe se queda.
+    // El jugador a 6: fuera del radio, asi que el jefe no sortea.
     radio:    { boss: [4, 5], player: [5, 10], zoneFn: (b) => fleeZone(b) },
-    // El jugador pegado: el jefe huye, y estas son sus casillas posibles.
+    // Sorteo 50: el jugador pegado y el jefe se va, y estas son sus casillas posibles.
     salto:    { boss: [4, 5], player: [5, 6], landFn: (b, p) => landingSpots(p) },
+    // Sorteo 30: cae en el centro y marca desde ahi. El cono va DESPUES del sorteo, asi que
+    // ancla en el centro y no donde estaba: 15 de sus 16 casillas, porque uno de los cuatro
+    // barriles en cruz a distancia 2 siempre le tapa el segundo paso.
+    centro:   { boss: CENTRO, player: [5, 8], markFn: (b, p) => cone(b, p) },
 
     // Pleno y color prende sin turno de aviso: se dibuja ardiendo, no marcado.
     pleno:    { boss: [5, 5], burnFn: (b) => allExceptRing(b, 1) },
