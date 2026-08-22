@@ -56,8 +56,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         /// </summary>
         /// <remarks>
         /// Su animator declara un solo trigger, <c>Attack</c> — ver <c>ComisionBiteAnim</c> — y no
-        /// tiene ciclo de caminata, así que la ficha entra en
-        /// <c>EnemyLocomotionInstaller.ForcedBlinkEntityIds</c>.
+        /// tiene ciclo de caminata. No hace falta: el bicho vuela, y el lerp de <c>Walk</c> con el
+        /// Idle corriendo es cómo se ve planear. Blink la teletransportaría.
         /// </remarks>
         public const string CritterArtPrefabPath = "Assets/Prefabs/Enemies/GeneralDirector_Animated.prefab";
 

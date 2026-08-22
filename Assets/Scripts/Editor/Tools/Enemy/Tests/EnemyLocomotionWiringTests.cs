@@ -1,7 +1,6 @@
 using System.Collections.Generic;
 using NUnit.Framework;
 using Rollgeon.Editor.Tools.Enemy;
-using Rollgeon.Editor.Tools.Enemy.Builders;
 using Rollgeon.Entities;
 using Rollgeon.Entities.Visuals;
 using UnityEditor;
@@ -85,11 +84,11 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                 if (StyleOf(prefab) == EntityPawn.LocomotionStyle.Blink) blinking.Add(prefab.name);
 
             // Assert — el Croupier entra porque viste el rig del Healer. El Cajero no:
-            // MechaBoss_Animated trae ciclo de caminata (AnimCon_Mecha → Movement). La Comisión sí
-            // entra, pero por el parche de ForcedBlinkEntityIds: GeneralDirector_Animated no tiene
-            // ciclo de caminata propio.
+            // MechaBoss_Animated trae ciclo de caminata (AnimCon_Mecha → Movement). La Comisión
+            // tampoco, y no es un olvido: su rig no tiene caminata pero el bicho VUELA, y Blink
+            // no recorre el camino — la teletransportaría en vez de hacerla planear.
             CollectionAssert.AreEquivalent(
-                new[] { "PF_Boss_Croupier", "SunkedGrand", "Healer", "PF_Min_Comision" },
+                new[] { "PF_Boss_Croupier", "SunkedGrand", "Healer" },
                 blinking,
                 "Cambió quién se teletransporta. Si es a propósito, actualizá esta lista; si no, " +
                 "alguien reconstruyó un prefab y se llevó puesto el flag.");
@@ -103,20 +102,38 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             Assert.IsFalse(EnemyLocomotionInstaller.HasTeleportClip(null));
         }
 
+        /// <summary>
+        /// El parche de <c>ForcedBlinkEntityIds</c> es para <b>terrestres</b> sin caminata, que sin
+        /// él patinan con los pies quietos. Un volador no lo quiere: Blink no recorre el camino, y
+        /// el lerp de Walk con el Idle corriendo es justamente cómo se ve planear.
+        /// </summary>
         [Test]
-        public void ForcedBlinkRoster_MatchesTheComisionEntityId()
+        public void NoFlyingUnitIsForcedToBlink()
         {
-            // Arrange / Act / Assert — el literal es a propósito (el instalador es genérico y no
-            // conoce los builders de cada jefe), y este test es lo único que lo mantiene sincronizado
-            // con la ficha real: el mismo idiom que BossPortraitLibraryTests usa para
-            // CajeroAssetBuilder.PortraitTexturePath.
-            // Assert.Contains pide un ICollection no genérico y HashSet<string> no lo implementa;
-            // CollectionAssert.Contains sí acepta el IEnumerable que HashSet<string> sí es.
-            CollectionAssert.Contains(EnemyLocomotionInstaller.ForcedBlinkEntityIds,
-                CajeroAssetBuilder.CritterEntityId,
-                $"El literal de ForcedBlinkEntityIds dejó de coincidir con " +
-                $"'{CajeroAssetBuilder.CritterEntityId}': la Comisión volvería a caminar en pose de " +
-                "Idle sobre GeneralDirector_Animated.");
+            // Act
+            var teleported = new List<string>();
+            foreach (var data in EnemyData())
+            {
+                if (!data.IsFlying) continue;
+                if (!EnemyLocomotionInstaller.ForcedBlinkEntityIds.Contains(data.EntityId)) continue;
+
+                teleported.Add(data.EntityId);
+            }
+
+            // Assert
+            CollectionAssert.IsEmpty(teleported,
+                "Un bicho volador forzado a Blink desaparece y reaparece en vez de planear. El " +
+                "parche es para los terrestres a los que les falta el ciclo de caminata.");
+        }
+
+        private static IEnumerable<EnemyDataSO> EnemyData()
+        {
+            foreach (var guid in AssetDatabase.FindAssets("t:EnemyDataSO"))
+            {
+                var data = AssetDatabase.LoadAssetAtPath<EnemyDataSO>(
+                    AssetDatabase.GUIDToAssetPath(guid));
+                if (data != null) yield return data;
+            }
         }
     }
 }

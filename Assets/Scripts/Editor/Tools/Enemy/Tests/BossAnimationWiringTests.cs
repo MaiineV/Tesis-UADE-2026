@@ -395,6 +395,11 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         /// Los que van en <see cref="EntityPawn.LocomotionStyle.Blink"/> quedan afuera a propósito:
         /// su gesto de desplazamiento <b>es</b> el clip de teletransporte, y quién blinkea lo fija
         /// <c>EnemyLocomotionWiringTests</c>. Acá sólo se mira a los que caminan.
+        /// <para>
+        /// Los voladores también quedan afuera, y por el mismo motivo de fondo: el bool alterna Idle
+        /// con un ciclo de <i>pasos</i>, y algo que planea no da pasos. Su Idle corriendo mientras el
+        /// cuerpo se traslada no es un defecto — es el efecto.
+        /// </para>
         /// </remarks>
         [Test]
         public void EveryWalkingRigOfAnInUseFight_DeclaresTheMovementBool()
@@ -420,6 +425,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                     $"'{entityId}' no tiene AnimatorController — se mueve en T-pose.");
 
                 if (StyleOf(prefab) == EntityPawn.LocomotionStyle.Blink) continue;
+                if (FliesAs(entityId)) continue;
                 if (DeclaresBool(controller, MovementParam)) continue;
 
                 sliding.Add(entityId);
@@ -431,6 +437,19 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                 "Alguien quedó deslizándose sin ciclo de caminata. Un rig que no declara el bool " +
                 $"'{MovementParam}' hace que EntityPawn traslade el cuerpo con el Animator en Idle: " +
                 "no tira ningún error, sólo se ve mal.");
+        }
+
+        /// <summary>Si la ficha de <paramref name="entityId"/> declara <c>IsFlying</c>.</summary>
+        private static bool FliesAs(string entityId)
+        {
+            foreach (var guid in AssetDatabase.FindAssets("t:EnemyDataSO"))
+            {
+                var data = AssetDatabase.LoadAssetAtPath<EnemyDataSO>(
+                    AssetDatabase.GUIDToAssetPath(guid));
+                if (data != null && data.EntityId == entityId) return data.IsFlying;
+            }
+
+            return false;
         }
 
         private static GameObject VisualPrefabOf(string entityId)
