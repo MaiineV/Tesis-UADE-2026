@@ -467,19 +467,32 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         /// Árbol del Cajero. Sequence raíz de 5 hijos:
         /// <list type="number">
         /// <item>Gate de las Comisiones (50% HP) → <c>Once → SpawnReinforcements ×2</c>.</item>
+        /// <item>La persecución.</item>
         /// <item>El ciclo de ataque: pegado a vos, <c>Alternate[mandoble, empujón]</c>.</item>
         /// <item>Las monedas de la sala, cada <see cref="CoinRainEveryNRounds"/> rondas.</item>
         /// <item>La caja: vence monedas y lo cura con lo que nadie levantó.</item>
-        /// <item>La persecución.</item>
         /// </list>
         /// Todo lo que puede devolver Failed va en <c>Selector[acción, Wait]</c>.
         /// </summary>
         /// <remarks>
+        /// <para>
+        /// La <b>persecución va antes del golpe</b>, y ahí está toda la diferencia entre empujarte y
+        /// caminar con vos, y empujarte y dejarte ir. Si arranca el turno pegado,
+        /// <c>AINode_Move</c> devuelve Failed —ya está en la banda— y nada lo mueve después del
+        /// tumbo, así que el empujón se lee. Si arranca lejos, cierra y pega en el mismo turno:
+        /// <see cref="BuildChase"/> apunta a <see cref="MeleeRange"/>, que es exactamente el rango
+        /// que pide el gate del ataque.
+        /// </para>
+        /// <para>
+        /// Con el movimiento en el medio el turno no se trunca: <c>AINode_Move</c> devuelve Running
+        /// al caminar, pero el <c>Selector</c> de <see cref="WrapFallible"/> sólo propaga Succeeded
+        /// en su path coroutine, así que la caja y la lluvia siguen corriendo el turno que camina.
+        /// </para>
+        /// <para>
         /// La <b>caja va después del ataque y de la lluvia</b> porque descubre las monedas barriendo
         /// las instancias vivas: si fuera antes, cada moneda soltada este turno viviría una ronda de
-        /// más. Y la <b>persecución va última</b> porque <c>AINode_Move</c> devuelve Running al
-        /// moverse y en el path no-coroutine un Running corta el Sequence, así que con el movimiento
-        /// en el medio las monedas dejarían de vencerse en los turnos en que camina.
+        /// más.
+        /// </para>
         /// </remarks>
         public static AINode_Sequence BuildAIRoot(
             HazardDefinitionSO chip = null, EnemyDataSO critter = null)
@@ -489,10 +502,10 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
                 Children = new List<AIDecisionNode>
                 {
                     WrapFallible(BuildCritterGate(critter)),
+                    WrapFallible(BuildChase()),
                     WrapFallible(BuildAttackGate(chip)),
                     WrapFallible(BuildCoinRain(chip)),
                     WrapFallible(BuildCoinVault(chip)),
-                    WrapFallible(BuildChase()),
                 },
             };
         }

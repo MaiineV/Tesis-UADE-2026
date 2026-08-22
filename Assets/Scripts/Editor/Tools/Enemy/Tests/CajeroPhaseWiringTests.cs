@@ -69,7 +69,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         public void Root_HasTheStepsOfTheSheet()
         {
             Assert.AreEqual(RootSteps, _root.Children.Count,
-                "Comisiones → ataca (mandoble o empujón) → monedas de la sala → caja → persigue.");
+                "Comisiones → persigue → ataca (mandoble o empujón) → monedas de la sala → caja.");
 
             Assert.IsNotNull(FindNode<AINode_SpawnReinforcements>(), "Faltan las Comisiones del 50%.");
             Assert.IsNotNull(FindNode<AINode_Alternate>(), "Falta el ciclo de los dos golpes.");
@@ -132,16 +132,39 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         }
 
         /// <summary>
-        /// <see cref="AINode_Move"/> devuelve <c>Running</c> cuando camina, y un Running trunca el
-        /// Sequence en el path no-coroutine: nada que tenga que correr todos los turnos puede quedar
-        /// detrás. En particular la caja — con el movimiento en el medio, las monedas dejarían de
-        /// vencerse justo en los turnos en que persigue, que son la mayoría.
+        /// La persecución corre <b>antes</b> del golpe, y de eso depende que el empujón se lea:
+        /// detrás del golpe, el jefe tumba al jugador tres casillas y en el mismo turno camina
+        /// cuatro para volver a pegarse, así que viajan juntos y el tumbo no cambia nada.
         /// </summary>
         [Test]
-        public void Chase_IsTheLastStep_BecauseARunningTruncatesTheSequence()
+        public void Chase_RunsBeforeTheBlow_SoAShoveIsNotWalkedBack()
         {
-            Assert.AreEqual(_root.Children.Count - 1, IndexOfStepWith<AINode_Move>(),
-                "La persecución dejó de ser el último paso del turno.");
+            int chaseIdx = IndexOfStepWith<AINode_Move>();
+            int blowIdx = IndexOfStepWith<AINode_Alternate>();
+
+            Assert.Greater(chaseIdx, -1, "No hay persecución en el árbol.");
+            Assert.Greater(blowIdx, -1, "No hay ciclo de golpes en el árbol.");
+            Assert.Less(chaseIdx, blowIdx,
+                "La persecución quedó detrás del golpe: el jefe vuelve a pegarse el mismo turno en " +
+                "que empuja y el tumbo deja de tener efecto.");
+        }
+
+        /// <summary>
+        /// Lo que hace que cerrar y pegar entren en el mismo turno: la persecución apunta al mismo
+        /// rango que exige el gate del ataque. Con un <c>DesiredRange</c> más grande frenaría a un
+        /// paso de distancia y no llegaría a golpear nunca en el turno que camina.
+        /// </summary>
+        [Test]
+        public void Chase_StopsExactlyWithinReachOfTheBlow()
+        {
+            var chase = FindNode<AINode_Move>();
+
+            Assert.IsNotNull(chase, "No hay persecución en el árbol.");
+            Assert.AreEqual(CajeroAssetBuilder.MeleeRange, ReadInt(chase.DesiredRange),
+                "La persecución dejó de frenar en el rango del golpe.");
+            Assert.AreEqual(CajeroAssetBuilder.ChaseSteps, ReadInt(chase.MaxSteps));
+            Assert.IsFalse(chase.Retreat,
+                "Con Retreat el jefe kitearía, y estando pegado se alejaría en vez de golpear.");
         }
 
         [Test]
