@@ -89,7 +89,6 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
 
         /// <summary>Vida del jefe de piso 1.</summary>
         public const int MaxHp = 300;
-        public const int Attack = 24;
         public const int Speed = 5;
         public const int MinGoldDrop = 15;
         public const int MaxGoldDrop = 23;
@@ -440,10 +439,17 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
             data.WeaknessMultiplierOverride = WeaknessMultiplier;
 
             data.BaseHP = MaxHp;
-            data.BaseAttack = Attack;
             data.BaseSpeed = Speed;
             data.MaxEnergy = 3;
-            data.BaseAttackRange = 1;
+
+            // Espejo del disparo, no un número propio. El jefe es 100% a distancia: su árbol no
+            // lleva ningún nodo de melee, así que este par no lo lee nadie en runtime —
+            // TreeDrivenEnemyAI saltea el BasicEnemyAI que sería su único consumidor. Pero se lee
+            // a mano, y con un 24 a alcance 1 heredado del diseño viejo el bloque de stats decía
+            // que el jefe de piso 1 pega más de cerca que el de piso 2, que es lo contrario de la
+            // verdad. Un 0 tampoco servía: leído al lado de otro jefe lo hace parecer inofensivo.
+            data.BaseAttack = ShotDamage;
+            data.BaseAttackRange = ShotRange;
 
             // Sin esto su propio fuego lo quema: ShouldAffect exige
             // OwnerBossImmune && IsBoss && que el dueño sea este guid.

@@ -865,7 +865,14 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                 Assert.AreEqual("boss.croupier", data.EntityId);
                 Assert.AreEqual(CroupierAssetBuilder.MaxHp, data.BaseHP,
                     "La vida que autora el builder dejó de ser la que termina en la ficha.");
-                Assert.AreEqual(24, data.BaseAttack);
+                // El par de melee espeja el disparo porque el jefe no tiene melee. Nadie lo lee en
+                // runtime, pero se lee a mano: con un número propio el bloque de stats miente sobre
+                // cuánto pega, y comparado contra otro jefe miente en la dirección que más engaña.
+                Assert.AreEqual(CroupierAssetBuilder.ShotDamage, data.BaseAttack,
+                    "El stat de ataque dejó de espejar el disparo, que es lo único con lo que pega.");
+                Assert.AreEqual(CroupierAssetBuilder.ShotRange, data.BaseAttackRange,
+                    "El alcance del stat dejó de espejar el del disparo: un 1 acá lo hace parecer " +
+                    "un jefe de contacto, y no llega nunca a distancia 1.");
                 Assert.AreEqual(ComboId.Poker, data.WeaknessComboId,
                     "La debilidad es el Poker (cuatro dados iguales), no el Par. El id canónico del " +
                     "catálogo es combo.poker.");
