@@ -268,7 +268,7 @@ MonoBehaviour:
       Data: 29|Rollgeon.Combat.AI.Decisions.AINode_RangedShot, Rollgeon
     - Name: Damage
       Entry: 3
-      Data: 14
+      Data: 17
     - Name: Range
       Entry: 3
       Data: 1
@@ -320,7 +320,7 @@ MonoBehaviour:
       Data: 33|Rollgeon.Combat.AI.Decisions.AINode_CajeroShove, Rollgeon
     - Name: Damage
       Entry: 3
-      Data: 10
+      Data: 12
     - Name: Range
       Entry: 3
       Data: 1
@@ -512,8 +512,8 @@ MonoBehaviour:
   Portrait: {fileID: 133841030, guid: 7354be46d5bce5b44ae3fc20ec0cb47f, type: 3}
   WeaknessComboId: combo.full_house
   WeaknessMultiplierOverride: 1.5
-  BaseHP: 350
-  BaseAttack: 14
+  BaseHP: 450
+  BaseAttack: 17
   BaseHealStrength: 0
   BaseSpeed: 4
   MaxEnergy: 3

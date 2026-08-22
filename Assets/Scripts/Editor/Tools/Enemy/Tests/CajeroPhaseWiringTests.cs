@@ -601,11 +601,11 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         /// </summary>
         /// <remarks>
         /// <c>AIPathPlanner.ComputeHazardPenalty</c> es <c>ceil(daño / HP × 10 × Caution)</c> y el
-        /// costo de casilla es <c>1 + penalty</c>. Con los 14 reales sobre 350 el penalty da 1 y la
+        /// costo de casilla es <c>1 + penalty</c>. Con los 17 reales sobre 450 el penalty da 1 y la
         /// casilla cuesta 2: rodea un desvío de un paso y se come el pincho si el desvío es de dos.
         /// Con el virtual sumado el penalty llega a 10 y la casilla cuesta 11 — más que cualquier
         /// desvío alcanzable dentro de un movimiento de <c>ChaseSteps</c>. <b>No es daño</b>: el
-        /// filtro de supervivencia sólo mira los 14 reales, así que "empujado se los come igual"
+        /// filtro de supervivencia sólo mira los 17 reales, así que "empujado se los come igual"
         /// sigue en pie.
         /// </remarks>
         [Test]
@@ -884,13 +884,16 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
 
                 Assert.AreEqual("boss.cashier", data.EntityId);
                 Assert.AreEqual("El Cajero", data.DisplayName);
-                Assert.AreEqual(350, data.BaseHP,
-                    "La vida del jefe cambió: la pelea es larga a propósito, el jugador tiene que " +
-                    "poder elegir varias veces entre pegarle y juntar monedas. Lo que se cura con " +
-                    "monedas vencidas es presupuesto aparte (MaxHealPerFight) y no figura acá.");
-                Assert.AreEqual(14, data.BaseAttack,
-                    "El golpe directo cambió de daño: el techo de daño por turno lo pone el tumbo " +
-                    "contra los pinchos, no el golpe directo.");
+                // Contra las constantes y no contra literales: son la ficha, y un retune tiene que
+                // poder moverlas sin pasar por acá.
+                Assert.AreEqual(CajeroAssetBuilder.BaseHP, data.BaseHP,
+                    "La ficha escribe una vida distinta de la que dice su constante.");
+                Assert.AreEqual(CajeroAssetBuilder.BaseAttack, data.BaseAttack,
+                    "La ficha escribe un mandoble distinto del que dice su constante.");
+                Assert.Greater(data.BaseHP, CajeroAssetBuilder.MaxHealPerFight * 4,
+                    "La curación por monedas vencidas dejó de ser presupuesto aparte y pasó a ser " +
+                    "una fracción gruesa de su vida: la pelea es larga para que el jugador pueda " +
+                    "elegir varias veces entre pegarle y juntar, no para que se cure de vuelta.");
                 Assert.AreEqual(CajeroAssetBuilder.MeleeRange, data.BaseAttackRange,
                     "Melee puro: no tiene nada a distancia.");
                 Assert.AreEqual(30, data.MinGoldDrop, "Drop de piso 2: 30-60.");

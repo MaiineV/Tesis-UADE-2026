@@ -19,7 +19,7 @@ MonoBehaviour:
   Category: 0
   Affinity: 1
   DamageKind: 3
-  EnterDamage: 14
+  EnterDamage: 17
   TurnStartDamage: 0
   HealAmount: 0
   StatusKind: 0
@@ -40,7 +40,7 @@ MonoBehaviour:
   TriggerVfxPrefab: {fileID: 0}
   TriggerVfxLifetime: 2
   TriggerVfxYOffset: 0.1
-  AIVirtualEnterDamage: 336
+  AIVirtualEnterDamage: 433
   AIAnnouncesLethal: 0
   EditorIcon: {fileID: 0}
   EditorColor: {r: 0.3, g: 0.3, b: 0.34, a: 1}

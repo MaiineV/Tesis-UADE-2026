@@ -105,10 +105,10 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         /// Vida del jefe de piso 2. Lo que se cura con monedas vencidas es presupuesto aparte
         /// (<see cref="MaxHealPerFight"/>): suma turnos sin figurar acá.
         /// </summary>
-        public const int BaseHP = 350;
+        public const int BaseHP = 450;
 
         /// <summary>Mandoble.</summary>
-        public const int BaseAttack = 14;
+        public const int BaseAttack = 17;
 
         public const int BaseSpeed = 4;
         public const int MaxEnergy = 3;
@@ -134,7 +134,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         /// <summary>
         /// Empujón. Cada casilla de pinchos que cruce el tumbo suma <see cref="SpikeDamage"/>.
         /// </summary>
-        public const int ShoveDamage = 10;
+        public const int ShoveDamage = 12;
 
         /// <summary>Casillas del tumbo. Frena en seco contra una caja fuerte o contra la pared.</summary>
         public const int ShovePushTiles = 3;
@@ -191,7 +191,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         public const string SpikeTileId = "TILE_SPIKES_CAJERO";
 
         /// <summary>Daño al entrar, también empujado. Es el mismo para el jugador y para él.</summary>
-        public const int SpikeDamage = 14;
+        public const int SpikeDamage = 17;
 
         /// <summary>
         /// Costo virtual que hace que el pathing lea un pincho armado como <b>intransitable</b> y no
@@ -199,12 +199,17 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         /// </summary>
         /// <remarks>
         /// <c>AIPathPlanner.ComputeHazardPenalty</c> es <c>ceil(daño / HP × 10 × Caution)</c> y
-        /// <c>ComputeTileCost</c> es <c>1 + penalty</c>: con <c>14 + 336 = 350</c> sobre 350 de vida
+        /// <c>ComputeTileCost</c> es <c>1 + penalty</c>: con <c>17 + 433 = 450</c> sobre 450 de vida
         /// la casilla cuesta 11, más que cualquier desvío posible en un movimiento de
         /// <see cref="ChaseSteps"/> pasos. <b>No es daño</b>: el filtro de supervivencia sólo mira
-        /// los 14 reales, así que empujado se los come igual.
+        /// los <see cref="SpikeDamage"/> reales, así que empujado se los come igual.
+        /// <para>
+        /// Va atado a <see cref="BaseHP"/>, no a un número suelto: la saturación es la suma dando la
+        /// vida entera del jefe, así que <b>tocarle la vida obliga a recalcular esto</b> o el pincho
+        /// armado vuelve a ser sólo caro y el jefe se camina sus propios pinchos.
+        /// </para>
         /// </remarks>
-        public const int SpikeAIVirtualDamage = 336;
+        public const int SpikeAIVirtualDamage = 433;
 
         /// <summary>Pinchos de la sala, sueltos y en casillas exactas. Ver <see cref="SpikePlanCells"/>.</summary>
         public const int SpikeCount = 10;
@@ -278,7 +283,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         public const int CritterHp = 18;
 
         /// <summary>Su disparo.</summary>
-        public const int CritterDamage = 6;
+        public const int CritterDamage = 7;
 
         /// <summary>Alcance del disparo.</summary>
         public const int CritterRange = 5;
