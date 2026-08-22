@@ -201,7 +201,6 @@ namespace Rollgeon.Combat.FSM.Tests
                 IsBaseBehavior = true,
                 Slot = HeroBehaviorSlot.Movement,
                 NeedsDiceRoll = false,
-                BlockOnRepeat = false, // movimiento es repetible.
                 Effects = new List<EffectData>
                 {
                     new EffectData

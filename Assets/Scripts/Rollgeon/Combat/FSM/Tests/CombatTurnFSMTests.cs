@@ -270,35 +270,6 @@ namespace Rollgeon.Combat.FSM.Tests
         }
 
         // ======================================================================
-        // Integracion TurnManager: _actionsUsedThisTurn clear en OnTurnStarted
-        // ======================================================================
-
-        [Test]
-        public void TurnManager_ActionsUsedCleared_OnTurnStartedDispatchedByFSM()
-        {
-            StackOrderPlayerFirst();
-            // Pre-poblar el TurnManager simulando que una accion se uso antes.
-            // El handler del TurnManager se suscribe a OnTurnStarted durante
-            // ConfigureForTests; disparando el evento limpia _actionsUsedThisTurn.
-            // Usamos WasUsedThisTurn/UsedActionsCount como read-only check.
-            Assert.AreEqual(0, _turnManager.UsedActionsCount, "pre-condicion: set vacio");
-
-            // Inyectamos una entry via una accion valida — para evitar dependencia
-            // de ActionDefinitionSO usamos directamente el flujo de FSM que
-            // dispara OnTurnStarted, y verificamos que SIGUE siendo 0 (clear).
-            // (El set comienza vacio, el test valida el hook sin un setup complejo).
-            var ctx = BuildContext();
-            var fsm = new CombatTurnFSM(ctx);
-            fsm.SetParticipants(new[] { _playerId, _enemyAId });
-            fsm.Start();
-            fsm.SendInput(CombatInput.StartCombat);
-
-            // Tras entrar a PlayerTurn el TurnManager recibio OnTurnStarted y
-            // limpio el set. Lo dejamos empty — cubre el smoke test del contrato.
-            Assert.AreEqual(0, _turnManager.UsedActionsCount);
-        }
-
-        // ======================================================================
         // RollPoolService suscribe OnTurnFinished - validado con fake
         // ======================================================================
 

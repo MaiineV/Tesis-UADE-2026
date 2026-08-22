@@ -14,7 +14,7 @@ namespace Rollgeon.UI.HUD
     /// <summary>
     /// Wrapper de un <see cref="UnityEngine.UI.Button"/> de la HUD de combate que
     /// expone un mini state machine (<see cref="ActionButtonState"/>) para responder
-    /// a Selected (pressed), Used, Locked, Available, Unaffordable. No escucha eventos
+    /// a Selected (pressed), Locked, Available, Unaffordable. No escucha eventos
     /// del bus — recibe transiciones via <see cref="SetState"/> desde
     /// <see cref="PlayerActionButtonsView"/>.
     /// </summary>
@@ -64,15 +64,6 @@ namespace Rollgeon.UI.HUD
                  "Todos los estados van a alpha pleno. Null = sin swap de sprite.")]
         [SerializeField]
         private Sprite _highlightSprite;
-
-        [InfoBox("Sprite del chip cuando la acción ya se ejecutó este turno (Used). Sin " +
-                 "alpha: la ficha se hunde hasta quedar con la mitad bajo el borde de la " +
-                 "pantalla — eso ES el feedback de usada. Null = cae al highlight.")]
-        [SerializeField]
-        private Sprite _usedSprite;
-
-        [SerializeField, MinValue(0f), Tooltip("Velocidad del hundimiento/regreso de la ficha usada (px de pantalla por segundo).")]
-        private float _usedSinkSpeed = 900f;
 
         [Title("Visual — Selected (pressed)")]
         [SerializeField, Range(1f, 1.3f)]
@@ -142,20 +133,10 @@ namespace Rollgeon.UI.HUD
         private Sprite _normalSprite;
         private bool _hovered;
 
-        // Hundimiento de la ficha usada, por enforcement continuo en LateUpdate (un
-        // tween one-shot lo pisaba el CombatHudZoneFlow y solo Movement bajaba). El
-        // regreso NO es por delta acumulado: el flow escribe posiciones absolutas y
-        // desincronizaba el acumulado (los chips quedaban en medio de la pantalla) —
-        // se vuelve a la posición de origen capturada en Awake. Ambas ramas solo
-        // actúan con el chip en su parent original: si el flow lo tiene, se espera.
-        private Transform _homeParent;
-        private Vector2 _homeAnchoredPos;
-        private bool _needsSinkRestore;
-
         private Color _costLabelBaseColor = Color.white;
         private Tween _rejectShake;
 
-        // Ortogonal al estado a proposito. Un chip puede estar Used o Locked por otra
+        // Ortogonal al estado a proposito. Un chip puede estar Locked por otra
         // razon Y ADEMAS ser impagable; con el rojo colgado del estado Unaffordable
         // (que es excluyente con los otros) esos casos nunca se pintaban. El estado
         // dice que podes hacer; esto dice si te alcanza la plata.
@@ -175,7 +156,7 @@ namespace Rollgeon.UI.HUD
         public TMP_FontAsset CostLabelFont => _costLabel != null ? _costLabel.font : null;
 
         /// <summary>Disparado cuando el boton es clickeado, independientemente del
-        /// estado interactable (Unity gatekeepea Locked/Used a nivel Button).
+        /// estado interactable (Unity gatekeepea Locked a nivel Button).
         /// Delegate plano (no event) por simetria con
         /// <see cref="PlayerActionButtonsView.OnBehaviorSelected"/> — el view setea
         /// a null en OnDestroy para evitar leaks de lambdas con captura.</summary>
@@ -188,8 +169,8 @@ namespace Rollgeon.UI.HUD
         /// <see cref="OnClicked"/> — el view lo limpia en OnDestroy.</summary>
         public Action OnRejected;
 
-        /// <summary>Disparado en el pointer down sobre CUALQUIER chip no usable (Locked,
-        /// Used o Unaffordable). El view resuelve el motivo con estado fresco y muestra
+        /// <summary>Disparado en el pointer down sobre CUALQUIER chip no usable (Locked
+        /// o Unaffordable). El view resuelve el motivo con estado fresco y muestra
         /// el aviso "Esta acción no puede ser realizada". Delegate plano como los otros.</summary>
         public Action<ActionButton> OnBlockedPressed;
 
@@ -211,9 +192,6 @@ namespace Rollgeon.UI.HUD
             _image = _button.targetGraphic as Image;
             if (_image != null) _normalSprite = _image.sprite;
             _baseScale = transform.localScale;
-
-            _homeParent = transform.parent;
-            if (transform is RectTransform homeRect) _homeAnchoredPos = homeRect.anchoredPosition;
 
             _outline = _button.GetComponent<Outline>();
             if (_outline == null)
@@ -274,7 +252,7 @@ namespace Rollgeon.UI.HUD
 
         /// <summary>
         /// Si al jugador le alcanza la energia para esta accion. Independiente de
-        /// <see cref="SetState"/>: un chip Used o Locked por otra razon igual pinta el
+        /// <see cref="SetState"/>: un chip Locked por otra razon igual pinta el
         /// costo en rojo si no lo podes pagar, y responde al intento con el shake.
         /// </summary>
         public void SetAffordable(bool affordable)
@@ -336,21 +314,6 @@ namespace Rollgeon.UI.HUD
                     if (_outline != null) _outline.enabled = false;
                     break;
 
-                // Used tiene su propio look: sprite dedicado a alpha pleno, y la ficha
-                // se hunde hasta el borde inferior de la pantalla — media ficha visible
-                // dice "ya la usaste" sin atenuar nada.
-                case ActionButtonState.Used:
-                    _button.interactable = false;
-                    if (_image != null)
-                    {
-                        var usedSprite = _usedSprite != null ? _usedSprite : _highlightSprite;
-                        if (usedSprite != null) _image.sprite = usedSprite;
-                        _image.color = _baseColor;
-                    }
-                    _stateScale = 1f;
-                    if (_outline != null) _outline.enabled = false;
-                    break;
-
                 case ActionButtonState.Available:
                     _button.interactable = true;
                     ApplyChipVisual(highlighted: _hovered);
@@ -391,47 +354,6 @@ namespace Rollgeon.UI.HUD
         // ======================================================================
         // Hundimiento de la ficha usada
         // ======================================================================
-
-        private static readonly Vector3[] CornersScratch = new Vector3[4];
-
-        /// <summary>
-        /// Enforcement por frame del hundimiento: mientras la ficha está Used la
-        /// empuja hacia abajo hasta dejar su centro en el borde inferior de la
-        /// pantalla (media ficha visible = "ya la usaste"); al salir de Used vuelve
-        /// a su anchoredPosition de origen. Corre en LateUpdate y re-mide cada
-        /// frame, así converge aunque el CombatHudZoneFlow mueva el chip entre
-        /// medio — y con el chip reparentado por el flow, simplemente espera.
-        /// </summary>
-        private void LateUpdate()
-        {
-            if (transform.parent != _homeParent) return; // el flow lo tiene en vuelo
-
-            bool instant = !Application.isPlaying || DiceAnim.DiceUiMotionPrefs.ReducedMotion
-                           || _usedSinkSpeed <= 0f;
-            float step = instant ? float.MaxValue : _usedSinkSpeed * Time.unscaledDeltaTime;
-
-            if (_state == ActionButtonState.Used)
-            {
-                _needsSinkRestore = true;
-                float centerY = CurrentScreenCenterY();
-                if (centerY <= 0f) return; // ya está en/bajo el borde
-                transform.position += Vector3.down * Mathf.Min(step, centerY);
-            }
-            else if (_needsSinkRestore && transform is RectTransform rect)
-            {
-                rect.anchoredPosition = Vector2.MoveTowards(rect.anchoredPosition, _homeAnchoredPos, step);
-                if (rect.anchoredPosition == _homeAnchoredPos) _needsSinkRestore = false;
-            }
-        }
-
-        /// <summary>Centro vertical del rect en pantalla (ScreenSpaceOverlay: world == píxeles).</summary>
-        private float CurrentScreenCenterY()
-        {
-            var rect = transform as RectTransform;
-            if (rect == null) return 0f;
-            rect.GetWorldCorners(CornersScratch);
-            return (CornersScratch[0].y + CornersScratch[1].y) * 0.5f;
-        }
 
         // Unaffordable sigue pintando rojo aunque nadie haya llamado SetAffordable —
         // el estado ya implica que la unica traba es la falta de rolls en el pool.
@@ -508,7 +430,7 @@ namespace Rollgeon.UI.HUD
         {
             bool energyProblem = !_affordable || _state == ActionButtonState.Unaffordable;
             bool blocked = energyProblem
-                           || _state is ActionButtonState.Locked or ActionButtonState.Used;
+                           || _state == ActionButtonState.Locked;
             if (!blocked) return false;
 
             PlayRejectFeedback(notifyEnergy: energyProblem);

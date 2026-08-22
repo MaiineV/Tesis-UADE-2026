@@ -24,7 +24,6 @@ public class ActionDefinitionSO : SerializedScriptableObject {
     public ScriptableObject BackingAsset; // ComboSO / ItemSO for typed dispatch
 
     public int  EnergyCost = 0;
-    public bool BlockOnRepeat = true;
     public int  FreeRollCount = 1;
     public bool AllowsEnergyReroll = true;
 
@@ -37,7 +36,7 @@ public class ActionDefinitionSO : SerializedScriptableObject {
 - If `Effect.Effects` is non-empty → [[TurnManager]]`.TryExecute` runs
   the effect pipeline in-place.
 - If `Effect.Effects` is empty and `BackingAsset` is set → "permit
-  no-op": charge energy, mark used, and let the external dispatcher (combo
+  no-op": charge energy and let the external dispatcher (combo
   executor, item system, AI) run the backing asset.
 
 ## `ActionId` convention

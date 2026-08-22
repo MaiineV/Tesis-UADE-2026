@@ -9,16 +9,15 @@ tags: [combat, actions, action-economy]
 # TurnManager
 
 > Action economy gate. Single service that decides whether any given
-> [[ActionDefinitionSO]] can run right now, charges the energy cost, and
-> tracks which `ActionId`s have been spent in the current turn.
+> [[ActionDefinitionSO]] can run right now and charges its roll cost.
+> There is **no per-turn action limit**: as long as the roll pool has rolls,
+> any action (movement included) can be repeated in the same turn.
 
 ## Responsibilities
 
-1. **Repetition constraint** (§12.6) — opt-in via
-   `ActionDefinitionSO.BlockOnRepeat`.
-2. **Energy cost** — charges via [[EnergyService]]`.SpendEnergy`.
-3. **Ruleset override hook** — future `RulesetSO.ForbiddenActionIds`
-   ([[RulesetSO]]); currently a stub returning `false`.
+1. **Roll cost** — 1 roll per direct action, charged via `IRollPoolService`.
+2. **Ruleset override hook** — tutorial action gate today; future
+   `RulesetSO.ForbiddenActionIds` ([[RulesetSO]]).
 
 ## API
 
@@ -31,25 +30,14 @@ public sealed class TurnManager : IPreloadableService, IDisposable {
 
     public bool CanExecute(ActionDefinitionSO action, Guid playerGuid, out string reason);
     public bool TryExecute(ActionDefinitionSO action, Guid playerGuid, EffectContext ctx);
-
-    public bool WasUsedThisTurn(string actionId);
-    public int  UsedActionsCount { get; }
 }
 ```
 
-## Clear semantics
-
-Subscribed to [[EventName]] `OnTurnStarted`; clears the used-action set
-on every turn start. Because the TurnManager is global (not per-actor),
-the player→enemy→player cycle resets the set twice per round — the
-intent is "mine, during my active slot", which matches.
-
 ## Execution flow
 
-`TryExecute` = `CanExecute` → `SpendEnergy` → optional
-`EffectData.TryExecute` → mark used (if effect ok or no effect). If the
-effect returns `false`, energy is already spent and the action is
-**not** marked used.
+`TryExecute` = `CanExecute` → spend 1 roll (in combat) → optional
+`EffectData.TryExecute`. If the effect returns `false`, the roll is
+already spent.
 
 ## Dependencies
 

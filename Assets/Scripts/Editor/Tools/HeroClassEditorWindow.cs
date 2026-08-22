@@ -446,7 +446,6 @@ namespace Rollgeon.Editor.Tools
             Prop($"{bp}.ActionName");
             Prop($"{bp}.IsBaseBehavior");
             Prop($"{bp}.Slot");
-            Prop($"{bp}.BlockOnRepeat");
 
             EditorGUILayout.Space(8);
             Header("Dice");

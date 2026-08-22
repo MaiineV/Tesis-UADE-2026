@@ -53,9 +53,6 @@ namespace Rollgeon.Combat.Resume
         /// </summary>
         public int PlayerRolls = -1;
 
-        /// <summary>Acciones ya usadas en el turno del player (se re-aplican tras el clear de OnTurnStarted).</summary>
-        public List<string> ActionsUsedThisTurn = new List<string>();
-
         /// <summary>Buffs/debuffs/shields de combate por entidad (Fase 4), keyed por GUID preservado.</summary>
         public List<EntityBuffBlock> Buffs = new List<EntityBuffBlock>();
 

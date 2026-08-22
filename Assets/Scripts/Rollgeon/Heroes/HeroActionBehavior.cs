@@ -32,10 +32,6 @@ namespace Rollgeon.Heroes
         [Tooltip("A cuál slot base corresponde.")]
         public HeroBehaviorSlot Slot;
 
-        [ToggleLeft]
-        [Tooltip("Si true, no puede ejecutarse dos veces en el mismo turno.")]
-        public bool BlockOnRepeat = true;
-
         [Title("Dice")]
         [ToggleLeft]
         [Tooltip("Si false, el behavior se ejecuta sin tirada de dados (ej. Movement).")]

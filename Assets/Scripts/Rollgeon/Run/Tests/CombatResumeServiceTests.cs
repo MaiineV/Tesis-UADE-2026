@@ -109,7 +109,6 @@ namespace Rollgeon.Run.Tests
                 RoundIndex = 2,
                 ActiveEntityId = "b",
                 PlayerRolls = 5,
-                ActionsUsedThisTurn = new List<string> { "attack" },
             };
 
             byte[] bytes = SerializationUtility.SerializeValue(src, DataFormat.JSON);
@@ -121,7 +120,6 @@ namespace Rollgeon.Run.Tests
             Assert.AreEqual(1, restored.Cursor);
             Assert.AreEqual(2, restored.RoundIndex);
             Assert.AreEqual(5, restored.PlayerRolls);
-            Assert.AreEqual(new[] { "attack" }, restored.ActionsUsedThisTurn.ToArray());
         }
 
         // ================================================================

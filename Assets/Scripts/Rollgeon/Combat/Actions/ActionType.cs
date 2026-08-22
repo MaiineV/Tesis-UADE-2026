@@ -31,7 +31,7 @@ namespace Rollgeon.Combat.Actions
         /// <summary>Defensa / pasar turno (§12.4).</summary>
         Defend = 3,
 
-        /// <summary>Movimiento en grid (§B). Suele declarar <c>BlockOnRepeat = false</c>.</summary>
+        /// <summary>Movimiento en grid (§B).</summary>
         Move = 4,
 
         /// <summary>Interaccion con objeto del mundo (§7.7).</summary>

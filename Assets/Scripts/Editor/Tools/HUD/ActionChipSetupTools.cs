@@ -54,7 +54,6 @@ namespace Rollgeon.EditorTools.HUD
                 {
                     var so = new SerializedObject(chip);
                     so.FindProperty("_highlightSprite").objectReferenceValue = highlightSprite;
-                    so.FindProperty("_usedSprite").objectReferenceValue = usedSprite;
                     var button = so.FindProperty("_button").objectReferenceValue as Button;
                     so.ApplyModifiedPropertiesWithoutUndo();
 

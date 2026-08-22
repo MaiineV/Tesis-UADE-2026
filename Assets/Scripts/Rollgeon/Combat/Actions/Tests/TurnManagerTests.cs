@@ -105,12 +105,11 @@ namespace Rollgeon.Combat.Actions.Tests
 
         // --- Helpers -----------------------------------------------------
 
-        private ActionDefinitionSO MakeAction(string id, bool blockOnRepeat = true)
+        private ActionDefinitionSO MakeAction(string id)
         {
             var def = ScriptableObject.CreateInstance<ActionDefinitionSO>();
             def.ActionId = id;
             def.Type = ActionType.Attack;
-            def.BlockOnRepeat = blockOnRepeat;
             def.Effect = new EffectData(); // listas vacias.
             _createdDefs.Add(def);
             return def;
@@ -174,23 +173,10 @@ namespace Rollgeon.Combat.Actions.Tests
         }
 
         [Test]
-        public void CanExecute_RepeatBlocked_FalseWithReason()
+        public void CanExecute_AfterExecution_StillTrueWhileRollsRemain()
         {
-            var def = MakeAction("attack.basic", blockOnRepeat: true);
-            // Marcamos como usada via TryExecute.
-            Assert.IsTrue(_tm.TryExecute(def, _actor, MakeCtx()));
-
-            bool ok = _tm.CanExecute(def, _actor, out var reason);
-
-            Assert.IsFalse(ok);
-            StringAssert.Contains("already used", reason);
-        }
-
-        [Test]
-        public void CanExecute_BlockOnRepeatFalse_CanRepeat()
-        {
-            // Movement pattern — BlockOnRepeat = false.
-            var def = MakeAction("move", blockOnRepeat: false);
+            // Sin limite de acciones por turno: ejecutar una accion no la bloquea.
+            var def = MakeAction("attack.basic");
             Assert.IsTrue(_tm.TryExecute(def, _actor, MakeCtx()));
 
             bool ok = _tm.CanExecute(def, _actor, out var reason);
@@ -202,7 +188,7 @@ namespace Rollgeon.Combat.Actions.Tests
         // --- TryExecute --------------------------------------------------
 
         [Test]
-        public void TryExecute_HappyPath_SpendsOneRollAndMarksUsed()
+        public void TryExecute_HappyPath_SpendsOneRoll()
         {
             var def = MakeAction("attack.basic");
 
@@ -211,24 +197,24 @@ namespace Rollgeon.Combat.Actions.Tests
             Assert.IsTrue(ok);
             Assert.AreEqual(3, _energy.Current[_actor], "1 roll cobrado (4 -> 3).");
             Assert.AreEqual(1, _energy.SpendCallCount);
-            Assert.IsTrue(_tm.WasUsedThisTurn("attack.basic"));
-            Assert.AreEqual(1, _tm.UsedActionsCount);
         }
 
         [Test]
-        public void TryExecute_RepeatBlocked_DoesNotSpendOrMutate()
+        public void TryExecute_SameActionRepeated_SpendsEachTimeUntilPoolEmpty()
         {
+            // El unico presupuesto del turno es el pool: 4 rolls = 4 ejecuciones.
             var def = MakeAction("attack.basic");
-            _tm.TryExecute(def, _actor, MakeCtx()); // primera — exitosa.
-            int spendCountAfterFirst = _energy.SpendCallCount;
-            int energyAfterFirst = _energy.Current[_actor];
 
-            bool ok = _tm.TryExecute(def, _actor, MakeCtx()); // segunda — bloqueada.
+            for (int i = 0; i < 4; i++)
+                Assert.IsTrue(_tm.TryExecute(def, _actor, MakeCtx()), $"ejecucion #{i + 1}");
+
+            Assert.AreEqual(0, _energy.Current[_actor]);
+            Assert.AreEqual(4, _energy.SpendCallCount);
+
+            bool ok = _tm.TryExecute(def, _actor, MakeCtx()); // quinta — sin rolls.
 
             Assert.IsFalse(ok);
-            Assert.AreEqual(spendCountAfterFirst, _energy.SpendCallCount,
-                "No debe intentar cobrar rolls en un repeat bloqueado.");
-            Assert.AreEqual(energyAfterFirst, _energy.Current[_actor]);
+            Assert.AreEqual(4, _energy.SpendCallCount, "Sin rolls no debe intentar cobrar.");
         }
 
         [Test]
@@ -241,15 +227,13 @@ namespace Rollgeon.Combat.Actions.Tests
 
             Assert.IsFalse(ok);
             Assert.AreEqual(0, _energy.Current[_actor], "El pool no debe cambiar.");
-            Assert.IsFalse(_tm.WasUsedThisTurn("attack.big"));
         }
 
         [Test]
-        public void TryExecute_EmptyEffect_PermitNoOp_ChargesAndMarks()
+        public void TryExecute_EmptyEffect_PermitNoOp_Charges()
         {
             // Accion con EffectData vacia (Effects.Count = 0) — "permit no-op".
-            // TurnManager cobra 1 roll + marca usada, delega el dispatch del
-            // BackingAsset a otro sistema.
+            // TurnManager cobra 1 roll y delega el dispatch del BackingAsset a otro sistema.
             var def = MakeAction("combo.full_house");
             Assert.AreEqual(0, def.Effect.Effects.Count);
 
@@ -257,91 +241,34 @@ namespace Rollgeon.Combat.Actions.Tests
 
             Assert.IsTrue(ok);
             Assert.AreEqual(3, _energy.Current[_actor]);
-            Assert.IsTrue(_tm.WasUsedThisTurn("combo.full_house"));
         }
 
         [Test]
-        public void TryExecute_MovementCanRepeat_SetStaysAtZero()
+        public void TryExecute_MovementCanRepeat_SpendsPerExecution()
         {
-            var move = MakeAction("move", blockOnRepeat: false);
+            var move = MakeAction("move");
 
             Assert.IsTrue(_tm.TryExecute(move, _actor, MakeCtx()));
             Assert.IsTrue(_tm.TryExecute(move, _actor, MakeCtx()));
 
             Assert.AreEqual(2, _energy.Current[_actor]);
-            Assert.AreEqual(0, _tm.UsedActionsCount,
-                "Movement con BlockOnRepeat=false NO debe entrar al set de usadas.");
         }
 
-        // --- OnTurnStarted clear -----------------------------------------
+        // --- Multi-actor semantics ---------------------------------------
 
         [Test]
-        public void OnTurnStarted_ClearsUsedSet()
+        public void MultiActor_PoolsAreIndependent()
         {
-            var def = MakeAction("attack.basic");
-            _tm.TryExecute(def, _actor, MakeCtx());
-            Assert.IsTrue(_tm.WasUsedThisTurn("attack.basic"));
-
-            EventManager.Trigger(EventName.OnTurnStarted, Guid.NewGuid());
-
-            Assert.IsFalse(_tm.WasUsedThisTurn("attack.basic"));
-            Assert.AreEqual(0, _tm.UsedActionsCount);
-        }
-
-        [Test]
-        public void OnTurnStarted_AfterClear_CanRepeatSameAction()
-        {
-            var def = MakeAction("attack.basic");
-            _tm.TryExecute(def, _actor, MakeCtx()); // usada.
-            _energy.Current[_actor] = 4;            // restaurar el pool manualmente.
-
-            EventManager.Trigger(EventName.OnTurnStarted, Guid.NewGuid());
-
-            bool ok = _tm.TryExecute(def, _actor, MakeCtx());
-            Assert.IsTrue(ok, "Tras OnTurnStarted la misma accion debe poder ejecutarse de nuevo.");
-            Assert.IsTrue(_tm.WasUsedThisTurn("attack.basic"));
-        }
-
-        // --- Dispose -----------------------------------------------------
-
-        [Test]
-        public void Dispose_UnsubscribesFromOnTurnStarted()
-        {
-            var def = MakeAction("attack.basic");
-            _tm.TryExecute(def, _actor, MakeCtx());
-
-            _tm.Dispose();
-            // Re-suscribimos otro TurnManager para verificar que el disposed ya no responde.
-            // El dispose limpia el set tambien — verificamos ese contrato.
-            Assert.AreEqual(0, _tm.UsedActionsCount);
-
-            // Un Trigger post-Dispose no debe lanzar (suscripcion ya retirada).
-            Assert.DoesNotThrow(() => EventManager.Trigger(EventName.OnTurnStarted, Guid.NewGuid()));
-
-            _tm = null; // evitar doble-dispose en TearDown.
-        }
-
-        // --- Multi-actor semantics (plan §10 R4) ------------------------
-
-        [Test]
-        public void MultiActor_SameTurnShareSet_ButClearOnTurnStarted()
-        {
-            // Dos actores distintos atacan en el mismo "turno" — el TurnManager es global
-            // y comparte el set. Esto es intencional: el clear ocurre en OnTurnStarted.
+            // El gate es por pool del actor: agotar el de A no afecta a B.
             var actorB = Guid.NewGuid();
-            _energy.Current[actorB] = 4;
+            _energy.Current[actorB] = 1;
+            _energy.Current[_actor] = 1;
 
             var def = MakeAction("attack.basic");
 
             Assert.IsTrue(_tm.TryExecute(def, _actor, MakeCtx()));
-            // Actor B intenta la misma accion — bloqueada por repeat en el mismo slot.
-            bool ok = _tm.CanExecute(def, actorB, out var reason);
-            Assert.IsFalse(ok, "Semantica = slot del actor activo; clear entre OnTurnStarted. Plan R4.");
-            StringAssert.Contains("already used", reason);
-
-            // Tras OnTurnStarted (cambio de turno), actor B puede ejecutar.
-            EventManager.Trigger(EventName.OnTurnStarted, actorB);
-            Assert.IsTrue(_tm.CanExecute(def, actorB, out _));
+            Assert.IsFalse(_tm.CanExecute(def, _actor, out _), "A se quedo sin rolls.");
+            Assert.IsTrue(_tm.CanExecute(def, actorB, out _), "B conserva su pool.");
         }
 
         // --- Feedback gate (§10.9) --------------------------------------
