@@ -1,0 +1,53 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!21 &2100000
+Material:
+  serializedVersion: 8
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: Mat_DamageTile
+  m_Shader: {fileID: 4800000, guid: 3a9544f68b779df4e9713ac0bcb4f815, type: 3}
+  m_Parent: {fileID: 0}
+  m_ModifiedSerializedProperties: 0
+  m_ValidKeywords: []
+  m_InvalidKeywords: []
+  m_LightmapFlags: 4
+  m_EnableInstancingVariants: 0
+  m_DoubleSidedGI: 0
+  m_CustomRenderQueue: -1
+  stringTagMap: {}
+  disabledShaderPasses: []
+  m_LockedProperties: 
+  m_SavedProperties:
+    serializedVersion: 3
+    m_TexEnvs: []
+    m_Ints: []
+    m_Floats:
+    - _AlphaCutoff: 1
+    - _DistortionScale: 4
+    - _DistortionStrength: 0.12
+    - _DitherScale: 1
+    - _EmissionStrength: 2.2
+    - _FresnelPower: 3.5
+    - _FresnelStrength: 1.8
+    - _MoteScale: 14
+    - _MoteThreshold: 0.78
+    - _PulseMax: 1.2
+    - _PulseMin: 0.5
+    - _PulseSharpness: 6
+    - _PulseSpeed: 3
+    - _Radius: 0.446
+    - _RotSpeed: 0.6
+    - _ScrollSpeed: -0.6
+    - _Smooth: 0.001
+    - _SpikeAmount: 0.0755
+    - _SpikeCount: 8
+    - _TileSlotHexAccent: 7
+    - _TileSlotHexBase: 13
+    - _TileSlotStone: 2
+    m_Colors:
+    - _DistortionSpeed: {r: 0.1, g: 0.1, b: 0, a: 0}
+  m_BuildTextureStacks: []
+  m_AllowLocking: 1

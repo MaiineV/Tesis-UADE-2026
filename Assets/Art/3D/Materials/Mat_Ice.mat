@@ -1,0 +1,47 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!21 &2100000
+Material:
+  serializedVersion: 8
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: Mat_Ice
+  m_Shader: {fileID: 4800000, guid: 872400255be4f6b419c03a39f9cf6d9c, type: 3}
+  m_Parent: {fileID: 0}
+  m_ModifiedSerializedProperties: 0
+  m_ValidKeywords: []
+  m_InvalidKeywords: []
+  m_LightmapFlags: 4
+  m_EnableInstancingVariants: 0
+  m_DoubleSidedGI: 0
+  m_CustomRenderQueue: -1
+  stringTagMap: {}
+  disabledShaderPasses: []
+  m_LockedProperties: 
+  m_SavedProperties:
+    serializedVersion: 3
+    m_TexEnvs: []
+    m_Ints: []
+    m_Floats:
+    - _AlphaCutoff: 1
+    - _BaseWidth: 0.77
+    - _DitherScale: 1
+    - _DitherStrength: 0.15
+    - _IceSlotBase: 3
+    - _IceSlotStripe: 1
+    - _LightTintStrength: 0.4
+    - _LightWrap: 0.1
+    - _MidThreshold: 0.65
+    - _ShadowSmooth: 0.02
+    - _ShadowThreshold: 0.35
+    - _SpotDither: 0
+    - _StripeAngle: -55.02
+    - _StripeScale: 4.51
+    - _StripeScrollSpeed: 0.6
+    - _StripeWidth: 0.37
+    - _UseDither: 0
+    m_Colors: []
+  m_BuildTextureStacks: []
+  m_AllowLocking: 1
