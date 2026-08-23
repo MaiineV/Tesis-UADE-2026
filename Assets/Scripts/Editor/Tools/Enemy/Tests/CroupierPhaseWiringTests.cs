@@ -538,10 +538,15 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                     "Tile_FireTemp es la genérica y tunearla ahí le cambiaría el fuego a todo el juego.");
                 // Un 0 cae al default del SO, y en ISpecialTileService.Place 0 significa PERMANENTE.
                 Assert.Contains(ignite.DurationRounds,
-                    new[] { CroupierAssetBuilder.FireDurationRounds, CroupierAssetBuilder.FireDurationRoundsPhase2 },
-                    $"Una ignición pasa {ignite.DurationRounds} rondas, que no es ni la duración " +
-                    "base ni la de fase 2: o es un número suelto que nadie va a mantener, o es un " +
-                    "0 que deja el fuego encendido para siempre.");
+                    new[]
+                    {
+                        CroupierAssetBuilder.FireDurationRounds,
+                        CroupierAssetBuilder.FireDurationRoundsPhase2,
+                        CroupierAssetBuilder.PlenoFireDurationRounds,
+                    },
+                    $"Una ignición pasa {ignite.DurationRounds} rondas, que no es la duración base, " +
+                    "ni la de fase 2, ni la del Pleno: o es un número suelto que nadie va a " +
+                    "mantener, o es un 0 que deja el fuego encendido para siempre.");
             }
         }
 
@@ -571,6 +576,10 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                 "Fase 2 tiene que ser exactamente una ronda más: es lo que hace que dos bandas " +
                 "convivan durante el relevo, y ése es el único escalón de dificultad del umbral. " +
                 "Dos rondas más y vuelve a apilarse sin techo.");
+
+            Assert.AreEqual(1, CroupierAssetBuilder.PlenoFireDurationRounds - 1,
+                "El Pleno arde una sola ronda. Prende el paño entero menos el 3x3 del jefe: dos " +
+                "rondas y el jugador pasa un turno completo sin ninguna casilla a la que moverse.");
         }
 
         /// <summary>Va cableado y no por default: el default de <c>RetireFullyReplaced</c> es "no
@@ -597,9 +606,13 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             Assert.AreEqual(1, ignitions.Count(i => i.DurationRounds == CroupierAssetBuilder.FireDurationRounds),
                 "Tiene que haber exactamente una ignición con la duración base: la de la banda " +
                 "mientras el jefe está por encima del 50%.");
-            Assert.AreEqual(2, ignitions.Count(i => i.DurationRounds == CroupierAssetBuilder.FireDurationRoundsPhase2),
-                "Y dos con la de fase 2: la banda por debajo del 50% y el propio Pleno, que prende " +
-                "justo al cruzar el umbral y por lo tanto ya está en fase 2.");
+            Assert.AreEqual(1, ignitions.Count(i => i.DurationRounds == CroupierAssetBuilder.FireDurationRoundsPhase2),
+                "Y exactamente una con la de fase 2: la banda por debajo del 50%.");
+
+            Assert.AreEqual(1, ignitions.Count(i => i.DurationRounds == CroupierAssetBuilder.PlenoFireDurationRounds),
+                "El Pleno lleva duración propia y más corta que las dos bandas: prende el paño " +
+                "entero salvo el 3x3 del jefe, así que si ardiera como una banda no quedaría dónde " +
+                "pararse. Igualarlo a fase 2 lo convierte en terreno y borra la sala.");
 
             // El If que ramifica: sin él las dos duraciones existirían en el árbol pero el jefe
             // usaría siempre la misma.

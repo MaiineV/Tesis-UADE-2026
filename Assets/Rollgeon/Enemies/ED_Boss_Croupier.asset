@@ -63,7 +63,7 @@ MonoBehaviour:
       Data: 0
     - Name: DurationRounds
       Entry: 3
-      Data: 4
+      Data: 2
     - Name: ChannelId
       Entry: 1
       Data: pleno

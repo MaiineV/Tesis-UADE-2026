@@ -121,6 +121,14 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         public const int FireDurationRoundsPhase2 = 4;
 
         /// <summary>
+        /// Duración del paño que prende "Pleno y color": 2 de casilla = arde 1. Es un fogonazo, no
+        /// terreno — prende todo salvo el 3x3 del jefe, así que si durara como una banda no habría
+        /// dónde pararse. Va aparte de <see cref="FireDurationRoundsPhase2"/> porque el Pleno cruza
+        /// el umbral y compartir la constante lo ataría a la duración de las bandas.
+        /// </summary>
+        public const int PlenoFireDurationRounds = 2;
+
+        /// <summary>
         /// Duracion del hazard de paño que este builder autora para La Bandida (sus reels lo
         /// consumen). El Croupier no lo usa.
         /// </summary>
@@ -506,14 +514,17 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
                     Guarded(new AINode_IgniteArea
                     {
                         Definition = fire,
-                        DurationRounds = FireDurationRoundsPhase2,
+                        DurationRounds = PlenoFireDurationRounds,
                         ChannelId = PlenoChannelId,
                         // 0 y no 1: el turno de aviso ya lo da el orden de los hijos. Con 1 el nodo
                         // sumaria SU turno de espera arriba del que ya da el orden y prenderia en
                         // N+2.
                         AnnounceTurns = 0,
-                        // El pano entero tapa a cualquier banda vieja: sin esto ese terreno se queda
-                        // con el reloj de la banda --el mas corto-- y se apaga en el wrap siguiente.
+                        // El pano entero tapa a cualquier banda vieja y le impone SU reloj, que es el
+                        // mas corto de los tres: sin esto el terreno compartido se queda con el de la
+                        // banda y el fogonazo no se lee como un turno. El precio es que el Pleno
+                        // acorta las bandas que ya ardian, y eso es a proposito: la sala prende
+                        // entera y se apaga entera.
                         RetireFullyReplaced = true,
                     }),
 
