@@ -124,7 +124,12 @@ namespace Rollgeon.Effects.Concretes
         private bool _selfHealOnNoTarget = true;
 
         public bool UseBuildDice => _useBuildDice;
-        public float ComboMultiplier => _comboMultiplier;
+
+        // El inspector promete MinValue(0.01) sobre _comboMultiplier, pero un blob
+        // serializado sin pasar por el inspector puede traer 0 — y en la N×M ese 0
+        // multiplica TODO el heal (Curarse curaba 0 siempre, playtest 22/08). 0 no es
+        // un valor autorable: se lee como "sin perilla" (×1).
+        public float ComboMultiplier => _comboMultiplier > 0f ? _comboMultiplier : 1f;
 
         public override string GetEffectName() => "Heal";
 
@@ -174,8 +179,8 @@ namespace Rollgeon.Effects.Concretes
                 int attack = ResolveOwnerAttack(context.OwnerGuid);
                 var sb = new System.Text.StringBuilder();
                 sb.Append("Curación: ATQ (").Append(attack).Append(") + base del combo × multi de dados");
-                if (!Mathf.Approximately(_comboMultiplier, 1f))
-                    sb.Append(" × ").Append(_comboMultiplier.ToString("0.##"));
+                if (!Mathf.Approximately(ComboMultiplier, 1f))
+                    sb.Append(" × ").Append(ComboMultiplier.ToString("0.##"));
                 sb.AppendLine();
                 sb.Append("Sin combo: ATQ + dado más alto elegido");
                 return sb.ToString();
@@ -289,7 +294,7 @@ namespace Rollgeon.Effects.Concretes
             int rawAmount = _healSource switch
             {
                 DamageSource.ComboValue when context?.ComboResult is { IsMatch: true } combo
-                    => Mathf.RoundToInt(combo.EffectiveTotal * _comboMultiplier),
+                    => Mathf.RoundToInt(combo.EffectiveTotal * ComboMultiplier),
                 DamageSource.ComboValue => 0,
                 DamageSource.FromReader when _reader != null && context != null
                     => Mathf.RoundToInt(_reader.Read(context) * _readerMultiplier),
@@ -334,7 +339,7 @@ namespace Rollgeon.Effects.Concretes
                     ResolveSourceId(context),
                     sheet.GetHealBase(combo.ComboId),
                     ResolveContributingDice(context, combo.ContributingIndices),
-                    _comboMultiplier);
+                    ComboMultiplier);
             }
 
             return ResolveNoComboFallback(context);
@@ -360,7 +365,7 @@ namespace Rollgeon.Effects.Concretes
 
             return Rollgeon.Combat.Damage.PlayerComboDamage.Resolve(
                 ResolveSourceId(context), contributingDice != null ? 0 : max,
-                contributingDice, _comboMultiplier,
+                contributingDice, ComboMultiplier,
                 Rollgeon.Combat.Damage.PlayerComboFormulaKind.Heal);
         }
 
