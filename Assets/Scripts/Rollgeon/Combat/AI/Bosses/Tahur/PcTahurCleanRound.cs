@@ -7,14 +7,9 @@ using UnityEngine;
 namespace Rollgeon.Combat.AI.Bosses.Tahur
 {
     /// <summary>
-    /// True si la ronda del Tahúr quedó limpia: la liquidación de este turno no marcó Castigo
-    /// (el jugador armó el canto exacto, o todavía no había canto que liquidar). Es el gate de
-    /// la rama del poke.
+    /// True si la liquidación de este turno no marcó Castigo. Sin el servicio del pozo registrado
+    /// devuelve <c>true</c>: semántica permisiva del catálogo ("sin servicio no veta").
     /// </summary>
-    /// <remarks>
-    /// Sin el servicio del pozo registrado devuelve <c>true</c>: semántica permisiva del catálogo
-    /// ("sin servicio no veta").
-    /// </remarks>
     [Serializable, HideReferenceObjectPicker]
     public sealed class PcTahurCleanRound : BasePreCondition
     {

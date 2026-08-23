@@ -11,13 +11,9 @@ using UnityEngine;
 namespace Rollgeon.Combat.AI.Bosses.Tahur
 {
     /// <summary>
-    /// "Liquida" del Tahúr: lee la mano que el jugador jugó, la mide contra el canto de la ronda
-    /// pasada, mueve las fichas del pozo y marca el Castigo con la forma que dice cuánto faltó.
-    /// </summary>
-    /// <remarks>
     /// Puede devolver <see cref="AIResult.Failed"/>, así que va envuelto en
     /// <c>Selector[SettleWager, Wait]</c>: un <c>Failed</c> suelto aborta el turno entero.
-    /// </remarks>
+    /// </summary>
     [Serializable, HideReferenceObjectPicker]
     public sealed class AINode_TahurSettleWager : AIActionNode
     {
@@ -85,8 +81,6 @@ namespace Rollgeon.Combat.AI.Bosses.Tahur
 
         public override string NodeName => "Tahúr — Settle Wager (liquida y mueve el pozo)";
 
-        // -----------------------------------------------------------------
-
         public override AIResult Tick(AIContext context)
         {
             if (context == null) return AIResult.Failed;
@@ -96,15 +90,13 @@ namespace Rollgeon.Combat.AI.Bosses.Tahur
             wager.PayoutPerChip = PayoutPerChip;
             wager.BeginBossTurn();
 
-            // Sólo mientras no se volteó la carta: a partir del volteo el valor lo fija
-            // AINode_TahurFlipCard y este nodo no puede pisárselo.
+            // Sólo mientras no se volteó la carta: después el valor lo fija AINode_TahurFlipCard.
             if (!wager.CallInverted) wager.RakeChipsPerRound = RakeChipsPerRound;
 
             // Antes de liquidar: el Castigo que se marque esta ronda ya cuenta la ficha del rastrillo.
             if (wager.RakeChipsPerRound > 0) wager.AddChips(wager.RakeChipsPerRound);
 
-            // El canto pendiente se armó con las reglas de antes del volteo: la primera
-            // liquidación tras invertir el cartel no castiga.
+            // El canto pendiente se armó con las reglas de antes del volteo: no castiga.
             if (wager.ConsumeGrace())
             {
                 wager.ConsumePlayedHand();
@@ -145,11 +137,6 @@ namespace Rollgeon.Combat.AI.Bosses.Tahur
             return MarkPunishment(context, wager, MissChipGain, ShapeForShortfall(-distance), TahurSettleOutcome.Miss);
         }
 
-        // -----------------------------------------------------------------
-        // Resultados
-        // -----------------------------------------------------------------
-
-        /// <remarks>El pozo no pega: paga, y el daño va contra el jefe.</remarks>
         private AIResult SettleExact(AIContext context, ITahurWagerService wager)
         {
             wager.ReportOutcome(TahurSettleOutcome.Exact, false);
@@ -212,14 +199,7 @@ namespace Rollgeon.Combat.AI.Bosses.Tahur
             return AIResult.Succeeded;
         }
 
-        // -----------------------------------------------------------------
-        // Tabla del pozo
-        // -----------------------------------------------------------------
-
-        /// <summary>
-        /// Daño del Castigo para un pozo de <paramref name="chips"/> fichas. Fichas por encima de la
-        /// tabla usan la última entrada, y nunca supera <see cref="DamageCeiling"/>.
-        /// </summary>
+        /// <summary>Fichas por encima de la tabla usan la última entrada, y nunca supera <see cref="DamageCeiling"/>.</summary>
         public int PunishmentDamageForChips(int chips)
         {
             if (PotDamageTable == null || PotDamageTable.Count == 0) return 0;
@@ -227,7 +207,6 @@ namespace Rollgeon.Combat.AI.Bosses.Tahur
             return Mathf.Clamp(PotDamageTable[index], 0, DamageCeiling);
         }
 
-        /// <summary>Forma del Castigo según cuántos escalones le faltaron al jugador.</summary>
         public TahurPunishmentShape ShapeForShortfall(int shortfall)
         {
             if (MissShapes == null || MissShapes.Count == 0) return GreedShape;

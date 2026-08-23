@@ -18,31 +18,17 @@ using UnityEngine;
 
 namespace Rollgeon.Combat.AI.Tests
 {
-    /// <summary>
-    /// El rodillo roto de La Bandida contra el <see cref="HazardService"/> real: su casilla queda
-    /// ardiendo. El fuego es el asset del Croupier reusado, así que acá se verifica el cableado y
-    /// la casilla exacta, no los números de la sustancia.
-    /// </summary>
     [TestFixture]
     public class BandidaReelFireTests
     {
         private const int ReelHp = 60;
         private const int MedianPlayerTurn = 42;
-        /// <summary>
-        /// Espejo de <c>CroupierAssetBuilder.BandidaReelFireDamage</c>, que vive en un assembly de
-        /// Editor.
-        /// </summary>
-        /// <remarks>
-        /// El nombre del original importa: <b>este hazard es de ella</b>. Lo autora el builder del
-        /// Croupier —de ahí que el asset se llame <c>HZ_Croupier_TableFire</c>— pero el único que lo
-        /// consume es <c>BandidaAssetBuilder.ReelFireHazardPath</c>. El fuego del Croupier es otra
-        /// cosa (la casilla especial <c>Tile_Fire_Croupier</c>, autorada a mano), así que subirle el
-        /// fuego a él no mueve este número y moverlo acá le cambia el daño a ella. Ya pasó una vez.
-        /// </remarks>
+        // Espejo de CroupierAssetBuilder.BandidaReelFireDamage, que vive en un assembly de Editor.
+        // El asset se llama HZ_Croupier_TableFire pero el fuego es de ella: subirle el fuego al
+        // Croupier no mueve este número, y moverlo acá le cambia el daño a ella.
         private const int FireDamage = 6;
 
-        /// <summary>Número del fixture, no de la ficha: el hazard autorado dura más, y acortarlo acá
-        /// es lo que deja los tests en dos wraps en vez de tres.</summary>
+        // Número del fixture, no de la ficha: acortarlo es lo que deja los tests en dos wraps.
         private const int FireDurationRounds = 2;
         private const int RespawnDelayPhase1 = 2;
         private const int CountdownStart = 2;
@@ -141,17 +127,11 @@ namespace Rollgeon.Combat.AI.Tests
             EventManager.ResetEventDictionary();
         }
 
-        // ======================================================================
-        // 60 de vida: el rodillo es una pared, no un vidrio
-        // ======================================================================
-
         [Test]
         public void ReelSpawns_WithTheFullHpPoolOfItsData()
         {
-            // Arrange / Act
             BossTurn();
 
-            // Assert
             Assert.AreEqual(ReelHp, _attributes.GetAttribute<Health>(FirstReelGuid()).Value,
                 "A 3 de vida cualquier golpe partía cualquier rodillo y la elección no existía.");
         }
@@ -159,37 +139,27 @@ namespace Rollgeon.Combat.AI.Tests
         [Test]
         public void ReelHitByAMedianTurn_SurvivesAndKeepsItsSlot()
         {
-            // Arrange
             BossTurn();
             var reel = FirstReelGuid();
 
-            // Act — el turno mediano del jugador, entero contra un solo rodillo.
             Damage(reel, MedianPlayerTurn);
             BossTurn();
 
-            // Assert
             Assert.AreEqual(3, AliveReelCount(), "Un turno mediano no alcanza para romper un rodillo.");
             Assert.AreEqual(ReelHp - MedianPlayerTurn, _attributes.GetAttribute<Health>(reel).Value);
             Assert.IsEmpty(Instances(), "Un rodillo dañado pero vivo no prende nada: sólo el roto arde.");
         }
 
-        // ======================================================================
-        // El rodillo roto deja fuego
-        // ======================================================================
-
         [Test]
         public void BrokenReel_LeavesFireOnItsExactTile()
         {
-            // Arrange
             BossTurn();
             var reel = FirstReelGuid();
             var slotCoord = CoordOf(reel);
 
-            // Act
             BreakReel(reel);
             BossTurn();
 
-            // Assert
             var instances = Instances();
             Assert.AreEqual(1, instances.Count, "Un fuego, y sólo por el rodillo que se rompió.");
             Assert.AreSame(_fire, instances[0].Definition,
@@ -202,18 +172,15 @@ namespace Rollgeon.Combat.AI.Tests
         [Test]
         public void ReelFire_BillsSixOnTheFirstTurnEndInsideIt()
         {
-            // Arrange
             BossTurn();
             var reel = FirstReelGuid();
             var slotCoord = CoordOf(reel);
             BreakReel(reel);
             BossTurn();
 
-            // Act — el jugador ocupa el hueco que abrió y cierra el turno ahí.
             _grid.Move(_player, slotCoord);
             EndTurn(_player);
 
-            // Assert
             Assert.AreEqual(1, _pipeline.Resolved.Count);
             Assert.AreEqual(FireDamage, _pipeline.Resolved[0].BaseDamage);
             Assert.AreEqual(_player, _pipeline.Resolved[0].TargetId);
@@ -223,17 +190,14 @@ namespace Rollgeon.Combat.AI.Tests
         [Test]
         public void ReelFire_DoesNotBillTheTurnOfTheBreak()
         {
-            // Arrange — rompe el rodillo y se para en el hueco en el MISMO turno.
             BossTurn();
             var reel = FirstReelGuid();
             var slotCoord = CoordOf(reel);
             BreakReel(reel);
 
-            // Act
             _grid.Move(_player, slotCoord);
             EndTurn(_player);
 
-            // Assert
             Assert.IsEmpty(_pipeline.Resolved,
                 "La rotura se descubre en el turno del jefe: el turno en que rompés es gratis y el " +
                 "precio empieza a correr desde el siguiente.");
@@ -242,18 +206,15 @@ namespace Rollgeon.Combat.AI.Tests
         [Test]
         public void TwoBrokenReels_LeaveTwoIndependentFires()
         {
-            // Arrange
             BossTurn();
             var first = _jackpot.Slots[0].ReelGuid;
             var second = _jackpot.Slots[2].ReelGuid;
             var coords = new[] { CoordOf(first), CoordOf(second) };
 
-            // Act
             BreakReel(first);
             BreakReel(second);
             BossTurn();
 
-            // Assert
             var instances = Instances();
             Assert.AreEqual(2, instances.Count,
                 "Cada rotura es su propia llama: una sola instancia compartida haría que la segunda " +
@@ -265,17 +226,14 @@ namespace Rollgeon.Combat.AI.Tests
         [Test]
         public void BrokenReel_IgnitesOnce_NotEveryTurnTheSlotStaysEmpty()
         {
-            // Arrange — reposición larga: la ranura queda vacía varios turnos seguidos.
             BossTurn();
             _jackpot.SetRespawnDelay(5);
             BreakReel(FirstReelGuid());
 
-            // Act
             BossTurn();
             BossTurn();
             BossTurn();
 
-            // Assert
             Assert.AreEqual(2, AliveReelCount(), "La ranura sigue vacía: el escenario del test.");
             Assert.AreEqual(1, Instances().Count,
                 "La ranura vacía no puede volver a prender cada turno: el fuego lo enciende la " +
@@ -285,17 +243,14 @@ namespace Rollgeon.Combat.AI.Tests
         [Test]
         public void RespawnedReel_ComesBackOnTopOfItsOwnFire()
         {
-            // Arrange
             BossTurn();
             var reel = FirstReelGuid();
             var slotCoord = CoordOf(reel);
             BreakReel(reel);
 
-            // Act
             BossTurn(); // Se descubre la rotura y prende.
             BossTurn(); // Fase 1: el rodillo vuelve a los dos turnos.
 
-            // Assert
             Assert.AreEqual(3, AliveReelCount(), "El fuego no ocupa la casilla: no puede trabar la reposición.");
             CollectionAssert.Contains(ReelCoords(), slotCoord);
             Assert.IsTrue(_hazard.TryGetHazardAt(slotCoord, out _),
@@ -306,36 +261,26 @@ namespace Rollgeon.Combat.AI.Tests
         [Test]
         public void ReelRow_WithoutAHazard_StillDetachesAndRespawns()
         {
-            // Arrange — la ficha del jefe sin fuego autorado.
             _reels.OnBreakHazard = null;
             BossTurn();
             var reel = FirstReelGuid();
 
-            // Act
             BreakReel(reel);
             BossTurn();
             BossTurn();
 
-            // Assert
             Assert.IsEmpty(Instances(), "Sin definición no hay fuego, y tampoco excepción.");
             Assert.AreEqual(3, AliveReelCount(), "El ciclo de reposición no depende del fuego.");
         }
 
-        // ======================================================================
-        // Lo que el fuego no puede romper
-        // ======================================================================
-
         [Test]
         public void DamagingAReel_StillCancelsTheJackpot_WithTheFireWired()
         {
-            // Arrange
             BossTurn();
             Assert.IsTrue(_jackpot.IsCounting);
 
-            // Act — un golpe que NO rompe.
             Damage(FirstReelGuid(), MedianPlayerTurn);
 
-            // Assert
             Assert.IsFalse(_jackpot.IsCounting,
                 "La cancelación va por el hook de daño del rodillo: subir su vida a 60 no puede " +
                 "haber movido eso a un chequeo de rotura.");
@@ -345,24 +290,16 @@ namespace Rollgeon.Combat.AI.Tests
         [Test]
         public void BreakingAReel_CancelsTheCountAndLeavesFire_InTheSamePlay()
         {
-            // Arrange
             BossTurn();
             var reel = FirstReelGuid();
 
-            // Act
             BreakReel(reel);
             BossTurn();
 
-            // Assert
             Assert.IsFalse(_jackpot.IsCounting, "Romper el rodillo cancela la cuenta.");
             Assert.AreEqual(1, Instances().Count, "…y deja la casilla ardiendo.");
         }
 
-        // ======================================================================
-        // Harness
-        // ======================================================================
-
-        /// <summary>El turno del jefe reducido a la fila de rodillos.</summary>
         private void BossTurn() => _reels.Tick(NewContext());
 
         private AIContext NewContext() => new AIContext
@@ -386,8 +323,8 @@ namespace Rollgeon.Combat.AI.Tests
 
         private static HazardDefinitionSO CreateFire()
         {
-            // Copia en memoria de HZ_Croupier_TableFire, el hazard que autora CroupierAssetBuilder.
-            // El daño se sigue del builder (ver FireDamage); la duración es del fixture.
+            // Copia en memoria de HZ_Croupier_TableFire: el daño se sigue del builder, la duración
+            // es del fixture.
             var def = ScriptableObject.CreateInstance<HazardDefinitionSO>();
             def.name = "Table Fire";
             def.hideFlags = HideFlags.HideAndDontSave;
@@ -432,7 +369,6 @@ namespace Rollgeon.Combat.AI.Tests
             return default;
         }
 
-        /// <summary>Baja vida y dispara el hook de daño, como un golpe real del jugador.</summary>
         private void Damage(Guid reelGuid, int amount)
         {
             var health = _attributes.GetAttribute<Health>(reelGuid);
@@ -448,10 +384,7 @@ namespace Rollgeon.Combat.AI.Tests
             });
         }
 
-        /// <summary>
-        /// Golpe letal más el entierro que hace <c>CombatDeathWatcher</c>: fuera de la cola y fuera
-        /// del grid, con la casilla liberada.
-        /// </summary>
+        // Golpe letal + el entierro que hace CombatDeathWatcher: fuera de la cola y fuera del grid.
         private void BreakReel(Guid reelGuid)
         {
             Damage(reelGuid, ReelHp);

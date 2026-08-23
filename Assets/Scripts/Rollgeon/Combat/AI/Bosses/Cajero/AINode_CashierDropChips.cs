@@ -10,16 +10,10 @@ using UnityEngine;
 namespace Rollgeon.Combat.AI.Decisions
 {
     /// <summary>
-    /// "Suelta": en cada turno de columna el Cajero tira fichas de oro dentro de la columna que acaba
-    /// de marcar, a <see cref="MinDistanceFromPlayer"/>-<see cref="MaxDistanceFromPlayer"/> del
-    /// jugador: <see cref="Count"/> si le pegaron desde su turno anterior, <see cref="MinCount"/> si no.
-    /// </summary>
-    /// <remarks>
     /// <c>DurationRounds = 1</c> expira antes de que el jugador pueda pisar la ficha; "dura un turno
-    /// del jugador" se autora como <c>2</c>. Va después del nodo de marca en el Sequence porque lee
-    /// el área pendiente de <c>IThreatenedAreaService</c>, y va dentro de
-    /// <c>Selector[DropChips, Wait]</c>: suelto en el Sequence su Failed abortaría el turno del jefe.
-    /// </remarks>
+    /// del jugador" se autora como <c>2</c>. Va después del nodo de marca porque lee el área
+    /// pendiente, y dentro de <c>Selector[DropChips, Wait]</c>: suelto su Failed aborta el turno.
+    /// </summary>
     [Serializable, HideReferenceObjectPicker]
     public sealed class AINode_CashierDropChips : AIActionNode
     {
@@ -69,8 +63,7 @@ namespace Rollgeon.Combat.AI.Decisions
             if (grid == null) return AIResult.Failed;
             if (!grid.TryGetPosition(context.PlayerGuid, out var playerCoord)) return AIResult.Failed;
 
-            // Se crea acá aunque todavía no suelte nada: el reloj del rastrillo necesita al
-            // servicio escuchando rondas desde el principio.
+            // Se crea acá aunque no suelte nada: el rastrillo necesita escuchar rondas desde el principio.
             var ledger = CashierLedgerService.ResolveOrCreate();
 
             if (!ServiceLocator.TryGetService<IThreatenedAreaService>(out var threat) || threat == null)
@@ -82,13 +75,11 @@ namespace Rollgeon.Combat.AI.Decisions
                 return AIResult.Failed;
             }
 
-            // El flag se consume DESPUÉS de saber que hay columna: en los turnos de disparo no hay
-            // marca, y consumirlo antes se comería el golpe que el jugador ya pagó.
+            // El flag se consume DESPUÉS de saber que hay columna: en los turnos de disparo no hay marca.
             var column = threat.GetPendingTiles(context.SelfGuid);
             if (column == null || column.Count == 0) return AIResult.Failed;
 
-            // Se consume aunque no llegue a soltar nada: dejarlo puesto haría que el próximo turno
-            // de columna cobrara un golpe que ya se pagó.
+            // Se consume aunque no suelte nada: dejarlo puesto cobraría dos veces el mismo golpe.
             bool paid = !RequireDamageTaken || ledger.ConsumeDamageTaken(context.SelfGuid);
             int toDrop = paid ? Count : MinCount;
             if (toDrop <= 0) return AIResult.Failed;
@@ -113,9 +104,8 @@ namespace Rollgeon.Combat.AI.Decisions
         }
 
         /// <summary>
-        /// Valor de una ficha: tirada inclusiva en [<see cref="MinValue"/>, <see cref="MaxValue"/>]
-        /// escalada por el multiplicador del arqueo. Se congela al soltarla (no al cobrarla) para
-        /// que un arqueo posterior no revalúe fichas ya en el piso.
+        /// Tirada inclusiva en [<see cref="MinValue"/>, <see cref="MaxValue"/>] escalada por el
+        /// multiplicador del arqueo. Se congela al soltarla, no al cobrarla.
         /// </summary>
         private int RollValue(System.Random rng, int multiplier)
         {
@@ -125,11 +115,7 @@ namespace Rollgeon.Combat.AI.Decisions
             return roll * (multiplier < 1 ? 1 : multiplier);
         }
 
-        /// <summary>
-        /// Elige casilla dentro de la columna: primero la banda [Min, Max] de distancia al jugador;
-        /// si está vacía, la casilla libre más cercana que igual respete el mínimo. Nunca elige la
-        /// casilla del jugador ni una ocupada.
-        /// </summary>
+        /// <summary>Primero la banda [Min, Max] de distancia al jugador; si está vacía, la casilla libre más cercana que respete el mínimo.</summary>
         private bool TryPickTile(
             IGridManager grid,
             IReadOnlyCollection<GridCoord> column,
@@ -158,8 +144,7 @@ namespace Rollgeon.Combat.AI.Decisions
             var pool = inBand.Count > 0 ? inBand : fallback;
             if (pool.Count == 0) return false;
 
-            // Orden estable antes de tirar el dado: los sets de tiles no garantizan orden de
-            // iteración, y sin esto el mismo seed elegiría casillas distintas entre corridas.
+            // Orden estable antes de tirar el dado: sin esto el mismo seed elige casillas distintas.
             pool.Sort(CompareCoord);
 
             if (pool == fallback)

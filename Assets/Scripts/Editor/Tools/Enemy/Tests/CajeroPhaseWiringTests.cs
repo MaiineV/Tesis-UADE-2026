@@ -20,38 +20,23 @@ using Rollgeon.Tiles;
 using Rollgeon.Tiles.Authoring;
 using UnityEditor;
 using UnityEngine;
-// Explícito porque el archivo importa UnityEditor y UnityEngine juntos, igual que
-// CroupierVisualWiringTests: sin el alias, `Object` queda ambiguo.
+// Explícito porque el archivo importa UnityEditor y UnityEngine juntos: sin él `Object` es ambiguo.
 using Object = UnityEngine.Object;
 
 namespace Rollgeon.Editor.Tools.Enemy.Tests
 {
-    /// <summary>
-    /// Wiring del árbol de <b>El Cajero</b> (piso 2) <b>en memoria</b>: contra el builder y no
-    /// contra el <c>.asset</c>, que falla por reimports en vez de por diseño roto.
-    /// </summary>
-    /// <remarks>
-    /// <para>
-    /// El jefe es melee puro y persecución: se te pega, alterna mandoble y empujón, y la sala suelta
-    /// monedas que él se cobra si no las levantás. Lo que se cuida acá es el <b>orden</b> del turno
-    /// (de ahí cuelga la mitad del diseño), la alternancia estricta de los dos golpes, que los tres
-    /// consumidores de monedas hablen de la misma definición, y el <b>terreno</b>: la mitad de la
-    /// pelea es la sala, así que el plano que la construye se verifica acá y no en la ficha suelta.
-    /// </para>
-    /// </remarks>
+    /// <summary>Wiring del árbol de El Cajero en memoria: contra el builder y no contra el
+    /// <c>.asset</c>, que falla por reimports en vez de por diseño roto.</summary>
     [TestFixture]
     public class CajeroPhaseWiringTests
     {
         private const float PercentTolerance = 0.0001f;
 
-        /// <summary>Los cinco pasos del turno, en orden. Ver <c>CajeroAssetBuilder.BuildAIRoot</c>.</summary>
         private const int RootSteps = 5;
 
-        /// <summary>
-        /// Una definición de casilla especial que <b>ya existe en disco</b>, para los tests del paso
-        /// que escribe placements. No es la del Cajero a propósito: <c>Tile_Spikes_Cajero</c> la crea
-        /// su propio menú, así que usarla ataría estos tests a que alguien lo haya corrido.
-        /// </summary>
+        /// <summary>Una definición que <b>ya existe en disco</b>. No es la del Cajero a propósito:
+        /// <c>Tile_Spikes_Cajero</c> la crea su propio menú, y usarla ataría el test a que se haya
+        /// corrido.</summary>
         private const string SharedSpikeTilePath = "Assets/Rollgeon/Tiles/Tile_Spikes.asset";
 
         private AINode_Sequence _root;
@@ -62,8 +47,6 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             _root = CajeroAssetBuilder.BuildAIRoot();
             Assert.IsNotNull(_root, "El builder tiene que devolver un Sequence raíz.");
         }
-
-        // ---- Forma del turno ---------------------------------------------
 
         [Test]
         public void Root_HasTheStepsOfTheSheet()
@@ -79,10 +62,6 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             Assert.IsNotNull(FindNode<AINode_Move>(), "Falta la persecución.");
         }
 
-        /// <summary>
-        /// Melee puro: cualquier daño a distancia le devuelve un golpe que no exige acercarse, y
-        /// la persecución deja de ser la pelea.
-        /// </summary>
         [Test]
         public void Boss_HasNoRangedAttackAndNoCounter()
         {
@@ -114,11 +93,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                 "aborta la secuencia y las Comisiones no saldrían nunca.");
         }
 
-        /// <summary>
-        /// La caja descubre las monedas barriendo las instancias vivas, así que tiene que correr
-        /// <b>después</b> de todo lo que suelta monedas: adelante, cada moneda soltada este turno
-        /// viviría una ronda de más.
-        /// </summary>
+        /// <summary>La caja descubre las monedas barriendo las instancias vivas, así que corre después de
+        /// todo lo que suelta monedas: adelante, cada moneda de este turno viviría una ronda de más.</summary>
         [Test]
         public void CoinVault_RunsAfterEverythingThatDropsCoins()
         {
@@ -131,11 +107,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             Assert.Greater(vaultIdx, shoveIdx, "La caja quedó antes del empujón, que también tira monedas.");
         }
 
-        /// <summary>
-        /// La persecución corre <b>antes</b> del golpe, y de eso depende que el empujón se lea:
-        /// detrás del golpe, el jefe tumba al jugador tres casillas y en el mismo turno camina
-        /// cuatro para volver a pegarse, así que viajan juntos y el tumbo no cambia nada.
-        /// </summary>
+        /// <summary>La persecución corre antes del golpe: detrás, el jefe tumba al jugador tres casillas y
+        /// en el mismo turno camina cuatro para volver a pegarse, así que el tumbo no cambia nada.</summary>
         [Test]
         public void Chase_RunsBeforeTheBlow_SoAShoveIsNotWalkedBack()
         {
@@ -149,11 +122,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                 "que empuja y el tumbo deja de tener efecto.");
         }
 
-        /// <summary>
-        /// Lo que hace que cerrar y pegar entren en el mismo turno: la persecución apunta al mismo
-        /// rango que exige el gate del ataque. Con un <c>DesiredRange</c> más grande frenaría a un
-        /// paso de distancia y no llegaría a golpear nunca en el turno que camina.
-        /// </summary>
+        /// <summary>Cerrar y pegar entran en el mismo turno porque la persecución apunta al mismo rango que
+        /// exige el gate: con un <c>DesiredRange</c> mayor frena a un paso y no golpea al caminar.</summary>
         [Test]
         public void Chase_StopsExactlyWithinReachOfTheBlow()
         {
@@ -170,9 +140,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         [Test]
         public void EveryChild_IsIsolatedInSelectorWithWaitFallback()
         {
-            // Los cinco tienen un Failed benigno: no cruzó el umbral, el jugador está lejos, no toca
-            // ronda de monedas, ninguna venció, ya está pegado. Suelto en el Sequence, cualquiera de
-            // esos le aborta el turno entero.
+            // Los cinco tienen un Failed benigno (no cruzó el umbral, el jugador está lejos, ninguna
+            // moneda venció, ya está pegado): suelto en el Sequence, cualquiera aborta el turno.
             for (int i = 0; i < _root.Children.Count; i++)
             {
                 var selector = _root.Children[i] as AINode_Selector;
@@ -183,13 +152,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             }
         }
 
-        // ---- El ciclo de los dos golpes -----------------------------------
-
-        /// <summary>
-        /// Mandoble, empujón, mandoble, empujón. El orden importa: el índice del
-        /// <see cref="AINode_Alternate"/> arranca en 0, así que la pelea abre con el golpe que no se
-        /// puede evitar de ninguna manera estando a su alcance.
-        /// </summary>
+        /// <summary>El índice del <see cref="AINode_Alternate"/> arranca en 0, así que el primer hijo es
+        /// con el que abre la pelea.</summary>
         [Test]
         public void AttackCycle_AlternatesTheHeavyBlowAndTheShove_InThatOrder()
         {
@@ -209,17 +173,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             Assert.IsInstanceOf<AINode_CajeroShove>(second, "El segundo tiempo tiene que ser el empujón.");
         }
 
-        /// <summary>
-        /// El gate de rango va <b>por fuera</b> del <c>Alternate</c>, y eso es lo único que hace que
-        /// la alternancia que el jugador ve sea estricta.
-        /// </summary>
-        /// <remarks>
-        /// <see cref="AINode_Alternate"/> avanza el índice ANTES de tickear al hijo y no lo devuelve
-        /// si el hijo falla. Con los dos golpes auto-gateados por su propio <c>Range</c> y nada
-        /// afuera, cada turno que el jefe pasa caminando quemaría un slot del ciclo: el jugador
-        /// contaría mandoble-empujón y le llegaría mandoble-mandoble. Con el <c>If</c> afuera, el
-        /// índice sólo se mueve en los turnos en que de verdad pega.
-        /// </remarks>
+        /// <summary><see cref="AINode_Alternate"/> avanza el índice ANTES de tickear al hijo y no lo
+        /// devuelve si el hijo falla: con el gate afuera, sólo se mueve en los turnos en que pega.</summary>
         [Test]
         public void AttackCycle_IsGatedByRangeFromOutsideTheAlternate()
         {
@@ -293,8 +248,6 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             Assert.AreEqual(BossFeedbackIds.CajeroImpactFeel, shove.ImpactFeelFeedbackId);
         }
 
-        // ---- Las monedas --------------------------------------------------
-
         [Test]
         public void CoinRain_UsesTheSheetNumbers()
         {
@@ -328,12 +281,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                 "El techo de curación llegó a valer una vida entera: la pelea puede no terminar.");
         }
 
-        /// <summary>
-        /// Los tres consumidores de monedas tienen que hablar de la <b>misma</b> definición. La caja
-        /// reconoce lo que hay en el piso comparando <c>info.Definition == Coin</c>: con una
-        /// definición distinta no falla nada, simplemente ninguna moneda vence nunca y el jefe no se
-        /// cura jamás.
-        /// </summary>
+        /// <summary>La caja reconoce el piso comparando <c>info.Definition == Coin</c>: con definiciones
+        /// distintas no falla nada, simplemente ninguna moneda vence y el jefe no se cura jamás.</summary>
         [Test]
         public void EveryCoinNode_TakesTheSameHazardDefinitionHandedToTheBuilder()
         {
@@ -356,18 +305,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             }
         }
 
-        // ---- El terreno de la sala ----------------------------------------
-
-        /// <summary>
-        /// <b>El plano del Cajero en <c>BossRoomBuilder</c>, no el array de esta ficha.</b> Los diez
-        /// pinchos y las seis cajas fuertes viven acá porque la regla que los gobierna es del jefe,
-        /// pero lo que se construye es el plano: si el plano no los lee, el array es un dibujo que
-        /// nadie mira y la sala sale pelada.
-        /// </summary>
-        /// <remarks>
-        /// Todo lo que se compara acá cruza <b>dos archivos</b>, la ficha del jefe y el plano de la
-        /// sala: cruzar el plano contra sí mismo pasa en verde con la sala sin un solo pincho.
-        /// </remarks>
+        /// <summary>Lo que se construye es el plano, no el array de la ficha: todo lo de acá cruza los dos
+        /// archivos, porque cruzar el plano contra sí mismo pasa en verde con la sala pelada.</summary>
         [Test]
         public void CajeroRoomPlan_CarriesTheTenSpikesAndTheSixSafeBoxes()
         {
@@ -402,10 +341,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                 "decisión y no el efecto colateral de editar el array.");
         }
 
-        /// <summary>
-        /// El jefe arranca en el <b>centro exacto</b>: descentrarlo hace que las cuatro esquinas
-        /// por las que puede entrar el jugador dejen de ser equivalentes.
-        /// </summary>
+        /// <summary>Descentrarlo hace que las cuatro esquinas por las que puede entrar el jugador dejen de
+        /// ser equivalentes.</summary>
         [Test]
         public void CajeroRoomPlan_StartsHimOnTheExactCentreOfTheRoom()
         {
@@ -419,15 +356,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                 "'centro' quiera decir lo mismo en el dibujo y en la grilla.");
         }
 
-        /// <summary>
-        /// La regla de los pinchos: <b>ninguno toca a otro, ni en diagonal</b>. Dos pegados forman
-        /// una pared que el tumbo no puede cruzar sin cobrar doble, y la sala pasa de tener trampas
-        /// a tener zonas prohibidas.
-        /// </summary>
-        /// <remarks>
-        /// Se verifica sobre las celdas que el <b>plano</b> coloca, no sobre el array de la ficha:
-        /// la regla vale sobre lo que se construye.
-        /// </remarks>
+        /// <summary>Dos pegados forman una pared que el tumbo no cruza sin cobrar doble. Se verifica sobre
+        /// las celdas que el plano coloca, no sobre el array: la regla vale sobre lo construido.</summary>
         [Test]
         public void PlannedSpikes_NeverTouchEachOther_NotEvenDiagonally()
         {
@@ -447,16 +377,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             }
         }
 
-        /// <summary>
-        /// Pinchos, cajas fuertes y la casilla del jefe: tres cosas que no pueden compartir celda, y
-        /// las tres tienen que caer dentro de la sala.
-        /// </summary>
-        /// <remarks>
-        /// Un pincho debajo de una caja fuerte no existe para el jugador (la caja bloquea, así que
-        /// nadie lo pisa) y uno debajo del jefe le cobra a él en su propio spawn. Fuera del plano,
-        /// <c>PlanToRoom</c> los manda a una casilla que la sala no tiene: el placement queda escrito
-        /// y el layout se ve completo.
-        /// </remarks>
+        /// <summary>Fuera del plano, <c>PlanToRoom</c> manda la celda a una casilla que la sala no tiene:
+        /// el placement queda escrito y el layout se ve completo.</summary>
         [Test]
         public void PlannedTerrain_NeverStacksTwoThingsOnOneCell_AndFitsInsideTheRoom()
         {
@@ -483,10 +405,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                 "triggers disparan una vez por instancia y Place no valida el solape.");
             Assert.AreEqual(boxes.Length, boxes.Distinct().Count(), "Hay cajas fuertes repetidas.");
 
-            // Más ajustado que los bordes del plano, y a propósito: la ficha pide que el borde y las
-            // cuatro esquinas queden limpios. El jugador entra por una esquina al azar, así que algo
-            // ahí lo recibe pisando un pincho o lo mete dentro de un mueble; y contra la pared un
-            // blocker no encarece ningún camino, sólo se come piso.
+            // Más ajustado que los bordes del plano a propósito: el jugador entra por una esquina al
+            // azar, y contra la pared un blocker no encarece ningún camino, sólo se come piso.
             foreach (var cell in spikes.Concat(boxes))
             {
                 Assert.IsTrue(
@@ -499,22 +419,9 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             }
         }
 
-        /// <summary>
-        /// El paso que escribe de verdad: las celdas del plano terminan en
-        /// <c>RoomLayout.SpecialTilePlacements</c> —la lista <b>permanente</b>— traducidas con
-        /// <c>PlanToRoom</c>, y sin borrar lo que la sala base ya traía.
-        /// </summary>
-        /// <remarks>
-        /// <para>
-        /// La lista importa: <c>SpecialTilePlacements</c> es la permanente y <c>SpecialTileSlots</c>
-        /// rolea el tipo. En estos planos la posición y el tipo son <b>los dos</b> autoría — un pincho
-        /// dibujado en una casilla exacta no puede salir "fuego" en la mitad de las runs.
-        /// </para>
-        /// <para>
-        /// Y agrega en vez de reemplazar: cada corrida parte de la sala base, así que lo que ya está
-        /// en la lista es autoría de la sala compartida del piso y vaciarla la borraría en la derivada.
-        /// </para>
-        /// </remarks>
+        /// <summary>La lista importa: <c>SpecialTilePlacements</c> es la permanente y <c>SpecialTileSlots</c>
+        /// rolea el tipo, y acá la posición y el tipo son los dos autoría. Y agrega en vez de
+        /// reemplazar: lo que ya está en la lista es autoría de la sala base compartida del piso.</summary>
         [Test]
         public void ApplySpecialTiles_WritesThePlanIntoTheLayoutsPermanentList()
         {
@@ -563,10 +470,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             }
         }
 
-        /// <summary>
-        /// Dos placements en la misma coord <b>cobran los dos</b>: los triggers disparan una vez por
-        /// instancia y <c>Place</c> no valida el solape. Una celda ya ocupada se saltea con finding.
-        /// </summary>
+        /// <summary>Dos placements en la misma coord <b>cobran los dos</b>: los triggers disparan una vez
+        /// por instancia y <c>Place</c> no valida el solape.</summary>
         [Test]
         public void ApplySpecialTiles_RefusesToStackTwoTilesOnOneCell()
         {
@@ -594,20 +499,9 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             }
         }
 
-        /// <summary>
-        /// El daño virtual es lo que convierte un pincho armado en <b>intransitable</b> para el
-        /// pathing en vez de en caro. La cuenta es la que documenta la ficha, y no es libre: apunta a
-        /// que <c>daño / HP</c> dé exactamente 1.
-        /// </summary>
-        /// <remarks>
-        /// <c>AIPathPlanner.ComputeHazardPenalty</c> es <c>ceil(daño / HP × 10 × Caution)</c> y el
-        /// costo de casilla es <c>1 + penalty</c>. Con los 20 reales sobre 450 el penalty da 1 y la
-        /// casilla cuesta 2: rodea un desvío de un paso y se come el pincho si el desvío es de dos.
-        /// Con el virtual sumado el penalty llega a 10 y la casilla cuesta 11 — más que cualquier
-        /// desvío alcanzable dentro de un movimiento de <c>ChaseSteps</c>. <b>No es daño</b>: el
-        /// filtro de supervivencia sólo mira los 20 reales, así que "empujado se los come igual"
-        /// sigue en pie.
-        /// </remarks>
+        /// <summary><c>AIPathPlanner.ComputeHazardPenalty</c> es <c>ceil(daño / HP × 10 × Caution)</c> y la
+        /// casilla cuesta <c>1 + penalty</c>: la suma apunta a que <c>daño / HP</c> dé 1 y el penalty
+        /// sature en 10. No es daño — el filtro de supervivencia sólo mira los 20 reales.</summary>
         [Test]
         public void SpikeVirtualDamage_SaturatesThePathingPenalty_AtExactlyHisOwnHp()
         {
@@ -618,8 +512,6 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             Assert.Greater(CajeroAssetBuilder.SpikeDamage, 0,
                 "Sin daño real el pincho es un cartel: el planner lo rodea y al jugador no le cuesta nada.");
         }
-
-        // ---- Las Comisiones -----------------------------------------------
 
         [Test]
         public void CritterGate_SpawnsTwoOfThemAtFiftyPercentHp()
@@ -650,11 +542,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                 "El Once envuelve el spawn y nada más.");
         }
 
-        /// <summary>
-        /// Es el único umbral y el único evento de la pelea, así que también es el único
-        /// <see cref="AINode_Once"/>: cualquier otro latch es una mecánica que se colgó de un umbral
-        /// sin que la ficha lo diga.
-        /// </summary>
+        /// <summary>Es el único umbral de la pelea, así que también el único <see cref="AINode_Once"/>:
+        /// otro latch es una mecánica colgada de un umbral que la ficha no dice.</summary>
         [Test]
         public void Once_WrapsOnlyThePhaseGate_SoTheCoinsKeepRunning()
         {
@@ -703,13 +592,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             }
         }
 
-        // ---- La ficha de la Comisión ---------------------------------------
-
-        /// <summary>
-        /// El refuerzo es <b>su</b> Comisión, no el ranged compartido del juego. Ese asset trae 50 de
-        /// vida y 10 de daño, y a la altura del 50% dos de ésos son un segundo jefe; además es el
-        /// asset de todos los encuentros normales, así que autorarle 18/6 se lo cambia a media run.
-        /// </summary>
+        /// <summary>El ranged compartido trae 50 de vida y 10 de daño —dos de ésos son un segundo jefe— y
+        /// además es el asset de todos los encuentros, así que autorarle 18/6 cambia media run.</summary>
         [Test]
         public void Reinforcements_AreHisOwnComision_NotTheSharedRangedEnemy()
         {
@@ -756,13 +640,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             }
         }
 
-        /// <summary>
-        /// El espejo de <see cref="PopulateEnemyData_KeepsHimGrounded_SoTheSpikesStillBillHim"/>:
-        /// el jefe camina y la Comisión vuela, y son los dos lados de la misma regla.
-        /// <c>IsFlying</c> gatea <c>SpecialTileService.ShouldAffect</c>, y esa misma guarda es la que
-        /// filtra <c>TryGetTileFor</c>, o sea la vista que el planner tiene del terreno: sin el flag
-        /// el bicho cobra 14 de un pincho teniendo 18 de vida <b>y</b> gasta movimiento rodeándolos.
-        /// </summary>
+        /// <summary><c>IsFlying</c> gatea <c>SpecialTileService.ShouldAffect</c>, y esa misma guarda filtra
+        /// <c>TryGetTileFor</c> —la vista del planner—: sin el flag cobra los pinchos Y los rodea.</summary>
         [Test]
         public void CritterData_KeepsHerFlying_SoTheSpikesDoNotBillHer()
         {
@@ -833,10 +712,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                 "el orden invertido, el turno en que entra en rango se le comería el disparo.");
         }
 
-        /// <summary>
-        /// Dispara desde <b>su</b> alcance y camina hasta ahí, no hasta el contacto: pegada al
-        /// jugador muere de un golpe cualquiera para pegar exactamente lo mismo que pega de lejos.
-        /// </summary>
+        /// <summary>Camina hasta su alcance y no hasta el contacto: pegada al jugador muere de un golpe
+        /// cualquiera para pegar exactamente lo mismo que pega de lejos.</summary>
         [Test]
         public void CritterAI_ShootsFromItsOwnRange_NotFromContact()
         {
@@ -870,8 +747,6 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                     "El Selector sin Wait de fallback devuelve Failed igual.");
             }
         }
-
-        // ---- EnemyDataSO --------------------------------------------------
 
         [Test]
         public void PopulateEnemyData_WritesTheSheet()
@@ -909,12 +784,9 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             }
         }
 
-        /// <summary>
-        /// El arte tiene alas y <c>IsFlying</c> se escribe explícito por eso: los pinchos son
-        /// <c>GroundOnly</c>, así que un tick en el Inspector le sacaría el único costo que la sala
-        /// le cobra a él — y "los esquiva caminando pero los come empujado" es la única herramienta
-        /// defensiva real que el jugador tiene acá.
-        /// </summary>
+        /// <summary>El arte tiene alas, así que <c>IsFlying</c> se escribe explícito: un tick en el
+        /// Inspector le saca el único costo que la sala le cobra a él (los pinchos son
+        /// <c>GroundOnly</c>), y "los esquiva caminando pero los come empujado" es la pelea.</summary>
         [Test]
         public void PopulateEnemyData_KeepsHimGrounded_SoTheSpikesStillBillHim()
         {
@@ -1011,8 +883,6 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             }
         }
 
-        // ---- Helpers ------------------------------------------------------
-
         /// <summary>El plano de la sala del Cajero, tal como lo va a construir el menú de salas.</summary>
         private static BossRoomPlan CajeroRoomPlan()
         {
@@ -1048,15 +918,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             return definition;
         }
 
-        /// <summary>
-        /// Corre el paso que convierte celdas de plano en placements y devuelve sus findings.
-        /// </summary>
-        /// <remarks>
-        /// Por reflexión porque el paso es privado, y en un solo lugar por lo mismo: si se renombra o
-        /// cambia de firma, rompe acá con un mensaje que lo dice, en vez de en cada test. Vale la
-        /// incomodidad: es el único paso que escribe las casillas especiales de la sala, y cuando no
-        /// se llama la sala se construye pelada <b>sin que falle nada</b>.
-        /// </remarks>
+        /// <summary>Por reflexión porque el paso es privado, y en un solo lugar por lo mismo: si se
+        /// renombra rompe acá con un mensaje que lo dice, en vez de en cada test.</summary>
         private static List<string> ApplySpecialTiles(RoomLayout layout, params Vector2Int[] planCells)
         {
             var apply = typeof(BossRoomBuilder).GetMethod(
@@ -1126,7 +989,6 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             return constant.Value;
         }
 
-        /// <summary>Índice del hijo del Sequence raíz que contiene un <typeparamref name="T"/>.</summary>
         private int IndexOfStepWith<T>() where T : class =>
             _root.Children.FindIndex(c => Descendants(c).OfType<T>().Any());
 
@@ -1140,10 +1002,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             return null;
         }
 
-        /// <summary>
-        /// El gate de HP del hijo raíz que además contiene un <typeparamref name="T"/>. El tipo
-        /// desambigua por si algún día dos mecánicas vuelven a compartir umbral.
-        /// </summary>
+        /// <summary>El tipo desambigua por si dos mecánicas vuelven a compartir umbral.</summary>
         private AINode_If FindGateAtPercent<T>(float percent) where T : class
         {
             return _root.Children.Select(Unwrap<AINode_If>).FirstOrDefault(g =>

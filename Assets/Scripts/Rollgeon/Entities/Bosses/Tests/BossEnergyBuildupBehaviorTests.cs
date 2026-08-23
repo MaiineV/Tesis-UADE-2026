@@ -6,10 +6,6 @@ using UnityEngine;
 
 namespace Rollgeon.Entities.Bosses.Tests
 {
-    /// <summary>
-    /// Tests de <see cref="BossEnergyBuildupBehavior"/>: energia crece, capea, y el flag
-    /// <see cref="BossEnergyBuildupBehavior.IsEnergyFull"/> es consistente con el max del SO.
-    /// </summary>
     [TestFixture]
     public class BossEnergyBuildupBehaviorTests
     {

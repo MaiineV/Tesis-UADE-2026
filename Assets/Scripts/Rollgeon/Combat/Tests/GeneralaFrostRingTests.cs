@@ -18,10 +18,6 @@ using UnityEngine.TestTools;
 
 namespace Rollgeon.Combat.Tests
 {
-    /// <summary>
-    /// La escarcha de La Generala: <see cref="AINode_GeneralaFrostRing"/> +
-    /// <see cref="IceStunBinder"/>, mismo harness que <see cref="AnotadorIceTrailTests"/>.
-    /// </summary>
     [TestFixture]
     public class GeneralaFrostRingTests
     {
@@ -101,7 +97,7 @@ namespace Rollgeon.Combat.Tests
             if (_frost != null) UnityEngine.Object.DestroyImmediate(_frost);
             _frost = null;
 
-            // Publicar pinta overlay: GameObject + un material por tint. Ver HazardServiceTests.
+            // Publicar pinta overlay: GameObject + un material por tint.
             if (ServiceLocator.TryGetService<IThreatOverlayService>(out var overlay)
                 && overlay is IDisposable disposable)
             {
@@ -114,17 +110,11 @@ namespace Rollgeon.Combat.Tests
             EventManager.ResetEventDictionary();
         }
 
-        // ======================================================================
-        // La forma
-        // ======================================================================
-
         [Test]
         public void ComputeArea_ReturnsTheWholeSquare_UpToTheRadius()
         {
-            // Act
             var area = AINode_GeneralaFrostRing.ComputeArea(_grid, TableTile, 2);
 
-            // Assert
             Assert.AreEqual(25, area.Count);
             foreach (var coord in area)
                 Assert.LessOrEqual(coord.Chebyshev(TableTile), 2, $"{coord} se fue del cuadrado.");
@@ -138,10 +128,9 @@ namespace Rollgeon.Combat.Tests
         [Test]
         public void ComputeRing_ReturnsOnlyTilesAtExactlyTheChebyshevRadius()
         {
-            // Act
             var ring = AINode_GeneralaFrostRing.ComputeRing(_grid, TableTile, 2);
 
-            // Assert — el perímetro del 5×5, sin su interior.
+            // El perímetro del 5×5, sin su interior.
             Assert.AreEqual(16, ring.Count);
             foreach (var coord in ring)
                 Assert.AreEqual(2, coord.Chebyshev(TableTile),
@@ -157,13 +146,10 @@ namespace Rollgeon.Combat.Tests
         [Test]
         public void ComputeRing_AgainstAWall_KeepsOnlyTheHalfThatFitsInTheRoom()
         {
-            // Arrange — con la mesa en la esquina, medio anillo cae fuera de la sala.
             var corner = new GridCoord(0, 0);
 
-            // Act
             var ring = AINode_GeneralaFrostRing.ComputeRing(_grid, corner, 2);
 
-            // Assert
             Assert.AreEqual(5, ring.Count,
                 "Desde la esquina sólo entran las 5 casillas del cuadrante válido.");
             foreach (var coord in ring)
@@ -173,17 +159,12 @@ namespace Rollgeon.Combat.Tests
             }
         }
 
-        // ======================================================================
-        // Publicar el anillo
-        // ======================================================================
-
         [Test]
         public void Tick_FreezesTheWholeTable_CenterIncluded()
         {
-            // Act
             var result = NewFrostNode().Tick(BossContext());
 
-            // Assert — el 5×5 entero, no las 16 del borde.
+            // El 5×5 entero, no las 16 del borde.
             Assert.AreEqual(AIResult.Succeeded, result);
             Assert.IsTrue(_hazard.TryGetHazardAt(RingTile, out var info));
             Assert.AreEqual(25, info.Tiles.Count);
@@ -196,14 +177,12 @@ namespace Rollgeon.Combat.Tests
         [Test]
         public void Tick_WithSolidOff_StillFreezesOnlyTheBorder()
         {
-            // Arrange — Odin no corre los inicializadores, así que un asset viejo trae Solid = false.
+            // Odin no corre los inicializadores, así que un asset viejo trae Solid = false.
             var node = NewFrostNode();
             node.Solid = false;
 
-            // Act
             node.Tick(BossContext());
 
-            // Assert
             Assert.IsTrue(_hazard.TryGetHazardAt(RingTile, out var info));
             Assert.AreEqual(16, info.Tiles.Count);
             Assert.IsFalse(_hazard.TryGetHazardAt(TableTile, out _));
@@ -212,13 +191,11 @@ namespace Rollgeon.Combat.Tests
         [Test]
         public void PlayerAlreadyInsideWhenItFalls_IsNotFrozen_SoTheFreeRoundBuysHimTheTable()
         {
-            // Arrange — ya está parado en la mesa cuando cae la escarcha.
             _grid.Register(_playerGuid, GluedTile);
 
-            // Act
             NewFrostNode().Tick(BossContext());
 
-            // Assert — OnEnter se dispara al pisar, no por estar.
+            // OnEnter se dispara al pisar, no por estar.
             Assert.AreEqual(0, _stun.GetStunTurns(_playerGuid),
                 "Publicar el área no stunea a quien ya estaba adentro.");
             Assert.IsTrue(_hazard.TryGetHazardAt(GluedTile, out _),
@@ -228,11 +205,10 @@ namespace Rollgeon.Combat.Tests
         [Test]
         public void Tick_WithoutAHazardDefinition_Fails_InsteadOfFreezingNothingSilently()
         {
-            // Arrange — el Failed lo absorbe el Selector[nodo, Wait]; lo que importa es el LogError.
+            // El Failed lo absorbe el Selector[nodo, Wait]; lo que importa es el LogError.
             var node = NewFrostNode();
             node.Hazard = null;
 
-            // Act + Assert
             LogAssert.Expect(LogType.Error, new System.Text.RegularExpressions.Regex("FrostRing"));
             Assert.AreEqual(AIResult.Failed, node.Tick(BossContext()));
         }
@@ -240,35 +216,25 @@ namespace Rollgeon.Combat.Tests
         [Test]
         public void SecondCast_ReplacesThePreviousRing_InsteadOfStacking()
         {
-            // Arrange
             var node = NewFrostNode();
             node.Tick(BossContext());
 
-            // Act — se reacomodó y congela desde su casilla nueva.
             _grid.Register(_bossGuid, new GridCoord(5, 8));
             node.Tick(BossContext());
 
-            // Assert
             Assert.AreEqual(1, _hazard.ActiveInstances().Count(), "Un solo anillo vivo por vez.");
             Assert.IsTrue(_hazard.TryGetHazardAt(new GridCoord(7, 8), out _), "El anillo nuevo está helado.");
             Assert.IsFalse(_hazard.TryGetHazardAt(RingTile, out _), "El anterior se apagó.");
         }
 
-        // ======================================================================
-        // Cruzarlo: 1 turno y 0 HP
-        // ======================================================================
-
         [Test]
         public void PlayerCrossingTheRing_LosesOneTurn_AndPaysNoHp()
         {
-            // Arrange
             NewFrostNode().Tick(BossContext());
 
-            // Act — entra a la mesa y pisa el anillo.
             _movement.RaiseMoved(_playerGuid, OutsideTile, GluedTile,
                 Path(OutsideTile, RingTile, GluedTile));
 
-            // Assert
             Assert.IsTrue(_stun.IsStunned(_playerGuid), "Cruzar el anillo tiene que costar el turno.");
             Assert.AreEqual(1, _stun.GetStunTurns(_playerGuid));
             CollectionAssert.IsEmpty(_pipeline.Resolved, "La escarcha no cobra HP.");
@@ -279,34 +245,25 @@ namespace Rollgeon.Combat.Tests
         [Test]
         public void PlayerStandingOnTheRingWhenItForms_IsNotStunned()
         {
-            // Arrange — el hielo cobra al ENTRAR, y quien ya estaba parado ahí no cruzó nada.
             _grid.Register(_playerGuid, RingTile);
 
-            // Act
             NewFrostNode().Tick(BossContext());
 
-            // Assert
             Assert.IsFalse(_stun.IsStunned(_playerGuid));
         }
 
         [Test]
         public void SheDoesNotFreezeHerself_WhenRepositioningThroughHerOwnRing()
         {
-            // Arrange — el reposicionamiento corre DESPUÉS de la escarcha en su turno.
+            // El reposicionamiento corre DESPUÉS de la escarcha en su turno.
             NewFrostNode().Tick(BossContext());
 
-            // Act
             _movement.RaiseMoved(_bossGuid, TableTile, new GridCoord(8, 5),
                 Path(TableTile, GluedTile, RingTile, OutsideTile));
 
-            // Assert
             Assert.IsFalse(_stun.IsStunned(_bossGuid),
                 "Auto-stunearse le regalaría al jugador un turno gratis y se leería como bug.");
         }
-
-        // ======================================================================
-        // Helpers
-        // ======================================================================
 
         private AINode_GeneralaFrostRing NewFrostNode() => new AINode_GeneralaFrostRing
         {
@@ -337,7 +294,6 @@ namespace Rollgeon.Combat.Tests
 
             public event Action<Guid, GridCoord, GridCoord, IReadOnlyList<GridCoord>> OnEntityMoved;
 
-            /// <summary>Dispara OnEntityMoved como lo haría el service real.</summary>
             public void RaiseMoved(Guid entity, GridCoord from, GridCoord to, IReadOnlyList<GridCoord> path)
                 => OnEntityMoved?.Invoke(entity, from, to, path);
         }

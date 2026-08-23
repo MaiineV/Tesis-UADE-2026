@@ -13,11 +13,8 @@ using UnityEngine;
 
 namespace Rollgeon.Combat.AI.Tests
 {
-    /// <summary>
-    /// El ciclo de dos turnos del Cajero: un turno marca columna, el siguiente dispara. Se arma acá
-    /// el mismo <c>Alternate</c> que <c>CajeroAssetBuilder</c>, que vive en Editor; el cableado lo
-    /// cubre <c>CajeroPhaseWiringTests</c>.
-    /// </summary>
+    // El Alternate se arma acá a mano porque CajeroAssetBuilder vive en el assembly de Editor; el
+    // cableado real lo cubre CajeroPhaseWiringTests.
     [TestFixture]
     public class CashierAttackCycleTests
     {
@@ -103,8 +100,6 @@ namespace Rollgeon.Combat.AI.Tests
             EventManager.ResetEventDictionary();
         }
 
-        // ---- El árbol, igual que el builder ------------------------------
-
         private static AINode_Selector WrapFallible(AIDecisionNode child) => new AINode_Selector
         {
             Children = new List<AIDecisionNode> { child, new AINode_Wait() },
@@ -173,17 +168,11 @@ namespace Rollgeon.Combat.AI.Tests
             return live.Count;
         }
 
-        // =====================================================================
-        // Alternancia
-        // =====================================================================
-
         [Test]
         public void test_attackCycle_opensByMarking_notByShooting()
         {
-            // Act
             RunBossTurn();
 
-            // Assert
             Assert.IsTrue(_threat.HasPending(_boss), "El primer turno del jefe marca la columna.");
             Assert.IsEmpty(_pipeline.Resolved,
                 "Abrir disparando serían 12 antes de que el jugador haya visto de qué va la pelea.");
@@ -192,13 +181,10 @@ namespace Rollgeon.Combat.AI.Tests
         [Test]
         public void test_attackCycle_secondTurn_shootsAndMarksNothing()
         {
-            // Arrange
             RunBossTurn();
 
-            // Act
             RunBossTurn();
 
-            // Assert
             Assert.IsFalse(_threat.HasPending(_boss),
                 "El turno de disparo no marca: el jugador tiene un turno entero de aire para leer la sala.");
             Assert.AreEqual(2, _pipeline.Resolved.Count, "Detona la columna del turno pasado y además dispara.");
@@ -209,14 +195,11 @@ namespace Rollgeon.Combat.AI.Tests
         [Test]
         public void test_attackCycle_thirdTurn_marksAgain_soTheRhythmIsStrict()
         {
-            // Arrange
             RunBossTurn();
             RunBossTurn();
 
-            // Act
             RunBossTurn();
 
-            // Assert
             Assert.IsTrue(_threat.HasPending(_boss), "Marca, dispara, marca: sin excepciones ni azar.");
             Assert.AreEqual(2, _pipeline.Resolved.Count,
                 "El turno de marca no suma daño: la columna que detonó ya se cobró en el turno de " +
@@ -226,14 +209,11 @@ namespace Rollgeon.Combat.AI.Tests
         [Test]
         public void test_attackCycle_dodgingTheColumn_stillEatsTheShot()
         {
-            // Arrange — el jugador da un paso al lado, que es lo que la columna sola le pedía.
             RunBossTurn();
             Assert.IsTrue(_grid.Move(_player, new GridCoord(PlayerStart.X + 1, PlayerStart.Y)));
 
-            // Act
             RunBossTurn();
 
-            // Assert
             Assert.AreEqual(1, _pipeline.Resolved.Count, "La columna falla, como corresponde…");
             Assert.AreEqual(ShotDamage, _pipeline.Resolved[0].BaseDamage,
                 "…pero esquivar ya no es salir gratis: el disparo no se esquiva moviéndose de columna.");
@@ -242,38 +222,29 @@ namespace Rollgeon.Combat.AI.Tests
         [Test]
         public void test_attackCycle_playerFarFromTheBoss_takesNothing_butCannotAttackEither()
         {
-            // Arrange — esquina opuesta: a 12 de Manhattan del jefe, muy fuera del disparo.
+            // Esquina opuesta: a 12 de Manhattan del jefe, muy fuera del disparo.
             Assert.IsTrue(_grid.Move(_player, new GridCoord(0, 0)));
             RunBossTurn();
             Assert.IsTrue(_grid.Move(_player, new GridCoord(1, 0)), "…y encima sale de su propia columna.");
 
-            // Act
             RunBossTurn();
 
-            // Assert
             Assert.IsEmpty(_pipeline.Resolved,
                 "Huir del todo es seguro, y por eso mismo estéril: desde ahí tampoco le pega al jefe.");
         }
 
-        // =====================================================================
-        // Las fichas contra la alternancia
-        // =====================================================================
-
         [Test]
         public void test_chips_hitLandedOnAShootingTurn_isPaidOnTheNextMarkingTurn()
         {
-            // Arrange
             RunBossTurn();
             Assert.AreEqual(0, LiveChips());
 
-            // Act — el jugador le pega y el jefe contesta con el turno de disparo (sin columna).
             PlayerHitsTheBoss();
             RunBossTurn();
             Assert.AreEqual(0, LiveChips(), "En el turno de disparo no hay columna donde soltarla.");
 
             RunBossTurn();
 
-            // Assert
             Assert.AreEqual(1, LiveChips(),
                 "El flag de daño no se consume en los turnos sin columna: si se consumiera, una de " +
                 "cada dos fichas desaparecería sin llegar al piso.");
@@ -282,28 +253,23 @@ namespace Rollgeon.Combat.AI.Tests
         [Test]
         public void test_chips_dropOnTheSameTurnWhenTheHitLandsBeforeAMarkingTurn()
         {
-            // Arrange
             PlayerHitsTheBoss();
 
-            // Act
             RunBossTurn();
 
-            // Assert
             Assert.AreEqual(1, LiveChips(), "Turno de columna con golpe pendiente: la ficha cae ya.");
         }
 
         [Test]
         public void test_chips_oneHitPaysExactlyOneChip_acrossTheWholeCycle()
         {
-            // Arrange
             PlayerHitsTheBoss();
 
-            // Act — marca (paga), dispara, marca de nuevo sin golpes nuevos.
+            // Marca (paga), dispara, marca de nuevo sin golpes nuevos.
             RunBossTurn();
             RunBossTurn();
             RunBossTurn();
 
-            // Assert
             Assert.AreEqual(1, LiveChips(), "Un golpe, una ficha — el flag se consume al pagarla.");
         }
 

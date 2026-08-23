@@ -4,12 +4,7 @@ using UnityEngine;
 
 namespace Rollgeon.Entities.Bosses.Tests
 {
-    /// <summary>
-    /// Tests de <see cref="BossFloorManagerSO"/>: los campos expuestos tienen los defaults
-    /// de la spec (#103 — interval 3, duration 2, doubleDamageWhenFull 0.5), hereda
-    /// <see cref="Rollgeon.Entities.EnemyDataSO"/>, y las clamps defensivas en el setter via
-    /// asignacion directa son respetadas.
-    /// </summary>
+    // Los defaults salen de la spec #103: interval 3, duration 2, doubleDamageWhenFull 0.5.
     [TestFixture]
     public class BossFloorManagerSOTests
     {
@@ -42,7 +37,6 @@ namespace Rollgeon.Entities.Bosses.Tests
         public void InheritsEnemyDataSO()
         {
             Assert.IsInstanceOf<Rollgeon.Entities.EnemyDataSO>(_so);
-            // T97b fields still reachable.
             _so.EntityId = "boss_floor_manager";
             _so.WeaknessComboId = "combo.par";
             Assert.AreEqual("boss_floor_manager", _so.EntityId);

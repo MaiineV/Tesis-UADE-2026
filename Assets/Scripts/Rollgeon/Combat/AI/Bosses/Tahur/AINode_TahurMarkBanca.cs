@@ -13,16 +13,11 @@ using UnityEngine;
 namespace Rollgeon.Combat.AI.Bosses.Tahur
 {
     /// <summary>
-    /// "La Banca" del Tahúr: con el pozo lleno marca toda la sala menos La Mesa, su 3×3, y cobra
-    /// al turno siguiente.
-    /// </summary>
-    /// <remarks>
     /// Va último en el turno, después del movimiento y de poner la mesa: el hueco se ancla en el
-    /// jefe. Marca sobre el guid del jefe — el mismo canal que
-    /// <see cref="AINode_TahurSettleWager"/>, donde <see cref="IThreatenedAreaService.Mark"/>
-    /// sobrescribe — así que el Castigo y La Banca nunca detonan juntos; y puede devolver
-    /// <see cref="AIResult.Failed"/>, así que va envuelto en <c>Selector[Banca, Wait]</c>.
-    /// </remarks>
+    /// jefe. Marca sobre el guid del jefe, el mismo canal que <see cref="AINode_TahurSettleWager"/>
+    /// —y <see cref="IThreatenedAreaService.Mark"/> sobrescribe—, así que el Castigo y La Banca
+    /// nunca detonan juntos. Puede devolver <c>Failed</c>: va en <c>Selector[Banca, Wait]</c>.
+    /// </summary>
     [Serializable, HideReferenceObjectPicker]
     public sealed class AINode_TahurMarkBanca : AIActionNode
     {
@@ -58,10 +53,7 @@ namespace Rollgeon.Combat.AI.Bosses.Tahur
 
         public override string NodeName => $"Tahúr — La Banca ({Damage} en toda la sala menos La Mesa)";
 
-        /// <remarks>
-        /// Vacío significa "el id canónico", no "sin animación": Odin deserializa un
-        /// <c>ED_Boss_*.asset</c> viejo sin correr los field initializers.
-        /// </remarks>
+        /// <summary>Vacío significa "el id canónico", no "sin animación": Odin deserializa un <c>ED_Boss_*.asset</c> viejo sin correr los field initializers.</summary>
         private string AnimFeedbackId => string.IsNullOrEmpty(AnimFeedbackIdOverride)
             ? BossFeedbackIds.TahurBancaAnim
             : AnimFeedbackIdOverride;
@@ -79,8 +71,7 @@ namespace Rollgeon.Combat.AI.Bosses.Tahur
                 context.Grid, selfCoord, ThreatShape.AllExceptSquareAroundSelf,
                 TableRadius, HalfRoomAxis.Vertical);
 
-            // El hueco es La Mesa, no un cuadrado parecido: si TableRadius y el Size del nodo de
-            // la mesa divergen, gana el paño cian.
+            // El hueco es La Mesa, no un cuadrado parecido: si TableRadius y el Size divergen, gana el paño.
             tiles.ExceptWith(wager.TableTiles);
 
             if (tiles.Count == 0)
@@ -106,14 +97,7 @@ namespace Rollgeon.Combat.AI.Bosses.Tahur
             return AIResult.Succeeded;
         }
 
-        /// <summary>
-        /// Camino de play mode: marca primero y <b>después</b> barre, reteniendo el turno hasta que
-        /// el gesto termina.
-        /// </summary>
-        /// <remarks>
-        /// La Banca no golpea este turno: el daño cae en el siguiente por el
-        /// <c>AINode_ExecuteTelegraph</c>.
-        /// </remarks>
+        /// <summary>Marca primero y <b>después</b> barre. La Banca no golpea este turno: el daño cae en el siguiente por el <c>AINode_ExecuteTelegraph</c>.</summary>
         public override IEnumerator TickCoroutine(AIContext context, Action<AIResult> onResult)
         {
             var result = Tick(context);
@@ -152,17 +136,13 @@ namespace Rollgeon.Combat.AI.Bosses.Tahur
                 TargetGuid = context.PlayerGuid,
             }, () => turn?.OnFeedbackComplete());
 
-            // Sin TurnManager no hay gate que esperar: la anim corre igual, sin retener el turno.
             if (turn == null || !turn.IsWaitingForFeedback) yield break;
 
             var wait = TurnManager.WaitForFeedbackCompletion(turn);
             while (wait.MoveNext()) yield return wait.Current;
         }
 
-        /// <summary>
-        /// Fichas a partir de las cuales barre la mesa, clampeado a
-        /// <see cref="ITahurWagerService.MaxChips"/>.
-        /// </summary>
+        /// <summary>Fichas a partir de las cuales barre la mesa, clampeado a <see cref="ITahurWagerService.MaxChips"/>.</summary>
         public int EffectiveThreshold(ITahurWagerService wager)
         {
             int threshold = Mathf.Max(1, ChipsThreshold);
@@ -171,7 +151,6 @@ namespace Rollgeon.Combat.AI.Bosses.Tahur
         }
 
 #if UNITY_EDITOR
-        // Dropdown obligatorio (§0): los ids de feedback nunca se tipean a mano.
         private static IEnumerable<string> GetFeedbackIdsForDropdown()
         {
             foreach (var guid in UnityEditor.AssetDatabase.FindAssets("t:FeedbackDBSO"))

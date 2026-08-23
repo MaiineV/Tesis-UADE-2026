@@ -11,18 +11,13 @@ using UnityEngine;
 namespace Rollgeon.Combat.AI.Decisions
 {
     /// <summary>
-    /// "Tacha" del Anotador (piso 2): corre el combo que el jugador más viene usando al vecino de la
-    /// hoja, así su Escalera paga como Doble Par (o al revés). No consume la acción del boss.
-    /// </summary>
-    /// <remarks>
     /// <see cref="IContractModifierService"/> no tiene expiración por modificador (sólo
     /// <c>ClearAll</c>), así que "dura 1 turno" se implementa limpiando todo al empezar el turno y
     /// volviendo a promulgar; en fase 2 no limpia y los corrimientos se acumulan.
-    /// </remarks>
+    /// </summary>
     [Serializable, HideReferenceObjectPicker]
     public sealed class AINode_ShiftComboToNeighbor : AIActionNode
     {
-        /// <summary>Hacia qué vecino de la hoja se corre el combo elegido.</summary>
         public enum ShiftDirection
         {
             /// <summary>Al inmediatamente superior por daño base: el combo pobre paga más.</summary>
@@ -31,7 +26,6 @@ namespace Rollgeon.Combat.AI.Decisions
             /// <summary>Al inmediatamente inferior: la Escalera paga como Doble Par.</summary>
             Down = 1,
 
-            /// <summary>Uno de los dos vecinos, al azar, por corrimiento.</summary>
             RandomNeighbor = 2,
         }
 
@@ -95,15 +89,7 @@ namespace Rollgeon.Combat.AI.Decisions
             return AIResult.Succeeded;
         }
 
-        // ======================================================================
-        // Elección del combo
-        // ======================================================================
-
-        /// <summary>
-        /// Los <paramref name="count"/> combos más jugados de la ventana, del más frecuente al
-        /// menos. Empate por frecuencia ⇒ gana el más reciente (recorremos el log de nuevo a viejo
-        /// y comparamos con <c>&gt;</c> estricto), que es la lectura de "lo que más venís usando".
-        /// </summary>
+        /// <summary>Del más frecuente al menos; empate por frecuencia ⇒ gana el más reciente.</summary>
         private List<string> PickMostPlayed(int count)
         {
             var result = new List<string>();
@@ -126,8 +112,6 @@ namespace Rollgeon.Combat.AI.Decisions
                 else { counts[comboId] = 1; order.Add(comboId); }
             }
 
-            // `order` ya viene de más reciente a más viejo, así que la selección estable por
-            // frecuencia desempata a favor del más reciente sin ordenar nada.
             for (int picked = 0; picked < count; picked++)
             {
                 string best = null;
@@ -142,7 +126,6 @@ namespace Rollgeon.Combat.AI.Decisions
                     }
                 }
 
-                // Menos combos distintos que corrimientos disponibles: se corren los que hay.
                 if (best == null) break;
                 result.Add(best);
             }
@@ -169,10 +152,6 @@ namespace Rollgeon.Combat.AI.Decisions
                 default: return NextInt(context, 2) == 0 ? +1 : -1;
             }
         }
-
-        // ======================================================================
-        // Helpers
-        // ======================================================================
 
         private bool IsInPhase2(AIContext context)
         {

@@ -10,21 +10,11 @@ using UnityEngine;
 namespace Rollgeon.Combat.AI.Bosses.Croupier
 {
     /// <summary>
-    /// Prende fuego el/los sector(es) que detonaron en este turno del jefe
-    /// (<see cref="AINode_DetonateSungSectors"/>): daña a quien termine su turno adentro.
+    /// <c>DurationRounds</c> pide un turno más de lo que arde: el fuego nace en el turno del jefe y
+    /// el jugador abre cada ronda (CNF-006), así que con <c>1</c> expira sin tickear nunca.
+    /// <see cref="IHazardService.SkipNextTick"/> se arma sólo si el jugador estaba adentro al
+    /// detonar: el flag se consume con un tick que hubiera pegado, y a ciegas se comería uno bueno.
     /// </summary>
-    /// <remarks>
-    /// <para>
-    /// <c>DurationRounds</c> pide un turno más de lo que arde en la mesa: el fuego nace en el turno del
-    /// jefe y el jugador tiene el primer turno de cada ronda (CNF-006), así que <c>DurationRounds = 1</c>
-    /// expira antes de que vuelva a jugar y el fuego no tickea nunca.
-    /// </para>
-    /// <para>
-    /// <see cref="IHazardService.SkipNextTick"/> se arma sólo si el jugador estaba adentro al detonar:
-    /// el flag se consume recién con un tick que hubiera pegado, así que armarlo a ciegas se tragaría
-    /// el primer tick legítimo.
-    /// </para>
-    /// </remarks>
     [Serializable, HideReferenceObjectPicker]
     public sealed class AINode_IgniteDetonatedSectors : AIActionNode
     {

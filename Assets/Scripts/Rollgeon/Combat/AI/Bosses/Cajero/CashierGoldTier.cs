@@ -4,10 +4,6 @@ using UnityEngine;
 
 namespace Rollgeon.Combat.Cashier
 {
-    /// <summary>
-    /// Un escalón de la columna del Cajero: desde cuánto oro aplica, qué ancho tiene la
-    /// franja y cuánto pega al detonar.
-    /// </summary>
     [Serializable, HideReferenceObjectPicker]
     public sealed class CashierGoldTier
     {

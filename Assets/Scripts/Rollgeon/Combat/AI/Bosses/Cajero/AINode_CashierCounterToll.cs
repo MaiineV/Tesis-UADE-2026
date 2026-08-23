@@ -6,17 +6,11 @@ using UnityEngine;
 namespace Rollgeon.Combat.AI.Decisions
 {
     /// <summary>
-    /// Arma el peaje del mostrador: a partir de este turno, el jugador que cierre su turno del
-    /// mismo lado del mostrador que el Cajero paga <see cref="Damage"/>.
-    /// </summary>
-    /// <remarks>
     /// El nodo sólo arma; el cobro lo hace <see cref="ICashierCounterTollService"/> al cerrar el
-    /// turno del jugador, fuera del árbol. Re-arma todos los turnos porque es idempotente y un
-    /// armado único al primer tick dejaría el mostrador mudo si algo deja el servicio en blanco a
-    /// mitad de pelea. Va antes del ciclo de ataque en el árbol: en el path no-coroutine un Running
-    /// del ataque aborta lo que venga después. <see cref="ChargesEveryNRounds"/> llega en 0 en un
-    /// asset viejo (Odin no corre los inicializadores de campo) y <c>Arm</c> lo clampea a 1.
-    /// </remarks>
+    /// turno del jugador, fuera del árbol. Re-arma todos los turnos porque es idempotente y el
+    /// mostrador queda mudo si algo deja el servicio en blanco a mitad de pelea. Va antes del ciclo
+    /// de ataque: en el path no-coroutine un Running del ataque aborta lo que venga después.
+    /// </summary>
     [Serializable, HideReferenceObjectPicker]
     public sealed class AINode_CashierCounterToll : AIActionNode, IAIOpeningNode
     {
@@ -49,10 +43,7 @@ namespace Rollgeon.Combat.AI.Decisions
             return AIResult.Succeeded;
         }
 
-        /// <summary>
-        /// Arma en la apertura: el overlay del mostrador nace junto con el servicio, así que sin
-        /// esto el lado que cobra no se pinta hasta que el jefe juega.
-        /// </summary>
+        /// <summary>Arma en la apertura: el overlay del mostrador nace junto con el servicio, así que sin esto el lado que cobra no se pinta hasta que el jefe juega.</summary>
         public void Opening(AIContext context) => Tick(context);
     }
 }

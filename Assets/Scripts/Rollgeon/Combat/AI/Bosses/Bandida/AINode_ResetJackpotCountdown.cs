@@ -6,12 +6,9 @@ using UnityEngine;
 namespace Rollgeon.Combat.AI.Bosses.Bandida
 {
     /// <summary>
-    /// Rearma la cuenta regresiva del jackpot en <see cref="Value"/> y la vuelve a poner a contar.
+    /// Va inmediatamente después del <c>TelegraphMark</c> del jackpot, en el mismo <c>Sequence</c>:
+    /// la cuenta que dispara se rearma en el acto.
     /// </summary>
-    /// <remarks>
-    /// Va inmediatamente después del <c>TelegraphMark</c> del jackpot, en el mismo
-    /// <c>Sequence</c>: la cuenta que dispara se rearma en el acto.
-    /// </remarks>
     [Serializable, HideReferenceObjectPicker]
     public sealed class AINode_ResetJackpotCountdown : AIActionNode
     {

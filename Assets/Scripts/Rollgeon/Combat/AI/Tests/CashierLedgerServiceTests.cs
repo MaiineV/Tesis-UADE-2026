@@ -7,14 +7,8 @@ using Rollgeon.Economy;
 
 namespace Rollgeon.Combat.AI.Tests
 {
-    /// <summary>
-    /// Tests de <see cref="CashierLedgerService"/>: la caja del arqueo (secuestro + devolución al
-    /// vencerlo), la ventana del soborno, las fichas y el flag de "me pegaron".
-    /// </summary>
-    /// <remarks>
-    /// El servicio se suscribe a <c>TypedEvent&lt;DamageResolvedPayload&gt;</c>, que
-    /// <c>ServiceLocator.Clear()</c> no desengancha — de ahí el <c>Dispose</c> en el teardown.
-    /// </remarks>
+    // El servicio se suscribe a TypedEvent<DamageResolvedPayload>, que ServiceLocator.Clear() no
+    // desengancha: de ahí el Dispose en el teardown.
     [TestFixture]
     public class CashierLedgerServiceTests
     {
@@ -58,8 +52,6 @@ namespace Rollgeon.Combat.AI.Tests
         private static void FireRound(int roundIndex) =>
             EventManager.Trigger(EventName.OnTurnQueueBuilt, new List<Guid>(), roundIndex);
 
-        // ---- Flag de daño ------------------------------------------------
-
         [Test]
         public void ConsumeDamageTaken_TrueOnceAfterAHit_ThenFalse()
         {
@@ -87,8 +79,6 @@ namespace Rollgeon.Combat.AI.Tests
             RaiseDamage(_boss, 30);
             Assert.IsTrue(_ledger.ConsumeDamageTaken(_boss));
         }
-
-        // ---- Arqueo: secuestro y devolución -------------------------------
 
         [Test]
         public void CollectTax_TakesThePercent_AndVaultsIt()
@@ -176,8 +166,6 @@ namespace Rollgeon.Combat.AI.Tests
             Assert.IsFalse(_ledger.ConsumeDamageTaken(_boss));
         }
 
-        // ---- Soborno ------------------------------------------------------
-
         [Test]
         public void TryBribe_ChargesTheCost_AndBuysOneTierForThreeRounds()
         {
@@ -235,8 +223,6 @@ namespace Rollgeon.Combat.AI.Tests
             Assert.AreEqual(1, _ledger.DamageStepDown, "La ventana cuenta rondas, no eventos.");
         }
 
-        // ---- Fichas -------------------------------------------------------
-
         [Test]
         public void Chip_PaysThePlayerOnPickup_Once()
         {
@@ -283,19 +269,14 @@ namespace Rollgeon.Combat.AI.Tests
             Assert.AreEqual(100, _economy.CurrentGold, "Un hazard ajeno (fuego, hielo) no paga oro.");
         }
 
-        // ---- La ficha soborna ---------------------------------------------
-
         [Test]
         public void Chip_PickedUpByThePlayer_AlsoBribesTheBoss_ForThreeRounds()
         {
-            // Arrange
             var chipId = Guid.NewGuid();
             _ledger.RegisterChip(chipId, 8, _boss);
 
-            // Act
             EventManager.Trigger(EventName.OnHazardTriggered, chipId, _player);
 
-            // Assert
             Assert.AreEqual(1, _ledger.DamageStepDown, "Devolverle la ficha le baja un escalón.");
             Assert.AreEqual(3, _ledger.BribeRoundsLeft);
             Assert.AreEqual(108, _economy.CurrentGold, "…y el oro de la ficha se cobra igual: son dos cosas.");
@@ -310,14 +291,12 @@ namespace Rollgeon.Combat.AI.Tests
         [Test]
         public void Chip_BribeIsFree_NeverChargesTheBribeCost()
         {
-            // Arrange — el soborno de lista cuesta 35; el de la ficha es el pago EN ficha.
+            // El soborno de lista cuesta 35; el de la ficha es el pago EN ficha.
             var chipId = Guid.NewGuid();
             _ledger.RegisterChip(chipId, 6, _boss);
 
-            // Act
             EventManager.Trigger(EventName.OnHazardTriggered, chipId, _player);
 
-            // Assert
             Assert.AreEqual(106, _economy.CurrentGold,
                 "Cobrarle además los 35 dejaría la ficha en pérdida neta y nadie la levantaría.");
         }
@@ -325,48 +304,39 @@ namespace Rollgeon.Combat.AI.Tests
         [Test]
         public void Chip_SteppedOnByItsOwner_DoesNotBribe()
         {
-            // Arrange
             var chipId = Guid.NewGuid();
             _ledger.RegisterChip(chipId, 8, _boss);
 
-            // Act — el jefe kitea sobre su propia columna.
             EventManager.Trigger(EventName.OnHazardTriggered, chipId, _boss);
 
-            // Assert
             Assert.AreEqual(0, _ledger.DamageStepDown, "El jefe no se soborna solo pisando sus fichas.");
         }
 
         [Test]
         public void Chip_ExpiredWithoutPickup_DoesNotBribe()
         {
-            // Arrange
             var chipId = Guid.NewGuid();
             _ledger.RegisterChip(chipId, 9, _boss);
 
-            // Act — rodó de vuelta a la caja antes de que nadie la pisara.
             EventManager.Trigger(EventName.OnHazardExpired, chipId);
             EventManager.Trigger(EventName.OnHazardTriggered, chipId, _player);
 
-            // Assert
             Assert.AreEqual(0, _ledger.DamageStepDown, "Ignorar las fichas no soborna.");
         }
 
         [Test]
         public void Chip_TwoInARow_RestartTheWindow_NeverStackTiers()
         {
-            // Arrange — misma invariante que TryBribe_Twice: el alivio es 1 escalón, siempre.
             var first = Guid.NewGuid();
             var second = Guid.NewGuid();
             _ledger.RegisterChip(first, 6, _boss);
             _ledger.RegisterChip(second, 6, _boss);
 
-            // Act
             EventManager.Trigger(EventName.OnHazardTriggered, first, _player);
             FireRound(1);
             FireRound(2);
             EventManager.Trigger(EventName.OnHazardTriggered, second, _player);
 
-            // Assert
             Assert.AreEqual(1, _ledger.DamageStepDown,
                 "Juntar fichas no apila escalones — si no, tres seguidas lo congelan.");
             FireRound(3);
@@ -379,7 +349,6 @@ namespace Rollgeon.Combat.AI.Tests
         [Test]
         public void Chip_Bribe_AnnouncesItselfOverTheBoss_AsText()
         {
-            // Arrange — el aviso va sobre el jefe porque lo que cambió es cuánto pega ÉL.
             var chipId = Guid.NewGuid();
             _ledger.RegisterChip(chipId, 7, _boss);
 
@@ -398,7 +367,6 @@ namespace Rollgeon.Combat.AI.Tests
 
             try
             {
-                // Act
                 EventManager.Trigger(EventName.OnHazardTriggered, chipId, _player);
             }
             finally
@@ -406,7 +374,6 @@ namespace Rollgeon.Combat.AI.Tests
                 EventManager.UnSubscribe(EventName.OnFloatingNumberRequested, capture);
             }
 
-            // Assert
             CollectionAssert.AreEqual(new[] { _boss }, announcedOver,
                 "El soborno se anuncia sobre el jefe, no sobre quien levantó la ficha.");
             Assert.AreEqual(1, announcedText.Count);
@@ -423,8 +390,6 @@ namespace Rollgeon.Combat.AI.Tests
             _ledger.SetChipValueMultiplier(2);
             Assert.AreEqual(2, _ledger.ChipValueMultiplier, "El arqueo duplica el valor de las fichas.");
         }
-
-        // ---- Registro ------------------------------------------------------
 
         [Test]
         public void ResolveOrCreate_IsIdempotent()

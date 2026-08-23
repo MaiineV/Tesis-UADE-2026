@@ -8,15 +8,9 @@ using UnityEngine;
 namespace Rollgeon.Combat.Cashier
 {
     /// <summary>
-    /// Implementación de <see cref="ICashierLedgerService"/>. POCO suscripto a eventos, sin
-    /// MonoBehaviour ni bootstrap: se auto-registra vía <see cref="ResolveOrCreate"/> el primer
-    /// turno del jefe.
+    /// Global y suscripto a <c>TypedEvent&lt;DamageResolvedPayload&gt;</c>, que
+    /// <c>ServiceLocator.Clear()</c> no desengancha: el fixture que lo cree debe llamar Dispose.
     /// </summary>
-    /// <remarks>
-    /// Es global y suscripto a <c>TypedEvent&lt;DamageResolvedPayload&gt;</c>, que
-    /// <c>ServiceLocator.Clear()</c> no desengancha: un fixture que lo cree debe llamar
-    /// <see cref="Dispose"/> en el teardown.
-    /// </remarks>
     public sealed class CashierLedgerService : ICashierLedgerService, IDisposable
     {
         private readonly HashSet<Guid> _damaged = new HashSet<Guid>();
@@ -56,7 +50,6 @@ namespace Rollgeon.Combat.Cashier
             EventManager.Subscribe(EventName.OnRunEnd, _onScopeEnded);
         }
 
-        /// <summary>Devuelve el servicio registrado o crea y registra uno nuevo (Global).</summary>
         public static ICashierLedgerService ResolveOrCreate()
         {
             if (ServiceLocator.TryGetService<ICashierLedgerService>(out var existing) && existing != null)
@@ -67,27 +60,15 @@ namespace Rollgeon.Combat.Cashier
             return created;
         }
 
-        // ======================================================================
-        // ICashierLedgerService
-        // ======================================================================
-
-        /// <inheritdoc />
         public int VaultedGold => _vaultedGold;
 
-        /// <inheritdoc />
         public int ChipValueMultiplier => _chipValueMultiplier;
 
-        /// <inheritdoc />
         public int DamageStepDown => _bribeRoundsLeft > 0 ? 1 : 0;
 
-        /// <inheritdoc />
         public int BribeRoundsLeft => _bribeRoundsLeft;
 
-        /// <inheritdoc />
-        /// <remarks>
-        /// Derivado del índice de ronda absoluto y no de un contador propio: el servicio se crea
-        /// perezosamente y se pierde los <c>OnTurnQueueBuilt</c> anteriores.
-        /// </remarks>
+        /// <summary>Derivado del índice de ronda absoluto y no de un contador propio: el servicio es lazy y se pierde los <c>OnTurnQueueBuilt</c> anteriores.</summary>
         public int DamageStepUp
         {
             get
@@ -97,23 +78,18 @@ namespace Rollgeon.Combat.Cashier
             }
         }
 
-        /// <inheritdoc />
         public int BribeCost { get; set; } = 35;
 
-        /// <inheritdoc />
         public int BribeRounds { get; set; } = 3;
 
-        /// <inheritdoc />
         public int RakeRoundsPerStep { get; set; } = 3;
 
-        /// <inheritdoc />
         public bool ConsumeDamageTaken(Guid entityGuid)
         {
             if (entityGuid == Guid.Empty) return false;
             return _damaged.Remove(entityGuid);
         }
 
-        /// <inheritdoc />
         public int CollectTax(Guid ownerGuid, float percent)
         {
             if (ownerGuid == Guid.Empty || percent <= 0f) return 0;
@@ -129,13 +105,11 @@ namespace Rollgeon.Combat.Cashier
             return take;
         }
 
-        /// <inheritdoc />
         public void SetChipValueMultiplier(int multiplier)
         {
             _chipValueMultiplier = multiplier < 1 ? 1 : multiplier;
         }
 
-        /// <inheritdoc />
         public bool TryBribe()
         {
             if (!ServiceLocator.TryGetService<IEconomyService>(out var economy) || economy == null) return false;
@@ -146,42 +120,30 @@ namespace Rollgeon.Combat.Cashier
         }
 
         /// <summary>
-        /// Abre (o reinicia) la ventana de soborno. Compartido por las dos formas de sobornar
-        /// —pagar el precio y levantar una ficha— para que no diverjan en duración.
+        /// Compartido por las dos formas de sobornar para que no diverjan en duración. La ventana se
+        /// reinicia, no acumula: <see cref="DamageStepDown"/> está topeado en 1.
         /// </summary>
-        /// <remarks>
-        /// La ventana se reinicia, no acumula: <see cref="DamageStepDown"/> está topeado en 1, así
-        /// que sobornar dos veces seguidas extiende la duración pero nunca da dos escalones.
-        /// </remarks>
         private void ArmBribeWindow()
         {
             _bribeRoundsLeft = BribeRounds < 0 ? 0 : BribeRounds;
         }
 
-        /// <inheritdoc />
         public void RegisterChip(Guid hazardInstanceId, int value, Guid ownerGuid)
         {
             if (hazardInstanceId == Guid.Empty || value <= 0) return;
             _chips[hazardInstanceId] = new ChipEntry { Value = value, Owner = ownerGuid };
         }
 
-        /// <inheritdoc />
         public int GetChipValue(Guid hazardInstanceId)
             => _chips.TryGetValue(hazardInstanceId, out var chip) ? chip.Value : 0;
 
-        /// <inheritdoc />
         public CashierTierSnapshot? LastTier => _lastTier;
 
-        /// <inheritdoc />
         public void ReportTier(int rank, int damage, int gold, int stepUp, int stepDown)
         {
             _lastTier = new CashierTierSnapshot(rank, damage, gold, stepUp, stepDown);
             EventManager.Trigger(EventName.OnCashierTierChanged, rank, damage);
         }
-
-        // ======================================================================
-        // Lifecycle
-        // ======================================================================
 
         public void Dispose()
         {
@@ -214,10 +176,7 @@ namespace Rollgeon.Combat.Cashier
             handler = null;
         }
 
-        /// <summary>
-        /// Borra todo el estado de pelea <b>sin</b> devolver la caja: si el combate terminó sin
-        /// que el jefe muriera (jugador muerto / run abortada), la banca gana.
-        /// </summary>
+        /// <summary><b>Sin</b> devolver la caja: si el combate terminó sin que el jefe muriera, la banca gana.</summary>
         private void ResetCombatState()
         {
             _damaged.Clear();
@@ -229,10 +188,6 @@ namespace Rollgeon.Combat.Cashier
             _lastRoundIndex = -1;
             _lastTier = null;
         }
-
-        // ======================================================================
-        // Event handlers
-        // ======================================================================
 
         private void OnDamageResolved(DamageResolvedPayload payload)
         {
@@ -270,10 +225,7 @@ namespace Rollgeon.Combat.Cashier
             AnnounceBribe(chip.Owner);
         }
 
-        /// <summary>
-        /// Avisa el soborno sobre el jefe y no sobre quien levantó la ficha: lo que cambió es
-        /// cuánto pega él.
-        /// </summary>
+        /// <summary>Avisa sobre el jefe y no sobre quien levantó la ficha: lo que cambió es cuánto pega él.</summary>
         private void AnnounceBribe(Guid bossGuid)
         {
             if (bossGuid == Guid.Empty) return;
@@ -286,19 +238,15 @@ namespace Rollgeon.Combat.Cashier
                 Vector3.zero);
         }
 
-        /// <summary>Texto del aviso de soborno. Literal: no hay tabla de localización de combate.</summary>
-        /// <remarks>
-        /// Sólo caracteres que están en el atlas de <c>m6x11plus</c>: la pixel font del HUD no tiene
-        /// <c>é</c> ni <c>·</c>, y un glifo que falta sale como cuadradito.
-        /// </remarks>
+        /// <summary>Sólo caracteres del atlas de <c>m6x11plus</c>: no tiene <c>é</c> ni <c>·</c>, y un glifo que falta sale como cuadradito.</summary>
         private const string BribeAnnouncement = "Soborno: -1 escalón";
 
         private void OnHazardExpiredExternal(params object[] args)
         {
             if (args == null || args.Length < 1 || !(args[0] is Guid instanceId)) return;
 
-            // Ficha no levantada: se descarta y no entra a la caja. La caja se devuelve al vencer al
-            // jefe, así que sumarla ahí convertiría "ignorar las fichas" en oro gratis.
+            // Ficha no levantada: se descarta. Sumarla a la caja, que se devuelve al vencer al jefe,
+            // convertiría "ignorar las fichas" en oro gratis.
             _chips.Remove(instanceId);
         }
 
@@ -313,7 +261,6 @@ namespace Rollgeon.Combat.Cashier
 
         private void OnScopeEndedExternal(params object[] args) => ResetCombatState();
 
-        /// <summary>Ficha viva: cuánto paga y quién la soltó.</summary>
         private struct ChipEntry
         {
             public int Value;

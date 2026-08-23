@@ -12,62 +12,31 @@ using UnityEngine;
 namespace Rollgeon.Entities.Behaviors
 {
     /// <summary>
-    /// Behavior del Boss Floor Manager (Content#0103) — en su turno cuenta turnos propios y cada
-    /// <see cref="BossFloorManagerSO.ComboBlockIntervalTurns"/> elige un combo <b>no bloqueado</b>
-    /// del <see cref="ContractSheet"/> del jugador y lo bloquea via
-    /// <see cref="IComboBlockService.Block"/>.
+    /// <see cref="_bossTurnCounter"/> es un campo <c>[NonSerialized]</c> — persiste en la instancia
+    /// clonada via <c>SerializationUtility.CreateCopy</c> (§7.2). El contador vive mientras el boss
+    /// vive; al morir, el clone se descarta.
     /// </summary>
-    /// <remarks>
-    /// <para>
-    /// <b>Pick aleatorio.</b> Usa <see cref="UnityEngine.Random"/>. Inyectable en tests via
-    /// <see cref="RandomSource"/>.
-    /// </para>
-    /// <para>
-    /// <b>Contract access.</b> No dependemos de <c>IPlayerService.Active.Sheet</c> (no existe
-    /// en el stub). El caller / spawner inyecta un <see cref="SheetResolver"/> que devuelve la
-    /// <see cref="ContractSheet"/> runtime del jugador. Patron identico al
-    /// <c>MaxHpResolver</c> del <c>SupportHealBehavior</c>.
-    /// </para>
-    /// <para>
-    /// <b>Counter storage.</b> <see cref="_bossTurnCounter"/> es un campo <c>[NonSerialized]</c>
-    /// — persiste en la instancia clonada via <c>SerializationUtility.CreateCopy</c> (§7.2). El
-    /// contador vive mientras el boss vive; al morir, el clone se descarta.
-    /// </para>
-    /// </remarks>
     [Serializable, HideReferenceObjectPicker]
     public class BossComboBlockBehavior : BaseBehavior
     {
         public override string BehaviorName => "Boss Combo Block";
 
-        /// <summary>
-        /// SO con los defaults de intervalo/duracion. Si null al <c>Execute</c> el behavior
-        /// intenta resolver desde <c>ctx.SourceEntity.DataSO</c>; si tampoco, warn + return.
-        /// Expuesto Inspector para permitir overrides per-instance.
-        /// </summary>
+        /// <summary>Si null al <c>Execute</c> el behavior intenta resolver desde la entity; si tampoco, warn + return.</summary>
         [Tooltip("Override opcional del BossFloorManagerSO con los tuning values. Si null, se " +
                  "resuelve por default desde el SO de la entidad owner (plan §4.3).")]
         public BossFloorManagerSO BossDataOverride;
 
-        /// <summary>Turnos contados del Boss. Resetea al spawnear (campo NonSerialized).</summary>
         [NonSerialized]
         private int _bossTurnCounter;
 
-        /// <summary>
-        /// Resolver de la <see cref="ContractSheet"/> del jugador. Inyectado por el spawner
-        /// (runtime) o por el test setup. Si null, el behavior loguea warning y no bloquea
-        /// (fallback defensivo).
-        /// </summary>
+        /// <summary>Inyectado por el spawner (runtime) o por el test setup. Si null, el behavior loguea warning y no bloquea.</summary>
         [NonSerialized]
         public Func<ContractSheet> SheetResolver;
 
-        /// <summary>
-        /// Funcion rng para elegir el combo al azar. Default <c>UnityEngine.Random.Range</c>
-        /// via wrapper. Inyectable en tests para determinismo.
-        /// </summary>
+        /// <summary>Default <c>UnityEngine.Random.Range</c> via wrapper. Inyectable en tests para determinismo.</summary>
         [NonSerialized]
         public Func<int, int> RandomSource; // takes exclusive upper bound.
 
-        /// <inheritdoc />
         public override void Execute(BehaviorContext ctx)
         {
             if (ctx == null || ctx.SourceEntity == null) return;
@@ -139,8 +108,7 @@ namespace Rollgeon.Entities.Behaviors
         private BossFloorManagerSO ResolveBossDataSO(BehaviorContext ctx)
         {
             if (BossDataOverride != null) return BossDataOverride;
-            // ctx.SourceEntity.DataSO no existe en el Entity stub — el override es la ruta
-            // canonica en el FP. [FOLLOWUP] Cuando Entity real exponga DataSO, resolverlo aqui.
+            // ctx.SourceEntity.DataSO no existe en el Entity stub: el override es la ruta canonica.
             return null;
         }
 

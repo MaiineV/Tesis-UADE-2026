@@ -14,14 +14,10 @@ using UnityEngine;
 namespace Rollgeon.Combat.AI.Bosses.Generala
 {
     /// <summary>
-    /// El cubilete de La Generala: cuando tira, baja la copa sobre quien esté pegado a ella y le
-    /// cobra <see cref="Damage"/> directos.
-    /// </summary>
-    /// <remarks>
     /// Con el jugador lejos devuelve <see cref="AIResult.Failed"/>, así que tiene que ir envuelto en
     /// <c>Selector[nodo, Wait]</c>: suelto le cancelaría al jefe el resto del turno, el telegraph de
     /// la mano incluido.
-    /// </remarks>
+    /// </summary>
     [Serializable, HideReferenceObjectPicker]
     public sealed class AINode_GeneralaCupSlam : AIActionNode
     {
@@ -51,18 +47,12 @@ namespace Rollgeon.Combat.AI.Bosses.Generala
 
         public override string NodeName => $"Generala — Cubilete ({Damage} melee)";
 
-        /// <remarks>
-        /// Vacío significa "el id canónico", no "sin animación": Odin no corre los field
-        /// initializers al deserializar un <c>ED_Boss_*.asset</c>.
-        /// </remarks>
+        /// <summary>Vacío significa "el id canónico", no "sin animación": Odin no corre los field initializers al deserializar un <c>ED_Boss_*.asset</c>.</summary>
         private string AnimFeedbackId => string.IsNullOrEmpty(AnimFeedbackIdOverride)
             ? BossFeedbackIds.GeneralaCupSlamAnim
             : AnimFeedbackIdOverride;
 
-        /// <summary>
-        /// Camino síncrono (EditMode / escenas sin <c>CoroutineHost</c>): cobra sin animación,
-        /// porque no hay dónde esperarla.
-        /// </summary>
+        /// <summary>Camino síncrono (EditMode / escenas sin <c>CoroutineHost</c>): cobra sin animación, porque no hay dónde esperarla.</summary>
         public override AIResult Tick(AIContext context)
         {
             if (!CanSlam(context)) return AIResult.Failed;
@@ -70,10 +60,7 @@ namespace Rollgeon.Combat.AI.Bosses.Generala
             return AIResult.Succeeded;
         }
 
-        /// <summary>
-        /// Camino de play mode: baja la copa y <b>retiene el turno hasta que el clip termina</b> — sin
-        /// eso el telegraph de la mano marca encima del cubilete todavía en el aire.
-        /// </summary>
+        /// <summary><b>Retiene el turno hasta que el clip termina</b> — sin eso el telegraph de la mano marca encima del cubilete todavía en el aire.</summary>
         public override IEnumerator TickCoroutine(AIContext context, Action<AIResult> onResult)
         {
             if (!CanSlam(context))
@@ -99,8 +86,6 @@ namespace Rollgeon.Combat.AI.Bosses.Generala
             slamOnce();
             onResult?.Invoke(AIResult.Succeeded);
         }
-
-        // ---- pasos compartidos por los dos caminos -------------------------
 
         private bool CanSlam(AIContext context)
         {
@@ -148,11 +133,10 @@ namespace Rollgeon.Combat.AI.Bosses.Generala
                 TargetGuid = context.PlayerGuid,
             }, () => turn?.OnFeedbackComplete());
 
-            // Sin Animation Event al que atarse, el daño cae con el VFX de impacto y no al final del
-            // clip: diferirlo deja el número flotante casi un segundo detrás de la copa.
+            // Sin Animation Event al que atarse, el daño cae con el VFX: diferirlo al final del clip
+            // deja el número flotante casi un segundo detrás de la copa.
             onImpact?.Invoke();
 
-            // Sin TurnManager no hay gate que esperar: la anim corre igual, sin retener el turno.
             if (turn == null || !turn.IsWaitingForFeedback) yield break;
 
             var wait = TurnManager.WaitForFeedbackCompletion(turn);
@@ -168,10 +152,7 @@ namespace Rollgeon.Combat.AI.Bosses.Generala
             BlockSequence = true,
         };
 
-        /// <summary>
-        /// Gira a la Generala hacia el jugador antes de bajar la copa. Sin esto queda mirando en la
-        /// dirección en la que kiteó el turno anterior y golpea de espaldas.
-        /// </summary>
+        /// <summary>Sin esto queda mirando en la dirección en la que kiteó el turno anterior y golpea de espaldas.</summary>
         private static void FaceTarget(AIContext context)
         {
             if (!ServiceLocator.TryGetService<Entities.Visuals.IEntityVisualService>(out var visuals) || visuals == null) return;
@@ -186,7 +167,6 @@ namespace Rollgeon.Combat.AI.Bosses.Generala
             : from.Chebyshev(to);
 
 #if UNITY_EDITOR
-        // Dropdown obligatorio (§0): los ids de feedback nunca se tipean a mano.
         private static IEnumerable<string> GetFeedbackIdsForDropdown()
         {
             foreach (var guid in UnityEditor.AssetDatabase.FindAssets("t:FeedbackDBSO"))

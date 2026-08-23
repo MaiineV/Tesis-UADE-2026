@@ -4,12 +4,6 @@ using Rollgeon.Combat.Cashier;
 
 namespace Rollgeon.Combat.AI.Tests
 {
-    /// <summary>
-    /// Unit tests de <see cref="CashierGoldTierTable"/> — la matemática del escalado por oro del
-    /// Cajero, aislada de grilla, economía y servicios. Los bordes exactos de los umbrales de la
-    /// ficha (99/100 y 249/250) son el corazón del anzuelo económico: si se corren, el jugador
-    /// aprende una regla equivocada.
-    /// </summary>
     [TestFixture]
     public class CashierGoldTierTableTests
     {
@@ -20,8 +14,6 @@ namespace Rollgeon.Combat.AI.Tests
             new CashierGoldTier { MinGold = 100, ColumnSize = 3, Damage = 28 },
             new CashierGoldTier { MinGold = 250, ColumnSize = 3, Damage = 35 },
         };
-
-        // ---- Escalones de la ficha ---------------------------------------
 
         [TestCase(0,   1, 14, 0)]
         [TestCase(1,   1, 14, 0)]
@@ -49,8 +41,6 @@ namespace Rollgeon.Combat.AI.Tests
             Assert.LessOrEqual(tier.Damage, 35,
                 "El techo de daño de piso 2 es 35 por golpe — el escalón rico no puede pasarlo.");
         }
-
-        // ---- Soborno: un escalón abajo -----------------------------------
 
         [TestCase(250, 3, 28)] // rico sobornado ⇒ paga como el escalón medio.
         [TestCase(100, 1, 14)] // medio sobornado ⇒ paga como el pobre.
@@ -80,8 +70,6 @@ namespace Rollgeon.Combat.AI.Tests
             Assert.AreEqual(0, rank, "Un stepDown negativo no debe promover al jefe de escalón.");
             Assert.AreEqual(14, tier.Damage);
         }
-
-        // ---- Robustez de autoría -----------------------------------------
 
         [Test]
         public void Resolve_UnsortedTable_RanksByMinGold_SoStepDownStaysMeaningful()

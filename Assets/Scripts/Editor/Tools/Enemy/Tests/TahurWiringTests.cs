@@ -14,15 +14,8 @@ using UnityEngine;
 
 namespace Rollgeon.Editor.Tools.Enemy.Tests
 {
-    /// <summary>
-    /// Valida el árbol y los stats del Tahúr <b>en memoria</b>, vía
-    /// <see cref="TahurAssetBuilder"/> — sin cargar el <c>.asset</c>.
-    /// </summary>
-    /// <remarks>
-    /// Contra el asset, un merge desprolijo o un builder no corrido dan un rojo confuso; contra el
-    /// builder, el rojo dice exactamente qué número o qué cable se movió. El asset se regenera con
-    /// <c>Tools/Rollgeon/Bosses/Build Tahur</c>, que usa este mismo código.
-    /// </remarks>
+    /// <summary>Árbol y stats del Tahúr en memoria: contra el asset, un merge desprolijo o un builder no
+    /// corrido dan un rojo confuso; contra el builder, el rojo dice qué cable se movió.</summary>
     [TestFixture]
     public class TahurWiringTests
     {
@@ -34,10 +27,6 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             _root = TahurAssetBuilder.BuildAIRoot();
             Assert.IsNotNull(_root, "BuildAIRoot devolvió null.");
         }
-
-        // -----------------------------------------------------------------
-        // Stats
-        // -----------------------------------------------------------------
 
         [Test]
         public void EnemyData_CarriesTheCalibratedStats()
@@ -64,10 +53,6 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                 Object.DestroyImmediate(data);
             }
         }
-
-        // -----------------------------------------------------------------
-        // Orden del turno
-        // -----------------------------------------------------------------
 
         [Test]
         public void Turn_ResolvesTheMarkedPunishmentFirst()
@@ -142,10 +127,6 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             }
         }
 
-        // -----------------------------------------------------------------
-        // Números del pozo
-        // -----------------------------------------------------------------
-
         [Test]
         public void Settle_CarriesTheCalibratedPotTable()
         {
@@ -214,10 +195,6 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                 "El hueco tiene que medir lo que mide el paño que el jugador ve en pantalla, no " +
                 "lo que dice una constante que alguien movió de un solo lado.");
         }
-
-        // -----------------------------------------------------------------
-        // Poke, canto, mesa, fase
-        // -----------------------------------------------------------------
 
         [Test]
         public void Poke_IsGatedByACleanRound_AndByMeleeRange()
@@ -298,10 +275,6 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             var move = FindFirst<AINode_Move>();
             Assert.IsFalse(move.Retreat, "El Tahúr nunca kitea: el que acorta es él.");
         }
-
-        // -----------------------------------------------------------------
-        // Visual y retrato
-        // -----------------------------------------------------------------
 
         [Test]
         public void Visual_PointsAtItsOwnWrapper_NotThePlaceholderNorTheFloorOneBoss()
@@ -400,10 +373,6 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                 "acá dejaría la barra flotando despegada de la cabeza.");
         }
 
-        // -----------------------------------------------------------------
-        // Paleta
-        // -----------------------------------------------------------------
-
         [Test]
         public void Retint_RepaintsEverySurfaceOfTheSharedArt()
         {
@@ -427,9 +396,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         {
             foreach (var pair in TahurAssetBuilder.BuildRetints())
             {
-                // Los slots de PA_MainPalette están desalineados respecto de los nombres de los
-                // Mat_* (Mat_LightGreen → slot 3, que renderea gris): con FromColors el color que
-                // se escribe es el que se ve.
+                // Los slots de PA_MainPalette están desalineados respecto de los Mat_* (Mat_LightGreen
+                // → slot 3, que renderea gris): con FromColors el color que se escribe es el que se ve.
                 Assert.IsFalse(pair.Value.PaletteSlot.HasValue,
                     $"'{pair.Key}' pide un slot de paleta en vez de colores explícitos.");
                 Assert.IsTrue(pair.Value.LightColor.HasValue
@@ -459,10 +427,9 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         [Test]
         public void Retint_KeepsTheBodyAwayFromItsOwnTelegraphColours()
         {
-            // La Mesa se pinta en cian y el Castigo en naranja. Las superficies grandes del jefe no
-            // pueden compartir esos tonos o los telegraphs desaparecen sobre su propio cuerpo.
-            // El dorado (cinta de la galera y canto de las cartas) SÍ pasa cerca del naranja, y por
-            // eso vive sólo en detalles finos — de ahí que no entre en esta lista.
+            // La Mesa se pinta en cian y el Castigo en naranja: una superficie grande del jefe con esos
+            // tonos hace desaparecer los telegraphs sobre su cuerpo. El dorado pasa cerca del naranja,
+            // y por eso vive sólo en detalles finos y no entra en esta lista.
             var telegraphOrange = new Color(1f, 0.5f, 0f);
 
             foreach (var surface in new[] { "Mat_LightBrown", "Mat_Brown", "Mat_White", "Mat_LightGreen" })
@@ -475,10 +442,6 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                     $"'{surface}' quedó demasiado cerca del naranja del Castigo.");
             }
         }
-
-        // -----------------------------------------------------------------
-        // Helpers
-        // -----------------------------------------------------------------
 
         private static float Distance(Color a, Color b)
             => new Vector3(a.r - b.r, a.g - b.g, a.b - b.b).magnitude;
@@ -513,7 +476,6 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             return found;
         }
 
-        /// <summary>Índice del hijo del Sequence raíz cuyo subárbol contiene un <typeparamref name="T"/>.</summary>
         private int IndexOfSubtreeWith<T>() where T : class
             => _root.Children.FindIndex(c => Descendants(c).OfType<T>().Any());
 
@@ -526,7 +488,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             return null;
         }
 
-        /// <summary>Tree-walker por reflexión — mismo patrón que <c>SunkenGrandPhaseWiringTests</c>.</summary>
+        /// <summary>Tree-walker por reflexión.</summary>
         private static List<object> Descendants(object root)
         {
             var all = new List<object>();

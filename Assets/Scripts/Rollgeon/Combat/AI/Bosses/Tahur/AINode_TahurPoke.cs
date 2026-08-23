@@ -14,12 +14,9 @@ using UnityEngine;
 namespace Rollgeon.Combat.AI.Bosses.Tahur
 {
     /// <summary>
-    /// El poke del Tahúr: daño melee corto, sólo en ronda limpia.
-    /// </summary>
-    /// <remarks>
     /// El poke y el Castigo nunca resuelven la misma ronda: sumados rompen el techo de daño por
     /// golpe del piso 3. El nodo se auto-gatea además del <c>PcTahurCleanRound</c> del árbol.
-    /// </remarks>
+    /// </summary>
     [Serializable, HideReferenceObjectPicker]
     public sealed class AINode_TahurPoke : AIActionNode
     {
@@ -48,26 +45,17 @@ namespace Rollgeon.Combat.AI.Bosses.Tahur
         [Tooltip("Override de la animación del pinche. Vacío = " + BossFeedbackIds.TahurPokeAnim + ".")]
         public string AnimFeedbackIdOverride;
 
-        /// <summary>
-        /// Key del Animation Event que marca el frame de impacto: es un hecho del clip, no un
-        /// campo autorable.
-        /// </summary>
+        /// <summary>Es un hecho del clip, no un campo autorable.</summary>
         private const string ImpactEventKey = "hit";
 
         public override string NodeName => $"Tahúr — Poke ({Damage})";
 
-        /// <remarks>
-        /// Vacío significa "el id canónico", no "sin animación": Odin deserializa un
-        /// <c>ED_Boss_*.asset</c> viejo sin correr los field initializers.
-        /// </remarks>
+        /// <summary>Vacío significa "el id canónico", no "sin animación": Odin deserializa un <c>ED_Boss_*.asset</c> viejo sin correr los field initializers.</summary>
         private string AnimFeedbackId => string.IsNullOrEmpty(AnimFeedbackIdOverride)
             ? BossFeedbackIds.TahurPokeAnim
             : AnimFeedbackIdOverride;
 
-        /// <summary>
-        /// Camino síncrono (EditMode / escenas sin <c>CoroutineHost</c>): cobra sin animación,
-        /// porque no hay dónde esperarla.
-        /// </summary>
+        /// <summary>Camino síncrono (EditMode / escenas sin <c>CoroutineHost</c>): cobra sin animación, porque no hay dónde esperarla.</summary>
         public override AIResult Tick(AIContext context)
         {
             if (!CanPoke(context)) return AIResult.Failed;
@@ -75,10 +63,6 @@ namespace Rollgeon.Combat.AI.Bosses.Tahur
             return AIResult.Succeeded;
         }
 
-        /// <summary>
-        /// Camino de play mode: aterriza el daño en el frame del pinche y retiene el turno hasta
-        /// que el clip termina.
-        /// </summary>
         public override IEnumerator TickCoroutine(AIContext context, Action<AIResult> onResult)
         {
             if (!CanPoke(context))
@@ -104,8 +88,6 @@ namespace Rollgeon.Combat.AI.Bosses.Tahur
             pokeOnce();
             onResult?.Invoke(AIResult.Succeeded);
         }
-
-        // ---- pasos compartidos por los dos caminos -------------------------
 
         private bool CanPoke(AIContext context)
         {
@@ -143,8 +125,8 @@ namespace Rollgeon.Combat.AI.Bosses.Tahur
         {
             if (!ServiceLocator.TryGetService<IFeedbackService>(out var feedback) || feedback == null) yield break;
 
-            // El impacto no se cuelga de StartMode.OnEvent: un step esperando una key que el clip
-            // no publique gira para siempre.
+            // El impacto no se cuelga de StartMode.OnEvent: un step esperando una key que el clip no
+            // publique gira para siempre.
             var steps = new List<FeedbackSequenceStep>
             {
                 Step(AnimFeedbackId),
@@ -162,7 +144,6 @@ namespace Rollgeon.Combat.AI.Bosses.Tahur
                 TargetGuid = context.PlayerGuid,
             }, () => turn?.OnFeedbackComplete());
 
-            // Sin TurnManager no hay gate que esperar: la anim corre igual, sin sincronizar el daño.
             if (turn == null || !turn.IsWaitingForFeedback) yield break;
 
             bool impactFired = false;
@@ -193,7 +174,6 @@ namespace Rollgeon.Combat.AI.Bosses.Tahur
             BlockSequence = true,
         };
 
-        /// <summary>Gira al Tahúr hacia el jugador antes del pinche.</summary>
         private static void FaceTarget(AIContext context)
         {
             if (!ServiceLocator.TryGetService<Entities.Visuals.IEntityVisualService>(out var visuals) || visuals == null) return;
@@ -204,7 +184,6 @@ namespace Rollgeon.Combat.AI.Bosses.Tahur
         }
 
 #if UNITY_EDITOR
-        // Dropdown obligatorio (§0): los ids de feedback nunca se tipean a mano.
         private static IEnumerable<string> GetFeedbackIdsForDropdown()
         {
             foreach (var guid in UnityEditor.AssetDatabase.FindAssets("t:FeedbackDBSO"))

@@ -12,17 +12,6 @@ using UnityEngine.TestTools;
 
 namespace Rollgeon.Combat.AI.Tests
 {
-    /// <summary>
-    /// El peaje de la fila de La Bandida: cuántos rolls del pool drena según cuántos
-    /// rodillos rompibles quedan en pie, y qué hace cuando no hay de dónde cobrar.
-    /// </summary>
-    /// <remarks>
-    /// El pool va por un espía y no por el <c>RollPoolService</c> real: lo que se está
-    /// fijando es la <b>política</b> del peaje —cuánto pide y cómo reacciona a un jugador
-    /// seco. El espía drena con la misma semántica parcial del servicio real:
-    /// <c>Drain</c> flooréa en 0 y devuelve lo efectivamente cobrado — ese detalle es el
-    /// que hace que el peaje cobre "lo que haya" en vez de nada.
-    /// </remarks>
     [TestFixture]
     public class BandidaReelTollTests
     {
@@ -60,10 +49,6 @@ namespace Rollgeon.Combat.AI.Tests
             ServiceLocator.Clear();
             EventManager.ResetEventDictionary();
         }
-
-        // =====================================================================
-        // Cuánto cobra
-        // =====================================================================
 
         [Test]
         public void FullRow_ChargesTheCap_NotOnePerReel()
@@ -110,10 +95,6 @@ namespace Rollgeon.Combat.AI.Tests
             Assert.AreEqual(0, _energy.TotalSpent);
         }
 
-        // =====================================================================
-        // El rodillo trabado
-        // =====================================================================
-
         [Test]
         public void LockedReel_DoesNotCount_BecauseThePlayerCannotAnswerIt()
         {
@@ -138,10 +119,6 @@ namespace Rollgeon.Combat.AI.Tests
                 "Cobrar por el único rodillo inrompible convierte el peaje en un impuesto que el " +
                 "jugador no tiene forma de contestar.");
         }
-
-        // =====================================================================
-        // Jugador seco
-        // =====================================================================
 
         [Test]
         public void DryPlayer_PaysWhatIsLeft_InsteadOfPayingNothing()
@@ -170,10 +147,6 @@ namespace Rollgeon.Combat.AI.Tests
             Assert.AreEqual(0, _energy.Current);
         }
 
-        // =====================================================================
-        // Degradado
-        // =====================================================================
-
         [Test]
         public void MissingRollPoolService_DoesNotCutTheBossTurn()
         {
@@ -191,10 +164,6 @@ namespace Rollgeon.Combat.AI.Tests
                 "Sin el servicio el peaje no cobra, pero el jefe tiene que seguir reponiendo la fila " +
                 "y atacando — un Failed acá le cancelaría el resto del turno.");
         }
-
-        // =====================================================================
-        // Helpers
-        // =====================================================================
 
         private void AttachAll()
         {

@@ -17,11 +17,7 @@ using UnityEngine;
 
 namespace Rollgeon.Editor.Tools.Enemy.Tests
 {
-    /// <summary>
-    /// Unit tests del pozo del Tahúr: acumulación de fichas, mapa fichas → castigo
-    /// (26/32/38/42/45 con techo en 45), el cobro que reemplaza el ataque, el rastrillo y el
-    /// canto. Sala 11×7 real, servicios reales salvo el pipeline de daño y el overlay.
-    /// </summary>
+    /// <summary>Sala 11×7 real y servicios reales salvo el pipeline de daño y el overlay.</summary>
     [TestFixture]
     public class TahurWagerTests
     {
@@ -107,10 +103,6 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             EventManager.ResetEventDictionary();
         }
 
-        // =================================================================
-        // El mapa fichas → castigo
-        // =================================================================
-
         [TestCase(1, 26)]
         [TestCase(2, 32)]
         [TestCase(3, 38)]
@@ -132,10 +124,6 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
 
             Assert.AreEqual(45, _settle.PunishmentDamageForChips(5));
         }
-
-        // =================================================================
-        // Los cuatro resultados
-        // =================================================================
 
         [Test]
         public void Miss_AddsOneChip_AndMarksThirtyTwoOnThePlayersColumn()
@@ -272,10 +260,6 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             Assert.AreEqual(45, _settle.PunishmentDamageForChips(_wager.Chips));
         }
 
-        // =================================================================
-        // La fase 2: el volteo, el rastrillo y la gracia
-        // =================================================================
-
         [Test]
         public void FlipCard_InvertsTheCall_AndFixesThePhaseTwoRake()
         {
@@ -343,10 +327,6 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                 "Te leyó ⇒ la forma más ancha, la de la codicia.");
         }
 
-        // =================================================================
-        // El poke
-        // =================================================================
-
         [Test]
         public void Poke_FailsOnAPunishmentRound()
         {
@@ -391,10 +371,6 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             Assert.AreEqual(AIResult.Failed, TahurAssetBuilder.BuildPoke().Tick(NewContext()));
         }
 
-        // =================================================================
-        // La Mesa
-        // =================================================================
-
         [Test]
         public void MarkTable_PaintsTheThreeByThreeAroundItself_WithoutTouchingThePunishment()
         {
@@ -412,10 +388,6 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             Assert.IsTrue(_threat.HasPending(_boss),
                 "La Mesa no puede pisar el Castigo: van en canales distintos.");
         }
-
-        // =================================================================
-        // El canto
-        // =================================================================
 
         [Test]
         public void Call_ForbidsTheCalledHand_AndDoublesEverythingAbove()
@@ -502,10 +474,6 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             }
         }
 
-        // =================================================================
-        // Helpers
-        // =================================================================
-
         private static string IdOf(int rank) => $"combo.step_{rank}";
 
         private AIContext NewContext() => new AIContext
@@ -536,10 +504,6 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             _grid.Move(_player, new GridCoord(6, 3));
             TahurAssetBuilder.BuildMarkTable().Tick(NewContext());
         }
-
-        // -----------------------------------------------------------------
-        // Doubles
-        // -----------------------------------------------------------------
 
         /// <summary>Combo de catálogo mínimo: solo aporta id y Priority para armar la escalera.</summary>
         private sealed class LadderCombo : BaseComboSO

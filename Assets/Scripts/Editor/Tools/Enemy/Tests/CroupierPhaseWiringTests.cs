@@ -17,15 +17,8 @@ using UnityEngine;
 
 namespace Rollgeon.Editor.Tools.Enemy.Tests
 {
-    /// <summary>
-    /// Wiring del árbol del Croupier <b>en memoria</b>: contra el builder y no contra el
-    /// <c>.asset</c>, que ataría el suite a que Unity lo haya reimportado. El jefe es un kiter de
-    /// dos tiempos, y lo que se cubre acá es lo que un merge puede romper sin que se note: el
-    /// candado que tiene que re-emitirse todos los turnos, el gate de cercanía que decide si cada
-    /// salto de fuga corre, la duración del fuego de la que cuelga todo el plan del jefe, y el
-    /// orden del bloque de "Pleno y color" — donde mover un nodo un lugar le cambia el efecto
-    /// entero.
-    /// </summary>
+    /// <summary>Wiring del árbol del Croupier en memoria: contra el builder y no contra el
+    /// <c>.asset</c>, que ataría el suite a que Unity lo haya reimportado.</summary>
     [TestFixture]
     public class CroupierPhaseWiringTests
     {
@@ -50,34 +43,6 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             if (_fire != null) Object.DestroyImmediate(_fire);
         }
 
-        // =====================================================================
-        // Estructura del turno
-        // =====================================================================
-
-        /// <summary>
-        /// El orden de los cuatro pasos de la raíz, que es el que define el turno: <b>detonar lo
-        /// avisado → candado → la acción normal del turno → armar el Pleno</b>.
-        /// </summary>
-        /// <remarks>
-        /// <para>
-        /// El armado del Pleno va <b>último, después</b> del Alternate, y no es un detalle de
-        /// prolijidad: es lo que hace que el turno del aviso no sea un turno perdido para el jefe
-        /// —dispara o prende su banda igual— y lo que le deja al jugador el turno entero para cruzar
-        /// la sala. Adelante del ciclo, el aviso y la acción del turno se pisarían en el mismo tick.
-        /// </para>
-        /// <para>
-        /// La detonación va <b>primera</b> por dos razones distintas, las dos load-bearing: arriba del
-        /// marcado es lo que separa el marcar del prender por un turno (ver
-        /// <see cref="PlenoGate_IgnitesTheTurnAfterItMarked"/>), y arriba del Alternate es lo que
-        /// evita que le pase el trapo al overlay de la banda que T1 acaba de levantar —
-        /// <c>Show</c>/<c>Clear</c> del overlay son por fuente y la ignición limpia la de su canal.
-        /// </para>
-        /// <para>
-        /// El candado, en cambio, sí tiene que estar <b>delante</b> del Alternate: el primer paso del
-        /// ciclo que devuelve <c>Running</c> (el blink de la fuga) aborta el Sequence raíz en el path
-        /// no-coroutine, y un candado que se saltea un turno se ve parpadear.
-        /// </para>
-        /// </remarks>
         [Test]
         public void TurnOrder_DetonatesFirst_ThenLocks_ThenActs_AndArmsThePlenoLast()
         {
@@ -107,19 +72,13 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                 "detrás del Alternate porque prende al turno siguiente, no en este.");
         }
 
-        /// <summary>
-        /// El Sequence raíz corta en el primer Failed y el Alternate avanza el índice igual: un paso
-        /// suelto que falla le cancela al jefe el resto del turno <b>y</b> desincroniza el ciclo.
-        /// </summary>
+        /// <summary>El Sequence raíz corta en el primer Failed y el Alternate avanza el índice igual:
+        /// un paso suelto que falla cancela el resto del turno <b>y</b> desincroniza el ciclo.</summary>
         [Test]
         public void EveryStepTheRootTicks_IsIsolatedInASelectorWithWaitFallback()
         {
             AssertChildrenAreGuarded(_root.Children, "el Sequence raíz");
         }
-
-        // =====================================================================
-        // Pleno y color (50%)
-        // =====================================================================
 
         [Test]
         public void PlenoGate_HasAWaitElse_SoItNeverAbortsTheSequence()
@@ -148,14 +107,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             Assert.AreEqual(0, stat.SpeedDelta, "La fase no lo apura: lo que cambia es el paño.");
         }
 
-        /// <summary>
-        /// <c>AllExceptSquareAroundSelf</c> usa el <c>Size</c> como radio del <b>hueco</b> que se
-        /// salva, no del área amenazada: leerlo al revés le prende debajo de los pies y le deja el
-        /// resto del paño limpio, que es exactamente el efecto contrario.
-        /// </summary>
-        /// <remarks>
-        /// El tamaño del hueco sale de <c>PlenoHoleRadius</c> y no de un literal acá.
-        /// </remarks>
+        /// <summary><c>AllExceptSquareAroundSelf</c> usa el <c>Size</c> como radio del <b>hueco</b> que
+        /// se salva, no del área amenazada: leerlo al revés hace exactamente lo contrario.</summary>
         [Test]
         public void PlenoGate_BurnsTheWholeTableExceptTheSquareAroundHim()
         {
@@ -169,22 +122,13 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                 "Con hueco 0 se prende su propia casilla: el jefe queda parado en el fuego y " +
                 "cualquier regresión de OwnerBossImmune lo mata solo.");
 
-            // Esta marca SÍ cobra y la banda no, y las dos avisan un turno antes: lo que las
-            // diferencia es cuánto cuesta obedecer el aviso. Salirse de la banda es un paso al
-            // costado; salirse de esto es cruzar media sala hasta el hueco. El número lo cobra
-            // AINode_IgniteArea al consumir la marca, y un 0 acá deja el momento más grande de la
-            // pelea sin acuse de recibo para quien no se movió.
+            // Esta marca SÍ cobra y la banda no: salirse de la banda es un paso al costado,
+            // salirse de esto es cruzar media sala hasta el hueco.
             Assert.AreEqual(CroupierAssetBuilder.PlenoIgnitionDamage, mark.Damage,
                 "El Pleno dejó de cobrar al prender: quien estaba parado adentro no se entera hasta " +
                 "su próximo turno.");
         }
 
-        /// <summary>
-        /// El hueco a salvo se calcula desde la casilla del jefe <b>en el momento del tick</b>, así
-        /// que el teleport tiene que correr <b>antes</b> del marcado. Detrás, el hueco vuelve a caer
-        /// donde el jefe había terminado de huir —contra una pared— y el 50% es el mecanismo viejo
-        /// con un nodo de más.
-        /// </summary>
         [Test]
         public void PlenoGate_TeleportsToTheCentreBeforeItRaisesTheTelegraph()
         {
@@ -203,11 +147,6 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                 "moverlo después deja el cuadrado a salvo vacío en el medio de la sala.");
         }
 
-        /// <summary>
-        /// El teleport consume el movimiento del turno. Sin eso el jefe se va del hueco que acaba
-        /// de plantar, y el área ya quedó anclada donde estaba: el cuadrado a salvo se queda vacío
-        /// en el medio de la sala y deja de leerse como "donde está el jefe".
-        /// </summary>
         [Test]
         public void PlenoTeleport_SpendsTheTurnsMovement_SoHeStaysInHisOwnHole()
         {
@@ -220,30 +159,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                 "quedó anclada donde estaba.");
         }
 
-        /// <summary>
-        /// <b>Marca en el turno N y prende en el N+1.</b> Marcando y prendiendo en el mismo tick el
-        /// aviso no se dibuja <i>ni un frame</i> —no hay yield entre el <c>Show</c> del telegraph y
-        /// el <c>Clear</c> de la ignición— y el paño se prende entero sin aviso ninguno.
-        /// </summary>
-        /// <remarks>
-        /// <para>
-        /// El turno de separación lo da el <b>orden de los hijos de la raíz</b>, no un contador: el
-        /// paso que prende está <b>arriba</b> del que marca, así que en el turno N pasa primero y no
-        /// encuentra nada, la marca se levanta después y queda pendiente con su overlay puesto todo
-        /// el turno del jugador, y recién la encuentra en el N+1.
-        /// </para>
-        /// <para>
-        /// Por eso <c>AnnounceTurns</c> tiene que quedarse en <b>0</b>: el nodo cuenta sus propias
-        /// activaciones, así que un 1 le sumaría SU turno de espera arriba del que ya da el orden y
-        /// la detonación caería en N+2 — el paño quedaría avisado dos turnos y el jugador dejaría de
-        /// creerle a la telegrafía.
-        /// </para>
-        /// <para>
-        /// Y por eso el paso que prende <b>no</b> puede quedar latcheado ni gateado: el turno en que
-        /// tickea con algo pendiente es el siguiente al del aviso, y ahí ya cruzó el umbral hace un
-        /// turno. Un <c>Once</c> o un gate encima y la marca se queda pintada para siempre.
-        /// </para>
-        /// </remarks>
+        /// <summary>El turno de separación entre marcar y prender lo da el <b>orden de los hijos de la
+        /// raíz</b>, no un contador: el paso que prende está arriba del que marca.</summary>
         [Test]
         public void PlenoGate_IgnitesTheTurnAfterItMarked()
         {
@@ -274,20 +191,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                 "queda pintada para siempre.");
         }
 
-        /// <summary>
-        /// El Pleno marca en su propio canal y la banda de T1 en el guid pelado, y el canal es lo
-        /// que las hace direccionables por separado. Los dos avisos se levantan en el <b>mismo</b>
-        /// turno —el que cruza el 50%— y <c>IThreatenedAreaService</c> guarda un área por fuente
-        /// <b>sobrescribiendo</b>, así que sin canal el segundo marcado del turno destruye al
-        /// primero, en el estado lógico y en el overlay. Y sin canal tampoco habría a qué apuntar
-        /// para descartar sólo uno de los dos (ver
-        /// <see cref="ThePleno_DropsTheCyclesPendingMark_BeforeRaisingItsOwn"/>).
-        /// </summary>
-        /// <remarks>
-        /// Y el que consume tiene que pedir el mismo canal: la ignición del tiempo de quema va sin
-        /// canal porque consume la banda, y la del paso 1 va con el del Pleno. Cruzados, cada uno
-        /// prende el área del otro con la duración del otro.
-        /// </remarks>
+        /// <summary><c>IThreatenedAreaService</c> guarda un área por fuente <b>sobrescribiendo</b>, y
+        /// los dos avisos se levantan el mismo turno: sin canal el segundo destruye al primero.</summary>
         [Test]
         public void ThePlenoMarkAndTheBandMark_LiveOnDifferentChannels()
         {
@@ -318,23 +223,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             }
         }
 
-        /// <summary>
-        /// El Pleno <b>reemplaza</b> el aviso del ciclo, no se le suma: descarta la banda antes de
-        /// encolar el suyo.
-        /// </summary>
-        /// <remarks>
-        /// <para>
-        /// El armado corre en el mismo turno que el Alternate, así que cuando el 50% se cruza sobre
-        /// un tiempo de reparto quedan <b>dos</b> áreas marcadas a la vez: el jugador ve dos avisos
-        /// prendidos y al turno siguiente detonan los dos. Y la banda ni tiene dónde caer —el Pleno
-        /// prende todo menos el hueco, así que su terreno ya arde—, con lo cual su beat se absorbe
-        /// en silencio y el jefe se ve congelado.
-        /// </para>
-        /// <para>
-        /// El canal es lo que hace la puntería: el descarte va sin canal porque la banda vive en el
-        /// guid pelado. Con el canal del Pleno se cancelaría a sí mismo y el 50% no prendería nunca.
-        /// </para>
-        /// </remarks>
+        /// <summary>El armado corre en el mismo turno que el Alternate, así que el 50% puede cruzarse
+        /// sobre un tiempo de reparto y dejar dos áreas marcadas a la vez.</summary>
         [Test]
         public void ThePleno_DropsTheCyclesPendingMark_BeforeRaisingItsOwn()
         {
@@ -363,12 +253,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                 "conservar su aviso en vez de desaparecer sin nada que la reemplace.");
         }
 
-        /// <summary>
-        /// Los pasos de adentro van <b>desnudos</b> a propósito, al revés del resto del árbol: el
-        /// bloque entero ya está envuelto en <c>Selector[If, Wait]</c>, y un Wait de fallback acá
-        /// haría que el Sequence devuelva Succeeded aunque no haya marcado ni prendido nada —
-        /// <c>AINode_Once</c> latchearía sobre esa mentira y el 50% no volvería a intentarse.
-        /// </summary>
+        /// <summary>Los pasos de adentro van <b>desnudos</b> a propósito, al revés del resto del árbol:
+        /// el bloque entero ya está envuelto en <c>Selector[If, Wait]</c>.</summary>
         [Test]
         public void PlenoBlock_IsGuardedAsAWhole_NotStepByStep()
         {
@@ -385,15 +271,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                 "adentro le corta el turno al jefe.");
         }
 
-        // =====================================================================
-        // El candado (70%)
-        // =====================================================================
-
-        /// <summary>
-        /// El candado es "permanente" por re-emisión, no por latch.
-        /// <c>AINode_RotateBlock</c> hace <c>dice.Clear()</c> antes de bloquear en cada tick y
-        /// <c>DiceBlockService</c> se limpia solo al cerrar cada turno del jugador.
-        /// </summary>
+        /// <summary>El candado es "permanente" por re-emisión, no por latch: <c>AINode_RotateBlock</c>
+        /// hace <c>dice.Clear()</c> por tick y <c>DiceBlockService</c> se limpia al cerrar el turno.</summary>
         [Test]
         public void DieLock_IsNotLatchedByOnce_SoItSurvivesTheEndOfEveryPlayerTurn()
         {
@@ -410,8 +289,6 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                 "Por encima del 70% el gate tiene que ser transparente, no Failed.");
         }
 
-        /// <summary>Adentro del Alternate sólo se emitiría uno de cada dos turnos, y el candado
-        /// parpadearía: puesto en el turno del jefe, borrado al cerrar el del jugador.</summary>
         [Test]
         public void DieLock_LivesOutsideTheAlternate_SoThePadlockDoesNotBlink()
         {
@@ -424,7 +301,6 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                 "Un solo nodo de candado en todo el árbol.");
         }
 
-        /// <summary>Índice fijo y no un sorteo: el candado se tiene que leer como "me saco ESE".</summary>
         [Test]
         public void DieLock_TakesAFixedDie_AndIsPresented()
         {
@@ -445,14 +321,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                 "come las dos escaladas en el mismo turno.");
         }
 
-        // =====================================================================
-        // Los dos tiempos
-        // =====================================================================
-
-        /// <summary>
-        /// Dispara <b>antes</b> de saltar: al revés, el tiro saldría desde la casilla nueva y el
-        /// jugador vería el fogonazo salir de donde el jefe ya no está.
-        /// </summary>
+        /// <summary>Dispara antes de saltar: al revés el jugador vería el fogonazo salir de donde el
+        /// jefe ya no está.</summary>
         [Test]
         public void DealBeat_ShootsBeforeFleeing_AndMarksTheBandFromWhereItLands()
         {
@@ -469,10 +339,6 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                 "desde la casilla vieja y el fuego no caería donde se anunció.");
         }
 
-        /// <summary>
-        /// El disparo se auto-gatea por rango. Si el alcance no cubriera la distancia a la que él
-        /// mismo salta, se sacaría de su propio rango y el tiempo de reparto quedaría mudo.
-        /// </summary>
         [Test]
         public void DealBeat_ShotOutrangesHisOwnFlight()
         {
@@ -495,10 +361,6 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                 "de reparto no hace nada.");
         }
 
-        /// <summary>
-        /// La banda sale de la ficha, y su profundidad se cuenta desde el borde al que el jefe
-        /// acaba de saltar — no desde el medio de la sala.
-        /// </summary>
         [Test]
         public void DealBeat_MarksTheAuthoredConeFromTheSheet()
         {
@@ -520,11 +382,6 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                 "cobran las casillas que planta.");
         }
 
-        /// <summary>
-        /// El tiempo de quema prende y recién entonces salta. Igual que el de reparto, ese salto
-        /// va sin tope de aterrizaje: la ventana en la que se le puede entrar ya no depende de
-        /// dónde cae, sino de que el jugador vuelva a acercarse dentro del gate de cercanía.
-        /// </summary>
         [Test]
         public void BurnBeat_IgnitesThenTeleports_AndDoesNotShoot()
         {
@@ -551,11 +408,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                 "del borde en el mismo turno en que saltó.");
         }
 
-        /// <summary>
-        /// El jefe sólo se toma la molestia de huir si el jugador está cerca: más lejos, el
-        /// disparo no tiene techo y el cono se marca desde donde esté parado, así que tepearse
-        /// igual no le compra nada.
-        /// </summary>
+        /// <summary>Sólo huye si el jugador está cerca: de lejos el disparo no tiene techo y el cono se
+        /// marca desde donde esté parado, así que tepearse no le compra nada.</summary>
         [Test]
         public void BothFlights_AreGatedByProximity_UsingTheSheetThreshold()
         {
@@ -574,11 +428,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             }
         }
 
-        /// <summary>
-        /// Un <c>If</c> sin <c>Else</c> devuelve <c>Failed</c> cuando la condición no pasa, y ese
-        /// <c>Failed</c> le cortaría el resto del tiempo (dispara y marca, o prende) al jefe cada
-        /// vez que el jugador esté lejos.
-        /// </summary>
+        /// <summary>Un <c>If</c> sin <c>Else</c> devuelve <c>Failed</c> cuando la condición no pasa.</summary>
         [Test]
         public void BothFlights_GateHasAWaitElse_SoBeingFarNeverAbortsTheBeat()
         {
@@ -590,11 +440,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                 "tiempo entero y el jefe ni prende lo marcado.");
         }
 
-        /// <summary>
-        /// Ninguno de los dos saltos de fuga lleva tope de aterrizaje: con el gate de cercanía, la
-        /// pelea sigue siendo ganable porque el jugador maneja el tempo de cuándo se vuelve a
-        /// acercar, no porque el salto tenga un techo a dónde cae.
-        /// </summary>
+        /// <summary>Sin tope a propósito: con el gate de cercanía la pelea es ganable porque el jugador
+        /// maneja el tempo de acercarse, no porque el salto tenga un techo a dónde cae.</summary>
         [Test]
         public void NeitherFlight_HasALandingCap()
         {
@@ -607,17 +454,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                 "El salto de quema volvió a tener tope de aterrizaje.");
         }
 
-        /// <summary>
-        /// El armado de "Pleno y color" se planta en el centro <b>siempre</b> al cruzar el 50%, sin
-        /// el gate de cercanía.
-        /// </summary>
-        /// <remarks>
-        /// El sorteo de la fuga también tiene un <c>AINode_TeleportToRoomCenter</c>, así que el tipo
-        /// de nodo ya no alcanza para distinguirlos: lo que hay que garantizar es que sean
-        /// <b>instancias distintas</b>. Compartir el objeto dejaría el plantado del Pleno colgando del
-        /// gate de cercanía, y al cruzar el 50% con el jugador lejos no se plantaría en el centro —
-        /// el hueco del Pleno caería donde el jefe estuviera parado.
-        /// </remarks>
+        /// <summary>El sorteo de la fuga también tiene un <c>AINode_TeleportToRoomCenter</c>, así que el
+        /// tipo de nodo no alcanza para distinguirlos: hay que garantizar instancias distintas.</summary>
         [Test]
         public void PlenoTeleport_IsNeverGated_AndIsADifferentNodeFromTheFleeTeleports()
         {
@@ -643,11 +481,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             }
         }
 
-        /// <summary>
-        /// El sorteo de la fuga: los dos tiempos apuestan con los pesos de la ficha, y el orden de
-        /// las opciones es contrato — <c>AINode_Random</c> acumula pesos y devuelve la primera que
-        /// pasa el corte, así que reordenarlas cambia qué resultado sale con cada tirada.
-        /// </summary>
+        /// <summary>El orden de las opciones es contrato: <c>AINode_Random</c> acumula pesos y devuelve
+        /// la primera que pasa el corte, así que reordenarlas cambia qué sale con cada tirada.</summary>
         [Test]
         public void BothBeats_RollTheAuthoredFleeOdds_InTheAuthoredOrder()
         {
@@ -675,11 +510,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             }
         }
 
-        /// <summary>
-        /// El aterrizaje al centro gasta el movimiento del turno, igual que los otros dos teleports
-        /// del jefe: sin eso, cualquier paso de reacomodo posterior lo saca del centro en el mismo
-        /// turno en que se plantó ahí.
-        /// </summary>
+        /// <summary>Sin gastar el movimiento del turno, cualquier paso de reacomodo posterior lo saca
+        /// del centro en el mismo turno en que se plantó ahí.</summary>
         [Test]
         public void TheCentreLanding_ConsumesTheTurnMovement()
         {
@@ -704,9 +536,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                 Assert.AreSame(_fire, ignite.Definition,
                     "Los dos tiempos que prenden plantan la MISMA definición, la propia del jefe: " +
                     "Tile_FireTemp es la genérica y tunearla ahí le cambiaría el fuego a todo el juego.");
-                // No se compara contra una sola constante porque ahora hay dos duraciones: la
-                // base y la de fase 2. Lo que no puede pasar nunca es el 0 — en el nodo cae al
-                // default del SO y en ISpecialTileService.Place un 0 significa PERMANENTE.
+                // Un 0 cae al default del SO, y en ISpecialTileService.Place 0 significa PERMANENTE.
                 Assert.Contains(ignite.DurationRounds,
                     new[] { CroupierAssetBuilder.FireDurationRounds, CroupierAssetBuilder.FireDurationRoundsPhase2 },
                     $"Una ignición pasa {ignite.DurationRounds} rondas, que no es ni la duración " +
@@ -715,20 +545,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             }
         }
 
-        /// <summary>
-        /// La relación entre cuánto arde una banda y cada cuánto prende una nueva. No es un detalle
-        /// de balance: es la diferencia entre un fuego que se esquiva y un piso que se achica.
-        /// </summary>
-        /// <remarks>
-        /// <para>
-        /// El jefe prende en uno de cada dos tiempos, o sea cada 2 rondas, y nadie apaga las bandas
-        /// anteriores. Con la duración base <b>igual</b> al intervalo, una banda se apaga justo cuando
-        /// nace la siguiente: nunca conviven dos y el paño vuelve a estar limpio. Con la de fase 2,
-        /// una ronda más, conviven durante la ronda del relevo — el único momento en que el piso útil
-        /// se achica. Que la base <b>supere</b> el intervalo es el bug: las bandas se apilan ronda a
-        /// ronda hasta que no queda dónde plantarse a defender.
-        /// </para>
-        /// </remarks>
+        /// <summary>Nadie apaga las bandas anteriores: con la duración base igual al intervalo nunca
+        /// conviven dos, y por encima del intervalo se apilan hasta que no queda piso.</summary>
         [Test]
         public void FireDuration_MatchesTheIgnitionInterval_AndOnlyPhaseTwoOverlaps()
         {
@@ -740,9 +558,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
 
             int ignitionIntervalRounds = alternate.Children.Count;
 
-            // "Arde N rondas" se autora como N + 1 (la ronda en que nace no le deja al jugador
-            // ningún arranque de turno por delante), así que lo que se compara contra el intervalo
-            // es la duración menos uno.
+            // "Arde N rondas" se autora como N + 1 (la ronda en que nace no le deja al jugador ningún
+            // arranque de turno por delante), así que contra el intervalo va la duración menos uno.
             Assert.AreEqual(ignitionIntervalRounds, CroupierAssetBuilder.FireDurationRounds - 1,
                 $"La banda base arde {CroupierAssetBuilder.FireDurationRounds - 1} rondas y prende " +
                 $"cada {ignitionIntervalRounds}. Por encima del intervalo las bandas se apilan y la " +
@@ -756,24 +573,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                 "Dos rondas más y vuelve a apilarse sin techo.");
         }
 
-        /// <summary>
-        /// Las tres igniciones relevan lo que reemplazan: una banda vieja que quede <b>entera</b>
-        /// adentro del área nueva se retira en vez de quedarse con su reloj.
-        /// </summary>
-        /// <remarks>
-        /// <para>
-        /// Es el caso normal de este jefe, no un borde: huye sobre el mismo eje y la banda le sale de
-        /// atrás con la profundidad de la sala, así que cada banda nueva contiene a la anterior. Sin
-        /// el relevo, el terreno compartido se queda con el reloj más viejo —el más corto— y la banda
-        /// que el jugador acaba de ver avisada se apaga en el wrap siguiente sin haber ardido: el
-        /// tiempo de quema no muestra nada.
-        /// </para>
-        /// <para>
-        /// Va cableado y no por default porque el default es "no retirar" (ver
-        /// <c>AINode_IgniteArea.RetireFullyReplaced</c>): el nodo lo monta cada jefe que prende piso,
-        /// y apagar fuego que el jugador ya tiene en pantalla es una decisión de <b>esta</b> pelea.
-        /// </para>
-        /// </remarks>
+        /// <summary>Va cableado y no por default: el default de <c>RetireFullyReplaced</c> es "no
+        /// retirar", y apagar fuego que el jugador ya tiene en pantalla es decisión de esta pelea.</summary>
         [Test]
         public void Ignitions_RelayTheBandTheyReplace()
         {
@@ -786,11 +587,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             }
         }
 
-        /// <summary>
-        /// Cuál de las dos duraciones usa cada ignición. El nodo no lee el HP: la elige un
-        /// <c>AINode_If</c>, así que si alguien colapsa las dos ramas en una la pelea pierde el
-        /// escalón de fase 2 sin que falle nada.
-        /// </summary>
+        /// <summary>El nodo no lee el HP: la duración la elige un <c>AINode_If</c>, así que colapsar las
+        /// dos ramas pierde el escalón de fase 2 sin que falle nada.</summary>
         [Test]
         public void PhaseTwo_IsTheOnlyThingThatLengthensAFire()
         {
@@ -820,15 +618,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                 "durar más sin que nada en pantalla se lo haya anunciado.");
         }
 
-        // =====================================================================
-        // Números de la ficha
-        // =====================================================================
-
-        /// <summary>
-        /// Sin <c>IsBoss</c> el jefe no es jefe para <c>SpecialTileService.ShouldAffect</c>, que
-        /// exige <c>OwnerBossImmune &amp;&amp; IsBoss &amp;&amp;</c> ser el dueño: el Croupier huye
-        /// pegado a la banda que acaba de prender, así que se quema con su propio fuego.
-        /// </summary>
+        /// <summary>Sin <c>IsBoss</c> el jefe no es jefe para <c>SpecialTileService.ShouldAffect</c>, que
+        /// exige <c>OwnerBossImmune &amp;&amp; IsBoss</c> y ser el dueño.</summary>
         [Test]
         public void PopulateEnemyData_MarksHimAsBoss_SoHeDoesNotBurnInHisOwnFire()
         {
@@ -852,22 +643,19 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         [Test]
         public void PopulateEnemyData_WritesTheSheet()
         {
-            // Arrange
             var data = ScriptableObject.CreateInstance<EnemyDataSO>();
             data.hideFlags = HideFlags.HideAndDontSave;
 
             try
             {
-                // Act — visual y retrato en null: el wiring visual vive en CroupierVisualWiringTests.
+                // Visual y retrato en null: el wiring visual vive en CroupierVisualWiringTests.
                 CroupierAssetBuilder.PopulateEnemyData(data, _fire, null, null);
 
-                // Assert
                 Assert.AreEqual("boss.croupier", data.EntityId);
                 Assert.AreEqual(CroupierAssetBuilder.MaxHp, data.BaseHP,
                     "La vida que autora el builder dejó de ser la que termina en la ficha.");
-                // El par de melee espeja el disparo porque el jefe no tiene melee. Nadie lo lee en
-                // runtime, pero se lee a mano: con un número propio el bloque de stats miente sobre
-                // cuánto pega, y comparado contra otro jefe miente en la dirección que más engaña.
+                // El par de melee espeja el disparo porque el jefe no tiene melee: nadie lo lee en
+                // runtime, pero con un número propio el bloque de stats miente sobre cuánto pega.
                 Assert.AreEqual(CroupierAssetBuilder.ShotDamage, data.BaseAttack,
                     "El stat de ataque dejó de espejar el disparo, que es lo único con lo que pega.");
                 Assert.AreEqual(CroupierAssetBuilder.ShotRange, data.BaseAttackRange,
@@ -894,15 +682,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             }
         }
 
-        /// <summary>
-        /// La debilidad es el <b>Poker</b> y el multiplicador es la otra mitad de esa decisión: el
-        /// Poker sale ~2 de cada 10 tiradas gastando el pozo entero, así que el ×2 es lo que hace
-        /// que valga ir a buscarlo.
-        /// </summary>
-        /// <remarks>
-        /// Cruza las dos constantes contra lo escrito porque el modo de romper esto es tipear el
-        /// valor en <c>PopulateEnemyData</c>: ahí la ficha y el asset se van cada uno para su lado.
-        /// </remarks>
+        /// <summary>El Poker sale ~2 de cada 10 tiradas gastando el pozo entero: de ahí el ×2, que es lo
+        /// que hace que valga ir a buscarlo.</summary>
         [Test]
         public void Weakness_IsThePokerFromTheSheet_NotAHardcodedId()
         {
@@ -938,10 +719,6 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                 "AINode_Behavior en el árbol traería su propio alcance y su propio número de daño.");
         }
 
-        // =====================================================================
-        // Helpers
-        // =====================================================================
-
         private AINode_Alternate Alternate()
         {
             var alternate = Descendants(_root).OfType<AINode_Alternate>().SingleOrDefault();
@@ -950,7 +727,6 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             return alternate;
         }
 
-        /// <summary>Tiempo 1: dispara, huye y marca la banda.</summary>
         private AIDecisionNode DealBeat()
         {
             var beat = Alternate().Children
@@ -959,7 +735,6 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             return beat;
         }
 
-        /// <summary>Tiempo 2: prende lo que marcó el tiempo pasado y no hace nada más.</summary>
         private AIDecisionNode BurnBeat()
         {
             var beat = Alternate().Children
@@ -968,12 +743,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             return beat;
         }
 
-        /// <summary>
-        /// El <c>If</c> de cercanía que gatea el sorteo de la fuga de un tiempo del ciclo. Se filtra
-        /// por el <c>AINode_Random</c> del <c>Then</c> y no por el primer <c>If</c> del tiempo: el
-        /// tiempo de quema tiene además el <c>If</c> que ramifica la duración del fuego por fase, y
-        /// ése cuelga un <c>AINode_IgniteArea</c>.
-        /// </summary>
+        /// <summary>Se filtra por el <c>AINode_Random</c> del <c>Then</c> y no por el primer <c>If</c> del
+        /// tiempo: el de quema tiene además el <c>If</c> que ramifica la duración del fuego.</summary>
         private static AINode_If FleeGateOf(AIDecisionNode beat)
         {
             var gate = Descendants(beat).OfType<AINode_If>()
@@ -982,15 +753,11 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             return gate;
         }
 
-        /// <summary>El sorteo de la fuga de un tiempo del ciclo.</summary>
         private static AINode_Random FleeRouletteOf(AIDecisionNode beat) =>
             (AINode_Random)FleeGateOf(beat).Then;
 
-        /// <summary>
-        /// Todo hijo de un contenedor que la raíz tickea tiene que ser <c>Selector[paso, Wait]</c>.
-        /// No entra en los Selectors: lo que cuelga adentro ya está aislado (ver
-        /// <see cref="PlenoBlock_IsGuardedAsAWhole_NotStepByStep"/>).
-        /// </summary>
+        /// <summary>Todo hijo de un contenedor que la raíz tickea tiene que ser <c>Selector[paso, Wait]</c>.
+        /// No entra en los Selectors: lo que cuelga adentro ya está aislado.</summary>
         private static void AssertChildrenAreGuarded(IEnumerable<AIDecisionNode> children, string container)
         {
             foreach (var child in children)
@@ -1043,12 +810,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             return _root.Children.FindIndex(c => ReferenceEquals(Unwrap<AINode_If>(c), gate));
         }
 
-        /// <summary>
-        /// Índice del paso de la raíz que <b>es</b> un <typeparamref name="T"/>. Deliberadamente
-        /// superficial: con una búsqueda en profundidad, la ignición del tiempo de quema haría que el
-        /// paso del Alternate contara como "el paso que prende", y el orden que este archivo cuida
-        /// —quién detona lo avisado y dónde está— se volvería incomprobable.
-        /// </summary>
+        /// <summary>Deliberadamente superficial: en profundidad, la ignición del tiempo de quema haría
+        /// que el paso del Alternate contara como "el paso que prende".</summary>
         private int IndexOfStep<T>() where T : class =>
             _root.Children.FindIndex(c => Unwrap<T>(c) != null);
 

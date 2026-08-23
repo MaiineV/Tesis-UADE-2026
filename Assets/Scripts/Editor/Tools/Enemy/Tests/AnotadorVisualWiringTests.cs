@@ -6,19 +6,13 @@ using UnityEngine;
 
 namespace Rollgeon.Editor.Tools.Enemy.Tests
 {
-    /// <summary>
-    /// Vestuario de El Anotador validado <b>en memoria</b>: la ficha del wrapper, el mapeo de
-    /// materiales del arte a la paleta de hielo, y que los tres colores que pueden convivir en el
-    /// piso de esta pelea se lean distinto.
-    /// </summary>
+    /// <summary>Vestuario de El Anotador validado en memoria, incluyendo que los tres colores que pueden
+    /// convivir en el piso de esta pelea se lean distinto.</summary>
     [TestFixture]
     public class AnotadorVisualWiringTests
     {
-        /// <summary>
-        /// Los materiales embebidos en <c>ChestMimic_Model.fbx</c>, leídos del FBX. Están acá para que
-        /// una re-exportación del arte que renombre o agregue partes rompa el test en vez de dejar
-        /// medio jefe con el color de fábrica.
-        /// </summary>
+        /// <summary>Leídos del FBX para que una re-exportación que renombre o agregue partes rompa el test
+        /// en vez de dejar medio jefe con el color de fábrica.</summary>
         private static readonly string[] FbxMaterials =
         {
             "Enemy_:Wood1", "Enemy_:Frame1", "Enemy_:Flesh", "Enemy_:Theet",
@@ -26,10 +20,6 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         };
 
         private const float ChannelTolerance = 0.0001f;
-
-        // ======================================================================
-        // Ficha del wrapper
-        // ======================================================================
 
         [Test]
         public void WrapperSpec_NestsTheModel_NotTheChestMimicPrefab()
@@ -80,11 +70,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                 "El nombre del hijo de arte es el que busca la pasada de animator/paleta.");
         }
 
-        /// <summary>
-        /// El retinte del wrapper no sirve para este FBX (nombres con <c>:</c> y shader sin las
-        /// properties de paleta): si alguien lo vuelve a poblar, el repintado propio del builder
-        /// dejaría de ser la única fuente de verdad de los materiales del jefe.
-        /// </summary>
+        /// <summary>El retinte del wrapper no sirve para este FBX (nombres con <c>:</c> y shader sin las
+        /// properties de paleta): poblarlo le saca al builder el ser la única fuente de verdad.</summary>
         [Test]
         public void WrapperSpec_LeavesRetintsEmpty_BecauseTheBuilderPaintsTheArtItself()
         {
@@ -95,10 +82,6 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                 "(Enemy_:Wood1): el clon del retinte se llamaría Mat_Anotador_Enemy_:Wood1.mat y ':' " +
                 "es ilegal en un path de Windows. Ver AnotadorAssetBuilder.IcePaints.");
         }
-
-        // ======================================================================
-        // Nombres canónicos de material
-        // ======================================================================
 
         [Test]
         public void CanonicalMaterialName_StripsTheMayaNamespace()
@@ -126,10 +109,6 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             Assert.IsNull(AnotadorAssetBuilder.PaintKeyFor(null),
                 "Un slot de material vacío no pide pintura, no explota.");
         }
-
-        // ======================================================================
-        // Paleta de hielo
-        // ======================================================================
 
         [Test]
         public void EveryFbxMaterial_HasAPaint()
@@ -244,10 +223,6 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             }
         }
 
-        // ======================================================================
-        // Legibilidad de amenazas: tres marcas, tres colores
-        // ======================================================================
-
         [Test]
         public void ThePencilRing_DoesNotUseTheNodeDefaultViolet()
         {
@@ -277,10 +252,6 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                 "Un tint con alpha 0 pinta quads invisibles (ver HazardDefinitionSO.EffectiveOverlayTint).");
             Assert.Greater(AnotadorAssetBuilder.IceOverlayTint.a, 0f);
         }
-
-        // ======================================================================
-        // VFX de la estela
-        // ======================================================================
 
         [Test]
         public void IceBurst_NeverOverwritesItsOwnTemplate()
@@ -315,10 +286,6 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                 "El quad late en alpha; el burst es opaco — es el golpe, no el aviso.");
         }
 
-        // ======================================================================
-        // Retrato
-        // ======================================================================
-
         [Test]
         public void Portrait_IsTheFaceOfTheRigHeWears()
         {
@@ -347,10 +314,6 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                 "BossVisualWrapperBuilder fuerza identidad en el hijo de arte y el root del FBX mira " +
                 "-Z: sin los 180° el mímico entra de espaldas.");
         }
-
-        // ======================================================================
-        // Helpers
-        // ======================================================================
 
         private static IEnumerable<Color> Colors(MaterialRetint paint)
         {

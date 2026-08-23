@@ -10,10 +10,6 @@ using Rollgeon.PreConditions.Concretes;
 
 namespace Rollgeon.Combat.AI.Tests
 {
-    /// <summary>
-    /// Tests del cubilete de La Generala (<see cref="AINode_GeneralaCupSlam"/>): el golpe melee
-    /// directo con el que cobra estar pegado a ella cuando tira.
-    /// </summary>
     [TestFixture]
     public class GeneralaCupSlamTests
     {
@@ -55,21 +51,14 @@ namespace Rollgeon.Combat.AI.Tests
             EventManager.ResetEventDictionary();
         }
 
-        // ======================================================================
-        // Alcance
-        // ======================================================================
-
         [Test]
         public void CupSlam_ChargesTheFullToll_ToThePlayerStandingNextToHer()
         {
-            // Arrange
             PlacePlayer(5, 4);
             var node = NewNode();
 
-            // Act
             var result = node.Tick(NewContext());
 
-            // Assert
             Assert.AreEqual(AIResult.Succeeded, result);
             Assert.AreEqual(1, _pipeline.Resolved.Count);
             Assert.AreEqual(CupDamage, _pipeline.Resolved[0].BaseDamage);
@@ -81,14 +70,11 @@ namespace Rollgeon.Combat.AI.Tests
         [Test]
         public void CupSlam_DoesNotReach_ThePlayerTwoTilesAway()
         {
-            // Arrange — a un paso de la mesa, que es la distancia desde la que no se rompe nada.
             PlacePlayer(5, 5);
             var node = NewNode();
 
-            // Act
             var result = node.Tick(NewContext());
 
-            // Assert
             Assert.AreEqual(AIResult.Failed, result);
             CollectionAssert.IsEmpty(_pipeline.Resolved);
         }
@@ -96,15 +82,13 @@ namespace Rollgeon.Combat.AI.Tests
         [Test]
         public void CupSlam_WithTheDefaultMetric_DoesNotReachTheDiagonal()
         {
-            // Arrange — la diagonal es también la casilla desde la que el jugador NO puede pegarle:
+            // La diagonal es también la casilla desde la que el jugador NO puede pegarle:
             // su Base Attack es Range 1 en Manhattan. El cubilete cubre exactamente lo mismo.
             PlacePlayer(6, 4);
             var node = NewNode();
 
-            // Act
             var result = node.Tick(NewContext());
 
-            // Assert
             Assert.AreEqual(AIResult.Failed, result);
             CollectionAssert.IsEmpty(_pipeline.Resolved);
         }
@@ -112,34 +96,25 @@ namespace Rollgeon.Combat.AI.Tests
         [Test]
         public void CupSlam_WithChebyshev_CoversTheWholeThreeByThree()
         {
-            // Arrange — con la métrica Chebyshev el cubilete cubre el 3×3 entero.
             PlacePlayer(6, 4);
             var node = NewNode();
             node.Metric = DistanceMetric.Chebyshev;
 
-            // Act
             var result = node.Tick(NewContext());
 
-            // Assert
             Assert.AreEqual(AIResult.Succeeded, result);
             Assert.AreEqual(CupDamage, _pipeline.Resolved[0].BaseDamage);
         }
 
-        // ======================================================================
-        // Compás
-        // ======================================================================
-
         [Test]
         public void CupSlam_ChargesOnEveryRoll_WhileThePlayerStaysGlued()
         {
-            // Arrange — el cubilete no tiene compás par/impar: quedarse pegado cuesta todos los turnos.
+            // El cubilete no tiene compás par/impar: quedarse pegado cuesta todos los turnos.
             PlacePlayer(5, 4);
             var node = NewNode();
 
-            // Act
             for (int round = 1; round <= 3; round++) node.Tick(NewContext());
 
-            // Assert
             Assert.AreEqual(3, _pipeline.Resolved.Count,
                 "Tres tiradas pegado a la mesa son tres cubiletes.");
         }
@@ -147,48 +122,34 @@ namespace Rollgeon.Combat.AI.Tests
         [Test]
         public void CupSlam_AnnouncesNothing_TheOnlyWarningIsTheDistance()
         {
-            // Arrange
             PlacePlayer(5, 4);
             var node = NewNode();
 
-            // Act
             node.Tick(NewContext());
 
-            // Assert — el golpe entra en el acto: no deja área pendiente que cobrar el turno que viene.
             CollectionAssert.IsEmpty(_threat.SnapshotPending(),
                 "El cubilete es melee directo — si marca un área, se convirtió en dos golpes.");
         }
 
-        // ======================================================================
-        // Contexto incompleto
-        // ======================================================================
-
         [Test]
         public void CupSlam_WithoutADamagePipeline_FailsInsteadOfThrowing()
         {
-            // Arrange
             PlacePlayer(5, 4);
             var context = NewContext();
             context.DamagePipeline = null;
 
-            // Act + Assert
             Assert.AreEqual(AIResult.Failed, NewNode().Tick(context));
         }
 
         [Test]
         public void CupSlam_WithThePlayerOffTheGrid_Fails()
         {
-            // Arrange — el jugador no está registrado en la grilla (sala sin cargar, entity muerta).
+            // El jugador no está registrado en la grilla (sala sin cargar, entity muerta).
             var node = NewNode();
 
-            // Act + Assert
             Assert.AreEqual(AIResult.Failed, node.Tick(NewContext()));
             CollectionAssert.IsEmpty(_pipeline.Resolved);
         }
-
-        // ======================================================================
-        // Helpers
-        // ======================================================================
 
         private void PlacePlayer(int x, int y) => _grid.Register(_player, new GridCoord(x, y));
 

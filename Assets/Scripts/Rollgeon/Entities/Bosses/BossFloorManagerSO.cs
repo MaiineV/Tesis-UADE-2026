@@ -3,28 +3,11 @@ using UnityEngine;
 
 namespace Rollgeon.Entities.Bosses
 {
-    /// <summary>
-    /// Datos estaticos del boss del piso 1 — "Gerente de Piso" (Content#0103). Hereda de
-    /// <see cref="Rollgeon.Entities.EnemyDataSO"/> y agrega los campos Inspector que
-    /// configuran la mecanica distintiva: bloquear un combo del ContractSheet del jugador
-    /// cada N turnos, por D turnos, + barra de energia interna que al llenarse sube la
-    /// chance de doble dano.
-    /// </summary>
-    /// <remarks>
-    /// <para>
-    /// Plan §4.1. Todos los valores editables desde el Inspector — DoD #103 exige que
-    /// nada de esto sea hardcoded.
-    /// </para>
-    /// </remarks>
     [CreateAssetMenu(
         menuName = "Rollgeon/Entities/Bosses/Floor Manager",
         fileName = "BossFloorManager")]
     public class BossFloorManagerSO : EnemyDataSO
     {
-        // -----------------------------------------------------------------
-        // Combo block (§4.1 / §6.2)
-        // -----------------------------------------------------------------
-
         [Title("Boss — Combo Block")]
         [MinValue(1)]
         [Tooltip("Cada cuantos turnos del Boss se dispara un nuevo bloqueo.")]
@@ -33,10 +16,6 @@ namespace Rollgeon.Entities.Bosses
         [MinValue(1)]
         [Tooltip("Duracion (en turnos del jugador) que dura un bloqueo antes de expirar.")]
         public int ComboBlockDurationTurns = 2;
-
-        // -----------------------------------------------------------------
-        // Energy buildup + double damage (§4.4 / §6.3)
-        // -----------------------------------------------------------------
 
         [Title("Boss — Energy Buildup")]
         [MinValue(1)]
@@ -54,10 +33,6 @@ namespace Rollgeon.Entities.Bosses
         [Range(0f, 1f)]
         [Tooltip("Probabilidad de doble dano cuando la energia del Boss esta al maximo. Spec #103 default 0.5.")]
         public float DoubleDamageChanceWhenEnergyFull = 0.5f;
-
-        // -----------------------------------------------------------------
-        // OnValidate — warning (no error) si duration > interval (overlap entre bloqueos).
-        // -----------------------------------------------------------------
 
         private void OnValidate()
         {

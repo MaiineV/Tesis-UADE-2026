@@ -8,14 +8,9 @@ using UnityEngine;
 namespace Rollgeon.Combat.Cashier
 {
     /// <summary>
-    /// Pinta el lado del mostrador que cobra <see cref="ICashierCounterTollService.TollDamage"/> a
-    /// quien cierre el turno ahí.
-    /// </summary>
-    /// <remarks>
     /// Lee posiciones vivas, igual que el cobro: un overlay horneado al armar mentiría en cuanto el
-    /// jefe se mueve. La fila del mostrador no se pinta porque
-    /// <see cref="CashierCounterTollService.IsSameSide"/> devuelve <c>false</c> con <c>side == 0</c>.
-    /// </remarks>
+    /// jefe se mueve. La fila del mostrador no se pinta porque <c>IsSameSide</c> es false en 0.
+    /// </summary>
     public sealed class CashierCounterTollOverlay : IDisposable
     {
         /// <summary>Verde fieltro de mesa, distinto del naranja del telegraph.</summary>
@@ -38,15 +33,13 @@ namespace Rollgeon.Combat.Cashier
             _onTurnStarted = Repaint;
             _onScopeEnded = ClearExternal;
 
-            // Por turno y por ronda, no por movimiento: el jefe cambia de lado dentro de su propio
-            // turno y el OnTurnStarted del jugador ya lo agarra actualizado.
+            // Por turno y por ronda, no por movimiento: el jefe cambia de lado dentro de su turno.
             EventManager.Subscribe(EventName.OnTurnQueueBuilt, _onTurnQueueBuilt);
             EventManager.Subscribe(EventName.OnTurnStarted, _onTurnStarted);
             EventManager.Subscribe(EventName.OnCombatEnd, _onScopeEnded);
             EventManager.Subscribe(EventName.OnRunEnd, _onScopeEnded);
         }
 
-        /// <summary>Devuelve el registrado o crea y registra uno nuevo (Global).</summary>
         public static CashierCounterTollOverlay ResolveOrCreate()
         {
             if (ServiceLocator.TryGetService<CashierCounterTollOverlay>(out var existing) && existing != null)
@@ -57,7 +50,6 @@ namespace Rollgeon.Combat.Cashier
             return created;
         }
 
-        /// <summary>Fuente del overlay derivada del jefe. Pública para asserts de tests.</summary>
         public static Guid OverlayGuid(Guid bossGuid)
         {
             if (bossGuid == Guid.Empty) return Guid.Empty;
@@ -67,14 +59,6 @@ namespace Rollgeon.Combat.Cashier
             return new Guid(bytes);
         }
 
-        // ======================================================================
-        // Pintado
-        // ======================================================================
-
-        /// <summary>
-        /// Recalcula y repinta el lado del jefe. Público para que los tests no dependan de qué
-        /// evento lo dispara.
-        /// </summary>
         public void Repaint(params object[] args)
         {
             if (_disposed) return;
@@ -90,7 +74,6 @@ namespace Rollgeon.Combat.Cashier
             _paintedFor = source;
         }
 
-        /// <summary>Baja el overlay. Idempotente.</summary>
         public void Clear()
         {
             if (_paintedFor == Guid.Empty) return;
@@ -102,10 +85,7 @@ namespace Rollgeon.Combat.Cashier
             _paintedFor = Guid.Empty;
         }
 
-        /// <summary>
-        /// Las casillas del lado del jefe, o <c>false</c> si no hay nada que pintar (peaje sin armar,
-        /// jefe muerto, sala sin bounds).
-        /// </summary>
+        /// <summary><c>false</c> si no hay nada que pintar (peaje sin armar, jefe muerto, sala sin bounds).</summary>
         public static bool TryResolveSide(out Guid bossGuid, out HashSet<GridCoord> tiles)
         {
             bossGuid = Guid.Empty;
@@ -118,8 +98,7 @@ namespace Rollgeon.Combat.Cashier
 
             if (!ServiceLocator.TryGetService<IGridManager>(out var grid) || grid == null) return false;
 
-            // Sin coordenada del jefe no hay lado: CombatDeathWatcher lo saca de la grilla al morir,
-            // así que esto es también lo que apaga el overlay solo al terminar la pelea.
+            // Sin coordenada del jefe no hay lado: es también lo que apaga el overlay al morir.
             bossGuid = toll.BossGuid;
             if (bossGuid == Guid.Empty || !grid.TryGetPosition(bossGuid, out var bossCoord)) return false;
 
@@ -131,10 +110,6 @@ namespace Rollgeon.Combat.Cashier
             }
             return tiles.Count > 0;
         }
-
-        // ======================================================================
-        // Lifecycle
-        // ======================================================================
 
         public void Dispose()
         {

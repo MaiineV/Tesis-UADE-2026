@@ -12,14 +12,10 @@ using UnityEngine;
 namespace Rollgeon.Combat.AI.Bosses.Croupier
 {
     /// <summary>
-    /// "Hagan sus apuestas": el Croupier canta <see cref="ICroupierWheelService.NumbersPerTurn"/>
-    /// número(s) del 1 al 6 y los deja flotando sobre él. Sólo los elige — marcar el sector y
-    /// confiscar el dado son otros dos nodos que leen de acá.
+    /// Sólo elige los números: marcar el sector y confiscar el dado son otros dos nodos que leen de
+    /// acá. <see cref="CantoFeedbackId"/> vacío ⇒ el id canónico: Odin no corre field initializers,
+    /// así que un <c>ED_Boss_Croupier</c> ya autorado no trae el campo.
     /// </summary>
-    /// <remarks>
-    /// <see cref="CantoFeedbackId"/> vacío ⇒ el id canónico (<see cref="BossFeedbackIds"/>): Odin no
-    /// corre field initializers, así que un <c>ED_Boss_Croupier</c> ya autorado no trae el campo.
-    /// </remarks>
     [Serializable, HideReferenceObjectPicker]
     public sealed class AINode_SpinWheel : AIActionNode, IAIOpeningNode
     {
@@ -48,10 +44,7 @@ namespace Rollgeon.Combat.AI.Bosses.Croupier
 
         public override string NodeName => "Spin Wheel (Croupier)";
 
-        /// <summary>
-        /// Camino síncrono (EditMode / escenas sin <c>CoroutineHost</c>): sortea y publica en el
-        /// mismo tick. No hay dónde esperar una animación, y bloquear acá colgaría los tests.
-        /// </summary>
+        /// <summary>Camino síncrono (EditMode / escenas sin <c>CoroutineHost</c>): bloquear acá colgaría los tests.</summary>
         public override AIResult Tick(AIContext context)
         {
             if (!TryPrepare(context, out var wheel, out var numbers)) return AIResult.Failed;
@@ -62,12 +55,9 @@ namespace Rollgeon.Combat.AI.Bosses.Croupier
 
         /// <summary>
         /// Canta por el camino síncrono antes del primer turno: el nodo de confiscación lee el número
-        /// cantado y <c>Bind</c> —que pasa por acá— es lo que instala la Represalia de mesa.
+        /// y <c>Bind</c> —que pasa por acá— instala la Represalia. Sin animación: la apertura corre
+        /// dentro del armado de la cola y retener el turno ahí cuelga el arranque del combate.
         /// </summary>
-        /// <remarks>
-        /// Sin animación: la apertura corre dentro del armado de la cola y retener el turno ahí cuelga
-        /// el arranque del combate.
-        /// </remarks>
         public void Opening(AIContext context) => Tick(context);
 
         public override IEnumerator TickCoroutine(AIContext context, Action<AIResult> onResult)
@@ -89,15 +79,11 @@ namespace Rollgeon.Combat.AI.Bosses.Croupier
             var canto = PlayCanto(context, singOnce);
             while (canto.MoveNext()) yield return canto.Current;
 
-            // Red de seguridad: sin feedback service o con la secuencia cortada, el número igual sale
-            // — los nodos que siguen en el Sequence lo dan por hecho.
+            // Red de seguridad: el número igual sale — los nodos que siguen lo dan por hecho.
             singOnce();
             onResult?.Invoke(AIResult.Succeeded);
         }
 
-        // ---- pasos compartidos por los dos caminos -------------------------
-
-        /// <summary>Resuelve el servicio y sortea los números, sin publicar nada.</summary>
         private bool TryPrepare(AIContext context, out ICroupierWheelService wheel, out List<int> numbers)
         {
             wheel = null;
@@ -147,7 +133,6 @@ namespace Rollgeon.Combat.AI.Bosses.Croupier
                 TargetGuid = context.PlayerGuid,
             }, () => turn?.OnFeedbackComplete());
 
-            // Sin TurnManager no hay gate que esperar: la anim corre igual, sin sincronizar el número.
             if (turn == null || !turn.IsWaitingForFeedback) yield break;
 
             bool cantoFired = string.IsNullOrEmpty(CantoEventKey);
@@ -169,10 +154,7 @@ namespace Rollgeon.Combat.AI.Bosses.Croupier
             }
         }
 
-        /// <summary>
-        /// <paramref name="count"/> números distintos entre sí de 1..6: dos números iguales en fase 2
-        /// harían caer un solo sector.
-        /// </summary>
+        /// <summary><paramref name="count"/> números distintos entre sí de 1..6: dos iguales en fase 2 harían caer un solo sector.</summary>
         private List<int> PickNumbers(AIContext context, int count)
         {
             int total = ThreatAreaShape.RoomSectorCount;

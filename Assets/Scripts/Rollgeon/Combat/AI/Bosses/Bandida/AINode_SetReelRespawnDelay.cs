@@ -5,9 +5,7 @@ using UnityEngine;
 
 namespace Rollgeon.Combat.AI.Bosses.Bandida
 {
-    /// <summary>
-    /// Pisa el delay de reposición de los rodillos (Fase 2 lo baja a 1 turno).
-    /// </summary>
+    /// <summary>Pisa el delay de reposición de los rodillos (Fase 2 lo baja a 1 turno).</summary>
     [Serializable, HideReferenceObjectPicker]
     public sealed class AINode_SetReelRespawnDelay : AIActionNode
     {

@@ -5,10 +5,7 @@ using UnityEngine;
 
 namespace Rollgeon.Combat.AI.Bosses.Tahur
 {
-    /// <summary>
-    /// "Se voltea la carta" — setup de Fase 2 del Tahúr: el cartel pasa de PIDE a LEE (la mano
-    /// cantada es la que NO hay que armar) y el pozo deja de poder volver a 0.
-    /// </summary>
+    /// <summary>Setup de Fase 2: el cartel pasa de PIDE a LEE (la mano cantada es la que NO hay que armar) y el pozo deja de poder volver a 0.</summary>
     [Serializable, HideReferenceObjectPicker]
     public sealed class AINode_TahurFlipCard : AIActionNode
     {

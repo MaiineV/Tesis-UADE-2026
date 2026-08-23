@@ -13,13 +13,9 @@ using UnityEngine;
 namespace Rollgeon.Combat.AI.Decisions
 {
     /// <summary>
-    /// El lápiz del Anotador (piso 2): daño melee <b>directo</b> —sin marca y sin área— contra el
-    /// jugador que esté pegado cuando le toca el turno.
-    /// </summary>
-    /// <remarks>
     /// Va antes del repliegue en el Sequence: la distancia se mide al empezar el turno del jefe, y
     /// después de <see cref="AINode_KeepDistance"/> el lápiz no cobraría nunca.
-    /// </remarks>
+    /// </summary>
     [Serializable, HideReferenceObjectPicker]
     public sealed class AINode_AnotadorPencil : AIActionNode
     {
@@ -38,19 +34,12 @@ namespace Rollgeon.Combat.AI.Decisions
         [Tooltip("Tipo de ataque del DamageContext.")]
         public AttackKind Kind = AttackKind.BasicAttack;
 
-        /// <summary>
-        /// Event key del Animation Event que marca el frame en que el lápiz entra. Const y no campo
-        /// autorable: un campo nuevo nace vacío en los <c>ED_Boss_*</c> ya serializados (Odin no corre
-        /// field initializers).
-        /// </summary>
+        /// <summary>Const y no campo autorable: un campo nuevo nace vacío en los <c>ED_Boss_*</c> ya serializados (Odin no corre field initializers).</summary>
         private const string ImpactEventKey = "hit";
 
         public override string NodeName => $"Anotador — Lápiz ({Damage})";
 
-        /// <summary>
-        /// Camino síncrono (EditMode / escenas sin <c>CoroutineHost</c>): cobra el lápiz en el acto,
-        /// sin presentación — bloquear acá colgaría el runner de tests.
-        /// </summary>
+        /// <summary>Camino síncrono (EditMode / escenas sin <c>CoroutineHost</c>): bloquear acá colgaría el runner de tests.</summary>
         public override AIResult Tick(AIContext context)
         {
             if (!CanStab(context)) return AIResult.Failed;
@@ -59,10 +48,6 @@ namespace Rollgeon.Combat.AI.Decisions
             return AIResult.Succeeded;
         }
 
-        /// <summary>
-        /// Camino de play mode: estocada + impacto sobre el jugador, con el daño aterrizado en el
-        /// frame del golpe y el turno retenido hasta que el clip termina.
-        /// </summary>
         public override IEnumerator TickCoroutine(AIContext context, Action<AIResult> onResult)
         {
             if (!CanStab(context))
@@ -89,12 +74,6 @@ namespace Rollgeon.Combat.AI.Decisions
             onResult?.Invoke(AIResult.Succeeded);
         }
 
-        // ---- pasos compartidos por los dos caminos -------------------------
-
-        /// <remarks>
-        /// Incluye el chequeo del pipeline y del daño: separarlos dejaría al camino coroutine
-        /// reproduciendo la estocada de un golpe que nunca iba a cobrar.
-        /// </remarks>
         private bool CanStab(AIContext context)
         {
             if (context?.Grid == null) return false;
@@ -173,10 +152,7 @@ namespace Rollgeon.Combat.AI.Decisions
             }
         }
 
-        /// <summary>
-        /// VFX y Feel del impacto: arrancan en el frame del golpe y bloquean la secuencia, para atar
-        /// el chispazo al lápiz en vez de al inicio del clip.
-        /// </summary>
+        /// <summary>Arrancan en el frame del golpe, para atar el chispazo al lápiz en vez de al inicio del clip.</summary>
         private static FeedbackSequenceStep ImpactStep(string feedbackId) => new FeedbackSequenceStep
         {
             Source = StepSource.FeedbackRef,
@@ -187,10 +163,7 @@ namespace Rollgeon.Combat.AI.Decisions
             BlockSequence = true,
         };
 
-        /// <summary>
-        /// Gira al jefe hacia el jugador antes de la estocada: el lápiz sale después del repliegue
-        /// del turno anterior, así que sin esto apuñala mirando hacia donde huyó.
-        /// </summary>
+        /// <summary>El lápiz sale después del repliegue del turno anterior: sin esto apuñala mirando hacia donde huyó.</summary>
         private static void FaceTarget(AIContext context)
         {
             if (!ServiceLocator.TryGetService<IEntityVisualService>(out var visuals) || visuals == null) return;

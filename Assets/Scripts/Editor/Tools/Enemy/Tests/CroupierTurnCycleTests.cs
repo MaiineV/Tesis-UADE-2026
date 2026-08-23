@@ -24,46 +24,23 @@ using UnityEngine.TestTools;
 
 namespace Rollgeon.Editor.Tools.Enemy.Tests
 {
-    /// <summary>
-    /// Corre el árbol REAL del Croupier turno a turno, con los servicios reales de amenaza,
-    /// casillas y movimiento. Lo que cubre es el <b>cruce del 50%</b>: cuántos avisos quedan
-    /// pendientes al cerrar ese turno y cuántas detonaciones caen al siguiente.
-    /// </summary>
-    /// <remarks>
-    /// <para>
-    /// <c>CroupierPhaseWiringTests</c> mira la forma del árbol: que el descarte exista, que tenga el
-    /// canal correcto y que caiga entre el teleport y el marcado. Nada de eso demuestra el
-    /// resultado, que es lo que el jugador reportó: "prepara 2 ataques y después ejecuta 2". Acá se
-    /// tickea y se cuenta.
-    /// </para>
-    /// <para>
-    /// El cruce cae en un turno cualquiera del ciclo de dos tiempos, así que hay un caso por beat:
-    /// sobre el reparto (T1) hay una banda recién marcada que descartar, y sobre la quema (T2) no
-    /// hay ninguna porque ese mismo turno la consumió. Los dos tienen que terminar con
-    /// <b>exactamente un</b> aviso pendiente.
-    /// </para>
-    /// </remarks>
+    /// <summary>Corre el árbol REAL del Croupier turno a turno con los servicios reales.
+    /// <c>CroupierPhaseWiringTests</c> mira la forma del árbol y eso no demuestra el resultado: acá
+    /// se tickea y se cuenta cuántos avisos quedan pendientes y cuántas detonaciones caen.</summary>
     [TestFixture]
     public class CroupierTurnCycleTests
     {
-        /// <summary>La sala del jefe. El centro (5,5) es donde lo planta el armado del Pleno.</summary>
         private const int RoomSide = 11;
 
-        /// <summary>
-        /// Centro de <c>NavGraph.Rect(11,11)</c>, que es 0-based: (5,5). Sale del lado de la sala
-        /// del fixture y no de la de producción — el nodo resuelve el centro del bounding box de
-        /// lo que haya cargado.
-        /// </summary>
+        /// <summary>Centro de <c>NavGraph.Rect(11,11)</c>, que es 0-based: (5,5). Sale del lado de la
+        /// sala del fixture porque el nodo resuelve el centro del bounding box de lo que haya cargado.</summary>
         private static readonly GridCoord RoomCentre = new GridCoord(RoomSide / 2, RoomSide / 2);
 
         private static readonly GridCoord BossTile = new GridCoord(8, 5);
 
-        /// <summary>
-        /// Manhattan 5 del jefe, o sea justo el <see cref="CroupierAssetBuilder.FleeTriggerRange"/>:
-        /// el gate de cercanía pasa (es inclusivo) y T1 corre entero — dispara, salta al borde y
-        /// marca el cono. En la fila del jefe es la única X que además cae fuera del hueco 3×3 del
-        /// Pleno, así que la ignición del paño le sigue cobrando.
-        /// </summary>
+        /// <summary>Manhattan 5 del jefe, justo el <see cref="CroupierAssetBuilder.FleeTriggerRange"/>:
+        /// el gate de cercanía pasa (es inclusivo) y T1 corre entero. Es además la única X de la fila
+        /// que cae fuera del hueco 3×3 del Pleno, así que la ignición del paño le sigue cobrando.</summary>
         private static readonly GridCoord PlayerTile = new GridCoord(3, 5);
 
         /// <summary>HP con el que los dos gates (70% y 50%) evalúan true.</summary>
@@ -108,9 +85,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             _pipeline = new SpyDamagePipeline();
             ServiceLocator.AddService<IDamagePipeline>(_pipeline, ServiceScope.Global);
 
-            // Registrado ANTES del primer marcado: ThreatTelegraphOverlay.ResolveOrCreate devuelve
-            // lo que ya esté en el locator, así que el spy evita que el fixture pare GameObjects de
-            // overlay en EditMode y además deja observar qué se apagó.
+            // Registrado ANTES del primer marcado: ThreatTelegraphOverlay.ResolveOrCreate devuelve lo
+            // que ya esté en el locator, así que el spy evita parar GameObjects en EditMode.
             _overlay = new SpyThreatOverlay();
             ServiceLocator.AddService<IThreatOverlayService>(_overlay, ServiceScope.Global);
 
@@ -165,20 +141,6 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             _created.Clear();
         }
 
-        // =====================================================================
-        // El cruce del 50% sobre el tiempo de reparto — el caso reportado
-        // =====================================================================
-
-        /// <summary>
-        /// El turno que cruza el 50% cayendo en T1 cierra con <b>un</b> aviso pendiente, no dos: el
-        /// Pleno reemplaza a la banda que ese mismo turno acababa de marcar.
-        /// </summary>
-        /// <remarks>
-        /// Es el bug tal como se reportó: la banda marcada y el paño marcado prendidos a la vez, y
-        /// al turno siguiente las dos detonaciones. El aviso de la banda vale menos que nada acá —
-        /// el Pleno prende todo salvo el hueco, así que su terreno ya arde y su beat se absorbe sin
-        /// mostrar nada.
-        /// </remarks>
         [Test]
         public void CrossingFiftyOnTheDealBeat_LeavesOnlyThePlenoQueued()
         {
@@ -199,14 +161,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                 "detonar nunca, que se lee igual de mal que los dos avisos.");
         }
 
-        /// <summary>
-        /// Y el turno siguiente cobra <b>una</b> detonación: prende el paño y nada más.
-        /// </summary>
-        /// <remarks>
-        /// La otra mitad de lo reportado ("después ejecuta 2 ataques"). Además fija que el tiempo de
-        /// quema, que se quedó sin banda que consumir, no corte el turno: <c>AINode_IgniteArea</c>
-        /// sin marca pendiente sale por <c>Succeeded</c>, no por <c>Failed</c>.
-        /// </remarks>
+        /// <summary><c>AINode_IgniteArea</c> sin marca pendiente sale por <c>Succeeded</c>, no por
+        /// <c>Failed</c>: el tiempo de quema se quedó sin banda y no puede cortar el turno.</summary>
         [Test]
         public void TheTurnAfterTheCrossing_DetonatesThePlenoAndNothingElse()
         {
@@ -232,19 +188,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             Assert.IsFalse(_threat.HasPending(_boss), "Apareció una banda pendiente de la nada.");
         }
 
-        // =====================================================================
-        // El cruce sobre el tiempo de quema
-        // =====================================================================
-
-        /// <summary>
-        /// Cruzando el 50% en T2 no hay banda que descartar —ese mismo turno la consumió la
-        /// quema—, y el descarte de más no puede tocar el aviso del Pleno.
-        /// </summary>
-        /// <remarks>
-        /// El caso que hace que el paso no pueda devolver <c>Failed</c> cuando no encuentra nada: va
-        /// desnudo dentro del Sequence del armado, así que un Failed acá corta el turno antes del
-        /// marcado y deja a <c>AINode_Once</c> sin latchear.
-        /// </remarks>
+        /// <summary>El descarte va desnudo dentro del Sequence del armado: si devolviera <c>Failed</c> al
+        /// no encontrar nada, cortaría el turno antes del marcado y dejaría a <c>Once</c> sin latchear.</summary>
         [Test]
         public void CrossingFiftyOnTheBurnBeat_BurnsTheBandAndStillQueuesThePleno()
         {
@@ -268,30 +213,16 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                 "Quedó una banda pendiente en el turno de quema, que es el que las consume.");
         }
 
-        // =====================================================================
-        // El armado que no se completa
-        // =====================================================================
-
-        /// <summary>
-        /// Si el teleport al centro falla, la banda <b>conserva</b> su aviso: el descarte va detrás
-        /// del único paso del bloque que puede fallar de verdad.
-        /// </summary>
-        /// <remarks>
-        /// Lo que esto protege es el peor resultado posible del turno: descartar el aviso del ciclo
-        /// y no dejar nada en su lugar. El jugador terminaría el turno sin ninguna amenaza dibujada
-        /// y el jefe sin nada que cobrar al siguiente — un turno en blanco para los dos, sin un solo
-        /// error en consola. Mover el descarte arriba del teleport es todo lo que hace falta para
-        /// producirlo.
-        /// </remarks>
+        /// <summary>El descarte va detrás del único paso del bloque que puede fallar de verdad: arriba
+        /// del teleport, un armado abortado deja el turno sin ninguna amenaza dibujada.</summary>
         [Test]
         public void WhenTheTeleportFails_TheBandKeepsItsWarningAndThePlenoRetriesLater()
         {
             SetBossHp(PhaseTwoHp);
             var root = CroupierAssetBuilder.BuildAIRoot(_fire);
 
-            // Sin servicio de movimiento el teleport al centro falla avisando, que es el modo de
-            // fallo que el propio nodo documenta. El salto de T1 también se cae, en silencio y
-            // aislado en su Selector, así que el beat sigue y la banda igual se marca.
+            // Sin servicio de movimiento el teleport al centro falla avisando. El salto de T1 también
+            // se cae, en silencio y aislado en su Selector, así que el beat sigue y la banda se marca.
             LogAssert.Expect(LogType.Warning, new Regex("AINode_TeleportToRoomCenter"));
             root.Tick(NewContextWithoutMovement(roundIndex: 1));
 
@@ -313,20 +244,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                 "El armado no se reintentó: el umbral del 50% se perdió para toda la pelea.");
         }
 
-        // =====================================================================
-        // El salto de todos los turnos
-        // =====================================================================
-
-        /// <summary>
-        /// Los <b>dos</b> tiempos sortean su fuga con el mismo gate de cercanía, y ninguna de las
-        /// dos salidas que mueven al jefe lleva tope de aterrizaje.
-        /// </summary>
-        /// <remarks>
-        /// Sin tope, cuando el sorteo dice borde el jefe aterriza de verdad lejos. Lo que sostiene
-        /// que la pelea sea ganable no es un techo a dónde cae, sino que el sorteo a veces no diga
-        /// borde: el jugador amenaza 8 casillas por turno, así que un salto sin tope siempre lo deja
-        /// fuera de alcance.
-        /// </remarks>
+        /// <summary>Lo que sostiene que la pelea sea ganable no es un techo a dónde cae el salto, sino
+        /// que el sorteo a veces no diga borde: sin tope, el salto siempre lo deja fuera de alcance.</summary>
         [Test]
         public void BothBeats_GateTheirJumpOnProximity_AndNeitherIsCapped()
         {
@@ -356,9 +275,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                     "El radio se mide en Manhattan, igual que el alcance de los ataques.");
             }
 
-            // Y salta de verdad los dos turnos, no sólo en la forma del árbol. El jugador se vuelve
-            // a acercar entre tiempos porque el salto de T1 lo deja fuera del radio: sin eso, T2 se
-            // quedaría quieto y estaríamos midiendo el gate en vez del salto.
+            // El jugador se vuelve a acercar entre tiempos porque el salto de T1 lo deja fuera del
+            // radio: sin eso T2 se quedaría quieto y estaríamos midiendo el gate en vez del salto.
             var start = PositionOf(_boss);
             root.Tick(NewContext(roundIndex: 1));
             var afterDeal = PositionOf(_boss);
@@ -370,10 +288,6 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                 "El tiempo de quema dejó al jefe donde estaba.");
         }
 
-        /// <summary>
-        /// Con el jugador fuera del radio el jefe se queda, pero el resto del tiempo tiene que
-        /// correr igual: el <c>Else</c> de Wait está justamente para que no se coma el turno.
-        /// </summary>
         [Test]
         public void WithThePlayerFarAway_TheBossHoldsHisGround_AndStillShoots()
         {
@@ -391,11 +305,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                 "que cobrar igual — si no, el Else del gate está devolviendo Failed.");
         }
 
-        /// <summary>
-        /// El ciclo no se desincroniza cuando el gate no pasa. Un <c>Failed</c> abortaría el
-        /// <c>Sequence</c> del tiempo mientras el <c>Alternate</c> avanza el índice igual, y el jefe
-        /// pasaría a repartir dos veces seguidas.
-        /// </summary>
+        /// <summary>Un <c>Failed</c> abortaría el <c>Sequence</c> del tiempo mientras el <c>Alternate</c>
+        /// avanza el índice igual, y el jefe pasaría a repartir dos veces seguidas.</summary>
         [Test]
         public void WithThePlayerFarAway_TheCycleKeepsAlternating()
         {
@@ -413,15 +324,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                 "seguidas en vez de prender lo que había marcado.");
         }
 
-        /// <summary>
-        /// El radio que dispara la fuga tiene que quedar por debajo de lo que el jugador alcanza en
-        /// un turno: es lo que hace ganable la pelea ahora que el salto no tiene tope.
-        /// </summary>
-        /// <remarks>
-        /// Es una comparación de constantes y no un tick a propósito: el número del kit del jugador
-        /// no vive en este repo como una constante que se pueda leer, así que lo que se pinea es la
-        /// relación.
-        /// </remarks>
+        /// <summary>Comparación de constantes y no un tick a propósito: el alcance del kit del jugador no
+        /// vive en el repo como una constante legible, así que lo que se pinea es la relación.</summary>
         [Test]
         public void TheFleeRadius_StaysBelowWhatThePlayerCanReachInATurn()
         {
@@ -436,15 +340,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                 "afuera del radio, y la vida del jefe pasa a ser infinita.");
         }
 
-        /// <summary>
-        /// El fuego cae en las casillas que se avisaron, aunque entre el aviso y la ignición el
-        /// jefe haya saltado dos veces.
-        /// </summary>
-        /// <remarks>
-        /// <c>AINode_IgniteArea</c> consume la marca en vez de recalcular la forma. Recalculándola
-        /// —la banda está anclada en el jefe y apunta al jugador— el fuego caería desde la casilla
-        /// nueva y el aviso que el jugador leyó todo el turno no valdría nada.
-        /// </remarks>
+        /// <summary><c>AINode_IgniteArea</c> consume la marca en vez de recalcular la forma: la banda
+        /// está anclada en el jefe, así que recalcularla la traería desde la casilla nueva.</summary>
         [Test]
         public void TheFireLandsWhereItWasAnnounced_EvenAfterTheJump()
         {
@@ -463,14 +360,6 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                 "se quema en una casilla que nunca vio marcada.");
         }
 
-        // =====================================================================
-        // Las otras dos salidas del sorteo
-        // =====================================================================
-
-        /// <summary>
-        /// Cuando el sorteo dice centro, el jefe termina el turno <b>en el centro de la sala</b> —
-        /// dentro de lo que el jugador amenaza, que es el punto de esa salida.
-        /// </summary>
         [Test]
         public void WhenTheRouletteSaysCentre_TheBossLandsInTheMiddleOfTheRoom()
         {
@@ -483,15 +372,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                 "alcance del jugador no está moviéndolo.");
         }
 
-        /// <summary>
-        /// Cuando el sorteo dice que se queda, el jefe no se mueve <b>y el resto del tiempo corre
-        /// igual</b>.
-        /// </summary>
-        /// <remarks>
-        /// Es el caso que protege el <c>AINode_Wait</c> de la tercera opción: con un <c>Node</c> nulo
-        /// el sorteo devolvería <c>Failed</c>, y ese <c>Failed</c> se comería el marcado del cono que
-        /// viene después. Quedarse tiene que exponerlo, no regalarle un turno mudo.
-        /// </remarks>
+        /// <summary>Es el caso que protege el <c>AINode_Wait</c> de la tercera opción: con un <c>Node</c>
+        /// nulo el sorteo devolvería <c>Failed</c> y se comería el marcado del cono que sigue.</summary>
         [Test]
         public void WhenTheRouletteSaysStay_TheBossHoldsHisGround_AndStillWorksTheBeat()
         {
@@ -509,14 +391,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                 "devolviendo Failed y abortando el resto del tiempo.");
         }
 
-        /// <summary>
-        /// Y el cono queda anclado donde el sorteo lo dejó: aterrizar en el centro le cambia qué
-        /// parte del paño amenaza, que es el canje de esa salida.
-        /// </summary>
-        /// <remarks>
-        /// El marcado va detrás del sorteo justamente por esto. Marcando primero, el cono saldría de
-        /// la casilla vieja y el jugador leería un aviso que no corresponde a dónde está el jefe.
-        /// </remarks>
+        /// <summary>El marcado va detrás del sorteo por esto: marcando primero, el cono saldría de la
+        /// casilla vieja y el aviso no correspondería a dónde está el jefe.</summary>
         [Test]
         public void TheConeIsAnchoredWhereTheRouletteLeftHim()
         {
@@ -534,20 +410,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                 "el jefe aterrizó en el medio y el aviso salió de donde ya no está.");
         }
 
-        // =====================================================================
-        // El cruce del 50% y el hueco del Pleno
-        // =====================================================================
-
-        /// <summary>
-        /// El turno que cruza el 50% termina con el jefe <b>en el centro</b>, caiga el cruce sobre
-        /// el tiempo que caiga.
-        /// </summary>
-        /// <remarks>
-        /// El armado del Pleno es el último paso del turno justamente por esto: cualquier salto
-        /// colgado detrás lo arranca del centro después de haber plantado ahí el hueco, y el ataque
-        /// más grande de la pelea se lee al revés — el único lugar a salvo queda donde el jefe no
-        /// está.
-        /// </remarks>
+        /// <summary>El armado del Pleno es el último paso del turno por esto: cualquier salto colgado
+        /// detrás lo arranca del centro donde plantó el hueco, y el ataque se lee al revés.</summary>
         [TestCase(false, TestName = "CrossingFifty_EndsTheTurnWithTheBossInTheCentre_OnTheDealBeat")]
         [TestCase(true, TestName = "CrossingFifty_EndsTheTurnWithTheBossInTheCentre_OnTheBurnBeat")]
         public void CrossingFifty_EndsTheTurnWithTheBossInTheCentre(bool onTheBurnBeat)
@@ -558,14 +422,6 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                 "El turno del cruce no terminó con el jefe en el centro de la sala.");
         }
 
-        /// <summary>
-        /// Y el hueco que el Pleno deja sin marcar rodea la casilla <b>final</b> del jefe.
-        /// </summary>
-        /// <remarks>
-        /// El gemelo por comportamiento del test de arriba: aquél mira dónde quedó parado, éste
-        /// mira dónde quedó el único lugar a salvo. Con un salto detrás del armado los dos dejan de
-        /// coincidir sin que falle nada.
-        /// </remarks>
         [TestCase(false, TestName = "ThePlenosHole_SurroundsWhereTheBossEnded_OnTheDealBeat")]
         [TestCase(true, TestName = "ThePlenosHole_SurroundsWhereTheBossEnded_OnTheBurnBeat")]
         public void ThePlenosHole_SurroundsWhereTheBossEnded(bool onTheBurnBeat)
@@ -590,18 +446,11 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             }
         }
 
-        // =====================================================================
-        // Helpers
-        // =====================================================================
-
         private Guid PlenoSource =>
             AINode_TelegraphMark.SourceKey(_boss, CroupierAssetBuilder.PlenoChannelId);
 
-        /// <summary>Corre el turno que cruza el 50% sobre el tiempo pedido.</summary>
-        /// <remarks>
-        /// El <c>Alternate</c> avanza su índice en cada tick, así que sobre qué tiempo cae el cruce
-        /// se elige gastando (o no) un turno previo con la vida entera.
-        /// </remarks>
+        /// <summary>El <c>Alternate</c> avanza su índice en cada tick, así que sobre qué tiempo cae el
+        /// cruce se elige gastando (o no) un turno previo con la vida entera.</summary>
         private void TickTheCrossingTurn(bool onTheBurnBeat)
         {
             var root = CroupierAssetBuilder.BuildAIRoot(_fire);
@@ -656,24 +505,18 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             return steps;
         }
 
-        /// <summary>
-        /// El gate de cercanía que envuelve el sorteo de la fuga del tiempo. Se filtra por lo que
-        /// cuelga del <c>Then</c> y no por el primer <c>If</c> del beat: el tiempo de quema tiene
-        /// además el <c>If</c> que ramifica la duración del fuego por fase, y ése cuelga un
-        /// <c>AINode_IgniteArea</c>.
-        /// </summary>
+        /// <summary>Se filtra por lo que cuelga del <c>Then</c> y no por el primer <c>If</c> del beat: el
+        /// de quema tiene además el <c>If</c> que ramifica la duración del fuego por fase.</summary>
         private static AINode_If FleeGateOf(AIDecisionNode beat) =>
             BeatSteps(beat).OfType<AINode_If>().Single(g => g.Then is AINode_Random);
 
         private static AINode_Random FleeRouletteOf(AIDecisionNode beat) =>
             (AINode_Random)FleeGateOf(beat).Then;
 
-        /// <summary>El salto al borde, que ahora es una de las tres salidas del sorteo.</summary>
         private static AINode_TeleportAwayToEdge FleeJumpOf(AIDecisionNode beat) =>
             FleeRouletteOf(beat).Options
                 .Select(o => o.Node).OfType<AINode_TeleportAwayToEdge>().Single();
 
-        /// <summary>Deja al jugador fuera del radio de fuga, sin sacarlo de la sala.</summary>
         private void MovePlayerBeyondFleeRadius()
         {
             var far = new GridCoord(BossTile.X - CroupierAssetBuilder.FleeTriggerRange - 2, BossTile.Y);
@@ -683,7 +526,6 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                 "El destino elegido sigue dentro del radio de fuga: el escenario no prueba nada.");
         }
 
-        /// <summary>Acerca al jugador a una casilla pegada a <paramref name="bossCoord"/>.</summary>
         private void MovePlayerNextTo(GridCoord bossCoord)
         {
             var offsets = new[] { (1, 0), (-1, 0), (0, 1), (0, -1) };
@@ -710,10 +552,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         private List<DamageContext> EnvironmentalHits() =>
             _pipeline.Resolved.Where(c => c.Kind == AttackKind.Environmental).ToList();
 
-        /// <summary>
-        /// Tirada del sorteo que fuerza el salto al borde. Es el resultado que la mayoría de estos
-        /// tests asume, porque son los que estaban escritos cuando el jefe huía siempre.
-        /// </summary>
+        /// <summary>Tirada que fuerza el salto al borde.</summary>
         private const double RollEdge = 0.0;
 
         /// <summary>Tirada que fuerza el aterrizaje en el centro de la sala.</summary>
@@ -722,23 +561,9 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         /// <summary>Tirada que fuerza que se quede donde está.</summary>
         private const double RollStay = 0.9;
 
-        /// <summary>
-        /// RNG que devuelve siempre la misma tirada, para fijar qué salida del sorteo de la fuga
-        /// sale en un test.
-        /// </summary>
-        /// <remarks>
-        /// <para>
-        /// Un <c>Random(seed)</c> fijo no sirve: cuál de las tres opciones cae depende de cuántos
-        /// draws se hayan consumido antes en el mismo tick, así que agregar o mover un nodo en el
-        /// árbol le voltea el resultado al test sin que nada del test cambie. Devolviendo siempre lo
-        /// mismo, el resultado es <b>independiente del orden de evaluación</b>.
-        /// </para>
-        /// <para>
-        /// Hereda con la seed que usaba el contexto antes para no cambiarle nada al resto: el sorteo
-        /// de la casilla de aterrizaje pasa por <c>Sample()</c>, no por <c>NextDouble()</c>, así que
-        /// overridear una no toca la otra.
-        /// </para>
-        /// </remarks>
+        /// <summary>Un <c>Random(seed)</c> fijo no sirve: cuál opción cae depende de cuántos draws se
+        /// consumieron antes en el tick, así que mover un nodo le voltea el resultado al test. El
+        /// aterrizaje pasa por <c>Sample()</c> y no por <c>NextDouble()</c>, así que sigue sorteando.</summary>
         private sealed class FixedRoll : System.Random
         {
             private readonly double _value;
@@ -759,9 +584,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             DamagePipeline = _pipeline,
             PlayerService = _playerService,
             RoundIndex = roundIndex,
-            // El RNG decide una rama real: el sorteo de la fuga elige entre irse al borde, saltar al
-            // centro y quedarse. Fijo para que el turno sea reproducible, y con la tirada explícita
-            // para que cada test diga qué salida está midiendo.
+            // El RNG decide una rama real (borde, centro o quedarse): fijo para que el turno sea
+            // reproducible, y con la tirada explícita para que cada test diga qué salida mide.
             Rng = new FixedRoll(roll),
         };
 
@@ -780,11 +604,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             return instance;
         }
 
-        /// <summary>
-        /// Registra qué fuentes se apagaron y no pinta nada. Ver el gemelo de
-        /// <c>AINode_CancelTelegraphTests</c>: los spies de overlay son privados en cada fixture
-        /// porque cada uno observa una cosa distinta.
-        /// </summary>
+        /// <summary>Registra qué fuentes se apagaron y no pinta nada. Los spies de overlay son privados
+        /// en cada fixture porque cada uno observa una cosa distinta.</summary>
         private sealed class SpyThreatOverlay : IThreatOverlayService
         {
             public readonly List<Guid> Cleared = new List<Guid>();

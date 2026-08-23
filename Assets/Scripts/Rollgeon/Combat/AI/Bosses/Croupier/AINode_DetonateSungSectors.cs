@@ -12,14 +12,7 @@ using UnityEngine;
 
 namespace Rollgeon.Combat.AI.Bosses.Croupier
 {
-    /// <summary>
-    /// Detona los sectores que el Croupier cantó el turno pasado: consume el área pendiente de cada
-    /// slot y, si el jugador está adentro, aplica su daño.
-    /// </summary>
-    /// <remarks>
-    /// Campo de id vacío ⇒ el id canónico (<see cref="BossFeedbackIds"/>): Odin no corre field
-    /// initializers, así que un <c>ED_Boss_Croupier</c> ya autorado no trae estos campos.
-    /// </remarks>
+    /// <summary>Campo de id vacío ⇒ el id canónico (<see cref="BossFeedbackIds"/>): Odin no corre field initializers y un asset ya autorado no trae estos campos.</summary>
     [Serializable, HideReferenceObjectPicker]
     public sealed class AINode_DetonateSungSectors : AIActionNode
     {
@@ -38,20 +31,13 @@ namespace Rollgeon.Combat.AI.Bosses.Croupier
 
         public override string NodeName => "Detonate Sung Sectors (Croupier)";
 
-        /// <summary>
-        /// Camino síncrono (EditMode / escenas sin <c>CoroutineHost</c>): la resolución completa sin
-        /// presentación — bloquear acá colgaría los tests.
-        /// </summary>
+        /// <summary>Camino síncrono (EditMode / escenas sin <c>CoroutineHost</c>): bloquear acá colgaría los tests.</summary>
         public override AIResult Tick(AIContext context)
         {
             Detonate(context);
             return AIResult.Succeeded;
         }
 
-        /// <summary>
-        /// Camino de play mode: el daño cae primero y el impacto se reproduce después, en el mismo
-        /// frame.
-        /// </summary>
         public override IEnumerator TickCoroutine(AIContext context, Action<AIResult> onResult)
         {
             if (Detonate(context))
@@ -62,8 +48,6 @@ namespace Rollgeon.Combat.AI.Bosses.Croupier
 
             onResult?.Invoke(AIResult.Succeeded);
         }
-
-        // ---- pasos compartidos por los dos caminos -------------------------
 
         /// <returns><c>true</c> si el golpe alcanzó al jugador — lo único que amerita impacto.</returns>
         private static bool Detonate(AIContext context)
@@ -114,8 +98,6 @@ namespace Rollgeon.Combat.AI.Bosses.Croupier
                 TargetGuid = context.PlayerGuid,
             }, () => turn?.OnFeedbackComplete());
 
-            // Sin TurnManager no hay gate que esperar: el impacto corre igual, pero el turno del jefe
-            // le pasa por encima.
             if (turn == null || !turn.IsWaitingForFeedback) yield break;
 
             var wait = TurnManager.WaitForFeedbackCompletion(turn);

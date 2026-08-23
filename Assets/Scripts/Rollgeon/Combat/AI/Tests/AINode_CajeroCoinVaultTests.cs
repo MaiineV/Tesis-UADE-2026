@@ -12,17 +12,8 @@ using UnityEngine;
 
 namespace Rollgeon.Combat.AI.Tests
 {
-    /// <summary>
-    /// La caja del Cajero: le pone reloj a cada moneda del piso, y la que se vence sin que nadie la
-    /// levante se la lleva él y lo cura — hasta un techo por pelea.
-    /// </summary>
-    /// <remarks>
-    /// <para>
-    /// Los tres números están duplicados de <c>CajeroAssetBuilder</c>, que vive en un assembly de
-    /// Editor y no se puede referenciar desde acá. Que el builder los cablee de verdad en el nodo lo
-    /// cubre <c>CajeroPhaseWiringTests.CoinVault_CarriesTheClockAndTheHealCeilingFromTheSheet</c>.
-    /// </para>
-    /// </remarks>
+    // Los tres números están duplicados de CajeroAssetBuilder, que vive en un assembly de Editor
+    // y no se puede referenciar desde acá.
     [TestFixture]
     public class AINode_CajeroCoinVaultTests
     {
@@ -69,10 +60,6 @@ namespace Rollgeon.Combat.AI.Tests
             EventManager.ResetEventDictionary();
         }
 
-        // =====================================================================
-        // El reloj
-        // =====================================================================
-
         [Test]
         public void ACoinNobodyPicksUp_ExpiresAndHealsHim()
         {
@@ -105,11 +92,8 @@ namespace Rollgeon.Combat.AI.Tests
             Assert.IsEmpty(_hazards.Deactivated, "La moneda desapareció antes de vencer.");
         }
 
-        /// <summary>
-        /// Una moneda que <b>desaparece antes</b> de su vencimiento la levantó el jugador, y ésa no
-        /// cura a nadie. Es la razón entera de que el reloj viva en este nodo: el servicio de hazards
-        /// expira igual la levantada y la vencida, así que desde afuera no se pueden distinguir.
-        /// </summary>
+        // El reloj vive en el nodo porque el servicio de hazards expira igual la levantada y la
+        // vencida: desde afuera no se pueden distinguir, y la levantada no cura.
         [Test]
         public void ACoinThePlayerPickedUp_IsForgottenWithoutHealing()
         {
@@ -125,8 +109,6 @@ namespace Rollgeon.Combat.AI.Tests
                 "jugada que la mecánica premia, y así pagaría lo mismo que ignorarla.");
         }
 
-        /// <summary>Sólo vigila su propia definición: el resto de los hazards de la sala no son
-        /// monedas y hacerlos vencer acá los apagaría antes de tiempo.</summary>
         [Test]
         public void AnotherHazardOnTheFloor_IsNeverTakenForACoin()
         {
@@ -142,9 +124,6 @@ namespace Rollgeon.Combat.AI.Tests
                 "Apagó un hazard ajeno: la caja sólo administra las monedas del Cajero.");
         }
 
-        /// <summary>
-        /// Una tanda entera vencida se cobra <b>de a una por turno</b>, no de un saque.
-        /// </summary>
         [Test]
         public void ARainOfCoins_ExpiresOnePerTurn_NotTheWholeBatchInOneBeat()
         {
@@ -172,14 +151,6 @@ namespace Rollgeon.Combat.AI.Tests
             }
         }
 
-        // =====================================================================
-        // El techo de curación
-        // =====================================================================
-
-        /// <summary>
-        /// El caso central: se le vencen más monedas de las que el techo puede pagar, y lo curado en
-        /// toda la pelea tiene que ser <b>exactamente</b> el techo.
-        /// </summary>
         [Test]
         public void MoreCoinsThanTheCeilingCanPay_HealsExactlyTheCeiling()
         {
@@ -211,9 +182,8 @@ namespace Rollgeon.Combat.AI.Tests
             int lastDrainRound = Drain(node, fromRound: LifetimeRounds, coinsToTheCeiling);
             Assert.AreEqual(MaxHealPerFight, BossHp() - BossStartHp, "Fixture: el techo no se alcanzó.");
 
-            // Una moneda más, ya con el presupuesto agotado. Las rondas van DESPUÉS del drenaje: el
-            // reloj de la moneda se cuenta desde el tick que la descubre, y volver atrás la dejaría
-            // con un vencimiento que ya pasó antes de existir.
+            // Las rondas van DESPUÉS del drenaje: el reloj se cuenta desde el tick que la descubre,
+            // y volver atrás la dejaría con un vencimiento que ya pasó antes de existir.
             var late = DropCoin();
             node.Tick(NewContext(lastDrainRound + 1));
             node.Tick(NewContext(lastDrainRound + 1 + LifetimeRounds));
@@ -225,10 +195,6 @@ namespace Rollgeon.Combat.AI.Tests
                 "línea, ignorarlas sería gratis y juntarlas dejaría de ser la jugada.");
         }
 
-        /// <summary>
-        /// El techo cuenta lo que <b>entró</b>, no lo que se ofreció: una moneda que se vence con el
-        /// jefe lleno no puede gastarle presupuesto que todavía no usó.
-        /// </summary>
         [Test]
         public void ACoinThatRotsWhileHeIsAtFullHp_DoesNotSpendTheCeiling()
         {
@@ -240,7 +206,6 @@ namespace Rollgeon.Combat.AI.Tests
             node.Tick(NewContext(round: LifetimeRounds));
             Assert.AreEqual(BossMaxHp, BossHp(), "Fixture: no tenía vida que recuperar.");
 
-            // Ahora sí lastimado, y con el techo entero todavía disponible.
             GiveBossHealth(BossStartHp);
             int coinsToTheCeiling = MaxHealPerFight / HealPerCoin;
             for (int i = 0; i < coinsToTheCeiling; i++) DropCoin();
@@ -269,10 +234,6 @@ namespace Rollgeon.Combat.AI.Tests
                 "dice que tiene.");
         }
 
-        // =====================================================================
-        // Helpers
-        // =====================================================================
-
         private static AINode_CajeroCoinVault NewNodeWith(HazardDefinitionSO coin) =>
             new AINode_CajeroCoinVault
             {
@@ -284,17 +245,8 @@ namespace Rollgeon.Combat.AI.Tests
 
         private AINode_CajeroCoinVault NewNode() => NewNodeWith(_coin);
 
-        /// <summary>
-        /// Le da al nodo un turno por cada moneda pendiente, con la ronda subiendo de una en una, y
-        /// devuelve la última ronda usada.
-        /// </summary>
-        /// <remarks>
-        /// La caja vence UNA moneda por tick (ver
-        /// <see cref="ARainOfCoins_ExpiresOnePerTurn_NotTheWholeBatchInOneBeat"/>), así que un solo
-        /// tick sobre una tanda vencida cobra una sola moneda. Devolver la ronda importa: el reloj de
-        /// una moneda se cuenta desde el tick que la descubre, y lo que se dropee después del drenaje
-        /// tiene que seguir avanzando en el tiempo, no volver atrás.
-        /// </remarks>
+        // La caja vence UNA moneda por tick, así que un tick sobre una tanda vencida cobra una sola.
+        // Devuelve la última ronda usada: lo que se dropee después no puede volver atrás en el tiempo.
         private int Drain(AINode_CajeroCoinVault node, int fromRound, int coins)
         {
             int round = fromRound;
@@ -337,11 +289,8 @@ namespace Rollgeon.Combat.AI.Tests
             return definition;
         }
 
-        /// <summary>
-        /// Lleva las instancias vivas y nada más. No simula duración —la moneda nace permanente a
-        /// propósito, ver <c>CajeroAssetBuilder.EnsureChipHazard</c>— así que el único reloj en juego
-        /// es el del nodo, que es lo que se está probando.
-        /// </summary>
+        // No simula duración: la moneda nace permanente a propósito, así que el único reloj en juego
+        // es el del nodo, que es lo que se está probando.
         private sealed class FakeHazardService : IHazardService
         {
             public readonly List<Guid> Deactivated = new List<Guid>();

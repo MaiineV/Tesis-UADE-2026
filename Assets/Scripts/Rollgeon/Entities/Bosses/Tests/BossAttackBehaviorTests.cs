@@ -10,10 +10,6 @@ using UnityEngine;
 
 namespace Rollgeon.Entities.Bosses.Tests
 {
-    /// <summary>
-    /// Tests de <see cref="BossAttackBehavior"/>: lee energia, aplica dano stub sobre Health,
-    /// duplica si el rng cae bajo la chance cuando la energia esta llena.
-    /// </summary>
     [TestFixture]
     public class BossAttackBehaviorTests
     {

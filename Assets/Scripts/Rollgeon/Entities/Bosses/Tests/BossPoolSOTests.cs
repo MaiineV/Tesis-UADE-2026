@@ -6,12 +6,6 @@ using Random = System.Random;
 
 namespace Rollgeon.Entities.Bosses.Tests
 {
-    /// <summary>
-    /// Cobertura de <see cref="BossPoolSO"/>: el roulette wheel respeta los pesos, las dos
-    /// palancas de apagado (Weight = 0 / Enabled = off) filtran, la invariante "≥1 boss
-    /// activo por piso" se sostiene con el fallback, y un pool sin autorar devuelve
-    /// <c>null</c> para que el resolver caiga a su path de siempre.
-    /// </summary>
     [TestFixture]
     public class BossPoolSOTests
     {
@@ -26,8 +20,6 @@ namespace Rollgeon.Entities.Bosses.Tests
             }
             _created.Clear();
         }
-
-        // ---- Helpers --------------------------------------------------------
 
         private EnemyDataSO MakeBoss(string entityId)
         {
@@ -50,18 +42,14 @@ namespace Rollgeon.Entities.Bosses.Tests
         private static WeightedBoss Entry(EnemyDataSO boss, float weight = 1f, bool enabled = true)
             => new WeightedBoss { Boss = boss, Weight = weight, Enabled = enabled };
 
-        // ---- Pool vacío / sin autorar ---------------------------------------
-
         [Test]
         public void Roll_EmptyPool_ReturnsNull()
         {
-            // Arrange
             var pool = MakePool();
 
-            // Act
             var result = pool.Roll(new Random(42));
 
-            // Assert — null = "no hay pool", el resolver usa el path de spawn previo.
+            // null = "no hay pool", el resolver usa el path de spawn previo.
             Assert.IsNull(result);
         }
 
@@ -75,18 +63,14 @@ namespace Rollgeon.Entities.Bosses.Tests
             Assert.IsNull(result);
         }
 
-        // ---- Filtros: las dos palancas de apagado ---------------------------
-
         [Test]
         public void Roll_WeightZero_SkipsEntry()
         {
-            // Arrange
             var active = MakeBoss("boss.active");
             var disabled = MakeBoss("boss.disabled");
             var pool = MakePool(Entry(active, 1f), Entry(disabled, 0f));
             var rng = new Random(42);
 
-            // Act / Assert — con un solo elegible, todos los rolls lo devuelven.
             for (int i = 0; i < 20; i++)
             {
                 Assert.AreSame(active, pool.Roll(rng));
@@ -96,13 +80,12 @@ namespace Rollgeon.Entities.Bosses.Tests
         [Test]
         public void Roll_EnabledFalse_SkipsEntryEvenWithWeight()
         {
-            // Arrange — peso alto pero apagado por contenido: no debe salir nunca.
+            // Peso alto pero apagado por contenido: no debe salir nunca.
             var active = MakeBoss("boss.active");
             var offline = MakeBoss("boss.offline");
             var pool = MakePool(Entry(active, 1f), Entry(offline, 99f, enabled: false));
             var rng = new Random(7);
 
-            // Act / Assert
             for (int i = 0; i < 20; i++)
             {
                 Assert.AreSame(active, pool.Roll(rng));
@@ -112,7 +95,7 @@ namespace Rollgeon.Entities.Bosses.Tests
         [Test]
         public void ActiveBosses_ExcludesZeroWeightAndDisabledEntries()
         {
-            // Arrange — el layout de piso 2/3 del diseño: 2 activos + 1 desactivado.
+            // El layout de piso 2/3 del diseño: 2 activos + 1 desactivado.
             var a = MakeBoss("boss.a");
             var b = MakeBoss("boss.b");
             var off = MakeBoss("boss.off");
@@ -123,26 +106,21 @@ namespace Rollgeon.Entities.Bosses.Tests
                 Entry(off, 1f, enabled: false),
                 Entry(zero, 0f));
 
-            // Act
             var active = pool.ActiveBosses();
 
-            // Assert
             CollectionAssert.AreEqual(new[] { a, b }, active);
         }
-
-        // ---- Distribución ---------------------------------------------------
 
         [Test]
         public void Roll_RespectsRelativeWeights()
         {
-            // Arrange — 3:1 sobre 2000 rolls; el margen es holgado para que el test no
+            // 3:1 sobre 2000 rolls; el margen es holgado para que el test no
             // sea flaky, pero suficiente para detectar un roulette invertido o uniforme.
             var heavy = MakeBoss("boss.heavy");
             var light = MakeBoss("boss.light");
             var pool = MakePool(Entry(heavy, 3f), Entry(light, 1f));
             var rng = new Random(1234);
 
-            // Act
             int heavyHits = 0;
             const int rolls = 2000;
             for (int i = 0; i < rolls; i++)
@@ -150,7 +128,7 @@ namespace Rollgeon.Entities.Bosses.Tests
                 if (ReferenceEquals(pool.Roll(rng), heavy)) heavyHits++;
             }
 
-            // Assert — esperado 75%.
+            // Esperado 75%.
             float ratio = heavyHits / (float)rolls;
             Assert.That(ratio, Is.InRange(0.70f, 0.80f),
                 $"peso 3:1 debería dar ~75% al boss pesado, dio {ratio:P1}.");
@@ -195,21 +173,17 @@ namespace Rollgeon.Entities.Bosses.Tests
             CollectionAssert.AreEquivalent(new[] { a, b, c }, seen);
         }
 
-        // ---- Invariante ≥1 boss activo --------------------------------------
-
         [Test]
         public void Roll_NoActiveEntries_FallsBackToFirstAuthoredBossWithWarning()
         {
-            // Arrange — todo apagado por error de autorado: la sala NO puede quedar vacía.
+            // Todo apagado por error de autorado: la sala NO puede quedar vacía.
             var first = MakeBoss("boss.first");
             var second = MakeBoss("boss.second");
             var pool = MakePool(Entry(first, 0f), Entry(second, 1f, enabled: false));
             LogAssert.Expect(LogType.Warning, new System.Text.RegularExpressions.Regex("no active bosses"));
 
-            // Act
             var result = pool.Roll(new Random(42));
 
-            // Assert
             Assert.AreSame(first, result,
                 "sin entries activas, el pool devuelve la primera no-nula (invariante ≥1 boss).");
         }

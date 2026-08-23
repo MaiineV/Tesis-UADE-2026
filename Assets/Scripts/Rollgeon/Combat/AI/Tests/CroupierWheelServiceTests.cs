@@ -14,14 +14,8 @@ using UnityEngine;
 
 namespace Rollgeon.Combat.AI.Tests
 {
-    /// <summary>
-    /// Los dos hooks de <see cref="CroupierWheelService"/>: Represalia (8 por golpe) y el
-    /// corrimiento de la rueda (se paga cerrando el turno dentro del sector cantado).
-    /// </summary>
-    /// <remarks>
-    /// Sala canónica 11×7 ⇒ sectores de 4×3: 1 = x0-3/y4-6, 2 = x4-7/y4-6, 3 = x7-10/y4-6,
-    /// 4 = x0-3/y0-2, 5 = x4-7/y0-2, 6 = x7-10/y0-2. La columna x=7 es costura: cae en dos sectores.
-    /// </remarks>
+    // Sala canónica 11×7 ⇒ sectores de 4×3: 1 = x0-3/y4-6, 2 = x4-7/y4-6, 3 = x7-10/y4-6,
+    // 4 = x0-3/y0-2, 5 = x4-7/y0-2, 6 = x7-10/y0-2. La columna x=7 es costura: cae en dos sectores.
     [TestFixture]
     public class CroupierWheelServiceTests
     {
@@ -70,8 +64,8 @@ namespace Rollgeon.Combat.AI.Tests
         {
             _wheel.Dispose();
 
-            // Marcar crea un GameObject + materiales por tint: sin este teardown quedan huérfanos y
-            // contaminan cualquier test que los busque por nombre.
+            // Marcar crea GameObject + materiales por tint: sin esto quedan huérfanos y contaminan
+            // a cualquier test que los busque por nombre.
             if (ServiceLocator.TryGetService<IThreatOverlayService>(out var overlay) && overlay is IDisposable d)
                 d.Dispose();
             var leftover = GameObject.Find("ThreatTelegraphOverlay");
@@ -82,20 +76,13 @@ namespace Rollgeon.Combat.AI.Tests
             EventManager.ResetEventDictionary();
         }
 
-        // =====================================================================
-        // La Represalia: pegarle cuesta 8, siempre
-        // =====================================================================
-
         [Test]
         public void Hit_WithOddNumberInTheAir_ChargesRetaliation()
         {
-            // Arrange
             _wheel.Sing(new List<int> { 3 });
 
-            // Act
             HitBoss();
 
-            // Assert
             Assert.AreEqual(1, _pipeline.Resolved.Count, "La Represalia se cobra una vez por golpe.");
             Assert.AreEqual(_playerGuid, _pipeline.Resolved[0].TargetId, "La cobra el atacante.");
             Assert.AreEqual(_bossGuid, _pipeline.Resolved[0].SourceId);
@@ -106,13 +93,10 @@ namespace Rollgeon.Combat.AI.Tests
         [Test]
         public void Hit_WithEvenNumberInTheAir_ChargesRetaliationToo()
         {
-            // Arrange
             _wheel.Sing(new List<int> { 4 });
 
-            // Act
             HitBoss();
 
-            // Assert
             Assert.AreEqual(1, _pipeline.Resolved.Count, "En los pares también se cobra.");
             Assert.AreEqual(Retaliation, _pipeline.Resolved[0].BaseDamage);
         }
@@ -120,14 +104,12 @@ namespace Rollgeon.Combat.AI.Tests
         [Test]
         public void TwoHitsInTheSameTurn_ChargeTwice()
         {
-            // Arrange — el candado por windup es del corrimiento, no del cobro.
+            // El candado por windup es del corrimiento, no del cobro.
             _wheel.Sing(new List<int> { 3 });
 
-            // Act
             HitBoss();
             HitBoss();
 
-            // Assert
             Assert.AreEqual(2, _pipeline.Resolved.Count);
             Assert.AreEqual(Retaliation * 2, Total(_pipeline.Resolved));
         }
@@ -135,14 +117,12 @@ namespace Rollgeon.Combat.AI.Tests
         [Test]
         public void RiggedWheel_StillChargesRetaliation()
         {
-            // Arrange — la rueda trucada apaga la palanca, no el precio de la casilla de melee.
+            // La rueda trucada apaga la palanca, no el precio de la casilla de melee.
             _wheel.SetMode(numbersPerTurn: 2, rigged: true, phaseIndex: 2);
             _wheel.Sing(new List<int> { 3, 4 });
 
-            // Act
             HitBoss();
 
-            // Assert
             Assert.AreEqual(1, _pipeline.Resolved.Count);
             Assert.AreEqual(Retaliation, _pipeline.Resolved[0].BaseDamage);
         }
@@ -150,24 +130,20 @@ namespace Rollgeon.Combat.AI.Tests
         [Test]
         public void Hit_OutsideTheWindup_StillChargesRetaliation()
         {
-            // Arrange — el hueco entre detonar y volver a cantar.
             _wheel.Sing(new List<int> { 3 });
             _wheel.ConsumeWindup();
 
-            // Act
             HitBoss();
 
-            // Assert
             Assert.AreEqual(1, _pipeline.Resolved.Count);
         }
 
         [Test]
         public void LethalHit_DoesNotCharge()
         {
-            // Arrange — sin esto la pelea se puede ganar y perder en el mismo intercambio.
+            // Sin esto la pelea se puede ganar y perder en el mismo intercambio.
             _wheel.Sing(new List<int> { 3 });
 
-            // Act
             TypedEvent<DamageResolvedPayload>.Raise(new DamageResolvedPayload
             {
                 SourceGuid = _playerGuid,
@@ -176,17 +152,15 @@ namespace Rollgeon.Combat.AI.Tests
                 WasLethal = true,
             });
 
-            // Assert
             Assert.IsEmpty(_pipeline.Resolved);
         }
 
         [Test]
         public void Hit_ThatDealtNoDamageAtAll_DoesNotCharge()
         {
-            // Arrange
             _wheel.Sing(new List<int> { 3 });
 
-            // Act — un evento de 0 (esquivado / inmune) lo publica el pipeline igual.
+            // Un evento de 0 (esquivado / inmune) lo publica el pipeline igual.
             TypedEvent<DamageResolvedPayload>.Raise(new DamageResolvedPayload
             {
                 SourceGuid = _playerGuid,
@@ -195,17 +169,14 @@ namespace Rollgeon.Combat.AI.Tests
                 ShieldAbsorbed = 0,
             });
 
-            // Assert
             Assert.IsEmpty(_pipeline.Resolved);
         }
 
         [Test]
         public void DamageToSomeoneElse_DoesNotCharge()
         {
-            // Arrange
             _wheel.Sing(new List<int> { 3 });
 
-            // Act
             TypedEvent<DamageResolvedPayload>.Raise(new DamageResolvedPayload
             {
                 SourceGuid = _bossGuid,
@@ -213,37 +184,26 @@ namespace Rollgeon.Combat.AI.Tests
                 FinalDamage = 20,
             });
 
-            // Assert
             Assert.IsEmpty(_pipeline.Resolved);
         }
 
         [Test]
         public void Hit_DoesNotMoveTheWheel()
         {
-            // Arrange
             _wheel.Sing(new List<int> { 3 });
 
-            // Act
             HitBoss();
 
-            // Assert
             Assert.AreEqual(new[] { 3 }, _wheel.SungNumbers, "Pegarle no corre la rueda.");
         }
-
-        // =====================================================================
-        // El corrimiento: se paga con el cuerpo
-        // =====================================================================
 
         [Test]
         public void EndTurnInsideTheCalledSector_MovesTheWheel()
         {
-            // Arrange — el jugador está en el sector 4 y el jefe canta el 4.
             _wheel.Sing(new List<int> { 4 });
 
-            // Act
             EndPlayerTurn();
 
-            // Assert
             Assert.AreEqual(new[] { 5 }, _wheel.SungNumbers, "El 4 tiene que pasar a 5.");
             Assert.IsEmpty(_pipeline.Resolved, "Correr la rueda con el cuerpo no cobra Represalia.");
         }
@@ -251,118 +211,92 @@ namespace Rollgeon.Combat.AI.Tests
         [Test]
         public void EndTurnOutsideTheCalledSector_DoesNothing()
         {
-            // Arrange — el jugador está en el sector 4 y el número cantado es el 3.
             _wheel.Sing(new List<int> { 3 });
 
-            // Act
             EndPlayerTurn();
 
-            // Assert
             Assert.AreEqual(new[] { 3 }, _wheel.SungNumbers, "Desde afuera la rueda no se toca.");
         }
 
         [Test]
         public void SecondTurnEndInsideTheSameWindup_DoesNotMoveItAgain()
         {
-            // Arrange — la costura x=7 cae en el sector 5 y en el 6, así que sin candado correría dos veces.
+            // La costura x=7 cae en el sector 5 y en el 6, así que sin candado correría dos veces.
             MovePlayer(new GridCoord(7, 1));
             _wheel.Sing(new List<int> { 5 });
 
-            // Act
             EndPlayerTurn();
             EndPlayerTurn();
 
-            // Assert
             Assert.AreEqual(new[] { 6 }, _wheel.SungNumbers, "Un solo corrimiento por número.");
         }
 
         [Test]
         public void RiggedWheel_DoesNotMove()
         {
-            // Arrange
             _wheel.SetMode(numbersPerTurn: 2, rigged: true, phaseIndex: 2);
             _wheel.Sing(new List<int> { 4, 5 });
 
-            // Act
             EndPlayerTurn();
 
-            // Assert
             Assert.AreEqual(new[] { 4, 5 }, _wheel.SungNumbers, "Con la rueda trucada el número no se mueve.");
         }
 
         [Test]
         public void EndTurnInsideOneOfTwoSectors_MovesOnlyThatNumber()
         {
-            // Arrange — hoy fase 2 va trucada; esto fija el criterio por-número si se destruca.
+            // Hoy fase 2 va trucada; esto fija el criterio por-número si se destruca.
             _wheel.SetMode(numbersPerTurn: 2, rigged: false, phaseIndex: 2);
             _wheel.Sing(new List<int> { 4, 3 });
 
-            // Act
             EndPlayerTurn();
 
-            // Assert
             Assert.AreEqual(new[] { 5, 3 }, _wheel.SungNumbers);
         }
 
         [Test]
         public void TurnEndOfSomeoneElse_DoesNotMoveTheWheel()
         {
-            // Arrange
             var otherGuid = Guid.NewGuid();
             _grid.Register(otherGuid, new GridCoord(1, 1)); // Sector 4, igual que el jugador.
             _wheel.Sing(new List<int> { 4 });
 
-            // Act
             EventManager.Trigger(EventName.OnTurnFinished, otherGuid);
 
-            // Assert
             Assert.AreEqual(new[] { 4 }, _wheel.SungNumbers);
         }
 
         [Test]
         public void EndTurn_OutsideTheWindup_DoesNothing()
         {
-            // Arrange — el windup se cierra al detonar.
             _wheel.Sing(new List<int> { 4 });
             _wheel.ConsumeWindup();
 
-            // Act
             EndPlayerTurn();
 
-            // Assert
             Assert.IsEmpty(_wheel.SungNumbers);
         }
 
         [Test]
         public void Nudge_FromSix_WrapsToOne()
         {
-            // Arrange
             MovePlayer(new GridCoord(9, 1)); // Sector 6.
             _wheel.Sing(new List<int> { 6 });
 
-            // Act
             EndPlayerTurn();
 
-            // Assert
             Assert.AreEqual(new[] { 1 }, _wheel.SungNumbers);
         }
-
-        // =====================================================================
-        // El corrimiento mueve la marca
-        // =====================================================================
 
         [Test]
         public void Nudge_MovesThePendingAreaToTheNewSector()
         {
-            // Arrange
             _wheel.Sing(new List<int> { 4 });
             Assert.IsTrue(CroupierSectorTelegraph.Mark(_bossGuid, slot: 0, sector: 4, damage: 20, kind: AttackKind.BasicAttack));
             _wheel.RecordMark(0, 20, AttackKind.BasicAttack);
 
-            // Act
             EndPlayerTurn();
 
-            // Assert
             var slotGuid = CroupierSectorTelegraph.SlotGuid(_bossGuid, 0);
             var pending = _threat.GetPendingTiles(slotGuid);
             var expected = ThreatAreaShape.ComputeRoomSector(_grid, 5);
@@ -375,35 +309,25 @@ namespace Rollgeon.Combat.AI.Tests
         [Test]
         public void Nudge_KeepsTheMarkedDamage()
         {
-            // Arrange
             _wheel.Sing(new List<int> { 4 });
             CroupierSectorTelegraph.Mark(_bossGuid, 0, 4, 20, AttackKind.BasicAttack);
             _wheel.RecordMark(0, 20, AttackKind.BasicAttack);
 
-            // Act
             EndPlayerTurn();
 
-            // Assert
             var slotGuid = CroupierSectorTelegraph.SlotGuid(_bossGuid, 0);
             Assert.IsTrue(_threat.TryConsume(slotGuid, out var area));
             Assert.AreEqual(20, area.Damage);
         }
 
-        // =====================================================================
-        // Estado por combate
-        // =====================================================================
-
         [Test]
         public void ConsumeWindup_PublishesTheDetonatedSectors()
         {
-            // Arrange
             _wheel.SetMode(2, rigged: true, phaseIndex: 2);
             _wheel.Sing(new List<int> { 2, 3 });
 
-            // Act
             var slots = _wheel.ConsumeWindup();
 
-            // Assert
             Assert.AreEqual(2, slots.Count);
             Assert.AreEqual(new[] { 2, 3 }, _wheel.DetonatedSectors);
             Assert.IsFalse(_wheel.WindupActive, "Detonar cierra el windup.");
@@ -415,11 +339,10 @@ namespace Rollgeon.Combat.AI.Tests
         [Test]
         public void SlotGuids_AreStableDistinctAndNeverTheBossGuid()
         {
-            // Arrange — dos áreas simultáneas necesitan dos fuentes distintas de la del propio jefe.
+            // Dos áreas simultáneas necesitan dos fuentes distintas de la del propio jefe.
             var slot0 = CroupierSectorTelegraph.SlotGuid(_bossGuid, 0);
             var slot1 = CroupierSectorTelegraph.SlotGuid(_bossGuid, 1);
 
-            // Assert
             Assert.AreNotEqual(Guid.Empty, slot0);
             Assert.AreNotEqual(slot0, slot1);
             Assert.AreNotEqual(_bossGuid, slot0);
@@ -430,14 +353,12 @@ namespace Rollgeon.Combat.AI.Tests
         [Test]
         public void CombatEnd_ResetsTheTableToPhaseOne()
         {
-            // Arrange — el servicio es Global pero su estado es por combate.
+            // El servicio es Global pero su estado es por combate.
             _wheel.SetMode(2, rigged: true, phaseIndex: 2);
             _wheel.Sing(new List<int> { 5 });
 
-            // Act
             EventManager.Trigger(EventName.OnCombatEnd);
 
-            // Assert
             Assert.AreEqual(1, _wheel.PhaseIndex);
             Assert.AreEqual(1, _wheel.NumbersPerTurn);
             Assert.IsFalse(_wheel.Rigged);
@@ -447,15 +368,13 @@ namespace Rollgeon.Combat.AI.Tests
         [Test]
         public void CombatEnd_UnhooksBothChannels()
         {
-            // Arrange — los dos hooks viven fuera del turno del jefe.
+            // Los dos hooks viven fuera del turno del jefe.
             _wheel.Sing(new List<int> { 4 });
             EventManager.Trigger(EventName.OnCombatEnd);
 
-            // Act
             HitBoss();
             EndPlayerTurn();
 
-            // Assert
             Assert.IsEmpty(_pipeline.Resolved);
             Assert.IsEmpty(_wheel.SungNumbers);
         }
@@ -463,16 +382,10 @@ namespace Rollgeon.Combat.AI.Tests
         [Test]
         public void SetMode_ClampsToTheAvailableSlots()
         {
-            // Act
             _wheel.SetMode(numbersPerTurn: 99, rigged: false, phaseIndex: 2);
 
-            // Assert
             Assert.AreEqual(CroupierSectorTelegraph.MaxSlots, _wheel.NumbersPerTurn);
         }
-
-        // =====================================================================
-        // Helpers
-        // =====================================================================
 
         private void HitBoss()
         {

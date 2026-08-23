@@ -7,14 +7,10 @@ using UnityEngine;
 namespace Rollgeon.Combat.AI.Bosses.Croupier
 {
     /// <summary>
-    /// Marca como amenazado el sector de cada número que el Croupier acaba de cantar
-    /// (<see cref="AINode_SpinWheel"/>) para que detone en su próximo turno
-    /// (<see cref="AINode_DetonateSungSectors"/>). No hace daño este turno.
+    /// No hace daño este turno. Cada slot marca su área por separado (ver
+    /// <see cref="CroupierSectorTelegraph"/>): en fase 2 las dos áreas tienen que resolverse aparte
+    /// para que la columna de costura cobre los dos golpes.
     /// </summary>
-    /// <remarks>
-    /// Cada slot marca su área por separado (ver <see cref="CroupierSectorTelegraph"/>): en fase 2 las
-    /// dos áreas tienen que resolverse aparte para que la columna de costura cobre los dos golpes.
-    /// </remarks>
     [Serializable, HideReferenceObjectPicker]
     public sealed class AINode_MarkSungSectors : AIActionNode
     {

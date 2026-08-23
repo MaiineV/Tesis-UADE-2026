@@ -8,10 +8,6 @@ using UnityEngine;
 
 namespace Rollgeon.Combat.AI.Bosses.Tahur
 {
-    /// <summary>
-    /// "Canta" del Tahúr: elige un escalón de la escalera del contrato del jugador y lo publica
-    /// como el canto de la próxima ronda.
-    /// </summary>
     [Serializable, HideReferenceObjectPicker]
     public sealed class AINode_TahurCallHand : AIActionNode
     {
@@ -52,7 +48,6 @@ namespace Rollgeon.Combat.AI.Bosses.Tahur
 
         public override string NodeName => "Tahúr — Call Hand (canta el escalón)";
 
-        /// <summary>Escalones ya cantados desde el último refill — para debug y tests.</summary>
         public IReadOnlyList<int> CalledSinceRefill => Used;
 
         private List<int> Used => _calledSinceRefill ??= new List<int>();
@@ -120,8 +115,6 @@ namespace Rollgeon.Combat.AI.Bosses.Tahur
 
             return AIResult.Succeeded;
         }
-
-        // -----------------------------------------------------------------
 
         private List<int> BuildPool(int minRank, int maxRank, int previousCall, bool useRotation, bool useValve)
         {

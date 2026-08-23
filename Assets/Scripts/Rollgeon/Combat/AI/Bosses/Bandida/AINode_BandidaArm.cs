@@ -14,13 +14,9 @@ using UnityEngine;
 namespace Rollgeon.Combat.AI.Bosses.Bandida
 {
     /// <summary>
-    /// El brazo de La Bandida: daño melee directo, sin marca y sin área, a quien haya terminado su
-    /// turno pegado a la máquina.
+    /// El <see cref="Metric"/> tiene que ser el mismo que el del <c>PcTargetInRange</c> que gatea el
+    /// nodo, o una de las dos mitades miente sobre las diagonales.
     /// </summary>
-    /// <remarks>
-    /// El <see cref="Metric"/> tiene que ser el mismo que el del <c>PcTargetInRange</c> que gatea
-    /// el nodo, o una de las dos mitades miente sobre las diagonales.
-    /// </remarks>
     [Serializable, HideReferenceObjectPicker]
     public sealed class AINode_BandidaArm : AIActionNode
     {
@@ -64,10 +60,7 @@ namespace Rollgeon.Combat.AI.Bosses.Bandida
 
         public override string NodeName => $"Bandida — Arm ({Damage})";
 
-        /// <summary>
-        /// Camino síncrono (EditMode / escenas sin <c>CoroutineHost</c>): el daño y nada más —
-        /// bloquear acá colgaría los tests.
-        /// </summary>
+        /// <summary>Camino síncrono (EditMode / escenas sin <c>CoroutineHost</c>): bloquear acá colgaría los tests.</summary>
         public override AIResult Tick(AIContext context)
         {
             if (!CanStrike(context)) return AIResult.Failed;
@@ -76,10 +69,6 @@ namespace Rollgeon.Combat.AI.Bosses.Bandida
             return AIResult.Succeeded;
         }
 
-        /// <summary>
-        /// Camino de play mode: palanca → impacto sobre el jugador, con el daño aterrizando en el
-        /// golpe si el clip publica <see cref="ImpactEventKey"/> y al final de la secuencia si no.
-        /// </summary>
         public override IEnumerator TickCoroutine(AIContext context, Action<AIResult> onResult)
         {
             if (!CanStrike(context))
@@ -104,12 +93,6 @@ namespace Rollgeon.Combat.AI.Bosses.Bandida
             onResult?.Invoke(AIResult.Succeeded);
         }
 
-        // ---- pasos compartidos por los dos caminos -------------------------
-
-        /// <summary>
-        /// El gate completo del nodo: el camino coroutine tiene que decidir antes de animar, o
-        /// retiene el turno para bajar la palanca sobre nadie.
-        /// </summary>
         private bool CanStrike(AIContext context)
         {
             if (context?.Grid == null) return false;
@@ -165,7 +148,6 @@ namespace Rollgeon.Combat.AI.Bosses.Bandida
                 TargetGuid = context.PlayerGuid,
             }, () => turn?.OnFeedbackComplete());
 
-            // Sin TurnManager no hay gate que esperar: la anim corre igual, sin sincronizar el daño.
             if (turn == null || !turn.IsWaitingForFeedback) yield break;
 
             bool impactFired = string.IsNullOrEmpty(ImpactEventKey);
@@ -187,7 +169,6 @@ namespace Rollgeon.Combat.AI.Bosses.Bandida
             }
         }
 
-        /// <summary>VFX/Feel del impacto: arrancan juntos cuando la palanca terminó de bajar.</summary>
         private static FeedbackSequenceStep Impact(string feedbackId) => new FeedbackSequenceStep
         {
             Source = StepSource.FeedbackRef,
@@ -198,15 +179,11 @@ namespace Rollgeon.Combat.AI.Bosses.Bandida
             BlockSequence = true,
         };
 
-        /// <summary>
-        /// Campo vacío ⇒ el id canónico: Odin no corre field initializers, así que un
-        /// <c>ED_Boss_Bandida</c> ya autorado no trae estos campos.
-        /// </summary>
+        /// <summary>Campo vacío ⇒ el id canónico: Odin no corre field initializers, así que un <c>ED_Boss_Bandida</c> ya autorado no trae estos campos.</summary>
         private static string Authored(string authored, string canonical)
             => string.IsNullOrEmpty(authored) ? canonical : authored;
 
 #if UNITY_EDITOR
-        // Dropdown obligatorio (§0): los ids de feedback nunca se tipean a mano.
         private static IEnumerable<string> GetFeedbackIdsForDropdown()
         {
             foreach (var guid in UnityEditor.AssetDatabase.FindAssets("t:FeedbackDBSO"))

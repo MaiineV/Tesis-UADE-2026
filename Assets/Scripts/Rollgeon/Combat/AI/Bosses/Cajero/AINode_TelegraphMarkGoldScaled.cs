@@ -12,14 +12,9 @@ using UnityEngine;
 namespace Rollgeon.Combat.AI.Decisions
 {
     /// <summary>
-    /// La columna que engorda: marca un área telegráfica cuyo <b>ancho y daño salen del oro que
-    /// lleva el jugador</b>.
-    /// </summary>
-    /// <remarks>
     /// El escalón efectivo es <c>clamp(rank(oro) + DamageStepUp) − DamageStepDown</c>. Sin
-    /// <c>IEconomyService</c> registrado asume 0 de oro (escalón más barato) en vez de fallar: sin
-    /// este nodo el jefe no ataca.
-    /// </remarks>
+    /// <c>IEconomyService</c> asume 0 de oro en vez de fallar: sin este nodo el jefe no ataca.
+    /// </summary>
     [Serializable, HideReferenceObjectPicker]
     public sealed class AINode_TelegraphMarkGoldScaled : AIActionNode
     {
@@ -48,10 +43,8 @@ namespace Rollgeon.Combat.AI.Decisions
         /// <summary>Último escalón resuelto (0-based por MinGold ascendente); -1 si nunca tickeó.</summary>
         [NonSerialized] public int LastRank = -1;
 
-        /// <summary>Oro leído en el último tick — para el inspector de AI y logs.</summary>
         [NonSerialized] public int LastGold;
 
-        /// <summary>Escalones que puso el rastrillo en el último tick.</summary>
         [NonSerialized] public int LastStepUp;
 
         public override string NodeName => $"Telegraph Mark Gold-Scaled ({Shape}, {Tiers?.Count ?? 0} tiers)";
@@ -90,8 +83,7 @@ namespace Rollgeon.Combat.AI.Decisions
             LastRank = rank;
             LastStepUp = stepUp;
 
-            // Se publica el escalón resuelto para que la lectura del HUD muestre el daño real en vez
-            // de recalcularlo con su propia copia de la tabla.
+            // Se publica el escalón para que el HUD muestre el daño real, sin recalcularlo por su cuenta.
             if (ServiceLocator.TryGetService<ICashierLedgerService>(out var reportTo) && reportTo != null)
                 reportTo.ReportTier(rank, tier.Damage, gold, stepUp, stepDown);
 

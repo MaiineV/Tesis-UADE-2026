@@ -25,10 +25,8 @@ using UnityEngine;
 
 namespace Rollgeon.Editor.Tools.Enemy.Tests
 {
-    /// <summary>
-    /// Árbol de La Generala armado en memoria: el wiring se valida sin depender de que el
-    /// <c>[MenuItem]</c> ya se haya corrido en el proyecto.
-    /// </summary>
+    /// <summary>Árbol de La Generala armado en memoria: el wiring se valida sin depender de que el
+    /// <c>[MenuItem]</c> ya se haya corrido en el proyecto.</summary>
     [TestFixture]
     public class GeneralaAssetBuilderTests
     {
@@ -51,14 +49,9 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             if (_frost != null) UnityEngine.Object.DestroyImmediate(_frost);
         }
 
-        // ======================================================================
-        // Orden del turno
-        // ======================================================================
-
         [Test]
         public void Root_OpensTheTurnByDetonatingTheHand_TheOnlyThingSheLeavesPending()
         {
-            // Assert
             Assert.IsInstanceOf<AINode_ExecuteTelegraph>(_root.Children[0],
                 "El primer hijo tiene que detonar la mano de la ronda pasada.");
 
@@ -69,11 +62,10 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         [Test]
         public void Root_TicksThePhaseGate_BeforeRollingTheHand()
         {
-            // Arrange
             int phaseIdx = _root.Children.FindIndex(c => Descendants(c).Any(n => n is AINode_SetHandReroll));
             int rollIdx = _root.Children.FindIndex(c => Descendants(c).Any(n => n is AINode_RollHand));
 
-            // Assert — si el gate quedara después, el reroll de Fase 2 recién aplicaría un turno tarde.
+            // Si el gate quedara después, el reroll de Fase 2 recién aplicaría un turno tarde.
             Assert.Greater(phaseIdx, -1, "No se encontró el gate de Fase 2.");
             Assert.Greater(rollIdx, phaseIdx, "El gate de fase tiene que ir antes de la tirada.");
         }
@@ -81,27 +73,20 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         [Test]
         public void Root_RefillsTheTable_BeforeRollingTheHand()
         {
-            // Arrange — la mano se arma con los dados vivos, así que la mesa se repone antes.
+            // La mano se arma con los dados vivos, así que la mesa se repone antes.
             int spawnIdx = _root.Children.FindIndex(c =>
                 Descendants(c).Any(n => n is AINode_SpawnRoomObjects));
             int rollIdx = _root.Children.FindIndex(c => Descendants(c).Any(n => n is AINode_RollHand));
 
-            // Assert
             Assert.Greater(spawnIdx, -1, "No se encontró el spawn de la mesa.");
             Assert.Greater(rollIdx, spawnIdx);
         }
 
-        // ======================================================================
-        // La mesa
-        // ======================================================================
-
         [Test]
         public void Table_SpawnsFiveDice_FromTheRoomObjectDefinition()
         {
-            // Act
             var spawn = Descendants(_root).OfType<AINode_SpawnRoomObjects>().FirstOrDefault();
 
-            // Assert
             Assert.IsNotNull(spawn);
             Assert.AreSame(_dice, spawn.Definition, "La mesa tiene que spawnear los dados de la casa.");
             Assert.AreEqual(GeneralaAssetBuilder.HandSize, spawn.Count);
@@ -113,10 +98,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         [Test]
         public void Table_SpreadsAcrossTheDoorFronts_NotRingedAroundHer()
         {
-            // Act
             var spawn = Descendants(_root).OfType<AINode_SpawnRoomObjects>().First();
 
-            // Assert
             Assert.AreEqual(AINode_SpawnRoomObjects.Placement.DoorFronts, spawn.Pattern,
                 "La mesa tiene que repartirse por la sala, no apilarse pegada a ella.");
         }
@@ -124,15 +107,13 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         [Test]
         public void DiceDefinition_CarriesTheTableNumbers_AndStaysOutOfTheTurnQueue()
         {
-            // Arrange — la reposición y el HP viven en la definición, no en el nodo.
+            // La reposición y el HP viven en la definición, no en el nodo.
             var table = ScriptableObject.CreateInstance<RoomObjectDefinitionSO>();
             table.hideFlags = HideFlags.HideAndDontSave;
             try
             {
-                // Act
                 GeneralaAssetBuilder.PopulateDiceDefinition(table, null);
 
-                // Assert
                 Assert.AreEqual(GeneralaAssetBuilder.DiceRoomObjectId, table.Id);
                 Assert.AreEqual(GeneralaAssetBuilder.DiceHp, table.Hp,
                     "Romper un dado tiene que costar un golpe entero.");
@@ -161,15 +142,12 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         [Test]
         public void DiceDefinition_ArmorsHer_AndTheFiveSharesAddUpToTheSheet()
         {
-            // Arrange
             var table = ScriptableObject.CreateInstance<RoomObjectDefinitionSO>();
             table.hideFlags = HideFlags.HideAndDontSave;
             try
             {
-                // Act
                 GeneralaAssetBuilder.PopulateDiceDefinition(table, null);
 
-                // Assert
                 Assert.IsTrue(table.GrantsOwnerArmor);
                 Assert.AreEqual(GeneralaAssetBuilder.TableArmorPerDie,
                     table.OwnerDamageReductionPerObject, 0.0001f);
@@ -191,22 +169,20 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         [Test]
         public void Table_KeepsHerRefillGesture()
         {
-            // Act
             var spawn = Descendants(_root).OfType<AINode_SpawnRoomObjects>().First();
 
-            // Assert — es el único uso que tiene esa animación del rig (ver BossFeedbackInstaller).
+            // Es el único uso que tiene esa animación del rig (ver BossFeedbackInstaller).
             Assert.AreEqual(BossFeedbackIds.GeneralaSummonAnim, spawn.SpawnFeedbackId);
         }
 
         [Test]
         public void Table_IsNotWrappedInOnce_SoTheHandComesBack()
         {
-            // Arrange — el spawn se auto-gatea y necesita tickear cada turno para correr los
+            // El spawn se auto-gatea y necesita tickear cada turno para correr los
             // relojes de reposición.
             var owner = _root.Children.FirstOrDefault(c =>
                 Descendants(c).Any(n => n is AINode_SpawnRoomObjects));
 
-            // Assert
             Assert.IsNotNull(owner);
             Assert.IsFalse(Descendants(owner).Any(n => n is AINode_Once),
                 "El spawn de la mesa no puede ir dentro de un Once — rompe la reposición.");
@@ -226,13 +202,13 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         [Test]
         public void RiskyNodes_AreIsolatedInSelectorsWithAWaitFallback()
         {
-            // Arrange — un Failed suelto en el Sequence raíz le cancela al jefe el resto del turno.
+            // Un Failed suelto en el Sequence raíz le cancela al jefe el resto del turno.
             var risky = _root.Children
                 .OfType<AINode_Selector>()
                 .Where(s => Descendants(s).Any(n => RiskyNodeTypes.Contains(n.GetType())))
                 .ToList();
 
-            // Assert — uno por nodo: compartir Selector saltearía al segundo en vez de aislarlo.
+            // Uno por nodo: compartir Selector saltearía al segundo en vez de aislarlo.
             Assert.AreEqual(RiskyNodeTypes.Length, risky.Count,
                 "Cada nodo que puede devolver Failed va en su propio Selector de aislamiento: la " +
                 "mesa, el setup de fase, el cubilete, la escarcha, la regla de la mano repetida y " +
@@ -244,14 +220,9 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             }
         }
 
-        // ======================================================================
-        // La tabla combo → telegraph
-        // ======================================================================
-
         [Test]
         public void HandTable_MapsEveryCategoryToTheSpecdShapeAndDamage()
         {
-            // Act + Assert — la ficha, mano por mano.
             AssertHandBranch(Rollgeon.Combos.ComboId.Generala, ThreatShape.ScatteredSquares,
                 GeneralaAssetBuilder.GeneralaDamage, size: 3, count: 8);
             AssertHandBranch(Rollgeon.Combos.ComboId.Poker, ThreatShape.SquareAroundPlayer,
@@ -267,11 +238,9 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         [Test]
         public void HandTable_HasABustBranch_ThatHurtsLessThanAPair()
         {
-            // Act
             var bust = HandBranches()
                 .FirstOrDefault(b => b.pc.Match == PcBossHandCombo.HandMatch.NoCombo);
 
-            // Assert
             Assert.IsNotNull(bust.mark, "Falta la rama de bust: fallar del todo también pega.");
             Assert.AreEqual(ThreatShape.DirectionalBand, bust.mark.Shape,
                 "El bust también sale de ella, no de una fila centrada en el jugador.");
@@ -288,7 +257,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         [Test]
         public void HandTable_EveryBranchRequiresAnArmedHand()
         {
-            // Assert — sin mano armada se perdería la ronda extra de aviso.
+            // Sin mano armada se perdería la ronda extra de aviso.
             foreach (var branch in HandBranches())
                 Assert.IsTrue(branch.pc.RequireArmed,
                     $"La rama '{branch.pc.ConditionName}' marca sin exigir mano armada.");
@@ -297,25 +266,18 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         [Test]
         public void HandTable_EndsInAWait_SoTheCalledHandTurnDoesNotAbortTheSequence()
         {
-            // Arrange
             var table = FindHandTable();
 
-            // Assert
             Assert.IsInstanceOf<AINode_Wait>(table.Children.Last(),
                 "El turno en que la mano solo se canta no matchea ninguna rama: hace falta el Wait.");
         }
 
-        // ======================================================================
-        // El cubilete
-        // ======================================================================
-
         [Test]
         public void CupSlam_HitsForTwelve_AtOneTileInManhattan()
         {
-            // Act
             var cup = FindCupSlam();
 
-            // Assert — mismo alcance con el que el jugador le pega a ella: si le llegás, te llega.
+            // Mismo alcance con el que el jugador le pega a ella: si le llegás, te llega.
             Assert.AreEqual(12, GeneralaAssetBuilder.CupSlamDamage,
                 "El mazazo cambió de daño: persigue (ver RepositionRange), así que llega seguido y " +
                 "el peaje por golpe tiene que ser bajo. El número vive en el builder, no en el nodo.");
@@ -329,10 +291,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         [Test]
         public void CupSlam_FallsOnEveryRoll_WithoutARoundParityGate()
         {
-            // Arrange
             var branch = FindCupBranch();
 
-            // Assert
             Assert.AreEqual(1, Descendants(_root).OfType<AINode_GeneralaCupSlam>().Count(),
                 "Un solo cubilete en el árbol: dos nodos serían dos golpes por tirada.");
             Assert.IsFalse(Descendants(branch).OfType<PcRoundNumber>().Any(),
@@ -344,27 +304,20 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         [Test]
         public void CupSlam_AnnouncesNothing_TheOnlyWarningIsTheDistance()
         {
-            // Arrange
             var branch = FindCupBranch();
 
-            // Assert
             Assert.IsFalse(Descendants(branch).OfType<AINode_AuxTelegraph>().Any(),
                 "El cubilete no ocupa canal de aviso: cobra en el acto.");
             Assert.IsFalse(Descendants(branch).OfType<AINode_TelegraphMark>().Any(),
                 "Ni marca área — el único aviso es la distancia, que el jugador controla entera.");
         }
 
-        // ======================================================================
-        // La escarcha
-        // ======================================================================
-
         [Test]
         public void Frost_FreezesExactlyTheTilesAdjacentToHer_AndNothingWider()
         {
-            // Act
             var frost = Descendants(_root).OfType<AINode_GeneralaFrostRing>().FirstOrDefault();
 
-            // Assert — radio 1 macizo = el 3×3 donde vive el quinto dado y desde donde se cobra
+            // Radio 1 macizo = el 3×3 donde vive el quinto dado y desde donde se cobra
             // el cubilete.
             Assert.IsNotNull(frost, "La Generala no congela nada.");
             Assert.AreEqual(GeneralaAssetBuilder.FrostRingRadius, frost.Radius);
@@ -394,13 +347,11 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         [Test]
         public void Frost_FallsOnACadenceOfRounds_SoThereIsARoundToBreakDice()
         {
-            // Arrange
             var gate = _root.Children
                 .OfType<AINode_Selector>()
                 .SelectMany(s => s.Children.OfType<AINode_If>())
                 .FirstOrDefault(i => Descendants(i).OfType<AINode_GeneralaFrostRing>().Any());
 
-            // Assert
             Assert.IsNotNull(gate, "La escarcha tiene que colgar de un gate de paridad de ronda.");
 
             var parity = gate.Conditions.OfType<PcRoundNumber>().FirstOrDefault();
@@ -414,14 +365,12 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         [Test]
         public void Frost_PaysInTurnsAndNotInHp_BecauseTheFloorCeilingIsAlreadyFull()
         {
-            // Arrange — la mano detonada (45) + el cubilete (12) ya llenan el techo del piso.
+            // La mano detonada (45) + el cubilete (12) ya llenan el techo del piso.
             var definition = ScriptableObject.CreateInstance<HazardDefinitionSO>();
             try
             {
-                // Act
                 GeneralaAssetBuilder.ConfigureFrostHazard(definition);
 
-                // Assert
                 Assert.AreEqual(0, definition.Damage, "El hielo no puede cobrar HP: el techo ya está lleno.");
                 Assert.AreEqual(HazardTriggerMode.OnEnter, definition.Trigger,
                     "Cobra al CRUZARLO — quedarse adentro o afuera del anillo no cuesta nada.");
@@ -442,7 +391,6 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         [Test]
         public void Frost_UsesItsOwnDefinition_AndDoesNotRetuneTheAnotadorsTrail()
         {
-            // Assert
             Assert.AreNotEqual(AnotadorAssetBuilder.IceHazardAssetPath,
                 GeneralaAssetBuilder.FrostHazardAssetPath,
                 "La Generala tiene que tener su propio HazardDefinitionSO.");
@@ -451,17 +399,11 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                 "Si las dos duraciones coincidieran, el asset propio no tendría razón de existir.");
         }
 
-        // ======================================================================
-        // La regla de la mano repetida
-        // ======================================================================
-
         [Test]
         public void RepeatBan_ForbidsExactlyTheLastComboScored()
         {
-            // Act
             var ban = Descendants(_root).OfType<AINode_RotateBlock>().FirstOrDefault();
 
-            // Assert
             Assert.IsNotNull(ban, "Falta la regla de la mano repetida.");
             Assert.AreEqual(AINode_RotateBlock.BlockTarget.Combo, ban.Target,
                 "Modo Dice bloquearía dados de la build — eso es del jefe del piso 1.");
@@ -472,26 +414,20 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         [Test]
         public void RepeatBan_IsPromulgatedAtTheEndOfHerTurn_SoThePlayerSeesItBeforeRolling()
         {
-            // Arrange
             int rollIdx = _root.Children.FindIndex(c => Descendants(c).Any(n => n is AINode_RollHand));
             int banIdx = _root.Children.FindIndex(c => Descendants(c).Any(n => n is AINode_RotateBlock));
 
-            // Assert — la fila sale tachada en el Contrato ANTES de que el jugador comprometa dados.
+            // La fila sale tachada en el Contrato ANTES de que el jugador comprometa dados.
             Assert.Greater(banIdx, -1, "No se encontró la regla en el Sequence raíz.");
             Assert.Greater(banIdx, rollIdx, "La regla se promulga al cierre del turno, no al abrirlo.");
         }
 
-        // ======================================================================
-        // El reposicionamiento
-        // ======================================================================
-
         [Test]
         public void Reposition_ChasesOnALeash_InsteadOfFleeing()
         {
-            // Act
             var move = Descendants(_root).OfType<AINode_Move>().FirstOrDefault();
 
-            // Assert — la correa: cierra distancia hasta DesiredRange y devuelve Failed (se queda
+            // La correa: cierra distancia hasta DesiredRange y devuelve Failed (se queda
             // quieta) cuando ya está más cerca.
             Assert.IsNotNull(move, "La Generala no se mueve: sin este nodo es una estatua.");
             Assert.IsFalse(move.Retreat,
@@ -506,7 +442,6 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         [Test]
         public void RepositionRange_StaysStrictlyOutsideCupSlamRange_SoSheNeverParksInMelee()
         {
-            // Assert
             Assert.Greater(GeneralaAssetBuilder.RepositionRange, GeneralaAssetBuilder.CupSlamRange,
                 "Su banda tiene que quedar FUERA del alcance del cubilete: si se pegara sola, el " +
                 "peaje de acercarse dejaría de elegirlo el jugador.");
@@ -515,7 +450,6 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         [Test]
         public void RepositionRange_StaysStrictlyOutsideTheFrostRing_SoTheIceIsNeverForced()
         {
-            // Assert
             Assert.Greater(GeneralaAssetBuilder.RepositionRange, GeneralaAssetBuilder.FrostRingRadius,
                 "La correa tiene que dejarla FUERA de su propio anillo de escarcha: si frena adentro, " +
                 "el hielo pasa de ser el precio de acercarse a ser un impuesto por ronda.");
@@ -524,7 +458,6 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         [Test]
         public void Reposition_GoesLast_SoTheCupAndTheFrostResolveFromWhereSheRolled()
         {
-            // Assert
             var last = _root.Children.Last();
             Assert.IsTrue(Descendants(last).OfType<AINode_Move>().Any(),
                 "El reposicionamiento tiene que ser el último hijo del Sequence raíz.");
@@ -535,17 +468,12 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                 "KeepDistance sólo kitea — convivir con Move duplicaría la lógica de distancia.");
         }
 
-        // ======================================================================
-        // Techo de daño
-        // ======================================================================
-
         [Test]
         public void Damage_NeverExceedsTheFloorThreeCeiling()
         {
-            // Arrange — techo de daño por golpe del piso 3.
+            // Techo de daño por golpe del piso 3.
             const int floorThreeCeiling = 45;
 
-            // Act + Assert
             foreach (var mark in Descendants(_root).OfType<AINode_TelegraphMark>())
                 Assert.LessOrEqual(mark.Damage, floorThreeCeiling,
                     $"Un TelegraphMark ({mark.Shape}) pega {mark.Damage}, sobre el techo del piso 3.");
@@ -556,20 +484,14 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                     $"El cubilete pega {cup.Damage}, sobre el techo del piso 3.");
         }
 
-        // ======================================================================
-        // Fase 2
-        // ======================================================================
-
         [Test]
         public void PhaseTwo_AtFiftyPercent_GivesRerollAndAdoptsTheWeakness_Once()
         {
-            // Act
             var gate = Descendants(_root)
                 .OfType<AINode_If>()
                 .FirstOrDefault(g => g.Conditions != null && g.Conditions.OfType<PcOwnerHpBelow>()
                     .Any(p => Mathf.Abs(p.Percent - GeneralaAssetBuilder.Phase2HpThreshold) < 0.0001f));
 
-            // Assert
             Assert.IsNotNull(gate, "No hay gate de HP al 50%.");
             Assert.IsInstanceOf<AINode_Once>(gate.Then, "El setup de fase corre una sola vez.");
 
@@ -587,21 +509,14 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             Assert.IsTrue(phase.EmitPhaseChangedEvent, "El feedback de Fase 2 se engancha a este evento.");
         }
 
-        // ======================================================================
-        // Data del SO
-        // ======================================================================
-
         [Test]
         public void PopulateEnemyData_WritesTheSpecdStatsAndIdentity()
         {
-            // Arrange
             var boss = ScriptableObject.CreateInstance<EnemyDataSO>();
             try
             {
-                // Act
                 GeneralaAssetBuilder.PopulateEnemyData(boss, _dice, null);
 
-                // Assert
                 Assert.AreEqual(GeneralaAssetBuilder.BossEntityId, boss.EntityId);
                 Assert.AreEqual("La Generala", boss.DisplayName);
                 Assert.AreEqual(GeneralaAssetBuilder.BossHp, boss.BaseHP);
@@ -621,14 +536,11 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         [Test]
         public void PopulateDiceData_MakesObjectsThatDoNotAttack_WithTheSpecdHp()
         {
-            // Arrange
             var dice = ScriptableObject.CreateInstance<EnemyDataSO>();
             try
             {
-                // Act
                 GeneralaAssetBuilder.PopulateDiceData(dice, null);
 
-                // Assert
                 Assert.AreEqual(GeneralaAssetBuilder.DiceEntityId, dice.EntityId);
                 Assert.AreEqual(GeneralaAssetBuilder.DiceHp, dice.BaseHP);
                 Assert.That(GeneralaAssetBuilder.DiceHp, Is.InRange(40, 50),
@@ -647,16 +559,14 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         [Test]
         public void PopulateEnemyData_AssignsTheVisualPrefabAndThePortrait()
         {
-            // Arrange
             var boss = ScriptableObject.CreateInstance<EnemyDataSO>();
             var visual = new GameObject("PF_Boss_Generala_Probe");
             var portrait = MakeSprite();
             try
             {
-                // Act
                 GeneralaAssetBuilder.PopulateEnemyData(boss, _dice, visual, portrait);
 
-                // Assert — sin VisualPrefab, EntityVisualService loguea error y no spawnea nada.
+                // Sin VisualPrefab, EntityVisualService loguea error y no spawnea nada.
                 Assert.AreSame(visual, boss.VisualPrefab);
                 Assert.AreSame(portrait, boss.Portrait,
                     "El retrato alimenta la cola de turnos y la BossBar por el mismo campo.");
@@ -672,7 +582,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         [Test]
         public void PopulateData_KeepsTheExistingVisual_WhenNothingIsPassed()
         {
-            // Arrange — el builder es re-ejecutable: una corrida sin arte no puede borrar el wiring.
+            // El builder es re-ejecutable: una corrida sin arte no puede borrar el wiring.
             var boss = ScriptableObject.CreateInstance<EnemyDataSO>();
             var visual = new GameObject("PF_Boss_Generala_Probe");
             var portrait = MakeSprite();
@@ -680,10 +590,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             {
                 GeneralaAssetBuilder.PopulateEnemyData(boss, _dice, visual, portrait);
 
-                // Act
                 GeneralaAssetBuilder.PopulateEnemyData(boss, _dice, null, null);
 
-                // Assert
                 Assert.AreSame(visual, boss.VisualPrefab);
                 Assert.AreSame(portrait, boss.Portrait);
             }
@@ -698,16 +606,13 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         [Test]
         public void PopulateDiceData_AssignsItsOwnVisualPrefabAndPortrait()
         {
-            // Arrange
             var dice = ScriptableObject.CreateInstance<EnemyDataSO>();
             var visual = new GameObject("PF_Obj_DadoCasa_Probe");
             var portrait = MakeSprite();
             try
             {
-                // Act
                 GeneralaAssetBuilder.PopulateDiceData(dice, visual, portrait);
 
-                // Assert
                 Assert.AreSame(visual, dice.VisualPrefab);
                 Assert.AreSame(portrait, dice.Portrait);
             }
@@ -718,10 +623,6 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                 DestroySprite(portrait);
             }
         }
-
-        // ======================================================================
-        // Helpers
-        // ======================================================================
 
         private static Sprite MakeSprite()
         {
@@ -794,7 +695,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                     "profundidad autorada.");
         }
 
-        /// <summary>Tree-walker por reflexión (mismo helper que SunkenGrandPhaseWiringTests).</summary>
+        /// <summary>Tree-walker por reflexión.</summary>
         private static List<object> Descendants(object root)
         {
             var all = new List<object>();

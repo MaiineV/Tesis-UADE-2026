@@ -10,12 +10,9 @@ using Object = UnityEngine.Object;
 
 namespace Rollgeon.Editor.Tools.Enemy.Tests
 {
-    /// <summary>
-    /// Vestuario de El Cajero: la ficha de wrapper, el prefab que sale de construirla contra el arte
-    /// real, y la regla de <see cref="CajeroAssetBuilder.ResolveVisualPrefab"/>. Construye en una
-    /// carpeta temporal que el teardown borra, y no llama a <c>EnsurePortrait</c> — reimportar
-    /// <c>Casino_0070.png</c> ensuciaría el <c>.meta</c> de un asset compartido.
-    /// </summary>
+    /// <summary>Construye en una carpeta temporal que el teardown borra, y no llama a
+    /// <c>EnsurePortrait</c>: reimportar <c>Casino_0070.png</c> ensuciaría el <c>.meta</c> de un
+    /// asset compartido.</summary>
     [TestFixture]
     public class CajeroVisualWiringTests
     {
@@ -38,10 +35,6 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
 
         private GameObject _wrapper;
 
-        // ======================================================================
-        // Fixture
-        // ======================================================================
-
         [OneTimeSetUp]
         public void OneTimeSetUp()
         {
@@ -63,10 +56,6 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             if (AssetDatabase.IsValidFolder(TestRoot)) AssetDatabase.DeleteAsset(TestRoot);
             AssetDatabase.Refresh();
         }
-
-        // ======================================================================
-        // Ficha de wrapper
-        // ======================================================================
 
         [Test]
         public void Spec_DressesTheCashierWithItsOwnArt_NotThePlaceholder()
@@ -211,10 +200,6 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             Assert.AreEqual("Cajero", spec.BossName, "El prefijo de los materiales sale de acá.");
         }
 
-        // ======================================================================
-        // Prefab construido
-        // ======================================================================
-
         [Test]
         public void Wrapper_IsAPickableAnimatedPawn()
         {
@@ -303,9 +288,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         [Test]
         public void Wrapper_KeepsItsColliderInsideItsOwnTile()
         {
-            // El mech está en T-pose: sus bounds dan ~1.5 de radio y el capsule saldría tapando las
-            // cuatro casillas vecinas, que con un jefe melee son justo las que el jugador necesita
-            // poder clickear (las monedas del piso, los pinchos de la sala).
+            // El mech está en T-pose: sus bounds dan ~1.5 de radio y el capsule taparía las cuatro
+            // casillas vecinas, que con un jefe melee son las que el jugador necesita clickear.
             var capsule = _wrapper.GetComponent<CapsuleCollider>();
             Assert.IsNotNull(capsule, "El wrapper del jefe nace con capsule.");
 
@@ -368,10 +352,6 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                 "El rebuild duplicó la caja de fichas.");
         }
 
-        // ======================================================================
-        // Retrato
-        // ======================================================================
-
         [Test]
         public void Portrait_PointsAtAnImportableTexture()
         {
@@ -381,10 +361,6 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             Assert.IsNotNull(importer,
                 $"'{CajeroAssetBuilder.PortraitTexturePath}' no es una textura importable.");
         }
-
-        // ======================================================================
-        // Regla de asignación
-        // ======================================================================
 
         [Test]
         public void ResolveVisualPrefab_TakesTheWrapper_WhenTheDataHasNothing()
@@ -457,10 +433,6 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                 Object.DestroyImmediate(placeholder);
             }
         }
-
-        // ======================================================================
-        // Helpers
-        // ======================================================================
 
         /// <summary>Clon de un material del arte en la carpeta temporal del fixture.</summary>
         private static Material LoadClone(string sourceMaterialName)

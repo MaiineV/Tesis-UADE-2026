@@ -9,21 +9,9 @@ using UnityEngine;
 
 namespace Rollgeon.Editor.Tools.Enemy.Tests
 {
-    /// <summary>
-    /// Fija el mapeo retrato ↔ jefe de <see cref="BossPortraitLibrary"/>.
-    /// </summary>
-    /// <remarks>
-    /// <para>
-    /// Un retrato que no resuelve <b>no rompe nada visible en el editor</b>: el campo
-    /// <c>Portrait</c> queda en null, el builder no falla, el prefab abre igual, y recién en Play
-    /// se nota que la cola de turnos muestra el visual default.
-    /// </para>
-    /// <para>
-    /// Los nombres de sub-sprite de la hoja compartida son la parte frágil: si el arte re-slicea
-    /// <c>RollGeonSprites.png</c>, los nombres <c>RollGeonSprites_N</c> se renumeran y los jefes
-    /// que la usan pierden la cara en silencio.
-    /// </para>
-    /// </remarks>
+    /// <summary>Un retrato que no resuelve no rompe nada visible en el editor: <c>Portrait</c> queda en
+    /// null y recién en Play la cola de turnos muestra el visual default. Lo frágil son los nombres
+    /// de sub-sprite: si el arte re-slicea la hoja compartida, se renumeran en silencio.</summary>
     [TestFixture]
     public sealed class BossPortraitLibraryTests
     {
@@ -40,10 +28,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         private const string BandidaDataPath = "Assets/Rollgeon/Enemies/ED_Boss_Bandida.asset";
         private const string AnotadorDataPath = "Assets/Rollgeon/Enemies/ED_Boss_Anotador.asset";
 
-        /// <summary>
-        /// Los seis jefes que pasan por la library, cada uno con la ficha en disco que lo
-        /// representa en los pools. La ficha es lo que permite cruzar library contra pool.
-        /// </summary>
+        /// <summary>Cada jefe con la ficha en disco que lo representa: la ficha es lo que permite cruzar
+        /// library contra pool.</summary>
         private static readonly (string Boss, string DataPath, Func<Sprite> Portrait)[] Bosses =
         {
             ("Croupier", CroupierDataPath, BossPortraitLibrary.Croupier),
@@ -82,10 +68,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                 "cara en la cola de turnos y en la barra de vida, sin ningún error que lo avise.");
         }
 
-        /// <summary>
-        /// Fichas de los jefes que hoy pueden salir en una run: entry del pool con
-        /// <c>Enabled</c> y peso mayor a cero.
-        /// </summary>
+        /// <summary>Los que hoy pueden salir en una run: entry del pool con <c>Enabled</c> y peso
+        /// mayor a cero.</summary>
         private static HashSet<string> BossesInThePool()
         {
             var inPool = new HashSet<string>();
@@ -107,17 +91,9 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             return inPool;
         }
 
-        /// <summary>
-        /// Dos jefes con la misma cara en la misma run son dos entradas indistinguibles en la cola
-        /// de turnos.
-        /// </summary>
-        /// <remarks>
-        /// La unicidad se exige <b>entre los que están en el pool</b>, no entre los seis. El
-        /// retrato sigue al rig (ver <see cref="BossPortraitLibrary"/>), así que dos jefes que
-        /// visten el mismo arte 3D tienen que mostrar la misma cara: mentir sobre la silueta que
-        /// está en la sala sí lo ve el jugador, y empatar con un jefe que no puede salir no lo ve
-        /// nadie.
-        /// </remarks>
+        /// <summary>La unicidad se exige entre los que están en el pool, no entre los seis: el retrato
+        /// sigue al rig, así que dos jefes con el mismo arte 3D <b>tienen</b> que compartir cara, y
+        /// empatar con un jefe que no puede salir no lo ve nadie.</summary>
         [Test]
         public void EveryBossInThePool_HasItsOwnPortrait()
         {
@@ -141,10 +117,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                 string.Join(", ", playing.Select(b => b.Boss)));
         }
 
-        /// <summary>
-        /// Los dos pares que comparten cara, y la condición que lo hace aceptable: uno de los dos
-        /// está en banco.
-        /// </summary>
+        /// <summary>Los pares que comparten cara, y la condición que lo hace aceptable: uno está en
+        /// banco.</summary>
         [Test]
         public void BossesOnTheSameRig_ShareTheirFace_WithOneOfThemBenched()
         {
@@ -177,11 +151,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             Assert.AreEqual(BossPortraitLibrary.AnotadorPath, AnotadorAssetBuilder.PortraitTexturePath);
         }
 
-        /// <summary>
-        /// El rodillo de la Bandida y el dado de la Generala <b>no</b> son personajes: son piezas de
-        /// la sala con turno propio. Si tomaran la cara del jefe, la cola de turnos mostraría dos
-        /// entradas idénticas y el jugador no sabría a cuál le está pegando.
-        /// </summary>
+        /// <summary>El rodillo y el dado son piezas de la sala con turno propio: con la cara del jefe, la
+        /// cola de turnos muestra dos entradas idénticas y no se sabe a cuál se le pega.</summary>
         [Test]
         public void PropEnemies_KeepTheirOwnSymbol()
         {

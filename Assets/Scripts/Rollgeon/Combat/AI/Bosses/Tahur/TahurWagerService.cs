@@ -8,22 +8,13 @@ using UnityEngine;
 namespace Rollgeon.Combat.AI.Bosses.Tahur
 {
     /// <summary>
-    /// Implementación POCO de <see cref="ITahurWagerService"/>. Guarda el pozo, el canto,
-    /// La Mesa y la última mano que jugó el jugador (vía
-    /// <c>TypedEvent&lt;ComboPlayedPayload&gt;</c>, el único canal que dispara una vez por
-    /// acción confirmada y no en cada preview de hold).
+    /// Lee la mano jugada por <c>TypedEvent&lt;ComboPlayedPayload&gt;</c>, el único canal que dispara
+    /// una vez por acción confirmada y no en cada preview de hold. Registro Global con reset en
+    /// <c>OnCombatEnd</c> / <c>OnRunEnd</c>.
     /// </summary>
-    /// <remarks>
-    /// Registro Global con reset en <c>OnCombatEnd</c> / <c>OnRunEnd</c>; se resuelve con
-    /// <see cref="ResolveOrCreate"/> para no depender de wiring manual en el bootstrap de
-    /// servicios.
-    /// </remarks>
     public sealed class TahurWagerService : ITahurWagerService, IDisposable
     {
-        /// <summary>
-        /// Key del overlay de La Mesa: no es el guid del boss porque esa key la usa el overlay del
-        /// Castigo, y compartirla haría que la mesa y el castigo se pisen.
-        /// </summary>
+        /// <summary>No es el guid del boss: esa key la usa el overlay del Castigo, y compartirla haría que la mesa y el castigo se pisen.</summary>
         public static readonly Guid TableOverlayGuid = new Guid("7a4c8f10-0000-4000-8000-000000000001");
 
         private int _chips;
@@ -50,14 +41,6 @@ namespace Rollgeon.Combat.AI.Bosses.Tahur
         private Action<ComboPlayedPayload> _onComboPlayedHandler;
         private bool _subscribed;
 
-        // ---------------------------------------------------------------------
-        // Resolución
-        // ---------------------------------------------------------------------
-
-        /// <summary>
-        /// Devuelve el servicio registrado o crea + registra uno (Global). Lazy para que el
-        /// boss no necesite entradas nuevas en el bootstrap de servicios.
-        /// </summary>
         public static ITahurWagerService ResolveOrCreate()
         {
             if (ServiceLocator.TryGetService<ITahurWagerService>(out var existing) && existing != null)
@@ -68,7 +51,6 @@ namespace Rollgeon.Combat.AI.Bosses.Tahur
             return created;
         }
 
-        /// <summary>Se registra Global y engancha el ciclo de vida + la lectura de manos jugadas.</summary>
         public void Register()
         {
             Subscribe();
@@ -84,7 +66,6 @@ namespace Rollgeon.Combat.AI.Bosses.Tahur
         /// <summary>Hook para tests EditMode — engancha/desengancha sin pasar por <see cref="Register"/>.</summary>
         public void SubscribeForTests() => Subscribe();
 
-        /// <summary>Hook para tests EditMode.</summary>
         public void UnsubscribeForTests() => Unsubscribe();
 
         private void Subscribe()
@@ -119,10 +100,6 @@ namespace Rollgeon.Combat.AI.Bosses.Tahur
             _lastPlayedComboId = payload.ComboId;
             _lastPlayedBy = payload.SourceGuid;
         }
-
-        // ---------------------------------------------------------------------
-        // El pozo
-        // ---------------------------------------------------------------------
 
         public int Chips => _chips;
 
@@ -162,10 +139,6 @@ namespace Rollgeon.Combat.AI.Bosses.Tahur
             ChipsChanged?.Invoke(_chips);
         }
 
-        // ---------------------------------------------------------------------
-        // El canto
-        // ---------------------------------------------------------------------
-
         public int CalledRank => _calledRank;
 
         public string CalledComboId => _calledComboId ?? string.Empty;
@@ -177,8 +150,8 @@ namespace Rollgeon.Combat.AI.Bosses.Tahur
             get
             {
                 if (_calledRank <= 0) return 0;
-                // LEE: cobra el escalón inmediatamente inferior al cantado. El canto en fase 2
-                // nunca sale rank 1 (ver AINode_TahurCallHand), así que el Max es defensivo.
+                // LEE: cobra el escalón inferior al cantado. El canto en fase 2 nunca sale rank 1,
+                // así que el Max es defensivo.
                 return _callInverted ? Mathf.Max(1, _calledRank - 1) : _calledRank;
             }
         }
@@ -188,10 +161,6 @@ namespace Rollgeon.Combat.AI.Bosses.Tahur
             _calledRank = Mathf.Max(0, rank);
             _calledComboId = comboId ?? string.Empty;
         }
-
-        // ---------------------------------------------------------------------
-        // La fase
-        // ---------------------------------------------------------------------
 
         public int RakeChipsPerRound
         {
@@ -218,10 +187,6 @@ namespace Rollgeon.Combat.AI.Bosses.Tahur
             return true;
         }
 
-        // ---------------------------------------------------------------------
-        // La Mesa
-        // ---------------------------------------------------------------------
-
         private HashSet<GridCoord> Table => _tableTiles ??= new HashSet<GridCoord>();
 
         public IReadOnlyCollection<GridCoord> TableTiles => Table;
@@ -236,10 +201,6 @@ namespace Rollgeon.Combat.AI.Bosses.Tahur
         }
 
         public void ClearTable() => Table.Clear();
-
-        // ---------------------------------------------------------------------
-        // La liquidación
-        // ---------------------------------------------------------------------
 
         public string LastPlayedComboId => _lastPlayedComboId ?? string.Empty;
 
