@@ -971,6 +971,45 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 13919417973649416
     m_Localized: "Parte de su mano, y en tu camino. Rompelo para borrarle una categor\xEDa."
+  - m_Id: 14364254574313472
+    m_Localized: "Reci\xE9n teletransportado"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 14364254620450816
+    m_Localized: "No pod\xE9s volver a usar un portal hasta que pase el efecto."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 14364254620450817
+    m_Localized: "Quem\xE1ndose"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 14364254620450818
+    m_Localized: "Est\xE1s sobre Fuego: recib\xEDs da\xF1o al inicio de tu turno
+      mientras sigas ac\xE1."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 14364254620450819
+    m_Localized: "Casilla de Curaci\xF3n"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 14364254620450820
+    m_Localized: "Termin\xE1 tu turno ac\xE1 para recuperar vida."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 14364254620450821
+    m_Localized: Impulso
+    m_Metadata:
+      m_Items: []
+  - m_Id: 14364254620450822
+    m_Localized: "Esta casilla mejora tu pr\xF3ximo movimiento."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 14364254620450823
+    m_Localized: Fortaleza
+    m_Metadata:
+      m_Items: []
+  - m_Id: 14364254620450824
+    m_Localized: "Tus combos ofensivos hacen da\xF1o extra mientras permanezcas ac\xE1."
     m_Metadata:
       m_Items: []
   references:

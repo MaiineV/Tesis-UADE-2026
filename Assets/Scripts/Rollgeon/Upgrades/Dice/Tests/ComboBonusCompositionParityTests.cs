@@ -17,6 +17,9 @@ namespace Rollgeon.Upgrades.Dice.Tests
     /// a los triggers legacy de scratch-math, contra los valores literales que el legacy
     /// producía (verificados con ambas implementaciones vivas antes del borrado —
     /// Feature#0035). Cambiar estas expectativas es cambiar el balance del juego.
+    /// Excepción deliberada (23/08): los face-conditional en hooks de combo ahora exigen
+    /// que el duplicado esté entre los contribuyentes — el legacy evaluaba la tirada
+    /// entera y ese era el bug de "afecta aunque no participe".
     /// </summary>
     [TestFixture]
     public class ComboBonusCompositionParityTests
@@ -28,7 +31,8 @@ namespace Rollgeon.Upgrades.Dice.Tests
         private static EnchantmentTriggerContext BuildCtx(
             string comboId,
             int[] faces,
-            int carrierIndex = 0)
+            int carrierIndex = 0,
+            int[] contributingIndices = null)
         {
             return new EnchantmentTriggerContext
             {
@@ -38,7 +42,7 @@ namespace Rollgeon.Upgrades.Dice.Tests
                     DiceResult = faces,
                     ComboResult = comboId != null
                         ? ComboDetectionResult.Match(comboId, baseDamage: 10, countUsed: 2,
-                            contributingIndices: new[] { 0 })
+                            contributingIndices: contributingIndices ?? new[] { 0 })
                         : (ComboDetectionResult?)null,
                 },
                 Scratch = new EnchantmentScratch(),
@@ -64,9 +68,10 @@ namespace Rollgeon.Upgrades.Dice.Tests
             };
         }
 
-        private static EnchantmentScratch RunComboMatched(ExecuteEffectsOnDiceEvent bridge, string comboId, int[] faces)
+        private static EnchantmentScratch RunComboMatched(ExecuteEffectsOnDiceEvent bridge, string comboId,
+            int[] faces, int[] contributingIndices = null)
         {
-            var ctx = BuildCtx(comboId, faces);
+            var ctx = BuildCtx(comboId, faces, contributingIndices: contributingIndices);
             bridge.OnComboMatched(ctx);
             return ctx.Scratch;
         }
@@ -171,25 +176,38 @@ namespace Rollgeon.Upgrades.Dice.Tests
         [Test]
         public void Composition_TwinMultiplier_OnlyWithDuplicateFace()
         {
-            // Ench_Gemelo: ×1.5 si otro dado comparte la cara del carrier.
+            // Ench_Gemelo: ×1.5 si otro dado comparte la cara del carrier. Desde el fix del
+            // 23/08 el gemelo tiene que estar entre los CONTRIBUYENTES del combo — un par
+            // fuera de la combinación confirmada ya no dispara (ese era el bug).
             var bridge = Bridge(EnchantmentHookEvent.ComboMatched,
                 Group(new EffMultiplyComboDamage { Multiplier = 1.5f },
                     new PcCarrierFace { Mode = CarrierFaceMode.HasDuplicate }));
 
-            Assert.AreEqual(1.5f, RunComboMatched(bridge, "combo.par", new[] { 3, 3, 5 }).ComboDamageMultiplier, 0.0001f);
-            Assert.AreEqual(1f, RunComboMatched(bridge, "combo.par", new[] { 3, 4, 5 }).ComboDamageMultiplier, 0.0001f);
+            Assert.AreEqual(1.5f, RunComboMatched(bridge, "combo.par", new[] { 3, 3, 5 },
+                contributingIndices: new[] { 0, 1 }).ComboDamageMultiplier, 0.0001f);
+            Assert.AreEqual(1f, RunComboMatched(bridge, "combo.par", new[] { 3, 4, 5 },
+                contributingIndices: new[] { 0, 1 }).ComboDamageMultiplier, 0.0001f);
+            Assert.AreEqual(1f, RunComboMatched(bridge, "combo.par", new[] { 3, 3, 5 },
+                contributingIndices: new[] { 0 }).ComboDamageMultiplier, 0.0001f,
+                "El gemelo (índice 1) quedó fuera del combo: no multiplica — regresión del bug 23/08.");
         }
 
         [Test]
         public void Composition_ResonantBonus_AddsCarrierFaceWhenDuplicated()
         {
-            // Ench_Resonante: +cara del carrier si está duplicada.
+            // Ench_Resonante: +cara del carrier si está duplicada. Mismo cambio de semántica
+            // que Gemelo (23/08): el duplicado tiene que participar del combo.
             var bridge = Bridge(EnchantmentHookEvent.ComboMatched,
                 Group(new EffAddComboBonus { Amount = new ReadCarrierFace() },
                     new PcCarrierFace { Mode = CarrierFaceMode.HasDuplicate }));
 
-            Assert.AreEqual(4, RunComboMatched(bridge, "combo.par", new[] { 4, 4, 2 }).BonusComboDamage);
-            Assert.AreEqual(0, RunComboMatched(bridge, "combo.par", new[] { 4, 5, 2 }).BonusComboDamage);
+            Assert.AreEqual(4, RunComboMatched(bridge, "combo.par", new[] { 4, 4, 2 },
+                contributingIndices: new[] { 0, 1 }).BonusComboDamage);
+            Assert.AreEqual(0, RunComboMatched(bridge, "combo.par", new[] { 4, 5, 2 },
+                contributingIndices: new[] { 0, 1 }).BonusComboDamage);
+            Assert.AreEqual(0, RunComboMatched(bridge, "combo.par", new[] { 4, 4, 2 },
+                contributingIndices: new[] { 0 }).BonusComboDamage,
+                "El duplicado (índice 1) quedó fuera del combo: sin bonus — regresión del bug 23/08.");
         }
 
         [Test]

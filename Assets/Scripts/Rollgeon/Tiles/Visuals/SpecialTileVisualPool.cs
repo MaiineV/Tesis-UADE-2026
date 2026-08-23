@@ -140,6 +140,12 @@ namespace Rollgeon.Tiles.Visuals
             // no es la del pool, y el Dispose no se lo llevaría.
             if (t.parent != root.transform) t.SetParent(root.transform, worldPositionStays: false);
 
+            // SetActive ANTES de posicionar: cualquier OnEnable del prefab que inicialice
+            // su pose (SpikeArmedVisual re-armando el pincho) corre primero, y la colocación
+            // autoritativa del pool siempre gana. Al revés, un clon reciclado se
+            // teletransportaba al origen del mundo apenas se prendía.
+            entry.Go.SetActive(true);
+
             // Rotación identidad a propósito: el Instantiate(prefab, world, identity) que había
             // antes descartaba la rotación propia del prefab (VFX_Fire trae 180° en el root),
             // así que un clon reciclado con la rotación vieja se vería distinto al primero.
@@ -149,7 +155,6 @@ namespace Rollgeon.Tiles.Visuals
             // prefab tal cual, igual que un Instantiate fresco.
             t.localScale = prefab.transform.localScale;
 
-            entry.Go.SetActive(true);
             entry.Parked = false;
             return entry;
         }

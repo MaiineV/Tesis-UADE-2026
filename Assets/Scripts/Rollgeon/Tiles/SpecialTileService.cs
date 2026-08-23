@@ -550,6 +550,26 @@ namespace Rollgeon.Tiles
             }
         }
 
+        /// <inheritdoc />
+        public void CollectTypesUnder(Guid entity, List<SpecialTileType> into)
+        {
+            if (into == null) return;
+            into.Clear();
+            if (entity == Guid.Empty || _instances.Count == 0) return;
+            if (!TryGetGrid(out var grid) || !grid.TryGetPosition(entity, out var coord)) return;
+
+            foreach (var instance in _instances.Values)
+            {
+                var def = instance.Definition;
+                if (def == null) continue;
+                if (!instance.Tiles.Contains(coord)) continue;
+                // Mismos filtros que un disparo real: un ícono de "quemándose" sobre un fuego
+                // del que una Zona de Seguridad te protege sería mentirle al jugador.
+                if (!ShouldAffect(instance, entity, coord)) continue;
+                if (!into.Contains(def.TileType)) into.Add(def.TileType);
+            }
+        }
+
         /// <summary>
         /// Filtros transversales, en el orden del plan: celda armada → affinity → ownership
         /// → Zona de Seguridad. La máscara de trigger ya se chequeó en el caller.
@@ -914,6 +934,11 @@ namespace Rollgeon.Tiles
                             break;
                         }
 
+                        // El cooldown se aplica ANTES de reubicar: si la celda de reubicación
+                        // es otro portal, la próxima iteración ya lo ve como celda común y la
+                        // cadena termina limpia (antes solo frenaba el ChainBudget).
+                        ApplyTeleportCooldown(entity, terminator.Definition);
+
                         if (remainingForced > 0)
                         {
                             // El remanente del empuje sigue desde el otro portal; el primer
@@ -1033,6 +1058,10 @@ namespace Rollgeon.Tiles
                 if (!portal && !ice) continue;
                 if (!instance.Tiles.Contains(coord)) continue;
                 if (portal && !HasValidPortalExit(instance)) continue;
+                // En cooldown post-teleport el portal es una celda común: no trunca el path
+                // ni teletransporta. Este es el único choke point — Filter, RunChainCore y
+                // ComputeSlideDestination pasan todos por acá.
+                if (portal && IsTeleportBlocked(entity)) continue;
                 if (!ShouldAffect(instance, entity, coord)) continue;
 
                 terminator = instance;
@@ -1044,6 +1073,28 @@ namespace Rollgeon.Tiles
 
         private bool HasValidPortalExit(SpecialTileInstance portal)
             => portal.LinkedInstanceId != Guid.Empty && _instances.ContainsKey(portal.LinkedInstanceId);
+
+        /// <summary>
+        /// Defensivo a propósito: sin <c>ITeleportCooldownService</c> registrado los portales
+        /// se comportan como siempre — los tests de cadenas existentes no necesitan el servicio.
+        /// </summary>
+        private static bool IsTeleportBlocked(Guid entity)
+            => ServiceLocator.TryGetService<Rollgeon.Combat.Status.ITeleportCooldownService>(out var cooldown)
+               && cooldown != null && cooldown.IsOnCooldown(entity);
+
+        private static void ApplyTeleportCooldown(Guid entity, SpecialTileDefinitionSO def)
+        {
+            // Aplica en cualquier fase (playtest 23/08: los portales se usan sobre todo en
+            // exploración). El reloj de expiración lo decide el servicio: turnos en combate,
+            // movimientos en exploración.
+            if (def == null || def.TeleportCooldownTurns <= 0) return;
+
+            if (ServiceLocator.TryGetService<Rollgeon.Combat.Status.ITeleportCooldownService>(out var cooldown)
+                && cooldown != null)
+            {
+                cooldown.Apply(entity, def.TeleportCooldownTurns);
+            }
+        }
 
         private bool TryResolvePortalExit(SpecialTileInstance portal, out GridCoord exit)
         {

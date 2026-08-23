@@ -40,6 +40,17 @@ namespace Rollgeon.Tiles.Visuals
         {
             if (Spikes == null) Spikes = transform;
 
+            // Invariante: Spikes debe ser un HIJO del root. El root lo posiciona el pool en
+            // la celda; si Spikes ES el root, _up/_down quedan en coordenadas del momento
+            // de creación y el primer Sink/reciclaje manda el pincho al origen del mundo
+            // (bug de playtest 23/08 — el prefab viejo tenía la malla en el root).
+            if (Spikes == transform)
+            {
+                Debug.LogWarning("[SpikeArmedVisual] 'Spikes' apunta al root del prefab — " +
+                                 "re-correr Tools/Rollgeon/Tiles/Install Spike Visual para " +
+                                 "regenerarlo con el pivote hijo.", this);
+            }
+
             _up = Spikes.localPosition;
             _down = _up + Vector3.down * SunkDepth;
 
@@ -49,8 +60,16 @@ namespace Rollgeon.Tiles.Visuals
             binding.OnDisarmed.AddListener(Sink);
         }
 
-        /// <summary>Arranca armado: es el estado de una celda recién puesta.</summary>
-        private void OnEnable() => Apply(_up);
+        /// <summary>
+        /// Arranca armado: es el estado de una celda recién puesta. También cubre el clon
+        /// reciclado del pool que se estacionó a mitad de un Slide — la corrutina murió con
+        /// el SetActive(false) y el snap la reemplaza.
+        /// </summary>
+        private void OnEnable()
+        {
+            _moving = null;
+            Apply(_up);
+        }
 
         private void Raise() => MoveTo(_up);
 

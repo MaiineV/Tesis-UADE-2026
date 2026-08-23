@@ -33,10 +33,11 @@ MonoBehaviour:
   OwnerBossImmune: 1
   TelegraphPayload: {fileID: 0}
   TelegraphRounds: 1
+  TeleportCooldownTurns: 2
   ProtectedTileTypes: 
-  VisualPrefab: {fileID: 0}
+  VisualPrefab: {fileID: 1531387017448088533, guid: 4f776957eb7298643ae33f5cab0f9b02, type: 3}
   VisualYOffset: 0.02
-  OverlayTint: {r: 1, g: 1, b: 1, a: 0.35}
+  OverlayTint: {r: 0, g: 0, b: 0, a: 0}
   TriggerVfxPrefab: {fileID: 0}
   TriggerVfxLifetime: 2
   TriggerVfxYOffset: 0.1

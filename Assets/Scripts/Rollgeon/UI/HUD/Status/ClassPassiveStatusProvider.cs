@@ -26,10 +26,12 @@ namespace Rollgeon.UI.HUD.Status
 
             bool active = passive.IsActiveFor(ownerGuid);
 
-            // El ícono inactivo es opcional: sin él la pasiva se lee igual, cambia el marco.
-            var icon = active
-                ? passive.ActiveIcon
-                : (passive.InactiveIcon != null ? passive.InactiveIcon : passive.ActiveIcon);
+            // Desactivada no se muestra (pedido de playtest 23/08): el slot gris permanente
+            // leía como "algo roto". El flanco off→on de la vista sigue sonando igual porque
+            // compara contra _lastActiveById, no contra la presencia del slot.
+            if (!active) return;
+
+            var icon = passive.ActiveIcon;
             if (icon == null) return;
 
             string id = string.IsNullOrEmpty(passive.PassiveId) ? "passive" : passive.PassiveId;

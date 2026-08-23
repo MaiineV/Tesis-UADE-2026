@@ -3431,7 +3431,7 @@ MonoBehaviour:
       Data: 100
     - Name: _comboMultiplier
       Entry: 4
-      Data: 0
+      Data: 1
     - Name: _reader
       Entry: 6
       Data: 
@@ -4962,7 +4962,7 @@ MonoBehaviour:
           AutoAccept: 0
         _healSource: 0
         _baseAmount: 100
-        _comboMultiplier: 0
+        _comboMultiplier: 1
         _reader:
           rid: -2
         _readerMultiplier: 0

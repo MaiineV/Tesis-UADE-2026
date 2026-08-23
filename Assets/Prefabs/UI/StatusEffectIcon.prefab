@@ -58,14 +58,14 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
-  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_Color: {r: 1, g: 1, b: 1, a: 0}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 1004988646, guid: ee12da05509c7a74686b1e1cc11cbd3e, type: 3}
+  m_Sprite: {fileID: 0}
   m_Type: 1
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -109,8 +109,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0}
   m_AnchorMax: {x: 0.5, y: 0}
-  m_AnchoredPosition: {x: 0, y: -2}
-  m_SizeDelta: {x: 48, y: 26}
+  m_AnchoredPosition: {x: 0, y: 0}
+  m_SizeDelta: {x: 76, y: 26}
   m_Pivot: {x: 0.5, y: 1}
 --- !u!222 &4191478912865531979
 CanvasRenderer:
@@ -264,12 +264,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1af5dc74998c1b649963f69c7d57e50f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Rollgeon::Rollgeon.UI.HUD.Status.StatusEffectIconView
-  _background: {fileID: 6497843524375550456}
   _icon: {fileID: 8460742470548102695}
   _durationLabel: {fileID: 1143384807204740946}
   _tooltip: {fileID: 8623773379970875124}
-  _activeBackground: {fileID: 114455497, guid: ee12da05509c7a74686b1e1cc11cbd3e, type: 3}
-  _inactiveBackground: {fileID: 1004988646, guid: ee12da05509c7a74686b1e1cc11cbd3e, type: 3}
 --- !u!114 &8623773379970875124
 MonoBehaviour:
   m_ObjectHideFlags: 0

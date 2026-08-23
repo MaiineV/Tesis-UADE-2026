@@ -315,6 +315,9 @@ namespace Rollgeon.Upgrades.Character
             Transform parent = room.SpawnedPrefab != null ? room.SpawnedPrefab.transform : null;
             var go = UnityEngine.Object.Instantiate(_pedestalPrefab, spawnPoint.position, spawnPoint.rotation, parent);
             go.name = $"[CharacterRewardPedestal] {reward.DisplayName ?? reward.UpgradeId}";
+            // El pedestal ocupa su celda — mismo patrón que tienda/altar. Al reclamarse
+            // se destruye el visual y el OnDisable del blocker libera la celda.
+            Rollgeon.Dungeon.Components.PropTileBlocker.Attach(go);
 
             var pedestal = go.GetComponent<CharacterRewardPedestalInteractable>();
             if (pedestal == null)

@@ -42,7 +42,10 @@ namespace Rollgeon.EditorTools.HUD
         private const string DiceBagSheetPath = "Assets/Art/UI/DiceBag/Dicebag.png";
         private const string CharacterFrameSheetPath = "Assets/Art/UI/CharacterFrame/CharacterFrame.png";
         private const string WarriorFrameSheetPath = "Assets/Art/UI/CharacterFrame/WarriorFrameSprite.png";
-        private const string WarriorPassiveSheetPath = "Assets/Art/UI/Pasives/Warriorpasive.png";
+        // El commit 2828dfab movió la sheet de Pasives/ a StatusEffects/ — la ruta vieja
+        // hacía fallar mudo todo AuthorWarriorPassive (LoadSpriteOrError + return).
+        private const string WarriorPassiveSheetPath = "Assets/Art/UI/StatusEffects/Warriorpasive.png";
+        private const string StatusEffectsSheetPath = "Assets/Art/UI/StatusEffects/statuseffects.png";
         private const string WarriorPassivePath = "Assets/Rollgeon/Classes/CP_Warrior.asset";
         private const string FontPath = "Assets/Fonts/m6x11plus SDF.asset";
 
@@ -106,17 +109,13 @@ namespace Rollgeon.EditorTools.HUD
         [MenuItem("Rollgeon/Player Icons/1 - Create Status Icon Prefab")]
         public static void CreateStatusIconPrefab()
         {
-            var activeFrame = LoadSpriteOrError(UiSheetPath, ActiveFrameSlice);
-            var inactiveFrame = LoadSpriteOrError(UiSheetPath, InactiveFrameSlice);
-            if (activeFrame == null || inactiveFrame == null) return;
-
             var existing = AssetDatabase.LoadAssetAtPath<GameObject>(StatusIconPrefabPath);
             if (existing != null)
             {
                 var contents = PrefabUtility.LoadPrefabContents(StatusIconPrefabPath);
                 try
                 {
-                    BuildStatusIcon(contents, activeFrame, inactiveFrame);
+                    BuildStatusIcon(contents);
                     PrefabUtility.SaveAsPrefabAsset(contents, StatusIconPrefabPath);
                 }
                 finally { PrefabUtility.UnloadPrefabContents(contents); }
@@ -127,30 +126,30 @@ namespace Rollgeon.EditorTools.HUD
             var go = new GameObject("StatusEffectIcon", typeof(RectTransform));
             try
             {
-                BuildStatusIcon(go, activeFrame, inactiveFrame);
+                BuildStatusIcon(go);
                 PrefabUtility.SaveAsPrefabAsset(go, StatusIconPrefabPath);
                 Debug.Log($"[PlayerIcons] Prefab creado: {StatusIconPrefabPath}");
             }
             finally { Object.DestroyImmediate(go); }
         }
 
-        private static void BuildStatusIcon(GameObject root, Sprite activeFrame, Sprite inactiveFrame)
+        private static void BuildStatusIcon(GameObject root)
         {
             var rootRect = (RectTransform)root.transform;
             rootRect.sizeDelta = StatusIconSize;
 
-            // El marco estira: los slices son barras de 88x24 con borde 9-slice, así que
-            // Sliced mantiene el borde a escala 1:1 y solo estira el centro hasta el cuadrado.
+            // Sin marco desde el playtest del 23/08: el Background quedó como catcher
+            // transparente porque es el único raycast target del ícono — es lo que le da
+            // hover al tooltip, que vive en el root (uGUI sube por la jerarquía buscando
+            // quien maneje pointer enter). Alpha 0 no afecta al raycast de uGUI.
             var bg = EnsureChildRect(rootRect, "Background", Vector2.zero, StatusIconSize);
             bg.anchorMin = Vector2.zero;
             bg.anchorMax = Vector2.one;
             bg.offsetMin = Vector2.zero;
             bg.offsetMax = Vector2.zero;
             var bgImage = Ensure<Image>(bg.gameObject);
-            bgImage.sprite = inactiveFrame;
-            bgImage.type = Image.Type.Sliced;
-            // Único raycast target del ícono: es lo que le da hover al tooltip, que vive en
-            // el root (uGUI sube por la jerarquía buscando quien maneje pointer enter).
+            bgImage.sprite = null;
+            bgImage.color = new Color(1f, 1f, 1f, 0f);
             bgImage.raycastTarget = true;
 
             // El ícono NO estira: preserveAspect sobre un rect con padding, para que el arte
@@ -164,12 +163,13 @@ namespace Rollgeon.EditorTools.HUD
             iconImage.preserveAspect = true;
             iconImage.raycastTarget = false;
 
-            // Duración: colgando del borde inferior del marco, centrada. Pivot arriba y Y
-            // negativa la dejan POR DEBAJO del borde, no encima del arte.
-            var duration = EnsureChildRect(rootRect, "Duration", new Vector2(0f, -2f), new Vector2(48f, 26f));
+            // Duración: pegada al borde inferior (Y=0), a todo el ancho del slot — layout
+            // pedido en el playtest del 23/08 (sin marco, el número va sobre el pie del arte).
+            var duration = EnsureChildRect(rootRect, "Duration", new Vector2(0f, 0f), new Vector2(76f, 26f));
             duration.anchorMin = duration.anchorMax = new Vector2(0.5f, 0f);
             duration.pivot = new Vector2(0.5f, 1f);
-            duration.anchoredPosition = new Vector2(0f, -2f);
+            duration.anchoredPosition = new Vector2(0f, 0f);
+            duration.sizeDelta = new Vector2(76f, 26f);
             var durationLabel = Ensure<TextMeshProUGUI>(duration.gameObject);
             durationLabel.font = AssetDatabase.LoadAssetAtPath<TMP_FontAsset>(FontPath);
             durationLabel.fontSize = 22f;
@@ -182,10 +182,7 @@ namespace Rollgeon.EditorTools.HUD
 
             var view = Ensure<StatusEffectIconView>(root);
             var so = new SerializedObject(view);
-            so.FindProperty("_background").objectReferenceValue = bgImage;
             so.FindProperty("_icon").objectReferenceValue = iconImage;
-            so.FindProperty("_activeBackground").objectReferenceValue = activeFrame;
-            so.FindProperty("_inactiveBackground").objectReferenceValue = inactiveFrame;
             so.FindProperty("_durationLabel").objectReferenceValue = durationLabel;
             so.FindProperty("_tooltip").objectReferenceValue = tooltip;
             so.ApplyModifiedPropertiesWithoutUndo();
@@ -405,7 +402,10 @@ namespace Rollgeon.EditorTools.HUD
                 return;
             }
 
-            var activeIcon = LoadSpriteOrError(WarriorPassiveSheetPath, "Warriorpasive_1");
+            // El ícono activo pasa a la sheet unificada de status effects (slice 7); el
+            // inactivo queda autorado como rollback aunque el provider ya no lo muestre
+            // (la pasiva desactivada no publica slot desde el playtest del 23/08).
+            var activeIcon = LoadSpriteOrError(StatusEffectsSheetPath, "statuseffects_7");
             var inactiveIcon = LoadSpriteOrError(WarriorPassiveSheetPath, "Warriorpasive_0");
             if (activeIcon == null || inactiveIcon == null) return;
 
@@ -428,10 +428,24 @@ namespace Rollgeon.EditorTools.HUD
 
             int patched = RescaleLowHpThreshold(passive, WarriorLowHpThreshold);
 
+            // El int del hook no sobrevive a que alguien borre un miembro del medio de
+            // EventName (tercer corrimiento: 837f1dd0 borró OnEnergyChanged y el 41
+            // serializado pasó de OnAttributeChanged a OnModifierAdded — la pasiva dejó de
+            // re-evaluarse al cambiar la vida). Se reafirma por NOMBRE en cada autorado.
+            int rebound = 0;
+            foreach (var hook in passive.Hooks)
+            {
+                if (hook?.Effect?.Effects == null) continue;
+                if (!hook.Effect.Effects.Any(e => e is EffLowHpAttackBuff)) continue;
+                if (hook.TriggerEvent != EventName.OnAttributeChanged) rebound++;
+                hook.TriggerEvent = EventName.OnAttributeChanged;
+            }
+
             EditorUtility.SetDirty(passive);
             AssetDatabase.SaveAssets();
             Debug.Log($"[PlayerIcons] CP_Warrior autorado: íconos + condición de activa, " +
-                      $"{patched} umbral(es) reescalado(s) a {WarriorLowHpThreshold}.");
+                      $"{patched} umbral(es) reescalado(s) a {WarriorLowHpThreshold}, " +
+                      $"{rebound} hook(s) re-apuntado(s) a OnAttributeChanged.");
         }
 
         // El umbral vive en un campo privado del effect, dentro del blob de Odin — se setea

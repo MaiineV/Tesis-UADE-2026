@@ -114,7 +114,7 @@ MonoBehaviour:
       Data: 
     - Name: RequireCarrierParticipates
       Entry: 5
-      Data: false
+      Data: true
     - Name: Effects
       Entry: 7
       Data: 6|System.Collections.Generic.List`1[[Rollgeon.Effects.EffectData, Rollgeon]],
@@ -433,42 +433,42 @@ MonoBehaviour:
   _faceFilter:
     rid: -2
   _triggers:
-  - rid: 6878114965000815251
+  - rid: 144068445231645564
   _capabilities: []
   references:
     version: 2
     RefIds:
     - rid: -2
       type: {class: , ns: , asm: }
-    - rid: 6878114965000815251
+    - rid: 144068445231645564
       type: {class: ExecuteEffectsOnDiceEvent, ns: Rollgeon.Upgrades.Dice.Triggers, asm: Rollgeon}
       data:
         Event: 3
         Filter:
           Mode: 1
           ComboIds: []
-        RequireCarrierParticipates: 0
+        RequireCarrierParticipates: 1
         Effects:
         - Label: Effect Group
           PreConditions:
-          - rid: 6878114965000815252
+          - rid: 144068445231645565
           Effects:
-          - rid: 6878114965000815253
+          - rid: 144068445231645566
           TargetSelector:
             rid: -2
         - Label: Effect Group
           PreConditions:
-          - rid: 6878114965000815254
+          - rid: 144068445231645567
           Effects:
-          - rid: 6878114965000815255
+          - rid: 144068445231645568
           TargetSelector:
             rid: -2
-    - rid: 6878114965000815252
+    - rid: 144068445231645565
       type: {class: PcCarrierFace, ns: Rollgeon.Upgrades.Dice.PreConditions, asm: Rollgeon}
       data:
         _isConstantValue: 1
         Mode: 2
-    - rid: 6878114965000815253
+    - rid: 144068445231645566
       type: {class: EffMultiplyComboDamage, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
       data:
         Selection:
@@ -492,12 +492,12 @@ MonoBehaviour:
           AutoResolve: 0
           AutoAccept: 1
         _multiplier: 3
-    - rid: 6878114965000815254
+    - rid: 144068445231645567
       type: {class: PcCarrierFace, ns: Rollgeon.Upgrades.Dice.PreConditions, asm: Rollgeon}
       data:
         _isConstantValue: 1
         Mode: 1
-    - rid: 6878114965000815255
+    - rid: 144068445231645568
       type: {class: EffMultiplyComboDamage, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
       data:
         Selection:

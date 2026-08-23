@@ -79,6 +79,22 @@ namespace Rollgeon.Combat.Damage
         }
 
         /// <summary>
+        /// Resuelve un único índice local (relativo al subset contribuyente) a su bag slot —
+        /// mismo mapeo que <see cref="Resolve"/>/<see cref="ResolveDetailed"/>, factoreado para
+        /// consumers que solo necesitan el número de slot (gates carrier-aware como
+        /// <c>CarrierParticipates</c> y <c>PcCarrierFace</c>, que no arman <see cref="ContributingDie"/>
+        /// completos). Sin mapa (null), <paramref name="localIndex"/> ya se asume bag slot directo
+        /// — ver <c>EffectContext.KeptDiceOriginalIndices</c>.
+        /// </summary>
+        public static int ResolveBagSlot(int localIndex, IReadOnlyList<int> keptDiceOriginalIndices)
+        {
+            return keptDiceOriginalIndices != null
+                   && localIndex >= 0 && localIndex < keptDiceOriginalIndices.Count
+                ? keptDiceOriginalIndices[localIndex]
+                : localIndex;
+        }
+
+        /// <summary>
         /// Conveniencia para efectos/announcers que parten de un <see cref="EffectContext"/>:
         /// resuelve el detalle (slot + cara + tipo) leyendo el bag del enchantment service y
         /// las caras de <c>KeptDice ?? DiceResult</c> (mismo espacio de índices locales que

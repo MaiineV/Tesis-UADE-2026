@@ -51,5 +51,12 @@ namespace Rollgeon.Tiles
 
         /// <summary>Fast-path para el pathing IA: sin instancias, el planner delega al scoring legacy.</summary>
         bool HasAnySpecialTiles { get; }
+
+        /// <summary>
+        /// Tipos de casilla armada que están afectando a la entidad en la celda que ocupa AHORA
+        /// (mismos filtros que un trigger: celda armada, affinity, ownership, Zona de Seguridad).
+        /// Para el HUD de "parado sobre". No dispara nada; limpia y reusa <paramref name="into"/>.
+        /// </summary>
+        void CollectTypesUnder(Guid entity, List<SpecialTileType> into);
     }
 }

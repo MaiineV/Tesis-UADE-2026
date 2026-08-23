@@ -19,6 +19,7 @@ namespace Rollgeon.Editor.Tools.Tiles
         public const string SpikeFbxPath = "Assets/Art/3D/Models/Items/Spikes.fbx";
         public const string SpikePrefabPath = "Assets/Art/3D/Models/Items/Spikes.prefab";
         public const string GenericSpikeTilePath = "Assets/Rollgeon/Tiles/Tile_Spikes.asset";
+        public const string CajeroSpikeTilePath = "Assets/Rollgeon/Tiles/Tile_Spikes_Cajero.asset";
 
         /// <summary>Alto del pincho armado sobre el piso. El tile suma su propio VisualYOffset.</summary>
         private const float SunkDepth = 0.32f;
@@ -29,31 +30,46 @@ namespace Rollgeon.Editor.Tools.Tiles
             var prefab = EnsureSpikePrefab();
             if (prefab == null) return;
 
-            var tile = AssetDatabase.LoadAssetAtPath<SpecialTileDefinitionSO>(GenericSpikeTilePath);
-            if (tile == null)
+            // El del Cajero también, y directo: regenerar el prefab cambia el fileID del
+            // root, así que cualquier tile que lo referenciara queda con la referencia
+            // colgada hasta re-asignarla.
+            int wired = 0;
+            foreach (var path in new[] { GenericSpikeTilePath, CajeroSpikeTilePath })
             {
-                Debug.LogError($"[SpikeTileVisualInstaller] No está '{GenericSpikeTilePath}'.");
-                return;
+                var tile = AssetDatabase.LoadAssetAtPath<SpecialTileDefinitionSO>(path);
+                if (tile == null)
+                {
+                    Debug.LogWarning($"[SpikeTileVisualInstaller] No está '{path}' — salteado.");
+                    continue;
+                }
+
+                tile.VisualPrefab = prefab;
+                tile.VisualYOffset = 0.02f;
+
+                // El tint es el respaldo para cuando NO hay malla. Con malla, un blanco a 0.35
+                // lava el arte y vuelve a dar el piso gris que motivó todo esto.
+                tile.OverlayTint = new Color(0f, 0f, 0f, 0f);
+
+                EditorUtility.SetDirty(tile);
+                wired++;
             }
 
-            tile.VisualPrefab = prefab;
-            tile.VisualYOffset = 0.02f;
-
-            // El tint es el respaldo para cuando NO hay malla. Con malla, un blanco a 0.35 lava el
-            // arte y vuelve a dar el piso gris que motivó todo esto.
-            tile.OverlayTint = new Color(0f, 0f, 0f, 0f);
-
-            EditorUtility.SetDirty(tile);
             AssetDatabase.SaveAssets();
-
-            Debug.Log($"[SpikeTileVisualInstaller] '{tile.name}' ahora usa '{prefab.name}'. " +
-                      "Correr 'Tools → Rollgeon → Bosses → Build Cajero' para propagarlo a los suyos.");
+            Debug.Log($"[SpikeTileVisualInstaller] {wired} tiles de pinchos apuntando a '{prefab.name}'.");
         }
 
         /// <summary>
-        /// Crea (o rehace) el prefab de pinchos: la malla del FBX más el binding de estado y el
-        /// componente que hunde el pincho disparado.
+        /// Crea (o rehace) el prefab de pinchos: un root VACÍO con el binding y el componente
+        /// que hunde, más la malla del FBX como HIJO ("Art").
         /// </summary>
+        /// <remarks>
+        /// La estructura root-vacío + hijo no es cosmética: el root lo posiciona el pool en la
+        /// celda, así que <c>SpikeArmedVisual.Spikes</c> DEBE ser un hijo para que sus
+        /// localPosition de armado/hundido sean relativas a la celda. La versión anterior
+        /// instanciaba el FBX (un solo nodo) como root y la malla terminaba siendo el root
+        /// mismo — el primer Sink o reciclaje del pool mandaba el pincho al origen del mundo
+        /// (bug de playtest 23/08: "puse pinchos y no aparecieron").
+        /// </remarks>
         public static GameObject EnsureSpikePrefab()
         {
             var fbx = AssetDatabase.LoadAssetAtPath<GameObject>(SpikeFbxPath);
@@ -63,33 +79,30 @@ namespace Rollgeon.Editor.Tools.Tiles
                 return null;
             }
 
-            var instance = (GameObject)PrefabUtility.InstantiatePrefab(fbx);
-            if (instance == null)
-            {
-                Debug.LogError("[SpikeTileVisualInstaller] No se pudo instanciar el FBX.");
-                return null;
-            }
-
+            var root = new GameObject("Spikes");
             try
             {
-                instance.name = "Spikes";
-                instance.transform.localPosition = Vector3.zero;
-                instance.transform.localRotation = Quaternion.identity;
+                var art = (GameObject)PrefabUtility.InstantiatePrefab(fbx);
+                if (art == null)
+                {
+                    Debug.LogError("[SpikeTileVisualInstaller] No se pudo instanciar el FBX.");
+                    return null;
+                }
+
+                art.name = "Art";
+                art.transform.SetParent(root.transform, worldPositionStays: false);
+                art.transform.localPosition = Vector3.zero;
+                art.transform.localRotation = Quaternion.identity;
 
                 // El binding lo bindea SpecialTileService al instanciar el visual por celda; sin él
                 // el pincho nunca se entera de que se disparó.
-                if (instance.GetComponent<SpecialTileVisualBinding>() == null)
-                    instance.AddComponent<SpecialTileVisualBinding>();
+                root.AddComponent<SpecialTileVisualBinding>();
 
-                var armed = instance.GetComponent<SpikeArmedVisual>();
-                if (armed == null) armed = instance.AddComponent<SpikeArmedVisual>();
+                var armed = root.AddComponent<SpikeArmedVisual>();
                 armed.SunkDepth = SunkDepth;
+                armed.Spikes = art.transform;
 
-                // Se hunde la malla, no el root: el root lo posiciona el servicio en su celda.
-                var mesh = instance.GetComponentInChildren<MeshRenderer>();
-                armed.Spikes = mesh != null ? mesh.transform : instance.transform;
-
-                if (mesh == null)
+                if (art.GetComponentInChildren<MeshRenderer>() == null)
                 {
                     Debug.LogWarning("[SpikeTileVisualInstaller] El FBX no trajo MeshRenderer: el " +
                                      "prefab queda vacío y los pinchos se siguen viendo como el piso.");
@@ -97,11 +110,11 @@ namespace Rollgeon.Editor.Tools.Tiles
 
                 // Todo mutado ANTES de guardar: SaveAsPrefabAsset serializa lo que hay ahora, y las
                 // mutaciones posteriores a la creación del asset se pierden.
-                return PrefabUtility.SaveAsPrefabAsset(instance, SpikePrefabPath);
+                return PrefabUtility.SaveAsPrefabAsset(root, SpikePrefabPath);
             }
             finally
             {
-                Object.DestroyImmediate(instance);
+                Object.DestroyImmediate(root);
             }
         }
     }

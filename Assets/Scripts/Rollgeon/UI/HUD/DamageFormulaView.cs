@@ -139,9 +139,19 @@ namespace Rollgeon.UI.HUD
             };
             EventManager.Subscribe(EventName.OnCombatTargetChanged, _onCombatTargetChanged);
 
+            // Los repintados que cayeron durante la secuencia (guard de arriba) se
+            // recuperan acá: cuando el gate baja a 0, la view vuelve a reflejar el
+            // estado real (típicamente ClearFormula post-confirm).
+            Rollgeon.Feedback.BreakdownUiGate.Changed += HandleBreakdownGateChanged;
+
             _bound = true;
             ClearFormula();
             HideThreshold();
+        }
+
+        private void HandleBreakdownGateChanged()
+        {
+            if (!Rollgeon.Feedback.BreakdownUiGate.Pending) UpdateFormula();
         }
 
         public void Unbind()
@@ -181,6 +191,7 @@ namespace Rollgeon.UI.HUD
                 EventManager.UnSubscribe(EventName.OnCombatTargetChanged, _onCombatTargetChanged);
                 _onCombatTargetChanged = null;
             }
+            Rollgeon.Feedback.BreakdownUiGate.Changed -= HandleBreakdownGateChanged;
             _currentBehavior = null;
             _lastComboDisplayName = null;
             _lastComboId = null;
@@ -226,9 +237,40 @@ namespace Rollgeon.UI.HUD
         {
             if (_formulaLabel == null) return;
 
+            // Mientras corre la secuencia de breakdown, el DamageBreakdownView es del
+            // BreakdownSequenceDirector — repintar acá arrancaría con el Hide() de abajo
+            // y pisaría los contadores a mitad de animación. Curar lo gatillaba siempre:
+            // al confirmar, ActionRollService cambia de fase y dispara este método en
+            // plena secuencia (ataque/escudo zafaban porque nada re-entra durante la
+            // suya). El repintado diferido llega por HandleBreakdownGateChanged.
+            if (Rollgeon.Feedback.BreakdownUiGate.Pending) return;
+
             // Default: el N×M solo aplica al modo daño-por-combo — la rama de abajo lo
             // re-muestra; cualquier otra rama (action roll, defensa, degradados) lo apaga.
             if (_breakdownView != null) _breakdownView.Hide();
+
+            // Heal N×M (Spec Heal N×M): Curarse entra por ActionRoll igual que Forzar
+            // Puerta, pero TryShowActionRollMode() solo sabe renderizar texto plano con
+            // CurrentEffectiveTotal — fórmula legacy que NO coincide con lo que cura
+            // EffHeal.ResolveBuildDiceAmount (HealBaseTable × ATQ × Σcaras vía
+            // PlayerComboHeal.Resolve). Con combo matcheado, paridad exacta con la rama de
+            // escudo de abajo: mismo breakdown N×M, misma base (tabla del sheet) y mismo
+            // multiplier (perilla del effect). Sin combo (dado holdeado más alto / build
+            // dice recién abierto) cae al modo plano de TryShowActionRollMode, que sigue
+            // siendo correcto para ese caso.
+            var healEff = _currentBehavior?.FindFirstHealEffect();
+            if (healEff != null && healEff.UseBuildDice && !string.IsNullOrEmpty(_lastComboId)
+                && _actionRollService != null && _actionRollService.IsActive && _breakdownView != null)
+            {
+                HideThreshold();
+                string healComboName = !string.IsNullOrEmpty(_lastComboDisplayName)
+                    ? _lastComboDisplayName : "Combo";
+                var preview = ResolveHealPreviewArgs(ResolvePlayerHealBase(_lastComboId), healEff);
+                _breakdownView.SetComboName(healComboName);
+                _breakdownView.ShowPreview(preview.Base, preview.Multiplier);
+                ClearLabelKeepingBreakdown();
+                return;
+            }
 
             // Si hay una ActionRoll activa, mostrar threshold + combo seleccionado y SALIR
             // (no se evalúa la fórmula de daño, que no aplica para Heal/ForceDoor).
@@ -389,6 +431,25 @@ namespace Rollgeon.UI.HUD
                 : null;
             return sheet?.GetShieldBase(comboId) ?? 0;
         }
+
+        // Espejo de ResolvePlayerShieldBase para curación — sheet del player como fuente de
+        // la HealBaseTable, mismo criterio que EffHeal.ResolveBuildDiceAmount, para que
+        // preview y aplicación real lean la misma base.
+        private static int ResolvePlayerHealBase(string comboId)
+        {
+            var sheet = ServiceLocator.TryGetService<IPlayerService>(out var player)
+                ? player?.CurrentHero?.Sheet
+                : null;
+            return sheet?.GetHealBase(comboId) ?? 0;
+        }
+
+        // Combina base de tabla + perilla de habilidad en los args que consume
+        // DamageBreakdownView.ShowPreview. Extraído de la rama de heal (que depende de
+        // ServiceLocator/MonoBehaviour) para poder testear la combinación sin pasar por
+        // Bind/SetBehavior — mismo par (base, multiplier) que arma la rama de escudo inline.
+        public static (int Base, float Multiplier) ResolveHealPreviewArgs(
+            int healBaseFromSheet, EffHeal healEffect)
+            => (healBaseFromSheet, healEffect?.ComboMultiplier ?? 1f);
 
         /// <summary>
         /// Aplica la mitigación real (weakness + escudo) del enemigo apuntado SIN

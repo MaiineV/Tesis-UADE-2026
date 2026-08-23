@@ -4,9 +4,12 @@ using System.Linq;
 using NUnit.Framework;
 using Patterns;
 using Rollgeon.Dice;
+using Rollgeon.Dungeon;
+using Rollgeon.Dungeon.Components;
 using Rollgeon.Effects;
 using Rollgeon.Effects.Selection;
 using Rollgeon.Entities.Behaviors;
+using Rollgeon.GameCamera;
 using Rollgeon.Grid;
 using Rollgeon.Heroes;
 using Rollgeon.Phase;
@@ -187,6 +190,93 @@ namespace Rollgeon.Exploration.Tests
             Assert.AreEqual(1, effect.ApplyCalls);
         }
 
+        // -------------------------------------------------------------------------
+        // Puerta bajo los pies (bug real que el guard de arriba destapó): el spawn al
+        // entrar a una sala deja al player parado exactamente sobre la casilla
+        // frente-a-puerta. Clickearla debe cruzar directo (sin "caminar" 0 pasos vía
+        // ExecuteBehavior) y el latch _crossingDoor debe evitar que un segundo evento
+        // repita el cruce.
+        // -------------------------------------------------------------------------
+
+        [Test]
+        public void OnSelectionCompleted_ClickOnOwnTile_WhenDoorTile_StartsCrossingWithoutExecutingBehavior()
+        {
+            // Arrange — player parado en (2,2), que además es la casilla frente a una
+            // puerta (dir North). DoorTileQuery.GetOpenDoorFrontTiles necesita un
+            // SpawnedPrefab real con DoorController — montar esa jerarquía completa acá
+            // no aporta nada a lo que este test cubre (el branching de
+            // OnSelectionCompleted), así que inyectamos _doorTiles por reflection, tal
+            // como lo dejaría ResolveDoorTiles si hubiese encontrado la puerta.
+            var move = AddExplorationMovement();
+            var effect = (FakeMoveEffect)move.Effects[0].Effects[0];
+
+            var fakeDungeon = new FakeDungeonService
+            {
+                CurrentInstance = new RoomInstance { InstanceId = Guid.NewGuid() },
+            };
+            ServiceLocator.AddService<IDungeonService>(fakeDungeon, ServiceScope.Global);
+
+            EventManager.Trigger(EventName.OnPhaseEnter, GamePhase.Exploration);
+            _service.OnBehaviorSelected(0);
+
+            SetField(_service, "_doorTiles", new Dictionary<GridCoord, DoorDirection>
+            {
+                { new GridCoord(2, 2), DoorDirection.North },
+            });
+
+            // Act — clickea la casilla en la que ya está parado, que es la puerta.
+            _selectionController.SimulateSelectionDone(new TargetSelectionResult
+            {
+                WasCompleted = true,
+                SelectedTargets = new List<TargetRef> { TargetRef.At(new GridCoord(2, 2)) },
+            });
+
+            // Assert — no "caminó" (el behavior de movimiento nunca se ejecuta con 0
+            // pasos) pero sí cruzó: EnterRoomByDoor(North) se invocó una vez. No hay
+            // IEntityVisualService registrado en el fixture, así que CrossDoorAfterArrival
+            // no tiene de qué esperar y corre hasta el final de forma sincrónica dentro
+            // del mismo CoroutineHost.Run — no hace falta pumpear frames para este assert.
+            Assert.AreEqual(0, effect.ApplyCalls,
+                "Click en la puerta bajo los pies no debe ejecutar el behavior de movimiento (0 pasos).");
+            CollectionAssert.AreEqual(new[] { DoorDirection.North }, fakeDungeon.EnterRoomByDoorCalls,
+                "Debe cruzar directo, sin esperar animación de movimiento (ya está parado ahí).");
+
+            // El fake dispara OnRoomEntered igual que DungeonManager.TransitionTo (real,
+            // sincrónico) — eso debe haber soltado el latch.
+            Assert.IsFalse((bool)GetField(_service, "_crossingDoor"),
+                "OnRoomEntered debe soltar el latch tras un cruce exitoso.");
+        }
+
+        [Test]
+        public void OnSelectionCompleted_WhileCrossingDoorLatchActive_IgnoresResult()
+        {
+            // Arrange — flow de selección en curso...
+            var move = AddExplorationMovement();
+            var effect = (FakeMoveEffect)move.Effects[0].Effects[0];
+            EventManager.Trigger(EventName.OnPhaseEnter, GamePhase.Exploration);
+            _service.OnBehaviorSelected(0);
+
+            // ...pero el latch ya está activo (un cruce disparado por un resultado previo
+            // sigue en vuelo). Lo seteamos a mano para no depender de correr la corrutina
+            // de cruce completa solo para llegar a este estado.
+            SetField(_service, "_crossingDoor", true);
+
+            // Act — un segundo resultado de selección llega mientras el latch sigue activo.
+            _selectionController.SimulateSelectionDone(new TargetSelectionResult
+            {
+                WasCompleted = true,
+                SelectedTargets = new List<TargetRef> { TargetRef.At(new GridCoord(3, 2)) },
+            });
+
+            // Assert — el guard corta al tope de OnSelectionCompleted, antes de cualquier
+            // otro efecto: ni ejecuta el behavior ni corre el cleanup normal (_state se
+            // queda en Selecting en vez de resetear a Idle).
+            Assert.AreEqual(0, effect.ApplyCalls,
+                "Con el latch activo, un segundo resultado no debe ejecutar nada.");
+            Assert.AreEqual("Selecting", GetField(_service, "_state").ToString(),
+                "El guard debe retornar antes del cleanup normal de OnSelectionCompleted.");
+        }
+
         private HeroActionBehavior AddExplorationMovement()
         {
             var move = new HeroActionBehavior
@@ -329,6 +419,73 @@ namespace Rollgeon.Exploration.Tests
                 ApplyCalls++;
                 return true;
             }
+        }
+
+        // Fake mínimo de IDungeonService para los tests de cruce de puerta — solo
+        // necesitamos CurrentRoomInstance (chequeo de "la sala no cambió durante el
+        // wait" en CrossDoorAfterArrival) y EnterRoomByDoor (registra la llamada y
+        // espeja el efecto real de DungeonManager: dispara OnRoomEntered sincrónico
+        // antes de retornar cuando la transición "sale bien").
+        private class FakeDungeonService : IDungeonService
+        {
+            public RoomInstance CurrentInstance;
+            public bool EnterRoomByDoorSucceeds = true;
+            public readonly List<DoorDirection> EnterRoomByDoorCalls = new List<DoorDirection>();
+
+            public RoomSO CurrentRoom => CurrentInstance?.Template;
+            public RoomInstance CurrentRoomInstance => CurrentInstance;
+            public DoorDirection? LastEntryDirection => null;
+
+            public void GenerateFloor(FloorLayoutSO layout, int seed) { }
+            public IReadOnlyDictionary<Guid, RoomInstance> GetAllRoomInstances() => new Dictionary<Guid, RoomInstance>();
+            public IReadOnlyDictionary<Guid, FloorShell> GetFloorShells() => new Dictionary<Guid, FloorShell>();
+
+            public bool CanEnterRoomByDoor(DoorDirection direction, out Guid neighborInstanceId)
+            {
+                neighborInstanceId = Guid.Empty;
+                return EnterRoomByDoorSucceeds;
+            }
+
+            public bool EnterRoomByDoor(DoorDirection direction)
+            {
+                EnterRoomByDoorCalls.Add(direction);
+                if (EnterRoomByDoorSucceeds)
+                    EventManager.Trigger(EventName.OnRoomEntered, Guid.NewGuid());
+                return EnterRoomByDoorSucceeds;
+            }
+
+            public bool EnterRoomByInstanceId(Guid instanceId) => false;
+            public bool SetRoomState(Guid instanceId, RoomState state) => false;
+            public void ResyncDoorVisuals(Guid instanceId) { }
+            public Bounds GetFloorBounds() => default;
+            public IReadOnlyList<WallOccluder> GetCurrentRoomOccluders() => Array.Empty<WallOccluder>();
+        }
+
+        // ----- reflection helpers (mismo patrón que ActionRollServiceTests) --------
+
+        private static void SetField(object instance, string name, object value)
+        {
+            var t = instance.GetType();
+            while (t != null)
+            {
+                var f = t.GetField(name, System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+                if (f != null) { f.SetValue(instance, value); return; }
+                t = t.BaseType;
+            }
+            Assert.Fail($"Field '{name}' not found on {instance.GetType().Name}.");
+        }
+
+        private static object GetField(object instance, string name)
+        {
+            var t = instance.GetType();
+            while (t != null)
+            {
+                var f = t.GetField(name, System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+                if (f != null) return f.GetValue(instance);
+                t = t.BaseType;
+            }
+            Assert.Fail($"Field '{name}' not found on {instance.GetType().Name}.");
+            return null;
         }
     }
 }

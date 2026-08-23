@@ -7,20 +7,18 @@ using UnityEngine.UI;
 namespace Rollgeon.UI.HUD.Status
 {
     /// <summary>
-    /// Un ícono de estado del player: marco de fondo + ícono del efecto, con arte de marco
-    /// distinta según el estado esté activo o latente. Es el prefab que
+    /// Un ícono de estado del player: solo el arte del efecto, sin marco (pedido de playtest
+    /// 23/08 — los marcos activo/inactivo se retiraron). Es el prefab que
     /// <see cref="PlayerStatusIconsView"/> instancia una vez por estado.
     /// </summary>
     /// <remarks>
-    /// El marco vive acá y no en el estado porque es del SISTEMA: todos los estados usan el
-    /// mismo par (activo/inactivo), así que un estado nuevo solo aporta su ícono. Los dos
-    /// sprites los inyecta el installer por SerializedObject.
+    /// El hover del tooltip lo da el "Background" del prefab, que quedó como Image
+    /// transparente solo-raycast — esta vista ya no lo referencia ni lo toca.
     /// </remarks>
     [AddComponentMenu("Rollgeon/UI/HUD/Status Effect Icon View")]
     public class StatusEffectIconView : MonoBehaviour
     {
         [Title("Refs")]
-        [SerializeField, Required] private Image _background;
         [SerializeField, Required] private Image _icon;
 
         [SerializeField]
@@ -31,13 +29,6 @@ namespace Rollgeon.UI.HUD.Status
         [SerializeField]
         [Tooltip("Trigger del tooltip de hover. Opcional: sin él el ícono no explica nada.")]
         private UITooltipTrigger _tooltip;
-
-        [Title("Marcos")]
-        [SerializeField, Tooltip("Marco cuando el estado está surtiendo efecto (UI-sheet_5).")]
-        private Sprite _activeBackground;
-
-        [SerializeField, Tooltip("Marco cuando el estado está latente (UI-sheet_7).")]
-        private Sprite _inactiveBackground;
 
         [ShowInInspector, ReadOnly] private string _stateId;
 
@@ -78,11 +69,6 @@ namespace Rollgeon.UI.HUD.Status
                 // Un estado sin arte todavía no debe dibujar el cuadrado blanco del Image.
                 _icon.enabled = state.Icon != null;
             }
-
-            if (_background == null) return;
-            var frame = state.Active ? _activeBackground : _inactiveBackground;
-            if (frame != null) _background.sprite = frame;
-            _background.enabled = _background.sprite != null;
         }
     }
 }

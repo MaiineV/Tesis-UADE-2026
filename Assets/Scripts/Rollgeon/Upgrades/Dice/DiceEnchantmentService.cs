@@ -202,17 +202,37 @@ namespace Rollgeon.Upgrades.Dice
             if (Bag == null) return;
             if (string.IsNullOrEmpty(payload.ComboId)) return;
 
+            // BUG carrier-scope: antes se usaba el overload legacy de Match (sin índices),
+            // así que CarrierParticipates/PcCarrierFace nunca veían contribuyentes y
+            // "cuando este dado participa del combo" terminaba evaluando la tirada
+            // COMPLETA. payload.ContributingDice ya viene resuelto a bag slot (lo arma
+            // ContributingDiceResolver.ResolveDetailed en DiceZoneView.RunComboDetection) —
+            // lo reusamos directo como ContributingIndices y dejamos KeptDiceOriginalIndices
+            // en null: eff.DiceResult acá es la tirada completa indexada por bag slot (mismo
+            // espacio que ctx.Slot.BagSlotIndex), así que "sin mapa ⇒ índice ya es bag slot"
+            // (el fallback documentado de ResolveBagSlot) es exactamente la identidad correcta.
+            var contributingBagSlots = ToBagSlots(payload.ContributingDice);
+
             var effectCtx = new EffectContext
             {
                 SourceGuid = payload.SourceGuid,
                 DiceResult = _lastFinalRoll,
-                ComboResult = ComboDetectionResult.Match(payload.BaseDamage, _lastFinalRoll?.Count ?? 0,
-                    payload.DynamicBonus),
+                ComboResult = ComboDetectionResult.Match(payload.ComboId, payload.BaseDamage,
+                    _lastFinalRoll?.Count ?? 0, contributingBagSlots, payload.DynamicBonus),
             };
             var scratch = DispatchComboMatched(effectCtx, payload.ComboId);
             LastComboScratch = scratch;
             // BUG-017: ComboMatched es preview (se re-dispara en cada toggle de hold) — los
             // recursos del scratch se materializan solo at-played (ComboPlayService); acá no.
+        }
+
+        private static IReadOnlyList<int> ToBagSlots(
+            IReadOnlyList<Rollgeon.Combat.Damage.ContributingDie> contributingDice)
+        {
+            if (contributingDice == null || contributingDice.Count == 0) return null;
+            var slots = new List<int>(contributingDice.Count);
+            for (int i = 0; i < contributingDice.Count; i++) slots.Add(contributingDice[i].BagSlot);
+            return slots;
         }
 
         private void OnComboPlayedHandler(ComboPlayedPayload payload)

@@ -147,8 +147,7 @@ namespace Rollgeon.Upgrades.Dice.Triggers
             int carrier = ctx.Slot.BagSlotIndex;
             for (int i = 0; i < contributing.Count; i++)
             {
-                int j = contributing[i];
-                int bagIndex = map != null && j >= 0 && j < map.Count ? map[j] : j;
+                int bagIndex = Rollgeon.Combat.Damage.ContributingDiceResolver.ResolveBagSlot(contributing[i], map);
                 if (bagIndex == carrier) return true;
             }
             return false;

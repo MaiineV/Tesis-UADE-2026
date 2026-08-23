@@ -3640,6 +3640,9 @@ MonoBehaviour:
     WallPlug: {fileID: 595992902658532138}
     DoorRoot: {fileID: 629644367849725670}
   BossDoorPrefab: {fileID: 4349409642055064947, guid: d40ad2ec1ecd39d48bb1abf4ee3a72bb, type: 3}
+  SpecialTilePlacements: []
+  SpecialTileSlots: []
+  PortalPairs: []
   LocalBounds:
     m_Center: {x: 0.5, y: 1.5175178, z: 0.5}
     m_Extent: {x: 6.500001, y: 2.0175185, z: 6.500001}
