@@ -1,7 +1,6 @@
 using System.Collections.Generic;
 using System.IO;
 using Rollgeon.Combat.AI.Decisions;
-using Rollgeon.Combat.AI.Readers;
 using Rollgeon.Combat.AI.Targeting;
 using Rollgeon.Combat.Pipelines;
 using Rollgeon.Combat.Threat;
@@ -204,10 +203,11 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         public const float LockHpThreshold = 0.7f;
 
         /// <summary>
-        /// Cual dado se traba. RotateBlock etiqueta el candado con el indice + 1, asi que 0
-        /// muestra "1".
+        /// Dados que traba el candado por turno. El cual lo sortea el nodo, no este builder: el
+        /// candado sale sin etiqueta y eso es lo correcto para un sorteo, porque no hay ningun
+        /// numero cantado al que atarlo.
         /// </summary>
-        public const int LockedDieIndex = 0;
+        public const int LockedDiceCount = 1;
 
         /// <summary>Umbral de "Pleno y color".</summary>
         public const float PlenoHpThreshold = 0.5f;
@@ -520,12 +520,12 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
                         // sumaria SU turno de espera arriba del que ya da el orden y prenderia en
                         // N+2.
                         AnnounceTurns = 0,
-                        // El pano entero tapa a cualquier banda vieja y le impone SU reloj, que es el
-                        // mas corto de los tres: sin esto el terreno compartido se queda con el de la
-                        // banda y el fogonazo no se lee como un turno. El precio es que el Pleno
-                        // acorta las bandas que ya ardian, y eso es a proposito: la sala prende
-                        // entera y se apaga entera.
-                        RetireFullyReplaced = true,
+                        // OFF, al reves que las bandas: el Pleno es el reloj mas corto de los tres,
+                        // asi que relevar lo que tapa le recortaria la banda que ya venia ardiendo a
+                        // un solo turno. Apagado, lo que ardia sigue con su reloj y el Pleno prende
+                        // el resto del pano — que es lo unico que tiene que durar un turno.
+                        // AlreadyBurning ya evita el doble cobro por su cuenta.
+                        RetireFullyReplaced = false,
                     }),
 
                     // 2. Desde el 70% le queda un dado con candado. SIN AINode_Once: DiceBlockService
@@ -541,7 +541,11 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
                         Then = new AINode_RotateBlock
                         {
                             Target = AINode_RotateBlock.BlockTarget.Dice,
-                            DirectedIndex = new AIConstantInt { Value = LockedDieIndex },
+                            // Sin DirectedIndex: el nodo sortea con el Rng del contexto, y como se
+                            // re-emite cada turno el dado trabado cambia turno a turno. Count = 1
+                            // porque el candado es uno; con mas de uno deja de ser una molestia y
+                            // pasa a decidir la tirada.
+                            Count = LockedDiceCount,
                             BlockVfxId = BossFeedbackIds.CroupierConfiscaVfx,
                             BlockFeelId = BossFeedbackIds.CroupierConfiscaFeel,
                         },

@@ -5,7 +5,6 @@ using System.Reflection;
 using System.Runtime.CompilerServices;
 using NUnit.Framework;
 using Rollgeon.Combat.AI.Decisions;
-using Rollgeon.Combat.AI.Readers;
 using Rollgeon.Combat.Threat;
 using Rollgeon.Combos;
 using Rollgeon.Editor.Tools.Enemy.Builders;
@@ -302,13 +301,18 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         }
 
         [Test]
-        public void DieLock_TakesAFixedDie_AndIsPresented()
+        public void DieLock_DrawsADifferentDieEachTurn_AndIsPresented()
         {
             var block = Descendants(_root).OfType<AINode_RotateBlock>().Single();
 
             Assert.AreEqual(AINode_RotateBlock.BlockTarget.Dice, block.Target);
-            Assert.AreEqual(CroupierAssetBuilder.LockedDieIndex, ReadInt(block.DirectedIndex),
-                "Un sorteo por turno se lee como un porcentaje, no como una confiscación.");
+            Assert.IsNull(block.DirectedIndex,
+                "Con DirectedIndex el candado cae siempre en el mismo dado. El nodo se re-emite " +
+                "todos los turnos, así que dejarlo vacío es lo que hace que el sorteo sea por " +
+                "turno; y el candado sale pelado porque no hay número cantado al que atarlo.");
+            Assert.AreEqual(CroupierAssetBuilder.LockedDiceCount, block.Count,
+                "Un solo dado por turno: con dos el candado deja de ser una molestia y pasa a " +
+                "decidir la tirada.");
             Assert.AreEqual(BossFeedbackIds.CroupierConfiscaVfx, block.BlockVfxId);
             Assert.AreEqual(BossFeedbackIds.CroupierConfiscaFeel, block.BlockFeelId);
         }
@@ -582,17 +586,30 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                 "rondas y el jugador pasa un turno completo sin ninguna casilla a la que moverse.");
         }
 
-        /// <summary>Va cableado y no por default: el default de <c>RetireFullyReplaced</c> es "no
-        /// retirar", y apagar fuego que el jugador ya tiene en pantalla es decisión de esta pelea.</summary>
+        /// <summary>Va cableado y no por default en los dos sentidos: apagar fuego que el jugador ya
+        /// tiene en pantalla, o dejarlo, es decisión de esta pelea y depende de qué reloj es más
+        /// corto.</summary>
         [Test]
-        public void Ignitions_RelayTheBandTheyReplace()
+        public void Ignitions_RelayTheBandTheyReplace_ExceptTheShorterPleno()
         {
             foreach (var ignite in Descendants(_root).OfType<AINode_IgniteArea>())
             {
+                bool isPleno = ignite.ChannelId == CroupierAssetBuilder.PlenoChannelId;
+
+                if (isPleno)
+                {
+                    Assert.IsFalse(ignite.RetireFullyReplaced,
+                        "El Pleno volvió a relevar lo que tapa. Es el reloj más corto de los tres: " +
+                        "relevando, le recorta a un turno la banda que ya venía ardiendo, y lo que " +
+                        "tiene que durar un turno es el fogonazo, no el fuego que ya estaba.");
+                    continue;
+                }
+
                 Assert.IsTrue(ignite.RetireFullyReplaced,
-                    "Una ignición dejó de relevar la banda que tapa por completo. Ese terreno se " +
-                    "queda con el reloj de la banda vieja, así que la recién avisada se apaga en el " +
-                    "wrap siguiente y el turno de quema pasa en blanco.");
+                    "Una banda dejó de relevar la que tapa por completo. Ese terreno se queda con " +
+                    "el reloj de la banda vieja —el más corto, porque ya viene corriendo—, así que " +
+                    "la recién avisada se apaga en el wrap siguiente y el turno de quema pasa en " +
+                    "blanco.");
             }
         }
 
@@ -798,13 +815,6 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                     $"{wrapper.Children.FirstOrDefault()?.GetType().Name} no tiene Wait de fallback " +
                     "— devolvería Failed igual.");
             }
-        }
-
-        private static int ReadInt(AIIntReader reader)
-        {
-            var constant = reader as AIConstantInt;
-            Assert.IsNotNull(constant, "Se esperaba un AIConstantInt (valor literal del inspector).");
-            return constant.Value;
         }
 
         /// <summary>Gate de HP por su umbral, venga suelto o envuelto en el Selector de aislamiento.</summary>
