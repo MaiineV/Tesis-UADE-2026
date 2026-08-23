@@ -13,7 +13,17 @@ MonoBehaviour:
   m_Name: StatusIconCatalog
   m_EditorClassIdentifier: Rollgeon::Rollgeon.UI.HUD.Status.StatusIconCatalogSO
   _entries:
+  - Id: status.burn
+    Icon: {fileID: -900020473, guid: ebbf8db95b2966645b4a7070d253083c, type: 3}
+  - Id: status.tp_delay
+    Icon: {fileID: 862183844, guid: ebbf8db95b2966645b4a7070d253083c, type: 3}
   - Id: status.poison
-    Icon: {fileID: 21300002, guid: 358b5d9f23bc9413e87c9948acc67ee1, type: 3}
+    Icon: {fileID: 482800848, guid: ebbf8db95b2966645b4a7070d253083c, type: 3}
+  - Id: status.tile_heal
+    Icon: {fileID: -412726588, guid: ebbf8db95b2966645b4a7070d253083c, type: 3}
+  - Id: status.tile_speed
+    Icon: {fileID: -154571996, guid: ebbf8db95b2966645b4a7070d253083c, type: 3}
+  - Id: status.tile_attack
+    Icon: {fileID: -132331292, guid: ebbf8db95b2966645b4a7070d253083c, type: 3}
   - Id: status.stun
-    Icon: {fileID: 21300008, guid: 358b5d9f23bc9413e87c9948acc67ee1, type: 3}
+    Icon: {fileID: -17862878, guid: ebbf8db95b2966645b4a7070d253083c, type: 3}

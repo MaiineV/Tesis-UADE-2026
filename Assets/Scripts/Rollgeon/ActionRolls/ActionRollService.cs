@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Patterns;
+using Rollgeon.Combat.Damage;
 using Rollgeon.Combat.Rolls;
 using Rollgeon.Combos;
 using Rollgeon.Dice;
@@ -600,6 +601,31 @@ namespace Rollgeon.ActionRolls
         // Si no hay combo, emitir con BaseDamage=0 limpia la UI.
         private void EmitComboMatched()
         {
+            // BUG carrier-scope: sin ContributingDice, DiceEnchantmentService.OnComboMatchedHandler
+            // no puede resolver "el carrier participó del combo" — el gate quedaba siempre
+            // permisivo (o siempre bloqueado, según RequireCarrierParticipates) para los
+            // encantamientos condicionales disparados desde un ActionRoll (Heal, Force Door).
+            // _currentComboResult.ContributingIndices son locales al subset holdeado
+            // (_currentHeldFaces); _currentHeldIndices mapea ese subset a bag slot — mismo
+            // contrato que ContributingDiceResolver usa en DiceZoneView.
+            IReadOnlyList<ContributingDie> contributingDice = null;
+            if (_currentComboResult.HasValue && _currentComboResult.Value.IsMatch)
+            {
+                IReadOnlyList<DiceType> bagDice = null;
+                if (ServiceLocator.TryGetService<Rollgeon.Upgrades.Dice.IDiceEnchantmentService>(out var enchants)
+                    && enchants?.Bag != null)
+                    bagDice = enchants.Bag.Dice;
+                else if (_bag != null)
+                    bagDice = _bag.Dice;
+
+                if (bagDice != null)
+                {
+                    contributingDice = ContributingDiceResolver.ResolveDetailed(
+                        _currentComboResult.Value.ContributingIndices, _currentHeldIndices,
+                        _currentHeldFaces, bagDice);
+                }
+            }
+
             TypedEvent<ComboMatchedPayload>.Raise(new ComboMatchedPayload
             {
                 SourceGuid = _playerGuid,
@@ -607,6 +633,7 @@ namespace Rollgeon.ActionRolls
                 DisplayName = _currentCombo != null ? Rollgeon.Localization.LocalizedContent.Name(_currentCombo.ComboId, _currentCombo.DisplayName) : string.Empty,
                 BaseDamage = _currentComboFlatBase,
                 DynamicBonus = _currentComboDynamicBonus,
+                ContributingDice = contributingDice,
             });
         }
 
@@ -659,14 +686,30 @@ namespace Rollgeon.ActionRolls
                 HeldDiceOriginalIndices = _currentHeldIndices,
             };
 
-            EventManager.Trigger(EventName.OnRollResolved, _playerGuid,
-                (IReadOnlyList<int>)(_currentRoll ?? Array.Empty<int>()));
+            // Este es el ÚNICO emisor de OnRollResolved que dispara ANTES de ejecutar la
+            // acción (los de CombatHandoffService son todos post-ejecución). Sin el gate,
+            // DiceZoneView corría su outro acá mismo y la secuencia N×M del heal (que nace
+            // recién dentro de cb → Execute → AnnounceHeal) arrancaba con los dados ya
+            // apagados: valores volando "de la nada". Sostenerlo alrededor de resolve+cb
+            // hace que el outro se difiera igual que en ataque/escudo; es ref-count, así
+            // que el Begin del BreakdownSequenceDirector anida sin pisarse, y si no hay
+            // combo que animar el finally lo baja en el mismo frame (outro sin retraso).
+            Rollgeon.Feedback.BreakdownUiGate.Begin();
+            try
+            {
+                EventManager.Trigger(EventName.OnRollResolved, _playerGuid,
+                    (IReadOnlyList<int>)(_currentRoll ?? Array.Empty<int>()));
 
-            SetPhase(ActionRollPhase.Resolved);
+                SetPhase(ActionRollPhase.Resolved);
 
-            var cb = _onCompleted;
-            ResetState();
-            cb?.Invoke(outcome);
+                var cb = _onCompleted;
+                ResetState();
+                cb?.Invoke(outcome);
+            }
+            finally
+            {
+                Rollgeon.Feedback.BreakdownUiGate.End();
+            }
         }
 
         private void CompleteCancelled()

@@ -927,6 +927,47 @@ MonoBehaviour:
       who stands still. They never touch their owner.'
     m_Metadata:
       m_Items: []
+  - m_Id: 14364254574313472
+    m_Localized: Teleport Fatigue
+    m_Metadata:
+      m_Items: []
+  - m_Id: 14364254620450816
+    m_Localized: You cannot use a portal again until this wears off.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 14364254620450817
+    m_Localized: Burning
+    m_Metadata:
+      m_Items: []
+  - m_Id: 14364254620450818
+    m_Localized: 'You are standing on Fire: you take damage at the start of your
+      turn while you remain here.'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 14364254620450819
+    m_Localized: Healing Tile
+    m_Metadata:
+      m_Items: []
+  - m_Id: 14364254620450820
+    m_Localized: End your turn here to recover health.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 14364254620450821
+    m_Localized: Boost
+    m_Metadata:
+      m_Items: []
+  - m_Id: 14364254620450822
+    m_Localized: This tile improves your next movement.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 14364254620450823
+    m_Localized: Strength
+    m_Metadata:
+      m_Items: []
+  - m_Id: 14364254620450824
+    m_Localized: Your offensive combos deal bonus damage while you stay here.
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

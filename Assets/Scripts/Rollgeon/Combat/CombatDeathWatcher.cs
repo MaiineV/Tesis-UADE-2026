@@ -30,6 +30,7 @@ namespace Rollgeon.Combat
         private readonly IEnemyAIRegistry _aiRegistry;
         private readonly IFeedbackService _feedback;
         private readonly TurnManager _turn;
+        private readonly Rollgeon.Phase.IPhaseService _phase;
 
         private readonly HashSet<Guid> _processed = new();
         private Action<DamageResolvedPayload> _handler;
@@ -44,7 +45,8 @@ namespace Rollgeon.Combat
             IGridManager grid = null,
             IEnemyAIRegistry aiRegistry = null,
             IFeedbackService feedback = null,
-            TurnManager turn = null)
+            TurnManager turn = null,
+            Rollgeon.Phase.IPhaseService phase = null)
         {
             _player = player ?? throw new ArgumentNullException(nameof(player));
             _signaller = signaller ?? throw new ArgumentNullException(nameof(signaller));
@@ -55,6 +57,7 @@ namespace Rollgeon.Combat
             _aiRegistry = aiRegistry;
             _feedback = feedback;
             _turn = turn;
+            _phase = phase;
 
             _handler = OnDamageResolved;
             TypedEvent<DamageResolvedPayload>.Subscribe(_handler);
@@ -71,9 +74,10 @@ namespace Rollgeon.Combat
             ServiceLocator.TryGetService<IEnemyAIRegistry>(out var aiRegistry);
             ServiceLocator.TryGetService<IFeedbackService>(out var feedback);
             ServiceLocator.TryGetService<TurnManager>(out var turn);
+            ServiceLocator.TryGetService<Rollgeon.Phase.IPhaseService>(out var phase);
 
             var watcher = new CombatDeathWatcher(
-                player, signaller, turnOrder, visuals, dungeon, grid, aiRegistry, feedback, turn);
+                player, signaller, turnOrder, visuals, dungeon, grid, aiRegistry, feedback, turn, phase);
             ServiceLocator.AddService<ICombatDeathWatcher>(watcher, ServiceScope.Run);
             return watcher;
         }
@@ -111,7 +115,7 @@ namespace Rollgeon.Combat
 
             if (payload.TargetGuid == _player.PlayerGuid)
             {
-                _signaller.NotifyCombatEnded(CombatOutcome.Defeat);
+                HandlePlayerDeath();
                 return;
             }
 
@@ -192,6 +196,41 @@ namespace Rollgeon.Combat
                 _turn?.OnFeedbackComplete();
                 FinishDeath(deadGuid, isFinalKill, combatRoomId);
             });
+        }
+
+        /// <summary>
+        /// En combate la derrota viaja por la FSM (que además hace TurnOrder.Reset y el pop
+        /// del CombatHUD). Fuera de combate no hay FSM: NotifyCombatEnded era un no-op
+        /// silencioso (CombatController hace return sin _fsm) y el player quedaba caminando
+        /// con 0 HP. Acá se emite directamente el evento terminal de derrota — el mismo
+        /// contrato que emite CombatReturnService.HandleDefeat — que ya consumen
+        /// DefeatScreen, analytics, achievements y unlocks sin depender del combate.
+        /// </summary>
+        private void HandlePlayerDeath()
+        {
+            // Sin IPhaseService (tests EditMode preexistentes) se asume combate: mismo
+            // comportamiento de siempre.
+            bool inCombat = _phase == null
+                || _phase.CurrentBase == Rollgeon.Phase.GamePhase.Combat;
+
+            if (inCombat)
+            {
+                _signaller.NotifyCombatEnded(CombatOutcome.Defeat);
+                return;
+            }
+
+            // Corta cualquier cadena en vuelo (slide de hielo, empuje): el motor de casillas
+            // frena con stop=Death cuando el muerto desaparece del grid.
+            _grid?.Unregister(_player.PlayerGuid);
+
+            // GameOver corta el re-armado del click-to-move (ArmMovement chequea la fase);
+            // sin esto el player seguía caminando detrás de la DefeatScreen. ReplacePhase
+            // tira si hay un overlay activo (pausa) — mejor derrota sin cambio de fase que
+            // una excepción en medio del golpe letal.
+            if (_phase.CurrentOverlay == Rollgeon.Phase.PhaseOverlay.None)
+                _phase.ReplacePhase(Rollgeon.Phase.GamePhase.GameOver);
+
+            EventManager.Trigger(EventName.OnPlayerDefeated, _player.RunId);
         }
 
         /// <summary>

@@ -366,5 +366,17 @@ namespace Patterns
         /// <summary>args: [Guid entityGuid]. El veneno de la entidad llegó a 0 turnos o se curó.
         /// El teardown (ClearAll en OnCombatEnd/OnRunEnd) NO lo dispara.</summary>
         OnPoisonExpired,
+
+        // --- Combat: teleport cooldown (portales) ---------------------------------
+        /// <summary>args: [Guid entityGuid, int turns]. La entidad quedó "recién teletransportada"
+        /// tras usar un portal. <c>turns</c> es el total restante tras el refresh —
+        /// <c>ITeleportCooldownService.Apply</c> toma max(), nunca suma (criterio Veneno/Stun).</summary>
+        OnTeleportCooldownApplied,
+        /// <summary>args: [Guid entityGuid, int remainingTurns]. Decrementó al inicio del turno de
+        /// la entidad.</summary>
+        OnTeleportCooldownTicked,
+        /// <summary>args: [Guid entityGuid]. El cooldown llegó a 0 o se limpió con Clear. El
+        /// teardown (ClearAll en OnCombatEnd/OnRunEnd/OnRoomEntered) NO lo dispara.</summary>
+        OnTeleportCooldownExpired,
     }
 }

@@ -7,17 +7,14 @@ using UnityEngine.UI;
 namespace Rollgeon.UI.Tests
 {
     /// <summary>
-    /// El marco lo pone el sistema (activo/inactivo) y el ícono lo trae el estado.
+    /// El ícono lo trae el estado; desde el playtest del 23/08 no hay marco del sistema.
     /// </summary>
     [TestFixture]
     public class StatusEffectIconViewTests
     {
         private GameObject _go;
         private StatusEffectIconView _view;
-        private Image _background;
         private Image _icon;
-        private Sprite _activeFrame;
-        private Sprite _inactiveFrame;
         private Sprite _stateIcon;
 
         [SetUp]
@@ -25,30 +22,21 @@ namespace Rollgeon.UI.Tests
         {
             _go = new GameObject("StatusEffectIcon", typeof(RectTransform));
 
-            var bgGo = new GameObject("Background", typeof(RectTransform), typeof(CanvasRenderer));
-            bgGo.transform.SetParent(_go.transform, worldPositionStays: false);
-            _background = bgGo.AddComponent<Image>();
-
             var iconGo = new GameObject("Icon", typeof(RectTransform), typeof(CanvasRenderer));
             iconGo.transform.SetParent(_go.transform, worldPositionStays: false);
             _icon = iconGo.AddComponent<Image>();
 
-            _activeFrame = MakeSprite("activeFrame");
-            _inactiveFrame = MakeSprite("inactiveFrame");
             _stateIcon = MakeSprite("stateIcon");
 
             _view = _go.AddComponent<StatusEffectIconView>();
-            SetPrivate(_view, "_background", _background);
             SetPrivate(_view, "_icon", _icon);
-            SetPrivate(_view, "_activeBackground", _activeFrame);
-            SetPrivate(_view, "_inactiveBackground", _inactiveFrame);
         }
 
         [TearDown]
         public void TearDown()
         {
             if (_go != null) Object.DestroyImmediate(_go);
-            foreach (var s in new[] { _activeFrame, _inactiveFrame, _stateIcon })
+            foreach (var s in new[] { _stateIcon })
             {
                 if (s == null) continue;
                 if (s.texture != null) Object.DestroyImmediate(s.texture);
@@ -65,38 +53,14 @@ namespace Rollgeon.UI.Tests
         }
 
         [Test]
-        public void should_use_the_active_frame_when_the_state_is_active()
+        public void should_show_the_state_icon()
         {
             // Arrange + Act
             _view.Show(new StatusIconState("passive.test", "Test", "Descripción", _stateIcon, active: true));
 
             // Assert
-            Assert.AreSame(_activeFrame, _background.sprite);
             Assert.AreSame(_stateIcon, _icon.sprite);
-        }
-
-        [Test]
-        public void should_use_the_inactive_frame_when_the_state_is_latent()
-        {
-            // Arrange + Act
-            _view.Show(new StatusIconState("passive.test", "Test", "Descripción", _stateIcon, active: false));
-
-            // Assert
-            Assert.AreSame(_inactiveFrame, _background.sprite);
-        }
-
-        [Test]
-        public void should_swap_the_frame_back_and_forth()
-        {
-            // Arrange — el mismo slot se reusa entre refreshes, así que el swap tiene que
-            // ir en los dos sentidos y no solo "prender".
-            _view.Show(new StatusIconState("passive.test", "Test", "Descripción", _stateIcon, active: true));
-
-            // Act
-            _view.Show(new StatusIconState("passive.test", "Test", "Descripción", _stateIcon, active: false));
-
-            // Assert
-            Assert.AreSame(_inactiveFrame, _background.sprite);
+            Assert.IsTrue(_icon.enabled);
         }
 
         [Test]

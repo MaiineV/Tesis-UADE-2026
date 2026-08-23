@@ -78,6 +78,15 @@ namespace Rollgeon.UI.HUD.Status
             EventManager.Subscribe(EventName.OnPoisonApplied, HandleOwnerEvent);
             EventManager.Subscribe(EventName.OnPoisonTicked, HandleOwnerEvent);
             EventManager.Subscribe(EventName.OnPoisonExpired, HandleOwnerEvent);
+            EventManager.Subscribe(EventName.OnTeleportCooldownApplied, HandleOwnerEvent);
+            EventManager.Subscribe(EventName.OnTeleportCooldownTicked, HandleOwnerEvent);
+            EventManager.Subscribe(EventName.OnTeleportCooldownExpired, HandleOwnerEvent);
+            // Lifecycle de casillas: args[0] es el instanceId, no el guid del player, así que
+            // no pasa por HandleOwnerEvent. Refresh incondicional — un FireTemp que expira
+            // bajo los pies debe apagar el ícono sin que el jugador se mueva.
+            EventManager.Subscribe(EventName.OnSpecialTilePlaced, HandleTileLifecycleEvent);
+            EventManager.Subscribe(EventName.OnSpecialTileExpired, HandleTileLifecycleEvent);
+            TryHookMovement();
             _bound = true;
 
             // Primer repintado en silencio: si el estado ya venía activo (rebind, load
@@ -100,6 +109,12 @@ namespace Rollgeon.UI.HUD.Status
             EventManager.UnSubscribe(EventName.OnPoisonApplied, HandleOwnerEvent);
             EventManager.UnSubscribe(EventName.OnPoisonTicked, HandleOwnerEvent);
             EventManager.UnSubscribe(EventName.OnPoisonExpired, HandleOwnerEvent);
+            EventManager.UnSubscribe(EventName.OnTeleportCooldownApplied, HandleOwnerEvent);
+            EventManager.UnSubscribe(EventName.OnTeleportCooldownTicked, HandleOwnerEvent);
+            EventManager.UnSubscribe(EventName.OnTeleportCooldownExpired, HandleOwnerEvent);
+            EventManager.UnSubscribe(EventName.OnSpecialTilePlaced, HandleTileLifecycleEvent);
+            EventManager.UnSubscribe(EventName.OnSpecialTileExpired, HandleTileLifecycleEvent);
+            UnhookMovement();
             _bound = false;
         }
 
@@ -120,9 +135,74 @@ namespace Rollgeon.UI.HUD.Status
         // entidades no nos mueven la fila.
         private void HandleOwnerEvent(params object[] args)
         {
+            // El MovementService es run-scoped y puede registrarse después de nuestro Bind:
+            // reintento barato en cada evento hasta engancharlo (mismo criterio que
+            // SpecialTileService.EnsureMovementSubscription).
+            TryHookMovement();
+
             if (args == null || args.Length < 1) return;
             if (!(args[0] is Guid entityGuid) || entityGuid != _playerGuid) return;
             Refresh();
+        }
+
+        private void HandleTileLifecycleEvent(params object[] args) => Refresh();
+
+        // ======================================================================
+        // Hook de movimiento — los estados "parado sobre" cambian al caminar, y el
+        // movimiento no viaja por el EventManager sino por delegados C#.
+        // ======================================================================
+
+        private Rollgeon.Movement.IMovementService _movementHooked;
+        private Rollgeon.Movement.IPathedMovementService _teleportHooked;
+
+        private void TryHookMovement()
+        {
+            if (_movementHooked != null) return;
+            if (!ServiceLocator.TryGetService<Rollgeon.Movement.IMovementService>(out var movement)
+                || movement == null)
+            {
+                return;
+            }
+
+            movement.OnEntityMoved += HandleEntityMoved;
+            _movementHooked = movement;
+
+            if (movement is Rollgeon.Movement.IPathedMovementService pathed)
+            {
+                // Teleport NO dispara OnEntityMoved por spec — sin este segundo hook el
+                // ícono de tp-delay aparecería recién en el próximo evento de turno.
+                pathed.OnEntityTeleported += HandleEntityTeleported;
+                _teleportHooked = pathed;
+            }
+        }
+
+        // Desuscribir SIEMPRE de la instancia cacheada: re-resolver por ServiceLocator
+        // podría devolver una más nueva y leakear la vieja (gotcha _movementSubscribedTo
+        // de SpecialTileService).
+        private void UnhookMovement()
+        {
+            if (_movementHooked != null)
+            {
+                _movementHooked.OnEntityMoved -= HandleEntityMoved;
+                _movementHooked = null;
+            }
+            if (_teleportHooked != null)
+            {
+                _teleportHooked.OnEntityTeleported -= HandleEntityTeleported;
+                _teleportHooked = null;
+            }
+        }
+
+        private void HandleEntityMoved(Guid entity, Rollgeon.Grid.GridCoord from,
+            Rollgeon.Grid.GridCoord to, IReadOnlyList<Rollgeon.Grid.GridCoord> path)
+        {
+            if (entity == _playerGuid) Refresh();
+        }
+
+        private void HandleEntityTeleported(Guid entity, Rollgeon.Grid.GridCoord from,
+            Rollgeon.Grid.GridCoord to)
+        {
+            if (entity == _playerGuid) Refresh();
         }
 
         /// <summary>Relee el estado real y repinta. Idempotente y barato.</summary>
@@ -181,6 +261,8 @@ namespace Rollgeon.UI.HUD.Status
             _providers.Add(new ClassPassiveStatusProvider());
             _providers.Add(new PoisonStatusProvider(_statusIconCatalog));
             _providers.Add(new StunStatusProvider(_statusIconCatalog));
+            _providers.Add(new TileStandStatusProvider(_statusIconCatalog));
+            _providers.Add(new TeleportCooldownStatusProvider(_statusIconCatalog));
         }
     }
 }

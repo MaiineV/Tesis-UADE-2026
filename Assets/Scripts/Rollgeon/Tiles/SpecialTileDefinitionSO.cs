@@ -102,6 +102,13 @@ namespace Rollgeon.Tiles
         [Tooltip("Rondas de advertencia (default GDD: 1 ronda completa).")]
         public int TelegraphRounds = 1;
 
+        [Header("Teleport")]
+        [Min(0)]
+        [Tooltip("Turnos de 'recién teletransportado' tras usar este portal: mientras dure, pisar " +
+                 "cualquier portal es celda común (no teleporta ni trunca el path). 0 = sin cooldown. " +
+                 "Solo aplica en combate: en exploración no hay turnos que lo hagan expirar.")]
+        public int TeleportCooldownTurns = 2;
+
         [Header("Safe Zone")]
         [Tooltip("De qué tipos de casilla protege esta zona (solo Category = ConditionalProtection). " +
                  "NO es inmunidad general: cada zona declara su lista.")]

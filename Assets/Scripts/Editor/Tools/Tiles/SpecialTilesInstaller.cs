@@ -58,6 +58,7 @@ namespace Rollgeon.EditorTools.Tiles
             {
                 EnsureAsset<UnitTraitServiceBootstrap>($"{BootstrapsFolder}/UnitTraitServiceBootstrap.asset"),
                 EnsureAsset<PoisonServiceBootstrap>($"{BootstrapsFolder}/PoisonServiceBootstrap.asset"),
+                EnsureAsset<TeleportCooldownServiceBootstrap>($"{BootstrapsFolder}/TeleportCooldownServiceBootstrap.asset"),
                 EnsureAsset<SpecialTileServiceBootstrap>($"{BootstrapsFolder}/SpecialTileServiceBootstrap.asset"),
                 EnsureAsset<ForcedMovementServiceBootstrap>($"{BootstrapsFolder}/ForcedMovementServiceBootstrap.asset"),
                 EnsureAsset<RoomSpecialTilesLoaderBootstrap>($"{BootstrapsFolder}/RoomSpecialTilesLoaderBootstrap.asset"),
@@ -80,6 +81,11 @@ namespace Rollgeon.EditorTools.Tiles
         {
             CreateDefinitions();
             CreateAndRegisterBootstraps();
+
+            // Los visuales al final, siempre: un solo comando deja las definiciones, los
+            // bootstraps y el arte wireados sin depender de correr menús en orden.
+            Rollgeon.Editor.Tools.Tiles.SpikeTileVisualInstaller.Install();
+            Rollgeon.Editor.Tools.Tiles.SpecialTileVisualsInstaller.Install();
         }
 
         // ==================================================================
@@ -195,6 +201,7 @@ namespace Rollgeon.EditorTools.Tiles
                 d.Triggers = TileTrigger.OnEnter | TileTrigger.OnForcedMovementInto;
                 d.Category = TileEffectCategory.Teleport;
                 d.Affinity = TileAffinity.All;
+                d.TeleportCooldownTurns = 2;
                 d.EditorColor = new Color(0.65f, 0.3f, 1f);
             });
 

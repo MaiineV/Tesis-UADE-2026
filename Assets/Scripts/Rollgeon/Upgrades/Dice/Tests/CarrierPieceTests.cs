@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using NUnit.Framework;
 using Patterns;
+using Rollgeon.Combos;
 using Rollgeon.Dice;
 using Rollgeon.Effects;
 using Rollgeon.PreConditions;
@@ -42,6 +43,21 @@ namespace Rollgeon.Upgrades.Dice.Tests
             };
         }
 
+        /// <summary>
+        /// Variante con datos de combo (hook ComboMatched/ComboPlayed) — <paramref name="contributingIndices"/>
+        /// son bag slots directos (identidad, <c>keptDiceOriginalIndices</c> null), mismo
+        /// encoding que <c>DiceEnchantmentService.OnComboMatchedHandler</c> arma para el
+        /// canal dados.
+        /// </summary>
+        private static EffectContext BuildComboCarrierContext(
+            int[] faces, int carrierIndex, int[] contributingIndices, DiceType type = DiceType.D6)
+        {
+            var ctx = BuildCarrierContext(faces, carrierIndex, type);
+            ctx.ComboResult = ComboDetectionResult.Match("combo.par", baseDamage: 10,
+                countUsed: contributingIndices.Length, contributingIndices: contributingIndices);
+            return ctx;
+        }
+
         private static PreConditionContext WrapPre(EffectContext eff) =>
             new PreConditionContext { Effect = eff };
 
@@ -78,6 +94,60 @@ namespace Rollgeon.Upgrades.Dice.Tests
                 "Otro dado comparte la cara del carrier.");
             Assert.IsFalse(pc.Evaluate(WrapPre(BuildCarrierContext(new[] { 3, 4, 5 }, 0))),
                 "Sin gemelo no pasa.");
+        }
+
+        // ================================================================
+        // PcCarrierFace.HasDuplicate — carrier-scope (bug fix)
+        // ================================================================
+
+        [Test]
+        public void PcCarrierFace_HasDuplicate_ComboContext_PairOnlyOutsideContributors_ReturnsFalse()
+        {
+            // Tirada [3,3,5] — hay un par de 3s, pero el combo (bag slots 1,2 → caras 3,5)
+            // no incluye al carrier (bag slot 0) NI forma el par entre sí. Antes del fix,
+            // HasDuplicate escaneaba TODA la tirada y esto disparaba en falso.
+            var pc = new PcCarrierFace { Mode = CarrierFaceMode.HasDuplicate };
+            var ctx = BuildComboCarrierContext(
+                faces: new[] { 3, 3, 5 }, carrierIndex: 0, contributingIndices: new[] { 1, 2 });
+
+            Assert.IsFalse(pc.Evaluate(WrapPre(ctx)),
+                "El carrier no participó del combo — el par entre los otros dos dados no debe contar.");
+        }
+
+        [Test]
+        public void PcCarrierFace_HasDuplicate_ComboContext_PairAmongContributors_ReturnsTrue()
+        {
+            // Tirada [3,3,5] — el combo usa los bag slots 0 y 1 (los dos 3s) y el carrier
+            // es el slot 0: participa Y tiene un gemelo dentro del subset contribuyente.
+            var pc = new PcCarrierFace { Mode = CarrierFaceMode.HasDuplicate };
+            var ctx = BuildComboCarrierContext(
+                faces: new[] { 3, 3, 5 }, carrierIndex: 0, contributingIndices: new[] { 0, 1 });
+
+            Assert.IsTrue(pc.Evaluate(WrapPre(ctx)));
+        }
+
+        [Test]
+        public void PcCarrierFace_HasDuplicate_ComboContext_CarrierOutsideContributors_ReturnsFalse()
+        {
+            // Combo = bag slots 1,2 (caras 3,3 — sí forman gemelo entre ellos), pero el
+            // carrier vive en el slot 0 y no es parte del combo: no dispara aunque su
+            // propia cara (3) también coincida con la de los contribuyentes.
+            var pc = new PcCarrierFace { Mode = CarrierFaceMode.HasDuplicate };
+            var ctx = BuildComboCarrierContext(
+                faces: new[] { 3, 3, 3 }, carrierIndex: 0, contributingIndices: new[] { 1, 2 });
+
+            Assert.IsFalse(pc.Evaluate(WrapPre(ctx)),
+                "El carrier debe estar ENTRE los contribuyentes, no solo compartir la cara.");
+        }
+
+        [Test]
+        public void PcCarrierFace_HasDuplicate_WithoutComboContext_FallsBackToFullRoll()
+        {
+            // Regresión: hooks sin noción de combo (RollResolved/DiceRolled/TurnFinished)
+            // no setean ComboResult — debe preservarse el comportamiento legado (toda la tirada).
+            var pc = new PcCarrierFace { Mode = CarrierFaceMode.HasDuplicate };
+
+            Assert.IsTrue(pc.Evaluate(WrapPre(BuildCarrierContext(new[] { 3, 3, 5 }, 0))));
         }
 
         [Test]

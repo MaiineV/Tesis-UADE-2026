@@ -891,6 +891,46 @@ MonoBehaviour:
     m_Key: tile.firecroupier.desc
     m_Metadata:
       m_Items: []
+  - m_Id: 14364254574313472
+    m_Key: status.tp_delay.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 14364254620450816
+    m_Key: status.tp_delay.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 14364254620450817
+    m_Key: status.burn.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 14364254620450818
+    m_Key: status.burn.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 14364254620450819
+    m_Key: status.tile_heal.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 14364254620450820
+    m_Key: status.tile_heal.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 14364254620450821
+    m_Key: status.tile_speed.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 14364254620450822
+    m_Key: status.tile_speed.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 14364254620450823
+    m_Key: status.tile_attack.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 14364254620450824
+    m_Key: status.tile_attack.desc
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

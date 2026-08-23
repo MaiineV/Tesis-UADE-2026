@@ -95,5 +95,32 @@ namespace Rollgeon.Combat.Tests
             Assert.IsNull(ContributingDiceResolver.ResolveDetailed(
                 new[] { 0 }, null, null, new[] { DiceType.D6 }));
         }
+
+        // ================================================================
+        // ResolveBagSlot — factoreado de CarrierParticipates/PcCarrierFace.
+        // ================================================================
+
+        [Test]
+        public void ResolveBagSlot_WithMap_UsesMappedSlot()
+        {
+            var map = new[] { 1, 3 };
+
+            Assert.AreEqual(1, ContributingDiceResolver.ResolveBagSlot(0, map));
+            Assert.AreEqual(3, ContributingDiceResolver.ResolveBagSlot(1, map));
+        }
+
+        [Test]
+        public void ResolveBagSlot_NullMap_TreatsIndexAsBagSlotDirectly()
+        {
+            Assert.AreEqual(2, ContributingDiceResolver.ResolveBagSlot(2, null));
+        }
+
+        [Test]
+        public void ResolveBagSlot_LocalIndexOutOfMapRange_FallsBackToIdentity()
+        {
+            var map = new[] { 1, 3 };
+
+            Assert.AreEqual(5, ContributingDiceResolver.ResolveBagSlot(5, map));
+        }
     }
 }

@@ -33,6 +33,7 @@ MonoBehaviour:
   OwnerBossImmune: 1
   TelegraphPayload: {fileID: 0}
   TelegraphRounds: 1
+  TeleportCooldownTurns: 2
   ProtectedTileTypes: 
   VisualPrefab: {fileID: 1508115570389179148, guid: f9b4763d566a93b499fc44e1bba810fc, type: 3}
   VisualYOffset: 0.02

@@ -585,6 +585,43 @@ namespace Rollgeon.EditorTools.Localization
             Content("status.stun.desc",
                 "Perdés tu próximo turno.",
                 "You lose your next turn.");
+
+            // Cooldown post-portal (con turnos, tickea como veneno/stun).
+            Content("status.tp_delay.name", "Recién teletransportado", "Teleport Fatigue");
+            Content("status.tp_delay.desc",
+                "No podés volver a usar un portal hasta que pase el efecto.",
+                "You cannot use a portal again until this wears off.");
+
+            // Estados "parado sobre" (sin turnos: duran lo que dure la estadía en la casilla).
+            Content("status.burn.name", "Quemándose", "Burning");
+            Content("status.burn.desc",
+                "Estás sobre Fuego: recibís daño al inicio de tu turno mientras sigas acá.",
+                "You are standing on Fire: you take damage at the start of your turn while you remain here.");
+            Content("status.tile_heal.name", "Casilla de Curación", "Healing Tile");
+            Content("status.tile_heal.desc",
+                "Terminá tu turno acá para recuperar vida.",
+                "End your turn here to recover health.");
+            Content("status.tile_speed.name", "Impulso", "Boost");
+            Content("status.tile_speed.desc",
+                "Esta casilla mejora tu próximo movimiento.",
+                "This tile improves your next movement.");
+            Content("status.tile_attack.name", "Fortaleza", "Strength");
+            Content("status.tile_attack.desc",
+                "Tus combos ofensivos hacen daño extra mientras permanezcas acá.",
+                "Your offensive combos deal bonus damage while you stay here.");
+        }
+
+        /// <summary>
+        /// Re-siembra SOLO las claves de la fila de estados. Mismo criterio que
+        /// <see cref="SeedSpecialTilesOnly"/>: acotar el blast radius del seeder completo.
+        /// </summary>
+        [MenuItem("Rollgeon/Localization/Seed Status Icons")]
+        public static void SeedStatusIconsOnly()
+        {
+            SeedStatusIcons();
+            AssetDatabase.SaveAssets();
+            AssetDatabase.Refresh();
+            Debug.Log("[LocalizationContentSeeder] Claves de la fila de estados pobladas.");
         }
 
         // ==================================================================

@@ -1,5 +1,8 @@
 using System;
+using System.Collections.Generic;
+using Rollgeon.Combat.Damage;
 using Rollgeon.Dice;
+using Rollgeon.Effects;
 using Rollgeon.PreConditions;
 using Sirenix.OdinInspector;
 
@@ -59,14 +62,62 @@ namespace Rollgeon.Upgrades.Dice.PreConditions
                 case CarrierFaceMode.Odd:
                     return (face % 2) != 0;
                 case CarrierFaceMode.HasDuplicate:
-                    for (int i = 0; i < eff.DiceResult.Count; i++)
-                    {
-                        if (i != idx && eff.DiceResult[i] == face) return true;
-                    }
-                    return false;
+                    return HasDuplicate(eff, idx, face);
                 default:
                     return false;
             }
+        }
+
+        /// <summary>
+        /// BUG carrier-scope: "gemelo/resonante" comparaba contra TODA la tirada — un
+        /// carrier afuera del combo podía igual encontrar un duplicado entre otros dados
+        /// también afuera del combo y disparar el bonus condicional. Con datos de
+        /// contribución (hook ComboMatched/ComboPlayed vía <see cref="EffectContext.ComboResult"/>)
+        /// restringimos la búsqueda a los dados que efectivamente formaron el combo, y el
+        /// carrier debe ser uno de ellos. Sin esos datos (RollResolved/DiceRolled/TurnFinished,
+        /// que no tienen noción de combo) preservamos el comportamiento legado: toda la tirada.
+        /// </summary>
+        private static bool HasDuplicate(EffectContext eff, int carrierBagSlot, int face)
+        {
+            var contributingSlots = ResolveContributingBagSlots(eff);
+            if (contributingSlots != null)
+            {
+                if (!contributingSlots.Contains(carrierBagSlot)) return false;
+                for (int i = 0; i < contributingSlots.Count; i++)
+                {
+                    int slot = contributingSlots[i];
+                    if (slot == carrierBagSlot) continue;
+                    if (slot < 0 || slot >= eff.DiceResult.Count) continue;
+                    if (eff.DiceResult[slot] == face) return true;
+                }
+                return false;
+            }
+
+            for (int i = 0; i < eff.DiceResult.Count; i++)
+            {
+                if (i != carrierBagSlot && eff.DiceResult[i] == face) return true;
+            }
+            return false;
+        }
+
+        /// <summary>
+        /// Bag slots de los dados contribuyentes del combo, o <c>null</c> si no hay contexto
+        /// de combo (match nulo/false o sin índices) — el caller cae al comportamiento legado
+        /// en ese caso. Reusa el mismo mapeo local→bag slot que <c>CarrierParticipates</c>.
+        /// </summary>
+        private static List<int> ResolveContributingBagSlots(EffectContext eff)
+        {
+            var combo = eff.ComboResult;
+            if (combo == null || !combo.Value.IsMatch) return null;
+
+            var contributing = combo.Value.ContributingIndices;
+            if (contributing == null || contributing.Count == 0) return null;
+
+            var map = eff.KeptDiceOriginalIndices;
+            var slots = new List<int>(contributing.Count);
+            for (int i = 0; i < contributing.Count; i++)
+                slots.Add(ContributingDiceResolver.ResolveBagSlot(contributing[i], map));
+            return slots;
         }
     }
 }

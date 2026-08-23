@@ -37,6 +37,9 @@ namespace Rollgeon.Grid
         // la única señal global de ese estado (mismo patrón que EnchantmentAltarInteractable).
         private bool _modalBlocked;
 
+        // Estado press/release del click PassThrough — ver el filtro al tope de OnClick.
+        private bool _buttonDown;
+
         private void OnEnable()
         {
             EventManager.Subscribe(EventName.OnEnchantmentAltarActivated, OnModalOpened);
@@ -70,6 +73,10 @@ namespace Rollgeon.Grid
                 _clickAction.performed += OnClick;
 
             _map.Enable();
+
+            // Neutraliza el initialStateCheck del action: si el map se re-habilita con el
+            // botón ya apretado, el performed fantasma que dispara no debe contar como click.
+            _buttonDown = _clickAction != null && _clickAction.IsPressed();
         }
 
         private void OnDisable()
@@ -126,6 +133,20 @@ namespace Rollgeon.Grid
 
         private void OnClick(InputAction.CallbackContext ctx)
         {
+            // La acción "Click" del map es PassThrough (así la espera el
+            // InputSystemUIInputModule, que comparte el asset): dispara performed en CADA
+            // cambio de valor, incluido el RELEASE. Sin este filtro un solo click físico
+            // producía dos OnClick separados por varios frames — el segundo caía sobre la
+            // selección recién re-armada tras cruzar una puerta y encadenaba dos salas.
+            bool pressed = ctx.ReadValueAsButton();
+            if (!pressed)
+            {
+                _buttonDown = false;
+                return;
+            }
+            if (_buttonDown) return; // performed repetido con el botón aún apretado
+            _buttonDown = true;
+
             Debug.Log("[TileClickHandler] OnClick fired");
 
             if (_pointerOverUi)

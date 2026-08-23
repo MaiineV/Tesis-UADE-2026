@@ -8,6 +8,7 @@ using Rollgeon.Economy;
 using Rollgeon.Effects;
 using Rollgeon.Upgrades.Combos;
 using Rollgeon.Upgrades.Combos.Triggers.Concretes;
+using Rollgeon.Upgrades.Dice.PreConditions;
 using UnityEditor;
 
 namespace Rollgeon.Upgrades.Dice.Tests
@@ -241,6 +242,56 @@ namespace Rollgeon.Upgrades.Dice.Tests
 
             Assert.IsEmpty(offenders.ToString(),
                 "Pasivas con efectos de apply directo en ComboMatched:\n" + offenders);
+        }
+
+        /// <summary>
+        /// Regresión del bug "encantamientos condicionales afectan la tirada entera aunque
+        /// el dado no participe": un trigger ComboMatched/ComboPlayed que gatea un efecto
+        /// con <see cref="PcCarrierFace"/> (Resonante, Gemelo, Fragil, ParityGamble — todas
+        /// dependen de qué dados formaron el combo) DEBE tener
+        /// <c>RequireCarrierParticipates = true</c>, o el gate del carrier nunca se
+        /// verifica contra el combo real y el efecto se evalúa sobre la tirada completa.
+        /// Ver <c>Rollgeon.EditorTools.Upgrades.EnchantmentCarrierFlagFixer</c> (Editor,
+        /// menú "Rollgeon/Upgrades/Fix Carrier Participation Flags") para el fix por asset.
+        /// </summary>
+        [Test]
+        public void EnchantmentAssets_WithCarrierFacePrecondition_RequireCarrierParticipates()
+        {
+            var offenders = new StringBuilder();
+
+            foreach (var guid in AssetDatabase.FindAssets("t:EnchantmentSO"))
+            {
+                var path = AssetDatabase.GUIDToAssetPath(guid);
+                var ench = AssetDatabase.LoadAssetAtPath<EnchantmentSO>(path);
+                if (ench?.Triggers == null) continue;
+
+                foreach (var trigger in ench.Triggers)
+                {
+                    if (trigger is not Triggers.ExecuteEffectsOnDiceEvent bridge) continue;
+                    if (bridge.Event != Triggers.EnchantmentHookEvent.ComboMatched
+                        && bridge.Event != Triggers.EnchantmentHookEvent.ComboPlayed) continue;
+                    if (bridge.RequireCarrierParticipates) continue;
+                    if (bridge.Effects == null) continue;
+
+                    bool usesCarrierFace = false;
+                    foreach (var group in bridge.Effects)
+                    {
+                        if (group?.PreConditions == null) continue;
+                        foreach (var pc in group.PreConditions)
+                        {
+                            if (pc is PcCarrierFace) usesCarrierFace = true;
+                        }
+                    }
+
+                    if (usesCarrierFace)
+                        offenders.AppendLine(
+                            $"{path}: usa PcCarrierFace pero RequireCarrierParticipates=false " +
+                            "(el gate del carrier no filtra por combo real).");
+                }
+            }
+
+            Assert.IsEmpty(offenders.ToString(),
+                "Encantamientos con PcCarrierFace sin RequireCarrierParticipates:\n" + offenders);
         }
 
         [Test]

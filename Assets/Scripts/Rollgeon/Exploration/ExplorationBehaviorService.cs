@@ -36,6 +36,14 @@ namespace Rollgeon.Exploration
         // transición al siguiente piso en vez de cruzar a una sala vecina.
         private System.Collections.Generic.HashSet<GridCoord> _exitTiles;
 
+        // Latch anti-encadenado (bug de puerta encadenada): true desde que se dispara un
+        // cruce de sala/piso hasta que la transición efectivamente resuelve. Mientras esté
+        // activo, ArmMovement no re-arma la selección y OnSelectionCompleted ignora
+        // cualquier resultado que llegue en el medio — sin esto, un evento duplicado (o
+        // el propio click que originó el cruce) podía encadenar un segundo cruce antes de
+        // que el primero terminara.
+        private bool _crossingDoor;
+
         private EventManager.EventReceiver _onPhaseEnter;
         private EventManager.EventReceiver _onPhaseExit;
         private EventManager.EventReceiver _onRoomEntered;
@@ -235,6 +243,9 @@ namespace Rollgeon.Exploration
         // la pisa — el guard de _state evita el ForceCancel de OnBehaviorSelected.
         private void ArmMovement()
         {
+            // Mientras estemos cruzando de sala/piso no hay que re-armar el movimiento —
+            // la selección se arma de nuevo cuando el cruce termine (ver OnRoomEntered).
+            if (_crossingDoor) return;
             if (_state != State.Idle) return;
             if (!ServiceLocator.TryGetService<IPhaseService>(out var phase)
                 || phase.CurrentBase != GamePhase.Exploration)
@@ -453,6 +464,11 @@ namespace Rollgeon.Exploration
 
         private void OnSelectionCompleted(TargetSelectionResult result)
         {
+            // Latch anti-encadenado: si ya hay un cruce de sala/piso en vuelo, cualquier
+            // resultado que llegue en el medio (evento duplicado, click en cola) se
+            // ignora sin tocar nada — ver comentario del campo _crossingDoor.
+            if (_crossingDoor) return;
+
             if (ServiceLocator.TryGetService<ISelectionController>(out var controller))
                 controller.OnSelectionCompleted -= OnSelectionCompleted;
 
@@ -471,15 +487,22 @@ namespace Rollgeon.Exploration
 
             var picked = result.FirstSelectedCoord;
 
-            // Clickear la casilla en la que ya estás parado es no-op. Sin este guard el
-            // bug era real: el spawn al entrar a una sala te deja SOBRE la casilla
-            // frente-a-puerta; ese click "caminaba" cero pasos (MovementService no-op,
-            // sin animación) y el cruce salía instantáneo — encadenando dos salas con
-            // un solo click sin quererlo.
-            if (picked.HasValue
+            // Inicializado afuera: el compilador no puede correlacionar hasDoorDir con la
+            // asignación del out dentro de la cadena de &&.
+            DoorDirection doorDir = default;
+            bool hasDoorDir = picked.HasValue && doorTiles != null
+                && doorTiles.TryGetValue(picked.Value, out doorDir);
+            bool isExitPick = !hasDoorDir && picked.HasValue && exitTiles != null
+                && exitTiles.Contains(picked.Value);
+
+            bool standingHere = picked.HasValue
                 && ServiceLocator.TryGetService<IGridManager>(out var gridForGuard)
                 && gridForGuard.TryGetPosition(playerGuid, out var currentPos)
-                && picked.Value == currentPos)
+                && picked.Value == currentPos;
+
+            // Clickear la casilla en la que ya estás parado (y que no es una puerta) es
+            // no-op.
+            if (standingHere && !hasDoorDir && !isExitPick)
             {
                 // Next-frame y no inline: acá seguimos dentro del callback de Complete()
                 // del SelectionController — re-armar la selección en el mismo stack se
@@ -489,22 +512,47 @@ namespace Rollgeon.Exploration
                 return;
             }
 
-            // Ejecutar el movimiento normal: el player camina hasta la casilla elegida.
+            // El spawn al entrar a una sala deja al player YA PARADO sobre la casilla
+            // frente-a-puerta por la que entró (ResolveSpawnCoord). Ese era el bug
+            // original: click ahí "caminaba" cero pasos (MovementService no-op, sin
+            // animación) y ExecuteBehavior + el cruce salían en el mismo frame,
+            // encadenando dos salas con un solo click. Acá saltamos directo al cruce
+            // (sin pasar por ExecuteBehavior, que no tiene nada que mover) y el latch de
+            // _crossingDoor evita que un segundo evento repita el salto.
+            if (standingHere && hasDoorDir)
+            {
+                Debug.Log($"[ExplorationBehaviorService] Click en la puerta bajo los pies (dir={doorDir}) — cruzar directo, sin caminar.");
+                _crossingDoor = true;
+                CoroutineHost.Run(CrossDoorAfterArrival(playerGuid, doorDir));
+                return;
+            }
+
+            if (standingHere && isExitPick)
+            {
+                Debug.Log("[ExplorationBehaviorService] Click en la puerta de salida bajo los pies — transicionar directo, sin caminar.");
+                _crossingDoor = true;
+                CoroutineHost.Run(ExitFloorAfterArrival(playerGuid));
+                return;
+            }
+
+            // Caso normal: el player no está parado en la casilla elegida — camina hasta
+            // ahí.
             ExecuteBehavior(behavior, playerGuid, result, null);
 
             // Si esa casilla es una "frente a puerta", cruzar a la sala vecina recién
             // cuando el pawn termine de caminar hasta ahí (no de forma instantánea).
-            if (picked.HasValue && doorTiles != null
-                && doorTiles.TryGetValue(picked.Value, out var dir))
+            if (hasDoorDir)
             {
-                Debug.Log($"[ExplorationBehaviorService] Casilla frente a puerta dir={dir} seleccionada — caminar y cruzar al llegar.");
-                CoroutineHost.Run(CrossDoorAfterArrival(playerGuid, dir));
+                Debug.Log($"[ExplorationBehaviorService] Casilla frente a puerta dir={doorDir} seleccionada — caminar y cruzar al llegar.");
+                _crossingDoor = true;
+                CoroutineHost.Run(CrossDoorAfterArrival(playerGuid, doorDir));
                 // El re-armado lo dispara OnRoomEntered al cargar la sala vecina.
             }
             // Si es la casilla frente a la puerta de SALIDA, transicionar de piso al llegar (#158).
-            else if (picked.HasValue && exitTiles != null && exitTiles.Contains(picked.Value))
+            else if (isExitPick)
             {
                 Debug.Log("[ExplorationBehaviorService] Casilla frente a puerta de salida seleccionada — caminar y transicionar de piso.");
+                _crossingDoor = true;
                 CoroutineHost.Run(ExitFloorAfterArrival(playerGuid));
                 // El re-armado lo dispara la primera sala del piso siguiente (OnRoomEntered).
             }
@@ -518,25 +566,59 @@ namespace Rollgeon.Exploration
 
         // Espera a que el pawn del player termine de caminar y recién ahí cruza la puerta.
         // Corre en el CoroutineHost porque este servicio es una clase plana. Si el pawn
-        // ya estaba en la casilla (sin animación) cruza inmediatamente.
-        private static IEnumerator CrossDoorAfterArrival(Guid playerGuid, DoorDirection dir)
+        // ya estaba en la casilla (sin animación) cruza inmediatamente. No-static: toca
+        // _crossingDoor en los caminos que abortan sin transición (ver comentarios abajo)
+        // — el camino feliz lo limpia OnRoomEntered, disparado sincrónicamente desde
+        // dentro de EnterRoomByDoor.
+        private IEnumerator CrossDoorAfterArrival(Guid playerGuid, DoorDirection dir)
         {
+            // Capturado ANTES del wait: si la sala cambia mientras esperamos (otra
+            // transición disparada en el medio), cruzar "a ciegas" con esta dirección
+            // podría llevar a una sala que ya no es la vecina correcta.
+            Guid? originRoomId = null;
+            if (ServiceLocator.TryGetService<IDungeonService>(out var dungeonAtStart) && dungeonAtStart != null)
+                originRoomId = dungeonAtStart.CurrentRoomInstance?.InstanceId;
+
             if (ServiceLocator.TryGetService<IEntityVisualService>(out var visuals) && visuals != null)
             {
                 var wait = visuals.WaitForMoveComplete(playerGuid);
                 if (wait != null) yield return wait;
             }
 
-            if (ServiceLocator.TryGetService<IDungeonService>(out var dungeon) && dungeon != null)
+            if (!ServiceLocator.TryGetService<IDungeonService>(out var dungeon) || dungeon == null)
             {
-                Debug.Log($"[ExplorationBehaviorService] Player llegó a la casilla frente a puerta dir={dir} — EnterRoomByDoor.");
-                dungeon.EnterRoomByDoor(dir);
+                // Sin IDungeonService no hay cómo cruzar — no dejar el latch pegado ni el
+                // movimiento muerto.
+                _crossingDoor = false;
+                ArmMovement();
+                yield break;
             }
+
+            if (originRoomId.HasValue && dungeon.CurrentRoomInstance?.InstanceId != originRoomId.Value)
+            {
+                Debug.LogWarning($"[ExplorationBehaviorService] Sala cambió durante el wait de cruce (dir={dir}) — abortando cruce, re-armando movimiento.");
+                _crossingDoor = false;
+                ArmMovement();
+                yield break;
+            }
+
+            Debug.Log($"[ExplorationBehaviorService] Player llegó a la casilla frente a puerta dir={dir} — EnterRoomByDoor.");
+            if (!dungeon.EnterRoomByDoor(dir))
+            {
+                // No pudo cruzar (ej. la puerta quedó lockeada durante el wait) — no va a
+                // llegar un OnRoomEntered que limpie el latch, así que lo hacemos acá para
+                // no dejar el movimiento muerto.
+                Debug.LogWarning($"[ExplorationBehaviorService] EnterRoomByDoor(dir={dir}) no transicionó — re-armando movimiento.");
+                _crossingDoor = false;
+                ArmMovement();
+            }
+            // Si transicionó, EnterRoomByDoor disparó OnRoomEntered sincrónicamente, que
+            // ya limpió el latch y re-armó el movimiento (ver OnRoomEntered).
         }
 
         // Espera a que el pawn llegue a la casilla de salida y dispara la transición de
         // piso (#158). FloorProgressionService consume OnFloorExitRequested.
-        private static IEnumerator ExitFloorAfterArrival(Guid playerGuid)
+        private IEnumerator ExitFloorAfterArrival(Guid playerGuid)
         {
             if (ServiceLocator.TryGetService<IEntityVisualService>(out var visuals) && visuals != null)
             {
@@ -550,6 +632,16 @@ namespace Rollgeon.Exploration
                 var roomId = dungeon.CurrentRoomInstance.InstanceId;
                 Debug.Log("[ExplorationBehaviorService] Player llegó a la puerta de salida — OnFloorExitRequested.");
                 EventManager.Trigger(EventName.OnFloorExitRequested, roomId);
+                // El re-armado (y la limpieza del latch) lo dispara OnRoomEntered cuando
+                // carga la primera sala del piso siguiente.
+            }
+            else
+            {
+                // No se pudo resolver la sala actual — no hay a quién pedirle la salida.
+                // No dejar el latch pegado ni el movimiento muerto.
+                Debug.LogWarning("[ExplorationBehaviorService] ExitFloorAfterArrival sin sala actual — re-armando movimiento.");
+                _crossingDoor = false;
+                ArmMovement();
             }
         }
 
@@ -581,6 +673,10 @@ namespace Rollgeon.Exploration
             {
                 Debug.Log("[ExplorationBehaviorService] OnPhaseEnter(Exploration) — _state cambia a Idle.");
                 _state = State.Idle;
+                // Defensivo: un cruce nunca debería seguir "en vuelo" al re-entrar a
+                // Exploración (ej. volviendo de combate), pero si quedó pegado por algún
+                // camino no cubierto, un arranque fresco no debe heredarlo.
+                _crossingDoor = false;
                 // Entrar a Exploración (inicio de run, nuevo piso, o volver de combate)
                 // arma el modo movimiento permanente.
                 CoroutineHost.Run(ArmMovementNextFrame());
@@ -592,6 +688,14 @@ namespace Rollgeon.Exploration
         // el guard de fase en ArmMovement evita armar si la sala disparó combate.
         private void OnRoomEntered(params object[] args)
         {
+            // El cruce (si lo había) ya resolvió — soltamos el latch ACÁ, antes de
+            // encolar el re-armado next-frame, para que el primer click en la sala nueva
+            // ya funcione. Es sincrónico y anterior al re-armado a propósito: si
+            // EnterRoomByDoor dispara este evento dos veces en el mismo frame (no debería,
+            // pero es barato cubrirlo), la segunda lo encuentra ya en false y solo repite
+            // un ArmMovementNextFrame inocuo — ArmMovement es idempotente vía el guard de
+            // _state.
+            _crossingDoor = false;
             CoroutineHost.Run(ArmMovementNextFrame());
         }
 
@@ -610,6 +714,10 @@ namespace Rollgeon.Exploration
                 }
                 _pendingBehavior = null;
                 _state = State.Inactive;
+                // Teardown: si la fase se corta a mitad de un cruce (ej. una sala dispara
+                // combate en el instante en que el player la pisa), no dejar el latch
+                // pegado para la próxima vez que entremos a Exploración.
+                _crossingDoor = false;
             }
         }
     }

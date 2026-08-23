@@ -392,6 +392,98 @@ namespace Rollgeon.Combat.Tests
             _turnOrder.BuildForCombat(allParticipants);
         }
 
+        // ------------------------------------------------------------------
+        // Muerte del player FUERA de combate (exploración: fuego/pinchos)
+        // ------------------------------------------------------------------
+
+        private CombatDeathWatcher CreateWatcherWithPhase(
+            Rollgeon.Phase.GamePhase phase, out StubPhaseService phaseStub, out GridManager grid)
+        {
+            // Reemplaza al watcher del SetUp: este fixture necesita fase + grid reales.
+            _watcher?.Dispose();
+            phaseStub = new StubPhaseService { CurrentBase = phase };
+            grid = new GridManager();
+            grid.LoadRoom(NavGraph.Rect(4, 4));
+            grid.Register(_player.PlayerGuid, new GridCoord(0, 0));
+
+            _watcher = new CombatDeathWatcher(
+                _player, _signaller, _turnOrder, _visuals, _dungeon,
+                grid: grid, phase: phaseStub);
+            return _watcher;
+        }
+
+        [Test]
+        public void should_fire_OnPlayerDefeated_when_player_dies_during_exploration_phase()
+        {
+            // Arrange
+            CreateWatcherWithPhase(Rollgeon.Phase.GamePhase.Exploration, out _, out _);
+            Guid? defeatedRunId = null;
+            EventManager.Subscribe(EventName.OnPlayerDefeated, args =>
+            {
+                if (args?.Length >= 1 && args[0] is Guid g) defeatedRunId = g;
+            });
+
+            // Act
+            RaiseLethal(Guid.NewGuid(), _player.PlayerGuid);
+
+            // Assert — sin combate no hay FSM: la derrota sale directo por el evento
+            // terminal, no por el signaller (que sería un no-op silencioso).
+            Assert.AreEqual(_player.RunId, defeatedRunId);
+            Assert.IsNull(_signaller.LastOutcome);
+        }
+
+        [Test]
+        public void should_keep_routing_through_the_signaller_when_player_dies_in_combat_phase()
+        {
+            // Arrange
+            CreateWatcherWithPhase(Rollgeon.Phase.GamePhase.Combat, out _, out _);
+            bool defeatedFired = false;
+            EventManager.Subscribe(EventName.OnPlayerDefeated, _ => defeatedFired = true);
+
+            // Act
+            RaiseLethal(Guid.NewGuid(), _player.PlayerGuid);
+
+            // Assert — en combate el flujo no cambia: FSM → CombatReturnService emite el evento.
+            Assert.AreEqual(CombatOutcome.Defeat, _signaller.LastOutcome);
+            Assert.IsFalse(defeatedFired);
+        }
+
+        [Test]
+        public void should_replace_phase_with_GameOver_when_player_dies_during_exploration()
+        {
+            // Arrange
+            CreateWatcherWithPhase(Rollgeon.Phase.GamePhase.Exploration, out var phase, out _);
+
+            // Act
+            RaiseLethal(Guid.NewGuid(), _player.PlayerGuid);
+
+            // Assert — GameOver corta el re-armado del click-to-move bajo la DefeatScreen.
+            Assert.AreEqual(Rollgeon.Phase.GamePhase.GameOver, phase.CurrentBase);
+        }
+
+        [Test]
+        public void should_unregister_player_from_grid_when_dying_outside_combat()
+        {
+            // Arrange — regresión del slide de hielo: una cadena en vuelo frena con
+            // stop=Death solo si el muerto desaparece del grid.
+            CreateWatcherWithPhase(Rollgeon.Phase.GamePhase.Exploration, out _, out var grid);
+
+            // Act
+            RaiseLethal(Guid.NewGuid(), _player.PlayerGuid);
+
+            // Assert
+            Assert.IsFalse(grid.TryGetPosition(_player.PlayerGuid, out _));
+        }
+
+        private sealed class StubPhaseService : Rollgeon.Phase.IPhaseService
+        {
+            public Rollgeon.Phase.GamePhase CurrentBase { get; set; }
+            public Rollgeon.Phase.PhaseOverlay CurrentOverlay { get; set; } = Rollgeon.Phase.PhaseOverlay.None;
+            public void ReplacePhase(Rollgeon.Phase.GamePhase next) => CurrentBase = next;
+            public void PushOverlay(Rollgeon.Phase.PhaseOverlay overlay) { }
+            public void PopOverlay() { }
+        }
+
         // ---- Stubs / Spies ----
 
         private class StubPlayerService : IPlayerService

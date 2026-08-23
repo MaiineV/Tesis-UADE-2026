@@ -4898,8 +4898,40 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: -8679921383154817045, guid: 8c98d707781db0046a93e3db4d2b3570, type: 3}
       insertIndex: -1
       addedObject: {fileID: 9179093129754125735}
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 8c98d707781db0046a93e3db4d2b3570, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 5269035036988571312}
   m_SourcePrefab: {fileID: 100100000, guid: 8c98d707781db0046a93e3db4d2b3570, type: 3}
+--- !u!1 &1531387017448088533 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: 8c98d707781db0046a93e3db4d2b3570, type: 3}
+  m_PrefabInstance: {fileID: 1838029059874774660}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &5269035036988571312
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1531387017448088533}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7e0e91325c9230f4584e5add4e5711e8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Rollgeon::Rollgeon.Tiles.Visuals.SpecialTileVisualBinding
+  OnArmed:
+    m_PersistentCalls:
+      m_Calls: []
+  OnDisarmed:
+    m_PersistentCalls:
+      m_Calls: []
+  OnTriggered:
+    m_PersistentCalls:
+      m_Calls: []
+  OnExpiring:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!4 &2164899690692426095 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 8c98d707781db0046a93e3db4d2b3570, type: 3}

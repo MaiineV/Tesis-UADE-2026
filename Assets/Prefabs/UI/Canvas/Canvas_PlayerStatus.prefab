@@ -2100,6 +2100,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Rollgeon::Rollgeon.UI.HUD.Status.PlayerStatusIconsView
   _iconPrefab: {fileID: 293321230397214024, guid: c936616b47f6033489386c78a1cc9150, type: 3}
   _container: {fileID: 4988331959284597082}
+  _statusIconCatalog: {fileID: 11400000, guid: c164b98d50506334dad8add443167107, type: 2}
   _activateClip: {fileID: 8300000, guid: a6a4ec83c80842e497d3f0b92c96b377, type: 3}
   _activateVolume: 0.9
 --- !u!1 &4000390175165277891
