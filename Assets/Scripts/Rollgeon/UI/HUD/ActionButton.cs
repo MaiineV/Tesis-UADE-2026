@@ -83,8 +83,9 @@ namespace Rollgeon.UI.HUD
 
         [Title("Visual — Unaffordable (no alcanza la energia)")]
         [SerializeField, Tooltip("Rojo del costo y del outline cuando no alcanza la energia. " +
-                 "Default = #D1365A, el rojo de UI de la paleta.")]
-        private Color _unaffordableColor = new Color(0.820f, 0.212f, 0.353f, 1f);
+                 "Default = #D1365A, el rojo de UI de la paleta (mismo valor que " +
+                 "UnavailableTint.TintColor, BUG-074). Sigue siendo tuneable en Inspector.")]
+        private Color _unaffordableColor = UnavailableTint.TintColor;
 
         [SerializeField, Tooltip("Duracion del shake del chip al intentar usarlo sin energia.")]
         private float _rejectShakeDuration = 0.28f;

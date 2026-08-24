@@ -35,6 +35,9 @@ namespace Rollgeon.GameCamera
         // --- Events (mirror de Patterns.EventName; ver §1.2 + §17.E.10) ----
         event Action<CameraFacing> FacingChanged;
         event Action<bool> FloorViewToggled;
+        /// <summary>Dispara con el nuevo <c>_targetZoom</c> tras un <see cref="ZoomBy"/> que
+        /// efectivamente lo movió (BUG-068 — gate del paso de cámara del tutorial).</summary>
+        event Action<float> ZoomChanged;
     }
 
     /// <summary>

@@ -244,6 +244,7 @@ namespace Rollgeon.Heroes
                 TriggeringEntity = ctx?.TriggeringEntity,
                 SourceBehavior = this,
                 TriggerContext = ctx,
+                ActionKind = ResolveRollActionKind(),
             };
 
             if (ctx is HeroBehaviorContext heroCtx)
@@ -345,6 +346,37 @@ namespace Rollgeon.Heroes
                 if (found != null) return found;
             }
             return null;
+        }
+
+        /// <summary>
+        /// Discriminante de acción (BUG-060) para <see cref="EffectContext.ActionKind"/>:
+        /// deriva de <see cref="HeroBehaviorSlot"/> cuando el behavior es uno de los 4 base
+        /// (identidad estable, ya usada por la UI); si no es base behavior, cae a
+        /// <see cref="BoardType"/> (Attack/Defense explícitos). Sin ninguna señal, queda
+        /// <see cref="RollActionKind.Unknown"/> — los consumers que gatean por acción de
+        /// combate lo tratan como NO pagable (fail-safe), nunca lo confunden con Attack.
+        /// </summary>
+        public RollActionKind ResolveRollActionKind()
+        {
+            if (IsBaseBehavior)
+            {
+                switch (Slot)
+                {
+                    case HeroBehaviorSlot.Movement: return RollActionKind.Movement;
+                    case HeroBehaviorSlot.BaseAttack:
+                    case HeroBehaviorSlot.SpecialAttack: return RollActionKind.Attack;
+                    case HeroBehaviorSlot.Healing: return RollActionKind.Heal;
+                    case HeroBehaviorSlot.ForceDoor: return RollActionKind.ForceDoor;
+                    case HeroBehaviorSlot.Defense: return RollActionKind.Defense;
+                }
+            }
+
+            return BoardType switch
+            {
+                DiceBoardType.Attack => RollActionKind.Attack,
+                DiceBoardType.Defense => RollActionKind.Defense,
+                _ => RollActionKind.Unknown,
+            };
         }
 
         public EffChain FindChainEffect()

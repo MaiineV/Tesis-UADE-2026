@@ -120,6 +120,107 @@ namespace Rollgeon.UI.Tests
             StringAssert.DoesNotContain("Daño:", text);
         }
 
+        // ── BUG-041: mapeo acción → key de localización ─────────────────
+        // Testea ResolveActionNameKey (la DECISIÓN de mapeo) en vez del texto final:
+        // en EditMode, LocalizedContent cae al fallback (=ActionName) sin una Localization
+        // runtime inicializada, así que comparar el texto final no distinguiría un mapeo
+        // roto de uno correcto — ambos devolverían el mismo fallback.
+
+        [Test]
+        public void ResolveActionNameKey_BaseBehaviorBaseAttackSlot_ReturnsAttackKey()
+        {
+            // Arrange
+            var behavior = MakeBehavior("Base Attack");
+            behavior.IsBaseBehavior = true;
+            behavior.Slot = HeroBehaviorSlot.BaseAttack;
+
+            // Act
+            var key = HeroActionTooltip.ResolveActionNameKey(behavior);
+
+            // Assert
+            Assert.AreEqual("action.attack", key);
+        }
+
+        [Test]
+        public void ResolveActionNameKey_BaseBehaviorDefenseSlot_ReturnsDefenseKey()
+        {
+            // Arrange — Slot Defense no tenía key seedeada antes del fix (BUG-041).
+            var behavior = MakeBehavior("Defense");
+            behavior.IsBaseBehavior = true;
+            behavior.Slot = HeroBehaviorSlot.Defense;
+
+            // Act
+            var key = HeroActionTooltip.ResolveActionNameKey(behavior);
+
+            // Assert
+            Assert.AreEqual("action.defense", key);
+        }
+
+        [Test]
+        public void ResolveActionNameKey_BaseBehaviorForceDoorSlot_ReturnsForceDoorKey()
+        {
+            // Arrange — "Force Door" (IsBaseBehavior=true) usa el slot ForceDoor.
+            var behavior = MakeBehavior("Force Door");
+            behavior.IsBaseBehavior = true;
+            behavior.Slot = HeroBehaviorSlot.ForceDoor;
+
+            // Act
+            var key = HeroActionTooltip.ResolveActionNameKey(behavior);
+
+            // Assert
+            Assert.AreEqual("action.force_door", key);
+        }
+
+        [Test]
+        public void ResolveActionNameKey_PassDoorNonBaseBehavior_ReturnsPassDoorKey()
+        {
+            // Arrange — "Pass door" comparte el slot ForceDoor con "Force Door" pero
+            // IsBaseBehavior=false: el mapeo por Slot no alcanza, matchea por ActionName.
+            var behavior = MakeBehavior("Pass door");
+            behavior.IsBaseBehavior = false;
+            behavior.Slot = HeroBehaviorSlot.ForceDoor;
+
+            // Act
+            var key = HeroActionTooltip.ResolveActionNameKey(behavior);
+
+            // Assert
+            Assert.AreEqual("action.pass_door", key);
+        }
+
+        [Test]
+        public void ResolveActionNameKey_NonBaseBehaviorWithoutSpecialCase_ReturnsNull()
+        {
+            // Arrange — behavior custom (ej. combo específico de una clase futura) sin
+            // IsBaseBehavior y sin ser "Pass door": no hay mapeo confiable, el caller
+            // (ResolveActionName / BuildFor) debe caer al ActionName crudo.
+            var behavior = MakeBehavior("Golpe Misterioso");
+            behavior.IsBaseBehavior = false;
+
+            // Act
+            var key = HeroActionTooltip.ResolveActionNameKey(behavior);
+
+            // Assert
+            Assert.IsNull(key);
+        }
+
+        [Test]
+        public void ResolveActionNameKey_IsBaseBehaviorFalseWithSlotSetAnyway_ReturnsNull()
+        {
+            // Arrange — guarda contra el default de enum: un behavior con
+            // IsBaseBehavior=false pero Slot=Movement (0, el default) NO debe mapear a
+            // "action.move" solo porque el campo quedó en su valor por defecto — Slot
+            // solo es confiable cuando IsBaseBehavior es true (ver doc de HeroActionBehavior.Slot).
+            var behavior = MakeBehavior("Algo sin configurar");
+            behavior.IsBaseBehavior = false;
+            behavior.Slot = HeroBehaviorSlot.Movement;
+
+            // Act
+            var key = HeroActionTooltip.ResolveActionNameKey(behavior);
+
+            // Assert
+            Assert.IsNull(key);
+        }
+
         private static EffectData MakeData(IEffect eff)
         {
             var data = new EffectData();

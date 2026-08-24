@@ -17,3 +17,6 @@ using System.Runtime.CompilerServices;
 // prefab de sala instanciado; el orden y el presupuesto, que son lo que puede romperse en
 // silencio, no.
 [assembly: InternalsVisibleTo("Rollgeon.Combat.Rooms.Tests")]
+// HeroActionTooltip.ResolveActionNameKey: el mapeo slot→key de localización se testea
+// como función pura, sin montar el runtime de Localization.
+[assembly: InternalsVisibleTo("Rollgeon.UI.Tests")]

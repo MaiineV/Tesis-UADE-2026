@@ -5,6 +5,7 @@ using Rollgeon.ActionRolls;
 using Rollgeon.Effects;
 using Rollgeon.Effects.Concretes;
 using Rollgeon.Heroes;
+using Rollgeon.Localization;
 
 namespace Rollgeon.UI.Tooltips
 {
@@ -16,21 +17,73 @@ namespace Rollgeon.UI.Tooltips
     /// </summary>
     public static class HeroActionTooltip
     {
+        // BUG-041: el nombre venía crudo de ActionName (texto libre autorado en el SO,
+        // nunca localizado). Mapeo por Slot — más confiable que matchear ActionName como
+        // string: un diseñador puede retipear el nombre visible sin romper la key. Solo
+        // es confiable cuando IsBaseBehavior es true (ver comentario del campo Slot en
+        // HeroActionBehavior — sin eso, Slot puede quedar en su default sin significado).
+        private static readonly Dictionary<HeroBehaviorSlot, string> BaseSlotKeys =
+            new Dictionary<HeroBehaviorSlot, string>
+            {
+                { HeroBehaviorSlot.Movement, "action.move" },
+                { HeroBehaviorSlot.BaseAttack, "action.attack" },
+                { HeroBehaviorSlot.SpecialAttack, "action.special_attack" },
+                { HeroBehaviorSlot.Healing, "action.heal" },
+                { HeroBehaviorSlot.ForceDoor, "action.force_door" },
+                { HeroBehaviorSlot.Defense, "action.defense" },
+            };
+
         public static string BuildFor(HeroActionBehavior behavior, in TooltipContext context)
         {
             if (behavior == null) return null;
 
             var sb = new StringBuilder();
-            sb.Append("<b>").Append(behavior.ActionName).Append("</b>");
+            sb.Append("<b>").Append(ResolveActionName(behavior)).Append("</b>");
 
             // Pool de Rolls: toda acción cuesta 1 roll por tirada — costo uniforme.
-            sb.AppendLine().Append("Costo: 1 Roll por tirada");
+            sb.AppendLine().Append(
+                LocalizedContent.Ui("tooltip.hero_action.cost_per_roll", "Costo: 1 Roll por tirada"));
 
             var body = FirstEffectTooltip(behavior.Effects, context);
             if (!string.IsNullOrEmpty(body))
                 sb.AppendLine().Append(body);
 
             return sb.ToString();
+        }
+
+        /// <summary>Nombre localizado de la acción, resuelto vía <see cref="ResolveActionNameKey"/>.</summary>
+        private static string ResolveActionName(HeroActionBehavior behavior)
+        {
+            var key = ResolveActionNameKey(behavior);
+            return key != null ? LocalizedContent.Ui(key, behavior.ActionName) : behavior.ActionName;
+        }
+
+        /// <summary>
+        /// Key de la tabla UI para el nombre de <paramref name="behavior"/>, o
+        /// <c>null</c> si no hay mapeo confiable (el caller cae al
+        /// <see cref="HeroActionBehavior.ActionName"/> crudo). Separado de
+        /// <see cref="ResolveActionName"/> para poder testear la DECISIÓN de mapeo sin
+        /// depender de que la Localization runtime esté inicializada (EditMode).
+        /// <para>
+        /// "Pass door" es el único caso especial: comparte el slot
+        /// <see cref="HeroBehaviorSlot.ForceDoor"/> con "Force Door" como variante
+        /// contextual con <c>IsBaseBehavior = false</c> — el mapeo por Slot no alcanza a
+        /// distinguirlas, así que matchea por ActionName contra la key ya seedeada
+        /// <c>action.pass_door</c> (la misma que usa el chip fijo de
+        /// <c>Canvas_ExplorationHUD.prefab</c>).
+        /// </para>
+        /// </summary>
+        internal static string ResolveActionNameKey(HeroActionBehavior behavior)
+        {
+            if (behavior == null) return null;
+
+            if (behavior.IsBaseBehavior && BaseSlotKeys.TryGetValue(behavior.Slot, out var key))
+                return key;
+
+            if (string.Equals(behavior.ActionName, "Pass door", StringComparison.OrdinalIgnoreCase))
+                return "action.pass_door";
+
+            return null;
         }
 
         /// <summary>

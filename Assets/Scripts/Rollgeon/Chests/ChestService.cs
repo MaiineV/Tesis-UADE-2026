@@ -263,11 +263,21 @@ namespace Rollgeon.Chests
                 if (forbidden.Contains(coord)) continue;
                 if (grid.IsOccupied(coord)) continue;
                 if (!grid.IsWalkable(coord)) continue;
+                // BUG-069: un nodo "caminable" del NavGraph puede tener grado 0 (isla —
+                // ver NavGraphBaker) y quedar atrapado entre pared y assets. Grafo vacío =
+                // "sin restricciones" (NavGraph.IsEmpty), ahí el chequeo no aplica.
+                if (!grid.Graph.IsEmpty && !HasAnyNeighbor(grid.Graph, coord)) continue;
                 candidates.Add(coord);
             }
 
             if (candidates.Count == 0) return null;
             return candidates[rng.Next(candidates.Count)];
+        }
+
+        private static bool HasAnyNeighbor(NavGraph graph, GridCoord coord)
+        {
+            foreach (var _ in graph.GetNeighbors(coord)) return true;
+            return false;
         }
 
         private static HashSet<GridCoord> CollectDoorCoords(IGridManager grid)

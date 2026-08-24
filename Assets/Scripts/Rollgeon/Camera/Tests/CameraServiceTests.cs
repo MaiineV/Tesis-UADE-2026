@@ -212,6 +212,58 @@ namespace Rollgeon.GameCamera.Tests
             Assert.IsTrue(received.Value);
         }
 
+        // BUG-068: el tutorial gatea su paso de cámara con ZoomChanged — necesita
+        // distinguir "el jugador hizo zoom de verdad" de "scrolleó pero ya estaba clampeado".
+
+        [Test]
+        public void ZoomBy_WithChange_FiresZoomChangedEvent()
+        {
+            // Arrange
+            float? received = null;
+            var beforeZoom = _service.CurrentZoom;
+            _service.ZoomChanged += z => received = z;
+
+            // Act — config fresca arranca a mitad de rango (ZoomMin=6, ZoomMax=22,
+            // DefaultZoom=9): un paso positivo no clampea.
+            _service.ZoomBy(1f);
+
+            // Assert
+            Assert.IsTrue(received.HasValue,
+                "ZoomChanged debe dispararse cuando el clamp movió _targetZoom.");
+            Assert.AreNotEqual(beforeZoom, received.Value);
+        }
+
+        [Test]
+        public void ZoomBy_ClampedWithNoChange_DoesNotFireZoomChangedEvent()
+        {
+            // Arrange — empuja el zoom hasta ZoomMax (clampeado).
+            for (int i = 0; i < 50; i++) _service.ZoomBy(10f);
+            bool fired = false;
+            _service.ZoomChanged += _ => fired = true;
+
+            // Act — ya está en el máximo; un scroll positivo más no mueve _targetZoom.
+            _service.ZoomBy(10f);
+
+            // Assert
+            Assert.IsFalse(fired,
+                "Sin cambio real en _targetZoom (clampeado), ZoomChanged no debe disparar.");
+        }
+
+        [Test]
+        public void ZoomBy_WhenDisabled_DoesNotFireZoomChangedEvent()
+        {
+            // Arrange
+            _config.EnableZoom = false;
+            bool fired = false;
+            _service.ZoomChanged += _ => fired = true;
+
+            // Act
+            _service.ZoomBy(1f);
+
+            // Assert
+            Assert.IsFalse(fired);
+        }
+
         // ------------------------------------------------------------------ //
         // Recenter / Follow                                                   //
         // ------------------------------------------------------------------ //

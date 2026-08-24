@@ -14,10 +14,13 @@ namespace Rollgeon.Combat.AI.Decisions
     /// TECHNICAL.md §17.§B (kiting).
     /// </summary>
     /// <remarks>
-    /// Devuelve <c>Failed</c> en el caso benigno "no hay nada que kitear" (ya estoy a distancia
-    /// ideal, no hay tile mejor), y un <see cref="AINode_Sequence"/> aborta al primer <c>Failed</c>:
-    /// puesto <b>antes</b> del ataque y sin un <c>Selector(KeepDistance, Wait)</c> que lo absorba,
-    /// el enemigo deja de hacer TODO cuando el player está lejos.
+    /// BUG-061/PUL-014 (fix): devuelve <c>Succeeded</c> — no <c>Failed</c> — en el caso benigno
+    /// "no hay nada que kitear" (ya estoy a distancia ideal, no hay tile mejor, el planner
+    /// devolvió NoMove). Antes devolvía <c>Failed</c> y, sin un <c>Selector(KeepDistance, Wait)</c>
+    /// que lo absorbiera, un <see cref="AINode_Sequence"/> puesto <b>antes</b> del ataque le
+    /// abortaba el turno ENTERO al enemigo cuando el player estaba lejos (o cuando el propio
+    /// enemigo quedaba aislado en el NavGraph). Solo los guard clauses de error real
+    /// (contexto/servicios ausentes, posición sin resolver) siguen devolviendo <c>Failed</c>.
     /// </remarks>
     [Serializable, HideReferenceObjectPicker]
     public sealed class AINode_KeepDistance : AIActionNode
@@ -52,7 +55,19 @@ namespace Rollgeon.Combat.AI.Decisions
 
             int idealDist = IdealDistance?.Read(context) ?? 4;
             int currentDist = selfCoord.Manhattan(playerCoord);
-            if (currentDist >= idealDist) return AIResult.Failed;
+            // BUG-061/PUL-014: mismo criterio que AINode_Move — "no hace falta kitear" y "no
+            // HAY forma de kitear" son benignos, Succeeded (no-op) para que la Sequence siga.
+            // Evidencia de que es seguro (grep de builders + assets, ver reporte del agente):
+            // el ÚNICO uso NO envuelto en Selector[…, Wait] es ED_RangedEnemy/ED_Healer, donde
+            // este nodo va ANTES del segundo chequeo de rango dentro del While-body — Failed
+            // hoy le come el ataque de ese turno (el propio <remarks> de la clase ya lo
+            // advertía). El resto (Anotador vía Fallback, Cajero/Tahur/Generala no usan
+            // KeepDistance) está en Selector[KeepDistance, Wait]; con AINode_Wait siempre
+            // Succeeded, este cambio no altera su resultado final. El While-body de
+            // RangedEnemy/Healer decrementa energía incondicionalmente ANTES de este nodo
+            // (primer hijo del Sequence), así que el loop sigue terminando por el contador de
+            // energía (MaxEnergy chico) y no por MaxIterations.
+            if (currentDist >= idealDist) return AIResult.Succeeded;
 
             int maxSteps = MaxSteps?.Read(context) ?? 3;
 
@@ -62,13 +77,13 @@ namespace Rollgeon.Combat.AI.Decisions
                 if (!AIPathMoveExecutor.TryPlanAndMove(context, playerCoord, maxSteps, idealDist,
                         Pathing.MoveIntent.Kite))
                 {
-                    return AIResult.Failed;
+                    return AIResult.Succeeded; // NoMove del planner: no-op
                 }
             }
             else
             {
                 var reachable = context.Movement.GetReachableTiles(selfCoord, maxSteps, includeOrigin: false);
-                if (reachable == null || reachable.Count == 0) return AIResult.Failed;
+                if (reachable == null || reachable.Count == 0) return AIResult.Succeeded; // sin candidato BFS
 
                 var best = selfCoord;
                 int bestScore = currentDist;
@@ -80,10 +95,10 @@ namespace Rollgeon.Combat.AI.Decisions
                     best = candidate;
                 }
 
-                if (best == selfCoord) return AIResult.Failed;
+                if (best == selfCoord) return AIResult.Succeeded; // ningún tile alcanzable mejora el kite
 
                 if (!context.Movement.Move(context.SelfGuid, best))
-                    return AIResult.Failed;
+                    return AIResult.Succeeded; // Move rechazó el destino (ocupado, etc.)
             }
 
             // Solo el movimiento efectivo consume la acción — los Failed de arriba

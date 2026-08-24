@@ -23,6 +23,7 @@ using Rollgeon.Phase;
 using Rollgeon.PreConditions;
 using Rollgeon.Player;
 using Rollgeon.UI;
+using Rollgeon.UI.HUD;
 using Rollgeon.UI.Screens;
 using UnityEngine;
 
@@ -81,6 +82,10 @@ namespace Rollgeon.Combat.Handoff
         private bool _isResolvingChainPhase;
         private EffChain _activeChain;
         private int _chainPhaseIndex;
+        // BUG-060: kind/combo de la fase que ExecuteChainPhase acaba de correr — leídos por
+        // ContinueChainPhase (diferida) al emitir el OnRollResolved real de esa fase.
+        private RollActionKind _lastChainPhaseKind;
+        private ComboDetectionResult? _lastChainPhaseComboResult;
         private TargetSelectionResult _chainPhaseSelectionResult;
         private ISelectionController _chainSelectionController;
         private Action _pendingChainCallback;
@@ -377,9 +382,12 @@ namespace Rollgeon.Combat.Handoff
 
                 if (_selectedBehavior != null) return;
 
-                var resolved = _lastFaces ?? Array.Empty<int>();
-                EventManager.Trigger(EventName.OnRollResolved, playerGuid, (IReadOnlyList<int>)resolved);
-
+                // BUG-060: pasar turno NO es una tirada resuelta — no hay acción de combate
+                // que pagar. Antes esto disparaba OnRollResolved incondicionalmente (incluso
+                // con _lastFaces == null → Array.Empty<int>()) y los encantamientos de oro
+                // reaccionaban a un "roll" que nunca existió. La UI que escuchaba este evento
+                // para resetear su estado (_rolled, etc.) ya recibe el mismo reset via
+                // OnTurnFinished, que EndPlayerTurn() dispara más abajo.
                 _lastFaces = null;
                 hud.ClearBehaviorForFormula();
                 _playerActions.EndPlayerTurn();
@@ -490,7 +498,11 @@ namespace Rollgeon.Combat.Handoff
                     if (playerState != null)
                     {
                         var r = _lastFaces ?? Array.Empty<int>();
-                        EventManager.Trigger(EventName.OnRollResolved, playerGuid, (IReadOnlyList<int>)r);
+                        // BUG-060: kind derivado del behavior seleccionado (Movement acá NO es
+                        // pagable aunque comboResult venga con match — mismo bag compartido que
+                        // un ataque puede formar un combo "de paso").
+                        EventManager.Trigger(EventName.OnRollResolved, playerGuid, (IReadOnlyList<int>)r,
+                            _selectedBehavior.ResolveRollActionKind(), comboResult);
 
                         // BUG-013: estas acciones (ej. Movement) ejecutan de forma asíncrona —
                         // el jugador todavía tiene que clickear el tile destino. Si soltáramos
@@ -525,7 +537,8 @@ namespace Rollgeon.Combat.Handoff
                     tm.TryExecuteRollsPrepaid(_selectedBehavior, playerGuid, behaviorCtx);
 
                 var resolved = _lastFaces ?? Array.Empty<int>();
-                EventManager.Trigger(EventName.OnRollResolved, playerGuid, (IReadOnlyList<int>)resolved);
+                EventManager.Trigger(EventName.OnRollResolved, playerGuid, (IReadOnlyList<int>)resolved,
+                    _selectedBehavior.ResolveRollActionKind(), comboResult);
                 EventManager.Trigger(EventName.OnBehaviorExecuted, playerGuid, executedActionName);
 
                 _lastFaces = null;
@@ -1028,6 +1041,12 @@ namespace Rollgeon.Combat.Handoff
             var phase = _activeChain.Phases[_chainPhaseIndex];
             var hero = ResolveHero();
 
+            // BUG-060: discriminante por fase — la fase de escudo de un ataque debe reportar
+            // Defense aunque el behavior dueño sea BaseAttack (Attack). Se persiste en campos
+            // porque el emisor real de OnRollResolved corre después (ContinueChainPhase, tras
+            // el gate de feedback) y effCtx acá es local.
+            _lastChainPhaseKind = ResolveChainPhaseKind(_chainPhaseIndex);
+
             var effCtx = new EffectContext
             {
                 SourceGuid = playerGuid,
@@ -1037,8 +1056,10 @@ namespace Rollgeon.Combat.Handoff
                 lastResult = true,
                 SourceBehavior = _selectedBehavior,
                 SelectionResult = _chainPhaseSelectionResult,
+                ActionKind = _lastChainPhaseKind,
             };
 
+            _lastChainPhaseComboResult = null;
             if (hero != null && _lastFaces != null)
             {
                 var keepMask = hud.GetCurrentKeep();
@@ -1047,6 +1068,7 @@ namespace Rollgeon.Combat.Handoff
                 effCtx.KeptDiceOriginalIndices = FilterKeptIndices(keepMask, _lastFaces.Length);
                 var keptTypes = ResolveKeptTypes(effCtx.KeptDiceOriginalIndices, keptDice.Length);
                 effCtx.ComboResult = DetectChainCombo(hero.Sheet, keptDice, keptTypes, _chainPhaseIndex);
+                _lastChainPhaseComboResult = effCtx.ComboResult;
             }
 
             var preCtx = new PreConditionContext
@@ -1153,7 +1175,16 @@ namespace Rollgeon.Combat.Handoff
                 return;
 
             var resolved = _lastFaces ?? Array.Empty<int>();
-            EventManager.Trigger(EventName.OnRollResolved, playerGuid, (IReadOnlyList<int>)resolved);
+            // BUG-060: kind/combo de ESTA fase, capturados en ExecuteChainPhase (arriba en la
+            // call stack, antes del gate de feedback). Cada fase paga por su propia tirada —
+            // N fases de un chain de ataque+defensa son N tiradas de combate reales, no una
+            // duplicada N veces. Se limpian después de usarlos: si algo dispara esta emisión
+            // dos veces por error, la segunda vez cae a Unknown (no pagable) en vez de
+            // re-pagar oro por la misma tirada.
+            EventManager.Trigger(EventName.OnRollResolved, playerGuid, (IReadOnlyList<int>)resolved,
+                _lastChainPhaseKind, _lastChainPhaseComboResult);
+            _lastChainPhaseKind = RollActionKind.Unknown;
+            _lastChainPhaseComboResult = null;
             _lastFaces = null;
 
             _chainPhaseIndex++;
@@ -1229,7 +1260,13 @@ namespace Rollgeon.Combat.Handoff
                 _chainSelectionController.CancelSelection();
 
             var chainResolved = _lastFaces ?? Array.Empty<int>();
-            EventManager.Trigger(EventName.OnRollResolved, playerGuid, (IReadOnlyList<int>)chainResolved);
+            // BUG-060: la tirada en mano nunca se confirmó — no hay ComboResult detectado
+            // para reportar (null = "sin combo", mismo default documentado en
+            // PcNoComboThisRoll). El kind sí se recalcula fresco (no reusa el de la última
+            // fase COMPLETADA, que puede ser una fase vieja si el jugador pasa antes de
+            // confirmar la actual).
+            EventManager.Trigger(EventName.OnRollResolved, playerGuid, (IReadOnlyList<int>)chainResolved,
+                ResolveChainPhaseKind(_chainPhaseIndex), (ComboDetectionResult?)null);
             FinishChain(hud, playerGuid, true);
         }
 
@@ -1541,6 +1578,31 @@ namespace Rollgeon.Combat.Handoff
             }
 
             return result;
+        }
+
+        /// <summary>
+        /// BUG-060: discriminante de la fase actual del chain — la propia si el diseñador
+        /// overrideó el board (ej. fase de escudo = Defense dentro de un chain de ataque),
+        /// si no el del behavior dueño (típicamente Attack para BaseAttack/SpecialAttack).
+        /// </summary>
+        private RollActionKind ResolveChainPhaseKind(int phaseIndex)
+        {
+            var fallback = _selectedBehavior != null
+                ? _selectedBehavior.ResolveRollActionKind()
+                : RollActionKind.Unknown;
+
+            var phases = _activeChain?.Phases;
+            if (phases == null || phaseIndex < 0 || phaseIndex >= phases.Count) return fallback;
+
+            var phase = phases[phaseIndex];
+            if (phase == null || !phase.OverrideBoardType) return fallback;
+
+            return phase.BoardType switch
+            {
+                DiceBoardType.Attack => RollActionKind.Attack,
+                DiceBoardType.Defense => RollActionKind.Defense,
+                _ => fallback,
+            };
         }
 
         // Capa 1 — tabla por clase (Spec Daño v2): Detect con el base plano de la clase.

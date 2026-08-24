@@ -378,5 +378,16 @@ namespace Patterns
         /// <summary>args: [Guid entityGuid]. El cooldown llegó a 0 o se limpió con Clear. El
         /// teardown (ClearAll en OnCombatEnd/OnRunEnd/OnRoomEntered) NO lo dispara.</summary>
         OnTeleportCooldownExpired,
+
+        // --- Camera: zoom feedback (BUG-068) -------------------------------------
+        // NOTA: agregado al final absoluto del enum a propósito — ver el comentario
+        // de OnReinforcementSpawned más arriba. Insertarlo junto a OnCameraFacingChanged
+        // (grupo lógico "Camera") shiftearía los ints de todo lo que va después y
+        // corrompería los valores ya guardados en assets Odin.
+        /// <summary>args: [float newZoom, float previousZoom]. <see cref="ICameraService.ZoomBy"/>
+        /// movió <c>_targetZoom</c> (no dispara si el clamp lo dejó igual, ni con zoom
+        /// deshabilitado). El tutorial lo consume para gatear el paso de cámara — practicar
+        /// el zoom real, no solo leer el texto.</summary>
+        OnCameraZoomChanged,
     }
 }

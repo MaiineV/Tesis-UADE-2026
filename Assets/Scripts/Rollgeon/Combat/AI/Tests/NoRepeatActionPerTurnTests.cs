@@ -354,10 +354,11 @@ namespace Rollgeon.Combat.AI.Tests
         }
 
         [Test]
-        public void Tick_MoveNode_FailedMove_DoesNotConsumeAction()
+        public void Tick_MoveNode_AlreadyInBand_SucceedsAsNoOp_DoesNotConsumeAction()
         {
-            // Arrange — ya está en banda (dist == DesiredRange): el nodo falla sin mover
-            // y NO debe consumir la acción de movimiento del turno.
+            // Arrange — ya está en banda (dist == DesiredRange): el nodo no se mueve.
+            // BUG-061/PUL-014: Succeeded (no-op benigno, no error) para no abortar el
+            // Sequence que lo contiene; igual NO debe consumir la acción de movimiento.
             _grid.Register(_enemy, new GridCoord(7, 0));
             _grid.Register(_player, new GridCoord(8, 0));
             var node = new AINode_Move { MaxSteps = Const(3), DesiredRange = Const(1) };
@@ -367,8 +368,8 @@ namespace Rollgeon.Combat.AI.Tests
             var result = node.Tick(ctx);
 
             // Assert
-            Assert.AreEqual(AIResult.Failed, result);
-            Assert.IsFalse(ctx.HasExecuted("__move"), "Un move fallido no consume la acción.");
+            Assert.AreEqual(AIResult.Succeeded, result);
+            Assert.IsFalse(ctx.HasExecuted("__move"), "Un move sin desplazamiento no consume la acción.");
         }
 
         // ----- fakes -------------------------------------------------------

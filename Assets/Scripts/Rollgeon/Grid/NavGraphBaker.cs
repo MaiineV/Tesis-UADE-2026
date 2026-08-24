@@ -90,7 +90,62 @@ namespace Rollgeon.Grid
                 }
             }
 
+            RemoveBlockedIsolatedNodes(graph, blockerBounds, gridOrigin, tileSize);
+
             return graph;
+        }
+
+        // BUG-061: el nodo sobrevive si el blocker entra en la banda de walk-clearance
+        // (IntersectsAnyBlocker, arriba), pero el CORTE de edges usa el AABB completo del
+        // blocker (IsSegmentBlocked) sin ese recorte de Y — un prop apoyado por encima de
+        // WalkClearance (ej. un barril a Y=1.0) deja el nodo "caminable" con sus 4 edges
+        // cortados. Ese enemigo queda en una isla de 1 celda para siempre.
+        //
+        // Criterio unificado post-pass: un nodo con grado 0 cuya celda (en XZ, CUALQUIER Y)
+        // solapa el footprint de un blocker real no existe — mismo estándar que
+        // IntersectsAnyBlocker pero sin la banda de altura, porque acá ya no importa si el
+        // blocker "vuela" sobre el piso: si mató todos los edges, el nodo es inalcanzable.
+        // Un nodo con grado 0 SIN blocker superpuesto (sala vacía, pockets legítimos)
+        // no se toca — esos son responsabilidad del validador (componentes desconexas), no
+        // de este pruning.
+        private static void RemoveBlockedIsolatedNodes(
+            NavGraph graph, List<Bounds> blockers, Vector3 origin, float tileSize)
+        {
+            if (blockers.Count == 0 || graph.IsEmpty) return;
+
+            var toRemove = new List<GridCoord>();
+            foreach (var node in graph.Nodes)
+            {
+                if (HasAnyNeighbor(graph, node.Coord)) continue;
+                if (!CellOverlapsAnyBlockerXZ(node.Coord, blockers, origin, tileSize)) continue;
+                toRemove.Add(node.Coord);
+            }
+
+            foreach (var coord in toRemove) graph.RemoveNode(coord);
+        }
+
+        private static bool HasAnyNeighbor(NavGraph graph, GridCoord coord)
+        {
+            foreach (var _ in graph.GetNeighbors(coord)) return true;
+            return false;
+        }
+
+        private static bool CellOverlapsAnyBlockerXZ(
+            GridCoord coord, List<Bounds> blockers, Vector3 origin, float tileSize)
+        {
+            float minX = origin.x + coord.X * tileSize;
+            float maxX = minX + tileSize;
+            float minZ = origin.z + coord.Y * tileSize;
+            float maxZ = minZ + tileSize;
+
+            for (int i = 0; i < blockers.Count; i++)
+            {
+                var wb = blockers[i];
+                float ox = Mathf.Min(maxX, wb.max.x) - Mathf.Max(minX, wb.min.x);
+                float oz = Mathf.Min(maxZ, wb.max.z) - Mathf.Max(minZ, wb.min.z);
+                if (ox > BlockerOverlapEpsilon && oz > BlockerOverlapEpsilon) return true;
+            }
+            return false;
         }
 
         private const float BlockerOverlapEpsilon = 0.01f;

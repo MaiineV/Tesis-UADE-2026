@@ -45,6 +45,10 @@ namespace Rollgeon.Tutorial
         public const string Combat2 = "tutorial.combat2";
         public const string EscapeAftermath = "tutorial.escape_aftermath";
         public const string CameraControls = "tutorial.camera_controls";
+        // BUG-068: variantes de progreso mientras el paso gatea rotación + zoom —
+        // se muestran una a la vez según qué le falta practicar al jugador.
+        public const string CameraNeedsRotate = "tutorial.camera_needs_rotate";
+        public const string CameraNeedsZoom = "tutorial.camera_needs_zoom";
         public const string MapRooms = "tutorial.map_rooms";
 
         // Sala D — tienda.
@@ -74,7 +78,7 @@ namespace Rollgeon.Tutorial
             AttackTeach, TargetTeach, ThrowTeach, DiceTeach, RerollTeach, DefenseTeach,
             DefenseDice, EndTurnTeach, Combat1Free, HealUnlocked, HealDice,
             GoToC, EscapeTeach, EscapeDice, Combat2Door, Combat2,
-            EscapeAftermath, CameraControls, MapRooms,
+            EscapeAftermath, CameraControls, CameraNeedsRotate, CameraNeedsZoom, MapRooms,
             ShopDoor, ShopPedestal, ShopPurchased, BackpackIcon,
             GoToE, EnchantRoom, EnchantTable, EnchantReroll, EnchantDone, DiceBagIcon, Exit,
             ContinueFooter,
