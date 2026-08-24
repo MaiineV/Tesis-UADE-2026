@@ -25,6 +25,17 @@ no `.exe`), target `WebGL`, options `None`.
   `Sirenix.Serialization.Editor.AOTSupportUtilities.ScanProjectForSerializedTypes`
   + `GenerateDLL` (la 0.3.4 escaneó 300 tipos).
 
+- **Quality: "Mobile" excluye WebGL** (QualitySettings). El player elige el
+  *primer* quality level no excluido para la plataforma — el mapa
+  `m_PerPlatformDefaultQuality` del YAML es legacy y no se consulta. Sin la
+  exclusión, la web arrancaba en Mobile: renderScale 0.8 (mundo borroso, UI
+  nítida) y un renderer sin `LightDataRendererFeature`, así que el cel-shader
+  leía `_RollgeonLightData` en cero y las luces no se veían. Con la exclusión,
+  la web usa el level "PC", igual que Standalone.
+- **PC_Renderer está en Forward+**, que WebGL2 no soporta (no hay SSBOs) — URP
+  cae solo a Forward con el límite de 4 luces por objeto del asset. Si algún
+  día las luces se ven distintas en web que en desktop, mirar acá primero.
+
 ## Proceso
 
 1. Cambiar el target a WebGL (Build Profiles). El primer switch reimporta todo
