@@ -1,0 +1,3 @@
+<linker>
+       <assembly fullname="Rollgeon.OdinAOTSupport" preserve="all"/>
+</linker>
