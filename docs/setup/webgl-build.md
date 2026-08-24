@@ -11,9 +11,12 @@ no `.exe`), target `WebGL`, options `None`.
   proyecto-wide nuestro código (`using Steamworks;` en `SteamServiceBootstrap`)
   no compila. Con el define, todo el stack de Steam degrada al warning
   "Compilado con DISABLESTEAMWORKS".
-- **Decompression fallback ON** (PlayerSettings → WebGL). La compresión es Brotli;
-  sin el fallback el hosting necesita servir `Content-Encoding: br`, con el
-  fallback el zip funciona en cualquier estático (itch.io, GitHub Pages, etc.).
+- **Compresión: Disabled** (PlayerSettings → WebGL). La 0.3.4 salió primero con
+  Brotli + decompression fallback y el load se colgaba al arrancar en itch, así
+  que se apagó la compresión: archivos `.data`/`.wasm` planos, cero etapas de
+  descompresión. El zip pesa casi lo mismo (el deflate del zip compensa) y el
+  hosting no necesita ningún header especial. El decompression fallback quedó
+  ON pero es inerte con la compresión apagada.
 - **AOT de Odin**: WebGL es IL2CPP, y sin el dll de soporte
   (`Assets/Plugins/Sirenix/Odin AOT Support/Rollgeon.OdinAOTSupport.dll`)
   `ServiceBootstrap.asset` deserializa `ExtraServices` **vacío y sin error** —
