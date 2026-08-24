@@ -14,6 +14,7 @@ using Rollgeon.Entities;
 using Rollgeon.Feedback;
 using Rollgeon.PreConditions;
 using Rollgeon.PreConditions.Concretes;
+using Rollgeon.Tiles;
 using Rollgeon.UI.HUD;
 using UnityEditor;
 using UnityEngine;
@@ -87,7 +88,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         /// Reducción de daño con la mesa entera en pie. Baja <see cref="TableArmorPerDie"/> por cada
         /// dado roto y <b>no vuelve</b>. Ver <c>RoomObjectArmorService</c>.
         /// </summary>
-        public const float TableArmorMax = 0.5f;
+        public const float TableArmorMax = 0.3f;
 
         /// <summary>
         /// Lo que descuenta cada dado en pie. Sale de la división y no de un literal: autorar 0.15
@@ -117,6 +118,34 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         /// <see cref="RepositionRange"/> tiene que quedar estrictamente por encima.
         /// </summary>
         public const int CupSlamRange = 1;
+
+        // ---- El anillo electrico --------------------------------------------------------
+
+        public const string ElectricTilePath = "Assets/Rollgeon/Tiles/Tile_Electric_Generala.asset";
+
+        public const string ElectricTileId = "TILE_ELECTRIC_GENERALA";
+
+        /// <summary>
+        /// Canal propio de la marca del anillo. Lo comparten el <c>AINode_TelegraphMark</c> que la
+        /// pinta y el <c>AINode_IgniteArea</c> que la prende: sin canal irian al default, que es el
+        /// que consume <c>AINode_ExecuteTelegraph</c>.
+        /// </summary>
+        public const string RingChannelId = "generala_ring";
+
+        /// <summary>Daño del piso electrico, cobrado al arrancar el turno de quien lo pisa.</summary>
+        public const int RingDamage = 35;
+
+        /// <summary>Turnos de aturdimiento que suma el piso, ademas del daño.</summary>
+        public const int RingStunTurns = 1;
+
+        /// <summary>
+        /// Vida del anillo en rondas. <b>Vale una ronda prendida, no dos</b>: el descuento va por
+        /// wrap de ronda y el anillo nace cuando el jugador ya movio (tira iniciativa 5 contra los 4
+        /// de ella, asi que abre la ronda), igual que el corrimiento de
+        /// <see cref="FrostDurationRounds"/>. Con 1 se apagaria en el wrap siguiente sin que nadie
+        /// hubiera arrancado un turno encima.
+        /// </summary>
+        public const int RingDurationRounds = 2;
 
         // ---- La escarcha ----------------------------------------------------------------
 
@@ -331,8 +360,10 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
             ConfigureFrostHazard(frost, AssetDatabase.LoadAssetAtPath<GameObject>(FrostVfxPrefabPath));
             EditorUtility.SetDirty(frost);
 
+            var electric = EnsureElectricTile();
+
             var boss = LoadOrCreate<EnemyDataSO>(BossAssetPath);
-            PopulateEnemyData(boss, table, bossVisual, bossPortrait, frost);
+            PopulateEnemyData(boss, table, bossVisual, bossPortrait, electric);
             EditorUtility.SetDirty(boss);
 
             AssetDatabase.SaveAssets();
@@ -341,7 +372,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
             Debug.Log(LogPrefix + $"Listo: '{BossAssetPath}' ({BossHp} HP) + su mesa en " +
                       $"'{DiceDefinitionPath}' ({HandSize} × {DiceHp} HP repartidos por la sala, " +
                       "sin reposición) + " +
-                      $"'{FrostHazardAssetPath}', con wrappers '{BossVisualPrefabPath}' y " +
+                      $"'{ElectricTilePath}', con wrappers '{BossVisualPrefabPath}' y " +
                       $"'{DiceVisualPrefabPath}'. Re-ejecutable sin duplicar nada.");
         }
 
@@ -780,7 +811,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
             RoomObjectDefinitionSO diceTable,
             GameObject visualPrefab,
             Sprite portrait = null,
-            HazardDefinitionSO frostHazard = null)
+            SpecialTileDefinitionSO electricFloor = null)
         {
             if (boss == null) return;
 
@@ -809,7 +840,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
             // sale del mismo campo (BaseEntitySO.Portrait → IEntityPortraitResolver).
             if (portrait != null) boss.Portrait = portrait;
 
-            boss.AIRoot = BuildAIRoot(diceTable, frostHazard);
+            boss.AIRoot = BuildAIRoot(diceTable, electricFloor);
         }
 
         /// <summary>
@@ -902,31 +933,44 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         // ======================================================================
 
         /// <summary>
-        /// Árbol de decisión del jefe. Orden del turno: cobra el aviso pendiente, corre el gate de
-        /// fase, repone la mesa, tira la mano —bajando el cubilete sobre quien esté pegado—, marca
-        /// el área del combo que le salió, congela el anillo de la mesa, tacha la mano que el
-        /// jugador acaba de anotar, y recién ahí se reacomoda.
+        /// Árbol de decisión del jefe. Orden del turno: prende el anillo que marcó el turno pasado,
+        /// corre el gate de fase, repone la mesa, baja el cubilete sobre quien esté pegado, marca el
+        /// anillo siguiente del ciclo, tacha la mano que el jugador acaba de anotar, y recién ahí se
+        /// reacomoda.
         /// </summary>
         /// <param name="diceTable">
         /// Definición de la mesa (<see cref="PopulateDiceDefinition"/>). Null en tests que no miren la
         /// mesa: el nodo devuelve Failed y su Selector de aislamiento lo absorbe.
         /// </param>
-        /// <param name="frostHazard">
-        /// Definición de la escarcha (<see cref="ConfigureFrostHazard"/>). Puede ser null en tests
-        /// que no miren el hielo: el nodo devuelve Failed y su Selector de aislamiento lo absorbe.
+        /// <param name="electricFloor">
+        /// La casilla que plantan los anillos (<see cref="EnsureElectricTile"/>). Puede ser null en
+        /// tests que sólo miren la forma del turno: la ignición devuelve Failed y su Selector de
+        /// aislamiento lo absorbe.
         /// </param>
         public static AINode_Sequence BuildAIRoot(RoomObjectDefinitionSO diceTable,
-                                                  HazardDefinitionSO frostHazard = null)
+                                                  SpecialTileDefinitionSO electricFloor = null)
         {
             return new AINode_Sequence
             {
                 Children = new List<AIDecisionNode>
                 {
-                    // 1. La mano de la ronda pasada explota con la forma del combo que le salió.
-                    new AINode_ExecuteTelegraph { WindupFeedbackId = BossFeedbackIds.GeneralaRangeAnim },
+                    // 1. Prende el anillo que marco el turno pasado. Aislado porque en su primer
+                    //    turno no hay marca pendiente y el nodo devuelve Failed.
+                    Isolate(new AINode_IgniteArea
+                    {
+                        Definition = electricFloor,
+                        ChannelId = RingChannelId,
+                        DurationRounds = RingDurationRounds,
 
-                    // 2. Fase 2 ANTES del ataque, para que el reroll aplique en el mismo turno en
-                    //    que cruza el umbral.
+                        // 0 y no 1: la ignicion corre ANTES de la marca, asi que el aviso ya
+                        // sobrevivio el turno del jugador cuando llega acá.
+                        AnnounceTurns = 0,
+                        RetireFullyReplaced = false,
+                        WindupFeedbackId = BossFeedbackIds.GeneralaRangeAnim,
+                    }),
+
+                    // 2. Fase 2 ANTES del ataque, para que el buff aplique en el mismo turno en que
+                    //    cruza el umbral.
                     Isolate(BuildPhaseTwoGate()),
 
                     // 3. La mesa. Sin Once: el nodo se auto-gatea y necesita tickear para recoger
@@ -939,152 +983,52 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
                         SpawnFeedbackId = BossFeedbackIds.GeneralaSummonAnim,
                     }),
 
-                    // 4. Tira los dados vivos y canta el combo (público un turno antes de detonar).
-                    new AINode_RollHand
-                    {
-                        SizeSource = AINode_RollHand.HandSizeSource.AliveAllies,
-                        MaxDice = HandSize,
-                        DieFaces = 6,
-                        SlowCombos = new List<string> { Rollgeon.Combos.ComboId.Generala },
-                    },
-
-                    // 5. Y con la misma tirada baja el cubilete sobre quien esté pegado. Aislado
-                    //    porque con el jugador lejos devuelve Failed, y un Failed acá le comería
-                    //    la marca de la mano.
+                    // 4. El cubilete sobre quien este pegado. Aislado porque con el jugador lejos
+                    //    devuelve Failed, y un Failed acá le comería la marca del anillo.
                     Isolate(BuildCupSlam()),
 
-                    // 6. La tabla combo → telegraph.
-                    BuildHandTelegraphTable(),
+                    // 5. Y marca el anillo siguiente del ciclo.
+                    BuildRingCycle(),
 
-                    // 7. La escarcha. Cero daño: el hielo cobra en turnos, no en HP.
-                    Isolate(BuildFrostGate(frostHazard)),
-
-                    // 8. La mano que el jugador acaba de anotar queda prohibida para la ronda que
+                    // 6. La mano que el jugador acaba de anotar queda prohibida para la ronda que
                     //    viene. Se computa al cerrar SU turno para que el jugador la vea tachada
                     //    antes de comprometer los dados.
                     Isolate(BuildRepeatBan()),
 
-                    // 9. Y recién ahí se mueve. Último a propósito: el cubilete y la escarcha se
-                    //    resuelven desde donde estaba parada cuando tiró, no desde donde terminó.
+                    // 7. Y recién ahí se mueve. Último a propósito: el cubilete se resuelve desde
+                    //    donde estaba parada, no desde donde terminó.
                     Isolate(BuildReposition()),
                 },
             };
         }
 
         /// <summary>
-        /// Selector con una rama por categoría, de la mano más alta a la más baja, y un
-        /// <see cref="AINode_Wait"/> al final. Ese Wait es el que cubre el turno de la mano
-        /// <i>cantada</i> (Generala recién tirada): ninguna rama matchea porque todas piden la mano
-        /// armada, y el turno tiene que seguir igual.
+        /// El ciclo del anillo: un tiempo por turno, de afuera hacia adentro y vuelta a empezar.
+        /// Marca ahora y <see cref="AINode_IgniteArea"/> lo prende al turno siguiente, así que el
+        /// jugador siempre ve el anillo un turno antes de que cobre.
         /// </summary>
         /// <remarks>
-        /// Cuidado al tocar las ramas de <c>DirectionalBand</c>: ahí <c>Size</c> es el MEDIO ancho
-        /// (1 ⇒ 3 casillas), mientras que en <c>Row</c> es el ancho total. Y la banda se centra en
-        /// ELLA, no en el jugador, así que un jugador fuera del eje no queda marcado.
+        /// <see cref="AINode_Alternate"/> rota entre todos sus hijos, no entre dos, así que el ciclo
+        /// de tres sale sin nodo nuevo. Los anillos van centrados en la SALA
+        /// (<see cref="ThreatShape.ConcentricRing"/>), no en ella: si se centraran en el jefe, el
+        /// anillo se correría con el reposicionamiento del paso siguiente.
         /// </remarks>
-        private static AINode_Selector BuildHandTelegraphTable()
+        public static AINode_Alternate BuildRingCycle()
         {
-            return new AINode_Selector
+            var beats = new List<AIDecisionNode>();
+            for (int ring = 1; ring <= ThreatAreaShape.ConcentricRingCount; ring++)
             {
-                Children = new List<AIDecisionNode>
+                beats.Add(new AINode_TelegraphMark
                 {
-                    // Casi toda la sala salvo el anillo del borde: ocho cuadrados de 3×3 anclados
-                    // en el 50% central, que es cómo ScatteredSquares reparte por construcción.
-                    HandBranch(Rollgeon.Combos.ComboId.Generala, new AINode_TelegraphMark
-                    {
-                        Shape = ThreatShape.ScatteredSquares,
-                        Count = 8,
-                        Size = 3,
-                        Damage = GeneralaDamage,
-                        Kind = AttackKind.BasicAttack,
-                    }),
+                    Shape = ThreatShape.ConcentricRing,
+                    Size = ring, // el indice del anillo viaja en Size, igual que en RoomSector
+                    ChannelId = RingChannelId,
+                    Damage = RingDamage,
+                    Kind = AttackKind.Environmental,
+                });
+            }
 
-                    HandBranch(Rollgeon.Combos.ComboId.Poker, new AINode_TelegraphMark
-                    {
-                        Shape = ThreatShape.SquareAroundPlayer,
-                        Size = 2, // radio 2 ⇒ 5×5 sobre el jugador
-                        Damage = PokerDamage,
-                        Kind = AttackKind.BasicAttack,
-                    }),
-
-                    HandBranch(Rollgeon.Combos.ComboId.FullHouse, new AINode_TelegraphMark
-                    {
-                        Shape = ThreatShape.ScatteredSquares,
-                        Count = 2,
-                        Size = 3,
-                        Damage = FullHouseDamage,
-                        Kind = AttackKind.BasicAttack,
-                    }),
-
-                    HandBranch(Rollgeon.Combos.ComboId.Straight, new AINode_TelegraphMark
-                    {
-                        Shape = ThreatShape.DirectionalBand,
-                        Size = 1,
-                        Depth = 4,
-                        Damage = LadderDamage,
-                        Kind = AttackKind.BasicAttack,
-                    }),
-
-                    HandBranch(Rollgeon.Combos.ComboId.Par, new AINode_TelegraphMark
-                    {
-                        Shape = ThreatShape.DirectionalBand,
-                        Size = 1,
-                        Depth = 3,
-                        Damage = PairDamage,
-                        Kind = AttackKind.BasicAttack,
-                    }),
-
-                    // El bust: fallar del todo duele menos que un par.
-                    BustBranch(new AINode_TelegraphMark
-                    {
-                        Shape = ThreatShape.DirectionalBand,
-                        Size = 0,
-                        Depth = 3,
-                        Damage = BustDamage,
-                        Kind = AttackKind.BasicAttack,
-                    }),
-
-                    new AINode_Wait(),
-                },
-            };
-        }
-
-        /// <summary>
-        /// <c>If(mano == comboId) → mark</c>, sin <c>Else</c>: el <see cref="AINode_If"/> devuelve
-        /// Failed cuando la rama elegida es null, que es justo lo que hace avanzar al Selector a la
-        /// categoría siguiente.
-        /// </summary>
-        private static AINode_If HandBranch(string comboId, AIDecisionNode mark)
-        {
-            return new AINode_If
-            {
-                Conditions = new List<BasePreCondition>
-                {
-                    new PcBossHandCombo
-                    {
-                        Match = PcBossHandCombo.HandMatch.Combo,
-                        ComboId = comboId,
-                        RequireArmed = true,
-                    },
-                },
-                Then = mark,
-            };
-        }
-
-        private static AINode_If BustBranch(AIDecisionNode mark)
-        {
-            return new AINode_If
-            {
-                Conditions = new List<BasePreCondition>
-                {
-                    new PcBossHandCombo
-                    {
-                        Match = PcBossHandCombo.HandMatch.NoCombo,
-                        RequireArmed = true,
-                    },
-                },
-                Then = mark,
-            };
+            return new AINode_Alternate { Children = beats };
         }
 
         /// <summary>
@@ -1106,40 +1050,94 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         }
 
         /// <summary>
-        /// La escarcha, colgada de la cadencia de ronda (<see cref="FrostParityDivisor"/>): cae en
-        /// las múltiplo de 3 y deja franca la tercera.
+        /// El piso electrico que plantan los anillos: <see cref="RingDamage"/> y
+        /// <see cref="RingStunTurns"/> turno de aturdimiento a quien arranque su turno encima.
         /// </summary>
         /// <remarks>
-        /// Sin ronda franca el hielo nuevo cae antes de que se derrita el anterior y no queda ventana
-        /// para romperle la mesa. Ver <see cref="FrostParityDivisor"/>.
+        /// <para>
+        /// Clon del <c>Tile_ElectricPuddle</c> generico y no el generico mismo: el charco base no
+        /// hace daño, y subirselo se lo cambiaria a todas las salas donde ya esta puesto.
+        /// </para>
+        /// <para>
+        /// <b>Solo OnTurnStart</b>, a proposito. Con OnEnter el anillo prendido seria una pared: para
+        /// pasar del centro al borde hay que cruzarlo, y cruzarlo costaria el golpe entero cada
+        /// ciclo. Asi la regla es "no termines tu turno acá", que es la que el aviso deja leer.
+        /// </para>
+        /// <para>
+        /// Y es puro aturdimiento, sin daño propio: los <see cref="RingDamage"/> los cobra
+        /// <c>AINode_IgniteArea.ChargeOnIgnition</c> con el Damage de la marca, al prender. Ponerlos
+        /// tambien acá los cobraria dos veces al que no se movio.
+        /// </para>
         /// </remarks>
-        public static AINode_If BuildFrostGate(HazardDefinitionSO frostHazard)
+        public static SpecialTileDefinitionSO EnsureElectricTile()
         {
-            return new AINode_If
-            {
-                Conditions = new List<BasePreCondition>
-                {
-                    new PcRoundNumber
-                    {
-                        Mode = PcRoundNumber.CompareMode.Multiple,
-                        Value = FrostParityDivisor,
-                    },
-                },
-                Then = BuildFrostRing(frostHazard),
-                // Sin Else: en ronda impar el If devuelve Failed y lo absorbe el Selector de Isolate.
-            };
+            var tile = LoadOrCreate<SpecialTileDefinitionSO>(ElectricTilePath);
+            ConfigureElectricTile(
+                tile,
+                AssetDatabase.LoadAssetAtPath<SpecialTileDefinitionSO>(GenericElectricTilePath));
+
+            EditorUtility.SetDirty(tile);
+            return tile;
         }
 
-        public static AINode_GeneralaFrostRing BuildFrostRing(HazardDefinitionSO frostHazard)
+        /// <summary>El charco generico del que sale el arte. Ver <see cref="ConfigureElectricTile"/>.</summary>
+        public const string GenericElectricTilePath = "Assets/Rollgeon/Tiles/Tile_ElectricPuddle.asset";
+
+        /// <summary>
+        /// Escribe los numeros del piso electrico sobre <paramref name="tile"/>. Parte pura, separada
+        /// de <see cref="EnsureElectricTile"/> para que los tests del turno puedan armar la casilla en
+        /// memoria sin tocar el AssetDatabase.
+        /// </summary>
+        /// <param name="generic">
+        /// El charco generico del que copia el arte. Con <c>null</c> la casilla queda sin visual y se
+        /// ve como el overlay pelado: el arte no es parte del contrato de la pelea.
+        /// </param>
+        public static void ConfigureElectricTile(
+            SpecialTileDefinitionSO tile, SpecialTileDefinitionSO generic = null)
         {
-            return new AINode_GeneralaFrostRing
+            if (tile == null) return;
+
+            tile.TileId = ElectricTileId;
+            tile.DisplayName = "Piso Electrico";
+            tile.TileType = SpecialTileType.ElectricPuddle;
+
+            tile.Triggers = TileTrigger.OnTurnStart;
+            tile.Category = TileEffectCategory.ApplyStatus;
+            tile.Affinity = TileAffinity.GroundOnly;
+            tile.DamageKind = AttackKind.Environmental;
+
+            tile.EnterDamage = 0;
+            tile.TurnStartDamage = 0;
+            tile.StatusKind = TileStatusKind.Stun;
+            tile.StatusTurns = RingStunTurns;
+
+            // Lo pone ella, no es terreno de la sala: dura lo que dura el anillo.
+            tile.DefaultDurationRounds = RingDurationRounds;
+            tile.DisarmOnTrigger = false;
+            tile.RearmOnRoundWrap = false;
+
+            // Los anillos se centran en la sala y ella camina: sin esto se electrocuta sola.
+            tile.OwnerBossImmune = true;
+
+            // Lo que el pathing enemigo le pone de precio: no hace daño, pero perder el turno es caro.
+            tile.AIVirtualEnterDamage = RingDamage;
+            tile.AIAnnouncesLethal = false;
+
+            tile.NameKey = "tile.electricpuddle";
+            tile.DescriptionKey = "tile.electricpuddle";
+
+            // Mismo arte que el charco generico: para el jugador es el mismo piso.
+            if (generic != null)
             {
-                Hazard = frostHazard,
-                Radius = FrostRingRadius,
-                Solid = FrostIsSolid,
-                StunTurns = FrostStunTurns,
-                ReplacePreviousRing = true,
-            };
+                tile.VisualPrefab = generic.VisualPrefab;
+                tile.VisualYOffset = generic.VisualYOffset;
+                tile.OverlayTint = generic.OverlayTint;
+                tile.TriggerVfxPrefab = generic.TriggerVfxPrefab;
+                tile.TriggerVfxLifetime = generic.TriggerVfxLifetime;
+                tile.TriggerVfxYOffset = generic.TriggerVfxYOffset;
+                tile.EditorIcon = generic.EditorIcon;
+                tile.EditorColor = generic.EditorColor;
+            }
         }
 
         /// <summary>

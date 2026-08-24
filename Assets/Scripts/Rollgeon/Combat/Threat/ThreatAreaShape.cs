@@ -86,6 +86,16 @@ namespace Rollgeon.Combat.Threat
         /// una sola casilla. Ver <see cref="ThreatAreaShape.ComputeDirectionalCone"/>.
         /// </summary>
         DirectionalCone,
+
+        /// <summary>
+        /// Uno de los <see cref="ThreatAreaShape.ConcentricRingCount"/> anillos concentricos de la
+        /// sala, numerados de afuera hacia adentro: 1 abraza el borde y el ultimo es el 3x3 del
+        /// centro. Ni el jugador ni el boss son el centro -- el centro es el de la sala, asi que el
+        /// anillo no se corre cuando el jefe camina. El indice viaja en el parametro <c>size</c>,
+        /// igual que en <see cref="RoomSector"/>. Ver
+        /// <see cref="ThreatAreaShape.ComputeConcentricRing"/>.
+        /// </summary>
+        ConcentricRing,
     }
 
     /// <summary>Eje de corte para <see cref="ThreatShape.HalfRoom"/>.</summary>
@@ -175,6 +185,14 @@ namespace Rollgeon.Combat.Threat
                     result.UnionWith(ComputeAllExceptSquareAroundSelf(grid, center, size));
                     break;
                 }
+
+                case ThreatShape.ConcentricRing:
+                {
+                    // El indice del anillo viaja en `size`; `center` no se usa: el anillo se centra
+                    // en la sala.
+                    result.UnionWith(ComputeConcentricRing(grid, size));
+                    break;
+                }
             }
 
             return result;
@@ -255,6 +273,61 @@ namespace Rollgeon.Combat.Threat
                 if (c.X < loX || c.X > hiX) continue;
                 if (c.Y < loY || c.Y > hiY) continue;
                 result.Add(c);
+            }
+
+            return result;
+        }
+
+        /// <summary>Cuantos anillos tiene el ciclo de <see cref="ThreatShape.ConcentricRing"/>.</summary>
+        public const int ConcentricRingCount = 3;
+
+        /// <summary>
+        /// Radio interior y exterior de cada anillo, en fracciones del semieje de la sala y no en
+        /// casillas, para que los anillos sigan siendo concentricos en cualquier tamano de sala.
+        /// </summary>
+        /// <remarks>
+        /// El interior de cada anillo queda por encima del exterior del siguiente a proposito: entre
+        /// anillo y anillo sobra al menos una casilla, y de ese hueco depende que un jugador aturdido
+        /// sobre un anillo no coma tambien el que se marca despues.
+        /// </remarks>
+        private static readonly (float Inner, float Outer)[] ConcentricRingBands =
+        {
+            (0.76f, 1.10f), // el que abraza el borde -- deja libres las cuatro esquinas
+            (0.40f, 0.68f),
+            (0.00f, 0.30f), // el 3x3 del centro
+        };
+
+        /// <summary>
+        /// Uno de los <see cref="ConcentricRingCount"/> anillos concentricos de la sala,
+        /// <paramref name="ring"/> numerado de afuera (1) hacia adentro. Fuera de rango ⇒ vacio.
+        /// </summary>
+        /// <remarks>
+        /// Centrado en la sala y no en el jefe: se mide contra el punto medio de los bounds
+        /// caminables, asi que el anillo no se mueve cuando el jefe se reposiciona.
+        /// </remarks>
+        public static HashSet<GridCoord> ComputeConcentricRing(IGridManager grid, int ring)
+        {
+            var result = new HashSet<GridCoord>();
+            if (grid == null) return result;
+            if (ring < 1 || ring > ConcentricRingCount) return result;
+
+            var tiles = new List<GridCoord>(RoomTiles(grid));
+            if (tiles.Count == 0) return result;
+
+            RoomBounds(tiles, out int minX, out int maxX, out int minY, out int maxY);
+
+            double cx = (minX + maxX) * 0.5d;
+            double cy = (minY + maxY) * 0.5d;
+            double half = System.Math.Max(maxX - minX, maxY - minY) * 0.5d;
+            if (half <= 0d) return result;
+
+            var band = ConcentricRingBands[ring - 1];
+            foreach (var c in tiles)
+            {
+                double dx = c.X - cx;
+                double dy = c.Y - cy;
+                double n = System.Math.Sqrt(dx * dx + dy * dy) / half;
+                if (n >= band.Inner && n <= band.Outer) result.Add(c);
             }
 
             return result;

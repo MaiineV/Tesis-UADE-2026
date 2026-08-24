@@ -101,12 +101,13 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                 "BossFeedbackInstaller.");
         }
 
-        /// <summary>Dos jefes no entran: el Croupier detona con su propio nodo y el Cajero no telegrafía
-        /// nada (melee de alcance 1). Los árboles se arman <b>dentro</b> del test: una excepción al
-        /// recolectar el source hace desaparecer el fixture entero en vez de reportar rojo.</summary>
+        /// <summary>Tres jefes no entran: el Croupier detona con su propio nodo, el Cajero no telegrafía
+        /// nada (melee de alcance 1) y La Generala prende su anillo con un <c>AINode_IgniteArea</c>
+        /// (ver <see cref="EveryIgnitedAreaPlaysSomething"/>). Los árboles se arman <b>dentro</b> del
+        /// test: una excepción al recolectar el source hace desaparecer el fixture entero en vez de
+        /// reportar rojo.</summary>
         private static IEnumerable<TestCaseData> TelegraphCases()
         {
-            yield return Case("La Generala", () => GeneralaAssetBuilder.BuildAIRoot(null));
             yield return Case("El Anotador", () => AnotadorAssetBuilder.BuildAIRoot(null));
             yield return Case("La Bandida", () => BandidaAssetBuilder.BuildAIRoot(null, null));
             yield return Case("El Tahúr", () => TahurAssetBuilder.BuildAIRoot());
@@ -157,6 +158,30 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                     "Un golpe del Cajero cobra sin animación: el daño sale y él no se mueve.");
                 Assert.IsTrue(db.HasFeedback(hit.AnimFeedbackId),
                     $"El Cajero pide el feedback '{hit.AnimFeedbackId}', que no está en el " +
+                    "FeedbackDB. Correr 'Tools → Rollgeon → Bosses → Build Boss Feedback'.");
+            }
+        }
+
+        /// <summary>Lo que en los otros cubre el ExecuteTelegraph: un area que se prende sin gesto deja
+        /// al jefe quieto mientras el piso aparece solo.</summary>
+        [Test]
+        public void EveryIgnitedAreaPlaysSomething()
+        {
+            var db = AssetDatabase.LoadAssetAtPath<FeedbackDBSO>(DbPath);
+            Assert.IsNotNull(db, $"No se encontró el FeedbackDB en '{DbPath}'.");
+
+            var ignitions = Descendants(GeneralaAssetBuilder.BuildAIRoot(null))
+                .OfType<AINode_IgniteArea>()
+                .ToList();
+
+            CollectionAssert.IsNotEmpty(ignitions, "La Generala no prende ningún área: su ataque entero.");
+            foreach (var node in ignitions)
+            {
+                Assert.IsNotEmpty(node.WindupFeedbackId ?? string.Empty,
+                    "La Generala prende su anillo sin animación: el piso aparece y ella no se mueve. " +
+                    "Setear WindupFeedbackId en su builder.");
+                Assert.IsTrue(db.HasFeedback(node.WindupFeedbackId),
+                    $"La Generala pide el feedback '{node.WindupFeedbackId}', que no está en el " +
                     "FeedbackDB. Correr 'Tools → Rollgeon → Bosses → Build Boss Feedback'.");
             }
         }
