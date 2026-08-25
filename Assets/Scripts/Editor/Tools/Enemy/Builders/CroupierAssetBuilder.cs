@@ -520,6 +520,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
                         // sumaria SU turno de espera arriba del que ya da el orden y prenderia en
                         // N+2.
                         AnnounceTurns = 0,
+                        WindupFeedbackId = BossFeedbackIds.CroupierMeleeAnim,
                         // OFF, al reves que las bandas: el Pleno es el reloj mas corto de los tres,
                         // asi que relevar lo que tapa le recortaria la banda que ya venia ardiendo a
                         // un solo turno. Apagado, lo que ardia sigue con su reloj y el Pleno prende
@@ -625,12 +626,14 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
                                             Definition = fire,
                                             DurationRounds = FireDurationRoundsPhase2,
                                             RetireFullyReplaced = true,
+                                            WindupFeedbackId = BossFeedbackIds.CroupierMeleeAnim,
                                         },
                                         Else = new AINode_IgniteArea
                                         {
                                             Definition = fire,
                                             DurationRounds = FireDurationRounds,
                                             RetireFullyReplaced = true,
+                                            WindupFeedbackId = BossFeedbackIds.CroupierMeleeAnim,
                                         },
                                     }),
 
