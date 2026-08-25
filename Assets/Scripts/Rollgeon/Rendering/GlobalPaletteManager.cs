@@ -54,14 +54,21 @@ namespace Rollgeon.Rendering
 
             for (int i = 0; i < count; i++)
             {
-                _lightBuf[i]  = (Vector4)slots[i].ComputedLight;
-                _midBuf[i]    = (Vector4)slots[i].ComputedMid;
-                _shadowBuf[i] = (Vector4)slots[i].ComputedShadow;
+                _lightBuf[i]  = (Vector4)ToShaderColor(slots[i].ComputedLight);
+                _midBuf[i]    = (Vector4)ToShaderColor(slots[i].ComputedMid);
+                _shadowBuf[i] = (Vector4)ToShaderColor(slots[i].ComputedShadow);
             }
 
             Shader.SetGlobalVectorArray(LightID,  _lightBuf);
             Shader.SetGlobalVectorArray(MidID,    _midBuf);
             Shader.SetGlobalVectorArray(ShadowID, _shadowBuf);
         }
+
+        // SetGlobalVectorArray sube floats crudos sin la conversión sRGB→Linear que
+        // Material.SetColor/Shader.SetGlobalColor sí hacen en un proyecto Linear —
+        // por eso los materiales con paleta se veían lavados/desaturados en cámara
+        // aunque coincidieran con el hex en el Inspector. Corregimos a mano acá.
+        static Color ToShaderColor(Color c) =>
+            QualitySettings.activeColorSpace == ColorSpace.Linear ? c.linear : c;
     }
 }
