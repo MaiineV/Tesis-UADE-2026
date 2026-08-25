@@ -1792,15 +1792,17 @@ public interface IMovementDieService {              // ServiceScope.Run, bootstr
   el path legacy de cobro-al-ejecutar sigue vivo cuando el servicio no está registrado).
 - **Drag-and-drop.** `ActionDragPolicy.RequiresTileDrop` = false con el flag: soltar en
   cualquier lado fuera de la UI tira el dado; el tile se elige después con el rango real.
-- **Eventos.** `OnMovementDieRollStarted [Guid, DiceType]` (solo con presenter) abre la
-  mesa de dados; `OnMovementDieRolled [Guid, int face, DiceType]` la cierra.
-  `ActionRollExplorationVisibility` y `CombatHudZoneFlow` los tratan como
-  `OnDiceRolled`/`OnBehaviorExecuted`. No emite `OnDiceRolled`.
-- **UI.** `MovementDieView` (un `DiceSlotView` + `DiceSlotAnimator`, centrado en el
-  `RollArea` de `Canvas_ActionRoll`, oculto fuera de su tirada) es el
-  `IMovementDiePresenter`: la mesa se abre, el dado gira en el centro, revela, hold breve,
-  se esconde, la mesa se cierra y recién ahí arranca la selección de tile. Sin cablear, el
-  reveal es sincrónico y no hay mesa.
+- **Eventos.** `OnMovementDieRollStarted [Guid, DiceType]` (solo con presenter) y
+  `OnMovementDieRolled [Guid, int face, DiceType]`. No emite `OnDiceRolled` y **no usa la
+  mesa de dados** (ni `ActionRollExplorationVisibility` ni `CombatHudZoneFlow` los escuchan).
+- **UI.** `MovementDieView` es un dado suelto detrás de la ficha de Mover (hermano previo,
+  mismos anchors/tamaño): oculto fuera de su acción; al soltar Mover sube con fade-in
+  roleando, hace drop-in encima de la ficha, muestra la cara y recién ahí publica el rango;
+  queda visible hasta elegir destino (`OnCleared` → fade-out). Sin cablear, el reveal es
+  sincrónico.
+- **Comprometida tras tirar.** Con `_movementRollPrepaid`, `HasCancellableSelection` es
+  false: ni click derecho ni clicks de slot cancelan (la UI muestra los demás slots
+  Locked); End Turn sigue soltando la selección y pierde el roll.
 
 Setup y follow-ups (throw manual 2D/3D, rig, encantamientos del dado):
 `docs/setup/movement-die.md`.

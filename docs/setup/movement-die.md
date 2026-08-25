@@ -42,18 +42,34 @@
 - **Evento**: `EventName.OnMovementDieRolled [Guid, int face, DiceType]` (al final del
   enum). NO dispara `OnDiceRolled` — el `DiceZoneView` no lo ve.
 
-## UI — el dado usa la mesa como cualquier tirada
+## UI — dado suelto detrás de la ficha de Mover
 
-`MovementDieView` (`UI/HUD/MovementDieView.cs`) vive **centrado en el `RollArea` de
-`Canvas_ActionRoll`** y está **oculto salvo durante su tirada**: al soltar Mover, el
-servicio emite `OnMovementDieRollStarted` → la mesa se abre (`ActionRollExplorationVisibility`)
-y los chips se apagan (`CombatHudZoneFlow`), igual que con `OnDiceRolled`; el dado gira en el
-centro (`DiceSlotAnimator`, mismo spin y pacing por `GameSpeedPrefs` que los 5 de la build),
-revela la cara, la deja leer `_revealHoldSeconds` (0.6 s / game speed) y se esconde; recién
-ahí el servicio emite `OnMovementDieRolled` → la mesa se cierra, los chips vuelven y arranca
-la selección de tile con el rango revelado. Es el `IMovementDiePresenter` del servicio; sin
-la view cableada el dado igual se tira (reveal sincrónico, sin mesa). No toca los 5 slots
-del `DiceZoneView`.
+`MovementDieView` (`UI/HUD/MovementDieView.cs`) es hermano **anterior** a `MoveButton` en
+`PlayerActionButtonsView` (se dibuja detrás), con los mismos anchors/pivot/tamaño que la
+ficha (`_chip`), y está **oculto salvo durante su acción**:
+
+1. Al soltar Mover: el dado aparece detrás de la ficha y **sube con fade-in mientras
+   rolea** (giro `_spinTurns`, caras random ciclando cada `_faceTickSeconds`, escala
+   `_startScale → 1`) hasta `_overshoot` por encima de su posición final.
+2. **Drop-in**: cae a la posición final (encima de la ficha, `_gap` de separación, misma X
+   y ancho ⇒ simétrico) con ease-out-bounce y un squash de aterrizaje.
+3. Al aterrizar muestra la cara real y **recién ahí** publica el rango (`onRevealed`).
+4. Queda visible hasta que el jugador elige a dónde moverse (o End Turn / fin de combate):
+   `OnCleared` → fade-out corto y se oculta.
+
+Todo sigue al game speed. Es el `IMovementDiePresenter` del servicio; sin la view cableada
+el dado igual se tira (reveal sincrónico). **No usa la mesa de dados**: los eventos
+`OnMovementDieRollStarted`/`OnMovementDieRolled` se emiten pero ni
+`ActionRollExplorationVisibility` ni `CombatHudZoneFlow` los escuchan.
+
+### Cancel: la acción queda comprometida tras la tirada
+
+Con el dado ya tirado (`_movementRollPrepaid`), `HasCancellableSelection` es `false`: el
+click derecho y los clicks de slot (mismo u otro) **no cancelan** el Movement, y
+`PlayerActionButtonsView` muestra los demás slots `Locked`. Antes de soltar Mover no hay
+nada que cancelar. **End Turn** sigue soltando la selección (pierde el roll pagado) — es la
+única salida si el jugador no quiere moverse. El Movement legacy (sin servicio) conserva el
+cancel gratis de BUG-013.
 
 ## Wiring (ya aplicado vía MCP, 2026-08-25)
 
@@ -68,12 +84,13 @@ del `DiceZoneView`.
      `ExpMovement` queda en `false`.
    - Nota: el asset es Odin-serialized — setear el flag a mano en el YAML **no alcanza**
      (hay doble representación); hacerlo desde el Inspector o por código en el editor.
-4. `Assets/Prefabs/UI/Canvas/Canvas_ActionRoll.prefab`:
-   `DiceZoneView/RollArea/MovementDieView` (RectTransform 100×100 centrado en el
-   RollArea) con `MovementDieView` + hijo `Slot` **inactivo** (instancia de
-   `Assets/Prefabs/UI/DiceSlotView.prefab`). `CombatHUDView._movementDie` queda en
-   None: es cross-canvas y `BindAll` lo resuelve con `FindFirstObjectByType` (mismo
-   patrón que `HealthChipStackView`).
+4. `Assets/Prefabs/UI/Canvas/Canvas_CombatHUD.prefab`:
+   `CombatHUDView/PlayerActionButtonsView/MovementDieView` — hermano **anterior** a
+   `MoveButton` (sibling index 0), mismos anchors/pivot/posición/tamaño que la ficha
+   (100×100 en `(-250, 5)`), `CanvasGroup` alpha 0 / sin raycast, `MovementDieView` con
+   `_slot` → hijo `Slot` **inactivo** (instancia de `Assets/Prefabs/UI/DiceSlotView.prefab`,
+   stretch al padre) y `_chip` → `MoveButton`. `CombatHUDView._movementDie` queda en None:
+   `BindAll` lo resuelve con `FindFirstObjectByType`.
 
 Para otra clase: crear su `MovementDieSO`, asignarlo en `StartingMovementDie` y activar
 `RangeFromMovementDie` en el `EffMove` de su Movement de combate.
