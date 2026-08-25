@@ -214,44 +214,6 @@ namespace Rollgeon.Combat.Rooms.Tests
             Assert.IsEmpty(Live(), "Con mecha 3 tienen que estallar al tercer descuento.");
         }
 
-        /// <summary>El jugador entra a la sala con el paño ya sembrado.</summary>
-        [Test]
-        public void Opening_SowsAndMarks_BeforeAnyTick()
-        {
-            var node = MakeNode(count: 4);
-
-            node.Opening(_context);
-
-            Assert.AreEqual(4, Live().Count, "La apertura no dejó las bombas puestas.");
-            Assert.IsEmpty(Instances(), "La apertura instala amenaza, no fuego.");
-            Assert.IsEmpty(_pipeline.Resolved,
-                "La apertura cobró daño: corre ANTES del primer turno del jugador, así que ahí " +
-                "no puede cobrar nada.");
-        }
-
-        /// <summary>
-        /// En régimen la siembra cae <i>en</i> el turno del tiempo de bombas; la apertura cae uno
-        /// antes de que ese turno llegue. Sin el +1 la generación de entrada estalla corrida y su
-        /// fuego se le encima al del cono.
-        /// </summary>
-        [Test]
-        public void Opening_GivesTheFirstGenerationOneExtraTurn()
-        {
-            var node = MakeNode(count: 2, fuse: 2);
-            node.Opening(_context);
-
-            var detonator = new AINode_DetonateBombField { ChannelPrefix = node.ChannelPrefix };
-
-            detonator.Tick(_context);
-            detonator.Tick(_context);
-            Assert.AreEqual(2, Live().Count,
-                "La generación de entrada estalló con la mecha de régimen: le falta el turno que " +
-                "compensa haber nacido antes del primer tiempo de bombas.");
-
-            detonator.Tick(_context);
-            Assert.IsEmpty(Live(), "Con mecha 2 + 1 tiene que estallar al tercer descuento.");
-        }
-
         /// <summary>El tiempo de bombas vuelve a pasar por las que siguen en pie: si les refrescara
         /// la mecha, no estallarían nunca.</summary>
         [Test]

@@ -39,15 +39,9 @@ namespace Rollgeon.Combat.Rooms
     /// <see cref="Definition"/> tiene que traer <c>RespawnDelayTurns = 0</c>: es lo que deja que la
     /// siembra reponga en la misma pasada tanto lo que detonó como lo que el jugador rompió a mano.
     /// </para>
-    /// <para>
-    /// <b>Siembra en la apertura</b> (<see cref="IAIOpeningNode"/>): el jugador entra a la sala con
-    /// las bombas puestas en vez de recibirlas después de haber elegido por dónde entrar a ciegas.
-    /// Instala amenaza y no cobra daño, que es la condición de la interfaz — el estallido vive en
-    /// <see cref="AINode_DetonateBombField"/> y ése <b>no</b> corre en la apertura.
-    /// </para>
     /// </remarks>
     [Serializable, HideReferenceObjectPicker]
-    public sealed class AINode_BombField : AIActionNode, IAIOpeningNode
+    public sealed class AINode_BombField : AIActionNode
     {
         [Tooltip("La bomba a sembrar. RespawnDelayTurns tiene que ser 0: es lo que permite que la " +
                  "siembra reponga tanto lo detonado como lo roto a mano.")]
@@ -117,7 +111,7 @@ namespace Rollgeon.Combat.Rooms
             var spawner = EnsureSpawner();
             spawner.Tick(context);
 
-            MarkNewBombs(context, grid, spawner, FuseTurns);
+            MarkNewBombs(context, grid, spawner);
 
             return AIResult.Succeeded;
         }
@@ -138,28 +132,9 @@ namespace Rollgeon.Combat.Rooms
             var sow = spawner.TickCoroutine(context, null);
             while (sow.MoveNext()) yield return sow.Current;
 
-            MarkNewBombs(context, context.Grid, spawner, FuseTurns);
+            MarkNewBombs(context, context.Grid, spawner);
 
             onResult?.Invoke(AIResult.Succeeded);
-        }
-
-        /// <summary>
-        /// La siembra de entrada, antes del primer turno del jugador.
-        /// </summary>
-        /// <remarks>
-        /// <b>Con un turno más de mecha</b>, y no por generosidad: en régimen la siembra cae
-        /// <i>en</i> el turno de este tiempo, y acá cae <b>uno antes</b> de que ese turno llegue. Sin
-        /// el +1 la generación de entrada estalla un turno corrida del resto y su fuego se le
-        /// encima al del cono, que es justo lo que el orden del ciclo separa.
-        /// </remarks>
-        public void Opening(AIContext context)
-        {
-            if (context?.Grid == null || context.Attributes == null || Definition == null) return;
-
-            var spawner = EnsureSpawner();
-            spawner.Opening(context);
-
-            MarkNewBombs(context, context.Grid, spawner, FuseTurns + 1);
         }
 
         private AINode_SpawnRoomObjects EnsureSpawner()
@@ -180,8 +155,7 @@ namespace Rollgeon.Combat.Rooms
         /// marcar la cruz de una que ya estaba es idempotente, y <c>Sow</c> no le refresca la mecha
         /// a una bomba ya armada.
         /// </remarks>
-        private void MarkNewBombs(
-            AIContext context, IGridManager grid, AINode_SpawnRoomObjects spawner, int fuseTurns)
+        private void MarkNewBombs(AIContext context, IGridManager grid, AINode_SpawnRoomObjects spawner)
         {
             ServiceLocator.TryGetService<IThreatenedAreaService>(out var threat);
             ServiceLocator.TryGetService<IThreatOverlayService>(out var overlay);
@@ -191,7 +165,7 @@ namespace Rollgeon.Combat.Rooms
             foreach (var (guid, coord) in spawner.LiveObjects())
             {
                 var cross = ComputeCross(coord, grid);
-                field.Sow(guid, cross, fuseTurns);
+                field.Sow(guid, cross, FuseTurns);
 
                 if (threat == null) continue;
 

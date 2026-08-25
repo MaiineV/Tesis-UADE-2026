@@ -851,17 +851,15 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                 "estallido no se le encima al fuego del cono.");
         }
 
-        /// <summary>Sin esto las bombas aparecen recien al cerrar el primer turno del jugador, que
-        /// ya eligio por donde entrar a ciegas. Es el mismo mecanismo con el que La Generala tiene
-        /// la mesa puesta de entrada.</summary>
+        /// <summary>El jugador entra a una sala limpia y mueve primero: el paño se siembra recien
+        /// en el primer turno del jefe, no antes.</summary>
         [Test]
-        public void TheBombs_ArePlantedBeforeThePlayersFirstTurn()
+        public void TheBombs_AreNotOnTheFeltBeforeThePlayerMoves()
         {
-            var field = Descendants(BombBeat()).OfType<AINode_BombField>().Single();
-
-            Assert.IsInstanceOf<IAIOpeningNode>(field,
-                "El campo de bombas dejo de sembrar en la apertura: el jugador entra a una sala " +
-                "limpia y las bombas le aparecen despues de haber decidido por donde entrar.");
+            Assert.IsNotInstanceOf<IAIOpeningNode>(
+                Descendants(BombBeat()).OfType<AINode_BombField>().Single(),
+                "El campo de bombas volvio a sembrar en la apertura: el jugador abre la pelea " +
+                "con cuatro bombas y sus cruces ya puestas, sin haber jugado un turno.");
 
             Assert.IsNotInstanceOf<IAIOpeningNode>(
                 Descendants(_root).OfType<AINode_DetonateBombField>().Single(),
