@@ -193,7 +193,9 @@ namespace Rollgeon.UI.HUD.DragDrop
             // al soltar en CUALQUIER lado fuera de la UI — no requieren celda debajo. El
             // gate IsPointerOverUI de arriba ya cubre "soltar de vuelta sobre los chips".
 
-            ResolveDispatcher()?.Commit(button, coord);
+            // Sin targeting por celda (auto-target, instantáneas, Movimiento con dado §6.6) el
+            // coord del drop no alimenta la selección — la acción decide sola qué abrir.
+            ResolveDispatcher()?.Commit(button, coord, feedTile: _requiresTile);
             return true;
         }
 

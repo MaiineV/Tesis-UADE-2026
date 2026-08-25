@@ -50,6 +50,11 @@ namespace Rollgeon.UI.Screens
         [SerializeField]
         private DiceZoneView _diceZone;
 
+        [SerializeField, Optional]
+        [Tooltip("§6.6: slot del dado de Movimiento (entidad separada de la build de 5). " +
+                 "Opcional — sin cablear no hay visual, el dado igual se tira.")]
+        private MovementDieView _movementDie;
+
         [Required("Arrastrar RerollCountView.")]
         [SerializeField]
         private RerollCountView _rerollCount;
@@ -349,6 +354,8 @@ namespace Rollgeon.UI.Screens
             if (_activeItems == null) _activeItems = UnityEngine.Object.FindFirstObjectByType<ActiveItemsView>(FindObjectsInactive.Include);
             if (_playerBaseDamage == null) _playerBaseDamage = UnityEngine.Object.FindFirstObjectByType<Rollgeon.UI.HUD.Breakdown.PlayerBaseDamageView>(FindObjectsInactive.Include);
             if (_breakdownDirector == null) _breakdownDirector = UnityEngine.Object.FindFirstObjectByType<Rollgeon.UI.HUD.Breakdown.BreakdownSequenceDirector>(FindObjectsInactive.Include);
+            // §6.6: el dado de Movimiento vive en la mesa (Canvas_ActionRoll), cross-canvas.
+            if (_movementDie == null) _movementDie = UnityEngine.Object.FindFirstObjectByType<MovementDieView>(FindObjectsInactive.Include);
 
             if (_turnQueue != null) _turnQueue.Bind(playerGuid);
             else Debug.LogWarning(LogPrefix + "_turnQueue no cableado.", this);
@@ -370,6 +377,8 @@ namespace Rollgeon.UI.Screens
 
             if (_diceZone != null) _diceZone.Bind(playerGuid);
             else Debug.LogWarning(LogPrefix + "_diceZone no cableado.", this);
+
+            if (_movementDie != null) _movementDie.Bind(playerGuid);
 
             if (_endTurnButtonView != null) _endTurnButtonView.Bind(playerGuid);
             else Debug.LogWarning(LogPrefix + "_endTurnButtonView no cableado.", this);
@@ -399,6 +408,7 @@ namespace Rollgeon.UI.Screens
             if (_healthChips != null) _healthChips.Unbind();
             if (_energyChips != null) _energyChips.Unbind();
             if (_diceZone != null) _diceZone.Unbind();
+            if (_movementDie != null) _movementDie.Unbind();
             if (_endTurnButtonView != null) _endTurnButtonView.Unbind();
             if (_damageFormula != null) _damageFormula.Unbind();
             if (_playerBaseDamage != null) _playerBaseDamage.Unbind();
