@@ -330,12 +330,13 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             Assert.AreEqual(10, fire.TurnStartDamage,
                 "Arrancar el turno adentro cambió de precio. Por debajo del escudo mediano del " +
                 "jugador (~13) el fuego deja de ser una amenaza y pasa a ser decoración.");
-            Assert.GreaterOrEqual(fire.EnterDamage, fire.TurnStartDamage,
-                "Cruzar el fuego pasó a costar MENOS que quedarse parado en él. Así la jugada " +
-                "óptima es correr por el paño encendido, que es lo contrario del plan del jefe.");
-            Assert.AreEqual(10, fire.EnterDamage,
-                "Se cobra por casilla cruzada — es lo que hace que atravesar una banda para llegar al " +
-                "jefe tenga precio.");
+            Assert.AreEqual(6, fire.EnterDamage,
+                "Se cobra por casilla cruzada — es lo que hace que atravesar una banda para llegar " +
+                "al jefe tenga precio.");
+            Assert.Less(fire.EnterDamage, fire.TurnStartDamage,
+                "Cruzar dejó de ser más barato que quedarse. El fuego cobra el paso a mitad de " +
+                "precio y la permanencia entera: atravesarlo es una decisión cara, plantarse " +
+                "adentro es un error.");
             Assert.AreEqual(CroupierAssetBuilder.FireDurationRounds, fire.DefaultDurationRounds,
                 "La duración del asset dejó de coincidir con la que autora el nodo de ignición: una " +
                 "de las dos manda y no se sabe cuál.");
