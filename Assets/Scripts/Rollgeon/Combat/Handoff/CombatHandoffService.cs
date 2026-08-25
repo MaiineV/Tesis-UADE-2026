@@ -575,6 +575,10 @@ namespace Rollgeon.Combat.Handoff
                 // volver el estado ya está limpio para seguir de largo.
                 if (_awaitingPlayerSelection)
                 {
+                    // §6.6: dado de Movimiento ya tirado ⇒ roll pagado ⇒ comprometido. Ni
+                    // el mismo slot ni otro cancelan; la UI los muestra Locked.
+                    if (_movementRollPrepaid) return;
+
                     bool sameAction = ResolveBehaviorAt(index) == _selectedBehavior;
                     CancelPlayerSelection();
                     // Defensa: si el unwind no completó (sin ISelectionController vivo,
@@ -941,7 +945,10 @@ namespace Rollgeon.Combat.Handoff
             get
             {
                 if (_forcedRerollPending || ThrowBusy()) return false;
-                if (_awaitingPlayerSelection) return true;
+                // §6.6: con el dado de Movimiento ya tirado el roll está pagado — la acción
+                // queda comprometida como cualquier tirada: ni click derecho ni otro slot
+                // la cancelan. Solo End Turn la suelta (y pierde el roll).
+                if (_awaitingPlayerSelection) return !_movementRollPrepaid;
                 return IsChainTargetingCancellable();
             }
         }
@@ -954,7 +961,7 @@ namespace Rollgeon.Combat.Handoff
 
             if (TryCancelChainTargeting(hud)) return true;
 
-            if (_awaitingPlayerSelection)
+            if (_awaitingPlayerSelection && !_movementRollPrepaid)
             {
                 CancelPlayerSelection();
                 return true;

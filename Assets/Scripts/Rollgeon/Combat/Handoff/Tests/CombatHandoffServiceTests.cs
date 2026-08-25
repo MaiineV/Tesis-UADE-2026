@@ -1104,6 +1104,50 @@ namespace Rollgeon.Combat.Handoff.Tests
         }
 
         [Test]
+        public void MovementDie_AfterRoll_SelectionIsNotCancellableByRightClickOrSlot()
+        {
+            // Arrange — Movement con el dado ya tirado (roll pagado) esperando su tile.
+            var hudGo = new GameObject("CombatHUD");
+            _createdObjects.Add(hudGo);
+            var hud = hudGo.AddComponent<CombatHUDView>();
+            _spyScreen.Current = hud;
+            SetPrivateField(_service, "_awaitingPlayerSelection", true);
+            SetPrivateField(_service, "_movementRollPrepaid", true);
+            SetPrivateField(_service, "_selectedBehavior",
+                new HeroActionBehavior { ActionName = "Movement", NeedsDiceRoll = false });
+            int executed = 0;
+            EventManager.EventReceiver onExecuted = _ => executed++;
+            EventManager.Subscribe(EventName.OnBehaviorExecuted, onExecuted);
+
+            // Act / Assert — ni click derecho ni re-click de slot cancelan.
+            Assert.IsFalse(_service.HasCancellableSelection);
+            Assert.IsFalse(_service.TryCancelFromRightClick());
+            Assert.IsTrue((bool)GetPrivateField(_service, "_awaitingPlayerSelection"));
+            Assert.IsNotNull(GetPrivateField(_service, "_selectedBehavior"));
+            Assert.AreEqual(0, executed);
+
+            EventManager.UnSubscribe(EventName.OnBehaviorExecuted, onExecuted);
+        }
+
+        [Test]
+        public void MovementDie_LegacyMovement_StillCancellableByRightClick()
+        {
+            // Arrange — sin dado (cobro-al-ejecutar): el cancel sigue siendo gratis.
+            var hudGo = new GameObject("CombatHUD");
+            _createdObjects.Add(hudGo);
+            _spyScreen.Current = hudGo.AddComponent<CombatHUDView>();
+            SetPrivateField(_service, "_awaitingPlayerSelection", true);
+            SetPrivateField(_service, "_movementRollPrepaid", false);
+            SetPrivateField(_service, "_selectedBehavior",
+                new HeroActionBehavior { ActionName = "Movement", NeedsDiceRoll = false });
+
+            // Act / Assert
+            Assert.IsTrue(_service.HasCancellableSelection);
+            Assert.IsTrue(_service.TryCancelFromRightClick());
+            Assert.IsFalse((bool)GetPrivateField(_service, "_awaitingPlayerSelection"));
+        }
+
+        [Test]
         public void MovementDie_ServiceNotRegistered_LegacyPathDoesNotChargeOnSelect()
         {
             // Arrange — sin IMovementDieService: Movement sigue cobrando al ejecutar (BUG-013).
