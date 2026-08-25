@@ -71,7 +71,7 @@ namespace Rollgeon.Upgrades.Dice.Tests
             var svc = MakeService();
             svc.InitializeFromBag(MakeBag(DiceType.D6));
 
-            var result = svc.ValidateApply(0, 0, null);
+            var result = svc.ValidateApply(0, null);
 
             Assert.IsFalse(result.Success);
         }
@@ -83,23 +83,10 @@ namespace Rollgeon.Upgrades.Dice.Tests
             svc.InitializeFromBag(MakeBag(DiceType.D6));
             var ench = MakeEnchantment("e");
 
-            var result = svc.ValidateApply(bagIndex: 99, enchSlotIndex: 0, ench);
+            var result = svc.ValidateApply(bagIndex: 99, ench);
 
             Assert.IsFalse(result.Success);
             StringAssert.Contains("Bag index", result.ErrorMessage);
-        }
-
-        [Test]
-        public void ValidateApply_OutOfRangeSlotIndex_Fails()
-        {
-            var svc = MakeService();
-            svc.InitializeFromBag(MakeBag(DiceType.D6)); // D6 = 2 cupos
-            var ench = MakeEnchantment("e");
-
-            var result = svc.ValidateApply(bagIndex: 0, enchSlotIndex: 99, ench);
-
-            Assert.IsFalse(result.Success);
-            StringAssert.Contains("Slot", result.ErrorMessage);
         }
 
         [Test]
@@ -109,7 +96,7 @@ namespace Rollgeon.Upgrades.Dice.Tests
             svc.InitializeFromBag(MakeBag(DiceType.D6));
             var ench = MakeEnchantment("only_d20", allowedTypes: DiceType.D20);
 
-            var result = svc.ValidateApply(0, 0, ench);
+            var result = svc.ValidateApply(0, ench);
 
             Assert.IsFalse(result.Success);
             StringAssert.Contains("no es compatible", result.ErrorMessage);
@@ -122,7 +109,7 @@ namespace Rollgeon.Upgrades.Dice.Tests
             svc.InitializeFromBag(MakeBag(DiceType.D6));
             var ench = MakeEnchantment("universal"); // empty AllowedDiceTypes
 
-            var result = svc.ValidateApply(0, 0, ench);
+            var result = svc.ValidateApply(0, ench);
 
             Assert.IsTrue(result.Success);
             CollectionAssert.AreEquivalent(new[] { 1, 2, 3, 4, 5, 6 }, result.ProjectedFaces);
@@ -136,53 +123,33 @@ namespace Rollgeon.Upgrades.Dice.Tests
             var ench = MakeEnchantment("evens",
                 filter: new ParityFilter { Allowed = Parity.Even });
 
-            var result = svc.ValidateApply(0, 0, ench);
+            var result = svc.ValidateApply(0, ench);
 
             Assert.IsTrue(result.Success);
             CollectionAssert.AreEquivalent(new[] { 2, 4, 6 }, result.ProjectedFaces);
         }
 
         [Test]
-        public void ValidateApply_TwoFiltersComposeToEmpty_Fails()
+        public void ValidateApply_ComposedWithExistingFilter_EmptyIntersection_Fails()
         {
             var svc = MakeService();
             svc.InitializeFromBag(MakeBag(DiceType.D6));
 
-            // Apply primer enchantment (solo pares) — ocupa slot 0.
+            // Apply primer encantamiento (solo pares). Append-only: la proyección de
+            // cualquier nuevo encantamiento compone sobre TODOS los existentes — no
+            // hay "slot" que reemplazar ni excluir.
             var evens = MakeEnchantment("evens",
                 filter: new ParityFilter { Allowed = Parity.Even });
-            var apply1 = svc.Apply(0, 0, evens);
+            var apply1 = svc.Apply(0, evens);
             Assert.IsTrue(apply1.Success);
 
-            // Intentar agregar "solo impares" en slot 1 — intersección vacía.
+            // Intentar sumar "solo impares" — intersección con lo ya aplicado da vacío.
             var odds = MakeEnchantment("odds",
                 filter: new ParityFilter { Allowed = Parity.Odd });
 
-            var result = svc.ValidateApply(0, 1, odds);
+            var result = svc.ValidateApply(0, odds);
 
             Assert.IsFalse(result.Success);
-        }
-
-        [Test]
-        public void ValidateApply_ReEnchantSameSlot_IgnoresExistingFilter()
-        {
-            var svc = MakeService();
-            svc.InitializeFromBag(MakeBag(DiceType.D6));
-
-            // Slot 0 = solo pares.
-            var evens = MakeEnchantment("evens",
-                filter: new ParityFilter { Allowed = Parity.Even });
-            svc.Apply(0, 0, evens);
-
-            // Re-enchant slot 0 (mismo slot) con solo impares — debería pasar
-            // porque ignoramos el filter del slot que estamos reemplazando.
-            var odds = MakeEnchantment("odds",
-                filter: new ParityFilter { Allowed = Parity.Odd });
-
-            var result = svc.ValidateApply(0, 0, odds);
-
-            Assert.IsTrue(result.Success);
-            CollectionAssert.AreEquivalent(new[] { 1, 3, 5 }, result.ProjectedFaces);
         }
 
         // ---- Apply ----------------------------------------------------------
@@ -194,26 +161,54 @@ namespace Rollgeon.Upgrades.Dice.Tests
             svc.InitializeFromBag(MakeBag(DiceType.D6));
             var ench = MakeEnchantment("e");
 
-            var result = svc.Apply(0, 0, ench);
+            var result = svc.Apply(0, ench);
 
             Assert.IsTrue(result.Success);
+            Assert.AreEqual(0, result.AppliedSlotIndex);
             Assert.AreSame(ench, svc.Bag.GetEnchantmentAt(0, 0));
         }
 
         [Test]
-        public void Apply_OverExistingSlot_ReplacesEnchantment()
+        public void Apply_CalledTwice_BothEnchantmentsPersist()
         {
             var svc = MakeService();
             svc.InitializeFromBag(MakeBag(DiceType.D6));
             var first = MakeEnchantment("first");
             var second = MakeEnchantment("second");
 
-            svc.Apply(0, 0, first);
-            var result = svc.Apply(0, 0, second);
+            var result1 = svc.Apply(0, first);
+            var result2 = svc.Apply(0, second);
 
-            Assert.IsTrue(result.Success);
-            Assert.AreSame(second, svc.Bag.GetEnchantmentAt(0, 0),
-                "re-enchant debe reemplazar el slot");
+            Assert.IsTrue(result1.Success);
+            Assert.AreEqual(0, result1.AppliedSlotIndex);
+            Assert.IsTrue(result2.Success);
+            Assert.AreEqual(1, result2.AppliedSlotIndex);
+            Assert.AreEqual(2, svc.Bag.GetEnchantmentCount(0));
+            Assert.AreSame(first, svc.Bag.GetEnchantmentAt(0, 0));
+            Assert.AreSame(second, svc.Bag.GetEnchantmentAt(0, 1));
+        }
+
+        [Test]
+        public void Apply_ThreeEnchantments_AllPersistWithoutLosingPrevious()
+        {
+            // DoD: el bag no tiene techo — un dado acumula encantamientos sin límite
+            // y ninguno de los previos se pierde al sumar uno nuevo.
+            var svc = MakeService();
+            svc.InitializeFromBag(MakeBag(DiceType.D6));
+            var first = MakeEnchantment("first");
+            var second = MakeEnchantment("second");
+            var third = MakeEnchantment("third");
+
+            svc.Apply(0, first);
+            svc.Apply(0, second);
+            var result3 = svc.Apply(0, third);
+
+            Assert.IsTrue(result3.Success);
+            Assert.AreEqual(2, result3.AppliedSlotIndex);
+            Assert.AreEqual(3, svc.Bag.GetEnchantmentCount(0));
+            Assert.AreSame(first, svc.Bag.GetEnchantmentAt(0, 0));
+            Assert.AreSame(second, svc.Bag.GetEnchantmentAt(0, 1));
+            Assert.AreSame(third, svc.Bag.GetEnchantmentAt(0, 2));
         }
 
         [Test]
@@ -222,7 +217,7 @@ namespace Rollgeon.Upgrades.Dice.Tests
             var svc = MakeService();
             svc.InitializeFromBag(MakeBag(DiceType.D6));
             var ench = MakeEnchantment("e");
-            svc.Apply(0, 0, ench);
+            svc.Apply(0, ench);
 
             bool removed = svc.Remove(0, 0);
 
@@ -239,6 +234,38 @@ namespace Rollgeon.Upgrades.Dice.Tests
             bool removed = svc.Remove(0, 0);
 
             Assert.IsFalse(removed);
+        }
+
+        [Test]
+        public void Remove_IsIdempotent_SecondCallReturnsFalse()
+        {
+            var svc = MakeService();
+            svc.InitializeFromBag(MakeBag(DiceType.D6));
+            var ench = MakeEnchantment("e");
+            svc.Apply(0, ench);
+            svc.Remove(0, 0);
+
+            bool removedAgain = svc.Remove(0, 0);
+
+            Assert.IsFalse(removedAgain);
+        }
+
+        [Test]
+        public void Remove_LeavesOtherEnchantmentIndicesIntact()
+        {
+            var svc = MakeService();
+            svc.InitializeFromBag(MakeBag(DiceType.D6));
+            var first = MakeEnchantment("first");
+            var second = MakeEnchantment("second");
+            svc.Apply(0, first);
+            svc.Apply(0, second);
+
+            bool removed = svc.Remove(0, 0);
+
+            Assert.IsTrue(removed);
+            Assert.IsNull(svc.Bag.GetEnchantmentAt(0, 0));
+            Assert.AreSame(second, svc.Bag.GetEnchantmentAt(0, 1),
+                "remove tombstonea el slot — no compacta ni corre los índices de los demás");
         }
 
         // ---- ComputeAllowedFaces --------------------------------------------
@@ -259,7 +286,7 @@ namespace Rollgeon.Upgrades.Dice.Tests
         {
             var svc = MakeService();
             svc.InitializeFromBag(MakeBag(DiceType.D6));
-            svc.Apply(0, 0, MakeEnchantment("evens",
+            svc.Apply(0, MakeEnchantment("evens",
                 filter: new ParityFilter { Allowed = Parity.Even }));
 
             var faces = svc.ComputeAllowedFaces(0);
@@ -273,7 +300,7 @@ namespace Rollgeon.Upgrades.Dice.Tests
             // BUG-030b: Afilado ahora restringe caras en vez de compensar con bonus post-roll.
             var svc = MakeService();
             svc.InitializeFromBag(MakeBag(DiceType.D4));
-            svc.Apply(0, 0, MakeEnchantment("afilado",
+            svc.Apply(0, MakeEnchantment("afilado",
                 filter: new MinHalfMaxFilter()));
 
             var faces = svc.ComputeAllowedFaces(0);

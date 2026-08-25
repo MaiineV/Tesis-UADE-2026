@@ -759,6 +759,58 @@ MonoBehaviour:
     m_Key: action.defense
     m_Metadata:
       m_Items: []
+  - m_Id: 14747843979739136
+    m_Key: altar.roll
+    m_Metadata:
+      m_Items: []
+  - m_Id: 14747844046848000
+    m_Key: altar.select_die_hint
+    m_Metadata:
+      m_Items: []
+  - m_Id: 14747844046848001
+    m_Key: altar.pull_hint
+    m_Metadata:
+      m_Items: []
+  - m_Id: 14747844046848002
+    m_Key: altar.choose_option_hint
+    m_Metadata:
+      m_Items: []
+  - m_Id: 14747844046848003
+    m_Key: altar.ench_count_singular
+    m_Metadata:
+      m_Items: []
+  - m_Id: 14747844046848004
+    m_Key: altar.ench_count_plural
+    m_Metadata:
+      m_Items: []
+  - m_Id: 14747907426975744
+    m_Key: dicebag.ench_singular
+    m_Metadata:
+      m_Items: []
+  - m_Id: 14747907426975745
+    m_Key: dicebag.ench_plural
+    m_Metadata:
+      m_Items: []
+  - m_Id: 14756158361141248
+    m_Key: altar.received
+    m_Metadata:
+      m_Items: []
+  - m_Id: 14756158411472896
+    m_Key: altar.die_faces
+    m_Metadata:
+      m_Items: []
+  - m_Id: 14756158411472897
+    m_Key: altar.no_enchantments
+    m_Metadata:
+      m_Items: []
+  - m_Id: 14756158411472898
+    m_Key: altar.load_error
+    m_Metadata:
+      m_Items: []
+  - m_Id: 14985430464036864
+    m_Key: altar.confirm_hint
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

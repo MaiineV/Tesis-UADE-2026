@@ -396,7 +396,7 @@ namespace Rollgeon.Upgrades.Dice
         // IDiceEnchantmentService — Apply / Validate / Remove / Compute
         // ====================================================================
 
-        public EnchantmentApplyResult ValidateApply(int bagIndex, int enchSlotIndex, EnchantmentSO ench)
+        public EnchantmentApplyResult ValidateApply(int bagIndex, EnchantmentSO ench)
         {
             EnsureInitializedFromPlayer();
 
@@ -406,16 +406,11 @@ namespace Rollgeon.Upgrades.Dice
                 return EnchantmentApplyResult.Fail($"Bag index {bagIndex} fuera de rango.");
 
             var diceType = Bag.Dice[bagIndex];
-            int maxSlots = Bag.GetEnchantmentSlotCount(bagIndex);
-            if (enchSlotIndex < 0 || enchSlotIndex >= maxSlots)
-                return EnchantmentApplyResult.Fail(
-                    $"Slot {enchSlotIndex} fuera de rango para {diceType} (cupos máximos: {maxSlots}).");
-
             if (!ench.IsCompatibleWith(diceType))
                 return EnchantmentApplyResult.Fail(
                     $"Encantamiento '{ench.UpgradeId}' no es compatible con {diceType}.");
 
-            var projected = ComputeProjectedFaces(bagIndex, enchSlotIndex, ench);
+            var projected = ComputeProjectedFaces(bagIndex, ench);
             int minRequired = _config != null ? _config.MinFacesAfterApply : 1;
             if (projected.Count < minRequired)
             {
@@ -427,17 +422,19 @@ namespace Rollgeon.Upgrades.Dice
             return EnchantmentApplyResult.Ok(projected);
         }
 
-        public EnchantmentApplyResult Apply(int bagIndex, int enchSlotIndex, EnchantmentSO ench)
+        public EnchantmentApplyResult Apply(int bagIndex, EnchantmentSO ench)
         {
-            var validation = ValidateApply(bagIndex, enchSlotIndex, ench);
+            var validation = ValidateApply(bagIndex, ench);
             if (!validation.Success) return validation;
 
-            // Limpiar counters previos del slot — si reemplazamos, el nuevo encantamiento arranca limpio.
-            var diceType = Bag.Dice[bagIndex];
-            var slot = new EnchantmentSlotRef(diceType, bagIndex, enchSlotIndex);
-            Bag.ClearCountersForSlot(slot);
+            // Append — nunca pisa un encantamiento existente, así que no hay
+            // counters previos que limpiar: el slot nace fresco.
+            int assignedIndex = Bag.AddEnchantment(bagIndex, ench);
+            if (assignedIndex < 0)
+                return EnchantmentApplyResult.Fail("AddEnchantment rechazó la operación.");
 
-            Bag.SetEnchantmentAt(bagIndex, enchSlotIndex, ench);
+            var diceType = Bag.Dice[bagIndex];
+            var slot = new EnchantmentSlotRef(diceType, bagIndex, assignedIndex);
 
             // Dispatch IOnEnchantmentAppliedTrigger
             var scratch = new EnchantmentScratch();
@@ -458,9 +455,9 @@ namespace Rollgeon.Upgrades.Dice
             ApplyScratchSideEffects(scratch);
 
             EventManager.Trigger(EventName.OnEnchantmentApplied,
-                ResolvePlayerGuid(), ench.UpgradeId, bagIndex, enchSlotIndex);
+                ResolvePlayerGuid(), ench.UpgradeId, bagIndex, assignedIndex);
 
-            return validation;
+            return EnchantmentApplyResult.Ok(validation.ProjectedFaces, assignedIndex);
         }
 
         public bool Remove(int bagIndex, int enchSlotIndex)
@@ -538,8 +535,10 @@ namespace Rollgeon.Upgrades.Dice
         // Internals
         // ====================================================================
 
-        private IReadOnlyCollection<int> ComputeProjectedFaces(int bagIndex, int replacingSlotIndex, EnchantmentSO newEnch)
+        private IReadOnlyCollection<int> ComputeProjectedFaces(int bagIndex, EnchantmentSO newEnch)
         {
+            // Append-only: el nuevo encantamiento se compone sobre TODOS los
+            // existentes — nada se reemplaza, así que nada se excluye.
             var diceType = Bag.Dice[bagIndex];
             var faces = SeedFaces(diceType);
             IReadOnlyCollection<int> current = faces;
@@ -547,7 +546,6 @@ namespace Rollgeon.Upgrades.Dice
             var slots = Bag.GetEnchantments(bagIndex);
             for (int i = 0; i < slots.Count; i++)
             {
-                if (i == replacingSlotIndex) continue; // ignoramos el slot que estamos reemplazando
                 var existing = slots[i];
                 if (existing?.FaceFilter == null) continue;
                 current = existing.FaceFilter.GetAllowedFaces(diceType, current);

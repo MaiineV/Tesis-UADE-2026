@@ -4,9 +4,9 @@ using System.Collections.Generic;
 namespace Rollgeon.Upgrades.Dice
 {
     /// <summary>
-    /// Resultado del flow <c>IEnchantmentRoomService.PerformEnchantment</c>:
-    /// el encantamiento que el pool roleó, oro pagado, y el preview de caras
-    /// resultantes para la UI.
+    /// Resultado de <c>IEnchantmentRoomService.ChooseOption</c>: el encantamiento
+    /// elegido de la oferta, el oro que costó el roll que la reveló, y el preview
+    /// de caras resultantes para la UI.
     /// </summary>
     public readonly struct EnchantmentRollResult
     {

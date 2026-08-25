@@ -54,25 +54,40 @@ namespace Rollgeon.Upgrades.Dice
             int floorDepth,
             IReadOnlyCollection<EnchantmentSO> exclude = null)
         {
-            if (Entries == null || Entries.Count == 0) return null;
+            return Roll(rng, new[] { targetType }, floorDepth, exclude);
+        }
 
-            EnchantmentSO picked = TryRollFiltered(rng, targetType, floorDepth, exclude);
+        /// <summary>
+        /// Variante multi-dado (slot machine con palanca-primero): un entry es
+        /// elegible si es compatible con AL MENOS UNO de los tipos del bag —
+        /// el dado destino se elige después de ver la oferta.
+        /// </summary>
+        public EnchantmentSO Roll(
+            System.Random rng,
+            IReadOnlyList<DiceType> targetTypes,
+            int floorDepth,
+            IReadOnlyCollection<EnchantmentSO> exclude = null)
+        {
+            if (Entries == null || Entries.Count == 0) return null;
+            if (targetTypes == null || targetTypes.Count == 0) return null;
+
+            EnchantmentSO picked = TryRollFiltered(rng, targetTypes, floorDepth, exclude);
             if (picked != null) return picked;
 
             // Fallback: ignorar el exclude por si todos los compatibles ya están aplicados.
-            return TryRollFiltered(rng, targetType, floorDepth, exclude: null);
+            return TryRollFiltered(rng, targetTypes, floorDepth, exclude: null);
         }
 
         private EnchantmentSO TryRollFiltered(
             System.Random rng,
-            DiceType targetType,
+            IReadOnlyList<DiceType> targetTypes,
             int floorDepth,
             IReadOnlyCollection<EnchantmentSO> exclude)
         {
             float total = 0f;
             for (int i = 0; i < Entries.Count; i++)
             {
-                if (!IsEligible(Entries[i], targetType, floorDepth, exclude)) continue;
+                if (!IsEligible(Entries[i], targetTypes, floorDepth, exclude)) continue;
                 total += Entries[i].Weight;
             }
             if (total <= 0f) return null;
@@ -81,7 +96,7 @@ namespace Rollgeon.Upgrades.Dice
             float cursor = 0f;
             for (int i = 0; i < Entries.Count; i++)
             {
-                if (!IsEligible(Entries[i], targetType, floorDepth, exclude)) continue;
+                if (!IsEligible(Entries[i], targetTypes, floorDepth, exclude)) continue;
                 cursor += Entries[i].Weight;
                 if (pick <= cursor) return Entries[i].Enchantment;
             }
@@ -89,7 +104,7 @@ namespace Rollgeon.Upgrades.Dice
             // Floating point drift — fallback al último eligible.
             for (int i = Entries.Count - 1; i >= 0; i--)
             {
-                if (IsEligible(Entries[i], targetType, floorDepth, exclude))
+                if (IsEligible(Entries[i], targetTypes, floorDepth, exclude))
                     return Entries[i].Enchantment;
             }
             return null;
@@ -97,18 +112,27 @@ namespace Rollgeon.Upgrades.Dice
 
         private static bool IsEligible(
             WeightedEnchantment entry,
-            DiceType targetType,
+            IReadOnlyList<DiceType> targetTypes,
             int floorDepth,
             IReadOnlyCollection<EnchantmentSO> exclude)
         {
             if (entry == null || entry.Enchantment == null) return false;
             if (entry.Weight <= 0f) return false;
             if (entry.MinFloorDepth > floorDepth) return false;
-            if (!entry.Enchantment.IsCompatibleWith(targetType)) return false;
+            if (!IsCompatibleWithAny(entry.Enchantment, targetTypes)) return false;
             if (exclude != null && exclude.Contains(entry.Enchantment)) return false;
             // Meta-progresión (#164): encantamientos gateados quedan fuera hasta desbloquearse.
             if (!MetaUnlockGate.IsAvailable(UnlockableCategory.Enchantment, entry.Enchantment.UpgradeId)) return false;
             return true;
+        }
+
+        private static bool IsCompatibleWithAny(EnchantmentSO ench, IReadOnlyList<DiceType> targetTypes)
+        {
+            for (int i = 0; i < targetTypes.Count; i++)
+            {
+                if (ench.IsCompatibleWith(targetTypes[i])) return true;
+            }
+            return false;
         }
     }
 }

@@ -71,7 +71,7 @@ namespace Rollgeon.Upgrades.Dice.Tests
             svc.InitializeFromBag(bag);
             if (ench != null)
             {
-                var result = svc.Apply(0, 0, ench);
+                var result = svc.Apply(0, ench);
                 Assert.IsTrue(result.Success, $"Setup: Apply falló — {result.ErrorMessage}");
             }
             ServiceLocator.AddService<IDiceEnchantmentService>(svc);
@@ -244,8 +244,8 @@ namespace Rollgeon.Upgrades.Dice.Tests
             _created.Add(bag);
             var svc = new DiceEnchantmentService(config: null);
             svc.InitializeFromBag(bag);
-            Assert.IsTrue(svc.Apply(0, 0, MakeTorpe(2)).Success);
-            Assert.IsTrue(svc.Apply(1, 0, MakeTorpe(2)).Success);
+            Assert.IsTrue(svc.Apply(0, MakeTorpe(2)).Success);
+            Assert.IsTrue(svc.Apply(1, MakeTorpe(2)).Success);
             ServiceLocator.AddService<IDiceEnchantmentService>(svc);
             RegisterTurnOrderAtPlayerTurn(2);
             StartCombat();

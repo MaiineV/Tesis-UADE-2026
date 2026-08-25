@@ -298,7 +298,7 @@ namespace Rollgeon.EditorTools.HUD
                 // -- Cupos --
                 var slotsCaption = EnsureSectionRect(panel, "SlotsCaption", ref y, 26f);
                 var slotsCaptionLabel = EnsureLabel(slotsCaption.gameObject, font, 20f, TextAlignmentOptions.Center);
-                slotsCaptionLabel.text = "Cupos de encantamiento";
+                slotsCaptionLabel.text = "Encantamientos";
 
                 var slotsSection = EnsureSectionRect(panel, "SlotsSection", ref y, SlotSize.y + 16f);
                 var slotsSectionBg = Ensure<Image>(slotsSection.gameObject);

@@ -27,22 +27,26 @@ namespace Rollgeon.Upgrades.Dice
         IReadOnlyCollection<int> ComputeAllowedFaces(int bagIndex);
 
         /// <summary>
-        /// Verifica si un encantamiento podría aplicarse en el slot sin ejecutar
-        /// el apply. Retorna <see cref="EnchantmentApplyResult.Ok"/> con el preview
-        /// de caras resultantes, o <see cref="EnchantmentApplyResult.Fail"/> con
-        /// la razón.
+        /// Verifica si un encantamiento podría sumarse al dado sin ejecutar
+        /// el apply — compatibilidad de tipo + coherencia (las caras proyectadas
+        /// componiendo TODOS los encantamientos actuales más el nuevo no pueden
+        /// bajar de <c>MinFacesAfterApply</c>). Retorna
+        /// <see cref="EnchantmentApplyResult.Ok"/> con el preview de caras
+        /// resultantes, o <see cref="EnchantmentApplyResult.Fail"/> con la razón.
         /// </summary>
-        EnchantmentApplyResult ValidateApply(int bagIndex, int enchSlotIndex, EnchantmentSO ench);
+        EnchantmentApplyResult ValidateApply(int bagIndex, EnchantmentSO ench);
 
         /// <summary>
-        /// Aplica el encantamiento al slot. Si el slot estaba ocupado, lo
-        /// reemplaza (re-enchant — GDD). Dispara hooks <c>OnEnchantmentApplied</c>,
-        /// purga counters previos, emite <c>EventName.OnEnchantmentApplied</c>.
+        /// Suma el encantamiento a la lista del dado (append — nunca reemplaza;
+        /// GDD: stack ilimitado). Dispara hooks <c>OnEnchantmentApplied</c> y
+        /// emite <c>EventName.OnEnchantmentApplied</c>. El índice asignado queda
+        /// en <see cref="EnchantmentApplyResult.AppliedSlotIndex"/>.
         /// </summary>
-        EnchantmentApplyResult Apply(int bagIndex, int enchSlotIndex, EnchantmentSO ench);
+        EnchantmentApplyResult Apply(int bagIndex, EnchantmentSO ench);
 
         /// <summary>
-        /// Quita el encantamiento del slot. Limpia counters asociados. Dispara
+        /// Quita el encantamiento del slot dejando un tombstone (los índices de
+        /// los demás no se mueven). Limpia counters asociados. Dispara
         /// <c>EventName.OnEnchantmentRemoved</c>. Idempotente — devuelve <c>false</c>
         /// si el slot ya estaba vacío.
         /// </summary>
