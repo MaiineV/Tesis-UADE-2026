@@ -59,6 +59,16 @@ namespace Rollgeon.Combat.AI.Decisions
         [Tooltip("Feel (hitstop/shake) de la confiscación. Vacío = sin presentación.")]
         public string BlockFeelId;
 
+        [Tooltip("Con true, BlockVfxId y BlockFeelId sólo se disparan en la primera confiscación de " +
+                 "esta instancia; de ahí en más el candado sigue trabando pero en silencio. Con false " +
+                 "(default) avisa todos los turnos, igual que hoy.")]
+        public bool AnnounceOnce = false;
+
+        // Estado por pelea, no del asset: [NonSerialized] vive sólo en la copia runtime del árbol
+        // (EnemyDataSO.CreateRuntimeAIRoot → SerializationUtility.CreateCopy), así que una pelea nueva
+        // arranca sin latchear (mismo patrón que AINode_SpawnReinforcements._hasSpawnedOnce).
+        [NonSerialized] private bool _hasAnnounced;
+
         public override string NodeName => DirectedIndex != null && Target == BlockTarget.Dice
             ? "Rotate Block (Dice, directed)"
             : $"Rotate Block ({Target} ×{Count})";
@@ -120,11 +130,22 @@ namespace Rollgeon.Combat.AI.Decisions
         /// Request armado a mano en vez de un <c>EffPlaySequence</c>: el nodo no nace de un effect
         /// pass, así que no tiene <c>EffectContext</c> que pasarle.
         /// </remarks>
+        /// <remarks>
+        /// Sólo se llega acá cuando el tick bloqueó algo de verdad (ver <see cref="TickCoroutine"/>),
+        /// así que el latch de <see cref="AnnounceOnce"/> se cierra acá y no en el tick: un turno que
+        /// no confisca nada no gasta el único aviso.
+        /// </remarks>
         private IEnumerator PlayConfiscation(AIContext context)
         {
+            bool silent = AnnounceOnce && _hasAnnounced;
+            _hasAnnounced = true;
+
             var steps = new List<FeedbackSequenceStep>(2);
-            if (!string.IsNullOrEmpty(BlockVfxId)) steps.Add(Step(BlockVfxId));
-            if (!string.IsNullOrEmpty(BlockFeelId)) steps.Add(Step(BlockFeelId));
+            if (!silent)
+            {
+                if (!string.IsNullOrEmpty(BlockVfxId)) steps.Add(Step(BlockVfxId));
+                if (!string.IsNullOrEmpty(BlockFeelId)) steps.Add(Step(BlockFeelId));
+            }
             if (steps.Count == 0) yield break;
 
             if (!ServiceLocator.TryGetService<IFeedbackService>(out var feedback) || feedback == null)
