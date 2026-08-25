@@ -143,13 +143,35 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
 
         /// <summary>El tiempo de reparto ya no marca nada, así que cruzar acá no le pisa ningún
         /// aviso: el descarte del armado pasa de largo y tiene que salir por <c>Succeeded</c>.</summary>
+        // El orden del ciclo, declarado una vez: rotarlo en el builder se arregla acá y no en cada
+        // test. Son numeros de turno, no indices: el primer Tick es el turno 1.
+        private const int BombTurn = 1;
+        private const int BurnTurn = 2;
+        private const int DealTurn = 3;
+
+        /// <summary>Corre el ciclo hasta el turno pedido inclusive y devuelve el resultado de ese
+        /// ultimo tick, que es el turno que el test esta mirando.</summary>
+        private AIResult TickThrough(AINode_Sequence root, int throughTurn, double roll = RollEdge)
+        {
+            var result = AIResult.Succeeded;
+            for (int turn = 1; turn <= throughTurn; turn++)
+                result = root.Tick(NewContext(roundIndex: turn, roll: roll));
+            return result;
+        }
+
+        /// <summary>El tiempo de reparto no marca nada, así que cruzar ahí no le pisa ningún aviso:
+        /// el descarte del armado pasa de largo y tiene que salir por <c>Succeeded</c>.</summary>
         [Test]
         public void CrossingFiftyOnTheDealBeat_LeavesOnlyThePlenoQueued()
         {
-            SetBossHp(PhaseTwoHp);
             var root = CroupierAssetBuilder.BuildAIRoot(_fire);
 
-            var result = root.Tick(NewContext(roundIndex: 1));
+            // Los dos primeros turnos con la vida entera: el cono que marca el tiempo de las bombas
+            // arde en el de quema, así que al llegar al reparto no queda nada pendiente.
+            TickThrough(root, BurnTurn);
+            SetBossHp(PhaseTwoHp);
+
+            var result = root.Tick(NewContext(roundIndex: DealTurn));
 
             Assert.AreNotEqual(AIResult.Failed, result,
                 "El turno del jefe se cortó entero. El descarte no encontró nada pendiente, y ese " +
@@ -166,11 +188,10 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         [Test]
         public void CrossingFiftyOnTheBombBeat_DiscardsTheConeItJustMarked()
         {
-            var root = CroupierAssetBuilder.BuildAIRoot(_fire);
-            root.Tick(NewContext(roundIndex: 1));
-
             SetBossHp(PhaseTwoHp);
-            var result = root.Tick(NewContext(roundIndex: 2));
+            var root = CroupierAssetBuilder.BuildAIRoot(_fire);
+
+            var result = root.Tick(NewContext(roundIndex: BombTurn));
 
             Assert.AreNotEqual(AIResult.Failed, result, "El turno del cruce se cortó entero.");
             Assert.IsTrue(_threat.HasPending(PlenoSource), "El Pleno no quedó encolado.");
@@ -207,11 +228,9 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                 "El golpe que se cobró no es el del Pleno.");
             Assert.IsFalse(_threat.HasPending(PlenoSource), "El paño quedó pendiente sin prender.");
 
-            // El cono SÍ queda pendiente: este turno es el de las bombas, que lo marca al final. No
-            // es un resto del turno anterior --el tiempo de reparto no marca-- sino el aviso nuevo.
-            Assert.IsTrue(_threat.HasPending(_boss),
-                "El tiempo de las bombas no dejó el cono marcado: el ciclo se quedó sin nada que " +
-                "prender en el turno de quema.");
+            // Nada pendiente: el cono que las bombas habían marcado se lo llevó el descarte del
+            // armado en el turno anterior, y el de quema no marca.
+            Assert.IsFalse(_threat.HasPending(_boss), "Apareció un cono pendiente de la nada.");
         }
 
         /// <summary>El descarte va desnudo dentro del Sequence del armado: si devolviera <c>Failed</c> al
@@ -221,17 +240,13 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         {
             var root = CroupierAssetBuilder.BuildAIRoot(_fire);
 
-            // Turno 1 con la vida entera: reparte y ningún gate abre.
-            root.Tick(NewContext(roundIndex: 1));
-
-            // Turno 2 son las bombas, y ahí se marca el cono. El cruce tiene que caer en el turno de
-            // quema, que es el tercero.
-            root.Tick(NewContext(roundIndex: 2));
+            // Turno 1 con la vida entera: las bombas siembran y marcan el cono.
+            root.Tick(NewContext(roundIndex: BombTurn));
             Assert.IsTrue(_threat.HasPending(_boss),
                 "Precondición: el tiempo de las bombas tenía que dejar el cono marcado.");
 
             SetBossHp(PhaseTwoHp);
-            var result = root.Tick(NewContext(roundIndex: 3));
+            var result = root.Tick(NewContext(roundIndex: BurnTurn));
 
             Assert.AreNotEqual(AIResult.Failed, result, "El turno del cruce se cortó entero.");
             Assert.AreEqual(1, FireInstances().Count,
@@ -252,18 +267,11 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             SetBossHp(PhaseTwoHp);
             var root = CroupierAssetBuilder.BuildAIRoot(_fire);
 
-            // Turno 1, el de reparto: el armado ya intenta y falla. Sin servicio de movimiento el
-            // teleport al centro falla avisando; el salto del ciclo también se cae, en silencio y
-            // aislado en su Selector, así que el tiempo sigue igual.
+            // Turno 1, el de las bombas: acá se marca el cono, y el armado falla detrás. Sin
+            // servicio de movimiento el teleport al centro falla avisando; el salto del ciclo también
+            // se cae, en silencio y aislado en su Selector, así que el tiempo sigue igual.
             LogAssert.Expect(LogType.Warning, new Regex("AINode_TeleportToRoomCenter"));
-            root.Tick(NewContextWithoutMovement(roundIndex: 1));
-            Assert.IsFalse(_threat.HasPending(PlenoSource),
-                "El Pleno quedó encolado con el jefe fuera del centro: el hueco a salvo cae donde " +
-                "estaba parado, contra la pared, y el paño deja de leerse.");
-
-            // Turno 2, el de las bombas: acá se marca el cono, y el armado vuelve a fallar detrás.
-            LogAssert.Expect(LogType.Warning, new Regex("AINode_TeleportToRoomCenter"));
-            root.Tick(NewContextWithoutMovement(roundIndex: 2));
+            root.Tick(NewContextWithoutMovement(roundIndex: BombTurn));
 
             Assert.IsTrue(_threat.HasPending(_boss),
                 "El armado abortó a mitad y se llevó igual el aviso del cono: el jugador cierra " +
@@ -273,7 +281,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                 "Se apagó el dibujo del cono que sí sigue pendiente: detona a ciegas.");
 
             // Y el umbral no se perdió: AINode_Once no latchea con Failed.
-            var result = root.Tick(NewContext(roundIndex: 3));
+            var result = root.Tick(NewContext(roundIndex: BurnTurn));
 
             Assert.AreNotEqual(AIResult.Failed, result, "El reintento cortó el turno.");
             Assert.IsTrue(_threat.HasPending(PlenoSource),
@@ -339,7 +347,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             MovePlayerBeyondFleeRadius();
             var start = PositionOf(_boss);
 
-            root.Tick(NewContext(roundIndex: 1));
+            TickThrough(root, DealTurn);
 
             Assert.AreEqual(start, PositionOf(_boss),
                 "El jefe saltó con el jugador fuera del radio: el turno se le va en huir de nadie y " +
@@ -357,15 +365,17 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             var root = CroupierAssetBuilder.BuildAIRoot(_fire);
             MovePlayerBeyondFleeRadius();
 
-            root.Tick(NewContext(roundIndex: 1));
+            TickThrough(root, DealTurn);
             int afterDeal = ShotCount();
             Assert.Greater(afterDeal, 0, "El tiempo de reparto no disparó.");
 
-            root.Tick(NewContext(roundIndex: 2));
+            // El turno siguiente vuelve a abrir el ciclo por las bombas: si disparara, el Alternate
+            // se desincronizó y el jefe reparte dos veces seguidas.
+            root.Tick(NewContext(roundIndex: DealTurn + 1));
 
             Assert.AreEqual(afterDeal, ShotCount(),
-                "El tiempo de quema disparó: el ciclo se desincronizó y el jefe repartió dos veces " +
-                "seguidas en vez de prender lo que había marcado.");
+                "El tiempo de las bombas disparó: el ciclo se desincronizó y el jefe repartió dos " +
+                "veces seguidas en vez de sembrar.");
         }
 
         /// <summary>Comparación de constantes y no un tick a propósito: el alcance del kit del jugador no
@@ -391,13 +401,12 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         {
             var root = CroupierAssetBuilder.BuildAIRoot(_fire);
 
-            root.Tick(NewContext(roundIndex: 1));
-            root.Tick(NewContext(roundIndex: 2));
+            root.Tick(NewContext(roundIndex: BombTurn));
             var announced = new HashSet<GridCoord>(_threat.GetPendingTiles(_boss));
             Assert.IsNotEmpty(announced,
                 "Precondición: el tiempo de las bombas tenía que marcar el cono.");
 
-            root.Tick(NewContext(roundIndex: 3));
+            root.Tick(NewContext(roundIndex: BurnTurn));
 
             var burning = new HashSet<GridCoord>(FireInstances().SelectMany(i => i.Coords));
             CollectionAssert.AreEquivalent(announced, burning,
@@ -426,19 +435,20 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             var root = CroupierAssetBuilder.BuildAIRoot(_fire);
             var start = PositionOf(_boss);
 
-            root.Tick(NewContext(roundIndex: 1, roll: RollStay));
+            // El marcado del cono vive detrás del sorteo del tiempo de las bombas, que es el primero.
+            root.Tick(NewContext(roundIndex: BombTurn, roll: RollStay));
 
             Assert.AreEqual(start, PositionOf(_boss),
                 "El sorteo dio quedarse y el jefe se movió igual.");
-            Assert.Greater(ShotCount(), 0,
-                "Quedarse le comió el disparo del tiempo de reparto.");
-
-            // El marcado vive detrás del sorteo del tiempo de las bombas, que es el siguiente.
-            root.Tick(NewContext(roundIndex: 2, roll: RollStay));
-
             Assert.IsNotEmpty(_threat.GetPendingTiles(_boss),
                 "Quedarse le comió el marcado del cono: la tercera opción del sorteo está " +
                 "devolviendo Failed y abortando el resto del tiempo.");
+
+            // Y el disparo vive detrás del sorteo del tiempo de reparto, que es el último.
+            TickThrough(root, DealTurn, RollStay);
+
+            Assert.Greater(ShotCount(), 0,
+                "Quedarse le comió el disparo del tiempo de reparto.");
         }
 
         /// <summary>El marcado va detrás del sorteo por esto: marcando primero, el cono saldría de la
@@ -448,8 +458,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         {
             var root = CroupierAssetBuilder.BuildAIRoot(_fire);
 
-            root.Tick(NewContext(roundIndex: 1, roll: RollCentre));
-            root.Tick(NewContext(roundIndex: 2, roll: RollCentre));
+            root.Tick(NewContext(roundIndex: BombTurn, roll: RollCentre));
 
             var announced = _threat.GetPendingTiles(_boss).ToList();
             Assert.IsNotEmpty(announced,

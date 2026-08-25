@@ -831,16 +831,42 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             return alternate;
         }
 
+        /// <summary>El ciclo abre por las bombas: el jugador entra a la sala con el paño ya
+        /// sembrado, y el cono que ese mismo tiempo marca arde en el turno siguiente.</summary>
         [Test]
-        public void BombBeat_SitsBetweenTheDealAndTheBurn()
+        public void TheCycle_OpensWithTheBombs_ThenBurns_ThenDeals()
         {
             var beats = Alternate().Children;
 
-            Assert.AreEqual(1, beats.IndexOf(BombBeat()),
-                "Las bombas van en el medio: el cono se marca en Reparte y arde en Quema, así que " +
-                "meterlas en cualquier otro lugar le cambia el plazo al cono.");
-            Assert.AreEqual(0, beats.IndexOf(DealBeat()));
-            Assert.AreEqual(2, beats.IndexOf(BurnBeat()));
+            Assert.AreEqual(0, beats.IndexOf(BombBeat()),
+                "Las bombas dejaron de abrir el ciclo. Abren porque son lo que tiene que estar " +
+                "puesto al entrar a la sala, y porque el cono que marcan necesita el turno de " +
+                "quema pegado detrás.");
+            Assert.AreEqual(1, beats.IndexOf(BurnBeat()),
+                "El tiempo de quema no va pegado al de las bombas: el cono se marca al cerrar las " +
+                "bombas, así que cualquier otro lugar le alarga el aviso.");
+            Assert.AreEqual(2, beats.IndexOf(DealBeat()),
+                "El reparto dejó de cerrar el ciclo. Cierra porque es el turno en el que estallan " +
+                "las bombas --mecha de " + CroupierAssetBuilder.BombFuseTurns + "-- y así el " +
+                "estallido no se le encima al fuego del cono.");
+        }
+
+        /// <summary>Sin esto las bombas aparecen recien al cerrar el primer turno del jugador, que
+        /// ya eligio por donde entrar a ciegas. Es el mismo mecanismo con el que La Generala tiene
+        /// la mesa puesta de entrada.</summary>
+        [Test]
+        public void TheBombs_ArePlantedBeforeThePlayersFirstTurn()
+        {
+            var field = Descendants(BombBeat()).OfType<AINode_BombField>().Single();
+
+            Assert.IsInstanceOf<IAIOpeningNode>(field,
+                "El campo de bombas dejo de sembrar en la apertura: el jugador entra a una sala " +
+                "limpia y las bombas le aparecen despues de haber decidido por donde entrar.");
+
+            Assert.IsNotInstanceOf<IAIOpeningNode>(
+                Descendants(_root).OfType<AINode_DetonateBombField>().Single(),
+                "El nodo que detona pasa a correr en la apertura: seria fuego antes de que el " +
+                "jugador toque un dado, que es justo lo que IAIOpeningNode prohibe.");
         }
 
         [Test]
@@ -849,27 +875,67 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             var field = Descendants(BombBeat()).OfType<AINode_BombField>().Single();
 
             Assert.AreSame(_bomb, field.Definition, "El campo tiene que sembrar SU bomba.");
-            Assert.AreSame(_bombFire, field.FireTile,
-                "El fuego de bomba es una casilla aparte de la del cono: las dos conviven en la " +
-                "misma sala, y el cono sigue cobrando lo suyo en el mismo turno.");
             Assert.AreEqual(CroupierAssetBuilder.BombCount, field.Count);
             Assert.AreEqual(CroupierAssetBuilder.BombSpacing, field.Spacing);
+            Assert.AreEqual(CroupierAssetBuilder.BombFuseTurns, field.FuseTurns,
+                "La mecha no sale de la constante de la ficha.");
             Assert.AreEqual(CroupierAssetBuilder.BombIgnitionDamage, field.IgnitionDamage,
                 "El estallido en sí no cobra: quien quedó parado ahí paga al arrancar su turno, " +
                 "que es lo que le da el turno para salirse.");
         }
 
-        /// <summary>Sin ids el nodo no puede bloquear el turno, y el estallido vuelve a salir en el
-        /// mismo frame que la siembra que le sigue.</summary>
+        /// <summary>La mecha se mide en turnos, así que el nodo que la descuenta NO puede vivir dentro
+        /// del <c>Alternate</c>: ahí correría una vez cada tres turnos y el plazo volvería a ser un
+        /// ciclo entero.</summary>
         [Test]
-        public void BombBeat_GivesTheBlastItsOwnBeat()
+        public void TheFuse_IsTickedEveryTurn_OutsideTheCycle()
+        {
+            var detonator = Descendants(_root).OfType<AINode_DetonateBombField>().Single();
+
+            Assert.IsEmpty(Descendants(Alternate()).OfType<AINode_DetonateBombField>(),
+                "El nodo que descuenta la mecha quedó adentro del ciclo: sólo correría en uno de " +
+                "los tres tiempos y la bomba volvería a durar un ciclo entero.");
+
+            var root = _root.Children;
+            int fuseIdx = root.FindIndex(c => Descendants(c).Any(n => n is AINode_DetonateBombField));
+            int cycleIdx = root.FindIndex(c => Descendants(c).Any(n => n is AINode_Alternate));
+
+            Assert.Greater(fuseIdx, -1, "El árbol no descuenta la mecha en ninguna parte.");
+            Assert.Less(fuseIdx, cycleIdx,
+                "La mecha se descuenta DESPUÉS del ciclo: en el turno de la siembra detonaría lo " +
+                "que ese mismo turno acaba de plantar.");
+
+            Assert.AreSame(_bombFire, detonator.FireTile,
+                "El fuego de bomba es una casilla aparte de la del cono: las dos conviven en la " +
+                "misma sala, y el cono sigue cobrando lo suyo en el mismo turno.");
+            Assert.AreEqual(CroupierAssetBuilder.BombIgnitionDamage, detonator.IgnitionDamage);
+        }
+
+        /// <summary>El canal se deriva del prefijo en los dos lados: con prefijos distintos, el que
+        /// detona levanta cruces que nadie pintó y las pintadas quedan para siempre.</summary>
+        [Test]
+        public void TheSowerAndTheDetonator_ShareTheChannelPrefix()
         {
             var field = Descendants(BombBeat()).OfType<AINode_BombField>().Single();
+            var detonator = Descendants(_root).OfType<AINode_DetonateBombField>().Single();
 
-            Assert.AreEqual(BossFeedbackIds.CroupierImpactVfx, field.DetonationVfxId,
-                "El estallido perdió su VFX: el fuego nuevo y las bombas nuevas vuelven a " +
-                "aparecer juntos y no se entiende que una cosa causó la otra.");
-            Assert.AreEqual(BossFeedbackIds.CroupierImpactFeel, field.DetonationFeelId,
+            Assert.AreEqual(CroupierAssetBuilder.BombChannelPrefix, field.ChannelPrefix);
+            Assert.AreEqual(field.ChannelPrefix, detonator.ChannelPrefix,
+                "Los dos nodos derivan el canal de amenaza del prefijo: si difieren, romper una " +
+                "bomba deja su aviso pintado para el resto de la pelea.");
+        }
+
+        /// <summary>Sin ids el nodo no puede bloquear el turno, y el fuego aparece sin que nada lo
+        /// anuncie.</summary>
+        [Test]
+        public void TheBlast_GetsItsOwnBeat()
+        {
+            var detonator = Descendants(_root).OfType<AINode_DetonateBombField>().Single();
+
+            Assert.AreEqual(BossFeedbackIds.CroupierImpactVfx, detonator.DetonationVfxId,
+                "El estallido perdió su VFX: el fuego aparece en el mismo frame que lo que el jefe " +
+                "haga después en el turno.");
+            Assert.AreEqual(BossFeedbackIds.CroupierImpactFeel, detonator.DetonationFeelId,
                 "El estallido perdió su feel.");
         }
 

@@ -1,5 +1,4 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using NUnit.Framework;
@@ -17,9 +16,8 @@ using UnityEngine;
 namespace Rollgeon.Combat.Rooms.Tests
 {
     /// <summary>
-    /// El tiempo del medio del Croupier: siembra, marca, y detona a ciclo cumplido. Contra los
-    /// servicios reales de amenaza y de casillas — lo que se verifica es el comportamiento, no la
-    /// forma de llamarlos.
+    /// La siembra: cuántas bombas caen, dónde, con qué cruz avisada y con qué mecha. Quien las hace
+    /// estallar es <see cref="AINode_DetonateBombField"/>, y tiene sus propios tests.
     /// </summary>
     [TestFixture]
     public class AINode_BombFieldTests
@@ -31,7 +29,6 @@ namespace Rollgeon.Combat.Rooms.Tests
         private SpecialTileService _tiles;
         private SpyDamagePipeline _pipeline;
         private RoomObjectDefinitionSO _bomb;
-        private SpecialTileDefinitionSO _fireTile;
 
         private Guid _boss;
         private Guid _player;
@@ -68,12 +65,6 @@ namespace Rollgeon.Combat.Rooms.Tests
             _bomb.Blocks = true;
             _bomb.RespawnDelayTurns = 0;
 
-            _fireTile = ScriptableObject.CreateInstance<SpecialTileDefinitionSO>();
-            _fireTile.hideFlags = HideFlags.HideAndDontSave;
-            _fireTile.TileId = "TILE_TEST_BOMBFIRE";
-            _fireTile.Triggers = TileTrigger.OnEnter | TileTrigger.OnTurnStart;
-            _fireTile.DefaultDurationRounds = 3;
-
             _context = new AIContext
             {
                 SelfGuid = _boss,
@@ -88,50 +79,43 @@ namespace Rollgeon.Combat.Rooms.Tests
         [TearDown]
         public void TearDown()
         {
+            if (ServiceLocator.TryGetService<BombFieldService>(out var field)) field?.Dispose();
+
             _tiles?.Dispose();
             _threat?.Dispose();
             _attributes?.Dispose();
             if (_bomb != null) UnityEngine.Object.DestroyImmediate(_bomb);
-            if (_fireTile != null) UnityEngine.Object.DestroyImmediate(_fireTile);
 
             ServiceLocator.Clear();
             EventManager.ResetEventDictionary();
         }
 
-        private AINode_BombField MakeNode(int count, int spacing = 3) => new AINode_BombField
+        private AINode_BombField MakeNode(int count, int spacing = 3, int fuse = 2) => new AINode_BombField
         {
             Definition = _bomb,
-            FireTile = _fireTile,
             Count = count,
             Spacing = spacing,
+            FuseTurns = fuse,
             IgnitionDamage = 20,
-            FireDurationRounds = 2,
         };
 
         private List<SpecialTileInfo> Instances() => new List<SpecialTileInfo>(_tiles.ActiveInstances());
 
-        /// <summary>Drena el camino coroutine hasta el final, que es como lo corre el jefe en play.</summary>
-        private static void Drain(AINode_BombField node, AIContext context)
-        {
-            var routine = node.TickCoroutine(context, null);
-            while (routine.MoveNext()) { }
-        }
-
-        // Primer tick: sólo siembra y marca
+        private List<(Guid Guid, IReadOnlyList<GridCoord> Cross)> Live() =>
+            AINode_BombField.LiveCrosses(_attributes).ToList();
 
         [Test]
-        public void FirstTick_SeedsCountBombs_MarksTheirCrosses_AndIgnitesNothing()
+        public void Sowing_SeedsCountBombs_MarksTheirCrosses_AndIgnitesNothing()
         {
-            var node = MakeNode(count: 3);
+            var node = MakeNode(count: 4);
 
             var result = node.Tick(_context);
 
             Assert.AreEqual(AIResult.Succeeded, result,
-                "El primer tick no tiene nada que detonar; Failed acá abortaría la Sequence del " +
-                "jefe en su primer turno de siembra.");
+                "Failed acá abortaría la Sequence del jefe en su turno de siembra.");
 
-            var crosses = node.LiveCrosses(_attributes).ToList();
-            Assert.AreEqual(3, crosses.Count, "Tienen que quedar armadas las 3 bombas sembradas.");
+            var crosses = Live();
+            Assert.AreEqual(4, crosses.Count, "Tienen que quedar armadas las 4 bombas sembradas.");
 
             foreach (var (guid, cross) in crosses)
             {
@@ -141,12 +125,12 @@ namespace Rollgeon.Combat.Rooms.Tests
                 Assert.IsTrue(_grid.TryGetPosition(guid, out _), "La bomba tiene que estar en el grid.");
             }
 
-            Assert.IsEmpty(Instances(), "El primer tick marca, no prende: no puede haber pasado un ciclo todavía.");
+            Assert.IsEmpty(Instances(), "Sembrar marca, no prende: el estallido es otro nodo.");
             Assert.IsEmpty(_pipeline.Resolved, "Nada tiene que cobrar en un tick que sólo telegrafía.");
         }
 
         [Test]
-        public void FirstTick_BombNearTheCorner_ClipsItsCrossAgainstTheRoom()
+        public void Sowing_BombNearTheCorner_ClipsItsCrossAgainstTheRoom()
         {
             var tinyGrid = new GridManager();
             tinyGrid.LoadRoom(NavGraph.Rect(2, 2));
@@ -155,7 +139,7 @@ namespace Rollgeon.Combat.Rooms.Tests
             var node = MakeNode(count: 1, spacing: 0);
             node.Tick(_context);
 
-            var cross = node.LiveCrosses(_attributes).Single().Cross;
+            var cross = Live().Single().Cross;
 
             Assert.AreEqual(3, cross.Count,
                 "Cualquier casilla de una sala 2x2 es esquina: centro + 2 brazos válidos, los otros " +
@@ -164,25 +148,24 @@ namespace Rollgeon.Combat.Rooms.Tests
                 Assert.IsTrue(tinyGrid.InBounds(coord), $"{coord} quedó marcada fuera de la sala.");
         }
 
-        // Romper a mano entre ticks
-
+        /// <summary>La vida es la autoridad, no el registro: la rota deja de estar armada en el acto.</summary>
         [Test]
-        public void BreakingOneBombBetweenTicks_LiftsOnlyItsOwnCross()
+        public void BreakingOneBomb_DropsItFromTheArmedList_WithoutTouchingTheOthers()
         {
-            var node = MakeNode(count: 3);
+            var node = MakeNode(count: 4);
             node.Tick(_context);
 
-            var before = node.LiveCrosses(_attributes).ToList();
+            var before = Live();
             var broken = before[0];
             var survivors = before.Skip(1).ToList();
 
             _attributes.SetAttributeValue<Health, int>(broken.Guid, 0);
 
-            var after = node.LiveCrosses(_attributes).ToList();
+            var after = Live();
 
             Assert.AreEqual(survivors.Count, after.Count,
-                "Romper una bomba entre ticks tiene que sacarla de la lista de armadas al toque, " +
-                "sin esperar al próximo tick.");
+                "Romper una bomba tiene que sacarla de la lista de armadas al toque, sin esperar " +
+                "ningún tick.");
             Assert.IsFalse(after.Any(c => c.Guid == broken.Guid), "La rota se sigue reportando armada.");
             foreach (var survivor in survivors)
             {
@@ -192,52 +175,13 @@ namespace Rollgeon.Combat.Rooms.Tests
             }
         }
 
-        // Segundo tick: detona lo vivo, no lo roto
-
-        [Test]
-        public void SecondTick_SurvivorsIgniteTheirCrossAndVanish_BrokenOnesIgniteNothing()
-        {
-            var node = MakeNode(count: 3);
-            node.Tick(_context);
-
-            var wave1 = node.LiveCrosses(_attributes).ToList();
-            var broken = wave1[0];
-            var survivors = wave1.Skip(1).ToList();
-            _attributes.SetAttributeValue<Health, int>(broken.Guid, 0);
-
-            node.Tick(_context);
-
-            var burnedTiles = new HashSet<GridCoord>(Instances().SelectMany(i => i.Coords));
-            foreach (var survivor in survivors)
-                foreach (var coord in survivor.Cross)
-                    Assert.IsTrue(burnedTiles.Contains(coord),
-                        $"{coord} era parte de la cruz de una bomba viva y no se prendió.");
-
-            foreach (var coord in broken.Cross)
-                Assert.IsFalse(burnedTiles.Contains(coord),
-                    $"{coord} pertenecía a la bomba rota a mano — no debería haber ardido.");
-
-            Assert.IsFalse(_grid.TryGetPosition(broken.Guid, out _), "La rota tiene que salir del grid igual.");
-            foreach (var survivor in survivors)
-                Assert.IsFalse(_grid.TryGetPosition(survivor.Guid, out _),
-                    "La que detonó tiene que desaparecer del grid.");
-
-            var newWave = node.LiveCrosses(_attributes).ToList();
-            Assert.AreEqual(3, newWave.Count, "El ciclo siguiente vuelve a sembrar las 3 bombas.");
-            var oldGuids = new HashSet<Guid>(wave1.Select(c => c.Guid));
-            Assert.IsTrue(newWave.All(c => !oldGuids.Contains(c.Guid)),
-                "Las bombas nuevas tienen que ser objetos distintos de los de la ola anterior.");
-        }
-
-        // Separación entre cruces
-
         [Test]
         public void AtTheAuthoredSpacing_NoTwoCrossesShareATile()
         {
             var node = MakeNode(count: 6);
             node.Tick(_context);
 
-            var crosses = node.LiveCrosses(_attributes).ToList();
+            var crosses = Live();
 
             for (int i = 0; i < crosses.Count; i++)
             {
@@ -250,122 +194,105 @@ namespace Rollgeon.Combat.Rooms.Tests
             }
         }
 
-        // Degradado sin datos
+        /// <summary>Es el número que el nodo de la detonación descuenta: sembrar sin mecha deja bombas
+        /// que no estallan nunca.</summary>
+        [Test]
+        public void Sowing_StampsTheAuthoredFuse()
+        {
+            var node = MakeNode(count: 2, fuse: 3);
+            node.Tick(_context);
+
+            var detonator = new AINode_DetonateBombField { ChannelPrefix = node.ChannelPrefix };
+
+            detonator.Tick(_context);
+            Assert.AreEqual(2, Live().Count, "Con mecha 3, el primer descuento no puede estallar nada.");
+
+            detonator.Tick(_context);
+            Assert.AreEqual(2, Live().Count, "Ni el segundo.");
+
+            detonator.Tick(_context);
+            Assert.IsEmpty(Live(), "Con mecha 3 tienen que estallar al tercer descuento.");
+        }
+
+        /// <summary>El jugador entra a la sala con el paño ya sembrado.</summary>
+        [Test]
+        public void Opening_SowsAndMarks_BeforeAnyTick()
+        {
+            var node = MakeNode(count: 4);
+
+            node.Opening(_context);
+
+            Assert.AreEqual(4, Live().Count, "La apertura no dejó las bombas puestas.");
+            Assert.IsEmpty(Instances(), "La apertura instala amenaza, no fuego.");
+            Assert.IsEmpty(_pipeline.Resolved,
+                "La apertura cobró daño: corre ANTES del primer turno del jugador, así que ahí " +
+                "no puede cobrar nada.");
+        }
+
+        /// <summary>
+        /// En régimen la siembra cae <i>en</i> el turno del tiempo de bombas; la apertura cae uno
+        /// antes de que ese turno llegue. Sin el +1 la generación de entrada estalla corrida y su
+        /// fuego se le encima al del cono.
+        /// </summary>
+        [Test]
+        public void Opening_GivesTheFirstGenerationOneExtraTurn()
+        {
+            var node = MakeNode(count: 2, fuse: 2);
+            node.Opening(_context);
+
+            var detonator = new AINode_DetonateBombField { ChannelPrefix = node.ChannelPrefix };
+
+            detonator.Tick(_context);
+            detonator.Tick(_context);
+            Assert.AreEqual(2, Live().Count,
+                "La generación de entrada estalló con la mecha de régimen: le falta el turno que " +
+                "compensa haber nacido antes del primer tiempo de bombas.");
+
+            detonator.Tick(_context);
+            Assert.IsEmpty(Live(), "Con mecha 2 + 1 tiene que estallar al tercer descuento.");
+        }
+
+        /// <summary>El tiempo de bombas vuelve a pasar por las que siguen en pie: si les refrescara
+        /// la mecha, no estallarían nunca.</summary>
+        [Test]
+        public void SowingAgainOverALiveBomb_DoesNotRefreshItsFuse()
+        {
+            var node = MakeNode(count: 2, fuse: 2);
+            node.Tick(_context);
+
+            var detonator = new AINode_DetonateBombField { ChannelPrefix = node.ChannelPrefix };
+            detonator.Tick(_context);
+
+            // El nodo vuelve a correr con las dos bombas todavía en pie: no siembra nada nuevo, pero
+            // sí vuelve a pasar por ellas.
+            node.Tick(_context);
+            detonator.Tick(_context);
+
+            Assert.IsEmpty(Live(),
+                "Re-sembrar sobre una bomba viva le refrescó la mecha: así nunca llega al plazo.");
+        }
+
+        [Test]
+        public void TheCoroutinePath_SowsAndMarksLikeTheSyncPath()
+        {
+            var node = MakeNode(count: 4);
+
+            var routine = node.TickCoroutine(_context, null);
+            while (routine.MoveNext()) { }
+
+            Assert.AreEqual(4, Live().Count, "El camino coroutine sembró otra cantidad que el síncrono.");
+            Assert.IsEmpty(Instances(), "Sembrar no prende nada.");
+        }
 
         [Test]
         public void DefinitionNull_DoesNotThrow_AndSucceeds()
         {
-            var node = new AINode_BombField { Definition = null, FireTile = _fireTile };
+            var node = new AINode_BombField { Definition = null };
 
             AIResult result = default;
             Assert.DoesNotThrow(() => result = node.Tick(_context));
             Assert.AreEqual(AIResult.Succeeded, result);
             Assert.IsEmpty(Instances());
-        }
-
-        [Test]
-        public void FireTileNull_DoesNotThrow_AndSucceeds()
-        {
-            var node = new AINode_BombField { Definition = _bomb, FireTile = null };
-
-            AIResult result = default;
-            Assert.DoesNotThrow(() => result = node.Tick(_context));
-            Assert.AreEqual(AIResult.Succeeded, result);
-            Assert.IsEmpty(Instances());
-        }
-
-        // El beat del estallido
-
-        /// <summary>El camino que corre en play tiene que sembrar y marcar igual que el síncrono: la
-        /// separación del estallido es de tiempo, no de comportamiento.</summary>
-        [Test]
-        public void TheCoroutinePath_SowsAndMarksLikeTheSyncPath()
-        {
-            var node = MakeNode(count: 3);
-
-            Drain(node, _context);
-
-            var wave = node.LiveCrosses(_attributes).ToList();
-            Assert.AreEqual(3, wave.Count, "El camino coroutine sembró otra cantidad que el síncrono.");
-            Assert.IsEmpty(Instances(), "La primera siembra no tiene nada que detonar.");
-        }
-
-        /// <summary>Lo que se arregla acá: el fuego y las bombas nuevas salían en el mismo frame y no
-        /// se podía atribuir uno al otro.</summary>
-        [Test]
-        public void TheCoroutinePath_ShowsTheBlast_BeforeItSowsAgain()
-        {
-            var feedback = new SpyFeedback();
-            ServiceLocator.AddService<IFeedbackService>(feedback, ServiceScope.Global);
-
-            var node = MakeNode(count: 3);
-            node.DetonationVfxId = "vfx.test.blast";
-            Drain(node, _context);
-
-            var sown = node.LiveCrosses(_attributes).Select(c => c.Guid).ToHashSet();
-            feedback.OnRequest = () =>
-            {
-                Assert.IsNotEmpty(Instances(),
-                    "El beat del estallido salió antes de prender el fuego: el jugador ve la " +
-                    "animación y el paño todavía limpio.");
-                foreach (var guid in sown)
-                    Assert.IsFalse(_grid.TryGetPosition(guid, out _),
-                        "Las bombas viejas todavía estaban en el paño cuando salió el beat.");
-                Assert.AreEqual(0, node.LiveCrosses(_attributes).Count(),
-                    "Las bombas nuevas ya estaban sembradas cuando salió el beat del estallido: " +
-                    "vuelve a ser todo el mismo frame.");
-            };
-
-            Drain(node, _context);
-
-            Assert.AreEqual(1, feedback.Requests, "El estallido no pidió su beat.");
-            Assert.AreEqual(3, node.LiveCrosses(_attributes).Count(),
-                "Después del beat tiene que haber sembrado las tres nuevas.");
-        }
-
-        [Test]
-        public void WithNothingToDetonate_TheBlastBeatDoesNotPlay()
-        {
-            var feedback = new SpyFeedback();
-            ServiceLocator.AddService<IFeedbackService>(feedback, ServiceScope.Global);
-
-            var node = MakeNode(count: 3);
-            node.DetonationVfxId = "vfx.test.blast";
-
-            Drain(node, _context);
-
-            Assert.AreEqual(0, feedback.Requests,
-                "La primera siembra pidió el beat del estallido sin nada que estallar: el jefe " +
-                "detonando al aire.");
-        }
-
-        /// <summary>Sin id el nodo no puede bloquear nada, y tiene que seguir sembrando igual.</summary>
-        [Test]
-        public void WithoutADetonationId_TheCoroutinePath_StillDetonatesAndSows()
-        {
-            var node = MakeNode(count: 3);
-            Drain(node, _context);
-            Drain(node, _context);
-
-            Assert.IsNotEmpty(Instances(), "Sin id de estallido dejó de prender el fuego.");
-            Assert.AreEqual(3, node.LiveCrosses(_attributes).Count(),
-                "Sin id de estallido dejó de sembrar.");
-        }
-
-        private sealed class SpyFeedback : IFeedbackService
-        {
-            public int Requests;
-            public Action OnRequest;
-
-            public void RequestFeedbackBlocking(FeedbackRequest request, Action onComplete)
-            {
-                Requests++;
-                OnRequest?.Invoke();
-
-                // El contrato de la interfaz: onComplete se invoca exactamente una vez, incluso con
-                // un id inválido.
-                onComplete?.Invoke();
-            }
         }
 
         private sealed class SpyDamagePipeline : IDamagePipeline
