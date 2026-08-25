@@ -32,6 +32,8 @@ tags: [moc, dice, reroll]
 - **Roller:** [[DiceRoller]] · [[IDiceRoller]]
 - **Bags & types:** [[DiceBagSO]] · [[DiceBagPoolSO]] ·
   [[DicePoolEntry]] · [[DiceType]] · [[DiceTypeExt]]
+- **Movement die (§6.6):** [[MovementDieSO]] — entidad separada de la build de 5;
+  servicio en [[Movement-MOC]] ([[IMovementDieService]])
 
 ## Cross-domain edges
 
