@@ -9,8 +9,8 @@ namespace Rollgeon.DevConsole.Commands
 {
     /// <summary>
     /// Setup de playtest en una línea: oro, un ejemplar de cada item del catálogo y
-    /// encantamientos random en todos los cupos libres de la bolsa. Compone lo que ya
-    /// hacen <c>gold</c>, <c>giveitem</c> y <c>ench random</c> — el valor es no tener
+    /// un encantamiento random en cada dado de la bolsa. Compone lo que ya hacen
+    /// <c>gold</c>, <c>giveitem</c> y <c>ench random</c> — el valor es no tener
     /// que tipear quince comandos antes de ir a probar un boss.
     /// </summary>
     public sealed class KitCommand : DevCommandBase
@@ -24,7 +24,7 @@ namespace Rollgeon.DevConsole.Commands
         public override IReadOnlyList<string> Aliases => _aliases;
         public override string Description =>
             $"Kit de playtest: +oro (default {DefaultGold}), 1 de cada item del catálogo " +
-            "y encantamientos random en todos los cupos libres. 'kit [oro]'.";
+            "y un encantamiento random por dado. 'kit [oro]'.";
         public override IReadOnlyList<ArgSpec> Args => _args;
 
         public override CommandResult Execute(IReadOnlyList<string> args, IDevConsoleContext ctx)
@@ -37,7 +37,7 @@ namespace Rollgeon.DevConsole.Commands
             economy.Add(gold);
 
             var (itemsAdded, itemsTotal) = GiveOneOfEachItem(ctx);
-            int enchants = FillEnchantmentSlots(ctx);
+            int enchants = ApplyRandomEnchantments(ctx);
 
             return CommandResult.Ok(
                 $"Kit: +{gold} oro (total {economy.CurrentGold}) · items {itemsAdded}/{itemsTotal} · " +
@@ -60,7 +60,7 @@ namespace Rollgeon.DevConsole.Commands
             return (added, total);
         }
 
-        private static int FillEnchantmentSlots(IDevConsoleContext ctx)
+        private static int ApplyRandomEnchantments(IDevConsoleContext ctx)
         {
             if (!ctx.TryResolve<IDiceEnchantmentService>(out var svc)
                 || svc == null || !svc.IsReady || svc.Bag == null) return 0;
@@ -70,24 +70,19 @@ namespace Rollgeon.DevConsole.Commands
             foreach (var entry in cat.Entries) if (entry != null) candidates.Add(entry);
             if (candidates.Count == 0) return 0;
 
+            // Con el stack sin techo no hay "cupos libres" que llenar — el kit
+            // suma exactamente uno por dado en cada corrida.
             var rng = new Random();
             int applied = 0;
             for (int bag = 0; bag < svc.Bag.Dice.Count; bag++)
             {
-                var current = svc.Bag.GetEnchantments(bag);
-                int slots = svc.Bag.GetEnchantmentSlotCount(bag);
-                for (int slot = 0; slot < slots; slot++)
+                Shuffle(candidates, rng);
+                foreach (var candidate in candidates)
                 {
-                    if (slot < current.Count && current[slot] != null) continue;
-
-                    Shuffle(candidates, rng);
-                    foreach (var candidate in candidates)
-                    {
-                        // ValidateApply ya rechaza incompatibles y redundantes (mismo
-                        // criterio que 'ench random').
-                        if (!svc.ValidateApply(bag, slot, candidate).Success) continue;
-                        if (svc.Apply(bag, slot, candidate).Success) { applied++; break; }
-                    }
+                    // ValidateApply ya rechaza incompatibles (mismo criterio que
+                    // 'ench random').
+                    if (!svc.ValidateApply(bag, candidate).Success) continue;
+                    if (svc.Apply(bag, candidate).Success) { applied++; break; }
                 }
             }
             return applied;

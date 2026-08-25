@@ -263,7 +263,7 @@ namespace Rollgeon.Upgrades.Dice.Tests
                         BuildBridge(EnchantmentHookEvent.ComboMatched,
                             Group(new EffAddComboBonus { Amount = new ReadConstantInt { Value = 4 } })),
                     });
-                Assert.IsTrue(svc.Apply(0, 0, ench).Success);
+                Assert.IsTrue(svc.Apply(0, ench).Success);
 
                 // Act — el preview matchea un combo.
                 TypedEvent<ComboMatchedPayload>.Raise(new ComboMatchedPayload
@@ -316,7 +316,7 @@ namespace Rollgeon.Upgrades.Dice.Tests
                 ?.SetValue(ench, new List<IEnchantmentTrigger> { bridge });
 
             // El encantamiento vive en el bag slot 0 — ese es el "carrier".
-            Assert.IsTrue(svc.Apply(0, 0, ench).Success);
+            Assert.IsTrue(svc.Apply(0, ench).Success);
             return svc;
         }
 

@@ -13,9 +13,13 @@ namespace Rollgeon.Upgrades.Dice
     /// </summary>
     /// <remarks>
     /// <para>
-    /// <b>Layout.</b> Para cada slot del bag (5 dados), un array de longitud
-    /// <c>diceType.MaxEnchantmentSlots()</c> con los <see cref="EnchantmentSO"/>
-    /// aplicados. Null = cupo vacío. <b>Los <see cref="EnchantmentSO"/> son
+    /// <b>Layout.</b> Para cada slot del bag (5 dados), una lista SIN TECHO de
+    /// <see cref="EnchantmentSO"/> aplicados, en orden de append. Los
+    /// encantamientos solo se suman (<see cref="AddEnchantment"/>) — nunca se
+    /// reemplazan. Remover (triggers tipo Explode) deja un <b>tombstone</b>
+    /// (null en su índice) en vez de compactar: eso mantiene estables los
+    /// índices de <see cref="EnchantmentSlotRef"/>, las keys de counters y la
+    /// iteración durante un dispatch. <b>Los <see cref="EnchantmentSO"/> son
     /// punteros al catálogo</b> — no se clonan; mutación va exclusivamente via
     /// los métodos de esta clase.
     /// </para>
@@ -23,7 +27,9 @@ namespace Rollgeon.Upgrades.Dice
     /// <b>Counters.</b> El diccionario per <c>(bagIndex, enchSlotIndex, key)</c>
     /// es la fuente de verdad de counters para triggers stateful (ej.
     /// <c>ExplodeIfUnusedForTurns</c>). Cuando se quita un encantamiento, sus
-    /// counters se purgan via <see cref="ClearCountersForSlot"/>.
+    /// counters se purgan via <see cref="ClearCountersForSlot"/>. Los
+    /// <b>die counters</b> (<c>(bagIndex, key)</c>) son estado per-dado — hoy
+    /// el contador de rolls del altar que escala el costo.
     /// </para>
     /// </remarks>
     public sealed class RuntimeDiceBag : ISaveable, IDisposable
@@ -32,9 +38,11 @@ namespace Rollgeon.Upgrades.Dice
         private const string LogPrefix = "[RuntimeDiceBag] ";
 
         private readonly DiceType[] _dice;
-        private readonly EnchantmentSO[][] _enchantments;
+        private readonly List<EnchantmentSO>[] _enchantments;
         private readonly Dictionary<(int bag, int slot, string key), int> _counters
             = new Dictionary<(int bag, int slot, string key), int>();
+        private readonly Dictionary<(int bag, string key), int> _dieCounters
+            = new Dictionary<(int bag, string key), int>();
         private readonly Func<string, EnchantmentSO> _resolveById;
 
         /// <summary>Tipos de dado en el bag, en orden de slot.</summary>
@@ -49,24 +57,27 @@ namespace Rollgeon.Upgrades.Dice
             if (dice == null) throw new ArgumentNullException(nameof(dice));
             _resolveById = resolveById;
             _dice = new DiceType[dice.Count];
-            _enchantments = new EnchantmentSO[dice.Count][];
+            _enchantments = new List<EnchantmentSO>[dice.Count];
             for (int i = 0; i < dice.Count; i++)
             {
                 _dice[i] = dice[i];
-                _enchantments[i] = new EnchantmentSO[dice[i].MaxEnchantmentSlots()];
+                _enchantments[i] = new List<EnchantmentSO>();
             }
         }
 
-        // ---- Enchantment slots ------------------------------------------------
+        // ---- Enchantment list ------------------------------------------------
 
-        /// <summary>Cupos disponibles del dado en <paramref name="bagIndex"/>.</summary>
-        public int GetEnchantmentSlotCount(int bagIndex)
+        /// <summary>
+        /// Largo de la lista de encantamientos del dado, tombstones incluidos.
+        /// NO es un techo — la lista crece con cada <see cref="AddEnchantment"/>.
+        /// </summary>
+        public int GetEnchantmentCount(int bagIndex)
         {
             if (bagIndex < 0 || bagIndex >= _enchantments.Length) return 0;
-            return _enchantments[bagIndex].Length;
+            return _enchantments[bagIndex].Count;
         }
 
-        /// <summary>Lectura de los encantamientos del dado. Puede contener nulls (cupos vacíos).</summary>
+        /// <summary>Lectura de los encantamientos del dado. Puede contener nulls (tombstones de removes).</summary>
         public IReadOnlyList<EnchantmentSO> GetEnchantments(int bagIndex)
         {
             if (bagIndex < 0 || bagIndex >= _enchantments.Length) return Array.Empty<EnchantmentSO>();
@@ -74,28 +85,42 @@ namespace Rollgeon.Upgrades.Dice
         }
 
         /// <summary>
-        /// Lee un slot específico. Devuelve null si el slot está vacío o el
+        /// Lee un slot específico. Devuelve null si el slot está tombstoneado o el
         /// índice es inválido.
         /// </summary>
         public EnchantmentSO GetEnchantmentAt(int bagIndex, int enchSlotIndex)
         {
             if (bagIndex < 0 || bagIndex >= _enchantments.Length) return null;
-            var arr = _enchantments[bagIndex];
-            if (enchSlotIndex < 0 || enchSlotIndex >= arr.Length) return null;
-            return arr[enchSlotIndex];
+            var list = _enchantments[bagIndex];
+            if (enchSlotIndex < 0 || enchSlotIndex >= list.Count) return null;
+            return list[enchSlotIndex];
         }
 
         /// <summary>
-        /// Escribe un encantamiento en un slot. <c>null</c> vacía el slot. No
-        /// dispara triggers — el caller (<c>DiceEnchantmentService</c>) coordina
-        /// los hooks <c>OnEnchantmentApplied</c>.
+        /// Suma un encantamiento a la lista del dado. Devuelve el índice asignado
+        /// (identidad estable para counters/triggers), o -1 si el índice de bag es
+        /// inválido o el encantamiento es null. No dispara triggers — el caller
+        /// (<c>DiceEnchantmentService</c>) coordina los hooks <c>OnEnchantmentApplied</c>.
+        /// </summary>
+        public int AddEnchantment(int bagIndex, EnchantmentSO ench)
+        {
+            if (ench == null) return -1;
+            if (bagIndex < 0 || bagIndex >= _enchantments.Length) return -1;
+            var list = _enchantments[bagIndex];
+            list.Add(ench);
+            return list.Count - 1;
+        }
+
+        /// <summary>
+        /// Escribe un slot existente. <c>null</c> tombstonea (camino de Remove);
+        /// no puede crecer la lista — para eso está <see cref="AddEnchantment"/>.
         /// </summary>
         public bool SetEnchantmentAt(int bagIndex, int enchSlotIndex, EnchantmentSO ench)
         {
             if (bagIndex < 0 || bagIndex >= _enchantments.Length) return false;
-            var arr = _enchantments[bagIndex];
-            if (enchSlotIndex < 0 || enchSlotIndex >= arr.Length) return false;
-            arr[enchSlotIndex] = ench;
+            var list = _enchantments[bagIndex];
+            if (enchSlotIndex < 0 || enchSlotIndex >= list.Count) return false;
+            list[enchSlotIndex] = ench;
             return true;
         }
 
@@ -139,6 +164,25 @@ namespace Rollgeon.Upgrades.Dice
             foreach (var k in toRemove) _counters.Remove(k);
         }
 
+        // ---- Die counters ----------------------------------------------------
+
+        /// <summary>Counter per-dado (no per-slot) — ej. rolls acumulados del altar.</summary>
+        public int GetDieCounter(int bagIndex, string key)
+        {
+            if (string.IsNullOrEmpty(key)) return 0;
+            return _dieCounters.TryGetValue((bagIndex, key), out var v) ? v : 0;
+        }
+
+        public int IncrementDieCounter(int bagIndex, string key, int delta = 1)
+        {
+            if (string.IsNullOrEmpty(key)) return 0;
+            var k = (bagIndex, key);
+            int prev = _dieCounters.TryGetValue(k, out var v) ? v : 0;
+            int next = prev + delta;
+            _dieCounters[k] = next;
+            return next;
+        }
+
         // ---- ISaveable (§15) ---------------------------------------------------
 
         public string SaveKey => SaveKeyConst;
@@ -148,15 +192,15 @@ namespace Rollgeon.Upgrades.Dice
             var snapshot = new RuntimeDiceBagSnapshot();
             for (int bag = 0; bag < _enchantments.Length; bag++)
             {
-                var arr = _enchantments[bag];
-                for (int slot = 0; slot < arr.Length; slot++)
+                var list = _enchantments[bag];
+                for (int slot = 0; slot < list.Count; slot++)
                 {
-                    if (arr[slot] == null || string.IsNullOrEmpty(arr[slot].UpgradeId)) continue;
+                    if (list[slot] == null || string.IsNullOrEmpty(list[slot].UpgradeId)) continue;
                     snapshot.Enchantments.Add(new EnchantmentSlotSnapshot
                     {
                         BagIndex = bag,
                         SlotIndex = slot,
-                        EnchantmentId = arr[slot].UpgradeId,
+                        EnchantmentId = list[slot].UpgradeId,
                     });
                 }
             }
@@ -170,14 +214,24 @@ namespace Rollgeon.Upgrades.Dice
                     Value = kv.Value,
                 });
             }
+            foreach (var kv in _dieCounters)
+            {
+                snapshot.DieCounters.Add(new DieCounterSnapshot
+                {
+                    BagIndex = kv.Key.bag,
+                    Key = kv.Key.key,
+                    Value = kv.Value,
+                });
+            }
             return snapshot;
         }
 
         public void RestoreState(object state)
         {
             for (int i = 0; i < _enchantments.Length; i++)
-                Array.Clear(_enchantments[i], 0, _enchantments[i].Length);
+                _enchantments[i].Clear();
             _counters.Clear();
+            _dieCounters.Clear();
 
             if (state is not RuntimeDiceBagSnapshot snapshot) return;
 
@@ -197,9 +251,16 @@ namespace Rollgeon.Upgrades.Dice
                                          "no existe en el catálogo — se descarta.");
                         continue;
                     }
-                    // SetEnchantmentAt bounds-checkea: un save de un bag distinto
-                    // (menos slots) degrada descartando en vez de romper.
-                    SetEnchantmentAt(e.BagIndex, e.SlotIndex, ench);
+                    if (e.BagIndex < 0 || e.BagIndex >= _enchantments.Length || e.SlotIndex < 0)
+                    {
+                        Debug.LogWarning(LogPrefix + $"Snapshot con índice inválido ({e.BagIndex},{e.SlotIndex}) — se descarta.");
+                        continue;
+                    }
+                    // Padding con tombstones hasta SlotIndex — los counters del save
+                    // apuntan a índices de append, que deben restaurarse idénticos.
+                    var list = _enchantments[e.BagIndex];
+                    while (list.Count <= e.SlotIndex) list.Add(null);
+                    list[e.SlotIndex] = ench;
                 }
             }
 
@@ -207,6 +268,16 @@ namespace Rollgeon.Upgrades.Dice
             {
                 if (string.IsNullOrEmpty(c.Key)) continue;
                 _counters[(c.BagIndex, c.SlotIndex, c.Key)] = c.Value;
+            }
+
+            // Saves anteriores al contador per-dado no traen la lista — queda vacía.
+            if (snapshot.DieCounters != null)
+            {
+                foreach (var c in snapshot.DieCounters)
+                {
+                    if (string.IsNullOrEmpty(c.Key)) continue;
+                    _dieCounters[(c.BagIndex, c.Key)] = c.Value;
+                }
             }
         }
 
@@ -228,6 +299,7 @@ namespace Rollgeon.Upgrades.Dice
     {
         public List<EnchantmentSlotSnapshot> Enchantments = new List<EnchantmentSlotSnapshot>();
         public List<EnchantmentCounterSnapshot> Counters = new List<EnchantmentCounterSnapshot>();
+        public List<DieCounterSnapshot> DieCounters = new List<DieCounterSnapshot>();
     }
 
     [Serializable]
@@ -243,6 +315,14 @@ namespace Rollgeon.Upgrades.Dice
     {
         public int BagIndex;
         public int SlotIndex;
+        public string Key;
+        public int Value;
+    }
+
+    [Serializable]
+    public class DieCounterSnapshot
+    {
+        public int BagIndex;
         public string Key;
         public int Value;
     }

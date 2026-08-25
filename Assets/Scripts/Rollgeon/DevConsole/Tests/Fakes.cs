@@ -179,9 +179,9 @@ namespace Rollgeon.DevConsole.Tests
     }
 
     /// <summary>
-    /// Servicio de encantamientos con un <see cref="RuntimeDiceBag"/> real (los cupos
-    /// salen de <c>DiceType.MaxEnchantmentSlots()</c>) y una regla de aceptación
-    /// inyectable para simular qué rechaza <c>ValidateApply</c>.
+    /// Servicio de encantamientos con un <see cref="RuntimeDiceBag"/> real
+    /// (listas append-only sin techo) y una regla de aceptación inyectable para
+    /// simular qué rechaza <c>ValidateApply</c>.
     /// </summary>
     public sealed class FakeDiceEnchantmentService : IDiceEnchantmentService
     {
@@ -202,20 +202,25 @@ namespace Rollgeon.DevConsole.Tests
 
         public IReadOnlyCollection<int> ComputeAllowedFaces(int bagIndex) => Array.Empty<int>();
 
-        public EnchantmentApplyResult ValidateApply(int bagIndex, int enchSlotIndex, EnchantmentSO ench)
+        public EnchantmentApplyResult ValidateApply(int bagIndex, EnchantmentSO ench)
             => Accepts(ench) ? EnchantmentApplyResult.Ok(null) : EnchantmentApplyResult.Fail("rechazado por el fake");
 
-        public EnchantmentApplyResult Apply(int bagIndex, int enchSlotIndex, EnchantmentSO ench)
+        public EnchantmentApplyResult Apply(int bagIndex, EnchantmentSO ench)
         {
-            var validation = ValidateApply(bagIndex, enchSlotIndex, ench);
+            var validation = ValidateApply(bagIndex, ench);
             if (!validation.Success) return validation;
 
-            Bag.SetEnchantmentAt(bagIndex, enchSlotIndex, ench);
-            Applied.Add((bagIndex, enchSlotIndex, ench));
-            return EnchantmentApplyResult.Ok(null);
+            int slot = Bag.AddEnchantment(bagIndex, ench);
+            if (slot < 0) return EnchantmentApplyResult.Fail("bagIndex inválido en el fake");
+            Applied.Add((bagIndex, slot, ench));
+            return EnchantmentApplyResult.Ok(null, slot);
         }
 
-        public bool Remove(int bagIndex, int enchSlotIndex) => Bag.SetEnchantmentAt(bagIndex, enchSlotIndex, null);
+        public bool Remove(int bagIndex, int enchSlotIndex)
+        {
+            if (Bag.GetEnchantmentAt(bagIndex, enchSlotIndex) == null) return false;
+            return Bag.SetEnchantmentAt(bagIndex, enchSlotIndex, null);
+        }
 
         public EnchantmentScratch ResolveComboBonus(Guid sourceGuid, string comboId,
             IReadOnlyList<int> diceResult, int comboBaseDamage) => null;
@@ -223,21 +228,35 @@ namespace Rollgeon.DevConsole.Tests
         public void InitializeFromBag(DiceBagSO bag) { }
     }
 
-    /// <summary>Altar de encantamiento con un resultado predefinido.</summary>
+    /// <summary>Altar de encantamiento con oferta y confirmación predefinidas.</summary>
     public sealed class FakeEnchantmentRoomService : IEnchantmentRoomService
     {
-        public EnchantmentRollResult NextResult = EnchantmentRollResult.Fail("sin configurar");
-        public readonly List<(int bag, int slot)> Calls = new List<(int, int)>();
+        public EnchantmentOfferResult NextOffer = EnchantmentOfferResult.Fail("sin configurar");
+        public EnchantmentRollResult NextChoice = EnchantmentRollResult.Fail("sin configurar");
+        public int RollOfferCalls;
+        public readonly List<(int option, int bag)> ConfirmCalls = new List<(int, int)>();
 
         public bool IsInitialized(Guid roomInstanceId) => true;
         public void NotifyAltarActivated(Guid roomInstanceId, string spawnPointId) { }
-        public int ResolveCost(int bagIndex, int enchSlotIndex) => 0;
+        public int ResolveCost() => 0;
 
-        public EnchantmentRollResult PerformEnchantment(Guid roomInstanceId, int bagIndex, int enchSlotIndex)
+        public EnchantmentOfferResult RollOffer(Guid roomInstanceId)
         {
-            Calls.Add((bagIndex, enchSlotIndex));
-            return NextResult;
+            RollOfferCalls++;
+            if (NextOffer.Success) CurrentOffer = NextOffer.Offer;
+            return NextOffer;
         }
+
+        public EnchantmentRollResult ConfirmChoice(int optionIndex, int bagIndex)
+        {
+            ConfirmCalls.Add((optionIndex, bagIndex));
+            if (NextChoice.Success) CurrentOffer = null;
+            return NextChoice;
+        }
+
+        public EnchantmentOffer? CurrentOffer { get; set; }
+
+        public void ClearOffer() => CurrentOffer = null;
     }
 
     /// <summary>Comando stub para tests de parser/registry/autocomplete.</summary>

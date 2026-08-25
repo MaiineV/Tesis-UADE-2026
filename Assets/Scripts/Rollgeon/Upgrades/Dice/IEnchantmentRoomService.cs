@@ -4,8 +4,10 @@ namespace Rollgeon.Upgrades.Dice
 {
     /// <summary>
     /// Coordina las Salas de Encantamiento — escucha <c>OnRoomEntered</c>, spawnea
-    /// el altar en el RewardSpawnPoint, y ofrece el flow <c>PerformEnchantment</c>
-    /// que la UI consume. Mismo patrón que <c>IShopManagerService</c>.
+    /// el altar en el RewardSpawnPoint, y ofrece el flow de la slot machine:
+    /// <see cref="RollOffer"/> (pagar → revelar 3 opciones) +
+    /// <see cref="ChooseOption"/> (elegir una → se suma al dado). Mismo patrón
+    /// que <c>IShopManagerService</c>.
     /// </summary>
     public interface IEnchantmentRoomService
     {
@@ -16,23 +18,40 @@ namespace Rollgeon.Upgrades.Dice
         /// Callback del <see cref="EnchantmentAltarInteractable"/> cuando el
         /// player presiona interact. Resuelve el costo base y dispara
         /// <see cref="Patterns.EventName.OnEnchantmentAltarActivated"/> — la UI
-        /// (Phase 6) lo consume para abrir la pantalla de selección.
+        /// lo consume para abrir la pantalla.
         /// </summary>
         void NotifyAltarActivated(Guid roomInstanceId, string spawnPointId);
 
         /// <summary>
-        /// Resuelve el costo del próximo uso del altar para un slot dado.
-        /// Distingue first-enchant vs re-encantamiento según el config.
-        /// La UI lo consume para mostrar el costo en tiempo real cuando el
-        /// player hovera dados/slots.
+        /// Costo del próximo roll de la palanca: <c>base × mult^n</c>, con
+        /// n = rolls totales de la run (contador global persistido — la palanca
+        /// se tira ANTES de elegir dado). La UI lo muestra arriba de la palanca.
         /// </summary>
-        int ResolveCost(int bagIndex, int enchSlotIndex);
+        int ResolveCost();
 
         /// <summary>
-        /// Ejecuta el flow completo: cobra oro, rolea pool con compatibility +
-        /// validación (intersección no-vacía), aplica encantamiento al slot.
-        /// La UI llama esto al confirmar selección de dado + slot.
+        /// Paga un roll y revela hasta 3 encantamientos distintos, cada uno
+        /// aplicable a AL MENOS un dado del bag (compatibilidad + coherencia
+        /// pre-filtrada). Si no hay ningún candidato válido, falla SIN cobrar.
+        /// Reemplaza cualquier oferta previa.
         /// </summary>
-        EnchantmentRollResult PerformEnchantment(Guid roomInstanceId, int bagIndex, int enchSlotIndex);
+        EnchantmentOfferResult RollOffer(Guid roomInstanceId);
+
+        /// <summary>
+        /// Confirma la elección: aplica la opción <paramref name="optionIndex"/>
+        /// de la oferta activa al dado <paramref name="bagIndex"/> (se SUMA,
+        /// nunca reemplaza) y limpia la oferta. Si el apply falla (ej. el dado
+        /// elegido no es coherente con esa opción), la oferta se conserva.
+        /// </summary>
+        EnchantmentRollResult ConfirmChoice(int optionIndex, int bagIndex);
+
+        /// <summary>Oferta activa, o null si no hay (la UI la renderiza).</summary>
+        EnchantmentOffer? CurrentOffer { get; }
+
+        /// <summary>
+        /// Descarta la oferta activa (cambio de dado, cierre del panel). El oro
+        /// del roll NO se devuelve — el GDD lo trata como costo hundido.
+        /// </summary>
+        void ClearOffer();
     }
 }

@@ -240,18 +240,18 @@ namespace Rollgeon.DevConsole.Tests
         }
 
         [Test]
-        public void ench_random_should_target_the_dice_and_slot_that_were_passed()
+        public void ench_random_should_target_the_die_that_was_passed()
         {
-            // Arrange
+            // Arrange — stack append-only: ya no hay slot para pasar, solo el dado.
             var svc = new FakeDiceEnchantmentService(DiceType.D6, DiceType.D6);
             var ctx = BuildEnchantContext(svc, enchantmentCount: 1);
 
             // Act
-            var res = new EnchantCommand().Execute(new[] { "random", "1", "0" }, ctx);
+            var res = new EnchantCommand().Execute(new[] { "random", "1" }, ctx);
 
             // Assert
             Assert.IsTrue(res.Success, res.Message);
-            Assert.AreEqual((1, 0), (svc.Applied[0].bag, svc.Applied[0].slot));
+            Assert.AreEqual(1, svc.Applied[0].bag);
         }
 
         [Test]
@@ -272,36 +272,45 @@ namespace Rollgeon.DevConsole.Tests
         [Test]
         public void ench_roll_should_go_through_the_altar_and_report_the_gold_paid()
         {
-            // Arrange
+            // Arrange — RollOffer (paga y revela) + ConfirmChoice (opción + dado)
+            // del altar fakeado.
             var svc = new FakeDiceEnchantmentService(DiceType.D6);
             var ctx = BuildEnchantContext(svc, enchantmentCount: 1);
+            var chosenEnchantment = ScriptableObject.CreateInstance<EnchantmentSO>();
+            var offer = new EnchantmentOffer(Guid.Empty,
+                options: new[] { chosenEnchantment }, goldPaid: 75);
             var altar = new FakeEnchantmentRoomService
             {
-                NextResult = EnchantmentRollResult.Ok(ScriptableObject.CreateInstance<EnchantmentSO>(), 75, null)
+                NextOffer = EnchantmentOfferResult.Ok(offer),
+                NextChoice = EnchantmentRollResult.Ok(chosenEnchantment, 75, null),
             };
             ctx.Register<IEnchantmentRoomService>(altar);
 
             // Act
-            var res = new EnchantCommand().Execute(new[] { "roll", "0", "0" }, ctx);
+            var res = new EnchantCommand().Execute(new[] { "roll", "0" }, ctx);
 
             // Assert
             Assert.IsTrue(res.Success, res.Message);
             StringAssert.Contains("75G", res.Message);
-            Assert.AreEqual((0, 0), altar.Calls[0]);
-            // El apply lo hace el service, no el comando.
+            Assert.AreEqual(1, altar.RollOfferCalls);
+            Assert.AreEqual(1, altar.ConfirmCalls.Count);
+            Assert.AreEqual(0, altar.ConfirmCalls[0].bag, "el dado forzado por argumento");
+            // El apply lo hace el service (vía ConfirmChoice), no el comando.
             Assert.IsEmpty(svc.Applied);
         }
 
         [Test]
         public void ench_roll_should_propagate_the_altar_error()
         {
-            // Arrange
+            // Arrange — el fallo ocurre en RollOffer (oro insuficiente para pagar la
+            // palanca), antes de que haya nada para elegir.
             var svc = new FakeDiceEnchantmentService(DiceType.D6);
             var ctx = BuildEnchantContext(svc, enchantmentCount: 1);
-            ctx.Register<IEnchantmentRoomService>(new FakeEnchantmentRoomService
+            var altar = new FakeEnchantmentRoomService
             {
-                NextResult = EnchantmentRollResult.Fail("Oro insuficiente (10/40).")
-            });
+                NextOffer = EnchantmentOfferResult.Fail("Oro insuficiente (10/40)."),
+            };
+            ctx.Register<IEnchantmentRoomService>(altar);
 
             // Act
             var res = new EnchantCommand().Execute(new[] { "roll" }, ctx);
@@ -309,6 +318,7 @@ namespace Rollgeon.DevConsole.Tests
             // Assert
             Assert.IsFalse(res.Success);
             StringAssert.Contains("Oro insuficiente", res.Message);
+            Assert.AreEqual(0, altar.ConfirmCalls.Count, "no debe confirmar si la oferta falló");
         }
 
         // =================================================================

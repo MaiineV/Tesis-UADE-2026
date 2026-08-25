@@ -431,8 +431,8 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 7800251719905305
-    m_Localized: "Elige un dado y un cupo, y confirma: el encantamiento sale al azar
-      \u2014 y puede ser malo."
+    m_Localized: 'Elige un dado y tira de la palanca: aparecen 3 encantamientos y
+      el que elijas se suma al dado.'
     m_Metadata:
       m_Items: []
   - m_Id: 7800251719905306
@@ -515,7 +515,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 9558930424168448
-    m_Localized: Cupos de encantamiento
+    m_Localized: Encantamientos
     m_Metadata:
       m_Items: []
   - m_Id: 9558930424168449
@@ -599,8 +599,8 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 10309000933244929
-    m_Localized: "Si no te gusta el resultado, puedes reemplazarlo pagando de nuevo:
-      cada reemplazo cuesta m\xE1s oro."
+    m_Localized: "\xBFNinguno te convence? Tira de la palanca otra vez para ver 3
+      opciones nuevas: cada tirada cuesta m\xE1s oro."
     m_Metadata:
       m_Items: []
   - m_Id: 10309000933244930
@@ -801,6 +801,60 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 14619625998090240
     m_Localized: Defensa
+    m_Metadata:
+      m_Items: []
+  - m_Id: 14747843979739136
+    m_Localized: Tirada
+    m_Metadata:
+      m_Items: []
+  - m_Id: 14747844046848000
+    m_Localized: Elige un dado para encantar.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 14747844046848001
+    m_Localized: Tira de la palanca para revelar 3 encantamientos.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 14747844046848002
+    m_Localized: "Elige un encantamiento para sumarlo al dado \u2014 pasa el cursor
+      para leerlos."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 14747844046848003
+    m_Localized: encantamiento
+    m_Metadata:
+      m_Items: []
+  - m_Id: 14747844046848004
+    m_Localized: encantamientos
+    m_Metadata:
+      m_Items: []
+  - m_Id: 14747907426975744
+    m_Localized: encantamiento
+    m_Metadata:
+      m_Items: []
+  - m_Id: 14747907426975745
+    m_Localized: encantamientos
+    m_Metadata:
+      m_Items: []
+  - m_Id: 14756158361141248
+    m_Localized: Recibiste
+    m_Metadata:
+      m_Items: []
+  - m_Id: 14756158411472896
+    m_Localized: Caras del dado
+    m_Metadata:
+      m_Items: []
+  - m_Id: 14756158411472897
+    m_Localized: Sin encantamientos
+    m_Metadata:
+      m_Items: []
+  - m_Id: 14756158411472898
+    m_Localized: "No se pudieron cargar los dados \u2014 cierra la mesa y vuelve
+      a intentar."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 14985430464036864
+    m_Localized: Aprieta Confirmar para encantar el dado.
     m_Metadata:
       m_Items: []
   references:

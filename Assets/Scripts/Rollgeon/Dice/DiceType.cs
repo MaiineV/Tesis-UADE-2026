@@ -56,22 +56,6 @@ namespace Rollgeon.Dice
         };
 
         /// <summary>
-        /// Cupos de encantamiento disponibles por dado. Sala de Encantamiento — GDD.
-        /// Más caras = más cupos, premiando especialización en dados grandes.
-        /// </summary>
-        public static int MaxEnchantmentSlots(this DiceType t) => t switch
-        {
-            DiceType.D3 => 1,
-            DiceType.D4 => 1,
-            DiceType.D6 => 2,
-            DiceType.D8 => 2,
-            DiceType.D10 => 3,
-            DiceType.D12 => 3,
-            DiceType.D20 => 4,
-            _ => 1,
-        };
-
-        /// <summary>
         /// Valor esperado (EV) de una tirada de este dado: <c>(MaxFace + 1) / 2</c>.
         /// Usado por la fórmula de daño v2 (Spec Daño §multi_dmg_combo) para ponderar
         /// la calidad de los dados que formaron el combo ganador.

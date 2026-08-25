@@ -24,17 +24,25 @@ namespace Rollgeon.Upgrades.Dice
         /// </summary>
         public IReadOnlyCollection<int> ProjectedFaces { get; }
 
-        private EnchantmentApplyResult(bool success, string error, IReadOnlyCollection<int> projectedFaces)
+        /// <summary>
+        /// Índice que el encantamiento recibió en la lista del dado (orden de
+        /// append). -1 en validaciones y fallos — solo un <c>Apply</c> exitoso
+        /// lo asigna.
+        /// </summary>
+        public int AppliedSlotIndex { get; }
+
+        private EnchantmentApplyResult(bool success, string error, IReadOnlyCollection<int> projectedFaces, int appliedSlotIndex)
         {
             Success = success;
             ErrorMessage = error;
             ProjectedFaces = projectedFaces ?? Array.Empty<int>();
+            AppliedSlotIndex = appliedSlotIndex;
         }
 
-        public static EnchantmentApplyResult Ok(IReadOnlyCollection<int> projectedFaces)
-            => new EnchantmentApplyResult(true, null, projectedFaces);
+        public static EnchantmentApplyResult Ok(IReadOnlyCollection<int> projectedFaces, int appliedSlotIndex = -1)
+            => new EnchantmentApplyResult(true, null, projectedFaces, appliedSlotIndex);
 
         public static EnchantmentApplyResult Fail(string error, IReadOnlyCollection<int> projectedFaces = null)
-            => new EnchantmentApplyResult(false, error, projectedFaces);
+            => new EnchantmentApplyResult(false, error, projectedFaces, -1);
     }
 }
