@@ -65,25 +65,9 @@ namespace Rollgeon.Dungeon
 
         private GridCoord ResolveSpawnCoord(DoorDirection? entryDirection, RoomLayout layout)
         {
-            if (entryDirection.HasValue)
-            {
-                var slot = layout.GetDoorSlot(entryDirection.Value);
-                if (slot?.Anchor != null)
-                {
-                    // El anchor está en el borde de la sala (sobre la pared/puerta). El
-                    // player debe quedar un paso adentro — primera tile interior — para
-                    // que se vea como si recién hubiera cruzado. Si el tile interior no
-                    // es walkable (layout raro), caemos al anchor para no spawnear afuera.
-                    var anchorCoord = _grid.WorldToGrid(slot.Anchor.position);
-                    var interior = anchorCoord + entryDirection.Value.InwardOffset();
-                    return _grid.IsWalkable(interior) ? interior : anchorCoord;
-                }
-            }
-
-            if (layout.PlayerSpawnPoint != null)
-                return _grid.WorldToGrid(layout.PlayerSpawnPoint.position);
-
-            return GridCoord.Zero;
+            return RoomEntryResolver.TryResolve(_grid, layout, entryDirection, out var coord)
+                ? coord
+                : GridCoord.Zero;
         }
     }
 }
