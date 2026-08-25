@@ -1792,10 +1792,15 @@ public interface IMovementDieService {              // ServiceScope.Run, bootstr
   el path legacy de cobro-al-ejecutar sigue vivo cuando el servicio no está registrado).
 - **Drag-and-drop.** `ActionDragPolicy.RequiresTileDrop` = false con el flag: soltar en
   cualquier lado fuera de la UI tira el dado; el tile se elige después con el rango real.
-- **Evento.** `EventName.OnMovementDieRolled [Guid, int face, DiceType]`. No emite
-  `OnDiceRolled`.
-- **UI.** `MovementDieView` (un `DiceSlotView` + `DiceSlotAnimator`) es el
-  `IMovementDiePresenter`; sin cablear, el reveal es sincrónico.
+- **Eventos.** `OnMovementDieRollStarted [Guid, DiceType]` (solo con presenter) abre la
+  mesa de dados; `OnMovementDieRolled [Guid, int face, DiceType]` la cierra.
+  `ActionRollExplorationVisibility` y `CombatHudZoneFlow` los tratan como
+  `OnDiceRolled`/`OnBehaviorExecuted`. No emite `OnDiceRolled`.
+- **UI.** `MovementDieView` (un `DiceSlotView` + `DiceSlotAnimator`, centrado en el
+  `RollArea` de `Canvas_ActionRoll`, oculto fuera de su tirada) es el
+  `IMovementDiePresenter`: la mesa se abre, el dado gira en el centro, revela, hold breve,
+  se esconde, la mesa se cierra y recién ahí arranca la selección de tile. Sin cablear, el
+  reveal es sincrónico y no hay mesa.
 
 Setup y follow-ups (throw manual 2D/3D, rig, encantamientos del dado):
 `docs/setup/movement-die.md`.

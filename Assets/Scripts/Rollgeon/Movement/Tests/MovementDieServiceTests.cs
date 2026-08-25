@@ -248,6 +248,38 @@ namespace Rollgeon.Movement.Tests
             Assert.AreEqual(1, presenter.PresentCount);
         }
 
+        [Test]
+        public void Roll_WithPresenter_EmitsRollStartedBeforeRolled_AndNothingWithoutPresenter()
+        {
+            // Arrange — la mesa abre con RollStarted y cierra con Rolled: el orden importa.
+            _player.SetPlayer(HeroWith(Die(DiceType.D4)), Guid.NewGuid());
+            _service = new MovementDieService(_player, seed: 7);
+            var order = new List<string>();
+            EventManager.EventReceiver onStarted = _ => order.Add("started");
+            EventManager.EventReceiver onRolled = _ => order.Add("rolled");
+            EventManager.Subscribe(EventName.OnMovementDieRollStarted, onStarted);
+            EventManager.Subscribe(EventName.OnMovementDieRolled, onRolled);
+            var guid = Guid.NewGuid();
+
+            // Act 1 — sin presenter: reveal sincrónico, sin mesa que abrir.
+            _service.Roll(guid, _ => { });
+            _service.ClearActiveRange();
+            CollectionAssert.AreEqual(new[] { "rolled" }, order);
+
+            // Act 2 — con presenter: started → (spin) → rolled.
+            order.Clear();
+            var presenter = new SpyPresenter();
+            _service.SetPresenter(presenter);
+            _service.Roll(guid, _ => { });
+            CollectionAssert.AreEqual(new[] { "started" }, order, "la mesa abre antes del reveal");
+            presenter.Finish();
+
+            // Assert
+            CollectionAssert.AreEqual(new[] { "started", "rolled" }, order);
+            EventManager.UnSubscribe(EventName.OnMovementDieRollStarted, onStarted);
+            EventManager.UnSubscribe(EventName.OnMovementDieRolled, onRolled);
+        }
+
         // ---- Fakes -----------------------------------------------------------
 
         private sealed class AlwaysOneRoller : IDiceRoller
