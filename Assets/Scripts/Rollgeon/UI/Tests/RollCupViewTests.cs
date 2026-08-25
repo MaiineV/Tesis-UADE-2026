@@ -9,12 +9,13 @@ using UnityEngine;
 namespace Rollgeon.UI.Tests
 {
     /// <summary>
-    /// Pila del Pool de Rolls: fetch inicial vía IRollPoolService, updates por
-    /// OnPlayerRollsChanged, filtro por guid y ocultamiento fuera de combate.
-    /// Rig inactivo → path instantáneo.
+    /// Vaso de generala del Pool de Rolls: fetch inicial vía IRollPoolService,
+    /// updates por OnPlayerRollsChanged, filtro por guid, ocultamiento fuera de
+    /// combate y pose boca abajo con 0 rolls. Rig inactivo y sin juice → path
+    /// instantáneo (EditMode no corre Awake/OnEnable — todo engancha en Bind).
     /// </summary>
     [TestFixture]
-    public class RollPoolChipStackViewTests
+    public class RollCupViewTests
     {
         private sealed class FakeRollPoolService : IRollPoolService
         {
@@ -35,10 +36,9 @@ namespace Rollgeon.UI.Tests
         }
 
         private GameObject _go;
-        private RollPoolChipStackView _view;
-        private ChipStackView _stack;
+        private RollCupView _view;
+        private RectTransform _cup;
         private TextMeshProUGUI _label;
-        private ChipStackSettingsSO _settings;
         private FakeRollPoolService _rolls;
         private Guid _playerGuid;
 
@@ -49,21 +49,20 @@ namespace Rollgeon.UI.Tests
             _rolls = new FakeRollPoolService();
             ServiceLocator.AddService<IRollPoolService>(_rolls);
 
-            _settings = ScriptableObject.CreateInstance<ChipStackSettingsSO>();
-
-            // Con RectTransform: ChipStackView castea su transform a RectTransform.
-            _go = new GameObject("RollPoolChips", typeof(RectTransform));
+            _go = new GameObject("RollCup", typeof(RectTransform));
             _go.SetActive(false);
-            _stack = _go.AddComponent<ChipStackView>();
-            _view = _go.AddComponent<RollPoolChipStackView>();
+            _view = _go.AddComponent<RollCupView>();
+
+            var cupGo = new GameObject("Cup", typeof(RectTransform));
+            cupGo.transform.SetParent(_go.transform, false);
+            _cup = (RectTransform)cupGo.transform;
 
             var labelGo = new GameObject("Label");
             labelGo.transform.SetParent(_go.transform, false);
             _label = labelGo.AddComponent<TextMeshProUGUI>();
 
-            AssignPrivate(_view, "_stack", _stack);
+            AssignPrivate(_view, "_cup", _cup);
             AssignPrivate(_view, "_label", _label);
-            AssignPrivate(_view, "_settings", _settings);
         }
 
         [TearDown]
@@ -72,69 +71,132 @@ namespace Rollgeon.UI.Tests
             InvokeNonPublic(_view, "OnDisable");
             EventManager.ResetEventDictionary();
             ServiceLocator.RemoveService<IRollPoolService>();
-            if (_settings != null) UnityEngine.Object.DestroyImmediate(_settings);
             if (_go != null) UnityEngine.Object.DestroyImmediate(_go);
         }
 
         [Test]
         public void Bind_FetchesInitialStateFromService()
         {
+            // Arrange
             _rolls.Current = 5;
             _rolls.Max = 15;
 
+            // Act
             _view.Bind(_playerGuid);
 
-            Assert.AreEqual(5, _stack.DisplayedCount);
+            // Assert
             Assert.AreEqual("5/15", _label.text);
+            Assert.IsFalse(_view.IsCupFaceDown);
         }
 
         [Test]
-        public void RollsEvent_UpdatesChipsAndLabel()
+        public void RollsEvent_UpdatesLabel()
         {
+            // Arrange
             _view.Bind(_playerGuid);
 
+            // Act
             EventManager.Trigger(EventName.OnPlayerRollsChanged, _playerGuid, 1, 15);
 
-            Assert.AreEqual(1, _stack.DisplayedCount);
+            // Assert
             Assert.AreEqual("1/15", _label.text);
+            Assert.IsFalse(_view.IsCupFaceDown);
         }
 
         [Test]
         public void RollsEvent_OtherGuid_Ignored()
         {
+            // Arrange
             _view.Bind(_playerGuid);
 
+            // Act
             EventManager.Trigger(EventName.OnPlayerRollsChanged, Guid.NewGuid(), 0, 15);
 
-            Assert.AreEqual(5, _stack.DisplayedCount);
+            // Assert
+            Assert.AreEqual("5/15", _label.text);
+            Assert.IsFalse(_view.IsCupFaceDown);
+        }
+
+        [Test]
+        public void RollsEvent_ToZero_SetsCupFaceDownInstant()
+        {
+            // Arrange
+            _view.Bind(_playerGuid);
+
+            // Act
+            EventManager.Trigger(EventName.OnPlayerRollsChanged, _playerGuid, 0, 15);
+
+            // Assert: sin juice el path es instantáneo — pose directa boca abajo.
+            Assert.IsTrue(_view.IsCupFaceDown);
+            Assert.AreEqual(RollCupMath.FaceDownZ, _cup.localEulerAngles.z, 0.01f);
+            Assert.AreEqual("0/15", _label.text);
+        }
+
+        [Test]
+        public void RollsEvent_RecoverFromZero_RestoresUprightPose()
+        {
+            // Arrange
+            _view.Bind(_playerGuid);
+            EventManager.Trigger(EventName.OnPlayerRollsChanged, _playerGuid, 0, 15);
+
+            // Act
+            EventManager.Trigger(EventName.OnPlayerRollsChanged, _playerGuid, 5, 15);
+
+            // Assert
+            Assert.IsFalse(_view.IsCupFaceDown);
+            Assert.AreEqual(RollCupMath.UprightZ, _cup.localEulerAngles.z, 0.01f);
             Assert.AreEqual("5/15", _label.text);
         }
 
         [Test]
-        public void OutsideCombat_HidesStackAndLabel()
+        public void OutsideCombat_HidesCupAndLabel()
         {
-            // El pool es combat-only: en exploración la pila y el número se ocultan.
+            // Arrange: el pool es combat-only — en exploración el vaso se oculta.
             _rolls.InCombat = false;
 
+            // Act
             _view.Bind(_playerGuid);
 
-            Assert.IsFalse(_stack.gameObject.activeSelf,
-                "Fuera de combate la pila de rolls debe ocultarse.");
+            // Assert
+            Assert.IsFalse(_cup.gameObject.activeSelf,
+                "Fuera de combate el vaso debe ocultarse.");
             Assert.IsFalse(_label.gameObject.activeSelf,
                 "Fuera de combate el número del pool debe ocultarse.");
         }
 
         [Test]
-        public void ReenteringCombat_ShowsStackAgain()
+        public void ReenteringCombat_ShowsCupAgain()
         {
+            // Arrange
             _rolls.InCombat = false;
             _view.Bind(_playerGuid);
 
+            // Act
             _rolls.InCombat = true;
             EventManager.Trigger(EventName.OnPlayerRollsChanged, _playerGuid, 5, 15);
 
-            Assert.IsTrue(_stack.gameObject.activeSelf);
-            Assert.AreEqual(5, _stack.DisplayedCount);
+            // Assert
+            Assert.IsTrue(_cup.gameObject.activeSelf);
+            Assert.AreEqual("5/15", _label.text);
+        }
+
+        [Test]
+        public void ReenteringCombat_AfterHide_AppliesPoseWithoutTransition()
+        {
+            // Arrange: al ocultarse se olvida lo mostrado (prev = -1) — el 0 del
+            // combate anterior no debe producir un flip espurio al reentrar.
+            _view.Bind(_playerGuid);
+            EventManager.Trigger(EventName.OnPlayerRollsChanged, _playerGuid, 0, 15);
+            _rolls.InCombat = false;
+            EventManager.Trigger(EventName.OnPlayerRollsChanged, _playerGuid, 0, 15);
+
+            // Act
+            _rolls.InCombat = true;
+            EventManager.Trigger(EventName.OnPlayerRollsChanged, _playerGuid, 5, 15);
+
+            // Assert: pose directa parado, sin herencia del 0 anterior.
+            Assert.IsFalse(_view.IsCupFaceDown);
+            Assert.AreEqual(RollCupMath.UprightZ, _cup.localEulerAngles.z, 0.01f);
         }
 
         // ---------------- helpers ----------------

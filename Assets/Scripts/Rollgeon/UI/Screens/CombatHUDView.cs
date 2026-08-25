@@ -66,9 +66,9 @@ namespace Rollgeon.UI.Screens
         [SerializeField]
         private HealthChipStackView _healthChips;
 
-        [Required("Arrastrar RollPoolChipStackView (pila de fichas del pool de rolls).")]
+        [Required("Arrastrar RollCupView (vaso de generala del pool de rolls).")]
         [SerializeField]
-        private RollPoolChipStackView _energyChips;
+        private RollCupView _energyChips;
 
         [Required("Arrastrar EndTurnButtonView.")]
         [SerializeField]
@@ -345,7 +345,7 @@ namespace Rollgeon.UI.Screens
             // Viven en Canvas_PlayerStatus (otro prefab) — sin referencia posible en
             // el Inspector, se auto-resuelven en escena.
             if (_healthChips == null) _healthChips = UnityEngine.Object.FindFirstObjectByType<HealthChipStackView>(FindObjectsInactive.Include);
-            if (_energyChips == null) _energyChips = UnityEngine.Object.FindFirstObjectByType<RollPoolChipStackView>(FindObjectsInactive.Include);
+            if (_energyChips == null) _energyChips = UnityEngine.Object.FindFirstObjectByType<RollCupView>(FindObjectsInactive.Include);
             if (_activeItems == null) _activeItems = UnityEngine.Object.FindFirstObjectByType<ActiveItemsView>(FindObjectsInactive.Include);
             if (_playerBaseDamage == null) _playerBaseDamage = UnityEngine.Object.FindFirstObjectByType<Rollgeon.UI.HUD.Breakdown.PlayerBaseDamageView>(FindObjectsInactive.Include);
             if (_breakdownDirector == null) _breakdownDirector = UnityEngine.Object.FindFirstObjectByType<Rollgeon.UI.HUD.Breakdown.BreakdownSequenceDirector>(FindObjectsInactive.Include);

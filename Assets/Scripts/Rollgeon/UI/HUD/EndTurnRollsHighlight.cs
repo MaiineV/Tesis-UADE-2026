@@ -196,7 +196,7 @@ namespace Rollgeon.UI.HUD
         /// <summary>
         /// Estado inicial silencioso: si el servicio/ruleset aún no existen, el primer
         /// <c>OnPlayerRollsChanged</c> corrige — el highlight solo importa mid-combate,
-        /// así que no hace falta el retry por frame de <see cref="RollPoolChipStackView"/>.
+        /// así que no hace falta el retry por frame de <see cref="RollCupView"/>.
         /// </summary>
         private void FetchInitialRolls()
         {

@@ -22,6 +22,8 @@ namespace Rollgeon.EditorTools.HUD
         private const string UiSheetPath = "Assets/Art/UI/UI-Sheet-sheet.png";
         private const string CoinSheetPath = "Assets/Art/UI/Inventory/CoinStyle1.1.png";
         private const string PotionSheetPath = "Assets/Art/UI/Inventory/PotionSheet.png";
+        private const string CupSpritePath = "Assets/Art/UI/VasoGenerala/VasoGenerala.png";
+        private const string ParticlePrefabPath = "Assets/Prefabs/UI/DiceThrowParticle.prefab";
         private const string FontPath = "Assets/Fonts/m6x11plus SDF.asset";
         private const string PlayerStatusPrefabPath = "Assets/Prefabs/UI/Canvas/Canvas_PlayerStatus.prefab";
         private const string CombatHudPrefabPath = "Assets/Prefabs/UI/Canvas/Canvas_CombatHUD.prefab";
@@ -37,6 +39,10 @@ namespace Rollgeon.EditorTools.HUD
         private const float PotionSlotY = 45f;
         private const float ChipRootY = 50f;
         private const float LabelY = 10f;
+
+        // Vaso de generala (Feature#0053): 39×62 nativo × 1.2, arriba del label.
+        private const float CupY = 85f;
+        private static readonly Vector2 CupSize = new Vector2(47f, 74f);
 
         [MenuItem("Rollgeon/Chip Stack HUD/Setup All")]
         public static void SetupAll()
@@ -65,10 +71,12 @@ namespace Rollgeon.EditorTools.HUD
             settings.GoldChipTilted = LoadSpriteOrError(CoinSheetPath, "CoinStyle1.1_1");
             settings.PotionFull = LoadSpriteOrError(PotionSheetPath, "PotionSheet_0");
             settings.PotionEmpty = LoadSpriteOrError(PotionSheetPath, "PotionSheet_1");
+            settings.RollCup = LoadSpriteOrError(CupSpritePath, "VasoGenerala_0");
 
             if (settings.HealthChip == null || settings.EnergyChip == null || settings.ShieldChip == null
                 || settings.GoldChipFlat == null || settings.GoldChipTilted == null
-                || settings.PotionFull == null || settings.PotionEmpty == null)
+                || settings.PotionFull == null || settings.PotionEmpty == null
+                || settings.RollCup == null)
             {
                 Debug.LogError("[ChipStackSetup] Falta al menos un slice — revisar los sheets. Abortando asignación.");
                 return;
@@ -76,7 +84,7 @@ namespace Rollgeon.EditorTools.HUD
 
             EditorUtility.SetDirty(settings);
             AssetDatabase.SaveAssets();
-            Debug.Log("[ChipStackSetup] ChipStackSettings listo con los 7 sprites.");
+            Debug.Log("[ChipStackSetup] ChipStackSettings listo con los 8 sprites.");
         }
 
         [MenuItem("Rollgeon/Chip Stack HUD/2 - Setup PlayerStatus Prefab")]
@@ -109,12 +117,13 @@ namespace Rollgeon.EditorTools.HUD
 
                 // -- Pilas --
                 var healthStack = EnsureStack(cluster, "HealthStack", HealthStackX, out var healthRoot, out var healthLabel);
-                var energyStack = EnsureStack(cluster, "EnergyStack", EnergyStackX, out var energyRoot, out var energyLabel);
                 var goldStack = EnsureStack(cluster, "GoldStack", GoldStackX, out var goldRoot, out var goldLabel);
 
                 var healthView = EnsureView<HealthChipStackView>(healthStack.gameObject, healthRoot, healthLabel, settings);
-                var energyView = EnsureView<RollPoolChipStackView>(energyStack.gameObject, energyRoot, energyLabel, settings);
                 var goldView = EnsureView<GoldChipStackView>(goldStack.gameObject, goldRoot, goldLabel, settings);
+
+                // -- Vaso de generala del pool de rolls (Feature#0053) --
+                EnsureCupStack(cluster, settings);
 
                 // -- Ficha inclinada del oro (hija del ChipRoot, arranca inactiva) --
                 // Posición fina de playtest: apoyada al pie de la pila, a la derecha.
@@ -225,14 +234,14 @@ namespace Rollgeon.EditorTools.HUD
                 : EditorSceneManager.OpenScene(GameplayScenePath, OpenSceneMode.Single);
 
             HealthChipStackView healthView = null;
-            RollPoolChipStackView energyView = null;
+            RollCupView energyView = null;
             CombatHUDView combatHud = null;
             ExplorationHUDView explorationHud = null;
 
             foreach (var rootGo in scene.GetRootGameObjects())
             {
                 if (healthView == null) healthView = rootGo.GetComponentInChildren<HealthChipStackView>(true);
-                if (energyView == null) energyView = rootGo.GetComponentInChildren<RollPoolChipStackView>(true);
+                if (energyView == null) energyView = rootGo.GetComponentInChildren<RollCupView>(true);
                 if (combatHud == null) combatHud = rootGo.GetComponentInChildren<CombatHUDView>(true);
                 if (explorationHud == null) explorationHud = rootGo.GetComponentInChildren<ExplorationHUDView>(true);
             }
@@ -254,7 +263,7 @@ namespace Rollgeon.EditorTools.HUD
             Debug.Log("[ChipStackSetup] 02_Gameplay recableado (orquestadores → chip stacks).");
         }
 
-        private static void WireHud(Component hud, HealthChipStackView health, RollPoolChipStackView energy)
+        private static void WireHud(Component hud, HealthChipStackView health, RollCupView energy)
         {
             var so = new SerializedObject(hud);
             so.FindProperty("_healthChips").objectReferenceValue = health;
@@ -313,9 +322,15 @@ namespace Rollgeon.EditorTools.HUD
             stack.sizeDelta = new Vector2(80f, 420f);
 
             chipRoot = EnsureRect(stack, "ChipRoot", new Vector2(0f, ChipRootY), new Vector2(80f, 0f));
+            label = EnsureStackLabel(stack);
 
+            return stack;
+        }
+
+        private static TextMeshProUGUI EnsureStackLabel(RectTransform stack)
+        {
             var labelRect = EnsureRect(stack, "Label", new Vector2(0f, LabelY), new Vector2(84f, 32f));
-            label = labelRect.GetComponent<TextMeshProUGUI>();
+            var label = labelRect.GetComponent<TextMeshProUGUI>();
             if (label == null) label = labelRect.gameObject.AddComponent<TextMeshProUGUI>();
             label.alignment = TextAlignmentOptions.Center;
             label.fontSize = 26f;
@@ -324,8 +339,96 @@ namespace Rollgeon.EditorTools.HUD
             var font = AssetDatabase.LoadAssetAtPath<TMP_FontAsset>(FontPath);
             if (font != null) label.font = font;
             EditorUtility.SetDirty(label);
+            return label;
+        }
 
-            return stack;
+        /// <summary>
+        /// EnergyStack versión Feature#0053: el pool de rolls es un vaso de
+        /// generala animado, no una pila de chips. Migra el stack viejo si
+        /// existe (borra ChipRoot y su ChipStackView) y cablea
+        /// RollCupView + RollCupJuice + capa de partículas. Idempotente.
+        /// </summary>
+        private static void EnsureCupStack(RectTransform cluster, ChipStackSettingsSO settings)
+        {
+            var stack = cluster.Find("EnergyStack") as RectTransform;
+            if (stack == null)
+            {
+                var go = new GameObject("EnergyStack", typeof(RectTransform));
+                stack = (RectTransform)go.transform;
+                stack.SetParent(cluster, worldPositionStays: false);
+            }
+            stack.anchorMin = stack.anchorMax = Vector2.zero;
+            stack.pivot = Vector2.zero;
+            stack.anchoredPosition = new Vector2(EnergyStackX, 0f);
+            stack.sizeDelta = new Vector2(80f, 420f);
+
+            // Migración del stack de chips viejo.
+            var chipRoot = stack.Find("ChipRoot");
+            if (chipRoot != null) Object.DestroyImmediate(chipRoot.gameObject);
+            if (stack.TryGetComponent<ChipStackView>(out var oldStack)) Object.DestroyImmediate(oldStack);
+
+            var label = EnsureStackLabel(stack);
+
+            // Vaso: pivot centrado — el flip gira sobre su centro.
+            var cup = stack.Find("Cup") as RectTransform;
+            if (cup == null)
+            {
+                var go = new GameObject("Cup", typeof(RectTransform));
+                cup = (RectTransform)go.transform;
+                cup.SetParent(stack, worldPositionStays: false);
+            }
+            cup.anchorMin = cup.anchorMax = new Vector2(0.5f, 0f);
+            cup.pivot = new Vector2(0.5f, 0.5f);
+            cup.anchoredPosition = new Vector2(0f, CupY);
+            cup.sizeDelta = CupSize;
+            if (!cup.TryGetComponent<Image>(out var cupImage)) cupImage = cup.gameObject.AddComponent<Image>();
+            cupImage.sprite = settings.RollCup;
+            cupImage.raycastTarget = false;
+
+            // Capa de partículas (pool de Images). Full-stretch con pivot
+            // centrado: así el InverseTransformPoint del juice coincide con el
+            // anchoredPosition de las partículas hijas.
+            var burstRect = stack.Find("CupBurst") as RectTransform;
+            if (burstRect == null)
+            {
+                var go = new GameObject("CupBurst", typeof(RectTransform));
+                burstRect = (RectTransform)go.transform;
+                burstRect.SetParent(stack, worldPositionStays: false);
+            }
+            burstRect.anchorMin = Vector2.zero;
+            burstRect.anchorMax = Vector2.one;
+            burstRect.pivot = new Vector2(0.5f, 0.5f);
+            burstRect.offsetMin = Vector2.zero;
+            burstRect.offsetMax = Vector2.zero;
+            if (!burstRect.TryGetComponent<DiceThrowImpactBurst>(out var burst))
+                burst = burstRect.gameObject.AddComponent<DiceThrowImpactBurst>();
+            var particlePrefab = AssetDatabase.LoadAssetAtPath<GameObject>(ParticlePrefabPath);
+            var burstSo = new SerializedObject(burst);
+            burstSo.FindProperty("_particlePrefab").objectReferenceValue =
+                particlePrefab != null ? particlePrefab.GetComponent<Image>() : null;
+            // Tuning a escala HUD: bursts más chicos y lentos que los del tablero.
+            burstSo.FindProperty("_countRange").vector2IntValue = new Vector2Int(3, 9);
+            burstSo.FindProperty("_speedRange").vector2Value = new Vector2(180f, 420f);
+            burstSo.FindProperty("_spreadDegrees").floatValue = 80f;
+            burstSo.FindProperty("_gravity").floatValue = 900f;
+            burstSo.FindProperty("_sizeRange").vector2Value = new Vector2(3f, 6f);
+            burstSo.FindProperty("_maxAlive").intValue = 24;
+            burstSo.ApplyModifiedProperties();
+
+            if (!stack.TryGetComponent<RollCupJuice>(out var juice))
+                juice = stack.gameObject.AddComponent<RollCupJuice>();
+            var juiceSo = new SerializedObject(juice);
+            juiceSo.FindProperty("_cup").objectReferenceValue = cup;
+            juiceSo.FindProperty("_burst").objectReferenceValue = burst;
+            juiceSo.ApplyModifiedProperties();
+
+            if (!stack.TryGetComponent<RollCupView>(out var view))
+                view = stack.gameObject.AddComponent<RollCupView>();
+            var viewSo = new SerializedObject(view);
+            viewSo.FindProperty("_cup").objectReferenceValue = cup;
+            viewSo.FindProperty("_label").objectReferenceValue = label;
+            viewSo.FindProperty("_juice").objectReferenceValue = juice;
+            viewSo.ApplyModifiedProperties();
         }
 
         private static T EnsureView<T>(GameObject host, RectTransform chipRoot, TextMeshProUGUI label,
