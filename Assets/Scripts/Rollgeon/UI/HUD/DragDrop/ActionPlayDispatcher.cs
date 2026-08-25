@@ -29,12 +29,17 @@ namespace Rollgeon.UI.HUD.DragDrop
         /// multi-target / no-AutoAccept) la cancela, de modo que el drop ejecute del todo o
         /// cancele limpio — nunca deja una selección colgada degradando a click-to-target.
         /// </summary>
-        public void Commit(ActionButton button, GridCoord coord)
+        /// <param name="feedTile">false ⇒ el drop NO targetea (§6.6: Movimiento con dado propio —
+        /// la selección de tile se abre recién al revelar la cara, con el rango real; alimentarla
+        /// con la celda del drop la rechazaría o cancelaría la acción ya cobrada).</param>
+        public void Commit(ActionButton button, GridCoord coord, bool feedTile = true)
         {
             if (button == null) return;
 
             // 1) Selección de la acción — espejo byte-a-byte de un click en el botón.
             button.OnClicked?.Invoke();
+
+            if (!feedTile) return;
 
             if (!ServiceLocator.TryGetService<ISelectionController>(out var selection) || selection == null)
             {

@@ -71,6 +71,26 @@ namespace Rollgeon.UI.Tests
         }
 
         [Test]
+        public void test_requiresTileDrop_rangeFromMovementDie_returnsFalse()
+        {
+            // Arrange — Movimiento con dado propio (§6.6): el rango no se conoce hasta el
+            // reveal, así que el drop no targetea celda — dispara la tirada.
+            var settings = new SelectionSettings
+            {
+                SlotState = SlotState.Empty,
+                AutoResolve = false,
+                AutoAccept = true,
+                IsConstantSelectionCount = true,
+                SelectionCount = 1,
+                RangeMode = RangeMode.PathReachable,
+                RangeFromMovementDie = true,
+            };
+
+            // Act + Assert
+            Assert.IsFalse(ActionDragPolicy.RequiresTileDrop(settings));
+        }
+
+        [Test]
         public void test_requiresTileDrop_selfState_returnsFalse()
         {
             // Self no necesita interacción del jugador.
