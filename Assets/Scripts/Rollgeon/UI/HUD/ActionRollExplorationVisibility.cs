@@ -69,10 +69,6 @@ namespace Rollgeon.UI.HUD
             EventManager.Subscribe(EventName.OnBehaviorExecuted, _onDiceFlowEnd);
             EventManager.Subscribe(EventName.OnCombatEnd, _onDiceFlowEnd);
             EventManager.Subscribe(EventName.OnTurnStarted, _onDiceFlowEnd);
-            // §6.6: el dado de Movimiento gira en la mesa — abre con el start y cierra al
-            // revelar (la selección de tile arranca recién después, con la mesa cerrada).
-            EventManager.Subscribe(EventName.OnMovementDieRollStarted, _onDiceFlowStart);
-            EventManager.Subscribe(EventName.OnMovementDieRolled, _onDiceFlowEnd);
 
             // El outro del confirm (todos los modos) corre DESPUÉS de OnBehaviorExecuted:
             // la zona tiene que quedar visible hasta que los dados terminen de volar.
@@ -129,7 +125,6 @@ namespace Rollgeon.UI.HUD
             {
                 EventManager.UnSubscribe(EventName.OnChainStarted, _onDiceFlowStart);
                 EventManager.UnSubscribe(EventName.OnDiceRolled, _onDiceFlowStart);
-                EventManager.UnSubscribe(EventName.OnMovementDieRollStarted, _onDiceFlowStart);
                 _onDiceFlowStart = null;
             }
             if (_onDiceFlowEnd != null)
@@ -137,7 +132,6 @@ namespace Rollgeon.UI.HUD
                 EventManager.UnSubscribe(EventName.OnBehaviorExecuted, _onDiceFlowEnd);
                 EventManager.UnSubscribe(EventName.OnCombatEnd, _onDiceFlowEnd);
                 EventManager.UnSubscribe(EventName.OnTurnStarted, _onDiceFlowEnd);
-                EventManager.UnSubscribe(EventName.OnMovementDieRolled, _onDiceFlowEnd);
                 _onDiceFlowEnd = null;
             }
             DiceOutroGate.Changed -= Refresh;

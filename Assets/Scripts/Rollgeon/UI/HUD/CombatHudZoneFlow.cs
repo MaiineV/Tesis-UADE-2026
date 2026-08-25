@@ -113,10 +113,6 @@ namespace Rollgeon.UI.HUD
             _onTargetChanged = args => HandleCombatTargetChanged(args);
             EventManager.Subscribe(EventName.OnChainStarted, _onFlowStart);
             EventManager.Subscribe(EventName.OnDiceRolled, _onFlowStart);
-            // §6.6: el dado de Movimiento gira en la mesa — mismo flow que una tirada:
-            // chips fuera al arrancar, de vuelta al revelar (antes de elegir el tile).
-            EventManager.Subscribe(EventName.OnMovementDieRollStarted, _onFlowStart);
-            EventManager.Subscribe(EventName.OnMovementDieRolled, _onFlowEnd);
             EventManager.Subscribe(EventName.OnBehaviorExecuted, _onFlowEnd);
             EventManager.Subscribe(EventName.OnCombatEnd, _onFlowEndForced);
             EventManager.Subscribe(EventName.OnTurnStarted, _onFlowEndForced);
@@ -136,13 +132,11 @@ namespace Rollgeon.UI.HUD
             {
                 EventManager.UnSubscribe(EventName.OnChainStarted, _onFlowStart);
                 EventManager.UnSubscribe(EventName.OnDiceRolled, _onFlowStart);
-                EventManager.UnSubscribe(EventName.OnMovementDieRollStarted, _onFlowStart);
                 _onFlowStart = null;
             }
             if (_onFlowEnd != null)
             {
                 EventManager.UnSubscribe(EventName.OnBehaviorExecuted, _onFlowEnd);
-                EventManager.UnSubscribe(EventName.OnMovementDieRolled, _onFlowEnd);
                 _onFlowEnd = null;
             }
             if (_onFlowEndForced != null)

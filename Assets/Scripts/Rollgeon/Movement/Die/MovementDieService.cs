@@ -105,13 +105,16 @@ namespace Rollgeon.Movement.Die
         public void ClearActiveRange()
         {
             bool hadSomething = _hasActive || _revealPending;
+            bool animating = _revealPending;
             _generation++;
             _revealPending = false;
             _hasActive = false;
             _activeRange = 0;
             _activeGuid = Guid.Empty;
             if (!hadSomething) return;
-            _presenter?.Abort();
+            // Con la animación en vuelo se corta en seco (Abort); con la cara ya
+            // revelada el presenter decide cómo despedirse (fade-out) vía OnCleared.
+            if (animating) _presenter?.Abort();
             OnCleared?.Invoke();
         }
 

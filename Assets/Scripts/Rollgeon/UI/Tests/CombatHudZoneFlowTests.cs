@@ -75,32 +75,17 @@ namespace Rollgeon.UI.Tests
         }
 
         [Test]
-        public void should_hide_chips_zone_when_movement_die_roll_starts()
+        public void should_ignore_movement_die_events_chips_stay_visible()
         {
-            // Arrange — §6.6: el dado de Movimiento gira en la mesa como cualquier tirada.
+            // §6.6: el dado de Movimiento es suelto (detrás de la ficha de Mover), no usa
+            // la mesa — sus eventos no deben apagar los chips.
             _chipsGroup.alpha = 1f;
             _chipsGroup.interactable = true;
 
-            // Act
             EventManager.Trigger(EventName.OnMovementDieRollStarted, System.Guid.NewGuid(), Rollgeon.Dice.DiceType.D4);
-
-            // Assert
-            Assert.AreEqual(0f, _chipsGroup.alpha, "La zona de chips debe apagarse mientras gira el dado de Movimiento.");
-            Assert.IsTrue(_flow.IsRolling);
-        }
-
-        [Test]
-        public void should_restore_chips_zone_when_movement_die_reveals()
-        {
-            // Arrange
-            EventManager.Trigger(EventName.OnMovementDieRollStarted, System.Guid.NewGuid(), Rollgeon.Dice.DiceType.D4);
-            Assert.AreEqual(0f, _chipsGroup.alpha, "Precondición: chips apagados durante el spin.");
-
-            // Act — la cara se reveló: la mesa se cierra ANTES de elegir el tile.
             EventManager.Trigger(EventName.OnMovementDieRolled, System.Guid.NewGuid(), 3, Rollgeon.Dice.DiceType.D4);
 
-            // Assert
-            Assert.AreEqual(1f, _chipsGroup.alpha, "Los chips vuelven al revelar el dado de Movimiento.");
+            Assert.AreEqual(1f, _chipsGroup.alpha, "Los chips no se tocan durante el dado de Movimiento.");
             Assert.IsFalse(_flow.IsRolling);
         }
 
