@@ -58,11 +58,10 @@ namespace Rollgeon.Combat.Rooms
         public int Count = 5;
 
         [MinValue(0)]
-        [Tooltip("Separación mínima entre bombas. Internamente se le suma 1 antes de pasarla al " +
-                 "sorteo: con la cruz de 5 casillas, dos centros alineados a distancia justa " +
-                 "(Chebyshev) igual tocan cruces; +1 fuerza Manhattan >= 3 entre centros, que es lo " +
-                 "que garantiza cero solape sin importar cómo caiga el sorteo.")]
-        public int Spacing = 2;
+        [Tooltip("Separación mínima entre bombas y contra el jefe, en Chebyshev. Con menos de 3 dos " +
+                 "cruces alineadas comparten la casilla del medio y las dos bombas se leen como una " +
+                 "mancha; a 3 no se tocan nunca.")]
+        public int Spacing = 3;
 
         [MinValue(0)]
         [Tooltip("Rondas que arde el fuego de la detonación. 0 = usa el default del SO de FireTile.")]
@@ -131,7 +130,7 @@ namespace Rollgeon.Combat.Rooms
                 Definition = Definition,
                 Count = Count,
                 Pattern = AINode_SpawnRoomObjects.Placement.ScatteredFree,
-                MinSpacing = Spacing + 1,
+                MinSpacing = Spacing,
                 ResolveSlotsEachSpawn = true,
             };
         }
@@ -191,7 +190,7 @@ namespace Rollgeon.Combat.Rooms
                 SourceId = context.SelfGuid,
                 TargetId = context.PlayerGuid,
                 BaseDamage = IgnitionDamage,
-                Kind = AttackKind.BasicAttack,
+                Kind = AttackKind.Environmental,
             });
         }
 
@@ -208,7 +207,7 @@ namespace Rollgeon.Combat.Rooms
                 if (threat == null) continue;
 
                 var channel = ChannelFor(context.SelfGuid, guid);
-                threat.Mark(channel, cross, IgnitionDamage, AttackKind.BasicAttack);
+                threat.Mark(channel, cross, IgnitionDamage, AttackKind.Environmental);
                 overlay?.Show(channel, cross);
             }
         }

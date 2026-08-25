@@ -96,7 +96,7 @@ namespace Rollgeon.Combat.Rooms.Tests
             EventManager.ResetEventDictionary();
         }
 
-        private AINode_BombField MakeNode(int count, int spacing = 2) => new AINode_BombField
+        private AINode_BombField MakeNode(int count, int spacing = 3) => new AINode_BombField
         {
             Definition = _bomb,
             FireTile = _fireTile,
@@ -108,9 +108,7 @@ namespace Rollgeon.Combat.Rooms.Tests
 
         private List<SpecialTileInfo> Instances() => new List<SpecialTileInfo>(_tiles.ActiveInstances());
 
-        // =====================================================================
         // Primer tick: sólo siembra y marca
-        // =====================================================================
 
         [Test]
         public void FirstTick_SeedsCountBombs_MarksTheirCrosses_AndIgnitesNothing()
@@ -157,9 +155,7 @@ namespace Rollgeon.Combat.Rooms.Tests
                 Assert.IsTrue(tinyGrid.InBounds(coord), $"{coord} quedó marcada fuera de la sala.");
         }
 
-        // =====================================================================
         // Romper a mano entre ticks
-        // =====================================================================
 
         [Test]
         public void BreakingOneBombBetweenTicks_LiftsOnlyItsOwnCross()
@@ -187,9 +183,7 @@ namespace Rollgeon.Combat.Rooms.Tests
             }
         }
 
-        // =====================================================================
         // Segundo tick: detona lo vivo, no lo roto
-        // =====================================================================
 
         [Test]
         public void SecondTick_SurvivorsIgniteTheirCrossAndVanish_BrokenOnesIgniteNothing()
@@ -226,14 +220,12 @@ namespace Rollgeon.Combat.Rooms.Tests
                 "Las bombas nuevas tienen que ser objetos distintos de los de la ola anterior.");
         }
 
-        // =====================================================================
         // Separación entre cruces
-        // =====================================================================
 
         [Test]
-        public void WithSpacingTwo_NoTwoCrossesShareATile()
+        public void AtTheAuthoredSpacing_NoTwoCrossesShareATile()
         {
-            var node = MakeNode(count: 6, spacing: 2);
+            var node = MakeNode(count: 6);
             node.Tick(_context);
 
             var crosses = node.LiveCrosses(_attributes).ToList();
@@ -249,9 +241,7 @@ namespace Rollgeon.Combat.Rooms.Tests
             }
         }
 
-        // =====================================================================
         // Degradado sin datos
-        // =====================================================================
 
         [Test]
         public void DefinitionNull_DoesNotThrow_AndSucceeds()

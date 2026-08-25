@@ -177,8 +177,9 @@ namespace Rollgeon.Combat.Rooms
         }
 
         /// <summary>
-        /// Guid y casilla de cada ranura en pie, para un nodo de otra ola que quiera saber por
-        /// composición qué sigue vivo sin tocar el estado interno.
+        /// Guid y casilla de cada ranura en pie. Lo consume por composición quien necesite saber qué
+        /// sobrevivió sin quedarse con la lista mutable: las bombas del Croupier deciden con esto
+        /// cuáles detonar.
         /// </summary>
         public IEnumerable<(Guid Guid, GridCoord Coord)> LiveObjects()
         {
