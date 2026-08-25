@@ -199,8 +199,11 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             root.Tick(NewContext(roundIndex: 1));
             Assert.IsTrue(_threat.HasPending(_boss), "Precondición: T1 tenía que dejar la banda marcada.");
 
+            // T2 son las bombas: el cruce tiene que caer en el turno de quema, que es el tercero.
+            root.Tick(NewContext(roundIndex: 2));
+
             SetBossHp(PhaseTwoHp);
-            var result = root.Tick(NewContext(roundIndex: 2));
+            var result = root.Tick(NewContext(roundIndex: 3));
 
             Assert.AreNotEqual(AIResult.Failed, result, "El turno del cruce se cortó entero.");
             Assert.AreEqual(1, FireInstances().Count,
@@ -239,9 +242,15 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             var result = root.Tick(NewContext(roundIndex: 2));
 
             Assert.AreNotEqual(AIResult.Failed, result, "El reintento cortó el turno.");
-            Assert.AreEqual(1, FireInstances().Count, "La banda que conservó su aviso no ardió.");
             Assert.IsTrue(_threat.HasPending(PlenoSource),
                 "El armado no se reintentó: el umbral del 50% se perdió para toda la pelea.");
+
+            // El armado descarta lo que hubiera pendiente antes de encolar el suyo, así que la banda
+            // que sobrevivió al turno anterior queda reemplazada sin haber ardido. Es el precio de
+            // que el Pleno no conviva con otra área: pasa una sola vez en la pelea, al cruzar el 50%.
+            Assert.IsFalse(_threat.HasPending(_boss),
+                "El armado dejó la banda pendiente además del Pleno: el jugador ve dos áreas " +
+                "dibujadas y al turno siguiente detonan las dos.");
         }
 
         /// <summary>Lo que sostiene que la pelea sea ganable no es un techo a dónde cae el salto, sino
@@ -351,7 +360,10 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             var announced = new HashSet<GridCoord>(_threat.GetPendingTiles(_boss));
             Assert.IsNotEmpty(announced, "Precondición: el tiempo de reparto tenía que marcar la banda.");
 
+            // Dos ticks y no uno: entre Reparte y Quema está el tiempo de las bombas, así que el
+            // cono que se marca en T1 arde en T3.
             root.Tick(NewContext(roundIndex: 2));
+            root.Tick(NewContext(roundIndex: 3));
 
             var burning = new HashSet<GridCoord>(FireInstances().SelectMany(i => i.Coords));
             CollectionAssert.AreEquivalent(announced, burning,
@@ -456,7 +468,12 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             var root = CroupierAssetBuilder.BuildAIRoot(_fire);
 
             int round = 1;
-            if (onTheBurnBeat) root.Tick(NewContext(round++));
+            if (onTheBurnBeat)
+            {
+                // Dos turnos para llegar al de quema, no uno: el ciclo es Reparte, Bombas, Quema.
+                root.Tick(NewContext(round++));
+                root.Tick(NewContext(round++));
+            }
 
             SetBossHp(PhaseTwoHp);
             var result = root.Tick(NewContext(round));
@@ -553,13 +570,26 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             _pipeline.Resolved.Where(c => c.Kind == AttackKind.Environmental).ToList();
 
         /// <summary>Tirada que fuerza el salto al borde.</summary>
-        private const double RollEdge = 0.0;
+        /// <remarks>
+        /// Salen de los pesos y no de literales: <c>AINode_Random</c> parte el 0..1 en tres franjas
+        /// proporcionales, así que un número fijo cambia de opción en cuanto se retoquen los pesos.
+        /// Cada tirada apunta al <b>medio</b> de su franja para no depender de si el corte es
+        /// inclusivo.
+        /// </remarks>
+        private const double RouletteTotal = CroupierAssetBuilder.FleeWeightEdge +
+                                             CroupierAssetBuilder.FleeWeightCenter +
+                                             CroupierAssetBuilder.FleeWeightStay;
+
+        private const double RollEdge = CroupierAssetBuilder.FleeWeightEdge * 0.5d / RouletteTotal;
 
         /// <summary>Tirada que fuerza el aterrizaje en el centro de la sala.</summary>
-        private const double RollCentre = 0.6;
+        private const double RollCentre =
+            (CroupierAssetBuilder.FleeWeightEdge + CroupierAssetBuilder.FleeWeightCenter * 0.5d) / RouletteTotal;
 
         /// <summary>Tirada que fuerza que se quede donde está.</summary>
-        private const double RollStay = 0.9;
+        private const double RollStay =
+            (CroupierAssetBuilder.FleeWeightEdge + CroupierAssetBuilder.FleeWeightCenter +
+             CroupierAssetBuilder.FleeWeightStay * 0.5d) / RouletteTotal;
 
         /// <summary>Un <c>Random(seed)</c> fijo no sirve: cuál opción cae depende de cuántos draws se
         /// consumieron antes en el tick, así que mover un nodo le voltea el resultado al test. El

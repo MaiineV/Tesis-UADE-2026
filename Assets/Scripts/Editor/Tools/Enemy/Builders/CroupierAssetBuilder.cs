@@ -3,6 +3,7 @@ using System.IO;
 using Rollgeon.Combat.AI.Decisions;
 using Rollgeon.Combat.AI.Targeting;
 using Rollgeon.Combat.Pipelines;
+using Rollgeon.Combat.Rooms;
 using Rollgeon.Combat.Threat;
 using Rollgeon.Combos;
 using Rollgeon.Entities;
@@ -105,19 +106,26 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         public const int BandidaReelFireDamage = 6;
 
         /// <summary>
-        /// "Arde 2 rondas" = 3 rondas de casilla. La duración tickea en el wrap de ronda y el fuego
+        /// "Arde 3 rondas" = 4 rondas de casilla. La duración tickea en el wrap de ronda y el fuego
         /// nace en el turno del jefe, o sea después del turno del jugador de esa ronda (CNF-006):
         /// la ronda en la que se enciende no le queda ningún arranque de turno del jugador por
         /// delante. Arrancar N turnos adentro pide autorar N + 1.
         /// </summary>
-        public const int FireDurationRounds = 3;
+        /// <remarks>
+        /// El número lo fija el ciclo, no el gusto: el cono prende en uno de los <b>tres</b> tiempos,
+        /// así que hay una ignición cada tres turnos y el fuego tiene que durar los tres. Con menos,
+        /// el paño queda limpio entre cono y cono y deja de ser algo que haya que rodear; con más, las
+        /// bandas se apilan y la sala se queda sin piso.
+        /// </remarks>
+        public const int FireDurationRounds = 4;
 
         /// <summary>
-        /// Duración de las bandas desde "Pleno y color": 4 de casilla = arde 3. Dos bandas pueden
-        /// convivir, pero no se pisan — la nueva sólo enciende lo que no ardía (ver
-        /// <c>AINode_IgniteArea.AlreadyBurning</c>).
+        /// Duración de las bandas desde "Pleno y color": 5 de casilla = arde 4. Exactamente una ronda
+        /// más que <see cref="FireDurationRounds"/>, y eso es lo que hace que dos bandas convivan
+        /// durante el relevo — el único escalón de dificultad del umbral. No se pisan: la nueva sólo
+        /// enciende lo que no ardía (ver <c>AINode_IgniteArea.AlreadyBurning</c>).
         /// </summary>
-        public const int FireDurationRoundsPhase2 = 4;
+        public const int FireDurationRoundsPhase2 = 5;
 
         /// <summary>
         /// Duración del paño que prende "Pleno y color": 2 de casilla = arde 1. Es un fogonazo, no
@@ -167,11 +175,11 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         /// </summary>
         /// <remarks>
         /// <para>
-        /// El borde se lleva el peso más alto porque desaparecer <b>es</b> el personaje, no una
+        /// El borde se lleva casi todo el peso porque desaparecer <b>es</b> el personaje, no una
         /// preferencia de balance: tiene que seguir siendo el resultado que el jugador espera. El
-        /// centro es el que tiene textura —lo alcanzás, pero desde el medio el cono no se recorta
-        /// contra ninguna pared, así que amenaza sus 16 casillas enteras: es un canje y no un
-        /// premio—. Quedarse es el premio gordo.
+        /// centro es el más raro de los tres y el que tiene textura —lo alcanzás, pero desde el medio
+        /// el cono no se recorta contra ninguna pared, así que amenaza sus 16 casillas enteras: es un
+        /// canje y no un premio—.
         /// </para>
         /// <para>
         /// Son <b>pesos</b>, no porcentajes: <c>AINode_Random</c> normaliza contra la suma. Suman 100
@@ -182,8 +190,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         /// del número cantado que giraba un rodillo. Este sorteo no tiene nada que ver con eso.
         /// </para>
         /// </remarks>
-        public const float FleeWeightEdge = 50f;
-        public const float FleeWeightCenter = 30f;
+        public const float FleeWeightEdge = 70f;
+        public const float FleeWeightCenter = 10f;
         public const float FleeWeightStay = 20f;
 
         /// <summary>Semi-ancho del apex del cono: 0 = arranca en una sola casilla.</summary>
@@ -237,6 +245,56 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
 
         /// <summary>Rojo de brasa — se tiene que leer distinto del naranja del telegraph.</summary>
         public static readonly Color FireOverlayTint = new Color(0.85f, 0.10f, 0.05f, 0.60f);
+
+        // ======================================================================
+        // Bombas — el tiempo del medio
+        // ======================================================================
+
+        public const string BombDefinitionPath = "Assets/Rollgeon/Combat/RoomObjects/RO_Croupier_Bomba.asset";
+        public const string BombDefinitionId = "roomobj.croupier.bomba";
+        public const string BombFireTilePath = "Assets/Rollgeon/Tiles/Tile_Fire_CroupierBomba.asset";
+        public const string BombFireTileId = "TILE_FIRE_CROUPIER_BOMBA";
+        public const string BombArtPrefabPath = "Assets/Art/3D/Models/Items/Bomb.fbx";
+        public const string BombVisualPrefabPath = "Assets/Prefabs/Enemies/Bosses/PF_Obj_Bomba.prefab";
+
+        public const int BombCount = 5;
+
+        /// <summary>
+        /// Separación mínima, en Chebyshev, entre bombas y contra el propio jefe.
+        /// </summary>
+        /// <remarks>
+        /// <b>3 y no 2</b>: a 2 dos cruces alineadas comparten la casilla del medio, y ahí las dos
+        /// bombas se leen como una mancha en vez de como dos preguntas. A 3 no se tocan nunca.
+        /// El precio es cuántas entran — medido sobre las 103 caminables de la sala, a 3 entran
+        /// <see cref="BombCount"/> en el 100% de las siembras, y diez sólo en el 5%.
+        /// </remarks>
+        public const int BombSpacing = 3;
+
+        /// <summary>
+        /// Vida de cada bomba. Baja a propósito: contra el daño del piso 1 (13-27) cualquier golpe la
+        /// rompe, y lo que la bomba cobra es <b>la acción</b>, no una barra que haya que fundir. El
+        /// dado de La Generala tiene 45 justamente porque ahí sí se quiere que cueste.
+        /// </summary>
+        public const int BombHp = 12;
+
+        /// <summary>
+        /// Lo que cobra la casilla que deja una bomba que llegó al plazo: los 10 del paño más 5 por
+        /// haberla dejado madurar.
+        /// </summary>
+        public const int BombFireDamage = 15;
+
+        /// <summary>
+        /// Lo que cobra el estallido en sí: <b>nada</b>, igual que el cono. Quien esté parado en la
+        /// cruz cuando prende paga los <see cref="BombFireDamage"/> al arrancar su turno ahí, que es
+        /// lo que le da el turno para salirse. Cobrar también al prender lo cobraría dos veces.
+        /// </summary>
+        public const int BombIgnitionDamage = 0;
+
+        /// <summary>
+        /// De acá sale el canal de amenaza de cada bomba (prefijo + su guid). Uno por bomba es lo que
+        /// hace que romper una levante <b>su</b> cruz: el servicio guarda un área por fuente.
+        /// </summary>
+        public const string BombChannelPrefix = "croupier.bomb.";
 
         // ======================================================================
         // Ficha visual — paleta
@@ -316,6 +374,9 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
             var visual = BuildVisualPrefab();
             var portrait = BossPortraitLibrary.Croupier();
 
+            var bombFire = EnsureBombFireTile();
+            var bomb = EnsureBombDefinition(BuildBombVisual());
+
             var boss = LoadOrCreate<EnemyDataSO>(BossAssetPath);
             var croupierFire = AssetDatabase.LoadAssetAtPath<SpecialTileDefinitionSO>(CroupierFirePath);
             if (croupierFire == null)
@@ -324,14 +385,15 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
                                "fuego: el nodo de ignicion falla y sus turnos de quema no hacen nada.");
             }
 
-            PopulateEnemyData(boss, croupierFire, visual, portrait);
+            PopulateEnemyData(boss, croupierFire, visual, portrait, bomb, bombFire);
 
             EditorUtility.SetDirty(boss);
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
 
-            Debug.Log($"[CroupierAssetBuilder] Listo: '{BossAssetPath}' + '{VisualPrefabPath}' + el " +
-                      $"hazard de paño de La Bandida ('{FirePhase1Path}').");
+            Debug.Log($"[CroupierAssetBuilder] Listo: '{BossAssetPath}' + '{VisualPrefabPath}' + sus " +
+                      $"bombas ('{bomb.name}' × {BombCount}, {BombHp} HP, con '{bombFire.name}' a " +
+                      $"{BombFireDamage}) + el hazard de paño de La Bandida ('{FirePhase1Path}').");
             Selection.activeObject = boss;
         }
 
@@ -431,7 +493,9 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
             EnemyDataSO data,
             SpecialTileDefinitionSO fire,
             GameObject visualPrefab,
-            Sprite portrait)
+            Sprite portrait,
+            RoomObjectDefinitionSO bombs = null,
+            SpecialTileDefinitionSO bombFire = null)
         {
             if (data == null) return;
 
@@ -474,7 +538,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
             data.Behaviors = new List<BaseBehavior>();
             data.ExtraTiers = new List<EnemyTier>();
 
-            data.AIRoot = BuildAIRoot(fire);
+            data.AIRoot = BuildAIRoot(fire, bombs, bombFire);
         }
 
         /// <summary>
@@ -500,7 +564,10 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         /// blink de la fuga no corta el Sequence.
         /// </para>
         /// </remarks>
-        public static AINode_Sequence BuildAIRoot(SpecialTileDefinitionSO fire)
+        public static AINode_Sequence BuildAIRoot(
+            SpecialTileDefinitionSO fire,
+            RoomObjectDefinitionSO bombs = null,
+            SpecialTileDefinitionSO bombFire = null)
         {
             return new AINode_Sequence
             {
@@ -549,6 +616,11 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
                             Count = LockedDiceCount,
                             BlockVfxId = BossFeedbackIds.CroupierConfiscaVfx,
                             BlockFeelId = BossFeedbackIds.CroupierConfiscaFeel,
+
+                            // El candado se re-emite todos los turnos porque DiceBlockService se
+                            // limpia solo; el cartel no. Sin esto el jugador ve el mismo aviso desde
+                            // el 70% hasta el final de la pelea.
+                            AnnounceOnce = true,
                         },
                         Else = new AINode_Wait(),
                     }),
@@ -603,7 +675,33 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
                                 },
                             },
 
-                            // -- T2 "Quema" ----------------------------------------------------
+                            // -- T2 "Bombas" ---------------------------------------------------
+                            // El nodo hace, en un tick, "detonar lo que sobrevivio -> sembrar de
+                            // nuevo -> marcar lo nuevo". Como el Alternate lo tickea una vez por
+                            // ciclo, entre que una bomba aparece y detona pasan los tres turnos:
+                            // ese es el plazo, y el nodo no lleva contador propio.
+                            new AINode_Sequence
+                            {
+                                Children = new List<AIDecisionNode>
+                                {
+                                    Guarded(new AINode_BombField
+                                    {
+                                        Definition = bombs,
+                                        FireTile = bombFire,
+                                        Count = BombCount,
+                                        Spacing = BombSpacing,
+                                        FireDurationRounds = FireDurationRounds,
+                                        IgnitionDamage = BombIgnitionDamage,
+                                        ChannelPrefix = BombChannelPrefix,
+                                    }),
+
+                                    // Mismo gate de cercania que los otros dos tiempos: los tres
+                                    // apuestan, si no este seria el turno gratis para acercarsele.
+                                    Guarded(FleeIfClose(FleeRoulette())),
+                                },
+                            },
+
+                            // -- T3 "Quema" ----------------------------------------------------
                             new AINode_Sequence
                             {
                                 Children = new List<AIDecisionNode>
@@ -654,11 +752,21 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
                     //    normal del turno: eso es lo que le da al jugador el turno entero para llegar
                     //    al hueco. El centro pone el hueco a la misma distancia de las cuatro
                     //    esquinas.
+                    //
+                    //    Las DOS condiciones a la vez, y el Once adentro del If a proposito: parado en
+                    //    el centro el Once no tickea, asi que no latchea y el ataque queda esperando a
+                    //    que su propia fuga lo saque. El salto ES el ataque, y sin salto no hay
+                    //    sorpresa que dar.
                     Guarded(new AINode_If
                     {
                         Conditions = new List<BasePreCondition>
                         {
                             new PcOwnerHpBelow { Percent = PlenoHpThreshold },
+                            new PCComposite
+                            {
+                                Mode = CompositeMode.Not,
+                                Children = new List<BasePreCondition> { new PcOwnerAtRoomCenter() },
+                            },
                         },
                         Then = new AINode_Once
                         {
@@ -892,6 +1000,149 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
 
             AssetDatabase.SaveAssets();
             return AssetDatabase.LoadAssetAtPath<GameObject>(FireVfxPrefabPath);
+        }
+
+        // ======================================================================
+        // Bombas
+        // ======================================================================
+
+        /// <summary>
+        /// Ficha del wrapper de la bomba. <b>Sin retintes</b>: el arte trae sus propios materiales y
+        /// pisarlos generaría materiales nuevos para un objeto que ya se lee.
+        /// </summary>
+        /// <remarks>
+        /// De acá sale la barra de vida, y es la misma que la de cualquier enemigo del juego: la
+        /// arma <see cref="BossVisualWrapperBuilder"/> con el atlas de
+        /// <see cref="BossVisualWrapperBuilder.HealthBarAtlasPath"/>. No hay UI propia de la bomba.
+        /// </remarks>
+        public static BossWrapperSpec BuildBombSpec()
+        {
+            return new BossWrapperSpec
+            {
+                ArtPrefabPath = BombArtPrefabPath,
+                OutputPrefabPath = BombVisualPrefabPath,
+                BossName = "BombaCroupier",
+                MaterialsFolder = BossVisualWrapperBuilder.DefaultMaterialsRoot + "/Croupier",
+
+                AddHealthBar = true,
+                HealthBarOffset = BombHealthBarOffset,
+
+                // Box y no Capsule: es un objeto chico apoyado en el piso, y el capsule del default
+                // se le come las casillas vecinas — que son justo las cuatro que la bomba amenaza.
+                Collider = ColliderKind.Box,
+
+                Props = new List<BossPropSpec>(),
+            };
+        }
+
+        /// <summary>La bomba es baja: a la altura del default la barra flota lejos del objeto.</summary>
+        public static readonly Vector3 BombHealthBarOffset = new Vector3(0f, 1.2f, 0f);
+
+        public static GameObject BuildBombVisual()
+        {
+            var wrapper = BossVisualWrapperBuilder.BuildWrapper(BuildBombSpec());
+            if (wrapper == null) return null;
+
+            return AssetDatabase.LoadAssetAtPath<GameObject>(BombVisualPrefabPath);
+        }
+
+        public static RoomObjectDefinitionSO EnsureBombDefinition(GameObject visual)
+        {
+            var def = LoadOrCreate<RoomObjectDefinitionSO>(BombDefinitionPath);
+            ConfigureBombDefinition(def, visual);
+
+            EditorUtility.SetDirty(def);
+            return def;
+        }
+
+        /// <summary>
+        /// Escribe los números de la bomba sobre <paramref name="def"/>. Parte pura, separada del
+        /// <c>Ensure</c> para que los tests del turno la armen en memoria sin tocar el
+        /// <c>AssetDatabase</c>.
+        /// </summary>
+        public static void ConfigureBombDefinition(RoomObjectDefinitionSO def, GameObject visual = null)
+        {
+            if (def == null) return;
+
+            def.Id = BombDefinitionId;
+            def.DisplayName = "Bomba";
+            def.Hp = BombHp;
+
+            // Bloquea, como el dado de La Generala: la bomba ocupa su casilla y hay que rodearla.
+            def.Blocks = true;
+            def.HideFromTurnQueue = true;
+
+            // 0 y no -1: la siembra entera se rehace en cada tick del campo de bombas, y esa
+            // reposición inmediata es lo que rellena tanto lo que detonó como lo que el jugador
+            // rompió a mano. Con -1 la ranura se retira y no vuelve a sembrarse nunca.
+            def.RespawnDelayTurns = 0;
+
+            // Nada de hazard al morir: romperla a mano NO deja fuego. El fuego es exclusivamente lo
+            // que deja la que llegó al plazo, y eso lo prende el campo de bombas, no la muerte.
+            def.OnDeathHazard = null;
+
+            // Y no le dan armadura al jefe: las bombas son un reloj del jugador, no el blindaje que
+            // sí son la mesa de La Generala y los reels de La Bandida.
+            def.OwnerDamageReductionPerObject = 0f;
+
+            if (visual != null) def.VisualPrefab = visual;
+        }
+
+        public static SpecialTileDefinitionSO EnsureBombFireTile()
+        {
+            var tile = LoadOrCreate<SpecialTileDefinitionSO>(BombFireTilePath);
+            ConfigureBombFireTile(
+                tile, AssetDatabase.LoadAssetAtPath<SpecialTileDefinitionSO>(CroupierFirePath));
+
+            EditorUtility.SetDirty(tile);
+            return tile;
+        }
+
+        /// <summary>
+        /// El fuego que deja una bomba: el mismo del paño con 5 más encima. Casilla aparte y no un
+        /// número sobre <see cref="CroupierFirePath"/> porque las dos conviven en la misma sala — el
+        /// cono sigue cobrando 10 en el mismo turno en que las bombas cobran 15.
+        /// </summary>
+        /// <param name="basefire">
+        /// El fuego del paño, del que copia todo salvo el daño. Con <c>null</c> la casilla queda con
+        /// los defaults y sin arte: los tests del turno sólo le miran los números.
+        /// </param>
+        public static void ConfigureBombFireTile(
+            SpecialTileDefinitionSO tile, SpecialTileDefinitionSO basefire = null)
+        {
+            if (tile == null) return;
+
+            tile.TileId = BombFireTileId;
+            tile.DisplayName = "Fuego de Bomba";
+            tile.TileType = SpecialTileType.FireTemp;
+
+            tile.Triggers = TileTrigger.OnEnter | TileTrigger.OnTurnStart;
+            tile.Category = TileEffectCategory.Damage;
+            tile.Affinity = TileAffinity.All;
+            tile.DamageKind = AttackKind.Environmental;
+
+            tile.EnterDamage = BombFireDamage;
+            tile.TurnStartDamage = BombFireDamage;
+
+            tile.DisarmOnTrigger = false;
+            tile.RearmOnRoundWrap = false;
+
+            // Él camina sobre lo que prende, igual que con el fuego del paño.
+            tile.OwnerBossImmune = true;
+
+            if (basefire == null) return;
+
+            tile.DefaultDurationRounds = basefire.DefaultDurationRounds;
+            tile.VisualPrefab = basefire.VisualPrefab;
+            tile.VisualYOffset = basefire.VisualYOffset;
+            tile.OverlayTint = basefire.OverlayTint;
+            tile.TriggerVfxPrefab = basefire.TriggerVfxPrefab;
+            tile.TriggerVfxLifetime = basefire.TriggerVfxLifetime;
+            tile.TriggerVfxYOffset = basefire.TriggerVfxYOffset;
+            tile.EditorIcon = basefire.EditorIcon;
+            tile.EditorColor = basefire.EditorColor;
+            tile.NameKey = basefire.NameKey;
+            tile.DescriptionKey = basefire.DescriptionKey;
         }
 
         // ======================================================================

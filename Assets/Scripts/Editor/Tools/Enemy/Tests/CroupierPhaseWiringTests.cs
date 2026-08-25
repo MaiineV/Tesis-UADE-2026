@@ -5,11 +5,13 @@ using System.Reflection;
 using System.Runtime.CompilerServices;
 using NUnit.Framework;
 using Rollgeon.Combat.AI.Decisions;
+using Rollgeon.Combat.Rooms;
 using Rollgeon.Combat.Threat;
 using Rollgeon.Combos;
 using Rollgeon.Editor.Tools.Enemy.Builders;
 using Rollgeon.Entities;
 using Rollgeon.Feedback;
+using Rollgeon.PreConditions;
 using Rollgeon.PreConditions.Concretes;
 using Rollgeon.Tiles;
 using UnityEngine;
@@ -24,6 +26,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         private const float PercentTolerance = 0.0001f;
 
         private SpecialTileDefinitionSO _fire;
+        private SpecialTileDefinitionSO _bombFire;
+        private RoomObjectDefinitionSO _bomb;
         private AINode_Sequence _root;
 
         [SetUp]
@@ -31,8 +35,12 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         {
             _fire = ScriptableObject.CreateInstance<SpecialTileDefinitionSO>();
             _fire.hideFlags = HideFlags.HideAndDontSave;
+            _bombFire = ScriptableObject.CreateInstance<SpecialTileDefinitionSO>();
+            _bombFire.hideFlags = HideFlags.HideAndDontSave;
+            _bomb = ScriptableObject.CreateInstance<RoomObjectDefinitionSO>();
+            _bomb.hideFlags = HideFlags.HideAndDontSave;
 
-            _root = CroupierAssetBuilder.BuildAIRoot(_fire);
+            _root = CroupierAssetBuilder.BuildAIRoot(_fire, _bomb, _bombFire);
             Assert.IsNotNull(_root, "BuildAIRoot debería devolver un Sequence.");
         }
 
@@ -40,6 +48,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         public void TearDown()
         {
             if (_fire != null) Object.DestroyImmediate(_fire);
+            if (_bombFire != null) Object.DestroyImmediate(_bombFire);
+            if (_bomb != null) Object.DestroyImmediate(_bomb);
         }
 
         [Test]
@@ -318,6 +328,49 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         }
 
         [Test]
+        public void DieLock_AnnouncesOnlyOnce_ButKeepsLockingEveryTurn()
+        {
+            var block = Descendants(_root).OfType<AINode_RotateBlock>().Single();
+
+            Assert.IsTrue(block.AnnounceOnce,
+                "El nodo se re-emite todos los turnos porque DiceBlockService se limpia solo. Sin " +
+                "este flag el jugador ve el mismo cartel de confiscación desde el 70% hasta el " +
+                "final de la pelea.");
+            Assert.IsNull(Descendants(_root).OfType<AINode_Once>()
+                    .FirstOrDefault(o => Descendants(o).OfType<AINode_RotateBlock>().Any()),
+                "El candado NO va adentro de un Once: ahí duraría un solo turno, porque lo que hace " +
+                "que sea permanente es re-emitirlo. Lo que se calla una vez es el aviso, no el " +
+                "bloqueo.");
+        }
+
+        [Test]
+        public void PlenoGate_AlsoDemandsHeIsNotAlreadyOnTheCentre()
+        {
+            var gate = FindGateAtPercent(CroupierAssetBuilder.PlenoHpThreshold);
+
+            var notOnCentre = gate.Conditions.OfType<PCComposite>()
+                .SingleOrDefault(c => c.Mode == CompositeMode.Not);
+
+            Assert.IsNotNull(notOnCentre,
+                "El pleno pide las dos cosas: bajo el 50% Y fuera del centro. El salto ES el " +
+                "ataque, así que disparándolo desde el centro no hay salto ni sorpresa.");
+            Assert.IsNotNull(notOnCentre.Children.OfType<PcOwnerAtRoomCenter>().SingleOrDefault(),
+                "Lo que se niega es estar parado en la casilla del centro, la misma a la que lo " +
+                "lleva su propio teleport.");
+        }
+
+        [Test]
+        public void PlenoGate_KeepsTheOnceInsideTheIf_SoStandingOnTheCentreDoesNotBurnTheLatch()
+        {
+            var gate = FindGateAtPercent(CroupierAssetBuilder.PlenoHpThreshold);
+
+            Assert.IsInstanceOf<AINode_Once>(gate.Then,
+                "El Once va DEBAJO del If: parado en el centro el gate no pasa, el Once no tickea " +
+                "y el ataque queda esperando a que su propia fuga lo saque. Al revés, el Once " +
+                "latchearía sin haber ejecutado nada y el pleno no saldría nunca.");
+        }
+
+        [Test]
         public void DieLock_ArmsBeforeTheHalfHpBurn_SoTheTwoThresholdsDoNotCollide()
         {
             Assert.Greater(CroupierAssetBuilder.LockHpThreshold, CroupierAssetBuilder.PlenoHpThreshold,
@@ -415,9 +468,9 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         /// <summary>Sólo huye si el jugador está cerca: de lejos el disparo no tiene techo y el cono se
         /// marca desde donde esté parado, así que tepearse no le compra nada.</summary>
         [Test]
-        public void BothFlights_AreGatedByProximity_UsingTheSheetThreshold()
+        public void EveryFlight_IsGatedByProximity_UsingTheSheetThreshold()
         {
-            foreach (var gate in new[] { FleeGateOf(DealBeat()), FleeGateOf(BurnBeat()) })
+            foreach (var gate in new[] { FleeGateOf(DealBeat()), FleeGateOf(BombBeat()), FleeGateOf(BurnBeat()) })
             {
                 var proximity = gate.Conditions.OfType<PcTargetInRange>().SingleOrDefault();
 
@@ -434,11 +487,14 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
 
         /// <summary>Un <c>If</c> sin <c>Else</c> devuelve <c>Failed</c> cuando la condición no pasa.</summary>
         [Test]
-        public void BothFlights_GateHasAWaitElse_SoBeingFarNeverAbortsTheBeat()
+        public void EveryFlight_GateHasAWaitElse_SoBeingFarNeverAbortsTheBeat()
         {
             Assert.IsInstanceOf<AINode_Wait>(FleeGateOf(DealBeat()).Else,
                 "El gate del salto de reparto no tiene Wait de Else: con el jugador lejos, corta " +
                 "el tiempo entero y el jefe ni dispara.");
+            Assert.IsInstanceOf<AINode_Wait>(FleeGateOf(BombBeat()).Else,
+                "El gate del salto de bombas no tiene Wait de Else: con el jugador lejos, corta el " +
+                "tiempo entero y la siembra se pierde.");
             Assert.IsInstanceOf<AINode_Wait>(FleeGateOf(BurnBeat()).Else,
                 "El gate del salto de quema no tiene Wait de Else: con el jugador lejos, corta el " +
                 "tiempo entero y el jefe ni prende lo marcado.");
@@ -449,13 +505,12 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         [Test]
         public void NeitherFlight_HasALandingCap()
         {
-            var dealFlight = Descendants(DealBeat()).OfType<AINode_TeleportAwayToEdge>().Single();
-            var burnFlight = Descendants(BurnBeat()).OfType<AINode_TeleportAwayToEdge>().Single();
-
-            Assert.AreEqual(0, dealFlight.MaxDistanceFromPlayer,
-                "El salto de reparto volvió a tener tope de aterrizaje.");
-            Assert.AreEqual(0, burnFlight.MaxDistanceFromPlayer,
-                "El salto de quema volvió a tener tope de aterrizaje.");
+            foreach (var beat in new[] { DealBeat(), BombBeat(), BurnBeat() })
+            {
+                var flight = Descendants(beat).OfType<AINode_TeleportAwayToEdge>().Single();
+                Assert.AreEqual(0, flight.MaxDistanceFromPlayer,
+                    "Un salto del ciclo volvió a tener tope de aterrizaje.");
+            }
         }
 
         /// <summary>El sorteo de la fuga también tiene un <c>AINode_TeleportToRoomCenter</c>, así que el
@@ -488,9 +543,9 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         /// <summary>El orden de las opciones es contrato: <c>AINode_Random</c> acumula pesos y devuelve
         /// la primera que pasa el corte, así que reordenarlas cambia qué sale con cada tirada.</summary>
         [Test]
-        public void BothBeats_RollTheAuthoredFleeOdds_InTheAuthoredOrder()
+        public void EveryBeat_RollsTheAuthoredFleeOdds_InTheAuthoredOrder()
         {
-            foreach (var beat in new[] { DealBeat(), BurnBeat() })
+            foreach (var beat in new[] { DealBeat(), BombBeat(), BurnBeat() })
             {
                 var options = FleeRouletteOf(beat).Options;
 
@@ -752,9 +807,46 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         private AINode_Alternate Alternate()
         {
             var alternate = Descendants(_root).OfType<AINode_Alternate>().SingleOrDefault();
-            Assert.IsNotNull(alternate, "No hay ciclo de dos tiempos en el árbol.");
-            Assert.AreEqual(2, alternate.Children.Count, "El jefe es de DOS tiempos: reparte y quema.");
+            Assert.IsNotNull(alternate, "No hay ciclo en el árbol.");
+            Assert.AreEqual(3, alternate.Children.Count,
+                "El jefe es de TRES tiempos: reparte, bombas y quema.");
             return alternate;
+        }
+
+        [Test]
+        public void BombBeat_SitsBetweenTheDealAndTheBurn()
+        {
+            var beats = Alternate().Children;
+
+            Assert.AreEqual(1, beats.IndexOf(BombBeat()),
+                "Las bombas van en el medio: el cono se marca en Reparte y arde en Quema, así que " +
+                "meterlas en cualquier otro lugar le cambia el plazo al cono.");
+            Assert.AreEqual(0, beats.IndexOf(DealBeat()));
+            Assert.AreEqual(2, beats.IndexOf(BurnBeat()));
+        }
+
+        [Test]
+        public void BombBeat_SowsWhatTheSheetSays()
+        {
+            var field = Descendants(BombBeat()).OfType<AINode_BombField>().Single();
+
+            Assert.AreSame(_bomb, field.Definition, "El campo tiene que sembrar SU bomba.");
+            Assert.AreSame(_bombFire, field.FireTile,
+                "El fuego de bomba es una casilla aparte de la del cono: las dos conviven en la " +
+                "misma sala, y el cono sigue cobrando lo suyo en el mismo turno.");
+            Assert.AreEqual(CroupierAssetBuilder.BombCount, field.Count);
+            Assert.AreEqual(CroupierAssetBuilder.BombSpacing, field.Spacing);
+            Assert.AreEqual(CroupierAssetBuilder.BombIgnitionDamage, field.IgnitionDamage,
+                "El estallido en sí no cobra: quien quedó parado ahí paga al arrancar su turno, " +
+                "que es lo que le da el turno para salirse.");
+        }
+
+        private AIDecisionNode BombBeat()
+        {
+            var beat = Alternate().Children
+                .FirstOrDefault(c => Descendants(c).Any(n => n is AINode_BombField));
+            Assert.IsNotNull(beat, "Ningún tiempo siembra bombas.");
+            return beat;
         }
 
         private AIDecisionNode DealBeat()

@@ -10,17 +10,17 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 6832fe6d91866cd45a01ae006873d323, type: 3}
-  m_Name: Tile_Fire_Croupier
+  m_Name: Tile_Fire_CroupierBomba
   m_EditorClassIdentifier: Rollgeon::Rollgeon.Tiles.SpecialTileDefinitionSO
-  TileId: TILE_FIRE_CROUPIER
-  DisplayName: Fuego de la Banca
+  TileId: TILE_FIRE_CROUPIER_BOMBA
+  DisplayName: Fuego de Bomba
   TileType: 2
   Triggers: 5
   Category: 0
   Affinity: 0
   DamageKind: 3
-  EnterDamage: 10
-  TurnStartDamage: 10
+  EnterDamage: 15
+  TurnStartDamage: 15
   HealAmount: 0
   StatusKind: 0
   StatusTurns: 0
@@ -33,6 +33,7 @@ MonoBehaviour:
   OwnerBossImmune: 1
   TelegraphPayload: {fileID: 0}
   TelegraphRounds: 1
+  TeleportCooldownTurns: 2
   ProtectedTileTypes: 
   VisualPrefab: {fileID: 2863510167059283868, guid: 2b481875e1cbb8c4283eacfba95ed37f, type: 3}
   VisualYOffset: 0.1
