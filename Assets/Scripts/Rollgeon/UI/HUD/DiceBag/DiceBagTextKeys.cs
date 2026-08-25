@@ -6,14 +6,17 @@ namespace Rollgeon.UI.HUD.DiceBag
     public static class DiceBagTextKeys
     {
         public const string Title = "dicebag.title";
+
+        /// <summary>Caption de la sección de encantamientos del dado elegido.</summary>
         public const string SlotsCaption = "dicebag.slots_caption";
 
-        /// <summary>Sufijo del contador de cada dado: "2/3 <b>cupos</b>".</summary>
-        public const string SlotsSuffix = "dicebag.slots_suffix";
+        /// <summary>Sufijo singular del contador de cada dado: "1 <b>encantamiento</b>".</summary>
+        public const string EnchSingular = "dicebag.ench_singular";
 
-        public const string EmptySlot = "dicebag.slot_empty";
+        /// <summary>Sufijo plural del contador de cada dado: "3 <b>encantamientos</b>".</summary>
+        public const string EnchPlural = "dicebag.ench_plural";
 
-        /// <summary>Dado sin ningún cupo ocupado.</summary>
+        /// <summary>Dado sin ningún encantamiento aplicado.</summary>
         public const string NoEnchantments = "dicebag.no_enchantments";
     }
 }

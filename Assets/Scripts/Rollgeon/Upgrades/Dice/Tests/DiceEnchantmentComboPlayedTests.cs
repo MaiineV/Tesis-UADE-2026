@@ -4,6 +4,7 @@ using System.Reflection;
 using NUnit.Framework;
 using Patterns;
 using Patterns.Save;
+using Rollgeon.Combat.Rolls;
 using Rollgeon.Combos;
 using Rollgeon.Combos.Play;
 using Rollgeon.Dice;
@@ -88,6 +89,9 @@ namespace Rollgeon.Upgrades.Dice.Tests
             {
                 SourceGuid = Guid.NewGuid(),
                 ComboId = comboId,
+                // BUG-060: sin discriminante el handler descarta el payload como
+                // no-pagable (fail-safe) — estos tests cubren el camino de combate.
+                ActionKind = RollActionKind.Attack,
                 ComboResult = ComboDetectionResult.Match(comboId, baseDamage: 10, countUsed: 2,
                     contributingIndices: new[] { 0, 1 }),
                 DiceResult = new[] { 2, 2, 5 },
@@ -121,7 +125,7 @@ namespace Rollgeon.Upgrades.Dice.Tests
             // Arrange
             _svc.InitializeFromBag(MakeBag(DiceType.D6));
             var trigger = new RecordingPlayedTrigger();
-            Assert.IsTrue(_svc.Apply(0, 0, MakeEnchantment("e1", trigger)).Success);
+            Assert.IsTrue(_svc.Apply(0, MakeEnchantment("e1", trigger)).Success);
 
             // Act
             var payload = BuildPayload("combo.par");
@@ -141,7 +145,7 @@ namespace Rollgeon.Upgrades.Dice.Tests
             // Arrange
             _svc.InitializeFromBag(MakeBag(DiceType.D6));
             var trigger = new RecordingPlayedTrigger();
-            Assert.IsTrue(_svc.Apply(0, 0, MakeEnchantment("e1", trigger)).Success);
+            Assert.IsTrue(_svc.Apply(0, MakeEnchantment("e1", trigger)).Success);
 
             // Act
             TypedEvent<ComboPlayedPayload>.Raise(new ComboPlayedPayload { ComboId = "" });
@@ -155,7 +159,7 @@ namespace Rollgeon.Upgrades.Dice.Tests
         {
             // Arrange
             _svc.InitializeFromBag(MakeBag(DiceType.D6));
-            Assert.IsTrue(_svc.Apply(0, 0, MakeEnchantment("e1", new BonusOnPlayedTrigger { Bonus = 3 })).Success);
+            Assert.IsTrue(_svc.Apply(0, MakeEnchantment("e1", new BonusOnPlayedTrigger { Bonus = 3 })).Success);
             var play = new ComboPlayService();
             play.Register();
 
@@ -163,6 +167,7 @@ namespace Rollgeon.Upgrades.Dice.Tests
             play.BeginPlay(new EffectContext
             {
                 SourceGuid = Guid.NewGuid(),
+                ActionKind = RollActionKind.Attack, // BUG-060: mismo gate que arriba
                 DiceResult = new[] { 2, 2, 5 },
                 ComboResult = ComboDetectionResult.Match("combo.par", baseDamage: 10, countUsed: 2,
                     contributingIndices: new[] { 0, 1 }),

@@ -63,6 +63,7 @@ namespace Rollgeon.Upgrades.Dice
                 _onRoomEnteredHandler = null;
             }
             _initialized.Clear();
+            _currentOffer = null;
         }
 
         // ====================================================================
@@ -86,20 +87,86 @@ namespace Rollgeon.Upgrades.Dice
             EventManager.Trigger(EventName.OnEnchantmentAltarActivated, playerGuid, roomInstanceId, cost);
         }
 
-        public int ResolveCost(int bagIndex, int enchSlotIndex)
+        public int ResolveCost()
         {
             if (_config == null) return 0;
             if (!ServiceLocator.TryGetService<IDiceEnchantmentService>(out var enchSvc)
                 || enchSvc?.Bag == null) return _config.BaseCost;
 
-            int rerollCount = ReadRerollCount(enchSvc.Bag, bagIndex, enchSlotIndex);
-            return _config.ResolveCost(rerollCount);
+            return _config.ResolveCost(enchSvc.Bag.GetDieCounter(RunCounterIndex, AltarRollKey));
         }
 
-        public EnchantmentRollResult PerformEnchantment(Guid roomInstanceId, int bagIndex, int enchSlotIndex)
+        public EnchantmentOffer? CurrentOffer => _currentOffer;
+
+        public void ClearOffer()
+        {
+            _currentOffer = null;
+        }
+
+        public EnchantmentOfferResult RollOffer(Guid roomInstanceId)
         {
             if (_config == null || _pool == null)
-                return EnchantmentRollResult.Fail("EnchantmentRoomService no configurado (config / pool null).");
+                return EnchantmentOfferResult.Fail("EnchantmentRoomService no configurado (config / pool null).");
+
+            if (!ServiceLocator.TryGetService<IDiceEnchantmentService>(out var enchSvc)
+                || enchSvc == null || !enchSvc.IsReady)
+            {
+                return EnchantmentOfferResult.Fail("DiceEnchantmentService no está listo.");
+            }
+
+            var bag = enchSvc.Bag;
+            int cost = _config.ResolveCost(bag.GetDieCounter(RunCounterIndex, AltarRollKey));
+
+            if (!ServiceLocator.TryGetService<IEconomyService>(out var economy) || economy == null)
+                return EnchantmentOfferResult.Fail("Economy service no registrado.");
+            if (!economy.CanAfford(cost))
+                return EnchantmentOfferResult.Fail($"Oro insuficiente ({economy.CurrentGold}/{cost}).");
+
+            // Candidatos: distintos entre sí y pre-validados por coherencia
+            // contra AL MENOS un dado del bag (palanca-primero: el dado destino
+            // se elige después; la UI marca cuáles son válidos por opción).
+            var exclude = new HashSet<EnchantmentSO>();
+            var options = new List<EnchantmentSO>(OfferSize);
+            int floorDepth = ResolveFloorDepth();
+            const int MaxAttempts = 24;
+            for (int attempt = 0; attempt < MaxAttempts && options.Count < OfferSize; attempt++)
+            {
+                var rolled = _pool.Roll(_rng, bag.Dice, floorDepth, exclude);
+                if (rolled == null) break;
+                // El pool tiene un fallback que ignora el exclude cuando se agota —
+                // si devuelve algo ya excluido, no quedan candidatos frescos.
+                if (exclude.Contains(rolled)) break;
+                exclude.Add(rolled);
+                if (!IsValidForAnyDie(enchSvc, bag, rolled)) continue;
+                options.Add(rolled);
+            }
+
+            if (options.Count == 0)
+            {
+                return EnchantmentOfferResult.Fail("Sin candidatos válidos para tus dados — no se cobró el roll.");
+            }
+
+            if (!economy.Spend(cost))
+            {
+                return EnchantmentOfferResult.Fail("Economy.Spend rechazó la operación.");
+            }
+
+            // El contador global escala el costo del próximo roll: base × mult^n.
+            bag.IncrementDieCounter(RunCounterIndex, AltarRollKey);
+            IncrementUsageState(roomInstanceId);
+
+            _currentOffer = new EnchantmentOffer(roomInstanceId, options, cost);
+            return EnchantmentOfferResult.Ok(_currentOffer.Value);
+        }
+
+        public EnchantmentRollResult ConfirmChoice(int optionIndex, int bagIndex)
+        {
+            if (_currentOffer == null)
+                return EnchantmentRollResult.Fail("No hay oferta activa — pagá un roll primero.");
+
+            var offer = _currentOffer.Value;
+            if (optionIndex < 0 || optionIndex >= offer.Options.Count)
+                return EnchantmentRollResult.Fail($"Opción {optionIndex} fuera de rango.");
 
             if (!ServiceLocator.TryGetService<IDiceEnchantmentService>(out var enchSvc)
                 || enchSvc == null || !enchSvc.IsReady)
@@ -107,91 +174,44 @@ namespace Rollgeon.Upgrades.Dice
                 return EnchantmentRollResult.Fail("DiceEnchantmentService no está listo.");
             }
 
-            var bag = enchSvc.Bag;
-            if (bagIndex < 0 || bagIndex >= bag.Dice.Count)
-                return EnchantmentRollResult.Fail($"Bag index {bagIndex} fuera de rango.");
-            if (enchSlotIndex < 0 || enchSlotIndex >= bag.GetEnchantmentSlotCount(bagIndex))
-                return EnchantmentRollResult.Fail($"Slot index {enchSlotIndex} fuera de rango.");
-
-            int rerollCount = ReadRerollCount(bag, bagIndex, enchSlotIndex);
-            int cost = _config.ResolveCost(rerollCount);
-
-            if (!ServiceLocator.TryGetService<IEconomyService>(out var economy) || economy == null)
-                return EnchantmentRollResult.Fail("Economy service no registrado.");
-            if (!economy.CanAfford(cost))
-                return EnchantmentRollResult.Fail($"Oro insuficiente ({economy.CurrentGold}/{cost}).");
-
-            // Roll con retries — el pool puede devolver entries que la validación bloquee
-            // (intersección vacía, redundancia). Excluimos los ya-aplicados de entrada.
-            var exclude = new HashSet<EnchantmentSO>();
-            foreach (var ench in bag.GetEnchantments(bagIndex))
+            var chosen = offer.Options[optionIndex];
+            var apply = enchSvc.Apply(bagIndex, chosen);
+            if (!apply.Success)
             {
-                if (ench != null) exclude.Add(ench);
+                // La oferta se conserva — el jugador puede elegir otro dado/opción.
+                return EnchantmentRollResult.Fail("Apply falló: " + apply.ErrorMessage);
             }
 
-            EnchantmentSO rolled = null;
-            EnchantmentApplyResult applyValidation = default;
-            const int MaxRetries = 8;
-            int floorDepth = ResolveFloorDepth();
-            for (int attempt = 0; attempt < MaxRetries; attempt++)
-            {
-                rolled = _pool.Roll(_rng, bag.Dice[bagIndex], floorDepth, exclude);
-                if (rolled == null)
-                {
-                    return EnchantmentRollResult.Fail("Pool vacío o sin candidatos compatibles.");
-                }
-                applyValidation = enchSvc.ValidateApply(bagIndex, enchSlotIndex, rolled);
-                if (applyValidation.Success) break;
-                exclude.Add(rolled);
-                rolled = null;
-            }
-
-            if (rolled == null || !applyValidation.Success)
-            {
-                return EnchantmentRollResult.Fail(
-                    $"No se encontró encantamiento válido tras {MaxRetries} intentos. " +
-                    (applyValidation.ErrorMessage ?? "(sin detalle)"));
-            }
-
-            if (!economy.Spend(cost))
-            {
-                return EnchantmentRollResult.Fail("Economy.Spend rechazó la operación.");
-            }
-
-            // enchSvc.Apply internamente llama Bag.ClearCountersForSlot — eso
-            // también borraría nuestro AltarRerollKey. Guardamos el count antes
-            // del Apply y lo restauramos + incrementamos después.
-            var slotRef = new EnchantmentSlotRef(bag.Dice[bagIndex], bagIndex, enchSlotIndex);
-            int savedRerollCount = bag.GetCounter(slotRef, AltarRerollKey);
-
-            var finalApply = enchSvc.Apply(bagIndex, enchSlotIndex, rolled);
-            if (!finalApply.Success)
-            {
-                // Refund para no dejar el oro perdido — situación de borde improbable.
-                economy.Add(cost);
-                return EnchantmentRollResult.Fail("Apply falló: " + finalApply.ErrorMessage);
-            }
-
-            // Restaurar el counter + sumar uno por este nuevo re-roll. El próximo
-            // roll sobre este mismo slot va a costar base × mult^(savedRerollCount+1).
-            bag.IncrementCounter(slotRef, AltarRerollKey, delta: savedRerollCount + 1);
-
-            IncrementUsageState(roomInstanceId);
-            return EnchantmentRollResult.Ok(rolled, cost, finalApply.ProjectedFaces);
+            _currentOffer = null;
+            return EnchantmentRollResult.Ok(chosen, offer.GoldPaid, apply.ProjectedFaces);
         }
 
-        // ====================================================================
-        // Reroll counter helpers
-        // ====================================================================
-
-        private const string AltarRerollKey = "altar_reroll_count";
-
-        private static int ReadRerollCount(RuntimeDiceBag bag, int bagIndex, int enchSlotIndex)
+        private static bool IsValidForAnyDie(IDiceEnchantmentService enchSvc, RuntimeDiceBag bag, EnchantmentSO ench)
         {
-            if (bag == null || bagIndex < 0 || bagIndex >= bag.Dice.Count) return 0;
-            var slotRef = new EnchantmentSlotRef(bag.Dice[bagIndex], bagIndex, enchSlotIndex);
-            return bag.GetCounter(slotRef, AltarRerollKey);
+            for (int i = 0; i < bag.Dice.Count; i++)
+            {
+                if (enchSvc.ValidateApply(i, ench).Success) return true;
+            }
+            return false;
         }
+
+        // ====================================================================
+        // Offer state
+        // ====================================================================
+
+        /// <summary>Opciones reveladas por roll — GDD: 3.</summary>
+        public const int OfferSize = 3;
+
+        private const string AltarRollKey = "altar_roll_count";
+
+        /// <summary>
+        /// Índice sentinela para el die-counter global de la run — el costo
+        /// escala por roll TOTAL (la palanca se tira antes de elegir dado), y el
+        /// diccionario de counters del bag acepta cualquier índice como key.
+        /// </summary>
+        private const int RunCounterIndex = -1;
+
+        private EnchantmentOffer? _currentOffer;
 
         // ====================================================================
         // OnRoomEntered handler

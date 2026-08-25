@@ -37,7 +37,7 @@ namespace Rollgeon.Upgrades.Dice.UI
         [Required]
         [SerializeField] private TextMeshProUGUI _label;
 
-        [Tooltip("Sublabel opcional — usado para mostrar 'X/Y cupos' o el nombre del encantamiento aplicado.")]
+        [Tooltip("Sublabel opcional — usado para mostrar 'N encantamientos' o el nombre del encantamiento aplicado.")]
         [SerializeField] private TextMeshProUGUI _subLabel;
 
         [Tooltip("Highlight visual opcional. Activado cuando el botón está 'selected' en el flow.")]

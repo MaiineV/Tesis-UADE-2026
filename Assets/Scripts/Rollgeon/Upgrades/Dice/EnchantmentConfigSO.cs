@@ -21,10 +21,10 @@ namespace Rollgeon.Upgrades.Dice
         private int _baseCost = 15;
 
         [MinValue(1f)]
-        [Tooltip("Multiplicador compuesto por cada re-roll consecutivo del MISMO slot. " +
-                 "Ej. 1.5 con costo base 15 → 1° encanto: 15G, 1° re-roll: 23G, 2° re-roll: 34G, " +
-                 "3° re-roll: 51G, ... El contador es per-(dado, slot): cambiar de slot/dado " +
-                 "resetea desde 0 para el nuevo slot. 1.0 = sin escalado (todos los rolls cuestan base).")]
+        [Tooltip("Multiplicador compuesto por cada roll pagado de la palanca en la run " +
+                 "(contador GLOBAL — la palanca se tira antes de elegir dado). " +
+                 "Ej. 1.5 con costo base 15 → 1° roll: 15G, 2° roll: 23G, 3° roll: 34G, " +
+                 "4° roll: 51G, ... 1.0 = sin escalado (todos los rolls cuestan base).")]
         [SerializeField]
         private float _reEnchantCostMultiplier = 1f;
 
@@ -39,17 +39,17 @@ namespace Rollgeon.Upgrades.Dice
         /// <summary>Costo base por uso del altar.</summary>
         public int BaseCost => _baseCost;
 
-        /// <summary>Multiplicador aplicado cuando se re-encanta un slot ya ocupado.</summary>
+        /// <summary>Multiplicador aplicado por cada roll pagado sobre el mismo dado.</summary>
         public float ReEnchantCostMultiplier => _reEnchantCostMultiplier;
 
         /// <summary>
-        /// Resuelve el costo del próximo uso del altar sobre un slot que ya fue
-        /// re-rolleado <paramref name="rerollCount"/> veces. Fórmula:
+        /// Resuelve el costo del próximo roll de la palanca sobre un dado que ya
+        /// pagó <paramref name="rerollCount"/> rolls en la run. Fórmula:
         /// <c>base × multiplier ^ rerollCount</c> (compuesto).
         /// </summary>
         /// <param name="rerollCount">
-        /// Veces que se encantó este slot previamente. 0 = primer encanto (cuesta base);
-        /// 1 = primer re-roll; 2 = segundo re-roll; etc.
+        /// Rolls previos pagados sobre este dado. 0 = primer roll (cuesta base);
+        /// 1 = segundo roll; etc.
         /// </param>
         public int ResolveCost(int rerollCount)
         {

@@ -5,13 +5,14 @@ namespace Rollgeon.Upgrades.Dice
 {
     /// <summary>
     /// Identidad del slot que <i>carga</i> un encantamiento: en qué dado del
-    /// bag vive y en cuál de los cupos de ese dado. Pasado por separado al
-    /// <c>EffectContext</c> en cada hook para que los triggers sepan sobre qué
-    /// dado están operando.
+    /// bag vive y en qué posición de la lista de encantamientos de ese dado.
+    /// Pasado por separado al <c>EffectContext</c> en cada hook para que los
+    /// triggers sepan sobre qué dado están operando.
     /// </summary>
     /// <remarks>
-    /// Struct readonly — los campos no mutan después de aplicado el encantamiento
-    /// (si se re-encanta, se crea un nuevo SlotRef con otro <see cref="Enchantment"/>).
+    /// Struct readonly — el índice es el orden de append en el dado y es estable
+    /// de por vida: remover un encantamiento deja un tombstone (null) en su
+    /// posición en vez de compactar la lista.
     /// </remarks>
     [Serializable]
     public readonly struct EnchantmentSlotRef
@@ -23,8 +24,8 @@ namespace Rollgeon.Upgrades.Dice
         public readonly int BagSlotIndex;
 
         /// <summary>
-        /// Índice del cupo de encantamiento dentro del dado
-        /// (0..<c>DiceType.MaxEnchantmentSlots()-1</c>).
+        /// Índice del encantamiento dentro de la lista del dado (orden de append,
+        /// tombstones incluidos).
         /// </summary>
         public readonly int EnchantmentSlotIndex;
 

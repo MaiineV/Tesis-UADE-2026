@@ -138,9 +138,11 @@ namespace Rollgeon.Patterns.Save.Tests
             var dice = new List<DiceType> { DiceType.D6, DiceType.D6 };
 
             var bag = new RuntimeDiceBag(dice, id => byId.TryGetValue(id, out var e) ? e : null);
-            Assert.IsTrue(bag.SetEnchantmentAt(0, 0, ench), "el D6 debe tener al menos un slot");
+            int assignedIndex = bag.AddEnchantment(0, ench);
+            Assert.AreEqual(0, assignedIndex, "primer append al dado debe quedar en el índice 0");
             var slotRef = new EnchantmentSlotRef(DiceType.D6, 0, 0);
             bag.IncrementCounter(slotRef, "altar_reroll_count", 3);
+            bag.IncrementDieCounter(0, "altar_roll_count", 2);
 
             var captured = bag.CaptureState();
 
@@ -150,6 +152,8 @@ namespace Rollgeon.Patterns.Save.Tests
             Assert.AreSame(ench, reborn.GetEnchantmentAt(0, 0));
             Assert.AreEqual(3, reborn.GetCounter(slotRef, "altar_reroll_count"),
                 "la economía del altar (contador de rerolls) viaja con el save");
+            Assert.AreEqual(2, reborn.GetDieCounter(0, "altar_roll_count"),
+                "el counter per-dado (rolls acumulados del altar) también viaja con el save");
         }
 
         // ====================================================================
