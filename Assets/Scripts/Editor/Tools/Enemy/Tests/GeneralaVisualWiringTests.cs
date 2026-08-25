@@ -166,7 +166,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             // La torreta mide ~1.1 y los jefes del juego 1.8/2.
             var raw = new Bounds(new Vector3(0f, 0.55f, 0f), new Vector3(0.7f, 1.1f, 0.8f));
 
-            var fit = GeneralaAssetBuilder.ArtFit.For(
+            var fit = BossArtFitter.ArtFit.For(
                 raw, GeneralaAssetBuilder.BossTargetHeight, GeneralaAssetBuilder.BossMaxWidth, 0.6f);
 
             Assert.Greater(fit.Scale, 1f, "Un jefe más chico que un enemigo común no se lee como jefe.");
@@ -178,7 +178,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             // Pivot en el centro del volumen, como el cubo del dado.
             var raw = new Bounds(Vector3.zero, new Vector3(1.2f, 1.2f, 1.2f));
 
-            var fit = GeneralaAssetBuilder.ArtFit.For(raw, 0.8f, 0.85f, 0.3f);
+            var fit = BossArtFitter.ArtFit.For(raw, 0.8f, 0.85f, 0.3f);
 
             Assert.AreEqual(0f, fit.Bounds.min.y, 0.0001f);
             Assert.AreEqual(0f, raw.min.y * fit.Scale + fit.Lift, 0.0001f);
@@ -190,7 +190,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             // Arte ancho y bajo: llegar al alto pedido lo dejaría de 2 de ancho.
             var raw = new Bounds(new Vector3(0f, 0.5f, 0f), new Vector3(1f, 1f, 1f));
 
-            var fit = GeneralaAssetBuilder.ArtFit.For(raw, 2f, 1.1f, 0.6f);
+            var fit = BossArtFitter.ArtFit.For(raw, 2f, 1.1f, 0.6f);
 
             Assert.LessOrEqual(fit.Bounds.size.x, 1.1f + 0.0001f);
             Assert.Less(fit.Bounds.size.y, 2f, "Manda el ancho, no el alto.");
@@ -202,7 +202,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             var raw = new Bounds(new Vector3(0f, 0.55f, 0f), new Vector3(0.7f, 1.1f, 0.8f));
             const float clearance = 0.6f;
 
-            var fit = GeneralaAssetBuilder.ArtFit.For(raw, 2f, 1.1f, clearance);
+            var fit = BossArtFitter.ArtFit.For(raw, 2f, 1.1f, clearance);
 
             Assert.AreEqual(fit.Bounds.max.y + clearance, fit.HealthBarOffset.y, 0.0001f);
             Assert.AreEqual(0f, fit.HealthBarOffset.x, 0.0001f);
@@ -212,7 +212,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         public void ArtFit_Unmeasured_LeavesTheWrapperUntouched()
         {
             // El fallback cuando el arte no reporta bounds usables.
-            var fit = GeneralaAssetBuilder.ArtFit.Unmeasured(2.6f);
+            var fit = BossArtFitter.ArtFit.Unmeasured(2.6f);
 
             Assert.AreEqual(1f, fit.Scale, 0.0001f);
             Assert.AreEqual(0f, fit.Lift, 0.0001f);
@@ -272,15 +272,15 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         }
 
         /// <summary>Fit de un jefe ya ajustado: 1 de ancho, 2 de alto, apoyado en el piso.</summary>
-        private static GeneralaAssetBuilder.ArtFit SampleBossFit() =>
-            GeneralaAssetBuilder.ArtFit.For(
+        private static BossArtFitter.ArtFit SampleBossFit() =>
+            BossArtFitter.ArtFit.For(
                 new Bounds(new Vector3(0f, 0.55f, 0f), new Vector3(0.7f, 1.1f, 0.8f)),
                 GeneralaAssetBuilder.BossTargetHeight,
                 GeneralaAssetBuilder.BossMaxWidth,
                 0.6f);
 
-        private static GeneralaAssetBuilder.ArtFit SampleDiceFit() =>
-            GeneralaAssetBuilder.ArtFit.For(
+        private static BossArtFitter.ArtFit SampleDiceFit() =>
+            BossArtFitter.ArtFit.For(
                 new Bounds(Vector3.zero, new Vector3(1.2f, 1.2f, 1.2f)),
                 GeneralaAssetBuilder.DiceTargetHeight,
                 GeneralaAssetBuilder.DiceMaxWidth,

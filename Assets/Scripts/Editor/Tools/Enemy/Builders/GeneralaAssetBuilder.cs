@@ -267,10 +267,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         public const string MaterialsFolder = BossVisualWrapperBuilder.DefaultMaterialsRoot + "/" + BossName;
 
         /// <summary>Nombre del hijo que envuelve el arte — el default de <see cref="BossWrapperSpec"/>.</summary>
-        private const string ArtChildName = "Art";
 
         /// <summary>Nombre del hijo con la barra de vida world-space que arma el wrapper.</summary>
-        private const string HealthBarChildName = "Canvas";
 
         // Medidas objetivo, en unidades de mundo (TileSize = 1). El alto sigue a los jefes que
         // ya están en el juego (SecurityGuardBoss mide 1.8, GeneralDirector 2); el ancho está
@@ -301,8 +299,6 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         private const float DiceBarScale = 0.35f;
 
         /// <summary>Escalas de arte fuera de este rango son síntoma de prop equivocado, no de tuning.</summary>
-        private const float MinArtScale = 0.3f;
-        private const float MaxArtScale = 3f;
 
         // ---- Paleta ---------------------------------------------------------------------
         //
@@ -386,12 +382,12 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         /// </summary>
         public static GameObject BuildBossVisual()
         {
-            var fit = MeasureFit(BossArtPrefabPath, BossTargetHeight, BossMaxWidth, BossBarClearance);
+            var fit = BossArtFitter.Measure(BossArtPrefabPath, BossTargetHeight, BossMaxWidth, BossBarClearance);
 
             var wrapper = BossVisualWrapperBuilder.BuildWrapper(BuildBossSpec(fit, BuildBossProps(fit)));
             if (wrapper == null) return null;
 
-            ApplyArtFit(BossVisualPrefabPath, fit);
+            BossArtFitter.Apply(BossVisualPrefabPath, fit);
             return AssetDatabase.LoadAssetAtPath<GameObject>(BossVisualPrefabPath);
         }
 
@@ -401,12 +397,12 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         /// </summary>
         public static GameObject BuildDiceVisual()
         {
-            var fit = MeasureFit(DiceArtPrefabPath, DiceTargetHeight, DiceMaxWidth, DiceBarClearance);
+            var fit = BossArtFitter.Measure(DiceArtPrefabPath, DiceTargetHeight, DiceMaxWidth, DiceBarClearance);
 
             var wrapper = BossVisualWrapperBuilder.BuildWrapper(BuildDiceSpec(fit));
             if (wrapper == null) return null;
 
-            ApplyArtFit(DiceVisualPrefabPath, fit, SanitizeDieArt, DiceBarScale);
+            BossArtFitter.Apply(DiceVisualPrefabPath, fit, SanitizeDieArt, DiceBarScale);
             return AssetDatabase.LoadAssetAtPath<GameObject>(DiceVisualPrefabPath);
         }
 
@@ -414,7 +410,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         /// Ficha del wrapper del jefe. Separada del build para poder testear el spec sin escribir
         /// assets: el collider Box, el retinte navy y la carpeta de materiales son el contrato.
         /// </summary>
-        public static BossWrapperSpec BuildBossSpec(ArtFit fit, List<BossPropSpec> props)
+        public static BossWrapperSpec BuildBossSpec(BossArtFitter.ArtFit fit, List<BossPropSpec> props)
         {
             return new BossWrapperSpec
             {
@@ -449,7 +445,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         }
 
         /// <summary>Ficha del wrapper del dado: barra propia y collider Box, porque es un cubo.</summary>
-        public static BossWrapperSpec BuildDiceSpec(ArtFit fit)
+        public static BossWrapperSpec BuildDiceSpec(BossArtFitter.ArtFit fit)
         {
             return new BossWrapperSpec
             {
@@ -473,14 +469,14 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         /// medidas salen de los bounds reales, así que un prop reexportado más grande no descoloca
         /// nada — se recalcula en el próximo build.
         /// </summary>
-        public static List<BossPropSpec> BuildBossProps(ArtFit fit)
+        public static List<BossPropSpec> BuildBossProps(BossArtFitter.ArtFit fit)
         {
             var props = new List<BossPropSpec>();
 
-            if (TryMeasurePrefab(CupPropPrefabPath, out var cupBounds))
+            if (BossArtFitter.TryMeasurePrefab(CupPropPrefabPath, out var cupBounds))
                 props.Add(BuildCupProp(fit, cupBounds));
 
-            if (TryMeasurePrefab(BannerPropPrefabPath, out var bannerBounds)
+            if (BossArtFitter.TryMeasurePrefab(BannerPropPrefabPath, out var bannerBounds)
                 && TryBuildBannerProp(fit, bannerBounds, out var banner))
             {
                 props.Add(banner);
@@ -498,10 +494,10 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         /// transform de la sala donde se autoró. Restando <c>min</c> / sumando <c>max</c> el prop
         /// apoya y toca sin importar dónde caiga su pivot.
         /// </remarks>
-        public static BossPropSpec BuildCupProp(ArtFit fit, Bounds cupBounds)
+        public static BossPropSpec BuildCupProp(BossArtFitter.ArtFit fit, Bounds cupBounds)
         {
-            float scale = FitScale(cupBounds, CupHeight, maxWidth: CupHeight * 2f);
-            var scaled = ScaleBounds(cupBounds, scale);
+            float scale = BossArtFitter.FitScale(cupBounds, CupHeight, maxWidth: CupHeight * 2f);
+            var scaled = BossArtFitter.ScaleBounds(cupBounds, scale);
 
             return new BossPropSpec
             {
@@ -519,15 +515,15 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         /// Estandarte a la espalda. Devuelve false — y no cuelga nada — si para llegar al alto
         /// pedido hay que escalar el prop fuera de rango.
         /// </summary>
-        public static bool TryBuildBannerProp(ArtFit fit, Bounds bannerBounds, out BossPropSpec prop)
+        public static bool TryBuildBannerProp(BossArtFitter.ArtFit fit, Bounds bannerBounds, out BossPropSpec prop)
         {
             prop = null;
             if (bannerBounds.size.y <= Mathf.Epsilon) return false;
 
             float raw = BannerHeight / bannerBounds.size.y;
-            if (raw < MinArtScale || raw > MaxArtScale) return false;
+            if (raw < BossArtFitter.MinArtScale || raw > BossArtFitter.MaxArtScale) return false;
 
-            var scaled = ScaleBounds(bannerBounds, raw);
+            var scaled = BossArtFitter.ScaleBounds(bannerBounds, raw);
 
             prop = new BossPropSpec
             {
@@ -544,194 +540,6 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
             return true;
         }
 
-        // ======================================================================
-        // Fit del arte
-        // ======================================================================
-
-        /// <summary>
-        /// Escala, levantada y bounds finales de un prefab de arte dentro de su wrapper.
-        /// </summary>
-        /// <remarks>
-        /// <see cref="BossVisualWrapperBuilder"/> anida el arte a escala 1 en el origen del wrapper,
-        /// que es lo correcto para un rig con el pivot en los pies y la altura de un jefe. El dado
-        /// tiene el pivot en el centro del cubo, así que apoyado en el origen queda medio enterrado.
-        /// Este struct calcula la corrección a partir de los bounds reales del arte, y
-        /// <see cref="ApplyArtFit"/> la escribe en el prefab.
-        /// </remarks>
-        public readonly struct ArtFit
-        {
-            /// <summary>Escala uniforme del hijo <c>Art</c>.</summary>
-            public readonly float Scale;
-
-            /// <summary>Y local del hijo <c>Art</c> para que el arte apoye en el piso.</summary>
-            public readonly float Lift;
-
-            /// <summary>Bounds del arte ya escalado y apoyado — es lo que tiene que cubrir el collider.</summary>
-            public readonly Bounds Bounds;
-
-            public readonly Vector3 HealthBarOffset;
-
-            public ArtFit(float scale, float lift, Bounds bounds, Vector3 healthBarOffset)
-            {
-                Scale = scale;
-                Lift = lift;
-                Bounds = bounds;
-                HealthBarOffset = healthBarOffset;
-            }
-
-            public static ArtFit For(Bounds raw, float targetHeight, float maxWidth, float barClearance)
-            {
-                float scale = FitScale(raw, targetHeight, maxWidth);
-                var scaled = ScaleBounds(raw, scale);
-
-                float lift = -scaled.min.y;
-                var grounded = new Bounds(scaled.center + new Vector3(0f, lift, 0f), scaled.size);
-
-                return new ArtFit(scale, lift, grounded,
-                    new Vector3(0f, grounded.max.y + barClearance, 0f));
-            }
-
-            /// <summary>Fallback cuando el arte no reporta bounds: se deja como lo dejó el wrapper.</summary>
-            public static ArtFit Unmeasured(float barHeight) => new ArtFit(
-                1f, 0f,
-                new Bounds(new Vector3(0f, 1f, 0f), new Vector3(1f, 2f, 1f)),
-                new Vector3(0f, barHeight, 0f));
-        }
-
-        private static ArtFit MeasureFit(string artPath, float targetHeight, float maxWidth, float barClearance)
-        {
-            if (TryMeasurePrefab(artPath, out var raw))
-                return ArtFit.For(raw, targetHeight, maxWidth, barClearance);
-
-            Debug.LogWarning(LogPrefix + $"No se pudieron medir los bounds de '{artPath}' — el wrapper " +
-                             "sale a escala 1 y hay que revisar collider y barra a mano.");
-            return ArtFit.Unmeasured(targetHeight + barClearance);
-        }
-
-        /// <summary>
-        /// Escala para llegar a <paramref name="targetHeight"/> sin pasarse de
-        /// <paramref name="maxWidth"/>: manda la restricción más chica, porque un jefe que llega al
-        /// alto pedido derramándose sobre las casillas vecinas deja de leerse en su tile.
-        /// </summary>
-        private static float FitScale(Bounds raw, float targetHeight, float maxWidth)
-        {
-            float scale = targetHeight / Mathf.Max(raw.size.y, Mathf.Epsilon);
-
-            float widest = Mathf.Max(raw.size.x, raw.size.z);
-            if (widest > Mathf.Epsilon) scale = Mathf.Min(scale, maxWidth / widest);
-
-            return Mathf.Clamp(scale, MinArtScale, MaxArtScale);
-        }
-
-        private static Bounds ScaleBounds(Bounds bounds, float scale) =>
-            new Bounds(bounds.center * scale, bounds.size * scale);
-
-        /// <summary>
-        /// Bounds de los Mesh/SkinnedMesh renderers de un prefab, medidos con el prefab en el origen
-        /// y a escala 1 — el mismo encuadre en el que el wrapper anida el arte.
-        /// </summary>
-        private static bool TryMeasurePrefab(string prefabPath, out Bounds bounds)
-        {
-            bounds = default;
-
-            var asset = AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath);
-            if (asset == null)
-            {
-                Debug.LogWarning(LogPrefix + $"No hay prefab en '{prefabPath}' — no se puede medir.");
-                return false;
-            }
-
-            var probe = PrefabUtility.InstantiatePrefab(asset) as GameObject;
-            if (probe == null) return false;
-
-            try
-            {
-                // El prefab puede traer el transform de la sala donde se autoró (la caja de dados
-                // viene en 1.5/0.783/-1.5): sin resetear, los bounds saldrían corridos.
-                probe.transform.SetPositionAndRotation(Vector3.zero, Quaternion.identity);
-                probe.transform.localScale = Vector3.one;
-
-                bool any = false;
-                foreach (var renderer in probe.GetComponentsInChildren<Renderer>(true))
-                {
-                    if (!(renderer is MeshRenderer || renderer is SkinnedMeshRenderer)) continue;
-
-                    if (any) bounds.Encapsulate(renderer.bounds);
-                    else { bounds = renderer.bounds; any = true; }
-                }
-
-                if (!any || bounds.size.y <= Mathf.Epsilon)
-                {
-                    Debug.LogWarning(LogPrefix + $"'{prefabPath}' no reporta bounds usables.");
-                    return false;
-                }
-                return true;
-            }
-            finally
-            {
-                UnityEngine.Object.DestroyImmediate(probe);
-            }
-        }
-
-        /// <summary>
-        /// Escribe el fit sobre el wrapper ya guardado: escala y levanta el hijo <c>Art</c>, re-dimensiona
-        /// el collider del root y, opcionalmente, encoge la barra y corre un paso extra sobre el arte.
-        /// </summary>
-        /// <remarks>
-        /// Es una segunda pasada y no un parámetro del spec porque <see cref="BossVisualWrapperBuilder"/>
-        /// fija el arte en identidad a propósito (su collider asume eso). Reescribir sobre el mismo path
-        /// mantiene el GUID, así que los <c>EnemyDataSO</c> que ya apuntan al wrapper sobreviven.
-        /// </remarks>
-        private static void ApplyArtFit(
-            string prefabPath,
-            ArtFit fit,
-            Action<Transform> postProcess = null,
-            float barScale = 1f)
-        {
-            var contents = PrefabUtility.LoadPrefabContents(prefabPath);
-            if (contents == null)
-            {
-                Debug.LogWarning(LogPrefix + $"No se pudo abrir '{prefabPath}' para ajustar el arte.");
-                return;
-            }
-
-            try
-            {
-                var art = contents.transform.Find(ArtChildName);
-                if (art == null)
-                {
-                    Debug.LogWarning(LogPrefix + $"'{prefabPath}' no tiene hijo '{ArtChildName}' — " +
-                                     "no se ajusta ni la escala ni el collider.");
-                    return;
-                }
-
-                art.localScale = Vector3.one * fit.Scale;
-                art.localPosition = new Vector3(0f, fit.Lift, 0f);
-
-                // El wrapper dimensionó el collider con el arte en identidad: escalado y levantado,
-                // ese collider queda chico y corrido respecto de lo que se ve.
-                var box = contents.GetComponent<BoxCollider>();
-                if (box != null)
-                {
-                    box.center = fit.Bounds.center;
-                    box.size = fit.Bounds.size;
-                }
-
-                if (!Mathf.Approximately(barScale, 1f))
-                {
-                    var bar = contents.transform.Find(HealthBarChildName);
-                    if (bar != null) bar.localScale = Vector3.one * barScale;
-                }
-
-                postProcess?.Invoke(art);
-
-                PrefabUtility.SaveAsPrefabAsset(contents, prefabPath);
-            }
-            finally
-            {
-                PrefabUtility.UnloadPrefabContents(contents);
-            }
-        }
 
         /// <summary>
         /// Deja el dado de la bandeja física en condiciones de ser un pawn de mesa.
