@@ -354,6 +354,8 @@ namespace Rollgeon.UI.Screens
             if (_activeItems == null) _activeItems = UnityEngine.Object.FindFirstObjectByType<ActiveItemsView>(FindObjectsInactive.Include);
             if (_playerBaseDamage == null) _playerBaseDamage = UnityEngine.Object.FindFirstObjectByType<Rollgeon.UI.HUD.Breakdown.PlayerBaseDamageView>(FindObjectsInactive.Include);
             if (_breakdownDirector == null) _breakdownDirector = UnityEngine.Object.FindFirstObjectByType<Rollgeon.UI.HUD.Breakdown.BreakdownSequenceDirector>(FindObjectsInactive.Include);
+            // §6.6: el dado de Movimiento vive en la mesa (Canvas_ActionRoll), cross-canvas.
+            if (_movementDie == null) _movementDie = UnityEngine.Object.FindFirstObjectByType<MovementDieView>(FindObjectsInactive.Include);
 
             if (_turnQueue != null) _turnQueue.Bind(playerGuid);
             else Debug.LogWarning(LogPrefix + "_turnQueue no cableado.", this);

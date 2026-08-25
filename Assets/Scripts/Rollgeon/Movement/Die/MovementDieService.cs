@@ -80,7 +80,14 @@ namespace Rollgeon.Movement.Die
                 EventManager.Trigger(EventName.OnMovementDieRolled, playerGuid, face, type);
             }
 
-            if (_presenter != null && _presenter.TryPresent(type, face, Reveal)) return;
+            if (_presenter != null)
+            {
+                // La mesa de dados se abre con este evento y se cierra con OnMovementDieRolled.
+                // Se emite ANTES de presentar: si el presenter revela sincrónico (sin
+                // animación) el par abre/cierra queda en orden. Sin presenter no hay mesa.
+                EventManager.Trigger(EventName.OnMovementDieRollStarted, playerGuid, type);
+                if (_presenter.TryPresent(type, face, Reveal)) return;
+            }
             Reveal();
         }
 

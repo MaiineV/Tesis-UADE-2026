@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using Patterns;
 using Rollgeon.Dice;
 using Rollgeon.Movement.Die;
@@ -9,16 +10,19 @@ using UnityEngine;
 namespace Rollgeon.UI.HUD
 {
     /// <summary>
-    /// Slot del dado de Movimiento en el HUD de combate (§6.6). Entidad visual separada del
-    /// <see cref="DiceZoneView"/>: un único <see cref="DiceSlotView"/> que muestra el tipo del
-    /// dado de la clase y, al resolver Movimiento, gira y revela la cara (= rango).
+    /// Dado de Movimiento en la mesa de dados (§6.6). Vive centrado en el <c>RollArea</c> de
+    /// <c>Canvas_ActionRoll</c> y está OCULTO salvo durante su tirada: la mesa se abre
+    /// (<c>OnMovementDieRollStarted</c>), el dado gira en el centro, revela la cara, la deja
+    /// leer un instante y se esconde; recién ahí la mesa se cierra (<c>OnMovementDieRolled</c>)
+    /// y arranca la selección de tile.
     /// </summary>
     /// <remarks>
     /// Es el <see cref="IMovementDiePresenter"/> del <see cref="IMovementDieService"/>: el
     /// servicio ya conoce la cara, esta view solo la anima y avisa al terminar — el rango se
     /// publica recién en ese callback, así el hover preview no lo spoilea. Reusa
-    /// <see cref="DiceSlotAnimator"/> (mismo spin, mismo pacing por <c>GameSpeedPrefs</c>) y
-    /// el <see cref="DiceUiAnimationSettingsSO"/> de Resources del DiceZoneView.
+    /// <see cref="DiceSlotAnimator"/> (mismo spin y pacing por <c>GameSpeedPrefs</c> que los
+    /// 5 dados de la build) y el <see cref="DiceUiAnimationSettingsSO"/> de Resources.
+    /// Entidad visual separada del <see cref="DiceZoneView"/>: no toca sus 5 slots.
     /// </remarks>
     [AddComponentMenu("Rollgeon/UI/HUD/Movement Die View")]
     public sealed class MovementDieView : MonoBehaviour, IMovementDiePresenter
@@ -32,14 +36,17 @@ namespace Rollgeon.UI.HUD
         [SerializeField, Tooltip("Opcional: override del tuning de spin. Null = Resources/" + SettingsResourcePath + ".")]
         private DiceUiAnimationSettingsSO _animSettings;
 
-        [SerializeField, Tooltip("Ocultar el slot fuera de combate (Bind/Unbind lo prende/apaga).")]
-        private bool _hideWhenUnbound = true;
+        [SerializeField, MinValue(0f)]
+        [Tooltip("Segundos que la cara queda visible tras el reveal antes de esconder el dado y " +
+                 "cerrar la mesa. Sigue al game speed.")]
+        private float _revealHoldSeconds = 0.6f;
 
         private DiceSlotAnimator _animator;
         private IMovementDieService _service;
         private Guid _playerGuid;
         private bool _bound;
         private Action _pendingReveal;
+        private Coroutine _holdRoutine;
 
         // ---- Lifecycle ---------------------------------------------------------
 
@@ -57,7 +64,7 @@ namespace Rollgeon.UI.HUD
             if (!ServiceLocator.TryGetService<IMovementDieService>(out _service) || _service == null)
             {
                 // Sin servicio (escena vieja, tests) no hay dado que mostrar.
-                gameObject.SetActive(false);
+                Hide();
                 return;
             }
 
@@ -65,9 +72,7 @@ namespace Rollgeon.UI.HUD
             _service.SetPresenter(this);
             _service.OnCleared += HandleCleared;
             _bound = true;
-
-            gameObject.SetActive(true);
-            ShowIdle();
+            Hide();
         }
 
         public void Unbind()
@@ -80,7 +85,6 @@ namespace Rollgeon.UI.HUD
             Abort();
             _service = null;
             _bound = false;
-            if (_hideWhenUnbound) gameObject.SetActive(false);
         }
 
         private void OnDestroy() => Unbind();
@@ -93,8 +97,10 @@ namespace Rollgeon.UI.HUD
             if (!_bound || _slot == null || _animator == null || !gameObject.activeInHierarchy)
                 return false;
 
+            StopHold();
             _pendingReveal = onRevealed;
-            _slot.SetDiceType(type);
+            _slot.gameObject.SetActive(true);
+            _slot.Bind(type);
             _slot.SetSpinRole(DiceShapeRole.SideA);
             _slot.ClearSpinPreview();
 
@@ -104,9 +110,9 @@ namespace Rollgeon.UI.HUD
             {
                 _slot.SetSpinRole(null);
                 _slot.ShowFace(face);
-                var reveal = _pendingReveal;
-                _pendingReveal = null;
-                reveal?.Invoke();
+                // Dejar leer la cara antes de esconder el dado y cerrar la mesa.
+                StopHold();
+                _holdRoutine = StartCoroutine(HoldThenReveal());
             });
             return true;
         }
@@ -115,22 +121,41 @@ namespace Rollgeon.UI.HUD
         public void Abort()
         {
             _pendingReveal = null;
+            StopHold();
             if (_animator != null) _animator.StopAll();
             if (_slot != null) _slot.SetSpinRole(null);
-            ShowIdle();
+            Hide();
         }
 
         // ---- Internals ---------------------------------------------------------
 
-        private void HandleCleared() => ShowIdle();
-
-        // Sin tirada vigente el slot muestra el tipo (D4…) sin número: el dado "existe"
-        // como entidad propia aunque no se esté moviendo.
-        private void ShowIdle()
+        private IEnumerator HoldThenReveal()
         {
-            if (_slot == null) return;
-            var type = _service != null ? _service.CurrentType : MovementDieSO.DefaultType;
-            _slot.Bind(type);
+            float hold = _revealHoldSeconds / Rollgeon.Timing.GameSpeedPrefs.Multiplier;
+            if (hold > 0f) yield return new WaitForSeconds(hold);
+            _holdRoutine = null;
+            var reveal = _pendingReveal;
+            _pendingReveal = null;
+            Hide();
+            reveal?.Invoke();
+        }
+
+        private void StopHold()
+        {
+            if (_holdRoutine != null)
+            {
+                StopCoroutine(_holdRoutine);
+                _holdRoutine = null;
+            }
+        }
+
+        private void HandleCleared() => Hide();
+
+        // Fuera de su tirada el dado no se ve: es una entidad propia, pero vive en la mesa
+        // igual que los otros dados y solo aparece mientras se tira.
+        private void Hide()
+        {
+            if (_slot != null) _slot.gameObject.SetActive(false);
         }
 
         private void EnsureAnimator()
