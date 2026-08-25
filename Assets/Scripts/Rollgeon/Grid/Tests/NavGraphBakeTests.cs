@@ -244,6 +244,112 @@ namespace Rollgeon.Grid.Tests
             }
         }
 
+        // -------------------------------------------------------------
+        // BUG-061 — nodo caminable con TODOS sus edges cortados por un blocker
+        // que solapa su propia celda queda como isla fantasma. El post-pass
+        // debe podarlo; un vecino que se queda sin edges SOLO porque perdió a
+        // este vecino (sin blocker propio) no se toca.
+        // -------------------------------------------------------------
+
+        [Test]
+        public void Bake_BlockerCoLocatedWithZeroDegreeNode_NodeIsRemoved()
+        {
+            var root = new GameObject("Root");
+            try
+            {
+                // Arrange: A(0,0) con un mesh "alto" (topY=0.5) y B(1,0) normal, adyacentes.
+                // Un blocker EN LA MISMA CELDA que A, con Y bajo (min=-0.1, max=0.4):
+                // satisface el clause "wb.max.y <= topY+eps" de IntersectsAnyBlocker → A
+                // NO se mata al agregar nodos (queda "caminable"). Pero ese mismo blocker
+                // SÍ contiene el centro de A (y=0 está en [-0.1,0.4]) → IsSegmentBlocked
+                // corta el único edge A↔B. A termina con grado 0 pese a estar "caminable".
+                CreateTallFloorCell(root, x: 0, z: 0);
+                CreateFloorCell(root, x: 1, z: 0);
+                CreateExemptLowBlocker(root, coord: new GridCoord(0, 0));
+
+                var settings = new NavGraphBakeSettings { TileSize = 1f, HeightThreshold = 0.5f };
+
+                // Act
+                var graph = NavGraphBaker.Bake(root, settings);
+
+                // Assert: solo sobrevive B — A se podó por grado 0 + blocker en su celda.
+                Assert.AreEqual(1, graph.NodeCount,
+                    "A (grado 0, con blocker en su propia celda) debe desaparecer.");
+                Assert.AreEqual(new GridCoord(1, 0), graph.Nodes[0].Coord,
+                    "El nodo sobreviviente debe ser B — no tenía blocker en su celda.");
+            }
+            finally
+            {
+                Object.DestroyImmediate(root);
+            }
+        }
+
+        [Test]
+        public void Bake_IsolatedNodeWithoutBlockerOverlap_NodeSurvives()
+        {
+            var root = new GameObject("Root");
+            try
+            {
+                // Arrange: una celda suelta sin vecinos autorados (grado 0 por diseño,
+                // no por un blocker) + un blocker exento en OTRA celda, lejos. El post-pass
+                // no debe tocar la celda suelta: su propia celda nunca solapa al blocker.
+                CreateFloorCell(root, x: 5, z: 5);
+                CreateFloorCell(root, x: 0, z: 0);
+                CreateFloorCell(root, x: 1, z: 0);
+                CreateExemptLowBlocker(root, coord: new GridCoord(0, 0));
+
+                var settings = new NavGraphBakeSettings { TileSize = 1f, HeightThreshold = 0.5f };
+
+                // Act
+                var graph = NavGraphBaker.Bake(root, settings);
+
+                // Assert: (5,5) sigue presente pese a tener grado 0 — nunca solapó al blocker.
+                var coords = new HashSet<GridCoord>();
+                foreach (var n in graph.Nodes) coords.Add(n.Coord);
+                Assert.IsTrue(coords.Contains(new GridCoord(5, 5)),
+                    "La celda suelta sin blocker propio no debe podarse.");
+            }
+            finally
+            {
+                Object.DestroyImmediate(root);
+            }
+        }
+
+        // Floor con bounds inusualmente alto (topY=0.5) — simula un piso cuyo mesh
+        // autorado tiene más altura de la esperada, el disparador realista del primer
+        // clause de exención de IntersectsAnyBlocker.
+        private static void CreateTallFloorCell(GameObject parent, int x, int z)
+        {
+            var cube = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            cube.transform.SetParent(parent.transform, worldPositionStays: false);
+            cube.transform.localPosition = new Vector3(x + 0.5f, 0f, z + 0.5f);
+            cube.transform.localScale = new Vector3(1f, 1f, 1f); // bounds y: [-0.5, 0.5]
+
+            var marker = cube.AddComponent<TileMarker>();
+            marker.Coord = new GridCoord(x, z);
+            marker.Type = TileType.Floor;
+            marker.IsBlocker = false;
+        }
+
+        // Blocker cuyo renderer va de y=-0.1 a y=0.4: exento del node-kill de un floor con
+        // topY=0.5 (clause "entirely below floor top"), pero su Bounds SÍ contiene y=0 —
+        // la altura real a la que viven los nodos del piso — así que corta cualquier edge
+        // que toque su celda.
+        private static void CreateExemptLowBlocker(GameObject parent, GridCoord coord)
+        {
+            var cube = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            cube.transform.SetParent(parent.transform, worldPositionStays: false);
+            cube.transform.localPosition = new Vector3(coord.X + 0.5f, 0.15f, coord.Y + 0.5f);
+            cube.transform.localScale = new Vector3(1f, 0.5f, 1f); // bounds y: [-0.1, 0.4]
+
+            var marker = cube.AddComponent<TileMarker>();
+            marker.Coord = coord;
+            marker.Type = TileType.Decoration;
+            marker.IsBlocker = true;
+            marker.Footprint = Vector3Int.one;
+            marker.FootprintOffset = Vector3Int.zero;
+        }
+
         // Floor tile ubicado en el CENTRO de su celda con la convención del
         // editor (celda N = [N, N+1], centro N+0.5), para que los renderer
         // bounds coincidan con el rectángulo de la celda.

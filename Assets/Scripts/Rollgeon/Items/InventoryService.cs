@@ -287,6 +287,12 @@ namespace Rollgeon.Items
                 var playerGuid = GetPlayerGuid();
                 if (payload.SourceGuid != playerGuid) return;
                 if (capturedHook.ComboFilter != null && !capturedHook.ComboFilter.Matches(payload.ComboId)) return;
+                // BUG-080: opt-in por hook — un bono de daño (El Egoísta) no debe leakear a
+                // Heal/Movement, que comparten el mismo play scratch que PlayerComboDamage/
+                // PlayerComboHeal leen. Unknown (default) = sin restricción, preserva items
+                // existentes que reaccionan a cualquier ComboPlayed.
+                if (capturedHook.ActionKindFilter != Rollgeon.Combat.Rolls.RollActionKind.Unknown
+                    && payload.ActionKind != capturedHook.ActionKindFilter) return;
 
                 // El efecto corre DENTRO de la ventana de combo jugado: el play scratch
                 // viaja como trigger context para que un EffAddComboBonus del item sume

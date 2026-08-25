@@ -718,6 +718,84 @@ MonoBehaviour:
     m_Localized: Playing
     m_Metadata:
       m_Items: []
+  - m_Id: 14619625939369984
+    m_Localized: 'You zoomed! Now rotate the camera: hold the right button and drag
+      the mouse.'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 14619625981313024
+    m_Localized: 'You rotated the camera! Now try the zoom: use the mouse wheel to
+      zoom in or out.'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 14619625989701632
+    m_Localized: 'Cost: 1 Roll per roll'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 14619625989701633
+    m_Localized: " \xD7 {0}"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 14619625989701634
+    m_Localized: 'No combo: ATK + highest kept die'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 14619625989701635
+    m_Localized: 'Damage: ATK ({0}) + combo score'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 14619625989701636
+    m_Localized: 'Damage: {0}'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 14619625989701637
+    m_Localized: "Healing: ATK ({0}) + combo base \xD7 dice multiplier"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 14619625989701638
+    m_Localized: 'Healing: combo score'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 14619625989701639
+    m_Localized: 'Healing: {0}% of max HP'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 14619625989701640
+    m_Localized: 'Healing: {0} HP'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 14619625989701641
+    m_Localized: "Shield: ATK ({0}) + combo base \xD7 dice multiplier"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 14619625989701642
+    m_Localized: 'Shield: +{0}'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 14619625989701643
+    m_Localized: "The Boss must be defeated \u2014 the door can't be forced"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 14619625989701644
+    m_Localized: 'Score to beat: {0}'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 14619625989701645
+    m_Localized: Move
+    m_Metadata:
+      m_Items: []
+  - m_Id: 14619625989701646
+    m_Localized: Move to any free tile in the room
+    m_Metadata:
+      m_Items: []
+  - m_Id: 14619625989701647
+    m_Localized: Move up to {0} tiles
+    m_Metadata:
+      m_Items: []
+  - m_Id: 14619625998090240
+    m_Localized: Defense
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

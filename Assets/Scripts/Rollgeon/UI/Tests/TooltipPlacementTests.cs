@@ -11,7 +11,9 @@ namespace Rollgeon.UI.Tests
     /// Cubre el fix de tooltips cortados y descentrados (BUG-029): AutoFit re-posiciona
     /// el panel para que entre completo en el canvas; Fixed no suma el offset global de
     /// AutoFit pero sí se clampea al canvas como red de seguridad. También cubre el
-    /// anclaje al centro real del rect (no al pivot) que usan ambos modos.
+    /// anclaje X centrado (no al pivot) que usan ambos modos, y el fix BUG-041: AutoFit
+    /// ancla al borde SUPERIOR del rect (no al centro) para que el tooltip no quede
+    /// tapado por el propio elemento/cursor que lo disparó; Fixed sigue centrando.
     /// </summary>
     [TestFixture]
     public sealed class TooltipPlacementTests
@@ -163,11 +165,14 @@ namespace Rollgeon.UI.Tests
         }
 
         [Test]
-        public void ScreenPosOf_TriggerWithPivotZeroZero_AnchorsToRectCenterNotPivot()
+        public void ScreenPosOf_TriggerWithPivotZeroZero_AnchorsAboveRectXCenteredNotPivot()
         {
             // Arrange — BUG-029: ScreenPosOf usaba rect.position (el PIVOT), no el
             // centro visual. Triggers con pivot (0,0), como PocionSlot, quedaban con el
             // tooltip descolgado hacia la esquina en vez de centrado sobre el elemento.
+            // BUG-041: el anchor Y ya no es el centro sino el borde SUPERIOR del rect —
+            // con el offset chico del controller, anclar al centro dejaba el tooltip de
+            // curación con el borde inferior tapado por el propio botón/cursor.
             var go = new GameObject("Trigger", typeof(RectTransform));
             _objects.Add(go);
             var rect = (RectTransform)go.transform;
@@ -180,16 +185,16 @@ namespace Rollgeon.UI.Tests
             // Act
             var screenPos = TooltipPlacementSettings.ScreenPosOf(rect);
 
-            // Assert — el centro real está a mitad de ancho/alto de esa esquina.
+            // Assert — X centrado (mitad del ancho); Y en el borde superior (alto completo).
             Assert.AreEqual(130f, screenPos.x, 1e-3f);
-            Assert.AreEqual(110f, screenPos.y, 1e-3f);
+            Assert.AreEqual(120f, screenPos.y, 1e-3f);
         }
 
         [Test]
-        public void ScreenPosOf_TriggerWithPivotCenter_MatchesRectPosition()
+        public void ScreenPosOf_TriggerWithPivotCenter_AnchorsAboveRectPosition()
         {
             // Arrange — caso control: con pivot (0.5, 0.5) el centro coincide con
-            // rect.position, así que el fix no debe romper triggers "normales".
+            // rect.position; el anchor de AutoFit queda medio-alto (10) por encima.
             var go = new GameObject("Trigger", typeof(RectTransform));
             _objects.Add(go);
             var rect = (RectTransform)go.transform;
@@ -202,7 +207,71 @@ namespace Rollgeon.UI.Tests
 
             // Assert
             Assert.AreEqual(200f, screenPos.x, 1e-3f);
-            Assert.AreEqual(300f, screenPos.y, 1e-3f);
+            Assert.AreEqual(310f, screenPos.y, 1e-3f);
+        }
+
+        [Test]
+        public void ScreenPosOf_TallerRect_AnchorsHigherThanShorterRect()
+        {
+            // Arrange — BUG-041 regression: el punto de anclaje debe escalar con la
+            // altura real del trigger (HealButton 100x100 vs PocionSlot 80x92), no ser
+            // un offset fijo — sino un botón alto seguiría con el tooltip pisándole el borde.
+            var shortGo = new GameObject("Short", typeof(RectTransform));
+            _objects.Add(shortGo);
+            var shortRect = (RectTransform)shortGo.transform;
+            shortRect.pivot = new Vector2(0.5f, 0.5f);
+            shortRect.sizeDelta = new Vector2(80f, 20f);
+            shortRect.position = new Vector3(0f, 0f, 0f);
+
+            var tallGo = new GameObject("Tall", typeof(RectTransform));
+            _objects.Add(tallGo);
+            var tallRect = (RectTransform)tallGo.transform;
+            tallRect.pivot = new Vector2(0.5f, 0.5f);
+            tallRect.sizeDelta = new Vector2(80f, 100f);
+            tallRect.position = new Vector3(0f, 0f, 0f);
+
+            // Act
+            var shortAnchor = TooltipPlacementSettings.ScreenPosOf(shortRect);
+            var tallAnchor = TooltipPlacementSettings.ScreenPosOf(tallRect);
+
+            // Assert
+            Assert.Greater(tallAnchor.y, shortAnchor.y,
+                "Un rect más alto debe anclar más arriba en pantalla.");
+            Assert.AreEqual(10f, shortAnchor.y, 1e-3f);
+            Assert.AreEqual(50f, tallAnchor.y, 1e-3f);
+        }
+
+        [Test]
+        public void ResolveFixedScreenPos_StillCentersAnchor_UnaffectedByAutoFitTopEdgeFix()
+        {
+            // Arrange — BUG-041: el fix de AutoFit (anclar al borde superior) NO debe
+            // mover los triggers Fixed (ej. offset autorado a mano de los chips de
+            // combate) — ResolveFixedScreenPos pasa por el helper de CENTRO, no por
+            // el público ScreenPosOf que ahora devuelve el borde superior.
+            var canvasGo = new GameObject("Canvas", typeof(Canvas));
+            _objects.Add(canvasGo);
+            canvasGo.GetComponent<Canvas>().renderMode = RenderMode.ScreenSpaceOverlay;
+
+            var anchorGo = new GameObject("Anchor", typeof(RectTransform));
+            anchorGo.transform.SetParent(canvasGo.transform, false);
+            var anchor = (RectTransform)anchorGo.transform;
+            anchor.pivot = new Vector2(0.5f, 0.5f);
+            anchor.sizeDelta = new Vector2(60f, 100f); // rect alto: si usara el borde superior, movería el Y bastante.
+            anchor.position = new Vector3(50f, 50f, 0f);
+
+            var settings = new TooltipPlacementSettings
+            {
+                Mode = TooltipPlacementMode.Fixed,
+                FixedAnchor = anchor,
+                FixedOffset = Vector2.zero,
+            };
+
+            // Act
+            var pos = settings.ResolveFixedScreenPos(null);
+
+            // Assert — coincide con el CENTRO del anchor (rect.position con pivot 0.5,0.5), no con el borde superior.
+            Assert.AreEqual(50f, pos.x, 1e-3f);
+            Assert.AreEqual(50f, pos.y, 1e-3f);
         }
 
         [Test]

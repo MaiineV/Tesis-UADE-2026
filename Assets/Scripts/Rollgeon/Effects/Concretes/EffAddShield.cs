@@ -9,6 +9,7 @@ using Rollgeon.Dice;
 using Rollgeon.Effects.Readers;
 using Rollgeon.Entities.Behaviors;
 using Rollgeon.Grid;
+using Rollgeon.Localization;
 using Rollgeon.Player;
 using Rollgeon.UI.Tooltips;
 using Rollgeon.Upgrades.Dice;
@@ -70,18 +71,24 @@ namespace Rollgeon.Effects.Concretes
                 {
                     int attack = ResolveOwnerAttack(context.OwnerGuid);
                     var sb = new System.Text.StringBuilder();
-                    sb.Append("Escudo: ATQ (").Append(attack).Append(") + base del combo × multi de dados");
+                    sb.Append(string.Format(
+                        LocalizedContent.Ui("tooltip.effect.shield.combo_header",
+                            "Escudo: ATQ ({0}) + base del combo × multi de dados"), attack));
                     if (!Mathf.Approximately(_comboMultiplier, 1f))
-                        sb.Append(" × ").Append(_comboMultiplier.ToString("0.##"));
+                        sb.Append(string.Format(
+                            LocalizedContent.Ui("tooltip.effect.combo.multiplier_suffix", " × {0}"),
+                            _comboMultiplier.ToString("0.##")));
                     return sb.ToString();
                 }
                 case DamageSource.FromReader when _reader != null:
-                    return "Escudo: +" + Mathf.RoundToInt(
-                        _reader.Read(context.ToReaderContext()) * _readerMultiplier);
+                    return string.Format(
+                        LocalizedContent.Ui("tooltip.effect.shield.flat", "Escudo: +{0}"),
+                        Mathf.RoundToInt(_reader.Read(context.ToReaderContext()) * _readerMultiplier));
                 case DamageSource.FromReader:
                     return null;
                 default:
-                    return "Escudo: +" + _baseAmount;
+                    return string.Format(
+                        LocalizedContent.Ui("tooltip.effect.shield.flat", "Escudo: +{0}"), _baseAmount);
             }
         }
 

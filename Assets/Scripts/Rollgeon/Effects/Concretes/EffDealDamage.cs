@@ -7,6 +7,7 @@ using Rollgeon.Combat.Pipelines;
 using Rollgeon.Dice;
 using Rollgeon.Effects.Readers;
 using Rollgeon.Entities.Behaviors;
+using Rollgeon.Localization;
 using Rollgeon.UI.Tooltips;
 using Rollgeon.Upgrades.Dice;
 using Sirenix.OdinInspector;
@@ -82,20 +83,27 @@ namespace Rollgeon.Effects.Concretes
                 {
                     int attack = ResolveOwnerAttack(context.OwnerGuid);
                     var sb = new System.Text.StringBuilder();
-                    sb.Append("Daño: ATQ (").Append(attack).Append(") + puntaje del combo");
+                    sb.Append(string.Format(
+                        LocalizedContent.Ui("tooltip.effect.damage.combo_header",
+                            "Daño: ATQ ({0}) + puntaje del combo"), attack));
                     if (!Mathf.Approximately(_comboMultiplier, 1f))
-                        sb.Append(" × ").Append(_comboMultiplier.ToString("0.##"));
+                        sb.Append(string.Format(
+                            LocalizedContent.Ui("tooltip.effect.combo.multiplier_suffix", " × {0}"),
+                            _comboMultiplier.ToString("0.##")));
                     sb.AppendLine();
-                    sb.Append("Sin combo: ATQ + dado más alto elegido");
+                    sb.Append(LocalizedContent.Ui("tooltip.effect.combo.no_combo_fallback",
+                        "Sin combo: ATQ + dado más alto elegido"));
                     return sb.ToString();
                 }
                 case DamageSource.FromReader when _reader != null:
-                    return "Daño: " + Mathf.RoundToInt(
-                        _reader.Read(context.ToReaderContext()) * _readerMultiplier);
+                    return string.Format(
+                        LocalizedContent.Ui("tooltip.effect.damage.flat", "Daño: {0}"),
+                        Mathf.RoundToInt(_reader.Read(context.ToReaderContext()) * _readerMultiplier));
                 case DamageSource.FromReader:
                     return null;
                 default:
-                    return "Daño: " + _baseAmount;
+                    return string.Format(
+                        LocalizedContent.Ui("tooltip.effect.damage.flat", "Daño: {0}"), _baseAmount);
             }
         }
 

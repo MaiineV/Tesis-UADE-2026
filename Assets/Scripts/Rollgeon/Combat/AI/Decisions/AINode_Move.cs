@@ -65,8 +65,16 @@ namespace Rollgeon.Combat.AI.Decisions
             int desiredRange = DesiredRange?.Read(context) ?? (StopAdjacent ? 1 : 0);
             int currentDist = selfCoord.Manhattan(targetCoord);
 
-            if (currentDist == desiredRange) return AIResult.Failed;        // ya en la banda
-            if (currentDist < desiredRange && !Retreat) return AIResult.Failed; // muy cerca, kite off
+            // BUG-061/PUL-014: "no hace falta moverse" y "no HAY forma de moverse" son casos
+            // benignos, no errores — Succeeded (no-op) para que la Sequence siga y el
+            // enemigo pueda atacar si ya está en rango. Antes devolvían Failed y un
+            // AINode_Sequence sin Selector que lo absorbiera abortaba el turno ENTERO,
+            // incluido el ataque (un enemigo en una isla de 1 celda del NavGraph quedaba
+            // trabado para siempre). Ver AIWrapFallible/Isolate en los builders de bosses:
+            // son Selector[Move, Wait] — con Wait siempre Succeeded, este cambio no altera
+            // su resultado final, solo evita el salto a Wait.
+            if (currentDist == desiredRange) return AIResult.Succeeded;        // ya en la banda
+            if (currentDist < desiredRange && !Retreat) return AIResult.Succeeded; // muy cerca, kite off
 
             int maxSteps = MaxSteps?.Read(context) ?? 3;
 
@@ -77,13 +85,13 @@ namespace Rollgeon.Combat.AI.Decisions
                 if (!AIPathMoveExecutor.TryPlanAndMove(context, targetCoord, maxSteps, desiredRange,
                         Pathing.MoveIntent.Approach))
                 {
-                    return AIResult.Failed;
+                    return AIResult.Succeeded; // NoMove del planner (isla, sin tile mejor): no-op
                 }
             }
             else
             {
                 var reachable = context.Movement.GetReachableTiles(selfCoord, maxSteps, includeOrigin: false);
-                if (reachable == null || reachable.Count == 0) return AIResult.Failed;
+                if (reachable == null || reachable.Count == 0) return AIResult.Succeeded; // sin candidato BFS
 
                 // Score único: minimizar |dist(target) - desiredRange|. Cubre acercarse,
                 // frenar en la banda y alejar (kite) con la misma pasada. Strict '<' =>
@@ -100,10 +108,10 @@ namespace Rollgeon.Combat.AI.Decisions
                     }
                 }
 
-                if (best == selfCoord) return AIResult.Failed;
+                if (best == selfCoord) return AIResult.Succeeded; // ningún tile alcanzable mejora la banda
 
                 if (!context.Movement.Move(context.SelfGuid, best))
-                    return AIResult.Failed;
+                    return AIResult.Succeeded; // Move rechazó el destino (ocupado, etc.)
             }
 
             // Solo el movimiento efectivo consume la acción — los Failed de arriba

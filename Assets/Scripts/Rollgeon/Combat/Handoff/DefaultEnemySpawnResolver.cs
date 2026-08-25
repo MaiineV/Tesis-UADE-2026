@@ -120,7 +120,7 @@ namespace Rollgeon.Combat.Handoff
                 foreach (var state in existingStates)
                 {
                     if (state.IsDead) continue;
-                    var data = LookupEnemyData(room, state.EnemyDataSOId);
+                    var data = LookupEnemyData(instance, state.EnemyDataSOId);
                     if (data == null) continue;
 
                     Guid? presetId = null;
@@ -492,12 +492,21 @@ namespace Rollgeon.Combat.Handoff
                 if (forbidden.Contains(coord)) continue;
                 if (_grid.IsOccupied(coord)) continue;
                 if (!_grid.IsWalkable(coord)) continue;
+                // BUG-069: un nodo walkable puede tener grado 0 (isla del NavGraph) —
+                // un enemigo spawneado ahí queda inalcanzable y sin poder moverse.
+                if (!_grid.Graph.IsEmpty && !HasAnyNeighbor(coord)) continue;
                 candidates.Add(coord);
             }
 
             if (candidates.Count == 0) return null;
             int pick = rng != null ? rng.Next(candidates.Count) : UnityEngine.Random.Range(0, candidates.Count);
             return candidates[pick];
+        }
+
+        private bool HasAnyNeighbor(GridCoord coord)
+        {
+            foreach (var _ in _grid.Graph.GetNeighbors(coord)) return true;
+            return false;
         }
 
         private static List<EnemySpawnState> CollectEnemyStates(RoomInstance instance)
@@ -510,8 +519,22 @@ namespace Rollgeon.Combat.Handoff
             return list;
         }
 
-        private static EnemyDataSO LookupEnemyData(RoomSO room, string entityId)
+        /// <summary>
+        /// Resuelve el <see cref="EnemyDataSO"/> de un <see cref="EnemySpawnState"/>
+        /// guardado, por su <c>EntityId</c>. Bosses (BUG-078): el spawn inicial de una
+        /// boss room NO pasa por <c>PossibleSetups</c>/<c>EnemyPool</c> (precedencia de
+        /// código en <see cref="BuildSpawnPlan"/>, ver <see cref="ResolveBossForFloor"/>),
+        /// así que el resume/re-entry normal nunca lo encontraba ahí — <c>continue</c>
+        /// silencioso, combate arrancaba sin el boss, softlock. Dos fallbacks antes de
+        /// rendirse: <see cref="RoomInstance.Boss"/> (el que roleó la generación del
+        /// piso — reproducible, mismo seed derivado en load) y el
+        /// <see cref="Rollgeon.Dungeon.FloorLayoutSO.BossPool"/> vigente (cubre un boss
+        /// forzado por dev console cuyo id tampoco vive en <c>instance.Boss</c>).
+        /// </summary>
+        private EnemyDataSO LookupEnemyData(RoomInstance instance, string entityId)
         {
+            var room = instance.Template;
+
             if (room.PossibleSetups != null)
             {
                 foreach (var setup in room.PossibleSetups)
@@ -532,6 +555,24 @@ namespace Rollgeon.Combat.Handoff
                 }
             }
 
+            if (instance.Boss != null && instance.Boss.EntityId == entityId) return instance.Boss;
+
+            var progression = _floorProgression;
+            if (progression == null)
+                ServiceLocator.TryGetService<IFloorProgressionService>(out progression);
+            var bossPool = progression?.CurrentLayout?.BossPool;
+            if (bossPool?.Entries != null)
+            {
+                foreach (var entry in bossPool.Entries)
+                {
+                    if (entry?.Boss != null && entry.Boss.EntityId == entityId) return entry.Boss;
+                }
+            }
+
+            UnityEngine.Debug.LogError(
+                $"[DefaultEnemySpawnResolver] LookupEnemyData: sin match para EntityId='{entityId}' " +
+                $"en room='{room.RoomId}' (PossibleSetups/EnemyPool/instance.Boss/BossPool del piso). " +
+                "El enemigo NO va a re-spawnear (BUG-078) — combate puede arrancar sin él.");
             return null;
         }
 

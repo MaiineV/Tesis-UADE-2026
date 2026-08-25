@@ -148,6 +148,19 @@ namespace Rollgeon.Grid
             _dirty = true;
         }
 
+        /// <summary>
+        /// Saca un nodo y cualquier edge que lo mencione (entrante o saliente). Usado por
+        /// <see cref="NavGraphBaker"/> para podar nodos que el bake dejó con grado 0 por un
+        /// blocker — un edge colgante hacia un nodo inexistente rompería <c>GetNeighbors</c>
+        /// del vecino que sí sobrevive.
+        /// </summary>
+        public void RemoveNode(GridCoord coord)
+        {
+            _nodes.RemoveAll(n => n.Coord.Equals(coord));
+            _edges.RemoveAll(e => e.From.Equals(coord) || e.To.Equals(coord));
+            _dirty = true;
+        }
+
         public void RemoveBidirectionalEdge(GridCoord a, GridCoord b)
         {
             RemoveEdge(a, b);
