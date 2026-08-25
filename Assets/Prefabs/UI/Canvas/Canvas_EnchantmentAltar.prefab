@@ -384,8 +384,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 1}
   m_AnchorMax: {x: 0.5, y: 1}
-  m_AnchoredPosition: {x: -0.9471, y: -24.58429}
-  m_SizeDelta: {x: 134.3949, y: 15.4157}
+  m_AnchoredPosition: {x: 0, y: -10}
+  m_SizeDelta: {x: 120, y: 30}
   m_Pivot: {x: 0.5, y: 1}
 --- !u!222 &9191355284256669431
 CanvasRenderer:
@@ -759,7 +759,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1761754520742319539}
-  - component: {fileID: 1442288662912400128}
+  - component: {fileID: 7970154954037374657}
   m_Layer: 0
   m_Name: OptionsRow
   m_TagString: Untagged
@@ -789,7 +789,7 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 36}
   m_SizeDelta: {x: 520, y: 150}
   m_Pivot: {x: 0.5, y: 0.5}
---- !u!114 &1442288662912400128
+--- !u!114 &7970154954037374657
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -1830,7 +1830,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: 54
+  m_text: 
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: ca366dedeeb19524d9660522c4b4f852, type: 2}
   m_sharedMaterial: {fileID: 2100000, guid: a06e036e36adf474e8ef067efc45ec46, type: 2}
@@ -2122,7 +2122,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: -1901076895, guid: e6824752b0b549147a88aadb6f446909, type: 3}
+  m_Sprite: {fileID: 401648072, guid: cca52ed63b2fdae4ca26627a5c6beed8, type: 3}
   m_Type: 1
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -3380,7 +3380,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: -882602019, guid: 88ef407795d62bd4eb65fe03874db4b6, type: 3}
+  m_Sprite: {fileID: -1557102915, guid: 88ef407795d62bd4eb65fe03874db4b6, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -3420,7 +3420,7 @@ MonoBehaviour:
     m_FadeDuration: 0.1
   m_SpriteState:
     m_HighlightedSprite: {fileID: 0}
-    m_PressedSprite: {fileID: 714173830, guid: 88ef407795d62bd4eb65fe03874db4b6, type: 3}
+    m_PressedSprite: {fileID: -1490200528, guid: 88ef407795d62bd4eb65fe03874db4b6, type: 3}
     m_SelectedSprite: {fileID: 0}
     m_DisabledSprite: {fileID: 0}
   m_AnimationTriggers:
@@ -3448,8 +3448,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Rollgeon::Rollgeon.Upgrades.Dice.UI.AltarConfirmButtonView
   _button: {fileID: 462687008922189826}
   _image: {fileID: 2517085566149254466}
-  _spriteIdle: {fileID: -882602019, guid: 88ef407795d62bd4eb65fe03874db4b6, type: 3}
-  _spriteReady: {fileID: -1603807675, guid: 88ef407795d62bd4eb65fe03874db4b6, type: 3}
+  _spriteIdle: {fileID: -1557102915, guid: 88ef407795d62bd4eb65fe03874db4b6, type: 3}
+  _spriteReady: {fileID: 568540644, guid: 88ef407795d62bd4eb65fe03874db4b6, type: 3}
   _settings: {fileID: 11400000, guid: 2f2fc15d6be9a174e95ab8b47773f351, type: 2}
 --- !u!1 &5737457854539317675
 GameObject:
@@ -4237,7 +4237,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: -652685361, guid: 88ef407795d62bd4eb65fe03874db4b6, type: 3}
+  m_Sprite: {fileID: 1619277194, guid: 88ef407795d62bd4eb65fe03874db4b6, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -4277,7 +4277,7 @@ MonoBehaviour:
     m_FadeDuration: 0.1
   m_SpriteState:
     m_HighlightedSprite: {fileID: 0}
-    m_PressedSprite: {fileID: -1632244934, guid: 88ef407795d62bd4eb65fe03874db4b6, type: 3}
+    m_PressedSprite: {fileID: 1701962892, guid: 88ef407795d62bd4eb65fe03874db4b6, type: 3}
     m_SelectedSprite: {fileID: 0}
     m_DisabledSprite: {fileID: 0}
   m_AnimationTriggers:
@@ -5131,7 +5131,7 @@ RectTransform:
   m_GameObject: {fileID: 7706100944348249627}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 0.30394104, y: 0.30394104, z: 0.30394104}
+  m_LocalScale: {x: 0.6, y: 0.6, z: 0.6}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 2433794469474253436}
@@ -5139,7 +5139,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0}
   m_AnchorMax: {x: 0.5, y: 0}
-  m_AnchoredPosition: {x: 7.1, y: 23.94}
+  m_AnchoredPosition: {x: 9, y: 23}
   m_SizeDelta: {x: 80, y: 90}
   m_Pivot: {x: 0.5, y: 0}
 --- !u!114 &5798657318579407145
