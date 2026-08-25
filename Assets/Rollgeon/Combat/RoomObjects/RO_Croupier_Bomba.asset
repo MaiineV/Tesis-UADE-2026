@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Rollgeon::Rollgeon.Combat.Rooms.RoomObjectDefinitionSO
   Id: roomobj.croupier.bomba
   DisplayName: Bomba
-  Hp: 12
+  Hp: 18
   Blocks: 1
   HideFromTurnQueue: 1
   RespawnDelayTurns: 0

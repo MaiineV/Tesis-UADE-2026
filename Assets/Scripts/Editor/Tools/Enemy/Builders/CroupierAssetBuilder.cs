@@ -289,11 +289,11 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         public const int BombSpacing = 3;
 
         /// <summary>
-        /// Vida de cada bomba. Baja a propósito: contra el daño del piso 1 (13-27) cualquier golpe la
-        /// rompe, y lo que la bomba cobra es <b>la acción</b>, no una barra que haya que fundir. El
-        /// dado de La Generala tiene 45 justamente porque ahí sí se quiere que cueste.
+        /// Vida de cada bomba. Contra el daño del piso 1 (13-27) el golpe flojo ya no alcanza: lo
+        /// que la bomba cobra sigue siendo <b>la acción</b>, pero una tirada pobre la deja en pie.
+        /// El dado de La Generala tiene 45 porque ahí sí se quiere fundir una barra.
         /// </summary>
-        public const int BombHp = 12;
+        public const int BombHp = 18;
 
         /// <summary>
         /// Lo que cobra la casilla que deja una bomba que llegó al plazo: los 10 del paño más 5 por
@@ -685,6 +685,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
                                         FuseTurns = BombFuseTurns,
                                         IgnitionDamage = BombIgnitionDamage,
                                         ChannelPrefix = BombChannelPrefix,
+                                        SowFeedbackId = BossFeedbackIds.CroupierRangeAnim,
                                     }),
 
                                     // Mismo gate de cercania que los otros dos tiempos: los tres
