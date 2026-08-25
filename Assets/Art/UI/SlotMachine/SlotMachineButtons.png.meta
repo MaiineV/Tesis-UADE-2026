@@ -106,14 +106,14 @@ TextureImporter:
         height: 13
       alignment: 0
       pivot: {x: 0.5, y: 0.5}
-      border: {x: 0, y: 0, z: 0, w: 0}
+      border: {x: 3, y: 3, z: 3, w: 3}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: b347d7d1e4134124a92a4446ef0b77f8
-      internalID: -1603807675
+      spriteID: 829536528ec2d2c419544949959c6c3f
+      internalID: 568540644
       vertices: []
       indices: 
       edges: []
@@ -128,14 +128,14 @@ TextureImporter:
         height: 13
       alignment: 0
       pivot: {x: 0.5, y: 0.5}
-      border: {x: 0, y: 0, z: 0, w: 0}
+      border: {x: 3, y: 3, z: 3, w: 3}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 145be7ee4022d244e8b424369fd7386f
-      internalID: 714173830
+      spriteID: 27a480cf7c08ae040916327d5d980669
+      internalID: -1490200528
       vertices: []
       indices: 
       edges: []
@@ -146,18 +146,18 @@ TextureImporter:
         serializedVersion: 2
         x: 72
         y: 23
-        width: 36
+        width: 34
         height: 13
       alignment: 0
       pivot: {x: 0.5, y: 0.5}
-      border: {x: 0, y: 0, z: 0, w: 0}
+      border: {x: 3, y: 3, z: 3, w: 3}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 640bceb1cfde80c489f7c50a7f62306a
-      internalID: -882602019
+      spriteID: 8b7d7d30b79700c4097376d26df3af4c
+      internalID: -1557102915
       vertices: []
       indices: 
       edges: []
@@ -172,14 +172,14 @@ TextureImporter:
         height: 13
       alignment: 0
       pivot: {x: 0.5, y: 0.5}
-      border: {x: 0, y: 0, z: 0, w: 0}
+      border: {x: 3, y: 3, z: 3, w: 3}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 3a9aeb16fd5efae45a2bb9af6bdb78ac
-      internalID: -652685361
+      spriteID: 379cff9a91a23a04d97c9478566ad5e2
+      internalID: 1619277194
       vertices: []
       indices: 
       edges: []
@@ -194,14 +194,14 @@ TextureImporter:
         height: 13
       alignment: 0
       pivot: {x: 0.5, y: 0.5}
-      border: {x: 0, y: 0, z: 0, w: 0}
+      border: {x: 3, y: 3, z: 3, w: 3}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 3bf006a37ea1fbf4c8f6152d63e4d6a9
-      internalID: -1632244934
+      spriteID: 8ab45b5ac461a8148824546d0ce6bc0b
+      internalID: 1701962892
       vertices: []
       indices: 
       edges: []
@@ -212,18 +212,18 @@ TextureImporter:
         serializedVersion: 2
         x: 72
         y: 9
-        width: 36
+        width: 34
         height: 13
       alignment: 0
       pivot: {x: 0.5, y: 0.5}
-      border: {x: 0, y: 0, z: 0, w: 0}
+      border: {x: 3, y: 3, z: 3, w: 3}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: e3db32af03d612847893f974453faeb5
-      internalID: -248057071
+      spriteID: 80ca0908972126f46912c7a98d77c1fe
+      internalID: -579922921
       vertices: []
       indices: 
       edges: []
@@ -232,7 +232,7 @@ TextureImporter:
     customData: 
     physicsShape: []
     bones: []
-    spriteID: 3e68d230fccfba6469948dcd2164c0e7
+    spriteID: 37a55408d87956a4fbb743f411e77ae0
     internalID: 0
     vertices: []
     indices: 
@@ -244,12 +244,12 @@ TextureImporter:
       - key: SpriteEditor.SliceSettings
         value: '{"sliceOnImport":false,"gridCellCount":{"x":1.0,"y":1.0},"gridSpriteSize":{"x":64.0,"y":64.0},"gridSpriteOffset":{"x":0.0,"y":0.0},"gridSpritePadding":{"x":0.0,"y":0.0},"pivot":{"x":0.5,"y":0.5},"pivotPixels":{"x":0.0,"y":0.0},"autoSlicingMethod":0,"spriteAlignment":0,"pivotUnitMode":0,"slicingType":0,"keepEmptyRects":false,"isAlternate":false}'
     nameFileIdTable:
-      SlotMachineButtons_0: -1603807675
-      SlotMachineButtons_1: 714173830
-      SlotMachineButtons_2: -882602019
-      SlotMachineButtons_3: -652685361
-      SlotMachineButtons_4: -1632244934
-      SlotMachineButtons_5: -248057071
+      SlotMachineButtons_0: 568540644
+      SlotMachineButtons_1: -1490200528
+      SlotMachineButtons_2: -1557102915
+      SlotMachineButtons_3: 1619277194
+      SlotMachineButtons_4: 1701962892
+      SlotMachineButtons_5: -579922921
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 
