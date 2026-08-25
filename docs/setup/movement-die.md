@@ -49,8 +49,12 @@
 ficha (`_chip`), y está **oculto salvo durante su acción**:
 
 1. Al soltar Mover: el dado aparece detrás de la ficha y **sube con fade-in mientras
-   rolea** (giro `_spinTurns`, caras random ciclando cada `_faceTickSeconds`, escala
-   `_startScale → 1`) hasta `_overshoot` por encima de su posición final.
+   rolea** (escala `_startScale → 1`) hasta `_overshoot` por encima de su posición final.
+   El roleo es **el mismo de la mesa**: no rota el transform, cicla las siluetas
+   Front/SideA/SideB del `DiceShapeCatalog` con ticks que desaceleran a lo largo de todo el
+   recorrido, leyendo `Resources/Dice/DiceUiAnimationSettings` (`SpinTickSeconds`,
+   `SpinDecelerationPower`, `ShowPreviewFacesDuringSpin`) — helpers de
+   `DiceAnimChoreographer`.
 2. **Drop-in**: cae a la posición final (encima de la ficha, `_gap` de separación, misma X
    y ancho ⇒ simétrico) con ease-out-bounce y un squash de aterrizaje.
 3. Al aterrizar muestra la cara real y **recién ahí** publica el rango (`onRevealed`).
