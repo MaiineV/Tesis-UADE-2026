@@ -42,13 +42,18 @@
 - **Evento**: `EventName.OnMovementDieRolled [Guid, int face, DiceType]` (al final del
   enum). NO dispara `OnDiceRolled` — el `DiceZoneView` no lo ve.
 
-## UI
+## UI — el dado usa la mesa como cualquier tirada
 
-`MovementDieView` (`UI/HUD/MovementDieView.cs`): un `DiceSlotView` que muestra el tipo
-del dado (D4…) mientras hay combate y, al mover, gira y revela la cara reutilizando
-`DiceSlotAnimator` (mismo spin y pacing por `GameSpeedPrefs` que el tablero). Es el
-`IMovementDiePresenter` del servicio: sin la view cableada el dado igual se tira
-(reveal sincrónico).
+`MovementDieView` (`UI/HUD/MovementDieView.cs`) vive **centrado en el `RollArea` de
+`Canvas_ActionRoll`** y está **oculto salvo durante su tirada**: al soltar Mover, el
+servicio emite `OnMovementDieRollStarted` → la mesa se abre (`ActionRollExplorationVisibility`)
+y los chips se apagan (`CombatHudZoneFlow`), igual que con `OnDiceRolled`; el dado gira en el
+centro (`DiceSlotAnimator`, mismo spin y pacing por `GameSpeedPrefs` que los 5 de la build),
+revela la cara, la deja leer `_revealHoldSeconds` (0.6 s / game speed) y se esconde; recién
+ahí el servicio emite `OnMovementDieRolled` → la mesa se cierra, los chips vuelven y arranca
+la selección de tile con el rango revelado. Es el `IMovementDiePresenter` del servicio; sin
+la view cableada el dado igual se tira (reveal sincrónico, sin mesa). No toca los 5 slots
+del `DiceZoneView`.
 
 ## Wiring (ya aplicado vía MCP, 2026-08-25)
 
@@ -63,10 +68,12 @@ del dado (D4…) mientras hay combate y, al mover, gira y revela la cara reutili
      `ExpMovement` queda en `false`.
    - Nota: el asset es Odin-serialized — setear el flag a mano en el YAML **no alcanza**
      (hay doble representación); hacerlo desde el Inspector o por código en el editor.
-4. `Assets/Prefabs/UI/Canvas/Canvas_CombatHUD.prefab`:
-   `CombatHUDView/PlayerActionButtonsView/MovementDieView` (RectTransform 56×56,
-   encima del `MoveButton`) con `MovementDieView` + hijo `Slot` (instancia de
-   `Assets/Prefabs/UI/DiceSlotView.prefab`). `CombatHUDView._movementDie` → esa view.
+4. `Assets/Prefabs/UI/Canvas/Canvas_ActionRoll.prefab`:
+   `DiceZoneView/RollArea/MovementDieView` (RectTransform 100×100 centrado en el
+   RollArea) con `MovementDieView` + hijo `Slot` **inactivo** (instancia de
+   `Assets/Prefabs/UI/DiceSlotView.prefab`). `CombatHUDView._movementDie` queda en
+   None: es cross-canvas y `BindAll` lo resuelve con `FindFirstObjectByType` (mismo
+   patrón que `HealthChipStackView`).
 
 Para otra clase: crear su `MovementDieSO`, asignarlo en `StartingMovementDie` y activar
 `RangeFromMovementDie` en el `EffMove` de su Movement de combate.
