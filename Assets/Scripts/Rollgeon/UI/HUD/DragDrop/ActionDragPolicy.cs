@@ -25,12 +25,16 @@ namespace Rollgeon.UI.HUD.DragDrop
         /// <summary>
         /// Una acción requiere soltar sobre una celda (targeting por tile) cuando su selección
         /// BeforeRoll necesita interacción del jugador, se auto-confirma y pide un único target —
-        /// el caso que un solo drop puede satisfacer (ej. Movimiento). Self / AutoResolve /
+        /// el caso que un solo drop puede satisfacer (ej. Movimiento legacy). Self / AutoResolve /
         /// multi-target quedan afuera (no se resuelven con un drop).
+        /// §6.6: con <see cref="SelectionSettings.RangeFromMovementDie"/> tampoco — el rango
+        /// recién se conoce al revelar el dado, así que el drop en cualquier lado fuera de la UI
+        /// dispara la tirada (mismo gesto que Heal / Forzar Puerta) y el tile se elige después.
         /// </summary>
         public static bool RequiresTileDrop(SelectionSettings settings)
         {
             if (settings == null) return false;
+            if (settings.RangeFromMovementDie) return false;
             return settings.NeedsPlayerInteraction()
                    && settings.AutoAccept
                    && settings.GetSelectionCount(default) == 1;

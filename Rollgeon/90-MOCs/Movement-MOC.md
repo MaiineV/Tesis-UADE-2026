@@ -37,6 +37,12 @@ tags: [moc, movement]
 - [[MovementService]] — default impl, BFS over walkable + free tiles
 - [[MovementServiceBootstrap]] — registers the service
 
+### Movement die (§6.6)
+- [[IMovementDieService]] — dado de Movimiento propio; su cara = rango del Movimiento en combate
+- [[MovementDieService]] — impl con RNG propio (no pasa por [[IDiceRoller]]), reveal diferido al presenter
+- [[MovementDieServiceBootstrap]] — registers the service (priority 79)
+- [[MovementDieSO]] — el asset por clase (vive en 08-Dice)
+
 ## Cross-domain edges
 
 - **Incoming** (consumers):

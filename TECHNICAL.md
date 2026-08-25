@@ -1756,6 +1756,50 @@ Aplica a todas las acciones basadas en dados — ataque Generala, defensa (§12.
 
 ---
 
+### 6.6 Dado de Movimiento
+
+Movimiento en combate tira un **dado propio**, separado por completo de los 5 dados
+de la `DiceBagSO` (Feature#0054, ago 2026). La cara revelada es el rango de casillas
+alcanzables de esa acción (BFS por camino, `RangeMode.PathReachable`); reemplaza al
+`Range` fijo y al stat `MovementRange` de §B.3, que nunca se implementó.
+
+```csharp
+[CreateAssetMenu(menuName = "Rollgeon/Dice/Movement Die")]
+public class MovementDieSO : ScriptableObject { public DiceType Type = DiceType.D4; }
+
+public interface IMovementDieService {              // ServiceScope.Run, bootstrap priority 79
+    DiceType CurrentType { get; }                    // override → ClassHeroSO.StartingMovementDie → D4
+    void Roll(Guid playerGuid, Action<int> onRevealed);
+    bool TryGetActiveRange(Guid playerGuid, out int range);
+    void ClearActiveRange();
+    void SetPresenter(IMovementDiePresenter presenter);
+}
+```
+
+- **No ocupa slot de la build.** `DiceBagSO.RequiredSize` sigue siendo 5; encantamientos
+  (`RuntimeDiceBag`, por índice de slot), bloqueos de dados y el HUD `int[5]` no lo ven.
+- **RNG propio.** No pasa por `IDiceRoller`: `EnchantedDiceRoller` aplica encantamientos
+  por índice del bag y `DiceRoller` consume la cola de rig del DevConsole — ambos
+  acoplarían el dado a la build. El rango activo se publica en el reveal, no al pedir
+  la tirada (sin spoiler en el hover preview).
+- **Rango.** `SelectionSettings.RangeFromMovementDie` + `ResolveEffectiveRange(owner)`:
+  tirada vigente → cara; servicio registrado sin tirada → cara máxima (rango potencial
+  para gates/preview pre-tirada); sin flag o sin servicio → `Range`. Exploración
+  (`ExpMovement`) no activa el flag: click-to-move intacto.
+- **Cobro.** 1 roll del pool **al tirar** (como toda acción con tirada);
+  `HeroBehaviorContext.RollsPrepaid = true` evita el segundo cobro de
+  `TurnManager.TryExecute`. Cancelar tras ver la cara no reembolsa (cambio vs BUG-013;
+  el path legacy de cobro-al-ejecutar sigue vivo cuando el servicio no está registrado).
+- **Drag-and-drop.** `ActionDragPolicy.RequiresTileDrop` = false con el flag: soltar en
+  cualquier lado fuera de la UI tira el dado; el tile se elige después con el rango real.
+- **Evento.** `EventName.OnMovementDieRolled [Guid, int face, DiceType]`. No emite
+  `OnDiceRolled`.
+- **UI.** `MovementDieView` (un `DiceSlotView` + `DiceSlotAnimator`) es el
+  `IMovementDiePresenter`; sin cablear, el reveal es sincrónico.
+
+Setup y follow-ups (throw manual 2D/3D, rig, encantamientos del dado):
+`docs/setup/movement-die.md`.
+
 ## 7. Entidades y Behaviors
 
 ### 7.0 `BaseEntitySO` — contrato común
@@ -5960,6 +6004,11 @@ public enum GridDirection { North, East, South, West }
 Para `FindPath`, también BFS con `parent[]` reconstruido al encontrar el target. Si algún día hace falta terreno con costes variables, migrar a A\* es localizado al servicio.
 
 #### B.3 Budget de movimiento
+
+> **Superseded (ago 2026, §6.6).** El stat `MovementRange` nunca se implementó: en combate el
+> budget del jugador es la cara del **dado de Movimiento** (`IMovementDieService`, §6.6) vía
+> `SelectionSettings.RangeFromMovementDie`; en exploración sigue siendo el `Range` autorado.
+> Lo que sigue queda como diseño histórico.
 
 El `budget` sale de un stat del actor — `MovementRange` (`IModifiable<int>`) declarado en §4.2. Modificadores de §3 lo afectan normalmente:
 

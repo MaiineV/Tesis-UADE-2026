@@ -3,7 +3,9 @@ using System.Collections.Generic;
 using Patterns;
 using Rollgeon.Entities;
 using Rollgeon.Grid;
+using Rollgeon.Dice;
 using Rollgeon.Movement;
+using Rollgeon.Movement.Die;
 using Sirenix.OdinInspector;
 using Sirenix.Serialization;
 using UnityEngine;
@@ -37,6 +39,13 @@ namespace Rollgeon.Effects.Selection
         [Tooltip("Manhattan: distancia pura, ignora paredes (ataques). " +
                  "PathReachable: BFS real por celdas caminables no ocupadas (movimiento).")]
         public RangeMode RangeMode = RangeMode.Manhattan;
+
+        [ShowIf(nameof(ShowMovementDie))]
+        [ToggleLeft]
+        [Tooltip("El rango lo define la cara del dado de Movimiento (§6.6) en vez de Range. " +
+                 "Sin tirada activa usa la cara máxima del dado (rango potencial); sin " +
+                 "IMovementDieService registrado cae a Range. Solo Movimiento de combate.")]
+        public bool RangeFromMovementDie;
 
         [HideIf(nameof(IsSelf))]
         [InfoBox("AoE con SlotState.Empty expande celdas vacías; los efectos de movimiento " +
@@ -100,6 +109,7 @@ namespace Rollgeon.Effects.Selection
         private bool IsSelf => SlotState == SlotState.Self;
         private bool ShowEntityFilter => SlotState == SlotState.Occupied || SlotState == SlotState.Both;
         private bool ShowRange => !IsSelf && !IsGlobal;
+        private bool ShowMovementDie => ShowRange && RangeMode == RangeMode.PathReachable;
         private bool ShowAutoAccept => !IsSelf && !AutoResolve;
         private bool IsAoe => !IsSelf && TargetMode == TargetMode.Aoe;
         private bool ShowAoeRadius => IsAoe && AoeShape == AoeShape.Radius;
@@ -135,6 +145,22 @@ namespace Rollgeon.Effects.Selection
         public bool NeedsPlayerInteraction()
         {
             return SlotState != SlotState.Self && !AutoResolve;
+        }
+
+        /// <summary>
+        /// Rango efectivo del owner (§6.6). Con <see cref="RangeFromMovementDie"/>: la cara
+        /// revelada del dado de Movimiento si hay tirada vigente; si no, la cara máxima del
+        /// dado — el rango POTENCIAL, para que el gate del botón, el hover preview y el drag
+        /// pre-tirada sigan mostrando "hay algo alcanzable". Sin servicio registrado (tests,
+        /// exploración sin wiring) o sin el flag, el <see cref="Range"/> autorado.
+        /// </summary>
+        public int ResolveEffectiveRange(Guid ownerGuid)
+        {
+            if (!RangeFromMovementDie) return Range;
+            if (!ServiceLocator.TryGetService<IMovementDieService>(out var die) || die == null)
+                return Range;
+            if (die.TryGetActiveRange(ownerGuid, out var rolled)) return rolled;
+            return die.CurrentType.MaxFace();
         }
 
         public bool NeedsSelectionAt(SelectionTiming t)
@@ -177,7 +203,7 @@ namespace Rollgeon.Effects.Selection
                 if (RangeMode == RangeMode.PathReachable
                     && ServiceLocator.TryGetService<IMovementService>(out var movement))
                 {
-                    foreach (var coord in movement.GetReachableTiles(ownerPosition, Range))
+                    foreach (var coord in movement.GetReachableTiles(ownerPosition, ResolveEffectiveRange(ownerGuid)))
                     {
                         if (PassesSlotFilters(grid, coord, ownerPosition, ownerGuid))
                             result.Add(TargetRef.At(coord));
@@ -191,7 +217,7 @@ namespace Rollgeon.Effects.Selection
 
                     foreach (var coord in grid.Graph.AllCoords())
                     {
-                        if (ownerPosition.Manhattan(coord) > Range) continue;
+                        if (ownerPosition.Manhattan(coord) > ResolveEffectiveRange(ownerGuid)) continue;
                         if (PassesSlotFilters(grid, coord, ownerPosition, ownerGuid))
                             result.Add(TargetRef.At(coord));
                     }
@@ -231,7 +257,7 @@ namespace Rollgeon.Effects.Selection
             if (RangeMode == RangeMode.PathReachable
                 && ServiceLocator.TryGetService<IMovementService>(out var movement))
             {
-                foreach (var coord in movement.GetReachableTiles(ownerPosition, Range))
+                foreach (var coord in movement.GetReachableTiles(ownerPosition, ResolveEffectiveRange(ownerGuid)))
                     if (coord != ownerPosition) result.Add(coord);
                 return result;
             }
@@ -243,7 +269,7 @@ namespace Rollgeon.Effects.Selection
             foreach (var coord in grid.Graph.AllCoords())
             {
                 if (coord == ownerPosition) continue;
-                if (ownerPosition.Manhattan(coord) > Range) continue;
+                if (ownerPosition.Manhattan(coord) > ResolveEffectiveRange(ownerGuid)) continue;
                 result.Add(coord);
             }
             return result;
