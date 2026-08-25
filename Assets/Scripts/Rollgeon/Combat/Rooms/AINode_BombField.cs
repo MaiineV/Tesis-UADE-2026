@@ -1,12 +1,15 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using Patterns;
 using Rollgeon.Attributes;
 using Rollgeon.Attributes.Stats;
+using Rollgeon.Combat.Actions;
 using Rollgeon.Combat.AI;
 using Rollgeon.Combat.AI.Decisions;
 using Rollgeon.Combat.Pipelines;
 using Rollgeon.Combat.Threat;
+using Rollgeon.Feedback;
 using Rollgeon.Grid;
 using Rollgeon.Tiles;
 using Sirenix.OdinInspector;
@@ -27,6 +30,14 @@ namespace Rollgeon.Combat.Rooms
     /// <see cref="Tick"/> hace, en orden, "detonar lo que sobrevivió → sembrar de nuevo → marcar lo
     /// nuevo" — así entre que una bomba aparece y detona pasan exactamente los tres turnos del
     /// ciclo del jefe, sin que este nodo lleve su propio contador.
+    /// </para>
+    /// <para>
+    /// Ese orden es correcto pero <b>no se lee</b> si las tres cosas salen en el mismo frame: el
+    /// jugador ve fuego nuevo y bombas nuevas de golpe y no puede atribuir uno al otro. Por eso
+    /// <see cref="TickCoroutine"/> mete el estallido en su propio beat bloqueante
+    /// (<see cref="DetonationVfxId"/>) antes de sembrar. <see cref="Tick"/> —el camino síncrono,
+    /// EditMode y escenas sin host de coroutines— hace las tres seguidas: bloquear ahí colgaría
+    /// los tests.
     /// </para>
     /// <para>
     /// La cruz de cada bomba se guarda por guid, no por casilla: es lo que hace que romper UNA no
@@ -74,6 +85,28 @@ namespace Rollgeon.Combat.Rooms
         [Tooltip("Prefijo del canal de amenaza por bomba (prefijo + guid). Sólo importa si el mismo " +
                  "jefe usa AINode_BombField más de una vez con canales que puedan chocar.")]
         public string ChannelPrefix = "bomb.";
+
+        [Title("Presentación")]
+#if UNITY_EDITOR
+        [ValueDropdown(nameof(GetFeedbackIdsForDropdown))]
+#endif
+        [Tooltip("VFX del estallido. Es el beat que separa el fuego de la siembra que sigue: vacío, " +
+                 "las dos cosas aparecen en el mismo frame. Sin id no bloquea nada y degrada a " +
+                 "silencio.")]
+        public string DetonationVfxId;
+
+#if UNITY_EDITOR
+        [ValueDropdown(nameof(GetFeedbackIdsForDropdown))]
+#endif
+        [Tooltip("Feel (hitstop/shake) del estallido.")]
+        public string DetonationFeelId;
+
+#if UNITY_EDITOR
+        [ValueDropdown(nameof(GetFeedbackIdsForDropdown))]
+#endif
+        [Tooltip("Gesto del jefe al sembrar. Va al AINode_SpawnRoomObjects de adentro, así que las " +
+                 "bombas caen con su animación en vez de materializarse mientras él sigue en idle.")]
+        public string SowFeedbackId;
 
         [NonSerialized] private AINode_SpawnRoomObjects _spawner;
         [NonSerialized] private Dictionary<Guid, List<GridCoord>> _crossByGuid;
@@ -123,6 +156,41 @@ namespace Rollgeon.Combat.Rooms
             return AIResult.Succeeded;
         }
 
+        /// <summary>
+        /// El mismo orden que <see cref="Tick"/>, con el estallido cobrando su propio beat: prende el
+        /// fuego, bloquea el turno mientras se ve, y recién ahí siembra.
+        /// </summary>
+        /// <remarks>
+        /// La siembra va por el <c>TickCoroutine</c> del spawner y no por su <c>Tick</c>: es el que
+        /// toca el gesto de <see cref="SowFeedbackId"/>, y sin eso las bombas nuevas volverían a
+        /// aparecer solas.
+        /// </remarks>
+        public override IEnumerator TickCoroutine(AIContext context, Action<AIResult> onResult)
+        {
+            if (context == null || Definition == null || FireTile == null ||
+                context.Grid == null || context.Attributes == null)
+            {
+                onResult?.Invoke(Tick(context));
+                yield break;
+            }
+
+            _crossByGuid ??= new Dictionary<Guid, List<GridCoord>>();
+
+            if (DetonateSurvivors(context, context.Grid))
+            {
+                var blast = PlayDetonation(context);
+                while (blast.MoveNext()) yield return blast.Current;
+            }
+
+            var spawner = EnsureSpawner();
+            var sow = spawner.TickCoroutine(context, null);
+            while (sow.MoveNext()) yield return sow.Current;
+
+            MarkNewBombs(context, context.Grid, spawner);
+
+            onResult?.Invoke(AIResult.Succeeded);
+        }
+
         private AINode_SpawnRoomObjects EnsureSpawner()
         {
             return _spawner ??= new AINode_SpawnRoomObjects
@@ -132,24 +200,31 @@ namespace Rollgeon.Combat.Rooms
                 Pattern = AINode_SpawnRoomObjects.Placement.ScatteredFree,
                 MinSpacing = Spacing,
                 ResolveSlotsEachSpawn = true,
+                SpawnFeedbackId = SowFeedbackId,
             };
         }
 
-        private void DetonateSurvivors(AIContext context, IGridManager grid)
+        /// <returns><c>true</c> si al menos una bomba llegó al plazo — lo único que amerita beat.</returns>
+        private bool DetonateSurvivors(AIContext context, IGridManager grid)
         {
-            if (_crossByGuid.Count == 0) return;
+            if (_crossByGuid.Count == 0) return false;
 
             ServiceLocator.TryGetService<ISpecialTileService>(out var special);
             ServiceLocator.TryGetService<IThreatenedAreaService>(out var threat);
             ServiceLocator.TryGetService<IThreatOverlayService>(out var overlay);
 
+            bool anyBlew = false;
             foreach (var kvp in _crossByGuid)
             {
                 var guid = kvp.Key;
                 var cross = kvp.Value;
 
                 var health = context.Attributes.GetAttribute<Health>(guid);
-                if (health != null && health.Value > 0) Detonate(context, grid, special, guid, cross);
+                if (health != null && health.Value > 0)
+                {
+                    Detonate(context, grid, special, guid, cross);
+                    anyBlew = true;
+                }
 
                 var channel = ChannelFor(context.SelfGuid, guid);
                 threat?.Clear(channel);
@@ -157,6 +232,7 @@ namespace Rollgeon.Combat.Rooms
             }
 
             _crossByGuid.Clear();
+            return anyBlew;
         }
 
         private void Detonate(
@@ -225,5 +301,61 @@ namespace Rollgeon.Combat.Rooms
 
         private Guid ChannelFor(Guid selfGuid, Guid bombGuid) =>
             AINode_TelegraphMark.SourceKey(selfGuid, ChannelPrefix + bombGuid.ToString("N"));
+
+        /// <remarks>
+        /// Request armado a mano y no un <c>EffPlaySequence</c>: el nodo no nace de un effect pass,
+        /// así que no tiene <c>EffectContext</c> que pasarle — mismo caso que el resto de los nodos
+        /// de jefe. Sin <c>TurnManager</c> el gate no existe: la anim corre igual pero el turno no se
+        /// retiene, y el estallido vuelve a pegarse a la siembra.
+        /// </remarks>
+        private IEnumerator PlayDetonation(AIContext context)
+        {
+            if (string.IsNullOrEmpty(DetonationVfxId) && string.IsNullOrEmpty(DetonationFeelId))
+                yield break;
+            if (!ServiceLocator.TryGetService<IFeedbackService>(out var feedback) || feedback == null)
+                yield break;
+
+            var steps = new List<FeedbackSequenceStep>(2);
+            if (!string.IsNullOrEmpty(DetonationVfxId)) steps.Add(Blast(DetonationVfxId));
+            if (!string.IsNullOrEmpty(DetonationFeelId)) steps.Add(Blast(DetonationFeelId));
+
+            ServiceLocator.TryGetService<TurnManager>(out var turn);
+            turn?.BeginFeedbackWait();
+            feedback.RequestFeedbackBlocking(new FeedbackRequest
+            {
+                IsSequence = true,
+                SequenceSteps = steps,
+                SourceGuid = context.SelfGuid,
+                TargetGuid = context.PlayerGuid,
+            }, () => turn?.OnFeedbackComplete());
+
+            if (turn == null || !turn.IsWaitingForFeedback) yield break;
+
+            var wait = TurnManager.WaitForFeedbackCompletion(turn);
+            while (wait.MoveNext()) yield return wait.Current;
+        }
+
+        private static FeedbackSequenceStep Blast(string feedbackId) => new FeedbackSequenceStep
+        {
+            Source = StepSource.FeedbackRef,
+            FeedbackRefId = feedbackId,
+            StartMode = StepStartMode.Immediate,
+            EndMode = StepEndMode.OnDuration,
+            BlockSequence = true,
+        };
+
+#if UNITY_EDITOR
+        // Dropdown obligatorio (§0): los ids de feedback nunca se tipean a mano.
+        private static IEnumerable<string> GetFeedbackIdsForDropdown()
+        {
+            foreach (var guid in UnityEditor.AssetDatabase.FindAssets("t:FeedbackDBSO"))
+            {
+                var path = UnityEditor.AssetDatabase.GUIDToAssetPath(guid);
+                var db = UnityEditor.AssetDatabase.LoadAssetAtPath<FeedbackDBSO>(path);
+                if (db == null) continue;
+                foreach (var id in db.GetAllFeedbackIds()) yield return id;
+            }
+        }
+#endif
     }
 }

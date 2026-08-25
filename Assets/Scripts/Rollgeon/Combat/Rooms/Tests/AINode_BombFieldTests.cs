@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using NUnit.Framework;
@@ -8,6 +9,7 @@ using Rollgeon.Attributes.Stats;
 using Rollgeon.Combat.AI;
 using Rollgeon.Combat.Pipelines;
 using Rollgeon.Combat.Threat;
+using Rollgeon.Feedback;
 using Rollgeon.Grid;
 using Rollgeon.Tiles;
 using UnityEngine;
@@ -107,6 +109,13 @@ namespace Rollgeon.Combat.Rooms.Tests
         };
 
         private List<SpecialTileInfo> Instances() => new List<SpecialTileInfo>(_tiles.ActiveInstances());
+
+        /// <summary>Drena el camino coroutine hasta el final, que es como lo corre el jefe en play.</summary>
+        private static void Drain(AINode_BombField node, AIContext context)
+        {
+            var routine = node.TickCoroutine(context, null);
+            while (routine.MoveNext()) { }
+        }
 
         // Primer tick: sólo siembra y marca
 
@@ -263,6 +272,100 @@ namespace Rollgeon.Combat.Rooms.Tests
             Assert.DoesNotThrow(() => result = node.Tick(_context));
             Assert.AreEqual(AIResult.Succeeded, result);
             Assert.IsEmpty(Instances());
+        }
+
+        // El beat del estallido
+
+        /// <summary>El camino que corre en play tiene que sembrar y marcar igual que el síncrono: la
+        /// separación del estallido es de tiempo, no de comportamiento.</summary>
+        [Test]
+        public void TheCoroutinePath_SowsAndMarksLikeTheSyncPath()
+        {
+            var node = MakeNode(count: 3);
+
+            Drain(node, _context);
+
+            var wave = node.LiveCrosses(_attributes).ToList();
+            Assert.AreEqual(3, wave.Count, "El camino coroutine sembró otra cantidad que el síncrono.");
+            Assert.IsEmpty(Instances(), "La primera siembra no tiene nada que detonar.");
+        }
+
+        /// <summary>Lo que se arregla acá: el fuego y las bombas nuevas salían en el mismo frame y no
+        /// se podía atribuir uno al otro.</summary>
+        [Test]
+        public void TheCoroutinePath_ShowsTheBlast_BeforeItSowsAgain()
+        {
+            var feedback = new SpyFeedback();
+            ServiceLocator.AddService<IFeedbackService>(feedback, ServiceScope.Global);
+
+            var node = MakeNode(count: 3);
+            node.DetonationVfxId = "vfx.test.blast";
+            Drain(node, _context);
+
+            var sown = node.LiveCrosses(_attributes).Select(c => c.Guid).ToHashSet();
+            feedback.OnRequest = () =>
+            {
+                Assert.IsNotEmpty(Instances(),
+                    "El beat del estallido salió antes de prender el fuego: el jugador ve la " +
+                    "animación y el paño todavía limpio.");
+                foreach (var guid in sown)
+                    Assert.IsFalse(_grid.TryGetPosition(guid, out _),
+                        "Las bombas viejas todavía estaban en el paño cuando salió el beat.");
+                Assert.AreEqual(0, node.LiveCrosses(_attributes).Count(),
+                    "Las bombas nuevas ya estaban sembradas cuando salió el beat del estallido: " +
+                    "vuelve a ser todo el mismo frame.");
+            };
+
+            Drain(node, _context);
+
+            Assert.AreEqual(1, feedback.Requests, "El estallido no pidió su beat.");
+            Assert.AreEqual(3, node.LiveCrosses(_attributes).Count(),
+                "Después del beat tiene que haber sembrado las tres nuevas.");
+        }
+
+        [Test]
+        public void WithNothingToDetonate_TheBlastBeatDoesNotPlay()
+        {
+            var feedback = new SpyFeedback();
+            ServiceLocator.AddService<IFeedbackService>(feedback, ServiceScope.Global);
+
+            var node = MakeNode(count: 3);
+            node.DetonationVfxId = "vfx.test.blast";
+
+            Drain(node, _context);
+
+            Assert.AreEqual(0, feedback.Requests,
+                "La primera siembra pidió el beat del estallido sin nada que estallar: el jefe " +
+                "detonando al aire.");
+        }
+
+        /// <summary>Sin id el nodo no puede bloquear nada, y tiene que seguir sembrando igual.</summary>
+        [Test]
+        public void WithoutADetonationId_TheCoroutinePath_StillDetonatesAndSows()
+        {
+            var node = MakeNode(count: 3);
+            Drain(node, _context);
+            Drain(node, _context);
+
+            Assert.IsNotEmpty(Instances(), "Sin id de estallido dejó de prender el fuego.");
+            Assert.AreEqual(3, node.LiveCrosses(_attributes).Count(),
+                "Sin id de estallido dejó de sembrar.");
+        }
+
+        private sealed class SpyFeedback : IFeedbackService
+        {
+            public int Requests;
+            public Action OnRequest;
+
+            public void RequestFeedbackBlocking(FeedbackRequest request, Action onComplete)
+            {
+                Requests++;
+                OnRequest?.Invoke();
+
+                // El contrato de la interfaz: onComplete se invoca exactamente una vez, incluso con
+                // un id inválido.
+                onComplete?.Invoke();
+            }
         }
 
         private sealed class SpyDamagePipeline : IDamagePipeline
