@@ -145,7 +145,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         // Kiteo y fuego
         // ======================================================================
 
-        /// <summary>Disparo de T1.</summary>
+        /// <summary>Disparo del tiempo de reparto.</summary>
         public const int ShotDamage = 18;
 
         /// <summary>
@@ -156,7 +156,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
 
         /// <summary>
         /// Distancia Manhattan al jugador desde la que el jefe se toma la molestia de huir. A esta
-        /// distancia o menos, los dos saltos del ciclo (T1 y T2) corren; más lejos, se quedan
+        /// distancia o menos, los tres saltos del ciclo corren; más lejos, se quedan
         /// plantados.
         /// </summary>
         /// <remarks>
@@ -236,7 +236,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         /// Canal de la marca de "Pleno y color" (<c>AINode_TelegraphMark.ChannelId</c>).
         /// </summary>
         /// <remarks>
-        /// El Pleno y la banda de T1 pueden estar marcados en el mismo turno, y tanto
+        /// El Pleno y la banda del cono pueden estar marcados en el mismo turno, y tanto
         /// <c>IThreatenedAreaService</c> como el overlay guardan un área por fuente: sin canal propio
         /// la segunda marca borra la primera. El paso que la consume tiene que declarar este mismo
         /// string.
@@ -257,7 +257,11 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         public const string BombArtPrefabPath = "Assets/Art/3D/Models/Items/Bomb.fbx";
         public const string BombVisualPrefabPath = "Assets/Prefabs/Enemies/Bosses/PF_Obj_Bomba.prefab";
 
-        public const int BombCount = 5;
+        /// <summary>
+        /// Bombas por siembra. Tres contra los tres turnos del ciclo: alcanza para romperlas todas si
+        /// el jugador dedica el ciclo entero a eso, y con eso paga no haberle pegado al jefe.
+        /// </summary>
+        public const int BombCount = 3;
 
         /// <summary>
         /// Separación mínima, en Chebyshev, entre bombas y contra el propio jefe.
@@ -266,7 +270,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         /// <b>3 y no 2</b>: a 2 dos cruces alineadas comparten la casilla del medio, y ahí las dos
         /// bombas se leen como una mancha en vez de como dos preguntas. A 3 no se tocan nunca.
         /// El precio es cuántas entran — medido sobre las 103 caminables de la sala, a 3 entran
-        /// <see cref="BombCount"/> en el 100% de las siembras, y diez sólo en el 5%.
+        /// <see cref="BombCount"/> en el 100% de las siembras, ocho en el 92% y diez sólo en el 5%.
         /// </remarks>
         public const int BombSpacing = 3;
 
@@ -554,8 +558,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         /// </para>
         /// <para>
         /// La ignición también va antes del <c>Alternate</c>: <c>Clear</c> y <c>Show</c> del overlay
-        /// son por fuente, así que detrás de T1 le pasaría el trapo al aviso de la banda que T1
-        /// acaba de levantar.
+        /// son por fuente, así que detrás del ciclo le pasaría el trapo al aviso que el tiempo de
+        /// las bombas acaba de levantar.
         /// </para>
         /// <para>
         /// Cada paso que puede fallar va en <c>Selector[paso, Wait]</c> porque el Sequence raíz corta
@@ -625,7 +629,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
                         Else = new AINode_Wait(),
                     }),
 
-                    // 3. Los dos tiempos: la accion normal del turno. Alternate avanza el indice en
+                    // 3. Los tres tiempos: la accion normal del turno. Alternate avanza el indice en
                     //    cada tick pase lo que pase, asi que un beat que falla igual gasta su turno y
                     //    el ciclo no se desincroniza.
                     Guarded(new AINode_Alternate
@@ -652,26 +656,9 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
                                         ImpactFeelFeedbackId = BossFeedbackIds.CroupierRangeImpactFeel,
                                     }),
 
-                                    // Sortea la fuga SI el jugador esta cerca, y ANTES de marcar:
-                                    // AINode_TelegraphMark ancla el cono en la casilla del jefe al
-                                    // tickear y AINode_IgniteArea lo consume sin recalcularlo, asi
-                                    // que marcando primero el fuego saldria de donde el jefe ya no
-                                    // esta. Con el sorteo eso pesa MAS que antes: una de las tres
-                                    // salidas lo deja en el centro de la sala, y desde ahi el cono
-                                    // no se recorta contra ninguna pared.
+                                    // Sortea la fuga SI el jugador esta cerca. Este tiempo no marca
+                                    // nada, asi que la fuga va al final y ya.
                                     Guarded(FleeIfClose(FleeRoulette())),
-
-                                    // Marca el cono: anclado en el, apuntando al jugador. Size es
-                                    // el semi-ancho del APEX, asi que 0 arranca en una casilla y se
-                                    // abre 1 por lado en cada paso.
-                                    Guarded(new AINode_TelegraphMark
-                                    {
-                                        Shape = ThreatShape.DirectionalCone,
-                                        Size = ConeApexHalfWidth,
-                                        Depth = ConeDepth,
-                                        Damage = 0,
-                                        Kind = AttackKind.Environmental,
-                                    }),
                                 },
                             },
 
@@ -693,11 +680,34 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
                                         FireDurationRounds = FireDurationRounds,
                                         IgnitionDamage = BombIgnitionDamage,
                                         ChannelPrefix = BombChannelPrefix,
+
+                                        // El estallido se cobra su propio beat: sin esto el fuego
+                                        // nuevo y las bombas nuevas salen en el mismo frame y el
+                                        // jugador no puede atribuir uno al otro. Los ids son los
+                                        // que autoro AINode_DetonateSungSectors --la ruleta que se
+                                        // retiro-- y siguen instalados en el FeedbackDB.
+                                        DetonationVfxId = BossFeedbackIds.CroupierImpactVfx,
+                                        DetonationFeelId = BossFeedbackIds.CroupierImpactFeel,
                                     }),
 
                                     // Mismo gate de cercania que los otros dos tiempos: los tres
                                     // apuestan, si no este seria el turno gratis para acercarsele.
                                     Guarded(FleeIfClose(FleeRoulette())),
+
+                                    // El aviso del cono, DESPUES de la fuga: AINode_TelegraphMark
+                                    // ancla el cono en la casilla del jefe al tickear y
+                                    // AINode_IgniteArea lo consume sin recalcularlo, asi que
+                                    // marcando antes de huir el fuego saldria de donde el jefe ya no
+                                    // esta. Size es el semi-ancho del APEX: 0 arranca en una casilla
+                                    // y se abre 1 por lado en cada paso.
+                                    Guarded(new AINode_TelegraphMark
+                                    {
+                                        Shape = ThreatShape.DirectionalCone,
+                                        Size = ConeApexHalfWidth,
+                                        Depth = ConeDepth,
+                                        Damage = 0,
+                                        Kind = AttackKind.Environmental,
+                                    }),
                                 },
                             },
 
@@ -737,9 +747,9 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
 
                                     // Sortea detras de prender (el fuego cae en las casillas
                                     // guardadas el turno anterior, asi que el orden no le cambia el
-                                    // area) y con el mismo gate de cercania que T1: los dos tiempos
-                                    // apuestan, no solo el de reparto. Instancia propia del sorteo
-                                    // --ver FleeRoulette--, no la de T1.
+                                    // area) y con el mismo gate de cercania que los otros dos: los
+                                    // tres tiempos apuestan, no solo el de reparto. Instancia propia
+                                    // del sorteo --ver FleeRoulette--, no la de los otros tiempos.
                                     Guarded(FleeIfClose(FleeRoulette())),
                                 },
                             },
@@ -800,9 +810,9 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
                                     },
                                     // Saca de la cola el aviso del ciclo antes de encolar este: el
                                     // Alternate ya corrio en este mismo turno y pudo dejar la banda
-                                    // de T1 marcada, y sin esto el jugador ve DOS areas prendidas a
-                                    // la vez y al turno siguiente detonan las dos. Se descarta la
-                                    // telegrafia, no el turno: el disparo de T1 ya se cobro.
+                                    // del cono marcada, y sin esto el jugador ve DOS areas prendidas
+                                    // a la vez y al turno siguiente detonan las dos. Se descarta la
+                                    // telegrafia, no el turno: el tiempo que corrio ya se cobro.
                                     new AINode_CancelTelegraph(),
                                     new AINode_TelegraphMark
                                     {
@@ -810,8 +820,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
                                         // Size es el radio del HUECO que se salva, no del area
                                         // amenazada: 1 = deja libre su 3x3 y prende el resto.
                                         Size = PlenoHoleRadius,
-                                        // Canal propio: la banda de T1 puede estar marcada en este
-                                        // mismo turno y el servicio guarda un area por fuente.
+                                        // Canal propio: la banda del cono puede estar marcada en
+                                        // este mismo turno y el servicio guarda un area por fuente.
                                         ChannelId = PlenoChannelId,
                                         // Lo cobra AINode_IgniteArea al consumir la marca: el numero
                                         // vive en la marca, no en el nodo que prende, porque es de
@@ -865,10 +875,10 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         /// </summary>
         /// <remarks>
         /// <para>
-        /// <b>Devuelve una instancia nueva por llamada, y eso es obligatorio.</b> Los dos tiempos del
+        /// <b>Devuelve una instancia nueva por llamada, y eso es obligatorio.</b> Los tres tiempos del
         /// ciclo piden su propio sorteo: compartir el objeto los haría compartir nodo en el árbol, y
         /// un nodo con estado por instancia (o un consumidor que lo busque por identidad) empezaría a
-        /// ver los dos tiempos como uno.
+        /// ver los tres tiempos como uno.
         /// </para>
         /// <para>
         /// <b>El orden de las opciones es contrato.</b> <c>AINode_Random</c> acumula pesos y devuelve
@@ -1015,7 +1025,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         /// arma <see cref="BossVisualWrapperBuilder"/> con el atlas de
         /// <see cref="BossVisualWrapperBuilder.HealthBarAtlasPath"/>. No hay UI propia de la bomba.
         /// </remarks>
-        public static BossWrapperSpec BuildBombSpec()
+        public static BossWrapperSpec BuildBombSpec(BossArtFitter.ArtFit fit)
         {
             return new BossWrapperSpec
             {
@@ -1025,7 +1035,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
                 MaterialsFolder = BossVisualWrapperBuilder.DefaultMaterialsRoot + "/Croupier",
 
                 AddHealthBar = true,
-                HealthBarOffset = BombHealthBarOffset,
+                HealthBarOffset = fit.HealthBarOffset,
 
                 // Box y no Capsule: es un objeto chico apoyado en el piso, y el capsule del default
                 // se le come las casillas vecinas — que son justo las cuatro que la bomba amenaza.
@@ -1035,14 +1045,37 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
             };
         }
 
-        /// <summary>La bomba es baja: a la altura del default la barra flota lejos del objeto.</summary>
-        public static readonly Vector3 BombHealthBarOffset = new Vector3(0f, 1.2f, 0f);
+        /// <summary>
+        /// Alto de la bomba ya apoyada. Bien por debajo del dado de La Generala (0.8): la bomba no es
+        /// un rival de la mesa, es un bulto en el paño que hay que rodear o romper.
+        /// </summary>
+        public const float BombTargetHeight = 0.55f;
 
+        /// <summary>
+        /// Ancho máximo. Menor que la casilla: la bomba se lee en su tile y no derrama sobre las
+        /// cuatro que amenaza, que son justo las que el jugador tiene que poder leer libres.
+        /// </summary>
+        public const float BombMaxWidth = 0.6f;
+
+        private const float BombBarClearance = 0.25f;
+
+        /// <summary>La misma que el dado de La Generala: la barra de un objeto se lee igual en los dos.</summary>
+        private const float BombBarScale = 0.35f;
+
+        /// <summary>
+        /// El fit es obligatorio y no cosmético: <c>Bomb.fbx</c> tiene el pivot en el centro del
+        /// volumen, así que el wrapper solo lo deja del alto del arte original y con media bomba
+        /// abajo del piso.
+        /// </summary>
         public static GameObject BuildBombVisual()
         {
-            var wrapper = BossVisualWrapperBuilder.BuildWrapper(BuildBombSpec());
+            var fit = BossArtFitter.Measure(
+                BombArtPrefabPath, BombTargetHeight, BombMaxWidth, BombBarClearance);
+
+            var wrapper = BossVisualWrapperBuilder.BuildWrapper(BuildBombSpec(fit));
             if (wrapper == null) return null;
 
+            BossArtFitter.Apply(BombVisualPrefabPath, fit, barScale: BombBarScale);
             return AssetDatabase.LoadAssetAtPath<GameObject>(BombVisualPrefabPath);
         }
 

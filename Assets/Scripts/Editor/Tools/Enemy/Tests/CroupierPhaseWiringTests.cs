@@ -207,11 +207,12 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         {
             var plenoMark = Descendants(FindGateAtPercent(CroupierAssetBuilder.PlenoHpThreshold).Then)
                 .OfType<AINode_TelegraphMark>().Single();
-            var bandMark = Descendants(DealBeat()).OfType<AINode_TelegraphMark>().Single();
+            var bandMark = Descendants(BombBeat()).OfType<AINode_TelegraphMark>().Single();
 
             Assert.AreEqual(CroupierAssetBuilder.PlenoChannelId, plenoMark.ChannelId,
                 "La marca del Pleno perdió su canal: cae bajo el guid pelado del jefe, o sea encima " +
-                "de la banda que T1 marcó este mismo turno — y la que sobrevive es una sola.");
+                "del cono que el tiempo de las bombas marcó este mismo turno — y la que sobrevive " +
+                "es una sola.");
             Assert.IsTrue(string.IsNullOrEmpty(bandMark.ChannelId),
                 "La banda estrenó canal. El tiempo de quema la consume por el guid pelado, así que " +
                 "un canal acá deja la banda avisada y sin prender para siempre.");
@@ -241,8 +242,9 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
 
             var cancel = arm.OfType<AINode_CancelTelegraph>().SingleOrDefault();
             Assert.IsNotNull(cancel,
-                "El armado del Pleno no descarta nada: la banda que T1 marcó este mismo turno queda " +
-                "pendiente, así que el jugador ve dos avisos y al turno siguiente detonan los dos.");
+                "El armado del Pleno no descarta nada: el cono que el tiempo de las bombas marcó " +
+                "este mismo turno queda pendiente, así que el jugador ve dos avisos y al turno " +
+                "siguiente detonan los dos.");
 
             Assert.IsTrue(string.IsNullOrEmpty(cancel.ChannelId),
                 "El descarte estrenó canal. La banda del ciclo se marca en el guid pelado del jefe: " +
@@ -381,18 +383,35 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         /// <summary>Dispara antes de saltar: al revés el jugador vería el fogonazo salir de donde el
         /// jefe ya no está.</summary>
         [Test]
-        public void DealBeat_ShootsBeforeFleeing_AndMarksTheBandFromWhereItLands()
+        public void DealBeat_ShootsBeforeFleeing()
         {
             var order = Descendants(DealBeat());
 
             int shot = order.FindIndex(n => n is AINode_RangedShot);
             int flee = order.FindIndex(n => n is AINode_TeleportAwayToEdge);
-            int mark = order.FindIndex(n => n is AINode_TelegraphMark);
 
             Assert.Greater(shot, -1, "El tiempo de reparto no dispara.");
             Assert.Greater(flee, shot, "El salto va después del disparo.");
+
+            Assert.IsEmpty(order.OfType<AINode_TelegraphMark>(),
+                "El tiempo de reparto volvió a marcar el cono. El aviso vive en el tiempo de las " +
+                "bombas: desde acá quedaría anunciado dos turnos antes de arder y el turno de " +
+                "reparto mostraría dos cosas a la vez.");
+        }
+
+        /// <summary>El aviso va al final del tiempo de las bombas, ya con el jefe en su casilla
+        /// definitiva.</summary>
+        [Test]
+        public void BombBeat_MarksTheConeAfterItFlees()
+        {
+            var order = Descendants(BombBeat());
+
+            int flee = order.FindIndex(n => n is AINode_TeleportAwayToEdge);
+            int mark = order.FindIndex(n => n is AINode_TelegraphMark);
+
+            Assert.Greater(mark, -1, "El tiempo de las bombas no marca el cono.");
             Assert.Greater(mark, flee,
-                "La banda está anclada en el jefe: marcarla antes de saltar la dejaría apuntando " +
+                "El cono está anclado en el jefe: marcarlo antes de saltar lo dejaría apuntando " +
                 "desde la casilla vieja y el fuego no caería donde se anunció.");
         }
 
@@ -419,20 +438,19 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         }
 
         [Test]
-        public void DealBeat_MarksTheAuthoredConeFromTheSheet()
+        public void BombBeat_MarksTheAuthoredConeFromTheSheet()
         {
-            var mark = Descendants(DealBeat()).OfType<AINode_TelegraphMark>().Single();
+            var mark = Descendants(BombBeat()).OfType<AINode_TelegraphMark>().Single();
 
             Assert.AreEqual(ThreatShape.DirectionalCone, mark.Shape,
-                "El reparto dejó de marcar un cono. La banda uniforme cobraba igual pegado al " +
+                "El aviso dejó de ser un cono. La banda uniforme cobraba igual pegado al " +
                 "jefe que en el fondo; el cono deja su casilla como refugio.");
             Assert.AreEqual(CroupierAssetBuilder.ConeApexHalfWidth, mark.Size,
                 "Size es el semi-ancho del APEX, y sale de la ficha.");
             Assert.AreEqual(CroupierAssetBuilder.ConeDepth, mark.Depth,
                 "La profundidad del nodo dejó de ser la de la ficha. Es cuánto paño quema cada " +
-                "turno de reparto: más corto y el cono no llega a cruzarse en el camino del " +
-                "jugador, más largo y barre la sala de punta a punta desde el borde en el que el " +
-                "jefe aterrizó.");
+                "ciclo: más corto y el cono no llega a cruzarse en el camino del jugador, más " +
+                "largo y barre la sala de punta a punta desde el borde en el que el jefe aterrizó.");
             Assert.AreEqual(0, mark.Damage,
                 "La banda no puede cobrar al prender: se marca un turno antes, así que el jugador " +
                 "tuvo su turno para salirse y quedarse adentro ya es una decisión suya. El daño lo " +
@@ -839,6 +857,20 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             Assert.AreEqual(CroupierAssetBuilder.BombIgnitionDamage, field.IgnitionDamage,
                 "El estallido en sí no cobra: quien quedó parado ahí paga al arrancar su turno, " +
                 "que es lo que le da el turno para salirse.");
+        }
+
+        /// <summary>Sin ids el nodo no puede bloquear el turno, y el estallido vuelve a salir en el
+        /// mismo frame que la siembra que le sigue.</summary>
+        [Test]
+        public void BombBeat_GivesTheBlastItsOwnBeat()
+        {
+            var field = Descendants(BombBeat()).OfType<AINode_BombField>().Single();
+
+            Assert.AreEqual(BossFeedbackIds.CroupierImpactVfx, field.DetonationVfxId,
+                "El estallido perdió su VFX: el fuego nuevo y las bombas nuevas vuelven a " +
+                "aparecer juntos y no se entiende que una cosa causó la otra.");
+            Assert.AreEqual(BossFeedbackIds.CroupierImpactFeel, field.DetonationFeelId,
+                "El estallido perdió su feel.");
         }
 
         private AIDecisionNode BombBeat()
