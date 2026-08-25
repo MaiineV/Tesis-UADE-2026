@@ -63,18 +63,44 @@ namespace Rollgeon.UI.Tooltips
         }
 
         /// <summary>
-        /// Punto-pantalla del CENTRO de un rect de UI (no su pivot — <c>rect.position</c>
-        /// es el pivot, y triggers con pivot (0,0) o (0.5,0) (PocionSlot, botones de
-        /// combate) quedaban con el tooltip descolgado hacia un costado). Para Canvas
-        /// Screen Space Overlay, el world point ya está en screen-space; para Camera/World
-        /// se proyecta con la cámara del canvas.
+        /// Punto-pantalla del BORDE SUPERIOR de un rect de UI, centrado en X (no el pivot
+        /// — <c>rect.position</c> es el pivot, y triggers con pivot (0,0) o (0.5,0)
+        /// (PocionSlot, botones de combate) quedaban con el tooltip descolgado hacia un
+        /// costado). Usado por <see cref="Tooltips.UITooltipTrigger"/> en modo AutoFit —
+        /// el único caller. Para Canvas Screen Space Overlay, el world point ya está en
+        /// screen-space; para Camera/World se proyecta con la cámara del canvas.
         /// </summary>
+        /// <remarks>
+        /// BUG-041: antes anclaba al CENTRO del rect. Con el offset chico del
+        /// <c>TooltipController</c> (12px por default) el borde inferior del panel
+        /// quedaba DENTRO del elemento — el tooltip de curación tapado por el propio
+        /// botón/cursor que lo disparó. Ancorar al borde superior deja el panel entero
+        /// por encima del elemento antes de sumar el offset del controller.
+        /// <para>
+        /// El modo Fixed (<see cref="TooltipPlacementSettings.ResolveFixedScreenPos"/>) NO
+        /// pasa por este método — sigue centrando su propio anchor, así que los triggers
+        /// Fixed (offset autorado a mano, ej. chips de combate) no cambian.
+        /// </para>
+        /// </remarks>
         public static Vector2 ScreenPosOf(RectTransform rect)
         {
             if (rect == null) return Vector2.zero;
-            return ScreenPosOf(rect, rect.GetComponentInParent<Canvas>());
+            return ScreenTopEdgeOf(rect, rect.GetComponentInParent<Canvas>());
         }
 
+        private static Vector2 ScreenTopEdgeOf(RectTransform rect, Canvas canvas)
+        {
+            if (rect == null) return Vector2.zero;
+            var r = rect.rect;
+            Vector3 worldTopEdge = rect.TransformPoint(new Vector3(r.center.x, r.yMax, 0f));
+            if (canvas == null || canvas.renderMode == RenderMode.ScreenSpaceOverlay)
+                return worldTopEdge;
+            return RectTransformUtility.WorldToScreenPoint(canvas.worldCamera, worldTopEdge);
+        }
+
+        // Centro real del rect (no el pivot) — sigue siendo lo que usa el modo Fixed vía
+        // ResolveFixedScreenPos: ahí el offset lo autora el diseñador a mano, así que el
+        // punto de partida no debe moverse con el fix de AutoFit (BUG-041).
         private static Vector2 ScreenPosOf(RectTransform rect, Canvas canvas)
         {
             if (rect == null) return Vector2.zero;

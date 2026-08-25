@@ -16,6 +16,7 @@ namespace Rollgeon.DevConsole.Cheats
     {
         private readonly IDevConsoleContext _ctx;
         private readonly EventManager.EventReceiver _handler;
+        private readonly EventManager.EventReceiver _onRunEndHandler;
         private bool _pinning;
 
         public bool Enabled { get; private set; }
@@ -24,6 +25,12 @@ namespace Rollgeon.DevConsole.Cheats
         {
             _ctx = ctx ?? throw new ArgumentNullException(nameof(ctx));
             _handler = OnAttributeChanged;
+            _onRunEndHandler = OnRunEnd;
+            // BUG-062 (hardening): DevConsoleSession vive fuera del ServiceScope.Run — sin
+            // esto, God Mode prendido para debuggear un piso sobrevive a EndRun y la
+            // siguiente run (o el piso 2+ de la misma) arranca "inmortal" sin que nadie lo
+            // haya pedido. Auto-apagar en OnRunEnd es la red de seguridad.
+            EventManager.Subscribe(EventName.OnRunEnd, _onRunEndHandler);
         }
 
         public void Enable()
@@ -39,6 +46,15 @@ namespace Rollgeon.DevConsole.Cheats
             if (!Enabled) return;
             Enabled = false;
             EventManager.UnSubscribe(EventName.OnAttributeChanged, _handler);
+        }
+
+        private void OnRunEnd(params object[] args)
+        {
+            if (!Enabled) return;
+            UnityEngine.Debug.LogWarning(
+                "[GodModeController] La run terminó con God Mode activo — auto-desactivando " +
+                "para que la próxima run no arranque inmortal (BUG-062).");
+            Disable();
         }
 
         public bool Toggle()
@@ -74,6 +90,10 @@ namespace Rollgeon.DevConsole.Cheats
             }
         }
 
-        public void Dispose() => Disable();
+        public void Dispose()
+        {
+            Disable();
+            EventManager.UnSubscribe(EventName.OnRunEnd, _onRunEndHandler);
+        }
     }
 }

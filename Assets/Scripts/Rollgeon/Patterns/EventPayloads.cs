@@ -189,6 +189,15 @@ namespace Patterns
         /// <summary>Índices de slot del bag (0-based) 1:1 con <see cref="KeptDice"/> —
         /// permite checks "mi dado participó" del canal de encantamientos.</summary>
         public IReadOnlyList<int> KeptDiceOriginalIndices;
+
+        /// <summary>
+        /// Discriminante de qué acción jugó este combo (BUG-060) — copiado del
+        /// <c>EffectContext.ActionKind</c> que abrió la ventana en <c>ComboPlayService.BeginPlay</c>.
+        /// Los encantamientos de oro (y hooks de ítem equivalentes) deben ignorar los kinds
+        /// que no son <see cref="Rollgeon.Combat.Rolls.RollActionKindExtensions.IsCombatPayable"/>
+        /// — ej. un trío tirado para MOVERSE no debe pagar "Avaro".
+        /// </summary>
+        public Rollgeon.Combat.Rolls.RollActionKind ActionKind;
     }
 
     /// <summary>

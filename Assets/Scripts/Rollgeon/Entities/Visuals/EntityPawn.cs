@@ -274,6 +274,20 @@ namespace Rollgeon.Entities.Visuals
                 transform.position = endPos;
                 i++;
             }
+
+            // BUG-069: si el loop terminó por 'break' (reroute fallido), el transform se quedó
+            // en 'prev' mientras la posición lógica en el grid YA está en el destino — la setea
+            // MovementService.Move de forma síncrona antes de animar, no esta corutina. Sin este
+            // resync el pawn se ve "atascado" hasta el próximo OnEntityMoved del mismo guid. En
+            // el camino feliz es un no-op: el último endPos del loop ya coincide con
+            // GridToWorld(destination).
+            if (grid.TryGetPosition(EntityGuid, out var logicalCoord))
+            {
+                var syncPos = grid.GridToWorld(logicalCoord);
+                syncPos.y += PawnYOffset;
+                transform.position = syncPos;
+            }
+
             SetMovementAnim(false);
             _moveAnim = null;
         }

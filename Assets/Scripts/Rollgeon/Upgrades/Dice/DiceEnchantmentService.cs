@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Patterns;
+using Rollgeon.Combat.Rolls;
 using Rollgeon.Combos;
 using Rollgeon.Combos.Play;
 using Rollgeon.Dice;
@@ -158,10 +159,25 @@ namespace Rollgeon.Upgrades.Dice
             if (!(args[1] is IReadOnlyList<int> faces)) return;
             _lastFinalRoll = faces;
 
+            // BUG-060: args[2] (opcional, back-compat) es el RollActionKind que armó
+            // el emisor — Attack/Defense/Heal EN COMBATE son las únicas tiradas que
+            // pagan encantamientos de oro. Sin discriminante (emisores viejos/tests)
+            // Unknown ⇒ no pagable, fail-safe.
+            var kind = args.Length > 2 && args[2] is RollActionKind k ? k : RollActionKind.Unknown;
+            if (!kind.IsCombatPayable()) return;
+
+            // args[3] (opcional) es el ComboDetectionResult REAL de esta tirada — antes
+            // este dispatch armaba el EffectContext sin ComboResult, así que
+            // PcNoComboThisRoll (Ench_GoldOnRoll / Ambicioso) siempre evaluaba "sin combo"
+            // y pagaba de más. Boxing de Nullable<T>: HasValue ⇒ boxed T; sin valor ⇒ null.
+            ComboDetectionResult? comboResult = null;
+            if (args.Length > 3 && args[3] is ComboDetectionResult crVal) comboResult = crVal;
+
             var effectCtx = new EffectContext
             {
                 SourceGuid = sourceGuid,
                 DiceResult = faces,
+                ComboResult = comboResult,
             };
             DispatchRollResolved(effectCtx);
         }
@@ -239,6 +255,9 @@ namespace Rollgeon.Upgrades.Dice
         {
             if (Bag == null) return;
             if (string.IsNullOrEmpty(payload.ComboId)) return;
+            // BUG-060: mismo gate que OnRollResolvedHandler — un trío tirado para MOVERSE
+            // (o cualquier acción no-combate) no debe disparar "Avaro"/"Codicioso".
+            if (!payload.ActionKind.IsCombatPayable()) return;
 
             // A diferencia de OnComboMatched (que reconstruye desde _lastFinalRoll), el
             // payload de ComboPlayed es autosuficiente: dados, kept y combo completos.

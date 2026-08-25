@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Rollgeon.Combat.Rolls;
 using Rollgeon.Combos;
 using Rollgeon.Effects.Selection;
 using Rollgeon.Entities;
@@ -60,6 +61,15 @@ namespace Rollgeon.Effects
 
         /// <summary>Resultado del combo matching via ContractSheet.MatchBest. Null si no hubo match.</summary>
         public ComboDetectionResult? ComboResult;
+
+        /// <summary>
+        /// Discriminante de qué acción generó esta tirada (BUG-060) — Attack/Defense/Heal
+        /// en combate son "pagables" para encantamientos de oro; Movement/EndTurn/ForceDoor/
+        /// Exploration no. <see cref="RollActionKind.Unknown"/> (default) = sin clasificar,
+        /// tratado como NO pagable (fail-safe). Lo setea quien arma el context (behaviors,
+        /// action rolls, chains) — ver <see cref="RollActionKindExtensions.IsCombatPayable"/>.
+        /// </summary>
+        public RollActionKind ActionKind;
 
         /// <summary>
         /// Total efectivo pre-computado por <c>IActionRollService</c> sobre el subset de

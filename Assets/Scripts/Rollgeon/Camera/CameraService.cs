@@ -66,6 +66,7 @@ namespace Rollgeon.GameCamera
 
         public event Action<CameraFacing> FacingChanged;
         public event Action<bool> FloorViewToggled;
+        public event Action<float> ZoomChanged;
 
         [SerializeField]
         [Tooltip("Override opcional del CameraConfigSO. Si es null, el service lo resuelve " +
@@ -521,6 +522,11 @@ namespace Rollgeon.GameCamera
                     onValueChange: v => ApplyZoomImmediate(v),
                     ease: _config.ZoomEase);
             }
+
+            // BUG-068: el tutorial gatea su paso de cámara con este evento — tiene que
+            // disparar apenas el target quedó fijado, no esperar a que el tween termine.
+            ZoomChanged?.Invoke(_targetZoom);
+            EventManager.Trigger(EventName.OnCameraZoomChanged, _targetZoom, previousTarget);
 
             EvaluateFloorViewGate();
         }

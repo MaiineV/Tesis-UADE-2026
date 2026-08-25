@@ -59,6 +59,17 @@ namespace Rollgeon.Effects.Tests
         }
 
         [Test]
+        public void TryGetRollSpec_InCombat_ReportsForceDoorKind()
+        {
+            // BUG-060: Forzar Puerta tiene tirada propia en combate pero está
+            // explícitamente excluida de los encantamientos de oro (decisión de diseño).
+            bool got = _effect.TryGetRollSpec(_playerGuid, out var spec);
+
+            Assert.IsTrue(got);
+            Assert.AreEqual(Rollgeon.Combat.Rolls.RollActionKind.ForceDoor, spec.Kind);
+        }
+
+        [Test]
         public void DiceSum_MeetsThreshold_SetsForced_AndEntersRoom()
         {
             var instance = CreateInstanceWithAdjacentDoor(DoorDirection.North);

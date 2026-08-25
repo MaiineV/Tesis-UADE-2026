@@ -683,6 +683,82 @@ MonoBehaviour:
     m_Key: menu.audio_unmuted
     m_Metadata:
       m_Items: []
+  - m_Id: 14619625939369984
+    m_Key: tutorial.camera_needs_rotate
+    m_Metadata:
+      m_Items: []
+  - m_Id: 14619625981313024
+    m_Key: tutorial.camera_needs_zoom
+    m_Metadata:
+      m_Items: []
+  - m_Id: 14619625989701632
+    m_Key: tooltip.hero_action.cost_per_roll
+    m_Metadata:
+      m_Items: []
+  - m_Id: 14619625989701633
+    m_Key: tooltip.effect.combo.multiplier_suffix
+    m_Metadata:
+      m_Items: []
+  - m_Id: 14619625989701634
+    m_Key: tooltip.effect.combo.no_combo_fallback
+    m_Metadata:
+      m_Items: []
+  - m_Id: 14619625989701635
+    m_Key: tooltip.effect.damage.combo_header
+    m_Metadata:
+      m_Items: []
+  - m_Id: 14619625989701636
+    m_Key: tooltip.effect.damage.flat
+    m_Metadata:
+      m_Items: []
+  - m_Id: 14619625989701637
+    m_Key: tooltip.effect.heal.combo_header
+    m_Metadata:
+      m_Items: []
+  - m_Id: 14619625989701638
+    m_Key: tooltip.effect.heal.combo_value
+    m_Metadata:
+      m_Items: []
+  - m_Id: 14619625989701639
+    m_Key: tooltip.effect.heal.percent
+    m_Metadata:
+      m_Items: []
+  - m_Id: 14619625989701640
+    m_Key: tooltip.effect.heal.flat
+    m_Metadata:
+      m_Items: []
+  - m_Id: 14619625989701641
+    m_Key: tooltip.effect.shield.combo_header
+    m_Metadata:
+      m_Items: []
+  - m_Id: 14619625989701642
+    m_Key: tooltip.effect.shield.flat
+    m_Metadata:
+      m_Items: []
+  - m_Id: 14619625989701643
+    m_Key: tooltip.effect.force_door.boss_room
+    m_Metadata:
+      m_Items: []
+  - m_Id: 14619625989701644
+    m_Key: tooltip.effect.force_door.threshold
+    m_Metadata:
+      m_Items: []
+  - m_Id: 14619625989701645
+    m_Key: tooltip.effect.move.default
+    m_Metadata:
+      m_Items: []
+  - m_Id: 14619625989701646
+    m_Key: tooltip.effect.move.global
+    m_Metadata:
+      m_Items: []
+  - m_Id: 14619625989701647
+    m_Key: tooltip.effect.move.range
+    m_Metadata:
+      m_Items: []
+  - m_Id: 14619625998090240
+    m_Key: action.defense
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

@@ -148,6 +148,57 @@ namespace Rollgeon.Entities.Visuals.Tests
                 "Tras Teardown, el fill no debe actualizarse.");
         }
 
+        // ------------------------------------------------------------------
+        // BUG-050 — escala world-space contra el zoom (ComputeZoomScale es
+        // estatico y puro: sin camara ni instancia del componente).
+        // ------------------------------------------------------------------
+
+        [Test]
+        public void test_computeZoomScale_atReferenceZoom_returnsOne()
+        {
+            // Act
+            float scale = WorldSpaceHealthBar.ComputeZoomScale(orthographicSize: 9f, referenceZoom: 9f);
+
+            // Assert
+            Assert.AreEqual(1f, scale, 0.001f);
+        }
+
+        [Test]
+        public void test_computeZoomScale_zoomedOutPastMax_clampsAtMaxScale()
+        {
+            // Arrange — CameraConfigSO.ZoomMax = 22, DefaultZoom = 9 → 22/9 ≈ 2.44,
+            // por encima del clamp de 2.2 (BUG-050: legibilidad con zoom out extremo).
+
+            // Act
+            float scale = WorldSpaceHealthBar.ComputeZoomScale(orthographicSize: 22f, referenceZoom: 9f);
+
+            // Assert
+            Assert.AreEqual(2.2f, scale, 0.001f);
+        }
+
+        [Test]
+        public void test_computeZoomScale_zoomedIn_neverGoesBelowMinScale()
+        {
+            // Arrange — CameraConfigSO.ZoomMin = 6, DefaultZoom = 9 → 6/9 ≈ 0.67; la barra
+            // no debe encogerse por debajo de su tamaño autorado.
+
+            // Act
+            float scale = WorldSpaceHealthBar.ComputeZoomScale(orthographicSize: 6f, referenceZoom: 9f);
+
+            // Assert
+            Assert.AreEqual(1f, scale, 0.001f);
+        }
+
+        [Test]
+        public void test_computeZoomScale_zeroReferenceZoom_returnsMinScaleWithoutDividingByZero()
+        {
+            // Act
+            float scale = WorldSpaceHealthBar.ComputeZoomScale(orthographicSize: 15f, referenceZoom: 0f);
+
+            // Assert
+            Assert.AreEqual(1f, scale, 0.001f);
+        }
+
         private void RegisterHealth(Guid entityId, int hp)
         {
             var attrs = new ModifiableAttributes();

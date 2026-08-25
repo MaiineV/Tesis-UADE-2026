@@ -13,6 +13,7 @@ using Rollgeon.Dungeon.State;
 using Rollgeon.Entities;
 using Rollgeon.Entities.Visuals;
 using Rollgeon.Grid;
+using Rollgeon.Localization;
 using Rollgeon.Phase;
 using Rollgeon.UI.HUD;
 using Rollgeon.UI.Tooltips;
@@ -79,6 +80,9 @@ namespace Rollgeon.Effects.Concretes
                 ActionLabel = "Forzar Puerta",
                 AllowReroll = true,
                 BoardType = DiceBoardType.Default,
+                // BUG-060: Forzar Puerta SIEMPRE excluida de encantamientos de oro, aunque
+                // solo tenga tirada en combate (decisión de diseño del usuario).
+                Kind = Rollgeon.Combat.Rolls.RollActionKind.ForceDoor,
             };
             return true;
         }
@@ -91,8 +95,12 @@ namespace Rollgeon.Effects.Concretes
         public string BuildTooltip()
         {
             if (!IsInCombat()) return null;
-            if (IsBossRoom()) return "El Boss debe ser vencido — no se puede forzar la puerta";
-            return $"Puntaje a superar: {RequiredValue}";
+            if (IsBossRoom())
+                return LocalizedContent.Ui("tooltip.effect.force_door.boss_room",
+                    "El Boss debe ser vencido — no se puede forzar la puerta");
+            return string.Format(
+                LocalizedContent.Ui("tooltip.effect.force_door.threshold", "Puntaje a superar: {0}"),
+                RequiredValue);
         }
 
         public override bool ApplyEffect(EffectContext context)

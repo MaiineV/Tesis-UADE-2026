@@ -95,8 +95,9 @@ namespace Rollgeon.Combat.AI.Tests
             // Act
             var result = node.Tick(Ctx());
 
-            // Assert
-            Assert.AreEqual(AIResult.Failed, result);
+            // Assert — BUG-061/PUL-014: "ya en la banda" es un no-op benigno, no un error;
+            // Succeeded para que un Sequence sin Selector siga con el resto del turno (ataque).
+            Assert.AreEqual(AIResult.Succeeded, result);
             _grid.TryGetPosition(_self, out var pos);
             Assert.AreEqual(new GridCoord(6, 0), pos, "No debe moverse si ya está en la banda.");
         }
@@ -112,8 +113,8 @@ namespace Rollgeon.Combat.AI.Tests
             // Act
             var result = node.Tick(Ctx());
 
-            // Assert
-            Assert.AreEqual(AIResult.Failed, result);
+            // Assert — mismo criterio: "muy cerca, kite off" es benigno, no error.
+            Assert.AreEqual(AIResult.Succeeded, result);
             _grid.TryGetPosition(_self, out var pos);
             Assert.AreEqual(new GridCoord(7, 0), pos, "Sin Retreat no debe alejarse.");
         }

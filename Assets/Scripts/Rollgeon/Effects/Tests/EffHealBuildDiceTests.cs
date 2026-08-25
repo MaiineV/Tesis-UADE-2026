@@ -234,6 +234,8 @@ namespace Rollgeon.Effects.Tests
             Assert.IsFalse(spec.RequireConfirm, "Heal va directo a roll, sin confirm dialog.");
             Assert.IsTrue(spec.AllowReroll);
             Assert.IsTrue(spec.CostsRolls, "En combate Curarse debe cobrar 1 roll por tirada.");
+            Assert.AreEqual(Rollgeon.Combat.Rolls.RollActionKind.Heal, spec.Kind,
+                "BUG-060: Curarse EN combate debe reportar Kind=Heal (pagable por encantamientos de oro).");
         }
 
         [Test]
@@ -246,6 +248,8 @@ namespace Rollgeon.Effects.Tests
 
             Assert.IsTrue(got);
             Assert.IsFalse(spec.CostsRolls, "Fuera de combate curarse no debe gastar rolls.");
+            Assert.AreEqual(Rollgeon.Combat.Rolls.RollActionKind.Exploration, spec.Kind,
+                "BUG-060: Curarse fuera de combate debe reportar Kind=Exploration (no pagable).");
         }
 
         [Test]

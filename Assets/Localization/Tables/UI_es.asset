@@ -725,6 +725,84 @@ MonoBehaviour:
     m_Localized: Sonando
     m_Metadata:
       m_Items: []
+  - m_Id: 14619625939369984
+    m_Localized: "\xA1Hiciste zoom! Ahora gira la c\xE1mara: mant\xE9n el bot\xF3n
+      derecho y arrastra el mouse."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 14619625981313024
+    m_Localized: "\xA1Giraste la c\xE1mara! Ahora prueba el zoom: usa la rueda del
+      mouse para acercar o alejar."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 14619625989701632
+    m_Localized: 'Costo: 1 Roll por tirada'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 14619625989701633
+    m_Localized: " \xD7 {0}"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 14619625989701634
+    m_Localized: "Sin combo: ATQ + dado m\xE1s alto elegido"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 14619625989701635
+    m_Localized: "Da\xF1o: ATQ ({0}) + puntaje del combo"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 14619625989701636
+    m_Localized: "Da\xF1o: {0}"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 14619625989701637
+    m_Localized: "Curaci\xF3n: ATQ ({0}) + base del combo \xD7 multi de dados"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 14619625989701638
+    m_Localized: "Curaci\xF3n: puntaje del combo"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 14619625989701639
+    m_Localized: "Curaci\xF3n: {0}% del HP m\xE1ximo"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 14619625989701640
+    m_Localized: "Curaci\xF3n: {0} HP"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 14619625989701641
+    m_Localized: "Escudo: ATQ ({0}) + base del combo \xD7 multi de dados"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 14619625989701642
+    m_Localized: 'Escudo: +{0}'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 14619625989701643
+    m_Localized: "El Boss debe ser vencido \u2014 no se puede forzar la puerta"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 14619625989701644
+    m_Localized: 'Puntaje a superar: {0}'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 14619625989701645
+    m_Localized: Moverse
+    m_Metadata:
+      m_Items: []
+  - m_Id: 14619625989701646
+    m_Localized: Moverse a cualquier casilla libre de la sala
+    m_Metadata:
+      m_Items: []
+  - m_Id: 14619625989701647
+    m_Localized: Moverse hasta {0} casillas
+    m_Metadata:
+      m_Items: []
+  - m_Id: 14619625998090240
+    m_Localized: Defensa
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Patterns;
+using Rollgeon.Combat.Rolls;
 using Rollgeon.Effects;
 using Rollgeon.Upgrades.Dice;
 using Sirenix.OdinInspector;
@@ -44,6 +45,14 @@ namespace Rollgeon.Items
                  "ComboIds = solo los ids listados.")]
         [OdinSerialize]
         public ComboFilter ComboFilter = new ComboFilter();
+
+        [ShowIf(nameof(Kind), PassiveHookKind.ComboPlayed)]
+        [InfoBox("Restringe el hook a un ActionKind específico (ej. Attack para un bono de " +
+                 "daño que no debe leakear a Heal/Movement — comparten el mismo play scratch, " +
+                 "BUG-080). Unknown = sin restricción, dispara para cualquier acción con combo " +
+                 "jugado (comportamiento previo, default).")]
+        [OdinSerialize]
+        public RollActionKind ActionKindFilter = RollActionKind.Unknown;
 
         [OdinSerialize]
         public EffectData Effect = new();

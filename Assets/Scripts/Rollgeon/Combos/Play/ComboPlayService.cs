@@ -111,6 +111,11 @@ namespace Rollgeon.Combos.Play
                 DiceResult = effCtx.DiceResult,
                 KeptDice = effCtx.KeptDice,
                 KeptDiceOriginalIndices = effCtx.KeptDiceOriginalIndices,
+                // BUG-060: viaja el discriminante de la acción que abrió esta ventana — sin
+                // esto un trío tirado para MOVERSE (mismo bag, misma detección de combo que
+                // un ataque) disparaba los hooks de oro/daño "at combo played" igual que un
+                // golpe real.
+                ActionKind = effCtx.ActionKind,
             });
 
             // Recursos (oro/stats) acumulados por los suscriptores se materializan una sola

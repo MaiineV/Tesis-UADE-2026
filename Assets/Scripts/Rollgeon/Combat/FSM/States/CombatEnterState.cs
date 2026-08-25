@@ -29,10 +29,22 @@ namespace Rollgeon.Combat.FSM.States
         internal EnemyTurnState Enemy;
         internal CombatExitState ExitRef;
 
+        /// <summary>
+        /// BUG-078 (guard defensivo): <c>true</c> cuando <see cref="Enter"/> detectó que
+        /// <see cref="CombatContext.CachedParticipants"/> no tiene ningún combatiente
+        /// además del player (ej. <c>DefaultEnemySpawnResolver</c> no pudo resolver al
+        /// boss en el resume). En ese caso no armamos la cola de turnos — <see cref="CheckInput"/>
+        /// desvía <c>StartCombat</c> directo a <see cref="ExitRef"/> en vez de Player/Enemy,
+        /// evitando el softlock de un player solo ciclando su propio turno.
+        /// </summary>
+        private bool _noValidCombatants;
+
         public CombatEnterState(CombatContext context) : base(context) { }
 
         public override void Enter(CombatInput input)
         {
+            _noValidCombatants = false;
+
             // 1) OnCombatStart BEFORE BuildForCombat — listeners de "combat init"
             //    (achievements, stats tracking) se suscriben al evento y esperan
             //    que corra antes del turn queue wiring.
@@ -43,6 +55,27 @@ namespace Rollgeon.Combat.FSM.States
                 UnityEngine.Debug.LogError(
                     "[CombatEnterState] CachedParticipants is null/empty. " +
                     "Call CombatTurnFSM.SetParticipants(...) before Start().");
+                return;
+            }
+
+            // BUG-078: la sala iba a combate pero no hay NINGÚN combatiente además del
+            // player (típicamente el spawn del boss falló en el resume/re-entry). Arrancar
+            // la FSM así deja al player como único participante de la cola: su turno
+            // termina y vuelve a empezar el suyo, ciclando para siempre — y en boss room
+            // EffForceDoor bloquea el escape, así que es un softlock real. Cerramos el
+            // combate en vez de construir la cola.
+            bool hasNonPlayerCombatant = false;
+            foreach (var id in Context.CachedParticipants)
+            {
+                if (id != Context.PlayerId) { hasNonPlayerCombatant = true; break; }
+            }
+            if (!hasNonPlayerCombatant)
+            {
+                UnityEngine.Debug.LogWarning(
+                    "[CombatEnterState] CachedParticipants solo contiene al player (sin enemigos) — " +
+                    "cerrando el combate como Aborted en vez de arrancar la FSM de turnos (BUG-078).");
+                _noValidCombatants = true;
+                Context.PendingOutcome = CombatOutcome.Aborted;
                 return;
             }
 
@@ -66,6 +99,15 @@ namespace Rollgeon.Combat.FSM.States
             switch (input)
             {
                 case CombatInput.StartCombat:
+                    // BUG-078: Enter ya decidió cerrar el combate (sin combatientes
+                    // válidos) — StartCombat no debe llevar a Player/Enemy con una cola
+                    // que nunca se armó.
+                    if (_noValidCombatants)
+                    {
+                        next = ExitRef;
+                        return true;
+                    }
+
                     // Remark (CNF-006): con el player forzado al frente de la cola en
                     // Enter, la rama Enemy es teóricamente inalcanzable mientras el
                     // player esté entre los participantes — se deja como fallback

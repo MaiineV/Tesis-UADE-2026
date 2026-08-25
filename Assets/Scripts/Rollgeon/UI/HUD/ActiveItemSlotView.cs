@@ -231,6 +231,13 @@ namespace Rollgeon.UI.HUD
                 // Depleted: conserva el sprite actual; el DepletedOverlay lo distingue.
             }
 
+            // BUG-074: Inactive/Depleted = "no lo podés usar ahora" — mismo outline rojo
+            // que ActionButton.Unaffordable, para que la ficha de ítem (poción/arco)
+            // conteste igual que los chips de acción. Convive con los overlays de arriba.
+            bool unavailable = state != ActiveItemState.Active;
+            if (unavailable) UnavailableTint.Apply(_icon);
+            else UnavailableTint.Remove(_icon);
+
             RefreshInteractable();
         }
 

@@ -5,6 +5,7 @@ using Rollgeon.Combat.Pipelines;
 using Rollgeon.Effects.Readers;
 using Rollgeon.Entities.Behaviors;
 using Rollgeon.Grid;
+using Rollgeon.Localization;
 using Rollgeon.Phase;
 using Rollgeon.Player;
 using Rollgeon.UI.HUD;
@@ -142,15 +143,21 @@ namespace Rollgeon.Effects.Concretes
             // Fuera de combate curarse es gratis — el pool no existe en exploración.
             // Threshold 0: la fórmula N×M no tiene umbral — la acción siempre cura algo
             // (con combo, tabla + ATQ + Σcaras; sin combo, el dado más alto).
+            bool inCombat = IsInCombat();
             spec = new ActionRollSpec
             {
-                CostsRolls = IsInCombat(),
+                CostsRolls = inCombat,
                 Threshold = 0,
                 RequireConfirm = false,
                 ActionLabel = "Curarse",
                 AllowReroll = true,
                 AlwaysSucceeds = true,
                 BoardType = DiceBoardType.Default,
+                // BUG-060: Curarse EN combate paga encantamientos de oro (Attack/Defense/Heal
+                // son las únicas tiradas de combate pagables); la variante de exploración
+                // (poción, gratis) no — mismo criterio que ya usa CostsRolls acá arriba.
+                Kind = inCombat ? Rollgeon.Combat.Rolls.RollActionKind.Heal
+                                : Rollgeon.Combat.Rolls.RollActionKind.Exploration,
             };
             return true;
         }
@@ -178,24 +185,32 @@ namespace Rollgeon.Effects.Concretes
                 // con el ATQ del owner resuelto en hover-time.
                 int attack = ResolveOwnerAttack(context.OwnerGuid);
                 var sb = new System.Text.StringBuilder();
-                sb.Append("Curación: ATQ (").Append(attack).Append(") + base del combo × multi de dados");
+                sb.Append(string.Format(
+                    LocalizedContent.Ui("tooltip.effect.heal.combo_header",
+                        "Curación: ATQ ({0}) + base del combo × multi de dados"), attack));
                 if (!Mathf.Approximately(ComboMultiplier, 1f))
-                    sb.Append(" × ").Append(ComboMultiplier.ToString("0.##"));
+                    sb.Append(string.Format(
+                        LocalizedContent.Ui("tooltip.effect.combo.multiplier_suffix", " × {0}"),
+                        ComboMultiplier.ToString("0.##")));
                 sb.AppendLine();
-                sb.Append("Sin combo: ATQ + dado más alto elegido");
+                sb.Append(LocalizedContent.Ui("tooltip.effect.combo.no_combo_fallback",
+                    "Sin combo: ATQ + dado más alto elegido"));
                 return sb.ToString();
             }
 
             return _healSource switch
             {
                 DamageSource.FromReader when _reader != null
-                    => "Curación: " + Mathf.RoundToInt(
-                        _reader.Read(context.ToReaderContext()) * _readerMultiplier) + " HP",
+                    => string.Format(LocalizedContent.Ui("tooltip.effect.heal.flat", "Curación: {0} HP"),
+                        Mathf.RoundToInt(_reader.Read(context.ToReaderContext()) * _readerMultiplier)),
                 DamageSource.FromReader => null,
-                DamageSource.ComboValue => "Curación: puntaje del combo",
+                DamageSource.ComboValue => LocalizedContent.Ui("tooltip.effect.heal.combo_value",
+                    "Curación: puntaje del combo"),
                 _ => _isPercentOfMax
-                    ? $"Curación: {_baseAmount}% del HP máximo"
-                    : $"Curación: {_baseAmount} HP",
+                    ? string.Format(LocalizedContent.Ui("tooltip.effect.heal.percent",
+                        "Curación: {0}% del HP máximo"), _baseAmount)
+                    : string.Format(LocalizedContent.Ui("tooltip.effect.heal.flat", "Curación: {0} HP"),
+                        _baseAmount),
             };
         }
 

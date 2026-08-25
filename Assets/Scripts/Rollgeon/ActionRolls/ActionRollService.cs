@@ -697,8 +697,11 @@ namespace Rollgeon.ActionRolls
             Rollgeon.Feedback.BreakdownUiGate.Begin();
             try
             {
+                // BUG-060: kind + ComboResult real viajan como args[2]/args[3] (back-compat
+                // posicional — DiceEnchantmentService.OnRollResolvedHandler los lee opcionalmente).
                 EventManager.Trigger(EventName.OnRollResolved, _playerGuid,
-                    (IReadOnlyList<int>)(_currentRoll ?? Array.Empty<int>()));
+                    (IReadOnlyList<int>)(_currentRoll ?? Array.Empty<int>()),
+                    _spec.Kind, _currentComboResult);
 
                 SetPhase(ActionRollPhase.Resolved);
 

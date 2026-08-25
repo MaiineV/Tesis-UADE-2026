@@ -169,6 +169,16 @@ namespace Rollgeon.Combat.Pipelines
                             ? currentHp
                             : LethalOverrideRemainingHp;
                         ctx.FinalDamage = currentHp - newHp;
+
+                        // BUG-062 (hardening): un golpe letal anulado en silencio es
+                        // exactamente la firma del bug reportado ("inmortal permanente") —
+                        // logueamos SIEMPRE que esto dispara, no solo la primera vez, para
+                        // que un caso fuera del tutorial (override mal scoped/leakeado) sea
+                        // visible en el log del piso donde pasó.
+                        Debug.LogWarning(
+                            $"[DamagePipeline] Golpe letal anulado por ILethalDamageOverride " +
+                            $"(target={ctx.TargetId}, source={ctx.SourceId}): {currentHp}→{newHp} HP " +
+                            $"(daño anulado: {finalDamage - ctx.FinalDamage}).");
                     }
 
                     hpBefore = currentHp;
@@ -179,7 +189,11 @@ namespace Rollgeon.Combat.Pipelines
                 }
                 else
                 {
-                    Debug.LogWarning(
+                    // BUG-062 (hardening): daño descartado en silencio es otra firma posible
+                    // de "inmortalidad permanente" — un target sin Health nunca puede morir
+                    // ni bajar de vida. Elevado de Warning a Error: esto nunca debería pasar
+                    // para una entidad viva en combate (registro incompleto/roto).
+                    Debug.LogError(
                         $"[DamagePipeline] Target '{ctx.TargetId}' has no Health attribute — damage discarded.");
                     ctx.FinalDamage = 0;
                     ctx.WasLethal = false;

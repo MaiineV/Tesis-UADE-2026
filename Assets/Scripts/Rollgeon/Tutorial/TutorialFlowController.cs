@@ -9,6 +9,7 @@ using Rollgeon.Combat.Rolls;
 using Rollgeon.Dungeon;
 using Rollgeon.Dungeon.Components;
 using Rollgeon.Economy;
+using Rollgeon.GameCamera;
 using Rollgeon.Heroes;
 using Rollgeon.Grid;
 using Rollgeon.Input;
@@ -95,6 +96,13 @@ namespace Rollgeon.Tutorial
         // El presupuesto de re-rolls se enseña en el primer re-roll del jugador.
         private bool _rerollTaught;
 
+        // BUG-068: el paso de cámara (post-escape) gatea con la práctica real —
+        // no avanza hasta que el jugador rotó Y hizo zoom al menos una vez. Sin
+        // esto, cualquier click izquierdo (herencia de BlockUntilContinue) lo
+        // saltaba sin tocar ninguno de los dos controles.
+        private bool _cameraRotated;
+        private bool _cameraZoomed;
+
         // true si el tutorial abrió el contrato en la primera tirada — solo en ese
         // caso lo cierra al terminar la acción (si lo abrió el jugador, es suyo).
         private bool _openedContractDrawer;
@@ -135,6 +143,8 @@ namespace Rollgeon.Tutorial
         private EventManager.EventReceiver _onTurnFinished;
         private EventManager.EventReceiver _onBehaviorExecuted;
         private EventManager.EventReceiver _onEnchantmentAltarActivated;
+        private EventManager.EventReceiver _onCameraFacingChanged;
+        private EventManager.EventReceiver _onCameraZoomChanged;
 
         private TutorialFlowController(TutorialConfigSO config, Guid runId)
         {
@@ -178,6 +188,8 @@ namespace Rollgeon.Tutorial
             if (_onTurnFinished != null) EventManager.UnSubscribe(EventName.OnTurnFinished, _onTurnFinished);
             if (_onBehaviorExecuted != null) EventManager.UnSubscribe(EventName.OnBehaviorExecuted, _onBehaviorExecuted);
             if (_onEnchantmentAltarActivated != null) EventManager.UnSubscribe(EventName.OnEnchantmentAltarActivated, _onEnchantmentAltarActivated);
+            if (_onCameraFacingChanged != null) EventManager.UnSubscribe(EventName.OnCameraFacingChanged, _onCameraFacingChanged);
+            if (_onCameraZoomChanged != null) EventManager.UnSubscribe(EventName.OnCameraZoomChanged, _onCameraZoomChanged);
             TypedEvent<DamageResolvedPayload>.Unsubscribe(OnDamageResolved);
 
             if (_movementService != null)
@@ -301,6 +313,8 @@ namespace Rollgeon.Tutorial
             _onTurnFinished = OnTurnFinished;
             _onBehaviorExecuted = OnBehaviorExecuted;
             _onEnchantmentAltarActivated = OnEnchantmentAltarActivated;
+            _onCameraFacingChanged = OnCameraFacingChangedForTeach;
+            _onCameraZoomChanged = OnCameraZoomChangedForTeach;
 
             EventManager.Subscribe(EventName.OnRoomEntered, _onRoomEntered);
             EventManager.Subscribe(EventName.OnCombatTriggered, _onCombatTriggered);
@@ -318,6 +332,8 @@ namespace Rollgeon.Tutorial
             EventManager.Subscribe(EventName.OnTurnFinished, _onTurnFinished);
             EventManager.Subscribe(EventName.OnBehaviorExecuted, _onBehaviorExecuted);
             EventManager.Subscribe(EventName.OnEnchantmentAltarActivated, _onEnchantmentAltarActivated);
+            EventManager.Subscribe(EventName.OnCameraFacingChanged, _onCameraFacingChanged);
+            EventManager.Subscribe(EventName.OnCameraZoomChanged, _onCameraZoomChanged);
             TypedEvent<DamageResolvedPayload>.Subscribe(OnDamageResolved);
 
             if (ServiceLocator.TryGetService<IMovementService>(out var movement) && movement != null)
@@ -551,16 +567,89 @@ namespace Rollgeon.Tutorial
             }, ShowCameraTeach);
         }
 
+        // BUG-068: antes cualquier click izquierdo avanzaba el paso sin que el
+        // jugador tocara la cámara — la rotación y el zoom quedaban SOLO
+        // explicados, nunca practicados. Ahora el paso queda PassThrough (el
+        // input de cámara sigue vivo detrás del dim, ver TutorialOverlay) y
+        // gatea con los eventos reales de ICameraService: no avanza hasta que
+        // el jugador rotó Y hizo zoom al menos una vez.
         private void ShowCameraTeach()
         {
             _step = TutorialStep.CameraTeach;
+            _cameraRotated = false;
+            _cameraZoomed = false;
+
+            // Fallback anti-softlock: sin ICameraService resuelto, o con rotación/
+            // zoom deshabilitados en el config, ningún evento va a llegar nunca —
+            // degradar al comportamiento viejo (click avanza) para no colgar el
+            // tutorial.
+            bool canGate = ServiceLocator.TryGetService<ICameraService>(out _)
+                && ServiceLocator.TryGetService<CameraConfigSO>(out var camConfig)
+                && camConfig != null && camConfig.EnableRotation && camConfig.EnableZoom;
+
+            if (!canGate)
+            {
+                ShowStep(TutorialStep.CameraTeach, new TutorialStepDisplayRequest
+                {
+                    AnchorKind = TutorialAnchorKind.None,
+                    Text = LocalizedContent.Ui(TutorialTextKeys.CameraControls,
+                        "Gira la cámara con el botón derecho. Arrastra el mapa con la rueda presionada. Zoom: rueda. Pruébalo ahora."),
+                    InputPolicy = TutorialInputPolicy.BlockUntilContinue,
+                }, ShowMapTeach);
+                return;
+            }
+
             ShowStep(TutorialStep.CameraTeach, new TutorialStepDisplayRequest
             {
                 AnchorKind = TutorialAnchorKind.None,
                 Text = LocalizedContent.Ui(TutorialTextKeys.CameraControls,
                     "Gira la cámara con el botón derecho. Arrastra el mapa con la rueda presionada. Zoom: rueda. Pruébalo ahora."),
-                InputPolicy = TutorialInputPolicy.BlockUntilContinue,
-            }, ShowMapTeach);
+                InputPolicy = TutorialInputPolicy.PassThrough,
+            });
+        }
+
+        private void OnCameraFacingChangedForTeach(params object[] args)
+        {
+            if (_step != TutorialStep.CameraTeach || _cameraRotated) return;
+            _cameraRotated = true;
+            RefreshCameraTeachStep();
+        }
+
+        private void OnCameraZoomChangedForTeach(params object[] args)
+        {
+            if (_step != TutorialStep.CameraTeach || _cameraZoomed) return;
+            _cameraZoomed = true;
+            RefreshCameraTeachStep();
+        }
+
+        /// <summary>
+        /// Re-muestra el paso de cámara con el texto que corresponde a lo que
+        /// falta practicar. Con ambos controles probados, avanza. ShowStep
+        /// retarget-ea el overlay ya visible (no hay parpadeo).
+        /// </summary>
+        private void RefreshCameraTeachStep()
+        {
+            if (_cameraRotated && _cameraZoomed)
+            {
+                ShowMapTeach();
+                return;
+            }
+
+            string text = _cameraRotated
+                ? LocalizedContent.Ui(TutorialTextKeys.CameraNeedsZoom,
+                    "¡Giraste la cámara! Ahora prueba el zoom: usa la rueda del mouse para acercar o alejar.")
+                : _cameraZoomed
+                    ? LocalizedContent.Ui(TutorialTextKeys.CameraNeedsRotate,
+                        "¡Hiciste zoom! Ahora gira la cámara: mantén el botón derecho y arrastra el mouse.")
+                    : LocalizedContent.Ui(TutorialTextKeys.CameraControls,
+                        "Gira la cámara con el botón derecho. Arrastra el mapa con la rueda presionada. Zoom: rueda. Pruébalo ahora.");
+
+            ShowStep(TutorialStep.CameraTeach, new TutorialStepDisplayRequest
+            {
+                AnchorKind = TutorialAnchorKind.None,
+                Text = text,
+                InputPolicy = TutorialInputPolicy.PassThrough,
+            });
         }
 
         // La cámara sigue viva detrás del dim — el jugador puede alejar el zoom

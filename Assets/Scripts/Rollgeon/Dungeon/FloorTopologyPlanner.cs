@@ -16,6 +16,13 @@ namespace Rollgeon.Dungeon
     {
         public const int MinRoomCount = 3;
 
+        /// <summary>
+        /// BUG-064: distancia de GRAFO mínima entre el start y la boss room. Con esto la
+        /// boss room queda a start→X→Y→boss como mínimo, así que el anillo reservado por
+        /// <see cref="ComputeBossRing"/> siempre cruza ≥2 celdas Combat.
+        /// </summary>
+        public const int MinBossGraphDistance = 3;
+
         private static readonly Vector2Int[] CardinalSteps =
         {
             new Vector2Int(0, 1),
@@ -212,21 +219,47 @@ namespace Rollgeon.Dungeon
                 remaining.Remove(startCell);
             }
 
-            // Boss(es)
+            // Boss(es). BUG-064: la boss room tiene que quedar a ≥2 combates del spawn, no
+            // solo "lejos" en Manhattan (eso permitía spawn → shop → boss). Se ordena por
+            // distancia de GRAFO desc — la métrica que importa para el invariante — y a
+            // igualdad por Manhattan desc para conservar el feel de "la más lejana".
+            var bossCells = new List<Vector2Int>();
             if (resolved.TryGetValue(RoomType.Boss, out var bossCount) && bossCount > 0)
             {
+                var dist = ComputeGraphDistances(cells, startCell);
                 var farthest = new List<Vector2Int>(remaining);
                 farthest.Sort((a, b) =>
-                    ManhattanFromStart(b).CompareTo(ManhattanFromStart(a)));
+                {
+                    int da = dist.TryGetValue(a, out var dda) ? dda : -1;
+                    int db = dist.TryGetValue(b, out var ddb) ? ddb : -1;
+                    int cmp = db.CompareTo(da);
+                    return cmp != 0 ? cmp : ManhattanFromStart(b).CompareTo(ManhattanFromStart(a));
+                });
                 int take = Math.Min(bossCount, farthest.Count);
                 for (int i = 0; i < take; i++)
                 {
-                    assignments[farthest[i]] = PickRandom(poolsByType.GetValueOrDefault(RoomType.Boss), rng);
-                    remaining.Remove(farthest[i]);
+                    var cell = farthest[i];
+                    bossCells.Add(cell);
+                    assignments[cell] = PickRandom(poolsByType.GetValueOrDefault(RoomType.Boss), rng);
+                    remaining.Remove(cell);
+
+                    // Piso degenerado (muy chico): no hay forma de garantizar 2 combates
+                    // antes del boss. Se degrada con warning en vez de tirar excepción.
+                    int d = dist.TryGetValue(cell, out var dd) ? dd : -1;
+                    if (d < MinBossGraphDistance)
+                        warnings.Add($"Boss: la celda {cell} quedó a distancia {d} del start " +
+                            $"(< {MinBossGraphDistance}); el piso es muy chico para garantizar 2 combates antes del boss.");
                 }
                 if (take < bossCount)
                     warnings.Add($"Boss: pedía {bossCount}, cupieron {take}.");
             }
+
+            // Reserva del anillo del boss como Combat (BUG-064). Se saca de `remaining`
+            // ANTES de las especiales para que Shop/Potion/Enchantment no lo pisen — ver
+            // XML doc de ComputeBossRing para la demostración del invariante.
+            var bossRing = ComputeBossRing(cells, bossCells, startCell);
+            foreach (var cell in bossRing)
+                remaining.Remove(cell);
 
             // Special types. El orden es explícito (no iterar `resolved`) para
             // que la colocación sea determinística contra un mismo seed. Todo
@@ -254,6 +287,19 @@ namespace Rollgeon.Dungeon
             int combatCount = resolved.TryGetValue(RoomType.Combat, out var rc) ? rc : 0;
             var combatPool = poolsByType.GetValueOrDefault(RoomType.Combat);
             int combatPlaced = 0;
+
+            // El anillo reservado del boss (BUG-064) se coloca primero y SIEMPRE como
+            // Combat, exceda o no el presupuesto configurado del layout — es la garantía
+            // dura del invariante, no una preferencia de asignación.
+            foreach (var cell in bossRing)
+            {
+                assignments[cell] = PickRandom(combatPool, rng);
+                combatPlaced++;
+            }
+            if (combatPlaced > combatCount)
+                warnings.Add($"Combat: el anillo del boss reservó {combatPlaced} celda(s) pero el " +
+                    $"layout pedía {combatCount}; se colocan igual para garantizar 2 combates antes del boss.");
+
             foreach (var cell in new List<Vector2Int>(remaining))
             {
                 if (combatPlaced >= combatCount) break;
@@ -298,6 +344,80 @@ namespace Rollgeon.Dungeon
 
         internal static int ManhattanFromStart(Vector2Int c) =>
             Math.Abs(c.x) + Math.Abs(c.y);
+
+        /// <summary>
+        /// BFS sobre el grafo inducido por <paramref name="cells"/> (4-adyacencia real, no
+        /// Manhattan — el piso puede tener ciclos/atajos). Devuelve la distancia mínima en
+        /// número de saltos desde <paramref name="start"/> a cada cell alcanzable.
+        /// </summary>
+        internal static Dictionary<Vector2Int, int> ComputeGraphDistances(
+            List<Vector2Int> cells, Vector2Int start)
+        {
+            var dist = new Dictionary<Vector2Int, int>(cells.Count);
+            var cellSet = new HashSet<Vector2Int>(cells);
+            if (!cellSet.Contains(start)) return dist;
+
+            var queue = new Queue<Vector2Int>();
+            dist[start] = 0;
+            queue.Enqueue(start);
+            while (queue.Count > 0)
+            {
+                var cur = queue.Dequeue();
+                int d = dist[cur];
+                foreach (var step in CardinalSteps)
+                {
+                    var next = cur + step;
+                    if (!cellSet.Contains(next) || dist.ContainsKey(next)) continue;
+                    dist[next] = d + 1;
+                    queue.Enqueue(next);
+                }
+            }
+            return dist;
+        }
+
+        /// <summary>
+        /// BUG-064: cells reservadas como Combat alrededor de cada boss cell —
+        /// <c>N(boss) ∪ (N(N(boss)) \ {boss})</c>, excluyendo el start y otras boss cells.
+        /// </summary>
+        /// <remarks>
+        /// Con <see cref="MinBossGraphDistance"/> ≥ 3, todo camino start→boss termina en
+        /// <c>… → X → Y → boss</c> con <c>Y ∈ N(boss)</c>, <c>X ∈ N(Y)</c> y <c>X ≠ start</c>
+        /// (si X fuera start, el camino tendría largo 2, por debajo del mínimo). Reservar
+        /// N(boss) y N(N(boss)) como Combat garantiza que ese camino cruce ≥2 Combat sin
+        /// importar la ruta elegida — es la sala de boss la que queda "amurallada" por
+        /// combates, no una condición probabilística sobre dónde caen las especiales.
+        /// </remarks>
+        internal static HashSet<Vector2Int> ComputeBossRing(
+            List<Vector2Int> cells, List<Vector2Int> bossCells, Vector2Int startCell)
+        {
+            var ring = new HashSet<Vector2Int>();
+            if (bossCells == null || bossCells.Count == 0) return ring;
+
+            var cellSet = new HashSet<Vector2Int>(cells);
+            var bossSet = new HashSet<Vector2Int>(bossCells);
+
+            foreach (var boss in bossSet)
+            {
+                var radius1 = new List<Vector2Int>(4);
+                foreach (var step in CardinalSteps)
+                {
+                    var n1 = boss + step;
+                    if (!cellSet.Contains(n1)) continue;
+                    radius1.Add(n1);
+                    if (n1 != startCell && !bossSet.Contains(n1)) ring.Add(n1);
+                }
+                foreach (var n1 in radius1)
+                {
+                    foreach (var step in CardinalSteps)
+                    {
+                        var n2 = n1 + step;
+                        if (!cellSet.Contains(n2) || bossSet.Contains(n2) || n2 == startCell) continue;
+                        ring.Add(n2);
+                    }
+                }
+            }
+            return ring;
+        }
 
         internal static Vector2Int PickRandomFromSet(HashSet<Vector2Int> set, System.Random rng)
         {

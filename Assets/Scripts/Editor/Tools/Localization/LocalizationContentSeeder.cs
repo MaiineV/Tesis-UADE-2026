@@ -30,6 +30,7 @@ namespace Rollgeon.EditorTools.Localization
         {
             SeedTutorial();
             SeedCombatUi();
+            SeedTooltipEffects();
             SeedEnchantments();
             SeedUnlockHints();
             SeedMiscContent();
@@ -173,6 +174,16 @@ namespace Rollgeon.EditorTools.Localization
                 "Gira la cámara con el botón derecho. Arrastra el mapa con la rueda presionada. Zoom: rueda. Pruébalo ahora.",
                 "Rotate the camera with the right button. Drag the map with the wheel pressed. Zoom: wheel. Try it now.");
 
+            // BUG-068: el paso gatea rotación + zoom — estas dos solo se muestran
+            // mientras falta practicar el control pendiente.
+            Ui(TutorialTextKeys.CameraNeedsRotate,
+                "¡Hiciste zoom! Ahora gira la cámara: mantén el botón derecho y arrastra el mouse.",
+                "You zoomed! Now rotate the camera: hold the right button and drag the mouse.");
+
+            Ui(TutorialTextKeys.CameraNeedsZoom,
+                "¡Giraste la cámara! Ahora prueba el zoom: usa la rueda del mouse para acercar o alejar.",
+                "You rotated the camera! Now try the zoom: use the mouse wheel to zoom in or out.");
+
             Ui(TutorialTextKeys.MapRooms,
                 "Aleja el zoom para ver las salas adyacentes: sus íconos te dicen cuáles son especiales (tienda, encantamiento...).",
                 "Zoom out to see the adjacent rooms: their icons tell you which ones are special (shop, enchantment...).");
@@ -277,6 +288,63 @@ namespace Rollgeon.EditorTools.Localization
             Ui(UiTextKeys.RejectNoPotion,
                 "No tienes poción disponible.",
                 "You have no potion available.");
+        }
+
+        // ==================================================================
+        // BUG-041: tooltips de acciones de hero (HeroActionTooltip + Eff*.BuildTooltip)
+        // esquivaban la localización por completo — literales en código. Familia
+        // tooltip.effect.<effect>.<variant>; tooltip.hero_action.* para el chrome del
+        // header (nombre ya sale de action.* vía HeroActionTooltip.ResolveActionName).
+        // ==================================================================
+        private static void SeedTooltipEffects()
+        {
+            Ui("tooltip.hero_action.cost_per_roll",
+                "Costo: 1 Roll por tirada",
+                "Cost: 1 Roll per roll");
+
+            // Sufijo de multiplicador (" × 1.5"): compartido por daño/curación/escudo
+            // cuando el ComboMultiplier del effect no es 1. Símbolo + número puro, sin
+            // palabras que traducir — mismo criterio que "Combo" (ver IdenticalByDesign
+            // en LocalizationTablesTests).
+            Ui("tooltip.effect.combo.multiplier_suffix", " × {0}", " × {0}");
+
+            // Segunda línea de la fórmula N×M sin combo — idéntica en EffDealDamage y
+            // EffHeal (ambas mezclan el dado holdeado más alto a la misma fórmula).
+            Ui("tooltip.effect.combo.no_combo_fallback",
+                "Sin combo: ATQ + dado más alto elegido",
+                "No combo: ATK + highest kept die");
+
+            Ui("tooltip.effect.damage.combo_header",
+                "Daño: ATQ ({0}) + puntaje del combo",
+                "Damage: ATK ({0}) + combo score");
+            Ui("tooltip.effect.damage.flat", "Daño: {0}", "Damage: {0}");
+
+            Ui("tooltip.effect.heal.combo_header",
+                "Curación: ATQ ({0}) + base del combo × multi de dados",
+                "Healing: ATK ({0}) + combo base × dice multiplier");
+            Ui("tooltip.effect.heal.combo_value",
+                "Curación: puntaje del combo",
+                "Healing: combo score");
+            Ui("tooltip.effect.heal.percent",
+                "Curación: {0}% del HP máximo",
+                "Healing: {0}% of max HP");
+            Ui("tooltip.effect.heal.flat", "Curación: {0} HP", "Healing: {0} HP");
+
+            Ui("tooltip.effect.shield.combo_header",
+                "Escudo: ATQ ({0}) + base del combo × multi de dados",
+                "Shield: ATK ({0}) + combo base × dice multiplier");
+            Ui("tooltip.effect.shield.flat", "Escudo: +{0}", "Shield: +{0}");
+
+            Ui("tooltip.effect.force_door.boss_room",
+                "El Boss debe ser vencido — no se puede forzar la puerta",
+                "The Boss must be defeated — the door can't be forced");
+            Ui("tooltip.effect.force_door.threshold", "Puntaje a superar: {0}", "Score to beat: {0}");
+
+            Ui("tooltip.effect.move.default", "Moverse", "Move");
+            Ui("tooltip.effect.move.global",
+                "Moverse a cualquier casilla libre de la sala",
+                "Move to any free tile in the room");
+            Ui("tooltip.effect.move.range", "Moverse hasta {0} casillas", "Move up to {0} tiles");
         }
 
         // ==================================================================
@@ -922,6 +990,9 @@ namespace Rollgeon.EditorTools.Localization
             Ui("action.special_attack", "Ataque especial", "Special Attack");
             Ui("action.force_door", "Forzar puerta", "Force Door");
             Ui("action.heal", "Curar", "Heal");
+            // BUG-041: falta del slot Defense en la familia action.* — HeroActionTooltip
+            // mapea Slot → key para localizar el nombre de la acción en hover.
+            Ui("action.defense", "Defensa", "Defense");
             Ui("action.end_turn", "Terminar turno", "End Turn");
             Ui("action.pass", "Pasar", "Pass");
             Ui("action.pass_door", "Cruzar puerta", "Pass Door");

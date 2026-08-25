@@ -1,3 +1,4 @@
+using Rollgeon.Combat.Rolls;
 using Rollgeon.UI.HUD;
 
 namespace Rollgeon.ActionRolls
@@ -51,6 +52,14 @@ namespace Rollgeon.ActionRolls
         /// </summary>
         public DiceBoardType BoardType;
 
+        /// <summary>
+        /// Discriminante de acción (BUG-060) que viaja al <c>OnRollResolved</c> que emite
+        /// <see cref="IActionRollService"/> — determina si esta tirada paga encantamientos
+        /// de oro (Heal EN combate) o no (Exploration, ForceDoor). El effect que arma el
+        /// spec (<c>EffHeal</c>, <c>EffForceDoor</c>) lo setea explícitamente.
+        /// </summary>
+        public RollActionKind Kind;
+
         public static ActionRollSpec Default => new ActionRollSpec
         {
             CostsRolls = false,
@@ -60,6 +69,7 @@ namespace Rollgeon.ActionRolls
             AllowReroll = true,
             AlwaysSucceeds = false,
             BoardType = DiceBoardType.Default,
+            Kind = RollActionKind.Exploration,
         };
     }
 }

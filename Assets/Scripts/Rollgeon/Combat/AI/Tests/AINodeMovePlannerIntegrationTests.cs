@@ -127,6 +127,72 @@ namespace Rollgeon.Combat.AI.Tests
                 "Sala limpia: mismo destino que el scoring legacy (3 pasos hacia la banda 1).");
         }
 
+        // -----------------------------------------------------------------
+        // BUG-061: planner NoMove (enemigo en una isla del NavGraph) ⇒ el nodo
+        // no aborta el turno, y un AINode_Sequence sin Selector que lo envuelva
+        // sigue con el resto de los hijos (ej. el ataque).
+        // -----------------------------------------------------------------
+
+        [Test]
+        public void MoveNode_PlannerReturnsNoMove_SucceedsAsNoOp()
+        {
+            // Arrange — planner stub que siempre reporta "no hay a dónde ir" (isla).
+            var context = MakeContext(new AlwaysNoMovePlanner());
+            var node = new AINode_Move();
+
+            // Act
+            var result = node.Tick(context);
+
+            // Assert — no-op, no error: no se movió y no consumió la acción de movimiento.
+            Assert.AreEqual(AIResult.Succeeded, result);
+            Assert.IsFalse(context.HasExecuted("__move"), "No se movió: no debe consumir la acción de movimiento.");
+            Assert.IsTrue(_grid.TryGetPosition(_enemy, out var pos));
+            Assert.AreEqual(new GridCoord(0, 0), pos, "Sin plan, el enemigo se queda donde está.");
+        }
+
+        [Test]
+        public void Sequence_MoveThenMarker_PlannerReturnsNoMove_MarkerStillRuns()
+        {
+            // Arrange — Sequence[Move, Marker] SIN Selector que absorba el Failed. Antes de
+            // BUG-061, un planner en NoMove hacía que AINode_Move devolviera Failed y el
+            // Sequence abortaba ANTES del marcador (ej. el ataque nunca corría).
+            var context = MakeContext(new AlwaysNoMovePlanner());
+            var marker = new MarkerNode();
+            var sequence = new AINode_Sequence
+            {
+                Children = new System.Collections.Generic.List<AIDecisionNode>
+                {
+                    new AINode_Move(),
+                    marker,
+                },
+            };
+
+            // Act
+            var result = sequence.Tick(context);
+
+            // Assert — el Sequence entero sucede, y el marcador (equivalente al ataque) corrió.
+            Assert.AreEqual(AIResult.Succeeded, result);
+            Assert.IsTrue(marker.Ticked, "El hijo posterior al Move debe correr aunque el planner diga NoMove.");
+        }
+
+        private sealed class AlwaysNoMovePlanner : IAIPathPlanner
+        {
+            public AIPathPlanResult PlanMove(in AIPathRequest request) => AIPathPlanResult.NoMove;
+        }
+
+        // Nodo de prueba mínimo: registra si corrió, sin efectos de juego — hace de proxy
+        // del "resto del turno" (ataque) que BUG-061 dejaba sin correr.
+        private sealed class MarkerNode : AIDecisionNode
+        {
+            public bool Ticked;
+            public override string NodeName => "Marker";
+            public override AIResult Tick(AIContext context)
+            {
+                Ticked = true;
+                return AIResult.Succeeded;
+            }
+        }
+
         private sealed class NullDamagePipeline : IDamagePipeline
         {
             public DamageContext Resolve(DamageContext ctx) { ctx.FinalDamage = ctx.BaseDamage; return ctx; }
