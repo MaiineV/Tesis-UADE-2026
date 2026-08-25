@@ -854,5 +854,267 @@ namespace Rollgeon.Combat.Handoff.Tests
                 "El cancel debe emitir OnBehaviorExecuted para liberar los slots de la UI.");
             EventManager.UnSubscribe(EventName.OnBehaviorExecuted, onExecuted);
         }
+
+        // -------------------------------------------------------------------
+        // §6.6 Dado de Movimiento — seleccionar Movement tira su dado propio
+        // (separado de la build), cobra 1 roll al tirar y deja la acción prepaga.
+        // -------------------------------------------------------------------
+
+        private sealed class FakeMovementDie : Rollgeon.Movement.Die.IMovementDieService
+        {
+            public int NextFace = 2;
+            public int RollCount;
+            public int ClearCount;
+            public bool HasActive;
+            public Guid ActiveGuid;
+            public Action<int> PendingReveal;
+            public bool DeferReveal;
+
+            public DiceType CurrentType => DiceType.D4;
+            public int LastFace => NextFace;
+            public void SetTypeOverride(DiceType? type) { }
+            public void SetPresenter(Rollgeon.Movement.Die.IMovementDiePresenter presenter) { }
+#pragma warning disable 67
+            public event Action<Guid, int> OnRolled;
+            public event Action OnCleared;
+#pragma warning restore 67
+
+            public void Roll(Guid playerGuid, Action<int> onRevealed)
+            {
+                RollCount++;
+                void Reveal()
+                {
+                    HasActive = true;
+                    ActiveGuid = playerGuid;
+                    onRevealed(NextFace);
+                }
+                if (DeferReveal) PendingReveal = _ => Reveal();
+                else Reveal();
+            }
+
+            public bool TryGetActiveRange(Guid playerGuid, out int range)
+            {
+                range = HasActive && playerGuid == ActiveGuid ? NextFace : 0;
+                return HasActive && playerGuid == ActiveGuid;
+            }
+
+            public void ClearActiveRange()
+            {
+                ClearCount++;
+                HasActive = false;
+                PendingReveal = null;
+            }
+        }
+
+        // Efecto de movimiento con selección BeforeRoll sobre celdas vacías alcanzables
+        // por camino — la misma forma que EffMove con RangeFromMovementDie.
+        private sealed class FakeMovementDieMoveEffect : Rollgeon.Effects.IEffect
+        {
+            public string GetEffectName() => "FakeMove";
+            public Rollgeon.Effects.Selection.SelectionSettings GetSelection()
+                => new Rollgeon.Effects.Selection.SelectionSettings
+                {
+                    SlotState = Rollgeon.Effects.Selection.SlotState.Empty,
+                    Timing = Rollgeon.Effects.Selection.SelectionTiming.BeforeRoll,
+                    Range = 4,
+                    RangeMode = Rollgeon.Effects.Selection.RangeMode.PathReachable,
+                    RangeFromMovementDie = true,
+                    AutoAccept = true,
+                };
+            public bool HasSelectionRequirement() => true;
+            public bool RequiresSelectionAt(Rollgeon.Effects.Selection.SelectionTiming timing)
+                => timing == Rollgeon.Effects.Selection.SelectionTiming.BeforeRoll;
+            public bool ValidateSelection(Rollgeon.Effects.Selection.TargetSelectionResult result,
+                Guid ownerGuid, out string error)
+            {
+                error = null;
+                return true;
+            }
+            public bool Apply(Rollgeon.Effects.EffectContext context) => true;
+        }
+
+        private static object GetPrivateField(object target, string fieldName)
+        {
+            var field = target.GetType().GetField(fieldName,
+                BindingFlags.Instance | BindingFlags.NonPublic);
+            Assert.IsNotNull(field, $"Field '{fieldName}' not found on {target.GetType().Name}.");
+            return field.GetValue(target);
+        }
+
+        /// <summary>
+        /// Arma un combate real con un héroe cuyo slot Movement usa el dado (índice 0 de
+        /// GetBehaviorsForPhase(Combat)), una grilla <paramref name="gridSize"/>² con el
+        /// jugador en (0,0) y el pool de rolls contable.
+        /// </summary>
+        private (CombatHUDView hud, CountingRollPool pool) ArmMovementDieCombat(int gridSize)
+        {
+            var room = CreateRoom(RoomType.Combat);
+            SetCurrentRoom(room);
+            _spyResolver.ReturnValue = new List<(Guid, EnemyDataSO)>();
+            var hudGo = new GameObject("CombatHUD");
+            _createdObjects.Add(hudGo);
+            var hud = hudGo.AddComponent<CombatHUDView>();
+            _spyScreen.Current = hud;
+
+            var hero = ScriptableObject.CreateInstance<ClassHeroSO>();
+            _createdObjects.Add(hero);
+            hero.PhaseBehaviors = new List<HeroActionBehavior>
+            {
+                new HeroActionBehavior
+                {
+                    ActionName = "Movement",
+                    IsBaseBehavior = true,
+                    Slot = HeroBehaviorSlot.Movement,
+                    NeedsDiceRoll = false,
+                    Effects = new List<Rollgeon.Effects.EffectData>
+                    {
+                        new Rollgeon.Effects.EffectData
+                        {
+                            Effects = new List<Rollgeon.Effects.IEffect> { new FakeMovementDieMoveEffect() },
+                        },
+                    },
+                },
+            };
+            _stubPlayer.CurrentHero = hero;
+
+            var grid = new Rollgeon.Grid.GridManager();
+            grid.LoadRoom(Rollgeon.Grid.NavGraph.Rect(gridSize, gridSize));
+            grid.Register(_stubPlayer.PlayerGuid, new Rollgeon.Grid.GridCoord(0, 0));
+            ServiceLocator.AddService<Rollgeon.Grid.IGridManager>(grid);
+            ServiceLocator.AddService<Rollgeon.Movement.IMovementService>(
+                new Rollgeon.Movement.MovementService(grid));
+
+            var pool = new CountingRollPool();
+            ServiceLocator.AddService<Rollgeon.Combat.Rolls.IRollPoolService>(pool);
+
+            TriggerCombat(Guid.NewGuid(), "test_room", RoomType.Combat);
+            return (hud, pool);
+        }
+
+        [Test]
+        public void MovementDie_SelectMovement_RollsOwnDieSpendsOneRollAndConfirmsPrepaid()
+        {
+            // Arrange
+            var (hud, pool) = ArmMovementDieCombat(gridSize: 4);
+            var die = new FakeMovementDie { NextFace = 2 };
+            ServiceLocator.AddService<Rollgeon.Movement.Die.IMovementDieService>(die);
+
+            bool prepaidAtConfirm = false;
+            Rollgeon.Combat.Rolls.RollActionKind resolvedKind = Rollgeon.Combat.Rolls.RollActionKind.Unknown;
+            EventManager.EventReceiver onResolved = args =>
+            {
+                // DoConfirm emite OnRollResolved antes de limpiar el estado: acá el flag ya
+                // tiene que estar marcado para que RollsPrepaid=true llegue al sub-FSM.
+                prepaidAtConfirm = (bool)GetPrivateField(_service, "_movementRollPrepaid");
+                resolvedKind = (Rollgeon.Combat.Rolls.RollActionKind)args[2];
+            };
+            EventManager.Subscribe(EventName.OnRollResolved, onResolved);
+            int rollStarted = 0;
+            EventManager.EventReceiver onStarted = _ => rollStarted++;
+            EventManager.Subscribe(EventName.OnRollStarted, onStarted);
+
+            // Act
+            hud.OnBehaviorSelected?.Invoke(0);
+
+            // Assert
+            Assert.AreEqual(1, die.RollCount, "Movement debe tirar SU dado, no la build.");
+            Assert.AreEqual(1, pool.TrySpendCallCount, "Exactamente 1 roll, cobrado al tirar.");
+            Assert.AreEqual(1, rollStarted);
+            Assert.IsTrue(prepaidAtConfirm, "DoConfirm debe correr con el roll prepago.");
+            Assert.AreEqual(Rollgeon.Combat.Rolls.RollActionKind.Movement, resolvedKind);
+            Assert.IsFalse((bool)GetPrivateField(_service, "_movementRollPrepaid"),
+                "Al terminar la acción el flag se limpia.");
+            Assert.GreaterOrEqual(die.ClearCount, 1, "Al terminar la acción se descarta el rango activo.");
+
+            EventManager.UnSubscribe(EventName.OnRollResolved, onResolved);
+            EventManager.UnSubscribe(EventName.OnRollStarted, onStarted);
+        }
+
+        [Test]
+        public void MovementDie_NoReachableTileAtReveal_ReleasesSelectionWithoutRefund()
+        {
+            // Arrange — el gate pre-selección ya rechaza un Movement sin destino, así que el
+            // caso real es asíncrono: la selección pasó, el dado anima, y al revelar ya no hay
+            // adónde ir (el tablero cambió). Se simula quitando la grilla antes del reveal.
+            var (hud, pool) = ArmMovementDieCombat(gridSize: 4);
+            var die = new FakeMovementDie { NextFace = 1, DeferReveal = true };
+            ServiceLocator.AddService<Rollgeon.Movement.Die.IMovementDieService>(die);
+            int executed = 0;
+            EventManager.EventReceiver onExecuted = _ => executed++;
+            EventManager.Subscribe(EventName.OnBehaviorExecuted, onExecuted);
+            hud.OnBehaviorSelected?.Invoke(0);
+            Assert.AreEqual(1, pool.TrySpendCallCount, "pre-condition: cobró al tirar");
+            ServiceLocator.RemoveService<Rollgeon.Grid.IGridManager>();
+
+            // Act
+            die.PendingReveal(0);
+
+            // Assert — pagó por la tirada que vio; la UI se libera; nada quedó armado.
+            Assert.AreEqual(1, pool.TrySpendCallCount, "Sin reembolso.");
+            Assert.AreEqual(98, pool.CurrentRolls);
+            Assert.AreEqual(1, executed, "OnBehaviorExecuted libera el slot en la UI.");
+            Assert.IsNull(GetPrivateField(_service, "_selectedBehavior"));
+            Assert.IsFalse(die.HasActive, "El rango activo se descarta.");
+            Assert.IsFalse((bool)GetPrivateField(_service, "_movementRollPrepaid"));
+
+            EventManager.UnSubscribe(EventName.OnBehaviorExecuted, onExecuted);
+        }
+
+        [Test]
+        public void MovementDie_PoolEmpty_DoesNotRollAndReleasesSelection()
+        {
+            // Arrange
+            var (hud, pool) = ArmMovementDieCombat(gridSize: 4);
+            pool.CurrentRolls = 0;
+            var die = new FakeMovementDie();
+            ServiceLocator.AddService<Rollgeon.Movement.Die.IMovementDieService>(die);
+
+            // Act
+            hud.OnBehaviorSelected?.Invoke(0);
+
+            // Assert
+            Assert.AreEqual(0, die.RollCount, "Sin roll en el pool no se tira el dado.");
+            Assert.IsNull(GetPrivateField(_service, "_selectedBehavior"));
+        }
+
+        [Test]
+        public void MovementDie_DeferredRevealAfterCombatEnd_IsIgnored()
+        {
+            // Arrange — el HUD anima el dado; el combate termina antes del reveal.
+            var (hud, pool) = ArmMovementDieCombat(gridSize: 4);
+            var die = new FakeMovementDie { DeferReveal = true };
+            ServiceLocator.AddService<Rollgeon.Movement.Die.IMovementDieService>(die);
+            hud.OnBehaviorSelected?.Invoke(0);
+            Assert.AreEqual(1, pool.TrySpendCallCount, "pre-condition: cobró al tirar");
+            var pending = die.PendingReveal;
+            Assert.IsNotNull(pending, "pre-condition: reveal diferido");
+            int resolved = 0;
+            EventManager.EventReceiver onResolved = _ => resolved++;
+            EventManager.Subscribe(EventName.OnRollResolved, onResolved);
+
+            // Act
+            EventManager.Trigger(EventName.OnCombatEnd, Guid.NewGuid(), CombatOutcome.Victory);
+            pending(0); // el presenter termina tarde
+
+            // Assert — el reset de combate soltó _selectedBehavior: el callback no confirma nada.
+            Assert.AreEqual(0, resolved);
+            Assert.GreaterOrEqual(die.ClearCount, 1, "El fin de combate descarta el dado.");
+
+            EventManager.UnSubscribe(EventName.OnRollResolved, onResolved);
+        }
+
+        [Test]
+        public void MovementDie_ServiceNotRegistered_LegacyPathDoesNotChargeOnSelect()
+        {
+            // Arrange — sin IMovementDieService: Movement sigue cobrando al ejecutar (BUG-013).
+            var (hud, pool) = ArmMovementDieCombat(gridSize: 4);
+
+            // Act
+            hud.OnBehaviorSelected?.Invoke(0);
+
+            // Assert — el path legacy no cobra al seleccionar.
+            Assert.AreEqual(0, pool.TrySpendCallCount);
+            Assert.IsFalse((bool)GetPrivateField(_service, "_movementRollPrepaid"));
+        }
     }
 }

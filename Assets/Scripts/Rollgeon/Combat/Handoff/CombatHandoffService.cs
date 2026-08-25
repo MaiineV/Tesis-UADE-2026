@@ -19,6 +19,7 @@ using Rollgeon.Feedback;
 using Rollgeon.Grid;
 using Rollgeon.Entities.Behaviors;
 using Rollgeon.Heroes;
+using Rollgeon.Movement.Die;
 using Rollgeon.Phase;
 using Rollgeon.PreConditions;
 using Rollgeon.Player;
@@ -70,11 +71,17 @@ namespace Rollgeon.Combat.Handoff
         // Analytics siguen suscriptos.
         private int _rollIndexThisAction;
 
-        // True mientras una accion sin tirada (Movement) espera que el jugador elija el
-        // tile destino y todavia se puede cancelar+reembolsar (BUG-013). Lo setea el
+        // True mientras una accion sin tirada de build (Movement) espera que el jugador
+        // elija el tile destino y todavia se puede cancelar (BUG-013). Lo setea el
         // playerState path de DoConfirm y lo limpia el callback de RequestAction al
-        // completarse o cancelarse la accion.
+        // completarse o cancelarse la accion. Con dado de Movimiento (§6.6) el cancel
+        // ya no reembolsa: el roll se cobro al tirar el dado.
         private bool _awaitingPlayerSelection;
+        // §6.6: el Movement ya cobró su roll al tirar el dado de Movimiento — DoConfirm
+        // marca RollsPrepaid=true para que TurnManager.TryExecute no cobre de nuevo (con
+        // pool 0 el segundo cobro fallaba y el move se perdía en silencio). Se limpia junto
+        // con _awaitingPlayerSelection.
+        private bool _movementRollPrepaid;
         // BUG-018: lock de re-entrada del Confirm de chain. Los efectos de la fase corren
         // sincrónicos en ExecuteChainPhase, pero _chainPhaseIndex y _selectedBehavior se
         // actualizan recién en la continuación diferida por el feedback — sin este flag,
@@ -318,6 +325,8 @@ namespace Rollgeon.Combat.Handoff
             _awaitingFirstRoll = false;
             _rollIndexThisAction = 0;
             _awaitingPlayerSelection = false;
+            _movementRollPrepaid = false;
+            ClearMovementDie();
             // BUG-030: un forced reroll agendado no sobrevive a su combate — el
             // callback del scheduler chequea el flag y hace no-op si llegó tarde.
             _forcedRerollPending = false;
@@ -465,13 +474,16 @@ namespace Rollgeon.Combat.Handoff
                 bool hasBeforeRoll = _selectedBehavior.HasEffectsWithSelectionAt(SelectionTiming.BeforeRoll);
                 Debug.Log($"[CombatHandoff] OnConfirm — behavior='{_selectedBehavior.ActionName}' hasBeforeRoll={hasBeforeRoll}");
 
-                // BUG-013 (cobrar al ejecutar): el Movement (sin tirada + selección before-roll)
-                // NO está prepago — el roll se cobra cuando la acción corre de verdad, es decir
-                // al clickear la celda (TurnManager.TryExecute dentro de PlayerExecutingSubState).
-                // Cancelar antes del click no cuesta nada. El resto sí está prepago: las acciones
-                // con tirada ya cobraron en el primer roll, y las instantáneas sin selección
-                // cobraron al ejecutarse (que es inmediato).
-                bool chargeOnExecute = !_selectedBehavior.NeedsDiceRoll && hasBeforeRoll;
+                // BUG-013 (cobrar al ejecutar): el Movement legacy (sin tirada + selección
+                // before-roll) NO está prepago — el roll se cobra cuando la acción corre de
+                // verdad, es decir al clickear la celda (TurnManager.TryExecute dentro de
+                // PlayerExecutingSubState). Cancelar antes del click no cuesta nada. El resto sí
+                // está prepago: las acciones con tirada ya cobraron en el primer roll, y las
+                // instantáneas sin selección cobraron al ejecutarse (que es inmediato).
+                // §6.6: con dado de Movimiento el roll se cobró al tirarlo (_movementRollPrepaid)
+                // — mismo criterio que una acción con tirada.
+                bool chargeOnExecute = !_selectedBehavior.NeedsDiceRoll && hasBeforeRoll
+                                       && !_movementRollPrepaid;
 
                 var behaviorCtx = new HeroBehaviorContext
                 {
@@ -523,6 +535,8 @@ namespace Rollgeon.Combat.Handoff
                         playerState.RequestAction(_selectedBehavior, behaviorCtx, () =>
                         {
                             _awaitingPlayerSelection = false;
+                            _movementRollPrepaid = false;
+                            ClearMovementDie();
                             EventManager.Trigger(EventName.OnBehaviorExecuted, playerGuid, executedActionName);
                             _lastFaces = null;
                             _selectedBehavior = null;
@@ -543,6 +557,8 @@ namespace Rollgeon.Combat.Handoff
 
                 _lastFaces = null;
                 _selectedBehavior = null;
+                _movementRollPrepaid = false;
+                ClearMovementDie();
                 hud.ClearBehaviorForFormula();
             }
 
@@ -799,6 +815,54 @@ namespace Rollgeon.Combat.Handoff
                     // instantáneas sin selección se ejecutan ya mismo, así que cobrar acá ES
                     // "al ejecutar" (1 roll flat por acción sin dados).
                     bool hasBeforeSelection = behavior.HasEffectsWithSelectionAt(SelectionTiming.BeforeRoll);
+
+                    // §6.6: Movimiento tira su dado propio (separado de la build de 5). El roll
+                    // se cobra ACÁ, al tirar — igual que las acciones con tirada — y DoConfirm
+                    // lo marca prepago. Cancelar después de ver la cara no reembolsa (misma
+                    // regla que ActionRollService.Cancel). Sin IMovementDieService registrado
+                    // (tests legacy, escenas sin wiring) el path de abajo queda intacto.
+                    if (hasBeforeSelection
+                        && behavior.ResolveRollActionKind() == RollActionKind.Movement
+                        && ServiceLocator.TryGetService<IMovementDieService>(out var movementDie)
+                        && movementDie != null)
+                    {
+                        if (!SpendRollNow(playerGuid))
+                        {
+                            _selectedBehavior = null;
+                            hud.ClearBehaviorForFormula();
+                            return;
+                        }
+                        EventManager.Trigger(EventName.OnRollStarted, playerGuid);
+                        movementDie.Roll(playerGuid, face =>
+                        {
+                            // El reveal puede llegar diferido (spin del HUD): si mientras tanto
+                            // cambió la selección o terminó el combate, no hay nada que confirmar.
+                            if (_selectedBehavior != behavior) return;
+
+                            // Con la cara ya publicada como rango activo, si no queda ninguna
+                            // casilla alcanzable el Movement no puede ejecutarse: soltar la
+                            // selección (sin reembolso — pagó por la tirada que vio).
+                            if (!behavior.HasUsableEffectGroup(playerGuid, firstEnemyId, out var why,
+                                    includeRollGate: false))
+                            {
+                                Debug.Log($"[CombatHandoff] Movement die {face}: sin destino alcanzable — {why}");
+                                movementDie.ClearActiveRange();
+                                _selectedBehavior = null;
+                                _lastFaces = null;
+                                hud.ClearBehaviorForFormula();
+                                EventManager.Trigger(EventName.OnBehaviorExecuted, playerGuid, behavior.ActionName);
+                                return;
+                            }
+
+                            // _lastFaces queda null a propósito: DoConfirm solo corre la
+                            // detección de combo / ComboLog cuando hay caras de la build —
+                            // la cara del dado de Movimiento no es una mano.
+                            _movementRollPrepaid = true;
+                            DoConfirm();
+                        });
+                        return;
+                    }
+
                     if (!hasBeforeSelection && !SpendRollNow(playerGuid))
                     {
                         _selectedBehavior = null;
@@ -1754,10 +1818,13 @@ namespace Rollgeon.Combat.Handoff
         }
 
         /// <summary>
-        /// Cancela un Movement (acción sin tirada) que está esperando que el jugador
-        /// clickee el tile destino (BUG-013). Con cobro-al-ejecutar el roll recién se
-        /// cobra al clickear la celda, así que cancelar antes NO cuesta nada — no hay nada
-        /// que reembolsar. Cancelar la selección dispara el unwind del sub-FSM
+        /// Cancela un Movement (acción sin tirada de build) que está esperando que el
+        /// jugador clickee el tile destino (BUG-013). En el path legacy (sin
+        /// <see cref="IMovementDieService"/>) el roll recién se cobra al clickear la celda,
+        /// así que cancelar antes NO cuesta nada. Con dado de Movimiento (§6.6) el roll ya
+        /// se cobró al tirar y NO se reembolsa — misma regla que las acciones con tirada.
+        /// En ambos casos no hay nada que devolver acá. Cancelar la selección dispara el
+        /// unwind del sub-FSM
         /// (<c>PlayerSelectingSubState → PlayerExecutingSubState</c> con <c>WasCancelled</c>),
         /// que skipea la ejecución (no cobra) e invoca el callback de <c>RequestAction</c>:
         /// ese callback limpia <see cref="_selectedBehavior"/> /
@@ -1779,9 +1846,21 @@ namespace Rollgeon.Combat.Handoff
             // a mano para no dejar la UI lockeada.
             var name = _selectedBehavior?.ActionName ?? "Movement";
             _awaitingPlayerSelection = false;
+            _movementRollPrepaid = false;
+            ClearMovementDie();
             _selectedBehavior = null;
             _lastFaces = null;
             EventManager.Trigger(EventName.OnBehaviorExecuted, _player.PlayerGuid, name);
+        }
+
+        /// <summary>
+        /// §6.6: descarta la tirada vigente del dado de Movimiento (y cualquier reveal
+        /// pendiente). Idempotente y no-op sin servicio registrado.
+        /// </summary>
+        private static void ClearMovementDie()
+        {
+            if (ServiceLocator.TryGetService<IMovementDieService>(out var die) && die != null)
+                die.ClearActiveRange();
         }
 
         /// <summary>
