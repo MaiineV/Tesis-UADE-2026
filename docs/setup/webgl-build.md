@@ -49,6 +49,13 @@ no `.exe`), target `WebGL`, options `None`.
    `Build/WebGL/StreamingAssets/aa/WebGL/` tenga las bundles de localización
    english/spanish, igual que en Windows.
 5. Zipear el contenido de `Build/WebGL/` y volver el target a Win64.
+   **NO usar `Compress-Archive` de PowerShell**: escribe los paths internos con
+   `\` (viola el spec zip) y el extractor de itch.io los trata como nombres
+   literales — `Build\...loader.js` queda suelto en la raíz en vez de dentro de
+   `Build/`, el `index.html` da 404 y el juego se queda cargando para siempre.
+   En local no se nota porque uno sirve la carpeta, no el zip. Zipear con
+   Python (`zipfile`), 7-Zip o `zip`, y verificar con `unzip -l` que los
+   nombres usen `/`.
 
 ## Verificar
 
