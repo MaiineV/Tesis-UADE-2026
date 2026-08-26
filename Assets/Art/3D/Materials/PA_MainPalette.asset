@@ -193,8 +193,104 @@ MonoBehaviour:
     lightColor: {r: 0, g: 0, b: 0, a: 0}
     midColor: {r: 0, g: 0, b: 0, a: 0}
     shadowColor: {r: 0, g: 0, b: 0, a: 0}
-  - label: 
-    baseColor: {r: 0, g: 0, b: 0, a: 0}
+  - label: Taupe, Beige Grisaceo
+    baseColor: {r: 0.6117647, g: 0.5803922, b: 0.5411765, a: 1}
+    autoGenerate: 1
+    shadowHueShift: 15
+    shadowSatShift: 0.1
+    shadowValShift: -0.28
+    lightHueShift: -10
+    lightSatShift: -0.12
+    lightValShift: 0.22
+    lightColor: {r: 1, g: 1, b: 1, a: 1}
+    midColor: {r: 0.6117647, g: 0.5803922, b: 0.5411765, a: 1}
+    shadowColor: {r: 0, g: 0, b: 0, a: 1}
+  - label: Naranja
+    baseColor: {r: 0.8784314, g: 0.4627451, b: 0.23921569, a: 1}
+    autoGenerate: 0
+    shadowHueShift: 15
+    shadowSatShift: 0.1
+    shadowValShift: -0.28
+    lightHueShift: -10
+    lightSatShift: -0.12
+    lightValShift: 0.22
+    lightColor: {r: 1, g: 0.50196075, b: 0.39215687, a: 1}
+    midColor: {r: 0.8784314, g: 0.4627451, b: 0.23921569, a: 1}
+    shadowColor: {r: 0.59607846, g: 0.3137255, b: 0.10588235, a: 1}
+  - label: Oliva, Verde Caqui
+    baseColor: {r: 0.41960785, g: 0.43529412, b: 0.32156864, a: 1}
+    autoGenerate: 1
+    shadowHueShift: 15
+    shadowSatShift: 0.1
+    shadowValShift: -0.28
+    lightHueShift: -10
+    lightSatShift: -0.12
+    lightValShift: 0.22
+    lightColor: {r: 1, g: 1, b: 1, a: 1}
+    midColor: {r: 0.41960785, g: 0.43529412, b: 0.32156864, a: 1}
+    shadowColor: {r: 0, g: 0, b: 0, a: 1}
+  - label: Verde Fieltro, Verde Bosque Oscuro
+    baseColor: {r: 0.12156863, g: 0.2, b: 0.1607843, a: 1}
+    autoGenerate: 0
+    shadowHueShift: 15
+    shadowSatShift: 0.1
+    shadowValShift: -0.28
+    lightHueShift: -10
+    lightSatShift: -0.12
+    lightValShift: 0.22
+    lightColor: {r: 0.30569413, g: 0.42, b: 0.34379607, a: 1}
+    midColor: {r: 0.12156863, g: 0.2, b: 0.1607843, a: 1}
+    shadowColor: {r: 0.23529412, g: 0.11764706, b: 0.06666667, a: 1}
+  - label: Celeste Acero, Gris Azulado
+    baseColor: {r: 0.4862745, g: 0.5921569, b: 0.627451, a: 1}
+    autoGenerate: 1
+    shadowHueShift: 15
+    shadowSatShift: 0.1
+    shadowValShift: -0.28
+    lightHueShift: -10
+    lightSatShift: -0.12
+    lightValShift: 0.22
+    lightColor: {r: 1, g: 1, b: 1, a: 1}
+    midColor: {r: 0.4862745, g: 0.5921569, b: 0.627451, a: 1}
+    shadowColor: {r: 0, g: 0, b: 0, a: 1}
+  - label: Azul Periwinkle, Violeta Azulado
+    baseColor: {r: 0.43137255, g: 0.49803922, b: 0.81960785, a: 1}
+    autoGenerate: 0
+    shadowHueShift: 15
+    shadowSatShift: 0.1
+    shadowValShift: -0.28
+    lightHueShift: -10
+    lightSatShift: -0.12
+    lightValShift: 0.22
+    lightColor: {r: 0.6463158, g: 0.7659968, b: 1, a: 1}
+    midColor: {r: 0.43137255, g: 0.49803922, b: 0.81960785, a: 1}
+    shadowColor: {r: 0.25490195, g: 0.23137255, b: 0.5411765, a: 1}
+  - label: Amatista, Violeta
+    baseColor: {r: 0.36078432, g: 0.2901961, b: 0.47843137, a: 1}
+    autoGenerate: 1
+    shadowHueShift: 15
+    shadowSatShift: 0.1
+    shadowValShift: -0.28
+    lightHueShift: -10
+    lightSatShift: -0.12
+    lightValShift: 0.22
+    lightColor: {r: 1, g: 1, b: 1, a: 1}
+    midColor: {r: 0.36078432, g: 0.2901961, b: 0.47843137, a: 1}
+    shadowColor: {r: 0, g: 0, b: 0, a: 1}
+  - label: Vino Muy Oscuro, Granate Negro
+    baseColor: {r: 0.16470589, g: 0.05490196, b: 0.10196078, a: 1}
+    autoGenerate: 0
+    shadowHueShift: 15
+    shadowSatShift: 0.1
+    shadowValShift: -0.28
+    lightHueShift: -10
+    lightSatShift: -0.12
+    lightValShift: 0.22
+    lightColor: {r: 0.38431373, g: 0.1764706, b: 0.29803923, a: 1}
+    midColor: {r: 0.16470589, g: 0.05490196, b: 0.10196078, a: 1}
+    shadowColor: {r: 0, g: 0, b: 0, a: 1}
+  - label: Marron Oscuro
+    baseColor: {r: 0.59607846, g: 0.3137255, b: 0.10588236, a: 0}
     autoGenerate: 0
     shadowHueShift: 0
     shadowSatShift: 0
