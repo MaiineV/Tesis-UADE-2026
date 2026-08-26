@@ -152,6 +152,7 @@ namespace Rollgeon.Combat.Rooms
 
             context.VisualService?.Despawn(guid);
             context.Grid.Unregister(guid);
+            RoomObjectCleanupService.ResolveOrCreate().Forget(guid);
 
             // El spawner que siembra recién nota la baja en su PROPIO Tick (CollectBroken mira
             // Health), y esta detonación pasa por afuera de esa vía — sin esto la ranura le queda

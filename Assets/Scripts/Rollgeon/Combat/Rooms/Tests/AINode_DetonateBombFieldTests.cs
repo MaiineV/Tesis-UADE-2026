@@ -90,6 +90,7 @@ namespace Rollgeon.Combat.Rooms.Tests
         public void TearDown()
         {
             if (ServiceLocator.TryGetService<BombFieldService>(out var field)) field?.Dispose();
+            if (ServiceLocator.TryGetService<RoomObjectCleanupService>(out var cleanup)) cleanup?.Dispose();
 
             _tiles?.Dispose();
             _threat?.Dispose();
@@ -123,6 +124,28 @@ namespace Rollgeon.Combat.Rooms.Tests
 
         private List<(Guid Guid, IReadOnlyList<GridCoord> Cross)> Live() =>
             AINode_BombField.LiveCrosses(_attributes).ToList();
+
+        /// <summary>
+        /// La bomba que estalló ya se fue por su cuenta. Quien la desanotaba era el CollectBroken del
+        /// nodo que siembra, que sólo tickea cuando le toca su tiempo del ciclo: hasta entonces el
+        /// barrido de fin de combate arrastraba guids de bombas que ya no existen.
+        /// </summary>
+        [Test]
+        public void ADetonatedBomb_DropsOffTheEndOfFightSweep_OnTheSpot()
+        {
+            Sower(count: 4, fuse: 1).Tick(_context);
+            var cleanup = RoomObjectCleanupService.ResolveOrCreate();
+            var sown = Live().Select(b => b.Guid).ToList();
+            CollectionAssert.IsSubsetOf(sown, cleanup.Tracked,
+                "Precondición: las sembradas tienen que estar anotadas en el barrido.");
+
+            Detonator().Tick(_context);
+
+            Assert.IsEmpty(Live(), "Precondición: con mecha 1 tienen que haber estallado.");
+            foreach (var guid in sown)
+                CollectionAssert.DoesNotContain(cleanup.Tracked, guid,
+                    "La bomba estallada siguió anotada en el barrido de fin de combate.");
+        }
 
         /// <summary>El plazo se mide en turnos del jefe, no en ciclos: es todo el punto del nodo.</summary>
         [Test]
