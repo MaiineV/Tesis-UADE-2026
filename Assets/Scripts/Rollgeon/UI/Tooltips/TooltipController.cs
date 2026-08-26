@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+using Rollgeon.UI.HUD.Status;
 using Sirenix.OdinInspector;
 using TMPro;
 using UnityEngine;
@@ -129,8 +131,16 @@ namespace Rollgeon.UI.Tooltips
         /// posición configurada salvo que efectivamente se salga.
         /// </summary>
         public void Show(string text, Vector2 screenPos, int ownerId, TooltipPlacementMode placement)
+            => Show(text, null, screenPos, ownerId, placement);
+
+        /// <summary>
+        /// Encabezado + columna de tarjetas, una por cosa en juego. Con <paramref name="cards"/>
+        /// nulo o vacío el panel se comporta exactamente igual que antes: sólo el encabezado.
+        /// </summary>
+        public void Show(string header, IReadOnlyList<StatusIconState> cards, Vector2 screenPos,
+                         int ownerId, TooltipPlacementMode placement)
         {
-            if (_text != null) _text.text = text ?? string.Empty;
+            ApplyContent(header, cards);
             _currentOwnerId = ownerId;
             SetVisible(true);
 
@@ -239,6 +249,14 @@ namespace Rollgeon.UI.Tooltips
             if (max.y > bounds.yMax - padding) shift.y = bounds.yMax - padding - max.y;
             if (min.y + shift.y < bounds.yMin + padding) shift.y = bounds.yMin + padding - min.y;
             return shift;
+        }
+
+        // Encabezado y columna en un solo lugar. Los campos de la columna son nullables a
+        // proposito: sin ellos el panel es exactamente el de siempre, que es lo que mantiene
+        // andando a todos los tooltips de texto que ya existen.
+        private void ApplyContent(string header, IReadOnlyList<StatusIconState> cards)
+        {
+            if (_text != null) _text.text = header ?? string.Empty;
         }
 
         private void SetVisible(bool visible)

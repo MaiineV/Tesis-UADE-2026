@@ -33,8 +33,21 @@ namespace Rollgeon.UI.HUD.Status
         /// </summary>
         public readonly int? RemainingTurns;
 
+        /// <summary>
+        /// Cuántas copias hay de esto en juego. <c>null</c> = no es apilable. Va siempre en el
+        /// badge del ícono y nunca escrito dentro de la regla: si algún día traba dos dados,
+        /// cambia el número del badge y la frase no se toca.
+        /// </summary>
+        public readonly int? StackCount;
+
+        /// <summary>Ver <see cref="StatusCardStyle"/>.</summary>
+        public readonly StatusCardStyle Style;
+
+        // Los dos últimos van al final y con default para que los providers que ya existen y sus
+        // tests compilen sin tocarse.
         public StatusIconState(string id, string displayName, string description,
-                               Sprite icon, bool active, int? remainingTurns = null)
+                               Sprite icon, bool active, int? remainingTurns = null,
+                               int? stackCount = null, StatusCardStyle style = StatusCardStyle.Unit)
         {
             Id = id;
             DisplayName = displayName;
@@ -42,6 +55,8 @@ namespace Rollgeon.UI.HUD.Status
             Icon = icon;
             Active = active;
             RemainingTurns = remainingTurns;
+            StackCount = stackCount;
+            Style = style;
         }
     }
 }

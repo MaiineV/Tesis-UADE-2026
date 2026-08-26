@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using Rollgeon.UI.HUD.Status;
 using Sirenix.OdinInspector;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -39,6 +41,18 @@ namespace Rollgeon.UI.Tooltips
         /// </summary>
         public Func<string> TextProvider;
 
+        /// <summary>
+        /// Tarjetas del panel, bajo el encabezado que da <see cref="TextProvider"/>. <c>null</c> =
+        /// tooltip de texto y nada más.
+        /// </summary>
+        public Func<IReadOnlyList<StatusIconState>> CardsProvider;
+
+        /// <summary>
+        /// Entra (<c>true</c>) y sale (<c>false</c>) el hover. Lo consume quien además del texto
+        /// tiene que pintar algo — el tooltip se resuelve solo acá adentro.
+        /// </summary>
+        public event Action<bool> HoverChanged;
+
         [SerializeField] private WorldTooltipMode _mode = WorldTooltipMode.Click;
 
         /// <summary>
@@ -56,11 +70,7 @@ namespace Rollgeon.UI.Tooltips
 
                 // El hover activo muere con el cambio de modo: si se pasa a Click quedaría un
                 // tooltip abierto que ningún Update va a cerrar.
-                if (_hoverActive)
-                {
-                    _hoverActive = false;
-                    HideTooltip();
-                }
+                SetHover(false, null);
             }
         }
 
@@ -94,16 +104,7 @@ namespace Rollgeon.UI.Tooltips
 
             if (_mode == WorldTooltipMode.Hover)
             {
-                if (hitMe && !_hoverActive)
-                {
-                    _hoverActive = true;
-                    ShowTooltip(cam);
-                }
-                else if (!hitMe && _hoverActive)
-                {
-                    _hoverActive = false;
-                    HideTooltip();
-                }
+                SetHover(hitMe, cam);
                 return;
             }
 
@@ -159,11 +160,32 @@ namespace Rollgeon.UI.Tooltips
 #endif
         }
 
+        // Único lugar que mueve _hoverActive: el flanco tiene que ser uno solo para que el
+        // evento no se dispare dos veces ni se saltee la salida.
+        private void SetHover(bool on, Camera cam)
+        {
+            if (_hoverActive == on) return;
+            _hoverActive = on;
+
+            if (on) ShowTooltip(cam);
+            else HideTooltip();
+
+            HoverChanged?.Invoke(on);
+        }
+
         private void ShowTooltip(Camera cam)
         {
             string text = ResolveText();
-            if (string.IsNullOrEmpty(text) || TooltipController.Instance == null) return;
-            TooltipController.Instance.Show(text, ResolvePlacementScreenPos(cam), _ownerId, _placement.Mode);
+            var cards = CardsProvider?.Invoke();
+
+            // Con tarjetas el panel vale aunque el encabezado venga vacío: la columna ES el
+            // contenido.
+            bool hasCards = cards != null && cards.Count > 0;
+            if (!hasCards && string.IsNullOrEmpty(text)) return;
+            if (TooltipController.Instance == null) return;
+
+            TooltipController.Instance.Show(
+                text, cards, ResolvePlacementScreenPos(cam), _ownerId, _placement.Mode);
         }
 
         private void ToggleTooltip(Camera cam)
@@ -207,10 +229,11 @@ namespace Rollgeon.UI.Tooltips
             if (TooltipController.Instance != null) TooltipController.Instance.Hide(_ownerId);
         }
 
+        // Levanta HoverChanged(false) a propósito: es lo que apaga el dibujo cuando el enemigo
+        // muere con el mouse encima.
         private void OnDisable()
         {
-            _hoverActive = false;
-            HideTooltip();
+            SetHover(false, null);
         }
 
         private string ResolveText()

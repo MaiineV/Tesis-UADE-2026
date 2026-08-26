@@ -111,14 +111,44 @@ namespace Rollgeon.Entities.Visuals
         private static void AttachTooltip(EntityPawn pawn, EnemyDataSO data)
         {
             if (pawn == null || data == null) return;
+
+            // El guard de collider tambien va aca arriba, y no solo dentro de AttachHoverTooltip:
+            // sin collider el pawn no queda ni con el componente de texto, que es lo que fija
+            // EntityVisualServiceTests.SpawnEnemy_AttachesNothing_WhenVisualHasNoCollider.
             if (pawn.GetComponentInChildren<Collider>(includeInactive: true) == null) return;
 
-            var go = pawn.gameObject;
-
-            var info = go.GetComponent<EnemyTooltipInfo>();
-            if (info == null) info = go.AddComponent<EnemyTooltipInfo>();
+            var info = pawn.gameObject.GetComponent<EnemyTooltipInfo>();
+            if (info == null) info = pawn.gameObject.AddComponent<EnemyTooltipInfo>();
             info.Bind(data);
 
+            var trigger = AttachHoverTooltip(pawn, info.BuildTooltip);
+            if (trigger == null) return;
+
+            // El preview vive en el MISMO trigger que el texto: un segundo raycast por enemigo por
+            // frame seria correr dos veces el mismo Update, y ademas el pipeline pixel-art escala
+            // el mouse a mano (ver WorldTooltipTrigger.RaycastHitsMe).
+            var guid = pawn.EntityGuid;
+            trigger.HoverChanged += on =>
+            {
+                var preview = Rollgeon.Combat.AI.EnemyIntentPreviewOverlay.ResolveOrCreate();
+                if (on) preview.Show(guid);
+                else preview.Clear();
+            };
+        }
+
+        /// <summary>
+        /// Cuelga un tooltip de hover en un pawn y devuelve el trigger. Publico porque los props
+        /// no pasan por <see cref="SpawnEnemy"/>: las bombas del Croupier las cuelga el nodo que
+        /// las siembra, que es el unico que sabe de quien son.
+        /// </summary>
+        /// <returns><c>null</c> si el pawn no tiene collider y no se colgo nada.</returns>
+        public static Rollgeon.UI.Tooltips.WorldTooltipTrigger AttachHoverTooltip(
+            EntityPawn pawn, Func<string> textProvider)
+        {
+            if (pawn == null) return null;
+            if (pawn.GetComponentInChildren<Collider>(includeInactive: true) == null) return null;
+
+            var go = pawn.gameObject;
             var trigger = go.GetComponent<Rollgeon.UI.Tooltips.WorldTooltipTrigger>();
             if (trigger == null) trigger = go.AddComponent<Rollgeon.UI.Tooltips.WorldTooltipTrigger>();
 
@@ -129,7 +159,8 @@ namespace Rollgeon.Entities.Visuals
             // Explícito en vez de dejar que el TooltipResolver lo busque: el pawn del jefe cuelga
             // otros IHasTooltipInfo abajo (las casillas de sus props) y el auto-resolve devuelve el
             // primero que encuentra.
-            trigger.TextProvider = info.BuildTooltip;
+            trigger.TextProvider = textProvider;
+            return trigger;
         }
 
         public EntityPawn SpawnProp(Guid guid, GameObject prefab, GridCoord coord)
