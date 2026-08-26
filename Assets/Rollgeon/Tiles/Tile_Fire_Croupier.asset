@@ -19,7 +19,7 @@ MonoBehaviour:
   Category: 0
   Affinity: 0
   DamageKind: 3
-  EnterDamage: 10
+  EnterDamage: 6
   TurnStartDamage: 10
   HealAmount: 0
   StatusKind: 0
@@ -27,10 +27,10 @@ MonoBehaviour:
   StatusTickDamage: 0
   ComboDamageBonus: 0
   MoveRangeBonus: 0
-  DefaultDurationRounds: 3
+  DefaultDurationRounds: 4
   DisarmOnTrigger: 0
   RearmOnRoundWrap: 0
-  OwnerBossImmune: 1
+  OwnerBossImmune: 0
   TelegraphPayload: {fileID: 0}
   TelegraphRounds: 1
   ProtectedTileTypes: 

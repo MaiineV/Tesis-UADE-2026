@@ -12,15 +12,8 @@ using UnityEngine;
 
 namespace Rollgeon.Combat.AI.Tests
 {
-    /// <summary>
-    /// Largo de la estela helada del Anotador (piso 2): cada repliegue deja 4 casillas congeladas,
-    /// las suficientes para tapar un tramo de corredor.
-    /// </summary>
-    /// <remarks>
-    /// Corre <see cref="AINode_IceTrail"/> contra un <see cref="IHazardService"/> falso: acá se mide
-    /// cuántas casillas manda a congelar y cuáles, no el hazard en sí. El recorrido completo con el
-    /// <c>HazardService</c> real (derretido, stun, expiración) vive en <c>AnotadorIceTrailTests</c>.
-    /// </remarks>
+    // Contra un IHazardService falso: acá se mide cuántas casillas manda a congelar y cuáles. El
+    // recorrido con el servicio real (derretido, stun, expiración) vive en AnotadorIceTrailTests.
     [TestFixture]
     public class AnotadorIceTrailLengthTests
     {
@@ -71,20 +64,13 @@ namespace Rollgeon.Combat.AI.Tests
             EventManager.ResetEventDictionary();
         }
 
-        // ======================================================================
-        // Largo
-        // ======================================================================
-
         [Test]
         public void Tick_AfterAFourStepRetreat_FreezesTheFourTilesHeWalked()
         {
-            // Arrange — el repliegue de 4 pasos que habilita la ficha: 4 casillas pisadas.
             Retreat(new GridCoord(7, 4), new GridCoord(6, 4), new GridCoord(5, 4), new GridCoord(4, 4));
 
-            // Act
             var result = TrailNode().Tick(BossContext());
 
-            // Assert
             Assert.AreEqual(AIResult.Succeeded, result);
             CollectionAssert.AreEqual(
                 new[]
@@ -100,15 +86,13 @@ namespace Rollgeon.Combat.AI.Tests
         [Test]
         public void Tick_WithARetreatLongerThanTheCap_KeepsTheFourClosestToHim()
         {
-            // Arrange — 6 pasos con tope 4: las que importan son las pegadas a su casilla final, que
+            // 6 pasos con tope 4: las que importan son las pegadas a su casilla final, que
             // son las que pisa quien lo persigue por el camino corto.
             Retreat(new GridCoord(7, 4), new GridCoord(6, 4), new GridCoord(5, 4),
                     new GridCoord(4, 4), new GridCoord(3, 4), new GridCoord(2, 4));
 
-            // Act
             TrailNode().Tick(BossContext());
 
-            // Assert
             CollectionAssert.AreEqual(
                 new[]
                 {
@@ -120,53 +104,38 @@ namespace Rollgeon.Combat.AI.Tests
         [Test]
         public void Tick_WithAShortRetreat_FreezesOnlyWhatHeWalked()
         {
-            // Arrange — acorralado contra un escritorio: dos pasos y nada más.
             Retreat(new GridCoord(7, 4), new GridCoord(6, 4));
 
-            // Act
             TrailNode().Tick(BossContext());
 
-            // Assert
             Assert.AreEqual(2, _hazards.LastTiles.Count,
                 "El tope no rellena: la estela nunca es más larga que el repliegue.");
         }
 
-        /// <summary>
-        /// El default del campo es el que usa cualquier árbol autorado a mano en el inspector, así que
-        /// tiene que ser el número de la ficha.
-        /// </summary>
+        // El default del campo es el que usa cualquier árbol autorado a mano en el inspector: tiene
+        // que ser el número de la ficha.
         [Test]
         public void TheNodeDefault_IsTheSheetsFourTiles()
         {
             Assert.AreEqual(SheetTrailTiles, new AINode_IceTrail().MaxTiles);
         }
 
-        /// <summary>
-        /// Una sola estela viva por vez: el repliegue nuevo mata al anterior. Es lo que hace que el
-        /// hielo NO se acumule pelea adentro.
-        /// </summary>
         [Test]
         public void Tick_OnTheNextRetreat_ReplacesThePreviousTrailInsteadOfStacking()
         {
-            // Arrange — el mismo nodo entre turnos: el id de su estela viva vive en la instancia.
+            // El mismo nodo entre turnos: el id de su estela viva vive en la instancia.
             var node = TrailNode();
             Retreat(new GridCoord(7, 4), new GridCoord(6, 4));
             node.Tick(BossContext());
 
-            // Act — el turno siguiente sigue caminando desde donde quedó.
             RetreatFrom(new GridCoord(6, 4), new GridCoord(5, 4), new GridCoord(4, 4));
             node.Tick(BossContext());
 
-            // Assert
             Assert.AreEqual(1, _hazards.Deactivated.Count,
                 "La estela del turno pasado tiene que apagarse antes de publicar la nueva.");
             CollectionAssert.AreEqual(new[] { new GridCoord(5, 4), new GridCoord(4, 4) },
                 _hazards.LastTiles);
         }
-
-        // ======================================================================
-        // Helpers
-        // ======================================================================
 
         private AINode_IceTrail TrailNode() => new AINode_IceTrail
         {
@@ -178,7 +147,6 @@ namespace Rollgeon.Combat.AI.Tests
 
         private AIContext BossContext() => new AIContext { SelfGuid = _boss };
 
-        /// <summary>Publica el movimiento del repliegue tal como lo haría <c>MovementService</c>.</summary>
         private void Retreat(params GridCoord[] walked) => RetreatFrom(RetreatOrigin, walked);
 
         private void RetreatFrom(GridCoord from, params GridCoord[] walked)
@@ -203,10 +171,6 @@ namespace Rollgeon.Combat.AI.Tests
                 => OnEntityMoved?.Invoke(entity, from, to, path);
         }
 
-        /// <summary>
-        /// Registra qué casillas pidió congelar el nodo. No simula duración, derretido ni overlay:
-        /// eso ya lo cubre el servicio real en <c>AnotadorIceTrailTests</c>.
-        /// </summary>
         private sealed class FakeHazardService : IHazardService
         {
             public readonly List<GridCoord> LastTiles = new List<GridCoord>();

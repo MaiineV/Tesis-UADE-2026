@@ -16,10 +16,6 @@ using UnityEngine;
 
 namespace Rollgeon.Combat.Tests
 {
-    /// <summary>
-    /// Estela helada de El Anotador: <see cref="AINode_IceTrail"/> + <see cref="IceStunBinder"/>
-    /// sobre el <see cref="HazardService"/> real, con el harness de <see cref="HazardServiceTests"/>.
-    /// </summary>
     [TestFixture]
     public class AnotadorIceTrailTests
     {
@@ -91,7 +87,7 @@ namespace Rollgeon.Combat.Tests
             if (_ice != null) UnityEngine.Object.DestroyImmediate(_ice);
             _ice = null;
 
-            // Activar pinta overlay: GameObject + un material por tint. Ver HazardServiceTests.
+            // Activar pinta overlay: GameObject + un material por tint.
             if (ServiceLocator.TryGetService<IThreatOverlayService>(out var overlay)
                 && overlay is IDisposable disposable)
             {
@@ -104,20 +100,13 @@ namespace Rollgeon.Combat.Tests
             EventManager.ResetEventDictionary();
         }
 
-        // ======================================================================
-        // La estela sale del repliegue
-        // ======================================================================
-
         [Test]
         public void Tick_AfterARetreat_FreezesExactlyTheTilesHeWalked()
         {
-            // Arrange
             RetreatAlongRow();
 
-            // Act
             var result = NewTrailNode().Tick(BossContext());
 
-            // Assert
             Assert.AreEqual(AIResult.Succeeded, result);
             Assert.IsTrue(_hazard.TryGetHazardAt(Trail1, out var info), "La primera casilla pisada debería estar helada.");
             Assert.IsTrue(_hazard.TryGetHazardAt(Trail2, out _));
@@ -130,15 +119,13 @@ namespace Rollgeon.Combat.Tests
         [Test]
         public void Tick_PathLongerThanMaxTiles_KeepsTheTilesClosestToHim()
         {
-            // Arrange — 5 pasos con tope 3.
+            // 5 pasos con tope 3.
             _movement.RaiseMoved(_bossGuid, new GridCoord(8, 0), new GridCoord(8, 5), Path(
                 new GridCoord(8, 0), new GridCoord(8, 1), new GridCoord(8, 2),
                 new GridCoord(8, 3), new GridCoord(8, 4), new GridCoord(8, 5)));
 
-            // Act
             NewTrailNode(maxTiles: 3).Tick(BossContext());
 
-            // Assert
             Assert.IsTrue(_hazard.TryGetHazardAt(new GridCoord(8, 5), out var info));
             Assert.AreEqual(3, info.Tiles.Count, "MaxTiles debería recortar la estela a 3 casillas.");
             Assert.IsTrue(_hazard.TryGetHazardAt(new GridCoord(8, 4), out _));
@@ -147,14 +134,12 @@ namespace Rollgeon.Combat.Tests
                 "Las casillas más viejas del recorrido quedan afuera del recorte.");
         }
 
-        /// <summary>Un <see cref="AIResult.Failed"/> acá cortaría el Sequence y la marca de fila.</summary>
+        // Un Failed acá cortaría el Sequence y la marca de fila.
         [Test]
         public void Tick_WithoutRetreat_SucceedsAndFreezesNothing()
         {
-            // Act
             var result = NewTrailNode().Tick(BossContext());
 
-            // Assert
             Assert.AreEqual(AIResult.Succeeded, result,
                 "Sin repliegue el nodo tiene que ser un no-op transparente, no un Failed.");
             CollectionAssert.IsEmpty(_hazard.ActiveInstances());
@@ -163,52 +148,40 @@ namespace Rollgeon.Combat.Tests
         [Test]
         public void Tick_TwiceWithoutMovingAgain_DoesNotRefreezeTheOldPath()
         {
-            // Arrange — el path se consume al leerlo.
+            // El path se consume al leerlo.
             RetreatAlongRow();
             var node = NewTrailNode();
             node.Tick(BossContext());
             int afterFirst = CountInstances();
 
-            // Act
             node.Tick(BossContext());
 
-            // Assert
             Assert.AreEqual(afterFirst, CountInstances(), "No debería nacer una segunda estela sin un segundo repliegue.");
         }
 
         [Test]
         public void SecondRetreat_ReplacesThePreviousTrail()
         {
-            // Arrange
             RetreatAlongRow();
             var node = NewTrailNode();
             node.Tick(BossContext());
 
-            // Act — se repliega por otra fila.
             _movement.RaiseMoved(_bossGuid, BossEnd, new GridCoord(5, 1), Path(
                 new GridCoord(5, 4), new GridCoord(5, 3), new GridCoord(5, 2), new GridCoord(5, 1)));
             node.Tick(BossContext());
 
-            // Assert
             Assert.AreEqual(1, CountInstances(), "Una sola estela viva por vez.");
             Assert.IsTrue(_hazard.TryGetHazardAt(new GridCoord(5, 2), out _), "La estela nueva debería estar helada.");
             Assert.IsFalse(_hazard.TryGetHazardAt(Trail1, out _), "La estela del turno anterior debería haberse ido.");
         }
 
-        // ======================================================================
-        // Pisarla: stun 1 y se derrite
-        // ======================================================================
-
         [Test]
         public void PlayerStepsOnTheTrail_IsStunnedOneTurn_AndTheTileMelts()
         {
-            // Arrange
             ArmTrail();
 
-            // Act
             _movement.RaiseMoved(_playerGuid, PlayerStart, Trail3, Path(PlayerStart, Trail3));
 
-            // Assert
             Assert.IsTrue(_stun.IsStunned(_playerGuid), "Pisar la estela debería stunear al jugador.");
             Assert.AreEqual(1, _stun.GetStunTurns(_playerGuid), "El stun de la estela es de 1 turno.");
             CollectionAssert.IsEmpty(_pipeline.Resolved, "La estela cobra en turnos, no en HP (Damage = 0).");
@@ -220,13 +193,10 @@ namespace Rollgeon.Combat.Tests
         [Test]
         public void CrossingTwoTrailTilesInOneMove_DoesNotChainStuns()
         {
-            // Arrange
             ArmTrail();
 
-            // Act — un movimiento que cruza dos casillas heladas.
             _movement.RaiseMoved(_playerGuid, PlayerStart, Trail2, Path(PlayerStart, Trail3, Trail2));
 
-            // Assert
             Assert.AreEqual(1, _stun.GetStunTurns(_playerGuid),
                 "ApplyStun toma max(actual, nuevo): dos pisadas siguen siendo 1 turno perdido.");
             Assert.IsFalse(_hazard.TryGetHazardAt(Trail3, out _));
@@ -236,16 +206,13 @@ namespace Rollgeon.Combat.Tests
         [Test]
         public void SteppingOnAMeltedTile_DoesNotStunAgain()
         {
-            // Arrange
             ArmTrail();
             _movement.RaiseMoved(_playerGuid, PlayerStart, Trail3, Path(PlayerStart, Trail3));
             _stun.ConsumeTurn(_playerGuid); // el jugador pierde el turno y sale del stun.
             Assert.IsFalse(_stun.IsStunned(_playerGuid));
 
-            // Act — vuelve a pisar la misma casilla, ya derretida.
             _movement.RaiseMoved(_playerGuid, PlayerStart, Trail3, Path(PlayerStart, Trail3));
 
-            // Assert
             Assert.IsFalse(_stun.IsStunned(_playerGuid),
                 "Una casilla derretida no vuelve a cobrar: sin eso el jugador pierde dos turnos seguidos.");
         }
@@ -253,13 +220,10 @@ namespace Rollgeon.Combat.Tests
         [Test]
         public void TheBoss_WalkingOverItsOwnTrail_IsNotStunned()
         {
-            // Arrange
             ArmTrail();
 
-            // Act — el repliegue del turno siguiente cruza su propia estela.
             _movement.RaiseMoved(_bossGuid, BossEnd, Trail1, Path(Trail3, Trail2, Trail1));
 
-            // Assert
             Assert.IsFalse(_stun.IsStunned(_bossGuid),
                 "El dueño de la estela no se congela a sí mismo: auto-stunearse le regalaría al " +
                 "jugador un turno gratis y se leería como bug.");
@@ -268,7 +232,6 @@ namespace Rollgeon.Combat.Tests
         [Test]
         public void ForeignOnEnterHazard_DoesNotStun()
         {
-            // Arrange — otra instancia OnEnter que NO es del Anotador.
             ArmTrail();
             var foreign = CreateIceDefinition();
             foreign.Damage = 4;
@@ -276,11 +239,9 @@ namespace Rollgeon.Combat.Tests
             {
                 _hazard.Activate(foreign, new[] { new GridCoord(1, 1) });
 
-                // Act
                 _movement.RaiseMoved(_playerGuid, new GridCoord(1, 0), new GridCoord(1, 1), Path(
                     new GridCoord(1, 0), new GridCoord(1, 1)));
 
-                // Assert
                 Assert.IsFalse(_stun.IsStunned(_playerGuid),
                     "El binder solo stunea por SUS instancias — un hazard ajeno con trigger OnEnter " +
                     "no debería robar el stun de la estela.");
@@ -295,63 +256,43 @@ namespace Rollgeon.Combat.Tests
         [Test]
         public void StunApplied_UsesTheNodeStunTurns()
         {
-            // Arrange — el número sale del nodo, no está hardcodeado en el binder.
+            // El número sale del nodo, no está hardcodeado en el binder.
             RetreatAlongRow();
             NewTrailNode(stunTurns: 2).Tick(BossContext());
 
-            // Act
             _movement.RaiseMoved(_playerGuid, PlayerStart, Trail3, Path(PlayerStart, Trail3));
 
-            // Assert
             Assert.AreEqual(2, _stun.GetStunTurns(_playerGuid));
         }
 
-        // ======================================================================
-        // Duración
-        // ======================================================================
-
-        /// <summary>
-        /// El jugador abre cada ronda (CNF-006) y la duración se descuenta en el wrap, así que
-        /// <c>DurationRounds = 1</c> mataría la estela antes de que pudiera pisarla.
-        /// </summary>
+        // El jugador abre cada ronda (CNF-006) y la duración se descuenta en el wrap: con
+        // DurationRounds = 1 la estela moriría antes de que pudiera pisarla.
         [Test]
         public void Trail_SurvivesTheRoundWrapAfterItWasLaid_AndDiesOnTheNext()
         {
-            // Arrange
             ArmTrail();
 
-            // Act — arranca la ronda siguiente: el jugador todavía no se movió.
             FireRound(1);
 
-            // Assert
             Assert.IsTrue(_hazard.TryGetHazardAt(Trail3, out _),
                 "La estela tiene que llegar viva al turno del jugador de la ronda siguiente.");
 
-            // Act — una ronda más y se derrite sola.
             FireRound(2);
 
-            // Assert
             Assert.IsFalse(_hazard.TryGetHazardAt(Trail3, out _), "Dura un turno del jugador, no más.");
         }
 
         [Test]
         public void AfterCombatEnd_TheTrailNoLongerStuns()
         {
-            // Arrange
             ArmTrail();
 
-            // Act
             EventManager.Trigger(EventName.OnCombatEnd, Guid.NewGuid());
             _movement.RaiseMoved(_playerGuid, PlayerStart, Trail3, Path(PlayerStart, Trail3));
 
-            // Assert
             Assert.IsFalse(_stun.IsStunned(_playerGuid), "El estado de la estela es combat-scoped.");
             Assert.AreEqual(0, CountInstances());
         }
-
-        // ======================================================================
-        // Helpers
-        // ======================================================================
 
         private static IReadOnlyList<GridCoord> Path(params GridCoord[] coords) => coords;
 
@@ -373,11 +314,9 @@ namespace Rollgeon.Combat.Tests
                 ReplacePreviousTrail = true,
             };
 
-        /// <summary>Publica el movimiento del repliegue tal como lo haría <c>MovementService</c>.</summary>
         private void RetreatAlongRow()
             => _movement.RaiseMoved(_bossGuid, BossStart, BossEnd, Path(BossStart, Trail1, Trail2, Trail3));
 
-        /// <summary>Repliegue + tick del nodo: deja la estela viva y trackeada.</summary>
         private void ArmTrail()
         {
             RetreatAlongRow();
@@ -418,7 +357,6 @@ namespace Rollgeon.Combat.Tests
 
             public event Action<Guid, GridCoord, GridCoord, IReadOnlyList<GridCoord>> OnEntityMoved;
 
-            /// <summary>Dispara OnEntityMoved como lo haría el service real.</summary>
             public void RaiseMoved(Guid entity, GridCoord from, GridCoord to, IReadOnlyList<GridCoord> path)
                 => OnEntityMoved?.Invoke(entity, from, to, path);
         }

@@ -14,9 +14,6 @@ using UnityEngine;
 
 namespace Rollgeon.Combat.AI.Tests
 {
-    /// <summary>
-    /// <see cref="AINode_IgniteDetonatedSectors"/> contra el <see cref="HazardService"/> real.
-    /// </summary>
     [TestFixture]
     public class CroupierIgnitionTests
     {
@@ -89,20 +86,13 @@ namespace Rollgeon.Combat.AI.Tests
             EventManager.ResetEventDictionary();
         }
 
-        // =====================================================================
-        // Ignición
-        // =====================================================================
-
         [Test]
         public void Ignite_OneFirePerDetonatedSector()
         {
-            // Arrange
             Detonate(2, 3);
 
-            // Act
             var result = Ignite();
 
-            // Assert
             Assert.AreEqual(AIResult.Succeeded, result);
             var instances = new List<HazardInstanceInfo>(_hazard.ActiveInstances());
             Assert.AreEqual(2, instances.Count, "Un fuego por sector detonado, no uno solo para los dos.");
@@ -115,14 +105,11 @@ namespace Rollgeon.Combat.AI.Tests
         [Test]
         public void Ignite_UsesThePhase2Fire_WhenTheTableIsRigged()
         {
-            // Arrange
             _wheel.SetMode(2, rigged: true, phaseIndex: 2);
             Detonate(1);
 
-            // Act
             Ignite();
 
-            // Assert
             var instances = new List<HazardInstanceInfo>(_hazard.ActiveInstances());
             Assert.AreEqual(1, instances.Count);
             Assert.AreSame(_firePhase2, instances[0].Definition);
@@ -132,14 +119,11 @@ namespace Rollgeon.Combat.AI.Tests
         [Test]
         public void Ignite_WithoutAPhase2Definition_FallsBackToTheSameFire()
         {
-            // Arrange
             _wheel.SetMode(2, rigged: true, phaseIndex: 2);
             Detonate(1);
 
-            // Act
             Ignite(withPhase2Def: false);
 
-            // Assert
             var instances = new List<HazardInstanceInfo>(_hazard.ActiveInstances());
             Assert.AreEqual(1, instances.Count);
             Assert.AreSame(_fire, instances[0].Definition);
@@ -148,11 +132,9 @@ namespace Rollgeon.Combat.AI.Tests
         [Test]
         public void Ignite_NothingDetonated_SucceedsWithoutIgniting()
         {
-            // Arrange — turno 1: cantó, pero todavía no detonó nada.
-            // Act
+            // Turno 1: cantó, pero todavía no detonó nada.
             var result = Ignite();
 
-            // Assert
             Assert.AreEqual(AIResult.Succeeded, result);
             Assert.IsEmpty(new List<HazardInstanceInfo>(_hazard.ActiveInstances()));
         }
@@ -160,34 +142,25 @@ namespace Rollgeon.Combat.AI.Tests
         [Test]
         public void Ignite_ConsumesTheDetonatedSectors_SoItNeverIgnitesTwice()
         {
-            // Arrange
             Detonate(1);
 
-            // Act
             Ignite();
             Ignite();
 
-            // Assert
             Assert.AreEqual(1, new List<HazardInstanceInfo>(_hazard.ActiveInstances()).Count,
                 "El segundo tick no debería re-encender el mismo sector.");
         }
 
-        // =====================================================================
-        // "La explosión consume la llama"
-        // =====================================================================
-
         [Test]
         public void PlayerCaughtByTheBlast_FirstFireTickIsSwallowed()
         {
-            // Arrange — el jugador está en el sector que detona: ya pagó los 20 este turno.
+            // El jugador está en el sector que detona: ya pagó los 20 este turno.
             MovePlayer(new GridCoord(0, 5)); // Sector 1.
             Detonate(1);
 
-            // Act
             Ignite();
             EndTurn(_playerGuid);
 
-            // Assert
             Assert.IsEmpty(_pipeline.Resolved,
                 "La detonación consume la llama: el fuego no puede cobrar 6 encima en el mismo turno.");
 
@@ -200,16 +173,14 @@ namespace Rollgeon.Combat.AI.Tests
         [Test]
         public void PlayerDodgedTheBlast_FireBillsTheFirstTurnEndInside()
         {
-            // Arrange — esquivó el sector, así que no se armó el candado de la detonación.
+            // Esquivó el sector, así que no se armó el candado de la detonación.
             MovePlayer(new GridCoord(10, 0)); // Sector 6, lejos del que detona.
             Detonate(1);
 
-            // Act
             Ignite();
             MovePlayer(new GridCoord(0, 5)); // Vuelve al bloque quemado.
             EndTurn(_playerGuid);
 
-            // Assert
             Assert.AreEqual(1, _pipeline.Resolved.Count, "El fuego tiene que cobrar 6 al entrar y quedarse.");
             Assert.AreEqual(FireDamage, _pipeline.Resolved[0].BaseDamage);
             Assert.AreEqual(_playerGuid, _pipeline.Resolved[0].TargetId);
@@ -219,32 +190,24 @@ namespace Rollgeon.Combat.AI.Tests
         [Test]
         public void BlastConsumesFlameDisabled_FireBillsRightAway()
         {
-            // Arrange — el flag es autorable: apagarlo suma detonación + fuego.
+            // El flag es autorable: apagarlo suma detonación + fuego.
             MovePlayer(new GridCoord(0, 5));
             Detonate(1);
 
-            // Act
             Ignite(blastConsumesFlame: false);
             EndTurn(_playerGuid);
 
-            // Assert
             Assert.AreEqual(1, _pipeline.Resolved.Count);
         }
-
-        // =====================================================================
-        // "El fuego dura y se acumula"
-        // =====================================================================
 
         [Test]
         public void Phase1Fire_BillsTwoPlayerTurnEnds_ThenGoesOut()
         {
-            // Arrange
             MovePlayer(new GridCoord(10, 0)); // Sector 6: esquiva la detonación, no se arma el skip.
             Detonate(1);
             Ignite();
             MovePlayer(new GridCoord(0, 5)); // Sector 1: se mete en el bloque quemado.
 
-            // Act + Assert
             NewRound(2);
             EndTurn(_playerGuid);
             Assert.AreEqual(1, _pipeline.Resolved.Count, "Primera ronda de fuego.");
@@ -261,17 +224,14 @@ namespace Rollgeon.Combat.AI.Tests
         [Test]
         public void Ignite_DoesNotPutOutThePreviousBlock()
         {
-            // Arrange
             MovePlayer(new GridCoord(10, 0)); // Sector 6: lejos de los dos que caen.
             Detonate(1);
             Ignite();
 
-            // Act — al turno siguiente cae otro bloque.
             NewRound(2);
             Detonate(4);
             Ignite();
 
-            // Assert
             Assert.AreEqual(2, new List<HazardInstanceInfo>(_hazard.ActiveInstances()).Count,
                 "El fuego del sector 1 tiene que seguir vivo cuando prende el del 4.");
 
@@ -284,14 +244,11 @@ namespace Rollgeon.Combat.AI.Tests
         [Test]
         public void SeamColumnInPhase2_BothFiresCoverIt()
         {
-            // Arrange — dos sectores contiguos comparten la columna de costura.
             _wheel.SetMode(2, rigged: true, phaseIndex: 2);
             Detonate(2, 3);
 
-            // Act
             Ignite();
 
-            // Assert
             var seam = new GridCoord(7, 5);
             int covering = 0;
             foreach (var instance in _hazard.ActiveInstances())
@@ -299,10 +256,6 @@ namespace Rollgeon.Combat.AI.Tests
 
             Assert.AreEqual(2, covering, "La columna de costura queda dentro de los dos fuegos.");
         }
-
-        // =====================================================================
-        // Helpers
-        // =====================================================================
 
         private void Detonate(params int[] sectors)
         {
@@ -332,10 +285,8 @@ namespace Rollgeon.Combat.AI.Tests
 
         private static void EndTurn(Guid entity) => EventManager.Trigger(EventName.OnTurnFinished, entity);
 
-        /// <summary>
-        /// Abre la ronda <paramref name="roundIndex"/>. Es el tick de duración de los hazards: el
-        /// <c>HazardService</c> descuenta rondas en <c>OnTurnQueueBuilt</c>, no en el cierre de turno.
-        /// </summary>
+        // Es el tick de duración de los hazards: HazardService descuenta rondas en OnTurnQueueBuilt,
+        // no en el cierre de turno.
         private static void NewRound(int roundIndex)
             => EventManager.Trigger(EventName.OnTurnQueueBuilt, new List<Guid>(), roundIndex);
 

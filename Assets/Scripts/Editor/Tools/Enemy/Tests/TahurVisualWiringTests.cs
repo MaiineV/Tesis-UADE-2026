@@ -10,12 +10,8 @@ using Object = UnityEngine.Object;
 
 namespace Rollgeon.Editor.Tools.Enemy.Tests
 {
-    /// <summary>
-    /// Vestido visual del Tahúr contra el arte real: retinte que matchee los materiales de
-    /// <c>SunkedGrand_Animated</c>, wrapper sin paleta compartida con el jefe del piso 1, y el
-    /// puente de Animation Events colgado. Toca el <c>AssetDatabase</c> —lo que se afirma es el
-    /// prefab escrito— pero construye en una carpeta temporal, no en el prefab del repo.
-    /// </summary>
+    /// <summary>Toca el <c>AssetDatabase</c> —lo que se afirma es el prefab escrito— pero construye en una
+    /// carpeta temporal, no en el prefab del repo.</summary>
     [TestFixture]
     public class TahurVisualWiringTests
     {
@@ -37,10 +33,6 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
 
         private GameObject _wrapper;
         private float _sharedSkinUsePaletteBeforeBuild;
-
-        // ======================================================================
-        // Fixture
-        // ======================================================================
 
         [OneTimeSetUp]
         public void OneTimeSetUp()
@@ -72,18 +64,13 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             AssetDatabase.Refresh();
         }
 
-        // ======================================================================
-        // Retinte contra el arte real
-        // ======================================================================
-
         [Test]
         public void Retint_KeysMatchTheMaterialsTheArtActuallyUses()
         {
-            // Arrange
             var artMaterials = MaterialNamesOf(TahurAssetBuilder.ArtPrefabPath);
             var retints = TahurAssetBuilder.BuildRetints();
 
-            // Assert — una key que no matchea es un typo silencioso: el jefe sale de fábrica.
+            // Una key que no matchea es un typo silencioso: el jefe sale de fábrica.
             foreach (var key in retints.Keys)
             {
                 CollectionAssert.Contains(artMaterials, key,
@@ -101,7 +88,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         [Test]
         public void Wrapper_SwapsEveryBodyMaterialForItsOwnClone()
         {
-            // Assert — un material compartido deja al Tahúr y al Sunken Grand gemelos ahí.
+            // Un material compartido deja al Tahúr y al Sunken Grand gemelos ahí.
             foreach (var renderer in BodyRenderers(_wrapper))
             {
                 foreach (var material in renderer.sharedMaterials)
@@ -118,11 +105,9 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         [Test]
         public void Wrapper_PaintsTheCoatFeltGreen_WithThePaletteToggleOff()
         {
-            // Arrange
             var coat = AssetDatabase.LoadAssetAtPath<Material>(
                 MaterialsFolder + "/Mat_Tahur_LightBrown.mat");
 
-            // Assert
             Assert.IsNotNull(coat, "No se clonó el material de la levita.");
             Assert.AreEqual(0f, coat.GetFloat("_UsePalette"),
                 "Con colores directos el toggle de paleta tiene que quedar apagado o no se ven.");
@@ -135,20 +120,15 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         [Test]
         public void Wrapper_DoesNotRepaintTheFloorOneBoss()
         {
-            // Assert — Mat_LightGreen es la piel del Sunken Grand: in-place repinta medio casino.
+            // Mat_LightGreen es la piel del Sunken Grand: in-place repinta medio casino.
             var skin = AssetDatabase.LoadAssetAtPath<Material>(SharedSkinMaterialPath);
             Assert.AreEqual(_sharedSkinUsePaletteBeforeBuild, skin.GetFloat("_UsePalette"),
                 "El builder pisó el material compartido en vez de clonarlo.");
         }
 
-        // ======================================================================
-        // Identidad del arte
-        // ======================================================================
-
         [Test]
         public void Wrapper_KeepsTheTwelveCardFan()
         {
-            // Assert
             int cards = BodyRenderers(_wrapper).Count(r => r.name.Contains("Card_SunkenGrand"));
             Assert.AreEqual(12, cards,
                 "El abanico del Tahúr son 12 cartas (Card_SunkenGrand + 1..11).");
@@ -157,21 +137,16 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         [Test]
         public void Wrapper_IsTargetableAndFlashesOnHit()
         {
-            // Assert
             Assert.IsNotNull(_wrapper.GetComponent<EntityPawn>(), "Falta EntityPawn.");
             Assert.IsNotNull(_wrapper.GetComponent<Collider>(),
                 "Sin collider en el root, PawnPicker no lo puede targetear.");
             Assert.IsNotNull(_wrapper.GetComponent<PawnMaterialFeedback>(), "Falta el hit flash.");
         }
 
-        // ======================================================================
-        // Puente de Animation Events
-        // ======================================================================
-
         [Test]
         public void Art_StillFiresFeedbackEventsFromItsAttackClips()
         {
-            // Assert — un re-export sin estos eventos deja el puente en peso muerto.
+            // Un re-export sin estos eventos deja el puente en peso muerto.
             foreach (var clipPath in AttackClipPaths)
             {
                 var clip = AssetDatabase.LoadAssetAtPath<AnimationClip>(clipPath);
@@ -186,10 +161,9 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         [Test]
         public void Wrapper_HangsTheFeedbackBridgeOnTheAnimator()
         {
-            // Arrange
             var animator = _wrapper.GetComponentInChildren<Animator>(includeInactive: true);
 
-            // Assert — los Animation Events se despachan al GameObject del Animator y a ningún otro.
+            // Los Animation Events se despachan al GameObject del Animator y a ningún otro.
             Assert.IsNotNull(animator, "El arte del Tahúr tiene que traer su Animator.");
             Assert.IsNotNull(animator.GetComponent<AnimationFeedbackEvent>(),
                 "Sin el puente, cada ataque tira 'AnimationEvent has no receiver' y los steps " +
@@ -199,36 +173,26 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         [Test]
         public void FeedbackBridge_IsIdempotent()
         {
-            // Act — la fixture ya lo corrió una vez.
+            // La fixture ya lo corrió una vez.
             var again = TahurAssetBuilder.EnsureAnimationFeedbackBridge(WrapperPath);
 
-            // Assert
             Assert.IsNotNull(again);
             var animator = again.GetComponentInChildren<Animator>(includeInactive: true);
             Assert.AreEqual(1, animator.GetComponents<AnimationFeedbackEvent>().Length,
                 "Rebuild duplicando el puente: cada Animation Event se publicaría dos veces.");
         }
 
-        // ======================================================================
-        // Retrato
-        // ======================================================================
-
         [Test]
         public void Portrait_ResolvesToASprite()
         {
-            // Act — la hoja está sliceada en Multiple: el retrato es un sub-sprite con nombre.
+            // La hoja está sliceada en Multiple: el retrato es un sub-sprite con nombre.
             var portrait = BossPortraitLibrary.Tahur();
 
-            // Assert
             Assert.IsNotNull(portrait,
                 $"No se resolvió '{BossPortraitLibrary.TahurSpriteName}' en " +
                 $"'{BossPortraitLibrary.SheetPath}': el campo Portrait del SO quedaría en null y la " +
                 "cola de turnos caería al visual default.");
         }
-
-        // ======================================================================
-        // Helpers
-        // ======================================================================
 
         /// <summary>Nombres únicos de los materiales de un prefab de arte, sin partículas ni trails.</summary>
         private static List<string> MaterialNamesOf(string prefabPath)

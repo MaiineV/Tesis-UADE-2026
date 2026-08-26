@@ -14,10 +14,6 @@ using UnityEngine;
 
 namespace Rollgeon.Combat.AI.Tests
 {
-    /// <summary>
-    /// El ciclo de dos turnos del ataque del Croupier: <see cref="AINode_MarkSungSectors"/> marca el
-    /// sector cantado y <see cref="AINode_DetonateSungSectors"/> lo cobra al turno siguiente.
-    /// </summary>
     [TestFixture]
     public class CroupierSectorAttackTests
     {
@@ -76,20 +72,13 @@ namespace Rollgeon.Combat.AI.Tests
             EventManager.ResetEventDictionary();
         }
 
-        // =====================================================================
-        // Marcar
-        // =====================================================================
-
         [Test]
         public void Mark_UsesThePhase1Damage_ByDefault()
         {
-            // Arrange
             _wheel.Sing(new List<int> { 1 });
 
-            // Act
             Assert.AreEqual(AIResult.Succeeded, Mark());
 
-            // Assert
             var area = Pending(slot: 0);
             Assert.AreEqual(SectorDamage, area.Damage);
             Assert.AreEqual(16, area.Tiles.Count, "El sector es de 4×4.");
@@ -98,14 +87,11 @@ namespace Rollgeon.Combat.AI.Tests
         [Test]
         public void Mark_UsesThePhase2Damage_WhenTheTableIsRigged()
         {
-            // Arrange
             _wheel.SetMode(2, rigged: true, phaseIndex: 2);
             _wheel.Sing(new List<int> { 2, 3 });
 
-            // Act
             Mark();
 
-            // Assert
             Assert.AreEqual(SectorDamagePhase2, Pending(0).Damage);
             Assert.AreEqual(SectorDamagePhase2, Pending(1).Damage);
         }
@@ -113,42 +99,32 @@ namespace Rollgeon.Combat.AI.Tests
         [Test]
         public void Mark_WithNothingInTheAir_Fails()
         {
-            // Arrange — el Failed lo absorbe el Selector[.., Wait] del árbol.
-            // Act + Assert
+            // El Failed lo absorbe el Selector[.., Wait] del árbol.
             Assert.AreEqual(AIResult.Failed, Mark());
         }
 
         [Test]
         public void Mark_TwoNumbers_KeepsBothAreasAlive()
         {
-            // Arrange — IThreatenedAreaService guarda un área por fuente: sin guid por slot se pisan.
+            // IThreatenedAreaService guarda un área por fuente: sin guid por slot se pisan.
             _wheel.SetMode(2, rigged: true, phaseIndex: 2);
             _wheel.Sing(new List<int> { 2, 3 });
 
-            // Act
             Mark();
 
-            // Assert
             Assert.IsTrue(_threat.HasPending(CroupierSectorTelegraph.SlotGuid(_bossGuid, 0)));
             Assert.IsTrue(_threat.HasPending(CroupierSectorTelegraph.SlotGuid(_bossGuid, 1)));
         }
 
-        // =====================================================================
-        // Detonar
-        // =====================================================================
-
         [Test]
         public void Detonate_PlayerInsideTheSector_TakesTheSectorDamage()
         {
-            // Arrange
             MovePlayer(new GridCoord(0, 5)); // Sector 1.
             _wheel.Sing(new List<int> { 1 });
             Mark();
 
-            // Act
             Assert.AreEqual(AIResult.Succeeded, Detonate());
 
-            // Assert
             Assert.AreEqual(1, _pipeline.Resolved.Count);
             Assert.AreEqual(SectorDamage, _pipeline.Resolved[0].BaseDamage);
             Assert.AreEqual(_bossGuid, _pipeline.Resolved[0].SourceId,
@@ -159,15 +135,13 @@ namespace Rollgeon.Combat.AI.Tests
         [Test]
         public void Detonate_PlayerOnTheMiddleRow_TakesTheHit()
         {
-            // Arrange — la fila del medio es costura: la comparten el bloque de arriba y el de abajo.
+            // La fila del medio es costura: la comparten el bloque de arriba y el de abajo.
             MovePlayer(new GridCoord(4, 3));
             _wheel.Sing(new List<int> { 2 });
             Mark();
 
-            // Act
             Assert.AreEqual(AIResult.Succeeded, Detonate());
 
-            // Assert
             Assert.AreEqual(1, _pipeline.Resolved.Count, "Ninguna casilla caminable es segura para siempre.");
             Assert.AreEqual(SectorDamage, _pipeline.Resolved[0].BaseDamage);
         }
@@ -175,15 +149,12 @@ namespace Rollgeon.Combat.AI.Tests
         [Test]
         public void Detonate_MiddleRow_AlsoFallsWithTheBlockBelowIt()
         {
-            // Arrange — la misma casilla del test anterior, ahora con el número de abajo.
             MovePlayer(new GridCoord(4, 3));
             _wheel.Sing(new List<int> { 5 });
             Mark();
 
-            // Act
             Detonate();
 
-            // Assert
             Assert.AreEqual(1, _pipeline.Resolved.Count);
             Assert.AreEqual(SectorDamage, _pipeline.Resolved[0].BaseDamage);
         }
@@ -191,32 +162,28 @@ namespace Rollgeon.Combat.AI.Tests
         [Test]
         public void Detonate_ApproachingFromAboveOrBelow_IsNormalRisk()
         {
-            // Arrange — canta el bloque de abajo y el jugador está en el de arriba, pegado al jefe:
+            // Canta el bloque de abajo y el jugador está en el de arriba, pegado al jefe:
             // el contrapeso de la costura es que llegar al melee por arriba/abajo no cuesta doble.
             MovePlayer(new GridCoord(5, 4));
             _wheel.Sing(new List<int> { 5 });
             Mark();
 
-            // Act
             Detonate();
 
-            // Assert
             Assert.IsEmpty(_pipeline.Resolved);
         }
 
         [Test]
         public void Detonate_SeamColumnInPhase2_TakesBothHits()
         {
-            // Arrange — son dos golpes separados, no uno de 24: el escudo se aplica a cada uno.
+            // Son dos golpes separados, no uno de 24: el escudo se aplica a cada uno.
             _wheel.SetMode(2, rigged: true, phaseIndex: 2);
             MovePlayer(new GridCoord(7, 5)); // La costura, arriba.
             _wheel.Sing(new List<int> { 2, 3 });
             Mark();
 
-            // Act
             Detonate();
 
-            // Assert
             Assert.AreEqual(2, _pipeline.Resolved.Count, "En la costura pegan los dos sectores.");
             Assert.AreEqual(SectorDamagePhase2 * 2, _pipeline.Resolved.Sum(c => c.BaseDamage));
             foreach (var ctx in _pipeline.Resolved)
@@ -226,16 +193,13 @@ namespace Rollgeon.Combat.AI.Tests
         [Test]
         public void Detonate_OutsideTheSeamInPhase2_TakesOnlyOneHit()
         {
-            // Arrange
             _wheel.SetMode(2, rigged: true, phaseIndex: 2);
             MovePlayer(new GridCoord(4, 5)); // Sector 2, fuera de la costura.
             _wheel.Sing(new List<int> { 2, 3 });
             Mark();
 
-            // Act
             Detonate();
 
-            // Assert
             Assert.AreEqual(1, _pipeline.Resolved.Count);
             Assert.AreEqual(SectorDamagePhase2, _pipeline.Resolved[0].BaseDamage);
         }
@@ -243,8 +207,7 @@ namespace Rollgeon.Combat.AI.Tests
         [Test]
         public void Detonate_WithNothingMarked_SucceedsAnyway()
         {
-            // Arrange — turno 1: Failed acá le cancelaría al jefe el resto del turno.
-            // Act + Assert
+            // Turno 1: Failed acá le cancelaría al jefe el resto del turno.
             Assert.AreEqual(AIResult.Succeeded, Detonate());
             Assert.IsEmpty(_pipeline.Resolved);
         }
@@ -252,14 +215,11 @@ namespace Rollgeon.Combat.AI.Tests
         [Test]
         public void Detonate_ClosesTheWindup_AndPublishesTheDetonatedSector()
         {
-            // Arrange
             _wheel.Sing(new List<int> { 5 });
             Mark();
 
-            // Act
             Detonate();
 
-            // Assert
             Assert.IsFalse(_wheel.WindupActive, "Después de detonar, pegarle ya no mueve la rueda.");
             Assert.AreEqual(new[] { 5 }, _wheel.DetonatedSectors, "El sector que cayó tiene que quedar para el fuego.");
             Assert.IsFalse(_threat.HasPending(CroupierSectorTelegraph.SlotGuid(_bossGuid, 0)));
@@ -268,33 +228,27 @@ namespace Rollgeon.Combat.AI.Tests
         [Test]
         public void StandingInTheCalledSector_PushesTheBlastOffYou()
         {
-            // Arrange
             MovePlayer(new GridCoord(0, 0)); // Sector 4.
             _wheel.Sing(new List<int> { 4 });
             Mark();
 
-            // Act
             EndPlayerTurn();
             Detonate();
 
-            // Assert
             Assert.IsEmpty(_pipeline.Resolved, "El 4 pasó a 5: donde está parado ya no detona nada.");
         }
 
         [Test]
         public void NudgedNumber_DetonatesTheNewSector_NotTheOneItSang()
         {
-            // Arrange
             MovePlayer(new GridCoord(0, 0)); // Sector 4.
             _wheel.Sing(new List<int> { 4 });
             Mark();
 
-            // Act — cierra el turno adentro (el 4 pasa a 5) y termina en el 5 antes de que caiga.
             EndPlayerTurn();
             MovePlayer(new GridCoord(4, 0)); // Sector 5, a donde mandó el hacha.
             Detonate();
 
-            // Assert
             Assert.AreEqual(1, _pipeline.Resolved.Count, "El sector 5 (el corrido) es el que detona.");
             Assert.AreEqual(SectorDamage, _pipeline.Resolved[0].BaseDamage);
         }
@@ -302,12 +256,10 @@ namespace Rollgeon.Combat.AI.Tests
         [Test]
         public void HittingTheBoss_DoesNotRedirectTheBlast()
         {
-            // Arrange
             MovePlayer(new GridCoord(0, 0)); // Sector 4.
             _wheel.Sing(new List<int> { 4 });
             Mark();
 
-            // Act
             TypedEvent<DamageResolvedPayload>.Raise(new DamageResolvedPayload
             {
                 SourceGuid = _playerGuid,
@@ -317,14 +269,9 @@ namespace Rollgeon.Combat.AI.Tests
             _pipeline.Resolved.Clear(); // Descartamos la Represalia: acá se mide la detonación.
             Detonate();
 
-            // Assert
             Assert.AreEqual(1, _pipeline.Resolved.Count, "El 4 sigue siendo el 4: le pega igual.");
             Assert.AreEqual(SectorDamage, _pipeline.Resolved[0].BaseDamage);
         }
-
-        // =====================================================================
-        // Helpers
-        // =====================================================================
 
         private AIResult Mark()
         {

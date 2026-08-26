@@ -14,11 +14,6 @@ using UnityEngine;
 
 namespace Rollgeon.Combat.AI.Tests
 {
-    /// <summary>
-    /// El rastrillo del Tahúr (el pozo sube solo, el Castigo escala 26 → 45) y La Banca (con el
-    /// pozo lleno, 45 en toda la sala menos La Mesa). Sala real 11×7 y servicios reales salvo el
-    /// pipeline de daño y el overlay.
-    /// </summary>
     [TestFixture]
     public class TahurRakeAndBancaTests
     {
@@ -111,18 +106,12 @@ namespace Rollgeon.Combat.AI.Tests
             EventManager.ResetEventDictionary();
         }
 
-        // =================================================================
-        // El rastrillo, desde la fase 1
-        // =================================================================
-
         [Test]
         public void Rake_StartsThePotAtOne_OnTheOpeningRound()
         {
-            // Arrange — primera ronda: todavía no cantó, no hay nada que liquidar.
-            // Act
+            // Primera ronda: todavía no cantó, no hay nada que liquidar.
             Assert.AreEqual(AIResult.Succeeded, Settle());
 
-            // Assert
             Assert.AreEqual(1, _wager.Chips, "La ficha: la carta sale y «el pozo arranca en 1».");
             Assert.AreEqual(TahurSettleOutcome.None, _wager.LastOutcome);
         }
@@ -130,16 +119,13 @@ namespace Rollgeon.Combat.AI.Tests
         [Test]
         public void Rake_MovesThePotEveryRound_EvenWhenThePlayerNeverFails()
         {
-            // Arrange — el jugador arma el canto exacto todas las rondas: 0 fichas por resultado.
             for (int round = 1; round <= 4; round++)
             {
                 Call(3);
                 PlayHand(3);
 
-                // Act
                 Settle();
 
-                // Assert
                 Assert.AreEqual(TahurSettleOutcome.Exact, _wager.LastOutcome,
                     "El jugador no falló ninguna ronda: el pozo se movió solo.");
                 Assert.AreEqual(round, _wager.Chips, $"Ronda {round}: el rastrillo empuja una ficha.");
@@ -150,7 +136,6 @@ namespace Rollgeon.Combat.AI.Tests
         [Test]
         public void Rake_WalksThePunishmentFromTwentySixToFortyFive_OnItsOwn()
         {
-            // Arrange
             var expected = new[] { 26, 32, 38, 42, 45 };
 
             for (int round = 0; round < expected.Length; round++)
@@ -158,15 +143,12 @@ namespace Rollgeon.Combat.AI.Tests
                 Call(3);
                 PlayHand(3);
 
-                // Act
                 Settle();
 
-                // Assert
                 Assert.AreEqual(expected[round], _settle.PunishmentDamageForChips(_wager.Chips),
                     $"Ronda {round + 1}: sin rastrillo el Castigo se quedaba clavado en 26.");
             }
 
-            // Assert — y de ahí no pasa.
             for (int extra = 0; extra < 3; extra++) { Call(3); PlayHand(3); Settle(); }
             Assert.AreEqual(5, _wager.Chips, "La banca: el pozo tope es 5 fichas.");
             Assert.AreEqual(45, _settle.PunishmentDamageForChips(_wager.Chips));
@@ -175,7 +157,7 @@ namespace Rollgeon.Combat.AI.Tests
         [Test]
         public void Rake_DoesNotStompThePhaseTwoRhythm_OnceTheCardIsFlipped()
         {
-            // Arrange — la liquidación escribe el rastrillo de fase 1 en cada tick.
+            // La liquidación escribe el rastrillo de fase 1 en cada tick.
             new AINode_TahurFlipCard
             {
                 RakeChipsPerRound = 2,
@@ -183,26 +165,19 @@ namespace Rollgeon.Combat.AI.Tests
                 GraceOnFirstSettle = false,
             }.Tick(Context());
 
-            // Act
             Settle();
 
-            // Assert
             Assert.AreEqual(2, _wager.RakeChipsPerRound, "El volteo manda a partir de la fase 2.");
             Assert.AreEqual(2, _wager.Chips);
         }
 
-        // =================================================================
-        // La Banca
-        // =================================================================
-
         [Test]
         public void Banca_HoldsFire_WhileThePotIsNotFull()
         {
-            // Arrange
             _wager.SetChips(4);
             MarkTable();
 
-            // Act + Assert — Failed es el caso normal: por eso va en Selector[Banca, Wait].
+            // Failed es el caso normal: por eso va en Selector[Banca, Wait].
             Assert.AreEqual(AIResult.Failed, Banca());
             Assert.IsFalse(_threat.HasPending(_boss));
         }
@@ -210,14 +185,11 @@ namespace Rollgeon.Combat.AI.Tests
         [Test]
         public void Banca_WithAFullPot_ThreatensTheWholeRoomButTheTable()
         {
-            // Arrange
             _wager.SetChips(5);
             MarkTable();
 
-            // Act
             Assert.AreEqual(AIResult.Succeeded, Banca());
 
-            // Assert
             Assert.IsTrue(_threat.TryConsume(_boss, out var area));
             Assert.AreEqual(WalkableTiles - TableTiles, area.Tiles.Count,
                 "La sala caminable entera menos el 3×3 de La Mesa.");
@@ -233,13 +205,11 @@ namespace Rollgeon.Combat.AI.Tests
         [Test]
         public void Banca_KeepsItsOwnHole_EvenIfTheTableWasNeverPainted()
         {
-            // Arrange — sin MarkTable el hueco sale de la forma, no de las casillas guardadas.
+            // Sin MarkTable el hueco sale de la forma, no de las casillas guardadas.
             _wager.SetChips(5);
 
-            // Act
             Assert.AreEqual(AIResult.Succeeded, Banca());
 
-            // Assert
             Assert.IsTrue(_threat.TryConsume(_boss, out var area));
             Assert.AreEqual(WalkableTiles - TableTiles, area.Tiles.Count);
         }
@@ -247,14 +217,11 @@ namespace Rollgeon.Combat.AI.Tests
         [Test]
         public void Banca_NeverPaysMoreThanTheFloorCeiling()
         {
-            // Arrange
             _wager.SetChips(5);
             MarkTable();
 
-            // Act
             new AINode_TahurMarkBanca { Damage = 90, DamageCeiling = 45 }.Tick(Context());
 
-            // Assert
             Assert.IsTrue(_threat.TryConsume(_boss, out var area));
             Assert.AreEqual(45, area.Damage);
         }
@@ -262,18 +229,14 @@ namespace Rollgeon.Combat.AI.Tests
         [Test]
         public void Banca_GivesOneRoundOfWarning_BeforeItCollects()
         {
-            // Arrange
             _wager.SetChips(5);
             MarkTable();
             Banca();
 
-            // Assert
             Assert.IsEmpty(_pipeline.Resolved, "La Banca se marca, no se cobra en el acto.");
 
-            // Act — el jugador se queda afuera y la cobra al abrir el turno siguiente.
             Assert.AreEqual(AIResult.Succeeded, Execute());
 
-            // Assert
             Assert.AreEqual(1, _pipeline.Resolved.Count);
             Assert.AreEqual(45, _pipeline.Resolved[0].BaseDamage);
             Assert.AreEqual(_player, _pipeline.Resolved[0].TargetId);
@@ -283,31 +246,25 @@ namespace Rollgeon.Combat.AI.Tests
         [Test]
         public void Banca_LeavesWhoeverIsStandingOnTheTableUntouched()
         {
-            // Arrange
             MovePlayer(OnTheTable);
             _wager.SetChips(5);
             MarkTable();
             Banca();
 
-            // Act
             Execute();
 
-            // Assert
             Assert.IsEmpty(_pipeline.Resolved, "La Mesa es daño 0 también cuando barre la sala.");
         }
 
         [Test]
         public void Banca_NeverThreatensATileThePokeCanReach()
         {
-            // Arrange — poke 12 + Banca 45 sobre la misma casilla romperían el techo de 45 del piso.
             _wager.SetChips(5);
             MarkTable();
             Banca();
 
-            // Act
             Assert.IsTrue(_threat.TryConsume(_boss, out var area));
 
-            // Assert
             foreach (var tile in MeleeReach(BossStart))
             {
                 Assert.IsFalse(area.Contains(tile),
@@ -318,15 +275,13 @@ namespace Rollgeon.Combat.AI.Tests
         [Test]
         public void Banca_CountsTheRoundAsMarked_SoAReorderedPokeStaysOff()
         {
-            // Arrange — hoy el poke resuelve antes que La Banca; el gate no puede depender del orden.
+            // Hoy el poke resuelve antes que La Banca; el gate no puede depender del orden.
             MovePlayer(OnTheTable);
             _wager.SetChips(5);
             MarkTable();
 
-            // Act
             Banca();
 
-            // Assert
             Assert.IsTrue(_wager.MarkedPunishmentThisTurn);
             Assert.AreEqual(AIResult.Failed, new AINode_TahurPoke().Tick(Context()));
             Assert.IsEmpty(_pipeline.Resolved);
@@ -335,18 +290,15 @@ namespace Rollgeon.Combat.AI.Tests
         [Test]
         public void Banca_ReplacesThePunishmentOfTheSameRound()
         {
-            // Arrange — con el pozo lleno el Castigo ya vale 45: los dos juntos romperían el techo.
             _wager.SetChips(4); // el rastrillo lo deja en 5 al liquidar
             Call(6);
             PlayHand(1);
             Settle();
             Assert.IsTrue(_threat.HasPending(_boss), "Fixture rota: el fallo tenía que marcar Castigo.");
 
-            // Act
             MarkTable();
             Assert.AreEqual(AIResult.Succeeded, Banca());
 
-            // Assert
             Assert.AreEqual(WalkableTiles - TableTiles, _threat.GetPendingTiles(_boss).Count,
                 "Las dos marcas van al guid del jefe: la última manda, y es La Banca.");
             Assert.IsTrue(_threat.TryConsume(_boss, out var area));
@@ -358,17 +310,15 @@ namespace Rollgeon.Combat.AI.Tests
         [Test]
         public void Banca_StandsDown_WhenThePlayerCollectsThePot()
         {
-            // Arrange — cobrar desde La Mesa es lo único que apaga La Banca.
+            // Cobrar desde La Mesa es lo único que apaga La Banca.
             MovePlayer(OnTheTable);
             _wager.SetChips(4); // el rastrillo lo deja en 5 al liquidar
             MarkTable();
             Call(3);
             PlayHand(3);
 
-            // Act
             Settle();
 
-            // Assert
             Assert.AreEqual(TahurSettleOutcome.Exact, _wager.LastOutcome);
             Assert.AreEqual(1, _pipeline.Resolved.Count);
             Assert.AreEqual(60, _pipeline.Resolved[0].BaseDamage, "12 × 5 fichas, contra el jefe.");
@@ -382,28 +332,21 @@ namespace Rollgeon.Combat.AI.Tests
         [Test]
         public void Banca_HoleFollowsTheTable_WhenTheTableIsWiderThanItsRadius()
         {
-            // Arrange — el radio del hueco y el Size de La Mesa se autorean por separado; si
+            // El radio del hueco y el Size de La Mesa se autorean por separado; si
             // divergen, manda el paño cian, que es lo único que el jugador ve.
             _wager.SetChips(5);
             new AINode_TahurMarkTable { Size = 2 }.Tick(Context());
 
-            // Act
             Assert.AreEqual(AIResult.Succeeded, Banca());
 
-            // Assert
             Assert.IsTrue(_threat.TryConsume(_boss, out var area));
             foreach (var tile in _wager.TableTiles)
                 Assert.IsFalse(area.Contains(tile), $"La Mesa {tile} quedó amenazada.");
             Assert.AreEqual(WalkableTiles - _wager.TableTiles.Count, area.Tiles.Count);
         }
 
-        // =================================================================
-        // Helpers
-        // =================================================================
-
         private static string IdOf(int rank) => $"combo.step_{rank}";
 
-        /// <summary>La sala de la ficha: 11×7 con las cuatro columnas.</summary>
         private static NavGraph TahurRoom()
         {
             var walkable = new bool[RoomWidth * RoomHeight];
@@ -451,11 +394,6 @@ namespace Rollgeon.Combat.AI.Tests
             ComboId = IdOf(rank),
         });
 
-        // -----------------------------------------------------------------
-        // Doubles
-        // -----------------------------------------------------------------
-
-        /// <summary>Combo de catálogo mínimo: solo aporta id y Priority para armar la escalera.</summary>
         private sealed class LadderCombo : BaseComboSO
         {
             public void Configure(string comboId, int priority)

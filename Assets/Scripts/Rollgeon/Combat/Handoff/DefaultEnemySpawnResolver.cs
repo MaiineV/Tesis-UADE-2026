@@ -343,6 +343,9 @@ namespace Rollgeon.Combat.Handoff
         {
             var coord = ResolveSpawnCoord(layout, spawnIndex);
 
+            if (spawnIndex == 0 && instance?.Template != null && instance.Template.Type == RoomType.Boss)
+                coord = ResolveBossSpawnCoord(layout, coord);
+
             // Seam opcional (Tutorial Mode): redirigir la casilla del primer spawn.
             if (ServiceLocator.TryGetService<IEnemySpawnCoordOverride>(out var coordOverride)
                 && coordOverride != null
@@ -574,6 +577,34 @@ namespace Rollgeon.Combat.Handoff
                 $"en room='{room.RoomId}' (PossibleSetups/EnemyPool/instance.Boss/BossPool del piso). " +
                 "El enemigo NO va a re-spawnear (BUG-078) — combate puede arrancar sin él.");
             return null;
+        }
+
+        /// <summary>Casillas hacia adentro desde la pared opuesta a la puerta de entrada. Con 0 el
+        /// jefe queda pegado a la pared y pierde la fila de atrás para huir.</summary>
+        public const int BossWallInset = 2;
+
+        /// <summary>
+        /// La casilla del jefe: contra la pared opuesta a la puerta por la que se entró, en vez de
+        /// la celda autorada del layout.
+        /// </summary>
+        /// <remarks>
+        /// Las salas de jefe traen las cuatro puertas y cuál se abre lo decide la topología del
+        /// piso, así que una celda autorada queda lejos de una puerta y encima de la de enfrente.
+        /// Cae a <paramref name="authored"/> ante cualquier duda: una posición vieja es mejor que
+        /// un jefe sin sala.
+        /// </remarks>
+        private GridCoord ResolveBossSpawnCoord(RoomLayout layout, GridCoord authored)
+        {
+            if (_grid == null || layout == null) return authored;
+
+            ServiceLocator.TryGetService<IDungeonService>(out var dungeon);
+            if (!RoomEntryResolver.TryResolve(_grid, layout, dungeon?.LastEntryDirection, out var entry))
+                return authored;
+
+            return BossEntrySpawnResolver.TryResolveAwayFromEntry(
+                _grid, entry, BossWallInset, out var coord)
+                ? coord
+                : authored;
         }
 
         private GridCoord ResolveSpawnCoord(RoomLayout layout, int index)

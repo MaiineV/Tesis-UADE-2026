@@ -932,6 +932,45 @@ MonoBehaviour:
       quien se queda quieto. A su due\xF1o no lo tocan."
     m_Metadata:
       m_Items: []
+  - m_Id: 13919417931706368
+    m_Localized: El Croupier
+    m_Metadata:
+      m_Items: []
+  - m_Id: 13919417973649408
+    m_Localized: "Quema el pa\xF1o que tiene delante y se va al borde cuando lo acorral\xE1s."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 13919417973649409
+    m_Localized: El Cajero
+    m_Metadata:
+      m_Items: []
+  - m_Id: 13919417973649410
+    m_Localized: "Te agarra, te tira lejos, y se queda con lo que se te cay\xF3."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 13919417973649411
+    m_Localized: "Comisi\xF3n"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 13919417973649412
+    m_Localized: Vuela, tira de lejos, y le pone precio a huir.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 13919417973649413
+    m_Localized: La Generala
+    m_Metadata:
+      m_Items: []
+  - m_Id: 13919417973649414
+    m_Localized: "Tira su propia mano a la vista. Rompele un dado y le borr\xE1s
+      una categor\xEDa."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 13919417973649415
+    m_Localized: Dado de la Casa
+    m_Metadata:
+      m_Items: []
+  - m_Id: 13919417973649416
+    m_Localized: "Parte de su mano, y en tu camino. Rompelo para borrarle una categor\xEDa."
   - m_Id: 14364254574313472
     m_Localized: "Reci\xE9n teletransportado"
     m_Metadata:

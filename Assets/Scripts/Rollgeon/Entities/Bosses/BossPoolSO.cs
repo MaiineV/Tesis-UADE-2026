@@ -6,23 +6,13 @@ using UnityEngine;
 namespace Rollgeon.Entities.Bosses
 {
     /// <summary>
-    /// Pool pesado de bosses de un piso. La sala de boss rolea contra este pool al
-    /// entrar, con el RNG determinístico por sala (seed derivada del
-    /// <c>roomInstanceId</c>) ⇒ el boss elegido es estable por seed/run.
-    /// Mismo patrón de roulette wheel que <c>EnchantmentPoolSO</c>.
+    /// Pool de bosses de un piso, roleado al entrar a la sala con el RNG determinístico por sala
+    /// (seed derivada del <c>roomInstanceId</c>) ⇒ el boss elegido es estable por seed/run.
     /// </summary>
     /// <remarks>
-    /// <para>
-    /// <b>Sin MinFloorDepth.</b> A diferencia del pool de encantamientos, acá el piso ya
-    /// está implícito: cada <c>FloorLayoutSO</c> apunta a su propio pool.
-    /// </para>
-    /// <para>
-    /// <b>Invariante ≥1 boss activo.</b> Un piso sin boss no es jugable (la sala queda
-    /// vacía y la run no se puede cerrar). Si ninguna entry quedó elegible pero hay
-    /// entries autoradas, <see cref="Roll"/> devuelve la primera no-nula con un warning en
-    /// vez de <c>null</c>. El <c>null</c> se reserva para "pool vacío / sin autorar", que
-    /// el resolver interpreta como "usá el path de spawn de siempre".
-    /// </para>
+    /// <b>Invariante ≥1 boss activo</b>: un piso sin boss no es jugable, así que si ninguna entry
+    /// quedó elegible pero hay entries autoradas, <see cref="Roll"/> devuelve la primera no-nula con
+    /// un warning. El <c>null</c> se reserva para "pool vacío / sin autorar".
     /// </remarks>
     [CreateAssetMenu(
         menuName = "Rollgeon/Entities/Bosses/Boss Pool",
@@ -37,19 +27,10 @@ namespace Rollgeon.Entities.Bosses
         [OdinSerialize]
         public List<WeightedBoss> Entries = new List<WeightedBoss>();
 
-        /// <summary>
-        /// Rolea un boss del pool. <c>null</c> solo si el pool no tiene ninguna entry con
-        /// boss autorado — el caller (resolver) cae a su path de spawn normal.
-        /// </summary>
-        /// <param name="rng">RNG inyectable para determinismo por sala y tests.</param>
+        /// <summary><c>null</c> solo si el pool no tiene ninguna entry con boss autorado — el caller cae a su path de spawn normal.</summary>
         public EnemyDataSO Roll(System.Random rng) => RollEntry(rng)?.Boss;
 
-        /// <summary>
-        /// Igual que <see cref="Roll"/> pero devuelve la entry entera, para los callers que
-        /// además necesitan su <see cref="WeightedBoss.Room"/>. Lo usa la generación del piso:
-        /// el boss se rolea ahí y la sala sale de la misma entry, así no hay dos sorteos que
-        /// puedan desincronizarse.
-        /// </summary>
+        /// <summary>Igual que <see cref="Roll"/> pero devuelve la entry entera: el boss y su sala salen del mismo sorteo, así no hay dos que puedan desincronizarse.</summary>
         public WeightedBoss RollEntry(System.Random rng)
         {
             if (Entries == null || Entries.Count == 0) return null;
@@ -57,8 +38,7 @@ namespace Rollgeon.Entities.Bosses
             var picked = TryRollActive(rng);
             if (picked != null) return picked;
 
-            // Invariante ≥1: el piso necesita un boss aunque el autorado haya quedado
-            // todo apagado. Preferimos un boss "mal configurado" a una sala vacía.
+            // Invariante ≥1: preferimos un boss "mal configurado" a una sala vacía.
             var fallback = FirstAuthoredEntry();
             if (fallback != null)
             {
@@ -69,10 +49,7 @@ namespace Rollgeon.Entities.Bosses
             return fallback;
         }
 
-        /// <summary>
-        /// Bosses que hoy pueden salir del roll, en orden de autorado. Consumido por el
-        /// comando <c>boss list</c> de la dev console y por los tests.
-        /// </summary>
+        /// <summary>Bosses que hoy pueden salir del roll, en orden de autorado.</summary>
         public IReadOnlyList<EnemyDataSO> ActiveBosses()
         {
             var result = new List<EnemyDataSO>();
@@ -84,10 +61,7 @@ namespace Rollgeon.Entities.Bosses
             return result;
         }
 
-        /// <summary>
-        /// <c>true</c> si la entry entra al roll: tiene boss, está <c>Enabled</c> y su peso
-        /// es positivo. Las dos palancas de apagado se chequean acá, en un solo lugar.
-        /// </summary>
+        /// <summary>Tiene boss, está <c>Enabled</c> y su peso es positivo: las dos palancas de apagado se chequean acá, en un solo lugar.</summary>
         public static bool IsActive(WeightedBoss entry)
         {
             if (entry == null || entry.Boss == null) return false;
@@ -106,8 +80,8 @@ namespace Rollgeon.Entities.Bosses
             }
             if (total <= 0f) return null;
 
-            // rng null solo en callers defensivos: elegimos la primera activa en vez de
-            // caer en UnityEngine.Random, que rompería el determinismo por sala.
+            // rng null solo en callers defensivos: la primera activa, y no UnityEngine.Random, que
+            // rompería el determinismo por sala.
             float pick = (float)(rng != null ? rng.NextDouble() : 0d) * total;
             float cursor = 0f;
             for (int i = 0; i < Entries.Count; i++)

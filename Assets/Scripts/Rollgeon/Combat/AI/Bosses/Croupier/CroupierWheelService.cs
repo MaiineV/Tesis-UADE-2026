@@ -9,15 +9,11 @@ using Rollgeon.Player;
 namespace Rollgeon.Combat.AI.Bosses.Croupier
 {
     /// <summary>
-    /// Implementación de <see cref="ICroupierWheelService"/>. Además del estado, es dueña de los dos
-    /// hooks del jefe que viven fuera del árbol de AI: la Represalia de mesa
-    /// (<c>TypedEvent&lt;DamageResolvedPayload&gt;</c>) y el corrimiento de la rueda
-    /// (<c>OnTurnFinished</c> + la casilla en la que el jugador cerró su turno).
+    /// Además del estado, es dueña de los dos hooks del jefe que viven fuera del árbol de AI: la
+    /// Represalia de mesa y el corrimiento de la rueda (<c>OnTurnFinished</c> + la casilla en la que
+    /// el jugador cerró su turno). El candado de corrimiento es por slot y dura todo el windup: sin
+    /// él, cerrar dos turnos dentro del mismo número lo movería dos veces.
     /// </summary>
-    /// <remarks>
-    /// El candado de corrimiento es por slot y dura todo el windup: sin él, cerrar dos turnos dentro
-    /// del mismo número lo movería dos veces.
-    /// </remarks>
     public sealed class CroupierWheelService : ICroupierWheelService, IDisposable
     {
         private readonly List<Slot> _slots = new List<Slot>(CroupierSectorTelegraph.MaxSlots);
@@ -52,10 +48,6 @@ namespace Rollgeon.Combat.AI.Bosses.Croupier
 
         public event Action<IReadOnlyList<int>> NumbersChanged;
 
-        /// <summary>
-        /// Devuelve el servicio registrado o crea + registra uno (Global). Lazy: el jefe entra por un
-        /// asset de datos y no puede depender de un bootstrap agregado a mano.
-        /// </summary>
         public static ICroupierWheelService ResolveOrCreate()
         {
             if (ServiceLocator.TryGetService<ICroupierWheelService>(out var existing) && existing != null)
@@ -97,17 +89,13 @@ namespace Rollgeon.Combat.AI.Bosses.Croupier
             NumbersChanged = null;
         }
 
-        // ======================================================================
-        // ICroupierWheelService
-        // ======================================================================
-
         public void Bind(Guid bossGuid)
         {
             if (bossGuid == Guid.Empty) return;
             if (_hooked && _bossGuid == bossGuid) return;
 
-            // Combate nuevo: si el estado del anterior sobrevive, el primer cierre de turno de esta
-            // pelea correría una rueda que ya no existe.
+            // Combate nuevo: con el estado del anterior vivo, el primer cierre de turno correría una
+            // rueda que ya no existe.
             if (_hooked && _bossGuid != bossGuid) ClearWindup(notify: true);
 
             _bossGuid = bossGuid;
@@ -169,8 +157,7 @@ namespace Rollgeon.Combat.AI.Bosses.Croupier
         {
             Unhook();
 
-            // El windup se limpia ANTES de soltar el guid: apagar los overlays de los slots necesita
-            // saber de quién eran.
+            // El windup se limpia ANTES de soltar el guid: apagar los overlays necesita saber de quién eran.
             ClearWindup(notify: true);
 
             _bossGuid = Guid.Empty;
@@ -180,10 +167,6 @@ namespace Rollgeon.Combat.AI.Bosses.Croupier
             RetaliationDamage = 8;
             _detonated.Clear();
         }
-
-        // ======================================================================
-        // Hooks fuera del árbol — Represalia (daño) y corrimiento (posición)
-        // ======================================================================
 
         private void Hook()
         {
@@ -209,33 +192,21 @@ namespace Rollgeon.Combat.AI.Bosses.Croupier
         }
 
         /// <summary>
-        /// Cobra <see cref="RetaliationDamage"/> por golpe recibido. No mira el número, ni la fase, ni
-        /// si hay windup abierto.
+        /// Cobra <see cref="RetaliationDamage"/> por golpe recibido: no mira el número, ni la fase,
+        /// ni el windup. El golpe letal no cobra — la pelea se ganaría y perdería en el mismo cruce.
         /// </summary>
-        /// <remarks>
-        /// El golpe letal no cobra: sin esa salvedad la pelea se puede ganar y perder en el mismo
-        /// intercambio.
-        /// </remarks>
         private void OnDamageResolvedExternal(DamageResolvedPayload payload)
         {
             if (_bossGuid == Guid.Empty || payload.TargetGuid != _bossGuid) return;
 
-            // Un golpe que no llegó a la mesa no se cobra: sin daño ni escudo consumido no hubo golpe
-            // (un evento de 0 lo publica igual el pipeline).
+            // Sin daño ni escudo consumido no hubo golpe (el pipeline publica el evento de 0 igual).
             if (payload.FinalDamage <= 0 && payload.ShieldAbsorbed <= 0) return;
             if (payload.WasLethal) return;
 
             Retaliate(payload.SourceGuid);
         }
 
-        // ======================================================================
-        // Hook de posición — el corrimiento de la rueda
-        // ======================================================================
-
-        /// <summary>
-        /// El jugador que cierra su turno dentro de un sector cantado lo corre un lugar. Corre sólo
-        /// el número en cuyo sector está parado, nunca los dos a la vez.
-        /// </summary>
+        /// <summary>Corre sólo el número en cuyo sector está parado el jugador, nunca los dos a la vez.</summary>
         private void OnTurnFinishedExternal(params object[] args)
         {
             if (_bossGuid == Guid.Empty || !WindupActive) return;
@@ -266,10 +237,7 @@ namespace Rollgeon.Combat.AI.Bosses.Croupier
             if (moved) NumbersChanged?.Invoke(SungNumbers);
         }
 
-        /// <summary>
-        /// Sólo el jugador corre la rueda: sin <see cref="IPlayerService"/> registrado no hay contra
-        /// quién comparar y no se corre nada.
-        /// </summary>
+        /// <summary>Sólo el jugador corre la rueda: sin <see cref="IPlayerService"/> registrado no hay contra quién comparar.</summary>
         private static Guid ResolvePlayerGuid()
             => ServiceLocator.TryGetService<IPlayerService>(out var player) && player != null
                 ? player.PlayerGuid
@@ -288,10 +256,6 @@ namespace Rollgeon.Combat.AI.Bosses.Croupier
                 Kind = AttackKind.Reaction,
             });
         }
-
-        // ======================================================================
-        // Internals
-        // ======================================================================
 
         private void ClearWindup(bool notify)
         {
@@ -318,7 +282,6 @@ namespace Rollgeon.Combat.AI.Bosses.Croupier
 
         private void OnScopeEndedExternal(params object[] args) => Reset();
 
-        /// <summary>Estado mutable de un número en el aire. La vista pública es <see cref="CroupierWheelSlot"/>.</summary>
         private struct Slot
         {
             public int Index;

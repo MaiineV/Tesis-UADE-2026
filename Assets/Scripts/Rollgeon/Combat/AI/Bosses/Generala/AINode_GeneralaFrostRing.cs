@@ -14,17 +14,11 @@ using UnityEngine;
 namespace Rollgeon.Combat.AI.Bosses.Generala
 {
     /// <summary>
-    /// La escarcha de la mesa: La Generala congela el cuadrado de <see cref="Radius"/> a la redonda
-    /// (<see cref="Solid"/>) o sólo su borde. Entrar cuesta el turno (<see cref="IStunService"/>, vía
-    /// <see cref="IceStunBinder"/>); ya estar adentro cuando cae, no.
-    /// </summary>
-    /// <remarks>
     /// El área se publica con ella como dueña y el binder ignora los triggers del dueño: con
-    /// <see cref="Solid"/> su propia casilla queda adentro, así que sin eso se congelaría a sí misma.
+    /// <see cref="Solid"/> su propia casilla queda adentro y sin eso se congelaría a sí misma.
     /// <see cref="Solid"/> llega en false en un asset viejo — Odin no corre los inicializadores de
-    /// campo al deserializar. Devuelve <c>Failed</c> cuando no hay anillo posible, así que va siempre
-    /// dentro de un <c>Selector[nodo, Wait]</c>.
-    /// </remarks>
+    /// campo. Devuelve <c>Failed</c> sin anillo posible, así que va en un <c>Selector[nodo, Wait]</c>.
+    /// </summary>
     [Serializable, HideReferenceObjectPicker]
     public sealed class AINode_GeneralaFrostRing : AIActionNode
     {
@@ -57,24 +51,17 @@ namespace Rollgeon.Combat.AI.Bosses.Generala
         [Tooltip("Override del gesto de la escarcha. Vacío = " + BossFeedbackIds.GeneralaFrostAnim + ".")]
         public string AnimFeedbackIdOverride;
 
-        /// <summary>Anillo vivo publicado por este nodo. Por pelea: el árbol se clona al spawn.</summary>
         [NonSerialized] private Guid _liveRingId;
 
         public override string NodeName =>
             $"Generala — Escarcha ({(Solid ? "área" : "anillo")} r{Radius})";
 
-        /// <remarks>
-        /// Vacío significa "el id canónico del nodo", no "sin animación": Odin no corre los field
-        /// initializers al deserializar un <c>ED_Boss_*.asset</c>.
-        /// </remarks>
+        /// <summary>Vacío significa "el id canónico del nodo", no "sin animación": Odin no corre los field initializers al deserializar un <c>ED_Boss_*.asset</c>.</summary>
         private string AnimFeedbackId => string.IsNullOrEmpty(AnimFeedbackIdOverride)
             ? BossFeedbackIds.GeneralaFrostAnim
             : AnimFeedbackIdOverride;
 
-        /// <summary>
-        /// Camino síncrono (EditMode / escenas sin <c>CoroutineHost</c>): congela sin gesto, porque
-        /// no hay dónde esperarlo.
-        /// </summary>
+        /// <summary>Camino síncrono (EditMode / escenas sin <c>CoroutineHost</c>): congela sin gesto, porque no hay dónde esperarlo.</summary>
         public override AIResult Tick(AIContext context)
         {
             if (context == null || context.SelfGuid == Guid.Empty) return AIResult.Failed;
@@ -120,10 +107,7 @@ namespace Rollgeon.Combat.AI.Bosses.Generala
             return AIResult.Succeeded;
         }
 
-        /// <summary>
-        /// Camino de play mode: congela primero y recién después presenta, así el estado del turno
-        /// nunca queda esperando un VFX.
-        /// </summary>
+        /// <summary>Congela primero y recién después presenta, así el estado del turno nunca queda esperando un VFX.</summary>
         public override IEnumerator TickCoroutine(AIContext context, Action<AIResult> onResult)
         {
             var result = Tick(context);
@@ -137,24 +121,15 @@ namespace Rollgeon.Combat.AI.Bosses.Generala
             onResult?.Invoke(result);
         }
 
-        /// <summary>
-        /// Casillas a distancia Chebyshev <b>exactamente</b> <paramref name="radius"/> de
-        /// <paramref name="center"/>, caminables y dentro de la sala: el borde hueco. Pura y estática.
-        /// </summary>
+        /// <summary>Casillas a distancia Chebyshev <b>exactamente</b> <paramref name="radius"/> del centro, caminables y dentro de la sala: el borde hueco.</summary>
         public static List<GridCoord> ComputeRing(IGridManager grid, GridCoord center, int radius) =>
             Compute(grid, center, radius, solid: false);
 
-        /// <summary>
-        /// Casillas a distancia Chebyshev <b>hasta</b> <paramref name="radius"/> de
-        /// <paramref name="center"/>, la del centro incluida: el cuadrado macizo.
-        /// </summary>
+        /// <summary>Casillas a distancia Chebyshev <b>hasta</b> <paramref name="radius"/> del centro, la del centro incluida: el cuadrado macizo.</summary>
         public static List<GridCoord> ComputeArea(IGridManager grid, GridCoord center, int radius) =>
             Compute(grid, center, radius, solid: true);
 
-        /// <summary>
-        /// La forma, en un solo lugar. <paramref name="solid"/> es lo único que cambia: <c>==</c>
-        /// contra <c>&lt;=</c> en la comparación de distancia.
-        /// </summary>
+        /// <summary>La forma, en un solo lugar: <paramref name="solid"/> es lo único que cambia (<c>==</c> contra <c>&lt;=</c>).</summary>
         private static List<GridCoord> Compute(IGridManager grid, GridCoord center, int radius, bool solid)
         {
             var tiles = new List<GridCoord>();
@@ -200,8 +175,6 @@ namespace Rollgeon.Combat.AI.Bosses.Generala
                 TargetGuid = context.PlayerGuid,
             }, () => turn?.OnFeedbackComplete());
 
-            // Sin TurnManager no hay gate que esperar: la anim igual corre, pero el turno no se
-            // retiene.
             if (turn == null || !turn.IsWaitingForFeedback) yield break;
 
             var wait = TurnManager.WaitForFeedbackCompletion(turn);
@@ -209,7 +182,6 @@ namespace Rollgeon.Combat.AI.Bosses.Generala
         }
 
 #if UNITY_EDITOR
-        // Dropdown obligatorio (§0): los ids de feedback nunca se tipean a mano.
         private static IEnumerable<string> GetFeedbackIdsForDropdown()
         {
             foreach (var guid in UnityEditor.AssetDatabase.FindAssets("t:FeedbackDBSO"))

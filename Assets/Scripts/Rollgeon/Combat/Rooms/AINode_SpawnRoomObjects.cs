@@ -34,7 +34,9 @@ namespace Rollgeon.Combat.Rooms
     /// </para>
     /// <para>
     /// Orden del tick: recoger rotos → correr relojes → reponer. Las casillas se resuelven una vez y
-    /// se recuerdan, así el objeto vuelve donde estaba.
+    /// se recuerdan, así el objeto vuelve donde estaba — salvo con
+    /// <see cref="ResolveSlotsEachSpawn"/>, que re-sortea contra <see cref="Pattern"/> en cada
+    /// reposición.
     /// </para>
     /// </remarks>
     [Serializable, HideReferenceObjectPicker]
@@ -93,6 +95,17 @@ namespace Rollgeon.Combat.Rooms
         [ShowIf(nameof(Pattern), Placement.RowNextToSelf)]
         [Tooltip("Lado del jefe donde se alinea la fila. Auto = el lado con más casillas válidas.")]
         public RowSide Side = RowSide.Auto;
+
+        [ShowIf(nameof(Pattern), Placement.ScatteredFree)]
+        [MinValue(0)]
+        [Tooltip("Separación mínima (Chebyshev) entre ranuras de ScatteredFree, y entre cada ranura y " +
+                 "el jefe. 0 = sin separación forzada (default, el comportamiento de siempre).")]
+        public int MinSpacing = 0;
+
+        [Tooltip("Al reponer una ranura, re-sortea su casilla contra Pattern en vez de volver a la " +
+                 "misma donde estaba. Default false: La Generala necesita que sus dados vuelvan al " +
+                 "mismo lugar.")]
+        public bool ResolveSlotsEachSpawn = false;
 
         [Tooltip("Casillas autoradas: absolutas con Pattern = ExplicitCoords, relativas al jefe con " +
                  "Pattern = OffsetsFromSelf. Ignorado por el resto de los patrones.")]
@@ -161,6 +174,22 @@ namespace Rollgeon.Combat.Rooms
             coord = _slots[index].Coord;
             objectGuid = _slots[index].ObjectGuid;
             return true;
+        }
+
+        /// <summary>
+        /// Guid y casilla de cada ranura en pie. Lo consume por composición quien necesite saber qué
+        /// sobrevivió sin quedarse con la lista mutable: las bombas del Croupier deciden con esto
+        /// cuáles detonar.
+        /// </summary>
+        public IEnumerable<(Guid Guid, GridCoord Coord)> LiveObjects()
+        {
+            if (_slots == null) yield break;
+
+            foreach (var slot in _slots)
+            {
+                if (slot.ObjectGuid == Guid.Empty) continue;
+                yield return (slot.ObjectGuid, slot.Coord);
+            }
         }
 
         public override AIResult Tick(AIContext context)
@@ -248,6 +277,7 @@ namespace Rollgeon.Combat.Rooms
                 // por él: un objeto puede irse por otra vía (un hazard, un cambio de fase) y una
                 // ranura rota que sigue en el mapa de ocupancia es un muro invisible.
                 grid.Unregister(slot.ObjectGuid);
+                RoomObjectCleanupService.ResolveOrCreate().Forget(slot.ObjectGuid);
 
                 LeaveDeathHazard(slot.Coord);
 
@@ -273,6 +303,11 @@ namespace Rollgeon.Combat.Rooms
         /// </summary>
         private void RefillSlots(AIContext context, IGridManager grid)
         {
+            // Resuelta una sola vez por tick, no por ranura: con varias ranuras vacías a la vez
+            // (una ola entera repuesta junta) cada una tiene que leer contra el mismo sorteo, no
+            // contra sorteos sucesivos que se van pisando entre sí.
+            List<GridCoord> freshCoords = null;
+
             for (int i = 0; i < _slots.Count; i++)
             {
                 var slot = _slots[i];
@@ -282,6 +317,12 @@ namespace Rollgeon.Combat.Rooms
                 {
                     slot.TurnsUntilRespawn--;
                     continue;
+                }
+
+                if (ResolveSlotsEachSpawn)
+                {
+                    freshCoords ??= ResolveSlotCoords(context, grid);
+                    if (freshCoords != null && i < freshCoords.Count) slot.Coord = freshCoords[i];
                 }
 
                 // Ranura pisada (el jugador parado ahí) o sin piso: se reintenta el próximo turno. El
@@ -402,6 +443,11 @@ namespace Rollgeon.Combat.Rooms
                 registry.Register(id, attrs);
 
             if (Definition.Blocks) grid.Register(id, coord);
+
+            // El barrido de fin de combate recorre el turn order, y con HideFromTurnQueue el objeto
+            // nunca entra ahí: sin esto se queda parado en la sala, ocupando su casilla, después de
+            // que la pelea terminó.
+            RoomObjectCleanupService.ResolveOrCreate().Track(id);
 
             SpawnPawn(context, id, coord, hp);
 
@@ -661,15 +707,25 @@ namespace Rollgeon.Combat.Rooms
             return result;
         }
 
+        /// <remarks>
+        /// Con <see cref="MinSpacing"/> el sorteo es goloso: cada candidata elegida poda del pool
+        /// todo lo que le quede cerca (y de paso, la propia casilla del jefe se poda antes de
+        /// arrancar). Si el pool se seca antes de juntar <see cref="Count"/>, se devuelve lo que
+        /// haya — mismo degradado silencioso que sin separación.
+        /// </remarks>
         private List<GridCoord> ScatteredSlots(AIContext context, IGridManager grid)
         {
             var graph = grid.Graph;
             if (graph == null || graph.IsEmpty) return null;
 
+            bool hasSelf = grid.TryGetPosition(context.SelfGuid, out var self);
+
             var pool = new List<GridCoord>();
             foreach (var c in graph.AllCoords())
             {
-                if (IsPlaceable(grid, c)) pool.Add(c);
+                if (!IsPlaceable(grid, c)) continue;
+                if (MinSpacing > 0 && hasSelf && c.Chebyshev(self) < MinSpacing) continue;
+                pool.Add(c);
             }
 
             var rng = context.Rng ?? new System.Random();
@@ -677,8 +733,11 @@ namespace Rollgeon.Combat.Rooms
             while (result.Count < Count && pool.Count > 0)
             {
                 int idx = rng.Next(pool.Count);
-                result.Add(pool[idx]);
+                var picked = pool[idx];
                 pool.RemoveAt(idx);
+                result.Add(picked);
+
+                if (MinSpacing > 0) pool.RemoveAll(c => c.Chebyshev(picked) < MinSpacing);
             }
             return result;
         }

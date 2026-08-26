@@ -387,6 +387,12 @@ MonoBehaviour:
     - Name: Count
       Entry: 3
       Data: 8
+    - Name: Columns
+      Entry: 3
+      Data: 3
+    - Name: Rows
+      Entry: 3
+      Data: 2
     - Name: HalfAxis
       Entry: 3
       Data: 0
@@ -396,6 +402,9 @@ MonoBehaviour:
     - Name: Kind
       Entry: 3
       Data: 1
+    - Name: ChannelId
+      Entry: 6
+      Data: 
     - Name: 
       Entry: 8
       Data: 
@@ -457,6 +466,12 @@ MonoBehaviour:
     - Name: Count
       Entry: 3
       Data: 3
+    - Name: Columns
+      Entry: 3
+      Data: 3
+    - Name: Rows
+      Entry: 3
+      Data: 2
     - Name: HalfAxis
       Entry: 3
       Data: 0
@@ -466,6 +481,9 @@ MonoBehaviour:
     - Name: Kind
       Entry: 3
       Data: 1
+    - Name: ChannelId
+      Entry: 6
+      Data: 
     - Name: 
       Entry: 8
       Data: 
@@ -527,6 +545,12 @@ MonoBehaviour:
     - Name: Count
       Entry: 3
       Data: 2
+    - Name: Columns
+      Entry: 3
+      Data: 3
+    - Name: Rows
+      Entry: 3
+      Data: 2
     - Name: HalfAxis
       Entry: 3
       Data: 0
@@ -536,6 +560,9 @@ MonoBehaviour:
     - Name: Kind
       Entry: 3
       Data: 1
+    - Name: ChannelId
+      Entry: 6
+      Data: 
     - Name: 
       Entry: 8
       Data: 
@@ -597,6 +624,12 @@ MonoBehaviour:
     - Name: Count
       Entry: 3
       Data: 3
+    - Name: Columns
+      Entry: 3
+      Data: 3
+    - Name: Rows
+      Entry: 3
+      Data: 2
     - Name: HalfAxis
       Entry: 3
       Data: 0
@@ -606,6 +639,9 @@ MonoBehaviour:
     - Name: Kind
       Entry: 3
       Data: 1
+    - Name: ChannelId
+      Entry: 6
+      Data: 
     - Name: 
       Entry: 8
       Data: 
@@ -667,6 +703,12 @@ MonoBehaviour:
     - Name: Count
       Entry: 3
       Data: 3
+    - Name: Columns
+      Entry: 3
+      Data: 3
+    - Name: Rows
+      Entry: 3
+      Data: 2
     - Name: HalfAxis
       Entry: 3
       Data: 0
@@ -676,6 +718,9 @@ MonoBehaviour:
     - Name: Kind
       Entry: 3
       Data: 1
+    - Name: ChannelId
+      Entry: 6
+      Data: 
     - Name: 
       Entry: 8
       Data: 
@@ -737,6 +782,12 @@ MonoBehaviour:
     - Name: Count
       Entry: 3
       Data: 3
+    - Name: Columns
+      Entry: 3
+      Data: 3
+    - Name: Rows
+      Entry: 3
+      Data: 2
     - Name: HalfAxis
       Entry: 3
       Data: 0
@@ -746,6 +797,9 @@ MonoBehaviour:
     - Name: Kind
       Entry: 3
       Data: 1
+    - Name: ChannelId
+      Entry: 6
+      Data: 
     - Name: 
       Entry: 8
       Data: 
@@ -977,13 +1031,7 @@ MonoBehaviour:
       Data: 
   EntityId: boss.la_generala
   DisplayName: La Generala
-  Description: "The house playing your own game. Five dice of her own on the table,
-    the same combo sheet you use, and one hand per round. Her roll is public before
-    it detonates: you see the five numbers and you know what is coming. Break a die
-    and you erase a category \u2014 with four she cannot roll Generala, with three
-    she loses Poker \u2014 and you open a hole in a room made of her own dice. Walking
-    up to the table is not free: every roll brings the cup down on whoever is standing
-    next to her."
+  Description: Rolls her own hand in the open. Break a die and you erase a category.
   Portrait: {fileID: -1548411135, guid: 2ea80cde72873384bac9f8c1ad22fc73, type: 3}
   WeaknessComboId: combo.generala
   WeaknessMultiplierOverride: 1.5
@@ -997,3 +1045,7 @@ MonoBehaviour:
   VisualPrefab: {fileID: 322360141667145346, guid: 118ca78e894b6b049b01efbc0d3e2a18, type: 3}
   MinGoldDrop: 60
   MaxGoldDrop: 80
+  IsFlying: 0
+  IsBoss: 0
+  Personality: 0
+  KamikazeIgnoresSurvival: 0

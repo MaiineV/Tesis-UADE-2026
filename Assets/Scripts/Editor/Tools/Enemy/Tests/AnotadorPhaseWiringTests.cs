@@ -15,11 +15,8 @@ using Object = UnityEngine.Object;
 
 namespace Rollgeon.Editor.Tools.Enemy.Tests
 {
-    /// <summary>
-    /// Wiring del árbol de El Anotador (piso 2) validado <b>en memoria</b> vía
-    /// <see cref="AnotadorAssetBuilder"/>. Contra el builder y no contra el <c>.asset</c>: es la
-    /// fuente de verdad del árbol y no depende de un import.
-    /// </summary>
+    /// <summary>Wiring del árbol de El Anotador en memoria: contra el builder y no contra el
+    /// <c>.asset</c>, que depende de un import.</summary>
     [TestFixture]
     public class AnotadorPhaseWiringTests
     {
@@ -58,10 +55,6 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             _ice = null;
             _root = null;
         }
-
-        // ======================================================================
-        // Estructura del turno
-        // ======================================================================
 
         [Test]
         public void Root_HasTheSevenChildrenOfTheDesignSheet_InOrder()
@@ -123,10 +116,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             }
         }
 
-        /// <summary>
-        /// <see cref="AINode_KeepDistance"/> y el lápiz devuelven <c>Failed</c> en su caso benigno,
-        /// que acá es la mayoría de los turnos: sueltos en el Sequence le comen la marca de fila.
-        /// </summary>
+        /// <summary><see cref="AINode_KeepDistance"/> y el lápiz devuelven <c>Failed</c> en su caso
+        /// benigno, que acá es la mayoría de los turnos: sueltos, le comen la marca de fila.</summary>
         [Test]
         public void EveryFailableChild_IsWrappedInSelectorWithWaitFallback()
         {
@@ -146,10 +137,6 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                     "devolvería Failed igual y abortaría el turno.");
             }
         }
-
-        // ======================================================================
-        // Marcas: una sola grande por turno, alternando eje
-        // ======================================================================
 
         [Test]
         public void RowAndColumn_ShareOneSelector_SoTheyCanNeverBothMarkInTheSameTurn()
@@ -199,10 +186,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                 "el jefe se queda sin ataque ese turno.");
         }
 
-        /// <summary>
-        /// El gate de HP tiene que quedar <b>adentro</b> del de paridad: envolviéndolo, la columna
-        /// vuelve a ser un ataque de fase 2 y muere la alternancia desde la ronda 1.
-        /// </summary>
+        /// <summary>El gate de HP va <b>adentro</b> del de paridad: envolviéndolo, la columna vuelve a ser
+        /// un ataque de fase 2 y muere la alternancia desde la ronda 1.</summary>
         [Test]
         public void Phase2_WidensTheColumnToThree_WithoutRegatingTheAlternation()
         {
@@ -243,10 +228,6 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                     $"El lápiz pega {pencil.Damage} — el techo de piso 2 es {Floor2DamageCeiling}.");
             }
         }
-
-        // ======================================================================
-        // El lápiz
-        // ======================================================================
 
         [Test]
         public void Pencil_IsDirectMelee_ForTwelve_AtRangeOne()
@@ -296,10 +277,6 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                 "El jefe marca formas que la ficha no tiene: las únicas áreas de esta pelea son la " +
                 "fila y la columna.");
         }
-
-        // ======================================================================
-        // Repliegue y estela
-        // ======================================================================
 
         [Test]
         public void Retreat_KeepsDistanceFour_WithFourSteps()
@@ -391,10 +368,6 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             }
         }
 
-        // ======================================================================
-        // Tacha (corrimiento) y fase 2
-        // ======================================================================
-
         [Test]
         public void Shift_RunsOneComboPerTurn_TwoAndPermanentInPhase2()
         {
@@ -449,10 +422,6 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                 string.Join(", ", thresholds));
             Assert.AreEqual(AnotadorAssetBuilder.Phase2HpThreshold, thresholds[0], PercentTolerance);
         }
-
-        // ======================================================================
-        // EnemyDataSO
-        // ======================================================================
 
         [Test]
         public void PopulateEnemyData_WritesTheDesignSheetNumbers()
@@ -515,16 +484,11 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             }
         }
 
-        // ======================================================================
-        // Helpers
-        // ======================================================================
-
         private static Func<object, bool> IsColumnOfWidth(int size) =>
             node => node is AINode_TelegraphMark mark
                     && mark.Shape == ThreatShape.Column
                     && mark.Size == size;
 
-        /// <summary>Hijo de tipo <typeparamref name="T"/> de un <c>Selector[node, Wait]</c>.</summary>
         private static T Child<T>(AIDecisionNode wrapper) where T : AIDecisionNode
         {
             if (wrapper is T direct) return direct;
@@ -558,11 +522,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             return constant.Value;
         }
 
-        /// <summary>
-        /// Condiciones de todos los <see cref="AINode_If"/> que hay que atravesar para llegar al
-        /// primer nodo que cumple <paramref name="match"/>, o <c>null</c> si no hay ninguno. Un
-        /// ancestro puede sumar un gate, así que mirar el gate suelto no alcanza.
-        /// </summary>
+        /// <summary>Condiciones de <b>todos</b> los <see cref="AINode_If"/> del camino, o <c>null</c> si no
+        /// hay nodo: un ancestro puede sumar un gate, así que mirar el gate suelto no alcanza.</summary>
         private List<BasePreCondition> GuardsOf(Func<object, bool> match)
         {
             var guards = new List<BasePreCondition>();

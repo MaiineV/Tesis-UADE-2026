@@ -7,15 +7,10 @@ using UnityEngine;
 namespace Rollgeon.Combat.AI.Bosses.Bandida
 {
     /// <summary>
-    /// HOLD (Fase 2): traba una ranura de la fila — su rodillo deja de cancelar la cuenta y se
-    /// vuelve inrompible.
-    /// </summary>
-    /// <remarks>
     /// Devuelve <see cref="AIResult.Failed"/> si la fila todavía no está armada, para que el
-    /// <c>Once</c> que lo envuelve no se consuma y lo reintente al turno siguiente. La
-    /// invulnerabilidad se simula con vida inagotable: el <c>DamagePipeline</c> no expone un canal
-    /// de inmunidad.
-    /// </remarks>
+    /// <c>Once</c> que lo envuelve no se consuma. La invulnerabilidad se simula con vida
+    /// inagotable: el <c>DamagePipeline</c> no expone un canal de inmunidad.
+    /// </summary>
     [Serializable, HideReferenceObjectPicker]
     public sealed class AINode_LockReel : AIActionNode
     {

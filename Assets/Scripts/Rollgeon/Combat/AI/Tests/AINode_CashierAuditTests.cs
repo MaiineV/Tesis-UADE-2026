@@ -8,10 +8,6 @@ using Rollgeon.Combat.Cashier;
 
 namespace Rollgeon.Combat.AI.Tests
 {
-    /// <summary>
-    /// Tests de <see cref="AINode_CashierAudit"/>: el arqueo de caja al 50% de HP — guarda parte del
-    /// oro del jugador, se cura con eso (con tope) y duplica el valor de las fichas.
-    /// </summary>
     [TestFixture]
     public class AINode_CashierAuditTests
     {
@@ -67,8 +63,6 @@ namespace Rollgeon.Combat.AI.Tests
 
         private int BossHp() => _attributes.GetAttributeValue<Health, int>(_boss);
 
-        // ---- Caso central ------------------------------------------------
-
         [Test]
         public void Tick_VaultsFortyPercent_AndHealsByThatMuch()
         {
@@ -84,12 +78,9 @@ namespace Rollgeon.Combat.AI.Tests
             Assert.AreEqual(25, _ledger.VaultedGold, "El oro queda en la caja, no desaparece.");
         }
 
-        // ---- El anuncio --------------------------------------------------
-
         [Test]
         public void Tick_AnnouncesTheGoldItTook_OnThePlayer()
         {
-            // Arrange
             GiveBossHealth(90);
             _ledger.NextTaxAmount = 25;
             var context = NewContext();
@@ -104,7 +95,6 @@ namespace Rollgeon.Combat.AI.Tests
 
             try
             {
-                // Act
                 NewNode().Tick(context);
             }
             finally
@@ -112,7 +102,6 @@ namespace Rollgeon.Combat.AI.Tests
                 EventManager.UnSubscribe(EventName.OnFloatingNumberRequested, capture);
             }
 
-            // Assert
             var lost = captured.Find(c => c.type == Rollgeon.UI.HUD.FloatingNumberType.GoldLost);
             Assert.AreEqual(context.PlayerGuid, lost.target,
                 "El cobro va sobre el jugador: es su oro el que sale del bolsillo.");
@@ -129,7 +118,7 @@ namespace Rollgeon.Combat.AI.Tests
         [Test]
         public void Tick_BrokePlayer_AnnouncesNothing()
         {
-            // Arrange — un "-0 G" enseñaría una regla que en esa pelea no se aplicó.
+            // Un "-0 G" enseñaría una regla que en esa pelea no se aplicó.
             GiveBossHealth(90);
             _ledger.NextTaxAmount = 0;
 
@@ -139,7 +128,6 @@ namespace Rollgeon.Combat.AI.Tests
 
             try
             {
-                // Act
                 NewNode().Tick(NewContext());
             }
             finally
@@ -147,7 +135,6 @@ namespace Rollgeon.Combat.AI.Tests
                 EventManager.UnSubscribe(EventName.OnFloatingNumberRequested, count);
             }
 
-            // Assert
             Assert.AreEqual(0, announcements);
         }
 
@@ -202,7 +189,7 @@ namespace Rollgeon.Combat.AI.Tests
         [Test]
         public void Tick_EmitsFloatingHeal_ForLegibility()
         {
-            // Arrange — se afirma el heal en concreto y no "cuántos avisos salieron": el arqueo
+            // Se afirma el heal en concreto y no "cuántos avisos salieron": el arqueo
             // además anuncia el oro cobrado y la promesa de devolución, y contarlos a todos ataba
             // este test a cuántos mensajes tiene el arqueo en vez de a que el heal se vea.
             GiveBossHealth(90);
@@ -218,7 +205,6 @@ namespace Rollgeon.Combat.AI.Tests
 
             try
             {
-                // Act
                 NewNode().Tick(NewContext());
             }
             finally
@@ -226,7 +212,6 @@ namespace Rollgeon.Combat.AI.Tests
                 EventManager.UnSubscribe(EventName.OnFloatingNumberRequested, capture);
             }
 
-            // Assert
             Assert.AreEqual(1, healRequests,
                 "El único jefe que se cura tiene que mostrarlo en pantalla.");
         }

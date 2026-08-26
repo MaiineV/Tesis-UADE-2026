@@ -1,0 +1,49 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6832fe6d91866cd45a01ae006873d323, type: 3}
+  m_Name: Tile_Fire_CroupierBomba
+  m_EditorClassIdentifier: Rollgeon::Rollgeon.Tiles.SpecialTileDefinitionSO
+  TileId: TILE_FIRE_CROUPIER_BOMBA
+  DisplayName: Fuego de Bomba
+  TileType: 2
+  Triggers: 5
+  Category: 0
+  Affinity: 0
+  DamageKind: 3
+  EnterDamage: 15
+  TurnStartDamage: 15
+  HealAmount: 0
+  StatusKind: 0
+  StatusTurns: 0
+  StatusTickDamage: 0
+  ComboDamageBonus: 0
+  MoveRangeBonus: 0
+  DefaultDurationRounds: 4
+  DisarmOnTrigger: 0
+  RearmOnRoundWrap: 0
+  OwnerBossImmune: 0
+  TelegraphPayload: {fileID: 0}
+  TelegraphRounds: 1
+  TeleportCooldownTurns: 2
+  ProtectedTileTypes: 
+  VisualPrefab: {fileID: 2863510167059283868, guid: 2b481875e1cbb8c4283eacfba95ed37f, type: 3}
+  VisualYOffset: 0.1
+  OverlayTint: {r: 1, g: 0.45, b: 0.1, a: 0.55}
+  TriggerVfxPrefab: {fileID: 0}
+  TriggerVfxLifetime: 2
+  TriggerVfxYOffset: 0.1
+  AIVirtualEnterDamage: 0
+  AIAnnouncesLethal: 0
+  EditorIcon: {fileID: 0}
+  EditorColor: {r: 1, g: 0.6, b: 0.25, a: 1}
+  NameKey: tile.firecroupier
+  DescriptionKey: tile.firecroupier

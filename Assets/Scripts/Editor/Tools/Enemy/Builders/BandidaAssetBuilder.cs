@@ -347,9 +347,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
 
             boss.EntityId = BossEntityId;
             boss.DisplayName = "La Bandida";
-            boss.Description =
-                "A three-reel slot machine bolted to the wall. It never chases you: it counts to " +
-                "the jackpot. Break any reel to cancel the count.";
+            boss.Description = "Never chases you — it counts to the jackpot. Break a reel to stop it.";
 
             boss.BaseHP = BossHp;
             boss.BaseAttack = BossAttack;
@@ -381,10 +379,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
 
             reel.EntityId = ReelEntityId;
             reel.DisplayName = "Reel";
-            reel.Description =
-                "One of La Bandida's three reels: a wall bolted in a row against hers. Any hit " +
-                "cancels the jackpot count, but breaking one costs most of a turn — and the tile " +
-                "it leaves behind burns.";
+            reel.Description = "Hit it to cancel the jackpot. What it leaves behind burns.";
 
             reel.BaseHP = ReelHp;
             reel.BaseAttack = 0;

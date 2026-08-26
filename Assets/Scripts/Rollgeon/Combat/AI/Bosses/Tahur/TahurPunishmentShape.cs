@@ -7,10 +7,6 @@ using UnityEngine;
 
 namespace Rollgeon.Combat.AI.Bosses.Tahur
 {
-    /// <summary>
-    /// Una forma del Castigo del Tahúr: la forma dice cuánto le faltó al jugador para armar el
-    /// canto.
-    /// </summary>
     [Serializable, HideReferenceObjectPicker]
     public class TahurPunishmentShape
     {
@@ -28,15 +24,11 @@ namespace Rollgeon.Combat.AI.Bosses.Tahur
         [ShowIf(nameof(Shape), ThreatShape.ScatteredSquares)]
         public int Count = 4;
 
-        /// <summary>Etiqueta corta para inspector / logs de debug del árbol.</summary>
         public string Label => Shape == ThreatShape.ScatteredSquares
             ? $"Scattered {Count}×{Size}"
             : $"{Shape} {Size}";
 
-        /// <summary>
-        /// Casillas del Castigo. <paramref name="playerCoord"/> es donde estaba el jugador al
-        /// liquidar — el Castigo se centra ahí, nunca en la posición final del jefe.
-        /// </summary>
+        /// <summary><paramref name="playerCoord"/> es donde estaba el jugador al liquidar — el Castigo se centra ahí, nunca en la posición final del jefe.</summary>
         public HashSet<GridCoord> Compute(IGridManager grid, GridCoord playerCoord, System.Random rng)
         {
             if (grid == null) return new HashSet<GridCoord>();
@@ -46,8 +38,7 @@ namespace Rollgeon.Combat.AI.Bosses.Tahur
 
             if (Shape == ThreatShape.DirectionalBand)
             {
-                // La banda direccional necesita origen + destino y el Castigo no sale del jefe:
-                // degrada a la columna del jugador.
+                // La banda direccional necesita origen + destino y el Castigo no sale del jefe.
                 return ThreatAreaShape.Compute(grid, playerCoord, ThreatShape.Column, Size, HalfRoomAxis.Vertical);
             }
 

@@ -707,6 +707,74 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
             return AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath);
         }
 
+        /// <summary>
+        /// Pone el Animation Event <c>hit</c> a mitad de cada clip de ataque del rig.
+        /// </summary>
+        /// <remarks>
+        /// <para>
+        /// El puente de arriba es la mitad del cableado: sin un clip que <b>publique</b> la key, un
+        /// step con <c>StartMode: OnEvent</c> se queda esperando y arrastra la secuencia entera con
+        /// él. Los prefabs de arte no traen eventos, así que cada rig los necesita autorados acá.
+        /// </para>
+        /// <para>
+        /// La mitad del clip no es una elección de gusto: es dónde están los eventos de los rigs que
+        /// ya funcionan (SunkedGrand y GeneralDirector, los dos exactamente en <c>0.5 × length</c>),
+        /// y el mismo factor que usa el helper de los cofres.
+        /// </para>
+        /// <para>
+        /// Idempotente por el par (función, key) y no por cantidad: un evento duplicado publicaría la
+        /// key dos veces en el mismo clip.
+        /// </para>
+        /// </remarks>
+        public static void EnsureAttackHitEvents(params string[] clipPaths)
+        {
+            if (clipPaths == null) return;
+
+            foreach (var clipPath in clipPaths)
+            {
+                var clip = AssetDatabase.LoadAssetAtPath<AnimationClip>(clipPath);
+                if (clip == null)
+                {
+                    Debug.LogError($"[BossVisualWrapperBuilder] No hay clip en '{clipPath}' — el " +
+                                   $"gesto de ataque no va a publicar '{ImpactEventKey}'.");
+                    continue;
+                }
+
+                var events = AnimationUtility.GetAnimationEvents(clip);
+                bool alreadyThere = false;
+                foreach (var existing in events)
+                {
+                    if (existing.functionName != FeedbackEventFunction) continue;
+                    if (existing.stringParameter != ImpactEventKey) continue;
+                    alreadyThere = true;
+                    break;
+                }
+                if (alreadyThere) continue;
+
+                float time = clip.length * 0.5f;
+                var updated = new List<AnimationEvent>(events)
+                {
+                    new AnimationEvent
+                    {
+                        time = time,
+                        functionName = FeedbackEventFunction,
+                        stringParameter = ImpactEventKey,
+                    },
+                };
+
+                AnimationUtility.SetAnimationEvents(clip, updated.ToArray());
+                EditorUtility.SetDirty(clip);
+                Debug.Log($"[BossVisualWrapperBuilder] '{clip.name}': Animation Event " +
+                          $"'{ImpactEventKey}' en t={time:0.000}s.");
+            }
+        }
+
+        /// <summary>El método que <see cref="AnimationFeedbackEvent"/> expone al clip.</summary>
+        private const string FeedbackEventFunction = nameof(AnimationFeedbackEvent.PushFeedbackEvent);
+
+        /// <summary>Key del frame del golpe, la que esperan los steps de impacto.</summary>
+        private const string ImpactEventKey = "hit";
+
         // ======================================================================
         // Persistencia
         // ======================================================================

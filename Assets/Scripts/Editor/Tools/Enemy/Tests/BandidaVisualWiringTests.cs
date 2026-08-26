@@ -10,11 +10,8 @@ using Object = UnityEngine.Object;
 
 namespace Rollgeon.Editor.Tools.Enemy.Tests
 {
-    /// <summary>
-    /// Pase visual de <b>La Bandida</b>: jefe y rodillo con arte, retinte y retrato propios. Toca
-    /// el <c>AssetDatabase</c> —lo que se afirma es el prefab escrito— pero construye en una
-    /// carpeta temporal que el teardown borra.
-    /// </summary>
+    /// <summary>Toca el <c>AssetDatabase</c> —lo que se afirma es el prefab escrito— pero construye en
+    /// una carpeta temporal que el teardown borra.</summary>
     [TestFixture]
     public class BandidaVisualWiringTests
     {
@@ -37,10 +34,6 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         private GameObject _bossWrapper;
         private GameObject _reelWrapper;
 
-        // ======================================================================
-        // Fixture
-        // ======================================================================
-
         [OneTimeSetUp]
         public void OneTimeSetUp()
         {
@@ -61,14 +54,9 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             AssetDatabase.Refresh();
         }
 
-        // ======================================================================
-        // Arte apuntado
-        // ======================================================================
-
         [Test]
         public void AuthoredArt_IsNotThePlaceholderAnymore_ForBossNorReel()
         {
-            // Assert
             Assert.AreNotEqual(PlaceholderPrefabPath, BandidaAssetBuilder.BossArtPrefabPath,
                 "El arte del jefe volvió al placeholder.");
             Assert.AreNotEqual(PlaceholderPrefabPath, BandidaAssetBuilder.ReelArtPrefabPath,
@@ -78,7 +66,6 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         [Test]
         public void BossAndReel_DoNotShareArtPrefabNorPortrait()
         {
-            // Assert
             Assert.AreNotEqual(BandidaAssetBuilder.BossArtPrefabPath,
                 BandidaAssetBuilder.ReelArtPrefabPath, "Jefe y rodillo comparten el arte.");
             Assert.AreNotEqual(BandidaAssetBuilder.BossVisualPrefabPath,
@@ -91,7 +78,6 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         [Test]
         public void EveryAuthoredAssetPath_ExistsInTheProject()
         {
-            // Assert
             Assert.IsNotNull(
                 AssetDatabase.LoadAssetAtPath<GameObject>(BandidaAssetBuilder.BossArtPrefabPath),
                 $"Falta el arte del jefe en '{BandidaAssetBuilder.BossArtPrefabPath}'.");
@@ -109,18 +95,13 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                 $"Falta el retrato del rodillo en '{BandidaAssetBuilder.ReelPortraitPath}'.");
         }
 
-        // ======================================================================
-        // Spec de retinte
-        // ======================================================================
-
         [Test]
         public void BossRetintKeys_AllMatchAMaterialOfTheArt()
         {
-            // Arrange
             var spec = BandidaAssetBuilder.BuildBossWrapperSpec();
             var artMaterials = MaterialNamesOf(BandidaAssetBuilder.BossArtPrefabPath);
 
-            // Assert — una key que no matchea sólo tira un warning: el jefe sale de fábrica.
+            // Una key que no matchea sólo tira un warning: el jefe sale de fábrica.
             foreach (var key in spec.Retints.Keys)
             {
                 CollectionAssert.Contains(artMaterials, key,
@@ -132,10 +113,9 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         [Test]
         public void BossRetint_UsesDirectColors_NotPaletteSlots()
         {
-            // Arrange
             var spec = BandidaAssetBuilder.BuildBossWrapperSpec();
 
-            // Assert — los labels de PA_MainPalette están desalineados: "slot Red" no garantiza rojo.
+            // Los labels de PA_MainPalette están desalineados: "slot Red" no garantiza rojo.
             foreach (var pair in spec.Retints)
             {
                 Assert.IsNull(pair.Value.PaletteSlot, $"'{pair.Key}' quedó pidiendo un slot de paleta.");
@@ -148,12 +128,11 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         [Test]
         public void BossRetint_PaintsTheChassisRed_AndTheHardwareGold()
         {
-            // Arrange
             var spec = BandidaAssetBuilder.BuildBossWrapperSpec();
             var chassis = spec.Retints[ChassisSourceMaterialName].MidColor.Value;
             var hardware = spec.Retints[HardwareSourceMaterialName].MidColor.Value;
 
-            // Assert — Mat_Gold cubre torso, brazos y piernas: es la carcasa, no los herrajes.
+            // Mat_Gold cubre torso, brazos y piernas: es la carcasa, no los herrajes.
             AssertColorsMatch(BandidaAssetBuilder.CabinetMid, chassis,
                 "La carcasa del mech dejó de ser el rojo del gabinete.");
             AssertColorsMatch(BandidaAssetBuilder.TrimMid, hardware,
@@ -165,11 +144,10 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         [Test]
         public void BossRetint_LeavesTheHighlightMaterialOutOfTheDictionary()
         {
-            // Arrange
             var spec = BandidaAssetBuilder.BuildBossWrapperSpec();
             var artMaterials = MaterialNamesOf(BandidaAssetBuilder.BossArtPrefabPath);
 
-            // Assert — Mat_White es el punto de luz del torso: se deja compartido a propósito.
+            // Mat_White es el punto de luz del torso: se deja compartido a propósito.
             CollectionAssert.Contains(artMaterials, HighlightSourceMaterialName,
                 "Fixture roto: el arte ya no usa el material de highlight.");
             CollectionAssert.DoesNotContain(spec.Retints.Keys, HighlightSourceMaterialName,
@@ -179,28 +157,21 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         [Test]
         public void ReelSpec_CarriesNoRetints()
         {
-            // Arrange
             var spec = BandidaAssetBuilder.BuildReelWrapperSpec();
 
-            // Assert — slotv02 trae 8 materiales por submalla: retintar a ciegas repinta la pieza
+            // Slotv02 trae 8 materiales por submalla: retintar a ciegas repinta la pieza
             // equivocada.
             Assert.IsTrue(spec.Retints == null || spec.Retints.Count == 0,
                 "El spec del rodillo trae retintes: con 8 materiales por submalla, retintar a " +
                 "ciegas repinta la pieza equivocada.");
         }
 
-        // ======================================================================
-        // Wrapper del jefe
-        // ======================================================================
-
         [Test]
         public void BossWrapper_HasTheGameplayComponentsAndTheHealthBar()
         {
-            // Arrange
             var pawn = _bossWrapper.GetComponent<EntityPawn>();
             var feedback = _bossWrapper.GetComponent<PawnMaterialFeedback>();
 
-            // Assert
             Assert.IsNotNull(pawn, "Falta EntityPawn.");
             Assert.IsNotNull(_bossWrapper.GetComponent<PawnRegistryBinding>(),
                 "Sin PawnRegistryBinding el jefe no recibe hit flash.");
@@ -214,11 +185,10 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         [Test]
         public void BossWrapper_KeepsTheAnimatedMechArt()
         {
-            // Arrange
             var art = _bossWrapper.transform.Find("Art");
             Assert.IsNotNull(art, "El arte tiene que quedar anidado en un hijo 'Art'.");
 
-            // Assert — sin el Animator del arte, el jefe se queda en T-pose toda la pelea.
+            // Sin el Animator del arte, el jefe se queda en T-pose toda la pelea.
             Assert.IsNotNull(art.GetComponentInChildren<Animator>(true),
                 "El arte del jefe perdió el Animator.");
             Assert.Greater(art.GetComponentsInChildren<SkinnedMeshRenderer>(true).Length, 0,
@@ -228,10 +198,9 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         [Test]
         public void BossWrapper_CapsuleStaysInsideItsOwnTile()
         {
-            // Arrange
             var capsule = _bossWrapper.GetComponent<CapsuleCollider>();
 
-            // Assert — el mech en T-pose da ~1.5 de radio y PawnPicker resuelve por collider: sin
+            // El mech en T-pose da ~1.5 de radio y PawnPicker resuelve por collider: sin
             // el clamp el jefe se come los clicks de los rodillos vecinos.
             Assert.IsNotNull(capsule, "El jefe necesita collider en el root para ser targeteable.");
             Assert.LessOrEqual(capsule.radius, BandidaAssetBuilder.BossColliderRadius,
@@ -244,10 +213,9 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         [Test]
         public void BossWrapper_ClonesTheChassisMaterialWithThePaletteToggleOff()
         {
-            // Arrange
             var clone = AssetDatabase.LoadAssetAtPath<Material>(ChassisCloneMaterialPath);
 
-            // Assert — el shader ramea `_UsePalette > 0.5 ? paleta : colores directos`.
+            // El shader ramea `_UsePalette > 0.5 ? paleta : colores directos`.
             Assert.IsNotNull(clone, $"No se clonó el material de la carcasa en '{ChassisCloneMaterialPath}'.");
             Assert.AreEqual(0f, clone.GetFloat("_UsePalette"));
             AssertColorsMatch(BandidaAssetBuilder.CabinetMid, clone.GetColor("_MidColor"),
@@ -257,7 +225,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         [Test]
         public void BossWrapper_DoesNotCloneTheMaterialsItLeavesAlone()
         {
-            // Assert — clonar todo por si acaso llenaría el proyecto de copias idénticas al original.
+            // Clonar todo por si acaso llenaría el proyecto de copias idénticas al original.
             Assert.IsNull(AssetDatabase.LoadAssetAtPath<Material>(HighlightCloneMaterialPath),
                 "Mat_White no está en el retinte y terminó clonado igual.");
         }
@@ -265,27 +233,20 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         [Test]
         public void BossWrapper_DoesNotMutateTheSharedSourceMaterial()
         {
-            // Arrange
             var source = AssetDatabase.LoadAssetAtPath<Material>(ChassisSourceMaterialPath);
 
-            // Assert — Mat_Gold lo comparte medio casino: retintarlo in-place los repinta a todos.
+            // Mat_Gold lo comparte medio casino: retintarlo in-place los repinta a todos.
             Assert.IsNotNull(source, $"Fixture roto: no existe '{ChassisSourceMaterialPath}'.");
             Assert.AreEqual(1f, source.GetFloat("_UsePalette"),
                 "El builder pisó el material original en vez de clonarlo.");
         }
 
-        // ======================================================================
-        // Wrapper del rodillo
-        // ======================================================================
-
         [Test]
         public void ReelWrapper_IsAStaticObject_WithNoAnimator()
         {
-            // Arrange
             var art = _reelWrapper.transform.Find("Art");
             Assert.IsNotNull(art, "Falta el hijo 'Art' del rodillo.");
 
-            // Assert
             Assert.IsEmpty(_reelWrapper.GetComponentsInChildren<Animator>(true),
                 "El rodillo salió con Animator: se confunde con un enemigo que actúa.");
             Assert.Greater(art.GetComponentsInChildren<MeshRenderer>(true).Length, 0,
@@ -295,11 +256,10 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         [Test]
         public void ReelWrapper_UsesABoxColliderLiftedTogetherWithTheArt()
         {
-            // Arrange
             var box = _reelWrapper.GetComponent<BoxCollider>();
             var art = _reelWrapper.transform.Find("Art");
 
-            // Assert — Box y no capsule: la máquina es una caja y el pick cubre la silueta entera.
+            // Box y no capsule: la máquina es una caja y el pick cubre la silueta entera.
             Assert.IsNotNull(box, "El rodillo quedó sin BoxCollider.");
             Assert.IsNull(_reelWrapper.GetComponent<CapsuleCollider>(),
                 "Quedaron dos colliders en el root del rodillo.");
@@ -314,10 +274,9 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         [Test]
         public void ReelWrapper_HasItsOwnHealthBar_SoChippingItReadsAsProgress()
         {
-            // Arrange
             var canvas = _reelWrapper.transform.Find("Canvas");
 
-            // Assert — AINode_SpawnReels inicializa pawn.HealthBar al reponer cada rodillo.
+            // AINode_SpawnReels inicializa pawn.HealthBar al reponer cada rodillo.
             Assert.IsNotNull(canvas, "El rodillo quedó sin canvas de barra.");
             Assert.IsNotNull(canvas.GetComponent<WorldSpaceHealthBar>(),
                 "El canvas del rodillo quedó sin WorldSpaceHealthBar.");
@@ -328,27 +287,20 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         [Test]
         public void ReelWrapper_HangsItsBarLowerThanTheBossBar()
         {
-            // Assert
             Assert.Less(BandidaAssetBuilder.ReelHealthBarOffset.y,
                 BandidaAssetBuilder.BossHealthBarOffset.y,
                 "La barra del rodillo dejó de estar más abajo que la del jefe.");
         }
 
-        // ======================================================================
-        // Idempotencia
-        // ======================================================================
-
         [Test]
         public void RebuildingTheBoss_KeepsTheGuidAndReappliesTheCapsuleClamp()
         {
-            // Arrange
             string guidBefore = AssetDatabase.AssetPathToGUID(BossWrapperPath);
             Assert.IsNotEmpty(guidBefore, "Fixture roto: el wrapper del jefe no está en disco.");
 
-            // Act
             var again = BandidaAssetBuilder.BuildBossVisual(BossWrapperPath, MaterialsFolder);
 
-            // Assert — los EnemyDataSO referencian el wrapper por GUID.
+            // Los EnemyDataSO referencian el wrapper por GUID.
             Assert.IsNotNull(again, "El rebuild del jefe devolvió null.");
             Assert.AreEqual(guidBefore, AssetDatabase.AssetPathToGUID(BossWrapperPath),
                 "El rebuild cambió el GUID del wrapper.");
@@ -361,10 +313,9 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         [Test]
         public void RebuildingTheReel_KeepsTheArtLiftWithoutStackingIt()
         {
-            // Act
             var again = BandidaAssetBuilder.BuildReelVisual(ReelWrapperPath, MaterialsFolder);
 
-            // Assert — el post-proceso setea la posición en absoluto, no suma un delta.
+            // El post-proceso setea la posición en absoluto, no suma un delta.
             Assert.IsNotNull(again, "El rebuild del rodillo devolvió null.");
             Assert.AreEqual(BandidaAssetBuilder.ReelArtYLift,
                 again.transform.Find("Art").localPosition.y, 0.001f,
@@ -372,23 +323,16 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             Assert.AreEqual(1, again.GetComponents<BoxCollider>().Length, "Se duplicó el box del rodillo.");
         }
 
-        // ======================================================================
-        // Populate
-        // ======================================================================
-
         [Test]
         public void PopulateEnemyData_AssignsTheVisualPrefabAndThePortrait()
         {
-            // Arrange
             var boss = ScriptableObject.CreateInstance<EnemyDataSO>();
             var reel = ScriptableObject.CreateInstance<EnemyDataSO>();
             var portrait = CreateRuntimeSprite();
             try
             {
-                // Act
                 BandidaAssetBuilder.PopulateEnemyData(boss, reel, _bossWrapper, portrait);
 
-                // Assert
                 Assert.AreSame(_bossWrapper, boss.VisualPrefab, "El jefe quedó sin VisualPrefab.");
                 Assert.AreSame(portrait, boss.Portrait,
                     "Sin Portrait el jefe sale sin cara en la cola de turnos y en la boss bar.");
@@ -404,15 +348,12 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         [Test]
         public void PopulateReelData_AssignsTheVisualPrefabAndThePortrait()
         {
-            // Arrange
             var reel = ScriptableObject.CreateInstance<EnemyDataSO>();
             var portrait = CreateRuntimeSprite();
             try
             {
-                // Act
                 BandidaAssetBuilder.PopulateReelData(reel, _reelWrapper, portrait);
 
-                // Assert
                 Assert.AreSame(_reelWrapper, reel.VisualPrefab, "El rodillo quedó sin VisualPrefab.");
                 Assert.AreSame(portrait, reel.Portrait,
                     "AINode_SpawnReels registra ReelData.Portrait en el resolver al reponer un rodillo.");
@@ -427,7 +368,6 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         [Test]
         public void Populate_WithNullVisuals_KeepsWhatIsAlreadyAssigned()
         {
-            // Arrange
             var boss = ScriptableObject.CreateInstance<EnemyDataSO>();
             var reel = ScriptableObject.CreateInstance<EnemyDataSO>();
             var portrait = CreateRuntimeSprite();
@@ -436,10 +376,9 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                 boss.VisualPrefab = _bossWrapper;
                 boss.Portrait = portrait;
 
-                // Act — los tests de wiring del árbol llaman al populate sin assets.
+                // Los tests de wiring del árbol llaman al populate sin assets.
                 BandidaAssetBuilder.PopulateEnemyData(boss, reel, null, null);
 
-                // Assert
                 Assert.AreSame(_bossWrapper, boss.VisualPrefab, "Un null borró el VisualPrefab.");
                 Assert.AreSame(portrait, boss.Portrait, "Un null borró el Portrait.");
             }
@@ -450,10 +389,6 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                 DestroySprite(portrait);
             }
         }
-
-        // ======================================================================
-        // Helpers
-        // ======================================================================
 
         /// <summary>Por canal y con tolerancia: el color va y vuelve por el YAML del material, así
         /// que comparar structs exactos rompería por el último bit.</summary>

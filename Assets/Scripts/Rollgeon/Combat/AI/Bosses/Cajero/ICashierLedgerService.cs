@@ -2,40 +2,22 @@ using System;
 
 namespace Rollgeon.Combat.Cashier
 {
-    /// <summary>
-    /// Contabilidad del Cajero: la caja donde secuestra el oro del arqueo, el rastrillo que le sube
-    /// el escalón con el paso de las rondas, el soborno que se lo baja, las fichas que sueltan sus
-    /// golpes y el flag de "me pegaron".
-    /// </summary>
-    /// <remarks>
-    /// Scope global con reset en <c>OnCombatEnd</c>/<c>OnRunEnd</c>: la caja no se filtra a la pelea
-    /// siguiente y si el jugador muere con oro secuestrado, la banca gana.
-    /// </remarks>
+    /// <summary>Scope global con reset en <c>OnCombatEnd</c>/<c>OnRunEnd</c>: si el jugador muere con oro secuestrado, la banca gana.</summary>
     public interface ICashierLedgerService
     {
-        /// <summary>Oro del jugador retenido en la caja, pendiente de devolución al vencer al jefe.</summary>
+        /// <summary>Oro del jugador retenido; se le devuelve al vencer al jefe.</summary>
         int VaultedGold { get; }
 
-        /// <summary>
-        /// Multiplicador que se aplica al valor de las fichas al soltarlas. 1 antes del arqueo,
-        /// <c>ChipValueMultiplierAfterAudit</c> después ("las fichas valen el doble").
-        /// </summary>
+        /// <summary>Multiplica el valor de las fichas al soltarlas: 1 antes del arqueo, <c>ChipValueMultiplierAfterAudit</c> después.</summary>
         int ChipValueMultiplier { get; }
 
         /// <summary>Escalones de descuento activos por soborno (0 = sin descuento).</summary>
         int DamageStepDown { get; }
 
-        /// <summary>
-        /// Rondas que le quedan de vigencia al soborno (0 = no hay soborno activo): es
-        /// <see cref="DamageStepDown"/> con la cuenta atrás visible.
-        /// </summary>
+        /// <summary>Rondas de vigencia que le quedan al soborno (0 = no hay soborno activo).</summary>
         int BribeRoundsLeft { get; }
 
-        /// <summary>
-        /// El rastrillo: escalones que el jefe se subió solo por el paso de las rondas,
-        /// <b>sin mirar el oro del jugador</b>. Sube +1 cada <see cref="RakeRoundsPerStep"/>
-        /// rondas de combate y no baja nunca — sólo lo contrarresta el soborno.
-        /// </summary>
+        /// <summary>Escalones que el jefe se subió solo por el paso de las rondas, sin mirar el oro del jugador: no baja nunca, sólo lo contrarresta el soborno.</summary>
         int DamageStepUp { get; }
 
         /// <summary>Costo en oro de un soborno. Default = 35 (ficha).</summary>
@@ -44,82 +26,47 @@ namespace Rollgeon.Combat.Cashier
         /// <summary>Rondas que dura el descuento de un soborno. Default = 3 (ficha).</summary>
         int BribeRounds { get; set; }
 
-        /// <summary>
-        /// Cada cuántas rondas el rastrillo suma un escalón. Default = 3; cero o negativo lo apaga.
-        /// </summary>
+        /// <summary>Cada cuántas rondas el rastrillo suma un escalón. Default = 3; cero o negativo lo apaga.</summary>
         int RakeRoundsPerStep { get; set; }
 
-        /// <summary>
-        /// <c>true</c> (y limpia el flag) si <paramref name="entityGuid"/> recibió daño desde la
-        /// última consulta. El nodo de fichas lo usa para "si le pegaste este turno, suelta una".
-        /// </summary>
+        /// <summary><c>true</c> —y limpia el flag— si <paramref name="entityGuid"/> recibió daño desde la última consulta.</summary>
         bool ConsumeDamageTaken(Guid entityGuid);
 
-        /// <summary>
-        /// Arqueo de caja: guarda <paramref name="percent"/> (0..1) del oro del jugador en la caja
-        /// de <paramref name="ownerGuid"/> y devuelve cuánto guardó (0 si el jugador está seco o
-        /// no hay economía). El heal del jefe lo aplica el nodo con este retorno.
-        /// </summary>
+        /// <summary>Guarda <paramref name="percent"/> (0..1) del oro del jugador en la caja de <paramref name="ownerGuid"/> y devuelve cuánto guardó (0 si el jugador está seco o no hay economía).</summary>
         int CollectTax(Guid ownerGuid, float percent);
 
-        /// <summary>Setea el multiplicador de fichas (el arqueo lo sube a 2).</summary>
         void SetChipValueMultiplier(int multiplier);
 
-        /// <summary>
-        /// Soborno: cobra <see cref="BribeCost"/> y arma <see cref="BribeRounds"/> rondas de
-        /// <see cref="DamageStepDown"/> = 1. Devuelve <c>false</c> si el jugador no puede pagar.
-        /// Lo llama la acción del jugador — el jefe nunca se soborna solo.
-        /// </summary>
+        /// <summary>Cobra <see cref="BribeCost"/> y arma <see cref="BribeRounds"/> rondas de <see cref="DamageStepDown"/> = 1; <c>false</c> si el jugador no puede pagar.</summary>
         bool TryBribe();
 
         /// <summary>
-        /// Registra una ficha viva: cuando el hazard <paramref name="hazardInstanceId"/> se dispare
-        /// (alguien la pisa) el servicio le paga <paramref name="value"/> de oro. Si expira sin
-        /// cobrarse, la ficha se descarta ("rueda de vuelta a la caja") sin pagarle a nadie.
-        /// <paramref name="ownerGuid"/> es quien la soltó: si es él el que la pisa (el jefe kitea
-        /// sobre su propia columna), no se cobra.
+        /// Paga <paramref name="value"/> cuando el hazard se dispare; si expira sin cobrarse no paga
+        /// a nadie, y si el que la pisa es su dueño tampoco. Levantar una ficha también soborna.
         /// </summary>
-        /// <remarks>
-        /// Levantar una ficha también soborna, sin cobrar <see cref="BribeCost"/>.
-        /// </remarks>
         void RegisterChip(Guid hazardInstanceId, int value, Guid ownerGuid);
 
         /// <summary>Valor de una ficha viva, o 0 si ese id no es una ficha del Cajero.</summary>
         int GetChipValue(Guid hazardInstanceId);
 
-        /// <summary>
-        /// Último escalón que el jefe resolvió al marcar, tal cual lo va a pegar. <c>null</c> antes
-        /// de la primera marca.
-        /// </summary>
+        /// <summary>Último escalón que el jefe resolvió al marcar, tal cual lo va a pegar. <c>null</c> antes de la primera marca.</summary>
         CashierTierSnapshot? LastTier { get; }
 
-        /// <summary>
-        /// Lo llama <c>AINode_TelegraphMarkGoldScaled</c> con el escalón que acaba de resolver, para
-        /// que la lectura del HUD muestre el daño <b>real</b> en vez de recalcularlo con su propia
-        /// copia de la tabla.
-        /// </summary>
+        /// <summary>Lo llama <c>AINode_TelegraphMarkGoldScaled</c> con el escalón resuelto, para que el HUD no recalcule el daño con su propia copia de la tabla.</summary>
         void ReportTier(int rank, int damage, int gold, int stepUp, int stepDown);
     }
 
-    /// <summary>
-    /// Foto inmutable del escalón con el que el Cajero marcó la última columna: qué va a pegar y de
-    /// dónde sale ese número.
-    /// </summary>
     public readonly struct CashierTierSnapshot
     {
         /// <summary>Índice del escalón efectivo en la tabla (0 = el más barato).</summary>
         public readonly int Rank;
 
-        /// <summary>Daño de la columna con ese escalón.</summary>
         public readonly int Damage;
 
-        /// <summary>Oro que tenía el jugador cuando se resolvió.</summary>
         public readonly int Gold;
 
-        /// <summary>Escalones que sumó el rastrillo.</summary>
         public readonly int StepUp;
 
-        /// <summary>Escalones que restó el soborno.</summary>
         public readonly int StepDown;
 
         public CashierTierSnapshot(int rank, int damage, int gold, int stepUp, int stepDown)

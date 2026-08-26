@@ -16,12 +16,9 @@ using Object = UnityEngine.Object;
 
 namespace Rollgeon.Editor.Tools.Enemy.Tests
 {
-    /// <summary>
-    /// Cierra el circuito animación ↔ ataque de los seis jefes. Los dos bugs que atrapa son mudos:
-    /// un <c>SetTrigger</c> de un parámetro inexistente sólo loguea un warning que se pierde, y un
-    /// <see cref="AINode_ExecuteTelegraph"/> sin <c>WindupFeedbackId</c> cobra igual con el jefe en
-    /// idle. Los jefes visten rigs prestados, así que sus triggers cambian sin avisar.
-    /// </summary>
+    /// <summary>Los dos bugs que atrapa son mudos: un <c>SetTrigger</c> de un parámetro inexistente sólo
+    /// loguea un warning que se pierde, y un <see cref="AINode_ExecuteTelegraph"/> sin
+    /// <c>WindupFeedbackId</c> cobra igual con el jefe en idle.</summary>
     [TestFixture]
     public class BossAnimationWiringTests
     {
@@ -48,21 +45,15 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         private static readonly HashSet<string> SlugsInUse =
             new HashSet<string> { "croupier", "cajero", "generala" };
 
-        // ==================================================================
-        // El trigger existe en el rig del jefe
-        // ==================================================================
-
         [Test]
         public void EveryBossAnimEntry_NamesATriggerItsOwnRigDeclares()
         {
-            // Arrange
             var db = AssetDatabase.LoadAssetAtPath<FeedbackDBSO>(DbPath);
             Assert.IsNotNull(db, $"No se encontró el FeedbackDB en '{DbPath}'.");
 
             var problems = new List<string>();
             int checkedEntries = 0;
 
-            // Act
             foreach (var entry in db.Entries)
             {
                 if (entry == null || string.IsNullOrEmpty(entry.FeedbackId)) continue;
@@ -99,7 +90,6 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                 }
             }
 
-            // Assert
             Assert.Greater(checkedEntries, 0,
                 "No se verificó ninguna entry de animación de jefe — ¿cambió el prefijo " +
                 $"'{AnimPrefix}' o se vació el FeedbackDB?");
@@ -111,21 +101,13 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                 "BossFeedbackInstaller.");
         }
 
-        // ==================================================================
-        // Ningún ataque se resuelve sin gesto
-        // ==================================================================
-
-        /// <summary>
-        /// Cada jefe que cobra un área marcada, y su árbol. Dos no entran, por razones distintas:
-        /// el Croupier detona con su propio nodo, y <b>el Cajero no telegrafía nada</b> — es melee
-        /// puro de alcance 1, así que no tiene área que avisar. Sus gestos los cubre
-        /// <see cref="TheCajeroHitsWithAGesture"/>. Los árboles se arman <b>dentro</b> del test —
-        /// una excepción al recolectar el source hace desaparecer el fixture entero en vez de
-        /// reportar rojo.
-        /// </summary>
+        /// <summary>Tres jefes no entran: el Croupier detona con su propio nodo, el Cajero no telegrafía
+        /// nada (melee de alcance 1) y La Generala prende su anillo con un <c>AINode_IgniteArea</c>
+        /// (ver <see cref="EveryIgnitedAreaPlaysSomething"/>). Los árboles se arman <b>dentro</b> del
+        /// test: una excepción al recolectar el source hace desaparecer el fixture entero en vez de
+        /// reportar rojo.</summary>
         private static IEnumerable<TestCaseData> TelegraphCases()
         {
-            yield return Case("La Generala", () => GeneralaAssetBuilder.BuildAIRoot(null));
             yield return Case("El Anotador", () => AnotadorAssetBuilder.BuildAIRoot(null));
             yield return Case("La Bandida", () => BandidaAssetBuilder.BuildAIRoot(null, null));
             yield return Case("El Tahúr", () => TahurAssetBuilder.BuildAIRoot());
@@ -137,14 +119,11 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         [TestCaseSource(nameof(TelegraphCases))]
         public void EveryTelegraphedAttack_PlaysSomething(System.Func<object> buildRoot, string bossName)
         {
-            // Arrange
             var db = AssetDatabase.LoadAssetAtPath<FeedbackDBSO>(DbPath);
             Assert.IsNotNull(db, $"No se encontró el FeedbackDB en '{DbPath}'.");
 
-            // Act
             var executes = Descendants(buildRoot()).OfType<AINode_ExecuteTelegraph>().ToList();
 
-            // Assert
             CollectionAssert.IsNotEmpty(executes, $"{bossName} no cobra ninguna marca.");
             foreach (var node in executes)
             {
@@ -157,25 +136,19 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             }
         }
 
-        /// <summary>
-        /// El Cajero no marca áreas, pega. Lo que en los demás cubre el telegraph, acá lo tienen
-        /// que cubrir sus dos golpes: si uno pierde el gesto, el daño sale y el jefe no se mueve,
-        /// y eso no falla en runtime — simplemente no se ve.
-        /// </summary>
+        /// <summary>El Cajero no marca áreas: lo que en los demás cubre el telegraph acá lo cubren sus dos
+        /// golpes, y un golpe sin gesto no falla en runtime — simplemente no se ve.</summary>
         [Test]
         public void TheCajeroHitsWithAGesture()
         {
-            // Arrange
             var db = AssetDatabase.LoadAssetAtPath<FeedbackDBSO>(DbPath);
             Assert.IsNotNull(db, $"No se encontró el FeedbackDB en '{DbPath}'.");
 
-            // Act — sus dos golpes son nodos de daño directo, no de marca. El empujón hereda de
-            // AINode_RangedShot, así que un solo filtro agarra el mandoble y el empujón.
+            // El empujón hereda de AINode_RangedShot, así que un filtro agarra el mandoble y el empujón.
             var hits = Descendants(CajeroAssetBuilder.BuildAIRoot(null))
                 .OfType<AINode_RangedShot>()
                 .ToList();
 
-            // Assert
             CollectionAssert.IsNotEmpty(hits,
                 "El Cajero se quedó sin golpes: su pelea entera son dos ataques melee que se " +
                 "intercalan.");
@@ -189,19 +162,41 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             }
         }
 
+        /// <summary>Lo que en los otros cubre el ExecuteTelegraph: un area que se prende sin gesto deja
+        /// al jefe quieto mientras el piso aparece solo.</summary>
         [Test]
-        public void TheGeneralaRefillsHerTable_WithAGesture()
+        public void EveryIgnitedAreaPlaysSomething()
         {
-            // Arrange — es el único uso que tiene esa animación del rig (ver BossFeedbackInstaller).
             var db = AssetDatabase.LoadAssetAtPath<FeedbackDBSO>(DbPath);
             Assert.IsNotNull(db, $"No se encontró el FeedbackDB en '{DbPath}'.");
 
-            // Act
+            var ignitions = Descendants(GeneralaAssetBuilder.BuildAIRoot(null))
+                .OfType<AINode_IgniteArea>()
+                .ToList();
+
+            CollectionAssert.IsNotEmpty(ignitions, "La Generala no prende ningún área: su ataque entero.");
+            foreach (var node in ignitions)
+            {
+                Assert.IsNotEmpty(node.WindupFeedbackId ?? string.Empty,
+                    "La Generala prende su anillo sin animación: el piso aparece y ella no se mueve. " +
+                    "Setear WindupFeedbackId en su builder.");
+                Assert.IsTrue(db.HasFeedback(node.WindupFeedbackId),
+                    $"La Generala pide el feedback '{node.WindupFeedbackId}', que no está en el " +
+                    "FeedbackDB. Correr 'Tools → Rollgeon → Bosses → Build Boss Feedback'.");
+            }
+        }
+
+        [Test]
+        public void TheGeneralaRefillsHerTable_WithAGesture()
+        {
+            // Es el único uso que tiene esa animación del rig (ver BossFeedbackInstaller).
+            var db = AssetDatabase.LoadAssetAtPath<FeedbackDBSO>(DbPath);
+            Assert.IsNotNull(db, $"No se encontró el FeedbackDB en '{DbPath}'.");
+
             var spawn = Descendants(GeneralaAssetBuilder.BuildAIRoot(null))
                 .OfType<AINode_SpawnRoomObjects>()
                 .FirstOrDefault();
 
-            // Assert
             Assert.IsNotNull(spawn, "La Generala no repone la mesa.");
             Assert.AreEqual(BossFeedbackIds.GeneralaSummonAnim, spawn.SpawnFeedbackId,
                 "La reposición de la mesa perdió su gesto de invocar.");
@@ -210,18 +205,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                 "'Tools → Rollgeon → Bosses → Build Boss Feedback'.");
         }
 
-        // ==================================================================
-        // Del nodo del árbol a la entry (la mitad que faltaba)
-        // ==================================================================
-
-        /// <summary>
-        /// Los tres jefes en uso más la Comisión, con el <c>EntityId</c> cuyo rig tiene que poder
-        /// tocar sus gestos.
-        /// </summary>
-        /// <remarks>
-        /// La Comisión entra con <b>su propio</b> EntityId y no con el del Cajero: no viste el rig
-        /// del jefe.
-        /// </remarks>
+        /// <summary>La Comisión entra con <b>su propio</b> EntityId y no con el del Cajero: no viste el rig
+        /// del jefe.</summary>
         private static IEnumerable<TestCaseData> GestureChainCases()
         {
             yield return ChainCase("El Croupier", CroupierAssetBuilder.EntityId,
@@ -238,26 +223,14 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                                               System.Func<object> buildRoot) =>
             new TestCaseData(buildRoot, bossName, entityId).SetName(bossName);
 
-        /// <summary>
-        /// Cierra el circuito en la dirección que faltaba:
-        /// <b>nodo del árbol → id → entry del DB → trigger → parámetro del rig</b>.
-        /// </summary>
-        /// <remarks>
-        /// <see cref="EveryBossAnimEntry_NamesATriggerItsOwnRigDeclares"/> recorre el circuito desde
-        /// la entry, así que una entry perfecta que <b>nadie llama</b> le pasa en verde: un
-        /// <c>AnimFeedbackId</c> vacío no es un error en runtime, el nodo degrada a silencio y el
-        /// jefe cobra el daño sin mover un dedo.
-        /// <para>
-        /// Se lee la propiedad <b>resuelta</b> y no el campo autorado: los nodos migrados
-        /// (<c>AINode_CashierRangedShot</c>, el mazazo de la Generala) tapan el campo vacío con un
-        /// default de subclase, y afirmar sobre el campo daría rojo por un cableado que sí funciona.
-        /// </para>
-        /// </remarks>
+        /// <summary>El circuito al revés: <see cref="EveryBossAnimEntry_NamesATriggerItsOwnRigDeclares"/>
+        /// arranca en la entry, así que una entry perfecta que nadie llama le pasa en verde. Se lee la
+        /// propiedad <b>resuelta</b> y no el campo: los nodos migrados tapan el campo vacío con un
+        /// default de subclase, y afirmar sobre el campo daría rojo por un cableado que funciona.</summary>
         [TestCaseSource(nameof(GestureChainCases))]
         public void EveryAttackNode_ResolvesAGestureItsRigCanPlay(
             System.Func<object> buildRoot, string bossName, string entityId)
         {
-            // Arrange
             var db = AssetDatabase.LoadAssetAtPath<FeedbackDBSO>(DbPath);
             Assert.IsNotNull(db, $"No se encontró el FeedbackDB en '{DbPath}'.");
 
@@ -265,8 +238,6 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             Assert.IsNotNull(controller,
                 $"'{entityId}' no tiene AnimatorController — ningún gesto de {bossName} puede sonar.");
 
-            // Act — cada nodo del árbol que declara un slot de gesto, con el valor que de verdad
-            // llega al bus de feedback.
             var slots = new List<KeyValuePair<string, string>>();
             foreach (var node in Descendants(buildRoot()))
             {
@@ -274,7 +245,6 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                 slots.Add(new KeyValuePair<string, string>($"{node.GetType().Name}.{member}", id));
             }
 
-            // Assert
             CollectionAssert.IsNotEmpty(slots,
                 $"{bossName} no tiene ni un nodo con slot de gesto. O se le vació el árbol, o " +
                 "cambiaron los nombres de los campos de presentación y este test dejó de mirar nada.");
@@ -316,13 +286,9 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                 "Feedback' si la entry es nueva.");
         }
 
-        /// <summary>Nombres de slot de gesto, en orden de prioridad.</summary>
-        /// <remarks>
-        /// <c>ResolvedAnimFeedbackId</c> va primero porque es el valor efectivo cuando el nodo tiene
-        /// fallback de subclase; el campo crudo queda como respaldo para los que no lo tienen. Por
-        /// nombre y no por tipo a propósito: un nodo de ataque nuevo con un campo llamado igual entra
-        /// solo, que es lo que evita que el próximo jefe se cablee mudo sin que nadie se entere.
-        /// </remarks>
+        /// <summary>En orden de prioridad: <c>ResolvedAnimFeedbackId</c> primero porque es el valor
+        /// efectivo con fallback de subclase. Por nombre y no por tipo a propósito: un nodo de ataque
+        /// nuevo con un campo llamado igual entra solo y no se cablea mudo sin que nadie se entere.</summary>
         private static readonly string[] GestureSlotNames =
         {
             "ResolvedAnimFeedbackId",
@@ -346,10 +312,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             return false;
         }
 
-        /// <summary>
-        /// Sube por la jerarquía a mano: los slots resueltos son <c>protected</c> y los de la
-        /// Generala <c>private</c>, y <c>FlattenHierarchy</c> no ve miembros no públicos del base.
-        /// </summary>
+        /// <summary>Sube por la jerarquía a mano: los slots resueltos son <c>protected</c> y los de la
+        /// Generala <c>private</c>, y <c>FlattenHierarchy</c> no ve miembros no públicos del base.</summary>
         private static bool TryReadStringMember(object instance, string name, out string value)
         {
             const BindingFlags Flags = BindingFlags.Instance | BindingFlags.Public
@@ -377,29 +341,16 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             return false;
         }
 
-        // ==================================================================
-        // El desplazamiento también es una animación
-        // ==================================================================
-
         /// <summary>Bool del Animator que gatea Idle ⇄ caminata. Lo prende <c>EntityPawn</c>.</summary>
         private const string MovementParam = "Movement";
 
-        /// <summary>
-        /// Un jefe que se desliza por el piso es el defecto que más se nota, y no lo cubre ningún id
-        /// de feedback: el desplazamiento no pasa por el <c>FeedbackDB</c> sino por el bool
-        /// <c>Movement</c> que <c>EntityPawn.SetMovementAnim</c> prende al animar el path. Si el
+        /// <summary>El desplazamiento no pasa por el <c>FeedbackDB</c> sino por este bool: si el
         /// controller no lo declara, el <c>SetBool</c> es un no-op silencioso y el cuerpo se traslada
-        /// en T-pose animada de Idle.
-        /// </summary>
-        /// <remarks>
-        /// Los que van en <see cref="EntityPawn.LocomotionStyle.Blink"/> quedan afuera a propósito:
-        /// su gesto de desplazamiento <b>es</b> el clip de teletransporte, y quién blinkea lo fija
-        /// <c>EnemyLocomotionWiringTests</c>. Acá sólo se mira a los que caminan.
-        /// </remarks>
+        /// en Idle. Los de <see cref="EntityPawn.LocomotionStyle.Blink"/> quedan afuera porque su gesto
+        /// ES el clip de teletransporte, y los voladores porque el bool alterna ciclos de pasos.</summary>
         [Test]
         public void EveryWalkingRigOfAnInUseFight_DeclaresTheMovementBool()
         {
-            // Arrange
             var entityIds = new[]
             {
                 CroupierAssetBuilder.EntityId,
@@ -408,7 +359,6 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                 GeneralaAssetBuilder.BossEntityId,
             };
 
-            // Act
             var sliding = new List<string>();
             foreach (var entityId in entityIds)
             {
@@ -420,17 +370,29 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                     $"'{entityId}' no tiene AnimatorController — se mueve en T-pose.");
 
                 if (StyleOf(prefab) == EntityPawn.LocomotionStyle.Blink) continue;
+                if (FliesAs(entityId)) continue;
                 if (DeclaresBool(controller, MovementParam)) continue;
 
                 sliding.Add(entityId);
             }
 
-            // Assert
             CollectionAssert.IsEmpty(
                 sliding,
                 "Alguien quedó deslizándose sin ciclo de caminata. Un rig que no declara el bool " +
                 $"'{MovementParam}' hace que EntityPawn traslade el cuerpo con el Animator en Idle: " +
                 "no tira ningún error, sólo se ve mal.");
+        }
+
+        private static bool FliesAs(string entityId)
+        {
+            foreach (var guid in AssetDatabase.FindAssets("t:EnemyDataSO"))
+            {
+                var data = AssetDatabase.LoadAssetAtPath<EnemyDataSO>(
+                    AssetDatabase.GUIDToAssetPath(guid));
+                if (data != null && data.EntityId == entityId) return data.IsFlying;
+            }
+
+            return false;
         }
 
         private static GameObject VisualPrefabOf(string entityId)
@@ -460,10 +422,6 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                 if (p.type == AnimatorControllerParameterType.Bool && p.name == param) return true;
             return false;
         }
-
-        // ==================================================================
-        // Helpers
-        // ==================================================================
 
         /// <summary>"anim.boss.cajero.shot" → "cajero".</summary>
         private static string SlugOf(string feedbackId)

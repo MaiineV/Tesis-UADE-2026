@@ -6,10 +6,6 @@ using Rollgeon.Movement;
 
 namespace Rollgeon.Combat.AI.Tests
 {
-    /// <summary>
-    /// Pinea el invariante de la sala de La Generala: sus dados son las paredes. La sala arranca sin
-    /// obstáculos fijos y se llena con los cinco dados que ella tira.
-    /// </summary>
     [TestFixture]
     public class GeneralaDiceBlockTests
     {
@@ -52,10 +48,8 @@ namespace Rollgeon.Combat.AI.Tests
         [Test]
         public void Dice_BlockThePathAcrossTheTable()
         {
-            // Act
             var path = _movement.FindPath(PlayerTile, FarSide);
 
-            // Assert
             CollectionAssert.IsEmpty(path,
                 "Con la columna de dados en pie no hay ruta al otro lado de la mesa.");
         }
@@ -63,10 +57,9 @@ namespace Rollgeon.Combat.AI.Tests
         [Test]
         public void Dice_CutTheRoomInTwo_ForMovementRange()
         {
-            // Act — rango de sobra para cruzar la sala entera si no hubiera dados.
+            // Rango de sobra para cruzar la sala entera si no hubiera dados.
             var reachable = _movement.GetReachableTiles(PlayerTile, range: 6);
 
-            // Assert
             foreach (var tile in reachable)
                 Assert.Less(tile.X, 2,
                     $"La casilla {tile} está del lado de allá de la mesa o encima de un dado.");
@@ -75,13 +68,11 @@ namespace Rollgeon.Combat.AI.Tests
         [Test]
         public void BreakingADie_OpensThePath_Through_ItsTile()
         {
-            // Arrange — CombatDeathWatcher saca el dado roto de la grilla.
+            // CombatDeathWatcher saca el dado roto de la grilla.
             _grid.Unregister(_middleDie);
 
-            // Act
             var path = _movement.FindPath(PlayerTile, FarSide);
 
-            // Assert
             CollectionAssert.IsNotEmpty(path);
             CollectionAssert.Contains(path, MiddleDieTile,
                 "El hueco que dejó el dado roto es el único paso al otro lado.");

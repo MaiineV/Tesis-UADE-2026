@@ -15,16 +15,9 @@ using UnityEngine;
 
 namespace Rollgeon.Combat.AI.Tests
 {
-    /// <summary>
-    /// Ciclo completo de La Bandida a nivel nodo: cuenta → disparo → rearme inmediato,
-    /// cancelación por daño en un rodillo, y la pausa de la reposición por fase.
-    /// </summary>
-    /// <remarks>
-    /// El árbol se arma acá a mano (sin el builder, que vive en el assembly de Editor) con los
-    /// mismos nodos y el mismo orden que <c>BandidaAssetBuilder.BuildAIRoot</c>: tick de la cuenta,
-    /// fila de rodillos, y pool con el gate del jackpot. El <see cref="ProbeNode"/> ocupa el lugar
-    /// del <c>TelegraphMark</c> del jackpot para no necesitar el servicio de amenazas ni overlays.
-    /// </remarks>
+    // El árbol se arma acá a mano —el builder vive en el assembly de Editor— con los mismos nodos
+    // y el mismo orden que BandidaAssetBuilder.BuildAIRoot. ProbeNode ocupa el lugar del
+    // TelegraphMark del jackpot para no necesitar el servicio de amenazas ni overlays.
     [TestFixture]
     public class BandidaJackpotCycleTests
     {
@@ -95,10 +88,6 @@ namespace Rollgeon.Combat.AI.Tests
             if (_reelData != null) UnityEngine.Object.DestroyImmediate(_reelData);
         }
 
-        // ======================================================================
-        // Fila de rodillos
-        // ======================================================================
-
         [Test]
         public void FirstBossTurn_SpawnsThreeAlignedReels_AndArmsTheCountAtTwo()
         {
@@ -127,10 +116,6 @@ namespace Rollgeon.Combat.AI.Tests
             CollectionAssert.AreEquivalent(first, ReelCoords(),
                 "Sin roturas no se repone nada: la fila es la misma.");
         }
-
-        // ======================================================================
-        // Cuenta → disparo → rearme
-        // ======================================================================
 
         [Test]
         public void Countdown_TicksTwoThenOne_AndFiresTheJackpotOnZero()
@@ -163,10 +148,6 @@ namespace Rollgeon.Combat.AI.Tests
             Assert.AreEqual(2, _jackpotProbe.Fired,
                 "El ciclo del jackpot es de dos turnos fijos si el jugador no rompe nada.");
         }
-
-        // ======================================================================
-        // Cancelación (hook de daño, no chequeo de HP)
-        // ======================================================================
 
         [Test]
         public void DamagingAnyReel_CancelsTheCount_ThroughTheDamageHook()
@@ -234,10 +215,6 @@ namespace Rollgeon.Combat.AI.Tests
                 "Bajarle vida al jefe no desarma la bomba: eso es justo el trade del diseño.");
         }
 
-        // ======================================================================
-        // Reposición: la pausa que compra cancelar
-        // ======================================================================
-
         [Test]
         public void BrokenReel_ReturnsOnTheSecondBossTurn_Aligned_AndRearmsTheCountAtTwo()
         {
@@ -274,11 +251,9 @@ namespace Rollgeon.Combat.AI.Tests
             Assert.AreEqual(1, _jackpotProbe.Fired);
         }
 
-        /// <summary>
-        /// El accidente que fija el orden del árbol: si <c>TickJackpot</c> corriera DESPUÉS de la
-        /// fila, el turno en que el rodillo vuelve rearmaría la cuenta en 2 y el mismo tick la
-        /// bajaría a 1 — el jugador perdería una de las dos rondas de aviso que compró rompiéndolo.
-        /// </summary>
+        // Fija el orden del árbol: con TickJackpot DESPUÉS de la fila, el turno en que el rodillo
+        // vuelve rearmaría la cuenta en 2 y el mismo tick la bajaría a 1, y el jugador perdería una
+        // de las dos rondas de aviso que compró rompiéndolo.
         [Test]
         public void RespawnTurn_KeepsBothWarningRounds_TheSameTurnTickDoesNotEatTheRearm()
         {
@@ -330,10 +305,6 @@ namespace Rollgeon.Combat.AI.Tests
                 "se revierte sola al turno siguiente.");
         }
 
-        // ======================================================================
-        // HOLD (Fase 2)
-        // ======================================================================
-
         [Test]
         public void Hold_MakesTheMiddleReelStopCancelling()
         {
@@ -380,10 +351,6 @@ namespace Rollgeon.Combat.AI.Tests
                 "lo reintente el turno siguiente.");
         }
 
-        // ======================================================================
-        // Estado por combate
-        // ======================================================================
-
         [Test]
         public void BindingANewBoss_ResetsTheStateOfThePreviousFight()
         {
@@ -428,14 +395,8 @@ namespace Rollgeon.Combat.AI.Tests
             finally { TypedEvent<JackpotCountdownPayload>.Unsubscribe(listener); }
         }
 
-        // ======================================================================
-        // Harness
-        // ======================================================================
-
-        /// <summary>
-        /// Mismo orden que el <c>Sequence</c> raíz del builder, sin ExecuteTelegraph (no hay
-        /// servicio de amenazas acá) ni gate de fase (los tests de fase disparan sus nodos a mano).
-        /// </summary>
+        // Mismo orden que el Sequence raíz del builder, sin ExecuteTelegraph (no hay servicio de
+        // amenazas acá) ni gate de fase (los tests de fase disparan sus nodos a mano).
         private void BossTurn()
         {
             var ctx = NewContext();
@@ -547,10 +508,8 @@ namespace Rollgeon.Combat.AI.Tests
                 WasLethal = false,
             });
 
-        /// <summary>
-        /// Rompe un rodillo como lo haría el jugador: el hook de daño primero (cancela la cuenta) y
-        /// después el entierro que hace <c>CombatDeathWatcher</c> — Health en 0 y fuera de la cola.
-        /// </summary>
+        // El hook de daño primero (cancela la cuenta) y después el entierro que hace
+        // CombatDeathWatcher: Health en 0 y fuera de la cola.
         private void BreakReel(Guid reelGuid)
         {
             RaiseDamage(reelGuid, 6);
@@ -559,7 +518,6 @@ namespace Rollgeon.Combat.AI.Tests
             _grid.Unregister(reelGuid);
         }
 
-        /// <summary>Hoja de test: cuenta cuántas veces la ejecutó el árbol.</summary>
         private sealed class ProbeNode : AIActionNode
         {
             public int Fired;

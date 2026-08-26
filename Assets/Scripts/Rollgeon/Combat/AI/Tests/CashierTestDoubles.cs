@@ -4,10 +4,6 @@ using Rollgeon.Economy;
 
 namespace Rollgeon.Combat.AI.Tests
 {
-    /// <summary>
-    /// Economía fake para los tests del Cajero: contador de oro sin save system, sin
-    /// <c>OnRunStart</c> y sin eventos. Lo que interesa es qué lee el jefe y cuánto le saca.
-    /// </summary>
     internal sealed class FakeEconomyService : IEconomyService
     {
         public int CurrentGold { get; private set; }
@@ -37,11 +33,6 @@ namespace Rollgeon.Combat.AI.Tests
         public void ResetTo(int amount) => CurrentGold = amount < 0 ? 0 : amount;
     }
 
-    /// <summary>
-    /// Ledger fake: sólo expone las palancas que leen los nodos (<see cref="DamageStepDown"/>,
-    /// <see cref="ChipValueMultiplier"/>) y registra las llamadas, sin suscribirse a eventos
-    /// globales. Los tests del servicio real usan <c>CashierLedgerService</c> directo.
-    /// </summary>
     internal sealed class FakeCashierLedgerService : ICashierLedgerService
     {
         public int VaultedGold { get; set; }

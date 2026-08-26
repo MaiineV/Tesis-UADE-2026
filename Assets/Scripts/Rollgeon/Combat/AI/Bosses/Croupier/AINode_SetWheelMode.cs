@@ -5,10 +5,6 @@ using UnityEngine;
 
 namespace Rollgeon.Combat.AI.Bosses.Croupier
 {
-    /// <summary>
-    /// Cambia el modo de mesa del Croupier: cuántos números canta por turno, si la rueda queda trucada
-    /// y el <see cref="ICroupierWheelService.PhaseIndex"/> que leen los nodos con valores por fase.
-    /// </summary>
     [Serializable, HideReferenceObjectPicker]
     public sealed class AINode_SetWheelMode : AIActionNode
     {

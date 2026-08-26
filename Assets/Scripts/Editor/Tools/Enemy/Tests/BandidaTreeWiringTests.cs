@@ -15,18 +15,8 @@ using UnityEngine;
 
 namespace Rollgeon.Editor.Tools.Enemy.Tests
 {
-    /// <summary>
-    /// Wiring del árbol de La Bandida, armado EN MEMORIA por
-    /// <see cref="BandidaAssetBuilder.BuildAIRoot"/> — sin cargar ningún asset.
-    /// </summary>
-    /// <remarks>
-    /// Mismo criterio que <c>SunkenGrandPhaseWiringTests</c>: lo que se fija acá es el orden de los
-    /// gates, los fallbacks que evitan que un <c>Failed</c> le cancele el turno al jefe, y los
-    /// números que el diseño trata como contrato (jackpot de 25 en 7×7, brazo melee de 12, rodillos
-    /// de 60, cuenta de 2, reposición 2 → 1).
-    /// Un test rojo acá significa que el árbol se desarmó en un merge o que alguien movió un número
-    /// de la ficha sin querer.
-    /// </remarks>
+    /// <summary>Wiring del árbol de La Bandida armado EN MEMORIA por
+    /// <see cref="BandidaAssetBuilder.BuildAIRoot"/>, sin cargar ningún asset.</summary>
     [TestFixture]
     public class BandidaTreeWiringTests
     {
@@ -46,10 +36,6 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         {
             if (_reelData != null) Object.DestroyImmediate(_reelData);
         }
-
-        // ======================================================================
-        // Estructura del turno
-        // ======================================================================
 
         [Test]
         public void Root_StartsWithExecuteTelegraph_SoTheMarkOfThePreviousTurnResolvesFirst()
@@ -141,10 +127,6 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                 "La Bandida está atornillada a la pared: no puede tener KeepDistance.");
         }
 
-        // ======================================================================
-        // Números de la ficha
-        // ======================================================================
-
         [Test]
         public void PhaseGate_TriggersAt50Percent_AndDoesNotTouchDamageNumbers()
         {
@@ -162,10 +144,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             Assert.IsTrue(statMod.EmitPhaseChangedEvent);
         }
 
-        /// <summary>
-        /// El peaje no cobra desde el turno 1: es el primer piso, y los primeros turnos tienen que
-        /// enseñar que la fila se rompe antes de cobrarle al jugador por no haberla roto.
-        /// </summary>
+        /// <summary>El peaje no cobra desde el turno 1: es el primer piso, y los primeros turnos enseñan
+        /// que la fila se rompe antes de cobrarle al jugador por no haberla roto.</summary>
         [Test]
         public void ReelToll_StaysOff_UntilTheBossDropsBelowItsThreshold()
         {
@@ -187,9 +167,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             CollectionAssert.IsNotEmpty(Descendants(gate.Then).OfType<AINode_BandidaReelToll>());
         }
 
-        /// <summary>
-        /// El techo sube en fase 2, pero nunca por encima del regen del jugador.
-        /// </summary>
+        /// <summary>El techo sube en fase 2, pero nunca por encima del regen del jugador.</summary>
         [Test]
         public void ReelToll_HardensInPhaseTwo_WithoutOutpacingThePlayersRegen()
         {
@@ -200,9 +178,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                 new[] { BandidaAssetBuilder.ReelTollCapPhase1, BandidaAssetBuilder.ReelTollCapPhase2 },
                 caps);
 
-            // Muy por debajo del grant de rolls del jugador (5 por turno). Un techo mayor
-            // lo dejaría en economía neta negativa, que deja de ser una palanca y pasa a
-            // ser un candado.
+            // Muy por debajo del grant de rolls del jugador (5 por turno): un techo mayor lo deja en
+            // economía neta negativa, que deja de ser una palanca y pasa a ser un candado.
             Assert.LessOrEqual(BandidaAssetBuilder.ReelTollCapPhase2, 2,
                 "El peaje no puede acercarse al grant por turno del jugador.");
         }
@@ -380,10 +357,6 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                 "El jackpot va primero en el Selector: una amenaza por turno, y la grande manda.");
         }
 
-        // ======================================================================
-        // Populate
-        // ======================================================================
-
         [Test]
         public void PopulateEnemyData_WritesTheSheetNumbers()
         {
@@ -433,10 +406,6 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             finally { Object.DestroyImmediate(reel); }
         }
 
-        // ======================================================================
-        // Helpers
-        // ======================================================================
-
         private AINode_If FindPhaseGate() =>
             _root.Children.SelectMany(c => Descendants(c).OfType<AINode_If>())
                 .FirstOrDefault(i => i.Conditions != null && i.Conditions.OfType<PcOwnerHpBelow>().Any());
@@ -457,9 +426,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         private int IndexOfChildContaining<T>() where T : class =>
             _root.Children.FindIndex(c => Descendants(c).OfType<T>().Any());
 
-        /// <summary>Tree-walker por reflexión (mismo helper que <c>SunkenGrandPhaseWiringTests</c>):
-        /// todo lo alcanzable desde <paramref name="root"/>, sin descender en
-        /// <see cref="Object"/> para no arrastrar assets referenciados.</summary>
+        /// <summary>Tree-walker por reflexión, sin descender en <see cref="Object"/> para no arrastrar
+        /// assets referenciados.</summary>
         private static List<object> Descendants(object root)
         {
             var all = new List<object>();

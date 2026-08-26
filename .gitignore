@@ -150,3 +150,7 @@ Rollgeon/.obsidian/core-plugins.json
 # steamcmd local (Tools/steamcmd). Nunca commitear: además de binarios pesados,
 # steamcmd cachea ahí el sentry/config de la cuenta de Steam tras el login.
 /Tools/steamcmd/
+
+# Notas que los subagentes se dejan entre corridas. Son per-checkout y no describen
+# el juego: mergearlas seria mezclar el scratch de dos maquinas distintas.
+/.claude/agent-memory/

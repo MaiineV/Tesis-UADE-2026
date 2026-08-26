@@ -12,15 +12,8 @@ using UnityEngine;
 
 namespace Rollgeon.Combat.AI.Tests
 {
-    /// <summary>
-    /// La confiscación del Croupier bloquea el dado del número que <b>acaba de caer</b>, en modo
-    /// <see cref="AIReadCroupierWheelNumber.NumberSource.Detonated"/>.
-    /// </summary>
-    /// <remarks>
-    /// El sorteo y el módulo de índices ya los cubre <c>AINode_RotateBlockDirectedTests</c>. Acá
-    /// importa de cuál lista sale el número: <c>ConsumeWindup()</c> vacía el windup, así que un
-    /// reader en modo <c>Sung</c> después de detonar devuelve el siguiente o -1, sin fallar.
-    /// </remarks>
+    // El sorteo y el módulo de índices ya los cubre AINode_RotateBlockDirectedTests: acá importa de
+    // cuál lista sale el número, porque ConsumeWindup() vacía el windup.
     [TestFixture]
     public class CroupierConfiscationTests
     {
@@ -67,10 +60,6 @@ namespace Rollgeon.Combat.AI.Tests
             EventManager.ResetEventDictionary();
         }
 
-        // =====================================================================
-        // El reader
-        // =====================================================================
-
         [Test]
         public void Detonated_ReadsTheNumberThatJustFell_AsASlotIndex()
         {
@@ -116,10 +105,6 @@ namespace Rollgeon.Combat.AI.Tests
             Assert.AreEqual(5, Reader(AIReadCroupierWheelNumber.NumberSource.Detonated, slot: 1).Read(Context()));
         }
 
-        // =====================================================================
-        // El nodo, con el reader puesto
-        // =====================================================================
-
         [Test]
         public void Node_BlocksTheDieOfTheNumberThatFell()
         {
@@ -161,14 +146,11 @@ namespace Rollgeon.Combat.AI.Tests
         [Test]
         public void Node_LabelsThePadlockWithTheNumberThatWasSung_NotTheSlotIndex()
         {
-            // Arrange — el reader devuelve base-0 para indexar la bolsa; el paño es 1-based.
             _wheel.Sing(new List<int> { 3 });
             _wheel.ConsumeWindup();
 
-            // Act
             BuildNode().Tick(Context());
 
-            // Assert
             Assert.AreEqual("3", _blocks.LabelOf(2),
                 "Con el índice crudo el candado diría '2' para el 3 que salió en la ruleta, que es " +
                 "peor que no decir nada.");
@@ -177,14 +159,11 @@ namespace Rollgeon.Combat.AI.Tests
         [Test]
         public void Node_LabelSurvivesTheModulo_SoTheSixStillSaysSix()
         {
-            // Arrange — el 6 confisca el dado 0 por el módulo, pero la etiqueta dice el número.
             _wheel.Sing(new List<int> { 6 });
             _wheel.ConsumeWindup();
 
-            // Act
             BuildNode().Tick(Context());
 
-            // Assert
             Assert.AreEqual("6", _blocks.LabelOf(0));
         }
 
@@ -202,10 +181,6 @@ namespace Rollgeon.Combat.AI.Tests
             CollectionAssert.AreEquivalent(new[] { 0 }, _blocks.BlockedIndices,
                 "El bloqueo del turno pasado no se acumula: cada turno confisca uno solo.");
         }
-
-        // =====================================================================
-        // Helpers
-        // =====================================================================
 
         private static AIReadCroupierWheelNumber Reader(
             AIReadCroupierWheelNumber.NumberSource source, int slot = 0) =>

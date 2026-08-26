@@ -14,10 +14,6 @@ using UnityEngine;
 
 namespace Rollgeon.Entities.Bosses.Tests
 {
-    /// <summary>
-    /// Tests de <see cref="BossComboBlockBehavior"/>: counter++ por turno, dispara Block cada
-    /// Interval, respeta combos bloqueados/tachados, no falla con candidates vacios.
-    /// </summary>
     [TestFixture]
     public class BossComboBlockBehaviorTests
     {
@@ -149,7 +145,6 @@ namespace Rollgeon.Entities.Bosses.Tests
 
             Assert.AreEqual(3, behavior.DebugTurnCounter, "Counter NO se resetea si no hubo candidates.");
             Assert.AreEqual(0, _blockedEvents.Count);
-            // Pre-existing 3 blocks remain untouched.
             Assert.AreEqual(3, _service.ActiveBlocks.Count);
         }
 
@@ -159,12 +154,10 @@ namespace Rollgeon.Entities.Bosses.Tests
             var behavior = BuildBehavior(pickIndex: 0);
             var ctx = CtxFor(Guid.NewGuid());
 
-            // First block at turn 3.
             for (int i = 0; i < 3; i++) behavior.Execute(ctx);
             var firstBlocked = new List<string>(_service.ActiveBlocks.Keys);
             Assert.AreEqual(1, firstBlocked.Count);
 
-            // Continue — second block at turn 6.
             for (int i = 0; i < 3; i++) behavior.Execute(ctx);
             Assert.AreEqual(2, _service.ActiveBlocks.Count,
                 "Dos intervals = dos bloqueos distintos (el primer combo sigue bloqueado).");

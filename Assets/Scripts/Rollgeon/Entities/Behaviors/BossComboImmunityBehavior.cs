@@ -8,23 +8,12 @@ using UnityEngine;
 namespace Rollgeon.Entities.Behaviors
 {
     /// <summary>
-    /// Pasiva de boss que hace que un combo específico (típicamente "Par") no pegue contra
-    /// la entidad. Cada turno del boss re-bloquea el combo via <see cref="IComboBlockService"/>
-    /// con duración alta; como <c>Block</c> toma el max de las duraciones, el bloqueo se
-    /// renueva y nunca expira en la práctica durante el combate.
+    /// Re-bloquea el combo cada turno del boss con duración alta y <c>Block</c> toma el max de las
+    /// duraciones, así que el bloqueo se renueva y nunca expira durante el combate. Va en
+    /// <c>OnTurnStart</c> porque no existe trigger <c>OnCombatStart</c>: si el jugador tira el combo
+    /// antes del primer turno del boss, ese hit pega. No limpia nada al terminar —
+    /// <see cref="ComboBlockService"/> ya escucha <c>OnCombatEnd</c>.
     /// </summary>
-    /// <remarks>
-    /// <para>
-    /// <b>Por qué `OnTurnStart`</b>: no existe trigger <c>OnCombatStart</c> en el sistema de
-    /// behaviors actual. Setear el bloqueo cada turno del boss es idempotente y mantiene la
-    /// pasiva activa durante todo el combate. Edge case mínimo: si el jugador tira el combo
-    /// antes del primer turno del boss, ese hit pega — para FP es aceptable.
-    /// </para>
-    /// <para>
-    /// <b>Cleanup</b>: <see cref="ComboBlockService"/> ya escucha <c>OnCombatEnd</c> y limpia
-    /// los bloqueos activos, así que la inmunidad no leakea a combates posteriores.
-    /// </para>
-    /// </remarks>
     [Serializable, HideReferenceObjectPicker]
     public class BossComboImmunityBehavior : BaseBehavior
     {

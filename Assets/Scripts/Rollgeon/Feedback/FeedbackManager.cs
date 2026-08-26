@@ -518,8 +518,14 @@ namespace Rollgeon.Feedback
 
             FeedbackSequenceRuntime.SetCurrent(bus);
 
+            // Cota de las esperas OnEvent. Es la duración estimada de esta secuencia porque esa es
+            // la pregunta correcta: no esperar un evento más allá del punto en que la secuencia ya
+            // debería haber terminado. Sin cota, un clip que no publica su key deja el step girando
+            // para siempre y lo único que cierra el turno es el watchdog.
+            float eventTimeout = EstimateSequenceDuration(steps);
+
             for (int i = 0; i < steps.Count; i++)
-                StartCoroutine(RunStep(i, steps, handles, bus, box));
+                StartCoroutine(RunStep(i, steps, handles, bus, box, eventTimeout));
 
             while (true)
             {
@@ -545,17 +551,18 @@ namespace Rollgeon.Feedback
             List<FeedbackSequenceStep> steps,
             StepHandle[] handles,
             FeedbackEventBus bus,
-            SequenceRequestBox box)
+            SequenceRequestBox box,
+            float eventTimeout)
         {
             var step = steps[stepIndex];
 
-            yield return WaitStartTrigger(step, stepIndex, handles, bus);
+            yield return WaitStartTrigger(step, stepIndex, handles, bus, eventTimeout);
             // Gap autoral puro (no duración de efecto) ⇒ sigue al game speed.
             if (step.StartDelay > 0f)
                 yield return new WaitForSeconds(step.StartDelay / Rollgeon.Timing.GameSpeedPrefs.Multiplier);
 
             var playbackHandle = DispatchStep(step, box);
-            yield return WaitEndTrigger(step, playbackHandle, bus);
+            yield return WaitEndTrigger(step, playbackHandle, bus, eventTimeout);
 
             handles[stepIndex].Done = true;
             bus.Publish($"$step.{stepIndex}.end");
@@ -564,7 +571,8 @@ namespace Rollgeon.Feedback
         }
 
         private IEnumerator WaitStartTrigger(
-            FeedbackSequenceStep step, int index, StepHandle[] handles, FeedbackEventBus bus)
+            FeedbackSequenceStep step, int index, StepHandle[] handles, FeedbackEventBus bus,
+            float eventTimeout)
         {
             switch (step.StartMode)
             {
@@ -579,13 +587,14 @@ namespace Rollgeon.Feedback
                     while (!handles[dep].Done) yield return null;
                     yield break;
                 case StepStartMode.OnEvent:
-                    while (!bus.HasFired(step.StartOnEventKey)) yield return null;
+                    yield return WaitForEvent(bus, step.StartOnEventKey, eventTimeout);
                     yield break;
             }
         }
 
         private IEnumerator WaitEndTrigger(
-            FeedbackSequenceStep step, PlaybackHandle playback, FeedbackEventBus bus)
+            FeedbackSequenceStep step, PlaybackHandle playback, FeedbackEventBus bus,
+            float eventTimeout)
         {
             switch (step.EndMode)
             {
@@ -607,10 +616,37 @@ namespace Rollgeon.Feedback
                     }
                     yield break;
                 case StepEndMode.OnEvent:
-                    while (!bus.HasFired(step.EndOnEventKey)) yield return null;
+                    yield return WaitForEvent(bus, step.EndOnEventKey, eventTimeout);
                     yield break;
             }
         }
+
+        /// <summary>
+        /// Espera a que <paramref name="key"/> se publique en el bus, y se rinde al cruzar
+        /// <paramref name="timeoutSeconds"/>.
+        /// </summary>
+        /// <remarks>
+        /// <para>
+        /// Un step con <c>OnEvent</c> no puede quedarse esperando para siempre: es blocking, así que
+        /// arrastra la secuencia entera, y hay clips en el proyecto que no publican nada. La cota
+        /// convierte "colgado hasta el watchdog" en "arrancó tarde", que degrada en vez de romper.
+        /// </para>
+        /// <para>
+        /// El reloj entra por parámetro para poder pinear el vencimiento sin escena ni frames — es
+        /// la única forma de testear esto en EditMode.
+        /// </para>
+        /// </remarks>
+        internal static IEnumerator WaitForEvent(
+            FeedbackEventBus bus, string key, float timeoutSeconds, Func<float> clock)
+        {
+            if (bus == null || clock == null) yield break;
+
+            float deadline = clock() + Mathf.Max(0f, timeoutSeconds);
+            while (!bus.HasFired(key) && clock() < deadline) yield return null;
+        }
+
+        private static IEnumerator WaitForEvent(FeedbackEventBus bus, string key, float timeoutSeconds)
+            => WaitForEvent(bus, key, timeoutSeconds, () => Time.time);
 
         private PlaybackHandle DispatchStep(FeedbackSequenceStep step, SequenceRequestBox box)
         {

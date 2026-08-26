@@ -12,14 +12,8 @@ using UnityEngine;
 
 namespace Rollgeon.Combat.AI.Tests
 {
-    /// <summary>
-    /// Alternancia de ejes del Anotador (piso 2): fila en rondas impares, columna en pares,
-    /// <b>desde la fase 1</b>, y el lápiz colgado de la misma paridad que la fila.
-    /// </summary>
-    /// <remarks>
-    /// Se arma acá el mismo fragmento que <c>AnotadorAssetBuilder</c>; que el builder lo autoree
-    /// así lo afirma <c>AnotadorPhaseWiringTests</c>, en el assembly de Editor.
-    /// </remarks>
+    // El fragmento se arma acá a mano: el builder vive en el assembly de Editor y que lo autoree
+    // así lo afirma AnotadorPhaseWiringTests.
     [TestFixture]
     public class AnotadorAxisAlternationTests
     {
@@ -79,17 +73,11 @@ namespace Rollgeon.Combat.AI.Tests
             EventManager.ResetEventDictionary();
         }
 
-        // ======================================================================
-        // Qué eje toca cada ronda
-        // ======================================================================
-
         [Test]
         public void OddRound_MarksTheRow()
         {
-            // Act
             Assert.AreEqual(AIResult.Succeeded, MarkAxis(round: 1));
 
-            // Assert
             var area = Pending();
             Assert.AreEqual(RoomWidth, area.Tiles.Count, "La fila del jugador es el ancho de la sala.");
             Assert.AreEqual(RowDamage, area.Damage);
@@ -101,10 +89,8 @@ namespace Rollgeon.Combat.AI.Tests
         [Test]
         public void EvenRound_MarksTheColumn()
         {
-            // Act
             Assert.AreEqual(AIResult.Succeeded, MarkAxis(round: 2));
 
-            // Assert
             var area = Pending();
             Assert.AreEqual(RoomHeight, area.Tiles.Count, "La columna del jugador es el alto de la sala.");
             Assert.AreEqual(ColumnDamage, area.Damage);
@@ -118,7 +104,7 @@ namespace Rollgeon.Combat.AI.Tests
             var damages = new List<int>();
             var sizes = new List<int>();
 
-            // Act — el jugador no se mueve: lo único que cambia el eje es la paridad de la ronda.
+            // El jugador no se mueve: lo único que cambia el eje es la paridad de la ronda.
             for (int round = 1; round <= 4; round++)
             {
                 Assert.AreEqual(AIResult.Succeeded, MarkAxis(round));
@@ -127,7 +113,7 @@ namespace Rollgeon.Combat.AI.Tests
                 sizes.Add(area.Tiles.Count);
             }
 
-            // Assert — el tamaño delata el eje: 11 vs 7.
+            // El tamaño delata el eje: 11 vs 7.
             CollectionAssert.AreEqual(
                 new[] { RowDamage, ColumnDamage, RowDamage, ColumnDamage }, damages);
             CollectionAssert.AreEqual(
@@ -137,7 +123,6 @@ namespace Rollgeon.Combat.AI.Tests
         [Test]
         public void TheStepThatDodgesTheRow_DoesNotDodgeTheColumnNextRound()
         {
-            // Arrange — ronda impar: la fila del jugador.
             MarkAxis(round: 1);
             var row = Pending();
             var sidestep = new GridCoord(PlayerStart.X, PlayerStart.Y + 1);
@@ -146,11 +131,9 @@ namespace Rollgeon.Combat.AI.Tests
             Assert.IsTrue(row.Contains(new GridCoord(PlayerStart.X + 1, PlayerStart.Y)),
                 "Un paso en X no saca de la fila.");
 
-            // Act — el jugador esquiva y el jefe marca la ronda par sobre su casilla nueva.
             Assert.IsTrue(_grid.Move(_player, sidestep), "Arrange: no se pudo esquivar.");
             MarkAxis(round: 2);
 
-            // Assert
             var column = Pending();
             Assert.IsTrue(column.Contains(new GridCoord(sidestep.X, sidestep.Y + 1)),
                 "Repetir el paso en Y deja al jugador dentro de la columna: el eje cambió.");
@@ -158,20 +141,13 @@ namespace Rollgeon.Combat.AI.Tests
                 "Ahora el paso que esquiva es el de X.");
         }
 
-        // ======================================================================
-        // El lápiz vive en la misma paridad
-        // ======================================================================
-
         [Test]
         public void Pencil_HitsOnOddRounds()
         {
-            // Arrange
             Assert.IsTrue(_grid.Move(_player, new GridCoord(8, 3)), "Arrange: no se pudo acercar.");
 
-            // Act
             var result = PencilGate().Tick(NewContext(round: 3));
 
-            // Assert
             Assert.AreEqual(AIResult.Succeeded, result);
             Assert.AreEqual(1, _pipeline.Resolved.Count);
             Assert.AreEqual(PencilDamage, _pipeline.Resolved[0].BaseDamage);
@@ -180,21 +156,14 @@ namespace Rollgeon.Combat.AI.Tests
         [Test]
         public void Pencil_StaysQuietOnEvenRounds_EvenWithThePlayerGlued()
         {
-            // Arrange — misma posición pegada, ronda par.
             Assert.IsTrue(_grid.Move(_player, new GridCoord(8, 3)), "Arrange: no se pudo acercar.");
 
-            // Act
             var result = PencilGate().Tick(NewContext(round: 4));
 
-            // Assert
             Assert.AreEqual(AIResult.Failed, result,
                 "El gate de paridad no pasa: por eso en el árbol va dentro de un Selector[..., Wait].");
             CollectionAssert.IsEmpty(_pipeline.Resolved);
         }
-
-        // ======================================================================
-        // Helpers — espejo del fragmento que autorea el builder
-        // ======================================================================
 
         /// <summary><c>Selector[ If(ronda par) → columna, fila ]</c> — el hijo 6 del Sequence raíz.</summary>
         private static AINode_Selector AxisMark()

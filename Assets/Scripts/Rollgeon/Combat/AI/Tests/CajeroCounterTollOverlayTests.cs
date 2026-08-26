@@ -8,12 +8,9 @@ using UnityEngine;
 
 namespace Rollgeon.Combat.AI.Tests
 {
-    /// <summary>El overlay que pinta el lado del mostrador.</summary>
-    /// <remarks>
-    /// Necesita <c>LoadRoom</c> porque lo que se prueba es qué casillas se pintan.
-    /// <c>NavGraph.Rect(11,11)</c> arranca en el origen, así que acá el mostrador va en la fila 5
-    /// y no en <c>Y = 0</c> como en la sala real; la regla es relativa a <c>CounterRow</c>.
-    /// </remarks>
+    // Necesita LoadRoom porque lo que se prueba es qué casillas se pintan. NavGraph.Rect(11,11)
+    // arranca en el origen, así que el mostrador va en la fila 5 y no en Y = 0 como en la sala
+    // real: la regla es relativa a CounterRow.
     [TestFixture]
     public class CajeroCounterTollOverlayTests
     {
@@ -78,33 +75,26 @@ namespace Rollgeon.Combat.AI.Tests
             ServiceLocator.AddService<TurnOrderService>(turnOrder);
         }
 
-        // =====================================================================
-        // Qué se pinta
-        // =====================================================================
-
         [Test]
         public void Side_WithoutAnArmedToll_PaintsNothing()
         {
-            // Arrange — el peaje se arma en el primer tick del jefe.
+            // El peaje se arma en el primer tick del jefe.
 
-            // Act
             bool resolved = CashierCounterTollOverlay.TryResolveSide(out _, out _);
 
-            // Assert
             Assert.IsFalse(resolved);
         }
 
         [Test]
         public void Side_OnTheFreeRound_PaintsNothing()
         {
-            // Arrange — cobra una ronda de cada dos; la impar es franca.
+            // Cobra una ronda de cada dos; la impar es franca.
             ArmIntermittent();
             PutPlayerInRound(1);
 
-            // Act
             bool resolved = CashierCounterTollOverlay.TryResolveSide(out _, out _);
 
-            // Assert — se apaga entero en vez de atenuarse.
+            // Se apaga entero en vez de atenuarse.
             Assert.IsFalse(resolved,
                 "En la ronda franca cruzar es gratis, y el overlay es lo único que lo dice.");
         }
@@ -112,14 +102,11 @@ namespace Rollgeon.Combat.AI.Tests
         [Test]
         public void Side_OnTheChargingRound_PaintsItAgain()
         {
-            // Arrange — la franca no es un descuento permanente.
             ArmIntermittent();
             PutPlayerInRound(2);
 
-            // Act
             bool resolved = CashierCounterTollOverlay.TryResolveSide(out _, out var tiles);
 
-            // Assert
             Assert.IsTrue(resolved);
             CollectionAssert.IsNotEmpty(tiles);
         }
@@ -127,13 +114,10 @@ namespace Rollgeon.Combat.AI.Tests
         [Test]
         public void Side_PaintsTheBossHalf_AndOnlyTheBossHalf()
         {
-            // Arrange
             Arm();
 
-            // Act
             bool resolved = CashierCounterTollOverlay.TryResolveSide(out var bossGuid, out var tiles);
 
-            // Assert
             Assert.IsTrue(resolved);
             Assert.AreEqual(_boss, bossGuid);
 
@@ -148,13 +132,11 @@ namespace Rollgeon.Combat.AI.Tests
         [Test]
         public void Side_NeverPaintsTheCounterRow_BecauseStandingInAnOpeningIsFree()
         {
-            // Arrange — IsSameSide devuelve false con side == 0.
+            // IsSameSide devuelve false con side == 0.
             Arm();
 
-            // Act
             CashierCounterTollOverlay.TryResolveSide(out _, out var tiles);
 
-            // Assert
             for (int x = 0; x <= 10; x++)
             {
                 CollectionAssert.DoesNotContain(tiles, new GridCoord(x, CounterRow),
@@ -166,13 +148,10 @@ namespace Rollgeon.Combat.AI.Tests
         [Test]
         public void Side_CoversEveryWalkableCellOfTheBossHalf()
         {
-            // Arrange
             Arm();
 
-            // Act
             CashierCounterTollOverlay.TryResolveSide(out _, out var tiles);
 
-            // Assert
             int expected = 0;
             foreach (var cell in ThreatAreaShape.RoomTiles(_grid))
                 if (cell.Y > CounterRow) expected++;
@@ -183,14 +162,12 @@ namespace Rollgeon.Combat.AI.Tests
         [Test]
         public void Side_FollowsTheBoss_WhenKitingCrossesHimToTheOtherHalf()
         {
-            // Arrange — el peaje lee posiciones vivas, no las que tenía al armarse.
+            // El peaje lee posiciones vivas, no las que tenía al armarse.
             Arm();
             Assert.IsTrue(_grid.Move(_boss, new GridCoord(5, 2)), "El jefe tenía que poder cruzar.");
 
-            // Act
             CashierCounterTollOverlay.TryResolveSide(out _, out var tiles);
 
-            // Assert
             foreach (var cell in tiles)
                 Assert.Less(cell.Y, CounterRow, $"{cell} quedó pintada del lado equivocado.");
         }
@@ -198,28 +175,21 @@ namespace Rollgeon.Combat.AI.Tests
         [Test]
         public void Side_WithTheBossOffTheGrid_PaintsNothing()
         {
-            // Arrange — CombatDeathWatcher lo saca de la grilla al morir.
+            // CombatDeathWatcher lo saca de la grilla al morir.
             Arm();
             _grid.Unregister(_boss);
 
-            // Act / Assert
             Assert.IsFalse(CashierCounterTollOverlay.TryResolveSide(out _, out _));
         }
-
-        // =====================================================================
-        // Ciclo de vida del pintado
-        // =====================================================================
 
         [Test]
         public void Repaint_PaintsUnderADerivedSource_NotUnderTheBossItself()
         {
-            // Arrange — el jefe ya marca su columna bajo su propio guid.
+            // El jefe ya marca su columna bajo su propio guid.
             Arm();
 
-            // Act
             _overlay.Repaint();
 
-            // Assert
             var overlay = (ThreatTelegraphOverlay)ThreatTelegraphOverlay.ResolveOrCreate();
             Assert.IsNotEmpty(overlay.ActiveQuadsOf(CashierCounterTollOverlay.OverlayGuid(_boss)));
             CollectionAssert.IsEmpty(overlay.ActiveQuadsOf(_boss),
@@ -229,31 +199,25 @@ namespace Rollgeon.Combat.AI.Tests
         [Test]
         public void Repaint_AfterDisarm_TakesTheOverlayDown()
         {
-            // Arrange
             Arm();
             _overlay.Repaint();
             var overlay = (ThreatTelegraphOverlay)ThreatTelegraphOverlay.ResolveOrCreate();
             Assume.That(overlay.ActiveQuadsOf(CashierCounterTollOverlay.OverlayGuid(_boss)), Is.Not.Empty);
 
-            // Act
             _toll.Disarm();
             _overlay.Repaint();
 
-            // Assert
             CollectionAssert.IsEmpty(overlay.ActiveQuadsOf(CashierCounterTollOverlay.OverlayGuid(_boss)));
         }
 
         [Test]
         public void CombatEnd_TakesTheOverlayDown()
         {
-            // Arrange
             Arm();
             _overlay.Repaint();
 
-            // Act
             EventManager.Trigger(EventName.OnCombatEnd);
 
-            // Assert
             var overlay = (ThreatTelegraphOverlay)ThreatTelegraphOverlay.ResolveOrCreate();
             CollectionAssert.IsEmpty(overlay.ActiveQuadsOf(CashierCounterTollOverlay.OverlayGuid(_boss)),
                 "El lado pintado no se filtra a la pelea siguiente.");
@@ -262,10 +226,8 @@ namespace Rollgeon.Combat.AI.Tests
         [Test]
         public void OverlayGuid_IsStableAndDifferentFromTheBossGuid()
         {
-            // Arrange / Act
             var derived = CashierCounterTollOverlay.OverlayGuid(_boss);
 
-            // Assert
             Assert.AreNotEqual(_boss, derived);
             Assert.AreEqual(derived, CashierCounterTollOverlay.OverlayGuid(_boss),
                 "Tiene que ser determinístico o cada repintado dejaría el anterior colgado.");

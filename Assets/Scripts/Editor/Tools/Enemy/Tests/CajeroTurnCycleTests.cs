@@ -11,25 +11,10 @@ using Rollgeon.Tiles.Forced;
 
 namespace Rollgeon.Editor.Tools.Enemy.Tests
 {
-    /// <summary>
-    /// Corre el ciclo de ataque <b>real</b> del Cajero turno a turno. Lo que cubre es la
-    /// alternancia estricta de sus dos golpes: mandoble, empujón, mandoble, empujón — y que los
-    /// turnos que pasa caminando <b>no</b> le gasten un lugar del ciclo.
-    /// </summary>
-    /// <remarks>
-    /// <para>
-    /// La alternancia es media mecánica: el empujón es el único golpe que el jugador puede preparar
-    /// (eligiendo desde qué casilla atacarlo, para que el tumbo no lo tire contra los pinchos), y eso
-    /// sólo funciona si puede contar los turnos. El cableado que lo garantiza vive en
-    /// <c>CajeroPhaseWiringTests</c>; acá se verifica que lo que sale es lo prometido.
-    /// </para>
-    /// <para>
-    /// Sin <c>chip</c>: con la definición de moneda en null el empujón pega y tira, pero no suelta
-    /// nada, así que el fixture no necesita hazards ni el ledger. Lo que sí se registra es un
-    /// <see cref="IForcedMovementService"/> falso — sin él el nodo loguea un warning y el tumbo no
-    /// existe, y de paso sirve para contar qué turnos empujaron de verdad.
-    /// </para>
-    /// </remarks>
+    /// <summary>Corre el ciclo de ataque real turno a turno: el cableado lo garantiza
+    /// <c>CajeroPhaseWiringTests</c>, acá se verifica que lo que sale es lo prometido. Sin
+    /// <c>chip</c> el empujón pega y tira pero no suelta nada, así que el fixture no necesita
+    /// hazards ni ledger; el <see cref="IForcedMovementService"/> falso sí, o el tumbo no existe.</summary>
     [TestFixture]
     public class CajeroTurnCycleTests
     {
@@ -78,13 +63,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             EventManager.ResetEventDictionary();
         }
 
-        // ---- La alternancia ------------------------------------------------
-
-        /// <summary>
-        /// Cuatro turnos pegados: mandoble, empujón, mandoble, empujón. El mandoble abre porque el
-        /// índice del <c>Alternate</c> arranca en 0 — la pelea tiene que empezar con el golpe que no
-        /// se puede evitar de ninguna manera.
-        /// </summary>
+        /// <summary>El mandoble abre porque el índice del <c>Alternate</c> arranca en 0: la pelea empieza
+        /// con el golpe que no se puede evitar de ninguna manera.</summary>
         [Test]
         public void AttackCycle_AlternatesStrictly_WhenEveryTurnConnects()
         {
@@ -110,12 +90,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                 "también tira, o el empujón dejó de tirar.");
         }
 
-        /// <summary>
-        /// El gate de rango vive <b>afuera</b> del <c>Alternate</c>, y ésta es la razón:
-        /// <see cref="AINode_Alternate"/> avanza el índice antes de tickear y no lo devuelve si el
-        /// hijo falla. Con los golpes auto-gateándose solos, un turno de caminata quemaría un lugar
-        /// del ciclo y el jugador contaría mandoble-empujón mientras le llegan dos mandobles.
-        /// </summary>
+        /// <summary><see cref="AINode_Alternate"/> avanza el índice antes de tickear y no lo devuelve si
+        /// el hijo falla: por eso el gate de rango vive afuera.</summary>
         [Test]
         public void AttackCycle_DoesNotBurnASlot_OnTheTurnsHeSpendsWalking()
         {
@@ -126,7 +102,6 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             gate.Tick(NewContext(0));
             Assert.IsEmpty(Damages(), "Pegó a distancia 3: los dos golpes son de contacto.");
 
-            // Turno 2: vuelve a estar pegado.
             Assert.IsTrue(_grid.Move(_player, GluedTile), "Fixture: el jugador tiene que poder volver.");
             gate.Tick(NewContext(1));
 
@@ -135,12 +110,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                 "empujón en vez de mandoble. El If de rango tiene que quedar POR FUERA del Alternate.");
         }
 
-        /// <summary>
-        /// Fuera de rango el gate devuelve lo que devuelva su <c>Else</c>, y ése es un
-        /// <c>AINode_Wait</c>: un Failed acá abortaría el Sequence del turno y se llevaría puestas
-        /// las monedas de la sala, la caja y la persecución — o sea, el jefe se quedaría clavado
-        /// justo en los turnos en que tenía que caminar hasta el jugador.
-        /// </summary>
+        /// <summary>Un <c>Failed</c> acá abortaría el Sequence del turno y se llevaría las monedas, la
+        /// caja y la persecución: el jefe se quedaría clavado justo en los turnos que camina.</summary>
         [Test]
         public void AttackGate_SucceedsOutOfRange_SoTheRestOfTheTurnStillRuns()
         {
@@ -151,11 +122,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                 "El gate del ataque falló con el jugador lejos, que es su caso más común.");
         }
 
-        /// <summary>
-        /// El empujón lo manda para el lado opuesto al jefe y las casillas de la ficha. Con
-        /// <c>Range = 1</c> y métrica Manhattan el jugador está siempre ortogonalmente pegado, así
-        /// que el cardinal es exacto y no hay desempate que elegir.
-        /// </summary>
+        /// <summary>Con <c>Range = 1</c> y métrica Manhattan el jugador está siempre ortogonalmente
+        /// pegado, así que el cardinal es exacto y no hay desempate que elegir.</summary>
         [Test]
         public void Shove_PushesAwayFromTheBoss_ForTheSheetsTiles()
         {
@@ -175,8 +143,6 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                 "El jugador está al ESTE del jefe, así que el tumbo va al este. Invertido, el " +
                 "empujón lo trae de vuelta encima del jefe y el tumbo deja de alejarlo de nada.");
         }
-
-        // ---- Helpers -------------------------------------------------------
 
         private AIContext NewContext(int roundIndex) => new AIContext
         {
@@ -214,11 +180,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             }
         }
 
-        /// <summary>
-        /// Registra los empujones pedidos sin mover nada. El tumbo real (frenar contra una caja
-        /// fuerte, cobrar los pinchos del camino, las continuaciones de hielo y portal) es del
-        /// servicio y ya tiene sus propios tests: acá sólo importa qué le pide el nodo.
-        /// </summary>
+        /// <summary>Registra los empujones pedidos sin mover nada: el tumbo real es del servicio y ya
+        /// tiene sus tests, acá sólo importa qué le pide el nodo.</summary>
         private sealed class FakeForcedMovementService : IForcedMovementService
         {
             public readonly List<PushCall> Pushes = new List<PushCall>();

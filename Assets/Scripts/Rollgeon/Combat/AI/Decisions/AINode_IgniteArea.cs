@@ -2,8 +2,10 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using Patterns;
+using Rollgeon.Combat.Actions;
 using Rollgeon.Combat.Pipelines;
 using Rollgeon.Combat.Threat;
+using Rollgeon.Feedback;
 using Rollgeon.Grid;
 using Rollgeon.Tiles;
 using Sirenix.OdinInspector;
@@ -87,6 +89,14 @@ namespace Rollgeon.Combat.AI.Decisions
         /// </summary>
         [NonSerialized] private int _turnsAnnounced;
 
+        [Title("Presentación")]
+#if UNITY_EDITOR
+        [ValueDropdown(nameof(GetFeedbackIdsForDropdown))]
+#endif
+        [Tooltip("Feedback ref id del gesto con el que el jefe prende el área. Vacío = sin animación: " +
+                 "las casillas aparecen y el jefe no se mueve.")]
+        public string WindupFeedbackId;
+
         public override string NodeName => Definition == null
             ? "Ignite Area (sin definición)"
             : $"Ignite Area ({Definition.name})";
@@ -100,9 +110,72 @@ namespace Rollgeon.Combat.AI.Decisions
         /// <inheritdoc />
         public override IEnumerator TickCoroutine(AIContext context, Action<AIResult> onResult)
         {
+            var gesture = PlayWindup(context);
+            while (gesture.MoveNext()) yield return gesture.Current;
+
             onResult?.Invoke(Ignite(context));
-            yield break;
         }
+
+        /// <summary>
+        /// El gesto con el que prende, antes de plantar. Bloquea el turno la duración de la entry
+        /// para que las casillas no aparezcan antes de que el jefe se mueva.
+        /// </summary>
+        /// <remarks>
+        /// No usa <c>ImpactEventKey</c> como <see cref="AINode_ExecuteTelegraph"/>: acá el daño no
+        /// puede aterrizar en el frame del golpe, porque <see cref="Ignite"/> es el que consume la
+        /// marca y tiene que correr una sola vez. El gesto entero va primero.
+        /// </remarks>
+        private IEnumerator PlayWindup(AIContext context)
+        {
+            if (string.IsNullOrEmpty(WindupFeedbackId)) yield break;
+            if (context == null || context.SelfGuid == Guid.Empty) yield break;
+
+            // Sin marca pendiente no hay ignición: animar acá dejaría al jefe gesticulando en el
+            // turno en que sólo telegrafía.
+            if (!ServiceLocator.TryGetService<IThreatenedAreaService>(out var threat) || threat == null) yield break;
+            if (!threat.HasPending(AINode_TelegraphMark.SourceKey(context.SelfGuid, ChannelId))) yield break;
+            if (_turnsAnnounced < AnnounceTurns) yield break;
+
+            if (!ServiceLocator.TryGetService<IFeedbackService>(out var feedback) || feedback == null) yield break;
+
+            var step = new FeedbackSequenceStep
+            {
+                FeedbackRefId = WindupFeedbackId,
+                StartMode = StepStartMode.Immediate,
+                EndMode = StepEndMode.OnDuration,
+                BlockSequence = true,
+            };
+
+            ServiceLocator.TryGetService<TurnManager>(out var turn);
+            turn?.BeginFeedbackWait();
+            feedback.RequestFeedbackBlocking(new FeedbackRequest
+            {
+                IsSequence = true,
+                SequenceSteps = new List<FeedbackSequenceStep> { step },
+                SourceGuid = context.SelfGuid,
+                TargetGuid = context.PlayerGuid,
+            }, () => turn?.OnFeedbackComplete());
+
+            // Sin TurnManager no hay gate que esperar — la anim igual corre.
+            if (turn == null || !turn.IsWaitingForFeedback) yield break;
+
+            var wait = TurnManager.WaitForFeedbackCompletion(turn);
+            while (wait.MoveNext()) yield return wait.Current;
+        }
+
+#if UNITY_EDITOR
+        // Dropdown obligatorio (§0): los ids de feedback nunca se tipean a mano.
+        private static IEnumerable<string> GetFeedbackIdsForDropdown()
+        {
+            foreach (var guid in UnityEditor.AssetDatabase.FindAssets("t:FeedbackDBSO"))
+            {
+                var path = UnityEditor.AssetDatabase.GUIDToAssetPath(guid);
+                var db = UnityEditor.AssetDatabase.LoadAssetAtPath<FeedbackDBSO>(path);
+                if (db == null) continue;
+                foreach (var id in db.GetAllFeedbackIds()) yield return id;
+            }
+        }
+#endif
 
         private AIResult Ignite(AIContext context)
         {

@@ -682,10 +682,10 @@ MonoBehaviour:
     FloatingNumberSourceKey: 1
   - FeedbackId: vfx.boss.croupier.impact
     Type: 0
-    Position: 1
+    Position: 4
     PositionReaderSO: {fileID: 0}
     PlayerTarget: 0
-    PositionOffset: {x: 0, y: 1, z: 0}
+    PositionOffset: {x: 0, y: 0.5, z: 0}
     Duration: 0.55
     CompletionMode: 0
     VfxPrefab: {fileID: 5782198322582804353, guid: 10cbad05949260d499f3fffd03ae8d05, type: 3}

@@ -7,24 +7,19 @@ using UnityEngine;
 namespace Rollgeon.Combat.AI.Bosses.Croupier
 {
     /// <summary>
-    /// Lee un número que el Croupier tiene en juego y lo devuelve como índice de slot de la bolsa
-    /// (número 1 → índice 0), o <c>-1</c> si no hay ninguno.
+    /// Devuelve el número como índice de slot de la bolsa (número 1 → índice 0), o <c>-1</c>. El
+    /// orden importa: <c>AINode_DetonateSungSectors</c> vacía el windup y la ignición consume
+    /// <c>DetonatedSectors</c>, así que un reader en modo <c>Detonated</c> va antes de la ignición.
     /// </summary>
-    /// <remarks>
-    /// El orden dentro del turno importa: <c>AINode_DetonateSungSectors</c> vacía el windup y
-    /// <c>AINode_IgniteDetonatedSectors</c> consume <c>DetonatedSectors</c>, así que un reader en modo
-    /// <c>Detonated</c> tiene que correr antes de la ignición.
-    /// </remarks>
     [Serializable, HideReferenceObjectPicker]
     public sealed class AIReadCroupierWheelNumber : AIIntReader
     {
-        /// <summary>De cuál de las dos listas del paño sale el número.</summary>
         public enum NumberSource
         {
-            /// <summary>El número cantado y todavía sin detonar (el sector marcado en el overlay).</summary>
+            /// <summary>El cantado y todavía sin detonar (el sector marcado en el overlay).</summary>
             Sung,
 
-            /// <summary>El número que detonó este turno. Se consume en la ignición.</summary>
+            /// <summary>El que detonó este turno. Se consume en la ignición.</summary>
             Detonated,
         }
 

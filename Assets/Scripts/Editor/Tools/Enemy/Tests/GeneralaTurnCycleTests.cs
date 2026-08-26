@@ -5,6 +5,7 @@ using System.Reflection;
 using NUnit.Framework;
 using Patterns;
 using Rollgeon.Combat.AI;
+using Rollgeon.Combat.AI.Decisions;
 using Rollgeon.Combat.BossHand;
 using Rollgeon.Combat.ComboLog;
 using Rollgeon.Combat.ContractMod;
@@ -12,6 +13,7 @@ using Rollgeon.Combat.Pipelines;
 using Rollgeon.Combat.Rooms;
 using Rollgeon.Combat.Status;
 using Rollgeon.Combat.Threat;
+using Rollgeon.Tiles;
 using Rollgeon.Combos;
 using Rollgeon.Combos.Concretes;
 using Rollgeon.Editor.Tools.Enemy.Builders;
@@ -21,16 +23,13 @@ using UnityEngine;
 
 namespace Rollgeon.Editor.Tools.Enemy.Tests
 {
-    /// <summary>
-    /// Corre el árbol REAL de La Generala turno a turno. Lo que cubre es la convivencia: el
-    /// cubilete devuelve <c>Failed</c> con el jugador lejos y no puede comerse el telegraph de la
-    /// mano, que se resuelve el mismo turno.
-    /// </summary>
+    /// <summary>Corre el árbol REAL turno a turno: el cubilete devuelve <c>Failed</c> con el jugador
+    /// lejos y no puede comerse la marca del anillo, que se prende al turno siguiente.</summary>
     [TestFixture]
     public class GeneralaTurnCycleTests
     {
-        /// <summary>Tirada fija que resuelve a Par — el único combo del catálogo de estos tests.</summary>
-        private static readonly int[] ParHand = { 4, 4, 2, 5, 1 };
+        /// <summary>Tirada fija: el Rng del contexto no puede quedar null o el spawn de la mesa falla.</summary>
+        private static readonly int[] ScriptedFaces = { 4, 4, 2, 5, 1 };
 
         private static readonly GridCoord TableTile = new GridCoord(5, 3);
 
@@ -52,7 +51,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         private readonly List<ScriptableObject> _created = new List<ScriptableObject>();
         private SpyDamagePipeline _pipeline;
         private RoomObjectDefinitionSO _dice;
-        private HazardDefinitionSO _frost;
+        private SpecialTileService _tiles;
+        private SpecialTileDefinitionSO _electric;
         private Guid _boss;
         private Guid _player;
 
@@ -86,8 +86,12 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             _comboLog = new ComboLogService();
             _comboLog.Register();
 
-            _frost = Create<HazardDefinitionSO>();
-            GeneralaAssetBuilder.ConfigureFrostHazard(_frost);
+            // Servicio real: lo que se prueba es que el anillo se plante de verdad.
+            _tiles = new SpecialTileService();
+            _tiles.Register();
+
+            _electric = Create<SpecialTileDefinitionSO>();
+            GeneralaAssetBuilder.ConfigureElectricTile(_electric);
 
             _attributes = new Rollgeon.Attributes.AttributesManager();
             ServiceLocator.AddService<Rollgeon.Attributes.AttributesManager>(_attributes);
@@ -124,6 +128,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         {
             _comboLog?.Dispose();
             _contractMods?.Dispose();
+            _tiles?.Dispose();
             _iceBinder?.Dispose();
             _stun?.Dispose();
             _hazards?.Dispose();
@@ -145,20 +150,21 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             _created.Clear();
         }
 
-        // ======================================================================
-        // El cubilete
-        // ======================================================================
+        /// <summary>
+        /// La fuente del anillo NO es el guid del jefe: la marca viaja por su canal propio, y
+        /// consumir el default devolveria vacio.
+        /// </summary>
+        private Guid RingSource()
+            => AINode_TelegraphMark.SourceKey(_boss, GeneralaAssetBuilder.RingChannelId);
 
         [Test]
         public void Turn_WithThePlayerGluedToTheTable_ChargesTheCupSlamOnTheSpot()
         {
-            // Arrange — el jugador arranca pegado, que es de donde le rompe los dados.
-            var root = GeneralaAssetBuilder.BuildAIRoot(_dice, _frost);
+            // El jugador arranca pegado, que es de donde le rompe los dados.
+            var root = GeneralaAssetBuilder.BuildAIRoot(_dice, _electric);
 
-            // Act
             root.Tick(NewContext(roundIndex: 1));
 
-            // Assert
             CollectionAssert.AreEqual(new[] { GeneralaAssetBuilder.CupSlamDamage }, DamageAmounts(),
                 "El único daño del primer turno tiene que ser el cubilete, y por lo que pide la ficha.");
             Assert.AreEqual(_boss, _pipeline.Resolved[0].SourceId);
@@ -168,14 +174,11 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         [Test]
         public void Turn_WithThePlayerTwoTilesFromTheTable_ChargesNothing()
         {
-            // Arrange
             MovePlayerTo(AwayTile);
-            var root = GeneralaAssetBuilder.BuildAIRoot(_dice, _frost);
+            var root = GeneralaAssetBuilder.BuildAIRoot(_dice, _electric);
 
-            // Act
             root.Tick(NewContext(roundIndex: 1));
 
-            // Assert
             CollectionAssert.IsEmpty(_pipeline.Resolved,
                 "El cubilete es exactamente el precio de estar pegado: a distancia no cobra nada.");
         }
@@ -183,197 +186,118 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         [Test]
         public void Turn_ChargesTheCupSlam_EveryRoundThePlayerStaysGlued()
         {
-            // Arrange
-            var root = GeneralaAssetBuilder.BuildAIRoot(_dice, _frost);
+            var root = GeneralaAssetBuilder.BuildAIRoot(_dice, _electric);
 
-            // Act — mismo árbol cinco rondas (mismo instance state que en combate); la marca se
-            // limpia entre turnos para que al pipeline sólo llegue el cubilete.
-            for (int round = 1; round <= 5; round++)
-            {
-                root.Tick(NewContext(round));
-                _threat.Clear(_boss);
-            }
+            // Mismo árbol cinco rondas (mismo instance state que en combate). La marca del anillo
+            // NO se limpia: es su ataque, y el jugador pegado a la mesa esta parado en el 3x3 del
+            // centro, asi que el tercer tiempo del ciclo le prende encima.
+            for (int round = 1; round <= 5; round++) root.Tick(NewContext(round));
 
-            // Assert
-            CollectionAssert.AreEqual(
-                Enumerable.Repeat(GeneralaAssetBuilder.CupSlamDamage, 5), DamageAmounts(),
-                "Cinco tiradas pegado a la mesa son cinco cubiletes.");
+            var cup = DamageAmounts().Where(d => d == GeneralaAssetBuilder.CupSlamDamage).ToList();
+            Assert.AreEqual(5, cup.Count, "Cinco tiradas pegado a la mesa son cinco cubiletes.");
+
+            // Y el anillo del centro cobra una sola vez en las cinco: el ciclo es de tres tiempos y
+            // el jugador solo esta en uno de ellos.
+            Assert.AreEqual(1, DamageAmounts().Count(d => d == GeneralaAssetBuilder.RingDamage),
+                "El ciclo tiene que haber prendido el centro exactamente una vez en cinco rondas.");
         }
 
         [Test]
-        public void Turn_LandsTheCupSlam_WithoutEatingTheHandMark()
+        public void Turn_LandsTheCupSlam_WithoutEatingTheRingMark()
         {
-            // Arrange
-            var root = GeneralaAssetBuilder.BuildAIRoot(_dice, _frost);
+            var root = GeneralaAssetBuilder.BuildAIRoot(_dice, _electric);
 
-            // Act
             root.Tick(NewContext(roundIndex: 1));
 
-            // Assert
             CollectionAssert.Contains(DamageAmounts(), GeneralaAssetBuilder.CupSlamDamage,
                 "El cubilete tiene que haber cobrado en este mismo turno.");
-            Assert.IsTrue(_threat.HasPending(_boss),
-                "Y la mano tiene que quedar marcada: el cubilete no puede comerse el telegraph.");
+            Assert.IsTrue(_threat.HasPending(RingSource()),
+                "Y el anillo tiene que quedar marcado: el cubilete no puede comerse el telegraph.");
             Assert.AreEqual(1, _threat.SnapshotPending().Count,
-                "Un solo aviso pendiente — el cubilete no ocupa canal propio, o la tirada valdría " +
+                "Un solo aviso pendiente — el cubilete no ocupa canal propio, o el turno valdría " +
                 "dos golpes.");
         }
 
         [Test]
-        public void Turn_WithThePlayerOutOfTheCupsReach_StillMarksTheHand()
+        public void Turn_WithThePlayerOutOfTheCupsReach_StillMarksTheRing()
         {
-            // Arrange — lejos el cubilete devuelve Failed; sin su Selector eso corta el Sequence raíz.
+            // Lejos el cubilete devuelve Failed; sin su Selector eso corta el Sequence raíz.
             MovePlayerTo(AwayTile);
-            var root = GeneralaAssetBuilder.BuildAIRoot(_dice, _frost);
+            var root = GeneralaAssetBuilder.BuildAIRoot(_dice, _electric);
 
-            // Act
             root.Tick(NewContext(roundIndex: 1));
 
-            // Assert
-            Assert.IsTrue(_threat.TryConsume(_boss, out var hand),
+            Assert.IsTrue(_threat.TryConsume(RingSource(), out var ring),
                 "Esquivar el cubilete no puede apagarle el ataque de la ronda.");
-            Assert.AreEqual(GeneralaAssetBuilder.PairDamage, hand.Damage,
-                "Y la marca sigue siendo la del combo que le salió.");
-        }
-
-        // ======================================================================
-        // La mano
-        // ======================================================================
-
-        [Test]
-        public void Turn_PublishesTheRolledHand_SoThePlayerCanReadItBeforeItDetonates()
-        {
-            // Arrange
-            var root = GeneralaAssetBuilder.BuildAIRoot(_dice, _frost);
-
-            // Act
-            root.Tick(NewContext(roundIndex: 1, faces: ParHand));
-
-            // Assert
-            Assert.IsTrue(BossDiceHandService.ResolveOrCreate().TryGetHand(_boss, out var hand));
-            Assert.AreEqual(ParHand, hand.Values, "Los cinco números son públicos.");
-            Assert.AreEqual(Rollgeon.Combos.ComboId.Par, hand.ComboId);
+            Assert.AreEqual(GeneralaAssetBuilder.RingDamage, ring.Damage);
         }
 
         [Test]
-        public void Turn_TheHandMark_MatchesTheComboThatCameOut()
+        public void Turn_MarksTheOuterRingFirst_AndWalksInwardOneRingPerTurn()
         {
-            // Arrange — [4,4,2,5,1] ⇒ Par ⇒ franja de 1 fila por PairDamage.
-            var root = GeneralaAssetBuilder.BuildAIRoot(_dice, _frost);
+            var root = GeneralaAssetBuilder.BuildAIRoot(_dice, _electric);
 
-            // Act
-            root.Tick(NewContext(roundIndex: 2, faces: ParHand));
+            var sizes = new List<int>();
+            for (int round = 1; round <= 4; round++)
+            {
+                root.Tick(NewContext(round));
+                Assert.IsTrue(_threat.TryConsume(RingSource(), out var ring),
+                    $"La ronda {round} no marco ningun anillo.");
+                sizes.Add(ring.Tiles.Count);
+            }
 
-            // Assert
-            Assert.IsTrue(_threat.TryConsume(_boss, out var hand));
-            Assert.AreEqual(GeneralaAssetBuilder.PairDamage, hand.Damage,
-                "El combo que le sale ES el ataque: un Par pega lo del Par.");
+            // De afuera hacia adentro, y el cuarto turno vuelve al grande: el ciclo es de tres.
+            Assert.Greater(sizes[0], sizes[1], "El anillo del borde tiene que ser el mas grande.");
+            Assert.Greater(sizes[1], sizes[2], "Y el del centro el mas chico.");
+            Assert.AreEqual(sizes[0], sizes[3], "El cuarto turno vuelve al anillo del borde.");
         }
 
         [Test]
-        public void Turn_ABustHand_MarksTheMinimumInsteadOfNothing()
+        public void Turn_LightsTheRingItMarkedTheTurnBefore_AndNotOnTheFirstTurn()
         {
-            // Arrange — [1,2,4,6,3] no forma ningún combo del catálogo.
-            var root = GeneralaAssetBuilder.BuildAIRoot(_dice, _frost);
+            var root = GeneralaAssetBuilder.BuildAIRoot(_dice, _electric);
 
-            // Act
-            root.Tick(NewContext(roundIndex: 2, faces: new[] { 1, 2, 4, 6, 3 }));
+            root.Tick(NewContext(roundIndex: 1));
+            CollectionAssert.IsEmpty(_tiles.ActiveInstances().ToList(),
+                "En su primer turno no hay marca pendiente todavia: no puede prender nada.");
 
-            // Assert
-            Assert.IsTrue(_threat.TryConsume(_boss, out var hand));
-            Assert.AreEqual(GeneralaAssetBuilder.BustDamage, hand.Damage);
-        }
-
-        // ======================================================================
-        // La escarcha
-        // ======================================================================
-
-        [Test]
-        public void Turn_OnAFrostRound_FreezesOnlyTheTilesAroundHer_CenterIncluded()
-        {
-            // Arrange
-            var root = GeneralaAssetBuilder.BuildAIRoot(_dice, _frost);
-
-            // Act — múltiplo de FrostParityDivisor (3).
-            root.Tick(NewContext(roundIndex: 3));
-
-            // Assert
-            Assert.IsTrue(_hazards.TryGetHazardAt(GluedTile, out var frost),
-                "La casilla pegada a ella es donde vive su quinto dado, y es lo que el candado cierra.");
-            Assert.IsTrue(_hazards.TryGetHazardAt(TableTile, out _),
-                "Su propia casilla incluida: no se congela por ser la dueña del área, no por estar afuera.");
-            Assert.IsTrue(_hazards.TryGetHazardAt(new GridCoord(4, 2), out _),
-                "La esquina también: es Chebyshev 1, no Manhattan.");
-
-            Assert.IsFalse(_hazards.TryGetHazardAt(AwayTile, out _),
-                "A distancia 2 ya NO hiela: el área bajó de 5×5 a 3×3 para dejar de leerse como " +
-                "terreno prohibido y volver a leerse como el cerrojo de una casilla.");
-
-            Assert.AreEqual(9, frost.Tiles.Count,
-                "El 3×3 macizo son 9 casillas — la sala 11×7 las contiene todas.");
-        }
-
-        [Test]
-        public void Turn_OnAFreeRound_LeavesTheTableClear_SoThereIsAWindowToBreakDice()
-        {
-            // Arrange
-            var root = GeneralaAssetBuilder.BuildAIRoot(_dice, _frost);
-
-            // Act — 2 no es múltiplo de FrostParityDivisor (3).
             root.Tick(NewContext(roundIndex: 2));
-
-            // Assert
-            Assert.IsFalse(_hazards.TryGetHazardAt(GluedTile, out _),
-                "En ronda franca no cae escarcha.");
-            CollectionAssert.IsEmpty(_hazards.ActiveInstances(), "Ni ninguna otra instancia.");
+            Assert.AreEqual(1, _tiles.ActiveInstances().Count(),
+                "El segundo turno prende el anillo que marco el primero.");
         }
 
         [Test]
-        public void Turn_TheFrostCostsATurnAndNotHp_SoTheFloorCeilingHolds()
+        public void Turn_TheRingIsCenteredOnTheRoom_SoItDoesNotFollowHer()
         {
-            // Arrange — pegado: la escarcha le cae encima sin stunearlo, porque OnEnter se dispara
-            // al pisar y él ya estaba adentro.
-            var root = GeneralaAssetBuilder.BuildAIRoot(_dice, _frost);
+            var root = GeneralaAssetBuilder.BuildAIRoot(_dice, _electric);
 
-            // Act — ronda de escarcha (múltiplo de FrostParityDivisor).
+            root.Tick(NewContext(roundIndex: 1));
+            Assert.IsTrue(_threat.TryConsume(RingSource(), out var first));
+
+            // El reposicionamiento del paso 7 ya la movio: si el anillo se anclara en ella, el
+            // segundo tiempo saldria corrido.
+            _grid.Register(_boss, AwayTile);
+            root.Tick(NewContext(roundIndex: 2));
+            Assert.IsTrue(_threat.TryConsume(RingSource(), out _));
             root.Tick(NewContext(roundIndex: 3));
+            Assert.IsTrue(_threat.TryConsume(RingSource(), out _));
+            root.Tick(NewContext(roundIndex: 4));
+            Assert.IsTrue(_threat.TryConsume(RingSource(), out var wrapped));
 
-            // Assert
-            CollectionAssert.AreEqual(new[] { GeneralaAssetBuilder.CupSlamDamage }, DamageAmounts(),
-                "La escarcha no puede cobrar daño: paga en turnos.");
+            CollectionAssert.AreEquivalent(first.Tiles, wrapped.Tiles,
+                "El mismo tiempo del ciclo tiene que marcar las mismas casillas aunque ella se haya " +
+                "movido: el anillo se centra en la sala.");
         }
-
-        [Test]
-        public void Turn_TheFrostReplacesTheRingOfThePreviousCast_InsteadOfStacking()
-        {
-            // Arrange
-            var root = GeneralaAssetBuilder.BuildAIRoot(_dice, _frost);
-
-            // Act — dos ciclos de escarcha (rondas 3 y 6, múltiplos de FrostParityDivisor).
-            root.Tick(NewContext(roundIndex: 3));
-            _threat.Clear(_boss);
-            root.Tick(NewContext(roundIndex: 6));
-
-            // Assert
-            Assert.AreEqual(1, _hazards.ActiveInstances().Count(),
-                "Una sola escarcha viva: dos superpuestas dejarían medio mapa helado.");
-        }
-
-        // ======================================================================
-        // La regla de la mano repetida
-        // ======================================================================
 
         [Test]
         public void Turn_ForbidsTheComboThePlayerJustScored_SoItPaysZeroNextRound()
         {
-            // Arrange — el jugador anotó un Par en su turno de esta ronda.
             _comboLog.Record(Rollgeon.Combos.ComboId.Par);
-            var root = GeneralaAssetBuilder.BuildAIRoot(_dice, _frost);
+            var root = GeneralaAssetBuilder.BuildAIRoot(_dice, _electric);
 
-            // Act — el jefe cierra su turno.
             root.Tick(NewContext(roundIndex: 1));
 
-            // Assert — la UI del Contrato lee estas dos cosas exactas (ContractRowStateResolver).
+            // La UI del Contrato lee estas dos cosas exactas (ContractRowStateResolver).
             Assert.IsTrue(_contractMods.IsForbidden(Rollgeon.Combos.ComboId.Par),
                 "La mano que acaba de anotar tiene que quedar prohibida.");
             Assert.AreEqual(0, _contractMods.GetEffectiveBaseDamage(Rollgeon.Combos.ComboId.Par, 10),
@@ -383,60 +307,44 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         [Test]
         public void Turn_TheBanIsASlidingWindow_SoLastRoundsComboComesBack()
         {
-            // Arrange
             _comboLog.Record(Rollgeon.Combos.ComboId.Par);
-            var root = GeneralaAssetBuilder.BuildAIRoot(_dice, _frost);
+            var root = GeneralaAssetBuilder.BuildAIRoot(_dice, _electric);
             root.Tick(NewContext(roundIndex: 1));
 
-            // Act — la ronda siguiente el jugador anota otra cosa.
             _comboLog.Record(Rollgeon.Combos.ComboId.Poker);
             _threat.Clear(_boss);
             root.Tick(NewContext(roundIndex: 2));
 
-            // Assert
             Assert.IsTrue(_contractMods.IsForbidden(Rollgeon.Combos.ComboId.Poker));
             Assert.IsFalse(_contractMods.IsForbidden(Rollgeon.Combos.ComboId.Par),
                 "El ban de la ronda pasada se levanta: sólo se prohíbe la última.");
         }
 
         [Test]
-        public void Turn_WithAnEmptyComboLog_BansNothing_AndStillMarksTheHand()
+        public void Turn_WithAnEmptyComboLog_BansNothing_AndStillMarksTheRing()
         {
-            // Arrange — primer turno de la pelea: el jugador todavía no anotó nada.
-            var root = GeneralaAssetBuilder.BuildAIRoot(_dice, _frost);
+            var root = GeneralaAssetBuilder.BuildAIRoot(_dice, _electric);
 
-            // Act
             root.Tick(NewContext(roundIndex: 1));
 
-            // Assert
             Assert.IsFalse(_contractMods.HasAnyModifier,
                 "Sin nada que repetir no se prohíbe nada — ni un id vacío.");
-            Assert.IsTrue(_threat.HasPending(_boss),
-                "Y la regla no puede comerse la marca de la mano.");
+            Assert.IsTrue(_threat.HasPending(RingSource()),
+                "Y la regla no puede comerse la marca del anillo.");
         }
-
-        // ======================================================================
-        // El reposicionamiento
-        // ======================================================================
 
         [Test]
         public void Turn_WithoutAMovementService_StillFinishesHerTurn()
         {
-            // Arrange — sin IMovementService el reposicionamiento devuelve Failed.
-            var root = GeneralaAssetBuilder.BuildAIRoot(_dice, _frost);
+            // Sin IMovementService el reposicionamiento devuelve Failed.
+            var root = GeneralaAssetBuilder.BuildAIRoot(_dice, _electric);
 
-            // Act
             var result = root.Tick(NewContext(roundIndex: 1));
 
-            // Assert
             Assert.AreNotEqual(AIResult.Failed, result,
                 "Un Failed del reposicionamiento no puede propagarse al Sequence raíz.");
-            Assert.IsTrue(_threat.HasPending(_boss), "Y la mano queda marcada igual.");
+            Assert.IsTrue(_threat.HasPending(RingSource()), "Y el anillo queda marcado igual.");
         }
-
-        // ======================================================================
-        // Helpers
-        // ======================================================================
 
         private void MovePlayerTo(GridCoord coord) => _grid.Register(_player, coord);
 
@@ -450,7 +358,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                 Attributes = _attributes,
                 DamagePipeline = _pipeline,
                 RoundIndex = roundIndex,
-                Rng = new ScriptedRandom(faces ?? ParHand),
+                Rng = new ScriptedRandom(faces ?? ScriptedFaces),
             };
 
         private List<int> DamageAmounts()

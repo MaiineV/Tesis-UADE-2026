@@ -1,5 +1,6 @@
 using UnityEditor;
 using UnityEngine;
+using Rollgeon.Editor.Tools.Enemy.Builders;
 using Rollgeon.Tutorial;
 using Rollgeon.UI;
 using Rollgeon.UI.HUD.Contract;
@@ -1115,6 +1116,35 @@ namespace Rollgeon.EditorTools.Localization
                 "him to take a part of the equation out of it. He speaks during combat " +
                 "making cool statistical observations about the player's roll. He's not " +
                 "cruel, he's an actuary who never learned to shut up.");
+
+            // Los tres del pool y su elenco. Acá NO va lore: es el texto del pergamino de
+            // hover, la única lectura que el jugador tiene antes de morir, así que dice lo que
+            // el jefe HACE y entra de un vistazo. Los tres de arriba son lore largo porque
+            // están en el banco y nadie los pasa el mouse por encima.
+            Boss(CroupierAssetBuilder.EntityId,
+                "El Croupier", "The Croupier",
+                "Quema el paño que tiene delante y se va al borde cuando lo acorralás.",
+                "Burns the ground in front of him and bolts for the edge when you crowd him.");
+
+            Boss(CajeroAssetBuilder.EntityId,
+                "El Cajero", "The Cashier",
+                "Te agarra, te tira lejos, y se queda con lo que se te cayó.",
+                "Grabs you, throws you clear, and keeps whatever you dropped.");
+
+            Boss(CajeroAssetBuilder.CritterEntityId,
+                "Comisión", "The Commission",
+                "Vuela, tira de lejos, y le pone precio a huir.",
+                "Flies, shoots from range, and puts a price on running.");
+
+            Boss(GeneralaAssetBuilder.BossEntityId,
+                "La Generala", "The Generala",
+                "Tira su propia mano a la vista. Rompele un dado y le borrás una categoría.",
+                "Rolls her own hand in the open. Break a die and you erase a category.");
+
+            Boss(GeneralaAssetBuilder.DiceEntityId,
+                "Dado de la Casa", "House Die",
+                "Parte de su mano, y en tu camino. Rompelo para borrarle una categoría.",
+                "Part of her hand, and in your way. Break it to erase a category.");
         }
 
         // ==================================================================
@@ -1126,6 +1156,19 @@ namespace Rollgeon.EditorTools.Localization
 
         private static void Content(string key, string es, string en)
             => LocalizationSetupTools.UpsertEntry(ContentTable, key, es, en);
+
+        /// <summary>
+        /// Atajo para el par <c>&lt;entityId&gt;.name</c> / <c>.desc</c> de un enemigo. El id va
+        /// entero y sin prefijo porque <c>EnemyDataSO.EntityId</c> ya lo trae calificado
+        /// (<c>boss.*</c>, <c>minion.*</c>, <c>obj.*</c>), que es la key que arma
+        /// <c>LocalizedContent</c>.
+        /// </summary>
+        private static void Boss(string entityId, string nameEs, string nameEn,
+                                 string descEs, string descEn)
+        {
+            Content($"{entityId}.name", nameEs, nameEn);
+            Content($"{entityId}.desc", descEs, descEn);
+        }
 
         /// <summary>Atajo para el par <c>ench.&lt;id&gt;.name</c> / <c>.desc</c>.</summary>
         private static void Ench(string id, string nameEs, string nameEn, string descEs, string descEn)

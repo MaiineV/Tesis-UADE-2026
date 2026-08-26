@@ -14,14 +14,9 @@ using UnityEngine;
 namespace Rollgeon.Combat.AI.Decisions
 {
     /// <summary>
-    /// "Arqueo de caja" (fase al 50% de HP del Cajero): guarda <see cref="TaxPercent"/> del oro del
-    /// jugador en la caja del jefe, se cura con eso hasta <see cref="MaxHeal"/>, y a partir de ahí
-    /// las fichas valen <see cref="ChipValueMultiplierAfterAudit"/> veces más.
-    /// </summary>
-    /// <remarks>
     /// Siempre Succeeded si pudo correr, incluso cobrando 0: va dentro de un <c>Once</c>, que no
     /// latchea con Failed, así que un Failed acá dejaría la Fase 2 sin anunciar para siempre.
-    /// </remarks>
+    /// </summary>
     [Serializable, HideReferenceObjectPicker]
     public sealed class AINode_CashierAudit : AIActionNode
     {
@@ -37,18 +32,12 @@ namespace Rollgeon.Combat.AI.Decisions
         [MinValue(1)]
         public int ChipValueMultiplierAfterAudit = 2;
 
-        /// <summary>
-        /// Event key del Animation Event del clip del jefe. Const y no campo autorable: un
-        /// <c>ED_Boss_*</c> ya serializado lo deserializaría vacío.
-        /// </summary>
+        /// <summary>Const y no campo autorable: un <c>ED_Boss_*</c> ya serializado lo deserializaría vacío.</summary>
         private const string ImpactEventKey = "hit";
 
         public override string NodeName => $"Cashier Audit ({TaxPercent:P0} → heal ≤ {MaxHeal})";
 
-        /// <summary>
-        /// Camino síncrono (EditMode / escenas sin <c>CoroutineHost</c>): arquea en el acto, sin
-        /// gesto. Bloquear acá colgaría el runner de tests.
-        /// </summary>
+        /// <summary>Camino síncrono (EditMode / escenas sin <c>CoroutineHost</c>): bloquear acá colgaría el runner de tests.</summary>
         public override AIResult Tick(AIContext context)
         {
             if (context == null || context.SelfGuid == Guid.Empty) return AIResult.Failed;
@@ -57,10 +46,6 @@ namespace Rollgeon.Combat.AI.Decisions
             return AIResult.Succeeded;
         }
 
-        /// <summary>
-        /// Camino de play mode: el jefe hace el gesto de manotear la caja y el oro cambia de manos en
-        /// el frame del golpe, con el turno retenido hasta que el clip termina.
-        /// </summary>
         public override IEnumerator TickCoroutine(AIContext context, Action<AIResult> onResult)
         {
             if (context == null || context.SelfGuid == Guid.Empty)
@@ -80,13 +65,10 @@ namespace Rollgeon.Combat.AI.Decisions
             var gesture = PlayAudit(context, resolveOnce);
             while (gesture.MoveNext()) yield return gesture.Current;
 
-            // Red de seguridad: el arqueo corre una sola vez — si se perdiera por falta de
-            // presentación, el jefe se quedaría en Fase 1 el resto de la pelea.
+            // Red de seguridad: el arqueo corre una sola vez, y perderlo lo deja en Fase 1 toda la pelea.
             resolveOnce();
             onResult?.Invoke(AIResult.Succeeded);
         }
-
-        // ---- pasos compartidos por los dos caminos -------------------------
 
         private void Audit(AIContext context)
         {
@@ -104,7 +86,6 @@ namespace Rollgeon.Combat.AI.Decisions
             if (heal > 0) ApplyHeal(attrs, context, heal);
         }
 
-        /// <summary>Dice el trato completo: cuánto te sacó y que vuelve si lo vencés.</summary>
         private static void Announce(AIContext context, int collected)
         {
             if (collected <= 0) return;
@@ -124,11 +105,7 @@ namespace Rollgeon.Combat.AI.Decisions
                 Vector3.zero);
         }
 
-        /// <summary>Texto de la promesa de devolución. Literal: no hay tabla de localización de jefes.</summary>
-        /// <remarks>
-        /// "matas" y no "vencés": la pixel font del HUD (<c>m6x11plus</c>) no tiene <c>é</c> en su
-        /// atlas y un glifo que falta sale como cuadradito.
-        /// </remarks>
+        /// <summary>"matas" y no "vencés": la pixel font del HUD (<c>m6x11plus</c>) no tiene <c>é</c> y un glifo que falta sale como cuadradito.</summary>
         private const string VaultPromise = "Arqueo: vuelve si lo matas";
 
         private static IEnumerator PlayAudit(AIContext context, Action onImpact)
@@ -183,8 +160,7 @@ namespace Rollgeon.Combat.AI.Decisions
                 return;
             }
 
-            // Sin baseline de SelfMaxHp no se clampea: preferimos curar de más que perder la
-            // curación entera del arqueo.
+            // Sin baseline de SelfMaxHp no se clampea: mejor curar de más que perder la curación entera.
             int maxHp = context.SelfMaxHp > 0 ? context.SelfMaxHp : int.MaxValue;
             attrs.Modify<Health, int>(context.SelfGuid, current =>
             {

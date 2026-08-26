@@ -8,23 +8,13 @@ using Rollgeon.Grid;
 namespace Rollgeon.Combat.Cashier
 {
     /// <summary>
-    /// Implementación de <see cref="ICashierCounterTollService"/>. POCO suscripto a
-    /// <see cref="EventName.OnTurnFinished"/>, sin MonoBehaviour ni bootstrap: se auto-registra vía
-    /// <see cref="ResolveOrCreate"/> el primer turno del jefe, igual que
-    /// <see cref="CashierLedgerService"/>.
+    /// Lee posiciones vivas y no la foto del armado, así el peaje sigue al jefe si el kiteo lo mueve.
+    /// Queda suscripto a <c>EventManager</c>, que <c>ServiceLocator.Clear()</c> no desengancha: el
+    /// fixture que lo cree debe llamar <see cref="Dispose"/> o sigue cobrando en el siguiente.
     /// </summary>
-    /// <remarks>
-    /// Lee posiciones vivas y no la foto del armado, así el peaje sigue al jefe si el kiteo lo mueve
-    /// y se apaga solo cuando muere. Queda suscripto a <c>EventManager</c>, que
-    /// <c>ServiceLocator.Clear()</c> no desengancha: el fixture que lo cree debe llamar
-    /// <see cref="Dispose"/> en el teardown o el peaje sigue cobrando en el fixture siguiente.
-    /// </remarks>
     public sealed class CashierCounterTollService : ICashierCounterTollService, IDisposable
     {
-        /// <summary>
-        /// Clasificación del daño del peaje: <see cref="AttackKind.Environmental"/> porque lo cobra
-        /// el mostrador y no el jefe, así que se cobra incluso con el jefe aturdido.
-        /// </summary>
+        /// <summary>Lo cobra el mostrador y no el jefe, así que se cobra incluso con el jefe aturdido.</summary>
         public const AttackKind TollKind = AttackKind.Environmental;
 
         private Guid _bossGuid;
@@ -47,7 +37,6 @@ namespace Rollgeon.Combat.Cashier
             EventManager.Subscribe(EventName.OnRunEnd, _onScopeEnded);
         }
 
-        /// <summary>Devuelve el servicio registrado o crea y registra uno nuevo (Global).</summary>
         public static ICashierCounterTollService ResolveOrCreate()
         {
             if (ServiceLocator.TryGetService<ICashierCounterTollService>(out var existing) && existing != null)
@@ -61,29 +50,18 @@ namespace Rollgeon.Combat.Cashier
             return created;
         }
 
-        // ======================================================================
-        // ICashierCounterTollService
-        // ======================================================================
-
-        /// <inheritdoc />
         public int TollDamage => _tollDamage;
 
-        /// <inheritdoc />
         public int CounterRow => _counterRow;
 
-        /// <inheritdoc />
         public bool IsArmed => _bossGuid != Guid.Empty && _payerGuid != Guid.Empty && _tollDamage > 0;
 
-        /// <inheritdoc />
         public int ChargesEveryNRounds => _chargesEveryNRounds;
 
-        /// <inheritdoc />
         public bool ChargesThisRound => IsArmed && IsChargingRound();
 
-        /// <inheritdoc />
         public Guid BossGuid => _bossGuid;
 
-        /// <inheritdoc />
         public void Arm(Guid bossGuid, Guid payerGuid, int counterRow, int tollDamage,
                         int chargesEveryNRounds = 1)
         {
@@ -100,7 +78,6 @@ namespace Rollgeon.Combat.Cashier
             _chargesEveryNRounds = chargesEveryNRounds < 1 ? 1 : chargesEveryNRounds;
         }
 
-        /// <inheritdoc />
         public void Disarm()
         {
             _bossGuid = Guid.Empty;
@@ -111,16 +88,10 @@ namespace Rollgeon.Combat.Cashier
         }
 
         /// <summary>
-        /// Si la ronda en curso es de las que cobran. Se lee de
-        /// <see cref="TurnOrderService.RoundIndex"/> en el momento del cobro y no de un contador
-        /// propio: el resume mid-combate restaura el <c>RoundIndex</c> por su cuenta, y un contador
-        /// local quedaría desfasado justo después de cargar una partida.
+        /// Se lee de <see cref="TurnOrderService.RoundIndex"/> en el momento del cobro y no de un
+        /// contador propio: el resume mid-combate lo restaura por su cuenta. Es 0-based y el jugador
+        /// abre cada ronda, así que su ronda N tiene índice N-1 — de ahí el <c>+1</c>.
         /// </summary>
-        /// <remarks>
-        /// El <c>RoundIndex</c> es 0-based y el jugador abre cada ronda, así que su ronda N tiene
-        /// índice N-1 — de ahí el <c>+1</c>. Sin <see cref="TurnOrderService"/> registrado cobra,
-        /// no perdona.
-        /// </remarks>
         private bool IsChargingRound()
         {
             if (_chargesEveryNRounds <= 1) return true;
@@ -131,20 +102,13 @@ namespace Rollgeon.Combat.Cashier
             return round % _chargesEveryNRounds == 0;
         }
 
-        /// <summary>
-        /// Si <paramref name="row"/> y <paramref name="otherRow"/> caen del mismo lado de
-        /// <paramref name="counterRow"/>. La fila del mostrador no cuenta como lado.
-        /// </summary>
+        /// <summary>La fila del mostrador no cuenta como lado.</summary>
         public static bool IsSameSide(int row, int otherRow, int counterRow)
         {
             int side = Math.Sign(row - counterRow);
             int otherSide = Math.Sign(otherRow - counterRow);
             return side != 0 && side == otherSide;
         }
-
-        // ======================================================================
-        // Lifecycle
-        // ======================================================================
 
         public void Dispose()
         {
@@ -164,10 +128,6 @@ namespace Rollgeon.Combat.Cashier
             }
             Disarm();
         }
-
-        // ======================================================================
-        // Event handlers
-        // ======================================================================
 
         private void OnTurnFinishedExternal(params object[] args)
         {
@@ -197,17 +157,11 @@ namespace Rollgeon.Combat.Cashier
 
         private void OnScopeEndedExternal(params object[] args) => Disarm();
 
-        // ======================================================================
-        // Presentación
-        // ======================================================================
-
-        /// <summary>Manotazo del Cajero + impacto sobre el que pagó, en el momento del cobro.</summary>
-        /// <remarks>
+        /// <summary>
         /// No bloquea el turno: el cobro cae en <c>OnTurnFinished</c>, fuera de toda coroutine que
         /// pueda esperarlo, así que un <c>BeginFeedbackWait</c> acá subiría el depth sin que nadie lo
-        /// baje. Todos los steps arrancan juntos: un step esperando el Animation Event <c>"hit"</c>
-        /// no se destrabaría hasta el watchdog.
-        /// </remarks>
+        /// baje. Los steps arrancan juntos: uno esperando el Animation Event colgaría al watchdog.
+        /// </summary>
         private void PlayTollFeedback(Guid payerGuid)
         {
             if (!ServiceLocator.TryGetService<IFeedbackService>(out var feedback) || feedback == null) return;

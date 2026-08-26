@@ -11,12 +11,9 @@ using Object = UnityEngine.Object;
 
 namespace Rollgeon.Editor.Tools.Enemy.Tests
 {
-    /// <summary>
-    /// Cómo queda <b>vestido</b> el Croupier: la ficha del wrapper y que el <c>ED_</c> se lleve
-    /// prefab visual y retrato. Casi todo in-memory; las dos excepciones (que el arte siga usando
-    /// los materiales del retinte y que el PNG del retrato exista) <b>leen</b> el AssetDatabase pero
-    /// no lo escriben — un rename silencioso ahí sólo deja un warning y colores de fábrica.
-    /// </summary>
+    /// <summary>Casi todo in-memory; las dos excepciones (que el arte siga usando los materiales del
+    /// retinte y que el PNG del retrato exista) <b>leen</b> el AssetDatabase pero no lo escriben —
+    /// un rename silencioso ahí sólo deja un warning y colores de fábrica.</summary>
     [TestFixture]
     public class CroupierVisualWiringTests
     {
@@ -32,10 +29,6 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             Assert.IsNotNull(_spec, "BuildWrapperSpec devolvió null.");
         }
 
-        // =====================================================================
-        // Arte y destino
-        // =====================================================================
-
         [Test]
         public void Spec_DressesTheSunkenGrandRigIntoTheBossPrefab()
         {
@@ -48,10 +41,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                 "El wrapper tiene que salir en PF_Boss_Croupier, no encima del prefab del rig prestado.");
         }
 
-        /// <summary>
-        /// El <c>*_Animated</c> es load-bearing: es el que trae el <c>Animator</c>. Apuntar al FBX o
-        /// al prefab crudo deja al jefe con malla y sin gestos, y eso no falla en ningún lado.
-        /// </summary>
+        /// <summary>El <c>*_Animated</c> es load-bearing: es el que trae el <c>Animator</c>. Apuntar al FBX
+        /// o al prefab crudo deja al jefe con malla y sin gestos, y eso no falla en ningún lado.</summary>
         [Test]
         public void Spec_DressesTheAnimatedWrapper_NotTheRawModel()
         {
@@ -64,10 +55,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                 $"'{_spec.ArtPrefabPath}' no trae Animator: el jefe pelea en T-pose.");
         }
 
-        /// <summary>
-        /// El spec puede decir una cosa y el <c>.prefab</c> serializado tener otra: hasta que
-        /// alguien corre el builder, el asset se queda con el rig viejo.
-        /// </summary>
+        /// <summary>El spec puede decir una cosa y el <c>.prefab</c> serializado tener otra: hasta que
+        /// alguien corre el builder, el asset se queda con el rig viejo.</summary>
         [Test]
         public void BuiltPrefab_ActuallyNestsTheArtTheSpecAsksFor()
         {
@@ -102,10 +91,6 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             Assert.AreEqual(ColliderKind.Capsule, _spec.Collider);
         }
 
-        // =====================================================================
-        // Retinte
-        // =====================================================================
-
         [Test]
         public void Spec_RetintsEverySurfaceThatWouldOtherwiseTwinTheTahur()
         {
@@ -121,10 +106,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                 "Mat_Particle_Red también (no es superficie del cuerpo).");
         }
 
-        /// <summary>
-        /// La camisa blanca es la única superficie que se comparte, y es una decisión: si alguien la
-        /// mete al diccionario, el jefe pierde el único punto claro de la silueta.
-        /// </summary>
+        /// <summary>La camisa blanca es la única superficie compartida, y es una decisión: metida al
+        /// diccionario, el jefe pierde el único punto claro de la silueta.</summary>
         [Test]
         public void Spec_LeavesTheWhiteShared_BecauseTheShirtIsHalfTheRead()
         {
@@ -187,10 +170,6 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             }
         }
 
-        // =====================================================================
-        // Sin props
-        // =====================================================================
-
         [Test]
         public void Spec_CarriesNoProps_SoNothingHangsOffHimWithoutMeaning()
         {
@@ -205,10 +184,6 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             // La rueda es mobiliario: si flasheara, el hit feedback dejaría de señalar el impacto.
             Assert.IsFalse(_spec.IncludePropRenderersInFeedback);
         }
-
-        // =====================================================================
-        // Ficha del jefe
-        // =====================================================================
 
         [Test]
         public void PopulateEnemyData_TakesTheVisualPrefabAndThePortrait()
@@ -238,10 +213,6 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                 Object.DestroyImmediate(data);
             }
         }
-
-        // =====================================================================
-        // Fixtures de arte — lectura del AssetDatabase, sin escritura
-        // =====================================================================
 
         [Test]
         public void Art_ExistsWhereTheSpecSaysItDoes()
@@ -307,15 +278,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                 "El prefab construido todavía trae el componente que hacía girar la rueda.");
         }
 
-        // =====================================================================
-        // La casilla de fuego — lectura del AssetDatabase, sin escritura
-        // =====================================================================
-
-        /// <summary>
-        /// El fuego del jefe. Se lee del asset y no del builder porque el builder sólo lo
-        /// <b>carga</b>: los números y el arte viven en el <c>.asset</c>, así que un test contra
-        /// constantes no vería nunca lo que ve el jugador.
-        /// </summary>
+        /// <summary>Se lee del asset y no del builder porque el builder sólo lo <b>carga</b>: los números
+        /// viven en el <c>.asset</c>, y un test contra constantes no vería lo que ve el jugador.</summary>
         private static SpecialTileDefinitionSO LoadFireTile() =>
             AssetDatabase.LoadAssetAtPath<SpecialTileDefinitionSO>(CroupierAssetBuilder.CroupierFirePath);
 
@@ -327,9 +291,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                 $"No existe {CroupierAssetBuilder.CroupierFirePath}: el nodo de ignición falla y los " +
                 "turnos de quema del jefe no hacen nada.");
 
-            // SpecialTileService.SpawnVisuals cae al overlay de quads cuando no hay prefab, y el
-            // fallback no avisa: la casilla "funciona" (cobra el daño) y se ve como un highlight
-            // de UI — el piso entero prendido y ni una llama en pantalla.
+            // SpecialTileService.SpawnVisuals cae al overlay de quads sin prefab y el fallback no
+            // avisa: la casilla cobra el daño y se ve como un highlight de UI, sin una sola llama.
             Assert.IsNotNull(fire.VisualPrefab,
                 "La casilla de fuego se quedó sin VisualPrefab. No es un fallo visible en consola: " +
                 "el servicio degrada solo a quads tintados y el fuego desaparece sin romper nada.");
@@ -355,42 +318,60 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                 "sala marcada en blanco y lo lee como un bug, no como fuego.");
         }
 
+        /// <summary>
+        /// La bomba tampoco lo perdona. Este asset SÍ lo escribe el builder, así que el invariante
+        /// vale contra los dos: el asset en disco y lo que el builder vuelve a escribir encima.
+        /// </summary>
+        [Test]
+        public void BombFireTile_BurnsItsOwnerToo()
+        {
+            var bombFire = AssetDatabase.LoadAssetAtPath<SpecialTileDefinitionSO>(
+                CroupierAssetBuilder.BombFireTilePath);
+            Assert.IsNotNull(bombFire, "Falta la casilla de fuego de bomba.");
+            AssertItBurnsItsOwner(bombFire);
+
+            var rebuilt = ScriptableObject.CreateInstance<SpecialTileDefinitionSO>();
+            rebuilt.hideFlags = HideFlags.HideAndDontSave;
+            try
+            {
+                CroupierAssetBuilder.ConfigureBombFireTile(rebuilt);
+                AssertItBurnsItsOwner(rebuilt);
+            }
+            finally
+            {
+                Object.DestroyImmediate(rebuilt);
+            }
+        }
+
+        private static void AssertItBurnsItsOwner(SpecialTileDefinitionSO tile) =>
+            Assert.IsFalse(tile.OwnerBossImmune,
+                $"'{tile.name}' volvió a perdonar a su dueño. El jefe se quema con lo suyo: es lo " +
+                "que le da sentido a que sus reacomodos esquiven las casillas que hacen daño.");
+
         [Test]
         public void FireTile_KeepsItsOwnNumbers_AndNotTheOnesOfTheGenericTemplate()
         {
             var fire = LoadFireTile();
             Assert.IsNotNull(fire, "Falta la casilla de fuego.");
 
-            // NINGÚN código escribe este asset: es autoría a mano, así que este test es lo único
-            // que lo ata a la ficha, y un rebuild descuidado desde la plantilla le devuelve los
-            // números de la plantilla sin que falle nada más. Cruzar y quedarse cuestan lo mismo
-            // (10 y 10) pero no pesan igual: el 10 de cruzar se cobra POR CASILLA y sin escudo,
-            // porque la acción del turno se fue en moverse.
-            //
-            // OJO: no hay constante en el builder que mueva estos dos números. La que se parece
-            // —CroupierAssetBuilder.BandidaReelFireDamage— alimenta el HazardDefinitionSO que el
-            // builder autora para los reels de La Bandida, y hoy vale otra cosa. Subir el fuego del
-            // Croupier es UNA edición y es en este .asset.
+            // NINGÚN código escribe este asset: es autoría a mano y este test es lo único que lo ata a
+            // la ficha. No hay constante en el builder que mueva estos dos números — la que se parece,
+            // BandidaReelFireDamage, alimenta el hazard de los reels de La Bandida.
             Assert.AreEqual(10, fire.TurnStartDamage,
                 "Arrancar el turno adentro cambió de precio. Por debajo del escudo mediano del " +
                 "jugador (~13) el fuego deja de ser una amenaza y pasa a ser decoración.");
-            Assert.GreaterOrEqual(fire.EnterDamage, fire.TurnStartDamage,
-                "Cruzar el fuego pasó a costar MENOS que quedarse parado en él. Así la jugada " +
-                "óptima es correr por el paño encendido, que es lo contrario del plan del jefe.");
-            Assert.AreEqual(10, fire.EnterDamage,
-                "Se cobra por casilla cruzada — es lo que hace que atravesar una banda para llegar al " +
-                "jefe tenga precio.");
+            Assert.AreEqual(6, fire.EnterDamage,
+                "Se cobra por casilla cruzada — es lo que hace que atravesar una banda para llegar " +
+                "al jefe tenga precio.");
+            Assert.Less(fire.EnterDamage, fire.TurnStartDamage,
+                "Cruzar dejó de ser más barato que quedarse. El fuego cobra el paso a mitad de " +
+                "precio y la permanencia entera: atravesarlo es una decisión cara, plantarse " +
+                "adentro es un error.");
             Assert.AreEqual(CroupierAssetBuilder.FireDurationRounds, fire.DefaultDurationRounds,
                 "La duración del asset dejó de coincidir con la que autora el nodo de ignición: una " +
                 "de las dos manda y no se sabe cuál.");
-            Assert.IsTrue(fire.OwnerBossImmune,
-                "Sin esto el jefe se quema en su propio fuego, y es un jefe que huye pegado a la " +
-                "banda que acaba de prender.");
+            AssertItBurnsItsOwner(fire);
         }
-
-        // =====================================================================
-        // Helpers
-        // =====================================================================
 
         /// <summary>Luma Rec. 601 — alcanza para ordenar los escalones de un ramp de cel shading.</summary>
         private static float Luminance(Color color) =>

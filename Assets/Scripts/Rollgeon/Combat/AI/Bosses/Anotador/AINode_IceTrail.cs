@@ -10,21 +10,11 @@ using UnityEngine;
 namespace Rollgeon.Combat.AI.Decisions
 {
     /// <summary>
-    /// Estela helada del Anotador (piso 2): congela las casillas que el boss <b>acaba de pisar</b>
-    /// en su repliegue. Pisarlas no hace daño — cuesta el turno (stun 1) y derrite la casilla.
+    /// Las casillas salen de <see cref="IceStunBinder"/>, que graba el path real: reconstruirlo con
+    /// <c>FindPath</c> daría otro camino, porque después de moverse la ocupancia cambió. "No me
+    /// repliegué este turno" devuelve <see cref="AIResult.Succeeded"/> como no-op: un
+    /// <see cref="AIResult.Failed"/> cortaría el Sequence y el boss perdería la marca de fila.
     /// </summary>
-    /// <remarks>
-    /// <para>
-    /// Las casillas salen de <see cref="IceStunBinder"/>, que graba el path real que publicó
-    /// <c>IMovementService.OnEntityMoved</c>. No se reconstruye con <c>FindPath</c>: después de moverse
-    /// la ocupancia cambió y el camino recalculado podría no ser el que caminó.
-    /// </para>
-    /// <para>
-    /// "No me repliegué este turno" devuelve <see cref="AIResult.Succeeded"/> como no-op: un
-    /// <see cref="AIResult.Failed"/> ahí cortaría el <see cref="AINode_Sequence"/> del turno y el boss
-    /// perdería la marca de fila, que es su único ataque.
-    /// </para>
-    /// </remarks>
     [Serializable, HideReferenceObjectPicker]
     public sealed class AINode_IceTrail : AIActionNode
     {
@@ -49,7 +39,6 @@ namespace Rollgeon.Combat.AI.Decisions
         [Tooltip("Si true, la estela nueva reemplaza la del turno anterior (una sola estela viva).")]
         public bool ReplacePreviousTrail = true;
 
-        /// <summary>Instancia viva publicada por este nodo. Por pelea: el árbol se clona al spawn.</summary>
         [NonSerialized] private Guid _liveTrailId;
 
         public override string NodeName => "Ice Trail (retreat tiles)";
@@ -66,8 +55,7 @@ namespace Rollgeon.Combat.AI.Decisions
             var binder = IceStunBinder.ResolveOrCreate();
             if (binder == null) return AIResult.Failed;
 
-            // Sin repliegue este turno ⇒ no-op transparente (ver remarks: un Failed acá le come
-            // la marca de fila al boss).
+            // Sin repliegue este turno ⇒ no-op transparente: un Failed acá le come la marca de fila.
             if (!binder.TryConsumeWalkedTiles(context.SelfGuid, out var walked)) return AIResult.Succeeded;
 
             if (!ServiceLocator.TryGetService<IHazardService>(out var hazards) || hazards == null)
@@ -97,10 +85,6 @@ namespace Rollgeon.Combat.AI.Decisions
             return AIResult.Succeeded;
         }
 
-        /// <summary>
-        /// Últimas <paramref name="max"/> casillas del recorrido: se recorta por el final porque las
-        /// que importan son las pegadas a su posición final.
-        /// </summary>
         private static List<GridCoord> TrimToLast(List<GridCoord> walked, int max)
         {
             if (walked == null) return new List<GridCoord>();

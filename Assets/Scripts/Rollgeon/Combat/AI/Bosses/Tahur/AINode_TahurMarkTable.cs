@@ -7,14 +7,10 @@ using UnityEngine;
 namespace Rollgeon.Combat.AI.Bosses.Tahur
 {
     /// <summary>
-    /// "Pone la mesa": pinta el 3×3 alrededor del Tahúr en cian, daño 0 — el único lugar desde
-    /// donde el jugador cobra el pozo.
-    /// </summary>
-    /// <remarks>
     /// La mesa vive en <see cref="ITahurWagerService.TableTiles"/> y su overlay usa una key propia
     /// (<see cref="TahurWagerService.TableOverlayGuid"/>): <see cref="IThreatenedAreaService"/> se
     /// indexa por el guid de la fuente y una segunda marca del mismo jefe pisaría al Castigo.
-    /// </remarks>
+    /// </summary>
     [Serializable, HideReferenceObjectPicker]
     public sealed class AINode_TahurMarkTable : AIActionNode
     {

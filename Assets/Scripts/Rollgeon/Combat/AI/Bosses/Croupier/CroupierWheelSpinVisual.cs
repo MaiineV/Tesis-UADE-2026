@@ -6,19 +6,14 @@ using UnityEngine;
 namespace Rollgeon.Combat.AI.Bosses.Croupier
 {
     /// <summary>
-    /// Gira la ruleta parenteada al prefab del Croupier cada vez que cambia el número en el aire, y la
-    /// deja parada en el sector cantado: el ángulo de la rueda <b>es</b> el número.
+    /// <see cref="ICroupierWheelService.NumbersChanged"/> es un solo canal para canto y corrimiento,
+    /// así que se clasifican por forma: todos los números exactamente +1 respecto del anterior es un
+    /// corrimiento (click corto); cualquier otra cosa, un canto nuevo (giro largo). Binding tardío:
+    /// al enganchar se lee <c>SungNumbers</c> para no perderse el primer canto.
     /// </summary>
-    /// <remarks>
-    /// <see cref="ICroupierWheelService.NumbersChanged"/> es un solo canal para canto y corrimiento, así
-    /// que se clasifican por forma: todos los números exactamente +1 respecto del evento anterior es un
-    /// corrimiento (click corto); cualquier otra cosa, un canto nuevo (giro largo). Binding tardío: al
-    /// enganchar se lee <c>SungNumbers</c> para no perderse el primer canto.
-    /// </remarks>
     [DisallowMultipleComponent]
     public sealed class CroupierWheelSpinVisual : MonoBehaviour
     {
-        /// <summary>Nombre con el que el builder parentea la ruleta al wrapper.</summary>
         public const string DefaultWheelChildName = "Wheel";
 
         [Header("Rig")]
@@ -62,10 +57,6 @@ namespace Rollgeon.Combat.AI.Bosses.Croupier
 
         private int SectorCount => _sectorCount > 0 ? _sectorCount : ThreatAreaShape.RoomSectorCount;
 
-        // ======================================================================
-        // Ciclo de vida
-        // ======================================================================
-
         private void Awake()
         {
             if (_wheel == null) _wheel = transform.Find(DefaultWheelChildName);
@@ -91,10 +82,6 @@ namespace Rollgeon.Combat.AI.Bosses.Croupier
             AdvanceSpin(Time.deltaTime);
         }
 
-        // ======================================================================
-        // Servicio
-        // ======================================================================
-
         private void EnsureBound()
         {
             ServiceLocator.TryGetService<ICroupierWheelService>(out var current);
@@ -107,8 +94,8 @@ namespace Rollgeon.Combat.AI.Bosses.Croupier
 
             _service.NumbersChanged += OnNumbersChanged;
 
-            // El primer canto viaja en el mismo tick en el que el nodo crea el servicio, así que su
-            // evento ya pasó cuando llegamos acá: se lee el estado en vez de esperar el próximo.
+            // El primer canto viaja en el mismo tick en que el nodo crea el servicio: su evento ya
+            // pasó, así que se lee el estado en vez de esperar el próximo.
             var inAir = _service.SungNumbers;
             if (inAir != null && inAir.Count > 0) OnNumbersChanged(inAir);
         }
@@ -140,18 +127,14 @@ namespace Rollgeon.Combat.AI.Bosses.Croupier
                 nudged ? _nudgeDuration : _singDuration);
         }
 
-        // ======================================================================
-        // Tween
-        // ======================================================================
-
         private void SpinTo(int sector, float extraTurns, float duration)
         {
             int count = Mathf.Max(1, SectorCount);
             int index = ((sector - 1) % count + count) % count;
             float aligned = index * (360f / count);
 
-            // Mathf.Repeat del delta = "la próxima vez que el ángulo actual pase por el sector", así el
-            // giro siempre va hacia adelante aunque el número nuevo sea menor que el anterior.
+            // Mathf.Repeat del delta = "la próxima vez que el ángulo pase por el sector": el giro
+            // siempre va hacia adelante aunque el número nuevo sea menor.
             _fromAngle = _angle;
             _toAngle = _angle + Mathf.Repeat(aligned - _angle, 360f) + Mathf.Max(0f, extraTurns) * 360f;
             _duration = Mathf.Max(0f, duration);
@@ -176,8 +159,7 @@ namespace Rollgeon.Combat.AI.Bosses.Croupier
 
         private void SnapToTarget()
         {
-            // El ángulo se normaliza al frenar: acumular vueltas toda la pelea le come precisión al
-            // float y el sector dejaría de caer donde tiene que caer.
+            // El ángulo se normaliza al frenar: acumular vueltas le come precisión al float.
             _angle = Mathf.Repeat(_toAngle, 360f);
             _fromAngle = _angle;
             _toAngle = _angle;
@@ -196,16 +178,11 @@ namespace Rollgeon.Combat.AI.Bosses.Croupier
             _wheel.localRotation = _baseRotation * Quaternion.AngleAxis(_angle, _axis);
         }
 
-        /// <summary>Ease-out cúbico: arranca rápido y se sienta en el número, como una rueda con roce.</summary>
         private static float EaseOut(float t)
         {
             float inv = 1f - t;
             return 1f - inv * inv * inv;
         }
-
-        // ======================================================================
-        // Clasificación canto / corrimiento
-        // ======================================================================
 
         private void CacheNumbers(IReadOnlyList<int> numbers)
         {
@@ -213,10 +190,6 @@ namespace Rollgeon.Combat.AI.Bosses.Croupier
             for (int i = 0; i < numbers.Count; i++) _lastNumbers.Add(numbers[i]);
         }
 
-        /// <summary>
-        /// <c>true</c> si <paramref name="current"/> es <paramref name="previous"/> corrido un sector:
-        /// la firma del corrimiento.
-        /// </summary>
         private bool IsSingleStepFrom(List<int> previous, IReadOnlyList<int> current)
         {
             if (previous.Count == 0 || previous.Count != current.Count) return false;
@@ -229,10 +202,7 @@ namespace Rollgeon.Combat.AI.Bosses.Croupier
             return true;
         }
 
-        /// <summary>
-        /// Mismo wrap que <c>CroupierWheelService</c> (privado allá): es una rueda, del último sector se
-        /// vuelve al primero.
-        /// </summary>
+        /// <summary>Mismo wrap que <c>CroupierWheelService</c> (privado allá): es una rueda, del último sector se vuelve al primero.</summary>
         private static int Wrap(int number, int count)
         {
             int wrapped = ((number - 1) % count + count) % count;

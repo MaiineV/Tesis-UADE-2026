@@ -1,9 +1,9 @@
 using System.Collections.Generic;
 using System.IO;
 using Rollgeon.Combat.AI.Decisions;
-using Rollgeon.Combat.AI.Readers;
 using Rollgeon.Combat.AI.Targeting;
 using Rollgeon.Combat.Pipelines;
+using Rollgeon.Combat.Rooms;
 using Rollgeon.Combat.Threat;
 using Rollgeon.Combos;
 using Rollgeon.Entities;
@@ -88,8 +88,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         public const float WeaknessMultiplier = 1.3f;
 
         /// <summary>Vida del jefe de piso 1.</summary>
-        public const int MaxHp = 300;
-        public const int Attack = 24;
+        public const int MaxHp = 250;
         public const int Speed = 5;
         public const int MinGoldDrop = 15;
         public const int MaxGoldDrop = 23;
@@ -107,19 +106,34 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         public const int BandidaReelFireDamage = 6;
 
         /// <summary>
-        /// "Arde 2 rondas" = 3 rondas de casilla. La duración tickea en el wrap de ronda y el fuego
+        /// "Arde 3 rondas" = 4 rondas de casilla. La duración tickea en el wrap de ronda y el fuego
         /// nace en el turno del jefe, o sea después del turno del jugador de esa ronda (CNF-006):
         /// la ronda en la que se enciende no le queda ningún arranque de turno del jugador por
         /// delante. Arrancar N turnos adentro pide autorar N + 1.
         /// </summary>
-        public const int FireDurationRounds = 3;
+        /// <remarks>
+        /// El número lo fija el ciclo, no el gusto: el cono prende en uno de los <b>tres</b> tiempos,
+        /// así que hay una ignición cada tres turnos y el fuego tiene que durar los tres. Con menos,
+        /// el paño queda limpio entre cono y cono y deja de ser algo que haya que rodear; con más, las
+        /// bandas se apilan y la sala se queda sin piso.
+        /// </remarks>
+        public const int FireDurationRounds = 4;
 
         /// <summary>
-        /// Duración de las bandas desde "Pleno y color": 4 de casilla = arde 3. Dos bandas pueden
-        /// convivir, pero no se pisan — la nueva sólo enciende lo que no ardía (ver
-        /// <c>AINode_IgniteArea.AlreadyBurning</c>).
+        /// Duración de las bandas desde "Pleno y color": 5 de casilla = arde 4. Exactamente una ronda
+        /// más que <see cref="FireDurationRounds"/>, y eso es lo que hace que dos bandas convivan
+        /// durante el relevo — el único escalón de dificultad del umbral. No se pisan: la nueva sólo
+        /// enciende lo que no ardía (ver <c>AINode_IgniteArea.AlreadyBurning</c>).
         /// </summary>
-        public const int FireDurationRoundsPhase2 = 4;
+        public const int FireDurationRoundsPhase2 = 5;
+
+        /// <summary>
+        /// Duración del paño que prende "Pleno y color": 2 de casilla = arde 1. Es un fogonazo, no
+        /// terreno — prende todo salvo el 3x3 del jefe, así que si durara como una banda no habría
+        /// dónde pararse. Va aparte de <see cref="FireDurationRoundsPhase2"/> porque el Pleno cruza
+        /// el umbral y compartir la constante lo ataría a la duración de las bandas.
+        /// </summary>
+        public const int PlenoFireDurationRounds = 2;
 
         /// <summary>
         /// Duracion del hazard de paño que este builder autora para La Bandida (sus reels lo
@@ -131,7 +145,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         // Kiteo y fuego
         // ======================================================================
 
-        /// <summary>Disparo de T1.</summary>
+        /// <summary>Disparo del tiempo de reparto.</summary>
         public const int ShotDamage = 18;
 
         /// <summary>
@@ -142,7 +156,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
 
         /// <summary>
         /// Distancia Manhattan al jugador desde la que el jefe se toma la molestia de huir. A esta
-        /// distancia o menos, los dos saltos del ciclo (T1 y T2) corren; más lejos, se quedan
+        /// distancia o menos, los tres saltos del ciclo corren; más lejos, se quedan
         /// plantados.
         /// </summary>
         /// <remarks>
@@ -154,6 +168,39 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         /// camina hacia él y el jefe no vuelve a huir hasta estar de nuevo dentro de este radio.
         /// </remarks>
         public const int FleeTriggerRange = 5;
+
+        /// <summary>
+        /// Pesos del sorteo de la fuga: adentro del radio no huye siempre, apuesta. Se va al borde,
+        /// se te viene encima, salta al centro de la sala, o se queda.
+        /// </summary>
+        /// <remarks>
+        /// <para>
+        /// El acercamiento se lleva el grueso: el kit del jefe es todo a distancia, así que cerrar
+        /// la distancia es la cara que le devuelve el turno al jugador —y por eso la banda lo deja
+        /// cerca y no pegado—. Desaparecer <b>es</b> el personaje, pero con el borde pesado la fuga
+        /// es la reacción cantada y la pelea se va en caminar detrás de él; acá es la cara rara, la
+        /// que castiga cuando sale. El centro es el que tiene textura —lo alcanzás, pero desde el
+        /// medio el cono no se recorta contra ninguna pared, así que amenaza sus 16 casillas
+        /// enteras: es un canje y no un premio—. Quedarse es el piso del sorteo.
+        /// </para>
+        /// <para>
+        /// Son <b>pesos</b>, no porcentajes: <c>AINode_Random</c> normaliza contra la suma. Suman 100
+        /// para que se lean como porcentajes, no porque el nodo lo pida.
+        /// </para>
+        /// <para>
+        /// Ojo con el vocabulario: <c>BossFeedbackIds</c> usa "la ruleta" para el mecanismo retirado
+        /// del número cantado que giraba un rodillo. Este sorteo no tiene nada que ver con eso.
+        /// </para>
+        /// </remarks>
+        public const float FleeWeightEdge = 20f;
+        public const float FleeWeightNear = 55f;
+        public const float FleeWeightCenter = 15f;
+        public const float FleeWeightStay = 10f;
+
+        /// <summary>Banda del acercamiento, en Manhattan al jugador. Ver
+        /// <see cref="AINode_TeleportNearTarget"/>: pegado sería regalarle un turno franco.</summary>
+        public const int NearMinDistance = 2;
+        public const int NearMaxDistance = 3;
 
         /// <summary>Semi-ancho del apex del cono: 0 = arranca en una sola casilla.</summary>
         public const int ConeApexHalfWidth = 0;
@@ -172,10 +219,11 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         public const float LockHpThreshold = 0.7f;
 
         /// <summary>
-        /// Cual dado se traba. RotateBlock etiqueta el candado con el indice + 1, asi que 0
-        /// muestra "1".
+        /// Dados que traba el candado por turno. El cual lo sortea el nodo, no este builder: el
+        /// candado sale sin etiqueta y eso es lo correcto para un sorteo, porque no hay ningun
+        /// numero cantado al que atarlo.
         /// </summary>
-        public const int LockedDieIndex = 0;
+        public const int LockedDiceCount = 1;
 
         /// <summary>Umbral de "Pleno y color".</summary>
         public const float PlenoHpThreshold = 0.5f;
@@ -196,7 +244,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         /// Canal de la marca de "Pleno y color" (<c>AINode_TelegraphMark.ChannelId</c>).
         /// </summary>
         /// <remarks>
-        /// El Pleno y la banda de T1 pueden estar marcados en el mismo turno, y tanto
+        /// El Pleno y la banda del cono pueden estar marcados en el mismo turno, y tanto
         /// <c>IThreatenedAreaService</c> como el overlay guardan un área por fuente: sin canal propio
         /// la segunda marca borra la primera. El paso que la consume tiene que declarar este mismo
         /// string.
@@ -205,6 +253,86 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
 
         /// <summary>Rojo de brasa — se tiene que leer distinto del naranja del telegraph.</summary>
         public static readonly Color FireOverlayTint = new Color(0.85f, 0.10f, 0.05f, 0.60f);
+
+        // ======================================================================
+        // Bombas — el primer tiempo del ciclo, y lo que ya está puesto al entrar a la sala
+        // ======================================================================
+
+        public const string BombDefinitionPath = "Assets/Rollgeon/Combat/RoomObjects/RO_Croupier_Bomba.asset";
+        public const string BombDefinitionId = "roomobj.croupier.bomba";
+        public const string BombFireTilePath = "Assets/Rollgeon/Tiles/Tile_Fire_CroupierBomba.asset";
+        public const string BombFireTileId = "TILE_FIRE_CROUPIER_BOMBA";
+        public const string BombArtPrefabPath = "Assets/Art/3D/Models/Items/Bomb.fbx";
+        public const string BombVisualPrefabPath = "Assets/Prefabs/Enemies/Bosses/PF_Obj_Bomba.prefab";
+
+        /// <summary>
+        /// Bombas por siembra. Se leen contra las <see cref="BombFuseTurns"/> acciones que la mecha le
+        /// deja al jugador: romperlas todas es posible con energía de sobra, pero el turno normal
+        /// obliga a elegir cuáles.
+        /// </summary>
+        public const int BombCount = 3;
+
+        /// <summary>
+        /// Turnos que la bomba está en pie, o sea acciones que el jugador tiene para romperla. Es
+        /// <b>menos que el ciclo</b> a propósito, y por eso el estallido vive en un nodo aparte
+        /// (<see cref="AINode_DetonateBombField"/>) tickeado todos los turnos: un nodo que corre una
+        /// vez por ciclo sólo puede expresar un plazo de un ciclo.
+        /// </summary>
+        /// <remarks>
+        /// Con la siembra abriendo el ciclo, 2 hace que el estallido caiga siempre en el tiempo de
+        /// reparto — el tercero —, o sea lejos del turno en que arde el cono. El jugador aprende en
+        /// qué turno le explota el paño, y nunca se le juntan los dos fuegos.
+        /// </remarks>
+        public const int BombFuseTurns = 2;
+
+        /// <summary>
+        /// La siembra rota <c>+</c> y <c>×</c>, y arranca por la cruz ortogonal.
+        /// </summary>
+        /// <remarks>
+        /// Las dos formas cubren 5 casillas, así que el fuego que queda pesa lo mismo y el balance no
+        /// se mueve. Lo que se mueve es la lectura: con la <c>+</c> el lugar donde pararse al lado de
+        /// una bomba es la diagonal, y con la <c>×</c> es justo la que mata. Rotando, la esquiva del
+        /// ciclo anterior no sirve para el siguiente y hay que volver a mirar el paño.
+        /// </remarks>
+        public const AINode_BombField.BlastShape BombShape = AINode_BombField.BlastShape.Alternating;
+
+        /// <summary>
+        /// Separación mínima, en Chebyshev, entre bombas y contra el propio jefe.
+        /// </summary>
+        /// <remarks>
+        /// <b>3 y no 2</b>: a 2 dos cruces alineadas comparten la casilla del medio, y ahí las dos
+        /// bombas se leen como una mancha en vez de como dos preguntas. A 3 no se tocan nunca — ni
+        /// las ortogonales ni las aspas, que se solaparían recién a 2.
+        /// El precio es cuántas entran — medido sobre las 103 caminables de la sala, a 3 entran
+        /// <see cref="BombCount"/> en el 100% de las siembras, ocho en el 92% y diez sólo en el 5%.
+        /// </remarks>
+        public const int BombSpacing = 3;
+
+        /// <summary>
+        /// Vida de cada bomba. Contra el daño del piso 1 (13-27) el golpe flojo ya no alcanza: lo
+        /// que la bomba cobra sigue siendo <b>la acción</b>, pero una tirada pobre la deja en pie.
+        /// El dado de La Generala tiene 45 porque ahí sí se quiere fundir una barra.
+        /// </summary>
+        public const int BombHp = 18;
+
+        /// <summary>
+        /// Lo que cobra la casilla que deja una bomba que llegó al plazo: los 10 del paño más 5 por
+        /// haberla dejado madurar.
+        /// </summary>
+        public const int BombFireDamage = 15;
+
+        /// <summary>
+        /// Lo que cobra el estallido en sí: <b>nada</b>, igual que el cono. Quien esté parado en la
+        /// cruz cuando prende paga los <see cref="BombFireDamage"/> al arrancar su turno ahí, que es
+        /// lo que le da el turno para salirse. Cobrar también al prender lo cobraría dos veces.
+        /// </summary>
+        public const int BombIgnitionDamage = 0;
+
+        /// <summary>
+        /// De acá sale el canal de amenaza de cada bomba (prefijo + su guid). Uno por bomba es lo que
+        /// hace que romper una levante <b>su</b> cruz: el servicio guarda un área por fuente.
+        /// </summary>
+        public const string BombChannelPrefix = "croupier.bomb.";
 
         // ======================================================================
         // Ficha visual — paleta
@@ -284,6 +412,9 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
             var visual = BuildVisualPrefab();
             var portrait = BossPortraitLibrary.Croupier();
 
+            var bombFire = EnsureBombFireTile();
+            var bomb = EnsureBombDefinition(BuildBombVisual());
+
             var boss = LoadOrCreate<EnemyDataSO>(BossAssetPath);
             var croupierFire = AssetDatabase.LoadAssetAtPath<SpecialTileDefinitionSO>(CroupierFirePath);
             if (croupierFire == null)
@@ -292,14 +423,16 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
                                "fuego: el nodo de ignicion falla y sus turnos de quema no hacen nada.");
             }
 
-            PopulateEnemyData(boss, croupierFire, visual, portrait);
+            PopulateEnemyData(boss, croupierFire, visual, portrait, bomb, bombFire);
 
             EditorUtility.SetDirty(boss);
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
 
-            Debug.Log($"[CroupierAssetBuilder] Listo: '{BossAssetPath}' + '{VisualPrefabPath}' + el " +
-                      $"hazard de paño de La Bandida ('{FirePhase1Path}').");
+            Debug.Log($"[CroupierAssetBuilder] Listo: '{BossAssetPath}' + '{VisualPrefabPath}' + sus " +
+                      $"bombas ('{bomb.name}' × {BombCount}, {BombHp} HP, mecha {BombFuseTurns}, con " +
+                      $"'{bombFire.name}' a {BombFireDamage}) + el hazard de paño de La Bandida " +
+                      $"('{FirePhase1Path}').");
             Selection.activeObject = boss;
         }
 
@@ -391,43 +524,6 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         // ======================================================================
 
         /// <summary>
-        /// Texto de hover del jefe: qué hace y con qué números, en tres oraciones.
-        /// </summary>
-        /// <remarks>
-        /// Los números salen de las constantes de la ficha o de <paramref name="fire"/>, nunca
-        /// escritos a mano. La duración se muestra con una ronda menos que la autorada: la ronda en
-        /// la que se enciende no tiene cierre de turno del jugador por delante.
-        /// </remarks>
-        public static string BuildDescription(SpecialTileDefinitionSO fire)
-        {
-            int coneMouth = (ConeApexHalfWidth + ConeDepth - 1) * 2 + 1;
-            int holeSide = PlenoHoleRadius * 2 + 1;
-            int lockPercent = Mathf.RoundToInt(LockHpThreshold * 100f);
-            int plenoPercent = Mathf.RoundToInt(PlenoHpThreshold * 100f);
-
-            var sb = new System.Text.StringBuilder();
-            sb.Append("Warps to the edge of the table every turn and shoots for ").Append(ShotDamage)
-              .Append(" at any range. Every other turn he lights a cone of fire ").Append(ConeDepth)
-              .Append(" deep, widening to ").Append(coneMouth).Append(" tiles");
-
-            if (fire != null)
-            {
-                sb.Append(" — ").Append(fire.EnterDamage).Append(" to cross, ")
-                  .Append(fire.TurnStartDamage).Append(" to start a turn on it");
-            }
-
-            sb.Append(", burning ").Append(Mathf.Max(1, FireDurationRounds - 1)).Append(" rounds (")
-              .Append(Mathf.Max(1, FireDurationRoundsPhase2 - 1)).Append(" under ").Append(plenoPercent)
-              .Append("%). At ").Append(lockPercent).Append("% he padlocks one die; at ")
-              .Append(plenoPercent).Append("% he warps to the centre and marks the whole table ")
-              .Append("except the ").Append(holeSide).Append("×").Append(holeSide)
-              .Append(" square around him — it burns on his next turn for ")
-              .Append(PlenoIgnitionDamage).Append(".");
-
-            return sb.ToString();
-        }
-
-        /// <summary>
         /// Escribe la ficha completa del Croupier en <paramref name="data"/>, incluido su
         /// <see cref="EnemyDataSO.AIRoot"/>. No toca <c>AssetDatabase</c>: sirve igual para el asset
         /// real y para una instancia in-memory de test.
@@ -436,22 +532,35 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
             EnemyDataSO data,
             SpecialTileDefinitionSO fire,
             GameObject visualPrefab,
-            Sprite portrait)
+            Sprite portrait,
+            RoomObjectDefinitionSO bombs = null,
+            SpecialTileDefinitionSO bombFire = null)
         {
             if (data == null) return;
 
             data.EntityId = EntityId;
             data.DisplayName = DisplayName;
-            data.Description = BuildDescription(fire);
+            // Una línea, sin números y sin prometer un resultado: el tooltip es un adelanto, no la
+            // ficha, y la fuga es un sorteo — nombrar una sola de las tres salidas miente la mitad
+            // de los turnos.
+            data.Description =
+                "Burns the ground in front of him and rolls for the exit when you crowd him.";
 
             data.WeaknessComboId = WeaknessComboId;
             data.WeaknessMultiplierOverride = WeaknessMultiplier;
 
             data.BaseHP = MaxHp;
-            data.BaseAttack = Attack;
             data.BaseSpeed = Speed;
             data.MaxEnergy = 3;
-            data.BaseAttackRange = 1;
+
+            // Espejo del disparo, no un número propio. El jefe es 100% a distancia: su árbol no
+            // lleva ningún nodo de melee, así que este par no lo lee nadie en runtime —
+            // TreeDrivenEnemyAI saltea el BasicEnemyAI que sería su único consumidor. Pero se lee
+            // a mano, y con un 24 a alcance 1 heredado del diseño viejo el bloque de stats decía
+            // que el jefe de piso 1 pega más de cerca que el de piso 2, que es lo contrario de la
+            // verdad. Un 0 tampoco servía: leído al lado de otro jefe lo hace parecer inofensivo.
+            data.BaseAttack = ShotDamage;
+            data.BaseAttackRange = ShotRange;
 
             // Sin esto su propio fuego lo quema: ShouldAffect exige
             // OwnerBossImmune && IsBoss && que el dueño sea este guid.
@@ -468,7 +577,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
             data.Behaviors = new List<BaseBehavior>();
             data.ExtraTiers = new List<EnemyTier>();
 
-            data.AIRoot = BuildAIRoot(fire);
+            data.AIRoot = BuildAIRoot(fire, bombs, bombFire);
         }
 
         /// <summary>
@@ -484,8 +593,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         /// </para>
         /// <para>
         /// La ignición también va antes del <c>Alternate</c>: <c>Clear</c> y <c>Show</c> del overlay
-        /// son por fuente, así que detrás de T1 le pasaría el trapo al aviso de la banda que T1
-        /// acaba de levantar.
+        /// son por fuente, así que detrás del ciclo le pasaría el trapo al aviso que el tiempo de
+        /// las bombas acaba de levantar.
         /// </para>
         /// <para>
         /// Cada paso que puede fallar va en <c>Selector[paso, Wait]</c> porque el Sequence raíz corta
@@ -494,7 +603,10 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         /// blink de la fuga no corta el Sequence.
         /// </para>
         /// </remarks>
-        public static AINode_Sequence BuildAIRoot(SpecialTileDefinitionSO fire)
+        public static AINode_Sequence BuildAIRoot(
+            SpecialTileDefinitionSO fire,
+            RoomObjectDefinitionSO bombs = null,
+            SpecialTileDefinitionSO bombFire = null)
         {
             return new AINode_Sequence
             {
@@ -508,18 +620,40 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
                     Guarded(new AINode_IgniteArea
                     {
                         Definition = fire,
-                        DurationRounds = FireDurationRoundsPhase2,
+                        DurationRounds = PlenoFireDurationRounds,
                         ChannelId = PlenoChannelId,
                         // 0 y no 1: el turno de aviso ya lo da el orden de los hijos. Con 1 el nodo
                         // sumaria SU turno de espera arriba del que ya da el orden y prenderia en
                         // N+2.
                         AnnounceTurns = 0,
-                        // El pano entero tapa a cualquier banda vieja: sin esto ese terreno se queda
-                        // con el reloj de la banda --el mas corto-- y se apaga en el wrap siguiente.
-                        RetireFullyReplaced = true,
+                        WindupFeedbackId = BossFeedbackIds.CroupierMeleeAnim,
+                        // OFF, al reves que las bandas: el Pleno es el reloj mas corto de los tres,
+                        // asi que relevar lo que tapa le recortaria la banda que ya venia ardiendo a
+                        // un solo turno. Apagado, lo que ardia sigue con su reloj y el Pleno prende
+                        // el resto del pano — que es lo unico que tiene que durar un turno.
+                        // AlreadyBurning ya evita el doble cobro por su cuenta.
+                        RetireFullyReplaced = false,
                     }),
 
-                    // 2. Desde el 70% le queda un dado con candado. SIN AINode_Once: DiceBlockService
+                    // 2. La mecha de las bombas. FUERA del Alternate y tickeado todos los turnos:
+                    //    es lo unico que permite un plazo mas corto que el ciclo, porque un nodo que
+                    //    corre una vez cada tres turnos solo puede expresar tres. Y ANTES del ciclo,
+                    //    o en el turno de la siembra detonaria lo que ese mismo turno acaba de
+                    //    plantar.
+                    Guarded(new AINode_DetonateBombField
+                    {
+                        FireTile = bombFire,
+                        FireDurationRounds = FireDurationRounds,
+                        IgnitionDamage = BombIgnitionDamage,
+                        ChannelPrefix = BombChannelPrefix,
+
+                        // Los ids son los que autoro AINode_DetonateSungSectors --la ruleta que se
+                        // retiro-- y siguen instalados en el FeedbackDB.
+                        DetonationVfxId = BossFeedbackIds.CroupierImpactVfx,
+                        DetonationFeelId = BossFeedbackIds.CroupierImpactFeel,
+                    }),
+
+                    // 3. Desde el 70% le queda un dado con candado. SIN AINode_Once: DiceBlockService
                     //    se limpia solo al cerrar cada turno del jugador, asi que "permanente" se
                     //    consigue re-emitiendolo todos los turnos; con Once duraria un turno. Y va
                     //    FUERA del Alternate por lo mismo: adentro se emitiria uno de cada dos.
@@ -532,57 +666,59 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
                         Then = new AINode_RotateBlock
                         {
                             Target = AINode_RotateBlock.BlockTarget.Dice,
-                            DirectedIndex = new AIConstantInt { Value = LockedDieIndex },
+                            // Sin DirectedIndex: el nodo sortea con el Rng del contexto, y como se
+                            // re-emite cada turno el dado trabado cambia turno a turno. Count = 1
+                            // porque el candado es uno; con mas de uno deja de ser una molestia y
+                            // pasa a decidir la tirada.
+                            Count = LockedDiceCount,
                             BlockVfxId = BossFeedbackIds.CroupierConfiscaVfx,
                             BlockFeelId = BossFeedbackIds.CroupierConfiscaFeel,
+
+                            // El candado se re-emite todos los turnos porque DiceBlockService se
+                            // limpia solo; el cartel no. Sin esto el jugador ve el mismo aviso desde
+                            // el 70% hasta el final de la pelea.
+                            AnnounceOnce = true,
                         },
                         Else = new AINode_Wait(),
                     }),
 
-                    // 3. Los dos tiempos: la accion normal del turno. Alternate avanza el indice en
+                    // 4. Los tres tiempos: la accion normal del turno. Alternate avanza el indice en
                     //    cada tick pase lo que pase, asi que un beat que falla igual gasta su turno y
                     //    el ciclo no se desincroniza.
                     Guarded(new AINode_Alternate
                     {
                         Children = new List<AIDecisionNode>
                         {
-                            // -- T1 "Reparte" --------------------------------------------------
+                            // -- T1 "Bombas" ---------------------------------------------------
+                            // Solo siembra y marca: la mecha la descuenta el nodo de arriba, todos
+                            // los turnos. Sembrando aca y con BombFuseTurns en 2, el estallido cae
+                            // siempre en el turno de reparto del ciclo siguiente.
                             new AINode_Sequence
                             {
                                 Children = new List<AIDecisionNode>
                                 {
-                                    // Dispara primero: si huyera antes, el tiro saldria desde la
-                                    // casilla nueva y el jugador veria el fogonazo salir de donde
-                                    // el jefe ya no esta.
-                                    Guarded(new AINode_RangedShot
+                                    Guarded(new AINode_BombField
                                     {
-                                        Damage = ShotDamage,
-                                        Range = ShotRange,
-                                        Kind = AttackKind.BasicAttack,
-                                        // Los tres ids explicitos: vacios el nodo degrada a silencio
-                                        // sin dar rojo, y el ataque sale sin gesto.
-                                        AnimFeedbackId = BossFeedbackIds.CroupierRangeAnim,
-                                        ImpactVfxFeedbackId = BossFeedbackIds.CroupierRangeImpactVfx,
-                                        ImpactFeelFeedbackId = BossFeedbackIds.CroupierRangeImpactFeel,
+                                        Definition = bombs,
+                                        Count = BombCount,
+                                        Shape = BombShape,
+                                        Spacing = BombSpacing,
+                                        FuseTurns = BombFuseTurns,
+                                        IgnitionDamage = BombIgnitionDamage,
+                                        ChannelPrefix = BombChannelPrefix,
+                                        SowFeedbackId = BossFeedbackIds.CroupierRangeAnim,
                                     }),
 
-                                    // Se va al borde SI el jugador esta cerca, y ANTES de marcar:
-                                    // AINode_TelegraphMark ancla la banda en la casilla del jefe al
-                                    // tickear y AINode_IgniteArea la consume sin recalcularla, asi
-                                    // que marcando primero el fuego sale de donde el jefe ya no esta.
-                                    Guarded(FleeIfClose(new AINode_TeleportAwayToEdge
-                                    {
-                                        // 0 = sin tope de aterrizaje. Que la fuga valga la pena
-                                        // (aterrizar lejos de verdad) importa mas que acotarla: el
-                                        // gate de cercania es lo que ahora sostiene que la pelea sea
-                                        // ganable, no donde cae el salto.
-                                        MaxDistanceFromPlayer = 0,
-                                        ConsumeMoveAction = true,
-                                    })),
+                                    // Mismo gate de cercania que los otros dos tiempos: los tres
+                                    // apuestan, si no este seria el turno gratis para acercarsele.
+                                    Guarded(FleeIfClose(FleeRoulette())),
 
-                                    // Marca el cono: anclado en el, apuntando al jugador. Size es
-                                    // el semi-ancho del APEX, asi que 0 arranca en una casilla y se
-                                    // abre 1 por lado en cada paso.
+                                    // El aviso del cono, DESPUES de la fuga: AINode_TelegraphMark
+                                    // ancla el cono en la casilla del jefe al tickear y
+                                    // AINode_IgniteArea lo consume sin recalcularlo, asi que
+                                    // marcando antes de huir el fuego saldria de donde el jefe ya no
+                                    // esta. Size es el semi-ancho del APEX: 0 arranca en una casilla
+                                    // y se abre 1 por lado en cada paso.
                                     Guarded(new AINode_TelegraphMark
                                     {
                                         Shape = ThreatShape.DirectionalCone,
@@ -617,42 +753,75 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
                                             Definition = fire,
                                             DurationRounds = FireDurationRoundsPhase2,
                                             RetireFullyReplaced = true,
+                                            WindupFeedbackId = BossFeedbackIds.CroupierMeleeAnim,
                                         },
                                         Else = new AINode_IgniteArea
                                         {
                                             Definition = fire,
                                             DurationRounds = FireDurationRounds,
                                             RetireFullyReplaced = true,
+                                            WindupFeedbackId = BossFeedbackIds.CroupierMeleeAnim,
                                         },
                                     }),
 
-                                    // Se va detras de prender (el fuego cae en las casillas guardadas
-                                    // el turno anterior, asi que el orden no le cambia el area) y
-                                    // SI el jugador esta cerca: el mismo gate que T1, sin tope de
-                                    // aterrizaje. Con el jugador manejando el tempo de cuando se
-                                    // vuelve a acercar, un tope acá ya no hace falta para que la
-                                    // pelea sea ganable.
-                                    Guarded(FleeIfClose(new AINode_TeleportAwayToEdge
+                                    // Sortea detras de prender (el fuego cae en las casillas
+                                    // guardadas el turno anterior, asi que el orden no le cambia el
+                                    // area) y con el mismo gate de cercania que los otros dos: los
+                                    // tres tiempos apuestan, no solo el de reparto. Instancia propia
+                                    // del sorteo --ver FleeRoulette--, no la de los otros tiempos.
+                                    Guarded(FleeIfClose(FleeRoulette())),
+                                },
+                            },
+
+                            // -- T3 "Reparte" --------------------------------------------------
+                            new AINode_Sequence
+                            {
+                                Children = new List<AIDecisionNode>
+                                {
+                                    // Dispara primero: si huyera antes, el tiro saldria desde la
+                                    // casilla nueva y el jugador veria el fogonazo salir de donde
+                                    // el jefe ya no esta.
+                                    Guarded(new AINode_RangedShot
                                     {
-                                        MaxDistanceFromPlayer = 0,
-                                        ConsumeMoveAction = true,
-                                    })),
+                                        Damage = ShotDamage,
+                                        Range = ShotRange,
+                                        Kind = AttackKind.BasicAttack,
+                                        // Los tres ids explicitos: vacios el nodo degrada a silencio
+                                        // sin dar rojo, y el ataque sale sin gesto.
+                                        AnimFeedbackId = BossFeedbackIds.CroupierRangeAnim,
+                                        ImpactVfxFeedbackId = BossFeedbackIds.CroupierRangeImpactVfx,
+                                        ImpactFeelFeedbackId = BossFeedbackIds.CroupierRangeImpactFeel,
+                                    }),
+
+                                    // Sortea la fuga SI el jugador esta cerca. Este tiempo no marca
+                                    // nada, asi que la fuga va al final y ya.
+                                    Guarded(FleeIfClose(FleeRoulette())),
                                 },
                             },
                         },
                     }),
 
-                    // 4. El armado de "Pleno y color", una sola vez al cruzar el 50%: se planta en el
+                    // 5. El armado de "Pleno y color", una sola vez al cruzar el 50%: se planta en el
                     //    CENTRO de la sala y marca TODO el pano menos el cuadrado que lo rodea.
                     //    Prende al turno siguiente, arriba (paso 1). Va ULTIMO, despues de la accion
                     //    normal del turno: eso es lo que le da al jugador el turno entero para llegar
                     //    al hueco. El centro pone el hueco a la misma distancia de las cuatro
                     //    esquinas.
+                    //
+                    //    Las DOS condiciones a la vez, y el Once adentro del If a proposito: parado en
+                    //    el centro el Once no tickea, asi que no latchea y el ataque queda esperando a
+                    //    que su propia fuga lo saque. El salto ES el ataque, y sin salto no hay
+                    //    sorpresa que dar.
                     Guarded(new AINode_If
                     {
                         Conditions = new List<BasePreCondition>
                         {
                             new PcOwnerHpBelow { Percent = PlenoHpThreshold },
+                            new PCComposite
+                            {
+                                Mode = CompositeMode.Not,
+                                Children = new List<BasePreCondition> { new PcOwnerAtRoomCenter() },
+                            },
                         },
                         Then = new AINode_Once
                         {
@@ -686,9 +855,9 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
                                     },
                                     // Saca de la cola el aviso del ciclo antes de encolar este: el
                                     // Alternate ya corrio en este mismo turno y pudo dejar la banda
-                                    // de T1 marcada, y sin esto el jugador ve DOS areas prendidas a
-                                    // la vez y al turno siguiente detonan las dos. Se descarta la
-                                    // telegrafia, no el turno: el disparo de T1 ya se cobro.
+                                    // del cono marcada, y sin esto el jugador ve DOS areas prendidas
+                                    // a la vez y al turno siguiente detonan las dos. Se descarta la
+                                    // telegrafia, no el turno: el tiempo que corrio ya se cobro.
                                     new AINode_CancelTelegraph(),
                                     new AINode_TelegraphMark
                                     {
@@ -696,8 +865,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
                                         // Size es el radio del HUECO que se salva, no del area
                                         // amenazada: 1 = deja libre su 3x3 y prende el resto.
                                         Size = PlenoHoleRadius,
-                                        // Canal propio: la banda de T1 puede estar marcada en este
-                                        // mismo turno y el servicio guarda un area por fuente.
+                                        // Canal propio: la banda del cono puede estar marcada en
+                                        // este mismo turno y el servicio guarda un area por fuente.
                                         ChannelId = PlenoChannelId,
                                         // Lo cobra AINode_IgniteArea al consumir la marca: el numero
                                         // vive en la marca, no en el nodo que prende, porque es de
@@ -727,12 +896,12 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         }
 
         /// <summary>
-        /// Gatea un salto de fuga por cercanía: sólo corre <paramref name="teleport"/> si el
+        /// Gatea la reacción de fuga por cercanía: sólo corre <paramref name="reaction"/> si el
         /// jugador está a <see cref="FleeTriggerRange"/> o menos (Manhattan). <c>Else = Wait</c> y
         /// no vacío: un <c>If</c> sin <c>Else</c> devuelve <c>Failed</c> cuando la condición no
         /// pasa, y ese <c>Failed</c> aborta el <c>Sequence</c> del tiempo entero.
         /// </summary>
-        private static AINode_If FleeIfClose(AINode_TeleportAwayToEdge teleport)
+        private static AINode_If FleeIfClose(AIDecisionNode reaction)
         {
             return new AINode_If
             {
@@ -740,8 +909,75 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
                 {
                     new PcTargetInRange { Range = FleeTriggerRange, Metric = DistanceMetric.Manhattan },
                 },
-                Then = teleport,
+                Then = reaction,
                 Else = new AINode_Wait(),
+            };
+        }
+
+        /// <summary>
+        /// El sorteo de la fuga: adentro del radio el jefe apuesta en vez de huir siempre. Se va al
+        /// borde, se te viene encima, se planta en el centro de la sala, o se queda donde está.
+        /// </summary>
+        /// <remarks>
+        /// <para>
+        /// <b>Devuelve una instancia nueva por llamada, y eso es obligatorio.</b> Los tres tiempos del
+        /// ciclo piden su propio sorteo: compartir el objeto los haría compartir nodo en el árbol, y
+        /// un nodo con estado por instancia (o un consumidor que lo busque por identidad) empezaría a
+        /// ver los tres tiempos como uno.
+        /// </para>
+        /// <para>
+        /// <b>El orden de las opciones es contrato.</b> <c>AINode_Random</c> acumula pesos y devuelve
+        /// la primera que pasa el corte, así que quedarse/irse dependen de en qué lugar está cada una
+        /// — los tests que fuerzan un resultado por RNG asumen este orden exacto.
+        /// </para>
+        /// <para>
+        /// El "se queda" es un <c>AINode_Wait</c> y <b>no</b> <c>null</c>: un <c>Option.Node</c> nulo
+        /// devuelve <c>Failed</c>, y ese <c>Failed</c> se comería el resto del tiempo (el disparo ya
+        /// cobrado no, pero sí el marcado del cono que viene después).
+        /// </para>
+        /// </remarks>
+        private static AINode_Random FleeRoulette()
+        {
+            return new AINode_Random
+            {
+                Options = new List<AINode_Random.Option>
+                {
+                    new AINode_Random.Option
+                    {
+                        Weight = FleeWeightEdge,
+                        // Sin tope de aterrizaje: cuando le sale huir, huye de verdad. Que la pelea
+                        // sea ganable ya no depende de dónde cae, sino de que el sorteo a veces no
+                        // salga borde.
+                        Node = new AINode_TeleportAwayToEdge
+                        {
+                            MaxDistanceFromPlayer = 0,
+                            ConsumeMoveAction = true,
+                        },
+                    },
+                    new AINode_Random.Option
+                    {
+                        Weight = FleeWeightNear,
+                        Node = new AINode_TeleportNearTarget
+                        {
+                            MinDistance = NearMinDistance,
+                            MaxDistance = NearMaxDistance,
+                            ConsumeMoveAction = true,
+                        },
+                    },
+                    new AINode_Random.Option
+                    {
+                        Weight = FleeWeightCenter,
+                        // El mismo nodo que usa el armado del Pleno, pero OTRA instancia: la del
+                        // Pleno no puede quedar colgada de este gate de cercanía o dejaría de
+                        // plantarse en el centro al cruzar el 50%.
+                        Node = new AINode_TeleportToRoomCenter { ConsumeMoveAction = true },
+                    },
+                    new AINode_Random.Option
+                    {
+                        Weight = FleeWeightStay,
+                        Node = new AINode_Wait(),
+                    },
+                },
             };
         }
 
@@ -829,6 +1065,181 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
 
             AssetDatabase.SaveAssets();
             return AssetDatabase.LoadAssetAtPath<GameObject>(FireVfxPrefabPath);
+        }
+
+        // ======================================================================
+        // Bombas
+        // ======================================================================
+
+        /// <summary>
+        /// Ficha del wrapper de la bomba. <b>Sin retintes</b>: el arte trae sus propios materiales y
+        /// pisarlos generaría materiales nuevos para un objeto que ya se lee.
+        /// </summary>
+        /// <remarks>
+        /// De acá sale la barra de vida, y es la misma que la de cualquier enemigo del juego: la
+        /// arma <see cref="BossVisualWrapperBuilder"/> con el atlas de
+        /// <see cref="BossVisualWrapperBuilder.HealthBarAtlasPath"/>. No hay UI propia de la bomba.
+        /// </remarks>
+        public static BossWrapperSpec BuildBombSpec(BossArtFitter.ArtFit fit)
+        {
+            return new BossWrapperSpec
+            {
+                ArtPrefabPath = BombArtPrefabPath,
+                OutputPrefabPath = BombVisualPrefabPath,
+                BossName = "BombaCroupier",
+                MaterialsFolder = BossVisualWrapperBuilder.DefaultMaterialsRoot + "/Croupier",
+
+                AddHealthBar = true,
+                HealthBarOffset = fit.HealthBarOffset,
+
+                // Box y no Capsule: es un objeto chico apoyado en el piso, y el capsule del default
+                // se le come las casillas vecinas — que son justo las cuatro que la bomba amenaza.
+                Collider = ColliderKind.Box,
+
+                Props = new List<BossPropSpec>(),
+            };
+        }
+
+        /// <summary>
+        /// Alto de la bomba ya apoyada. Por encima del dado de La Generala (0.8): la bomba es lo que
+        /// el jugador tiene que decidir romper turno a turno, y a menos de esto no se le ve ni la
+        /// barra.
+        /// </summary>
+        public const float BombTargetHeight = 1f;
+
+        /// <summary>
+        /// Ancho máximo. Todavía por debajo de la casilla: la bomba llena su tile pero no derrama
+        /// sobre las cuatro que amenaza, que son justo las que el jugador tiene que poder leer libres.
+        /// </summary>
+        public const float BombMaxWidth = 0.9f;
+
+        /// <summary>
+        /// Aire entre la bomba y su barra. El mismo que el del jefe: con la barra a tamaño de enemigo
+        /// (ver <see cref="BuildBombVisual"/>) menos que esto la deja apoyada sobre el arte.
+        /// </summary>
+        private const float BombBarClearance = 0.6f;
+
+        /// <summary>
+        /// El fit es obligatorio y no cosmético: <c>Bomb.fbx</c> tiene el pivot en el centro del
+        /// volumen, así que el wrapper solo lo deja del alto del arte original y con media bomba
+        /// abajo del piso.
+        /// </summary>
+        /// <remarks>
+        /// <b>Sin encoger la barra.</b> El dado de La Generala la lleva a 0.35 y ahí los números no se
+        /// leen; la bomba usa la barra <b>tal cual la lleva cualquier enemigo del juego</b> (escala 1),
+        /// que es de dónde sale <see cref="BombBarClearance"/>: a tamaño completo necesita el mismo
+        /// aire que la de un jefe.
+        /// </remarks>
+        public static GameObject BuildBombVisual()
+        {
+            var fit = BossArtFitter.Measure(
+                BombArtPrefabPath, BombTargetHeight, BombMaxWidth, BombBarClearance);
+
+            var wrapper = BossVisualWrapperBuilder.BuildWrapper(BuildBombSpec(fit));
+            if (wrapper == null) return null;
+
+            BossArtFitter.Apply(BombVisualPrefabPath, fit);
+            return AssetDatabase.LoadAssetAtPath<GameObject>(BombVisualPrefabPath);
+        }
+
+        public static RoomObjectDefinitionSO EnsureBombDefinition(GameObject visual)
+        {
+            var def = LoadOrCreate<RoomObjectDefinitionSO>(BombDefinitionPath);
+            ConfigureBombDefinition(def, visual);
+
+            EditorUtility.SetDirty(def);
+            return def;
+        }
+
+        /// <summary>
+        /// Escribe los números de la bomba sobre <paramref name="def"/>. Parte pura, separada del
+        /// <c>Ensure</c> para que los tests del turno la armen en memoria sin tocar el
+        /// <c>AssetDatabase</c>.
+        /// </summary>
+        public static void ConfigureBombDefinition(RoomObjectDefinitionSO def, GameObject visual = null)
+        {
+            if (def == null) return;
+
+            def.Id = BombDefinitionId;
+            def.DisplayName = "Bomba";
+            def.Hp = BombHp;
+
+            // Bloquea, como el dado de La Generala: la bomba ocupa su casilla y hay que rodearla.
+            def.Blocks = true;
+            def.HideFromTurnQueue = true;
+
+            // 0 y no -1: la siembra entera se rehace en cada tick del campo de bombas, y esa
+            // reposición inmediata es lo que rellena tanto lo que detonó como lo que el jugador
+            // rompió a mano. Con -1 la ranura se retira y no vuelve a sembrarse nunca.
+            def.RespawnDelayTurns = 0;
+
+            // Nada de hazard al morir: romperla a mano NO deja fuego. El fuego es exclusivamente lo
+            // que deja la que llegó al plazo, y eso lo prende el campo de bombas, no la muerte.
+            def.OnDeathHazard = null;
+
+            // Y no le dan armadura al jefe: las bombas son un reloj del jugador, no el blindaje que
+            // sí son la mesa de La Generala y los reels de La Bandida.
+            def.OwnerDamageReductionPerObject = 0f;
+
+            if (visual != null) def.VisualPrefab = visual;
+        }
+
+        public static SpecialTileDefinitionSO EnsureBombFireTile()
+        {
+            var tile = LoadOrCreate<SpecialTileDefinitionSO>(BombFireTilePath);
+            ConfigureBombFireTile(
+                tile, AssetDatabase.LoadAssetAtPath<SpecialTileDefinitionSO>(CroupierFirePath));
+
+            EditorUtility.SetDirty(tile);
+            return tile;
+        }
+
+        /// <summary>
+        /// El fuego que deja una bomba: el mismo del paño con 5 más encima. Casilla aparte y no un
+        /// número sobre <see cref="CroupierFirePath"/> porque las dos conviven en la misma sala — el
+        /// cono sigue cobrando 10 en el mismo turno en que las bombas cobran 15.
+        /// </summary>
+        /// <param name="basefire">
+        /// El fuego del paño, del que copia todo salvo el daño. Con <c>null</c> la casilla queda con
+        /// los defaults y sin arte: los tests del turno sólo le miran los números.
+        /// </param>
+        public static void ConfigureBombFireTile(
+            SpecialTileDefinitionSO tile, SpecialTileDefinitionSO basefire = null)
+        {
+            if (tile == null) return;
+
+            tile.TileId = BombFireTileId;
+            tile.DisplayName = "Fuego de Bomba";
+            tile.TileType = SpecialTileType.FireTemp;
+
+            tile.Triggers = TileTrigger.OnEnter | TileTrigger.OnTurnStart;
+            tile.Category = TileEffectCategory.Damage;
+            tile.Affinity = TileAffinity.All;
+            tile.DamageKind = AttackKind.Environmental;
+
+            tile.EnterDamage = BombFireDamage;
+            tile.TurnStartDamage = BombFireDamage;
+
+            tile.DisarmOnTrigger = false;
+            tile.RearmOnRoundWrap = false;
+
+            // Se quema con lo suyo, igual que con el fuego del paño: es lo que le da sentido a que
+            // sus reacomodos esquiven las casillas que hacen daño.
+            tile.OwnerBossImmune = false;
+
+            if (basefire == null) return;
+
+            tile.DefaultDurationRounds = basefire.DefaultDurationRounds;
+            tile.VisualPrefab = basefire.VisualPrefab;
+            tile.VisualYOffset = basefire.VisualYOffset;
+            tile.OverlayTint = basefire.OverlayTint;
+            tile.TriggerVfxPrefab = basefire.TriggerVfxPrefab;
+            tile.TriggerVfxLifetime = basefire.TriggerVfxLifetime;
+            tile.TriggerVfxYOffset = basefire.TriggerVfxYOffset;
+            tile.EditorIcon = basefire.EditorIcon;
+            tile.EditorColor = basefire.EditorColor;
+            tile.NameKey = basefire.NameKey;
+            tile.DescriptionKey = basefire.DescriptionKey;
         }
 
         // ======================================================================

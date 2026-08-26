@@ -45,11 +45,15 @@ namespace Rollgeon.Feedback
         /// </summary>
         public const string CroupierTeleportAnim = "anim.boss.croupier.teleport";
 
-        // Sin llamador desde que se retiraron la ruleta y el golpe cuerpo a cuerpo: los únicos que
-        // los piden son AINode_SpinWheel / AINode_DetonateSungSectors, que ya no están en el árbol.
-        // Se dejan porque esos nodos siguen compilando y borrar la entry los dejaría pidiendo una
-        // que no existe.
+        /// <summary>
+        /// El gesto con el que prende lo que marcó (<c>AINode_IgniteArea</c>). Es el clip de melee y
+        /// no <see cref="CroupierRangeAnim"/> a propósito: el disparo ya usa ése, y repetirlo dejaría
+        /// dos tiempos distintos del ciclo viéndose igual.
+        /// </summary>
         public const string CroupierMeleeAnim  = "anim.boss.croupier.melee";
+        // Sin llamador desde que se retiro la ruleta: el unico que lo pide es AINode_SpinWheel, que
+        // ya no esta en el arbol. Se deja porque el nodo sigue compilando y borrar la entry lo
+        // dejaria pidiendo una que no existe.
         public const string CroupierCantoAnim  = "anim.boss.croupier.canto";
         public const string CroupierImpactVfx  = "vfx.boss.croupier.impact";
         public const string CroupierImpactFeel = "feel.boss.croupier.impact";

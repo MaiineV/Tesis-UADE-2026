@@ -59,7 +59,7 @@ MonoBehaviour:
       Data: 5|Rollgeon.Combat.AI.Decisions.AINode_CashierRangedShot, Rollgeon
     - Name: Damage
       Entry: 3
-      Data: 6
+      Data: 8
     - Name: Range
       Entry: 3
       Data: 5
@@ -165,13 +165,12 @@ MonoBehaviour:
       Data: 
   EntityId: minion.cajero_comision
   DisplayName: "Comisi\xF3n"
-  Description: Lo que el Cajero manda a cobrar cuando se le empieza a escapar. Vuela,
-    tira de lejos y hace que huir tenga precio.
+  Description: Vuela, tira de lejos, y le pone precio a huir.
   Portrait: {fileID: 133841030, guid: 7354be46d5bce5b44ae3fc20ec0cb47f, type: 3}
   WeaknessComboId: 
   WeaknessMultiplierOverride: 0
   BaseHP: 18
-  BaseAttack: 6
+  BaseAttack: 8
   BaseHealStrength: 0
   BaseSpeed: 5
   MaxEnergy: 1
@@ -180,7 +179,7 @@ MonoBehaviour:
   VisualPrefab: {fileID: 1453312193095082628, guid: 65b4e9aba2ad03946bc8d8c65fb39e85, type: 3}
   MinGoldDrop: 0
   MaxGoldDrop: 0
-  IsFlying: 0
+  IsFlying: 1
   IsBoss: 0
   Personality: 0
   KamikazeIgnoresSurvival: 0

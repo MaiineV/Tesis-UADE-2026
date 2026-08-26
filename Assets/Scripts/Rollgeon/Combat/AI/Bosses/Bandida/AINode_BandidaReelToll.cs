@@ -11,14 +11,10 @@ using UnityEngine;
 namespace Rollgeon.Combat.AI.Bosses.Bandida
 {
     /// <summary>
-    /// El peaje de la fila: cada turno del jefe, la máquina le drena rolls del pool al jugador —
-    /// uno por cada rodillo vivo que todavía se pueda romper, hasta <see cref="Cap"/>.
-    /// </summary>
-    /// <remarks>
     /// <see cref="Cap"/> tiene que quedar muy por debajo del grant de rolls por turno, o el jugador
     /// entra en economía neta negativa. Siempre devuelve <see cref="AIResult.Succeeded"/>: un
     /// <c>Failed</c> acá le cortaría al jefe el resto del turno.
-    /// </remarks>
+    /// </summary>
     [Serializable, HideReferenceObjectPicker]
     public sealed class AINode_BandidaReelToll : AIActionNode
     {
@@ -67,12 +63,10 @@ namespace Rollgeon.Combat.AI.Bosses.Bandida
             return breakable < Cap ? breakable : Cap;
         }
 
-        /// <summary>Número flotante sobre el jugador + el manotazo de la máquina.</summary>
-        /// <remarks>
-        /// <see cref="FloatingNumberType.Status"/> y no <c>Damage</c>: el jugador pierde rolls, no
-        /// vida. No bloquea el turno (sin <c>BeginFeedbackWait</c>): es un cobro pasivo que pasa
-        /// todos los turnos.
-        /// </remarks>
+        /// <summary>
+        /// <see cref="FloatingNumberType.Status"/> y no <c>Damage</c>: pierde rolls, no vida. Sin
+        /// <c>BeginFeedbackWait</c>: es un cobro pasivo que pasa todos los turnos.
+        /// </summary>
         private static void Announce(AIContext context, int drained)
         {
             EventManager.Trigger(

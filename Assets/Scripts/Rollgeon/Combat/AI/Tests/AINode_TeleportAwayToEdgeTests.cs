@@ -5,6 +5,7 @@ using Patterns;
 using Rollgeon.Combat.AI.Decisions;
 using Rollgeon.Grid;
 using Rollgeon.Movement;
+using Rollgeon.Tiles;
 using UnityEngine;
 using UnityEngine.TestTools;
 
@@ -25,8 +26,10 @@ namespace Rollgeon.Combat.AI.Tests
 
         private GridManager _grid;
         private MovementService _movement;
+        private SpecialTileService _tiles;
         private Guid _boss;
         private Guid _player;
+        private readonly List<ScriptableObject> _createdTiles = new List<ScriptableObject>();
 
         [SetUp]
         public void SetUp()
@@ -43,11 +46,21 @@ namespace Rollgeon.Combat.AI.Tests
 
             _boss = Guid.NewGuid();
             _player = Guid.NewGuid();
+
+            ServiceLocator.AddService<IGridManager>(_grid, ServiceScope.Global);
+            _tiles = new SpecialTileService();
+            _tiles.ConfigureForTests(() => _player);
+            ServiceLocator.AddService<ISpecialTileService>(_tiles, ServiceScope.Global);
         }
 
         [TearDown]
         public void TearDown()
         {
+            _tiles?.Dispose();
+            foreach (var asset in _createdTiles)
+                if (asset != null) UnityEngine.Object.DestroyImmediate(asset);
+            _createdTiles.Clear();
+
             ServiceLocator.Clear();
             EventManager.ResetEventDictionary();
         }
@@ -371,6 +384,92 @@ namespace Rollgeon.Combat.AI.Tests
             Place(bossStart, player);
             node.Tick(NewContext(seed));
             return BossCoord();
+        }
+
+        /// <summary>
+        /// El jefe enciende sus propias bandas y después salta: sin el filtro, el salto lo planta
+        /// adentro del fuego que acaba de poner.
+        /// </summary>
+        [Test]
+        public void Tick_SkipsTheTilesThatBurn()
+        {
+            var player = new GridCoord(5, 5);
+            Place(new GridCoord(5, 4), player);
+
+            var node = NewNode();
+            var clean = new GridCoord(0, 0);
+            BurnEverythingExcept(clean, player);
+
+            for (int seed = 0; seed < 20; seed++)
+            {
+                _grid.Register(_boss, new GridCoord(5, 4));
+                node.Tick(NewContext(seed));
+
+                Assert.AreEqual(clean, BossCoord(), "Escapó a una casilla que arde.");
+            }
+        }
+
+        /// <summary>
+        /// Preferencia y no requisito: un <c>Failed</c> acá aborta la Sequence del turno, así que con
+        /// la sala entera ardiendo escapa igual.
+        /// </summary>
+        [Test]
+        public void WithTheWholeRoomBurning_ItStillEscapes()
+        {
+            var player = new GridCoord(5, 5);
+            var start = new GridCoord(5, 4);
+            Place(start, player);
+            BurnEverythingExcept(GridCoord.Zero, player, burnTheException: true);
+
+            Assert.AreEqual(AIResult.Succeeded, NewNode().Tick(NewContext(1)));
+            Assert.AreNotEqual(start, BossCoord(), "No escapó.");
+        }
+
+        [Test]
+        public void WithTheFlagOff_TheFireDoesNotFilterAnything()
+        {
+            var player = new GridCoord(5, 5);
+            var clean = new GridCoord(0, 0);
+            Place(new GridCoord(5, 4), player);
+            BurnEverythingExcept(clean, player);
+
+            var node = new AINode_TeleportAwayToEdge { AvoidHarmfulTiles = false };
+            var landings = new HashSet<GridCoord>();
+            for (int seed = 0; seed < 20; seed++)
+            {
+                _grid.Register(_boss, new GridCoord(5, 4));
+                node.Tick(NewContext(seed));
+                landings.Add(BossCoord());
+            }
+
+            CollectionAssert.IsNotSubsetOf(landings, new[] { clean },
+                "Con el filtro apagado el sorteo reparte por toda la franja, no se refugia siempre " +
+                "en la única casilla limpia.");
+        }
+
+        /// <summary>Prende toda la sala menos <paramref name="spared"/> y la casilla del jugador.</summary>
+        private void BurnEverythingExcept(
+            GridCoord spared, GridCoord player, bool burnTheException = false)
+        {
+            var def = ScriptableObject.CreateInstance<SpecialTileDefinitionSO>();
+            def.hideFlags = HideFlags.HideAndDontSave;
+            def.TileId = "TILE_FIRE";
+            def.TileType = SpecialTileType.Fire;
+            def.Triggers = TileTrigger.OnEnter | TileTrigger.OnTurnStart;
+            def.Category = TileEffectCategory.Damage;
+            def.EnterDamage = 6;
+            def.TurnStartDamage = 10;
+            _createdTiles.Add(def);
+
+            var burning = new List<GridCoord>();
+            foreach (var coord in _grid.Graph.AllCoords())
+            {
+                if (coord == player) continue;
+                if (!burnTheException && coord == spared) continue;
+                burning.Add(coord);
+            }
+
+            _tiles.Place(def, burning);
         }
 
         /// <summary>

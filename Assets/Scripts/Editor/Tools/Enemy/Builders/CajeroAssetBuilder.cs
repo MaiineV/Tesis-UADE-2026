@@ -51,13 +51,28 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         public const string ArtPrefabPath = "Assets/Prefabs/Enemies/MechaBoss_Animated.prefab";
 
         /// <summary>
+        /// Los gestos de ataque del rig, los que tienen que publicar el frame del golpe.
+        /// </summary>
+        /// <remarks>
+        /// El mandoble y el empujón heredan de <c>AINode_RangedShot</c>, que arranca su VFX y su feel
+        /// de impacto con <c>StartMode: OnEvent</c>. Sin el evento en el clip esos steps se quedan
+        /// esperando y el golpe entero —daño, tumbo y monedas— cae recién cuando el watchdog mata la
+        /// secuencia, unos tres segundos después del gesto.
+        /// </remarks>
+        public static readonly string[] AttackClipPaths =
+        {
+            "Assets/Art/3D/Animations/Enemies/Mecha/Anim_Mecha_AttackMelee.anim",
+            "Assets/Art/3D/Animations/Enemies/Mecha/Anim_Mecha_AttackRange.anim",
+        };
+
+        /// <summary>
         /// Arte de la Comisión: rig propio, no el del jefe. Compartir el mech hacía que el minion
         /// fuera el jefe en chico, y lo único que los separaba era la escala y el tinte.
         /// </summary>
         /// <remarks>
         /// Su animator declara un solo trigger, <c>Attack</c> — ver <c>ComisionBiteAnim</c> — y no
-        /// tiene ciclo de caminata, así que la ficha entra en
-        /// <c>EnemyLocomotionInstaller.ForcedBlinkEntityIds</c>.
+        /// tiene ciclo de caminata. No hace falta: el bicho vuela, y el lerp de <c>Walk</c> con el
+        /// Idle corriendo es cómo se ve planear. Blink la teletransportaría.
         /// </remarks>
         public const string CritterArtPrefabPath = "Assets/Prefabs/Enemies/GeneralDirector_Animated.prefab";
 
@@ -90,10 +105,10 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         /// Vida del jefe de piso 2. Lo que se cura con monedas vencidas es presupuesto aparte
         /// (<see cref="MaxHealPerFight"/>): suma turnos sin figurar acá.
         /// </summary>
-        public const int BaseHP = 350;
+        public const int BaseHP = 450;
 
         /// <summary>Mandoble.</summary>
-        public const int BaseAttack = 14;
+        public const int BaseAttack = 20;
 
         public const int BaseSpeed = 4;
         public const int MaxEnergy = 3;
@@ -119,7 +134,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         /// <summary>
         /// Empujón. Cada casilla de pinchos que cruce el tumbo suma <see cref="SpikeDamage"/>.
         /// </summary>
-        public const int ShoveDamage = 10;
+        public const int ShoveDamage = 14;
 
         /// <summary>Casillas del tumbo. Frena en seco contra una caja fuerte o contra la pared.</summary>
         public const int ShovePushTiles = 3;
@@ -176,7 +191,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         public const string SpikeTileId = "TILE_SPIKES_CAJERO";
 
         /// <summary>Daño al entrar, también empujado. Es el mismo para el jugador y para él.</summary>
-        public const int SpikeDamage = 14;
+        public const int SpikeDamage = 20;
 
         /// <summary>
         /// Costo virtual que hace que el pathing lea un pincho armado como <b>intransitable</b> y no
@@ -184,12 +199,17 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         /// </summary>
         /// <remarks>
         /// <c>AIPathPlanner.ComputeHazardPenalty</c> es <c>ceil(daño / HP × 10 × Caution)</c> y
-        /// <c>ComputeTileCost</c> es <c>1 + penalty</c>: con <c>14 + 336 = 350</c> sobre 350 de vida
+        /// <c>ComputeTileCost</c> es <c>1 + penalty</c>: con <c>20 + 430 = 450</c> sobre 450 de vida
         /// la casilla cuesta 11, más que cualquier desvío posible en un movimiento de
         /// <see cref="ChaseSteps"/> pasos. <b>No es daño</b>: el filtro de supervivencia sólo mira
-        /// los 14 reales, así que empujado se los come igual.
+        /// los <see cref="SpikeDamage"/> reales, así que empujado se los come igual.
+        /// <para>
+        /// Va atado a <see cref="BaseHP"/>, no a un número suelto: la saturación es la suma dando la
+        /// vida entera del jefe, así que <b>tocarle la vida obliga a recalcular esto</b> o el pincho
+        /// armado vuelve a ser sólo caro y el jefe se camina sus propios pinchos.
+        /// </para>
         /// </remarks>
-        public const int SpikeAIVirtualDamage = 336;
+        public const int SpikeAIVirtualDamage = 430;
 
         /// <summary>Pinchos de la sala, sueltos y en casillas exactas. Ver <see cref="SpikePlanCells"/>.</summary>
         public const int SpikeCount = 10;
@@ -263,7 +283,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         public const int CritterHp = 18;
 
         /// <summary>Su disparo.</summary>
-        public const int CritterDamage = 6;
+        public const int CritterDamage = 8;
 
         /// <summary>Alcance del disparo.</summary>
         public const int CritterRange = 5;
@@ -284,11 +304,17 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         public const float CritterArtScale = 0.45f;
 
         /// <summary>
-        /// Altura a la que se levanta el arte sobre su casilla. En 0 apoya, que es lo que pide un rig que camina. Se levanta el hijo <c>Art</c> del wrapper
-        /// y no <c>EntityPawn.PawnYOffset</c>, que es un <c>const</c> privado compartido por héroe y
-        /// enemigos: levantarlo de ahí levantaría a todo el bestiario.
+        /// Altura a la que se levanta la BASE del arte sobre su casilla. Despegada porque el bicho
+        /// tiene <c>IsFlying</c>: es la única pista en pantalla de por qué cruza los pinchos sin
+        /// cobrar. Apoyada, la inmunidad se ve como un bug.
         /// </summary>
-        public const float CritterHoverHeight = 0f;
+        /// <remarks>
+        /// Se levanta el hijo <c>Art</c> del wrapper y no <c>EntityPawn.PawnYOffset</c>, que es un
+        /// <c>const</c> privado compartido por héroe y enemigos: levantarlo de ahí levantaría a todo
+        /// el bestiario. <c>ApplyCritterFit</c> recalcula collider y barra contra los bounds ya
+        /// levantados, así que este número es lo único que hay que tocar.
+        /// </remarks>
+        public const float CritterHoverHeight = 0.35f;
 
         /// <summary>Aire entre la punta del bicho y su barra de vida.</summary>
         private const float CritterBarClearance = 0.35f;
@@ -446,19 +472,32 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         /// Árbol del Cajero. Sequence raíz de 5 hijos:
         /// <list type="number">
         /// <item>Gate de las Comisiones (50% HP) → <c>Once → SpawnReinforcements ×2</c>.</item>
+        /// <item>La persecución.</item>
         /// <item>El ciclo de ataque: pegado a vos, <c>Alternate[mandoble, empujón]</c>.</item>
         /// <item>Las monedas de la sala, cada <see cref="CoinRainEveryNRounds"/> rondas.</item>
         /// <item>La caja: vence monedas y lo cura con lo que nadie levantó.</item>
-        /// <item>La persecución.</item>
         /// </list>
         /// Todo lo que puede devolver Failed va en <c>Selector[acción, Wait]</c>.
         /// </summary>
         /// <remarks>
+        /// <para>
+        /// La <b>persecución va antes del golpe</b>, y ahí está toda la diferencia entre empujarte y
+        /// caminar con vos, y empujarte y dejarte ir. Si arranca el turno pegado,
+        /// <c>AINode_Move</c> devuelve Failed —ya está en la banda— y nada lo mueve después del
+        /// tumbo, así que el empujón se lee. Si arranca lejos, cierra y pega en el mismo turno:
+        /// <see cref="BuildChase"/> apunta a <see cref="MeleeRange"/>, que es exactamente el rango
+        /// que pide el gate del ataque.
+        /// </para>
+        /// <para>
+        /// Con el movimiento en el medio el turno no se trunca: <c>AINode_Move</c> devuelve Running
+        /// al caminar, pero el <c>Selector</c> de <see cref="WrapFallible"/> sólo propaga Succeeded
+        /// en su path coroutine, así que la caja y la lluvia siguen corriendo el turno que camina.
+        /// </para>
+        /// <para>
         /// La <b>caja va después del ataque y de la lluvia</b> porque descubre las monedas barriendo
         /// las instancias vivas: si fuera antes, cada moneda soltada este turno viviría una ronda de
-        /// más. Y la <b>persecución va última</b> porque <c>AINode_Move</c> devuelve Running al
-        /// moverse y en el path no-coroutine un Running corta el Sequence, así que con el movimiento
-        /// en el medio las monedas dejarían de vencerse en los turnos en que camina.
+        /// más.
+        /// </para>
         /// </remarks>
         public static AINode_Sequence BuildAIRoot(
             HazardDefinitionSO chip = null, EnemyDataSO critter = null)
@@ -468,10 +507,10 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
                 Children = new List<AIDecisionNode>
                 {
                     WrapFallible(BuildCritterGate(critter)),
+                    WrapFallible(BuildChase()),
                     WrapFallible(BuildAttackGate(chip)),
                     WrapFallible(BuildCoinRain(chip)),
                     WrapFallible(BuildCoinVault(chip)),
-                    WrapFallible(BuildChase()),
                 },
             };
         }
@@ -661,10 +700,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
             data.DisplayName = DisplayName;
             // Interpolado y no escrito a mano: un literal acá se queda viejo cuando se tunea la
             // constante.
-            data.Description =
-                "Cortés, contable, imperturbable. No te mata: te sobrevive con tu plata. Te " +
-                $"persigue, te agarra y te tira {ShovePushTiles} casillas, y lo que se te caiga y " +
-                "no levantes se lo lleva él.";
+            data.Description = "Te agarra, te tira lejos, y se queda con lo que se te cayó.";
 
             data.BaseHP = BaseHP;
             data.BaseAttack = BaseAttack;
@@ -708,9 +744,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
 
             data.EntityId = CritterEntityId;
             data.DisplayName = CritterDisplayName;
-            data.Description =
-                "Lo que el Cajero manda a cobrar cuando se le empieza a escapar. Vuela, tira de " +
-                "lejos y hace que huir tenga precio.";
+            data.Description = "Vuela, tira de lejos, y le pone precio a huir.";
 
             data.BaseHP = CritterHp;
 
@@ -722,6 +756,12 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
             data.MaxEnergy = 1;
             data.BaseHealStrength = 0;
             data.BaseAttackRange = CritterRange;
+
+            // Al revés que su jefe: los pinchos son GroundOnly y la Comisión los sobrevuela. La
+            // misma guarda alimenta al planner (ISpecialTileAIQuery.TryGetTileFor), así que no los
+            // cobra Y tampoco los rodea — es la diferencia de movilidad que tiene contra el Cajero,
+            // que sí tiene que esquivarlos. Con 18 de vida un pinchazo de 14 la borraba de una.
+            data.IsFlying = true;
 
             data.WeaknessComboId = string.Empty;
             data.WeaknessMultiplierOverride = 0f;
@@ -787,6 +827,10 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
             var spikes = EnsureSpikeTile();
             var portrait = EnsurePortrait();
 
+            // Va afuera del guard de churn del wrapper: los eventos viven en los clips, no en el
+            // prefab, así que un wrapper que no hace falta reconstruir igual los necesita.
+            BossVisualWrapperBuilder.EnsureAttackHitEvents(AttackClipPaths);
+
             var critter = LoadOrCreate<EnemyDataSO>(ReinforcementAssetPath);
 
             // Load antes que Ensure: reconstruir el wrapper en cada rebuild de números le churnea el
@@ -795,7 +839,17 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
             // siempre: un cambio de ArtPrefabPath no llegaría nunca al asset.
             var critterWrapper = AssetDatabase.LoadAssetAtPath<GameObject>(CritterVisualPrefabPath);
             if (critterWrapper == null || !NestsArt(CritterVisualPrefabPath, CritterArtPrefabPath))
+            {
                 critterWrapper = EnsureCritterVisualPrefab();
+            }
+            else
+            {
+                // El guard de arriba sólo mira el rig, y la escala y el despegue viven en
+                // constantes aparte: sin esta pasada un cambio de CritterArtScale o de
+                // CritterHoverHeight no llegaría nunca al prefab. ApplyCritterFit no reescribe
+                // si ya estaban bien, así que no reintroduce churn.
+                ApplyCritterFit(CritterVisualPrefabPath);
+            }
 
             PopulateCritterData(critter, critterWrapper, portrait);
             EditorUtility.SetDirty(critter);
@@ -995,6 +1049,11 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
                     return;
                 }
 
+                // Se leen antes de medir, porque medir pisa las dos: son la referencia contra
+                // la que se decide si hay algo que guardar.
+                var hadScale = art.localScale;
+                var hadPosition = art.localPosition;
+
                 // Los bounds se miden con el arte en identidad, que es como lo dejó el wrapper.
                 art.localScale = Vector3.one;
                 art.localPosition = Vector3.zero;
@@ -1007,6 +1066,10 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
                 float baseY = measured ? raw.min.y * CritterArtScale : 0f;
                 art.localPosition = new Vector3(0f, CritterHoverHeight - baseY, 0f);
 
+                // Vector3 == compara con epsilon, que es la tolerancia que quiere un valor
+                // serializado en el prefab.
+                bool changed = hadScale != art.localScale || hadPosition != art.localPosition;
+
                 if (measured)
                 {
                     var flying = new Bounds(
@@ -1016,6 +1079,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
                     var box = contents.GetComponent<BoxCollider>();
                     if (box != null)
                     {
+                        changed |= box.center != flying.center || box.size != flying.size;
                         box.center = flying.center;
                         box.size = flying.size;
                     }
@@ -1023,12 +1087,17 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
                     var bar = contents.transform.Find(HealthBarChildName);
                     if (bar != null)
                     {
-                        bar.localPosition = new Vector3(0f, flying.max.y + CritterBarClearance, 0f);
-                        bar.localScale = Vector3.one * CritterBarScale;
+                        var barPosition = new Vector3(0f, flying.max.y + CritterBarClearance, 0f);
+                        var barScale = Vector3.one * CritterBarScale;
+                        changed |= bar.localPosition != barPosition || bar.localScale != barScale;
+                        bar.localPosition = barPosition;
+                        bar.localScale = barScale;
                     }
                 }
 
-                PrefabUtility.SaveAsPrefabAsset(contents, prefabPath);
+                // Sin cambio no se reescribe: SaveAsPrefabAsset renumera fileIDs internos y
+                // ensuciaría el diff del prefab en cada corrida del builder.
+                if (changed) PrefabUtility.SaveAsPrefabAsset(contents, prefabPath);
             }
             finally
             {

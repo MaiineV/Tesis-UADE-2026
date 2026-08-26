@@ -8,38 +8,22 @@ using UnityEngine;
 namespace Rollgeon.Combat.AI.Bosses.Croupier
 {
     /// <summary>
-    /// Marca / limpia el área telegráfica de <b>un</b> número cantado. Código puro compartido por el
-    /// nodo que marca y por el servicio de la rueda (que re-marca cuando el jugador corre la rueda).
-    /// </summary>
-    /// <remarks>
-    /// <para>
     /// Cada slot marca bajo un guid derivado del jefe, no bajo el del jefe:
-    /// <see cref="IThreatenedAreaService"/> guarda <i>una</i> área pendiente por fuente y sobrescribe
-    /// al re-marcar, así que con un solo guid el segundo número de fase 2 se come al primero y la
-    /// columna de costura cobra un golpe en vez de dos.
-    /// </para>
-    /// <para>
-    /// El guid derivado no se usa como <c>SourceId</c> del daño: el que detona resuelve con el guid
-    /// real del jefe, para que atribución, debilidad y feedback sigan apuntando al Croupier.
-    /// </para>
-    /// </remarks>
+    /// <see cref="IThreatenedAreaService"/> guarda <i>una</i> área pendiente por fuente, así que con
+    /// un solo guid el segundo número de fase 2 se come al primero. El guid derivado no se usa como
+    /// <c>SourceId</c>: el que detona resuelve con el guid real para no perder la atribución.
+    /// </summary>
     public static class CroupierSectorTelegraph
     {
-        /// <summary>Slots máximos simultáneos: fase 2 canta dos números.</summary>
         public const int MaxSlots = 2;
 
-        /// <summary>
-        /// Latón del aviso: el mismo matiz que el número de la ruleta (<c>BrassLight</c> del builder),
-        /// distinto del rojo del fuego (<c>CroupierAssetBuilder.FireOverlayTint</c>).
-        /// </summary>
+        /// <summary>El mismo matiz que el número de la ruleta (<c>BrassLight</c> del builder), distinto del rojo del fuego.</summary>
         public static readonly Color SectorTint = new Color(0.831f, 0.635f, 0.196f, 0.55f);
 
         // XOR sobre el último byte del guid del jefe: determinístico, distinto por slot y nunca igual
-        // al guid original (el salt es != 0), así que no puede pisar el área que marque otro sistema
-        // bajo la fuente del propio jefe.
+        // al original, así que no pisa el área que marque otro sistema bajo la fuente del jefe.
         private const int SlotSalt = 0xC0;
 
-        /// <summary>Fuente derivada del slot <paramref name="slot"/> del jefe <paramref name="bossGuid"/>.</summary>
         public static Guid SlotGuid(Guid bossGuid, int slot)
         {
             if (bossGuid == Guid.Empty) return Guid.Empty;
@@ -49,10 +33,7 @@ namespace Rollgeon.Combat.AI.Bosses.Croupier
             return new Guid(bytes);
         }
 
-        /// <summary>
-        /// Marca el sector <paramref name="sector"/> como área pendiente del slot y pinta su overlay.
-        /// Devuelve <c>false</c> si no hay servicios/sala o si el sector queda vacío.
-        /// </summary>
+        /// <summary>Devuelve <c>false</c> si no hay servicios/sala o si el sector queda vacío.</summary>
         public static bool Mark(Guid bossGuid, int slot, int sector, int damage, AttackKind kind)
         {
             var slotGuid = SlotGuid(bossGuid, slot);
@@ -69,7 +50,6 @@ namespace Rollgeon.Combat.AI.Bosses.Croupier
             return true;
         }
 
-        /// <summary>Apaga el overlay del slot. El área pendiente la consume el nodo que detona.</summary>
         public static void ClearOverlay(Guid bossGuid, int slot)
         {
             var slotGuid = SlotGuid(bossGuid, slot);

@@ -11,12 +11,6 @@ using UnityEngine;
 
 namespace Rollgeon.Combat.AI.Tests
 {
-    /// <summary>
-    /// Tests de <see cref="AINode_TelegraphMarkGoldScaled"/>: la columna del Cajero engorda con el
-    /// oro del jugador. Cubren el recorrido completo del nodo — leer la economía, resolver el
-    /// escalón, y dejar el área marcada en <see cref="IThreatenedAreaService"/> con el ancho y el
-    /// daño correctos — que es lo que después detona <c>AINode_ExecuteTelegraph</c>.
-    /// </summary>
     [TestFixture]
     public class AINode_TelegraphMarkGoldScaledTests
     {
@@ -53,8 +47,8 @@ namespace Rollgeon.Combat.AI.Tests
         [TearDown]
         public void TearDown()
         {
-            // AINode_TelegraphMark crea el GameObject del overlay al marcar (ver
-            // HazardServiceTests): sin limpiarlo queda huérfano entre tests.
+            // AINode_TelegraphMark crea el GameObject del overlay al marcar: sin limpiarlo queda
+            // huérfano entre tests.
             if (ServiceLocator.TryGetService<IThreatOverlayService>(out var overlay)
                 && overlay is IDisposable disposable)
             {
@@ -66,8 +60,6 @@ namespace Rollgeon.Combat.AI.Tests
             ServiceLocator.Clear();
             EventManager.ResetEventDictionary();
         }
-
-        // ---- Helpers -----------------------------------------------------
 
         private static List<CashierGoldTier> FichaTiers() => new List<CashierGoldTier>
         {
@@ -91,7 +83,6 @@ namespace Rollgeon.Combat.AI.Tests
             Rng = new System.Random(7),
         };
 
-        /// <summary>Columnas distintas (X) que cubre el área marcada = ancho de la franja.</summary>
         private int MarkedWidth()
         {
             var xs = new HashSet<int>();
@@ -104,8 +95,6 @@ namespace Rollgeon.Combat.AI.Tests
             Assert.IsTrue(_threat.TryConsume(_boss, out var area), "El jefe no dejó área marcada.");
             return area.Damage;
         }
-
-        // ---- Escalones de la ficha ---------------------------------------
 
         [TestCase(0,   1, 14)]
         [TestCase(99,  1, 14)]
@@ -173,8 +162,6 @@ namespace Rollgeon.Combat.AI.Tests
             Assert.AreEqual(120, node.LastGold);
         }
 
-        // ---- Soborno -----------------------------------------------------
-
         [Test]
         public void Tick_WithBribeActive_MarksOneTierLower()
         {
@@ -210,8 +197,6 @@ namespace Rollgeon.Combat.AI.Tests
 
             Assert.AreEqual(35, MarkedDamage());
         }
-
-        // ---- Degradados --------------------------------------------------
 
         [Test]
         public void Tick_WithoutEconomyService_FallsBackToCheapestTier_InsteadOfNotAttacking()

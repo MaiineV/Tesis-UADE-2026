@@ -10,10 +10,6 @@ using Rollgeon.PreConditions.Concretes;
 
 namespace Rollgeon.Combat.AI.Tests
 {
-    /// <summary>
-    /// El brazo de La Bandida como golpe melee directo: 12 a quien haya cerrado el turno pegado a la
-    /// máquina, sin marca previa y sin área.
-    /// </summary>
     [TestFixture]
     public class BandidaArmMeleeTests
     {
@@ -59,20 +55,13 @@ namespace Rollgeon.Combat.AI.Tests
             EventManager.ResetEventDictionary();
         }
 
-        // ======================================================================
-        // Alcance
-        // ======================================================================
-
         [Test]
         public void Arm_HitsForTwelve_WhenThePlayerClosedTheTurnAdjacent()
         {
-            // Arrange
             MovePlayer(new GridCoord(5, 2));
 
-            // Act
             var result = Arm().Tick(NewContext());
 
-            // Assert
             Assert.AreEqual(AIResult.Succeeded, result);
             Assert.AreEqual(1, _pipeline.Resolved.Count, "El brazo cobra en el acto, no el turno que viene.");
             Assert.AreEqual(ArmDamage, _pipeline.Resolved[0].BaseDamage);
@@ -85,13 +74,10 @@ namespace Rollgeon.Combat.AI.Tests
         [Test]
         public void Arm_ReachesDiagonals_LikeTheGateThatSelectsIt()
         {
-            // Arrange — la esquina desde la que se llega a un rodillo de la punta.
             MovePlayer(new GridCoord(4, 2));
 
-            // Act
             var result = Arm().Tick(NewContext());
 
-            // Assert
             Assert.AreEqual(AIResult.Succeeded, result,
                 "Con métrica Chebyshev la diagonal está pegada: si el brazo no llegara ahí, el " +
                 "jugador rompería rodillos gratis parado en diagonal.");
@@ -101,13 +87,10 @@ namespace Rollgeon.Combat.AI.Tests
         [Test]
         public void Arm_DoesNothing_WhenThePlayerStayedOneTileOut()
         {
-            // Arrange
             MovePlayer(new GridCoord(5, 1));
 
-            // Act
             var result = Arm().Tick(NewContext());
 
-            // Assert
             Assert.AreEqual(AIResult.Failed, result, "Fuera de alcance el nodo falla y el pool cae al Wait.");
             Assert.IsEmpty(_pipeline.Resolved, "El brazo no puede alcanzar a nadie a dos casillas.");
         }
@@ -115,33 +98,24 @@ namespace Rollgeon.Combat.AI.Tests
         [Test]
         public void Arm_MeasuresDistanceItself_EvenWithoutTheGate()
         {
-            // Arrange — el nodo corre suelto, como quedaría tras un rewire que se coma el If.
+            // El nodo corre suelto, como quedaría tras un rewire que se coma el If.
             MovePlayer(new GridCoord(0, 0));
 
-            // Act
             var result = Arm().Tick(NewContext());
 
-            // Assert
             Assert.AreEqual(AIResult.Failed, result,
                 "Sin auto-gate, un rewire distraído convertiría el brazo en un golpe a distancia " +
                 "de 12 — justo lo que un jefe atornillado a la pared no puede tener.");
             Assert.IsEmpty(_pipeline.Resolved);
         }
 
-        // ======================================================================
-        // Sin marca y sin área
-        // ======================================================================
-
         [Test]
         public void Arm_LeavesNoThreatenedArea_BecauseItIsNotATelegraph()
         {
-            // Arrange
             MovePlayer(new GridCoord(5, 2));
 
-            // Act
             Arm().Tick(NewContext());
 
-            // Assert
             Assert.IsFalse(_threat.HasPending(_boss),
                 "Si el brazo deja área pendiente volvió a ser un telegraph: avisaría un turno antes " +
                 "y un paso lo esquivaría entero.");
@@ -151,50 +125,39 @@ namespace Rollgeon.Combat.AI.Tests
         [Test]
         public void Arm_ResolvesWithoutAnyThreatService_SoItCannotDependOnTelegraphState()
         {
-            // Arrange — sala sin servicios de amenaza registrados, como una escena sin bootstrap.
+            // Sala sin servicios de amenaza registrados, como una escena sin bootstrap.
             ServiceLocator.Clear();
             ServiceLocator.AddService<IGridManager>(_grid);
             ServiceLocator.AddService<IDamagePipeline>(_pipeline);
             MovePlayer(new GridCoord(5, 2));
 
-            // Act
             var result = Arm().Tick(NewContext());
 
-            // Assert
             Assert.AreEqual(AIResult.Succeeded, result);
             Assert.AreEqual(ArmDamage, _pipeline.Resolved[0].BaseDamage);
         }
 
-        // ======================================================================
-        // Bordes
-        // ======================================================================
-
         [Test]
         public void Arm_Fails_WithoutADamagePipeline()
         {
-            // Arrange
             MovePlayer(new GridCoord(5, 2));
             var context = NewContext();
             context.DamagePipeline = null;
 
-            // Act
             var result = Arm().Tick(context);
 
-            // Assert
             Assert.AreEqual(AIResult.Failed, result, "Sin pipeline no hay golpe, y no puede explotar.");
         }
 
         [Test]
         public void Arm_Fails_WhenTheBossIsNotOnTheGrid()
         {
-            // Arrange — el jefe murió y algo todavía tickea su árbol.
+            // El jefe murió y algo todavía tickea su árbol.
             MovePlayer(new GridCoord(5, 2));
             _grid.Unregister(_boss);
 
-            // Act
             var result = Arm().Tick(NewContext());
 
-            // Assert
             Assert.AreEqual(AIResult.Failed, result);
             Assert.IsEmpty(_pipeline.Resolved);
         }
@@ -202,23 +165,16 @@ namespace Rollgeon.Combat.AI.Tests
         [Test]
         public void Arm_WithManhattanMetric_SparesTheDiagonals()
         {
-            // Arrange — con Manhattan la diagonal queda a 2 y el brazo no llega.
             MovePlayer(new GridCoord(4, 2));
             var node = Arm();
             node.Metric = DistanceMetric.Manhattan;
 
-            // Act
             var result = node.Tick(NewContext());
 
-            // Assert
             Assert.AreEqual(AIResult.Failed, result,
                 "Con Manhattan la diagonal está a 2: el gate del árbol tiene que compartir métrica " +
                 "con el nodo o una de las dos mitades miente.");
         }
-
-        // ======================================================================
-        // Harness
-        // ======================================================================
 
         private static AINode_BandidaArm Arm() => new AINode_BandidaArm
         {

@@ -14,6 +14,7 @@ using Rollgeon.Entities;
 using Rollgeon.Feedback;
 using Rollgeon.PreConditions;
 using Rollgeon.PreConditions.Concretes;
+using Rollgeon.Tiles;
 using Rollgeon.UI.HUD;
 using UnityEditor;
 using UnityEngine;
@@ -87,7 +88,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         /// Reducción de daño con la mesa entera en pie. Baja <see cref="TableArmorPerDie"/> por cada
         /// dado roto y <b>no vuelve</b>. Ver <c>RoomObjectArmorService</c>.
         /// </summary>
-        public const float TableArmorMax = 0.5f;
+        public const float TableArmorMax = 0.3f;
 
         /// <summary>
         /// Lo que descuenta cada dado en pie. Sale de la división y no de un literal: autorar 0.15
@@ -117,6 +118,34 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         /// <see cref="RepositionRange"/> tiene que quedar estrictamente por encima.
         /// </summary>
         public const int CupSlamRange = 1;
+
+        // ---- El anillo electrico --------------------------------------------------------
+
+        public const string ElectricTilePath = "Assets/Rollgeon/Tiles/Tile_Electric_Generala.asset";
+
+        public const string ElectricTileId = "TILE_ELECTRIC_GENERALA";
+
+        /// <summary>
+        /// Canal propio de la marca del anillo. Lo comparten el <c>AINode_TelegraphMark</c> que la
+        /// pinta y el <c>AINode_IgniteArea</c> que la prende: sin canal irian al default, que es el
+        /// que consume <c>AINode_ExecuteTelegraph</c>.
+        /// </summary>
+        public const string RingChannelId = "generala_ring";
+
+        /// <summary>Daño del piso electrico, cobrado al arrancar el turno de quien lo pisa.</summary>
+        public const int RingDamage = 35;
+
+        /// <summary>Turnos de aturdimiento que suma el piso, ademas del daño.</summary>
+        public const int RingStunTurns = 1;
+
+        /// <summary>
+        /// Vida del anillo en rondas. <b>Vale una ronda prendida, no dos</b>: el descuento va por
+        /// wrap de ronda y el anillo nace cuando el jugador ya movio (tira iniciativa 5 contra los 4
+        /// de ella, asi que abre la ronda), igual que el corrimiento de
+        /// <see cref="FrostDurationRounds"/>. Con 1 se apagaria en el wrap siguiente sin que nadie
+        /// hubiera arrancado un turno encima.
+        /// </summary>
+        public const int RingDurationRounds = 2;
 
         // ---- La escarcha ----------------------------------------------------------------
 
@@ -204,6 +233,22 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         public const string BossName = "Generala";
 
         public const string BossArtPrefabPath = "Assets/Prefabs/Enemies/DiceBoss_Animated.prefab";
+
+        /// <summary>
+        /// Los gestos de ataque del rig, los que tienen que publicar el frame del golpe.
+        /// </summary>
+        /// <remarks>
+        /// El que cambia algo hoy es <c>AttackRange</c>: es el trigger de
+        /// <c>BossFeedbackIds.GeneralaRangeAnim</c>, el windup de su <c>AINode_ExecuteTelegraph</c>,
+        /// y con el evento el daño pasa a caer en el golpe en vez de al cerrar el step. El cubilete
+        /// (<c>AttackMelee</c>) ignora el evento a propósito —ver <c>AINode_GeneralaCupSlam</c>— pero
+        /// va igual: un rig a medias es el que se rompe cuando alguien cambia de nodo.
+        /// </remarks>
+        public static readonly string[] AttackClipPaths =
+        {
+            "Assets/Art/3D/Animations/Enemies/DiceBoss/Anim_DiceBoss_AttackMelee.anim",
+            "Assets/Art/3D/Animations/Enemies/DiceBoss/Anim_DiceBoss_AttackRange.anim",
+        };
         public const string BossVisualPrefabPath = "Assets/Prefabs/Enemies/Bosses/PF_Boss_Generala.prefab";
         /// <summary>Retrato del rig que viste (<c>DiceBoss_Animated</c>). Ver <see cref="BossPortraitLibrary"/>.</summary>
         public const string BossPortraitTexturePath = BossPortraitLibrary.GeneralaPath;
@@ -222,10 +267,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         public const string MaterialsFolder = BossVisualWrapperBuilder.DefaultMaterialsRoot + "/" + BossName;
 
         /// <summary>Nombre del hijo que envuelve el arte — el default de <see cref="BossWrapperSpec"/>.</summary>
-        private const string ArtChildName = "Art";
 
         /// <summary>Nombre del hijo con la barra de vida world-space que arma el wrapper.</summary>
-        private const string HealthBarChildName = "Canvas";
 
         // Medidas objetivo, en unidades de mundo (TileSize = 1). El alto sigue a los jefes que
         // ya están en el juego (SecurityGuardBoss mide 1.8, GeneralDirector 2); el ancho está
@@ -256,8 +299,6 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         private const float DiceBarScale = 0.35f;
 
         /// <summary>Escalas de arte fuera de este rango son síntoma de prop equivocado, no de tuning.</summary>
-        private const float MinArtScale = 0.3f;
-        private const float MaxArtScale = 3f;
 
         // ---- Paleta ---------------------------------------------------------------------
         //
@@ -295,6 +336,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         [MenuItem("Tools/Rollgeon/Bosses/Build Generala")]
         public static void Run()
         {
+            BossVisualWrapperBuilder.EnsureAttackHitEvents(AttackClipPaths);
+
             var bossVisual = BuildBossVisual();
             var diceVisual = BuildDiceVisual();
 
@@ -313,8 +356,10 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
             ConfigureFrostHazard(frost, AssetDatabase.LoadAssetAtPath<GameObject>(FrostVfxPrefabPath));
             EditorUtility.SetDirty(frost);
 
+            var electric = EnsureElectricTile();
+
             var boss = LoadOrCreate<EnemyDataSO>(BossAssetPath);
-            PopulateEnemyData(boss, table, bossVisual, bossPortrait, frost);
+            PopulateEnemyData(boss, table, bossVisual, bossPortrait, electric);
             EditorUtility.SetDirty(boss);
 
             AssetDatabase.SaveAssets();
@@ -323,7 +368,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
             Debug.Log(LogPrefix + $"Listo: '{BossAssetPath}' ({BossHp} HP) + su mesa en " +
                       $"'{DiceDefinitionPath}' ({HandSize} × {DiceHp} HP repartidos por la sala, " +
                       "sin reposición) + " +
-                      $"'{FrostHazardAssetPath}', con wrappers '{BossVisualPrefabPath}' y " +
+                      $"'{ElectricTilePath}', con wrappers '{BossVisualPrefabPath}' y " +
                       $"'{DiceVisualPrefabPath}'. Re-ejecutable sin duplicar nada.");
         }
 
@@ -337,12 +382,12 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         /// </summary>
         public static GameObject BuildBossVisual()
         {
-            var fit = MeasureFit(BossArtPrefabPath, BossTargetHeight, BossMaxWidth, BossBarClearance);
+            var fit = BossArtFitter.Measure(BossArtPrefabPath, BossTargetHeight, BossMaxWidth, BossBarClearance);
 
             var wrapper = BossVisualWrapperBuilder.BuildWrapper(BuildBossSpec(fit, BuildBossProps(fit)));
             if (wrapper == null) return null;
 
-            ApplyArtFit(BossVisualPrefabPath, fit);
+            BossArtFitter.Apply(BossVisualPrefabPath, fit);
             return AssetDatabase.LoadAssetAtPath<GameObject>(BossVisualPrefabPath);
         }
 
@@ -352,12 +397,12 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         /// </summary>
         public static GameObject BuildDiceVisual()
         {
-            var fit = MeasureFit(DiceArtPrefabPath, DiceTargetHeight, DiceMaxWidth, DiceBarClearance);
+            var fit = BossArtFitter.Measure(DiceArtPrefabPath, DiceTargetHeight, DiceMaxWidth, DiceBarClearance);
 
             var wrapper = BossVisualWrapperBuilder.BuildWrapper(BuildDiceSpec(fit));
             if (wrapper == null) return null;
 
-            ApplyArtFit(DiceVisualPrefabPath, fit, SanitizeDieArt, DiceBarScale);
+            BossArtFitter.Apply(DiceVisualPrefabPath, fit, SanitizeDieArt, DiceBarScale);
             return AssetDatabase.LoadAssetAtPath<GameObject>(DiceVisualPrefabPath);
         }
 
@@ -365,7 +410,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         /// Ficha del wrapper del jefe. Separada del build para poder testear el spec sin escribir
         /// assets: el collider Box, el retinte navy y la carpeta de materiales son el contrato.
         /// </summary>
-        public static BossWrapperSpec BuildBossSpec(ArtFit fit, List<BossPropSpec> props)
+        public static BossWrapperSpec BuildBossSpec(BossArtFitter.ArtFit fit, List<BossPropSpec> props)
         {
             return new BossWrapperSpec
             {
@@ -400,7 +445,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         }
 
         /// <summary>Ficha del wrapper del dado: barra propia y collider Box, porque es un cubo.</summary>
-        public static BossWrapperSpec BuildDiceSpec(ArtFit fit)
+        public static BossWrapperSpec BuildDiceSpec(BossArtFitter.ArtFit fit)
         {
             return new BossWrapperSpec
             {
@@ -424,14 +469,14 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         /// medidas salen de los bounds reales, así que un prop reexportado más grande no descoloca
         /// nada — se recalcula en el próximo build.
         /// </summary>
-        public static List<BossPropSpec> BuildBossProps(ArtFit fit)
+        public static List<BossPropSpec> BuildBossProps(BossArtFitter.ArtFit fit)
         {
             var props = new List<BossPropSpec>();
 
-            if (TryMeasurePrefab(CupPropPrefabPath, out var cupBounds))
+            if (BossArtFitter.TryMeasurePrefab(CupPropPrefabPath, out var cupBounds))
                 props.Add(BuildCupProp(fit, cupBounds));
 
-            if (TryMeasurePrefab(BannerPropPrefabPath, out var bannerBounds)
+            if (BossArtFitter.TryMeasurePrefab(BannerPropPrefabPath, out var bannerBounds)
                 && TryBuildBannerProp(fit, bannerBounds, out var banner))
             {
                 props.Add(banner);
@@ -449,10 +494,10 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         /// transform de la sala donde se autoró. Restando <c>min</c> / sumando <c>max</c> el prop
         /// apoya y toca sin importar dónde caiga su pivot.
         /// </remarks>
-        public static BossPropSpec BuildCupProp(ArtFit fit, Bounds cupBounds)
+        public static BossPropSpec BuildCupProp(BossArtFitter.ArtFit fit, Bounds cupBounds)
         {
-            float scale = FitScale(cupBounds, CupHeight, maxWidth: CupHeight * 2f);
-            var scaled = ScaleBounds(cupBounds, scale);
+            float scale = BossArtFitter.FitScale(cupBounds, CupHeight, maxWidth: CupHeight * 2f);
+            var scaled = BossArtFitter.ScaleBounds(cupBounds, scale);
 
             return new BossPropSpec
             {
@@ -470,15 +515,15 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         /// Estandarte a la espalda. Devuelve false — y no cuelga nada — si para llegar al alto
         /// pedido hay que escalar el prop fuera de rango.
         /// </summary>
-        public static bool TryBuildBannerProp(ArtFit fit, Bounds bannerBounds, out BossPropSpec prop)
+        public static bool TryBuildBannerProp(BossArtFitter.ArtFit fit, Bounds bannerBounds, out BossPropSpec prop)
         {
             prop = null;
             if (bannerBounds.size.y <= Mathf.Epsilon) return false;
 
             float raw = BannerHeight / bannerBounds.size.y;
-            if (raw < MinArtScale || raw > MaxArtScale) return false;
+            if (raw < BossArtFitter.MinArtScale || raw > BossArtFitter.MaxArtScale) return false;
 
-            var scaled = ScaleBounds(bannerBounds, raw);
+            var scaled = BossArtFitter.ScaleBounds(bannerBounds, raw);
 
             prop = new BossPropSpec
             {
@@ -495,194 +540,6 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
             return true;
         }
 
-        // ======================================================================
-        // Fit del arte
-        // ======================================================================
-
-        /// <summary>
-        /// Escala, levantada y bounds finales de un prefab de arte dentro de su wrapper.
-        /// </summary>
-        /// <remarks>
-        /// <see cref="BossVisualWrapperBuilder"/> anida el arte a escala 1 en el origen del wrapper,
-        /// que es lo correcto para un rig con el pivot en los pies y la altura de un jefe. El dado
-        /// tiene el pivot en el centro del cubo, así que apoyado en el origen queda medio enterrado.
-        /// Este struct calcula la corrección a partir de los bounds reales del arte, y
-        /// <see cref="ApplyArtFit"/> la escribe en el prefab.
-        /// </remarks>
-        public readonly struct ArtFit
-        {
-            /// <summary>Escala uniforme del hijo <c>Art</c>.</summary>
-            public readonly float Scale;
-
-            /// <summary>Y local del hijo <c>Art</c> para que el arte apoye en el piso.</summary>
-            public readonly float Lift;
-
-            /// <summary>Bounds del arte ya escalado y apoyado — es lo que tiene que cubrir el collider.</summary>
-            public readonly Bounds Bounds;
-
-            public readonly Vector3 HealthBarOffset;
-
-            public ArtFit(float scale, float lift, Bounds bounds, Vector3 healthBarOffset)
-            {
-                Scale = scale;
-                Lift = lift;
-                Bounds = bounds;
-                HealthBarOffset = healthBarOffset;
-            }
-
-            public static ArtFit For(Bounds raw, float targetHeight, float maxWidth, float barClearance)
-            {
-                float scale = FitScale(raw, targetHeight, maxWidth);
-                var scaled = ScaleBounds(raw, scale);
-
-                float lift = -scaled.min.y;
-                var grounded = new Bounds(scaled.center + new Vector3(0f, lift, 0f), scaled.size);
-
-                return new ArtFit(scale, lift, grounded,
-                    new Vector3(0f, grounded.max.y + barClearance, 0f));
-            }
-
-            /// <summary>Fallback cuando el arte no reporta bounds: se deja como lo dejó el wrapper.</summary>
-            public static ArtFit Unmeasured(float barHeight) => new ArtFit(
-                1f, 0f,
-                new Bounds(new Vector3(0f, 1f, 0f), new Vector3(1f, 2f, 1f)),
-                new Vector3(0f, barHeight, 0f));
-        }
-
-        private static ArtFit MeasureFit(string artPath, float targetHeight, float maxWidth, float barClearance)
-        {
-            if (TryMeasurePrefab(artPath, out var raw))
-                return ArtFit.For(raw, targetHeight, maxWidth, barClearance);
-
-            Debug.LogWarning(LogPrefix + $"No se pudieron medir los bounds de '{artPath}' — el wrapper " +
-                             "sale a escala 1 y hay que revisar collider y barra a mano.");
-            return ArtFit.Unmeasured(targetHeight + barClearance);
-        }
-
-        /// <summary>
-        /// Escala para llegar a <paramref name="targetHeight"/> sin pasarse de
-        /// <paramref name="maxWidth"/>: manda la restricción más chica, porque un jefe que llega al
-        /// alto pedido derramándose sobre las casillas vecinas deja de leerse en su tile.
-        /// </summary>
-        private static float FitScale(Bounds raw, float targetHeight, float maxWidth)
-        {
-            float scale = targetHeight / Mathf.Max(raw.size.y, Mathf.Epsilon);
-
-            float widest = Mathf.Max(raw.size.x, raw.size.z);
-            if (widest > Mathf.Epsilon) scale = Mathf.Min(scale, maxWidth / widest);
-
-            return Mathf.Clamp(scale, MinArtScale, MaxArtScale);
-        }
-
-        private static Bounds ScaleBounds(Bounds bounds, float scale) =>
-            new Bounds(bounds.center * scale, bounds.size * scale);
-
-        /// <summary>
-        /// Bounds de los Mesh/SkinnedMesh renderers de un prefab, medidos con el prefab en el origen
-        /// y a escala 1 — el mismo encuadre en el que el wrapper anida el arte.
-        /// </summary>
-        private static bool TryMeasurePrefab(string prefabPath, out Bounds bounds)
-        {
-            bounds = default;
-
-            var asset = AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath);
-            if (asset == null)
-            {
-                Debug.LogWarning(LogPrefix + $"No hay prefab en '{prefabPath}' — no se puede medir.");
-                return false;
-            }
-
-            var probe = PrefabUtility.InstantiatePrefab(asset) as GameObject;
-            if (probe == null) return false;
-
-            try
-            {
-                // El prefab puede traer el transform de la sala donde se autoró (la caja de dados
-                // viene en 1.5/0.783/-1.5): sin resetear, los bounds saldrían corridos.
-                probe.transform.SetPositionAndRotation(Vector3.zero, Quaternion.identity);
-                probe.transform.localScale = Vector3.one;
-
-                bool any = false;
-                foreach (var renderer in probe.GetComponentsInChildren<Renderer>(true))
-                {
-                    if (!(renderer is MeshRenderer || renderer is SkinnedMeshRenderer)) continue;
-
-                    if (any) bounds.Encapsulate(renderer.bounds);
-                    else { bounds = renderer.bounds; any = true; }
-                }
-
-                if (!any || bounds.size.y <= Mathf.Epsilon)
-                {
-                    Debug.LogWarning(LogPrefix + $"'{prefabPath}' no reporta bounds usables.");
-                    return false;
-                }
-                return true;
-            }
-            finally
-            {
-                UnityEngine.Object.DestroyImmediate(probe);
-            }
-        }
-
-        /// <summary>
-        /// Escribe el fit sobre el wrapper ya guardado: escala y levanta el hijo <c>Art</c>, re-dimensiona
-        /// el collider del root y, opcionalmente, encoge la barra y corre un paso extra sobre el arte.
-        /// </summary>
-        /// <remarks>
-        /// Es una segunda pasada y no un parámetro del spec porque <see cref="BossVisualWrapperBuilder"/>
-        /// fija el arte en identidad a propósito (su collider asume eso). Reescribir sobre el mismo path
-        /// mantiene el GUID, así que los <c>EnemyDataSO</c> que ya apuntan al wrapper sobreviven.
-        /// </remarks>
-        private static void ApplyArtFit(
-            string prefabPath,
-            ArtFit fit,
-            Action<Transform> postProcess = null,
-            float barScale = 1f)
-        {
-            var contents = PrefabUtility.LoadPrefabContents(prefabPath);
-            if (contents == null)
-            {
-                Debug.LogWarning(LogPrefix + $"No se pudo abrir '{prefabPath}' para ajustar el arte.");
-                return;
-            }
-
-            try
-            {
-                var art = contents.transform.Find(ArtChildName);
-                if (art == null)
-                {
-                    Debug.LogWarning(LogPrefix + $"'{prefabPath}' no tiene hijo '{ArtChildName}' — " +
-                                     "no se ajusta ni la escala ni el collider.");
-                    return;
-                }
-
-                art.localScale = Vector3.one * fit.Scale;
-                art.localPosition = new Vector3(0f, fit.Lift, 0f);
-
-                // El wrapper dimensionó el collider con el arte en identidad: escalado y levantado,
-                // ese collider queda chico y corrido respecto de lo que se ve.
-                var box = contents.GetComponent<BoxCollider>();
-                if (box != null)
-                {
-                    box.center = fit.Bounds.center;
-                    box.size = fit.Bounds.size;
-                }
-
-                if (!Mathf.Approximately(barScale, 1f))
-                {
-                    var bar = contents.transform.Find(HealthBarChildName);
-                    if (bar != null) bar.localScale = Vector3.one * barScale;
-                }
-
-                postProcess?.Invoke(art);
-
-                PrefabUtility.SaveAsPrefabAsset(contents, prefabPath);
-            }
-            finally
-            {
-                PrefabUtility.UnloadPrefabContents(contents);
-            }
-        }
 
         /// <summary>
         /// Deja el dado de la bandeja física en condiciones de ser un pawn de mesa.
@@ -762,19 +619,13 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
             RoomObjectDefinitionSO diceTable,
             GameObject visualPrefab,
             Sprite portrait = null,
-            HazardDefinitionSO frostHazard = null)
+            SpecialTileDefinitionSO electricFloor = null)
         {
             if (boss == null) return;
 
             boss.EntityId = BossEntityId;
             boss.DisplayName = "La Generala";
-            boss.Description =
-                "The house playing your own game. Five dice of her own on the table, the same combo " +
-                "sheet you use, and one hand per round. Her roll is public before it detonates: you " +
-                "see the five numbers and you know what is coming. Break a die and you erase a " +
-                "category — with four she cannot roll Generala, with three she loses Poker — and you " +
-                "open a hole in a room made of her own dice. Walking up to the table is not free: " +
-                "every roll brings the cup down on whoever is standing next to her.";
+            boss.Description = "Rolls her own hand in the open. Break a die and you erase a category.";
 
             boss.BaseHP = BossHp;
             boss.BaseAttack = BossAttack;
@@ -797,7 +648,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
             // sale del mismo campo (BaseEntitySO.Portrait → IEntityPortraitResolver).
             if (portrait != null) boss.Portrait = portrait;
 
-            boss.AIRoot = BuildAIRoot(diceTable, frostHazard);
+            boss.AIRoot = BuildAIRoot(diceTable, electricFloor);
         }
 
         /// <summary>
@@ -838,10 +689,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
 
             dice.EntityId = DiceEntityId;
             dice.DisplayName = "Dado de la Casa";
-            dice.Description =
-                "One of the five dice the house rolls. No attack of its own — it sits on the table " +
-                "being part of her hand and blocking the way. Breaking one costs you a full swing " +
-                "and erases a category from her sheet.";
+            dice.Description = "Part of her hand, and in your way. Break it to erase a category.";
 
             dice.BaseHP = DiceHp;
             dice.BaseAttack = 0;
@@ -893,31 +741,44 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         // ======================================================================
 
         /// <summary>
-        /// Árbol de decisión del jefe. Orden del turno: cobra el aviso pendiente, corre el gate de
-        /// fase, repone la mesa, tira la mano —bajando el cubilete sobre quien esté pegado—, marca
-        /// el área del combo que le salió, congela el anillo de la mesa, tacha la mano que el
-        /// jugador acaba de anotar, y recién ahí se reacomoda.
+        /// Árbol de decisión del jefe. Orden del turno: prende el anillo que marcó el turno pasado,
+        /// corre el gate de fase, repone la mesa, baja el cubilete sobre quien esté pegado, marca el
+        /// anillo siguiente del ciclo, tacha la mano que el jugador acaba de anotar, y recién ahí se
+        /// reacomoda.
         /// </summary>
         /// <param name="diceTable">
         /// Definición de la mesa (<see cref="PopulateDiceDefinition"/>). Null en tests que no miren la
         /// mesa: el nodo devuelve Failed y su Selector de aislamiento lo absorbe.
         /// </param>
-        /// <param name="frostHazard">
-        /// Definición de la escarcha (<see cref="ConfigureFrostHazard"/>). Puede ser null en tests
-        /// que no miren el hielo: el nodo devuelve Failed y su Selector de aislamiento lo absorbe.
+        /// <param name="electricFloor">
+        /// La casilla que plantan los anillos (<see cref="EnsureElectricTile"/>). Puede ser null en
+        /// tests que sólo miren la forma del turno: la ignición devuelve Failed y su Selector de
+        /// aislamiento lo absorbe.
         /// </param>
         public static AINode_Sequence BuildAIRoot(RoomObjectDefinitionSO diceTable,
-                                                  HazardDefinitionSO frostHazard = null)
+                                                  SpecialTileDefinitionSO electricFloor = null)
         {
             return new AINode_Sequence
             {
                 Children = new List<AIDecisionNode>
                 {
-                    // 1. La mano de la ronda pasada explota con la forma del combo que le salió.
-                    new AINode_ExecuteTelegraph { WindupFeedbackId = BossFeedbackIds.GeneralaRangeAnim },
+                    // 1. Prende el anillo que marco el turno pasado. Aislado porque en su primer
+                    //    turno no hay marca pendiente y el nodo devuelve Failed.
+                    Isolate(new AINode_IgniteArea
+                    {
+                        Definition = electricFloor,
+                        ChannelId = RingChannelId,
+                        DurationRounds = RingDurationRounds,
 
-                    // 2. Fase 2 ANTES del ataque, para que el reroll aplique en el mismo turno en
-                    //    que cruza el umbral.
+                        // 0 y no 1: la ignicion corre ANTES de la marca, asi que el aviso ya
+                        // sobrevivio el turno del jugador cuando llega acá.
+                        AnnounceTurns = 0,
+                        RetireFullyReplaced = false,
+                        WindupFeedbackId = BossFeedbackIds.GeneralaRangeAnim,
+                    }),
+
+                    // 2. Fase 2 ANTES del ataque, para que el buff aplique en el mismo turno en que
+                    //    cruza el umbral.
                     Isolate(BuildPhaseTwoGate()),
 
                     // 3. La mesa. Sin Once: el nodo se auto-gatea y necesita tickear para recoger
@@ -930,152 +791,52 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
                         SpawnFeedbackId = BossFeedbackIds.GeneralaSummonAnim,
                     }),
 
-                    // 4. Tira los dados vivos y canta el combo (público un turno antes de detonar).
-                    new AINode_RollHand
-                    {
-                        SizeSource = AINode_RollHand.HandSizeSource.AliveAllies,
-                        MaxDice = HandSize,
-                        DieFaces = 6,
-                        SlowCombos = new List<string> { Rollgeon.Combos.ComboId.Generala },
-                    },
-
-                    // 5. Y con la misma tirada baja el cubilete sobre quien esté pegado. Aislado
-                    //    porque con el jugador lejos devuelve Failed, y un Failed acá le comería
-                    //    la marca de la mano.
+                    // 4. El cubilete sobre quien este pegado. Aislado porque con el jugador lejos
+                    //    devuelve Failed, y un Failed acá le comería la marca del anillo.
                     Isolate(BuildCupSlam()),
 
-                    // 6. La tabla combo → telegraph.
-                    BuildHandTelegraphTable(),
+                    // 5. Y marca el anillo siguiente del ciclo.
+                    BuildRingCycle(),
 
-                    // 7. La escarcha. Cero daño: el hielo cobra en turnos, no en HP.
-                    Isolate(BuildFrostGate(frostHazard)),
-
-                    // 8. La mano que el jugador acaba de anotar queda prohibida para la ronda que
+                    // 6. La mano que el jugador acaba de anotar queda prohibida para la ronda que
                     //    viene. Se computa al cerrar SU turno para que el jugador la vea tachada
                     //    antes de comprometer los dados.
                     Isolate(BuildRepeatBan()),
 
-                    // 9. Y recién ahí se mueve. Último a propósito: el cubilete y la escarcha se
-                    //    resuelven desde donde estaba parada cuando tiró, no desde donde terminó.
+                    // 7. Y recién ahí se mueve. Último a propósito: el cubilete se resuelve desde
+                    //    donde estaba parada, no desde donde terminó.
                     Isolate(BuildReposition()),
                 },
             };
         }
 
         /// <summary>
-        /// Selector con una rama por categoría, de la mano más alta a la más baja, y un
-        /// <see cref="AINode_Wait"/> al final. Ese Wait es el que cubre el turno de la mano
-        /// <i>cantada</i> (Generala recién tirada): ninguna rama matchea porque todas piden la mano
-        /// armada, y el turno tiene que seguir igual.
+        /// El ciclo del anillo: un tiempo por turno, de afuera hacia adentro y vuelta a empezar.
+        /// Marca ahora y <see cref="AINode_IgniteArea"/> lo prende al turno siguiente, así que el
+        /// jugador siempre ve el anillo un turno antes de que cobre.
         /// </summary>
         /// <remarks>
-        /// Cuidado al tocar las ramas de <c>DirectionalBand</c>: ahí <c>Size</c> es el MEDIO ancho
-        /// (1 ⇒ 3 casillas), mientras que en <c>Row</c> es el ancho total. Y la banda se centra en
-        /// ELLA, no en el jugador, así que un jugador fuera del eje no queda marcado.
+        /// <see cref="AINode_Alternate"/> rota entre todos sus hijos, no entre dos, así que el ciclo
+        /// de tres sale sin nodo nuevo. Los anillos van centrados en la SALA
+        /// (<see cref="ThreatShape.ConcentricRing"/>), no en ella: si se centraran en el jefe, el
+        /// anillo se correría con el reposicionamiento del paso siguiente.
         /// </remarks>
-        private static AINode_Selector BuildHandTelegraphTable()
+        public static AINode_Alternate BuildRingCycle()
         {
-            return new AINode_Selector
+            var beats = new List<AIDecisionNode>();
+            for (int ring = 1; ring <= ThreatAreaShape.ConcentricRingCount; ring++)
             {
-                Children = new List<AIDecisionNode>
+                beats.Add(new AINode_TelegraphMark
                 {
-                    // Casi toda la sala salvo el anillo del borde: ocho cuadrados de 3×3 anclados
-                    // en el 50% central, que es cómo ScatteredSquares reparte por construcción.
-                    HandBranch(Rollgeon.Combos.ComboId.Generala, new AINode_TelegraphMark
-                    {
-                        Shape = ThreatShape.ScatteredSquares,
-                        Count = 8,
-                        Size = 3,
-                        Damage = GeneralaDamage,
-                        Kind = AttackKind.BasicAttack,
-                    }),
+                    Shape = ThreatShape.ConcentricRing,
+                    Size = ring, // el indice del anillo viaja en Size, igual que en RoomSector
+                    ChannelId = RingChannelId,
+                    Damage = RingDamage,
+                    Kind = AttackKind.Environmental,
+                });
+            }
 
-                    HandBranch(Rollgeon.Combos.ComboId.Poker, new AINode_TelegraphMark
-                    {
-                        Shape = ThreatShape.SquareAroundPlayer,
-                        Size = 2, // radio 2 ⇒ 5×5 sobre el jugador
-                        Damage = PokerDamage,
-                        Kind = AttackKind.BasicAttack,
-                    }),
-
-                    HandBranch(Rollgeon.Combos.ComboId.FullHouse, new AINode_TelegraphMark
-                    {
-                        Shape = ThreatShape.ScatteredSquares,
-                        Count = 2,
-                        Size = 3,
-                        Damage = FullHouseDamage,
-                        Kind = AttackKind.BasicAttack,
-                    }),
-
-                    HandBranch(Rollgeon.Combos.ComboId.Straight, new AINode_TelegraphMark
-                    {
-                        Shape = ThreatShape.DirectionalBand,
-                        Size = 1,
-                        Depth = 4,
-                        Damage = LadderDamage,
-                        Kind = AttackKind.BasicAttack,
-                    }),
-
-                    HandBranch(Rollgeon.Combos.ComboId.Par, new AINode_TelegraphMark
-                    {
-                        Shape = ThreatShape.DirectionalBand,
-                        Size = 1,
-                        Depth = 3,
-                        Damage = PairDamage,
-                        Kind = AttackKind.BasicAttack,
-                    }),
-
-                    // El bust: fallar del todo duele menos que un par.
-                    BustBranch(new AINode_TelegraphMark
-                    {
-                        Shape = ThreatShape.DirectionalBand,
-                        Size = 0,
-                        Depth = 3,
-                        Damage = BustDamage,
-                        Kind = AttackKind.BasicAttack,
-                    }),
-
-                    new AINode_Wait(),
-                },
-            };
-        }
-
-        /// <summary>
-        /// <c>If(mano == comboId) → mark</c>, sin <c>Else</c>: el <see cref="AINode_If"/> devuelve
-        /// Failed cuando la rama elegida es null, que es justo lo que hace avanzar al Selector a la
-        /// categoría siguiente.
-        /// </summary>
-        private static AINode_If HandBranch(string comboId, AIDecisionNode mark)
-        {
-            return new AINode_If
-            {
-                Conditions = new List<BasePreCondition>
-                {
-                    new PcBossHandCombo
-                    {
-                        Match = PcBossHandCombo.HandMatch.Combo,
-                        ComboId = comboId,
-                        RequireArmed = true,
-                    },
-                },
-                Then = mark,
-            };
-        }
-
-        private static AINode_If BustBranch(AIDecisionNode mark)
-        {
-            return new AINode_If
-            {
-                Conditions = new List<BasePreCondition>
-                {
-                    new PcBossHandCombo
-                    {
-                        Match = PcBossHandCombo.HandMatch.NoCombo,
-                        RequireArmed = true,
-                    },
-                },
-                Then = mark,
-            };
+            return new AINode_Alternate { Children = beats };
         }
 
         /// <summary>
@@ -1097,40 +858,94 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         }
 
         /// <summary>
-        /// La escarcha, colgada de la cadencia de ronda (<see cref="FrostParityDivisor"/>): cae en
-        /// las múltiplo de 3 y deja franca la tercera.
+        /// El piso electrico que plantan los anillos: <see cref="RingDamage"/> y
+        /// <see cref="RingStunTurns"/> turno de aturdimiento a quien arranque su turno encima.
         /// </summary>
         /// <remarks>
-        /// Sin ronda franca el hielo nuevo cae antes de que se derrita el anterior y no queda ventana
-        /// para romperle la mesa. Ver <see cref="FrostParityDivisor"/>.
+        /// <para>
+        /// Clon del <c>Tile_ElectricPuddle</c> generico y no el generico mismo: el charco base no
+        /// hace daño, y subirselo se lo cambiaria a todas las salas donde ya esta puesto.
+        /// </para>
+        /// <para>
+        /// <b>Solo OnTurnStart</b>, a proposito. Con OnEnter el anillo prendido seria una pared: para
+        /// pasar del centro al borde hay que cruzarlo, y cruzarlo costaria el golpe entero cada
+        /// ciclo. Asi la regla es "no termines tu turno acá", que es la que el aviso deja leer.
+        /// </para>
+        /// <para>
+        /// Y es puro aturdimiento, sin daño propio: los <see cref="RingDamage"/> los cobra
+        /// <c>AINode_IgniteArea.ChargeOnIgnition</c> con el Damage de la marca, al prender. Ponerlos
+        /// tambien acá los cobraria dos veces al que no se movio.
+        /// </para>
         /// </remarks>
-        public static AINode_If BuildFrostGate(HazardDefinitionSO frostHazard)
+        public static SpecialTileDefinitionSO EnsureElectricTile()
         {
-            return new AINode_If
-            {
-                Conditions = new List<BasePreCondition>
-                {
-                    new PcRoundNumber
-                    {
-                        Mode = PcRoundNumber.CompareMode.Multiple,
-                        Value = FrostParityDivisor,
-                    },
-                },
-                Then = BuildFrostRing(frostHazard),
-                // Sin Else: en ronda impar el If devuelve Failed y lo absorbe el Selector de Isolate.
-            };
+            var tile = LoadOrCreate<SpecialTileDefinitionSO>(ElectricTilePath);
+            ConfigureElectricTile(
+                tile,
+                AssetDatabase.LoadAssetAtPath<SpecialTileDefinitionSO>(GenericElectricTilePath));
+
+            EditorUtility.SetDirty(tile);
+            return tile;
         }
 
-        public static AINode_GeneralaFrostRing BuildFrostRing(HazardDefinitionSO frostHazard)
+        /// <summary>El charco generico del que sale el arte. Ver <see cref="ConfigureElectricTile"/>.</summary>
+        public const string GenericElectricTilePath = "Assets/Rollgeon/Tiles/Tile_ElectricPuddle.asset";
+
+        /// <summary>
+        /// Escribe los numeros del piso electrico sobre <paramref name="tile"/>. Parte pura, separada
+        /// de <see cref="EnsureElectricTile"/> para que los tests del turno puedan armar la casilla en
+        /// memoria sin tocar el AssetDatabase.
+        /// </summary>
+        /// <param name="generic">
+        /// El charco generico del que copia el arte. Con <c>null</c> la casilla queda sin visual y se
+        /// ve como el overlay pelado: el arte no es parte del contrato de la pelea.
+        /// </param>
+        public static void ConfigureElectricTile(
+            SpecialTileDefinitionSO tile, SpecialTileDefinitionSO generic = null)
         {
-            return new AINode_GeneralaFrostRing
+            if (tile == null) return;
+
+            tile.TileId = ElectricTileId;
+            tile.DisplayName = "Piso Electrico";
+            tile.TileType = SpecialTileType.ElectricPuddle;
+
+            tile.Triggers = TileTrigger.OnTurnStart;
+            tile.Category = TileEffectCategory.ApplyStatus;
+            tile.Affinity = TileAffinity.GroundOnly;
+            tile.DamageKind = AttackKind.Environmental;
+
+            tile.EnterDamage = 0;
+            tile.TurnStartDamage = 0;
+            tile.StatusKind = TileStatusKind.Stun;
+            tile.StatusTurns = RingStunTurns;
+
+            // Lo pone ella, no es terreno de la sala: dura lo que dura el anillo.
+            tile.DefaultDurationRounds = RingDurationRounds;
+            tile.DisarmOnTrigger = false;
+            tile.RearmOnRoundWrap = false;
+
+            // Los anillos se centran en la sala y ella camina: sin esto se electrocuta sola.
+            tile.OwnerBossImmune = true;
+
+            // Lo que el pathing enemigo le pone de precio: no hace daño, pero perder el turno es caro.
+            tile.AIVirtualEnterDamage = RingDamage;
+            tile.AIAnnouncesLethal = false;
+
+            tile.NameKey = "tile.electricpuddle";
+            tile.DescriptionKey = "tile.electricpuddle";
+
+            // Mismo arte que el charco generico: para el jugador es el mismo piso.
+            if (generic != null)
             {
-                Hazard = frostHazard,
-                Radius = FrostRingRadius,
-                Solid = FrostIsSolid,
-                StunTurns = FrostStunTurns,
-                ReplacePreviousRing = true,
-            };
+                tile.VisualPrefab = generic.VisualPrefab;
+                tile.VisualYOffset = generic.VisualYOffset;
+                tile.OverlayTint = generic.OverlayTint;
+                tile.TriggerVfxPrefab = generic.TriggerVfxPrefab;
+                tile.TriggerVfxLifetime = generic.TriggerVfxLifetime;
+                tile.TriggerVfxYOffset = generic.TriggerVfxYOffset;
+                tile.EditorIcon = generic.EditorIcon;
+                tile.EditorColor = generic.EditorColor;
+            }
         }
 
         /// <summary>

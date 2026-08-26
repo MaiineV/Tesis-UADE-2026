@@ -7,23 +7,15 @@ using UnityEngine;
 namespace Rollgeon.Combat.AI.Bosses.Croupier
 {
     /// <summary>
-    /// El número cantado (<see cref="ICroupierWheelService.SungNumbers"/>), escrito en el centro de la
-    /// ruleta.
+    /// El label es hijo del root del wrapper y no de <c>Wheel</c>: colgarlo de la rueda lo haría
+    /// girar con ella y sería ilegible justo en el momento del canto.
     /// </summary>
-    /// <remarks>
-    /// El label es hijo del root del wrapper y no de <c>Wheel</c>: colgarlo de la rueda lo haría girar
-    /// con ella y sería ilegible justo en el momento del canto.
-    /// </remarks>
     [DisallowMultipleComponent]
     public sealed class CroupierWheelNumberView : MonoBehaviour
     {
-        /// <summary>Nombre con el que el builder parentea el label al wrapper.</summary>
         public const string DefaultLabelChildName = "WheelNumber";
 
-        /// <summary>
-        /// Separador entre los dos números de fase 2. Barra y no interpunto: la pixel font del HUD
-        /// (<c>m6x11plus</c>) no tiene <c>·</c> (U+00B7) en su atlas y el glifo saldría como cuadradito.
-        /// </summary>
+        /// <summary>Barra y no interpunto: la pixel font del HUD (<c>m6x11plus</c>) no tiene <c>·</c> (U+00B7) en su atlas y el glifo saldría como cuadradito.</summary>
         public const string DefaultSeparator = " / ";
 
         [Header("Rig")]
@@ -35,10 +27,6 @@ namespace Rollgeon.Combat.AI.Bosses.Croupier
         [SerializeField] private bool _faceCamera = true;
 
         private ICroupierWheelService _service;
-
-        // ======================================================================
-        // Ciclo de vida
-        // ======================================================================
 
         private void Awake()
         {
@@ -69,10 +57,6 @@ namespace Rollgeon.Combat.AI.Bosses.Croupier
             FaceCamera();
         }
 
-        // ======================================================================
-        // Servicio
-        // ======================================================================
-
         private void EnsureBound()
         {
             ServiceLocator.TryGetService<ICroupierWheelService>(out var current);
@@ -100,10 +84,6 @@ namespace Rollgeon.Combat.AI.Bosses.Croupier
             _service = null;
         }
 
-        // ======================================================================
-        // Pintado
-        // ======================================================================
-
         private void Publish(IReadOnlyList<int> numbers)
         {
             if (_label == null) return;
@@ -111,14 +91,12 @@ namespace Rollgeon.Combat.AI.Bosses.Croupier
             string text = Format(numbers, DefaultSeparator);
             _label.text = text;
 
-            // Se apaga el GameObject y no sólo el texto: un label vacío sigue pagando su draw call y,
-            // con outline autorado, deja un halo visible sobre el hub.
+            // Se apaga el GameObject y no sólo el texto: un label vacío paga su draw call y, con
+            // outline autorado, deja un halo sobre el hub.
             _label.gameObject.SetActive(text.Length > 0);
         }
 
-        /// <summary>
-        /// Los números en el aire, listos para escribir. Vacío si no hay ninguno.
-        /// </summary>
+        /// <summary>Los números en el aire, listos para escribir. Vacío si no hay ninguno.</summary>
         public static string Format(IReadOnlyList<int> numbers, string separator)
         {
             if (numbers == null || numbers.Count == 0) return string.Empty;
@@ -141,7 +119,7 @@ namespace Rollgeon.Combat.AI.Bosses.Croupier
             if (cam == null) return;
 
             // Se copia la rotación de la cámara en vez de mirar hacia ella: con LookAt, dos labels a
-            // distinta distancia quedan con inclinaciones distintas y el texto se lee torcido.
+            // distinta distancia se leen torcidos.
             _label.transform.rotation = cam.transform.rotation;
         }
     }

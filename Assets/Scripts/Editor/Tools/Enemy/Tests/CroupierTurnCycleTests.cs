@@ -24,46 +24,23 @@ using UnityEngine.TestTools;
 
 namespace Rollgeon.Editor.Tools.Enemy.Tests
 {
-    /// <summary>
-    /// Corre el árbol REAL del Croupier turno a turno, con los servicios reales de amenaza,
-    /// casillas y movimiento. Lo que cubre es el <b>cruce del 50%</b>: cuántos avisos quedan
-    /// pendientes al cerrar ese turno y cuántas detonaciones caen al siguiente.
-    /// </summary>
-    /// <remarks>
-    /// <para>
-    /// <c>CroupierPhaseWiringTests</c> mira la forma del árbol: que el descarte exista, que tenga el
-    /// canal correcto y que caiga entre el teleport y el marcado. Nada de eso demuestra el
-    /// resultado, que es lo que el jugador reportó: "prepara 2 ataques y después ejecuta 2". Acá se
-    /// tickea y se cuenta.
-    /// </para>
-    /// <para>
-    /// El cruce cae en un turno cualquiera del ciclo de dos tiempos, así que hay un caso por beat:
-    /// sobre el reparto (T1) hay una banda recién marcada que descartar, y sobre la quema (T2) no
-    /// hay ninguna porque ese mismo turno la consumió. Los dos tienen que terminar con
-    /// <b>exactamente un</b> aviso pendiente.
-    /// </para>
-    /// </remarks>
+    /// <summary>Corre el árbol REAL del Croupier turno a turno con los servicios reales.
+    /// <c>CroupierPhaseWiringTests</c> mira la forma del árbol y eso no demuestra el resultado: acá
+    /// se tickea y se cuenta cuántos avisos quedan pendientes y cuántas detonaciones caen.</summary>
     [TestFixture]
     public class CroupierTurnCycleTests
     {
-        /// <summary>La sala del jefe. El centro (5,5) es donde lo planta el armado del Pleno.</summary>
         private const int RoomSide = 11;
 
-        /// <summary>
-        /// Centro de <c>NavGraph.Rect(11,11)</c>, que es 0-based: (5,5). Sale del lado de la sala
-        /// del fixture y no de la de producción — el nodo resuelve el centro del bounding box de
-        /// lo que haya cargado.
-        /// </summary>
+        /// <summary>Centro de <c>NavGraph.Rect(11,11)</c>, que es 0-based: (5,5). Sale del lado de la
+        /// sala del fixture porque el nodo resuelve el centro del bounding box de lo que haya cargado.</summary>
         private static readonly GridCoord RoomCentre = new GridCoord(RoomSide / 2, RoomSide / 2);
 
         private static readonly GridCoord BossTile = new GridCoord(8, 5);
 
-        /// <summary>
-        /// Manhattan 5 del jefe, o sea justo el <see cref="CroupierAssetBuilder.FleeTriggerRange"/>:
-        /// el gate de cercanía pasa (es inclusivo) y T1 corre entero — dispara, salta al borde y
-        /// marca el cono. En la fila del jefe es la única X que además cae fuera del hueco 3×3 del
-        /// Pleno, así que la ignición del paño le sigue cobrando.
-        /// </summary>
+        /// <summary>Manhattan 5 del jefe, justo el <see cref="CroupierAssetBuilder.FleeTriggerRange"/>:
+        /// el gate de cercanía pasa (es inclusivo) y T1 corre entero. Es además la única X de la fila
+        /// que cae fuera del hueco 3×3 del Pleno, así que la ignición del paño le sigue cobrando.</summary>
         private static readonly GridCoord PlayerTile = new GridCoord(3, 5);
 
         /// <summary>HP con el que los dos gates (70% y 50%) evalúan true.</summary>
@@ -108,9 +85,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             _pipeline = new SpyDamagePipeline();
             ServiceLocator.AddService<IDamagePipeline>(_pipeline, ServiceScope.Global);
 
-            // Registrado ANTES del primer marcado: ThreatTelegraphOverlay.ResolveOrCreate devuelve
-            // lo que ya esté en el locator, así que el spy evita que el fixture pare GameObjects de
-            // overlay en EditMode y además deja observar qué se apagó.
+            // Registrado ANTES del primer marcado: ThreatTelegraphOverlay.ResolveOrCreate devuelve lo
+            // que ya esté en el locator, así que el spy evita parar GameObjects en EditMode.
             _overlay = new SpyThreatOverlay();
             ServiceLocator.AddService<IThreatOverlayService>(_overlay, ServiceScope.Global);
 
@@ -165,48 +141,70 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             _created.Clear();
         }
 
-        // =====================================================================
-        // El cruce del 50% sobre el tiempo de reparto — el caso reportado
-        // =====================================================================
+        /// <summary>El tiempo de reparto ya no marca nada, así que cruzar acá no le pisa ningún
+        /// aviso: el descarte del armado pasa de largo y tiene que salir por <c>Succeeded</c>.</summary>
+        // El orden del ciclo, declarado una vez: rotarlo en el builder se arregla acá y no en cada
+        // test. Son numeros de turno, no indices: el primer Tick es el turno 1.
+        private const int BombTurn = 1;
+        private const int BurnTurn = 2;
+        private const int DealTurn = 3;
 
-        /// <summary>
-        /// El turno que cruza el 50% cayendo en T1 cierra con <b>un</b> aviso pendiente, no dos: el
-        /// Pleno reemplaza a la banda que ese mismo turno acababa de marcar.
-        /// </summary>
-        /// <remarks>
-        /// Es el bug tal como se reportó: la banda marcada y el paño marcado prendidos a la vez, y
-        /// al turno siguiente las dos detonaciones. El aviso de la banda vale menos que nada acá —
-        /// el Pleno prende todo salvo el hueco, así que su terreno ya arde y su beat se absorbe sin
-        /// mostrar nada.
-        /// </remarks>
+        /// <summary>Corre el ciclo hasta el turno pedido inclusive y devuelve el resultado de ese
+        /// ultimo tick, que es el turno que el test esta mirando.</summary>
+        private AIResult TickThrough(AINode_Sequence root, int throughTurn, double roll = RollEdge)
+        {
+            var result = AIResult.Succeeded;
+            for (int turn = 1; turn <= throughTurn; turn++)
+                result = root.Tick(NewContext(roundIndex: turn, roll: roll));
+            return result;
+        }
+
+        /// <summary>El tiempo de reparto no marca nada, así que cruzar ahí no le pisa ningún aviso:
+        /// el descarte del armado pasa de largo y tiene que salir por <c>Succeeded</c>.</summary>
         [Test]
         public void CrossingFiftyOnTheDealBeat_LeavesOnlyThePlenoQueued()
+        {
+            var root = CroupierAssetBuilder.BuildAIRoot(_fire);
+
+            // Los dos primeros turnos con la vida entera: el cono que marca el tiempo de las bombas
+            // arde en el de quema, así que al llegar al reparto no queda nada pendiente.
+            TickThrough(root, BurnTurn);
+            SetBossHp(PhaseTwoHp);
+
+            var result = root.Tick(NewContext(roundIndex: DealTurn));
+
+            Assert.AreNotEqual(AIResult.Failed, result,
+                "El turno del jefe se cortó entero. El descarte no encontró nada pendiente, y ese " +
+                "no-op tiene que salir por Succeeded o se lleva el marcado que sigue.");
+            Assert.IsTrue(_threat.HasPending(PlenoSource),
+                "El Pleno no quedó encolado: el descarte se llevó puesto el aviso que tenía que " +
+                "encolar, o el marcado nunca corrió.");
+            Assert.IsFalse(_threat.HasPending(_boss),
+                "Apareció un cono pendiente en el tiempo de reparto, que no marca nada.");
+        }
+
+        /// <summary>El único turno en el que el armado pisa un aviso propio: el cono se marca al final
+        /// del tiempo de las bombas y el armado corre detrás del ciclo, en el mismo tick.</summary>
+        [Test]
+        public void CrossingFiftyOnTheBombBeat_DiscardsTheConeItJustMarked()
         {
             SetBossHp(PhaseTwoHp);
             var root = CroupierAssetBuilder.BuildAIRoot(_fire);
 
-            var result = root.Tick(NewContext(roundIndex: 1));
+            var result = root.Tick(NewContext(roundIndex: BombTurn));
 
-            Assert.AreNotEqual(AIResult.Failed, result, "El turno del jefe se cortó entero.");
-            Assert.IsTrue(_threat.HasPending(PlenoSource),
-                "El Pleno no quedó encolado: el descarte se llevó puesto el aviso que tenía que " +
-                "reemplazar a la banda, o el marcado nunca corrió.");
+            Assert.AreNotEqual(AIResult.Failed, result, "El turno del cruce se cortó entero.");
+            Assert.IsTrue(_threat.HasPending(PlenoSource), "El Pleno no quedó encolado.");
             Assert.IsFalse(_threat.HasPending(_boss),
-                "La banda de T1 siguió pendiente junto con el Pleno. Son los DOS avisos prendidos " +
-                "a la vez que reportó el jugador, y al turno siguiente detonan los dos.");
+                "El cono siguió pendiente junto con el Pleno. Son los DOS avisos prendidos a la vez " +
+                "que reportó el jugador, y al turno siguiente detonan los dos.");
             CollectionAssert.Contains(_overlay.Cleared, _boss,
-                "Se descartó el área de la banda pero quedó su dibujo: un aviso pintado que no va a " +
+                "Se descartó el área del cono pero quedó su dibujo: un aviso pintado que no va a " +
                 "detonar nunca, que se lee igual de mal que los dos avisos.");
         }
 
-        /// <summary>
-        /// Y el turno siguiente cobra <b>una</b> detonación: prende el paño y nada más.
-        /// </summary>
-        /// <remarks>
-        /// La otra mitad de lo reportado ("después ejecuta 2 ataques"). Además fija que el tiempo de
-        /// quema, que se quedó sin banda que consumir, no corte el turno: <c>AINode_IgniteArea</c>
-        /// sin marca pendiente sale por <c>Succeeded</c>, no por <c>Failed</c>.
-        /// </remarks>
+        /// <summary><c>AINode_IgniteArea</c> sin marca pendiente sale por <c>Succeeded</c>, no por
+        /// <c>Failed</c>: el tiempo de quema se quedó sin banda y no puede cortar el turno.</summary>
         [Test]
         public void TheTurnAfterTheCrossing_DetonatesThePlenoAndNothingElse()
         {
@@ -229,33 +227,26 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             Assert.AreEqual(CroupierAssetBuilder.PlenoIgnitionDamage, EnvironmentalHits()[0].BaseDamage,
                 "El golpe que se cobró no es el del Pleno.");
             Assert.IsFalse(_threat.HasPending(PlenoSource), "El paño quedó pendiente sin prender.");
-            Assert.IsFalse(_threat.HasPending(_boss), "Apareció una banda pendiente de la nada.");
+
+            // Nada pendiente: el cono que las bombas habían marcado se lo llevó el descarte del
+            // armado en el turno anterior, y el de quema no marca.
+            Assert.IsFalse(_threat.HasPending(_boss), "Apareció un cono pendiente de la nada.");
         }
 
-        // =====================================================================
-        // El cruce sobre el tiempo de quema
-        // =====================================================================
-
-        /// <summary>
-        /// Cruzando el 50% en T2 no hay banda que descartar —ese mismo turno la consumió la
-        /// quema—, y el descarte de más no puede tocar el aviso del Pleno.
-        /// </summary>
-        /// <remarks>
-        /// El caso que hace que el paso no pueda devolver <c>Failed</c> cuando no encuentra nada: va
-        /// desnudo dentro del Sequence del armado, así que un Failed acá corta el turno antes del
-        /// marcado y deja a <c>AINode_Once</c> sin latchear.
-        /// </remarks>
+        /// <summary>El descarte va desnudo dentro del Sequence del armado: si devolviera <c>Failed</c> al
+        /// no encontrar nada, cortaría el turno antes del marcado y dejaría a <c>Once</c> sin latchear.</summary>
         [Test]
         public void CrossingFiftyOnTheBurnBeat_BurnsTheBandAndStillQueuesThePleno()
         {
             var root = CroupierAssetBuilder.BuildAIRoot(_fire);
 
-            // Turno 1 con la vida entera: T1 marca la banda y ningún gate abre.
-            root.Tick(NewContext(roundIndex: 1));
-            Assert.IsTrue(_threat.HasPending(_boss), "Precondición: T1 tenía que dejar la banda marcada.");
+            // Turno 1 con la vida entera: las bombas siembran y marcan el cono.
+            root.Tick(NewContext(roundIndex: BombTurn));
+            Assert.IsTrue(_threat.HasPending(_boss),
+                "Precondición: el tiempo de las bombas tenía que dejar el cono marcado.");
 
             SetBossHp(PhaseTwoHp);
-            var result = root.Tick(NewContext(roundIndex: 2));
+            var result = root.Tick(NewContext(roundIndex: BurnTurn));
 
             Assert.AreNotEqual(AIResult.Failed, result, "El turno del cruce se cortó entero.");
             Assert.AreEqual(1, FireInstances().Count,
@@ -268,63 +259,45 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                 "Quedó una banda pendiente en el turno de quema, que es el que las consume.");
         }
 
-        // =====================================================================
-        // El armado que no se completa
-        // =====================================================================
-
-        /// <summary>
-        /// Si el teleport al centro falla, la banda <b>conserva</b> su aviso: el descarte va detrás
-        /// del único paso del bloque que puede fallar de verdad.
-        /// </summary>
-        /// <remarks>
-        /// Lo que esto protege es el peor resultado posible del turno: descartar el aviso del ciclo
-        /// y no dejar nada en su lugar. El jugador terminaría el turno sin ninguna amenaza dibujada
-        /// y el jefe sin nada que cobrar al siguiente — un turno en blanco para los dos, sin un solo
-        /// error en consola. Mover el descarte arriba del teleport es todo lo que hace falta para
-        /// producirlo.
-        /// </remarks>
+        /// <summary>El descarte va detrás del único paso del bloque que puede fallar de verdad: arriba
+        /// del teleport, un armado abortado deja el turno sin ninguna amenaza dibujada.</summary>
         [Test]
-        public void WhenTheTeleportFails_TheBandKeepsItsWarningAndThePlenoRetriesLater()
+        public void WhenTheTeleportFails_TheConeKeepsItsWarningAndThePlenoRetriesLater()
         {
             SetBossHp(PhaseTwoHp);
             var root = CroupierAssetBuilder.BuildAIRoot(_fire);
 
-            // Sin servicio de movimiento el teleport al centro falla avisando, que es el modo de
-            // fallo que el propio nodo documenta. El salto de T1 también se cae, en silencio y
-            // aislado en su Selector, así que el beat sigue y la banda igual se marca.
+            // Turno 1, el de las bombas: acá se marca el cono, y el armado falla detrás. Sin
+            // servicio de movimiento el teleport al centro falla avisando; el salto del ciclo también
+            // se cae, en silencio y aislado en su Selector, así que el tiempo sigue igual.
             LogAssert.Expect(LogType.Warning, new Regex("AINode_TeleportToRoomCenter"));
-            root.Tick(NewContextWithoutMovement(roundIndex: 1));
+            root.Tick(NewContextWithoutMovement(roundIndex: BombTurn));
 
             Assert.IsTrue(_threat.HasPending(_boss),
-                "El armado abortó a mitad y se llevó igual el aviso de la banda: el jugador cierra " +
+                "El armado abortó a mitad y se llevó igual el aviso del cono: el jugador cierra " +
                 "el turno sin ninguna amenaza dibujada y el jefe sin nada que prender.");
-            Assert.IsFalse(_threat.HasPending(PlenoSource),
-                "El Pleno quedó encolado con el jefe fuera del centro: el hueco a salvo cae donde " +
-                "estaba parado, contra la pared, y el paño deja de leerse.");
+            Assert.IsFalse(_threat.HasPending(PlenoSource), "El Pleno se armó con el teleport fallado.");
             CollectionAssert.DoesNotContain(_overlay.Cleared, _boss,
-                "Se apagó el dibujo de la banda que sí sigue pendiente: detona a ciegas.");
+                "Se apagó el dibujo del cono que sí sigue pendiente: detona a ciegas.");
 
             // Y el umbral no se perdió: AINode_Once no latchea con Failed.
-            var result = root.Tick(NewContext(roundIndex: 2));
+            var result = root.Tick(NewContext(roundIndex: BurnTurn));
 
             Assert.AreNotEqual(AIResult.Failed, result, "El reintento cortó el turno.");
-            Assert.AreEqual(1, FireInstances().Count, "La banda que conservó su aviso no ardió.");
             Assert.IsTrue(_threat.HasPending(PlenoSource),
                 "El armado no se reintentó: el umbral del 50% se perdió para toda la pelea.");
+
+            // El reintento cayó en el turno de quema, que consume el cono antes de que el armado
+            // descarte: el aviso que sobrevivió al fallo alcanza a arder.
+            Assert.AreEqual(1, FireInstances().Count,
+                "El cono que se salvó del armado fallado no ardió en su turno de quema.");
+            Assert.IsFalse(_threat.HasPending(_boss),
+                "El armado dejó el cono pendiente además del Pleno: el jugador ve dos áreas " +
+                "dibujadas y al turno siguiente detonan las dos.");
         }
 
-        // =====================================================================
-        // El salto de todos los turnos
-        // =====================================================================
-
-        /// <summary>
-        /// El jefe salta en los <b>dos</b> tiempos, y sólo el de quema lleva tope.
-        /// </summary>
-        /// <remarks>
-        /// El tope es la ventana entera de la pelea: el jugador amenaza 8 casillas por turno, así
-        /// que el tiempo sin tope siempre lo deja fuera de alcance y el otro es el único en que se
-        /// lo puede tocar.
-        /// </remarks>
+        /// <summary>Lo que sostiene que la pelea sea ganable no es un techo a dónde cae el salto, sino
+        /// que el sorteo a veces no diga borde: sin tope, el salto siempre lo deja fuera de alcance.</summary>
         [Test]
         public void BothBeats_GateTheirJumpOnProximity_AndNeitherIsCapped()
         {
@@ -334,9 +307,9 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             foreach (var beat in beats)
             {
                 Assert.AreEqual(1, BeatSteps(beat).OfType<AINode_If>()
-                        .Count(g => g.Then is AINode_TeleportAwayToEdge),
-                    "Un tiempo del ciclo dejó de tener exactamente un salto gateado: o el jefe se " +
-                    "queda quieto ese turno, o salta dos veces y el segundo pisa al primero.");
+                        .Count(g => g.Then is AINode_Random),
+                    "Un tiempo del ciclo dejó de tener exactamente un sorteo gateado: o el jefe se " +
+                    "queda quieto ese turno, o sortea dos veces y el segundo pisa al primero.");
 
                 Assert.AreEqual(0, FleeJumpOf(beat).MaxDistanceFromPlayer,
                     "El salto volvió a tener tope de aterrizaje. Con el gate de cercanía decidiendo " +
@@ -354,9 +327,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                     "El radio se mide en Manhattan, igual que el alcance de los ataques.");
             }
 
-            // Y salta de verdad los dos turnos, no sólo en la forma del árbol. El jugador se vuelve
-            // a acercar entre tiempos porque el salto de T1 lo deja fuera del radio: sin eso, T2 se
-            // quedaría quieto y estaríamos midiendo el gate en vez del salto.
+            // El jugador se vuelve a acercar entre tiempos porque el salto de T1 lo deja fuera del
+            // radio: sin eso T2 se quedaría quieto y estaríamos midiendo el gate en vez del salto.
             var start = PositionOf(_boss);
             root.Tick(NewContext(roundIndex: 1));
             var afterDeal = PositionOf(_boss);
@@ -368,10 +340,6 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                 "El tiempo de quema dejó al jefe donde estaba.");
         }
 
-        /// <summary>
-        /// Con el jugador fuera del radio el jefe se queda, pero el resto del tiempo tiene que
-        /// correr igual: el <c>Else</c> de Wait está justamente para que no se coma el turno.
-        /// </summary>
         [Test]
         public void WithThePlayerFarAway_TheBossHoldsHisGround_AndStillShoots()
         {
@@ -379,7 +347,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             MovePlayerBeyondFleeRadius();
             var start = PositionOf(_boss);
 
-            root.Tick(NewContext(roundIndex: 1));
+            TickThrough(root, DealTurn);
 
             Assert.AreEqual(start, PositionOf(_boss),
                 "El jefe saltó con el jugador fuera del radio: el turno se le va en huir de nadie y " +
@@ -389,37 +357,29 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                 "que cobrar igual — si no, el Else del gate está devolviendo Failed.");
         }
 
-        /// <summary>
-        /// El ciclo no se desincroniza cuando el gate no pasa. Un <c>Failed</c> abortaría el
-        /// <c>Sequence</c> del tiempo mientras el <c>Alternate</c> avanza el índice igual, y el jefe
-        /// pasaría a repartir dos veces seguidas.
-        /// </summary>
+        /// <summary>Un <c>Failed</c> abortaría el <c>Sequence</c> del tiempo mientras el <c>Alternate</c>
+        /// avanza el índice igual, y el jefe pasaría a repartir dos veces seguidas.</summary>
         [Test]
         public void WithThePlayerFarAway_TheCycleKeepsAlternating()
         {
             var root = CroupierAssetBuilder.BuildAIRoot(_fire);
             MovePlayerBeyondFleeRadius();
 
-            root.Tick(NewContext(roundIndex: 1));
+            TickThrough(root, DealTurn);
             int afterDeal = ShotCount();
             Assert.Greater(afterDeal, 0, "El tiempo de reparto no disparó.");
 
-            root.Tick(NewContext(roundIndex: 2));
+            // El turno siguiente vuelve a abrir el ciclo por las bombas: si disparara, el Alternate
+            // se desincronizó y el jefe reparte dos veces seguidas.
+            root.Tick(NewContext(roundIndex: DealTurn + 1));
 
             Assert.AreEqual(afterDeal, ShotCount(),
-                "El tiempo de quema disparó: el ciclo se desincronizó y el jefe repartió dos veces " +
-                "seguidas en vez de prender lo que había marcado.");
+                "El tiempo de las bombas disparó: el ciclo se desincronizó y el jefe repartió dos " +
+                "veces seguidas en vez de sembrar.");
         }
 
-        /// <summary>
-        /// El radio que dispara la fuga tiene que quedar por debajo de lo que el jugador alcanza en
-        /// un turno: es lo que hace ganable la pelea ahora que el salto no tiene tope.
-        /// </summary>
-        /// <remarks>
-        /// Es una comparación de constantes y no un tick a propósito: el número del kit del jugador
-        /// no vive en este repo como una constante que se pueda leer, así que lo que se pinea es la
-        /// relación.
-        /// </remarks>
+        /// <summary>Comparación de constantes y no un tick a propósito: el alcance del kit del jugador no
+        /// vive en el repo como una constante legible, así que lo que se pinea es la relación.</summary>
         [Test]
         public void TheFleeRadius_StaysBelowWhatThePlayerCanReachInATurn()
         {
@@ -434,47 +394,85 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                 "afuera del radio, y la vida del jefe pasa a ser infinita.");
         }
 
-        /// <summary>
-        /// El fuego cae en las casillas que se avisaron, aunque entre el aviso y la ignición el
-        /// jefe haya saltado dos veces.
-        /// </summary>
-        /// <remarks>
-        /// <c>AINode_IgniteArea</c> consume la marca en vez de recalcular la forma. Recalculándola
-        /// —la banda está anclada en el jefe y apunta al jugador— el fuego caería desde la casilla
-        /// nueva y el aviso que el jugador leyó todo el turno no valdría nada.
-        /// </remarks>
+        /// <summary><c>AINode_IgniteArea</c> consume la marca en vez de recalcular la forma: la banda
+        /// está anclada en el jefe, así que recalcularla la traería desde la casilla nueva.</summary>
         [Test]
         public void TheFireLandsWhereItWasAnnounced_EvenAfterTheJump()
         {
             var root = CroupierAssetBuilder.BuildAIRoot(_fire);
 
-            root.Tick(NewContext(roundIndex: 1));
+            root.Tick(NewContext(roundIndex: BombTurn));
             var announced = new HashSet<GridCoord>(_threat.GetPendingTiles(_boss));
-            Assert.IsNotEmpty(announced, "Precondición: el tiempo de reparto tenía que marcar la banda.");
+            Assert.IsNotEmpty(announced,
+                "Precondición: el tiempo de las bombas tenía que marcar el cono.");
 
-            root.Tick(NewContext(roundIndex: 2));
+            root.Tick(NewContext(roundIndex: BurnTurn));
 
             var burning = new HashSet<GridCoord>(FireInstances().SelectMany(i => i.Coords));
             CollectionAssert.AreEquivalent(announced, burning,
-                "El fuego no cubre la banda que se avisó. Entre el aviso y la ignición el jefe " +
-                "saltó dos veces: si el área se recalcula, cae desde donde está ahora y el jugador " +
+                "El fuego no cubre el cono que se avisó. Entre el aviso y la ignición el jefe " +
+                "saltó otra vez: si el área se recalcula, cae desde donde está ahora y el jugador " +
                 "se quema en una casilla que nunca vio marcada.");
         }
 
-        // =====================================================================
-        // El cruce del 50% y el hueco del Pleno
-        // =====================================================================
+        [Test]
+        public void WhenTheRouletteSaysCentre_TheBossLandsInTheMiddleOfTheRoom()
+        {
+            var root = CroupierAssetBuilder.BuildAIRoot(_fire);
 
-        /// <summary>
-        /// El turno que cruza el 50% termina con el jefe <b>en el centro</b>, caiga el cruce sobre
-        /// el tiempo que caiga.
-        /// </summary>
-        /// <remarks>
-        /// El armado del Pleno es el último paso del turno justamente por esto: cualquier salto
-        /// colgado detrás lo arranca del centro después de haber plantado ahí el hueco, y el ataque
-        /// más grande de la pelea se lee al revés — el único lugar a salvo queda donde el jefe no
-        /// está.
-        /// </remarks>
+            root.Tick(NewContext(roundIndex: 1, roll: RollCentre));
+
+            Assert.AreEqual(RoomCentre, PositionOf(_boss),
+                "El sorteo dio centro y el jefe no terminó en el centro: la salida que lo deja al " +
+                "alcance del jugador no está moviéndolo.");
+        }
+
+        /// <summary>Es el caso que protege el <c>AINode_Wait</c> de la tercera opción: con un <c>Node</c>
+        /// nulo el sorteo devolvería <c>Failed</c> y se comería el marcado del cono que sigue.</summary>
+        [Test]
+        public void WhenTheRouletteSaysStay_TheBossHoldsHisGround_AndStillWorksTheBeat()
+        {
+            var root = CroupierAssetBuilder.BuildAIRoot(_fire);
+            var start = PositionOf(_boss);
+
+            // El marcado del cono vive detrás del sorteo del tiempo de las bombas, que es el primero.
+            root.Tick(NewContext(roundIndex: BombTurn, roll: RollStay));
+
+            Assert.AreEqual(start, PositionOf(_boss),
+                "El sorteo dio quedarse y el jefe se movió igual.");
+            Assert.IsNotEmpty(_threat.GetPendingTiles(_boss),
+                "Quedarse le comió el marcado del cono: la tercera opción del sorteo está " +
+                "devolviendo Failed y abortando el resto del tiempo.");
+
+            // Y el disparo vive detrás del sorteo del tiempo de reparto, que es el último.
+            TickThrough(root, DealTurn, RollStay);
+
+            Assert.Greater(ShotCount(), 0,
+                "Quedarse le comió el disparo del tiempo de reparto.");
+        }
+
+        /// <summary>El marcado va detrás del sorteo por esto: marcando primero, el cono saldría de la
+        /// casilla vieja y el aviso no correspondería a dónde está el jefe.</summary>
+        [Test]
+        public void TheConeIsAnchoredWhereTheRouletteLeftHim()
+        {
+            var root = CroupierAssetBuilder.BuildAIRoot(_fire);
+
+            root.Tick(NewContext(roundIndex: BombTurn, roll: RollCentre));
+
+            var announced = _threat.GetPendingTiles(_boss).ToList();
+            Assert.IsNotEmpty(announced,
+                "Precondición: el tiempo de las bombas tenía que marcar el cono.");
+
+            int nearest = announced.Min(t =>
+                Math.Abs(t.X - RoomCentre.X) + Math.Abs(t.Y - RoomCentre.Y));
+            Assert.AreEqual(1, nearest,
+                "El cono no arranca pegado al centro, así que quedó anclado en la casilla vieja: " +
+                "el jefe aterrizó en el medio y el aviso salió de donde ya no está.");
+        }
+
+        /// <summary>El armado del Pleno es el último paso del turno por esto: cualquier salto colgado
+        /// detrás lo arranca del centro donde plantó el hueco, y el ataque se lee al revés.</summary>
         [TestCase(false, TestName = "CrossingFifty_EndsTheTurnWithTheBossInTheCentre_OnTheDealBeat")]
         [TestCase(true, TestName = "CrossingFifty_EndsTheTurnWithTheBossInTheCentre_OnTheBurnBeat")]
         public void CrossingFifty_EndsTheTurnWithTheBossInTheCentre(bool onTheBurnBeat)
@@ -485,14 +483,6 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                 "El turno del cruce no terminó con el jefe en el centro de la sala.");
         }
 
-        /// <summary>
-        /// Y el hueco que el Pleno deja sin marcar rodea la casilla <b>final</b> del jefe.
-        /// </summary>
-        /// <remarks>
-        /// El gemelo por comportamiento del test de arriba: aquél mira dónde quedó parado, éste
-        /// mira dónde quedó el único lugar a salvo. Con un salto detrás del armado los dos dejan de
-        /// coincidir sin que falle nada.
-        /// </remarks>
         [TestCase(false, TestName = "ThePlenosHole_SurroundsWhereTheBossEnded_OnTheDealBeat")]
         [TestCase(true, TestName = "ThePlenosHole_SurroundsWhereTheBossEnded_OnTheBurnBeat")]
         public void ThePlenosHole_SurroundsWhereTheBossEnded(bool onTheBurnBeat)
@@ -517,24 +507,22 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             }
         }
 
-        // =====================================================================
-        // Helpers
-        // =====================================================================
-
         private Guid PlenoSource =>
             AINode_TelegraphMark.SourceKey(_boss, CroupierAssetBuilder.PlenoChannelId);
 
-        /// <summary>Corre el turno que cruza el 50% sobre el tiempo pedido.</summary>
-        /// <remarks>
-        /// El <c>Alternate</c> avanza su índice en cada tick, así que sobre qué tiempo cae el cruce
-        /// se elige gastando (o no) un turno previo con la vida entera.
-        /// </remarks>
+        /// <summary>El <c>Alternate</c> avanza su índice en cada tick, así que sobre qué tiempo cae el
+        /// cruce se elige gastando (o no) un turno previo con la vida entera.</summary>
         private void TickTheCrossingTurn(bool onTheBurnBeat)
         {
             var root = CroupierAssetBuilder.BuildAIRoot(_fire);
 
             int round = 1;
-            if (onTheBurnBeat) root.Tick(NewContext(round++));
+            if (onTheBurnBeat)
+            {
+                // Dos turnos para llegar al de quema, no uno: el ciclo es Reparte, Bombas, Quema.
+                root.Tick(NewContext(round++));
+                root.Tick(NewContext(round++));
+            }
 
             SetBossHp(PhaseTwoHp);
             var result = root.Tick(NewContext(round));
@@ -583,18 +571,18 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             return steps;
         }
 
-        /// <summary>
-        /// El gate de cercanía que envuelve el salto de fuga del tiempo. Se filtra por lo que
-        /// cuelga del <c>Then</c> y no por el primer <c>If</c> del beat: el tiempo de quema tiene
-        /// además el <c>If</c> que ramifica la duración del fuego por fase.
-        /// </summary>
+        /// <summary>Se filtra por lo que cuelga del <c>Then</c> y no por el primer <c>If</c> del beat: el
+        /// de quema tiene además el <c>If</c> que ramifica la duración del fuego por fase.</summary>
         private static AINode_If FleeGateOf(AIDecisionNode beat) =>
-            BeatSteps(beat).OfType<AINode_If>().Single(g => g.Then is AINode_TeleportAwayToEdge);
+            BeatSteps(beat).OfType<AINode_If>().Single(g => g.Then is AINode_Random);
+
+        private static AINode_Random FleeRouletteOf(AIDecisionNode beat) =>
+            (AINode_Random)FleeGateOf(beat).Then;
 
         private static AINode_TeleportAwayToEdge FleeJumpOf(AIDecisionNode beat) =>
-            (AINode_TeleportAwayToEdge)FleeGateOf(beat).Then;
+            FleeRouletteOf(beat).Options
+                .Select(o => o.Node).OfType<AINode_TeleportAwayToEdge>().Single();
 
-        /// <summary>Deja al jugador fuera del radio de fuga, sin sacarlo de la sala.</summary>
         private void MovePlayerBeyondFleeRadius()
         {
             var far = new GridCoord(BossTile.X - CroupierAssetBuilder.FleeTriggerRange - 2, BossTile.Y);
@@ -604,7 +592,6 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                 "El destino elegido sigue dentro del radio de fuga: el escenario no prueba nada.");
         }
 
-        /// <summary>Acerca al jugador a una casilla pegada a <paramref name="bossCoord"/>.</summary>
         private void MovePlayerNextTo(GridCoord bossCoord)
         {
             var offsets = new[] { (1, 0), (-1, 0), (0, 1), (0, -1) };
@@ -631,7 +618,49 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         private List<DamageContext> EnvironmentalHits() =>
             _pipeline.Resolved.Where(c => c.Kind == AttackKind.Environmental).ToList();
 
-        private AIContext NewContext(int roundIndex) => new AIContext
+        /// <summary>Tirada que fuerza el salto al borde.</summary>
+        /// <remarks>
+        /// Salen de los pesos y no de literales: <c>AINode_Random</c> parte el 0..1 en franjas
+        /// proporcionales, así que un número fijo cambia de opción en cuanto se retoquen los pesos.
+        /// Cada tirada apunta al <b>medio</b> de su franja para no depender de si el corte es
+        /// inclusivo, y las sumas acumuladas siguen el orden autorado de las opciones
+        /// (borde → acercamiento → centro → quedarse).
+        /// </remarks>
+        private const double RouletteTotal = CroupierAssetBuilder.FleeWeightEdge +
+                                             CroupierAssetBuilder.FleeWeightNear +
+                                             CroupierAssetBuilder.FleeWeightCenter +
+                                             CroupierAssetBuilder.FleeWeightStay;
+
+        private const double RollEdge = CroupierAssetBuilder.FleeWeightEdge * 0.5d / RouletteTotal;
+
+        /// <summary>Tirada que fuerza el acercamiento al jugador.</summary>
+        private const double RollNear =
+            (CroupierAssetBuilder.FleeWeightEdge + CroupierAssetBuilder.FleeWeightNear * 0.5d) / RouletteTotal;
+
+        /// <summary>Tirada que fuerza el aterrizaje en el centro de la sala.</summary>
+        private const double RollCentre =
+            (CroupierAssetBuilder.FleeWeightEdge + CroupierAssetBuilder.FleeWeightNear +
+             CroupierAssetBuilder.FleeWeightCenter * 0.5d) / RouletteTotal;
+
+        /// <summary>Tirada que fuerza que se quede donde está.</summary>
+        private const double RollStay =
+            (CroupierAssetBuilder.FleeWeightEdge + CroupierAssetBuilder.FleeWeightNear +
+             CroupierAssetBuilder.FleeWeightCenter +
+             CroupierAssetBuilder.FleeWeightStay * 0.5d) / RouletteTotal;
+
+        /// <summary>Un <c>Random(seed)</c> fijo no sirve: cuál opción cae depende de cuántos draws se
+        /// consumieron antes en el tick, así que mover un nodo le voltea el resultado al test. El
+        /// aterrizaje pasa por <c>Sample()</c> y no por <c>NextDouble()</c>, así que sigue sorteando.</summary>
+        private sealed class FixedRoll : System.Random
+        {
+            private readonly double _value;
+            public FixedRoll(double value) : base(1) { _value = value; }
+            public override double NextDouble() => _value;
+        }
+
+        private AIContext NewContext(int roundIndex) => NewContext(roundIndex, RollEdge);
+
+        private AIContext NewContext(int roundIndex, double roll) => new AIContext
         {
             SelfGuid = _boss,
             PlayerGuid = _player,
@@ -642,9 +671,9 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             DamagePipeline = _pipeline,
             PlayerService = _playerService,
             RoundIndex = roundIndex,
-            // Fijo: el candado del 70% es dirigido, pero el nodo igual pide RNG para el sorteo que
-            // no usa, y un turno del jefe tiene que ser reproducible.
-            Rng = new System.Random(1),
+            // El RNG decide una rama real (borde, centro o quedarse): fijo para que el turno sea
+            // reproducible, y con la tirada explícita para que cada test diga qué salida mide.
+            Rng = new FixedRoll(roll),
         };
 
         private AIContext NewContextWithoutMovement(int roundIndex)
@@ -662,11 +691,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             return instance;
         }
 
-        /// <summary>
-        /// Registra qué fuentes se apagaron y no pinta nada. Ver el gemelo de
-        /// <c>AINode_CancelTelegraphTests</c>: los spies de overlay son privados en cada fixture
-        /// porque cada uno observa una cosa distinta.
-        /// </summary>
+        /// <summary>Registra qué fuentes se apagaron y no pinta nada. Los spies de overlay son privados
+        /// en cada fixture porque cada uno observa una cosa distinta.</summary>
         private sealed class SpyThreatOverlay : IThreatOverlayService
         {
             public readonly List<Guid> Cleared = new List<Guid>();

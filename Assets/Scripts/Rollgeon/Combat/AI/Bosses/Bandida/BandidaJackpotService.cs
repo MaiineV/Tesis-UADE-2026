@@ -6,11 +6,7 @@ using Rollgeon.Patterns.Bootstrap;
 
 namespace Rollgeon.Combat.AI.Bosses.Bandida
 {
-    /// <summary>
-    /// Implementación POCO de <see cref="IBandidaJackpotService"/>. Calca el lifecycle de
-    /// <c>StunService</c>: registro global vía <see cref="IPreloadableService"/>, estado
-    /// combat-scoped y limpieza por <c>OnCombatEnd</c> / <c>OnRunEnd</c>.
-    /// </summary>
+    /// <summary>Registro global vía <see cref="IPreloadableService"/>, estado combat-scoped y limpieza por <c>OnCombatEnd</c> / <c>OnRunEnd</c>.</summary>
     public sealed class BandidaJackpotService : IBandidaJackpotService, IPreloadableService, IDisposable
     {
         private readonly List<ReelSlot> _slots = new List<ReelSlot>();
@@ -36,14 +32,6 @@ namespace Rollgeon.Combat.AI.Bosses.Bandida
         public int LockedReelHp => _lockedReelHp;
         public IReadOnlyList<ReelSlot> Slots => _slots;
 
-        // ======================================================================
-        // Lifecycle
-        // ======================================================================
-
-        /// <summary>
-        /// Devuelve el servicio registrado, o crea y registra uno: es el único camino que usan los
-        /// nodos del árbol, así el jefe funciona sin bootstrap en escena.
-        /// </summary>
         public static IBandidaJackpotService ResolveOrCreate()
         {
             if (ServiceLocator.TryGetService<IBandidaJackpotService>(out var existing) && existing != null)
@@ -104,10 +92,6 @@ namespace Rollgeon.Combat.AI.Bosses.Bandida
             UnsubscribeHandlers();
             ResetAll();
         }
-
-        // ======================================================================
-        // IBandidaJackpotService
-        // ======================================================================
 
         public void BindBoss(Guid bossGuid)
         {
@@ -222,10 +206,6 @@ namespace Rollgeon.Combat.AI.Bosses.Bandida
             _respawnDelayTurns = 2;
             _lockedReelHp = 0;
         }
-
-        // ======================================================================
-        // Hooks
-        // ======================================================================
 
         // El hook de cancelación. Filtra por daño efectivo: un golpe absorbido entero por escudo
         // no rompe nada, así que tampoco desarma la bomba.

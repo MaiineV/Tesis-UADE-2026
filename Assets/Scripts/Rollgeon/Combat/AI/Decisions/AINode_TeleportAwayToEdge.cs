@@ -7,6 +7,7 @@ using Rollgeon.Combat.Threat;
 using Rollgeon.Feedback;
 using Rollgeon.Grid;
 using Rollgeon.Movement;
+using Rollgeon.Tiles;
 using Sirenix.OdinInspector;
 using UnityEngine;
 
@@ -57,6 +58,10 @@ namespace Rollgeon.Combat.AI.Decisions
                  "en el mismo turno en que escapó.")]
         public bool ConsumeMoveAction = true;
 
+        [Tooltip("Saca del sorteo las casillas que hacen daño. Con toda la franja ardiendo salta " +
+                 "igual — es preferencia, no requisito: un Failed acá aborta la Sequence del turno.")]
+        public bool AvoidHarmfulTiles = true;
+
 #if UNITY_EDITOR
         [ValueDropdown(nameof(GetFeedbackIdsForDropdown))]
 #endif
@@ -97,7 +102,10 @@ namespace Rollgeon.Combat.AI.Decisions
                 return AIResult.Failed;
             }
 
-            var candidates = CollectCandidates(grid, context.Movement, selfCoord, playerCoord);
+            var candidates = CollectCandidates(
+                grid, context.Movement, selfCoord, playerCoord, AvoidHarmfulTiles);
+            if (candidates.Count == 0 && AvoidHarmfulTiles)
+                candidates = CollectCandidates(grid, context.Movement, selfCoord, playerCoord, false);
             if (candidates.Count == 0) return AIResult.Failed;
 
             var rng = context.Rng ?? new System.Random();
@@ -134,7 +142,8 @@ namespace Rollgeon.Combat.AI.Decisions
         /// mismo lugar y el turno se leería como un salto que no pasó.
         /// </remarks>
         private List<GridCoord> CollectCandidates(
-            IGridManager grid, IMovementService movement, GridCoord selfCoord, GridCoord playerCoord)
+            IGridManager grid, IMovementService movement, GridCoord selfCoord, GridCoord playerCoord,
+            bool skipHarmful)
         {
             var best = new List<GridCoord>();
 
@@ -170,6 +179,7 @@ namespace Rollgeon.Combat.AI.Decisions
             foreach (var c in tiles)
             {
                 if (c == selfCoord || grid.IsOccupied(c)) continue;
+                if (skipHarmful && HarmfulTileQuery.IsHarmfulAt(c)) continue;
                 // El techo filtra y el piso sólo empata puntajes, así que un techo por debajo del
                 // piso no deja el sorteo vacío: deja el piso sin alcanzar.
                 if (withinReach != null && !withinReach.Contains(c)) continue;

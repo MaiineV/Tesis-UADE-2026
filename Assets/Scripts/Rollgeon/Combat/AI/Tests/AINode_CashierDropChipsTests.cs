@@ -11,11 +11,6 @@ using UnityEngine;
 
 namespace Rollgeon.Combat.AI.Tests
 {
-    /// <summary>
-    /// Tests de <see cref="AINode_CashierDropChips"/>: la ficha cae DENTRO de la columna recién
-    /// marcada y a 2-3 casillas del jugador — "te muestra la plata exactamente donde va a caer el
-    /// hacha". También cubre que sólo pague cuando le pegaron y que no invente fichas sin columna.
-    /// </summary>
     [TestFixture]
     public class AINode_CashierDropChipsTests
     {
@@ -79,8 +74,6 @@ namespace Rollgeon.Combat.AI.Tests
             EventManager.ResetEventDictionary();
         }
 
-        // ---- Helpers -----------------------------------------------------
-
         /// <summary>Marca la columna de 3 de ancho del jugador, como haría el nodo de la columna.</summary>
         private HashSet<GridCoord> MarkColumn(int size = 3)
         {
@@ -116,8 +109,6 @@ namespace Rollgeon.Combat.AI.Tests
             foreach (var info in _hazards.ActiveInstances()) live.Add(info);
             return live;
         }
-
-        // ---- Caso central ------------------------------------------------
 
         [Test]
         public void Tick_DropsOneChip_InsideTheMarkedColumn_AtTwoOrThreeTiles()
@@ -196,8 +187,6 @@ namespace Rollgeon.Combat.AI.Tests
             Assert.AreEqual(1, _ledger.RegisteredChips);
         }
 
-        // ---- El piso garantizado -------------------------------------------
-
         [Test]
         public void Tick_WithoutDamageTaken_StillDropsTheGuaranteedFloor()
         {
@@ -246,8 +235,6 @@ namespace Rollgeon.Combat.AI.Tests
             Assert.AreEqual(3, _ledger.RegisteredChips,
                 "2 del turno con golpe + 1 del piso, no 2 + 2.");
         }
-
-        // ---- Failed benignos ----------------------------------------------
 
         [Test]
         public void Tick_WithoutDamageTaken_AndNoFloor_ReturnsFailed_AndDropsNothing()

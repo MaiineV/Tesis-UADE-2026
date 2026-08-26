@@ -356,8 +356,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
 
             data.EntityId = EntityId;
             data.DisplayName = DisplayName;
-            data.Description = "El que lleva la planilla. No juega contra vos: te corrige el puntaje " +
-                               "mientras tirás, y nunca a tu favor.";
+            data.Description = "No pelea: te corrige el puntaje mientras tirás, y nunca a tu favor.";
 
             data.WeaknessComboId = WeaknessComboId;
             data.WeaknessMultiplierOverride = WeaknessMultiplier;

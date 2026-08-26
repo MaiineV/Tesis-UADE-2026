@@ -927,6 +927,45 @@ MonoBehaviour:
       who stands still. They never touch their owner.'
     m_Metadata:
       m_Items: []
+  - m_Id: 13919417931706368
+    m_Localized: The Croupier
+    m_Metadata:
+      m_Items: []
+  - m_Id: 13919417973649408
+    m_Localized: Burns the ground in front of him and bolts for the edge when you
+      crowd him.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 13919417973649409
+    m_Localized: The Cashier
+    m_Metadata:
+      m_Items: []
+  - m_Id: 13919417973649410
+    m_Localized: Grabs you, throws you clear, and keeps whatever you dropped.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 13919417973649411
+    m_Localized: The Commission
+    m_Metadata:
+      m_Items: []
+  - m_Id: 13919417973649412
+    m_Localized: Flies, shoots from range, and puts a price on running.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 13919417973649413
+    m_Localized: The Generala
+    m_Metadata:
+      m_Items: []
+  - m_Id: 13919417973649414
+    m_Localized: Rolls her own hand in the open. Break a die and you erase a category.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 13919417973649415
+    m_Localized: House Die
+    m_Metadata:
+      m_Items: []
+  - m_Id: 13919417973649416
+    m_Localized: Part of her hand, and in your way. Break it to erase a category.
   - m_Id: 14364254574313472
     m_Localized: Teleport Fatigue
     m_Metadata:

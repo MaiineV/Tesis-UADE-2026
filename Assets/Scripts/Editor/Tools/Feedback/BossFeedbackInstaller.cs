@@ -85,7 +85,9 @@ namespace Rollgeon.Editor.Tools
             // del DB los deja pidiendo entries inexistentes.
             yield return Spec.Anim(CroupierMeleeAnim, "Attack_Melee");
             yield return Spec.Anim(CroupierCantoAnim, "Attack_Range");
-            yield return Spec.Vfx(CroupierImpactVfx, MeleeImpactVfxPath);
+            // El estallido de las bombas se ancla en la casilla que revienta, no en un pawn: es la
+            // unica ignicion del Croupier que no sale de el ni cae sobre el jugador.
+            yield return Spec.VfxAtWorld(CroupierImpactVfx, MeleeImpactVfxPath);
             yield return Spec.Feel(CroupierImpactFeel, MeleeImpactFeelPath);
 
             yield return Spec.Vfx(CroupierConfiscaVfx, RangedImpactVfxPath);
@@ -264,6 +266,15 @@ namespace Rollgeon.Editor.Tools
             // El offset en Y sube el impacto del piso al torso, como las entries de enemigo.
             public static Spec Vfx(string id, string prefabPath) =>
                 new Spec(id, FeedbackType.VFX, SpawnPosition.AtTarget, new Vector3(0f, 1f, 0f),
+                         0.55f, null, prefabPath);
+
+            /// <summary>
+            /// Chispazo anclado en una casilla y no en un pawn: la posicion la trae el caller en
+            /// <c>FeedbackRequest.WorldPosition</c>. El offset en Y es la mitad del de los pawns —
+            /// esto nace del piso, no de un torso.
+            /// </summary>
+            public static Spec VfxAtWorld(string id, string prefabPath) =>
+                new Spec(id, FeedbackType.VFX, SpawnPosition.WorldPosition, new Vector3(0f, 0.5f, 0f),
                          0.55f, null, prefabPath);
 
             public static Spec Feel(string id, string prefabPath) =>

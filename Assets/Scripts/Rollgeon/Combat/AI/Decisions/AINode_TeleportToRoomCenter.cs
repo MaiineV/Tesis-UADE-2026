@@ -1,6 +1,4 @@
 using System;
-using System.Collections.Generic;
-using Rollgeon.Combat.Threat;
 using Rollgeon.Grid;
 using Rollgeon.Movement;
 using Sirenix.OdinInspector;
@@ -32,6 +30,12 @@ namespace Rollgeon.Combat.AI.Decisions
                  "en el mismo turno en que se plantó ahí.")]
         public bool ConsumeMoveAction = true;
 
+        [Tooltip("Esquiva las casillas que hacen daño: si el centro arde, cae en la más cercana " +
+                 "limpia. Tiene que valer lo MISMO que el PcOwnerAtRoomCenter que lo gatea, o el " +
+                 "gate se abre en una casilla a la que este nodo no lleva. Con toda la sala ardiendo " +
+                 "cae igual — es preferencia, no requisito.")]
+        public bool AvoidHarmfulTiles = true;
+
         public override string NodeName => "Teleport To Room Center";
 
         public override AIResult Tick(AIContext context)
@@ -55,7 +59,8 @@ namespace Rollgeon.Combat.AI.Decisions
                 return AIResult.Failed;
             }
 
-            if (!TryResolveDestination(grid, context.SelfGuid, selfCoord, out var destination))
+            if (!RoomCenterResolver.TryResolve(
+                    grid, context.SelfGuid, selfCoord, out var destination, AvoidHarmfulTiles))
             {
                 Debug.LogWarning("[AINode_TeleportToRoomCenter] La sala no tiene ninguna casilla " +
                                  "caminable libre — ¿grafo sin bounds? No se reubica nada.");
@@ -78,79 +83,6 @@ namespace Rollgeon.Combat.AI.Decisions
 
             ConsumeMove(context);
             return AIResult.Succeeded;
-        }
-
-        /// <summary>
-        /// Centro del bounding box de la sala si está usable, y si no la casilla usable más cercana.
-        /// <c>false</c> sólo si la sala no ofrece ninguna.
-        /// </summary>
-        /// <remarks>
-        /// "Usable" = caminable y libre, con la propia casilla del que actúa contando como libre:
-        /// descartarla lo mandaría a dar un salto lateral cuando ya era lo más cerca del centro que hay.
-        /// </remarks>
-        private static bool TryResolveDestination(
-            IGridManager grid, Guid selfGuid, GridCoord selfCoord, out GridCoord destination)
-        {
-            destination = selfCoord;
-
-            // RoomTiles ya filtra caminable y devuelve vacío con el grafo stub "infinito". Materializado
-            // porque se recorre dos veces (bounds + pick).
-            var tiles = new List<GridCoord>(ThreatAreaShape.RoomTiles(grid));
-            if (tiles.Count == 0) return false;
-
-            int minX = int.MaxValue, maxX = int.MinValue, minY = int.MaxValue, maxY = int.MinValue;
-            foreach (var c in tiles)
-            {
-                if (c.X < minX) minX = c.X;
-                if (c.X > maxX) maxX = c.X;
-                if (c.Y < minY) minY = c.Y;
-                if (c.Y > maxY) maxY = c.Y;
-            }
-
-            // División entera: en un lado de largo par el centro cae en la casilla de abajo/izquierda.
-            // Arbitrario pero estable — el jefe aterriza siempre en la misma, no alternando entre las
-            // dos del medio de turno a turno.
-            var center = new GridCoord((minX + maxX) / 2, (minY + maxY) / 2);
-
-            bool found = false;
-            int bestToCenter = int.MaxValue;
-            int bestFromSelf = int.MaxValue;
-            foreach (var c in tiles)
-            {
-                if (!IsFreeFor(grid, c, selfGuid)) continue;
-
-                int toCenter = c.Manhattan(center);
-                int fromSelf = c.Manhattan(selfCoord);
-                if (found && !IsBetter(c, toCenter, fromSelf, destination, bestToCenter, bestFromSelf))
-                    continue;
-
-                destination = c;
-                bestToCenter = toCenter;
-                bestFromSelf = fromSelf;
-                found = true;
-            }
-
-            return found;
-        }
-
-        private static bool IsFreeFor(IGridManager grid, GridCoord coord, Guid selfGuid)
-        {
-            if (!grid.IsOccupied(coord)) return true;
-            return grid.TryGetOccupant(coord, out var occupant) && occupant == selfGuid;
-        }
-
-        /// <remarks>
-        /// Cercanía al centro primero, empates por el salto más corto y después por menor (Y, X), para
-        /// que el destino no dependa del orden en que el grafo horneado enumera sus nodos.
-        /// </remarks>
-        private static bool IsBetter(
-            GridCoord candidate, int toCenter, int fromSelf,
-            GridCoord best, int bestToCenter, int bestFromSelf)
-        {
-            if (toCenter != bestToCenter) return toCenter < bestToCenter;
-            if (fromSelf != bestFromSelf) return fromSelf < bestFromSelf;
-            if (candidate.Y != best.Y) return candidate.Y < best.Y;
-            return candidate.X < best.X;
         }
 
         /// <remarks>
