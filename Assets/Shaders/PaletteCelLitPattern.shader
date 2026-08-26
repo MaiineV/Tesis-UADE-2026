@@ -78,8 +78,8 @@ Shader "Rollgeon/PaletteCelLitPattern"
         // DÓNDE se aplica sin tener que tocar código — cualquier combinación
         // de Fill/Detail/BG/TopFace puede tener el brillo metálico o no.
         [Toggle] _EnableMetallic ("Enable Metallic Sheen", Float) = 0
-        _SpecularPower    ("Specular Power",    Range(1, 128)) = 48
-        _SpecularStrength ("Specular Strength", Range(0, 4))   = 1.5
+        _FresnelPower    ("Fresnel Power",    Range(0.1, 8)) = 3
+        _FresnelStrength ("Fresnel Strength", Range(0, 4))   = 1.5
         [Toggle] _MetallicFill     ("Metallic on Fill (Color A/B)",    Float) = 0
         [Toggle] _MetallicDetail   ("Metallic on Detail/Border",       Float) = 1
         [Toggle] _MetallicBG       ("Metallic on Background",          Float) = 0
@@ -180,8 +180,8 @@ Shader "Rollgeon/PaletteCelLitPattern"
                 float  _UseShadowDither;
                 float  _ShadowDitherDensity;
                 float  _EnableMetallic;
-                float  _SpecularPower;
-                float  _SpecularStrength;
+                float  _FresnelPower;
+                float  _FresnelStrength;
                 float  _MetallicFill;
                 float  _MetallicDetail;
                 float  _MetallicBG;
@@ -592,18 +592,20 @@ Shader "Rollgeon/PaletteCelLitPattern"
                     color = lerp(color, creaseColor, creaseVal * _CreaseAlpha);
                 }
 
-                // ── Metallic Sheen (specular Blinn-Phong) ───────────────────────
-                // Solo la/s zona/s con su toggle prendido reciben el brillo — el
-                // resto de la pared sigue mate. Tintado por patternColor (no blanco
-                // puro) para que el highlight sea "el mismo color pero brillando",
-                // tipo glow emissive, en vez de lavar la pared a blanco.
+                // ── Metallic Sheen (Fresnel de borde) ───────────────────────────
+                // Blinn-Phong (dot(N, luz+vista)) depende del ángulo de LUZ además
+                // del de cámara — con luz direccional fija (isométrico), algunas
+                // orientaciones de pared nunca caen cerca de ese ángulo y quedan
+                // sin brillo aunque el resto ande bien. Fresnel solo depende del
+                // ángulo cámara-normal, así que las 4 paredes (ninguna mira a la
+                // cámara de frente en isométrico) lo muestran de forma consistente.
+                // Tintado por patternColor (no blanco puro) — glow del mismo color.
                 if (_EnableMetallic > 0.5 && zoneMetallic > 0.5)
                 {
                     float3 viewDirWS = normalize(IN.viewDirWS);
-                    float3 halfDir   = normalize(mainLight.direction + viewDirWS);
-                    float  spec = pow(saturate(dot(normalWS, halfDir)), _SpecularPower)
-                                  * _SpecularStrength * mainLight.distanceAttenuation * mainLight.shadowAttenuation;
-                    color += spec * patternColor;
+                    float  fresnel = pow(1.0 - saturate(dot(normalWS, viewDirWS)), _FresnelPower)
+                                     * _FresnelStrength;
+                    color += fresnel * patternColor;
                 }
 
                 color = saturate(color + addTint * _LightTintStrength);
@@ -644,7 +646,7 @@ Shader "Rollgeon/PaletteCelLitPattern"
                 float _LightWrap; float _ShadowDarken; float _LightBrighten;
                 float _UseDither; float _DitherStrength;
                 float _UseShadowDither; float _ShadowDitherDensity;
-                float _EnableMetallic; float _SpecularPower; float _SpecularStrength;
+                float _EnableMetallic; float _FresnelPower; float _FresnelStrength;
                 float _MetallicFill; float _MetallicDetail; float _MetallicBG; float _MetallicTopFace;
                 float _EnableCrease; float _CreaseDarken;
                 float _CreaseThreshold; float _CreaseSmooth; float _CreaseAlpha; float _CreaseDither;
@@ -726,7 +728,7 @@ Shader "Rollgeon/PaletteCelLitPattern"
                 float _LightWrap; float _ShadowDarken; float _LightBrighten;
                 float _UseDither; float _DitherStrength;
                 float _UseShadowDither; float _ShadowDitherDensity;
-                float _EnableMetallic; float _SpecularPower; float _SpecularStrength;
+                float _EnableMetallic; float _FresnelPower; float _FresnelStrength;
                 float _MetallicFill; float _MetallicDetail; float _MetallicBG; float _MetallicTopFace;
                 float _EnableCrease; float _CreaseDarken;
                 float _CreaseThreshold; float _CreaseSmooth; float _CreaseAlpha; float _CreaseDither;
@@ -783,7 +785,7 @@ Shader "Rollgeon/PaletteCelLitPattern"
                 float _LightWrap; float _ShadowDarken; float _LightBrighten;
                 float _UseDither; float _DitherStrength;
                 float _UseShadowDither; float _ShadowDitherDensity;
-                float _EnableMetallic; float _SpecularPower; float _SpecularStrength;
+                float _EnableMetallic; float _FresnelPower; float _FresnelStrength;
                 float _MetallicFill; float _MetallicDetail; float _MetallicBG; float _MetallicTopFace;
                 float _EnableCrease; float _CreaseDarken;
                 float _CreaseThreshold; float _CreaseSmooth; float _CreaseAlpha; float _CreaseDither;

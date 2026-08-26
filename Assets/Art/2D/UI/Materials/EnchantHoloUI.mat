@@ -12,7 +12,8 @@ Material:
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
   m_ValidKeywords: []
-  m_InvalidKeywords: []
+  m_InvalidKeywords:
+  - _PIXELATEDNOISE_ON
   m_LightmapFlags: 4
   m_EnableInstancingVariants: 0
   m_DoubleSidedGI: 0
@@ -30,16 +31,41 @@ Material:
     m_Ints: []
     m_Floats:
     - _ColorMask: 15
+    - _DistortScale: 2
+    - _DistortStrength: 0.3
+    - _EdgeGlowStrength: 4
+    - _EdgeGlowWidth: 8
+    - _EffectOpacity: 0.508
+    - _EmissionBase: 1.5
+    - _EmissionEnergyBoost: 2.5
+    - _EnergyHigh: 0.85
+    - _EnergyLow: 0.318
     - _HoloAngle: 35
     - _HoloScale: 0.008
     - _HoloSheen: 0.35
     - _HoloSpeed: 0.35
     - _HoloStrength: 0.85
+    - _Noise1Scale: 6.86
+    - _Noise2Scale: 5
+    - _NoiseScale: 0.01
+    - _PaletteSlot: 20
+    - _PixelBlockSize: 16
+    - _PixelatedNoise: 1
     - _Stencil: 0
     - _StencilComp: 8
     - _StencilOp: 0
     - _StencilReadMask: 255
     - _StencilWriteMask: 255
-    m_Colors: []
+    - _UsePalette: 1
+    - _WarpScale: 1.5
+    - _WarpStrength: 0.211
+    m_Colors:
+    - _DarkColor: {r: 0.049999982, g: 0, b: 0.11999995, a: 1}
+    - _DistortSpeed: {r: 0.08, g: 0.03, b: 0, a: 0}
+    - _LightColor: {r: 1, g: 0, b: 0.85, a: 1}
+    - _MidColor: {r: 0.45, g: 0, b: 1, a: 1}
+    - _Noise1Speed: {r: 1, g: 1, b: 0, a: 0}
+    - _Noise2Speed: {r: 1, g: 1, b: 0, a: 0}
+    - _WarpSpeed: {r: 0.05, g: 0.02, b: 0, a: 0}
   m_BuildTextureStacks: []
   m_AllowLocking: 1
