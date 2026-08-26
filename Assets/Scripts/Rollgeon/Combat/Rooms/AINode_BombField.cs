@@ -227,6 +227,8 @@ namespace Rollgeon.Combat.Rooms
                 // amenaza. Sin marca no habría qué mostrar en el hover ni qué detonar.
                 threat?.Mark(channel, armed, IgnitionDamage, AttackKind.Environmental);
                 if (!HoverOnlyPaint) overlay?.Show(channel, armed);
+
+                AttachBombTooltip(context, guid);
             }
         }
 
@@ -246,6 +248,36 @@ namespace Rollgeon.Combat.Rooms
                 damage: 0, kind: AttackKind.Environmental,
                 amount: Count, turnsAway: 0);
             return true;
+        }
+
+        /// <summary>
+        /// Le cuelga a la bomba su propio hover: su tarjeta, su mecha y su cruz, no las del jefe.
+        /// </summary>
+        /// <remarks>
+        /// <c>MarkNewBombs</c> recorre TODAS las bombas en pie en cada siembra, no sólo las nuevas,
+        /// así que sale temprano si esta ya tiene su tooltip: re-suscribir el hover dejaría la cruz
+        /// pintándose dos veces por bomba y por siembra.
+        /// </remarks>
+        private void AttachBombTooltip(AIContext context, Guid bombGuid)
+        {
+            if (context.VisualService == null) return;
+            if (!context.VisualService.TryGetPawn(bombGuid, out var pawn) || pawn == null) return;
+            if (pawn.gameObject.GetComponent<Visuals.RoomObjectTooltipInfo>() != null) return;
+
+            var info = pawn.gameObject.AddComponent<Visuals.RoomObjectTooltipInfo>();
+            info.Bind(Definition, context.SelfGuid, bombGuid);
+
+            var trigger = Rollgeon.Entities.Visuals.EntityVisualService.AttachHoverTooltip(
+                pawn, info.BuildTooltip);
+            if (trigger == null) return;
+
+            var bossGuid = context.SelfGuid;
+            trigger.HoverChanged += on =>
+            {
+                var preview = EnemyIntentPreviewOverlay.ResolveOrCreate();
+                if (on) preview.ShowForSubject(bossGuid, bombGuid);
+                else preview.Clear();
+            };
         }
 
         /// <summary>Qué forma le toca a la siembra número <paramref name="sowing"/>, contando de 0.</summary>
