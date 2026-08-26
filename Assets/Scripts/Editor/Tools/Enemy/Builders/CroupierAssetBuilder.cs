@@ -88,7 +88,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         public const float WeaknessMultiplier = 1.3f;
 
         /// <summary>Vida del jefe de piso 1.</summary>
-        public const int MaxHp = 300;
+        public const int MaxHp = 250;
         public const int Speed = 5;
         public const int MinGoldDrop = 15;
         public const int MaxGoldDrop = 23;
@@ -192,8 +192,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         /// del número cantado que giraba un rodillo. Este sorteo no tiene nada que ver con eso.
         /// </para>
         /// </remarks>
-        public const float FleeWeightEdge = 40f;
-        public const float FleeWeightNear = 35f;
+        public const float FleeWeightEdge = 45f;
+        public const float FleeWeightNear = 30f;
         public const float FleeWeightCenter = 10f;
         public const float FleeWeightStay = 15f;
 
@@ -266,11 +266,11 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         public const string BombVisualPrefabPath = "Assets/Prefabs/Enemies/Bosses/PF_Obj_Bomba.prefab";
 
         /// <summary>
-        /// Bombas por siembra. Cuatro contra las <see cref="BombFuseTurns"/> acciones que la mecha le
-        /// deja al jugador: no le da para romperlas todas, así que la pregunta no es cuántas sino
-        /// cuáles &mdash; y dos estallan siempre.
+        /// Bombas por siembra. Se leen contra las <see cref="BombFuseTurns"/> acciones que la mecha le
+        /// deja al jugador: romperlas todas es posible con energía de sobra, pero el turno normal
+        /// obliga a elegir cuáles.
         /// </summary>
-        public const int BombCount = 4;
+        public const int BombCount = 3;
 
         /// <summary>
         /// Turnos que la bomba está en pie, o sea acciones que el jugador tiene para romperla. Es

@@ -922,7 +922,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             Assert.IsNotInstanceOf<IAIOpeningNode>(
                 Descendants(BombBeat()).OfType<AINode_BombField>().Single(),
                 "El campo de bombas volvio a sembrar en la apertura: el jugador abre la pelea " +
-                "con cuatro bombas y sus cruces ya puestas, sin haber jugado un turno.");
+                "con el pano ya sembrado y sus cruces puestas, sin haber jugado un turno.");
 
             Assert.IsNotInstanceOf<IAIOpeningNode>(
                 Descendants(_root).OfType<AINode_DetonateBombField>().Single(),

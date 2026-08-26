@@ -285,7 +285,7 @@ MonoBehaviour:
       Data: 2
     - Name: Count
       Entry: 3
-      Data: 4
+      Data: 3
     - Name: Spacing
       Entry: 3
       Data: 3
@@ -378,7 +378,7 @@ MonoBehaviour:
       Data: Rollgeon.Combat.AI.Decisions.AINode_Random+Option, Rollgeon
     - Name: Weight
       Entry: 4
-      Data: 40
+      Data: 45
     - Name: Node
       Entry: 7
       Data: 36|Rollgeon.Combat.AI.Decisions.AINode_TeleportAwayToEdge, Rollgeon
@@ -411,7 +411,7 @@ MonoBehaviour:
       Data: Rollgeon.Combat.AI.Decisions.AINode_Random+Option, Rollgeon
     - Name: Weight
       Entry: 4
-      Data: 35
+      Data: 30
     - Name: Node
       Entry: 7
       Data: 37|Rollgeon.Combat.AI.Decisions.AINode_TeleportNearTarget, Rollgeon
@@ -757,7 +757,7 @@ MonoBehaviour:
       Data: Rollgeon.Combat.AI.Decisions.AINode_Random+Option, Rollgeon
     - Name: Weight
       Entry: 4
-      Data: 40
+      Data: 45
     - Name: Node
       Entry: 7
       Data: 63|Rollgeon.Combat.AI.Decisions.AINode_TeleportAwayToEdge, Rollgeon
@@ -790,7 +790,7 @@ MonoBehaviour:
       Data: Rollgeon.Combat.AI.Decisions.AINode_Random+Option, Rollgeon
     - Name: Weight
       Entry: 4
-      Data: 35
+      Data: 30
     - Name: Node
       Entry: 7
       Data: 64|Rollgeon.Combat.AI.Decisions.AINode_TeleportNearTarget, Rollgeon
@@ -1014,7 +1014,7 @@ MonoBehaviour:
       Data: Rollgeon.Combat.AI.Decisions.AINode_Random+Option, Rollgeon
     - Name: Weight
       Entry: 4
-      Data: 40
+      Data: 45
     - Name: Node
       Entry: 7
       Data: 82|Rollgeon.Combat.AI.Decisions.AINode_TeleportAwayToEdge, Rollgeon
@@ -1047,7 +1047,7 @@ MonoBehaviour:
       Data: Rollgeon.Combat.AI.Decisions.AINode_Random+Option, Rollgeon
     - Name: Weight
       Entry: 4
-      Data: 35
+      Data: 30
     - Name: Node
       Entry: 7
       Data: 83|Rollgeon.Combat.AI.Decisions.AINode_TeleportNearTarget, Rollgeon
@@ -1392,7 +1392,7 @@ MonoBehaviour:
   Portrait: {fileID: -249503321, guid: 20ce88debfdaa06459d18ed604643892, type: 3}
   WeaknessComboId: combo.poker
   WeaknessMultiplierOverride: 1.3
-  BaseHP: 300
+  BaseHP: 250
   BaseAttack: 18
   BaseHealStrength: 0
   BaseSpeed: 5
