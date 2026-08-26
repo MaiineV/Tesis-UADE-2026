@@ -777,7 +777,7 @@ GameObject:
   - component: {fileID: 4689467003917721267}
   - component: {fileID: 5946022871096465522}
   m_Layer: 0
-  m_Name: SpecialAttackButton
+  m_Name: ClassSkillButton
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -935,8 +935,8 @@ MonoBehaviour:
     Mode: 0
     FixedAnchor: {fileID: 0}
     FixedOffset: {x: 0, y: 0}
-  _previewText: "<b>Acci\xF3n</b>\nCosto: 2 de energ\xEDa\nDa\xF1o: ATQ (3) + puntaje
-    del combo"
+  _previewText: "<b>Habilidad de clase</b>\nCosto: 1 Roll por tirada\nEmpuje: casillas
+    seg\xFAn el combo"
 --- !u!114 &4689467003917721267
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2643,11 +2643,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: Rollgeon::Rollgeon.UI.HUD.MovementDieView
   _slot: {fileID: 7726012930550379026}
   _chip: {fileID: 7769084269542449525}
+  _animSettings: {fileID: 0}
   _riseSeconds: 0.45
   _gap: 10
   _overshoot: 22
-  _spinTurns: 1.5
-  _faceTickSeconds: 0.06
   _startScale: 0.75
   _dropSeconds: 0.28
   _landSquash: 0.18

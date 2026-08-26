@@ -29,7 +29,9 @@ namespace Rollgeon.Combat.Status
     /// countdown llegue a 0, y el handler nunca corre. Si el contexto se construye sin
     /// <c>DeltaTimeProvider</c> (path legacy síncrono, usado por tests viejos), el handler ya
     /// corrió durante <c>Enter</c> y el "skip" solo termina el turno después de que el enemigo
-    /// actuó. Hoy ningún sistema stunea enemigos, así que el caso no se da en runtime.
+    /// actuó. El Empuje del Guerrero (<c>ClassSkillPushResolver</c>, Feature#0055) stunea
+    /// enemigos al chocarlos contra una pared; en runtime el <c>CombatController</c> siempre
+    /// configura el grace period, así que el handler nunca llega a correr.
     /// </para>
     /// </remarks>
     public sealed class StunTurnSkipper : IDisposable

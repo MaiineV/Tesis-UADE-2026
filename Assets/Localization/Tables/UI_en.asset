@@ -142,10 +142,6 @@ MonoBehaviour:
     m_Localized: Move
     m_Metadata:
       m_Items: []
-  - m_Id: 33290952929282
-    m_Localized: Special Attack
-    m_Metadata:
-      m_Items: []
   - m_Id: 33290952929283
     m_Localized: Force Door
     m_Metadata:
@@ -846,6 +842,26 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 14985430464036864
     m_Localized: Press Confirm to enchant the die.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 15429564853567488
+    m_Localized: 'Push: tiles by combo'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 15429564908093440
+    m_Localized: 'No combo: the roll is spent with no effect'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 15429564908093441
+    m_Localized: '{0}: push {1}'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 15429564908093442
+    m_Localized: 'Push - no combo: no effect'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 15429564929064960
+    m_Localized: Class Skill
     m_Metadata:
       m_Items: []
   references:

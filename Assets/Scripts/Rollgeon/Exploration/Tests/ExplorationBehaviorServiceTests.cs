@@ -37,7 +37,7 @@ namespace Rollgeon.Exploration.Tests
             _playerGuid = Guid.NewGuid();
 
             _heroSO = ScriptableObject.CreateInstance<ClassHeroSO>();
-            foreach (var slot in new[] { HeroBehaviorSlot.Movement, HeroBehaviorSlot.BaseAttack, HeroBehaviorSlot.SpecialAttack, HeroBehaviorSlot.Healing })
+            foreach (var slot in new[] { HeroBehaviorSlot.Movement, HeroBehaviorSlot.BaseAttack, HeroBehaviorSlot.ClassSkill, HeroBehaviorSlot.Healing })
                 _heroSO.PhaseBehaviors.Add(new HeroActionBehavior { IsBaseBehavior = true, Slot = slot, AllowedPhases = GamePhaseMask.Combat });
 
             _playerService = new StubPlayerService

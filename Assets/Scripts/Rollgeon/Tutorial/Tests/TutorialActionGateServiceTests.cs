@@ -54,7 +54,7 @@ namespace Rollgeon.Tutorial.Tests
             // Assert
             Assert.IsFalse(gate.IsSlotLocked(HeroBehaviorSlot.Movement));
             Assert.IsTrue(gate.IsSlotLocked(HeroBehaviorSlot.BaseAttack));
-            Assert.IsTrue(gate.IsSlotLocked(HeroBehaviorSlot.SpecialAttack));
+            Assert.IsTrue(gate.IsSlotLocked(HeroBehaviorSlot.ClassSkill));
             Assert.IsTrue(gate.IsSlotLocked(HeroBehaviorSlot.Healing));
             Assert.IsTrue(gate.IsSlotLocked(HeroBehaviorSlot.ForceDoor));
             Assert.IsTrue(gate.IsSlotLocked(HeroBehaviorSlot.Defense));
@@ -126,7 +126,7 @@ namespace Rollgeon.Tutorial.Tests
 
             Assert.IsFalse(gate.IsSlotLocked(HeroBehaviorSlot.BaseAttack));
             Assert.IsTrue(gate.IsSlotLocked(HeroBehaviorSlot.Movement));
-            Assert.IsTrue(gate.IsSlotLocked(HeroBehaviorSlot.SpecialAttack));
+            Assert.IsTrue(gate.IsSlotLocked(HeroBehaviorSlot.ClassSkill));
             Assert.IsTrue(gate.IsSlotLocked(HeroBehaviorSlot.Healing));
             Assert.IsTrue(gate.IsSlotLocked(HeroBehaviorSlot.ForceDoor));
         }
@@ -189,7 +189,7 @@ namespace Rollgeon.Tutorial.Tests
             // Act
             gate.LockAllExcept(HeroBehaviorSlot.BaseAttack);
 
-            // Assert — cambian Movement, SpecialAttack, ForceDoor y Defense (4), no
+            // Assert — cambian Movement, ClassSkill, ForceDoor y Defense (4), no
             // Healing (ya locked) ni BaseAttack (permitido).
             Assert.AreEqual(4, _unlockedEvents);
         }
@@ -204,7 +204,7 @@ namespace Rollgeon.Tutorial.Tests
             Assert.IsFalse(gate.IsSlotLocked(HeroBehaviorSlot.Movement));
             Assert.IsTrue(gate.IsSlotLocked(HeroBehaviorSlot.BaseAttack),
                 "ATACAR arranca bloqueado — se desbloquea en su paso de enseñanza.");
-            Assert.IsTrue(gate.IsSlotLocked(HeroBehaviorSlot.SpecialAttack));
+            Assert.IsTrue(gate.IsSlotLocked(HeroBehaviorSlot.ClassSkill));
             Assert.IsTrue(gate.IsSlotLocked(HeroBehaviorSlot.Healing));
             Assert.IsTrue(gate.IsSlotLocked(HeroBehaviorSlot.ForceDoor));
         }

@@ -51,16 +51,24 @@ namespace Rollgeon.Tiles.Forced
             var path = new List<GridCoord> { current };
             var cursor = current;
             var stop = ForcedMoveStop.CompletedDistance;
+            GridCoord blockedAt = default;
+            Guid blockerGuid = Guid.Empty;
             for (int i = 0; i < tiles; i++)
             {
                 var next = direction.Step(cursor);
-                if (!grid.IsWalkable(next) || grid.IsOccupied(next)) { stop = ForcedMoveStop.Obstacle; break; }
+                if (!grid.IsWalkable(next) || grid.IsOccupied(next))
+                {
+                    stop = ForcedMoveStop.Obstacle;
+                    blockedAt = next;
+                    if (!grid.TryGetOccupant(next, out blockerGuid)) blockerGuid = Guid.Empty;
+                    break;
+                }
                 path.Add(next);
                 cursor = next;
             }
 
             if (path.Count >= 2) pathed.CommitPath(entity, path);
-            return new ForcedMoveResult(cursor, path.Count - 1, stop, false);
+            return new ForcedMoveResult(cursor, path.Count - 1, stop, false, blockedAt, blockerGuid);
         }
     }
 }

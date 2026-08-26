@@ -228,7 +228,7 @@ namespace Rollgeon.Effects.Tests
         [Test]
         public void TargetsEnemies_TrueForOccupiedEnemyFilter_FalseOtherwise()
         {
-            // Assert — ataque/ataque especial (occupied + enemies) pinta rango completo.
+            // Assert — ataque/habilidad de clase (occupied + enemies) pinta rango completo.
             Assert.IsTrue(AttackSelection(1).TargetsEnemies);
             // Movimiento (slot vacío) no.
             Assert.IsFalse(MovementSelection(RangeMode.Manhattan, 1).TargetsEnemies);

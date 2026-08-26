@@ -1142,7 +1142,7 @@
                     "initialStateCheck": false
                 },
                 {
-                    "name": "SpecialAttack",
+                    "name": "ClassSkill",
                     "type": "Button",
                     "id": "b0a1e900-0000-4000-8000-000000000003",
                     "expectedControlType": "Button",
@@ -1244,7 +1244,7 @@
                     "interactions": "",
                     "processors": "",
                     "groups": "Keyboard&Mouse",
-                    "action": "SpecialAttack",
+                    "action": "ClassSkill",
                     "isComposite": false,
                     "isPartOfComposite": false
                 },

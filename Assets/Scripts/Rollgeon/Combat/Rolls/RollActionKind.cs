@@ -15,7 +15,7 @@ namespace Rollgeon.Combat.Rolls
         /// que pagar de más por un emisor sin clasificar.</summary>
         Unknown = 0,
 
-        /// <summary>Ataque (BaseAttack / SpecialAttack).</summary>
+        /// <summary>Ataque (BaseAttack).</summary>
         Attack,
 
         /// <summary>Defensa / escudo (fase de un chain o behavior dedicado).</summary>
@@ -37,6 +37,13 @@ namespace Rollgeon.Combat.Rolls
 
         /// <summary>Action roll fuera de combate (Curarse/Forzar Puerta en exploración).</summary>
         Exploration,
+
+        /// <summary>
+        /// Habilidad de Clase (slot <c>ClassSkill</c>; Empuje en el Guerrero, Feature#0055).
+        /// Tirada de combate con combo pero SIN daño de combo: no es pagable para los
+        /// encantamientos de oro ni para los hooks de ítem filtrados por Attack.
+        /// </summary>
+        ClassSkill,
     }
 
     /// <summary>Helpers de clasificación sobre <see cref="RollActionKind"/>.</summary>

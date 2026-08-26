@@ -113,7 +113,7 @@ namespace Rollgeon.Exploration
             var behaviors = hero.GetBehaviorsForPhase(GamePhase.Exploration);
 
             // Buscar por slot (no por list index) — la lista de exploration filtra
-            // los slots que no aplican (ej. BaseAttack, SpecialAttack), por lo que
+            // los slots que no aplican (ej. BaseAttack, ClassSkill), por lo que
             // los índices no se alinean con HeroBehaviorSlot. Buscar por slot
             // garantiza que el botón de Pass Door no termine disparando Healing.
             HeroActionBehavior behavior = null;

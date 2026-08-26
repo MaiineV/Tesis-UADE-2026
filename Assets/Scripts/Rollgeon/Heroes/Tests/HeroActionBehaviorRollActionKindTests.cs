@@ -16,7 +16,7 @@ namespace Rollgeon.Heroes.Tests
     {
         [TestCase(HeroBehaviorSlot.Movement, RollActionKind.Movement)]
         [TestCase(HeroBehaviorSlot.BaseAttack, RollActionKind.Attack)]
-        [TestCase(HeroBehaviorSlot.SpecialAttack, RollActionKind.Attack)]
+        [TestCase(HeroBehaviorSlot.ClassSkill, RollActionKind.ClassSkill)]
         [TestCase(HeroBehaviorSlot.Healing, RollActionKind.Heal)]
         [TestCase(HeroBehaviorSlot.ForceDoor, RollActionKind.ForceDoor)]
         [TestCase(HeroBehaviorSlot.Defense, RollActionKind.Defense)]

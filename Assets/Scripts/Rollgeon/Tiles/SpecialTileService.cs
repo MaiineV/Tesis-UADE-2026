@@ -911,11 +911,23 @@ namespace Rollgeon.Tiles
                 int traveled = 0;
                 var stop = ForcedMoveStop.CompletedDistance;
                 var kind = initialKind;
+                GridCoord blockedAt = default;
+                Guid blockerGuid = Guid.Empty;
 
                 if (!TryGetGrid(out var grid))
                     return new ForcedMoveResult(default, 0, ForcedMoveStop.Obstacle, false);
                 if (!TryGetPathedMovement(out var pathed))
                     return new ForcedMoveResult(default, 0, ForcedMoveStop.Obstacle, false);
+
+                // El choque se captura ANTES de cualquier reubicación (portal): el consumidor
+                // (empuje del Guerrero) necesita saber contra QUÉ frenó, y FinalCoord puede
+                // terminar fuera de la línea de empuje.
+                void Block(GridCoord next)
+                {
+                    stop = ForcedMoveStop.Obstacle;
+                    blockedAt = next;
+                    if (!grid.TryGetOccupant(next, out blockerGuid)) blockerGuid = Guid.Empty;
+                }
 
                 int budget = ChainBudget;
                 while (budget-- > 0)
@@ -950,11 +962,11 @@ namespace Rollgeon.Tiles
                             {
                                 // El empuje muere contra el borde, pero nadie queda parado
                                 // sobre un portal: reubicación con fallback horario.
+                                Block(next);
                                 RelocateOffPortal(grid, pathed, entity, exit, ref dir, kind);
-                                stop = ForcedMoveStop.Obstacle;
                                 break;
                             }
-                            if (!pathed.CommitPath(entity, new List<GridCoord> { exit, next })) { stop = ForcedMoveStop.Obstacle; break; }
+                            if (!pathed.CommitPath(entity, new List<GridCoord> { exit, next })) { Block(next); break; }
                             remainingForced--;
                             traveled++;
                             ResolveEntries(entity, new[] { next }, kind);
@@ -976,8 +988,8 @@ namespace Rollgeon.Tiles
                         // Hielo: la unidad sigue en la dirección de entrada hasta salir del
                         // hielo o chocar. Cada celda atravesada dispara sus propios triggers.
                         var next = dir.Step(current);
-                        if (!IsFreeCell(grid, next)) { stop = ForcedMoveStop.Obstacle; break; }
-                        if (!pathed.CommitPath(entity, new List<GridCoord> { current, next })) { stop = ForcedMoveStop.Obstacle; break; }
+                        if (!IsFreeCell(grid, next)) { Block(next); break; }
+                        if (!pathed.CommitPath(entity, new List<GridCoord> { current, next })) { Block(next); break; }
                         traveled++;
                         ResolveEntries(entity, new[] { next }, TileMovementKind.Slide);
                         continue;
@@ -989,8 +1001,8 @@ namespace Rollgeon.Tiles
                         // nada: el empuje ya lo está arrastrando (si el empuje TERMINA sobre
                         // hielo, la próxima iteración desliza).
                         var next = dir.Step(current);
-                        if (!IsFreeCell(grid, next)) { stop = ForcedMoveStop.Obstacle; break; }
-                        if (!pathed.CommitPath(entity, new List<GridCoord> { current, next })) { stop = ForcedMoveStop.Obstacle; break; }
+                        if (!IsFreeCell(grid, next)) { Block(next); break; }
+                        if (!pathed.CommitPath(entity, new List<GridCoord> { current, next })) { Block(next); break; }
                         remainingForced--;
                         traveled++;
                         ResolveEntries(entity, new[] { next }, kind);
@@ -1002,7 +1014,7 @@ namespace Rollgeon.Tiles
 
                 bool died = !grid.TryGetPosition(entity, out var finalCoord);
                 if (died) stop = ForcedMoveStop.Death;
-                return new ForcedMoveResult(finalCoord, traveled, stop, died);
+                return new ForcedMoveResult(finalCoord, traveled, stop, died, blockedAt, blockerGuid);
             }
             finally
             {

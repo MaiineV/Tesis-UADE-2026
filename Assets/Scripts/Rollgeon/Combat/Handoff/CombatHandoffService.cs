@@ -1654,7 +1654,7 @@ namespace Rollgeon.Combat.Handoff
         /// <summary>
         /// BUG-060: discriminante de la fase actual del chain — la propia si el diseñador
         /// overrideó el board (ej. fase de escudo = Defense dentro de un chain de ataque),
-        /// si no el del behavior dueño (típicamente Attack para BaseAttack/SpecialAttack).
+        /// si no el del behavior dueño (típicamente Attack para BaseAttack/ClassSkill).
         /// </summary>
         private RollActionKind ResolveChainPhaseKind(int phaseIndex)
         {

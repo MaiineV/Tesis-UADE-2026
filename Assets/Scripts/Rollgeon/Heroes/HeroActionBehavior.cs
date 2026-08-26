@@ -276,7 +276,7 @@ namespace Rollgeon.Heroes
             return null;
         }
 
-        // El BaseAttack/SpecialAttack del guerrero envuelven el EffDealDamage en fases de
+        // El BaseAttack del guerrero envuelve el EffDealDamage en fases de
         // EffChain y, adentro de esas, en un step InlineEffect de EffPlaySequence (el daño
         // se difiere al frame de impacto). O sea que NO está al nivel top del behavior.
         // Bajamos por EffectTree para que la UI (DamageFormulaView, ComboIndicatorView)
@@ -307,6 +307,33 @@ namespace Rollgeon.Heroes
                     var found = FindAddShieldIn(eff);
                     if (found != null) return found;
                 }
+            }
+            return null;
+        }
+
+        // Empuje (Feature#0055): la UI lee la tabla para el preview "{combo}: empuja N".
+        public EffClassSkillPush FindFirstClassSkillPushEffect()
+        {
+            if (Effects == null) return null;
+            foreach (var group in Effects)
+            {
+                if (group?.Effects == null) continue;
+                foreach (var eff in group.Effects)
+                {
+                    var found = FindClassSkillPushIn(eff);
+                    if (found != null) return found;
+                }
+            }
+            return null;
+        }
+
+        private static EffClassSkillPush FindClassSkillPushIn(IEffect eff)
+        {
+            if (eff is EffClassSkillPush push) return push;
+            foreach (var child in EffectTree.DirectChildren(eff))
+            {
+                var found = FindClassSkillPushIn(child);
+                if (found != null) return found;
             }
             return null;
         }
@@ -363,8 +390,9 @@ namespace Rollgeon.Heroes
                 switch (Slot)
                 {
                     case HeroBehaviorSlot.Movement: return RollActionKind.Movement;
-                    case HeroBehaviorSlot.BaseAttack:
-                    case HeroBehaviorSlot.SpecialAttack: return RollActionKind.Attack;
+                    case HeroBehaviorSlot.BaseAttack: return RollActionKind.Attack;
+                    // Empuje: combo sin daño — kind propio, no pagable (Feature#0055).
+                    case HeroBehaviorSlot.ClassSkill: return RollActionKind.ClassSkill;
                     case HeroBehaviorSlot.Healing: return RollActionKind.Heal;
                     case HeroBehaviorSlot.ForceDoor: return RollActionKind.ForceDoor;
                     case HeroBehaviorSlot.Defense: return RollActionKind.Defense;

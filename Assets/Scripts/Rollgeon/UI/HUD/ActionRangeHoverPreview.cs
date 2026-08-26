@@ -65,7 +65,7 @@ namespace Rollgeon.UI.HUD
             if (behavior == null) return;
 
             // Selección efectiva: la propia del efecto, o la de la fase 0 si es un chain
-            // (Special Attack — la selection del chain está oculta y la real vive en la
+            // (Class Skill / Base Attack — la selection del chain está oculta y la real vive en la
             // fase). Null en todos los efectos = acción sin selección, no hay preview.
             var settings = behavior.Effects?
                 .Where(g => g?.Effects != null)
@@ -87,7 +87,7 @@ namespace Rollgeon.UI.HUD
             // el EntityFilter no aplica, siempre "move".
             if (settings.TargetsEnemies)
             {
-                // Ataque / ataque especial: pintar TODO el rango con el tinte base "range"
+                // Ataque / habilidad de clase: pintar TODO el rango con el tinte base "range"
                 // y los enemigos targeteables con "attack" por encima. Aunque no haya
                 // ningún enemigo en rango, igual se muestra el alcance de la habilidad.
                 var rangeTiles = settings.ResolveRangeTiles(ownerPos, playerService.PlayerGuid);
