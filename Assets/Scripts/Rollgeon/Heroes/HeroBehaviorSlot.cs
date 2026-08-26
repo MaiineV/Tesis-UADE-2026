@@ -6,7 +6,8 @@ namespace Rollgeon.Heroes
     {
         Movement = 0,
         BaseAttack = 1,
-        SpecialAttack = 2,
+        ClassSkill = 2,   // ex SpecialAttack (Feature#0055) — mismo valor, no reordenar
+
         Healing = 3,
         ForceDoor = 4,
         Defense = 5

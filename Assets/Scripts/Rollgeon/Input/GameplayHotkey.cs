@@ -12,7 +12,7 @@ namespace Rollgeon.Input
     {
         Move,
         Attack,
-        SpecialAttack,
+        ClassSkill,
         Heal,
         Roll,
         Confirm,

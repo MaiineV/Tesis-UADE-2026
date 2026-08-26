@@ -97,7 +97,7 @@ namespace Rollgeon.Heroes.Tests
             {
                 var movement     = MakeBase(HeroBehaviorSlot.Movement,      GamePhaseMask.All);
                 var baseAttack   = MakeBase(HeroBehaviorSlot.BaseAttack,    GamePhaseMask.Combat);
-                var specialAttack= MakeBase(HeroBehaviorSlot.SpecialAttack, GamePhaseMask.Combat);
+                var specialAttack= MakeBase(HeroBehaviorSlot.ClassSkill, GamePhaseMask.Combat);
                 var healing      = MakeBase(HeroBehaviorSlot.Healing,       GamePhaseMask.All);
                 so.PhaseBehaviors.AddRange(new[] { movement, baseAttack, specialAttack, healing });
 
@@ -122,7 +122,7 @@ namespace Rollgeon.Heroes.Tests
             {
                 var movement     = MakeBase(HeroBehaviorSlot.Movement,      GamePhaseMask.All);
                 var baseAttack   = MakeBase(HeroBehaviorSlot.BaseAttack,    GamePhaseMask.Combat);
-                var specialAttack= MakeBase(HeroBehaviorSlot.SpecialAttack, GamePhaseMask.Combat);
+                var specialAttack= MakeBase(HeroBehaviorSlot.ClassSkill, GamePhaseMask.Combat);
                 var healing      = MakeBase(HeroBehaviorSlot.Healing,       GamePhaseMask.All);
                 var forceDoor    = MakeBase(HeroBehaviorSlot.ForceDoor,     GamePhaseMask.Combat);
                 var defense      = MakeBase(HeroBehaviorSlot.Defense,       GamePhaseMask.Combat);
@@ -151,7 +151,7 @@ namespace Rollgeon.Heroes.Tests
             {
                 var movement     = MakeBase(HeroBehaviorSlot.Movement,      GamePhaseMask.All);
                 var baseAttack   = MakeBase(HeroBehaviorSlot.BaseAttack,    GamePhaseMask.Combat);
-                var specialAttack= MakeBase(HeroBehaviorSlot.SpecialAttack, GamePhaseMask.Combat);
+                var specialAttack= MakeBase(HeroBehaviorSlot.ClassSkill, GamePhaseMask.Combat);
                 var healing      = MakeBase(HeroBehaviorSlot.Healing,       GamePhaseMask.All);
                 so.PhaseBehaviors.AddRange(new[] { movement, baseAttack, specialAttack, healing });
 
@@ -178,7 +178,7 @@ namespace Rollgeon.Heroes.Tests
                 };
                 var healing      = MakeBase(HeroBehaviorSlot.Healing,       GamePhaseMask.All);
                 var baseAttack   = MakeBase(HeroBehaviorSlot.BaseAttack,    GamePhaseMask.Combat);
-                var specialAttack= MakeBase(HeroBehaviorSlot.SpecialAttack, GamePhaseMask.Combat);
+                var specialAttack= MakeBase(HeroBehaviorSlot.ClassSkill, GamePhaseMask.Combat);
                 so.PhaseBehaviors.AddRange(new[] { exploreMove, healing, baseAttack, specialAttack });
 
                 var result = so.GetBehaviorsForPhase(GamePhase.Exploration);
@@ -197,7 +197,7 @@ namespace Rollgeon.Heroes.Tests
             {
                 var movement     = MakeBase(HeroBehaviorSlot.Movement,      GamePhaseMask.Exploration);
                 var baseAttack   = MakeBase(HeroBehaviorSlot.BaseAttack,    GamePhaseMask.Combat);
-                var specialAttack= MakeBase(HeroBehaviorSlot.SpecialAttack, GamePhaseMask.Combat);
+                var specialAttack= MakeBase(HeroBehaviorSlot.ClassSkill, GamePhaseMask.Combat);
                 var healing      = MakeBase(HeroBehaviorSlot.Healing,       GamePhaseMask.Combat);
                 var custom       = new HeroActionBehavior
                 {
@@ -223,7 +223,7 @@ namespace Rollgeon.Heroes.Tests
             {
                 var movement     = MakeBase(HeroBehaviorSlot.Movement,      GamePhaseMask.Combat);
                 var baseAttack   = MakeBase(HeroBehaviorSlot.BaseAttack,    GamePhaseMask.Combat);
-                var specialAttack= MakeBase(HeroBehaviorSlot.SpecialAttack, GamePhaseMask.Combat);
+                var specialAttack= MakeBase(HeroBehaviorSlot.ClassSkill, GamePhaseMask.Combat);
                 var healing      = MakeBase(HeroBehaviorSlot.Healing,       GamePhaseMask.Combat);
                 var combatCustom = new HeroActionBehavior
                 {

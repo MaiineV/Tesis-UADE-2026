@@ -7,7 +7,7 @@ namespace Rollgeon.Exploration
         /// <summary>
         /// Ejecuta el behavior asociado al <paramref name="slot"/> (el int es el
         /// valor del enum <c>HeroBehaviorSlot</c>: 0=Movement, 1=BaseAttack,
-        /// 2=SpecialAttack, 3=Healing, 4=ForceDoor/PassDoor).
+        /// 2=ClassSkill, 3=Healing, 4=ForceDoor/PassDoor).
         /// </summary>
         /// <remarks>
         /// El parámetro es <b>slot</b>, no list-index. Antes era list-index, lo
