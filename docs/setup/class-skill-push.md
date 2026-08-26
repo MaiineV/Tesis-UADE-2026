@@ -89,7 +89,11 @@ Daño de choque: `AttackKind.Environmental`, `SourceId = player` (crédito de ki
    - en `CH_Warrior.asset` y `Assets/Rollgeon/Tutorial/CH_Warrior_Tutorial.asset`: behavior base
      del slot 2 → `ActionName = "Class Skill"`, `NeedsDiceRoll`, `AllowsReroll`, `BoardType = Attack`;
      reemplaza in-place cada `EffDealDamage` del árbol (fase del `EffChain` → step `InlineEffect` del
-     `EffPlaySequence`) por `EffClassSkillPush` con la selección adyacente; renombra la fase a `Push`.
+     `EffPlaySequence`) por `EffClassSkillPush`; renombra la fase a `Push`; y reconfigura a
+     adyacencia (Range 1, Enemies) **todas** las selecciones pre-roll del árbol. **Gotcha**: la
+     selección que gatea el botón y apunta el target es la primera `BeforeRoll` de la fase 0
+     (`EffChain.FindPhaseSelectionAt`) — en el Warrior es la del `EffPlaySequence` que envuelve al
+     efecto, no la del efecto; sin este paso el chip seguía apuntando a rango 4.
    - **Los `ClassHeroSO` son Odin**: editar el YAML a mano no round-tripea. Re-correr el tool si hay
      que reautorar. Verificar siempre `git diff Assets/Rollgeon/ServiceBootstrap.asset` (una sola
      entrada nueva en cada lista; un editor stale puede tirar refs).
@@ -115,8 +119,12 @@ slot 2 con `IsBaseBehavior = true` y `Slot = ClassSkill`. **Gotcha**: `GetBehavi
 - `Tiles/Tests/SpecialTileChainTests.cs` — `BlockerGuid`/`BlockedAt` en `Push_StopsBeforeObstacle`,
   `Push_IntoEdge_BlockerGuidIsEmpty`.
 - `Combat/Skills/Tests/ClassSkillPushResolverTests.cs` — pared/prop/cofre ⇒ stun; objeto de sala ⇒
-  daño + rompe; enemigo ⇒ ambos dañados + remanente encadenado; cadena contra pared; remanente 0;
-  muertes a mitad de cadena; hielo; guarda anti-loop.
+  daño + rompe; enemigo ⇒ ambos dañados + remanente encadenado; cadena contra pared; bloqueador muere
+  ⇒ sin 2º eslabón; pinchos matan a mitad ⇒ sin choque; empujado muere pero el bloqueador igual se
+  empuja; guarda anti-loop. (Sin caso de hielo/portal — follow-up.)
+- Smoke en Play Mode (MCP, 2026-08-26): servicios registrados, selección efectiva `Range 1 / Enemies`,
+  empuje libre (2,0)→(4,0), pared ⇒ stun 1, cadena ⇒ ambos −10 y el 2º recorre el remanente. El flujo
+  de UI (click chip → target → mesa → confirmar) comparte el path del Base Attack; queda para QA manual.
 - `Heroes/Tests/ClassSkillPushTableSOTests.cs` — 8 valores de la spec, ids desconocidos ⇒ 0,
   `CollisionDamage == 10`. `HeroBehaviorSlotTests` (valor 2),
   `HeroActionBehaviorRollActionKindTests` (`ClassSkill` no pagable).
