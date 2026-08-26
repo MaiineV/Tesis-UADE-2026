@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using Patterns;
 using PrimeTween;
 using Rollgeon.Combat.Rolls;
@@ -10,28 +9,29 @@ using UnityEngine;
 namespace Rollgeon.UI.HUD
 {
     /// <summary>
-    /// Pila de fichas del Pool de Rolls del jugador (una ficha por roll) con label
-    /// "actual/max" debajo. Heredera directa de la pila de energía (Feature#0050):
+    /// Vaso de generala del Pool de Rolls del jugador con label "actual/max"
+    /// debajo. Heredera directa de la pila de chips (Feature#0050→#0053):
     /// mismo GUID de script, mismo prefab. Solo visible en combate — el pool no
-    /// existe en exploración.
+    /// existe en exploración. Dueña del ESTADO (datos, gating, label, pose
+    /// lógica); el movimiento vive en <see cref="RollCupJuice"/> — sin juice o
+    /// fuera de Play, la pose se aplica instantánea.
     /// </summary>
-    [AddComponentMenu("Rollgeon/UI/HUD/Roll Pool Chip Stack View")]
-    public class RollPoolChipStackView : MonoBehaviour
+    [AddComponentMenu("Rollgeon/UI/HUD/Roll Cup View")]
+    public class RollCupView : MonoBehaviour
     {
-        private const string LogPrefix = "[RollPoolChipStackView] ";
+        private const string LogPrefix = "[RollCupView] ";
 
-        [Title("Roll Chips — Widget refs")]
-        [Required("Arrastrar el ChipStackView de la pila de rolls.")]
+        [Title("Roll Cup — Widget refs")]
+        [Required("Arrastrar el RectTransform del vaso (Image con VasoGenerala_0).")]
         [SerializeField]
-        private ChipStackView _stack;
+        private RectTransform _cup;
 
-        [Required("Arrastrar el TextMeshProUGUI debajo de la pila.")]
+        [Required("Arrastrar el TextMeshProUGUI debajo del vaso.")]
         [SerializeField]
         private TextMeshProUGUI _label;
 
-        [Required("Arrastrar el ChipStackSettings asset.")]
-        [SerializeField]
-        private ChipStackSettingsSO _settings;
+        [SerializeField, Optional, Tooltip("Coreografía del vaso (bob/shake/flip). Sin wiring, poses instantáneas.")]
+        private RollCupJuice _juice;
 
         [Title("Feedback — sin rolls")]
         [SerializeField, Tooltip("Color del flash del número cuando una acción no se puede pagar. " +
@@ -51,12 +51,18 @@ namespace Rollgeon.UI.HUD
         private bool _bound;
 
         private bool _hasData;
-        private readonly List<int> _chipBuffer = new List<int>();
+
+        // -1 = sin dato mostrado (primer fetch o reentrada a combate): el
+        // clasificador devuelve None y el vaso toma la pose sin coreografía.
+        private int _lastShownCurrent = -1;
 
         private Color _labelBaseColor = Color.white;
         private Vector3 _labelRestScale = Vector3.one;
         private Tween _insufficientFlash;
         private Tween _insufficientPunchTween;
+
+        /// <summary>Pose lógica actual del vaso (true = boca abajo, sin rolls).</summary>
+        public bool IsCupFaceDown { get; private set; }
 
         private void Awake()
         {
@@ -65,18 +71,17 @@ namespace Rollgeon.UI.HUD
                 _labelBaseColor = _label.color;
                 _labelRestScale = _label.transform.localScale;
             }
-            ConfigureStack();
         }
 
         /// <summary>
-        /// Feedback de "no te alcanza": sacude la pila y hace flashear el número en rojo.
+        /// Feedback de "no te alcanza": sacude el vaso y hace flashear el número en rojo.
         /// Lo dispara <see cref="PlayerActionButtonsView"/> cuando el jugador intenta usar
-        /// una acción impagable — la pila es la respuesta a "¿por qué no puedo?".
-        /// No-op con reduced motion (el shake de la pila ya se auto-gatea).
+        /// una acción impagable — el vaso es la respuesta a "¿por qué no puedo?".
+        /// No-op con reduced motion (el shake del juice ya se auto-gatea).
         /// </summary>
         public void PlayInsufficient()
         {
-            if (_stack != null) _stack.Shake();
+            if (_juice != null) _juice.PlayInsufficientShake();
 
             if (_label == null || !Application.isPlaying || DiceAnim.DiceUiMotionPrefs.ReducedMotion) return;
             if (_insufficientFlash.isAlive) return; // spam de rechazos: un flash por vez
@@ -97,16 +102,9 @@ namespace Rollgeon.UI.HUD
                 useUnscaledTime: true);
         }
 
-        private void ConfigureStack()
-        {
-            if (_stack == null || _settings == null) return;
-            _stack.Configure(_settings, new[] { _settings.EnergyChip }, _settings.ChipSpacingY);
-        }
-
         public void Bind(Guid playerGuid)
         {
             _playerGuid = playerGuid;
-            ConfigureStack();
             if (!_bound) Subscribe();
             FetchInitialState();
         }
@@ -118,7 +116,6 @@ namespace Rollgeon.UI.HUD
 
         private void OnEnable()
         {
-            ConfigureStack();
             Subscribe();
             FetchInitialState();
         }
@@ -165,7 +162,7 @@ namespace Rollgeon.UI.HUD
         /// <summary>
         /// Reintento del estado inicial: al arrancar la run el BindAll del HUD
         /// puede correr antes de que el jugador/servicio existan y el fetch
-        /// falla silencioso — la pila quedaba vacía hasta el primer combate.
+        /// falla silencioso — el vaso quedaba sin datos hasta el primer combate.
         /// Se reintenta por frame hasta la primera lectura exitosa.
         /// </summary>
         private void Update()
@@ -212,22 +209,50 @@ namespace Rollgeon.UI.HUD
 
         private void Apply(int current, int max, bool animate)
         {
-            if (_settings == null) return;
-
-            // El pool solo existe en combate: fuera de él la pila y el número se
+            // El pool solo existe en combate: fuera de él el vaso y el número se
             // ocultan (el GO raíz queda activo para seguir escuchando eventos).
             bool inCombat = ServiceLocator.TryGetService<IRollPoolService>(out var rolls)
                             && rolls != null && rolls.IsCombatActive;
-            if (_stack != null) _stack.gameObject.SetActive(inCombat);
+            if (_cup != null) _cup.gameObject.SetActive(inCombat);
             if (_label != null) _label.gameObject.SetActive(inCombat);
-            if (!inCombat) return;
+            if (!inCombat)
+            {
+                // Olvidar lo mostrado: reentrar a combate aplica pose directa y
+                // nunca reproduce una transición espuria (ej. flip por el 0 del
+                // OnCombatEnd anterior). El juice se frena — un bob sobre un
+                // vaso oculto es puro desperdicio.
+                _lastShownCurrent = -1;
+                if (_juice != null && Application.isPlaying) _juice.StopAndRest();
+                return;
+            }
 
-            // Sin tope visual: una ficha por roll disponible.
-            _chipBuffer.Clear();
-            for (int i = 0; i < current; i++) _chipBuffer.Add(0);
-
-            if (_stack != null) _stack.SetChips(_chipBuffer, animate);
+            // El número nunca miente: se actualiza antes de cualquier coreografía.
             if (_label != null) _label.text = ChipStackMath.FormatRollsLabel(current, max);
+
+            bool faceDown = RollCupMath.IsFaceDown(current);
+            var transition = animate
+                ? RollCupMath.Classify(_lastShownCurrent, current)
+                : RollCupTransition.None;
+            _lastShownCurrent = current;
+            IsCupFaceDown = faceDown;
+
+            if (_juice != null && Application.isPlaying)
+            {
+                if (transition == RollCupTransition.None) _juice.SetPoseInstant(faceDown);
+                else _juice.OnTransition(transition, faceDown);
+            }
+            else
+            {
+                ApplyPoseInstant(faceDown);
+            }
+        }
+
+        /// <summary>Pose sin animación — camino de EditMode y de reduced wiring.</summary>
+        private void ApplyPoseInstant(bool faceDown)
+        {
+            if (_cup == null) return;
+            _cup.localEulerAngles = new Vector3(0f, 0f,
+                faceDown ? RollCupMath.FaceDownZ : RollCupMath.UprightZ);
         }
     }
 }

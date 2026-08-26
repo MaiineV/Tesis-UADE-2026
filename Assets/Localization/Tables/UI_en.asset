@@ -426,8 +426,8 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 7800251719905305
-    m_Localized: "Pick a die and a slot, then confirm: the enchantment is random
-      \u2014 and it can be bad."
+    m_Localized: 'Pick a die and pull the lever: 3 enchantments appear and the one
+      you pick is added to the die.'
     m_Metadata:
       m_Items: []
   - m_Id: 7800251719905306
@@ -509,7 +509,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 9558930424168448
-    m_Localized: Enchantment slots
+    m_Localized: Enchantments
     m_Metadata:
       m_Items: []
   - m_Id: 9558930424168449
@@ -592,8 +592,8 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 10309000933244929
-    m_Localized: 'Don''t like the result? You can replace it by paying again: each
-      replacement costs more gold.'
+    m_Localized: 'None convince you? Pull the lever again for 3 new options: each
+      roll costs more gold.'
     m_Metadata:
       m_Items: []
   - m_Id: 10309000933244930
@@ -794,6 +794,58 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 14619625998090240
     m_Localized: Defense
+    m_Metadata:
+      m_Items: []
+  - m_Id: 14747843979739136
+    m_Localized: Roll
+    m_Metadata:
+      m_Items: []
+  - m_Id: 14747844046848000
+    m_Localized: Pick a die to enchant.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 14747844046848001
+    m_Localized: Pull the lever to reveal 3 enchantments.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 14747844046848002
+    m_Localized: "Pick an enchantment to add it to the die \u2014 hover to read them."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 14747844046848003
+    m_Localized: enchantment
+    m_Metadata:
+      m_Items: []
+  - m_Id: 14747844046848004
+    m_Localized: enchantments
+    m_Metadata:
+      m_Items: []
+  - m_Id: 14747907426975744
+    m_Localized: enchantment
+    m_Metadata:
+      m_Items: []
+  - m_Id: 14747907426975745
+    m_Localized: enchantments
+    m_Metadata:
+      m_Items: []
+  - m_Id: 14756158361141248
+    m_Localized: You got
+    m_Metadata:
+      m_Items: []
+  - m_Id: 14756158411472896
+    m_Localized: Die faces
+    m_Metadata:
+      m_Items: []
+  - m_Id: 14756158411472897
+    m_Localized: No enchantments
+    m_Metadata:
+      m_Items: []
+  - m_Id: 14756158411472898
+    m_Localized: "Couldn't load the dice \u2014 close the table and try again."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 14985430464036864
+    m_Localized: Press Confirm to enchant the die.
     m_Metadata:
       m_Items: []
   references:

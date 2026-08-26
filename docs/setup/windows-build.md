@@ -104,6 +104,20 @@ Opciones: `LocalizedContent` cae a fallbacks en español y se ve perfecta aunque
 haya cargado ninguna tabla. El menú usa `LocalizeStringEvent`, que sale en blanco o
 con la key cruda si el contenido falta.
 
+## Variante sin Steam
+
+Para distribuir el `.exe` fuera de Steam (jurados, itch, etc.): mismo build
+pero con `BuildPlayerOptions.extraScriptingDefines = ["DISABLESTEAMWORKS"]`
+y salida a `Build/Windows64NoSteam`. El define apaga Steamworks.NET y nuestro
+stack de Steam (que degrada a un warning único) **solo para esa build**, sin
+tocar los defines del proyecto. No hay entry point de menú — se llama a
+`BuildPipeline.BuildPlayer` por script (la 0.3.4 salió así).
+
+Después de buildear, borrar del output `steam_appid.txt` (lo copia el
+postprocessor igual) y `Rollgeon_Data/Plugins/x86_64/steam_api64.dll` —
+nada los usa con el define activo. Al zipear, excluir
+`Rollgeon_BurstDebugInformation_DoNotShip`.
+
 ## Cosas que NO son bugs
 
 - **No hay overlay de Steam** al lanzar el `.exe` desde el explorador, aunque

@@ -560,6 +560,16 @@ namespace Rollgeon.UI.HUD
                 return ActionButtonState.Locked;
             }
 
+            // §6.6: Movement con dado de Movimiento ya tirado — el roll está pagado y la
+            // selección no es cancelable (el handoff ignora los clicks de slot): Locked,
+            // no Available, para no prometer un switch que no va a pasar.
+            if (_awaitingSelection
+                && ServiceLocator.TryGetService<Rollgeon.Combat.Handoff.ICombatHandoffService>(out var handoffSel)
+                && handoffSel != null && !handoffSel.HasCancellableSelection)
+            {
+                return ActionButtonState.Locked;
+            }
+
             // Force Door es contextual: solo habilita pegado (Manhattan ≤ 1, ortogonal)
             // a una puerta no-tapiada y FUERA de la sala de Boss (sin escape). PCAdjacentToDoor
             // vive en ShowConditions, que HasUsableEffectGroup NO evalúa — sin este gate el

@@ -35,11 +35,23 @@ Shader "Rollgeon/PaletteCelLitPattern"
 
         [Toggle] _FlattenTopFaces ("Flatten Top/Bottom Faces (sin shapes, mismo color)", Float) = 0
 
+        [Header(Palette)]
+        // Mismo criterio que PaletteCelLit: [ToggleUI] (no [Toggle], no declara
+        // keyword) — el shader ramifica sobre el float en runtime. Un slot por
+        // cada una de las 5 zonas de color — cada una elige su propio slot.
+        [ToggleUI] _UsePalette ("Use Global Palette", Float) = 0
+        [PaletteSlot] _SlotColorA  ("Palette Slot Color A",         Float) = 0
+        [PaletteSlot] _SlotColorB  ("Palette Slot Color B",         Float) = 0
+        [PaletteSlot] _SlotDetail  ("Palette Slot Detail",          Float) = 0
+        [PaletteSlot] _SlotBG      ("Palette Slot Background",      Float) = 0
+        [PaletteSlot] _SlotTopFace ("Palette Slot Top/Bottom Face", Float) = 0
+
         [Header(Colors)]
-        _ColorA      ("Color A  (base / celdas pares)",          Color) = (0.38, 0.10, 0.10, 1)
-        _ColorB      ("Color B  (celdas impares)",               Color) = (0.26, 0.06, 0.06, 1)
-        _DetailColor ("Detail Color  (borde / centro radial)",   Color) = (0.55, 0.42, 0.05, 1)
-        _BGColor     ("Background Color (fuera de la forma)",    Color) = (0.18, 0.04, 0.04, 1)
+        _ColorA       ("Color A  (base / celdas pares)",          Color) = (0.38, 0.10, 0.10, 1)
+        _ColorB       ("Color B  (celdas impares)",               Color) = (0.26, 0.06, 0.06, 1)
+        _DetailColor  ("Detail Color  (borde / centro radial)",   Color) = (0.55, 0.42, 0.05, 1)
+        _BGColor      ("Background Color (fuera de la forma)",    Color) = (0.18, 0.04, 0.04, 1)
+        _TopFaceColor ("Top/Bottom Face Color (con Flatten Top Faces)", Color) = (0.38, 0.10, 0.10, 1)
 
         [Header(Cel Controls)]
         _ShadowThreshold ("Shadow Threshold", Range(0,1))   = 0.35
@@ -58,6 +70,20 @@ Shader "Rollgeon/PaletteCelLitPattern"
         [Header(Additional Lights)]
         _LightTintStrength        ("Spotlight Tint Color",                Range(0,1)) = 0.4
         _SpotDither               ("Edge Dither",            Range(0,1)) = 0.0
+
+        [Header(Metallic Sheen)]
+        // Specular Blinn-Phong (mismo criterio que WetCable.shader) — highlight
+        // afilado que reacciona a la luz real, no una textura sampleada. El
+        // master toggle apaga todo de un saque; los 4 toggles de zona deciden
+        // DÓNDE se aplica sin tener que tocar código — cualquier combinación
+        // de Fill/Detail/BG/TopFace puede tener el brillo metálico o no.
+        [Toggle] _EnableMetallic ("Enable Metallic Sheen", Float) = 0
+        _FresnelPower    ("Fresnel Power",    Range(0.1, 8)) = 3
+        _FresnelStrength ("Fresnel Strength", Range(0, 4))   = 1.5
+        [Toggle] _MetallicFill     ("Metallic on Fill (Color A/B)",    Float) = 0
+        [Toggle] _MetallicDetail   ("Metallic on Detail/Border",       Float) = 1
+        [Toggle] _MetallicBG       ("Metallic on Background",          Float) = 0
+        [Toggle] _MetallicTopFace  ("Metallic on Top/Bottom Face",     Float) = 0
 
         [Header(Crease)]
         [Toggle] _EnableCrease ("Enable Crease",   Float)      = 0
@@ -121,6 +147,12 @@ Shader "Rollgeon/PaletteCelLitPattern"
             float4 _RollgeonLightData[128];
 
             CBUFFER_START(UnityPerMaterial)
+                float  _UsePalette;
+                float  _SlotColorA;
+                float  _SlotColorB;
+                float  _SlotDetail;
+                float  _SlotBG;
+                float  _SlotTopFace;
                 float  _ShapeType;
                 float  _PatternType;
                 float  _DetailType;
@@ -136,6 +168,7 @@ Shader "Rollgeon/PaletteCelLitPattern"
                 float4 _ColorB;
                 float4 _DetailColor;
                 float4 _BGColor;
+                float4 _TopFaceColor;
                 float  _ShadowThreshold;
                 float  _MidThreshold;
                 float  _ShadowSmooth;
@@ -146,6 +179,13 @@ Shader "Rollgeon/PaletteCelLitPattern"
                 float  _DitherStrength;
                 float  _UseShadowDither;
                 float  _ShadowDitherDensity;
+                float  _EnableMetallic;
+                float  _FresnelPower;
+                float  _FresnelStrength;
+                float  _MetallicFill;
+                float  _MetallicDetail;
+                float  _MetallicBG;
+                float  _MetallicTopFace;
                 float  _EnableCrease;
                 float  _CreaseDarken;
                 float  _CreaseThreshold;
@@ -161,6 +201,9 @@ Shader "Rollgeon/PaletteCelLitPattern"
                 float  _EnableEmission;
                 float4 _EmissionColor;
             CBUFFER_END
+
+            // Arrays globales subidos por GlobalPaletteManager cada frame
+            float4 _PaletteMidColors[32];
 
             struct Attributes
             {
@@ -367,11 +410,19 @@ Shader "Rollgeon/PaletteCelLitPattern"
                     && (abs(normalWS.y) > abs(normalWS.x))
                     && (abs(normalWS.y) > abs(normalWS.z));
 
+                float3 colA = _UsePalette > 0.5 ? _PaletteMidColors[int(_SlotColorA)].rgb : _ColorA.rgb;
+                float3 colB = _UsePalette > 0.5 ? _PaletteMidColors[int(_SlotColorB)].rgb : _ColorB.rgb;
+                float3 colDetail = _UsePalette > 0.5 ? _PaletteMidColors[int(_SlotDetail)].rgb : _DetailColor.rgb;
+                float3 colBG = _UsePalette > 0.5 ? _PaletteMidColors[int(_SlotBG)].rgb : _BGColor.rgb;
+                float3 colTopFace = _UsePalette > 0.5 ? _PaletteMidColors[int(_SlotTopFace)].rgb : _TopFaceColor.rgb;
+
                 float3 patternColor;
+                float  zoneMetallic;
 
                 if (isTopFace)
                 {
-                    patternColor = _ColorA.rgb;
+                    patternColor = colTopFace;
+                    zoneMetallic = _MetallicTopFace;
                 }
                 else
                 {
@@ -388,7 +439,7 @@ Shader "Rollgeon/PaletteCelLitPattern"
 
                     bool   onAnyBorder = false;
                     bool   inAnyFill   = false;
-                    float3 fillColor   = _BGColor.rgb;
+                    float3 fillColor   = colBG;
 
                     for (int ndy = -1; ndy <= 1; ndy++)
                     for (int ndx = -1; ndx <= 1; ndx++)
@@ -409,7 +460,7 @@ Shader "Rollgeon/PaletteCelLitPattern"
                         else                          altIdx = fmod(abs(nCell.x), 2.0);
                         if (nCell.y < _SolidRows) altIdx = 0.0;
 
-                        float3 baseCol = altIdx > 0.5 ? _ColorB.rgb : _ColorA.rgb;
+                        float3 baseCol = altIdx > 0.5 ? colB : colA;
 
                         if (_DetailType < 0.5) // Flat
                         {
@@ -431,14 +482,26 @@ Shader "Rollgeon/PaletteCelLitPattern"
                             {
                                 inAnyFill = true;
                                 float t = saturate(length(pSc) / (_ShapeSize * 0.47));
-                                fillColor = lerp(_DetailColor.rgb, baseCol, t);
+                                fillColor = lerp(colDetail, baseCol, t);
                             }
                         }
                     }
 
-                    if      (onAnyBorder) patternColor = _DetailColor.rgb;
-                    else if (inAnyFill)   patternColor = lerp(fillColor, _BGColor.rgb, 1.0 - _ShapeOpacity);
-                    else                  patternColor = _BGColor.rgb;
+                    if (onAnyBorder)
+                    {
+                        patternColor = colDetail;
+                        zoneMetallic = _MetallicDetail;
+                    }
+                    else if (inAnyFill)
+                    {
+                        patternColor = lerp(fillColor, colBG, 1.0 - _ShapeOpacity);
+                        zoneMetallic = _MetallicFill;
+                    }
+                    else
+                    {
+                        patternColor = colBG;
+                        zoneMetallic = _MetallicBG;
+                    }
                 }
 
                 // ── Luz ──────────────────────────────────────────────────────────
@@ -529,6 +592,22 @@ Shader "Rollgeon/PaletteCelLitPattern"
                     color = lerp(color, creaseColor, creaseVal * _CreaseAlpha);
                 }
 
+                // ── Metallic Sheen (Fresnel de borde) ───────────────────────────
+                // Blinn-Phong (dot(N, luz+vista)) depende del ángulo de LUZ además
+                // del de cámara — con luz direccional fija (isométrico), algunas
+                // orientaciones de pared nunca caen cerca de ese ángulo y quedan
+                // sin brillo aunque el resto ande bien. Fresnel solo depende del
+                // ángulo cámara-normal, así que las 4 paredes (ninguna mira a la
+                // cámara de frente en isométrico) lo muestran de forma consistente.
+                // Tintado por patternColor (no blanco puro) — glow del mismo color.
+                if (_EnableMetallic > 0.5 && zoneMetallic > 0.5)
+                {
+                    float3 viewDirWS = normalize(IN.viewDirWS);
+                    float  fresnel = pow(1.0 - saturate(dot(normalWS, viewDirWS)), _FresnelPower)
+                                     * _FresnelStrength;
+                    color += fresnel * patternColor;
+                }
+
                 color = saturate(color + addTint * _LightTintStrength);
                 color = lerp(color, _HitFlashColor.rgb, _HitFlashAmount);
                 color += _EmissionColor.rgb * _EnableEmission;
@@ -558,14 +637,17 @@ Shader "Rollgeon/PaletteCelLitPattern"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Shadows.hlsl"
 
             CBUFFER_START(UnityPerMaterial)
+                float _UsePalette; float _SlotColorA; float _SlotColorB; float _SlotDetail; float _SlotBG; float _SlotTopFace;
                 float _ShapeType; float _PatternType; float _DetailType;
                 float _TileScale; float _ShapeSize; float _ShapeScaleX; float _ShapeScaleY; float _ShapeOpacity;
                 float _BorderWidth; float _SolidRows; float _FlattenTopFaces;
-                float4 _ColorA; float4 _ColorB; float4 _DetailColor; float4 _BGColor;
+                float4 _ColorA; float4 _ColorB; float4 _DetailColor; float4 _BGColor; float4 _TopFaceColor;
                 float _ShadowThreshold; float _MidThreshold; float _ShadowSmooth;
                 float _LightWrap; float _ShadowDarken; float _LightBrighten;
                 float _UseDither; float _DitherStrength;
                 float _UseShadowDither; float _ShadowDitherDensity;
+                float _EnableMetallic; float _FresnelPower; float _FresnelStrength;
+                float _MetallicFill; float _MetallicDetail; float _MetallicBG; float _MetallicTopFace;
                 float _EnableCrease; float _CreaseDarken;
                 float _CreaseThreshold; float _CreaseSmooth; float _CreaseAlpha; float _CreaseDither;
                 float _LightTintStrength; float _AlphaCutoff; float _DitherScale; float _SpotDither;
@@ -637,14 +719,17 @@ Shader "Rollgeon/PaletteCelLitPattern"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 
             CBUFFER_START(UnityPerMaterial)
+                float _UsePalette; float _SlotColorA; float _SlotColorB; float _SlotDetail; float _SlotBG; float _SlotTopFace;
                 float _ShapeType; float _PatternType; float _DetailType;
                 float _TileScale; float _ShapeSize; float _ShapeScaleX; float _ShapeScaleY; float _ShapeOpacity;
                 float _BorderWidth; float _SolidRows; float _FlattenTopFaces;
-                float4 _ColorA; float4 _ColorB; float4 _DetailColor; float4 _BGColor;
+                float4 _ColorA; float4 _ColorB; float4 _DetailColor; float4 _BGColor; float4 _TopFaceColor;
                 float _ShadowThreshold; float _MidThreshold; float _ShadowSmooth;
                 float _LightWrap; float _ShadowDarken; float _LightBrighten;
                 float _UseDither; float _DitherStrength;
                 float _UseShadowDither; float _ShadowDitherDensity;
+                float _EnableMetallic; float _FresnelPower; float _FresnelStrength;
+                float _MetallicFill; float _MetallicDetail; float _MetallicBG; float _MetallicTopFace;
                 float _EnableCrease; float _CreaseDarken;
                 float _CreaseThreshold; float _CreaseSmooth; float _CreaseAlpha; float _CreaseDither;
                 float _LightTintStrength; float _AlphaCutoff; float _DitherScale; float _SpotDither;
@@ -691,14 +776,17 @@ Shader "Rollgeon/PaletteCelLitPattern"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 
             CBUFFER_START(UnityPerMaterial)
+                float _UsePalette; float _SlotColorA; float _SlotColorB; float _SlotDetail; float _SlotBG; float _SlotTopFace;
                 float _ShapeType; float _PatternType; float _DetailType;
                 float _TileScale; float _ShapeSize; float _ShapeScaleX; float _ShapeScaleY; float _ShapeOpacity;
                 float _BorderWidth; float _SolidRows; float _FlattenTopFaces;
-                float4 _ColorA; float4 _ColorB; float4 _DetailColor; float4 _BGColor;
+                float4 _ColorA; float4 _ColorB; float4 _DetailColor; float4 _BGColor; float4 _TopFaceColor;
                 float _ShadowThreshold; float _MidThreshold; float _ShadowSmooth;
                 float _LightWrap; float _ShadowDarken; float _LightBrighten;
                 float _UseDither; float _DitherStrength;
                 float _UseShadowDither; float _ShadowDitherDensity;
+                float _EnableMetallic; float _FresnelPower; float _FresnelStrength;
+                float _MetallicFill; float _MetallicDetail; float _MetallicBG; float _MetallicTopFace;
                 float _EnableCrease; float _CreaseDarken;
                 float _CreaseThreshold; float _CreaseSmooth; float _CreaseAlpha; float _CreaseDither;
                 float _LightTintStrength; float _AlphaCutoff; float _DitherScale; float _SpotDither;

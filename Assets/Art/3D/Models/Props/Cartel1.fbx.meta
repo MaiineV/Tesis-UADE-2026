@@ -13,7 +13,7 @@ ModelImporter:
       type: UnityEngine:Material
       assembly: UnityEngine.CoreModule
       name: red
-    second: {fileID: 2100000, guid: 32fe36c4195d3974484250e7e67bb49d, type: 2}
+    second: {fileID: 2100000, guid: c8884ba4adaff8d448551e7d02a6f8c8, type: 2}
   - first:
       type: UnityEngine:Material
       assembly: UnityEngine.CoreModule
@@ -23,7 +23,7 @@ ModelImporter:
       type: UnityEngine:Material
       assembly: UnityEngine.CoreModule
       name: yellow
-    second: {fileID: 2100000, guid: 1f0a232f5b988d84984e61d919c499f3, type: 2}
+    second: {fileID: 2100000, guid: 1265d8cd92b71984e9f5173d797b560e, type: 2}
   materials:
     materialImportMode: 2
     materialName: 0

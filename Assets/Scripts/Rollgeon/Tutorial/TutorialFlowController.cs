@@ -1399,21 +1399,21 @@ namespace Rollgeon.Tutorial
             {
                 AnchorKind = TutorialAnchorKind.None,
                 Text = LocalizedContent.Ui(TutorialTextKeys.EnchantTable,
-                    "Elige un dado y un cupo, y confirma: el encantamiento sale al azar — y puede ser malo."),
+                    "Elige un dado y tira de la palanca: aparecen 3 encantamientos y el que elijas se suma al dado."),
                 InputPolicy = TutorialInputPolicy.BlockUntilContinue,
             }, ShowEnchantRerollHint);
         }
 
-        // Segundo popup de la mesa: el resultado es una apuesta, y el reemplazo
-        // (pagando cada vez más) es la forma de arreglar uno malo. Solo se explica —
-        // la economía del tutorial alcanza para exactamente un encantamiento.
+        // Segundo popup de la mesa: si la oferta no convence, se puede volver a
+        // tirar — pagando de nuevo, y cada tirada del mismo dado cuesta más. Solo
+        // se explica — la economía del tutorial alcanza para pocas tiradas.
         private void ShowEnchantRerollHint()
         {
             ShowStep(TutorialStep.Enchant, new TutorialStepDisplayRequest
             {
                 AnchorKind = TutorialAnchorKind.None,
                 Text = LocalizedContent.Ui(TutorialTextKeys.EnchantReroll,
-                    "Si no te gusta el resultado, puedes reemplazarlo pagando de nuevo: cada reemplazo cuesta más oro."),
+                    "¿Ninguno te convence? Tira de la palanca otra vez para ver 3 opciones nuevas: cada tirada cuesta más oro."),
                 InputPolicy = TutorialInputPolicy.BlockUntilContinue,
             }, () => Overlay()?.Hide());
         }

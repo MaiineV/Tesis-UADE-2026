@@ -389,5 +389,17 @@ namespace Patterns
         /// deshabilitado). El tutorial lo consume para gatear el paso de cámara — practicar
         /// el zoom real, no solo leer el texto.</summary>
         OnCameraZoomChanged,
+
+        // --- Movement die (§6.6) --------------------------------------------------
+        // NOTA: al final absoluto del enum a propósito (ver OnReinforcementSpawned).
+        /// <summary>args: [Guid playerGuid, int face, DiceType type]. El dado de Movimiento
+        /// (entidad separada de la build de 5) reveló su cara; la cara es el rango de esa
+        /// acción de Movimiento. NO dispara <c>OnDiceRolled</c> — el DiceZoneView no lo ve.
+        /// Cierra la mesa de dados (ActionRollExplorationVisibility / CombatHudZoneFlow).</summary>
+        OnMovementDieRolled,
+        /// <summary>args: [Guid playerGuid, DiceType type]. Arrancó la tirada del dado de
+        /// Movimiento con presenter (spin en la mesa). Abre la mesa de dados igual que
+        /// <c>OnDiceRolled</c>/<c>OnChainStarted</c>. No se emite en reveals sincrónicos.</summary>
+        OnMovementDieRollStarted,
     }
 }

@@ -119,11 +119,13 @@ Material:
     - _EnableCrease: 0
     - _EnableWear: 1
     - _EnvironmentReflections: 1
+    - _FloorSlot: 0
     - _GlossMapScale: 0
     - _Glossiness: 0
     - _GlossyReflections: 0
+    - _HitFlashAmount: 0
     - _LightBrighten: 0.668
-    - _LightTintStrength: 0.104
+    - _LightTintStrength: 0.034
     - _LightWrap: -0.231
     - _Metallic: 0
     - _MidThreshold: 0.475
@@ -165,6 +167,7 @@ Material:
     - _TearThreshold: 0.35
     - _TileScale: 1
     - _UseDither: 0
+    - _UsePalette: 0
     - _UseShadowDither: 1
     - _WearAnisotropy: 0.5
     - _WearDarken: 1
@@ -184,6 +187,7 @@ Material:
     - _ColorB: {r: 0.25999996, g: 0.059999965, b: 0.059999965, a: 1}
     - _DetailColor: {r: 0.54999995, g: 0.41999996, b: 0.049999982, a: 1}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
+    - _HitFlashColor: {r: 1, g: 1, b: 1, a: 1}
     - _MortarColor: {r: 0.6, g: 0.54999995, b: 0.47999996, a: 1}
     - _SpecColor: {r: 0.19999996, g: 0.19999996, b: 0.19999996, a: 1}
     - _TearEdgeColor: {r: 0.85, g: 0.78, b: 0.54999995, a: 1}

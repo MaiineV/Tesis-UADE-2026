@@ -4,6 +4,7 @@ using System.Linq;
 using Rollgeon.Dice;
 using Rollgeon.Entities.Behaviors;
 using Rollgeon.Items;
+using Rollgeon.Movement.Die;
 using Rollgeon.Phase;
 using Sirenix.OdinInspector;
 using Sirenix.Serialization;
@@ -130,6 +131,12 @@ namespace Rollgeon.Heroes
         [Tooltip("[STUB] — elevated by Hero Template task. Opaque ref al DiceBagSO inicial " +
                  "de la clase (DiceBagSO aun no existe).")]
         public ScriptableObject StartingDiceBagRef;
+
+        [Title("Movement Die")]
+        [Tooltip("Dado de Movimiento de la clase (§6.6). Entidad separada de la build de 5: " +
+                 "se tira solo al resolver Movimiento en combate y su cara define el rango. " +
+                 "Null = D4.")]
+        public MovementDieSO StartingMovementDie;
 
         [Title("Dice Bag Pool (Fase 2)")]
         [Tooltip("Pool de dados disponibles para la clase. El jugador arma su bolsa de 5 " +

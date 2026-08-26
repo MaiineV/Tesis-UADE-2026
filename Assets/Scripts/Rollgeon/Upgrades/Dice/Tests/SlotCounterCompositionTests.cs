@@ -125,7 +125,7 @@ namespace Rollgeon.Upgrades.Dice.Tests
                     IncrementAndExplodeOnTurnFinished(maxTurns),
                 });
 
-            Assert.IsTrue(_svc.Apply(0, 0, ench).Success);
+            Assert.IsTrue(_svc.Apply(0, ench).Success);
             return ench;
         }
 

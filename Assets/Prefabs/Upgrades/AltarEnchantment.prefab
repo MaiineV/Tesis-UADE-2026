@@ -71,8 +71,6 @@ MonoBehaviour:
   InteractLabel: 
   _interactRange: 1.5
   _interactKey: 20
-  _promptVisual: {fileID: 0}
-  _promptLabel: {fileID: 0}
   _tooltipTrigger: {fileID: 6535375700932073643}
 --- !u!114 &6535375700932073643
 MonoBehaviour:
@@ -87,8 +85,14 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Rollgeon::Rollgeon.UI.Tooltips.WorldTooltipTrigger
   _mode: 1
+  _placement:
+    Mode: 0
+    FixedAnchor: {fileID: 0}
+    FixedOffset: {x: 0, y: 0}
   _camera: {fileID: 0}
   _raycastDistance: 100
+  _previewText: "<b>Forzar Puerta</b>\nCosto: 2 de energ\xEDa\nPuntaje a superar:
+    25"
 --- !u!1001 &2466594979785779208
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -137,6 +141,26 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: -7511558181221131132, guid: 91d45488a9c2365469473c22878aa471, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: fd993b79a689da5429c2d0623fba4a80, type: 2}
+    - target: {fileID: -7511558181221131132, guid: 91d45488a9c2365469473c22878aa471, type: 3}
+      propertyPath: 'm_Materials.Array.data[1]'
+      value: 
+      objectReference: {fileID: 2100000, guid: cd32b95fe4fe2644aa6ee4d9a12671f4, type: 2}
+    - target: {fileID: -7511558181221131132, guid: 91d45488a9c2365469473c22878aa471, type: 3}
+      propertyPath: 'm_Materials.Array.data[2]'
+      value: 
+      objectReference: {fileID: 2100000, guid: 709d128d523a6c645b8dba84ad6d2f4a, type: 2}
+    - target: {fileID: -7511558181221131132, guid: 91d45488a9c2365469473c22878aa471, type: 3}
+      propertyPath: 'm_Materials.Array.data[3]'
+      value: 
+      objectReference: {fileID: 2100000, guid: e14e62372ce83cc4296d02f37d861e52, type: 2}
+    - target: {fileID: -7511558181221131132, guid: 91d45488a9c2365469473c22878aa471, type: 3}
+      propertyPath: 'm_Materials.Array.data[6]'
+      value: 
+      objectReference: {fileID: 2100000, guid: 9f1857737d7c5f84dbee9130c7a196ae, type: 2}
     - target: {fileID: 919132149155446097, guid: 91d45488a9c2365469473c22878aa471, type: 3}
       propertyPath: m_Name
       value: MesaEncantamientosv02

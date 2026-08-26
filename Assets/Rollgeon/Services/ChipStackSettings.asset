@@ -15,6 +15,7 @@ MonoBehaviour:
   HealthChip: {fileID: 1611900147, guid: cca52ed63b2fdae4ca26627a5c6beed8, type: 3}
   ShieldChip: {fileID: -18201817, guid: cca52ed63b2fdae4ca26627a5c6beed8, type: 3}
   EnergyChip: {fileID: -163928928, guid: cca52ed63b2fdae4ca26627a5c6beed8, type: 3}
+  RollCup: {fileID: 399862200, guid: 6d08ba971f4eee34d9bae78b782c7dc4, type: 3}
   GoldChipFlat: {fileID: -1590291716, guid: 55b21875323eef642a528fe5a0fd2874, type: 3}
   GoldChipTilted: {fileID: -332512725, guid: 55b21875323eef642a528fe5a0fd2874, type: 3}
   PotionFull: {fileID: -2101014440, guid: b6568abed2869da409ddf4c38de78986, type: 3}
@@ -22,7 +23,6 @@ MonoBehaviour:
   ChipScale: 1.2
   ChipSpacingY: 17
   GoldChipSpacingY: 10
-  MaxVisibleChips: 30
   DropHeight: 60
   DropDuration: 0.28
   DropEase: 30
@@ -33,6 +33,8 @@ MonoBehaviour:
   ShakeDuration: 0.25
   ShakeStrengthX: 6
   ShakeFrequency: 20
+  GhostChipAlpha: 0.25
+  GhostChipTint: {r: 0.6509804, g: 0.6509804, b: 0.6509804, a: 1}
   ShieldHex: A3B3B1
   ChipDropClip: {fileID: 0}
   ChipSpendClip: {fileID: 0}

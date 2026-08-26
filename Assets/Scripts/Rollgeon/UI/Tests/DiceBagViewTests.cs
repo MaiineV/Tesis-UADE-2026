@@ -70,26 +70,26 @@ namespace Rollgeon.UI.Tests
         }
 
         [Test]
-        public void should_show_used_over_total_slots()
+        public void should_show_the_enchant_count_with_the_localized_suffix()
         {
             // Arrange
             var card = MakeCard(out _, out var slots, out _, out _);
 
             // Act
-            card.Bind(MakeSprite("d6"), maxFace: 6, usedSlots: 2, totalSlots: 3, "cupos", onClick: null);
+            card.Bind(MakeSprite("d6"), maxFace: 6, enchantCount: 2, "encantamientos", onClick: null);
 
             // Assert
-            Assert.AreEqual("2/3 cupos", slots.text);
+            Assert.AreEqual("2 encantamientos", slots.text);
         }
 
         [Test]
-        public void should_hide_the_counter_for_a_die_with_no_slots()
+        public void should_hide_the_counter_for_a_die_with_no_enchantments()
         {
-            // Arrange — hay tipos de dado sin cupos; "0/0 cupos" sería ruido.
+            // Arrange — hay dados sin encantar; "0 encantamientos" sería ruido.
             var card = MakeCard(out _, out var slots, out _, out _);
 
             // Act
-            card.Bind(MakeSprite("d4"), maxFace: 4, usedSlots: 0, totalSlots: 0, "cupos", onClick: null);
+            card.Bind(MakeSprite("d4"), maxFace: 4, enchantCount: 0, "encantamientos", onClick: null);
 
             // Assert
             Assert.AreEqual(string.Empty, slots.text);
@@ -100,7 +100,7 @@ namespace Rollgeon.UI.Tests
         {
             // Arrange
             var card = MakeCard(out var frame, out _, out var idle, out var selected);
-            card.Bind(MakeSprite("d6"), 6, 0, 3, "cupos", null);
+            card.Bind(MakeSprite("d6"), 6, 0, "encantamientos", null);
 
             // Act + Assert
             card.SetSelected(true);
@@ -116,7 +116,7 @@ namespace Rollgeon.UI.Tests
             // Arrange
             var card = MakeCard(out var frame, out _, out _, out _);
             int clicks = 0;
-            card.Bind(MakeSprite("d6"), 6, 0, 3, "cupos", () => clicks++);
+            card.Bind(MakeSprite("d6"), 6, 0, "encantamientos", () => clicks++);
 
             // Act
             frame.gameObject.GetComponent<Button>().onClick.Invoke();

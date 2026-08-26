@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using Patterns;
 using PrimeTween;
 using Rollgeon.Dice;
@@ -16,17 +15,20 @@ using LocalizedContent = Rollgeon.Localization.LocalizedContent;
 namespace Rollgeon.Upgrades.Dice.UI
 {
     /// <summary>
-    /// Pantalla de la Sala de Encantamiento. Se subscribe a
-    /// <c>OnEnchantmentAltarActivated</c> y abre el flow de selección de dado +
-    /// cupo + confirmar, con el layout del mock del altar: fondo del sheet de UI,
-    /// dados del inventario como cards (sprite + nº de caras), cupos como selects
-    /// con la descripción del encantamiento abajo y pila de oro completa.
+    /// Pantalla de la Sala de Encantamiento, versión máquina (mock
+    /// <c>nuevaUIMesa.jpeg</c>): el fondo del modal ES la slot machine
+    /// (<c>SlotMachine_0</c>). Flujo palanca-primero: el jugador tira la palanca
+    /// (paga el roll — <c>RollOffer</c>), los 3 slots giran y revelan
+    /// encantamientos; elige UNO (outline fijo), después elige un dado válido de
+    /// la repisa (sube y brilla con el holo de encantado) y el botón Confirmar
+    /// —que pulsa entre prendido y apagado— aplica (<c>ConfirmChoice</c>).
     /// </summary>
     /// <remarks>
     /// <para>
-    /// <b>State.</b> No usamos un FSM — todos los elementos están visibles, se
-    /// actualizan según selección. Confirm queda disabled hasta tener slot
-    /// seleccionado + oro suficiente.
+    /// <b>State.</b> Oferta (fuente de verdad:
+    /// <see cref="IEnchantmentRoomService.CurrentOffer"/>) + índice de opción y
+    /// de dado elegidos + flag de spin. Re-tirar la palanca con oferta activa
+    /// la reemplaza (re-roll del GDD) y limpia las selecciones.
     /// </para>
     /// <para>
     /// <b>Cierre.</b> <c>OnEnchantmentAltarClosed</c> se emite SIEMPRE sincrónico
@@ -39,48 +41,35 @@ namespace Rollgeon.Upgrades.Dice.UI
     {
         private const string LogPrefix = "[EnchantmentAltarView] ";
 
-        [Title("Root + chrome")]
+        [Title("Root")]
         [Required, SerializeField] private GameObject _panelRoot;
-        [SerializeField] private TextMeshProUGUI _titleLabel;
-        [SerializeField] private TextMeshProUGUI _goldLabel;
 
-        [Tooltip("Pila de oro completa del panel — el label de cantidad es _goldLabel.")]
-        [SerializeField, Optional] private AltarGoldDisplayView _goldDisplay;
+        [Title("Slot machine — opciones")]
+        [InfoBox("Los 3 slots de la slot machine, izquierda a derecha.")]
+        [SerializeField] private EnchantmentOptionSlotView[] _optionSlots;
 
-        [Tooltip("Pila de oro junto al costo — mismo icono que la del oro.")]
+        [Tooltip("Descripción / hints / resultado — la barra bajo los slots.")]
+        [SerializeField] private TextMeshProUGUI _optionDescriptionLabel;
+
+        [Title("Slot machine — repisa de dados")]
+        [InfoBox("Las 5 posiciones de la repisa de la máquina, izquierda a derecha.")]
+        [SerializeField] private AltarDieSlotView[] _dieSlots;
+
+        [Title("Slot machine — palanca")]
+        [SerializeField] private AltarLeverView _lever;
+
+        [Tooltip("Título de la caja de costo ('Tirada'), arriba al centro.")]
+        [SerializeField, Optional] private TextMeshProUGUI _costTitleLabel;
+
+        [Tooltip("Valor del costo del próximo roll — objeto separado, abajo junto a la pila.")]
+        [SerializeField] private TextMeshProUGUI _costLabel;
+
+        [Tooltip("Pila de fichas de oro de la caja de costo — el ícono canónico de oro.")]
         [SerializeField, Optional] private AltarGoldDisplayView _costGoldDisplay;
 
-        [Title("Dice list")]
-        [InfoBox("Container donde se instancian los 5 botones (uno por dado del bag). " +
-                 "El prefab debe tener EnchantmentItemButtonView.")]
-        [Required, SerializeField] private Transform _diceContainer;
-        [Required, SerializeField] private EnchantmentItemButtonView _diceButtonPrefab;
-
-        [Title("Slot list (del dado seleccionado)")]
-        [Required, SerializeField] private Transform _slotContainer;
-        [Required, SerializeField] private EnchantmentItemButtonView _slotButtonPrefab;
-
-        [Tooltip("Descripción del encantamiento del cupo seleccionado, debajo de la fila de cupos.")]
-        [SerializeField, Optional] private TextMeshProUGUI _slotDescriptionLabel;
-
-        [Title("Caras actuales")]
-        [Tooltip("Container de mini-cards de caras. Sin asignar, cae al texto de _facesPreviewLabel.")]
-        [SerializeField, Optional] private Transform _facesContainer;
-        [SerializeField, Optional] private EnchantmentFaceCardView _faceCardPrefab;
-
-        [Title("Captions (opcionales — el view los localiza al abrir)")]
-        [SerializeField, Optional] private TextMeshProUGUI _diceCaptionLabel;
-        [SerializeField, Optional] private TextMeshProUGUI _slotCaptionLabel;
-        [SerializeField, Optional] private TextMeshProUGUI _facesCaptionLabel;
-
-        [Title("Selection feedback + actions")]
-        [SerializeField] private TextMeshProUGUI _costLabel;
-        [SerializeField] private TextMeshProUGUI _facesPreviewLabel;
-        [Required, SerializeField] private Button _confirmButton;
+        [Title("Botones")]
+        [SerializeField] private AltarConfirmButtonView _confirmButton;
         [SerializeField] private Button _closeButton;
-
-        [Title("Result feedback")]
-        [SerializeField] private TextMeshProUGUI _resultLabel;
 
         [Title("Settings")]
         [Tooltip("Sprites por tipo de dado — mismos que la build selection.")]
@@ -102,15 +91,14 @@ namespace Rollgeon.Upgrades.Dice.UI
         // ----- Runtime state ----------------------------------------------------
         private bool _subscribed;
         private Guid _currentRoomInstanceId;
+        private int _selectedOptionIndex = -1;
         private int _selectedBagIndex = -1;
-        private int _selectedSlotIndex = -1;
+        private bool _spinning;
         private bool _closing;
         private RectTransform _panelRect;
         private CanvasGroup _panelCanvasGroup;
-        private CanvasGroup _resultCanvasGroup;
-        private readonly List<EnchantmentItemButtonView> _diceButtons = new List<EnchantmentItemButtonView>();
-        private readonly List<EnchantmentItemButtonView> _slotButtons = new List<EnchantmentItemButtonView>();
-        private readonly List<EnchantmentFaceCardView> _faceCards = new List<EnchantmentFaceCardView>();
+        private CanvasGroup _descriptionCanvasGroup;
+        private int _reelsPending;
 
         // ====================================================================
         // Lifecycle
@@ -119,14 +107,34 @@ namespace Rollgeon.Upgrades.Dice.UI
         private void Awake()
         {
             if (_panelRoot != null) _panelRoot.SetActive(false);
-            if (_confirmButton != null) _confirmButton.onClick.AddListener(HandleConfirmClicked);
             if (_closeButton != null) _closeButton.onClick.AddListener(HandleCloseClicked);
+            if (_confirmButton != null && _confirmButton.Button != null)
+                _confirmButton.Button.onClick.AddListener(HandleConfirmClicked);
+            if (_lever != null) _lever.OnPulled += HandleLeverPulled;
+            if (_optionSlots != null)
+            {
+                for (int i = 0; i < _optionSlots.Length; i++)
+                {
+                    if (_optionSlots[i] == null) continue;
+                    _optionSlots[i].Configure(i, HandleOptionClicked, HandleOptionHoverChanged);
+                }
+            }
+            if (_dieSlots != null)
+            {
+                for (int i = 0; i < _dieSlots.Length; i++)
+                {
+                    if (_dieSlots[i] == null) continue;
+                    _dieSlots[i].Configure(i, HandleDieClicked);
+                }
+            }
         }
 
         private void OnDestroy()
         {
-            if (_confirmButton != null) _confirmButton.onClick.RemoveListener(HandleConfirmClicked);
             if (_closeButton != null) _closeButton.onClick.RemoveListener(HandleCloseClicked);
+            if (_confirmButton != null && _confirmButton.Button != null)
+                _confirmButton.Button.onClick.RemoveListener(HandleConfirmClicked);
+            if (_lever != null) _lever.OnPulled -= HandleLeverPulled;
         }
 
         private void OnEnable() => Subscribe();
@@ -151,6 +159,7 @@ namespace Rollgeon.Upgrades.Dice.UI
             if (_panelRoot == null || !_panelRoot.activeSelf) return;
             _panelRoot.SetActive(false);
             RestorePanelPose();
+            ClearRoomOffer();
 
             // Si el disable llegó en medio del tween-out del botón de cerrar, el
             // Closed ya se emitió sincrónico en HandleCloseClicked — no duplicar.
@@ -195,8 +204,7 @@ namespace Rollgeon.Upgrades.Dice.UI
 
         private void HandleGoldChanged(params object[] args)
         {
-            RefreshGoldDisplay(animate: true);
-            RefreshConfirmButtonState();
+            RefreshLeverAndCost();
         }
 
         // ====================================================================
@@ -214,29 +222,27 @@ namespace Rollgeon.Upgrades.Dice.UI
             StopPanelTweens();
             RestorePanelPose();
             _closing = false;
+            _spinning = false;
             _panelRoot.SetActive(true);
 
-            _selectedBagIndex = -1;
-            _selectedSlotIndex = -1;
-            if (_resultLabel != null) _resultLabel.text = string.Empty;
+            ClearSelections();
+            ClearRoomOffer();
+            ResetOptionSlots();
+            BindDiceShelf();
+            if (_confirmButton != null) _confirmButton.SetReady(false);
 
-            if (_titleLabel != null)
-                _titleLabel.text = LocalizedContent.Ui("altar.title", "Altar de Encantamiento");
             ApplyCaptions();
-
-            PopulateDiceButtons();
-            ClearSlotButtons();
-            RefreshGoldDisplay(animate: true);
-            RefreshSelectionLabels();
-            RefreshConfirmButtonState();
+            SetDescriptionHint(DescriptionHint.PullLever);
+            RefreshLeverAndCost();
+            if (_costGoldDisplay != null) _costGoldDisplay.Refresh(animate: false);
 
             PlayOpenJuice();
-            PlayCardsEntrance(_diceButtons);
         }
 
         private void HandleCloseClicked()
         {
             if (_closing) return;
+            ClearRoomOffer();
 
             // El gate de movimiento espera el Closed sincrónico — el tween de salida
             // es solo cosmético y corre después de avisar.
@@ -304,7 +310,8 @@ namespace Rollgeon.Upgrades.Dice.UI
         {
             if (_panelRect != null) Tween.StopAll(onTarget: _panelRect);
             if (_panelCanvasGroup != null) Tween.StopAll(onTarget: _panelCanvasGroup);
-            if (_resultCanvasGroup != null) Tween.StopAll(onTarget: _resultCanvasGroup);
+            if (_descriptionCanvasGroup != null) Tween.StopAll(onTarget: _descriptionCanvasGroup);
+            _spinning = false; // los reels en vuelo los frena cada slot (OnDisable / SetEmpty)
         }
 
         private void RestorePanelPose()
@@ -315,18 +322,15 @@ namespace Rollgeon.Upgrades.Dice.UI
                 _panelCanvasGroup.alpha = 1f;
                 _panelCanvasGroup.blocksRaycasts = true;
             }
-            if (_resultCanvasGroup != null) _resultCanvasGroup.alpha = 1f;
+            if (_descriptionCanvasGroup != null) _descriptionCanvasGroup.alpha = 1f;
         }
 
         private void ApplyCaptions()
         {
-            if (_diceCaptionLabel != null)
-                _diceCaptionLabel.text = LocalizedContent.Ui("altar.your_dice", "Tus dados:");
-            if (_slotCaptionLabel != null)
-                _slotCaptionLabel.text = LocalizedContent.Ui("altar.choose_slot", "Elige el cupo del dado seleccionado:");
-            if (_facesCaptionLabel != null)
-                _facesCaptionLabel.text = LocalizedContent.Ui("altar.current_faces", "Caras actuales") + ":";
-            SetButtonLabel(_confirmButton, LocalizedContent.Ui("altar.confirm", "Confirmar"));
+            if (_costTitleLabel != null)
+                _costTitleLabel.text = LocalizedContent.Ui("altar.roll", "Tirada");
+            if (_confirmButton != null)
+                SetButtonLabel(_confirmButton.Button, LocalizedContent.Ui("altar.confirm", "Confirmar"));
             SetButtonLabel(_closeButton, LocalizedContent.Ui("altar.close", "Cerrar"));
         }
 
@@ -338,146 +342,401 @@ namespace Rollgeon.Upgrades.Dice.UI
         }
 
         // ====================================================================
-        // Dice list
+        // Repisa de dados
         // ====================================================================
 
-        private void PopulateDiceButtons()
+        private void BindDiceShelf()
         {
-            // Limpiar previos
-            foreach (var btn in _diceButtons)
+            if (_dieSlots == null || _dieSlots.Length == 0)
             {
-                if (btn != null) Destroy(btn.gameObject);
+                Debug.LogError(LogPrefix + "_dieSlots sin asignar — la repisa queda vacía.", this);
+                ShowError(LocalizedContent.Ui("altar.load_error",
+                    "No se pudieron cargar los dados — cierra la mesa y vuelve a intentar."));
+                return;
             }
-            _diceButtons.Clear();
 
             if (!ServiceLocator.TryGetService<IDiceEnchantmentService>(out var enchSvc)
                 || enchSvc == null || !enchSvc.IsReady || enchSvc.Bag == null)
             {
-                Debug.LogWarning(LogPrefix + "DiceEnchantmentService no listo — no se pueden listar dados.");
-                ShowEmptyStateMessage();
-                return;
-            }
-            if (_diceButtonPrefab == null || _diceContainer == null)
-            {
-                // Este return era 100% mudo — un ref desconectado en el prefab dejaba
-                // la mesa abierta y vacía sin ninguna pista (bug de la mesa del tutorial).
-                Debug.LogError(LogPrefix + "_diceButtonPrefab o _diceContainer sin asignar — la lista de dados queda vacía.", this);
-                ShowEmptyStateMessage();
+                Debug.LogWarning(LogPrefix + "DiceEnchantmentService no listo — no se pueden mostrar dados.");
+                ShowError(LocalizedContent.Ui("altar.load_error",
+                    "No se pudieron cargar los dados — cierra la mesa y vuelve a intentar."));
                 return;
             }
 
             var bag = enchSvc.Bag;
-            for (int b = 0; b < bag.Dice.Count; b++)
+            for (int i = 0; i < _dieSlots.Length; i++)
             {
-                int bagIndex = b; // capture
-                var dice = bag.Dice[b];
-                int total = dice.MaxEnchantmentSlots();
-                int used = CountUsedSlots(bag, b);
+                var slot = _dieSlots[i];
+                if (slot == null) continue;
 
-                var slots = bag.GetEnchantments(b);
+                bool occupied = i < bag.Dice.Count;
+                slot.SetOccupied(occupied);
+                if (!occupied) continue;
 
-                var btn = Instantiate(_diceButtonPrefab, _diceContainer);
-                // La card se identifica por el sprite + nº de caras — sin label de
-                // texto del tipo ni del slot de equipamiento (decisión de diseño:
-                // los dados van en orden de inventario, el slot no se muestra).
-                btn.Configure(
-                    label: string.Empty,
-                    subLabel: $"{used}/{total} {LocalizedContent.Ui("altar.slots_suffix", "cupos")}",
-                    onClick: () => HandleDiceClicked(bagIndex),
-                    tooltipProvider: () => BuildDiceTooltip(slots));
-                btn.SetDiceIcon(
+                var dice = bag.Dice[i];
+                var enchants = bag.GetEnchantments(i);
+                slot.Bind(
                     _diceUiSettings != null ? _diceUiSettings.GetSprite(dice) : null,
-                    dice.MaxFace().ToString());
-                _diceButtons.Add(btn);
+                    dice.MaxFace().ToString(),
+                    () => BuildDiceTooltip(enchants));
+            }
+        }
+
+        private void RefreshDiceSelectable()
+        {
+            if (_dieSlots == null) return;
+            var option = GetSelectedOption();
+            bool anyValid = false;
+
+            ServiceLocator.TryGetService<IDiceEnchantmentService>(out var enchSvc);
+            for (int i = 0; i < _dieSlots.Length; i++)
+            {
+                var slot = _dieSlots[i];
+                if (slot == null) continue;
+                bool valid = option != null && enchSvc != null
+                             && enchSvc.ValidateApply(i, option).Success;
+                slot.SetSelectable(valid);
+                anyValid |= valid;
             }
 
-            if (_diceButtons.Count == 0)
+            if (option != null && !anyValid)
             {
-                Debug.LogWarning(LogPrefix + "Populate terminó con 0 botones de dado — bag vacío?");
-                ShowEmptyStateMessage();
+                // Pre-filtrado en RollOffer garantiza ≥1 dado válido por opción —
+                // esto solo puede pasar si el estado cambió por afuera (dev console).
+                Debug.LogWarning(LogPrefix + "La opción elegida no tiene ningún dado válido.");
             }
+        }
+
+        private void ClearDiceSelection()
+        {
+            _selectedBagIndex = -1;
+            if (_dieSlots == null) return;
+            foreach (var slot in _dieSlots)
+            {
+                if (slot != null) slot.SetSelected(false);
+            }
+        }
+
+        private void HandleDieClicked(int bagIndex)
+        {
+            if (_spinning || _selectedOptionIndex < 0) return;
+
+            _selectedBagIndex = bagIndex;
+            for (int i = 0; i < _dieSlots.Length; i++)
+            {
+                if (_dieSlots[i] != null) _dieSlots[i].SetSelected(i == bagIndex);
+            }
+            if (_confirmButton != null) _confirmButton.SetReady(true);
+            SetDescriptionHint(DescriptionHint.Confirm);
+        }
+
+        // ====================================================================
+        // Palanca + roll
+        // ====================================================================
+
+        private void HandleLeverPulled()
+        {
+            if (_spinning) return;
+            if (!ServiceLocator.TryGetService<IEnchantmentRoomService>(out var roomSvc) || roomSvc == null)
+            {
+                Debug.LogWarning(LogPrefix + "RoomService no registrado — la palanca no puede rolear.");
+                return;
+            }
+
+            var result = roomSvc.RollOffer(_currentRoomInstanceId);
+            if (!result.Success)
+            {
+                ShowError(result.ErrorMessage);
+                RefreshLeverAndCost();
+                return;
+            }
+
+            // Re-roll con selecciones activas: se descartan junto con la oferta vieja.
+            ClearSelections();
+            if (_confirmButton != null) _confirmButton.SetReady(false);
+            StartSpin(result.Offer);
+        }
+
+        private void RefreshLeverAndCost()
+        {
+            int cost = ResolveCurrentCost();
+
+            if (_costLabel != null)
+                _costLabel.text = cost.ToString();
+
+            if (_lever != null)
+                _lever.SetInteractable(!_spinning && CanAfford(cost));
+        }
+
+        private bool CanAfford(int cost)
+        {
+            if (!ServiceLocator.TryGetService<IEconomyService>(out var economy) || economy == null) return false;
+            return economy.CanAfford(cost);
+        }
+
+        private int ResolveCurrentCost()
+        {
+            if (!ServiceLocator.TryGetService<IEnchantmentRoomService>(out var roomSvc) || roomSvc == null) return 0;
+            return roomSvc.ResolveCost();
+        }
+
+        // ====================================================================
+        // Reels
+        // ====================================================================
+
+        private void StartSpin(EnchantmentOffer offer)
+        {
+            if (_optionSlots == null || _optionSlots.Length == 0)
+            {
+                Debug.LogError(LogPrefix + "_optionSlots sin asignar — no hay dónde mostrar la oferta.", this);
+                return;
+            }
+
+            SetDescriptionHint(DescriptionHint.Spinning);
+            RefreshDiceSelectable(); // sin opción elegida ⇒ apaga los outlines
+
+            if (!CanJuice())
+            {
+                LandAllReels(offer);
+                return;
+            }
+
+            _spinning = true;
+            RefreshLeverAndCost(); // apaga la palanca durante el spin
+            SetOptionsInteractable(false);
+
+            var cycleNames = BuildCycleNames(offer);
+            _reelsPending = 0;
+
+            for (int i = 0; i < _optionSlots.Length; i++)
+            {
+                var slot = _optionSlots[i];
+                if (slot == null) continue;
+                _reelsPending++;
+
+                var final = i < offer.Options.Count ? offer.Options[i] : null;
+                float duration = _uiSettings.ReelSpinDuration + i * _uiSettings.ReelStopStagger;
+                // Más ciclos en los reels que giran más tiempo — la densidad de
+                // nombres desfilando se mantiene mientras el vecino ya frenó.
+                int cycles = Mathf.Max(4, _uiSettings.ReelTotalCycles
+                    + Mathf.RoundToInt(i * _uiSettings.ReelStopStagger * 8f));
+
+                // Offset primo por reel para que no desfilen la misma secuencia.
+                slot.PlaySpin(duration, cycles, cycleNames, i * 7, final, HandleReelLanded);
+            }
+
+            if (_reelsPending == 0) LandAllReels(offer);
+        }
+
+        private void HandleReelLanded()
+        {
+            _reelsPending--;
+            if (_reelsPending <= 0) FinishSpin();
+        }
+
+        private void LandAllReels(EnchantmentOffer offer)
+        {
+            for (int i = 0; i < _optionSlots.Length; i++)
+            {
+                var slot = _optionSlots[i];
+                if (slot == null) continue;
+                slot.SetOption(i < offer.Options.Count ? offer.Options[i] : null);
+            }
+            FinishSpin();
+        }
+
+        private void FinishSpin()
+        {
+            _spinning = false;
+            SetOptionsInteractable(true);
+            SetDescriptionHint(DescriptionHint.ChooseOption);
+            RefreshLeverAndCost(); // el costo subió (escala global) y la palanca vuelve (re-roll)
         }
 
         /// <summary>
-        /// Mensaje visible cuando la lista de dados no se pudo poblar — la mesa nunca
-        /// debe abrirse vacía y muda: sin esto el jugador queda mirando un panel sin
-        /// información y sin saber que es un bug (y en el tutorial, sin poder avanzar).
+        /// Nombres que ciclan durante el spin: el catálogo completo da variedad;
+        /// fallback a las opciones de la oferta si no está registrado.
         /// </summary>
-        private void ShowEmptyStateMessage()
+        private static List<string> BuildCycleNames(EnchantmentOffer offer)
         {
-            if (_resultLabel == null) return;
-            _resultLabel.text = "<color=#ff8888>No se pudieron cargar los dados — cierra la mesa y vuelve a intentar.</color>";
-        }
-
-        private static int CountUsedSlots(RuntimeDiceBag bag, int bagIndex)
-        {
-            var slots = bag.GetEnchantments(bagIndex);
-            int used = 0;
-            for (int i = 0; i < slots.Count; i++)
+            var names = new List<string>();
+            if (ServiceLocator.TryGetService<EnchantmentCatalogSO>(out var catalog) && catalog != null)
             {
-                if (slots[i] != null) used++;
+                foreach (var entry in catalog.Entries)
+                {
+                    if (entry == null) continue;
+                    names.Add(EnchantmentOptionSlotView.FormatName(entry));
+                }
             }
-            return used;
-        }
-
-        private void HandleDiceClicked(int bagIndex)
-        {
-            _selectedBagIndex = bagIndex;
-            _selectedSlotIndex = -1;
-            for (int i = 0; i < _diceButtons.Count; i++)
+            if (names.Count == 0)
             {
-                _diceButtons[i].SetSelected(i == bagIndex);
+                foreach (var opt in offer.Options)
+                {
+                    if (opt != null) names.Add(EnchantmentOptionSlotView.FormatName(opt));
+                }
             }
-            PopulateSlotButtons(bagIndex);
-            PlayCardsEntrance(_slotButtons);
-            RefreshSelectionLabels();
-            RefreshConfirmButtonState();
+            if (names.Count == 0) names.Add("?");
+            return names;
         }
 
         // ====================================================================
-        // Slot list (del dado seleccionado)
+        // Opciones — hover + selección
         // ====================================================================
 
-        private void PopulateSlotButtons(int bagIndex)
+        private void ResetOptionSlots()
         {
-            ClearSlotButtons();
-
-            if (!ServiceLocator.TryGetService<IDiceEnchantmentService>(out var enchSvc)
-                || enchSvc?.Bag == null)
+            if (_optionSlots == null) return;
+            foreach (var slot in _optionSlots)
             {
-                Debug.LogWarning(LogPrefix + "DiceEnchantmentService/Bag no disponible — slots del dado no se pueden listar.");
+                if (slot != null) slot.SetEmpty();
+            }
+        }
+
+        private void SetOptionsInteractable(bool interactable)
+        {
+            if (_optionSlots == null) return;
+            foreach (var slot in _optionSlots)
+            {
+                if (slot == null) continue;
+                slot.SetInteractable(interactable && slot.Option != null);
+            }
+        }
+
+        private void ClearSelections()
+        {
+            _selectedOptionIndex = -1;
+            ClearDiceSelection();
+            if (_optionSlots != null)
+            {
+                foreach (var slot in _optionSlots)
+                {
+                    if (slot != null) slot.SetSelected(false);
+                }
+            }
+            RefreshDiceSelectable();
+        }
+
+        private EnchantmentSO GetSelectedOption()
+        {
+            if (_optionSlots == null) return null;
+            if (_selectedOptionIndex < 0 || _selectedOptionIndex >= _optionSlots.Length) return null;
+            var slot = _optionSlots[_selectedOptionIndex];
+            return slot != null ? slot.Option : null;
+        }
+
+        private void HandleOptionClicked(int index)
+        {
+            if (_spinning) return;
+            if (index < 0 || _optionSlots == null || index >= _optionSlots.Length) return;
+            var clicked = _optionSlots[index];
+            if (clicked == null || clicked.Option == null) return;
+
+            _selectedOptionIndex = index;
+            for (int i = 0; i < _optionSlots.Length; i++)
+            {
+                if (_optionSlots[i] != null) _optionSlots[i].SetSelected(i == index);
+            }
+
+            // Cambiar de encantamiento invalida el dado elegido (puede no ser
+            // coherente con el nuevo) — se re-elige entre los marcados.
+            ClearDiceSelection();
+            if (_confirmButton != null) _confirmButton.SetReady(false);
+            RefreshDiceSelectable();
+
+            if (_optionDescriptionLabel != null)
+                _optionDescriptionLabel.text = BuildEnchantmentTooltip(clicked.Option);
+        }
+
+        private void HandleOptionHoverChanged(int index, bool hovering)
+        {
+            if (_spinning || _optionDescriptionLabel == null) return;
+            if (hovering && index >= 0 && index < _optionSlots.Length && _optionSlots[index] != null
+                && _optionSlots[index].Option != null)
+            {
+                _optionDescriptionLabel.text = BuildEnchantmentTooltip(_optionSlots[index].Option);
                 return;
             }
-            if (_slotButtonPrefab == null || _slotContainer == null)
+
+            // Al salir del hover: la descripción del elegido, o el hint del paso.
+            var selected = GetSelectedOption();
+            if (selected != null)
             {
-                Debug.LogError(LogPrefix + "_slotButtonPrefab o _slotContainer sin asignar — lista de slots vacía.", this);
+                _optionDescriptionLabel.text = BuildEnchantmentTooltip(selected);
+                return;
+            }
+            SetDescriptionHint(GetCurrentOffer().HasValue ? DescriptionHint.ChooseOption
+                : DescriptionHint.PullLever);
+        }
+
+        // ====================================================================
+        // Confirmar
+        // ====================================================================
+
+        private void HandleConfirmClicked()
+        {
+            if (_spinning || _selectedOptionIndex < 0 || _selectedBagIndex < 0) return;
+            if (!ServiceLocator.TryGetService<IEnchantmentRoomService>(out var roomSvc) || roomSvc == null)
+            {
+                Debug.LogWarning(LogPrefix + "RoomService no registrado — no se puede confirmar.");
                 return;
             }
 
-            var bag = enchSvc.Bag;
-            int slotCount = bag.GetEnchantmentSlotCount(bagIndex);
-            for (int s = 0; s < slotCount; s++)
+            var result = roomSvc.ConfirmChoice(_selectedOptionIndex, _selectedBagIndex);
+            if (!result.Success)
             {
-                int slotIndex = s; // capture
-                var existing = bag.GetEnchantmentAt(bagIndex, s);
-
-                string label = $"{LocalizedContent.Ui("altar.slot", "Cupo")} {s + 1}";
-                string subLabel = existing != null
-                    ? $"{LocalizedContent.Ui("altar.enchantment", "Encantamiento")}:\n<color=#{EnchantmentPalette.TitleHex(existing)}>{LocalizedContent.Name(existing.UpgradeId, existing.DisplayName)}</color>"
-                    : LocalizedContent.Ui("altar.empty", "Vacío");
-
-                // Capturamos el SO (no el índice) para el tooltip — los botones se
-                // reconstruyen en cada Populate (incluido tras un apply), así que no
-                // hay riesgo de que quede stale apuntando a un encantamiento viejo.
-                Func<string> tooltipProvider = existing != null
-                    ? () => BuildEnchantmentTooltip(existing)
-                    : null;
-
-                var btn = Instantiate(_slotButtonPrefab, _slotContainer);
-                btn.Configure(label, subLabel, () => HandleSlotClicked(slotIndex), tooltipProvider);
-                btn.SetMuted(existing == null);
-                _slotButtons.Add(btn);
+                ShowError(result.ErrorMessage);
+                // La oferta se conserva — el dado elegido pudo ser el problema.
+                ClearDiceSelection();
+                if (_confirmButton != null) _confirmButton.SetReady(false);
+                RefreshDiceSelectable();
+                return;
             }
+
+            // Aplicado: la máquina vuelve a reposo con el resultado a la vista.
+            ClearSelections();
+            ResetOptionSlots();
+            BindDiceShelf();
+            if (_confirmButton != null) _confirmButton.SetReady(false);
+            ShowResult(result);
+            RefreshLeverAndCost();
+        }
+
+        private EnchantmentOffer? GetCurrentOffer()
+        {
+            return ServiceLocator.TryGetService<IEnchantmentRoomService>(out var roomSvc) && roomSvc != null
+                ? roomSvc.CurrentOffer
+                : null;
+        }
+
+        private static void ClearRoomOffer()
+        {
+            if (ServiceLocator.TryGetService<IEnchantmentRoomService>(out var roomSvc) && roomSvc != null)
+                roomSvc.ClearOffer();
+        }
+
+        // ====================================================================
+        // Description bar (hints + resultado)
+        // ====================================================================
+
+        private enum DescriptionHint { PullLever, Spinning, ChooseOption, SelectDie, Confirm }
+
+        private void SetDescriptionHint(DescriptionHint hint)
+        {
+            if (_optionDescriptionLabel == null) return;
+            _optionDescriptionLabel.text = hint switch
+            {
+                DescriptionHint.PullLever => LocalizedContent.Ui("altar.pull_hint",
+                    "Tira de la palanca para revelar 3 encantamientos."),
+                DescriptionHint.Spinning => "...",
+                DescriptionHint.ChooseOption => LocalizedContent.Ui("altar.choose_option_hint",
+                    "Elige un encantamiento — pasa el cursor para leerlos."),
+                DescriptionHint.SelectDie => LocalizedContent.Ui("altar.select_die_hint",
+                    "Elige un dado para encantar."),
+                DescriptionHint.Confirm => LocalizedContent.Ui("altar.confirm_hint",
+                    "Aprieta Confirmar para encantar el dado."),
+                _ => string.Empty,
+            };
         }
 
         // ====================================================================
@@ -485,10 +744,9 @@ namespace Rollgeon.Upgrades.Dice.UI
         // ====================================================================
 
         /// <summary>
-        /// Texto de hover para un slot con encantamiento aplicado: nombre en bold +
-        /// descripción reducida. <c>public</c> (no <c>internal</c>) porque el asmdef
-        /// de tests de Dice no tiene <c>InternalsVisibleTo</c> hacia el assembly
-        /// raíz — ver nota de deviation en el resumen de la tarea.
+        /// Texto de hover para un encantamiento: nombre en bold + descripción
+        /// reducida. <c>public</c> (no <c>internal</c>) porque el asmdef de tests
+        /// de Dice no tiene <c>InternalsVisibleTo</c> hacia el assembly raíz.
         /// </summary>
         public static string BuildEnchantmentTooltip(EnchantmentSO ench)
         {
@@ -501,12 +759,12 @@ namespace Rollgeon.Upgrades.Dice.UI
         }
 
         /// <summary>
-        /// Texto de hover para un dado: una línea por cupo ocupado
+        /// Texto de hover para un dado: una línea por encantamiento aplicado
         /// ("• Nombre — Descripción"), o placeholder si no tiene ninguno.
         /// </summary>
         public static string BuildDiceTooltip(IReadOnlyList<EnchantmentSO> slots)
         {
-            const string none = "Sin encantamientos";
+            string none = LocalizedContent.Ui("altar.no_enchantments", "Sin encantamientos");
             if (slots == null || slots.Count == 0) return none;
 
             var lines = new List<string>();
@@ -520,249 +778,23 @@ namespace Rollgeon.Upgrades.Dice.UI
             return lines.Count > 0 ? string.Join("\n", lines) : none;
         }
 
-        private void ClearSlotButtons()
-        {
-            foreach (var btn in _slotButtons)
-            {
-                if (btn != null) Destroy(btn.gameObject);
-            }
-            _slotButtons.Clear();
-        }
-
-        private void HandleSlotClicked(int slotIndex)
-        {
-            _selectedSlotIndex = slotIndex;
-            for (int i = 0; i < _slotButtons.Count; i++)
-            {
-                _slotButtons[i].SetSelected(i == slotIndex);
-            }
-            RefreshSelectionLabels();
-            RefreshConfirmButtonState();
-        }
-
         // ====================================================================
-        // Selection feedback labels
+        // Result feedback
         // ====================================================================
 
-        private void RefreshSelectionLabels()
+        private void ShowError(string message)
         {
-            int cost = ResolveCurrentCost();
-            if (_costLabel != null)
-            {
-                _costLabel.text = _selectedBagIndex >= 0 && _selectedSlotIndex >= 0
-                    ? $"{LocalizedContent.Ui("altar.cost", "Costo")}: <color=#D9A44E>{cost} {LocalizedContent.Ui("gold.unit", "oro")}</color>"
-                    : $"{LocalizedContent.Ui("altar.cost", "Costo")}: —";
-            }
-            RefreshFacesPreview();
-            RefreshSlotDescription();
-        }
-
-        private void RefreshFacesPreview()
-        {
-            bool hasSelection = _selectedBagIndex >= 0;
-            var faces = hasSelection ? ComputeAllowedFacesForSelection() : Array.Empty<int>();
-
-            if (_facesContainer != null && _faceCardPrefab != null)
-            {
-                ClearFaceCards();
-                if (_facesCaptionLabel != null) _facesCaptionLabel.gameObject.SetActive(hasSelection);
-                if (!hasSelection) return;
-
-                Sprite sprite = null;
-                if (_diceUiSettings != null && TryGetSelectedDiceType(out var type))
-                    sprite = _diceUiSettings.GetSprite(type);
-
-                foreach (int face in faces.OrderBy(f => f))
-                {
-                    var card = Instantiate(_faceCardPrefab, _facesContainer);
-                    card.Set(sprite, face);
-                    _faceCards.Add(card);
-                }
-                return;
-            }
-
-            // Fallback texto — prefab viejo sin container de caras.
-            if (_facesPreviewLabel != null)
-            {
-                _facesPreviewLabel.text = hasSelection
-                    ? LocalizedContent.Ui("altar.current_faces", "Caras actuales") + ": " + FormatFaces(faces)
-                    : string.Empty;
-            }
-        }
-
-        private void ClearFaceCards()
-        {
-            foreach (var card in _faceCards)
-            {
-                if (card != null) Destroy(card.gameObject);
-            }
-            _faceCards.Clear();
-        }
-
-        private bool TryGetSelectedDiceType(out DiceType type)
-        {
-            type = default;
-            if (_selectedBagIndex < 0) return false;
-            if (!ServiceLocator.TryGetService<IDiceEnchantmentService>(out var enchSvc)
-                || enchSvc?.Bag == null || _selectedBagIndex >= enchSvc.Bag.Dice.Count)
-                return false;
-            type = enchSvc.Bag.Dice[_selectedBagIndex];
-            return true;
-        }
-
-        private void RefreshSlotDescription()
-        {
-            if (_slotDescriptionLabel == null) return;
-
-            string text = string.Empty;
-            if (_selectedBagIndex >= 0 && _selectedSlotIndex >= 0
-                && ServiceLocator.TryGetService<IDiceEnchantmentService>(out var enchSvc)
-                && enchSvc?.Bag != null)
-            {
-                var existing = enchSvc.Bag.GetEnchantmentAt(_selectedBagIndex, _selectedSlotIndex);
-                if (existing != null)
-                {
-                    string name = $"<color=#{EnchantmentPalette.TitleHex(existing)}>{LocalizedContent.Name(existing.UpgradeId, !string.IsNullOrEmpty(existing.DisplayName) ? existing.DisplayName : existing.UpgradeId)}</color>";
-                    string desc = LocalizedContent.Description(existing.UpgradeId, existing.Description);
-                    text = string.IsNullOrEmpty(desc)
-                        ? $"<b>{name}</b>"
-                        : $"<b>{name}</b> — <size=90%>{desc}</size>";
-                }
-            }
-            _slotDescriptionLabel.text = text;
-        }
-
-        private void RefreshGoldDisplay(bool animate)
-        {
-            if (_goldDisplay != null) _goldDisplay.Refresh(animate);
-            if (_costGoldDisplay != null) _costGoldDisplay.Refresh(animate);
-            if (_goldLabel == null) return;
-            if (ServiceLocator.TryGetService<IEconomyService>(out var economy) && economy != null)
-            {
-                _goldLabel.text = $"{LocalizedContent.Ui("altar.gold", "Oro")}: {economy.CurrentGold}";
-            }
-        }
-
-        private void RefreshConfirmButtonState()
-        {
-            if (_confirmButton == null) return;
-            bool valid = _selectedBagIndex >= 0 && _selectedSlotIndex >= 0;
-            bool canAfford = valid && CanAffordCurrentSelection();
-            _confirmButton.interactable = valid && canAfford;
-        }
-
-        private bool CanAffordCurrentSelection()
-        {
-            if (!ServiceLocator.TryGetService<IEconomyService>(out var economy) || economy == null) return false;
-            return economy.CanAfford(ResolveCurrentCost());
-        }
-
-        private int ResolveCurrentCost()
-        {
-            if (_selectedBagIndex < 0 || _selectedSlotIndex < 0) return 0;
-            if (!ServiceLocator.TryGetService<IEnchantmentRoomService>(out var roomSvc) || roomSvc == null) return 0;
-            return roomSvc.ResolveCost(_selectedBagIndex, _selectedSlotIndex);
-        }
-
-        private IReadOnlyCollection<int> ComputeAllowedFacesForSelection()
-        {
-            if (_selectedBagIndex < 0) return Array.Empty<int>();
-            if (!ServiceLocator.TryGetService<IDiceEnchantmentService>(out var enchSvc) || enchSvc == null)
-                return Array.Empty<int>();
-            return enchSvc.ComputeAllowedFaces(_selectedBagIndex);
-        }
-
-        private static string FormatFaces(IReadOnlyCollection<int> faces)
-        {
-            if (faces == null || faces.Count == 0) return "—";
-            var sorted = faces.OrderBy(f => f);
-            return string.Join(", ", sorted);
-        }
-
-        // ====================================================================
-        // Juice helpers
-        // ====================================================================
-
-        private void PlayCardsEntrance(List<EnchantmentItemButtonView> cards)
-        {
-            if (!CanJuice()) return;
-
-            for (int i = 0; i < cards.Count; i++)
-            {
-                var card = cards[i];
-                if (card == null) continue;
-
-                var t = card.transform;
-                var cg = card.GetComponent<CanvasGroup>();
-                if (cg == null) cg = card.gameObject.AddComponent<CanvasGroup>();
-
-                Tween.StopAll(onTarget: t);
-                Tween.StopAll(onTarget: cg);
-                cg.alpha = 0f;
-                t.localScale = Vector3.one * _uiSettings.CardEnterScaleFrom;
-
-                float delay = i * _uiSettings.CardStagger;
-                Tween.Alpha(cg, 1f, _uiSettings.CardEnterDuration, _uiSettings.CardEnterEase,
-                    startDelay: delay, useUnscaledTime: true);
-                Tween.Scale(t, Vector3.one, _uiSettings.CardEnterDuration, _uiSettings.CardEnterEase,
-                    startDelay: delay, useUnscaledTime: true);
-            }
-        }
-
-        private void PlayResultJuice()
-        {
-            if (!CanJuice() || _resultLabel == null) return;
-
-            if (_resultCanvasGroup == null)
-            {
-                _resultCanvasGroup = _resultLabel.GetComponent<CanvasGroup>();
-                if (_resultCanvasGroup == null) _resultCanvasGroup = _resultLabel.gameObject.AddComponent<CanvasGroup>();
-            }
-            Tween.StopAll(onTarget: _resultCanvasGroup);
-            _resultCanvasGroup.alpha = 0f;
-            Tween.Alpha(_resultCanvasGroup, 1f, _uiSettings.ResultFadeDuration, _uiSettings.ResultEase,
-                useUnscaledTime: true);
-        }
-
-        // ====================================================================
-        // Confirm flow
-        // ====================================================================
-
-        private void HandleConfirmClicked()
-        {
-            if (_selectedBagIndex < 0 || _selectedSlotIndex < 0) return;
-            if (!ServiceLocator.TryGetService<IEnchantmentRoomService>(out var roomSvc) || roomSvc == null)
-            {
-                Debug.LogWarning(LogPrefix + "RoomService no registrado — no se puede confirmar.");
-                return;
-            }
-
-            var result = roomSvc.PerformEnchantment(_currentRoomInstanceId, _selectedBagIndex, _selectedSlotIndex);
-            ShowResult(result);
-            if (result.Success && _goldDisplay != null) _goldDisplay.Shake();
-
-            // Refrescar UI tras el apply — slots cambiaron, oro cambió.
-            PopulateDiceButtons();
-            if (_selectedBagIndex >= 0) PopulateSlotButtons(_selectedBagIndex);
-            // La selección del slot se mantiene por ergonomía (re-enchant del mismo slot).
-            // SetSelected(true) sobre las cards recién pobladas dispara su punch — el
-            // feedback visual del apply sobre el dado y el cupo elegidos.
-            for (int i = 0; i < _diceButtons.Count; i++)
-                _diceButtons[i].SetSelected(i == _selectedBagIndex);
-            for (int i = 0; i < _slotButtons.Count; i++)
-                _slotButtons[i].SetSelected(i == _selectedSlotIndex);
-            RefreshGoldDisplay(animate: true);
-            RefreshSelectionLabels();
-            RefreshConfirmButtonState();
+            if (_optionDescriptionLabel == null) return;
+            _optionDescriptionLabel.text = $"<color=#ff8888>{message}</color>";
+            PlayDescriptionJuice();
         }
 
         private void ShowResult(EnchantmentRollResult result)
         {
-            if (_resultLabel == null) return;
+            if (_optionDescriptionLabel == null) return;
             if (!result.Success)
             {
-                _resultLabel.text = $"<color=#ff8888>{result.ErrorMessage}</color>";
-                PlayResultJuice();
+                ShowError(result.ErrorMessage);
                 return;
             }
             var rolled = result.RolledEnchantment;
@@ -770,18 +802,35 @@ namespace Rollgeon.Upgrades.Dice.UI
                 ? $"<color=#{EnchantmentPalette.TitleHex(rolled)}>{LocalizedContent.Name(rolled.UpgradeId, rolled.DisplayName ?? rolled.UpgradeId)}</color>"
                 : "?";
             string faces = FormatFaces(result.ProjectedFaces);
-            // Descripción inline en el resultado (CNF-011) — el jugador ve qué hace el
-            // encantamiento sin tener que ir a buscarlo de nuevo en la lista de slots.
-            // Formato compacto en 2 líneas: el label vive al pie de un panel que ya
-            // ocupa la pantalla completa — 4 líneas desbordaban por debajo.
-            string rolledDesc = rolled != null ? LocalizedContent.Description(rolled.UpgradeId, rolled.Description) : string.Empty;
-            string descPart = string.IsNullOrEmpty(rolledDesc)
-                ? string.Empty
-                : $" — <size=80%><i>{rolledDesc}</i></size>";
-            _resultLabel.text =
-                $"<color=#88ff88>Recibiste:</color> <b>{name}</b>{descPart}\n" +
-                $"Caras del dado: {faces}  ·  Oro gastado: {result.GoldPaid}";
-            PlayResultJuice();
+            string received = LocalizedContent.Ui("altar.received", "Recibiste");
+            string dieFaces = LocalizedContent.Ui("altar.die_faces", "Caras del dado");
+            _optionDescriptionLabel.text =
+                $"<color=#88ff88>{received}:</color> <b>{name}</b>  ·  <size=85%>{dieFaces}: {faces}</size>";
+            PlayDescriptionJuice();
+        }
+
+        private void PlayDescriptionJuice()
+        {
+            if (!CanJuice() || _optionDescriptionLabel == null) return;
+
+            if (_descriptionCanvasGroup == null)
+            {
+                _descriptionCanvasGroup = _optionDescriptionLabel.GetComponent<CanvasGroup>();
+                if (_descriptionCanvasGroup == null)
+                    _descriptionCanvasGroup = _optionDescriptionLabel.gameObject.AddComponent<CanvasGroup>();
+            }
+            Tween.StopAll(onTarget: _descriptionCanvasGroup);
+            _descriptionCanvasGroup.alpha = 0f;
+            Tween.Alpha(_descriptionCanvasGroup, 1f, _uiSettings.ResultFadeDuration, _uiSettings.ResultEase,
+                useUnscaledTime: true);
+        }
+
+        private static string FormatFaces(IReadOnlyCollection<int> faces)
+        {
+            if (faces == null || faces.Count == 0) return "—";
+            var sorted = new List<int>(faces);
+            sorted.Sort();
+            return string.Join(", ", sorted);
         }
     }
 }

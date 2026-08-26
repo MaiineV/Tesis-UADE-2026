@@ -16,6 +16,12 @@ Shader "Rollgeon/PaletteCelFloor"
 {
     Properties
     {
+        [Header(Palette)]
+        // Mismo criterio que PaletteCelLit: [ToggleUI] (no [Toggle], no declara
+        // keyword) — el shader ramifica sobre el float en runtime.
+        [ToggleUI] _UsePalette ("Use Global Palette", Float) = 0
+        [PaletteSlot] _FloorSlot ("Palette Slot", Float) = 0
+
         [Header(Surface)]
         _BaseColor       ("Base Color", Color) = (0.30, 0.55, 0.20, 1)
 
@@ -107,6 +113,8 @@ Shader "Rollgeon/PaletteCelFloor"
             float4 _RollgeonLightData[128];
 
             CBUFFER_START(UnityPerMaterial)
+                float  _UsePalette;
+                float  _FloorSlot;
                 float4 _BaseColor;
                 float  _PatchScale;
                 float  _PatchThreshold;
@@ -142,6 +150,9 @@ Shader "Rollgeon/PaletteCelFloor"
                 float  _HitFlashAmount;
                 float4 _HitFlashColor;
             CBUFFER_END
+
+            // Arrays globales subidos por GlobalPaletteManager cada frame
+            float4 _PaletteMidColors[32];
 
             struct Attributes
             {
@@ -272,6 +283,10 @@ Shader "Rollgeon/PaletteCelFloor"
                 UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(IN);
                 float3 normalWS = normalize(IN.normalWS);
 
+                float3 baseColor = _UsePalette > 0.5
+                    ? _PaletteMidColors[int(_FloorSlot)].rgb
+                    : _BaseColor.rgb;
+
                 float2 wUV = WorldUV(IN.positionWS, normalWS);
 
                 // ── Manchas: 3 capas independientes acumuladas ───────────────────
@@ -291,7 +306,7 @@ Shader "Rollgeon/PaletteCelFloor"
 
                 // Acumulación multiplicativa: cada capa oscurece el resultado anterior
                 // → donde se superponen, el color es más oscuro de forma natural
-                float3 surfaceColor = _BaseColor.rgb;
+                float3 surfaceColor = baseColor;
                 surfaceColor *= 1.0 - p1 * _PatchDarken;
                 surfaceColor *= 1.0 - p2 * _PatchDarken;
                 surfaceColor *= 1.0 - p3 * _PatchDarken;
@@ -435,6 +450,8 @@ Shader "Rollgeon/PaletteCelFloor"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Shadows.hlsl"
 
             CBUFFER_START(UnityPerMaterial)
+                float  _UsePalette;
+                float  _FloorSlot;
                 float4 _BaseColor;
                 float _PatchScale; float _PatchThreshold; float _PatchSoftness;
                 float _PatchDarken; float _PatchAnisotropy; float _PatchSeed;
@@ -497,6 +514,8 @@ Shader "Rollgeon/PaletteCelFloor"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 
             CBUFFER_START(UnityPerMaterial)
+                float  _UsePalette;
+                float  _FloorSlot;
                 float4 _BaseColor;
                 float _PatchScale; float _PatchThreshold; float _PatchSoftness;
                 float _PatchDarken; float _PatchAnisotropy; float _PatchSeed;
@@ -535,6 +554,8 @@ Shader "Rollgeon/PaletteCelFloor"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 
             CBUFFER_START(UnityPerMaterial)
+                float  _UsePalette;
+                float  _FloorSlot;
                 float4 _BaseColor;
                 float _PatchScale; float _PatchThreshold; float _PatchSoftness;
                 float _PatchDarken; float _PatchAnisotropy; float _PatchSeed;

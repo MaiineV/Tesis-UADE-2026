@@ -33,19 +33,6 @@ namespace Rollgeon.Dice.Tests
             Assert.AreEqual(expected, type.MaxPerBag());
         }
 
-        // Sala de Encantamiento — GDD: D3/D4=1, D6/D8=2, D10/D12=3, D20=4.
-        [TestCase(DiceType.D3, 1)]
-        [TestCase(DiceType.D4, 1)]
-        [TestCase(DiceType.D6, 2)]
-        [TestCase(DiceType.D8, 2)]
-        [TestCase(DiceType.D10, 3)]
-        [TestCase(DiceType.D12, 3)]
-        [TestCase(DiceType.D20, 4)]
-        public void MaxEnchantmentSlots_MatchesSpec(DiceType type, int expected)
-        {
-            Assert.AreEqual(expected, type.MaxEnchantmentSlots());
-        }
-
         [TestCase(DiceType.D3, 2.0f)]
         [TestCase(DiceType.D4, 2.5f)]
         [TestCase(DiceType.D6, 3.5f)]

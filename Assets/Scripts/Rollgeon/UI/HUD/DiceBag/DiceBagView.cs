@@ -14,8 +14,8 @@ using UnityEngine;
 namespace Rollgeon.UI.HUD.DiceBag
 {
     /// <summary>
-    /// Contenido del panel de la bolsa de dados: los dados de la run, los cupos de
-    /// encantamiento del que esté elegido, sus caras y la descripción.
+    /// Contenido del panel de la bolsa de dados: los dados de la run, los
+    /// encantamientos del que esté elegido, sus caras y la descripción.
     /// </summary>
     /// <remarks>
     /// Misma estructura que la mesa de encantamientos, pero SOLO INFORMATIVO: acá no se
@@ -51,6 +51,7 @@ namespace Rollgeon.UI.HUD.DiceBag
         private readonly List<DiceBagDieCardView> _dieCards = new();
         private readonly List<DiceBagSlotView> _slotViews = new();
         private readonly List<EnchantmentFaceCardView> _faceCards = new();
+        private readonly List<EnchantmentSO> _selectedDieEnchantments = new();
 
         private SlidingDrawer _drawer;
         private int _selectedDie = -1;
@@ -76,7 +77,7 @@ namespace Rollgeon.UI.HUD.DiceBag
             if (_titleLabel != null)
                 _titleLabel.text = LocalizedContent.Ui(DiceBagTextKeys.Title, "Bolsa de Dados");
             if (_slotsCaptionLabel != null)
-                _slotsCaptionLabel.text = LocalizedContent.Ui(DiceBagTextKeys.SlotsCaption, "Cupos de encantamiento");
+                _slotsCaptionLabel.text = LocalizedContent.Ui(DiceBagTextKeys.SlotsCaption, "Encantamientos");
         }
 
         // ==================================================================
@@ -102,15 +103,17 @@ namespace Rollgeon.UI.HUD.DiceBag
 
                 int index = i; // capture
                 var type = bag.Dice[i];
+                int enchantCount = CountUsedSlots(bag, i);
                 _dieCards[i].Bind(
                     _diceUiSettings != null ? _diceUiSettings.GetSprite(type) : null,
                     type.MaxFace(),
-                    CountUsedSlots(bag, i),
-                    type.MaxEnchantmentSlots(),
-                    LocalizedContent.Ui(DiceBagTextKeys.SlotsSuffix, "cupos"),
+                    enchantCount,
+                    enchantCount == 1
+                        ? LocalizedContent.Ui(DiceBagTextKeys.EnchSingular, "encantamiento")
+                        : LocalizedContent.Ui(DiceBagTextKeys.EnchPlural, "encantamientos"),
                     () => SelectDie(index));
                 // Mismo holo que los dados encantados de la zona de combate: se identifica
-                // de un vistazo cuáles tienen al menos un cupo ocupado.
+                // de un vistazo cuáles tienen al menos un encantamiento.
                 _dieCards[i].SetEnchantVisual(
                     DiceEnchantVisualResolver.ResolvePrimary(bag.GetEnchantments(i)));
             }
@@ -136,10 +139,21 @@ namespace Rollgeon.UI.HUD.DiceBag
 
         private void RebuildSlots()
         {
-            var bag = ResolveBag();
-            var slots = _selectedDie >= 0 ? bag?.GetEnchantments(_selectedDie) : null;
-            int count = slots?.Count ?? 0;
+            // Solo los encantamientos aplicados — con el stack sin techo no
+            // existen "cupos vacíos" que mostrar (los nulls son tombstones de
+            // removes y tampoco se dibujan).
+            _selectedDieEnchantments.Clear();
+            if (_selectedDie >= 0)
+            {
+                var slots = ResolveBag()?.GetEnchantments(_selectedDie);
+                if (slots != null)
+                {
+                    for (int i = 0; i < slots.Count; i++)
+                        if (slots[i] != null) _selectedDieEnchantments.Add(slots[i]);
+                }
+            }
 
+            int count = _selectedDieEnchantments.Count;
             EnsureSlots(count);
 
             for (int i = 0; i < _slotViews.Count; i++)
@@ -149,7 +163,7 @@ namespace Rollgeon.UI.HUD.DiceBag
                 if (!used) continue;
 
                 int index = i; // capture
-                _slotViews[i].Bind(slots[i] != null, () => SelectSlot(index));
+                _slotViews[i].Bind(filled: true, () => SelectSlot(index));
                 _slotViews[i].SetSelected(false);
             }
 
@@ -190,36 +204,30 @@ namespace Rollgeon.UI.HUD.DiceBag
         }
 
         /// <summary>
-        /// Describe el cupo elegido; sin cupo elegido, resume los encantamientos del dado.
+        /// Describe el encantamiento elegido; sin elección, resume los del dado.
         /// </summary>
         private void RefreshDescription()
         {
             if (_descriptionLabel == null) return;
 
-            var bag = ResolveBag();
-            if (_selectedDie < 0 || bag == null)
+            if (_selectedDie < 0 || ResolveBag() == null)
             {
                 _descriptionLabel.text = string.Empty;
                 return;
             }
 
-            var slots = bag.GetEnchantments(_selectedDie);
-
-            if (_selectedSlot >= 0 && slots != null && _selectedSlot < slots.Count)
+            if (_selectedSlot >= 0 && _selectedSlot < _selectedDieEnchantments.Count)
             {
-                var ench = slots[_selectedSlot];
-                _descriptionLabel.text = ench != null
-                    ? DescribeEnchantment(ench)
-                    : LocalizedContent.Ui(DiceBagTextKeys.EmptySlot, "Cupo libre.");
+                _descriptionLabel.text = DescribeEnchantment(_selectedDieEnchantments[_selectedSlot]);
                 return;
             }
 
-            // Sin cupo elegido: el resumen del dado.
-            _descriptionLabel.text = BuildSummary(slots);
+            // Sin encantamiento elegido: el resumen del dado.
+            _descriptionLabel.text = BuildSummary(_selectedDieEnchantments);
         }
 
         /// <summary>
-        /// Resumen de los encantamientos del dado, una línea por cupo ocupado.
+        /// Resumen de los encantamientos del dado, una línea por cada uno.
         /// </summary>
         /// <remarks>
         /// Propio y no <c>EnchantmentAltarView.BuildDiceTooltip</c>: aquel tiene el "Sin

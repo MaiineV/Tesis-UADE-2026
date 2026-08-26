@@ -68,8 +68,7 @@ namespace Rollgeon.DevConsole.Commands
         {
             new ArgSpec("add|remove|list|random|roll", ArgKind.Choice, options: ArgProviders.EnchantSub),
             new ArgSpec("bagIndex", ArgKind.Int, optional: true, options: ArgProviders.BagIndices),
-            new ArgSpec("slot", ArgKind.Int, optional: true),
-            new ArgSpec("enchId", ArgKind.String, optional: true, options: ArgProviders.Enchants)
+            new ArgSpec("slot|enchId", ArgKind.String, optional: true, options: ArgProviders.Enchants)
         };
 
         private static readonly string[] _aliases = { "enchant" };
@@ -77,9 +76,9 @@ namespace Rollgeon.DevConsole.Commands
         public override string Name => "ench";
         public override IReadOnlyList<string> Aliases => _aliases;
         public override string Description =>
-            "Encantamientos: 'ench add <bag> <slot> <id>' | 'ench remove <bag> <slot>' | " +
-            "'ench list <bag>' | 'ench random [bag] [slot]' (gratis, del catálogo) | " +
-            "'ench roll [bag] [slot]' (altar: rolea del pool y cobra oro).";
+            "Encantamientos (stack sin techo — siempre se SUMAN): 'ench add <bag> <id>' | " +
+            "'ench remove <bag> <slot>' | 'ench list <bag>' | 'ench random [bag]' (gratis, " +
+            "del catálogo) | 'ench roll [bag]' (altar: paga la oferta de 3 y elige una al azar).";
         public override IReadOnlyList<ArgSpec> Args => _args;
 
         public override CommandResult Execute(IReadOnlyList<string> args, IDevConsoleContext ctx)
@@ -90,8 +89,8 @@ namespace Rollgeon.DevConsole.Commands
 
             string sub = args[0].ToLowerInvariant();
 
-            // random y roll aceptan dado y slot opcionales, así que resuelven sus propios
-            // argumentos; add/remove/list siguen exigiendo el bagIndex en args[1].
+            // random y roll aceptan el dado opcional, así que resuelven su propio
+            // argumento; add/remove/list siguen exigiendo el bagIndex en args[1].
             if (sub == "random") return ExecuteRandom(args, ctx, svc);
             if (sub == "roll") return ExecuteRoll(args, ctx, svc);
 
@@ -103,7 +102,7 @@ namespace Rollgeon.DevConsole.Commands
                 case "list":
                 {
                     var enchs = svc.Bag.GetEnchantments(bag);
-                    ctx.Log.Info($"Dado [{bag}] {svc.Bag.Dice[bag]} — cupos {svc.Bag.GetEnchantmentSlotCount(bag)}:");
+                    ctx.Log.Info($"Dado [{bag}] {svc.Bag.Dice[bag]} — {svc.Bag.GetEnchantmentCount(bag)} encantamientos:");
                     for (int s = 0; s < enchs.Count; s++)
                         ctx.Log.Info($"  slot {s}: {(enchs[s] != null ? enchs[s].UpgradeId : "-")}");
                     return CommandResult.Ok();
@@ -117,14 +116,13 @@ namespace Rollgeon.DevConsole.Commands
                 }
                 case "add":
                 {
-                    if (!TryInt(args, 2, out var slot)) return CommandResult.Fail("Usá 'ench add <bag> <slot> <enchId>'.");
-                    if (args.Count < 4) return CommandResult.Fail("Falta el enchId.");
+                    if (args.Count < 3) return CommandResult.Fail("Usá 'ench add <bag> <enchId>'.");
                     if (!RequireService<EnchantmentCatalogSO>(ctx, out var cat, out var e2)) return e2;
-                    var ench = cat.GetById(args[3]);
-                    if (ench == null) return CommandResult.Fail($"Encantamiento desconocido: '{args[3]}'.");
-                    var res = svc.Apply(bag, slot, ench);
+                    var ench = cat.GetById(args[2]);
+                    if (ench == null) return CommandResult.Fail($"Encantamiento desconocido: '{args[2]}'.");
+                    var res = svc.Apply(bag, ench);
                     return res.Success
-                        ? CommandResult.Ok($"Aplicado {ench.UpgradeId} en [{bag}] slot {slot}.")
+                        ? CommandResult.Ok($"Aplicado {ench.UpgradeId} en [{bag}] (slot {res.AppliedSlotIndex}).")
                         : CommandResult.Fail(res.ErrorMessage ?? "No se pudo aplicar.");
                 }
                 default:
@@ -141,10 +139,10 @@ namespace Rollgeon.DevConsole.Commands
                                             IDiceEnchantmentService svc)
         {
             if (!RequireService<EnchantmentCatalogSO>(ctx, out var cat, out var e)) return e;
-            if (!TryResolveTarget(args, svc, out int bag, out int slot, out var error)) return error;
+            if (!TryResolveTargetDie(args, svc, out int bag, out var error)) return error;
 
             // Sin filtrar a mano: ValidateApply ya rechaza los incompatibles (intersección
-            // de caras vacía) y los redundantes con lo que el dado tiene puesto.
+            // de caras vacía) contra lo que el dado tiene puesto.
             var candidates = new List<EnchantmentSO>();
             foreach (var entry in cat.Entries) if (entry != null) candidates.Add(entry);
             if (candidates.Count == 0) return CommandResult.Fail("El catálogo de encantamientos está vacío.");
@@ -152,21 +150,22 @@ namespace Rollgeon.DevConsole.Commands
 
             foreach (var candidate in candidates)
             {
-                if (!svc.ValidateApply(bag, slot, candidate).Success) continue;
+                if (!svc.ValidateApply(bag, candidate).Success) continue;
 
-                var applied = svc.Apply(bag, slot, candidate);
+                var applied = svc.Apply(bag, candidate);
                 if (applied.Success)
-                    return CommandResult.Ok($"Aplicado {candidate.UpgradeId} en [{bag}] slot {slot}.");
+                    return CommandResult.Ok($"Aplicado {candidate.UpgradeId} en [{bag}] (slot {applied.AppliedSlotIndex}).");
             }
 
             return CommandResult.Fail(
                 $"Ninguno de los {candidates.Count} encantamientos del catálogo es compatible con " +
-                $"[{bag}] {svc.Bag.Dice[bag]} slot {slot}.");
+                $"[{bag}] {svc.Bag.Dice[bag]}.");
         }
 
         /// <summary>
-        /// El flujo del altar sin caminar hasta la sala: rolea del pool con el peso por
-        /// piso y cobra el oro escalado por re-roll.
+        /// El flujo del altar sin caminar hasta la sala: paga la oferta de 3 del
+        /// pool (palanca-primero, costo global de la run), elige una opción al
+        /// azar y la confirma sobre el dado pedido (o uno válido al azar).
         /// </summary>
         /// <remarks>
         /// Le pasamos la sala actual como <c>roomInstanceId</c>. Si no es una sala de
@@ -178,27 +177,48 @@ namespace Rollgeon.DevConsole.Commands
                                           IDiceEnchantmentService svc)
         {
             if (!RequireService<IEnchantmentRoomService>(ctx, out var room, out var e)) return e;
-            if (!TryResolveTarget(args, svc, out int bag, out int slot, out var error)) return error;
+            bool bagForced = args.Count > 1;
+            if (!TryResolveTargetDie(args, svc, out int bag, out var error)) return error;
 
             var roomId = Guid.Empty;
             if (ctx.TryResolve<IDungeonService>(out var dungeon) && dungeon?.CurrentRoomInstance != null)
                 roomId = dungeon.CurrentRoomInstance.InstanceId;
 
-            var result = room.PerformEnchantment(roomId, bag, slot);
-            if (!result.Success) return CommandResult.Fail(result.ErrorMessage);
+            var offer = room.RollOffer(roomId);
+            if (!offer.Success) return CommandResult.Fail(offer.ErrorMessage);
 
-            string id = result.RolledEnchantment != null ? result.RolledEnchantment.UpgradeId : "?";
-            return CommandResult.Ok($"Roleado {id} en [{bag}] slot {slot} por {result.GoldPaid}G.");
+            var options = offer.Offer.Options;
+            var names = new List<string>();
+            foreach (var opt in options) if (opt != null) names.Add(opt.UpgradeId);
+            ctx.Log.Info($"Oferta: {string.Join(", ", names)} ({offer.Offer.GoldPaid}G).");
+
+            int pick = UnityEngine.Random.Range(0, options.Count);
+            // Sin dado forzado, buscar uno válido para la opción elegida — la UI
+            // hace lo mismo marcando los seleccionables.
+            if (!bagForced)
+            {
+                for (int i = 0; i < svc.Bag.Dice.Count; i++)
+                {
+                    if (!svc.ValidateApply(i, options[pick]).Success) continue;
+                    bag = i;
+                    break;
+                }
+            }
+
+            var chosen = room.ConfirmChoice(pick, bag);
+            if (!chosen.Success) return CommandResult.Fail(chosen.ErrorMessage);
+
+            string id = chosen.RolledEnchantment != null ? chosen.RolledEnchantment.UpgradeId : "?";
+            return CommandResult.Ok($"Elegido {id} para [{bag}] por {chosen.GoldPaid}G.");
         }
 
         /// <summary>
-        /// Resuelve dado y slot de <c>args[1]</c>/<c>args[2]</c>, o los elige al azar
-        /// prefiriendo un slot libre. Si el dado no tiene cupos, falla con el motivo.
+        /// Resuelve el dado de <c>args[1]</c>, o elige uno al azar — con el stack sin
+        /// techo cualquier dado acepta más encantamientos.
         /// </summary>
-        private static bool TryResolveTarget(IReadOnlyList<string> args, IDiceEnchantmentService svc,
-                                            out int bag, out int slot, out CommandResult error)
+        private static bool TryResolveTargetDie(IReadOnlyList<string> args, IDiceEnchantmentService svc,
+                                                out int bag, out CommandResult error)
         {
-            slot = -1;
             error = default;
             int diceCount = svc.Bag.Dice.Count;
 
@@ -209,68 +229,11 @@ namespace Rollgeon.DevConsole.Commands
                     error = CommandResult.Fail($"bagIndex fuera de rango (0..{diceCount - 1}).");
                     return false;
                 }
-            }
-            else
-            {
-                bag = PickDice(svc, diceCount);
+                return true;
             }
 
-            int slotCount = svc.Bag.GetEnchantmentSlotCount(bag);
-            if (slotCount <= 0)
-            {
-                error = CommandResult.Fail($"El dado [{bag}] {svc.Bag.Dice[bag]} no tiene cupos de encantamiento.");
-                return false;
-            }
-
-            if (args.Count > 2)
-            {
-                if (!TryInt(args, 2, out slot) || slot < 0 || slot >= slotCount)
-                {
-                    error = CommandResult.Fail($"slot fuera de rango (0..{slotCount - 1}) para el dado [{bag}].");
-                    return false;
-                }
-            }
-            else
-            {
-                slot = PickSlot(svc, bag, slotCount);
-            }
-
+            bag = diceCount > 0 ? UnityEngine.Random.Range(0, diceCount) : 0;
             return true;
-        }
-
-        /// <summary>Primer dado con cupo libre (en orden al azar); si están todos llenos,
-        /// uno cualquiera — sobreescribir es válido, el altar hace lo mismo.</summary>
-        private static int PickDice(IDiceEnchantmentService svc, int diceCount)
-        {
-            var order = new List<int>(diceCount);
-            for (int i = 0; i < diceCount; i++) order.Add(i);
-            Shuffle(order);
-
-            foreach (int i in order)
-            {
-                int slotCount = svc.Bag.GetEnchantmentSlotCount(i);
-                if (slotCount <= 0) continue;
-                if (HasFreeSlot(svc, i, slotCount)) return i;
-            }
-            return order.Count > 0 ? order[0] : 0;
-        }
-
-        private static int PickSlot(IDiceEnchantmentService svc, int bag, int slotCount)
-        {
-            var enchs = svc.Bag.GetEnchantments(bag);
-            for (int s = 0; s < slotCount; s++)
-                if (enchs == null || s >= enchs.Count || enchs[s] == null) return s;
-
-            return UnityEngine.Random.Range(0, slotCount);
-        }
-
-        private static bool HasFreeSlot(IDiceEnchantmentService svc, int bag, int slotCount)
-        {
-            var enchs = svc.Bag.GetEnchantments(bag);
-            if (enchs == null) return true;
-            for (int s = 0; s < slotCount; s++)
-                if (s >= enchs.Count || enchs[s] == null) return true;
-            return false;
         }
 
         /// <summary>Fisher-Yates con el RNG de Unity — los tests fijan el seed con

@@ -222,12 +222,12 @@ namespace Rollgeon.EditorTools.Localization
                 "This is the enchantment table: it upgrades a die for gold. Walk to the altar and press F.");
 
             Ui(TutorialTextKeys.EnchantTable,
-                "Elige un dado y un cupo, y confirma: el encantamiento sale al azar — y puede ser malo.",
-                "Pick a die and a slot, then confirm: the enchantment is random — and it can be bad.");
+                "Elige un dado y tira de la palanca: aparecen 3 encantamientos y el que elijas se suma al dado.",
+                "Pick a die and pull the lever: 3 enchantments appear and the one you pick is added to the die.");
 
             Ui(TutorialTextKeys.EnchantReroll,
-                "Si no te gusta el resultado, puedes reemplazarlo pagando de nuevo: cada reemplazo cuesta más oro.",
-                "Don't like the result? You can replace it by paying again: each replacement costs more gold.");
+                "¿Ninguno te convence? Tira de la palanca otra vez para ver 3 opciones nuevas: cada tirada cuesta más oro.",
+                "None convince you? Pull the lever again for 3 new options: each roll costs more gold.");
 
             Ui(TutorialTextKeys.EnchantDone,
                 "¡Dado encantado! Ya sabes todo lo que necesitas — cierra la mesa.",
@@ -797,10 +797,10 @@ namespace Rollgeon.EditorTools.Localization
         private static void SeedDiceBag()
         {
             Ui(DiceBagTextKeys.Title, "Bolsa de Dados", "Dice Bag");
-            Ui(DiceBagTextKeys.SlotsCaption, "Cupos de encantamiento", "Enchantment slots");
-            // Va detrás del contador ("2/3 cupos"), así que en minúscula y sin punto.
-            Ui(DiceBagTextKeys.SlotsSuffix, "cupos", "slots");
-            Ui(DiceBagTextKeys.EmptySlot, "Cupo libre.", "Empty slot.");
+            Ui(DiceBagTextKeys.SlotsCaption, "Encantamientos", "Enchantments");
+            // Van detrás del contador ("2 encantamientos"), así que en minúscula y sin punto.
+            Ui(DiceBagTextKeys.EnchSingular, "encantamiento", "enchantment");
+            Ui(DiceBagTextKeys.EnchPlural, "encantamientos", "enchantments");
             Ui(DiceBagTextKeys.NoEnchantments, "Sin encantamientos.", "No enchantments.");
         }
 

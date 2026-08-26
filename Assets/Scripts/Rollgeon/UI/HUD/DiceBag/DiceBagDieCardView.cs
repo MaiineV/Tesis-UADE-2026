@@ -9,8 +9,8 @@ namespace Rollgeon.UI.HUD.DiceBag
 {
     /// <summary>
     /// Un dado de la bolsa: la casilla, el ícono del dado con su número de caras (igual que
-    /// en la mesa de encantamientos) y, POR FUERA del cuadrado, cuántos cupos de
-    /// encantamiento tiene usados sobre el total.
+    /// en la mesa de encantamientos) y, POR FUERA del cuadrado, cuántos encantamientos
+    /// acumuló (stack sin techo — GDD).
     /// </summary>
     /// <remarks>
     /// El contador va afuera del marco a pedido de diseño: adentro competía con el número
@@ -58,8 +58,8 @@ namespace Rollgeon.UI.HUD.DiceBag
 
         private void HandleClick() => _onClick?.Invoke();
 
-        public void Bind(Sprite diceSprite, int maxFace, int usedSlots, int totalSlots,
-                         string slotsSuffix, Action onClick)
+        public void Bind(Sprite diceSprite, int maxFace, int enchantCount,
+                         string enchantSuffix, Action onClick)
         {
             _onClick = onClick;
 
@@ -71,11 +71,11 @@ namespace Rollgeon.UI.HUD.DiceBag
 
             if (_faceCountLabel != null) _faceCountLabel.text = maxFace > 0 ? maxFace.ToString() : string.Empty;
 
-            // "2/3 cupos" — el sufijo viene ya localizado del panel, que es quien sabe de
-            // la tabla; la card solo dibuja.
+            // "2 encantamientos" — el sufijo viene ya localizado del panel, que es quien
+            // sabe de la tabla; la card solo dibuja. Sin encantamientos, sin contador.
             if (_slotsLabel != null)
-                _slotsLabel.text = totalSlots > 0
-                    ? $"{usedSlots}/{totalSlots} {slotsSuffix}".TrimEnd()
+                _slotsLabel.text = enchantCount > 0
+                    ? $"{enchantCount} {enchantSuffix}".TrimEnd()
                     : string.Empty;
         }
 

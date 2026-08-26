@@ -62,10 +62,9 @@ namespace Rollgeon.Upgrades.Dice.Tests
         // ---- Helpers ----------------------------------------------------
 
         // Réplica de Ench_GoldOnRoll (Ambicioso): RollResolved + PcNoComboThisRoll → +2 oro
-        // de consuelo cuando NO se formó combo. slotIndex separado del de Avaro — el D6
-        // de test tiene 2 cupos de encantamiento y aplicar dos en el mismo slot reemplaza
-        // el primero en vez de sumarlo.
-        private void ApplyAmbiciosoStyleEnchantment(int enchSlotIndex = 0)
+        // de consuelo cuando NO se formó combo. Apply es append-only — cada llamada
+        // suma un encantamiento nuevo al dado sin tocar los anteriores.
+        private void ApplyAmbiciosoStyleEnchantment()
         {
             var ench = ScriptableObject.CreateInstance<EnchantmentSO>();
             _created.Add(ench);
@@ -85,11 +84,11 @@ namespace Rollgeon.Upgrades.Dice.Tests
             typeof(EnchantmentSO).GetField("_triggers", BindingFlags.NonPublic | BindingFlags.Instance)
                 ?.SetValue(ench, new List<IEnchantmentTrigger> { bridge });
 
-            Assert.IsTrue(_svc.Apply(0, enchSlotIndex, ench).Success);
+            Assert.IsTrue(_svc.Apply(0, ench).Success);
         }
 
         // Réplica de Ench_Avaro: ComboPlayed + whitelist "combo.trio" → +3 oro.
-        private void ApplyAvaroStyleEnchantment(int enchSlotIndex = 0)
+        private void ApplyAvaroStyleEnchantment()
         {
             var ench = ScriptableObject.CreateInstance<EnchantmentSO>();
             _created.Add(ench);
@@ -109,7 +108,7 @@ namespace Rollgeon.Upgrades.Dice.Tests
             typeof(EnchantmentSO).GetField("_triggers", BindingFlags.NonPublic | BindingFlags.Instance)
                 ?.SetValue(ench, new List<IEnchantmentTrigger> { bridge });
 
-            Assert.IsTrue(_svc.Apply(0, enchSlotIndex, ench).Success);
+            Assert.IsTrue(_svc.Apply(0, ench).Success);
         }
 
         private void TriggerRollResolved(RollActionKind? kind, ComboDetectionResult? combo)
@@ -182,9 +181,10 @@ namespace Rollgeon.Upgrades.Dice.Tests
         [Test]
         public void RollResolved_Attack_WithTrio_DoesNotPayAmbicioso_ButComboPlayedPaysAvaro()
         {
-            // Arrange — slots distintos: el D6 de test tiene 2 cupos de encantamiento.
-            ApplyAmbiciosoStyleEnchantment(enchSlotIndex: 0);
-            ApplyAvaroStyleEnchantment(enchSlotIndex: 1);
+            // Arrange — append-only: ambos encantamientos conviven en el mismo dado
+            // sin pisarse (índices 0 y 1 asignados automáticamente por Apply).
+            ApplyAmbiciosoStyleEnchantment();
+            ApplyAvaroStyleEnchantment();
             var combo = ComboDetectionResult.Match("combo.trio", baseDamage: 10, countUsed: 3,
                 contributingIndices: new[] { 0, 1, 2 });
 

@@ -18,9 +18,12 @@ namespace Rollgeon.UI.HUD
         [Tooltip("UI-Sheet-sheet_9 — fichas de escudo, van ENCIMA de las de vida.")]
         public Sprite ShieldChip;
 
-        [Tooltip("UI-Sheet-sheet_5 — una ficha por roll del pool (ex ficha de energía; " +
-                 "mismo sprite hasta el pase visual del Pool de Rolls).")]
+        [Tooltip("UI-Sheet-sheet_5 — ex ficha del pool de rolls. Sin uso desde " +
+                 "Feature#0053: el pool es el vaso de generala (RollCupView).")]
         public Sprite EnergyChip;
+
+        [Tooltip("VasoGenerala_0 — vaso de generala del pool de rolls (Feature#0053).")]
+        public Sprite RollCup;
 
         [Tooltip("CoinStyle1.1_0 — ficha plana de la pila de oro (hasta 4).")]
         public Sprite GoldChipFlat;
