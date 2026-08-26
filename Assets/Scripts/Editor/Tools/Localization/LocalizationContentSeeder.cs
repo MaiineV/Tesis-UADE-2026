@@ -335,6 +335,12 @@ namespace Rollgeon.EditorTools.Localization
                 "Escudo: ATQ ({0}) + base del combo × multi de dados",
                 "Shield: ATK ({0}) + combo base × dice multiplier");
             Ui("tooltip.effect.shield.flat", "Escudo: +{0}", "Shield: +{0}");
+            // Feature#0055 — Habilidad de Clase: Empuje.
+            Ui("tooltip.effect.push.header", "Empuje: casillas según el combo", "Push: tiles by combo");
+            Ui("tooltip.effect.push.no_combo", "Sin combo: la tirada se pierde sin efecto",
+                "No combo: the roll is spent with no effect");
+            Ui("formula.push.preview", "{0}: empuja {1}", "{0}: push {1}");
+            Ui("formula.push.no_combo", "Empuje - sin combo: sin efecto", "Push - no combo: no effect");
 
             Ui("tooltip.effect.force_door.boss_room",
                 "El Boss debe ser vencido — no se puede forzar la puerta",
@@ -988,7 +994,9 @@ namespace Rollgeon.EditorTools.Localization
             Ui("nav.rooms", "Salas", "Rooms");
             Ui("action.attack", "Atacar", "Attack");
             Ui("action.move", "Mover", "Move");
-            Ui("action.special_attack", "Ataque especial", "Special Attack");
+            // Feature#0055: el slot 2 pasó de Ataque especial a Habilidad de Clase (genérica por
+            // clase — el tooltip del efecto lleva el detalle "Empuje").
+            Ui("action.class_skill", "Habilidad de clase", "Class Skill");
             Ui("action.force_door", "Forzar puerta", "Force Door");
             Ui("action.heal", "Curar", "Heal");
             // BUG-041: falta del slot Defense en la familia action.* — HeroActionTooltip

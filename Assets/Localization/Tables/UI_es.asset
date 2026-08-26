@@ -857,6 +857,26 @@ MonoBehaviour:
     m_Localized: Aprieta Confirmar para encantar el dado.
     m_Metadata:
       m_Items: []
+  - m_Id: 15429564853567488
+    m_Localized: "Empuje: casillas seg\xFAn el combo"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 15429564908093440
+    m_Localized: 'Sin combo: la tirada se pierde sin efecto'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 15429564908093441
+    m_Localized: '{0}: empuja {1}'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 15429564908093442
+    m_Localized: 'Empuje - sin combo: sin efecto'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 15429564929064960
+    m_Localized: Habilidad de clase
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

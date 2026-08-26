@@ -811,6 +811,26 @@ MonoBehaviour:
     m_Key: altar.confirm_hint
     m_Metadata:
       m_Items: []
+  - m_Id: 15429564853567488
+    m_Key: tooltip.effect.push.header
+    m_Metadata:
+      m_Items: []
+  - m_Id: 15429564908093440
+    m_Key: tooltip.effect.push.no_combo
+    m_Metadata:
+      m_Items: []
+  - m_Id: 15429564908093441
+    m_Key: formula.push.preview
+    m_Metadata:
+      m_Items: []
+  - m_Id: 15429564908093442
+    m_Key: formula.push.no_combo
+    m_Metadata:
+      m_Items: []
+  - m_Id: 15429564929064960
+    m_Key: action.class_skill
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

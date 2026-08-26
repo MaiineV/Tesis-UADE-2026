@@ -8,6 +8,7 @@ using Rollgeon.Dice;
 using Rollgeon.Effects.Concretes;
 using Rollgeon.Heroes;
 using Rollgeon.Items;
+using Rollgeon.Localization;
 using Rollgeon.Player;
 using TMPro;
 using UnityEngine;
@@ -275,6 +276,28 @@ namespace Rollgeon.UI.HUD
             // Si hay una ActionRoll activa, mostrar threshold + combo seleccionado y SALIR
             // (no se evalúa la fórmula de daño, que no aplica para Heal/ForceDoor).
             if (TryShowActionRollMode()) return;
+
+            // Modo Habilidad de Clase (Empuje, Feature#0055): la tirada no genera daño ni
+            // escudo — el combo se traduce a casillas por la tabla del efecto. Sin combo no
+            // hay efecto (y el roll ya está cobrado), se avisa antes de confirmar.
+            var pushEff = _currentBehavior?.FindFirstClassSkillPushEffect();
+            if (pushEff != null)
+            {
+                HideThreshold();
+                if (string.IsNullOrEmpty(_lastComboId))
+                {
+                    RenderLabel(LocalizedContent.Ui("formula.push.no_combo",
+                        "Empuje - sin combo: sin efecto"), 0);
+                    return;
+                }
+
+                int tiles = pushEff.Table != null ? pushEff.Table.GetTiles(_lastComboId) : 0;
+                string pushComboName = !string.IsNullOrEmpty(_lastComboDisplayName)
+                    ? _lastComboDisplayName : "Combo";
+                RenderLabel(string.Format(
+                    LocalizedContent.Ui("formula.push.preview", "{0}: empuja {1}"), pushComboName, tiles), tiles);
+                return;
+            }
 
             // Modo defensa: la tirada activa genera ESCUDO, no daño. Entra por dos
             // caminos: fase >0 de un chain (evento OnChainPhaseStarted) o un behavior
