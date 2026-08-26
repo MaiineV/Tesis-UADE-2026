@@ -129,6 +129,35 @@ namespace Rollgeon.Combat.Rooms.Tests
             Assert.IsEmpty(_pipeline.Resolved, "Nada tiene que cobrar en un tick que sólo telegrafía.");
         }
 
+        /// <summary>
+        /// El overlay no está en los bootstrap: lo crea el primero que pinta. Consultándolo con
+        /// TryGetService la primera siembra de la pelea caía antes de que existiera, y esas bombas
+        /// —las únicas que el jugador ve aparecer sin haber visto nunca un aviso— quedaban sin cruz.
+        /// </summary>
+        [Test]
+        public void TheFirstSowingOfTheFight_PaintsItsCrosses_WithNoPainterRegisteredYet()
+        {
+            ServiceLocator.RemoveService<IThreatOverlayService>();
+            // Show necesita el grid para ubicar los quads; en la pelea lo trae el bootstrap.
+            ServiceLocator.AddService<IGridManager>(_grid, ServiceScope.Global);
+
+            var node = MakeNode(count: 4);
+            node.Tick(_context);
+
+            Assert.IsTrue(ServiceLocator.TryGetService<IThreatOverlayService>(out var painter),
+                "La siembra tiene que levantar el overlay, no esperar a que otro nodo lo cree.");
+
+            var overlay = (ThreatTelegraphOverlay)painter;
+            foreach (var (guid, cross) in Live())
+            {
+                var channel = AINode_BombField.ChannelFor(_boss, node.ChannelPrefix, guid);
+                Assert.AreEqual(cross.Count, overlay.ActiveQuadsOf(channel).Count,
+                    "La bomba quedó sin cruz pintada.");
+            }
+
+            overlay.Dispose();
+        }
+
         [Test]
         public void Sowing_BombNearTheCorner_ClipsItsCrossAgainstTheRoom()
         {

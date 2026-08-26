@@ -151,14 +151,21 @@ namespace Rollgeon.Combat.Rooms
         }
 
         /// <remarks>
+        /// <para>
         /// Pasa por TODAS las que están en pie y no sólo por las nuevas, y eso está bien: volver a
         /// marcar la cruz de una que ya estaba es idempotente, y <c>Sow</c> no le refresca la mecha
         /// a una bomba ya armada.
+        /// </para>
+        /// <para>
+        /// El overlay va por <c>ResolveOrCreate</c> y no por <c>TryGetService</c>: no está en los
+        /// bootstrap, lo crea el primero que pinta. Consultándolo, la primera siembra de la pelea
+        /// caía antes de que existiera y esas bombas quedaban sin cruz.
+        /// </para>
         /// </remarks>
         private void MarkNewBombs(AIContext context, IGridManager grid, AINode_SpawnRoomObjects spawner)
         {
             ServiceLocator.TryGetService<IThreatenedAreaService>(out var threat);
-            ServiceLocator.TryGetService<IThreatOverlayService>(out var overlay);
+            var overlay = ThreatTelegraphOverlay.ResolveOrCreate();
 
             var field = BombFieldService.ResolveOrCreate();
 
@@ -167,10 +174,8 @@ namespace Rollgeon.Combat.Rooms
                 var cross = ComputeCross(coord, grid);
                 field.Sow(guid, cross, FuseTurns);
 
-                if (threat == null) continue;
-
                 var channel = ChannelFor(context.SelfGuid, ChannelPrefix, guid);
-                threat.Mark(channel, cross, IgnitionDamage, AttackKind.Environmental);
+                threat?.Mark(channel, cross, IgnitionDamage, AttackKind.Environmental);
                 overlay?.Show(channel, cross);
             }
         }
