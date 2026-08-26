@@ -134,6 +134,18 @@ namespace Rollgeon.Entities.Visuals
                 if (on) preview.Show(guid);
                 else preview.Clear();
             };
+
+            // La fila sobre la cabeza y la columna del tooltip leen la MISMA lista: el icono que
+            // flota sobre el bicho y el de su tarjeta son el mismo sprite, que es lo que hace que
+            // el sistema se entienda sin tutorial.
+            var settings = Resources.Load<Rollgeon.UI.HUD.Status.EnemyStatusRowSettingsSO>(
+                Rollgeon.UI.HUD.Status.EnemyStatusRowSettingsSO.ResourcePath);
+            if (settings == null || settings.IconPrefab == null) return;
+
+            var row = Rollgeon.UI.HUD.Status.EnemyStatusIconsView.Create(pawn.transform, settings);
+            if (row == null) return;
+            row.Initialize(guid, settings.IconPrefab, settings.Catalog);
+            trigger.CardsProvider = row.Collect;
         }
 
         /// <summary>
