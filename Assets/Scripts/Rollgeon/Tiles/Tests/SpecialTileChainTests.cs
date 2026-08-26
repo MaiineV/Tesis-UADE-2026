@@ -178,13 +178,31 @@ namespace Rollgeon.Tiles.Tests
         [Test]
         public void Push_StopsBeforeObstacle()
         {
-            _grid.Register(Guid.NewGuid(), new GridCoord(3, 0));
+            var blocker = Guid.NewGuid();
+            _grid.Register(blocker, new GridCoord(3, 0));
 
             var result = _forced.Push(_player, Cardinal.East, 5, Guid.NewGuid());
 
             Assert.AreEqual(new GridCoord(2, 0), result.FinalCoord);
             Assert.AreEqual(2, result.TilesTraveled);
             Assert.AreEqual(ForcedMoveStop.Obstacle, result.StoppedBy);
+            Assert.AreEqual(new GridCoord(3, 0), result.BlockedAt);
+            Assert.AreEqual(blocker, result.BlockerGuid);
+            Assert.IsTrue(result.BlockedByEntity);
+            Assert.IsFalse(result.BlockedByWall);
+        }
+
+        [Test]
+        public void Push_IntoEdge_BlockerGuidIsEmpty()
+        {
+            // Grid de 10x10: empujar 20 celdas hacia el Este choca contra el borde, no
+            // contra un ocupante — BlockerGuid debe distinguir pared de entidad.
+            var result = _forced.Push(_player, Cardinal.East, 20, Guid.NewGuid());
+
+            Assert.AreEqual(ForcedMoveStop.Obstacle, result.StoppedBy);
+            Assert.AreEqual(Guid.Empty, result.BlockerGuid);
+            Assert.IsTrue(result.BlockedByWall);
+            Assert.IsFalse(result.BlockedByEntity);
         }
 
         // ======================================================================
