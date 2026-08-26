@@ -277,6 +277,7 @@ namespace Rollgeon.Combat.Rooms
                 // por él: un objeto puede irse por otra vía (un hazard, un cambio de fase) y una
                 // ranura rota que sigue en el mapa de ocupancia es un muro invisible.
                 grid.Unregister(slot.ObjectGuid);
+                RoomObjectCleanupService.ResolveOrCreate().Forget(slot.ObjectGuid);
 
                 LeaveDeathHazard(slot.Coord);
 
@@ -442,6 +443,11 @@ namespace Rollgeon.Combat.Rooms
                 registry.Register(id, attrs);
 
             if (Definition.Blocks) grid.Register(id, coord);
+
+            // El barrido de fin de combate recorre el turn order, y con HideFromTurnQueue el objeto
+            // nunca entra ahí: sin esto se queda parado en la sala, ocupando su casilla, después de
+            // que la pelea terminó.
+            RoomObjectCleanupService.ResolveOrCreate().Track(id);
 
             SpawnPawn(context, id, coord, hp);
 
