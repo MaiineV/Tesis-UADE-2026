@@ -551,7 +551,7 @@ namespace Rollgeon.Tiles
         }
 
         /// <inheritdoc />
-        public void CollectTypesUnder(Guid entity, List<SpecialTileType> into)
+        public void CollectUnder(Guid entity, List<SpecialTileInfo> into)
         {
             if (into == null) return;
             into.Clear();
@@ -566,7 +566,17 @@ namespace Rollgeon.Tiles
                 // Mismos filtros que un disparo real: un ícono de "quemándose" sobre un fuego
                 // del que una Zona de Seguridad te protege sería mentirle al jugador.
                 if (!ShouldAffect(instance, entity, coord)) continue;
-                if (!into.Contains(def.TileType)) into.Add(def.TileType);
+
+                // Una sola entrada por definición: dos instancias del mismo fuego solapadas son
+                // la misma casilla para el que la pisa, y cobran lo mismo.
+                bool already = false;
+                for (int i = 0; i < into.Count; i++)
+                {
+                    if (into[i].Definition != def) continue;
+                    already = true;
+                    break;
+                }
+                if (!already) into.Add(instance.ToInfo());
             }
         }
 

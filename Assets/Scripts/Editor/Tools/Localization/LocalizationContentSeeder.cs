@@ -663,9 +663,17 @@ namespace Rollgeon.EditorTools.Localization
 
             // Estados "parado sobre" (sin turnos: duran lo que dure la estadía en la casilla).
             Content("status.burn.name", "Quemándose", "Burning");
+            // {0} = daño al entrar, {1} = daño al empezar el turno encima. Los pasa
+            // TileStandStatusProvider.BurnState desde la definición que se está pisando: cuatro
+            // fuegos comparten el tipo y cobran 8/12, 6/10 y 15/15. El <b> va en la tabla para
+            // que la énfasis sea autorable por idioma.
             Content("status.burn.desc",
-                "Estás sobre Fuego: recibís daño al inicio de tu turno mientras sigas acá.",
-                "You are standing on Fire: you take damage at the start of your turn while you remain here.");
+                "<b>{0}</b> al entrar en una casilla. <b>{1}</b> si empezás tu turno sobre ella.",
+                "<b>{0}</b> on entering a tile. <b>{1}</b> if you start your turn on it.");
+            Content("status.dice_block.name", "Candado", "Padlock");
+            Content("status.dice_block.desc",
+                "Uno de tus dados queda trabado. Sortea otro cada turno.",
+                "One of your dice stays jammed. He draws another one every turn.");
             Content("status.tile_heal.name", "Casilla de Curación", "Healing Tile");
             Content("status.tile_heal.desc",
                 "Terminá tu turno acá para recuperar vida.",
@@ -1123,13 +1131,13 @@ namespace Rollgeon.EditorTools.Localization
             // están en el banco y nadie los pasa el mouse por encima.
             Boss(CroupierAssetBuilder.EntityId,
                 "El Croupier", "The Croupier",
-                "Quema el paño que tiene delante y se va al borde cuando lo acorralás.",
-                "Burns the ground in front of him and bolts for the edge when you crowd him.");
+                "Siembra bombas en el paño, le prende fuego al suelo que tiene delante y dispara a distancia. Si lo acorralás, salta al borde de la sala.",
+                "Sows bombs across the felt, sets the ground in front of him on fire, and shoots from range. Crowd him and he bolts for the edge.");
 
             Boss(CajeroAssetBuilder.EntityId,
                 "El Cajero", "The Cashier",
-                "Te agarra, te tira lejos, y se queda con lo que se te cayó.",
-                "Grabs you, throws you clear, and keeps whatever you dropped.");
+                "Te tira lejos y te llena el piso de monedas. Las que no levantás a tiempo se las lleva él, y cada una lo cura.",
+                "Throws you clear and litters the floor with coins. The ones you don't grab in time he takes back, and each one heals him.");
 
             Boss(CajeroAssetBuilder.CritterEntityId,
                 "Comisión", "The Commission",
@@ -1138,8 +1146,8 @@ namespace Rollgeon.EditorTools.Localization
 
             Boss(GeneralaAssetBuilder.BossEntityId,
                 "La Generala", "The Generala",
-                "Tira su propia mano a la vista. Rompele un dado y le borrás una categoría.",
-                "Rolls her own hand in the open. Break a die and you erase a category.");
+                "Tira su propia mano a la vista y te cobra la categoría que le salga. Rompele un dado y le borrás una.",
+                "Rolls her hand in the open and charges you whatever category it lands. Break a die and you erase one.");
 
             Boss(GeneralaAssetBuilder.DiceEntityId,
                 "Dado de la Casa", "House Die",

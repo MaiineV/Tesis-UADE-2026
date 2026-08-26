@@ -20,9 +20,11 @@ namespace Rollgeon.UI.HUD.Status
 
         private readonly StatusIconCatalogSO _catalog;
 
-        // Reusada entre Collects: la fila se repinta en cada movimiento y esto corre en
-        // pleno combate — cero allocs por refresh.
-        private readonly List<SpecialTileType> _typesScratch = new();
+        // Reusada entre Collects: la fila se repinta en cada movimiento y esto corre en pleno
+        // combate. No es cero allocs — CollectUnder copia las coords de cada instancia — pero
+        // son una o dos casillas, y sin la definición no hay forma de saber cuánto cobra la que
+        // estás pisando.
+        private readonly List<SpecialTileInfo> _under = new();
 
         public TileStandStatusProvider(StatusIconCatalogSO catalog) => _catalog = catalog;
 
@@ -31,22 +33,22 @@ namespace Rollgeon.UI.HUD.Status
             if (into == null) return;
             if (!ServiceLocator.TryGetService<ISpecialTileService>(out var tiles) || tiles == null) return;
 
-            tiles.CollectTypesUnder(ownerGuid, _typesScratch);
-            if (_typesScratch.Count == 0) return;
+            tiles.CollectUnder(ownerGuid, _under);
+            if (_under.Count == 0) return;
 
             // Fire y FireTemp colapsan en un solo "quemándose": para el jugador es el mismo
             // estado, y dos íconos idénticos leerían como bug.
             bool burnAdded = false;
-            foreach (var type in _typesScratch)
+            foreach (var info in _under)
             {
-                switch (type)
+                var def = info.Definition;
+                switch (def.TileType)
                 {
                     case SpecialTileType.Fire:
                     case SpecialTileType.FireTemp:
                         if (burnAdded) break;
                         burnAdded = true;
-                        Add(into, BurnId, "Quemándose",
-                            "Estás sobre Fuego: recibís daño al inicio de tu turno mientras sigas acá.");
+                        into.Add(BurnState(def, _catalog != null ? _catalog.Resolve(BurnId) : null));
                         break;
 
                     case SpecialTileType.Heal:
@@ -65,6 +67,33 @@ namespace Rollgeon.UI.HUD.Status
                         break;
                 }
             }
+        }
+
+        /// <summary>
+        /// El "quemándose" con los números de ESA casilla. Público y estático para que la tarjeta
+        /// de suelo de un jefe diga la misma frase sin copiarla.
+        /// </summary>
+        /// <remarks>
+        /// Los números salen de la definición y no de la key: cuatro fuegos comparten
+        /// <see cref="SpecialTileType"/> y cobran 8/12, 6/10 y 15/15.
+        /// </remarks>
+        public static StatusIconState BurnState(SpecialTileDefinitionSO definition, UnityEngine.Sprite icon,
+                                                StatusCardStyle style = StatusCardStyle.Unit)
+        {
+            int enter = definition != null ? definition.EnterDamage : 0;
+            int turnStart = definition != null ? definition.TurnStartDamage : 0;
+
+            return new StatusIconState(
+                BurnId,
+                LocalizedContent.Name(BurnId, "Quemándose"),
+                LocalizedContent.DescriptionFormat(BurnId,
+                    "<b>{0}</b> al entrar en una casilla. <b>{1}</b> si empezás tu turno sobre ella.",
+                    enter, turnStart),
+                icon,
+                active: true,
+                remainingTurns: null,
+                stackCount: null,
+                style: style);
         }
 
         private void Add(List<StatusIconState> into, string id, string fallbackName, string fallbackDesc)

@@ -33,6 +33,65 @@ namespace Rollgeon.Localization
             => Resolve(entityId, DescSuffix, fallback);
 
         /// <summary>
+        /// Como <see cref="Description"/> pero con argumentos, para las descripciones que llevan
+        /// números vivos — el fuego que estás pisando cobra 6/10 o 15/15 según cuál sea.
+        /// </summary>
+        public static string DescriptionFormat(string entityId, string fallbackFormat,
+                                               params object[] args)
+            => string.IsNullOrEmpty(entityId)
+                ? SafeFormat(fallbackFormat, args)
+                : FromTableFormat(ContentTable, entityId + DescSuffix, fallbackFormat, args);
+
+        /// <summary>
+        /// <c>table[key]</c> formateado con <paramref name="args"/>, o el fallback formateado.
+        /// </summary>
+        /// <remarks>
+        /// Va por <c>GetLocalizedString(args)</c> y no por un <c>string.Format</c> del resultado:
+        /// hoy las entries no son Smart y las dos rutas coinciden, pero si alguna se marca Smart
+        /// el formateo tiene que seguir siendo el del package y no el nuestro.
+        /// </remarks>
+        public static string FromTableFormat(string table, string key, string fallbackFormat,
+                                             params object[] args)
+        {
+            if (!string.IsNullOrEmpty(key))
+            {
+                try
+                {
+                    var stringTable = LocalizationSettings.StringDatabase.GetTable(table);
+                    var entry = stringTable?.GetEntry(key);
+                    if (entry != null)
+                    {
+                        var localized = entry.GetLocalizedString(args);
+                        if (!string.IsNullOrEmpty(localized)) return localized;
+                    }
+                }
+                catch (Exception)
+                {
+                    // Localization no inicializado / tabla ausente → caemos al valor autor.
+                }
+            }
+
+            return SafeFormat(fallbackFormat, args);
+        }
+
+        // El fallback tambien es un format string autorado a mano: un {0} de mas ahi no puede
+        // tirar una excepcion adentro de un tooltip.
+        private static string SafeFormat(string format, object[] args)
+        {
+            if (string.IsNullOrEmpty(format)) return format;
+            if (args == null || args.Length == 0) return format;
+
+            try
+            {
+                return string.Format(format, args);
+            }
+            catch (FormatException)
+            {
+                return format;
+            }
+        }
+
+        /// <summary>
         /// Pista localizada del contenido, o <paramref name="fallback"/>. La usan los
         /// desbloqueables, que muestran una pista mientras están bloqueados y recién
         /// revelan la <see cref="Description"/> al cumplirse.
