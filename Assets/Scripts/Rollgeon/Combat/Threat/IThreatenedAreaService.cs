@@ -44,6 +44,17 @@ namespace Rollgeon.Combat.Threat
         /// </summary>
         bool TryConsume(Guid sourceGuid, out ThreatenedArea pending);
 
+        /// <summary>
+        /// Lee el área pendiente de <paramref name="sourceGuid"/> <b>sin</b> consumirla: lo mismo
+        /// que devuelve <see cref="TryConsume"/>, pero dejándola puesta.
+        /// </summary>
+        /// <remarks>
+        /// <see cref="GetPendingTiles"/> ya lee sin consumir pero no trae el número, y el número
+        /// es justamente lo que el aviso promete. Quien lo leyera con <see cref="TryConsume"/> se
+        /// lo cobraría a sí mismo y el jefe se quedaría sin su ataque.
+        /// </remarks>
+        bool TryPeek(Guid sourceGuid, out ThreatenedArea pending);
+
         /// <summary>Descarta el área pendiente de <paramref name="sourceGuid"/> sin ejecutarla.</summary>
         void Clear(Guid sourceGuid);
 

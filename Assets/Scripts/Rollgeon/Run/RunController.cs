@@ -255,6 +255,15 @@ namespace Rollgeon.Run
             }
             ServiceLocator.AddService<IEnemyAIHandler>(aiHandler, ServiceScope.Run);
 
+            // Leer el árbol de un enemigo sin tickearlo: es lo que alimenta el hover del tooltip.
+            // Sólo con el handler de árbol — el fallback básico no tiene ciclo que anticipar.
+            if (aiHandler is TreeDrivenEnemyAI treeAI)
+            {
+                ServiceLocator.AddService<IEnemyIntentService>(
+                    new EnemyIntentService(aiRegistry, playerService, treeAI.TryBuildReadContext),
+                    ServiceScope.Run);
+            }
+
             // 7. Exploration
             ExplorationController.CreateAndRegister();
 

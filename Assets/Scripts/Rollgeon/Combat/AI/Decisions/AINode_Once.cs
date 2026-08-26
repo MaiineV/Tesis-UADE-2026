@@ -28,6 +28,9 @@ namespace Rollgeon.Combat.AI.Decisions
 
         public override string NodeName => "Once";
 
+        /// <summary><c>true</c> cuando el hijo ya corrió y el nodo quedó transparente.</summary>
+        public bool HasRun => _done;
+
         public override AIResult Tick(AIContext context)
         {
             if (_done) return AIResult.Succeeded;

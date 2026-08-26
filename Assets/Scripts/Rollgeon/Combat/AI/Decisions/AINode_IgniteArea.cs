@@ -50,7 +50,7 @@ namespace Rollgeon.Combat.AI.Decisions
     /// </para>
     /// </remarks>
     [Serializable, HideReferenceObjectPicker]
-    public sealed class AINode_IgniteArea : AIActionNode
+    public sealed class AINode_IgniteArea : AIActionNode, IAIIntentNode
     {
         [Required]
         [Tooltip("Definición de la casilla a plantar. Sin esto el nodo falla: es el daño entero del " +
@@ -106,6 +106,37 @@ namespace Rollgeon.Combat.AI.Decisions
         /// esperar: las casillas traen su propio visual y VFX.
         /// </summary>
         public override AIResult Tick(AIContext context) => Ignite(context);
+
+        /// <summary>
+        /// Describe el área que este paso va a prender, leída del servicio de amenaza.
+        /// </summary>
+        /// <remarks>
+        /// La describe el que la CONSUME y no el que la marca. La forma del cono se ancla al
+        /// tickear —detrás de la fuga— y un paso posterior del árbol puede descartarla en el
+        /// mismo turno, así que lo único que se puede afirmar es lo que ya quedó congelado acá.
+        /// Sin marca pendiente esto contesta <c>false</c>, que es exactamente el turno en que el
+        /// jefe sólo telegrafía y el turno en que se le canceló la banda.
+        /// </remarks>
+        public bool TryDescribeIntent(AIContext context, out AIIntent intent)
+        {
+            intent = default;
+            if (context == null || Definition == null) return false;
+            if (!ServiceLocator.TryGetService<IThreatenedAreaService>(out var threat) || threat == null)
+                return false;
+
+            var source = AINode_TelegraphMark.SourceKey(context.SelfGuid, ChannelId);
+            if (!threat.TryPeek(source, out var area)) return false;
+
+            int rounds = DurationRounds > 0 ? DurationRounds : Definition.DefaultDurationRounds;
+            intent = new AIIntent(
+                "intent.ignite", "Prende el suelo",
+                area.Damage, area.Kind,
+                tiles: area.Tiles,
+                leaves: Definition, leavesRounds: rounds,
+                turnsAway: AnnounceTurns,
+                channelKey: source);
+            return true;
+        }
 
         /// <inheritdoc />
         public override IEnumerator TickCoroutine(AIContext context, Action<AIResult> onResult)

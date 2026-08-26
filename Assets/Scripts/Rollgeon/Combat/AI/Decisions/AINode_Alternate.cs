@@ -28,6 +28,15 @@ namespace Rollgeon.Combat.AI.Decisions
 
         public override string NodeName => "Alternate";
 
+        /// <summary>El hijo que le toca al próximo tick, o <c>null</c> si no hay hijos.</summary>
+        /// <remarks>
+        /// Entre turnos ES el próximo tiempo del ciclo: <see cref="Tick"/> lee
+        /// <c>Children[_index % Count]</c> y recién después avanza el índice, así que leerlo acá
+        /// no lo consume ni lo adelanta.
+        /// </remarks>
+        public AIDecisionNode NextChild =>
+            Children == null || Children.Count == 0 ? null : Children[_index % Children.Count];
+
         public override AIResult Tick(AIContext context)
         {
             if (Children == null || Children.Count == 0) return AIResult.Failed;

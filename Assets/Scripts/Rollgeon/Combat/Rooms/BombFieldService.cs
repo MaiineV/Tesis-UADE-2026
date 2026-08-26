@@ -51,6 +51,12 @@ namespace Rollgeon.Combat.Rooms
         /// <summary>Las que siguen en pie, para que el nodo que siembra sepa cuántas reponer.</summary>
         IEnumerable<(Guid Guid, IReadOnlyList<GridCoord> Cross)> Live(AttributesManager attributes);
 
+        /// <summary>
+        /// Turnos que le quedan a la mecha de <paramref name="bombGuid"/>. <c>1</c> = estalla en
+        /// el próximo turno del jefe.
+        /// </summary>
+        bool TryGetFuse(Guid bombGuid, out int fuse);
+
         void Clear();
     }
 
@@ -139,6 +145,25 @@ namespace Rollgeon.Combat.Rooms
                 if (health == null || health.Value <= 0) continue;
                 yield return (kvp.Key, kvp.Value.Cross);
             }
+        }
+
+        /// <summary>
+        /// Turnos que le quedan a la mecha de <paramref name="bombGuid"/>. La cuenta la baja
+        /// <c>TickFuses</c>, así que <c>1</c> significa "estalla en el próximo turno del jefe".
+        /// </summary>
+        /// <remarks>
+        /// Aparte de <c>Live</c> a propósito: esa promete crucecitas y nada más, y tiene callers
+        /// que no quieren saber de la mecha.
+        /// </remarks>
+        public bool TryGetFuse(Guid bombGuid, out int fuse)
+        {
+            if (_bombs.TryGetValue(bombGuid, out var entry))
+            {
+                fuse = entry.Fuse;
+                return true;
+            }
+            fuse = 0;
+            return false;
         }
 
         public void Clear() => _bombs.Clear();

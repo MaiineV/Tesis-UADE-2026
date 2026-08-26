@@ -41,7 +41,7 @@ namespace Rollgeon.Combat.Rooms
     /// </para>
     /// </remarks>
     [Serializable, HideReferenceObjectPicker]
-    public sealed class AINode_BombField : AIActionNode
+    public sealed class AINode_BombField : AIActionNode, IAIIntentNode
     {
         [Tooltip("La bomba a sembrar. RespawnDelayTurns tiene que ser 0: es lo que permite que la " +
                  "siembra reponga tanto lo detonado como lo roto a mano.")]
@@ -94,6 +94,11 @@ namespace Rollgeon.Combat.Rooms
         [Tooltip("Prefijo del canal de amenaza por bomba (prefijo + guid). Tiene que ser el MISMO " +
                  "que el de AINode_DetonateBombField.")]
         public string ChannelPrefix = "bomb.";
+
+        [Tooltip("Deja la cruz marcada pero NO la pinta: el dibujo sale sólo al pasar el mouse por " +
+                 "encima de la bomba. Off = se pinta al sembrar y se queda, que es como se comportan " +
+                 "todos los jefes ya autorados.")]
+        public bool HoverOnlyPaint;
 
         [Title("Presentación")]
 #if UNITY_EDITOR
@@ -218,9 +223,29 @@ namespace Rollgeon.Combat.Rooms
                 if (armed == null) continue;
 
                 var channel = ChannelFor(context.SelfGuid, ChannelPrefix, guid);
+                // El Mark es incondicional: el flag decide quién DIBUJA la cruz, no si la bomba
+                // amenaza. Sin marca no habría qué mostrar en el hover ni qué detonar.
                 threat?.Mark(channel, armed, IgnitionDamage, AttackKind.Environmental);
-                overlay?.Show(channel, armed);
+                if (!HoverOnlyPaint) overlay?.Show(channel, armed);
             }
+        }
+
+        /// <summary>Describe la siembra: cuántas bombas y con qué mecha.</summary>
+        /// <remarks>
+        /// <b>Sin casillas a propósito.</b> Las ranuras las sortea <c>AINode_SpawnRoomObjects</c>
+        /// con <c>ScatteredFree</c> en el momento de sembrar, así que dónde van a caer no se sabe
+        /// hasta que caen. Un conjunto vacío significa "no se sabe", nunca "estimado".
+        /// </remarks>
+        public bool TryDescribeIntent(AIContext context, out AIIntent intent)
+        {
+            intent = default;
+            if (Definition == null) return false;
+
+            intent = new AIIntent(
+                "intent.bomb_field", "Siembra bombas",
+                damage: 0, kind: AttackKind.Environmental,
+                amount: Count, turnsAway: 0);
+            return true;
         }
 
         /// <summary>Qué forma le toca a la siembra número <paramref name="sowing"/>, contando de 0.</summary>

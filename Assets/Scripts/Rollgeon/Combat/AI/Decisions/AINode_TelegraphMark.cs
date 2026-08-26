@@ -74,6 +74,11 @@ namespace Rollgeon.Combat.AI.Decisions
                  "consume (AINode_IgniteArea) tiene que declarar el MISMO canal.")]
         public string ChannelId;
 
+        [Tooltip("Deja el área marcada pero NO la pinta: el dibujo sale sólo al pasar el mouse por " +
+                 "encima del enemigo. Off = se pinta al marcar y se queda, que es como se comportan " +
+                 "todos los jefes ya autorados.")]
+        public bool HoverOnlyPaint;
+
         public override string NodeName => string.IsNullOrEmpty(ChannelId)
             ? $"Telegraph Mark ({Shape}, dmg {Damage})"
             : $"Telegraph Mark [{ChannelId}] ({Shape}, dmg {Damage})";
@@ -159,7 +164,9 @@ namespace Rollgeon.Combat.AI.Decisions
 
             // Overlay de sprites independiente del tinte del piso: el highlight de move/path del
             // jugador pinta y limpia sus tiles a su antojo, y se llevaría puesto el warning.
-            ThreatTelegraphOverlay.ResolveOrCreate().Show(source, tiles);
+            // El Mark de arriba es incondicional: el flag decide quién DIBUJA el área, no si el
+            // jefe la amenaza.
+            if (!HoverOnlyPaint) ThreatTelegraphOverlay.ResolveOrCreate().Show(source, tiles);
 
             return AIResult.Succeeded;
         }
