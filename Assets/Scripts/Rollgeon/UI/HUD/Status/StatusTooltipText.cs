@@ -38,6 +38,19 @@ namespace Rollgeon.UI.HUD.Status
             return sb.ToString();
         }
 
+        /// <summary>
+        /// Badge del ícono/tarjeta: la cantidad si el estado es apilable, la duración si no.
+        /// El stack nunca se escribe en la regla — así un estado que hoy traba un dado y
+        /// mañana traba dos cambia el número acá y la frase queda intacta.
+        /// </summary>
+        public static string ResolveBadge(in StatusIconState state)
+        {
+            if (state.StackCount.HasValue)
+                return state.StackCount.Value == 0 ? string.Empty : state.StackCount.Value.ToString();
+
+            return ResolveDurationBadge(state);
+        }
+
         /// <summary>Texto que va bajo el ícono ("1 Turno" / "3 Turnos"). Vacío sin duración.</summary>
         public static string ResolveDurationBadge(in StatusIconState state)
         {

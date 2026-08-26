@@ -50,6 +50,19 @@ namespace Rollgeon.UI.Tooltips
         [Tooltip("Canvas host. Si null, busca uno via GetComponentInParent en Awake.")]
         [SerializeField] private Canvas _hostCanvas;
 
+        [Tooltip("Contenedor de la columna de tarjetas (\"Cards\"), hermano de _text bajo " +
+                 "el panel. Null a propósito: sin cablear, el panel se comporta exactamente " +
+                 "como el tooltip de texto de siempre — es lo que mantiene vivos todos los " +
+                 "tooltips existentes y TooltipPlacementTests mientras se completa el wiring " +
+                 "del prefab (ver Rollgeon/Tooltips/2 - Wire Card Column Into Tooltip Panel).")]
+        [SerializeField] private RectTransform _cardsContainer;
+
+        [Tooltip("Prefab de una tarjeta de la columna. Null junto con _cardsContainer = " +
+                 "sin columna, mismo comportamiento que antes.")]
+        [SerializeField] private TooltipCardView _cardPrefab;
+
+        private readonly List<TooltipCardView> _cardSlots = new List<TooltipCardView>();
+
         private RectTransform _hostCanvasRect;
         private bool _visible;
         // Identifica al trigger dueño del tooltip actual. Las llamadas a Hide(ownerId) solo
@@ -80,13 +93,27 @@ namespace Rollgeon.UI.Tooltips
         {
             if (_root == null && transform.childCount > 0)
                 _root = transform.GetChild(0) as RectTransform;
+            // El auto-resolve toma el primer TMP descendiente, y una vez que existe la columna
+            // ese primero puede ser el titulo de una tarjeta. Sin columna cableada el camino es
+            // identico al de siempre.
             if (_text == null)
-                _text = GetComponentInChildren<TMP_Text>(includeInactive: true);
+                _text = FindHeaderLabel();
 
             if (_hostCanvas == null) _hostCanvas = GetComponentInParent<Canvas>();
             _hostCanvasRect = _hostCanvas != null ? _hostCanvas.transform as RectTransform : null;
 
             EnsureOverlaySorting();
+        }
+
+        private TMP_Text FindHeaderLabel()
+        {
+            foreach (var candidate in GetComponentsInChildren<TMP_Text>(includeInactive: true))
+            {
+                if (_cardsContainer != null && candidate.transform.IsChildOf(_cardsContainer))
+                    continue;
+                return candidate;
+            }
+            return null;
         }
 
         // El orden de jerarquía dentro del canvas HUD dejaba el tooltip DEBAJO de
@@ -256,7 +283,37 @@ namespace Rollgeon.UI.Tooltips
         // andando a todos los tooltips de texto que ya existen.
         private void ApplyContent(string header, IReadOnlyList<StatusIconState> cards)
         {
-            if (_text != null) _text.text = header ?? string.Empty;
+            int count = cards?.Count ?? 0;
+
+            if (_text != null)
+            {
+                _text.text = header ?? string.Empty;
+                // Sin tarjetas el encabezado ES el tooltip y no se apaga nunca: apagarlo dejaria
+                // un panel vacio. Con tarjetas, un encabezado vacio solo agregaria un renglon
+                // alto de nada arriba de la columna.
+                _text.gameObject.SetActive(count == 0 || !string.IsNullOrEmpty(header));
+            }
+
+            if (_cardsContainer == null || _cardPrefab == null) return;
+
+            _cardsContainer.gameObject.SetActive(count > 0);
+            EnsureCardSlots(count);
+
+            for (int i = 0; i < _cardSlots.Count; i++)
+            {
+                bool used = i < count;
+                _cardSlots[i].gameObject.SetActive(used);
+                if (used) _cardSlots[i].Show(cards[i]);
+            }
+        }
+
+        // Los slots se reusan y solo se apagan, igual que PlayerStatusIconsView.EnsureSlots: el
+        // panel se reabre en cada hover y destruir/instanciar por hover seria churn por mover el
+        // mouse.
+        private void EnsureCardSlots(int needed)
+        {
+            while (_cardSlots.Count < needed)
+                _cardSlots.Add(Instantiate(_cardPrefab, _cardsContainer));
         }
 
         private void SetVisible(bool visible)
