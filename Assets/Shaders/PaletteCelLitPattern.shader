@@ -35,6 +35,16 @@ Shader "Rollgeon/PaletteCelLitPattern"
 
         [Toggle] _FlattenTopFaces ("Flatten Top/Bottom Faces (sin shapes, mismo color)", Float) = 0
 
+        [Header(Palette)]
+        // Mismo criterio que PaletteCelLit: [ToggleUI] (no [Toggle], no declara
+        // keyword) — el shader ramifica sobre el float en runtime. Un slot por
+        // cada una de las 4 zonas de color — cada una elige su propio slot.
+        [ToggleUI] _UsePalette ("Use Global Palette", Float) = 0
+        [PaletteSlot] _SlotColorA ("Palette Slot Color A",  Float) = 0
+        [PaletteSlot] _SlotColorB ("Palette Slot Color B",  Float) = 0
+        [PaletteSlot] _SlotDetail ("Palette Slot Detail",   Float) = 0
+        [PaletteSlot] _SlotBG     ("Palette Slot Background", Float) = 0
+
         [Header(Colors)]
         _ColorA      ("Color A  (base / celdas pares)",          Color) = (0.38, 0.10, 0.10, 1)
         _ColorB      ("Color B  (celdas impares)",               Color) = (0.26, 0.06, 0.06, 1)
@@ -121,6 +131,11 @@ Shader "Rollgeon/PaletteCelLitPattern"
             float4 _RollgeonLightData[128];
 
             CBUFFER_START(UnityPerMaterial)
+                float  _UsePalette;
+                float  _SlotColorA;
+                float  _SlotColorB;
+                float  _SlotDetail;
+                float  _SlotBG;
                 float  _ShapeType;
                 float  _PatternType;
                 float  _DetailType;
@@ -161,6 +176,9 @@ Shader "Rollgeon/PaletteCelLitPattern"
                 float  _EnableEmission;
                 float4 _EmissionColor;
             CBUFFER_END
+
+            // Arrays globales subidos por GlobalPaletteManager cada frame
+            float4 _PaletteMidColors[32];
 
             struct Attributes
             {
@@ -367,11 +385,16 @@ Shader "Rollgeon/PaletteCelLitPattern"
                     && (abs(normalWS.y) > abs(normalWS.x))
                     && (abs(normalWS.y) > abs(normalWS.z));
 
+                float3 colA = _UsePalette > 0.5 ? _PaletteMidColors[int(_SlotColorA)].rgb : _ColorA.rgb;
+                float3 colB = _UsePalette > 0.5 ? _PaletteMidColors[int(_SlotColorB)].rgb : _ColorB.rgb;
+                float3 colDetail = _UsePalette > 0.5 ? _PaletteMidColors[int(_SlotDetail)].rgb : _DetailColor.rgb;
+                float3 colBG = _UsePalette > 0.5 ? _PaletteMidColors[int(_SlotBG)].rgb : _BGColor.rgb;
+
                 float3 patternColor;
 
                 if (isTopFace)
                 {
-                    patternColor = _ColorA.rgb;
+                    patternColor = colA;
                 }
                 else
                 {
@@ -388,7 +411,7 @@ Shader "Rollgeon/PaletteCelLitPattern"
 
                     bool   onAnyBorder = false;
                     bool   inAnyFill   = false;
-                    float3 fillColor   = _BGColor.rgb;
+                    float3 fillColor   = colBG;
 
                     for (int ndy = -1; ndy <= 1; ndy++)
                     for (int ndx = -1; ndx <= 1; ndx++)
@@ -409,7 +432,7 @@ Shader "Rollgeon/PaletteCelLitPattern"
                         else                          altIdx = fmod(abs(nCell.x), 2.0);
                         if (nCell.y < _SolidRows) altIdx = 0.0;
 
-                        float3 baseCol = altIdx > 0.5 ? _ColorB.rgb : _ColorA.rgb;
+                        float3 baseCol = altIdx > 0.5 ? colB : colA;
 
                         if (_DetailType < 0.5) // Flat
                         {
@@ -431,14 +454,14 @@ Shader "Rollgeon/PaletteCelLitPattern"
                             {
                                 inAnyFill = true;
                                 float t = saturate(length(pSc) / (_ShapeSize * 0.47));
-                                fillColor = lerp(_DetailColor.rgb, baseCol, t);
+                                fillColor = lerp(colDetail, baseCol, t);
                             }
                         }
                     }
 
-                    if      (onAnyBorder) patternColor = _DetailColor.rgb;
-                    else if (inAnyFill)   patternColor = lerp(fillColor, _BGColor.rgb, 1.0 - _ShapeOpacity);
-                    else                  patternColor = _BGColor.rgb;
+                    if      (onAnyBorder) patternColor = colDetail;
+                    else if (inAnyFill)   patternColor = lerp(fillColor, colBG, 1.0 - _ShapeOpacity);
+                    else                  patternColor = colBG;
                 }
 
                 // ── Luz ──────────────────────────────────────────────────────────
@@ -558,6 +581,7 @@ Shader "Rollgeon/PaletteCelLitPattern"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Shadows.hlsl"
 
             CBUFFER_START(UnityPerMaterial)
+                float _UsePalette; float _SlotColorA; float _SlotColorB; float _SlotDetail; float _SlotBG;
                 float _ShapeType; float _PatternType; float _DetailType;
                 float _TileScale; float _ShapeSize; float _ShapeScaleX; float _ShapeScaleY; float _ShapeOpacity;
                 float _BorderWidth; float _SolidRows; float _FlattenTopFaces;
@@ -637,6 +661,7 @@ Shader "Rollgeon/PaletteCelLitPattern"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 
             CBUFFER_START(UnityPerMaterial)
+                float _UsePalette; float _SlotColorA; float _SlotColorB; float _SlotDetail; float _SlotBG;
                 float _ShapeType; float _PatternType; float _DetailType;
                 float _TileScale; float _ShapeSize; float _ShapeScaleX; float _ShapeScaleY; float _ShapeOpacity;
                 float _BorderWidth; float _SolidRows; float _FlattenTopFaces;
@@ -691,6 +716,7 @@ Shader "Rollgeon/PaletteCelLitPattern"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 
             CBUFFER_START(UnityPerMaterial)
+                float _UsePalette; float _SlotColorA; float _SlotColorB; float _SlotDetail; float _SlotBG;
                 float _ShapeType; float _PatternType; float _DetailType;
                 float _TileScale; float _ShapeSize; float _ShapeScaleX; float _ShapeScaleY; float _ShapeOpacity;
                 float _BorderWidth; float _SolidRows; float _FlattenTopFaces;
