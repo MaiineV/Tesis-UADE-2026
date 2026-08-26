@@ -286,6 +286,9 @@ MonoBehaviour:
     - Name: Count
       Entry: 3
       Data: 3
+    - Name: Shape
+      Entry: 3
+      Data: 2
     - Name: Spacing
       Entry: 3
       Data: 3

@@ -945,6 +945,24 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                 "que es lo que le da el turno para salirse.");
         }
 
+        /// <summary>
+        /// Las dos formas cubren 5 casillas, así que el fuego que queda pesa lo mismo: lo que rota es
+        /// dónde está el hueco. Fija en una sola forma, la esquiva se memoriza en la primera siembra
+        /// y el paño deja de preguntar nada por el resto de la pelea.
+        /// </summary>
+        [Test]
+        public void TheBombs_RotateBetweenThePlusAndTheX()
+        {
+            var field = Descendants(BombBeat()).OfType<AINode_BombField>().Single();
+
+            Assert.AreEqual(AINode_BombField.BlastShape.Alternating, field.Shape,
+                "La siembra dejó de rotar la forma de la cruz.");
+            Assert.AreEqual(AINode_BombField.BlastShape.Orthogonal, field.ShapeForSowing(0),
+                "La primera siembra de la pelea tiene que ser la cruz de siempre.");
+            Assert.AreEqual(AINode_BombField.BlastShape.Diagonal, field.ShapeForSowing(1),
+                "La segunda tiene que salir en aspa.");
+        }
+
         /// <summary>La mecha se mide en turnos, así que el nodo que la descuenta NO puede vivir dentro
         /// del <c>Alternate</c>: ahí correría una vez cada tres turnos y el plazo volvería a ser un
         /// ciclo entero.</summary>

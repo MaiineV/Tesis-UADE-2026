@@ -286,11 +286,23 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         public const int BombFuseTurns = 2;
 
         /// <summary>
+        /// La siembra rota <c>+</c> y <c>×</c>, y arranca por la cruz ortogonal.
+        /// </summary>
+        /// <remarks>
+        /// Las dos formas cubren 5 casillas, así que el fuego que queda pesa lo mismo y el balance no
+        /// se mueve. Lo que se mueve es la lectura: con la <c>+</c> el lugar donde pararse al lado de
+        /// una bomba es la diagonal, y con la <c>×</c> es justo la que mata. Rotando, la esquiva del
+        /// ciclo anterior no sirve para el siguiente y hay que volver a mirar el paño.
+        /// </remarks>
+        public const AINode_BombField.BlastShape BombShape = AINode_BombField.BlastShape.Alternating;
+
+        /// <summary>
         /// Separación mínima, en Chebyshev, entre bombas y contra el propio jefe.
         /// </summary>
         /// <remarks>
         /// <b>3 y no 2</b>: a 2 dos cruces alineadas comparten la casilla del medio, y ahí las dos
-        /// bombas se leen como una mancha en vez de como dos preguntas. A 3 no se tocan nunca.
+        /// bombas se leen como una mancha en vez de como dos preguntas. A 3 no se tocan nunca — ni
+        /// las ortogonales ni las aspas, que se solaparían recién a 2.
         /// El precio es cuántas entran — medido sobre las 103 caminables de la sala, a 3 entran
         /// <see cref="BombCount"/> en el 100% de las siembras, ocho en el 92% y diez sólo en el 5%.
         /// </remarks>
@@ -689,6 +701,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
                                     {
                                         Definition = bombs,
                                         Count = BombCount,
+                                        Shape = BombShape,
                                         Spacing = BombSpacing,
                                         FuseTurns = BombFuseTurns,
                                         IgnitionDamage = BombIgnitionDamage,

@@ -30,7 +30,13 @@ namespace Rollgeon.Combat.Rooms
         /// Registra una bomba recién sembrada con su cruz y su mecha en turnos. <b>No-op si ya está
         /// armada</b>: re-sembrar no le refresca el plazo.
         /// </summary>
-        void Sow(Guid bombGuid, IReadOnlyList<GridCoord> cross, int fuseTurns);
+        /// <returns>
+        /// La cruz que la bomba tiene <b>de verdad</b> — la de <paramref name="cross"/> si se armó
+        /// acá, o la que ya tenía si estaba armada. Es lo que hay que pintar: la siembra vuelve a
+        /// pasar por las que siguen en pie, y las formas rotan, así que marcar la que se le pasó le
+        /// dibujaría a una bomba vieja el aspa de la generación nueva. <c>null</c> si no se registró.
+        /// </returns>
+        IReadOnlyList<GridCoord> Sow(Guid bombGuid, IReadOnlyList<GridCoord> cross, int fuseTurns);
 
         /// <summary>
         /// Descuenta un turno a cada mecha y reparte el resultado: las que llegaron a cero
@@ -77,18 +83,19 @@ namespace Rollgeon.Combat.Rooms
             ServiceLocator.AddService<BombFieldService>(this, ServiceScope.Global);
         }
 
-        public void Sow(Guid bombGuid, IReadOnlyList<GridCoord> cross, int fuseTurns)
+        public IReadOnlyList<GridCoord> Sow(Guid bombGuid, IReadOnlyList<GridCoord> cross, int fuseTurns)
         {
-            if (bombGuid == Guid.Empty || cross == null || cross.Count == 0) return;
+            if (bombGuid == Guid.Empty || cross == null || cross.Count == 0) return null;
 
             // Una bomba ya armada NO se re-arma: el nodo que siembra vuelve a pasar por las que
             // siguen en pie cada vez que le toca su tiempo, y refrescarles la mecha las volvería
-            // eternas. La mecha la fija quien la plantó, una sola vez.
-            if (_bombs.ContainsKey(bombGuid)) return;
+            // eternas. La mecha la fija quien la plantó, una sola vez — y con ella su cruz.
+            if (_bombs.TryGetValue(bombGuid, out var armed)) return armed.Cross;
 
             // Mínimo 1 y no 0: con 0 la bomba nace ya vencida y detona antes de que el jugador tenga
             // un turno para mirarla.
             _bombs[bombGuid] = new Entry(cross, Math.Max(1, fuseTurns));
+            return cross;
         }
 
         public void TickFuses(
