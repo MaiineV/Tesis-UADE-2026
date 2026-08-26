@@ -929,6 +929,8 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 13919417973649416
     m_Key: obj.dado_casa.desc
+    m_Metadata:
+      m_Items: []
   - m_Id: 14364254574313472
     m_Key: status.tp_delay.name
     m_Metadata:
