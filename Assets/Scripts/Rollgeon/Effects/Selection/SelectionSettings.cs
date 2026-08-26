@@ -121,7 +121,7 @@ namespace Rollgeon.Effects.Selection
         private bool ShowDynamicCount => ShowCount && !IsConstantSelectionCount;
 
         /// <summary>
-        /// True si la selección apunta a enemigos (ataque / ataque especial). Estos
+        /// True si la selección apunta a enemigos (ataque / habilidad de clase). Estos
         /// pintan TODO el rango geométrico con el tinte base "range" y los slots
         /// seleccionables (con enemigo) con "attack" por encima. Centraliza la condición
         /// antes duplicada inline en el hover preview y en el chain de combate.

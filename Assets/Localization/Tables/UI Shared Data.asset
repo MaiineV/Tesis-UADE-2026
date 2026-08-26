@@ -139,10 +139,6 @@ MonoBehaviour:
     m_Key: action.move
     m_Metadata:
       m_Items: []
-  - m_Id: 33290952929282
-    m_Key: action.special_attack
-    m_Metadata:
-      m_Items: []
   - m_Id: 33290952929283
     m_Key: action.force_door
     m_Metadata:

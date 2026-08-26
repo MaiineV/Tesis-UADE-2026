@@ -146,13 +146,13 @@ namespace Rollgeon.Combat.Actions.Tests
             SetEntries(
                 MakeAction("move", ActionType.Move),
                 MakeAction("attack.basic", ActionType.Attack),
-                MakeAction("attack.special", ActionType.Attack),
+                MakeAction("attack.heavy", ActionType.Attack),
                 MakeAction("skill.heal", ActionType.SkillCheck)
             );
 
             var attacks = _catalog.GetIdsByType(ActionType.Attack).ToList();
 
-            CollectionAssert.AreEquivalent(new[] { "attack.basic", "attack.special" }, attacks);
+            CollectionAssert.AreEquivalent(new[] { "attack.basic", "attack.heavy" }, attacks);
         }
 
         [Test]

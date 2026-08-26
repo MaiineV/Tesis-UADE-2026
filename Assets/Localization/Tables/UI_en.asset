@@ -142,10 +142,6 @@ MonoBehaviour:
     m_Localized: Move
     m_Metadata:
       m_Items: []
-  - m_Id: 33290952929282
-    m_Localized: Special Attack
-    m_Metadata:
-      m_Items: []
   - m_Id: 33290952929283
     m_Localized: Force Door
     m_Metadata:

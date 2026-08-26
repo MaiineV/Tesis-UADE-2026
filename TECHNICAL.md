@@ -4368,7 +4368,7 @@ public class ActionDefinitionSO : SerializedScriptableObject
 
 **Convención de naming de `ActionId`.** `<tipo>.<subtipo>.<nombre>`. Ejemplos:
 - `combo.full_house`, `combo.generala`
-- `attack.basic`, `attack.ranged`
+- `attack.basic`
 - `ability.berserker.frenzy`, `ability.necromancer.raise`
 - `item.potion.heal_small`, `item.bomb.poison`
 - `move`, `defend`, `interact`, `skill.heal`, `skill.force_door`

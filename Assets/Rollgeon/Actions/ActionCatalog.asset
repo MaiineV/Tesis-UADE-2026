@@ -17,7 +17,6 @@ MonoBehaviour:
     SerializedBytes: 
     ReferencedUnityObjects:
     - {fileID: 11400000, guid: 2cfb9128bf0d0ca478be11ae27dce695, type: 2}
-    - {fileID: 11400000, guid: cc30bad06612bed46851331e58065af2, type: 2}
     - {fileID: 11400000, guid: 6500edf3ba361784ea41b673c2e9999e, type: 2}
     - {fileID: 11400000, guid: ecba0b261d0282a4cab6d3163de13e56, type: 2}
     - {fileID: 11400000, guid: c4a1d03ac9bf1bf4c8950a197aa6415a, type: 2}
@@ -33,7 +32,7 @@ MonoBehaviour:
         Rollgeon]], mscorlib
     - Name: 
       Entry: 12
-      Data: 6
+      Data: 5
     - Name: 
       Entry: 10
       Data: 0
@@ -49,9 +48,6 @@ MonoBehaviour:
     - Name: 
       Entry: 10
       Data: 4
-    - Name: 
-      Entry: 10
-      Data: 5
     - Name: 
       Entry: 13
       Data: 

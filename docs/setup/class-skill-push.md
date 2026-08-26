@@ -100,8 +100,12 @@ Daño de choque: `AttackKind.Environmental`, `SourceId = player` (crédito de ki
 2. **Prefab** `Assets/Prefabs/UI/Canvas/Canvas_CombatHUD.prefab` (vía MCP `manage_prefabs`):
    `SpecialAttackButton` → `ClassSkillButton`; `UITooltipTrigger._previewText` actualizado.
 3. **Localización**: `Rollgeon → Localization → Seed Content + UI` re-corrido (`action.class_skill`,
-   `tooltip.effect.push.*`, `formula.push.*`). `action.special_attack` queda en las tablas (huérfana).
-4. `Assets/Rollgeon/Actions/AD_AttackSpecial.asset` (catálogo `ActionCatalogSO`, dormido) no se tocó.
+   `tooltip.effect.push.*`, `formula.push.*`). La key vieja `action.special_attack` se eliminó de la
+   colección `UI` (API de Localization desde el editor).
+4. **Restos del viejo ataque especial / a rango eliminados**: `AD_AttackSpecial.asset` borrado y
+   quitado de `ActionCatalog.asset` (catálogo `ActionCatalogSO`, dormido — sin consumidores runtime);
+   handlers `OnHotkeySpecial` → `OnHotkeyClassSkill`; fixtures y comentarios renombrados. Lo único que
+   conserva el nombre es la nota histórica en `HeroBehaviorSlot.cs` ("ex SpecialAttack").
 
 Para otra clase: crear su `ClassSkillPushTableSO` (o un efecto distinto), autorar el behavior base del
 slot 2 con `IsBaseBehavior = true` y `Slot = ClassSkill`. **Gotcha**: `GetBehaviorsForPhase` compacta
