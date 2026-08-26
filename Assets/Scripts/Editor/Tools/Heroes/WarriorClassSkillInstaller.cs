@@ -173,10 +173,32 @@ namespace Rollgeon.Editor.Tools.Heroes
             // Reapuntar la tabla en los efectos ya instalados (idempotencia: corridas
             // posteriores solo refrescan la referencia).
             foreach (var push in FindPushes(behavior))
-            {
                 push.Table = table;
-                ConfigureSelection(push.Selection);
+
+            // La selección que gatea el botón y apunta el target es la PRIMERA BeforeRoll de
+            // la fase 0 (EffChain.FindPhaseSelectionAt) — en el Warrior es la del
+            // EffPlaySequence que envuelve al efecto, no la del efecto. Todo nodo del árbol
+            // que pida selección pre-roll pasa a exigir adyacencia con un enemigo.
+            int selections = 0;
+            foreach (var group in behavior.Effects)
+            {
+                if (group?.Effects == null) continue;
+                foreach (var eff in group.Effects)
+                {
+                    foreach (var node in EffectTree.SelfAndDescendants(eff))
+                    {
+                        if (node is EffChain) continue; // selección fantasma, oculta e ignorada
+                        if (node is BaseEffect baseEffect
+                            && (baseEffect is EffClassSkillPush
+                                || baseEffect.RequiresSelectionAt(SelectionTiming.BeforeRoll)))
+                        {
+                            ConfigureSelection(baseEffect.Selection);
+                            selections++;
+                        }
+                    }
+                }
             }
+            Debug.Log(LogPrefix + $"{hero.name}: selecciones pre-roll reconfiguradas a adyacencia: {selections}.");
 
             EditorUtility.SetDirty(hero);
             Debug.Log(LogPrefix + $"{hero.name}: slot ClassSkill → '{ActionName}', efectos reemplazados: {replaced}.");
