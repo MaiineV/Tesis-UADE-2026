@@ -73,7 +73,7 @@ namespace Rollgeon.Combat.Rooms
 
         public override AIResult Tick(AIContext context)
         {
-            Resolve(context);
+            Resolve(context, null);
             return AIResult.Succeeded;
         }
 
@@ -81,17 +81,22 @@ namespace Rollgeon.Combat.Rooms
         /// lo que el jefe haga después en el turno.</summary>
         public override IEnumerator TickCoroutine(AIContext context, Action<AIResult> onResult)
         {
-            if (Resolve(context))
+            var blasts = new List<GridCoord>();
+            if (Resolve(context, blasts))
             {
-                var blast = PlayDetonation(context);
-                while (blast.MoveNext()) yield return blast.Current;
+                var beat = PlayDetonation(context, blasts);
+                while (beat.MoveNext()) yield return beat.Current;
             }
 
             onResult?.Invoke(AIResult.Succeeded);
         }
 
+        /// <param name="blasts">
+        /// Recibe la casilla de cada bomba que llegó al plazo, para que el chispazo salga de donde
+        /// reventó. <c>null</c> en el camino síncrono, que no presenta nada.
+        /// </param>
         /// <returns><c>true</c> si al menos una bomba llegó al plazo — lo único que amerita beat.</returns>
-        private bool Resolve(AIContext context)
+        private bool Resolve(AIContext context, List<GridCoord> blasts)
         {
             if (context?.Grid == null || context.Attributes == null) return false;
 
@@ -112,6 +117,10 @@ namespace Rollgeon.Combat.Rooms
 
             foreach (var (guid, cross) in due)
             {
+                // La casilla se lee ANTES de detonar: Detonate saca la bomba del grid, y después
+                // ya no hay dónde anclar el chispazo.
+                if (blasts != null && context.Grid.TryGetPosition(guid, out var at)) blasts.Add(at);
+
                 Detonate(context, special, guid, cross);
                 LiftCross(context.SelfGuid, guid, threat, overlay);
             }
@@ -176,17 +185,39 @@ namespace Rollgeon.Combat.Rooms
         }
 
         /// <remarks>
+        /// <para>
         /// Request armado a mano y no un <c>EffPlaySequence</c>: el nodo no nace de un effect pass,
         /// así que no tiene <c>EffectContext</c> que pasarle — mismo caso que el resto de los nodos
         /// de jefe. Sin <c>TurnManager</c> el gate no existe: la anim corre igual pero el turno no se
         /// retiene.
+        /// </para>
+        /// <para>
+        /// El chispazo va anclado en la casilla de la bomba (<c>WorldPosition</c>) y <b>no</b> en el
+        /// jugador. Sobre el jugador, una salva de tres bombas en rincones distintos daba un solo
+        /// destello encima suyo — y en el turno de reparto, donde también sale el disparo, ese
+        /// destello se leía como un segundo impacto del tiro.
+        /// </para>
+        /// <para>
+        /// Los estallidos que no abren el beat se piden sueltos, sin tocar el gate del turno: son
+        /// simultáneos, y retenerlos de a uno convertiría la salva en una fila de destellos.
+        /// </para>
         /// </remarks>
-        private IEnumerator PlayDetonation(AIContext context)
+        private IEnumerator PlayDetonation(AIContext context, List<GridCoord> blasts)
         {
             if (string.IsNullOrEmpty(DetonationVfxId) && string.IsNullOrEmpty(DetonationFeelId))
                 yield break;
             if (!ServiceLocator.TryGetService<IFeedbackService>(out var feedback) || feedback == null)
                 yield break;
+
+            if (!string.IsNullOrEmpty(DetonationVfxId) && blasts != null)
+            {
+                for (int i = 1; i < blasts.Count; i++)
+                {
+                    feedback.RequestFeedbackBlocking(BlastRequest(
+                        context, new List<FeedbackSequenceStep> { Blast(DetonationVfxId) },
+                        context.Grid.GridToWorld(blasts[i])), null);
+                }
+            }
 
             var steps = new List<FeedbackSequenceStep>(2);
             if (!string.IsNullOrEmpty(DetonationVfxId)) steps.Add(Blast(DetonationVfxId));
@@ -194,18 +225,40 @@ namespace Rollgeon.Combat.Rooms
 
             ServiceLocator.TryGetService<TurnManager>(out var turn);
             turn?.BeginFeedbackWait();
-            feedback.RequestFeedbackBlocking(new FeedbackRequest
-            {
-                IsSequence = true,
-                SequenceSteps = steps,
-                SourceGuid = context.SelfGuid,
-                TargetGuid = context.PlayerGuid,
-            }, () => turn?.OnFeedbackComplete());
+            feedback.RequestFeedbackBlocking(
+                BlastRequest(context, steps, FirstBlastWorld(context, blasts)),
+                () => turn?.OnFeedbackComplete());
 
             if (turn == null || !turn.IsWaitingForFeedback) yield break;
 
             var wait = TurnManager.WaitForFeedbackCompletion(turn);
             while (wait.MoveNext()) yield return wait.Current;
+        }
+
+        /// <remarks>
+        /// <c>TargetGuid</c> es el propio jefe y no el jugador: el estallido es cosa suya, y una entry
+        /// autorada <c>AtTarget</c> tiene que caer sobre la mesa, no sobre quien la está sufriendo.
+        /// </remarks>
+        private static FeedbackRequest BlastRequest(
+            AIContext context, List<FeedbackSequenceStep> steps, Vector3 world) => new FeedbackRequest
+        {
+            IsSequence = true,
+            SequenceSteps = steps,
+            SourceGuid = context.SelfGuid,
+            TargetGuid = context.SelfGuid,
+            WorldPosition = world,
+        };
+
+        /// <summary>
+        /// Dónde sale el estallido que abre el beat. Sin casilla —camino síncrono, o una bomba que
+        /// salió del grid antes de tiempo— cae en la del jefe, que es de donde salió la bomba.
+        /// </summary>
+        private static Vector3 FirstBlastWorld(AIContext context, List<GridCoord> blasts)
+        {
+            if (blasts != null && blasts.Count > 0) return context.Grid.GridToWorld(blasts[0]);
+            if (context.Grid.TryGetPosition(context.SelfGuid, out var selfCoord))
+                return context.Grid.GridToWorld(selfCoord);
+            return Vector3.zero;
         }
 
         /// <summary>IReadOnlyList no trae Contains, y Linq sobre la cruz aloca por estallido.</summary>

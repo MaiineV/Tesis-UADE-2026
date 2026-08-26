@@ -260,15 +260,85 @@ namespace Rollgeon.Combat.Rooms.Tests
             detonator.DetonationVfxId = "vfx.test.blast";
 
             Drain(detonator);
-            Assert.AreEqual(0, feedback.Requests,
+            Assert.AreEqual(0, feedback.Beats.Count,
                 "Pidió el beat en un turno en que sólo descontó la mecha: el jefe detonando al aire.");
 
             Drain(detonator);
-            Assert.AreEqual(1, feedback.Requests, "El estallido no pidió su beat.");
+            Assert.AreEqual(1, feedback.Beats.Count, "El estallido no pidió su beat.");
 
             Drain(detonator);
+            Assert.AreEqual(1, feedback.Beats.Count,
+                "Volvió a pedir el beat sin nada que estallar. El turno retiene UNA vez por salva, " +
+                "no una por bomba.");
+        }
+
+        /// <summary>
+        /// El chispazo sale de la casilla que revienta. Anclado en el jugador se leía como un golpe
+        /// suyo — y en el turno de reparto, donde también sale el disparo, como un segundo impacto
+        /// del tiro.
+        /// </summary>
+        [Test]
+        public void TheSpark_ComesOutOfTheBombTile_NotOffThePlayer()
+        {
+            var feedback = new SpyFeedback();
+            ServiceLocator.AddService<IFeedbackService>(feedback, ServiceScope.Global);
+
+            Sower(count: 1, fuse: 1).Tick(_context);
+            var bombCoord = CenterOf(Live().Single().Guid);
+
+            var detonator = Detonator();
+            detonator.DetonationVfxId = "vfx.test.blast";
+            Drain(detonator);
+
+            var beat = feedback.Beats.Single();
+            Assert.AreEqual(_grid.GridToWorld(bombCoord), beat.WorldPosition,
+                "El chispazo no salió de la casilla de la bomba.");
+            Assert.AreNotEqual(_player, beat.TargetGuid,
+                "Con el jugador como target, una entry autorada AtTarget vuelve a caer encima suyo.");
+        }
+
+        /// <summary>Una salva de bombas separadas son varios estallidos, no un destello.</summary>
+        [Test]
+        public void EveryBombThatBlows_GetsItsOwnSpark()
+        {
+            var feedback = new SpyFeedback();
+            ServiceLocator.AddService<IFeedbackService>(feedback, ServiceScope.Global);
+
+            Sower(count: 3, fuse: 1).Tick(_context);
+            var coords = Live().Select(b => _grid.GridToWorld(CenterOf(b.Guid))).ToList();
+            Assert.AreEqual(3, coords.Count, "La siembra no plantó las tres.");
+
+            var detonator = Detonator();
+            detonator.DetonationVfxId = "vfx.test.blast";
+            Drain(detonator);
+
+            Assert.AreEqual(3, feedback.Requests, "Falta un chispazo: tres bombas, tres estallidos.");
+            CollectionAssert.AreEquivalent(coords, feedback.All.Select(r => r.WorldPosition).ToList(),
+                "Los chispazos no salieron de las casillas que reventaron.");
+        }
+
+        /// <summary>Sin id de VFX no se pide nada suelto: el beat sigue siendo sólo el feel.</summary>
+        [Test]
+        public void WithNoSparkAuthored_OnlyTheBeatIsRequested()
+        {
+            var feedback = new SpyFeedback();
+            ServiceLocator.AddService<IFeedbackService>(feedback, ServiceScope.Global);
+
+            Sower(count: 3, fuse: 1).Tick(_context);
+
+            var detonator = Detonator();
+            detonator.DetonationVfxId = null;
+            detonator.DetonationFeelId = "feel.test.blast";
+            Drain(detonator);
+
             Assert.AreEqual(1, feedback.Requests,
-                "Volvió a pedir el beat sin nada que estallar.");
+                "Sin chispazo autorado no hay estallidos sueltos que pedir.");
+        }
+
+        private GridCoord CenterOf(Guid guid)
+        {
+            Assert.IsTrue(_grid.TryGetPosition(guid, out var coord), "La bomba no está en el grid.");
+            return coord;
         }
 
         [Test]
@@ -319,11 +389,20 @@ namespace Rollgeon.Combat.Rooms.Tests
 
         private sealed class SpyFeedback : IFeedbackService
         {
-            public int Requests;
+            public readonly List<FeedbackRequest> All = new List<FeedbackRequest>();
+
+            /// <summary>
+            /// Los que retienen el turno. El discriminante es el <c>onComplete</c>: el nodo pide los
+            /// estallidos que no abren el beat sin callback justamente para no tocar el gate.
+            /// </summary>
+            public readonly List<FeedbackRequest> Beats = new List<FeedbackRequest>();
+
+            public int Requests => All.Count;
 
             public void RequestFeedbackBlocking(FeedbackRequest request, Action onComplete)
             {
-                Requests++;
+                All.Add(request);
+                if (onComplete != null) Beats.Add(request);
 
                 // El contrato de la interfaz: onComplete se invoca exactamente una vez, incluso con
                 // un id inválido.
