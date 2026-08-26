@@ -381,7 +381,7 @@ MonoBehaviour:
       Data: Rollgeon.Combat.AI.Decisions.AINode_Random+Option, Rollgeon
     - Name: Weight
       Entry: 4
-      Data: 45
+      Data: 20
     - Name: Node
       Entry: 7
       Data: 36|Rollgeon.Combat.AI.Decisions.AINode_TeleportAwayToEdge, Rollgeon
@@ -414,7 +414,7 @@ MonoBehaviour:
       Data: Rollgeon.Combat.AI.Decisions.AINode_Random+Option, Rollgeon
     - Name: Weight
       Entry: 4
-      Data: 30
+      Data: 55
     - Name: Node
       Entry: 7
       Data: 37|Rollgeon.Combat.AI.Decisions.AINode_TeleportNearTarget, Rollgeon
@@ -444,7 +444,7 @@ MonoBehaviour:
       Data: Rollgeon.Combat.AI.Decisions.AINode_Random+Option, Rollgeon
     - Name: Weight
       Entry: 4
-      Data: 10
+      Data: 15
     - Name: Node
       Entry: 7
       Data: 38|Rollgeon.Combat.AI.Decisions.AINode_TeleportToRoomCenter, Rollgeon
@@ -465,7 +465,7 @@ MonoBehaviour:
       Data: Rollgeon.Combat.AI.Decisions.AINode_Random+Option, Rollgeon
     - Name: Weight
       Entry: 4
-      Data: 15
+      Data: 10
     - Name: Node
       Entry: 7
       Data: 39|Rollgeon.Combat.AI.Decisions.AINode_Wait, Rollgeon
@@ -760,7 +760,7 @@ MonoBehaviour:
       Data: Rollgeon.Combat.AI.Decisions.AINode_Random+Option, Rollgeon
     - Name: Weight
       Entry: 4
-      Data: 45
+      Data: 20
     - Name: Node
       Entry: 7
       Data: 63|Rollgeon.Combat.AI.Decisions.AINode_TeleportAwayToEdge, Rollgeon
@@ -793,7 +793,7 @@ MonoBehaviour:
       Data: Rollgeon.Combat.AI.Decisions.AINode_Random+Option, Rollgeon
     - Name: Weight
       Entry: 4
-      Data: 30
+      Data: 55
     - Name: Node
       Entry: 7
       Data: 64|Rollgeon.Combat.AI.Decisions.AINode_TeleportNearTarget, Rollgeon
@@ -823,7 +823,7 @@ MonoBehaviour:
       Data: Rollgeon.Combat.AI.Decisions.AINode_Random+Option, Rollgeon
     - Name: Weight
       Entry: 4
-      Data: 10
+      Data: 15
     - Name: Node
       Entry: 7
       Data: 65|Rollgeon.Combat.AI.Decisions.AINode_TeleportToRoomCenter, Rollgeon
@@ -844,7 +844,7 @@ MonoBehaviour:
       Data: Rollgeon.Combat.AI.Decisions.AINode_Random+Option, Rollgeon
     - Name: Weight
       Entry: 4
-      Data: 15
+      Data: 10
     - Name: Node
       Entry: 7
       Data: 66|Rollgeon.Combat.AI.Decisions.AINode_Wait, Rollgeon
@@ -1017,7 +1017,7 @@ MonoBehaviour:
       Data: Rollgeon.Combat.AI.Decisions.AINode_Random+Option, Rollgeon
     - Name: Weight
       Entry: 4
-      Data: 45
+      Data: 20
     - Name: Node
       Entry: 7
       Data: 82|Rollgeon.Combat.AI.Decisions.AINode_TeleportAwayToEdge, Rollgeon
@@ -1050,7 +1050,7 @@ MonoBehaviour:
       Data: Rollgeon.Combat.AI.Decisions.AINode_Random+Option, Rollgeon
     - Name: Weight
       Entry: 4
-      Data: 30
+      Data: 55
     - Name: Node
       Entry: 7
       Data: 83|Rollgeon.Combat.AI.Decisions.AINode_TeleportNearTarget, Rollgeon
@@ -1080,7 +1080,7 @@ MonoBehaviour:
       Data: Rollgeon.Combat.AI.Decisions.AINode_Random+Option, Rollgeon
     - Name: Weight
       Entry: 4
-      Data: 10
+      Data: 15
     - Name: Node
       Entry: 7
       Data: 84|Rollgeon.Combat.AI.Decisions.AINode_TeleportToRoomCenter, Rollgeon
@@ -1101,7 +1101,7 @@ MonoBehaviour:
       Data: Rollgeon.Combat.AI.Decisions.AINode_Random+Option, Rollgeon
     - Name: Weight
       Entry: 4
-      Data: 15
+      Data: 10
     - Name: Node
       Entry: 7
       Data: 85|Rollgeon.Combat.AI.Decisions.AINode_Wait, Rollgeon

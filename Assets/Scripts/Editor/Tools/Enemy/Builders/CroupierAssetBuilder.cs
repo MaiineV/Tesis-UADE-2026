@@ -175,13 +175,13 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         /// </summary>
         /// <remarks>
         /// <para>
-        /// El borde y el acercamiento se reparten el grueso: desaparecer <b>es</b> el personaje,
-        /// pero con el borde solo la reacción era cantada. Acercarse es la apuesta opuesta y la que
-        /// paga el jugador —el kit del jefe es todo a distancia, así que cerrar la distancia le
-        /// entrega parte del turno—; por eso la banda lo deja cerca y no pegado. El centro es el más
-        /// raro de los cuatro y el que tiene textura —lo alcanzás, pero desde el medio el cono no se
-        /// recorta contra ninguna pared, así que amenaza sus 16 casillas enteras: es un canje y no un
-        /// premio—.
+        /// El acercamiento se lleva el grueso: el kit del jefe es todo a distancia, así que cerrar
+        /// la distancia es la cara que le devuelve el turno al jugador —y por eso la banda lo deja
+        /// cerca y no pegado—. Desaparecer <b>es</b> el personaje, pero con el borde pesado la fuga
+        /// es la reacción cantada y la pelea se va en caminar detrás de él; acá es la cara rara, la
+        /// que castiga cuando sale. El centro es el que tiene textura —lo alcanzás, pero desde el
+        /// medio el cono no se recorta contra ninguna pared, así que amenaza sus 16 casillas
+        /// enteras: es un canje y no un premio—. Quedarse es el piso del sorteo.
         /// </para>
         /// <para>
         /// Son <b>pesos</b>, no porcentajes: <c>AINode_Random</c> normaliza contra la suma. Suman 100
@@ -192,10 +192,10 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         /// del número cantado que giraba un rodillo. Este sorteo no tiene nada que ver con eso.
         /// </para>
         /// </remarks>
-        public const float FleeWeightEdge = 45f;
-        public const float FleeWeightNear = 30f;
-        public const float FleeWeightCenter = 10f;
-        public const float FleeWeightStay = 15f;
+        public const float FleeWeightEdge = 20f;
+        public const float FleeWeightNear = 55f;
+        public const float FleeWeightCenter = 15f;
+        public const float FleeWeightStay = 10f;
 
         /// <summary>Banda del acercamiento, en Manhattan al jugador. Ver
         /// <see cref="AINode_TeleportNearTarget"/>: pegado sería regalarle un turno franco.</summary>
