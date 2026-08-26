@@ -26,7 +26,7 @@ MonoBehaviour:
       Data: 0|Rollgeon.Balance.RollPoolConfig, Rollgeon
     - Name: RollsAtCombatStart
       Entry: 3
-      Data: 3
+      Data: 4
     - Name: RollsPerTurn
       Entry: 3
       Data: 3
