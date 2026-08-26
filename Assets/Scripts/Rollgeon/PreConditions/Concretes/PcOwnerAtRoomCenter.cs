@@ -2,6 +2,7 @@ using System;
 using Patterns;
 using Rollgeon.Grid;
 using Sirenix.OdinInspector;
+using UnityEngine;
 
 namespace Rollgeon.PreConditions.Concretes
 {
@@ -16,6 +17,11 @@ namespace Rollgeon.PreConditions.Concretes
     [Serializable, HideReferenceObjectPicker]
     public sealed class PcOwnerAtRoomCenter : BasePreCondition
     {
+        [Tooltip("Tiene que valer lo MISMO que el AINode_TeleportToRoomCenter que gatea, o la " +
+                 "condición pregunta por una casilla a la que el teleport no lleva: el gate se abre, " +
+                 "el salto no mueve nada y el ataque se gasta mudo.")]
+        public bool AvoidHarmfulTiles = true;
+
         public override string ConditionName => "Owner at room center";
 
         public override bool Evaluate(PreConditionContext context)
@@ -24,8 +30,11 @@ namespace Rollgeon.PreConditions.Concretes
             if (!ServiceLocator.TryGetService<IGridManager>(out var grid)) return false;
             if (!grid.TryGetPosition(context.OwnerGuid, out var ownerCoord)) return false;
 
-            if (!RoomCenterResolver.TryResolve(grid, context.OwnerGuid, ownerCoord, out var center))
+            if (!RoomCenterResolver.TryResolve(
+                    grid, context.OwnerGuid, ownerCoord, out var center, AvoidHarmfulTiles))
+            {
                 return false;
+            }
 
             return center == ownerCoord;
         }

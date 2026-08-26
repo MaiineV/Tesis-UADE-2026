@@ -30,6 +30,12 @@ namespace Rollgeon.Combat.AI.Decisions
                  "en el mismo turno en que se plantó ahí.")]
         public bool ConsumeMoveAction = true;
 
+        [Tooltip("Esquiva las casillas que hacen daño: si el centro arde, cae en la más cercana " +
+                 "limpia. Tiene que valer lo MISMO que el PcOwnerAtRoomCenter que lo gatea, o el " +
+                 "gate se abre en una casilla a la que este nodo no lleva. Con toda la sala ardiendo " +
+                 "cae igual — es preferencia, no requisito.")]
+        public bool AvoidHarmfulTiles = true;
+
         public override string NodeName => "Teleport To Room Center";
 
         public override AIResult Tick(AIContext context)
@@ -53,7 +59,8 @@ namespace Rollgeon.Combat.AI.Decisions
                 return AIResult.Failed;
             }
 
-            if (!RoomCenterResolver.TryResolve(grid, context.SelfGuid, selfCoord, out var destination))
+            if (!RoomCenterResolver.TryResolve(
+                    grid, context.SelfGuid, selfCoord, out var destination, AvoidHarmfulTiles))
             {
                 Debug.LogWarning("[AINode_TeleportToRoomCenter] La sala no tiene ninguna casilla " +
                                  "caminable libre — ¿grafo sin bounds? No se reubica nada.");

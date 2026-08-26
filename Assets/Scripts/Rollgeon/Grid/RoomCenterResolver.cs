@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Rollgeon.Combat.Threat;
+using Rollgeon.Tiles;
 
 namespace Rollgeon.Grid
 {
@@ -9,7 +10,7 @@ namespace Rollgeon.Grid
     /// la comparte <see cref="Rollgeon.Combat.AI.Decisions.AINode_TeleportToRoomCenter"/> (a dónde
     /// reubicarse) con <see cref="Rollgeon.PreConditions.Concretes.PcOwnerAtRoomCenter"/> (si ya
     /// se está ahí). Si divergieran, el gate de "no está en el centro" se abriría en una casilla a
-    /// la que el teleport nunca lleva y el ataque quedaría en loop.
+    /// la que el teleport nunca lleva: el salto no movería nada y el ataque se gastaría mudo.
     /// </summary>
     public static class RoomCenterResolver
     {
@@ -17,16 +18,42 @@ namespace Rollgeon.Grid
         /// Centro del bounding box de la sala si está usable, y si no la casilla usable más cercana.
         /// <c>false</c> sólo si la sala no ofrece ninguna.
         /// </summary>
+        /// <param name="avoidHarmfulTiles">
+        /// Descarta las casillas que hacen daño (<see cref="HarmfulTileQuery"/>). Es preferencia y no
+        /// requisito: si el filtro deja la sala sin candidatas se resuelve igual sin él, porque un
+        /// <c>false</c> acá aborta la Sequence del turno del jefe.
+        /// </param>
         /// <remarks>
+        /// <para>
         /// "Usable" = caminable y libre, con la propia casilla de <paramref name="selfGuid"/> contando
         /// como libre: descartarla mandaría a un salto lateral cuando ya se estaba lo más cerca del
         /// centro que hay.
+        /// </para>
+        /// <para>
+        /// El filtro vive acá y no en el nodo que reubica porque el gate que pregunta "¿ya está en el
+        /// centro?" resuelve por esta misma función: leyendo distinto, el jefe parado en la casilla
+        /// limpia de al lado abriría el gate, el teleport resolvería la casilla donde ya está y el
+        /// ataque se gastaría sin salto.
+        /// </para>
         /// </remarks>
         public static bool TryResolve(
-            IGridManager grid, Guid selfGuid, GridCoord selfCoord, out GridCoord destination)
+            IGridManager grid, Guid selfGuid, GridCoord selfCoord, out GridCoord destination,
+            bool avoidHarmfulTiles = false)
         {
             destination = selfCoord;
             if (grid == null) return false;
+
+            if (avoidHarmfulTiles && TryPick(grid, selfGuid, selfCoord, true, out destination))
+                return true;
+
+            return TryPick(grid, selfGuid, selfCoord, false, out destination);
+        }
+
+        private static bool TryPick(
+            IGridManager grid, Guid selfGuid, GridCoord selfCoord, bool skipHarmful,
+            out GridCoord destination)
+        {
+            destination = selfCoord;
 
             // RoomTiles ya filtra caminable y devuelve vacío con el grafo stub "infinito". Materializado
             // porque se recorre dos veces (bounds + pick).
@@ -53,6 +80,7 @@ namespace Rollgeon.Grid
             foreach (var c in tiles)
             {
                 if (!IsFreeFor(grid, c, selfGuid)) continue;
+                if (skipHarmful && HarmfulTileQuery.IsHarmfulAt(c)) continue;
 
                 int toCenter = c.Manhattan(center);
                 int fromSelf = c.Manhattan(selfCoord);
