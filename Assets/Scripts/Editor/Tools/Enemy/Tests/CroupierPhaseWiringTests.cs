@@ -128,8 +128,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             Assert.AreEqual(CroupierAssetBuilder.PlenoHoleRadius, mark.Size,
                 "El Size de esta shape es el hueco que NO se prende, y sale de la ficha.");
             Assert.Greater(mark.Size, 0,
-                "Con hueco 0 se prende su propia casilla: el jefe queda parado en el fuego y " +
-                "cualquier regresión de OwnerBossImmune lo mata solo.");
+                "Con hueco 0 se prende su propia casilla. Ya no es inmune a su propio fuego, así que " +
+                "el Pleno lo mataría solo.");
 
             // Esta marca SÍ cobra y la banda no: salirse de la banda es un paso al costado,
             // salirse de esto es cruzar media sala hasta el hueco.
@@ -567,22 +567,26 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             {
                 var options = FleeRouletteOf(beat).Options;
 
-                Assert.AreEqual(3, options.Count,
-                    "El sorteo de la fuga dejó de tener tres salidas.");
+                Assert.AreEqual(4, options.Count,
+                    "El sorteo de la fuga dejó de tener cuatro salidas.");
 
                 Assert.AreEqual(CroupierAssetBuilder.FleeWeightEdge, options[0].Weight,
                     "El peso de irse al borde no sale de la constante de la ficha.");
-                Assert.AreEqual(CroupierAssetBuilder.FleeWeightCenter, options[1].Weight,
+                Assert.AreEqual(CroupierAssetBuilder.FleeWeightNear, options[1].Weight,
+                    "El peso de venírsele encima no sale de la constante de la ficha.");
+                Assert.AreEqual(CroupierAssetBuilder.FleeWeightCenter, options[2].Weight,
                     "El peso de saltar al centro no sale de la constante de la ficha.");
-                Assert.AreEqual(CroupierAssetBuilder.FleeWeightStay, options[2].Weight,
+                Assert.AreEqual(CroupierAssetBuilder.FleeWeightStay, options[3].Weight,
                     "El peso de quedarse no sale de la constante de la ficha.");
 
                 Assert.IsInstanceOf<AINode_TeleportAwayToEdge>(options[0].Node,
                     "La primera salida del sorteo dejó de ser el salto al borde.");
-                Assert.IsInstanceOf<AINode_TeleportToRoomCenter>(options[1].Node,
-                    "La segunda salida del sorteo dejó de ser el salto al centro.");
-                Assert.IsInstanceOf<AINode_Wait>(options[2].Node,
-                    "La tercera salida del sorteo tiene que ser un Wait explícito: un Node null " +
+                Assert.IsInstanceOf<AINode_TeleportNearTarget>(options[1].Node,
+                    "La segunda salida del sorteo dejó de ser el acercamiento.");
+                Assert.IsInstanceOf<AINode_TeleportToRoomCenter>(options[2].Node,
+                    "La tercera salida del sorteo dejó de ser el salto al centro.");
+                Assert.IsInstanceOf<AINode_Wait>(options[3].Node,
+                    "La última salida del sorteo tiene que ser un Wait explícito: un Node null " +
                     "devuelve Failed y se comería el resto del tiempo del jefe.");
             }
         }
@@ -600,6 +604,63 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                 Assert.IsTrue(landing.ConsumeMoveAction,
                     "El aterrizaje al centro dejó de gastar el movimiento del turno.");
             }
+        }
+
+        /// <summary>
+        /// El invariante que hace que el Pleno exista: el salto y el gate que lo abre tienen que
+        /// esquivar —o no esquivar— exactamente lo mismo. Divergiendo, el gate se abre en una casilla
+        /// a la que el teleport no lleva, el salto no mueve nada y el AINode_Once latchea igual: el
+        /// ataque se gasta mudo.
+        /// </summary>
+        [Test]
+        public void ThePlenoJump_AndTheGateThatOpensIt_ReadTheSameCentre()
+        {
+            var gate = FindGateAtPercent(CroupierAssetBuilder.PlenoHpThreshold);
+
+            var jump = Descendants(gate.Then).OfType<AINode_TeleportToRoomCenter>().Single();
+            var atCentre = gate.Conditions.OfType<PCComposite>()
+                .Single(c => c.Mode == CompositeMode.Not)
+                .Children.OfType<PcOwnerAtRoomCenter>().Single();
+
+            Assert.AreEqual(jump.AvoidHarmfulTiles, atCentre.AvoidHarmfulTiles,
+                "El salto del Pleno y su gate leen centros distintos.");
+        }
+
+        /// <summary>Pegado al jugador sería regalarle un turno franco: el kit del jefe es todo a
+        /// distancia.</summary>
+        [Test]
+        public void TheClosingJump_LandsNearThePlayer_ButNeverOnTopOfHim()
+        {
+            foreach (var beat in new[] { DealBeat(), BombBeat(), BurnBeat() })
+            {
+                var closing = Descendants(FleeRouletteOf(beat))
+                    .OfType<AINode_TeleportNearTarget>().Single();
+
+                Assert.AreEqual(CroupierAssetBuilder.NearMinDistance, closing.MinDistance,
+                    "El piso de la banda no sale de la constante de la ficha.");
+                Assert.AreEqual(CroupierAssetBuilder.NearMaxDistance, closing.MaxDistance,
+                    "El techo de la banda no sale de la constante de la ficha.");
+                Assert.Greater(closing.MinDistance, 1,
+                    "El acercamiento pasó a caer pegado: un turno franco de golpes gratis.");
+                Assert.IsTrue(closing.ConsumeMoveAction,
+                    "El acercamiento dejó de gastar el movimiento del turno, así que un paso " +
+                    "posterior lo deshace en el mismo turno.");
+            }
+        }
+
+        /// <summary>Los tres reacomodos esquivan el fuego: con la inmunidad de owner apagada, el jefe
+        /// se cocina solo si salta adentro de sus propias bandas.</summary>
+        [Test]
+        public void EveryJump_StepsAroundTheFireItLit()
+        {
+            foreach (var node in Descendants(_root).OfType<AINode_TeleportAwayToEdge>())
+                Assert.IsTrue(node.AvoidHarmfulTiles, "Un salto al borde dejó de esquivar el fuego.");
+
+            foreach (var node in Descendants(_root).OfType<AINode_TeleportNearTarget>())
+                Assert.IsTrue(node.AvoidHarmfulTiles, "Un acercamiento dejó de esquivar el fuego.");
+
+            foreach (var node in Descendants(_root).OfType<AINode_TeleportToRoomCenter>())
+                Assert.IsTrue(node.AvoidHarmfulTiles, "Un salto al centro dejó de esquivar el fuego.");
         }
 
         [Test]
@@ -721,10 +782,13 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                 "durar más sin que nada en pantalla se lo haya anunciado.");
         }
 
-        /// <summary>Sin <c>IsBoss</c> el jefe no es jefe para <c>SpecialTileService.ShouldAffect</c>, que
-        /// exige <c>OwnerBossImmune &amp;&amp; IsBoss</c> y ser el dueño.</summary>
+        /// <summary>
+        /// <c>IsBoss</c> es de lo que cuelga todo el camino de jefe (sala, barra, casillas con dueño).
+        /// La inmunidad al fuego propio que antes venía con él está apagada a propósito en los dos
+        /// assets de fuego del Croupier — ver <c>CroupierVisualWiringTests</c>.
+        /// </summary>
         [Test]
-        public void PopulateEnemyData_MarksHimAsBoss_SoHeDoesNotBurnInHisOwnFire()
+        public void PopulateEnemyData_MarksHimAsBoss()
         {
             var data = ScriptableObject.CreateInstance<EnemyDataSO>();
             data.hideFlags = HideFlags.HideAndDontSave;
@@ -734,8 +798,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                 CroupierAssetBuilder.PopulateEnemyData(data, _fire, null, null);
 
                 Assert.IsTrue(data.IsBoss,
-                    "Ningún builder venía escribiendo IsBoss y el jefe contaba como enemigo común: " +
-                    "OwnerBossImmune no lo protege y muere en su propio Pleno y color.");
+                    "Ningún builder venía escribiendo IsBoss y el jefe contaba como enemigo común.");
             }
             finally
             {

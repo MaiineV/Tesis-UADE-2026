@@ -318,6 +318,36 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                 "sala marcada en blanco y lo lee como un bug, no como fuego.");
         }
 
+        /// <summary>
+        /// La bomba tampoco lo perdona. Este asset SÍ lo escribe el builder, así que el invariante
+        /// vale contra los dos: el asset en disco y lo que el builder vuelve a escribir encima.
+        /// </summary>
+        [Test]
+        public void BombFireTile_BurnsItsOwnerToo()
+        {
+            var bombFire = AssetDatabase.LoadAssetAtPath<SpecialTileDefinitionSO>(
+                CroupierAssetBuilder.BombFireTilePath);
+            Assert.IsNotNull(bombFire, "Falta la casilla de fuego de bomba.");
+            AssertItBurnsItsOwner(bombFire);
+
+            var rebuilt = ScriptableObject.CreateInstance<SpecialTileDefinitionSO>();
+            rebuilt.hideFlags = HideFlags.HideAndDontSave;
+            try
+            {
+                CroupierAssetBuilder.ConfigureBombFireTile(rebuilt);
+                AssertItBurnsItsOwner(rebuilt);
+            }
+            finally
+            {
+                Object.DestroyImmediate(rebuilt);
+            }
+        }
+
+        private static void AssertItBurnsItsOwner(SpecialTileDefinitionSO tile) =>
+            Assert.IsFalse(tile.OwnerBossImmune,
+                $"'{tile.name}' volvió a perdonar a su dueño. El jefe se quema con lo suyo: es lo " +
+                "que le da sentido a que sus reacomodos esquiven las casillas que hacen daño.");
+
         [Test]
         public void FireTile_KeepsItsOwnNumbers_AndNotTheOnesOfTheGenericTemplate()
         {
@@ -340,9 +370,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             Assert.AreEqual(CroupierAssetBuilder.FireDurationRounds, fire.DefaultDurationRounds,
                 "La duración del asset dejó de coincidir con la que autora el nodo de ignición: una " +
                 "de las dos manda y no se sabe cuál.");
-            Assert.IsTrue(fire.OwnerBossImmune,
-                "Sin esto el jefe se quema en su propio fuego, y es un jefe que huye pegado a la " +
-                "banda que acaba de prender.");
+            AssertItBurnsItsOwner(fire);
         }
 
         /// <summary>Luma Rec. 601 — alcanza para ordenar los escalones de un ramp de cel shading.</summary>

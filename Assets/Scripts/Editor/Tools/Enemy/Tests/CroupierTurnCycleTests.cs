@@ -620,24 +620,32 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
 
         /// <summary>Tirada que fuerza el salto al borde.</summary>
         /// <remarks>
-        /// Salen de los pesos y no de literales: <c>AINode_Random</c> parte el 0..1 en tres franjas
+        /// Salen de los pesos y no de literales: <c>AINode_Random</c> parte el 0..1 en franjas
         /// proporcionales, así que un número fijo cambia de opción en cuanto se retoquen los pesos.
         /// Cada tirada apunta al <b>medio</b> de su franja para no depender de si el corte es
-        /// inclusivo.
+        /// inclusivo, y las sumas acumuladas siguen el orden autorado de las opciones
+        /// (borde → acercamiento → centro → quedarse).
         /// </remarks>
         private const double RouletteTotal = CroupierAssetBuilder.FleeWeightEdge +
+                                             CroupierAssetBuilder.FleeWeightNear +
                                              CroupierAssetBuilder.FleeWeightCenter +
                                              CroupierAssetBuilder.FleeWeightStay;
 
         private const double RollEdge = CroupierAssetBuilder.FleeWeightEdge * 0.5d / RouletteTotal;
 
+        /// <summary>Tirada que fuerza el acercamiento al jugador.</summary>
+        private const double RollNear =
+            (CroupierAssetBuilder.FleeWeightEdge + CroupierAssetBuilder.FleeWeightNear * 0.5d) / RouletteTotal;
+
         /// <summary>Tirada que fuerza el aterrizaje en el centro de la sala.</summary>
         private const double RollCentre =
-            (CroupierAssetBuilder.FleeWeightEdge + CroupierAssetBuilder.FleeWeightCenter * 0.5d) / RouletteTotal;
+            (CroupierAssetBuilder.FleeWeightEdge + CroupierAssetBuilder.FleeWeightNear +
+             CroupierAssetBuilder.FleeWeightCenter * 0.5d) / RouletteTotal;
 
         /// <summary>Tirada que fuerza que se quede donde está.</summary>
         private const double RollStay =
-            (CroupierAssetBuilder.FleeWeightEdge + CroupierAssetBuilder.FleeWeightCenter +
+            (CroupierAssetBuilder.FleeWeightEdge + CroupierAssetBuilder.FleeWeightNear +
+             CroupierAssetBuilder.FleeWeightCenter +
              CroupierAssetBuilder.FleeWeightStay * 0.5d) / RouletteTotal;
 
         /// <summary>Un <c>Random(seed)</c> fijo no sirve: cuál opción cae depende de cuántos draws se

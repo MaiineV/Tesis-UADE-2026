@@ -30,7 +30,7 @@ MonoBehaviour:
   DefaultDurationRounds: 4
   DisarmOnTrigger: 0
   RearmOnRoundWrap: 0
-  OwnerBossImmune: 1
+  OwnerBossImmune: 0
   TelegraphPayload: {fileID: 0}
   TelegraphRounds: 1
   ProtectedTileTypes: 

@@ -171,15 +171,17 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
 
         /// <summary>
         /// Pesos del sorteo de la fuga: adentro del radio no huye siempre, apuesta. Se va al borde,
-        /// salta al centro de la sala, o se queda.
+        /// se te viene encima, salta al centro de la sala, o se queda.
         /// </summary>
         /// <remarks>
         /// <para>
-        /// El borde se lleva casi todo el peso porque desaparecer <b>es</b> el personaje, no una
-        /// preferencia de balance: tiene que seguir siendo el resultado que el jugador espera. El
-        /// centro es el más raro de los tres y el que tiene textura —lo alcanzás, pero desde el medio
-        /// el cono no se recorta contra ninguna pared, así que amenaza sus 16 casillas enteras: es un
-        /// canje y no un premio—.
+        /// El borde y el acercamiento se reparten el grueso: desaparecer <b>es</b> el personaje,
+        /// pero con el borde solo la reacción era cantada. Acercarse es la apuesta opuesta y la que
+        /// paga el jugador —el kit del jefe es todo a distancia, así que cerrar la distancia le
+        /// entrega parte del turno—; por eso la banda lo deja cerca y no pegado. El centro es el más
+        /// raro de los cuatro y el que tiene textura —lo alcanzás, pero desde el medio el cono no se
+        /// recorta contra ninguna pared, así que amenaza sus 16 casillas enteras: es un canje y no un
+        /// premio—.
         /// </para>
         /// <para>
         /// Son <b>pesos</b>, no porcentajes: <c>AINode_Random</c> normaliza contra la suma. Suman 100
@@ -190,9 +192,15 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         /// del número cantado que giraba un rodillo. Este sorteo no tiene nada que ver con eso.
         /// </para>
         /// </remarks>
-        public const float FleeWeightEdge = 70f;
+        public const float FleeWeightEdge = 40f;
+        public const float FleeWeightNear = 35f;
         public const float FleeWeightCenter = 10f;
-        public const float FleeWeightStay = 20f;
+        public const float FleeWeightStay = 15f;
+
+        /// <summary>Banda del acercamiento, en Manhattan al jugador. Ver
+        /// <see cref="AINode_TeleportNearTarget"/>: pegado sería regalarle un turno franco.</summary>
+        public const int NearMinDistance = 2;
+        public const int NearMaxDistance = 3;
 
         /// <summary>Semi-ancho del apex del cono: 0 = arranca en una sola casilla.</summary>
         public const int ConeApexHalfWidth = 0;
@@ -895,7 +903,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
 
         /// <summary>
         /// El sorteo de la fuga: adentro del radio el jefe apuesta en vez de huir siempre. Se va al
-        /// borde, se planta en el centro de la sala, o se queda donde está.
+        /// borde, se te viene encima, se planta en el centro de la sala, o se queda donde está.
         /// </summary>
         /// <remarks>
         /// <para>
@@ -930,6 +938,16 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
                         Node = new AINode_TeleportAwayToEdge
                         {
                             MaxDistanceFromPlayer = 0,
+                            ConsumeMoveAction = true,
+                        },
+                    },
+                    new AINode_Random.Option
+                    {
+                        Weight = FleeWeightNear,
+                        Node = new AINode_TeleportNearTarget
+                        {
+                            MinDistance = NearMinDistance,
+                            MaxDistance = NearMaxDistance,
                             ConsumeMoveAction = true,
                         },
                     },
@@ -1192,8 +1210,9 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
             tile.DisarmOnTrigger = false;
             tile.RearmOnRoundWrap = false;
 
-            // Él camina sobre lo que prende, igual que con el fuego del paño.
-            tile.OwnerBossImmune = true;
+            // Se quema con lo suyo, igual que con el fuego del paño: es lo que le da sentido a que
+            // sus reacomodos esquiven las casillas que hacen daño.
+            tile.OwnerBossImmune = false;
 
             if (basefire == null) return;
 
