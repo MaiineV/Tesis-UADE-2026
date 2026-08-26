@@ -4493,6 +4493,54 @@ public class TurnOrderService
 
 **Cross‑ref.** §2 (atributos — `Speed` declarado acá), §3 (modificadores de Speed), §12.2 (DamagePipeline), §D (UI de turn queue), §14.7 (RulesetSO define los rangos del speed die).
 
+### 12.8 Habilidad de Clase — Empuje del Guerrero (Feature#0055)
+
+> GDD: Combat System § "Habilidad de Clase, Empuje del Guerrero" + Turn System (tabla de acciones).
+> Reemplaza al viejo *Ataque especial / a rango*. Setup completo en `docs/setup/class-skill-push.md`.
+
+**Slot.** `HeroBehaviorSlot.ClassSkill = 2` (ex `SpecialAttack`, mismo valor serializado — chip, hotkey
+`E` y prefab no migran). Cada clase autora su propio behavior en ese slot; el Guerrero usa un
+`EffChain` de 1 fase (`Label = Push`, `BoardType = Attack`) cuyo efecto es `EffClassSkillPush` con
+selección `Occupied + BeforeRoll + Enemies + Range 1 (Manhattan)` — la adyacencia se exige al elegir
+objetivo, **antes** de tirar (compromiso ciego). El roll se cobra en ese click (`SpendRollForThrow`),
+los rerolls cuestan 1 roll cada uno como en Ataque.
+
+**Kind.** `RollActionKind.ClassSkill` (append). **No** es `IsCombatPayable`: una tirada de empuje no
+paga encantamientos de oro ni hooks de ítem filtrados por `Attack`.
+
+**Tabla.** `ClassSkillPushTableSO` (`Rollgeon/Heroes/Class Skill Push Table`): `Entries {ComboId,
+Tiles}` + `CollisionDamage` (10). `GetTiles(comboId)` devuelve 0 para combos sin entrada
+(`combo.brute_force`) o sin combo ⇒ la tirada se consume **sin efecto** — la única acción núcleo sin
+piso de dado más alto. `ResetToSpec()` carga los valores del GDD: Par 1, Doble Par 1, Suma 4
+(`combo.higher_number`) 2, Trío 2, Full House 3, Escalera 3, Póker 4, Generala 5.
+
+**Resolución.** `IClassSkillPushResolver.Resolve(pusher, target, distance, collisionDamage,
+stunTurns = 1)` (`Combat/Skills/Push`, bootstrap priority 82). Dirección =
+`CardinalExtensions.FromDelta(player, target)`. Cada eslabón llama a `IForcedMovementService.Push`
+(casillas especiales, hielo y portales intactos) y clasifica el choque con
+`ForcedMoveResult.BlockerGuid` (nuevo; `Empty` = pared / fuera de grilla, capturado **antes** de la
+reubicación de portal):
+
+| Bloqueador | Clasificación | Efecto |
+|---|---|---|
+| Sin ocupante (pared, borde) | `Wall` | `IStunService.ApplyStun(empujado, 1)` — pierde el turno |
+| Guid sin `Health` (`PropTileBlocker`), cofre (`IChestRegistry`), el propio jugador | `NonBreakable` | igual que pared |
+| Objeto de sala (`IRoomObjectCleanupService.Tracked`) | `Breakable` | daño de choque al empujado + daño letal (`Health + Shield`) al objeto por el `DamagePipeline` (el `CombatDeathWatcher` lo desregistra, `CollectBroken` ve una muerte normal). El empujado **no** avanza a la celda liberada. |
+| Entidad registrada con `Health > 0` | `Enemy` | daño de choque a **ambos**; si el bloqueador sigue vivo y queda remanente (`distance − TilesTraveled`), se empuja con las mismas reglas (cadena, misma dirección) |
+
+Daño de choque: `AttackKind.Environmental`, `SourceId = player` (crédito de kill), sin `ComboId` (sin
+weakness). Guardas: `visited` por entidad + `MaxChainDepth = 16`. Muerte a mitad del recorrido
+(pinchos) ⇒ eslabón `Died`, sin choque. El `PushOutcome` (lista de `PushHop`) queda logueado.
+
+**UI.** `DamageFormulaView` muestra `"{combo}: empuja N"` / `"Empuje - sin combo: sin efecto"`; la
+fase no tiene `EffDealDamage`/`EffAddShield`, así que el N×M breakdown nunca se emite.
+`HeroActionTooltip` → `action.class_skill`. Tutorial: el slot sigue bloqueado.
+
+**Autoría.** `Rollgeon → Heroes → Install Warrior Class Skill` (idempotente): crea la tabla y el
+bootstrap, los registra, y reemplaza in-place cada `EffDealDamage` del slot 2 de `CH_Warrior` y
+`CH_Warrior_Tutorial` por `EffClassSkillPush` (conserva el `EffPlaySequence` de golpe). Los
+`ClassHeroSO` son Odin — no editar el YAML a mano.
+
 **Cross‑ref §12.** §3 (modifiers direccionales), §4 (stats del héroe incluyen Incoming/Outgoing multipliers), §5 (EvaluateRoll), §6 (DiceRoller + Encantamientos), §6.5 (reroll budget), §10 (feedback), §13.4 (weakness).
 
 ---
