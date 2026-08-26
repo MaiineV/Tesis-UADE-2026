@@ -937,7 +937,8 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 13919417973649408
-    m_Localized: "Quema el pa\xF1o que tiene delante y se va al borde cuando lo acorral\xE1s."
+    m_Localized: "Siembra bombas en el pa\xF1o, le prende fuego al suelo que tiene
+      delante y dispara a distancia. Si lo acorral\xE1s, salta al borde de la sala."
     m_Metadata:
       m_Items: []
   - m_Id: 13919417973649409
@@ -945,7 +946,8 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 13919417973649410
-    m_Localized: "Te agarra, te tira lejos, y se queda con lo que se te cay\xF3."
+    m_Localized: "Te tira lejos y te llena el piso de monedas. Las que no levant\xE1s
+      a tiempo se las lleva \xE9l, y cada una lo cura."
     m_Metadata:
       m_Items: []
   - m_Id: 13919417973649411
@@ -961,8 +963,8 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 13919417973649414
-    m_Localized: "Tira su propia mano a la vista. Rompele un dado y le borr\xE1s
-      una categor\xEDa."
+    m_Localized: "Tira su propia mano a la vista y te cobra la categor\xEDa que le
+      salga. Rompele un dado y le borr\xE1s una."
     m_Metadata:
       m_Items: []
   - m_Id: 13919417973649415
@@ -971,6 +973,8 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 13919417973649416
     m_Localized: "Parte de su mano, y en tu camino. Rompelo para borrarle una categor\xEDa."
+    m_Metadata:
+      m_Items: []
   - m_Id: 14364254574313472
     m_Localized: "Reci\xE9n teletransportado"
     m_Metadata:
@@ -984,8 +988,8 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 14364254620450818
-    m_Localized: "Est\xE1s sobre Fuego: recib\xEDs da\xF1o al inicio de tu turno
-      mientras sigas ac\xE1."
+    m_Localized: "<b>{0}</b> al entrar en una casilla. <b>{1}</b> si empez\xE1s tu
+      turno sobre ella."
     m_Metadata:
       m_Items: []
   - m_Id: 14364254620450819
@@ -1010,6 +1014,14 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 14364254620450824
     m_Localized: "Tus combos ofensivos hacen da\xF1o extra mientras permanezcas ac\xE1."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 15476475624660992
+    m_Localized: Candado
+    m_Metadata:
+      m_Items: []
+  - m_Id: 15476475679186944
+    m_Localized: Uno de tus dados queda trabado. Sortea otro cada turno.
     m_Metadata:
       m_Items: []
   references:

@@ -932,8 +932,8 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 13919417973649408
-    m_Localized: Burns the ground in front of him and bolts for the edge when you
-      crowd him.
+    m_Localized: Sows bombs across the felt, sets the ground in front of him on fire,
+      and shoots from range. Crowd him and he bolts for the edge.
     m_Metadata:
       m_Items: []
   - m_Id: 13919417973649409
@@ -941,7 +941,8 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 13919417973649410
-    m_Localized: Grabs you, throws you clear, and keeps whatever you dropped.
+    m_Localized: Throws you clear and litters the floor with coins. The ones you
+      don't grab in time he takes back, and each one heals him.
     m_Metadata:
       m_Items: []
   - m_Id: 13919417973649411
@@ -957,7 +958,8 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 13919417973649414
-    m_Localized: Rolls her own hand in the open. Break a die and you erase a category.
+    m_Localized: Rolls her hand in the open and charges you whatever category it
+      lands. Break a die and you erase one.
     m_Metadata:
       m_Items: []
   - m_Id: 13919417973649415
@@ -966,6 +968,8 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 13919417973649416
     m_Localized: Part of her hand, and in your way. Break it to erase a category.
+    m_Metadata:
+      m_Items: []
   - m_Id: 14364254574313472
     m_Localized: Teleport Fatigue
     m_Metadata:
@@ -979,8 +983,8 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 14364254620450818
-    m_Localized: 'You are standing on Fire: you take damage at the start of your
-      turn while you remain here.'
+    m_Localized: <b>{0}</b> on entering a tile. <b>{1}</b> if you start your turn
+      on it.
     m_Metadata:
       m_Items: []
   - m_Id: 14364254620450819
@@ -1005,6 +1009,14 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 14364254620450824
     m_Localized: Your offensive combos deal bonus damage while you stay here.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 15476475624660992
+    m_Localized: Padlock
+    m_Metadata:
+      m_Items: []
+  - m_Id: 15476475679186944
+    m_Localized: One of your dice stays jammed. He draws another one every turn.
     m_Metadata:
       m_Items: []
   references:

@@ -929,6 +929,8 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 13919417973649416
     m_Key: obj.dado_casa.desc
+    m_Metadata:
+      m_Items: []
   - m_Id: 14364254574313472
     m_Key: status.tp_delay.name
     m_Metadata:
@@ -967,6 +969,14 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 14364254620450824
     m_Key: status.tile_attack.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 15476475624660992
+    m_Key: status.dice_block.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 15476475679186944
+    m_Key: status.dice_block.desc
     m_Metadata:
       m_Items: []
   m_Metadata:

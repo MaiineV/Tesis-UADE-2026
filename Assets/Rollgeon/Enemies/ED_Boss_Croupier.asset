@@ -301,6 +301,9 @@ MonoBehaviour:
     - Name: ChannelPrefix
       Entry: 1
       Data: croupier.bomb.
+    - Name: HoverOnlyPaint
+      Entry: 5
+      Data: true
     - Name: SowFeedbackId
       Entry: 1
       Data: anim.boss.croupier.range
@@ -551,6 +554,9 @@ MonoBehaviour:
     - Name: ChannelId
       Entry: 6
       Data: 
+    - Name: HoverOnlyPaint
+      Entry: 5
+      Data: true
     - Name: 
       Entry: 8
       Data: 
@@ -1340,6 +1346,9 @@ MonoBehaviour:
     - Name: ChannelId
       Entry: 1
       Data: pleno
+    - Name: HoverOnlyPaint
+      Entry: 5
+      Data: true
     - Name: 
       Entry: 8
       Data: 
