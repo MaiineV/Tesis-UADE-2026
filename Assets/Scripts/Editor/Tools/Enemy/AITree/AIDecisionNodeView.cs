@@ -179,6 +179,13 @@ namespace Rollgeon.Editor.Tools.Enemy.AITree
                     return $"ATK {a.AttackDelta:+0;-0;0} · SPD {a.SpeedDelta:+0;-0;0} → phase {a.PhaseIndex}";
                 case AINode_Once _:
                     return "run child once";
+                case AINode_Random r:
+                    // Siempre texto no vacío: BuildSummary solo crea el label si el primer
+                    // summary tiene contenido, y los pesos aparecen recién al conectar hijos.
+                    if (r.Options == null || r.Options.Count == 0) return "sin opciones";
+                    var parts = new List<string>(r.Options.Count);
+                    foreach (var o in r.Options) parts.Add(o.Weight.ToString("0.##"));
+                    return "pesos: " + string.Join(" / ", parts);
                 default:
                     return null;
             }
@@ -193,36 +200,5 @@ namespace Rollgeon.Editor.Tools.Enemy.AITree
             return reader.GetType().Name;
         }
 
-        // ---- per-subtype field lists (used by the side inspector) ---------
-
-        public static string[] InlineFieldsOf(AIDecisionNode node)
-        {
-            switch (node)
-            {
-                case AINode_If _:           return _ifFields;
-                case AINode_While _:        return _whileFields;
-                case AINode_Behavior _:     return _behaviorFields;
-                case AINode_Move _:         return _moveFields;
-                case AINode_KeepDistance _: return _keepDistanceFields;
-                case AINode_TelegraphMark _:    return _telegraphMarkFields;
-                case AINode_RotateBlock _:      return _rotateBlockFields;
-                case AINode_PromulgateRule _:   return _promulgateRuleFields;
-                case AINode_ApplyStatModifier _: return _applyStatModifierFields;
-                case AINode_ExecuteTelegraph _: return _executeTelegraphFields;
-                // AINode_Once no tiene params inline: edita su Child via el port del grafo.
-                default:                    return Array.Empty<string>();
-            }
-        }
-
-        static readonly string[] _ifFields = { "TargetSelector", "Conditions" };
-        static readonly string[] _whileFields = { "TargetSelector", "Conditions", "MaxIterations" };
-        static readonly string[] _behaviorFields = { "Behavior" };
-        static readonly string[] _moveFields = { "TargetSelector", "MaxSteps", "DesiredRange", "Retreat", "StopAdjacent" };
-        static readonly string[] _keepDistanceFields = { "MaxSteps", "IdealDistance" };
-        static readonly string[] _telegraphMarkFields = { "Shape", "Size", "HalfAxis", "Damage", "Kind", "HighlightStyle" };
-        static readonly string[] _rotateBlockFields = { "Target", "Count" };
-        static readonly string[] _promulgateRuleFields = { "EnabledRules", "RulesPerPromulgation", "IntervalPhase1", "IntervalPhase2", "Phase2HpThreshold", "DoubleFactor", "HalfFactor" };
-        static readonly string[] _applyStatModifierFields = { "AttackDelta", "SpeedDelta", "PhaseIndex", "EmitPhaseChangedEvent" };
-        static readonly string[] _executeTelegraphFields = { "WindupFeedbackId", "ImpactEventKey" };
     }
 }

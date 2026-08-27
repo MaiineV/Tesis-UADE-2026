@@ -181,6 +181,9 @@ namespace Rollgeon.Editor.Tools.Enemy.AITree
                     case AINode_KeepDistance keepDistNode:
                         DrawKeepDistanceNode(keepDistNode);
                         break;
+                    case AINode_Random randomNode:
+                        DrawRandomNode(randomNode);
+                        break;
                     default:
                         DrawDefault();
                         break;
@@ -200,17 +203,95 @@ namespace Rollgeon.Editor.Tools.Enemy.AITree
 
         // ---- per-subtype drawers -----------------------------------------
 
+        /// <summary>
+        /// Dibuja todos los miembros serializados del nodo salvo la topología (hijos), que se
+        /// edita por los puertos del grafo. Reemplaza las listas de campos a mano por tipo: con
+        /// 60 tipos de nodo, la lista se desactualizaba (TelegraphMark listaba un campo que no
+        /// existía y omitía cinco) y 50 tipos quedaban sin UI.
+        /// </summary>
+        /// <remarks>
+        /// Un slot polimórfico nulo (ej. <c>AINode_RotateBlock.DirectedIndex : AIIntReader</c>)
+        /// no muestra picker propio porque las bases llevan <c>[HideReferenceObjectPicker]</c>
+        /// (§13.6.1) — se le antepone el picker del proyecto, igual que en los drawers custom.
+        /// </remarks>
         void DrawDefault()
         {
-            var fields = AIDecisionNodeView.InlineFieldsOf(_selected);
-            if (fields.Length == 0)
+            var nodeProp = _ctx.At(_selectedPath);
+            if (nodeProp == null) return;
+
+            bool drewAny = false;
+            for (int i = 0; i < nodeProp.Children.Count; i++)
+            {
+                var child = nodeProp.Children[i];
+                var entry = child.ValueEntry;
+                if (entry == null)
+                {
+                    // Grupos / métodos: Odin decide qué mostrar.
+                    child.Draw();
+                    drewAny = true;
+                    continue;
+                }
+
+                var declared = entry.BaseValueType;
+                if (AITreeTopology.IsTopologyMember(declared)) continue;
+
+                if (declared.IsAbstract || declared.IsInterface)
+                {
+                    var current = entry.WeakSmartValue;
+                    PolymorphicPicker.DrawSingle(
+                        child.NiceName, declared, current,
+                        newInstance => _ctx.Mutate(
+                            "Change " + child.NiceName,
+                            () => entry.WeakSmartValue = newInstance));
+                    if (entry.WeakSmartValue != null)
+                    {
+                        EditorGUI.indentLevel++;
+                        child.Draw();
+                        EditorGUI.indentLevel--;
+                    }
+                    drewAny = true;
+                    continue;
+                }
+
+                child.Draw();
+                drewAny = true;
+            }
+
+            if (!drewAny)
             {
                 EditorGUILayout.HelpBox(
-                    "This node has no inline parameters — its behavior is fully determined by its children.",
+                    "Este nodo no tiene parámetros: su comportamiento lo definen sus hijos.",
                     MessageType.Info);
+            }
+        }
+
+        /// <summary>
+        /// Los hijos de Random se conectan por el puerto "Options"; acá solo se edita el peso de
+        /// cada uno. <c>Options.$i.Weight</c> es la ruta Odin del elemento <c>i</c>.
+        /// </summary>
+        void DrawRandomNode(AINode_Random node)
+        {
+            EditorGUILayout.HelpBox(
+                "Cada turno elige un hijo al azar. El peso es relativo (2 y 1 = 2/3 y 1/3). " +
+                "Los hijos se conectan por el puerto Options; el orden es el de conexión.",
+                MessageType.None);
+
+            if (node.Options == null || node.Options.Count == 0)
+            {
+                EditorGUILayout.LabelField("Sin hijos conectados.", EditorStyles.miniLabel);
                 return;
             }
-            foreach (var fieldName in fields) DrawOdinProp(fieldName);
+
+            for (int i = 0; i < node.Options.Count; i++)
+            {
+                var child = node.Options[i].Node;
+                EditorGUILayout.LabelField(child != null ? child.NodeName : "(sin conectar)",
+                    EditorStyles.boldLabel);
+                EditorGUI.indentLevel++;
+                DrawOdinProp($"Options.${i}.Weight");
+                EditorGUI.indentLevel--;
+                EditorGUILayout.Space(4);
+            }
         }
 
         /// <summary>
