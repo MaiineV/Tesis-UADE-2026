@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Rollgeon.Combos;
 using Rollgeon.Editor.Tools.Enemy.AITree;
 using Rollgeon.Editor.Tools.Enemy.Builders;
+using Rollgeon.Editor.Tools.Enemy.Templates;
 using Rollgeon.Entities;
 using UnityEditor;
 using UnityEngine;
@@ -20,7 +21,8 @@ namespace Rollgeon.Editor.Tools.Enemy
     public sealed class EnemyEditorWindow : EditorWindow
     {
         const float LEFT_WIDTH = 240f;
-        static readonly string[] KindFilters = { "Todos", "Jefes", "Regulares" };
+        static readonly string[] KindFilters = { "Todos", "Jefes", "Regulares", "Plantillas" };
+        const int KindTemplates = 3;
 
         readonly List<EnemyDataSO> _enemies = new List<EnemyDataSO>();
         readonly Dictionary<EnemyDataSO, List<EnemyIssue>> _issues = new Dictionary<EnemyDataSO, List<EnemyIssue>>();
@@ -246,12 +248,8 @@ namespace Rollgeon.Editor.Tools.Enemy
             EditorGUILayout.EndScrollView();
             EditorGUILayout.Space(8);
 
-            if (GUILayout.Button("+ Nuevo enemigo", GUILayout.Height(24f)))
-            {
-                var so = EnemyAssetOps.CreateNew();
-                RefreshList();
-                Select(so);
-            }
+            if (GUILayout.Button("+ Nuevo enemigo ▾", GUILayout.Height(24f)))
+                ShowNewEnemyMenu();
 
             using (new EditorGUI.DisabledScope(_selected == null))
             {
@@ -261,9 +259,54 @@ namespace Rollgeon.Editor.Tools.Enemy
                     RefreshList();
                     if (copy != null) Select(copy);
                 }
+                if (GUILayout.Button("Guardar como plantilla", GUILayout.Height(22f)))
+                {
+                    var tpl = EnemyAssetOps.SaveAsTemplate(_selected);
+                    RefreshList();
+                    if (tpl != null) { _kindFilter = KindTemplates; Select(tpl); }
+                }
                 if (GUILayout.Button("Mostrar en Project", GUILayout.Height(20f)))
                     EditorGUIUtility.PingObject(_selected);
             }
+        }
+
+        /// <summary>
+        /// Vacío / arquetipos del GDD (en código, siempre disponibles) / plantillas del designer
+        /// (assets bajo la carpeta Templates). Los dos últimos abren directo el árbol.
+        /// </summary>
+        void ShowNewEnemyMenu()
+        {
+            var menu = new GenericMenu();
+            menu.AddItem(new GUIContent("Vacío"), false, () => Created(EnemyAssetOps.CreateNew(), openTree: false));
+            menu.AddSeparator(string.Empty);
+            foreach (var t in EnemyArchetypeTemplates.All)
+            {
+                var template = t;
+                string group = EnemyEditorVocab.LabelOf(template.Archetype);
+                menu.AddItem(new GUIContent($"Arquetipo GDD/{group}/{template.Name}"), false,
+                    () => Created(EnemyAssetOps.CreateFromTemplate(template), openTree: true));
+            }
+            menu.AddSeparator(string.Empty);
+            var user = EnemyTemplateCatalog.UserTemplates();
+            if (user.Count == 0)
+                menu.AddDisabledItem(new GUIContent("Plantillas propias/Sin plantillas guardadas"));
+            foreach (var tpl in user)
+            {
+                var template = tpl;
+                menu.AddItem(new GUIContent("Plantillas propias/" + LabelOf(template)), false,
+                    () => Created(EnemyAssetOps.CreateFromAsset(template), openTree: true));
+            }
+            menu.ShowAsContext();
+        }
+
+        void Created(EnemyDataSO so, bool openTree)
+        {
+            if (so == null) return;
+            if (_kindFilter == KindTemplates) _kindFilter = 0;
+            RefreshList();
+            Select(so);
+            if (openTree) SwitchTab(1);
+            _leftPanel?.MarkDirtyRepaint();
         }
 
         static string LabelOf(EnemyDataSO e) => string.IsNullOrEmpty(e.DisplayName) ? e.name : e.DisplayName;
@@ -275,6 +318,7 @@ namespace Rollgeon.Editor.Tools.Enemy
             string chip = EnemyEditorVocab.Chip(archetype);
             if (!string.IsNullOrEmpty(chip)) text += $"  [{chip}]";
             if (BossBuilderRegistry.TryGetBuilder(e, out _)) text += "  ⚙";
+            if (EnemyTemplateCatalog.IsTemplate(e)) text += "  [T]";
 
             string tooltip = null;
             if (_issues.TryGetValue(e, out var issues) && issues.Count > 0)
@@ -293,6 +337,9 @@ namespace Rollgeon.Editor.Tools.Enemy
 
         bool Matches(EnemyDataSO e)
         {
+            // Las plantillas viven en su propia vista: no son enemigos jugables.
+            bool isTemplate = EnemyTemplateCatalog.IsTemplate(e);
+            if ((_kindFilter == KindTemplates) != isTemplate) return false;
             if (_kindFilter == 1 && !e.IsBoss) return false;
             if (_kindFilter == 2 && e.IsBoss) return false;
 
