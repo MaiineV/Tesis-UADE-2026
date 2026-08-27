@@ -9,7 +9,9 @@ namespace Rollgeon.Editor.Tools.Item
     /// Authoring window for <see cref="ItemSO"/> — closes the gap TECHNICAL.md §26.1 promised
     /// ("un diseñador crea … un item … sin escribir una línea de C#") and §26.2-26.11 never filled.
     /// </summary>
-    public sealed class ItemEditorWindow : BlockEditorWindow<ItemSO>
+    // `partial` para que cada tab del host viva en su propio archivo: las tabs se descubren por
+    // [BlockEditorTab] y no hay registro central, así que dos features no se pisan al agregarse.
+    public sealed partial class ItemEditorWindow : BlockEditorWindow<ItemSO>
     {
         [MenuItem("Tools/Item Editor")]
         static void Open()

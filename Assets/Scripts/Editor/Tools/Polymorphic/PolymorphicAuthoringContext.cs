@@ -115,6 +115,53 @@ namespace Rollgeon.Editor.Tools.Polymorphic
             Notify();
         }
 
+        // ---- agrupación de undo ---------------------------------------------
+
+        /// <summary>
+        /// Collapses every undo step recorded inside the scope into a single named one.
+        /// </summary>
+        /// <example>
+        /// <code>
+        /// using (PolymorphicAuthoringContext.UndoGroup("Create Item"))
+        /// {
+        ///     // create the asset, register it in the catalog, write the localization keys,
+        ///     // write the shop price…
+        /// }
+        /// </code>
+        /// </example>
+        /// <remarks>
+        /// <para>
+        /// Creating one item touches four assets (spec §7.2). Without this, Unity files each write in
+        /// its own group and a single Ctrl+Z undoes only the last one — leaving the author with a
+        /// half-created item and no way to tell how many more times to press it.
+        /// </para>
+        /// <para>
+        /// Purely additive and opt-in: it neither reads nor writes any context state, so nothing that
+        /// already calls <see cref="Mutate"/> changes behaviour. Static for the same reason — a
+        /// grouped operation usually spans several assets and therefore several contexts.
+        /// </para>
+        /// </remarks>
+        public static UndoGroupScope UndoGroup(string name) => new UndoGroupScope(name);
+
+        /// <summary>Scope returned by <see cref="UndoGroup"/>. Collapses on dispose.</summary>
+        /// <remarks>
+        /// A struct so the <c>using</c> costs no allocation, and the group index is captured on
+        /// construction because <c>Undo.GetCurrentGroup</c> has already advanced by the time the
+        /// scope ends.
+        /// </remarks>
+        public readonly struct UndoGroupScope : IDisposable
+        {
+            readonly int _group;
+
+            internal UndoGroupScope(string name)
+            {
+                _group = Undo.GetCurrentGroup();
+                Undo.SetCurrentGroupName(name);
+            }
+
+            public void Dispose() => Undo.CollapseUndoOperations(_group);
+        }
+
         /// <summary>
         /// Path whose value reference-equals <paramref name="target"/>, or null if unreachable.
         /// Needed because polymorphic topologies shift paths on every structural edit, so a

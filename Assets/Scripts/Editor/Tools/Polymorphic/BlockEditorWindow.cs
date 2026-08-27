@@ -1,6 +1,4 @@
-using System.Collections.Generic;
 using Rollgeon.Editor.Tools.Polymorphic.Graph;
-using Rollgeon.Patterns.Catalogs;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -21,19 +19,32 @@ namespace Rollgeon.Editor.Tools.Polymorphic
     /// <para>
     /// Subclasses supply the asset type and the folder; everything else is shared.
     /// </para>
+    /// <para>
+    /// <b>Split into partials by responsibility</b> (same convention as <c>RoomEditorWindow.*.cs</c>)
+    /// so that concurrent work on the list, the CRUD flow, the inspector, the raw-data view and the
+    /// host-declared tabs never lands in the same file:
+    /// </para>
+    /// <list type="bullet">
+    /// <item><description><c>BlockEditorWindow.cs</c> — shell, lifecycle, root layout, shared state.</description></item>
+    /// <item><description><c>BlockEditorWindow.List.cs</c> — the left list, search, filters, row rendering, selection.</description></item>
+    /// <item><description><c>BlockEditorWindow.Crud.cs</c> — create / duplicate / delete / rename / catalog registration.</description></item>
+    /// <item><description><c>BlockEditorWindow.Inspector.cs</c> — the side panel that edits the selected node.</description></item>
+    /// <item><description><c>BlockEditorWindow.RawData.cs</c> — the raw Odin tree tab.</description></item>
+    /// <item><description><c>BlockEditorWindow.Tabs.cs</c> — the tab host and <see cref="BlockEditorTabAttribute"/> discovery.</description></item>
+    /// </list>
+    /// <para>
+    /// Each partial declares the host hooks it consumes, so the extension contract lives next to the
+    /// code that calls it rather than in one shared block everybody has to edit.
+    /// </para>
     /// </remarks>
-    public abstract class BlockEditorWindow<T> : EditorWindow where T : ScriptableObject
+    public abstract partial class BlockEditorWindow<T> : EditorWindow where T : ScriptableObject
     {
         const float LEFT_WIDTH = 230f;
 
-        readonly List<T> _assets = new List<T>();
         readonly PolymorphicAuthoringContext _ctx = new PolymorphicAuthoringContext();
 
         T _selected;
         BlockGraphNode _selectedNode;
-        string _search = string.Empty;
-        int _tabIndex; // 0 = graph, 1 = raw data
-        Vector2 _leftScroll, _panelScroll, _dataScroll;
 
         BlockGraphView _graph;
         IMGUIContainer _leftPanel;
@@ -41,33 +52,19 @@ namespace Rollgeon.Editor.Tools.Polymorphic
         IMGUIContainer _dataPanel;
         VisualElement _rightHost;
         VisualElement _graphTab;
-        Button _tabGraph, _tabData;
 
-        // ---- subclass contract --------------------------------------------
+        // ---- shared state exposed to hosts -----------------------------------
 
-        /// <summary>Folder new assets are created in, e.g. <c>Assets/Rollgeon/Items</c>.</summary>
-        protected abstract string DefaultFolder { get; }
-
-        /// <summary>File name stem for new assets, e.g. <c>Item_New</c>.</summary>
-        protected abstract string NewAssetName { get; }
-
-        /// <summary>Label for the list row. Falls back to the asset's file name.</summary>
-        protected virtual string LabelOf(T asset) => asset != null ? asset.name : "(null)";
-
-        /// <summary>Extra searchable text (ids, display names) beyond the file name.</summary>
-        protected virtual string SearchTextOf(T asset) => LabelOf(asset);
-
-        /// <summary>Optional per-asset warnings drawn above the graph.</summary>
-        protected virtual void DrawIssues(T asset) { }
-
-        /// <summary>The asset's authored id. Drives the catalog check and the rename suggestion.</summary>
-        protected virtual string IdOf(T asset) => null;
+        /// <summary>The asset the list has selected, or null.</summary>
+        protected T SelectedAsset => _selected;
 
         /// <summary>
-        /// File name this asset should carry, derived from its id — e.g. <c>Item_PotionHealing</c>.
-        /// Null disables the rename button.
+        /// The authoring context bound to <see cref="SelectedAsset"/>. Exposed because a
+        /// host-declared tab that edits data has no other legal way to mutate an Odin asset:
+        /// every write must go through <see cref="PolymorphicAuthoringContext.Mutate"/> so the
+        /// serialization blob is regenerated (see that type's remarks).
         /// </summary>
-        protected virtual string SuggestedAssetName(T asset) => null;
+        protected PolymorphicAuthoringContext Context => _ctx;
 
         // ---- lifecycle -----------------------------------------------------
 
@@ -99,6 +96,7 @@ namespace Rollgeon.Editor.Tools.Polymorphic
             _graph?.Bind(_selected, _ctx);
             _leftPanel?.MarkDirtyRepaint();
             _sidePanel?.MarkDirtyRepaint();
+            MarkDeclaredTabsDirty();
         }
 
         // ---- UI ------------------------------------------------------------
@@ -114,15 +112,7 @@ namespace Rollgeon.Editor.Tools.Polymorphic
             var rightCol = new VisualElement { style = { flexGrow = 1, flexDirection = FlexDirection.Column } };
             root.Add(rightCol);
 
-            var tabBar = new VisualElement { style = { flexDirection = FlexDirection.Row, height = 28, marginBottom = 4 } };
-            _tabGraph = MakeTab("Graph", () => SwitchTab(0));
-            _tabData = MakeTab("Raw Data", () => SwitchTab(1));
-            tabBar.Add(_tabGraph);
-            tabBar.Add(_tabData);
-            rightCol.Add(tabBar);
-
             _rightHost = new VisualElement { style = { flexGrow = 1 } };
-            rightCol.Add(_rightHost);
 
             _graph = new BlockGraphView { style = { flexGrow = 1 } };
             _graph.OnNodeSelected += node =>
@@ -134,6 +124,7 @@ namespace Rollgeon.Editor.Tools.Polymorphic
             {
                 _sidePanel?.MarkDirtyRepaint();
                 _dataPanel?.MarkDirtyRepaint();
+                MarkDeclaredTabsDirty();
             };
 
             _sidePanel = new IMGUIContainer(DrawSidePanel)
@@ -152,334 +143,22 @@ namespace Rollgeon.Editor.Tools.Polymorphic
 
             _dataPanel = new IMGUIContainer(DrawRawData) { style = { flexGrow = 1 } };
 
+            // Tab bar is built after its contents exist, and added above the host so the bar sits on
+            // top; the built-in tabs hand it elements that are already wired.
+            BuildTabBar(rightCol);
+            rightCol.Add(_rightHost);
+
             // The context repaints both panels itself so GenericMenu picks show up immediately —
             // those callbacks fire outside the IMGUI cycle.
             _ctx.Changed += () =>
             {
                 _sidePanel?.MarkDirtyRepaint();
                 _dataPanel?.MarkDirtyRepaint();
+                MarkDeclaredTabsDirty();
                 _graph?.Rebuild();
             };
 
             SwitchTab(0);
-        }
-
-        Button MakeTab(string label, System.Action onClick)
-        {
-            var b = new Button(onClick) { text = label };
-            b.style.flexGrow = 1;
-            b.style.height = 26;
-            b.style.unityFontStyleAndWeight = FontStyle.Bold;
-            return b;
-        }
-
-        void SwitchTab(int index)
-        {
-            _tabIndex = index;
-            _rightHost.Clear();
-            _rightHost.Add(index == 0 ? _graphTab : (VisualElement)_dataPanel);
-            _tabGraph.style.backgroundColor = index == 0 ? new Color(0.30f, 0.40f, 0.55f) : new Color(0.20f, 0.20f, 0.20f);
-            _tabData.style.backgroundColor = index == 1 ? new Color(0.30f, 0.40f, 0.55f) : new Color(0.20f, 0.20f, 0.20f);
-        }
-
-        // ---- left list -----------------------------------------------------
-
-        void DrawLeft()
-        {
-            using (new EditorGUILayout.HorizontalScope(EditorStyles.toolbar))
-            {
-                string next = GUILayout.TextField(_search, EditorStyles.toolbarSearchField);
-                if (next != _search) _search = next;
-            }
-
-            EditorGUILayout.Space(2);
-            _leftScroll = EditorGUILayout.BeginScrollView(_leftScroll);
-
-            int shown = 0;
-            foreach (var asset in _assets)
-            {
-                if (!Matches(asset)) continue;
-                shown++;
-                bool isSel = asset == _selected;
-                var prev = GUI.backgroundColor;
-                if (isSel) GUI.backgroundColor = new Color(0.45f, 0.75f, 1f);
-                if (GUILayout.Button(LabelOf(asset), GUILayout.Height(24f))) Select(asset);
-                GUI.backgroundColor = prev;
-            }
-            if (shown == 0)
-                EditorGUILayout.HelpBox(_assets.Count == 0 ? "No assets found." : "Nothing matches the filter.", MessageType.Info);
-
-            EditorGUILayout.EndScrollView();
-            EditorGUILayout.Space(6);
-
-            if (GUILayout.Button("+ Create", GUILayout.Height(24f))) CreateAsset();
-
-            using (new EditorGUI.DisabledScope(_selected == null))
-            {
-                using (new EditorGUILayout.HorizontalScope())
-                {
-                    if (GUILayout.Button("Duplicate")) DuplicateSelected();
-                    if (GUILayout.Button("Delete")) DeleteSelected();
-                }
-                if (GUILayout.Button("Ping in Project")) EditorGUIUtility.PingObject(_selected);
-            }
-        }
-
-        bool Matches(T asset)
-        {
-            if (string.IsNullOrEmpty(_search)) return true;
-            var text = SearchTextOf(asset);
-            return text != null && text.IndexOf(_search, System.StringComparison.OrdinalIgnoreCase) >= 0;
-        }
-
-        void Select(T asset)
-        {
-            if (_selected == asset) return;
-            _selected = asset;
-            _selectedNode = null;
-            _ctx.Bind(asset);
-            _graph.Bind(asset, _ctx);
-            _graph.FrameGraph();
-            _sidePanel?.MarkDirtyRepaint();
-            _dataPanel?.MarkDirtyRepaint();
-        }
-
-        // ---- panels ---------------------------------------------------------
-
-        void DrawSidePanel()
-        {
-            if (_selected == null)
-            {
-                EditorGUILayout.HelpBox("Select an asset on the left.", MessageType.Info);
-                return;
-            }
-
-            _ctx.UpdateTree();
-            _panelScroll = EditorGUILayout.BeginScrollView(_panelScroll);
-
-            DrawIssues(_selected);
-
-            if (_selectedNode == null)
-            {
-                EditorGUILayout.HelpBox("Select a block in the graph to edit it.", MessageType.Info);
-            }
-            else if (_selectedNode.Kind == BlockNodeKind.Root)
-            {
-                // The asset's own fields — id, display name, icon, cooldown… Everything except the
-                // blocks, which are nodes to the right. Saves a trip to the Raw Data tab for the
-                // fields an author touches most.
-                BlockPanelStyles.DrawNodeHeader(_selectedNode);
-                using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
-                {
-                    PolymorphicBlockDrawer.DrawNode(
-                        _ctx, _selected, string.Empty, PolymorphicBlockDrawer.Options.Default);
-                    DrawRenameButton();
-                }
-
-                EditorGUILayout.Space(4);
-                DrawCatalogButton();
-
-                if (_selectedNode.Children.Count > 0)
-                {
-                    EditorGUILayout.Space(6);
-                    BlockPanelStyles.DrawChildrenSummary(_selectedNode);
-                }
-            }
-            else
-            {
-                BlockPanelStyles.DrawNodeHeader(_selectedNode);
-
-                // The cached path goes stale whenever a list shifts — re-resolve against the live
-                // object before drawing, or the panel would edit the wrong element.
-                if (!_ctx.PathPointsTo(_selectedNode.Path, _selectedNode.Value))
-                {
-                    var repaired = _ctx.FindPathTo(_selectedNode.Value);
-                    if (string.IsNullOrEmpty(repaired))
-                    {
-                        EditorGUILayout.HelpBox(
-                            "This block is no longer reachable — it was probably removed. " +
-                            "Select another one.", MessageType.Warning);
-                        EditorGUILayout.EndScrollView();
-                        return;
-                    }
-                    _selectedNode.Path = repaired;
-                }
-
-                using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
-                {
-                    PolymorphicBlockDrawer.DrawNode(
-                        _ctx, _selectedNode.Value, _selectedNode.Path, PolymorphicBlockDrawer.Options.Default);
-                }
-
-                if (_selectedNode.Children.Count > 0)
-                {
-                    EditorGUILayout.Space(6);
-                    BlockPanelStyles.DrawChildrenSummary(_selectedNode);
-                }
-            }
-
-            EditorGUILayout.EndScrollView();
-            _ctx.ApplyChanges();
-        }
-
-        void DrawRawData()
-        {
-            if (_selected == null)
-            {
-                EditorGUILayout.HelpBox("Select an asset on the left.", MessageType.Info);
-                return;
-            }
-            _ctx.UpdateTree();
-            _dataScroll = EditorGUILayout.BeginScrollView(_dataScroll);
-            _ctx.Tree?.Draw(false);
-            EditorGUILayout.EndScrollView();
-            _ctx.ApplyChanges();
-        }
-
-        // ---- root-node actions ----------------------------------------------
-
-        /// <summary>
-        /// Renames the asset file after its id. Without it every asset keeps the "_New" stem the
-        /// Create button gave it, and a folder of Item_New 1 / Item_New 2 is unnavigable.
-        /// </summary>
-        void DrawRenameButton()
-        {
-            string suggested = SuggestedAssetName(_selected);
-            if (string.IsNullOrEmpty(suggested)) return;
-            if (suggested == _selected.name) return;
-
-            EditorGUILayout.Space(4);
-            var prev = GUI.backgroundColor;
-            GUI.backgroundColor = new Color(0.55f, 0.75f, 1f);
-            if (GUILayout.Button($"Rename asset  →  {suggested}", GUILayout.Height(22f)))
-                RenameAsset(suggested);
-            GUI.backgroundColor = prev;
-        }
-
-        void RenameAsset(string newName)
-        {
-            string path = AssetDatabase.GetAssetPath(_selected);
-            // Renaming is GUID-stable, so pools and catalogs keep pointing at it.
-            string error = AssetDatabase.RenameAsset(path, newName);
-            if (!string.IsNullOrEmpty(error))
-            {
-                EditorUtility.DisplayDialog("Rename failed", error, "OK");
-                return;
-            }
-            AssetDatabase.SaveAssets();
-            RefreshList();
-        }
-
-        /// <summary>
-        /// Registers the asset in whatever catalog lists its type. An unregistered asset is
-        /// invisible to everything that resolves by id — shops, effects, the dev console.
-        /// </summary>
-        void DrawCatalogButton()
-        {
-            var catalog = FindCatalog();
-            if (catalog == null) return;
-
-            string id = IdOf(_selected);
-            if (string.IsNullOrEmpty(id))
-            {
-                EditorGUILayout.HelpBox("Set an id before registering this in a catalog.", MessageType.Info);
-                return;
-            }
-
-            if (catalog.Contains(id))
-            {
-                using (new EditorGUILayout.HorizontalScope())
-                {
-                    EditorGUILayout.LabelField($"✓ Registered in {catalog.name}", EditorStyles.miniLabel);
-                    if (GUILayout.Button("Ping", GUILayout.Width(44f))) EditorGUIUtility.PingObject(catalog);
-                }
-                return;
-            }
-
-            var prev = GUI.backgroundColor;
-            GUI.backgroundColor = new Color(0.55f, 0.95f, 0.6f);
-            if (GUILayout.Button($"Add to {catalog.name}", GUILayout.Height(24f)))
-            {
-                if (catalog.EditorAdd(_selected))
-                {
-                    AssetDatabase.SaveAssets();
-                    Debug.Log($"[{GetType().Name}] '{id}' registered in {catalog.name}.", catalog);
-                }
-            }
-            GUI.backgroundColor = prev;
-        }
-
-        /// <summary>
-        /// First catalog asset in the project whose entry type is <typeparamref name="T"/>. Found by
-        /// type rather than by a per-window override — one catalog per family is the convention, and
-        /// a hardcoded path would rot the moment someone moves the asset.
-        /// </summary>
-        BaseCatalogSO<T> FindCatalog()
-        {
-            foreach (var guid in AssetDatabase.FindAssets("t:" + nameof(BaseCatalogSO)))
-            {
-                var path = AssetDatabase.GUIDToAssetPath(guid);
-                if (AssetDatabase.LoadAssetAtPath<BaseCatalogSO>(path) is BaseCatalogSO<T> typed)
-                    return typed;
-            }
-            return null;
-        }
-
-        // ---- CRUD -----------------------------------------------------------
-
-        void RefreshList()
-        {
-            _assets.Clear();
-            foreach (var guid in AssetDatabase.FindAssets("t:" + typeof(T).Name))
-            {
-                var path = AssetDatabase.GUIDToAssetPath(guid);
-                var asset = AssetDatabase.LoadAssetAtPath<T>(path);
-                if (asset != null) _assets.Add(asset);
-            }
-            _assets.Sort((a, b) => string.CompareOrdinal(LabelOf(a), LabelOf(b)));
-
-            if (_selected != null && !_assets.Contains(_selected)) Select(null);
-        }
-
-        void CreateAsset()
-        {
-            if (!AssetDatabase.IsValidFolder(DefaultFolder))
-            {
-                System.IO.Directory.CreateDirectory(DefaultFolder);
-                AssetDatabase.Refresh();
-            }
-            string path = AssetDatabase.GenerateUniqueAssetPath($"{DefaultFolder}/{NewAssetName}.asset");
-            var asset = CreateInstance<T>();
-            AssetDatabase.CreateAsset(asset, path);
-            AssetDatabase.SaveAssets();
-            RefreshList();
-            Select(asset);
-        }
-
-        void DuplicateSelected()
-        {
-            if (_selected == null) return;
-            string src = AssetDatabase.GetAssetPath(_selected);
-            string dst = AssetDatabase.GenerateUniqueAssetPath(src);
-            if (!AssetDatabase.CopyAsset(src, dst)) return;
-            AssetDatabase.SaveAssets();
-            RefreshList();
-            Select(AssetDatabase.LoadAssetAtPath<T>(dst));
-        }
-
-        void DeleteSelected()
-        {
-            if (_selected == null) return;
-            if (!EditorUtility.DisplayDialog(
-                    "Delete asset",
-                    $"Delete '{LabelOf(_selected)}'? This cannot be undone.\n\nAnything referencing it " +
-                    "(pools, catalogs) will be left with a missing reference.",
-                    "Delete", "Cancel")) return;
-
-            AssetDatabase.DeleteAsset(AssetDatabase.GetAssetPath(_selected));
-            AssetDatabase.SaveAssets();
-            Select(null);
-            RefreshList();
         }
     }
 }
