@@ -221,7 +221,12 @@ namespace Rollgeon.Combat.AI.Decisions
                     aiRegistry.Register(id, aiRoot, EnemyToSpawn.ResolveMaxHP(tier));
                 }
 
-                grid.Register(id, coord);
+                if (!grid.TryRegister(id, coord, EnemyToSpawn.EffectiveFootprint))
+                {
+                    // Los bordes se eligen celda a celda: un refuerzo multi-celda que no cabe entra 1×1.
+                    Debug.LogWarning($"[AINode_SpawnReinforcements] '{EnemyToSpawn.name}' no cabe con su footprint en {coord}: se registra 1×1.");
+                    grid.Register(id, coord);
+                }
                 visuals?.SpawnEnemy(id, EnemyToSpawn, coord);
 
                 // Sin registrar los traits, un refuerzo volador pisaría pinchos y un refuerzo jefe se
