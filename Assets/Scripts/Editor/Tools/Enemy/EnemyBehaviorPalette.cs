@@ -20,17 +20,17 @@ namespace Rollgeon.Editor.Tools.Enemy
         public static void Show(Action<BaseBehavior> onPick)
         {
             var menu = new GenericMenu();
-            menu.AddItem(new GUIContent("Action — Empty (EnemyActionBehavior)"), false, () => onPick(BuildEmptyAction()));
-            menu.AddItem(new GUIContent("Action — Always-target Player (EnemyActionBehavior)"), false, () => onPick(BuildPlayerAction()));
-            menu.AddItem(new GUIContent("Action — Target Lowest-HP Ally (EnemyActionBehavior)"), false, () => onPick(BuildLowestHpAllyAction()));
-            menu.AddItem(new GUIContent("Action — Target Highest-Attack Enemy (EnemyActionBehavior)"), false, () => onPick(BuildHighestAttackEnemyAction()));
+            menu.AddItem(new GUIContent("Acción — Vacía"), false, () => onPick(BuildEmptyAction()));
+            menu.AddItem(new GUIContent("Acción — Siempre al jugador"), false, () => onPick(BuildPlayerAction()));
+            menu.AddItem(new GUIContent("Acción — Al aliado con menos vida"), false, () => onPick(BuildLowestHpAllyAction()));
+            menu.AddItem(new GUIContent("Acción — Al rival con más ataque"), false, () => onPick(BuildHighestAttackEnemyAction()));
             menu.AddSeparator(string.Empty);
-            menu.AddItem(new GUIContent("Support — Heal Lowest-HP Ally"), false, () => onPick(new SupportHealBehavior()));
+            menu.AddItem(new GUIContent("Apoyo — Curar al aliado con menos vida"), false, () => onPick(new SupportHealBehavior()));
             menu.AddSeparator(string.Empty);
-            menu.AddItem(new GUIContent("Boss — Combo Block"), false, () => onPick(new BossComboBlockBehavior()));
-            menu.AddItem(new GUIContent("Boss — Combo Immunity"), false, () => onPick(new BossComboImmunityBehavior()));
-            menu.AddItem(new GUIContent("Boss — Energy Buildup"), false, () => onPick(new BossEnergyBuildupBehavior()));
-            menu.AddItem(new GUIContent("Boss — Attack"), false, () => onPick(new BossAttackBehavior()));
+            menu.AddItem(new GUIContent("Jefe — Bloqueo de combo"), false, () => onPick(new BossComboBlockBehavior()));
+            menu.AddItem(new GUIContent("Jefe — Inmunidad a combo"), false, () => onPick(new BossComboImmunityBehavior()));
+            menu.AddItem(new GUIContent("Jefe — Acumulación de energía"), false, () => onPick(new BossEnergyBuildupBehavior()));
+            menu.AddItem(new GUIContent("Jefe — Ataque"), false, () => onPick(new BossAttackBehavior()));
             menu.ShowAsContext();
         }
 
@@ -38,7 +38,7 @@ namespace Rollgeon.Editor.Tools.Enemy
         {
             return new EnemyActionBehavior
             {
-                ActionName = "New Action",
+                ActionName = "Nueva acción",
                 Trigger = BehaviorTrigger.OnTurnStart,
                 AllowedPhases = GamePhaseMask.All,
                 Effects = new System.Collections.Generic.List<EffectData>(),
@@ -48,7 +48,7 @@ namespace Rollgeon.Editor.Tools.Enemy
         static BaseBehavior BuildPlayerAction()
         {
             var behavior = (EnemyActionBehavior)BuildEmptyAction();
-            behavior.ActionName = "Attack Player";
+            behavior.ActionName = "Atacar al jugador";
             behavior.TargetSelector = new TargetSelector_AlwaysPlayer();
             return behavior;
         }
@@ -56,7 +56,7 @@ namespace Rollgeon.Editor.Tools.Enemy
         static BaseBehavior BuildLowestHpAllyAction()
         {
             var behavior = (EnemyActionBehavior)BuildEmptyAction();
-            behavior.ActionName = "Support Lowest-HP Ally";
+            behavior.ActionName = "Apoyar al aliado con menos vida";
             behavior.TargetSelector = new TargetSelector_ByAttribute
             {
                 Relation = EntityFilterMask.Allies,
@@ -69,7 +69,7 @@ namespace Rollgeon.Editor.Tools.Enemy
         static BaseBehavior BuildHighestAttackEnemyAction()
         {
             var behavior = (EnemyActionBehavior)BuildEmptyAction();
-            behavior.ActionName = "Focus Highest-Attack Enemy";
+            behavior.ActionName = "Enfocar al rival con más ataque";
             behavior.TargetSelector = new TargetSelector_ByAttribute
             {
                 Relation = EntityFilterMask.Enemies,
