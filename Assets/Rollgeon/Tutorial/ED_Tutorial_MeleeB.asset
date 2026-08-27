@@ -122,6 +122,9 @@ MonoBehaviour:
     - Name: RangeMode
       Entry: 3
       Data: 0
+    - Name: RangeFromMovementDie
+      Entry: 5
+      Data: false
     - Name: TargetMode
       Entry: 3
       Data: 0
@@ -367,6 +370,9 @@ MonoBehaviour:
     - Name: RangeMode
       Entry: 3
       Data: 0
+    - Name: RangeFromMovementDie
+      Entry: 5
+      Data: false
     - Name: TargetMode
       Entry: 3
       Data: 0
@@ -584,6 +590,9 @@ MonoBehaviour:
     - Name: RangeMode
       Entry: 3
       Data: 0
+    - Name: RangeFromMovementDie
+      Entry: 5
+      Data: false
     - Name: TargetMode
       Entry: 3
       Data: 0
@@ -726,6 +735,9 @@ MonoBehaviour:
     - Name: RangeMode
       Entry: 3
       Data: 0
+    - Name: RangeFromMovementDie
+      Entry: 5
+      Data: false
     - Name: TargetMode
       Entry: 3
       Data: 0
@@ -831,6 +843,9 @@ MonoBehaviour:
     - Name: RangeMode
       Entry: 3
       Data: 0
+    - Name: RangeFromMovementDie
+      Entry: 5
+      Data: false
     - Name: TargetMode
       Entry: 3
       Data: 0
@@ -1198,10 +1213,28 @@ MonoBehaviour:
     - Name: 
       Entry: 8
       Data: 
+    - Name: AIDetachedNodes
+      Entry: 7
+      Data: 59|System.Collections.Generic.List`1[[Rollgeon.Combat.AI.Decisions.AIDecisionNode,
+        Rollgeon]], mscorlib
+    - Name: 
+      Entry: 12
+      Data: 0
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
   EntityId: enemy_tutorial_melee_b
   DisplayName: Recluta (Tutorial)
   Description: 
   Portrait: {fileID: 1810877574, guid: 20ce88debfdaa06459d18ed604643892, type: 3}
+  Design:
+    Archetype: 1
+    Pattern: 1
+    Timing: 1
+    Notes: 'Tutorial: persigue y golpea a distancia 1.'
   WeaknessComboId: 
   WeaknessMultiplierOverride: 0
   BaseHP: 60

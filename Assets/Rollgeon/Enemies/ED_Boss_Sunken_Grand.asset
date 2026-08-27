@@ -313,6 +313,9 @@ MonoBehaviour:
     - Name: RespawnDelayTurns
       Entry: 3
       Data: 2
+    - Name: SpawnFeedbackId
+      Entry: 6
+      Data: 
     - Name: 
       Entry: 8
       Data: 
@@ -458,6 +461,12 @@ MonoBehaviour:
     - Name: Count
       Entry: 3
       Data: 3
+    - Name: Columns
+      Entry: 3
+      Data: 0
+    - Name: Rows
+      Entry: 3
+      Data: 0
     - Name: HalfAxis
       Entry: 3
       Data: 0
@@ -467,6 +476,9 @@ MonoBehaviour:
     - Name: Kind
       Entry: 3
       Data: 1
+    - Name: ChannelId
+      Entry: 6
+      Data: 
     - Name: 
       Entry: 8
       Data: 
@@ -577,6 +589,12 @@ MonoBehaviour:
     - Name: Count
       Entry: 3
       Data: 3
+    - Name: Columns
+      Entry: 3
+      Data: 0
+    - Name: Rows
+      Entry: 3
+      Data: 0
     - Name: HalfAxis
       Entry: 3
       Data: 0
@@ -586,6 +604,9 @@ MonoBehaviour:
     - Name: Kind
       Entry: 3
       Data: 1
+    - Name: ChannelId
+      Entry: 6
+      Data: 
     - Name: 
       Entry: 8
       Data: 
@@ -631,6 +652,18 @@ MonoBehaviour:
     - Name: Count
       Entry: 3
       Data: 1
+    - Name: DirectedIndex
+      Entry: 6
+      Data: 
+    - Name: BlockVfxId
+      Entry: 6
+      Data: 
+    - Name: BlockFeelId
+      Entry: 6
+      Data: 
+    - Name: AnnounceOnce
+      Entry: 5
+      Data: false
     - Name: 
       Entry: 8
       Data: 
@@ -643,6 +676,19 @@ MonoBehaviour:
     - Name: 
       Entry: 8
       Data: 
+    - Name: AIDetachedNodes
+      Entry: 7
+      Data: 64|System.Collections.Generic.List`1[[Rollgeon.Combat.AI.Decisions.AIDecisionNode,
+        Rollgeon]], mscorlib
+    - Name: 
+      Entry: 12
+      Data: 0
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
   EntityId: boss.sunken_grand
   DisplayName: The Sunken Grand
   Description: 'He has been calculating odds in the casino for centuries. He doesn''t
@@ -651,6 +697,12 @@ MonoBehaviour:
     observations about the player''s roll. He''s not cruel, he''s an actuary who
     never learned to shut up.'
   Portrait: {fileID: -249503321, guid: 20ce88debfdaa06459d18ed604643892, type: 3}
+  Design:
+    Archetype: 2
+    Pattern: 3
+    Timing: 2
+    Notes: "Mantiene distancia; telegraphs: banda direccional y 3\xD73 alrededor
+      de s\xED; activa hazards; refuerzos."
   WeaknessComboId: 
   WeaknessMultiplierOverride: 0
   BaseHP: 200
@@ -663,3 +715,7 @@ MonoBehaviour:
   VisualPrefab: {fileID: 5047352166231496340, guid: e9fa077d66130974b8ee953161b1b85f, type: 3}
   MinGoldDrop: 15
   MaxGoldDrop: 23
+  IsFlying: 0
+  IsBoss: 0
+  Personality: 0
+  KamikazeIgnoresSurvival: 0

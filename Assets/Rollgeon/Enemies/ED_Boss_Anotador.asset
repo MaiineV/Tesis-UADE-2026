@@ -424,6 +424,12 @@ MonoBehaviour:
     - Name: Count
       Entry: 3
       Data: 3
+    - Name: Columns
+      Entry: 3
+      Data: 0
+    - Name: Rows
+      Entry: 3
+      Data: 0
     - Name: HalfAxis
       Entry: 3
       Data: 0
@@ -433,6 +439,9 @@ MonoBehaviour:
     - Name: Kind
       Entry: 3
       Data: 1
+    - Name: ChannelId
+      Entry: 6
+      Data: 
     - Name: 
       Entry: 8
       Data: 
@@ -457,6 +466,12 @@ MonoBehaviour:
     - Name: Count
       Entry: 3
       Data: 3
+    - Name: Columns
+      Entry: 3
+      Data: 0
+    - Name: Rows
+      Entry: 3
+      Data: 0
     - Name: HalfAxis
       Entry: 3
       Data: 0
@@ -466,6 +481,9 @@ MonoBehaviour:
     - Name: Kind
       Entry: 3
       Data: 1
+    - Name: ChannelId
+      Entry: 6
+      Data: 
     - Name: 
       Entry: 8
       Data: 
@@ -499,6 +517,12 @@ MonoBehaviour:
     - Name: Count
       Entry: 3
       Data: 3
+    - Name: Columns
+      Entry: 3
+      Data: 0
+    - Name: Rows
+      Entry: 3
+      Data: 0
     - Name: HalfAxis
       Entry: 3
       Data: 0
@@ -508,6 +532,9 @@ MonoBehaviour:
     - Name: Kind
       Entry: 3
       Data: 1
+    - Name: ChannelId
+      Entry: 6
+      Data: 
     - Name: 
       Entry: 8
       Data: 
@@ -615,11 +642,30 @@ MonoBehaviour:
     - Name: 
       Entry: 8
       Data: 
+    - Name: AIDetachedNodes
+      Entry: 7
+      Data: 49|System.Collections.Generic.List`1[[Rollgeon.Combat.AI.Decisions.AIDecisionNode,
+        Rollgeon]], mscorlib
+    - Name: 
+      Entry: 12
+      Data: 0
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
   EntityId: boss.scorekeeper
   DisplayName: El Anotador
   Description: "El que lleva la planilla. No juega contra vos: te corrige el puntaje
     mientras tir\xE1s, y nunca a tu favor."
   Portrait: {fileID: -1790906141, guid: 5103e983e850dbc408e171ce0b6f9714, type: 3}
+  Design:
+    Archetype: 2
+    Pattern: 11
+    Timing: 2
+    Notes: "Mantiene distancia; l\xE1piz a distancia, estela de hielo, telegraphs
+      de fila/columna; desplaza combos vecinos."
   WeaknessComboId: combo.generala
   WeaknessMultiplierOverride: 1.5
   BaseHP: 170
@@ -632,3 +678,7 @@ MonoBehaviour:
   VisualPrefab: {fileID: 4956226314291901843, guid: a75067ac703ab3145b6a767b5c32b2b5, type: 3}
   MinGoldDrop: 30
   MaxGoldDrop: 60
+  IsFlying: 0
+  IsBoss: 0
+  Personality: 0
+  KamikazeIgnoresSurvival: 0

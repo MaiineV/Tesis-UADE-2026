@@ -40,10 +40,28 @@ MonoBehaviour:
     - Name: 
       Entry: 8
       Data: 
+    - Name: AIDetachedNodes
+      Entry: 7
+      Data: 2|System.Collections.Generic.List`1[[Rollgeon.Combat.AI.Decisions.AIDecisionNode,
+        Rollgeon]], mscorlib
+    - Name: 
+      Entry: 12
+      Data: 0
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
   EntityId: obj.dado_casa
   DisplayName: Dado de la Casa
   Description: Part of her hand, and in your way. Break it to erase a category.
   Portrait: {fileID: 21300000, guid: a9fc014b5dcab1641b66a088781b4ea1, type: 3}
+  Design:
+    Archetype: 0
+    Pattern: 0
+    Timing: 0
+    Notes: 'Objeto de sala: no ataca ni se mueve.'
   WeaknessComboId: 
   WeaknessMultiplierOverride: 0
   BaseHP: 45
