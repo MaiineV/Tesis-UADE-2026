@@ -166,6 +166,17 @@ namespace Rollgeon.Entities
         [Tooltip("Flag narrativo: este kamikaze ignora por completo el filtro de supervivencia del pathing.")]
         public bool KamikazeIgnoresSurvival;
 
+        [Title("Tamaño en grilla")]
+        [Tooltip("Celdas que ocupa (ancho × alto). (1,1) = enemigo común. El ancla es la celda inferior-izquierda " +
+                 "(min X, min Y): el marcador de spawn del layout es esa celda y el pawn se centra en el rectángulo. " +
+                 "Fase A: solo enemigos estáticos; el pathfinding y el targeting multi-celda son Fase B/C.")]
+        public Vector2Int Footprint = Vector2Int.one;
+
+        /// <summary>Footprint saneado (cada eje ≥ 1): lo único que lee el runtime.</summary>
+        public Vector2Int EffectiveFootprint => Grid.GridFootprint.Normalize(Footprint);
+
+        public bool HasMultiCellFootprint => !Grid.GridFootprint.IsUnit(EffectiveFootprint);
+
         [Title("AI Decision Tree (§7.5)")]
         [InfoBox("Árbol polimórfico que decide qué hace el enemigo cada turno. " +
                  "Null/vacío = fallback al BasicEnemyAI (siempre ataca). " +
