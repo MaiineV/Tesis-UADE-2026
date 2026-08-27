@@ -36,7 +36,11 @@ namespace Rollgeon.Combat.AI
         private Guid _paintedSubject;
         private bool _hasSubject;
 
-        private EnemyIntentPreviewOverlay()
+        /// <summary>
+        /// Público como el de <see cref="ThreatTelegraphOverlay"/>: producción entra por
+        /// <see cref="ResolveOrCreate"/>, y quien necesite una instancia limpia la construye.
+        /// </summary>
+        public EnemyIntentPreviewOverlay()
         {
             EventManager.Subscribe(EventName.OnTurnStarted, HandleTurnStarted);
             EventManager.Subscribe(EventName.OnCombatEnd, HandleScopeEnded);
@@ -89,9 +93,10 @@ namespace Rollgeon.Combat.AI
             CollectCells(_next, _nextCells, subjectGuid, hasSubject);
 
             // Sin esto, una celda que está en las dos listas se lleva DOS quads apilados y se lee
-            // como una casilla distinta y más brillante. Gana la de "lo próximo", que es de lo que
-            // se le está avisando al jugador.
-            _standingCells.ExceptWith(_nextCells);
+            // como una casilla distinta. Un quad es un solo aviso, así que en el empate se pierde
+            // uno de los dos: gana lo que ya está puesto, que es lo seguro — el próximo ataque
+            // todavía puede caer en otro lado, la marca que el jefe ya congeló no.
+            _nextCells.ExceptWith(_standingCells);
 
             var overlay = ThreatTelegraphOverlay.ResolveOrCreate();
             if (overlay == null) return;
