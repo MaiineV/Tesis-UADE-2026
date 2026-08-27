@@ -262,6 +262,13 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         public const string BombDefinitionId = "roomobj.croupier.bomba";
         public const string BombFireTilePath = "Assets/Rollgeon/Tiles/Tile_Fire_CroupierBomba.asset";
         public const string BombFireTileId = "TILE_FIRE_CROUPIER_BOMBA";
+
+        /// <summary>
+        /// Clave propia y no la del fuego del paño: las dos casillas conviven en la misma sala, se
+        /// dibujan con el mismo prefab y cobran 6/10 contra 15/15. Compartiendo clave, el tooltip
+        /// del fuego de bomba se titula con el nombre del otro.
+        /// </summary>
+        public const string BombFireContentKey = "tile.firecroupierbomba";
         public const string BombArtPrefabPath = "Assets/Art/3D/Models/Items/Bomb.fbx";
         public const string BombVisualPrefabPath = "Assets/Prefabs/Enemies/Bosses/PF_Obj_Bomba.prefab";
 
@@ -1236,6 +1243,9 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
             // sus reacomodos esquiven las casillas que hacen daño.
             tile.OwnerBossImmune = false;
 
+            tile.NameKey = BombFireContentKey;
+            tile.DescriptionKey = BombFireContentKey;
+
             if (basefire == null) return;
 
             tile.DefaultDurationRounds = basefire.DefaultDurationRounds;
@@ -1247,8 +1257,6 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
             tile.TriggerVfxYOffset = basefire.TriggerVfxYOffset;
             tile.EditorIcon = basefire.EditorIcon;
             tile.EditorColor = basefire.EditorColor;
-            tile.NameKey = basefire.NameKey;
-            tile.DescriptionKey = basefire.DescriptionKey;
         }
 
         // ======================================================================

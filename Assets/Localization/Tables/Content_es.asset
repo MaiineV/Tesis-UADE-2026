@@ -929,7 +929,7 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 13172026638630912
     m_Localized: "Llamas de la banca: duran casi toda la mano y castigan fuerte a
-      quien se queda quieto. A su due\xF1o no lo tocan."
+      quien se queda quieto. Al Croupier tambi\xE9n lo queman."
     m_Metadata:
       m_Items: []
   - m_Id: 13919417931706368
@@ -1022,6 +1022,15 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 15476475679186944
     m_Localized: Uno de tus dados queda trabado. Sortea otro cada turno.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 15491811094798336
+    m_Localized: Fuego de Bomba
+    m_Metadata:
+      m_Items: []
+  - m_Id: 15491811132547072
+    m_Localized: "Lo que deja una bomba al estallar. Quema mucho m\xE1s que el fuego
+      del pa\xF1o, y tampoco perdona al Croupier."
     m_Metadata:
       m_Items: []
   references:

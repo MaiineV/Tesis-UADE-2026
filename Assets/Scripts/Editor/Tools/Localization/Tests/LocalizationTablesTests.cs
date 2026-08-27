@@ -5,6 +5,7 @@ using Rollgeon.Meta;
 using Rollgeon.Tutorial;
 using Rollgeon.UI;
 using Rollgeon.UI.Help;
+using Rollgeon.Tiles;
 using UnityEditor;
 using UnityEditor.Localization;
 using UnityEngine.Localization;
@@ -184,6 +185,89 @@ namespace Rollgeon.Editor.Tools.Localization.Tests
 
             // Assert
             Assert.IsEmpty(missing, "Keys de unlocks ausentes en Content:\n" + string.Join("\n", missing));
+        }
+
+        /// <summary>
+        /// Pares de casillas que comparten clave a sabiendas y todavía no se separaron. Sacar una
+        /// línea de acá el día que la casilla reciba su propio texto.
+        /// </summary>
+        /// <remarks>
+        /// 2026-08-26 — Los pinchos del Cajero cobran 20 contra los 12 de los genéricos y se
+        /// titulan "Pinchos" igual que ellos. Es el mismo bug que tenía el fuego de bomba del
+        /// Croupier; queda afuera de la rama del hover porque es otra pelea.
+        /// </remarks>
+        private static readonly HashSet<string> SharedTileKeysByDesign = new HashSet<string>
+        {
+            "tile.spikes",
+        };
+
+        [Test]
+        public void test_localization_tiles_that_charge_differently_do_not_share_a_key()
+        {
+            // Arrange — el tooltip de una casilla se titula con su NameKey y sus números salen de
+            // la definición. Dos casillas con la misma clave y distinto precio se leen como la
+            // misma cosa cobrando cualquier número.
+            var byKey = new Dictionary<string, List<SpecialTileDefinitionSO>>();
+            foreach (string guid in AssetDatabase.FindAssets("t:SpecialTileDefinitionSO"))
+            {
+                var def = AssetDatabase.LoadAssetAtPath<SpecialTileDefinitionSO>(
+                    AssetDatabase.GUIDToAssetPath(guid));
+                if (def == null || string.IsNullOrEmpty(def.NameKey)) continue;
+
+                if (!byKey.TryGetValue(def.NameKey, out var group))
+                    byKey[def.NameKey] = group = new List<SpecialTileDefinitionSO>();
+                group.Add(def);
+            }
+
+            // Act
+            var collisions = new List<string>();
+            foreach (var pair in byKey)
+            {
+                if (pair.Value.Count < 2 || SharedTileKeysByDesign.Contains(pair.Key)) continue;
+
+                var first = pair.Value[0];
+                foreach (var other in pair.Value)
+                {
+                    if (other.EnterDamage == first.EnterDamage
+                        && other.TurnStartDamage == first.TurnStartDamage
+                        && other.HealAmount == first.HealAmount) continue;
+
+                    collisions.Add($"{pair.Key}: " + string.Join(", ", pair.Value.Select(
+                        d => $"{d.name} ({d.EnterDamage}/{d.TurnStartDamage})")));
+                    break;
+                }
+            }
+
+            // Assert
+            Assert.IsEmpty(collisions,
+                "Casillas con precios distintos compartiendo texto — la que no es dueña de la clave " +
+                "se titula con el nombre de la otra:\n" + string.Join("\n", collisions));
+        }
+
+        [Test]
+        public void test_localization_every_tile_key_exists_in_the_content_table()
+        {
+            // Arrange
+            var collection = RequireCollection("Content");
+
+            // Act — sin entrada, LocalizedContent.Description devuelve vacío y el tooltip pierde la
+            // descripción entera sin avisar; el nombre cae al DisplayName de editor.
+            var missing = new List<string>();
+            foreach (string guid in AssetDatabase.FindAssets("t:SpecialTileDefinitionSO"))
+            {
+                var def = AssetDatabase.LoadAssetAtPath<SpecialTileDefinitionSO>(
+                    AssetDatabase.GUIDToAssetPath(guid));
+                if (def == null || string.IsNullOrEmpty(def.NameKey)) continue;
+
+                foreach (string suffix in new[] { ".name", ".desc" })
+                {
+                    if (collection.SharedData.GetEntry(def.NameKey + suffix) == null)
+                        missing.Add(def.NameKey + suffix);
+                }
+            }
+
+            // Assert
+            Assert.IsEmpty(missing, "Keys de casillas ausentes en Content:\n" + string.Join("\n", missing));
         }
 
         private static StringTableCollection RequireCollection(string name)

@@ -924,7 +924,7 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 13172026638630912
     m_Localized: 'The house''s flames: they last most of the hand and punish anyone
-      who stands still. They never touch their owner.'
+      who stands still. They burn the Croupier too.'
     m_Metadata:
       m_Items: []
   - m_Id: 13919417931706368
@@ -1017,6 +1017,15 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 15476475679186944
     m_Localized: One of your dice stays jammed. He draws another one every turn.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 15491811094798336
+    m_Localized: Bomb Fire
+    m_Metadata:
+      m_Items: []
+  - m_Id: 15491811132547072
+    m_Localized: What a bomb leaves when it blows. It burns far worse than the house
+      fire, and it doesn't spare the Croupier either.
     m_Metadata:
       m_Items: []
   references:

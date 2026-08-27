@@ -979,6 +979,14 @@ MonoBehaviour:
     m_Key: status.dice_block.desc
     m_Metadata:
       m_Items: []
+  - m_Id: 15491811094798336
+    m_Key: tile.firecroupierbomba.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 15491811132547072
+    m_Key: tile.firecroupierbomba.desc
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

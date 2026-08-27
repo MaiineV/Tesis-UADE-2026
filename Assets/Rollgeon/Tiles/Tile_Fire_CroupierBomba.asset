@@ -45,5 +45,5 @@ MonoBehaviour:
   AIAnnouncesLethal: 0
   EditorIcon: {fileID: 0}
   EditorColor: {r: 1, g: 0.6, b: 0.25, a: 1}
-  NameKey: tile.firecroupier
-  DescriptionKey: tile.firecroupier
+  NameKey: tile.firecroupierbomba
+  DescriptionKey: tile.firecroupierbomba

@@ -743,8 +743,12 @@ namespace Rollgeon.EditorTools.Localization
                 "Fire that burns out on its own after a few rounds.");
             Content("tile.firecroupier.name", "Fuego de la Banca", "House Fire");
             Content("tile.firecroupier.desc",
-                "Llamas de la banca: duran casi toda la mano y castigan fuerte a quien se queda quieto. A su dueño no lo tocan.",
-                "The house's flames: they last most of the hand and punish anyone who stands still. They never touch their owner.");
+                "Llamas de la banca: duran casi toda la mano y castigan fuerte a quien se queda quieto. Al Croupier también lo queman.",
+                "The house's flames: they last most of the hand and punish anyone who stands still. They burn the Croupier too.");
+            Content("tile.firecroupierbomba.name", "Fuego de Bomba", "Bomb Fire");
+            Content("tile.firecroupierbomba.desc",
+                "Lo que deja una bomba al estallar. Quema mucho más que el fuego del paño, y tampoco perdona al Croupier.",
+                "What a bomb leaves when it blows. It burns far worse than the house fire, and it doesn't spare the Croupier either.");
             Content("tile.ice.name", "Hielo", "Ice");
             Content("tile.ice.desc",
                 "Te deslizás en la dirección en la que entraste hasta salir del hielo o chocar.",
