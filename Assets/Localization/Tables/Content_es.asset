@@ -1033,6 +1033,46 @@ MonoBehaviour:
       del pa\xF1o, y tampoco perdona al Croupier."
     m_Metadata:
       m_Items: []
+  - m_Id: 15516266093322240
+    m_Localized: Prende el suelo
+    m_Metadata:
+      m_Items: []
+  - m_Id: 15516266126876672
+    m_Localized: "Prende la banda que marc\xF3, por <b>{0}</b>."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 15516266126876673
+    m_Localized: Te dispara
+    m_Metadata:
+      m_Items: []
+  - m_Id: 15516266126876674
+    m_Localized: Te dispara desde lejos por <b>{0}</b>.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 15516266126876675
+    m_Localized: Siembra bombas
+    m_Metadata:
+      m_Items: []
+  - m_Id: 15516266126876676
+    m_Localized: "Siembra <b>{1}</b> bombas. D\xF3nde caen se sortea al sembrarlas."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 15516266126876677
+    m_Localized: Estalla
+    m_Metadata:
+      m_Items: []
+  - m_Id: 15516266126876678
+    m_Localized: Estalla en cruz.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 15516266126876679
+    m_Localized: Lo que deja
+    m_Metadata:
+      m_Items: []
+  - m_Id: 15516266126876680
+    m_Localized: 'Deja fuego: <b>{0}</b> al entrar, <b>{1}</b> por turno, {2} rondas.'
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

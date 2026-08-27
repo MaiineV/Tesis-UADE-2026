@@ -1028,6 +1028,47 @@ MonoBehaviour:
       fire, and it doesn't spare the Croupier either.
     m_Metadata:
       m_Items: []
+  - m_Id: 15516266093322240
+    m_Localized: Sets the Floor Alight
+    m_Metadata:
+      m_Items: []
+  - m_Id: 15516266126876672
+    m_Localized: Lights up the band he marked, for <b>{0}</b>.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 15516266126876673
+    m_Localized: Shoots You
+    m_Metadata:
+      m_Items: []
+  - m_Id: 15516266126876674
+    m_Localized: Shoots you from range for <b>{0}</b>.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 15516266126876675
+    m_Localized: Sows Bombs
+    m_Metadata:
+      m_Items: []
+  - m_Id: 15516266126876676
+    m_Localized: Sows <b>{1}</b> bombs. Where they land is drawn as he sows them.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 15516266126876677
+    m_Localized: Detonates
+    m_Metadata:
+      m_Items: []
+  - m_Id: 15516266126876678
+    m_Localized: Blows up in a cross.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 15516266126876679
+    m_Localized: What It Leaves
+    m_Metadata:
+      m_Items: []
+  - m_Id: 15516266126876680
+    m_Localized: 'Leaves fire: <b>{0}</b> on entering, <b>{1}</b> per turn, for {2}
+      rounds.'
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

@@ -987,6 +987,46 @@ MonoBehaviour:
     m_Key: tile.firecroupierbomba.desc
     m_Metadata:
       m_Items: []
+  - m_Id: 15516266093322240
+    m_Key: intent.ignite.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 15516266126876672
+    m_Key: intent.ignite.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 15516266126876673
+    m_Key: intent.ranged_shot.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 15516266126876674
+    m_Key: intent.ranged_shot.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 15516266126876675
+    m_Key: intent.bomb_field.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 15516266126876676
+    m_Key: intent.bomb_field.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 15516266126876677
+    m_Key: intent.bomb_blast.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 15516266126876678
+    m_Key: intent.bomb_blast.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 15516266126876679
+    m_Key: intent.leaves.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 15516266126876680
+    m_Key: intent.leaves.desc
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

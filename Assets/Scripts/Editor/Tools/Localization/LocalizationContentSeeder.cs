@@ -1,5 +1,6 @@
 using UnityEditor;
 using UnityEngine;
+using Rollgeon.Combat.AI.Decisions;
 using Rollgeon.Editor.Tools.Enemy.Builders;
 using Rollgeon.Tutorial;
 using Rollgeon.UI;
@@ -686,6 +687,47 @@ namespace Rollgeon.EditorTools.Localization
             Content("status.tile_attack.desc",
                 "Tus combos ofensivos hacen daño extra mientras permanezcas acá.",
                 "Your offensive combos deal bonus damage while you stay here.");
+
+            SeedIntents();
+        }
+
+        /// <summary>
+        /// Lo que un enemigo va a hacer, en la tarjeta que sale al pasarle el mouse.
+        /// </summary>
+        /// <remarks>
+        /// Todas las reglas se formatean con la misma terna —{0} daño, {1} cantidad, {2} turnos—
+        /// y cada frase usa los que le sirven (ver <c>AIIntentText</c>). Las keys viven en
+        /// <c>AIIntentTextKeys.All</c> y hay un test que exige que todas estén acá: sin entry, la
+        /// tarjeta salía con el texto de autor en español aunque el juego corriera en inglés.
+        /// </remarks>
+        private static void SeedIntents()
+        {
+            Content(AIIntentTextKeys.Ignite + ".name", "Prende el suelo", "Sets the Floor Alight");
+            Content(AIIntentTextKeys.Ignite + ".desc",
+                "Prende la banda que marcó, por <b>{0}</b>.",
+                "Lights up the band he marked, for <b>{0}</b>.");
+
+            Content(AIIntentTextKeys.RangedShot + ".name", "Te dispara", "Shoots You");
+            Content(AIIntentTextKeys.RangedShot + ".desc",
+                "Te dispara desde lejos por <b>{0}</b>.",
+                "Shoots you from range for <b>{0}</b>.");
+
+            Content(AIIntentTextKeys.BombField + ".name", "Siembra bombas", "Sows Bombs");
+            Content(AIIntentTextKeys.BombField + ".desc",
+                "Siembra <b>{1}</b> bombas. Dónde caen se sortea al sembrarlas.",
+                "Sows <b>{1}</b> bombs. Where they land is drawn as he sows them.");
+
+            // Sin {0} a propósito: el estallido del Croupier cobra cero y todo lo que hace es el
+            // fuego que deja. Anunciar "por 0" sería decir que el golpe existe y no lastima.
+            Content(AIIntentTextKeys.BombBlast + ".name", "Estalla", "Detonates");
+            Content(AIIntentTextKeys.BombBlast + ".desc",
+                "Estalla en cruz.",
+                "Blows up in a cross.");
+
+            Content(AIIntentTextKeys.Leaves + ".name", "Lo que deja", "What It Leaves");
+            Content(AIIntentTextKeys.Leaves + ".desc",
+                "Deja fuego: <b>{0}</b> al entrar, <b>{1}</b> por turno, {2} rondas.",
+                "Leaves fire: <b>{0}</b> on entering, <b>{1}</b> per turn, for {2} rounds.");
         }
 
         /// <summary>

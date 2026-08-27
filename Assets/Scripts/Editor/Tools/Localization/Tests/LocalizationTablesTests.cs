@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using NUnit.Framework;
+using Rollgeon.Combat.AI.Decisions;
 using Rollgeon.Meta;
 using Rollgeon.Tutorial;
 using Rollgeon.UI;
@@ -242,6 +243,34 @@ namespace Rollgeon.Editor.Tools.Localization.Tests
             Assert.IsEmpty(collisions,
                 "Casillas con precios distintos compartiendo texto — la que no es dueña de la clave " +
                 "se titula con el nombre de la otra:\n" + string.Join("\n", collisions));
+        }
+
+        /// <summary>
+        /// Las intenciones se escriben en la tarjeta que sale al pasarle el mouse a un enemigo.
+        /// Las cuatro vivieron una rama entera sin entry: salían con el texto de autor, en
+        /// español, con el juego corriendo en inglés, y ningún test lo veía.
+        /// </summary>
+        [Test]
+        public void test_localization_every_intent_key_exists_in_the_content_table()
+        {
+            // Arrange
+            var collection = RequireCollection("Content");
+
+            // Act
+            var missing = new List<string>();
+            foreach (string key in AIIntentTextKeys.All)
+            {
+                foreach (string suffix in new[] { ".name", ".desc" })
+                {
+                    if (collection.SharedData.GetEntry(key + suffix) == null)
+                        missing.Add(key + suffix);
+                }
+            }
+
+            // Assert
+            Assert.IsEmpty(missing,
+                "Keys de intenciones ausentes en Content — la tarjeta del enemigo cae al texto " +
+                "de autor y sale en español en cualquier idioma:\n" + string.Join("\n", missing));
         }
 
         [Test]
