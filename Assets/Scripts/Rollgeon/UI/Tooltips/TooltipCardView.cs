@@ -28,6 +28,10 @@ namespace Rollgeon.UI.Tooltips
         [SerializeField, Required] private GameObject _badge;
         [SerializeField, Required] private TextMeshProUGUI _badgeLabel;
 
+        [Tooltip("Línea entre el título y la regla. Se apaga con la regla: un divisor sin nada " +
+                 "debajo parte la tarjeta en dos por nada.")]
+        [SerializeField] private GameObject _divider;
+
         /// <summary>Id del estado que esta tarjeta está mostrando — la columna lo usa para reusarla.</summary>
         public string CardId { get; private set; }
 
@@ -46,7 +50,11 @@ namespace Rollgeon.UI.Tooltips
                     : TextAlignmentOptions.Left;
             }
 
-            if (isTerrain)
+            // Sin arte el bloque del ícono se va entero, no sólo el Image: dejarlo prendido
+            // reservaría su ancho en la fila y el título arrancaría corrido contra un hueco.
+            bool hasIcon = !isTerrain && state.Icon != null;
+
+            if (!hasIcon)
             {
                 if (_iconRoot != null) _iconRoot.SetActive(false);
                 if (_badge != null) _badge.SetActive(false);
@@ -58,8 +66,7 @@ namespace Rollgeon.UI.Tooltips
                 if (_icon != null)
                 {
                     _icon.sprite = state.Icon;
-                    // Un estado sin arte todavía no debe dibujar el cuadrado blanco del Image.
-                    _icon.enabled = state.Icon != null;
+                    _icon.enabled = true;
                 }
 
                 if (_badge != null)
@@ -72,11 +79,13 @@ namespace Rollgeon.UI.Tooltips
                 }
             }
 
+            bool hasRule = !string.IsNullOrEmpty(state.Description);
             if (_ruleLabel != null)
             {
                 _ruleLabel.text = state.Description ?? string.Empty;
-                _ruleLabel.gameObject.SetActive(!string.IsNullOrEmpty(state.Description));
+                _ruleLabel.gameObject.SetActive(hasRule);
             }
+            if (_divider != null) _divider.SetActive(hasRule);
         }
     }
 }

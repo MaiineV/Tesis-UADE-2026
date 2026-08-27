@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using Rollgeon.Combat.AI.Decisions;
 using Rollgeon.UI.HUD.Status;
 using UnityEditor;
 using UnityEngine;
@@ -33,6 +34,12 @@ namespace Rollgeon.Editor.Tools.HUD
             (TileStandStatusProvider.SpeedId, "statuseffects_4"),
             (TileStandStatusProvider.AttackId, "statuseffects_5"),
             (StunStatusProvider.StateId, "statuseffects_6"),
+
+            // Las dos intenciones del Croupier que terminan en fuego reusan el slice de burn:
+            // es literalmente el mismo fuego, y sin entry la tarjeta sale sin ícono. Las otras
+            // dos (siembra, disparo) siguen sin arte y su tarjeta degrada al título solo.
+            (AIIntentTextKeys.Ignite, "statuseffects_0"),
+            (AIIntentTextKeys.BombBlast, "statuseffects_0"),
         };
 
         [MenuItem("Rollgeon/Player Icons/6 - Author Status Icon Catalog")]
