@@ -7,13 +7,14 @@ Material:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: Mat_DarkGray Variant
-  m_Shader: {fileID: 4800000, guid: 36608aed4130c0747865b0028b1071e4, type: 3}
-  m_Parent: {fileID: 2100000, guid: c017d00077244dd48aaf3679f9a1c184, type: 2}
+  m_Name: Mat_FireTorch Variant
+  m_Shader: {fileID: 4800000, guid: 355d86df7a8703f438d3276da1361f7a, type: 3}
+  m_Parent: {fileID: 2100000, guid: 5671d4ab21733fb46a4fe169c74e9f6b, type: 2}
   m_ModifiedSerializedProperties: 0
   m_ValidKeywords: []
   m_InvalidKeywords:
-  - _USEPALETTE_ON
+  - _ENABLESWAY_ON
+  - _USEDITHER_ON
   m_LightmapFlags: 4
   m_EnableInstancingVariants: 0
   m_DoubleSidedGI: 0
@@ -27,8 +28,9 @@ Material:
     m_TexEnvs: []
     m_Ints: []
     m_Floats:
-    - _UsePalette: 0
-    m_Colors:
-    - _LightColor: {r: 0.2058117, g: 0.20902999, b: 0.23584908, a: 1}
+    - _FireSlotBase: 21
+    - _FireSlotMid: 0
+    - _FireSlotTip: 7
+    m_Colors: []
   m_BuildTextureStacks: []
   m_AllowLocking: 1
