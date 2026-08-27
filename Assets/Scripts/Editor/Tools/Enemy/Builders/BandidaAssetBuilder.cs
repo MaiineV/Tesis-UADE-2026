@@ -370,6 +370,13 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
 
             boss.AIRoot = BuildAIRoot(reelData, reelFire);
             boss.AIDetachedNodes.Clear(); // el builder es fuente de verdad: nada suelto sobrevive
+            boss.Design = new EnemyDesignSheet
+            {
+                Archetype = EnemyArchetype.Melee,
+                Pattern = AttackPatternKind.Unspecified,
+                Timing = AttackTiming.Telegraph,
+                Notes = "Brazo de contacto; rodillos con peaje; 3×3 sobre el jugador; jackpot con cuenta regresiva.",
+            };
         }
 
         /// <summary>
@@ -406,6 +413,13 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
 
             reel.AIRoot = new AINode_Wait();
             reel.AIDetachedNodes.Clear(); // el builder es fuente de verdad: nada suelto sobrevive
+            reel.Design = new EnemyDesignSheet
+            {
+                Archetype = EnemyArchetype.Unspecified,
+                Pattern = AttackPatternKind.Unspecified,
+                Timing = AttackTiming.Unspecified,
+                Notes = "Objeto de sala: no ataca ni se mueve.",
+            };
         }
 
         // ======================================================================

@@ -729,6 +729,13 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
 
             data.AIRoot = BuildAIRoot(chip, critter);
             data.AIDetachedNodes.Clear(); // el builder es fuente de verdad: nada suelto sobrevive
+            data.Design = new EnemyDesignSheet
+            {
+                Archetype = EnemyArchetype.Melee,
+                Pattern = AttackPatternKind.ContactAdjacent,
+                Timing = AttackTiming.Instant,
+                Notes = "Mandoble y empujón alternados a distancia 1; lluvia de monedas; caja fuerte; refuerzos (Comisión).",
+            };
         }
 
         // ---- La Comisión (ficha propia) -----------------------------------
@@ -778,6 +785,13 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
 
             data.AIRoot = BuildCritterAIRoot();
             data.AIDetachedNodes.Clear(); // el builder es fuente de verdad: nada suelto sobrevive
+            data.Design = new EnemyDesignSheet
+            {
+                Archetype = EnemyArchetype.Ranged,
+                Pattern = AttackPatternKind.DiamondArea,
+                Timing = AttackTiming.Instant,
+                Notes = "Mordisco a distancia 5 (Manhattan); se acerca si no llega.",
+            };
         }
 
         /// <summary>

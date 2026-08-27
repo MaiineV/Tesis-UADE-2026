@@ -653,6 +653,13 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
 
             boss.AIRoot = BuildAIRoot(diceTable, electricFloor);
             boss.AIDetachedNodes.Clear(); // el builder es fuente de verdad: nada suelto sobrevive
+            boss.Design = new EnemyDesignSheet
+            {
+                Archetype = EnemyArchetype.Melee,
+                Pattern = AttackPatternKind.Unspecified,
+                Timing = AttackTiming.Telegraph,
+                Notes = "Cubiletazo de contacto; telegraphs: cuadrados dispersos, 3×3 sobre el jugador, banda direccional; anillo de escarcha; dados de la casa.",
+            };
         }
 
         /// <summary>
@@ -718,6 +725,13 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
             // que le pega al jugador rompe la lectura de "todo el daño entra por la mano".
             dice.AIRoot = new AINode_Wait();
             dice.AIDetachedNodes.Clear(); // el builder es fuente de verdad: nada suelto sobrevive
+            dice.Design = new EnemyDesignSheet
+            {
+                Archetype = EnemyArchetype.Unspecified,
+                Pattern = AttackPatternKind.Unspecified,
+                Timing = AttackTiming.Unspecified,
+                Notes = "Objeto de sala: no ataca ni se mueve.",
+            };
         }
 
         /// <summary>
