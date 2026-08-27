@@ -24,6 +24,9 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
     /// </remarks>
     public static class TahurAssetBuilder
     {
+        /// <summary>Menú que regenera estos assets. Lo lee el Editor de enemigos para avisar que el builder pisa el árbol.</summary>
+        public const string MenuPath = "Tools/Rollgeon/Bosses/Build Tahur";
+
         // -----------------------------------------------------------------
         // Identidad + stats
         // -----------------------------------------------------------------
@@ -362,13 +365,14 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
             if (portrait != null) data.Portrait = portrait;
 
             data.AIRoot = BuildAIRoot();
+            data.AIDetachedNodes.Clear(); // el builder es fuente de verdad: nada suelto sobrevive
         }
 
         // -----------------------------------------------------------------
         // Menú
         // -----------------------------------------------------------------
 
-        [MenuItem("Tools/Rollgeon/Bosses/Build Tahur")]
+        [MenuItem(MenuPath)]
         public static void BuildTahurAsset()
         {
             var data = AssetDatabase.LoadAssetAtPath<EnemyDataSO>(AssetPath);

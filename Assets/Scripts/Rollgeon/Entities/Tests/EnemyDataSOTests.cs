@@ -1,5 +1,6 @@
 using NUnit.Framework;
 using Rollgeon.Attributes;
+using Rollgeon.Combat.AI.Decisions;
 using Rollgeon.Attributes.Stats;
 using Rollgeon.Entities;
 using Rollgeon.Entities.Behaviors;
@@ -101,6 +102,34 @@ namespace Rollgeon.Entities.Tests
         public void CreateRuntimeBehaviors_EmptyList_ReturnsEmpty()
         {
             Assert.AreEqual(0, _so.CreateRuntimeBehaviors().Count);
+        }
+
+        // ---- Ficha de diseño + nodos sueltos (Fix#0048) --------------------
+
+        [Test]
+        public void Design_DefaultsToUnspecified_OnFreshInstance()
+        {
+            Assert.IsNotNull(_so.Design);
+            Assert.AreEqual(EnemyArchetype.Unspecified, _so.Design.Archetype);
+            Assert.AreEqual(AttackPatternKind.Unspecified, _so.Design.Pattern);
+            Assert.AreEqual(AttackTiming.Unspecified, _so.Design.Timing);
+            Assert.IsTrue(string.IsNullOrEmpty(_so.Design.Notes));
+        }
+
+        [Test]
+        public void AIDetachedNodes_DefaultsEmpty_AndRuntimeRootIgnoresIt()
+        {
+            Assert.IsNotNull(_so.AIDetachedNodes);
+            Assert.AreEqual(0, _so.AIDetachedNodes.Count);
+
+            // Un subárbol suelto no debe filtrarse al árbol que corre en combate.
+            _so.AIDetachedNodes.Add(new AINode_Wait());
+            Assert.IsNull(_so.CreateRuntimeAIRoot());
+
+            _so.AIRoot = new AINode_Sequence();
+            var runtime = _so.CreateRuntimeAIRoot() as AINode_Sequence;
+            Assert.IsNotNull(runtime);
+            Assert.AreEqual(0, runtime.Children.Count);
         }
     }
 }

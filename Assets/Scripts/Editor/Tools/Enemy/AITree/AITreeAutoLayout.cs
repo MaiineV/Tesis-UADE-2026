@@ -9,7 +9,8 @@ namespace Rollgeon.Editor.Tools.Enemy.AITree
     /// <summary>
     /// Simple tree layout: depth × X spacing, sibling index × Y spacing. Doesn't account
     /// for subtree width — that would need Reingold–Tilford. The graph view supports manual
-    /// drag, so this just gives a non-overlapping starting point.
+    /// drag, so this just gives a non-overlapping starting point. Los subárboles sueltos se
+    /// apilan debajo del árbol principal, cada uno arrancando en profundidad 0.
     /// </summary>
     public static class AITreeAutoLayout
     {
@@ -19,10 +20,12 @@ namespace Rollgeon.Editor.Tools.Enemy.AITree
         public static Dictionary<AIDecisionNode, Vector2> Compute(GraphSnapshot snap)
         {
             var positions = new Dictionary<AIDecisionNode, Vector2>();
-            if (snap?.Root == null) return positions;
+            if (snap == null) return positions;
 
             int siblingCounter = 0;
-            Walk(snap, snap.Root, depth: 0, ref siblingCounter, positions);
+            if (snap.Root != null) Walk(snap, snap.Root, depth: 0, ref siblingCounter, positions);
+            foreach (var d in snap.DetachedRoots())
+                Walk(snap, d, depth: 0, ref siblingCounter, positions);
             return positions;
         }
 
@@ -41,12 +44,13 @@ namespace Rollgeon.Editor.Tools.Enemy.AITree
     }
 
     /// <summary>
-    /// Sidecar JSON layout persistence keyed by pre-order traversal index. Stable as long as
-    /// the tree topology doesn't change; falls back to auto-layout when keys mismatch.
+    /// Sidecar JSON layout persistence keyed by pre-order traversal index
+    /// (<see cref="GraphSnapshot.PreOrder"/>). Stable as long as the tree topology doesn't
+    /// change; falls back to auto-layout when keys mismatch.
     /// </summary>
     public static class AITreeLayoutSidecar
     {
-        const string LAYOUTS_DIR = "Assets/Rollgeon/Enemies/_layouts";
+        public const string LayoutsDir = "Assets/Rollgeon/Enemies/_layouts";
 
         [System.Serializable]
         sealed class LayoutFile
@@ -73,7 +77,7 @@ namespace Rollgeon.Editor.Tools.Enemy.AITree
                 var data = JsonUtility.FromJson<LayoutFile>(json);
                 if (data?.Entries == null) return null;
 
-                var ordered = PreOrder(snap);
+                var ordered = snap.PreOrder();
                 var result = new Dictionary<AIDecisionNode, Vector2>();
                 foreach (var entry in data.Entries)
                 {
@@ -93,10 +97,10 @@ namespace Rollgeon.Editor.Tools.Enemy.AITree
 
         public static void Save(EnemyDataSO so, GraphSnapshot snap, Dictionary<AIDecisionNode, Vector2> positions)
         {
-            if (so == null || positions == null) return;
-            Directory.CreateDirectory(LAYOUTS_DIR);
+            if (so == null || snap == null || positions == null) return;
+            Directory.CreateDirectory(LayoutsDir);
 
-            var ordered = PreOrder(snap);
+            var ordered = snap.PreOrder();
             var data = new LayoutFile();
             for (int i = 0; i < ordered.Count; i++)
             {
@@ -116,29 +120,13 @@ namespace Rollgeon.Editor.Tools.Enemy.AITree
             File.WriteAllText(PathFor(so), JsonUtility.ToJson(data, prettyPrint: true));
         }
 
-        static string PathFor(EnemyDataSO so)
+        public static string PathFor(EnemyDataSO so)
         {
             string id = string.IsNullOrEmpty(so.EntityId) ? so.name : so.EntityId;
-            return Path.Combine(LAYOUTS_DIR, $"{id}.json").Replace('\\', '/');
+            return PathForId(id);
         }
 
-        static List<AIDecisionNode> PreOrder(GraphSnapshot snap)
-        {
-            var list = new List<AIDecisionNode>();
-            if (snap?.Root == null) return list;
-            var visited = new HashSet<AIDecisionNode>();
-            Visit(snap, snap.Root, visited, list);
-            return list;
-        }
-
-        static void Visit(GraphSnapshot snap, AIDecisionNode node, HashSet<AIDecisionNode> visited, List<AIDecisionNode> list)
-        {
-            if (node == null || !visited.Add(node)) return;
-            list.Add(node);
-            foreach (var e in snap.Edges)
-            {
-                if (e.Parent == node) Visit(snap, e.Child, visited, list);
-            }
-        }
+        public static string PathForId(string id, string layoutsDir = LayoutsDir)
+            => Path.Combine(layoutsDir, $"{id}.json").Replace('\\', '/');
     }
 }

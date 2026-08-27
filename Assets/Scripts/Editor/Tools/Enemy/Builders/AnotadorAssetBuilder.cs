@@ -24,6 +24,9 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
     /// </remarks>
     public static class AnotadorAssetBuilder
     {
+        /// <summary>Menú que regenera estos assets. Lo lee el Editor de enemigos para avisar que el builder pisa el árbol.</summary>
+        public const string MenuPath = "Tools/Rollgeon/Bosses/Build Anotador";
+
         // ======================================================================
         // Identidad y rutas
         // ======================================================================
@@ -377,6 +380,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
             if (portrait != null) data.Portrait = portrait;
 
             data.AIRoot = BuildAIRoot(iceHazard);
+            data.AIDetachedNodes.Clear(); // el builder es fuente de verdad: nada suelto sobrevive
         }
 
         /// <summary>
@@ -484,7 +488,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         // Menú — la única capa que escribe a disco
         // ======================================================================
 
-        [MenuItem("Tools/Rollgeon/Bosses/Build Anotador")]
+        [MenuItem(MenuPath)]
         public static void BuildAnotador()
         {
             var iceBurst = BuildIceBurstVfx();
