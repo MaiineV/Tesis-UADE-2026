@@ -111,19 +111,100 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         }
 
         [Test]
-        public void Commit_WithValidationErrors_DoesNotTouchAsset()
+        public void Commit_WithCycle_DoesNotTouchAsset()
+        {
+            var so = NewEnemyWithSequence(out var seq, out var leaf1, out _);
+            var snap = AITreeSerializer.Load(so.AIRoot);
+            snap.Edges.Add(new GraphSnapshot.Edge(leaf1, 0, seq)); // leaf1 → seq: ciclo
+
+            bool ok = AITreeSerializer.Commit(so, snap, "Edit AI Tree", out var issues);
+
+            Assert.IsFalse(ok);
+            Assert.IsTrue(AITreeValidator.HasErrors(issues));
+            Assert.AreSame(seq, so.AIRoot);
+            Assert.AreEqual(2, seq.Children.Count);
+        }
+
+        [Test]
+        public void Commit_WithWarningsOnly_WritesAsset()
+        {
+            var so = NewEnemyWithSequence(out var seq, out _, out var leaf2);
+            var snap = AITreeSerializer.Load(so.AIRoot);
+            snap.Edges.RemoveAll(e => e.Child == leaf2); // leaf2 queda suelto (info); seq sigue con 1 hijo
+
+            bool ok = AITreeSerializer.Commit(so, snap, "Edit AI Tree", out var issues);
+
+            Assert.IsTrue(ok);
+            Assert.IsFalse(AITreeValidator.HasErrors(issues));
+            Assert.AreEqual(1, seq.Children.Count);
+            CollectionAssert.AreEqual(new[] { leaf2 }, so.AIDetachedNodes);
+        }
+
+        [Test]
+        public void Commit_WritesDetachedRootsToAIDetachedNodes_AndLoadRoundTrips()
         {
             var so = NewEnemyWithSequence(out var seq, out _, out _);
             var snap = AITreeSerializer.Load(so.AIRoot);
-            var orphan = new AINode_Wait();
-            snap.Nodes.Add(orphan);
+            var loose = new AINode_Sequence();
+            var looseLeaf = new AINode_Wait();
+            snap.Nodes.Add(loose);
+            snap.Nodes.Add(looseLeaf);
+            snap.Edges.Add(new GraphSnapshot.Edge(loose, 0, looseLeaf));
 
-            bool ok = AITreeSerializer.Commit(so, snap, "Edit AI Tree", out var errors);
+            Assert.IsTrue(AITreeSerializer.Commit(so, snap, "Edit AI Tree", out _));
 
-            Assert.IsFalse(ok);
-            CollectionAssert.IsNotEmpty(errors);
-            Assert.AreSame(seq, so.AIRoot);
-            Assert.AreEqual(2, seq.Children.Count);
+            CollectionAssert.AreEqual(new[] { loose }, so.AIDetachedNodes);
+            var reloaded = AITreeSerializer.Load(so.AIRoot, so.AIDetachedNodes);
+            Assert.AreEqual(5, reloaded.Nodes.Count);
+            Assert.AreEqual(3, reloaded.Edges.Count);
+            Assert.AreSame(seq, reloaded.Root);
+        }
+
+        [Test]
+        public void Commit_UndoRestoresAIDetachedNodes()
+        {
+            var so = NewEnemyWithSequence(out _, out _, out _);
+            var snap = AITreeSerializer.Load(so.AIRoot);
+            snap.Nodes.Add(new AINode_Wait());
+
+            Assert.IsTrue(AITreeSerializer.Commit(so, snap, "Edit AI Tree", out _));
+            Assert.AreEqual(1, so.AIDetachedNodes.Count);
+
+            Undo.PerformUndo();
+
+            Assert.AreEqual(0, so.AIDetachedNodes.Count);
+        }
+
+        // ---- PortLabel ------------------------------------------------------
+
+        [Test]
+        public void PortLabel_FreeDynamicSlot_IsPlus()
+        {
+            var slot = AITreeTopology.SlotsOf(new AINode_Sequence())[0];
+            Assert.AreEqual("+", AITreeTopology.PortLabel(slot, null));
+        }
+
+        [Test]
+        public void PortLabel_ConnectedDynamicSlot_ShowsOrdinal()
+        {
+            var slot = AITreeTopology.SlotsOf(new AINode_Sequence())[0];
+            Assert.AreEqual("2", AITreeTopology.PortLabel(slot, 2));
+        }
+
+        [Test]
+        public void PortLabel_Random_ShowsOrdinalAndWeight()
+        {
+            var slot = AITreeTopology.SlotsOf(new AINode_Random())[0];
+            Assert.AreEqual("1 · peso 2.5", AITreeTopology.PortLabel(slot, 1, 2.5f));
+        }
+
+        [Test]
+        public void PortLabel_FixedSlot_IsSpanishLabel()
+        {
+            var slots = AITreeTopology.SlotsOf(new AINode_If());
+            Assert.AreEqual("Entonces", AITreeTopology.PortLabel(slots[0], null));
+            Assert.AreEqual("Si no", AITreeTopology.PortLabel(slots[1], 1));
+            Assert.AreEqual("Then", slots[0].Name, "Name es identificador estable, no se traduce");
         }
     }
 }

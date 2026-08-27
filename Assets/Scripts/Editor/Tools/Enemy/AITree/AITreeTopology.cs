@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using Rollgeon.Combat.AI.Decisions;
 
 namespace Rollgeon.Editor.Tools.Enemy.AITree
@@ -18,9 +19,23 @@ namespace Rollgeon.Editor.Tools.Enemy.AITree
     {
         public readonly struct Slot
         {
-            public readonly string Name;     // shown on the port label
+            public readonly string Name;     // identificador estable (tests, sidecar); no se muestra
+            public readonly string Label;    // texto del puerto, en español
             public readonly bool IsDynamic;  // true → user can add more children of this slot kind
-            public Slot(string name, bool isDynamic) { Name = name; IsDynamic = isDynamic; }
+            public Slot(string name, string label, bool isDynamic) { Name = name; Label = label; IsDynamic = isDynamic; }
+        }
+
+        /// <summary>
+        /// Texto de un puerto de salida. Slot fijo → su label. Slot dinámico: el puerto libre es
+        /// "+"; el conectado muestra el ordinal (orden de ejecución) y, en Random, el peso.
+        /// </summary>
+        public static string PortLabel(Slot slot, int? ordinal, float? weight = null)
+        {
+            if (!slot.IsDynamic) return slot.Label;
+            if (ordinal == null) return "+";
+            return weight.HasValue
+                ? $"{ordinal.Value} · peso {weight.Value.ToString("0.##", CultureInfo.InvariantCulture)}"
+                : ordinal.Value.ToString(CultureInfo.InvariantCulture);
         }
 
         public static IReadOnlyList<Slot> SlotsOf(AIDecisionNode node)
@@ -150,10 +165,10 @@ namespace Rollgeon.Editor.Tools.Enemy.AITree
 
         // ---- canonical slot configurations -------------------------------
 
-        static readonly Slot[] _dynamicChildren = { new Slot("Children", true) };
-        static readonly Slot[] _ifSlots = { new Slot("Then", false), new Slot("Else", false) };
-        static readonly Slot[] _randomOptions = { new Slot("Options", true) };
-        static readonly Slot[] _whileSlots = { new Slot("Body", false) };
-        static readonly Slot[] _onceSlot = { new Slot("Child", false) };
+        static readonly Slot[] _dynamicChildren = { new Slot("Children", "Hijos", true) };
+        static readonly Slot[] _ifSlots = { new Slot("Then", "Entonces", false), new Slot("Else", "Si no", false) };
+        static readonly Slot[] _randomOptions = { new Slot("Options", "Opciones", true) };
+        static readonly Slot[] _whileSlots = { new Slot("Body", "Cuerpo", false) };
+        static readonly Slot[] _onceSlot = { new Slot("Child", "Hijo", false) };
     }
 }
