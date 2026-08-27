@@ -1,4 +1,8 @@
+using System;
 using System.Text;
+using Patterns;
+using Rollgeon.Attributes;
+using Rollgeon.Attributes.Stats;
 using Rollgeon.Localization;
 using Rollgeon.UI.Tooltips;
 using UnityEngine;
@@ -26,9 +30,63 @@ namespace Rollgeon.Entities.Visuals
     public sealed class EnemyTooltipInfo : MonoBehaviour, IHasTooltipInfo
     {
         private EnemyDataSO _data;
+        private Guid _entityGuid;
 
         /// <summary>Llamado por <see cref="EntityVisualService"/> al instanciar el pawn.</summary>
         public void Bind(EnemyDataSO data) => _data = data;
+
+        /// <summary>
+        /// Con el guid, además del texto puede leer los vitales. Sobrecarga y no un parámetro
+        /// más: los tests que sólo miran el texto no tienen guid que dar.
+        /// </summary>
+        public void Bind(EnemyDataSO data, Guid entityGuid)
+        {
+            _data = data;
+            _entityGuid = entityGuid;
+        }
+
+        /// <summary>
+        /// El contenido completo: identidad y vitales arriba, color al pie. La descripción baja
+        /// al pie porque no es información — el jugador que abre el panel a mitad de una pelea
+        /// viene a ver cuánta vida le queda al bicho, no a leer su presentación.
+        /// </summary>
+        public TooltipContent BuildContent()
+        {
+            var data = _data;
+            if (data == null) return default;
+
+            string id = data.EntityId;
+            string name = string.IsNullOrEmpty(id)
+                ? data.DisplayName
+                : LocalizedContent.Name(id, data.DisplayName);
+            string flavor = string.IsNullOrEmpty(id)
+                ? data.Description
+                : LocalizedContent.Description(id, data.Description);
+
+            ReadVitals(out int? health, out int? maxHealth, out int? shield);
+            return new TooltipContent(name: name, flavor: flavor,
+                                      health: health, maxHealth: maxHealth, shield: shield);
+        }
+
+        // Sin AttributesManager los tres quedan en null y la banda no dibuja la fila: fuera de
+        // combate el enemigo no tiene vitales que mostrar, y un "0/0" seria peor que nada.
+        private void ReadVitals(out int? health, out int? maxHealth, out int? shield)
+        {
+            health = null;
+            maxHealth = null;
+            shield = null;
+
+            if (_entityGuid == Guid.Empty) return;
+            if (!ServiceLocator.TryGetService<AttributesManager>(out var attrs) || attrs == null)
+                return;
+
+            int max = attrs.GetAttributeValue<MaxHealth, int>(_entityGuid);
+            if (max <= 0) return;
+
+            maxHealth = max;
+            health = attrs.GetAttributeValue<Health, int>(_entityGuid);
+            shield = attrs.GetAttributeValue<Shield, int>(_entityGuid);
+        }
 
         public string BuildTooltip()
         {

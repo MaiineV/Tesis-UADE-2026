@@ -61,6 +61,23 @@ namespace Rollgeon.UI.Tooltips
                  "sin columna, mismo comportamiento que antes.")]
         [SerializeField] private TooltipCardView _cardPrefab;
 
+        [Title("Banda de identidad")]
+        [Tooltip("Nombre de la unidad. Null, como toda esta banda: un tooltip que no trae " +
+                 "identidad deja el bloque apagado y el panel es el de siempre.")]
+        [SerializeField] private TMP_Text _nameLabel;
+
+        [SerializeField] private GameObject _vitalsRoot;
+        [SerializeField] private TMP_Text _hpLabel;
+
+        [Tooltip("El par ícono+número del escudo. Se apaga entero cuando la unidad no tiene: " +
+                 "un \"0\" al lado de un escudo se lee como que el escudo existe y está roto.")]
+        [SerializeField] private GameObject _shieldRoot;
+        [SerializeField] private TMP_Text _shieldLabel;
+
+        [Tooltip("Color de la unidad, al pie. Separado de _text porque no es información y no " +
+                 "puede quedarse con el arriba del panel.")]
+        [SerializeField] private TMP_Text _footerLabel;
+
         private readonly List<TooltipCardView> _cardSlots = new List<TooltipCardView>();
 
         private RectTransform _hostCanvasRect;
@@ -111,6 +128,10 @@ namespace Rollgeon.UI.Tooltips
             {
                 if (_cardsContainer != null && candidate.transform.IsChildOf(_cardsContainer))
                     continue;
+                // Los labels de la banda y del pie tampoco son el párrafo: si el auto-resolve
+                // se quedara con el nombre, un tooltip de texto escribiría en el renglón grande.
+                if (candidate == _nameLabel || candidate == _hpLabel
+                    || candidate == _shieldLabel || candidate == _footerLabel) continue;
                 return candidate;
             }
             return null;
@@ -166,8 +187,16 @@ namespace Rollgeon.UI.Tooltips
         /// </summary>
         public void Show(string header, IReadOnlyList<StatusIconState> cards, Vector2 screenPos,
                          int ownerId, TooltipPlacementMode placement)
+            => Show(TooltipContent.FromText(header, cards), screenPos, ownerId, placement);
+
+        /// <summary>
+        /// El camino completo: banda de identidad, columna y pie. Todo lo demás termina acá con
+        /// un <see cref="TooltipContent"/> que sólo trae texto.
+        /// </summary>
+        public void Show(in TooltipContent content, Vector2 screenPos, int ownerId,
+                         TooltipPlacementMode placement)
         {
-            ApplyContent(header, cards);
+            ApplyContent(content);
             _currentOwnerId = ownerId;
             SetVisible(true);
 
@@ -278,20 +307,30 @@ namespace Rollgeon.UI.Tooltips
             return shift;
         }
 
-        // Encabezado y columna en un solo lugar. Los campos de la columna son nullables a
-        // proposito: sin ellos el panel es exactamente el de siempre, que es lo que mantiene
-        // andando a todos los tooltips de texto que ya existen.
-        private void ApplyContent(string header, IReadOnlyList<StatusIconState> cards)
+        // Banda, parrafo, columna y pie en un solo lugar. Todos los campos menos _text son
+        // nullables a proposito: sin ellos el panel es exactamente el de siempre, que es lo que
+        // mantiene andando a todos los tooltips de texto que ya existen.
+        private void ApplyContent(in TooltipContent content)
         {
-            int count = cards?.Count ?? 0;
+            int count = content.CardCount;
 
             if (_text != null)
             {
-                _text.text = header ?? string.Empty;
-                // Sin tarjetas el encabezado ES el tooltip y no se apaga nunca: apagarlo dejaria
-                // un panel vacio. Con tarjetas, un encabezado vacio solo agregaria un renglon
-                // alto de nada arriba de la columna.
-                _text.gameObject.SetActive(count == 0 || !string.IsNullOrEmpty(header));
+                _text.text = content.Text ?? string.Empty;
+                // Sin nada mas el parrafo ES el tooltip y no se apaga nunca: apagarlo dejaria un
+                // panel vacio. Con banda o columna, un parrafo vacio solo agregaria un renglon
+                // alto de nada en el medio.
+                bool aloneInThePanel = count == 0 && !content.HasVitals
+                                       && string.IsNullOrEmpty(content.Name);
+                _text.gameObject.SetActive(aloneInThePanel || !string.IsNullOrEmpty(content.Text));
+            }
+
+            ApplyIdentity(content);
+
+            if (_footerLabel != null)
+            {
+                _footerLabel.text = content.Flavor ?? string.Empty;
+                _footerLabel.gameObject.SetActive(!string.IsNullOrEmpty(content.Flavor));
             }
 
             if (_cardsContainer == null || _cardPrefab == null) return;
@@ -303,8 +342,28 @@ namespace Rollgeon.UI.Tooltips
             {
                 bool used = i < count;
                 _cardSlots[i].gameObject.SetActive(used);
-                if (used) _cardSlots[i].Show(cards[i]);
+                if (used) _cardSlots[i].Show(content.Cards[i]);
             }
+        }
+
+        private void ApplyIdentity(in TooltipContent content)
+        {
+            if (_nameLabel != null)
+            {
+                _nameLabel.text = content.Name ?? string.Empty;
+                _nameLabel.gameObject.SetActive(!string.IsNullOrEmpty(content.Name));
+            }
+
+            if (_vitalsRoot != null) _vitalsRoot.SetActive(content.HasVitals);
+            if (!content.HasVitals) return;
+
+            if (_hpLabel != null)
+                _hpLabel.text = $"{content.Health.Value}/{content.MaxHealth.Value}";
+
+            // Un escudo en cero no es un escudo roto, es que la unidad no usa escudo.
+            int shield = content.Shield ?? 0;
+            if (_shieldRoot != null) _shieldRoot.SetActive(shield > 0);
+            if (_shieldLabel != null && shield > 0) _shieldLabel.text = shield.ToString();
         }
 
         // Los slots se reusan y solo se apagan, igual que PlayerStatusIconsView.EnsureSlots: el

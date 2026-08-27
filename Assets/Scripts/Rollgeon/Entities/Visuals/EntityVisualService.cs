@@ -119,15 +119,19 @@ namespace Rollgeon.Entities.Visuals
 
             var info = pawn.gameObject.GetComponent<EnemyTooltipInfo>();
             if (info == null) info = pawn.gameObject.AddComponent<EnemyTooltipInfo>();
-            info.Bind(data);
+            var guid = pawn.EntityGuid;
+            info.Bind(data, guid);
 
             var trigger = AttachHoverTooltip(pawn, info.BuildTooltip);
             if (trigger == null) return;
 
+            // Su propia banda de identidad en vez del parrafo aplanado: el enemigo es lo unico en
+            // el juego que puede decir cuanta vida le queda mientras lo estas mirando.
+            trigger.ContentProvider = info.BuildContent;
+
             // El preview vive en el MISMO trigger que el texto: un segundo raycast por enemigo por
             // frame seria correr dos veces el mismo Update, y ademas el pipeline pixel-art escala
             // el mouse a mano (ver WorldTooltipTrigger.RaycastHitsMe).
-            var guid = pawn.EntityGuid;
             trigger.HoverChanged += on =>
             {
                 var preview = Rollgeon.Combat.AI.EnemyIntentPreviewOverlay.ResolveOrCreate();

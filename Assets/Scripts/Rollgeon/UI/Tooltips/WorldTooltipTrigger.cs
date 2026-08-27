@@ -48,6 +48,13 @@ namespace Rollgeon.UI.Tooltips
         public Func<IReadOnlyList<StatusIconState>> CardsProvider;
 
         /// <summary>
+        /// Provider de la banda de identidad — nombre, vitales y color al pie. Gana sobre
+        /// <see cref="TextProvider"/> cuando está: quien sabe describirse entero no tiene por qué
+        /// aplanarse a un párrafo.
+        /// </summary>
+        public Func<TooltipContent> ContentProvider;
+
+        /// <summary>
         /// Entra (<c>true</c>) y sale (<c>false</c>) el hover. Lo consume quien además del texto
         /// tiene que pintar algo — el tooltip se resuelve solo acá adentro.
         /// </summary>
@@ -175,17 +182,28 @@ namespace Rollgeon.UI.Tooltips
 
         private void ShowTooltip(Camera cam)
         {
-            string text = ResolveText();
-            var cards = CardsProvider?.Invoke();
+            var content = BuildContent();
 
-            // Con tarjetas el panel vale aunque el encabezado venga vacío: la columna ES el
-            // contenido.
-            bool hasCards = cards != null && cards.Count > 0;
-            if (!hasCards && string.IsNullOrEmpty(text)) return;
+            // Con tarjetas o con banda el panel vale aunque el párrafo venga vacío: la columna
+            // ES el contenido.
+            if (content.IsEmpty) return;
             if (TooltipController.Instance == null) return;
 
             TooltipController.Instance.Show(
-                text, cards, ResolvePlacementScreenPos(cam), _ownerId, _placement.Mode);
+                content, ResolvePlacementScreenPos(cam), _ownerId, _placement.Mode);
+        }
+
+        private TooltipContent BuildContent()
+        {
+            var cards = CardsProvider?.Invoke();
+            if (ContentProvider == null) return TooltipContent.FromText(ResolveText(), cards);
+
+            // Las tarjetas siguen viniendo del CardsProvider aunque haya banda: las arma la fila
+            // que flota sobre la cabeza, y son la MISMA lista que esa fila pinta.
+            var content = ContentProvider.Invoke();
+            return new TooltipContent(
+                text: content.Text, name: content.Name, cards: cards, flavor: content.Flavor,
+                health: content.Health, maxHealth: content.MaxHealth, shield: content.Shield);
         }
 
         private void ToggleTooltip(Camera cam)
