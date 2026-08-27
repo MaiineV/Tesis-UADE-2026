@@ -135,3 +135,19 @@ Ver `.gitignore`. Destacados:
   - Cuando el MCP no esté disponible, el setup de engine (scenes, SOs,
     prefabs, UI wiring) lo hace el usuario siguiendo `docs/setup/*.md` y
     los agents escriben solo C#.
+
+---
+
+## GDD en DocsApp (API REST)
+
+El GDD vive en DocsApp (workspace *Rollgeon*), no en el repo. Los agents lo
+leen y editan por la API:
+
+- Cliente: `tools/docsapp/docsapp.ps1` (`teams`, `tree`, `find`, `get`,
+  `create`, `update`, `delete`). Levanta el token del `.env` de la raíz.
+- Setup, endpoints y gotchas: `docs/setup/docsapp-api.md`.
+- El **PAT va en `.env`** (gitignoreado). Nunca commitearlo ni pegarlo en
+  un doc, script o `CLAUDE.md`. Si el token falta, avisar al usuario en vez
+  de asumir que la operación se aplicó.
+- **`PATCH` pisa el cuerpo entero del doc**: el flujo es siempre
+  `GET → editar el markdown completo → PATCH`.

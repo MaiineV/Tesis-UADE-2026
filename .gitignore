@@ -154,3 +154,8 @@ Rollgeon/.obsidian/core-plugins.json
 # Notas que los subagentes se dejan entre corridas. Son per-checkout y no describen
 # el juego: mergearlas seria mezclar el scratch de dos maquinas distintas.
 /.claude/agent-memory/
+
+# Secretos locales. `.env` guarda el PAT de DocsApp (API del GDD) — nunca se commitea.
+# El template sin token vive en docs/setup/docsapp-api.md.
+/.env
+/.env.*
