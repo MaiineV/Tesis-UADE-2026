@@ -95,7 +95,7 @@ namespace Rollgeon.Combat.Rooms
                 // El daño es el del estallido en sí, que en el Croupier es CERO a propósito: todo
                 // lo que cobra una bomba es el fuego que deja. Anunciar un golpe sería mentir.
                 into.Add(new AIIntent(
-                    "intent.bomb_blast", "Estalla",
+                    AIIntentTextKeys.BombBlast, "Estalla",
                     IgnitionDamage, AttackKind.Environmental,
                     tiles: cross,
                     leaves: FireTile, leavesRounds: rounds,

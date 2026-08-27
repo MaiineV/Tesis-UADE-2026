@@ -178,13 +178,16 @@ namespace Rollgeon.UI.HUD.Status
             foreach (var intent in _standing) _states.Add(ToState(intent));
         }
 
+        // El badge cuenta turnos hasta que pase, no turnos restantes de un estado: TurnsAway 0 es
+        // "en su próximo turno", que para el jugador es un turno de distancia.
         private StatusIconState ToState(in AIIntent intent)
             => new StatusIconState(
                 intent.LabelKey,
                 LocalizedContent.Name(intent.LabelKey, intent.LabelFallback),
-                LocalizedContent.Description(intent.LabelKey, string.Empty),
+                AIIntentText.Describe(intent),
                 _catalog != null ? _catalog.Resolve(intent.LabelKey) : null,
-                active: true);
+                active: true,
+                remainingTurns: intent.TurnsAway + 1);
 
         // Punto de extensión: un jefe nuevo es un IStatusIconProvider más, sin tocar nada de UI.
         private void BuildProviders()

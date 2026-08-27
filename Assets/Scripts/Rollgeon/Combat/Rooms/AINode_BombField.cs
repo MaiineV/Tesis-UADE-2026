@@ -244,7 +244,7 @@ namespace Rollgeon.Combat.Rooms
             if (Definition == null) return false;
 
             intent = new AIIntent(
-                "intent.bomb_field", "Siembra bombas",
+                AIIntentTextKeys.BombField, "Siembra bombas",
                 damage: 0, kind: AttackKind.Environmental,
                 amount: Count, turnsAway: 0);
             return true;

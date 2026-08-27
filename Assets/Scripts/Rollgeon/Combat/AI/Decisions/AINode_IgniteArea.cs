@@ -129,7 +129,7 @@ namespace Rollgeon.Combat.AI.Decisions
 
             int rounds = DurationRounds > 0 ? DurationRounds : Definition.DefaultDurationRounds;
             intent = new AIIntent(
-                "intent.ignite", "Prende el suelo",
+                AIIntentTextKeys.Ignite, "Prende el suelo",
                 area.Damage, area.Kind,
                 tiles: area.Tiles,
                 leaves: Definition, leavesRounds: rounds,
