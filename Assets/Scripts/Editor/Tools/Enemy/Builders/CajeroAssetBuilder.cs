@@ -28,6 +28,9 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
     /// </remarks>
     public static class CajeroAssetBuilder
     {
+        /// <summary>Menú que regenera estos assets. Lo lee el Editor de enemigos para avisar que el builder pisa el árbol.</summary>
+        public const string MenuPath = "Tools/Rollgeon/Bosses/Build Cajero";
+
         // ---- Rutas -------------------------------------------------------
 
         public const string EnemyAssetPath = "Assets/Rollgeon/Enemies/ED_Boss_Cajero.asset";
@@ -725,6 +728,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
             if (portrait != null) data.Portrait = portrait;
 
             data.AIRoot = BuildAIRoot(chip, critter);
+            data.AIDetachedNodes.Clear(); // el builder es fuente de verdad: nada suelto sobrevive
         }
 
         // ---- La Comisión (ficha propia) -----------------------------------
@@ -773,6 +777,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
             if (portrait != null) data.Portrait = portrait;
 
             data.AIRoot = BuildCritterAIRoot();
+            data.AIDetachedNodes.Clear(); // el builder es fuente de verdad: nada suelto sobrevive
         }
 
         /// <summary>
@@ -820,7 +825,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
 
         // ---- MenuItem ----------------------------------------------------
 
-        [MenuItem("Tools/Rollgeon/Bosses/Build Cajero")]
+        [MenuItem(MenuPath)]
         public static void BuildCajeroAsset()
         {
             var chip = EnsureChipHazard();

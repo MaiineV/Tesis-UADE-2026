@@ -22,6 +22,9 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
     /// </remarks>
     public static class BandidaAssetBuilder
     {
+        /// <summary>Menú que regenera estos assets. Lo lee el Editor de enemigos para avisar que el builder pisa el árbol.</summary>
+        public const string MenuPath = "Tools/Rollgeon/Bosses/Build Bandida";
+
         // ======================================================================
         // Contrato de la ficha de diseño — todos los números viven acá.
         // ======================================================================
@@ -366,6 +369,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
             if (portrait != null) boss.Portrait = portrait;
 
             boss.AIRoot = BuildAIRoot(reelData, reelFire);
+            boss.AIDetachedNodes.Clear(); // el builder es fuente de verdad: nada suelto sobrevive
         }
 
         /// <summary>
@@ -401,6 +405,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
             if (portrait != null) reel.Portrait = portrait;
 
             reel.AIRoot = new AINode_Wait();
+            reel.AIDetachedNodes.Clear(); // el builder es fuente de verdad: nada suelto sobrevive
         }
 
         // ======================================================================
@@ -506,7 +511,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         // MenuItem (la única parte que toca el AssetDatabase)
         // ======================================================================
 
-        [MenuItem("Tools/Rollgeon/Bosses/Build Bandida")]
+        [MenuItem(MenuPath)]
         public static void BuildBandida()
         {
             var bossVisual = BuildBossVisual();
