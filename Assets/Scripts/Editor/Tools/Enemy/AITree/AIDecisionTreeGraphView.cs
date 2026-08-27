@@ -402,17 +402,13 @@ namespace Rollgeon.Editor.Tools.Enemy.AITree
             foreach (var kv in _views)
                 positions[kv.Key] = kv.Value.GetPosition().position;
 
-            var newRoot = AITreeSerializer.Save(_snap, out var errors);
-            if (errors.Count > 0)
+            // Commit valida, graba el undo y recién después reconstruye el árbol.
+            if (!AITreeSerializer.Commit(_enemy, _snap, "Edit AI Tree", out var errors))
             {
                 _statusLabel.text = "Errors: " + string.Join(" · ", errors.ConvertAll(e => e.Message));
                 return;
             }
             _statusLabel.text = string.Empty;
-
-            Undo.RecordObject(_enemy, "Edit AI Tree");
-            _enemy.AIRoot = newRoot;
-            EditorUtility.SetDirty(_enemy);
             AITreeLayoutSidecar.Save(_enemy, _snap, positions);
         }
 

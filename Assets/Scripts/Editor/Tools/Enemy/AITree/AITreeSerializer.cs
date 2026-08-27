@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Rollgeon.Combat.AI.Decisions;
+using Rollgeon.Entities;
 
 namespace Rollgeon.Editor.Tools.Enemy.AITree
 {
@@ -79,6 +80,11 @@ namespace Rollgeon.Editor.Tools.Enemy.AITree
             errors = Validate(snap);
             if (errors.Count > 0) return null;
 
+            // Los pesos de Random viven en el nodo y ClearChildren los destruye: capturarlos
+            // antes, por (parent, child), para que sigan al hijo aunque cambie el orden de edges.
+            var weights = new Dictionary<(AIDecisionNode, AIDecisionNode), float>();
+            foreach (var n in snap.Nodes) AITreeTopology.CaptureEdgeWeights(n, weights);
+
             // Group edges: parent → slotIndex → ordered children.
             var byParent = new Dictionary<AIDecisionNode, SortedDictionary<int, List<AIDecisionNode>>>();
             foreach (var e in snap.Edges)
@@ -105,16 +111,46 @@ namespace Rollgeon.Editor.Tools.Enemy.AITree
                 {
                     int slot = slotPair.Key;
                     foreach (var child in slotPair.Value)
-                        AITreeTopology.AppendChild(parent, slot, child);
+                    {
+                        float weight = weights.TryGetValue((parent, child), out var w) ? w : 1f;
+                        AITreeTopology.AppendChild(parent, slot, child, weight);
+                    }
                 }
             }
 
             return snap.Root;
         }
 
+        /// <summary>
+        /// Valida, registra undo y escribe el árbol en <paramref name="enemy"/>, en ese orden.
+        /// Devuelve <c>false</c> sin tocar el asset (ni dejar un undo vacío) si hay errores.
+        /// </summary>
+        /// <remarks>
+        /// El orden importa: <see cref="Save"/> muta los nodos in-place, así que
+        /// <c>Undo.RecordObject</c> tiene que correr ANTES — el snapshot de undo serializa el
+        /// SO en ese instante (regenera el blob Odin desde el estado vivo). Grabar después deja
+        /// un "antes" idéntico al "después" y Ctrl+Z no revierte nada.
+        /// </remarks>
+        public static bool Commit(EnemyDataSO enemy, GraphSnapshot snap, string undoLabel,
+                                  out List<ValidationError> errors)
+        {
+            errors = Validate(snap);
+            if (enemy == null)
+            {
+                errors.Add(new ValidationError(null, "No enemy bound."));
+                return false;
+            }
+            if (errors.Count > 0) return false;
+
+            UnityEditor.Undo.RecordObject(enemy, undoLabel);
+            enemy.AIRoot = Save(snap, out _);
+            UnityEditor.EditorUtility.SetDirty(enemy);
+            return true;
+        }
+
         // ---- Validation ---------------------------------------------------
 
-        static List<ValidationError> Validate(GraphSnapshot snap)
+        public static List<ValidationError> Validate(GraphSnapshot snap)
         {
             var errors = new List<ValidationError>();
             if (snap == null) { errors.Add(new ValidationError(null, "Snapshot is null.")); return errors; }

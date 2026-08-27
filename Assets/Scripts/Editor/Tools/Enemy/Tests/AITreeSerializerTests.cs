@@ -77,25 +77,143 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             Assert.AreSame(elseLeaf, ifNode.Else);
         }
 
-        [Test]
-        public void Save_PreservesRandomOptionsAndDefaultsWeight()
+        // ---- Random weights -----------------------------------------------
+        // Save reconstruye Options desde los edges; el peso se captura del nodo antes de
+        // limpiar. Ningún test limpia Options a mano: eso vaciaría la fuente del peso.
+
+        static AINode_Random RandomWithTwoWeightedLeaves(out AINode_Wait leaf1, out AINode_Move leaf2)
         {
             var rnd = new AINode_Random();
-            var leaf1 = new AINode_Wait();
-            var leaf2 = new AINode_Move();
+            leaf1 = new AINode_Wait();
+            leaf2 = new AINode_Move();
             rnd.Options.Add(new AINode_Random.Option { Node = leaf1, Weight = 2f });
             rnd.Options.Add(new AINode_Random.Option { Node = leaf2, Weight = 5f });
+            return rnd;
+        }
+
+        [Test]
+        public void Save_Random_PreservesWeightsPerChild()
+        {
+            var rnd = RandomWithTwoWeightedLeaves(out var leaf1, out var leaf2);
 
             var snap = AITreeSerializer.Load(rnd);
-            rnd.Options.Clear();
             AITreeSerializer.Save(snap, out var errors);
 
             Assert.IsEmpty(errors);
             Assert.AreEqual(2, rnd.Options.Count);
-            // Note: weights collapse to default 1 because Save doesn't carry per-edge weight
-            // — this test pins that behavior so changes are intentional.
-            Assert.AreEqual(1f, rnd.Options[0].Weight);
-            Assert.AreEqual(1f, rnd.Options[1].Weight);
+            Assert.AreSame(leaf1, rnd.Options[0].Node);
+            Assert.AreEqual(2f, rnd.Options[0].Weight);
+            Assert.AreSame(leaf2, rnd.Options[1].Node);
+            Assert.AreEqual(5f, rnd.Options[1].Weight);
+        }
+
+        [Test]
+        public void Save_Random_WeightsFollowChildWhenEdgeOrderChanges()
+        {
+            var rnd = RandomWithTwoWeightedLeaves(out var leaf1, out var leaf2);
+
+            var snap = AITreeSerializer.Load(rnd);
+            var first = snap.Edges[0];
+            snap.Edges[0] = snap.Edges[1];
+            snap.Edges[1] = first;
+            AITreeSerializer.Save(snap, out var errors);
+
+            Assert.IsEmpty(errors);
+            Assert.AreSame(leaf2, rnd.Options[0].Node);
+            Assert.AreEqual(5f, rnd.Options[0].Weight);
+            Assert.AreSame(leaf1, rnd.Options[1].Node);
+            Assert.AreEqual(2f, rnd.Options[1].Weight);
+        }
+
+        [Test]
+        public void Save_Random_NewEdgeDefaultsWeightToOne()
+        {
+            var rnd = RandomWithTwoWeightedLeaves(out _, out _);
+            var leaf3 = new AINode_Wait();
+
+            var snap = AITreeSerializer.Load(rnd);
+            snap.Nodes.Add(leaf3);
+            snap.Edges.Add(new GraphSnapshot.Edge(rnd, 0, leaf3));
+            AITreeSerializer.Save(snap, out var errors);
+
+            Assert.IsEmpty(errors);
+            Assert.AreEqual(3, rnd.Options.Count);
+            Assert.AreEqual(2f, rnd.Options[0].Weight);
+            Assert.AreEqual(5f, rnd.Options[1].Weight);
+            Assert.AreSame(leaf3, rnd.Options[2].Node);
+            Assert.AreEqual(1f, rnd.Options[2].Weight);
+        }
+
+        [Test]
+        public void Save_Random_RemovedEdgeDropsItsOption()
+        {
+            var rnd = RandomWithTwoWeightedLeaves(out var leaf1, out var leaf2);
+
+            var snap = AITreeSerializer.Load(rnd);
+            snap.Nodes.Remove(leaf1);
+            snap.Edges.RemoveAll(e => e.Child == leaf1);
+            AITreeSerializer.Save(snap, out var errors);
+
+            Assert.IsEmpty(errors);
+            Assert.AreEqual(1, rnd.Options.Count);
+            Assert.AreSame(leaf2, rnd.Options[0].Node);
+            Assert.AreEqual(5f, rnd.Options[0].Weight);
+        }
+
+        // ---- Alternate ----------------------------------------------------
+
+        [Test]
+        public void SlotsOf_Alternate_ExposesOneDynamicSlot()
+        {
+            var slots = AITreeTopology.SlotsOf(new AINode_Alternate());
+
+            Assert.AreEqual(1, slots.Count);
+            Assert.IsTrue(slots[0].IsDynamic);
+            Assert.AreEqual("Children", slots[0].Name);
+        }
+
+        [Test]
+        public void Load_Alternate_ProducesOneEdgePerChildInOrder()
+        {
+            var alt = new AINode_Alternate();
+            var leaf1 = new AINode_Wait();
+            var leaf2 = new AINode_Move();
+            var leaf3 = new AINode_Wait();
+            alt.Children.Add(leaf1);
+            alt.Children.Add(leaf2);
+            alt.Children.Add(leaf3);
+
+            var snap = AITreeSerializer.Load(alt);
+
+            Assert.AreEqual(4, snap.Nodes.Count);
+            Assert.AreEqual(3, snap.Edges.Count);
+            Assert.AreSame(leaf1, snap.Edges[0].Child);
+            Assert.AreSame(leaf2, snap.Edges[1].Child);
+            Assert.AreSame(leaf3, snap.Edges[2].Child);
+            foreach (var e in snap.Edges) Assert.AreEqual(0, e.SlotIndex);
+        }
+
+        [Test]
+        public void Save_Alternate_RoundTripPreservesChildOrder()
+        {
+            var alt = new AINode_Alternate();
+            var leaf1 = new AINode_Wait();
+            var leaf2 = new AINode_Wait();
+            var leaf3 = new AINode_Wait();
+            alt.Children.Add(leaf1);
+            alt.Children.Add(leaf2);
+            alt.Children.Add(leaf3);
+
+            var snap = AITreeSerializer.Load(alt);
+            alt.Children.Clear();
+            var rebuilt = AITreeSerializer.Save(snap, out var errors);
+
+            Assert.IsEmpty(errors);
+            Assert.AreSame(alt, rebuilt);
+            Assert.AreEqual(3, alt.Children.Count);
+            Assert.AreSame(leaf1, alt.Children[0]);
+            Assert.AreSame(leaf2, alt.Children[1]);
+            Assert.AreSame(leaf3, alt.Children[2]);
         }
 
         // ---- Validation ---------------------------------------------------

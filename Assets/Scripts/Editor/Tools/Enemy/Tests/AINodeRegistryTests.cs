@@ -36,6 +36,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         {
             Assert.AreEqual(AINodeCategory.Composite, AINodeRegistry.Find(typeof(AINode_Selector)).Value.Category);
             Assert.AreEqual(AINodeCategory.Composite, AINodeRegistry.Find(typeof(AINode_Sequence)).Value.Category);
+            Assert.AreEqual(AINodeCategory.Composite, AINodeRegistry.Find(typeof(AINode_Alternate)).Value.Category);
             Assert.AreEqual(AINodeCategory.Branching, AINodeRegistry.Find(typeof(AINode_If)).Value.Category);
             Assert.AreEqual(AINodeCategory.Branching, AINodeRegistry.Find(typeof(AINode_Random)).Value.Category);
             Assert.AreEqual(AINodeCategory.Leaf,      AINodeRegistry.Find(typeof(AINode_Wait)).Value.Category);
