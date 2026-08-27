@@ -44,6 +44,15 @@ namespace Rollgeon.Entities
         // Weakness (§5 — T97b). NO renombrar estos 2 campos.
         // -----------------------------------------------------------------
 
+        // -----------------------------------------------------------------
+        // Ficha de diseño (GDD "Patrones de Ataque"). Solo metadata; ver EnemyDesignSheet.
+        // -----------------------------------------------------------------
+
+        [Title("Ficha de diseño (GDD)")]
+        [Tooltip("Arquetipo, patrón geométrico y timing según el GDD. Ningún sistema de runtime lo lee; " +
+                 "el Editor de enemigos lo usa para filtrar y para chequear coherencia con el árbol de IA.")]
+        public EnemyDesignSheet Design = new EnemyDesignSheet();
+
         [Title("Weakness (§5 — T97b)")]
         [ValueDropdown(nameof(GetComboIds))]
         [Tooltip("ComboId al que este enemigo es debil. Vacio = sin debilidad. " +
@@ -163,6 +172,17 @@ namespace Rollgeon.Entities
                  "Clonado deep al spawn para evitar shared state entre instancias.")]
         [OdinSerialize]
         public AIDecisionNode AIRoot;
+
+        /// <summary>
+        /// Subárboles que el designer dejó sin conectar en el Editor de enemigos (raíces de cada
+        /// subárbol suelto). Persisten para no perder trabajo a medio armar; el runtime los ignora
+        /// (<see cref="CreateRuntimeAIRoot"/> solo copia <see cref="AIRoot"/>).
+        /// </summary>
+        [Title("Nodos sueltos (Editor de enemigos)")]
+        [InfoBox("Subárboles sin conectar que quedaron en el canvas del Editor de enemigos. El runtime los ignora; " +
+                 "editalos desde Tools → Editor de enemigos, no desde acá.")]
+        [OdinSerialize]
+        public List<AIDecisionNode> AIDetachedNodes = new List<AIDecisionNode>();
 
         // -----------------------------------------------------------------
         // Runtime builders.
