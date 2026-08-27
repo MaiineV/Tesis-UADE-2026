@@ -35,38 +35,6 @@ namespace Rollgeon.Editor.Tools.Enemy
         /// </remarks>
         public static readonly HashSet<string> ForcedBlinkEntityIds = new HashSet<string>();
 
-        [MenuItem("Rollgeon/Enemies/Apply Teleport Locomotion")]
-        public static void Apply()
-        {
-            var visited = new HashSet<string>();
-            int blink = 0;
-            int walk = 0;
-
-            foreach (var guid in AssetDatabase.FindAssets("t:EnemyDataSO"))
-            {
-                var data = AssetDatabase.LoadAssetAtPath<EnemyDataSO>(AssetDatabase.GUIDToAssetPath(guid));
-                if (data?.VisualPrefab == null) continue;
-
-                var prefabPath = AssetDatabase.GetAssetPath(data.VisualPrefab);
-                if (string.IsNullOrEmpty(prefabPath) || !visited.Add(prefabPath)) continue;
-
-                if (!ApplyTo(prefabPath, data.EntityId, out var style)) continue;
-
-                if (style == EntityPawn.LocomotionStyle.Blink)
-                {
-                    blink++;
-                    Debug.Log(LogPrefix + $"'{data.EntityId}' ({data.VisualPrefab.name}) → Blink: " +
-                              (Teleports(data.VisualPrefab)
-                                  ? "su clip de movimiento es un teletransporte."
-                                  : "PARCHE — su rig no tiene ciclo de caminata (ver ForcedBlinkEntityIds)."));
-                }
-                else walk++;
-            }
-
-            AssetDatabase.SaveAssets();
-            Debug.Log(LogPrefix + $"Listo — {blink} prefab(s) en Blink, {walk} en Walk.");
-        }
-
         /// <summary>Público para que el test pueda afirmar la regla sin abrir prefabs.</summary>
         public static bool HasTeleportClip(RuntimeAnimatorController controller)
         {
