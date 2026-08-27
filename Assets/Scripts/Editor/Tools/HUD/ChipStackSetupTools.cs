@@ -23,6 +23,7 @@ namespace Rollgeon.EditorTools.HUD
         private const string CoinSheetPath = "Assets/Art/UI/Inventory/CoinStyle1.1.png";
         private const string PotionSheetPath = "Assets/Art/UI/Inventory/PotionSheet.png";
         private const string CupSpritePath = "Assets/Art/UI/VasoGenerala/VasoGenerala.png";
+        private const string CupFlipSpritePath = "Assets/Art/UI/VasoGenerala/VasoGeneralaFlip.png";
         private const string ParticlePrefabPath = "Assets/Prefabs/UI/DiceThrowParticle.prefab";
         private const string FontPath = "Assets/Fonts/m6x11plus SDF.asset";
         private const string PlayerStatusPrefabPath = "Assets/Prefabs/UI/Canvas/Canvas_PlayerStatus.prefab";
@@ -72,11 +73,12 @@ namespace Rollgeon.EditorTools.HUD
             settings.PotionFull = LoadSpriteOrError(PotionSheetPath, "PotionSheet_0");
             settings.PotionEmpty = LoadSpriteOrError(PotionSheetPath, "PotionSheet_1");
             settings.RollCup = LoadSpriteOrError(CupSpritePath, "VasoGenerala_0");
+            settings.RollCupFlip = LoadSpriteOrError(CupFlipSpritePath, "VasoGeneralaFlip_0");
 
             if (settings.HealthChip == null || settings.EnergyChip == null || settings.ShieldChip == null
                 || settings.GoldChipFlat == null || settings.GoldChipTilted == null
                 || settings.PotionFull == null || settings.PotionEmpty == null
-                || settings.RollCup == null)
+                || settings.RollCup == null || settings.RollCupFlip == null)
             {
                 Debug.LogError("[ChipStackSetup] Falta al menos un slice — revisar los sheets. Abortando asignación.");
                 return;
@@ -84,7 +86,7 @@ namespace Rollgeon.EditorTools.HUD
 
             EditorUtility.SetDirty(settings);
             AssetDatabase.SaveAssets();
-            Debug.Log("[ChipStackSetup] ChipStackSettings listo con los 8 sprites.");
+            Debug.Log("[ChipStackSetup] ChipStackSettings listo con los 9 sprites.");
         }
 
         [MenuItem("Rollgeon/Chip Stack HUD/2 - Setup PlayerStatus Prefab")]
@@ -420,6 +422,10 @@ namespace Rollgeon.EditorTools.HUD
             var juiceSo = new SerializedObject(juice);
             juiceSo.FindProperty("_cup").objectReferenceValue = cup;
             juiceSo.FindProperty("_burst").objectReferenceValue = burst;
+            // Swap de sprite a mitad del giro: parado ↔ boca abajo (Flip).
+            juiceSo.FindProperty("_cupImage").objectReferenceValue = cupImage;
+            juiceSo.FindProperty("_uprightSprite").objectReferenceValue = settings.RollCup;
+            juiceSo.FindProperty("_faceDownSprite").objectReferenceValue = settings.RollCupFlip;
             juiceSo.ApplyModifiedProperties();
 
             if (!stack.TryGetComponent<RollCupView>(out var view))

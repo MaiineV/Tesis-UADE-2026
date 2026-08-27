@@ -1,5 +1,6 @@
 using NUnit.Framework;
 using Rollgeon.UI.HUD;
+using UnityEngine;
 
 namespace Rollgeon.UI.Tests
 {
@@ -146,6 +147,65 @@ namespace Rollgeon.UI.Tests
 
             // Assert
             Assert.IsFalse(chain);
+        }
+
+        // ---------------- swap de sprite a mitad del giro ----------------
+
+        [TestCase(0f, false)]
+        [TestCase(89.9f, false)]
+        [TestCase(90f, true)]
+        [TestCase(180f, true)]
+        [TestCase(269.9f, true)]
+        [TestCase(270f, false)]
+        [TestCase(360f, false)]
+        [TestCase(372f, false)] // overshoot del OutBack del flip-up
+        [TestCase(450f, true)]  // segunda vuelta: mismo criterio módulo 360
+        [TestCase(-100f, true)] // winding negativo: -100 ≡ 260, dentro de [90, 270)
+        public void ShowsFlipSprite_SwitchesAtQuarterTurns(float logicalZ, bool expected)
+        {
+            // Act
+            bool shows = RollCupMath.ShowsFlipSprite(logicalZ);
+
+            // Assert
+            Assert.AreEqual(expected, shows);
+        }
+
+        [Test]
+        public void VisualZ_FaceDownWithFlipSprite_IsZero()
+        {
+            // Arrange: el Flip ya está dibujado boca abajo — a 180° lógico va sin rotar.
+
+            // Act
+            float visual = RollCupMath.VisualZ(RollCupMath.FaceDownZ, flipSpriteShown: true);
+
+            // Assert
+            Assert.AreEqual(0f, visual, 0.001f);
+        }
+
+        [Test]
+        public void VisualZ_WithoutFlipSprite_IsLogical()
+        {
+            // Arrange: sin sprite Flip cableado se conserva el giro completo del dibujo único.
+
+            // Act
+            float visual = RollCupMath.VisualZ(RollCupMath.FaceDownZ, flipSpriteShown: false);
+
+            // Assert
+            Assert.AreEqual(RollCupMath.FaceDownZ, visual, 0.001f);
+        }
+
+        [TestCase(90f)]
+        [TestCase(270f)]
+        public void VisualZ_AtSwapBoundary_BothSpritesPointTheSameWay(float boundaryZ)
+        {
+            // Arrange: el sprite parado tiene la boca en +Y y el Flip en -Y. En la
+            // frontera del swap la boca rotada debe apuntar al mismo lado con ambos.
+            var mouthUpright = Quaternion.Euler(0f, 0f, RollCupMath.VisualZ(boundaryZ, false)) * Vector2.up;
+            var mouthFlip = Quaternion.Euler(0f, 0f, RollCupMath.VisualZ(boundaryZ, true)) * Vector2.down;
+
+            // Assert
+            Assert.AreEqual(mouthUpright.x, mouthFlip.x, 0.001f);
+            Assert.AreEqual(mouthUpright.y, mouthFlip.y, 0.001f);
         }
     }
 }

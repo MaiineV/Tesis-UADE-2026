@@ -25,6 +25,10 @@ namespace Rollgeon.UI.HUD
         [Tooltip("VasoGenerala_0 — vaso de generala del pool de rolls (Feature#0053).")]
         public Sprite RollCup;
 
+        [Tooltip("VasoGeneralaFlip_0 — vaso boca abajo (sin rolls). RollCupJuice lo muestra " +
+                 "desde la mitad del giro; el dibujo ya viene invertido.")]
+        public Sprite RollCupFlip;
+
         [Tooltip("CoinStyle1.1_0 — ficha plana de la pila de oro (hasta 4).")]
         public Sprite GoldChipFlat;
 

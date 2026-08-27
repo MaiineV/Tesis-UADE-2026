@@ -2581,6 +2581,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Rollgeon::Rollgeon.UI.HUD.RollCupJuice
   _cup: {fileID: 4199409879242672401}
   _burst: {fileID: 1074379339914087484}
+  _cupImage: {fileID: 7475708266503458536}
+  _uprightSprite: {fileID: 399862200, guid: 6d08ba971f4eee34d9bae78b782c7dc4, type: 3}
+  _faceDownSprite: {fileID: 581849072, guid: aaf2c45925ead8440b83990dfb233617, type: 3}
   _bobAmplitude: 1.5
   _bobPeriod: 1.1
   _shakeDegrees: 10
