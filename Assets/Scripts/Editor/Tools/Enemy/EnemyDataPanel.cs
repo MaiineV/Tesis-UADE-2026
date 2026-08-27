@@ -249,6 +249,7 @@ namespace Rollgeon.Editor.Tools.Enemy
                 Prop("IsBoss", "Jefe");
                 Prop("Personality", "Personalidad");
                 Prop("KamikazeIgnoresSurvival", "Kamikaze ignora supervivencia");
+                Prop("Footprint", "Tamaño en grilla (ancho × alto)");
             }
         }
 

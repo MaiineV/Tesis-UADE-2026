@@ -23,6 +23,15 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         }
 
         [Test]
+        public void FootprintBadge_EmptyForUnit_TextOtherwise()
+        {
+            Assert.AreEqual(string.Empty, EnemyEditorVocab.FootprintBadge(new UnityEngine.Vector2Int(1, 1)));
+            Assert.AreEqual(string.Empty, EnemyEditorVocab.FootprintBadge(new UnityEngine.Vector2Int(0, 0)));
+            Assert.AreEqual("2×2", EnemyEditorVocab.FootprintBadge(new UnityEngine.Vector2Int(2, 2)));
+            Assert.AreEqual("2×1", EnemyEditorVocab.FootprintBadge(new UnityEngine.Vector2Int(2, 1)));
+        }
+
+        [Test]
         public void Chip_IsShortAndEmptyForUnspecified()
         {
             Assert.AreEqual("M", EnemyEditorVocab.Chip(EnemyArchetype.Melee));

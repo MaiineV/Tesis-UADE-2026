@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using Rollgeon.Combos;
 using Rollgeon.Editor.Tools.Enemy.AITree;
@@ -22,6 +23,10 @@ namespace Rollgeon.Editor.Tools.Enemy
         public const string SecTiers = "Tiers";
         public const string SecAI = "Árbol de IA";
         public const string SecSheet = "Ficha de diseño";
+        public const string SecFootprint = "Tamaño en grilla";
+
+        /// <summary>Lado a partir del cual pocas salas tienen lugar y el spawn puede caer al fallback 1×1.</summary>
+        public const int LargeFootprintSide = 4;
 
         public static List<EnemyIssue> Validate(EnemyDataSO so, IReadOnlyList<EnemyDataSO> all,
                                                 ComboCatalogSO catalogOrNull, EnemyTreeSummary summaryOrNull = null)
@@ -73,6 +78,22 @@ namespace Rollgeon.Editor.Tools.Enemy
             }
             if (so.Portrait == null)
                 issues.Add(new EnemyIssue(EnemyIssueSeverity.Warning, SecVisual, "Sin retrato: la cola de turnos y la barra de jefe muestran un placeholder."));
+
+            // ---- tamaño en grilla ---------------------------------------------
+            if (so.Footprint.x < 1 || so.Footprint.y < 1)
+                issues.Add(new EnemyIssue(EnemyIssueSeverity.Error, SecFootprint,
+                    $"Tamaño {so.Footprint.x}×{so.Footprint.y}: cada lado tiene que ser ≥ 1 (el runtime lo clampea a 1, corregilo)."));
+            else if (so.HasMultiCellFootprint)
+            {
+                var fp = so.EffectiveFootprint;
+                if (summary.HasMovement)
+                    issues.Add(new EnemyIssue(EnemyIssueSeverity.Warning, SecFootprint,
+                        $"Tamaño {fp.x}×{fp.y} con nodos de movimiento ({EnemyTreeSummary.Names(summary.MovementNodes)}): " +
+                        "el pathfinding multi-celda es Fase B pendiente — se mueve como 1×1 (solo el ancla)."));
+                if (Math.Max(fp.x, fp.y) >= LargeFootprintSide)
+                    issues.Add(new EnemyIssue(EnemyIssueSeverity.Warning, SecFootprint,
+                        $"Tamaño {fp.x}×{fp.y}: pocas salas tienen lugar; si no cabe cerca del spawn se registra 1×1."));
+            }
 
             // ---- recompensas -------------------------------------------------
             if (so.MinGoldDrop > so.MaxGoldDrop)
