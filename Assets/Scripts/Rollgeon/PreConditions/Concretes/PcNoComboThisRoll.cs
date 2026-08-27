@@ -13,7 +13,7 @@ namespace Rollgeon.PreConditions.Concretes
     /// sin contexto o sin ComboResult se considera "no hubo combo" → pasa.
     /// </remarks>
     [Serializable, HideReferenceObjectPicker]
-    public sealed class PcNoComboThisRoll : BasePreCondition
+    public sealed class PcNoComboThisRoll : BasePreCondition, IReadsTriggerEffect
     {
         public override string ConditionName => "Sin combo en este roll";
 
