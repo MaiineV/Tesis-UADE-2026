@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using Rollgeon.Entities;
 using Rollgeon.Entities.Behaviors;
+using Rollgeon.Entities.Bosses;
 using Sirenix.OdinInspector.Editor;
 using UnityEditor;
 using UnityEngine;
@@ -25,7 +26,9 @@ namespace Rollgeon.Editor.Tools.Enemy
         bool _statsOpen = true;
         bool _tiersOpen = true;
         bool _weaknessOpen = true;
+        bool _traitsOpen = true;
         bool _rewardsOpen = false;
+        bool _bossOpen = true;
 
         public void Bind(EnemyDataSO so)
         {
@@ -71,7 +74,14 @@ namespace Rollgeon.Editor.Tools.Enemy
             EditorGUILayout.Space(8);
             DrawWeakness();
             EditorGUILayout.Space(8);
+            DrawTraits();
+            EditorGUILayout.Space(8);
             DrawRewards();
+            if (_so is BossFloorManagerSO boss)
+            {
+                EditorGUILayout.Space(8);
+                DrawBoss(boss);
+            }
             EditorGUILayout.Space(12);
             DrawBehaviors();
 
@@ -88,6 +98,57 @@ namespace Rollgeon.Editor.Tools.Enemy
             Prop("EntityId");
             Prop("DisplayName");
             Prop("Description");
+
+            // ObjectField a mano por la misma razón que Visual Prefab (ver DrawVisual): Odin
+            // pierde el drag-drop de UnityEngine.Object dentro de un IMGUIContainer.
+            EditorGUI.BeginChangeCheck();
+            var newPortrait = (Sprite)EditorGUILayout.ObjectField(
+                new GUIContent("Portrait",
+                    "Sprite identificatorio para UI (cola de turnos, barra de jefe, bestiario)."),
+                _so.Portrait,
+                typeof(Sprite),
+                allowSceneObjects: false);
+            if (EditorGUI.EndChangeCheck())
+            {
+                Undo.RecordObject(_so, "Set Portrait");
+                _so.Portrait = newPortrait;
+                EditorUtility.SetDirty(_so);
+            }
+        }
+
+        void DrawTraits()
+        {
+            _traitsOpen = EditorGUILayout.Foldout(_traitsOpen, "Rasgos de unidad", toggleOnLabelClick: true);
+            if (!_traitsOpen) return;
+            using (new EditorGUI.IndentLevelScope())
+            {
+                Prop("IsFlying");
+                Prop("IsBoss");
+                Prop("Personality");
+                Prop("KamikazeIgnoresSurvival");
+            }
+        }
+
+        void DrawBoss(BossFloorManagerSO boss)
+        {
+            _bossOpen = EditorGUILayout.Foldout(_bossOpen, "Jefe", toggleOnLabelClick: true);
+            if (!_bossOpen) return;
+            using (new EditorGUI.IndentLevelScope())
+            {
+                if (!boss.IsBoss)
+                {
+                    EditorGUILayout.HelpBox(
+                        "Esta ficha es un BossFloorManagerSO pero no tiene 'IsBoss' marcado: las " +
+                        "inmunidades y el kill credit de jefe no aplican.",
+                        MessageType.Warning);
+                }
+                Prop("ComboBlockIntervalTurns");
+                Prop("ComboBlockDurationTurns");
+                Prop("BossEnergyMax");
+                Prop("BossEnergyGainPerTurn");
+                Prop("DoubleDamageChanceDefault");
+                Prop("DoubleDamageChanceWhenEnergyFull");
+            }
         }
 
         void DrawVisual()
