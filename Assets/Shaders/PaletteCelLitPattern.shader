@@ -367,7 +367,10 @@ Shader "Rollgeon/PaletteCelLitPattern"
             float CelLightVal(float3 normalWS, Light light, float wrap)
             {
                 float NdotL = dot(normalWS, normalize(light.direction));
+                // Gate por luminancia real — sin luz activa, lightValue debe caer a 0 (Shadow plano).
+                float luminance = dot(light.color, half3(0.2126, 0.7152, 0.0722));
                 return saturate(NdotL + wrap)
+                     * luminance
                      * light.distanceAttenuation
                      * light.shadowAttenuation;
             }
@@ -533,7 +536,9 @@ Shader "Rollgeon/PaletteCelLitPattern"
                         float preVal    = saturate(shaped + (spotBayer - 0.5) * _SpotDither * quantStep);
                         float spotVal   = (ldSteps > 1.5) ? (floor(preVal * ldSteps) / (ldSteps - 1.0)) : preVal;
                         // Shadow attenuation applied after quantization (0=shadowed, 1=lit)
-                        spotVal        *= addLt.shadowAttenuation;
+                        // Gate por luminancia real — ver PaletteCelLit.shader.
+                        float addLuminance = dot(addLt.color, half3(0.2126, 0.7152, 0.0722));
+                        spotVal        *= addLt.shadowAttenuation * addLuminance;
                         lightValue      = max(lightValue, spotVal);
                         addTint        += addLt.color * spotVal;
                     LIGHT_LOOP_END

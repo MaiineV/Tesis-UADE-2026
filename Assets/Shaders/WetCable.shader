@@ -143,7 +143,9 @@ Shader "Rollgeon/WetCable"
             {
                 float NdotL = dot(normalWS, normalize(light.direction));
                 float wrapped = saturate(NdotL + wrapBias);
-                return wrapped * light.distanceAttenuation * light.shadowAttenuation;
+                // Gate por luminancia real — sin luz activa, lightValue debe caer a 0 (Shadow plano).
+                float luminance = dot(light.color, half3(0.2126, 0.7152, 0.0722));
+                return wrapped * luminance * light.distanceAttenuation * light.shadowAttenuation;
             }
 
             half4 Frag(Varyings IN) : SV_Target
@@ -178,7 +180,9 @@ Shader "Rollgeon/WetCable"
                         float quantStep = (ldSteps > 1.5) ? (1.0 / (ldSteps - 1.0)) : 1.0;
                         float preVal    = saturate(shaped + (spotBayer - 0.5) * _SpotDither * quantStep);
                         float spotVal   = (ldSteps > 1.5) ? (floor(preVal * ldSteps) / (ldSteps - 1.0)) : preVal;
-                        spotVal        *= addLt.shadowAttenuation;
+                        // Gate por luminancia real — ver PaletteCelLit.shader.
+                        float addLuminance = dot(addLt.color, half3(0.2126, 0.7152, 0.0722));
+                        spotVal        *= addLt.shadowAttenuation * addLuminance;
                         lightValue      = max(lightValue, spotVal);
                         addTint        += addLt.color * spotVal;
                     LIGHT_LOOP_END
