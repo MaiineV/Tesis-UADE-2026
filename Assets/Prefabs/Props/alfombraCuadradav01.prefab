@@ -63,7 +63,7 @@ PrefabInstance:
     - target: {fileID: -7511558181221131132, guid: 9dc3c91f2af79124aa0210a31e11f0d1, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
       value: 
-      objectReference: {fileID: 2100000, guid: 27d43947f42f5bc4b8ec5ca998a41552, type: 2}
+      objectReference: {fileID: 2100000, guid: 35eddbfb2db96f8479b6f9524ed42a51, type: 2}
     - target: {fileID: 919132149155446097, guid: 9dc3c91f2af79124aa0210a31e11f0d1, type: 3}
       propertyPath: m_Name
       value: alfombraCuadradav01
