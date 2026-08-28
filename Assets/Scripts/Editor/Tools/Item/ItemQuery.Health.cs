@@ -87,10 +87,13 @@ namespace Rollgeon.Editor.Tools.Item
             {
                 var label = LabelOf(item);
 
-                if (pool != null && !ItemShopPriceBridge.IsInPool(pool, item))
+                // Contra TODAS las pools, no solo la tienda. Preguntar solo por la tienda daba un
+                // falso positivo en cinco items que salen de cofres: el aviso decia que no aparecian,
+                // y aparecian. Lo que importa no es por que via se consigue, sino si se consigue.
+                if (!ItemPoolMembership.IsInAnyPool(item))
                     findings.Add(new CatalogFinding(
                         FindingSeverity.Warning,
-                        $"'{label}' no está en el ShopPool — no cuesta nada y no aparece en tienda.",
+                        $"'{label}' no está en ninguna pool — no se puede conseguir jugando.",
                         item));
 
                 if (item.Icon == null)

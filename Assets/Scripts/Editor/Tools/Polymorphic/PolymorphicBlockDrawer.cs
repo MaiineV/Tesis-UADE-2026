@@ -6,6 +6,7 @@ using Rollgeon.Effects;
 using Rollgeon.Effects.Concretes;
 using Rollgeon.Effects.Readers;
 using Rollgeon.PreConditions;
+using Sirenix.OdinInspector;
 using Sirenix.OdinInspector.Editor;
 using UnityEditor;
 using UnityEngine;
@@ -277,10 +278,26 @@ namespace Rollgeon.Editor.Tools.Polymorphic
 
             bool drewAnything = false;
 
+            // Los campos se agrupan bajo el [Title] que los precede y cada grupo se puede plegar. Un
+            // ItemSO tiene cinco categorias y en un panel angosto se leian como un muro continuo; el
+            // titulo ya marcaba la division visualmente, pero no dejaba esconder lo que no se toca.
+            string openSection = null;
+            bool sectionVisible = true;
+
             foreach (var child in children)
             {
                 if (IsBlockNamed(blocks, child.Name)) continue;   // graphed
                 if (IsBlockNamed(pickers, child.Name)) continue;  // graphed, or handled below
+
+                var title = TitleOf(child);
+                if (title != null && title != openSection)
+                {
+                    openSection = title;
+                    sectionVisible = DrawSectionHeader(type, title);
+                }
+
+                if (!sectionVisible) { drewAnything = true; continue; }
+
                 child.Draw();
                 drewAnything = true;
             }
@@ -396,6 +413,33 @@ namespace Rollgeon.Editor.Tools.Polymorphic
 
             foreach (var block in blocks)
                 DrawBlockMember(ctx, block, value, path, opts, depth);
+        }
+
+        /// <summary>El <c>[Title]</c> del miembro, si abre una categoria; null si no.</summary>
+        static string TitleOf(InspectorProperty property)
+        {
+            var member = property?.Info?.GetMemberInfo();
+            var title = member?.GetCustomAttribute<TitleAttribute>(false);
+            return string.IsNullOrEmpty(title?.Title) ? null : title.Title;
+        }
+
+        /// <summary>
+        /// Cabecera plegable de una categoria. Devuelve si su contenido va dibujado.
+        /// </summary>
+        /// <remarks>
+        /// El estado se guarda por tipo de asset y titulo, no por instancia: las categorias son las
+        /// mismas para todos los items, asi que plegar una y cambiar de item deberia mantenerla
+        /// plegada — si se reabriera en cada seleccion, plegarla no serviria de nada.
+        /// </remarks>
+        static bool DrawSectionHeader(System.Type ownerType, string title)
+        {
+            var key = "Rollgeon.PolymorphicBlockDrawer.Section." + ownerType.Name + "." + title;
+            bool expanded = EditorPrefs.GetBool(key, true);
+
+            EditorGUILayout.Space(2);
+            bool next = EditorGUILayout.Foldout(expanded, title, true, EditorStyles.foldoutHeader);
+            if (next != expanded) EditorPrefs.SetBool(key, next);
+            return next;
         }
 
         static bool IsBlockNamed(IReadOnlyList<PolymorphicMember> blocks, string name)

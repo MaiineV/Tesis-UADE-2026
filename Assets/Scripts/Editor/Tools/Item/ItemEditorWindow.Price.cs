@@ -24,12 +24,34 @@ namespace Rollgeon.Editor.Tools.Item
             ? _priceePool
             : (_priceePool = ItemShopPriceBridge.LoadDefaultPool());
 
-        partial void OnPriceAssetsRefreshed() => _priceePool = null;
+        partial void OnPriceAssetsRefreshed()
+        {
+            _priceePool = null;
+            ItemPoolMembership.InvalidateCache();
+        }
 
         protected override void DrawRootExtras(ItemSO asset)
         {
             if (asset == null) return;
 
+            EditorGUILayout.Space(2);
+            if (DrawExtrasSection("Shop")) DrawShopPrice(asset);
+            if (DrawExtrasSection("Pools")) DrawPoolsSection(asset);
+        }
+
+        /// <summary>Cabecera plegable, con el mismo estado persistido que las categorias de Odin.</summary>
+        static bool DrawExtrasSection(string title)
+        {
+            var key = "Rollgeon.PolymorphicBlockDrawer.Section.ItemSO." + title;
+            bool expanded = EditorPrefs.GetBool(key, true);
+            EditorGUILayout.Space(2);
+            bool next = EditorGUILayout.Foldout(expanded, title, true, EditorStyles.foldoutHeader);
+            if (next != expanded) EditorPrefs.SetBool(key, next);
+            return next;
+        }
+
+        void DrawShopPrice(ItemSO asset)
+        {
             var pool = PricePool;
             if (pool == null)
             {
@@ -38,9 +60,6 @@ namespace Rollgeon.Editor.Tools.Item
                     MessageType.Warning);
                 return;
             }
-
-            EditorGUILayout.Space(4);
-            EditorGUILayout.LabelField("Shop", EditorStyles.miniBoldLabel);
 
             int gddPrice = RarityPricing.BasePriceFor(asset.Rarity);
 
@@ -66,6 +85,42 @@ namespace Rollgeon.Editor.Tools.Item
 
             if (GUILayout.Button($"Agregar a la tienda por {gddPrice} oro"))
                 ItemShopPriceBridge.AddToPool(pool, asset, gddPrice);
+        }
+
+        /// <summary>
+        /// De qué pools sale el ítem, con casillas para entrarlo o sacarlo.
+        /// </summary>
+        /// <remarks>
+        /// Un ítem se consigue por varias vías — tienda y las pools de cofre por rareza — y no había
+        /// ninguna vista que lo dijera: para saberlo había que abrir los `.asset` de cada pool y
+        /// buscar el GUID a mano. La tienda ya se editaba arriba porque lleva precio; el resto es
+        /// pertenencia pelada y entra acá.
+        /// </remarks>
+        void DrawPoolsSection(ItemSO asset)
+        {
+            var pools = ItemPoolMembership.GetPools(asset);
+            if (pools.Count == 0) return;
+
+            int inPools = 0;
+            foreach (var p in pools) if (p.Contains) inPools++;
+
+            if (inPools == 0)
+                EditorGUILayout.HelpBox(
+                    "No está en ninguna pool — no se puede conseguir jugando.", MessageType.Warning);
+
+            foreach (var entry in pools)
+            {
+                using (new EditorGUILayout.HorizontalScope())
+                {
+                    bool next = EditorGUILayout.ToggleLeft(entry.Name, entry.Contains);
+                    if (next != entry.Contains)
+                        ItemPoolMembership.Set(
+                            asset, entry.Pool, next, RarityPricing.BasePriceFor(asset.Rarity));
+
+                    if (GUILayout.Button("Ping", EditorStyles.miniButton, GUILayout.Width(40)))
+                        EditorGUIUtility.PingObject(entry.Pool);
+                }
+            }
         }
     }
 }
