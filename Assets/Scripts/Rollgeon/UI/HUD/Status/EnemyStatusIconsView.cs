@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Patterns;
 using Rollgeon.Combat.AI;
 using Rollgeon.Combat.AI.Decisions;
+using Rollgeon.Entities;
 using Rollgeon.Entities.Visuals;
 using Rollgeon.Localization;
 using UnityEngine;
@@ -34,6 +35,7 @@ namespace Rollgeon.UI.HUD.Status
         private readonly List<AIIntent> _next = new();
 
         private Guid _entityGuid;
+        private EnemyDataSO _data;
         private StatusEffectIconView _iconPrefab;
         private StatusIconCatalogSO _catalog;
         private RectTransform _container;
@@ -96,13 +98,14 @@ namespace Rollgeon.UI.HUD.Status
         }
 
         public void Initialize(Guid entityGuid, StatusEffectIconView iconPrefab,
-                               StatusIconCatalogSO catalog)
+                               StatusIconCatalogSO catalog, EnemyDataSO data = null)
         {
             if (_bound) Teardown();
 
             _entityGuid = entityGuid;
             _iconPrefab = iconPrefab;
             _catalog = catalog;
+            _data = data;
             BuildProviders();
 
             EventManager.Subscribe(EventName.OnTurnStarted, HandleRefreshEvent);
@@ -160,8 +163,10 @@ namespace Rollgeon.UI.HUD.Status
             _attack.Clear();
             _applied.Clear();
 
-            CollectIntents();
+            // Providers antes que intents: el primero es el kit, y la debilidad va arriba de todo
+            // porque es lo único de la columna que cambia qué tirás, no qué te va a pasar.
             foreach (var provider in _providers) provider.Collect(_entityGuid, _applied);
+            CollectIntents();
         }
 
         public void Refresh()
@@ -250,6 +255,11 @@ namespace Rollgeon.UI.HUD.Status
         private void BuildProviders()
         {
             _providers.Clear();
+
+            // El kit primero: la debilidad es lo único de la columna que cambia cómo PELEÁS
+            // --las demás dicen qué te va a pasar, esa dice qué tirar-- así que va arriba de todo.
+            if (_data != null) _providers.Add(new EnemyKitStatusProvider(_catalog, _data));
+
             _providers.Add(new PoisonStatusProvider(_catalog));
             _providers.Add(new StunStatusProvider(_catalog));
             _providers.Add(new TileStandStatusProvider(_catalog));

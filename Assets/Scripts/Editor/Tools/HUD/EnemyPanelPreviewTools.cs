@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
+using Patterns;
 using Rollgeon.Combat.AI;
+using Rollgeon.Combat.Weakness;
 using Rollgeon.Combat.AI.Decisions;
 using Rollgeon.Entities;
 using Rollgeon.Localization;
@@ -33,9 +35,6 @@ namespace Rollgeon.EditorTools.HUD
 
         // Temp/ está en el .gitignore: es un volcado de diagnóstico, no un asset.
         private const string DumpPath = "Temp/tooltip-layout.txt";
-
-        private const string WeaknessId = "enemy.weakness";
-        private const string TeleportId = "ability.teleport";
 
         [MenuItem("Rollgeon/Tooltips/Preview Enemy Panel")]
         public static void Preview() => Preview(withSampleStates: false);
@@ -239,62 +238,59 @@ namespace Rollgeon.EditorTools.HUD
                 EnemyStatusIconsView.AddIfOwn(intent, owner, catalog, applied);
         }
 
-        // MAQUETA. Las tres tarjetas del costado que estamos probando, en orden: por que le pega
-        // fuerte, que sabe hacer, y que dejo ardiendo. Los datos son del SO --la debilidad y su
-        // multiplicador salen del asset, el fuego de su propia definicion-- pero solo el Burn tiene
-        // provider de verdad. Las otras dos son texto sin key de localizacion todavia.
+        // Nada inventado: el MISMO provider que la fila usa en pelea, con lo unico que fuera de
+        // combate no existe --el registry de debilidades-- levantado al vuelo desde el SO, que es
+        // exactamente lo que el spawn registra. El fuego se planta de verdad en el servicio de
+        // casillas para que el Burn salga del provider real y no de una maqueta.
         private static void AddSampleStates(EnemyDataSO data, List<StatusIconState> into)
         {
             var settings = Resources.Load<EnemyStatusRowSettingsSO>(
                 EnemyStatusRowSettingsSO.ResourcePath);
             var catalog = settings != null ? settings.Catalog : null;
 
-            AddWeakness(data, into);
+            var owner = Guid.NewGuid();
 
-            // El sprite es el de status.tp_delay porque es el unico teleport que hay dibujado; la
-            // key es otra a proposito: tp_delay es el cooldown de HABER saltado, no saber saltar.
-            into.Add(new StatusIconState(
-                TeleportId,
-                LocalizedContent.Name(TeleportId, "Se teletransporta"),
-                LocalizedContent.Description(TeleportId,
-                    "Salta a una casilla al lado tuyo, o al otro lado de la sala."),
-                catalog != null ? catalog.Resolve("status.tp_delay") : null,
-                active: true));
-
-            var fire = FindFireDefinition(data);
-            if (fire == null)
+            bool hadRegistry = ServiceLocator.TryGetService<IWeaknessRegistry>(out var registry)
+                               && registry != null;
+            if (!hadRegistry)
             {
-                Debug.LogWarning("[EnemyPanelPreview] " + data.name + " no deja fuego, asi que la " +
-                                 "tarjeta de Burn no entra.");
-                return;
+                registry = new WeaknessRegistry();
+                ServiceLocator.AddService<IWeaknessRegistry>(registry, ServiceScope.Global);
             }
+            registry.SetWeakness(owner, data.WeaknessComboId, data.WeaknessMultiplierOverride);
 
-            into.Add(TileStandStatusProvider.BurnState(
-                fire,
-                catalog != null ? catalog.Resolve(TileStandStatusProvider.BurnId) : null,
-                StatusCardStyle.Terrain,
-                remainingRounds: fire.DefaultDurationRounds > 0
-                    ? fire.DefaultDurationRounds
-                    : (int?)null));
+            try
+            {
+                new EnemyKitStatusProvider(catalog, data).Collect(owner, into);
+
+                var fire = FindFireDefinition(data);
+                if (fire != null)
+                    new StubOwnedFire(fire).Collect(owner, into, catalog);
+            }
+            finally
+            {
+                registry.Unregister(owner);
+            }
         }
 
-        // Arriba de todo porque es lo unico del panel que cambia como PELEAS: las otras dos dicen
-        // que te va a pasar, esta dice que tirar.
-        private static void AddWeakness(EnemyDataSO data, List<StatusIconState> into)
+        // El unico doble del preview: fuera de combate no hay servicio de casillas donde plantar
+        // fuego de verdad, asi que esto le da a BurnState los mismos argumentos que
+        // OwnedTilesStatusProvider le pasa en pelea. Si aquel cambia que muestra, esto se nota
+        // desfasado en el proximo preview -- y es UNA llamada, no una segunda logica.
+        private readonly struct StubOwnedFire
         {
-            if (string.IsNullOrEmpty(data.WeaknessComboId)) return;
+            private readonly SpecialTileDefinitionSO _fire;
 
-            string combo = LocalizedContent.Name(data.WeaknessComboId, data.WeaknessComboId);
-            float multiplier = data.WeaknessMultiplierOverride;
-            if (multiplier <= 0f) return;
+            public StubOwnedFire(SpecialTileDefinitionSO fire) => _fire = fire;
 
-            into.Add(new StatusIconState(
-                WeaknessId,
-                LocalizedContent.Name(WeaknessId, "Débil"),
-                LocalizedContent.DescriptionFormat(WeaknessId, "{0} le pega ×{1}.",
-                    combo, multiplier.ToString("0.##")),
-                icon: null,
-                active: true));
+            public void Collect(Guid owner, List<StatusIconState> into, StatusIconCatalogSO catalog)
+                => into.Add(TileStandStatusProvider.BurnState(
+                    _fire,
+                    catalog != null ? catalog.Resolve(TileStandStatusProvider.BurnId) : null,
+                    StatusCardStyle.Terrain,
+                    remainingRounds: _fire.DefaultDurationRounds > 0
+                        ? _fire.DefaultDurationRounds
+                        : (int?)null));
         }
 
         // El fuego que deja el nodo que prende, y no el primero que aparezca entre las dependencias
