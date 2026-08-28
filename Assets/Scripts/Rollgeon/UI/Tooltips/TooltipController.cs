@@ -72,6 +72,10 @@ namespace Rollgeon.UI.Tooltips
                  "identidad deja el bloque apagado y el panel es el de siempre.")]
         [SerializeField] private TMP_Text _nameLabel;
 
+        [Tooltip("Familia de la unidad, debajo del nombre. Se apaga sola cuando el enemigo no " +
+                 "tiene familia autorada.")]
+        [SerializeField] private TMP_Text _typeLabel;
+
         [SerializeField] private GameObject _vitalsRoot;
         [SerializeField] private TMP_Text _hpLabel;
 
@@ -142,7 +146,7 @@ namespace Rollgeon.UI.Tooltips
                     continue;
                 // Los labels de la banda y del pie tampoco son el párrafo: si el auto-resolve
                 // se quedara con el nombre, un tooltip de texto escribiría en el renglón grande.
-                if (candidate == _nameLabel || candidate == _hpLabel
+                if (candidate == _nameLabel || candidate == _typeLabel || candidate == _hpLabel
                     || candidate == _shieldLabel || candidate == _footerLabel) continue;
                 return candidate;
             }
@@ -400,6 +404,12 @@ namespace Rollgeon.UI.Tooltips
             {
                 _nameLabel.text = content.Name ?? string.Empty;
                 _nameLabel.gameObject.SetActive(!string.IsNullOrEmpty(content.Name));
+            }
+
+            if (_typeLabel != null)
+            {
+                _typeLabel.text = content.Type ?? string.Empty;
+                _typeLabel.gameObject.SetActive(!string.IsNullOrEmpty(content.Type));
             }
 
             if (_vitalsRoot != null) _vitalsRoot.SetActive(content.HasVitals);

@@ -41,6 +41,16 @@ namespace Rollgeon.Editor.Tools.HUD.Tests
                 "tarjetas que describe.");
         }
 
+        [Test]
+        public void LaFilaDeFamiliaNoDecideElAnchoDelPanel()
+        {
+            var panel = LoadPanel();
+
+            Assert.AreEqual(WidthOf(panel, "Cards"), WidthOf(panel, "Identity/Type"), 0.5f,
+                "La familia es un TMP más: sin ancho propio, un 'Jefe · Rango' largo vuelve a " +
+                "ensanchar el panel — exactamente el bug que tenía el pie.");
+        }
+
         private static float WidthOf(Transform panel, string child)
         {
             var found = panel.Find(child);

@@ -25,6 +25,7 @@ namespace Rollgeon.UI.Tests
         private RectTransform _panel;
         private TextMeshProUGUI _text;
         private TextMeshProUGUI _name;
+        private TextMeshProUGUI _type;
         private GameObject _vitals;
         private TextMeshProUGUI _hp;
         private GameObject _shield;
@@ -40,6 +41,7 @@ namespace Rollgeon.UI.Tests
 
             _panel = Child("Panel", _go.transform);
             _name = Label("Name", _panel);
+            _type = Label("Type", _panel);
             _vitals = Child("Vitals", _panel).gameObject;
             _hp = Label("Hp", _vitals.transform);
             _shield = Child("Shield", _vitals.transform).gameObject;
@@ -52,6 +54,7 @@ namespace Rollgeon.UI.Tests
             SetPrivate("_root", _panel);
             SetPrivate("_text", _text);
             SetPrivate("_nameLabel", _name);
+            SetPrivate("_typeLabel", _type);
             SetPrivate("_vitalsRoot", _vitals);
             SetPrivate("_hpLabel", _hp);
             SetPrivate("_shieldRoot", _shield);
@@ -113,6 +116,30 @@ namespace Rollgeon.UI.Tests
             Assert.IsFalse(_text.gameObject.activeSelf,
                 "El párrafo quedó prendido y vacío arriba de la columna: un renglón alto de nada " +
                 "entre el nombre y las tarjetas.");
+        }
+
+        [Test]
+        public void ConFamilia_LaFilaDeTipoSeDibuja()
+        {
+            _controller.Show(
+                new TooltipContent(name: "El Croupier", type: "Jefe · Rango",
+                                   health: 168, maxHealth: 250),
+                Vector2.zero, 1, TooltipPlacementMode.Fixed);
+
+            Assert.IsTrue(_type.gameObject.activeSelf);
+            Assert.AreEqual("Jefe · Rango", _type.text);
+        }
+
+        [Test]
+        public void SinFamilia_LaFilaDeTipoNoSeDibuja()
+        {
+            // Es el caso de los enemigos que nadie autoró: la fila se va entera en vez de
+            // quedar prendida y vacía debajo del nombre.
+            _controller.Show(
+                new TooltipContent(name: "CardEnemy", health: 20, maxHealth: 20),
+                Vector2.zero, 1, TooltipPlacementMode.Fixed);
+
+            Assert.IsFalse(_type.gameObject.activeSelf);
         }
 
         [Test]

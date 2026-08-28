@@ -4,13 +4,15 @@ using Patterns;
 using Rollgeon.Attributes;
 using Rollgeon.Attributes.Stats;
 using Rollgeon.Localization;
+using Rollgeon.UI.HUD.Status;
 using Rollgeon.UI.Tooltips;
 using UnityEngine;
 
 namespace Rollgeon.Entities.Visuals
 {
     /// <summary>
-    /// Contenido del tooltip de un enemigo: nombre + descripción de su <see cref="EnemyDataSO"/>.
+    /// Lo que un enemigo sabe decir de sí mismo, en las dos formas que le piden: el panel
+    /// (<see cref="BuildContent"/>) y el párrafo (<see cref="BuildTooltip"/>).
     /// Lo pega <see cref="EntityVisualService"/> en el pawn al spawnearlo, junto a un
     /// <see cref="WorldTooltipTrigger"/> en modo Hover; el <c>TooltipResolver</c> lo encuentra solo.
     /// </summary>
@@ -21,9 +23,9 @@ namespace Rollgeon.Entities.Visuals
     /// describiéndose en el idioma anterior hasta el próximo combate.
     /// </para>
     /// <para>
-    /// La descripción es la única explicación de la pelea que el jugador puede leer sin morir
-    /// primero, así que tiene que decir lo que el jefe <i>hace ahora</i>. Un rediseño que cambia el
-    /// kit y deja la descripción vieja es peor que no tener tooltip: promete una pelea que no existe.
+    /// La descripción tiene que decir lo que el bicho <i>hace ahora</i>. Un rediseño que cambia el
+    /// kit y deja la descripción vieja es peor que no tener tooltip: promete una pelea que no
+    /// existe. Y donde sí se lee —el párrafo— no hay tarjetas al lado que la desmientan.
     /// </para>
     /// </remarks>
     [AddComponentMenu("Rollgeon/Entities/Enemy Tooltip Info")]
@@ -46,10 +48,19 @@ namespace Rollgeon.Entities.Visuals
         }
 
         /// <summary>
-        /// El contenido completo: identidad y vitales arriba, color al pie. La descripción baja
-        /// al pie porque no es información — el jugador que abre el panel a mitad de una pelea
-        /// viene a ver cuánta vida le queda al bicho, no a leer su presentación.
+        /// El contenido del panel: nombre, familia y vitales. <b>Sin descripción.</b>
         /// </summary>
+        /// <remarks>
+        /// El panel no lleva lore, y no es una cuestión de espacio: cualquier frase que resuma al
+        /// bicho repite alguna de sus tarjetas, porque las tarjetas <i>son</i> lo que hace. El
+        /// Croupier se describe con tres verbos y uno de los tres es siempre el ataque que se está
+        /// mostrando — teníamos "…y dispara de lejos" a un renglón de "Te dispara de lejos".
+        /// <para>
+        /// La descripción sigue viva y se lee por <see cref="BuildTooltip"/>, que es lo que usan
+        /// las bombas y los objetos que un jefe pone en el paño: ahí el tooltip es un párrafo y no
+        /// un panel, así que no hay tarjeta que pueda contradecirla.
+        /// </para>
+        /// </remarks>
         public TooltipContent BuildContent()
         {
             var data = _data;
@@ -59,13 +70,12 @@ namespace Rollgeon.Entities.Visuals
             string name = string.IsNullOrEmpty(id)
                 ? data.DisplayName
                 : LocalizedContent.Name(id, data.DisplayName);
-            string flavor = string.IsNullOrEmpty(id)
-                ? data.Description
-                : LocalizedContent.Description(id, data.Description);
 
             ReadVitals(out int? health, out int? maxHealth, out int? shield);
-            return new TooltipContent(name: name, flavor: flavor,
-                                      health: health, maxHealth: maxHealth, shield: shield);
+            return new TooltipContent(
+                name: name,
+                type: EnemyArchetypeText.Describe(data.Archetype, data.IsBoss),
+                health: health, maxHealth: maxHealth, shield: shield);
         }
 
         // Sin AttributesManager los tres quedan en null y la banda no dibuja la fila: fuera de

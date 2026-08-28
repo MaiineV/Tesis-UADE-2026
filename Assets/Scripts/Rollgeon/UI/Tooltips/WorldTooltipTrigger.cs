@@ -213,7 +213,8 @@ namespace Rollgeon.UI.Tooltips
             var content = ContentProvider.Invoke();
             return new TooltipContent(
                 text: content.Text, name: content.Name, cards: cards, flavor: content.Flavor,
-                health: content.Health, maxHealth: content.MaxHealth, shield: content.Shield);
+                health: content.Health, maxHealth: content.MaxHealth, shield: content.Shield,
+                type: content.Type);
         }
 
         private void ToggleTooltip(Camera cam)

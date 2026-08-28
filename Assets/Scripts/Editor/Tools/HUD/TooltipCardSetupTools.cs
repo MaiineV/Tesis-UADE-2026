@@ -193,6 +193,12 @@ namespace Rollgeon.EditorTools.HUD
                 var nameLabel = EnsureLabel(identity, "Name", 44f, TextAlignmentOptions.Center, PanelInk);
                 nameLabel.fontStyle = FontStyles.Bold;
 
+                // Pegada al nombre y no al título: las dos son identidad. Y chica, porque el hijo
+                // más ancho decide cuánto mide el panel — una familia larga adentro del título es
+                // lo que lo ensancha.
+                var typeLabel = EnsureLabel(identity, "Type", 26f, TextAlignmentOptions.Center, PanelInkSoft);
+                Ensure<LayoutElement>(typeLabel.gameObject).preferredWidth = ContentWidth;
+
                 var vitals = EnsureChildRect(identity, "Vitals", Vector2.zero, Vector2.zero);
                 var vitalsLayout = Ensure<HorizontalLayoutGroup>(vitals.gameObject);
                 vitalsLayout.spacing = 10;
@@ -225,11 +231,17 @@ namespace Rollgeon.EditorTools.HUD
                 return (so, p) =>
                 {
                     so.FindProperty("_nameLabel").objectReferenceValue = nameLabel;
+                    so.FindProperty("_typeLabel").objectReferenceValue = typeLabel;
                     so.FindProperty("_vitalsRoot").objectReferenceValue = vitals.gameObject;
                     so.FindProperty("_hpLabel").objectReferenceValue = hpLabel;
                     so.FindProperty("_shieldRoot").objectReferenceValue = shield.gameObject;
                     so.FindProperty("_shieldLabel").objectReferenceValue = shieldLabel;
                     so.FindProperty("_footerLabel").objectReferenceValue = footer;
+
+                    // La familia va pegada al nombre y los vitales después: las dos primeras son
+                    // identidad, la tercera es estado. Explícito porque Ensure* agrega al final, y
+                    // en un panel que ya tenía Vitals la fila nueva caería debajo de los números.
+                    typeLabel.transform.SetSiblingIndex(1);
 
                     // Identidad arriba, párrafo y columna en el medio, color al pie. El orden es
                     // el contenido del tooltip: lo que necesitás mientras peleás va primero.

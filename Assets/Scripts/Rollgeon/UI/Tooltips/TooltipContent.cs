@@ -21,6 +21,13 @@ namespace Rollgeon.UI.Tooltips
         /// <summary>Nombre de la unidad, encabezando la banda de identidad.</summary>
         public readonly string Name;
 
+        /// <summary>
+        /// Familia de la unidad — <c>Jefe · Rango</c>. Va pegada al nombre y no al título: las dos
+        /// son identidad, y el título es el hijo más ancho del panel, así que meterla ahí es lo
+        /// que hace que el panel se ensanche. Vacía = no se dibuja la fila.
+        /// </summary>
+        public readonly string Type;
+
         public readonly int? Health;
         public readonly int? MaxHealth;
         public readonly int? Shield;
@@ -30,9 +37,12 @@ namespace Rollgeon.UI.Tooltips
         /// <summary>Color de la unidad, al pie y en chico. Nunca arriba: no es información.</summary>
         public readonly string Flavor;
 
+        // type va al final y con default para que nada de lo que ya construye un TooltipContent
+        // —los siete tooltips de texto incluidos— tenga que tocarse.
         public TooltipContent(string text = null, string name = null,
                               IReadOnlyList<StatusIconState> cards = null, string flavor = null,
-                              int? health = null, int? maxHealth = null, int? shield = null)
+                              int? health = null, int? maxHealth = null, int? shield = null,
+                              string type = null)
         {
             Text = text;
             Name = name;
@@ -41,6 +51,7 @@ namespace Rollgeon.UI.Tooltips
             Health = health;
             MaxHealth = maxHealth;
             Shield = shield;
+            Type = type;
         }
 
         public static TooltipContent FromText(string text, IReadOnlyList<StatusIconState> cards = null)

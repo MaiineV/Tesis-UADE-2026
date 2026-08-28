@@ -6,7 +6,7 @@ using UnityEngine;
 namespace Rollgeon.Entities.Visuals.Tests
 {
     /// <summary>
-    /// El <b>texto</b> del tooltip de un enemigo. El enganche al pawn (quién lo cuelga y con qué
+    /// Lo que un enemigo dice de sí mismo: el párrafo y el contenido del panel. El enganche al pawn (quién lo cuelga y con qué
     /// trigger) lo cubre <c>EntityVisualServiceTests</c>.
     /// </summary>
     /// <remarks>
@@ -51,6 +51,45 @@ namespace Rollgeon.Entities.Visuals.Tests
             var info = go.AddComponent<EnemyTooltipInfo>();
             if (data != null) info.Bind(data);
             return info;
+        }
+
+        [Test]
+        public void BuildContent_NoTraeLore_AunqueElSOTengaDescripcion()
+        {
+            var info = MakeInfo(MakeData("El Croupier", "Siembra bombas y dispara de lejos."));
+
+            var content = info.BuildContent();
+
+            // El panel no lleva lore: cualquier resumen del bicho repite alguna de sus tarjetas.
+            // La descripción sigue viva y la lee BuildTooltip, que es el párrafo de las bombas.
+            Assert.IsEmpty(content.Flavor ?? string.Empty);
+            StringAssert.Contains("Siembra bombas", info.BuildTooltip());
+        }
+
+        [Test]
+        public void BuildContent_TraeLaFamiliaConSuPrefijoDeJefe()
+        {
+            var data = MakeData("El Croupier", "Siembra bombas.");
+            data.Archetype = Rollgeon.Entities.Traits.EnemyArchetype.Ranged;
+            data.IsBoss = true;
+
+            string type = MakeInfo(data).BuildContent().Type;
+
+            // Sin mirar la traducción: lo que se fija es que la familia llegue y que el prefijo
+            // de jefe la envuelva en vez de reemplazarla.
+            Assert.IsNotEmpty(type);
+            StringAssert.Contains(
+                Rollgeon.UI.HUD.Status.EnemyArchetypeText.Describe(
+                    Rollgeon.Entities.Traits.EnemyArchetype.Ranged, isBoss: false),
+                type);
+        }
+
+        [Test]
+        public void BuildContent_SinFamiliaAutorada_UnComunNoTieneFila()
+        {
+            var info = MakeInfo(MakeData("CardEnemy", "Un goblin."));
+
+            Assert.IsEmpty(info.BuildContent().Type ?? string.Empty);
         }
 
         [Test]
