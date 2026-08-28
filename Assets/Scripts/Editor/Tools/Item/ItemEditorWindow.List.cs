@@ -190,12 +190,68 @@ namespace Rollgeon.Editor.Tools.Item
         /// <summary>Big rows: centered icon tile with the name wrapped underneath.</summary>
         void DrawGridRow(Rect rect, ItemSO asset, float rowSize)
         {
-            float iconSize = Mathf.Max(0f, Mathf.Min(rect.width - ROW_PADDING * 2f, rect.height - GRID_NAME_HEIGHT));
+            var style = GridLabelStyle(rowSize);
+            float nameHeight = GridNameHeight(rect.height, style);
+
+            float iconSize = Mathf.Max(0f, Mathf.Min(rect.width - ROW_PADDING * 2f, rect.height - nameHeight));
             var iconRect = new Rect(rect.x + (rect.width - iconSize) * 0.5f, rect.y + ROW_PADDING, iconSize, iconSize);
             DrawIcon(iconRect, asset.Icon);
 
-            var labelRect = new Rect(rect.x + 2f, iconRect.yMax + 2f, rect.width - 4f, GRID_NAME_HEIGHT - 2f);
-            GUI.Label(labelRect, LabelOf(asset), GridLabelStyle(rowSize));
+            var labelRect = new Rect(rect.x + 2f, iconRect.yMax + 2f, rect.width - 4f, nameHeight - 2f);
+            GUI.Label(labelRect, Ellipsize(LabelOf(asset), style, labelRect.width, nameHeight - 2f), style);
+        }
+
+        /// <summary>
+        /// Alto reservado para el nombre: un número <b>entero</b> de líneas que entren en la celda.
+        /// </summary>
+        /// <remarks>
+        /// Antes era una constante de 28 px. Al escalar la fuente con el slider, dos líneas dejaron de
+        /// entrar y la segunda quedaba cortada al medio — que es justo lo que se ve feo. Redondear a
+        /// líneas enteras hace que el recorte, cuando ocurre, caiga entre renglones y no dentro de uno.
+        /// </remarks>
+        static float GridNameHeight(float cellHeight, GUIStyle style)
+        {
+            float lineHeight = style.lineHeight;
+            // 0.45 y no menos: con un tercio de la celda solo entraba UNA línea incluso en la celda
+            // más grande, y entonces casi todos los nombres se recortaban. Con esto, una celda grande
+            // da dos líneas y el icono se queda con el resto.
+            float budget = Mathf.Clamp(cellHeight * 0.45f, lineHeight, lineHeight * MAX_GRID_NAME_LINES);
+            int lines = Mathf.Max(1, Mathf.FloorToInt(budget / lineHeight));
+            return lines * lineHeight + 4f;
+        }
+
+        const int MAX_GRID_NAME_LINES = 2;
+
+        /// <summary>
+        /// Recorta con «…» lo que no entre en <paramref name="height"/>.
+        /// </summary>
+        /// <remarks>
+        /// Sin esto, un nombre largo simplemente desaparece a mitad de palabra y el ítem queda
+        /// irreconocible en la grilla. El puntito final avisa que hay más, que es información: el
+        /// nombre completo sigue estando en el panel de la derecha.
+        /// <para>
+        /// El bucle recorta de a palabras, no de a caracteres, para no partir una en dos. Corre en el
+        /// camino de dibujo pero solo mide texto — nada de disco, y a escala de catálogo (decenas de
+        /// celdas visibles) es imperceptible.
+        /// </para>
+        /// </remarks>
+        static string Ellipsize(string text, GUIStyle style, float width, float height)
+        {
+            if (string.IsNullOrEmpty(text) || width <= 0f) return text;
+
+            var content = new GUIContent(text);
+            if (style.CalcHeight(content, width) <= height) return text;
+
+            int cut = text.Length;
+            while (cut > 1)
+            {
+                int space = text.LastIndexOf(' ', Mathf.Min(cut - 1, text.Length - 1));
+                cut = space > 0 ? space : cut - 1;
+
+                content.text = text.Substring(0, cut) + "…";
+                if (style.CalcHeight(content, width) <= height) return content.text;
+            }
+            return "…";
         }
 
         static void DrawSelectionBorder(Rect rect)
