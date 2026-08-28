@@ -582,6 +582,13 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
 
             data.AIRoot = BuildAIRoot(fire, bombs, bombFire);
             data.AIDetachedNodes.Clear(); // el builder es fuente de verdad: nada suelto sobrevive
+            data.Design = new EnemyDesignSheet
+            {
+                Archetype = EnemyArchetype.Ranged,
+                Pattern = AttackPatternKind.Cone,
+                Timing = AttackTiming.Telegraph,
+                Notes = "Cono direccional, disparo a distancia larga, bombas en cruz, teletransportes, fuego en sectores.",
+            };
         }
 
         /// <summary>

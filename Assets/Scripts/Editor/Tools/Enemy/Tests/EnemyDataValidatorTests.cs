@@ -51,6 +51,25 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             return EnemyDataValidator.Validate(so, all, null);
         }
 
+        [Test]
+        public void Validate_MissingPrefab_IsError_WhenHandAuthored()
+        {
+            var so = Healthy();
+            so.VisualPrefab = null;
+            var issues = EnemyDataValidator.Validate(so, new List<EnemyDataSO> { so }, null, null, null);
+            Assert.IsTrue(Has(issues, EnemyIssueSeverity.Error, "Sin Visual Prefab"));
+        }
+
+        [Test]
+        public void Validate_MissingPrefab_IsWarning_WhenBuilderGenerated()
+        {
+            var so = Healthy();
+            so.VisualPrefab = null;
+            var issues = EnemyDataValidator.Validate(so, new List<EnemyDataSO> { so }, null, null, "Tools/Rollgeon/Bosses/Build X");
+            Assert.IsTrue(Has(issues, EnemyIssueSeverity.Warning, "Build X"));
+            Assert.IsFalse(Has(issues, EnemyIssueSeverity.Error, "Sin Visual Prefab"));
+        }
+
         static bool Has(List<EnemyIssue> issues, EnemyIssueSeverity sev, string fragment)
             => issues.Exists(i => i.Severity == sev && i.Message.Contains(fragment));
 

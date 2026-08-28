@@ -248,6 +248,9 @@ MonoBehaviour:
     - Name: RangeMode
       Entry: 3
       Data: 0
+    - Name: RangeFromMovementDie
+      Entry: 5
+      Data: false
     - Name: TargetMode
       Entry: 3
       Data: 0
@@ -394,39 +397,23 @@ MonoBehaviour:
       Data: 
     - Name: 
       Entry: 7
-      Data: 31|Rollgeon.Combat.AI.Decisions.AINode_Random, Rollgeon
-    - Name: Options
-      Entry: 7
-      Data: 32|System.Collections.Generic.List`1[[Rollgeon.Combat.AI.Decisions.AINode_Random+Option,
-        Rollgeon]], mscorlib
-    - Name: 
-      Entry: 12
-      Data: 1
-    - Name: 
-      Entry: 7
-      Data: Rollgeon.Combat.AI.Decisions.AINode_Random+Option, Rollgeon
-    - Name: Weight
-      Entry: 4
-      Data: 1
-    - Name: Node
-      Entry: 7
-      Data: 33|Rollgeon.Combat.AI.Decisions.AINode_If, Rollgeon
+      Data: 31|Rollgeon.Combat.AI.Decisions.AINode_If, Rollgeon
     - Name: TargetSelector
       Entry: 7
-      Data: 34|Rollgeon.Combat.AI.Targeting.TargetSelector_Self, Rollgeon
+      Data: 32|Rollgeon.Combat.AI.Targeting.TargetSelector_Self, Rollgeon
     - Name: 
       Entry: 8
       Data: 
     - Name: Conditions
       Entry: 7
-      Data: 35|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
+      Data: 33|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
         Rollgeon]], mscorlib
     - Name: 
       Entry: 12
       Data: 1
     - Name: 
       Entry: 7
-      Data: 36|Rollgeon.PreConditions.Concretes.PcOwnerHpBelow, Rollgeon
+      Data: 34|Rollgeon.PreConditions.Concretes.PcOwnerHpBelow, Rollgeon
     - Name: _isConstantValue
       Entry: 5
       Data: true
@@ -444,7 +431,7 @@ MonoBehaviour:
       Data: 
     - Name: Then
       Entry: 7
-      Data: 37|Rollgeon.Combat.AI.Decisions.AINode_TelegraphMark, Rollgeon
+      Data: 35|Rollgeon.Combat.AI.Decisions.AINode_TelegraphMark, Rollgeon
     - Name: Shape
       Entry: 3
       Data: 1
@@ -457,6 +444,12 @@ MonoBehaviour:
     - Name: Count
       Entry: 3
       Data: 0
+    - Name: Columns
+      Entry: 3
+      Data: 0
+    - Name: Rows
+      Entry: 3
+      Data: 0
     - Name: HalfAxis
       Entry: 3
       Data: 0
@@ -466,12 +459,15 @@ MonoBehaviour:
     - Name: Kind
       Entry: 3
       Data: 1
+    - Name: ChannelId
+      Entry: 6
+      Data: 
     - Name: 
       Entry: 8
       Data: 
     - Name: Else
       Entry: 7
-      Data: 38|Rollgeon.Combat.AI.Decisions.AINode_TelegraphMark, Rollgeon
+      Data: 36|Rollgeon.Combat.AI.Decisions.AINode_TelegraphMark, Rollgeon
     - Name: Shape
       Entry: 3
       Data: 1
@@ -484,6 +480,12 @@ MonoBehaviour:
     - Name: Count
       Entry: 3
       Data: 0
+    - Name: Columns
+      Entry: 3
+      Data: 0
+    - Name: Rows
+      Entry: 3
+      Data: 0
     - Name: HalfAxis
       Entry: 3
       Data: 0
@@ -493,17 +495,8 @@ MonoBehaviour:
     - Name: Kind
       Entry: 3
       Data: 1
-    - Name: 
-      Entry: 8
-      Data: 
-    - Name: 
-      Entry: 8
-      Data: 
-    - Name: 
-      Entry: 8
-      Data: 
-    - Name: 
-      Entry: 13
+    - Name: ChannelId
+      Entry: 6
       Data: 
     - Name: 
       Entry: 8
@@ -522,23 +515,23 @@ MonoBehaviour:
       Data: 
     - Name: 
       Entry: 7
-      Data: 39|Rollgeon.Combat.AI.Decisions.AINode_If, Rollgeon
+      Data: 37|Rollgeon.Combat.AI.Decisions.AINode_If, Rollgeon
     - Name: TargetSelector
       Entry: 7
-      Data: 40|Rollgeon.Combat.AI.Targeting.TargetSelector_Self, Rollgeon
+      Data: 38|Rollgeon.Combat.AI.Targeting.TargetSelector_Self, Rollgeon
     - Name: 
       Entry: 8
       Data: 
     - Name: Conditions
       Entry: 7
-      Data: 41|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
+      Data: 39|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
         Rollgeon]], mscorlib
     - Name: 
       Entry: 12
       Data: 1
     - Name: 
       Entry: 7
-      Data: 42|Rollgeon.PreConditions.Concretes.PcOwnerHpBelow, Rollgeon
+      Data: 40|Rollgeon.PreConditions.Concretes.PcOwnerHpBelow, Rollgeon
     - Name: _isConstantValue
       Entry: 5
       Data: true
@@ -556,25 +549,49 @@ MonoBehaviour:
       Data: 
     - Name: Then
       Entry: 7
-      Data: 43|Rollgeon.Combat.AI.Decisions.AINode_RotateBlock, Rollgeon
+      Data: 41|Rollgeon.Combat.AI.Decisions.AINode_RotateBlock, Rollgeon
     - Name: Target
       Entry: 3
       Data: 1
     - Name: Count
       Entry: 3
       Data: 2
+    - Name: DirectedIndex
+      Entry: 6
+      Data: 
+    - Name: BlockVfxId
+      Entry: 6
+      Data: 
+    - Name: BlockFeelId
+      Entry: 6
+      Data: 
+    - Name: AnnounceOnce
+      Entry: 5
+      Data: false
     - Name: 
       Entry: 8
       Data: 
     - Name: Else
       Entry: 7
-      Data: 44|Rollgeon.Combat.AI.Decisions.AINode_RotateBlock, Rollgeon
+      Data: 42|Rollgeon.Combat.AI.Decisions.AINode_RotateBlock, Rollgeon
     - Name: Target
       Entry: 3
       Data: 1
     - Name: Count
       Entry: 3
       Data: 1
+    - Name: DirectedIndex
+      Entry: 6
+      Data: 
+    - Name: BlockVfxId
+      Entry: 6
+      Data: 
+    - Name: BlockFeelId
+      Entry: 6
+      Data: 
+    - Name: AnnounceOnce
+      Entry: 5
+      Data: false
     - Name: 
       Entry: 8
       Data: 
@@ -590,6 +607,19 @@ MonoBehaviour:
     - Name: 
       Entry: 8
       Data: 
+    - Name: AIDetachedNodes
+      Entry: 7
+      Data: 43|System.Collections.Generic.List`1[[Rollgeon.Combat.AI.Decisions.AIDecisionNode,
+        Rollgeon]], mscorlib
+    - Name: 
+      Entry: 12
+      Data: 0
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
   EntityId: boss.security_boss
   DisplayName: Security Boss
   Description: He has spent centuries reviewing casino security protocols. Every
@@ -597,6 +627,12 @@ MonoBehaviour:
     his lifetime and continues applying the same procedures even if there is no one
     left alive to protect. If the player repeats a move, he already has it recorded.
   Portrait: {fileID: -2011244216, guid: 20ce88debfdaa06459d18ed604643892, type: 3}
+  Design:
+    Archetype: 1
+    Pattern: 11
+    Timing: 2
+    Notes: Golpe de contacto; telegraph de fila (ancho 1, o 3 con <20% HP); bloquea
+      combos.
   WeaknessComboId: 
   WeaknessMultiplierOverride: 0
   BaseHP: 200
@@ -609,3 +645,7 @@ MonoBehaviour:
   VisualPrefab: {fileID: 5047352166231496340, guid: d5850ff2d25822f48967f044a77ef5b0, type: 3}
   MinGoldDrop: 30
   MaxGoldDrop: 60
+  IsFlying: 0
+  IsBoss: 0
+  Personality: 0
+  KamikazeIgnoresSurvival: 0

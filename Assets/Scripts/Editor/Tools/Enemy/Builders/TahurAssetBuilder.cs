@@ -366,6 +366,13 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
 
             data.AIRoot = BuildAIRoot();
             data.AIDetachedNodes.Clear(); // el builder es fuente de verdad: nada suelto sobrevive
+            data.Design = new EnemyDesignSheet
+            {
+                Archetype = EnemyArchetype.Melee,
+                Pattern = AttackPatternKind.Unspecified,
+                Timing = AttackTiming.Telegraph,
+                Notes = "Pinchazo de contacto; marca mesa/banca (apuesta), voltea carta, canta mano.",
+            };
         }
 
         // -----------------------------------------------------------------

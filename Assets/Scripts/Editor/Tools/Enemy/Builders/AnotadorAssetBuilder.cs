@@ -381,6 +381,13 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
 
             data.AIRoot = BuildAIRoot(iceHazard);
             data.AIDetachedNodes.Clear(); // el builder es fuente de verdad: nada suelto sobrevive
+            data.Design = new EnemyDesignSheet
+            {
+                Archetype = EnemyArchetype.Ranged,
+                Pattern = AttackPatternKind.TelegraphRowColumn,
+                Timing = AttackTiming.Telegraph,
+                Notes = "Mantiene distancia; lápiz a distancia, estela de hielo, telegraphs de fila/columna; desplaza combos vecinos.",
+            };
         }
 
         /// <summary>

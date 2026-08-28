@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using Rollgeon.Combos;
 using Rollgeon.Editor.Tools.Enemy.AITree;
+using Rollgeon.Editor.Tools.Enemy.Builders;
 using Rollgeon.Entities;
 using Rollgeon.Entities.Bosses;
 using UnityEditor;
@@ -24,6 +25,19 @@ namespace Rollgeon.Editor.Tools.Enemy
 
         public static List<EnemyIssue> Validate(EnemyDataSO so, IReadOnlyList<EnemyDataSO> all,
                                                 ComboCatalogSO catalogOrNull, EnemyTreeSummary summaryOrNull = null)
+        {
+            string builderMenu = so != null && BossBuilderRegistry.TryGetBuilder(so, out var menu) ? menu : null;
+            return Validate(so, all, catalogOrNull, summaryOrNull, builderMenu);
+        }
+
+        /// <param name="builderMenuOrNull">
+        /// Menú del builder que genera este asset (ver <see cref="BossBuilderRegistry"/>), o null si
+        /// se autora a mano. Cambia la severidad del prefab faltante: los jefes en pausa tienen el
+        /// prefab borrado a propósito y el builder lo regenera.
+        /// </param>
+        public static List<EnemyIssue> Validate(EnemyDataSO so, IReadOnlyList<EnemyDataSO> all,
+                                                ComboCatalogSO catalogOrNull, EnemyTreeSummary summaryOrNull,
+                                                string builderMenuOrNull)
         {
             var issues = new List<EnemyIssue>();
             if (so == null) return issues;
@@ -50,7 +64,13 @@ namespace Rollgeon.Editor.Tools.Enemy
 
             // ---- visual ------------------------------------------------------
             if (so.VisualPrefab == null)
-                issues.Add(new EnemyIssue(EnemyIssueSeverity.Error, SecVisual, "Sin Visual Prefab: spawnea sin pawn visual (EntityVisualService loguea error)."));
+            {
+                if (builderMenuOrNull != null)
+                    issues.Add(new EnemyIssue(EnemyIssueSeverity.Warning, SecVisual,
+                        $"Sin Visual Prefab: jefe en pausa (prefab borrado a propósito). Correr {builderMenuOrNull} lo regenera."));
+                else
+                    issues.Add(new EnemyIssue(EnemyIssueSeverity.Error, SecVisual, "Sin Visual Prefab: spawnea sin pawn visual (EntityVisualService loguea error)."));
+            }
             if (so.Portrait == null)
                 issues.Add(new EnemyIssue(EnemyIssueSeverity.Warning, SecVisual, "Sin retrato: la cola de turnos y la barra de jefe muestran un placeholder."));
 
