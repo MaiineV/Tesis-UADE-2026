@@ -30,6 +30,13 @@ namespace Rollgeon.Editor.Tools.Enemy
             return labels;
         }
 
+        /// <summary>Badge de la lista para footprints multi-celda ("2×2"); vacío para 1×1.</summary>
+        public static string FootprintBadge(UnityEngine.Vector2Int footprint)
+        {
+            var fp = Rollgeon.Grid.GridFootprint.Normalize(footprint);
+            return Rollgeon.Grid.GridFootprint.IsUnit(fp) ? string.Empty : $"{fp.x}×{fp.y}";
+        }
+
         /// <summary>Chip corto para la lista: M / R / S; vacío si no está definido.</summary>
         public static string Chip(EnemyArchetype archetype)
         {

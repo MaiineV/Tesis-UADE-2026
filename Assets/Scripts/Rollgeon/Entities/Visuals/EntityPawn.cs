@@ -107,14 +107,28 @@ namespace Rollgeon.Entities.Visuals
             _moveAnim = null;
         }
 
+        /// <summary>
+        /// Celdas que ocupa la entidad (ancho × alto desde el ancla). Solo afecta dónde se
+        /// dibuja el pawn: un 2×2 se centra entre sus cuatro celdas en vez de pararse en el ancla.
+        /// </summary>
+        public Vector2Int Footprint { get; private set; } = Vector2Int.one;
+
+        public void SetFootprint(Vector2Int footprint) => Footprint = GridFootprint.Normalize(footprint);
+
+        /// <summary>Posición del pawn para una celda lógica: centro del rectángulo + alto del pawn.</summary>
+        private Vector3 WorldFor(IGridManager grid, GridCoord anchor)
+        {
+            var pos = grid.GridToWorld(anchor) + GridFootprint.CenterOffset(Footprint, grid.TileSize);
+            pos.y += PawnYOffset;
+            return pos;
+        }
+
         public void SnapToGrid(IGridManager grid, GridCoord coord)
         {
             if (grid == null) return;
             // Un snap es posición autoritativa: cualquier path en vuelo quedó obsoleto.
             StopMovement();
-            var pos = grid.GridToWorld(coord);
-            pos.y += PawnYOffset;
-            transform.position = pos;
+            transform.position = WorldFor(grid, coord);
         }
 
         /// <summary>
@@ -211,9 +225,7 @@ namespace Rollgeon.Entities.Visuals
 
             if (_blinkOutSeconds > 0f) yield return new WaitForSeconds(_blinkOutSeconds);
 
-            var endPos = grid.GridToWorld(to);
-            endPos.y += PawnYOffset;
-            transform.position = endPos;
+            transform.position = WorldFor(grid, to);
 
             if (_blinkInSeconds > 0f) yield return new WaitForSeconds(_blinkInSeconds);
 
@@ -260,8 +272,7 @@ namespace Rollgeon.Entities.Visuals
                 FaceCoord(prev, next);
 
                 Vector3 startPos = transform.position;
-                Vector3 endPos = grid.GridToWorld(next);
-                endPos.y += PawnYOffset;
+                Vector3 endPos = WorldFor(grid, next);
 
                 float elapsed = 0f;
                 while (elapsed < secondsPerStep)
@@ -283,9 +294,7 @@ namespace Rollgeon.Entities.Visuals
             // GridToWorld(destination).
             if (grid.TryGetPosition(EntityGuid, out var logicalCoord))
             {
-                var syncPos = grid.GridToWorld(logicalCoord);
-                syncPos.y += PawnYOffset;
-                transform.position = syncPos;
+                transform.position = WorldFor(grid, logicalCoord);
             }
 
             SetMovementAnim(false);

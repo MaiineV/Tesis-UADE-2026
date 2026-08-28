@@ -319,6 +319,8 @@ namespace Rollgeon.Editor.Tools.Enemy
             if (!string.IsNullOrEmpty(chip)) text += $"  [{chip}]";
             if (BossBuilderRegistry.TryGetBuilder(e, out _)) text += "  ⚙";
             if (EnemyTemplateCatalog.IsTemplate(e)) text += "  [T]";
+            string footprint = EnemyEditorVocab.FootprintBadge(e.Footprint);
+            if (!string.IsNullOrEmpty(footprint)) text += "  " + footprint;
 
             string tooltip = null;
             if (_issues.TryGetValue(e, out var issues) && issues.Count > 0)

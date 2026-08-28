@@ -65,6 +65,20 @@ namespace Rollgeon.Entities.Visuals.Tests
             return data;
         }
 
+        [Test]
+        public void SpawnEnemy_PropagatesFootprintToPawn_AndCentersIt()
+        {
+            var data = MakeEnemy("Big");
+            data.Footprint = new Vector2Int(2, 2);
+
+            var pawn = _service.SpawnEnemy(Guid.NewGuid(), data, new GridCoord(1, 1));
+
+            Assert.AreEqual(new Vector2Int(2, 2), pawn.Footprint);
+            var expected = _grid.GridToWorld(new GridCoord(1, 1)) + new Vector3(0.5f, 0.1f, 0.5f);
+            Assert.AreEqual(expected.x, pawn.transform.position.x, 1e-4f);
+            Assert.AreEqual(expected.z, pawn.transform.position.z, 1e-4f);
+        }
+
         /// <summary>
         /// Enemigo cuyo arte trae collider — la única condición bajo la que <c>AttachTooltip</c>
         /// cuelga algo. <c>EntityId</c> vacío a propósito: así <c>EnemyTooltipInfo</c> lee el

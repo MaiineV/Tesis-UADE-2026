@@ -70,6 +70,50 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             Assert.IsFalse(Has(issues, EnemyIssueSeverity.Error, "Sin Visual Prefab"));
         }
 
+        [Test]
+        public void Validate_Footprint_NonPositive_IsError()
+        {
+            var so = Healthy();
+            so.Footprint = new Vector2Int(0, 1);
+            Assert.IsTrue(Has(Validate(so), EnemyIssueSeverity.Error, "cada lado tiene que ser ≥ 1"));
+        }
+
+        [Test]
+        public void Validate_Footprint_MultiCellWithMovement_WarnsFaseB()
+        {
+            var so = Healthy();
+            so.Footprint = new Vector2Int(2, 2);
+            so.AIRoot = new AINode_Move();
+            var issues = Validate(so);
+            Assert.IsTrue(Has(issues, EnemyIssueSeverity.Warning, "Fase B"));
+            Assert.IsTrue(Has(issues, EnemyIssueSeverity.Warning, "Move"));
+        }
+
+        [Test]
+        public void Validate_Footprint_MultiCellStatic_NoFootprintIssue()
+        {
+            var so = Healthy();
+            so.Footprint = new Vector2Int(2, 1);
+            so.AIRoot = new AINode_Wait();
+            Assert.IsFalse(Validate(so).Exists(i => i.Section == EnemyDataValidator.SecFootprint));
+        }
+
+        [Test]
+        public void Validate_Footprint_Default_NoFootprintIssue()
+        {
+            var so = Healthy();
+            Assert.IsFalse(Validate(so).Exists(i => i.Section == EnemyDataValidator.SecFootprint));
+        }
+
+        [Test]
+        public void Validate_Footprint_Large_Warns()
+        {
+            var so = Healthy();
+            so.Footprint = new Vector2Int(4, 4);
+            so.AIRoot = new AINode_Wait();
+            Assert.IsTrue(Has(Validate(so), EnemyIssueSeverity.Warning, "pocas salas"));
+        }
+
         static bool Has(List<EnemyIssue> issues, EnemyIssueSeverity sev, string fragment)
             => issues.Exists(i => i.Severity == sev && i.Message.Contains(fragment));
 
