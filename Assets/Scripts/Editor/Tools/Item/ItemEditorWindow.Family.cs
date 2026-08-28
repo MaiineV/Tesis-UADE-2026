@@ -63,6 +63,23 @@ namespace Rollgeon.Editor.Tools.Item
             _familyPoolCache = null;
         }
 
+        /// <summary>
+        /// Libera los contextos por variante al cerrar la ventana.
+        /// </summary>
+        /// <remarks>
+        /// Cada contexto envuelve un <c>PropertyTree</c> de Odin, que es <c>IDisposable</c>.
+        /// <see cref="PruneFamilyContexts"/> ya acota el conjunto vivo a la familia en pantalla, pero
+        /// los de la última familia vista sobrevivían al cierre hasta que pasara el GC. No hace falta
+        /// un gancho de teardown por tab: el <c>OnDisable</c> del shell es <c>protected virtual</c>.
+        /// </remarks>
+        protected override void OnDisable()
+        {
+            foreach (var ctx in _familyContexts.Values) ctx?.Dispose();
+            _familyContexts.Clear();
+
+            base.OnDisable();
+        }
+
         readonly Dictionary<ItemSO, PolymorphicAuthoringContext> _familyContexts =
             new Dictionary<ItemSO, PolymorphicAuthoringContext>();
 
