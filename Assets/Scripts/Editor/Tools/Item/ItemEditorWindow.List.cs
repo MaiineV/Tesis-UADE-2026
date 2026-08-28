@@ -165,7 +165,7 @@ namespace Rollgeon.Editor.Tools.Item
             bool clicked = GUI.Button(rect, GUIContent.none, GUIStyle.none);
 
             if (rowSize > GRID_ROW_THRESHOLD)
-                DrawGridRow(rect, asset);
+                DrawGridRow(rect, asset, rowSize);
             else
                 DrawCompactRow(rect, asset, rowSize);
 
@@ -184,18 +184,18 @@ namespace Rollgeon.Editor.Tools.Item
             var labelRect = new Rect(
                 iconRect.xMax + 4f, rect.y,
                 rect.width - iconRect.width - ROW_PADDING * 3f - 4f, rect.height);
-            GUI.Label(labelRect, LabelOf(asset), CompactLabelStyle);
+            GUI.Label(labelRect, LabelOf(asset), CompactLabelStyle(rowSize));
         }
 
         /// <summary>Big rows: centered icon tile with the name wrapped underneath.</summary>
-        void DrawGridRow(Rect rect, ItemSO asset)
+        void DrawGridRow(Rect rect, ItemSO asset, float rowSize)
         {
             float iconSize = Mathf.Max(0f, Mathf.Min(rect.width - ROW_PADDING * 2f, rect.height - GRID_NAME_HEIGHT));
             var iconRect = new Rect(rect.x + (rect.width - iconSize) * 0.5f, rect.y + ROW_PADDING, iconSize, iconSize);
             DrawIcon(iconRect, asset.Icon);
 
             var labelRect = new Rect(rect.x + 2f, iconRect.yMax + 2f, rect.width - 4f, GRID_NAME_HEIGHT - 2f);
-            GUI.Label(labelRect, LabelOf(asset), GridLabelStyle);
+            GUI.Label(labelRect, LabelOf(asset), GridLabelStyle(rowSize));
         }
 
         static void DrawSelectionBorder(Rect rect)
@@ -237,16 +237,35 @@ namespace Rollgeon.Editor.Tools.Item
         // Built per-call rather than cached: caching a GUIStyle derived from EditorStyles across an
         // editor theme switch (Pro/Personal skin) can leave it stale until the next domain reload.
         // Cheap enough at catalog scale (tens of rows) that it isn't worth the risk.
-        static GUIStyle CompactLabelStyle => new GUIStyle(EditorStyles.label)
+        /// <summary>
+        /// Tamaño de fuente para una celda de <paramref name="rowSize"/> píxeles.
+        /// </summary>
+        /// <remarks>
+        /// Escala con el slider en vez de ser fijo: si el texto se queda en el tamaño mínimo mientras
+        /// la celda crece, agrandar la lista deja de servir para leerla — que es justamente para lo
+        /// que se agranda. El piso de 12 es el tamaño de <c>EditorStyles.label</c>; el techo evita
+        /// que en celdas grandes el nombre le coma el lugar al icono.
+        /// </remarks>
+        static int LabelFontSize(float rowSize) =>
+            Mathf.RoundToInt(Mathf.Lerp(12f, 15f, Mathf.InverseLerp(MIN_ROW_SIZE, MAX_ROW_SIZE, rowSize)));
+
+        // Construidos por llamada y no cacheados: un GUIStyle derivado de EditorStyles que sobreviva
+        // un cambio de skin (Pro/Personal) queda stale hasta el próximo domain reload. A escala de
+        // catálogo (decenas de filas) no vale la pena el riesgo.
+        static GUIStyle CompactLabelStyle(float rowSize) => new GUIStyle(EditorStyles.label)
         {
             alignment = TextAnchor.MiddleLeft,
             wordWrap = false,
+            fontSize = LabelFontSize(rowSize),
         };
 
-        static GUIStyle GridLabelStyle => new GUIStyle(EditorStyles.miniLabel)
+        // Sobre EditorStyles.label y no miniLabel: mini es la fuente más chica del editor y en una
+        // celda con icono el nombre quedaba casi ilegible.
+        static GUIStyle GridLabelStyle(float rowSize) => new GUIStyle(EditorStyles.label)
         {
             alignment = TextAnchor.UpperCenter,
             wordWrap = true,
+            fontSize = LabelFontSize(rowSize),
         };
     }
 }
