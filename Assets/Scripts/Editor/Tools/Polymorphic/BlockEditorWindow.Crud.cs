@@ -179,7 +179,7 @@ namespace Rollgeon.Editor.Tools.Polymorphic
         /// </summary>
         void DrawCatalogButton()
         {
-            var catalog = FindCatalog();
+            var catalog = Catalog;
             if (catalog == null) return;
 
             string id = IdOf(_selected);
@@ -217,15 +217,39 @@ namespace Rollgeon.Editor.Tools.Polymorphic
         /// type rather than by a per-window override — one catalog per family is the convention, and
         /// a hardcoded path would rot the moment someone moves the asset.
         /// </summary>
-        BaseCatalogSO<T> FindCatalog()
+        /// <remarks>
+        /// <b>Cacheado, y no por prolijidad.</b> Esto lo llama <c>DrawCatalogButton</c>, que corre en
+        /// <b>cada repaint</b> del panel. Sin caché, cada frame hacía un <c>FindAssets</c> más un
+        /// <c>LoadAssetAtPath</c> por cada catálogo del proyecto hasta dar con el suyo: medido, ~13 ms
+        /// por frame. Escribir en cualquier campo del panel pagaba eso por tecla.
+        /// <para>
+        /// Se guarda la <b>referencia</b>, no su contenido, así que el estado que se muestra sigue
+        /// siendo el real. Se suelta en <c>OnAssetsRefreshed</c>, cuando el proyecto cambió y el
+        /// asset pudo haberse movido o borrado.
+        /// </para>
+        /// </remarks>
+        protected BaseCatalogSO<T> Catalog
         {
-            foreach (var guid in AssetDatabase.FindAssets("t:" + nameof(BaseCatalogSO)))
+            get
             {
-                var path = AssetDatabase.GUIDToAssetPath(guid);
-                if (AssetDatabase.LoadAssetAtPath<BaseCatalogSO>(path) is BaseCatalogSO<T> typed)
-                    return typed;
+                if (_catalog != null) return _catalog;
+
+                foreach (var guid in AssetDatabase.FindAssets("t:" + nameof(BaseCatalogSO)))
+                {
+                    var path = AssetDatabase.GUIDToAssetPath(guid);
+                    if (AssetDatabase.LoadAssetAtPath<BaseCatalogSO>(path) is BaseCatalogSO<T> typed)
+                    {
+                        _catalog = typed;
+                        return _catalog;
+                    }
+                }
+                return null;
             }
-            return null;
         }
+
+        BaseCatalogSO<T> _catalog;
+
+        /// <summary>Suelta el catálogo cacheado. La llama el shell al rebuildear la lista.</summary>
+        void InvalidateCatalogCache() => _catalog = null;
     }
 }

@@ -230,6 +230,7 @@ namespace Rollgeon.Editor.Tools.Polymorphic
 
             if (_selected != null && !_assets.Contains(_selected)) Select(null);
 
+            InvalidateCatalogCache();
             OnAssetsRefreshed();
         }
 

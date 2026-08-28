@@ -82,28 +82,22 @@ namespace Rollgeon.Editor.Tools.Item
         /// dev console all resolve through <c>ItemCatalogSO.GetById</c>. Cheap to forget, and the
         /// symptom (item silently never appears) points nowhere near the cause.
         /// </summary>
-        static void WarnIfNotInCatalog(ItemSO asset)
+        void WarnIfNotInCatalog(ItemSO asset)
         {
             if (string.IsNullOrEmpty(asset.ItemId)) return;
 
-            var ids = ItemCatalogSO.GetEditorAllIds();
-            if (ids == null) return;
-
-            foreach (var id in ids)
-                if (id == asset.ItemId) return;
+            // Catalog es la referencia cacheada del shell — ver su remark: buscarla costaba ~13 ms
+            // por frame porque esto se dibuja en cada repaint del panel.
+            var catalog = Catalog;
+            if (catalog == null) return;
+            if (catalog.Contains(asset.ItemId)) return;
 
             EditorGUILayout.HelpBox(
                 $"'{asset.ItemId}' is not registered in ItemCatalog — the shop, EffAddItemToInventory " +
                 "and `giveitem` all resolve through the catalog, so this item can never be granted.",
                 MessageType.Warning);
 
-            if (GUILayout.Button("Ping ItemCatalog"))
-            {
-                var guids = AssetDatabase.FindAssets("t:ItemCatalogSO");
-                if (guids.Length > 0)
-                    EditorGUIUtility.PingObject(
-                        AssetDatabase.LoadAssetAtPath<ItemCatalogSO>(AssetDatabase.GUIDToAssetPath(guids[0])));
-            }
+            if (GUILayout.Button("Ping ItemCatalog")) EditorGUIUtility.PingObject(catalog);
         }
     }
 }
