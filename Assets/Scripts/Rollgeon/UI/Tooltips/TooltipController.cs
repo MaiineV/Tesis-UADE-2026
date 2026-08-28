@@ -71,6 +71,10 @@ namespace Rollgeon.UI.Tooltips
                  "Null = caen en la columna de arriba, y el panel queda como antes.")]
         [SerializeField] private RectTransform _sideCardsContainer;
 
+        [Tooltip("Tarjetas colgadas DEBAJO de la caja — la debilidad. Null = caen en la columna " +
+                 "de adentro, y el panel queda como antes.")]
+        [SerializeField] private RectTransform _bottomCardsContainer;
+
         [Title("Banda de identidad")]
         [Tooltip("Nombre de la unidad. Null, como toda esta banda: un tooltip que no trae " +
                  "identidad deja el bloque apagado y el panel es el de siempre.")]
@@ -100,6 +104,7 @@ namespace Rollgeon.UI.Tooltips
 
         private readonly List<TooltipCardView> _cardSlots = new List<TooltipCardView>();
         private readonly List<TooltipCardView> _sideCardSlots = new List<TooltipCardView>();
+        private readonly List<TooltipCardView> _bottomCardSlots = new List<TooltipCardView>();
 
         private RectTransform _hostCanvasRect;
         private bool _visible;
@@ -150,6 +155,8 @@ namespace Rollgeon.UI.Tooltips
                 if (_cardsContainer != null && candidate.transform.IsChildOf(_cardsContainer))
                     continue;
                 if (_sideCardsContainer != null && candidate.transform.IsChildOf(_sideCardsContainer))
+                    continue;
+                if (_bottomCardsContainer != null && candidate.transform.IsChildOf(_bottomCardsContainer))
                     continue;
                 // Los labels de la banda y del pie tampoco son el párrafo: si el auto-resolve
                 // se quedara con el nombre, un tooltip de texto escribiría en el renglón grande.
@@ -394,17 +401,39 @@ namespace Rollgeon.UI.Tooltips
 
             if (_cardsContainer == null || _cardPrefab == null) return;
 
-            // Sin segunda columna cableada, lo del costado se dibuja en la de arriba: el panel
-            // queda exactamente como antes en vez de perder tarjetas, que es lo que hace que este
-            // slot pueda faltar de verdad.
+            // Sin los contenedores extra cableados, todo cae en la columna de adentro: el panel
+            // queda exactamente como antes en vez de perder tarjetas, que es lo que hace que estos
+            // slots puedan faltar de verdad.
+            var side = content.SideCards;
+            var bottom = content.BottomCards;
+
+            if (_bottomCardsContainer != null)
+                FillColumn(_bottomCardsContainer, _bottomCardSlots, bottom, null);
+
             if (_sideCardsContainer == null)
             {
-                FillColumn(_cardsContainer, _cardSlots, content.Cards, content.SideCards);
+                FillColumn(_cardsContainer, _cardSlots, content.Cards,
+                           Concat(side, _bottomCardsContainer == null ? bottom : null));
                 return;
             }
 
-            FillColumn(_cardsContainer, _cardSlots, content.Cards, null);
-            FillColumn(_sideCardsContainer, _sideCardSlots, content.SideCards, null);
+            FillColumn(_cardsContainer, _cardSlots, content.Cards,
+                       _bottomCardsContainer == null ? bottom : null);
+            FillColumn(_sideCardsContainer, _sideCardSlots, side, null);
+        }
+
+        // Solo corre en el panel a medio cablear: con los tres contenedores puestos nunca hay dos
+        // listas para la misma columna y esto no aloca.
+        private static IReadOnlyList<StatusIconState> Concat(IReadOnlyList<StatusIconState> a,
+                                                             IReadOnlyList<StatusIconState> b)
+        {
+            if (a == null || a.Count == 0) return b;
+            if (b == null || b.Count == 0) return a;
+
+            var merged = new List<StatusIconState>(a.Count + b.Count);
+            merged.AddRange(a);
+            merged.AddRange(b);
+            return merged;
         }
 
         private void ApplyIdentity(in TooltipContent content)
@@ -533,6 +562,7 @@ namespace Rollgeon.UI.Tooltips
             EnsureRefs();
             ResetSlots(_cardSlots);
             ResetSlots(_sideCardSlots);
+            ResetSlots(_bottomCardSlots);
         }
 
         private static void ResetSlots(List<TooltipCardView> slots)

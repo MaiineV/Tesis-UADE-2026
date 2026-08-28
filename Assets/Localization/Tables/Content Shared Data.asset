@@ -1051,6 +1051,10 @@ MonoBehaviour:
     m_Key: enemy.fire_tiles.desc
     m_Metadata:
       m_Items: []
+  - m_Id: 16155814888665088
+    m_Key: boss.croupier.brief
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

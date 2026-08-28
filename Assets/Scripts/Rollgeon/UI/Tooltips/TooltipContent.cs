@@ -41,6 +41,13 @@ namespace Rollgeon.UI.Tooltips
         /// </summary>
         public readonly IReadOnlyList<StatusIconState> SideCards;
 
+        /// <summary>
+        /// Tarjetas colgadas DEBAJO de la caja — la debilidad. Afuera y no adentro por lo mismo
+        /// que <see cref="SideCards"/>: lo que se agrega o se va no puede reacomodar el panel que
+        /// se está leyendo.
+        /// </summary>
+        public readonly IReadOnlyList<StatusIconState> BottomCards;
+
         /// <summary>Color de la unidad, al pie y en chico. Nunca arriba: no es información.</summary>
         public readonly string Flavor;
 
@@ -50,7 +57,8 @@ namespace Rollgeon.UI.Tooltips
                               IReadOnlyList<StatusIconState> cards = null, string flavor = null,
                               int? health = null, int? maxHealth = null, int? shield = null,
                               string type = null,
-                              IReadOnlyList<StatusIconState> sideCards = null)
+                              IReadOnlyList<StatusIconState> sideCards = null,
+                              IReadOnlyList<StatusIconState> bottomCards = null)
         {
             Text = text;
             Name = name;
@@ -61,6 +69,7 @@ namespace Rollgeon.UI.Tooltips
             Shield = shield;
             Type = type;
             SideCards = sideCards;
+            BottomCards = bottomCards;
         }
 
         public static TooltipContent FromText(string text, IReadOnlyList<StatusIconState> cards = null)
@@ -73,9 +82,11 @@ namespace Rollgeon.UI.Tooltips
 
         public int SideCardCount => SideCards?.Count ?? 0;
 
+        public int BottomCardCount => BottomCards?.Count ?? 0;
+
         /// <summary>Sin nada que decir el panel no se abre — un recuadro vacío es peor que nada.</summary>
         public bool IsEmpty
-            => CardCount == 0 && SideCardCount == 0 && !HasVitals
+            => CardCount == 0 && SideCardCount == 0 && BottomCardCount == 0 && !HasVitals
                && string.IsNullOrEmpty(Text)
                && string.IsNullOrEmpty(Name)
                && string.IsNullOrEmpty(Flavor);

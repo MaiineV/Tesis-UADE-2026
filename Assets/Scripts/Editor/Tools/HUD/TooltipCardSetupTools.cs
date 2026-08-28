@@ -42,6 +42,10 @@ namespace Rollgeon.EditorTools.HUD
         // Aire entre el panel y la columna del costado. Chico a propósito: más lejos y deja de
         // leerse como algo de ESTE bicho.
         private const float SideColumnGap = 16f;
+
+        // Mas angosta que el panel a proposito: colgada abajo con el MISMO ancho se leeria como
+        // un piso mas de la caja, no como una tarjeta colgante.
+        private const float BottomCardsWidth = 260f;
         private const float IconSize = 44f;
         private const float BadgeSize = 34f;
 
@@ -256,6 +260,46 @@ namespace Rollgeon.EditorTools.HUD
             Debug.Log("[TooltipCardSetupTools] Columna del costado cableada en el panel.");
         }
 
+        [MenuItem("Rollgeon/Tooltips/5 - Wire Bottom Cards")]
+        public static void WireBottomCards()
+        {
+            EditPanel(panel =>
+            {
+                var bottom = EnsureChildRect(panel, "BottomCards",
+                    new Vector2(0f, -SideColumnGap), new Vector2(BottomCardsWidth, 0f));
+
+                // Colgada de la esquina inferior izquierda, creciendo hacia abajo. ignoreLayout
+                // por lo mismo que el costado: lo que cuelga no puede reacomodar la caja.
+                Ensure<LayoutElement>(bottom.gameObject).ignoreLayout = true;
+                bottom.anchorMin = new Vector2(0f, 0f);
+                bottom.anchorMax = new Vector2(0f, 0f);
+                bottom.pivot = new Vector2(0f, 1f);
+                bottom.anchoredPosition = new Vector2(0f, -SideColumnGap);
+
+                var layout = Ensure<VerticalLayoutGroup>(bottom.gameObject);
+                layout.spacing = 10;
+                layout.childAlignment = TextAnchor.UpperLeft;
+                layout.childControlWidth = true;
+                layout.childControlHeight = true;
+                layout.childForceExpandWidth = true;
+                layout.childForceExpandHeight = false;
+
+                // Solo el alto: el ancho es fijo (260) y es el layout el que se lo impone a la
+                // tarjeta, cuyo prefab preferiria los 330 de la columna de adentro.
+                var fitter = Ensure<ContentSizeFitter>(bottom.gameObject);
+                fitter.horizontalFit = ContentSizeFitter.FitMode.Unconstrained;
+                fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+
+                return (so, _) =>
+                {
+                    so.FindProperty("_bottomCardsContainer").objectReferenceValue = bottom;
+                    bottom.SetAsLastSibling();
+                };
+            });
+
+            Debug.Log("[TooltipCardSetupTools] Tarjetas colgantes de abajo cableadas en el panel.");
+        }
+
         [MenuItem("Rollgeon/Tooltips/3 - Wire Identity Band And Footer")]
         public static void WireIdentityBand()
         {
@@ -271,7 +315,9 @@ namespace Rollgeon.EditorTools.HUD
                 identityLayout.childForceExpandHeight = false;
                 Ensure<LayoutElement>(identity.gameObject).preferredWidth = ContentWidth;
 
-                var nameLabel = EnsureLabel(identity, "Name", 44f, TextAlignmentOptions.Center, PanelInk);
+                // 34 y no 44: el nombre encabeza pero no es lo que se lee — con la frase
+                // tactica adentro de la caja, un nombre a 44 se comia el panel entero.
+                var nameLabel = EnsureLabel(identity, "Name", 34f, TextAlignmentOptions.Center, PanelInk);
                 nameLabel.fontStyle = FontStyles.Bold;
 
                 // Pegada al nombre y no al título: las dos son identidad. Y chica, porque el hijo

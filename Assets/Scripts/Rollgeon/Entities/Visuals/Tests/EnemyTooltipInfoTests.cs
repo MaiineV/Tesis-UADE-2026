@@ -60,9 +60,11 @@ namespace Rollgeon.Entities.Visuals.Tests
 
             var content = info.BuildContent();
 
-            // El panel no lleva lore: cualquier resumen del bicho repite alguna de sus tarjetas.
-            // La descripción sigue viva y la lee BuildTooltip, que es el párrafo de las bombas.
-            Assert.IsEmpty(content.Flavor ?? string.Empty);
+            // El panel no lleva el lore del .desc: su frase es OTRA key (.brief), y un enemigo
+            // sin frase autorada no muestra ninguna. El lore sigue vivo en BuildTooltip.
+            Assert.IsEmpty(content.Flavor ?? string.Empty,
+                "El .desc se coló en el panel: la frase táctica sale de .brief, y este id no " +
+                "tiene entry.");
             StringAssert.Contains("Siembra bombas", info.BuildTooltip());
         }
 

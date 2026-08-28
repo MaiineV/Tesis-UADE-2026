@@ -92,7 +92,7 @@ namespace Rollgeon.UI.Tests
         }
 
         [Test]
-        public void LaColumnaPrincipal_EsLaDebilidad_NoElAtaque()
+        public void LoQueCuelgaDebajo_EsLaDebilidad_NoElAtaque()
         {
             // Arrange — la debilidad sale del registry vivo, como en el spawn real.
             var registry = new Rollgeon.Combat.Weakness.WeaknessRegistry();
@@ -107,13 +107,13 @@ namespace Rollgeon.UI.Tests
                 _intents.Next.Add(Own(AIIntentTextKeys.RangedShot, "Te dispara"));
 
                 // Act
-                var attack = _view.CollectAttack();
+                var weakness = _view.CollectWeakness();
 
                 // Assert
-                Assert.AreEqual(1, attack.Count);
-                Assert.AreEqual("enemy.weakness", attack[0].Id,
-                    "El panel principal lleva la debilidad —lo único que cambia qué TIRÁS— y el " +
-                    "ataque bajó al costado con su fecha.");
+                Assert.AreEqual(1, weakness.Count);
+                Assert.AreEqual("enemy.weakness", weakness[0].Id,
+                    "La debilidad cuelga sola debajo de la caja —lo único que cambia qué TIRÁS— " +
+                    "y el ataque bajó al costado con su fecha.");
             }
             finally
             {

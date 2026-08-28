@@ -70,12 +70,12 @@ namespace Rollgeon.EditorTools.HUD
                 return;
             }
 
-            var attack = new List<StatusIconState>();
             var applied = new List<StatusIconState>();
-            CollectCards(data, attack, applied);
-            if (withSampleStates) AddSampleStates(data, attack, applied);
+            var bottom = new List<StatusIconState>();
+            CollectCards(data, applied);
+            if (withSampleStates) AddSampleStates(data, bottom, applied);
 
-            var content = BuildContent(data, attack, applied);
+            var content = BuildContent(data, bottom, applied);
 
             // Las tarjetas de la vuelta anterior sobreviven en el canvas y no son instancias de
             // prefab: sin tirarlas, editar la tarjeta y volver acá muestra las de antes.
@@ -93,13 +93,7 @@ namespace Rollgeon.EditorTools.HUD
             // El resumen va al log además del Game view: si la ventana no está abierta, cuántas
             // tarjetas quedaron en cada columna sigue siendo la respuesta a "esto cambió o no".
             Debug.Log("[EnemyPanelPreview] " + content.Name + " — tipo '" + content.Type + "' — " +
-                      attack.Count + " tarjeta(s) de ataque, " + applied.Count + " al costado" +
-                      (withSampleStates ? " (dos de muestra)." : "."));
-
-            if (attack.Count == 0)
-                Debug.LogWarning("[EnemyPanelPreview] Sin tarjeta de ataque: el árbol de " +
-                                 data.name + " no tiene un Alternate con próximo tiempo, o sus " +
-                                 "nodos no saben describirse.");
+                      applied.Count + " al costado, " + bottom.Count + " colgando abajo.");
         }
 
         /// <summary>
@@ -179,7 +173,7 @@ namespace Rollgeon.EditorTools.HUD
         }
 
         private static TooltipContent BuildContent(EnemyDataSO data,
-                                                   List<StatusIconState> attack,
+                                                   List<StatusIconState> bottom,
                                                    List<StatusIconState> applied)
         {
             string id = data.EntityId;
@@ -189,17 +183,21 @@ namespace Rollgeon.EditorTools.HUD
 
             // Sin vitales, igual que el panel de verdad: la barra de vida ya está sobre la cabeza
             // del bicho. Un preview que muestre una fila que el juego no dibuja no sirve.
+            string brief = string.IsNullOrEmpty(id)
+                ? string.Empty
+                : LocalizedContent.FromTable(
+                    LocalizedContent.ContentTable, id + ".brief", string.Empty);
+
             return new TooltipContent(
                 name: name,
                 type: EnemyArchetypeText.Describe(data.Archetype, data.IsBoss),
-                cards: attack, sideCards: applied);
+                flavor: brief, sideCards: applied, bottomCards: bottom);
         }
 
         // El árbol real, leído por el walker real. Lo único de mentira es el contexto: fuera de
         // combate no hay grilla ni player, y los campos de AIContext son nullables a propósito
         // porque cada nodo tolera que le falte el servicio.
-        private static void CollectCards(EnemyDataSO data, List<StatusIconState> attack,
-                                         List<StatusIconState> applied)
+        private static void CollectCards(EnemyDataSO data, List<StatusIconState> applied)
         {
             if (data.AIRoot == null) return;
 
@@ -245,7 +243,7 @@ namespace Rollgeon.EditorTools.HUD
         // combate no existe --el registry de debilidades-- levantado al vuelo desde el SO, que es
         // exactamente lo que el spawn registra. El fuego se planta de verdad en el servicio de
         // casillas para que el Burn salga del provider real y no de una maqueta.
-        private static void AddSampleStates(EnemyDataSO data, List<StatusIconState> attack,
+        private static void AddSampleStates(EnemyDataSO data, List<StatusIconState> bottom,
                                             List<StatusIconState> into)
         {
             var settings = Resources.Load<EnemyStatusRowSettingsSO>(
@@ -266,7 +264,7 @@ namespace Rollgeon.EditorTools.HUD
             try
             {
                 var kit = new EnemyKitStatusProvider(catalog, data);
-                kit.CollectWeakness(owner, attack);
+                kit.CollectWeakness(owner, bottom);
                 kit.Collect(owner, into);
 
                 var fire = FindFireDefinition(data);

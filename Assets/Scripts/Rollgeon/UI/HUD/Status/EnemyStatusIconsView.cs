@@ -28,7 +28,7 @@ namespace Rollgeon.UI.HUD.Status
     public sealed class EnemyStatusIconsView : MonoBehaviour
     {
         private readonly List<IStatusIconProvider> _providers = new();
-        private readonly List<StatusIconState> _attack = new();
+        private readonly List<StatusIconState> _weakness = new();
         private readonly List<StatusIconState> _applied = new();
         private readonly List<StatusEffectIconView> _slots = new();
         private readonly List<AIIntent> _standing = new();
@@ -138,16 +138,16 @@ namespace Rollgeon.UI.HUD.Status
         private void OnDisable() => Teardown();
 
         /// <summary>
-        /// Lo que el enemigo <b>va a hacer</b>: la columna de arriba del panel.
+        /// La tarjeta que cuelga <b>debajo</b> de la caja: la debilidad.
         /// </summary>
         /// <remarks>
         /// Se recalcula en cada llamada, así que el tooltip siempre está al día en el momento del
         /// hover, cubra o no cubra un evento lo que cambió.
         /// </remarks>
-        public IReadOnlyList<StatusIconState> CollectAttack()
+        public IReadOnlyList<StatusIconState> CollectWeakness()
         {
             Recollect();
-            return _attack;
+            return _weakness;
         }
 
         /// <summary>
@@ -164,13 +164,13 @@ namespace Rollgeon.UI.HUD.Status
         // veces por hover es barato: SetHover dispara en el flanco del mouse, no por frame.
         private void Recollect()
         {
-            _attack.Clear();
+            _weakness.Clear();
             _applied.Clear();
 
-            // La columna principal es la debilidad: lo único del panel que cambia qué TIRÁS. Todo
-            // lo que va a pasar --el próximo ataque incluido-- es del costado, y el ataque arriba
-            // de esa columna porque es lo más urgente de lo que va a pasar.
-            _kit?.CollectWeakness(_entityGuid, _attack);
+            // La debilidad va sola, colgada debajo de la caja: lo único del panel que cambia qué
+            // TIRÁS no comparte columna con lo que va a pasar. El próximo ataque encabeza el
+            // costado porque es lo más urgente de lo que va a pasar.
+            _kit?.CollectWeakness(_entityGuid, _weakness);
 
             CollectIntents();
             foreach (var provider in _providers) provider.Collect(_entityGuid, _applied);
@@ -185,7 +185,7 @@ namespace Rollgeon.UI.HUD.Status
             // La fila sigue siendo UNA aunque el panel tenga dos columnas: el ícono que flota
             // sobre el bicho y el de su tarjeta tienen que ser el mismo sprite, que es lo que hace
             // que el sistema se entienda sin tutorial. Su ataque primero, que es lo que se lee.
-            int shown = Draw(_attack, 0);
+            int shown = Draw(_weakness, 0);
             shown = Draw(_applied, shown);
 
             for (int i = shown; i < _slots.Count; i++)

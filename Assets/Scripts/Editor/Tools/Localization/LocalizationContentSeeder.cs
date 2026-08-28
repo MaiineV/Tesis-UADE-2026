@@ -674,6 +674,12 @@ namespace Rollgeon.EditorTools.Localization
                 "{0} le pega ×{1}.",
                 "{0} hits it for ×{1}.");
 
+            // La frase tactica del panel: como pelea, en una linea. Distinta del .desc (el lore
+            // del parrafo) a proposito — el panel no lleva lore.
+            Content("boss.croupier.brief",
+                "Quema la sala y se teletransporta cuando lo alcanzás.",
+                "Burns the room and teleports when someone reaches him.");
+
             Content("enemy.fire_tiles.name", "Casillas de fuego", "Fire Tiles");
             // {0} = daño al entrar, {1} = al empezar el turno encima — la misma pareja que
             // status.burn.desc, porque son las dos caras del mismo fuego.

@@ -33,7 +33,8 @@ namespace Rollgeon.Entities.Visuals
         public void Bind(EnemyDataSO data) => _data = data;
 
         /// <summary>
-        /// El contenido del panel: nombre y familia. <b>Sin descripción y sin vitales.</b>
+        /// El contenido del panel: nombre, familia y una frase táctica de una línea (la key
+        /// <c>.brief</c>). <b>Sin lore y sin vitales.</b>
         /// </summary>
         /// <remarks>
         /// El panel no lleva lore, y no es una cuestión de espacio: cualquier frase que resuma al
@@ -61,9 +62,18 @@ namespace Rollgeon.Entities.Visuals
                 ? data.DisplayName
                 : LocalizedContent.Name(id, data.DisplayName);
 
+            // La frase táctica, no el lore: una línea de cómo pelea, autorada por bicho en la
+            // key .brief. Sin entry no se dibuja nada — el fallback vacío ES la decisión de que
+            // un enemigo sin frase no muestre una.
+            string brief = string.IsNullOrEmpty(id)
+                ? string.Empty
+                : LocalizedContent.FromTable(
+                    LocalizedContent.ContentTable, id + ".brief", string.Empty);
+
             return new TooltipContent(
                 name: name,
-                type: EnemyArchetypeText.Describe(data.Archetype, data.IsBoss));
+                type: EnemyArchetypeText.Describe(data.Archetype, data.IsBoss),
+                flavor: brief);
         }
 
         public string BuildTooltip()

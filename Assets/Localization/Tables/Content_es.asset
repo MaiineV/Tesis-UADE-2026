@@ -1098,6 +1098,10 @@ MonoBehaviour:
       turno sobre ella."
     m_Metadata:
       m_Items: []
+  - m_Id: 16155814888665088
+    m_Localized: "Quema la sala y se teletransporta cuando lo alcanz\xE1s."
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []
