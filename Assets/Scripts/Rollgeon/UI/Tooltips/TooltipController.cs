@@ -486,22 +486,40 @@ namespace Rollgeon.UI.Tooltips
         /// </summary>
         internal void EditorPreview(string text, Vector2 screenPos, TooltipPlacementMode placement)
         {
+            EditorPreviewBegin();
+            Show(text, screenPos, EditorPreviewOwnerId, placement);
+        }
+
+        /// <summary>
+        /// El panel entero sin play mode: banda, familia, vitales, la columna y el costado.
+        /// </summary>
+        /// <remarks>
+        /// Público y no <c>internal</c> como su hermano de texto porque a este lo llama el autorado,
+        /// que vive en el assembly de editor y no ve los internals de este.
+        /// </remarks>
+        public void EditorPreview(in TooltipContent content, Vector2 screenPos,
+                                  TooltipPlacementMode placement)
+        {
+            EditorPreviewBegin();
+            Show(content, screenPos, EditorPreviewOwnerId, placement);
+        }
+
+        // Sin esto el panel se "activa" pero nunca se ve: activeSelf=true con un ancestro apagado
+        // sigue siendo invisible. Activar ANTES de Show para que el layout rebuild del clamp mida
+        // el tamaño real.
+        private void EditorPreviewBegin()
+        {
             EnsureRefs();
 
-            // Sin esto el panel se "activa" pero nunca se ve: activeSelf=true con un
-            // ancestro apagado sigue siendo invisible. Activar ANTES de Show para que
-            // el layout rebuild del clamp mida el tamaño real.
             for (var t = transform; t != null; t = t.parent)
             {
                 if (t.gameObject.activeSelf) continue;
                 t.gameObject.SetActive(true);
                 _editorPreviewActivated.Add(t.gameObject);
             }
-
-            Show(text, screenPos, EditorPreviewOwnerId, placement);
         }
 
-        internal void EditorPreviewHide()
+        public void EditorPreviewHide()
         {
             EnsureRefs();
             HideForce();

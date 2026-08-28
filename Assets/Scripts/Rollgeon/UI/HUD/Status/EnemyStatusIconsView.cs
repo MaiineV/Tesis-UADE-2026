@@ -217,23 +217,31 @@ namespace Rollgeon.UI.HUD.Status
         // Lo que le pertenece a otra cosa del paño se lee en ESA cosa. Las bombas del Croupier
         // publican una cruz cada una y el jefe las tickea a todas, así que sin esto su columna
         // eran tres tarjetas de bombas y su próximo ataque perdido al final.
-        private void AddIfOwn(in AIIntent intent, List<StatusIconState> into)
+        //
+        // Estático y público porque el preview de editor arma este mismo panel sin combate: con
+        // su propia copia de esto, el panel que mirás para diseñar dejaría de ser el que el juego
+        // dibuja en cuanto una de las dos cambie.
+        public static void AddIfOwn(in AIIntent intent, Guid owner, StatusIconCatalogSO catalog,
+                                    List<StatusIconState> into)
         {
-            if (intent.SubjectGuid != Guid.Empty && intent.SubjectGuid != _entityGuid) return;
-            into.Add(ToState(intent));
+            if (intent.SubjectGuid != Guid.Empty && intent.SubjectGuid != owner) return;
+            into.Add(ToState(intent, catalog));
         }
+
+        private void AddIfOwn(in AIIntent intent, List<StatusIconState> into)
+            => AddIfOwn(intent, _entityGuid, _catalog, into);
 
         // El badge cuenta turnos hasta que pase, no turnos restantes de un estado: TurnsAway 0 es
         // "en su próximo turno", que para el jugador es un turno de distancia.
         //
         // Daño 0 viaja como null y no como cero: una intención que no pega por sí misma —el
         // estallido, que lo que cobra es el fuego que deja— no tiene que mostrar un "0".
-        private StatusIconState ToState(in AIIntent intent)
+        public static StatusIconState ToState(in AIIntent intent, StatusIconCatalogSO catalog)
             => new StatusIconState(
                 intent.LabelKey,
                 LocalizedContent.Name(intent.LabelKey, intent.LabelFallback),
                 AIIntentText.Describe(intent),
-                _catalog != null ? _catalog.Resolve(intent.LabelKey) : null,
+                catalog != null ? catalog.Resolve(intent.LabelKey) : null,
                 active: true,
                 remainingTurns: intent.TurnsAway + 1,
                 damage: intent.Damage > 0 ? intent.Damage : (int?)null);
