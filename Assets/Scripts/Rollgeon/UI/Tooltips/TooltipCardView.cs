@@ -28,6 +28,10 @@ namespace Rollgeon.UI.Tooltips
         [SerializeField, Required] private GameObject _badge;
         [SerializeField, Required] private TextMeshProUGUI _badgeLabel;
 
+        [Tooltip("Lo que pega, a la derecha del título. Se apaga cuando la intención no pega por " +
+                 "sí misma.")]
+        [SerializeField] private TextMeshProUGUI _damageLabel;
+
         [Tooltip("Línea entre el título y la regla. Se apaga con la regla: un divisor sin nada " +
                  "debajo parte la tarjeta en dos por nada.")]
         [SerializeField] private GameObject _divider;
@@ -77,6 +81,14 @@ namespace Rollgeon.UI.Tooltips
                     if (_badgeLabel != null) _badgeLabel.text = badge;
                     _badge.SetActive(badge.Length > 0);
                 }
+            }
+
+            // Nunca dentro de la frase: si algún día el disparo pega 30 en vez de 24, cambia este
+            // número y no hay que retraducir nada. Es el mismo trato que el badge del stack.
+            if (_damageLabel != null)
+            {
+                _damageLabel.text = state.Damage?.ToString() ?? string.Empty;
+                _damageLabel.gameObject.SetActive(state.Damage.HasValue);
             }
 
             bool hasRule = !string.IsNullOrEmpty(state.Description);

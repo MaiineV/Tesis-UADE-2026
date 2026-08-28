@@ -45,16 +45,18 @@ namespace Rollgeon.UI.Tests
         }
 
         [Test]
-        public void ElDisparo_DiceSuDanio()
+        public void ElDisparo_EsUnaTarjetaDeSoloTitulo()
         {
             var intent = new AIIntent(AIIntentTextKeys.RangedShot, "Te dispara",
                                       damage: 24, kind: AttackKind.BasicAttack);
 
             string rule = AIIntentText.Describe(intent);
 
-            StringAssert.Contains("24", rule,
-                "El disparo no dice por cuánto pega. Es el único ataque del jefe que el jugador " +
-                "puede esquivar moviéndose, y sin el número no sabe si vale la pena.");
+            // El número no desapareció: se mudó al costado del título de la tarjeta, que es dónde
+            // un rebalanceo lo cambia sin retraducir nada (ver TooltipCardViewDamageTests).
+            Assert.IsEmpty(rule,
+                "\"Te dispara\" más su número ya lo dicen entero, y \"desde lejos\" lo dice la " +
+                "familia del bicho arriba del panel. No quedaba nada para una frase.");
         }
 
         [Test]
@@ -96,11 +98,13 @@ namespace Rollgeon.UI.Tests
         [Test]
         public void SinNadaQueDejar_NoArrastraLaFraseDeLoQueDeja()
         {
+            // Con Ignite y no con el disparo: el disparo es tarjeta de sólo título, así que los dos
+            // lados quedarían vacíos y el test pasaría sin mirar nada.
             var conLeaves = AIIntentText.Describe(new AIIntent(
-                AIIntentTextKeys.RangedShot, "Te dispara", 30, AttackKind.BasicAttack,
+                AIIntentTextKeys.Ignite, "Prende el suelo", 30, AttackKind.Environmental,
                 leaves: Fire(enter: 7, turnStart: 9), leavesRounds: 4));
             var sinLeaves = AIIntentText.Describe(new AIIntent(
-                AIIntentTextKeys.RangedShot, "Te dispara", 30, AttackKind.BasicAttack));
+                AIIntentTextKeys.Ignite, "Prende el suelo", 30, AttackKind.Environmental));
 
             Assert.Less(sinLeaves.Length, conLeaves.Length,
                 "Una intención que no deja nada en el piso arrastró igual la frase de lo que " +

@@ -189,6 +189,9 @@ namespace Rollgeon.UI.HUD.Status
 
         // El badge cuenta turnos hasta que pase, no turnos restantes de un estado: TurnsAway 0 es
         // "en su próximo turno", que para el jugador es un turno de distancia.
+        //
+        // Daño 0 viaja como null y no como cero: una intención que no pega por sí misma —el
+        // estallido, que lo que cobra es el fuego que deja— no tiene que mostrar un "0".
         private StatusIconState ToState(in AIIntent intent)
             => new StatusIconState(
                 intent.LabelKey,
@@ -196,7 +199,8 @@ namespace Rollgeon.UI.HUD.Status
                 AIIntentText.Describe(intent),
                 _catalog != null ? _catalog.Resolve(intent.LabelKey) : null,
                 active: true,
-                remainingTurns: intent.TurnsAway + 1);
+                remainingTurns: intent.TurnsAway + 1,
+                damage: intent.Damage > 0 ? intent.Damage : (int?)null);
 
         // Punto de extensión: un jefe nuevo es un IStatusIconProvider más, sin tocar nada de UI.
         private void BuildProviders()

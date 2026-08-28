@@ -111,6 +111,11 @@ namespace Rollgeon.EditorTools.HUD
             titleLabel.fontStyle = FontStyles.Bold;
             Ensure<LayoutElement>(titleLabel.gameObject).flexibleWidth = 1f;
 
+            // Último de la fila y sin flexibleWidth: el título se queda con el sobrante, así que
+            // el número termina pegado al borde derecho sin un spacer de por medio.
+            var damageLabel = EnsureLabel(headerRect, "Damage", 34f, TextAlignmentOptions.Right, CardInk);
+            damageLabel.fontStyle = FontStyles.Bold;
+
             var dividerRect = EnsureChildRect(rootRect, "Divider", Vector2.zero, new Vector2(0f, 3f));
             Ensure<LayoutElement>(dividerRect.gameObject).preferredHeight = 3f;
             var dividerImage = Ensure<Image>(dividerRect.gameObject);
@@ -130,6 +135,7 @@ namespace Rollgeon.EditorTools.HUD
             so.FindProperty("_icon").objectReferenceValue = iconImage;
             so.FindProperty("_badge").objectReferenceValue = badgeRect.gameObject;
             so.FindProperty("_badgeLabel").objectReferenceValue = badgeLabel;
+            so.FindProperty("_damageLabel").objectReferenceValue = damageLabel;
             so.FindProperty("_divider").objectReferenceValue = dividerRect.gameObject;
             so.ApplyModifiedPropertiesWithoutUndo();
 

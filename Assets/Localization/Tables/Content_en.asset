@@ -1041,7 +1041,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 15516266126876674
-    m_Localized: Shoots you from range for <b>{0}</b>.
+    m_Localized: 
     m_Metadata:
       m_Items: []
   - m_Id: 15516266126876675

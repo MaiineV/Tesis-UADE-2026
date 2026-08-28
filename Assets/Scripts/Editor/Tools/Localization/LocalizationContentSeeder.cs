@@ -709,10 +709,10 @@ namespace Rollgeon.EditorTools.Localization
                 "Prende la banda que marcó, por <b>{0}</b>.",
                 "Lights up the band he marked, for <b>{0}</b>.");
 
+            // Descripcion vacia a proposito, igual que el estallido: el titulo dice que hace, el
+            // numero de la tarjeta dice cuanto, y "desde lejos" lo dice la familia del bicho.
             Content(AIIntentTextKeys.RangedShot + ".name", "Te dispara", "Shoots You");
-            Content(AIIntentTextKeys.RangedShot + ".desc",
-                "Te dispara desde lejos por <b>{0}</b>.",
-                "Shoots you from range for <b>{0}</b>.");
+            Content(AIIntentTextKeys.RangedShot + ".desc", string.Empty, string.Empty);
 
             Content(AIIntentTextKeys.BombField + ".name", "Siembra bombas", "Sows Bombs");
             Content(AIIntentTextKeys.BombField + ".desc",

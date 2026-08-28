@@ -43,11 +43,19 @@ namespace Rollgeon.UI.HUD.Status
         /// <summary>Ver <see cref="StatusCardStyle"/>.</summary>
         public readonly StatusCardStyle Style;
 
-        // Los dos últimos van al final y con default para que los providers que ya existen y sus
+        /// <summary>
+        /// Lo que pega, pegado al título y <b>nunca</b> dentro de la frase. <c>null</c> = no pega
+        /// por sí mismo. Mismo argumento que <see cref="StackCount"/>: rebalancear cambia un
+        /// número del dato y no toca una línea de texto en ningún idioma.
+        /// </summary>
+        public readonly int? Damage;
+
+        // Los últimos van al final y con default para que los providers que ya existen y sus
         // tests compilen sin tocarse.
         public StatusIconState(string id, string displayName, string description,
                                Sprite icon, bool active, int? remainingTurns = null,
-                               int? stackCount = null, StatusCardStyle style = StatusCardStyle.Unit)
+                               int? stackCount = null, StatusCardStyle style = StatusCardStyle.Unit,
+                               int? damage = null)
         {
             Id = id;
             DisplayName = displayName;
@@ -57,6 +65,7 @@ namespace Rollgeon.UI.HUD.Status
             RemainingTurns = remainingTurns;
             StackCount = stackCount;
             Style = style;
+            Damage = damage;
         }
     }
 }
