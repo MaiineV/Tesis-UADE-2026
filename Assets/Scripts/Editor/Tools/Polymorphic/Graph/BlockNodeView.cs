@@ -18,11 +18,12 @@ namespace Rollgeon.Editor.Tools.Polymorphic.Graph
     /// </remarks>
     public sealed class BlockNodeView : Node
     {
-        /// <summary>Node box height when expanded. Matches <see cref="BlockGraphLayout.NODE_HEIGHT"/>
-        /// — the layout reserves that much row pitch regardless of collapse state, so a node is
-        /// only ever allowed to <i>shrink</i> below it, never grow past it (see the height comment
-        /// on <see cref="BlockGraphLayout"/>: growing past the row is what overlaps the node below;
-        /// shrinking just leaves blank canvas, which is safe).</summary>
+        /// <summary>Node box height when collapsed — just enough for the title bar and ports.
+        /// Expanded height is <see cref="BlockGraphLayout.HeightOf"/> for this node, not a shared
+        /// constant: the layout reserves exactly that much row pitch, so a node is only ever
+        /// allowed to <i>shrink</i> below its own reserved height, never grow past it (shrinking
+        /// just leaves blank canvas, which is safe; growing past the row is what would overlap the
+        /// node below).</summary>
         const float CollapsedHeight = 40f;
 
         public BlockGraphNode Model { get; }
@@ -42,6 +43,27 @@ namespace Rollgeon.Editor.Tools.Polymorphic.Graph
         readonly VisualElement _body;
         readonly Button _collapseButton;
 
+        /// <summary>Edge colour into a <see cref="BlockNodeKind.Condition"/> — a gate term, dim and
+        /// desaturated so it reads as "checked", not "executed".</summary>
+        static readonly Color GateEdgeColor = new Color(0.62f, 0.56f, 0.30f);
+
+        /// <summary>Edge colour into everything else — the real execution line.</summary>
+        static readonly Color FlowEdgeColor = new Color(0.45f, 0.65f, 0.85f);
+
+        /// <summary>
+        /// What the incoming port says about how this block gets reached. A condition is one term
+        /// of an AND — "AND" beats a blank port precisely because there's no order between siblings
+        /// to show. An effect runs at a specific step of a list — its 1-based position in
+        /// <see cref="BlockGraphNode.SourceIndex"/> says exactly when, which a bare arrow can't.
+        /// </summary>
+        static string InputPortLabel(BlockGraphNode model)
+        {
+            if (model.Kind == BlockNodeKind.Condition) return "AND";
+            if (model.Kind == BlockNodeKind.Effect && model.SourceIndex >= 0)
+                return (model.SourceIndex + 1).ToString();
+            return string.Empty;
+        }
+
         public BlockNodeView(BlockGraphNode model, bool startCollapsed)
         {
             Model = model;
@@ -56,7 +78,11 @@ namespace Rollgeon.Editor.Tools.Polymorphic.Graph
             capabilities &= ~Capabilities.Movable;
 
             InputPort = InstantiatePort(Orientation.Horizontal, Direction.Input, Port.Capacity.Single, typeof(bool));
-            InputPort.portName = string.Empty;
+            InputPort.portName = InputPortLabel(model);
+            // A condition's incoming edge is an AND-gate term, not a flow step, and it should not
+            // read like one — colour it apart from the effect/default flow colour so the canvas
+            // stops implying an execution line between conditions and effects (they're not one).
+            InputPort.portColor = model.Kind == BlockNodeKind.Condition ? GateEdgeColor : FlowEdgeColor;
             inputContainer.Add(InputPort);
 
             OutputPort = InstantiatePort(Orientation.Horizontal, Direction.Output, Port.Capacity.Multi, typeof(bool));
@@ -165,9 +191,9 @@ namespace Rollgeon.Editor.Tools.Polymorphic.Graph
         {
             _body.style.display = _collapsed ? DisplayStyle.None : DisplayStyle.Flex;
             _collapseButton.text = _collapsed ? "▸" : "▾";
-            // Shrink only — never grow past BlockGraphLayout.NODE_HEIGHT, or this node would
+            // Shrink only — never grow past BlockGraphLayout.HeightOf(Model), or this node would
             // overlap the one the layout placed below it.
-            style.height = _collapsed ? CollapsedHeight : BlockGraphLayout.NODE_HEIGHT;
+            style.height = _collapsed ? CollapsedHeight : BlockGraphLayout.HeightOf(Model);
             if (raiseEvent) OnCollapseChanged?.Invoke(_collapsed);
         }
 

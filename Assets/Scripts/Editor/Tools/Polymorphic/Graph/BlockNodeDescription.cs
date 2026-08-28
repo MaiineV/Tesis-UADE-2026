@@ -69,18 +69,24 @@ namespace Rollgeon.Editor.Tools.Polymorphic.Graph
             return null;
         }
 
-        /// <summary>EffectData already titles itself with its Label; the body says how many parts
-        /// feed it, since that's the one thing the title can't show.</summary>
+        /// <summary>
+        /// EffectData already titles itself with its Label; the body says how it resolves, since
+        /// that's the one thing the title can't show — and it isn't one flat list. PreConditions
+        /// are an AND-gate (every one has to pass, order doesn't matter); Effects are a sequence
+        /// (they run in list order, only once the gate passed). Saying "if N pass -> M in order"
+        /// instead of "N conditions · M effects" is the point: the old wording read like two equal
+        /// siblings, which is exactly the confusion the canvas's gate/flow split exists to fix.
+        /// </summary>
         static string DescribeGroup(object value)
         {
             int preConditions = CountOf(value, "PreConditions");
             int effects = CountOf(value, "Effects");
+            string sequence = effects == 1 ? "1 effect, in order" : $"{effects} effects, in order";
 
-            var sb = new StringBuilder();
-            if (preConditions > 0)
-                sb.Append(preConditions).Append(preConditions == 1 ? " condition" : " conditions").Append("  ·  ");
-            sb.Append(effects).Append(effects == 1 ? " effect" : " effects");
-            return sb.ToString();
+            if (preConditions == 0) return sequence;
+
+            string gate = preConditions == 1 ? "if 1 condition passes" : $"if all {preConditions} conditions pass";
+            return $"{gate} → {sequence}";
         }
 
         static int CountOf(object owner, string fieldName)
