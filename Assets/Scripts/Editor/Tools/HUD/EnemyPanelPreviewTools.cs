@@ -4,6 +4,7 @@ using Rollgeon.Combat.AI;
 using Rollgeon.Combat.AI.Decisions;
 using Rollgeon.Entities;
 using Rollgeon.Localization;
+using Rollgeon.Tiles;
 using Rollgeon.UI.HUD.Status;
 using Rollgeon.UI.Tooltips;
 using UnityEditor;
@@ -45,7 +46,7 @@ namespace Rollgeon.EditorTools.HUD
         /// combate ninguno tiene nada que decir. Sin esto la columna que motivó todo el trabajo
         /// es la única parte del panel que no se puede mirar sin llegar al jefe en una run.
         /// </remarks>
-        [MenuItem("Rollgeon/Tooltips/Preview Enemy Panel + Applied States")]
+        [MenuItem("Rollgeon/Tooltips/Preview Enemy Panel + Standing Effects")]
         public static void PreviewWithStates() => Preview(withSampleStates: true);
 
         private static void Preview(bool withSampleStates)
@@ -70,7 +71,7 @@ namespace Rollgeon.EditorTools.HUD
             var attack = new List<StatusIconState>();
             var applied = new List<StatusIconState>();
             CollectCards(data, attack, applied);
-            if (withSampleStates) AddSampleStates(applied);
+            if (withSampleStates) AddSampleStates(data, applied);
 
             var content = BuildContent(data, attack, applied);
 
@@ -235,31 +236,48 @@ namespace Rollgeon.EditorTools.HUD
                 EnemyStatusIconsView.AddIfOwn(intent, owner, catalog, applied);
         }
 
-        // Lo simulado es que estén puestos, no lo que dicen: la key, el sprite del catálogo y el
-        // texto localizado son los mismos que publican StunStatusProvider y TileStandStatusProvider
-        // en combate, así que lo que se mide acá es el ancho real de la columna.
-        private static void AddSampleStates(List<StatusIconState> into)
+        // Lo simulado es que el fuego este puesto, no lo que dice: la definicion es la que este
+        // enemigo deja de verdad, y la tarjeta la arma el MISMO BurnState que usa el provider en
+        // combate. Lo que se mide aca es la tarjeta real, no una maqueta.
+        private static void AddSampleStates(EnemyDataSO data, List<StatusIconState> into)
         {
+            var fire = FindFireDefinition(data);
+            if (fire == null)
+            {
+                Debug.LogWarning("[EnemyPanelPreview] " + data.name + " no deja fuego, asi que no " +
+                                 "hay nada propio que mostrar al costado.");
+                return;
+            }
+
             var settings = Resources.Load<EnemyStatusRowSettingsSO>(
                 EnemyStatusRowSettingsSO.ResourcePath);
             var catalog = settings != null ? settings.Catalog : null;
 
-            into.Add(new StatusIconState(
-                StunStatusProvider.StateId,
-                LocalizedContent.Name(StunStatusProvider.StateId, "Aturdido"),
-                LocalizedContent.Description(StunStatusProvider.StateId, "Perdés tu próximo turno."),
-                catalog != null ? catalog.Resolve(StunStatusProvider.StateId) : null,
-                active: true,
-                remainingTurns: 1));
-
-            into.Add(new StatusIconState(
-                TileStandStatusProvider.BurnId,
-                LocalizedContent.Name(TileStandStatusProvider.BurnId, "Quemándose"),
-                LocalizedContent.DescriptionFormat(TileStandStatusProvider.BurnId,
-                    "<b>{0}</b> al entrar en una casilla. <b>{1}</b> si empezás tu turno sobre ella.",
-                    6, 10),
+            into.Add(TileStandStatusProvider.BurnState(
+                fire,
                 catalog != null ? catalog.Resolve(TileStandStatusProvider.BurnId) : null,
-                active: true));
+                StatusCardStyle.Terrain,
+                remainingRounds: fire.DefaultDurationRounds > 0
+                    ? fire.DefaultDurationRounds
+                    : (int?)null));
+        }
+
+        // Por dependencias del asset y no caminando el arbol a mano: el fuego cuelga de un nodo
+        // adentro del SO, y repetir aca el recorrido de AIIntentWalker seria una segunda copia que
+        // se desincroniza en cuanto alguien mueva un nodo de lugar.
+        private static SpecialTileDefinitionSO FindFireDefinition(EnemyDataSO data)
+        {
+            string path = AssetDatabase.GetAssetPath(data);
+            if (string.IsNullOrEmpty(path)) return null;
+
+            foreach (var dependency in AssetDatabase.GetDependencies(path, recursive: true))
+            {
+                var definition = AssetDatabase.LoadAssetAtPath<SpecialTileDefinitionSO>(dependency);
+                if (definition == null) continue;
+                if (definition.TileType == SpecialTileType.Fire ||
+                    definition.TileType == SpecialTileType.FireTemp) return definition;
+            }
+            return null;
         }
 
         // La escena abierta puede no tener el canvas del tooltip (00_Bootstrap no lo tiene). En

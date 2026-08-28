@@ -665,7 +665,7 @@ namespace Rollgeon.EditorTools.Localization
                 "You cannot use a portal again until this wears off.");
 
             // Estados "parado sobre" (sin turnos: duran lo que dure la estadía en la casilla).
-            Content("status.burn.name", "Quemándose", "Burning");
+            Content("status.burn.name", "Quemadura", "Burn");
             // {0} = daño al entrar, {1} = daño al empezar el turno encima. Los pasa
             // TileStandStatusProvider.BurnState desde la definición que se está pisando: cuatro
             // fuegos comparten el tipo y cobran 8/12, 6/10 y 15/15. El <b> va en la tabla para

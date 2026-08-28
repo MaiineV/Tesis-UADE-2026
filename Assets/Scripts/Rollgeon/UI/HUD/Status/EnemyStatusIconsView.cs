@@ -254,6 +254,10 @@ namespace Rollgeon.UI.HUD.Status
             _providers.Add(new StunStatusProvider(_catalog));
             _providers.Add(new TileStandStatusProvider(_catalog));
             _providers.Add(new DiceBlockStatusProvider(_catalog));
+
+            // Lo que el bicho dejó ardiendo tambien es de su columna: los otros cuatro dicen lo que
+            // le pasa A el, este dice lo que el mantiene en el paño.
+            _providers.Add(new OwnedTilesStatusProvider(_catalog));
         }
 
         private void EnsureSlots(int needed)
