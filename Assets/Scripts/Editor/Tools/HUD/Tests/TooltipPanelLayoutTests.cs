@@ -1,4 +1,5 @@
 using NUnit.Framework;
+using TMPro;
 using Rollgeon.UI.Tooltips;
 using UnityEditor;
 using UnityEngine;
@@ -83,7 +84,7 @@ namespace Rollgeon.Editor.Tools.HUD.Tests
             var found = card.Find(child);
             Assert.IsNotNull(found, $"La tarjeta del tooltip no tiene '{child}'.");
 
-            var label = found.GetComponent<TMPro.TMP_Text>();
+            var label = found.GetComponent<TMP_Text>();
             Assert.IsNotNull(label, $"'{child}' no es un TMP_Text.");
             return label.fontSize;
         }

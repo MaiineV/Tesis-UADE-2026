@@ -5,6 +5,7 @@
         "Rollgeon",
         "Rollgeon.Editor",
         "UnityEngine.UI",
+        "Unity.TextMeshPro",
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner"
     ],

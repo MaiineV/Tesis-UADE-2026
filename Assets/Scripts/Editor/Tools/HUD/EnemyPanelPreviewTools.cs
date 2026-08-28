@@ -72,10 +72,19 @@ namespace Rollgeon.EditorTools.HUD
             if (withSampleStates) AddSampleStates(applied);
 
             var content = BuildContent(data, attack, applied);
+
+            // Las tarjetas de la vuelta anterior sobreviven en el canvas y no son instancias de
+            // prefab: sin tirarlas, editar la tarjeta y volver acá muestra las de antes.
+            controller.EditorPreviewResetCards();
             controller.EditorPreview(
                 content,
                 new Vector2(Screen.width * 0.5f, Screen.height * 0.55f),
                 TooltipPlacementMode.AutoFit);
+
+            // Fuera de play mode nadie tira un frame solo: sin esto el Game view se queda con el
+            // dibujo viejo y el panel parece no haber cambiado.
+            EditorApplication.QueuePlayerLoopUpdate();
+            UnityEditorInternal.InternalEditorUtility.RepaintAllViews();
 
             // El resumen va al log además del Game view: si la ventana no está abierta, cuántas
             // tarjetas quedaron en cada columna sigue siendo la respuesta a "esto cambió o no".

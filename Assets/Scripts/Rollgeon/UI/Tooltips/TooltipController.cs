@@ -519,6 +519,29 @@ namespace Rollgeon.UI.Tooltips
             }
         }
 
+        /// <summary>
+        /// Tira las tarjetas ya instanciadas para que la próxima vuelta las cree del prefab de hoy.
+        /// </summary>
+        /// <remarks>
+        /// Los slots se crean con <c>Instantiate</c>, así que <b>no</b> son instancias de prefab y
+        /// no heredan nada de lo que se le cambie al asset después. Sin esto, tocar la tarjeta y
+        /// volver a previsualizar sigue mostrando las viejas — el panel se ve idéntico y parece
+        /// que el cambio no entró.
+        /// </remarks>
+        public void EditorPreviewResetCards()
+        {
+            EnsureRefs();
+            ResetSlots(_cardSlots);
+            ResetSlots(_sideCardSlots);
+        }
+
+        private static void ResetSlots(List<TooltipCardView> slots)
+        {
+            foreach (var slot in slots)
+                if (slot != null) DestroyImmediate(slot.gameObject);
+            slots.Clear();
+        }
+
         public void EditorPreviewHide()
         {
             EnsureRefs();
