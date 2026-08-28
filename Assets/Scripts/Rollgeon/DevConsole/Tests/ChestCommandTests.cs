@@ -46,6 +46,18 @@ namespace Rollgeon.DevConsole.Tests
         }
 
         [Test]
+        public void chest_spawn_should_parse_god_tier()
+        {
+            // Regresión: "god" tiene que estar en _tiers/TryParseTier — antes de
+            // agregar el caso, un "chest spawn god" fallaba con "tier desconocido"
+            // (comportamiento correcto por default: false, pero el tier debe existir).
+            var result = Run("spawn", "god");
+
+            Assert.IsTrue(result.Success, result.Message);
+            Assert.AreEqual(ItemRarity.God, _chests.LastSpawnTier);
+        }
+
+        [Test]
         public void chest_spawn_should_fail_on_unknown_tier()
         {
             // Act

@@ -52,6 +52,7 @@ namespace Rollgeon.Editor.Tools.Localization.Tests
             Rollgeon.UI.ChestReveal.ChestRevealTextKeys.RarityUncommon,
             Rollgeon.UI.ChestReveal.ChestRevealTextKeys.RarityRare,
             Rollgeon.UI.ChestReveal.ChestRevealTextKeys.RarityLegendary,
+            Rollgeon.UI.ChestReveal.ChestRevealTextKeys.RarityGod,
             // BUG-041: sufijo de multiplicador de combo (" × 1.5") — símbolo + número
             // puro, sin palabras que traducir (mismo criterio que "Combo").
             "tooltip.effect.combo.multiplier_suffix",

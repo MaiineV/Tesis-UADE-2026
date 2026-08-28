@@ -244,6 +244,13 @@ namespace Rollgeon.EditorTools.Chests
             {
                 // Placeholders del GDD: HP por tier a escala del daño actual, stats de
                 // Mimic 40/55/70/85% (TBD-15), oro de Mimic/fallback (TBD-16/TBD-01).
+                //
+                // Solo 4 tiers A PROPÓSITO: item-editor-spec.md §5.3 — el tier Dios NO
+                // está confirmado como mecánica de cofre por Diseño (el GDD del Cofre
+                // sigue en 4 tiers, y ese conflicto todavía no se comunicó al equipo).
+                // ChestConfigSO.RollTier ya no puede sortear un ItemRarity sin entry acá
+                // (ver su comentario), así que dejar afuera a God es seguro: ningún cofre
+                // va a salir tageado Dios sin un ChestTierDef real.
                 config.Tiers = new List<ChestTierDef>
                 {
                     NewTier(ItemRarity.Common, 20, 0.40f, 8, 12, 8),
@@ -277,6 +284,8 @@ namespace Rollgeon.EditorTools.Chests
                 if (pool.Buckets != null && pool.Buckets.Count > 0)
                     Debug.Log(LogPrefix + "Buckets legacy/incompletos — se reseedean referenciando LootPools.");
                 var catalog = FindItemCatalog();
+                // Mismos 4 tiers que config.Tiers arriba — sin bucket God no hay tier
+                // Dios para tenerlo (ver comentario de config.Tiers).
                 pool.Buckets = new List<ChestLootBucket>
                 {
                     NewBucket(catalog, ItemRarity.Common, 8, 14),
@@ -376,18 +385,35 @@ namespace Rollgeon.EditorTools.Chests
             return lootPool;
         }
 
+        /// <summary>
+        /// Distribución de rarezas del LootPool placeholder de cada tier de cofre.
+        /// Switch exhaustivo A PROPÓSITO: antes el <c>default:</c> cubría Common Y
+        /// cualquier valor no listado — con God agregado al enum eso significaba
+        /// heredar la tabla de Common en silencio si algún día se llamaba con ese
+        /// tier. El tier Dios no está seedeado desde <see cref="CreateAssets"/>
+        /// (ver su comentario), así que esta rama no debería ejecutarse hoy; si
+        /// alguna vez se llama, falla fuerte en vez de degradar.
+        /// </summary>
         private static RarityWeights TierWeights(ItemRarity tier)
         {
             switch (tier)
             {
+                case ItemRarity.Common:
+                    return new RarityWeights { Common = 70f, Uncommon = 25f, Rare = 5f, Legendary = 0f, God = 0f };
                 case ItemRarity.Uncommon:
-                    return new RarityWeights { Common = 40f, Uncommon = 40f, Rare = 18f, Legendary = 2f };
+                    return new RarityWeights { Common = 40f, Uncommon = 40f, Rare = 18f, Legendary = 2f, God = 0f };
                 case ItemRarity.Rare:
-                    return new RarityWeights { Common = 15f, Uncommon = 40f, Rare = 35f, Legendary = 10f };
+                    return new RarityWeights { Common = 15f, Uncommon = 40f, Rare = 35f, Legendary = 10f, God = 0f };
                 case ItemRarity.Legendary:
-                    return new RarityWeights { Common = 5f, Uncommon = 20f, Rare = 40f, Legendary = 35f };
+                    return new RarityWeights { Common = 5f, Uncommon = 20f, Rare = 40f, Legendary = 35f, God = 0f };
+                case ItemRarity.God:
+                    throw new System.NotSupportedException(
+                        "TierWeights(God): el tier de cofre Dios no está confirmado por Diseño " +
+                        "(item-editor-spec.md §5.3). Definir la escalera acá antes de sumarlo a " +
+                        "config.Tiers/pool.Buckets en CreateAssets().");
                 default:
-                    return new RarityWeights { Common = 70f, Uncommon = 25f, Rare = 5f, Legendary = 0f };
+                    throw new System.ArgumentOutOfRangeException(
+                        nameof(tier), tier, "ItemRarity sin tabla de pesos en ChestSetupTools.");
             }
         }
 

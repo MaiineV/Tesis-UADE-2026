@@ -63,6 +63,25 @@ namespace Rollgeon.Loot.Tests
         }
 
         [Test]
+        public void RollItem_ShouldTreatGodAsOwnCategory_NotCommon()
+        {
+            // Arrange — regresión del bug del default: en WeightFor. Common pesa 0
+            // y God pesa 1: antes del fix, un ítem God caía en el default: del
+            // switch y heredaba el peso de Common (0) ⇒ nunca salía.
+            var common = NewItem("loot.common", ItemRarity.Common);
+            var god = NewItem("loot.god", ItemRarity.God);
+            var pool = NewPool(new[] { common, god },
+                new RarityWeights { Common = 0f, Uncommon = 0f, Rare = 0f, Legendary = 0f, God = 1f });
+            var rng = new System.Random(5);
+
+            // Act + Assert
+            for (int i = 0; i < 100; i++)
+            {
+                Assert.AreSame(god, pool.RollItem(rng));
+            }
+        }
+
+        [Test]
         public void RollItem_ShouldIgnoreWeightedCategory_WhenItHasNoItems()
         {
             // Arrange — Legendary pesa 100 pero no hay ítems Legendary en la lista:

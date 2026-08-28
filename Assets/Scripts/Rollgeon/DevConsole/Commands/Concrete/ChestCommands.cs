@@ -17,7 +17,7 @@ namespace Rollgeon.DevConsole.Commands
     public sealed class ChestCommand : DevCommandBase
     {
         private static readonly string[] _subcommands = { "spawn", "kill", "info" };
-        private static readonly string[] _tiers = { "common", "uncommon", "rare", "legendary" };
+        private static readonly string[] _tiers = { "common", "uncommon", "rare", "legendary", "god" };
 
         private static readonly ArgSpec[] _args =
         {
@@ -94,6 +94,10 @@ namespace Rollgeon.DevConsole.Commands
                 $"| tile ({chest.Coord.X},{chest.Coord.Y}) | guid {chest.Guid:N}");
         }
 
+        // "default: return false" acá NO es el bug de switch-sin-caso-God que hay
+        // en otros lados: cualquier string no reconocido (God incluido, si no
+        // estuviera listado) falla explícitamente con el mensaje de arriba —
+        // no hay degradación silenciosa a otra rareza. God SÍ está listado.
         private static bool TryParseTier(string raw, out ItemRarity tier)
         {
             switch (raw.ToLowerInvariant())
@@ -102,6 +106,7 @@ namespace Rollgeon.DevConsole.Commands
                 case "uncommon": tier = ItemRarity.Uncommon; return true;
                 case "rare": tier = ItemRarity.Rare; return true;
                 case "legendary": tier = ItemRarity.Legendary; return true;
+                case "god": tier = ItemRarity.God; return true;
                 default: tier = ItemRarity.Common; return false;
             }
         }

@@ -328,10 +328,14 @@ namespace Rollgeon.EditorTools.Chests
             return rect;
         }
 
-        // rarity_0..rarity_3 del sheet, en orden ItemRarity (Common..Legendary).
+        // rarity_0..rarity_4 del sheet, en orden ItemRarity (Common..God). El sheet
+        // hoy solo tiene rarity_0..rarity_3 (item-editor-spec.md §5.2: God se suma
+        // en esta pasada) — el warning de abajo avisa "Falta rarity_4" hasta que el
+        // artista agregue el sprite; mientras tanto ChestReelCellView.Bind clampea
+        // el índice y muestra el de Legendary, pero YA NO en silencio: queda logueado.
         private static Sprite[] LoadRaritySprites()
         {
-            var sprites = new Sprite[4];
+            var sprites = new Sprite[5];
             foreach (var asset in AssetDatabase.LoadAllAssetsAtPath(RaritySheetPath))
             {
                 if (asset is Sprite sprite && sprite.name.StartsWith("rarity_")

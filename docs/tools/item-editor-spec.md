@@ -110,7 +110,7 @@ familias tampoco hace falta: los nombres de tiers del GDD ya son distintos entre
 
 ## 4. Localización
 
-**Hallazgo:** la tabla `Content` tiene 44 claves de ítems = los 22 × `.name` + `.desc`. Los 22
+**Hallazgo:** la tabla `Content` tiene 44 claves de ítems = 22 × `.name` + `.desc`. Esos 22
 ítems ya están localizados en `es` y `en`, así que los campos `DisplayName` y `Description` del
 asset **son texto muerto** — nunca se muestran, solo son respaldo si falta la clave.
 
@@ -247,6 +247,11 @@ Para el game designer, no para el que autora.
 - Valor esperado cruzando con la probabilidad de cada combo.
 - Contraste contra la tabla de precios del GDD (§2).
 - **Salud del catálogo**: ids repetidos, ítems fuera de la tienda, sin icono, hooks vacíos.
+
+> Dato verificado contra `ShopPool.asset`: **18 de los 24 ítems están en el pool** (1 garantizado
+> + 17 roleables). Los 6 de afuera — Amuleto de Reflejo, Coraza Reforzada, Egoísta, Instinto de
+> Supervivencia, Rodilleras de Acero y el del tutorial — no cuestan nada y no aparecen en tienda,
+> y nada lo avisa hoy.
 
 Reemplaza a `docs/balance/item-inventory.html`, generado a mano en julio, que dice "5 ítems"
 cuando hay 22. Matar ese mantenimiento manual es parte del valor.

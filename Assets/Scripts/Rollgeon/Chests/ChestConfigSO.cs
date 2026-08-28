@@ -24,14 +24,31 @@ namespace Rollgeon.Chests
         [MinValue(0f)] public float Rare = 0f;
         [MinValue(0f)] public float Legendary = 0f;
 
+        // Dios (item-editor-spec.md §5.1/§5.3): default 0 — ningún cofre pesa Dios
+        // hasta que Diseño confirme el tier (el GDD del Cofre sigue en 4 tiers).
+        // Field nuevo en una clase ya serializada: Odin lo completa con este
+        // default en las entries existentes de ChestConfig.asset, sin migración.
+        [MinValue(0f)] public float God = 0f;
+
+        /// <summary>
+        /// Peso del tier. Switch exhaustivo A PROPÓSITO: antes de agregar
+        /// <see cref="ItemRarity.God"/> el <c>default:</c> devolvía <see cref="Common"/>
+        /// para cualquier valor no listado — con 5 rarezas eso pesaba un cofre Dios
+        /// como Normal sin un solo error. Ahora cada caso es explícito y un valor
+        /// realmente inesperado revienta en vez de degradar en silencio.
+        /// </summary>
         public float WeightFor(ItemRarity tier)
         {
             switch (tier)
             {
+                case ItemRarity.Common: return Common;
                 case ItemRarity.Uncommon: return Uncommon;
                 case ItemRarity.Rare: return Rare;
                 case ItemRarity.Legendary: return Legendary;
-                default: return Common;
+                case ItemRarity.God: return God;
+                default:
+                    throw new ArgumentOutOfRangeException(
+                        nameof(tier), tier, "ItemRarity sin peso definido en ChestFloorTierWeights.");
             }
         }
     }
@@ -67,7 +84,11 @@ namespace Rollgeon.Chests
 
         [Title("Tiers")]
         [ListDrawerSettings(ShowFoldout = false)]
-        [Tooltip("Config por tier. Debe haber exactamente una entry por ItemRarity.")]
+        [Tooltip("Config por tier. Idealmente una entry por ItemRarity, pero el tier Dios " +
+                 "(item-editor-spec.md §5.3) NO está confirmado como mecánica de cofre por " +
+                 "Diseño todavía — hoy la lista tiene 4 entries a propósito. Un ItemRarity " +
+                 "sin entry acá cae a Tiers[0] en GetTierDef (fallback defensivo documentado, " +
+                 "no un bug) y RollTier ya no puede sortearlo (ver su comentario).")]
         public List<ChestTierDef> Tiers = new List<ChestTierDef>();
 
         [Tooltip("Pesos de tier según el piso (TBD-02 como data). Vacío = uniforme.")]
@@ -125,12 +146,26 @@ namespace Rollgeon.Chests
 
         /// <summary>
         /// Rolea el tier del cofre para el piso dado. Tabla vacía / pesos en 0 ⇒
-        /// uniforme entre los 4 tiers. Determinista respecto del <paramref name="rng"/>.
+        /// uniforme entre los tiers CONFIGURADOS. Determinista respecto del
+        /// <paramref name="rng"/>.
         /// </summary>
+        /// <remarks>
+        /// El universo de tiers roleables sale de <see cref="Tiers"/>, no de
+        /// <c>Enum.GetValues(typeof(ItemRarity))</c>. Con 5 valores de rareza y el
+        /// tier Dios sin <see cref="ChestTierDef"/> confirmado (ver comentario en
+        /// <see cref="Tiers"/>), sortear directo del enum podía devolver
+        /// <see cref="ItemRarity.God"/> en el fallback uniforme aunque no hubiera
+        /// def ni bucket de loot para ese tier: <see cref="GetTierDef"/> caía a
+        /// Tiers[0] en silencio (cofre visualmente Normal pero tageado Dios) y
+        /// <c>ChestLootPoolSO.Roll</c> degradaba a oro CERO (sin bucket God ⇒
+        /// oro 0) — el peor de los dos silencios posibles. Ahora un ItemRarity sin
+        /// entry en <see cref="Tiers"/> nunca puede salir sorteado.
+        /// </remarks>
         public ItemRarity RollTier(System.Random rng, int floorNumber)
         {
             var weights = ResolveWeights(floorNumber);
-            var tiers = (ItemRarity[])Enum.GetValues(typeof(ItemRarity));
+            var tiers = ConfiguredTierValues();
+            if (tiers.Length == 0) return ItemRarity.Common; // Config sin Tiers — no debería pasar en producción.
 
             if (weights == null) return tiers[rng.Next(tiers.Length)];
 
@@ -146,6 +181,19 @@ namespace Rollgeon.Chests
                 if (pick <= cursor) return tiers[i];
             }
             return tiers[tiers.Length - 1];
+        }
+
+        // Tiers válidos (no-null) en el orden autorado de la lista — el orden no
+        // afecta la probabilidad (uniforme o por peso acumulado), solo importa
+        // para que el fallback por drift de punto flotante sea determinista.
+        private ItemRarity[] ConfiguredTierValues()
+        {
+            var result = new List<ItemRarity>(Tiers.Count);
+            for (int i = 0; i < Tiers.Count; i++)
+            {
+                if (Tiers[i] != null) result.Add(Tiers[i].Tier);
+            }
+            return result.ToArray();
         }
     }
 }
