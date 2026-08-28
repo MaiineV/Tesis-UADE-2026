@@ -66,6 +66,16 @@ namespace Rollgeon.Editor.Tools.Polymorphic
         /// Re-scans the project and selects <paramref name="asset"/>. The way a host flow that
         /// created assets on its own (a wizard, a variant generator) hands control back to the shell.
         /// </summary>
+        /// <summary>
+        /// Selecciona <paramref name="asset"/> sin re-escanear el proyecto.
+        /// </summary>
+        /// <remarks>
+        /// Para saltar a un asset que ya esta en la lista — una fila de la tab de metricas, por
+        /// ejemplo. <see cref="RefreshAndSelect"/> ademas rebuildea, que es lo correcto despues de
+        /// crear algo pero desperdicio cuando el asset ya existe.
+        /// </remarks>
+        protected void SelectAsset(T asset) => Select(asset);
+
         protected void RefreshAndSelect(T asset)
         {
             RefreshList();

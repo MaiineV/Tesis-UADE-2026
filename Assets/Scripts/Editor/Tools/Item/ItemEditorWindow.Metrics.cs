@@ -29,7 +29,24 @@ namespace Rollgeon.Editor.Tools.Item
     /// </remarks>
     public sealed partial class ItemEditorWindow
     {
-        enum MetricsGroupBy { Rarity, Family }
+        enum MetricsGroupBy { Rarity, Family, None }
+
+        /// <summary>Columna por la que ordena la tabla. <c>None</c> = respetar el agrupado.</summary>
+        enum MetricsSortBy { None, Name, Rarity, Price, Deviation }
+
+        /// <summary>Un filtro puesto al clickear una barra de distribucion.</summary>
+        readonly struct MetricsFilter
+        {
+            public string Label { get; }
+            public System.Func<ItemQuery.ItemMetrics, bool> Predicate { get; }
+            public bool Active => Predicate != null;
+
+            public MetricsFilter(string label, System.Func<ItemQuery.ItemMetrics, bool> predicate)
+            {
+                Label = label;
+                Predicate = predicate;
+            }
+        }
 
         static readonly ItemRarity[] MetricsRarityOrder =
             { ItemRarity.Common, ItemRarity.Uncommon, ItemRarity.Rare, ItemRarity.Legendary, ItemRarity.God };
@@ -50,6 +67,10 @@ namespace Rollgeon.Editor.Tools.Item
         IReadOnlyList<ItemSO> _metricsLooseCache;
 
         MetricsGroupBy _metricsGroupBy = MetricsGroupBy.Rarity;
+        MetricsSortBy _metricsSortBy = MetricsSortBy.None;
+        bool _metricsSortDesc;
+        MetricsFilter _metricsFilter;
+        string _metricsSearch = string.Empty;
         float _metricsDeviationThresholdPct = MetricsDefaultDeviationThreshold;
 
         bool _metricsShowDistribution = true;
@@ -174,10 +195,6 @@ namespace Rollgeon.Editor.Tools.Item
             if (GUILayout.Button("Refresh", EditorStyles.toolbarButton, GUILayout.Width(70)))
                 RefreshMetrics();
 
-            GUILayout.Space(12);
-            EditorGUILayout.LabelField("Agrupar por", GUILayout.Width(70));
-            _metricsGroupBy = (MetricsGroupBy)EditorGUILayout.EnumPopup(_metricsGroupBy, EditorStyles.toolbarPopup, GUILayout.Width(80));
-
             GUILayout.FlexibleSpace();
 
             EditorGUILayout.LabelField("Umbral outlier de precio", GUILayout.Width(150));
@@ -234,22 +251,42 @@ namespace Rollgeon.Editor.Tools.Item
                             if (s2.Kind == kind && s2.Max > max) max = s2.Max;
                 if (max == 0) continue;
 
-                EditorGUILayout.Space(4);
+                EditorGUILayout.Space(6);
                 EditorGUILayout.LabelField(kind.ToString(), EditorStyles.miniBoldLabel);
 
+                // Los tiers se dibujan de menor a mayor sobre la MISMA escala, asi un tier cuyo
+                // minimo cae por debajo del maximo del anterior se ve pisado sin tener que restar.
+                int prevMax = -1;
                 foreach (var rarity in MetricsRarityOrder)
                 {
                     if (!_metricsMagnitudesCache.TryGetValue(rarity, out var ss)) continue;
                     foreach (var sum in ss)
                     {
                         if (sum.Kind != kind) continue;
-                        DrawMagnitudeRow(rarity, sum, max);
+                        bool overlaps = sum.Count > 0 && prevMax >= 0 && sum.Min < prevMax;
+                        DrawMagnitudeRow(rarity, sum, max, overlaps);
+                        if (sum.Count > 0) prevMax = Mathf.Max(prevMax, sum.Max);
                     }
                 }
+
+                DrawScaleAxis(max);
             }
         }
 
-        void DrawMagnitudeRow(ItemRarity rarity, ItemQuery.MagnitudeSummary sum, int max)
+        /// <summary>Los extremos de la escala, para que las barras signifiquen algo sin adivinar.</summary>
+        void DrawScaleAxis(int max)
+        {
+            var rect = GUILayoutUtility.GetRect(GUIContent.none, GUIStyle.none, GUILayout.Height(12f));
+            float labelW = Mathf.Min(110f, rect.width * 0.28f);
+            float trackX = rect.x + labelW + 12f;
+            float trackW = Mathf.Max(20f, rect.width - labelW - 130f);
+
+            GUI.Label(new Rect(trackX, rect.y, 40f, rect.height), "0", EditorStyles.miniLabel);
+            GUI.Label(new Rect(trackX + trackW - 60f, rect.y, 60f, rect.height),
+                      max.ToString(), _metricsRightStyle);
+        }
+
+        void DrawMagnitudeRow(ItemRarity rarity, ItemQuery.MagnitudeSummary sum, int max, bool overlaps)
         {
             var rect = GUILayoutUtility.GetRect(GUIContent.none, GUIStyle.none, GUILayout.Height(17f));
             float labelW = Mathf.Min(110f, rect.width * 0.28f);
@@ -268,12 +305,15 @@ namespace Rollgeon.Editor.Tools.Item
                 float x0 = trackX + trackW * (sum.Min / (float)max);
                 float x1 = trackX + trackW * (sum.Max / (float)max);
                 EditorGUI.DrawRect(new Rect(x0, rect.y + 5f, Mathf.Max(2f, x1 - x0), 8f),
-                                   new Color(0.45f, 0.65f, 0.85f, 0.85f));
+                                   overlaps
+                                       ? new Color(0.85f, 0.62f, 0.35f, 0.9f)
+                                       : new Color(0.45f, 0.65f, 0.85f, 0.85f));
             }
 
             var text = sum.Count == 0
                 ? (sum.Dynamic > 0 ? $"{sum.Dynamic} dinámicos" : "—")
-                : $"{sum.Min}–{sum.Max}  (n={sum.Count}{(sum.Dynamic > 0 ? $", +{sum.Dynamic} din." : "")})";
+                : $"{sum.Min}–{sum.Max}  (n={sum.Count}{(sum.Dynamic > 0 ? $", +{sum.Dynamic} din." : "")})"
+                  + (overlaps ? "  ⚠" : "");
             GUI.Label(new Rect(rect.xMax - 118f, rect.y, 114f, rect.height), text, _metricsRightStyle);
         }
 
@@ -289,14 +329,20 @@ namespace Rollgeon.Editor.Tools.Item
         /// </remarks>
         void DrawDistribution()
         {
-            DrawBarBlock("Por rareza", CountByRarity(_metricsCache));
-            EditorGUILayout.Space(6);
-            DrawBarBlock("Por evento disparador", CountByEvent(_metricsCache));
-            EditorGUILayout.Space(6);
-            DrawBarBlock("Por combo", CountByCombo(_metricsCache));
+            DrawBarBlock("Por rareza", CountByRarity(_metricsCache),
+                label => new MetricsFilter("rareza: " + label, m => m.RarityLabel == label));
+            EditorGUILayout.Space(4);
+            DrawBarBlock("Por evento disparador", CountByEvent(_metricsCache),
+                label => new MetricsFilter("evento: " + label,
+                    m => m.TriggerEvents.Any(e => e.ToString() == label)));
+            EditorGUILayout.Space(4);
+            DrawBarBlock("Por combo", CountByCombo(_metricsCache),
+                label => new MetricsFilter("combo: " + label,
+                    m => m.ComboIds.Any(id =>
+                        (id == ItemQuery.AnyComboSentinel ? "(cualquier combo)" : id) == label)));
         }
 
-        static void DrawBarBlock(string title, List<(string Label, int Count)> rows)
+        void DrawBarBlock(string title, List<(string Label, int Count)> rows, System.Func<string, MetricsFilter> filterFor)
         {
             EditorGUILayout.LabelField(title, EditorStyles.miniBoldLabel);
 
@@ -311,7 +357,7 @@ namespace Rollgeon.Editor.Tools.Item
 
             foreach (var (label, count) in rows)
             {
-                var rect = GUILayoutUtility.GetRect(GUIContent.none, GUIStyle.none, GUILayout.Height(16f));
+                var rect = GUILayoutUtility.GetRect(GUIContent.none, GUIStyle.none, GUILayout.Height(15f));
                 float labelW = Mathf.Min(150f, rect.width * 0.35f);
 
                 GUI.Label(new Rect(rect.x + 4f, rect.y, labelW, rect.height), label, EditorStyles.miniLabel);
@@ -326,6 +372,13 @@ namespace Rollgeon.Editor.Tools.Item
 
                 GUI.Label(new Rect(rect.xMax - 36f, rect.y, 32f, rect.height),
                           count.ToString(), EditorStyles.miniLabel);
+
+                // La barra filtra la tabla: convierte el grafico en navegacion en vez de dato suelto.
+                if (GUI.Button(rect, GUIContent.none, GUIStyle.none))
+                {
+                    _metricsFilter = filterFor(label);
+                    _metricsShowTable = true;
+                }
             }
         }
 
@@ -521,42 +574,156 @@ namespace Rollgeon.Editor.Tools.Item
         /// </remarks>
         void DrawTable()
         {
+            DrawTableControls();
+
+            var rows = FilteredRows();
+            if (rows.Count == 0)
+            {
+                EditorGUILayout.LabelField("Ningún ítem coincide.", EditorStyles.miniLabel);
+                return;
+            }
+
+            DrawColumnHeaders();
+
+            if (_metricsSortBy != MetricsSortBy.None || _metricsGroupBy == MetricsGroupBy.None)
+            {
+                // Ordenado: la agrupacion estorbaria, porque lo que se quiere ver es el ranking.
+                int flat = 0;
+                foreach (var m in Sorted(rows)) DrawRow(m, flat++);
+                return;
+            }
+
             var groups = _metricsGroupBy == MetricsGroupBy.Rarity
-                ? _metricsCache.GroupBy(m => m.RarityLabel).OrderBy(g => MetricsRarityOrderOf(g.Key))
-                : _metricsCache
-                    .GroupBy(m => string.IsNullOrEmpty(m.FamilyId) ? "(sin familia)" : m.FamilyId)
-                    .OrderBy(g => g.Key, StringComparer.Ordinal);
+                ? rows.GroupBy(m => m.RarityLabel).OrderBy(g => MetricsRarityOrderOf(g.Key))
+                : rows.GroupBy(m => string.IsNullOrEmpty(m.FamilyId) ? "(sin familia)" : m.FamilyId)
+                      .OrderBy(g => g.Key, StringComparer.Ordinal);
 
             int row = 0;
             foreach (var group in groups)
             {
-                EditorGUILayout.Space(6);
+                EditorGUILayout.Space(4);
                 EditorGUILayout.LabelField(group.Key.ToUpperInvariant(), EditorStyles.miniBoldLabel);
-
-                var ordered = _metricsGroupBy == MetricsGroupBy.Rarity
-                    ? group.OrderBy(m => string.IsNullOrEmpty(m.FamilyId) ? "" : m.FamilyId, StringComparer.Ordinal)
-                        .ThenBy(m => m.Asset != null ? m.Asset.VariantIndex : 0)
-                    : group.OrderBy(m => m.Asset != null ? m.Asset.VariantIndex : 0);
-
-                foreach (var m in ordered) DrawRow(m, row++);
+                foreach (var m in group.OrderBy(m => m.Asset != null ? m.Asset.VariantIndex : 0))
+                    DrawRow(m, row++);
             }
+        }
+
+        /// <summary>Busqueda, agrupado y el chip del filtro que puso un clic en una barra.</summary>
+        void DrawTableControls()
+        {
+            using (new EditorGUILayout.HorizontalScope())
+            {
+                _metricsSearch = EditorGUILayout.TextField(_metricsSearch, EditorStyles.toolbarSearchField, GUILayout.MaxWidth(180f));
+
+                EditorGUILayout.LabelField("Agrupar", EditorStyles.miniLabel, GUILayout.Width(50));
+                _metricsGroupBy = (MetricsGroupBy)EditorGUILayout.EnumPopup(
+                    _metricsGroupBy, EditorStyles.toolbarPopup, GUILayout.Width(80));
+
+                GUILayout.FlexibleSpace();
+
+                if (_metricsFilter.Active)
+                {
+                    if (GUILayout.Button($"✕  {_metricsFilter.Label}", EditorStyles.miniButton))
+                        _metricsFilter = default;
+                }
+
+                if (_metricsSortBy != MetricsSortBy.None && GUILayout.Button("✕ orden", EditorStyles.miniButton))
+                    _metricsSortBy = MetricsSortBy.None;
+            }
+        }
+
+        List<ItemQuery.ItemMetrics> FilteredRows()
+        {
+            var result = new List<ItemQuery.ItemMetrics>();
+            foreach (var m in _metricsCache)
+            {
+                if (_metricsFilter.Active && !_metricsFilter.Predicate(m)) continue;
+                if (!string.IsNullOrEmpty(_metricsSearch)
+                    && LabelOf(m.Asset).IndexOf(_metricsSearch, StringComparison.OrdinalIgnoreCase) < 0) continue;
+                result.Add(m);
+            }
+            return result;
+        }
+
+        IEnumerable<ItemQuery.ItemMetrics> Sorted(List<ItemQuery.ItemMetrics> rows)
+        {
+            IEnumerable<ItemQuery.ItemMetrics> q;
+            switch (_metricsSortBy)
+            {
+                case MetricsSortBy.Name: q = rows.OrderBy(m => LabelOf(m.Asset), StringComparer.OrdinalIgnoreCase); break;
+                case MetricsSortBy.Rarity: q = rows.OrderBy(m => MetricsRarityOrderOf(m.RarityLabel)); break;
+                case MetricsSortBy.Price: q = rows.OrderBy(m => m.PriceIsFallback ? int.MinValue : m.Price); break;
+                case MetricsSortBy.Deviation: q = rows.OrderBy(DeviationOf); break;
+                default: return rows;
+            }
+            return _metricsSortDesc ? q.Reverse() : q;
+        }
+
+        /// <summary>Cuanto se aparta el precio del que dicta el GDD. Negativo si no tiene precio, para que caiga al fondo.</summary>
+        static float DeviationOf(ItemQuery.ItemMetrics m)
+        {
+            if (m.PriceIsFallback || m.GddBasePrice <= 0) return -1f;
+            return Mathf.Abs(m.Price - m.GddBasePrice) / (float)m.GddBasePrice;
+        }
+
+        void DrawColumnHeaders()
+        {
+            var rect = GUILayoutUtility.GetRect(GUIContent.none, GUIStyle.none, GUILayout.Height(18f));
+            EditorGUI.DrawRect(rect, new Color(1f, 1f, 1f, 0.05f));
+
+            float x = rect.x + 14f;
+            float free = rect.width - 14f - 56f;
+            float wName = Mathf.Max(120f, free * 0.32f);
+            float wFamily = Mathf.Max(80f, free * 0.20f);
+            float wPrice = Mathf.Max(90f, free * 0.18f);
+            float wTrigger = Mathf.Max(90f, free - wName - wFamily - wPrice);
+
+            SortHeader(new Rect(x, rect.y, wName, rect.height), "Nombre", MetricsSortBy.Name); x += wName;
+            GUI.Label(new Rect(x, rect.y, wFamily, rect.height), "Familia", EditorStyles.miniBoldLabel); x += wFamily;
+            SortHeader(new Rect(x, rect.y, wPrice, rect.height), "Precio / GDD", MetricsSortBy.Price); x += wPrice;
+            SortHeader(new Rect(x, rect.y, wTrigger, rect.height), "Dispara", MetricsSortBy.Deviation);
+        }
+
+        /// <summary>Encabezado clickeable. Segundo clic sobre la misma columna invierte el orden.</summary>
+        void SortHeader(Rect rect, string title, MetricsSortBy column)
+        {
+            bool active = _metricsSortBy == column;
+            var label = active ? title + (_metricsSortDesc ? "  ▾" : "  ▴") : title;
+
+            if (!GUI.Button(rect, label, EditorStyles.miniBoldLabel)) return;
+
+            if (active) _metricsSortDesc = !_metricsSortDesc;
+            else { _metricsSortBy = column; _metricsSortDesc = false; }
         }
 
         void DrawRow(ItemQuery.ItemMetrics m, int index)
         {
-            var rect = GUILayoutUtility.GetRect(GUIContent.none, GUIStyle.none, GUILayout.Height(20f));
+            // 17 px y no 20: con ~90 instancias previstas por el GDD, tres pixeles por fila son
+            // cuatro filas mas en pantalla.
+            var rect = GUILayoutUtility.GetRect(GUIContent.none, GUIStyle.none, GUILayout.Height(17f));
 
-            // Rayado alternado: sin el, veinticinco filas de texto plano se leen como un bloque.
-            if (index % 2 == 1) EditorGUI.DrawRect(rect, new Color(1f, 1f, 1f, 0.03f));
+            bool isSelected = m.Asset != null && m.Asset == SelectedAsset;
+            if (isSelected) EditorGUI.DrawRect(rect, new Color(0.45f, 0.75f, 1f, 0.18f));
+            else if (index % 2 == 1) EditorGUI.DrawRect(rect, new Color(1f, 1f, 1f, 0.03f));
+
+            // La fila entera lleva a editar el item. La tab decia que estaba mal y no llevaba a
+            // arreglarlo: Ping abre el Project, que no es donde se edita.
+            var clickArea = new Rect(rect.x, rect.y, rect.width - 56f, rect.height);
+            if (GUI.Button(clickArea, GUIContent.none, GUIStyle.none) && m.Asset != null)
+            {
+                var target = m.Asset;
+                EditorApplication.delayCall += () =>
+                {
+                    SelectAsset(target);
+                    ActivateTab("Graph");
+                };
+            }
 
             float x = rect.x + 4f;
-
-            // Chip de rareza. Dice el tier sin gastar una columna de texto.
-            var chip = new Rect(x, rect.y + 5f, 4f, 10f);
-            EditorGUI.DrawRect(chip, RarityPalette.BodyColor(m.Rarity));
+            EditorGUI.DrawRect(new Rect(x, rect.y + 4f, 4f, 9f), RarityPalette.BodyColor(m.Rarity));
             x += 10f;
 
-            float free = rect.width - (x - rect.x) - 56f;   // 56 = Ping
+            float free = rect.width - (x - rect.x) - 56f;
             float wName = Mathf.Max(120f, free * 0.32f);
             float wFamily = Mathf.Max(80f, free * 0.20f);
             float wPrice = Mathf.Max(90f, free * 0.18f);
@@ -575,11 +742,10 @@ namespace Rollgeon.Editor.Tools.Item
             x += wPrice;
 
             GUI.Label(new Rect(x, rect.y, wTrigger, rect.height), TriggerSummary(m), EditorStyles.miniLabel);
-            x += wTrigger;
 
             using (new EditorGUI.DisabledScope(m.Asset == null))
             {
-                if (GUI.Button(new Rect(rect.xMax - 52f, rect.y + 1f, 48f, 17f), "Ping", EditorStyles.miniButton))
+                if (GUI.Button(new Rect(rect.xMax - 52f, rect.y, 48f, 16f), "Ping", EditorStyles.miniButton))
                     EditorGUIUtility.PingObject(m.Asset);
             }
         }

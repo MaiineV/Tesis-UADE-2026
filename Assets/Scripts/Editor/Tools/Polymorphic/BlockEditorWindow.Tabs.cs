@@ -130,6 +130,23 @@ namespace Rollgeon.Editor.Tools.Polymorphic
             return b;
         }
 
+        /// <summary>
+        /// Activa la tab que se llame <paramref name="title"/>. Silencioso si no existe.
+        /// </summary>
+        /// <remarks>
+        /// Por titulo y no por indice porque el orden lo decide el atributo de cada tab: un host que
+        /// agregue una tab nueva correria cualquier indice que otro archivo tuviera hardcodeado.
+        /// </remarks>
+        protected void ActivateTab(string title)
+        {
+            for (int i = 0; i < _tabs.Count; i++)
+            {
+                if (_tabs[i].Title != title) continue;
+                SwitchTab(i);
+                return;
+            }
+        }
+
         void SwitchTab(int index)
         {
             if (index < 0 || index >= _tabs.Count) return;
