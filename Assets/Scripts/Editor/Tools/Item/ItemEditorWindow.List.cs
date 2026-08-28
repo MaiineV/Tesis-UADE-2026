@@ -51,6 +51,43 @@ namespace Rollgeon.Editor.Tools.Item
         string _filterFamilyId;
         Type _filterEffectType;
 
+        // ---- degradado por familia -------------------------------------------------------------
+        //
+        // Posicion 0..1 de cada item dentro de su familia. Se calcula al rebuildear la lista y no en
+        // el dibujo: averiguarla ahi obligaria a recorrer las familias por fila y por repaint.
+        readonly Dictionary<ItemSO, float> _familyRamp = new Dictionary<ItemSO, float>();
+
+        partial void OnListAssetsRefreshed()
+        {
+            _familyRamp.Clear();
+            foreach (var family in ItemQuery.GetFamilies(Assets))
+            {
+                int last = family.Variants.Count - 1;
+                if (last <= 0) continue;   // una sola variante: no hay progresion que mostrar
+                for (int i = 0; i <= last; i++)
+                    _familyRamp[family.Variants[i]] = i / (float)last;
+            }
+        }
+
+        /// <summary>
+        /// Aclara el color de rareza segun la posicion del item dentro de su familia.
+        /// </summary>
+        /// <remarks>
+        /// El color solo dice la rareza, y en una familia de tiers eso ya se sabe mirando el orden.
+        /// Lo que no se ve es <b>que tan arriba</b> esta una variante en su propia progresion, que es
+        /// lo que uno compara cuando balancea una familia. El degradado lo muestra sin sumar un
+        /// widget: el tier mas bajo queda con el color pleno y el mas alto aclarado.
+        /// <para>
+        /// Los items sueltos y las familias de una sola variante no se tocan — un degradado sobre un
+        /// unico elemento no comunica nada y solo desalinearia su color del de los demas de su rareza.
+        /// </para>
+        /// </remarks>
+        Color FamilyTinted(Color rarityColor, ItemSO asset)
+        {
+            if (!_familyRamp.TryGetValue(asset, out float t)) return rarityColor;
+            return Color.Lerp(rarityColor, Color.Lerp(rarityColor, Color.white, 0.55f), t);
+        }
+
         // ============================ Filter bar ============================
 
         protected override void DrawFilterBar()
@@ -155,7 +192,7 @@ namespace Rollgeon.Editor.Tools.Item
         {
             if (asset == null) return false;
 
-            Color bg = RarityPalette.BodyColor(asset.Rarity);
+            Color bg = FamilyTinted(RarityPalette.BodyColor(asset.Rarity), asset);
             bg.a = isSelected ? 0.55f : 0.28f;
             EditorGUI.DrawRect(rect, bg);
 
