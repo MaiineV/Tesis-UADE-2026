@@ -51,7 +51,7 @@ namespace Rollgeon.UI.Tooltips
                  "anclaje y cuánto queda su borde superior por encima de él. En píxeles de " +
                  "referencia del canvas — se escala con el scaleFactor, igual que el offset " +
                  "de los triggers Fixed.")]
-        [SerializeField] private Vector2 _sideOffset = new Vector2(56f, 24f);
+        [SerializeField] private Vector2 _sideOffset = new Vector2(110f, 150f);
 
         [Tooltip("Canvas host. Si null, busca uno via GetComponentInParent en Awake.")]
         [SerializeField] private Canvas _hostCanvas;

@@ -12,9 +12,9 @@ namespace Rollgeon.EditorTools.HUD
     /// Autora el prefab de una tarjeta del tooltip, la columna del panel y la banda de identidad.
     /// </summary>
     /// <remarks>
-    /// Idempotente: correrlo dos veces deja el mismo resultado. La columna es más angosta que el
-    /// párrafo de un tooltip de texto: acá el panel se lee de arriba abajo, tarjeta por tarjeta, y
-    /// una columna ancha lo vuelve un bloque cuadrado donde ninguna tarjeta se distingue.
+    /// Idempotente: correrlo dos veces deja el mismo resultado. La columna, la banda y el pie
+    /// comparten un solo ancho: el panel se dimensiona por su hijo más ancho, así que el que se
+    /// salga del acuerdo decide él solo cuánto mide el tooltip.
     /// </remarks>
     public static class TooltipCardSetupTools
     {
@@ -37,9 +37,9 @@ namespace Rollgeon.EditorTools.HUD
         // Un solo ancho para todo lo que va apilado en el panel. El pie es TMP con wrap: sin un
         // ancho que lo ate, su preferido es el del texto ENTERO en un renglón, y el panel se
         // estiraba hasta ahí — el color del bicho decidía el ancho del tooltip.
-        private const float ContentWidth = 220f;
-        private const float IconSize = 24f;
-        private const float BadgeSize = 18f;
+        private const float ContentWidth = 300f;
+        private const float IconSize = 36f;
+        private const float BadgeSize = 28f;
 
         // Crema sobre la placa oscura. Los labels salían en el blanco default de TMP, que sobre
         // el panel color hueso quedaba invisible.
@@ -66,8 +66,8 @@ namespace Rollgeon.EditorTools.HUD
             // y le da a la regla el ancho entero, que es lo que hace legible una frase con
             // números adentro a 13px.
             var layout = Ensure<VerticalLayoutGroup>(root);
-            layout.padding = new RectOffset(11, 11, 8, 8);
-            layout.spacing = 5;
+            layout.padding = new RectOffset(14, 14, 10, 10);
+            layout.spacing = 6;
             layout.childAlignment = TextAnchor.UpperCenter;
             layout.childControlWidth = true;
             layout.childControlHeight = true;
@@ -78,7 +78,7 @@ namespace Rollgeon.EditorTools.HUD
 
             var headerRect = EnsureChildRect(rootRect, "Header", Vector2.zero, Vector2.zero);
             var headerLayout = Ensure<HorizontalLayoutGroup>(headerRect.gameObject);
-            headerLayout.spacing = 7;
+            headerLayout.spacing = 9;
             headerLayout.childAlignment = TextAnchor.MiddleLeft;
             headerLayout.childControlWidth = true;
             headerLayout.childControlHeight = true;
@@ -105,9 +105,9 @@ namespace Rollgeon.EditorTools.HUD
             badgeImage.type = Image.Type.Simple;
             badgeImage.preserveAspect = true;
             badgeImage.raycastTarget = false;
-            var badgeLabel = EnsureLabel(badgeRect, "Value", 12f, TextAlignmentOptions.Center, CardInk);
+            var badgeLabel = EnsureLabel(badgeRect, "Value", 18f, TextAlignmentOptions.Center, CardInk);
 
-            var titleLabel = EnsureLabel(headerRect, "Title", 18f, TextAlignmentOptions.Left, CardInk);
+            var titleLabel = EnsureLabel(headerRect, "Title", 26f, TextAlignmentOptions.Left, CardInk);
             titleLabel.fontStyle = FontStyles.Bold;
             Ensure<LayoutElement>(titleLabel.gameObject).flexibleWidth = 1f;
 
@@ -119,7 +119,7 @@ namespace Rollgeon.EditorTools.HUD
 
             // Centrada como la referencia: bajo un divisor, una frase de dos renglones centrada
             // se lee como una regla y no como la continuación del título.
-            var ruleLabel = EnsureLabel(rootRect, "Rule", 15f, TextAlignmentOptions.Center, CardInk);
+            var ruleLabel = EnsureLabel(rootRect, "Rule", 22f, TextAlignmentOptions.Center, CardInk);
             ruleLabel.enableWordWrapping = true;
 
             var view = Ensure<TooltipCardView>(root);
@@ -156,7 +156,7 @@ namespace Rollgeon.EditorTools.HUD
                 var cards = EnsureChildRect(panel, "Cards", Vector2.zero, Vector2.zero);
 
                 var layout = Ensure<VerticalLayoutGroup>(cards.gameObject);
-                layout.spacing = 6;
+                layout.spacing = 8;
                 layout.childAlignment = TextAnchor.UpperCenter;
                 layout.childControlWidth = true;
                 layout.childControlHeight = true;
@@ -182,7 +182,7 @@ namespace Rollgeon.EditorTools.HUD
             {
                 var identity = EnsureChildRect(panel, "Identity", Vector2.zero, Vector2.zero);
                 var identityLayout = Ensure<VerticalLayoutGroup>(identity.gameObject);
-                identityLayout.spacing = 3;
+                identityLayout.spacing = 4;
                 identityLayout.childAlignment = TextAnchor.UpperCenter;
                 identityLayout.childControlWidth = true;
                 identityLayout.childControlHeight = true;
@@ -190,7 +190,7 @@ namespace Rollgeon.EditorTools.HUD
                 identityLayout.childForceExpandHeight = false;
                 Ensure<LayoutElement>(identity.gameObject).preferredWidth = ContentWidth;
 
-                var nameLabel = EnsureLabel(identity, "Name", 22f, TextAlignmentOptions.Center, PanelInk);
+                var nameLabel = EnsureLabel(identity, "Name", 34f, TextAlignmentOptions.Center, PanelInk);
                 nameLabel.fontStyle = FontStyles.Bold;
 
                 var vitals = EnsureChildRect(identity, "Vitals", Vector2.zero, Vector2.zero);
@@ -202,8 +202,8 @@ namespace Rollgeon.EditorTools.HUD
                 vitalsLayout.childForceExpandWidth = false;
                 vitalsLayout.childForceExpandHeight = false;
 
-                EnsureIcon(vitals, "HeartIcon", LoadSlice(HeartChipId), new Vector2(30f, 20f));
-                var hpLabel = EnsureLabel(vitals, "Hp", 18f, TextAlignmentOptions.Left, PanelInk);
+                EnsureIcon(vitals, "HeartIcon", LoadSlice(HeartChipId), new Vector2(44f, 30f));
+                var hpLabel = EnsureLabel(vitals, "Hp", 27f, TextAlignmentOptions.Left, PanelInk);
                 hpLabel.fontStyle = FontStyles.Bold;
 
                 var shield = EnsureChildRect(vitals, "Shield", Vector2.zero, Vector2.zero);
@@ -214,11 +214,11 @@ namespace Rollgeon.EditorTools.HUD
                 shieldLayout.childControlHeight = true;
                 shieldLayout.childForceExpandWidth = false;
                 shieldLayout.childForceExpandHeight = false;
-                EnsureIcon(shield, "ShieldIcon", LoadFirstSprite(ShieldIconGuid), new Vector2(18f, 18f));
-                var shieldLabel = EnsureLabel(shield, "Value", 18f, TextAlignmentOptions.Left, PanelInk);
+                EnsureIcon(shield, "ShieldIcon", LoadFirstSprite(ShieldIconGuid), new Vector2(27f, 27f));
+                var shieldLabel = EnsureLabel(shield, "Value", 27f, TextAlignmentOptions.Left, PanelInk);
                 shieldLabel.fontStyle = FontStyles.Bold;
 
-                var footer = EnsureLabel(panel, "Footer", 14f, TextAlignmentOptions.Center, PanelInkSoft);
+                var footer = EnsureLabel(panel, "Footer", 20f, TextAlignmentOptions.Center, PanelInkSoft);
                 footer.enableWordWrapping = true;
                 Ensure<LayoutElement>(footer.gameObject).preferredWidth = ContentWidth;
 

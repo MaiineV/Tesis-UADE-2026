@@ -307,7 +307,10 @@ namespace Rollgeon.UI.Tests
         {
             // Arrange — el panel centrado sobre el punto tapaba al enemigo que lo abrió, que es
             // lo único que el panel sirve para leer.
-            var controller = CreateOverlayTooltipController(out var root, panelSize: new Vector2(100f, 40f));
+            // Alto y no un cuadradito: el panel real son cientos de píxeles, y es ESO lo que tiene
+            // que caer por debajo del anclaje. Uno de 40px entraría entero arriba y el test diría
+            // que sí sin haber probado nada.
+            var controller = CreateOverlayTooltipController(out var root, panelSize: new Vector2(100f, 200f));
             var anchor = Vector2.zero; // centro del canvas, margen de sobra hacia la derecha
 
             // Act
@@ -318,8 +321,8 @@ namespace Rollgeon.UI.Tests
             Assert.AreEqual(1f, root.pivot.y, 1e-3f);
             Assert.Greater(root.position.x, anchor.x,
                 "El panel arranca sobre el punto de anclaje en vez de al costado.");
-            Assert.Less(root.position.y - 40f, anchor.y,
-                "El panel no cuelga hacia abajo del punto.");
+            Assert.Less(root.position.y - 200f, anchor.y,
+                "El panel entra entero por encima del anclaje en vez de colgar hacia abajo.");
         }
 
         [Test]
