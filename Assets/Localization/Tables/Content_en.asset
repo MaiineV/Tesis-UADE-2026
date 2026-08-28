@@ -1009,6 +1009,14 @@ MonoBehaviour:
     m_Localized: Your offensive combos deal bonus damage while you stay here.
     m_Metadata:
       m_Items: []
+  - m_Id: 16109110673002496
+    m_Localized: Mega God
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16109110710751232
+    m_Localized: This item let you became god
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

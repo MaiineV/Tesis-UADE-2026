@@ -971,6 +971,14 @@ MonoBehaviour:
     m_Key: status.tile_attack.desc
     m_Metadata:
       m_Items: []
+  - m_Id: 16109110673002496
+    m_Key: mega.god.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16109110710751232
+    m_Key: mega.god.desc
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

@@ -1014,6 +1014,14 @@ MonoBehaviour:
     m_Localized: "Tus combos ofensivos hacen da\xF1o extra mientras permanezcas ac\xE1."
     m_Metadata:
       m_Items: []
+  - m_Id: 16109110673002496
+    m_Localized: Mega Dios
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16109110710751232
+    m_Localized: 'Este item te permite ser dios '
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

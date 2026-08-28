@@ -84,6 +84,9 @@ MonoBehaviour:
     - Name: RangeMode
       Entry: 3
       Data: 0
+    - Name: RangeFromMovementDie
+      Entry: 5
+      Data: false
     - Name: TargetMode
       Entry: 3
       Data: 0
@@ -171,9 +174,6 @@ MonoBehaviour:
     - Name: _healMaxCap
       Entry: 3
       Data: 0
-    - Name: _energyCostInCombat
-      Entry: 3
-      Data: 0
     - Name: _useDiceRoll
       Entry: 5
       Data: true
@@ -212,13 +212,14 @@ MonoBehaviour:
   Description: 
   Icon: {fileID: -1010130055, guid: 0e072bd29469b3944abf9db8575bc0f8, type: 3}
   Rarity: 0
+  FamilyId: 
+  VariantIndex: 0
   Type: 1
-  PassiveHooks: []
   OnActivate:
     Label: Effect Group
     PreConditions: []
     Effects:
-    - rid: 144068172410257461
+    - rid: 9091479671810032372
     TargetSelector:
       rid: -2
   Cooldown: 0
@@ -231,7 +232,7 @@ MonoBehaviour:
     RefIds:
     - rid: -2
       type: {class: , ns: , asm: }
-    - rid: 144068172410257461
+    - rid: 9091479671810032372
       type: {class: EffHeal, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
       data:
         Selection:
@@ -241,6 +242,7 @@ MonoBehaviour:
           IsGlobal: 0
           Range: 1
           RangeMode: 0
+          RangeFromMovementDie: 0
           TargetMode: 0
           AoeShape: 0
           AoeRadius: 0
@@ -265,7 +267,6 @@ MonoBehaviour:
         _healThreshold: 0
         _healScaleFactor: 0
         _healMaxCap: 0
-        _energyCostInCombat: 0
         _useDiceRoll: 1
         _diceCount: 1
         _diceFaces: 10
