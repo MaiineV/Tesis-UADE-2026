@@ -77,7 +77,7 @@ namespace Rollgeon.UI.Tooltips
                 {
                     // El stack va siempre acá, nunca dentro de la regla: si algún día traba
                     // dos dados en vez de uno, cambia este número y la frase no se toca.
-                    string badge = StatusTooltipText.ResolveBadge(state);
+                    string badge = StatusTooltipText.ResolveCardBadge(state);
                     if (_badgeLabel != null) _badgeLabel.text = badge;
                     _badge.SetActive(badge.Length > 0);
                 }

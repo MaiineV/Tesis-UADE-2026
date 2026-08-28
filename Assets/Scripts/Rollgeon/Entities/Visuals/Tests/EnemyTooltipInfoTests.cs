@@ -85,6 +85,17 @@ namespace Rollgeon.Entities.Visuals.Tests
         }
 
         [Test]
+        public void BuildContent_NoTraeVitales_QueYaEstanSobreLaCabeza()
+        {
+            var content = MakeInfo(MakeData("El Croupier", "Siembra bombas.")).BuildContent();
+
+            // La barra de vida flota sobre el bicho y es la que el jugador mira mientras le pega.
+            // Repetirla adentro del panel gasta una fila en un número que está a dos centímetros.
+            Assert.IsFalse(content.HasVitals);
+            Assert.IsNull(content.Shield);
+        }
+
+        [Test]
         public void BuildContent_SinFamiliaAutorada_UnComunNoTieneFila()
         {
             var info = MakeInfo(MakeData("CardEnemy", "Un goblin."));

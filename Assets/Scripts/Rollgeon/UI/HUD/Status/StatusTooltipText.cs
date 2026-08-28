@@ -51,6 +51,23 @@ namespace Rollgeon.UI.HUD.Status
             return ResolveDurationBadge(state);
         }
 
+        /// <summary>
+        /// El badge de una tarjeta del tooltip: sólo el número.
+        /// </summary>
+        /// <remarks>
+        /// La ficha de la tarjeta es redonda y del ancho de un dígito, así que "1 Turno" adentro
+        /// se parte en una letra por renglón y se lee vertical. La fila que flota sobre la cabeza
+        /// sí escribe la palabra, porque ahí el texto va <b>bajo</b> el ícono y tiene el ancho de
+        /// la celda entera — por eso son dos badges y no uno.
+        /// </remarks>
+        public static string ResolveCardBadge(in StatusIconState state)
+        {
+            if (state.StackCount.HasValue)
+                return state.StackCount.Value == 0 ? string.Empty : state.StackCount.Value.ToString();
+
+            return state.RemainingTurns?.ToString() ?? string.Empty;
+        }
+
         /// <summary>Texto que va bajo el ícono ("1 Turno" / "3 Turnos"). Vacío sin duración.</summary>
         public static string ResolveDurationBadge(in StatusIconState state)
         {

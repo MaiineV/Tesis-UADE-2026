@@ -1045,11 +1045,11 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 15516266126876675
-    m_Localized: Sows Bombs
+    m_Localized: Spawn Bombs
     m_Metadata:
       m_Items: []
   - m_Id: 15516266126876676
-    m_Localized: Sows <b>{1}</b> bombs. Where they land is drawn as he sows them.
+    m_Localized: Spawns <b>{1}</b> bombs. Where they land is drawn as he spawns them.
     m_Metadata:
       m_Items: []
   - m_Id: 15516266126876677

@@ -714,10 +714,10 @@ namespace Rollgeon.EditorTools.Localization
             Content(AIIntentTextKeys.RangedShot + ".name", "Te dispara", "Shoots You");
             Content(AIIntentTextKeys.RangedShot + ".desc", string.Empty, string.Empty);
 
-            Content(AIIntentTextKeys.BombField + ".name", "Siembra bombas", "Sows Bombs");
+            Content(AIIntentTextKeys.BombField + ".name", "Siembra bombas", "Spawn Bombs");
             Content(AIIntentTextKeys.BombField + ".desc",
                 "Siembra <b>{1}</b> bombas. Dónde caen se sortea al sembrarlas.",
-                "Sows <b>{1}</b> bombs. Where they land is drawn as he sows them.");
+                "Spawns <b>{1}</b> bombs. Where they land is drawn as he spawns them.");
 
             // Descripción vacía a propósito: el título dice qué pasa y el badge cuánto falta.
             // La entry existe igual porque el guard la exige y para poder llenarla sin tocar código.

@@ -80,8 +80,7 @@ namespace Rollgeon.EditorTools.HUD
             // El resumen va al log además del Game view: si la ventana no está abierta, cuántas
             // tarjetas quedaron en cada columna sigue siendo la respuesta a "esto cambió o no".
             Debug.Log("[EnemyPanelPreview] " + content.Name + " — tipo '" + content.Type + "' — " +
-                      content.Health + "/" + content.MaxHealth + " — " + attack.Count +
-                      " tarjeta(s) de ataque, " + applied.Count + " al costado" +
+                      attack.Count + " tarjeta(s) de ataque, " + applied.Count + " al costado" +
                       (withSampleStates ? " (dos de muestra)." : "."));
 
             if (attack.Count == 0)
@@ -111,14 +110,11 @@ namespace Rollgeon.EditorTools.HUD
                 ? data.DisplayName
                 : LocalizedContent.Name(id, data.DisplayName);
 
-            // A tope de vida y no a media asta: es un estado real de la pelea —el primer turno—
-            // así que el preview no inventa un número que el jugador nunca vio.
-            int maxHp = data.ResolveMaxHP(1);
-
+            // Sin vitales, igual que el panel de verdad: la barra de vida ya está sobre la cabeza
+            // del bicho. Un preview que muestre una fila que el juego no dibuja no sirve.
             return new TooltipContent(
                 name: name,
                 type: EnemyArchetypeText.Describe(data.Archetype, data.IsBoss),
-                health: maxHp, maxHealth: maxHp,
                 cards: attack, sideCards: applied);
         }
 

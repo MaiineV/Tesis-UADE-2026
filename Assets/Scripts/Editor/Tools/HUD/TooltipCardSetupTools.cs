@@ -111,7 +111,9 @@ namespace Rollgeon.EditorTools.HUD
             badgeImage.raycastTarget = false;
             var badgeLabel = EnsureLabel(badgeRect, "Value", 22f, TextAlignmentOptions.Center, CardInk);
 
-            var titleLabel = EnsureLabel(headerRect, "Title", 34f, TextAlignmentOptions.Left, CardInk);
+            // Por debajo de la regla (27) a proposito: el titulo nombra la cosa y la regla es
+            // lo que se lee, asi que un titulo mas grande que ella se lleva el ojo primero.
+            var titleLabel = EnsureLabel(headerRect, "Title", 26f, TextAlignmentOptions.Left, CardInk);
             titleLabel.fontStyle = FontStyles.Bold;
             Ensure<LayoutElement>(titleLabel.gameObject).flexibleWidth = 1f;
 

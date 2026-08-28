@@ -120,7 +120,7 @@ namespace Rollgeon.Entities.Visuals
             var info = pawn.gameObject.GetComponent<EnemyTooltipInfo>();
             if (info == null) info = pawn.gameObject.AddComponent<EnemyTooltipInfo>();
             var guid = pawn.EntityGuid;
-            info.Bind(data, guid);
+            info.Bind(data);
 
             var trigger = AttachHoverTooltip(pawn, info.BuildTooltip);
             if (trigger == null) return;

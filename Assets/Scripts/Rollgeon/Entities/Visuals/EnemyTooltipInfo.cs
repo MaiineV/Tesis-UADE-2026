@@ -1,8 +1,4 @@
-using System;
 using System.Text;
-using Patterns;
-using Rollgeon.Attributes;
-using Rollgeon.Attributes.Stats;
 using Rollgeon.Localization;
 using Rollgeon.UI.HUD.Status;
 using Rollgeon.UI.Tooltips;
@@ -32,23 +28,12 @@ namespace Rollgeon.Entities.Visuals
     public sealed class EnemyTooltipInfo : MonoBehaviour, IHasTooltipInfo
     {
         private EnemyDataSO _data;
-        private Guid _entityGuid;
 
         /// <summary>Llamado por <see cref="EntityVisualService"/> al instanciar el pawn.</summary>
         public void Bind(EnemyDataSO data) => _data = data;
 
         /// <summary>
-        /// Con el guid, además del texto puede leer los vitales. Sobrecarga y no un parámetro
-        /// más: los tests que sólo miran el texto no tienen guid que dar.
-        /// </summary>
-        public void Bind(EnemyDataSO data, Guid entityGuid)
-        {
-            _data = data;
-            _entityGuid = entityGuid;
-        }
-
-        /// <summary>
-        /// El contenido del panel: nombre, familia y vitales. <b>Sin descripción.</b>
+        /// El contenido del panel: nombre y familia. <b>Sin descripción y sin vitales.</b>
         /// </summary>
         /// <remarks>
         /// El panel no lleva lore, y no es una cuestión de espacio: cualquier frase que resuma al
@@ -59,6 +44,11 @@ namespace Rollgeon.Entities.Visuals
         /// La descripción sigue viva y se lee por <see cref="BuildTooltip"/>, que es lo que usan
         /// las bombas y los objetos que un jefe pone en el paño: ahí el tooltip es un párrafo y no
         /// un panel, así que no hay tarjeta que pueda contradecirla.
+        /// </para>
+        /// <para>
+        /// <b>Ni vitales.</b> La barra de vida ya flota sobre la cabeza del bicho y es la que el
+        /// jugador mira mientras le pega; repetirla adentro del panel gasta una fila en un número
+        /// que está a dos centímetros, y encima desactualizado hasta el próximo hover.
         /// </para>
         /// </remarks>
         public TooltipContent BuildContent()
@@ -71,31 +61,9 @@ namespace Rollgeon.Entities.Visuals
                 ? data.DisplayName
                 : LocalizedContent.Name(id, data.DisplayName);
 
-            ReadVitals(out int? health, out int? maxHealth, out int? shield);
             return new TooltipContent(
                 name: name,
-                type: EnemyArchetypeText.Describe(data.Archetype, data.IsBoss),
-                health: health, maxHealth: maxHealth, shield: shield);
-        }
-
-        // Sin AttributesManager los tres quedan en null y la banda no dibuja la fila: fuera de
-        // combate el enemigo no tiene vitales que mostrar, y un "0/0" seria peor que nada.
-        private void ReadVitals(out int? health, out int? maxHealth, out int? shield)
-        {
-            health = null;
-            maxHealth = null;
-            shield = null;
-
-            if (_entityGuid == Guid.Empty) return;
-            if (!ServiceLocator.TryGetService<AttributesManager>(out var attrs) || attrs == null)
-                return;
-
-            int max = attrs.GetAttributeValue<MaxHealth, int>(_entityGuid);
-            if (max <= 0) return;
-
-            maxHealth = max;
-            health = attrs.GetAttributeValue<Health, int>(_entityGuid);
-            shield = attrs.GetAttributeValue<Shield, int>(_entityGuid);
+                type: EnemyArchetypeText.Describe(data.Archetype, data.IsBoss));
         }
 
         public string BuildTooltip()

@@ -18,6 +18,7 @@ namespace Rollgeon.Editor.Tools.HUD.Tests
     public sealed class TooltipPanelLayoutTests
     {
         private const string TooltipPrefabPath = "Assets/Prefabs/UI/Canvas/Canvas_Tooltip.prefab";
+        private const string CardPrefabPath = "Assets/Prefabs/UI/TooltipCard.prefab";
 
         [Test]
         public void ElPieNoDecideElAnchoDelPanel()
@@ -64,6 +65,34 @@ namespace Rollgeon.Editor.Tools.HUD.Tests
             Assert.AreEqual(WidthOf(panel, "Cards"), WidthOf(panel, "Identity/Type"), 0.5f,
                 "La familia es un TMP más: sin ancho propio, un 'Jefe · Rango' largo vuelve a " +
                 "ensanchar el panel — exactamente el bug que tenía el pie.");
+        }
+
+        [Test]
+        public void ElTituloDeLaTarjetaNoLeGanaALaRegla()
+        {
+            var card = LoadCard();
+
+            Assert.Less(FontSizeOf(card, "Header/Title"), FontSizeOf(card, "Rule"),
+                "El título nombra la cosa y la regla es lo que se lee. Con el título más grande " +
+                "que ella se lleva el ojo primero, y la tarjeta pasa a ser un encabezado con una " +
+                "nota al pie.");
+        }
+
+        private static float FontSizeOf(Transform card, string child)
+        {
+            var found = card.Find(child);
+            Assert.IsNotNull(found, $"La tarjeta del tooltip no tiene '{child}'.");
+
+            var label = found.GetComponent<TMPro.TMP_Text>();
+            Assert.IsNotNull(label, $"'{child}' no es un TMP_Text.");
+            return label.fontSize;
+        }
+
+        private static Transform LoadCard()
+        {
+            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(CardPrefabPath);
+            Assert.IsNotNull(prefab, $"Falta {CardPrefabPath}.");
+            return prefab.transform;
         }
 
         private static float WidthOf(Transform panel, string child)
