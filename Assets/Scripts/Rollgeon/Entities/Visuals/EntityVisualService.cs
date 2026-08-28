@@ -172,6 +172,10 @@ namespace Rollgeon.Entities.Visuals
             // y robarle ese click para abrir un panel rompería el input del combate.
             trigger.Mode = Rollgeon.UI.Tooltips.WorldTooltipMode.Hover;
 
+            // Al costado y colgando: el panel centrado encima tapaba al bicho que estabas
+            // mirando, y lo que el panel cuenta solo sirve mientras lo ves en el tablero.
+            trigger.Placement = Rollgeon.UI.Tooltips.TooltipPlacementMode.Beside;
+
             // Explícito en vez de dejar que el TooltipResolver lo busque: el pawn del jefe cuelga
             // otros IHasTooltipInfo abajo (las casillas de sus props) y el auto-resolve devuelve el
             // primero que encuentra.

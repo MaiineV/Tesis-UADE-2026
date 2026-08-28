@@ -19,6 +19,13 @@ namespace Rollgeon.UI.Tooltips
         /// de borde — la posición configurada por diseño sigue siendo la base).
         /// </summary>
         Fixed = 1,
+
+        /// <summary>
+        /// Cuelga del costado del elemento y hacia abajo, en vez de crecer por encima. Para lo
+        /// que se mira mientras se lo señala: un panel centrado sobre un enemigo lo tapa justo
+        /// cuando lo estás leyendo. Si de ese lado no entra, cuelga del otro.
+        /// </summary>
+        Beside = 2,
     }
 
     /// <summary>

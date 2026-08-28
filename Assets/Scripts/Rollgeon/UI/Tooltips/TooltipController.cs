@@ -47,6 +47,12 @@ namespace Rollgeon.UI.Tooltips
                  "pantalla cuando AutoFit re-posiciona el tooltip.")]
         [SerializeField] private float _screenPadding = 8f;
 
+        [Tooltip("Solo en modo Beside: cuánto se corre el panel al costado del punto de " +
+                 "anclaje y cuánto queda su borde superior por encima de él. En píxeles de " +
+                 "referencia del canvas — se escala con el scaleFactor, igual que el offset " +
+                 "de los triggers Fixed.")]
+        [SerializeField] private Vector2 _sideOffset = new Vector2(56f, 24f);
+
         [Tooltip("Canvas host. Si null, busca uno via GetComponentInParent en Awake.")]
         [SerializeField] private Canvas _hostCanvas;
 
@@ -77,6 +83,12 @@ namespace Rollgeon.UI.Tooltips
         [Tooltip("Color de la unidad, al pie. Separado de _text porque no es información y no " +
                  "puede quedarse con el arriba del panel.")]
         [SerializeField] private TMP_Text _footerLabel;
+
+        // El panel crece hacia arriba centrado sobre el punto: es lo que esperan los tooltips
+        // de texto. Beside lo cambia mientras dura, así que cada Show lo vuelve a fijar.
+        private static readonly Vector2 GrowUpPivot = new Vector2(0.5f, 0f);
+        private static readonly Vector2 HangRightPivot = new Vector2(0f, 1f);
+        private static readonly Vector2 HangLeftPivot = new Vector2(1f, 1f);
 
         private readonly List<TooltipCardView> _cardSlots = new List<TooltipCardView>();
 
@@ -200,11 +212,40 @@ namespace Rollgeon.UI.Tooltips
             _currentOwnerId = ownerId;
             SetVisible(true);
 
-            var target = placement == TooltipPlacementMode.Fixed
-                ? screenPos
-                : screenPos + _anchorOffset;
-            PositionAt(target);
+            if (placement == TooltipPlacementMode.Beside) PlaceBeside(screenPos);
+            else PlaceOver(screenPos, placement);
+
             ClampToCanvas();
+        }
+
+        private void PlaceOver(Vector2 screenPos, TooltipPlacementMode placement)
+        {
+            if (_root != null) _root.pivot = GrowUpPivot;
+            PositionAt(placement == TooltipPlacementMode.Fixed
+                ? screenPos
+                : screenPos + _anchorOffset);
+        }
+
+        /// <summary>
+        /// Cuelga el panel al costado del punto y hacia abajo: el borde superior arranca apenas
+        /// por encima del anclaje, así lo que disparó el tooltip queda a la vista al lado.
+        /// </summary>
+        private void PlaceBeside(Vector2 anchor)
+        {
+            if (_root == null) return;
+
+            float scale = _hostCanvas != null ? _hostCanvas.scaleFactor : 1f;
+            var offset = _sideOffset * scale;
+
+            _root.pivot = HangRightPivot;
+            PositionAt(anchor + offset);
+
+            // Si para entrar en pantalla habría que arrastrarlo a la izquierda, cuelga del otro
+            // lado: el clamp lo metería justo encima de lo que este modo evita tapar.
+            if (MeasureClampShift().x >= 0f) return;
+
+            _root.pivot = HangLeftPivot;
+            PositionAt(anchor + new Vector2(-offset.x, offset.y));
         }
 
         /// <summary>
@@ -276,7 +317,16 @@ namespace Rollgeon.UI.Tooltips
         /// </remarks>
         private void ClampToCanvas()
         {
-            if (_root == null || _hostCanvasRect == null) return;
+            var shift = MeasureClampShift();
+            if (shift.sqrMagnitude > 0.0001f)
+                _root.position += _hostCanvasRect.TransformVector(new Vector3(shift.x, shift.y, 0f));
+        }
+
+        // Cuánto habría que correr el panel para que entre. Separado del clamp porque el modo
+        // Beside lo pregunta ANTES de aplicarlo, para decidir de qué lado colgar.
+        private Vector2 MeasureClampShift()
+        {
+            if (_root == null || _hostCanvasRect == null) return Vector2.zero;
 
             // El TMP recién recibió texto nuevo — forzar layout para medir el tamaño real.
             UnityEngine.UI.LayoutRebuilder.ForceRebuildLayoutImmediate(_root);
@@ -286,9 +336,7 @@ namespace Rollgeon.UI.Tooltips
             Vector2 min = _hostCanvasRect.InverseTransformPoint(corners[0]);
             Vector2 max = _hostCanvasRect.InverseTransformPoint(corners[2]);
 
-            var shift = ComputeClampShift(min, max, _hostCanvasRect.rect, _screenPadding);
-            if (shift.sqrMagnitude > 0.0001f)
-                _root.position += _hostCanvasRect.TransformVector(new Vector3(shift.x, shift.y, 0f));
+            return ComputeClampShift(min, max, _hostCanvasRect.rect, _screenPadding);
         }
 
         /// <summary>

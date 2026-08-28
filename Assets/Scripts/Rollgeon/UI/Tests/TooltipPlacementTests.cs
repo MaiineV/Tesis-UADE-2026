@@ -302,6 +302,59 @@ namespace Rollgeon.UI.Tests
             Assert.AreEqual(105f, pos.y, 1e-3f);
         }
 
+        [Test]
+        public void Show_BesidePlacement_HangsToTheRightOfTheAnchor()
+        {
+            // Arrange — el panel centrado sobre el punto tapaba al enemigo que lo abrió, que es
+            // lo único que el panel sirve para leer.
+            var controller = CreateOverlayTooltipController(out var root, panelSize: new Vector2(100f, 40f));
+            var anchor = Vector2.zero; // centro del canvas, margen de sobra hacia la derecha
+
+            // Act
+            controller.Show("texto", anchor, ownerId: 1, TooltipPlacementMode.Beside);
+
+            // Assert — pivot arriba-izquierda: la posición ES el borde superior izquierdo.
+            Assert.AreEqual(0f, root.pivot.x, 1e-3f);
+            Assert.AreEqual(1f, root.pivot.y, 1e-3f);
+            Assert.Greater(root.position.x, anchor.x,
+                "El panel arranca sobre el punto de anclaje en vez de al costado.");
+            Assert.Less(root.position.y - 40f, anchor.y,
+                "El panel no cuelga hacia abajo del punto.");
+        }
+
+        [Test]
+        public void Show_BesidePlacement_NoRoomOnTheRight_HangsFromTheOtherSide()
+        {
+            // Arrange — pegado al borde derecho, el clamp metería el panel en pantalla
+            // arrastrándolo justo encima del enemigo. Colgar del otro lado lo deja a la vista.
+            var controller = CreateOverlayTooltipController(out var root, panelSize: new Vector2(100f, 40f));
+            var anchor = new Vector2(300f, 0f); // a la derecha entraría de 356 a 456; útil = 392
+
+            // Act
+            controller.Show("texto", anchor, ownerId: 1, TooltipPlacementMode.Beside);
+
+            // Assert — pivot arriba-derecha: la posición ES el borde derecho del panel.
+            Assert.AreEqual(1f, root.pivot.x, 1e-3f);
+            Assert.Less(root.position.x, anchor.x,
+                "El panel quedó del lado sin lugar y el clamp lo arrastró sobre el anclaje.");
+        }
+
+        [Test]
+        public void Show_AfterBeside_TextTooltipVuelveACrecerHaciaArriba()
+        {
+            // Arrange — el modo Beside mueve el pivot del panel compartido. Si no se restaura,
+            // el próximo tooltip de puerta o de acción sale colgado del cursor.
+            var controller = CreateOverlayTooltipController(out var root, panelSize: new Vector2(100f, 40f));
+
+            // Act
+            controller.Show("texto", Vector2.zero, ownerId: 1, TooltipPlacementMode.Beside);
+            controller.Show("texto", Vector2.zero, ownerId: 2, TooltipPlacementMode.Fixed);
+
+            // Assert
+            Assert.AreEqual(0.5f, root.pivot.x, 1e-3f);
+            Assert.AreEqual(0f, root.pivot.y, 1e-3f);
+        }
+
         /// <param name="panelSize">
         /// Tamaño del panel (sizeDelta), relevante para los tests de clamp — sin tamaño
         /// el rect queda en un punto y el clamp nunca dispara.

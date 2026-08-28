@@ -83,6 +83,16 @@ namespace Rollgeon.UI.Tooltips
 
         [SerializeField] private TooltipPlacementSettings _placement = new TooltipPlacementSettings();
 
+        /// <summary>
+        /// Dónde se dibuja el panel respecto del objeto. Escribible por lo mismo que
+        /// <see cref="Mode"/>: los triggers que se cuelgan por código no pasan por el Inspector.
+        /// </summary>
+        public TooltipPlacementMode Placement
+        {
+            get => _placement.Mode;
+            set => _placement.Mode = value;
+        }
+
         [Tooltip("Cámara usada para raycast + WorldToScreenPoint. Null = Camera.main en runtime.")]
         [SerializeField] private Camera _camera;
 
