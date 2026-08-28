@@ -283,9 +283,11 @@ namespace Rollgeon.Editor.Tools.Polymorphic
             // titulo ya marcaba la division visualmente, pero no dejaba esconder lo que no se toca.
             string openSection = null;
             bool sectionVisible = true;
+            bool sectionHasContent = true;
 
-            foreach (var child in children)
+            for (int i = 0; i < children.Count; i++)
             {
+                var child = children[i];
                 if (IsBlockNamed(blocks, child.Name)) continue;   // graphed
                 if (IsBlockNamed(pickers, child.Name)) continue;  // graphed, or handled below
 
@@ -293,7 +295,17 @@ namespace Rollgeon.Editor.Tools.Polymorphic
                 if (title != null && title != openSection)
                 {
                     openSection = title;
-                    sectionVisible = DrawSectionHeader(type, title);
+                    sectionHasContent = SectionHasVisibleContent(children, i, title, blocks, pickers);
+                    sectionVisible = sectionHasContent && DrawSectionHeader(type, title);
+                }
+
+                if (!sectionHasContent)
+                {
+                    // Se dibuja igual — no emite nada — porque Odin reevalua el ShowIf DENTRO del
+                    // Draw de cada campo. Saltearlo dejaria la categoria escondida para siempre:
+                    // al pasar el item de Passive a Active, sus campos nunca volverian a mirarse.
+                    child.Draw();
+                    continue;
                 }
 
                 if (!sectionVisible) { drewAnything = true; continue; }
@@ -413,6 +425,36 @@ namespace Rollgeon.Editor.Tools.Polymorphic
 
             foreach (var block in blocks)
                 DrawBlockMember(ctx, block, value, path, opts, depth);
+        }
+
+        /// <summary>
+        /// Si la categoria que abre <paramref name="start"/> tiene algun campo visible.
+        /// </summary>
+        /// <remarks>
+        /// Una categoria puede quedar entera oculta por <c>ShowIf</c> — "Action economy" y "Active
+        /// Effects" son solo de items Activos, asi que en un Pasivo no tienen un solo campo. Su
+        /// cabecera desplegada la dibuja el <c>[Title]</c> de Odin, que sale junto al primer campo:
+        /// sin campos no sale nada, y quedaba una categoria sin titulo ni linea con el triangulo
+        /// flotando sobre la anterior. Desplegarla la hacia desaparecer y no habia como volver a
+        /// plegarla.
+        /// </remarks>
+        static bool SectionHasVisibleContent(
+            List<InspectorProperty> children, int start, string title,
+            IReadOnlyList<PolymorphicMember> blocks, IReadOnlyList<PolymorphicMember> pickers)
+        {
+            for (int i = start; i < children.Count; i++)
+            {
+                var child = children[i];
+
+                var childTitle = TitleOf(child);
+                if (i > start && childTitle != null && childTitle != title) break;
+
+                if (IsBlockNamed(blocks, child.Name)) continue;
+                if (IsBlockNamed(pickers, child.Name)) continue;
+                if (child.State.Visible) return true;
+            }
+
+            return false;
         }
 
         /// <summary>El <c>[Title]</c> del miembro, si abre una categoria; null si no.</summary>

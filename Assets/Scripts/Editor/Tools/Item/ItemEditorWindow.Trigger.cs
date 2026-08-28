@@ -88,17 +88,20 @@ namespace Rollgeon.Editor.Tools.Item
             // no cambiaria cuando se aplica.
             if (ItemTriggerCatalog.IsPermanent(hook))
             {
-                EditorGUILayout.LabelField("Dispara cuando", "Mientras lo tengas en el inventario");
-                EditorGUILayout.LabelField(" ",
-                    "Es un modificador permanente: se aplica al conseguir el ítem y se saca al " +
-                    "perderlo. No usa evento.", EditorStyles.miniLabel);
+                EditorGUILayout.LabelField("Dispara cuando", EditorStyles.miniBoldLabel);
+                EditorGUILayout.LabelField("Mientras lo tengas en el inventario");
+                DrawHelp("Es un modificador permanente: se aplica al conseguir el ítem y se saca al " +
+                         "perderlo. No usa evento.");
                 return;
             }
 
-            // El índice -1 deja el popup en blanco en vez de mentir mostrando la primera opción,
-            // que es justo el error que este catálogo viene a hacer visible.
+            EditorGUILayout.LabelField("Dispara cuando", EditorStyles.miniBoldLabel);
+
+            // El desplegable va a lo ancho y con el titulo arriba: las frases del catalogo son
+            // oraciones enteras ("Cuando jugás un combo específico") y en la columna de valor de un
+            // panel angosto entraba la mitad.
             int current = matched.HasValue ? IndexOf(matched.Value.Id) : -1;
-            int next = EditorGUILayout.Popup("Dispara cuando", current, TriggerLabels);
+            int next = EditorGUILayout.Popup(current, TriggerLabels);
             if (next != current && next >= 0)
             {
                 var option = ItemTriggerCatalog.All[next];
@@ -113,8 +116,8 @@ namespace Rollgeon.Editor.Tools.Item
                 return;
             }
 
+            DrawHelp(matched.Value.Help);
             var opt = matched.Value;
-            EditorGUILayout.LabelField(" ", opt.Help, EditorStyles.miniLabel);
 
             if (!opt.FiltersByEntity)
                 EditorGUILayout.HelpBox(
@@ -192,7 +195,8 @@ namespace Rollgeon.Editor.Tools.Item
             int current = System.Array.IndexOf(kinds, hook.ActionKindFilter);
             if (current < 0) current = 0;
 
-            int next = EditorGUILayout.Popup("Limitado a", current, labels);
+            EditorGUILayout.LabelField("Limitado a", EditorStyles.miniBoldLabel);
+            int next = EditorGUILayout.Popup(current, labels);
             if (next == current) return;
 
             var picked = kinds[next];
@@ -209,6 +213,22 @@ namespace Rollgeon.Editor.Tools.Item
                 asset.PassiveHooks.Add(hook);
             });
         }
+
+        /// <summary>
+        /// La linea de ayuda, a todo el ancho y envolviendo.
+        /// </summary>
+        /// <remarks>
+        /// Iba como valor de un <c>LabelField</c> con label vacio: eso la mete en la columna de
+        /// valor, que en este panel son ~150 px, y <c>miniLabel</c> no envuelve — se cortaba a la
+        /// mitad de la primera frase.
+        /// </remarks>
+        static void DrawHelp(string text)
+        {
+            _helpStyle ??= new GUIStyle(EditorStyles.miniLabel) { wordWrap = true };
+            EditorGUILayout.LabelField(text, _helpStyle);
+        }
+
+        static GUIStyle _helpStyle;
 
         static int IndexOf(string optionId)
         {
