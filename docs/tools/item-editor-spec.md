@@ -299,6 +299,33 @@ Todo lo demás está afuera.
    protegen con confirmación y con "qué referencia a esto", que es lo que realmente falta hoy:
    borrar deja una entry null en el catálogo y un `WeightedShopItem` sin ítem en el pool, que el
    rolling saltea **en silencio**.
+
+### 7.1 Límite medido de la atomicidad del alta
+
+Probado end-to-end contra Unity con `ItemAuthoring.CreateItem` + un solo `PerformUndo`:
+
+| | Tras crear | Tras un Ctrl+Z |
+|---|---|---|
+| Archivo `.asset` | ✅ creado | ⚠️ **sigue existiendo** |
+| `ItemCatalog` | ✅ registrado | ✅ revertido |
+| `ShopPool` | ✅ con precio | ✅ revertido |
+| Tabla `Content` (es + en) | ✅ con las 2 claves | ✅ revertido |
+
+Los tres assets revierten a contenido **byte-idéntico** (verificado con `git diff`). El que no
+vuelve es el archivo: `Undo.RegisterCreatedObjectUndo` desregistra el objeto pero **Unity no
+borra el `.asset` del disco**.
+
+**Consecuencia:** un Ctrl+Z después de crear deja exactamente el estado que el `UndoGroup`
+buscaba evitar — un ítem huérfano, sin catálogo, sin precio y sin localización.
+
+**Cómo se cubre:** no se intenta forzar el borrado en el undo (engancharse a
+`undoRedoPerformed` para borrar archivos es frágil y puede comerse trabajo real). En su lugar,
+`ItemQuery.CheckCatalogHealth` ya reporta los ítems fuera del catálogo y fuera del pool, así que
+el huérfano **aparece como hallazgo** en la tab de métricas. La UI de la Fase 3 debería ofrecer
+borrarlo desde ahí.
+
+`Item_New.asset` e `Item_New 1.asset`, que están sin trackear en el repo, son exactamente este
+caso y sirven de caso de prueba.
 5. **Un test EditMode por superficie** que verifique que después de cada mutación el asset quedó
    dirty. Es la única forma de que la regla 3 no se degrade con el tiempo.
 
