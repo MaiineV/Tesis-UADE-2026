@@ -1,3 +1,4 @@
+using Rollgeon.Editor.Tools.Polymorphic;
 using Rollgeon.Items;
 using Rollgeon.Shop;
 using UnityEditor;
@@ -39,13 +40,20 @@ namespace Rollgeon.Editor.Tools.Item
             if (DrawExtrasSection("Pools")) DrawPoolsSection(asset);
         }
 
-        /// <summary>Cabecera plegable, con el mismo estado persistido que las categorias de Odin.</summary>
+        /// <summary>
+        /// Cabecera de Shop y Pools, con el mismo aspecto y la misma persistencia que las categorías
+        /// que vienen del <c>[Title]</c> de Odin.
+        /// </summary>
+        /// <remarks>
+        /// Estas dos no tienen <c>[Title]</c> del que colgarse — no son campos del asset —, así que
+        /// dibujan su propio título y su línea. Pasan por el mismo helper que las otras para que no se
+        /// note de dónde salió cada una.
+        /// </remarks>
         static bool DrawExtrasSection(string title)
         {
-            var key = "Rollgeon.PolymorphicBlockDrawer.Section.ItemSO." + title;
+            var key = PolymorphicBlockDrawer.SectionKeyOf(nameof(ItemSO), title);
             bool expanded = EditorPrefs.GetBool(key, true);
-            EditorGUILayout.Space(2);
-            bool next = EditorGUILayout.Foldout(expanded, title, true, EditorStyles.foldoutHeader);
+            bool next = PolymorphicBlockDrawer.SectionToggle(title, expanded, drawOwnTitle: true);
             if (next != expanded) EditorPrefs.SetBool(key, next);
             return next;
         }

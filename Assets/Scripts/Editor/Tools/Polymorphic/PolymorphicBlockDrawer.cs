@@ -433,13 +433,69 @@ namespace Rollgeon.Editor.Tools.Polymorphic
         /// </remarks>
         static bool DrawSectionHeader(System.Type ownerType, string title)
         {
-            var key = "Rollgeon.PolymorphicBlockDrawer.Section." + ownerType.Name + "." + title;
+            var key = SectionKeyOf(ownerType.Name, title);
             bool expanded = EditorPrefs.GetBool(key, true);
-
-            EditorGUILayout.Space(2);
-            bool next = EditorGUILayout.Foldout(expanded, title, true, EditorStyles.foldoutHeader);
+            bool next = SectionToggle(title, expanded, drawOwnTitle: !expanded);
             if (next != expanded) EditorPrefs.SetBool(key, next);
             return next;
+        }
+
+        internal static string SectionKeyOf(string ownerTypeName, string title) =>
+            "Rollgeon.PolymorphicBlockDrawer.Section." + ownerTypeName + "." + title;
+
+        /// <summary>
+        /// Triángulo de plegado alineado a la derecha del encabezado de categoría.
+        /// </summary>
+        /// <remarks>
+        /// El subrayado lo dibuja el <c>[Title]</c> de Odin, y queremos ese — no una segunda cabecera
+        /// arriba, que era lo que se veía duplicado. Así que el triángulo se dibuja solo, alineado a
+        /// la derecha, y se lo sube con un espacio negativo para que caiga sobre la misma línea que el
+        /// título que Odin va a dibujar justo después.
+        /// <para>
+        /// Cuando la categoría está plegada, Odin no llega a dibujar nada — sus campos no se dibujan —
+        /// así que ahí el título y su línea los pone <paramref name="drawOwnTitle"/>, replicando el
+        /// mismo aspecto para que plegar y desplegar no cambie la cabecera.
+        /// </para>
+        /// </remarks>
+        internal static bool SectionToggle(string title, bool expanded, bool drawOwnTitle)
+        {
+            EditorGUILayout.Space(6);
+
+            if (drawOwnTitle)
+            {
+                using (new EditorGUILayout.HorizontalScope())
+                {
+                    EditorGUILayout.LabelField(title, EditorStyles.boldLabel);
+                    GUILayout.FlexibleSpace();
+                    expanded = DrawArrow(expanded);
+                }
+                DrawUnderline();
+                return expanded;
+            }
+
+            using (new EditorGUILayout.HorizontalScope())
+            {
+                GUILayout.FlexibleSpace();
+                expanded = DrawArrow(expanded);
+            }
+
+            // Sube la línea siguiente para que el título de Odin comparta fila con el triángulo.
+            GUILayout.Space(-EditorGUIUtility.singleLineHeight - 2f);
+            return expanded;
+        }
+
+        static bool DrawArrow(bool expanded)
+        {
+            var rect = GUILayoutUtility.GetRect(16f, EditorGUIUtility.singleLineHeight, GUILayout.Width(16f));
+            if (GUI.Button(rect, expanded ? "▾" : "▸", EditorStyles.label)) expanded = !expanded;
+            return expanded;
+        }
+
+        static void DrawUnderline()
+        {
+            var line = GUILayoutUtility.GetRect(GUIContent.none, GUIStyle.none, GUILayout.Height(1f));
+            EditorGUI.DrawRect(line, new Color(0.35f, 0.35f, 0.35f, 1f));
+            EditorGUILayout.Space(2);
         }
 
         static bool IsBlockNamed(IReadOnlyList<PolymorphicMember> blocks, string name)
