@@ -484,8 +484,12 @@ namespace Rollgeon.Combat.Threat
             }
         }
 
-        /// <summary>Naranja de advertencia: el default del overload sin color.</summary>
-        public static readonly Color DefaultTint = new Color(1f, 0.45f, 0.1f, 0.55f);
+        /// <summary>
+        /// Rojo de advertencia: el default del overload sin color. Rojo y no naranja: es la marca
+        /// de "esto te va a pegar", y el naranja se leía como decorado — el mismo matiz que el
+        /// fuego ya puesto de los hazards (0.85, 0.1, 0.05).
+        /// </summary>
+        public static readonly Color DefaultTint = new Color(0.9f, 0.12f, 0.06f, 0.55f);
 
         /// <summary>Cian de la zona segura (paleta de las fichas de jefe).</summary>
         public static readonly Color SafeTint = new Color(0.227f, 0.525f, 0.784f, 0.5f);

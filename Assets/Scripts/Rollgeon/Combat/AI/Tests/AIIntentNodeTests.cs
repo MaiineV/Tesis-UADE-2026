@@ -85,7 +85,9 @@ namespace Rollgeon.Combat.AI.Tests
                 "Las casillas no son las que el jefe ya dejó marcadas. Recalcularlas puede mover " +
                 "el área, y el dibujo dejaría de coincidir con lo que se va a prender.");
             Assert.AreEqual(7, intent.Damage, "El número sale de la marca, no del nodo que prende.");
-            Assert.AreEqual(4, intent.LeavesRounds, "No dice cuánto dura el fuego que deja.");
+            Assert.IsNull(intent.Leaves,
+                "El aviso volvió a cargar lo que deja: la tarjeta arrastraría 'Deja fuego: …' — " +
+                "los números que, apenas prende, ya muestra Fire Tiles.");
         }
 
         [Test]

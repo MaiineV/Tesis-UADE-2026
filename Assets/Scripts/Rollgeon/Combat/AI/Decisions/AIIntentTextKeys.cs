@@ -33,9 +33,7 @@ namespace Rollgeon.Combat.AI.Decisions
         /// </remarks>
         public static string RuleFallback(string key) => key switch
         {
-            // Vacía a propósito: "Bola de fuego" ya dice qué es, la casilla marcada en el piso
-            // dice dónde, y los números del fuego los lleva la tarjeta de Fire Tiles.
-            Ignite => string.Empty,
+            Ignite => "Prende un cono de fuego.",
             // Vacía a propósito: el título dice qué hace, el número de la tarjeta dice cuánto, y
             // "desde lejos" lo dice la familia del bicho arriba del panel. No quedaba nada.
             RangedShot => string.Empty,

@@ -127,12 +127,13 @@ namespace Rollgeon.Combat.AI.Decisions
             var source = AINode_TelegraphMark.SourceKey(context.SelfGuid, ChannelId);
             if (!threat.TryPeek(source, out var area)) return false;
 
-            int rounds = DurationRounds > 0 ? DurationRounds : Definition.DefaultDurationRounds;
+            // Sin leaves a propósito: con ellos la tarjeta arrastraba "Deja fuego: 6 al entrar,
+            // 10 por turno, 4 rondas" — los números que, apenas prende, ya muestra Fire Tiles.
+            // El párrafo de las bombas sí los necesita, y por eso el payload sigue existiendo.
             intent = new AIIntent(
                 AIIntentTextKeys.Ignite, "Bola de fuego",
                 area.Damage, area.Kind,
                 tiles: area.Tiles,
-                leaves: Definition, leavesRounds: rounds,
                 turnsAway: AnnounceTurns,
                 channelKey: source);
             return true;

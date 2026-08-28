@@ -77,8 +77,6 @@ namespace Rollgeon.Editor.Tools.Localization.Tests
             // "Te dispara" más el número de la tarjeta ya lo dicen entero, y "desde lejos" lo
             // dice la fila de familia del panel.
             AIIntentTextKeys.RangedShot + ".desc",
-            // "Bola de fuego" ya dice qué es, y los números del fuego van en Fire Tiles.
-            AIIntentTextKeys.Ignite + ".desc",
         };
 
         private static readonly string[] Collections = { "Content", "UI" };

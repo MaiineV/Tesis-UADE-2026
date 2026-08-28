@@ -733,9 +733,11 @@ namespace Rollgeon.EditorTools.Localization
         private static void SeedIntents()
         {
             Content(AIIntentTextKeys.Ignite + ".name", "Bola de fuego", "Fire Ball");
-            // Vacía a propósito: el título dice qué es, la marca en el piso dice dónde, y los
-            // números del fuego los lleva la tarjeta de Fire Tiles.
-            Content(AIIntentTextKeys.Ignite + ".desc", string.Empty, string.Empty);
+            // Una frase y sin números: la forma. El dónde lo marca el piso y los números del
+            // fuego los lleva la tarjeta de Fire Tiles.
+            Content(AIIntentTextKeys.Ignite + ".desc",
+                "Prende un cono de fuego.",
+                "Lights a cone of fire.");
 
             // Descripcion vacia a proposito, igual que el estallido: el titulo dice que hace, el
             // numero de la tarjeta dice cuanto, y "desde lejos" lo dice la familia del bicho.
