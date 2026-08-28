@@ -13,6 +13,17 @@ namespace Rollgeon.Editor.Tools.Polymorphic
         /// <summary>Optional per-asset warnings drawn above the graph.</summary>
         protected virtual void DrawIssues(T asset) { }
 
+        /// <summary>
+        /// Campos del asset que no son campos del asset. Se dibuja bajo los propios, en el nodo raíz.
+        /// </summary>
+        /// <remarks>
+        /// El panel raíz lo dibuja Odin desde el objeto, así que solo muestra lo que vive <i>en</i> el
+        /// asset. Pero hay datos que pertenecen conceptualmente al ítem y están guardados en otro lado
+        /// — el precio vive en el <c>ShopPool</c>, no en el <c>ItemSO</c> — y sin este gancho el autor
+        /// tiene que salir de la ventana para editarlos, que es justo lo que la tool viene a evitar.
+        /// </remarks>
+        protected virtual void DrawRootExtras(T asset) { }
+
         void DrawSidePanel()
         {
             if (_selected == null)
@@ -40,6 +51,7 @@ namespace Rollgeon.Editor.Tools.Polymorphic
                 {
                     PolymorphicBlockDrawer.DrawNode(
                         _ctx, _selected, string.Empty, PolymorphicBlockDrawer.Options.Default);
+                    DrawRootExtras(_selected);
                     DrawRenameButton();
                 }
 
