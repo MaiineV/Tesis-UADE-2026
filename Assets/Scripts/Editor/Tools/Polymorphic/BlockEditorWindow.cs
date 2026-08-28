@@ -155,7 +155,7 @@ namespace Rollgeon.Editor.Tools.Polymorphic
                 _sidePanel?.MarkDirtyRepaint();
                 _dataPanel?.MarkDirtyRepaint();
                 MarkDeclaredTabsDirty();
-                _graph?.Rebuild();
+                _graph?.RefreshOrRebuild();
             };
 
             SwitchTab(0);

@@ -274,6 +274,40 @@ namespace Rollgeon.Editor.Tools.Polymorphic.Graph
         /// (CH_Warrior, the biggest asset in the project, is 43 nodes) and it's the only way the
         /// graph can't drift from list order.
         /// </summary>
+        /// <summary>
+        /// Refresca el canvas tras un cambio en el asset, reconstruyendo solo si hizo falta.
+        /// </summary>
+        /// <remarks>
+        /// Editar un valor en el panel no cambia la topología: los mismos bloques siguen en los mismos
+        /// paths, solo cambió lo que dicen. Reconstruir entero en ese caso destruiría y recrearía cada
+        /// nodo <b>en cada tecla</b>, y de paso te tira la selección del canvas mientras escribís.
+        /// <para>
+        /// Si el conjunto de paths es idéntico al que ya está en pantalla, se actualiza el contenido
+        /// de las vistas existentes. Si cambió — se agregó o borró un bloque — se reconstruye.
+        /// </para>
+        /// </remarks>
+        public void RefreshOrRebuild()
+        {
+            if (_model?.Root == null || _asset == null) { Rebuild(); return; }
+
+            var next = BlockGraphModel.Build(_asset);
+            if (next?.Root == null || next.AllNodes.Count != _model.AllNodes.Count) { Rebuild(); return; }
+
+            for (int i = 0; i < next.AllNodes.Count; i++)
+            {
+                if (next.AllNodes[i].Path == _model.AllNodes[i].Path) continue;
+                Rebuild();
+                return;
+            }
+
+            // Misma topología: solo cambiaron los valores. Se refresca el texto en su lugar.
+            for (int i = 0; i < next.AllNodes.Count; i++)
+            {
+                var old = _model.AllNodes[i];
+                if (_views.TryGetValue(old, out var view)) view.RefreshContent(next.AllNodes[i]);
+            }
+        }
+
         public void Rebuild()
         {
             _suppressSelectionEvents = true;

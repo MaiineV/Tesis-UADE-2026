@@ -37,10 +37,53 @@ namespace Rollgeon.Editor.Tools.Polymorphic.Graph
         const float ICON_ROW_HEIGHT = 32f;
         const float DETAIL_LINE_HEIGHT = 14f;
 
-        /// <summary>Rough glyph budget per wrapped line of body text at the node's fixed width and
-        /// the body label's font size. Deliberately conservative (real text wraps a little earlier)
-        /// so this only ever over-reserves, never clips.</summary>
-        const float CHARS_PER_LINE = 32f;
+        /// <summary>Glifos que entran en una línea del cuerpo, al ancho del nodo menos sus márgenes.</summary>
+        const int CHARS_PER_LINE = 32;
+
+        /// <summary>
+        /// Cuántas líneas ocupa <paramref name="text"/> al envolverse por palabras.
+        /// </summary>
+        /// <remarks>
+        /// Antes esto era <c>ceil(largo / CHARS_PER_LINE)</c>, y por eso algunas descripciones se
+        /// cortaban: esa cuenta asume que el texto llena cada línea hasta el borde, pero el wrap real
+        /// corta en el último espacio que entra. Una línea que termina antes para no partir una
+        /// palabra desperdicia lo que sobra, así que el texto ocupa <b>más</b> líneas que las
+        /// estimadas — nunca menos. Simular el corte por palabras elimina esa subestimación.
+        /// <para>
+        /// Sigue siendo una función pura sobre el string: no mide fuentes ni toca el sistema de GUI,
+        /// así que el layout se mantiene determinístico y testeable fuera de un <c>OnGUI</c>.
+        /// Una palabra más larga que la línea se parte, que es lo que hace el motor de texto.
+        /// </para>
+        /// </remarks>
+        internal static int WrappedLineCount(string text)
+        {
+            if (string.IsNullOrEmpty(text)) return 0;
+
+            int lines = 1;
+            int used = 0;
+
+            foreach (var word in text.Split(' '))
+            {
+                int len = word.Length;
+
+                // Palabra sola más larga que la línea: se parte, y cae en la última.
+                if (len > CHARS_PER_LINE)
+                {
+                    if (used > 0) { lines++; used = 0; }
+                    lines += (len - 1) / CHARS_PER_LINE;
+                    used = len % CHARS_PER_LINE;
+                    if (used == 0) used = CHARS_PER_LINE;
+                    continue;
+                }
+
+                int needed = used == 0 ? len : used + 1 + len;
+                if (needed <= CHARS_PER_LINE) { used = needed; continue; }
+
+                lines++;
+                used = len;
+            }
+            return lines;
+        }
 
         /// <summary>Extra breathing room where a group's children stop being an AND-gate and start
         /// being a sequence — see <see cref="IsLaneBoundary"/>.</summary>
@@ -63,10 +106,7 @@ namespace Rollgeon.Editor.Tools.Polymorphic.Graph
 
             string detail = BlockNodeDescription.Describe(node);
             if (!string.IsNullOrEmpty(detail))
-            {
-                int lines = Mathf.Max(1, Mathf.CeilToInt(detail.Length / CHARS_PER_LINE));
-                height += lines * DETAIL_LINE_HEIGHT;
-            }
+                height += WrappedLineCount(detail) * DETAIL_LINE_HEIGHT;
 
             return Mathf.Max(NODE_HEIGHT, height);
         }

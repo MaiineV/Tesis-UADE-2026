@@ -26,7 +26,7 @@ namespace Rollgeon.Editor.Tools.Polymorphic.Graph
         /// node below).</summary>
         const float CollapsedHeight = 40f;
 
-        public BlockGraphNode Model { get; }
+        public BlockGraphNode Model { get; private set; }
         public Port InputPort { get; }
         public Port OutputPort { get; }
 
@@ -185,6 +185,36 @@ namespace Rollgeon.Editor.Tools.Polymorphic.Graph
         {
             _collapsed = !_collapsed;
             ApplyCollapsedState(raiseEvent: true);
+        }
+
+        /// <summary>
+        /// Vuelve a pintar el nodo desde <paramref name="next"/>, sin recrearlo.
+        /// </summary>
+        /// <remarks>
+        /// Se usa cuando el asset cambió de valores pero no de topología: los mismos bloques en los
+        /// mismos paths, diciendo otra cosa. Recrear la vista ahí costaría destruir y construir cada
+        /// nodo en cada tecla, y le tiraría al usuario la selección del canvas mientras escribe.
+        /// <para>
+        /// El <c>Model</c> se reemplaza y no solo se releen sus textos: cada proyección arma nodos
+        /// nuevos, y quedarse con el viejo dejaría <c>Value</c>, <c>Owner</c> y <c>SourceIndex</c>
+        /// apuntando a una foto vieja — que es lo que consultan el menú de agregar y el de borrar.
+        /// </para>
+        /// </remarks>
+        public void RefreshContent(BlockGraphNode next)
+        {
+            if (next == null) return;
+
+            Model = next;
+            title = next.Title;
+            titleContainer.style.backgroundColor = BlockPanelStyles.AccentOf(next.Kind);
+
+            InputPort.portName = InputPortLabel(next);
+            InputPort.portColor = next.Kind == BlockNodeKind.Condition ? GateEdgeColor : FlowEdgeColor;
+
+            _body.Clear();
+            BuildBody(_body, next);
+
+            ApplyCollapsedState(raiseEvent: false);
         }
 
         void ApplyCollapsedState(bool raiseEvent)

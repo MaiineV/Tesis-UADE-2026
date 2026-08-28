@@ -187,10 +187,29 @@ namespace Rollgeon.Editor.Tools.Polymorphic
 
         public void UpdateTree() => Tree?.UpdateTree();
 
+        /// <summary>
+        /// Vuelca al asset lo que el panel editó este frame, y avisa si algo cambió de verdad.
+        /// </summary>
+        /// <remarks>
+        /// El <c>Notify</c> es la parte que faltaba. <c>PropertyTree.ApplyChanges</c> devuelve
+        /// <c>true</c> cuando efectivamente aplicó una edición, y ese retorno se estaba descartando:
+        /// como editar un valor por el drawer de Odin no pasa por <see cref="Mutate"/>, nadie
+        /// levantaba <see cref="Changed"/> y el grafo seguía mostrando el valor viejo hasta que uno
+        /// cambiaba de asset y volvía — momento en que se reconstruía por otro camino.
+        /// <para>
+        /// Solo notifica cuando hubo cambio real, no en cada repaint: si notificara siempre, el grafo
+        /// se reconstruiría en cada frame.
+        /// </para>
+        /// </remarks>
         public void ApplyChanges()
         {
             FlushNestedCollectionQueues();
-            Tree?.ApplyChanges();
+
+            if (Tree == null) return;
+            if (!Tree.ApplyChanges()) return;
+
+            MarkDirty();
+            Notify();
         }
 
         // ---- colas de colección anidadas -----------------------------------
