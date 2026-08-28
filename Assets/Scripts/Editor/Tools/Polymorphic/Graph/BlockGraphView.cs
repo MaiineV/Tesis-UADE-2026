@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using UnityEditor;
 using UnityEditor.Experimental.GraphView;
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -18,16 +19,22 @@ namespace Rollgeon.Editor.Tools.Polymorphic.Graph
     /// <see cref="OnNodeSelected"/> and the host draws it. Nothing is edited here.
     /// </para>
     /// <para>
-    /// <b>Nothing is connectable and nothing is draggable</b>, because there is no authored topology
-    /// to author: every edge comes from a field or a list index. Ports exist so edges have anchors.
-    /// Adding a block means adding a list element, not dropping a node on empty canvas — so there is
-    /// no node-creation search window either.
+    /// <b>Nodes are never connectable and never draggable</b>, because there is no authored topology
+    /// to author: every edge comes from a field or a list index (<see cref="GetCompatiblePorts"/>
+    /// always returns empty). Adding a block means adding a list element — dragging from a node's
+    /// output connector opens the same add menu as right-click (<see cref="AppendAddItems"/> via
+    /// <see cref="PortAddDragManipulator"/>), it never starts a real connection.
     /// </para>
     /// </remarks>
     public sealed class BlockGraphView : GraphView
     {
         readonly Dictionary<BlockGraphNode, BlockNodeView> _views = new Dictionary<BlockGraphNode, BlockNodeView>();
         readonly Label _emptyHint;
+
+        /// <summary>Collapsed state keyed by <see cref="BlockGraphNode.Path"/>, not by node instance
+        /// — <see cref="Rebuild"/> throws every node view away on each edit, so the path is the only
+        /// identity that survives. Missing entry = expanded (the default).</summary>
+        readonly Dictionary<string, bool> _collapsedByPath = new Dictionary<string, bool>();
 
         UnityEngine.Object _asset;
         PolymorphicAuthoringContext _ctx;
@@ -107,8 +114,38 @@ namespace Rollgeon.Editor.Tools.Polymorphic.Graph
 
         void AppendAddItems(DropdownMenu menu, BlockNodeView node)
         {
+            foreach (var (label, perform) in AddOptionsFor(node))
+                menu.AppendAction(label, _ => perform());
+        }
+
+        /// <summary>
+        /// Shown when a drag from <see cref="BlockNodeView.OutputPort"/> lands on empty canvas
+        /// (<see cref="PortAddDragManipulator"/>). Same options as the right-click menu — built
+        /// from <see cref="AddOptionsFor"/> so there is exactly one place that decides "what can be
+        /// added here", not two menus that can drift apart.
+        /// </summary>
+        void ShowAddMenuAtCursor(BlockNodeView node)
+        {
+            var menu = new GenericMenu();
+            bool any = false;
+            foreach (var (label, perform) in AddOptionsFor(node))
+            {
+                any = true;
+                menu.AddItem(new GUIContent(label), false, () => perform());
+            }
+            if (!any) menu.AddDisabledItem(new GUIContent("(nothing to add here)"));
+            menu.ShowAsContext();
+        }
+
+        /// <summary>
+        /// Every list this node's value owns, one entry per concrete subtype it could hold —
+        /// the single source of truth for "what can be added here", shared by the right-click
+        /// menu and the drag-from-connector drop menu.
+        /// </summary>
+        IEnumerable<(string label, Action perform)> AddOptionsFor(BlockNodeView node)
+        {
             var value = node.Model.Value;
-            if (value == null) return;
+            if (value == null) yield break;
             var type = value.GetType();
 
             foreach (var member in PolymorphicMemberScanner.Scan(type))
@@ -121,9 +158,7 @@ namespace Rollgeon.Editor.Tools.Polymorphic.Graph
                     var capturedList = list;
                     var capturedType = concrete;
                     var label = member.Title;
-                    menu.AppendAction(
-                        $"Add {label}/{concrete.Name}",
-                        _ => Add(capturedList, capturedType, label));
+                    yield return ($"Add {label}/{concrete.Name}", () => Add(capturedList, capturedType, label));
                 }
             }
 
@@ -135,9 +170,19 @@ namespace Rollgeon.Editor.Tools.Polymorphic.Graph
                 var capturedList = list;
                 var capturedType = member.BaseType;
                 var label = member.Title;
-                menu.AppendAction($"Add {label}/{member.BaseType.Name}",
-                    _ => Add(capturedList, capturedType, label));
+                yield return ($"Add {label}/{member.BaseType.Name}", () => Add(capturedList, capturedType, label));
             }
+        }
+
+        /// <summary>Whether <paramref name="type"/> has any list a block could be added to — used to
+        /// keep the output port visible (and therefore draggable) on a node with zero children today
+        /// but an addable list, e.g. a freshly-added <c>EffChain</c> with no phases yet.</summary>
+        internal static bool HasAddableMembers(Type type)
+        {
+            if (type == null) return false;
+            foreach (var member in PolymorphicMemberScanner.Scan(type)) if (member.IsList) return true;
+            foreach (var member in PolymorphicMemberScanner.BlockMembersOf(type)) if (member.IsList) return true;
+            return false;
         }
 
         void Add(IList list, Type concrete, string label)
@@ -223,7 +268,11 @@ namespace Rollgeon.Editor.Tools.Polymorphic.Graph
 
                 foreach (var node in _model.AllNodes)
                 {
-                    var view = new BlockNodeView(node);
+                    bool collapsed = _collapsedByPath.TryGetValue(node.Path, out var c) && c;
+                    var view = new BlockNodeView(node, collapsed);
+                    view.OnCollapseChanged += isCollapsed => _collapsedByPath[node.Path] = isCollapsed;
+                    view.OnAddMenuRequested += () => ShowAddMenuAtCursor(view);
+
                     var p = positions.TryGetValue(node, out var xy) ? xy : Vector2.zero;
                     view.SetPosition(new Rect(p, Vector2.zero));
                     AddElement(view);
