@@ -174,8 +174,17 @@ namespace Rollgeon.UI.HUD.Status
             if (!intents.TryRead(_entityGuid, _standing, _next)) return;
 
             // Su siguiente ataque primero: es lo que el jugador vino a leer.
-            foreach (var intent in _next) _states.Add(ToState(intent));
-            foreach (var intent in _standing) _states.Add(ToState(intent));
+            foreach (var intent in _next) AddIfOwn(intent);
+            foreach (var intent in _standing) AddIfOwn(intent);
+        }
+
+        // Lo que le pertenece a otra cosa del paño se lee en ESA cosa. Las bombas del Croupier
+        // publican una cruz cada una y el jefe las tickea a todas, así que sin esto su columna
+        // eran tres tarjetas de bombas y su próximo ataque perdido al final.
+        private void AddIfOwn(in AIIntent intent)
+        {
+            if (intent.SubjectGuid != Guid.Empty && intent.SubjectGuid != _entityGuid) return;
+            _states.Add(ToState(intent));
         }
 
         // El badge cuenta turnos hasta que pase, no turnos restantes de un estado: TurnsAway 0 es
