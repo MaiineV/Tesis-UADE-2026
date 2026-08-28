@@ -45,6 +45,52 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             return so;
         }
 
+        const string TemplatesDir = TestRoot + "/Templates";
+        const string EnemiesDir = TestRoot + "/Enemies";
+
+        [Test]
+        public void SaveAsTemplate_WritesUnderTemplatesFolder_WithTplId()
+        {
+            var src = CreateSource("ED_Tpl", "test.tpl");
+
+            var tpl = EnemyAssetOps.SaveAsTemplate(src, TemplatesDir, LayoutsDir);
+
+            Assert.IsNotNull(tpl);
+            StringAssert.StartsWith(TemplatesDir + "/ET_Tpl", AssetDatabase.GetAssetPath(tpl));
+            Assert.AreEqual("tpl.test.tpl", tpl.EntityId);
+            Assert.AreEqual("Origen", tpl.DisplayName);
+        }
+
+        [Test]
+        public void CreateFromAsset_CopiesTemplateBackAsEnemy_WithoutSuffixes()
+        {
+            var src = CreateSource("ED_Src2", "test.src2");
+            var tpl = EnemyAssetOps.SaveAsTemplate(src, TemplatesDir, LayoutsDir);
+
+            var enemy = EnemyAssetOps.CreateFromAsset(tpl, EnemiesDir, LayoutsDir);
+
+            Assert.IsNotNull(enemy);
+            StringAssert.StartsWith(EnemiesDir + "/ED_Src2", AssetDatabase.GetAssetPath(enemy));
+            Assert.AreEqual("enemy.test.src2", enemy.EntityId);
+            Assert.AreEqual("Origen", enemy.DisplayName);
+            Assert.IsInstanceOf<AINode_Sequence>(enemy.AIRoot, "CopyAsset tiene que preservar el blob Odin");
+        }
+
+        [Test]
+        public void CreateFromTemplate_AppliesArchetype_AndPersists()
+        {
+            var template = Templates.EnemyArchetypeTemplates.Find("pursuer");
+
+            var so = EnemyAssetOps.CreateFromTemplate(template, EnemiesDir);
+
+            Assert.IsNotNull(so);
+            StringAssert.StartsWith(EnemiesDir + "/ED_Pursuer", AssetDatabase.GetAssetPath(so));
+            Assert.AreEqual("enemy.pursuer", so.EntityId);
+            Assert.AreEqual(EnemyArchetype.Melee, so.Design.Archetype);
+            var reloaded = AssetDatabase.LoadAssetAtPath<EnemyDataSO>(AssetDatabase.GetAssetPath(so));
+            Assert.IsInstanceOf<AINode_Sequence>(reloaded.AIRoot);
+        }
+
         [Test]
         public void Duplicate_CreatesSiblingAssetWithCopiaSuffixes()
         {
