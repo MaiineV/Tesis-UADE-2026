@@ -40,12 +40,16 @@ namespace Rollgeon.Editor.Tools.Item
         /// </remarks>
         partial void DrawTriggerExtras(ItemSO asset);
 
+        /// <summary>La sección "Textos", que vive en <c>ItemEditorWindow.Localization.cs</c>.</summary>
+        partial void DrawLocalizationExtras(ItemSO asset);
+
         protected override void DrawRootExtras(ItemSO asset)
         {
             if (asset == null) return;
 
             EditorGUILayout.Space(2);
             DrawTriggerExtras(asset);
+            DrawLocalizationExtras(asset);
             if (DrawExtrasSection("Shop")) DrawShopPrice(asset);
             if (DrawExtrasSection("Pools")) DrawPoolsSection(asset);
         }

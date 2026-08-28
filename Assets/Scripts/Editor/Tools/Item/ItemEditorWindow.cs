@@ -33,6 +33,7 @@ namespace Rollgeon.Editor.Tools.Item
         partial void OnFamilyAssetsRefreshed();
         partial void OnPriceAssetsRefreshed();
         partial void OnTriggerAssetsRefreshed();
+        partial void OnLocalizationAssetsRefreshed();
 
         protected override void OnAssetsRefreshed()
         {
@@ -42,6 +43,7 @@ namespace Rollgeon.Editor.Tools.Item
             OnFamilyAssetsRefreshed();
             OnPriceAssetsRefreshed();
             OnTriggerAssetsRefreshed();
+            OnLocalizationAssetsRefreshed();
         }
 
         protected override string LabelOf(ItemSO asset)
