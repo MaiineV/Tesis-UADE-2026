@@ -932,8 +932,8 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 13919417973649408
-    m_Localized: Sows bombs across the felt, sets the ground in front of him on fire,
-      and shoots from range. Crowd him and he bolts for the edge.
+    m_Localized: Sows bombs, lights the floor and shoots from range. Crowd him and
+      he bolts for the edge.
     m_Metadata:
       m_Items: []
   - m_Id: 13919417973649409

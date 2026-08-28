@@ -937,8 +937,8 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 13919417973649408
-    m_Localized: "Siembra bombas en el pa\xF1o, le prende fuego al suelo que tiene
-      delante y dispara a distancia. Si lo acorral\xE1s, salta al borde de la sala."
+    m_Localized: Siembra bombas, prende el suelo y dispara de lejos. Acorralalo y
+      se va al borde.
     m_Metadata:
       m_Items: []
   - m_Id: 13919417973649409

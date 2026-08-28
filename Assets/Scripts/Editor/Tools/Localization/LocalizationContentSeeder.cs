@@ -1175,8 +1175,8 @@ namespace Rollgeon.EditorTools.Localization
             // están en el banco y nadie los pasa el mouse por encima.
             Boss(CroupierAssetBuilder.EntityId,
                 "El Croupier", "The Croupier",
-                "Siembra bombas en el paño, le prende fuego al suelo que tiene delante y dispara a distancia. Si lo acorralás, salta al borde de la sala.",
-                "Sows bombs across the felt, sets the ground in front of him on fire, and shoots from range. Crowd him and he bolts for the edge.");
+                "Siembra bombas, prende el suelo y dispara de lejos. Acorralalo y se va al borde.",
+                "Sows bombs, lights the floor and shoots from range. Crowd him and he bolts for the edge.");
 
             Boss(CajeroAssetBuilder.EntityId,
                 "El Cajero", "The Cashier",
