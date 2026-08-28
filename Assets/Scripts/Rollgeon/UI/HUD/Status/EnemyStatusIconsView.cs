@@ -28,14 +28,17 @@ namespace Rollgeon.UI.HUD.Status
     public sealed class EnemyStatusIconsView : MonoBehaviour
     {
         private readonly List<IStatusIconProvider> _providers = new();
-        private readonly List<StatusIconState> _weakness = new();
         private readonly List<StatusIconState> _applied = new();
         private readonly List<StatusEffectIconView> _slots = new();
         private readonly List<AIIntent> _standing = new();
         private readonly List<AIIntent> _next = new();
+        private readonly List<AIIntent> _options = new();
 
         /// <summary>Key de UI de la etiqueta "Próximo turno" del ataque.</summary>
         public const string NextTurnKey = "enemy.panel.next_turn";
+
+        /// <summary>Key de UI del renglón "Debilidad: {0}" del pie del panel.</summary>
+        public const string WeaknessLineKey = "enemy.panel.weakness";
 
         private Guid _entityGuid;
         private EnemyDataSO _data;
@@ -138,20 +141,21 @@ namespace Rollgeon.UI.HUD.Status
         private void OnDisable() => Teardown();
 
         /// <summary>
-        /// La tarjeta que cuelga <b>debajo</b> de la caja: la debilidad.
+        /// La debilidad como renglón del pie — "Debilidad: Poker" — con la misma letra que la
+        /// frase táctica, no como tarjeta ni ícono. Recalculada en cada hover: el registry es la
+        /// fuente viva y la IA puede reescribirla mid-combate.
         /// </summary>
-        /// <remarks>
-        /// Se recalcula en cada llamada, así que el tooltip siempre está al día en el momento del
-        /// hover, cubra o no cubra un evento lo que cambió.
-        /// </remarks>
-        public IReadOnlyList<StatusIconState> CollectWeakness()
-        {
-            Recollect();
-            return _weakness;
-        }
+        public string WeaknessLine() => WeaknessLine(_kit?.WeaknessComboName(_entityGuid));
+
+        /// <summary>El renglón ya formateado y localizado, o <c>null</c> sin combo.</summary>
+        public static string WeaknessLine(string comboName)
+            => string.IsNullOrEmpty(comboName)
+                ? null
+                : LocalizedContent.FromTableFormat(LocalizedContent.UITable, WeaknessLineKey,
+                                                   "Debilidad: <b>{0}</b>", comboName);
 
         /// <summary>
-        /// Lo que <b>le pasa</b> y lo que mantiene en el paño: la columna del costado, para que
+        /// Lo que <b>va a hacer</b> y lo que le pasa: la columna del costado, para que
         /// aturdirlo no estire el panel hacia abajo.
         /// </summary>
         public IReadOnlyList<StatusIconState> CollectApplied()
@@ -160,18 +164,11 @@ namespace Rollgeon.UI.HUD.Status
             return _applied;
         }
 
-        // Las dos listas salen del mismo tick, así que se llenan juntas. Recorrer el árbol dos
-        // veces por hover es barato: SetHover dispara en el flanco del mouse, no por frame.
+        // Se recalcula en cada hover; recorrer el árbol por hover es barato porque SetHover
+        // dispara en el flanco del mouse, no por frame.
         private void Recollect()
         {
-            _weakness.Clear();
             _applied.Clear();
-
-            // La debilidad va sola, colgada debajo de la caja: lo único del panel que cambia qué
-            // TIRÁS no comparte columna con lo que va a pasar. El próximo ataque encabeza el
-            // costado porque es lo más urgente de lo que va a pasar.
-            _kit?.CollectWeakness(_entityGuid, _weakness);
-
             CollectIntents();
             foreach (var provider in _providers) provider.Collect(_entityGuid, _applied);
         }
@@ -185,8 +182,7 @@ namespace Rollgeon.UI.HUD.Status
             // La fila sigue siendo UNA aunque el panel tenga dos columnas: el ícono que flota
             // sobre el bicho y el de su tarjeta tienen que ser el mismo sprite, que es lo que hace
             // que el sistema se entienda sin tutorial. Su ataque primero, que es lo que se lee.
-            int shown = Draw(_weakness, 0);
-            shown = Draw(_applied, shown);
+            int shown = Draw(_applied, 0);
 
             for (int i = shown; i < _slots.Count; i++)
                 _slots[i].gameObject.SetActive(false);
@@ -215,14 +211,56 @@ namespace Rollgeon.UI.HUD.Status
         {
             if (!ServiceLocator.TryGetService<IEnemyIntentService>(out var intents) || intents == null)
                 return;
-            if (!intents.TryRead(_entityGuid, _standing, _next)) return;
+            if (!intents.TryRead(_entityGuid, _standing, _next, _options)) return;
 
-            // El próximo tiempo del ciclo lleva fecha —"Próximo turno", en chico— y es lo que lo
-            // distingue de lo que el jefe mantiene en el paño, que se tickea todos los turnos y no
-            // la lleva. Sin esa etiqueta las dos cosas se leían como dos ataques y el jugador
-            // tenía que adivinar cuál iba a pasar.
-            foreach (var intent in _next) AddIfOwn(intent, _applied, NextTurnEyebrow());
-            foreach (var intent in _standing) AddIfOwn(intent, _applied);
+            AppendIntentCards(_next, _options, _standing, _entityGuid, _catalog, _applied);
+        }
+
+        /// <summary>
+        /// Reparte los intents leídos del árbol en tarjetas de la columna: el próximo ataque con
+        /// su fecha, debajo el resto del repertorio, y al final lo que mantiene en el paño.
+        /// </summary>
+        /// <remarks>
+        /// Sólo el próximo tiempo del ciclo lleva fecha —"Próximo turno", en chico—: los otros
+        /// tiempos son lo que el bicho SABE hacer, no lo que va a pasar, y una fecha en ellos
+        /// prometería un turno que no es el suyo. Estático y público por lo mismo que
+        /// <see cref="AddIfOwn"/>: el preview de editor arma este mismo panel sin combate.
+        /// </remarks>
+        public static void AppendIntentCards(List<AIIntent> next, List<AIIntent> options,
+                                             List<AIIntent> standing, Guid owner,
+                                             StatusIconCatalogSO catalog,
+                                             List<StatusIconState> into)
+        {
+            if (next != null)
+                foreach (var intent in next) AddIfOwn(intent, owner, catalog, into, NextTurnEyebrow());
+
+            // El repertorio incluye al que viene y puede repetir tiempos (dos beats que huyen
+            // publican el mismo salto): filtrado por key para que cada ataque salga UNA vez.
+            if (options != null)
+                foreach (var intent in options)
+                {
+                    if (Lists(next, intent.LabelKey) || Lists(into, intent.LabelKey)) continue;
+                    AddIfOwn(intent, owner, catalog, into);
+                }
+
+            if (standing != null)
+                foreach (var intent in standing) AddIfOwn(intent, owner, catalog, into);
+        }
+
+        private static bool Lists(List<AIIntent> intents, string key)
+        {
+            if (intents == null) return false;
+            foreach (var intent in intents)
+                if (intent.LabelKey == key) return true;
+            return false;
+        }
+
+        private static bool Lists(List<StatusIconState> states, string key)
+        {
+            if (states == null) return false;
+            foreach (var state in states)
+                if (state.Id == key) return true;
+            return false;
         }
 
         // Lo que le pertenece a otra cosa del paño se lee en ESA cosa. Las bombas del Croupier
@@ -270,8 +308,8 @@ namespace Rollgeon.UI.HUD.Status
 
             _kit = _data != null ? new EnemyKitStatusProvider(_catalog, _data) : null;
 
-            // El teleport del kit va al costado con los demás; la debilidad NO está acá --la pide
-            // Recollect para la columna principal, que es donde cambia qué tirás.
+            // El teleport del kit va al costado con los demás; la debilidad NO está acá --es un
+            // renglón del pie del panel (WeaknessLine), no una tarjeta.
             if (_kit != null) _providers.Add(_kit);
 
             _providers.Add(new PoisonStatusProvider(_catalog));

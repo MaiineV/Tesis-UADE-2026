@@ -37,15 +37,19 @@ namespace Rollgeon.EditorTools.HUD
         // Un solo ancho para todo lo que va apilado en el panel. El pie es TMP con wrap: sin un
         // ancho que lo ate, su preferido es el del texto ENTERO en un renglón, y el panel se
         // estiraba hasta ahí — el color del bicho decidía el ancho del tooltip.
-        private const float ContentWidth = 330f;
+        private const float ContentWidth = 290f;
+
+        // Más angosta que el panel: con tres ataques en la columna, tarjetas del ancho de la caja
+        // hacían que el costado pesara más que el bicho que describe.
+        private const float CardWidth = 250f;
 
         // Aire entre el panel y la columna del costado. Chico a propósito: más lejos y deja de
         // leerse como algo de ESTE bicho.
-        private const float SideColumnGap = 16f;
+        private const float SideColumnGap = 12f;
 
 
-        private const float IconSize = 44f;
-        private const float BadgeSize = 34f;
+        private const float IconSize = 34f;
+        private const float BadgeSize = 26f;
 
         // Crema sobre la placa oscura. Los labels salían en el blanco default de TMP, que sobre
         // el panel color hueso quedaba invisible.
@@ -62,7 +66,7 @@ namespace Rollgeon.EditorTools.HUD
         {
             var root = new GameObject("TooltipCard", typeof(RectTransform));
             var rootRect = (RectTransform)root.transform;
-            rootRect.sizeDelta = new Vector2(ContentWidth, 64f);
+            rootRect.sizeDelta = new Vector2(CardWidth, 56f);
 
             var background = Ensure<Image>(root);
             background.sprite = LoadSlice(CardPlateId);
@@ -73,19 +77,19 @@ namespace Rollgeon.EditorTools.HUD
             // y le da a la regla el ancho entero, que es lo que hace legible una frase con
             // números adentro a 13px.
             var layout = Ensure<VerticalLayoutGroup>(root);
-            layout.padding = new RectOffset(17, 17, 13, 13);
-            layout.spacing = 8;
+            layout.padding = new RectOffset(13, 13, 10, 10);
+            layout.spacing = 6;
             layout.childAlignment = TextAnchor.UpperCenter;
             layout.childControlWidth = true;
             layout.childControlHeight = true;
             layout.childForceExpandWidth = true;
             layout.childForceExpandHeight = false;
 
-            Ensure<LayoutElement>(root).preferredWidth = ContentWidth;
+            Ensure<LayoutElement>(root).preferredWidth = CardWidth;
 
             var headerRect = EnsureChildRect(rootRect, "Header", Vector2.zero, Vector2.zero);
             var headerLayout = Ensure<HorizontalLayoutGroup>(headerRect.gameObject);
-            headerLayout.spacing = 11;
+            headerLayout.spacing = 8;
             headerLayout.childAlignment = TextAnchor.MiddleLeft;
             headerLayout.childControlWidth = true;
             headerLayout.childControlHeight = true;
@@ -112,7 +116,7 @@ namespace Rollgeon.EditorTools.HUD
             badgeImage.type = Image.Type.Simple;
             badgeImage.preserveAspect = true;
             badgeImage.raycastTarget = false;
-            var badgeLabel = EnsureLabel(badgeRect, "Value", 22f, TextAlignmentOptions.Center, CardInk);
+            var badgeLabel = EnsureLabel(badgeRect, "Value", 18f, TextAlignmentOptions.Center, CardInk);
 
             // Estirado a la ficha, y no el 0x0 que deja EnsureLabel: con un rect sin ancho TMP
             // acomoda el texto contra el pivote y parte cualquier cosa de más de un carácter en un
@@ -125,19 +129,19 @@ namespace Rollgeon.EditorTools.HUD
 
             // Chico y apagado a proposito: es una fecha, no un segundo titulo. Y arriba de todo
             // porque dice cuando pasa lo que la tarjeta describe -- se lee antes que el que.
-            var eyebrowLabel = EnsureLabel(rootRect, "Eyebrow", 18f, TextAlignmentOptions.Left,
+            var eyebrowLabel = EnsureLabel(rootRect, "Eyebrow", 14f, TextAlignmentOptions.Left,
                                            CardInkSoft);
             eyebrowLabel.transform.SetSiblingIndex(0);
 
-            // Por debajo de la regla (27) a proposito: el titulo nombra la cosa y la regla es
+            // Por debajo de la regla (21) a proposito: el titulo nombra la cosa y la regla es
             // lo que se lee, asi que un titulo mas grande que ella se lleva el ojo primero.
-            var titleLabel = EnsureLabel(headerRect, "Title", 26f, TextAlignmentOptions.Left, CardInk);
+            var titleLabel = EnsureLabel(headerRect, "Title", 20f, TextAlignmentOptions.Left, CardInk);
             titleLabel.fontStyle = FontStyles.Bold;
             Ensure<LayoutElement>(titleLabel.gameObject).flexibleWidth = 1f;
 
             // Último de la fila y sin flexibleWidth: el título se queda con el sobrante, así que
             // el número termina pegado al borde derecho sin un spacer de por medio.
-            var damageLabel = EnsureLabel(headerRect, "Damage", 34f, TextAlignmentOptions.Right, CardInk);
+            var damageLabel = EnsureLabel(headerRect, "Damage", 26f, TextAlignmentOptions.Right, CardInk);
             damageLabel.fontStyle = FontStyles.Bold;
 
             var dividerRect = EnsureChildRect(rootRect, "Divider", Vector2.zero, new Vector2(0f, 3f));
@@ -148,7 +152,7 @@ namespace Rollgeon.EditorTools.HUD
 
             // Centrada como la referencia: bajo un divisor, una frase de dos renglones centrada
             // se lee como una regla y no como la continuación del título.
-            var ruleLabel = EnsureLabel(rootRect, "Rule", 27f, TextAlignmentOptions.Center, CardInk);
+            var ruleLabel = EnsureLabel(rootRect, "Rule", 21f, TextAlignmentOptions.Center, CardInk);
             ruleLabel.enableWordWrapping = true;
 
             var view = Ensure<TooltipCardView>(root);
@@ -187,7 +191,7 @@ namespace Rollgeon.EditorTools.HUD
                 var cards = EnsureChildRect(panel, "Cards", Vector2.zero, Vector2.zero);
 
                 var layout = Ensure<VerticalLayoutGroup>(cards.gameObject);
-                layout.spacing = 10;
+                layout.spacing = 8;
                 layout.childAlignment = TextAnchor.UpperCenter;
                 layout.childControlWidth = true;
                 layout.childControlHeight = true;
@@ -235,7 +239,7 @@ namespace Rollgeon.EditorTools.HUD
                 side.anchoredPosition = new Vector2(SideColumnGap, 0f);
 
                 var layout = Ensure<VerticalLayoutGroup>(side.gameObject);
-                layout.spacing = 10;
+                layout.spacing = 8;
                 layout.childAlignment = TextAnchor.UpperCenter;
                 layout.childControlWidth = true;
                 layout.childControlHeight = true;
@@ -307,7 +311,7 @@ namespace Rollgeon.EditorTools.HUD
             {
                 var identity = EnsureChildRect(panel, "Identity", Vector2.zero, Vector2.zero);
                 var identityLayout = Ensure<VerticalLayoutGroup>(identity.gameObject);
-                identityLayout.spacing = 5;
+                identityLayout.spacing = 4;
                 identityLayout.childAlignment = TextAnchor.UpperCenter;
                 identityLayout.childControlWidth = true;
                 identityLayout.childControlHeight = true;
@@ -315,16 +319,31 @@ namespace Rollgeon.EditorTools.HUD
                 identityLayout.childForceExpandHeight = false;
                 Ensure<LayoutElement>(identity.gameObject).preferredWidth = ContentWidth;
 
-                // 34 y no 44: el nombre encabeza pero no es lo que se lee — con la frase
-                // tactica adentro de la caja, un nombre a 44 se comia el panel entero.
-                var nameLabel = EnsureLabel(identity, "Name", 34f, TextAlignmentOptions.Center, PanelInk);
-                nameLabel.fontStyle = FontStyles.Bold;
+                // Nombre y familia en el MISMO renglón: "The Croupier   Jefe · Rango". Alineados
+                // abajo para que la familia, más chica, comparta la línea de base del nombre.
+                var titleRow = EnsureChildRect(identity, "TitleRow", Vector2.zero, Vector2.zero);
+                var titleRowLayout = Ensure<HorizontalLayoutGroup>(titleRow.gameObject);
+                titleRowLayout.spacing = 8;
+                titleRowLayout.childAlignment = TextAnchor.LowerCenter;
+                titleRowLayout.childControlWidth = true;
+                titleRowLayout.childControlHeight = true;
+                titleRowLayout.childForceExpandWidth = false;
+                titleRowLayout.childForceExpandHeight = false;
 
-                // Pegada al nombre y no al título: las dos son identidad. Y chica, porque el hijo
-                // más ancho decide cuánto mide el panel — una familia larga adentro del título es
-                // lo que lo ensancha.
-                var typeLabel = EnsureLabel(identity, "Type", 26f, TextAlignmentOptions.Center, PanelInkSoft);
-                Ensure<LayoutElement>(typeLabel.gameObject).preferredWidth = ContentWidth;
+                // Migración del panel ya autorado: Name y Type nacieron como hijos directos de
+                // Identity, y Find no baja niveles — sin moverlos, esto crearía un segundo par.
+                Reparent(identity, "Name", titleRow);
+                Reparent(identity, "Type", titleRow);
+
+                var nameLabel = EnsureLabel(titleRow, "Name", 26f, TextAlignmentOptions.Left, PanelInk);
+                nameLabel.fontStyle = FontStyles.Bold;
+                nameLabel.textWrappingMode = TextWrappingModes.NoWrap;
+
+                var typeLabel = EnsureLabel(titleRow, "Type", 18f, TextAlignmentOptions.Left, PanelInkSoft);
+                typeLabel.textWrappingMode = TextWrappingModes.NoWrap;
+                // El ancho fijo era de cuando vivía sola bajo el VLG; dentro de la fila volvería
+                // a imponer el ancho del panel entero.
+                Ensure<LayoutElement>(typeLabel.gameObject).preferredWidth = -1f;
 
                 var vitals = EnsureChildRect(identity, "Vitals", Vector2.zero, Vector2.zero);
                 var vitalsLayout = Ensure<HorizontalLayoutGroup>(vitals.gameObject);
@@ -335,8 +354,8 @@ namespace Rollgeon.EditorTools.HUD
                 vitalsLayout.childForceExpandWidth = false;
                 vitalsLayout.childForceExpandHeight = false;
 
-                EnsureIcon(vitals, "HeartIcon", LoadSlice(HeartChipId), new Vector2(56f, 38f));
-                var hpLabel = EnsureLabel(vitals, "Hp", 34f, TextAlignmentOptions.Left, PanelInk);
+                EnsureIcon(vitals, "HeartIcon", LoadSlice(HeartChipId), new Vector2(46f, 31f));
+                var hpLabel = EnsureLabel(vitals, "Hp", 28f, TextAlignmentOptions.Left, PanelInk);
                 hpLabel.fontStyle = FontStyles.Bold;
 
                 var shield = EnsureChildRect(vitals, "Shield", Vector2.zero, Vector2.zero);
@@ -347,11 +366,11 @@ namespace Rollgeon.EditorTools.HUD
                 shieldLayout.childControlHeight = true;
                 shieldLayout.childForceExpandWidth = false;
                 shieldLayout.childForceExpandHeight = false;
-                EnsureIcon(shield, "ShieldIcon", LoadFirstSprite(ShieldIconGuid), new Vector2(34f, 34f));
-                var shieldLabel = EnsureLabel(shield, "Value", 34f, TextAlignmentOptions.Left, PanelInk);
+                EnsureIcon(shield, "ShieldIcon", LoadFirstSprite(ShieldIconGuid), new Vector2(28f, 28f));
+                var shieldLabel = EnsureLabel(shield, "Value", 28f, TextAlignmentOptions.Left, PanelInk);
                 shieldLabel.fontStyle = FontStyles.Bold;
 
-                var footer = EnsureLabel(panel, "Footer", 24f, TextAlignmentOptions.Center, PanelInkSoft);
+                var footer = EnsureLabel(panel, "Footer", 20f, TextAlignmentOptions.Center, PanelInkSoft);
                 footer.enableWordWrapping = true;
                 Ensure<LayoutElement>(footer.gameObject).preferredWidth = ContentWidth;
 
@@ -365,9 +384,11 @@ namespace Rollgeon.EditorTools.HUD
                     so.FindProperty("_shieldLabel").objectReferenceValue = shieldLabel;
                     so.FindProperty("_footerLabel").objectReferenceValue = footer;
 
-                    // La familia va pegada al nombre y los vitales después: las dos primeras son
-                    // identidad, la tercera es estado. Explícito porque Ensure* agrega al final, y
-                    // en un panel que ya tenía Vitals la fila nueva caería debajo de los números.
+                    // El renglón del nombre encabeza la banda; los vitales después. Explícito
+                    // porque Ensure* agrega al final. Y adentro de la fila, la familia a la
+                    // DERECHA del nombre.
+                    titleRow.SetSiblingIndex(0);
+                    nameLabel.transform.SetSiblingIndex(0);
                     typeLabel.transform.SetSiblingIndex(1);
 
                     // Identidad arriba, párrafo y columna en el medio, color al pie. El orden es
@@ -475,6 +496,13 @@ namespace Rollgeon.EditorTools.HUD
             label.color = ink;
             label.raycastTarget = false;
             return label;
+        }
+
+        private static void Reparent(RectTransform parent, string child, RectTransform newParent)
+        {
+            var found = parent.Find(child);
+            if (found != null && found.parent != newParent)
+                found.SetParent(newParent, worldPositionStays: false);
         }
 
         private static RectTransform EnsureChildRect(RectTransform parent, string name, Vector2 pos, Vector2 size)

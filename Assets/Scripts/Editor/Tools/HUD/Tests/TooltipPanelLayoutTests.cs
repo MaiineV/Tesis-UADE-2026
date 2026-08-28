@@ -59,13 +59,27 @@ namespace Rollgeon.Editor.Tools.HUD.Tests
         }
 
         [Test]
-        public void LaFilaDeFamiliaNoDecideElAnchoDelPanel()
+        public void LaFamiliaVaEnElRenglonDelNombre_ALaDerecha()
         {
             var panel = LoadPanel();
 
-            Assert.AreEqual(WidthOf(panel, "Cards"), WidthOf(panel, "Identity/Type"), 0.5f,
-                "La familia es un TMP más: sin ancho propio, un 'Jefe · Rango' largo vuelve a " +
-                "ensanchar el panel — exactamente el bug que tenía el pie.");
+            var name = panel.Find("Identity/TitleRow/Name");
+            var type = panel.Find("Identity/TitleRow/Type");
+            Assert.IsNotNull(name, "El panel no tiene 'Identity/TitleRow/Name'.");
+            Assert.IsNotNull(type,
+                "La familia no está en el renglón del nombre: 'Jefe · Rango' va a la DERECHA de " +
+                "'The Croupier', no debajo.");
+            Assert.Greater(type.GetSiblingIndex(), name.GetSiblingIndex(),
+                "La familia quedó ANTES del nombre en la fila: se lee 'Jefe · Rango The " +
+                "Croupier'.");
+
+            // El ancho fijo era de cuando vivía sola bajo el VLG; dentro de la fila volvería a
+            // imponer el ancho del panel entero.
+            var element = type.GetComponent<LayoutElement>();
+            if (element != null)
+                Assert.Less(element.preferredWidth, 0f,
+                    "El Type conserva un preferredWidth fijo: adentro de la fila del nombre " +
+                    "eso ensancha el panel entero.");
         }
 
         [Test]

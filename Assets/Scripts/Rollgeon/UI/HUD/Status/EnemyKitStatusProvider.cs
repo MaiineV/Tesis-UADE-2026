@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using Patterns;
-using Rollgeon.Balance;
 using Rollgeon.Combat.AI;
 using Rollgeon.Combat.AI.Decisions;
 using Rollgeon.Combat.Weakness;
@@ -12,15 +11,15 @@ using Rollgeon.Localization;
 namespace Rollgeon.UI.HUD.Status
 {
     /// <summary>
-    /// Publica el kit del enemigo: la debilidad (combo y multiplicador) para la columna principal
-    /// del panel, y lo que sabe hacer que no es un ataque (hoy, teleportarse) para la del costado.
+    /// Publica el kit del enemigo: el combo al que es débil (para el renglón del pie del panel) y
+    /// lo que sabe hacer que no es un ataque (hoy, teleportarse) para la columna del costado.
     /// </summary>
     /// <remarks>
     /// <para>
     /// La debilidad sale del <see cref="IWeaknessRegistry"/> y no del <see cref="EnemyDataSO"/>:
     /// el registry es la fuente viva — lo puebla el spawn y lo puede reescribir la IA mid-combate —
     /// así que leer el SO daría el dato de autoría y no el vigente. Mismo contrato que
-    /// <c>BossBarView.ApplyWeakness</c>, hasta en el default del multiplicador.
+    /// <c>BossBarView.ApplyWeakness</c>.
     /// </para>
     /// <para>
     /// El teleport sale del árbol del propio bicho, no de una lista autorada aparte: si un rediseño
@@ -30,10 +29,7 @@ namespace Rollgeon.UI.HUD.Status
     /// </remarks>
     public sealed class EnemyKitStatusProvider : IStatusIconProvider
     {
-        public const string WeaknessId = "enemy.weakness";
         public const string TeleportId = "ability.teleport";
-
-        private const float FallbackWeaknessMultiplier = 1.5f;
 
         private readonly StatusIconCatalogSO _catalog;
         private readonly bool _teleports;
@@ -47,7 +43,7 @@ namespace Rollgeon.UI.HUD.Status
             _teleports = Teleports(data);
         }
 
-        /// <summary>Sólo el teleport: la debilidad va por <see cref="CollectWeakness"/>.</summary>
+        /// <summary>Sólo el teleport: la debilidad va por <see cref="WeaknessComboName"/>.</summary>
         public void Collect(Guid ownerGuid, List<StatusIconState> into)
         {
             if (into == null) return;
@@ -65,33 +61,22 @@ namespace Rollgeon.UI.HUD.Status
         }
 
         /// <summary>
-        /// La debilidad sola, para la columna PRINCIPAL del panel. Separada de
-        /// <see cref="Collect"/> porque no comparte columna con el resto del kit: es lo único que
-        /// cambia qué tirás, y va en el panel, no en la tirita del costado.
+        /// El nombre localizado del combo al que es débil, o <c>null</c> sin debilidad registrada.
+        /// Separado de <see cref="Collect"/> porque la debilidad dejó de ser tarjeta: es un
+        /// renglón del pie del panel, con la misma letra que la frase táctica.
         /// </summary>
-        public void CollectWeakness(Guid ownerGuid, List<StatusIconState> into)
+        public string WeaknessComboName(Guid ownerGuid)
         {
-            if (ownerGuid == Guid.Empty) return;
+            if (ownerGuid == Guid.Empty) return null;
             if (!ServiceLocator.TryGetService<IWeaknessRegistry>(out var registry) || registry == null)
-                return;
-            if (!registry.TryGet(ownerGuid, out var weakness)) return;
-            if (string.IsNullOrEmpty(weakness.comboId)) return;
+                return null;
+            if (!registry.TryGet(ownerGuid, out var weakness)) return null;
+            if (string.IsNullOrEmpty(weakness.comboId)) return null;
 
-            float multiplier = weakness.mult > 0f ? weakness.mult : DefaultWeaknessMultiplier();
             var combo = ResolveCombo(weakness.comboId);
-            string comboName = combo != null
+            return combo != null
                 ? LocalizedContent.Name(combo.ComboId, combo.DisplayName)
                 : weakness.comboId;
-
-            into.Add(new StatusIconState(
-                WeaknessId,
-                LocalizedContent.Name(WeaknessId, "Debilidad"),
-                LocalizedContent.DescriptionFormat(WeaknessId, "{0} le pega ×{1}.",
-                    comboName, multiplier.ToString("0.##")),
-                // El arte del combo, no un ícono de "debilidad": lo que el jugador tiene que
-                // reconocer es la mano que le conviene tirar.
-                combo != null ? combo.Icon : null,
-                active: true));
         }
 
         private static bool Teleports(EnemyDataSO data)
@@ -107,14 +92,6 @@ namespace Rollgeon.UI.HUD.Status
                     || node is AINode_TeleportToRoomCenter) return true;
 
             return false;
-        }
-
-        private static float DefaultWeaknessMultiplier()
-        {
-            ServiceLocator.TryGetService<RulesetSO>(out var ruleset);
-            return ruleset != null && ruleset.Weakness != null
-                ? ruleset.Weakness.DefaultMultiplier
-                : FallbackWeaknessMultiplier;
         }
 
         private static BaseComboSO ResolveCombo(string comboId)

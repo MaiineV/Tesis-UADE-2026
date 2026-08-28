@@ -177,10 +177,12 @@ namespace Rollgeon.Combat.AI.Tests
             public readonly List<AIIntent> Standing = new();
             public readonly List<AIIntent> Next = new();
 
-            public bool TryRead(Guid enemyId, List<AIIntent> standing, List<AIIntent> next)
+            public bool TryRead(Guid enemyId, List<AIIntent> standing, List<AIIntent> next,
+                                List<AIIntent> options = null)
             {
                 standing?.Clear();
                 next?.Clear();
+                options?.Clear();
                 if (!CanRead) return false;
 
                 standing?.AddRange(Standing);

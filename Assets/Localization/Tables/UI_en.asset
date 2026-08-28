@@ -872,6 +872,10 @@ MonoBehaviour:
     m_Localized: Next turn
     m_Metadata:
       m_Items: []
+  - m_Id: 16191439641702400
+    m_Localized: 'Weakness: <b>{0}</b>'
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

@@ -149,7 +149,10 @@ namespace Rollgeon.Entities.Visuals
             var row = Rollgeon.UI.HUD.Status.EnemyStatusIconsView.Create(pawn.transform, settings);
             if (row == null) return;
             row.Initialize(guid, settings.IconPrefab, settings.Catalog, data);
-            trigger.BottomCardsProvider = row.CollectWeakness;
+
+            // La debilidad no es tarjeta: es un renglón al pie de la caja, con la misma letra
+            // que la frase táctica.
+            trigger.FooterLineProvider = row.WeaknessLine;
             trigger.SideCardsProvider = row.CollectApplied;
         }
 

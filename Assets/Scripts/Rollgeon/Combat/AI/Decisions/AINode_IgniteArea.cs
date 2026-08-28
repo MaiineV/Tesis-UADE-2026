@@ -139,6 +139,24 @@ namespace Rollgeon.Combat.AI.Decisions
             return true;
         }
 
+        /// <summary>
+        /// Como repertorio la bola de fuego se afirma sin marca pendiente: la marca es el estado
+        /// de ESTE ciclo, y sin ella la intención viva contesta <c>false</c> justo cuando el
+        /// panel lista qué más sabe hacer. Sin daño a propósito: el número vive en la marca.
+        /// </summary>
+        public bool TryDescribeOption(AIContext context, out AIIntent intent)
+        {
+            if (Definition == null)
+            {
+                intent = default;
+                return false;
+            }
+
+            intent = new AIIntent(AIIntentTextKeys.Ignite, "Bola de fuego", 0,
+                                  AttackKind.Environmental);
+            return true;
+        }
+
         /// <inheritdoc />
         public override IEnumerator TickCoroutine(AIContext context, Action<AIResult> onResult)
         {

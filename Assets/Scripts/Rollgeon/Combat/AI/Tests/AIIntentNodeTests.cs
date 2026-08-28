@@ -126,6 +126,41 @@ namespace Rollgeon.Combat.AI.Tests
         }
 
         [Test]
+        public void IgniteArea_ComoRepertorio_SeAfirmaSinMarcaPendiente()
+        {
+            // Arrange — sin marca: el estado exacto en que la intención viva contesta false.
+            var ignite = new AINode_IgniteArea { Definition = FireTile(6, 10) };
+
+            // Act
+            bool described = ((IAIIntentNode)ignite).TryDescribeOption(Context(), out var intent);
+
+            // Assert — la marca es el estado de ESTE ciclo; "sabe prender un cono" no depende
+            // de ella. Y sin daño: el número vive en la marca, prometer otro sería inventarlo.
+            Assert.IsTrue(described,
+                "El repertorio calló la bola de fuego: el panel listaría dos ataques posibles " +
+                "cuando el jefe tiene tres.");
+            Assert.AreEqual(AIIntentTextKeys.Ignite, intent.LabelKey);
+            Assert.AreEqual(0, intent.Damage);
+        }
+
+        [Test]
+        public void RangedShot_ComoRepertorio_SeAfirmaFueraDeAlcance()
+        {
+            // Arrange — rango 1 con el jugador a 2: la intención viva contesta false.
+            var shot = new AINode_RangedShot { Damage = 18, Range = 1, Metric = DistanceMetric.Manhattan };
+
+            // Act
+            bool described = ((IAIIntentNode)shot).TryDescribeOption(Context(), out var intent);
+
+            // Assert — dónde está parado el jugador es el estado de este turno, no el kit.
+            Assert.IsTrue(described,
+                "El repertorio calló el disparo por estar fuera de rango: 'qué sabe hacer' no " +
+                "puede depender de dónde esté parado el jugador en el hover.");
+            Assert.AreEqual(18, intent.Damage,
+                "El daño del disparo sí es del kit y tiene que viajar en la tarjeta.");
+        }
+
+        [Test]
         public void BombField_NoPrometeCasillas_PorqueLasRanurasSeSorteanAlSembrar()
         {
             var bombs = ScriptableObject.CreateInstance<Rollgeon.Combat.Rooms.RoomObjectDefinitionSO>();

@@ -24,5 +24,18 @@ namespace Rollgeon.Combat.AI.Decisions
         {
             if (into != null && TryDescribeIntent(context, out var one)) into.Add(one);
         }
+
+        /// <summary>
+        /// La versión repertorio: lo que el nodo <b>sabe</b> hacer, afirmable sin el estado del
+        /// combate — sin marca pendiente, sin rango al jugador. Es lo que el panel lista como
+        /// "ataques posibles" debajo del que viene.
+        /// </summary>
+        /// <remarks>
+        /// El default es la intención viva; la sobreescriben los nodos cuya intención viva
+        /// depende del estado, porque como repertorio contestarían <c>false</c> justo cuando el
+        /// jugador pregunta qué más puede pasarle.
+        /// </remarks>
+        bool TryDescribeOption(AIContext context, out AIIntent intent)
+            => TryDescribeIntent(context, out intent);
     }
 }

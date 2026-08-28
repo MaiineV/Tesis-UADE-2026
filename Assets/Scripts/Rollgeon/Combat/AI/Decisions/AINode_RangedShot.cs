@@ -149,6 +149,16 @@ namespace Rollgeon.Combat.AI.Decisions
             return true;
         }
 
+        /// <summary>
+        /// Como repertorio el disparo se afirma siempre: <see cref="CanFire"/> es el estado de
+        /// ESTE turno, y "qué sabe hacer" no depende de dónde esté parado el jugador.
+        /// </summary>
+        public bool TryDescribeOption(AIContext context, out AIIntent intent)
+        {
+            intent = new AIIntent(AIIntentTextKeys.RangedShot, "Te dispara", Damage, Kind);
+            return true;
+        }
+
         private bool CanFire(AIContext context)
         {
             if (context?.Grid == null) return false;

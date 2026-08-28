@@ -54,9 +54,15 @@ namespace Rollgeon.UI.Tooltips
         public Func<IReadOnlyList<StatusIconState>> SideCardsProvider;
 
         /// <summary>
-        /// Tarjetas colgadas debajo de la caja — la debilidad. <c>null</c> = nada colgando.
+        /// Tarjetas colgadas debajo de la caja. <c>null</c> = nada colgando.
         /// </summary>
         public Func<IReadOnlyList<StatusIconState>> BottomCardsProvider;
+
+        /// <summary>
+        /// Un renglón extra al pie del panel, debajo del texto de sabor y con su misma letra —
+        /// la debilidad del enemigo. <c>null</c> = el pie queda como lo trajo el contenido.
+        /// </summary>
+        public Func<string> FooterLineProvider;
 
         /// <summary>
         /// Provider de la banda de identidad — nombre, vitales y color al pie. Gana sobre
@@ -225,9 +231,20 @@ namespace Rollgeon.UI.Tooltips
             // que flota sobre la cabeza, y son la MISMA lista que esa fila pinta.
             var content = ContentProvider.Invoke();
             return new TooltipContent(
-                text: content.Text, name: content.Name, cards: cards, flavor: content.Flavor,
+                text: content.Text, name: content.Name, cards: cards,
+                flavor: ComposeFlavor(content.Flavor, FooterLineProvider?.Invoke()),
                 health: content.Health, maxHealth: content.MaxHealth, shield: content.Shield,
                 type: content.Type, sideCards: sideCards, bottomCards: bottomCards);
+        }
+
+        /// <summary>
+        /// El pie con su renglón extra debajo. Estático y público porque el preview de editor
+        /// arma este mismo panel sin combate y tiene que pegarlo igual.
+        /// </summary>
+        public static string ComposeFlavor(string flavor, string footerLine)
+        {
+            if (string.IsNullOrEmpty(footerLine)) return flavor;
+            return string.IsNullOrEmpty(flavor) ? footerLine : flavor + "\n" + footerLine;
         }
 
         private void ToggleTooltip(Camera cam)

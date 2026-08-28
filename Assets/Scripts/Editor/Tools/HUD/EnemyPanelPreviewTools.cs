@@ -71,11 +71,10 @@ namespace Rollgeon.EditorTools.HUD
             }
 
             var applied = new List<StatusIconState>();
-            var bottom = new List<StatusIconState>();
             CollectCards(data, applied);
-            if (withSampleStates) AddSampleStates(data, bottom, applied);
+            string weaknessLine = withSampleStates ? AddSampleStates(data, applied) : null;
 
-            var content = BuildContent(data, bottom, applied);
+            var content = BuildContent(data, weaknessLine, applied);
 
             // Las tarjetas de la vuelta anterior sobreviven en el canvas y no son instancias de
             // prefab: sin tirarlas, editar la tarjeta y volver acá muestra las de antes.
@@ -91,9 +90,9 @@ namespace Rollgeon.EditorTools.HUD
             UnityEditorInternal.InternalEditorUtility.RepaintAllViews();
 
             // El resumen va al log además del Game view: si la ventana no está abierta, cuántas
-            // tarjetas quedaron en cada columna sigue siendo la respuesta a "esto cambió o no".
+            // tarjetas quedaron en la columna sigue siendo la respuesta a "esto cambió o no".
             Debug.Log("[EnemyPanelPreview] " + content.Name + " — tipo '" + content.Type + "' — " +
-                      applied.Count + " al costado, " + bottom.Count + " colgando abajo.");
+                      applied.Count + " al costado, pie: '" + content.Flavor + "'.");
         }
 
         /// <summary>
@@ -172,8 +171,7 @@ namespace Rollgeon.EditorTools.HUD
             }
         }
 
-        private static TooltipContent BuildContent(EnemyDataSO data,
-                                                   List<StatusIconState> bottom,
+        private static TooltipContent BuildContent(EnemyDataSO data, string weaknessLine,
                                                    List<StatusIconState> applied)
         {
             string id = data.EntityId;
@@ -191,7 +189,8 @@ namespace Rollgeon.EditorTools.HUD
             return new TooltipContent(
                 name: name,
                 type: EnemyArchetypeText.Describe(data.Archetype, data.IsBoss),
-                flavor: brief, sideCards: applied, bottomCards: bottom);
+                flavor: WorldTooltipTrigger.ComposeFlavor(brief, weaknessLine),
+                sideCards: applied);
         }
 
         // El árbol real, leído por el walker real. Lo único de mentira es el contexto: fuera de
@@ -214,9 +213,10 @@ namespace Rollgeon.EditorTools.HUD
 
             var standing = new List<AIIntent>();
             var next = new List<AIIntent>();
+            var options = new List<AIIntent>();
             try
             {
-                AIIntentWalker.Collect(data.AIRoot, context, standing, next);
+                AIIntentWalker.Collect(data.AIRoot, context, standing, next, options);
             }
             catch (Exception e)
             {
@@ -230,21 +230,16 @@ namespace Rollgeon.EditorTools.HUD
                 EnemyStatusRowSettingsSO.ResourcePath);
             var catalog = settings != null ? settings.Catalog : null;
 
-            // Mismo reparto que la fila real: la columna principal es la debilidad, y TODO lo que
-            // va a pasar --el proximo ataque, con su fecha en chico-- es del costado.
-            foreach (var intent in next)
-                EnemyStatusIconsView.AddIfOwn(intent, owner, catalog, applied,
-                                              EnemyStatusIconsView.NextTurnEyebrow());
-            foreach (var intent in standing)
-                EnemyStatusIconsView.AddIfOwn(intent, owner, catalog, applied);
+            // El MISMO reparto que la fila real: el próximo con su fecha, el repertorio debajo,
+            // y al final lo que mantiene en el paño.
+            EnemyStatusIconsView.AppendIntentCards(next, options, standing, owner, catalog, applied);
         }
 
         // Nada inventado: el MISMO provider que la fila usa en pelea, con lo unico que fuera de
         // combate no existe --el registry de debilidades-- levantado al vuelo desde el SO, que es
-        // exactamente lo que el spawn registra. El fuego se planta de verdad en el servicio de
-        // casillas para que el Burn salga del provider real y no de una maqueta.
-        private static void AddSampleStates(EnemyDataSO data, List<StatusIconState> bottom,
-                                            List<StatusIconState> into)
+        // exactamente lo que el spawn registra. Devuelve el renglon de la debilidad, ya
+        // formateado por el mismo codigo que el pie real.
+        private static string AddSampleStates(EnemyDataSO data, List<StatusIconState> into)
         {
             var settings = Resources.Load<EnemyStatusRowSettingsSO>(
                 EnemyStatusRowSettingsSO.ResourcePath);
@@ -261,8 +256,8 @@ namespace Rollgeon.EditorTools.HUD
             }
             registry.SetWeakness(owner, data.WeaknessComboId, data.WeaknessMultiplierOverride);
 
-            // El catalogo de combos tambien: sin el, la Weak dice la key cruda y sin el icono del
-            // combo -- y lo que se esta calibrando aca es justamente como se ve esa tarjeta.
+            // El catalogo de combos tambien: sin el, el renglon de la debilidad dice la key cruda
+            // en vez del nombre del combo.
             if (!ServiceLocator.TryGetService<Rollgeon.Combos.ComboCatalogSO>(out var combos)
                 || combos == null)
             {
@@ -276,12 +271,13 @@ namespace Rollgeon.EditorTools.HUD
             try
             {
                 var kit = new EnemyKitStatusProvider(catalog, data);
-                kit.CollectWeakness(owner, bottom);
                 kit.Collect(owner, into);
 
                 var fire = FindFireDefinition(data);
                 if (fire != null)
                     new StubOwnedFire(fire).Collect(owner, into, catalog);
+
+                return EnemyStatusIconsView.WeaknessLine(kit.WeaknessComboName(owner));
             }
             finally
             {

@@ -11,14 +11,17 @@ namespace Rollgeon.Combat.AI
     public interface IEnemyIntentService
     {
         /// <summary>
-        /// Llena <paramref name="standing"/> con lo que el enemigo ya tiene puesto y
-        /// <paramref name="next"/> con su siguiente ataque. Ambas listas se limpian antes.
+        /// Llena <paramref name="standing"/> con lo que el enemigo ya tiene puesto,
+        /// <paramref name="next"/> con su siguiente ataque y <paramref name="options"/> con
+        /// todos los tiempos de su ciclo — el repertorio entero, para que el panel pueda listar
+        /// los ataques posibles y no sólo el que viene. Las listas se limpian antes.
         /// </summary>
         /// <remarks>
         /// Devuelve <c>false</c> fuera del turno del jugador: durante el turno del enemigo el
         /// índice de su ciclo ya avanzó y sus marcas están en movimiento, así que lo que se lea
         /// ahí no es una predicción sino una foto a medio revelar.
         /// </remarks>
-        bool TryRead(Guid enemyId, List<AIIntent> standing, List<AIIntent> next);
+        bool TryRead(Guid enemyId, List<AIIntent> standing, List<AIIntent> next,
+                     List<AIIntent> options = null);
     }
 }

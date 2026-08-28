@@ -15,22 +15,33 @@ namespace Rollgeon.Combat.AI
     public static class AIIntentWalker
     {
         /// <summary>
-        /// Llena <paramref name="standing"/> con los pasos que la raíz tickea todos los turnos y
-        /// <paramref name="next"/> con el próximo tiempo del ciclo. Ambas listas se limpian.
+        /// Llena <paramref name="standing"/> con los pasos que la raíz tickea todos los turnos,
+        /// <paramref name="next"/> con el próximo tiempo del ciclo, y <paramref name="options"/>
+        /// con TODOS los tiempos del ciclo — el repertorio, no la agenda. Las listas se limpian.
         /// </summary>
         public static void Collect(AIDecisionNode root, AIContext context,
-                                   List<AIIntent> standing, List<AIIntent> next)
+                                   List<AIIntent> standing, List<AIIntent> next,
+                                   List<AIIntent> options = null)
         {
             standing?.Clear();
             next?.Clear();
+            options?.Clear();
             if (root == null || context == null) return;
 
             var alternates = new List<AINode_Alternate>();
             Walk(root, context, standing, alternates);
 
-            if (next == null) return;
             foreach (var alternate in alternates)
-                Walk(alternate.NextChild, context, next, null);
+            {
+                if (next != null) Walk(alternate.NextChild, context, next, null);
+
+                // El repertorio se describe con TryDescribeOption y no con la intención viva:
+                // el cono sin marca pendiente y el disparo fuera de rango contestan false, que
+                // es lo correcto para "qué va a pasar" y lo incorrecto para "qué sabe hacer".
+                if (options == null || alternate.Children == null) continue;
+                foreach (var child in alternate.Children)
+                    Walk(child, context, options, null, asOptions: true);
+            }
         }
 
         /// <summary>
@@ -81,21 +92,31 @@ namespace Rollgeon.Combat.AI
         }
 
         private static void Walk(AIDecisionNode node, AIContext context,
-                                 List<AIIntent> into, List<AINode_Alternate> alternates)
+                                 List<AIIntent> into, List<AINode_Alternate> alternates,
+                                 bool asOptions = false)
         {
             if (node == null) return;
 
             if (node is IAIIntentNode intentNode && into != null)
-                intentNode.DescribeIntents(context, into);
+            {
+                if (asOptions)
+                {
+                    if (intentNode.TryDescribeOption(context, out var option)) into.Add(option);
+                }
+                else
+                {
+                    intentNode.DescribeIntents(context, into);
+                }
+            }
 
             switch (node)
             {
                 case AINode_Sequence sequence:
-                    WalkChildren(sequence.Children, context, into, alternates);
+                    WalkChildren(sequence.Children, context, into, alternates, asOptions);
                     break;
 
                 case AINode_Selector selector:
-                    WalkChildren(selector.Children, context, into, alternates);
+                    WalkChildren(selector.Children, context, into, alternates, asOptions);
                     break;
 
                 // En la pasada de "lo que está en curso" el ciclo no aporta nada: sus hijos son
@@ -106,23 +127,35 @@ namespace Rollgeon.Combat.AI
                     break;
 
                 // La rama que el propio If elegiría, preguntándole a él y no reimplementando la
-                // condición acá.
+                // condición acá. Como repertorio se abren las DOS: la condición es el estado de
+                // este turno, y el duplicado que resulta lo filtra por key quien arma la columna.
                 case AINode_If branch:
-                    Walk(branch.Evaluate(context) ? branch.Then : branch.Else, context, into, alternates);
+                    if (asOptions)
+                    {
+                        Walk(branch.Then, context, into, alternates, asOptions);
+                        Walk(branch.Else, context, into, alternates, asOptions);
+                    }
+                    else
+                    {
+                        Walk(branch.Evaluate(context) ? branch.Then : branch.Else,
+                             context, into, alternates);
+                    }
                     break;
 
-                // Un Once ya latcheado es transparente y su hijo no vuelve a correr.
+                // Un Once ya latcheado es transparente y su hijo no vuelve a correr — también
+                // como repertorio: lo que ya se gastó dejó de ser posible.
                 case AINode_Once once:
-                    if (!once.HasRun) Walk(once.Child, context, into, alternates);
+                    if (!once.HasRun) Walk(once.Child, context, into, alternates, asOptions);
                     break;
             }
         }
 
         private static void WalkChildren(List<AIDecisionNode> children, AIContext context,
-                                         List<AIIntent> into, List<AINode_Alternate> alternates)
+                                         List<AIIntent> into, List<AINode_Alternate> alternates,
+                                         bool asOptions = false)
         {
             if (children == null) return;
-            foreach (var child in children) Walk(child, context, into, alternates);
+            foreach (var child in children) Walk(child, context, into, alternates, asOptions);
         }
     }
 }

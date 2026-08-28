@@ -835,6 +835,10 @@ MonoBehaviour:
     m_Key: enemy.panel.next_turn
     m_Metadata:
       m_Items: []
+  - m_Id: 16191439641702400
+    m_Key: enemy.panel.weakness
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

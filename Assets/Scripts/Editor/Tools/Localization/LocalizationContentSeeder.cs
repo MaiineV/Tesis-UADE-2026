@@ -664,16 +664,6 @@ namespace Rollgeon.EditorTools.Localization
                 "No podés volver a usar un portal hasta que pase el efecto.",
                 "You cannot use a portal again until this wears off.");
 
-            // Lo que el panel del enemigo dice de EL: por que le pega fuerte y que sabe hacer.
-            // Todavia sin provider --hoy solo los arma el preview-- pero con key desde el dia uno:
-            // una tarjeta con texto pelado se queda en ingles el dia que alguien juegue en espanol.
-            Content("enemy.weakness.name", "Debilidad", "Weakness");
-            // {0} = combo, {1} = multiplicador. Salen del EnemyDataSO, no de la key: cada bicho
-            // tiene el suyo y rebalancear no puede obligar a retraducir.
-            Content("enemy.weakness.desc",
-                "{0} le pega ×{1}.",
-                "{0} hits it for ×{1}.");
-
             // La frase tactica del panel: como pelea, en una linea. Distinta del .desc (el lore
             // del parrafo) a proposito — el panel no lleva lore.
             Content("boss.croupier.brief",
@@ -779,6 +769,11 @@ namespace Rollgeon.EditorTools.Localization
             // La fecha del ataque en su tarjeta del costado. En chico y arriba del título: es lo
             // que lo distingue de lo que el jefe mantiene en el paño, que no lleva fecha.
             Ui(EnemyStatusIconsView.NextTurnKey, "Próximo turno", "Next turn");
+
+            // La debilidad como renglón del pie del panel — no es tarjeta ni ícono. {0} = el
+            // nombre del combo, que sale del registry vivo y no de la key.
+            Ui(EnemyStatusIconsView.WeaknessLineKey,
+               "Debilidad: <b>{0}</b>", "Weakness: <b>{0}</b>");
         }
 
         /// <summary>

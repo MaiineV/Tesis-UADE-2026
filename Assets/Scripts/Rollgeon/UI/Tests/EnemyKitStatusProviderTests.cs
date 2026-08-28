@@ -53,36 +53,33 @@ namespace Rollgeon.UI.Tests
         }
 
         [Test]
-        public void test_kit_a_registered_weakness_becomes_the_top_card()
+        public void test_kit_a_registered_weakness_names_its_combo()
         {
             // Arrange — el registry y no el SO: es la fuente viva, la IA puede reescribirla.
             _registry.SetWeakness(_boss, "combo.poker", 1.3f);
             var provider = new EnemyKitStatusProvider(catalog: null, MakeData());
 
-            // Act — CollectWeakness y no Collect: la debilidad va a la columna PRINCIPAL del
-            // panel, así que la fila la pide por separado del resto del kit.
-            provider.CollectWeakness(_boss, _states);
+            // Act — WeaknessComboName y no Collect: la debilidad es un renglón del pie del
+            // panel, no una tarjeta del costado.
+            string combo = provider.WeaknessComboName(_boss);
 
-            // Assert
-            Assert.AreEqual(1, _states.Count);
-            Assert.AreEqual(EnemyKitStatusProvider.WeaknessId, _states[0].Id);
-            StringAssert.Contains("1.3", _states[0].Description,
-                "El multiplicador vigente va en la regla: sin él, 'débil al póker' no dice " +
-                "cuánto vale tirarlo.");
+            // Assert — sin catálogo de combos cae a la key cruda, que acá alcanza para fijar
+            // que el combo que sale es el registrado.
+            Assert.AreEqual("combo.poker", combo);
         }
 
         [Test]
-        public void test_kit_no_weakness_registered_publishes_no_weakness_card()
+        public void test_kit_no_weakness_registered_names_no_combo()
         {
             // Arrange
             var provider = new EnemyKitStatusProvider(catalog: null, MakeData());
 
             // Act
-            provider.CollectWeakness(_boss, _states);
+            string combo = provider.WeaknessComboName(_boss);
 
             // Assert
-            Assert.IsEmpty(_states,
-                "Un común sin debilidad no puede mostrar la fila: una tarjeta 'Débil' sin combo " +
+            Assert.IsNull(combo,
+                "Un común sin debilidad no puede mostrar el renglón: un 'Debilidad:' sin combo " +
                 "promete un multiplicador que no existe.");
         }
 

@@ -35,10 +35,12 @@ namespace Rollgeon.Combat.AI
         }
 
         /// <inheritdoc />
-        public bool TryRead(Guid enemyId, List<AIIntent> standing, List<AIIntent> next)
+        public bool TryRead(Guid enemyId, List<AIIntent> standing, List<AIIntent> next,
+                            List<AIIntent> options = null)
         {
             standing?.Clear();
             next?.Clear();
+            options?.Clear();
 
             if (!IsPlayerTurn()) return false;
             if (enemyId == Guid.Empty || _registry == null || _readContext == null) return false;
@@ -47,7 +49,7 @@ namespace Rollgeon.Combat.AI
             var context = _readContext(enemyId);
             if (context == null) return false;
 
-            AIIntentWalker.Collect(root, context, standing, next);
+            AIIntentWalker.Collect(root, context, standing, next, options);
             return true;
         }
 

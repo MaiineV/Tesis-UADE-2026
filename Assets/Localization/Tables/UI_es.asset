@@ -881,6 +881,10 @@ MonoBehaviour:
     m_Localized: "Pr\xF3ximo turno"
     m_Metadata:
       m_Items: []
+  - m_Id: 16191439641702400
+    m_Localized: 'Debilidad: <b>{0}</b>'
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

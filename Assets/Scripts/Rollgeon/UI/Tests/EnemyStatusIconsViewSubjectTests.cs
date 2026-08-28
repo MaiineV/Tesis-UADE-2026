@@ -92,7 +92,7 @@ namespace Rollgeon.UI.Tests
         }
 
         [Test]
-        public void LoQueCuelgaDebajo_EsLaDebilidad_NoElAtaque()
+        public void LaDebilidad_EsUnRenglonDelPie_NoUnaTarjeta()
         {
             // Arrange — la debilidad sale del registry vivo, como en el spawn real.
             var registry = new Rollgeon.Combat.Weakness.WeaknessRegistry();
@@ -107,18 +107,48 @@ namespace Rollgeon.UI.Tests
                 _intents.Next.Add(Own(AIIntentTextKeys.RangedShot, "Te dispara"));
 
                 // Act
-                var weakness = _view.CollectWeakness();
+                string line = _view.WeaknessLine();
+                var applied = _view.CollectApplied();
 
-                // Assert
-                Assert.AreEqual(1, weakness.Count);
-                Assert.AreEqual("enemy.weakness", weakness[0].Id,
-                    "La debilidad cuelga sola debajo de la caja —lo único que cambia qué TIRÁS— " +
-                    "y el ataque bajó al costado con su fecha.");
+                // Assert — texto y no tarjeta: sin catálogo de combos el renglón dice la key
+                // cruda, que acá alcanza para fijar que el combo registrado es el que sale.
+                StringAssert.Contains("combo.poker", line,
+                    "El renglón del pie no dice el combo del registry: promete una debilidad " +
+                    "que no es la vigente.");
+                foreach (var state in applied)
+                    Assert.AreNotEqual("enemy.weakness", state.Id,
+                        "La debilidad volvió a ser tarjeta: va como renglón del pie, con la " +
+                        "misma letra que la frase táctica.");
             }
             finally
             {
                 UnityEngine.Object.DestroyImmediate(data);
             }
+        }
+
+        [Test]
+        public void ElRepertorioEntero_SaleAlCostado_SoloElProximoConFecha()
+        {
+            // Arrange — el ciclo del Croupier leído entero: el disparo es el próximo tiempo, y
+            // las bombas y el cono son los otros dos beats del mismo Alternate.
+            _intents.Next.Add(Own(AIIntentTextKeys.RangedShot, "Te dispara"));
+            _intents.Options.Add(Own(AIIntentTextKeys.BombField, "Siembra bombas"));
+            _intents.Options.Add(Own(AIIntentTextKeys.Ignite, "Prende el cono"));
+            _intents.Options.Add(Own(AIIntentTextKeys.RangedShot, "Te dispara"));
+
+            // Act
+            var applied = _view.CollectApplied();
+
+            // Assert — los tres ataques, una vez cada uno, el que viene arriba y con fecha.
+            Assert.AreEqual(3, applied.Count,
+                "El repertorio tiene que salir entero y sin repetir: el próximo también está en " +
+                "la lista de posibles y no puede aparecer dos veces.");
+            Assert.AreEqual(AIIntentTextKeys.RangedShot, applied[0].Id);
+            Assert.IsNotEmpty(applied[0].Eyebrow ?? string.Empty,
+                "El próximo tiempo lleva la fecha.");
+            Assert.IsEmpty(applied[1].Eyebrow ?? string.Empty,
+                "Un ataque posible no lleva fecha: es lo que SABE hacer, no lo que va a pasar.");
+            Assert.IsEmpty(applied[2].Eyebrow ?? string.Empty);
         }
 
         [Test]
@@ -150,13 +180,17 @@ namespace Rollgeon.UI.Tests
         {
             public readonly List<AIIntent> Standing = new List<AIIntent>();
             public readonly List<AIIntent> Next = new List<AIIntent>();
+            public readonly List<AIIntent> Options = new List<AIIntent>();
 
-            public bool TryRead(Guid enemyId, List<AIIntent> standing, List<AIIntent> next)
+            public bool TryRead(Guid enemyId, List<AIIntent> standing, List<AIIntent> next,
+                                List<AIIntent> options = null)
             {
                 standing?.Clear();
                 next?.Clear();
+                options?.Clear();
                 standing?.AddRange(Standing);
                 next?.AddRange(Next);
+                options?.AddRange(Options);
                 return true;
             }
         }
