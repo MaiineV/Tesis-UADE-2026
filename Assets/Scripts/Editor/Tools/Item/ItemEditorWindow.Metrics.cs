@@ -60,6 +60,8 @@ namespace Rollgeon.Editor.Tools.Item
         Vector2 _metricsScroll;
         GUIStyle _metricsFallbackPriceStyle;
         GUIStyle _metricsSectionHeaderStyle;
+        GUIStyle _metricsStatusStyle;
+        GUIStyle _metricsRightStyle;
 
         [BlockEditorTab("Metrics", 20)]
         void DrawMetricsTab()
@@ -68,30 +70,64 @@ namespace Rollgeon.Editor.Tools.Item
             if (_metricsCache == null) RefreshMetrics();
 
             DrawMetricsToolbar();
+            DrawStatusStrip();
 
             _metricsScroll = EditorGUILayout.BeginScrollView(_metricsScroll);
 
-            _metricsShowDistribution = EditorGUILayout.Foldout(_metricsShowDistribution, "Distribución", true, _metricsSectionHeaderStyle);
-            if (_metricsShowDistribution) DrawDistribution();
+            // Salud primero: es lo unico accionable. Antes venia tercera, debajo de dos tablas que
+            // no piden ninguna decision.
+            int problemas = _metricsFindingsCache.Count + _metricsPriceOutlierCache.Count;
+            if (MetricsSection("Problemas", problemas, ref _metricsShowHealth)) DrawHealth();
 
-            EditorGUILayout.Space(10);
-
-            _metricsShowMagnitudes = EditorGUILayout.Foldout(
-                _metricsShowMagnitudes, "Magnitudes por rareza", true, _metricsSectionHeaderStyle);
-            if (_metricsShowMagnitudes) DrawMagnitudes();
-
-            EditorGUILayout.Space(10);
-
-            var healthCount = _metricsFindingsCache.Count + _metricsPriceOutlierCache.Count;
-            _metricsShowHealth = EditorGUILayout.Foldout(_metricsShowHealth, $"Salud del catálogo ({healthCount})", true, _metricsSectionHeaderStyle);
-            if (_metricsShowHealth) DrawHealth();
-
-            EditorGUILayout.Space(10);
-
-            _metricsShowTable = EditorGUILayout.Foldout(_metricsShowTable, $"Ítems ({_metricsCache.Count})", true, _metricsSectionHeaderStyle);
-            if (_metricsShowTable) DrawTable();
+            if (MetricsSection("Catálogo", _metricsCache.Count, ref _metricsShowTable)) DrawTable();
+            if (MetricsSection("Distribución", 0, ref _metricsShowDistribution)) DrawDistribution();
+            if (MetricsSection("Magnitudes", 0, ref _metricsShowMagnitudes)) DrawMagnitudes();
 
             EditorGUILayout.EndScrollView();
+        }
+
+        /// <summary>
+        /// El titular: cuantos items hay y si algo esta mal, sin tener que leer nada mas.
+        /// </summary>
+        /// <remarks>
+        /// La tab abria con tres tablas de numeros y ninguna respondia la primera pregunta de quien la
+        /// abre, que es "¿esta todo bien?". Esta franja la contesta en una linea y se tine de rojo
+        /// cuando no.
+        /// </remarks>
+        void DrawStatusStrip()
+        {
+            int problemas = _metricsFindingsCache.Count + _metricsPriceOutlierCache.Count;
+            int variantes = 0;
+            foreach (var f in _metricsFamiliesCache) variantes += f.Variants.Count;
+
+            var rect = GUILayoutUtility.GetRect(GUIContent.none, GUIStyle.none, GUILayout.Height(26f));
+            EditorGUI.DrawRect(rect, problemas == 0
+                ? new Color(0.20f, 0.28f, 0.22f)
+                : new Color(0.30f, 0.20f, 0.18f));
+
+            var text = $"{_metricsCache.Count} ítems   ·   {_metricsFamiliesCache.Count} familias ({variantes} variantes)"
+                     + $"   ·   {_metricsLooseCache.Count} sueltos   ·   "
+                     + (problemas == 0 ? "sin problemas" : $"{problemas} problemas");
+
+            var label = new Rect(rect.x + 8f, rect.y, rect.width - 16f, rect.height);
+            GUI.Label(label, text, _metricsStatusStyle);
+        }
+
+        /// <summary>Cabecera de seccion con su cuenta al costado. <paramref name="count"/> 0 = sin contador.</summary>
+        bool MetricsSection(string title, int count, ref bool expanded)
+        {
+            EditorGUILayout.Space(8);
+            using (new EditorGUILayout.HorizontalScope())
+            {
+                var header = count > 0 ? $"{title}   ({count})" : title;
+                bool next = EditorGUILayout.Foldout(expanded, header, true, _metricsSectionHeaderStyle);
+                if (next != expanded) expanded = next;
+            }
+
+            var line = GUILayoutUtility.GetRect(GUIContent.none, GUIStyle.none, GUILayout.Height(1f));
+            EditorGUI.DrawRect(line, new Color(0.35f, 0.35f, 0.35f));
+            EditorGUILayout.Space(3);
+            return expanded;
         }
 
         void EnsureMetricsStyles()
@@ -101,6 +137,13 @@ namespace Rollgeon.Editor.Tools.Item
 
             if (_metricsSectionHeaderStyle == null)
                 _metricsSectionHeaderStyle = new GUIStyle(EditorStyles.foldout) { fontStyle = FontStyle.Bold };
+
+            if (_metricsStatusStyle == null)
+                _metricsStatusStyle = new GUIStyle(EditorStyles.boldLabel)
+                { alignment = TextAnchor.MiddleLeft, fontSize = 12 };
+
+            if (_metricsRightStyle == null)
+                _metricsRightStyle = new GUIStyle(EditorStyles.label) { alignment = TextAnchor.MiddleRight };
         }
 
         void RefreshMetrics()
@@ -160,6 +203,15 @@ namespace Rollgeon.Editor.Tools.Item
         /// mismo y uno dar el doble que el otro. Acá se ve si una rareza pega de verdad más que la
         /// de abajo, que es lo que el jugador espera al pagar la diferencia.
         /// </remarks>
+        /// <summary>
+        /// Cuanto da cada rareza, por recurso.
+        /// </summary>
+        /// <remarks>
+        /// Se dibuja una fila por rareza y recurso con el rango minimo-maximo como barra: lo que
+        /// importa no es el promedio sino si los tiers se solapan, y eso en una tabla de numeros hay
+        /// que calcularlo mentalmente. Con las barras alineadas a la misma escala, un tier que pisa al
+        /// de arriba se ve solo.
+        /// </remarks>
         void DrawMagnitudes()
         {
             if (_metricsMagnitudesCache == null || _metricsMagnitudesCache.Count == 0)
@@ -169,99 +221,112 @@ namespace Rollgeon.Editor.Tools.Item
             }
 
             EditorGUILayout.LabelField(
-                "Solo valores fijos. Los que se calculan en vivo (leen oro, contadores) se cuentan aparte "
-                + "como dinámicos y nunca entran al promedio.",
-                EditorStyles.miniLabel);
-            EditorGUILayout.Space(2);
+                "Solo valores fijos. Los que se calculan en vivo se cuentan aparte.", EditorStyles.miniLabel);
 
-            using (new EditorGUILayout.HorizontalScope(EditorStyles.toolbar))
+            foreach (ItemQuery.MagnitudeKind kind in Enum.GetValues(typeof(ItemQuery.MagnitudeKind)))
             {
-                EditorGUILayout.LabelField("Rareza", EditorStyles.miniBoldLabel, GUILayout.Width(90));
-                EditorGUILayout.LabelField("Recurso", EditorStyles.miniBoldLabel, GUILayout.Width(80));
-                EditorGUILayout.LabelField("Efectos", EditorStyles.miniBoldLabel, GUILayout.Width(60));
-                EditorGUILayout.LabelField("Mín", EditorStyles.miniBoldLabel, GUILayout.Width(50));
-                EditorGUILayout.LabelField("Prom", EditorStyles.miniBoldLabel, GUILayout.Width(60));
-                EditorGUILayout.LabelField("Máx", EditorStyles.miniBoldLabel, GUILayout.Width(50));
-                EditorGUILayout.LabelField("Dinámicos", EditorStyles.miniBoldLabel, GUILayout.Width(70));
-            }
+                if (kind == ItemQuery.MagnitudeKind.Other) continue;
 
-            foreach (var rarity in MetricsRarityOrder)
-            {
-                if (!_metricsMagnitudesCache.TryGetValue(rarity, out var summaries) || summaries.Count == 0)
-                    continue;
+                int max = 0;
+                foreach (var rarity in MetricsRarityOrder)
+                    if (_metricsMagnitudesCache.TryGetValue(rarity, out var ss))
+                        foreach (var s2 in ss)
+                            if (s2.Kind == kind && s2.Max > max) max = s2.Max;
+                if (max == 0) continue;
 
-                bool first = true;
-                foreach (var s in summaries)
+                EditorGUILayout.Space(4);
+                EditorGUILayout.LabelField(kind.ToString(), EditorStyles.miniBoldLabel);
+
+                foreach (var rarity in MetricsRarityOrder)
                 {
-                    using (new EditorGUILayout.HorizontalScope())
+                    if (!_metricsMagnitudesCache.TryGetValue(rarity, out var ss)) continue;
+                    foreach (var sum in ss)
                     {
-                        if (first)
-                        {
-                            var swatch = GUILayoutUtility.GetRect(10f, 10f, GUILayout.Width(10f));
-                            swatch.y += 4f;
-                            swatch.height = 10f;
-                            EditorGUI.DrawRect(swatch, RarityPalette.BodyColor(rarity));
-                            EditorGUILayout.LabelField(RarityPalette.DisplayName(rarity), GUILayout.Width(76));
-                            first = false;
-                        }
-                        else
-                        {
-                            EditorGUILayout.LabelField(" ", GUILayout.Width(90));
-                        }
-
-                        EditorGUILayout.LabelField(s.Kind.ToString(), GUILayout.Width(80));
-                        EditorGUILayout.LabelField(s.Count.ToString(), GUILayout.Width(60));
-
-                        if (s.Count == 0)
-                        {
-                            EditorGUILayout.LabelField("—", _metricsFallbackPriceStyle, GUILayout.Width(160));
-                        }
-                        else
-                        {
-                            EditorGUILayout.LabelField(s.Min.ToString(), GUILayout.Width(50));
-                            EditorGUILayout.LabelField(s.Average.ToString("0.#"), GUILayout.Width(60));
-                            EditorGUILayout.LabelField(s.Max.ToString(), GUILayout.Width(50));
-                        }
-
-                        EditorGUILayout.LabelField(
-                            s.Dynamic == 0 ? "—" : s.Dynamic.ToString(), GUILayout.Width(70));
+                        if (sum.Kind != kind) continue;
+                        DrawMagnitudeRow(rarity, sum, max);
                     }
                 }
             }
         }
 
-        // ============================ Distribución ============================
-
-        void DrawDistribution()
+        void DrawMagnitudeRow(ItemRarity rarity, ItemQuery.MagnitudeSummary sum, int max)
         {
-            var families = _metricsFamiliesCache;
-            var loose = _metricsLooseCache;
-            EditorGUILayout.LabelField(
-                $"{_metricsCache.Count} ítems totales — {families.Count} familias ({families.Sum(f => f.Variants.Count)} variantes), {loose.Count} sueltos.",
-                EditorStyles.miniLabel);
+            var rect = GUILayoutUtility.GetRect(GUIContent.none, GUIStyle.none, GUILayout.Height(17f));
+            float labelW = Mathf.Min(110f, rect.width * 0.28f);
 
-            EditorGUILayout.Space(4);
-            EditorGUILayout.BeginHorizontal();
-            DrawCountsColumn("Por rareza", CountByRarity(_metricsCache));
-            DrawCountsColumn("Por evento", CountByEvent(_metricsCache));
-            DrawCountsColumn("Por combo", CountByCombo(_metricsCache));
-            EditorGUILayout.EndHorizontal();
+            EditorGUI.DrawRect(new Rect(rect.x, rect.y + 4f, 3f, 9f), RarityPalette.BodyColor(rarity));
+            GUI.Label(new Rect(rect.x + 8f, rect.y, labelW, rect.height),
+                      RarityPalette.DisplayName(rarity), EditorStyles.miniLabel);
+
+            float trackX = rect.x + labelW + 12f;
+            float trackW = Mathf.Max(20f, rect.width - labelW - 130f);
+            EditorGUI.DrawRect(new Rect(trackX, rect.y + 5f, trackW, 8f), new Color(1f, 1f, 1f, 0.06f));
+
+            if (sum.Count > 0)
+            {
+                // Barra de min a max: el rango es el dato, no el promedio.
+                float x0 = trackX + trackW * (sum.Min / (float)max);
+                float x1 = trackX + trackW * (sum.Max / (float)max);
+                EditorGUI.DrawRect(new Rect(x0, rect.y + 5f, Mathf.Max(2f, x1 - x0), 8f),
+                                   new Color(0.45f, 0.65f, 0.85f, 0.85f));
+            }
+
+            var text = sum.Count == 0
+                ? (sum.Dynamic > 0 ? $"{sum.Dynamic} dinámicos" : "—")
+                : $"{sum.Min}–{sum.Max}  (n={sum.Count}{(sum.Dynamic > 0 ? $", +{sum.Dynamic} din." : "")})";
+            GUI.Label(new Rect(rect.xMax - 118f, rect.y, 114f, rect.height), text, _metricsRightStyle);
         }
 
-        static void DrawCountsColumn(string title, List<(string Label, int Count)> rows)
+        // ============================ Distribución ============================
+
+        /// <summary>
+        /// Cuantos items caen en cada rareza, evento y combo — con barras.
+        /// </summary>
+        /// <remarks>
+        /// Antes eran tres columnas de "etiqueta   numero". Comparar proporciones leyendo numeros es
+        /// justo lo que el ojo hace mal y una barra hace sola: un hueco de cobertura — un evento con
+        /// un solo item, un combo sin ninguno — salta sin tener que sumar.
+        /// </remarks>
+        void DrawDistribution()
         {
-            EditorGUILayout.BeginVertical(GUILayout.MinWidth(200));
-            EditorGUILayout.LabelField(title, EditorStyles.boldLabel);
+            DrawBarBlock("Por rareza", CountByRarity(_metricsCache));
+            EditorGUILayout.Space(6);
+            DrawBarBlock("Por evento disparador", CountByEvent(_metricsCache));
+            EditorGUILayout.Space(6);
+            DrawBarBlock("Por combo", CountByCombo(_metricsCache));
+        }
+
+        static void DrawBarBlock(string title, List<(string Label, int Count)> rows)
+        {
+            EditorGUILayout.LabelField(title, EditorStyles.miniBoldLabel);
+
             if (rows.Count == 0)
             {
                 EditorGUILayout.LabelField("—", EditorStyles.miniLabel);
+                return;
             }
-            else
+
+            int max = 1;
+            foreach (var r in rows) if (r.Count > max) max = r.Count;
+
+            foreach (var (label, count) in rows)
             {
-                foreach (var (label, count) in rows)
-                    EditorGUILayout.LabelField(label, count.ToString());
+                var rect = GUILayoutUtility.GetRect(GUIContent.none, GUIStyle.none, GUILayout.Height(16f));
+                float labelW = Mathf.Min(150f, rect.width * 0.35f);
+
+                GUI.Label(new Rect(rect.x + 4f, rect.y, labelW, rect.height), label, EditorStyles.miniLabel);
+
+                float trackX = rect.x + labelW + 8f;
+                float trackW = Mathf.Max(20f, rect.width - labelW - 48f);
+                var track = new Rect(trackX, rect.y + 4f, trackW, 8f);
+                EditorGUI.DrawRect(track, new Color(1f, 1f, 1f, 0.06f));
+
+                var fill = new Rect(trackX, track.y, trackW * (count / (float)max), 8f);
+                EditorGUI.DrawRect(fill, new Color(0.45f, 0.65f, 0.85f, 0.85f));
+
+                GUI.Label(new Rect(rect.xMax - 36f, rect.y, 32f, rect.height),
+                          count.ToString(), EditorStyles.miniLabel);
             }
-            EditorGUILayout.EndVertical();
         }
 
         static List<(string Label, int Count)> CountByRarity(IReadOnlyList<ItemQuery.ItemMetrics> metrics) =>
@@ -303,6 +368,14 @@ namespace Rollgeon.Editor.Tools.Item
 
         // ============================ Salud del catálogo ============================
 
+        /// <summary>
+        /// Los hallazgos, mas severos arriba.
+        /// </summary>
+        /// <remarks>
+        /// Antes cada hallazgo era un <c>helpBox</c> propio: con seis avisos la seccion ocupaba media
+        /// pantalla y no se podia barrer de un vistazo. Ahora son filas de una linea, con una barra de
+        /// color a la izquierda que dice la severidad sin leer.
+        /// </remarks>
         void DrawHealth()
         {
             var all = _metricsFindingsCache.Concat(_metricsPriceOutlierCache)
@@ -311,33 +384,36 @@ namespace Rollgeon.Editor.Tools.Item
 
             if (all.Count == 0)
             {
-                EditorGUILayout.HelpBox("Sin hallazgos — catálogo limpio.", MessageType.Info);
+                EditorGUILayout.LabelField("Sin hallazgos — catálogo limpio.", EditorStyles.miniLabel);
                 return;
             }
 
-            foreach (var finding in all)
+            for (int i = 0; i < all.Count; i++)
             {
-                EditorGUILayout.BeginHorizontal(EditorStyles.helpBox);
-                EditorGUILayout.LabelField(IconFor(finding.Severity), GUILayout.Width(20));
-                EditorGUILayout.LabelField(finding.Message, EditorStyles.wordWrappedLabel);
+                var finding = all[i];
+                var rect = GUILayoutUtility.GetRect(GUIContent.none, GUIStyle.none, GUILayout.Height(20f));
+                if (i % 2 == 1) EditorGUI.DrawRect(rect, new Color(1f, 1f, 1f, 0.03f));
+
+                EditorGUI.DrawRect(new Rect(rect.x, rect.y + 2f, 3f, rect.height - 4f), SeverityColor(finding.Severity));
+
+                GUI.Label(new Rect(rect.x + 10f, rect.y, rect.width - 68f, rect.height),
+                          finding.Message, EditorStyles.miniLabel);
 
                 using (new EditorGUI.DisabledScope(finding.Asset == null))
                 {
-                    if (GUILayout.Button("Ping", GUILayout.Width(50)))
+                    if (GUI.Button(new Rect(rect.xMax - 52f, rect.y + 1f, 48f, 17f), "Ping", EditorStyles.miniButton))
                         EditorGUIUtility.PingObject(finding.Asset);
                 }
-
-                EditorGUILayout.EndHorizontal();
             }
         }
 
-        static string IconFor(ItemQuery.FindingSeverity severity)
+        static Color SeverityColor(ItemQuery.FindingSeverity severity)
         {
             switch (severity)
             {
-                case ItemQuery.FindingSeverity.Error: return "⛔";
-                case ItemQuery.FindingSeverity.Warning: return "⚠";
-                default: return "ℹ";
+                case ItemQuery.FindingSeverity.Error: return new Color(0.80f, 0.30f, 0.25f);
+                case ItemQuery.FindingSeverity.Warning: return new Color(0.85f, 0.68f, 0.30f);
+                default: return new Color(0.45f, 0.65f, 0.85f);
             }
         }
 
@@ -434,75 +510,115 @@ namespace Rollgeon.Editor.Tools.Item
 
         // ============================ Tabla comparable ============================
 
+        /// <summary>
+        /// El catalogo, una fila por item.
+        /// </summary>
+        /// <remarks>
+        /// La version anterior tenia nueve columnas de ancho fijo que sumaban ~750 px: en un panel
+        /// angosto se desbordaban y se pisaban entre si. Ahora las columnas se reparten el ancho
+        /// disponible y quedan solo las cuatro que responden algo — quien es, de que familia, cuanto
+        /// cuesta contra lo que dicta el GDD, y cuando dispara. El resto se ve seleccionando el item.
+        /// </remarks>
         void DrawTable()
         {
-            EditorGUILayout.BeginHorizontal();
-            EditorGUILayout.LabelField("Nombre", EditorStyles.boldLabel, GUILayout.Width(160));
-            GUILayout.Space(16); // swatch de rareza
-            EditorGUILayout.LabelField("Rareza", EditorStyles.boldLabel, GUILayout.Width(70));
-            EditorGUILayout.LabelField("Tipo", EditorStyles.boldLabel, GUILayout.Width(55));
-            EditorGUILayout.LabelField("Familia", EditorStyles.boldLabel, GUILayout.Width(110));
-            EditorGUILayout.LabelField("Precio", EditorStyles.boldLabel, GUILayout.Width(55));
-            EditorGUILayout.LabelField("GDD", EditorStyles.boldLabel, GUILayout.Width(45));
-            EditorGUILayout.LabelField("Eventos", EditorStyles.boldLabel, GUILayout.Width(150));
-            EditorGUILayout.LabelField("Combos", EditorStyles.boldLabel, GUILayout.MinWidth(120));
-            GUILayout.Space(50); // Ping
-            EditorGUILayout.EndHorizontal();
-
             var groups = _metricsGroupBy == MetricsGroupBy.Rarity
                 ? _metricsCache.GroupBy(m => m.RarityLabel).OrderBy(g => MetricsRarityOrderOf(g.Key))
                 : _metricsCache
                     .GroupBy(m => string.IsNullOrEmpty(m.FamilyId) ? "(sin familia)" : m.FamilyId)
                     .OrderBy(g => g.Key, StringComparer.Ordinal);
 
+            int row = 0;
             foreach (var group in groups)
             {
-                EditorGUILayout.Space(4);
-                EditorGUILayout.LabelField(group.Key, EditorStyles.miniBoldLabel);
+                EditorGUILayout.Space(6);
+                EditorGUILayout.LabelField(group.Key.ToUpperInvariant(), EditorStyles.miniBoldLabel);
 
                 var ordered = _metricsGroupBy == MetricsGroupBy.Rarity
                     ? group.OrderBy(m => string.IsNullOrEmpty(m.FamilyId) ? "" : m.FamilyId, StringComparer.Ordinal)
                         .ThenBy(m => m.Asset != null ? m.Asset.VariantIndex : 0)
                     : group.OrderBy(m => m.Asset != null ? m.Asset.VariantIndex : 0);
 
-                foreach (var m in ordered)
-                    DrawRow(m);
+                foreach (var m in ordered) DrawRow(m, row++);
             }
         }
 
-        void DrawRow(ItemQuery.ItemMetrics m)
+        void DrawRow(ItemQuery.ItemMetrics m, int index)
         {
-            EditorGUILayout.BeginHorizontal();
+            var rect = GUILayoutUtility.GetRect(GUIContent.none, GUIStyle.none, GUILayout.Height(20f));
 
-            EditorGUILayout.LabelField(LabelOf(m.Asset), GUILayout.Width(160));
+            // Rayado alternado: sin el, veinticinco filas de texto plano se leen como un bloque.
+            if (index % 2 == 1) EditorGUI.DrawRect(rect, new Color(1f, 1f, 1f, 0.03f));
 
-            var swatch = GUILayoutUtility.GetRect(12, 14, GUILayout.Width(12));
-            EditorGUI.DrawRect(swatch, RarityPalette.BodyColor(m.Rarity));
-            GUILayout.Space(4);
-            EditorGUILayout.LabelField(m.RarityLabel, GUILayout.Width(66));
+            float x = rect.x + 4f;
 
-            EditorGUILayout.LabelField(m.Type.ToString(), GUILayout.Width(55));
-            EditorGUILayout.LabelField(string.IsNullOrEmpty(m.FamilyId) ? "—" : m.FamilyId, GUILayout.Width(110));
+            // Chip de rareza. Dice el tier sin gastar una columna de texto.
+            var chip = new Rect(x, rect.y + 5f, 4f, 10f);
+            EditorGUI.DrawRect(chip, RarityPalette.BodyColor(m.Rarity));
+            x += 10f;
 
-            var priceText = m.PriceIsFallback ? $"({m.Price})" : m.Price.ToString();
-            EditorGUILayout.LabelField(priceText, m.PriceIsFallback ? _metricsFallbackPriceStyle : EditorStyles.label, GUILayout.Width(55));
-            EditorGUILayout.LabelField(m.GddBasePrice.ToString(), GUILayout.Width(45));
+            float free = rect.width - (x - rect.x) - 56f;   // 56 = Ping
+            float wName = Mathf.Max(120f, free * 0.32f);
+            float wFamily = Mathf.Max(80f, free * 0.20f);
+            float wPrice = Mathf.Max(90f, free * 0.18f);
+            float wTrigger = Mathf.Max(90f, free - wName - wFamily - wPrice);
 
-            var events = m.TriggerEvents.Count > 0 ? string.Join(", ", m.TriggerEvents) : "—";
-            EditorGUILayout.LabelField(events, GUILayout.Width(150));
+            GUI.Label(new Rect(x, rect.y, wName, rect.height), LabelOf(m.Asset));
+            x += wName;
 
-            var combos = m.ComboIds.Count > 0
-                ? string.Join(", ", m.ComboIds.Select(id => id == ItemQuery.AnyComboSentinel ? "*" : id))
-                : "—";
-            EditorGUILayout.LabelField(combos, GUILayout.MinWidth(120));
+            var family = string.IsNullOrEmpty(m.FamilyId)
+                ? "—"
+                : $"{m.FamilyId} · {(m.Asset != null ? m.Asset.VariantIndex : 0)}";
+            GUI.Label(new Rect(x, rect.y, wFamily, rect.height), family, EditorStyles.miniLabel);
+            x += wFamily;
+
+            DrawPriceCell(new Rect(x, rect.y, wPrice, rect.height), m);
+            x += wPrice;
+
+            GUI.Label(new Rect(x, rect.y, wTrigger, rect.height), TriggerSummary(m), EditorStyles.miniLabel);
+            x += wTrigger;
 
             using (new EditorGUI.DisabledScope(m.Asset == null))
             {
-                if (GUILayout.Button("Ping", GUILayout.Width(50)))
+                if (GUI.Button(new Rect(rect.xMax - 52f, rect.y + 1f, 48f, 17f), "Ping", EditorStyles.miniButton))
                     EditorGUIUtility.PingObject(m.Asset);
             }
+        }
 
-            EditorGUILayout.EndHorizontal();
+        /// <summary>
+        /// Precio real y el del GDD en una celda, y en rojo cuando se apartan.
+        /// </summary>
+        /// <remarks>
+        /// Antes eran dos columnas de numeros sueltos y comparar era trabajo del ojo. La comparacion
+        /// ES el dato: un precio solo no dice nada sin el tier al lado.
+        /// </remarks>
+        void DrawPriceCell(Rect rect, ItemQuery.ItemMetrics m)
+        {
+            if (m.PriceIsFallback)
+            {
+                GUI.Label(rect, "sin precio", _metricsFallbackPriceStyle);
+                return;
+            }
+
+            bool off = m.GddBasePrice > 0
+                       && Mathf.Abs(m.Price - m.GddBasePrice) / (float)m.GddBasePrice > _metricsDeviationThresholdPct;
+
+            var prev = GUI.color;
+            if (off) GUI.color = new Color(1f, 0.65f, 0.55f);
+            GUI.Label(rect, m.Price == m.GddBasePrice ? m.Price.ToString() : $"{m.Price}  /  {m.GddBasePrice}");
+            GUI.color = prev;
+        }
+
+        /// <summary>Cuando dispara, en una linea. El detalle completo esta en el grafo del item.</summary>
+        static string TriggerSummary(ItemQuery.ItemMetrics m)
+        {
+            var combos = m.ComboIds.Count > 0
+                ? string.Join(", ", m.ComboIds.Select(id =>
+                    id == ItemQuery.AnyComboSentinel ? "cualquier combo" : id.Replace("combo.", "")))
+                : null;
+
+            if (combos != null) return combos;
+            if (m.TriggerEvents.Count > 0) return string.Join(", ", m.TriggerEvents);
+            return "—";
         }
 
         static int MetricsRarityOrderOf(string rarityLabel)
