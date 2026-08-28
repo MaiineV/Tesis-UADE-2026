@@ -42,6 +42,21 @@ namespace Rollgeon.Editor.Tools.HUD.Tests
         }
 
         [Test]
+        public void LaColumnaDelCostadoNoPuedeEnsancharElPanel()
+        {
+            var panel = LoadPanel();
+
+            var side = panel.Find("SideCards");
+            Assert.IsNotNull(side, "El panel del tooltip no tiene 'SideCards'.");
+
+            var element = side.GetComponent<LayoutElement>();
+            Assert.IsNotNull(element, "'SideCards' no tiene LayoutElement.");
+            Assert.IsTrue(element.ignoreLayout,
+                "La columna del costado entró al layout del panel: desde ahí su ancho se suma al " +
+                "del panel, y aturdir a un enemigo vuelve a mover todo lo que ya se calibró.");
+        }
+
+        [Test]
         public void LaFilaDeFamiliaNoDecideElAnchoDelPanel()
         {
             var panel = LoadPanel();

@@ -38,6 +38,10 @@ namespace Rollgeon.EditorTools.HUD
         // ancho que lo ate, su preferido es el del texto ENTERO en un renglón, y el panel se
         // estiraba hasta ahí — el color del bicho decidía el ancho del tooltip.
         private const float ContentWidth = 330f;
+
+        // Aire entre el panel y la columna del costado. Chico a propósito: más lejos y deja de
+        // leerse como algo de ESTE bicho.
+        private const float SideColumnGap = 16f;
         private const float IconSize = 44f;
         private const float BadgeSize = 34f;
 
@@ -179,6 +183,58 @@ namespace Rollgeon.EditorTools.HUD
             });
 
             Debug.Log("[TooltipCardSetupTools] Columna de tarjetas cableada en el panel del tooltip.");
+        }
+
+        /// <summary>
+        /// La segunda columna: los estados que le aplicaste, al costado y no debajo.
+        /// </summary>
+        /// <remarks>
+        /// <b>Fuera del layout del panel</b> (<c>ignoreLayout</c>) y anclada a su esquina superior
+        /// derecha. Es la decisión que mantiene el riesgo en cero: el panel sigue midiendo lo que
+        /// mide su columna de arriba, así que <see cref="ContentWidth"/>, el punto del que cuelga y
+        /// el recorte contra el borde de la pantalla siguen siendo exactamente los que se
+        /// calibraron. Un panel horizontal habría vuelto a poner las tres cosas en juego.
+        /// <para>
+        /// Lo que sí queda afuera: el recorte a pantalla mide el panel y no la columna, así que
+        /// pegado al borde derecho el costado puede irse de la pantalla. Es el mismo problema que
+        /// el modo Beside ya resuelve colgando del otro lado, y se arregla ahí el día que aparezca.
+        /// </para>
+        /// </remarks>
+        [MenuItem("Rollgeon/Tooltips/4 - Wire Side Column")]
+        public static void WireSideColumn()
+        {
+            EditPanel(panel =>
+            {
+                var side = EnsureChildRect(panel, "SideCards", Vector2.zero, Vector2.zero);
+
+                Ensure<LayoutElement>(side.gameObject).ignoreLayout = true;
+                side.anchorMin = new Vector2(1f, 1f);
+                side.anchorMax = new Vector2(1f, 1f);
+                side.pivot = new Vector2(0f, 1f);
+                side.anchoredPosition = new Vector2(SideColumnGap, 0f);
+
+                var layout = Ensure<VerticalLayoutGroup>(side.gameObject);
+                layout.spacing = 10;
+                layout.childAlignment = TextAnchor.UpperCenter;
+                layout.childControlWidth = true;
+                layout.childControlHeight = true;
+                layout.childForceExpandWidth = false;
+                layout.childForceExpandHeight = false;
+
+                // Propio porque nada más la dimensiona: está fuera del layout del panel, así que
+                // sin esto queda del tamaño que tenía el RectTransform al crearse.
+                var fitter = Ensure<ContentSizeFitter>(side.gameObject);
+                fitter.horizontalFit = ContentSizeFitter.FitMode.PreferredSize;
+                fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+
+                return (so, _) =>
+                {
+                    so.FindProperty("_sideCardsContainer").objectReferenceValue = side;
+                    side.SetAsLastSibling();
+                };
+            });
+
+            Debug.Log("[TooltipCardSetupTools] Columna del costado cableada en el panel.");
         }
 
         [MenuItem("Rollgeon/Tooltips/3 - Wire Identity Band And Footer")]
