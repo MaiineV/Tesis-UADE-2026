@@ -8,6 +8,7 @@ using Rollgeon.Combat.Threat;
 using Rollgeon.Combos;
 using Rollgeon.Entities;
 using Rollgeon.Entities.Behaviors;
+using Rollgeon.Entities.Traits;
 using Rollgeon.Feedback;
 using Rollgeon.PreConditions;
 using Rollgeon.PreConditions.Concretes;
@@ -572,6 +573,10 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
             // Sin esto su propio fuego lo quema: ShouldAffect exige
             // OwnerBossImmune && IsBoss && que el dueño sea este guid.
             data.IsBoss = true;
+
+            // Sus tres tiempos pegan de lejos: siembra, prende la banda que marcó, y dispara. El
+            // panel lo lee "Jefe · Rango" — el prefijo sale del IsBoss de arriba.
+            data.Archetype = EnemyArchetype.Ranged;
 
             data.BaseHealStrength = 0;
 
