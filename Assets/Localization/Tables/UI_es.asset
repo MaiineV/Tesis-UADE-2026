@@ -857,6 +857,26 @@ MonoBehaviour:
     m_Localized: Aprieta Confirmar para encantar el dado.
     m_Metadata:
       m_Items: []
+  - m_Id: 16084878164422656
+    m_Localized: Melee
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16084878344777728
+    m_Localized: Rango
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16084878344777729
+    m_Localized: Support
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16084878344777730
+    m_Localized: Jefe
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16084878344777731
+    m_Localized: "Jefe \xB7 {0}"
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

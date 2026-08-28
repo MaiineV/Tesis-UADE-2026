@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Linq;
 using NUnit.Framework;
 using Rollgeon.Combat.AI.Decisions;
+using Rollgeon.Entities.Traits;
 using Rollgeon.Meta;
 using Rollgeon.Tutorial;
 using Rollgeon.UI;
@@ -57,6 +58,11 @@ namespace Rollgeon.Editor.Tools.Localization.Tests
             // BUG-041: sufijo de multiplicador de combo (" × 1.5") — símbolo + número
             // puro, sin palabras que traducir (mismo criterio que "Combo").
             "tooltip.effect.combo.multiplier_suffix",
+            // "Melee" y "Support" son los términos que el equipo ya usa en castellano para
+            // hablar de las familias, igual que "Combo" y "Reroll". "Rango"/"Ranged" sí se
+            // traduce, y por eso no está acá.
+            EnemyArchetypeKeys.Melee,
+            EnemyArchetypeKeys.Support,
         };
 
         /// <summary>
@@ -138,6 +144,22 @@ namespace Rollgeon.Editor.Tools.Localization.Tests
             // Assert
             Assert.IsEmpty(missing,
                 "Keys de TutorialTextKeys sin entry en la tabla UI:\n" + string.Join("\n", missing));
+        }
+
+        [Test]
+        public void test_localization_every_archetype_key_exists_in_the_ui_table()
+        {
+            // Arrange
+            var collection = RequireCollection("UI");
+
+            // Act
+            var missing = EnemyArchetypeKeys.All
+                .Where(key => collection.SharedData.GetEntry(key) == null)
+                .ToList();
+
+            // Assert
+            Assert.IsEmpty(missing,
+                "Keys de EnemyArchetypeKeys sin entry en la tabla UI:\n" + string.Join("\n", missing));
         }
 
         [Test]

@@ -811,6 +811,26 @@ MonoBehaviour:
     m_Key: altar.confirm_hint
     m_Metadata:
       m_Items: []
+  - m_Id: 16084878164422656
+    m_Key: enemy.archetype.melee
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16084878344777728
+    m_Key: enemy.archetype.ranged
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16084878344777729
+    m_Key: enemy.archetype.support
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16084878344777730
+    m_Key: enemy.archetype.boss
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16084878344777731
+    m_Key: enemy.archetype.boss_format
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

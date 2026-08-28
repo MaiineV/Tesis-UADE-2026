@@ -149,6 +149,11 @@ namespace Rollgeon.Entities
                  "de la casilla. También cambia cómo el kill credit y la protección de SafeZone lo tratan.")]
         public bool IsBoss;
 
+        [Tooltip("Familia de combate que muestra el panel al pasarle el mouse. Unset = no muestra " +
+                 "la fila; un enemigo mal etiquetado miente sobre cómo se lo pelea. Es OTRO eje que " +
+                 "Personality, que es riesgo de pathing: un support puede ser agresivo.")]
+        public EnemyArchetype Archetype = EnemyArchetype.Unset;
+
         [Tooltip("Perfil de riesgo del pathing IA frente a casillas peligrosas (MinSurvivalHP + Caution). " +
                  "Todo el catálogo arranca en Normal.")]
         public AIPersonality Personality = AIPersonality.Normal;

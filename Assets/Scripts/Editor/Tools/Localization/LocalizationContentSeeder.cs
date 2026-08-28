@@ -2,6 +2,7 @@ using UnityEditor;
 using UnityEngine;
 using Rollgeon.Combat.AI.Decisions;
 using Rollgeon.Editor.Tools.Enemy.Builders;
+using Rollgeon.Entities.Traits;
 using Rollgeon.Tutorial;
 using Rollgeon.UI;
 using Rollgeon.UI.HUD.Contract;
@@ -38,6 +39,7 @@ namespace Rollgeon.EditorTools.Localization
             SeedMiscContent();
             SeedBuildHelp();
             SeedStatusIcons();
+            SeedArchetypes();
             SeedSpecialTiles();
             SeedContractDrawer();
             SeedPlayerIcons();
@@ -726,6 +728,36 @@ namespace Rollgeon.EditorTools.Localization
             Content(AIIntentTextKeys.Leaves + ".desc",
                 "Deja fuego: <b>{0}</b> al entrar, <b>{1}</b> por turno, {2} rondas.",
                 "Leaves fire: <b>{0}</b> on entering, <b>{1}</b> per turn, for {2} rounds.");
+        }
+
+        /// <summary>
+        /// La familia de combate que el panel de un enemigo dice de él (tabla UI).
+        /// </summary>
+        /// <remarks>
+        /// El prefijo del jefe es un formato y no una concatenación en código: así el separador
+        /// —y el orden, si algún idioma lo quiere al revés— es autorable por locale.
+        /// </remarks>
+        private static void SeedArchetypes()
+        {
+            Ui(EnemyArchetypeKeys.Melee, "Melee", "Melee");
+            Ui(EnemyArchetypeKeys.Ranged, "Rango", "Ranged");
+            Ui(EnemyArchetypeKeys.Support, "Support", "Support");
+
+            Ui(EnemyArchetypeKeys.Boss, "Jefe", "Boss");
+            Ui(EnemyArchetypeKeys.BossFormat, "Jefe · {0}", "Boss · {0}");
+        }
+
+        /// <summary>
+        /// Re-siembra SOLO las familias. Mismo criterio que <see cref="SeedStatusIconsOnly"/>:
+        /// acotar el blast radius del seeder completo.
+        /// </summary>
+        [MenuItem("Rollgeon/Localization/Seed Enemy Archetypes")]
+        public static void SeedArchetypesOnly()
+        {
+            SeedArchetypes();
+            AssetDatabase.SaveAssets();
+            AssetDatabase.Refresh();
+            Debug.Log("[LocalizationContentSeeder] Familias de enemigo pobladas en la tabla UI.");
         }
 
         /// <summary>
