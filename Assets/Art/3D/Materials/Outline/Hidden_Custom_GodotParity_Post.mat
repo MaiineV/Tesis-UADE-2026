@@ -14,6 +14,7 @@ Material:
   m_ValidKeywords: []
   m_InvalidKeywords:
   - _CREASEOVERLAY_ON
+  - _LINEOVERLAY_ON
   m_LightmapFlags: 4
   m_EnableInstancingVariants: 0
   m_DoubleSidedGI: 0
@@ -28,7 +29,7 @@ Material:
     m_Floats:
     - _AngleZCutoff: 0.5
     - _AngleZCutoffDiagonal: 0.5
-    - _AngleZScale: -0.19
+    - _AngleZScale: 0
     - _AngleZScaleDiagonal: 2
     - _ConcaveCutoff: 5.72
     - _ConcaveZCutoff: 0.5

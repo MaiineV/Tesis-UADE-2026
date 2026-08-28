@@ -158,17 +158,17 @@ MonoBehaviour:
     midColor: {r: 0.95, g: 0.9, b: 0.52, a: 1}
     shadowColor: {r: 0, g: 0, b: 0, a: 1}
   - label: "Exclusivo \u2014 armadura del Guerrero"
-    baseColor: {r: 0.24313726, g: 0.36078432, b: 0.4627451, a: 1}
+    baseColor: {r: 0.24313727, g: 0.36078432, b: 0.45882356, a: 1}
     autoGenerate: 1
     shadowHueShift: 15
     shadowSatShift: 0.1
-    shadowValShift: -0.28
+    shadowValShift: 0.12
     lightHueShift: -10
     lightSatShift: -0.12
-    lightValShift: 0.22
-    lightColor: {r: 1, g: 1, b: 1, a: 1}
-    midColor: {r: 0.68, g: 0.1, b: 0.1, a: 1}
-    shadowColor: {r: 0, g: 0, b: 0, a: 1}
+    lightValShift: 0.4
+    lightColor: {r: 0.43921572, g: 0.6117647, b: 0.68235296, a: 1}
+    midColor: {r: 0.24313727, g: 0.36078432, b: 0.45882356, a: 1}
+    shadowColor: {r: 0.078431375, g: 0.10980393, b: 0.18431373, a: 1}
   - label: "Exclusivo \u2014 vestimenta del Mago"
     baseColor: {r: 0.23921569, g: 0.22745098, b: 0.41960785, a: 0}
     autoGenerate: 1
