@@ -170,7 +170,13 @@ namespace Rollgeon.Editor.Tools.Item
         void RefreshMetrics()
         {
             _metricsCache = ItemQuery.GetMetrics();
-            _metricsFindingsCache = ItemQuery.CheckCatalogHealth();
+
+            // Salud estructural + faltantes de traduccion en una sola lista: para quien mira la tab
+            // son el mismo tipo de pregunta ("¿que le falta a este catalogo?"), y separarlos en dos
+            // secciones obligaria a barrer dos veces.
+            var structural = ItemQuery.CheckCatalogHealth();
+            var localization = ItemQuery.CheckLocalizationHealth(ItemQuery.GetAllItems());
+            _metricsFindingsCache = structural.Concat(localization).ToList();
             _metricsPriceOutlierCache = ComputePriceOutliers(_metricsCache, _metricsDeviationThresholdPct);
 
             // Los overloads sin argumento reescanean el proyecto entero (FindAssets + cargar cada

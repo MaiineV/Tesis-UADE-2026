@@ -197,6 +197,92 @@ namespace Rollgeon.Editor.Tools.Item.Tests
                 "el evento es decorativo en un hook que solo lleva modificadores");
         }
 
+        // ---- localización -----------------------------------------------------
+
+        /// <summary>Lookup falso: los tests no dependen de las tablas reales del proyecto.</summary>
+        static ItemQuery.LocalizedTextLookup Texts(
+            params (string Locale, string Name, string Desc)[] rows) =>
+            (itemId, locale) =>
+            {
+                foreach (var row in rows)
+                    if (row.Locale == locale)
+                        return new ItemLocalizationBridge.Entry(row.Name, row.Desc);
+                return default;
+            };
+
+        static readonly string[] TwoLocales = { "es", "en" };
+
+        ItemSO Localizable(string id)
+        {
+            var item = Create<ItemSO>();
+            item.ItemId = id;
+            item.DisplayName = id;
+            return item;
+        }
+
+        [Test]
+        public void CheckLocalizationHealth_NoEntryForALocale_IsFlagged()
+        {
+            var item = Localizable("test.loc.missing");
+
+            var findings = ItemQuery.CheckLocalizationHealth(
+                new[] { item }, TwoLocales,
+                Texts(("es", "Nombre", "Desc")));
+
+            Assert.IsTrue(findings.Any(f => f.Asset == item && f.Message.Contains("no tiene texto en EN")));
+        }
+
+        [Test]
+        public void CheckLocalizationHealth_SameTextInBothLocales_IsFlagged()
+        {
+            var item = Localizable("test.loc.copied");
+
+            var findings = ItemQuery.CheckLocalizationHealth(
+                new[] { item }, TwoLocales,
+                Texts(("es", "Mega Legendario", "Igual"), ("en", "Mega Legendario", "Igual")));
+
+            Assert.IsTrue(findings.Any(f => f.Message.Contains("mismo nombre")),
+                "el mismo texto en dos idiomas es una columna copiada, no una traducción");
+            Assert.IsTrue(findings.Any(f => f.Message.Contains("misma descripción")));
+        }
+
+        [Test]
+        public void CheckLocalizationHealth_EmptyValueInALocale_IsFlagged()
+        {
+            var item = Localizable("test.loc.empty");
+
+            var findings = ItemQuery.CheckLocalizationHealth(
+                new[] { item }, TwoLocales,
+                Texts(("es", "Nombre", "Desc"), ("en", "", "English desc")));
+
+            Assert.IsTrue(findings.Any(f => f.Message.Contains("no tiene nombre en EN")));
+            Assert.IsFalse(findings.Any(f => f.Message.Contains("no tiene descripción en EN")));
+        }
+
+        [Test]
+        public void CheckLocalizationHealth_FullyTranslated_IsClean()
+        {
+            var item = Localizable("test.loc.ok");
+
+            var findings = ItemQuery.CheckLocalizationHealth(
+                new[] { item }, TwoLocales,
+                Texts(("es", "Botas Ligeras", "Corrés más"), ("en", "Light Boots", "You run faster")));
+
+            CollectionAssert.IsEmpty(findings);
+        }
+
+        /// <summary>Sin id no hay dónde guardar el texto; eso ya lo reporta <c>CheckCatalogHealth</c>.</summary>
+        [Test]
+        public void CheckLocalizationHealth_ItemWithoutId_IsSkipped()
+        {
+            var item = Create<ItemSO>();
+            item.ItemId = string.Empty;
+
+            var findings = ItemQuery.CheckLocalizationHealth(new[] { item }, TwoLocales, Texts());
+
+            CollectionAssert.IsEmpty(findings);
+        }
+
         static EffectData EffectWith(BaseEffect effect)
         {
             var data = new EffectData();
