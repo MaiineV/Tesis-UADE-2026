@@ -78,8 +78,7 @@ namespace Rollgeon.UI.HUD.Status
         /// <see cref="SpecialTileType"/> y cobran 8/12, 6/10 y 15/15.
         /// </remarks>
         public static StatusIconState BurnState(SpecialTileDefinitionSO definition, UnityEngine.Sprite icon,
-                                                StatusCardStyle style = StatusCardStyle.Unit,
-                                                int? remainingRounds = null)
+                                                StatusCardStyle style = StatusCardStyle.Unit)
         {
             int enter = definition != null ? definition.EnterDamage : 0;
             int turnStart = definition != null ? definition.TurnStartDamage : 0;
@@ -92,10 +91,7 @@ namespace Rollgeon.UI.HUD.Status
                     enter, turnStart),
                 icon,
                 active: true,
-                // Los turnos sólo los sabe quien mira el fuego desde afuera: el que lo está
-                // pisando no tiene una casilla sino todas las que toca, y contarle una sola
-                // mentiría sobre cuánto le queda al incendio.
-                remainingTurns: remainingRounds,
+                remainingTurns: null,
                 stackCount: null,
                 style: style);
         }

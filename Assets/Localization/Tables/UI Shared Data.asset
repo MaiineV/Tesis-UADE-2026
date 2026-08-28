@@ -831,6 +831,10 @@ MonoBehaviour:
     m_Key: enemy.archetype.boss_format
     m_Metadata:
       m_Items: []
+  - m_Id: 16149703682879488
+    m_Key: enemy.panel.next_turn
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

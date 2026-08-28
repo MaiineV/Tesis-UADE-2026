@@ -48,6 +48,7 @@ namespace Rollgeon.EditorTools.HUD
         // Crema sobre la placa oscura. Los labels salían en el blanco default de TMP, que sobre
         // el panel color hueso quedaba invisible.
         private static readonly Color CardInk = new Color(0.94f, 0.90f, 0.82f);
+        private static readonly Color CardInkSoft = new Color(0.94f, 0.90f, 0.82f, 0.65f);
         private static readonly Color DividerInk = new Color(0.83f, 0.68f, 0.33f, 0.45f);
 
         // El marrón del párrafo del panel, para que la banda pertenezca al mismo tooltip.
@@ -120,6 +121,12 @@ namespace Rollgeon.EditorTools.HUD
             badgeLabel.rectTransform.anchoredPosition = Vector2.zero;
             badgeLabel.textWrappingMode = TextWrappingModes.NoWrap;
 
+            // Chico y apagado a proposito: es una fecha, no un segundo titulo. Y arriba de todo
+            // porque dice cuando pasa lo que la tarjeta describe -- se lee antes que el que.
+            var eyebrowLabel = EnsureLabel(rootRect, "Eyebrow", 18f, TextAlignmentOptions.Center,
+                                           CardInkSoft);
+            eyebrowLabel.transform.SetSiblingIndex(0);
+
             // Por debajo de la regla (27) a proposito: el titulo nombra la cosa y la regla es
             // lo que se lee, asi que un titulo mas grande que ella se lleva el ojo primero.
             var titleLabel = EnsureLabel(headerRect, "Title", 26f, TextAlignmentOptions.Left, CardInk);
@@ -145,6 +152,7 @@ namespace Rollgeon.EditorTools.HUD
             var view = Ensure<TooltipCardView>(root);
             var so = new SerializedObject(view);
             so.FindProperty("_titleLabel").objectReferenceValue = titleLabel;
+            so.FindProperty("_eyebrowLabel").objectReferenceValue = eyebrowLabel;
             so.FindProperty("_ruleLabel").objectReferenceValue = ruleLabel;
             so.FindProperty("_iconRoot").objectReferenceValue = iconRect.gameObject;
             so.FindProperty("_icon").objectReferenceValue = iconImage;

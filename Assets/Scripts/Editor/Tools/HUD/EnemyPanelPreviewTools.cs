@@ -73,7 +73,7 @@ namespace Rollgeon.EditorTools.HUD
             var attack = new List<StatusIconState>();
             var applied = new List<StatusIconState>();
             CollectCards(data, attack, applied);
-            if (withSampleStates) AddSampleStates(data, applied);
+            if (withSampleStates) AddSampleStates(data, attack, applied);
 
             var content = BuildContent(data, attack, applied);
 
@@ -232,8 +232,11 @@ namespace Rollgeon.EditorTools.HUD
                 EnemyStatusRowSettingsSO.ResourcePath);
             var catalog = settings != null ? settings.Catalog : null;
 
+            // Mismo reparto que la fila real: la columna principal es la debilidad, y TODO lo que
+            // va a pasar --el proximo ataque, con su fecha en chico-- es del costado.
             foreach (var intent in next)
-                EnemyStatusIconsView.AddIfOwn(intent, owner, catalog, attack);
+                EnemyStatusIconsView.AddIfOwn(intent, owner, catalog, applied,
+                                              EnemyStatusIconsView.NextTurnEyebrow());
             foreach (var intent in standing)
                 EnemyStatusIconsView.AddIfOwn(intent, owner, catalog, applied);
         }
@@ -242,7 +245,8 @@ namespace Rollgeon.EditorTools.HUD
         // combate no existe --el registry de debilidades-- levantado al vuelo desde el SO, que es
         // exactamente lo que el spawn registra. El fuego se planta de verdad en el servicio de
         // casillas para que el Burn salga del provider real y no de una maqueta.
-        private static void AddSampleStates(EnemyDataSO data, List<StatusIconState> into)
+        private static void AddSampleStates(EnemyDataSO data, List<StatusIconState> attack,
+                                            List<StatusIconState> into)
         {
             var settings = Resources.Load<EnemyStatusRowSettingsSO>(
                 EnemyStatusRowSettingsSO.ResourcePath);
@@ -261,7 +265,9 @@ namespace Rollgeon.EditorTools.HUD
 
             try
             {
-                new EnemyKitStatusProvider(catalog, data).Collect(owner, into);
+                var kit = new EnemyKitStatusProvider(catalog, data);
+                kit.CollectWeakness(owner, attack);
+                kit.Collect(owner, into);
 
                 var fire = FindFireDefinition(data);
                 if (fire != null)
@@ -284,10 +290,9 @@ namespace Rollgeon.EditorTools.HUD
             public StubOwnedFire(SpecialTileDefinitionSO fire) => _fire = fire;
 
             public void Collect(Guid owner, List<StatusIconState> into, StatusIconCatalogSO catalog)
-                => into.Add(TileStandStatusProvider.BurnState(
+                => into.Add(OwnedTilesStatusProvider.FireTilesState(
                     _fire,
                     catalog != null ? catalog.Resolve(TileStandStatusProvider.BurnId) : null,
-                    StatusCardStyle.Terrain,
                     remainingRounds: _fire.DefaultDurationRounds > 0
                         ? _fire.DefaultDurationRounds
                         : (int?)null));

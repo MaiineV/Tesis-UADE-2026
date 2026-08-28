@@ -12,8 +12,8 @@ using Rollgeon.Localization;
 namespace Rollgeon.UI.HUD.Status
 {
     /// <summary>
-    /// Publica el kit del enemigo en su columna del costado: por qué le pega fuerte (la debilidad,
-    /// con su combo y multiplicador) y qué sabe hacer que no es un ataque (hoy, teleportarse).
+    /// Publica el kit del enemigo: la debilidad (combo y multiplicador) para la columna principal
+    /// del panel, y lo que sabe hacer que no es un ataque (hoy, teleportarse) para la del costado.
     /// </summary>
     /// <remarks>
     /// <para>
@@ -47,11 +47,10 @@ namespace Rollgeon.UI.HUD.Status
             _teleports = Teleports(data);
         }
 
+        /// <summary>Sólo el teleport: la debilidad va por <see cref="CollectWeakness"/>.</summary>
         public void Collect(Guid ownerGuid, List<StatusIconState> into)
         {
             if (into == null) return;
-
-            CollectWeakness(ownerGuid, into);
 
             if (_teleports)
                 into.Add(new StatusIconState(
@@ -65,7 +64,12 @@ namespace Rollgeon.UI.HUD.Status
                     active: true));
         }
 
-        private void CollectWeakness(Guid ownerGuid, List<StatusIconState> into)
+        /// <summary>
+        /// La debilidad sola, para la columna PRINCIPAL del panel. Separada de
+        /// <see cref="Collect"/> porque no comparte columna con el resto del kit: es lo único que
+        /// cambia qué tirás, y va en el panel, no en la tirita del costado.
+        /// </summary>
+        public void CollectWeakness(Guid ownerGuid, List<StatusIconState> into)
         {
             if (ownerGuid == Guid.Empty) return;
             if (!ServiceLocator.TryGetService<IWeaknessRegistry>(out var registry) || registry == null)

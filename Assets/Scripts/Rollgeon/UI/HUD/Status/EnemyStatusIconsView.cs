@@ -34,8 +34,12 @@ namespace Rollgeon.UI.HUD.Status
         private readonly List<AIIntent> _standing = new();
         private readonly List<AIIntent> _next = new();
 
+        /// <summary>Key de UI de la etiqueta "Próximo turno" del ataque.</summary>
+        public const string NextTurnKey = "enemy.panel.next_turn";
+
         private Guid _entityGuid;
         private EnemyDataSO _data;
+        private EnemyKitStatusProvider _kit;
         private StatusEffectIconView _iconPrefab;
         private StatusIconCatalogSO _catalog;
         private RectTransform _container;
@@ -163,10 +167,13 @@ namespace Rollgeon.UI.HUD.Status
             _attack.Clear();
             _applied.Clear();
 
-            // Providers antes que intents: el primero es el kit, y la debilidad va arriba de todo
-            // porque es lo único de la columna que cambia qué tirás, no qué te va a pasar.
-            foreach (var provider in _providers) provider.Collect(_entityGuid, _applied);
+            // La columna principal es la debilidad: lo único del panel que cambia qué TIRÁS. Todo
+            // lo que va a pasar --el próximo ataque incluido-- es del costado, y el ataque arriba
+            // de esa columna porque es lo más urgente de lo que va a pasar.
+            _kit?.CollectWeakness(_entityGuid, _attack);
+
             CollectIntents();
+            foreach (var provider in _providers) provider.Collect(_entityGuid, _applied);
         }
 
         public void Refresh()
@@ -210,12 +217,11 @@ namespace Rollgeon.UI.HUD.Status
                 return;
             if (!intents.TryRead(_entityGuid, _standing, _next)) return;
 
-            // El próximo tiempo del ciclo ES su ataque. Lo que el árbol tickea TODOS los turnos
-            // no es un segundo ataque sino lo que el jefe mantiene en el paño —el fuego del Pleno,
-            // el candado del 70%—, y eso es un estado. Mezclarlos en una sola columna es lo que
-            // hacía que el panel mostrara dos tarjetas de ataque y el jugador tuviera que adivinar
-            // cuál de las dos iba a pasar.
-            foreach (var intent in _next) AddIfOwn(intent, _attack);
+            // El próximo tiempo del ciclo lleva fecha —"Próximo turno", en chico— y es lo que lo
+            // distingue de lo que el jefe mantiene en el paño, que se tickea todos los turnos y no
+            // la lleva. Sin esa etiqueta las dos cosas se leían como dos ataques y el jugador
+            // tenía que adivinar cuál iba a pasar.
+            foreach (var intent in _next) AddIfOwn(intent, _applied, NextTurnEyebrow());
             foreach (var intent in _standing) AddIfOwn(intent, _applied);
         }
 
@@ -227,21 +233,26 @@ namespace Rollgeon.UI.HUD.Status
         // su propia copia de esto, el panel que mirás para diseñar dejaría de ser el que el juego
         // dibuja en cuanto una de las dos cambie.
         public static void AddIfOwn(in AIIntent intent, Guid owner, StatusIconCatalogSO catalog,
-                                    List<StatusIconState> into)
+                                    List<StatusIconState> into, string eyebrow = null)
         {
             if (intent.SubjectGuid != Guid.Empty && intent.SubjectGuid != owner) return;
-            into.Add(ToState(intent, catalog));
+            into.Add(ToState(intent, catalog, eyebrow));
         }
 
-        private void AddIfOwn(in AIIntent intent, List<StatusIconState> into)
-            => AddIfOwn(intent, _entityGuid, _catalog, into);
+        private void AddIfOwn(in AIIntent intent, List<StatusIconState> into, string eyebrow = null)
+            => AddIfOwn(intent, _entityGuid, _catalog, into, eyebrow);
+
+        /// <summary>La etiqueta de fecha del próximo ataque, ya localizada.</summary>
+        public static string NextTurnEyebrow()
+            => LocalizedContent.Ui(NextTurnKey, "Próximo turno");
 
         // El badge cuenta turnos hasta que pase, no turnos restantes de un estado: TurnsAway 0 es
         // "en su próximo turno", que para el jugador es un turno de distancia.
         //
         // Daño 0 viaja como null y no como cero: una intención que no pega por sí misma —el
         // estallido, que lo que cobra es el fuego que deja— no tiene que mostrar un "0".
-        public static StatusIconState ToState(in AIIntent intent, StatusIconCatalogSO catalog)
+        public static StatusIconState ToState(in AIIntent intent, StatusIconCatalogSO catalog,
+                                              string eyebrow = null)
             => new StatusIconState(
                 intent.LabelKey,
                 LocalizedContent.Name(intent.LabelKey, intent.LabelFallback),
@@ -249,16 +260,19 @@ namespace Rollgeon.UI.HUD.Status
                 catalog != null ? catalog.Resolve(intent.LabelKey) : null,
                 active: true,
                 remainingTurns: intent.TurnsAway + 1,
-                damage: intent.Damage > 0 ? intent.Damage : (int?)null);
+                damage: intent.Damage > 0 ? intent.Damage : (int?)null,
+                eyebrow: eyebrow);
 
         // Punto de extensión: un jefe nuevo es un IStatusIconProvider más, sin tocar nada de UI.
         private void BuildProviders()
         {
             _providers.Clear();
 
-            // El kit primero: la debilidad es lo único de la columna que cambia cómo PELEÁS
-            // --las demás dicen qué te va a pasar, esa dice qué tirar-- así que va arriba de todo.
-            if (_data != null) _providers.Add(new EnemyKitStatusProvider(_catalog, _data));
+            _kit = _data != null ? new EnemyKitStatusProvider(_catalog, _data) : null;
+
+            // El teleport del kit va al costado con los demás; la debilidad NO está acá --la pide
+            // Recollect para la columna principal, que es donde cambia qué tirás.
+            if (_kit != null) _providers.Add(_kit);
 
             _providers.Add(new PoisonStatusProvider(_catalog));
             _providers.Add(new StunStatusProvider(_catalog));

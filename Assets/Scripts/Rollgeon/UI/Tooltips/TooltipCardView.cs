@@ -30,6 +30,10 @@ namespace Rollgeon.UI.Tooltips
                  "sí misma.")]
         [SerializeField] private TextMeshProUGUI _damageLabel;
 
+        [Tooltip("Renglón chico arriba del título — 'Próximo turno'. Se apaga cuando el estado " +
+                 "no trae fecha.")]
+        [SerializeField] private TextMeshProUGUI _eyebrowLabel;
+
         [Tooltip("Línea entre el título y la regla. Se apaga con la regla: un divisor sin nada " +
                  "debajo parte la tarjeta en dos por nada.")]
         [SerializeField] private GameObject _divider;
@@ -81,6 +85,12 @@ namespace Rollgeon.UI.Tooltips
                     if (_badgeLabel != null) _badgeLabel.text = badge;
                     _badge.SetActive(badge.Length > 0);
                 }
+            }
+
+            if (_eyebrowLabel != null)
+            {
+                _eyebrowLabel.text = state.Eyebrow ?? string.Empty;
+                _eyebrowLabel.gameObject.SetActive(!string.IsNullOrEmpty(state.Eyebrow));
             }
 
             // Nunca dentro de la frase: si algún día el disparo pega 30 en vez de 24, cambia este

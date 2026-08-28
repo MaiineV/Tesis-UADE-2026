@@ -59,8 +59,9 @@ namespace Rollgeon.UI.Tests
             _registry.SetWeakness(_boss, "combo.poker", 1.3f);
             var provider = new EnemyKitStatusProvider(catalog: null, MakeData());
 
-            // Act
-            provider.Collect(_boss, _states);
+            // Act — CollectWeakness y no Collect: la debilidad va a la columna PRINCIPAL del
+            // panel, así que la fila la pide por separado del resto del kit.
+            provider.CollectWeakness(_boss, _states);
 
             // Assert
             Assert.AreEqual(1, _states.Count);
@@ -77,7 +78,7 @@ namespace Rollgeon.UI.Tests
             var provider = new EnemyKitStatusProvider(catalog: null, MakeData());
 
             // Act
-            provider.Collect(_boss, _states);
+            provider.CollectWeakness(_boss, _states);
 
             // Assert
             Assert.IsEmpty(_states,

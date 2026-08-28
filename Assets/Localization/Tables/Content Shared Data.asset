@@ -1043,6 +1043,14 @@ MonoBehaviour:
     m_Key: ability.teleport.desc
     m_Metadata:
       m_Items: []
+  - m_Id: 16151112637673472
+    m_Key: enemy.fire_tiles.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16151112667033600
+    m_Key: enemy.fire_tiles.desc
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

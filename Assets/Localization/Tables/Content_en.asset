@@ -1085,6 +1085,15 @@ MonoBehaviour:
     m_Localized: Jumps to a tile beside you, or across the room.
     m_Metadata:
       m_Items: []
+  - m_Id: 16151112637673472
+    m_Localized: Fire Tiles
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16151112667033600
+    m_Localized: <b>{0}</b> on entering a tile. <b>{1}</b> if you start your turn
+      on it.
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

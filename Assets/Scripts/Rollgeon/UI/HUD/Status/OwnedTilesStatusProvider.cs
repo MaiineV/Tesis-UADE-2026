@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Patterns;
+using Rollgeon.Localization;
 using Rollgeon.Tiles;
 
 namespace Rollgeon.UI.HUD.Status
@@ -24,6 +25,13 @@ namespace Rollgeon.UI.HUD.Status
     /// </remarks>
     public sealed class OwnedTilesStatusProvider : IStatusIconProvider
     {
+        /// <summary>
+        /// Key propia y no <c>status.burn</c>: "Quemadura" es el estado del que está parado en el
+        /// fuego, y esta tarjeta habla de las casillas que el jefe mantiene ardiendo. Compartir la
+        /// key era leer "el jefe se quema" donde lo que pasa es "el jefe quema".
+        /// </summary>
+        public const string FireTilesId = "enemy.fire_tiles";
+
         private readonly StatusIconCatalogSO _catalog;
 
         public OwnedTilesStatusProvider(StatusIconCatalogSO catalog) => _catalog = catalog;
@@ -54,13 +62,35 @@ namespace Rollgeon.UI.HUD.Status
 
             if (hottest == null) return;
 
-            into.Add(TileStandStatusProvider.BurnState(
+            into.Add(FireTilesState(
                 hottest,
                 _catalog != null ? _catalog.Resolve(TileStandStatusProvider.BurnId) : null,
+                remainingRounds: longest > 0 ? longest : (int?)null));
+        }
+
+        /// <summary>
+        /// La tarjeta de las casillas ardiendo, con los números de ESA definición. Estática para
+        /// que el preview de editor arme exactamente esta tarjeta y no una maqueta.
+        /// </summary>
+        public static StatusIconState FireTilesState(SpecialTileDefinitionSO definition,
+                                                     UnityEngine.Sprite icon,
+                                                     int? remainingRounds = null)
+        {
+            int enter = definition != null ? definition.EnterDamage : 0;
+            int turnStart = definition != null ? definition.TurnStartDamage : 0;
+
+            return new StatusIconState(
+                FireTilesId,
+                LocalizedContent.Name(FireTilesId, "Casillas de fuego"),
+                LocalizedContent.DescriptionFormat(FireTilesId,
+                    "<b>{0}</b> al entrar en una casilla. <b>{1}</b> si empezás tu turno sobre ella.",
+                    enter, turnStart),
+                icon,
+                active: true,
+                remainingTurns: remainingRounds,
                 // Terrain y no Unit: habla del suelo, no del bicho. Con eso además la fila que
                 // flota sobre su cabeza la saltea sola — el fuego está en el piso, y ahí se ve.
-                StatusCardStyle.Terrain,
-                remainingRounds: longest > 0 ? longest : (int?)null));
+                style: StatusCardStyle.Terrain);
         }
     }
 }

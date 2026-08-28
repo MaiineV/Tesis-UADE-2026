@@ -868,6 +868,10 @@ MonoBehaviour:
     m_Localized: "Boss \xB7 {0}"
     m_Metadata:
       m_Items: []
+  - m_Id: 16149703682879488
+    m_Localized: Next turn
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

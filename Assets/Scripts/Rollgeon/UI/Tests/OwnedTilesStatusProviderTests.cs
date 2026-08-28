@@ -82,7 +82,9 @@ namespace Rollgeon.UI.Tests
 
             // Assert
             Assert.AreEqual(1, _states.Count);
-            Assert.AreEqual(TileStandStatusProvider.BurnId, _states[0].Id);
+            Assert.AreEqual(OwnedTilesStatusProvider.FireTilesId, _states[0].Id,
+                "La key es propia: status.burn es el estado del que PISA el fuego, y esta " +
+                "tarjeta dice que el jefe lo mantiene.");
             Assert.AreEqual(StatusCardStyle.Terrain, _states[0].Style,
                 "Habla del suelo y no del bicho, que es lo que hace que la fila sobre su cabeza " +
                 "la saltee: un ícono de fuego encima del jefe diría que el jefe se quema.");

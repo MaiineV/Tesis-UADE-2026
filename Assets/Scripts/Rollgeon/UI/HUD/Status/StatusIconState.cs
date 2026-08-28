@@ -44,6 +44,12 @@ namespace Rollgeon.UI.HUD.Status
         public readonly StatusCardStyle Style;
 
         /// <summary>
+        /// Renglón chico arriba del título — <c>Próximo turno</c>. Dice CUÁNDO pasa lo que la
+        /// tarjeta describe; null = la tarjeta no necesita fecha y el renglón no se dibuja.
+        /// </summary>
+        public readonly string Eyebrow;
+
+        /// <summary>
         /// Lo que pega, pegado al título y <b>nunca</b> dentro de la frase. <c>null</c> = no pega
         /// por sí mismo. Mismo argumento que <see cref="StackCount"/>: rebalancear cambia un
         /// número del dato y no toca una línea de texto en ningún idioma.
@@ -55,8 +61,9 @@ namespace Rollgeon.UI.HUD.Status
         public StatusIconState(string id, string displayName, string description,
                                Sprite icon, bool active, int? remainingTurns = null,
                                int? stackCount = null, StatusCardStyle style = StatusCardStyle.Unit,
-                               int? damage = null)
+                               int? damage = null, string eyebrow = null)
         {
+            Eyebrow = eyebrow;
             Id = id;
             DisplayName = displayName;
             Description = description;

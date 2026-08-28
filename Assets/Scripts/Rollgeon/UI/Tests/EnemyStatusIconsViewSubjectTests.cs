@@ -59,22 +59,18 @@ namespace Rollgeon.UI.Tests
                 _intents.Standing.Add(OfBomb(Guid.NewGuid()));
 
             // Act
-            var attack = _view.CollectAttack();
             var applied = _view.CollectApplied();
 
             // Assert
-            Assert.AreEqual(1, attack.Count,
+            Assert.AreEqual(1, applied.Count,
                 "La columna del jefe se llenó con una tarjeta por bomba en el paño. La cruz es de " +
-                "la bomba y se lee pasándole el mouse a la bomba; acá tapa lo único que el jugador " +
-                "abrió el tooltip para ver, que es el próximo ataque.");
-            Assert.AreEqual(AIIntentTextKeys.RangedShot, attack[0].Id);
-            Assert.IsEmpty(applied,
-                "Las cruces de otras bombas se colaron por el costado: el filtro de dueño tiene que " +
-                "valer para las dos columnas, no solo para la de arriba.");
+                "la bomba y se lee pasándole el mouse a la bomba; acá tapa lo primero que el " +
+                "jugador busca, que es el próximo ataque.");
+            Assert.AreEqual(AIIntentTextKeys.RangedShot, applied[0].Id);
         }
 
         [Test]
-        public void ElProximoTiempoEsSuAtaque_YLoQueTickeaSiempreEsUnEstado()
+        public void ElProximoTiempoLlevaFecha_YLoQueTickeaSiempreNo()
         {
             // Arrange — el ciclo del Croupier: el disparo es el próximo tiempo, y el fuego del
             // Pleno cuelga FUERA del Alternate y se tickea todos los turnos.
@@ -82,17 +78,47 @@ namespace Rollgeon.UI.Tests
             _intents.Standing.Add(Own(AIIntentTextKeys.Ignite, "Prende el suelo"));
 
             // Act
-            var attack = _view.CollectAttack();
             var applied = _view.CollectApplied();
 
-            // Assert
-            Assert.AreEqual(1, attack.Count,
-                "Arriba tiene que quedar UN ataque. Con las dos listas en la misma columna el panel " +
-                "mostraba dos tarjetas de ataque y el jugador tenía que adivinar cuál iba a pasar.");
-            Assert.AreEqual(AIIntentTextKeys.RangedShot, attack[0].Id);
-            Assert.AreEqual(1, applied.Count);
-            Assert.AreEqual(AIIntentTextKeys.Ignite, applied[0].Id,
-                "Lo que el árbol mantiene en el paño es un estado y va al costado, no arriba.");
+            // Assert — comparten columna, así que lo que los separa es la etiqueta de fecha: sin
+            // ella el panel mostraba dos tarjetas de ataque y había que adivinar cuál iba a pasar.
+            Assert.AreEqual(2, applied.Count);
+            Assert.AreEqual(AIIntentTextKeys.RangedShot, applied[0].Id,
+                "El próximo ataque va arriba de la columna: es lo más urgente de lo que va a pasar.");
+            Assert.IsNotEmpty(applied[0].Eyebrow ?? string.Empty,
+                "El próximo tiempo del ciclo lleva la fecha —'Próximo turno'— en chico.");
+            Assert.IsEmpty(applied[1].Eyebrow ?? string.Empty,
+                "Lo que el jefe mantiene en el paño no lleva fecha: no va a pasar, está pasando.");
+        }
+
+        [Test]
+        public void LaColumnaPrincipal_EsLaDebilidad_NoElAtaque()
+        {
+            // Arrange — la debilidad sale del registry vivo, como en el spawn real.
+            var registry = new Rollgeon.Combat.Weakness.WeaknessRegistry();
+            registry.SetWeakness(_boss, "combo.poker", 1.3f);
+            ServiceLocator.AddService<Rollgeon.Combat.Weakness.IWeaknessRegistry>(
+                registry, ServiceScope.Global);
+
+            var data = ScriptableObject.CreateInstance<Rollgeon.Entities.EnemyDataSO>();
+            try
+            {
+                _view.Initialize(_boss, null, null, data);
+                _intents.Next.Add(Own(AIIntentTextKeys.RangedShot, "Te dispara"));
+
+                // Act
+                var attack = _view.CollectAttack();
+
+                // Assert
+                Assert.AreEqual(1, attack.Count);
+                Assert.AreEqual("enemy.weakness", attack[0].Id,
+                    "El panel principal lleva la debilidad —lo único que cambia qué TIRÁS— y el " +
+                    "ataque bajó al costado con su fecha.");
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(data);
+            }
         }
 
         [Test]

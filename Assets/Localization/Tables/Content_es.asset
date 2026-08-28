@@ -1089,6 +1089,15 @@ MonoBehaviour:
     m_Localized: Salta a una casilla al lado tuyo, o al otro lado de la sala.
     m_Metadata:
       m_Items: []
+  - m_Id: 16151112637673472
+    m_Localized: Casillas de fuego
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16151112667033600
+    m_Localized: "<b>{0}</b> al entrar en una casilla. <b>{1}</b> si empez\xE1s tu
+      turno sobre ella."
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

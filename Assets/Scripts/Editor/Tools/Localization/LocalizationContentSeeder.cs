@@ -674,6 +674,13 @@ namespace Rollgeon.EditorTools.Localization
                 "{0} le pega ×{1}.",
                 "{0} hits it for ×{1}.");
 
+            Content("enemy.fire_tiles.name", "Casillas de fuego", "Fire Tiles");
+            // {0} = daño al entrar, {1} = al empezar el turno encima — la misma pareja que
+            // status.burn.desc, porque son las dos caras del mismo fuego.
+            Content("enemy.fire_tiles.desc",
+                "<b>{0}</b> al entrar en una casilla. <b>{1}</b> si empezás tu turno sobre ella.",
+                "<b>{0}</b> on entering a tile. <b>{1}</b> if you start your turn on it.");
+
             Content("ability.teleport.name", "Se teletransporta", "Teleport");
             Content("ability.teleport.desc",
                 "Salta a una casilla al lado tuyo, o al otro lado de la sala.",
@@ -760,6 +767,10 @@ namespace Rollgeon.EditorTools.Localization
 
             Ui(EnemyArchetypeKeys.Boss, "Jefe", "Boss");
             Ui(EnemyArchetypeKeys.BossFormat, "Jefe · {0}", "Boss · {0}");
+
+            // La fecha del ataque en su tarjeta del costado. En chico y arriba del título: es lo
+            // que lo distingue de lo que el jefe mantiene en el paño, que no lleva fecha.
+            Ui(EnemyStatusIconsView.NextTurnKey, "Próximo turno", "Next turn");
         }
 
         /// <summary>
