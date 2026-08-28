@@ -35,12 +35,6 @@ namespace Rollgeon.Editor.Tools.Polymorphic.Tests
             return item;
         }
 
-        static BlockGraphNode FindByTitle(BlockGraphModel.Result model, string title)
-        {
-            foreach (var n in model.AllNodes) if (n.Title == title) return n;
-            return null;
-        }
-
         /// <summary>
         /// Busca por el nombre del tipo, no por el título.
         /// </summary>

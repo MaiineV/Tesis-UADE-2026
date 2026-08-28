@@ -163,6 +163,32 @@ namespace Rollgeon.Editor.Tools.Item
             return true;
         }
 
+        /// <summary>
+        /// Snapshot de <c>itemId → dueño</c> de todo el proyecto, para consultar muchas veces sin
+        /// volver a tocar disco.
+        /// </summary>
+        /// <remarks>
+        /// <see cref="IsIdAvailable"/> escanea con <c>FindAssets</c> y carga cada asset: medido, ~12 ms
+        /// por llamada. Sirve para una consulta puntual, pero no para una UI que valida mientras el
+        /// usuario escribe. Quien llame se queda con el snapshot y decide cuándo renovarlo — el
+        /// servicio no cachea nada por su cuenta, porque el momento correcto de invalidar lo sabe la
+        /// UI (al abrir un formulario), no esta clase.
+        /// <para>
+        /// Un id duplicado en disco deja al primero encontrado como dueño, igual que
+        /// <see cref="IsIdAvailable"/>.
+        /// </para>
+        /// </remarks>
+        public static Dictionary<string, ItemSO> BuildIdOwnerSnapshot()
+        {
+            var map = new Dictionary<string, ItemSO>(StringComparer.Ordinal);
+            foreach (var so in EnumerateAllItemAssets())
+            {
+                if (so == null || string.IsNullOrEmpty(so.ItemId)) continue;
+                if (!map.ContainsKey(so.ItemId)) map[so.ItemId] = so;
+            }
+            return map;
+        }
+
         static IEnumerable<ItemSO> EnumerateAllItemAssets()
         {
             var guids = AssetDatabase.FindAssets("t:" + nameof(ItemSO));

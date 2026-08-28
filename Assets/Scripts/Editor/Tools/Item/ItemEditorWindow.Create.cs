@@ -136,6 +136,30 @@ namespace Rollgeon.Editor.Tools.Item
     /// </summary>
     static class ItemIdPreview
     {
+        // Snapshot de ids tomado al abrir el asistente, más un memo del último nombre consultado.
+        //
+        // Consultar disco por cada tecla costaba ~12 ms (FindAssets + cargar cada ItemSO), y esto se
+        // dibuja en cada repaint: el carácter aparecía después del escaneo. Con el snapshot la
+        // consulta es un lookup en diccionario, y el memo evita rehacer hasta eso mientras el nombre
+        // no cambia.
+        //
+        // Se renueva al abrir cada formulario (Refresh), que es cuando la foto puede haber quedado
+        // vieja. Si alguien crea un ítem desde otro lado con el asistente abierto, el aviso queda
+        // desactualizado por esos segundos — y no importa: el alta revalida contra disco antes de
+        // escribir, que es donde la respuesta tiene que ser correcta.
+        static Dictionary<string, ItemSO> _idOwners;
+        static string _lastDisplayName;
+        static string _lastId;
+        static bool _lastAvailable;
+        static string _lastOwnerLabel;
+
+        /// <summary>Vuelve a tomar la foto de ids. La llaman los asistentes al abrirse.</summary>
+        public static void Refresh()
+        {
+            _idOwners = ItemAuthoring.BuildIdOwnerSnapshot();
+            _lastDisplayName = null;
+        }
+
         public static void Draw(string displayName)
         {
             if (string.IsNullOrWhiteSpace(displayName))
@@ -144,8 +168,22 @@ namespace Rollgeon.Editor.Tools.Item
                 return;
             }
 
-            var id = ItemIdSlug.FromDisplayName(displayName);
-            if (string.IsNullOrEmpty(id))
+            if (displayName != _lastDisplayName)
+            {
+                _lastDisplayName = displayName;
+                if (_idOwners == null) Refresh();
+
+                _lastId = ItemIdSlug.FromDisplayName(displayName);
+
+                ItemSO owner = null;
+                _lastAvailable = !string.IsNullOrEmpty(_lastId)
+                                 && !_idOwners.TryGetValue(_lastId, out owner);
+                _lastOwnerLabel = owner == null
+                    ? "<unknown>"
+                    : (string.IsNullOrEmpty(owner.DisplayName) ? owner.name : owner.DisplayName);
+            }
+
+            if (string.IsNullOrEmpty(_lastId))
             {
                 EditorGUILayout.HelpBox(
                     "This Display Name doesn't derive a usable id (only separators/symbols).",
@@ -153,16 +191,13 @@ namespace Rollgeon.Editor.Tools.Item
                 return;
             }
 
-            if (ItemAuthoring.IsIdAvailable(id, out var owner))
+            if (_lastAvailable)
             {
-                EditorGUILayout.HelpBox($"Id: {id}", MessageType.Info);
+                EditorGUILayout.HelpBox($"Id: {_lastId}", MessageType.Info);
                 return;
             }
 
-            var ownerLabel = owner != null
-                ? (string.IsNullOrEmpty(owner.DisplayName) ? owner.name : owner.DisplayName)
-                : "<unknown>";
-            EditorGUILayout.HelpBox($"Id '{id}' is already used by '{ownerLabel}'.", MessageType.Error);
+            EditorGUILayout.HelpBox($"Id '{_lastId}' is already used by '{_lastOwnerLabel}'.", MessageType.Error);
         }
     }
 
@@ -230,6 +265,7 @@ namespace Rollgeon.Editor.Tools.Item
         /// </param>
         public static void Open(ItemEditorWindow owner, ItemSO prefillFrom)
         {
+            ItemIdPreview.Refresh();
             var w = CreateInstance<ItemCreationWizard>();
             w.titleContent = new GUIContent(prefillFrom == null ? "New Item" : "Duplicate → New Item");
             w._owner = owner;
@@ -489,6 +525,7 @@ namespace Rollgeon.Editor.Tools.Item
 
         public static void Open(ItemEditorWindow owner, ItemSO source)
         {
+            ItemIdPreview.Refresh();
             var w = CreateInstance<ItemAddVariantWizard>();
             w.titleContent = new GUIContent($"Add variant → {source.FamilyId}");
             w._owner = owner;

@@ -114,8 +114,31 @@ namespace Rollgeon.Editor.Tools.Polymorphic.Graph
 
         void AppendAddItems(DropdownMenu menu, BlockNodeView node)
         {
+            bool any = false;
             foreach (var (label, perform) in AddOptionsFor(node))
+            {
+                any = true;
                 menu.AppendAction(label, _ => perform());
+            }
+
+            if (!any) menu.AppendAction(NothingToAddHint(node), _ => { }, DropdownMenuAction.Status.Disabled);
+        }
+
+        /// <summary>
+        /// Qué decir cuando un bloque no tiene ninguna lista a la que agregar.
+        /// </summary>
+        /// <remarks>
+        /// Un menú vacío se lee como "está roto". No lo está: hay bloques cuyo contenido son slots
+        /// simples que ya existen siempre (el <c>Effect</c> de un hook) o listas de tipos concretos
+        /// sin nada polimórfico debajo (los modificadores persistentes), que Odin dibuja bien y por
+        /// eso viven en el panel y no en el canvas. El menú lo dice en vez de dejar el hueco.
+        /// </remarks>
+        static string NothingToAddHint(BlockNodeView node)
+        {
+            var kind = node.Model.Subtitle;
+            return string.IsNullOrEmpty(kind)
+                ? "Nada para agregar acá — editá este bloque en el panel"
+                : $"'{kind}' no tiene listas para agregar — editalo en el panel de la derecha";
         }
 
         /// <summary>
