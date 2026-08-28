@@ -85,16 +85,28 @@ namespace Rollgeon.UI.Tests
         }
 
         [Test]
-        public void UnaTarjetaDeTerreno_CentraElTituloYNoLlevaIcono()
+        public void UnaTarjetaDeTerreno_LlevaSuIconoIgual()
         {
             _view.Show(new StatusIconState("status.burn", "Fuego de Bomba", "15 al entrar.",
                                            _sprite, active: true,
                                            style: StatusCardStyle.Terrain));
 
-            Assert.AreEqual(TextAlignmentOptions.Center, _title.alignment,
-                "El suelo no es una unidad: su tarjeta se titula centrada para que no se lea " +
-                "como un estado más del bicho.");
+            Assert.IsTrue(_iconRoot.activeSelf,
+                "Terrain dice de QUÉ habla la tarjeta, no cómo se dibuja: lo que le cobra ser " +
+                "del suelo es que la fila sobre la cabeza la saltee, no perder su arte.");
+            Assert.AreEqual(TextAlignmentOptions.Left, _title.alignment,
+                "Con ícono el título se alinea a él; centrado dejaría un hueco entre los dos.");
+        }
+
+        [Test]
+        public void UnaTarjetaSinArte_CentraElTitulo()
+        {
+            _view.Show(new StatusIconState("intent.bomb_field", "Siembra bombas",
+                                           "Siembra 3 bombas.", icon: null, active: true));
+
             Assert.IsFalse(_iconRoot.activeSelf);
+            Assert.AreEqual(TextAlignmentOptions.Center, _title.alignment,
+                "Sin ícono, un título a la izquierda arranca contra el borde y no contra nada.");
         }
 
         [Test]

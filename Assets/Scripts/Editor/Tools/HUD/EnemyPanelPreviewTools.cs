@@ -34,6 +34,9 @@ namespace Rollgeon.EditorTools.HUD
         // Temp/ está en el .gitignore: es un volcado de diagnóstico, no un asset.
         private const string DumpPath = "Temp/tooltip-layout.txt";
 
+        private const string WeaknessId = "enemy.weakness";
+        private const string TeleportId = "ability.teleport";
+
         [MenuItem("Rollgeon/Tooltips/Preview Enemy Panel")]
         public static void Preview() => Preview(withSampleStates: false);
 
@@ -236,22 +239,35 @@ namespace Rollgeon.EditorTools.HUD
                 EnemyStatusIconsView.AddIfOwn(intent, owner, catalog, applied);
         }
 
-        // Lo simulado es que el fuego este puesto, no lo que dice: la definicion es la que este
-        // enemigo deja de verdad, y la tarjeta la arma el MISMO BurnState que usa el provider en
-        // combate. Lo que se mide aca es la tarjeta real, no una maqueta.
+        // MAQUETA. Las tres tarjetas del costado que estamos probando, en orden: por que le pega
+        // fuerte, que sabe hacer, y que dejo ardiendo. Los datos son del SO --la debilidad y su
+        // multiplicador salen del asset, el fuego de su propia definicion-- pero solo el Burn tiene
+        // provider de verdad. Las otras dos son texto sin key de localizacion todavia.
         private static void AddSampleStates(EnemyDataSO data, List<StatusIconState> into)
         {
-            var fire = FindFireDefinition(data);
-            if (fire == null)
-            {
-                Debug.LogWarning("[EnemyPanelPreview] " + data.name + " no deja fuego, asi que no " +
-                                 "hay nada propio que mostrar al costado.");
-                return;
-            }
-
             var settings = Resources.Load<EnemyStatusRowSettingsSO>(
                 EnemyStatusRowSettingsSO.ResourcePath);
             var catalog = settings != null ? settings.Catalog : null;
+
+            AddWeakness(data, into);
+
+            // El sprite es el de status.tp_delay porque es el unico teleport que hay dibujado; la
+            // key es otra a proposito: tp_delay es el cooldown de HABER saltado, no saber saltar.
+            into.Add(new StatusIconState(
+                TeleportId,
+                LocalizedContent.Name(TeleportId, "Se teletransporta"),
+                LocalizedContent.Description(TeleportId,
+                    "Salta a una casilla al lado tuyo, o al otro lado de la sala."),
+                catalog != null ? catalog.Resolve("status.tp_delay") : null,
+                active: true));
+
+            var fire = FindFireDefinition(data);
+            if (fire == null)
+            {
+                Debug.LogWarning("[EnemyPanelPreview] " + data.name + " no deja fuego, asi que la " +
+                                 "tarjeta de Burn no entra.");
+                return;
+            }
 
             into.Add(TileStandStatusProvider.BurnState(
                 fire,
@@ -262,21 +278,36 @@ namespace Rollgeon.EditorTools.HUD
                     : (int?)null));
         }
 
-        // Por dependencias del asset y no caminando el arbol a mano: el fuego cuelga de un nodo
-        // adentro del SO, y repetir aca el recorrido de AIIntentWalker seria una segunda copia que
-        // se desincroniza en cuanto alguien mueva un nodo de lugar.
+        // Arriba de todo porque es lo unico del panel que cambia como PELEAS: las otras dos dicen
+        // que te va a pasar, esta dice que tirar.
+        private static void AddWeakness(EnemyDataSO data, List<StatusIconState> into)
+        {
+            if (string.IsNullOrEmpty(data.WeaknessComboId)) return;
+
+            string combo = LocalizedContent.Name(data.WeaknessComboId, data.WeaknessComboId);
+            float multiplier = data.WeaknessMultiplierOverride;
+            if (multiplier <= 0f) return;
+
+            into.Add(new StatusIconState(
+                WeaknessId,
+                LocalizedContent.Name(WeaknessId, "Débil"),
+                LocalizedContent.DescriptionFormat(WeaknessId, "{0} le pega ×{1}.",
+                    combo, multiplier.ToString("0.##")),
+                icon: null,
+                active: true));
+        }
+
+        // El fuego que deja el nodo que prende, y no el primero que aparezca entre las dependencias
+        // del asset: el Croupier tiene dos --el del suelo, 6/10, y el que dejan sus bombas, 15/15--
+        // y agarrar cualquiera muestra numeros de la otra mecanica.
         private static SpecialTileDefinitionSO FindFireDefinition(EnemyDataSO data)
         {
-            string path = AssetDatabase.GetAssetPath(data);
-            if (string.IsNullOrEmpty(path)) return null;
+            var igniters = new List<AINode_IgniteArea>();
+            AIIntentWalker.CollectNodes(data.AIRoot, igniters);
 
-            foreach (var dependency in AssetDatabase.GetDependencies(path, recursive: true))
-            {
-                var definition = AssetDatabase.LoadAssetAtPath<SpecialTileDefinitionSO>(dependency);
-                if (definition == null) continue;
-                if (definition.TileType == SpecialTileType.Fire ||
-                    definition.TileType == SpecialTileType.FireTemp) return definition;
-            }
+            foreach (var igniter in igniters)
+                if (igniter.Definition != null) return igniter.Definition;
+
             return null;
         }
 

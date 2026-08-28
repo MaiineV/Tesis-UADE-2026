@@ -84,8 +84,8 @@ namespace Rollgeon.UI.Tests
             Assert.AreEqual(1, _states.Count);
             Assert.AreEqual(TileStandStatusProvider.BurnId, _states[0].Id);
             Assert.AreEqual(StatusCardStyle.Terrain, _states[0].Style,
-                "Habla del suelo, no del bicho: sin ícono y con el título centrado, y la fila que " +
-                "flota sobre su cabeza la saltea.");
+                "Habla del suelo y no del bicho, que es lo que hace que la fila sobre su cabeza " +
+                "la saltee: un ícono de fuego encima del jefe diría que el jefe se quema.");
         }
 
         [Test]

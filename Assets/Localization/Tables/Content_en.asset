@@ -1069,6 +1069,22 @@ MonoBehaviour:
       rounds.'
     m_Metadata:
       m_Items: []
+  - m_Id: 16142169173585920
+    m_Localized: Weak
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16142169202946048
+    m_Localized: "{0} hits it for \xD7{1}."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16142169202946049
+    m_Localized: Teleport
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16142169202946050
+    m_Localized: Jumps to a tile beside you, or across the room.
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

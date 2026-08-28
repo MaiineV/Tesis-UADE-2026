@@ -8,9 +8,7 @@ namespace Rollgeon.UI.Tooltips
 {
     /// <summary>
     /// Una tarjeta de la columna del tooltip: una sola cosa en juego, nunca un párrafo.
-    /// <see cref="StatusIconState.Style"/> decide la forma — <see cref="StatusCardStyle.Unit"/>
-    /// habla de la unidad (ícono + título a la izquierda) y <see cref="StatusCardStyle.Terrain"/>
-    /// habla del suelo (sin ícono, título centrado).
+    /// Con arte va ícono a la izquierda y título alineado a él; sin arte, título centrado.
     /// </summary>
     /// <remarks>
     /// Igual que <see cref="Rollgeon.UI.HUD.Status.StatusEffectIconView"/>: la columna recicla
@@ -44,19 +42,21 @@ namespace Rollgeon.UI.Tooltips
             CardId = state.Id;
             name = string.IsNullOrEmpty(state.Id) ? "TooltipCard" : $"TooltipCard_{state.Id}";
 
-            bool isTerrain = state.Style == StatusCardStyle.Terrain;
+            // Sin arte el bloque del ícono se va entero, no sólo el Image: dejarlo prendido
+            // reservaría su ancho en la fila y el título arrancaría corrido contra un hueco.
+            //
+            // El estilo NO entra en esta cuenta. Terrain dice de qué habla la tarjeta --del suelo,
+            // no del bicho-- y eso ya lo cobra la fila que flota sobre la cabeza, que la saltea. Lo
+            // que decide la forma acá adentro es si hay arte: el fuego del jefe tiene la suya.
+            bool hasIcon = state.Icon != null;
 
             if (_titleLabel != null)
             {
                 _titleLabel.text = state.DisplayName ?? string.Empty;
-                _titleLabel.alignment = isTerrain
-                    ? TextAlignmentOptions.Center
-                    : TextAlignmentOptions.Left;
+                _titleLabel.alignment = hasIcon
+                    ? TextAlignmentOptions.Left
+                    : TextAlignmentOptions.Center;
             }
-
-            // Sin arte el bloque del ícono se va entero, no sólo el Image: dejarlo prendido
-            // reservaría su ancho en la fila y el título arrancaría corrido contra un hueco.
-            bool hasIcon = !isTerrain && state.Icon != null;
 
             if (!hasIcon)
             {

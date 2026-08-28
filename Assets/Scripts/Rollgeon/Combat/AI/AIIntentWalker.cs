@@ -33,6 +33,53 @@ namespace Rollgeon.Combat.AI
                 Walk(alternate.NextChild, context, next, null);
         }
 
+        /// <summary>
+        /// Todos los nodos de un tipo que cuelgan del árbol, sin tickearlo ni elegir rama.
+        /// </summary>
+        /// <remarks>
+        /// A diferencia de <see cref="Collect"/> baja por las <b>dos</b> ramas de un <c>If</c> y por
+        /// todos los hijos de un <c>Alternate</c>: no pregunta qué va a hacer ahora sino qué es
+        /// capaz de hacer, que es lo que necesita quien lo describe fuera de combate. Y por eso no
+        /// pide contexto: nada acá evalúa una condición.
+        /// </remarks>
+        public static void CollectNodes<T>(AIDecisionNode node, List<T> into)
+            where T : AIDecisionNode
+        {
+            if (node == null || into == null) return;
+            if (node is T match) into.Add(match);
+
+            switch (node)
+            {
+                case AINode_Sequence sequence:
+                    CollectChildren(sequence.Children, into);
+                    break;
+
+                case AINode_Selector selector:
+                    CollectChildren(selector.Children, into);
+                    break;
+
+                case AINode_Alternate alternate:
+                    CollectChildren(alternate.Children, into);
+                    break;
+
+                case AINode_If branch:
+                    CollectNodes(branch.Then, into);
+                    CollectNodes(branch.Else, into);
+                    break;
+
+                case AINode_Once once:
+                    CollectNodes(once.Child, into);
+                    break;
+            }
+        }
+
+        private static void CollectChildren<T>(List<AIDecisionNode> children, List<T> into)
+            where T : AIDecisionNode
+        {
+            if (children == null) return;
+            foreach (var child in children) CollectNodes(child, into);
+        }
+
         private static void Walk(AIDecisionNode node, AIContext context,
                                  List<AIIntent> into, List<AINode_Alternate> alternates)
         {

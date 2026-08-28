@@ -1027,6 +1027,22 @@ MonoBehaviour:
     m_Key: intent.leaves.desc
     m_Metadata:
       m_Items: []
+  - m_Id: 16142169173585920
+    m_Key: enemy.weakness.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16142169202946048
+    m_Key: enemy.weakness.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16142169202946049
+    m_Key: ability.teleport.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16142169202946050
+    m_Key: ability.teleport.desc
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

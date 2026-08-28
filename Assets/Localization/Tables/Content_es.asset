@@ -1073,6 +1073,22 @@ MonoBehaviour:
     m_Localized: 'Deja fuego: <b>{0}</b> al entrar, <b>{1}</b> por turno, {2} rondas.'
     m_Metadata:
       m_Items: []
+  - m_Id: 16142169173585920
+    m_Localized: "D\xE9bil"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16142169202946048
+    m_Localized: "{0} le pega \xD7{1}."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16142169202946049
+    m_Localized: Se teletransporta
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16142169202946050
+    m_Localized: Salta a una casilla al lado tuyo, o al otro lado de la sala.
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []
