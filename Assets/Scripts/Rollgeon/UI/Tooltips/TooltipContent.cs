@@ -32,7 +32,14 @@ namespace Rollgeon.UI.Tooltips
         public readonly int? MaxHealth;
         public readonly int? Shield;
 
+        /// <summary>Lo que va a hacer: la columna de arriba.</summary>
         public readonly IReadOnlyList<StatusIconState> Cards;
+
+        /// <summary>
+        /// Lo que le pasa: la columna del costado. Va al costado y no debajo para que aturdir a un
+        /// enemigo no estire el panel hacia abajo justo cuando lo estás leyendo.
+        /// </summary>
+        public readonly IReadOnlyList<StatusIconState> SideCards;
 
         /// <summary>Color de la unidad, al pie y en chico. Nunca arriba: no es información.</summary>
         public readonly string Flavor;
@@ -42,7 +49,8 @@ namespace Rollgeon.UI.Tooltips
         public TooltipContent(string text = null, string name = null,
                               IReadOnlyList<StatusIconState> cards = null, string flavor = null,
                               int? health = null, int? maxHealth = null, int? shield = null,
-                              string type = null)
+                              string type = null,
+                              IReadOnlyList<StatusIconState> sideCards = null)
         {
             Text = text;
             Name = name;
@@ -52,6 +60,7 @@ namespace Rollgeon.UI.Tooltips
             MaxHealth = maxHealth;
             Shield = shield;
             Type = type;
+            SideCards = sideCards;
         }
 
         public static TooltipContent FromText(string text, IReadOnlyList<StatusIconState> cards = null)
@@ -62,9 +71,11 @@ namespace Rollgeon.UI.Tooltips
 
         public int CardCount => Cards?.Count ?? 0;
 
+        public int SideCardCount => SideCards?.Count ?? 0;
+
         /// <summary>Sin nada que decir el panel no se abre — un recuadro vacío es peor que nada.</summary>
         public bool IsEmpty
-            => CardCount == 0 && !HasVitals
+            => CardCount == 0 && SideCardCount == 0 && !HasVitals
                && string.IsNullOrEmpty(Text)
                && string.IsNullOrEmpty(Name)
                && string.IsNullOrEmpty(Flavor);

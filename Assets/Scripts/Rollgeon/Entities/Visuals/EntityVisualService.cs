@@ -149,7 +149,8 @@ namespace Rollgeon.Entities.Visuals
             var row = Rollgeon.UI.HUD.Status.EnemyStatusIconsView.Create(pawn.transform, settings);
             if (row == null) return;
             row.Initialize(guid, settings.IconPrefab, settings.Catalog);
-            trigger.CardsProvider = row.Collect;
+            trigger.CardsProvider = row.CollectAttack;
+            trigger.SideCardsProvider = row.CollectApplied;
         }
 
         /// <summary>

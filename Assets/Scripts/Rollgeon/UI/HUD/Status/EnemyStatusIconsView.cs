@@ -15,15 +15,20 @@ namespace Rollgeon.UI.HUD.Status
     /// tarjetas que abre su tooltip.
     /// </summary>
     /// <remarks>
-    /// Las dos salen de la MISMA lista, y eso es el punto: el ícono que ves flotando sobre el bicho
-    /// y el de la tarjeta que se abre al pasar el mouse son el mismo sprite, que es lo que hace que
-    /// el sistema se entienda sin tutorial.
+    /// Las dos salen del MISMO tick, y eso es el punto: el ícono que ves flotando sobre el bicho y
+    /// el de la tarjeta que se abre al pasar el mouse son el mismo sprite, que es lo que hace que el
+    /// sistema se entienda sin tutorial.
+    /// <para>
+    /// El panel las pide partidas en dos —lo que va a hacer y lo que le pasa— porque son dos
+    /// columnas; la fila que flota las dibuja juntas, porque es una sola fila.
+    /// </para>
     /// </remarks>
     [AddComponentMenu("Rollgeon/UI/HUD/Enemy Status Icons View")]
     public sealed class EnemyStatusIconsView : MonoBehaviour
     {
         private readonly List<IStatusIconProvider> _providers = new();
-        private readonly List<StatusIconState> _states = new();
+        private readonly List<StatusIconState> _attack = new();
+        private readonly List<StatusIconState> _applied = new();
         private readonly List<StatusEffectIconView> _slots = new();
         private readonly List<AIIntent> _standing = new();
         private readonly List<AIIntent> _next = new();
@@ -126,42 +131,69 @@ namespace Rollgeon.UI.HUD.Status
         private void OnDisable() => Teardown();
 
         /// <summary>
-        /// Todo lo que este enemigo tiene en juego, en orden: primero lo que va a hacer, después
-        /// los estados que lo afectan.
+        /// Lo que el enemigo <b>va a hacer</b>: la columna de arriba del panel.
         /// </summary>
         /// <remarks>
         /// Se recalcula en cada llamada, así que el tooltip siempre está al día en el momento del
         /// hover, cubra o no cubra un evento lo que cambió.
         /// </remarks>
-        public IReadOnlyList<StatusIconState> Collect()
+        public IReadOnlyList<StatusIconState> CollectAttack()
         {
-            _states.Clear();
+            Recollect();
+            return _attack;
+        }
+
+        /// <summary>
+        /// Lo que <b>le pasa</b> y lo que mantiene en el paño: la columna del costado, para que
+        /// aturdirlo no estire el panel hacia abajo.
+        /// </summary>
+        public IReadOnlyList<StatusIconState> CollectApplied()
+        {
+            Recollect();
+            return _applied;
+        }
+
+        // Las dos listas salen del mismo tick, así que se llenan juntas. Recorrer el árbol dos
+        // veces por hover es barato: SetHover dispara en el flanco del mouse, no por frame.
+        private void Recollect()
+        {
+            _attack.Clear();
+            _applied.Clear();
+
             CollectIntents();
-            foreach (var provider in _providers) provider.Collect(_entityGuid, _states);
-            return _states;
+            foreach (var provider in _providers) provider.Collect(_entityGuid, _applied);
         }
 
         public void Refresh()
         {
             if (_container == null || _iconPrefab == null) return;
 
-            Collect();
+            Recollect();
 
-            // La fila muestra SOLO lo que tiene ícono y habla de la unidad. Una tarjeta de terreno
-            // describe el suelo, que ya se ve en el paño, y una sin arte dejaría un cuadrado vacío
-            // flotando sobre el bicho.
-            int shown = 0;
-            for (int i = 0; i < _states.Count; i++)
-            {
-                if (!IsFloatable(_states[i])) continue;
-                EnsureSlots(shown + 1);
-                _slots[shown].gameObject.SetActive(true);
-                _slots[shown].Show(_states[i]);
-                shown++;
-            }
+            // La fila sigue siendo UNA aunque el panel tenga dos columnas: el ícono que flota
+            // sobre el bicho y el de su tarjeta tienen que ser el mismo sprite, que es lo que hace
+            // que el sistema se entienda sin tutorial. Su ataque primero, que es lo que se lee.
+            int shown = Draw(_attack, 0);
+            shown = Draw(_applied, shown);
 
             for (int i = shown; i < _slots.Count; i++)
                 _slots[i].gameObject.SetActive(false);
+        }
+
+        // La fila muestra SOLO lo que tiene ícono y habla de la unidad. Una tarjeta de terreno
+        // describe el suelo, que ya se ve en el paño, y una sin arte dejaría un cuadrado vacío
+        // flotando sobre el bicho.
+        private int Draw(List<StatusIconState> states, int shown)
+        {
+            for (int i = 0; i < states.Count; i++)
+            {
+                if (!IsFloatable(states[i])) continue;
+                EnsureSlots(shown + 1);
+                _slots[shown].gameObject.SetActive(true);
+                _slots[shown].Show(states[i]);
+                shown++;
+            }
+            return shown;
         }
 
         private static bool IsFloatable(in StatusIconState state)
@@ -173,18 +205,22 @@ namespace Rollgeon.UI.HUD.Status
                 return;
             if (!intents.TryRead(_entityGuid, _standing, _next)) return;
 
-            // Su siguiente ataque primero: es lo que el jugador vino a leer.
-            foreach (var intent in _next) AddIfOwn(intent);
-            foreach (var intent in _standing) AddIfOwn(intent);
+            // El próximo tiempo del ciclo ES su ataque. Lo que el árbol tickea TODOS los turnos
+            // no es un segundo ataque sino lo que el jefe mantiene en el paño —el fuego del Pleno,
+            // el candado del 70%—, y eso es un estado. Mezclarlos en una sola columna es lo que
+            // hacía que el panel mostrara dos tarjetas de ataque y el jugador tuviera que adivinar
+            // cuál de las dos iba a pasar.
+            foreach (var intent in _next) AddIfOwn(intent, _attack);
+            foreach (var intent in _standing) AddIfOwn(intent, _applied);
         }
 
         // Lo que le pertenece a otra cosa del paño se lee en ESA cosa. Las bombas del Croupier
         // publican una cruz cada una y el jefe las tickea a todas, así que sin esto su columna
         // eran tres tarjetas de bombas y su próximo ataque perdido al final.
-        private void AddIfOwn(in AIIntent intent)
+        private void AddIfOwn(in AIIntent intent, List<StatusIconState> into)
         {
             if (intent.SubjectGuid != Guid.Empty && intent.SubjectGuid != _entityGuid) return;
-            _states.Add(ToState(intent));
+            into.Add(ToState(intent));
         }
 
         // El badge cuenta turnos hasta que pase, no turnos restantes de un estado: TurnsAway 0 es

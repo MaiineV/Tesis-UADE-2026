@@ -53,32 +53,64 @@ namespace Rollgeon.UI.Tests
         [Test]
         public void LasCrucesDeLasBombas_NoSonTarjetasDelJefe()
         {
+            // Arrange
             _intents.Next.Add(Own(AIIntentTextKeys.RangedShot, "Te dispara"));
             for (int i = 0; i < 3; i++)
                 _intents.Standing.Add(OfBomb(Guid.NewGuid()));
 
-            var cards = _view.Collect();
+            // Act
+            var attack = _view.CollectAttack();
+            var applied = _view.CollectApplied();
 
-            Assert.AreEqual(1, cards.Count,
+            // Assert
+            Assert.AreEqual(1, attack.Count,
                 "La columna del jefe se llenó con una tarjeta por bomba en el paño. La cruz es de " +
                 "la bomba y se lee pasándole el mouse a la bomba; acá tapa lo único que el jugador " +
                 "abrió el tooltip para ver, que es el próximo ataque.");
-            Assert.AreEqual(AIIntentTextKeys.RangedShot, cards[0].Id);
+            Assert.AreEqual(AIIntentTextKeys.RangedShot, attack[0].Id);
+            Assert.IsEmpty(applied,
+                "Las cruces de otras bombas se colaron por el costado: el filtro de dueño tiene que " +
+                "valer para las dos columnas, no solo para la de arriba.");
+        }
+
+        [Test]
+        public void ElProximoTiempoEsSuAtaque_YLoQueTickeaSiempreEsUnEstado()
+        {
+            // Arrange — el ciclo del Croupier: el disparo es el próximo tiempo, y el fuego del
+            // Pleno cuelga FUERA del Alternate y se tickea todos los turnos.
+            _intents.Next.Add(Own(AIIntentTextKeys.RangedShot, "Te dispara"));
+            _intents.Standing.Add(Own(AIIntentTextKeys.Ignite, "Prende el suelo"));
+
+            // Act
+            var attack = _view.CollectAttack();
+            var applied = _view.CollectApplied();
+
+            // Assert
+            Assert.AreEqual(1, attack.Count,
+                "Arriba tiene que quedar UN ataque. Con las dos listas en la misma columna el panel " +
+                "mostraba dos tarjetas de ataque y el jugador tenía que adivinar cuál iba a pasar.");
+            Assert.AreEqual(AIIntentTextKeys.RangedShot, attack[0].Id);
+            Assert.AreEqual(1, applied.Count);
+            Assert.AreEqual(AIIntentTextKeys.Ignite, applied[0].Id,
+                "Lo que el árbol mantiene en el paño es un estado y va al costado, no arriba.");
         }
 
         [Test]
         public void LoQueElJefeTickeaParaSiMismo_SiEsTarjetaSuya()
         {
+            // Arrange
             _intents.Standing.Add(Own(AIIntentTextKeys.Ignite, "Prende el suelo"));
             _intents.Standing.Add(new AIIntent(
                 AIIntentTextKeys.BombField, "Siembra bombas", 0, AttackKind.Environmental,
                 amount: 3, subjectGuid: _boss));
 
-            var cards = _view.Collect();
+            // Act
+            var applied = _view.CollectApplied();
 
-            Assert.AreEqual(2, cards.Count,
+            // Assert
+            Assert.AreEqual(2, applied.Count,
                 "Se filtró de más: una intención sin dueño, o marcada con el guid del propio jefe, " +
-                "es suya y tiene que salir en su columna.");
+                "es suya y tiene que salir en su panel.");
         }
 
         private AIIntent Own(string key, string fallback)

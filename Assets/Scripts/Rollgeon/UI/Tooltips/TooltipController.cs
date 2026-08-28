@@ -67,6 +67,10 @@ namespace Rollgeon.UI.Tooltips
                  "sin columna, mismo comportamiento que antes.")]
         [SerializeField] private TooltipCardView _cardPrefab;
 
+        [Tooltip("Segunda columna, al costado de la de arriba: los estados que le aplicaron. " +
+                 "Null = caen en la columna de arriba, y el panel queda como antes.")]
+        [SerializeField] private RectTransform _sideCardsContainer;
+
         [Title("Banda de identidad")]
         [Tooltip("Nombre de la unidad. Null, como toda esta banda: un tooltip que no trae " +
                  "identidad deja el bloque apagado y el panel es el de siempre.")]
@@ -95,6 +99,7 @@ namespace Rollgeon.UI.Tooltips
         private static readonly Vector2 HangLeftPivot = new Vector2(1f, 1f);
 
         private readonly List<TooltipCardView> _cardSlots = new List<TooltipCardView>();
+        private readonly List<TooltipCardView> _sideCardSlots = new List<TooltipCardView>();
 
         private RectTransform _hostCanvasRect;
         private bool _visible;
@@ -143,6 +148,8 @@ namespace Rollgeon.UI.Tooltips
             foreach (var candidate in GetComponentsInChildren<TMP_Text>(includeInactive: true))
             {
                 if (_cardsContainer != null && candidate.transform.IsChildOf(_cardsContainer))
+                    continue;
+                if (_sideCardsContainer != null && candidate.transform.IsChildOf(_sideCardsContainer))
                     continue;
                 // Los labels de la banda y del pie tampoco son el párrafo: si el auto-resolve
                 // se quedara con el nombre, un tooltip de texto escribiría en el renglón grande.
@@ -387,15 +394,17 @@ namespace Rollgeon.UI.Tooltips
 
             if (_cardsContainer == null || _cardPrefab == null) return;
 
-            _cardsContainer.gameObject.SetActive(count > 0);
-            EnsureCardSlots(count);
-
-            for (int i = 0; i < _cardSlots.Count; i++)
+            // Sin segunda columna cableada, lo del costado se dibuja en la de arriba: el panel
+            // queda exactamente como antes en vez de perder tarjetas, que es lo que hace que este
+            // slot pueda faltar de verdad.
+            if (_sideCardsContainer == null)
             {
-                bool used = i < count;
-                _cardSlots[i].gameObject.SetActive(used);
-                if (used) _cardSlots[i].Show(content.Cards[i]);
+                FillColumn(_cardsContainer, _cardSlots, content.Cards, content.SideCards);
+                return;
             }
+
+            FillColumn(_cardsContainer, _cardSlots, content.Cards, null);
+            FillColumn(_sideCardsContainer, _sideCardSlots, content.SideCards, null);
         }
 
         private void ApplyIdentity(in TooltipContent content)
@@ -427,10 +436,25 @@ namespace Rollgeon.UI.Tooltips
         // Los slots se reusan y solo se apagan, igual que PlayerStatusIconsView.EnsureSlots: el
         // panel se reabre en cada hover y destruir/instanciar por hover seria churn por mover el
         // mouse.
-        private void EnsureCardSlots(int needed)
+        //
+        // Dos listas y no una concatenada: concatenar alocaria una lista nueva en cada hover, y el
+        // caso de las dos juntas es solo el del panel sin segunda columna.
+        private void FillColumn(RectTransform container, List<TooltipCardView> slots,
+                                IReadOnlyList<StatusIconState> first,
+                                IReadOnlyList<StatusIconState> second)
         {
-            while (_cardSlots.Count < needed)
-                _cardSlots.Add(Instantiate(_cardPrefab, _cardsContainer));
+            int firstCount = first?.Count ?? 0;
+            int total = firstCount + (second?.Count ?? 0);
+
+            container.gameObject.SetActive(total > 0);
+            while (slots.Count < total) slots.Add(Instantiate(_cardPrefab, container));
+
+            for (int i = 0; i < slots.Count; i++)
+            {
+                bool used = i < total;
+                slots[i].gameObject.SetActive(used);
+                if (used) slots[i].Show(i < firstCount ? first[i] : second[i - firstCount]);
+            }
         }
 
         private void SetVisible(bool visible)

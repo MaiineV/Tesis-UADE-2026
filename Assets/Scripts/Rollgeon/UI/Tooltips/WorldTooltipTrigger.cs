@@ -48,6 +48,12 @@ namespace Rollgeon.UI.Tooltips
         public Func<IReadOnlyList<StatusIconState>> CardsProvider;
 
         /// <summary>
+        /// Tarjetas de la columna del costado — los estados que le aplicaron. <c>null</c> = el
+        /// panel no abre segunda columna.
+        /// </summary>
+        public Func<IReadOnlyList<StatusIconState>> SideCardsProvider;
+
+        /// <summary>
         /// Provider de la banda de identidad — nombre, vitales y color al pie. Gana sobre
         /// <see cref="TextProvider"/> cuando está: quien sabe describirse entero no tiene por qué
         /// aplanarse a un párrafo.
@@ -206,6 +212,7 @@ namespace Rollgeon.UI.Tooltips
         private TooltipContent BuildContent()
         {
             var cards = CardsProvider?.Invoke();
+            var sideCards = SideCardsProvider?.Invoke();
             if (ContentProvider == null) return TooltipContent.FromText(ResolveText(), cards);
 
             // Las tarjetas siguen viniendo del CardsProvider aunque haya banda: las arma la fila
@@ -214,7 +221,7 @@ namespace Rollgeon.UI.Tooltips
             return new TooltipContent(
                 text: content.Text, name: content.Name, cards: cards, flavor: content.Flavor,
                 health: content.Health, maxHealth: content.MaxHealth, shield: content.Shield,
-                type: content.Type);
+                type: content.Type, sideCards: sideCards);
         }
 
         private void ToggleTooltip(Camera cam)
