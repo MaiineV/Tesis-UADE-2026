@@ -10,13 +10,36 @@ descubrimiento por `execute_code` del Paso 1.** Si esto y el runtime discrepan, 
 | Campo | Tipo | Que decide |
 |---|---|---|
 | `Kind` | `PassiveHookKind` | `EventBus` (0, default) o `ComboPlayed` (1) |
-| `TriggerEvent` | `EventName` | Solo si `Kind == EventBus` |
+| `TriggerEvent` | `EventName` | Solo si `Kind == EventBus`. **No lo elijas a mano: usá `ItemTriggerCatalog`** |
+| `Subject` | `PassiveHookSubject` | `Source` (0, default) = el jugador es `args[0]`; `Target` (1) = es `args[1]`. Es lo que separa "cuando pegás" de "cuando te pegan" |
 | `ComboFilter` | `ComboFilter` | Solo si `ComboPlayed`. `Mode`: `AnyCombo` o `ComboIds` + `List<string> ComboIds` |
 | `ActionKindFilter` | `RollActionKind` | Solo si `ComboPlayed`. `Unknown` = sin restriccion |
 | `Effect` | `EffectData` | `Label`, `PreConditions` (AND), `Effects` (en orden), `TargetSelector` |
 | `PersistentModifiers` | `List<PersistentModifierDef>` | Mientras el item este en inventario |
 
-`PassiveHookKind` es **append-only**: se serializa el int del enum. No reordenar.
+`PassiveHookKind` y `PassiveHookSubject` son **append-only**: se serializa el int del enum. No
+reordenar.
+
+### El catalogo de disparadores
+
+`Assets/Scripts/Editor/Tools/Item/ItemTriggerCatalog.cs` — la lista curada de disparadores que
+**si** funcionan, con nombre de disenio. Es la unica via recomendada para setear el "cuando":
+`EventName` tiene mas de cien miembros y elegir uno que no sirve no da error, el item
+simplemente no dispara nunca.
+
+| Miembro | Para que |
+|---|---|
+| `All` | Las opciones ofrecibles (`Id`, `DisplayName`, `Help`, `UsesComboIds`) |
+| `Match(hook)` | La opcion de un hook, o `null` si quedo fuera del catalogo |
+| `Apply(hook, option)` | Escribe `Kind`/`TriggerEvent`/`Subject`/`ComboFilter.Mode` |
+| `Describe(hook)` | El "cuando" en una frase |
+| `IsPermanent(hook)` | El hook no usa evento: solo lleva modificadores persistentes |
+
+**No estan en el catalogo, y no por olvido:** `OnCombatStart` y `OnRunStart` llevan el id de la
+sala y de la run en `args[0]`, no el del jugador; `OnComboCrossed` se dispara con `Guid.Empty`; y
+`OnPlayerHealthChanged` no lo emite nadie en produccion. Los cuatro se ven perfectamente
+elegibles en el desplegable crudo y no disparan nunca — dos items del catalogo estan rotos hoy
+exactamente por eso.
 
 `PersistentModifierDef`: `Type TargetStat`, `ModifierOperation Operation`, `float Amount`,
 `ModifierDirection Direction` (default `Intrinsic`).
@@ -108,9 +131,22 @@ Dictionary<string,ItemSO> BuildIdOwnerSnapshot();
 `ItemType`: `Passive | Active`.
 `ItemCreationSpec.TargetFolder` null → `Assets/Rollgeon/Items`.
 `BasePrice` null → derivado de la rareza.
+`TriggerId` → un `Id` de `ItemTriggerCatalog.All`; vacio = sin hooks. Uno que no existe **falla la
+creacion**. Solo para `Passive`. `TriggerComboIds` solo aplica si la opcion usa combos.
 
-**Lo que `CreateItem` NO hace: hooks ni efectos.** Un item creado asi no hace nada hasta el
-segundo paso de autoria.
+**Lo que `CreateItem` NO hace: efectos.** Con `TriggerId` el item queda con el hook y su
+disparador, pero sin efectos: sabe cuando dispara y todavia no hace nada.
+
+## Textos localizados
+
+`ItemSO.DisplayName` **no es lo que ve el jugador**: es el fallback.
+`LocalizedContent.Name(itemId, so.DisplayName)` devuelve la entrada de la tabla `Content`
+(`<itemId>.name` / `.desc`) si existe. `CreateItem` siembra las dos keys, asi que desde el alta
+manda la tabla.
+
+`Rollgeon.Editor.Tools.Item.ItemLocalizationBridge`: `Locales()`, `Read(itemId, locale)`,
+`Write(itemId, locale, name, desc)`. Para cambiar el texto de un item ya creado, escribi ahi — no
+en `DisplayName`, que no cambia nada en el juego.
 
 ## Limites medidos (spec §7.1)
 

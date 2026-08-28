@@ -172,6 +172,10 @@ var spec = new Rollgeon.Editor.Tools.Item.ItemCreationSpec
     VariantIndex   = null,
     BasePrice      = null,   // null = deriva de la rareza
     TargetFolder   = null,   // null = Assets/Rollgeon/Items
+
+    // El CUANDO. Id de ItemTriggerCatalog, no un EventName crudo — ver "Elegir el disparador".
+    TriggerId      = "combo.ids",
+    TriggerComboIds = new System.Collections.Generic.List<string> { "combo.generala" },
 };
 
 var r = Rollgeon.Editor.Tools.Item.ItemAuthoring.CreateItem(spec);
@@ -181,10 +185,39 @@ return "OK id=" + r.ItemId + " path=" + r.AssetPath;
 
 **Si `Success` es false, frená y reportá los `Errors` al usuario.** No sigas al Paso 5.
 
+### Elegir el disparador
+
+**Nunca escribas un `EventName` a mano.** `PassiveItemHook.TriggerEvent` es del tipo `EventName`,
+o sea el bus entero del juego: mas de cien miembros, de los que sirven ~una docena. Elegir uno que
+no sirve **no da error**: el item simplemente no dispara nunca. Y hay trampas que el nombre no
+delata — `OnCombatStart` lleva el id de la SALA en `args[0]`, `OnComboCrossed` manda `Guid.Empty`,
+`OnPlayerHealthChanged` no lo emite nadie en produccion. Dos items del catalogo estan rotos hoy
+exactamente por esto.
+
+`ItemTriggerCatalog` es la lista curada de lo que si funciona. Leela antes de decidir:
+
+```csharp
+var sb = new System.Text.StringBuilder();
+foreach (var o in Rollgeon.Editor.Tools.Item.ItemTriggerCatalog.All)
+    sb.Append(o.Id).Append(" | ").Append(o.DisplayName).Append(" | ").Append(o.Help).AppendLine();
+return sb.ToString();
+```
+
+- `TriggerId` vacio = el item nace sin hooks (comportamiento viejo).
+- Un `TriggerId` que no esta en el catalogo **falla la creacion**, no crea un item mudo.
+- `TriggerComboIds` solo aplica a la opcion que pide combos (`UsesComboIds`).
+- Solo para `ItemType.Passive`. En un Activo es error.
+
+**`Subject` distingue pegar de que te peguen.** `OnDamageIncoming` se dispara como
+`[quienPega, quienRecibe, danio]` y el hook compara al jugador contra `args[0]` por defecto, asi
+que colgarse de ese evento sin mas dispara **al pegar**. El catalogo tiene las dos entradas
+separadas (`damage.dealt.final` y `damage.taken`) y pone el `Subject` correcto. Si lo autoras a
+mano, `PassiveHookSubject.Target` es "cuando te pegan".
+
 ## Paso 5 (escritura B) — Autorar hook y efectos
 
-`CreateItem` **no autora hooks ni efectos**: el item recien creado no hace nada todavia. Este
-segundo `execute_code` puebla `PassiveHooks`. Patron de referencia:
+Con `TriggerId`, `CreateItem` deja el hook armado pero **sin efectos**: ya sabe cuando dispara y
+todavia no hace nada. Este segundo `execute_code` le pone los efectos. Patron de referencia:
 `Assets/Scripts/Editor/Tools/Item/EgoistaComboBonusReauthorTool.cs` (79 lineas, hace exactamente
 esto).
 
@@ -193,18 +226,12 @@ var path = "Assets/Rollgeon/Items/Item_Piedra_Sangrienta.asset";  // el AssetPat
 var item = UnityEditor.AssetDatabase.LoadAssetAtPath<Rollgeon.Items.ItemSO>(path);
 if (item == null) return "FAIL: no se encontro " + path;
 
-var hook = new Rollgeon.Items.PassiveItemHook
-{
-    Kind = Rollgeon.Items.PassiveHookKind.ComboPlayed,   // o EventBus
-    // Solo para EventBus:
-    // TriggerEvent = EventName.OnTurnStarted,
-    ComboFilter = new Rollgeon.Upgrades.Dice.ComboFilter
-    {
-        Mode = Rollgeon.Upgrades.Dice.ComboFilterMode.ComboIds,   // o AnyCombo
-        ComboIds = new System.Collections.Generic.List<string> { "combo.generala" },
-    },
-    ActionKindFilter = Rollgeon.Combat.Rolls.RollActionKind.Attack,  // Unknown = sin restriccion
-    Effect = new Rollgeon.Effects.EffectData
+// El hook ya existe con su disparador puesto por TriggerId: solo se le agregan los efectos.
+// Si el item se creo SIN TriggerId, armá el hook con ItemTriggerCatalog.Apply en vez de
+// escribir Kind/TriggerEvent/Subject a mano.
+var hook = item.PassiveHooks[0];
+hook.ActionKindFilter = Rollgeon.Combat.Rolls.RollActionKind.Attack;  // Unknown = sin restriccion
+hook.Effect = new Rollgeon.Effects.EffectData
     {
         Label = "Effect Group",
         PreConditions = new System.Collections.Generic.List<Rollgeon.PreConditions.BasePreCondition>(),
@@ -216,12 +243,7 @@ var hook = new Rollgeon.Items.PassiveItemHook
             },
         },
         TargetSelector = null,
-    },
-    PersistentModifiers =
-        new System.Collections.Generic.List<Rollgeon.Items.PersistentModifierDef>(),
-};
-
-item.PassiveHooks = new System.Collections.Generic.List<Rollgeon.Items.PassiveItemHook> { hook };
+    };
 
 UnityEditor.EditorUtility.SetDirty(item);
 UnityEditor.AssetDatabase.SaveAssets();
