@@ -114,6 +114,22 @@ namespace Rollgeon.Editor.Tools.Item
 
                     var hasEffects = hook.Effect?.Effects != null && hook.Effect.Effects.Count > 0;
                     var hasModifiers = hook.PersistentModifiers != null && hook.PersistentModifiers.Count > 0;
+
+                    // Un hook fuera del catalogo no rompe nada visible: no loguea, no tira, el item
+                    // simplemente no dispara nunca. Antes eso se descubria jugando (o preguntandole
+                    // a un programador por que el item "no anda").
+                    //
+                    // Solo cuenta si el hook tiene EFECTOS. Los PersistentModifiers los aplica
+                    // ApplyPersistentModifiers al entrar el item al inventario, recorriendo los hooks
+                    // sin mirar el evento: en un hook que solo lleva modificadores el TriggerEvent
+                    // es decorativo, y avisar ahi seria mandar a "arreglar" dos items que andan.
+                    if (hasEffects && ItemTriggerCatalog.Match(hook) == null)
+                        findings.Add(new CatalogFinding(
+                            FindingSeverity.Error,
+                            $"'{label}' dispara con '{hook.TriggerEvent}', que ningún ítem puede " +
+                            "escuchar — nunca se va a ejecutar.",
+                            item));
+
                     if (!hasEffects && !hasModifiers)
                         findings.Add(new CatalogFinding(
                             FindingSeverity.Warning,

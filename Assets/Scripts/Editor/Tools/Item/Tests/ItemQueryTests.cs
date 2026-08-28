@@ -168,5 +168,92 @@ namespace Rollgeon.Editor.Tools.Item.Tests
                                              && f.Severity == ItemQuery.FindingSeverity.Warning
                                              && f.Message.Contains("sin efectos ni modificadores")));
         }
+
+        /// <summary>
+        /// Un hook que solo lleva modificadores persistentes no usa su evento: los aplica
+        /// <c>ApplyPersistentModifiers</c> al entrar el ítem al inventario, sin mirarlo. Avisar ahí
+        /// mandaría a "arreglar" ítems que andan — pasó con Botas Ligeras y Coraza Reforzada.
+        /// </summary>
+        [Test]
+        public void CheckCatalogHealth_HookWithOnlyPersistentModifiers_IsNotFlaggedForItsEvent()
+        {
+            var item = Create<ItemSO>();
+            item.ItemId = "test.modsonly";
+            item.Type = ItemType.Passive;
+            item.PassiveHooks = new List<PassiveItemHook>
+            {
+                new PassiveItemHook
+                {
+                    Kind = PassiveHookKind.EventBus,
+                    TriggerEvent = EventName.OnRunStart,
+                    PersistentModifiers = new List<PersistentModifierDef> { new PersistentModifierDef() },
+                },
+            };
+            var pool = Create<ShopPoolSO>();
+
+            var findings = ItemQuery.CheckCatalogHealth(new[] { item }, pool);
+
+            Assert.IsFalse(findings.Any(f => f.Message.Contains("nunca se va a ejecutar")),
+                "el evento es decorativo en un hook que solo lleva modificadores");
+        }
+
+        static EffectData EffectWith(BaseEffect effect)
+        {
+            var data = new EffectData();
+            data.Effects.Add(effect);
+            return data;
+        }
+
+        /// <summary>
+        /// Un evento fuera de <see cref="ItemTriggerCatalog"/> no rompe nada visible: el ítem
+        /// simplemente no dispara nunca, y eso antes se descubría jugando.
+        /// </summary>
+        [Test]
+        public void CheckCatalogHealth_FlagsHookOnAnEventNoItemCanHear()
+        {
+            var item = Create<ItemSO>();
+            item.ItemId = "test.deadhook";
+            item.Type = ItemType.Passive;
+            item.PassiveHooks = new List<PassiveItemHook>
+            {
+                new PassiveItemHook
+                {
+                    Kind = PassiveHookKind.EventBus,
+                    TriggerEvent = EventName.OnSceneLoaded,
+                    Effect = EffectWith(new EffAddShield()),
+                },
+            };
+            var pool = Create<ShopPoolSO>();
+
+            var findings = ItemQuery.CheckCatalogHealth(new[] { item }, pool);
+
+            Assert.IsTrue(findings.Any(f => f.Asset == item
+                                             && f.Severity == ItemQuery.FindingSeverity.Error
+                                             && f.Message.Contains("nunca se va a ejecutar")));
+        }
+
+        [Test]
+        public void CheckCatalogHealth_HookOnACatalogEvent_IsNotFlagged()
+        {
+            var item = Create<ItemSO>();
+            item.ItemId = "test.livehook";
+            item.Type = ItemType.Passive;
+            item.PassiveHooks = new List<PassiveItemHook>
+            {
+                new PassiveItemHook
+                {
+                    Kind = PassiveHookKind.EventBus,
+                    TriggerEvent = EventName.OnDamageIncoming,
+                    Subject = PassiveHookSubject.Target,
+                    Effect = EffectWith(new EffAddShield()),
+                },
+            };
+            var pool = Create<ShopPoolSO>();
+
+            var findings = ItemQuery.CheckCatalogHealth(new[] { item }, pool);
+
+            Assert.IsFalse(findings.Any(f => f.Message.Contains("nunca se va a ejecutar")),
+                "'cuando te pegan' está en el catálogo — no puede reportarse como muerto");
+        }
     }
 }

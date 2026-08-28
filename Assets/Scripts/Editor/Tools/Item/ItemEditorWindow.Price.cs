@@ -31,11 +31,21 @@ namespace Rollgeon.Editor.Tools.Item
             ItemPoolMembership.InvalidateCache();
         }
 
+        /// <summary>La sección "Cuándo", que vive en <c>ItemEditorWindow.Trigger.cs</c>.</summary>
+        /// <remarks>
+        /// <see cref="DrawRootExtras"/> es un override y solo puede existir una vez en la clase, así
+        /// que las secciones que agregan otros archivos parciales entran por acá — mismo patrón de
+        /// dispatch que <c>OnPriceAssetsRefreshed</c>/<c>OnMetricsAssetsRefreshed</c>. Va primero
+        /// porque es lo que un autor necesita leer antes que el precio.
+        /// </remarks>
+        partial void DrawTriggerExtras(ItemSO asset);
+
         protected override void DrawRootExtras(ItemSO asset)
         {
             if (asset == null) return;
 
             EditorGUILayout.Space(2);
+            DrawTriggerExtras(asset);
             if (DrawExtrasSection("Shop")) DrawShopPrice(asset);
             if (DrawExtrasSection("Pools")) DrawPoolsSection(asset);
         }

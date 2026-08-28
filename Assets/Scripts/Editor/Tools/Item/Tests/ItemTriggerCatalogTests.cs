@@ -177,6 +177,35 @@ namespace Rollgeon.Editor.Tools.Item.Tests
             StringAssert.Contains("desconocido", ItemTriggerCatalog.Describe(hook));
         }
 
+        /// <summary>
+        /// Un hook que sólo lleva modificadores no escucha su evento: lo aplica el inventario al
+        /// entrar el ítem. Botas Ligeras y Coraza Reforzada están en <c>OnRunStart</c>, que nunca
+        /// matchea al jugador, y andan — decirles "disparador desconocido" mandaría a arreglarlas.
+        /// </summary>
+        [Test]
+        public void Describe_HookWithOnlyPersistentModifiers_SaysItIsPermanent()
+        {
+            var hook = new PassiveItemHook
+            {
+                TriggerEvent = EventName.OnRunStart,
+                PersistentModifiers = new List<PersistentModifierDef> { new PersistentModifierDef() },
+            };
+
+            Assert.IsTrue(ItemTriggerCatalog.IsPermanent(hook));
+            StringAssert.Contains("inventario", ItemTriggerCatalog.Describe(hook));
+        }
+
+        [Test]
+        public void IsPermanent_HookWithEffects_IsFalse()
+        {
+            var hook = new PassiveItemHook { TriggerEvent = EventName.OnTurnStarted };
+            hook.Effect.Effects.Add(new Rollgeon.Effects.Concretes.EffAddShield());
+            hook.PersistentModifiers = new List<PersistentModifierDef> { new PersistentModifierDef() };
+
+            Assert.IsFalse(ItemTriggerCatalog.IsPermanent(hook),
+                "si además tiene efectos, el evento sí decide cuándo corren");
+        }
+
         [Test]
         public void Describe_Null_IsEmpty()
         {

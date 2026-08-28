@@ -26,6 +26,14 @@ namespace Rollgeon.Editor.Tools.Item
     /// legible y una lista cerrada, para que lo que se ofrece sea lo que funciona.
     /// </para>
     /// <para>
+    /// <b>No están, y no por olvido:</b> <c>OnCombatStart</c> y <c>OnRunStart</c> llevan en
+    /// <c>args[0]</c> el id de la sala y de la run, no el del jugador, así que el filtro del hook
+    /// los descarta siempre; <c>OnComboCrossed</c> se dispara con <c>Guid.Empty</c>; y
+    /// <c>OnPlayerHealthChanged</c> no lo emite nadie en producción — la vida viaja por
+    /// <c>TypedEvent&lt;HealthChangedPayload&gt;</c>, al que un hook de ítem no llega. Los cuatro
+    /// se ven perfectamente elegibles en el desplegable crudo y no disparan nunca.
+    /// </para>
+    /// <para>
     /// <b>Al sumar una entrada</b>, confirmá contra el <c>EventManager.Trigger</c> real qué lleva
     /// <c>args[0]</c>: el hook filtra por ahí (o por <c>args[1]</c> con
     /// <see cref="PassiveHookSubject.Target"/>), y un evento cuyo primer argumento no es un
@@ -131,14 +139,7 @@ namespace Rollgeon.Editor.Tools.Item
             Bus("weakness.hit", "Cuando pegás a una debilidad",
                 "El golpe acertó la debilidad del enemigo.", EventName.OnWeaknessHit),
 
-            // --- Contrato ------------------------------------------------------
-            Bus("combo.crossed", "Cuando tachás un combo del contrato",
-                "El combo quedó cruzado en la planilla.", EventName.OnComboCrossed),
-
             // --- Recursos ------------------------------------------------------
-            Bus("health.changed", "Cuando cambia tu vida",
-                "Sube o baja — el hook no distingue cuál de las dos.",
-                EventName.OnPlayerHealthChanged),
             Bus("shield.changed", "Cuando cambia tu escudo",
                 "Sube o baja.", EventName.OnShieldChanged),
             Bus("gold.changed", "Cuando cambia tu oro",
@@ -149,7 +150,30 @@ namespace Rollgeon.Editor.Tools.Item
             // --- Inventario ----------------------------------------------------
             Bus("item.obtained", "Cuando conseguís un ítem",
                 "Cubre compras en la tienda y recompensas de cofre.", EventName.OnItemObtained),
+            Bus("modifier.added", "Cuando te aplican un modificador",
+                "Cualquier buff o debuff que entre sobre un atributo del jugador.",
+                EventName.OnModifierAdded),
         };
+
+        /// <summary>
+        /// El hook no usa su evento: rinde mientras el ítem esté en el inventario.
+        /// </summary>
+        /// <remarks>
+        /// Los <see cref="PassiveItemHook.PersistentModifiers"/> los aplica
+        /// <c>InventoryService.ApplyPersistentModifiers</c> al entrar el ítem, recorriendo los hooks
+        /// <b>sin mirar el evento</b>. O sea que en un hook que sólo lleva modificadores el
+        /// <c>TriggerEvent</c> es decorativo — Botas Ligeras y Coraza Reforzada están en
+        /// <c>OnRunStart</c>, que nunca matchea al jugador, y funcionan igual. Es una tercera
+        /// categoría de "cuándo" que no es un evento, y decirlo así evita que alguien "arregle" un
+        /// ítem que anda.
+        /// </remarks>
+        public static bool IsPermanent(PassiveItemHook hook)
+        {
+            if (hook == null) return false;
+            bool hasEffects = hook.Effect?.Effects != null && hook.Effect.Effects.Count > 0;
+            bool hasModifiers = hook.PersistentModifiers != null && hook.PersistentModifiers.Count > 0;
+            return !hasEffects && hasModifiers;
+        }
 
         /// <summary>
         /// La opción del catálogo que corresponde a <paramref name="hook"/>, o <c>null</c> si
@@ -214,6 +238,8 @@ namespace Rollgeon.Editor.Tools.Item
         public static string Describe(PassiveItemHook hook)
         {
             if (hook == null) return string.Empty;
+
+            if (IsPermanent(hook)) return "Mientras lo tengas en el inventario";
 
             var option = Match(hook);
             var sb = new StringBuilder();

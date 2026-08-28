@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Reflection;
 using System.Text;
 using UnityEngine;
@@ -22,11 +23,34 @@ namespace Rollgeon.Editor.Tools.Polymorphic.Graph
         const BindingFlags Flags = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
         const int MaxFields = 4;
 
+        static readonly Dictionary<Type, Func<object, string>> Describers =
+            new Dictionary<Type, Func<object, string>>();
+
+        /// <summary>
+        /// Registra cómo se describe un tipo de bloque, en lugar del volcado de campos genérico.
+        /// </summary>
+        /// <remarks>
+        /// Este archivo describe por reflexión a propósito, para que una familia nueva de efectos o
+        /// hooks salga en el canvas sin tocarlo. Pero el volcado no puede traducir: el hook de un
+        /// ítem salía como <c>"Kind: EventBus · Trigger Event: OnDamageIncoming"</c>, que es el dato
+        /// correcto en el idioma de quien escribió el motor. Un registro opt-in deja que el dueño
+        /// del dominio ponga la frase — la ventana de ítems registra <c>PassiveItemHook</c> — sin
+        /// que este archivo tenga que conocer ningún tipo del juego.
+        /// </remarks>
+        public static void Register<T>(Func<T, string> describer) where T : class
+        {
+            if (describer == null) Describers.Remove(typeof(T));
+            else Describers[typeof(T)] = value => describer(value as T);
+        }
+
         /// <summary>Body text for a node's detail area. Empty when there's nothing to add beyond
         /// the title/subtitle already on the header.</summary>
         public static string Describe(BlockGraphNode node)
         {
             if (node?.Value == null) return string.Empty;
+
+            if (Describers.TryGetValue(node.Value.GetType(), out var describer))
+                return describer(node.Value) ?? string.Empty;
 
             switch (node.Kind)
             {
