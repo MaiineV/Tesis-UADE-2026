@@ -116,6 +116,29 @@ namespace Rollgeon.Editor.Tools.Item
         }
 
         /// <summary>
+        /// Saca la entry de <paramref name="item"/> del pool. Devuelve <c>false</c> si no estaba.
+        /// </summary>
+        /// <remarks>
+        /// Nunca toca <c>Guaranteed</c>, por el mismo criterio que <see cref="AddToPool"/>: ese slot
+        /// es de <c>ShopSetupTools</c>. Un ítem garantizado devuelve <c>false</c> y queda intacto.
+        /// <para>
+        /// Existe para que borrar un ítem no deje un <c>WeightedShopItem</c> con <c>Item</c> null:
+        /// el rolling lo saltea <b>en silencio</b>, así que la tienda pierde variedad sin un solo
+        /// error en consola.
+        /// </para>
+        /// </remarks>
+        public static bool RemoveFromPool(ShopPoolSO pool, ItemSO item)
+        {
+            if (!TryFindEntry(pool, item, out var isGuaranteed, out var itemsIndex)) return false;
+            if (isGuaranteed) return false;
+
+            Undo.RecordObject(pool, "Remove Item From Shop Pool");
+            pool.Items.RemoveAt(itemsIndex);
+            EditorUtility.SetDirty(pool);
+            return true;
+        }
+
+        /// <summary>
         /// Locates <paramref name="item"/>'s entry. <paramref name="isGuaranteed"/> selects
         /// <see cref="ShopPoolSO.Guaranteed"/>; otherwise <paramref name="itemsIndex"/> indexes
         /// <see cref="ShopPoolSO.Items"/>. Kept private — callers only need the outcome, not where it

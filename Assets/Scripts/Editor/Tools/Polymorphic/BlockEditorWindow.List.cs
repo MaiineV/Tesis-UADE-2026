@@ -229,6 +229,25 @@ namespace Rollgeon.Editor.Tools.Polymorphic
             _assets.Sort((a, b) => string.CompareOrdinal(LabelOf(a), LabelOf(b)));
 
             if (_selected != null && !_assets.Contains(_selected)) Select(null);
+
+            OnAssetsRefreshed();
         }
+
+        /// <summary>
+        /// El host vuelve a calcular acá lo que derive de <see cref="Assets"/>.
+        /// </summary>
+        /// <remarks>
+        /// Existe por una razón medida: sin él, un host solo puede derivar datos dentro de su
+        /// método de dibujo, y todo lo que dibuja IMGUI corre en <b>cada repaint</b>. Un filtro que
+        /// recorría el árbol de efectos de los 24 ítems para armar su dropdown terminaba haciendo 24
+        /// recorridos de árbol por frame, y el editor entero se arrastraba.
+        /// <para>
+        /// Se dispara cuando la lista se rebuildea: al abrir la ventana y en cada
+        /// <c>OnProjectChange</c>. Lo derivado de campos que se editan sin reimportar el asset queda
+        /// stale hasta el próximo cambio de proyecto — aceptable para poblar un dropdown, no para
+        /// nada que afecte lo que se guarda.
+        /// </para>
+        /// </remarks>
+        protected virtual void OnAssetsRefreshed() { }
     }
 }

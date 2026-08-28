@@ -95,6 +95,41 @@ namespace Rollgeon.Editor.Tools.Item
     // ==================================================================================================
 
     /// <summary>
+    /// Bloque plegable con el nombre y la descripción en inglés, compartido por los dos asistentes.
+    /// </summary>
+    /// <remarks>
+    /// Plegado por defecto para no estorbar el camino rápido. El aviso de que queda por traducir es
+    /// deliberado: el proyecto valida por test que ninguna clave repita el español en inglés, así
+    /// que dejarlo vacío es una decisión con consecuencia, no un descuido silencioso.
+    /// </remarks>
+    static class ItemEnglishFields
+    {
+        public static void Draw(ref bool expanded, ref string nameEn, ref string descriptionEn)
+        {
+            expanded = EditorGUILayout.Foldout(expanded, "English (optional)", true);
+            if (!expanded)
+            {
+                if (string.IsNullOrWhiteSpace(nameEn) && string.IsNullOrWhiteSpace(descriptionEn))
+                    EditorGUILayout.LabelField(" ", "Sin traducir — se usa el texto en español.", EditorStyles.miniLabel);
+                return;
+            }
+
+            using (new EditorGUI.IndentLevelScope())
+            {
+                nameEn = EditorGUILayout.TextField("Display Name (EN)", nameEn);
+                EditorGUILayout.LabelField("Description (EN)");
+                descriptionEn = EditorGUILayout.TextArea(descriptionEn, GUILayout.MinHeight(40f));
+
+                if (string.IsNullOrWhiteSpace(nameEn) || string.IsNullOrWhiteSpace(descriptionEn))
+                    EditorGUILayout.HelpBox(
+                        "Lo que dejes vacío se siembra con el texto en español y queda como deuda de "
+                        + "traducción: el test de localización lo va a marcar.",
+                        MessageType.Info);
+            }
+        }
+    }
+
+    /// <summary>
     /// Live id feedback (spec §6.2 item 3): while a Display Name is typed, shows the id it will
     /// derive to and flags instantly if it's already taken, naming the owner. Shared by both
     /// wizards below so the two forms give identical feedback.
@@ -162,6 +197,14 @@ namespace Rollgeon.Editor.Tools.Item
         // single-item fields
         string _displayName = string.Empty;
         string _description = string.Empty;
+
+        // Inglés opcional. El proyecto tiene dos tests de localización que, juntos, exigen que toda
+        // clave tenga valor en los dos idiomas Y que difieran: sembrar el español en ambos deja la
+        // suite roja hasta que alguien traduzca. Completarlo acá evita esa deuda de entrada; dejarlo
+        // vacío sigue siendo válido y el test es el que después te lo recuerda.
+        bool _showEnglish;
+        string _displayNameEn = string.Empty;
+        string _descriptionEn = string.Empty;
         Sprite _icon;
         ItemRarity _rarity;
         ItemType _type;
@@ -240,6 +283,8 @@ namespace Rollgeon.Editor.Tools.Item
 
             EditorGUILayout.LabelField("Description");
             _description = EditorGUILayout.TextArea(_description, GUILayout.MinHeight(48f));
+
+            ItemEnglishFields.Draw(ref _showEnglish, ref _displayNameEn, ref _descriptionEn);
 
             _icon = (Sprite)EditorGUILayout.ObjectField("Icon", _icon, typeof(Sprite), false);
             _rarity = (ItemRarity)EditorGUILayout.EnumPopup("Rarity", _rarity);
@@ -359,6 +404,8 @@ namespace Rollgeon.Editor.Tools.Item
                 {
                     DisplayName = _displayName,
                     Description = _description,
+                    DisplayNameEn = _displayNameEn,
+                    DescriptionEn = _descriptionEn,
                     Icon = _icon,
                     Rarity = _rarity,
                     Type = _type,

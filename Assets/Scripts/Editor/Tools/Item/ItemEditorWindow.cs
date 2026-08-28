@@ -23,6 +23,23 @@ namespace Rollgeon.Editor.Tools.Item
         protected override string DefaultFolder => "Assets/Rollgeon/Items";
         protected override string NewAssetName => "Item_New";
 
+        // Cada superficie del host (lista, métricas, familia) vive en su propio parcial y necesita
+        // recalcular lo que derive de la lista de assets. Como `OnAssetsRefreshed` se puede
+        // sobrescribir una sola vez por clase, el override vive acá y reparte a métodos parciales:
+        // cada archivo implementa el suyo sin conocer a los demás, y el que no lo necesite
+        // simplemente no lo implementa (el compilador borra la llamada).
+        partial void OnListAssetsRefreshed();
+        partial void OnMetricsAssetsRefreshed();
+        partial void OnFamilyAssetsRefreshed();
+
+        protected override void OnAssetsRefreshed()
+        {
+            base.OnAssetsRefreshed();
+            OnListAssetsRefreshed();
+            OnMetricsAssetsRefreshed();
+            OnFamilyAssetsRefreshed();
+        }
+
         protected override string LabelOf(ItemSO asset)
         {
             if (asset == null) return "(null)";

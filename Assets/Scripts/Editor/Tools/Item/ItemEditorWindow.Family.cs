@@ -53,6 +53,16 @@ namespace Rollgeon.Editor.Tools.Item
         ItemSO _familyLastFollowed;
         Vector2 _familyScroll;
         Action _familyPendingAction;
+        // Caché de lo derivado de la lista de assets — se invalida cuando el shell la rebuildea.
+        IReadOnlyList<ItemQuery.ItemFamily> _familyListCache;
+        Rollgeon.Shop.ShopPoolSO _familyPoolCache;
+
+        partial void OnFamilyAssetsRefreshed()
+        {
+            _familyListCache = null;
+            _familyPoolCache = null;
+        }
+
         readonly Dictionary<ItemSO, PolymorphicAuthoringContext> _familyContexts =
             new Dictionary<ItemSO, PolymorphicAuthoringContext>();
 
@@ -61,7 +71,9 @@ namespace Rollgeon.Editor.Tools.Item
         {
             SyncFollowedSelection();
 
-            var families = ItemQuery.GetFamilies();
+            // Desde caché: GetFamilies() sin argumentos reescanea el proyecto entero, y esto corre
+            // en cada repaint de IMGUI. Se recalcula en OnFamilyAssetsRefreshed.
+            var families = _familyListCache ?? (_familyListCache = ItemQuery.GetFamilies());
             if (families.Count == 0)
             {
                 EditorGUILayout.HelpBox(
@@ -226,7 +238,11 @@ namespace Rollgeon.Editor.Tools.Item
         /// <summary>Price lives on the ShopPool, not the item (§2/§3) — read/write it through the bridge instead of duplicating a field here.</summary>
         void DrawFamilyPriceRow(ItemSO variant)
         {
-            var pool = ItemShopPriceBridge.LoadDefaultPool();
+            // Cacheado: se dibuja una fila de precio por variante, en cada repaint — cargar el asset
+            // del pool cada vez es una consulta al AssetDatabase por fila por frame.
+            var pool = _familyPoolCache != null
+                ? _familyPoolCache
+                : (_familyPoolCache = ItemShopPriceBridge.LoadDefaultPool());
             if (pool == null)
             {
                 EditorGUILayout.HelpBox("No ShopPool at the default path.", MessageType.None);

@@ -43,6 +43,7 @@ namespace Rollgeon.Editor.Tools.Item
             bool ok = TryPrepare(
                 spec.DisplayName, spec.Description, spec.Icon, spec.Rarity, spec.Type,
                 spec.FamilyId, spec.VariantIndex ?? 0, spec.BasePrice, spec.TargetFolder,
+                new LocalizedText(spec.DisplayNameEn, spec.DescriptionEn),
                 claimed, errors, out var prepared);
 
             if (!ok || errors.Count > 0) return new ItemCreationResult(errors);
@@ -87,6 +88,7 @@ namespace Rollgeon.Editor.Tools.Item
                 bool ok = TryPrepare(
                     v.DisplayName, description, icon, v.Rarity, spec.Type,
                     spec.FamilyId, variantIndex, v.BasePrice, spec.TargetFolder,
+                    new LocalizedText(v.DisplayNameEn, v.DescriptionEn),
                     claimed, errors, out var p);
                 if (ok) prepared.Add(p);
             }
@@ -175,6 +177,29 @@ namespace Rollgeon.Editor.Tools.Item
         // ---- validation + write ---------------------------------------------------------------------
 
         /// <summary>Fully-validated, ready-to-write item. Only <see cref="TryPrepare"/> constructs one.</summary>
+        /// <summary>
+        /// Nombre y descripcion en un idioma. Vacio = usar el texto autor.
+        /// </summary>
+        /// <remarks>
+        /// Existe para no sumarle dos parametros mas a <c>TryPrepare</c>, que ya toma doce. El
+        /// ingles no se valida — es texto libre y opcional —, asi que viaja junto sin pasar por las
+        /// mismas reglas que el resto de la especificacion.
+        /// </remarks>
+        public readonly struct LocalizedText
+        {
+            public readonly string Name;
+            public readonly string Description;
+
+            public LocalizedText(string name, string description)
+            {
+                Name = name;
+                Description = description;
+            }
+
+            public string NameOr(string fallback) => string.IsNullOrWhiteSpace(Name) ? fallback : Name;
+            public string DescriptionOr(string fallback) => string.IsNullOrWhiteSpace(Description) ? fallback : Description;
+        }
+
         readonly struct PreparedItem
         {
             public readonly string ItemId;
@@ -188,9 +213,13 @@ namespace Rollgeon.Editor.Tools.Item
             public readonly int BasePrice;
             public readonly string TargetFolder;
 
+            /// <summary>Textos en ingles. Vacios = se siembra el texto autor en ambos locales.</summary>
+            public readonly LocalizedText English;
+
             public PreparedItem(
                 string itemId, string displayName, string description, Sprite icon, ItemRarity rarity,
-                ItemType type, string familyId, int variantIndex, int basePrice, string targetFolder)
+                ItemType type, string familyId, int variantIndex, int basePrice, string targetFolder,
+                LocalizedText english)
             {
                 ItemId = itemId;
                 DisplayName = displayName;
@@ -202,6 +231,7 @@ namespace Rollgeon.Editor.Tools.Item
                 VariantIndex = variantIndex;
                 BasePrice = basePrice;
                 TargetFolder = targetFolder;
+                English = english;
             }
         }
 
@@ -213,6 +243,7 @@ namespace Rollgeon.Editor.Tools.Item
         static bool TryPrepare(
             string displayName, string description, Sprite icon, ItemRarity rarity, ItemType type,
             string familyId, int variantIndex, int? basePrice, string targetFolder,
+            LocalizedText english,
             HashSet<string> claimedIds, List<string> errors, out PreparedItem prepared)
         {
             prepared = default;
@@ -271,7 +302,7 @@ namespace Rollgeon.Editor.Tools.Item
 
             prepared = new PreparedItem(
                 itemId, displayName, description ?? string.Empty, icon, rarity, type,
-                familyId ?? string.Empty, variantIndex, resolvedPrice, folder);
+                familyId ?? string.Empty, variantIndex, resolvedPrice, folder, english);
             return true;
         }
 
@@ -299,10 +330,14 @@ namespace Rollgeon.Editor.Tools.Item
 
             catalog.EditorAdd(item);
 
-            // No translation service here — both locales seed with the authored text; the Fase 3
-            // language dropdown (spec §4) is where EN gets its real translation later.
-            UpsertLocalizationEntryWithUndo(p.ItemId + LocalizedContent.NameSuffix, p.DisplayName, p.DisplayName);
-            UpsertLocalizationEntryWithUndo(p.ItemId + LocalizedContent.DescSuffix, p.Description, p.Description);
+            // El ingles cae al texto autor cuando no se escribio. Se admite a proposito: deja crear
+            // rapido y el test test_localization_no_key_repeats_the_spanish_text_in_english avisa
+            // despues cuales quedaron sin traducir. Completar los campos en ingles del asistente
+            // evita esa deuda de entrada.
+            UpsertLocalizationEntryWithUndo(
+                p.ItemId + LocalizedContent.NameSuffix, p.DisplayName, p.English.NameOr(p.DisplayName));
+            UpsertLocalizationEntryWithUndo(
+                p.ItemId + LocalizedContent.DescSuffix, p.Description, p.English.DescriptionOr(p.Description));
 
             ItemShopPriceBridge.AddToPool(pool, item, p.BasePrice);
 
@@ -362,9 +397,113 @@ namespace Rollgeon.Editor.Tools.Item
 
             UpsertLocalizationEntryWithUndo(newKey, esValue, enValue);
 
+            // Por RemoveKeyEverywhere y no por SharedData.RemoveKey: este último deja las entradas
+            // de cada idioma huérfanas en el .asset, con el texto viejo adentro.
             Undo.RecordObject(collection.SharedData, "Rename Item Id");
-            collection.SharedData.RemoveKey(oldKey);
+            RemoveKeyEverywhere(collection, oldKey);
             EditorUtility.SetDirty(collection.SharedData);
+        }
+
+        /// <summary>
+        /// Borra un ítem deshaciendo las cuatro escrituras que lo dieron de alta: lo saca del
+        /// catálogo, lo saca del <c>ShopPool</c>, borra sus dos claves de localización y recién
+        /// entonces elimina el asset.
+        /// </summary>
+        /// <remarks>
+        /// <para>
+        /// El botón Delete de la ventana borra solo el archivo, y cada una de las otras tres
+        /// escrituras queda huérfana: una entry null en el catálogo, un <c>WeightedShopItem</c> sin
+        /// ítem que el rolling saltea <b>en silencio</b>, y dos claves muertas en la tabla.
+        /// </para>
+        /// <para>
+        /// <b>El orden importa.</b> Catálogo y pool se limpian con el asset todavía vivo, porque los
+        /// dos localizan la entry <i>por referencia al objeto</i>: con el asset ya borrado la
+        /// referencia es null y no hay con qué encontrarla.
+        /// </para>
+        /// <para>
+        /// <b>No es undoable.</b> <c>AssetDatabase.DeleteAsset</c> queda fuera del sistema de undo,
+        /// así que un Ctrl+Z revertiría las tres primeras limpiezas y dejaría el archivo borrado —
+        /// peor que no hacer nada. Por eso no se agrupa en un <c>UndoGroup</c>: que cada paso quede
+        /// suelto deja el rastro visible en vez de fingir una atomicidad que no existe.
+        /// </para>
+        /// </remarks>
+        public static ItemDeletionResult DeleteItem(ItemSO item)
+        {
+            if (item == null) return ItemDeletionResult.Failed("No hay ítem que borrar.");
+
+            string itemId = item.ItemId;
+            string assetPath = AssetDatabase.GetAssetPath(item);
+            if (string.IsNullOrEmpty(assetPath))
+                return ItemDeletionResult.Failed("El ítem no tiene un asset en disco.");
+
+            bool removedFromCatalog = false;
+            var catalog = LoadCatalog();
+            if (catalog != null) removedFromCatalog = catalog.EditorRemove(item);
+
+            bool removedFromPool = false;
+            var pool = ItemShopPriceBridge.LoadDefaultPool();
+            if (pool != null) removedFromPool = ItemShopPriceBridge.RemoveFromPool(pool, item);
+
+            int removedKeys = string.IsNullOrEmpty(itemId) ? 0 : RemoveLocalizationKeys(itemId);
+
+            AssetDatabase.SaveAssets();
+
+            if (!AssetDatabase.DeleteAsset(assetPath))
+                return ItemDeletionResult.Failed($"No se pudo borrar el asset en '{assetPath}'.");
+
+            AssetDatabase.SaveAssets();
+            return ItemDeletionResult.Ok(itemId, assetPath, removedFromCatalog, removedFromPool, removedKeys);
+        }
+
+        /// <summary>Borra <c>&lt;itemId&gt;.name</c> y <c>&lt;itemId&gt;.desc</c> de la tabla <c>Content</c>. Devuelve cuántas sacó.</summary>
+        static int RemoveLocalizationKeys(string itemId)
+        {
+            var collection = LocalizationEditorSettings.GetStringTableCollection(LocalizedContent.ContentTable);
+            if (collection == null) return 0;
+
+            int removed = 0;
+            Undo.RecordObject(collection.SharedData, "Delete Item Localization");
+            foreach (var suffix in new[] { LocalizedContent.NameSuffix, LocalizedContent.DescSuffix })
+            {
+                if (RemoveKeyEverywhere(collection, itemId + suffix)) removed++;
+            }
+
+            if (removed == 0) return 0;
+
+            EditorUtility.SetDirty(collection.SharedData);
+            return removed;
+        }
+
+        /// <summary>
+        /// Borra <paramref name="key"/> de la shared data <b>y</b> de cada tabla de idioma.
+        /// Devuelve <c>false</c> si la clave no existía.
+        /// </summary>
+        /// <remarks>
+        /// <c>SharedTableData.RemoveKey</c> saca únicamente la <i>definición</i> de la clave. Las
+        /// entradas por locale están indexadas por el id numérico que esa definición asignaba, así
+        /// que quedan huérfanas: invisibles desde el editor de Localization, pero presentes en el
+        /// <c>.asset</c> y visibles en el diff.
+        /// <para>
+        /// De ahí el orden: primero se resuelve el id y se borran las entradas de cada tabla,
+        /// después se quita la clave. Al revés no hay con qué encontrarlas.
+        /// </para>
+        /// </remarks>
+        static bool RemoveKeyEverywhere(StringTableCollection collection, string key)
+        {
+            var shared = collection.SharedData.GetEntry(key);
+            if (shared == null) return false;
+
+            var id = shared.Id;
+            foreach (var table in collection.StringTables)
+            {
+                if (table == null) continue;
+                Undo.RecordObject(table, "Delete Item Localization");
+                table.RemoveEntry(id);
+                EditorUtility.SetDirty(table);
+            }
+
+            collection.SharedData.RemoveKey(key);
+            return true;
         }
     }
 }

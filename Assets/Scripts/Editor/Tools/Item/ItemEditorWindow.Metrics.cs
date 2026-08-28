@@ -45,6 +45,8 @@ namespace Rollgeon.Editor.Tools.Item
         IReadOnlyList<ItemQuery.ItemMetrics> _metricsCache;
         IReadOnlyList<ItemQuery.CatalogFinding> _metricsFindingsCache;
         List<ItemQuery.CatalogFinding> _metricsPriceOutlierCache;
+        IReadOnlyList<ItemQuery.ItemFamily> _metricsFamiliesCache;
+        IReadOnlyList<ItemSO> _metricsLooseCache;
 
         MetricsGroupBy _metricsGroupBy = MetricsGroupBy.Rarity;
         float _metricsDeviationThresholdPct = MetricsDefaultDeviationThreshold;
@@ -98,6 +100,17 @@ namespace Rollgeon.Editor.Tools.Item
             _metricsCache = ItemQuery.GetMetrics();
             _metricsFindingsCache = ItemQuery.CheckCatalogHealth();
             _metricsPriceOutlierCache = ComputePriceOutliers(_metricsCache, _metricsDeviationThresholdPct);
+
+            // Los overloads sin argumento reescanean el proyecto entero (FindAssets + cargar cada
+            // ItemSO). Llamarlos desde DrawDistribution significaba un escaneo completo POR REPAINT.
+            _metricsFamiliesCache = ItemQuery.GetFamilies();
+            _metricsLooseCache = ItemQuery.GetLooseItems();
+        }
+
+        /// <summary>La lista cambió en disco: la próxima vez que se dibuje la tab se recalcula.</summary>
+        partial void OnMetricsAssetsRefreshed()
+        {
+            _metricsCache = null;
         }
 
         // ============================ Toolbar ============================
@@ -132,8 +145,8 @@ namespace Rollgeon.Editor.Tools.Item
 
         void DrawDistribution()
         {
-            var families = ItemQuery.GetFamilies();
-            var loose = ItemQuery.GetLooseItems();
+            var families = _metricsFamiliesCache;
+            var loose = _metricsLooseCache;
             EditorGUILayout.LabelField(
                 $"{_metricsCache.Count} ítems totales — {families.Count} familias ({families.Sum(f => f.Variants.Count)} variantes), {loose.Count} sueltos.",
                 EditorStyles.miniLabel);

@@ -13,6 +13,12 @@ namespace Rollgeon.Editor.Tools.Item
     {
         public string DisplayName;
         public string Description;
+
+        /// <summary>Nombre en ingles. Vacio = se siembra el texto en espanol (queda por traducir).</summary>
+        public string DisplayNameEn;
+
+        /// <summary>Descripcion en ingles. Vacio = se siembra el texto en espanol (queda por traducir).</summary>
+        public string DescriptionEn;
         public Sprite Icon;
         public ItemRarity Rarity;
         public ItemType Type;
@@ -37,6 +43,12 @@ namespace Rollgeon.Editor.Tools.Item
 
         /// <summary>Null/empty falls back to <see cref="ItemFamilyCreationSpec.DefaultDescription"/>.</summary>
         public string Description;
+
+        /// <summary>Nombre en ingles. Vacio = se siembra el texto en espanol (queda por traducir).</summary>
+        public string DisplayNameEn;
+
+        /// <summary>Descripcion en ingles. Vacio = se siembra el texto en espanol (queda por traducir).</summary>
+        public string DescriptionEn;
 
         /// <summary>Null falls back to <see cref="ItemFamilyCreationSpec.DefaultIcon"/>.</summary>
         public Sprite Icon;

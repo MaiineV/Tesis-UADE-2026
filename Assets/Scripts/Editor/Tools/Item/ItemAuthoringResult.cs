@@ -85,4 +85,43 @@ namespace Rollgeon.Editor.Tools.Item
             NewId = null;
         }
     }
+
+    /// <summary>
+    /// Resultado de <c>ItemAuthoring.DeleteItem</c>.
+    /// </summary>
+    /// <remarks>
+    /// Informa cada limpieza por separado en vez de un solo booleano: un ítem puede estar fuera del
+    /// catálogo o fuera del pool desde antes, y "no lo saqué del pool porque no estaba" no es lo
+    /// mismo que "fallé al sacarlo". Quien llama lo reporta tal cual.
+    /// </remarks>
+    public readonly struct ItemDeletionResult
+    {
+        public bool Success { get; }
+        public string ErrorMessage { get; }
+        public string ItemId { get; }
+        public string AssetPath { get; }
+        public bool RemovedFromCatalog { get; }
+        public bool RemovedFromPool { get; }
+        public int RemovedLocalizationKeys { get; }
+
+        ItemDeletionResult(
+            bool success, string errorMessage, string itemId, string assetPath,
+            bool removedFromCatalog, bool removedFromPool, int removedLocalizationKeys)
+        {
+            Success = success;
+            ErrorMessage = errorMessage;
+            ItemId = itemId;
+            AssetPath = assetPath;
+            RemovedFromCatalog = removedFromCatalog;
+            RemovedFromPool = removedFromPool;
+            RemovedLocalizationKeys = removedLocalizationKeys;
+        }
+
+        internal static ItemDeletionResult Ok(
+            string itemId, string assetPath, bool removedFromCatalog, bool removedFromPool, int removedKeys) =>
+            new ItemDeletionResult(true, null, itemId, assetPath, removedFromCatalog, removedFromPool, removedKeys);
+
+        internal static ItemDeletionResult Failed(string errorMessage) =>
+            new ItemDeletionResult(false, errorMessage, null, null, false, false, 0);
+    }
 }
