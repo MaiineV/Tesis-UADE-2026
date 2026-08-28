@@ -42,10 +42,7 @@ namespace Rollgeon.UI.HUD.Status
             if (!ServiceLocator.TryGetService<ISpecialTileService>(out var tiles) || tiles == null) return;
 
             // Un incendio son muchas instancias y una sola tarjeta: el jugador no cuenta casillas,
-            // pregunta si el piso quema. Se queda la que más dura, que es cuándo deja de quemar.
-            SpecialTileDefinitionSO hottest = null;
-            int longest = 0;
-
+            // pregunta si el piso quema.
             foreach (var info in tiles.ActiveInstances())
             {
                 if (info.OwnerGuid != ownerGuid) continue;
@@ -55,26 +52,21 @@ namespace Rollgeon.UI.HUD.Status
                 if (definition.TileType != SpecialTileType.Fire &&
                     definition.TileType != SpecialTileType.FireTemp) continue;
 
-                if (hottest != null && info.RemainingRounds <= longest) continue;
-                hottest = definition;
-                longest = info.RemainingRounds;
+                into.Add(FireTilesState(definition));
+                return;
             }
-
-            if (hottest == null) return;
-
-            into.Add(FireTilesState(
-                hottest,
-                _catalog != null ? _catalog.Resolve(TileStandStatusProvider.BurnId) : null,
-                remainingRounds: longest > 0 ? longest : (int?)null));
         }
 
         /// <summary>
         /// La tarjeta de las casillas ardiendo, con los números de ESA definición. Estática para
         /// que el preview de editor arme exactamente esta tarjeta y no una maqueta.
         /// </summary>
-        public static StatusIconState FireTilesState(SpecialTileDefinitionSO definition,
-                                                     UnityEngine.Sprite icon,
-                                                     int? remainingRounds = null)
+        /// <remarks>
+        /// Sin ícono y sin badge de turnos a propósito: el arte del fuego ya está en el piso —en
+        /// cada casilla ardiendo— y la cuenta regresiva del incendio leída en el panel del jefe
+        /// parecía un valor del jefe. Los números que SÍ son de esta tarjeta van en la regla.
+        /// </remarks>
+        public static StatusIconState FireTilesState(SpecialTileDefinitionSO definition)
         {
             int enter = definition != null ? definition.EnterDamage : 0;
             int turnStart = definition != null ? definition.TurnStartDamage : 0;
@@ -85,11 +77,10 @@ namespace Rollgeon.UI.HUD.Status
                 LocalizedContent.DescriptionFormat(FireTilesId,
                     "<b>{0}</b> al entrar en una casilla. <b>{1}</b> si empezás tu turno sobre ella.",
                     enter, turnStart),
-                icon,
+                icon: null,
                 active: true,
-                remainingTurns: remainingRounds,
                 // Terrain y no Unit: habla del suelo, no del bicho. Con eso además la fila que
-                // flota sobre su cabeza la saltea sola — el fuego está en el piso, y ahí se ve.
+                // flota sobre su cabeza la saltea sola.
                 style: StatusCardStyle.Terrain);
         }
     }

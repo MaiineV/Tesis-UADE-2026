@@ -732,20 +732,20 @@ namespace Rollgeon.EditorTools.Localization
         /// </remarks>
         private static void SeedIntents()
         {
-            Content(AIIntentTextKeys.Ignite + ".name", "Prende el suelo", "Sets the Floor Alight");
-            Content(AIIntentTextKeys.Ignite + ".desc",
-                "Prende la banda que marcó, por <b>{0}</b>.",
-                "Lights up the band he marked, for <b>{0}</b>.");
+            Content(AIIntentTextKeys.Ignite + ".name", "Bola de fuego", "Fire Ball");
+            // Vacía a propósito: el título dice qué es, la marca en el piso dice dónde, y los
+            // números del fuego los lleva la tarjeta de Fire Tiles.
+            Content(AIIntentTextKeys.Ignite + ".desc", string.Empty, string.Empty);
 
             // Descripcion vacia a proposito, igual que el estallido: el titulo dice que hace, el
             // numero de la tarjeta dice cuanto, y "desde lejos" lo dice la familia del bicho.
             Content(AIIntentTextKeys.RangedShot + ".name", "Te dispara", "Shoots You");
             Content(AIIntentTextKeys.RangedShot + ".desc", string.Empty, string.Empty);
 
-            Content(AIIntentTextKeys.BombField + ".name", "Siembra bombas", "Spawn Bombs");
+            Content(AIIntentTextKeys.BombField + ".name", "Bombas", "Bombs");
             Content(AIIntentTextKeys.BombField + ".desc",
-                "Siembra <b>{1}</b> bombas.",
-                "Spawns <b>{1}</b> bombs.");
+                "Siembra <b>{1}</b> bombas al azar.",
+                "Spawns <b>{1}</b> random bombs.");
 
             // Descripción vacía a propósito: el título dice qué pasa y el badge cuánto falta.
             // La entry existe igual porque el guard la exige y para poder llenarla sin tocar código.

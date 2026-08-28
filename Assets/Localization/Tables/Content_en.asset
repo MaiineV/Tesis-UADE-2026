@@ -1029,11 +1029,11 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 15516266093322240
-    m_Localized: Sets the Floor Alight
+    m_Localized: Fire Ball
     m_Metadata:
       m_Items: []
   - m_Id: 15516266126876672
-    m_Localized: Lights up the band he marked, for <b>{0}</b>.
+    m_Localized: 
     m_Metadata:
       m_Items: []
   - m_Id: 15516266126876673
@@ -1045,11 +1045,11 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 15516266126876675
-    m_Localized: Spawn Bombs
+    m_Localized: Bombs
     m_Metadata:
       m_Items: []
   - m_Id: 15516266126876676
-    m_Localized: Spawns <b>{1}</b> bombs.
+    m_Localized: Spawns <b>{1}</b> random bombs.
     m_Metadata:
       m_Items: []
   - m_Id: 15516266126876677

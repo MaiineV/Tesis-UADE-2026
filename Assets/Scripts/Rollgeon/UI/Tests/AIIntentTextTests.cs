@@ -80,11 +80,13 @@ namespace Rollgeon.UI.Tests
             var bombFire = Fire(enter: 15, turnStart: 15);
             var coneFire = Fire(enter: 6, turnStart: 10);
 
+            // BombField y no Ignite: la bola de fuego es tarjeta de sólo título, así que su
+            // regla vacía tampoco arrastra lo que deja y acá no habría nada que comparar.
             string bomb = AIIntentText.Describe(new AIIntent(
-                AIIntentTextKeys.Ignite, "Prende el suelo", 12, AttackKind.Environmental,
+                AIIntentTextKeys.BombField, "Bombas", 12, AttackKind.Environmental,
                 leaves: bombFire, leavesRounds: 4));
             string cone = AIIntentText.Describe(new AIIntent(
-                AIIntentTextKeys.Ignite, "Prende el suelo", 12, AttackKind.Environmental,
+                AIIntentTextKeys.BombField, "Bombas", 12, AttackKind.Environmental,
                 leaves: coneFire, leavesRounds: 3));
 
             // Los dos fuegos comparten SpecialTileType y cobran distinto: los números tienen que
@@ -98,13 +100,13 @@ namespace Rollgeon.UI.Tests
         [Test]
         public void SinNadaQueDejar_NoArrastraLaFraseDeLoQueDeja()
         {
-            // Con Ignite y no con el disparo: el disparo es tarjeta de sólo título, así que los dos
-            // lados quedarían vacíos y el test pasaría sin mirar nada.
+            // Con BombField y no con el disparo ni la bola de fuego: esos son tarjetas de sólo
+            // título, así que los dos lados quedarían vacíos y el test pasaría sin mirar nada.
             var conLeaves = AIIntentText.Describe(new AIIntent(
-                AIIntentTextKeys.Ignite, "Prende el suelo", 30, AttackKind.Environmental,
+                AIIntentTextKeys.BombField, "Bombas", 30, AttackKind.Environmental,
                 leaves: Fire(enter: 7, turnStart: 9), leavesRounds: 4));
             var sinLeaves = AIIntentText.Describe(new AIIntent(
-                AIIntentTextKeys.Ignite, "Prende el suelo", 30, AttackKind.Environmental));
+                AIIntentTextKeys.BombField, "Bombas", 30, AttackKind.Environmental));
 
             Assert.Less(sinLeaves.Length, conLeaves.Length,
                 "Una intención que no deja nada en el piso arrastró igual la frase de lo que " +

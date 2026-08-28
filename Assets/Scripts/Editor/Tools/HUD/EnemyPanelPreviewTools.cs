@@ -261,6 +261,18 @@ namespace Rollgeon.EditorTools.HUD
             }
             registry.SetWeakness(owner, data.WeaknessComboId, data.WeaknessMultiplierOverride);
 
+            // El catalogo de combos tambien: sin el, la Weak dice la key cruda y sin el icono del
+            // combo -- y lo que se esta calibrando aca es justamente como se ve esa tarjeta.
+            if (!ServiceLocator.TryGetService<Rollgeon.Combos.ComboCatalogSO>(out var combos)
+                || combos == null)
+            {
+                combos = AssetDatabase.LoadAssetAtPath<Rollgeon.Combos.ComboCatalogSO>(
+                    "Assets/Rollgeon/Combos/ComboCatalog.asset");
+                if (combos != null)
+                    ServiceLocator.AddService<Rollgeon.Combos.ComboCatalogSO>(
+                        combos, ServiceScope.Global);
+            }
+
             try
             {
                 var kit = new EnemyKitStatusProvider(catalog, data);
@@ -288,12 +300,7 @@ namespace Rollgeon.EditorTools.HUD
             public StubOwnedFire(SpecialTileDefinitionSO fire) => _fire = fire;
 
             public void Collect(Guid owner, List<StatusIconState> into, StatusIconCatalogSO catalog)
-                => into.Add(OwnedTilesStatusProvider.FireTilesState(
-                    _fire,
-                    catalog != null ? catalog.Resolve(TileStandStatusProvider.BurnId) : null,
-                    remainingRounds: _fire.DefaultDurationRounds > 0
-                        ? _fire.DefaultDurationRounds
-                        : (int?)null));
+                => into.Add(OwnedTilesStatusProvider.FireTilesState(_fire));
         }
 
         // El fuego que deja el nodo que prende, y no el primero que aparezca entre las dependencias

@@ -106,7 +106,7 @@ namespace Rollgeon.UI.Tests
         }
 
         [Test]
-        public void test_owned_tiles_a_whole_fire_is_one_card_with_the_longest_countdown()
+        public void test_owned_tiles_a_whole_fire_is_one_card_with_no_countdown()
         {
             // Arrange — un incendio son muchas instancias; el jugador pregunta si el piso quema,
             // no cuántas casillas hay.
@@ -119,8 +119,12 @@ namespace Rollgeon.UI.Tests
 
             // Assert
             Assert.AreEqual(1, _states.Count);
-            Assert.AreEqual(4, _states[0].RemainingTurns,
-                "El badge dice cuándo deja de quemar, así que manda la que más dura.");
+            Assert.IsNull(_states[0].RemainingTurns,
+                "La cuenta regresiva del incendio leída en el panel del jefe parecía un valor del " +
+                "jefe — un 4 al lado del título que no se sabe de qué es. Los números de esta " +
+                "tarjeta van en la regla.");
+            Assert.IsNull(_states[0].Icon,
+                "Sin arte a propósito: el fuego ya se ve en el piso, casilla por casilla.");
         }
 
         [Test]

@@ -8,7 +8,7 @@ namespace Rollgeon.UI.Tooltips
 {
     /// <summary>
     /// Una tarjeta de la columna del tooltip: una sola cosa en juego, nunca un párrafo.
-    /// Con arte va ícono a la izquierda y título alineado a él; sin arte, título centrado.
+    /// Título siempre a la izquierda; el ícono, si hay arte, va delante de él.
     /// </summary>
     /// <remarks>
     /// Igual que <see cref="Rollgeon.UI.HUD.Status.StatusEffectIconView"/>: la columna recicla
@@ -48,19 +48,13 @@ namespace Rollgeon.UI.Tooltips
 
             // Sin arte el bloque del ícono se va entero, no sólo el Image: dejarlo prendido
             // reservaría su ancho en la fila y el título arrancaría corrido contra un hueco.
-            //
-            // El estilo NO entra en esta cuenta. Terrain dice de qué habla la tarjeta --del suelo,
-            // no del bicho-- y eso ya lo cobra la fila que flota sobre la cabeza, que la saltea. Lo
-            // que decide la forma acá adentro es si hay arte: el fuego del jefe tiene la suya.
+            // El estilo no entra en esta cuenta: Terrain dice de qué habla la tarjeta, no su forma.
             bool hasIcon = state.Icon != null;
 
+            // Siempre a la izquierda, con o sin ícono: en una columna de tarjetas mezcladas los
+            // títulos centrados bailaban de x según cuál tenía arte.
             if (_titleLabel != null)
-            {
                 _titleLabel.text = state.DisplayName ?? string.Empty;
-                _titleLabel.alignment = hasIcon
-                    ? TextAlignmentOptions.Left
-                    : TextAlignmentOptions.Center;
-            }
 
             if (!hasIcon)
             {

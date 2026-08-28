@@ -33,11 +33,13 @@ namespace Rollgeon.Combat.AI.Decisions
         /// </remarks>
         public static string RuleFallback(string key) => key switch
         {
-            Ignite => "Prende la banda que marcó, por <b>{0}</b>.",
+            // Vacía a propósito: "Bola de fuego" ya dice qué es, la casilla marcada en el piso
+            // dice dónde, y los números del fuego los lleva la tarjeta de Fire Tiles.
+            Ignite => string.Empty,
             // Vacía a propósito: el título dice qué hace, el número de la tarjeta dice cuánto, y
             // "desde lejos" lo dice la familia del bicho arriba del panel. No quedaba nada.
             RangedShot => string.Empty,
-            BombField => "Siembra <b>{1}</b> bombas.",
+            BombField => "Siembra <b>{1}</b> bombas al azar.",
             // Vacía a propósito: el título ya dice qué pasa y el badge cuánto falta. La cruz se
             // ve en el piso, y el fuego que queda lo cuenta la casilla al pasarle el mouse.
             BombBlast => string.Empty,

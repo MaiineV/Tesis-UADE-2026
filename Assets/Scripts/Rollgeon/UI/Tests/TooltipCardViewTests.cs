@@ -74,14 +74,15 @@ namespace Rollgeon.UI.Tests
         }
 
         [Test]
-        public void ConArte_ElIconoSeDibujaYElTituloVaALaIzquierda()
+        public void ConArte_ElIconoSeDibuja()
         {
-            _view.Show(new StatusIconState("intent.ignite", "Prende el suelo",
+            // La alineación del título ya no se toca acá: es del prefab (siempre izquierda),
+            // así que lo único que Show decide con el arte es si el bloque del ícono vive.
+            _view.Show(new StatusIconState("intent.ignite", "Bola de fuego",
                                            "Prende la banda que marcó.", _sprite, active: true));
 
             Assert.IsTrue(_iconRoot.activeSelf);
             Assert.AreSame(_sprite, _icon.sprite);
-            Assert.AreEqual(TextAlignmentOptions.Left, _title.alignment);
         }
 
         [Test]
@@ -94,19 +95,17 @@ namespace Rollgeon.UI.Tests
             Assert.IsTrue(_iconRoot.activeSelf,
                 "Terrain dice de QUÉ habla la tarjeta, no cómo se dibuja: lo que le cobra ser " +
                 "del suelo es que la fila sobre la cabeza la saltee, no perder su arte.");
-            Assert.AreEqual(TextAlignmentOptions.Left, _title.alignment,
-                "Con ícono el título se alinea a él; centrado dejaría un hueco entre los dos.");
         }
 
         [Test]
-        public void UnaTarjetaSinArte_CentraElTitulo()
+        public void UnaTarjetaSinArte_ApagaElBloqueDelIcono()
         {
-            _view.Show(new StatusIconState("intent.bomb_field", "Siembra bombas",
-                                           "Siembra 3 bombas.", icon: null, active: true));
+            _view.Show(new StatusIconState("intent.bomb_field", "Bombas",
+                                           "Siembra 3 bombas al azar.", icon: null, active: true));
 
-            Assert.IsFalse(_iconRoot.activeSelf);
-            Assert.AreEqual(TextAlignmentOptions.Center, _title.alignment,
-                "Sin ícono, un título a la izquierda arranca contra el borde y no contra nada.");
+            Assert.IsFalse(_iconRoot.activeSelf,
+                "Sin arte el bloque del ícono se va entero: prendido reservaría su ancho y el " +
+                "título arrancaría corrido contra un hueco.");
         }
 
         [Test]
