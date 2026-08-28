@@ -22,6 +22,14 @@ namespace Rollgeon.Editor.Tools.Polymorphic
         string _search = string.Empty;
         Vector2 _leftScroll;
         float _rowSize = DEFAULT_ROW_SIZE;
+        bool _rowSizePrefLoaded;
+
+        /// <summary>
+        /// Persists <see cref="RowSize"/> per closed <typeparamref name="T"/> so
+        /// <c>ItemEditorWindow</c> and <c>EnchantmentEditorWindow</c> each remember their own slider
+        /// position instead of sharing one key (spec §6.1).
+        /// </summary>
+        static readonly string ROW_SIZE_PREF_KEY = "Rollgeon.BlockEditorWindow." + typeof(T).Name + ".RowSize";
 
         // ---- host hooks ----------------------------------------------------
 
@@ -102,10 +110,28 @@ namespace Rollgeon.Editor.Tools.Polymorphic
 
         void DrawLeft()
         {
+            // Lazy rather than in OnEnable: EditorPrefs needs ROW_SIZE_PREF_KEY, which needs
+            // typeof(T) — cheap either way, but this keeps every row-size concern in this one file.
+            if (!_rowSizePrefLoaded)
+            {
+                _rowSizePrefLoaded = true;
+                RowSize = EditorPrefs.GetFloat(ROW_SIZE_PREF_KEY, DEFAULT_ROW_SIZE);
+            }
+
             using (new EditorGUILayout.HorizontalScope(EditorStyles.toolbar))
             {
                 string next = GUILayout.TextField(_search, EditorStyles.toolbarSearchField);
                 if (next != _search) _search = next;
+
+                // Row-size slider, Project-window style: grows the rect DrawRow receives from a
+                // text line into an icon tile (spec §6.1). The host never has to poll this — it
+                // reads RowSize back through the DrawRow parameter the shell already threads.
+                float sliderNext = GUILayout.HorizontalSlider(_rowSize, MIN_ROW_SIZE, MAX_ROW_SIZE, GUILayout.Width(70f));
+                if (!Mathf.Approximately(sliderNext, _rowSize))
+                {
+                    RowSize = sliderNext;
+                    EditorPrefs.SetFloat(ROW_SIZE_PREF_KEY, _rowSize);
+                }
             }
 
             DrawFilterBar();
