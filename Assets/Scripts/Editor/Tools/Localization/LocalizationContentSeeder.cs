@@ -667,7 +667,7 @@ namespace Rollgeon.EditorTools.Localization
             // Lo que el panel del enemigo dice de EL: por que le pega fuerte y que sabe hacer.
             // Todavia sin provider --hoy solo los arma el preview-- pero con key desde el dia uno:
             // una tarjeta con texto pelado se queda en ingles el dia que alguien juegue en espanol.
-            Content("enemy.weakness.name", "Débil", "Weak");
+            Content("enemy.weakness.name", "Debilidad", "Weakness");
             // {0} = combo, {1} = multiplicador. Salen del EnemyDataSO, no de la key: cada bicho
             // tiene el suyo y rebalancear no puede obligar a retraducir.
             Content("enemy.weakness.desc",

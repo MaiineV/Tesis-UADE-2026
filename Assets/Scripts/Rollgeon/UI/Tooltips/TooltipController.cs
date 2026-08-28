@@ -560,16 +560,25 @@ namespace Rollgeon.UI.Tooltips
         public void EditorPreviewResetCards()
         {
             EnsureRefs();
-            ResetSlots(_cardSlots);
-            ResetSlots(_sideCardSlots);
-            ResetSlots(_bottomCardSlots);
+            ResetSlots(_cardsContainer, _cardSlots);
+            ResetSlots(_sideCardsContainer, _sideCardSlots);
+            ResetSlots(_bottomCardsContainer, _bottomCardSlots);
         }
 
-        private static void ResetSlots(List<TooltipCardView> slots)
+        // Barre los HIJOS del contenedor y no sólo la lista: las listas viven en el domain y el
+        // reload las vacía, pero las tarjetas instanciadas quedan en la escena. Con sólo la lista,
+        // cada preview post-recompilación apilaba una tarjeta nueva sobre la huérfana.
+        private static void ResetSlots(RectTransform container, List<TooltipCardView> slots)
         {
-            foreach (var slot in slots)
-                if (slot != null) DestroyImmediate(slot.gameObject);
             slots.Clear();
+            if (container == null) return;
+
+            for (int i = container.childCount - 1; i >= 0; i--)
+            {
+                var child = container.GetChild(i);
+                if (child.GetComponent<TooltipCardView>() != null)
+                    DestroyImmediate(child.gameObject);
+            }
         }
 
         public void EditorPreviewHide()

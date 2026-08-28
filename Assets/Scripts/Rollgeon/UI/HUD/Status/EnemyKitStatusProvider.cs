@@ -85,7 +85,7 @@ namespace Rollgeon.UI.HUD.Status
 
             into.Add(new StatusIconState(
                 WeaknessId,
-                LocalizedContent.Name(WeaknessId, "Débil"),
+                LocalizedContent.Name(WeaknessId, "Debilidad"),
                 LocalizedContent.DescriptionFormat(WeaknessId, "{0} le pega ×{1}.",
                     comboName, multiplier.ToString("0.##")),
                 // El arte del combo, no un ícono de "debilidad": lo que el jugador tiene que

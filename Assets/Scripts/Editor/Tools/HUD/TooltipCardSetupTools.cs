@@ -264,15 +264,17 @@ namespace Rollgeon.EditorTools.HUD
             EditPanel(panel =>
             {
                 var bottom = EnsureChildRect(panel, "BottomCards",
-                    new Vector2(0f, -SideColumnGap), new Vector2(ContentWidth, 0f));
+                    new Vector2(0f, -SideColumnGap), Vector2.zero);
 
-                // Centrada bajo la caja y con el MISMO ancho que las tarjetas del costado:
-                // corrida o mas angosta se leia como un objeto suelto, no como parte del panel.
+                // Anclada a los DOS bordes de la caja: mide lo que mida el panel, hoy y despues
+                // de cualquier recalibracion. Mas angosta se leia como un objeto suelto colgando
+                // de la caja, no como el piso de abajo del mismo panel.
                 // ignoreLayout por lo mismo que el costado: lo que cuelga no reacomoda la caja.
                 Ensure<LayoutElement>(bottom.gameObject).ignoreLayout = true;
-                bottom.anchorMin = new Vector2(0.5f, 0f);
-                bottom.anchorMax = new Vector2(0.5f, 0f);
+                bottom.anchorMin = new Vector2(0f, 0f);
+                bottom.anchorMax = new Vector2(1f, 0f);
                 bottom.pivot = new Vector2(0.5f, 1f);
+                bottom.sizeDelta = new Vector2(0f, 0f);
                 bottom.anchoredPosition = new Vector2(0f, -SideColumnGap);
 
                 var layout = Ensure<VerticalLayoutGroup>(bottom.gameObject);
@@ -283,7 +285,7 @@ namespace Rollgeon.EditorTools.HUD
                 layout.childForceExpandWidth = true;
                 layout.childForceExpandHeight = false;
 
-                // Solo el alto: el ancho es fijo (ContentWidth) y lo impone el layout.
+                // Solo el alto: el ancho lo dan los anchors (el de la caja) y lo impone el layout.
                 var fitter = Ensure<ContentSizeFitter>(bottom.gameObject);
                 fitter.horizontalFit = ContentSizeFitter.FitMode.Unconstrained;
                 fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
