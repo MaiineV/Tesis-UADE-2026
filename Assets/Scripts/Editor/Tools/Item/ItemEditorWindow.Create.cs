@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using Rollgeon.Items;
 using UnityEditor;
 using UnityEngine;
@@ -247,6 +248,12 @@ namespace Rollgeon.Editor.Tools.Item
         int _basePrice;
         string _targetFolder;
 
+        // El disparador lo comparten los dos modos: una familia se diferencia por magnitud, no por
+        // cuando dispara. Arranca en el primero del catalogo ("Cuando jugás cualquier combo"), que
+        // es el caso mayoritario — 19 de los 24 items del catalogo cuelgan de un combo.
+        string _triggerId = ItemTriggerCatalog.All[0].Id;
+        readonly List<string> _triggerComboIds = new List<string>();
+
         // family fields
         string _familyId = string.Empty;
         ItemType _familyType;
@@ -326,8 +333,66 @@ namespace Rollgeon.Editor.Tools.Item
             _rarity = (ItemRarity)EditorGUILayout.EnumPopup("Rarity", _rarity);
             _type = (ItemType)EditorGUILayout.EnumPopup("Type", _type);
 
+            DrawTrigger(_type);
+
             DrawBasePriceOverride(ref _overrideBasePrice, ref _basePrice, _rarity);
             DrawFolderField("Target Folder", ref _targetFolder);
+        }
+
+        /// <summary>
+        /// El "cuándo" al crear, no después.
+        /// </summary>
+        /// <remarks>
+        /// El asistente creaba el ítem con <c>PassiveHooks</c> vacío y había que ir al grafo a
+        /// armar el hook — justo cuando el autor ya tenía decidido cuándo quería que disparara.
+        /// </remarks>
+        void DrawTrigger(ItemType type)
+        {
+            if (type != ItemType.Passive) return;
+
+            EditorGUILayout.Space(2);
+            EditorGUILayout.LabelField("Dispara cuando", EditorStyles.miniBoldLabel);
+
+            int current = IndexOfTrigger(_triggerId);
+            int next = EditorGUILayout.Popup(current, TriggerLabels);
+            if (next != current && next >= 0)
+            {
+                _triggerId = ItemTriggerCatalog.All[next].Id;
+                _triggerComboIds.Clear();
+            }
+
+            var option = current >= 0 ? ItemTriggerCatalog.All[current] : ItemTriggerCatalog.All[0];
+            EditorGUILayout.LabelField(option.Help, HelpStyle);
+
+            if (!option.UsesComboIds) return;
+
+            var ids = KnownComboIds;
+            ItemComboPicker.Draw(ids, _triggerComboIds,
+                (id, on) => { if (on) _triggerComboIds.Add(id); else _triggerComboIds.Remove(id); },
+                all => { _triggerComboIds.Clear(); if (all) _triggerComboIds.AddRange(ids); });
+
+            if (_triggerComboIds.Count == 0)
+                EditorGUILayout.HelpBox(
+                    "Sin ningún combo elegido no dispara nunca.", MessageType.Warning);
+        }
+
+        static string[] _triggerLabels;
+        static string[] TriggerLabels =>
+            _triggerLabels ??= ItemTriggerCatalog.All.Select(o => o.DisplayName).ToArray();
+
+        static GUIStyle _helpStyle;
+        static GUIStyle HelpStyle =>
+            _helpStyle ??= new GUIStyle(EditorStyles.miniLabel) { wordWrap = true };
+
+        List<string> _knownCombos;
+        List<string> KnownComboIds =>
+            _knownCombos ??= Rollgeon.Combos.BaseComboSO.GetKnownComboIds().OrderBy(id => id).ToList();
+
+        static int IndexOfTrigger(string id)
+        {
+            for (int i = 0; i < ItemTriggerCatalog.All.Count; i++)
+                if (ItemTriggerCatalog.All[i].Id == id) return i;
+            return -1;
         }
 
         void DrawFamily()
@@ -338,6 +403,7 @@ namespace Rollgeon.Editor.Tools.Item
             EditorGUILayout.LabelField("Default Description");
             _familyDescription = EditorGUILayout.TextArea(_familyDescription, GUILayout.MinHeight(36f));
             _familyIcon = (Sprite)EditorGUILayout.ObjectField("Default Icon", _familyIcon, typeof(Sprite), false);
+            DrawTrigger(_familyType);
             DrawFolderField("Target Folder", ref _familyTargetFolder);
 
             EditorGUILayout.Space(8);
@@ -447,6 +513,8 @@ namespace Rollgeon.Editor.Tools.Item
                     Type = _type,
                     BasePrice = _overrideBasePrice ? _basePrice : (int?)null,
                     TargetFolder = string.IsNullOrWhiteSpace(_targetFolder) ? null : _targetFolder,
+                    TriggerId = _type == ItemType.Passive ? _triggerId : null,
+                    TriggerComboIds = _triggerComboIds.Count > 0 ? new List<string>(_triggerComboIds) : null,
                 };
 
                 var result = ItemAuthoring.CreateItem(spec);
@@ -482,6 +550,8 @@ namespace Rollgeon.Editor.Tools.Item
                     DefaultIcon = _familyIcon,
                     TargetFolder = string.IsNullOrWhiteSpace(_familyTargetFolder) ? null : _familyTargetFolder,
                     Variants = variants,
+                    TriggerId = _familyType == ItemType.Passive ? _triggerId : null,
+                    TriggerComboIds = _triggerComboIds.Count > 0 ? new List<string>(_triggerComboIds) : null,
                 };
 
                 var result = ItemAuthoring.CreateFamily(spec);

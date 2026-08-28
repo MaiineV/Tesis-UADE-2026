@@ -46,11 +46,14 @@ namespace Rollgeon.Editor.Tools.Item
                 new LocalizedText(spec.DisplayNameEn, spec.DescriptionEn),
                 claimed, errors, out var prepared);
 
+            var trigger = ResolveTrigger(spec.TriggerId, spec.Type, errors);
+
             if (!ok || errors.Count > 0) return new ItemCreationResult(errors);
 
             using (PolymorphicAuthoringContext.UndoGroup("Create Item"))
             {
                 var item = WriteItem(prepared, catalog, pool);
+                ApplyTrigger(item, trigger, spec.TriggerComboIds);
                 return new ItemCreationResult(item, item.ItemId, AssetDatabase.GetAssetPath(item));
             }
         }
@@ -93,13 +96,19 @@ namespace Rollgeon.Editor.Tools.Item
                 if (ok) prepared.Add(p);
             }
 
+            var trigger = ResolveTrigger(spec.TriggerId, spec.Type, errors);
+
             if (errors.Count > 0) return new ItemFamilyCreationResult(errors);
 
             using (PolymorphicAuthoringContext.UndoGroup("Create Item Family"))
             {
                 var items = new List<ItemSO>(prepared.Count);
                 foreach (var p in prepared)
-                    items.Add(WriteItem(p, catalog, pool));
+                {
+                    var item = WriteItem(p, catalog, pool);
+                    ApplyTrigger(item, trigger, spec.TriggerComboIds);
+                    items.Add(item);
+                }
                 return new ItemFamilyCreationResult(items);
             }
         }
@@ -368,6 +377,48 @@ namespace Rollgeon.Editor.Tools.Item
             ItemShopPriceBridge.AddToPool(pool, item, p.BasePrice);
 
             return item;
+        }
+
+        /// <summary>
+        /// Traduce el <c>TriggerId</c> de la spec a una opcion del catalogo.
+        /// </summary>
+        /// <remarks>
+        /// Un id que no existe es un <b>error de creacion</b> y no un hook mudo: crear el item igual
+        /// pero sin disparador seria repetir en el alta el mismo problema que el catalogo vino a
+        /// resolver — un item que no dispara nunca y nadie sabe por que.
+        /// </remarks>
+        static ItemTriggerCatalog.TriggerOption? ResolveTrigger(
+            string triggerId, ItemType type, List<string> errors)
+        {
+            if (string.IsNullOrWhiteSpace(triggerId)) return null;
+
+            if (type != ItemType.Passive)
+            {
+                errors.Add($"TriggerId '{triggerId}' only applies to Passive items ('{type}' given).");
+                return null;
+            }
+
+            foreach (var option in ItemTriggerCatalog.All)
+                if (option.Id == triggerId) return option;
+
+            errors.Add($"TriggerId '{triggerId}' is not in ItemTriggerCatalog.");
+            return null;
+        }
+
+        static void ApplyTrigger(
+            ItemSO item, ItemTriggerCatalog.TriggerOption? trigger, IReadOnlyList<string> comboIds)
+        {
+            if (item == null || !trigger.HasValue) return;
+
+            var hook = new PassiveItemHook();
+            ItemTriggerCatalog.Apply(hook, trigger.Value);
+
+            if (trigger.Value.UsesComboIds && comboIds != null)
+                hook.ComboFilter.ComboIds = new List<string>(comboIds);
+
+            item.PassiveHooks ??= new List<PassiveItemHook>();
+            item.PassiveHooks.Add(hook);
+            EditorUtility.SetDirty(item);
         }
 
         static ItemCatalogSO LoadCatalog()

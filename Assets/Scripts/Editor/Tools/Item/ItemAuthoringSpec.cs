@@ -34,6 +34,21 @@ namespace Rollgeon.Editor.Tools.Item
 
         /// <summary>Null/empty = <see cref="ItemAuthoring.DefaultFolder"/>.</summary>
         public string TargetFolder;
+
+        /// <summary>
+        /// Id del disparador en <c>ItemTriggerCatalog</c> (ej. <c>"combo.any"</c>). Vacio = el item
+        /// nace sin hooks, como antes.
+        /// </summary>
+        /// <remarks>
+        /// Se guarda el id como string y no la opcion del catalogo porque esta spec tiene que
+        /// sobrevivir un round trip de JSON — la arma tambien la skill de MCP.
+        /// </remarks>
+        public string TriggerId;
+
+        /// <summary>
+        /// Combos que escucha, cuando <see cref="TriggerId"/> es el que pide ids. Vacio en el resto.
+        /// </summary>
+        public IReadOnlyList<string> TriggerComboIds;
     }
 
     /// <summary>One variant inside a <see cref="ItemFamilyCreationSpec"/>.</summary>
@@ -84,5 +99,20 @@ namespace Rollgeon.Editor.Tools.Item
         public string TargetFolder;
 
         public IReadOnlyList<ItemFamilyVariantSpec> Variants;
+
+        /// <summary>
+        /// Id del disparador en <c>ItemTriggerCatalog</c> (ej. <c>"combo.any"</c>). Compartido por todas las variantes: una
+        /// familia se diferencia por magnitud, no por cuando dispara. Vacio = sin hooks.
+        /// </summary>
+        /// <remarks>
+        /// Se guarda el id como string y no la opcion del catalogo porque esta spec tiene que
+        /// sobrevivir un round trip de JSON — la arma tambien la skill de MCP.
+        /// </remarks>
+        public string TriggerId;
+
+        /// <summary>
+        /// Combos que escucha, cuando <see cref="TriggerId"/> es el que pide ids. Vacio en el resto.
+        /// </summary>
+        public IReadOnlyList<string> TriggerComboIds;
     }
 }

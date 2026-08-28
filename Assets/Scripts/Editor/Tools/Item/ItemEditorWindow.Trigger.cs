@@ -141,9 +141,7 @@ namespace Rollgeon.Editor.Tools.Item
         /// todos apagados.
         /// </para>
         /// <para>
-        /// No es un <c>MaskField</c> porque el de Unity se cierra en cada clic: marcar tres combos
-        /// son tres aperturas. Este es un <see cref="PopupWindowContent"/> propio, que queda abierto
-        /// hasta que hacés clic afuera.
+        /// El control en sí es <see cref="ItemComboPicker"/>, compartido con el asistente de creación.
         /// </para>
         /// </remarks>
         void DrawComboPicker(PassiveItemHook hook)
@@ -161,107 +159,30 @@ namespace Rollgeon.Editor.Tools.Item
             EditorGUILayout.LabelField("Combos", EditorStyles.miniBoldLabel);
 
             var selected = hook.ComboFilter.ComboIds;
-            var rect = EditorGUILayout.GetControlRect();
-            if (EditorGUI.DropdownButton(rect, new GUIContent(ComboSummary(selected, ids.Count)), FocusType.Keyboard))
-            {
-                // Se escribe con RecordUndo + MarkDirty pero SIN Notify: notificar reconstruye el
-                // grafo, y hacerlo en cada tilde con el popup abierto es churn que ademas puede
-                // robarle el foco y cerrarlo. El grafo se entera una sola vez, al cerrar.
-                PopupWindow.Show(rect, new ComboMaskDropdown(
-                    ids, rect.width,
-                    id => selected.Contains(id),
-                    (id, on) =>
-                    {
-                        Context.RecordUndo(on ? "Add Item Trigger Combo" : "Remove Item Trigger Combo");
-                        if (on) { if (!selected.Contains(id)) selected.Add(id); }
-                        else selected.Remove(id);
-                        Context.MarkDirty();
-                    },
-                    all =>
-                    {
-                        Context.RecordUndo("Set Item Trigger Combos");
-                        selected.Clear();
-                        if (all) selected.AddRange(ids);
-                        Context.MarkDirty();
-                    },
-                    () => Context.Notify()));
-            }
+
+            // Se escribe con RecordUndo + MarkDirty pero SIN Notify: notificar reconstruye el grafo,
+            // y hacerlo en cada tilde con el popup abierto es churn que ademas puede robarle el foco
+            // y cerrarlo. El grafo se entera una sola vez, al cerrar.
+            ItemComboPicker.Draw(ids, selected,
+                (id, on) =>
+                {
+                    Context.RecordUndo(on ? "Add Item Trigger Combo" : "Remove Item Trigger Combo");
+                    if (on) { if (!selected.Contains(id)) selected.Add(id); }
+                    else selected.Remove(id);
+                    Context.MarkDirty();
+                },
+                all =>
+                {
+                    Context.RecordUndo("Set Item Trigger Combos");
+                    selected.Clear();
+                    if (all) selected.AddRange(ids);
+                    Context.MarkDirty();
+                },
+                () => Context.Notify());
 
             if (selected.Count == 0)
                 EditorGUILayout.HelpBox(
                     "Sin ningún combo elegido no dispara nunca.", MessageType.Warning);
-        }
-
-        /// <summary>Qué dice el botón cerrado. Con más de dos, el detalle no entra y no aporta.</summary>
-        static string ComboSummary(List<string> selected, int total)
-        {
-            if (selected.Count == 0) return "Ningún combo";
-            if (selected.Count == total) return "Todos los combos";
-            if (selected.Count <= 2)
-                return string.Join(", ", selected.Select(ShortComboLabel));
-            return $"{selected.Count} combos";
-        }
-
-        /// <summary>
-        /// Desplegable de selección múltiple que no se cierra al marcar.
-        /// </summary>
-        /// <remarks>
-        /// Escribe a medida que se clickea, no al cerrar: cerrar un popup de Unity es hacer clic
-        /// afuera, y un cambio que solo se guarda ahí se pierde si el usuario aprieta Escape.
-        /// </remarks>
-        sealed class ComboMaskDropdown : PopupWindowContent
-        {
-            const float RowHeight = 18f;
-            const float HeaderHeight = 24f;
-            const float MaxHeight = 320f;
-
-            readonly IReadOnlyList<string> _ids;
-            readonly float _width;
-            readonly System.Func<string, bool> _isOn;
-            readonly System.Action<string, bool> _toggle;
-            readonly System.Action<bool> _setAll;
-            readonly System.Action _onClosed;
-            Vector2 _scroll;
-
-            public ComboMaskDropdown(
-                IReadOnlyList<string> ids, float width,
-                System.Func<string, bool> isOn,
-                System.Action<string, bool> toggle,
-                System.Action<bool> setAll,
-                System.Action onClosed)
-            {
-                _ids = ids;
-                _width = Mathf.Max(180f, width);
-                _isOn = isOn;
-                _toggle = toggle;
-                _setAll = setAll;
-                _onClosed = onClosed;
-            }
-
-            /// <summary>Recién acá se le avisa al grafo: una reconstrucción, no una por tilde.</summary>
-            public override void OnClose() => _onClosed?.Invoke();
-
-            public override Vector2 GetWindowSize() =>
-                new Vector2(_width, Mathf.Min(MaxHeight, HeaderHeight + _ids.Count * RowHeight + 8f));
-
-            public override void OnGUI(Rect rect)
-            {
-                using (new EditorGUILayout.HorizontalScope(EditorStyles.toolbar))
-                {
-                    if (GUILayout.Button("Todos", EditorStyles.toolbarButton)) _setAll(true);
-                    if (GUILayout.Button("Ninguno", EditorStyles.toolbarButton)) _setAll(false);
-                }
-
-                _scroll = EditorGUILayout.BeginScrollView(_scroll);
-                foreach (var id in _ids)
-                {
-                    bool on = _isOn(id);
-                    bool next = EditorGUILayout.ToggleLeft(
-                        ShortComboLabel(id), on, GUILayout.Height(RowHeight));
-                    if (next != on) _toggle(id, next);
-                }
-                EditorGUILayout.EndScrollView();
-            }
         }
 
         /// <summary>
@@ -327,8 +248,5 @@ namespace Rollgeon.Editor.Tools.Item
             return -1;
         }
 
-        /// <summary>"combo.full_house" → "full house". El prefijo es igual en todos y sólo gasta ancho.</summary>
-        static string ShortComboLabel(string id) =>
-            string.IsNullOrEmpty(id) ? id : id.Replace("combo.", string.Empty).Replace('_', ' ');
     }
 }

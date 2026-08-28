@@ -97,6 +97,47 @@ namespace Rollgeon.Editor.Tools.Item.Tests
             StringAssert.Contains("test.probe.item", string.Join(" ", result.Errors));
         }
 
+        /// <summary>
+        /// Un <c>TriggerId</c> fuera del catálogo tiene que frenar la creación, no crear el ítem sin
+        /// disparador: eso repetiría en el alta el problema que el catálogo vino a resolver.
+        /// </summary>
+        [Test]
+        public void CreateItem_UnknownTriggerId_FailsWithoutCreatingAnAsset()
+        {
+            var spec = new ItemCreationSpec
+            {
+                DisplayName = "Test Trigger Probe",
+                Rarity = ItemRarity.Common,
+                Type = ItemType.Passive,
+                TriggerId = "no.existe",
+            };
+
+            var before = AssetDatabase.FindAssets("t:ItemSO").Length;
+            var result = ItemAuthoring.CreateItem(spec);
+            var after = AssetDatabase.FindAssets("t:ItemSO").Length;
+
+            Assert.IsFalse(result.Success);
+            StringAssert.Contains("no.existe", string.Join(" ", result.Errors));
+            Assert.AreEqual(before, after);
+        }
+
+        [Test]
+        public void CreateItem_TriggerOnAnActiveItem_Fails()
+        {
+            var spec = new ItemCreationSpec
+            {
+                DisplayName = "Test Active Trigger Probe",
+                Rarity = ItemRarity.Common,
+                Type = ItemType.Active,
+                TriggerId = ItemTriggerCatalog.All[0].Id,
+            };
+
+            var result = ItemAuthoring.CreateItem(spec);
+
+            Assert.IsFalse(result.Success);
+            StringAssert.Contains("Passive", string.Join(" ", result.Errors));
+        }
+
         [Test]
         public void CreateFamily_TwoVariantsWithSameDerivedId_FailsBeforeWritingEither()
         {
