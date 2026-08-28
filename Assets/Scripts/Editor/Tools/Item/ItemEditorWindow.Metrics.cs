@@ -46,6 +46,7 @@ namespace Rollgeon.Editor.Tools.Item
         IReadOnlyList<ItemQuery.CatalogFinding> _metricsFindingsCache;
         List<ItemQuery.CatalogFinding> _metricsPriceOutlierCache;
         IReadOnlyList<ItemQuery.ItemFamily> _metricsFamiliesCache;
+        IReadOnlyDictionary<ItemRarity, IReadOnlyList<ItemQuery.MagnitudeSummary>> _metricsMagnitudesCache;
         IReadOnlyList<ItemSO> _metricsLooseCache;
 
         MetricsGroupBy _metricsGroupBy = MetricsGroupBy.Rarity;
@@ -53,6 +54,7 @@ namespace Rollgeon.Editor.Tools.Item
 
         bool _metricsShowDistribution = true;
         bool _metricsShowHealth = true;
+        bool _metricsShowMagnitudes = true;
         bool _metricsShowTable = true;
 
         Vector2 _metricsScroll;
@@ -71,6 +73,12 @@ namespace Rollgeon.Editor.Tools.Item
 
             _metricsShowDistribution = EditorGUILayout.Foldout(_metricsShowDistribution, "Distribución", true, _metricsSectionHeaderStyle);
             if (_metricsShowDistribution) DrawDistribution();
+
+            EditorGUILayout.Space(10);
+
+            _metricsShowMagnitudes = EditorGUILayout.Foldout(
+                _metricsShowMagnitudes, "Magnitudes por rareza", true, _metricsSectionHeaderStyle);
+            if (_metricsShowMagnitudes) DrawMagnitudes();
 
             EditorGUILayout.Space(10);
 
@@ -103,6 +111,7 @@ namespace Rollgeon.Editor.Tools.Item
 
             // Los overloads sin argumento reescanean el proyecto entero (FindAssets + cargar cada
             // ItemSO). Llamarlos desde DrawDistribution significaba un escaneo completo POR REPAINT.
+            _metricsMagnitudesCache = ItemQuery.GetMagnitudesByRarity();
             _metricsFamiliesCache = ItemQuery.GetFamilies();
             _metricsLooseCache = ItemQuery.GetLooseItems();
         }
@@ -139,6 +148,86 @@ namespace Rollgeon.Editor.Tools.Item
             }
 
             EditorGUILayout.EndHorizontal();
+        }
+
+        // ============================ Magnitudes ============================
+
+        /// <summary>
+        /// Daño, oro, curación y escudo agregados por rareza (spec §6.6).
+        /// </summary>
+        /// <remarks>
+        /// Es la pregunta que el precio solo no responde: dos ítems del mismo tier pueden costar lo
+        /// mismo y uno dar el doble que el otro. Acá se ve si una rareza pega de verdad más que la
+        /// de abajo, que es lo que el jugador espera al pagar la diferencia.
+        /// </remarks>
+        void DrawMagnitudes()
+        {
+            if (_metricsMagnitudesCache == null || _metricsMagnitudesCache.Count == 0)
+            {
+                EditorGUILayout.LabelField("Sin magnitudes legibles todavía.", EditorStyles.miniLabel);
+                return;
+            }
+
+            EditorGUILayout.LabelField(
+                "Solo valores fijos. Los que se calculan en vivo (leen oro, contadores) se cuentan aparte "
+                + "como dinámicos y nunca entran al promedio.",
+                EditorStyles.miniLabel);
+            EditorGUILayout.Space(2);
+
+            using (new EditorGUILayout.HorizontalScope(EditorStyles.toolbar))
+            {
+                EditorGUILayout.LabelField("Rareza", EditorStyles.miniBoldLabel, GUILayout.Width(90));
+                EditorGUILayout.LabelField("Recurso", EditorStyles.miniBoldLabel, GUILayout.Width(80));
+                EditorGUILayout.LabelField("Efectos", EditorStyles.miniBoldLabel, GUILayout.Width(60));
+                EditorGUILayout.LabelField("Mín", EditorStyles.miniBoldLabel, GUILayout.Width(50));
+                EditorGUILayout.LabelField("Prom", EditorStyles.miniBoldLabel, GUILayout.Width(60));
+                EditorGUILayout.LabelField("Máx", EditorStyles.miniBoldLabel, GUILayout.Width(50));
+                EditorGUILayout.LabelField("Dinámicos", EditorStyles.miniBoldLabel, GUILayout.Width(70));
+            }
+
+            foreach (var rarity in MetricsRarityOrder)
+            {
+                if (!_metricsMagnitudesCache.TryGetValue(rarity, out var summaries) || summaries.Count == 0)
+                    continue;
+
+                bool first = true;
+                foreach (var s in summaries)
+                {
+                    using (new EditorGUILayout.HorizontalScope())
+                    {
+                        if (first)
+                        {
+                            var swatch = GUILayoutUtility.GetRect(10f, 10f, GUILayout.Width(10f));
+                            swatch.y += 4f;
+                            swatch.height = 10f;
+                            EditorGUI.DrawRect(swatch, RarityPalette.BodyColor(rarity));
+                            EditorGUILayout.LabelField(RarityPalette.DisplayName(rarity), GUILayout.Width(76));
+                            first = false;
+                        }
+                        else
+                        {
+                            EditorGUILayout.LabelField(" ", GUILayout.Width(90));
+                        }
+
+                        EditorGUILayout.LabelField(s.Kind.ToString(), GUILayout.Width(80));
+                        EditorGUILayout.LabelField(s.Count.ToString(), GUILayout.Width(60));
+
+                        if (s.Count == 0)
+                        {
+                            EditorGUILayout.LabelField("—", _metricsFallbackPriceStyle, GUILayout.Width(160));
+                        }
+                        else
+                        {
+                            EditorGUILayout.LabelField(s.Min.ToString(), GUILayout.Width(50));
+                            EditorGUILayout.LabelField(s.Average.ToString("0.#"), GUILayout.Width(60));
+                            EditorGUILayout.LabelField(s.Max.ToString(), GUILayout.Width(50));
+                        }
+
+                        EditorGUILayout.LabelField(
+                            s.Dynamic == 0 ? "—" : s.Dynamic.ToString(), GUILayout.Width(70));
+                    }
+                }
+            }
         }
 
         // ============================ Distribución ============================
