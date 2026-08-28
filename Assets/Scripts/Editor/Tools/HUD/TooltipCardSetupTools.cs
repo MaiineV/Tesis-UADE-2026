@@ -111,6 +111,15 @@ namespace Rollgeon.EditorTools.HUD
             badgeImage.raycastTarget = false;
             var badgeLabel = EnsureLabel(badgeRect, "Value", 22f, TextAlignmentOptions.Center, CardInk);
 
+            // Estirado a la ficha, y no el 0x0 que deja EnsureLabel: con un rect sin ancho TMP
+            // acomoda el texto contra el pivote y parte cualquier cosa de más de un carácter en un
+            // renglón por letra. Es lo que hacía que el badge se leyera vertical al lado del ícono.
+            badgeLabel.rectTransform.anchorMin = Vector2.zero;
+            badgeLabel.rectTransform.anchorMax = Vector2.one;
+            badgeLabel.rectTransform.sizeDelta = Vector2.zero;
+            badgeLabel.rectTransform.anchoredPosition = Vector2.zero;
+            badgeLabel.textWrappingMode = TextWrappingModes.NoWrap;
+
             // Por debajo de la regla (27) a proposito: el titulo nombra la cosa y la regla es
             // lo que se lee, asi que un titulo mas grande que ella se lleva el ojo primero.
             var titleLabel = EnsureLabel(headerRect, "Title", 26f, TextAlignmentOptions.Left, CardInk);

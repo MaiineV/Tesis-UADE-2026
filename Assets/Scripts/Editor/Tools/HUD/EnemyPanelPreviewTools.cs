@@ -8,6 +8,7 @@ using Rollgeon.UI.HUD.Status;
 using Rollgeon.UI.Tooltips;
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 namespace Rollgeon.EditorTools.HUD
 {
@@ -29,8 +30,8 @@ namespace Rollgeon.EditorTools.HUD
         private const string CroupierPath = "Assets/Rollgeon/Enemies/ED_Boss_Croupier.asset";
         private const string TooltipPrefabPath = "Assets/Prefabs/UI/Canvas/Canvas_Tooltip.prefab";
 
-        // El canvas que el preview tuvo que traerse porque la escena abierta no tenía ninguno.
-        private static GameObject _borrowed;
+        // Temp/ está en el .gitignore: es un volcado de diagnóstico, no un asset.
+        private const string DumpPath = "Temp/tooltip-layout.txt";
 
         [MenuItem("Rollgeon/Tooltips/Preview Enemy Panel")]
         public static void Preview() => Preview(withSampleStates: false);
@@ -98,16 +99,80 @@ namespace Rollgeon.EditorTools.HUD
                                  "nodos no saben describirse.");
         }
 
+        /// <summary>
+        /// Escupe el panel dibujado — cada nodo con su rect y su texto — al Console.
+        /// </summary>
+        /// <remarks>
+        /// Sirve para discutir lo que se ve sin tener que describirlo: qué quedó prendido, dónde,
+        /// de qué tamaño y con qué adentro.
+        /// </remarks>
+        [MenuItem("Rollgeon/Tooltips/Preview Enemy Panel - Dump Layout")]
+        public static void DumpLayout()
+        {
+            var found = CollectControllers();
+            if (found.Count == 0)
+            {
+                Debug.LogWarning("[EnemyPanelPreview] No hay TooltipController en la escena.");
+                return;
+            }
+
+            if (found.Count > 1)
+                Debug.LogWarning("[EnemyPanelPreview] Hay " + found.Count + " paneles en la " +
+                                 "escena: lo que ves son varios superpuestos.");
+
+            var controller = found[0];
+
+            var sb = new System.Text.StringBuilder();
+            Dump(controller.transform, 0, sb);
+
+            // A archivo y no sólo al Console: el árbol entero no entra en una línea de log y la
+            // consola lo recorta justo donde está lo que se quiere mirar.
+            System.IO.File.WriteAllText(DumpPath, sb.ToString());
+            Debug.Log("[EnemyPanelPreview] Layout escrito en " + DumpPath + "\n" + sb);
+        }
+
+        private static void Dump(Transform t, int depth, System.Text.StringBuilder sb)
+        {
+            var rect = t as RectTransform;
+            sb.Append(new string(' ', depth * 2)).Append(t.name);
+
+            if (!t.gameObject.activeSelf) sb.Append(" [OFF]");
+            if (rect != null)
+                sb.Append(" size=").Append(Mathf.Round(rect.rect.width))
+                  .Append('x').Append(Mathf.Round(rect.rect.height))
+                  .Append(" pos=").Append(Mathf.Round(rect.anchoredPosition.x))
+                  .Append(',').Append(Mathf.Round(rect.anchoredPosition.y));
+
+            var label = t.GetComponent<TMPro.TMP_Text>();
+            if (label != null)
+                sb.Append(" text='").Append(label.text).Append("' fs=").Append(label.fontSize);
+
+            var image = t.GetComponent<UnityEngine.UI.Image>();
+            if (image != null)
+                sb.Append(" img=").Append(image.sprite != null ? image.sprite.name : "<null>");
+
+            sb.Append('\n');
+
+            // Los apagados se listan igual pero no se abren: lo que importa de una rama muerta es
+            // que está muerta.
+            if (!t.gameObject.activeSelf) return;
+            for (int i = 0; i < t.childCount; i++) Dump(t.GetChild(i), depth + 1, sb);
+        }
+
         [MenuItem("Rollgeon/Tooltips/Preview Enemy Panel - Hide")]
         public static void Hide()
         {
-            var controller = UnityEngine.Object.FindFirstObjectByType<TooltipController>(
-                FindObjectsInactive.Include);
-            if (controller != null) controller.EditorPreviewHide();
+            foreach (var controller in CollectControllers())
+            {
+                var root = controller.transform.root.gameObject;
+                if (root.hideFlags == HideFlags.DontSave)
+                {
+                    UnityEngine.Object.DestroyImmediate(root);
+                    continue;
+                }
 
-            if (_borrowed == null) return;
-            UnityEngine.Object.DestroyImmediate(_borrowed);
-            _borrowed = null;
+                controller.EditorPreviewHide();
+            }
         }
 
         private static TooltipContent BuildContent(EnemyDataSO data,
@@ -201,20 +266,49 @@ namespace Rollgeon.EditorTools.HUD
         // vez de mandarte a abrir otra escena, se lo trae y lo marca para que no se guarde con ella.
         private static TooltipController ResolveController()
         {
-            var found = UnityEngine.Object.FindFirstObjectByType<TooltipController>(
-                FindObjectsInactive.Include);
-            if (found != null) return found;
+            var found = CollectControllers();
+
+            // Los prestados de vueltas anteriores se tiran SIEMPRE, y por eso esto no puede usar
+            // FindObjectsByType: no devuelve un objeto marcado DontSave. Con eso, cada preview no
+            // encontraba el canvas de la vuelta anterior, colgaba otro encima, y lo que se veía
+            // eran dos paneles superpuestos — el viejo tapando al que se acababa de armar.
+            for (int i = found.Count - 1; i >= 0; i--)
+            {
+                var root = found[i].transform.root.gameObject;
+                if (root.hideFlags != HideFlags.DontSave) continue;
+
+                found.RemoveAt(i);
+                UnityEngine.Object.DestroyImmediate(root);
+            }
+
+            if (found.Count > 0) return found[0];
 
             var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(TooltipPrefabPath);
             if (prefab == null) return null;
 
-            _borrowed = (GameObject)PrefabUtility.InstantiatePrefab(prefab);
-            if (_borrowed == null) return null;
+            var borrowed = (GameObject)PrefabUtility.InstantiatePrefab(prefab);
+            if (borrowed == null) return null;
 
-            foreach (var t in _borrowed.GetComponentsInChildren<Transform>(true))
+            foreach (var t in borrowed.GetComponentsInChildren<Transform>(true))
                 t.gameObject.hideFlags = HideFlags.DontSave;
 
-            return _borrowed.GetComponentInChildren<TooltipController>(true);
+            return borrowed.GetComponentInChildren<TooltipController>(true);
+        }
+
+        // Recorre las raíces de las escenas cargadas en vez de preguntarle a FindObjectsByType,
+        // que se saltea todo lo marcado DontSave — que es justo lo que cuelga este tool.
+        private static List<TooltipController> CollectControllers()
+        {
+            var found = new List<TooltipController>();
+            for (int i = 0; i < SceneManager.sceneCount; i++)
+            {
+                var scene = SceneManager.GetSceneAt(i);
+                if (!scene.isLoaded) continue;
+
+                foreach (var root in scene.GetRootGameObjects())
+                    found.AddRange(root.GetComponentsInChildren<TooltipController>(true));
+            }
+            return found;
         }
     }
 }
