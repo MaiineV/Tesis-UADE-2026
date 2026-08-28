@@ -157,19 +157,43 @@ namespace Rollgeon.Editor.Tools.Polymorphic
                 EditorGUILayout.HelpBox(_assets.Count == 0 ? "No assets found." : "Nothing matches the filter.", MessageType.Info);
 
             EditorGUILayout.EndScrollView();
-            EditorGUILayout.Space(6);
 
-            if (GUILayout.Button("+ Create", GUILayout.Height(24f))) CreateAsset();
+            DrawFooterActions();
+        }
+
+        /// <summary>
+        /// Acciones de asset, al pie de la lista: la primaria destacada y las secundarias en una
+        /// sola fila segmentada.
+        /// </summary>
+        /// <remarks>
+        /// Antes eran tres filas apiladas de alto completo, que le comían altura a la lista — que es
+        /// lo que el usuario mira. Quedan dos: Create se mantiene grande porque es la acción con la
+        /// que uno entra a la ventana, y el resto pasa a mini-botones segmentados, que es el idioma
+        /// visual nativo del editor para un grupo de acciones sobre la selección.
+        /// </remarks>
+        void DrawFooterActions()
+        {
+            EditorGUILayout.Space(4);
+
+            if (GUILayout.Button("+ Create", GUILayout.Height(26f))) CreateAsset();
+
+            EditorGUILayout.Space(2);
 
             using (new EditorGUI.DisabledScope(_selected == null))
+            using (new EditorGUILayout.HorizontalScope())
             {
-                using (new EditorGUILayout.HorizontalScope())
-                {
-                    if (GUILayout.Button("Duplicate")) DuplicateSelected();
-                    if (GUILayout.Button("Delete")) DeleteSelected();
-                }
-                if (GUILayout.Button("Ping in Project")) EditorGUIUtility.PingObject(_selected);
+                if (GUILayout.Button("Duplicate", EditorStyles.miniButtonLeft)) DuplicateSelected();
+                if (GUILayout.Button("Ping", EditorStyles.miniButtonMid)) EditorGUIUtility.PingObject(_selected);
+
+                // El destructivo se tiñe en vez de separarse: separarlo sugeriría que actúa sobre
+                // otra cosa, y actúa sobre la misma selección que los otros dos.
+                var prev = GUI.backgroundColor;
+                GUI.backgroundColor = new Color(1f, 0.6f, 0.55f);
+                if (GUILayout.Button("Delete", EditorStyles.miniButtonRight)) DeleteSelected();
+                GUI.backgroundColor = prev;
             }
+
+            EditorGUILayout.Space(2);
         }
 
         bool Matches(T asset)
