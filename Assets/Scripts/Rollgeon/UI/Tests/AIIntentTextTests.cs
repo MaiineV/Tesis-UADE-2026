@@ -58,36 +58,28 @@ namespace Rollgeon.UI.Tests
         }
 
         [Test]
-        public void ElEstallido_NoAnunciaSuGolpeEnCero_YSiElFuegoQueDeja()
+        public void ElEstallido_EsUnaTarjetaDeSoloTitulo()
         {
-            var fire = Fire(enter: 15, turnStart: 15);
-            var intent = new AIIntent(AIIntentTextKeys.BombBlast, "Estalla",
+            var intent = new AIIntent(AIIntentTextKeys.BombBlast, "Detonar la bomba",
                                       damage: 0, kind: AttackKind.Environmental,
-                                      leaves: fire, leavesRounds: 4);
+                                      leaves: Fire(enter: 15, turnStart: 15), leavesRounds: 4);
 
             string rule = AIIntentText.Describe(intent);
-            string withDamage = AIIntentText.Describe(new AIIntent(
-                AIIntentTextKeys.BombBlast, "Estalla", damage: 999, kind: AttackKind.Environmental,
-                leaves: fire, leavesRounds: 4));
 
-            Assert.AreEqual(rule, withDamage,
-                "La frase del estallido usa su daño, que en el Croupier es CERO a propósito: todo " +
-                "lo que cobra una bomba es el fuego que deja. Un \"0\" impreso se lee como un " +
-                "golpe que existe y no duele.");
-            StringAssert.Contains("15", rule,
-                "No dijo lo que deja. La bomba en sí no pega: si la tarjeta no nombra el fuego, " +
-                "no nombra nada de lo que va a pasar.");
-            StringAssert.Contains("4", rule, "No dijo cuánto dura el fuego que deja.");
+            Assert.IsEmpty(rule,
+                "\"Detonar la bomba\" ya dice todo lo que pasa, y el badge dice cuánto falta. " +
+                "Una intención con la frase vacía tampoco arrastra la de lo que deja: si la " +
+                "arrastrara, vaciar la entry en la tabla no serviría para pedir esta tarjeta.");
         }
 
         [Test]
-        public void ElFuegoDeLaBomba_NoUsaLosNumerosDelFuegoDelPanio()
+        public void DosFuegosDistintos_CadaUnoConSusNumeros()
         {
             var bombFire = Fire(enter: 15, turnStart: 15);
             var coneFire = Fire(enter: 6, turnStart: 10);
 
             string bomb = AIIntentText.Describe(new AIIntent(
-                AIIntentTextKeys.BombBlast, "Estalla", 0, AttackKind.Environmental,
+                AIIntentTextKeys.Ignite, "Prende el suelo", 12, AttackKind.Environmental,
                 leaves: bombFire, leavesRounds: 4));
             string cone = AIIntentText.Describe(new AIIntent(
                 AIIntentTextKeys.Ignite, "Prende el suelo", 12, AttackKind.Environmental,

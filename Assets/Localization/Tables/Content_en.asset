@@ -1053,11 +1053,11 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 15516266126876677
-    m_Localized: Detonates
+    m_Localized: Detonate the Bomb
     m_Metadata:
       m_Items: []
   - m_Id: 15516266126876678
-    m_Localized: Blows up in a cross.
+    m_Localized: 
     m_Metadata:
       m_Items: []
   - m_Id: 15516266126876679

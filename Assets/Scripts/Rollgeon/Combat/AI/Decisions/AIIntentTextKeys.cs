@@ -29,15 +29,16 @@ namespace Rollgeon.Combat.AI.Decisions
         /// </summary>
         /// <remarks>
         /// Los argumentos son siempre los mismos tres —daño, cantidad, turnos— y cada frase usa
-        /// los que le sirven. <see cref="BombBlast"/> no nombra el daño a propósito: el estallido
-        /// del Croupier cobra cero y todo lo que hace es el fuego que deja.
+        /// los que le sirven. Una frase vacía es una tarjeta de solo título.
         /// </remarks>
         public static string RuleFallback(string key) => key switch
         {
             Ignite => "Prende la banda que marcó, por <b>{0}</b>.",
             RangedShot => "Te dispara desde lejos por <b>{0}</b>.",
             BombField => "Siembra <b>{1}</b> bombas. Dónde caen se sortea al sembrarlas.",
-            BombBlast => "Estalla en cruz.",
+            // Vacía a propósito: el título ya dice qué pasa y el badge cuánto falta. La cruz se
+            // ve en el piso, y el fuego que queda lo cuenta la casilla al pasarle el mouse.
+            BombBlast => string.Empty,
             Leaves => "Deja fuego: <b>{0}</b> al entrar, <b>{1}</b> por turno, {2} rondas.",
             _ => string.Empty,
         };

@@ -59,6 +59,17 @@ namespace Rollgeon.Editor.Tools.Localization.Tests
             "tooltip.effect.combo.multiplier_suffix",
         };
 
+        /// <summary>
+        /// Keys que existen vacías a propósito. Una descripción de intención vacía es lo que
+        /// pide una tarjeta de solo título: la entry sigue estando para poder llenarla desde la
+        /// tabla, sin tocar código, el día que esa tarjeta quiera decir algo más.
+        /// </summary>
+        private static readonly HashSet<string> EmptyByDesign = new HashSet<string>
+        {
+            // "Detonar la bomba" ya dice qué pasa, y el badge dice cuántos turnos faltan.
+            AIIntentTextKeys.BombBlast + ".desc",
+        };
+
         private static readonly string[] Collections = { "Content", "UI" };
 
         [Test]
@@ -73,6 +84,8 @@ namespace Rollgeon.Editor.Tools.Localization.Tests
                 var collection = RequireCollection(collectionName);
                 foreach (var shared in collection.SharedData.Entries)
                 {
+                    if (EmptyByDesign.Contains(shared.Key)) continue;
+
                     if (string.IsNullOrEmpty(ValueOf(collection, EsCode, shared.Key)))
                         empties.Add($"{collectionName}/{shared.Key} [es]");
                     if (string.IsNullOrEmpty(ValueOf(collection, EnCode, shared.Key)))

@@ -25,14 +25,15 @@ namespace Rollgeon.UI.HUD.Status
         {
             string rule = Format(intent.LabelKey, intent.Damage, intent.Amount, intent.TurnsAway);
 
+            // Una intención sin frase propia se explica con su título y el badge de la mecha, y
+            // tampoco arrastra lo que deja: vaciar su entry en la tabla ES pedir esa tarjeta.
+            if (string.IsNullOrEmpty(rule)) return string.Empty;
             if (intent.Leaves == null) return rule;
 
             string leaves = Format(AIIntentTextKeys.Leaves,
                 intent.Leaves.EnterDamage, intent.Leaves.TurnStartDamage, intent.LeavesRounds);
 
-            if (string.IsNullOrEmpty(rule)) return leaves;
-            if (string.IsNullOrEmpty(leaves)) return rule;
-            return rule + " " + leaves;
+            return string.IsNullOrEmpty(leaves) ? rule : rule + " " + leaves;
         }
 
         private static string Format(string key, params object[] args)

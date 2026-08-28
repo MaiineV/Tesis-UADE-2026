@@ -717,12 +717,10 @@ namespace Rollgeon.EditorTools.Localization
                 "Siembra <b>{1}</b> bombas. Dónde caen se sortea al sembrarlas.",
                 "Sows <b>{1}</b> bombs. Where they land is drawn as he sows them.");
 
-            // Sin {0} a propósito: el estallido del Croupier cobra cero y todo lo que hace es el
-            // fuego que deja. Anunciar "por 0" sería decir que el golpe existe y no lastima.
-            Content(AIIntentTextKeys.BombBlast + ".name", "Estalla", "Detonates");
-            Content(AIIntentTextKeys.BombBlast + ".desc",
-                "Estalla en cruz.",
-                "Blows up in a cross.");
+            // Descripción vacía a propósito: el título dice qué pasa y el badge cuánto falta.
+            // La entry existe igual porque el guard la exige y para poder llenarla sin tocar código.
+            Content(AIIntentTextKeys.BombBlast + ".name", "Detonar la bomba", "Detonate the Bomb");
+            Content(AIIntentTextKeys.BombBlast + ".desc", string.Empty, string.Empty);
 
             Content(AIIntentTextKeys.Leaves + ".name", "Lo que deja", "What It Leaves");
             Content(AIIntentTextKeys.Leaves + ".desc",
