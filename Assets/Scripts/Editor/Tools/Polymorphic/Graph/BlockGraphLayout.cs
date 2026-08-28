@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -111,14 +112,41 @@ namespace Rollgeon.Editor.Tools.Polymorphic.Graph
             return Mathf.Max(NODE_HEIGHT, height);
         }
 
-        public static Dictionary<BlockGraphNode, Vector2> Compute(BlockGraphModel.Result model)
+        public static Dictionary<BlockGraphNode, Vector2> Compute(BlockGraphModel.Result model) =>
+            Compute(model, null);
+
+        /// <summary>
+        /// Igual que <see cref="Compute(BlockGraphModel.Result)"/>, pero midiendo cada nodo con
+        /// <paramref name="measuredHeight"/> en vez de estimarlo.
+        /// </summary>
+        /// <remarks>
+        /// <see cref="HeightOf"/> es una estimación: suma chrome, subtítulo, tag y líneas de texto a
+        /// partir de constantes. Sirve para colocar los nodos <b>antes</b> de que existan, pero se
+        /// queda corta por poco — márgenes e interlineado reales que las constantes no capturan — y
+        /// entonces el cuerpo se recorta.
+        /// <para>
+        /// El canvas la usa en la primera pasada y vuelve a llamar acá con las alturas ya resueltas
+        /// por UIToolkit. Medir es lo único que no puede equivocarse; estimar siempre va a estar a un
+        /// margen de distancia.
+        /// </para>
+        /// </remarks>
+        public static Dictionary<BlockGraphNode, Vector2> Compute(
+            BlockGraphModel.Result model, Func<BlockGraphNode, float> measuredHeight)
         {
             var positions = new Dictionary<BlockGraphNode, Vector2>();
             if (model?.Root == null) return positions;
 
+            float Height(BlockGraphNode n)
+            {
+                if (measuredHeight == null) return HeightOf(n);
+                float h = measuredHeight(n);
+                // Un nodo que todavía no resolvió su geometría mide 0 o NaN: ahí vale la estimación.
+                return h > 1f && !float.IsNaN(h) ? h : HeightOf(n);
+            }
+
             float cursor = 0f;
-            Place(model.Root, ref cursor, positions);
-            ResolveColumnOverlaps(model.AllNodes, positions);
+            Place(model.Root, ref cursor, positions, Height);
+            ResolveColumnOverlaps(model.AllNodes, positions, Height);
             return positions;
         }
 
@@ -126,14 +154,14 @@ namespace Rollgeon.Editor.Tools.Polymorphic.Graph
         /// Post-order: leaves consume the next free row, parents land on the midpoint of their
         /// first and last child. Returns the row this node settled on.
         /// </summary>
-        static float Place(BlockGraphNode node, ref float cursor, Dictionary<BlockGraphNode, Vector2> positions)
+        static float Place(BlockGraphNode node, ref float cursor, Dictionary<BlockGraphNode, Vector2> positions, Func<BlockGraphNode, float> height)
         {
             float x = node.Column * (NODE_WIDTH + H_SPACING);
 
             if (node.Children.Count == 0)
             {
                 float y = cursor;
-                cursor += HeightOf(node) + V_SPACING;
+                cursor += height(node) + V_SPACING;
                 positions[node] = new Vector2(x, y);
                 return y;
             }
@@ -147,7 +175,7 @@ namespace Rollgeon.Editor.Tools.Polymorphic.Graph
                 // read as a boundary instead of one flat list of siblings.
                 if (i > 0 && IsLaneBoundary(node.Children[i - 1], node.Children[i])) cursor += LANE_GAP;
 
-                float childY = Place(node.Children[i], ref cursor, positions);
+                float childY = Place(node.Children[i], ref cursor, positions, height);
                 if (i == 0) firstChildY = childY;
                 lastChildY = childY;
             }
@@ -170,7 +198,7 @@ namespace Rollgeon.Editor.Tools.Polymorphic.Graph
         /// above it. Never moves a node up — that would undo pass one's centring — and a column's
         /// fix-up never touches another column's positions or any x, so it can't cascade sideways.
         /// </summary>
-        static void ResolveColumnOverlaps(List<BlockGraphNode> nodes, Dictionary<BlockGraphNode, Vector2> positions)
+        static void ResolveColumnOverlaps(List<BlockGraphNode> nodes, Dictionary<BlockGraphNode, Vector2> positions, Func<BlockGraphNode, float> height)
         {
             var byColumn = new Dictionary<int, List<BlockGraphNode>>();
             foreach (var node in nodes)
@@ -190,7 +218,7 @@ namespace Rollgeon.Editor.Tools.Polymorphic.Graph
                     var p = positions[node];
                     float y = Mathf.Max(p.y, minY);
                     positions[node] = new Vector2(p.x, y);
-                    minY = y + HeightOf(node) + V_SPACING;
+                    minY = y + height(node) + V_SPACING;
                 }
             }
         }

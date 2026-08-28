@@ -221,9 +221,11 @@ namespace Rollgeon.Editor.Tools.Polymorphic.Graph
         {
             _body.style.display = _collapsed ? DisplayStyle.None : DisplayStyle.Flex;
             _collapseButton.text = _collapsed ? "▸" : "▾";
-            // Shrink only — never grow past BlockGraphLayout.HeightOf(Model), or this node would
-            // overlap the one the layout placed below it.
-            style.height = _collapsed ? CollapsedHeight : BlockGraphLayout.HeightOf(Model);
+            // Expandido: alto automático, para que el cuerpo nunca se recorte. La altura estimada se
+            // usaba acá y siempre quedaba corta por un margen; ahora el canvas mide la real y
+            // reposiciona (ver BlockGraphView.ApplyMeasuredLayout).
+            if (_collapsed) style.height = CollapsedHeight;
+            else style.height = StyleKeyword.Auto;
             if (raiseEvent) OnCollapseChanged?.Invoke(_collapsed);
         }
 

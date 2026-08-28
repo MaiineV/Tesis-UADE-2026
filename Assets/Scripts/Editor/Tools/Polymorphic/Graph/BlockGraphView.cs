@@ -353,6 +353,26 @@ namespace Rollgeon.Editor.Tools.Polymorphic.Graph
             {
                 _suppressSelectionEvents = false;
             }
+
+            // Segunda pasada: las posiciones de arriba salen de una ESTIMACION de altura, porque los
+            // nodos todavia no existian cuando se calcularon. Una vez que UIToolkit resolvio su
+            // geometria se recalcula con la altura real, que es lo unico que no puede quedarse corto.
+            schedule.Execute(ApplyMeasuredLayout).ExecuteLater(0);
+        }
+
+        /// <summary>Recoloca los nodos usando la altura que UIToolkit les resolvio.</summary>
+        void ApplyMeasuredLayout()
+        {
+            if (_model?.Root == null || _views.Count == 0) return;
+
+            var positions = BlockGraphLayout.Compute(
+                _model, node => _views.TryGetValue(node, out var v) ? v.resolvedStyle.height : 0f);
+
+            foreach (var kv in _views)
+            {
+                if (!positions.TryGetValue(kv.Key, out var p)) continue;
+                kv.Value.SetPosition(new Rect(p, Vector2.zero));
+            }
         }
 
         /// <summary>Frame the whole graph. Called by the host after a bind.</summary>
