@@ -141,6 +141,14 @@ namespace Rollgeon.Editor.Tools.Item
         static string DisplayEffectName(Type effectType) =>
             effectType.Name.StartsWith("Eff", StringComparison.Ordinal) ? effectType.Name.Substring(3) : effectType.Name;
 
+        /// <summary>
+        /// Switches the shell from a single-column list into a wrapping grid once rows are big
+        /// enough to look like tiles rather than text lines. <see cref="DrawGridRow"/> already centers
+        /// the icon using the rect it's handed, so this is the only change needed here — the shell
+        /// (<c>BlockEditorWindow.List.cs</c>) does the actual column math and cell slicing.
+        /// </summary>
+        protected override bool UseGridLayout => RowSize > GRID_ROW_THRESHOLD;
+
         // ============================ Rows ============================
 
         protected override bool DrawRow(Rect rect, ItemSO asset, bool isSelected, float rowSize)

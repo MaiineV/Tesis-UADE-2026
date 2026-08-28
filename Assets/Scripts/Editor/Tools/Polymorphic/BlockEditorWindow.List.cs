@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.UIElements;
 
 namespace Rollgeon.Editor.Tools.Polymorphic
 {
@@ -15,6 +16,16 @@ namespace Rollgeon.Editor.Tools.Polymorphic
         protected const float MIN_ROW_SIZE = 18f;
         protected const float MAX_ROW_SIZE = 96f;
 
+        // Panel width used to be the shell's fixed LEFT_WIDTH const (BlockEditorWindow.cs). It lives
+        // here instead — a resizable panel needs somewhere to persist the dragged value, and the
+        // shell field (_leftPanel) is reachable from any partial of this class, so no coordination
+        // with that file was needed beyond reading its width once at splitter creation.
+        const float DEFAULT_LEFT_WIDTH = 230f;
+        const float MIN_LEFT_WIDTH = 180f;
+        const float MAX_LEFT_WIDTH = 600f;
+        const float SPLITTER_WIDTH = 4f;
+        const float GRID_CELL_SPACING = 4f;
+
         static readonly Color SELECTED_ROW_TINT = new Color(0.45f, 0.75f, 1f);
 
         readonly List<T> _assets = new List<T>();
@@ -23,6 +34,7 @@ namespace Rollgeon.Editor.Tools.Polymorphic
         Vector2 _leftScroll;
         float _rowSize = DEFAULT_ROW_SIZE;
         bool _rowSizePrefLoaded;
+        VisualElement _leftSplitter;
 
         /// <summary>
         /// Persists <see cref="RowSize"/> per closed <typeparamref name="T"/> so
@@ -30,6 +42,9 @@ namespace Rollgeon.Editor.Tools.Polymorphic
         /// position instead of sharing one key (spec §6.1).
         /// </summary>
         static readonly string ROW_SIZE_PREF_KEY = "Rollgeon.BlockEditorWindow." + typeof(T).Name + ".RowSize";
+
+        /// <summary>Same per-type persistence as <see cref="ROW_SIZE_PREF_KEY"/>, for the panel's dragged width.</summary>
+        static readonly string LEFT_WIDTH_PREF_KEY = "Rollgeon.BlockEditorWindow." + typeof(T).Name + ".LeftWidth";
 
         // ---- host hooks ----------------------------------------------------
 
@@ -82,6 +97,19 @@ namespace Rollgeon.Editor.Tools.Polymorphic
         protected virtual bool PassesFilters(T asset) => true;
 
         /// <summary>
+        /// Whether the list currently renders as a wrapping grid of square cells instead of a single
+        /// column of full-width rows.
+        /// </summary>
+        /// <remarks>
+        /// Off by default so a host that never opts in (<c>EnchantmentEditorWindow</c>) keeps the
+        /// exact list behavior it already had no matter how big <see cref="RowSize"/> gets — the
+        /// shell can't assume every host wants a grid once rows grow, since a host's <see cref="DrawRow"/>
+        /// may not even support square cells. A host opts in once <see cref="RowSize"/> crosses its own
+        /// "this looks like a tile now" threshold (see <c>ItemEditorWindow.GRID_ROW_THRESHOLD</c>).
+        /// </remarks>
+        protected virtual bool UseGridLayout => false;
+
+        /// <summary>
         /// Paints one row into <paramref name="rect"/> and reports whether it was clicked.
         /// </summary>
         /// <param name="rect">The row's reserved rect. The shell owns layout; the host owns pixels.</param>
@@ -118,6 +146,8 @@ namespace Rollgeon.Editor.Tools.Polymorphic
                 RowSize = EditorPrefs.GetFloat(ROW_SIZE_PREF_KEY, DEFAULT_ROW_SIZE);
             }
 
+            EnsureLeftSplitter();
+
             using (new EditorGUILayout.HorizontalScope(EditorStyles.toolbar))
             {
                 string next = GUILayout.TextField(_search, EditorStyles.toolbarSearchField);
@@ -139,6 +169,23 @@ namespace Rollgeon.Editor.Tools.Polymorphic
             EditorGUILayout.Space(2);
             _leftScroll = EditorGUILayout.BeginScrollView(_leftScroll);
 
+            int shown = UseGridLayout ? DrawGrid() : DrawRows();
+
+            if (shown == 0)
+                EditorGUILayout.HelpBox(_assets.Count == 0 ? "No assets found." : "Nothing matches the filter.", MessageType.Info);
+
+            EditorGUILayout.EndScrollView();
+
+            DrawFooterActions();
+        }
+
+        /// <summary>
+        /// One full-width rect per item, unchanged from the pre-grid list — this is what every host
+        /// that never opts into <see cref="UseGridLayout"/> still gets, and what a grid host falls
+        /// back to when the panel is too narrow to fit more than one column (see <see cref="DrawGrid"/>).
+        /// </summary>
+        int DrawRows()
+        {
             int shown = 0;
             foreach (var asset in _assets)
             {
@@ -153,12 +200,134 @@ namespace Rollgeon.Editor.Tools.Polymorphic
 
                 if (DrawRow(rect, asset, asset == _selected, _rowSize)) Select(asset);
             }
-            if (shown == 0)
-                EditorGUILayout.HelpBox(_assets.Count == 0 ? "No assets found." : "Nothing matches the filter.", MessageType.Info);
+            return shown;
+        }
 
-            EditorGUILayout.EndScrollView();
+        /// <summary>
+        /// Wrapping grid of square <see cref="RowSize"/>-sized cells, used once <see cref="UseGridLayout"/>
+        /// flips on (item-editor-spec.md §6.1).
+        /// </summary>
+        /// <remarks>
+        /// Reserves one full-width rect per <b>row of cells</b>, not per item — the bug this replaces
+        /// reserved a full-width rect per asset, so every enlarged icon got its own row instead of
+        /// packing several per line. Reserving per grid-row keeps the scroll view's automatic
+        /// content-height (computed from the sum of <c>GUILayoutUtility.GetRect</c> calls made while
+        /// it lays out, same mechanism the plain list already relied on) correct without any manual
+        /// scroll-height math.
+        /// <para>
+        /// Column count comes from a zero-height probe rect taken once per repaint — width doesn't
+        /// change mid-frame, so every subsequent row reuses it instead of re-measuring. If the panel
+        /// is too narrow to fit more than one column, a single-column grid would just waste the empty
+        /// side of every square cell, so this falls back to <see cref="DrawRows"/> instead: no worse
+        /// than the pre-grid behavior, and no wasted space.
+        /// </para>
+        /// </remarks>
+        int DrawGrid()
+        {
+            float cellSize = _rowSize;
 
-            DrawFooterActions();
+            float probeWidth = EditorGUILayout.GetControlRect(false, 0f, GUILayout.ExpandWidth(true)).width;
+            int columns = Mathf.Max(1, Mathf.FloorToInt((probeWidth + GRID_CELL_SPACING) / (cellSize + GRID_CELL_SPACING)));
+            if (columns <= 1) return DrawRows();
+
+            int shown = 0;
+            int col = 0;
+            Rect rowRect = default;
+
+            foreach (var asset in _assets)
+            {
+                if (!Matches(asset)) continue;
+
+                if (col == 0)
+                {
+                    // Style.none: GUI.skin.button's own padding/margin would throw off the manual
+                    // per-column slicing below, and DrawRow already paints its own background per cell.
+                    rowRect = GUILayoutUtility.GetRect(
+                        GUIContent.none, GUIStyle.none,
+                        GUILayout.Height(cellSize + GRID_CELL_SPACING), GUILayout.ExpandWidth(true));
+                }
+
+                // Only the top cellSize x cellSize slice of the reserved row is drawn into; the
+                // GRID_CELL_SPACING left at the bottom is the vertical gap to the next row.
+                var cellRect = new Rect(rowRect.x + col * (cellSize + GRID_CELL_SPACING), rowRect.y, cellSize, cellSize);
+                if (DrawRow(cellRect, asset, asset == _selected, _rowSize)) Select(asset);
+
+                shown++;
+                col++;
+                if (col >= columns) col = 0;
+            }
+            return shown;
+        }
+
+        /// <summary>
+        /// Lazily inserts the drag handle between the shell's left panel and the rest of the window,
+        /// and applies the persisted width. Lives here (not <c>BlockEditorWindow.cs</c>) because a
+        /// resizable panel needs a place to own the dragged value and its persistence, and
+        /// <c>_leftPanel</c> is reachable from this partial without that file needing to change.
+        /// </summary>
+        /// <remarks>
+        /// Runs once — every call after the first is a single null check, so calling it from
+        /// <see cref="DrawLeft"/> (i.e. every repaint) costs nothing once the splitter exists. Deferred
+        /// to the first repaint rather than <c>OnEnable</c> because <c>_leftPanel</c> is only guaranteed
+        /// to be parented into <c>rootVisualElement</c> by the time IMGUIContainer starts calling back
+        /// into <see cref="DrawLeft"/>.
+        /// </remarks>
+        void EnsureLeftSplitter()
+        {
+            if (_leftSplitter != null || _leftPanel?.parent == null) return;
+
+            float width = EditorPrefs.GetFloat(LEFT_WIDTH_PREF_KEY, DEFAULT_LEFT_WIDTH);
+            _leftPanel.style.width = Mathf.Clamp(width, MIN_LEFT_WIDTH, MAX_LEFT_WIDTH);
+
+            var splitter = new VisualElement
+            {
+                style =
+                {
+                    width = SPLITTER_WIDTH,
+                    flexShrink = 0,
+                    backgroundColor = new Color(0.12f, 0.12f, 0.12f),
+                },
+            };
+            splitter.RegisterCallback<MouseEnterEvent>(_ => splitter.style.backgroundColor = new Color(0.35f, 0.55f, 0.85f));
+            splitter.RegisterCallback<MouseLeaveEvent>(_ => splitter.style.backgroundColor = new Color(0.12f, 0.12f, 0.12f));
+
+            bool dragging = false;
+            float startX = 0f;
+            float startWidth = 0f;
+
+            splitter.RegisterCallback<MouseDownEvent>(evt =>
+            {
+                if (evt.button != 0) return;
+                dragging = true;
+                startX = evt.mousePosition.x;
+                startWidth = _leftPanel.resolvedStyle.width;
+                splitter.CaptureMouse();
+                evt.StopPropagation();
+            });
+            splitter.RegisterCallback<MouseMoveEvent>(evt =>
+            {
+                if (!dragging) return;
+                float delta = evt.mousePosition.x - startX;
+                // The panel sits to the left of the splitter (opposite of EnemyEditorWindow's grip):
+                // dragging right grows it, dragging left shrinks it.
+                _leftPanel.style.width = Mathf.Clamp(startWidth + delta, MIN_LEFT_WIDTH, MAX_LEFT_WIDTH);
+                evt.StopPropagation();
+            });
+            splitter.RegisterCallback<MouseUpEvent>(evt =>
+            {
+                if (!dragging) return;
+                dragging = false;
+                splitter.ReleaseMouse();
+                // Only on release, not on every MouseMoveEvent: EditorPrefs hits the Windows registry,
+                // and writing it per drag-frame would reintroduce the same per-repaint cost the list's
+                // own AssetDatabase scan was just pulled out of.
+                EditorPrefs.SetFloat(LEFT_WIDTH_PREF_KEY, _leftPanel.resolvedStyle.width);
+                evt.StopPropagation();
+            });
+
+            int index = _leftPanel.parent.IndexOf(_leftPanel);
+            _leftPanel.parent.Insert(index + 1, splitter);
+            _leftSplitter = splitter;
         }
 
         /// <summary>
