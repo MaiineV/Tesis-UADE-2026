@@ -37,7 +37,7 @@ namespace Rollgeon.Combat.AI.Decisions
             // Vacía a propósito: el título dice qué hace, el número de la tarjeta dice cuánto, y
             // "desde lejos" lo dice la familia del bicho arriba del panel. No quedaba nada.
             RangedShot => string.Empty,
-            BombField => "Siembra <b>{1}</b> bombas. Dónde caen se sortea al sembrarlas.",
+            BombField => "Siembra <b>{1}</b> bombas.",
             // Vacía a propósito: el título ya dice qué pasa y el badge cuánto falta. La cruz se
             // ve en el piso, y el fuego que queda lo cuenta la casilla al pasarle el mouse.
             BombBlast => string.Empty,

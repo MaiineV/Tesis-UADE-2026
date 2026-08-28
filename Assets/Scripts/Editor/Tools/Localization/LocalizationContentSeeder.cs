@@ -716,8 +716,8 @@ namespace Rollgeon.EditorTools.Localization
 
             Content(AIIntentTextKeys.BombField + ".name", "Siembra bombas", "Spawn Bombs");
             Content(AIIntentTextKeys.BombField + ".desc",
-                "Siembra <b>{1}</b> bombas. Dónde caen se sortea al sembrarlas.",
-                "Spawns <b>{1}</b> bombs. Where they land is drawn as he spawns them.");
+                "Siembra <b>{1}</b> bombas.",
+                "Spawns <b>{1}</b> bombs.");
 
             // Descripción vacía a propósito: el título dice qué pasa y el badge cuánto falta.
             // La entry existe igual porque el guard la exige y para poder llenarla sin tocar código.

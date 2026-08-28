@@ -1054,7 +1054,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 15516266126876676
-    m_Localized: "Siembra <b>{1}</b> bombas. D\xF3nde caen se sortea al sembrarlas."
+    m_Localized: Siembra <b>{1}</b> bombas.
     m_Metadata:
       m_Items: []
   - m_Id: 15516266126876677
