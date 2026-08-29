@@ -26,6 +26,13 @@ namespace Rollgeon.UI.Tooltips
         /// cuando lo estás leyendo. Si de ese lado no entra, cuelga del otro.
         /// </summary>
         Beside = 2,
+
+        /// <summary>
+        /// Panel fijo en la esquina superior derecha del canvas, ignorando el punto-pantalla
+        /// del trigger. Para el panel de combate: una posición estable que el ojo aprende,
+        /// en vez de un panel que salta con cada enemigo hovereado.
+        /// </summary>
+        ScreenTopRight = 3,
     }
 
     /// <summary>

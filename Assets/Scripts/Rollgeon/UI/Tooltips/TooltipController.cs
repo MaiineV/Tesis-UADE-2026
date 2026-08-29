@@ -53,6 +53,11 @@ namespace Rollgeon.UI.Tooltips
                  "de los triggers Fixed.")]
         [SerializeField] private Vector2 _sideOffset = new Vector2(110f, 150f);
 
+        [Tooltip("Solo en modo ScreenTopRight: margen entre el panel y la esquina superior " +
+                 "derecha del canvas, en píxeles de referencia (unidades locales del canvas, " +
+                 "resolución-independientes).")]
+        [SerializeField] private Vector2 _screenAnchorPadding = new Vector2(16f, 16f);
+
         [Tooltip("Canvas host. Si null, busca uno via GetComponentInParent en Awake.")]
         [SerializeField] private Canvas _hostCanvas;
 
@@ -231,9 +236,28 @@ namespace Rollgeon.UI.Tooltips
             SetVisible(true);
 
             if (placement == TooltipPlacementMode.Beside) PlaceBeside(screenPos);
+            else if (placement == TooltipPlacementMode.ScreenTopRight) PlaceTopRight();
             else PlaceOver(screenPos, placement);
 
             ClampToCanvas();
+        }
+
+        /// <summary>
+        /// Ancla la esquina superior derecha del panel a la del canvas, menos el padding
+        /// configurado. Ignora el punto-pantalla del trigger: la gracia del modo es que el
+        /// panel viva siempre en el mismo lugar.
+        /// </summary>
+        private void PlaceTopRight()
+        {
+            if (_root == null || _hostCanvasRect == null) return;
+
+            // El rect local del canvas ya está en píxeles de referencia — el padding se
+            // aplica ahí y el TransformPoint lo lleva a la resolución real.
+            _root.pivot = HangLeftPivot;
+            var rect = _hostCanvasRect.rect;
+            var local = new Vector2(rect.xMax - _screenAnchorPadding.x,
+                                    rect.yMax - _screenAnchorPadding.y);
+            _root.position = _hostCanvasRect.TransformPoint(local);
         }
 
         private void PlaceOver(Vector2 screenPos, TooltipPlacementMode placement)

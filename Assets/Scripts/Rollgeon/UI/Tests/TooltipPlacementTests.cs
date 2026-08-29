@@ -358,6 +358,64 @@ namespace Rollgeon.UI.Tests
             Assert.AreEqual(0f, root.pivot.y, 1e-3f);
         }
 
+        [Test]
+        public void Show_ScreenTopRight_AnchorsToCanvasCornerIgnoringScreenPos()
+        {
+            // Arrange — el panel de combate vive en una posición fija que el ojo aprende:
+            // el punto-pantalla del trigger (que cambia con cada enemigo) no debe moverlo.
+            var controller = CreateOverlayTooltipController(out var root, panelSize: new Vector2(100f, 40f));
+
+            // Act — dos anclas bien distintas.
+            controller.Show("texto", new Vector2(0f, 0f), ownerId: 1, TooltipPlacementMode.ScreenTopRight);
+            var posAtCenterAnchor = root.position;
+            controller.Show("texto", new Vector2(200f, -100f), ownerId: 1, TooltipPlacementMode.ScreenTopRight);
+
+            // Assert — pivot arriba-derecha y posición = esquina del canvas − padding (16,16),
+            // idéntica para ambas anclas.
+            Assert.AreEqual(1f, root.pivot.x, 1e-3f);
+            Assert.AreEqual(1f, root.pivot.y, 1e-3f);
+            Assert.AreEqual(Bounds.xMax - 16f, root.position.x, 1e-3f);
+            Assert.AreEqual(Bounds.yMax - 16f, root.position.y, 1e-3f);
+            Assert.AreEqual(posAtCenterAnchor.x, root.position.x, 1e-3f,
+                "El punto-pantalla del trigger no debe mover el panel fijo.");
+            Assert.AreEqual(posAtCenterAnchor.y, root.position.y, 1e-3f,
+                "El punto-pantalla del trigger no debe mover el panel fijo.");
+        }
+
+        [Test]
+        public void Show_ScreenTopRight_TallerContentKeepsTheTopEdge()
+        {
+            // Arrange — con pivot (1,1) el panel crece hacia abajo: un contenido más alto
+            // (jefe con curse y estados) no debe empujar el borde superior fuera de lugar.
+            var controllerShort = CreateOverlayTooltipController(out var shortRoot, panelSize: new Vector2(100f, 40f));
+            var controllerTall = CreateOverlayTooltipController(out var tallRoot, panelSize: new Vector2(100f, 200f));
+
+            // Act
+            controllerShort.Show("texto", Vector2.zero, ownerId: 1, TooltipPlacementMode.ScreenTopRight);
+            controllerTall.Show("texto", Vector2.zero, ownerId: 1, TooltipPlacementMode.ScreenTopRight);
+
+            // Assert — misma esquina superior derecha para ambos tamaños.
+            Assert.AreEqual(shortRoot.position.x, tallRoot.position.x, 1e-3f);
+            Assert.AreEqual(shortRoot.position.y, tallRoot.position.y, 1e-3f,
+                "El borde superior del panel fijo no debe moverse con el alto del contenido.");
+        }
+
+        [Test]
+        public void Show_AfterScreenTopRight_TextTooltipVuelveACrecerHaciaArriba()
+        {
+            // Arrange — mismo contrato que Beside: el modo mueve el pivot del panel
+            // compartido y el próximo tooltip de texto debe volver al de siempre.
+            var controller = CreateOverlayTooltipController(out var root, panelSize: new Vector2(100f, 40f));
+
+            // Act
+            controller.Show("texto", Vector2.zero, ownerId: 1, TooltipPlacementMode.ScreenTopRight);
+            controller.Show("texto", Vector2.zero, ownerId: 2, TooltipPlacementMode.Fixed);
+
+            // Assert
+            Assert.AreEqual(0.5f, root.pivot.x, 1e-3f);
+            Assert.AreEqual(0f, root.pivot.y, 1e-3f);
+        }
+
         /// <param name="panelSize">
         /// Tamaño del panel (sizeDelta), relevante para los tests de clamp — sin tamaño
         /// el rect queda en un punto y el clamp nunca dispara.
