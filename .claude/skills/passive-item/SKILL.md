@@ -1,6 +1,6 @@
 ---
 name: passive-item
-description: "Crea un item pasivo de Rollgeon conversando: hace las preguntas, descubre combos/eventos/efectos en runtime y arma el item completo (identidad + catalogo + precio + localizacion + hook + efectos) por Unity MCP. Usar para: nuevo item pasivo, crear item, item que haga X cuando Y."
+description: "Crea items pasivos de Rollgeon por Unity MCP — sueltos o familias de variantes — armando el item completo (identidad + catalogo + precio + localizacion + disparador + efectos). Funciona de dos maneras: contale la idea y lo construye, o pedile que te guie con preguntas. Usar para: nuevo item pasivo, crear item, familia de items, item que haga X cuando Y."
 category: "gamedev"
 argument-hint: "[idea suelta del item, opcional]"
 user-invocable: true
@@ -11,6 +11,28 @@ allowed-tools: Read, Glob, Grep, Bash, AskUserQuestion, mcp__UnityMCP__execute_c
 
 Convierte una idea suelta ("un item que cuando saco generala me cure") en un `ItemSO`
 funcional dentro de Unity, sin abrir el editor a mano.
+
+## Mantener esta skill al dia
+
+**Si tocas los efectos, esta skill se actualiza en el mismo cambio.** Agregar, renombrar,
+cambiar de campos o borrar un `IEffect`, un `EffectIntReader`, una `BasePreCondition` o una
+entrada de `ItemTriggerCatalog` deja desactualizado lo que esta skill le dice al proximo agente,
+y el sintoma no es un error: es un item mal armado que nadie revisa.
+
+Que revisar cuando eso pasa:
+
+| Cambiaste | Actualiza |
+|---|---|
+| Un `IEffect` concreto (campos, nombre, semantica) | La tabla de efectos de `references/domain-cheatsheet.md` |
+| Un `EffectIntReader` o una `BasePreCondition` | Las secciones de readers / precondiciones del cheatsheet |
+| `ItemTriggerCatalog.All` | "Elegir el disparador" en este archivo y la tabla del cheatsheet |
+| `ItemCreationSpec` / `ItemFamilyCreationSpec` | Los Pasos 4 y 4-bis de este archivo |
+| El modelo de `PassiveItemHook` | "Anatomia de un hook" en el cheatsheet |
+
+El Paso 1 descubre los tipos **en runtime** justamente para que un olvido no rompa el alta: la
+lista de efectos disponibles siempre sale del proyecto, nunca de este texto. Lo que si envejece
+es la **semantica** — cual conviene en cada caso, cual leakea, cual escala con el combo — y eso
+es lo que hay que mantener a mano.
 
 ## Regla que no se negocia
 
@@ -45,6 +67,30 @@ Tampoco crees scripts nuevos bajo `Assets/Scripts/` para esto. Todo va inline po
    **Si no responde, frená y avisá al usuario** — no asumas que nada se aplico.
 2. Si el Editor esta en Play Mode, pedí que salga: crear assets en Play es una fuente de perdida
    de trabajo.
+
+## Paso 0.5 — Elegí el modo
+
+Hay dos formas de usar esto y la eligo el usuario, no vos.
+
+**Modo directo — "te cuento la idea y armalo".** El usuario describe el item en sus palabras
+("uno que cuando me pegan gane 5 de escudo, raro") y vos lo construis entero. Reglas:
+
+- Completá con defaults todo lo que no dijo: rareza `Common` si no la nombro, precio derivado de
+  la rareza, sin precondiciones, sin modificadores persistentes, sin icono, sin familia.
+- **Preguntá solo lo que cambia el item de verdad** y no podes deducir. Tipicamente: el matiz de
+  daño (`EffAddComboBonus` vs `EffDealDamage`, ver Paso 2.5), un disparador ambiguo, o el ingles
+  si pensas dejarlo sin traducir.
+- No preguntes de a una cosa por mensaje: juntá las dudas en un solo `AskUserQuestion`.
+- **Siempre mostrá el resumen de la especificacion y esperá confirmacion antes de escribir.** Ahi
+  se corrige lo que dedujiste mal, que es mas barato que crear y borrar.
+
+**Modo guiado — "hacéme las preguntas".** Recorrés el Paso 2 completo, una decision por vez, con
+las opciones descubiertas en el Paso 1.
+
+**Como elegir:** si el mensaje inicial ya trae una idea concreta, ofrecé el modo directo
+resumiendo lo que entendiste y aclarando que puede pedirte el guiado. Si el mensaje es vago
+("quiero hacer un item") o el usuario pide ayuda para decidir, andá al guiado. Ante la duda,
+preguntá cual prefiere con `AskUserQuestion` — es una sola pregunta.
 
 ## Paso 1 — Descubrimiento (nunca hardcodear las opciones)
 
@@ -85,10 +131,11 @@ return sb.ToString();
 
 Si `EventName` no resuelve sin calificar, buscá su namespace con Grep antes de reintentar.
 
-> **Los eventos usables son un subconjunto del enum.** El `InfoBox` de `PassiveItemHook` lista
-> los que hoy disparan bien: `OnTurnStarted`, `OnTurnFinished`, `OnRollStarted`, `OnDiceRolled`,
-> `OnRollResolved`, `OnDamageIncoming`, `OnDamageOutgoing`, `OnComboCrossed`, `OnWeaknessHit`,
-> `OnPlayerHealthChanged`. Ofrecé esos primero y marcá el resto como "no verificado".
+> **No ofrezcas el enum `EventName` crudo.** Los que sirven son ~15 de mas de cien, y el
+> `InfoBox` de `PassiveItemHook` todavia lista dos que **no disparan nunca**
+> (`OnComboCrossed` manda `Guid.Empty`, `OnPlayerHealthChanged` no lo emite nadie en produccion).
+> La lista buena es `ItemTriggerCatalog.All` — ver "Elegir el disparador" en el Paso 4. El enum
+> completo se descubre igual, pero solo para leer, no para ofrecer.
 
 Para ver como se autora un efecto real, mirá items existentes en vez de inventar campos:
 
@@ -105,20 +152,16 @@ Si el usuario ya dio la respuesta en su mensaje inicial, no la vuelvas a pregunt
 al pasar. Si el usuario dice "elegí vos", proponé un default razonable y seguí.
 
 1. **Idea / fantasia** — que quiere que haga el item. Pregunta abierta, solo si arranco de cero.
-2. **Cuando se dispara** — `ComboPlayed` (al jugar un combo) o `EventBus` (un evento del bus).
-   Explicá la diferencia en una linea: ComboPlayed corre **pre-daño**, dentro de la ventana del
-   golpe; EventBus corre cuando el bus lo emite y para bonos de daño suele llegar tarde.
-3. **Filtro**:
-   - Si `ComboPlayed`: ¿que combos? `AnyCombo` o lista de ids (mostrá los descubiertos).
-   - Si `EventBus`: ¿que `EventName`?
-4. **`ActionKindFilter`** (solo `ComboPlayed`): `Attack`, `Heal`, `Movement`, ... o `Unknown`
+2. **Cuando se dispara** — ofrecé los `DisplayName` de `ItemTriggerCatalog.All` (ver "Elegir el
+   disparador"), no `Kind` ni `EventName`. Son frases de disenio: "Cuando te pegan", "Cuando la
+   tirada queda firme". El `Help` de cada opcion es la aclaracion de una linea.
+3. **Combos** — solo si la opcion elegida los pide (`UsesComboIds`). Mostrá los ids descubiertos
+   en el Paso 1. **Sin ningun combo elegido el item no dispara nunca.**
+4. **`ActionKindFilter`** (solo con disparadores de combo): `Attack`, `Heal`, `Movement`, ... o `Unknown`
    para no restringir. **Default recomendado: `Attack` para cualquier bono de daño** — Heal y
    Movement comparten el mismo play scratch y el bono leakea (BUG-060/BUG-080).
 5. **Efecto** — que hace. Ofrecé los `IEffect` descubiertos, agrupados por intencion.
-   **Preguntá explicitamente el matiz de daño:**
-   - `EffAddComboBonus` → **suma al daño del combo**, o sea **se multiplica con el combo**.
-   - `EffDealDamage` → **golpe aparte**, no escala con el combo.
-   El usuario casi siempre quiere el primero. No lo elijas por el: preguntá cual de los dos.
+   Ver **Paso 2.5**: el matiz de daño se pregunta siempre, en los dos modos.
 6. **Magnitud** — valor fijo o un `EffectIntReader` (ej. `ReadCurrentGold`,
    `ReadCurrentGoldSqrtScaled`, `ReadComboCounter`). Si es escalado, pedí el factor.
 7. **Condiciones** (`PreConditions`, se evaluan en **AND**) — opcional. Ej. `PcOwnerHpBelow`,
@@ -132,12 +175,22 @@ al pasar. Si el usuario dice "elegí vos", proponé un default razonable y segu�
     falla hasta que alguien lo complete.
 11. **`Rarity`**: `Common | Uncommon | Rare | Legendary | God`.
 12. **Precio**: `null` = se deriva de la rareza (default). Solo preguntá si quiere override.
-13. **Familia** (opcional): `FamilyId` + `VariantIndex` si es variante de una familia existente.
-    Si el usuario quiere varias variantes de una, usá `ItemAuthoring.CreateFamily` en vez de
-    `CreateItem`.
+13. **Familia** (opcional): ver "Paso 4-bis — Familias". Si el usuario quiere varias variantes de
+    una sola idea, ese es el camino y no repetir `CreateItem`.
 14. **Icono**: opcional. Si el usuario da un path de sprite, cargalo; si no, queda `null`.
 
 Antes de escribir nada, **mostrá un resumen de la especificacion completa y pedí confirmacion**.
+
+## Paso 2.5 — El matiz de daño (se pregunta en los dos modos)
+
+Si el item hace daño, **preguntá cual de los dos quiere**. Es la unica decision que no se deduce
+de la idea y que cambia el item por completo:
+
+- `EffAddComboBonus` → **suma al daño del combo**, o sea **se multiplica con el combo**.
+- `EffDealDamage` → **golpe aparte**, no escala con el combo.
+
+El usuario casi siempre quiere el primero, pero no lo elijas por el: la diferencia en un
+Full House es de varias veces el numero.
 
 ## Paso 3 — Chequeo de id
 
@@ -213,6 +266,80 @@ return sb.ToString();
 que colgarse de ese evento sin mas dispara **al pegar**. El catalogo tiene las dos entradas
 separadas (`damage.dealt.final` y `damage.taken`) y pone el `Subject` correcto. Si lo autoras a
 mano, `PassiveHookSubject.Target` es "cuando te pegan".
+
+## Paso 4-bis — Familias de variantes
+
+Una familia es **la misma idea en varios escalones**: Botas Ligeras → del Viento → del Rayo →
+Alas de Hermes. Comparten `FamilyId` y se diferencian por `VariantIndex`, rareza y magnitud.
+
+Usá `CreateFamily` y no varios `CreateItem` seguidos: valida **todas** las variantes antes de
+escribir ninguna — incluidas las colisiones de id entre variantes del mismo pedido — y las crea
+en **un solo paso de undo**. Con `CreateItem` en bucle, la variante 3 que falla te deja las dos
+primeras a medio crear.
+
+```csharp
+var spec = new Rollgeon.Editor.Tools.Item.ItemFamilyCreationSpec
+{
+    FamilyId          = "botas",
+    Type              = Rollgeon.Items.ItemType.Passive,
+    DefaultDescription = "Al jugar una Escalera, ganás escudo.",
+    DefaultIcon       = null,
+    TargetFolder      = null,
+
+    // Compartido por todas: una familia se diferencia por magnitud, no por cuando dispara.
+    TriggerId         = "combo.ids",
+    TriggerComboIds   = new System.Collections.Generic.List<string> { "combo.ladder" },
+
+    Variants = new System.Collections.Generic.List<Rollgeon.Editor.Tools.Item.ItemFamilyVariantSpec>
+    {
+        new Rollgeon.Editor.Tools.Item.ItemFamilyVariantSpec
+        {
+            DisplayName = "Botas Ligeras", DisplayNameEn = "Light Boots",
+            DescriptionEn = "Gain shield when you play a Ladder.",
+            Rarity = Rollgeon.Items.ItemRarity.Common,
+        },
+        new Rollgeon.Editor.Tools.Item.ItemFamilyVariantSpec
+        {
+            DisplayName = "Botas del Viento", DisplayNameEn = "Wind Boots",
+            DescriptionEn = "Gain more shield when you play a Ladder.",
+            Rarity = Rollgeon.Items.ItemRarity.Rare,
+        },
+    },
+};
+
+var r = Rollgeon.Editor.Tools.Item.ItemAuthoring.CreateFamily(spec);
+if (!r.Success) return "FAIL: " + string.Join(" | ", r.Errors);
+return "OK variantes=" + r.Items.Count;
+```
+
+Reglas que importan:
+
+- **`VariantIndex` null = la posicion en la lista** (0, 1, 2...). Es lo que querés casi siempre.
+  Ponerlo a mano solo si vas a intercalar una variante en una familia existente.
+- **Dos variantes en el mismo indice es un bug de datos**, no un error de compilacion: la familia
+  queda con dos items en el mismo escalon y la tab de Family los muestra pisados. Si agregás a una
+  familia que ya existe, leé los indices ocupados primero.
+- **La rareza es por variante y el precio se deriva de ella**, salvo que pases `BasePrice`.
+- **El disparador es de la familia**, no de cada variante. Si dos variantes tienen que disparar
+  distinto, no son una familia: son dos items sueltos.
+- `Description` e `Icon` por variante caen a `DefaultDescription` / `DefaultIcon` si van en null.
+- Despues de crear, los **efectos se autoran por variante** (Paso 5): cada una tiene su hook con
+  el disparador puesto, y lo que cambia entre escalones es la magnitud.
+
+Para **agregar una variante a una familia que ya existe**, no uses `CreateFamily` (crearia todo
+de nuevo): creá un `CreateItem` con `FamilyId` y el `VariantIndex` libre.
+
+```csharp
+var sb = new System.Text.StringBuilder();
+foreach (var f in Rollgeon.Editor.Tools.Item.ItemQuery.GetFamilies())
+{
+    sb.Append(f.FamilyId).Append(": ");
+    foreach (var v in f.Variants)
+        sb.Append(v.VariantIndex).Append("=").Append(v.DisplayName).Append("  ");
+    sb.AppendLine();
+}
+return sb.ToString();
+```
 
 ## Paso 5 (escritura B) — Autorar hook y efectos
 
@@ -293,7 +420,7 @@ return sb.ToString();
   el canal correcto. Avisá y pará.
 - Editar un item ya existente: se puede reautorar con el Paso 5, pero confirmá primero con el
   usuario que pisar `PassiveHooks` es lo que quiere.
-- Varias variantes de una familia: usá `ItemAuthoring.CreateFamily` con `ItemFamilyCreationSpec`.
+- Varias variantes de una familia: **si** va por esta skill, con el Paso 4-bis.
 
 Detalles de dominio (semantica de cada efecto, readers, precondiciones, errores conocidos):
 `references/domain-cheatsheet.md`.

@@ -1,5 +1,9 @@
 # passive-item — cheatsheet de dominio
 
+> **Este archivo se actualiza con el codigo.** Si agregas, cambias o borras un efecto, un reader,
+> una precondicion o una entrada del catalogo de disparadores, actualizalo en el mismo cambio —
+> ver "Mantener esta skill al dia" en `SKILL.md`.
+
 Contexto de apoyo para la skill. **Las listas de aca son orientativas: la fuente de verdad es el
 descubrimiento por `execute_code` del Paso 1.** Si esto y el runtime discrepan, gana el runtime.
 
@@ -136,6 +140,26 @@ creacion**. Solo para `Passive`. `TriggerComboIds` solo aplica si la opcion usa 
 
 **Lo que `CreateItem` NO hace: efectos.** Con `TriggerId` el item queda con el hook y su
 disparador, pero sin efectos: sabe cuando dispara y todavia no hace nada.
+
+## Familias
+
+Una familia es la misma idea en varios escalones. Comparten `FamilyId`; `VariantIndex` las
+ordena. `FamilyId` y `VariantIndex` son **solo organizativos** — no los lee ningun sistema de
+runtime, viven para la tool y para el balance.
+
+`ItemFamilyCreationSpec`: `FamilyId` (requerido), `Type`, `DefaultDescription`, `DefaultIcon`,
+`TargetFolder`, `TriggerId` + `TriggerComboIds` (compartidos), `Variants`.
+`ItemFamilyVariantSpec`: `DisplayName`, `Description`, `DisplayNameEn`, `DescriptionEn`, `Icon`,
+`Rarity`, `BasePrice`, `VariantIndex`.
+
+`ItemFamilyCreationResult`: `Success`, `Errors`, `Items`.
+
+- `VariantIndex` null → la posicion en la lista. Dos variantes en el mismo indice no da error:
+  deja la familia con dos items en el mismo escalon.
+- La rareza es **por variante**; el precio se deriva de ella salvo `BasePrice`.
+- El disparador es **de la familia**. Dos variantes que disparan distinto no son una familia.
+- Consulta: `ItemQuery.GetFamilies()` → `ItemFamily { FamilyId, IReadOnlyList<ItemSO> Variants }`
+  (ordenadas por `VariantIndex`); `ItemQuery.GetLooseItems()` para las sin familia.
 
 ## Textos localizados
 
