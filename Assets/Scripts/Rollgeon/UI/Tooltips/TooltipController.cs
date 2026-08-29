@@ -101,6 +101,10 @@ namespace Rollgeon.UI.Tooltips
                  "puede quedarse con el arriba del panel.")]
         [SerializeField] private TMP_Text _footerLabel;
 
+        [Tooltip("Indicador de fijado (candado), en la esquina del panel. Null, como todo lo " +
+                 "demás: sin cablear no hay candado y el panel es el de siempre.")]
+        [SerializeField] private GameObject _pinIndicator;
+
         // El panel crece hacia arriba centrado sobre el punto: es lo que esperan los tooltips
         // de texto. Beside lo cambia mientras dura, así que cada Show lo vuelve a fijar.
         private static readonly Vector2 GrowUpPivot = new Vector2(0.5f, 0f);
@@ -231,6 +235,11 @@ namespace Rollgeon.UI.Tooltips
         public void Show(in TooltipContent content, Vector2 screenPos, int ownerId,
                          TooltipPlacementMode placement)
         {
+            // Cada Show arranca sin candado: el panel es compartido, y el trigger fijado lo
+            // re-afirma después de su propio Show. Sin esto, el candado de un panel fijado
+            // sobrevivía al tooltip de la puerta.
+            SetPinned(false);
+
             ApplyContent(content);
             _currentOwnerId = ownerId;
             SetVisible(true);
@@ -510,10 +519,17 @@ namespace Rollgeon.UI.Tooltips
             }
         }
 
+        /// <summary>Prende/apaga el candado de fijado. Lo maneja el trigger dueño del pin.</summary>
+        public void SetPinned(bool pinned)
+        {
+            if (_pinIndicator != null) _pinIndicator.SetActive(pinned);
+        }
+
         private void SetVisible(bool visible)
         {
             _visible = visible;
             if (_root != null) _root.gameObject.SetActive(visible);
+            if (!visible) SetPinned(false);
             // overrideSorting no persiste si se seteó con el GO inactivo — re-aplicar
             // con el panel ya activo.
             if (visible) EnsureOverlaySorting();

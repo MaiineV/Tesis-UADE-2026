@@ -262,6 +262,50 @@ namespace Rollgeon.EditorTools.HUD
             Debug.Log("[TooltipCardSetupTools] Columna del costado cableada en el panel.");
         }
 
+        /// <summary>
+        /// El candado de fijado, en la esquina superior derecha del panel. Nace apagado: lo
+        /// prende <see cref="TooltipController.SetPinned"/> cuando un trigger fija el tooltip.
+        /// </summary>
+        [MenuItem("Rollgeon/Tooltips/6 - Wire Pin Indicator")]
+        public static void WirePinIndicator()
+        {
+            var padlock = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Art/UI/Unlocks/Padlock.png");
+            if (padlock == null)
+            {
+                Debug.LogError("[TooltipCardSetupTools] Falta Assets/Art/UI/Unlocks/Padlock.png " +
+                               "(o no está importado como Sprite).");
+                return;
+            }
+
+            EditPanel(panel =>
+            {
+                var pin = EnsureChildRect(panel, "PinIndicator", Vector2.zero, new Vector2(22f, 22f));
+
+                // Fuera del layout y colgado de la esquina, como las columnas laterales: un
+                // indicador no puede reacomodar la caja.
+                Ensure<LayoutElement>(pin.gameObject).ignoreLayout = true;
+                pin.anchorMin = new Vector2(1f, 1f);
+                pin.anchorMax = new Vector2(1f, 1f);
+                pin.pivot = new Vector2(1f, 1f);
+                pin.anchoredPosition = new Vector2(-6f, -6f);
+
+                var image = Ensure<Image>(pin.gameObject);
+                image.sprite = padlock;
+                image.preserveAspect = true;
+                image.raycastTarget = false;
+
+                pin.gameObject.SetActive(false);
+
+                return (so, _) =>
+                {
+                    so.FindProperty("_pinIndicator").objectReferenceValue = pin.gameObject;
+                    pin.SetAsLastSibling();
+                };
+            });
+
+            Debug.Log("[TooltipCardSetupTools] Candado de fijado cableado en el panel.");
+        }
+
         [MenuItem("Rollgeon/Tooltips/5 - Wire Bottom Cards")]
         public static void WireBottomCards()
         {

@@ -72,6 +72,28 @@ namespace Rollgeon.UI.Tests
         }
 
         [Test]
+        public void ElCandado_LoPrendeSetPinned_YCadaShowLoApaga()
+        {
+            // Arrange
+            var pin = Child("PinIndicator", _panel).gameObject;
+            pin.SetActive(false);
+            SetPrivate("_pinIndicator", pin);
+
+            // Act + Assert
+            _controller.SetPinned(true);
+            Assert.IsTrue(pin.activeSelf, "SetPinned(true) no prendió el candado.");
+
+            // El panel es compartido: un Show de otro dueño (la puerta) no hereda el candado —
+            // el trigger fijado lo re-afirma después de su propio Show.
+            _controller.Show("texto", Vector2.zero, 2, TooltipPlacementMode.Fixed);
+            Assert.IsFalse(pin.activeSelf, "El candado sobrevivió a un Show ajeno.");
+
+            _controller.SetPinned(true);
+            _controller.HideForce();
+            Assert.IsFalse(pin.activeSelf, "El candado quedó prendido con el panel oculto.");
+        }
+
+        [Test]
         public void ConIdentidad_LaBandaMuestraNombreYVitales()
         {
             _controller.Show(Boss(health: 180, maxHealth: 250), Vector2.zero, 1,

@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using Patterns;
+using Rollgeon.Effects.Selection;
 using Rollgeon.UI.HUD.Status;
 using Sirenix.OdinInspector;
 using UnityEngine;
@@ -77,6 +79,29 @@ namespace Rollgeon.UI.Tooltips
         /// </summary>
         public event Action<bool> HoverChanged;
 
+        /// <summary>
+        /// Un click sobre el objeto fija el tooltip: el panel queda abierto con el mouse libre y
+        /// el contenido se re-muestra en cada turno. Solo lo prenden los enemigos. Fijar nunca
+        /// consume el click que selecciona objetivo: los clicks en modo targeting se ignoran, y
+        /// entrar en modo ataque suelta el fijado solo.
+        /// </summary>
+        public bool PinOnClick;
+
+        /// <summary>
+        /// El fijado volvió a mostrar el tooltip sin flanco de hover (cambio de turno, o el hover
+        /// de otro trigger que devolvió el panel). Lo consume quien pinta el preview de amenaza,
+        /// que solo escucha <see cref="HoverChanged"/> y se perdería estos re-dibujos.
+        /// </summary>
+        public event Action PinRefreshed;
+
+        /// <summary>Si este trigger tiene el tooltip fijado ahora.</summary>
+        public bool IsPinned => _pinned;
+
+        private bool _pinned;
+
+        // Un solo fijado en todo el combate: el panel es uno solo, así que fijar B suelta a A.
+        private static WorldTooltipTrigger s_pinned;
+
         [SerializeField] private WorldTooltipMode _mode = WorldTooltipMode.Click;
 
         /// <summary>
@@ -138,7 +163,10 @@ namespace Rollgeon.UI.Tooltips
 
             if (_mode == WorldTooltipMode.Hover)
             {
-                SetHover(hitMe, cam);
+                if (PinOnClick && !pointerOverUI && MouseLeftPressedThisFrame())
+                    HandlePinClick(hitMe);
+
+                SetHover(hitMe || _pinned, cam);
                 return;
             }
 
@@ -146,6 +174,81 @@ namespace Rollgeon.UI.Tooltips
             {
                 ToggleTooltip(cam);
             }
+        }
+
+        // El click de targeting es atacar (TileClickHandler): el fijado solo puede vivir en los
+        // clicks que hoy no hacen nada. Click sobre el objeto = toggle; click en el vacío con el
+        // tooltip fijado = soltar.
+        private void HandlePinClick(bool hitMe)
+        {
+            if (IsSelectingTarget()) return;
+
+            if (hitMe)
+            {
+                if (_pinned) Unpin();
+                else Pin();
+            }
+            else if (_pinned)
+            {
+                Unpin();
+            }
+        }
+
+        private static bool IsSelectingTarget()
+            => ServiceLocator.TryGetService<ISelectionController>(out var selection)
+               && selection != null && selection.IsSelecting;
+
+        /// <summary>
+        /// Fija el tooltip de este trigger. Suelta al que estuviera fijado — el panel es uno.
+        /// Público para poder fijar/soltar sin simular el mouse (tests, tutorial).
+        /// </summary>
+        public void Pin()
+        {
+            if (_pinned) return;
+            if (s_pinned != null && s_pinned != this) s_pinned.Unpin();
+            s_pinned = this;
+            _pinned = true;
+
+            // Suscripciones solo en el flanco del fijado, y espejadas en Unpin: un pin que
+            // suscribe dos veces re-muestra el panel dos veces por turno.
+            EventManager.Subscribe(EventName.OnTurnStarted, HandlePinRefresh);
+            EventManager.Subscribe(EventName.OnActionSelectionStarted, HandleTargetingStarted);
+            EventManager.Subscribe(EventName.OnChainTargetSelectionStarted, HandleTargetingStarted);
+
+            if (TooltipController.Instance != null) TooltipController.Instance.SetPinned(true);
+        }
+
+        /// <summary>Suelta el fijado. El hover vigente (si lo hay) mantiene el panel abierto.</summary>
+        public void Unpin()
+        {
+            if (!_pinned) return;
+            _pinned = false;
+            if (s_pinned == this) s_pinned = null;
+
+            EventManager.UnSubscribe(EventName.OnTurnStarted, HandlePinRefresh);
+            EventManager.UnSubscribe(EventName.OnActionSelectionStarted, HandleTargetingStarted);
+            EventManager.UnSubscribe(EventName.OnChainTargetSelectionStarted, HandleTargetingStarted);
+
+            if (TooltipController.Instance != null) TooltipController.Instance.SetPinned(false);
+        }
+
+        // Los providers recolectan fresh en cada Show: re-mostrar ES el refresh del bloque de
+        // próximo turno mientras el panel está fijado, sin re-hoverear.
+        private void HandlePinRefresh(params object[] args)
+        {
+            if (!_pinned) return;
+
+            ShowTooltip(_camera != null ? _camera : Camera.main);
+            PinRefreshed?.Invoke();
+        }
+
+        // Al agarrar la ficha de atacar el panel se cierra solo: el click vuelve a ser 100% de
+        // seleccionar objetivo (decisión §6.2 del spec de tooltips).
+        private void HandleTargetingStarted(params object[] args)
+        {
+            Unpin();
+            if (!_hoverActive) return;
+            SetHover(false, null);
         }
 
         private bool RaycastHitsMe(Camera cam, Vector2 mouseScreen)
@@ -218,6 +321,10 @@ namespace Rollgeon.UI.Tooltips
 
             TooltipController.Instance.Show(
                 content, ResolvePlacementScreenPos(cam), _ownerId, _placement.Mode);
+
+            // Cada Show pisa el candado del panel compartido; el dueño lo re-afirma. Así el
+            // hover de otro trigger sobre un panel fijado no deja el candado mintiendo.
+            if (_pinned) TooltipController.Instance.SetPinned(true);
         }
 
         private TooltipContent BuildContent()
@@ -276,6 +383,9 @@ namespace Rollgeon.UI.Tooltips
         // donde el user ve la puerta.
         private Vector2 ResolveAnchorScreenPos(Camera cam)
         {
+            // Sin cámara no hay proyección — pasa en el refresh del fijado fuera de una escena
+            // completa. ScreenTopRight ignora el punto igual.
+            if (cam == null) return Vector2.zero;
             Vector3 rtPos = cam.WorldToScreenPoint(transform.position);
             if (cam.pixelWidth <= 0 || cam.pixelHeight <= 0) return rtPos;
             return new Vector2(
@@ -285,13 +395,25 @@ namespace Rollgeon.UI.Tooltips
 
         private void HideTooltip()
         {
-            if (TooltipController.Instance != null) TooltipController.Instance.Hide(_ownerId);
+            if (TooltipController.Instance == null) return;
+
+            // Con otro trigger fijado, salir de este hover no cierra el panel: se lo devuelve al
+            // fijado, que lo re-muestra con su contenido (y su candado).
+            if (s_pinned != null && s_pinned != this && s_pinned._pinned)
+            {
+                s_pinned.ShowTooltip(s_pinned._camera != null ? s_pinned._camera : Camera.main);
+                s_pinned.PinRefreshed?.Invoke();
+                return;
+            }
+
+            TooltipController.Instance.Hide(_ownerId);
         }
 
         // Levanta HoverChanged(false) a propósito: es lo que apaga el dibujo cuando el enemigo
-        // muere con el mouse encima.
+        // muere con el mouse encima. El fijado también muere con el dueño.
         private void OnDisable()
         {
+            Unpin();
             SetHover(false, null);
         }
 

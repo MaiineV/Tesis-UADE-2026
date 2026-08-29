@@ -139,6 +139,16 @@ namespace Rollgeon.Entities.Visuals
                 else preview.Clear();
             };
 
+            // El click fija el panel (candado). Solo enemigos: fuera de targeting el click sobre
+            // un enemigo hoy no hace nada, así que el gesto está libre; en targeting el trigger
+            // lo ignora y el click sigue siendo 100% de apuntar.
+            trigger.PinOnClick = true;
+
+            // El fijado re-muestra sin flanco de hover (cambio de turno, o el hover de otro
+            // trigger que devolvió el panel) — el overlay de amenaza se repinta con él.
+            trigger.PinRefreshed += () =>
+                Rollgeon.Combat.AI.EnemyIntentPreviewOverlay.ResolveOrCreate().Show(guid);
+
             // La fila sobre la cabeza y la columna del tooltip leen la MISMA lista: el icono que
             // flota sobre el bicho y el de su tarjeta son el mismo sprite, que es lo que hace que
             // el sistema se entienda sin tutorial.
