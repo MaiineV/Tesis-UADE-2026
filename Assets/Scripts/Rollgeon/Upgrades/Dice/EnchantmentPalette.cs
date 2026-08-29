@@ -22,5 +22,39 @@ namespace Rollgeon.Upgrades.Dice
         /// <summary>Hex RRGGBB (sin #) para rich text inline.</summary>
         public static string TitleHex(EnchantmentSO enchantment)
             => ColorUtility.ToHtmlStringRGB(TitleColor(enchantment));
+
+        // ------------------------------------------------------------------
+        // Colores por categoría — regla 9.1 de la paleta: reusar hexas
+        // existentes en vez de inventar (telegraph, maná, escudo, oro, vida).
+        // ------------------------------------------------------------------
+
+        /// <summary>#E0763D — Ataque (naranja telegraph).</summary>
+        public static readonly Color32 Ataque = new Color32(0xE0, 0x76, 0x3D, 0xFF);
+
+        /// <summary>#6E7FD1 — Control (azul maná).</summary>
+        public static readonly Color32 Control = new Color32(0x6E, 0x7F, 0xD1, 0xFF);
+
+        /// <summary>#A3B3B1 — Defensa (gris escudo).</summary>
+        public static readonly Color32 Defensa = new Color32(0xA3, 0xB3, 0xB1, 0xFF);
+
+        /// <summary>#D9A44E — Economía (dorado oro).</summary>
+        public static readonly Color32 Economia = new Color32(0xD9, 0xA4, 0x4E, 0xFF);
+
+        /// <summary>#D1365A — Maldición (rojo vida, mismo hex que Cursed).</summary>
+        public static readonly Color32 Maldicion = new Color32(0xD1, 0x36, 0x5A, 0xFF);
+
+        public static Color32 CategoryColor(EnchantmentCategory category) => category switch
+        {
+            EnchantmentCategory.Ataque => Ataque,
+            EnchantmentCategory.Control => Control,
+            EnchantmentCategory.Defensa => Defensa,
+            EnchantmentCategory.Economia => Economia,
+            EnchantmentCategory.Maldicion => Maldicion,
+            _ => Blessed,
+        };
+
+        /// <summary>Hex RRGGBB (sin #) del color de la categoría, para rich text inline.</summary>
+        public static string CategoryHex(EnchantmentCategory category)
+            => ColorUtility.ToHtmlStringRGB(CategoryColor(category));
     }
 }

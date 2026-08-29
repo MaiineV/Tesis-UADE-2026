@@ -1622,14 +1622,10 @@ public static class DiceTypeExt
     public static int MaxFace(this DiceType t) => t switch {
         DiceType.D4 => 4, DiceType.D6 => 6, DiceType.D8 => 8,
         DiceType.D10 => 10, DiceType.D12 => 12, DiceType.D20 => 20, _ => 6 };
-
-    public static int MaxPerBag(this DiceType t) => t switch {
-        DiceType.D4 => 5, DiceType.D6 => 5, DiceType.D8 => 4,
-        DiceType.D10 => 3, DiceType.D12 => 2, DiceType.D20 => 1, _ => 5 };
 }
 ```
 
-**Reglas del GD (Dice Builder).** 5 dados exactos por bolsa, máximos por tipo duros (sin pesos).
+**Reglas del GD (Dice Builder).** 5 dados exactos por bolsa, **sin tope de copias por tipo** (5×D20 es una bolsa válida). El tope por tipo (`MaxPerBag` / `DicePoolEntry.MaxInBag`) existió hasta agosto 2026 y se eliminó: el pool de una clase (`DiceBagPoolSO.Offerings`) ahora solo define *qué tipos* se ofrecen, y cualquier tipo ofrecido puede llenar la bolsa entera.
 
 ### 6.2 `DiceBagSO`
 
@@ -1647,10 +1643,6 @@ public class DiceBagSO : ScriptableObject
     {
         if (Dice.Count != 5)
             Debug.LogWarning($"{name}: DiceBag debe tener 5 dados (tiene {Dice.Count})");
-
-        foreach (var group in Dice.GroupBy(d => d))
-            if (group.Count() > group.Key.MaxPerBag())
-                Debug.LogWarning($"{name}: {group.Key} excede máximo ({group.Count()}/{group.Key.MaxPerBag()})");
     }
 }
 ```

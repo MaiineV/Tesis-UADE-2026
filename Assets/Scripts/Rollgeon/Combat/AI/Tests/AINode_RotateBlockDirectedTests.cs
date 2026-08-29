@@ -42,7 +42,7 @@ namespace Rollgeon.Combat.AI.Tests
 
             _bag = ScriptableObject.CreateInstance<DiceBagSO>();
             _bag.hideFlags = HideFlags.HideAndDontSave;
-            // Uno de cada tipo: la bolsa canónica son 5 dados y así ningún tipo pasa su MaxPerBag
+            // Uno de cada tipo: la bolsa canónica son 5 dados
             // (una bolsa inválida sólo loguea warnings, pero ensucian el runner).
             _bag.Dice = new List<DiceType> { DiceType.D4, DiceType.D6, DiceType.D8, DiceType.D10, DiceType.D12 };
 

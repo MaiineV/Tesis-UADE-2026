@@ -155,7 +155,7 @@ MonoBehaviour:
   m_FillClockwise: 1
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
-  m_PixelsPerUnitMultiplier: 1
+  m_PixelsPerUnitMultiplier: 0.2
 --- !u!114 &2129149739039793646
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -171,7 +171,7 @@ MonoBehaviour:
   _nameLabel: {fileID: 2463155849634705918}
   _bodyLabel: {fileID: 314831847980593559}
   _lockIcon: {fileID: 1481729040914908429}
-  _unlockedNameColor: {r: 0.90588236, g: 0.8901961, b: 0.8862745, a: 1}
+  _unlockedNameColor: {r: 0, g: 0, b: 0, a: 1}
   _lockedNameColor: {r: 0.1254902, g: 0.101960786, b: 0.08235294, a: 1}
 --- !u!114 &5380517166936641493
 MonoBehaviour:
@@ -492,8 +492,8 @@ MonoBehaviour:
   m_fontMaterials: []
   m_fontColor32:
     serializedVersion: 2
-    rgba: 4293059559
-  m_fontColor: {r: 0.90588236, g: 0.8901961, b: 0.8862745, a: 1}
+    rgba: 4278190080
+  m_fontColor: {r: 0, g: 0, b: 0, a: 1}
   m_enableVertexGradient: 0
   m_colorMode: 3
   m_fontColorGradient:

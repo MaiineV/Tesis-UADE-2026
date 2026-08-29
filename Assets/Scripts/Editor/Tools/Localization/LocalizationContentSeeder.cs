@@ -608,9 +608,9 @@ namespace Rollgeon.EditorTools.Localization
         {
             Ui(BuildHelpTextKeys.Pool,
                 "Estos son los dados de tu clase. Haz clic en uno para sumarlo a la bolsa; " +
-                "el número de cada fila dice cuántos puedes llevar de ese tipo.",
-                "These are your class dice. Click one to add it to your bag; the number on each " +
-                "row shows how many of that type you can carry.");
+                "puedes repetir el mismo tipo tantas veces como quieras.",
+                "These are your class dice. Click one to add it to your bag; you can repeat " +
+                "the same type as many times as you like.");
 
             Ui(BuildHelpTextKeys.Strip,
                 "Tu bolsa se arma aquí, siempre ordenada de menor a mayor. Haz clic en un dado " +
@@ -803,11 +803,14 @@ namespace Rollgeon.EditorTools.Localization
         private static void SeedDiceBag()
         {
             Ui(DiceBagTextKeys.Title, "Bolsa de Dados", "Dice Bag");
-            Ui(DiceBagTextKeys.SlotsCaption, "Encantamientos", "Enchantments");
-            // Van detrás del contador ("2 encantamientos"), así que en minúscula y sin punto.
-            Ui(DiceBagTextKeys.EnchSingular, "encantamiento", "enchantment");
-            Ui(DiceBagTextKeys.EnchPlural, "encantamientos", "enchantments");
             Ui(DiceBagTextKeys.NoEnchantments, "Sin encantamientos.", "No enchantments.");
+
+            // Labels de categoría del acordeón ("Ancla - Control").
+            Ui(DiceBagTextKeys.CatAtaque, "Ataque", "Attack");
+            Ui(DiceBagTextKeys.CatControl, "Control", "Control");
+            Ui(DiceBagTextKeys.CatDefensa, "Defensa", "Defense");
+            Ui(DiceBagTextKeys.CatEconomia, "Economía", "Economy");
+            Ui(DiceBagTextKeys.CatMaldicion, "Maldición", "Curse");
         }
 
         // ==================================================================

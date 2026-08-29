@@ -17,7 +17,7 @@ MonoBehaviour:
   CloseSeconds: 0.12
   TotalCells: 40
   MinSpinCells: 28
-  CellWidth: 96
+  CellWidth: 110
   CellSpacing: 8
   SpinSeconds: 3.6
   DecelerationCurve:
@@ -33,4 +33,46 @@ MonoBehaviour:
   RevealFadeSeconds: 0.2
   AutoDismissSeconds: 0
   SkipSpeedMultiplier: 3
+  SpinSnapT: 0.55
   MaxSequenceSeconds: 12
+  EnableSfx: 1
+  EnableParticles: 1
+  EnableShakeAndHitstop: 1
+  DimFadeSeconds: 0.15
+  DimRestAlpha: 0.6
+  OpenTiltDegrees: 4
+  TitlePunchScale: 0.15
+  TitlePunchSeconds: 0.18
+  ClosePanelScaleTo: 0.94
+  TickBasePitch: 0.9
+  TickMaxPitch: 1.5
+  TickMinInterval: 0.03
+  TickVolume: 0.5
+  PointerFlickDegrees: 10
+  PointerFlickSeconds: 0.08
+  ClimaxT: 0.85
+  ClimaxZoomScale: 1.03
+  ClimaxZoomSeconds: 0.6
+  ClimaxDuckFactor: 0.7
+  FlashSeconds: 0.15
+  FlashPeakAlphaMax: 0.25
+  BurstIntensityMin: 0.2
+  BurstIntensityMax: 1
+  PanelShakeAmplitudeMax: 7
+  PanelShakeSeconds: 0.3
+  PanelShakeFrequency: 12
+  CamShakeAmplitudeMax: 0.6
+  CamShakeSeconds: 0.25
+  HitstopSeconds: 0.05
+  ChimePitchMin: 0.9
+  ChimePitchMax: 1.25
+  WinnerPunchScaleMin: 1.1
+  WinnerPunchScaleMax: 1.25
+  WinnerPunchSeconds: 0.18
+  RevealDuckFactor: 0.5
+  CardPopScaleFrom: 0.8
+  CardPopSeconds: 0.22
+  GoldCountUpSeconds: 0.35
+  IdlePulsePeriod: 0.9
+  IdlePulseColorLerp: 0.35
+  IdlePulseScale: 1.03

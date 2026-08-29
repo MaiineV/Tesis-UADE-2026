@@ -45,7 +45,7 @@ namespace Rollgeon.UI.Tests
             _row.OnRemoveRequested += t => _removed.Add(t);
             _row.OnAddRequested += t => _added.Add(t);
 
-            _row.Bind(DiceType.D6, maxInBag: 3);
+            _row.Bind(DiceType.D6);
         }
 
         [TearDown]
@@ -97,20 +97,6 @@ namespace Rollgeon.UI.Tests
             // Arrange — bolsa llena: Refresh apaga el botón de agregar. Es justo cuando
             // más querés poder sacar, así que el derecho NO puede mirar interactable.
             _row.Refresh(currentCount: 2, bagHasRoom: false);
-            Assert.IsFalse(_addButton.interactable, "precondición del test");
-
-            // Act
-            RightClickTheDie();
-
-            // Assert
-            CollectionAssert.AreEqual(new[] { DiceType.D6 }, _removed);
-        }
-
-        [Test]
-        public void should_request_remove_even_when_type_is_exhausted()
-        {
-            // Arrange — 3/3 de este tipo: el add está apagado y la fila atenuada.
-            _row.Refresh(currentCount: 3, bagHasRoom: true);
             Assert.IsFalse(_addButton.interactable, "precondición del test");
 
             // Act

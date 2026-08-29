@@ -201,7 +201,7 @@ namespace Rollgeon.UI.Screens
 
                 var row = Instantiate(_poolOfferingPrefab, _poolOfferingsContainer);
                 var sprite = _diceUiSettings != null ? _diceUiSettings.GetSprite(entry.Type) : null;
-                row.Bind(entry.Type, entry.MaxInBag, sprite);
+                row.Bind(entry.Type, sprite);
                 row.OnAddRequested += OnAddDice;
                 row.OnRemoveRequested += OnRemoveDice;
                 _poolRows.Add(row);
@@ -220,9 +220,8 @@ namespace Rollgeon.UI.Screens
             if (pool == null) return;
             if (_currentBag.Count >= pool.RequiredBagSize) return;
 
-            int currentOfType = _currentBag.Count(d => d == type);
-            int maxOfType = pool.MaxFor(type);
-            if (currentOfType >= maxOfType) return;
+            // Sin tope por tipo: cualquier dado ofrecido puede llenar la bolsa (5×D20 ok).
+            if (!pool.Offers(type)) return;
 
             _currentBag.Add(type);
             RefreshUI();
@@ -326,7 +325,7 @@ namespace Rollgeon.UI.Screens
                 _poolOfferingsContainer as RectTransform,
                 BuildHelpTextKeys.Pool,
                 "Estos son los dados de tu clase. Haz clic en uno para sumarlo a la bolsa; " +
-                "el número de cada fila dice cuántos puedes llevar de ese tipo.");
+                "puedes repetir el mismo tipo tantas veces como quieras.");
 
             // Solo la tira. Sumar el contador al recorte (que está en la esquina opuesta)
             // hacía que el spotlight abarcara el bounding box de ambos: un círculo enorme

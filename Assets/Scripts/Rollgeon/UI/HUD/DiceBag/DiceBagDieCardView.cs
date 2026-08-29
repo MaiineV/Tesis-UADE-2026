@@ -1,37 +1,26 @@
 using System;
 using Rollgeon.Upgrades.Dice;
 using Sirenix.OdinInspector;
-using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
 namespace Rollgeon.UI.HUD.DiceBag
 {
     /// <summary>
-    /// Un dado de la bolsa: la casilla, el ícono del dado con su número de caras (igual que
-    /// en la mesa de encantamientos) y, POR FUERA del cuadrado, cuántos encantamientos
-    /// acumuló (stack sin techo — GDD).
+    /// Un dado de la bolsa: el sprite del dado con su número de caras encima, sin
+    /// marco ni fondo (mock "new dice bag drawer"). El seleccionado se marca con
+    /// alpha pleno + escala; el resto queda atenuado.
     /// </summary>
-    /// <remarks>
-    /// El contador va afuera del marco a pedido de diseño: adentro competía con el número
-    /// de caras y la casilla quedaba cargada.
-    /// </remarks>
     [AddComponentMenu("Rollgeon/UI/HUD/Dice Bag Die Card View")]
     public class DiceBagDieCardView : MonoBehaviour
     {
+        private const float SelectedScale = 1.1f;
+        private const float DimmedAlpha = 0.7f;
+
         [Title("Refs")]
-        [SerializeField, Required] private Image _frame;
         [SerializeField, Required] private Image _diceIcon;
-        [SerializeField, Required] private TextMeshProUGUI _faceCountLabel;
-        [SerializeField, Required] private TextMeshProUGUI _slotsLabel;
+        [SerializeField, Required] private TMPro.TextMeshProUGUI _faceCountLabel;
         [SerializeField, Required] private Button _button;
-
-        [Title("Marcos")]
-        [SerializeField, Tooltip("Casilla en reposo (UI-sheet_7).")]
-        private Sprite _idleFrame;
-
-        [SerializeField, Tooltip("Casilla del dado seleccionado (UI-sheet_5).")]
-        private Sprite _selectedFrame;
 
         [Title("Encantamiento")]
         [SerializeField, Tooltip("Material del dado encantado (EnchantHoloUI) — el mismo que usan " +
@@ -58,8 +47,7 @@ namespace Rollgeon.UI.HUD.DiceBag
 
         private void HandleClick() => _onClick?.Invoke();
 
-        public void Bind(Sprite diceSprite, int maxFace, int enchantCount,
-                         string enchantSuffix, Action onClick)
+        public void Bind(Sprite diceSprite, int maxFace, Action onClick)
         {
             _onClick = onClick;
 
@@ -69,14 +57,8 @@ namespace Rollgeon.UI.HUD.DiceBag
                 _diceIcon.enabled = diceSprite != null;
             }
 
-            if (_faceCountLabel != null) _faceCountLabel.text = maxFace > 0 ? maxFace.ToString() : string.Empty;
-
-            // "2 encantamientos" — el sufijo viene ya localizado del panel, que es quien
-            // sabe de la tabla; la card solo dibuja. Sin encantamientos, sin contador.
-            if (_slotsLabel != null)
-                _slotsLabel.text = enchantCount > 0
-                    ? $"{enchantCount} {enchantSuffix}".TrimEnd()
-                    : string.Empty;
+            if (_faceCountLabel != null)
+                _faceCountLabel.text = maxFace > 0 ? maxFace.ToString() : string.Empty;
         }
 
         /// <summary>
@@ -104,11 +86,17 @@ namespace Rollgeon.UI.HUD.DiceBag
             return _enchantMaterial;
         }
 
+        /// <summary>Sin marco, la selección se lee por presencia: alpha pleno y un toque de escala.</summary>
         public void SetSelected(bool selected)
         {
-            if (_frame == null) return;
-            var sprite = selected ? _selectedFrame : _idleFrame;
-            if (sprite != null) _frame.sprite = sprite;
+            if (_diceIcon != null)
+            {
+                var c = _diceIcon.color;
+                c.a = selected ? 1f : DimmedAlpha;
+                _diceIcon.color = c;
+            }
+
+            transform.localScale = Vector3.one * (selected ? SelectedScale : 1f);
         }
     }
 }

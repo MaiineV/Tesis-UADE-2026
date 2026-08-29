@@ -47,6 +47,9 @@ MonoBehaviour:
     - Name: 
       Entry: 8
       Data: 
+    - Name: _category
+      Entry: 3
+      Data: 2
     - Name: _allowedDiceTypes
       Entry: 7
       Data: 1|System.Collections.Generic.List`1[[Rollgeon.Dice.DiceType, Rollgeon]],
@@ -96,13 +99,13 @@ MonoBehaviour:
       Entry: 8
       Data: 
   _faceFilter:
-    rid: 6878114965000815260
+    rid: 144068563111248736
   _triggers: []
   _capabilities: []
   references:
     version: 2
     RefIds:
-    - rid: 6878114965000815260
+    - rid: 144068563111248736
       type: {class: ParityFilter, ns: Rollgeon.Upgrades.Dice.Filters, asm: Rollgeon}
       data:
         Allowed: 0

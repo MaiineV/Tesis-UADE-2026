@@ -34,6 +34,12 @@ namespace Rollgeon.Upgrades.Dice
         fileName = "Enchantment")]
     public class EnchantmentSO : UpgradeSO
     {
+        [Title("Category")]
+        [InfoBox("Tipo que la UI muestra junto al nombre (Ataque, Control, ...). " +
+                 "None = sin clasificar — la auditoría lo rechaza.")]
+        [OdinSerialize]
+        protected EnchantmentCategory _category = EnchantmentCategory.None;
+
         [Title("Compatibility")]
         [InfoBox("Tipos de dado a los que este encantamiento puede aplicarse. " +
                  "Vacío = aplica a todos los tipos. La validación previa al apply " +
@@ -68,6 +74,17 @@ namespace Rollgeon.Upgrades.Dice
 
         /// <inheritdoc />
         public override UpgradeChannel Channel => UpgradeChannel.Dice;
+
+        /// <summary>Tipo mostrado por la UI junto al nombre. None = sin clasificar.</summary>
+        public EnchantmentCategory Category => _category;
+
+#if UNITY_EDITOR
+        /// <summary>
+        /// Setter editor-only para builders (los assets son Odin — nunca editar el
+        /// YAML a mano; asignar por código + SetDirty + SaveAssets).
+        /// </summary>
+        public void EditorSetCategory(EnchantmentCategory category) => _category = category;
+#endif
 
         /// <summary>Tipos de dado válidos. Empty = todos.</summary>
         public IReadOnlyList<DiceType> AllowedDiceTypes => _allowedDiceTypes;

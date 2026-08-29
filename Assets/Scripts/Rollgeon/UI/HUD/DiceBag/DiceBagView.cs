@@ -10,17 +10,20 @@ using Rollgeon.Upgrades.Dice.UI;
 using Sirenix.OdinInspector;
 using TMPro;
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace Rollgeon.UI.HUD.DiceBag
 {
     /// <summary>
-    /// Contenido del panel de la bolsa de dados: los dados de la run, los
-    /// encantamientos del que esté elegido, sus caras y la descripción.
+    /// Contenido del panel de la bolsa de dados (mock "new dice bag drawer"): los
+    /// dados de la run (solo sprite, el seleccionado resaltado), las caras del
+    /// elegido en una fila responsive, y el acordeón de encantamientos — filas
+    /// "Nombre - Tipo" cuya descripción se expande de a una.
     /// </summary>
     /// <remarks>
-    /// Misma estructura que la mesa de encantamientos, pero SOLO INFORMATIVO: acá no se
-    /// encanta nada, así que no hay costo, ni confirmar, ni oro. Por eso vive en el HUD y
-    /// está disponible en combate y en exploración — es la ayuda visual de "qué tengo".
+    /// SOLO INFORMATIVO: acá no se encanta nada, así que no hay costo, ni confirmar,
+    /// ni oro. Por eso vive en el HUD y está disponible en combate y en exploración —
+    /// es la ayuda visual de "qué tengo".
     /// </remarks>
     [AddComponentMenu("Rollgeon/UI/HUD/Dice Bag View")]
     [RequireComponent(typeof(SlidingDrawer))]
@@ -30,18 +33,17 @@ namespace Rollgeon.UI.HUD.DiceBag
         [SerializeField, Required] private RectTransform _diceContainer;
         [SerializeField, Required] private DiceBagDieCardView _dieCardPrefab;
 
-        [Title("Cupos")]
-        [SerializeField, Required] private RectTransform _slotsContainer;
-        [SerializeField, Required] private DiceBagSlotView _slotPrefab;
-
         [Title("Caras")]
         [SerializeField, Required] private RectTransform _facesContainer;
         [SerializeField, Required] private EnchantmentFaceCardView _faceCardPrefab;
 
+        [Title("Encantamientos")]
+        [SerializeField, Required] private RectTransform _enchantListContainer;
+        [SerializeField, Required] private DiceBagEnchantRowView _enchantRowPrefab;
+        [SerializeField] private TextMeshProUGUI _noEnchantmentsLabel;
+
         [Title("Textos")]
         [SerializeField] private TextMeshProUGUI _titleLabel;
-        [SerializeField] private TextMeshProUGUI _slotsCaptionLabel;
-        [SerializeField, Required] private TextMeshProUGUI _descriptionLabel;
 
         [Title("Settings")]
         [SerializeField, Required]
@@ -49,13 +51,13 @@ namespace Rollgeon.UI.HUD.DiceBag
         private DiceBuildUiSettingsSO _diceUiSettings;
 
         private readonly List<DiceBagDieCardView> _dieCards = new();
-        private readonly List<DiceBagSlotView> _slotViews = new();
         private readonly List<EnchantmentFaceCardView> _faceCards = new();
+        private readonly List<DiceBagEnchantRowView> _enchantRows = new();
         private readonly List<EnchantmentSO> _selectedDieEnchantments = new();
 
         private SlidingDrawer _drawer;
         private int _selectedDie = -1;
-        private int _selectedSlot = -1;
+        private int _expandedRow = -1;
 
         private void Awake()
         {
@@ -76,8 +78,6 @@ namespace Rollgeon.UI.HUD.DiceBag
         {
             if (_titleLabel != null)
                 _titleLabel.text = LocalizedContent.Ui(DiceBagTextKeys.Title, "Bolsa de Dados");
-            if (_slotsCaptionLabel != null)
-                _slotsCaptionLabel.text = LocalizedContent.Ui(DiceBagTextKeys.SlotsCaption, "Encantamientos");
         }
 
         // ==================================================================
@@ -103,14 +103,9 @@ namespace Rollgeon.UI.HUD.DiceBag
 
                 int index = i; // capture
                 var type = bag.Dice[i];
-                int enchantCount = CountUsedSlots(bag, i);
                 _dieCards[i].Bind(
                     _diceUiSettings != null ? _diceUiSettings.GetSprite(type) : null,
                     type.MaxFace(),
-                    enchantCount,
-                    enchantCount == 1
-                        ? LocalizedContent.Ui(DiceBagTextKeys.EnchSingular, "encantamiento")
-                        : LocalizedContent.Ui(DiceBagTextKeys.EnchPlural, "encantamientos"),
                     () => SelectDie(index));
                 // Mismo holo que los dados encantados de la zona de combate: se identifica
                 // de un vistazo cuáles tienen al menos un encantamiento.
@@ -127,48 +122,13 @@ namespace Rollgeon.UI.HUD.DiceBag
         private void SelectDie(int index)
         {
             _selectedDie = index;
-            _selectedSlot = -1;
+            _expandedRow = -1;
 
             for (int i = 0; i < _dieCards.Count; i++)
                 _dieCards[i].SetSelected(i == index);
 
-            RebuildSlots();
             RebuildFaces();
-            RefreshDescription();
-        }
-
-        private void RebuildSlots()
-        {
-            // Solo los encantamientos aplicados — con el stack sin techo no
-            // existen "cupos vacíos" que mostrar (los nulls son tombstones de
-            // removes y tampoco se dibujan).
-            _selectedDieEnchantments.Clear();
-            if (_selectedDie >= 0)
-            {
-                var slots = ResolveBag()?.GetEnchantments(_selectedDie);
-                if (slots != null)
-                {
-                    for (int i = 0; i < slots.Count; i++)
-                        if (slots[i] != null) _selectedDieEnchantments.Add(slots[i]);
-                }
-            }
-
-            int count = _selectedDieEnchantments.Count;
-            EnsureSlots(count);
-
-            for (int i = 0; i < _slotViews.Count; i++)
-            {
-                bool used = i < count;
-                _slotViews[i].gameObject.SetActive(used);
-                if (!used) continue;
-
-                int index = i; // capture
-                _slotViews[i].Bind(filled: true, () => SelectSlot(index));
-                _slotViews[i].SetSelected(false);
-            }
-
-            if (_slotsCaptionLabel != null)
-                _slotsCaptionLabel.gameObject.SetActive(count > 0);
+            RebuildEnchantList();
         }
 
         private void RebuildFaces()
@@ -184,6 +144,7 @@ namespace Rollgeon.UI.HUD.DiceBag
                 sprite = _diceUiSettings != null ? _diceUiSettings.GetSprite(type) : null;
             }
 
+            ApplyResponsiveCellSize(count);
             EnsureFaceCards(count);
 
             for (int i = 0; i < _faceCards.Count; i++)
@@ -195,70 +156,66 @@ namespace Rollgeon.UI.HUD.DiceBag
             }
         }
 
-        private void SelectSlot(int index)
+        // Más caras = celdas más chicas, siempre una fila que entra en la banda.
+        private void ApplyResponsiveCellSize(int faces)
         {
-            _selectedSlot = index;
-            for (int i = 0; i < _slotViews.Count; i++)
-                _slotViews[i].SetSelected(i == index);
-            RefreshDescription();
+            if (_facesContainer == null || faces <= 0) return;
+            if (!_facesContainer.TryGetComponent<GridLayoutGroup>(out var grid)) return;
+
+            float cell = DiceBagFaceLayout.CellSize(faces, _facesContainer.rect.width, grid.spacing.x);
+            grid.cellSize = new Vector2(cell, cell);
         }
 
-        /// <summary>
-        /// Describe el encantamiento elegido; sin elección, resume los del dado.
-        /// </summary>
-        private void RefreshDescription()
+        // ==================================================================
+        // Acordeón de encantamientos
+        // ==================================================================
+
+        private void RebuildEnchantList()
         {
-            if (_descriptionLabel == null) return;
-
-            if (_selectedDie < 0 || ResolveBag() == null)
+            // Solo los aplicados — los nulls son tombstones de removes y no se dibujan.
+            _selectedDieEnchantments.Clear();
+            if (_selectedDie >= 0)
             {
-                _descriptionLabel.text = string.Empty;
-                return;
-            }
-
-            if (_selectedSlot >= 0 && _selectedSlot < _selectedDieEnchantments.Count)
-            {
-                _descriptionLabel.text = DescribeEnchantment(_selectedDieEnchantments[_selectedSlot]);
-                return;
-            }
-
-            // Sin encantamiento elegido: el resumen del dado.
-            _descriptionLabel.text = BuildSummary(_selectedDieEnchantments);
-        }
-
-        /// <summary>
-        /// Resumen de los encantamientos del dado, una línea por cada uno.
-        /// </summary>
-        /// <remarks>
-        /// Propio y no <c>EnchantmentAltarView.BuildDiceTooltip</c>: aquel tiene el "Sin
-        /// encantamientos" hardcodeado en español, y además ata este HUD a una pantalla con
-        /// la que no comparte ciclo de vida.
-        /// </remarks>
-        private static string BuildSummary(IReadOnlyList<EnchantmentSO> slots)
-        {
-            var lines = new List<string>();
-            if (slots != null)
-            {
-                for (int i = 0; i < slots.Count; i++)
+                var slots = ResolveBag()?.GetEnchantments(_selectedDie);
+                if (slots != null)
                 {
-                    if (slots[i] == null) continue;
-                    lines.Add("• " + DescribeEnchantment(slots[i]).Replace("\n", " — "));
+                    for (int i = 0; i < slots.Count; i++)
+                        if (slots[i] != null) _selectedDieEnchantments.Add(slots[i]);
                 }
             }
 
-            return lines.Count > 0
-                ? string.Join("\n", lines)
-                : LocalizedContent.Ui(DiceBagTextKeys.NoEnchantments, "Sin encantamientos.");
+            int count = _selectedDieEnchantments.Count;
+            EnsureEnchantRows(count);
+
+            for (int i = 0; i < _enchantRows.Count; i++)
+            {
+                bool used = i < count;
+                _enchantRows[i].gameObject.SetActive(used);
+                if (!used) continue;
+
+                int index = i; // capture
+                _enchantRows[i].Bind(_selectedDieEnchantments[i], () => OnRowClicked(index));
+            }
+
+            if (_noEnchantmentsLabel != null)
+            {
+                bool empty = _selectedDie >= 0 && count == 0;
+                _noEnchantmentsLabel.gameObject.SetActive(empty);
+                if (empty)
+                    _noEnchantmentsLabel.text =
+                        LocalizedContent.Ui(DiceBagTextKeys.NoEnchantments, "Sin encantamientos.");
+            }
         }
 
-        private static string DescribeEnchantment(EnchantmentSO ench)
+        /// <summary>
+        /// Acordeón exclusivo: click abre la fila y cierra la que estuviera abierta;
+        /// re-click sobre la abierta la cierra.
+        /// </summary>
+        private void OnRowClicked(int index)
         {
-            string name = $"<color=#{EnchantmentPalette.TitleHex(ench)}>" +
-                          LocalizedContent.Name(ench.UpgradeId,
-                              !string.IsNullOrEmpty(ench.DisplayName) ? ench.DisplayName : ench.UpgradeId) +
-                          "</color>";
-            string body = LocalizedContent.Description(ench.UpgradeId, ench.Description ?? string.Empty);
-            return string.IsNullOrEmpty(body) ? $"<b>{name}</b>" : $"<b>{name}</b>\n{body}";
+            _expandedRow = _expandedRow == index ? -1 : index;
+            for (int i = 0; i < _enchantRows.Count; i++)
+                _enchantRows[i].SetExpanded(i == _expandedRow);
         }
 
         // ==================================================================
@@ -273,17 +230,6 @@ namespace Rollgeon.UI.HUD.DiceBag
                 : null;
         }
 
-        private static int CountUsedSlots(RuntimeDiceBag bag, int bagIndex)
-        {
-            var slots = bag?.GetEnchantments(bagIndex);
-            if (slots == null) return 0;
-
-            int used = 0;
-            for (int i = 0; i < slots.Count; i++)
-                if (slots[i] != null) used++;
-            return used;
-        }
-
         // Los tres pools se reusan y solo se apagan: el panel se repuebla en cada apertura.
         private void EnsureDieCards(int needed)
         {
@@ -291,16 +237,16 @@ namespace Rollgeon.UI.HUD.DiceBag
                 _dieCards.Add(Instantiate(_dieCardPrefab, _diceContainer));
         }
 
-        private void EnsureSlots(int needed)
-        {
-            while (_slotViews.Count < needed)
-                _slotViews.Add(Instantiate(_slotPrefab, _slotsContainer));
-        }
-
         private void EnsureFaceCards(int needed)
         {
             while (_faceCards.Count < needed)
                 _faceCards.Add(Instantiate(_faceCardPrefab, _facesContainer));
+        }
+
+        private void EnsureEnchantRows(int needed)
+        {
+            while (_enchantRows.Count < needed)
+                _enchantRows.Add(Instantiate(_enchantRowPrefab, _enchantListContainer));
         }
     }
 }

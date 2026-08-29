@@ -24,8 +24,8 @@ namespace Rollgeon.Dice
     }
 
     /// <summary>
-    /// Extensiones de <see cref="DiceType"/> con la tabla de caras, el tope por
-    /// bolsa y los cupos de encantamiento (Sistema de Mejoras In-Run).
+    /// Extensiones de <see cref="DiceType"/> con la tabla de caras y los cupos
+    /// de encantamiento (Sistema de Mejoras In-Run).
     /// </summary>
     public static class DiceTypeExt
     {
@@ -40,19 +40,6 @@ namespace Rollgeon.Dice
             DiceType.D12 => 12,
             DiceType.D20 => 20,
             _ => 6,
-        };
-
-        /// <summary>Máximo de copias de este dado permitidas en una bolsa de 5.</summary>
-        public static int MaxPerBag(this DiceType t) => t switch
-        {
-            DiceType.D3 => 5,
-            DiceType.D4 => 5,
-            DiceType.D6 => 5,
-            DiceType.D8 => 4,
-            DiceType.D10 => 3,
-            DiceType.D12 => 2,
-            DiceType.D20 => 1,
-            _ => 5,
         };
 
         /// <summary>

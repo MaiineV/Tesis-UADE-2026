@@ -59,20 +59,12 @@ namespace Rollgeon.Dice.Tests
         }
 
         [Test]
-        public void Validate_RejectsExcessOfD20()
+        public void Validate_AcceptsFiveOfSameType_NoPerTypeCap()
         {
-            // D20 tiene MaxPerBag = 1. Dos D20 + 3 D6 viola la regla.
-            var bag = MakeBag(DiceType.D20, DiceType.D20, DiceType.D6, DiceType.D6, DiceType.D6);
-            Assert.IsFalse(bag.Validate(out var error));
-            StringAssert.Contains("D20", error);
-        }
-
-        [Test]
-        public void Validate_AcceptsBoundaryD8()
-        {
-            // D8 tiene MaxPerBag = 4. 4xD8 + 1xD6 está en el límite — válido.
-            var bag = MakeBag(DiceType.D8, DiceType.D8, DiceType.D8, DiceType.D8, DiceType.D6);
+            // Sin tope por tipo: 5×D20 es una bolsa válida.
+            var bag = MakeBag(DiceType.D20, DiceType.D20, DiceType.D20, DiceType.D20, DiceType.D20);
             Assert.IsTrue(bag.Validate(out var error), "Expected valid; error='{0}'", error);
+            Assert.IsNull(error);
         }
 
         [Test]

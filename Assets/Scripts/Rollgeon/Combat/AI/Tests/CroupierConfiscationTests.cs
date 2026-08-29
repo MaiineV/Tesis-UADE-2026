@@ -34,7 +34,7 @@ namespace Rollgeon.Combat.AI.Tests
 
             _bag = ScriptableObject.CreateInstance<DiceBagSO>();
             _bag.hideFlags = HideFlags.HideAndDontSave;
-            // Uno de cada tipo: ningún tipo pasa su MaxPerBag, que sólo loguearía warnings.
+            // Uno de cada tipo — composición arbitraria, sin topes por tipo.
             _bag.Dice = new List<DiceType> { DiceType.D4, DiceType.D6, DiceType.D8, DiceType.D10, DiceType.D12 };
             Assert.AreEqual(BagSize, _bag.Dice.Count, "El módulo del índice se mide contra esta bolsa.");
 

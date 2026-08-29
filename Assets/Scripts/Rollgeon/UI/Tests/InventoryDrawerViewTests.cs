@@ -6,17 +6,18 @@ using Rollgeon.UI.HUD;
 using Rollgeon.UI.HUD.Inventory;
 using Rollgeon.UI.Tooltips;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
 namespace Rollgeon.UI.Tests
 {
     /// <summary>
-    /// Fórmulas de layout del drawer de inventario, el resize del rebuild y el bind de la
-    /// celda (base/ícono/tooltip).
+    /// Math del grid rombo (<see cref="InventoryDiamondLayout"/>), el resize del rebuild
+    /// y los estados de la celda (con/sin item, hover, tooltip).
     /// </summary>
     /// <remarks>
     /// El rebuild se prueba sin <c>IInventoryService</c> registrado (scope Run): el drawer
-    /// tiene que mostrar la fila vacía del mockup en vez de romper.
+    /// tiene que mostrar las 20 celdas vacías del mockup en vez de romper.
     /// </remarks>
     [TestFixture]
     public class InventoryDrawerViewTests
@@ -31,35 +32,64 @@ namespace Rollgeon.UI.Tests
         }
 
         // ------------------------------------------------------------------
-        // Fórmulas puras
+        // Math del layout rombo
         // ------------------------------------------------------------------
 
         [Test]
-        public void should_always_show_a_full_first_row_even_when_empty()
+        public void should_show_twenty_empty_cells_at_minimum()
         {
-            // Arrange + Act + Assert — el mockup muestra 6 celdas vacías, no cero.
-            Assert.AreEqual(6, InventoryDrawerView.VisibleCells(0));
-            Assert.AreEqual(1, InventoryDrawerView.Rows(0));
+            // Arrange + Act + Assert — el mockup arranca con 4 filas de 5 rombos.
+            Assert.AreEqual(20, InventoryDiamondLayout.VisibleCells(0));
+            Assert.AreEqual(4, InventoryDiamondLayout.Rows(0));
+            Assert.AreEqual(20, InventoryDiamondLayout.VisibleCells(20));
+            Assert.AreEqual(4, InventoryDiamondLayout.Rows(20));
         }
 
         [Test]
-        public void should_wrap_to_a_new_row_after_six_items()
+        public void should_grow_a_full_row_beyond_twenty_items()
         {
-            // Arrange + Act + Assert
-            Assert.AreEqual(6, InventoryDrawerView.VisibleCells(6));
-            Assert.AreEqual(12, InventoryDrawerView.VisibleCells(7));
-            Assert.AreEqual(3, InventoryDrawerView.Rows(13));
+            // Arrange + Act + Assert — con 21 items aparece la fila 5 completa.
+            Assert.AreEqual(25, InventoryDiamondLayout.VisibleCells(21));
+            Assert.AreEqual(5, InventoryDiamondLayout.Rows(21));
+            Assert.AreEqual(30, InventoryDiamondLayout.VisibleCells(26));
         }
 
         [Test]
-        public void should_grow_box_and_panel_height_per_extra_row()
+        public void should_stagger_odd_rows_half_a_cell_to_the_right()
         {
-            // Arrange — números del plan: caja 88 la primera fila, +72 por fila extra.
-            // Act + Assert
-            Assert.AreEqual(88f, InventoryDrawerView.BoxHeight(1), 0.001f);
-            Assert.AreEqual(160f, InventoryDrawerView.BoxHeight(2), 0.001f);
-            Assert.AreEqual(196f, InventoryDrawerView.PanelHeight(1), 0.001f);
-            Assert.AreEqual(268f, InventoryDrawerView.PanelHeight(2), 0.001f);
+            // Arrange — celda 0 (fila par) vs celda 5 (fila impar, misma columna).
+            var even = InventoryDiamondLayout.CellPosition(0);
+            var odd = InventoryDiamondLayout.CellPosition(5);
+
+            // Assert — misma columna, X corrida el stagger; el patrón se repite en fila 2.
+            Assert.AreEqual(even.x + InventoryDiamondLayout.RowStagger, odd.x, 0.001f);
+            Assert.AreEqual(even.x, InventoryDiamondLayout.CellPosition(10).x, 0.001f);
+        }
+
+        [Test]
+        public void should_place_cells_by_column_and_row_pitch()
+        {
+            // Arrange
+            float half = InventoryDiamondLayout.DiamondSize / 2f;
+
+            // Act
+            var first = InventoryDiamondLayout.CellPosition(0);
+            var second = InventoryDiamondLayout.CellPosition(1);
+            var rowBelow = InventoryDiamondLayout.CellPosition(5);
+
+            // Assert
+            Assert.AreEqual(new Vector2(half, -half), first);
+            Assert.AreEqual(first.x + InventoryDiamondLayout.ColPitch, second.x, 0.001f);
+            Assert.AreEqual(first.y - InventoryDiamondLayout.RowPitch, rowBelow.y, 0.001f);
+        }
+
+        [Test]
+        public void should_grow_panel_height_per_extra_row()
+        {
+            // Arrange + Act + Assert — una fila extra suma exactamente RowPitch.
+            float fourRows = InventoryDiamondLayout.PanelHeight(4);
+            float fiveRows = InventoryDiamondLayout.PanelHeight(5);
+            Assert.AreEqual(InventoryDiamondLayout.RowPitch, fiveRows - fourRows, 0.001f);
         }
 
         // ------------------------------------------------------------------
@@ -67,70 +97,83 @@ namespace Rollgeon.UI.Tests
         // ------------------------------------------------------------------
 
         [Test]
-        public void should_show_six_empty_cells_when_the_service_is_missing()
+        public void should_show_twenty_positioned_cells_when_the_service_is_missing()
         {
             // Arrange
-            var view = MakeDrawer(out var panel, out var itemsBox, out var grid);
+            var view = MakeDrawer(out var panel, out var grid);
 
             // Act
             view.Rebuild();
 
-            // Assert
-            Assert.AreEqual(6, CountActiveChildren(grid));
-            Assert.AreEqual(InventoryDrawerView.PanelHeight(1), panel.sizeDelta.y, 0.001f);
-            Assert.AreEqual(InventoryDrawerView.BoxHeight(1), itemsBox.sizeDelta.y, 0.001f);
+            // Assert — 20 celdas activas, posicionadas por la math (sin LayoutGroup).
+            Assert.AreEqual(20, CountActiveChildren(grid));
+            Assert.AreEqual(InventoryDiamondLayout.PanelHeight(4), panel.sizeDelta.y, 0.001f);
+            Assert.AreEqual(InventoryDiamondLayout.PanelWidth, panel.sizeDelta.x, 0.001f);
+
+            var slot7 = (RectTransform)grid.GetChild(7);
+            Assert.AreEqual(InventoryDiamondLayout.CellPosition(7), slot7.anchoredPosition);
         }
 
         // ------------------------------------------------------------------
-        // Celda
+        // Celda: estados con/sin item + hover
         // ------------------------------------------------------------------
 
         [Test]
-        public void should_show_nothing_inside_an_empty_cell()
+        public void should_show_the_empty_sprite_and_no_tooltip_on_an_empty_cell()
         {
-            // Arrange — celda vacía = cuadradito pelado: ni base, ni ícono, ni tooltip.
-            var slot = MakeSlot(out _, out var baseImage, out var icon, out var tooltip);
+            // Arrange
+            var slot = MakeSlot(out var cell, out var icon, out var tooltip, out var sprites);
 
             // Act
             slot.Bind(null);
 
             // Assert
-            Assert.IsFalse(baseImage.enabled);
+            Assert.AreSame(sprites.Empty, cell.sprite);
             Assert.IsFalse(icon.enabled);
+            Assert.IsFalse(slot.IsOccupied);
             Assert.IsNotNull(tooltip.TextProvider, "vacío explícito, no null — null cae en AutoResolve");
             Assert.AreEqual(string.Empty, tooltip.TextProvider());
         }
 
         [Test]
-        public void should_show_the_item_icon_and_hide_the_base_when_bound()
+        public void should_show_the_filled_sprite_and_centered_icon_when_bound()
         {
             // Arrange
             var item = MakeItem("moneda.suerte.par", "Moneda de la suerte", "Cada Par da +2 oro.");
-            item.Icon = MakeSprite("base");
-            var slot = MakeSlot(out _, out var baseImage, out var icon, out _);
+            item.Icon = MakeSprite("icon");
+            var slot = MakeSlot(out var cell, out var icon, out _, out var sprites);
 
             // Act
             slot.Bind(item);
 
             // Assert
+            Assert.AreSame(sprites.Filled, cell.sprite);
             Assert.IsTrue(icon.enabled);
             Assert.AreSame(item.Icon, icon.sprite);
-            Assert.IsFalse(baseImage.enabled, "la base es el fallback, no un fondo permanente");
+            Assert.IsTrue(slot.IsOccupied);
         }
 
         [Test]
-        public void should_keep_the_base_when_the_item_has_no_icon()
+        public void should_swap_to_hover_sprites_on_pointer_enter_and_back_on_exit()
         {
-            // Arrange
-            var item = MakeItem("coraza.reforzada", "Coraza Reforzada", "+2 vida máxima");
-            var slot = MakeSlot(out _, out var baseImage, out var icon, out _);
-
-            // Act
+            // Arrange — celda ocupada.
+            var item = MakeItem("test.hover.item", "Item", "desc");
+            var slot = MakeSlot(out var cell, out _, out _, out var sprites);
             slot.Bind(item);
+            var pointer = new PointerEventData(EventSystem.current);
 
-            // Assert
-            Assert.IsTrue(baseImage.enabled);
-            Assert.IsFalse(icon.enabled);
+            // Act + Assert — hover con item.
+            slot.OnPointerEnter(pointer);
+            Assert.AreSame(sprites.FilledHover, cell.sprite);
+            slot.OnPointerExit(pointer);
+            Assert.AreSame(sprites.Filled, cell.sprite);
+
+            // Act + Assert — hover sin item.
+            slot.Bind(null);
+            slot.OnPointerEnter(pointer);
+            Assert.AreSame(sprites.EmptyHover, cell.sprite);
+            slot.OnPointerExit(pointer);
+            Assert.AreSame(sprites.Empty, cell.sprite);
         }
 
         [Test]
@@ -139,7 +182,7 @@ namespace Rollgeon.UI.Tests
             // Arrange — id que no existe en las tablas: LocalizedContent devuelve el
             // fallback (los campos del asset) sin importar si la localización cargó.
             var item = MakeItem("test.tooltip.item", "Moneda de la suerte", "Cada Par da +2 oro.");
-            var slot = MakeSlot(out _, out _, out _, out var tooltip);
+            var slot = MakeSlot(out _, out _, out var tooltip, out _);
 
             // Act
             slot.Bind(item);
@@ -154,7 +197,7 @@ namespace Rollgeon.UI.Tests
         {
             // Arrange
             var item = MakeItem("test.tooltip.nameless", displayName: "", description: "");
-            var slot = MakeSlot(out _, out _, out _, out var tooltip);
+            var slot = MakeSlot(out _, out _, out var tooltip, out _);
 
             // Act
             slot.Bind(item);
@@ -167,43 +210,55 @@ namespace Rollgeon.UI.Tests
         // Helpers
         // ------------------------------------------------------------------
 
-        private InventoryDrawerView MakeDrawer(out RectTransform panel, out RectTransform itemsBox,
-            out RectTransform grid)
+        private sealed class SlotSprites
+        {
+            public Sprite Filled, Empty, FilledHover, EmptyHover;
+        }
+
+        private InventoryDrawerView MakeDrawer(out RectTransform panel, out RectTransform grid)
         {
             var go = new GameObject("InventoryDrawer", typeof(RectTransform));
             _spawned.Add(go);
 
             panel = AddRectChild(go.transform, "Panel");
-            itemsBox = AddRectChild(panel, "ItemsBox");
-            grid = AddRectChild(itemsBox, "Grid");
+            grid = AddRectChild(panel, "Grid");
 
             var slotPrefab = MakeSlot(out _, out _, out _, out _);
 
             go.AddComponent<SlidingDrawer>();
             var view = go.AddComponent<InventoryDrawerView>();
             SetPrivate(view, "_panel", panel);
-            SetPrivate(view, "_itemsBox", itemsBox);
             SetPrivate(view, "_grid", grid);
             SetPrivate(view, "_slotPrefab", slotPrefab);
             return view;
         }
 
-        private InventoryItemSlotView MakeSlot(out Image cell, out Image baseImage,
-            out Image icon, out UITooltipTrigger tooltip)
+        private InventoryItemSlotView MakeSlot(out Image cell, out Image icon,
+            out UITooltipTrigger tooltip, out SlotSprites sprites)
         {
             var go = new GameObject("Slot", typeof(RectTransform));
             _spawned.Add(go);
 
             cell = go.AddComponent<Image>();
-            baseImage = AddImageChild(go, "Base");
             icon = AddImageChild(go, "ItemIcon");
             tooltip = go.AddComponent<UITooltipTrigger>();
 
+            sprites = new SlotSprites
+            {
+                Filled = MakeSprite("filled"),
+                Empty = MakeSprite("empty"),
+                FilledHover = MakeSprite("filledHover"),
+                EmptyHover = MakeSprite("emptyHover"),
+            };
+
             var slot = go.AddComponent<InventoryItemSlotView>();
             SetPrivate(slot, "_cellBg", cell);
-            SetPrivate(slot, "_base", baseImage);
             SetPrivate(slot, "_icon", icon);
             SetPrivate(slot, "_tooltip", tooltip);
+            SetPrivate(slot, "_filledSprite", sprites.Filled);
+            SetPrivate(slot, "_emptySprite", sprites.Empty);
+            SetPrivate(slot, "_filledHoverSprite", sprites.FilledHover);
+            SetPrivate(slot, "_emptyHoverSprite", sprites.EmptyHover);
             return slot;
         }
 
@@ -241,9 +296,6 @@ namespace Rollgeon.UI.Tests
             go.transform.SetParent(parent.transform, worldPositionStays: false);
             return (RectTransform)go.transform;
         }
-
-        private static RectTransform AddRectChild(GameObject parent, string name)
-            => AddRectChild(parent.transform, name);
 
         private static Image AddImageChild(GameObject parent, string name)
         {
