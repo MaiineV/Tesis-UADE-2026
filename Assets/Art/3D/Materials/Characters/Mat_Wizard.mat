@@ -20,7 +20,7 @@ Material:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: Mat_Warrior
+  m_Name: Mat_Wizard
   m_Shader: {fileID: 4800000, guid: 36608aed4130c0747865b0028b1071e4, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
@@ -105,10 +105,10 @@ Material:
     - _BumpScale: 1
     - _ClearCoatMask: 0
     - _ClearCoatSmoothness: 0
-    - _CreaseAlpha: 0.457
+    - _CreaseAlpha: 0.8
     - _CreaseDither: 0
-    - _CreaseSmooth: 0
-    - _CreaseThreshold: 0.882
+    - _CreaseSmooth: 0.05
+    - _CreaseThreshold: 0.35
     - _Cull: 2
     - _Cutoff: 0.5
     - _DetailAlbedoMapScale: 1
@@ -117,19 +117,19 @@ Material:
     - _DitherStrength: 0.15
     - _DstBlend: 0
     - _DstBlendAlpha: 0
-    - _EnableCrease: 1
+    - _EnableCrease: 0
     - _EnableEmission: 0
     - _EnvironmentReflections: 1
     - _GlossMapScale: 0
     - _Glossiness: 0
     - _GlossyReflections: 0
     - _HitFlashAmount: 0
-    - _LightTintStrength: 0.047
+    - _LightTintStrength: 0.4
     - _LightWrap: 0.1
     - _Metallic: 0
-    - _MidThreshold: 0.39
+    - _MidThreshold: 0.457
     - _OcclusionStrength: 1
-    - _PaletteSlot: 12
+    - _PaletteSlot: 13
     - _Parallax: 0.005
     - _QueueOffset: 0
     - _ReceiveShadows: 1
@@ -153,7 +153,7 @@ Material:
     - _BaseColor: {r: 1, g: 1, b: 1, a: 1}
     - _Color: {r: 1, g: 1, b: 1, a: 1}
     - _CreaseColor: {r: 0.14999998, g: 0.14999998, b: 0.19999996, a: 1}
-    - _EmissionColor: {r: 0.09545213, g: 0.21323103, b: 0.31132078, a: 1}
+    - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
     - _HitFlashColor: {r: 1, g: 1, b: 1, a: 1}
     - _LightColor: {r: 0.96470594, g: 0.93725497, b: 0.63529414, a: 1}
     - _MidColor: {r: 1, g: 0.86666673, b: 0, a: 1}

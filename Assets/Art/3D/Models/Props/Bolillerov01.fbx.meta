@@ -43,7 +43,7 @@ ModelImporter:
       type: UnityEngine:Material
       assembly: UnityEngine.CoreModule
       name: putple
-    second: {fileID: 2100000, guid: 1800e9f2299478a4c9c3d9aa31d6f133, type: 2}
+    second: {fileID: 2100000, guid: 35eddbfb2db96f8479b6f9524ed42a51, type: 2}
   - first:
       type: UnityEngine:Material
       assembly: UnityEngine.CoreModule

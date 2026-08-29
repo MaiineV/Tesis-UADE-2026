@@ -127,7 +127,7 @@ Material:
     - _LightTintStrength: 0.4
     - _LightWrap: 0.1
     - _Metallic: 0
-    - _MidThreshold: 0.533
+    - _MidThreshold: 0.446
     - _OcclusionStrength: 1
     - _PaletteSlot: 8
     - _Parallax: 0.005
