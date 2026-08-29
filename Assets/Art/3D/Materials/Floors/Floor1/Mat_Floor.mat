@@ -167,7 +167,7 @@ Material:
     - _TearThreshold: 0.35
     - _TileScale: 1
     - _UseDither: 0
-    - _UsePalette: 0
+    - _UsePalette: 1
     - _UseShadowDither: 1
     - _WearAnisotropy: 0.5
     - _WearDarken: 1

@@ -20,7 +20,7 @@ Material:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: Mat_Purple
+  m_Name: Mat_Amatista
   m_Shader: {fileID: 4800000, guid: 36608aed4130c0747865b0028b1071e4, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
@@ -107,14 +107,14 @@ Material:
     - _ClearCoatSmoothness: 0
     - _CreaseAlpha: 0.8
     - _CreaseDither: 0
-    - _CreaseSmooth: 0.008
-    - _CreaseThreshold: 0.496
+    - _CreaseSmooth: 0.05
+    - _CreaseThreshold: 0.35
     - _Cull: 2
     - _Cutoff: 0.5
     - _DetailAlbedoMapScale: 1
     - _DetailNormalMapScale: 1
     - _DitherScale: 1
-    - _DitherStrength: 0.448
+    - _DitherStrength: 0.15
     - _DstBlend: 0
     - _DstBlendAlpha: 0
     - _EnableCrease: 0
@@ -127,15 +127,15 @@ Material:
     - _LightTintStrength: 0.4
     - _LightWrap: 0.1
     - _Metallic: 0
-    - _MidThreshold: 0.533
+    - _MidThreshold: 0.65
     - _OcclusionStrength: 1
-    - _PaletteSlot: 2
+    - _PaletteSlot: 21
     - _Parallax: 0.005
     - _QueueOffset: 0
     - _ReceiveShadows: 1
     - _ShadowDitherDensity: 0.3
-    - _ShadowSmooth: 0
-    - _ShadowThreshold: 0.202
+    - _ShadowSmooth: 0.02
+    - _ShadowThreshold: 0.35
     - _Smoothness: 0.5
     - _SmoothnessTextureChannel: 0
     - _SpecularHighlights: 1
@@ -155,9 +155,9 @@ Material:
     - _CreaseColor: {r: 0.14999998, g: 0.14999998, b: 0.19999996, a: 1}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
     - _HitFlashColor: {r: 1, g: 1, b: 1, a: 1}
-    - _LightColor: {r: 0.7294118, g: 0.37647063, b: 0.38431376, a: 1}
-    - _MidColor: {r: 0.5411765, g: 0.11764707, b: 0.14901961, a: 1}
-    - _ShadowColor: {r: 0.4156863, g: 0.08235294, b: 0.09019608, a: 1}
+    - _LightColor: {r: 0.25490198, g: 0.24705884, b: 0.2392157, a: 1}
+    - _MidColor: {r: 0.20784315, g: 0.20000002, b: 0.19215688, a: 1}
+    - _ShadowColor: {r: 0.098039225, g: 0.1137255, b: 0.12941177, a: 1}
     - _SpecColor: {r: 0.19999996, g: 0.19999996, b: 0.19999996, a: 1}
   m_BuildTextureStacks: []
   m_AllowLocking: 1

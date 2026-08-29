@@ -52,6 +52,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: BanderaParedv01
       objectReference: {fileID: 0}
+    - target: {fileID: 7202271454713460447, guid: 06ff84c661e418d4f81cbd3278c56caa, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: 35eddbfb2db96f8479b6f9524ed42a51, type: 2}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []

@@ -37,7 +37,7 @@ Material:
   stringTagMap: {}
   disabledShaderPasses:
   - MOTIONVECTORS
-  m_LockedProperties: 
+  m_LockedProperties: _TileScale
   m_SavedProperties:
     serializedVersion: 3
     m_TexEnvs:
@@ -118,7 +118,7 @@ Material:
     - _Cutoff: 0.5
     - _DetailAlbedoMapScale: 1
     - _DetailNormalMapScale: 1
-    - _DetailType: 1.95
+    - _DetailType: 0
     - _DitherScale: 1
     - _DitherStrength: 0
     - _DstBlend: 0
@@ -145,23 +145,23 @@ Material:
     - _MidThreshold: 0.36
     - _OcclusionStrength: 1
     - _Parallax: 0.005
-    - _PatternType: 1.9
+    - _PatternType: 0
     - _QueueOffset: 0
     - _ReceiveShadows: 1
     - _ShadowDarken: 0.577
     - _ShadowDitherDensity: 0.194
     - _ShadowSmooth: 0
     - _ShadowThreshold: 0.228
-    - _ShapeOpacity: 0.429
-    - _ShapeScaleX: 1.03
+    - _ShapeOpacity: 0.753
+    - _ShapeScaleX: 0.64
     - _ShapeScaleY: 1.42
-    - _ShapeSize: 0.84
-    - _ShapeType: 0.69
-    - _SlotBG: 0
+    - _ShapeSize: 1.23
+    - _ShapeType: 0
+    - _SlotBG: 9
     - _SlotColorA: 0
-    - _SlotColorB: 0
+    - _SlotColorB: 9
     - _SlotDetail: 0
-    - _SlotTopFace: 0
+    - _SlotTopFace: 9
     - _Smoothness: 0.5
     - _SmoothnessTextureChannel: 0
     - _SolidRows: 0
@@ -182,15 +182,15 @@ Material:
     - _XRMotionVectorsPass: 1
     - _ZWrite: 1
     m_Colors:
-    - _BGColor: {r: 0.18039216, g: 0.22745098, b: 0.24313726, a: 1}
+    - _BGColor: {r: 0.2735849, g: 0.10194909, b: 0.10194909, a: 1}
     - _BaseColor: {r: 1, g: 1, b: 1, a: 1}
     - _Color: {r: 1, g: 1, b: 1, a: 1}
-    - _ColorA: {r: 0.37254903, g: 0.4509804, b: 0.47843137, a: 1}
-    - _ColorB: {r: 0.5137255, g: 0.59607846, b: 0.627451, a: 1}
-    - _DetailColor: {r: 0.654902, g: 0.72156864, b: 0.74509805, a: 1}
+    - _ColorA: {r: 0.14150941, g: 0.019137366, b: 0.0073424703, a: 1}
+    - _ColorB: {r: 1, g: 1, b: 1, a: 1}
+    - _DetailColor: {r: 1, g: 1, b: 1, a: 1}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
     - _HitFlashColor: {r: 1, g: 1, b: 1, a: 1}
     - _SpecColor: {r: 0.19999996, g: 0.19999996, b: 0.19999996, a: 1}
-    - _TopFaceColor: {r: 0.37254903, g: 0.44705886, b: 0.47450984, a: 1}
+    - _TopFaceColor: {r: 0.2830189, g: 0.09185058, b: 0.07342472, a: 1}
   m_BuildTextureStacks: []
   m_AllowLocking: 1
