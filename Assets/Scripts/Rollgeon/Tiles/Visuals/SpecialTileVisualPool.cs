@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Rollgeon.UI.Tooltips;
 using UnityEngine;
 using Object = UnityEngine.Object;
 
@@ -271,7 +272,7 @@ namespace Rollgeon.Tiles.Visuals
             // overload genérico no lo declara igual que el no-genérico.
             var go = Object.Instantiate<GameObject>(prefab, Root.transform);
 
-            return new PooledTileVisual
+            var entry = new PooledTileVisual
             {
                 Go = go,
                 Prefab = prefab,
@@ -281,6 +282,34 @@ namespace Rollgeon.Tiles.Visuals
                 Binding = go.GetComponentInChildren<SpecialTileVisualBinding>(true),
                 Tooltip = go.GetComponentInChildren<SpecialTileTooltipInfo>(true),
             };
+
+            // Toda casilla con efecto de juego tiene tooltip (regla del spec: sin descripción es
+            // bug de contenido, no excepción). Por código y una vez por clon, como el resto de
+            // los componentes: ningún prefab de casilla traía el trigger, así que el Bind por
+            // alquiler que ya hace SpecialTileService no llegaba a mostrarse nunca.
+            if (entry.Tooltip == null) entry.Tooltip = go.AddComponent<SpecialTileTooltipInfo>();
+            AttachHoverTooltip(go, entry.Tooltip);
+
+            return entry;
+        }
+
+        private static void AttachHoverTooltip(GameObject go, SpecialTileTooltipInfo tooltip)
+        {
+            // Bajo y chato: acusa el hover sin molestar al input — PawnPicker no se bloquea por
+            // colliders que no son pawns y el pick de celda intersecta el plano del piso.
+            if (go.GetComponentInChildren<Collider>(true) == null)
+            {
+                var collider = go.AddComponent<BoxCollider>();
+                collider.isTrigger = true;
+                collider.size = new Vector3(0.9f, 0.1f, 0.9f);
+                collider.center = new Vector3(0f, 0.05f, 0f);
+            }
+
+            var trigger = go.GetComponent<WorldTooltipTrigger>();
+            if (trigger == null) trigger = go.AddComponent<WorldTooltipTrigger>();
+            trigger.Mode = WorldTooltipMode.Hover;
+            trigger.Placement = TooltipPlacementMode.ScreenTopRight;
+            trigger.TextProvider = tooltip.BuildTooltip;
         }
 
         /// <summary>Fuera de play mode <c>Destroy</c> es diferido y no llega a aplicarse en un test.</summary>

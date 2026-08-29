@@ -282,6 +282,38 @@ namespace Rollgeon.Tiles.Tests
         // ======================================================================
 
         [Test]
+        public void Rent_AttachesTheHoverTooltip_WithColliderAndTrigger()
+        {
+            // Arrange — un prefab pelado, sin tooltip ni collider: el caso real de todos los
+            // prefabs de casilla del proyecto (VFX_Fire no trae ninguno de los dos).
+            var bare = new GameObject("VFX_BareTile");
+            try
+            {
+                using (var pool = new SpecialTileVisualPool(FixturePoolRootName))
+                {
+                    // Act
+                    var visual = pool.Rent(bare, Vector3.zero);
+
+                    // Assert — regla del spec de tooltips: toda casilla con efecto de juego tiene
+                    // tooltip. El trigger sin collider sería un Update por frame que nunca acierta.
+                    Assert.IsNotNull(visual.Tooltip,
+                        "El clon quedó sin SpecialTileTooltipInfo: no hay qué mostrar en el hover.");
+                    var trigger = visual.Go.GetComponent<Rollgeon.UI.Tooltips.WorldTooltipTrigger>();
+                    Assert.IsNotNull(trigger, "El clon quedó sin trigger de hover.");
+                    Assert.AreEqual(Rollgeon.UI.Tooltips.WorldTooltipMode.Hover, trigger.Mode);
+                    Assert.AreEqual(Rollgeon.UI.Tooltips.TooltipPlacementMode.ScreenTopRight,
+                        trigger.Placement);
+                    Assert.IsNotNull(visual.Go.GetComponentInChildren<Collider>(true),
+                        "Sin collider el raycast del hover no puede tocar la casilla.");
+                }
+            }
+            finally
+            {
+                Object.DestroyImmediate(bare);
+            }
+        }
+
+        [Test]
         public void ParkingPastTheCap_DestroysTheSurplusInsteadOfHoardingItForever()
         {
             // Arrange — tope chico a propósito: el default (128) exigiría 129 GameObjects.
