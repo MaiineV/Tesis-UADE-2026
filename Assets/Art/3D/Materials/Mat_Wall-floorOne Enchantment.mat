@@ -7,7 +7,7 @@ Material:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: Mat_Wall Variant 1
+  m_Name: Mat_Wall-floorOne Enchantment
   m_Shader: {fileID: 4800000, guid: 4882ce624e1a4d746be7a4235eed768d, type: 3}
   m_Parent: {fileID: 2100000, guid: 2c425b611307ae843a5f6c8cf348063b, type: 2}
   m_ModifiedSerializedProperties: 0
@@ -31,7 +31,8 @@ Material:
     m_Ints: []
     m_Floats: []
     m_Colors:
-    - _BGColor: {r: 0.49056602, g: 0.18280526, b: 0.18280526, a: 1}
-    - _ColorA: {r: 0.33962262, g: 0.029966699, b: 0, a: 1}
+    - _BGColor: {r: 0.21257631, g: 0.06367925, b: 0.254717, a: 1}
+    - _ColorA: {r: 0.26124358, g: 0.052954778, b: 0.3207547, a: 1}
+    - _TopFaceColor: {r: 0.17348213, g: 0.055802777, b: 0.20754719, a: 1}
   m_BuildTextureStacks: []
   m_AllowLocking: 1

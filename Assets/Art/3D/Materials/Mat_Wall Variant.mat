@@ -14,6 +14,8 @@ Material:
   m_ValidKeywords: []
   m_InvalidKeywords:
   - _FLATTENTOPFACES_ON
+  - _METALLICDETAIL_ON
+  - _METALLICFILL_ON
   - _USESHADOWDITHER_ON
   m_LightmapFlags: 4
   m_EnableInstancingVariants: 0
@@ -28,17 +30,24 @@ Material:
     m_TexEnvs: []
     m_Ints: []
     m_Floats:
-    - _BorderWidth: 0.065
-    - _DetailType: 1.95
-    - _PatternType: 1.87
+    - _BorderWidth: 0.115
+    - _DetailType: 0.89
+    - _FlattenTopFaces: 1
+    - _PatternType: 0
     - _ShadowThreshold: 0.228
-    - _ShapeOpacity: 0.429
+    - _ShapeOpacity: 0.649
     - _ShapeScaleX: 1.77
-    - _ShapeScaleY: 1.94
+    - _ShapeScaleY: 1.54
     - _ShapeSize: 0.7
-    - _ShapeType: 2.14
-    - _SolidRows: 0
-    - _TileScale: 1.91
+    - _ShapeType: 1.07
+    - _SlotBG: 18
+    - _SlotColorA: 18
+    - _SlotColorB: 18
+    - _SlotDetail: 17
+    - _SlotTopFace: 0
+    - _SolidRows: 20
+    - _TileScale: 1.51
+    - _UsePalette: 1
     m_Colors:
     - _BGColor: {r: 0.13333334, g: 0.047058824, b: 0.105882354, a: 1}
     - _ColorA: {r: 0.2627451, g: 0.09411765, b: 0.21176471, a: 1}

@@ -18284,6 +18284,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Point Light-lv1
       objectReference: {fileID: 0}
+    - target: {fileID: 2511541876599037250, guid: ff7a5cadbe4bbad40b6010242b840a75, type: 3}
+      propertyPath: m_Intensity
+      value: 3.03
+      objectReference: {fileID: 0}
     - target: {fileID: 8041273639942093199, guid: ff7a5cadbe4bbad40b6010242b840a75, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0.5
@@ -22013,6 +22017,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1711357143213522343}
     m_Modifications:
+    - target: {fileID: 469870974711245379, guid: ad44ebff3e30b9b4db255577630dafd4, type: 3}
+      propertyPath: m_Intensity
+      value: 0.48
+      objectReference: {fileID: 0}
     - target: {fileID: 2682388243789026644, guid: ad44ebff3e30b9b4db255577630dafd4, type: 3}
       propertyPath: m_LocalPosition.x
       value: -1.478
@@ -24809,6 +24817,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1711357143213522343}
     m_Modifications:
+    - target: {fileID: 469870974711245379, guid: ad44ebff3e30b9b4db255577630dafd4, type: 3}
+      propertyPath: m_Intensity
+      value: 0.48
+      objectReference: {fileID: 0}
     - target: {fileID: 2682388243789026644, guid: ad44ebff3e30b9b4db255577630dafd4, type: 3}
       propertyPath: m_LocalPosition.x
       value: -5.054
