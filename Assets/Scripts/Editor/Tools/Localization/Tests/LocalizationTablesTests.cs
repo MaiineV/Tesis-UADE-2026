@@ -63,6 +63,10 @@ namespace Rollgeon.Editor.Tools.Localization.Tests
             // traduce, y por eso no está acá.
             EnemyArchetypeKeys.Melee,
             EnemyArchetypeKeys.Support,
+            // "Combo" otra vez (tipo de ataque), y el formato del título con tipo: separador
+            // y orden, sin palabras que traducir.
+            Rollgeon.UI.HUD.Status.AttackKindTextKeys.ComboAttack,
+            Rollgeon.UI.HUD.Status.AttackKindTextKeys.TitleFormat,
         };
 
         /// <summary>
@@ -77,6 +81,12 @@ namespace Rollgeon.Editor.Tools.Localization.Tests
             // "Te dispara" más el número de la tarjeta ya lo dicen entero, y "desde lejos" lo
             // dice la fila de familia del panel.
             AIIntentTextKeys.RangedShot + ".desc",
+            // Tarjetas de solo título: el número dice cuánto, y las casillas marcadas del golpe
+            // telegrafiado ya se ven en el paño.
+            AIIntentTextKeys.Telegraph + ".desc",
+            AIIntentTextKeys.Attack + ".desc",
+            // "Ambiental" en el título de un ataque no califica nada que el jugador pueda usar.
+            Rollgeon.UI.HUD.Status.AttackKindTextKeys.Environmental,
         };
 
         private static readonly string[] Collections = { "Content", "UI" };
@@ -163,6 +173,23 @@ namespace Rollgeon.Editor.Tools.Localization.Tests
             // Assert
             Assert.IsEmpty(missing,
                 "Keys de EnemyArchetypeKeys sin entry en la tabla UI:\n" + string.Join("\n", missing));
+        }
+
+        [Test]
+        public void test_localization_every_attack_kind_key_exists_in_the_ui_table()
+        {
+            // Arrange
+            var collection = RequireCollection("UI");
+
+            // Act
+            var missing = Rollgeon.UI.HUD.Status.AttackKindTextKeys.All
+                .Where(key => collection.SharedData.GetEntry(key) == null)
+                .ToList();
+
+            // Assert
+            Assert.IsEmpty(missing,
+                "Keys de AttackKindTextKeys sin entry en la tabla UI — el título de la tarjeta " +
+                "de próximo turno cae al texto de autor:\n" + string.Join("\n", missing));
         }
 
         [Test]

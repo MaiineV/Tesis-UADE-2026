@@ -153,6 +153,10 @@ namespace Rollgeon.Entities.Visuals
             // La debilidad no es tarjeta: es un renglón al pie de la caja, con la misma letra
             // que la frase táctica.
             trigger.FooterLineProvider = row.WeaknessLine;
+
+            // Dos columnas con papeles distintos: la principal lleva el bloque de próximo turno
+            // (y la maldición del jefe), el costado lo que le pasa y lo que mantiene en el paño.
+            trigger.CardsProvider = row.CollectPanelCards;
             trigger.SideCardsProvider = row.CollectApplied;
         }
 
@@ -176,9 +180,10 @@ namespace Rollgeon.Entities.Visuals
             // y robarle ese click para abrir un panel rompería el input del combate.
             trigger.Mode = Rollgeon.UI.Tooltips.WorldTooltipMode.Hover;
 
-            // Al costado y colgando: el panel centrado encima tapaba al bicho que estabas
-            // mirando, y lo que el panel cuenta solo sirve mientras lo ves en el tablero.
-            trigger.Placement = Rollgeon.UI.Tooltips.TooltipPlacementMode.Beside;
+            // Panel fijo arriba a la derecha: una posición estable que el ojo aprende, en vez
+            // de un panel que salta con cada enemigo hovereado (decisión §8.2 del spec de
+            // tooltips). Nunca tapa al bicho porque no vive sobre el tablero.
+            trigger.Placement = Rollgeon.UI.Tooltips.TooltipPlacementMode.ScreenTopRight;
 
             // Explícito en vez de dejar que el TooltipResolver lo busque: el pawn del jefe cuelga
             // otros IHasTooltipInfo abajo (las casillas de sus props) y el auto-resolve devuelve el

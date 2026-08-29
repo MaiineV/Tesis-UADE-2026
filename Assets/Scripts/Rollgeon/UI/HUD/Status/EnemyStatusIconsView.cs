@@ -29,10 +29,10 @@ namespace Rollgeon.UI.HUD.Status
     {
         private readonly List<IStatusIconProvider> _providers = new();
         private readonly List<StatusIconState> _applied = new();
+        private readonly List<StatusIconState> _panelCards = new();
         private readonly List<StatusEffectIconView> _slots = new();
         private readonly List<AIIntent> _standing = new();
         private readonly List<AIIntent> _next = new();
-        private readonly List<AIIntent> _options = new();
 
         /// <summary>Key de UI de la etiqueta "Próximo turno" del ataque.</summary>
         public const string NextTurnKey = "enemy.panel.next_turn";
@@ -155,8 +155,9 @@ namespace Rollgeon.UI.HUD.Status
                                                    "Debilidad: <b>{0}</b>", comboName);
 
         /// <summary>
-        /// Lo que <b>va a hacer</b> y lo que le pasa: la columna del costado, para que
-        /// aturdirlo no estire el panel hacia abajo.
+        /// Lo que <b>le pasa</b> y lo que mantiene en el paño: la columna del costado, para que
+        /// aturdirlo no estire el panel hacia abajo. El próximo ataque ya no vive acá — es el
+        /// bloque de la columna principal (<see cref="CollectPanelCards"/>).
         /// </summary>
         public IReadOnlyList<StatusIconState> CollectApplied()
         {
@@ -164,12 +165,31 @@ namespace Rollgeon.UI.HUD.Status
             return _applied;
         }
 
+        /// <summary>
+        /// La columna principal del panel: el bloque de próximo turno. Se recalcula en cada
+        /// hover, igual que el costado.
+        /// </summary>
+        public IReadOnlyList<StatusIconState> CollectPanelCards()
+        {
+            Recollect();
+            return _panelCards;
+        }
+
         // Se recalcula en cada hover; recorrer el árbol por hover es barato porque SetHover
         // dispara en el flanco del mouse, no por frame.
         private void Recollect()
         {
             _applied.Clear();
-            CollectIntents();
+            _panelCards.Clear();
+
+            if (ServiceLocator.TryGetService<IEnemyIntentService>(out var intents) && intents != null
+                && intents.TryRead(_entityGuid, _standing, _next))
+            {
+                string promotedKey = AppendNextTurnCard(_next, _standing, _entityGuid, _catalog,
+                                                        _panelCards);
+                AppendStandingCards(_standing, promotedKey, _entityGuid, _catalog, _applied);
+            }
+
             foreach (var provider in _providers) provider.Collect(_entityGuid, _applied);
         }
 
@@ -182,7 +202,8 @@ namespace Rollgeon.UI.HUD.Status
             // La fila sigue siendo UNA aunque el panel tenga dos columnas: el ícono que flota
             // sobre el bicho y el de su tarjeta tienen que ser el mismo sprite, que es lo que hace
             // que el sistema se entienda sin tutorial. Su ataque primero, que es lo que se lee.
-            int shown = Draw(_applied, 0);
+            int shown = Draw(_panelCards, 0);
+            shown = Draw(_applied, shown);
 
             for (int i = shown; i < _slots.Count; i++)
                 _slots[i].gameObject.SetActive(false);
@@ -207,60 +228,71 @@ namespace Rollgeon.UI.HUD.Status
         private static bool IsFloatable(in StatusIconState state)
             => state.Style == StatusCardStyle.Unit && state.Icon != null;
 
-        private void CollectIntents()
+        /// <summary>
+        /// La tarjeta del bloque de próximo turno: el próximo tiempo del ciclo o, en un árbol sin
+        /// ciclo —el bestiario común, el golpe marcado de un jefe telegraph—, lo primero que
+        /// tickea todos los turnos. Devuelve la key promovida para que la columna del costado no
+        /// la repita, o <c>null</c> si no había nada que afirmar (el bloque no se dibuja).
+        /// </summary>
+        /// <remarks>
+        /// Estático y público por lo mismo que <see cref="AddIfOwn"/>: el preview de editor arma
+        /// este mismo panel sin combate.
+        /// </remarks>
+        public static string AppendNextTurnCard(List<AIIntent> next, List<AIIntent> standing,
+                                                Guid owner, StatusIconCatalogSO catalog,
+                                                List<StatusIconState> into)
         {
-            if (!ServiceLocator.TryGetService<IEnemyIntentService>(out var intents) || intents == null)
-                return;
-            if (!intents.TryRead(_entityGuid, _standing, _next, _options)) return;
+            if (!TryPickOwn(next, owner, out var intent)
+                && !TryPickOwn(standing, owner, out intent))
+                return null;
 
-            AppendIntentCards(_next, _options, _standing, _entityGuid, _catalog, _applied);
+            into.Add(ToNextTurnState(intent, catalog));
+            return intent.LabelKey;
         }
 
         /// <summary>
-        /// Reparte los intents leídos del árbol en tarjetas de la columna: el próximo ataque con
-        /// su fecha, debajo el resto del repertorio, y al final lo que mantiene en el paño.
+        /// Lo que el bicho mantiene en el paño, para la columna del costado — menos lo que ya se
+        /// promovió al bloque de próximo turno, que saldría dos veces.
         /// </summary>
-        /// <remarks>
-        /// Sólo el próximo tiempo del ciclo lleva fecha —"Próximo turno", en chico—: los otros
-        /// tiempos son lo que el bicho SABE hacer, no lo que va a pasar, y una fecha en ellos
-        /// prometería un turno que no es el suyo. Estático y público por lo mismo que
-        /// <see cref="AddIfOwn"/>: el preview de editor arma este mismo panel sin combate.
-        /// </remarks>
-        public static void AppendIntentCards(List<AIIntent> next, List<AIIntent> options,
-                                             List<AIIntent> standing, Guid owner,
-                                             StatusIconCatalogSO catalog,
-                                             List<StatusIconState> into)
+        public static void AppendStandingCards(List<AIIntent> standing, string promotedKey,
+                                               Guid owner, StatusIconCatalogSO catalog,
+                                               List<StatusIconState> into)
         {
-            if (next != null)
-                foreach (var intent in next) AddIfOwn(intent, owner, catalog, into, NextTurnEyebrow());
-
-            // El repertorio incluye al que viene y puede repetir tiempos (dos beats que huyen
-            // publican el mismo salto): filtrado por key para que cada ataque salga UNA vez.
-            if (options != null)
-                foreach (var intent in options)
-                {
-                    if (Lists(next, intent.LabelKey) || Lists(into, intent.LabelKey)) continue;
-                    AddIfOwn(intent, owner, catalog, into);
-                }
-
-            if (standing != null)
-                foreach (var intent in standing) AddIfOwn(intent, owner, catalog, into);
+            if (standing == null) return;
+            foreach (var intent in standing)
+            {
+                if (intent.LabelKey == promotedKey) continue;
+                AddIfOwn(intent, owner, catalog, into);
+            }
         }
 
-        private static bool Lists(List<AIIntent> intents, string key)
+        private static bool TryPickOwn(List<AIIntent> intents, Guid owner, out AIIntent picked)
         {
+            picked = default;
             if (intents == null) return false;
             foreach (var intent in intents)
-                if (intent.LabelKey == key) return true;
+            {
+                if (intent.SubjectGuid != Guid.Empty && intent.SubjectGuid != owner) continue;
+                picked = intent;
+                return true;
+            }
             return false;
         }
 
-        private static bool Lists(List<StatusIconState> states, string key)
+        // El tipo de ataque va en el título sólo acá: las tarjetas del costado hablan de efectos
+        // y terreno, no de ataques, y un " · Básico" en ellas no calificaría nada.
+        private static StatusIconState ToNextTurnState(in AIIntent intent, StatusIconCatalogSO catalog)
         {
-            if (states == null) return false;
-            foreach (var state in states)
-                if (state.Id == key) return true;
-            return false;
+            var state = ToState(intent, catalog, NextTurnEyebrow());
+            return new StatusIconState(
+                state.Id,
+                AttackKindText.ComposeTitle(state.DisplayName, intent.Kind),
+                state.Description,
+                state.Icon,
+                active: true,
+                remainingTurns: state.RemainingTurns,
+                damage: state.Damage,
+                eyebrow: state.Eyebrow);
         }
 
         // Lo que le pertenece a otra cosa del paño se lee en ESA cosa. Las bombas del Croupier

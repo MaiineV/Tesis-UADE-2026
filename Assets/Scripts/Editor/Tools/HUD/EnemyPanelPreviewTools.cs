@@ -70,11 +70,12 @@ namespace Rollgeon.EditorTools.HUD
                 return;
             }
 
+            var panelCards = new List<StatusIconState>();
             var applied = new List<StatusIconState>();
-            CollectCards(data, applied);
+            CollectCards(data, panelCards, applied);
             string weaknessLine = withSampleStates ? AddSampleStates(data, applied) : null;
 
-            var content = BuildContent(data, weaknessLine, applied);
+            var content = BuildContent(data, weaknessLine, panelCards, applied);
 
             // Las tarjetas de la vuelta anterior sobreviven en el canvas y no son instancias de
             // prefab: sin tirarlas, editar la tarjeta y volver acá muestra las de antes.
@@ -90,9 +91,10 @@ namespace Rollgeon.EditorTools.HUD
             UnityEditorInternal.InternalEditorUtility.RepaintAllViews();
 
             // El resumen va al log además del Game view: si la ventana no está abierta, cuántas
-            // tarjetas quedaron en la columna sigue siendo la respuesta a "esto cambió o no".
+            // tarjetas quedaron en cada columna sigue siendo la respuesta a "esto cambió o no".
             Debug.Log("[EnemyPanelPreview] " + content.Name + " — tipo '" + content.Type + "' — " +
-                      applied.Count + " al costado, pie: '" + content.Flavor + "'.");
+                      panelCards.Count + " en la principal, " + applied.Count + " al costado, " +
+                      "pie: '" + content.Flavor + "'.");
         }
 
         /// <summary>
@@ -172,6 +174,7 @@ namespace Rollgeon.EditorTools.HUD
         }
 
         private static TooltipContent BuildContent(EnemyDataSO data, string weaknessLine,
+                                                   List<StatusIconState> panelCards,
                                                    List<StatusIconState> applied)
         {
             string id = data.EntityId;
@@ -189,6 +192,7 @@ namespace Rollgeon.EditorTools.HUD
             return new TooltipContent(
                 name: name,
                 type: EnemyArchetypeText.Describe(data.Archetype, data.IsBoss),
+                cards: panelCards,
                 flavor: WorldTooltipTrigger.ComposeFlavor(brief, weaknessLine),
                 sideCards: applied);
         }
@@ -196,7 +200,8 @@ namespace Rollgeon.EditorTools.HUD
         // El árbol real, leído por el walker real. Lo único de mentira es el contexto: fuera de
         // combate no hay grilla ni player, y los campos de AIContext son nullables a propósito
         // porque cada nodo tolera que le falte el servicio.
-        private static void CollectCards(EnemyDataSO data, List<StatusIconState> applied)
+        private static void CollectCards(EnemyDataSO data, List<StatusIconState> panelCards,
+                                         List<StatusIconState> applied)
         {
             if (data.AIRoot == null) return;
 
@@ -213,10 +218,9 @@ namespace Rollgeon.EditorTools.HUD
 
             var standing = new List<AIIntent>();
             var next = new List<AIIntent>();
-            var options = new List<AIIntent>();
             try
             {
-                AIIntentWalker.Collect(data.AIRoot, context, standing, next, options);
+                AIIntentWalker.Collect(data.AIRoot, context, standing, next);
             }
             catch (Exception e)
             {
@@ -230,9 +234,11 @@ namespace Rollgeon.EditorTools.HUD
                 EnemyStatusRowSettingsSO.ResourcePath);
             var catalog = settings != null ? settings.Catalog : null;
 
-            // El MISMO reparto que la fila real: el próximo con su fecha, el repertorio debajo,
-            // y al final lo que mantiene en el paño.
-            EnemyStatusIconsView.AppendIntentCards(next, options, standing, owner, catalog, applied);
+            // El MISMO reparto que la fila real: el bloque de próximo turno en la principal, y
+            // lo que mantiene en el paño al costado.
+            string promotedKey = EnemyStatusIconsView.AppendNextTurnCard(
+                next, standing, owner, catalog, panelCards);
+            EnemyStatusIconsView.AppendStandingCards(standing, promotedKey, owner, catalog, applied);
         }
 
         // Nada inventado: el MISMO provider que la fila usa en pelea, con lo unico que fuera de

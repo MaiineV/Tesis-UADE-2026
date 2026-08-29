@@ -40,6 +40,7 @@ namespace Rollgeon.EditorTools.Localization
             SeedBuildHelp();
             SeedStatusIcons();
             SeedArchetypes();
+            SeedAttackKinds();
             SeedSpecialTiles();
             SeedContractDrawer();
             SeedPlayerIcons();
@@ -782,6 +783,25 @@ namespace Rollgeon.EditorTools.Localization
             // nombre del combo, que sale del registry vivo y no de la key.
             Ui(EnemyStatusIconsView.WeaknessLineKey,
                "Debilidad: <b>{0}</b>", "Weakness: <b>{0}</b>");
+        }
+
+        /// <summary>
+        /// El tipo de ataque que la tarjeta de próximo turno suma al título (tabla UI).
+        /// </summary>
+        private static void SeedAttackKinds()
+        {
+            Ui(AttackKindTextKeys.ComboAttack, "Combo", "Combo");
+            Ui(AttackKindTextKeys.BasicAttack, "Básico", "Basic");
+            Ui(AttackKindTextKeys.DamageOverTime, "Daño sostenido", "Damage Over Time");
+            // Vacía a propósito: "Ambiental" en el título de un ataque no califica nada que
+            // el jugador pueda usar; la entry existe para poder llenarla sin tocar código.
+            Ui(AttackKindTextKeys.Environmental, string.Empty, string.Empty);
+            Ui(AttackKindTextKeys.Reaction, "Reacción", "Reaction");
+            Ui(AttackKindTextKeys.ScriptedAbility, "Habilidad", "Ability");
+
+            // Formato y no concatenación: el separador es autorable por locale, igual que el
+            // prefijo del jefe.
+            Ui(AttackKindTextKeys.TitleFormat, "{0} · {1}", "{0} · {1}");
         }
 
         /// <summary>
