@@ -315,30 +315,18 @@ namespace Rollgeon.Combat.AI.Tests
         }
 
         [Test]
-        public void ConHoverOnlyPaint_MarcaIgual_PeroNoPinta()
+        public void Mark_MarcaSiempre_YNuncaPinta()
         {
-            var mark = ConeMark();
-            mark.HoverOnlyPaint = true;
-
-            mark.Tick(Context());
-
-            Assert.IsTrue(_threat.HasPending(_boss),
-                "Dejó de marcar: el flag decide quién DIBUJA, no si el jefe amenaza. Sin marca no " +
-                "hay nada que mostrar en el hover ni nada que prender después.");
-            Assert.AreEqual(0, _overlay.Shown.Count,
-                "Pintó igual: el paño tiene que quedar limpio hasta que el jugador consulte.");
-        }
-
-        [Test]
-        public void SinElFlag_SiguePintandoComoSiempre()
-        {
+            // Act
             ConeMark().Tick(Context());
 
-            Assert.AreEqual(1, _overlay.Shown.Count,
-                "Dejó de pintar sin que nadie se lo pidiera. El default tiene que ser el " +
-                "comportamiento de siempre: Odin no corre inicializadores de campo al " +
-                "deserializar, así que los cinco jefes ya autorados reciben el flag en false y " +
-                "esta es la prueba de que eso los deja intactos.");
+            // Assert — regla Mewgenics del spec de tooltips: los tiles de ataque solo se
+            // dibujan con el mouse encima. Marcar y dibujar quedaron separados para siempre.
+            Assert.IsTrue(_threat.HasPending(_boss),
+                "Dejó de marcar: sin marca no hay nada que mostrar en el hover ni nada que " +
+                "prender después.");
+            Assert.AreEqual(0, _overlay.Shown.Count,
+                "Pintó al marcar: el paño tiene que quedar limpio hasta que el jugador consulte.");
         }
 
         private AINode_TelegraphMark ConeMark() => new AINode_TelegraphMark

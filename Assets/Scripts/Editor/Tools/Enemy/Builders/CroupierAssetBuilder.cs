@@ -718,9 +718,6 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
                                         FuseTurns = BombFuseTurns,
                                         IgnitionDamage = BombIgnitionDamage,
                                         ChannelPrefix = BombChannelPrefix,
-                                        // La cruz se ve pasando el mouse por SU bomba. El paño
-                                        // queda limpio y leer el piso es una accion del jugador.
-                                        HoverOnlyPaint = true,
                                         SowFeedbackId = BossFeedbackIds.CroupierRangeAnim,
                                     }),
 
@@ -741,11 +738,6 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
                                         Depth = ConeDepth,
                                         Damage = 0,
                                         Kind = AttackKind.Environmental,
-                                        // La marca sigue igual; lo unico que cambia es quien la
-                                        // dibuja. El turno del jefe dura segundos y ahi nadie lee:
-                                        // el cono se pinta cuando el jugador pasa el mouse, en su
-                                        // propio turno y con tiempo para decidir donde pararse.
-                                        HoverOnlyPaint = true,
                                     }),
                                 },
                             },
@@ -893,7 +885,6 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
                                         // ESTE aviso.
                                         Damage = PlenoIgnitionDamage,
                                         Kind = AttackKind.Environmental,
-                                        HoverOnlyPaint = true,
                                     },
                                 },
                             },

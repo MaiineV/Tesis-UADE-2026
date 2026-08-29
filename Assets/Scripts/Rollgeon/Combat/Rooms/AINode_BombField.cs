@@ -95,11 +95,6 @@ namespace Rollgeon.Combat.Rooms
                  "que el de AINode_DetonateBombField.")]
         public string ChannelPrefix = "bomb.";
 
-        [Tooltip("Deja la cruz marcada pero NO la pinta: el dibujo sale sólo al pasar el mouse por " +
-                 "encima de la bomba. Off = se pinta al sembrar y se queda, que es como se comportan " +
-                 "todos los jefes ya autorados.")]
-        public bool HoverOnlyPaint;
-
         [Title("Presentación")]
 #if UNITY_EDITOR
         [ValueDropdown(nameof(GetFeedbackIdsForDropdown))]
@@ -195,22 +190,19 @@ namespace Rollgeon.Combat.Rooms
         }
 
         /// <remarks>
-        /// <para>
-        /// Pasa por TODAS las que están en pie y no sólo por las nuevas. Lo que se pinta es lo que
+        /// Pasa por TODAS las que están en pie y no sólo por las nuevas. Lo que se marca es lo que
         /// <c>Sow</c> devuelve y no la cruz recién calculada: a una bomba ya armada le contesta la
-        /// suya, que es la que le va a estallar. Pintando la calculada, con las formas rotando, una
-        /// bomba vieja quedaría avisando el aspa de la generación nueva.
-        /// </para>
+        /// suya, que es la que le va a estallar. Con las formas rotando, una bomba vieja quedaría
+        /// avisando el aspa de la generación nueva.
         /// <para>
-        /// El overlay va por <c>ResolveOrCreate</c> y no por <c>TryGetService</c>: no está en los
-        /// bootstrap, lo crea el primero que pinta. Consultándolo, la primera siembra de la pelea
-        /// caía antes de que existiera y esas bombas quedaban sin cruz.
+        /// Marca y no pinta: la cruz se dibuja sólo al pasar el mouse por la bomba
+        /// (<c>EnemyIntentPreviewOverlay</c>). El paño queda limpio y leer el piso es una acción
+        /// del jugador — regla Mewgenics del spec de tooltips.
         /// </para>
         /// </remarks>
         private void MarkNewBombs(AIContext context, IGridManager grid, AINode_SpawnRoomObjects spawner)
         {
             ServiceLocator.TryGetService<IThreatenedAreaService>(out var threat);
-            var overlay = ThreatTelegraphOverlay.ResolveOrCreate();
 
             var field = BombFieldService.ResolveOrCreate();
 
@@ -223,10 +215,7 @@ namespace Rollgeon.Combat.Rooms
                 if (armed == null) continue;
 
                 var channel = ChannelFor(context.SelfGuid, ChannelPrefix, guid);
-                // El Mark es incondicional: el flag decide quién DIBUJA la cruz, no si la bomba
-                // amenaza. Sin marca no habría qué mostrar en el hover ni qué detonar.
                 threat?.Mark(channel, armed, IgnitionDamage, AttackKind.Environmental);
-                if (!HoverOnlyPaint) overlay?.Show(channel, armed);
 
                 AttachBombTooltip(context, guid);
             }
