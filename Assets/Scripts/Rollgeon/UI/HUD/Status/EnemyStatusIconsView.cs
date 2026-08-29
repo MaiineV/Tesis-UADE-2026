@@ -37,6 +37,9 @@ namespace Rollgeon.UI.HUD.Status
         /// <summary>Key de UI de la etiqueta "Próximo turno" del ataque.</summary>
         public const string NextTurnKey = "enemy.panel.next_turn";
 
+        /// <summary>Key de UI de la etiqueta del bloque de maldición del jefe.</summary>
+        public const string PlayerCurseKey = "enemy.panel.player_curse";
+
         /// <summary>Key de UI del renglón "Debilidad: {0}" del pie del panel.</summary>
         public const string WeaknessLineKey = "enemy.panel.weakness";
 
@@ -190,6 +193,8 @@ namespace Rollgeon.UI.HUD.Status
                 AppendStandingCards(_standing, promotedKey, _entityGuid, _catalog, _applied);
             }
 
+            AppendCurseCard(_data != null ? _data.Curse : null, _catalog, _panelCards);
+
             foreach (var provider in _providers) provider.Collect(_entityGuid, _applied);
         }
 
@@ -316,6 +321,31 @@ namespace Rollgeon.UI.HUD.Status
         public static string NextTurnEyebrow()
             => LocalizedContent.Ui(NextTurnKey, "Próximo turno");
 
+        /// <summary>La etiqueta del bloque de maldición, ya localizada.</summary>
+        public static string PlayerCurseEyebrow()
+            => LocalizedContent.Ui(PlayerCurseKey, "Maldición");
+
+        /// <summary>
+        /// La maldición del jefe sobre el jugador, como tarjeta de la columna principal debajo
+        /// del próximo turno. Sin <paramref name="curse"/> autorado no agrega nada — el bloque
+        /// no existe y no deja hueco. Estático y público por lo mismo que <see cref="AddIfOwn"/>:
+        /// el preview de editor arma este mismo panel sin combate.
+        /// </summary>
+        public static void AppendCurseCard(BossCurseSO curse, StatusIconCatalogSO catalog,
+                                           List<StatusIconState> into)
+        {
+            if (curse == null || into == null) return;
+
+            into.Add(new StatusIconState(
+                curse.CurseId ?? string.Empty,
+                LocalizedContent.Name(curse.CurseId, curse.DisplayName),
+                LocalizedContent.Description(curse.CurseId, curse.Description),
+                curse.Icon != null ? curse.Icon
+                    : catalog != null ? catalog.Resolve(curse.CurseId) : null,
+                active: true,
+                eyebrow: PlayerCurseEyebrow()));
+        }
+
         // El badge cuenta turnos hasta que pase, no turnos restantes de un estado: TurnsAway 0 es
         // "en su próximo turno", que para el jugador es un turno de distancia.
         //
@@ -344,10 +374,12 @@ namespace Rollgeon.UI.HUD.Status
             // renglón del pie del panel (WeaknessLine), no una tarjeta.
             if (_kit != null) _providers.Add(_kit);
 
+            // El candado de dados ya no es un provider de esta fila: era la maldición del jefe
+            // dicha ad-hoc (aparecía recién al primer bloqueo), y ahora la dice el bloque
+            // PLAYER CURSE desde el turno 1 (AppendCurseCard, con el BossCurseSO del jefe).
             _providers.Add(new PoisonStatusProvider(_catalog));
             _providers.Add(new StunStatusProvider(_catalog));
             _providers.Add(new TileStandStatusProvider(_catalog));
-            _providers.Add(new DiceBlockStatusProvider(_catalog));
 
             // Lo que el bicho dejó ardiendo tambien es de su columna: los otros cuatro dicen lo que
             // le pasa A el, este dice lo que el mantiene en el paño.

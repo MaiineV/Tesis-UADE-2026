@@ -56,6 +56,11 @@ namespace Rollgeon.Entities
                  ">0 pisa el default global solo para este enemigo.")]
         public float WeaknessMultiplierOverride = 0f;
 
+        [Title("Player Curse")]
+        [Tooltip("La pasiva de este jefe sobre el jugador, para el bloque PLAYER CURSE de su " +
+                 "panel. Null = el bloque no existe (bestiario común y jefes sin maldición).")]
+        public BossCurseSO Curse;
+
         // -----------------------------------------------------------------
         // Base Stats — Content#0099.
         // -----------------------------------------------------------------

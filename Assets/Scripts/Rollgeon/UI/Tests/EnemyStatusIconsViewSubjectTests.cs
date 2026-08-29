@@ -218,6 +218,62 @@ namespace Rollgeon.UI.Tests
             Assert.AreEqual(AIIntentTextKeys.BombField, applied[0].Id);
         }
 
+        [Test]
+        public void ConCurseAutorado_LaMaldicionSaleDebajoDelProximoTurno()
+        {
+            // Arrange — la pasiva del jefe sobre el jugador, autorada en su data: el panel la
+            // anuncia desde el turno 1, no recién cuando traba el primer dado.
+            var curse = ScriptableObject.CreateInstance<Rollgeon.Entities.BossCurseSO>();
+            var data = ScriptableObject.CreateInstance<Rollgeon.Entities.EnemyDataSO>();
+            try
+            {
+                curse.CurseId = "status.dice_block";
+                curse.DisplayName = "Candado";
+                curse.Description = "Te traba un dado.";
+                data.Curse = curse;
+                _view.Initialize(_boss, null, null, data);
+                _intents.Next.Add(Own(AIIntentTextKeys.RangedShot, "Te dispara"));
+
+                // Act
+                var panel = _view.CollectPanelCards();
+
+                // Assert — el orden ES el spec: header (fuera de esta lista), próximo turno,
+                // maldición. La etiqueta chica la separa del ataque.
+                Assert.AreEqual(2, panel.Count);
+                Assert.AreEqual("status.dice_block", panel[1].Id);
+                Assert.AreEqual(EnemyStatusIconsView.PlayerCurseEyebrow(), panel[1].Eyebrow,
+                    "La maldición sin su etiqueta se lee como un segundo ataque.");
+            }
+            finally
+            {
+                Object.DestroyImmediate(curse);
+                Object.DestroyImmediate(data);
+            }
+        }
+
+        [Test]
+        public void SinCurse_ElBloqueNoExiste()
+        {
+            // Arrange — bestiario común: data sin Curse.
+            var data = ScriptableObject.CreateInstance<Rollgeon.Entities.EnemyDataSO>();
+            try
+            {
+                _view.Initialize(_boss, null, null, data);
+                _intents.Next.Add(Own(AIIntentTextKeys.RangedShot, "Te dispara"));
+
+                // Act
+                var panel = _view.CollectPanelCards();
+
+                // Assert — ni tarjeta ni hueco.
+                Assert.AreEqual(1, panel.Count,
+                    "Apareció un bloque de maldición para un enemigo que no maldice nada.");
+            }
+            finally
+            {
+                Object.DestroyImmediate(data);
+            }
+        }
+
         private AIIntent Own(string key, string fallback)
             => new AIIntent(key, fallback, 24, AttackKind.BasicAttack);
 

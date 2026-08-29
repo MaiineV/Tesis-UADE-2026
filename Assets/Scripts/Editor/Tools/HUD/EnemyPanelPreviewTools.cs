@@ -234,10 +234,11 @@ namespace Rollgeon.EditorTools.HUD
                 EnemyStatusRowSettingsSO.ResourcePath);
             var catalog = settings != null ? settings.Catalog : null;
 
-            // El MISMO reparto que la fila real: el bloque de próximo turno en la principal, y
-            // lo que mantiene en el paño al costado.
+            // El MISMO reparto que la fila real: el bloque de próximo turno y la maldición en
+            // la principal, y lo que mantiene en el paño al costado.
             string promotedKey = EnemyStatusIconsView.AppendNextTurnCard(
                 next, standing, owner, catalog, panelCards);
+            EnemyStatusIconsView.AppendCurseCard(data.Curse, catalog, panelCards);
             EnemyStatusIconsView.AppendStandingCards(standing, promotedKey, owner, catalog, applied);
         }
 
