@@ -69,15 +69,12 @@ namespace Rollgeon.Editor.Tools.Item
         /// <remarks>
         /// Cada contexto envuelve un <c>PropertyTree</c> de Odin, que es <c>IDisposable</c>.
         /// <see cref="PruneFamilyContexts"/> ya acota el conjunto vivo a la familia en pantalla, pero
-        /// los de la última familia vista sobrevivían al cierre hasta que pasara el GC. No hace falta
-        /// un gancho de teardown por tab: el <c>OnDisable</c> del shell es <c>protected virtual</c>.
+        /// los de la última familia vista sobrevivían al cierre hasta que pasara el GC.
         /// </remarks>
-        protected override void OnDisable()
+        partial void OnFamilyDisable()
         {
             foreach (var ctx in _familyContexts.Values) ctx?.Dispose();
             _familyContexts.Clear();
-
-            base.OnDisable();
         }
 
         readonly Dictionary<ItemSO, PolymorphicAuthoringContext> _familyContexts =

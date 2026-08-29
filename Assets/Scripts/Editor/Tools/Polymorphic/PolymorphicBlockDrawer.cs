@@ -52,6 +52,46 @@ namespace Rollgeon.Editor.Tools.Polymorphic
             public static Options Default => new Options { ShowTargetSelector = false };
         }
 
+        // ---- campos con dibujo propio -------------------------------------
+
+        static readonly Dictionary<(System.Type Owner, string Member), System.Action<object>>
+            MemberDrawers = new Dictionary<(System.Type, string), System.Action<object>>();
+
+        /// <summary>
+        /// Hace que un campo lo dibuje el dueño del dominio en vez de Odin.
+        /// </summary>
+        /// <remarks>
+        /// <para>
+        /// Este drawer es genérico a propósito y no conoce ningún tipo del juego, pero hay campos que
+        /// dibujados tal cual mienten: <c>ItemSO.DisplayName</c> no es lo que ve el jugador — es el
+        /// respaldo de la tabla de localización. Un registro opt-in deja que la ventana de ítems
+        /// ponga ahí el campo del idioma activo, en la misma categoría "Identity" donde el autor lo
+        /// busca, sin que este archivo sepa que existe la localización.
+        /// </para>
+        /// <para>
+        /// Solo aplica a <see cref="DrawNode"/> — el panel. La tab de Raw Data recorre el árbol por
+        /// su cuenta y sigue mostrando el campo crudo, que es justo para lo que está.
+        /// </para>
+        /// </remarks>
+        public static void RegisterMemberDrawer(
+            System.Type ownerType, string memberName, System.Action<object> draw)
+        {
+            if (ownerType == null || string.IsNullOrEmpty(memberName)) return;
+
+            var key = (ownerType, memberName);
+            if (draw == null) MemberDrawers.Remove(key);
+            else MemberDrawers[key] = draw;
+        }
+
+        static bool TryDrawMember(object owner, InspectorProperty child)
+        {
+            if (MemberDrawers.Count == 0 || owner == null) return false;
+            if (!MemberDrawers.TryGetValue((owner.GetType(), child.Name), out var draw)) return false;
+
+            draw(owner);
+            return true;
+        }
+
         // ---- generic polymorphic list -------------------------------------
 
         /// <summary>
@@ -310,7 +350,7 @@ namespace Rollgeon.Editor.Tools.Polymorphic
 
                 if (!sectionVisible) { drewAnything = true; continue; }
 
-                child.Draw();
+                if (!TryDrawMember(value, child)) child.Draw();
                 drewAnything = true;
             }
 

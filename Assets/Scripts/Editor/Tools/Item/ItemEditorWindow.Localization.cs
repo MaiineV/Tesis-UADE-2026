@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using Rollgeon.Editor.Tools.Polymorphic;
 using Rollgeon.Items;
 using UnityEditor;
 using UnityEngine;
@@ -7,18 +8,20 @@ using UnityEngine;
 namespace Rollgeon.Editor.Tools.Item
 {
     /// <summary>
-    /// La sección "Textos": el nombre y la descripción que ve el jugador, por idioma.
+    /// El nombre y la descripción del ítem, en el idioma elegido, dentro de "Identity".
     /// </summary>
     /// <remarks>
     /// <para>
-    /// Hasta acá el panel dibujaba <c>DisplayName</c> y <c>Description</c> del asset y nada más — y
-    /// esos campos son el <b>fallback</b>, no lo que ve el jugador: gana la tabla <c>Content</c>, que
-    /// el asistente siembra al crear. O sea que editar el nombre en la tool no cambiaba nada en el
-    /// juego, sin ningún aviso, y para tocar el texto real había que abrir la ventana de
-    /// Localization y buscar la key a mano.
+    /// <c>ItemSO.DisplayName</c> no es lo que ve el jugador: es el respaldo.
+    /// <c>LocalizedContent.Name(itemId, so.DisplayName)</c> devuelve la entrada de la tabla
+    /// <c>Content</c> si existe, y el asistente siembra las dos keys al crear — así que el campo del
+    /// asset queda pisado desde el minuto cero. Editarlo no cambiaba nada en el juego y nada lo
+    /// avisaba.
     /// </para>
     /// <para>
-    /// La idea no es reorganizar la tabla sino que el diseñador no tenga que verla.
+    /// Por eso los campos <b>reemplazan</b> a los del asset en su lugar de siempre, en vez de vivir
+    /// en una sección aparte: dos pares de campos de nombre y descripción en el mismo panel es
+    /// exactamente la ambigüedad que hay que sacar. El campo crudo sigue disponible en Raw Data.
     /// </para>
     /// </remarks>
     public sealed partial class ItemEditorWindow
@@ -28,6 +31,7 @@ namespace Rollgeon.Editor.Tools.Item
         IReadOnlyList<string> _locales;
         string _locale;
         GUIStyle _localeHelpStyle;
+        string[] _localeLabels;
 
         IReadOnlyList<string> Locales => _locales ??= ItemLocalizationBridge.Locales();
 
@@ -50,23 +54,74 @@ namespace Rollgeon.Editor.Tools.Item
             }
         }
 
+        partial void OnLocalizationEnable()
+        {
+            PolymorphicBlockDrawer.RegisterMemberDrawer(
+                typeof(ItemSO), nameof(ItemSO.DisplayName), owner => DrawLocalizedName(owner as ItemSO));
+            PolymorphicBlockDrawer.RegisterMemberDrawer(
+                typeof(ItemSO), nameof(ItemSO.Description), owner => DrawLocalizedDescription(owner as ItemSO));
+        }
+
+        partial void OnLocalizationDisable()
+        {
+            // El registro es estático y la lambda captura esta ventana: sin soltarlo, cerrarla dejaría
+            // el panel de la próxima escribiendo contra una instancia muerta.
+            PolymorphicBlockDrawer.RegisterMemberDrawer(typeof(ItemSO), nameof(ItemSO.DisplayName), null);
+            PolymorphicBlockDrawer.RegisterMemberDrawer(typeof(ItemSO), nameof(ItemSO.Description), null);
+        }
+
         partial void OnLocalizationAssetsRefreshed()
         {
             _locales = null;
+            _localeLabels = null;
         }
 
-        partial void DrawLocalizationExtras(ItemSO asset)
+        void DrawLocalizedName(ItemSO asset)
         {
             if (asset == null) return;
-            if (!DrawExtrasSection("Textos")) return;
+
+            DrawLocaleDropdown();
 
             if (string.IsNullOrEmpty(asset.ItemId))
             {
                 EditorGUILayout.HelpBox(
                     "El ítem no tiene id, así que no tiene dónde guardar sus textos.", MessageType.Warning);
+                EditorGUILayout.LabelField("Nombre", asset.DisplayName);
                 return;
             }
 
+            var locale = ActiveLocale;
+            var current = ItemLocalizationBridge.Read(asset.ItemId, locale).Name ?? asset.DisplayName;
+
+            EditorGUI.BeginChangeCheck();
+            var next = EditorGUILayout.TextField("Nombre", current);
+            if (EditorGUI.EndChangeCheck()) WriteName(asset, locale, next);
+        }
+
+        void DrawLocalizedDescription(ItemSO asset)
+        {
+            if (asset == null || string.IsNullOrEmpty(asset.ItemId)) return;
+
+            var locale = ActiveLocale;
+            var current = ItemLocalizationBridge.Read(asset.ItemId, locale).Description ?? asset.Description;
+
+            EditorGUILayout.LabelField("Descripción");
+            EditorGUI.BeginChangeCheck();
+            var next = EditorGUILayout.TextArea(current, GUILayout.MinHeight(48f));
+            if (EditorGUI.EndChangeCheck()) WriteDescription(asset, locale, next);
+
+            DrawLocaleHelp(locale);
+        }
+
+        /// <summary>
+        /// En qué idioma se están editando los textos.
+        /// </summary>
+        /// <remarks>
+        /// Desplegable y no una botonera: hoy son dos idiomas, pero una fila de botones deja de
+        /// entrar en cuanto se sume un tercero, y este panel ya es angosto.
+        /// </remarks>
+        void DrawLocaleDropdown()
+        {
             var locales = Locales;
             if (locales.Count == 0)
             {
@@ -74,61 +129,48 @@ namespace Rollgeon.Editor.Tools.Item
                 return;
             }
 
-            DrawLocaleBar(locales);
+            _localeLabels ??= locales
+                .Select(code => $"{ItemLocalizationBridge.DisplayNameOf(code)} ({code.ToUpperInvariant()})")
+                .ToArray();
 
-            var locale = ActiveLocale;
-            var entry = ItemLocalizationBridge.Read(asset.ItemId, locale);
-
-            if (entry.Name == null && entry.Description == null)
-                EditorGUILayout.HelpBox(
-                    $"Sin texto en {ItemLocalizationBridge.DisplayNameOf(locale)}: el juego muestra el " +
-                    "del asset. Escribí acá para traducirlo.", MessageType.Info);
-
-            var name = entry.Name ?? asset.DisplayName;
-            var description = entry.Description ?? asset.Description;
-
-            EditorGUI.BeginChangeCheck();
-            var nextName = EditorGUILayout.TextField("Nombre", name);
-            EditorGUILayout.LabelField("Descripción");
-            var nextDescription = EditorGUILayout.TextArea(description, GUILayout.MinHeight(48f));
-            if (EditorGUI.EndChangeCheck())
-                WriteTexts(asset, locale, nextName, nextDescription);
-
-            DrawLocaleHelp(locale);
-        }
-
-        void DrawLocaleBar(IReadOnlyList<string> locales)
-        {
-            var labels = new string[locales.Count];
             int current = 0;
             for (int i = 0; i < locales.Count; i++)
-            {
-                labels[i] = locales[i].ToUpperInvariant();
                 if (locales[i] == ActiveLocale) current = i;
-            }
 
-            int next = GUILayout.Toolbar(current, labels);
+            int next = EditorGUILayout.Popup("Idioma", current, _localeLabels);
             if (next != current) ActiveLocale = locales[next];
         }
 
+        void WriteName(ItemSO asset, string locale, string value)
+        {
+            var entry = ItemLocalizationBridge.Read(asset.ItemId, locale);
+            ItemLocalizationBridge.Write(asset.ItemId, locale, value, entry.Description ?? asset.Description);
+            SyncFallback(asset, locale, value, null);
+        }
+
+        void WriteDescription(ItemSO asset, string locale, string value)
+        {
+            var entry = ItemLocalizationBridge.Read(asset.ItemId, locale);
+            ItemLocalizationBridge.Write(asset.ItemId, locale, entry.Name ?? asset.DisplayName, value);
+            SyncFallback(asset, locale, null, value);
+        }
+
         /// <summary>
-        /// Guarda el texto y, en el idioma de autoría, también el fallback del asset.
+        /// En el idioma de autoría, el campo del asset acompaña al de la tabla.
         /// </summary>
         /// <remarks>
-        /// Sincronizar el fallback es lo que saca la trampa: si el campo del asset dice una cosa y la
-        /// tabla otra, el juego muestra el de la tabla y el panel de "Identity" queda mintiendo. El
-        /// español es el idioma en el que se autora este proyecto, así que es el que manda ahí.
+        /// Es lo que saca la trampa: con el asset diciendo una cosa y la tabla otra, el juego muestra
+        /// la de la tabla y el campo crudo queda mintiendo para siempre. El español es el idioma en
+        /// el que se autora este proyecto, así que es el que manda ahí.
         /// </remarks>
-        void WriteTexts(ItemSO asset, string locale, string name, string description)
+        void SyncFallback(ItemSO asset, string locale, string name, string description)
         {
-            ItemLocalizationBridge.Write(asset.ItemId, locale, name, description);
-
             if (locale != ItemLocalizationBridge.AuthoringLocale) return;
 
             Context.Mutate("Edit Item Text", () =>
             {
-                asset.DisplayName = name;
-                asset.Description = description;
+                if (name != null) asset.DisplayName = name;
+                if (description != null) asset.Description = description;
             });
         }
 
@@ -138,10 +180,10 @@ namespace Rollgeon.Editor.Tools.Item
 
             EditorGUILayout.LabelField(
                 locale == ItemLocalizationBridge.AuthoringLocale
-                    ? "Esto es lo que ve el jugador. Al ser el idioma de autoría, también actualiza " +
-                      "el nombre y la descripción del asset, que son el texto de respaldo."
-                    : "Esto es lo que ve el jugador en ese idioma. El nombre del asset no cambia: " +
-                      "es sólo el respaldo cuando falta la traducción.",
+                    ? "Es lo que ve el jugador. Al ser el idioma de autoría, también actualiza el " +
+                      "texto de respaldo del asset."
+                    : "Es lo que ve el jugador en ese idioma. El texto de respaldo del asset no " +
+                      "cambia: sólo se usa cuando falta la traducción.",
                 _localeHelpStyle);
         }
     }

@@ -35,6 +35,26 @@ namespace Rollgeon.Editor.Tools.Item
         partial void OnTriggerAssetsRefreshed();
         partial void OnLocalizationAssetsRefreshed();
 
+        // Mismo criterio que OnAssetsRefreshed: OnEnable/OnDisable se pueden sobrescribir una sola
+        // vez por clase, asi que el override vive aca y reparte. Antes el de teardown lo tenia la
+        // tab de familia, que quedaba dueña del cierre de features que no son suyas.
+        partial void OnLocalizationEnable();
+        partial void OnFamilyDisable();
+        partial void OnLocalizationDisable();
+
+        protected override void OnEnable()
+        {
+            base.OnEnable();
+            OnLocalizationEnable();
+        }
+
+        protected override void OnDisable()
+        {
+            OnFamilyDisable();
+            OnLocalizationDisable();
+            base.OnDisable();
+        }
+
         protected override void OnAssetsRefreshed()
         {
             base.OnAssetsRefreshed();
