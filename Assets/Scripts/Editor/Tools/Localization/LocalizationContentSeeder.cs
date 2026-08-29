@@ -744,6 +744,14 @@ namespace Rollgeon.EditorTools.Localization
             Content(AIIntentTextKeys.BombBlast + ".name", "Detonar la bomba", "Detonate the Bomb");
             Content(AIIntentTextKeys.BombBlast + ".desc", string.Empty, string.Empty);
 
+            // Descripciones vacías: el título dice qué pasa y el número de la tarjeta cuánto.
+            // Las casillas marcadas del golpe telegrafiado ya se ven en el paño al hoverear.
+            Content(AIIntentTextKeys.Telegraph + ".name", "Golpe marcado", "Marked Strike");
+            Content(AIIntentTextKeys.Telegraph + ".desc", string.Empty, string.Empty);
+
+            Content(AIIntentTextKeys.Attack + ".name", "Te ataca", "Attacks You");
+            Content(AIIntentTextKeys.Attack + ".desc", string.Empty, string.Empty);
+
             Content(AIIntentTextKeys.Leaves + ".name", "Lo que deja", "What It Leaves");
             Content(AIIntentTextKeys.Leaves + ".desc",
                 "Deja fuego: <b>{0}</b> al entrar, <b>{1}</b> por turno, {2} rondas.",

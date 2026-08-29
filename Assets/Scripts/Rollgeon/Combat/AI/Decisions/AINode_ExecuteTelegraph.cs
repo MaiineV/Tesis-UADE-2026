@@ -26,7 +26,7 @@ namespace Rollgeon.Combat.AI.Decisions
     /// "no había nada pendiente" o "el jugador esquivó" no deben cortar el sequence.
     /// </remarks>
     [Serializable, HideReferenceObjectPicker]
-    public sealed class AINode_ExecuteTelegraph : AIActionNode
+    public sealed class AINode_ExecuteTelegraph : AIActionNode, IAIIntentNode
     {
         [Title("Windup")]
 #if UNITY_EDITOR
@@ -85,6 +85,33 @@ namespace Rollgeon.Combat.AI.Decisions
             // autorada, sin feedback service) el daño igual cae — tarde, pero cae.
             resolveOnce();
             onResult?.Invoke(AIResult.Succeeded);
+        }
+
+        /// <summary>
+        /// La marca ya congelada, leída sin consumir: casillas, daño y tipo son los del
+        /// <see cref="IThreatenedAreaService"/>, no una re-deducción del árbol.
+        /// </summary>
+        public bool TryDescribeIntent(AIContext context, out AIIntent intent)
+        {
+            intent = default;
+            if (context == null) return false;
+            if (!ServiceLocator.TryGetService<IThreatenedAreaService>(out var threat) || threat == null)
+                return false;
+            if (!threat.TryPeek(context.SelfGuid, out var area)) return false;
+
+            intent = new AIIntent(AIIntentTextKeys.Telegraph, "Golpe marcado",
+                                  area.Damage, area.Kind, area.Tiles);
+            return true;
+        }
+
+        /// <summary>
+        /// Como repertorio no afirma nada: este nodo cobra lo que otro marcó, y sin marca
+        /// pendiente no hay forma, daño ni tipo que prometer.
+        /// </summary>
+        public bool TryDescribeOption(AIContext context, out AIIntent intent)
+        {
+            intent = default;
+            return false;
         }
 
         // ---- pasos compartidos por los dos caminos -------------------------

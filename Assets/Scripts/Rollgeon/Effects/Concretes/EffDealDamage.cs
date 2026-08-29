@@ -65,6 +65,31 @@ namespace Rollgeon.Effects.Concretes
         public float ComboMultiplier => _comboMultiplier;
         public int BaseAmount => _baseAmount;
 
+        /// <summary>Tipo de ataque con el que este daño entra al pipeline.</summary>
+        public AttackKind Kind => _attackKind;
+
+        /// <summary>
+        /// El daño que el panel de intención puede afirmar hoy para <paramref name="ownerGuid"/>:
+        /// el mismo número que entraría a <c>DamageContext.BaseDamage</c>. ComboValue depende de
+        /// una tirada que todavía no pasó — ahí no hay nada que afirmar.
+        /// </summary>
+        public bool TryDescribePreviewDamage(Guid ownerGuid, out int damage)
+        {
+            switch (_damageSource)
+            {
+                case DamageSource.Constant:
+                    damage = _baseAmount;
+                    return damage > 0;
+                case DamageSource.FromReader when _reader != null:
+                    damage = Mathf.RoundToInt(
+                        _reader.Read(new EffectContext { SourceGuid = ownerGuid }) * _readerMultiplier);
+                    return damage > 0;
+                default:
+                    damage = 0;
+                    return false;
+            }
+        }
+
         public override string GetEffectName() => "Deal Damage";
 
         // IHasTooltipInfo — texto dinámico por personaje: ComboValue lee el ATQ del

@@ -15,12 +15,18 @@ namespace Rollgeon.Combat.AI.Decisions
         public const string BombField = "intent.bomb_field";
         public const string BombBlast = "intent.bomb_blast";
 
+        /// <summary>La marca telegrafiada ya congelada, leída por el nodo que la cobra.</summary>
+        public const string Telegraph = "intent.telegraph";
+
+        /// <summary>El golpe genérico del bestiario común (behavior componible, melee o ranged).</summary>
+        public const string Attack = "intent.attack";
+
         /// <summary>Frase compartida de lo que una intención deja en el piso.</summary>
         public const string Leaves = "intent.leaves";
 
         public static readonly string[] All =
         {
-            Ignite, RangedShot, BombField, BombBlast, Leaves,
+            Ignite, RangedShot, BombField, BombBlast, Telegraph, Attack, Leaves,
         };
 
         /// <summary>
@@ -41,6 +47,10 @@ namespace Rollgeon.Combat.AI.Decisions
             // Vacía a propósito: el título ya dice qué pasa y el badge cuánto falta. La cruz se
             // ve en el piso, y el fuego que queda lo cuenta la casilla al pasarle el mouse.
             BombBlast => string.Empty,
+            // Vacías: el título dice qué pasa y el número de la tarjeta cuánto. Las casillas
+            // marcadas ya se ven en el paño al hoverear.
+            Telegraph => string.Empty,
+            Attack => string.Empty,
             Leaves => "Deja fuego: <b>{0}</b> al entrar, <b>{1}</b> por turno, {2} rondas.",
             _ => string.Empty,
         };

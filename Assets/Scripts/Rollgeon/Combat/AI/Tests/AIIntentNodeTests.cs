@@ -7,6 +7,7 @@ using Rollgeon.Attributes.Stats;
 using Rollgeon.Combat.AI.Decisions;
 using Rollgeon.Combat.Pipelines;
 using Rollgeon.Combat.Threat;
+using Rollgeon.Entities.Behaviors;
 using Rollgeon.Grid;
 using Rollgeon.PreConditions.Concretes;
 using Rollgeon.Tiles;
@@ -174,6 +175,134 @@ namespace Rollgeon.Combat.AI.Tests
 
             ScriptableObject.DestroyImmediate(bombs);
         }
+
+        [Test]
+        public void ExecuteTelegraph_ConMarcaPendiente_DescribeLaMarcaSinConsumirla()
+        {
+            // Arrange — la marca congelada del turno anterior, con sus casillas y su número.
+            var tiles = new[] { new GridCoord(2, 0), new GridCoord(3, 0) };
+            _threat.Mark(_boss, tiles, damage: 25, AttackKind.ScriptedAbility);
+            var execute = new AINode_ExecuteTelegraph();
+
+            // Act
+            bool described = execute.TryDescribeIntent(Context(), out var intent);
+
+            // Assert
+            Assert.IsTrue(described, "El nodo que cobra la marca es el único que puede describirla.");
+            CollectionAssert.AreEquivalent(tiles, intent.Tiles,
+                "Las casillas no son las de la marca: el dibujo dejaría de coincidir con lo que va a cobrar.");
+            Assert.AreEqual(25, intent.Damage, "El número sale de la marca congelada.");
+            Assert.AreEqual(AttackKind.ScriptedAbility, intent.Kind);
+            Assert.IsTrue(_threat.HasPending(_boss),
+                "Leer el aviso se comió la marca: el jefe pasaría el turno sin su ataque, y lo " +
+                "habría causado el jugador por pasar el mouse.");
+        }
+
+        [Test]
+        public void ExecuteTelegraph_SinMarca_NoPrometeNada()
+        {
+            // Arrange
+            var execute = new AINode_ExecuteTelegraph();
+
+            // Act + Assert — sin marca no hay forma, daño ni tipo que afirmar.
+            Assert.IsFalse(execute.TryDescribeIntent(Context(), out _),
+                "Prometió cobrar una marca que no existe.");
+        }
+
+        [Test]
+        public void ExecuteTelegraph_ComoRepertorio_NoAfirmaNada()
+        {
+            // Arrange — incluso con marca puesta: el repertorio describe el kit, y el kit de este
+            // nodo es "cobrar lo que otro marcó", que no es un ataque propio que listar.
+            _threat.Mark(_boss, new[] { new GridCoord(2, 0) }, damage: 25, AttackKind.ScriptedAbility);
+            var execute = new AINode_ExecuteTelegraph();
+
+            // Act + Assert
+            Assert.IsFalse(((IAIIntentNode)execute).TryDescribeOption(Context(), out _),
+                "Listó 'cobrar la marca' como un ataque del repertorio.");
+        }
+
+        [Test]
+        public void Behavior_ConDanoConstante_DescribeElGolpe()
+        {
+            // Arrange — el ataque del bestiario común: un behavior componible con EffDealDamage.
+            var node = new AINode_Behavior { Behavior = AttackBehavior(new Rollgeon.Effects.Concretes.EffDealDamage()) };
+
+            // Act
+            bool described = node.TryDescribeIntent(Context(), out var intent);
+
+            // Assert — EffDealDamage nace Constant con _baseAmount 10.
+            Assert.IsTrue(described, "El golpe del behavior no se describió: el bestiario común " +
+                "quedaría sin bloque de próximo turno.");
+            Assert.AreEqual(AIIntentTextKeys.Attack, intent.LabelKey);
+            Assert.AreEqual(10, intent.Damage);
+            Assert.AreEqual(0, intent.Tiles.Count,
+                "Prometió casillas: el target del behavior se resuelve al ejecutar.");
+        }
+
+        [Test]
+        public void Behavior_ConReaderDeStat_AfirmaElStatVivoDelDueno()
+        {
+            // Arrange — el camino real de ED_MeleeCardEnemy: FromReader leyendo el Attack del
+            // dueño. El número afirmado tiene que ser el stat vivo, no una copia serializada.
+            var attack = new Rollgeon.Attributes.Stats.Attack(13);
+            _attrs.GetAttributes(_boss).SetAttribute<Rollgeon.Attributes.Stats.Attack>(attack);
+
+            var damage = new Rollgeon.Effects.Concretes.EffDealDamage();
+            SetPrivateField(damage, "_damageSource", Rollgeon.Effects.Concretes.DamageSource.FromReader);
+            SetPrivateField(damage, "_reader", new Rollgeon.Effects.Readers.ReadEntityStat());
+            var node = new AINode_Behavior { Behavior = AttackBehavior(damage) };
+
+            // Act
+            bool described = node.TryDescribeIntent(Context(), out var intent);
+
+            // Assert
+            Assert.IsTrue(described);
+            Assert.AreEqual(13, intent.Damage, "El daño afirmado no es el stat vivo del dueño.");
+        }
+
+        [Test]
+        public void Behavior_LibroDeEnergia_NoDescribeNada()
+        {
+            // Arrange — Reset/Charge Energy: administración, no un ataque que anunciar.
+            var bookkeeping = new EnemyActionBehavior
+            {
+                ActionName = "Charge Energy",
+                Effects = new List<Rollgeon.Effects.EffectData>
+                {
+                    new Rollgeon.Effects.EffectData
+                    {
+                        Effects = new List<Rollgeon.Effects.IEffect>
+                            { new Rollgeon.Effects.Concretes.EffModifyIntAttribute() },
+                    },
+                },
+            };
+            var node = new AINode_Behavior { Behavior = bookkeeping };
+
+            // Act + Assert
+            Assert.IsFalse(node.TryDescribeIntent(Context(), out _),
+                "Anunció 'Te ataca' por un behavior que solo mueve energía.");
+        }
+
+        private static EnemyActionBehavior AttackBehavior(Rollgeon.Effects.Concretes.EffDealDamage damage)
+            => new EnemyActionBehavior
+            {
+                ActionName = "Attack",
+                Effects = new List<Rollgeon.Effects.EffectData>
+                {
+                    new Rollgeon.Effects.EffectData
+                    {
+                        Effects = new List<Rollgeon.Effects.IEffect> { damage },
+                    },
+                },
+            };
+
+        // Los campos del effect son privados a propósito (autorado Odin): el test arma el mismo
+        // estado que un asset deserializado, no un camino público nuevo.
+        private static void SetPrivateField(object target, string field, object value)
+            => target.GetType()
+                .GetField(field, System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
+                .SetValue(target, value);
 
         [Test]
         public void TelegraphMark_NoDescribeIntencion()

@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using Rollgeon.Effects.Concretes;
 using Rollgeon.Entities.Behaviors;
 using Sirenix.OdinInspector;
 using Sirenix.Serialization;
@@ -12,7 +13,7 @@ namespace Rollgeon.Combat.AI.Decisions
     /// <see cref="AIContext"/> en un <see cref="EnemyAIBehaviorContext"/>.
     /// </summary>
     [Serializable, HideReferenceObjectPicker]
-    public sealed class AINode_Behavior : AIActionNode
+    public sealed class AINode_Behavior : AIActionNode, IAIIntentNode
     {
         [OdinSerialize, SerializeReference]
         public EnemyActionBehavior Behavior;
@@ -37,6 +38,33 @@ namespace Rollgeon.Combat.AI.Decisions
             Behavior.Execute(bctx);
             if (countsAsAction) context.MarkExecuted(Behavior.BehaviorName);
             return AIResult.Succeeded;
+        }
+
+        /// <summary>
+        /// El golpe del behavior, si lo hay: el primer <see cref="EffDealDamage"/> cuyo daño se
+        /// puede afirmar hoy. Cubre al bestiario común, cuyo ataque no es un nodo propio sino un
+        /// behavior componible. Sin casillas: el target se resuelve al ejecutar, y prometer una
+        /// celda acá sería adivinarla.
+        /// </summary>
+        public bool TryDescribeIntent(AIContext context, out AIIntent intent)
+        {
+            intent = default;
+            if (context == null || Behavior == null || Behavior.IsEnergyBookkeeping) return false;
+            if (Behavior.Effects == null) return false;
+
+            foreach (var group in Behavior.Effects)
+            {
+                if (group?.Effects == null) continue;
+                foreach (var effect in group.Effects)
+                {
+                    if (effect is not EffDealDamage damage) continue;
+                    if (!damage.TryDescribePreviewDamage(context.SelfGuid, out int amount)) continue;
+
+                    intent = new AIIntent(AIIntentTextKeys.Attack, "Te ataca", amount, damage.Kind);
+                    return true;
+                }
+            }
+            return false;
         }
 
         public override IEnumerator TickCoroutine(AIContext context, Action<AIResult> onResult)
