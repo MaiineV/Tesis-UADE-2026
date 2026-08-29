@@ -55,8 +55,9 @@ namespace Rollgeon.UI.Tooltips
 
         [Tooltip("Solo en modo ScreenTopRight: margen entre el panel y la esquina superior " +
                  "derecha del canvas, en píxeles de referencia (unidades locales del canvas, " +
-                 "resolución-independientes).")]
-        [SerializeField] private Vector2 _screenAnchorPadding = new Vector2(16f, 16f);
+                 "resolución-independientes). El margen vertical arranca debajo de la fila de " +
+                 "retratos del HUD, que vive pegada a ese mismo borde.")]
+        [SerializeField] private Vector2 _screenAnchorPadding = new Vector2(16f, 120f);
 
         [Tooltip("Canvas host. Si null, busca uno via GetComponentInParent en Awake.")]
         [SerializeField] private Canvas _hostCanvas;
