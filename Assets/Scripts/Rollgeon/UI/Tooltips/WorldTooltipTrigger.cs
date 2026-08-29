@@ -251,20 +251,37 @@ namespace Rollgeon.UI.Tooltips
             SetHover(false, null);
         }
 
+        // UN raycast por frame compartido entre todos los triggers, no uno por trigger: con la
+        // sala prendida fuego hay ~112 casillas con trigger además de los enemigos, y un
+        // RaycastAll (que además aloca el array) por cada uno era el nuevo costo sostenido
+        // dominante. Todos comparten el mismo ray porque todos preguntan lo mismo: qué hay
+        // bajo el mouse. La distancia la fija el primero del frame — todos usan el default.
+        private static readonly RaycastHit[] s_sharedHits = new RaycastHit[64];
+        private static int s_sharedHitCount;
+        private static int s_sharedFrame = -1;
+        private static Camera s_sharedCam;
+
         private bool RaycastHitsMe(Camera cam, Vector2 mouseScreen)
         {
-            // Pixel-art pipeline: la cámara renderiza a un RT chiquito, así que
-            // pixelWidth/Height ≠ Screen.width/Height. Escalamos el mouse pos al
-            // viewport interno de la cámara antes del ScreenPointToRay. Mismo fix
-            // que TileClickHandler usa para sus raycasts.
-            var rtPos = new Vector2(
-                mouseScreen.x / Screen.width  * cam.pixelWidth,
-                mouseScreen.y / Screen.height * cam.pixelHeight);
-            var ray = cam.ScreenPointToRay(rtPos);
-            var hits = Physics.RaycastAll(ray, _raycastDistance);
-            for (int i = 0; i < hits.Length; i++)
+            if (s_sharedFrame != Time.frameCount || s_sharedCam != cam)
             {
-                var hitGo = hits[i].collider != null ? hits[i].collider.gameObject : null;
+                s_sharedFrame = Time.frameCount;
+                s_sharedCam = cam;
+
+                // Pixel-art pipeline: la cámara renderiza a un RT chiquito, así que
+                // pixelWidth/Height ≠ Screen.width/Height. Escalamos el mouse pos al
+                // viewport interno de la cámara antes del ScreenPointToRay. Mismo fix
+                // que TileClickHandler usa para sus raycasts.
+                var rtPos = new Vector2(
+                    mouseScreen.x / Screen.width  * cam.pixelWidth,
+                    mouseScreen.y / Screen.height * cam.pixelHeight);
+                var ray = cam.ScreenPointToRay(rtPos);
+                s_sharedHitCount = Physics.RaycastNonAlloc(ray, s_sharedHits, _raycastDistance);
+            }
+
+            for (int i = 0; i < s_sharedHitCount; i++)
+            {
+                var hitGo = s_sharedHits[i].collider != null ? s_sharedHits[i].collider.gameObject : null;
                 if (hitGo == null) continue;
                 if (hitGo == gameObject) return true;
                 if (hitGo.transform.IsChildOf(transform)) return true;
