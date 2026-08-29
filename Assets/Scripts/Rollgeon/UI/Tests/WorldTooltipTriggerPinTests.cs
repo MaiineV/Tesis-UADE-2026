@@ -110,11 +110,15 @@ namespace Rollgeon.UI.Tests
         [Test]
         public void ElFijadoMuereConSuDueno()
         {
-            // Arrange — el enemigo fijado muere: su GO se apaga.
+            // Arrange — el enemigo fijado muere: su GO se apaga y Unity dispara OnDisable.
             _a.Pin();
 
-            // Act
-            _goA.SetActive(false);
+            // Act — el callback directo: en EditMode Unity no corre el ciclo de vida de los
+            // componentes creados en el test, así que SetActive(false) acá no dispara nada.
+            typeof(WorldTooltipTrigger)
+                .GetMethod("OnDisable",
+                    System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
+                .Invoke(_a, null);
 
             // Assert
             Assert.IsFalse(_a.IsPinned,
