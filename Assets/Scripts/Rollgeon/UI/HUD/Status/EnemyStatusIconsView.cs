@@ -20,8 +20,9 @@ namespace Rollgeon.UI.HUD.Status
     /// el de la tarjeta que se abre al pasar el mouse son el mismo sprite, que es lo que hace que el
     /// sistema se entienda sin tutorial.
     /// <para>
-    /// El panel las pide partidas en dos —lo que va a hacer y lo que le pasa— porque son dos
-    /// columnas; la fila que flota las dibuja juntas, porque es una sola fila.
+    /// El panel las pide partidas en dos —lo que va a hacer arriba, lo que le pasa como fila de
+    /// íconos al pie— porque son dos zonas; la fila que flota las dibuja juntas, porque es una
+    /// sola fila.
     /// </para>
     /// </remarks>
     [AddComponentMenu("Rollgeon/UI/HUD/Enemy Status Icons View")]
@@ -30,6 +31,7 @@ namespace Rollgeon.UI.HUD.Status
         private readonly List<IStatusIconProvider> _providers = new();
         private readonly List<StatusIconState> _applied = new();
         private readonly List<StatusIconState> _panelCards = new();
+        private readonly List<StatusIconState> _bottomIcons = new();
         private readonly List<StatusEffectIconView> _slots = new();
         private readonly List<AIIntent> _standing = new();
         private readonly List<AIIntent> _next = new();
@@ -39,9 +41,6 @@ namespace Rollgeon.UI.HUD.Status
 
         /// <summary>Key de UI de la etiqueta del bloque de maldición del jefe.</summary>
         public const string PlayerCurseKey = "enemy.panel.player_curse";
-
-        /// <summary>Key de UI del renglón "Debilidad: {0}" del pie del panel.</summary>
-        public const string WeaknessLineKey = "enemy.panel.weakness";
 
         private Guid _entityGuid;
         private EnemyDataSO _data;
@@ -144,28 +143,39 @@ namespace Rollgeon.UI.HUD.Status
         private void OnDisable() => Teardown();
 
         /// <summary>
-        /// La debilidad como renglón del pie — "Debilidad: Poker" — con la misma letra que la
-        /// frase táctica, no como tarjeta ni ícono. Recalculada en cada hover: el registry es la
-        /// fuente viva y la IA puede reescribirla mid-combate.
-        /// </summary>
-        public string WeaknessLine() => WeaknessLine(_kit?.WeaknessComboName(_entityGuid));
-
-        /// <summary>El renglón ya formateado y localizado, o <c>null</c> sin combo.</summary>
-        public static string WeaknessLine(string comboName)
-            => string.IsNullOrEmpty(comboName)
-                ? null
-                : LocalizedContent.FromTableFormat(LocalizedContent.UITable, WeaknessLineKey,
-                                                   "Debilidad: <b>{0}</b>", comboName);
-
-        /// <summary>
-        /// Lo que <b>le pasa</b> y lo que mantiene en el paño: la columna del costado, para que
-        /// aturdirlo no estire el panel hacia abajo. El próximo ataque ya no vive acá — es el
-        /// bloque de la columna principal (<see cref="CollectPanelCards"/>).
+        /// Lo que <b>le pasa</b> y lo que mantiene en el paño, con todo su texto. El panel ya no
+        /// dibuja esta lista: usa <see cref="CollectBottomIcons"/>. Sigue viva porque es la fuente
+        /// de la fila de abajo y de la fila que flota sobre la cabeza.
         /// </summary>
         public IReadOnlyList<StatusIconState> CollectApplied()
         {
             Recollect();
             return _applied;
+        }
+
+        /// <summary>
+        /// La fila de estados al pie del panel: lo que le pasa y lo que mantiene en el paño,
+        /// reducido a lo que tiene arte — los slots son sólo ícono y un estado sin sprite sería
+        /// una placa vacía.
+        /// </summary>
+        public IReadOnlyList<StatusIconState> CollectBottomIcons()
+        {
+            Recollect();
+            AppendBottomIcons(_applied, _bottomIcons);
+            return _bottomIcons;
+        }
+
+        /// <summary>
+        /// El filtro de la fila de abajo. Estático y público por lo mismo que
+        /// <see cref="AddIfOwn"/>: el preview de editor arma este mismo panel sin combate.
+        /// </summary>
+        public static void AppendBottomIcons(List<StatusIconState> applied,
+                                             List<StatusIconState> into)
+        {
+            into.Clear();
+            if (applied == null) return;
+            foreach (var state in applied)
+                if (state.Icon != null) into.Add(state);
         }
 
         /// <summary>
@@ -336,9 +346,11 @@ namespace Rollgeon.UI.HUD.Status
         {
             if (curse == null || into == null) return;
 
+            // Sin título a propósito (mockup del spec): la tarjeta es label + regla — "PLAYER
+            // CURSE / Te traba un dado." El nombre del curse vive en su ícono y su regla.
             into.Add(new StatusIconState(
                 curse.CurseId ?? string.Empty,
-                LocalizedContent.Name(curse.CurseId, curse.DisplayName),
+                null,
                 LocalizedContent.Description(curse.CurseId, curse.Description),
                 curse.Icon != null ? curse.Icon
                     : catalog != null ? catalog.Resolve(curse.CurseId) : null,
@@ -370,8 +382,8 @@ namespace Rollgeon.UI.HUD.Status
 
             _kit = _data != null ? new EnemyKitStatusProvider(_catalog, _data) : null;
 
-            // El teleport del kit va al costado con los demás; la debilidad NO está acá --es un
-            // renglón del pie del panel (WeaknessLine), no una tarjeta.
+            // El teleport del kit va a la fila de abajo con los demás; la debilidad no está en
+            // el panel (mockup del spec: header, próximo turno, maldición, estados — nada más).
             if (_kit != null) _providers.Add(_kit);
 
             // El candado de dados ya no es un provider de esta fila: era la maldición del jefe

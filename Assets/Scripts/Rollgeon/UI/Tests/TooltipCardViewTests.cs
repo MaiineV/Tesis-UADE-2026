@@ -23,6 +23,9 @@ namespace Rollgeon.UI.Tests
         private GameObject _badge;
         private TextMeshProUGUI _badgeLabel;
         private GameObject _divider;
+        private GameObject _labelRow;
+        private GameObject _headerRow;
+        private TextMeshProUGUI _eyebrow;
         private Sprite _sprite;
 
         [SetUp]
@@ -30,13 +33,16 @@ namespace Rollgeon.UI.Tests
         {
             _go = new GameObject("TooltipCard", typeof(RectTransform));
 
-            _iconRoot = Child("Icon");
+            _labelRow = Child("LabelRow");
+            _iconRoot = Child("Icon", _labelRow.transform);
             _icon = _iconRoot.AddComponent<Image>();
             _badge = Child("Badge", _iconRoot.transform);
             _badgeLabel = Label("Value", _badge.transform);
-            _title = Label("Title");
-            _rule = Label("Rule");
+            _eyebrow = Label("Eyebrow", _labelRow.transform);
             _divider = Child("Divider");
+            _headerRow = Child("Header");
+            _title = Label("Title", _headerRow.transform);
+            _rule = Label("Rule");
 
             _sprite = MakeSprite();
 
@@ -48,6 +54,9 @@ namespace Rollgeon.UI.Tests
             SetPrivate("_badge", _badge);
             SetPrivate("_badgeLabel", _badgeLabel);
             SetPrivate("_divider", _divider);
+            SetPrivate("_labelRow", _labelRow);
+            SetPrivate("_headerRow", _headerRow);
+            SetPrivate("_eyebrowLabel", _eyebrow);
         }
 
         [TearDown]
@@ -117,6 +126,64 @@ namespace Rollgeon.UI.Tests
             Assert.IsFalse(_rule.gameObject.activeSelf);
             Assert.IsFalse(_divider.activeSelf,
                 "Quedó una línea partiendo la tarjeta en dos sin nada debajo.");
+        }
+
+        [Test]
+        public void ConLabelYContenido_ElDivisorSubrayaElLabel()
+        {
+            // Arrange — el bloque de próximo turno del mockup: NEXT TURN / línea / título + daño.
+            var state = new StatusIconState("intent.ranged_shot", "Card Throw", null,
+                                            null, active: true, damage: 18,
+                                            eyebrow: "Next turn");
+
+            // Act
+            _view.Show(state);
+
+            // Assert
+            Assert.IsTrue(_divider.activeSelf,
+                "El divisor no subrayó el label del bloque: NEXT TURN quedó pegado al título.");
+            Assert.IsTrue(_labelRow.activeSelf);
+            Assert.IsTrue(_headerRow.activeSelf);
+        }
+
+        [Test]
+        public void SinLabel_ElDivisorNoParteElContenido()
+        {
+            // Arrange — una tarjeta de un solo bloque: título y regla, sin eyebrow. La línea
+            // dejó de vivir entre título y regla — subraya labels, no parte contenido.
+            var state = new StatusIconState("status.stun", "Aturdido", "Este turno no ataca.",
+                                            null, active: true);
+
+            // Act
+            _view.Show(state);
+
+            // Assert
+            Assert.IsFalse(_divider.activeSelf,
+                "El divisor partió una tarjeta sin label: la línea es del nombre del bloque.");
+            Assert.IsFalse(_labelRow.activeSelf,
+                "La fila del label quedó prendida sin ícono ni eyebrow: un renglón de aire.");
+        }
+
+        [Test]
+        public void LaMaldicion_EsLabelMasRegla_SinFilaDeTitulo()
+        {
+            // Arrange — el bloque PLAYER CURSE del mockup: ícono + label, línea, y la regla.
+            // Sin título: el nombre del curse no tiene renglón propio.
+            var state = new StatusIconState("status.dice_block", null, "Te traba un dado.",
+                                            _sprite, active: true, eyebrow: "Player Curse");
+
+            // Act
+            _view.Show(state);
+
+            // Assert
+            Assert.IsTrue(_labelRow.activeSelf);
+            Assert.IsTrue(_iconRoot.activeSelf, "El ícono del curse va en la fila del label.");
+            Assert.IsTrue(_divider.activeSelf);
+            Assert.IsFalse(_headerRow.activeSelf,
+                "La fila del título quedó viva vacía: entre el label y la regla queda un " +
+                "renglón de aire.");
+            Assert.IsFalse(_title.gameObject.activeSelf);
+            Assert.IsTrue(_rule.gameObject.activeSelf);
         }
 
         [Test]

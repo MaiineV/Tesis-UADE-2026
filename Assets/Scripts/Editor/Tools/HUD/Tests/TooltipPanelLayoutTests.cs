@@ -59,27 +59,27 @@ namespace Rollgeon.Editor.Tools.HUD.Tests
         }
 
         [Test]
-        public void LaFamiliaVaEnElRenglonDelNombre_ALaDerecha()
+        public void LaFamiliaVaDebajoDelNombre()
         {
             var panel = LoadPanel();
 
-            var name = panel.Find("Identity/TitleRow/Name");
-            var type = panel.Find("Identity/TitleRow/Type");
-            Assert.IsNotNull(name, "El panel no tiene 'Identity/TitleRow/Name'.");
+            // El mockup del spec: "The Croupier" arriba y "Boss · Ranged" en su propio renglón,
+            // debajo. Si esto falla con 'Identity/Name' ausente, falta re-correr el menú
+            // Rollgeon/Tooltips/3 sobre el prefab.
+            var name = panel.Find("Identity/Name");
+            var type = panel.Find("Identity/Type");
+            Assert.IsNotNull(name, "El panel no tiene 'Identity/Name' como renglón propio.");
             Assert.IsNotNull(type,
-                "La familia no está en el renglón del nombre: 'Jefe · Rango' va a la DERECHA de " +
-                "'The Croupier', no debajo.");
+                "La familia no está debajo del nombre: 'Boss · Ranged' va en su propio renglón.");
             Assert.Greater(type.GetSiblingIndex(), name.GetSiblingIndex(),
-                "La familia quedó ANTES del nombre en la fila: se lee 'Jefe · Rango The " +
-                "Croupier'.");
+                "La familia quedó ARRIBA del nombre: se lee 'Boss · Ranged' antes que " +
+                "'The Croupier'.");
 
-            // El ancho fijo era de cuando vivía sola bajo el VLG; dentro de la fila volvería a
-            // imponer el ancho del panel entero.
             var element = type.GetComponent<LayoutElement>();
             if (element != null)
                 Assert.Less(element.preferredWidth, 0f,
-                    "El Type conserva un preferredWidth fijo: adentro de la fila del nombre " +
-                    "eso ensancha el panel entero.");
+                    "El Type conserva un preferredWidth fijo: le impondría su ancho al panel " +
+                    "entero en vez de dejar que el layout lo estire.");
         }
 
         [Test]
@@ -91,6 +91,59 @@ namespace Rollgeon.Editor.Tools.HUD.Tests
                 "El título nombra la cosa y la regla es lo que se lee. Con el título más grande " +
                 "que ella se lleva el ojo primero, y la tarjeta pasa a ser un encabezado con una " +
                 "nota al pie.");
+        }
+
+        [Test]
+        public void LaTarjeta_EsLabelDivisorContenido()
+        {
+            // El mockup: el label del bloque arriba (ícono + NEXT TURN/PLAYER CURSE), el divisor
+            // subrayándolo, y recién después el contenido. Si falta 'LabelRow', falta re-correr
+            // los menús Rollgeon/Tooltips/1 y 2.
+            var card = LoadCard();
+
+            var label = card.Find("LabelRow");
+            var divider = card.Find("Divider");
+            var header = card.Find("Header");
+            var rule = card.Find("Rule");
+            Assert.IsNotNull(label, "La tarjeta no tiene 'LabelRow'.");
+            Assert.IsNotNull(divider, "La tarjeta no tiene 'Divider'.");
+            Assert.IsNotNull(header, "La tarjeta no tiene 'Header'.");
+            Assert.IsNotNull(rule, "La tarjeta no tiene 'Rule'.");
+            Assert.IsNotNull(card.Find("LabelRow/Eyebrow"),
+                "El eyebrow no vive en la fila del label.");
+            Assert.IsNotNull(card.Find("LabelRow/Icon"),
+                "El ícono no vive en la fila del label — es el candado al lado de PLAYER CURSE.");
+
+            Assert.Less(label.GetSiblingIndex(), divider.GetSiblingIndex(),
+                "El divisor quedó arriba del label: tiene que subrayarlo.");
+            Assert.Less(divider.GetSiblingIndex(), header.GetSiblingIndex(),
+                "El contenido quedó arriba del divisor.");
+            Assert.Less(header.GetSiblingIndex(), rule.GetSiblingIndex(),
+                "La regla quedó arriba de la fila del título.");
+        }
+
+        [Test]
+        public void LaFilaDeAbajo_EsUnaFilaYTieneSuPropioSlot()
+        {
+            var panel = LoadPanel();
+
+            // Slots cuadrados en horizontal, no una pila de tarjetas. Si esto falla, falta
+            // re-correr los menús Rollgeon/Tooltips/5 y 7.
+            var bottom = panel.Find("BottomCards");
+            Assert.IsNotNull(bottom, "El panel no tiene 'BottomCards'.");
+            Assert.IsNotNull(bottom.GetComponent<HorizontalLayoutGroup>(),
+                "La fila de abajo no es horizontal: los estados saldrían apilados como tarjetas.");
+            Assert.IsNull(bottom.GetComponent<VerticalLayoutGroup>(),
+                "Quedó el VerticalLayoutGroup viejo conviviendo con la fila: dos layout groups " +
+                "en el mismo GO pelean por los hijos.");
+
+            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(TooltipPrefabPath);
+            var controller = prefab.GetComponentInChildren<TooltipController>(includeInactive: true);
+            var slot = new SerializedObject(controller)
+                .FindProperty("_bottomCardPrefab").objectReferenceValue;
+            Assert.IsNotNull(slot,
+                "El panel no tiene cableado el prefab del slot de estado: la fila de abajo " +
+                "saldría con las tarjetas de texto.");
         }
 
         private static float FontSizeOf(Transform card, string child)

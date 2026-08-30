@@ -160,14 +160,12 @@ namespace Rollgeon.Entities.Visuals
             if (row == null) return;
             row.Initialize(guid, settings.IconPrefab, settings.Catalog, data);
 
-            // La debilidad no es tarjeta: es un renglón al pie de la caja, con la misma letra
-            // que la frase táctica.
-            trigger.FooterLineProvider = row.WeaknessLine;
-
-            // Dos columnas con papeles distintos: la principal lleva el bloque de próximo turno
-            // (y la maldición del jefe), el costado lo que le pasa y lo que mantiene en el paño.
+            // Dos zonas con papeles distintos: la columna principal lleva el bloque de próximo
+            // turno (y la maldición del jefe); lo que le pasa y lo que mantiene en el paño va
+            // como fila de slots de ícono al pie del panel. La debilidad no sale en el panel:
+            // el mockup del spec lo dejó en header, próximo turno, maldición y estados.
             trigger.CardsProvider = row.CollectPanelCards;
-            trigger.SideCardsProvider = row.CollectApplied;
+            trigger.BottomCardsProvider = row.CollectBottomIcons;
         }
 
         /// <summary>

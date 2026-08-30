@@ -140,9 +140,11 @@ namespace Rollgeon.UI.Tests
         }
 
         [Test]
-        public void LaDebilidad_EsUnRenglonDelPie_NoUnaTarjeta()
+        public void LaDebilidad_NoSaleEnElPanel()
         {
-            // Arrange — la debilidad sale del registry vivo, como en el spawn real.
+            // Arrange — la debilidad registrada y viva, como en el spawn real. El mockup del
+            // spec dejó el panel en header, próximo turno, maldición y estados: la debilidad
+            // no tiene bloque, ni tarjeta, ni renglón.
             var registry = new Rollgeon.Combat.Weakness.WeaknessRegistry();
             registry.SetWeakness(_boss, "combo.poker", 1.3f);
             ServiceLocator.AddService<Rollgeon.Combat.Weakness.IWeaknessRegistry>(
@@ -155,18 +157,16 @@ namespace Rollgeon.UI.Tests
                 _intents.Next.Add(Own(AIIntentTextKeys.RangedShot, "Te dispara"));
 
                 // Act
-                string line = _view.WeaknessLine();
+                var panel = _view.CollectPanelCards();
                 var applied = _view.CollectApplied();
 
-                // Assert — texto y no tarjeta: sin catálogo de combos el renglón dice la key
-                // cruda, que acá alcanza para fijar que el combo registrado es el que sale.
-                StringAssert.Contains("combo.poker", line,
-                    "El renglón del pie no dice el combo del registry: promete una debilidad " +
-                    "que no es la vigente.");
+                // Assert
+                foreach (var state in panel)
+                    Assert.AreNotEqual("enemy.weakness", state.Id,
+                        "La debilidad apareció en la columna principal: el spec no le da bloque.");
                 foreach (var state in applied)
                     Assert.AreNotEqual("enemy.weakness", state.Id,
-                        "La debilidad volvió a ser tarjeta: va como renglón del pie, con la " +
-                        "misma letra que la frase táctica.");
+                        "La debilidad volvió a ser tarjeta de estados.");
             }
             finally
             {
@@ -243,6 +243,10 @@ namespace Rollgeon.UI.Tests
                 Assert.AreEqual("status.dice_block", panel[1].Id);
                 Assert.AreEqual(EnemyStatusIconsView.PlayerCurseEyebrow(), panel[1].Eyebrow,
                     "La maldición sin su etiqueta se lee como un segundo ataque.");
+                Assert.IsTrue(string.IsNullOrEmpty(panel[1].DisplayName),
+                    "La maldición llevó título: el mockup la deja en label + regla — " +
+                    "'PLAYER CURSE / Te traba un dado.'");
+                StringAssert.Contains("Te traba", panel[1].Description);
             }
             finally
             {
@@ -271,6 +275,57 @@ namespace Rollgeon.UI.Tests
             finally
             {
                 Object.DestroyImmediate(data);
+            }
+        }
+
+        [Test]
+        public void LaFilaDeAbajo_SoloLlevaLoQueTieneArte()
+        {
+            // Arrange — sin catálogo ningún intent resuelve sprite: lo que mantiene en el paño
+            // existe como estado pero no puede ser slot, porque el slot es sólo ícono y sin
+            // arte quedaría una placa vacía.
+            _intents.Next.Add(Own(AIIntentTextKeys.RangedShot, "Te dispara"));
+            _intents.Standing.Add(Own(AIIntentTextKeys.Ignite, "Prende el suelo"));
+
+            // Act
+            var applied = _view.CollectApplied();
+            var bottom = _view.CollectBottomIcons();
+
+            // Assert
+            Assert.AreEqual(1, applied.Count);
+            Assert.AreEqual(0, bottom.Count,
+                "Un estado sin sprite llegó a la fila de abajo: su slot sería una placa vacía.");
+        }
+
+        [Test]
+        public void ElFiltroDeLaFilaDeAbajo_DejaPasarLoQueSiTieneSprite()
+        {
+            // Arrange — el filtro directo, sin catálogo de por medio: es el mismo que usa el
+            // preview de editor.
+            var tex = new Texture2D(4, 4);
+            var sprite = Sprite.Create(tex, new Rect(0, 0, 4, 4), new Vector2(0.5f, 0.5f));
+            try
+            {
+                var applied = new List<StatusIconState>
+                {
+                    new StatusIconState("status.stun", "Aturdido", "No ataca.", sprite,
+                                        active: true),
+                    new StatusIconState("status.sin_arte", "Invisible", "Sin sprite.", null,
+                                        active: true),
+                };
+                var bottom = new List<StatusIconState>();
+
+                // Act
+                EnemyStatusIconsView.AppendBottomIcons(applied, bottom);
+
+                // Assert
+                Assert.AreEqual(1, bottom.Count);
+                Assert.AreEqual("status.stun", bottom[0].Id);
+            }
+            finally
+            {
+                Object.DestroyImmediate(sprite);
+                Object.DestroyImmediate(tex);
             }
         }
 

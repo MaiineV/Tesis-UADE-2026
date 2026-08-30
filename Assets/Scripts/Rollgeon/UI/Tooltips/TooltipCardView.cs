@@ -34,9 +34,18 @@ namespace Rollgeon.UI.Tooltips
                  "no trae fecha.")]
         [SerializeField] private TextMeshProUGUI _eyebrowLabel;
 
-        [Tooltip("Línea entre el título y la regla. Se apaga con la regla: un divisor sin nada " +
-                 "debajo parte la tarjeta en dos por nada.")]
+        [Tooltip("Línea debajo del label del bloque (NEXT TURN, PLAYER CURSE). Se apaga cuando " +
+                 "no hay label o no hay nada debajo que separar.")]
         [SerializeField] private GameObject _divider;
+
+        [Tooltip("La fila del label del bloque — ícono + eyebrow. Se apaga entera cuando el " +
+                 "estado no trae ninguno de los dos. Null en prefabs sin la fila: cada pieza " +
+                 "se apaga sola.")]
+        [SerializeField] private GameObject _labelRow;
+
+        [Tooltip("La fila del título y el daño. Se apaga entera en las tarjetas que son sólo " +
+                 "label y regla — la maldición del jefe no lleva título.")]
+        [SerializeField] private GameObject _headerRow;
 
         /// <summary>Id del estado que esta tarjeta está mostrando — la columna lo usa para reusarla.</summary>
         public string CardId { get; private set; }
@@ -53,8 +62,12 @@ namespace Rollgeon.UI.Tooltips
 
             // Siempre a la izquierda, con o sin ícono: en una columna de tarjetas mezcladas los
             // títulos centrados bailaban de x según cuál tenía arte.
+            bool hasTitle = !string.IsNullOrEmpty(state.DisplayName);
             if (_titleLabel != null)
+            {
                 _titleLabel.text = state.DisplayName ?? string.Empty;
+                _titleLabel.gameObject.SetActive(hasTitle);
+            }
 
             if (!hasIcon)
             {
@@ -81,11 +94,16 @@ namespace Rollgeon.UI.Tooltips
                 }
             }
 
+            bool hasEyebrow = !string.IsNullOrEmpty(state.Eyebrow);
             if (_eyebrowLabel != null)
             {
                 _eyebrowLabel.text = state.Eyebrow ?? string.Empty;
-                _eyebrowLabel.gameObject.SetActive(!string.IsNullOrEmpty(state.Eyebrow));
+                _eyebrowLabel.gameObject.SetActive(hasEyebrow);
             }
+
+            // El ícono vive en la fila del label (el candado al lado de PLAYER CURSE): sin
+            // ninguno de los dos la fila entera se va, no queda un renglón de aire.
+            if (_labelRow != null) _labelRow.SetActive(hasIcon || hasEyebrow);
 
             // Nunca dentro de la frase: si algún día el disparo pega 30 en vez de 24, cambia este
             // número y no hay que retraducir nada. Es el mismo trato que el badge del stack.
@@ -95,13 +113,19 @@ namespace Rollgeon.UI.Tooltips
                 _damageLabel.gameObject.SetActive(state.Damage.HasValue);
             }
 
+            if (_headerRow != null) _headerRow.SetActive(hasTitle || state.Damage.HasValue);
+
             bool hasRule = !string.IsNullOrEmpty(state.Description);
             if (_ruleLabel != null)
             {
                 _ruleLabel.text = state.Description ?? string.Empty;
                 _ruleLabel.gameObject.SetActive(hasRule);
             }
-            if (_divider != null) _divider.SetActive(hasRule);
+
+            // El divisor subraya el label del bloque, no parte el contenido: se prende con label
+            // arriba y algo abajo. Sin label la tarjeta es de un solo bloque y la línea sobra.
+            if (_divider != null)
+                _divider.SetActive(hasEyebrow && (hasTitle || hasRule || state.Damage.HasValue));
         }
     }
 }

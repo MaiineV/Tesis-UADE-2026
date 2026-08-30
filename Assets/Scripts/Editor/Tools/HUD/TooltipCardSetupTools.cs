@@ -48,14 +48,22 @@ namespace Rollgeon.EditorTools.HUD
         private const float SideColumnGap = 12f;
 
 
-        private const float IconSize = 34f;
-        private const float BadgeSize = 26f;
+        // Chico: vive en la fila del label, al lado de "PLAYER CURSE", no encabezando el título.
+        private const float IconSize = 22f;
+        private const float BadgeSize = 18f;
+
+        // La placa cuadrada de la fila de estados al pie del panel — sólo ícono.
+        private const string SlotPrefabPath = "Assets/Prefabs/UI/TooltipStatusSlot.prefab";
+        private const float SlotSize = 44f;
+        private const float SlotIconPadding = 8f;
 
         // Crema sobre la placa oscura. Los labels salían en el blanco default de TMP, que sobre
         // el panel color hueso quedaba invisible.
         private static readonly Color CardInk = new Color(0.94f, 0.90f, 0.82f);
-        private static readonly Color CardInkSoft = new Color(0.94f, 0.90f, 0.82f, 0.65f);
         private static readonly Color DividerInk = new Color(0.83f, 0.68f, 0.33f, 0.45f);
+
+        // Dorado pleno para el label del bloque — NEXT TURN, PLAYER CURSE — como el mockup.
+        private static readonly Color LabelInk = new Color(0.87f, 0.72f, 0.38f);
 
         // El marrón del párrafo del panel, para que la banda pertenezca al mismo tooltip.
         private static readonly Color PanelInk = new Color(0.14f, 0.10f, 0.07f);
@@ -87,16 +95,18 @@ namespace Rollgeon.EditorTools.HUD
 
             Ensure<LayoutElement>(root).preferredWidth = CardWidth;
 
-            var headerRect = EnsureChildRect(rootRect, "Header", Vector2.zero, Vector2.zero);
-            var headerLayout = Ensure<HorizontalLayoutGroup>(headerRect.gameObject);
-            headerLayout.spacing = 8;
-            headerLayout.childAlignment = TextAnchor.MiddleLeft;
-            headerLayout.childControlWidth = true;
-            headerLayout.childControlHeight = true;
-            headerLayout.childForceExpandWidth = false;
-            headerLayout.childForceExpandHeight = false;
+            // La fila del label del bloque: el ícono chico y el "NEXT TURN"/"PLAYER CURSE" en
+            // dorado, arriba de todo — nombra el bloque y se lee antes que el contenido (mockup).
+            var labelRow = EnsureChildRect(rootRect, "LabelRow", Vector2.zero, Vector2.zero);
+            var labelLayout = Ensure<HorizontalLayoutGroup>(labelRow.gameObject);
+            labelLayout.spacing = 6;
+            labelLayout.childAlignment = TextAnchor.MiddleLeft;
+            labelLayout.childControlWidth = true;
+            labelLayout.childControlHeight = true;
+            labelLayout.childForceExpandWidth = false;
+            labelLayout.childForceExpandHeight = false;
 
-            var iconRect = EnsureChildRect(headerRect, "Icon", Vector2.zero, new Vector2(IconSize, IconSize));
+            var iconRect = EnsureChildRect(labelRow, "Icon", Vector2.zero, new Vector2(IconSize, IconSize));
             var iconLayout = Ensure<LayoutElement>(iconRect.gameObject);
             iconLayout.preferredWidth = IconSize;
             iconLayout.preferredHeight = IconSize;
@@ -127,11 +137,29 @@ namespace Rollgeon.EditorTools.HUD
             badgeLabel.rectTransform.anchoredPosition = Vector2.zero;
             badgeLabel.textWrappingMode = TextWrappingModes.NoWrap;
 
-            // Chico y apagado a proposito: es una fecha, no un segundo titulo. Y arriba de todo
-            // porque dice cuando pasa lo que la tarjeta describe -- se lee antes que el que.
-            var eyebrowLabel = EnsureLabel(rootRect, "Eyebrow", 14f, TextAlignmentOptions.Left,
-                                           CardInkSoft);
-            eyebrowLabel.transform.SetSiblingIndex(0);
+            // En mayúsculas por estilo y no por texto: la key sigue diciendo "Next turn" y
+            // ningún idioma tiene que autorar gritado.
+            var eyebrowLabel = EnsureLabel(labelRow, "Eyebrow", 14f, TextAlignmentOptions.Left,
+                                           LabelInk);
+            eyebrowLabel.fontStyle = FontStyles.Bold | FontStyles.UpperCase;
+            Ensure<LayoutElement>(eyebrowLabel.gameObject).flexibleWidth = 1f;
+
+            // Debajo del label y no del título: el divisor subraya el nombre del bloque (mockup),
+            // y TooltipCardView lo prende sólo cuando hay label con contenido debajo.
+            var dividerRect = EnsureChildRect(rootRect, "Divider", Vector2.zero, new Vector2(0f, 3f));
+            Ensure<LayoutElement>(dividerRect.gameObject).preferredHeight = 3f;
+            var dividerImage = Ensure<Image>(dividerRect.gameObject);
+            dividerImage.color = DividerInk;
+            dividerImage.raycastTarget = false;
+
+            var headerRect = EnsureChildRect(rootRect, "Header", Vector2.zero, Vector2.zero);
+            var headerLayout = Ensure<HorizontalLayoutGroup>(headerRect.gameObject);
+            headerLayout.spacing = 8;
+            headerLayout.childAlignment = TextAnchor.MiddleLeft;
+            headerLayout.childControlWidth = true;
+            headerLayout.childControlHeight = true;
+            headerLayout.childForceExpandWidth = false;
+            headerLayout.childForceExpandHeight = false;
 
             // Por debajo de la regla (21) a proposito: el titulo nombra la cosa y la regla es
             // lo que se lee, asi que un titulo mas grande que ella se lleva el ojo primero.
@@ -143,12 +171,6 @@ namespace Rollgeon.EditorTools.HUD
             // el número termina pegado al borde derecho sin un spacer de por medio.
             var damageLabel = EnsureLabel(headerRect, "Damage", 26f, TextAlignmentOptions.Right, CardInk);
             damageLabel.fontStyle = FontStyles.Bold;
-
-            var dividerRect = EnsureChildRect(rootRect, "Divider", Vector2.zero, new Vector2(0f, 3f));
-            Ensure<LayoutElement>(dividerRect.gameObject).preferredHeight = 3f;
-            var dividerImage = Ensure<Image>(dividerRect.gameObject);
-            dividerImage.color = DividerInk;
-            dividerImage.raycastTarget = false;
 
             // Centrada como la referencia: bajo un divisor, una frase de dos renglones centrada
             // se lee como una regla y no como la continuación del título.
@@ -166,6 +188,8 @@ namespace Rollgeon.EditorTools.HUD
             so.FindProperty("_badgeLabel").objectReferenceValue = badgeLabel;
             so.FindProperty("_damageLabel").objectReferenceValue = damageLabel;
             so.FindProperty("_divider").objectReferenceValue = dividerRect.gameObject;
+            so.FindProperty("_labelRow").objectReferenceValue = labelRow.gameObject;
+            so.FindProperty("_headerRow").objectReferenceValue = headerRect.gameObject;
             so.ApplyModifiedPropertiesWithoutUndo();
 
             Directory.CreateDirectory(Path.GetDirectoryName(CardPrefabPath));
@@ -315,8 +339,7 @@ namespace Rollgeon.EditorTools.HUD
                     new Vector2(0f, -SideColumnGap), Vector2.zero);
 
                 // Anclada a los DOS bordes de la caja: mide lo que mida el panel, hoy y despues
-                // de cualquier recalibracion. Mas angosta se leia como un objeto suelto colgando
-                // de la caja, no como el piso de abajo del mismo panel.
+                // de cualquier recalibracion.
                 // ignoreLayout por lo mismo que el costado: lo que cuelga no reacomoda la caja.
                 Ensure<LayoutElement>(bottom.gameObject).ignoreLayout = true;
                 bottom.anchorMin = new Vector2(0f, 0f);
@@ -325,12 +348,18 @@ namespace Rollgeon.EditorTools.HUD
                 bottom.sizeDelta = new Vector2(0f, 0f);
                 bottom.anchoredPosition = new Vector2(0f, -SideColumnGap);
 
-                var layout = Ensure<VerticalLayoutGroup>(bottom.gameObject);
-                layout.spacing = 10;
+                // Fila horizontal de slots cuadrados (mockup), ya no una pila de tarjetas. La
+                // versión anterior dejó un VerticalLayoutGroup: dos layout groups en el mismo GO
+                // pelean, así que el viejo se tira antes de asegurar el nuevo.
+                var stale = bottom.GetComponent<VerticalLayoutGroup>();
+                if (stale != null) Object.DestroyImmediate(stale, true);
+
+                var layout = Ensure<HorizontalLayoutGroup>(bottom.gameObject);
+                layout.spacing = 8;
                 layout.childAlignment = TextAnchor.UpperLeft;
                 layout.childControlWidth = true;
                 layout.childControlHeight = true;
-                layout.childForceExpandWidth = true;
+                layout.childForceExpandWidth = false;
                 layout.childForceExpandHeight = false;
 
                 // Solo el alto: el ancho lo dan los anchors (el de la caja) y lo impone el layout.
@@ -345,7 +374,82 @@ namespace Rollgeon.EditorTools.HUD
                 };
             });
 
-            Debug.Log("[TooltipCardSetupTools] Tarjetas colgantes de abajo cableadas en el panel.");
+            Debug.Log("[TooltipCardSetupTools] Fila de estados de abajo cableada en el panel.");
+        }
+
+        /// <summary>
+        /// La placa cuadrada de la fila de estados al pie del panel: sólo ícono (y el badge de
+        /// turnos/stack). Sin labels a propósito — el slot dice "esto le está pasando", el
+        /// detalle vive en el juego.
+        /// </summary>
+        [MenuItem("Rollgeon/Tooltips/7 - Author Status Slot Prefab And Wire It")]
+        public static void AuthorStatusSlotPrefab()
+        {
+            var root = new GameObject("TooltipStatusSlot", typeof(RectTransform));
+            var rootRect = (RectTransform)root.transform;
+            rootRect.sizeDelta = new Vector2(SlotSize, SlotSize);
+
+            var background = Ensure<Image>(root);
+            background.sprite = LoadSlice(CardPlateId);
+            background.type = Image.Type.Sliced;
+            background.raycastTarget = false;
+
+            var element = Ensure<LayoutElement>(root);
+            element.preferredWidth = SlotSize;
+            element.preferredHeight = SlotSize;
+
+            // El ícono estirado a la placa con su aire, sin layout group: un slot es una placa
+            // y un sprite, no una fila.
+            var iconRect = EnsureChildRect(rootRect, "Icon", Vector2.zero, Vector2.zero);
+            iconRect.anchorMin = Vector2.zero;
+            iconRect.anchorMax = Vector2.one;
+            iconRect.offsetMin = new Vector2(SlotIconPadding, SlotIconPadding);
+            iconRect.offsetMax = new Vector2(-SlotIconPadding, -SlotIconPadding);
+            var iconImage = Ensure<Image>(iconRect.gameObject);
+            iconImage.preserveAspect = true;
+            iconImage.raycastTarget = false;
+
+            var badgeRect = EnsureChildRect(iconRect, "Badge", Vector2.zero,
+                                            new Vector2(BadgeSize, BadgeSize));
+            badgeRect.anchorMin = new Vector2(1f, 0f);
+            badgeRect.anchorMax = new Vector2(1f, 0f);
+            badgeRect.pivot = new Vector2(0.5f, 0.5f);
+            var badgeImage = Ensure<Image>(badgeRect.gameObject);
+            badgeImage.sprite = LoadSlice(BadgePlateId);
+            badgeImage.type = Image.Type.Simple;
+            badgeImage.preserveAspect = true;
+            badgeImage.raycastTarget = false;
+            var badgeLabel = EnsureLabel(badgeRect, "Value", 13f, TextAlignmentOptions.Center,
+                                         CardInk);
+            badgeLabel.rectTransform.anchorMin = Vector2.zero;
+            badgeLabel.rectTransform.anchorMax = Vector2.one;
+            badgeLabel.rectTransform.sizeDelta = Vector2.zero;
+            badgeLabel.rectTransform.anchoredPosition = Vector2.zero;
+            badgeLabel.textWrappingMode = TextWrappingModes.NoWrap;
+
+            // Los labels de texto quedan sin cablear a propósito: TooltipCardView null-guardea
+            // cada pieza y el slot no tiene dónde ponerlos.
+            var view = Ensure<TooltipCardView>(root);
+            var so = new SerializedObject(view);
+            so.FindProperty("_iconRoot").objectReferenceValue = iconRect.gameObject;
+            so.FindProperty("_icon").objectReferenceValue = iconImage;
+            so.FindProperty("_badge").objectReferenceValue = badgeRect.gameObject;
+            so.FindProperty("_badgeLabel").objectReferenceValue = badgeLabel;
+            so.ApplyModifiedPropertiesWithoutUndo();
+
+            Directory.CreateDirectory(Path.GetDirectoryName(SlotPrefabPath));
+            var saved = PrefabUtility.SaveAsPrefabAsset(root, SlotPrefabPath);
+            Object.DestroyImmediate(root);
+
+            EditPanel(panel => (controllerSo, unused) =>
+            {
+                controllerSo.FindProperty("_bottomCardPrefab").objectReferenceValue =
+                    saved.GetComponent<TooltipCardView>();
+            });
+            AssetDatabase.SaveAssets();
+
+            Debug.Log($"[TooltipCardSetupTools] Slot de estado autorado en {SlotPrefabPath} y " +
+                      "cableado como prefab de la fila de abajo.");
         }
 
         [MenuItem("Rollgeon/Tooltips/3 - Wire Identity Band And Footer")]
@@ -363,30 +467,24 @@ namespace Rollgeon.EditorTools.HUD
                 identityLayout.childForceExpandHeight = false;
                 Ensure<LayoutElement>(identity.gameObject).preferredWidth = ContentWidth;
 
-                // Nombre y familia en el MISMO renglón: "The Croupier   Jefe · Rango". Alineados
-                // abajo para que la familia, más chica, comparta la línea de base del nombre.
-                var titleRow = EnsureChildRect(identity, "TitleRow", Vector2.zero, Vector2.zero);
-                var titleRowLayout = Ensure<HorizontalLayoutGroup>(titleRow.gameObject);
-                titleRowLayout.spacing = 8;
-                titleRowLayout.childAlignment = TextAnchor.LowerCenter;
-                titleRowLayout.childControlWidth = true;
-                titleRowLayout.childControlHeight = true;
-                titleRowLayout.childForceExpandWidth = false;
-                titleRowLayout.childForceExpandHeight = false;
+                // Nombre arriba y familia DEBAJO — "The Croupier" / "Boss · Ranged" — como el
+                // mockup. Migración del panel ya autorado: una versión anterior los metía juntos
+                // en una fila (TitleRow); se sacan de ahí y la fila se tira.
+                var titleRow = identity.Find("TitleRow") as RectTransform;
+                if (titleRow != null)
+                {
+                    Reparent(titleRow, "Name", identity);
+                    Reparent(titleRow, "Type", identity);
+                    Object.DestroyImmediate(titleRow.gameObject, true);
+                }
 
-                // Migración del panel ya autorado: Name y Type nacieron como hijos directos de
-                // Identity, y Find no baja niveles — sin moverlos, esto crearía un segundo par.
-                Reparent(identity, "Name", titleRow);
-                Reparent(identity, "Type", titleRow);
-
-                var nameLabel = EnsureLabel(titleRow, "Name", 26f, TextAlignmentOptions.Left, PanelInk);
+                var nameLabel = EnsureLabel(identity, "Name", 26f, TextAlignmentOptions.Left, PanelInk);
                 nameLabel.fontStyle = FontStyles.Bold;
                 nameLabel.textWrappingMode = TextWrappingModes.NoWrap;
 
-                var typeLabel = EnsureLabel(titleRow, "Type", 18f, TextAlignmentOptions.Left, PanelInkSoft);
+                var typeLabel = EnsureLabel(identity, "Type", 18f, TextAlignmentOptions.Left, PanelInkSoft);
                 typeLabel.textWrappingMode = TextWrappingModes.NoWrap;
-                // El ancho fijo era de cuando vivía sola bajo el VLG; dentro de la fila volvería
-                // a imponer el ancho del panel entero.
+                // El ancho fijo confundía al VLG: el renglón lo estira el layout, no el label.
                 Ensure<LayoutElement>(typeLabel.gameObject).preferredWidth = -1f;
 
                 var vitals = EnsureChildRect(identity, "Vitals", Vector2.zero, Vector2.zero);
@@ -428,10 +526,8 @@ namespace Rollgeon.EditorTools.HUD
                     so.FindProperty("_shieldLabel").objectReferenceValue = shieldLabel;
                     so.FindProperty("_footerLabel").objectReferenceValue = footer;
 
-                    // El renglón del nombre encabeza la banda; los vitales después. Explícito
-                    // porque Ensure* agrega al final. Y adentro de la fila, la familia a la
-                    // DERECHA del nombre.
-                    titleRow.SetSiblingIndex(0);
+                    // Nombre, familia, vitales — en ese orden. Explícito porque Ensure* agrega
+                    // al final.
                     nameLabel.transform.SetSiblingIndex(0);
                     typeLabel.transform.SetSiblingIndex(1);
 

@@ -70,10 +70,12 @@ namespace Rollgeon.Entities.Visuals
                 : LocalizedContent.FromTable(
                     LocalizedContent.ContentTable, id + ".brief", string.Empty);
 
+            // La frase va como párrafo, no como pie: en el panel el párrafo vive pegado a la
+            // identidad (el bloque de header del mockup), y el pie quedaba abajo de las tarjetas.
             return new TooltipContent(
+                text: brief,
                 name: name,
-                type: EnemyArchetypeText.Describe(data.Archetype, data.IsBoss),
-                flavor: brief);
+                type: EnemyArchetypeText.Describe(data.Archetype, data.IsBoss));
         }
 
         public string BuildTooltip()

@@ -62,9 +62,13 @@ namespace Rollgeon.Entities.Visuals.Tests
 
             // El panel no lleva el lore del .desc: su frase es OTRA key (.brief), y un enemigo
             // sin frase autorada no muestra ninguna. El lore sigue vivo en BuildTooltip.
-            Assert.IsEmpty(content.Flavor ?? string.Empty,
+            Assert.IsEmpty(content.Text ?? string.Empty,
                 "El .desc se coló en el panel: la frase táctica sale de .brief, y este id no " +
                 "tiene entry.");
+            // La frase viaja como párrafo (el bloque de header del mockup), no como pie: el pie
+            // quedaba abajo de las tarjetas y el header la quiere pegada al nombre.
+            Assert.IsEmpty(content.Flavor ?? string.Empty,
+                "Algo llegó al pie del panel: el enemigo ya no manda nada ahí.");
             StringAssert.Contains("Siembra bombas", info.BuildTooltip());
         }
 

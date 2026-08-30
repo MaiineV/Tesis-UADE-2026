@@ -77,9 +77,13 @@ namespace Rollgeon.UI.Tooltips
                  "Null = caen en la columna de arriba, y el panel queda como antes.")]
         [SerializeField] private RectTransform _sideCardsContainer;
 
-        [Tooltip("Tarjetas colgadas DEBAJO de la caja — la debilidad. Null = caen en la columna " +
-                 "de adentro, y el panel queda como antes.")]
+        [Tooltip("Fila colgada DEBAJO de la caja — los estados del bicho como slots de ícono. " +
+                 "Null = caen en la columna de adentro, y el panel queda como antes.")]
         [SerializeField] private RectTransform _bottomCardsContainer;
+
+        [Tooltip("Prefab de un slot de la fila de abajo — la placa cuadrada de sólo ícono. " +
+                 "Null = usa el prefab de tarjeta y la fila sale con texto.")]
+        [SerializeField] private TooltipCardView _bottomCardPrefab;
 
         [Title("Banda de identidad")]
         [Tooltip("Nombre de la unidad. Null, como toda esta banda: un tooltip que no trae " +
@@ -442,7 +446,7 @@ namespace Rollgeon.UI.Tooltips
             var bottom = content.BottomCards;
 
             if (_bottomCardsContainer != null)
-                FillColumn(_bottomCardsContainer, _bottomCardSlots, bottom, null);
+                FillColumn(_bottomCardsContainer, _bottomCardSlots, bottom, null, _bottomCardPrefab);
 
             if (_sideCardsContainer == null)
             {
@@ -504,13 +508,18 @@ namespace Rollgeon.UI.Tooltips
         // caso de las dos juntas es solo el del panel sin segunda columna.
         private void FillColumn(RectTransform container, List<TooltipCardView> slots,
                                 IReadOnlyList<StatusIconState> first,
-                                IReadOnlyList<StatusIconState> second)
+                                IReadOnlyList<StatusIconState> second,
+                                TooltipCardView prefab = null)
         {
+            // Cada columna puede traer su propia forma de tarjeta (la fila de abajo usa la placa
+            // de sólo ícono); sin una propia, la tarjeta de siempre.
+            if (prefab == null) prefab = _cardPrefab;
+
             int firstCount = first?.Count ?? 0;
             int total = firstCount + (second?.Count ?? 0);
 
             container.gameObject.SetActive(total > 0);
-            while (slots.Count < total) slots.Add(Instantiate(_cardPrefab, container));
+            while (slots.Count < total) slots.Add(Instantiate(prefab, container));
 
             for (int i = 0; i < slots.Count; i++)
             {

@@ -781,11 +781,6 @@ namespace Rollgeon.EditorTools.Localization
 
             // La etiqueta del bloque de maldición del jefe, misma letra chica que la fecha.
             Ui(EnemyStatusIconsView.PlayerCurseKey, "Maldición", "Player Curse");
-
-            // La debilidad como renglón del pie del panel — no es tarjeta ni ícono. {0} = el
-            // nombre del combo, que sale del registry vivo y no de la key.
-            Ui(EnemyStatusIconsView.WeaknessLineKey,
-               "Debilidad: <b>{0}</b>", "Weakness: <b>{0}</b>");
         }
 
         /// <summary>
