@@ -1848,8 +1848,9 @@ MonoBehaviour:
   DisplayName: Healer
   Description: 
   Portrait: {fileID: -2011244216, guid: 20ce88debfdaa06459d18ed604643892, type: 3}
-  WeaknessComboId: combo.double_pair
+  WeaknessComboId:
   WeaknessMultiplierOverride: 0
+  Archetype: 3
   BaseHP: 60
   BaseAttack: 20
   BaseHealStrength: 20

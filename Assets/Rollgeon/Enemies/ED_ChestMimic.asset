@@ -1202,8 +1202,9 @@ MonoBehaviour:
   DisplayName: Mimic
   Description: 
   Portrait: {fileID: -1790906141, guid: 5103e983e850dbc408e171ce0b6f9714, type: 3}
-  WeaknessComboId: 
+  WeaknessComboId:
   WeaknessMultiplierOverride: 0
+  Archetype: 1
   BaseHP: 60
   BaseAttack: 20
   BaseHealStrength: 5

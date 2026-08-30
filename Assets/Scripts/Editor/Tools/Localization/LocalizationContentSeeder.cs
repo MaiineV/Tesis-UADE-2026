@@ -670,6 +670,42 @@ namespace Rollgeon.EditorTools.Localization
             Content("boss.croupier.brief",
                 "Quema la sala y se teletransporta cuando lo alcanzás.",
                 "Burns the room and teleports when someone reaches him.");
+            Content("boss.cashier.brief",
+                "Pega más fuerte cuanto más oro llevás. Las fichas que dejás vencer se las queda.",
+                "Hits harder the more gold you carry. Chips you let expire, he keeps.");
+            Content("boss.la_generala.brief",
+                "Suelta anillos eléctricos en oleadas — movete entre anillo y anillo.",
+                "Unleashes electric rings in waves — move between rings.");
+            Content("minion.cajero_comision.brief",
+                "Vuela, dispara de lejos y le pone precio a huir.",
+                "Flies, shoots from range, and puts a price on running.");
+            Content("obj.dado_casa.brief",
+                "Rompelo para borrarle una categoría a la Generala.",
+                "Break it to erase one of the Generala's categories.");
+            Content("healerEnemy.brief",
+                "Cura a los suyos antes que pegarte.",
+                "Heals its allies before it hits you.");
+            Content("CardEnemy01.brief",
+                "Corre al jugador más cercano y pega de frente.",
+                "Rushes the closest player and swings up close.");
+            Content("RangedEnemy01.brief",
+                "Dispara de lejos; cortá la línea o cerrale la distancia.",
+                "Shoots from afar; break the line or close the gap.");
+            Content("ChestMimic01.brief",
+                "Se hace pasar por cofre y pega cuando te acercás.",
+                "Poses as a chest and strikes when you get close.");
+            Content("enemy_tutorial_melee_b.brief", "Pega de cerca.", "Hits up close.");
+            Content("enemy_tutorial_melee_c.brief", "Pega de cerca.", "Hits up close.");
+
+            // Maldiciones de jefe (bloque PLAYER CURSE). La del Croupier reusa status.dice_block.
+            Content("curse.bank_keeps.name", "La banca retiene", "The Bank Keeps");
+            Content("curse.bank_keeps.desc",
+                "El oro que dejás vencer se lo queda la banca.",
+                "Gold you let expire, the bank keeps.");
+            Content("curse.repeat_ban.name", "Mano vetada", "Banned Hand");
+            Content("curse.repeat_ban.desc",
+                "No podés repetir el combo que acabás de anotar.",
+                "You can't repeat the combo you just scored.");
 
             Content("enemy.fire_tiles.name", "Casillas de fuego", "Fire Tiles");
             // {0} = daño al entrar, {1} = al empezar el turno encima — la misma pareja que
@@ -855,6 +891,29 @@ namespace Rollgeon.EditorTools.Localization
             Ui("tile.tooltip.heal", "Cura al terminar el turno: {0}", "Heals at end of turn: {0}");
             Ui("tile.tooltip.duration", "Dura {0} rondas", "Lasts {0} rounds");
 
+            // El panel estructurado de una casilla: la fila de tipo del header y las etiquetas
+            // de sus tarjetas de números (los números viajan como dato, no en el texto).
+            Ui("tile.category.format", "Casilla · {0}", "Tile · {0}");
+            Ui("tile.category.damage", "Daño", "Damage");
+            Ui("tile.category.heal", "Curación", "Healing");
+            Ui("tile.category.status", "Estado", "Status");
+            Ui("tile.category.buff", "Mejora", "Buff");
+            Ui("tile.category.slide", "Deslizamiento", "Slide");
+            Ui("tile.category.teleport", "Teletransporte", "Teleport");
+            Ui("tile.category.warning", "Advertencia", "Warning");
+            Ui("tile.category.protection", "Protección", "Protection");
+            Ui("tile.panel.effect", "Efecto", "Effect");
+            Ui("tile.panel.enter", "Al entrar", "On enter");
+            Ui("tile.panel.turn_start", "Empezar el turno encima", "Start your turn on it");
+            Ui("tile.panel.heal", "Cura al terminar el turno", "Heals at end of turn");
+            Ui("tile.panel.applies", "Aplica", "Applies");
+
+            // La caja EN EL PISO del panel de un enemigo parado sobre una casilla especial, y el
+            // header de los objetos que un jefe pone en la sala (bombas).
+            Ui("enemy.panel.on_the_floor", "En el piso", "On the floor");
+            Ui("prop.panel.type", "Objeto", "Object");
+            Ui("prop.panel.leaves", "Deja", "Leaves");
+
             // Nombre + descripción por casilla del catálogo.
             Content("tile.spikes.name", "Pinchos", "Spikes");
             Content("tile.spikes.desc",
@@ -912,6 +971,12 @@ namespace Rollgeon.EditorTools.Localization
             Content("tile.safezone.desc",
                 "Protege de efectos específicos a cualquier unidad adentro.",
                 "Shields any unit inside from specific effects.");
+            // Key propia del pincho del Cajero: pega 20 contra los 12 del común, y el tooltip
+            // no puede presentarlo como el mismo objeto.
+            Content("tile.spikes_cajero.name", "Pinchos del Cajero", "Cashier's Spikes");
+            Content("tile.spikes_cajero.desc",
+                "Se desarman al pisarlos y se rearman solos. Duelen bastante más que los comunes.",
+                "Disarm when stepped on and rearm on their own. They hurt a fair bit more than the common ones.");
         }
 
         // ==================================================================
@@ -1208,7 +1273,17 @@ namespace Rollgeon.EditorTools.Localization
             // Enemigos.
             Content("Boss01.name", "Jefe de Prueba", "Boss Test");
             Content("healerEnemy.name", "Sanador", "Healer");
+            Content("healerEnemy.desc",
+                "Un espíritu de la casa que remienda a los suyos.",
+                "A house spirit that patches up its own.");
             Content("CardEnemy01.name", "Enemigo Carta", "Card Enemy");
+            Content("CardEnemy01.desc",
+                "Soldado de la casa, cuerpo a cuerpo.",
+                "House soldier; fights up close.");
+            Content("ChestMimic01.name", "Mímico", "Mimic");
+            Content("ChestMimic01.desc",
+                "Un cofre que muerde.",
+                "A chest that bites.");
             Content("RangedEnemy01.name", "Enemigo a Distancia", "Ranged Enemy");
             Content("RangedEnemy01.desc",
                 "Goblin con ataque a distancia, dispara con una ballesta.",

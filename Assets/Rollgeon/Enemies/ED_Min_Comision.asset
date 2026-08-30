@@ -181,5 +181,6 @@ MonoBehaviour:
   MaxGoldDrop: 0
   IsFlying: 1
   IsBoss: 0
+  Archetype: 2
   Personality: 0
   KamikazeIgnoresSurvival: 0

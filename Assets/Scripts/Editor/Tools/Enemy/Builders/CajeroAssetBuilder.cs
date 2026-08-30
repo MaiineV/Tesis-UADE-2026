@@ -1247,8 +1247,10 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
             spikes.AIVirtualEnterDamage = SpikeAIVirtualDamage;
             spikes.AIAnnouncesLethal = false;
 
-            spikes.NameKey = "tile.spikes";
-            spikes.DescriptionKey = "tile.spikes";
+            // Key propia y no la del pincho genérico: éste pega 20 contra los 12 del común, y el
+            // tooltip no puede presentarlo como el mismo objeto.
+            spikes.NameKey = "tile.spikes_cajero";
+            spikes.DescriptionKey = "tile.spikes_cajero";
 
             // Mismo arte y mismo color de paleta que el pincho genérico: para el jugador es el mismo
             // objeto.

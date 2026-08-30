@@ -257,15 +257,7 @@ namespace Rollgeon.Editor.Tools.Localization.Tests
         /// Pares de casillas que comparten clave a sabiendas y todavía no se separaron. Sacar una
         /// línea de acá el día que la casilla reciba su propio texto.
         /// </summary>
-        /// <remarks>
-        /// 2026-08-26 — Los pinchos del Cajero cobran 20 contra los 12 de los genéricos y se
-        /// titulan "Pinchos" igual que ellos. Es el mismo bug que tenía el fuego de bomba del
-        /// Croupier; queda afuera de la rama del hover porque es otra pelea.
-        /// </remarks>
-        private static readonly HashSet<string> SharedTileKeysByDesign = new HashSet<string>
-        {
-            "tile.spikes",
-        };
+        private static readonly HashSet<string> SharedTileKeysByDesign = new HashSet<string>();
 
         [Test]
         public void test_localization_tiles_that_charge_differently_do_not_share_a_key()

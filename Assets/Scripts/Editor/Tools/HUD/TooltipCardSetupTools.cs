@@ -596,6 +596,89 @@ namespace Rollgeon.EditorTools.HUD
                       "ED_Boss_Croupier.Curse.");
         }
 
+        private const string CajeroCursePath = "Assets/Rollgeon/Enemies/BC_Cajero_BankKeeps.asset";
+        private const string CajeroPath = "Assets/Rollgeon/Enemies/ED_Boss_Cajero.asset";
+        private const string CoinPath = "Assets/Art/UI/Inventory/CoinStyle1.1.png";
+        private const string GeneralaCursePath = "Assets/Rollgeon/Enemies/BC_Generala_RepeatBan.asset";
+        private const string GeneralaPath = "Assets/Rollgeon/Enemies/ED_Boss_Generala.asset";
+
+        /// <summary>
+        /// Las maldiciones del Cajero (la banca se queda el oro que dejás vencer — pasiva de toda
+        /// la pelea, base siempre activa) y de la Generala (no repetir la mano recién anotada —
+        /// gateada por el contrato: recién sale cuando hay un combo tachado de verdad).
+        /// </summary>
+        [MenuItem("Rollgeon/Tooltips/10 - Author Cajero And Generala Curses")]
+        public static void AuthorCajeroAndGeneralaCurses()
+        {
+            AuthorCurse<Rollgeon.Entities.BossCurseSO>(CajeroCursePath, CajeroPath, curse =>
+            {
+                curse.CurseId = "curse.bank_keeps";
+                curse.DisplayName = "La banca retiene";
+                curse.Description = "El oro que dejás vencer se lo queda la banca.";
+                curse.Icon = AssetDatabase.LoadAssetAtPath<Sprite>(CoinPath);
+            });
+
+            AuthorCurse<Rollgeon.Entities.RepeatBanCurseSO>(GeneralaCursePath, GeneralaPath, curse =>
+            {
+                curse.CurseId = "curse.repeat_ban";
+                curse.DisplayName = "Mano vetada";
+                curse.Description = "No podés repetir el combo que acabás de anotar.";
+                // Sin ícono hasta que haya arte: la tarjeta es label + regla igual.
+            });
+        }
+
+        private static void AuthorCurse<T>(string cursePath, string bossPath,
+                                           System.Action<Rollgeon.Entities.BossCurseSO> fill)
+            where T : Rollgeon.Entities.BossCurseSO
+        {
+            var data = AssetDatabase.LoadAssetAtPath<Rollgeon.Entities.EnemyDataSO>(bossPath);
+            if (data == null)
+            {
+                Debug.LogError($"[TooltipCardSetupTools] Falta {bossPath}.");
+                return;
+            }
+
+            var curse = AssetDatabase.LoadAssetAtPath<Rollgeon.Entities.BossCurseSO>(cursePath);
+            if (curse != null && curse.GetType() != typeof(T))
+            {
+                // El tipo define el gate (IsActive): si cambió, se recrea. El guid nuevo no rompe
+                // nada porque este mismo menú lo vuelve a colgar en la data del jefe.
+                AssetDatabase.DeleteAsset(cursePath);
+                curse = null;
+            }
+
+            if (curse == null)
+            {
+                var fresh = ScriptableObject.CreateInstance<T>();
+                // Mutado ANTES de CreateAsset: crear sobre un path recién borrado pierde las
+                // mutaciones posteriores.
+                fill(fresh);
+                AssetDatabase.CreateAsset(fresh, cursePath);
+                curse = fresh;
+            }
+            else
+            {
+                fill(curse);
+                EditorUtility.SetDirty(curse);
+            }
+
+            var so = new SerializedObject(data);
+            var prop = so.FindProperty("Curse");
+            if (prop == null)
+            {
+                Debug.LogError($"[TooltipCardSetupTools] {bossPath} no expone 'Curse' a " +
+                               "SerializedObject.");
+                return;
+            }
+            prop.objectReferenceValue = curse;
+            so.ApplyModifiedPropertiesWithoutUndo();
+            EditorUtility.SetDirty(data);
+
+            AssetDatabase.SaveAssets();
+            Debug.Log($"[TooltipCardSetupTools] Curse autorado en {cursePath} y colgado en " +
+                      $"{System.IO.Path.GetFileNameWithoutExtension(bossPath)}.Curse.");
+        }
+
         [MenuItem("Rollgeon/Tooltips/3 - Wire Identity Band And Footer")]
         public static void WireIdentityBand()
         {
