@@ -309,7 +309,11 @@ namespace Rollgeon.Tiles.Visuals
             if (trigger == null) trigger = go.AddComponent<WorldTooltipTrigger>();
             trigger.Mode = WorldTooltipMode.Hover;
             trigger.Placement = TooltipPlacementMode.ScreenTopRight;
-            trigger.TextProvider = tooltip.BuildTooltip;
+
+            // El mismo reparto que un enemigo: header estructurado + tarjetas de números, no un
+            // párrafo con los precios incrustados.
+            trigger.ContentProvider = tooltip.BuildContent;
+            trigger.CardsProvider = tooltip.CollectCards;
         }
 
         /// <summary>Fuera de play mode <c>Destroy</c> es diferido y no llega a aplicarse en un test.</summary>

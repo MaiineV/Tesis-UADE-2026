@@ -7,6 +7,8 @@ using Rollgeon.Attributes.Stats;
 using Rollgeon.Combat.AI;
 using Rollgeon.Combat.AI.Decisions;
 using Rollgeon.Localization;
+using Rollgeon.Tiles.Visuals;
+using Rollgeon.UI.HUD.Status;
 using Rollgeon.UI.Tooltips;
 using UnityEngine;
 
@@ -14,7 +16,8 @@ namespace Rollgeon.Combat.Rooms.Visuals
 {
     /// <summary>
     /// Contenido del tooltip de un objeto que un jefe pone en la sala — la bomba del Croupier y su
-    /// mecha.
+    /// mecha. Mismo reparto que casillas y enemigos: <see cref="BuildContent"/> es el header (con
+    /// la vida y la mecha al pie) y <see cref="CollectCards"/> los números del fuego que deja.
     /// </summary>
     /// <remarks>
     /// Se rearma en cada hover en vez de guardar el string: el idioma puede cambiar en pleno
@@ -25,6 +28,7 @@ namespace Rollgeon.Combat.Rooms.Visuals
     {
         private readonly List<AIIntent> _standing = new();
         private readonly List<AIIntent> _next = new();
+        private readonly List<StatusIconState> _cards = new();
 
         private RoomObjectDefinitionSO _definition;
         private Guid _ownerGuid;
@@ -39,6 +43,77 @@ namespace Rollgeon.Combat.Rooms.Visuals
             _definition = definition;
             _ownerGuid = ownerGuid;
             _selfGuid = selfGuid;
+        }
+
+        /// <summary>
+        /// El header del panel. La vida y la mecha van al pie: son estado vivo del objeto, no su
+        /// identidad, y como pie se refrescan con cada hover sin disputarle espacio a las tarjetas.
+        /// </summary>
+        public TooltipContent BuildContent()
+        {
+            var def = _definition;
+            if (def == null) return default;
+
+            return new TooltipContent(
+                text: LocalizedContent.Description(def.Id, string.Empty),
+                name: LocalizedContent.Name(def.Id, def.EffectiveDisplayName),
+                type: LocalizedContent.Ui("prop.panel.type", "Objeto"),
+                flavor: ComposeStatusFooter());
+        }
+
+        /// <summary>
+        /// Los números de lo que el estallido deja en el piso — el estallido en sí no cobra nada
+        /// (todo lo que hace una bomba es su fuego), así que las tarjetas son las de ESA casilla.
+        /// </summary>
+        public IReadOnlyList<StatusIconState> CollectCards()
+        {
+            _cards.Clear();
+            if (TryFindBlast(out var intent) && intent.Leaves != null)
+            {
+                SpecialTileCards.Append(intent.Leaves, _cards,
+                    LocalizedContent.Ui("prop.panel.leaves", "Deja"));
+            }
+            return _cards;
+        }
+
+        private string ComposeStatusFooter()
+        {
+            var sb = new StringBuilder();
+
+            if (ServiceLocator.TryGetService<AttributesManager>(out var attributes)
+                && attributes != null)
+            {
+                var health = attributes.GetAttribute<Health>(_selfGuid);
+                if (health != null)
+                    sb.Append(string.Format(
+                        LocalizedContent.Ui("prop.tooltip.health", "Vida: {0}"), health.Value));
+            }
+
+            if (TryFindBlast(out var intent))
+            {
+                if (sb.Length > 0) sb.Append('\n');
+                sb.Append(string.Format(
+                    LocalizedContent.Ui("prop.tooltip.fuse", "Estalla en {0} turnos"),
+                    Mathf.Max(0, intent.TurnsAway)));
+            }
+
+            return sb.Length > 0 ? sb.ToString() : null;
+        }
+
+        private bool TryFindBlast(out AIIntent blast)
+        {
+            blast = default;
+            if (!ServiceLocator.TryGetService<IEnemyIntentService>(out var intents) || intents == null)
+                return false;
+            if (!intents.TryRead(_ownerGuid, _standing, _next)) return false;
+
+            foreach (var intent in _standing)
+            {
+                if (intent.SubjectGuid != _selfGuid) continue;
+                blast = intent;
+                return true;
+            }
+            return false;
         }
 
         public string BuildTooltip()

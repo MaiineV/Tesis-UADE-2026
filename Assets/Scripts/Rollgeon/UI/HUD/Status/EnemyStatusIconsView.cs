@@ -6,6 +6,7 @@ using Rollgeon.Combat.AI.Decisions;
 using Rollgeon.Entities;
 using Rollgeon.Entities.Visuals;
 using Rollgeon.Localization;
+using Rollgeon.Tiles;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -41,6 +42,9 @@ namespace Rollgeon.UI.HUD.Status
 
         /// <summary>Key de UI de la etiqueta del bloque de maldición del jefe.</summary>
         public const string PlayerCurseKey = "enemy.panel.player_curse";
+
+        /// <summary>Key de UI de la etiqueta del bloque de la casilla que el bicho pisa.</summary>
+        public const string OnTheFloorKey = "enemy.panel.on_the_floor";
 
         private Guid _entityGuid;
         private EnemyDataSO _data;
@@ -210,7 +214,54 @@ namespace Rollgeon.UI.HUD.Status
             if (curse != null && curse.IsActive(_entityGuid))
                 AppendCurseCard(curse, _catalog, _panelCards);
 
+            // El hover de la celda es uno solo aunque la pisen dos cosas (decisión del 30/08):
+            // el panel del bicho suma la casilla como una caja más al final del stack, en vez de
+            // disputarle el mouse al tooltip de la casilla.
+            AppendGroundCards(_entityGuid, _under, _panelCards);
+
             foreach (var provider in _providers) provider.Collect(_entityGuid, _applied);
+        }
+
+        private readonly List<SpecialTileInfo> _under = new();
+
+        /// <summary>
+        /// La casilla especial bajo el bicho, como tarjeta EN EL PISO al final de la columna.
+        /// Título + su precio como dato; el detalle completo vive en el hover de otra celda de la
+        /// misma casilla. Estático y público por lo mismo que <see cref="AddIfOwn"/>.
+        /// </summary>
+        public static void AppendGroundCards(Guid owner, List<SpecialTileInfo> underScratch,
+                                             List<StatusIconState> into)
+        {
+            if (underScratch == null || into == null) return;
+            if (!ServiceLocator.TryGetService<ISpecialTileService>(out var tiles) || tiles == null)
+                return;
+
+            tiles.CollectUnder(owner, underScratch);
+            if (underScratch.Count == 0) return;
+
+            // La etiqueta subraya el bloque entero: la lleva sólo la primera caja, como EFECTO.
+            string eyebrow = LocalizedContent.Ui(OnTheFloorKey, "En el piso");
+            foreach (var info in underScratch)
+            {
+                var def = info.Definition;
+                if (def == null) continue;
+
+                string id = string.IsNullOrEmpty(def.NameKey) ? def.TileId : def.NameKey;
+
+                // El precio que le importa a quien lee al bicho parado ahí es el de quedarse
+                // (turn start); si la casilla sólo cobra al entrar, ese.
+                int? price = def.TurnStartDamage > 0 ? def.TurnStartDamage
+                    : def.EnterDamage > 0 ? def.EnterDamage : (int?)null;
+
+                into.Add(new StatusIconState(
+                    "ground." + id,
+                    LocalizedContent.Name(id, def.DisplayName ?? def.TileId),
+                    description: null, icon: null, active: true,
+                    style: StatusCardStyle.Terrain,
+                    damage: price,
+                    eyebrow: eyebrow));
+                eyebrow = null;
+            }
         }
 
         public void Refresh()

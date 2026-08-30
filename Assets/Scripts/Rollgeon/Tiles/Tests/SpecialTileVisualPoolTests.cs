@@ -303,6 +303,12 @@ namespace Rollgeon.Tiles.Tests
                     Assert.AreEqual(Rollgeon.UI.Tooltips.WorldTooltipMode.Hover, trigger.Mode);
                     Assert.AreEqual(Rollgeon.UI.Tooltips.TooltipPlacementMode.ScreenTopRight,
                         trigger.Placement);
+                    Assert.IsNotNull(trigger.ContentProvider,
+                        "El clon quedó sin header estructurado: la casilla volvería al párrafo " +
+                        "plano con los números incrustados.");
+                    Assert.IsNotNull(trigger.CardsProvider,
+                        "El clon quedó sin tarjetas de números: los precios de la casilla no " +
+                        "tienen dónde mostrarse como dato.");
                     Assert.IsNotNull(visual.Go.GetComponentInChildren<Collider>(true),
                         "Sin collider el raycast del hover no puede tocar la casilla.");
                 }

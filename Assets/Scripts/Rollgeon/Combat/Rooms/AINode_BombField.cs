@@ -260,6 +260,11 @@ namespace Rollgeon.Combat.Rooms
                 pawn, info.BuildTooltip);
             if (trigger == null) return;
 
+            // El mismo reparto que casillas y enemigos: header estructurado + tarjetas del fuego
+            // que deja. El BuildTooltip de arriba queda de fallback si alguien borra el provider.
+            trigger.ContentProvider = info.BuildContent;
+            trigger.CardsProvider = info.CollectCards;
+
             var bossGuid = context.SelfGuid;
             trigger.HoverChanged += on =>
             {
