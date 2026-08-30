@@ -119,6 +119,22 @@ namespace Rollgeon.Combat.AI.Tests
         }
 
         [Test]
+        public void ElHoverDelJefe_NoPintaLasCrucesDeSusBombas()
+        {
+            var bomba = Guid.NewGuid();
+            _intents.Standing.Add(Intent(Cells((1, 1))));
+            _intents.Standing.Add(Intent(Cells((2, 2)), subject: _boss));
+            _intents.Standing.Add(Intent(Cells((7, 7)), subject: bomba));
+
+            _preview.Show(_boss);
+
+            var pintadas = _overlay.Painted.SelectMany(p => p.Cells).ToList();
+            CollectionAssert.AreEquivalent(Cells((1, 1), (2, 2)), pintadas,
+                "El hover del jefe encendió el daño de sus bombas. Cada bomba ya cuenta su propia " +
+                "cruz en su propio hover: acá se lee solo lo que el jefe hace con su cuerpo.");
+        }
+
+        [Test]
         public void FueraDelTurnoDelJugador_NoPintaNada()
         {
             _intents.CanRead = false;

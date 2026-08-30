@@ -56,7 +56,10 @@ namespace Rollgeon.Combat.AI
         public static Guid NextSource(Guid enemyId)
             => AINode_AuxTelegraph.ChannelGuid(enemyId, NextChannel);
 
-        /// <summary>Pinta todo lo del enemigo: lo que tiene puesto y su próximo ataque.</summary>
+        /// <summary>
+        /// Pinta lo que es del enemigo mismo: sus marcas y su próximo ataque. Lo que generan sus
+        /// objetos (las bombas) no entra — cada uno tiene su propio hover.
+        /// </summary>
         public void Show(Guid enemyId) => Paint(enemyId, Guid.Empty, hasSubject: false);
 
         /// <summary>
@@ -89,8 +92,8 @@ namespace Rollgeon.Combat.AI
                 return;
             if (!intents.TryRead(enemyId, _standing, _next)) return;
 
-            CollectCells(_standing, _standingCells, subjectGuid, hasSubject);
-            CollectCells(_next, _nextCells, subjectGuid, hasSubject);
+            CollectCells(_standing, _standingCells, enemyId, subjectGuid, hasSubject);
+            CollectCells(_next, _nextCells, enemyId, subjectGuid, hasSubject);
 
             // Sin esto, una celda que está en las dos listas se lleva DOS quads apilados y se lee
             // como una casilla distinta. Un quad es un solo aviso, así que en el empate se pierde
@@ -110,12 +113,22 @@ namespace Rollgeon.Combat.AI
         }
 
         private static void CollectCells(List<AIIntent> intents, HashSet<GridCoord> into,
-                                         Guid subjectGuid, bool hasSubject)
+                                         Guid enemyId, Guid subjectGuid, bool hasSubject)
         {
             into.Clear();
             foreach (var intent in intents)
             {
-                if (hasSubject && intent.SubjectGuid != subjectGuid) continue;
+                if (hasSubject)
+                {
+                    if (intent.SubjectGuid != subjectGuid) continue;
+                }
+                // Mismo reparto que la card NEXT TURN: sobre el cuerpo se lee lo del enemigo, y lo
+                // que sale de sus objetos (las cruces de sus bombas) lo cuenta el hover del objeto.
+                else if (intent.SubjectGuid != Guid.Empty && intent.SubjectGuid != enemyId)
+                {
+                    continue;
+                }
+
                 foreach (var coord in intent.Tiles) into.Add(coord);
             }
         }
