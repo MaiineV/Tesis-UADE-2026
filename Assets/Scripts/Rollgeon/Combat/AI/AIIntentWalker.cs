@@ -81,6 +81,10 @@ namespace Rollgeon.Combat.AI
                 case AINode_Once once:
                     CollectNodes(once.Child, into);
                     break;
+
+                case AINode_While loop:
+                    CollectNodes(loop.Body, into);
+                    break;
             }
         }
 
@@ -146,6 +150,14 @@ namespace Rollgeon.Combat.AI
                 // como repertorio: lo que ya se gastó dejó de ser posible.
                 case AINode_Once once:
                     if (!once.HasRun) Walk(once.Child, context, into, alternates, asOptions);
+                    break;
+
+                // El While es presupuesto, no bifurcación: su cuerpo ES lo que el enemigo hace
+                // (todo el bestiario común envuelve su ataque en un While de energía). Su condición
+                // no se evalúa acá: mide el estado DURANTE el turno del enemigo, y leída en el
+                // turno del jugador contestaría por un momento que todavía no llegó.
+                case AINode_While loop:
+                    Walk(loop.Body, context, into, alternates, asOptions);
                     break;
             }
         }

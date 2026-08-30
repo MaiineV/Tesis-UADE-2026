@@ -129,6 +129,33 @@ namespace Rollgeon.Combat.AI.Tests
         }
 
         [Test]
+        public void UnWhile_SeBajaPorSuCuerpo_SinEvaluarLaCondicion()
+        {
+            // La forma de todo el bestiario común: Sequence[ bookkeeping, While(energía){ ataque } ].
+            var root = new AINode_Sequence
+            {
+                Children = new List<AIDecisionNode>
+                {
+                    new AINode_While
+                    {
+                        // Falsa leída ahora (el jefe está a full vida): la condición del While mide
+                        // el turno del enemigo, no el momento de la lectura, así que no debe cortar.
+                        Conditions = new List<BasePreCondition> { new PcOwnerHpBelow { Percent = 0.5f } },
+                        Body = Shot(13),
+                    },
+                },
+            };
+
+            AIIntentWalker.Collect(root, Context(), _standing, _next);
+
+            Assert.AreEqual(1, _standing.Count,
+                "El walker no bajó por el cuerpo del While. Todo el bestiario común envuelve su " +
+                "ataque real en un While de energía: sin este descenso, esos enemigos muestran " +
+                "NEXT TURN vacío teniendo la data completa.");
+            Assert.AreEqual(13, _standing[0].Damage, "No es el ataque del cuerpo del While.");
+        }
+
+        [Test]
         public void UnNodoQueNoSabeDescribirse_NoSeAdivina()
         {
             var root = new AINode_Random
