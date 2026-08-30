@@ -72,14 +72,21 @@ public class PaletteSlotDrawer : MaterialPropertyDrawer
         if (manager != null && manager.Palette != null)
             return manager.Palette;
 
-        // 2. Fallback: buscar por nombre preferido (sin manager en escena cargada)
-        var guids = AssetDatabase.FindAssets("PA_MainPalette t:PaletteAsset");
-        if (guids.Length > 0)
-            return AssetDatabase.LoadAssetAtPath<PaletteAsset>(
-                AssetDatabase.GUIDToAssetPath(guids[0]));
+        // 2. Fallback: sin manager en escena cargada (ej. editando en 00_Bootstrap, que
+        // no tiene uno a propósito). FindAssets busca por SUBSTRING, así que
+        // "PA_MainPalette t:PaletteAsset" también matchea "PA_MainPalette - version1" o
+        // cualquier otro asset viejo/backup que empiece igual, en un orden arbitrario —
+        // por eso filtramos acá por nombre de archivo EXACTO en vez de confiar en el
+        // orden que devuelve la búsqueda.
+        var guids = AssetDatabase.FindAssets("t:PaletteAsset");
+        foreach (var guid in guids)
+        {
+            var path = AssetDatabase.GUIDToAssetPath(guid);
+            if (System.IO.Path.GetFileNameWithoutExtension(path) == "PA_MainPalette")
+                return AssetDatabase.LoadAssetAtPath<PaletteAsset>(path);
+        }
 
         // 3. Fallback final: cualquier PaletteAsset en el proyecto
-        guids = AssetDatabase.FindAssets("t:PaletteAsset");
         if (guids.Length > 0)
             return AssetDatabase.LoadAssetAtPath<PaletteAsset>(
                 AssetDatabase.GUIDToAssetPath(guids[0]));

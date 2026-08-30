@@ -120,7 +120,7 @@ Material:
     - _EnableCrease: 1
     - _EnableWear: 1
     - _EnvironmentReflections: 1
-    - _FloorSlot: 2
+    - _FloorSlot: 3
     - _GlossMapScale: 0
     - _Glossiness: 0
     - _GlossyReflections: 0

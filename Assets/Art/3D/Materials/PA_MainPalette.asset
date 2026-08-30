@@ -33,7 +33,7 @@ MonoBehaviour:
     shadowValShift: -0.28
     lightHueShift: -10
     lightSatShift: -0.12
-    lightValShift: 0.22
+    lightValShift: 0.04411763
     lightColor: {r: 1, g: 1, b: 1, a: 1}
     midColor: {r: 0.88, g: 0.83, b: 0.72, a: 1}
     shadowColor: {r: 0, g: 0, b: 0, a: 1}
@@ -62,7 +62,7 @@ MonoBehaviour:
     midColor: {r: 0.25, g: 0.25, b: 0.28, a: 1}
     shadowColor: {r: 0, g: 0, b: 0, a: 1}
   - label: Brown, DarkYellow
-    baseColor: {r: 0.59607846, g: 0.3137255, b: 0.10588236, a: 1}
+    baseColor: {r: 0.37647063, g: 0.28627452, b: 0.2392157, a: 1}
     autoGenerate: 1
     shadowHueShift: 15
     shadowSatShift: 0.1
@@ -81,7 +81,7 @@ MonoBehaviour:
     shadowValShift: -0.28
     lightHueShift: -10
     lightSatShift: -0.12
-    lightValShift: 0.22
+    lightValShift: 0.09901953
     lightColor: {r: 0.77647066, g: 0.6666667, b: 0.40000004, a: 1}
     midColor: {r: 0.6117647, g: 0.4784314, b: 0.18431373, a: 1}
     shadowColor: {r: 0.33333334, g: 0.2509804, b: 0.098039225, a: 1}
@@ -141,7 +141,7 @@ MonoBehaviour:
     shadowValShift: -0.28
     lightHueShift: -10
     lightSatShift: -0.12
-    lightValShift: 0.22
+    lightValShift: 0.09901959
     lightColor: {r: 1, g: 1, b: 1, a: 1}
     midColor: {r: 0.3, g: 0.72, b: 0.22, a: 1}
     shadowColor: {r: 0, g: 0, b: 0, a: 1}
@@ -214,7 +214,7 @@ MonoBehaviour:
     lightHueShift: -10
     lightSatShift: -0.12
     lightValShift: 0.22
-    lightColor: {r: 1, g: 0.50196075, b: 0.39215687, a: 1}
+    lightColor: {r: 0.95, g: 0.4768627, b: 0.37254903, a: 1}
     midColor: {r: 0.8784314, g: 0.4627451, b: 0.23921569, a: 1}
     shadowColor: {r: 0.59607846, g: 0.3137255, b: 0.10588235, a: 1}
   - label: Oliva, Verde Caqui
@@ -302,31 +302,31 @@ MonoBehaviour:
     midColor: {r: 0.37647063, g: 0.28627452, b: 0.2392157, a: 1}
     shadowColor: {r: 0.22352943, g: 0.18823531, b: 0.17254902, a: 1}
   - label: Bone
-    baseColor: {r: 0.87843144, g: 0.75294125, b: 0.6627451, a: 0}
+    baseColor: {r: 0.87843144, g: 0.75294125, b: 0.6627451, a: 1}
     autoGenerate: 1
     shadowHueShift: 15
     shadowSatShift: 0.1
     shadowValShift: -0.28
     lightHueShift: -10
     lightSatShift: -0.12
-    lightValShift: 0.22
+    lightValShift: 0.07156855
     lightColor: {r: 0, g: 0, b: 0, a: 0}
     midColor: {r: 0, g: 0, b: 0, a: 0}
     shadowColor: {r: 0, g: 0, b: 0, a: 0}
   - label: LightYellow
-    baseColor: {r: 1, g: 0.7137255, b: 0.47450984, a: 0}
+    baseColor: {r: 0.95, g: 0.67803925, b: 0.45078433, a: 1}
     autoGenerate: 1
     shadowHueShift: 15
     shadowSatShift: 0.1
     shadowValShift: -0.28
     lightHueShift: -10
     lightSatShift: -0.12
-    lightValShift: 0.22
+    lightValShift: 0
     lightColor: {r: 0, g: 0, b: 0, a: 0}
     midColor: {r: 0, g: 0, b: 0, a: 0}
     shadowColor: {r: 0, g: 0, b: 0, a: 0}
   - label: DarkYellow
-    baseColor: {r: 0.454902, g: 0.41176474, b: 0.11764707, a: 0}
+    baseColor: {r: 0.454902, g: 0.41176474, b: 0.11764707, a: 1}
     autoGenerate: 1
     shadowHueShift: 15
     shadowSatShift: 0.1

@@ -45,9 +45,9 @@ Material:
     - _CreaseThreshold: 0.35
     - _DitherStrength: 0.15
     - _LightWrap: 0.34
-    - _MidThreshold: 0.465
+    - _MidThreshold: 0.323
     - _PaletteSlot: 5
-    - _ShadowThreshold: 0.181
+    - _ShadowThreshold: 0.11
     - _UsePalette: 1
     m_Colors:
     - _CreaseColor: {r: 0.14999998, g: 0.14999998, b: 0.19999996, a: 1}

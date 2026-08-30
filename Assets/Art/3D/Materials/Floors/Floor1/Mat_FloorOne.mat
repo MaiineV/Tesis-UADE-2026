@@ -125,7 +125,7 @@ Material:
     - _GlossyReflections: 0
     - _HitFlashAmount: 0
     - _LightBrighten: 0.668
-    - _LightTintStrength: 0.034
+    - _LightTintStrength: 0.191
     - _LightWrap: -0.231
     - _Metallic: 0
     - _MidThreshold: 0.475

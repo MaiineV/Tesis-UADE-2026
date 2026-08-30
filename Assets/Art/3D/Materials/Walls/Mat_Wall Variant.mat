@@ -35,7 +35,7 @@ Material:
     - _FlattenTopFaces: 1
     - _PatternType: 0
     - _ShadowThreshold: 0.228
-    - _ShapeOpacity: 0.649
+    - _ShapeOpacity: 0.228
     - _ShapeScaleX: 1.77
     - _ShapeScaleY: 1.54
     - _ShapeSize: 0.7
