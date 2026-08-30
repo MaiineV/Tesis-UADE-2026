@@ -40,6 +40,12 @@ namespace Rollgeon.Rendering
         private Light _light;
         private Vector3 _localPosition;
         private float _baseRange;
+        // Último valor que ESTE script escribió — si Range/Position difieren de esto
+        // al arrancar el frame, alguien los cambió desde afuera (Inspector en Play
+        // Mode) y hay que adoptar eso como la nueva base, en vez de seguir tirando
+        // hacia el valor viejo capturado en Awake.
+        private float _lastWrittenRange;
+        private Vector3 _lastWrittenPosition;
         // Semillas por-instancia (hash de la posición inicial) para que varias
         // antorchas en la misma sala no titilen sincronizadas con el mismo patrón.
         private float _seedIntensity;
@@ -51,6 +57,8 @@ namespace Rollgeon.Rendering
             _light = GetComponent<Light>();
             _localPosition = transform.localPosition;
             _baseRange = _light.range;
+            _lastWrittenPosition = _localPosition;
+            _lastWrittenRange = _baseRange;
 
             float hash = Mathf.Abs(Mathf.Sin(Vector3.Dot(transform.position, new Vector3(12.9898f, 78.233f, 37.719f))) * 43758.5453f);
             hash -= Mathf.Floor(hash);
@@ -61,6 +69,14 @@ namespace Rollgeon.Rendering
 
         private void Update()
         {
+            // Si Range/Position difieren de lo último que escribimos nosotros, es que
+            // los cambiaron desde afuera (Inspector, drag en Scene view) — adoptamos
+            // eso como la nueva base en vez de pisarlo con el valor viejo.
+            if (!Mathf.Approximately(_light.range, _lastWrittenRange))
+                _baseRange = _light.range;
+            if (transform.localPosition != _lastWrittenPosition)
+                _localPosition = transform.localPosition;
+
             float t = Time.time * NoiseSpeed;
 
             // Perlin en [0,1] -> remapeado a [-1,1] para oscilar simétrico alrededor de BaseIntensity.
@@ -70,6 +86,7 @@ namespace Rollgeon.Rendering
 
             if (RangeAmplitude > 0f)
                 _light.range = Mathf.Max(0.01f, _baseRange + noise * RangeAmplitude);
+            _lastWrittenRange = _light.range;
 
             if (UseColorDrift)
                 _light.color = Color.Lerp(ColorLow, ColorHigh, intensity01);
@@ -81,6 +98,7 @@ namespace Rollgeon.Rendering
                 float jy = (Mathf.PerlinNoise(_seedJitterY + jt, 0f) * 2f - 1f) * PositionJitter;
                 transform.localPosition = _localPosition + new Vector3(jx, jy, 0f);
             }
+            _lastWrittenPosition = transform.localPosition;
         }
     }
 }
