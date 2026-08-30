@@ -203,7 +203,12 @@ namespace Rollgeon.UI.HUD.Status
                 AppendStandingCards(_standing, promotedKey, _entityGuid, _catalog, _applied);
             }
 
-            AppendCurseCard(_data != null ? _data.Curse : null, _catalog, _panelCards);
+            // Sólo cuando opera: la del Croupier arranca con su fase 2, y el bloque antes de eso
+            // promete un castigo que no existe. El preview de editor llama AppendCurseCard
+            // directo y la muestra siempre — ahí se diseña la tarjeta, no la pelea.
+            var curse = _data != null ? _data.Curse : null;
+            if (curse != null && curse.IsActive(_entityGuid))
+                AppendCurseCard(curse, _catalog, _panelCards);
 
             foreach (var provider in _providers) provider.Collect(_entityGuid, _applied);
         }

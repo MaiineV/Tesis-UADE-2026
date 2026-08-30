@@ -232,8 +232,9 @@ namespace Rollgeon.UI.Tests
         [Test]
         public void ConCurseAutorado_LaMaldicionSaleDebajoDelProximoTurno()
         {
-            // Arrange — la pasiva del jefe sobre el jugador, autorada en su data: el panel la
-            // anuncia desde el turno 1, no recién cuando traba el primer dado.
+            // Arrange — la pasiva del jefe sobre el jugador, autorada en su data. La base está
+            // activa toda la pelea; el gate por mecánica lo cubre
+            // LaMaldicionDelCandado_NoSaleHastaQueOpere.
             var curse = ScriptableObject.CreateInstance<Rollgeon.Entities.BossCurseSO>();
             var data = ScriptableObject.CreateInstance<Rollgeon.Entities.EnemyDataSO>();
             try
@@ -260,6 +261,44 @@ namespace Rollgeon.UI.Tests
                     "La maldición llevó título: el mockup la deja en label + regla — " +
                     "'PLAYER CURSE / Te traba un dado.'");
                 StringAssert.Contains("Te traba", panel[1].Description);
+            }
+            finally
+            {
+                Object.DestroyImmediate(curse);
+                Object.DestroyImmediate(data);
+            }
+        }
+
+        [Test]
+        public void LaMaldicionDelCandado_NoSaleHastaQueOpere()
+        {
+            // Arrange — el Croupier activa su pasiva recién en la fase 2 (70% de vida): hasta
+            // que el candado no traba dados de verdad, el bloque promete un castigo que no
+            // existe. La señal es el propio servicio que traba — sin umbral duplicado en data.
+            var curse = ScriptableObject.CreateInstance<Rollgeon.Entities.DiceBlockCurseSO>();
+            var data = ScriptableObject.CreateInstance<Rollgeon.Entities.EnemyDataSO>();
+            var dice = new FakeDiceBlock();
+            ServiceLocator.AddService<Rollgeon.Combat.DiceBlock.IDiceBlockService>(dice);
+            try
+            {
+                curse.CurseId = "test.curse.unmapped";
+                curse.Description = "Te traba un dado.";
+                data.Curse = curse;
+                _view.Initialize(_boss, null, null, data);
+                _intents.Next.Add(Own(AIIntentTextKeys.RangedShot, "Te dispara"));
+
+                // Act + Assert — pasiva dormida: sólo el próximo turno.
+                Assert.AreEqual(1, _view.CollectPanelCards().Count,
+                    "El bloque PLAYER CURSE salió con la pasiva dormida: anuncia un castigo " +
+                    "que todavía no opera.");
+
+                // La fase 2 traba el primer dado: ahora el bloque existe.
+                dice.Block(0);
+                var panel = _view.CollectPanelCards();
+                Assert.AreEqual(2, panel.Count,
+                    "El candado está trabando y el bloque no salió: el jugador pierde un dado " +
+                    "sin que el panel diga por qué.");
+                Assert.AreEqual("test.curse.unmapped", panel[1].Id);
             }
             finally
             {
@@ -348,6 +387,22 @@ namespace Rollgeon.UI.Tests
         private static AIIntent OfBomb(Guid bomb)
             => new AIIntent(AIIntentTextKeys.BombBlast, "Detonar la bomba", 0,
                             AttackKind.Environmental, subjectGuid: bomb);
+
+        private sealed class FakeDiceBlock : Rollgeon.Combat.DiceBlock.IDiceBlockService
+        {
+            private readonly HashSet<int> _blocked = new HashSet<int>();
+
+            public void Block(int index, string label = null)
+            {
+                if (index >= 0) _blocked.Add(index);
+            }
+
+            public string LabelOf(int index) => null;
+            public void Unblock(int index) => _blocked.Remove(index);
+            public bool IsBlocked(int index) => _blocked.Contains(index);
+            public IReadOnlyCollection<int> BlockedIndices => _blocked;
+            public void Clear() => _blocked.Clear();
+        }
 
         private sealed class FakeIntentService : IEnemyIntentService
         {

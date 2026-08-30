@@ -544,17 +544,37 @@ namespace Rollgeon.EditorTools.HUD
             }
 
             var curse = AssetDatabase.LoadAssetAtPath<Rollgeon.Entities.BossCurseSO>(CurseAssetPath);
-            if (curse == null)
+            if (curse != null && curse is not Rollgeon.Entities.DiceBlockCurseSO)
             {
-                curse = ScriptableObject.CreateInstance<Rollgeon.Entities.BossCurseSO>();
-                AssetDatabase.CreateAsset(curse, CurseAssetPath);
+                // El tipo cambió (el candado se gatea por IDiceBlockService — el bloque recién
+                // sale cuando la pasiva opera): se recrea. El guid nuevo no rompe nada porque
+                // este mismo menú lo vuelve a colgar en la data del jefe.
+                AssetDatabase.DeleteAsset(CurseAssetPath);
+                curse = null;
             }
 
-            curse.CurseId = "status.dice_block";
-            curse.DisplayName = "Candado de dados";
-            curse.Description = "Te traba un dado.";
-            curse.Icon = AssetDatabase.LoadAssetAtPath<Sprite>(PadlockPath);
-            EditorUtility.SetDirty(curse);
+            if (curse == null)
+            {
+                var fresh = ScriptableObject.CreateInstance<Rollgeon.Entities.DiceBlockCurseSO>();
+                // Mutado ANTES de CreateAsset: crear sobre un path recién borrado pierde las
+                // mutaciones posteriores.
+                Fill(fresh);
+                AssetDatabase.CreateAsset(fresh, CurseAssetPath);
+                curse = fresh;
+            }
+            else
+            {
+                Fill(curse);
+                EditorUtility.SetDirty(curse);
+            }
+
+            static void Fill(Rollgeon.Entities.BossCurseSO target)
+            {
+                target.CurseId = "status.dice_block";
+                target.DisplayName = "Candado de dados";
+                target.Description = "Te traba un dado.";
+                target.Icon = AssetDatabase.LoadAssetAtPath<Sprite>(PadlockPath);
+            }
 
             // SerializedObject y no asignación directa: EnemyDataSO es Odin, pero Curse es un
             // campo Unity-serializable — esto lo escribe donde Unity lo lee, sin tocar los
@@ -594,24 +614,31 @@ namespace Rollgeon.EditorTools.HUD
                 identityLayout.childForceExpandHeight = false;
                 Ensure<LayoutElement>(identity.gameObject).preferredWidth = ContentWidth;
 
-                // Nombre arriba y familia DEBAJO — "The Croupier" / "Boss · Ranged" — como el
-                // mockup. Migración del panel ya autorado: una versión anterior los metía juntos
-                // en una fila (TitleRow); se sacan de ahí y la fila se tira.
-                var titleRow = identity.Find("TitleRow") as RectTransform;
-                if (titleRow != null)
-                {
-                    Reparent(titleRow, "Name", identity);
-                    Reparent(titleRow, "Type", identity);
-                    Object.DestroyImmediate(titleRow.gameObject, true);
-                }
+                // Nombre y familia en el MISMO renglón — "The Croupier   Boss · Ranged" —
+                // alineados abajo para que la familia, más chica, comparta la línea de base.
+                var titleRow = EnsureChildRect(identity, "TitleRow", Vector2.zero, Vector2.zero);
+                var titleRowLayout = Ensure<HorizontalLayoutGroup>(titleRow.gameObject);
+                titleRowLayout.spacing = 8;
+                titleRowLayout.childAlignment = TextAnchor.LowerLeft;
+                titleRowLayout.childControlWidth = true;
+                titleRowLayout.childControlHeight = true;
+                titleRowLayout.childForceExpandWidth = false;
+                titleRowLayout.childForceExpandHeight = false;
 
-                var nameLabel = EnsureLabel(identity, "Name", 26f, TextAlignmentOptions.Left, PanelInk);
+                // Migración del panel ya autorado: Name y Type pueden vivir como hijos directos
+                // de Identity (versión apilada), y Find no baja niveles — sin moverlos, esto
+                // crearía un segundo par.
+                Reparent(identity, "Name", titleRow);
+                Reparent(identity, "Type", titleRow);
+
+                var nameLabel = EnsureLabel(titleRow, "Name", 26f, TextAlignmentOptions.Left, PanelInk);
                 nameLabel.fontStyle = FontStyles.Bold;
                 nameLabel.textWrappingMode = TextWrappingModes.NoWrap;
 
-                var typeLabel = EnsureLabel(identity, "Type", 18f, TextAlignmentOptions.Left, PanelInkSoft);
+                var typeLabel = EnsureLabel(titleRow, "Type", 18f, TextAlignmentOptions.Left, PanelInkSoft);
                 typeLabel.textWrappingMode = TextWrappingModes.NoWrap;
-                // El ancho fijo confundía al VLG: el renglón lo estira el layout, no el label.
+                // El ancho fijo era de cuando vivía sola bajo el VLG; dentro de la fila volvería
+                // a imponer el ancho del panel entero.
                 Ensure<LayoutElement>(typeLabel.gameObject).preferredWidth = -1f;
 
                 var vitals = EnsureChildRect(identity, "Vitals", Vector2.zero, Vector2.zero);
@@ -653,8 +680,10 @@ namespace Rollgeon.EditorTools.HUD
                     so.FindProperty("_shieldLabel").objectReferenceValue = shieldLabel;
                     so.FindProperty("_footerLabel").objectReferenceValue = footer;
 
-                    // Nombre, familia, vitales — en ese orden. Explícito porque Ensure* agrega
-                    // al final.
+                    // El renglón del nombre encabeza la banda; los vitales después. Explícito
+                    // porque Ensure* agrega al final. Y adentro de la fila, la familia a la
+                    // DERECHA del nombre.
+                    titleRow.SetSiblingIndex(0);
                     nameLabel.transform.SetSiblingIndex(0);
                     typeLabel.transform.SetSiblingIndex(1);
 

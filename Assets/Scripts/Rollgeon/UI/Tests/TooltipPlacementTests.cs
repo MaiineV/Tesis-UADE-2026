@@ -370,13 +370,13 @@ namespace Rollgeon.UI.Tests
             var posAtCenterAnchor = root.position;
             controller.Show("texto", new Vector2(200f, -100f), ownerId: 1, TooltipPlacementMode.ScreenTopRight);
 
-            // Assert — pivot arriba-derecha y posición = esquina del canvas − padding (16,120:
-            // el margen vertical deja pasar la fila de retratos del HUD), idéntica para ambas
-            // anclas.
+            // Assert — pivot arriba-derecha y posición = esquina del canvas − padding (16,150:
+            // el margen vertical deja pasar la fila de retratos del HUD con aire), idéntica
+            // para ambas anclas.
             Assert.AreEqual(1f, root.pivot.x, 1e-3f);
             Assert.AreEqual(1f, root.pivot.y, 1e-3f);
             Assert.AreEqual(Bounds.xMax - 16f, root.position.x, 1e-3f);
-            Assert.AreEqual(Bounds.yMax - 120f, root.position.y, 1e-3f);
+            Assert.AreEqual(Bounds.yMax - 150f, root.position.y, 1e-3f);
             Assert.AreEqual(posAtCenterAnchor.x, root.position.x, 1e-3f,
                 "El punto-pantalla del trigger no debe mover el panel fijo.");
             Assert.AreEqual(posAtCenterAnchor.y, root.position.y, 1e-3f,

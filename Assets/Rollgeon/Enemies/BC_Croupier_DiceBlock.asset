@@ -9,9 +9,9 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e57a6490b53f4e7c8ef1ca0c0f3b077e, type: 3}
+  m_Script: {fileID: 11500000, guid: e8fe2ce7b2211cf44bd50f7d34e98921, type: 3}
   m_Name: BC_Croupier_DiceBlock
-  m_EditorClassIdentifier: Rollgeon::Rollgeon.Entities.BossCurseSO
+  m_EditorClassIdentifier: Rollgeon::Rollgeon.Entities.DiceBlockCurseSO
   CurseId: status.dice_block
   DisplayName: Candado de dados
   Description: Te traba un dado.

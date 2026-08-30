@@ -28,5 +28,13 @@ namespace Rollgeon.Entities
         [Title("HUD")]
         [Tooltip("Ícono de la tarjeta. Vacío = se resuelve CurseId contra el StatusIconCatalog.")]
         public Sprite Icon;
+
+        /// <summary>
+        /// Si la maldición está operando AHORA. El panel esconde el bloque hasta entonces: la
+        /// del Croupier arranca recién con su segunda fase (70% de vida), y anunciarla antes
+        /// promete un castigo que todavía no existe. La base siempre está activa — maldiciones
+        /// pasivas de toda la pelea.
+        /// </summary>
+        public virtual bool IsActive(System.Guid bossGuid) => true;
     }
 }

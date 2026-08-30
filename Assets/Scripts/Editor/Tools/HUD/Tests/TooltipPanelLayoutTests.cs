@@ -86,27 +86,28 @@ namespace Rollgeon.Editor.Tools.HUD.Tests
         }
 
         [Test]
-        public void LaFamiliaVaDebajoDelNombre()
+        public void LaFamiliaVaEnElRenglonDelNombre_ALaDerecha()
         {
             var panel = LoadPanel();
 
-            // El mockup del spec: "The Croupier" arriba y "Boss · Ranged" en su propio renglón,
-            // debajo. Si esto falla con el path ausente, falta re-correr los menús
+            // "The Croupier   Boss · Ranged" en un solo renglón (pedido del 30/08 — pisa la
+            // versión apilada del mockup). Si el path falta, falta re-correr los menús
             // Rollgeon/Tooltips/8 y 3 sobre el prefab.
-            var name = panel.Find("HeaderBox/Identity/Name");
-            var type = panel.Find("HeaderBox/Identity/Type");
-            Assert.IsNotNull(name, "El panel no tiene 'Identity/Name' como renglón propio.");
+            var name = panel.Find("HeaderBox/Identity/TitleRow/Name");
+            var type = panel.Find("HeaderBox/Identity/TitleRow/Type");
+            Assert.IsNotNull(name, "El panel no tiene 'HeaderBox/Identity/TitleRow/Name'.");
             Assert.IsNotNull(type,
-                "La familia no está debajo del nombre: 'Boss · Ranged' va en su propio renglón.");
+                "La familia no está en el renglón del nombre: 'Boss · Ranged' va a la DERECHA " +
+                "de 'The Croupier'.");
             Assert.Greater(type.GetSiblingIndex(), name.GetSiblingIndex(),
-                "La familia quedó ARRIBA del nombre: se lee 'Boss · Ranged' antes que " +
-                "'The Croupier'.");
+                "La familia quedó ANTES del nombre en la fila: se lee 'Boss · Ranged " +
+                "The Croupier'.");
 
             var element = type.GetComponent<LayoutElement>();
             if (element != null)
                 Assert.Less(element.preferredWidth, 0f,
-                    "El Type conserva un preferredWidth fijo: le impondría su ancho al panel " +
-                    "entero en vez de dejar que el layout lo estire.");
+                    "El Type conserva un preferredWidth fijo: adentro de la fila del nombre " +
+                    "eso ensancha el panel entero.");
         }
 
         [Test]
