@@ -11,6 +11,8 @@ GameObject:
   - component: {fileID: 3265225985495149000}
   - component: {fileID: 8607579510690414198}
   - component: {fileID: 6859561151955249247}
+  - component: {fileID: 7400058139789216923}
+  - component: {fileID: 2723598737388964953}
   m_Layer: 0
   m_Name: Point Light
   m_TagString: Untagged
@@ -27,7 +29,7 @@ Transform:
   m_GameObject: {fileID: 2580684216574477168}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalPosition: {x: 0, y: 0.03, z: -0.33}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -43,14 +45,14 @@ Light:
   m_Enabled: 1
   serializedVersion: 12
   m_Type: 2
-  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_Color: {r: 0.9215687, g: 0.48627454, b: 0.16862746, a: 1}
   m_Intensity: 0.48
-  m_Range: 1.62
+  m_Range: 4.3
   m_SpotAngle: 30
   m_InnerSpotAngle: 21.80208
   m_CookieSize2D: {x: 0.5, y: 0.5}
   m_Shadows:
-    m_Type: 0
+    m_Type: 1
     m_Resolution: -1
     m_CustomResolution: -1
     m_Strength: 1
@@ -87,7 +89,7 @@ Light:
   m_LightShadowCasterMode: 0
   m_AreaSize: {x: 1, y: 1}
   m_BounceIntensity: 1
-  m_ColorTemperature: 1656
+  m_ColorTemperature: 1900
   m_UseColorTemperature: 1
   m_BoundingSphereOverride: {x: 0, y: 0, z: 0, w: 0}
   m_UseBoundingSphereOverride: 0
@@ -111,7 +113,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Unity.RenderPipelines.Universal.Runtime::UnityEngine.Rendering.Universal.UniversalAdditionalLightData
   m_UsePipelineSettings: 1
-  m_AdditionalLightsShadowResolutionTier: 2
+  m_AdditionalLightsShadowResolutionTier: 0
   m_CustomShadowLayers: 0
   m_LightCookieSize: {x: 1, y: 1}
   m_LightCookieOffset: {x: 0, y: 0}
@@ -127,6 +129,42 @@ MonoBehaviour:
   m_ShadowLayerMask: 1
   m_RenderingLayers: 1
   m_ShadowRenderingLayers: 1
+--- !u!114 &7400058139789216923
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2580684216574477168}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0aa51c461a2c2974dab3655d164e3960, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::AdditionalLightData
+  preQuantizeIntensity: 1.8
+  falloff: 0
+  falloffSteps: 3.35
+--- !u!114 &2723598737388964953
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2580684216574477168}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 01799bc17bf3d6b449a03aaac4849ec4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Rollgeon::Rollgeon.Rendering.TorchFlicker
+  BaseIntensity: 2
+  IntensityAmplitude: 0.4
+  NoiseSpeed: 1
+  RangeAmplitude: 0.2
+  PositionJitter: 0.011
+  PositionJitterSpeed: 0.3
+  UseColorDrift: 0
+  ColorLow: {r: 0.85, g: 0.35, b: 0.1, a: 1}
+  ColorHigh: {r: 1, g: 0.65, b: 0.25, a: 1}
 --- !u!1001 &5999474496405776010
 PrefabInstance:
   m_ObjectHideFlags: 0

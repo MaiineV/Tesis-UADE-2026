@@ -20,6 +20,11 @@ namespace Rollgeon.Rendering
         [Tooltip("Velocidad del ruido — más alto = titila más rápido.")]
         public float NoiseSpeed = 1.5f;
 
+        [Header("Range Noise (opcional)")]
+        [Tooltip("Cuánto se aleja el Range del valor base (+/-), con el mismo ruido que la " +
+                 "intensidad — la luz se agranda/achica en sync con el brillo. 0 = Range fijo.")]
+        [Range(0f, 2f)] public float RangeAmplitude = 0f;
+
         [Header("Position Jitter (opcional)")]
         [Tooltip("Desplaza la luz un poco cada frame, como si la llama se moviera. 0 = quieta.")]
         [Range(0f, 0.2f)] public float PositionJitter = 0f;
@@ -34,6 +39,7 @@ namespace Rollgeon.Rendering
 
         private Light _light;
         private Vector3 _localPosition;
+        private float _baseRange;
         // Semillas por-instancia (hash de la posición inicial) para que varias
         // antorchas en la misma sala no titilen sincronizadas con el mismo patrón.
         private float _seedIntensity;
@@ -44,6 +50,7 @@ namespace Rollgeon.Rendering
         {
             _light = GetComponent<Light>();
             _localPosition = transform.localPosition;
+            _baseRange = _light.range;
 
             float hash = Mathf.Abs(Mathf.Sin(Vector3.Dot(transform.position, new Vector3(12.9898f, 78.233f, 37.719f))) * 43758.5453f);
             hash -= Mathf.Floor(hash);
@@ -60,6 +67,9 @@ namespace Rollgeon.Rendering
             float noise = Mathf.PerlinNoise(_seedIntensity + t, 0f) * 2f - 1f;
             float intensity01 = noise * 0.5f + 0.5f; // [0,1] normalizado, para el color drift
             _light.intensity = Mathf.Max(0f, BaseIntensity + noise * IntensityAmplitude);
+
+            if (RangeAmplitude > 0f)
+                _light.range = Mathf.Max(0.01f, _baseRange + noise * RangeAmplitude);
 
             if (UseColorDrift)
                 _light.color = Color.Lerp(ColorLow, ColorHigh, intensity01);
