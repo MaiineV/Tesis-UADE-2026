@@ -131,6 +131,53 @@ namespace Rollgeon.UI.Tests
         }
 
         [Test]
+        public void test_kit_the_weakness_slot_falls_back_to_the_combo_icon()
+        {
+            // Arrange — la piedrita rota del mockup todavía no existe como arte: mientras el
+            // catálogo de estados no tenga entry para enemy.weakness, el slot usa el ícono del
+            // combo — el MISMO que el badge de la barra del jefe, iconografía ya vista.
+            var tex = new Texture2D(4, 4);
+            var sprite = Sprite.Create(tex, new Rect(0, 0, 4, 4), new Vector2(0.5f, 0.5f));
+            var combo = ScriptableObject.CreateInstance<Rollgeon.Combos.Concretes.Combo_Poker>();
+            _created.Add(combo);
+            SetComboField(combo, "_comboId", "combo.poker");
+            SetComboField(combo, "_icon", sprite);
+
+            var comboCatalog = ScriptableObject.CreateInstance<Rollgeon.Combos.ComboCatalogSO>();
+            _created.Add(comboCatalog);
+            comboCatalog.EditorAdd(combo);
+            ServiceLocator.AddService<Rollgeon.Combos.ComboCatalogSO>(
+                comboCatalog, ServiceScope.Global);
+
+            _registry.SetWeakness(_boss, "combo.poker", 1.3f);
+            var provider = new EnemyKitStatusProvider(catalog: null, MakeData());
+
+            try
+            {
+                // Act
+                provider.Collect(_boss, _states);
+
+                // Assert
+                Assert.AreEqual(1, _states.Count);
+                Assert.AreSame(sprite, _states[0].Icon,
+                    "El slot de la debilidad salió sin el ícono del combo: sin piedrita en el " +
+                    "catálogo, queda invisible en la fila de abajo.");
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(sprite);
+                UnityEngine.Object.DestroyImmediate(tex);
+            }
+        }
+
+        private static void SetComboField(Rollgeon.Combos.BaseComboSO combo, string field,
+                                          object value)
+            => typeof(Rollgeon.Combos.BaseComboSO)
+                .GetField(field, System.Reflection.BindingFlags.Instance
+                                 | System.Reflection.BindingFlags.NonPublic)
+                .SetValue(combo, value);
+
+        [Test]
         public void test_kit_a_tree_without_teleports_publishes_no_teleport_card()
         {
             // Arrange

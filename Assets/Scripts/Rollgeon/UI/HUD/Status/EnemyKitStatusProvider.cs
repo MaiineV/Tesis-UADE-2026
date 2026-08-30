@@ -7,6 +7,7 @@ using Rollgeon.Combat.Weakness;
 using Rollgeon.Combos;
 using Rollgeon.Entities;
 using Rollgeon.Localization;
+using UnityEngine;
 
 namespace Rollgeon.UI.HUD.Status
 {
@@ -66,34 +67,48 @@ namespace Rollgeon.UI.HUD.Status
                     active: true,
                     style: StatusCardStyle.Trait));
 
-            // La debilidad como slot — la piedrita rota del mockup. El nombre del combo viaja
-            // como DisplayName por si algún día el slot dice algo; hoy el slot es sólo ícono.
-            string combo = WeaknessComboName(ownerGuid);
-            if (!string.IsNullOrEmpty(combo))
+            // La debilidad como slot — la piedrita rota del mockup. Hasta que ese arte llegue
+            // al catálogo, el ícono del propio combo lo suple: es el mismo que el badge de la
+            // barra del jefe, así que el jugador ya lo vio, y encima dice A QUÉ es débil.
+            if (TryDescribeWeakness(ownerGuid, out string comboName, out Sprite comboIcon))
+            {
+                Sprite icon = _catalog != null ? _catalog.Resolve(WeaknessId) : null;
+                if (icon == null) icon = comboIcon;
+
                 into.Add(new StatusIconState(
                     WeaknessId,
-                    combo,
+                    comboName,
                     null,
-                    _catalog != null ? _catalog.Resolve(WeaknessId) : null,
+                    icon,
                     active: true,
                     style: StatusCardStyle.Trait));
+            }
         }
 
         /// <summary>
         /// El nombre localizado del combo al que es débil, o <c>null</c> sin debilidad registrada.
         /// </summary>
         public string WeaknessComboName(Guid ownerGuid)
+            => TryDescribeWeakness(ownerGuid, out string name, out _) ? name : null;
+
+        private static bool TryDescribeWeakness(Guid ownerGuid, out string comboName,
+                                                out Sprite comboIcon)
         {
-            if (ownerGuid == Guid.Empty) return null;
+            comboName = null;
+            comboIcon = null;
+
+            if (ownerGuid == Guid.Empty) return false;
             if (!ServiceLocator.TryGetService<IWeaknessRegistry>(out var registry) || registry == null)
-                return null;
-            if (!registry.TryGet(ownerGuid, out var weakness)) return null;
-            if (string.IsNullOrEmpty(weakness.comboId)) return null;
+                return false;
+            if (!registry.TryGet(ownerGuid, out var weakness)) return false;
+            if (string.IsNullOrEmpty(weakness.comboId)) return false;
 
             var combo = ResolveCombo(weakness.comboId);
-            return combo != null
+            comboName = combo != null
                 ? LocalizedContent.Name(combo.ComboId, combo.DisplayName)
                 : weakness.comboId;
+            comboIcon = combo != null ? combo.Icon : null;
+            return true;
         }
 
         private static bool Teleports(EnemyDataSO data)
