@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
+using Patterns;
 using Rollgeon.Combat.AI;
 using Rollgeon.Combat.AI.Decisions;
+using Rollgeon.Combat.Weakness;
 using Rollgeon.Entities;
 using Rollgeon.Localization;
 using Rollgeon.Tiles;
@@ -246,9 +248,10 @@ namespace Rollgeon.EditorTools.HUD
             EnemyStatusIconsView.AppendStandingCards(standing, promotedKey, owner, catalog, applied);
         }
 
-        // Nada inventado: el MISMO provider que la fila usa en pelea. La debilidad ya no se
-        // agrega porque el panel ya no la muestra — el mockup del spec lo dejó en header,
-        // próximo turno, maldición y estados.
+        // Nada inventado: el MISMO provider que la fila usa en pelea, con lo único que fuera de
+        // combate no existe —el registry de debilidades— levantado al vuelo desde el SO, que es
+        // exactamente lo que el spawn registra. La debilidad sale como slot de la fila de abajo
+        // (la piedrita rota), no como renglón.
         private static void AddSampleStates(EnemyDataSO data, List<StatusIconState> into)
         {
             var settings = Resources.Load<EnemyStatusRowSettingsSO>(
@@ -257,12 +260,28 @@ namespace Rollgeon.EditorTools.HUD
 
             var owner = Guid.NewGuid();
 
-            var kit = new EnemyKitStatusProvider(catalog, data);
-            kit.Collect(owner, into);
+            bool hadRegistry = ServiceLocator.TryGetService<IWeaknessRegistry>(out var registry)
+                               && registry != null;
+            if (!hadRegistry)
+            {
+                registry = new WeaknessRegistry();
+                ServiceLocator.AddService<IWeaknessRegistry>(registry, ServiceScope.Global);
+            }
+            registry.SetWeakness(owner, data.WeaknessComboId, data.WeaknessMultiplierOverride);
 
-            var fire = FindFireDefinition(data);
-            if (fire != null)
-                new StubOwnedFire(fire).Collect(owner, into, catalog);
+            try
+            {
+                var kit = new EnemyKitStatusProvider(catalog, data);
+                kit.Collect(owner, into);
+
+                var fire = FindFireDefinition(data);
+                if (fire != null)
+                    new StubOwnedFire(fire).Collect(owner, into, catalog);
+            }
+            finally
+            {
+                registry.Unregister(owner);
+            }
         }
 
         // El unico doble del preview: fuera de combate no hay servicio de casillas donde plantar

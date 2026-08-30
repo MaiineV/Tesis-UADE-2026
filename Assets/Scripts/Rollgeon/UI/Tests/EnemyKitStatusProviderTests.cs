@@ -105,6 +105,29 @@ namespace Rollgeon.UI.Tests
             // Assert
             Assert.AreEqual(1, _states.Count);
             Assert.AreEqual(EnemyKitStatusProvider.TeleportId, _states[0].Id);
+            Assert.AreEqual(StatusCardStyle.Trait, _states[0].Style,
+                "El teleport es un rasgo del kit, no un estado transitorio: como Unit flotaría " +
+                "sobre la cabeza todo el combate.");
+        }
+
+        [Test]
+        public void test_kit_a_registered_weakness_becomes_a_trait_slot()
+        {
+            // Arrange — la piedrita rota del mockup: la debilidad vuelve al panel como slot de
+            // la fila de abajo, no como renglón de texto.
+            _registry.SetWeakness(_boss, "combo.poker", 1.3f);
+            var provider = new EnemyKitStatusProvider(catalog: null, MakeData());
+
+            // Act
+            provider.Collect(_boss, _states);
+
+            // Assert — sin catálogo el slot va sin sprite y la fila de abajo lo filtra sola;
+            // lo que se fija acá es que el estado exista y diga el combo vigente.
+            Assert.AreEqual(1, _states.Count);
+            Assert.AreEqual(EnemyKitStatusProvider.WeaknessId, _states[0].Id);
+            Assert.AreEqual("combo.poker", _states[0].DisplayName);
+            Assert.AreEqual(StatusCardStyle.Trait, _states[0].Style,
+                "La debilidad es un rasgo: como Unit flotaría sobre la cabeza todo el combate.");
         }
 
         [Test]

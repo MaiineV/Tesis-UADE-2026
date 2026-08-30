@@ -140,11 +140,11 @@ namespace Rollgeon.UI.Tests
         }
 
         [Test]
-        public void LaDebilidad_NoSaleEnElPanel()
+        public void LaDebilidad_EsUnSlotDeLaFilaDeAbajo_NoUnBloqueDeTexto()
         {
-            // Arrange — la debilidad registrada y viva, como en el spawn real. El mockup del
-            // spec dejó el panel en header, próximo turno, maldición y estados: la debilidad
-            // no tiene bloque, ni tarjeta, ni renglón.
+            // Arrange — la debilidad registrada y viva, como en el spawn real. En el mockup es
+            // la piedrita rota de la fila de estados: un slot de ícono, nunca un bloque de
+            // texto ni un renglón.
             var registry = new Rollgeon.Combat.Weakness.WeaknessRegistry();
             registry.SetWeakness(_boss, "combo.poker", 1.3f);
             ServiceLocator.AddService<Rollgeon.Combat.Weakness.IWeaknessRegistry>(
@@ -159,14 +159,25 @@ namespace Rollgeon.UI.Tests
                 // Act
                 var panel = _view.CollectPanelCards();
                 var applied = _view.CollectApplied();
+                var bottom = _view.CollectBottomIcons();
 
-                // Assert
+                // Assert — en la columna principal nunca; en los estados sí, como rasgo; y a la
+                // fila de abajo recién llega cuando el catálogo tenga el sprite de la piedrita
+                // (acá no hay catálogo, así que el filtro la deja afuera sin placa vacía).
                 foreach (var state in panel)
-                    Assert.AreNotEqual("enemy.weakness", state.Id,
+                    Assert.AreNotEqual(EnemyKitStatusProvider.WeaknessId, state.Id,
                         "La debilidad apareció en la columna principal: el spec no le da bloque.");
+
+                bool inApplied = false;
                 foreach (var state in applied)
-                    Assert.AreNotEqual("enemy.weakness", state.Id,
-                        "La debilidad volvió a ser tarjeta de estados.");
+                    if (state.Id == EnemyKitStatusProvider.WeaknessId) inApplied = true;
+                Assert.IsTrue(inApplied,
+                    "La debilidad registrada no llegó a los estados: la piedrita rota del " +
+                    "mockup no tiene de dónde salir.");
+
+                foreach (var state in bottom)
+                    Assert.AreNotEqual(EnemyKitStatusProvider.WeaknessId, state.Id,
+                        "Un slot sin sprite llegó a la fila: una placa vacía.");
             }
             finally
             {

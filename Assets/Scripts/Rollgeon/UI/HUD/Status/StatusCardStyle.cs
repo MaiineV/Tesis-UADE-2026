@@ -16,5 +16,13 @@ namespace Rollgeon.UI.HUD.Status
         /// estilo dice de QUÉ habla, no cómo se dibuja.
         /// </remarks>
         Terrain = 1,
+
+        /// <summary>
+        /// Habla de lo que la unidad <b>es</b> — su punto débil, su kit — no de algo que le está
+        /// pasando. La fila sobre la cabeza la saltea: ahí viven los estados transitorios, y un
+        /// rasgo permanente flotando todo el combate es ruido. En el panel sale como slot,
+        /// igual que todo.
+        /// </summary>
+        Trait = 2,
     }
 }

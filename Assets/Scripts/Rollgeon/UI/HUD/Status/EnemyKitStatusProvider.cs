@@ -11,8 +11,9 @@ using Rollgeon.Localization;
 namespace Rollgeon.UI.HUD.Status
 {
     /// <summary>
-    /// Publica el kit del enemigo: el combo al que es débil (para el renglón del pie del panel) y
-    /// lo que sabe hacer que no es un ataque (hoy, teleportarse) para la columna del costado.
+    /// Publica el kit del enemigo — el combo al que es débil y lo que sabe hacer que no es un
+    /// ataque (hoy, teleportarse) — como rasgos (<see cref="StatusCardStyle.Trait"/>): slots de
+    /// la fila de abajo del panel, nunca la fila que flota sobre la cabeza.
     /// </summary>
     /// <remarks>
     /// <para>
@@ -31,6 +32,12 @@ namespace Rollgeon.UI.HUD.Status
     {
         public const string TeleportId = "ability.teleport";
 
+        /// <summary>
+        /// Id del slot de la debilidad (la piedrita rota del mockup) y su key en el catálogo de
+        /// íconos. Sin entry de catálogo el slot no sale: la fila de abajo filtra lo sin arte.
+        /// </summary>
+        public const string WeaknessId = "enemy.weakness";
+
         private readonly StatusIconCatalogSO _catalog;
         private readonly bool _teleports;
 
@@ -43,7 +50,6 @@ namespace Rollgeon.UI.HUD.Status
             _teleports = Teleports(data);
         }
 
-        /// <summary>Sólo el teleport: la debilidad va por <see cref="WeaknessComboName"/>.</summary>
         public void Collect(Guid ownerGuid, List<StatusIconState> into)
         {
             if (into == null) return;
@@ -57,13 +63,24 @@ namespace Rollgeon.UI.HUD.Status
                     // El sprite de tp_delay a propósito: es el único teleport dibujado. La key es
                     // otra porque tp_delay es el cooldown de HABER saltado, no saber saltar.
                     _catalog != null ? _catalog.Resolve("status.tp_delay") : null,
-                    active: true));
+                    active: true,
+                    style: StatusCardStyle.Trait));
+
+            // La debilidad como slot — la piedrita rota del mockup. El nombre del combo viaja
+            // como DisplayName por si algún día el slot dice algo; hoy el slot es sólo ícono.
+            string combo = WeaknessComboName(ownerGuid);
+            if (!string.IsNullOrEmpty(combo))
+                into.Add(new StatusIconState(
+                    WeaknessId,
+                    combo,
+                    null,
+                    _catalog != null ? _catalog.Resolve(WeaknessId) : null,
+                    active: true,
+                    style: StatusCardStyle.Trait));
         }
 
         /// <summary>
         /// El nombre localizado del combo al que es débil, o <c>null</c> sin debilidad registrada.
-        /// Separado de <see cref="Collect"/> porque la debilidad dejó de ser tarjeta: es un
-        /// renglón del pie del panel, con la misma letra que la frase táctica.
         /// </summary>
         public string WeaknessComboName(Guid ownerGuid)
         {
