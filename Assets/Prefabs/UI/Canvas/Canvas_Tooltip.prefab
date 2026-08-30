@@ -308,7 +308,7 @@ MonoBehaviour:
   _anchorOffset: {x: 0, y: 12}
   _screenPadding: 8
   _sideOffset: {x: 110, y: 150}
-  _screenAnchorPadding: {x: 16, y: 150}
+  _screenAnchorPadding: {x: 16, y: 190}
   _hostCanvas: {fileID: 4653882643239674456}
   _cardsContainer: {fileID: 7015434091554989138}
   _cardPrefab: {fileID: 297427673820011300, guid: 62d999e6b0de02b41b4ab578f87e81d6, type: 3}
