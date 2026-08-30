@@ -72,6 +72,12 @@ Shader "Rollgeon/WetCable"
 
             float4 _RollgeonLightData[128];
 
+            // Luces falsas (FakeAreaLight/FakeAreaLightManager.cs) — props que iluminan sin
+            // gastar el presupuesto real de Light (URP limita a 4 adicionales por objeto).
+            // 3 float4 por luz: (posA.xyz, intensity), (posB.xyz, range), (color.rgb, 0).
+            float  _FakeAreaLightCount;
+            float4 _FakeAreaLightData[40];
+
             CBUFFER_START(UnityPerMaterial)
                 float _CableSlotInsulation;
                 float _CableSlotCopper;
@@ -148,6 +154,71 @@ Shader "Rollgeon/WetCable"
                 return wrapped * luminance * light.distanceAttenuation * light.shadowAttenuation;
             }
 
+            // Punto más cercano en un segmento a-b.
+            float3 ClosestOnSegment(float3 p, float3 a, float3 b)
+            {
+                float3 ab = b - a;
+                float  t  = saturate(dot(p - a, ab) / max(dot(ab, ab), 1e-5));
+                return a + ab * t;
+            }
+
+            // Luces falsas: cada una es una POLILÍNEA de hasta 4 puntos (3 tramos) — se busca
+            // el punto más cercano de TODA la curva a este píxel y se lo trata como la posición
+            // de una luz puntual real para el banding NdotL, con falloff por distancia. Con 1
+            // punto se comporta como point light; con 2+ sigue el trazado real de la tira LED
+            // en vez de cortar en línea recta entre extremos.
+            float FakeAreaLightContribution(float3 positionWS, float3 normalWS, inout float3 tint)
+            {
+                float best = 0.0;
+                int count = (int)_FakeAreaLightCount;
+                [loop]
+                for (int i = 0; i < count; i++)
+                {
+                    int b = i * 5;
+                    float3 p0         = _FakeAreaLightData[b].xyz;
+                    float  intensity  = _FakeAreaLightData[b].w;
+                    float3 p1         = _FakeAreaLightData[b + 1].xyz;
+                    float  range      = _FakeAreaLightData[b + 1].w;
+                    float3 p2         = _FakeAreaLightData[b + 2].xyz;
+                    int    pointCount = (int)_FakeAreaLightData[b + 2].w;
+                    float3 p3         = _FakeAreaLightData[b + 3].xyz;
+                    float3 color      = _FakeAreaLightData[b + 4].xyz;
+
+                    float3 closest   = p0;
+                    float  minDistSq = dot(positionWS - p0, positionWS - p0);
+
+                    if (pointCount >= 2)
+                    {
+                        float3 c0 = ClosestOnSegment(positionWS, p0, p1);
+                        float  d0 = dot(positionWS - c0, positionWS - c0);
+                        if (d0 < minDistSq) { minDistSq = d0; closest = c0; }
+                    }
+                    if (pointCount >= 3)
+                    {
+                        float3 c1 = ClosestOnSegment(positionWS, p1, p2);
+                        float  d1 = dot(positionWS - c1, positionWS - c1);
+                        if (d1 < minDistSq) { minDistSq = d1; closest = c1; }
+                    }
+                    if (pointCount >= 4)
+                    {
+                        float3 c2 = ClosestOnSegment(positionWS, p2, p3);
+                        float  d2 = dot(positionWS - c2, positionWS - c2);
+                        if (d2 < minDistSq) { minDistSq = d2; closest = c2; }
+                    }
+
+                    float dist  = sqrt(max(minDistSq, 1e-8));
+                    float atten = saturate(1.0 - dist / max(range, 1e-4));
+                    atten *= atten;
+
+                    float ndotl = saturate(dot(normalWS, (closest - positionWS) / dist));
+                    float val   = atten * ndotl * intensity;
+
+                    best  = max(best, val);
+                    tint += color * val;
+                }
+                return best;
+            }
+
             half4 Frag(Varyings IN) : SV_Target
             {
                 UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(IN);
@@ -188,6 +259,11 @@ Shader "Rollgeon/WetCable"
                     LIGHT_LOOP_END
                 }
                 #endif
+
+                // Luces falsas (ver FakeAreaLightManager) — se combinan igual que una luz
+                // adicional real, sin pasar por el presupuesto de Light de URP.
+                float fakeVal = FakeAreaLightContribution(IN.positionWS, normalWS, addTint);
+                lightValue = max(lightValue, fakeVal);
 
                 float ditherOffset = 0.0;
                 if (_UseDither > 0.5)
