@@ -452,12 +452,88 @@ namespace Rollgeon.EditorTools.HUD
                       "cableado como prefab de la fila de abajo.");
         }
 
+        /// <summary>
+        /// Parte el panel en cajas separadas (mockup): la placa queda envolviendo SOLO el header
+        /// — identidad, frase táctica, pie — y las tarjetas (NEXT TURN, PLAYER CURSE) cuelgan
+        /// debajo como cajas propias, AFUERA de la del header. Los slots de estados ya colgaban
+        /// afuera. El panel raíz queda transparente: es un apilador, no una caja.
+        /// </summary>
+        [MenuItem("Rollgeon/Tooltips/8 - Split The Header Box")]
+        public static void SplitHeaderBox()
+        {
+            EditPanel(panel =>
+            {
+                bool creating = panel.Find("HeaderBox") == null;
+                var header = EnsureChildRect(panel, "HeaderBox", Vector2.zero, Vector2.zero);
+
+                var panelLayout = Ensure<VerticalLayoutGroup>(panel.gameObject);
+                var headerLayout = Ensure<VerticalLayoutGroup>(header.gameObject);
+
+                if (creating)
+                {
+                    // La placa y el aire interno del panel se mudan ENTEROS a la caja del
+                    // header. Guardado sólo en el primer corte: re-correr el menú no puede
+                    // volver a copiar un padding que ya quedó en cero.
+                    var panelImage = panel.GetComponent<Image>();
+                    var headerImage = Ensure<Image>(header.gameObject);
+                    if (panelImage != null)
+                    {
+                        headerImage.sprite = panelImage.sprite;
+                        headerImage.type = panelImage.type;
+                        headerImage.color = panelImage.color;
+                        Object.DestroyImmediate(panelImage, true);
+                    }
+                    headerImage.raycastTarget = false;
+
+                    headerLayout.padding = new RectOffset(
+                        panelLayout.padding.left, panelLayout.padding.right,
+                        panelLayout.padding.top, panelLayout.padding.bottom);
+                    headerLayout.spacing = panelLayout.spacing;
+                    headerLayout.childAlignment = TextAnchor.UpperCenter;
+                    headerLayout.childControlWidth = true;
+                    headerLayout.childControlHeight = true;
+                    headerLayout.childForceExpandWidth = true;
+                    headerLayout.childForceExpandHeight = false;
+
+                    panelLayout.padding = new RectOffset(0, 0, 0, 0);
+                    // El aire ENTRE cajas, más grande que el interno: es lo que las hace leerse
+                    // como bloques separados y no como un panel partido por error.
+                    panelLayout.spacing = 10f;
+                }
+
+                // Idempotente: si ya viven en el header, Reparent no hace nada.
+                Reparent(panel, "Identity", header);
+                Reparent(panel, "Text", header);
+                Reparent(panel, "Footer", header);
+
+                return (so, p) =>
+                {
+                    header.SetSiblingIndex(0);
+                    var cards = p.Find("Cards");
+                    if (cards != null) cards.SetSiblingIndex(1);
+
+                    var identity = header.Find("Identity");
+                    if (identity != null) identity.SetAsFirstSibling();
+                    var text = header.Find("Text");
+                    if (text != null) text.SetSiblingIndex(1);
+                    var footer = header.Find("Footer");
+                    if (footer != null) footer.SetAsLastSibling();
+                };
+            });
+
+            Debug.Log("[TooltipCardSetupTools] Header partido: la placa envuelve sólo la " +
+                      "identidad y la frase; las tarjetas cuelgan afuera como cajas propias.");
+        }
+
         [MenuItem("Rollgeon/Tooltips/3 - Wire Identity Band And Footer")]
         public static void WireIdentityBand()
         {
             EditPanel(panel =>
             {
-                var identity = EnsureChildRect(panel, "Identity", Vector2.zero, Vector2.zero);
+                // Con el header partido (menú 8), la identidad y el pie viven adentro de la
+                // caja del header; sin partir, directo en el panel como siempre.
+                var host = panel.Find("HeaderBox") as RectTransform ?? panel;
+                var identity = EnsureChildRect(host, "Identity", Vector2.zero, Vector2.zero);
                 var identityLayout = Ensure<VerticalLayoutGroup>(identity.gameObject);
                 identityLayout.spacing = 4;
                 identityLayout.childAlignment = TextAnchor.UpperCenter;
@@ -512,7 +588,7 @@ namespace Rollgeon.EditorTools.HUD
                 var shieldLabel = EnsureLabel(shield, "Value", 28f, TextAlignmentOptions.Left, PanelInk);
                 shieldLabel.fontStyle = FontStyles.Bold;
 
-                var footer = EnsureLabel(panel, "Footer", 20f, TextAlignmentOptions.Center, PanelInkSoft);
+                var footer = EnsureLabel(host, "Footer", 20f, TextAlignmentOptions.Center, PanelInkSoft);
                 footer.enableWordWrapping = true;
                 Ensure<LayoutElement>(footer.gameObject).preferredWidth = ContentWidth;
 
@@ -542,10 +618,22 @@ namespace Rollgeon.EditorTools.HUD
             Debug.Log("[TooltipCardSetupTools] Banda de identidad y pie cableados en el panel.");
         }
 
-        // Párrafo antes que la columna: el párrafo es de los tooltips de texto y no convive con
-        // las tarjetas, pero si algún día conviven el orden ya está decidido.
+        // Párrafo antes que la columna. Con el header partido (menú 8): la caja del header
+        // primero y las tarjetas después, y adentro de la caja el párrafo entre identidad y pie.
         private static void OrderMiddle(RectTransform panel)
         {
+            var header = panel.Find("HeaderBox");
+            if (header != null)
+            {
+                header.SetSiblingIndex(0);
+                var outerCards = panel.Find("Cards");
+                if (outerCards != null) outerCards.SetSiblingIndex(1);
+
+                var innerText = header.Find("Text");
+                if (innerText != null) innerText.SetSiblingIndex(1);
+                return;
+            }
+
             var text = panel.Find("Text");
             var cards = panel.Find("Cards");
             if (text != null) text.SetSiblingIndex(1);

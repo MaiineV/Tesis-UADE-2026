@@ -26,7 +26,7 @@ namespace Rollgeon.Editor.Tools.HUD.Tests
         {
             var panel = LoadPanel();
 
-            Assert.AreEqual(WidthOf(panel, "Cards"), WidthOf(panel, "Footer"), 0.5f,
+            Assert.AreEqual(WidthOf(panel, "Cards"), WidthOf(panel, "HeaderBox/Footer"), 0.5f,
                 "El pie no tiene ancho propio, y es un TMP con wrap: su ancho preferido es el " +
                 "del color del bicho ENTERO en un renglón. Con eso, la frase de sabor terminaba " +
                 "decidiendo cuánto mide el tooltip.");
@@ -37,10 +37,37 @@ namespace Rollgeon.Editor.Tools.HUD.Tests
         {
             var panel = LoadPanel();
 
-            Assert.AreEqual(WidthOf(panel, "Cards"), WidthOf(panel, "Identity"), 0.5f,
+            Assert.AreEqual(WidthOf(panel, "Cards"), WidthOf(panel, "HeaderBox/Identity"), 0.5f,
                 "El nombre y los vitales se leen centrados sobre la columna: si la banda mide " +
                 "otra cosa, el panel se ensancha por ella y el nombre queda descentrado de las " +
                 "tarjetas que describe.");
+        }
+
+        [Test]
+        public void ElHeaderEsSuPropiaCaja_YLasTarjetasCuelganAfuera()
+        {
+            var panel = LoadPanel();
+
+            // El mockup: la placa envuelve SOLO al header, y NEXT TURN / PLAYER CURSE son cajas
+            // propias debajo. Si falta 'HeaderBox', falta correr el menú Rollgeon/Tooltips/8.
+            var header = panel.Find("HeaderBox");
+            Assert.IsNotNull(header, "El panel no tiene 'HeaderBox'.");
+
+            var plate = header.GetComponent<Image>();
+            Assert.IsNotNull(plate, "'HeaderBox' no tiene placa propia.");
+            Assert.IsNotNull(plate.sprite, "La placa del header quedó sin sprite: un rectángulo " +
+                                           "blanco atrás del nombre.");
+            Assert.IsNull(panel.GetComponent<Image>(),
+                "El panel raíz conserva su placa: todo lo que cuelga abajo vuelve a leerse " +
+                "ADENTRO de la caja del header.");
+
+            var cards = panel.Find("Cards");
+            Assert.IsNotNull(cards, "El panel no tiene 'Cards'.");
+            Assert.AreNotEqual(header, cards.parent,
+                "Las tarjetas viven adentro de la caja del header: NEXT TURN tiene que colgar " +
+                "afuera, como caja propia.");
+            Assert.Less(header.GetSiblingIndex(), cards.GetSiblingIndex(),
+                "Las tarjetas quedaron ARRIBA del header.");
         }
 
         [Test]
@@ -64,10 +91,10 @@ namespace Rollgeon.Editor.Tools.HUD.Tests
             var panel = LoadPanel();
 
             // El mockup del spec: "The Croupier" arriba y "Boss · Ranged" en su propio renglón,
-            // debajo. Si esto falla con 'Identity/Name' ausente, falta re-correr el menú
-            // Rollgeon/Tooltips/3 sobre el prefab.
-            var name = panel.Find("Identity/Name");
-            var type = panel.Find("Identity/Type");
+            // debajo. Si esto falla con el path ausente, falta re-correr los menús
+            // Rollgeon/Tooltips/8 y 3 sobre el prefab.
+            var name = panel.Find("HeaderBox/Identity/Name");
+            var type = panel.Find("HeaderBox/Identity/Type");
             Assert.IsNotNull(name, "El panel no tiene 'Identity/Name' como renglón propio.");
             Assert.IsNotNull(type,
                 "La familia no está debajo del nombre: 'Boss · Ranged' va en su propio renglón.");
