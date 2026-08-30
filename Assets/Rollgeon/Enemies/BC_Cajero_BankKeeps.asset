@@ -1,0 +1,18 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e57a6490b53f4e7c8ef1ca0c0f3b077e, type: 3}
+  m_Name: BC_Cajero_BankKeeps
+  m_EditorClassIdentifier: Rollgeon::Rollgeon.Entities.BossCurseSO
+  CurseId: curse.bank_keeps
+  DisplayName: La banca retiene
+  Description: "El oro que dej\xE1s vencer se lo queda la banca."
+  Icon: {fileID: -1590291716, guid: 55b21875323eef642a528fe5a0fd2874, type: 3}

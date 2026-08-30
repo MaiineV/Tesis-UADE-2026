@@ -871,6 +871,74 @@ MonoBehaviour:
     m_Key: enemy.panel.title_kind_format
     m_Metadata:
       m_Items: []
+  - m_Id: 16873831498969088
+    m_Key: tile.category.format
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16873831515746304
+    m_Key: tile.category.damage
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16873831515746305
+    m_Key: tile.category.heal
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16873831515746306
+    m_Key: tile.category.status
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16873831515746307
+    m_Key: tile.category.buff
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16873831515746308
+    m_Key: tile.category.slide
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16873831515746309
+    m_Key: tile.category.teleport
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16873831515746310
+    m_Key: tile.category.warning
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16873831515746311
+    m_Key: tile.category.protection
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16873831515746312
+    m_Key: tile.panel.effect
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16873831515746313
+    m_Key: tile.panel.enter
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16873831515746314
+    m_Key: tile.panel.turn_start
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16873831515746315
+    m_Key: tile.panel.heal
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16873831515746316
+    m_Key: tile.panel.applies
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16873831515746317
+    m_Key: enemy.panel.on_the_floor
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16873831515746318
+    m_Key: prop.panel.type
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16873831515746319
+    m_Key: prop.panel.leaves
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

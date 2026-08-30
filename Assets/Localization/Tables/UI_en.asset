@@ -908,6 +908,74 @@ MonoBehaviour:
     m_Localized: "{0} \xB7 {1}"
     m_Metadata:
       m_Items: []
+  - m_Id: 16873831498969088
+    m_Localized: "Tile \xB7 {0}"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16873831515746304
+    m_Localized: Damage
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16873831515746305
+    m_Localized: Healing
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16873831515746306
+    m_Localized: Status
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16873831515746307
+    m_Localized: Buff
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16873831515746308
+    m_Localized: Slide
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16873831515746309
+    m_Localized: Teleport
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16873831515746310
+    m_Localized: Warning
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16873831515746311
+    m_Localized: Protection
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16873831515746312
+    m_Localized: Effect
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16873831515746313
+    m_Localized: On enter
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16873831515746314
+    m_Localized: Start your turn on it
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16873831515746315
+    m_Localized: Heals at end of turn
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16873831515746316
+    m_Localized: Applies
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16873831515746317
+    m_Localized: On the floor
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16873831515746318
+    m_Localized: Object
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16873831515746319
+    m_Localized: Leaves
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

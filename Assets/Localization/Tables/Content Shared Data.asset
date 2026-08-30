@@ -1071,6 +1071,86 @@ MonoBehaviour:
     m_Key: intent.attack.desc
     m_Metadata:
       m_Items: []
+  - m_Id: 16873829754138624
+    m_Key: boss.cashier.brief
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16873829850607616
+    m_Key: boss.la_generala.brief
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16873829850607617
+    m_Key: minion.cajero_comision.brief
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16873829850607618
+    m_Key: obj.dado_casa.brief
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16873829854801920
+    m_Key: healerEnemy.brief
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16873829854801921
+    m_Key: CardEnemy01.brief
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16873829854801922
+    m_Key: RangedEnemy01.brief
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16873829854801923
+    m_Key: ChestMimic01.brief
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16873829854801924
+    m_Key: enemy_tutorial_melee_b.brief
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16873829854801925
+    m_Key: enemy_tutorial_melee_c.brief
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16873829854801926
+    m_Key: curse.bank_keeps.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16873829854801927
+    m_Key: curse.bank_keeps.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16873829854801928
+    m_Key: curse.repeat_ban.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16873829854801929
+    m_Key: curse.repeat_ban.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16873829888356352
+    m_Key: tile.spikes_cajero.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16873829888356353
+    m_Key: tile.spikes_cajero.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16873829980631040
+    m_Key: healerEnemy.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16873829984825344
+    m_Key: CardEnemy01.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16873829984825345
+    m_Key: ChestMimic01.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16873829984825346
+    m_Key: ChestMimic01.desc
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

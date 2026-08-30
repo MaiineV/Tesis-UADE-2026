@@ -512,6 +512,7 @@ MonoBehaviour:
   Portrait: {fileID: 133841030, guid: 7354be46d5bce5b44ae3fc20ec0cb47f, type: 3}
   WeaknessComboId: combo.full_house
   WeaknessMultiplierOverride: 1.5
+  Curse: {fileID: 11400000, guid: 0e92b4d6bcb557b4684b8a969a2ace36, type: 2}
   BaseHP: 450
   BaseAttack: 20
   BaseHealStrength: 0

@@ -1114,6 +1114,87 @@ MonoBehaviour:
     m_Localized: 
     m_Metadata:
       m_Items: []
+  - m_Id: 16873829754138624
+    m_Localized: Hits harder the more gold you carry. Chips you let expire, he keeps.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16873829850607616
+    m_Localized: "Unleashes electric rings in waves \u2014 move between rings."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16873829850607617
+    m_Localized: Flies, shoots from range, and puts a price on running.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16873829850607618
+    m_Localized: Break it to erase one of the Generala's categories.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16873829854801920
+    m_Localized: Heals its allies before it hits you.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16873829854801921
+    m_Localized: Rushes the closest player and swings up close.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16873829854801922
+    m_Localized: Shoots from afar; break the line or close the gap.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16873829854801923
+    m_Localized: Poses as a chest and strikes when you get close.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16873829854801924
+    m_Localized: Hits up close.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16873829854801925
+    m_Localized: Hits up close.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16873829854801926
+    m_Localized: The Bank Keeps
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16873829854801927
+    m_Localized: Gold you let expire, the bank keeps.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16873829854801928
+    m_Localized: Banned Hand
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16873829854801929
+    m_Localized: You can't repeat the combo you just scored.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16873829888356352
+    m_Localized: Cashier's Spikes
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16873829888356353
+    m_Localized: Disarm when stepped on and rearm on their own. They hurt a fair
+      bit more than the common ones.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16873829980631040
+    m_Localized: A house spirit that patches up its own.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16873829984825344
+    m_Localized: House soldier; fights up close.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16873829984825345
+    m_Localized: Mimic
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16873829984825346
+    m_Localized: A chest that bites.
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

@@ -1118,6 +1118,89 @@ MonoBehaviour:
     m_Localized: 
     m_Metadata:
       m_Items: []
+  - m_Id: 16873829754138624
+    m_Localized: "Pega m\xE1s fuerte cuanto m\xE1s oro llev\xE1s. Las fichas que
+      dej\xE1s vencer se las queda."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16873829850607616
+    m_Localized: "Suelta anillos el\xE9ctricos en oleadas \u2014 movete entre anillo
+      y anillo."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16873829850607617
+    m_Localized: Vuela, dispara de lejos y le pone precio a huir.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16873829850607618
+    m_Localized: "Rompelo para borrarle una categor\xEDa a la Generala."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16873829854801920
+    m_Localized: Cura a los suyos antes que pegarte.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16873829854801921
+    m_Localized: "Corre al jugador m\xE1s cercano y pega de frente."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16873829854801922
+    m_Localized: "Dispara de lejos; cort\xE1 la l\xEDnea o cerrale la distancia."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16873829854801923
+    m_Localized: "Se hace pasar por cofre y pega cuando te acerc\xE1s."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16873829854801924
+    m_Localized: Pega de cerca.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16873829854801925
+    m_Localized: Pega de cerca.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16873829854801926
+    m_Localized: La banca retiene
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16873829854801927
+    m_Localized: "El oro que dej\xE1s vencer se lo queda la banca."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16873829854801928
+    m_Localized: Mano vetada
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16873829854801929
+    m_Localized: "No pod\xE9s repetir el combo que acab\xE1s de anotar."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16873829888356352
+    m_Localized: Pinchos del Cajero
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16873829888356353
+    m_Localized: "Se desarman al pisarlos y se rearman solos. Duelen bastante m\xE1s
+      que los comunes."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16873829980631040
+    m_Localized: "Un esp\xEDritu de la casa que remienda a los suyos."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16873829984825344
+    m_Localized: Soldado de la casa, cuerpo a cuerpo.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16873829984825345
+    m_Localized: "M\xEDmico"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16873829984825346
+    m_Localized: Un cofre que muerde.
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

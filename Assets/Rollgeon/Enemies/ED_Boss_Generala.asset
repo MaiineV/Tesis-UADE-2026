@@ -212,6 +212,12 @@ MonoBehaviour:
     - Name: Side
       Entry: 3
       Data: 0
+    - Name: MinSpacing
+      Entry: 3
+      Data: 0
+    - Name: ResolveSlotsEachSpawn
+      Entry: 5
+      Data: false
     - Name: Coords
       Entry: 7
       Data: 19|System.Collections.Generic.List`1[[Rollgeon.Grid.GridCoord, Rollgeon]],
@@ -941,6 +947,9 @@ MonoBehaviour:
     - Name: BlockFeelId
       Entry: 6
       Data: 
+    - Name: AnnounceOnce
+      Entry: 5
+      Data: false
     - Name: 
       Entry: 8
       Data: 
@@ -1035,6 +1044,7 @@ MonoBehaviour:
   Portrait: {fileID: -1548411135, guid: 2ea80cde72873384bac9f8c1ad22fc73, type: 3}
   WeaknessComboId: combo.generala
   WeaknessMultiplierOverride: 1.5
+  Curse: {fileID: 11400000, guid: fe76475bf4cca9a43a3341d900130b0b, type: 2}
   BaseHP: 240
   BaseAttack: 40
   BaseHealStrength: 0
