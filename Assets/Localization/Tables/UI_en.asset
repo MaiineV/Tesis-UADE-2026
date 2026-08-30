@@ -876,6 +876,38 @@ MonoBehaviour:
     m_Localized: 'Weakness: <b>{0}</b>'
     m_Metadata:
       m_Items: []
+  - m_Id: 16825655438012416
+    m_Localized: Player Curse
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16825655454789632
+    m_Localized: Combo
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16825655454789633
+    m_Localized: Basic
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16825655454789634
+    m_Localized: Damage Over Time
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16825655454789635
+    m_Localized: 
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16825655454789636
+    m_Localized: Reaction
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16825655454789637
+    m_Localized: Ability
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16825655454789638
+    m_Localized: "{0} \xB7 {1}"
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

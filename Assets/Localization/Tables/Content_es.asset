@@ -1102,6 +1102,22 @@ MonoBehaviour:
     m_Localized: "Quema la sala y se teletransporta cuando lo alcanz\xE1s."
     m_Metadata:
       m_Items: []
+  - m_Id: 16825653756096512
+    m_Localized: Golpe marcado
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16825653806428160
+    m_Localized: 
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16825653806428161
+    m_Localized: Te ataca
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16825653806428162
+    m_Localized: 
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

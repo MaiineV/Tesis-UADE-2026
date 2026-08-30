@@ -839,6 +839,38 @@ MonoBehaviour:
     m_Key: enemy.panel.weakness
     m_Metadata:
       m_Items: []
+  - m_Id: 16825655438012416
+    m_Key: enemy.panel.player_curse
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16825655454789632
+    m_Key: attack_kind.combo_attack
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16825655454789633
+    m_Key: attack_kind.basic_attack
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16825655454789634
+    m_Key: attack_kind.damage_over_time
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16825655454789635
+    m_Key: attack_kind.environmental
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16825655454789636
+    m_Key: attack_kind.reaction
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16825655454789637
+    m_Key: attack_kind.scripted_ability
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16825655454789638
+    m_Key: enemy.panel.title_kind_format
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

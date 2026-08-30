@@ -525,6 +525,57 @@ namespace Rollgeon.EditorTools.HUD
                       "identidad y la frase; las tarjetas cuelgan afuera como cajas propias.");
         }
 
+        private const string CurseAssetPath = "Assets/Rollgeon/Enemies/BC_Croupier_DiceBlock.asset";
+        private const string CroupierPath = "Assets/Rollgeon/Enemies/ED_Boss_Croupier.asset";
+        private const string PadlockPath = "Assets/Art/UI/Unlocks/Padlock.png";
+
+        /// <summary>
+        /// El asset de la maldición del Croupier (bloque PLAYER CURSE) y su enganche en la data
+        /// del jefe. Reusa la key <c>status.dice_block</c>: nombre y efecto ya están sembrados.
+        /// </summary>
+        [MenuItem("Rollgeon/Tooltips/9 - Author Croupier Curse Asset")]
+        public static void AuthorCroupierCurse()
+        {
+            var data = AssetDatabase.LoadAssetAtPath<Rollgeon.Entities.EnemyDataSO>(CroupierPath);
+            if (data == null)
+            {
+                Debug.LogError($"[TooltipCardSetupTools] Falta {CroupierPath}.");
+                return;
+            }
+
+            var curse = AssetDatabase.LoadAssetAtPath<Rollgeon.Entities.BossCurseSO>(CurseAssetPath);
+            if (curse == null)
+            {
+                curse = ScriptableObject.CreateInstance<Rollgeon.Entities.BossCurseSO>();
+                AssetDatabase.CreateAsset(curse, CurseAssetPath);
+            }
+
+            curse.CurseId = "status.dice_block";
+            curse.DisplayName = "Candado de dados";
+            curse.Description = "Te traba un dado.";
+            curse.Icon = AssetDatabase.LoadAssetAtPath<Sprite>(PadlockPath);
+            EditorUtility.SetDirty(curse);
+
+            // SerializedObject y no asignación directa: EnemyDataSO es Odin, pero Curse es un
+            // campo Unity-serializable — esto lo escribe donde Unity lo lee, sin tocar los
+            // SerializationNodes.
+            var so = new SerializedObject(data);
+            var prop = so.FindProperty("Curse");
+            if (prop == null)
+            {
+                Debug.LogError("[TooltipCardSetupTools] ED_Boss_Croupier no expone 'Curse' a " +
+                               "SerializedObject.");
+                return;
+            }
+            prop.objectReferenceValue = curse;
+            so.ApplyModifiedPropertiesWithoutUndo();
+            EditorUtility.SetDirty(data);
+
+            AssetDatabase.SaveAssets();
+            Debug.Log($"[TooltipCardSetupTools] Curse autorado en {CurseAssetPath} y colgado en " +
+                      "ED_Boss_Croupier.Curse.");
+        }
+
         [MenuItem("Rollgeon/Tooltips/3 - Wire Identity Band And Footer")]
         public static void WireIdentityBand()
         {

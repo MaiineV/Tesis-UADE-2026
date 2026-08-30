@@ -238,7 +238,9 @@ namespace Rollgeon.UI.Tests
             var data = ScriptableObject.CreateInstance<Rollgeon.Entities.EnemyDataSO>();
             try
             {
-                curse.CurseId = "status.dice_block";
+                // Key sin entry a propósito (mismo truco que EnemyTooltipInfoTests): con una key
+                // real el assert dependería del idioma del editor.
+                curse.CurseId = "test.curse.unmapped";
                 curse.DisplayName = "Candado";
                 curse.Description = "Te traba un dado.";
                 data.Curse = curse;
@@ -251,7 +253,7 @@ namespace Rollgeon.UI.Tests
                 // Assert — el orden ES el spec: header (fuera de esta lista), próximo turno,
                 // maldición. La etiqueta chica la separa del ataque.
                 Assert.AreEqual(2, panel.Count);
-                Assert.AreEqual("status.dice_block", panel[1].Id);
+                Assert.AreEqual("test.curse.unmapped", panel[1].Id);
                 Assert.AreEqual(EnemyStatusIconsView.PlayerCurseEyebrow(), panel[1].Eyebrow,
                     "La maldición sin su etiqueta se lee como un segundo ataque.");
                 Assert.IsTrue(string.IsNullOrEmpty(panel[1].DisplayName),

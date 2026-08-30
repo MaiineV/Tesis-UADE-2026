@@ -1,0 +1,18 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e57a6490b53f4e7c8ef1ca0c0f3b077e, type: 3}
+  m_Name: BC_Croupier_DiceBlock
+  m_EditorClassIdentifier: Rollgeon::Rollgeon.Entities.BossCurseSO
+  CurseId: status.dice_block
+  DisplayName: Candado de dados
+  Description: Te traba un dado.
+  Icon: {fileID: 2083525884, guid: 159d6b6b57974af4ea65835902bfecaf, type: 3}

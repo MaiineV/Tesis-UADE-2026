@@ -1098,6 +1098,22 @@ MonoBehaviour:
     m_Localized: Burns the room and teleports when someone reaches him.
     m_Metadata:
       m_Items: []
+  - m_Id: 16825653756096512
+    m_Localized: Marked Strike
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16825653806428160
+    m_Localized: 
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16825653806428161
+    m_Localized: Attacks You
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16825653806428162
+    m_Localized: 
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

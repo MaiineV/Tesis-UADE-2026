@@ -1055,6 +1055,22 @@ MonoBehaviour:
     m_Key: boss.croupier.brief
     m_Metadata:
       m_Items: []
+  - m_Id: 16825653756096512
+    m_Key: intent.telegraph.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16825653806428160
+    m_Key: intent.telegraph.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16825653806428161
+    m_Key: intent.attack.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16825653806428162
+    m_Key: intent.attack.desc
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:
