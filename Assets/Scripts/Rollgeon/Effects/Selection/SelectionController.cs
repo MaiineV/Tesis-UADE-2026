@@ -285,9 +285,18 @@ namespace Rollgeon.Effects.Selection
 
             if (!isValid) return;
 
+            // Dedupe por coord y por OCUPANTE (Fase C): dos celdas de un mismo footprint
+            // multi-celda son el mismo target — el jugador no puede gastar dos picks en él.
+            ServiceLocator.TryGetService<Grid.IGridManager>(out var pickGrid);
+            Guid targetOccupant = Guid.Empty;
+            pickGrid?.TryGetOccupant(target.Coord, out targetOccupant);
             foreach (var s in _selected)
             {
-                if (s.Coord == target.Coord)
+                bool sameCoord = s.Coord == target.Coord;
+                bool sameOccupant = targetOccupant != Guid.Empty && pickGrid != null
+                    && pickGrid.TryGetOccupant(s.Coord, out var prevOccupant)
+                    && prevOccupant == targetOccupant;
+                if (sameCoord || sameOccupant)
                 {
                     UnityEngine.Debug.Log($"[SelectionController] OnTargetClicked coord={target.Coord} SKIPPED (already selected)");
                     return;
@@ -300,7 +309,13 @@ namespace Rollgeon.Effects.Selection
             // "selected" para que el destino no quede pintado mientras el pawn camina.
             if (!_suppressPathPreview
                 && ServiceLocator.TryGetService<ITileHighlightService>(out var highlight))
-                highlight.HighlightSingle(target.Coord, "selected");
+            {
+                // Un ocupante multi-celda se pinta entero; celda vacía o 1×1, como siempre.
+                if (targetOccupant != Guid.Empty && pickGrid != null)
+                    highlight.Highlight(pickGrid.OccupiedCells(targetOccupant), "selected");
+                else
+                    highlight.HighlightSingle(target.Coord, "selected");
+            }
 
             var settings = _request.Settings;
             if (settings != null && settings.AutoAccept)

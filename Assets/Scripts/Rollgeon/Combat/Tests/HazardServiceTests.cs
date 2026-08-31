@@ -429,6 +429,66 @@ namespace Rollgeon.Combat.Tests
             CollectionAssert.IsEmpty(_pipeline.Resolved, "El origen del movimiento debería excluirse del scan.");
         }
 
+        // ======================================================================
+        // Footprint multi-celda (Fase C)
+        // ======================================================================
+
+        private void MakePlayerBig(GridCoord anchor)
+        {
+            _grid.Unregister(_playerGuid);
+            Assert.IsTrue(_grid.TryRegister(_playerGuid, anchor, new Vector2Int(2, 2)),
+                "setup: el 2×2 tiene que caber");
+        }
+
+        [Test]
+        public void OnTurnEndInTile_MultiCell_NonAnchorCellOnFire_DamagesOnce()
+        {
+            // Arrange — 2×2 anclado en (3,3) cubre (3,3)-(4,4); la llama está en (4,4), NO en el ancla.
+            var def = CreateInstanceDefinition(HazardTriggerMode.OnTurnEndInTile, damage: 7);
+            _hazard.Activate(def, new[] { new GridCoord(4, 4) });
+            MakePlayerBig(new GridCoord(3, 3));
+
+            // Act
+            EventManager.Trigger(EventName.OnTurnFinished, _playerGuid);
+
+            // Assert
+            Assert.AreEqual(1, _pipeline.Resolved.Count, "Cualquier celda cubierta cuenta como estar parado encima.");
+        }
+
+        [Test]
+        public void OnTurnEndInTile_MultiCell_TwoCellsOfSameInstance_DamagesOnce()
+        {
+            // Arrange — la instancia cubre dos celdas del rect: cobra UNA vez por instancia.
+            var def = CreateInstanceDefinition(HazardTriggerMode.OnTurnEndInTile, damage: 7);
+            _hazard.Activate(def, new[] { new GridCoord(3, 4), new GridCoord(4, 4) });
+            MakePlayerBig(new GridCoord(3, 3));
+
+            // Act
+            EventManager.Trigger(EventName.OnTurnFinished, _playerGuid);
+
+            // Assert
+            Assert.AreEqual(1, _pipeline.Resolved.Count, "Dos celdas de la MISMA instancia = un solo cobro.");
+        }
+
+        [Test]
+        public void OnEnter_MultiCell_TrapUnderNonAnchorCell_TriggersOnce()
+        {
+            // Arrange — 2×2 en (0,0); trampa en (2,1): al dar un paso al Este el rect cubre
+            // (1,0)-(2,1) y la pisa con una celda no-ancla. Dos celdas de la misma instancia
+            // en el mismo paso siguen siendo un solo cobro.
+            var def = CreateInstanceDefinition(HazardTriggerMode.OnEnter, damage: 5);
+            _hazard.Activate(def, new[] { new GridCoord(2, 1), new GridCoord(2, 0) });
+            MakePlayerBig(new GridCoord(0, 0));
+
+            // Act — path de ANCLAS (0,0) → (1,0), como lo emite MovementService.
+            _movement.RaiseMoved(_playerGuid, new GridCoord(0, 0), new GridCoord(1, 0), Path(
+                new GridCoord(0, 0), new GridCoord(1, 0)));
+
+            // Assert
+            Assert.AreEqual(1, _pipeline.Resolved.Count,
+                "La trampa bajo una celda no-ancla dispara, y una sola vez por paso.");
+        }
+
         [Test]
         public void OnEnter_ZeroDamage_StillRaisesTriggeredEvent()
         {

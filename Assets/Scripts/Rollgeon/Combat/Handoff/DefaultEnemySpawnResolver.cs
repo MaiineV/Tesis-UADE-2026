@@ -434,6 +434,7 @@ namespace Rollgeon.Combat.Handoff
             ApplyComboImmunities(enemyData);
             RegisterWeakness(id, enemyData);
             RegisterTraits(id, enemyData);
+            RegisterAura(id, enemyData);
 
             return id;
         }
@@ -448,6 +449,17 @@ namespace Rollgeon.Combat.Handoff
             if (enemyData == null) return;
             if (ServiceLocator.TryGetService<IUnitTraitService>(out var traits) && traits != null)
                 traits.Register(id, enemyData.CreateTraits());
+        }
+
+        /// <summary>
+        /// Registra el aura defensiva declarada en el SO (Guardian). El servicio se crea lazy
+        /// solo si algún enemigo la trae; el aura muere sola con el portador (fuera del grid).
+        /// </summary>
+        private static void RegisterAura(Guid id, EnemyDataSO enemyData)
+        {
+            if (enemyData == null || !enemyData.HasAura) return;
+            Rollgeon.Combat.Auras.EnemyAuraService.ResolveOrCreate()
+                .Register(id, enemyData.AuraRadius, enemyData.AuraFlatReduction);
         }
 
         /// <summary>

@@ -87,8 +87,9 @@ namespace Rollgeon.Editor.Tools.Enemy
             {
                 var fp = so.EffectiveFootprint;
                 issues.Add(new EnemyIssue(EnemyIssueSeverity.Warning, SecFootprint,
-                    $"Tamaño {fp.x}×{fp.y}: se mueve, ataca y se empuja como rectángulo (Fase B), pero el " +
-                    "targeting del jugador, el AoE y las casillas especiales lo tratan como su ancla (Fase C pendiente)."));
+                    $"Tamaño {fp.x}×{fp.y}: movimiento, targeting, AoE y casillas ya son por rectángulo. " +
+                    "Quedan por ancla: Hielo/Portal (física de casillas), las formas de telegraph propias, " +
+                    "y el collider del prefab no escala (verificar el click en Play Mode)."));
                 if (Math.Max(fp.x, fp.y) >= LargeFootprintSide)
                     issues.Add(new EnemyIssue(EnemyIssueSeverity.Warning, SecFootprint,
                         $"Tamaño {fp.x}×{fp.y}: pocas salas tienen lugar; si no cabe cerca del spawn se registra 1×1."));
@@ -156,8 +157,10 @@ namespace Rollgeon.Editor.Tools.Enemy
                 switch (design.Archetype)
                 {
                     case EnemyArchetype.Support:
-                        if (!summary.HasHeal && !summary.HasBuff)
-                            issues.Add(new EnemyIssue(EnemyIssueSeverity.Warning, SecSheet, "Arquetipo = Apoyo pero no cura ni buffea a nadie."));
+                        // El aura defensiva declarada en el SO cuenta como capacidad de apoyo
+                        // aunque el árbol no cure ni buffee (Guardian del GDD).
+                        if (!summary.HasHeal && !summary.HasBuff && !so.HasAura)
+                            issues.Add(new EnemyIssue(EnemyIssueSeverity.Warning, SecSheet, "Arquetipo = Apoyo pero no cura, no buffea ni proyecta aura."));
                         break;
                     case EnemyArchetype.Ranged:
                         if (!summary.HasRangedShot && !summary.KeepsDistance && !summary.HasTelegraph)

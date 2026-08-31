@@ -382,8 +382,8 @@ namespace Rollgeon.Combat.AI.Decisions
 
             var grid = context.Grid;
             if (grid == null) return;
-            if (!grid.TryGetPosition(context.PlayerGuid, out var playerCoord)) return;
-            if (!area.Contains(playerCoord)) return;
+            // OccupiesAny (Fase C): cualquier celda cubierta por la víctima cuenta.
+            if (!grid.OccupiesAny(context.PlayerGuid, area.Contains)) return;
 
             context.DamagePipeline.Resolve(new DamageContext
             {

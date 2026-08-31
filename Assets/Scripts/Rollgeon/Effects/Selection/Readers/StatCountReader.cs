@@ -44,6 +44,7 @@ namespace Rollgeon.Effects.Selection.Readers
                 StatType.Energy       => Get<Energy>(attrs, info.ownerGuid),
                 StatType.Shield       => Get<Shield>(attrs, info.ownerGuid),
                 StatType.HealStrength => Get<HealStrength>(attrs, info.ownerGuid),
+                StatType.AttackRange  => Get<AttackRange>(attrs, info.ownerGuid),
                 _ => Min,
             };
 

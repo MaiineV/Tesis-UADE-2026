@@ -117,8 +117,8 @@ namespace Rollgeon.Combat.AI.Bosses.Croupier
         {
             var grid = context.Grid;
             if (grid == null) return false;
-            if (!grid.TryGetPosition(context.PlayerGuid, out var playerCoord)) return false;
-            if (!area.Contains(playerCoord)) return false;
+            // OccupiesAny (Fase C): cualquier celda cubierta por la víctima cuenta.
+            if (!grid.OccupiesAny(context.PlayerGuid, area.Contains)) return false;
 
             if (context.DamagePipeline != null && area.Damage > 0)
             {

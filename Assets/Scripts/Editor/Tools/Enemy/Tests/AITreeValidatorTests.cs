@@ -2,8 +2,10 @@ using System.Collections.Generic;
 using NUnit.Framework;
 using Rollgeon.Combat.AI.Decisions;
 using Rollgeon.Editor.Tools.Enemy.AITree;
+using Rollgeon.Editor.Tools.Enemy.Templates;
 using Rollgeon.Effects;
 using Rollgeon.Effects.Concretes;
+using Rollgeon.Effects.Readers;
 using Rollgeon.Entities.Behaviors;
 using Rollgeon.PreConditions;
 using Rollgeon.PreConditions.Concretes;
@@ -209,6 +211,114 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         {
             Assert.IsFalse(AITreeValidator.NeedsPlayerRollContext(typeof(EffDealDamage)));
             Assert.IsTrue(AITreeValidator.NeedsPlayerRollContext(typeof(EffMultiplyComboDamage)));
+        }
+
+        // ---- PcGoldCompare: el falso positivo del marker -------------------
+
+        [Test]
+        public void Validate_PcGoldCompareWithConstant_NoWarning()
+        {
+            // Arrange — default: Value = ReadConstantInt. El oro sale de IEconomyService,
+            // no del roll: es 100% usable en enemigos.
+            var ifNode = new AINode_If { Then = new AINode_Wait() };
+            ifNode.Conditions.Add(new PcGoldCompare());
+
+            // Act
+            var issues = AITreeValidator.Validate(AITreeSerializer.Load(ifNode));
+
+            // Assert
+            Assert.IsFalse(Mentions(issues, "PcGoldCompare"),
+                string.Join(" | ", issues.ConvertAll(i => i.Message)));
+        }
+
+        [Test]
+        public void Validate_PcGoldCompareWithEffectReader_IsWarning()
+        {
+            // Arrange — un reader que lee el EffectContext sí depende del roll inexistente.
+            var ifNode = new AINode_If { Then = new AINode_Wait() };
+            ifNode.Conditions.Add(new PcGoldCompare { Value = new ReadEntityStat() });
+
+            // Act + Assert
+            Assert.IsTrue(Mentions(AITreeValidator.Validate(AITreeSerializer.Load(ifNode)), "PcGoldCompare"));
+        }
+
+        [Test]
+        public void PcUnusableInEnemyTree_ClassifiesTheMarkerMinusGold()
+        {
+            Assert.IsTrue(AITreeValidator.PcUnusableInEnemyTree(typeof(PcNoComboThisRoll)));
+            Assert.IsFalse(AITreeValidator.PcUnusableInEnemyTree(typeof(PcGoldCompare)), "el oro no depende del roll");
+            Assert.IsFalse(AITreeValidator.PcUnusableInEnemyTree(typeof(PcTargetInRange)));
+        }
+
+        // ---- ActionName duplicado / claves reservadas ----------------------
+
+        static AINode_Behavior Named(string name)
+        {
+            var node = BehaviorWith(new EffDealDamage());
+            node.Behavior.ActionName = name;
+            return node;
+        }
+
+        [Test]
+        public void Validate_DuplicateActionName_IsWarning()
+        {
+            // Arrange — dos Behaviors DISTINTOS con el mismo nombre: el gate una-acción-por-turno
+            // va por string, el segundo se saltearía en silencio.
+            var root = new AINode_Sequence();
+            root.Children.Add(Named("Ataque"));
+            root.Children.Add(Named("Ataque"));
+
+            // Act
+            var issues = AITreeValidator.Validate(AITreeSerializer.Load(root));
+
+            // Assert
+            Assert.IsFalse(AITreeValidator.HasErrors(issues));
+            Assert.IsTrue(Mentions(issues, "Acción duplicada"));
+        }
+
+        [Test]
+        public void Validate_DistinctActionNames_NoDuplicateWarning()
+        {
+            var root = new AINode_Sequence();
+            root.Children.Add(Named("Ataque"));
+            root.Children.Add(Named("Disparo"));
+
+            Assert.IsFalse(Mentions(AITreeValidator.Validate(AITreeSerializer.Load(root)), "Acción duplicada"));
+        }
+
+        [Test]
+        public void Validate_EnergyBookkeepingDuplicates_NoWarning()
+        {
+            // Arrange — Recargar/Gastar energía se repiten a propósito (el gate los exime).
+            var root = new AINode_Sequence();
+            root.Children.Add(EnemyTreeKit.SpendEnergy());
+            root.Children.Add(EnemyTreeKit.SpendEnergy());
+
+            // Act + Assert
+            Assert.IsFalse(Mentions(AITreeValidator.Validate(AITreeSerializer.Load(root)), "Acción duplicada"));
+        }
+
+        [Test]
+        public void Validate_DuplicateInDetachedSubtree_NoWarning()
+        {
+            // Arrange — el duplicado vive en un subárbol suelto: no ejecuta, no compite.
+            var root = Named("Ataque");
+            var snap = AITreeSerializer.Load(root, new List<AIDecisionNode> { Named("Ataque") });
+
+            // Act + Assert
+            Assert.IsFalse(Mentions(AITreeValidator.Validate(snap), "Acción duplicada"));
+        }
+
+        [Test]
+        public void Validate_ReservedActionName_IsError()
+        {
+            // Arrange — "__move" es la clave del AINode_Move: un Behavior con ese nombre
+            // desactiva el movimiento del turno.
+            var issues = AITreeValidator.Validate(AITreeSerializer.Load(Named(AINode_Move.ActionKey)));
+
+            // Assert
+            Assert.IsTrue(AITreeValidator.HasErrors(issues));
+            Assert.IsTrue(Mentions(issues, "reservada"));
         }
 
         // ---- info ---------------------------------------------------------

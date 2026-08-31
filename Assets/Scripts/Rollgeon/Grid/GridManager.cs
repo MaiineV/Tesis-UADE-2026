@@ -65,6 +65,27 @@ namespace Rollgeon.Grid
             return true;
         }
 
+        public bool OccupiesAny(Guid entityGuid, Func<GridCoord, bool> area)
+        {
+            if (area == null) return false;
+            foreach (var c in OccupiedCells(entityGuid))
+                if (area(c)) return true;
+            return false;
+        }
+
+        public List<Guid> DistinctOccupants(IEnumerable<GridCoord> coords)
+        {
+            var result = new List<Guid>();
+            if (coords == null) return result;
+            var seen = new HashSet<Guid>();
+            foreach (var c in coords)
+            {
+                if (!_coordToEntity.TryGetValue(c, out var occupant) || occupant == Guid.Empty) continue;
+                if (seen.Add(occupant)) result.Add(occupant);
+            }
+            return result;
+        }
+
         public void Register(Guid entityGuid, GridCoord coord)
         {
             if (entityGuid == Guid.Empty)

@@ -44,6 +44,9 @@ namespace Rollgeon.Combat.Pipelines
         /// </remarks>
         public float IncomingMultiplier = 1f;
 
+        /// <summary>Reducción plana entrante aplicada (stage 3b, ej. aura de Guardian); 0 = ninguna.</summary>
+        public int IncomingFlatReduction;
+
         /// <summary>Final damage committed to Health after all stages.</summary>
         public int FinalDamage;
 

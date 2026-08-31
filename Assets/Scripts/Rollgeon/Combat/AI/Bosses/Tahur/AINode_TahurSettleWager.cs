@@ -142,11 +142,12 @@ namespace Rollgeon.Combat.AI.Bosses.Tahur
             wager.ReportOutcome(TahurSettleOutcome.Exact, false);
 
             var grid = context.Grid;
-            if (grid == null || !grid.TryGetPosition(context.PlayerGuid, out var playerCoord))
+            if (grid == null || !grid.TryGetPosition(context.PlayerGuid, out _))
                 return AIResult.Succeeded;
 
             // Cobrar exige estar en La Mesa: armar exacto desde afuera es contención sin cobro.
-            if (!wager.IsOnTable(playerCoord)) return AIResult.Succeeded;
+            // OccupiesAny (Fase C): cualquier celda cubierta por la víctima cuenta.
+            if (!grid.OccupiesAny(context.PlayerGuid, wager.IsOnTable)) return AIResult.Succeeded;
 
             int payout = wager.Chips * PayoutPerChip;
             if (payout > 0 && context.DamagePipeline != null)

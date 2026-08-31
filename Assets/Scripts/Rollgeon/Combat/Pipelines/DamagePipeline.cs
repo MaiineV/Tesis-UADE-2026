@@ -104,6 +104,9 @@ namespace Rollgeon.Combat.Pipelines
             // ── 3. Incoming multiplier ────────────────────────────────────────
             damage = ApplyIncomingMultiplier(ctx, damage);
 
+            // ── 3b. Incoming flat reduction (aura de Guardian) ────────────────
+            damage = ApplyIncomingFlatReduction(ctx, damage);
+
             EventManager.Trigger(EventName.OnDamageIncoming,
                 ctx.SourceId, ctx.TargetId, damage);
 
@@ -251,6 +254,9 @@ namespace Rollgeon.Combat.Pipelines
             // "30" en el desglose y la barra del jefe bajaría 9.
             damage = ApplyIncomingMultiplier(ctx, damage);
 
+            // Stage 3b — reducción plana entrante. Va también acá o el preview miente.
+            damage = ApplyIncomingFlatReduction(ctx, damage);
+
             // Stage 4 — shield absorption (computar, NO escribir Shield ni disparar eventos).
             int absorbed = ComputeShieldAbsorbed(ReadShield(ctx.TargetId), damage);
             if (absorbed > 0)
@@ -325,6 +331,31 @@ namespace Rollgeon.Combat.Pipelines
             ctx.IncomingMultiplier = multiplier;
 
             int reduced = Mathf.RoundToInt(damage * multiplier);
+            return reduced < 1 ? 1 : reduced;
+        }
+
+        /// <summary>
+        /// Stage 3b: descuenta la reducción plana de <see cref="IIncomingFlatDamageReducerProvider"/>
+        /// (aura de Guardian etc.), con el mismo piso de 1 que el multiplicador — un golpe que
+        /// entró positivo nunca muestra 0. Compartido entre Resolve y Preview; el monto usado
+        /// queda en <see cref="DamageContext.IncomingFlatReduction"/>.
+        /// </summary>
+        private static int ApplyIncomingFlatReduction(DamageContext ctx, int damage)
+        {
+            ctx.IncomingFlatReduction = 0;
+            if (damage <= 0) return damage;
+
+            if (!ServiceLocator.TryGetService<IIncomingFlatDamageReducerProvider>(out var provider)
+                || provider == null)
+            {
+                return damage;
+            }
+
+            int reduction = provider.GetFlatReduction(ctx);
+            if (reduction <= 0) return damage;
+
+            ctx.IncomingFlatReduction = reduction;
+            int reduced = damage - reduction;
             return reduced < 1 ? 1 : reduced;
         }
 

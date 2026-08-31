@@ -83,6 +83,60 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         }
 
         [Test]
+        public void Sweeper_IsInstant_WithoutTelegraphNodes()
+        {
+            var so = Apply(EnemyArchetypeTemplates.Find("sweeper"));
+            Assert.AreEqual(AttackTiming.Instant, so.Design.Timing);
+            Assert.IsFalse(EnemyTreeSummary.Build(so).HasTelegraph, "el barrido es instantáneo");
+        }
+
+        [Test]
+        public void Guardian_DeclaresAura_AndPassesSupportRule()
+        {
+            var so = Apply(EnemyArchetypeTemplates.Find("guardian"));
+            Assert.IsTrue(so.HasAura);
+            Assert.AreEqual(2, so.AuraRadius);
+
+            var issues = EnemyDataValidator.Validate(so, new List<EnemyDataSO> { so }, null, null, null);
+            Assert.IsFalse(issues.Exists(i => i.Message.Contains("Apoyo")),
+                "el aura declarada cuenta como capacidad de soporte");
+        }
+
+        [Test]
+        public void Templates_MainAttackGate_ReadsTheSheetRange()
+        {
+            // El gate principal (donde el rango del If coincidía con la ficha) pasa a leer el
+            // atributo AttackRange — la ficha es LA fuente, sin número duplicado. El Charger
+            // queda afuera a propósito: su If(1) es el contacto de la embestida, no su rango 2.
+            var withOwnerRange = new[]
+            {
+                "pursuer", "sweeper", "skirmisher", "kiter", "sniper", "artillery", "mago",
+                "healer", "guardian",
+            };
+
+            foreach (var id in withOwnerRange)
+            {
+                var so = Apply(EnemyArchetypeTemplates.Find(id));
+                Assert.IsTrue(AnyGateUsesOwnerRange(so), id + ": ningún PcTargetInRange lee la ficha");
+            }
+
+            Assert.IsFalse(AnyGateUsesOwnerRange(Apply(EnemyArchetypeTemplates.Find("charger"))),
+                "el If(1) del Charger es contacto de embestida, queda literal");
+        }
+
+        static bool AnyGateUsesOwnerRange(EnemyDataSO so)
+        {
+            foreach (var n in AITreeSerializer.Load(so.AIRoot).Nodes)
+            {
+                if (!(n is Rollgeon.Combat.AI.Decisions.AINode_If i) || i.Conditions == null) continue;
+                foreach (var pc in i.Conditions)
+                    if (pc is Rollgeon.PreConditions.Concretes.PcTargetInRange r && r.UseOwnerAttackRange)
+                        return true;
+            }
+            return false;
+        }
+
+        [Test]
         public void Charger_TelegraphUsesTheTemplateAttack()
         {
             var so = Apply(EnemyArchetypeTemplates.Find("charger"));
