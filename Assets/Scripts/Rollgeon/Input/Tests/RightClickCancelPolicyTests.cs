@@ -20,7 +20,8 @@ namespace Rollgeon.Input.Tests
                 combatHudActive: false,
                 claimedByDiceGrab: false,
                 hasCancellableSelection: true,
-                anyDieSelected: true);
+                anyDieSelected: true,
+                uiSequencePending: false);
 
             // Assert
             Assert.AreEqual(RightClickAction.None, action);
@@ -35,7 +36,8 @@ namespace Rollgeon.Input.Tests
                 combatHudActive: true,
                 claimedByDiceGrab: true,
                 hasCancellableSelection: true,
-                anyDieSelected: true);
+                anyDieSelected: true,
+                uiSequencePending: false);
 
             // Assert
             Assert.AreEqual(RightClickAction.None, action);
@@ -51,7 +53,8 @@ namespace Rollgeon.Input.Tests
                 combatHudActive: true,
                 claimedByDiceGrab: false,
                 hasCancellableSelection: true,
-                anyDieSelected: true);
+                anyDieSelected: true,
+                uiSequencePending: false);
 
             // Assert
             Assert.AreEqual(RightClickAction.CancelSelection, action);
@@ -66,7 +69,8 @@ namespace Rollgeon.Input.Tests
                 combatHudActive: true,
                 claimedByDiceGrab: false,
                 hasCancellableSelection: false,
-                anyDieSelected: true);
+                anyDieSelected: true,
+                uiSequencePending: false);
 
             // Assert
             Assert.AreEqual(RightClickAction.DeselectAllDice, action);
@@ -80,10 +84,58 @@ namespace Rollgeon.Input.Tests
                 combatHudActive: true,
                 claimedByDiceGrab: false,
                 hasCancellableSelection: false,
-                anyDieSelected: false);
+                anyDieSelected: false,
+                uiSequencePending: false);
 
             // Assert
             Assert.AreEqual(RightClickAction.None, action);
+        }
+
+        [Test]
+        public void should_do_nothing_when_ui_sequence_is_pending()
+        {
+            // Arrange + Act — BUG-070: rotar la cámara (mismo botón derecho) durante
+            // la suma N×M o el outro de dados no debe cancelar la fase del chain…
+            var action = RightClickCancelPolicy.Decide(
+                combatHudActive: true,
+                claimedByDiceGrab: false,
+                hasCancellableSelection: true,
+                anyDieSelected: false,
+                uiSequencePending: true);
+
+            // Assert
+            Assert.AreEqual(RightClickAction.None, action);
+        }
+
+        [Test]
+        public void should_not_deselect_dice_when_ui_sequence_is_pending()
+        {
+            // Arrange + Act — …ni borrar los "+N"/holds en plena animación de la suma.
+            var action = RightClickCancelPolicy.Decide(
+                combatHudActive: true,
+                claimedByDiceGrab: false,
+                hasCancellableSelection: false,
+                anyDieSelected: true,
+                uiSequencePending: true);
+
+            // Assert
+            Assert.AreEqual(RightClickAction.None, action);
+        }
+
+        [Test]
+        public void should_still_cancel_selection_when_no_sequence_is_pending()
+        {
+            // Arrange + Act — regresión: fuera de la ventana de la secuencia el
+            // cancel legítimo del targeting sigue vivo.
+            var action = RightClickCancelPolicy.Decide(
+                combatHudActive: true,
+                claimedByDiceGrab: false,
+                hasCancellableSelection: true,
+                anyDieSelected: false,
+                uiSequencePending: false);
+
+            // Assert
+            Assert.AreEqual(RightClickAction.CancelSelection, action);
         }
     }
 }

@@ -44,7 +44,7 @@ namespace Rollgeon.Combat.Rolls
 
         private int _current;
         private bool _inCombat;
-        private int _perTurnGrantBonus;
+        private int _rollPoolBonus;
 
         /// <summary>Mismo slot que tenía EnergyService: antes de TurnManager (60).</summary>
         public int Priority => 50;
@@ -178,32 +178,40 @@ namespace Rollgeon.Combat.Rolls
 
         public int GetMax(Guid entityId)
         {
-            return _ruleset != null ? _ruleset.RollPool.RollPoolCap : 0;
+            if (_ruleset == null) return 0;
+            int cap = _ruleset.RollPool.RollPoolCap;
+            // BUG-85: el bonus de los boss rewards sube el TECHO del pool (solo del
+            // player) — antes solo alimentaba el grant por turno y era invisible.
+            return IsPlayer(entityId) ? cap + _rollPoolBonus : cap;
         }
 
         public int GetRollsPerTurn(Guid entityId)
         {
+            // BUG-85: el bonus ya no infla el grant por turno — su efecto es máximo
+            // más alto + más rolls al arrancar el combate (visible al instante).
             int baseGrant = _ruleset != null ? _ruleset.RollPool.RollsPerTurn : 0;
-            int total = baseGrant + _perTurnGrantBonus;
-            return total > 0 ? total : 0;
+            return baseGrant > 0 ? baseGrant : 0;
         }
 
-        public void AddPerTurnGrantBonus(int amount)
+        public void AddRollPoolBonus(int amount)
         {
-            _perTurnGrantBonus += amount;
+            _rollPoolBonus += amount;
+            // El claim ocurre en exploración: refrescar ya el HUD con el máximo
+            // nuevo (y que el próximo combate arranque mostrando el cambio).
+            TriggerRollsChanged();
         }
 
         /// <summary>
-        /// Bonus por turno acumulado (rewards "+1 Roll por turno"). Expuesto para el
-        /// snapshot de run (<c>RollPoolSaveable</c>) — no está en la interfaz porque
-        /// solo la persistencia lo necesita.
+        /// Bonus de pool acumulado (rewards "Rolls +1"). Expuesto para el snapshot
+        /// de run (<c>RollPoolSaveable</c>) — no está en la interfaz porque solo la
+        /// persistencia lo necesita.
         /// </summary>
-        public int PerTurnGrantBonus => _perTurnGrantBonus;
+        public int RollPoolBonus => _rollPoolBonus;
 
         /// <summary>Restaura el bonus desde un save de run (pisa, no suma).</summary>
-        public void RestorePerTurnGrantBonus(int value)
+        public void RestoreRollPoolBonus(int value)
         {
-            _perTurnGrantBonus = value;
+            _rollPoolBonus = value;
         }
 
         public void RestoreCurrent(Guid entityId, int value)
@@ -229,7 +237,7 @@ namespace Rollgeon.Combat.Rolls
             _playerId = Guid.Empty;
             _current = 0;
             _inCombat = false;
-            _perTurnGrantBonus = 0;
+            _rollPoolBonus = 0;
         }
 
         /// <summary>
@@ -242,7 +250,9 @@ namespace Rollgeon.Combat.Rolls
             if (_playerId == Guid.Empty || _ruleset == null) return;
 
             _inCombat = true;
-            _current = Math.Min(_ruleset.RollPool.RollsAtCombatStart, GetMax(_playerId));
+            // BUG-85: el bonus de los rewards también suma al arranque, así el efecto
+            // se ve en el primer turno de cada combate (clampeado al máximo nuevo).
+            _current = Math.Min(_ruleset.RollPool.RollsAtCombatStart + _rollPoolBonus, GetMax(_playerId));
             TriggerRollsChanged();
         }
 

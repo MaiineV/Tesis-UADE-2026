@@ -127,6 +127,69 @@ namespace Rollgeon.Effects.Tests
             Assert.AreEqual(3, MaxX(settings.ResolveValidTiles(new GridCoord(0, 0), _owner)));
         }
 
+        // ---------------- Bonus MoveRange (reward "Movimiento+", BUG-85) --------
+
+        private void RegisterMoveRange(int bonus)
+        {
+            var attrs = new Rollgeon.Attributes.AttributesManager();
+            var a = new Rollgeon.Attributes.ModifiableAttributes();
+            a.SetAttribute<Rollgeon.Attributes.Stats.MoveRange>(
+                new Rollgeon.Attributes.Stats.MoveRange(bonus));
+            attrs.Register(_owner, a);
+            ServiceLocator.AddService<Rollgeon.Attributes.AttributesManager>(attrs, ServiceScope.Global);
+        }
+
+        [Test]
+        public void should_add_move_range_bonus_to_rolled_face_when_range_from_movement_die()
+        {
+            // Arrange — cara 2 + bonus 1 = rango 3.
+            ServiceLocator.AddService<IMovementDieService>(_die, ServiceScope.Global);
+            _die.Active[_owner] = 2;
+            RegisterMoveRange(1);
+            var settings = Movement(range: 4, fromDie: true);
+
+            // Act + Assert
+            Assert.AreEqual(3, settings.ResolveEffectiveRange(_owner));
+            Assert.AreEqual(3, MaxX(settings.ResolveValidTiles(new GridCoord(0, 0), _owner)));
+        }
+
+        [Test]
+        public void should_add_move_range_bonus_to_max_face_fallback()
+        {
+            // Arrange — sin tirada: potencial = MaxFace(4) + bonus 1, para que el
+            // gate del botón y el hover preview queden coherentes con el rango real.
+            ServiceLocator.AddService<IMovementDieService>(_die, ServiceScope.Global);
+            RegisterMoveRange(1);
+            var settings = Movement(range: 2, fromDie: true);
+
+            // Act + Assert
+            Assert.AreEqual(5, settings.ResolveEffectiveRange(_owner));
+        }
+
+        [Test]
+        public void should_ignore_move_range_when_flag_off()
+        {
+            // Arrange — el bonus es exclusivo del dado de Movimiento: un selection
+            // normal (ataque, skill) no debe agrandarse.
+            RegisterMoveRange(3);
+            var settings = Movement(range: 4, fromDie: false);
+
+            // Act + Assert
+            Assert.AreEqual(4, settings.ResolveEffectiveRange(_owner));
+        }
+
+        [Test]
+        public void should_degrade_to_zero_bonus_without_attributes_manager()
+        {
+            // Arrange — sin AttributesManager (tests, enemigos): bonus 0, sin logs.
+            ServiceLocator.AddService<IMovementDieService>(_die, ServiceScope.Global);
+            _die.Active[_owner] = 2;
+            var settings = Movement(range: 4, fromDie: true);
+
+            // Act + Assert
+            Assert.AreEqual(2, settings.ResolveEffectiveRange(_owner));
+        }
+
         private sealed class FakeMovementDie : IMovementDieService
         {
             public readonly Dictionary<Guid, int> Active = new Dictionary<Guid, int>();

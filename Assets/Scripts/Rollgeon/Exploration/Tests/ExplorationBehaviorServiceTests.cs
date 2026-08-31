@@ -305,6 +305,65 @@ namespace Rollgeon.Exploration.Tests
                 "El guard debe retornar antes del cleanup normal de OnSelectionCompleted.");
         }
 
+        // -------------------------------------------------------------------------
+        // TryCancelPendingWalk (hotkey X): el camino feliz (pawn caminando de verdad)
+        // es PlayMode-only — RequestStopAtStepEnd exige Application.isPlaying y una
+        // corutina viva. Acá cubrimos los guards EditMode-testeables.
+        // -------------------------------------------------------------------------
+
+        [Test]
+        public void TryCancelPendingWalk_WhenInactive_ReturnsFalse()
+        {
+            // Arrange — sin OnPhaseEnter el service está Inactive.
+
+            // Act + Assert
+            Assert.IsFalse(_service.TryCancelPendingWalk());
+        }
+
+        [Test]
+        public void TryCancelPendingWalk_WithoutVisualService_ReturnsFalse()
+        {
+            // Arrange — fase activa pero sin IEntityVisualService registrado.
+            EventManager.Trigger(EventName.OnPhaseEnter, GamePhase.Exploration);
+
+            // Act + Assert
+            Assert.IsFalse(_service.TryCancelPendingWalk());
+        }
+
+        [Test]
+        public void TryCancelPendingWalk_PawnNotMoving_ReturnsFalseWithoutTouchingState()
+        {
+            // Arrange — hay pawn registrado pero quieto: no hay caminata que cancelar
+            // y el cancel NO debe soltar latches ni matar corutinas de llegada.
+            EventManager.Trigger(EventName.OnPhaseEnter, GamePhase.Exploration);
+            var pawnGo = new GameObject("pawn");
+            try
+            {
+                var pawn = pawnGo.AddComponent<Rollgeon.Entities.Visuals.EntityPawn>();
+                pawn.Bind(_playerGuid, Rollgeon.Entities.Visuals.EntityPawn.PawnKind.Hero);
+                var visuals = new StubVisualService();
+                visuals.Pawns[_playerGuid] = pawn;
+                ServiceLocator.AddService<Rollgeon.Entities.Visuals.IEntityVisualService>(
+                    visuals, ServiceScope.Global);
+                SetField(_service, "_crossingDoor", true);
+                int genBefore = (int)GetField(_service, "_walkGeneration");
+
+                // Act
+                bool result = _service.TryCancelPendingWalk();
+
+                // Assert
+                Assert.IsFalse(result);
+                Assert.IsTrue((bool)GetField(_service, "_crossingDoor"),
+                    "Un cancel fallido no debe soltar el latch de cruce.");
+                Assert.AreEqual(genBefore, (int)GetField(_service, "_walkGeneration"),
+                    "Un cancel fallido no debe invalidar corutinas de llegada en vuelo.");
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(pawnGo);
+            }
+        }
+
         private HeroActionBehavior AddExplorationMovement()
         {
             var move = new HeroActionBehavior
@@ -447,6 +506,22 @@ namespace Rollgeon.Exploration.Tests
                 ApplyCalls++;
                 return true;
             }
+        }
+
+        // Fake mínimo de IEntityVisualService — solo TryGetPawn responde de verdad.
+        private class StubVisualService : Rollgeon.Entities.Visuals.IEntityVisualService
+        {
+            public readonly Dictionary<Guid, Rollgeon.Entities.Visuals.EntityPawn> Pawns = new();
+
+            public Rollgeon.Entities.Visuals.EntityPawn SpawnHero(Guid guid, ClassHeroSO hero, GridCoord coord) => null;
+            public Rollgeon.Entities.Visuals.EntityPawn SpawnEnemy(Guid guid, Rollgeon.Entities.EnemyDataSO data, GridCoord coord) => null;
+            public Rollgeon.Entities.Visuals.EntityPawn SpawnProp(Guid guid, GameObject prefab, GridCoord coord) => null;
+            public void Despawn(Guid guid) { }
+            public void DespawnAll() { }
+            public bool TryGetPawn(Guid guid, out Rollgeon.Entities.Visuals.EntityPawn pawn)
+                => Pawns.TryGetValue(guid, out pawn) && pawn != null;
+            public System.Collections.IEnumerator WaitForMoveComplete(Guid entityId) => null;
+            public Vector3? TryGetWorldPosition(Guid entityId) => null;
         }
 
         // Fake mínimo de IDungeonService para los tests de cruce de puerta — solo

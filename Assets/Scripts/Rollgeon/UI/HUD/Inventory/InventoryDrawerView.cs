@@ -31,8 +31,21 @@ namespace Rollgeon.UI.HUD.Inventory
         [Title("Textos")]
         [SerializeField] private TextMeshProUGUI _titleLabel;
 
+        // Entrada de display: items comprados y boss rewards (BUG-85) comparten celda.
+        private readonly struct DisplayEntry
+        {
+            public readonly Sprite Icon;
+            public readonly System.Func<string> Tooltip;
+
+            public DisplayEntry(Sprite icon, System.Func<string> tooltip)
+            {
+                Icon = icon;
+                Tooltip = tooltip;
+            }
+        }
+
         private readonly List<InventoryItemSlotView> _slots = new();
-        private readonly List<ItemSO> _items = new();
+        private readonly List<DisplayEntry> _items = new();
 
         private SlidingDrawer _drawer;
 
@@ -78,7 +91,8 @@ namespace Rollgeon.UI.HUD.Inventory
 
                 var rt = (RectTransform)_slots[i].transform;
                 rt.anchoredPosition = InventoryDiamondLayout.CellPosition(i);
-                _slots[i].Bind(i < _items.Count ? _items[i] : null);
+                if (i < _items.Count) _slots[i].Bind(_items[i].Icon, _items[i].Tooltip);
+                else _slots[i].Bind(null, null);
             }
 
             // Solo el alto: la X la maneja SlidingDrawer y el ancho es fijo.
@@ -90,16 +104,26 @@ namespace Rollgeon.UI.HUD.Inventory
             }
         }
 
-        // El service tiene scope Run: en escenas sin run no está registrado y el drawer
-        // se muestra vacío en vez de romper.
+        // Los services tienen scope Run/Global: en escenas sin run no están registrados
+        // y el drawer se muestra vacío en vez de romper.
         private void CollectItems()
         {
             _items.Clear();
-            if (!ServiceLocator.TryGetService<IInventoryService>(out var inv) || inv == null)
-                return;
 
-            AppendItems(inv.PassiveItems);
-            AppendItems(inv.ActiveItems);
+            if (ServiceLocator.TryGetService<IInventoryService>(out var inv) && inv != null)
+            {
+                AppendItems(inv.PassiveItems);
+                AppendItems(inv.ActiveItems);
+            }
+
+            // BUG-85: los boss rewards reclamados también se listan — no entran al
+            // InventoryService (no son ItemSO) pero el jugador tiene que poder ver
+            // qué mejoras de personaje lleva la run.
+            if (ServiceLocator.TryGetService<Rollgeon.Upgrades.Character.ICharacterRewardService>(
+                    out var rewards) && rewards != null)
+            {
+                AppendRewards(rewards.ClaimedRewards);
+            }
         }
 
         private void AppendItems(IReadOnlyList<InventorySlot> slots)
@@ -108,8 +132,37 @@ namespace Rollgeon.UI.HUD.Inventory
             for (int i = 0; i < slots.Count; i++)
             {
                 var item = slots[i]?.Item;
-                if (item != null) _items.Add(item);
+                if (item == null) continue;
+                var captured = item;
+                _items.Add(new DisplayEntry(item.Icon, () => BuildItemTooltip(captured)));
             }
+        }
+
+        private void AppendRewards(IReadOnlyList<Rollgeon.Upgrades.Character.CharacterRewardSO> claimed)
+        {
+            if (claimed == null) return;
+            for (int i = 0; i < claimed.Count; i++)
+            {
+                var reward = claimed[i];
+                if (reward == null) continue;
+                _items.Add(new DisplayEntry(reward.Icon, () => BuildRewardTooltip(reward)));
+            }
+        }
+
+        private static string BuildItemTooltip(ItemSO item)
+        {
+            string fallbackName = !string.IsNullOrEmpty(item.DisplayName) ? item.DisplayName : item.ItemId;
+            string name = LocalizedContent.Name(item.ItemId, fallbackName);
+            string body = LocalizedContent.Description(item.ItemId, item.Description ?? string.Empty);
+            return string.IsNullOrEmpty(body) ? $"<b>{name}</b>" : $"<b>{name}</b>\n{body}";
+        }
+
+        private static string BuildRewardTooltip(Rollgeon.Upgrades.Character.CharacterRewardSO reward)
+        {
+            string fallbackName = !string.IsNullOrEmpty(reward.DisplayName) ? reward.DisplayName : reward.UpgradeId;
+            string name = LocalizedContent.Name(reward.UpgradeId, fallbackName);
+            string body = LocalizedContent.Description(reward.UpgradeId, reward.Description ?? string.Empty);
+            return string.IsNullOrEmpty(body) ? $"<b>{name}</b>" : $"<b>{name}</b>\n{body}";
         }
 
         // El pool se reusa y solo se apaga: el panel se repuebla en cada apertura.

@@ -20,5 +20,6 @@ namespace Rollgeon.Input
         ForceDoor,
         Defense,
         ToggleMinimap,
+        CancelMove,
     }
 }

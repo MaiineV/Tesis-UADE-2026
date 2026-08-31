@@ -213,7 +213,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 5531895623681
-    m_Localized: +1 Roll per turn
+    m_Localized: Roll pool +1
     m_Metadata:
       m_Items: []
   - m_Id: 5531895623682
@@ -1007,6 +1007,23 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 14364254620450824
     m_Localized: Your offensive combos deal bonus damage while you stay here.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17185034194485248
+    m_Localized: '+1 to the roll pool: raises the max and the rolls you start each
+      combat with.'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17185034236428288
+    m_Localized: Max Health +25
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17185034236428289
+    m_Localized: Movement +1
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17185034236428290
+    m_Localized: +1 cell of range on the Movement die in combat.
     m_Metadata:
       m_Items: []
   references:
