@@ -3,8 +3,10 @@ using System.Collections.Generic;
 using Rollgeon.Combat.AI.Decisions;
 using Rollgeon.Effects;
 using Rollgeon.Effects.Concretes;
+using Rollgeon.Effects.Readers;
 using Rollgeon.Entities.Behaviors;
 using Rollgeon.PreConditions;
+using Rollgeon.PreConditions.Concretes;
 
 namespace Rollgeon.Editor.Tools.Enemy.AITree
 {
@@ -138,7 +140,63 @@ namespace Rollgeon.Editor.Tools.Enemy.AITree
                 }
             }
 
+            CheckDuplicateActionNames(snap, issues);
+
             return issues;
+        }
+
+        /// <summary>
+        /// El gate una-acción-por-turno (<c>AINode_Behavior</c>) va por <c>BehaviorName</c>: dos
+        /// Behaviors distintos con el mismo nombre colisionan y el segundo se saltea EN SILENCIO
+        /// (sin log). Solo miramos lo alcanzable desde Root — los subárboles sueltos no ejecutan.
+        /// Reset/Gastar energía están exentos (el gate también los exime). Un nombre igual a una
+        /// clave reservada del movimiento es Error: desactivaría el Move/KeepDistance del turno.
+        /// </summary>
+        static void CheckDuplicateActionNames(GraphSnapshot snap, List<ValidationIssue> issues)
+        {
+            if (snap.Root == null) return;
+
+            var reachable = new HashSet<AIDecisionNode>();
+            var queue = new Queue<AIDecisionNode>();
+            reachable.Add(snap.Root);
+            queue.Enqueue(snap.Root);
+            while (queue.Count > 0)
+            {
+                var cur = queue.Dequeue();
+                foreach (var e in snap.Edges)
+                {
+                    if (e.Parent != cur || e.Child == null || reachable.Contains(e.Child)) continue;
+                    reachable.Add(e.Child);
+                    queue.Enqueue(e.Child);
+                }
+            }
+
+            var seen = new HashSet<string>(StringComparer.Ordinal);
+            foreach (var n in snap.Nodes)
+            {
+                if (!(n is AINode_Behavior b) || b.Behavior == null) continue;
+                if (!reachable.Contains(n)) continue;
+
+                var name = b.Behavior.BehaviorName;
+                if (string.IsNullOrEmpty(name)) continue;
+
+                if (name == AINode_Move.ActionKey || name == AINode_KeepDistance.ActionKey)
+                {
+                    issues.Add(new ValidationIssue(n,
+                        $"'{name}' es una clave reservada del movimiento: un Behavior con ese nombre desactiva el Move/KeepDistance del turno.",
+                        IssueSeverity.Error));
+                    continue;
+                }
+
+                if (b.Behavior.IsEnergyBookkeeping) continue;
+
+                if (!seen.Add(name))
+                {
+                    issues.Add(new ValidationIssue(n,
+                        $"Acción duplicada: ya hay otro Behavior '{name}' alcanzable en el árbol. El gate una-acción-por-turno va por nombre, así que este nodo se saltearía en silencio — renombralo.",
+                        IssueSeverity.Warning));
+                }
+            }
         }
 
         // ---- Eff / PC ------------------------------------------------------
@@ -190,12 +248,37 @@ namespace Rollgeon.Editor.Tools.Enemy.AITree
             foreach (var pc in conditions)
             {
                 if (pc == null) continue;
-                if (pc is IReadsTriggerEffect)
+                if (pc is PcGoldCompare gold)
+                {
+                    // Falso positivo del marker: el oro sale de IEconomyService, no del roll.
+                    // Solo el reader puede depender del effect — con constante (o sin reader)
+                    // la PC es 100% usable en árboles enemigos.
+                    if (gold.Value != null && !(gold.Value is ReadConstantInt))
+                        issues.Add(new ValidationIssue(owner,
+                            "PcGoldCompare con un reader que lee el effect: en un árbol enemigo el effect es null y el reader devuelve 0. Usá ReadConstantInt.",
+                            IssueSeverity.Warning));
+                }
+                else if (pc is IReadsTriggerEffect)
+                {
                     issues.Add(new ValidationIssue(owner,
                         $"{pc.GetType().Name} lee el roll/combo del jugador: en un árbol enemigo nunca hay. No va a evaluar como esperás.",
                         IssueSeverity.Warning));
+                }
                 if (pc is PCComposite composite) CheckConditions(owner, composite.Children, issues);
             }
+        }
+
+        /// <summary>
+        /// PCs que en un árbol enemigo nunca pueden evaluar con sentido (leen el roll/combo del
+        /// jugador vía el marker <see cref="IReadsTriggerEffect"/>). <see cref="PcGoldCompare"/>
+        /// se exime: el oro sale de <c>IEconomyService</c> y con constante funciona perfecto.
+        /// Consumido por el picker del árbol enemigo para ni ofrecerlas.
+        /// </summary>
+        public static bool PcUnusableInEnemyTree(Type pcType)
+        {
+            if (pcType == null) return false;
+            if (pcType == typeof(PcGoldCompare)) return false;
+            return typeof(IReadsTriggerEffect).IsAssignableFrom(pcType);
         }
 
         // ---- helpers -------------------------------------------------------
