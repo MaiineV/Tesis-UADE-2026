@@ -45,7 +45,7 @@ namespace Rollgeon.Editor.Tools.Enemy
         string[] _archetypeFilters;
         Vector2 _leftScroll;
 
-        [MenuItem("Tools/Enemy Editor")]
+        [MenuItem("Tools/Rollgeon/Editor de enemigos")]
         static void Open()
         {
             var w = GetWindow<EnemyEditorWindow>("Editor de enemigos");
