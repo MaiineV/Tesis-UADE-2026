@@ -9,7 +9,9 @@ namespace Rollgeon.Editor.Tools.Item
     /// Authoring window for <see cref="ItemSO"/> — closes the gap TECHNICAL.md §26.1 promised
     /// ("un diseñador crea … un item … sin escribir una línea de C#") and §26.2-26.11 never filled.
     /// </summary>
-    public sealed class ItemEditorWindow : BlockEditorWindow<ItemSO>
+    // `partial` para que cada tab del host viva en su propio archivo: las tabs se descubren por
+    // [BlockEditorTab] y no hay registro central, así que dos features no se pisan al agregarse.
+    public sealed partial class ItemEditorWindow : BlockEditorWindow<ItemSO>
     {
         [MenuItem("Tools/Item Editor")]
         static void Open()
@@ -20,6 +22,49 @@ namespace Rollgeon.Editor.Tools.Item
 
         protected override string DefaultFolder => "Assets/Rollgeon/Items";
         protected override string NewAssetName => "Item_New";
+
+        // Cada superficie del host (lista, métricas, familia) vive en su propio parcial y necesita
+        // recalcular lo que derive de la lista de assets. Como `OnAssetsRefreshed` se puede
+        // sobrescribir una sola vez por clase, el override vive acá y reparte a métodos parciales:
+        // cada archivo implementa el suyo sin conocer a los demás, y el que no lo necesite
+        // simplemente no lo implementa (el compilador borra la llamada).
+        partial void OnListAssetsRefreshed();
+        partial void OnMetricsAssetsRefreshed();
+        partial void OnFamilyAssetsRefreshed();
+        partial void OnPriceAssetsRefreshed();
+        partial void OnTriggerAssetsRefreshed();
+        partial void OnLocalizationAssetsRefreshed();
+
+        // Mismo criterio que OnAssetsRefreshed: OnEnable/OnDisable se pueden sobrescribir una sola
+        // vez por clase, asi que el override vive aca y reparte. Antes el de teardown lo tenia la
+        // tab de familia, que quedaba dueña del cierre de features que no son suyas.
+        partial void OnLocalizationEnable();
+        partial void OnFamilyDisable();
+        partial void OnLocalizationDisable();
+
+        protected override void OnEnable()
+        {
+            base.OnEnable();
+            OnLocalizationEnable();
+        }
+
+        protected override void OnDisable()
+        {
+            OnFamilyDisable();
+            OnLocalizationDisable();
+            base.OnDisable();
+        }
+
+        protected override void OnAssetsRefreshed()
+        {
+            base.OnAssetsRefreshed();
+            OnListAssetsRefreshed();
+            OnMetricsAssetsRefreshed();
+            OnFamilyAssetsRefreshed();
+            OnPriceAssetsRefreshed();
+            OnTriggerAssetsRefreshed();
+            OnLocalizationAssetsRefreshed();
+        }
 
         protected override string LabelOf(ItemSO asset)
         {
@@ -63,28 +108,22 @@ namespace Rollgeon.Editor.Tools.Item
         /// dev console all resolve through <c>ItemCatalogSO.GetById</c>. Cheap to forget, and the
         /// symptom (item silently never appears) points nowhere near the cause.
         /// </summary>
-        static void WarnIfNotInCatalog(ItemSO asset)
+        void WarnIfNotInCatalog(ItemSO asset)
         {
             if (string.IsNullOrEmpty(asset.ItemId)) return;
 
-            var ids = ItemCatalogSO.GetEditorAllIds();
-            if (ids == null) return;
-
-            foreach (var id in ids)
-                if (id == asset.ItemId) return;
+            // Catalog es la referencia cacheada del shell — ver su remark: buscarla costaba ~13 ms
+            // por frame porque esto se dibuja en cada repaint del panel.
+            var catalog = Catalog;
+            if (catalog == null) return;
+            if (catalog.Contains(asset.ItemId)) return;
 
             EditorGUILayout.HelpBox(
                 $"'{asset.ItemId}' is not registered in ItemCatalog — the shop, EffAddItemToInventory " +
                 "and `giveitem` all resolve through the catalog, so this item can never be granted.",
                 MessageType.Warning);
 
-            if (GUILayout.Button("Ping ItemCatalog"))
-            {
-                var guids = AssetDatabase.FindAssets("t:ItemCatalogSO");
-                if (guids.Length > 0)
-                    EditorGUIUtility.PingObject(
-                        AssetDatabase.LoadAssetAtPath<ItemCatalogSO>(AssetDatabase.GUIDToAssetPath(guids[0])));
-            }
+            if (GUILayout.Button("Ping ItemCatalog")) EditorGUIUtility.PingObject(catalog);
         }
     }
 }

@@ -7778,6 +7778,41 @@ public class ItemCatalogSO : SerializedScriptableObject
 
 Pre-cargado en `ServiceBootstrapSO` (§1.1.1). Alimenta los `[ValueDropdown]` de todo SO que referencie un ítem.
 
+### 18.6 Deuda conocida — el inventario lleva las copias por `itemId`, no por copia
+
+El GDD de pasivas exige duplicados explícitamente: *"la obtención de ítems pasivos es
+infinita: no hay tope de copias en la run"* y *"Stacking: aditivo entre tiers y copias"*.
+`AddItem` los acepta — no hay guarda de duplicado para pasivos — pero los dos registros
+de bookkeeping del `InventoryService` están keyeados por `itemId`, así que **dos copias del
+mismo ítem son indistinguibles entre sí**.
+
+Dos síntomas, ambos silenciosos:
+
+1. **Perder una copia apaga las dos.** `UnbindPassiveHooks`
+   (`Assets/Scripts/Rollgeon/Items/InventoryService.cs:351`) desengancha *todos* los handlers
+   cuyo `itemId` matchee. Sacar una de dos copias deja a la otra en el inventario pero sin
+   suscripciones: el ítem sigue en la UI y ya no dispara. Aplica a cualquier pasivo con hooks.
+
+2. **Un modificador persistente queda aplicado para siempre.**
+   `_appliedModifierIds[item.ItemId] = modIds` (`InventoryService.cs:424`) **asigna**, no
+   acumula. La segunda copia pisa los `ModifierId` de la primera; al removerla se quitan los
+   de la segunda y los de la primera quedan sin dueño, imposibles de encontrar y de remover.
+   Hoy alcanza a `Item_BotasLigeras` y `Item_CorazaReforzada` — los únicos dos assets con
+   `PersistentModifiers` no vacíos.
+
+Lo que **sí** stackea bien es el bono de daño de combo: `GetComboBonusFor`
+(`InventoryService.cs:215`) recorre la lista de slots, no un diccionario, así que cada copia
+suma por separado.
+
+**Arreglo previsto.** Llevar ambos registros por *copia* (un handle por slot del inventario)
+en vez de por id, y que bind/unbind operen sobre una copia sola. Está contenido en
+`InventoryService`: el formato de save ya admite duplicados — `InventorySnapshot.PassiveItemIds`
+es una `List<string>` y el mismo id puede figurar dos veces — así que no hay migración.
+
+**No confundir con el estado con memoria por copia.** Contadores tipo Vértigo o Furia
+Contenida (§GDD pasivas) necesitan además un objeto de instancia en runtime que se persista;
+eso es un problema aparte y más grande. Esta deuda es solo el bookkeeping.
+
 **Cross‑ref §18.** §1.1.1 (bootstrap registra `ItemCatalogSO`), §3 (modificadores persistentes de pasivos), §8 (effects de activación y hooks), §14 (unlocks de ítems `ItemUnlockSO`), §15 (save via `InventoryState`), §17.F (shop vende ítems via `EffAddItemToInventory`).
 
 ---

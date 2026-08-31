@@ -11,15 +11,25 @@ namespace Rollgeon.UI.ChestReveal
         public const string RarityUncommon = "chest.rarity.uncommon";
         public const string RarityRare = "chest.rarity.rare";
         public const string RarityLegendary = "chest.rarity.legendary";
+        public const string RarityGod = "chest.rarity.god";
 
+        /// <summary>
+        /// Switch exhaustivo A PROPÓSITO: el <c>default:</c> devolvía la key de
+        /// Common para cualquier rareza no listada — con God agregado, el reveal de
+        /// un cofre Dios mostraba la etiqueta "Common" en el panel, sin un solo error.
+        /// </summary>
         public static string RarityKey(Items.ItemRarity rarity)
         {
             switch (rarity)
             {
+                case Items.ItemRarity.Common: return RarityCommon;
                 case Items.ItemRarity.Uncommon: return RarityUncommon;
                 case Items.ItemRarity.Rare: return RarityRare;
                 case Items.ItemRarity.Legendary: return RarityLegendary;
-                default: return RarityCommon;
+                case Items.ItemRarity.God: return RarityGod;
+                default:
+                    throw new System.ArgumentOutOfRangeException(
+                        nameof(rarity), rarity, "ItemRarity sin key de localización en ChestRevealTextKeys.");
             }
         }
     }

@@ -65,6 +65,7 @@ namespace Rollgeon.Chests.Tests
         {
             // Arrange — piso 2 con 100% Legendary.
             var config = NewConfig();
+            AddStandardTiers(config);
             config.TierWeightsByFloor.Add(new ChestFloorTierWeights
             {
                 FloorNumber = 2,
@@ -87,6 +88,7 @@ namespace Rollgeon.Chests.Tests
         {
             // Arrange — piso 1: solo Common; piso 3+: solo Rare. En piso 5 aplica la de 3.
             var config = NewConfig();
+            AddStandardTiers(config);
             config.TierWeightsByFloor.Add(new ChestFloorTierWeights { FloorNumber = 1, Common = 1f });
             config.TierWeightsByFloor.Add(new ChestFloorTierWeights
             {
@@ -108,14 +110,47 @@ namespace Rollgeon.Chests.Tests
         {
             // Arrange
             var config = NewConfig();
+            AddStandardTiers(config);
             var rng = new System.Random(2024);
             var seen = new HashSet<ItemRarity>();
 
             // Act
             for (int i = 0; i < 200; i++) seen.Add(config.RollTier(rng, floorNumber: 1));
 
-            // Assert — uniforme sobre 4 tiers: con 200 muestras salen todos.
+            // Assert — uniforme sobre los 4 tiers configurados: con 200 muestras salen todos.
             Assert.AreEqual(4, seen.Count);
+        }
+
+        [Test]
+        public void RollTier_ShouldNeverPickGod_WhenNoTierDefConfigured()
+        {
+            // Arrange — regresión del bug de item-editor-spec.md §5: agregar God al
+            // enum NO debe hacer que un cofre sin tier Dios configurado (Tiers ni
+            // TierWeightsByFloor) pueda salir sorteado como Dios — antes caía en el
+            // default: de WeightFor y ahora, además, ConfiguredTierValues() ni
+            // siquiera lo ofrece como candidato.
+            var config = NewConfig();
+            AddStandardTiers(config); // Common/Uncommon/Rare/Legendary — sin God, a propósito.
+            var rng = new System.Random(99);
+
+            // Act + Assert — sin TierWeightsByFloor ⇒ ejercita el fallback uniforme,
+            // el camino que rompía antes de acotar el universo a Tiers.
+            for (int i = 0; i < 500; i++)
+            {
+                Assert.AreNotEqual(ItemRarity.God, config.RollTier(rng, floorNumber: 1));
+            }
+        }
+
+        [Test]
+        public void WeightFor_God_ShouldNotFallBackToCommon()
+        {
+            // Arrange — el bug concreto: antes, cualquier ItemRarity no listado en el
+            // switch (God incluido) devolvía el peso de Common en silencio.
+            var weights = new ChestFloorTierWeights { Common = 5f, God = 0f };
+
+            // Act + Assert
+            Assert.AreEqual(0f, weights.WeightFor(ItemRarity.God));
+            Assert.AreNotEqual(weights.WeightFor(ItemRarity.Common), weights.WeightFor(ItemRarity.God));
         }
 
         [Test]
@@ -138,6 +173,18 @@ namespace Rollgeon.Chests.Tests
             var config = ScriptableObject.CreateInstance<ChestConfigSO>();
             _assets.Add(config);
             return config;
+        }
+
+        // Espeja el seed real de ChestSetupTools.CreateAssets(): 4 tiers, sin God
+        // (item-editor-spec.md §5.3 — el tier Dios no está confirmado como
+        // mecánica de cofre). RollTier depende de Tiers para saber qué puede
+        // sortear, así que los tests de RollTier necesitan esto poblado.
+        private static void AddStandardTiers(ChestConfigSO config)
+        {
+            config.Tiers.Add(new ChestTierDef { Tier = ItemRarity.Common });
+            config.Tiers.Add(new ChestTierDef { Tier = ItemRarity.Uncommon });
+            config.Tiers.Add(new ChestTierDef { Tier = ItemRarity.Rare });
+            config.Tiers.Add(new ChestTierDef { Tier = ItemRarity.Legendary });
         }
     }
 }

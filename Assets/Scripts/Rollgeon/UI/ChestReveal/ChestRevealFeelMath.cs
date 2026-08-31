@@ -11,17 +11,26 @@ namespace Rollgeon.UI.ChestReveal
     public static class ChestRevealFeelMath
     {
         /// <summary>
-        /// Intensidad de drama 0..1 por tier: Common apenas se siente, Legendary es
-        /// un evento. Alimenta todos los knobs por-rareza vía <see cref="Knob"/>.
+        /// Intensidad de drama 0..1 por tier: Common apenas se siente, Legendary y
+        /// God son el techo del rango (1f — el sistema de knobs es 0..1, no hay
+        /// "más que Legendary" para darle a God salvo mediante <see cref="HitstopAllowed"/>).
+        /// Switch exhaustivo A PROPÓSITO: el <c>default:</c> devolvía la intensidad
+        /// de Common — con God agregado, el reveal más raro del juego iba a
+        /// sentirse como el más común. Alimenta todos los knobs por-rareza vía
+        /// <see cref="Knob"/>.
         /// </summary>
         public static float Intensity01(ItemRarity rarity)
         {
             switch (rarity)
             {
+                case ItemRarity.Common: return 0.15f;
                 case ItemRarity.Uncommon: return 0.4f;
                 case ItemRarity.Rare: return 0.7f;
                 case ItemRarity.Legendary: return 1f;
-                default: return 0.15f;
+                case ItemRarity.God: return 1f;
+                default:
+                    throw new System.ArgumentOutOfRangeException(
+                        nameof(rarity), rarity, "ItemRarity sin intensidad definida en ChestRevealFeelMath.");
             }
         }
 
@@ -52,8 +61,12 @@ namespace Rollgeon.UI.ChestReveal
             return now + Mathf.Max(0.005f, minInterval) / Mathf.Max(1, speedMultiplier);
         }
 
-        /// <summary>El micro-hitstop del landing es solo para el tier máximo.</summary>
-        public static bool HitstopAllowed(ItemRarity rarity) => rarity == ItemRarity.Legendary;
+        /// <summary>
+        /// El micro-hitstop del landing es para el tier máximo — con God agregado
+        /// eso ya no es un único valor, así que se compara por rango (&gt;=) en vez
+        /// de la igualdad puntual con Legendary que había antes.
+        /// </summary>
+        public static bool HitstopAllowed(ItemRarity rarity) => rarity >= ItemRarity.Legendary;
 
         /// <summary>El duck de música del landing/climax aplica de Rare para arriba.</summary>
         public static bool DuckAllowed(ItemRarity rarity) => rarity >= ItemRarity.Rare;

@@ -35,9 +35,18 @@ namespace Rollgeon.Editor.Tools.Polymorphic.Tests
             return item;
         }
 
-        static BlockGraphNode FindByTitle(BlockGraphModel.Result model, string title)
+        /// <summary>
+        /// Busca por el nombre del tipo, no por el título.
+        /// </summary>
+        /// <remarks>
+        /// El <c>Title</c> es texto de display y cambia a propósito — un nodo de efecto ahora dice
+        /// "Chain", no "EffChain", porque el grafo existe para que se lea qué hace el ítem. Un test
+        /// que ancla en el título se rompe cada vez que alguien mejora una etiqueta, sin que haya
+        /// pasado nada malo. El <c>Subtitle</c> es el nombre del tipo y sí es estructura.
+        /// </remarks>
+        static BlockGraphNode FindBySubtitle(BlockGraphModel.Result model, string subtitle)
         {
-            foreach (var n in model.AllNodes) if (n.Title == title) return n;
+            foreach (var n in model.AllNodes) if (n.Subtitle == subtitle) return n;
             return null;
         }
 
@@ -103,8 +112,9 @@ namespace Rollgeon.Editor.Tools.Polymorphic.Tests
 
             var model = BlockGraphModel.Build(item);
 
-            var chainNode = FindByTitle(model, "EffChain");
+            var chainNode = FindBySubtitle(model, "EffChain");
             Assert.IsNotNull(chainNode, "the chain is a node of its own");
+            Assert.AreEqual("Chain", chainNode.Title, "el título es el nombre legible del efecto");
             Assert.AreEqual(2, chainNode.Children.Count, "one child per phase");
             Assert.AreEqual("Phase 1", chainNode.Children[0].Title);
             Assert.AreEqual("Phase 2", chainNode.Children[1].Title);

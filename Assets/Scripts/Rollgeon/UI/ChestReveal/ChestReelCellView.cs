@@ -22,7 +22,9 @@ namespace Rollgeon.UI.ChestReveal
         [SerializeField] private TMP_Text _goldAmountLabel;
 
         [Title("Skin")]
-        [Tooltip("Fondo por rareza, indexado por ItemRarity (0=Common … 3=Legendary).")]
+        [Tooltip("Fondo por rareza, indexado por ItemRarity (0=Common … 4=God). Si el " +
+                 "array tiene menos de 5 entries (sheet sin sprite de God todavía), " +
+                 "Bind() clampea al último índice disponible — ver ChestRevealSetupTools.")]
         [SerializeField] private Sprite[] _rarityBackgrounds;
 
         public RectTransform Rect => (RectTransform)transform;

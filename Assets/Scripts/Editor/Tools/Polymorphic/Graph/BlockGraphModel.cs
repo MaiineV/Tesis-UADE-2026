@@ -84,7 +84,9 @@ namespace Rollgeon.Editor.Tools.Polymorphic.Graph
             result.Root = new BlockGraphNode
             {
                 Path = string.Empty,
-                Title = asset.name,
+                // AuthoredName picks up DisplayName on ItemSO and EnchantmentSO/UpgradeSO alike by
+                // convention; falls back to the asset filename when nothing is authored yet.
+                Title = AuthoredName(asset) ?? asset.name,
                 Subtitle = asset.GetType().Name,
                 Kind = BlockNodeKind.Root,
                 Value = asset,
@@ -169,7 +171,13 @@ namespace Rollgeon.Editor.Tools.Polymorphic.Graph
                 return string.IsNullOrEmpty(group.Label) ? "Effect Group" : group.Label;
 
             string authored = AuthoredName(value);
-            return string.IsNullOrEmpty(authored) ? value.GetType().Name : authored;
+            if (!string.IsNullOrEmpty(authored)) return authored;
+
+            // Effects don't carry a Label field, but GetEffectName() is exactly the human name an
+            // effect already declares for itself — "Deal Damage" beats "EffDealDamage".
+            if (value is IEffect effect) return effect.GetEffectName();
+
+            return value.GetType().Name;
         }
 
         /// <summary>

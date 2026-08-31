@@ -6,6 +6,7 @@ using Rollgeon.Effects;
 using Rollgeon.Effects.Concretes;
 using Rollgeon.Effects.Readers;
 using Rollgeon.PreConditions;
+using Sirenix.OdinInspector;
 using Sirenix.OdinInspector.Editor;
 using UnityEditor;
 using UnityEngine;
@@ -62,6 +63,46 @@ namespace Rollgeon.Editor.Tools.Polymorphic
                                   && !global::Rollgeon.Editor.Tools.Enemy.AITree.AITreeValidator.PcUnusableInEnemyTree(t),
             };
             public static Options Default => new Options { ShowTargetSelector = false };
+        }
+
+        // ---- campos con dibujo propio -------------------------------------
+
+        static readonly Dictionary<(System.Type Owner, string Member), System.Action<object>>
+            MemberDrawers = new Dictionary<(System.Type, string), System.Action<object>>();
+
+        /// <summary>
+        /// Hace que un campo lo dibuje el dueño del dominio en vez de Odin.
+        /// </summary>
+        /// <remarks>
+        /// <para>
+        /// Este drawer es genérico a propósito y no conoce ningún tipo del juego, pero hay campos que
+        /// dibujados tal cual mienten: <c>ItemSO.DisplayName</c> no es lo que ve el jugador — es el
+        /// respaldo de la tabla de localización. Un registro opt-in deja que la ventana de ítems
+        /// ponga ahí el campo del idioma activo, en la misma categoría "Identity" donde el autor lo
+        /// busca, sin que este archivo sepa que existe la localización.
+        /// </para>
+        /// <para>
+        /// Solo aplica a <see cref="DrawNode"/> — el panel. La tab de Raw Data recorre el árbol por
+        /// su cuenta y sigue mostrando el campo crudo, que es justo para lo que está.
+        /// </para>
+        /// </remarks>
+        public static void RegisterMemberDrawer(
+            System.Type ownerType, string memberName, System.Action<object> draw)
+        {
+            if (ownerType == null || string.IsNullOrEmpty(memberName)) return;
+
+            var key = (ownerType, memberName);
+            if (draw == null) MemberDrawers.Remove(key);
+            else MemberDrawers[key] = draw;
+        }
+
+        static bool TryDrawMember(object owner, InspectorProperty child)
+        {
+            if (MemberDrawers.Count == 0 || owner == null) return false;
+            if (!MemberDrawers.TryGetValue((owner.GetType(), child.Name), out var draw)) return false;
+
+            draw(owner);
+            return true;
         }
 
         // ---- generic polymorphic list -------------------------------------
@@ -292,11 +333,39 @@ namespace Rollgeon.Editor.Tools.Polymorphic
 
             bool drewAnything = false;
 
-            foreach (var child in children)
+            // Los campos se agrupan bajo el [Title] que los precede y cada grupo se puede plegar. Un
+            // ItemSO tiene cinco categorias y en un panel angosto se leian como un muro continuo; el
+            // titulo ya marcaba la division visualmente, pero no dejaba esconder lo que no se toca.
+            string openSection = null;
+            bool sectionVisible = true;
+            bool sectionHasContent = true;
+
+            for (int i = 0; i < children.Count; i++)
             {
+                var child = children[i];
                 if (IsBlockNamed(blocks, child.Name)) continue;   // graphed
                 if (IsBlockNamed(pickers, child.Name)) continue;  // graphed, or handled below
-                child.Draw();
+
+                var title = TitleOf(child);
+                if (title != null && title != openSection)
+                {
+                    openSection = title;
+                    sectionHasContent = SectionHasVisibleContent(children, i, title, blocks, pickers);
+                    sectionVisible = sectionHasContent && DrawSectionHeader(type, title);
+                }
+
+                if (!sectionHasContent)
+                {
+                    // Se dibuja igual — no emite nada — porque Odin reevalua el ShowIf DENTRO del
+                    // Draw de cada campo. Saltearlo dejaria la categoria escondida para siempre:
+                    // al pasar el item de Passive a Active, sus campos nunca volverian a mirarse.
+                    child.Draw();
+                    continue;
+                }
+
+                if (!sectionVisible) { drewAnything = true; continue; }
+
+                if (!TryDrawMember(value, child)) child.Draw();
                 drewAnything = true;
             }
 
@@ -411,6 +480,119 @@ namespace Rollgeon.Editor.Tools.Polymorphic
 
             foreach (var block in blocks)
                 DrawBlockMember(ctx, block, value, path, opts, depth);
+        }
+
+        /// <summary>
+        /// Si la categoria que abre <paramref name="start"/> tiene algun campo visible.
+        /// </summary>
+        /// <remarks>
+        /// Una categoria puede quedar entera oculta por <c>ShowIf</c> — "Action economy" y "Active
+        /// Effects" son solo de items Activos, asi que en un Pasivo no tienen un solo campo. Su
+        /// cabecera desplegada la dibuja el <c>[Title]</c> de Odin, que sale junto al primer campo:
+        /// sin campos no sale nada, y quedaba una categoria sin titulo ni linea con el triangulo
+        /// flotando sobre la anterior. Desplegarla la hacia desaparecer y no habia como volver a
+        /// plegarla.
+        /// </remarks>
+        static bool SectionHasVisibleContent(
+            List<InspectorProperty> children, int start, string title,
+            IReadOnlyList<PolymorphicMember> blocks, IReadOnlyList<PolymorphicMember> pickers)
+        {
+            for (int i = start; i < children.Count; i++)
+            {
+                var child = children[i];
+
+                var childTitle = TitleOf(child);
+                if (i > start && childTitle != null && childTitle != title) break;
+
+                if (IsBlockNamed(blocks, child.Name)) continue;
+                if (IsBlockNamed(pickers, child.Name)) continue;
+                if (child.State.Visible) return true;
+            }
+
+            return false;
+        }
+
+        /// <summary>El <c>[Title]</c> del miembro, si abre una categoria; null si no.</summary>
+        static string TitleOf(InspectorProperty property)
+        {
+            var member = property?.Info?.GetMemberInfo();
+            var title = member?.GetCustomAttribute<TitleAttribute>(false);
+            return string.IsNullOrEmpty(title?.Title) ? null : title.Title;
+        }
+
+        /// <summary>
+        /// Cabecera plegable de una categoria. Devuelve si su contenido va dibujado.
+        /// </summary>
+        /// <remarks>
+        /// El estado se guarda por tipo de asset y titulo, no por instancia: las categorias son las
+        /// mismas para todos los items, asi que plegar una y cambiar de item deberia mantenerla
+        /// plegada — si se reabriera en cada seleccion, plegarla no serviria de nada.
+        /// </remarks>
+        static bool DrawSectionHeader(System.Type ownerType, string title)
+        {
+            var key = SectionKeyOf(ownerType.Name, title);
+            bool expanded = EditorPrefs.GetBool(key, true);
+            bool next = SectionToggle(title, expanded, drawOwnTitle: !expanded);
+            if (next != expanded) EditorPrefs.SetBool(key, next);
+            return next;
+        }
+
+        internal static string SectionKeyOf(string ownerTypeName, string title) =>
+            "Rollgeon.PolymorphicBlockDrawer.Section." + ownerTypeName + "." + title;
+
+        /// <summary>
+        /// Triángulo de plegado alineado a la derecha del encabezado de categoría.
+        /// </summary>
+        /// <remarks>
+        /// El subrayado lo dibuja el <c>[Title]</c> de Odin, y queremos ese — no una segunda cabecera
+        /// arriba, que era lo que se veía duplicado. Así que el triángulo se dibuja solo, alineado a
+        /// la derecha, y se lo sube con un espacio negativo para que caiga sobre la misma línea que el
+        /// título que Odin va a dibujar justo después.
+        /// <para>
+        /// Cuando la categoría está plegada, Odin no llega a dibujar nada — sus campos no se dibujan —
+        /// así que ahí el título y su línea los pone <paramref name="drawOwnTitle"/>, replicando el
+        /// mismo aspecto para que plegar y desplegar no cambie la cabecera.
+        /// </para>
+        /// </remarks>
+        internal static bool SectionToggle(string title, bool expanded, bool drawOwnTitle)
+        {
+            EditorGUILayout.Space(6);
+
+            if (drawOwnTitle)
+            {
+                using (new EditorGUILayout.HorizontalScope())
+                {
+                    EditorGUILayout.LabelField(title, EditorStyles.boldLabel);
+                    GUILayout.FlexibleSpace();
+                    expanded = DrawArrow(expanded);
+                }
+                DrawUnderline();
+                return expanded;
+            }
+
+            using (new EditorGUILayout.HorizontalScope())
+            {
+                GUILayout.FlexibleSpace();
+                expanded = DrawArrow(expanded);
+            }
+
+            // Sube la línea siguiente para que el título de Odin comparta fila con el triángulo.
+            GUILayout.Space(-EditorGUIUtility.singleLineHeight - 2f);
+            return expanded;
+        }
+
+        static bool DrawArrow(bool expanded)
+        {
+            var rect = GUILayoutUtility.GetRect(16f, EditorGUIUtility.singleLineHeight, GUILayout.Width(16f));
+            if (GUI.Button(rect, expanded ? "▾" : "▸", EditorStyles.label)) expanded = !expanded;
+            return expanded;
+        }
+
+        static void DrawUnderline()
+        {
+            var line = GUILayoutUtility.GetRect(GUIContent.none, GUIStyle.none, GUILayout.Height(1f));
+            EditorGUI.DrawRect(line, new Color(0.35f, 0.35f, 0.35f, 1f));
+            EditorGUILayout.Space(2);
         }
 
         static bool IsBlockNamed(IReadOnlyList<PolymorphicMember> blocks, string name)

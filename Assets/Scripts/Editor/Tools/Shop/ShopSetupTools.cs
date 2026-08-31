@@ -112,13 +112,23 @@ namespace Rollgeon.EditorTools.Shop
         }
 
         // Los items más raros son más caros, más escasos en el roll y aparecen en pisos más profundos.
+        //
+        // NOTA (item-editor-spec.md §2/§5): esta escala (10/20/35/55) es PREVIA al
+        // GDD de Ítems Pasivos y NO son los precios del GDD (15/35/60/100/120,
+        // ver Rollgeon.Items.RarityPricing). Migrar esta tool a RarityPricing es
+        // decisión de Fase 2 (el asistente de creación, D2 del spec) — acá el
+        // alcance es solo que God no caiga en el `_` de estos switch expressions
+        // y herede el valor de Common en silencio. Se extrapola la MISMA escala
+        // legacy en vez de mezclarla con la del GDD a mitad de tabla.
         private static float WeightForRarity(ItemRarity rarity) => rarity switch
         {
             ItemRarity.Common => 1.0f,
             ItemRarity.Uncommon => 0.7f,
             ItemRarity.Rare => 0.4f,
             ItemRarity.Legendary => 0.2f,
-            _ => 1.0f,
+            ItemRarity.God => 0.1f,
+            _ => throw new System.ArgumentOutOfRangeException(
+                nameof(rarity), rarity, "ItemRarity sin peso definido en ShopSetupTools."),
         };
 
         private static int PriceForRarity(ItemRarity rarity) => rarity switch
@@ -127,7 +137,9 @@ namespace Rollgeon.EditorTools.Shop
             ItemRarity.Uncommon => 20,
             ItemRarity.Rare => 35,
             ItemRarity.Legendary => 55,
-            _ => 10,
+            ItemRarity.God => 80,
+            _ => throw new System.ArgumentOutOfRangeException(
+                nameof(rarity), rarity, "ItemRarity sin precio definido en ShopSetupTools."),
         };
 
         private static int MinDepthForRarity(ItemRarity rarity) => rarity switch
@@ -136,7 +148,9 @@ namespace Rollgeon.EditorTools.Shop
             ItemRarity.Uncommon => 0,
             ItemRarity.Rare => 1,
             ItemRarity.Legendary => 2,
-            _ => 0,
+            ItemRarity.God => 3,
+            _ => throw new System.ArgumentOutOfRangeException(
+                nameof(rarity), rarity, "ItemRarity sin profundidad mínima definida en ShopSetupTools."),
         };
     }
 }

@@ -61,6 +61,9 @@ MonoBehaviour:
     - Name: 
       Entry: 8
       Data: 
+    - Name: ActionKindFilter
+      Entry: 3
+      Data: 0
     - Name: Effect
       Entry: 7
       Data: 4|Rollgeon.Effects.EffectData, Rollgeon
@@ -111,6 +114,9 @@ MonoBehaviour:
     - Name: RangeMode
       Entry: 3
       Data: 0
+    - Name: RangeFromMovementDie
+      Entry: 5
+      Data: false
     - Name: TargetMode
       Entry: 3
       Data: 0
@@ -301,22 +307,9 @@ MonoBehaviour:
 '
   Icon: {fileID: 1808964844, guid: ee12da05509c7a74686b1e1cc11cbd3e, type: 3}
   Rarity: 0
+  FamilyId: 
+  VariantIndex: 0
   Type: 0
-  PassiveHooks:
-  - Kind: 1
-    TriggerEvent: 0
-    ComboFilter:
-      Mode: 2
-      ComboIds:
-      - combo.full_house
-    Effect:
-      Label: Effect Group
-      PreConditions: []
-      Effects:
-      - rid: 3216492003629990225
-      TargetSelector:
-        rid: -2
-    PersistentModifiers: []
   OnActivate:
     Label: Effect Group
     PreConditions: []
@@ -333,43 +326,3 @@ MonoBehaviour:
     RefIds:
     - rid: -2
       type: {class: , ns: , asm: }
-    - rid: 3216492003629990225
-      type: {class: EffHeal, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
-      data:
-        Selection:
-          SlotState: 1
-          Timing: 0
-          EntityFilter: 2
-          IsGlobal: 0
-          Range: 1
-          RangeMode: 0
-          TargetMode: 0
-          AoeShape: 0
-          AoeRadius: 1
-          PatternRows: 1
-          PatternCols: 1
-          PatternCenter: {x: 0, y: 0}
-          PatternFlat: 01
-          IsConstantSelectionCount: 1
-          SelectionCount: 1
-          SelectionCountReader:
-            rid: -2
-          AutoResolve: 0
-          AutoAccept: 1
-        _healSource: 0
-        _baseAmount: 20
-        _comboMultiplier: 1
-        _reader:
-          rid: -2
-        _readerMultiplier: 1
-        _isPercentOfMax: 0
-        _useBuildDice: 0
-        _healThreshold: 30
-        _healScaleFactor: 1
-        _healMaxCap: 0
-        _useDiceRoll: 0
-        _diceCount: 1
-        _diceFaces: 10
-        _diceResultMultiplier: 0
-        _sourceTag: eff.heal
-        _selfHealOnNoTarget: 1

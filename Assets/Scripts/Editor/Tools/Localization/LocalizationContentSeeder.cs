@@ -853,6 +853,9 @@ namespace Rollgeon.EditorTools.Localization
             Ui(Rollgeon.UI.ChestReveal.ChestRevealTextKeys.RarityUncommon, "Uncommon", "Uncommon");
             Ui(Rollgeon.UI.ChestReveal.ChestRevealTextKeys.RarityRare, "Rare", "Rare");
             Ui(Rollgeon.UI.ChestReveal.ChestRevealTextKeys.RarityLegendary, "Legendary", "Legendary");
+            // God (item-editor-spec.md §5.1): mismo criterio que sus hermanos — término
+            // de juego sin traducir. El re-run de este seeder queda pendiente del gate.
+            Ui(Rollgeon.UI.ChestReveal.ChestRevealTextKeys.RarityGod, "God", "God");
         }
 
         // ==================================================================

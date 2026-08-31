@@ -24,6 +24,15 @@ namespace Rollgeon.UI.ChestReveal.Tests
         }
 
         [Test]
+        public void Intensity01_God_ShouldShareTheCeilingWithLegendary()
+        {
+            // God no puede ser "más que 1" — el rango del sistema de knobs es 0..1
+            // y Legendary ya es el techo. Antes del fix, God caía en el default:
+            // del switch y volvía la intensidad de Common (0.15f) en vez de esto.
+            Assert.AreEqual(1f, ChestRevealFeelMath.Intensity01(ItemRarity.God));
+        }
+
+        [Test]
         public void Knob_ShouldClampIntensity_OutsideUnitRange()
         {
             // Act + Assert
@@ -91,13 +100,16 @@ namespace Rollgeon.UI.ChestReveal.Tests
         }
 
         [Test]
-        public void HitstopAllowed_ShouldBeLegendaryOnly()
+        public void HitstopAllowed_ShouldBeLegendaryAndAbove()
         {
-            // Act + Assert
+            // Renombrado de "LegendaryOnly": con God agregado, HitstopAllowed
+            // compara por rango (>=) — el hitstop del landing es "para el tier
+            // máximo", y eso ya no es un único valor.
             Assert.IsFalse(ChestRevealFeelMath.HitstopAllowed(ItemRarity.Common));
             Assert.IsFalse(ChestRevealFeelMath.HitstopAllowed(ItemRarity.Uncommon));
             Assert.IsFalse(ChestRevealFeelMath.HitstopAllowed(ItemRarity.Rare));
             Assert.IsTrue(ChestRevealFeelMath.HitstopAllowed(ItemRarity.Legendary));
+            Assert.IsTrue(ChestRevealFeelMath.HitstopAllowed(ItemRarity.God));
         }
 
         [Test]
@@ -108,6 +120,7 @@ namespace Rollgeon.UI.ChestReveal.Tests
             Assert.IsFalse(ChestRevealFeelMath.DuckAllowed(ItemRarity.Uncommon));
             Assert.IsTrue(ChestRevealFeelMath.DuckAllowed(ItemRarity.Rare));
             Assert.IsTrue(ChestRevealFeelMath.DuckAllowed(ItemRarity.Legendary));
+            Assert.IsTrue(ChestRevealFeelMath.DuckAllowed(ItemRarity.God));
         }
 
         [Test]
