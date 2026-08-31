@@ -172,8 +172,8 @@ namespace Rollgeon.Combat.Rooms
         private void ChargeIgnitionDamage(AIContext context, IReadOnlyList<GridCoord> cross)
         {
             if (IgnitionDamage <= 0 || context.DamagePipeline == null) return;
-            if (!context.Grid.TryGetPosition(context.PlayerGuid, out var playerCoord)) return;
-            if (!ContainsCoord(cross, playerCoord)) return;
+            // OccupiesAny (Fase C): cualquier celda cubierta por la víctima cuenta.
+            if (!context.Grid.OccupiesAny(context.PlayerGuid, c => ContainsCoord(cross, c))) return;
 
             context.DamagePipeline.Resolve(new DamageContext
             {
