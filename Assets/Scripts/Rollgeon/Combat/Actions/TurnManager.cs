@@ -51,15 +51,6 @@ namespace Rollgeon.Combat.Actions
         /// </summary>
         private Guid _actingGuid;
 
-        /// <summary>
-        /// <c>ActionId</c> de items ya usados en el turno actual. Se vacia en cada
-        /// <see cref="EventName.OnTurnStarted"/>. Dos items que comparten
-        /// <c>ActionId</c> (ej. todas las pociones con <c>item.potion</c>) se limitan
-        /// entre si a uno por turno.
-        /// </summary>
-        private readonly HashSet<string> _itemActionsUsedThisTurn =
-            new HashSet<string>(StringComparer.Ordinal);
-
         private EventManager.EventReceiver _onTurnStartedHandler;
         private EventManager.EventReceiver _onTurnFinishedHandler;
 
@@ -100,9 +91,10 @@ namespace Rollgeon.Combat.Actions
         // ======================================================================
 
         /// <summary>
-        /// Los items con <c>ConsumesAction</c> solo se usan en el turno propio y una vez
-        /// por <c>ActionId</c>. Es una regla de items: el resto de las acciones sigue sin
-        /// limite por turno (el unico presupuesto es el pool de rolls).
+        /// El GDD de items activos pide que solo se usen en el turno propio (PRE-01).
+        /// Es una regla de items: el resto de las acciones no mira el turno, y ningun
+        /// tipo de accion tiene limite de repeticiones — el unico presupuesto son los
+        /// rolls (el GDD permite explicitamente usar el item dos veces en un turno).
         /// </summary>
         private void SubscribeTurnTracking()
         {
@@ -123,14 +115,12 @@ namespace Rollgeon.Combat.Actions
             _onTurnStartedHandler = null;
             _onTurnFinishedHandler = null;
             _actingGuid = Guid.Empty;
-            _itemActionsUsedThisTurn.Clear();
         }
 
         private void HandleTurnStarted(params object[] args)
         {
             if (args == null || args.Length < 1 || !(args[0] is Guid guid)) return;
             _actingGuid = guid;
-            _itemActionsUsedThisTurn.Clear();
         }
 
         private void HandleTurnFinished(params object[] args)
@@ -146,16 +136,6 @@ namespace Rollgeon.Combat.Actions
         public void SetActingGuidForTests(Guid guid)
         {
             _actingGuid = guid;
-            _itemActionsUsedThisTurn.Clear();
-        }
-
-        /// <summary>
-        /// <c>true</c> si <paramref name="actionId"/> ya se gasto en este turno.
-        /// Seam para el HUD, que necesita saberlo sin intentar la accion.
-        /// </summary>
-        public bool IsItemActionUsedThisTurn(string actionId)
-        {
-            return !string.IsNullOrEmpty(actionId) && _itemActionsUsedThisTurn.Contains(actionId);
         }
 
         /// <summary>
@@ -211,18 +191,13 @@ namespace Rollgeon.Combat.Actions
                 return false;
             }
 
-            // Reglas exclusivas de items activos con ConsumesAction. El resto de las
-            // acciones sigue sin limite por turno — el unico presupuesto son los rolls.
+            // Regla exclusiva de items activos (GDD, PRE-01): solo en tu turno. El
+            // resto de las acciones no mira el turno.
             if (action.Type == ActionType.UseItem)
             {
                 if (!IsActingTurn(playerGuid))
                 {
                     reason = "Not your turn.";
-                    return false;
-                }
-                if (IsItemActionUsedThisTurn(action.ActionId))
-                {
-                    reason = $"Action '{action.ActionId}' was already used this turn.";
                     return false;
                 }
             }
@@ -272,11 +247,6 @@ namespace Rollgeon.Combat.Actions
         {
             if (!CanExecute(action, playerGuid, out _)) return false;
             if (_rolls.IsCombatActive && !_rolls.TrySpendRolls(playerGuid, 1)) return false;
-
-            // El ActionId se marca al pasar el gate, no al terminar el efecto: el roll ya
-            // se cobro y el turno ya se consumio aunque el efecto devuelva false.
-            if (action.Type == ActionType.UseItem && !string.IsNullOrEmpty(action.ActionId))
-                _itemActionsUsedThisTurn.Add(action.ActionId);
 
             if (action.Effect == null || action.Effect.Effects == null || action.Effect.Effects.Count == 0)
                 return true;

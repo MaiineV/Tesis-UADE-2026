@@ -190,9 +190,6 @@ namespace Rollgeon.Items
                     if (!tm.IsActingTurn(playerGuid))
                         return ItemActivationBlock.NotYourTurn;
 
-                    if (tm.IsItemActionUsedThisTurn(item.ResolvedActionId))
-                        return ItemActivationBlock.ActionAlreadyUsed;
-
                     bool poolEmpty = ServiceLocator.TryGetService<IRollPoolService>(out var rolls)
                                      && rolls != null
                                      && rolls.IsCombatActive

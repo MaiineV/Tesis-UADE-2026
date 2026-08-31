@@ -480,20 +480,7 @@ namespace Rollgeon.UI.HUD
         // bloqueado (sin energía, locked, usado), la tecla responde con el MISMO
         // rechazo completo que el mouse — shake + SFX + toast vía TryRejectPress,
         // que es el camino de OnPointerDown.
-        private void TriggerSlotHotkey(HeroBehaviorSlot slot) => TryTriggerSlot(slot);
-
-        /// <summary>
-        /// Dispara el chip del <paramref name="slot"/> como si el jugador lo hubiera
-        /// clickeado — mismo camino y mismo gating. Si el chip esta visible pero
-        /// deshabilitado, responde con el rechazo completo (shake + SFX + toast).
-        /// <para>
-        /// Publico porque <c>ActiveItemsView</c> lo usa para delegar: un item cuyo uso lo
-        /// media un behavior de la clase (la pocion → <c>Healing</c>) tiene que producir
-        /// exactamente lo mismo desde el slot del HUD que desde el chip.
-        /// </para>
-        /// </summary>
-        /// <returns><c>false</c> si no hay chip para ese slot.</returns>
-        public bool TryTriggerSlot(HeroBehaviorSlot slot)
+        private void TriggerSlotHotkey(HeroBehaviorSlot slot)
         {
             for (int i = 0; i < _buttons.Length; i++)
             {
@@ -503,9 +490,8 @@ namespace Rollgeon.UI.HUD
                     button.Button.onClick.Invoke();
                 else
                     button.TryRejectPress();
-                return true;
+                return;
             }
-            return false;
         }
 
         // ======================================================================

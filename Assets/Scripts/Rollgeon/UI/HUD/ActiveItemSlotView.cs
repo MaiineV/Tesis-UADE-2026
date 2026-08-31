@@ -83,26 +83,13 @@ namespace Rollgeon.UI.HUD
                  "mostrar contador con un solo ítem).")]
         private int _hideCountAtOrBelow = 0;
 
-        [Title("Cooldown (opcional)")]
-        [Tooltip("Label TMP con los turnos que faltan para poder reusar el item. Si null, " +
-                 "se auto-crea uno centrado en runtime la primera vez que hace falta.")]
-        [SerializeField]
-        private TextMeshProUGUI _cooldownLabel;
-
         [ShowInInspector, ReadOnly]
         public ActiveItemState CurrentState { get; private set; } = ActiveItemState.Inactive;
-
-        /// <summary>Turnos restantes de cooldown. 0 = usable. Seam de test.</summary>
-        [ShowInInspector, ReadOnly]
-        public int CurrentCooldown { get; private set; }
 
         // Ortogonal al estado, espejo de ActionButton._affordable (BUG-074): con poción
         // en el inventario pero 0 rolls en el pool, el slot sigue Active pero tiene que
         // pintar el mismo rojo que los chips de acción.
         private bool _affordable = true;
-
-        /// <summary>Estado actual de affordability — seam de test.</summary>
-        public bool IsAffordableForTests => _affordable;
 
         private void Awake()
         {
@@ -208,35 +195,16 @@ namespace Rollgeon.UI.HUD
 
         private void HandleClick()
         {
-            // Inactive = el slot no representa ningun item (barra vacia): no hay nada que
-            // rechazar. Depleted y Active-sin-recursos SI emiten, para que ActiveItemsView
-            // resuelva el motivo y muestre el toast en vez de tragarse el tap.
-            if (CurrentState == ActiveItemState.Inactive) return;
+            if (CurrentState != ActiveItemState.Active) return;
             OnClicked?.Invoke(this);
         }
 
-        // El boton queda interactable mientras el slot tenga un item detras, aunque no se
-        // pueda usar ahora — un boton no-interactable no dispara onClick y el jugador se
-        // queda sin saber por que. El gate real vive en ActiveItemsView.HandleSlotClicked.
         private void RefreshInteractable()
         {
             if (_button != null)
             {
-                _button.interactable = CurrentState != ActiveItemState.Inactive;
+                _button.interactable = CurrentState == ActiveItemState.Active;
             }
-        }
-
-        /// <summary>
-        /// Pisa el icono con el <c>ItemSO.Icon</c> del item que ocupa el slot. Lo usan los
-        /// slots que <see cref="ActiveItemsView"/> instancia en runtime, donde el sprite no
-        /// se puede cablear en Inspector porque el item se conoce recien en la run. En los
-        /// slots pinneados (poción) no se llama: ahí mandan los sprites serializados.
-        /// </summary>
-        public void SetIcon(Sprite sprite)
-        {
-            if (_icon == null) return;
-            _icon.sprite = sprite;
-            _icon.enabled = sprite != null;
         }
 
         /// <summary>
@@ -293,62 +261,6 @@ namespace Rollgeon.UI.HUD
             bool unavailable = CurrentState != ActiveItemState.Active || !_affordable;
             if (unavailable) UnavailableTint.Apply(_icon);
             else UnavailableTint.Remove(_icon);
-        }
-
-        /// <summary>
-        /// Turnos que faltan para poder reusar el item. <c>0</c> esconde el label.
-        /// El doc pide que el cooldown se lea como numero de turnos, no solo como tinte.
-        /// </summary>
-        public void SetCooldown(int turnsRemaining)
-        {
-            CurrentCooldown = Mathf.Max(0, turnsRemaining);
-
-            if (_cooldownLabel == null)
-            {
-                // Sin cooldown activo no hace falta crear nada: la enorme mayoria de los
-                // items tiene Cooldown 0 y nunca pasa por aca.
-                if (CurrentCooldown <= 0) return;
-                _cooldownLabel = BuildAutoCooldownLabel();
-            }
-
-            if (CurrentCooldown <= 0)
-            {
-                _cooldownLabel.gameObject.SetActive(false);
-                return;
-            }
-
-            _cooldownLabel.gameObject.SetActive(true);
-            _cooldownLabel.text = CurrentCooldown.ToString();
-        }
-
-        /// <summary>
-        /// TMP centrado y grande sobre el icono — el numero de turnos tiene que leerse
-        /// de un vistazo, a diferencia del contador de cargas que vive en la esquina.
-        /// </summary>
-        private TextMeshProUGUI BuildAutoCooldownLabel()
-        {
-            var go = new GameObject("CooldownLabel");
-            go.transform.SetParent(transform, worldPositionStays: false);
-
-            var rt = go.AddComponent<RectTransform>();
-            rt.anchorMin = Vector2.zero;
-            rt.anchorMax = Vector2.one;
-            rt.offsetMin = Vector2.zero;
-            rt.offsetMax = Vector2.zero;
-            rt.localScale = Vector3.one;
-
-            var tmp = go.AddComponent<TextMeshProUGUI>();
-            tmp.fontSize = 44f;
-            tmp.alignment = TextAlignmentOptions.Center;
-            tmp.color = Color.white;
-            tmp.fontStyle = FontStyles.Bold;
-            tmp.outlineWidth = 0.3f;
-            tmp.outlineColor = Color.black;
-            tmp.raycastTarget = false;
-            tmp.text = string.Empty;
-
-            go.transform.SetAsLastSibling();
-            return tmp;
         }
 
         /// <summary>

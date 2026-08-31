@@ -23,14 +23,13 @@ namespace Rollgeon.UI
         // Rechazo al clickear un slot de item activo del HUD (ActiveItemsView).
         public const string RejectOnCooldown = "action.reject.cooldown";
         public const string RejectItemUnavailable = "action.reject.item_unavailable";
-        public const string RejectActionUsedThisTurn = "action.reject.action_used_turn";
 
         /// <summary>Todas las keys de esta clase, para validación en tests.</summary>
         public static IReadOnlyList<string> All { get; } = new[]
         {
             RejectTitle, RejectNoRange, RejectNoRolls, RejectUsed,
             RejectFullHealth, RejectNoDoor, RejectNotYourTurn, RejectNoPotion,
-            RejectOnCooldown, RejectItemUnavailable, RejectActionUsedThisTurn,
+            RejectOnCooldown, RejectItemUnavailable,
         };
     }
 }

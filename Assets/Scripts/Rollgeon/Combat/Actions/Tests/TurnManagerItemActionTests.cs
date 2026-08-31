@@ -8,11 +8,14 @@ using UnityEngine;
 namespace Rollgeon.Combat.Actions.Tests
 {
     /// <summary>
-    /// Reglas de turno que el GDD pide <b>solo</b> para items activos con
-    /// <c>ConsumesAction</c>: se usan en tu turno y una vez por <c>ActionId</c>
-    /// ("si dos items comparten el mismo ActionId, solo uno de ellos puede usarse por
-    /// turno"). El resto de las acciones sigue sin límite por turno — el único
-    /// presupuesto es el pool de rolls.
+    /// PRE-01 del GDD de Ítems Activos: el ítem solo se usa en el turno propio, dentro
+    /// de combate. Es una regla exclusiva de items — el resto de las acciones no mira
+    /// el turno.
+    /// <para>
+    /// El GDD <b>no</b> pone tope de usos: "el jugador intenta activar el ítem dos veces
+    /// en el mismo turno → Permitido, mientras haya rolls disponibles". El único
+    /// presupuesto sigue siendo el pool de rolls.
+    /// </para>
     /// </summary>
     [TestFixture]
     public sealed class TurnManagerItemActionTests
@@ -103,94 +106,18 @@ namespace Rollgeon.Combat.Actions.Tests
         }
 
         // ------------------------------------------------------------------
-        // ActionId compartido — uno por turno
+        // Sin limite de repeticiones
         // ------------------------------------------------------------------
 
         [Test]
-        public void test_sameActionId_cannotBeUsedTwiceInATurn()
+        public void test_theSameItemCanBeUsedTwiceInOneTurn()
         {
-            // Arrange
-            Assert.IsTrue(_tm.TryExecute(UseItem("item.potion"), _player, Ctx()));
-
-            // Act
-            bool ok = _tm.CanExecute(UseItem("item.potion"), _player, out var reason);
-
-            // Assert
-            Assert.IsFalse(ok);
-            StringAssert.Contains("already used", reason);
-        }
-
-        [Test]
-        public void test_twoItemsSharingAnActionId_blockEachOther()
-        {
-            // Arrange — el caso que el GDD nombra: todas las pociones con el mismo
-            // ActionId se limitan a una por turno aunque sean items distintos.
-            Assert.IsTrue(_tm.TryExecute(UseItem("item.potion"), _player, Ctx()));
-
-            // Act — otro ActionDefinition, mismo ActionId.
-            bool ok = _tm.CanExecute(UseItem("item.potion"), _player, out _);
-
-            // Assert
-            Assert.IsFalse(ok);
-        }
-
-        [Test]
-        public void test_differentActionIds_doNotBlockEachOther()
-        {
-            // Arrange
-            Assert.IsTrue(_tm.TryExecute(UseItem("item.potion"), _player, Ctx()));
-
-            // Act + Assert
-            Assert.IsTrue(_tm.CanExecute(UseItem("item.bomb"), _player, out _));
-        }
-
-        [Test]
-        public void test_aNewTurn_clearsTheUsedActionIds()
-        {
-            // Arrange
-            _tm.TryExecute(UseItem("item.potion"), _player, Ctx());
-            Assert.IsFalse(_tm.CanExecute(UseItem("item.potion"), _player, out _));
-
-            // Act — arranca un turno nuevo por el bus, como en el juego. Register()
-            // corta temprano sin IRollPoolService en el locator, y sin llegar al final
-            // no se suscribe a OnTurnStarted.
-            ServiceLocator.AddService<Rollgeon.Combat.Rolls.IRollPoolService>(_rolls);
-            _tm.Register();
-            EventManager.Trigger(EventName.OnTurnStarted, _player);
-
-            // Assert
-            Assert.IsTrue(_tm.CanExecute(UseItem("item.potion"), _player, out _));
-        }
-
-        [Test]
-        public void test_theActionIdIsSpentEvenIfTheEffectFails()
-        {
-            // Arrange — el roll ya se cobro y el turno ya se gasto: reintentar seria
-            // gratis y rompe la economia.
+            // El GDD lo dice explicitamente en edge cases: "el jugador intenta activar
+            // el item dos veces en el mismo turno -> Permitido, mientras haya rolls".
             var action = UseItem("item.potion");
-            action.Effect.Effects.Add(new Eff_Fail());
+            Assert.IsTrue(_tm.TryExecute(action, _player, Ctx()));
 
-            // Act
-            bool ok = _tm.TryExecute(action, _player, Ctx());
-
-            // Assert
-            Assert.IsFalse(ok, "el efecto devolvio false");
-            Assert.IsTrue(_tm.IsItemActionUsedThisTurn("item.potion"),
-                "el ActionId igual quedo gastado");
-        }
-
-        [Test]
-        public void test_nonItemActions_canRepeatInTheSameTurn()
-        {
-            // Arrange — sin limite de acciones por turno para lo que no es item.
-            var attack = UseItem("action.attack");
-            attack.Type = ActionType.Attack;
-
-            // Act
-            _tm.TryExecute(attack, _player, Ctx());
-
-            // Assert
-            Assert.IsTrue(_tm.CanExecute(attack, _player, out _));
+            Assert.IsTrue(_tm.CanExecute(action, _player, out _));
         }
 
         // ------------------------------------------------------------------
@@ -210,13 +137,6 @@ namespace Rollgeon.Combat.Actions.Tests
         private EffectContext Ctx()
         {
             return new EffectContext { SourceGuid = _player, TargetGuid = _player, lastResult = true };
-        }
-
-        [Serializable]
-        private sealed class Eff_Fail : BaseEffect
-        {
-            public override string GetEffectName() => "Fail";
-            public override bool ApplyEffect(EffectContext context) => false;
         }
     }
 }

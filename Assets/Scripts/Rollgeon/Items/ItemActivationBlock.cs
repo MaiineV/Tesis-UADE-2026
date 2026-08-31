@@ -39,12 +39,5 @@ namespace Rollgeon.Items
         /// </summary>
         NotYourTurn = 7,
 
-        /// <summary>
-        /// Otro item con el mismo <c>ActionId</c> ya se uso en este turno.
-        /// </summary>
-        ActionAlreadyUsed = 8,
-
-        /// <summary>El jugador cancelo la seleccion de objetivo.</summary>
-        SelectionCancelled = 9,
     }
 }
