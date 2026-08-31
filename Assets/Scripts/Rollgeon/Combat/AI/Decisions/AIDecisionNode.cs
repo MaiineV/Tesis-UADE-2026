@@ -1,6 +1,8 @@
 using System;
 using System.Collections;
 using Sirenix.OdinInspector;
+using Sirenix.Serialization;
+using UnityEngine;
 
 namespace Rollgeon.Combat.AI.Decisions
 {
@@ -14,6 +16,15 @@ namespace Rollgeon.Combat.AI.Decisions
     [Serializable, HideReferenceObjectPicker]
     public abstract class AIDecisionNode
     {
+        /// <summary>
+        /// Identidad de AUTORÍA — la key estable del sidecar de layout del Editor de
+        /// enemigos. El runtime jamás la lee. Null en árboles viejos (Odin deserializa
+        /// default): el editor la asigna lazy al guardar el layout. Viaja en el blob Odin
+        /// del SO, así sobrevive reloads, builders que regeneran el árbol y edición externa.
+        /// </summary>
+        [OdinSerialize, HideInInspector]
+        public string EditorNodeId;
+
         public virtual string NodeName => GetType().Name;
 
         public abstract AIResult Tick(AIContext context);

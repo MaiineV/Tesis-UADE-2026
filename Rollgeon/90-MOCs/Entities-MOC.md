@@ -32,7 +32,6 @@ tags: [moc, entities]
 
  BehaviorLibrarySO  ─ optional pool of named templates
 
- EnemyCatalogSO     ─ catalog of all EnemyDataSO
  BossFloorManagerSO ─ packs boss room + boss enemy + rewards (stub)
 
  EntityVisualService (IEntityVisualService)
@@ -41,7 +40,7 @@ tags: [moc, entities]
 
 ## Notes
 
-- **Data:** [[BaseEntitySO]] · [[EnemyDataSO]] · [[EnemyCatalogSO]]
+- **Data:** [[BaseEntitySO]] · [[EnemyDataSO]]
 - **Behaviors:** [[BaseBehavior]] · [[BehaviorTrigger]] ·
   [[BehaviorContext]] · [[GamePhaseMask]] ·
   [[GamePhaseMaskExtensions]] · [[HealStrength]] ·

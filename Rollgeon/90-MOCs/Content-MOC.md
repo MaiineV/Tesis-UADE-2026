@@ -19,7 +19,6 @@ tags: [moc, content, catalogs]
     implementations:
       ActionCatalogSO   ✅  (02-Combat/Actions)
       ComboCatalogSO    ✅  (03-Combos)
-      EnemyCatalogSO    ✅  (05-Entities)
       BehaviorLibrarySO ✅  (05-Entities)
       EntityCatalogSO   🟡  TBD
       RoomCatalogSO     🟡  TBD
@@ -37,7 +36,7 @@ tags: [moc, content, catalogs]
 
 - [[BaseCatalogSO]] · [[Content-Catalogs]]
 - **Shipped catalogs** (home folders):
-  [[ActionCatalogSO]] · [[ComboCatalogSO]] · [[EnemyCatalogSO]] ·
+  [[ActionCatalogSO]] · [[ComboCatalogSO]] ·
   [[BehaviorLibrarySO]]
 
 ## Cross-domain edges
