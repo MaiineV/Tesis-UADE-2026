@@ -308,6 +308,37 @@ namespace Rollgeon.UI.Tests
         }
 
         [Test]
+        public void LaMaldicion_EsUnRasgoDeLaPelea_NoFlotaSobreLaCabeza()
+        {
+            // Arrange — un curse siempre activo Y con ícono (el caso del Cajero: la moneda).
+            var curse = ScriptableObject.CreateInstance<Rollgeon.Entities.BossCurseSO>();
+            var into = new List<StatusIconState>();
+            try
+            {
+                curse.CurseId = "test.curse.unmapped";
+                curse.Description = "El oro que dejás vencer se lo queda la banca.";
+                curse.Icon = Sprite.Create(Texture2D.whiteTexture,
+                    new Rect(0, 0, 4, 4), new Vector2(0.5f, 0.5f));
+
+                // Act
+                EnemyStatusIconsView.AppendCurseCard(curse, null, into);
+
+                // Assert — con Style Unit + ícono, la fila que flota sobre la cabeza la dibuja:
+                // la moneda clavada sobre el Cajero todo el combate, con un tooltip de slot sin
+                // encabezado (el curse viaja sin título a propósito).
+                Assert.AreEqual(1, into.Count);
+                Assert.AreEqual(StatusCardStyle.Trait, into[0].Style,
+                    "La maldición salió como estado de la unidad: la fila sobre la cabeza va a " +
+                    "flotarla todo el combate. Es un rasgo de la pelea — Trait, como la debilidad.");
+            }
+            finally
+            {
+                Object.DestroyImmediate(curse.Icon);
+                Object.DestroyImmediate(curse);
+            }
+        }
+
+        [Test]
         public void SinCurse_ElBloqueNoExiste()
         {
             // Arrange — bestiario común: data sin Curse.

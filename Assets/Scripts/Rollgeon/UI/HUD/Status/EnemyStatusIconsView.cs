@@ -404,6 +404,10 @@ namespace Rollgeon.UI.HUD.Status
 
             // Sin título a propósito (mockup del spec): la tarjeta es label + regla — "PLAYER
             // CURSE / Te traba un dado." El nombre del curse vive en su ícono y su regla.
+            //
+            // Trait y no Unit: la maldición es de la pelea, no un estado transitorio del bicho.
+            // Con Unit + ícono entraría a la fila que flota sobre su cabeza — la moneda del
+            // Cajero clavada ahí todo el combate, con un tooltip de slot sin encabezado.
             into.Add(new StatusIconState(
                 curse.CurseId ?? string.Empty,
                 null,
@@ -411,6 +415,7 @@ namespace Rollgeon.UI.HUD.Status
                 curse.Icon != null ? curse.Icon
                     : catalog != null ? catalog.Resolve(curse.CurseId) : null,
                 active: true,
+                style: StatusCardStyle.Trait,
                 eyebrow: PlayerCurseEyebrow()));
         }
 
