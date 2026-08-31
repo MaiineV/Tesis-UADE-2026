@@ -24,6 +24,10 @@ namespace Rollgeon.Editor.Tools.Enemy
             menu.AddItem(new GUIContent("Acción — Siempre al jugador"), false, () => onPick(BuildPlayerAction()));
             menu.AddItem(new GUIContent("Acción — Al aliado con menos vida"), false, () => onPick(BuildLowestHpAllyAction()));
             menu.AddItem(new GUIContent("Acción — Al rival con más ataque"), false, () => onPick(BuildHighestAttackEnemyAction()));
+            menu.AddItem(new GUIContent("Acción — Embestida con empuje"), false,
+                () => onPick(Templates.EnemyTreeKit.AttackMeleeWithPush("Embestida con empuje").Behavior));
+            menu.AddItem(new GUIContent("Acción — Barrido en cono"), false,
+                () => onPick(Templates.EnemyTreeKit.SweepCone("Barrido en cono").Behavior));
             menu.AddSeparator(string.Empty);
             menu.AddItem(new GUIContent("Apoyo — Curar al aliado con menos vida"), false, () => onPick(new SupportHealBehavior()));
             menu.AddSeparator(string.Empty);

@@ -9,9 +9,9 @@ namespace Rollgeon.Editor.Tools.Enemy.Templates
 {
     /// <summary>
     /// Las diez fichas del GDD "Patrones de Ataque → Fichas de enemigo" como árboles genéricos
-    /// (Move / KeepDistance / Telegraph / Behavior con Eff y PC). Lo que el GDD dejó TBD o el
-    /// runtime no tiene (empuje de grilla, solo-diagonales, aura) queda dicho en la descripción
-    /// para que el designer sepa qué modelar.
+    /// (Move / KeepDistance / Telegraph / Behavior con Eff y PC). Con las piezas de runtime de
+    /// Feature#0061 (empuje de grilla, aura, alineación/LoS, área instantánea) las diez juegan
+    /// tal cual dice su ficha.
     /// </summary>
     public static class EnemyArchetypeTemplates
     {
@@ -36,26 +36,26 @@ namespace Rollgeon.Editor.Tools.Enemy.Templates
 
             new EnemyTemplate("charger", "Charger", EnemyArchetype.Melee,
                 "Se alinea a distancia 2 y telegrafía una banda de 3 casillas hacia el jugador; adyacente, " +
-                "usa un golpe reducido (×0,5). TBD del GDD: el empuje de 1 casilla y el +50% si está bloqueado " +
-                "(no hay efecto de empuje de grilla; EffApplyImpulse es solo visual).",
+                "embiste: daño pleno + empuje de 1 casilla, y si el empuje queda bloqueado (pared/ocupante) " +
+                "suma +ATK×0,5 en su lugar.",
                 so => Fill(so, 90, 20, 4, 2, AttackPatternKind.StraightLine, AttackTiming.Telegraph,
                     atk => Sequence(ExecuteTelegraph(), EnergyLoop(
-                        IfTargetInRange(1, AttackMelee("Golpe reducido", 0.5f),
+                        IfTargetInRange(1, AttackMeleeWithPush(),
                             Sequence(Chase(3, 2), Telegraph(ThreatShape.DirectionalBand, 1, atk, depth: 3))))))),
 
             new EnemyTemplate("sweeper", "Sweeper", EnemyArchetype.Melee,
-                "Se mantiene pegado y telegrafía un 3×3 alrededor de sí (se cobra al turno siguiente). " +
-                "TBD: el barrido instantáneo en arco/cono/cruz no existe sin código; queda como telegraph corto.",
-                so => Fill(so, 80, 15, 4, 1, AttackPatternKind.ArcSweep, AttackTiming.Telegraph,
-                    atk => Sequence(ExecuteTelegraph(), EnergyLoop(
-                        IfTargetInRange(1, Telegraph(ThreatShape.SquareAroundSelf, 1, atk), Chase(3, 1),
-                            DistanceMetric.Chebyshev))))),
+                "Se mantiene pegado y barre en cono instantáneo hacia el jugador (1-3 casillas, en el mismo " +
+                "turno, sin telegraph). Solo golpea al jugador — sin friendly fire.",
+                so => Fill(so, 80, 15, 4, 1, AttackPatternKind.Cone, AttackTiming.Instant,
+                    atk => EnergyLoop(
+                        IfTargetInRange(1, SweepCone(), Chase(3, 1), DistanceMetric.Chebyshev)))),
 
             new EnemyTemplate("skirmisher", "Skirmisher", EnemyArchetype.Ranged,
-                "Dispara a ≤4 (Chebyshev) y se reposiciona a distancia 3. TBD: el GDD lo restringe a " +
-                "diagonales; el runtime no tiene ese chequeo, hoy dispara en cualquier dirección.",
+                "Dispara SOLO en diagonal exacta a ≤4 (Chebyshev) y se reposiciona a distancia 3. El filtro " +
+                "gatea el disparo; el movimiento no busca posiciones diagonales (optimiza distancia).",
                 so => Fill(so, 50, 12, 5, 4, AttackPatternKind.ContactDiagonal, AttackTiming.Instant,
-                    atk => EnergyLoop(IfTargetInRange(4, AttackRanged(), Kite(3, 3), DistanceMetric.Chebyshev)))),
+                    atk => EnergyLoop(IfTargetInRange(4, AttackRanged(), Kite(3, 3), DistanceMetric.Chebyshev,
+                        alignment: TargetAlignment.DiagonalOnly)))),
 
             new EnemyTemplate("kiter", "Kiter", EnemyArchetype.Ranged,
                 "Dispara si el jugador está a ≤5 (diamante Manhattan) y mantiene distancia 3; si no, se acerca. " +
@@ -64,11 +64,12 @@ namespace Rollgeon.Editor.Tools.Enemy.Templates
                     atk => EnergyLoop(IfTargetInRange(5, Sequence(AttackRanged(), Kite(3, 3)), Chase(3, 3))))),
 
             new EnemyTemplate("sniper", "Sniper", EnemyArchetype.Ranged,
-                "A ≤8 telegrafía la fila del jugador (se cobra al turno siguiente, no lo sigue); si no, busca " +
-                "distancia 5. TBD: línea de visión (no existe chequeo de LoS).",
+                "En la misma fila/columna que el jugador, a ≤8 y con línea de visión libre, telegrafía la " +
+                "fila (se cobra al turno siguiente, no lo sigue); si no, busca distancia 5.",
                 so => Fill(so, 45, 25, 4, 8, AttackPatternKind.StraightLine, AttackTiming.Telegraph,
                     atk => Sequence(ExecuteTelegraph(), EnergyLoop(
-                        IfTargetInRange(8, Telegraph(ThreatShape.Row, 1, atk), Kite(2, 5)))))),
+                        IfTargetInRange(8, Telegraph(ThreatShape.Row, 1, atk), Kite(2, 5),
+                            alignment: TargetAlignment.SameRowOrColumn, lineOfSight: true))))),
 
             new EnemyTemplate("artillery", "Artillery", EnemyArchetype.Ranged,
                 "Casi no se mueve (SPD 1); a ≤6 telegrafía un 3×3 sobre el jugador y lo cobra al turno siguiente.",
@@ -92,10 +93,15 @@ namespace Rollgeon.Editor.Tools.Enemy.Templates
                         Sequence(AttackRanged(), Kite(3, 3)))))),
 
             new EnemyTemplate("guardian", "Guardian", EnemyArchetype.Support,
-                "Golpea a distancia 1; si no llega, se pega al aliado más cercano. TBD: el aura de +defensa " +
-                "a 2 casillas no existe como efecto; el validador avisa 'Support sin cura/buff' hasta que se agregue.",
-                so => Fill(so, 110, 15, 3, 1, AttackPatternKind.ContactAdjacent, AttackTiming.Instant,
-                    atk => EnergyLoop(IfTargetInRange(1, AttackMelee(), MoveToAlly(3, 1))))),
+                "Aura defensiva: los aliados a ≤2 casillas reciben −5 de daño entrante (piso 1) mientras " +
+                "viva. Golpea a distancia 1; si no llega, se pega al aliado más cercano.",
+                so =>
+                {
+                    Fill(so, 110, 15, 3, 1, AttackPatternKind.ContactAdjacent, AttackTiming.Instant,
+                        atk => EnergyLoop(IfTargetInRange(1, AttackMelee(), MoveToAlly(3, 1))));
+                    so.AuraRadius = 2;
+                    so.AuraFlatReduction = 5;
+                }),
         };
 
         /// <param name="root">Recibe el ATK ya decidido: los Telegraph llevan el daño como constante.</param>

@@ -22,6 +22,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Templates
         public static readonly string[] DealDamageFields = { "_damageSource", "_reader", "_readerMultiplier", "_attackKind" };
         public static readonly string[] ModifyIntFields = { "_amountSource", "_baseAmount", "_reader", "_clampHealthToMax" };
         public static readonly string[] PlaySequenceFields = { "_steps" };
+        public static readonly string[] GridPushFields = { "_distance", "_blockedBonusMultiplier", "_attackKind" };
 
         /// <summary>Daño leído de un stat del atacante (ATK por defecto), como los enemigos autorados a mano.</summary>
         public static EffDealDamage DealDamageFromStat(StatType stat = StatType.Attack, float multiplier = 1f,
@@ -50,6 +51,17 @@ namespace Rollgeon.Editor.Tools.Enemy.Templates
             Set(e, "_amountSource", DamageSource.FromReader);
             Set(e, "_reader", new ReadEntityStat { Entity = ReaderEntitySource.Source, Stat = stat, UseModified = true });
             Set(e, "_clampHealthToMax", true);
+            return e;
+        }
+
+        /// <summary>Empuje de grilla del Charger: distancia constante y bono si quedó bloqueado.</summary>
+        public static EffGridPush GridPush(int distance = 1, float blockedBonusMultiplier = 0.5f,
+                                           AttackKind kind = AttackKind.BasicAttack)
+        {
+            var e = new EffGridPush();
+            Set(e, "_distance", distance);
+            Set(e, "_blockedBonusMultiplier", blockedBonusMultiplier);
+            Set(e, "_attackKind", kind);
             return e;
         }
 

@@ -157,8 +157,10 @@ namespace Rollgeon.Editor.Tools.Enemy
                 switch (design.Archetype)
                 {
                     case EnemyArchetype.Support:
-                        if (!summary.HasHeal && !summary.HasBuff)
-                            issues.Add(new EnemyIssue(EnemyIssueSeverity.Warning, SecSheet, "Arquetipo = Apoyo pero no cura ni buffea a nadie."));
+                        // El aura defensiva declarada en el SO cuenta como capacidad de apoyo
+                        // aunque el árbol no cure ni buffee (Guardian del GDD).
+                        if (!summary.HasHeal && !summary.HasBuff && !so.HasAura)
+                            issues.Add(new EnemyIssue(EnemyIssueSeverity.Warning, SecSheet, "Arquetipo = Apoyo pero no cura, no buffea ni proyecta aura."));
                         break;
                     case EnemyArchetype.Ranged:
                         if (!summary.HasRangedShot && !summary.KeepsDistance && !summary.HasTelegraph)

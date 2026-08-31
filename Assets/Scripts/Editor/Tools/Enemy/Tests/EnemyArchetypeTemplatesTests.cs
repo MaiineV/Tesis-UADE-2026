@@ -83,6 +83,26 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         }
 
         [Test]
+        public void Sweeper_IsInstant_WithoutTelegraphNodes()
+        {
+            var so = Apply(EnemyArchetypeTemplates.Find("sweeper"));
+            Assert.AreEqual(AttackTiming.Instant, so.Design.Timing);
+            Assert.IsFalse(EnemyTreeSummary.Build(so).HasTelegraph, "el barrido es instantáneo");
+        }
+
+        [Test]
+        public void Guardian_DeclaresAura_AndPassesSupportRule()
+        {
+            var so = Apply(EnemyArchetypeTemplates.Find("guardian"));
+            Assert.IsTrue(so.HasAura);
+            Assert.AreEqual(2, so.AuraRadius);
+
+            var issues = EnemyDataValidator.Validate(so, new List<EnemyDataSO> { so }, null, null, null);
+            Assert.IsFalse(issues.Exists(i => i.Message.Contains("Apoyo")),
+                "el aura declarada cuenta como capacidad de soporte");
+        }
+
+        [Test]
         public void Charger_TelegraphUsesTheTemplateAttack()
         {
             var so = Apply(EnemyArchetypeTemplates.Find("charger"));

@@ -81,6 +81,48 @@ namespace Rollgeon.Editor.Tools.Enemy.Templates
                     EffectAuthoring.Step("feel.enemy.melee.impact"),
                     EffectAuthoring.Step("hit.impulse"))));
 
+        /// <summary>Embestida del Charger: golpe melee pleno + empuje de 1 casilla; si el empuje
+        /// queda bloqueado, el efecto de empuje cobra el bono (+ATK×0,5) por su cuenta.</summary>
+        public static AINode_Behavior AttackMeleeWithPush(string name = "Embestida",
+                                                          int pushDistance = 1, float blockedBonus = 0.5f)
+            => Behavior(name, new TargetSelector_AlwaysPlayer(), Group(
+                EffectAuthoring.Sequence(EffectAuthoring.Step("anim.enemy.melee.attack", StepEndMode.OnEvent, "hit")),
+                EffectAuthoring.DealDamageFromStat(StatType.Attack),
+                EffectAuthoring.GridPush(pushDistance, blockedBonus),
+                EffectAuthoring.Sequence(
+                    EffectAuthoring.Step("vfx.enemy.melee.impact"),
+                    EffectAuthoring.Step("sfx.enemy.melee.hit"),
+                    EffectAuthoring.Step("feel.enemy.melee.impact"),
+                    EffectAuthoring.Step("hit.impulse"))));
+
+        /// <summary>
+        /// Behavior con ÁREA instantánea (Sweeper): los efectos golpean a los ocupantes del
+        /// área que pasen el filtro (default: solo el jugador), en el mismo turno.
+        /// </summary>
+        public static AINode_Behavior AreaBehavior(string name, BaseEnemyTargetSelector selector,
+                                                   ThreatShape shape, int size, int depth,
+                                                   params EffectData[] groups)
+        {
+            var node = Behavior(name, selector, groups);
+            node.Behavior.UseArea = true;
+            node.Behavior.AreaShape = shape;
+            node.Behavior.AreaSize = size;
+            node.Behavior.AreaDepth = depth;
+            return node;
+        }
+
+        /// <summary>Barrido en cono instantáneo del Sweeper (apex 0 ⇒ 1-3-5 casillas).</summary>
+        public static AINode_Behavior SweepCone(string name = "Barrido", int apexHalfWidth = 0,
+                                                int depth = 2, float multiplier = 1f)
+            => AreaBehavior(name, new TargetSelector_AlwaysPlayer(),
+                ThreatShape.DirectionalCone, apexHalfWidth, depth, Group(
+                    EffectAuthoring.Sequence(EffectAuthoring.Step("anim.enemy.melee.attack", StepEndMode.OnEvent, "hit")),
+                    EffectAuthoring.DealDamageFromStat(StatType.Attack, multiplier),
+                    EffectAuthoring.Sequence(
+                        EffectAuthoring.Step("vfx.enemy.melee.impact"),
+                        EffectAuthoring.Step("sfx.enemy.melee.hit"),
+                        EffectAuthoring.Step("feel.enemy.melee.impact"))));
+
         /// <summary>Disparo directo: mismo pipeline que el melee con los feedbacks <c>enemy.ranged.*</c>.</summary>
         public static AINode_Behavior AttackRanged(string name = "Disparo", float multiplier = 1f)
             => Behavior(name, new TargetSelector_AlwaysPlayer(), Group(
@@ -115,10 +157,15 @@ namespace Rollgeon.Editor.Tools.Enemy.Templates
 
         public static AINode_If IfTargetInRange(int range, AIDecisionNode then, AIDecisionNode @else = null,
                                                 DistanceMetric metric = DistanceMetric.Manhattan,
-                                                BaseEnemyTargetSelector selector = null)
+                                                BaseEnemyTargetSelector selector = null,
+                                                TargetAlignment alignment = TargetAlignment.Any,
+                                                bool lineOfSight = false)
         {
             var n = new AINode_If { TargetSelector = selector ?? new TargetSelector_AlwaysPlayer(), Then = then, Else = @else };
-            n.Conditions.Add(new PcTargetInRange { Range = range, Metric = metric });
+            n.Conditions.Add(new PcTargetInRange
+            {
+                Range = range, Metric = metric, Alignment = alignment, RequireLineOfSight = lineOfSight,
+            });
             return n;
         }
 
