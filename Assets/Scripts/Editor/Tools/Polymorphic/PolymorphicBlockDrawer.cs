@@ -48,7 +48,20 @@ namespace Rollgeon.Editor.Tools.Polymorphic
             /// </summary>
             public bool ShowTargetSelector;
 
-            public static Options Enemy => new Options { ShowTargetSelector = true };
+            /// <summary>
+            /// Filtro de tipos para los pickers de Eff/PC. El host enemigo esconde lo que en su
+            /// contexto no hace nada (efectos/PCs que leen el roll del jugador — el validador ya
+            /// los marca en assets viejos). Null = sin filtro (Item/Enchantment Editor).
+            /// </summary>
+            public System.Func<System.Type, bool> TypeFilter;
+
+            public static Options Enemy => new Options
+            {
+                ShowTargetSelector = true,
+                // global:: — dentro del struct, "Enemy" a secas resuelve a este mismo property.
+                TypeFilter = t => !global::Rollgeon.Editor.Tools.Enemy.AITree.AITreeValidator.NeedsPlayerRollContext(t)
+                                  && !global::Rollgeon.Editor.Tools.Enemy.AITree.AITreeValidator.PcUnusableInEnemyTree(t),
+            };
             public static Options Default => new Options { ShowTargetSelector = false };
         }
 
@@ -131,12 +144,14 @@ namespace Rollgeon.Editor.Tools.Polymorphic
 
         /// <summary>"+ Add" that records undo before mutating, then dirties and repaints.</summary>
         public static void DrawAddButton(
-            PolymorphicAuthoringContext ctx, string label, System.Type baseType, IList list)
+            PolymorphicAuthoringContext ctx, string label, System.Type baseType, IList list,
+            System.Func<System.Type, bool> filter = null)
         {
             PolymorphicPicker.DrawAddButton(
                 label, baseType, list,
                 onAdded: () => { ctx.MarkDirty(); ctx.Notify(); },
-                onBeforeAdd: () => ctx.RecordUndo("Add " + label));
+                onBeforeAdd: () => ctx.RecordUndo("Add " + label),
+                filter: filter);
         }
 
         /// <summary>Picker for a single polymorphic slot, followed by Odin drawing its fields.</summary>
@@ -225,14 +240,14 @@ namespace Rollgeon.Editor.Tools.Polymorphic
             EditorGUILayout.LabelField("PreConditions (AND)", EditorStyles.miniBoldLabel);
             if (item.PreConditions == null) item.PreConditions = new List<BasePreCondition>();
             DrawPolymorphicListItems(ctx, item.PreConditions, basePath + ".PreConditions", "PreCondition");
-            DrawAddButton(ctx, "PreCondition", typeof(BasePreCondition), item.PreConditions);
+            DrawAddButton(ctx, "PreCondition", typeof(BasePreCondition), item.PreConditions, opts.TypeFilter);
 
             EditorGUILayout.Space(4);
 
             EditorGUILayout.LabelField("Effects", EditorStyles.miniBoldLabel);
             if (item.Effects == null) item.Effects = new List<IEffect>();
             DrawEffectListItems(ctx, item.Effects, basePath + ".Effects", opts, depth);
-            DrawAddButton(ctx, "Effect", typeof(IEffect), item.Effects);
+            DrawAddButton(ctx, "Effect", typeof(IEffect), item.Effects, opts.TypeFilter);
 
             if (!opts.ShowTargetSelector) return;
 

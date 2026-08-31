@@ -35,6 +35,7 @@ namespace Rollgeon.Effects.Tests
             attrs.SetAttribute<Energy>(new Energy(5));
             attrs.SetAttribute<Shield>(new Shield(0));
             attrs.SetAttribute<Attack>(new Attack(3));
+            attrs.SetAttribute<AttackRange>(new AttackRange(4));
             _attrManager.Register(_sourceId, attrs);
 
             ServiceLocator.AddService<AttributesManager>(_attrManager, ServiceScope.Run);
@@ -191,6 +192,20 @@ namespace Rollgeon.Effects.Tests
         }
 
         // ── Stat routing ───────────────────────────────────────────────
+
+        [Test]
+        public void Add_AttackRange_RoutesToNewAttribute()
+        {
+            // Arrange — AttackRange=4 del SetUp; el stat nuevo es buffeable como cualquiera.
+            var eff = MakeConstant(StatType.AttackRange, IntOperation.Add, 2);
+
+            // Act
+            eff.ApplyEffect(MakeCtx());
+
+            // Assert
+            Assert.AreEqual(6, _attrManager.GetAttributeValue<AttackRange, int>(_sourceId));
+            Assert.AreEqual(5, _attrManager.GetAttributeValue<Energy, int>(_sourceId), "Energy no debe cambiar.");
+        }
 
         [Test]
         public void TargetStat_RoutesToCorrectAttribute()

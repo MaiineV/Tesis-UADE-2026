@@ -443,8 +443,8 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 8535671167614976
-    m_Localized: These are your class dice. Click one to add it to your bag; the
-      number on each row shows how many of that type you can carry.
+    m_Localized: These are your class dice. Click one to add it to your bag; you
+      can repeat the same type as many times as you like.
     m_Metadata:
       m_Items: []
   - m_Id: 8535671486382080
@@ -862,6 +862,26 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 15429564929064960
     m_Localized: Class Skill
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16211047658389504
+    m_Localized: Attack
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16211047712915456
+    m_Localized: Control
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16211047712915457
+    m_Localized: Defense
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16211047712915458
+    m_Localized: Economy
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16211047712915459
+    m_Localized: Curse
     m_Metadata:
       m_Items: []
   references:

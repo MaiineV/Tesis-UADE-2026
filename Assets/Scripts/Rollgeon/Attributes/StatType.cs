@@ -8,5 +8,7 @@ namespace Rollgeon.Attributes
         Energy,
         Shield,
         HealStrength,
+        // Appendear al final: los indices viajan serializados en assets.
+        AttackRange,
     }
 }

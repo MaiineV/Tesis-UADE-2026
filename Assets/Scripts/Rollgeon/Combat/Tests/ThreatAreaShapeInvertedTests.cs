@@ -187,6 +187,7 @@ namespace Rollgeon.Combat.Tests
                 ThreatShape.SquareAroundSelf,
                 ThreatShape.AllExceptSquareAroundSelf,
                 ThreatShape.ColumnAroundSelf,
+                ThreatShape.CrossAroundSelf,
             };
 
             foreach (var shape in selfCentered)

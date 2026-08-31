@@ -134,10 +134,16 @@ namespace Rollgeon.Combat.AI.Decisions
         {
             var pool = new List<GridCoord>();
 
+            // Footprint del self (Fase B): un candidato solo vale si el rectángulo entero
+            // cabe ahí. El guid se recupera del ancla propia; para 1×1 nada cambia.
+            grid.TryGetOccupant(selfCoord, out var selfGuid);
+            var selfFp = grid.GetFootprint(selfGuid);
+
             // RoomTiles ya filtra caminable y devuelve vacío con el grafo stub "infinito".
             foreach (var c in ThreatAreaShape.RoomTiles(grid))
             {
-                if (c == selfCoord || c == playerCoord || grid.IsOccupied(c)) continue;
+                if (c == selfCoord || c == playerCoord) continue;
+                if (!grid.CanPlace(c, selfFp, ignore: selfGuid)) continue;
                 if (skipHarmful && HarmfulTileQuery.IsHarmfulAt(c)) continue;
 
                 int distance = c.Manhattan(playerCoord);

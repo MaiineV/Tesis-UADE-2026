@@ -25,7 +25,7 @@ namespace Rollgeon.Upgrades.Dice.UI
     public sealed class EnchantmentOptionSlotView : MonoBehaviour,
         IPointerEnterHandler, IPointerExitHandler
     {
-        private const float EmptyAlpha = 0.45f;
+        private const float EmptyAlpha = 1f;
         private const float FallbackRowHeight = 86f;
 
         [Title("Widget refs")]

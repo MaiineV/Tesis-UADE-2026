@@ -827,6 +827,26 @@ MonoBehaviour:
     m_Key: action.class_skill
     m_Metadata:
       m_Items: []
+  - m_Id: 16211047658389504
+    m_Key: dicebag.cat.ataque
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16211047712915456
+    m_Key: dicebag.cat.control
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16211047712915457
+    m_Key: dicebag.cat.defensa
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16211047712915458
+    m_Key: dicebag.cat.economia
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16211047712915459
+    m_Key: dicebag.cat.maldicion
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

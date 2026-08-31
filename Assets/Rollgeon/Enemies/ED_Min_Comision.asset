@@ -163,10 +163,28 @@ MonoBehaviour:
     - Name: 
       Entry: 8
       Data: 
+    - Name: AIDetachedNodes
+      Entry: 7
+      Data: 13|System.Collections.Generic.List`1[[Rollgeon.Combat.AI.Decisions.AIDecisionNode,
+        Rollgeon]], mscorlib
+    - Name: 
+      Entry: 12
+      Data: 0
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
   EntityId: minion.cajero_comision
   DisplayName: "Comisi\xF3n"
   Description: Vuela, tira de lejos, y le pone precio a huir.
   Portrait: {fileID: 133841030, guid: 7354be46d5bce5b44ae3fc20ec0cb47f, type: 3}
+  Design:
+    Archetype: 2
+    Pattern: 7
+    Timing: 1
+    Notes: Mordisco a distancia 5 (Manhattan); se acerca si no llega.
   WeaknessComboId: 
   WeaknessMultiplierOverride: 0
   BaseHP: 18

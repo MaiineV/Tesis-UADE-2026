@@ -93,7 +93,7 @@ namespace Rollgeon.Entities.Visuals
                 Debug.LogError($"[EntityVisualService] EnemyDataSO '{data.name}' no tiene VisualPrefab asignado.");
                 return null;
             }
-            var pawn = SpawnInternal(guid, data.VisualPrefab, coord, EntityPawn.PawnKind.Enemy);
+            var pawn = SpawnInternal(guid, data.VisualPrefab, coord, EntityPawn.PawnKind.Enemy, data.EffectiveFootprint);
             AttachTooltip(pawn, data);
             return pawn;
         }
@@ -125,6 +125,12 @@ namespace Rollgeon.Entities.Visuals
             // Hover y no Click: el click sobre una casilla ocupada por un enemigo ya es "atacar",
             // y robarle ese click para abrir un panel rompería el input del combate.
             trigger.Mode = Rollgeon.UI.Tooltips.WorldTooltipMode.Hover;
+
+            // BUG-075: el anclaje es transform.position del pawn (los pies) y el panel
+            // crecía hacia arriba justo sobre el cuerpo del modelo. Debajo de los pies no
+            // tapa nada; el clamp del controller lo mete en pantalla si el enemigo está
+            // pegado al borde inferior.
+            trigger.VerticalSide = Rollgeon.UI.Tooltips.TooltipVerticalSide.Below;
 
             // Explícito en vez de dejar que el TooltipResolver lo busque: el pawn del jefe cuelga
             // otros IHasTooltipInfo abajo (las casillas de sus props) y el auto-resolve devuelve el
@@ -185,7 +191,8 @@ namespace Rollgeon.Entities.Visuals
 
         // ---- Internals ---------------------------------------------------
 
-        private EntityPawn SpawnInternal(Guid guid, GameObject prefab, GridCoord coord, EntityPawn.PawnKind kind)
+        private EntityPawn SpawnInternal(Guid guid, GameObject prefab, GridCoord coord, EntityPawn.PawnKind kind,
+                                         Vector2Int footprint = default)
         {
             if (guid == Guid.Empty) throw new ArgumentException("guid cannot be Guid.Empty", nameof(guid));
             if (_byGuid.ContainsKey(guid)) Despawn(guid);
@@ -194,6 +201,7 @@ namespace Rollgeon.Entities.Visuals
             var pawn = go.GetComponent<EntityPawn>();
             if (pawn == null) pawn = go.AddComponent<EntityPawn>();
             pawn.Bind(guid, kind);
+            pawn.SetFootprint(footprint == default ? Vector2Int.one : footprint);
             pawn.SnapToGrid(_grid, coord);
 
             // §10 feedback pipeline: el pawn queda descubierto por IPawnRegistry via este binding.

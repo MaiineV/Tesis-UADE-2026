@@ -50,7 +50,7 @@ Both stats and behaviors are deep-cloned on spawn:
 - **Uses:** [[BaseEntitySO]], [[Health]], [[Attack]], [[Speed]],
   [[Energy]], [[HealStrength]], [[BaseBehavior]], [[ComboCatalogSO]]
   (dropdown source).
-- **Used by:** [[EnemyCatalogSO]], [[EnemyPoolSO]],
+- **Used by:** [[EnemyPoolSO]],
   [[DefaultEnemySpawnResolver]], [[WeaknessRegistry]] (on spawn).
 
 ## Code

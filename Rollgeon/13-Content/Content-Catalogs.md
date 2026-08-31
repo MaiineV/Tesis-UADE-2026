@@ -15,9 +15,8 @@ tags: [content, catalog, index]
 |---|---|---|
 | [[ActionCatalogSO]]        | ✅ done  | action economy |
 | [[ComboCatalogSO]]         | ✅ done  | 8 Warrior combos |
-| [[EnemyCatalogSO]]         | ✅ done  | enemies |
 | [[BehaviorLibrarySO]]      | ✅ done  | behaviors |
-| EntityCatalogSO            | 🟡 TBD   | Unified entity catalog across enemies / props / npcs (§7). Today covered by EnemyCatalogSO. |
+| EntityCatalogSO            | 🟡 TBD   | Unified entity catalog across enemies / props / npcs (§7). The old EnemyCatalogSO was retired (no runtime readers; the enemy tool discovers assets via FindAssets). |
 | RoomCatalogSO              | 🟡 TBD   | Currently inline via FloorLayoutSO references. |
 | RulesetCatalogSO           | 🟡 TBD   | Today a single [[RulesetSO]] registered directly. |
 | FeedbackDBSO               | 🟡 TBD   | §10 feedback pipeline unimplemented. |

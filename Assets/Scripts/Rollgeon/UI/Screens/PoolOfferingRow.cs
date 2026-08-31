@@ -10,13 +10,14 @@ namespace Rollgeon.UI.Screens
     /// <summary>
     /// Una fila del pool en <see cref="BuildSelectionScreen"/>: el sprite del
     /// dado (clickeable — el click izquierdo AGREGA a la bolsa, el derecho QUITA
-    /// una copia), el nombre del tipo y el contador "X / max". Se atenúa cuando el
-    /// tipo se agota o la bolsa está llena. Quitar también se puede clickeando el
-    /// dado en la tira de la bolsa: los dos caminos van al mismo handler.
+    /// una copia), el nombre del tipo y el contador de copias en la bolsa. No hay
+    /// tope por tipo: el add solo se apaga cuando la bolsa está llena. Quitar
+    /// también se puede clickeando el dado en la tira de la bolsa: los dos
+    /// caminos van al mismo handler.
     /// </summary>
     /// <remarks>
     /// La screen orquesta la logica (no la fila). La fila solo muestra el tipo,
-    /// el contador "X / max" y emite eventos de click.
+    /// el contador y emite eventos de click.
     /// </remarks>
     [AddComponentMenu("Rollgeon/UI/Screens/Pool Offering Row")]
     public class PoolOfferingRow : MonoBehaviour
@@ -44,23 +45,19 @@ namespace Rollgeon.UI.Screens
         [SerializeField, Optional, Tooltip("CanvasGroup del root — atenúa la fila agotada.")]
         private CanvasGroup _rowGroup;
 
-        private const float ExhaustedAlpha = 0.4f;
-
         private PointerRightClickRelay _rightClickRelay;
         private int _currentCount;
 
         public DiceType Type { get; private set; }
-        public int MaxInBag { get; private set; }
 
         public event Action<DiceType> OnAddRequested;
         public event Action<DiceType> OnRemoveRequested;
 
-        public void Bind(DiceType type, int maxInBag) => Bind(type, maxInBag, dieSprite: null);
+        public void Bind(DiceType type) => Bind(type, dieSprite: null);
 
-        public void Bind(DiceType type, int maxInBag, Sprite dieSprite)
+        public void Bind(DiceType type, Sprite dieSprite)
         {
             Type = type;
-            MaxInBag = maxInBag;
 
             if (_typeLabel != null) _typeLabel.text = type.ToString();
             if (_dieImage != null && dieSprite != null) _dieImage.sprite = dieSprite;
@@ -98,24 +95,19 @@ namespace Rollgeon.UI.Screens
 
         /// <summary>
         /// Refresca el contador y la interactividad. <paramref name="bagHasRoom"/>
-        /// apaga el add cuando la bolsa ya alcanzo <c>RequiredBagSize</c>. La fila
-        /// agotada (sin más copias disponibles) se atenúa como en el mock.
+        /// apaga el add cuando la bolsa ya alcanzo <c>RequiredBagSize</c> — es el
+        /// único gate: sin tope por tipo, la fila nunca se "agota" sola.
         /// </summary>
         public void Refresh(int currentCount, bool bagHasRoom)
         {
             _currentCount = currentCount;
-            if (_countLabel != null) _countLabel.text = $"{currentCount} / {MaxInBag}";
+            if (_countLabel != null) _countLabel.text = currentCount.ToString();
 
-            bool canAdd = bagHasRoom && currentCount < MaxInBag;
-            if (_addButton != null) _addButton.interactable = canAdd;
+            if (_addButton != null) _addButton.interactable = bagHasRoom;
             if (_removeButton != null) _removeButton.interactable = currentCount > 0;
 
-            // Gris solo cuando el TIPO se agotó (mock: fila D20 1/1 en gris) — la
-            // bolsa llena no atenúa las filas, solo apaga el click.
-            if (_rowGroup != null)
-            {
-                _rowGroup.alpha = currentCount >= MaxInBag ? ExhaustedAlpha : 1f;
-            }
+            // La bolsa llena no atenúa las filas, solo apaga el click.
+            if (_rowGroup != null) _rowGroup.alpha = 1f;
         }
 
         /// <summary>El installer/screen apaga el divider de la última fila.</summary>

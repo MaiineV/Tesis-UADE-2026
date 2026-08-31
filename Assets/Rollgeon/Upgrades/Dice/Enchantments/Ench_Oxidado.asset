@@ -46,6 +46,9 @@ MonoBehaviour:
     - Name: 
       Entry: 8
       Data: 
+    - Name: _category
+      Entry: 3
+      Data: 5
     - Name: _allowedDiceTypes
       Entry: 7
       Data: 1|System.Collections.Generic.List`1[[Rollgeon.Dice.DiceType, Rollgeon]],
@@ -156,6 +159,9 @@ MonoBehaviour:
     - Name: RangeMode
       Entry: 3
       Data: 0
+    - Name: RangeFromMovementDie
+      Entry: 5
+      Data: false
     - Name: TargetMode
       Entry: 3
       Data: 0
@@ -277,15 +283,15 @@ MonoBehaviour:
   _faceFilter:
     rid: -2
   _triggers:
-  - rid: 3043746564886758302
+  - rid: 144068563111248715
   _capabilities:
-  - rid: 3043746564886758303
+  - rid: 144068563111248716
   references:
     version: 2
     RefIds:
     - rid: -2
       type: {class: , ns: , asm: }
-    - rid: 3043746564886758302
+    - rid: 144068563111248715
       type: {class: ExecuteEffectsOnDiceEvent, ns: Rollgeon.Upgrades.Dice.Triggers, asm: Rollgeon}
       data:
         Event: 2
@@ -297,13 +303,13 @@ MonoBehaviour:
         - Label: Effect Group
           PreConditions: []
           Effects:
-          - rid: 3043746564886758304
+          - rid: 144068563111248717
           TargetSelector:
             rid: -2
-    - rid: 3043746564886758303
+    - rid: 144068563111248716
       type: {class: CapCursed, ns: Rollgeon.Upgrades.Dice, asm: Rollgeon}
       data: 
-    - rid: 3043746564886758304
+    - rid: 144068563111248717
       type: {class: EffAddComboBonus, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
       data:
         Selection:
@@ -313,6 +319,7 @@ MonoBehaviour:
           IsGlobal: 0
           Range: 1
           RangeMode: 0
+          RangeFromMovementDie: 0
           TargetMode: 0
           AoeShape: 0
           AoeRadius: 1
@@ -327,8 +334,8 @@ MonoBehaviour:
           AutoResolve: 0
           AutoAccept: 1
         _amount:
-          rid: 3043746564886758305
-    - rid: 3043746564886758305
+          rid: 144068563111248718
+    - rid: 144068563111248718
       type: {class: ReadConstantInt, ns: Rollgeon.Effects.Readers, asm: Rollgeon}
       data:
         Value: -1

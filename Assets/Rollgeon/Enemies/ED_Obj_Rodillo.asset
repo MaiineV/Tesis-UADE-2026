@@ -40,12 +40,30 @@ MonoBehaviour:
     - Name: 
       Entry: 8
       Data: 
+    - Name: AIDetachedNodes
+      Entry: 7
+      Data: 2|System.Collections.Generic.List`1[[Rollgeon.Combat.AI.Decisions.AIDecisionNode,
+        Rollgeon]], mscorlib
+    - Name: 
+      Entry: 12
+      Data: 0
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
   EntityId: obj.reel
   DisplayName: Reel
   Description: "One of La Bandida's three reels: a wall bolted in a row against hers.
     Any hit cancels the jackpot count, but breaking one costs most of a turn \u2014
     and the tile it leaves behind burns."
   Portrait: {fileID: 21300000, guid: 042f56cf989a1484c98dd857b500872c, type: 3}
+  Design:
+    Archetype: 0
+    Pattern: 0
+    Timing: 0
+    Notes: 'Objeto de sala: no ataca ni se mueve.'
   WeaknessComboId: 
   WeaknessMultiplierOverride: 0
   BaseHP: 60
@@ -58,3 +76,7 @@ MonoBehaviour:
   VisualPrefab: {fileID: 1991033538973086034, guid: a647e828c0b7acd4ab78cc80f2ee603b, type: 3}
   MinGoldDrop: 0
   MaxGoldDrop: 0
+  IsFlying: 0
+  IsBoss: 0
+  Personality: 0
+  KamikazeIgnoresSurvival: 0

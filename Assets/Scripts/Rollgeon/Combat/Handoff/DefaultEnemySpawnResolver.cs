@@ -17,6 +17,7 @@ using Rollgeon.Entities.Traits;
 using Rollgeon.Entities.Visuals;
 using Rollgeon.Grid;
 using Rollgeon.Run;
+using UnityEngine;
 
 namespace Rollgeon.Combat.Handoff
 {
@@ -138,7 +139,7 @@ namespace Rollgeon.Combat.Handoff
                     }
                     else
                     {
-                        var randomCoord = TryPickRandomSpawnCoord(forbidden, rng);
+                        var randomCoord = TryPickRandomSpawnCoord(forbidden, rng, data.EffectiveFootprint);
                         id = randomCoord.HasValue
                             ? RegisterEnemyAtCoord(data, randomCoord.Value, rng, state, state.Tier, presetId)
                             : RegisterEnemyFromState(data, state, layout, rng, presetId);
@@ -150,7 +151,26 @@ namespace Rollgeon.Combat.Handoff
                         instance.SpawnedEnemies.Add(id);
                     }
                 }
-                return result;
+
+                // BUG-078: había states vivos pero NINGUNO se pudo resolver (típico:
+                // LookupEnemyData sin match en el resume). Devolver vacío deja a la sala
+                // yendo a combate sin combatientes → abort fantasma. Caemos al plan de
+                // primer spawn, que garantiza boss vía instance.Boss / BossPool del piso.
+                bool anyAliveState = false;
+                foreach (var state in existingStates)
+                {
+                    if (!state.IsDead) { anyAliveState = true; break; }
+                }
+                if (result.Count == 0 && anyAliveState)
+                {
+                    Debug.LogWarning(
+                        "[DefaultEnemySpawnResolver] Re-entry con states vivos pero 0 enemigos " +
+                        "resueltos — fallback a primer spawn (BUG-078).");
+                }
+                else
+                {
+                    return result;
+                }
             }
 
             // 2. Primer spawn de la sala.
@@ -381,7 +401,18 @@ namespace Rollgeon.Combat.Handoff
                 _aiRegistry.Register(id, aiRoot, maxHp);
             }
 
-            if (_grid != null) _grid.Register(id, coord);
+            if (_grid != null)
+            {
+                var footprint = enemyData.EffectiveFootprint;
+                coord = ResolveFootprintAnchor(coord, footprint, enemyData);
+                if (!_grid.TryRegister(id, coord, footprint))
+                {
+                    // Ya se intentó correr el ancla: el rectángulo no cabe. Se registra 1×1 para que
+                    // el combate arranque igual; el pawn se dibuja grande sobre una celda.
+                    Debug.LogError($"[DefaultEnemySpawnResolver] '{enemyData.name}' ({footprint.x}×{footprint.y}) no cabe cerca de {coord}: se registra 1×1.");
+                    _grid.Register(id, coord);
+                }
+            }
             if (_visuals != null) _visuals.SpawnEnemy(id, enemyData, coord);
 
             int hp = state != null ? Math.Max(0, state.CurrentHP) : maxHp;
@@ -403,6 +434,7 @@ namespace Rollgeon.Combat.Handoff
             ApplyComboImmunities(enemyData);
             RegisterWeakness(id, enemyData);
             RegisterTraits(id, enemyData);
+            RegisterAura(id, enemyData);
 
             return id;
         }
@@ -417,6 +449,17 @@ namespace Rollgeon.Combat.Handoff
             if (enemyData == null) return;
             if (ServiceLocator.TryGetService<IUnitTraitService>(out var traits) && traits != null)
                 traits.Register(id, enemyData.CreateTraits());
+        }
+
+        /// <summary>
+        /// Registra el aura defensiva declarada en el SO (Guardian). El servicio se crea lazy
+        /// solo si algún enemigo la trae; el aura muere sola con el portador (fuera del grid).
+        /// </summary>
+        private static void RegisterAura(Guid id, EnemyDataSO enemyData)
+        {
+            if (enemyData == null || !enemyData.HasAura) return;
+            Rollgeon.Combat.Auras.EnemyAuraService.ResolveOrCreate()
+                .Register(id, enemyData.AuraRadius, enemyData.AuraFlatReduction);
         }
 
         /// <summary>
@@ -486,6 +529,9 @@ namespace Rollgeon.Combat.Handoff
         /// caer al path determinístico.
         /// </summary>
         private GridCoord? TryPickRandomSpawnCoord(HashSet<GridCoord> forbidden, System.Random rng)
+            => TryPickRandomSpawnCoord(forbidden, rng, GridFootprint.Unit);
+
+        private GridCoord? TryPickRandomSpawnCoord(HashSet<GridCoord> forbidden, System.Random rng, Vector2Int footprint)
         {
             if (_grid == null || _grid.Graph == null) return null;
 
@@ -495,6 +541,7 @@ namespace Rollgeon.Combat.Handoff
                 if (forbidden.Contains(coord)) continue;
                 if (_grid.IsOccupied(coord)) continue;
                 if (!_grid.IsWalkable(coord)) continue;
+                if (!GridFootprint.IsUnit(footprint) && !FootprintFits(coord, footprint, forbidden)) continue;
                 // BUG-069: un nodo walkable puede tener grado 0 (isla del NavGraph) —
                 // un enemigo spawneado ahí queda inalcanzable y sin poder moverse.
                 if (!_grid.Graph.IsEmpty && !HasAnyNeighbor(coord)) continue;
@@ -504,6 +551,55 @@ namespace Rollgeon.Combat.Handoff
             if (candidates.Count == 0) return null;
             int pick = rng != null ? rng.Next(candidates.Count) : UnityEngine.Random.Range(0, candidates.Count);
             return candidates[pick];
+        }
+
+        /// <summary>El rectángulo entero cabe (walkable + libre) y ninguna de sus celdas está prohibida.</summary>
+        private bool FootprintFits(GridCoord anchor, Vector2Int footprint, HashSet<GridCoord> forbidden)
+        {
+            if (!_grid.CanPlace(anchor, footprint)) return false;
+            if (forbidden == null) return true;
+            foreach (var c in GridFootprint.Cells(anchor, footprint))
+                if (forbidden.Contains(c)) return false;
+            return true;
+        }
+
+        /// <summary>Radio (Chebyshev) en el que se busca un ancla alternativa para un footprint que no cabe.</summary>
+        public const int FootprintShiftRadius = 3;
+
+        /// <summary>
+        /// Un 1×1 vuelve tal cual. Para un rectángulo que no cabe en el ancla pedida, barre anclas
+        /// cercanas en orden determinista (anillos Chebyshev 1..<see cref="FootprintShiftRadius"/>,
+        /// dentro del anillo por Manhattan, X, Y) y devuelve la primera que cabe; si ninguna cabe
+        /// devuelve la original (el caller decide el fallback).
+        /// </summary>
+        private GridCoord ResolveFootprintAnchor(GridCoord desired, Vector2Int footprint, EnemyDataSO data)
+        {
+            if (_grid == null || GridFootprint.IsUnit(footprint)) return desired;
+            if (_grid.CanPlace(desired, footprint)) return desired;
+
+            var ring = new List<GridCoord>();
+            for (int r = 1; r <= FootprintShiftRadius; r++)
+            {
+                ring.Clear();
+                for (int dy = -r; dy <= r; dy++)
+                    for (int dx = -r; dx <= r; dx++)
+                        if (Math.Max(Math.Abs(dx), Math.Abs(dy)) == r)
+                            ring.Add(new GridCoord(desired.X + dx, desired.Y + dy));
+                ring.Sort((a, b) =>
+                {
+                    int c = desired.Manhattan(a).CompareTo(desired.Manhattan(b));
+                    if (c != 0) return c;
+                    c = a.X.CompareTo(b.X);
+                    return c != 0 ? c : a.Y.CompareTo(b.Y);
+                });
+                foreach (var anchor in ring)
+                {
+                    if (!_grid.CanPlace(anchor, footprint)) continue;
+                    Debug.LogWarning($"[DefaultEnemySpawnResolver] '{data.name}' ({footprint.x}×{footprint.y}) no cabe en {desired}: corrido a {anchor}.");
+                    return anchor;
+                }
+            }
+            return desired;
         }
 
         private bool HasAnyNeighbor(GridCoord coord)

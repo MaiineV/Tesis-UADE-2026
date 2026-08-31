@@ -195,6 +195,55 @@ namespace Rollgeon.UI.Tests
             return actionButton;
         }
 
+        // ------------------------------------------------------------------
+        // ShouldFlagUnaffordable — regla pura del flag ortogonal (BUG-074)
+        // ------------------------------------------------------------------
+
+        [Test]
+        public void test_shouldFlagUnaffordable_playerTurnIdleNoRolls_flags()
+        {
+            Assert.IsTrue(PlayerActionButtonsView.ShouldFlagUnaffordable(
+                isPlayerTurn: true, inChain: false, rolled: false,
+                modalRollActive: false, hasRolls: false));
+        }
+
+        [Test]
+        public void test_shouldFlagUnaffordable_withRolls_doesNotFlag()
+        {
+            Assert.IsFalse(PlayerActionButtonsView.ShouldFlagUnaffordable(
+                isPlayerTurn: true, inChain: false, rolled: false,
+                modalRollActive: false, hasRolls: true));
+        }
+
+        [Test]
+        public void test_shouldFlagUnaffordable_enemyTurn_doesNotFlag()
+        {
+            Assert.IsFalse(PlayerActionButtonsView.ShouldFlagUnaffordable(
+                isPlayerTurn: false, inChain: false, rolled: false,
+                modalRollActive: false, hasRolls: false));
+        }
+
+        [Test]
+        public void test_shouldFlagUnaffordable_actionInFlight_doesNotFlag()
+        {
+            // El pool baja transitoriamente durante la propia acción — pintar rojo
+            // ahí es ruido (parpadeo durante la animación).
+            Assert.IsFalse(PlayerActionButtonsView.ShouldFlagUnaffordable(
+                isPlayerTurn: true, inChain: true, rolled: false,
+                modalRollActive: false, hasRolls: false));
+            Assert.IsFalse(PlayerActionButtonsView.ShouldFlagUnaffordable(
+                isPlayerTurn: true, inChain: false, rolled: true,
+                modalRollActive: false, hasRolls: false));
+        }
+
+        [Test]
+        public void test_shouldFlagUnaffordable_modalRollOpen_doesNotFlag()
+        {
+            Assert.IsFalse(PlayerActionButtonsView.ShouldFlagUnaffordable(
+                isPlayerTurn: true, inChain: false, rolled: false,
+                modalRollActive: true, hasRolls: false));
+        }
+
         private static void AssignPrivate(object target, string fieldName, object value)
         {
             var field = target.GetType().GetField(fieldName,

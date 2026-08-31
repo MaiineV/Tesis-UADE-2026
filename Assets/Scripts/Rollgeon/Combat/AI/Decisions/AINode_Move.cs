@@ -2,6 +2,7 @@ using System;
 using Rollgeon.Combat.AI.Readers;
 using Rollgeon.Combat.AI.Targeting;
 using Rollgeon.Grid;
+using Rollgeon.Movement;
 using Sirenix.OdinInspector;
 using Sirenix.Serialization;
 using UnityEngine;
@@ -44,7 +45,8 @@ namespace Rollgeon.Combat.AI.Decisions
         public override string NodeName => "Move Toward Target";
 
         /// <summary>Key compartida por todos los AINode_Move del árbol: mover es UNA acción por turno.</summary>
-        internal const string ActionKey = "__move";
+        // Público: el AITreeValidator (editor asmdef) lo usa para vetar ActionNames reservados.
+        public const string ActionKey = "__move";
 
         public override AIResult Tick(AIContext context)
         {
@@ -63,7 +65,11 @@ namespace Rollgeon.Combat.AI.Decisions
                 return AIResult.Failed;
 
             int desiredRange = DesiredRange?.Read(context) ?? (StopAdjacent ? 1 : 0);
-            int currentDist = selfCoord.Manhattan(targetCoord);
+            // Rect-a-rect (Fase B): la distancia se mide desde la celda más cercana de cada
+            // footprint; para dos 1×1 es el Manhattan de siempre.
+            var selfFp = context.Grid.GetFootprint(context.SelfGuid);
+            var targetFp = context.Grid.GetFootprint(targetGuid);
+            int currentDist = GridFootprint.ManhattanDistance(selfCoord, selfFp, targetCoord, targetFp);
 
             // BUG-061/PUL-014: "no hace falta moverse" y "no HAY forma de moverse" son casos
             // benignos, no errores — Succeeded (no-op) para que la Sequence siga y el
@@ -90,7 +96,11 @@ namespace Rollgeon.Combat.AI.Decisions
             }
             else
             {
-                var reachable = context.Movement.GetReachableTiles(selfCoord, maxSteps, includeOrigin: false);
+                // GetReachableAnchors respeta el footprint (un 2×2 no entra por un pasillo
+                // de 1); los fakes de tests sin la interfaz aditiva degradan al BFS 1×1.
+                var reachable = (context.Movement as IPathedMovementService)
+                        ?.GetReachableAnchors(context.SelfGuid, maxSteps)
+                    ?? context.Movement.GetReachableTiles(selfCoord, maxSteps, includeOrigin: false);
                 if (reachable == null || reachable.Count == 0) return AIResult.Succeeded; // sin candidato BFS
 
                 // Score único: minimizar |dist(target) - desiredRange|. Cubre acercarse,
@@ -100,7 +110,7 @@ namespace Rollgeon.Combat.AI.Decisions
                 int bestErr = Mathf.Abs(currentDist - desiredRange);
                 foreach (var candidate in reachable)
                 {
-                    int err = Mathf.Abs(candidate.Manhattan(targetCoord) - desiredRange);
+                    int err = Mathf.Abs(GridFootprint.ManhattanDistance(candidate, selfFp, targetCoord, targetFp) - desiredRange);
                     if (err < bestErr)
                     {
                         bestErr = err;

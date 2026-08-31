@@ -971,12 +971,20 @@ MonoBehaviour:
     m_Key: status.tile_attack.desc
     m_Metadata:
       m_Items: []
-  - m_Id: 16109110673002496
-    m_Key: mega.god.name
+  - m_Id: 17185034194485248
+    m_Key: char_rew.energy_plus_1.desc
     m_Metadata:
       m_Items: []
-  - m_Id: 16109110710751232
-    m_Key: mega.god.desc
+  - m_Id: 17185034236428288
+    m_Key: char_rew.hp_plus_25.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17185034236428289
+    m_Key: char_rew.move_plus_1.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17185034236428290
+    m_Key: char_rew.move_plus_1.desc
     m_Metadata:
       m_Items: []
   m_Metadata:

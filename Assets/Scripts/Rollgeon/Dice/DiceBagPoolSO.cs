@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using Sirenix.OdinInspector;
 using UnityEngine;
 
@@ -20,13 +19,12 @@ namespace Rollgeon.Dice
         public int RequiredBagSize = DiceBagSO.RequiredSize;
 
         [ListDrawerSettings(ShowFoldout = false)]
-        [Tooltip("Tipos de dado disponibles para esta clase y el tope de copias permitidas.")]
+        [Tooltip("Tipos de dado disponibles para esta clase. Sin tope de copias: cualquier tipo ofrecido puede llenar la bolsa entera.")]
         public List<DicePoolEntry> Offerings = new();
 
         /// <summary>
-        /// <c>true</c> si el pool puede generar bolsas validas (suma de
-        /// <see cref="DicePoolEntry.MaxInBag"/> &gt;= <see cref="RequiredBagSize"/> y ningun
-        /// override excede <see cref="DiceTypeExt.MaxPerBag"/>).
+        /// <c>true</c> si el pool puede generar bolsas validas (al menos un tipo
+        /// ofrecido — sin topes por tipo, un solo tipo alcanza para llenar la bolsa).
         /// </summary>
         public bool Validate(out string error)
         {
@@ -36,39 +34,17 @@ namespace Rollgeon.Dice
                 return false;
             }
 
-            foreach (var entry in Offerings)
-            {
-                int hardCap = entry.Type.MaxPerBag();
-                if (entry.MaxInBag <= 0)
-                {
-                    error = $"{entry.Type}: MaxInBag debe ser > 0.";
-                    return false;
-                }
-                if (entry.MaxInBag > hardCap)
-                {
-                    error = $"{entry.Type}: MaxInBag {entry.MaxInBag} excede MaxPerBag global ({hardCap}).";
-                    return false;
-                }
-            }
-
-            int totalCapacity = Offerings.Sum(o => o.MaxInBag);
-            if (totalCapacity < RequiredBagSize)
-            {
-                error = $"Suma de MaxInBag ({totalCapacity}) < RequiredBagSize ({RequiredBagSize}) — el jugador no podria llenar la bolsa.";
-                return false;
-            }
-
             error = null;
             return true;
         }
 
-        /// <summary>Cap efectivo para un tipo: 0 si no esta en el pool.</summary>
-        public int MaxFor(DiceType type)
+        /// <summary><c>true</c> si el tipo esta ofrecido en este pool.</summary>
+        public bool Offers(DiceType type)
         {
-            if (Offerings == null) return 0;
+            if (Offerings == null) return false;
             for (int i = 0; i < Offerings.Count; i++)
-                if (Offerings[i].Type == type) return Offerings[i].MaxInBag;
-            return 0;
+                if (Offerings[i].Type == type) return true;
+            return false;
         }
 
         private void OnValidate()
@@ -86,10 +62,5 @@ namespace Rollgeon.Dice
     public struct DicePoolEntry
     {
         public DiceType Type;
-
-        [Tooltip("Maximo de copias de este dado que el jugador puede meter en su bolsa. " +
-                 "No puede exceder DiceType.MaxPerBag().")]
-        [MinValue(1)]
-        public int MaxInBag;
     }
 }

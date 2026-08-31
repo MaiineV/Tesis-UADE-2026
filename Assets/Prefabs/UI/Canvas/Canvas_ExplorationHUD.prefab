@@ -1879,7 +1879,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: -82396921, guid: d9c8010d59b9fb840b4e32c323e48742, type: 3}
+  m_Sprite: {fileID: -93443171, guid: f3ece9c685d3ae44888c7a085817b313, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -1993,8 +1993,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 93e83ee3d3103164dbbead54b40b114a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Rollgeon::Rollgeon.UI.HUD.ChipButtonVisual
-  _highlightSprite: {fileID: -707948687, guid: d9c8010d59b9fb840b4e32c323e48742, type: 3}
-  _usedSprite: {fileID: -1401037328, guid: d9c8010d59b9fb840b4e32c323e48742, type: 3}
+  _highlightSprite: {fileID: -1942933173, guid: f3ece9c685d3ae44888c7a085817b313, type: 3}
+  _usedSprite: {fileID: -93443171, guid: f3ece9c685d3ae44888c7a085817b313, type: 3}
   _disabledAlpha: 0.5
   _sinkSpeed: 900
   _rejectClip: {fileID: 8300000, guid: e6f216e1ceb348eeacf1b9359b914e92, type: 3}

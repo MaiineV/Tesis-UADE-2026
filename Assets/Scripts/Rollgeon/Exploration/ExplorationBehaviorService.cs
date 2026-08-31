@@ -44,9 +44,16 @@ namespace Rollgeon.Exploration
         // que el primero terminara.
         private bool _crossingDoor;
 
+        // Token de generación de la caminata en curso: TryCancelPendingWalk lo bumpea
+        // y las corutinas que esperan "llegó a destino" (cruce de sala, salida de piso,
+        // re-armado) capturan el valor ANTES del wait — si al despertar cambió, la
+        // caminata fue cancelada y no deben actuar (patrón MovementDieService).
+        private int _walkGeneration;
+
         private EventManager.EventReceiver _onPhaseEnter;
         private EventManager.EventReceiver _onPhaseExit;
         private EventManager.EventReceiver _onRoomEntered;
+        private EventManager.EventReceiver _onTutorialActionUnlocked;
 
         public bool IsActive => _state != State.Inactive;
 
@@ -55,10 +62,25 @@ namespace Rollgeon.Exploration
             _onPhaseEnter = OnPhaseEnter;
             _onPhaseExit = OnPhaseExit;
             _onRoomEntered = OnRoomEntered;
+            _onTutorialActionUnlocked = OnTutorialActionUnlocked;
 
             EventManager.Subscribe(EventName.OnPhaseEnter, _onPhaseEnter);
             EventManager.Subscribe(EventName.OnPhaseExit, _onPhaseExit);
             EventManager.Subscribe(EventName.OnRoomEntered, _onRoomEntered);
+            EventManager.Subscribe(EventName.OnTutorialActionUnlocked, _onTutorialActionUnlocked);
+        }
+
+        // BUG-068: el gate del tutorial corta el re-armado del movimiento, pero nada lo
+        // re-armaba al desbloquear — el jugador quedaba sin click-to-move hasta la próxima
+        // transición de sala. El evento dispara tanto en Lock como en Unlock (es la señal
+        // genérica de "recomputá"); si Movement sigue lockeado, OnBehaviorSelected lo
+        // ignora vía el gate y esto degrada a no-op. Fuera del tutorial el evento no se
+        // emite.
+        private void OnTutorialActionUnlocked(params object[] args)
+        {
+            if (args == null || args.Length < 1 || args[0] is not HeroBehaviorSlot slot) return;
+            if (slot != HeroBehaviorSlot.Movement) return;
+            CoroutineHost.Run(ArmMovementNextFrame());
         }
 
         public static ExplorationBehaviorService CreateAndRegister()
@@ -168,6 +190,47 @@ namespace Rollgeon.Exploration
             ArmMovement();
         }
 
+        public bool TryCancelPendingWalk()
+        {
+            if (_state == State.Inactive) return false;
+            if (!ServiceLocator.TryGetService<IPlayerService>(out var playerService)
+                || playerService == null)
+                return false;
+            var playerGuid = playerService.PlayerGuid;
+
+            if (!ServiceLocator.TryGetService<IEntityVisualService>(out var visuals)
+                || visuals == null
+                || !visuals.TryGetPawn(playerGuid, out var pawn)
+                || pawn == null || !pawn.IsMoving)
+                return false;
+
+            bool requested = pawn.RequestStopAtStepEnd(cell =>
+            {
+                // La posición lógica YA está en el destino (Move es sincrónico):
+                // truncarla a la celda donde frenó el pawn. Si falla (celda ocupada),
+                // el resync BUG-069 del pawn snapea al destino lógico — sin desync.
+                if (ServiceLocator.TryGetService<Rollgeon.Movement.IMovementService>(out var movement)
+                    && movement is Rollgeon.Movement.IMoveTruncationService truncation)
+                {
+                    if (!truncation.TryTruncateMoveAt(playerGuid, cell))
+                    {
+                        Debug.LogWarning($"[ExplorationBehaviorService] No pude truncar el movimiento en {cell} " +
+                                         "(celda inválida u ocupada) — el pawn snapea al destino lógico.");
+                    }
+                }
+                // Re-armar el click-to-move desde la celda donde quedó.
+                CoroutineHost.Run(RearmMovementAfterArrival(playerGuid));
+            });
+            if (!requested) return false;
+
+            // Mata las corutinas en vuelo que esperaban la llegada: cancelar una
+            // caminata hacia una puerta NO debe cruzar de sala ni cambiar de piso.
+            _walkGeneration++;
+            _crossingDoor = false;
+            Debug.Log("[ExplorationBehaviorService] Caminata cancelada (X) — frena al completar el step.");
+            return true;
+        }
+
         public void CancelSelection()
         {
             if (_state != State.Selecting) return;
@@ -232,6 +295,11 @@ namespace Rollgeon.Exploration
                 EventManager.UnSubscribe(EventName.OnRoomEntered, _onRoomEntered);
                 _onRoomEntered = null;
             }
+            if (_onTutorialActionUnlocked != null)
+            {
+                EventManager.UnSubscribe(EventName.OnTutorialActionUnlocked, _onTutorialActionUnlocked);
+                _onTutorialActionUnlocked = null;
+            }
 
             _state = State.Inactive;
         }
@@ -267,11 +335,15 @@ namespace Rollgeon.Exploration
         // rango se recalcule desde la casilla de destino y no mientras se mueve.
         private IEnumerator RearmMovementAfterArrival(Guid playerGuid)
         {
+            int gen = _walkGeneration;
             if (ServiceLocator.TryGetService<IEntityVisualService>(out var visuals) && visuals != null)
             {
                 var wait = visuals.WaitForMoveComplete(playerGuid);
                 if (wait != null) yield return wait;
             }
+            // Caminata cancelada mientras esperábamos: el re-armado lo lanza el propio
+            // cancel — este rearme viejo muere acá para no duplicar.
+            if (gen != _walkGeneration) yield break;
             ArmMovement();
         }
 
@@ -579,10 +651,20 @@ namespace Rollgeon.Exploration
             if (ServiceLocator.TryGetService<IDungeonService>(out var dungeonAtStart) && dungeonAtStart != null)
                 originRoomId = dungeonAtStart.CurrentRoomInstance?.InstanceId;
 
+            int gen = _walkGeneration;
             if (ServiceLocator.TryGetService<IEntityVisualService>(out var visuals) && visuals != null)
             {
                 var wait = visuals.WaitForMoveComplete(playerGuid);
                 if (wait != null) yield return wait;
+            }
+
+            // Caminata cancelada (X) mientras esperábamos: WaitForMoveComplete se
+            // resuelve igual ("llegó"), pero el player NO llegó a la puerta — cruzar
+            // acá sería el peor bug del cancel. El rearme lo maneja el propio cancel.
+            if (gen != _walkGeneration)
+            {
+                _crossingDoor = false;
+                yield break;
             }
 
             if (!ServiceLocator.TryGetService<IDungeonService>(out var dungeon) || dungeon == null)
@@ -620,10 +702,19 @@ namespace Rollgeon.Exploration
         // piso (#158). FloorProgressionService consume OnFloorExitRequested.
         private IEnumerator ExitFloorAfterArrival(Guid playerGuid)
         {
+            int gen = _walkGeneration;
             if (ServiceLocator.TryGetService<IEntityVisualService>(out var visuals) && visuals != null)
             {
                 var wait = visuals.WaitForMoveComplete(playerGuid);
                 if (wait != null) yield return wait;
+            }
+
+            // Caminata cancelada (X): no transicionar de piso — mismo criterio que
+            // CrossDoorAfterArrival.
+            if (gen != _walkGeneration)
+            {
+                _crossingDoor = false;
+                yield break;
             }
 
             if (ServiceLocator.TryGetService<IDungeonService>(out var dungeon) && dungeon != null
@@ -718,6 +809,8 @@ namespace Rollgeon.Exploration
                 // combate en el instante en que el player la pisa), no dejar el latch
                 // pegado para la próxima vez que entremos a Exploración.
                 _crossingDoor = false;
+                // Defensivo: mata corutinas de llegada en vuelo de la fase que se va.
+                _walkGeneration++;
             }
         }
     }

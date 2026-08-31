@@ -1,5 +1,6 @@
 using NUnit.Framework;
 using Rollgeon.Attributes;
+using Rollgeon.Combat.AI.Decisions;
 using Rollgeon.Attributes.Stats;
 using Rollgeon.Entities;
 using Rollgeon.Entities.Behaviors;
@@ -84,6 +85,36 @@ namespace Rollgeon.Entities.Tests
         }
 
         [Test]
+        public void CreateRuntimeStats_MaterializesAttackRange()
+        {
+            // Arrange
+            _so.BaseAttackRange = 24;
+
+            // Act
+            var attrs = _so.CreateRuntimeStats();
+
+            // Assert — el rango dejó de ser RESERVADO: viaja como atributo.
+            Assert.AreEqual(24, attrs.GetAttributeValue<AttackRange, int>());
+        }
+
+        [Test]
+        public void CreateRuntimeStats_AttackRange_RespectsTierOverride()
+        {
+            // Arrange — T2 con rango manual distinto del base.
+            _so.BaseAttackRange = 5;
+            _so.ExtraTiers.Add(new EnemyTier
+            {
+                Label = "T2",
+                MinFloor = 2,
+                AttackRange = new TierStat { Mode = StatMode.Manual, ManualValue = 8 },
+            });
+
+            // Act + Assert
+            Assert.AreEqual(8, _so.CreateRuntimeStats(2).GetAttributeValue<AttackRange, int>());
+            Assert.AreEqual(5, _so.CreateRuntimeStats(1).GetAttributeValue<AttackRange, int>());
+        }
+
+        [Test]
         public void CreateRuntimeBehaviors_ClonesPolymorphicBehaviors()
         {
             var template = new SupportHealBehavior { BaseHealAmount = 9 };
@@ -101,6 +132,34 @@ namespace Rollgeon.Entities.Tests
         public void CreateRuntimeBehaviors_EmptyList_ReturnsEmpty()
         {
             Assert.AreEqual(0, _so.CreateRuntimeBehaviors().Count);
+        }
+
+        // ---- Ficha de diseño + nodos sueltos (Fix#0048) --------------------
+
+        [Test]
+        public void Design_DefaultsToUnspecified_OnFreshInstance()
+        {
+            Assert.IsNotNull(_so.Design);
+            Assert.AreEqual(EnemyArchetype.Unspecified, _so.Design.Archetype);
+            Assert.AreEqual(AttackPatternKind.Unspecified, _so.Design.Pattern);
+            Assert.AreEqual(AttackTiming.Unspecified, _so.Design.Timing);
+            Assert.IsTrue(string.IsNullOrEmpty(_so.Design.Notes));
+        }
+
+        [Test]
+        public void AIDetachedNodes_DefaultsEmpty_AndRuntimeRootIgnoresIt()
+        {
+            Assert.IsNotNull(_so.AIDetachedNodes);
+            Assert.AreEqual(0, _so.AIDetachedNodes.Count);
+
+            // Un subárbol suelto no debe filtrarse al árbol que corre en combate.
+            _so.AIDetachedNodes.Add(new AINode_Wait());
+            Assert.IsNull(_so.CreateRuntimeAIRoot());
+
+            _so.AIRoot = new AINode_Sequence();
+            var runtime = _so.CreateRuntimeAIRoot() as AINode_Sequence;
+            Assert.IsNotNull(runtime);
+            Assert.AreEqual(0, runtime.Children.Count);
         }
     }
 }

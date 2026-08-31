@@ -50,6 +50,25 @@ namespace Rollgeon.Upgrades.Dice.Tests
             Assert.IsEmpty(offenders.ToString(), "Assets con triggers legacy sin migrar:\n" + offenders);
         }
 
+        [Test]
+        public void AllEnchantmentAssets_HaveACategoryAssigned()
+        {
+            // Arrange + Act — None = sin clasificar; el drawer mostraría el nombre pelado.
+            var offenders = new StringBuilder();
+            foreach (var guid in AssetDatabase.FindAssets("t:EnchantmentSO"))
+            {
+                var path = AssetDatabase.GUIDToAssetPath(guid);
+                var ench = AssetDatabase.LoadAssetAtPath<EnchantmentSO>(path);
+                if (ench != null && ench.Category == EnchantmentCategory.None)
+                    offenders.AppendLine(path);
+            }
+
+            // Assert
+            Assert.IsEmpty(offenders.ToString(),
+                "Assets sin categoría — correr 'Rollgeon/Enchantments/Assign Categories' "
+                + "(y sumar el id al diccionario si es nuevo):\n" + offenders);
+        }
+
         /// <summary>
         /// Repro del reporte "encantamiento con combo asignado otorga en cualquier combo":
         /// carga el ASSET REAL (Ench_Avaro, oro solo con trío/poker/generala) y despacha

@@ -13,7 +13,7 @@ ModelImporter:
       type: UnityEngine:Material
       assembly: UnityEngine.CoreModule
       name: Bone
-    second: {fileID: 2100000, guid: 27d43947f42f5bc4b8ec5ca998a41552, type: 2}
+    second: {fileID: 2100000, guid: 0603a7d8f2a88de4abab48feacb6abe7, type: 2}
   - first:
       type: UnityEngine:Material
       assembly: UnityEngine.CoreModule

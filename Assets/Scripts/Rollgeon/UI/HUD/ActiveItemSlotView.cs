@@ -86,6 +86,11 @@ namespace Rollgeon.UI.HUD
         [ShowInInspector, ReadOnly]
         public ActiveItemState CurrentState { get; private set; } = ActiveItemState.Inactive;
 
+        // Ortogonal al estado, espejo de ActionButton._affordable (BUG-074): con poción
+        // en el inventario pero 0 rolls en el pool, el slot sigue Active pero tiene que
+        // pintar el mismo rojo que los chips de acción.
+        private bool _affordable = true;
+
         private void Awake()
         {
             EnsureClickable();
@@ -231,14 +236,31 @@ namespace Rollgeon.UI.HUD
                 // Depleted: conserva el sprite actual; el DepletedOverlay lo distingue.
             }
 
-            // BUG-074: Inactive/Depleted = "no lo podés usar ahora" — mismo outline rojo
-            // que ActionButton.Unaffordable, para que la ficha de ítem (poción/arco)
-            // conteste igual que los chips de acción. Convive con los overlays de arriba.
-            bool unavailable = state != ActiveItemState.Active;
+            RefreshUnavailableTint();
+            RefreshInteractable();
+        }
+
+        /// <summary>
+        /// Si al jugador le alcanzan los rolls para usar el ítem. Ortogonal a
+        /// <see cref="SetState"/>: un slot Active con el pool vacío pinta el mismo
+        /// rojo que los chips de acción (BUG-074).
+        /// </summary>
+        public void SetAffordable(bool affordable)
+        {
+            if (_affordable == affordable) return;
+            _affordable = affordable;
+            RefreshUnavailableTint();
+        }
+
+        // BUG-074: Inactive/Depleted = "no lo podés usar ahora", y Active-sin-rolls
+        // también — mismo outline rojo que ActionButton.Unaffordable, para que la
+        // ficha de ítem (poción/arco) conteste igual que los chips de acción.
+        // Convive con los overlays de estado.
+        private void RefreshUnavailableTint()
+        {
+            bool unavailable = CurrentState != ActiveItemState.Active || !_affordable;
             if (unavailable) UnavailableTint.Apply(_icon);
             else UnavailableTint.Remove(_icon);
-
-            RefreshInteractable();
         }
 
         /// <summary>

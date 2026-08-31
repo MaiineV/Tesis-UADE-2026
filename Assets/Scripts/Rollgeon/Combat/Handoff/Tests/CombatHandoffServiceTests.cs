@@ -180,7 +180,7 @@ namespace Rollgeon.Combat.Handoff.Tests
             public int GetCurrent(Guid entityId) => CurrentRolls;
             public int GetMax(Guid entityId) => 15;
             public int GetRollsPerTurn(Guid entityId) => 5;
-            public void AddPerTurnGrantBonus(int amount) { }
+            public void AddRollPoolBonus(int amount) { }
             public void RestoreCurrent(Guid entityId, int value) => CurrentRolls = value;
         }
 
@@ -388,6 +388,38 @@ namespace Rollgeon.Combat.Handoff.Tests
             _spyCombat.LastEnemyActionHandler(testId);
             Assert.AreEqual(1, _spyAI.HandleCallCount);
             Assert.AreEqual(testId, _spyAI.LastEnemyId);
+        }
+
+        [Test]
+        public void OnCombatTriggered_BossBarSubscriberThrows_StartCombatStillRuns()
+        {
+            // Arrange — BUG-078: TypedEvent.Raise no aísla excepciones; un subscriber
+            // roto de la barra de boss (ej. BossBarView en frame 1 del resume) mataba
+            // el resto del handoff dejando boss visible + HUD pusheado + FSM nula.
+            var room = CreateRoom(RoomType.Boss);
+            SetCurrentRoom(room);
+            var enemy = CreateEnemy("Boss");
+            _spyResolver.ReturnValue = new List<(Guid, EnemyDataSO)>
+                { (Guid.NewGuid(), enemy) };
+            Action<BossEncounterStartedPayload> throwingListener =
+                _ => throw new InvalidOperationException("boss bar rota");
+            TypedEvent<BossEncounterStartedPayload>.Subscribe(throwingListener);
+            UnityEngine.TestTools.LogAssert.Expect(LogType.Error,
+                new System.Text.RegularExpressions.Regex("BossEncounterStarted"));
+
+            try
+            {
+                // Act
+                TriggerCombat(Guid.NewGuid(), "boss_room", RoomType.Boss);
+
+                // Assert — el combate arranca igual: la barra es cosmética.
+                Assert.AreEqual(1, _spyCombat.StartCombatCallCount,
+                    "StartCombat debe correr aunque el subscriber del boss bar lance.");
+            }
+            finally
+            {
+                TypedEvent<BossEncounterStartedPayload>.Clear();
+            }
         }
 
         [Test]
@@ -1104,29 +1136,59 @@ namespace Rollgeon.Combat.Handoff.Tests
         }
 
         [Test]
-        public void MovementDie_AfterRoll_SelectionIsNotCancellableByRightClickOrSlot()
+        public void MovementDie_AfterRoll_RightClickCancelsWithoutRefund()
         {
             // Arrange — Movement con el dado ya tirado (roll pagado) esperando su tile.
+            // §6.6 revertido: la selección se puede soltar; el roll pagado se pierde.
             var hudGo = new GameObject("CombatHUD");
             _createdObjects.Add(hudGo);
             var hud = hudGo.AddComponent<CombatHUDView>();
             _spyScreen.Current = hud;
+            var behavior = new HeroActionBehavior { ActionName = "Movement", NeedsDiceRoll = false };
+            behavior.SetBehaviorValue(Rollgeon.Entities.Behaviors.BehaviorValueKey.FloatingDamage,
+                new Rollgeon.Entities.Behaviors.FloatBehaviorValue { Value = 7f });
             SetPrivateField(_service, "_awaitingPlayerSelection", true);
             SetPrivateField(_service, "_movementRollPrepaid", true);
-            SetPrivateField(_service, "_selectedBehavior",
-                new HeroActionBehavior { ActionName = "Movement", NeedsDiceRoll = false });
+            SetPrivateField(_service, "_selectedBehavior", behavior);
             int executed = 0;
             EventManager.EventReceiver onExecuted = _ => executed++;
             EventManager.Subscribe(EventName.OnBehaviorExecuted, onExecuted);
 
-            // Act / Assert — ni click derecho ni re-click de slot cancelan.
-            Assert.IsFalse(_service.HasCancellableSelection);
-            Assert.IsFalse(_service.TryCancelFromRightClick());
-            Assert.IsTrue((bool)GetPrivateField(_service, "_awaitingPlayerSelection"));
-            Assert.IsNotNull(GetPrivateField(_service, "_selectedBehavior"));
-            Assert.AreEqual(0, executed);
+            // Act / Assert — el click derecho cancela y libera todo el estado.
+            Assert.IsTrue(_service.HasCancellableSelection);
+            Assert.IsTrue(_service.TryCancelFromRightClick());
+            Assert.IsFalse((bool)GetPrivateField(_service, "_awaitingPlayerSelection"));
+            Assert.IsFalse((bool)GetPrivateField(_service, "_movementRollPrepaid"));
+            Assert.IsNull(GetPrivateField(_service, "_selectedBehavior"));
+            Assert.AreEqual(1, executed, "OnBehaviorExecuted libera el slot en la UI.");
+            // El path cancelado no pasa por Execute(): los stored values del behavior
+            // (compartido toda la run) se limpian en el cancel.
+            Assert.IsFalse(behavior.TryGetBehaviorValues<Rollgeon.Entities.Behaviors.FloatBehaviorValue>(
+                Rollgeon.Entities.Behaviors.BehaviorValueKey.FloatingDamage, out _));
 
             EventManager.UnSubscribe(EventName.OnBehaviorExecuted, onExecuted);
+        }
+
+        [Test]
+        public void MovementDie_AfterRoll_SlotReclickCancelsCommittedSelection()
+        {
+            // Arrange — combate real con callbacks del HUD bindeados; se simula el
+            // estado comprometido (dado tirado, roll prepago) sobre el behavior REAL
+            // del slot 0, así el re-click resuelve sameAction.
+            var (hud, pool) = ArmMovementDieCombat(gridSize: 4);
+            var movementBehavior = _stubPlayer.CurrentHero.PhaseBehaviors[0];
+            SetPrivateField(_service, "_awaitingPlayerSelection", true);
+            SetPrivateField(_service, "_movementRollPrepaid", true);
+            SetPrivateField(_service, "_selectedBehavior", movementBehavior);
+
+            // Act — el guard viejo (§6.6) ignoraba este click con el roll prepago.
+            hud.OnBehaviorSelected?.Invoke(0);
+
+            // Assert — la selección comprometida se soltó sin cobrar nada nuevo.
+            Assert.IsFalse((bool)GetPrivateField(_service, "_awaitingPlayerSelection"));
+            Assert.IsFalse((bool)GetPrivateField(_service, "_movementRollPrepaid"));
+            Assert.IsNull(GetPrivateField(_service, "_selectedBehavior"));
+            Assert.AreEqual(0, pool.TrySpendCallCount, "Cancelar no cobra rolls.");
         }
 
         [Test]

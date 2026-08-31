@@ -38,7 +38,9 @@ namespace Rollgeon.Input
                 combatHudActive: hud != null,
                 claimedByDiceGrab: RightClickClaim.WasClaimedThisFrame,
                 hasCancellableSelection: handoff != null && handoff.HasCancellableSelection,
-                anyDieSelected: hud != null && hud.AnyDieHeld());
+                anyDieSelected: hud != null && hud.AnyDieHeld(),
+                uiSequencePending: Rollgeon.Feedback.BreakdownUiGate.Pending
+                                   || Rollgeon.UI.HUD.DiceAnim.DiceOutroGate.OutroPending);
 
             switch (action)
             {

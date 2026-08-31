@@ -28,6 +28,9 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
     /// </remarks>
     public static class CajeroAssetBuilder
     {
+        /// <summary>Menú que regenera estos assets. Lo lee el Editor de enemigos para avisar que el builder pisa el árbol.</summary>
+        public const string MenuPath = "Tools/Rollgeon/Bosses/Build Cajero";
+
         // ---- Rutas -------------------------------------------------------
 
         public const string EnemyAssetPath = "Assets/Rollgeon/Enemies/ED_Boss_Cajero.asset";
@@ -725,6 +728,14 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
             if (portrait != null) data.Portrait = portrait;
 
             data.AIRoot = BuildAIRoot(chip, critter);
+            data.AIDetachedNodes.Clear(); // el builder es fuente de verdad: nada suelto sobrevive
+            data.Design = new EnemyDesignSheet
+            {
+                Archetype = EnemyArchetype.Melee,
+                Pattern = AttackPatternKind.ContactAdjacent,
+                Timing = AttackTiming.Instant,
+                Notes = "Mandoble y empujón alternados a distancia 1; lluvia de monedas; caja fuerte; refuerzos (Comisión).",
+            };
         }
 
         // ---- La Comisión (ficha propia) -----------------------------------
@@ -773,6 +784,14 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
             if (portrait != null) data.Portrait = portrait;
 
             data.AIRoot = BuildCritterAIRoot();
+            data.AIDetachedNodes.Clear(); // el builder es fuente de verdad: nada suelto sobrevive
+            data.Design = new EnemyDesignSheet
+            {
+                Archetype = EnemyArchetype.Ranged,
+                Pattern = AttackPatternKind.DiamondArea,
+                Timing = AttackTiming.Instant,
+                Notes = "Mordisco a distancia 5 (Manhattan); se acerca si no llega.",
+            };
         }
 
         /// <summary>
@@ -820,7 +839,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
 
         // ---- MenuItem ----------------------------------------------------
 
-        [MenuItem("Tools/Rollgeon/Bosses/Build Cajero")]
+        [MenuItem(MenuPath)]
         public static void BuildCajeroAsset()
         {
             var chip = EnsureChipHazard();

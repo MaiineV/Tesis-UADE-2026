@@ -1,3 +1,5 @@
+using Rollgeon.Upgrades.Dice;
+
 namespace Rollgeon.UI.HUD.DiceBag
 {
     /// <summary>
@@ -7,16 +9,25 @@ namespace Rollgeon.UI.HUD.DiceBag
     {
         public const string Title = "dicebag.title";
 
-        /// <summary>Caption de la sección de encantamientos del dado elegido.</summary>
-        public const string SlotsCaption = "dicebag.slots_caption";
-
-        /// <summary>Sufijo singular del contador de cada dado: "1 <b>encantamiento</b>".</summary>
-        public const string EnchSingular = "dicebag.ench_singular";
-
-        /// <summary>Sufijo plural del contador de cada dado: "3 <b>encantamientos</b>".</summary>
-        public const string EnchPlural = "dicebag.ench_plural";
-
         /// <summary>Dado sin ningún encantamiento aplicado.</summary>
         public const string NoEnchantments = "dicebag.no_enchantments";
+
+        // Labels de categoría del acordeón ("Ancla - Control").
+        public const string CatAtaque = "dicebag.cat.ataque";
+        public const string CatControl = "dicebag.cat.control";
+        public const string CatDefensa = "dicebag.cat.defensa";
+        public const string CatEconomia = "dicebag.cat.economia";
+        public const string CatMaldicion = "dicebag.cat.maldicion";
+
+        /// <summary>Key del label de una categoría; null para None (la UI omite el segmento).</summary>
+        public static string CategoryKey(EnchantmentCategory category) => category switch
+        {
+            EnchantmentCategory.Ataque => CatAtaque,
+            EnchantmentCategory.Control => CatControl,
+            EnchantmentCategory.Defensa => CatDefensa,
+            EnchantmentCategory.Economia => CatEconomia,
+            EnchantmentCategory.Maldicion => CatMaldicion,
+            _ => null,
+        };
     }
 }

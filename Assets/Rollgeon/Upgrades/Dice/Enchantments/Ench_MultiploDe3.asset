@@ -14,9 +14,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Rollgeon::Rollgeon.Upgrades.Dice.EnchantmentSO
   serializationData:
     SerializedFormat: 2
-    SerializedBytes:
+    SerializedBytes: 
     ReferencedUnityObjects: []
-    SerializedBytesString:
+    SerializedBytesString: 
     Prefab: {fileID: 0}
     PrefabModificationsReferencedUnityObjects: []
     PrefabModifications: []
@@ -32,55 +32,85 @@ MonoBehaviour:
       Data: Solo muestra multiplos de 3. d12:{3,6,9,12}
     - Name: _icon
       Entry: 6
-      Data:
+      Data: 
+    - Name: _statGrants
+      Entry: 7
+      Data: 0|System.Collections.Generic.List`1[[Rollgeon.Upgrades.StatGrant, Rollgeon]],
+        mscorlib
+    - Name: 
+      Entry: 12
+      Data: 0
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: _category
+      Entry: 3
+      Data: 2
     - Name: _allowedDiceTypes
       Entry: 7
-      Data: 0|System.Collections.Generic.List`1[[Rollgeon.Dice.DiceType, Rollgeon]],
+      Data: 1|System.Collections.Generic.List`1[[Rollgeon.Dice.DiceType, Rollgeon]],
         mscorlib
-    - Name:
+    - Name: 
       Entry: 12
       Data: 2
-    - Name:
+    - Name: 
       Entry: 3
       Data: 1
-    - Name:
+    - Name: 
       Entry: 3
       Data: 4
-    - Name:
+    - Name: 
       Entry: 13
-      Data:
-    - Name:
+      Data: 
+    - Name: 
       Entry: 8
-      Data:
+      Data: 
     - Name: _faceFilter
       Entry: 7
-      Data: 1|Rollgeon.Upgrades.Dice.Filters.MultipleOfNFilter, Rollgeon
+      Data: 2|Rollgeon.Upgrades.Dice.Filters.MultipleOfNFilter, Rollgeon
     - Name: N
       Entry: 3
       Data: 3
-    - Name:
+    - Name: 
       Entry: 8
-      Data:
+      Data: 
     - Name: _triggers
       Entry: 7
-      Data: 2|System.Collections.Generic.List`1[[Rollgeon.Upgrades.Dice.Triggers.IEnchantmentTrigger,
+      Data: 3|System.Collections.Generic.List`1[[Rollgeon.Upgrades.Dice.Triggers.IEnchantmentTrigger,
         Rollgeon]], mscorlib
-    - Name:
+    - Name: 
       Entry: 12
       Data: 0
-    - Name:
+    - Name: 
       Entry: 13
-      Data:
-    - Name:
+      Data: 
+    - Name: 
       Entry: 8
-      Data:
+      Data: 
+    - Name: _capabilities
+      Entry: 7
+      Data: 4|System.Collections.Generic.List`1[[Rollgeon.Upgrades.Dice.IEnchantmentCapability,
+        Rollgeon]], mscorlib
+    - Name: 
+      Entry: 12
+      Data: 0
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
   _faceFilter:
-    rid: 5000000000000000005
+    rid: 144068563111248719
   _triggers: []
+  _capabilities: []
   references:
     version: 2
     RefIds:
-    - rid: 5000000000000000005
+    - rid: 144068563111248719
       type: {class: MultipleOfNFilter, ns: Rollgeon.Upgrades.Dice.Filters, asm: Rollgeon}
       data:
         N: 3

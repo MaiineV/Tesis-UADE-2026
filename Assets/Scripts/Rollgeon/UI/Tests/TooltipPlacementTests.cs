@@ -91,6 +91,62 @@ namespace Rollgeon.UI.Tests
                 "El borde izquierdo debe quedar dentro aunque el panel no entre entero.");
         }
 
+        // ------------------------------------------------------------------
+        // ComputeAnchorTarget — lado vertical del panel (BUG-075)
+        // ------------------------------------------------------------------
+
+        [Test]
+        public void ComputeAnchorTarget_Above_ReturnsAnchorPlusOffset()
+        {
+            // Arrange
+            var anchor = new Vector2(400f, 300f);
+            var offset = new Vector2(0f, 12f);
+
+            // Act
+            var target = TooltipVerticalPlacement.ComputeAnchorTarget(
+                anchor, offset, panelScreenHeight: 100f, TooltipVerticalSide.Above);
+
+            // Assert — comportamiento histórico intacto.
+            Assert.AreEqual(anchor + offset, target);
+        }
+
+        [Test]
+        public void ComputeAnchorTarget_Below_PlacesPanelTopBelowAnchor()
+        {
+            // Arrange — pivot inferior-centro: el panel ocupa [pivot.y, pivot.y + alto].
+            var anchor = new Vector2(400f, 300f);
+            var offset = new Vector2(0f, 12f);
+            const float panelHeight = 100f;
+
+            // Act
+            var target = TooltipVerticalPlacement.ComputeAnchorTarget(
+                anchor, offset, panelHeight, TooltipVerticalSide.Below);
+
+            // Assert — el TOPE del panel (pivot + alto) queda offset.y por debajo del
+            // anclaje: 300 - 12 = 288; pivot en 188.
+            Assert.AreEqual(400f, target.x, 1e-3f, "X no cambia con el lado vertical");
+            Assert.AreEqual(188f, target.y, 1e-3f);
+            Assert.AreEqual(anchor.y - offset.y, target.y + panelHeight, 1e-3f,
+                "el tope del panel debe caer justo debajo del anclaje");
+        }
+
+        [Test]
+        public void ComputeAnchorTarget_BelowNearScreenBottom_ClampShiftsBackInside()
+        {
+            // Arrange — enemigo pegado al borde inferior: el panel colgado hacia abajo
+            // queda fuera de los bounds y el clamp existente lo tiene que devolver.
+            var target = TooltipVerticalPlacement.ComputeAnchorTarget(
+                new Vector2(0f, -330f), new Vector2(0f, 12f), 100f, TooltipVerticalSide.Below);
+            var min = new Vector2(-100f, target.y);
+            var max = new Vector2(100f, target.y + 100f);
+
+            // Act
+            var shift = TooltipController.ComputeClampShift(min, max, Bounds, 8f);
+
+            // Assert — shift positivo en Y: lo empuja de vuelta a pantalla.
+            Assert.Greater(shift.y, 0f, "el clamp debe empujar el panel de vuelta dentro del canvas");
+        }
+
         [Test]
         public void Show_FixedPlacement_FarFromEdge_DoesNotClamp()
         {

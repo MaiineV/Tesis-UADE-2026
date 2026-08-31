@@ -37,6 +37,28 @@ namespace Rollgeon.Entities.Behaviors
         [OdinSerialize, SerializeReference]
         public BaseEnemyTargetSelector TargetSelector;
 
+        [Title("Área (opcional)")]
+        [Tooltip("Ataque de ÁREA instantáneo (Sweeper): los efectos afectan a todos los ocupantes " +
+                 "del área que pasen el filtro, en el mismo turno, sin telegraph.")]
+        public bool UseArea;
+
+        [ShowIf(nameof(UseArea))]
+        [Tooltip("Forma del área. Las direccionales (Band/Cone) salen del enemigo hacia su target; " +
+                 "las *AroundSelf se centran en él; el resto, en el target.")]
+        public Rollgeon.Combat.Threat.ThreatShape AreaShape = Rollgeon.Combat.Threat.ThreatShape.SquareAroundSelf;
+
+        [ShowIf(nameof(UseArea)), MinValue(0)]
+        [Tooltip("Tamaño de la forma (mismo significado que en el Telegraph).")]
+        public int AreaSize = 1;
+
+        [ShowIf(nameof(UseArea)), MinValue(1)]
+        [Tooltip("Profundidad de las formas direccionales (Band/Cone).")]
+        public int AreaDepth = 3;
+
+        [ShowIf(nameof(UseArea))]
+        [Tooltip("Quién puede ser golpeado por el área. Default: solo el jugador — sin friendly fire.")]
+        public EntityFilterMask AreaFilter = EntityFilterMask.Player;
+
         [Title("Effect Pipeline")]
         [InfoBox("Grupos de PreConditions + Effects ejecutados en orden. " +
                  "Short-circuit: si un grupo retorna false, los siguientes no corren.")]
@@ -179,6 +201,21 @@ namespace Rollgeon.Entities.Behaviors
                 lastResult = true,
             };
 
+            // Área instantánea (Sweeper): los efectos reciben las celdas del área cuyos
+            // ocupantes pasan el filtro de relación. TargetGuid queda en Empty a propósito:
+            // sin víctimas la lista queda vacía y el fallback de los efectos no golpea a nadie
+            // (un barrido que erra, erra).
+            if (UseArea)
+            {
+                effCtx.TargetGuid = Guid.Empty;
+                effCtx.SelectionResult = new TargetSelectionResult
+                {
+                    WasCompleted = true,
+                    SelectedTargets = ComputeAreaTargets(aiCtx, targetGuid),
+                };
+                return effCtx;
+            }
+
             // Inject precomputed target so effects with autoresolve flow read it via SelectionResult.
             // EffDealDamage already prefers SelectionResult over ctx.TargetGuid, so this keeps both
             // paths consistent without forcing the enemy to go through SelectionSettings.
@@ -195,6 +232,67 @@ namespace Rollgeon.Entities.Behaviors
             }
 
             return effCtx;
+        }
+
+        /// <summary>
+        /// Celdas del área cuyos ocupantes pasan <see cref="AreaFilter"/>. Dispatch de shapes
+        /// calcado de <c>AINode_TelegraphMark</c>: las direccionales salen del enemigo hacia su
+        /// target; AnchorsOnSelf se centra en él; el resto, en el target. Celdas vacías o con
+        /// ocupantes fuera del filtro quedan afuera — sin friendly fire (los efectos con dedupe
+        /// por guid golpean una vez por víctima).
+        /// </summary>
+        private List<TargetRef> ComputeAreaTargets(AIContext aiCtx, Guid targetGuid)
+        {
+            var result = new List<TargetRef>();
+            var grid = aiCtx.Grid;
+            if (grid == null) return result;
+            if (!grid.TryGetPosition(aiCtx.SelfGuid, out var selfCoord)) return result;
+
+            HashSet<Rollgeon.Grid.GridCoord> tiles;
+            if (Rollgeon.Combat.Threat.ThreatAreaShape.NeedsSelfAndPlayer(AreaShape))
+            {
+                if (targetGuid == Guid.Empty || !grid.TryGetPosition(targetGuid, out var towardCoord))
+                    return result;
+                tiles = AreaShape == Rollgeon.Combat.Threat.ThreatShape.DirectionalCone
+                    ? Rollgeon.Combat.Threat.ThreatAreaShape.ComputeDirectionalCone(
+                        grid, selfCoord, towardCoord, AreaSize, AreaDepth)
+                    : Rollgeon.Combat.Threat.ThreatAreaShape.ComputeDirectionalBand(
+                        grid, selfCoord, towardCoord, AreaSize, AreaDepth);
+            }
+            else if (Rollgeon.Combat.Threat.ThreatAreaShape.AnchorsOnSelf(AreaShape))
+            {
+                tiles = Rollgeon.Combat.Threat.ThreatAreaShape.Compute(
+                    grid, selfCoord, AreaShape, AreaSize, default);
+            }
+            else
+            {
+                if (targetGuid == Guid.Empty || !grid.TryGetPosition(targetGuid, out var centerCoord))
+                    return result;
+                tiles = Rollgeon.Combat.Threat.ThreatAreaShape.Compute(
+                    grid, centerCoord, AreaShape, AreaSize, default);
+            }
+
+            ServiceLocator.TryGetService<IEntityQueryService>(out var query);
+            foreach (var tile in tiles)
+            {
+                if (!grid.TryGetOccupant(tile, out var occupant) || occupant == Guid.Empty) continue;
+                if (occupant == aiCtx.SelfGuid) continue; // el barrido no golpea al que lo hace
+
+                bool passes;
+                if (query != null)
+                {
+                    passes = (query.GetRelationship(aiCtx.SelfGuid, occupant) & AreaFilter) != 0;
+                }
+                else
+                {
+                    // Sin IEntityQueryService (tests/bootstrap temprano): solo el player pasa el
+                    // filtro default — nunca friendly fire por ausencia de servicio.
+                    passes = (AreaFilter & EntityFilterMask.Player) != 0 && occupant == aiCtx.PlayerGuid;
+                }
+                if (passes) result.Add(TargetRef.At(tile));
+            }
+
+            return result;
         }
     }
 }

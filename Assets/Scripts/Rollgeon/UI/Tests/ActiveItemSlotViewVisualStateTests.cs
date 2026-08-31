@@ -107,6 +107,55 @@ namespace Rollgeon.UI.Tests
         }
 
         // ------------------------------------------------------------------
+        // Affordability — ortogonal al estado (BUG-074 round 2: poción con
+        // inventario pero 0 rolls quedaba sin el rojo que sí tenían los chips)
+        // ------------------------------------------------------------------
+
+        [Test]
+        public void test_activeItemSlotView_activeButUnaffordable_paintsIconOutlineRed()
+        {
+            // Arrange
+            _slot.SetState(ActiveItemState.Active);
+
+            // Act
+            _slot.SetAffordable(false);
+
+            // Assert
+            var outline = _icon.GetComponent<Outline>();
+            Assert.IsNotNull(outline, "SetAffordable(false) debe encender el outline");
+            Assert.IsTrue(outline.enabled);
+            Assert.AreEqual(UnavailableTint.TintColor, outline.effectColor);
+        }
+
+        [Test]
+        public void test_activeItemSlotView_becomingAffordableAgain_removesOutline()
+        {
+            // Arrange
+            _slot.SetState(ActiveItemState.Active);
+            _slot.SetAffordable(false);
+
+            // Act
+            _slot.SetAffordable(true);
+
+            // Assert
+            Assert.IsFalse(_icon.GetComponent<Outline>().enabled);
+        }
+
+        [Test]
+        public void test_activeItemSlotView_inactiveAndAffordable_keepsOutlineRed()
+        {
+            // Arrange — sin ítems el slot sigue "no disponible" aunque sobren rolls.
+            _slot.SetState(ActiveItemState.Inactive);
+
+            // Act
+            _slot.SetAffordable(true);
+
+            // Assert
+            Assert.IsTrue(_icon.GetComponent<Outline>().enabled,
+                "el estado Inactive manda: sin ítems el rojo se queda");
+        }
+
+        // ------------------------------------------------------------------
         // Helpers (patrón de ActionButtonVisualStateTests)
         // ------------------------------------------------------------------
 

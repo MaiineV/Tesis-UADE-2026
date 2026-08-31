@@ -292,6 +292,7 @@ MonoBehaviour:
   _textFormat: '{0}/{1}'
   _barRoot: {fileID: 3652065530495214971}
   _offset: {x: 0, y: 3, z: 0}
+  _referenceZoom: 9
 --- !u!1 &6537447648959145237
 GameObject:
   m_ObjectHideFlags: 0
@@ -591,6 +592,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Rollgeon::Rollgeon.Entities.Visuals.EntityPawn
   _healthBar: {fileID: 4900675398012603257}
+  _locomotion: 0
+  _blinkOutSeconds: 0.14
+  _blinkInSeconds: 0.14
 --- !u!114 &3821633793728467348
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -695,6 +699,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Goblin_Model
       objectReference: {fileID: 0}
+    - target: {fileID: 7739679584617297554, guid: 04ac2c1739cecb546bf6e4c2cac661fc, type: 3}
+      propertyPath: 'm_Materials.Array.data[1]'
+      value: 
+      objectReference: {fileID: 2100000, guid: 0603a7d8f2a88de4abab48feacb6abe7, type: 2}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []

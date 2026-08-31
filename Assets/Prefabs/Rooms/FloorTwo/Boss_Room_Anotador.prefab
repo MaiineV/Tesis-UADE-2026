@@ -17114,6 +17114,7 @@ GameObject:
   m_Component:
   - component: {fileID: 6254225774992340393}
   - component: {fileID: 3011425381786629766}
+  - component: {fileID: 2296716185830036860}
   m_Layer: 0
   m_Name: Boss_Room_Anotador
   m_TagString: Untagged
@@ -19689,6 +19690,24 @@ MonoBehaviour:
   LocalBounds:
     m_Center: {x: 0.5, y: 1.5175179, z: 0.5}
     m_Extent: {x: 6.500001, y: 2.0175185, z: 6.500001}
+--- !u!114 &2296716185830036860
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4081914326300392353}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 50cefe50f5ed2604cadd1d963123a59b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Rollgeon::Rollgeon.Dungeon.Components.RoomPropScatter
+  PropSet: {fileID: 11400000, guid: 3eb1fe56ba7399b44bdf35d3c23866f2, type: 2}
+  Count: 8
+  MinSpacing: 1
+  DoorExclusionRadius: 1
+  RandomYRotation: 1
+  CellJitter: 0.3
 --- !u!1 &4092963861532901322
 GameObject:
   m_ObjectHideFlags: 0
@@ -42967,7 +42986,7 @@ PrefabInstance:
     - target: {fileID: 7169675054983971040, guid: d147e65e26cd8ea4ea60cf7c4cf68b1e, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
       value: 
-      objectReference: {fileID: 2100000, guid: 6bc204cd81bd87f449da9e914438940a, type: 2}
+      objectReference: {fileID: 2100000, guid: 43de8febcb1ad8b4b9280323d70d5c3e, type: 2}
     - target: {fileID: 7866955273201450059, guid: d147e65e26cd8ea4ea60cf7c4cf68b1e, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0.5
@@ -43355,7 +43374,7 @@ PrefabInstance:
     - target: {fileID: 7169675054983971040, guid: d147e65e26cd8ea4ea60cf7c4cf68b1e, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
       value: 
-      objectReference: {fileID: 2100000, guid: 6bc204cd81bd87f449da9e914438940a, type: 2}
+      objectReference: {fileID: 2100000, guid: 43de8febcb1ad8b4b9280323d70d5c3e, type: 2}
     - target: {fileID: 7866955273201450059, guid: d147e65e26cd8ea4ea60cf7c4cf68b1e, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0.5
@@ -45122,7 +45141,7 @@ PrefabInstance:
     - target: {fileID: 7169675054983971040, guid: d147e65e26cd8ea4ea60cf7c4cf68b1e, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
       value: 
-      objectReference: {fileID: 2100000, guid: 6bc204cd81bd87f449da9e914438940a, type: 2}
+      objectReference: {fileID: 2100000, guid: 43de8febcb1ad8b4b9280323d70d5c3e, type: 2}
     - target: {fileID: 7866955273201450059, guid: d147e65e26cd8ea4ea60cf7c4cf68b1e, type: 3}
       propertyPath: m_LocalPosition.x
       value: 6.5
@@ -52733,7 +52752,7 @@ PrefabInstance:
     - target: {fileID: 7169675054983971040, guid: d147e65e26cd8ea4ea60cf7c4cf68b1e, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
       value: 
-      objectReference: {fileID: 2100000, guid: 6bc204cd81bd87f449da9e914438940a, type: 2}
+      objectReference: {fileID: 2100000, guid: 43de8febcb1ad8b4b9280323d70d5c3e, type: 2}
     - target: {fileID: 7866955273201450059, guid: d147e65e26cd8ea4ea60cf7c4cf68b1e, type: 3}
       propertyPath: m_LocalPosition.x
       value: -5.5

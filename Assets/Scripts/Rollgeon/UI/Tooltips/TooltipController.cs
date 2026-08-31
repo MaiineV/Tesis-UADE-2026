@@ -129,14 +129,40 @@ namespace Rollgeon.UI.Tooltips
         /// posición configurada salvo que efectivamente se salga.
         /// </summary>
         public void Show(string text, Vector2 screenPos, int ownerId, TooltipPlacementMode placement)
+            => Show(text, screenPos, ownerId, placement, TooltipVerticalSide.Above);
+
+        /// <summary>
+        /// Variante con lado vertical (BUG-075). <see cref="TooltipVerticalSide.Below"/>
+        /// cuelga el panel entero DEBAJO del punto de anclaje — usado por los tooltips de
+        /// enemigos (anclados a los pies del pawn) para no tapar el modelo. Solo aplica en
+        /// AutoFit; el clamp a pantalla corre igual, así que un enemigo pegado al borde
+        /// inferior no deja el tooltip afuera.
+        /// </summary>
+        public void Show(string text, Vector2 screenPos, int ownerId,
+            TooltipPlacementMode placement, TooltipVerticalSide side)
         {
             if (_text != null) _text.text = text ?? string.Empty;
             _currentOwnerId = ownerId;
             SetVisible(true);
 
-            var target = placement == TooltipPlacementMode.Fixed
-                ? screenPos
-                : screenPos + _anchorOffset;
+            Vector2 target;
+            if (placement == TooltipPlacementMode.Fixed)
+            {
+                target = screenPos;
+            }
+            else if (side == TooltipVerticalSide.Below && _root != null)
+            {
+                // Medir la altura real del panel con el texto nuevo antes de colocarlo
+                // — colgar "debajo" necesita saber cuánto ocupa.
+                UnityEngine.UI.LayoutRebuilder.ForceRebuildLayoutImmediate(_root);
+                float panelScreenHeight = _root.rect.height * _root.lossyScale.y;
+                target = TooltipVerticalPlacement.ComputeAnchorTarget(
+                    screenPos, _anchorOffset, panelScreenHeight, side);
+            }
+            else
+            {
+                target = screenPos + _anchorOffset;
+            }
             PositionAt(target);
             ClampToCanvas();
         }
@@ -164,7 +190,8 @@ namespace Rollgeon.UI.Tooltips
         /// con el nuevo owner. Usado por click triggers (puerta).
         /// </summary>
         public void Toggle(string text, Vector2 screenPos, int ownerId,
-            TooltipPlacementMode placement = TooltipPlacementMode.AutoFit)
+            TooltipPlacementMode placement = TooltipPlacementMode.AutoFit,
+            TooltipVerticalSide side = TooltipVerticalSide.Above)
         {
             if (_visible && _currentOwnerId == ownerId)
             {
@@ -173,7 +200,7 @@ namespace Rollgeon.UI.Tooltips
             }
             else
             {
-                Show(text, screenPos, ownerId, placement);
+                Show(text, screenPos, ownerId, placement, side);
             }
         }
 

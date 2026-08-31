@@ -1,6 +1,7 @@
 using PrimeTween;
 using Sirenix.OdinInspector;
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace Rollgeon.UI.HUD
 {
@@ -25,6 +26,17 @@ namespace Rollgeon.UI.HUD
 
         [SerializeField, Optional, Tooltip("Burst de partículas UI (pool de Images). Sin wiring, sin partículas.")]
         private DiceThrowImpactBurst _burst;
+
+        [Title("Sprites — swap a mitad del giro")]
+        [SerializeField, Optional, Tooltip("Image del vaso. Sin wiring (o sin sprite Flip) el vaso gira con un solo dibujo.")]
+        private Image _cupImage;
+
+        [SerializeField, Optional, Tooltip("Vaso parado (VasoGenerala_0). Si queda vacío se toma el sprite que tenga la Image al arrancar.")]
+        private Sprite _uprightSprite;
+
+        [SerializeField, Optional, Tooltip("Vaso boca abajo (VasoGeneralaFlip_0, ya dibujado invertido). " +
+                 "Se muestra a partir de la mitad del giro (90°→270°) con la rotación compensada.")]
+        private Sprite _faceDownSprite;
 
         [Title("Bob idle")]
         [SerializeField, MinValue(0f), Tooltip("Amplitud (px) del bobbing en reposo.")]
@@ -109,6 +121,9 @@ namespace Rollgeon.UI.HUD
             // Reposo capturado una sola vez con el vaso quieto — capturarlo a
             // mitad de tween correría la pose acumulativamente.
             CaptureRest();
+            // El sprite de autoría de la Image es el vaso parado: sirve de default
+            // para no exigir cablear lo que el prefab ya sabe.
+            if (_uprightSprite == null && _cupImage != null) _uprightSprite = _cupImage.sprite;
         }
 
         private void OnDisable()
@@ -351,11 +366,27 @@ namespace Rollgeon.UI.HUD
             SetCupAngle(_targetFaceDown ? RollCupMath.FaceDownZ : RollCupMath.UprightZ);
         }
 
+        /// <summary>
+        /// Único punto de escritura de la rotación: <paramref name="z"/> es el
+        /// ángulo LÓGICO (0 parado, 180 boca abajo, 360 vuelta completa). Acá se
+        /// decide qué dibujo va y cuánto se compensa — el shake trabaja sobre la
+        /// rotación física resultante, así que no necesita saber de sprites.
+        /// </summary>
         private void SetCupAngle(float z)
         {
             if (_cup == null) return;
-            _cup.localEulerAngles = new Vector3(0f, 0f, z);
+
+            bool flipShown = CanSwapSprite && RollCupMath.ShowsFlipSprite(z);
+            if (CanSwapSprite)
+            {
+                var wanted = flipShown ? _faceDownSprite : _uprightSprite;
+                if (_cupImage.sprite != wanted) _cupImage.sprite = wanted;
+            }
+
+            _cup.localEulerAngles = new Vector3(0f, 0f, RollCupMath.VisualZ(z, flipShown));
         }
+
+        private bool CanSwapSprite => _cupImage != null && _uprightSprite != null && _faceDownSprite != null;
 
         private void RebasePosition()
         {

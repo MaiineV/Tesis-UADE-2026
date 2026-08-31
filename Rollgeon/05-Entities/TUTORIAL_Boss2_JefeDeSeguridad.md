@@ -202,7 +202,7 @@ Igual que cualquier boss: que la sala de boss spawnee **este** EnemyDataSO.
 La forma más directa (la que ya usás): en el **prefab de la sala** de boss, el
 componente **`SpawnPointConfig` → `Enemy Sets`** tiene que apuntar a
 `ED_Boss_JefeDeSeguridad` (o dejá `Enemy Sets` vacío y poné el boss en el
-`EnemyPool` del `RoomSO`). Registralo también en el `EnemyCatalogSO`.
+`EnemyPool` del `RoomSO`).
 
 ---
 

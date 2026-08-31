@@ -15,12 +15,12 @@ namespace Rollgeon.Editor.Tools.Enemy.AITree
         {
             var entries = new List<SearchTreeEntry>
             {
-                new SearchTreeGroupEntry(new GUIContent("AI Decision Node"), 0),
+                new SearchTreeGroupEntry(new GUIContent("Nodo de decisión"), 0),
             };
 
-            AddCategoryGroup(entries, "Composites", AINodeCategory.Composite);
-            AddCategoryGroup(entries, "Branching",  AINodeCategory.Branching);
-            AddCategoryGroup(entries, "Leaves",     AINodeCategory.Leaf);
+            AddCategoryGroup(entries, "Compuestos",    AINodeCategory.Composite);
+            AddCategoryGroup(entries, "Ramificación", AINodeCategory.Branching);
+            AddCategoryGroup(entries, "Hojas",        AINodeCategory.Leaf);
 
             return entries;
         }

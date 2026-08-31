@@ -34,6 +34,9 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
     /// </remarks>
     public static class GeneralaAssetBuilder
     {
+        /// <summary>Menú que regenera estos assets. Lo lee el Editor de enemigos para avisar que el builder pisa el árbol.</summary>
+        public const string MenuPath = "Tools/Rollgeon/Bosses/Build Generala";
+
         private const string LogPrefix = "[GeneralaAssetBuilder] ";
 
         private const string EnemiesFolder = "Assets/Rollgeon/Enemies";
@@ -333,7 +336,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         // MenuItem
         // ======================================================================
 
-        [MenuItem("Tools/Rollgeon/Bosses/Build Generala")]
+        [MenuItem(MenuPath)]
         public static void Run()
         {
             BossVisualWrapperBuilder.EnsureAttackHitEvents(AttackClipPaths);
@@ -649,6 +652,14 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
             if (portrait != null) boss.Portrait = portrait;
 
             boss.AIRoot = BuildAIRoot(diceTable, electricFloor);
+            boss.AIDetachedNodes.Clear(); // el builder es fuente de verdad: nada suelto sobrevive
+            boss.Design = new EnemyDesignSheet
+            {
+                Archetype = EnemyArchetype.Melee,
+                Pattern = AttackPatternKind.Unspecified,
+                Timing = AttackTiming.Telegraph,
+                Notes = "Cubiletazo de contacto; telegraphs: cuadrados dispersos, 3×3 sobre el jugador, banda direccional; anillo de escarcha; dados de la casa.",
+            };
         }
 
         /// <summary>
@@ -713,6 +724,14 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
             // AIRoot explícito: sin árbol el spawn cae al BasicEnemyAI, que ataca siempre — un dado
             // que le pega al jugador rompe la lectura de "todo el daño entra por la mano".
             dice.AIRoot = new AINode_Wait();
+            dice.AIDetachedNodes.Clear(); // el builder es fuente de verdad: nada suelto sobrevive
+            dice.Design = new EnemyDesignSheet
+            {
+                Archetype = EnemyArchetype.Unspecified,
+                Pattern = AttackPatternKind.Unspecified,
+                Timing = AttackTiming.Unspecified,
+                Notes = "Objeto de sala: no ataca ni se mueve.",
+            };
         }
 
         /// <summary>

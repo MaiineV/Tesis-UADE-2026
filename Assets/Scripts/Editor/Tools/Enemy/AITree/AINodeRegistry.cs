@@ -45,6 +45,9 @@ namespace Rollgeon.Editor.Tools.Enemy.AITree
             foreach (var t in TypeCache.GetTypesDerivedFrom<AIDecisionNode>())
             {
                 if (t.IsAbstract) continue;
+                // Los dobles de test (SpyNode, CountingNode...) viven en asmdefs *.Tests y no
+                // son contenido: no van al buscador ni cuentan para la doc.
+                if (t.Assembly.GetName().Name.EndsWith(".Tests", StringComparison.Ordinal)) continue;
                 list.Add(new AINodeMeta(t, DisplayNameFor(t), CategoryFor(t)));
             }
             list.Sort((a, b) =>

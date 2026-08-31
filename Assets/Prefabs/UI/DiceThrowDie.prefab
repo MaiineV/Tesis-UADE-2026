@@ -153,7 +153,7 @@ MonoBehaviour:
         Active: 1
         UniqueID: -1703805370
         Label: Juice_SettlePop
-        OriginalLabel: 
+        OriginalLabel: Scale Spring
         ChannelMode: 0
         Channel: 0
         MMChannelDefinition: {fileID: 0}
@@ -524,7 +524,7 @@ MonoBehaviour:
         Active: 1
         UniqueID: -1516837909
         Label: Juice_BounceSquash
-        OriginalLabel: 
+        OriginalLabel: Scale Spring
         ChannelMode: 0
         Channel: 0
         MMChannelDefinition: {fileID: 0}
@@ -698,6 +698,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Rollgeon::Rollgeon.Dice.Throw.DiceThrowDieView
   _background: {fileID: 6065771616561052594}
   _label: {fileID: 2143494192420124490}
+  _shapeCatalog: {fileID: 0}
 --- !u!114 &8683225115686858545
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -870,7 +871,7 @@ MonoBehaviour:
         Active: 1
         UniqueID: -981644629
         Label: Juice_CritPop
-        OriginalLabel: 
+        OriginalLabel: Scale Spring
         ChannelMode: 0
         Channel: 0
         MMChannelDefinition: {fileID: 0}
@@ -1104,7 +1105,7 @@ MonoBehaviour:
         Active: 1
         UniqueID: -1235325267
         Label: Juice_PickupPop
-        OriginalLabel: 
+        OriginalLabel: Scale Spring
         ChannelMode: 0
         Channel: 0
         MMChannelDefinition: {fileID: 0}

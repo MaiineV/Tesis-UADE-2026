@@ -25,6 +25,18 @@ namespace Rollgeon.UI.HUD.Breakdown
             return Mathf.Max(floor, 1f - rampPerStep * index);
         }
 
+        /// <summary>
+        /// Piso de duración de un paso que debe LEERSE (nombre de ítem del spinner,
+        /// BUG-063): el ramp + game speed pueden dejarlo bajo los 0.1s y el texto no
+        /// llega a verse. El skip explícito del jugador NO respeta el piso — pidió
+        /// velocidad y la secuencia se comprime igual que siempre.
+        /// </summary>
+        public static float FloorUnlessSkipping(float seconds, float floor, bool skipping)
+        {
+            if (skipping) return seconds;
+            return Mathf.Max(seconds, floor);
+        }
+
         /// <summary>Pitch del dado <paramref name="index"/> (0-based), clampeado al rango sano de PlaySfx2D.</summary>
         public static float PitchForIndex(int index, float step)
         {

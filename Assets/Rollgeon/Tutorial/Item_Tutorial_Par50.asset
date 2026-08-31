@@ -266,9 +266,23 @@ MonoBehaviour:
   Description: "+50 de da\xF1o al armar un Par."
   Icon: {fileID: 1808964844, guid: ee12da05509c7a74686b1e1cc11cbd3e, type: 3}
   Rarity: 1
-  FamilyId: 
-  VariantIndex: 0
   Type: 0
+  PassiveHooks:
+  - Kind: 1
+    TriggerEvent: 0
+    ComboFilter:
+      Mode: 2
+      ComboIds:
+      - combo.pair
+    ActionKindFilter: 0
+    Effect:
+      Label: Tutorial Par +50
+      PreConditions: []
+      Effects:
+      - rid: 144068533694759314
+      TargetSelector:
+        rid: -2
+    PersistentModifiers: []
   OnActivate:
     Label: Effect Group
     PreConditions: []
@@ -285,3 +299,33 @@ MonoBehaviour:
     RefIds:
     - rid: -2
       type: {class: , ns: , asm: }
+    - rid: 144068533694759314
+      type: {class: EffAddComboBonus, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
+      data:
+        Selection:
+          SlotState: 1
+          Timing: 0
+          EntityFilter: 2
+          IsGlobal: 0
+          Range: 1
+          RangeMode: 0
+          RangeFromMovementDie: 0
+          TargetMode: 0
+          AoeShape: 0
+          AoeRadius: 1
+          PatternRows: 1
+          PatternCols: 1
+          PatternCenter: {x: 0, y: 0}
+          PatternFlat: 01
+          IsConstantSelectionCount: 1
+          SelectionCount: 1
+          SelectionCountReader:
+            rid: -2
+          AutoResolve: 0
+          AutoAccept: 1
+        _amount:
+          rid: 144068533694759315
+    - rid: 144068533694759315
+      type: {class: ReadConstantInt, ns: Rollgeon.Effects.Readers, asm: Rollgeon}
+      data:
+        Value: 50

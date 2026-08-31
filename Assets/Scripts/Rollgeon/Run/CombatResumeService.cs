@@ -182,6 +182,34 @@ namespace Rollgeon.Run
                 }
             if (order.Count == 0) return false; // nada consistente que restaurar
 
+            // BUG-078: si hay enemigos VIVOS entre los participantes pero la cola
+            // restaurada quedó solo-player (el GUID del enemigo guardado no matchea el
+            // respawneado), restaurarla bypassearía el guard de no-combatants de
+            // CombatEnterState — CachedParticipants sí tiene al boss, pero la cola
+            // ciclaría al player solo. Devolvemos false para que el caller arme una cola
+            // fresca con los vivos (BuildForCombat). Si NO hay enemigos vivos, no es este
+            // caso: el guard de CombatEnterState ya lo corta antes de llegar acá.
+            bool hasLiveNonPlayer = false;
+            foreach (var g in live)
+            {
+                if (g != livePlayerId) { hasLiveNonPlayer = true; break; }
+            }
+            if (hasLiveNonPlayer)
+            {
+                bool orderHasNonPlayer = false;
+                foreach (var g in order)
+                {
+                    if (g != livePlayerId) { orderHasNonPlayer = true; break; }
+                }
+                if (!orderHasNonPlayer)
+                {
+                    UnityEngine.Debug.LogWarning(
+                        "[CombatResumeService] Cola restaurada sin los enemigos vivos (GUIDs del " +
+                        "save no matchean los respawneados) — descartando snapshot, cola fresca (BUG-078).");
+                    return false;
+                }
+            }
+
             // Clampea el cursor a la entidad activa sobreviviente.
             Guid activeGuid = Remap(ParseGuid(snap.ActiveEntityId));
             int cursor = order.IndexOf(activeGuid);

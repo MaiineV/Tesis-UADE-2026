@@ -506,10 +506,29 @@ MonoBehaviour:
     - Name: 
       Entry: 8
       Data: 
+    - Name: AIDetachedNodes
+      Entry: 7
+      Data: 45|System.Collections.Generic.List`1[[Rollgeon.Combat.AI.Decisions.AIDecisionNode,
+        Rollgeon]], mscorlib
+    - Name: 
+      Entry: 12
+      Data: 0
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
   EntityId: boss.cashier
   DisplayName: El Cajero
   Description: "Te agarra, te tira lejos, y se queda con lo que se te cay\xF3."
   Portrait: {fileID: 133841030, guid: 7354be46d5bce5b44ae3fc20ec0cb47f, type: 3}
+  Design:
+    Archetype: 1
+    Pattern: 1
+    Timing: 1
+    Notes: "Mandoble y empuj\xF3n alternados a distancia 1; lluvia de monedas; caja
+      fuerte; refuerzos (Comisi\xF3n)."
   WeaknessComboId: combo.full_house
   WeaknessMultiplierOverride: 1.5
   BaseHP: 450

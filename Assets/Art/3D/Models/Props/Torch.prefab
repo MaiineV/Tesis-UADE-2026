@@ -11,6 +11,8 @@ GameObject:
   - component: {fileID: 6674751806655954429}
   - component: {fileID: 469870974711245379}
   - component: {fileID: 3369568121459539050}
+  - component: {fileID: 8954606166221226451}
+  - component: {fileID: 7087805766304604815}
   m_Layer: 0
   m_Name: Point Light
   m_TagString: Untagged
@@ -127,6 +129,41 @@ MonoBehaviour:
   m_ShadowLayerMask: 1
   m_RenderingLayers: 1
   m_ShadowRenderingLayers: 1
+--- !u!114 &8954606166221226451
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5918148014847743813}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0aa51c461a2c2974dab3655d164e3960, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::AdditionalLightData
+  preQuantizeIntensity: 1.5
+  falloff: 0
+  falloffSteps: 11.66
+--- !u!114 &7087805766304604815
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5918148014847743813}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 01799bc17bf3d6b449a03aaac4849ec4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Rollgeon::Rollgeon.Rendering.TorchFlicker
+  BaseIntensity: 2
+  IntensityAmplitude: 0.4
+  NoiseSpeed: 1.5
+  PositionJitter: 0
+  PositionJitterSpeed: 4
+  UseColorDrift: 0
+  ColorLow: {r: 0.85, g: 0.35, b: 0.1, a: 1}
+  ColorHigh: {r: 1, g: 0.65, b: 0.25, a: 1}
 --- !u!1001 &2500474813056283327
 PrefabInstance:
   m_ObjectHideFlags: 0

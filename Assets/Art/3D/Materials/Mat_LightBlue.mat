@@ -125,17 +125,17 @@ Material:
     - _GlossyReflections: 0
     - _HitFlashAmount: 0
     - _LightTintStrength: 0.4
-    - _LightWrap: 0.1
+    - _LightWrap: 0.23
     - _Metallic: 0
-    - _MidThreshold: 0.533
+    - _MidThreshold: 0.417
     - _OcclusionStrength: 1
-    - _PaletteSlot: 3
+    - _PaletteSlot: 19
     - _Parallax: 0.005
     - _QueueOffset: 0
     - _ReceiveShadows: 1
     - _ShadowDitherDensity: 0.3
     - _ShadowSmooth: 0
-    - _ShadowThreshold: 0.202
+    - _ShadowThreshold: 0.108
     - _Smoothness: 0.5
     - _SmoothnessTextureChannel: 0
     - _SpecularHighlights: 1

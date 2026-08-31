@@ -54,6 +54,11 @@ namespace Rollgeon.UI.HUD
         [ShowInInspector, ReadOnly]
         private bool _bound;
 
+        // BUG-074: el rojo de "sin rolls" solo aplica durante el turno del jugador —
+        // espejo del flag de PlayerActionButtonsView, para que la ficha de poción
+        // responda al mismo tiempo que los chips de acción.
+        private bool _isPlayerTurn;
+
         public void Bind(Guid playerGuid)
         {
             _playerGuid = playerGuid;
@@ -74,6 +79,12 @@ namespace Rollgeon.UI.HUD
             EventManager.Subscribe(EventName.OnItemObtained, HandleItemObtained);
             EventManager.Subscribe(EventName.OnActiveItemUsed, HandleActiveItemUsed);
             EventManager.Subscribe(EventName.OnItemRemoved, HandleItemRemoved);
+            // BUG-074: la affordability del slot sigue al pool de rolls y al turno,
+            // igual que los chips de PlayerActionButtonsView.
+            EventManager.Subscribe(EventName.OnPlayerRollsChanged, HandleRollsOrPhaseChanged);
+            EventManager.Subscribe(EventName.OnTurnStarted, HandleTurnStarted);
+            EventManager.Subscribe(EventName.OnTurnFinished, HandleTurnFinished);
+            EventManager.Subscribe(EventName.OnPhaseEnter, HandleRollsOrPhaseChanged);
             SubscribeSlotClicks();
             _bound = true;
         }
@@ -84,6 +95,10 @@ namespace Rollgeon.UI.HUD
             EventManager.UnSubscribe(EventName.OnItemObtained, HandleItemObtained);
             EventManager.UnSubscribe(EventName.OnActiveItemUsed, HandleActiveItemUsed);
             EventManager.UnSubscribe(EventName.OnItemRemoved, HandleItemRemoved);
+            EventManager.UnSubscribe(EventName.OnPlayerRollsChanged, HandleRollsOrPhaseChanged);
+            EventManager.UnSubscribe(EventName.OnTurnStarted, HandleTurnStarted);
+            EventManager.UnSubscribe(EventName.OnTurnFinished, HandleTurnFinished);
+            EventManager.UnSubscribe(EventName.OnPhaseEnter, HandleRollsOrPhaseChanged);
             UnsubscribeSlotClicks();
             _bound = false;
         }
@@ -317,6 +332,51 @@ namespace Rollgeon.UI.HUD
                 int count = CountInInventory(binding.ItemId);
                 binding.Slot.SetState(count > 0 ? ActiveItemState.Active : ActiveItemState.Inactive);
                 binding.Slot.SetCount(count);
+            }
+
+            RefreshAffordability();
+        }
+
+        // ==================================================================
+        // BUG-074 — affordability por pool de rolls
+        // ==================================================================
+
+        private void HandleTurnStarted(params object[] args)
+        {
+            if (args == null || args.Length < 1 || !(args[0] is Guid guid)) return;
+            _isPlayerTurn = guid == _playerGuid;
+            RefreshAffordability();
+        }
+
+        private void HandleTurnFinished(params object[] args)
+        {
+            if (args == null || args.Length < 1 || !(args[0] is Guid guid)) return;
+            if (guid != _playerGuid) return;
+            _isPlayerTurn = false;
+            RefreshAffordability();
+        }
+
+        private void HandleRollsOrPhaseChanged(params object[] args) => RefreshAffordability();
+
+        /// <summary>
+        /// Espejo de la regla de <see cref="PlayerActionButtonsView"/>: en combate,
+        /// durante el turno del jugador y con el pool en 0, todos los slots pintan el
+        /// rojo de "no te alcanza". Fuera de combate o de turno, siempre affordable.
+        /// </summary>
+        private void RefreshAffordability()
+        {
+            bool affordable = true;
+            if (_isPlayerTurn
+                && ServiceLocator.TryGetService<Rollgeon.Combat.Rolls.IRollPoolService>(out var rolls)
+                && rolls != null
+                && rolls.IsCombatActive)
+            {
+                affordable = rolls.GetCurrent(_playerGuid) >= 1;
+            }
+
+            for (int i = 0; i < _bindings.Count; i++)
+            {
+                _bindings[i].Slot?.SetAffordable(affordable);
             }
         }
     }

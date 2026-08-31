@@ -85,6 +85,7 @@ namespace Rollgeon.UI.HUD
             public bool IsPlayer;
             public bool IsBoss;
             public bool Destroyed;
+            public bool Stunned;
         }
 
         /// <summary>Suscribe al bus y guarda el playerGuid (frames del player en el carrusel).</summary>
@@ -97,6 +98,8 @@ namespace Rollgeon.UI.HUD
             EventManager.Subscribe(EventName.OnTurnStarted, HandleTurnStarted);
             EventManager.Subscribe(EventName.OnTurnFinished, HandleTurnFinished);
             EventManager.Subscribe(EventName.OnEntityDestroyed, HandleEntityDestroyed);
+            EventManager.Subscribe(EventName.OnStunApplied, HandleStunApplied);
+            EventManager.Subscribe(EventName.OnStunExpired, HandleStunExpired);
             _bound = true;
         }
 
@@ -108,6 +111,8 @@ namespace Rollgeon.UI.HUD
             EventManager.UnSubscribe(EventName.OnTurnStarted, HandleTurnStarted);
             EventManager.UnSubscribe(EventName.OnTurnFinished, HandleTurnFinished);
             EventManager.UnSubscribe(EventName.OnEntityDestroyed, HandleEntityDestroyed);
+            EventManager.UnSubscribe(EventName.OnStunApplied, HandleStunApplied);
+            EventManager.UnSubscribe(EventName.OnStunExpired, HandleStunExpired);
             _bound = false;
         }
 
@@ -221,6 +226,10 @@ namespace Rollgeon.UI.HUD
                 info.Portrait = portraits != null && portraits.TryGetPortrait(guid, out var sprite)
                     ? sprite
                     : null;
+                // Seed desde el servicio: un rebuild mid-stun (Append, resume) no
+                // debe perder la cruz — el evento OnStunApplied ya pasó (BUG-87).
+                info.Stunned = ServiceLocator.TryGetService<Rollgeon.Combat.Status.IStunService>(out var stun)
+                               && stun != null && stun.IsStunned(guid);
             }
             for (int i = 0; i < stale.Count; i++)
             {
@@ -272,6 +281,7 @@ namespace Rollgeon.UI.HUD
             // Solo los próximos llevan su orden relativo (+1..+4); el activo sin número.
             slot.SetLabel(relPos > 0 ? relPos.ToString() : null);
             slot.SetDestroyed(info?.Destroyed ?? false);
+            slot.SetStunned(info?.Stunned ?? false);
             slot.SetActive(relPos == 0);
         }
 
@@ -482,6 +492,32 @@ namespace Rollgeon.UI.HUD
                 if (slot == null || slot.SlotGuid != guid) continue;
                 slot.SetDestroyed(true);
                 slot.SetActive(false);
+            }
+        }
+
+        // BUG-87: cruz de stun — mismo patrón que destroyed (la ventana puede
+        // repetir el guid con pocas entidades; BindSlotContent re-aplica al rotar).
+        private void HandleStunApplied(params object[] args)
+        {
+            if (!TryReadGuid(args, "OnStunApplied", out var guid)) return;
+            ApplyStunned(guid, true);
+        }
+
+        private void HandleStunExpired(params object[] args)
+        {
+            if (!TryReadGuid(args, "OnStunExpired", out var guid)) return;
+            ApplyStunned(guid, false);
+        }
+
+        private void ApplyStunned(Guid guid, bool stunned)
+        {
+            if (_entities.TryGetValue(guid, out var info)) info.Stunned = stunned;
+
+            for (int i = 0; i < _window.Count; i++)
+            {
+                var slot = _window[i];
+                if (slot == null || slot.SlotGuid != guid) continue;
+                slot.SetStunned(stunned);
             }
         }
 

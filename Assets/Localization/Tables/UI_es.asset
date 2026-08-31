@@ -449,8 +449,8 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 8535671167614976
-    m_Localized: "Estos son los dados de tu clase. Haz clic en uno para sumarlo a
-      la bolsa; el n\xFAmero de cada fila dice cu\xE1ntos puedes llevar de ese tipo."
+    m_Localized: Estos son los dados de tu clase. Haz clic en uno para sumarlo a
+      la bolsa; puedes repetir el mismo tipo tantas veces como quieras.
     m_Metadata:
       m_Items: []
   - m_Id: 8535671486382080
@@ -871,6 +871,26 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 15429564929064960
     m_Localized: Habilidad de clase
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16211047658389504
+    m_Localized: Ataque
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16211047712915456
+    m_Localized: Control
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16211047712915457
+    m_Localized: Defensa
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16211047712915458
+    m_Localized: "Econom\xEDa"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16211047712915459
+    m_Localized: "Maldici\xF3n"
     m_Metadata:
       m_Items: []
   references:

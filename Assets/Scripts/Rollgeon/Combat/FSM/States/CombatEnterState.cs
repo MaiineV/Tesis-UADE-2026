@@ -10,11 +10,15 @@ namespace Rollgeon.Combat.FSM.States
     /// </summary>
     /// <remarks>
     /// <para>
-    /// <b>Enter.</b> Dispara <c>OnCombatStart(roomInstanceId)</c>, llama
-    /// <c>TurnOrder.BuildForCombat(CachedParticipants, Context.PlayerId)</c> (que a
+    /// <b>Enter.</b> Valida los participantes, dispara <c>OnCombatStart(roomInstanceId)</c>
+    /// y llama <c>TurnOrder.BuildForCombat(CachedParticipants, Context.PlayerId)</c> (que a
     /// su vez dispara <c>OnTurnQueueBuilt</c>). Pasar <c>PlayerId</c> como
     /// <c>priorityGuid</c> es la política CNF-006 ("el jugador siempre tiene el
     /// primer turno del combate") — no hay flag de config, es incondicional.
+    /// Si la validación falla, <c>OnCombatStart</c> NO se emite: un abort inmediato
+    /// emitiría el par start/end en el mismo frame y listeners de estado (ej.
+    /// <c>RollPoolService</c>) quedarían con el pool reseteado a 0 fuera de combate
+    /// (BUG-078: sin UI de energía + acciones gratis).
     /// </para>
     /// <para>
     /// <b>CheckInput(StartCombat).</b> Si <c>TurnOrder.Current == PlayerId</c>
@@ -45,11 +49,6 @@ namespace Rollgeon.Combat.FSM.States
         {
             _noValidCombatants = false;
 
-            // 1) OnCombatStart BEFORE BuildForCombat — listeners de "combat init"
-            //    (achievements, stats tracking) se suscriben al evento y esperan
-            //    que corra antes del turn queue wiring.
-            EventManager.Trigger(EventName.OnCombatStart, Context.RoomInstanceId);
-
             if (Context.CachedParticipants == null || Context.CachedParticipants.Count == 0)
             {
                 UnityEngine.Debug.LogError(
@@ -78,6 +77,13 @@ namespace Rollgeon.Combat.FSM.States
                 Context.PendingOutcome = CombatOutcome.Aborted;
                 return;
             }
+
+            // OnCombatStart recién acá, con los participantes ya validados, y ANTES de
+            // BuildForCombat/TryBeginResume — listeners de "combat init" (achievements,
+            // stats tracking) esperan que corra antes del turn queue wiring, y el resume
+            // necesita que RollPoolService ya haya arrancado el pool para poder pisarlo
+            // con el valor guardado (RestoreCurrent).
+            EventManager.Trigger(EventName.OnCombatStart, Context.RoomInstanceId);
 
             // Resume desde save (#0028 Fase 3): si hay estado de combate stageado para esta
             // sala, restaura la cola/cursor/round/energía exactos y NO armamos una fresca.

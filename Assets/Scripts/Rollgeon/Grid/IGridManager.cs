@@ -12,6 +12,13 @@ namespace Rollgeon.Grid
     /// al terminar la run. Mantiene ocupancia (<c>GridCoord → Guid</c>) y permite traducción
     /// a coordenadas del mundo si el <see cref="GridOrigin"/> y <see cref="TileSize"/> están
     /// configurados por el bootstrap de la sala.
+    /// <para>
+    /// Footprint (Fase A): una entidad puede ocupar un rectángulo de celdas (ver
+    /// <see cref="GridFootprint"/>). Su posición (<see cref="TryGetPosition"/>) sigue siendo
+    /// una sola celda: el <b>ancla</b> (inferior-izquierda). Los miembros con implementación
+    /// default tratan a todo como 1×1 para que las implementaciones existentes sigan
+    /// compilando; <see cref="GridManager"/> los sobreescribe.
+    /// </para>
     /// </remarks>
     public interface IGridManager
     {
@@ -34,7 +41,11 @@ namespace Rollgeon.Grid
         bool TryGetOccupant(GridCoord c, out Guid entityGuid);
         bool TryGetPosition(Guid entityGuid, out GridCoord coord);
 
-        /// <summary>Registra una entidad en el tile. Sobrescribe si ya estaba en otro tile.</summary>
+        /// <summary>
+        /// Registra una entidad 1×1 en el tile. Sobrescribe si ya estaba en otro tile y desaloja
+        /// (con warning) a quien estuviera ahí. Sobre un guid ya registrado con footprint
+        /// multi-celda, conserva ese footprint (equivale a <see cref="TryRegister"/>).
+        /// </summary>
         void Register(Guid entityGuid, GridCoord coord);
 
         void Unregister(Guid entityGuid);
@@ -46,6 +57,77 @@ namespace Rollgeon.Grid
         Vector3 GridToWorld(GridCoord c);
         GridCoord WorldToGrid(Vector3 world);
 
+        /// <summary>Un par por entidad: guid → ancla.</summary>
         IEnumerable<KeyValuePair<Guid, GridCoord>> Occupants();
+
+        // ---- footprint (Fase A) ------------------------------------------
+
+        /// <summary>Tamaño registrado de la entidad; (1,1) si no está registrada o es común.</summary>
+        Vector2Int GetFootprint(Guid entityGuid) => GridFootprint.Unit;
+
+        /// <summary>
+        /// True si todas las celdas del rectángulo son walkable y están libres (o las ocupa
+        /// <paramref name="ignore"/>, para mover una entidad sobre sí misma).
+        /// </summary>
+        bool CanPlace(GridCoord anchor, Vector2Int footprint, Guid ignore = default)
+        {
+            foreach (var c in GridFootprint.Cells(anchor, footprint))
+            {
+                if (!IsWalkable(c)) return false;
+                if (TryGetOccupant(c, out var occupant) && occupant != ignore) return false;
+            }
+            return true;
+        }
+
+        /// <summary>
+        /// Registra la entidad ocupando el rectángulo. A diferencia de <see cref="Register"/>,
+        /// un footprint multi-celda <b>no desaloja</b>: devuelve <c>false</c> sin tocar nada si
+        /// alguna celda está tomada o no es walkable. (1,1) equivale a <see cref="Register"/>.
+        /// </summary>
+        bool TryRegister(Guid entityGuid, GridCoord anchor, Vector2Int footprint)
+        {
+            if (!CanPlace(anchor, footprint, entityGuid)) return false;
+            Register(entityGuid, anchor);
+            return true;
+        }
+
+        /// <summary>Celdas que cubre la entidad (vacío si no está registrada).</summary>
+        IEnumerable<GridCoord> OccupiedCells(Guid entityGuid)
+            => TryGetPosition(entityGuid, out var anchor)
+                ? GridFootprint.Cells(anchor, GetFootprint(entityGuid))
+                : Array.Empty<GridCoord>();
+
+        // ---- footprint (Fase C) ------------------------------------------
+
+        /// <summary>
+        /// True si ALGUNA celda cubierta por la entidad cae en el área. Para un 1×1
+        /// equivale al patrón viejo <c>TryGetPosition + area(coord)</c>; para un rect,
+        /// un telegraph/hazard que toca cualquier celda lo alcanza.
+        /// </summary>
+        bool OccupiesAny(Guid entityGuid, Func<GridCoord, bool> area)
+        {
+            if (area == null) return false;
+            foreach (var c in OccupiedCells(entityGuid))
+                if (area(c)) return true;
+            return false;
+        }
+
+        /// <summary>
+        /// Ocupantes de las coords, deduplicados por guid en orden de primera aparición.
+        /// Un 2×2 cubierto por 4 celdas de un AoE aparece UNA vez — la base del
+        /// "una vez por entidad" de los efectos de área.
+        /// </summary>
+        List<Guid> DistinctOccupants(IEnumerable<GridCoord> coords)
+        {
+            var result = new List<Guid>();
+            if (coords == null) return result;
+            var seen = new HashSet<Guid>();
+            foreach (var c in coords)
+            {
+                if (!TryGetOccupant(c, out var occupant) || occupant == Guid.Empty) continue;
+                if (seen.Add(occupant)) result.Add(occupant);
+            }
+            return result;
+        }
     }
 }

@@ -194,9 +194,10 @@ namespace Rollgeon.Combat.AI.Decisions
 
             bool hit = false;
             var grid = context.Grid;
+            // OccupiesAny (Fase C): una víctima multi-celda es alcanzada si CUALQUIER celda
+            // cubierta cae en el área; para 1×1 equivale al Contains(coord) de siempre.
             if (grid != null
-                && grid.TryGetPosition(context.PlayerGuid, out var playerCoord)
-                && area.Contains(playerCoord))
+                && grid.OccupiesAny(context.PlayerGuid, area.Contains))
             {
                 hit = true;
                 if (context.DamagePipeline != null && area.Damage > 0)
@@ -220,8 +221,7 @@ namespace Rollgeon.Combat.AI.Decisions
                 && ServiceLocator.TryGetService<Rollgeon.Chests.IChestRegistry>(out var chests)
                 && chests != null
                 && chests.TryGetActiveChest(out var chestGuid)
-                && grid.TryGetPosition(chestGuid, out var chestCoord)
-                && area.Contains(chestCoord))
+                && grid.OccupiesAny(chestGuid, area.Contains))
             {
                 context.DamagePipeline.Resolve(new DamageContext
                 {

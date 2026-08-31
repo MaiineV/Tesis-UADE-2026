@@ -30,6 +30,9 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
     /// </remarks>
     public static class CroupierAssetBuilder
     {
+        /// <summary>Menú que regenera estos assets. Lo lee el Editor de enemigos para avisar que el builder pisa el árbol.</summary>
+        public const string MenuPath = "Tools/Rollgeon/Bosses/Build Croupier";
+
         // ======================================================================
         // Rutas
         // ======================================================================
@@ -401,7 +404,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         // Menú
         // ======================================================================
 
-        [MenuItem("Tools/Rollgeon/Bosses/Build Croupier")]
+        [MenuItem(MenuPath)]
         public static void BuildCroupier()
         {
             var flame = BuildFireVfx();
@@ -578,6 +581,14 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
             data.ExtraTiers = new List<EnemyTier>();
 
             data.AIRoot = BuildAIRoot(fire, bombs, bombFire);
+            data.AIDetachedNodes.Clear(); // el builder es fuente de verdad: nada suelto sobrevive
+            data.Design = new EnemyDesignSheet
+            {
+                Archetype = EnemyArchetype.Ranged,
+                Pattern = AttackPatternKind.Cone,
+                Timing = AttackTiming.Telegraph,
+                Notes = "Cono direccional, disparo a distancia larga, bombas en cruz, teletransportes, fuego en sectores.",
+            };
         }
 
         /// <summary>

@@ -27,19 +27,33 @@ MonoBehaviour:
       Data: char_rew.energy_plus_1
     - Name: _displayName
       Entry: 1
-      Data: Energy+
+      Data: Rolls+
     - Name: _description
-      Entry: 6
-      Data: 
+      Entry: 1
+      Data: "+1 al pool de rolls: sube el m\xE1ximo y los rolls con los que arranc\xE1s
+        cada combate."
     - Name: _icon
       Entry: 6
+      Data: 
+    - Name: _statGrants
+      Entry: 7
+      Data: 0|System.Collections.Generic.List`1[[Rollgeon.Upgrades.StatGrant, Rollgeon]],
+        mscorlib
+    - Name: 
+      Entry: 12
+      Data: 0
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
       Data: 
     - Name: _targetStat
       Entry: 3
       Data: 1
     - Name: _amount
       Entry: 7
-      Data: 0|Rollgeon.Effects.Readers.ReadConstantInt, Rollgeon
+      Data: 1|Rollgeon.Effects.Readers.ReadConstantInt, Rollgeon
     - Name: Value
       Entry: 3
       Data: 1
@@ -50,11 +64,11 @@ MonoBehaviour:
       Entry: 10
       Data: 0
   _amount:
-    rid: 2879776407734714811
+    rid: 144068626277466797
   references:
     version: 2
     RefIds:
-    - rid: 2879776407734714811
+    - rid: 144068626277466797
       type: {class: ReadConstantInt, ns: Rollgeon.Effects.Readers, asm: Rollgeon}
       data:
         Value: 1

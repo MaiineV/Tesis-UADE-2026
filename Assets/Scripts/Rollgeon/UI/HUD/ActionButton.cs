@@ -260,7 +260,10 @@ namespace Rollgeon.UI.HUD
         {
             if (_affordable == affordable) return;
             _affordable = affordable;
-            ApplyCostLabelColor();
+            // ApplyVisual y no solo el label: el borde rojo también depende de este
+            // flag (BUG-074 — antes solo el estado Unaffordable encendía el outline
+            // y las fichas Locked-por-otra-razón quedaban sin feedback).
+            ApplyVisual();
         }
 
         public bool IsAffordable => _affordable;
@@ -298,11 +301,6 @@ namespace Rollgeon.UI.HUD
                     _button.interactable = false;
                     ApplyChipVisual(highlighted: true);
                     _stateScale = 1f;
-                    if (_outline != null)
-                    {
-                        _outline.effectColor = _unaffordableColor;
-                        _outline.enabled = true;
-                    }
                     break;
 
                 // Sprite base a alpha pleno (feedback playtest: nada de atenuar) —
@@ -312,29 +310,46 @@ namespace Rollgeon.UI.HUD
                     _button.interactable = false;
                     ApplyChipVisual(highlighted: false);
                     _stateScale = 1f;
-                    if (_outline != null) _outline.enabled = false;
                     break;
 
                 case ActionButtonState.Available:
                     _button.interactable = true;
                     ApplyChipVisual(highlighted: _hovered);
                     _stateScale = 1f;
-                    if (_outline != null) _outline.enabled = false;
                     break;
 
                 case ActionButtonState.Selected:
                     _button.interactable = true;
                     ApplyChipVisual(highlighted: true);
                     _stateScale = _selectedScale;
-                    if (_outline != null)
-                    {
-                        _outline.effectColor = _glowColor;
-                        _outline.enabled = true;
-                    }
                     break;
             }
 
+            ApplyOutline();
             ApplyScale();
+        }
+
+        /// <summary>
+        /// Outline del chip, resuelto DESPUÉS del switch de estado (BUG-074): el rojo de
+        /// "no te alcanza" es ortogonal al estado — una ficha Locked por otra razón
+        /// (Heal a vida llena, ataque sin rango) igual pinta el borde rojo si además no
+        /// hay rolls. Selected es la excepción: la acción ya está comprometida y pagada,
+        /// ahí manda el glow.
+        /// </summary>
+        private void ApplyOutline()
+        {
+            if (_outline == null) return;
+
+            if (_state == ActionButtonState.Selected)
+            {
+                _outline.effectColor = _glowColor;
+                _outline.enabled = true;
+                return;
+            }
+
+            bool showRed = !_affordable || _state == ActionButtonState.Unaffordable;
+            _outline.effectColor = _unaffordableColor;
+            _outline.enabled = showRed;
         }
 
         /// <summary>

@@ -175,6 +175,65 @@ namespace Rollgeon.Combat.AI.Tests
             Assert.IsTrue(marker.Ticked, "El hijo posterior al Move debe correr aunque el planner diga NoMove.");
         }
 
+        // -----------------------------------------------------------------
+        // AttackRange de la ficha → AIPathRequest (antes: hardcodeado en 1,
+        // todo enemigo planeaba como melee, incluso el Croupier con rango 24).
+        // -----------------------------------------------------------------
+
+        [Test]
+        public void MoveNode_SheetAttackRange_ReachesThePlannerRequest()
+        {
+            // Arrange — enemigo con el atributo AttackRange(24) materializado por la ficha.
+            var sniper = Guid.NewGuid();
+            _grid.Register(sniper, new GridCoord(1, 0));
+            var bag = new ModifiableAttributes();
+            bag.EnsureInitialized();
+            bag.SetAttribute<Health>(new Health(60));
+            bag.SetAttribute<AttackRange>(new AttackRange(24));
+            _attributes.Register(sniper, bag);
+
+            var planner = new RequestCapturePlanner();
+            var context = MakeContext(planner);
+            context.SelfGuid = sniper;
+
+            // Act
+            new AINode_Move().Tick(context);
+
+            // Assert
+            Assert.IsTrue(planner.Called, "El nodo debe llegar al planner.");
+            Assert.AreEqual(24, planner.Captured.AttackRange,
+                "El request debe llevar el rango de la ficha, no el 1 histórico.");
+        }
+
+        [Test]
+        public void MoveNode_NoAttackRangeAttribute_PlansAsMeleeOne()
+        {
+            // Arrange — _enemy del SetUp no tiene el atributo: comportamiento histórico.
+            var planner = new RequestCapturePlanner();
+            var context = MakeContext(planner);
+
+            // Act
+            new AINode_Move().Tick(context);
+
+            // Assert
+            Assert.IsTrue(planner.Called);
+            Assert.AreEqual(1, planner.Captured.AttackRange,
+                "Sin atributo (fakes, enemigos viejos) el planner sigue asumiendo melee de 1.");
+        }
+
+        private sealed class RequestCapturePlanner : IAIPathPlanner
+        {
+            public bool Called;
+            public AIPathRequest Captured;
+
+            public AIPathPlanResult PlanMove(in AIPathRequest request)
+            {
+                Called = true;
+                Captured = request;
+                return AIPathPlanResult.NoMove;
+            }
+        }
+
         private sealed class AlwaysNoMovePlanner : IAIPathPlanner
         {
             public AIPathPlanResult PlanMove(in AIPathRequest request) => AIPathPlanResult.NoMove;

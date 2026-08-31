@@ -21,18 +21,6 @@ namespace Rollgeon.Dice.Tests
             Assert.AreEqual(expected, type.MaxFace());
         }
 
-        [TestCase(DiceType.D3, 5)]
-        [TestCase(DiceType.D4, 5)]
-        [TestCase(DiceType.D6, 5)]
-        [TestCase(DiceType.D8, 4)]
-        [TestCase(DiceType.D10, 3)]
-        [TestCase(DiceType.D12, 2)]
-        [TestCase(DiceType.D20, 1)]
-        public void MaxPerBag_MatchesSpec(DiceType type, int expected)
-        {
-            Assert.AreEqual(expected, type.MaxPerBag());
-        }
-
         [TestCase(DiceType.D3, 2.0f)]
         [TestCase(DiceType.D4, 2.5f)]
         [TestCase(DiceType.D6, 3.5f)]

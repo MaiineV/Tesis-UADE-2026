@@ -100,5 +100,19 @@ namespace Rollgeon.UI.Screens
         {
             return (index - (count - 1) * 0.5f) * spacing;
         }
+
+        /// <summary>
+        /// Spacing efectivo para que <paramref name="count"/> dados entren en
+        /// <paramref name="availableWidth"/>: el autorado manda mientras quepa; si
+        /// no, se comprime (abanico con solape) sin volverse negativo. Con 5 exactos
+        /// nunca clampa, pero la bolsa ya no tiene tope por tipo y puede crecer.
+        /// </summary>
+        public static float FitSpacing(int count, float baseSpacing, float dieSize, float availableWidth)
+        {
+            if (count <= 1) return baseSpacing;
+            float fit = (availableWidth - dieSize) / (count - 1);
+            if (fit >= baseSpacing) return baseSpacing;
+            return fit > 0f ? fit : 0f;
+        }
     }
 }

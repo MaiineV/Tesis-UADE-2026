@@ -88,6 +88,17 @@ namespace Rollgeon.Upgrades.Dice.UI
             return rect != null;
         }
 
+        /// <summary>
+        /// RectTransform del panel de la slot-machine — anchor del overlay del tutorial
+        /// (BUG-036: los pasos del altar se anclan al panel para que el popup se coloque
+        /// al costado en vez de taparlo centrado).
+        /// </summary>
+        public bool TryGetPanelRect(out RectTransform rect)
+        {
+            rect = _panelRoot != null ? _panelRoot.transform as RectTransform : null;
+            return rect != null;
+        }
+
         // ----- Runtime state ----------------------------------------------------
         private bool _subscribed;
         private Guid _currentRoomInstanceId;

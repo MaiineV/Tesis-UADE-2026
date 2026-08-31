@@ -428,6 +428,12 @@ MonoBehaviour:
     - Name: Count
       Entry: 3
       Data: 3
+    - Name: Columns
+      Entry: 3
+      Data: 0
+    - Name: Rows
+      Entry: 3
+      Data: 0
     - Name: HalfAxis
       Entry: 3
       Data: 0
@@ -437,6 +443,9 @@ MonoBehaviour:
     - Name: Kind
       Entry: 3
       Data: 1
+    - Name: ChannelId
+      Entry: 6
+      Data: 
     - Name: 
       Entry: 8
       Data: 
@@ -558,11 +567,30 @@ MonoBehaviour:
     - Name: 
       Entry: 8
       Data: 
+    - Name: AIDetachedNodes
+      Entry: 7
+      Data: 47|System.Collections.Generic.List`1[[Rollgeon.Combat.AI.Decisions.AIDecisionNode,
+        Rollgeon]], mscorlib
+    - Name: 
+      Entry: 12
+      Data: 0
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
   EntityId: boss.one_armed
   DisplayName: La Bandida
   Description: 'A three-reel slot machine bolted to the wall. It never chases you:
     it counts to the jackpot. Break any reel to cancel the count.'
   Portrait: {fileID: 133841030, guid: 7354be46d5bce5b44ae3fc20ec0cb47f, type: 3}
+  Design:
+    Archetype: 1
+    Pattern: 0
+    Timing: 2
+    Notes: "Brazo de contacto; rodillos con peaje; 3\xD73 sobre el jugador; jackpot
+      con cuenta regresiva."
   WeaknessComboId: combo.ladder
   WeaknessMultiplierOverride: 1.5
   BaseHP: 120
@@ -575,3 +603,7 @@ MonoBehaviour:
   VisualPrefab: {fileID: 4256035605858373344, guid: 6eeb034791598da41821a380e2a9d39d, type: 3}
   MinGoldDrop: 15
   MaxGoldDrop: 23
+  IsFlying: 0
+  IsBoss: 0
+  Personality: 0
+  KamikazeIgnoresSurvival: 0

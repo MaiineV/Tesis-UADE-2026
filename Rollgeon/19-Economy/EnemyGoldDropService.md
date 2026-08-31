@@ -31,7 +31,7 @@ On destruction it triggers `OnFloatingNumberRequested` with `FloatingNumberType.
 ## Dependencies
 
 **Uses:** [[IEconomyService]], [[EventManager]], [[EventName]] (`OnEntityDestroyed`, `OnFloatingNumberRequested`), [[FloatingNumberType]].
-**Used by:** [[RunController]] (constructs and registers in `ServiceScope.Run`), [[DefaultEnemySpawnResolver]] (calls `RegisterDrop` after rolling), indirectly [[EnemyDataSO]] / [[EnemyCatalogSO]] (provide `Min/MaxGoldDrop` data).
+**Used by:** [[RunController]] (constructs and registers in `ServiceScope.Run`), [[DefaultEnemySpawnResolver]] (calls `RegisterDrop` after rolling), indirectly [[EnemyDataSO]] (provide `Min/MaxGoldDrop` data).
 
 ## Code
 

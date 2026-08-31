@@ -41,6 +41,10 @@ namespace Rollgeon.UI.HUD
         [Tooltip("Overlay que se muestra cuando el actor fue destruido mid-round.")]
         private GameObject _destroyedOverlay;
 
+        [SerializeField]
+        [Tooltip("Overlay cruz: el actor está stuneado y va a perder su próximo turno.")]
+        private GameObject _stunOverlay;
+
         [Title("Turn Slot — Frame (borde/fondo por estado)")]
         [SerializeField]
         [Tooltip("Image del borde/fondo detrás del portrait. Los cablea el installer " +
@@ -120,6 +124,7 @@ namespace Rollgeon.UI.HUD
 
             SetActive(false);
             SetDestroyed(false);
+            SetStunned(false);
         }
 
         /// <summary>
@@ -170,6 +175,15 @@ namespace Rollgeon.UI.HUD
             if (_destroyedOverlay != null)
             {
                 _destroyedOverlay.SetActive(destroyed);
+            }
+        }
+
+        /// <summary>Togglea el overlay "stuneado" (cruz sobre el portrait, BUG-87).</summary>
+        public void SetStunned(bool stunned)
+        {
+            if (_stunOverlay != null)
+            {
+                _stunOverlay.SetActive(stunned);
             }
         }
 
