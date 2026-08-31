@@ -4902,8 +4902,7 @@ diseñar para uno.**
 
 `ED_Healer.asset` lo confirma desde el otro lado: 1890 líneas y **cero `rid`**, porque
 `EnemyDataSO.AIRoot` es `[OdinSerialize]` sin `[SerializeReference]` — o sea el `EffectData` de los
-enemigos es directamente invisible a `SerializedObject`. Mismo caso: `EnemyCatalogSO` (ver el
-comentario en `EnemyEditorWindow`) y `BaseComboSO._extraEffects` (`protected` + `[OdinSerialize]`,
+enemigos es directamente invisible a `SerializedObject`. Mismo caso: `BaseComboSO._extraEffects` (`protected` + `[OdinSerialize]`,
 sin `[SerializeField]`).
 
 **Deuda: el racional de "doble cobertura" es inventado.** El docstring de `EffectData.cs` dice que
