@@ -6,6 +6,7 @@ using Patterns.Save;
 using Rollgeon.Attributes;
 using Rollgeon.Attributes.Modifiers;
 using Rollgeon.Combat.Actions;
+using Rollgeon.Combat.Rolls;
 using Rollgeon.Combos.Play;
 using Rollgeon.Effects;
 using Rollgeon.Effects.Concretes;
@@ -46,10 +47,33 @@ namespace Rollgeon.Items
 
         public event Action<ItemSO, bool> OnItemChanged;
 
+        /// <summary>
+        /// Handler de <see cref="EventName.OnTurnFinished"/> que baja los cooldowns.
+        /// Guardado en campo para poder desuscribir en <see cref="Dispose"/>.
+        /// </summary>
+        private readonly EventManager.EventReceiver _onTurnFinishedHandler;
+
         public InventoryService(ItemCatalogSO catalog, int maxActiveSlots)
         {
             _catalog = catalog;
             _maxActiveSlots = Mathf.Max(1, maxActiveSlots);
+
+            // Sin esto TickCooldowns no lo llamaba nadie y un item con Cooldown > 0
+            // quedaba bloqueado para el resto de la run. Mismo patron de hook por turno
+            // que ComboBlockService / DiceBlockService.
+            _onTurnFinishedHandler = HandleTurnFinished;
+            EventManager.Subscribe(EventName.OnTurnFinished, _onTurnFinishedHandler);
+        }
+
+        /// <summary>
+        /// Solo el turno del jugador descuenta: el cooldown de un item se mide en turnos
+        /// propios, no en turnos de mesa.
+        /// </summary>
+        private void HandleTurnFinished(params object[] args)
+        {
+            if (args == null || args.Length < 1 || !(args[0] is Guid guid)) return;
+            if (guid != GetPlayerGuid()) return;
+            TickCooldowns();
         }
 
         // ======================================================================
@@ -132,37 +156,86 @@ namespace Rollgeon.Items
         // Activate (active items)
         // ======================================================================
 
-        public bool ActivateItem(int activeSlotIndex, EffectContext ctx)
+        /// <summary>
+        /// Espejo read-only de los gates de <see cref="ActivateItem"/>. Es la unica
+        /// fuente de verdad: <c>ActivateItem</c> lo llama primero, asi el rojo del HUD y
+        /// el rechazo real no pueden divergir.
+        /// </summary>
+        public ItemActivationBlock CanActivateItem(int activeSlotIndex, EffectContext ctx)
         {
-            if (activeSlotIndex < 0 || activeSlotIndex >= _activeItems.Count) return false;
+            if (activeSlotIndex < 0 || activeSlotIndex >= _activeItems.Count)
+                return ItemActivationBlock.InvalidSlot;
 
             var slot = _activeItems[activeSlotIndex];
-            if (slot.CurrentCooldown > 0) return false;
+            if (slot.CurrentCooldown > 0) return ItemActivationBlock.OnCooldown;
 
             var item = slot.Item;
-            if (item == null || item.Type != ItemType.Active) return false;
+            if (item == null || item.Type != ItemType.Active)
+                return ItemActivationBlock.NotActiveItem;
+
+            var playerGuid = ctx?.SourceGuid ?? GetPlayerGuid();
 
             if (item.ConsumesAction)
             {
-                if (!ServiceLocator.TryGetService<TurnManager>(out var tm))
+                if (!ServiceLocator.TryGetService<TurnManager>(out var tm) || tm == null)
+                    return ItemActivationBlock.ForbiddenByRuleset;
+
+                if (!tm.CanExecute(BuildUseItemAction(item), playerGuid, out _))
+                {
+                    // TurnManager devuelve el motivo como string en ingles; en vez de
+                    // parsearlo, re-preguntamos al pool para separar "no te alcanza" de
+                    // "el ruleset lo prohibe".
+                    bool poolEmpty = ServiceLocator.TryGetService<IRollPoolService>(out var rolls)
+                                     && rolls != null
+                                     && rolls.IsCombatActive
+                                     && rolls.GetCurrent(playerGuid) < 1;
+                    return poolEmpty
+                        ? ItemActivationBlock.NotEnoughRolls
+                        : ItemActivationBlock.ForbiddenByRuleset;
+                }
+            }
+
+            // Las precondiciones del OnActivate valen para las dos ramas. Antes la rama
+            // ConsumesAction solo las veia dentro de TurnManager.TryExecute — o sea,
+            // despues de cobrar el roll.
+            if (item.OnActivate != null && !item.OnActivate.CanBeExecuted(BuildPreCtx(ctx)))
+                return ItemActivationBlock.PreconditionFailed;
+
+            return ItemActivationBlock.None;
+        }
+
+        private static ActionDefinitionSO BuildUseItemAction(ItemSO item)
+        {
+            return new ActionDefinitionSO
+            {
+                ActionId = item.ResolvedActionId,
+                Type = ActionType.UseItem,
+                BackingAsset = item,
+                Effect = item.OnActivate,
+            };
+        }
+
+        public bool ActivateItem(int activeSlotIndex, EffectContext ctx)
+        {
+            var block = CanActivateItem(activeSlotIndex, ctx);
+            if (block != ItemActivationBlock.None)
+            {
+                if (block == ItemActivationBlock.ForbiddenByRuleset
+                    && !ServiceLocator.TryGetService<TurnManager>(out _))
                 {
                     Debug.LogWarning("[InventoryService] TurnManager not registered — cannot enforce action economy.");
-                    return false;
                 }
+                return false;
+            }
 
-                var action = new ActionDefinitionSO
-                {
-                    ActionId = item.ResolvedActionId,
-                    Type = ActionType.UseItem,
-                    BackingAsset = item,
-                    Effect = item.OnActivate,
-                };
+            var slot = _activeItems[activeSlotIndex];
+            var item = slot.Item;
 
+            if (item.ConsumesAction)
+            {
                 var playerGuid = ctx?.SourceGuid ?? GetPlayerGuid();
-                if (!tm.CanExecute(action, playerGuid, out _)) return false;
-
-                var ok = tm.TryExecute(action, playerGuid, ctx);
-                if (!ok) return false;
+                ServiceLocator.TryGetService<TurnManager>(out var tm);
+                if (!tm.TryExecute(BuildUseItemAction(item), playerGuid, ctx)) return false;
             }
             else
             {
@@ -536,6 +609,7 @@ namespace Rollgeon.Items
         public void Dispose()
         {
             SaveSystem.Unregister(this);
+            EventManager.UnSubscribe(EventName.OnTurnFinished, _onTurnFinishedHandler);
             ClearAllHooksAndModifiers();
             _passiveItems.Clear();
             _activeItems.Clear();
