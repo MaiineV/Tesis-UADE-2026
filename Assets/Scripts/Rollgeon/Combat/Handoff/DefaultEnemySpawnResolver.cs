@@ -151,7 +151,26 @@ namespace Rollgeon.Combat.Handoff
                         instance.SpawnedEnemies.Add(id);
                     }
                 }
-                return result;
+
+                // BUG-078: había states vivos pero NINGUNO se pudo resolver (típico:
+                // LookupEnemyData sin match en el resume). Devolver vacío deja a la sala
+                // yendo a combate sin combatientes → abort fantasma. Caemos al plan de
+                // primer spawn, que garantiza boss vía instance.Boss / BossPool del piso.
+                bool anyAliveState = false;
+                foreach (var state in existingStates)
+                {
+                    if (!state.IsDead) { anyAliveState = true; break; }
+                }
+                if (result.Count == 0 && anyAliveState)
+                {
+                    Debug.LogWarning(
+                        "[DefaultEnemySpawnResolver] Re-entry con states vivos pero 0 enemigos " +
+                        "resueltos — fallback a primer spawn (BUG-078).");
+                }
+                else
+                {
+                    return result;
+                }
             }
 
             // 2. Primer spawn de la sala.

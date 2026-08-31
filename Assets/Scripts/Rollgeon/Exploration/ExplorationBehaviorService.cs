@@ -47,6 +47,7 @@ namespace Rollgeon.Exploration
         private EventManager.EventReceiver _onPhaseEnter;
         private EventManager.EventReceiver _onPhaseExit;
         private EventManager.EventReceiver _onRoomEntered;
+        private EventManager.EventReceiver _onTutorialActionUnlocked;
 
         public bool IsActive => _state != State.Inactive;
 
@@ -55,10 +56,25 @@ namespace Rollgeon.Exploration
             _onPhaseEnter = OnPhaseEnter;
             _onPhaseExit = OnPhaseExit;
             _onRoomEntered = OnRoomEntered;
+            _onTutorialActionUnlocked = OnTutorialActionUnlocked;
 
             EventManager.Subscribe(EventName.OnPhaseEnter, _onPhaseEnter);
             EventManager.Subscribe(EventName.OnPhaseExit, _onPhaseExit);
             EventManager.Subscribe(EventName.OnRoomEntered, _onRoomEntered);
+            EventManager.Subscribe(EventName.OnTutorialActionUnlocked, _onTutorialActionUnlocked);
+        }
+
+        // BUG-068: el gate del tutorial corta el re-armado del movimiento, pero nada lo
+        // re-armaba al desbloquear — el jugador quedaba sin click-to-move hasta la próxima
+        // transición de sala. El evento dispara tanto en Lock como en Unlock (es la señal
+        // genérica de "recomputá"); si Movement sigue lockeado, OnBehaviorSelected lo
+        // ignora vía el gate y esto degrada a no-op. Fuera del tutorial el evento no se
+        // emite.
+        private void OnTutorialActionUnlocked(params object[] args)
+        {
+            if (args == null || args.Length < 1 || args[0] is not HeroBehaviorSlot slot) return;
+            if (slot != HeroBehaviorSlot.Movement) return;
+            CoroutineHost.Run(ArmMovementNextFrame());
         }
 
         public static ExplorationBehaviorService CreateAndRegister()
@@ -231,6 +247,11 @@ namespace Rollgeon.Exploration
             {
                 EventManager.UnSubscribe(EventName.OnRoomEntered, _onRoomEntered);
                 _onRoomEntered = null;
+            }
+            if (_onTutorialActionUnlocked != null)
+            {
+                EventManager.UnSubscribe(EventName.OnTutorialActionUnlocked, _onTutorialActionUnlocked);
+                _onTutorialActionUnlocked = null;
             }
 
             _state = State.Inactive;

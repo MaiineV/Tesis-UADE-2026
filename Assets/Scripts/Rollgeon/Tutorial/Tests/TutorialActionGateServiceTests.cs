@@ -72,6 +72,55 @@ namespace Rollgeon.Tutorial.Tests
         }
 
         [Test]
+        public void LockAll_LocksEverySlotIncludingMovement()
+        {
+            // Arrange — BUG-068: la cadena post-escape (cámara/mapa) necesita bloquear
+            // TODO, Movement incluido, o el jugador se va de la sala e ignora la lección.
+            var gate = CreateGate(HeroBehaviorSlot.Healing);
+
+            // Act
+            gate.LockAll();
+
+            // Assert
+            foreach (HeroBehaviorSlot slot in System.Enum.GetValues(typeof(HeroBehaviorSlot)))
+                Assert.IsTrue(gate.IsSlotLocked(slot), $"{slot} debe quedar lockeado");
+        }
+
+        [Test]
+        public void LockAll_ThenRestoreTo_ReturnsToExactSnapshot()
+        {
+            // Arrange
+            var gate = CreateGate(HeroBehaviorSlot.Healing, HeroBehaviorSlot.Defense);
+            var snapshot = gate.SnapshotLocked();
+
+            // Act
+            gate.LockAll();
+            gate.RestoreTo(snapshot);
+
+            // Assert — el round-trip vuelve exactamente al set original.
+            Assert.IsFalse(gate.IsSlotLocked(HeroBehaviorSlot.Movement));
+            Assert.IsFalse(gate.IsSlotLocked(HeroBehaviorSlot.BaseAttack));
+            Assert.IsTrue(gate.IsSlotLocked(HeroBehaviorSlot.Healing));
+            Assert.IsTrue(gate.IsSlotLocked(HeroBehaviorSlot.Defense));
+        }
+
+        [Test]
+        public void LockAll_FiresEventsOnlyForSlotsThatChange()
+        {
+            // Arrange — Healing ya lockeado: no debe re-disparar.
+            var gate = CreateGate(HeroBehaviorSlot.Healing);
+            int slotCount = System.Enum.GetValues(typeof(HeroBehaviorSlot)).Length;
+            _unlockedEvents = 0;
+
+            // Act
+            gate.LockAll();
+
+            // Assert
+            Assert.AreEqual(slotCount - 1, _unlockedEvents,
+                "un evento por slot que cambió; el ya-lockeado no re-dispara");
+        }
+
+        [Test]
         public void IsActionLocked_ActionNameOfLockedSlot_ReturnsTrue()
         {
             var gate = CreateGate(HeroBehaviorSlot.Healing);

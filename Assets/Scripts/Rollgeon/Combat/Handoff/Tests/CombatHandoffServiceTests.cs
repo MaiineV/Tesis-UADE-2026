@@ -391,6 +391,38 @@ namespace Rollgeon.Combat.Handoff.Tests
         }
 
         [Test]
+        public void OnCombatTriggered_BossBarSubscriberThrows_StartCombatStillRuns()
+        {
+            // Arrange — BUG-078: TypedEvent.Raise no aísla excepciones; un subscriber
+            // roto de la barra de boss (ej. BossBarView en frame 1 del resume) mataba
+            // el resto del handoff dejando boss visible + HUD pusheado + FSM nula.
+            var room = CreateRoom(RoomType.Boss);
+            SetCurrentRoom(room);
+            var enemy = CreateEnemy("Boss");
+            _spyResolver.ReturnValue = new List<(Guid, EnemyDataSO)>
+                { (Guid.NewGuid(), enemy) };
+            Action<BossEncounterStartedPayload> throwingListener =
+                _ => throw new InvalidOperationException("boss bar rota");
+            TypedEvent<BossEncounterStartedPayload>.Subscribe(throwingListener);
+            UnityEngine.TestTools.LogAssert.Expect(LogType.Error,
+                new System.Text.RegularExpressions.Regex("BossEncounterStarted"));
+
+            try
+            {
+                // Act
+                TriggerCombat(Guid.NewGuid(), "boss_room", RoomType.Boss);
+
+                // Assert — el combate arranca igual: la barra es cosmética.
+                Assert.AreEqual(1, _spyCombat.StartCombatCallCount,
+                    "StartCombat debe correr aunque el subscriber del boss bar lance.");
+            }
+            finally
+            {
+                TypedEvent<BossEncounterStartedPayload>.Clear();
+            }
+        }
+
+        [Test]
         public void Dispose_UnsubscribesFromEvent()
         {
             var room = CreateRoom(RoomType.Combat);

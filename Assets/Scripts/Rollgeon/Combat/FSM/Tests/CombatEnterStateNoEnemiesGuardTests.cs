@@ -54,6 +54,10 @@ namespace Rollgeon.Combat.FSM.Tests
 
             EventManager.Subscribe(EventName.OnCombatEnd,
                 args => _eventLog.Add($"OnCombatEnd:{args[0]}:{args[1]}"));
+            EventManager.Subscribe(EventName.OnCombatStart,
+                args => _eventLog.Add($"OnCombatStart:{args[0]}"));
+            EventManager.Subscribe(EventName.OnTurnQueueBuilt,
+                args => _eventLog.Add("OnTurnQueueBuilt"));
         }
 
         [TearDown]
@@ -121,9 +125,55 @@ namespace Rollgeon.Combat.FSM.Tests
             fsm.Start();
             fsm.SendInput(CombatInput.StartCombat);
 
-            // Assert — la cola nunca se armó: TurnOrder.Current queda en su default vacío.
-            Assert.AreEqual(Guid.Empty, _turnOrder.Current,
+            // Assert — la cola nunca se armó. TurnOrderService.Current lanza si no hay
+            // participantes (el assert viejo comparaba contra Guid.Empty y quedó roto
+            // cuando Current se volvió throwing): la señal correcta es el count en 0.
+            Assert.AreEqual(0, _turnOrder.ParticipantCount,
                 "BuildForCombat no debió correr para una cola sin enemigos.");
+            Assert.Throws<InvalidOperationException>(() => _ = _turnOrder.Current,
+                "sin cola armada, Current debe seguir siendo un estado inválido explícito.");
+        }
+
+        [Test]
+        public void StartCombat_ParticipantsOnlyPlayer_DoesNotEmitOnCombatStart()
+        {
+            // Arrange
+            var fsm = new CombatTurnFSM(BuildContext());
+            fsm.SetParticipants(new[] { _playerId });
+
+            // Act
+            fsm.Start();
+            fsm.SendInput(CombatInput.StartCombat);
+
+            // Assert — el abort defensivo NO debe emitir OnCombatStart: un par
+            // start/end en el mismo frame deja a RollPoolService con _inCombat=false
+            // y _current=0 (BUG-078: sin UI de energía + acciones gratis).
+            Assert.IsFalse(_eventLog.Exists(e => e.StartsWith("OnCombatStart")),
+                "el cierre defensivo no debe emitir OnCombatStart.");
+        }
+
+        [Test]
+        public void StartCombat_WithEnemyParticipant_EmitsOnCombatStartOnceBeforeQueueBuilt()
+        {
+            // Arrange
+            _provider.SetRoll(_playerId, 100);
+            _provider.SetRoll(_enemyId, 10);
+            var fsm = new CombatTurnFSM(BuildContext());
+            fsm.SetParticipants(new[] { _playerId, _enemyId });
+
+            // Act
+            fsm.Start();
+            fsm.SendInput(CombatInput.StartCombat);
+
+            // Assert — contrato de orden: listeners de "combat init" esperan
+            // OnCombatStart antes del turn queue wiring.
+            int startCount = _eventLog.FindAll(e => e.StartsWith("OnCombatStart")).Count;
+            Assert.AreEqual(1, startCount, "OnCombatStart debe emitirse exactamente una vez.");
+            int startIndex = _eventLog.FindIndex(e => e.StartsWith("OnCombatStart"));
+            int queueIndex = _eventLog.FindIndex(e => e == "OnTurnQueueBuilt");
+            Assert.GreaterOrEqual(queueIndex, 0, "el camino feliz debe armar la cola de turnos.");
+            Assert.Less(startIndex, queueIndex,
+                "OnCombatStart debe emitirse ANTES de OnTurnQueueBuilt.");
         }
 
         [Test]

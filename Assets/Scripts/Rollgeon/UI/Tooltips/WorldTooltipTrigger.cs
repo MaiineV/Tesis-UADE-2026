@@ -66,6 +66,23 @@ namespace Rollgeon.UI.Tooltips
 
         [SerializeField] private TooltipPlacementSettings _placement = new TooltipPlacementSettings();
 
+        [Tooltip("De qué lado del punto de anclaje cuelga el panel (solo AutoFit). Above = " +
+                 "histórico (crece hacia arriba). Below = panel entero debajo del anclaje — " +
+                 "para pawns cuyo origen son los pies y el panel tapaba el modelo (BUG-075).")]
+        [SerializeField] private TooltipVerticalSide _verticalSide = TooltipVerticalSide.Above;
+
+        /// <summary>
+        /// Lado vertical del panel. Escribible para triggers agregados por código
+        /// (<c>EntityVisualService.AttachTooltip</c> lo pone en <see cref="TooltipVerticalSide.Below"/>
+        /// para los enemigos); el default serializado (<c>Above</c>) preserva los triggers
+        /// existentes (puerta).
+        /// </summary>
+        public TooltipVerticalSide VerticalSide
+        {
+            get => _verticalSide;
+            set => _verticalSide = value;
+        }
+
         [Tooltip("Cámara usada para raycast + WorldToScreenPoint. Null = Camera.main en runtime.")]
         [SerializeField] private Camera _camera;
 
@@ -163,14 +180,16 @@ namespace Rollgeon.UI.Tooltips
         {
             string text = ResolveText();
             if (string.IsNullOrEmpty(text) || TooltipController.Instance == null) return;
-            TooltipController.Instance.Show(text, ResolvePlacementScreenPos(cam), _ownerId, _placement.Mode);
+            TooltipController.Instance.Show(text, ResolvePlacementScreenPos(cam), _ownerId,
+                _placement.Mode, _verticalSide);
         }
 
         private void ToggleTooltip(Camera cam)
         {
             string text = ResolveText();
             if (string.IsNullOrEmpty(text) || TooltipController.Instance == null) return;
-            TooltipController.Instance.Toggle(text, ResolvePlacementScreenPos(cam), _ownerId, _placement.Mode);
+            TooltipController.Instance.Toggle(text, ResolvePlacementScreenPos(cam), _ownerId,
+                _placement.Mode, _verticalSide);
         }
 
         // Punto-pantalla final según el modo: AutoFit ancla al objeto 3D (el controller

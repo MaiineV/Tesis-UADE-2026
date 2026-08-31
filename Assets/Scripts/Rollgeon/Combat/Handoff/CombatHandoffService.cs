@@ -226,31 +226,73 @@ namespace Rollgeon.Combat.Handoff
                 // Encuentro de jefe: encender la barra de vida en pantalla (BossBarView).
                 // Se bindea al primer enemigo (el jefe es el único spawn en RoomType.Boss)
                 // y le pasa el nombre ya localizado. La barra lee el Health por su cuenta.
+                // BUG-078: TypedEvent.Raise NO aísla excepciones de subscribers (a
+                // diferencia de EventManager) — un throw acá (BossBarView en frame 1 del
+                // resume) mataba el resto del handoff dejando boss visible + HUD pusheado
+                // + FSM nunca arrancada. La barra es cosmética: jamás puede frenar el
+                // arranque del combate.
                 if (roomType == RoomType.Boss && firstEnemyId != Guid.Empty && firstEnemyData != null)
                 {
-                    TypedEvent<BossEncounterStartedPayload>.Raise(new BossEncounterStartedPayload
+                    try
                     {
-                        BossGuid = firstEnemyId,
-                        DisplayName = Rollgeon.Localization.LocalizedContent.Name(
-                            firstEnemyData.EntityId, firstEnemyData.DisplayName),
-                    });
+                        TypedEvent<BossEncounterStartedPayload>.Raise(new BossEncounterStartedPayload
+                        {
+                            BossGuid = firstEnemyId,
+                            DisplayName = Rollgeon.Localization.LocalizedContent.Name(
+                                firstEnemyData.EntityId, firstEnemyData.DisplayName),
+                        });
+                    }
+                    catch (Exception ex)
+                    {
+                        UnityEngine.Debug.LogError(
+                            "[CombatHandoffService] Subscriber de BossEncounterStarted lanzó — " +
+                            "la barra de boss puede no mostrarse; el combate arranca igual (BUG-078).\n" + ex);
+                    }
                 }
 
                 // Cablea delegates del HUD contra IPlayerCombatActions + reroll budget
                 // (setup doc UI#0095b §8.7). Sin esto, los clicks del HUD loggean
                 // "no cableado" y combat se stucka.
-                WireCombatHUDDelegates(firstEnemyId);
+                // BUG-078: si el wire/StartCombat tira, reintentamos una vez y si vuelve a
+                // fallar cerramos el combate como Aborted (pop HUD + resume exploración vía
+                // CombatReturnService) en vez de dejar fase=Combat sin FSM — ese estado
+                // fantasma era "boss visible, sin energía, acciones gratis".
+                bool started = TryWireAndStart(firstEnemyId, participants, roomInstanceId, attempt: 1);
+                if (!started)
+                    started = TryWireAndStart(firstEnemyId, participants, roomInstanceId, attempt: 2);
 
-                // Start the combat FSM.
+                if (!started)
+                {
+                    UnityEngine.Debug.LogError(
+                        "[CombatHandoffService] StartCombat falló dos veces — cerrando el " +
+                        "combate como Aborted para volver a exploración consistente (BUG-078).");
+                    EventManager.Trigger(EventName.OnCombatEnd, roomInstanceId, CombatOutcome.Aborted);
+                }
+            }
+            finally
+            {
+                IsHandoffInProgress = false;
+            }
+        }
+
+        private bool TryWireAndStart(
+            Guid firstEnemyId, List<Guid> participants, Guid roomInstanceId, int attempt)
+        {
+            try
+            {
+                WireCombatHUDDelegates(firstEnemyId);
                 _combatStarter.StartCombat(
                     _player.PlayerGuid,
                     participants,
                     roomInstanceId,
                     _aiHandler.HandleEnemyTurn);
+                return true;
             }
-            finally
+            catch (Exception ex)
             {
-                IsHandoffInProgress = false;
+                UnityEngine.Debug.LogError(
+                    $"[CombatHandoffService] Wire/StartCombat lanzó (intento {attempt}) (BUG-078).\n" + ex);
+                return false;
             }
         }
 

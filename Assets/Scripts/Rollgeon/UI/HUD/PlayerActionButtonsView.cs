@@ -500,6 +500,18 @@ namespace Rollgeon.UI.HUD
 
         public void RecomputeButtonStates()
         {
+            // Aparte del estado: el estado es excluyente y se queda con la PRIMERA
+            // razon de la cascada, asi que un chip Locked por rango o por vida llena
+            // ocultaba que ademas no lo podias pagar. El flag solo se enciende cuando
+            // la falta de rolls es LA noticia: turno propio, sin accion en vuelo y sin
+            // modal — pintar rojo durante la animacion propia o el turno enemigo es
+            // ruido (BUG-074).
+            bool modalRollActive = _awaitingSelection
+                && ServiceLocator.TryGetService<IActionRollService>(out var modalRoll)
+                && modalRoll != null && modalRoll.IsActive;
+            bool flagUnaffordable = ShouldFlagUnaffordable(
+                _isPlayerTurn, _inChain, _rolled, modalRollActive, HasEnoughRolls());
+
             for (int i = 0; i < _buttons.Length; i++)
             {
                 if (_buttons[i] == null) continue;
@@ -507,11 +519,20 @@ namespace Rollgeon.UI.HUD
                 var behavior = ResolveBehaviorForSlot(i);
                 _buttons[i].SetState(ComputeStateForSlot(i, behavior));
 
-                // Aparte del estado: el estado es excluyente y se queda con la PRIMERA
-                // razon de la cascada, asi que un chip Locked por rango o por vida llena
-                // ocultaba que ademas no lo podias pagar. Sin behavior no opinamos.
-                if (behavior != null) _buttons[i].SetAffordable(HasEnoughRolls());
+                // Sin behavior no opinamos.
+                if (behavior != null) _buttons[i].SetAffordable(!flagUnaffordable);
             }
+        }
+
+        /// <summary>
+        /// Regla pura del flag ortogonal de affordability (BUG-074): rojo en TODAS las
+        /// fichas con behavior cuando es el turno del jugador, no hay accion en curso ni
+        /// modal abierto, y el pool no cubre ni 1 roll.
+        /// </summary>
+        internal static bool ShouldFlagUnaffordable(
+            bool isPlayerTurn, bool inChain, bool rolled, bool modalRollActive, bool hasRolls)
+        {
+            return isPlayerTurn && !inChain && !rolled && !modalRollActive && !hasRolls;
         }
 
         private ActionButtonState ComputeStateForSlot(int slotIndex, HeroActionBehavior behavior)

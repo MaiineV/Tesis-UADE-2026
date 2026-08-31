@@ -113,6 +113,20 @@ namespace Rollgeon.Tutorial
         }
 
         /// <summary>
+        /// Bloquea TODOS los slots (BUG-068: durante EscapeAftermath → CameraTeach →
+        /// MapTeach ninguna acción está permitida — ni siquiera Movement, o el jugador
+        /// se escapa de la sala e ignora la lección de cámara). Reusa <see cref="Lock"/>:
+        /// idempotente y con evento por slot que cambia.
+        /// </summary>
+        public void LockAll()
+        {
+            foreach (HeroBehaviorSlot slot in Enum.GetValues(typeof(HeroBehaviorSlot)))
+            {
+                Lock(slot);
+            }
+        }
+
+        /// <summary>
         /// Restaura el set exacto de un snapshot: lockea lo que estaba lockeado y
         /// deslockea el resto. No-op con snapshot null.
         /// </summary>

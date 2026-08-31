@@ -126,6 +126,12 @@ namespace Rollgeon.Entities.Visuals
             // y robarle ese click para abrir un panel rompería el input del combate.
             trigger.Mode = Rollgeon.UI.Tooltips.WorldTooltipMode.Hover;
 
+            // BUG-075: el anclaje es transform.position del pawn (los pies) y el panel
+            // crecía hacia arriba justo sobre el cuerpo del modelo. Debajo de los pies no
+            // tapa nada; el clamp del controller lo mete en pantalla si el enemigo está
+            // pegado al borde inferior.
+            trigger.VerticalSide = Rollgeon.UI.Tooltips.TooltipVerticalSide.Below;
+
             // Explícito en vez de dejar que el TooltipResolver lo busque: el pawn del jefe cuelga
             // otros IHasTooltipInfo abajo (las casillas de sus props) y el auto-resolve devuelve el
             // primero que encuentra.

@@ -181,7 +181,7 @@ namespace Rollgeon.UI.Tests
         // llena) y encima impagable no mostraba nada y no contestaba al click.
 
         [Test]
-        public void test_actionButton_lockedAndUnaffordable_stillPaintsCostRed()
+        public void test_actionButton_lockedAndUnaffordable_paintsCostAndOutlineRed()
         {
             // Arrange
             var expected = (Color)GetPrivate(_button, "_unaffordableColor");
@@ -190,9 +190,57 @@ namespace Rollgeon.UI.Tests
             // Act
             _button.SetAffordable(false);
 
-            // Assert
+            // Assert — BUG-074 round 2: el tester reportó "algunas fichas tienen borde
+            // rojo y otras no" — el borde ahora también es ortogonal al estado.
             Assert.AreEqual(expected, _costLabel.color, "el costo tiene que quedar rojo aunque esté Locked");
-            Assert.IsFalse(_outline.enabled, "el outline sigue siendo del estado, no de la plata");
+            Assert.IsTrue(_outline.enabled, "el borde rojo tiene que encenderse aunque esté Locked");
+            Assert.AreEqual(expected, _outline.effectColor);
+        }
+
+        [Test]
+        public void test_actionButton_availableAndUnaffordable_paintsOutlineRed()
+        {
+            // Arrange
+            var expected = (Color)GetPrivate(_button, "_unaffordableColor");
+            _button.SetState(ActionButtonState.Available);
+
+            // Act
+            _button.SetAffordable(false);
+
+            // Assert
+            Assert.IsTrue(_outline.enabled);
+            Assert.AreEqual(expected, _outline.effectColor);
+        }
+
+        [Test]
+        public void test_actionButton_selectedAndUnaffordable_keepsGlowNotRed()
+        {
+            // Arrange — la acción Selected ya está comprometida y pagada: pintar rojo
+            // ahí es ruido; el glow de selección manda.
+            var glow = (Color)GetPrivate(_button, "_glowColor");
+            _button.SetState(ActionButtonState.Selected);
+
+            // Act
+            _button.SetAffordable(false);
+
+            // Assert
+            Assert.IsTrue(_outline.enabled);
+            Assert.AreEqual(glow, _outline.effectColor, "Selected conserva el glow, nunca el rojo");
+        }
+
+        [Test]
+        public void test_actionButton_becomingAffordableAgain_turnsOutlineOff()
+        {
+            // Arrange
+            _button.SetState(ActionButtonState.Locked);
+            _button.SetAffordable(false);
+            Assert.IsTrue(_outline.enabled, "sanity: el rojo está prendido");
+
+            // Act
+            _button.SetAffordable(true);
+
+            // Assert
+            Assert.IsFalse(_outline.enabled, "recuperar rolls debe apagar el borde rojo");
         }
 
         [Test]

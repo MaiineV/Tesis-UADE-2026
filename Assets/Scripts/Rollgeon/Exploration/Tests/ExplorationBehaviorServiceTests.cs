@@ -130,6 +130,34 @@ namespace Rollgeon.Exploration.Tests
         }
 
         [Test]
+        public void OnTutorialActionUnlocked_MovementSlot_DoesNotThrowWithoutGate()
+        {
+            // Arrange — BUG-068: el service escucha el unlock del tutorial para
+            // re-armar el click-to-move. Fuera del tutorial (sin gate registrado) y
+            // fuera de exploración, el handler degrada a no-op.
+            // (Sin OnPhaseEnter: _state = Inactive.)
+
+            // Act / Assert
+            Assert.DoesNotThrow(() => EventManager.Trigger(
+                EventName.OnTutorialActionUnlocked, HeroBehaviorSlot.Movement));
+        }
+
+        [Test]
+        public void OnTutorialActionUnlocked_NonMovementSlot_IsIgnored()
+        {
+            // Arrange
+            AddExplorationMovement();
+            EventManager.Trigger(EventName.OnPhaseEnter, GamePhase.Exploration);
+            _selectionController.SelectionStarted = false;
+
+            // Act — un unlock de otra acción no debe re-armar el movimiento.
+            EventManager.Trigger(EventName.OnTutorialActionUnlocked, HeroBehaviorSlot.Healing);
+
+            // Assert
+            Assert.IsFalse(_selectionController.SelectionStarted);
+        }
+
+        [Test]
         public void CancelSelection_ReturnsToIdle()
         {
             AddExplorationMovement();

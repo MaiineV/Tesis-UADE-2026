@@ -30,6 +30,11 @@ namespace Rollgeon.UI.HUD.Breakdown
         [MinValue(0f), Tooltip("Rotación del tambor al siguiente modificador (tras el vuelo del número).")]
         public float SpinnerSpinSeconds = 0.22f;
 
+        [MinValue(0f), Tooltip("Piso de duración REAL (post game-speed y ramp) del vuelo de un " +
+                               "modificador global — garantiza que el nombre del ítem se lea " +
+                               "(BUG-063). El skip explícito del jugador lo ignora.")]
+        public float GlobalModMinVisibleSeconds = 0.35f;
+
         [Title("Choque final")]
         [MinValue(0.05f), Tooltip("Viaje de N y M hacia el punto de choque (acelerando).")]
         public float ClashTravelSeconds = 0.22f;

@@ -85,8 +85,18 @@ namespace Rollgeon.Combat.Handoff
                 case CombatOutcome.Defeat:
                     HandleDefeat();
                     break;
+                case CombatOutcome.Aborted:
+                    // Escape (EffForceDoor) o abort defensivo (BUG-078): mismo efecto
+                    // operativo que la victoria — pop del CombatHUD + volver a exploración —
+                    // pero SIN la semántica de sala clareada (eso lo decide DungeonManager,
+                    // que ignora todo lo que no sea Victory).
+                    HandleAborted();
+                    break;
                 default:
-                    HandleVictory(roomInstanceId);
+                    UnityEngine.Debug.LogError(
+                        $"[CombatReturnService] CombatOutcome desconocido: {outcome} — " +
+                        "tratado como Aborted (pop + resume).");
+                    HandleAborted();
                     break;
             }
         }
@@ -99,6 +109,15 @@ namespace Rollgeon.Combat.Handoff
             // popeamos y volvemos a exploración para que pueda caminar a los pedestales — igual
             // que en cualquier sala clareada. Si el floor se cerró de inmediato (VictoryScreen
             // ya al top) o el HUD ya se popeó por un OnCombatEnd previo, no tocamos el stack.
+            if (!TryPopCombatHud()) return;
+            _exploration.ResumeAfterCombat();
+        }
+
+        // Abort/escape: pop + resume, igual que la victoria en lo operativo. Separado
+        // para que el contrato quede explícito (EffForceDoor depende de que el Aborted
+        // devuelva al player a exploración; pineado por test).
+        private void HandleAborted()
+        {
             if (!TryPopCombatHud()) return;
             _exploration.ResumeAfterCombat();
         }
