@@ -20,5 +20,13 @@ namespace Rollgeon.Exploration
         void OnBehaviorSelected(int slot);
 
         void CancelSelection();
+
+        /// <summary>
+        /// Cancela la caminata click-to-move en curso (hotkey X): el pawn frena al
+        /// completar el step actual y la posición lógica se trunca a esa celda.
+        /// Cancelar una caminata hacia una puerta NO cruza de sala ni transiciona
+        /// de piso. <c>true</c> si había una caminata que cancelar.
+        /// </summary>
+        bool TryCancelPendingWalk();
     }
 }

@@ -215,7 +215,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 5531895623681
-    m_Localized: +1 Roll por turno
+    m_Localized: Pool de rolls +1
     m_Metadata:
       m_Items: []
   - m_Id: 5531895623682
@@ -1012,6 +1012,23 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 14364254620450824
     m_Localized: "Tus combos ofensivos hacen da\xF1o extra mientras permanezcas ac\xE1."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17185034194485248
+    m_Localized: "+1 al pool de rolls: sube el m\xE1ximo y los rolls con los que
+      arranc\xE1s cada combate."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17185034236428288
+    m_Localized: "Vida m\xE1xima +25"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17185034236428289
+    m_Localized: Movimiento +1
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17185034236428290
+    m_Localized: +1 celda de rango al dado de Movimiento en combate.
     m_Metadata:
       m_Items: []
   references:

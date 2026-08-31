@@ -131,7 +131,7 @@ namespace Rollgeon.UI.Screens
             entry.Rect.SetSiblingIndex(index);
             _entries.Insert(index, entry);
 
-            float targetX = DiceStripMath.SlotX(index, _entries.Count, _settings.Spacing);
+            float targetX = DiceStripMath.SlotX(index, _entries.Count, EffectiveSpacing());
             if (instant)
             {
                 entry.Rect.anchoredPosition = new Vector2(targetX, 0f);
@@ -238,12 +238,20 @@ namespace Rollgeon.UI.Screens
             }
         }
 
+        // El spacing autorado, clampeado al ancho del contenedor: sin tope por tipo
+        // de dado la bolsa puede crecer y la tira no debe salirse de pantalla.
+        private float EffectiveSpacing()
+        {
+            return DiceStripMath.FitSpacing(_entries.Count, _settings.Spacing,
+                _settings.DieSize, ((RectTransform)transform).rect.width);
+        }
+
         private void Reflow(bool instant)
         {
             for (int i = 0; i < _entries.Count; i++)
             {
                 var rect = _entries[i].Rect;
-                float targetX = DiceStripMath.SlotX(i, _entries.Count, _settings.Spacing);
+                float targetX = DiceStripMath.SlotX(i, _entries.Count, EffectiveSpacing());
                 if (Mathf.Approximately(rect.anchoredPosition.x, targetX)) continue;
 
                 if (instant)

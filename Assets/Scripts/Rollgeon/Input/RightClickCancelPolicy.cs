@@ -14,18 +14,29 @@ namespace Rollgeon.Input
 
     /// <summary>
     /// Decisión pura del click derecho en combate. Prioridad: selección de acción
-    /// abierta &gt; deseleccionar dados &gt; nada. Fuera del HUD de combate o con el
-    /// click ya claimeado por un presenter (cancel de agarre de dados), no-op.
+    /// abierta &gt; deseleccionar dados &gt; nada. Fuera del HUD de combate, con el
+    /// click ya claimeado por un presenter (cancel de agarre de dados) o con una
+    /// secuencia de UI en vuelo (breakdown N×M / outro de dados), no-op.
     /// </summary>
+    /// <remarks>
+    /// BUG-070: el botón derecho también es RotateModifier del map Camera — rotar
+    /// la cámara durante la suma N×M disparaba CancelSelection sobre la fase del
+    /// chain (los chips quedaban en alpha 0 sin OnBehaviorExecuted que los
+    /// restaure) o DeselectAllDice (borraba los "+N" en plena animación). El gate
+    /// cubre solo la ventana de la secuencia: un right-click sin drag durante el
+    /// targeting normal sigue cancelando.
+    /// </remarks>
     public static class RightClickCancelPolicy
     {
         public static RightClickAction Decide(
             bool combatHudActive,
             bool claimedByDiceGrab,
             bool hasCancellableSelection,
-            bool anyDieSelected)
+            bool anyDieSelected,
+            bool uiSequencePending)
         {
             if (!combatHudActive || claimedByDiceGrab) return RightClickAction.None;
+            if (uiSequencePending) return RightClickAction.None;
             if (hasCancellableSelection) return RightClickAction.CancelSelection;
             if (anyDieSelected) return RightClickAction.DeselectAllDice;
             return RightClickAction.None;

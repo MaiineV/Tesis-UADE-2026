@@ -216,7 +216,7 @@ MonoBehaviour:
         MMChannelDefinition: {fileID: 0}
         Chance: 100
         Timing:
-          TimescaleMode: 0
+          TimescaleMode: 1
           ExcludeFromHoldingPauses: 0
           ContributeToTotalDuration: 1
           InitialDelay: 0
@@ -1190,7 +1190,7 @@ MonoBehaviour:
         MMChannelDefinition: {fileID: 0}
         Chance: 100
         Timing:
-          TimescaleMode: 0
+          TimescaleMode: 1
           ExcludeFromHoldingPauses: 0
           ContributeToTotalDuration: 1
           InitialDelay: 0
@@ -1254,7 +1254,7 @@ MonoBehaviour:
         DebugActive: 0
         AnimatePositionTarget: {fileID: 3439927873213138460}
         DeclaredDuration: 0
-        Space: 0
+        Space: 2
         DampingX: 0.4
         FrequencyX: 6
         DampingY: 0.4

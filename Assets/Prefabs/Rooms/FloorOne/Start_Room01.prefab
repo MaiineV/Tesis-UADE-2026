@@ -17058,6 +17058,14 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 4686837363888089078, guid: e0224d170d55baf4bb0b55b78fbeb52f, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: 35eddbfb2db96f8479b6f9524ed42a51, type: 2}
+    - target: {fileID: 4686837363888089078, guid: e0224d170d55baf4bb0b55b78fbeb52f, type: 3}
+      propertyPath: 'm_Materials.Array.data[3]'
+      value: 
+      objectReference: {fileID: 2100000, guid: 6d93331fa16eb554cb8e5d22047d8647, type: 2}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -28407,6 +28415,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: CajaFichasv01
       objectReference: {fileID: 0}
+    - target: {fileID: 7885387794739382763, guid: 44c6fbee28cc5d24c91d5f8bf154b6a3, type: 3}
+      propertyPath: 'm_Materials.Array.data[3]'
+      value: 
+      objectReference: {fileID: 2100000, guid: 1800e9f2299478a4c9c3d9aa31d6f133, type: 2}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []

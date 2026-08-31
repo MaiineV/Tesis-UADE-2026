@@ -51,7 +51,7 @@ namespace Rollgeon.Combat.FSM.Tests
 
         public int GetRollsPerTurn(Guid entityId) => RollsPerTurn;
 
-        public void AddPerTurnGrantBonus(int amount) => RollsPerTurn += amount;
+        public void AddRollPoolBonus(int amount) => RollsPerTurn += amount;
 
         public void RestoreCurrent(Guid entityId, int value)
             => Current[entityId] = Math.Clamp(value, 0, Cap);

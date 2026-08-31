@@ -322,6 +322,9 @@ namespace Rollgeon.Run
             playerAttrs.SetAttribute<MaxHealth>(new MaxHealth(hero.BaseMaxHp));
             playerAttrs.SetAttribute<Speed>(new Speed(hero.BaseSpeed));
             playerAttrs.SetAttribute<Shield>(new Shield(0));
+            // BUG-85: bonus de rango del dado de Movimiento — base 0, los rewards
+            // "Movimiento+" agregan modifiers (SelectionSettings lo suma a la cara).
+            playerAttrs.SetAttribute<MoveRange>(new MoveRange(0));
             // Attack = dmg_base_PJ (Spec Daño v2): piso garantizado del turno, aplica incluso sin combo.
             if (hero.BaseAttack <= 0)
             {

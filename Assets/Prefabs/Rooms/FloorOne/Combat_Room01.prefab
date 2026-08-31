@@ -3593,7 +3593,9 @@ MonoBehaviour:
   MinSpacing: 1
   DoorExclusionRadius: 1
   RandomYRotation: 1
+  TipOverChance: 0.35
   CellJitter: 0.3
+  PerimeterBias: 0.6
 --- !u!1 &3533938085313625065
 GameObject:
   m_ObjectHideFlags: 0
@@ -10392,6 +10394,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1711357143213522343}
     m_Modifications:
+    - target: {fileID: 2597693799217589064, guid: ffa2e707b36efd040a75c092e4ff87f3, type: 3}
+      propertyPath: 'm_Materials.Array.data[11]'
+      value: 
+      objectReference: {fileID: 2100000, guid: efd99590793df8e4cace7c1d655a4fa1, type: 2}
     - target: {fileID: 2879759769342412074, guid: ffa2e707b36efd040a75c092e4ff87f3, type: 3}
       propertyPath: m_Name
       value: Poolv04

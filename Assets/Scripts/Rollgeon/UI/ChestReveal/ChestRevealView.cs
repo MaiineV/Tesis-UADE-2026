@@ -80,6 +80,13 @@ namespace Rollgeon.UI.ChestReveal
         private Coroutine _watchdog;
         private int _gatesHeld;
 
+        // BUG-071: pose autorada del panel y la reward card, capturada una sola vez.
+        // Cada cofre arranca desde acá — corta cualquier deriva acumulada por shakes
+        // o springs interrumpidos en el cofre anterior.
+        private Vector2 _panelRestPos;
+        private Vector2 _cardRestPos;
+        private bool _restPosesCaptured;
+
         private static bool ReducedMotion => DiceUiMotionPrefs.ReducedMotion;
 
         /// <summary>Duración efectiva: settings ÷ velocidad de juego ÷ skip Fast.</summary>
@@ -135,6 +142,20 @@ namespace Rollgeon.UI.ChestReveal
         {
             if (_queue.Count == 0) return;
             _current = _queue.Dequeue();
+
+            if (!_restPosesCaptured)
+            {
+                if (_panelRect != null) _panelRestPos = _panelRect.anchoredPosition;
+                if (_rewardCardGroup != null)
+                    _cardRestPos = ((RectTransform)_rewardCardGroup.transform).anchoredPosition;
+                _restPosesCaptured = true;
+            }
+            else
+            {
+                if (_panelRect != null) _panelRect.anchoredPosition = _panelRestPos;
+                if (_rewardCardGroup != null)
+                    ((RectTransform)_rewardCardGroup.transform).anchoredPosition = _cardRestPos;
+            }
 
             if (_root != null) _root.SetActive(true);
             BuildReel();

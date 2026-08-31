@@ -1212,6 +1212,15 @@
                     "processors": "",
                     "interactions": "",
                     "initialStateCheck": false
+                },
+                {
+                    "name": "CancelMove",
+                    "type": "Button",
+                    "id": "b0a1e900-0000-4000-8000-00000000000b",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
                 }
             ],
             "bindings": [
@@ -1322,6 +1331,17 @@
                     "processors": "",
                     "groups": "Keyboard&Mouse",
                     "action": "ToggleMinimap",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "b0a1e900-0000-4000-8000-00000000010b",
+                    "path": "<Keyboard>/x",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "Keyboard&Mouse",
+                    "action": "CancelMove",
                     "isComposite": false,
                     "isPartOfComposite": false
                 }

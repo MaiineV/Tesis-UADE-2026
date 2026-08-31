@@ -11,7 +11,7 @@ namespace Rollgeon.Movement
     /// A* con heurística Manhattan (point-to-point en 4-neighborhood, costo uniforme).
     /// TECHNICAL.md §17.§B.
     /// </summary>
-    public sealed class MovementService : IMovementService, IPathedMovementService
+    public sealed class MovementService : IMovementService, IPathedMovementService, IMoveTruncationService
     {
         private readonly IGridManager _grid;
 
@@ -191,6 +191,30 @@ namespace Rollgeon.Movement
             if (!_grid.Move(entity, target)) return false;
 
             OnEntityMoved?.Invoke(entity, from, target, effective);
+            return true;
+        }
+
+        // ======================================================================
+        // IMoveTruncationService
+        // ======================================================================
+
+        /// <inheritdoc />
+        public event Action<Guid, GridCoord, GridCoord> OnEntityMoveTruncated;
+
+        /// <inheritdoc />
+        public bool TryTruncateMoveAt(Guid entity, GridCoord cell)
+        {
+            if (!_grid.TryGetPosition(entity, out var from))
+            {
+                Debug.LogWarning($"[MovementService] TryTruncateMoveAt: entidad {entity} no registrada en grid.");
+                return false;
+            }
+            if (from == cell) return true;
+            if (!_grid.IsWalkable(cell) || _grid.IsOccupied(cell)) return false;
+            if (!_grid.Move(entity, cell)) return false;
+
+            // Sin OnEntityMoved a propósito (ver doc de la interfaz).
+            OnEntityMoveTruncated?.Invoke(entity, from, cell);
             return true;
         }
 
