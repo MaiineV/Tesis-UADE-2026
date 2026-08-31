@@ -175,6 +175,8 @@ namespace Rollgeon.Items
 
             var playerGuid = ctx?.SourceGuid ?? GetPlayerGuid();
 
+            // Solo los items que consumen accion pasan por el TurnManager. Los gratis son
+            // side-effects: se pueden usar incluso en el turno enemigo.
             if (item.ConsumesAction)
             {
                 if (!ServiceLocator.TryGetService<TurnManager>(out var tm) || tm == null)
@@ -183,8 +185,14 @@ namespace Rollgeon.Items
                 if (!tm.CanExecute(BuildUseItemAction(item), playerGuid, out _))
                 {
                     // TurnManager devuelve el motivo como string en ingles; en vez de
-                    // parsearlo, re-preguntamos al pool para separar "no te alcanza" de
-                    // "el ruleset lo prohibe".
+                    // parsearlo, re-preguntamos cada regla por separado para que el HUD
+                    // pueda mostrar el motivo exacto.
+                    if (!tm.IsActingTurn(playerGuid))
+                        return ItemActivationBlock.NotYourTurn;
+
+                    if (tm.IsItemActionUsedThisTurn(item.ResolvedActionId))
+                        return ItemActivationBlock.ActionAlreadyUsed;
+
                     bool poolEmpty = ServiceLocator.TryGetService<IRollPoolService>(out var rolls)
                                      && rolls != null
                                      && rolls.IsCombatActive

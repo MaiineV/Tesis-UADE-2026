@@ -32,5 +32,19 @@ namespace Rollgeon.Items
 
         /// <summary>Alguna precondicion del <c>OnActivate</c> no se cumple.</summary>
         PreconditionFailed = 6,
+
+        /// <summary>
+        /// Consume accion y no es el turno del jugador. Solo aplica a items con
+        /// <c>ConsumesAction</c>: los gratis se pueden usar en el turno enemigo.
+        /// </summary>
+        NotYourTurn = 7,
+
+        /// <summary>
+        /// Otro item con el mismo <c>ActionId</c> ya se uso en este turno.
+        /// </summary>
+        ActionAlreadyUsed = 8,
+
+        /// <summary>El jugador cancelo la seleccion de objetivo.</summary>
+        SelectionCancelled = 9,
     }
 }
