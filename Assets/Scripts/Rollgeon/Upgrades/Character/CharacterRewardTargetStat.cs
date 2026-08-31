@@ -21,11 +21,16 @@ namespace Rollgeon.Upgrades.Character
     {
         /// <summary>Vida máxima (HP pool).</summary>
         Health,
-        /// <summary>+N rolls otorgados al cierre de cada turno (Pool de Rolls). Ex Energy.</summary>
+        /// <summary>
+        /// +N al pool de rolls: sube el máximo y los rolls al arrancar cada combate
+        /// (BUG-85 — antes era regen por turno, invisible). Ex Energy.
+        /// </summary>
         RollRegen,
         /// <summary>Velocidad — determina frecuencia de turnos.</summary>
         Speed,
         /// <summary>Daño base de ataque.</summary>
         Attack,
+        /// <summary>+N celdas de rango al dado de Movimiento en combate (BUG-85). Agregado AL FINAL.</summary>
+        MoveRange,
     }
 }

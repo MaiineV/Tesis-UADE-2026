@@ -51,6 +51,7 @@ namespace Rollgeon.UI.Tests
         {
             EventManager.ResetEventDictionary();
             ServiceLocator.RemoveService<IEntityPortraitResolver>();
+            ServiceLocator.RemoveService<Rollgeon.Combat.Status.IStunService>();
             if (_go != null) UnityEngine.Object.DestroyImmediate(_go);
             if (_prefab != null) UnityEngine.Object.DestroyImmediate(_prefab.gameObject);
             foreach (var obj in _createdObjects)
@@ -84,6 +85,37 @@ namespace Rollgeon.UI.Tests
             var guids = new List<Guid>(count);
             for (int i = 0; i < count; i++) guids.Add(Guid.NewGuid());
             return guids;
+        }
+
+        /// <summary>Agrega el GO del overlay de stun al prefab del slot y lo cablea.</summary>
+        private GameObject AddStunOverlayToPrefab()
+        {
+            var overlay = new GameObject("StunOverlay", typeof(RectTransform));
+            overlay.transform.SetParent(_prefab.transform, false);
+            overlay.SetActive(false);
+            AssignPrivate(_prefab, "_stunOverlay", overlay);
+            return overlay;
+        }
+
+        /// <summary>Overlay de stun de un slot instanciado, leído por reflection.</summary>
+        private static GameObject StunOverlayOf(TurnSlotView slot)
+        {
+            var field = typeof(TurnSlotView).GetField("_stunOverlay",
+                BindingFlags.Instance | BindingFlags.NonPublic);
+            Assert.IsNotNull(field, "Field '_stunOverlay' no encontrado.");
+            return (GameObject)field.GetValue(slot);
+        }
+
+        /// <summary>Fake mínimo: solo IsStunned/GetStunTurns responden.</summary>
+        private sealed class FakeStunService : Rollgeon.Combat.Status.IStunService
+        {
+            public readonly HashSet<Guid> Stunned = new();
+            public void ApplyStun(Guid entity, int turns = 1) => Stunned.Add(entity);
+            public bool IsStunned(Guid entity) => Stunned.Contains(entity);
+            public int GetStunTurns(Guid entity) => Stunned.Contains(entity) ? 1 : 0;
+            public bool ConsumeTurn(Guid entity) => Stunned.Remove(entity);
+            public void Clear(Guid entity) => Stunned.Remove(entity);
+            public void ClearAll() => Stunned.Clear();
         }
 
         /// <summary>Fake con sprites fijos por guid; sin lazy player.</summary>
@@ -285,6 +317,93 @@ namespace Rollgeon.UI.Tests
             // Assert
             Assert.AreEqual(0, _container.childCount,
                 "Tras Unbind no se deben procesar nuevos eventos de queue built.");
+        }
+
+        [Test]
+        public void OnStunApplied_ShowsCrossOnVisibleSlots()
+        {
+            // Arrange — BUG-87: la cruz debe prenderse en TODOS los slots del guid
+            // (con pocas entidades la ventana lo repite).
+            AddStunOverlayToPrefab();
+            _view.Bind(Guid.NewGuid());
+            var guids = MakeGuids(2);
+            EventManager.Trigger(EventName.OnTurnQueueBuilt, (IReadOnlyList<Guid>)guids, 0);
+
+            // Act
+            EventManager.Trigger(EventName.OnStunApplied, guids[1], 1);
+
+            // Assert
+            for (int i = 0; i < _container.childCount; i++)
+            {
+                var slot = _container.GetChild(i).GetComponent<TurnSlotView>();
+                bool expected = slot.SlotGuid == guids[1];
+                Assert.AreEqual(expected, StunOverlayOf(slot).activeSelf,
+                    $"Slot {i} (guid {(slot.SlotGuid == guids[1] ? "stuneado" : "sano")}) mal marcado.");
+            }
+        }
+
+        [Test]
+        public void OnStunExpired_HidesCross()
+        {
+            // Arrange
+            AddStunOverlayToPrefab();
+            _view.Bind(Guid.NewGuid());
+            var guids = MakeGuids(3);
+            EventManager.Trigger(EventName.OnTurnQueueBuilt, (IReadOnlyList<Guid>)guids, 0);
+            EventManager.Trigger(EventName.OnStunApplied, guids[0], 1);
+
+            // Act
+            EventManager.Trigger(EventName.OnStunExpired, guids[0]);
+
+            // Assert
+            var slot = _view.FindSlot(guids[0]);
+            Assert.IsNotNull(slot);
+            Assert.IsFalse(StunOverlayOf(slot).activeSelf,
+                "Al expirar el stun la cruz debe apagarse.");
+        }
+
+        [Test]
+        public void OnTurnStarted_AfterStun_ReappliesCrossOnRotation()
+        {
+            // Arrange — la rotación re-bindea slots por posición: el estado de stun
+            // vive en EntityInfo y debe sobrevivir el shift.
+            AddStunOverlayToPrefab();
+            _view.Bind(Guid.NewGuid());
+            var guids = MakeGuids(5);
+            EventManager.Trigger(EventName.OnTurnQueueBuilt, (IReadOnlyList<Guid>)guids, 0);
+            EventManager.Trigger(EventName.OnStunApplied, guids[3], 1);
+
+            // Act — dos avances de turno.
+            EventManager.Trigger(EventName.OnTurnStarted, guids[1]);
+            EventManager.Trigger(EventName.OnTurnStarted, guids[2]);
+
+            // Assert
+            var slot = _view.FindSlot(guids[3]);
+            Assert.IsNotNull(slot);
+            Assert.IsTrue(StunOverlayOf(slot).activeSelf,
+                "La cruz debe sobrevivir las rotaciones del carrusel.");
+        }
+
+        [Test]
+        public void RebuildQueue_MidStun_SeedsCrossFromService()
+        {
+            // Arrange — el evento OnStunApplied ya pasó antes del rebuild (Append,
+            // resume): el estado se siembra desde IStunService.
+            AddStunOverlayToPrefab();
+            var stun = new FakeStunService();
+            var guids = MakeGuids(2);
+            stun.Stunned.Add(guids[0]);
+            ServiceLocator.AddService<Rollgeon.Combat.Status.IStunService>(stun, ServiceScope.Run);
+
+            // Act
+            _view.Bind(Guid.NewGuid());
+            _view.RebuildQueue(guids);
+
+            // Assert
+            var slot = _view.FindSlot(guids[0]);
+            Assert.IsNotNull(slot);
+            Assert.IsTrue(StunOverlayOf(slot).activeSelf,
+                "Un rebuild mid-stun debe recuperar la cruz desde el servicio.");
         }
 
         private static void AssignPrivate(object target, string fieldName, object value)

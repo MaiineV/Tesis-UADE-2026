@@ -2429,7 +2429,7 @@ MonoBehaviour:
   m_ReferencePixelsPerUnit: 100
   m_ScaleFactor: 1
   m_ReferenceResolution: {x: 1920, y: 1080}
-  m_ScreenMatchMode: 0
+  m_ScreenMatchMode: 1
   m_MatchWidthOrHeight: 0.5
   m_PhysicalUnit: 3
   m_FallbackScreenDPI: 96
@@ -6689,6 +6689,10 @@ PrefabInstance:
     - target: {fileID: 2324085560422700607, guid: b303602a1cf723249b68ca33354910f3, type: 3}
       propertyPath: m_Name
       value: Canvas_Tooltip
+      objectReference: {fileID: 0}
+    - target: {fileID: 3007932051918669519, guid: b303602a1cf723249b68ca33354910f3, type: 3}
+      propertyPath: m_ScreenMatchMode
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 5118285021237413397, guid: b303602a1cf723249b68ca33354910f3, type: 3}
       propertyPath: m_Pivot.x

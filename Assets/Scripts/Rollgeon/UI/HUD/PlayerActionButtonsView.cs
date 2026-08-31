@@ -581,9 +581,11 @@ namespace Rollgeon.UI.HUD
                 return ActionButtonState.Locked;
             }
 
-            // §6.6: Movement con dado de Movimiento ya tirado — el roll está pagado y la
-            // selección no es cancelable (el handoff ignora los clicks de slot): Locked,
-            // no Available, para no prometer un switch que no va a pasar.
+            // Defensa: si el handoff reporta una selección NO cancelable (throw en
+            // vuelo, forced reroll), los slots quedan Locked para no prometer un
+            // switch que el handoff va a ignorar. Con el dado de Movimiento ya tirado
+            // la selección SÍ es cancelable (§6.6 revertido: se pierde el roll, no el
+            // turno), así que este branch ya no aplica a ese caso.
             if (_awaitingSelection
                 && ServiceLocator.TryGetService<Rollgeon.Combat.Handoff.ICombatHandoffService>(out var handoffSel)
                 && handoffSel != null && !handoffSel.HasCancellableSelection)

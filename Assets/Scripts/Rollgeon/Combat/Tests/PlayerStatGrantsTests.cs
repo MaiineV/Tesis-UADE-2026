@@ -74,6 +74,22 @@ namespace Rollgeon.Combat.Tests
         }
 
         [Test]
+        public void Apply_MoveRange_AddsToModifiedValue()
+        {
+            // Arrange — BUG-85: el reward "Movimiento+" rutea al stat MoveRange
+            // (RunController lo registra en 0 al armar el player).
+            var attrs = _attrs.GetAttributes(_player);
+            attrs.SetAttribute<MoveRange>(new MoveRange(0));
+
+            // Act
+            bool ok = PlayerStatGrants.Apply(CharacterRewardTargetStat.MoveRange, 1);
+
+            // Assert
+            Assert.IsTrue(ok);
+            Assert.AreEqual(1, _attrs.GetAttribute<MoveRange>(_player).ModifiedValue);
+        }
+
+        [Test]
         public void Apply_List_AppliesEachGrant()
         {
             var grants = new List<StatGrant>
@@ -127,22 +143,26 @@ namespace Rollgeon.Combat.Tests
         }
 
         [Test]
-        public void Apply_RollRegen_RaisesPerTurnGrant()
+        public void Apply_RollRegen_RaisesPoolMax()
         {
-            // Feature#0050: el reward ex "Energía +1" suma +1 al grant por turno
-            // del Pool de Rolls (via IRollPoolService, no como modifier de atributo).
+            // BUG-85: el reward ex "Energía +1" sube el TECHO del pool (y el arranque
+            // de combate) via IRollPoolService — antes solo inflaba el grant por
+            // turno y era invisible. Sigue sin ser modifier de atributo.
             var pool = new Rollgeon.Combat.Rolls.RollPoolService();
             var ruleset = UnityEngine.ScriptableObject.CreateInstance<Rollgeon.Balance.RulesetSO>();
             try
             {
                 pool.ConfigureForTests(ruleset);
+                pool.InitializeForEntity(_player);
                 ServiceLocator.AddService<Rollgeon.Combat.Rolls.IRollPoolService>(pool);
 
                 bool ok = PlayerStatGrants.Apply(CharacterRewardTargetStat.RollRegen, 1);
 
                 Assert.IsTrue(ok);
-                Assert.AreEqual(6, pool.GetRollsPerTurn(_player),
-                    "El grant por turno debe pasar de 5 (ruleset) a 6.");
+                Assert.AreEqual(16, pool.GetMax(_player),
+                    "El máximo del pool debe pasar de 15 (ruleset) a 16.");
+                Assert.AreEqual(5, pool.GetRollsPerTurn(_player),
+                    "El grant por turno queda en el base del ruleset.");
             }
             finally
             {

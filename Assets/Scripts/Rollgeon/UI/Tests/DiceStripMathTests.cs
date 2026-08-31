@@ -129,5 +129,49 @@ namespace Rollgeon.UI.Tests
         {
             Assert.AreEqual(expected, DiceStripMath.SlotX(index, count, spacing: 118f), 0.001f);
         }
+
+        // ---------------- FitSpacing ----------------
+
+        [TestCase(0)]
+        [TestCase(1)]
+        public void FitSpacing_ZeroOrOneDie_ReturnsBaseSpacing(int count)
+        {
+            Assert.AreEqual(118f,
+                DiceStripMath.FitSpacing(count, baseSpacing: 118f, dieSize: 96f, availableWidth: 900f));
+        }
+
+        [Test]
+        public void FitSpacing_SmallBagFits_KeepsAuthoredSpacing()
+        {
+            // 5 dados a 118px de spacing ocupan 4*118 + 96 = 568 < 900: sin clamp.
+            Assert.AreEqual(118f,
+                DiceStripMath.FitSpacing(5, baseSpacing: 118f, dieSize: 96f, availableWidth: 900f));
+        }
+
+        [Test]
+        public void FitSpacing_LargeBag_CompressesToExactFit()
+        {
+            // 12 dados: (900 - 96) / 11 = 73.09… — la tira entra justa en el ancho.
+            Assert.AreEqual((900f - 96f) / 11f,
+                DiceStripMath.FitSpacing(12, baseSpacing: 118f, dieSize: 96f, availableWidth: 900f),
+                0.001f);
+        }
+
+        [Test]
+        public void FitSpacing_ExactBoundary_KeepsAuthoredSpacing()
+        {
+            // El fit da exactamente el base: no debe comprimir de más.
+            // width = die + (count-1)*base = 96 + 4*118 = 568.
+            Assert.AreEqual(118f,
+                DiceStripMath.FitSpacing(5, baseSpacing: 118f, dieSize: 96f, availableWidth: 568f));
+        }
+
+        [Test]
+        public void FitSpacing_AbsurdlyNarrowWidth_ClampsAtZero()
+        {
+            // Contenedor más angosto que un dado: solape total, nunca negativo.
+            Assert.AreEqual(0f,
+                DiceStripMath.FitSpacing(10, baseSpacing: 118f, dieSize: 96f, availableWidth: 50f));
+        }
     }
 }

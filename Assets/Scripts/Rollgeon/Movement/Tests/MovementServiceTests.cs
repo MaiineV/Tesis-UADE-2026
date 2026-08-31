@@ -79,6 +79,84 @@ namespace Rollgeon.Movement.Tests
             Assert.IsFalse(tiles.Contains(new GridCoord(3, 2)));
         }
 
+        // ---------------- TryTruncateMoveAt (cancel de caminata) ----------------
+
+        [Test]
+        public void TryTruncateMoveAt_AfterMove_RelocatesEntityWithoutRaisingOnEntityMoved()
+        {
+            // Arrange — Move ya adelantó la posición lógica al destino; el cancel
+            // trunca de vuelta a una celda intermedia del path.
+            var entity = Guid.NewGuid();
+            _grid.Register(entity, new GridCoord(0, 0));
+            int movedCount = 0;
+            _movement.OnEntityMoved += (_, _, _, _) => movedCount++;
+            int truncatedCount = 0;
+            GridCoord truncatedFrom = default, truncatedTo = default;
+            ((IMoveTruncationService)_movement).OnEntityMoveTruncated += (guid, from, to) =>
+            {
+                truncatedCount++;
+                truncatedFrom = from;
+                truncatedTo = to;
+            };
+            Assert.IsTrue(_movement.Move(entity, new GridCoord(0, 4)));
+            Assert.AreEqual(1, movedCount, "pre-condition");
+
+            // Act
+            bool result = ((IMoveTruncationService)_movement).TryTruncateMoveAt(entity, new GridCoord(0, 2));
+
+            // Assert — la entidad quedó en la celda de parada, sin re-emitir
+            // OnEntityMoved (los suscriptores de tiles ya procesaron el path completo).
+            Assert.IsTrue(result);
+            Assert.IsTrue(_grid.TryGetPosition(entity, out var pos));
+            Assert.AreEqual(new GridCoord(0, 2), pos);
+            Assert.AreEqual(1, movedCount, "Truncar NO debe emitir OnEntityMoved.");
+            Assert.AreEqual(1, truncatedCount);
+            Assert.AreEqual(new GridCoord(0, 4), truncatedFrom);
+            Assert.AreEqual(new GridCoord(0, 2), truncatedTo);
+        }
+
+        [Test]
+        public void TryTruncateMoveAt_CellOccupied_ReturnsFalseAndKeepsPosition()
+        {
+            // Arrange
+            var entity = Guid.NewGuid();
+            _grid.Register(entity, new GridCoord(0, 4));
+            _grid.Register(Guid.NewGuid(), new GridCoord(0, 2));
+
+            // Act
+            bool result = ((IMoveTruncationService)_movement).TryTruncateMoveAt(entity, new GridCoord(0, 2));
+
+            // Assert — sin truncación la posición lógica queda donde estaba (el
+            // resync visual del pawn snapea al destino, sin desync).
+            Assert.IsFalse(result);
+            Assert.IsTrue(_grid.TryGetPosition(entity, out var pos));
+            Assert.AreEqual(new GridCoord(0, 4), pos);
+        }
+
+        [Test]
+        public void TryTruncateMoveAt_SameCell_ReturnsTrueWithoutEvent()
+        {
+            // Arrange
+            var entity = Guid.NewGuid();
+            _grid.Register(entity, new GridCoord(1, 1));
+            int truncatedCount = 0;
+            ((IMoveTruncationService)_movement).OnEntityMoveTruncated += (_, _, _) => truncatedCount++;
+
+            // Act
+            bool result = ((IMoveTruncationService)_movement).TryTruncateMoveAt(entity, new GridCoord(1, 1));
+
+            // Assert
+            Assert.IsTrue(result);
+            Assert.AreEqual(0, truncatedCount, "Truncar a la celda propia es no-op sin evento.");
+        }
+
+        [Test]
+        public void TryTruncateMoveAt_UnregisteredEntity_ReturnsFalse()
+        {
+            Assert.IsFalse(((IMoveTruncationService)_movement)
+                .TryTruncateMoveAt(Guid.NewGuid(), new GridCoord(1, 1)));
+        }
+
         [Test]
         public void FindPath_OpenGrid_ReturnsShortestManhattan()
         {

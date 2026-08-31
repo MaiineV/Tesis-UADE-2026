@@ -571,9 +571,18 @@ namespace Rollgeon.EditorTools.Localization
         {
             // Recompensas de personaje — se veían en inglés incluso en español.
             Content("char_rew.attack_plus_3.name", "Ataque +3", "Attack +3");
-            Content("char_rew.energy_plus_1.name", "+1 Roll por turno", "+1 Roll per turn");
-            Content("char_rew.hp_plus_5.name", "Vida máxima +5", "Max Health +5");
-            Content("char_rew.speed_plus_2.name", "Velocidad +2", "Speed +2");
+            // BUG-85: Energy pasó a subir el pool (máximo + arranque de combate).
+            Content("char_rew.energy_plus_1.name", "Pool de rolls +1", "Roll pool +1");
+            Content("char_rew.energy_plus_1.desc",
+                "+1 al pool de rolls: sube el máximo y los rolls con los que arrancás cada combate.",
+                "+1 to the roll pool: raises the max and the rolls you start each combat with.");
+            // El asset se llama HP_Plus5 pero su id real es hp_plus_25 (da 25).
+            Content("char_rew.hp_plus_25.name", "Vida máxima +25", "Max Health +25");
+            // BUG-85: Speed+ se re-autoró como Movimiento+ (MoveRange).
+            Content("char_rew.move_plus_1.name", "Movimiento +1", "Movement +1");
+            Content("char_rew.move_plus_1.desc",
+                "+1 celda de rango al dado de Movimiento en combate.",
+                "+1 cell of range on the Movement die in combat.");
 
             // Pasivas de combo.
             Content("combo.pass.gold_on_ladder.name", "Codicia en Escalera", "Greed on Ladder");

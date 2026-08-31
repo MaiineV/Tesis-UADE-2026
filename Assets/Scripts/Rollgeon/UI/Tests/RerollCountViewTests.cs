@@ -124,7 +124,7 @@ namespace Rollgeon.UI.Tests
             public int GetCurrent(Guid entityId) => CurrentRolls;
             public int GetMax(Guid entityId) => 15;
             public int GetRollsPerTurn(Guid entityId) => 5;
-            public void AddPerTurnGrantBonus(int amount) { }
+            public void AddRollPoolBonus(int amount) { }
             public void RestoreCurrent(Guid entityId, int value) { }
         }
 

@@ -42,20 +42,34 @@ namespace Rollgeon.UI.HUD.Inventory
         /// </summary>
         public void Bind(ItemSO item)
         {
-            _occupied = item != null;
-            bool hasIcon = _occupied && item.Icon != null;
+            if (item == null)
+            {
+                Bind(null, null);
+                return;
+            }
+            Bind(item.Icon, () => BuildTooltip(item));
+        }
+
+        /// <summary>
+        /// Bindea contenido genérico (BUG-85: los boss rewards no son <see cref="ItemSO"/>
+        /// pero se listan en el mismo drawer). <paramref name="tooltipProvider"/> se
+        /// evalúa en cada hover, así el texto sigue al idioma. Ambos null = celda vacía.
+        /// </summary>
+        public void Bind(Sprite icon, System.Func<string> tooltipProvider)
+        {
+            _occupied = tooltipProvider != null;
 
             if (_icon != null)
             {
-                _icon.sprite = hasIcon ? item.Icon : null;
-                _icon.enabled = hasIcon;
+                _icon.sprite = icon;
+                _icon.enabled = icon != null;
             }
 
             if (_tooltip != null)
             {
                 // String vacío explícito en celdas vacías — con TextProvider null el
                 // trigger cae en TooltipResolver.AutoResolve y puede mostrar otra cosa.
-                _tooltip.TextProvider = _occupied ? () => BuildTooltip(item) : () => string.Empty;
+                _tooltip.TextProvider = tooltipProvider ?? (() => string.Empty);
             }
 
             RefreshBackground();

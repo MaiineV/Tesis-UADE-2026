@@ -151,16 +151,31 @@ namespace Rollgeon.Effects.Selection
         /// Rango efectivo del owner (§6.6). Con <see cref="RangeFromMovementDie"/>: la cara
         /// revelada del dado de Movimiento si hay tirada vigente; si no, la cara máxima del
         /// dado — el rango POTENCIAL, para que el gate del botón, el hover preview y el drag
-        /// pre-tirada sigan mostrando "hay algo alcanzable". Sin servicio registrado (tests,
-        /// exploración sin wiring) o sin el flag, el <see cref="Range"/> autorado.
+        /// pre-tirada sigan mostrando "hay algo alcanzable". En ambas ramas se suma el bonus
+        /// del stat <c>MoveRange</c> (reward "Movimiento+", BUG-85) para que gate, preview y
+        /// rango real queden coherentes. Sin servicio registrado (tests, exploración sin
+        /// wiring) o sin el flag, el <see cref="Range"/> autorado.
         /// </summary>
         public int ResolveEffectiveRange(Guid ownerGuid)
         {
             if (!RangeFromMovementDie) return Range;
             if (!ServiceLocator.TryGetService<IMovementDieService>(out var die) || die == null)
                 return Range;
-            if (die.TryGetActiveRange(ownerGuid, out var rolled)) return rolled;
-            return die.CurrentType.MaxFace();
+            int bonus = ResolveMoveRangeBonus(ownerGuid);
+            if (die.TryGetActiveRange(ownerGuid, out var rolled)) return rolled + bonus;
+            return die.CurrentType.MaxFace() + bonus;
+        }
+
+        // Bonus de MoveRange del owner; degrada a 0 sin AttributesManager o si la
+        // entidad no tiene el stat (enemigos, tests) — GetAttributeModifiedValue
+        // devuelve default sin loguear en ese caso.
+        private static int ResolveMoveRangeBonus(Guid ownerGuid)
+        {
+            if (ownerGuid == Guid.Empty) return 0;
+            if (!ServiceLocator.TryGetService<Rollgeon.Attributes.AttributesManager>(out var attrs)
+                || attrs == null)
+                return 0;
+            return attrs.GetAttributeModifiedValue<Rollgeon.Attributes.Stats.MoveRange, int>(ownerGuid);
         }
 
         public bool NeedsSelectionAt(SelectionTiming t)

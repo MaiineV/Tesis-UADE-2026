@@ -305,8 +305,16 @@ namespace Rollgeon.UI.ChestReveal
         /// <summary>
         /// Skip Jump / watchdog: frena todo lo que esté en vuelo y restaura poses.
         /// El duck NO se toca acá — la música vuelve recién en <see cref="OnSequenceEnd"/>.
+        /// BUG-071: los springs MMF también se restauran — un stop sin restore los
+        /// re-basea (<c>_targetValue = _currentValue</c>) y el próximo cofre arranca
+        /// desde la pose desplazada, acumulativo.
         /// </summary>
-        public void OnForceFinalState() => StopMotionResiduals();
+        public void OnForceFinalState()
+        {
+            StopMotionResiduals();
+            MmfJuice.Rest(_openPlayer);
+            MmfJuice.Rest(_revealPlayer);
+        }
 
         /// <summary>
         /// Cierre — SIEMPRE (normal/skip/watchdog/teardown) y ANTES del próximo
@@ -331,11 +339,12 @@ namespace Rollgeon.UI.ChestReveal
 
         private void StopMotionResiduals()
         {
-            if (_shakeTween.isAlive)
-            {
-                _shakeTween.Stop();
-                RestoreShakePos();
-            }
+            // BUG-071: restaurar SIEMPRE que haya rest válido, no solo con el tween
+            // vivo — la view mata el shake desde afuera (Tween.StopAll sobre el panel)
+            // y sin este restore la posición derivada se re-capturaba como reposo en
+            // el próximo ShakePanel, acumulando corrimiento cofre a cofre.
+            if (_shakeTween.isAlive) _shakeTween.Stop();
+            RestoreShakePos();
             if (_pointerFlick.isAlive)
             {
                 _pointerFlick.Stop();

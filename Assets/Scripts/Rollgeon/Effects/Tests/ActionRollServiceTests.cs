@@ -729,7 +729,7 @@ namespace Rollgeon.Effects.Tests
             public int GetCurrent(Guid id) => CurrentRolls;
             public int GetMax(Guid id) => 99;
             public int GetRollsPerTurn(Guid id) => 5;
-            public void AddPerTurnGrantBonus(int amount) { }
+            public void AddRollPoolBonus(int amount) { }
             public void InitializeForEntity(Guid id) { }
             public void RestoreCurrent(Guid id, int value) => CurrentRolls = value;
         }

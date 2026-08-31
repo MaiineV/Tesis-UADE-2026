@@ -611,16 +611,15 @@ namespace Rollgeon.Combat.Handoff
                 if (ThrowBusy()) return;
 
                 // BUG-013 + QoL switch: si hay un Movement esperando su tile, el mismo
-                // slot lo cancela ("deseleccionar", sin costo — la energía se cobra al
-                // ejecutar) y OTRO slot lo cancela Y arranca la nueva acción en el mismo
-                // gesto. CancelSelection unwindea el sub-FSM sincrónicamente, así que al
+                // slot lo cancela ("deseleccionar") y OTRO slot lo cancela Y arranca la
+                // nueva acción en el mismo gesto. Con el dado de Movimiento ya tirado el
+                // roll pagado NO se reembolsa (misma regla que las acciones con tirada),
+                // pero la selección se puede soltar igual — decisión §6.6 revertida:
+                // quedar forzado a moverse sí o sí era peor que perder el roll.
+                // CancelSelection unwindea el sub-FSM sincrónicamente, así que al
                 // volver el estado ya está limpio para seguir de largo.
                 if (_awaitingPlayerSelection)
                 {
-                    // §6.6: dado de Movimiento ya tirado ⇒ roll pagado ⇒ comprometido. Ni
-                    // el mismo slot ni otro cancelan; la UI los muestra Locked.
-                    if (_movementRollPrepaid) return;
-
                     bool sameAction = ResolveBehaviorAt(index) == _selectedBehavior;
                     CancelPlayerSelection();
                     // Defensa: si el unwind no completó (sin ISelectionController vivo,
@@ -987,10 +986,11 @@ namespace Rollgeon.Combat.Handoff
             get
             {
                 if (_forcedRerollPending || ThrowBusy()) return false;
-                // §6.6: con el dado de Movimiento ya tirado el roll está pagado — la acción
-                // queda comprometida como cualquier tirada: ni click derecho ni otro slot
-                // la cancelan. Solo End Turn la suelta (y pierde el roll).
-                if (_awaitingPlayerSelection) return !_movementRollPrepaid;
+                // §6.6 revertido: con el dado de Movimiento ya tirado el roll pagado NO
+                // se reembolsa, pero la selección se puede cancelar igual (click derecho,
+                // mismo slot u otro slot) — quedar forzado a moverse era peor que perder
+                // el roll.
+                if (_awaitingPlayerSelection) return true;
                 return IsChainTargetingCancellable();
             }
         }
@@ -1003,7 +1003,7 @@ namespace Rollgeon.Combat.Handoff
 
             if (TryCancelChainTargeting(hud)) return true;
 
-            if (_awaitingPlayerSelection && !_movementRollPrepaid)
+            if (_awaitingPlayerSelection)
             {
                 CancelPlayerSelection();
                 return true;
@@ -1870,9 +1870,9 @@ namespace Rollgeon.Combat.Handoff
         /// Cancela un Movement (acción sin tirada de build) que está esperando que el
         /// jugador clickee el tile destino (BUG-013). En el path legacy (sin
         /// <see cref="IMovementDieService"/>) el roll recién se cobra al clickear la celda,
-        /// así que cancelar antes NO cuesta nada. Con dado de Movimiento (§6.6) el roll ya
-        /// se cobró al tirar y NO se reembolsa — misma regla que las acciones con tirada.
-        /// En ambos casos no hay nada que devolver acá. Cancelar la selección dispara el
+        /// así que cancelar antes NO cuesta nada. Con dado de Movimiento (§6.6 revertido)
+        /// el roll ya se cobró al tirar y NO se reembolsa, pero la selección se cancela
+        /// igual — el jugador pierde el roll, no el turno. Cancelar la selección dispara el
         /// unwind del sub-FSM
         /// (<c>PlayerSelectingSubState → PlayerExecutingSubState</c> con <c>WasCancelled</c>),
         /// que skipea la ejecución (no cobra) e invoca el callback de <c>RequestAction</c>:
@@ -1883,6 +1883,12 @@ namespace Rollgeon.Combat.Handoff
         private void CancelPlayerSelection()
         {
             if (!_awaitingPlayerSelection) return;
+
+            // El path cancelado no pasa por HeroActionBehavior.Execute() (que limpia
+            // stored values en su primera línea): sin esta limpieza, valores que los
+            // efectos appendearon quedan acumulados en el behavior del ClassHeroSO
+            // (compartido toda la run) — mismo precedente que el chain resuelto.
+            _selectedBehavior?.ClearBehaviorValues();
 
             if (ServiceLocator.TryGetService<ISelectionController>(out var sel)
                 && sel != null && sel.IsSelecting)
