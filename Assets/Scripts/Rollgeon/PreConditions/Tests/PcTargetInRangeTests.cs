@@ -1,6 +1,8 @@
 using System;
 using NUnit.Framework;
 using Patterns;
+using Rollgeon.Attributes;
+using Rollgeon.Attributes.Stats;
 using Rollgeon.Grid;
 using Rollgeon.PreConditions.Concretes;
 
@@ -175,6 +177,86 @@ namespace Rollgeon.PreConditions.Tests
                 Range = 8, Alignment = TargetAlignment.SameRowOrColumn, RequireLineOfSight = true,
             };
             Assert.IsTrue(pc.Evaluate(Ctx(_ownerId, _opponentId)));
+        }
+
+        // ── UseOwnerAttackRange: rango desde la ficha (atributo AttackRange) ───────
+
+        private AttributesManager MakeAttrs(Guid owner, int attackRange)
+        {
+            var am = new AttributesManager();
+            var attrs = new ModifiableAttributes();
+            attrs.EnsureInitialized();
+            attrs.SetAttribute<AttackRange>(new AttackRange(attackRange));
+            am.Register(owner, attrs);
+            return am;
+        }
+
+        [Test]
+        public void Evaluate_UseOwnerAttackRange_UsesSheetAttribute()
+        {
+            // Arrange — Range=1 quedaría corto; la ficha dice 5 y manda ella.
+            _grid.Register(_ownerId, new GridCoord(0, 0));
+            _grid.Register(_opponentId, new GridCoord(4, 0)); // Manhattan = 4
+            var am = MakeAttrs(_ownerId, attackRange: 5);
+            var ctx = Ctx(_ownerId, _opponentId);
+            ctx.Attributes = am;
+
+            // Act + Assert
+            try
+            {
+                Assert.IsTrue(new PcTargetInRange { Range = 1, UseOwnerAttackRange = true }.Evaluate(ctx));
+            }
+            finally { am.Dispose(); }
+        }
+
+        [Test]
+        public void Evaluate_UseOwnerAttackRange_SheetRangeIsAlsoTheCeiling()
+        {
+            // Arrange — la ficha dice 5 y el target está a 6: no dispara aunque Range sea 99.
+            _grid.Register(_ownerId, new GridCoord(0, 0));
+            _grid.Register(_opponentId, new GridCoord(6, 0));
+            var am = MakeAttrs(_ownerId, attackRange: 5);
+            var ctx = Ctx(_ownerId, _opponentId);
+            ctx.Attributes = am;
+
+            // Act + Assert
+            try
+            {
+                Assert.IsFalse(new PcTargetInRange { Range = 99, UseOwnerAttackRange = true }.Evaluate(ctx));
+            }
+            finally { am.Dispose(); }
+        }
+
+        [Test]
+        public void Evaluate_UseOwnerAttackRange_WithoutAttributes_FallsBackToRange()
+        {
+            // Arrange — sin AttributesManager en el contexto (ej. PC de héroe): manda Range.
+            _grid.Register(_ownerId, new GridCoord(0, 0));
+            _grid.Register(_opponentId, new GridCoord(2, 0));
+
+            // Act + Assert
+            Assert.IsTrue(new PcTargetInRange { Range = 3, UseOwnerAttackRange = true }
+                .Evaluate(Ctx(_ownerId, _opponentId)));
+            Assert.IsFalse(new PcTargetInRange { Range = 1, UseOwnerAttackRange = true }
+                .Evaluate(Ctx(_ownerId, _opponentId)));
+        }
+
+        [Test]
+        public void Evaluate_UseOwnerAttackRange_ZeroAttribute_FallsBackToRange()
+        {
+            // Arrange — ficha vieja con rango 0: el 0 no es un rango, cae a Range.
+            _grid.Register(_ownerId, new GridCoord(0, 0));
+            _grid.Register(_opponentId, new GridCoord(2, 0));
+            var am = MakeAttrs(_ownerId, attackRange: 0);
+            var ctx = Ctx(_ownerId, _opponentId);
+            ctx.Attributes = am;
+
+            // Act + Assert
+            try
+            {
+                Assert.IsFalse(new PcTargetInRange { Range = 1, UseOwnerAttackRange = true }.Evaluate(ctx));
+            }
+            finally { am.Dispose(); }
         }
 
         [Test]
