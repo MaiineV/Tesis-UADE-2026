@@ -79,22 +79,28 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         }
 
         [Test]
-        public void Validate_Footprint_MultiCellWithMovement_WarnsFaseB()
+        public void Validate_Footprint_MultiCell_WarnsFaseC()
         {
+            // Fase B: el movimiento multi-celda ya existe; el warning ahora avisa lo que
+            // sigue tratando al rectángulo como su ancla (targeting del jugador, AoE,
+            // casillas) y aplica a TODO multi-celda, con o sin nodos de movimiento.
             var so = Healthy();
             so.Footprint = new Vector2Int(2, 2);
             so.AIRoot = new AINode_Move();
             var issues = Validate(so);
-            Assert.IsTrue(Has(issues, EnemyIssueSeverity.Warning, "Fase B"));
-            Assert.IsTrue(Has(issues, EnemyIssueSeverity.Warning, "Move"));
+            Assert.IsTrue(Has(issues, EnemyIssueSeverity.Warning, "Fase C"));
+            Assert.IsFalse(Has(issues, EnemyIssueSeverity.Warning, "Fase B pendiente"));
+
+            so.AIRoot = new AINode_Wait();
+            so.Footprint = new Vector2Int(2, 1);
+            Assert.IsTrue(Has(Validate(so), EnemyIssueSeverity.Warning, "Fase C"));
         }
 
         [Test]
-        public void Validate_Footprint_MultiCellStatic_NoFootprintIssue()
+        public void Validate_Footprint_Unit_NoFootprintIssue()
         {
             var so = Healthy();
-            so.Footprint = new Vector2Int(2, 1);
-            so.AIRoot = new AINode_Wait();
+            so.Footprint = Vector2Int.one;
             Assert.IsFalse(Validate(so).Exists(i => i.Section == EnemyDataValidator.SecFootprint));
         }
 

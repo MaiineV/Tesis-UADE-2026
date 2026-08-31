@@ -174,11 +174,17 @@ namespace Rollgeon.Combat.AI.Decisions
                 if (c.Y > maxY) maxY = c.Y;
             }
 
+            // Footprint del self (Fase B): un candidato solo vale si el rectángulo entero
+            // cabe ahí. El guid se recupera del ancla propia; para 1×1 nada cambia.
+            grid.TryGetOccupant(selfCoord, out var selfGuid);
+            var selfFp = grid.GetFootprint(selfGuid);
+
             int bestFar = int.MinValue;
             int bestEdge = int.MaxValue;
             foreach (var c in tiles)
             {
-                if (c == selfCoord || grid.IsOccupied(c)) continue;
+                if (c == selfCoord) continue;
+                if (!grid.CanPlace(c, selfFp, ignore: selfGuid)) continue;
                 if (skipHarmful && HarmfulTileQuery.IsHarmfulAt(c)) continue;
                 // El techo filtra y el piso sólo empata puntajes, así que un techo por debajo del
                 // piso no deja el sorteo vacío: deja el piso sin alcanzar.

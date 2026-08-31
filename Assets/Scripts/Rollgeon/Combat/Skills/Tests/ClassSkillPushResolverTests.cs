@@ -123,6 +123,102 @@ namespace Rollgeon.Combat.Skills.Push.Tests
             _grid.Register(_player, new GridCoord(0, 0));
         }
 
+        private Guid SpawnBigEnemy(GridCoord anchor, Vector2Int footprint, int hp)
+        {
+            var guid = Guid.NewGuid();
+            Assert.IsTrue(_grid.TryRegister(guid, anchor, footprint), "setup: el rect tiene que caber");
+            _traits.Register(guid, UnitTraits.DefaultGround);
+            var attrs = new ModifiableAttributes();
+            attrs.EnsureInitialized();
+            attrs.SetAttribute<Health>(new Health(hp));
+            attrs.SetAttribute<Shield>(new Shield(0));
+            _attributes.Register(guid, attrs);
+            return guid;
+        }
+
+        // ======================================================================
+        // Fase B — empuje de footprints multi-celda
+        // ======================================================================
+
+        [Test]
+        public void Push_2x2_FreeDestination_MovesWholeRectangle()
+        {
+            // Player (0,0) pegado al ancla; espacio libre a la derecha.
+            var big = SpawnBigEnemy(new GridCoord(1, 0), new Vector2Int(2, 2), 100);
+
+            var outcome = _resolver.Resolve(_player, big, distance: 2, collisionDamage: 10);
+
+            Assert.IsTrue(_grid.TryGetPosition(big, out var anchor));
+            Assert.AreEqual(new GridCoord(3, 0), anchor, "el rect entero avanzó 2");
+            Assert.IsTrue(_grid.IsOccupied(new GridCoord(4, 1)), "celda no-ancla ocupada en destino");
+            Assert.IsFalse(_grid.IsOccupied(new GridCoord(1, 0)), "las celdas viejas quedaron libres");
+            Assert.AreEqual(PushHopStop.Completed, outcome.Hops[0].Stop);
+        }
+
+        [Test]
+        public void Push_2x2_PartiallyBlocked_StopsAsObstacle()
+        {
+            // El rect (1,0)-(2,1); un enemigo en (5,1) pisa UNA celda del rect destino con
+            // ancla (4,0): bloqueo parcial = bloqueado tras avanzar 2.
+            var big = SpawnBigEnemy(new GridCoord(1, 0), new Vector2Int(2, 2), 100);
+            var blocker = SpawnEnemy(new GridCoord(5, 1), 100);
+
+            var outcome = _resolver.Resolve(_player, big, distance: 4, collisionDamage: 10);
+
+            Assert.IsTrue(_grid.TryGetPosition(big, out var anchor));
+            Assert.AreEqual(new GridCoord(3, 0), anchor, "frenó una ancla antes del solape");
+            Assert.AreEqual(blocker, outcome.Hops[0].BlockerGuid);
+            Assert.AreEqual(PushHopStop.Enemy, outcome.Hops[0].Stop, "choque normal: daño a ambos");
+        }
+
+        [Test]
+        public void Push_2x2_AgainstWall_StunsLikeAnyBlockedPush()
+        {
+            // Sala 20×5: el rect (1,3)-(2,4) ya toca el borde superior; empujar al Norte no
+            // tiene ni una ancla válida → choque contra pared con stun.
+            var big = SpawnBigEnemy(new GridCoord(1, 3), new Vector2Int(2, 2), 100);
+            _grid.Unregister(_player);
+            _grid.Register(_player, new GridCoord(1, 2)); // pegado por abajo, empuja al Norte
+
+            var outcome = _resolver.Resolve(_player, big, distance: 2, collisionDamage: 10);
+
+            Assert.IsTrue(_grid.TryGetPosition(big, out var anchor));
+            Assert.AreEqual(new GridCoord(1, 3), anchor, "no se movió");
+            Assert.AreEqual(PushHopStop.Wall, outcome.Hops[0].Stop);
+        }
+
+        [Test]
+        public void Push_2x2_DirectionFromNearestCell_NotAnchor()
+        {
+            // Player (0,2) pegado a la celda (1,2) del rect (1,1)-(2,2): el delta al ANCLA
+            // es diagonal (1,-1); la dirección tiene que salir de la celda más cercana → East.
+            _grid.Unregister(_player);
+            _grid.Register(_player, new GridCoord(0, 2));
+            var big = SpawnBigEnemy(new GridCoord(1, 1), new Vector2Int(2, 2), 100);
+
+            var outcome = _resolver.Resolve(_player, big, distance: 1, collisionDamage: 0);
+
+            Assert.AreEqual(Cardinal.East, outcome.Direction);
+            Assert.IsTrue(_grid.TryGetPosition(big, out var anchor));
+            Assert.AreEqual(new GridCoord(2, 1), anchor, "empujado 1 al Este");
+        }
+
+        [Test]
+        public void ForcedPush_2x2_ReportsTraveledAndBlocker()
+        {
+            // Push directo del servicio: (1,0)-(2,1) al Este con un 1×1 en (6,0); avanza 2
+            // anclas y frena cuando el rect destino pisa al ocupante.
+            var big = SpawnBigEnemy(new GridCoord(1, 0), new Vector2Int(2, 2), 100);
+            var occupant = SpawnEnemy(new GridCoord(6, 0), 100);
+
+            var move = _forced.Push(big, Cardinal.East, 5, _player);
+
+            Assert.AreEqual(ForcedMoveStop.Obstacle, move.StoppedBy);
+            Assert.AreEqual(new GridCoord(4, 0), move.FinalCoord);
+            Assert.AreEqual(3, move.TilesTraveled);
+            Assert.AreEqual(occupant, move.BlockerGuid);
+        }
+
         private Guid SpawnEnemy(GridCoord coord, int hp)
         {
             var guid = Guid.NewGuid();

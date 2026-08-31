@@ -135,7 +135,12 @@ namespace Rollgeon.Movement
             }
             if (from == destination) return true;
 
-            var path = FindPath(from, destination);
+            // Multi-celda: A* sobre anclas donde el rectángulo entero cabe. 1×1 sigue el
+            // FindPath público de siempre (mismo código, misma semántica).
+            var fp = _grid.GetFootprint(entity);
+            var path = GridFootprint.IsUnit(fp)
+                ? FindPath(from, destination)
+                : FindPathRect(entity, fp, from, destination);
             if (path.Count == 0) return false;
 
             // El filtro puede truncar el path (Hielo/Portal terminan el movimiento ahí);
@@ -172,12 +177,14 @@ namespace Rollgeon.Movement
             // Solo el origen: no hay nada que caminar — no-op válido, sin evento.
             if (effective.Count < 2) return effective.Count == 1;
 
+            var fp = _grid.GetFootprint(entity);
             for (int i = 1; i < effective.Count; i++)
             {
                 var step = effective[i];
                 if (effective[i - 1].Manhattan(step) != 1) return false;
-                if (!_grid.IsWalkable(step)) return false;
-                if (_grid.IsOccupied(step)) return false;
+                // CanPlace valida el rectángulo entero; para 1×1 es el chequeo de siempre
+                // (walkable + libre) más tolerar la celda propia — superset seguro.
+                if (!_grid.CanPlace(step, fp, ignore: entity)) return false;
             }
 
             var target = effective[effective.Count - 1];
@@ -220,11 +227,95 @@ namespace Rollgeon.Movement
                 return false;
             }
             if (from == to) return true;
-            if (!_grid.IsWalkable(to) || _grid.IsOccupied(to)) return false;
+            if (!_grid.CanPlace(to, _grid.GetFootprint(entity), ignore: entity)) return false;
             if (!_grid.Move(entity, to)) return false;
 
             OnEntityTeleported?.Invoke(entity, from, to);
             return true;
+        }
+
+        /// <inheritdoc />
+        public List<GridCoord> GetReachableAnchors(Guid entity, int range)
+        {
+            var result = new List<GridCoord>();
+            if (range < 0) return result;
+            if (!_grid.TryGetPosition(entity, out var origin)) return result;
+
+            var fp = _grid.GetFootprint(entity);
+
+            // BFS calcado de GetReachableTiles — mismo ORDEN de descubrimiento para 1×1
+            // (CanPlace con ignore:self solo difiere en la celda propia, que ya está en
+            // visited): los nodos IA puntúan con '<' estricto y el primero entre iguales gana.
+            var visited = new Dictionary<GridCoord, int> { [origin] = 0 };
+            var queue = new Queue<GridCoord>();
+            queue.Enqueue(origin);
+
+            while (queue.Count > 0)
+            {
+                var current = queue.Dequeue();
+                int distance = visited[current];
+
+                if (distance > 0) result.Add(current);
+                if (distance == range) continue;
+
+                foreach (var edge in _grid.Graph.GetNeighbors(current))
+                {
+                    var n = edge.To;
+                    if (visited.ContainsKey(n)) continue;
+                    if (!_grid.CanPlace(n, fp, ignore: entity)) continue;
+
+                    visited[n] = distance + 1;
+                    queue.Enqueue(n);
+                }
+            }
+
+            return result;
+        }
+
+        /// <summary>A* de <see cref="FindPath"/> sobre anclas válidas para el rectángulo:
+        /// cada paso (incluido el destino) exige <c>CanPlace(ancla, fp, ignore: entity)</c>.</summary>
+        private List<GridCoord> FindPathRect(Guid entity, Vector2Int fp, GridCoord from, GridCoord to)
+        {
+            if (from == to) return new List<GridCoord> { from };
+            if (!_grid.CanPlace(to, fp, ignore: entity)) return new List<GridCoord>();
+
+            var cameFrom = new Dictionary<GridCoord, GridCoord>();
+            var gScore = new Dictionary<GridCoord, int> { [from] = 0 };
+            var fScore = new Dictionary<GridCoord, int> { [from] = from.Manhattan(to) };
+            var open = new List<GridCoord> { from };
+            var openSet = new HashSet<GridCoord> { from };
+
+            while (open.Count > 0)
+            {
+                int bestIdx = 0;
+                int bestF = fScore[open[0]];
+                for (int i = 1; i < open.Count; i++)
+                {
+                    int f = fScore[open[i]];
+                    if (f < bestF) { bestF = f; bestIdx = i; }
+                }
+                var current = open[bestIdx];
+                open.RemoveAt(bestIdx);
+                openSet.Remove(current);
+
+                if (current == to) return ReconstructPath(cameFrom, current, from);
+
+                foreach (var edge in _grid.Graph.GetNeighbors(current))
+                {
+                    var n = edge.To;
+                    if (!_grid.CanPlace(n, fp, ignore: entity)) continue;
+
+                    int tentativeG = gScore[current] + 1;
+                    if (gScore.TryGetValue(n, out var existingG) && tentativeG >= existingG) continue;
+
+                    cameFrom[n] = current;
+                    gScore[n] = tentativeG;
+                    fScore[n] = tentativeG + n.Manhattan(to);
+                    if (openSet.Add(n)) open.Add(n);
+                }
+            }
+
+            return new List<GridCoord>();
         }
 
         private IReadOnlyList<GridCoord> ApplyFilter(Guid entity, IReadOnlyList<GridCoord> path)

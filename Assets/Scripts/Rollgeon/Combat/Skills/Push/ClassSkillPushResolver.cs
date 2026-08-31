@@ -51,8 +51,17 @@ namespace Rollgeon.Combat.Skills.Push
             }
 
             // Con Range 1 y métrica Manhattan el objetivo está ortogonalmente pegado, así que el
-            // delta es un cardinal exacto (mismo razonamiento que AINode_CajeroShove).
-            outcome.Direction = CardinalExtensions.FromDelta(pusherCoord, targetCoord);
+            // delta es un cardinal exacto (mismo razonamiento que AINode_CajeroShove). Con un
+            // target multi-celda el ANCLA puede quedar en diagonal: la dirección se toma
+            // contra la celda del rectángulo más cercana al pusher (para 1×1 es la misma).
+            var nearestCell = targetCoord;
+            int nearestDist = int.MaxValue;
+            foreach (var cell in grid.OccupiedCells(target))
+            {
+                int d = pusherCoord.Manhattan(cell);
+                if (d < nearestDist) { nearestDist = d; nearestCell = cell; }
+            }
+            outcome.Direction = CardinalExtensions.FromDelta(pusherCoord, nearestCell);
 
             var visited = new HashSet<Guid>();
             PushChain(outcome, grid, forced, pusher, target, outcome.Direction, distance, collisionDamage,
