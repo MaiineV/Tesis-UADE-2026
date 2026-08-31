@@ -45,7 +45,8 @@ namespace Rollgeon.Combat.AI.Decisions
         public override string NodeName => "Move Toward Target";
 
         /// <summary>Key compartida por todos los AINode_Move del árbol: mover es UNA acción por turno.</summary>
-        internal const string ActionKey = "__move";
+        // Público: el AITreeValidator (editor asmdef) lo usa para vetar ActionNames reservados.
+        public const string ActionKey = "__move";
 
         public override AIResult Tick(AIContext context)
         {
