@@ -86,10 +86,9 @@ namespace Rollgeon.Editor.Tools.Enemy
             else if (so.HasMultiCellFootprint)
             {
                 var fp = so.EffectiveFootprint;
-                if (summary.HasMovement)
-                    issues.Add(new EnemyIssue(EnemyIssueSeverity.Warning, SecFootprint,
-                        $"Tamaño {fp.x}×{fp.y} con nodos de movimiento ({EnemyTreeSummary.Names(summary.MovementNodes)}): " +
-                        "el pathfinding multi-celda es Fase B pendiente — se mueve como 1×1 (solo el ancla)."));
+                issues.Add(new EnemyIssue(EnemyIssueSeverity.Warning, SecFootprint,
+                    $"Tamaño {fp.x}×{fp.y}: se mueve, ataca y se empuja como rectángulo (Fase B), pero el " +
+                    "targeting del jugador, el AoE y las casillas especiales lo tratan como su ancla (Fase C pendiente)."));
                 if (Math.Max(fp.x, fp.y) >= LargeFootprintSide)
                     issues.Add(new EnemyIssue(EnemyIssueSeverity.Warning, SecFootprint,
                         $"Tamaño {fp.x}×{fp.y}: pocas salas tienen lugar; si no cabe cerca del spawn se registra 1×1."));
