@@ -1,6 +1,7 @@
 using System;
 using NUnit.Framework;
 using Patterns;
+using Rollgeon.Effects.Selection;
 using Rollgeon.UI.Tooltips;
 using UnityEngine;
 using Object = UnityEngine.Object;
@@ -50,6 +51,9 @@ namespace Rollgeon.UI.Tests
             if (_b != null) _b.Unpin();
             if (_goA != null) Object.DestroyImmediate(_goA);
             if (_goB != null) Object.DestroyImmediate(_goB);
+            // Estático: en EditMode todos los tests corren en el mismo frame, y un sello
+            // colgado haría que cualquier HandlePinClick posterior descarte su click.
+            SelectionController.LastSelectionEndFrame = -1;
             ServiceLocator.Clear();
             EventManager.ResetEventDictionary();
         }
@@ -105,6 +109,30 @@ namespace Rollgeon.UI.Tests
 
             // Assert
             Assert.IsFalse(_a.IsPinned);
+        }
+
+        [Test]
+        public void ElClickQueConfirmoElObjetivo_NoFija()
+        {
+            // Arrange — TileClickHandler resolvió la selección este mismo frame: su Update
+            // puede correr antes que el del trigger, así que IsSelecting ya da false cuando
+            // el trigger ve el click.
+            SelectionController.LastSelectionEndFrame = Time.frameCount;
+
+            // Act
+            _a.HandlePinClick(true);
+
+            // Assert
+            Assert.IsFalse(_a.IsPinned,
+                "El click que confirmó el ataque fijó el tooltip: candado de regalo por pegarle.");
+
+            // Arrange + Act — un frame después el mismo click vuelve a ser de fijar.
+            SelectionController.LastSelectionEndFrame = Time.frameCount - 1;
+            _a.HandlePinClick(true);
+
+            // Assert
+            Assert.IsTrue(_a.IsPinned,
+                "El guard descarta clicks de frames que no son el del fin de la selección.");
         }
 
         [Test]

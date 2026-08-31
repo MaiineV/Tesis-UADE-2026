@@ -50,6 +50,15 @@ namespace Rollgeon.Effects.Selection
 
         public bool IsSelecting => _request != null;
 
+        /// <summary>
+        /// Frame en el que terminó la última selección, completada o cancelada. El click que
+        /// confirma el objetivo la resuelve sincrónico, y los Update que corren después en ese
+        /// mismo frame ya ven <see cref="IsSelecting"/> en false — pero ese click fue de
+        /// apuntar. Quien reaccione a clicks "fuera de targeting" descarta también este frame.
+        /// Setter internal: los tests lo estampan sin armar una selección entera.
+        /// </summary>
+        public static int LastSelectionEndFrame { get; internal set; } = -1;
+
         public bool CanOverlayHoverPreview => _request == null || _suppressRange;
 
         public event Action<TargetSelectionResult> OnSelectionCompleted;
@@ -314,6 +323,7 @@ namespace Rollgeon.Effects.Selection
 
         public void CancelSelection()
         {
+            LastSelectionEndFrame = UnityEngine.Time.frameCount;
             ClearHighlights();
 
             var result = new TargetSelectionResult
@@ -334,6 +344,7 @@ namespace Rollgeon.Effects.Selection
 
         private void Complete()
         {
+            LastSelectionEndFrame = UnityEngine.Time.frameCount;
             UnityEngine.Debug.Log($"[SelectionController] Complete — {_selected.Count} targets selected");
             ClearHighlights();
 

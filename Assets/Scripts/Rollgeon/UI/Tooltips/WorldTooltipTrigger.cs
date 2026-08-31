@@ -179,9 +179,15 @@ namespace Rollgeon.UI.Tooltips
         // El click de targeting es atacar (TileClickHandler): el fijado solo puede vivir en los
         // clicks que hoy no hacen nada. Click sobre el objeto = toggle; click en el vacío con el
         // tooltip fijado = soltar.
-        private void HandlePinClick(bool hitMe)
+        // Internal para los tests: simular el mouse acá probaría al raycast, no al fijado.
+        internal void HandlePinClick(bool hitMe)
         {
             if (IsSelectingTarget()) return;
+
+            // El click que confirma el objetivo resuelve la selección sincrónico, y este
+            // Update puede correr después en el mismo frame: IsSelecting ya da false, pero
+            // ese click fue de atacar — no puede fijar.
+            if (SelectionController.LastSelectionEndFrame == Time.frameCount) return;
 
             if (hitMe)
             {
