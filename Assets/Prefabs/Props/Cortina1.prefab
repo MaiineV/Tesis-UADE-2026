@@ -115,6 +115,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: -7511558181221131132, guid: a2f8eebb5d3e50e4b99b9792d1abc215, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: 35eddbfb2db96f8479b6f9524ed42a51, type: 2}
     - target: {fileID: 919132149155446097, guid: a2f8eebb5d3e50e4b99b9792d1abc215, type: 3}
       propertyPath: m_Name
       value: Cortina1
