@@ -564,7 +564,7 @@ MonoBehaviour:
     m_Bits: 1
   m_VolumeTrigger: {fileID: 0}
   m_VolumeFrameworkUpdateModeOption: 2
-  m_RenderPostProcessing: 1
+  m_RenderPostProcessing: 0
   m_Antialiasing: 0
   m_AntialiasingQuality: 2
   m_StopNaN: 0
@@ -2648,7 +2648,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 06ca1818618cb8743b3a9c8b23d747fe, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Rollgeon::Rollgeon.Input.RightClickCancelController
 --- !u!114 &2024317184
 MonoBehaviour:
@@ -2660,7 +2660,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 0e6230adc4c8e1843989f3a63616c43e, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Rollgeon::Rollgeon.Input.ExplorationMoveCancelController
 --- !u!1001 &1456976755807077571
 PrefabInstance:
