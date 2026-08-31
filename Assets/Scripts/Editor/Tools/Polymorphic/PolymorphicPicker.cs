@@ -24,15 +24,18 @@ namespace Rollgeon.Editor.Tools.Polymorphic
     /// </summary>
     public static class PolymorphicPicker
     {
-        public static List<Type> ConcreteSubtypesOf(Type baseType)
+        /// <param name="filter">Filtro opcional por contexto del host (ej. el árbol enemigo esconde
+        /// efectos/PCs que leen el roll del jugador). Null = todos los concretos.</param>
+        public static List<Type> ConcreteSubtypesOf(Type baseType, Func<Type, bool> filter = null)
         {
             var types = new List<Type>();
             // Include the base type itself when it's a concrete class (e.g. EnemyActionBehavior
             // has no derived classes — without this the picker would show an empty menu).
-            if (IsValidPickerType(baseType)) types.Add(baseType);
+            if (IsValidPickerType(baseType) && (filter == null || filter(baseType))) types.Add(baseType);
             foreach (var t in TypeCache.GetTypesDerivedFrom(baseType))
             {
                 if (!IsValidPickerType(t)) continue;
+                if (filter != null && !filter(t)) continue;
                 types.Add(t);
             }
             types.Sort((a, b) => string.Compare(a.Name, b.Name, StringComparison.Ordinal));
@@ -91,13 +94,14 @@ namespace Rollgeon.Editor.Tools.Polymorphic
         /// </para>
         /// </summary>
         public static void DrawAddButton(
-            string label, Type baseType, IList list, Action onAdded, Action onBeforeAdd = null)
+            string label, Type baseType, IList list, Action onAdded, Action onBeforeAdd = null,
+            Func<Type, bool> filter = null)
         {
             if (list == null) return;
             if (GUILayout.Button("+ Add " + label, GUILayout.Height(22f)))
             {
                 var menu = new GenericMenu();
-                foreach (var t in ConcreteSubtypesOf(baseType))
+                foreach (var t in ConcreteSubtypesOf(baseType, filter))
                 {
                     var capt = t;
                     menu.AddItem(new GUIContent(t.Name), false, () =>
