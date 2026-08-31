@@ -33,6 +33,16 @@ namespace Rollgeon.Editor.Tools.HUD.Tests
         }
 
         [Test]
+        public void ElParrafoTampocoDecideElAnchoDelPanel()
+        {
+            var panel = LoadPanel();
+
+            Assert.AreEqual(WidthOf(panel, "Cards"), WidthOf(panel, "HeaderBox/Text"), 0.5f,
+                "La frase táctica tiene un ancho propio: siendo el hijo más ancho, es ELLA la " +
+                "que decide cuánto mide el tooltip, y el resto queda con aire muerto al costado.");
+        }
+
+        [Test]
         public void LaBandaDeIdentidadMideLoMismoQueLaColumna()
         {
             var panel = LoadPanel();

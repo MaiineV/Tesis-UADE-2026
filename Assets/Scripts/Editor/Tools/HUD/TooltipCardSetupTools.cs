@@ -37,25 +37,34 @@ namespace Rollgeon.EditorTools.HUD
         // Un solo ancho para todo lo que va apilado en el panel. El pie es TMP con wrap: sin un
         // ancho que lo ate, su preferido es el del texto ENTERO en un renglón, y el panel se
         // estiraba hasta ahí — el color del bicho decidía el ancho del tooltip.
-        private const float ContentWidth = 290f;
+        private const float ContentWidth = 350f;
 
         // Más angosta que el panel: con tres ataques en la columna, tarjetas del ancho de la caja
         // hacían que el costado pesara más que el bicho que describe.
-        private const float CardWidth = 250f;
+        private const float CardWidth = 300f;
 
         // Aire entre el panel y la columna del costado. Chico a propósito: más lejos y deja de
         // leerse como algo de ESTE bicho.
-        private const float SideColumnGap = 12f;
+        private const float SideColumnGap = 14f;
+
+        // El aire interno de la caja del header. Dueño de este archivo y no del prefab: el
+        // tooltip entero se agranda o se achica desde acá.
+        private const int HeaderPadX = 26;
+        private const int HeaderPadY = 22;
+
+        // El párrafo del panel. El único cuerpo de letra que este archivo no crea pero sí
+        // dimensiona: es el bloque más largo del tooltip.
+        private const float ParagraphFont = 26f;
 
 
         // Chico: vive en la fila del label, al lado de "PLAYER CURSE", no encabezando el título.
-        private const float IconSize = 22f;
-        private const float BadgeSize = 18f;
+        private const float IconSize = 26f;
+        private const float BadgeSize = 22f;
 
         // La placa cuadrada de la fila de estados al pie del panel — sólo ícono.
         private const string SlotPrefabPath = "Assets/Prefabs/UI/TooltipStatusSlot.prefab";
-        private const float SlotSize = 44f;
-        private const float SlotIconPadding = 8f;
+        private const float SlotSize = 52f;
+        private const float SlotIconPadding = 10f;
 
         // Crema sobre la placa oscura. Los labels salían en el blanco default de TMP, que sobre
         // el panel color hueso quedaba invisible.
@@ -74,7 +83,7 @@ namespace Rollgeon.EditorTools.HUD
         {
             var root = new GameObject("TooltipCard", typeof(RectTransform));
             var rootRect = (RectTransform)root.transform;
-            rootRect.sizeDelta = new Vector2(CardWidth, 56f);
+            rootRect.sizeDelta = new Vector2(CardWidth, 66f);
 
             var background = Ensure<Image>(root);
             background.sprite = LoadSlice(CardPlateId);
@@ -83,10 +92,10 @@ namespace Rollgeon.EditorTools.HUD
 
             // Vertical y no horizontal: la referencia pone el ícono chico en la línea del título
             // y le da a la regla el ancho entero, que es lo que hace legible una frase con
-            // números adentro a 13px.
+            // números adentro en letra chica.
             var layout = Ensure<VerticalLayoutGroup>(root);
-            layout.padding = new RectOffset(13, 13, 10, 10);
-            layout.spacing = 6;
+            layout.padding = new RectOffset(16, 16, 12, 12);
+            layout.spacing = 7;
             layout.childAlignment = TextAnchor.UpperCenter;
             layout.childControlWidth = true;
             layout.childControlHeight = true;
@@ -126,7 +135,7 @@ namespace Rollgeon.EditorTools.HUD
             badgeImage.type = Image.Type.Simple;
             badgeImage.preserveAspect = true;
             badgeImage.raycastTarget = false;
-            var badgeLabel = EnsureLabel(badgeRect, "Value", 18f, TextAlignmentOptions.Center, CardInk);
+            var badgeLabel = EnsureLabel(badgeRect, "Value", 22f, TextAlignmentOptions.Center, CardInk);
 
             // Estirado a la ficha, y no el 0x0 que deja EnsureLabel: con un rect sin ancho TMP
             // acomoda el texto contra el pivote y parte cualquier cosa de más de un carácter en un
@@ -139,7 +148,7 @@ namespace Rollgeon.EditorTools.HUD
 
             // En mayúsculas por estilo y no por texto: la key sigue diciendo "Next turn" y
             // ningún idioma tiene que autorar gritado.
-            var eyebrowLabel = EnsureLabel(labelRow, "Eyebrow", 14f, TextAlignmentOptions.Left,
+            var eyebrowLabel = EnsureLabel(labelRow, "Eyebrow", 17f, TextAlignmentOptions.Left,
                                            LabelInk);
             eyebrowLabel.fontStyle = FontStyles.Bold | FontStyles.UpperCase;
             Ensure<LayoutElement>(eyebrowLabel.gameObject).flexibleWidth = 1f;
@@ -161,20 +170,20 @@ namespace Rollgeon.EditorTools.HUD
             headerLayout.childForceExpandWidth = false;
             headerLayout.childForceExpandHeight = false;
 
-            // Por debajo de la regla (21) a proposito: el titulo nombra la cosa y la regla es
-            // lo que se lee, asi que un titulo mas grande que ella se lleva el ojo primero.
-            var titleLabel = EnsureLabel(headerRect, "Title", 20f, TextAlignmentOptions.Left, CardInk);
+            // Por debajo de la regla a proposito: el titulo nombra la cosa y la regla es lo
+            // que se lee, asi que un titulo mas grande que ella se lleva el ojo primero.
+            var titleLabel = EnsureLabel(headerRect, "Title", 24f, TextAlignmentOptions.Left, CardInk);
             titleLabel.fontStyle = FontStyles.Bold;
             Ensure<LayoutElement>(titleLabel.gameObject).flexibleWidth = 1f;
 
             // Último de la fila y sin flexibleWidth: el título se queda con el sobrante, así que
             // el número termina pegado al borde derecho sin un spacer de por medio.
-            var damageLabel = EnsureLabel(headerRect, "Damage", 26f, TextAlignmentOptions.Right, CardInk);
+            var damageLabel = EnsureLabel(headerRect, "Damage", 31f, TextAlignmentOptions.Right, CardInk);
             damageLabel.fontStyle = FontStyles.Bold;
 
             // Centrada como la referencia: bajo un divisor, una frase de dos renglones centrada
             // se lee como una regla y no como la continuación del título.
-            var ruleLabel = EnsureLabel(rootRect, "Rule", 21f, TextAlignmentOptions.Center, CardInk);
+            var ruleLabel = EnsureLabel(rootRect, "Rule", 25f, TextAlignmentOptions.Center, CardInk);
             ruleLabel.enableWordWrapping = true;
 
             var view = Ensure<TooltipCardView>(root);
@@ -419,7 +428,7 @@ namespace Rollgeon.EditorTools.HUD
             badgeImage.type = Image.Type.Simple;
             badgeImage.preserveAspect = true;
             badgeImage.raycastTarget = false;
-            var badgeLabel = EnsureLabel(badgeRect, "Value", 13f, TextAlignmentOptions.Center,
+            var badgeLabel = EnsureLabel(badgeRect, "Value", 16f, TextAlignmentOptions.Center,
                                          CardInk);
             badgeLabel.rectTransform.anchorMin = Vector2.zero;
             badgeLabel.rectTransform.anchorMax = Vector2.one;
@@ -471,9 +480,8 @@ namespace Rollgeon.EditorTools.HUD
 
                 if (creating)
                 {
-                    // La placa y el aire interno del panel se mudan ENTEROS a la caja del
-                    // header. Guardado sólo en el primer corte: re-correr el menú no puede
-                    // volver a copiar un padding que ya quedó en cero.
+                    // La placa del panel se muda ENTERA a la caja del header. Sólo en el
+                    // primer corte: después de esto el panel ya no tiene placa que mudar.
                     var panelImage = panel.GetComponent<Image>();
                     var headerImage = Ensure<Image>(header.gameObject);
                     if (panelImage != null)
@@ -485,9 +493,6 @@ namespace Rollgeon.EditorTools.HUD
                     }
                     headerImage.raycastTarget = false;
 
-                    headerLayout.padding = new RectOffset(
-                        panelLayout.padding.left, panelLayout.padding.right,
-                        panelLayout.padding.top, panelLayout.padding.bottom);
                     headerLayout.spacing = panelLayout.spacing;
                     headerLayout.childAlignment = TextAnchor.UpperCenter;
                     headerLayout.childControlWidth = true;
@@ -500,6 +505,11 @@ namespace Rollgeon.EditorTools.HUD
                     // como bloques separados y no como un panel partido por error.
                     panelLayout.spacing = 10f;
                 }
+
+                // Fuera del alta: re-correr el menú tiene que poder cambiar el tamaño de la
+                // caja, y el padding del panel del que se copiaba ya quedó en cero.
+                headerLayout.padding = new RectOffset(HeaderPadX, HeaderPadX,
+                                                      HeaderPadY, HeaderPadY);
 
                 // Idempotente: si ya viven en el header, Reparent no hace nada.
                 Reparent(panel, "Identity", header);
@@ -770,11 +780,11 @@ namespace Rollgeon.EditorTools.HUD
                 Reparent(identity, "Name", titleRow);
                 Reparent(identity, "Type", titleRow);
 
-                var nameLabel = EnsureLabel(titleRow, "Name", 26f, TextAlignmentOptions.Left, PanelInk);
+                var nameLabel = EnsureLabel(titleRow, "Name", 31f, TextAlignmentOptions.Left, PanelInk);
                 nameLabel.fontStyle = FontStyles.Bold;
                 nameLabel.textWrappingMode = TextWrappingModes.NoWrap;
 
-                var typeLabel = EnsureLabel(titleRow, "Type", 18f, TextAlignmentOptions.Left, PanelInkSoft);
+                var typeLabel = EnsureLabel(titleRow, "Type", 22f, TextAlignmentOptions.Left, PanelInkSoft);
                 typeLabel.textWrappingMode = TextWrappingModes.NoWrap;
                 // El ancho fijo era de cuando vivía sola bajo el VLG; dentro de la fila volvería
                 // a imponer el ancho del panel entero.
@@ -789,8 +799,8 @@ namespace Rollgeon.EditorTools.HUD
                 vitalsLayout.childForceExpandWidth = false;
                 vitalsLayout.childForceExpandHeight = false;
 
-                EnsureIcon(vitals, "HeartIcon", LoadSlice(HeartChipId), new Vector2(46f, 31f));
-                var hpLabel = EnsureLabel(vitals, "Hp", 28f, TextAlignmentOptions.Left, PanelInk);
+                EnsureIcon(vitals, "HeartIcon", LoadSlice(HeartChipId), new Vector2(55f, 37f));
+                var hpLabel = EnsureLabel(vitals, "Hp", 34f, TextAlignmentOptions.Left, PanelInk);
                 hpLabel.fontStyle = FontStyles.Bold;
 
                 var shield = EnsureChildRect(vitals, "Shield", Vector2.zero, Vector2.zero);
@@ -801,13 +811,24 @@ namespace Rollgeon.EditorTools.HUD
                 shieldLayout.childControlHeight = true;
                 shieldLayout.childForceExpandWidth = false;
                 shieldLayout.childForceExpandHeight = false;
-                EnsureIcon(shield, "ShieldIcon", LoadFirstSprite(ShieldIconGuid), new Vector2(28f, 28f));
-                var shieldLabel = EnsureLabel(shield, "Value", 28f, TextAlignmentOptions.Left, PanelInk);
+                EnsureIcon(shield, "ShieldIcon", LoadFirstSprite(ShieldIconGuid), new Vector2(34f, 34f));
+                var shieldLabel = EnsureLabel(shield, "Value", 34f, TextAlignmentOptions.Left, PanelInk);
                 shieldLabel.fontStyle = FontStyles.Bold;
 
-                var footer = EnsureLabel(host, "Footer", 20f, TextAlignmentOptions.Center, PanelInkSoft);
+                var footer = EnsureLabel(host, "Footer", 24f, TextAlignmentOptions.Center, PanelInkSoft);
                 footer.enableWordWrapping = true;
                 Ensure<LayoutElement>(footer.gameObject).preferredWidth = ContentWidth;
+
+                // El párrafo lo trae el panel original y este menú no lo crea, pero sí lo
+                // dimensiona: agrandar la caja sin agrandar la frase que la llena la deja hueca.
+                // Y entra al mismo ancho que el resto — con uno propio decide él cuánto mide el
+                // panel, que es justo lo que el acuerdo de ContentWidth evita.
+                var paragraph = host.Find("Text")?.GetComponent<TextMeshProUGUI>();
+                if (paragraph != null)
+                {
+                    paragraph.fontSize = ParagraphFont;
+                    Ensure<LayoutElement>(paragraph.gameObject).preferredWidth = ContentWidth;
+                }
 
                 return (so, p) =>
                 {
