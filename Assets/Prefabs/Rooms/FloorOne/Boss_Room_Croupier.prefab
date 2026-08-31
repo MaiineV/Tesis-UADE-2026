@@ -1567,6 +1567,7 @@ GameObject:
   m_Component:
   - component: {fileID: 8431516118208265091}
   - component: {fileID: 9128138016410322270}
+  - component: {fileID: 3587430573095708637}
   m_Layer: 0
   m_Name: Boss_Room_Croupier
   m_TagString: Untagged
@@ -4573,6 +4574,24 @@ MonoBehaviour:
   LocalBounds:
     m_Center: {x: 0.5, y: 2.197415, z: 0.5}
     m_Extent: {x: 6.500001, y: 2.6974158, z: 6.500001}
+--- !u!114 &3587430573095708637
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9090795697972525258}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 50cefe50f5ed2604cadd1d963123a59b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Rollgeon::Rollgeon.Dungeon.Components.RoomPropScatter
+  PropSet: {fileID: 11400000, guid: 3eb1fe56ba7399b44bdf35d3c23866f2, type: 2}
+  Count: 8
+  MinSpacing: 1
+  DoorExclusionRadius: 1
+  RandomYRotation: 1
+  CellJitter: 0.3
 --- !u!1 &9190321017662176861
 GameObject:
   m_ObjectHideFlags: 0

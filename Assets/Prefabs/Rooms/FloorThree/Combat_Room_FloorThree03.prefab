@@ -15449,6 +15449,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1711357143213522343}
   - component: {fileID: 5898699619738018492}
+  - component: {fileID: 4105020304398244065}
   m_Layer: 0
   m_Name: Combat_Room_FloorThree03
   m_TagString: Untagged
@@ -18070,6 +18071,24 @@ MonoBehaviour:
   LocalBounds:
     m_Center: {x: 0.5, y: 1.5175179, z: 0.5}
     m_Extent: {x: 6.500001, y: 2.0175185, z: 6.500001}
+--- !u!114 &4105020304398244065
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3358072774779011347}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 50cefe50f5ed2604cadd1d963123a59b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Rollgeon::Rollgeon.Dungeon.Components.RoomPropScatter
+  PropSet: {fileID: 11400000, guid: 3eb1fe56ba7399b44bdf35d3c23866f2, type: 2}
+  Count: 8
+  MinSpacing: 1
+  DoorExclusionRadius: 1
+  RandomYRotation: 1
+  CellJitter: 0.3
 --- !u!1 &3437138850587694754
 GameObject:
   m_ObjectHideFlags: 0

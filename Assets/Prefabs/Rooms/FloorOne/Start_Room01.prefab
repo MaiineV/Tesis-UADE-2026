@@ -235,6 +235,7 @@ MonoBehaviour:
     Mode: 0
     FixedAnchor: {fileID: 0}
     FixedOffset: {x: 0, y: 0}
+  _verticalSide: 0
   _camera: {fileID: 0}
   _raycastDistance: 100
   _previewText: "<b>Forzar Puerta</b>\nCosto: 2 de energ\xEDa\nPuntaje a superar:
@@ -689,6 +690,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1711357143213522343}
   - component: {fileID: 5898699619738018492}
+  - component: {fileID: 2473393322801030512}
   m_Layer: 0
   m_Name: Start_Room01
   m_TagString: Untagged
@@ -3505,6 +3507,26 @@ MonoBehaviour:
   LocalBounds:
     m_Center: {x: 0.5, y: 1.5175178, z: 0.5}
     m_Extent: {x: 6.500001, y: 2.0175185, z: 6.500001}
+--- !u!114 &2473393322801030512
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3358072774779011347}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 50cefe50f5ed2604cadd1d963123a59b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Rollgeon::Rollgeon.Dungeon.Components.RoomPropScatter
+  PropSet: {fileID: 11400000, guid: 3eb1fe56ba7399b44bdf35d3c23866f2, type: 2}
+  Count: 4
+  MinSpacing: 1
+  DoorExclusionRadius: 1
+  RandomYRotation: 1
+  TipOverChance: 0.35
+  CellJitter: 0.3
+  PerimeterBias: 0.6
 --- !u!1 &3532493069270815337
 GameObject:
   m_ObjectHideFlags: 0
