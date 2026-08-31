@@ -86,6 +86,27 @@ namespace Rollgeon.Grid
             if (TryPickPawn(ray, out var pawn, maxDistance)
                 && grid.TryGetPosition(pawn.EntityGuid, out var pawnCoord))
             {
+                // Footprint multi-celda (Fase C): devolver la celda cubierta más cercana al
+                // punto bajo el cursor, no el ancla fija — si el ancla quedó fuera del rango
+                // del ataque pero otra celda del rect no, el click tiene que valer. Para un
+                // 1×1 la única celda cubierta ES el ancla (comportamiento de siempre).
+                var footprint = grid.GetFootprint(pawn.EntityGuid);
+                if (!GridFootprint.IsUnit(footprint))
+                {
+                    var floorPlane = new Plane(Vector3.up, grid.GridOrigin);
+                    if (floorPlane.Raycast(ray, out float toFloor))
+                    {
+                        var cursorCell = grid.WorldToGrid(ray.GetPoint(toFloor));
+                        var best = pawnCoord;
+                        int bestDist = int.MaxValue;
+                        foreach (var c in GridFootprint.Cells(pawnCoord, footprint))
+                        {
+                            int d = c.Manhattan(cursorCell);
+                            if (d < bestDist) { bestDist = d; best = c; }
+                        }
+                        return best;
+                    }
+                }
                 return pawnCoord;
             }
 
