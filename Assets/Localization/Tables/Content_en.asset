@@ -875,7 +875,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 12914473364717576
-    m_Localized: Heals if you END your turn on it. Passing through does nothing.
+    m_Localized: Heals if you <b>end</b> your turn on it. Passing through does nothing.
     m_Metadata:
       m_Items: []
   - m_Id: 12914473364717577

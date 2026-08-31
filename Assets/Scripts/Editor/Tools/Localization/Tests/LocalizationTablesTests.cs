@@ -58,11 +58,6 @@ namespace Rollgeon.Editor.Tools.Localization.Tests
             // BUG-041: sufijo de multiplicador de combo (" × 1.5") — símbolo + número
             // puro, sin palabras que traducir (mismo criterio que "Combo").
             "tooltip.effect.combo.multiplier_suffix",
-            // "Melee" y "Support" son los términos que el equipo ya usa en castellano para
-            // hablar de las familias, igual que "Combo" y "Reroll". "Rango"/"Ranged" sí se
-            // traduce, y por eso no está acá.
-            EnemyArchetypeKeys.Melee,
-            EnemyArchetypeKeys.Support,
             // "Combo" otra vez (tipo de ataque), y el formato del título con tipo: separador
             // y orden, sin palabras que traducir.
             Rollgeon.UI.HUD.Status.AttackKindTextKeys.ComboAttack,

@@ -46,9 +46,9 @@ namespace Rollgeon.Entities.Traits
         /// </summary>
         public static string Fallback(string key) => key switch
         {
-            Melee => "Melee",
+            Melee => "Cuerpo a cuerpo",
             Ranged => "Rango",
-            Support => "Support",
+            Support => "Soporte",
             Boss => "Jefe",
             BossFormat => "Jefe · {0}",
             _ => string.Empty,

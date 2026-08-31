@@ -812,9 +812,9 @@ namespace Rollgeon.EditorTools.Localization
         /// </remarks>
         private static void SeedArchetypes()
         {
-            Ui(EnemyArchetypeKeys.Melee, "Melee", "Melee");
+            Ui(EnemyArchetypeKeys.Melee, "Cuerpo a cuerpo", "Melee");
             Ui(EnemyArchetypeKeys.Ranged, "Rango", "Ranged");
-            Ui(EnemyArchetypeKeys.Support, "Support", "Support");
+            Ui(EnemyArchetypeKeys.Support, "Soporte", "Support");
 
             Ui(EnemyArchetypeKeys.Boss, "Jefe", "Boss");
             Ui(EnemyArchetypeKeys.BossFormat, "Jefe · {0}", "Boss · {0}");
@@ -990,8 +990,8 @@ namespace Rollgeon.EditorTools.Localization
                 "Poisons you: damage at the start of each turn for several turns.");
             Content("tile.heal.name", "Curación", "Healing");
             Content("tile.heal.desc",
-                "Cura si TERMINÁS tu turno encima. Pasar de largo no cura.",
-                "Heals if you END your turn on it. Passing through does nothing.");
+                "Cura si <b>terminás</b> tu turno encima. Pasar de largo no cura.",
+                "Heals if you <b>end</b> your turn on it. Passing through does nothing.");
             Content("tile.strength.name", "Fortaleza", "Strength");
             Content("tile.strength.desc",
                 "Tus combos ofensivos pegan más fuerte mientras estés parado acá.",

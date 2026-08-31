@@ -858,7 +858,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 16084878164422656
-    m_Localized: Melee
+    m_Localized: Cuerpo a cuerpo
     m_Metadata:
       m_Items: []
   - m_Id: 16084878344777728
@@ -866,7 +866,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 16084878344777729
-    m_Localized: Support
+    m_Localized: Soporte
     m_Metadata:
       m_Items: []
   - m_Id: 16084878344777730

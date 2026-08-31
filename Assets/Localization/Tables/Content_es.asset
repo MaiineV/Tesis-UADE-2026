@@ -879,7 +879,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 12914473364717576
-    m_Localized: "Cura si TERMIN\xC1S tu turno encima. Pasar de largo no cura."
+    m_Localized: "Cura si <b>termin\xE1s</b> tu turno encima. Pasar de largo no cura."
     m_Metadata:
       m_Items: []
   - m_Id: 12914473364717577

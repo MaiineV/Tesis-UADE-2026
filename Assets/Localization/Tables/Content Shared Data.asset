@@ -1207,6 +1207,14 @@ MonoBehaviour:
     m_Key: chest.desc
     m_Metadata:
       m_Items: []
+  - m_Id: 17201829490126848
+    m_Key: roomobj.croupier.bomba.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17201829544652800
+    m_Key: roomobj.croupier.bomba.desc
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:
