@@ -892,6 +892,10 @@ MonoBehaviour:
     m_Localized: You can't use this item right now.
     m_Metadata:
       m_Items: []
+  - m_Id: 17261896722796544
+    m_Localized: You already used an item like this turn.
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

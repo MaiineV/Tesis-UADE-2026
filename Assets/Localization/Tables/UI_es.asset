@@ -901,6 +901,10 @@ MonoBehaviour:
     m_Localized: No podes usar este objeto ahora.
     m_Metadata:
       m_Items: []
+  - m_Id: 17261896722796544
+    m_Localized: Ya usaste un objeto asi este turno.
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

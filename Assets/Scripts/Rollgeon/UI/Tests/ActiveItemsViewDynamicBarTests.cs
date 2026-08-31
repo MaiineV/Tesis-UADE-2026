@@ -4,6 +4,7 @@ using System.Reflection;
 using NUnit.Framework;
 using Patterns;
 using Rollgeon.Effects;
+using Rollgeon.Heroes;
 using Rollgeon.Items;
 using Rollgeon.UI.HUD;
 using UnityEngine;
@@ -14,8 +15,11 @@ namespace Rollgeon.UI.Tests
     /// <summary>
     /// La barra de items activos era un mapa hardcodeado <c>ItemId → Slot</c> con una sola
     /// entrada (la poción): cualquier otro item activo que el jugador consiguiera no tenía
-    /// slot en pantalla y por lo tanto no se podía usar. Estos tests cubren el pool
-    /// dinámico que lo reemplaza y el gate de activación del click.
+    /// slot en pantalla y por lo tanto no se podía usar.
+    /// <para>
+    /// El GDD manda un slot <b>por carga</b> (dos pociones = dos slots) y que se consuma
+    /// la que tocaste, así que el índice visual tiene que mapear al índice del inventario.
+    /// </para>
     /// </summary>
     [TestFixture]
     public sealed class ActiveItemsViewDynamicBarTests
@@ -40,8 +44,8 @@ namespace Rollgeon.UI.Tests
             var container = new GameObject("Bar", typeof(RectTransform));
             container.transform.SetParent(_root.transform, false);
 
-            AssignPrivate(_view, "_dynamicContainer", container.GetComponent<RectTransform>());
-            AssignPrivate(_view, "_dynamicSlotPrefab", BuildSlotPrefab());
+            AssignPrivate(_view, "_slotsContainer", container.GetComponent<RectTransform>());
+            AssignPrivate(_view, "_slotPrefab", BuildSlotPrefab());
             AssignPrivate(_view, "_playerGuid", _playerGuid);
         }
 
@@ -55,28 +59,28 @@ namespace Rollgeon.UI.Tests
         }
 
         // ------------------------------------------------------------------
-        // Poblado del pool
+        // Poblado — una carga, un slot
         // ------------------------------------------------------------------
 
         [Test]
         public void test_rebuild_withNoItems_showsNoSlots()
         {
             // Act
-            _view.RebuildDynamicSlots();
+            _view.Rebuild();
 
             // Assert
             Assert.AreEqual(0, VisibleSlots().Count);
         }
 
         [Test]
-        public void test_rebuild_oneSlotPerDistinctActiveItem()
+        public void test_rebuild_oneSlotPerActiveItem()
         {
             // Arrange
             _inventory.AddActive(NewActive("item.a"));
             _inventory.AddActive(NewActive("item.b"));
 
             // Act
-            _view.RebuildDynamicSlots();
+            _view.Rebuild();
 
             // Assert — esto es lo que antes era imposible: items sin binding en Inspector
             // igual aparecen en pantalla.
@@ -84,35 +88,34 @@ namespace Rollgeon.UI.Tests
         }
 
         [Test]
-        public void test_rebuild_duplicateItemIds_stackIntoOneSlot()
+        public void test_rebuild_repeatedCharges_getOneSlotEach()
         {
-            // Arrange — tres cargas del mismo consumible.
+            // Arrange — el GDD: "varias cargas del mismo item = varios slots".
             var item = NewActive("item.a");
             _inventory.AddActive(item);
             _inventory.AddActive(item);
             _inventory.AddActive(item);
 
             // Act
-            _view.RebuildDynamicSlots();
+            _view.Rebuild();
 
             // Assert
-            Assert.AreEqual(1, VisibleSlots().Count, "las cargas se agrupan en un solo slot");
+            Assert.AreEqual(3, VisibleSlots().Count, "cada carga es un slot, no un contador");
         }
 
         [Test]
-        public void test_rebuild_pinnedItemIds_areExcludedFromTheDynamicBar()
+        public void test_rebuild_neverExceedsMaxActiveSlots()
         {
-            // Arrange — la poción tiene slot pinneado en el prefab y se usa por el botón
-            // Heal: no debe duplicarse en la barra.
-            SetBindings("potion.healing");
-            _inventory.AddActive(NewActive("potion.healing"));
-            _inventory.AddActive(NewActive("item.a"));
+            // Arrange — el inventario no deberia pasarse, pero la barra no puede confiar
+            // en eso: MaxActiveSlots es el limite de pantalla.
+            _inventory.MaxSlots = 2;
+            for (int i = 0; i < 5; i++) _inventory.AddActive(NewActive("item." + i));
 
             // Act
-            _view.RebuildDynamicSlots();
+            _view.Rebuild();
 
             // Assert
-            Assert.AreEqual(1, VisibleSlots().Count);
+            Assert.AreEqual(2, VisibleSlots().Count);
         }
 
         [Test]
@@ -123,26 +126,28 @@ namespace Rollgeon.UI.Tests
             _inventory.AddActive(NewActive("item.a"));
 
             // Act
-            _view.RebuildDynamicSlots();
+            _view.Rebuild();
 
             // Assert
             Assert.AreEqual(1, VisibleSlots().Count);
         }
 
         [Test]
-        public void test_rebuild_afterConsumingTheLastCharge_hidesTheSlot()
+        public void test_rebuild_afterConsumingACharge_shrinksTheBar()
         {
             // Arrange
-            _inventory.AddActive(NewActive("item.a"));
-            _view.RebuildDynamicSlots();
-            Assert.AreEqual(1, VisibleSlots().Count);
+            var item = NewActive("item.a");
+            _inventory.AddActive(item);
+            _inventory.AddActive(item);
+            _view.Rebuild();
+            Assert.AreEqual(2, VisibleSlots().Count);
 
             // Act — el pool se reusa y solo se apaga, no se destruye.
-            _inventory.ClearActives();
-            _view.RebuildDynamicSlots();
+            _inventory.RemoveActiveAt(0);
+            _view.Rebuild();
 
             // Assert
-            Assert.AreEqual(0, VisibleSlots().Count);
+            Assert.AreEqual(1, VisibleSlots().Count);
         }
 
         [Test]
@@ -152,12 +157,48 @@ namespace Rollgeon.UI.Tests
             _inventory.AddActive(NewActive("item.a"));
 
             // Act
-            _view.RebuildDynamicSlots();
-            _view.RebuildDynamicSlots();
-            _view.RebuildDynamicSlots();
+            _view.Rebuild();
+            _view.Rebuild();
+            _view.Rebuild();
 
             // Assert
             Assert.AreEqual(1, AllSlots().Count, "no se instancia un slot nuevo por rebuild");
+        }
+
+        // ------------------------------------------------------------------
+        // Cooldown visible
+        // ------------------------------------------------------------------
+
+        [Test]
+        public void test_rebuild_showsRemainingCooldownTurnsOnTheSlot()
+        {
+            // Arrange
+            _inventory.AddActive(NewActive("item.a"));
+            _inventory.SetCooldown(0, 3);
+
+            // Act
+            _view.Rebuild();
+
+            // Assert
+            Assert.AreEqual(3, VisibleSlots()[0].CurrentCooldown);
+        }
+
+        [Test]
+        public void test_turnEvent_refreshesTheCooldownWithoutRepopulating()
+        {
+            // Arrange — el cooldown baja en OnTurnFinished; la barra tiene que repintar
+            // sin repoblar (el inventario no cambio).
+            _inventory.AddActive(NewActive("item.a"));
+            _inventory.SetCooldown(0, 2);
+            _view.Rebuild();
+
+            // Act
+            _inventory.SetCooldown(0, 1);
+            InvokePrivate(_view, "RefreshSlotStates");
+
+            // Assert
+            Assert.AreEqual(1, VisibleSlots()[0].CurrentCooldown);
+            Assert.AreEqual(1, AllSlots().Count);
         }
 
         // ------------------------------------------------------------------
@@ -165,18 +206,36 @@ namespace Rollgeon.UI.Tests
         // ------------------------------------------------------------------
 
         [Test]
-        public void test_click_onUsableSlot_activatesTheMatchingInventoryIndex()
+        public void test_click_consumesTheChargeYouTouched()
         {
-            // Arrange — el índice del click tiene que ser el del inventario, no el visual.
+            // Arrange — tres cargas del MISMO ItemId: buscar por id gastaria siempre la
+            // primera. El indice visual tiene que mapear al del inventario.
+            var item = NewActive("item.a");
+            _inventory.AddActive(item);
+            _inventory.AddActive(item);
+            _inventory.AddActive(item);
+            _view.Rebuild();
+
+            // Act
+            Click(VisibleSlots()[2]);
+
+            // Assert
+            Assert.AreEqual(1, _inventory.ActivatedIndices.Count);
+            Assert.AreEqual(2, _inventory.ActivatedIndices[0]);
+        }
+
+        [Test]
+        public void test_click_onSecondItem_activatesItsOwnIndex()
+        {
+            // Arrange
             _inventory.AddActive(NewActive("item.a"));
             _inventory.AddActive(NewActive("item.b"));
-            _view.RebuildDynamicSlots();
+            _view.Rebuild();
 
             // Act
             Click(VisibleSlots()[1]);
 
             // Assert
-            Assert.AreEqual(1, _inventory.ActivatedIndices.Count);
             Assert.AreEqual(1, _inventory.ActivatedIndices[0]);
         }
 
@@ -186,7 +245,7 @@ namespace Rollgeon.UI.Tests
             // Arrange — el prerequisito no se cumple.
             _inventory.AddActive(NewActive("item.a"));
             _inventory.Block = ItemActivationBlock.PreconditionFailed;
-            _view.RebuildDynamicSlots();
+            _view.Rebuild();
 
             // Act
             Click(VisibleSlots()[0]);
@@ -202,7 +261,7 @@ namespace Rollgeon.UI.Tests
             // Arrange
             _inventory.AddActive(NewActive("item.a"));
             _inventory.Block = ItemActivationBlock.OnCooldown;
-            _view.RebuildDynamicSlots();
+            _view.Rebuild();
 
             // Act
             Click(VisibleSlots()[0]);
@@ -212,15 +271,13 @@ namespace Rollgeon.UI.Tests
         }
 
         [Test]
-        public void test_click_inCombatOutsidePlayerTurn_doesNotActivate()
+        public void test_click_outsideYourTurn_doesNotActivate()
         {
-            // Arrange — TurnManager no mira de quién es el turno, así que sin este gate
-            // el click en turno enemigo igual le cobraría un roll al jugador.
-            ServiceLocator.AddService<Rollgeon.Combat.Rolls.IRollPoolService>(
-                new FakeRollPool { IsCombatActive = true, Current = 5 });
+            // Arrange — el gate de turno vive en TurnManager y llega como bloqueo; la
+            // vista solo tiene que respetarlo.
             _inventory.AddActive(NewActive("item.a"));
-            _view.RebuildDynamicSlots();
-            AssignPrivate(_view, "_isPlayerTurn", false);
+            _inventory.Block = ItemActivationBlock.NotYourTurn;
+            _view.Rebuild();
 
             // Act
             Click(VisibleSlots()[0]);
@@ -229,36 +286,40 @@ namespace Rollgeon.UI.Tests
             CollectionAssert.IsEmpty(_inventory.ActivatedIndices);
         }
 
-        [Test]
-        public void test_click_inCombatDuringPlayerTurn_activates()
-        {
-            // Arrange
-            ServiceLocator.AddService<Rollgeon.Combat.Rolls.IRollPoolService>(
-                new FakeRollPool { IsCombatActive = true, Current = 5 });
-            _inventory.AddActive(NewActive("item.a"));
-            _view.RebuildDynamicSlots();
-            AssignPrivate(_view, "_isPlayerTurn", true);
-
-            // Act
-            Click(VisibleSlots()[0]);
-
-            // Assert — el bloqueo por fase que había antes hacía esto imposible.
-            Assert.AreEqual(1, _inventory.ActivatedIndices.Count);
-        }
+        // ------------------------------------------------------------------
+        // Delegacion a behaviors (la pocion)
+        // ------------------------------------------------------------------
 
         [Test]
-        public void test_click_outOfCombat_activatesWithoutTurnGate()
+        public void test_click_onBehaviorDelegatedItem_doesNotGoThroughActivateItem()
         {
-            // Arrange — en exploración no hay turnos: _isPlayerTurn queda en false.
-            _inventory.AddActive(NewActive("item.a"));
-            _view.RebuildDynamicSlots();
-            AssignPrivate(_view, "_isPlayerTurn", false);
+            // Arrange — la poción se resuelve por el behavior Healing, el mismo que el
+            // botón Heal, para que los dos caminos den exactamente lo mismo.
+            _inventory.AddActive(NewActive("potion.healing"));
+            SetBehaviorDelegates("potion.healing", HeroBehaviorSlot.Healing);
+            _view.Rebuild();
 
             // Act
             Click(VisibleSlots()[0]);
 
             // Assert
-            Assert.AreEqual(1, _inventory.ActivatedIndices.Count);
+            CollectionAssert.IsEmpty(_inventory.ActivatedIndices,
+                "el item delegado no pasa por ActivateItem — lo resuelve el behavior");
+        }
+
+        [Test]
+        public void test_behaviorDelegatedItem_isNeverPaintedUnaffordableByTheItemGate()
+        {
+            // Arrange — su gating lo decide el behavior; CanActivateItem no aplica.
+            _inventory.AddActive(NewActive("potion.healing"));
+            _inventory.Block = ItemActivationBlock.PreconditionFailed;
+            SetBehaviorDelegates("potion.healing", HeroBehaviorSlot.Healing);
+
+            // Act
+            _view.Rebuild();
+
+            // Assert
+            Assert.IsTrue(VisibleSlots()[0].IsAffordableForTests);
         }
 
         // ------------------------------------------------------------------
@@ -275,7 +336,7 @@ namespace Rollgeon.UI.Tests
 
         private List<ActiveItemSlotView> AllSlots()
         {
-            var field = typeof(ActiveItemsView).GetField("_dynamicSlots",
+            var field = typeof(ActiveItemsView).GetField("_slots",
                 BindingFlags.Instance | BindingFlags.NonPublic);
             return (List<ActiveItemSlotView>)field.GetValue(_view);
         }
@@ -290,19 +351,13 @@ namespace Rollgeon.UI.Tests
             return visible;
         }
 
-        private void SetBindings(params string[] pinnedItemIds)
+        private void SetBehaviorDelegates(string itemId, HeroBehaviorSlot slot)
         {
-            var list = new List<ActiveItemsView.ItemSlotBinding>();
-            foreach (var id in pinnedItemIds)
+            var list = new List<ActiveItemsView.BehaviorDelegate>
             {
-                var go = new GameObject("Pinned_" + id, typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
-                go.transform.SetParent(_root.transform, false);
-                var slot = go.AddComponent<ActiveItemSlotView>();
-                AssignPrivate(slot, "_icon", go.GetComponent<Image>());
-                AssignPrivate(slot, "_displayOnly", true);
-                list.Add(new ActiveItemsView.ItemSlotBinding { ItemId = id, Slot = slot });
-            }
-            AssignPrivate(_view, "_bindings", list);
+                new ActiveItemsView.BehaviorDelegate { ItemId = itemId, Slot = slot },
+            };
+            AssignPrivate(_view, "_behaviorDelegates", list);
         }
 
         /// <summary>
@@ -348,8 +403,15 @@ namespace Rollgeon.UI.Tests
             info.SetValue(target, value);
         }
 
+        private static void InvokePrivate(object target, string method)
+        {
+            var info = target.GetType().GetMethod(method, BindingFlags.Instance | BindingFlags.NonPublic);
+            Assert.IsNotNull(info, $"método {method} no encontrado en {target.GetType().Name}");
+            info.Invoke(target, null);
+        }
+
         // ------------------------------------------------------------------
-        // Fakes
+        // Fake
         // ------------------------------------------------------------------
 
         private sealed class FakeInventory : IInventoryService
@@ -360,11 +422,13 @@ namespace Rollgeon.UI.Tests
             /// <summary>Motivo que devuelve <see cref="CanActivateItem"/>.</summary>
             public ItemActivationBlock Block = ItemActivationBlock.None;
 
+            public int MaxSlots = 4;
             public readonly List<int> ActivatedIndices = new List<int>();
 
             public void AddActive(ItemSO item) => _actives.Add(new InventorySlot { Item = item });
             public void AddPassive(ItemSO item) => _passives.Add(new InventorySlot { Item = item });
-            public void ClearActives() => _actives.Clear();
+            public void RemoveActiveAt(int index) => _actives.RemoveAt(index);
+            public void SetCooldown(int index, int turns) => _actives[index].CurrentCooldown = turns;
 
             public IReadOnlyList<InventorySlot> PassiveItems => _passives;
             public IReadOnlyList<InventorySlot> ActiveItems => _actives;
@@ -384,27 +448,11 @@ namespace Rollgeon.UI.Tests
 
             public int GetComboDamageBonusPreview(string comboId) => 0;
             public void TickCooldowns() { }
-            public int MaxActiveSlots => 4;
+            public int MaxActiveSlots => MaxSlots;
 
 #pragma warning disable CS0067
             public event Action<ItemSO, bool> OnItemChanged;
 #pragma warning restore CS0067
-        }
-
-        private sealed class FakeRollPool : Rollgeon.Combat.Rolls.IRollPoolService
-        {
-            public bool IsCombatActive { get; set; }
-            public int Current;
-
-            public void InitializeForEntity(Guid entityId) { }
-            public bool TrySpendRolls(Guid entityId, int count) => true;
-            public int Drain(Guid entityId, int amount) => 0;
-            public void AddRolls(Guid entityId, int amount) { }
-            public int GetCurrent(Guid entityId) => Current;
-            public int GetMax(Guid entityId) => 10;
-            public int GetRollsPerTurn(Guid entityId) => 1;
-            public void AddRollPoolBonus(int amount) { }
-            public void RestoreCurrent(Guid entityId, int value) { }
         }
     }
 }
