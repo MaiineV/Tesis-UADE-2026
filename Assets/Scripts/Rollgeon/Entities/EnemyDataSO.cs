@@ -166,6 +166,20 @@ namespace Rollgeon.Entities
         [Tooltip("Flag narrativo: este kamikaze ignora por completo el filtro de supervivencia del pathing.")]
         public bool KamikazeIgnoresSurvival;
 
+        [Title("Aura defensiva (0 = sin aura)")]
+        [Tooltip("Radio Manhattan (rect-a-rect) del aura: los ALIADOS a esta distancia o menos " +
+                 "reciben la reducción mientras el portador viva. 0 = sin aura.")]
+        [MinValue(0)]
+        public int AuraRadius;
+
+        [Tooltip("Puntos de daño que el aura descuenta de cada golpe entrante a los aliados " +
+                 "(piso de daño 1). Con varias auras aplica la mayor, no suman.")]
+        [MinValue(0)]
+        public int AuraFlatReduction;
+
+        /// <summary>True si este enemigo proyecta aura (radio y reducción positivos).</summary>
+        public bool HasAura => AuraRadius > 0 && AuraFlatReduction > 0;
+
         [Title("Tamaño en grilla")]
         [Tooltip("Celdas que ocupa (ancho × alto). (1,1) = enemigo común. El ancla es la celda inferior-izquierda " +
                  "(min X, min Y): el marcador de spawn del layout es esa celda y el pawn se centra en el rectángulo. " +
