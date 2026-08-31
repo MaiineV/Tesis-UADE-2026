@@ -184,6 +184,7 @@ namespace Rollgeon.Combat.AI.Targeting
                 case StatType.Energy:       return TryRead<Energy>(attrs, guid, modified, out value);
                 case StatType.Shield:       return TryRead<Shield>(attrs, guid, modified, out value);
                 case StatType.HealStrength: return TryRead<HealStrength>(attrs, guid, modified, out value);
+                case StatType.AttackRange:  return TryRead<AttackRange>(attrs, guid, modified, out value);
                 default:
                     value = 0;
                     return false;

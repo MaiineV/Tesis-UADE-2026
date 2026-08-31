@@ -40,6 +40,7 @@ namespace Rollgeon.Effects.Readers
                 StatType.Energy       => Get<Energy>(attrs, guid),
                 StatType.Shield       => Get<Shield>(attrs, guid),
                 StatType.HealStrength => Get<HealStrength>(attrs, guid),
+                StatType.AttackRange  => Get<AttackRange>(attrs, guid),
                 _ => 0,
             };
         }
