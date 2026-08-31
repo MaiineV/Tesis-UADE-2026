@@ -96,5 +96,38 @@ namespace Rollgeon.Grid
             => TryGetPosition(entityGuid, out var anchor)
                 ? GridFootprint.Cells(anchor, GetFootprint(entityGuid))
                 : Array.Empty<GridCoord>();
+
+        // ---- footprint (Fase C) ------------------------------------------
+
+        /// <summary>
+        /// True si ALGUNA celda cubierta por la entidad cae en el área. Para un 1×1
+        /// equivale al patrón viejo <c>TryGetPosition + area(coord)</c>; para un rect,
+        /// un telegraph/hazard que toca cualquier celda lo alcanza.
+        /// </summary>
+        bool OccupiesAny(Guid entityGuid, Func<GridCoord, bool> area)
+        {
+            if (area == null) return false;
+            foreach (var c in OccupiedCells(entityGuid))
+                if (area(c)) return true;
+            return false;
+        }
+
+        /// <summary>
+        /// Ocupantes de las coords, deduplicados por guid en orden de primera aparición.
+        /// Un 2×2 cubierto por 4 celdas de un AoE aparece UNA vez — la base del
+        /// "una vez por entidad" de los efectos de área.
+        /// </summary>
+        List<Guid> DistinctOccupants(IEnumerable<GridCoord> coords)
+        {
+            var result = new List<Guid>();
+            if (coords == null) return result;
+            var seen = new HashSet<Guid>();
+            foreach (var c in coords)
+            {
+                if (!TryGetOccupant(c, out var occupant) || occupant == Guid.Empty) continue;
+                if (seen.Add(occupant)) result.Add(occupant);
+            }
+            return result;
+        }
     }
 }
