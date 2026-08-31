@@ -31,3 +31,6 @@ MonoBehaviour:
   PersistentVfxPrefab: {fileID: 919132149155446097, guid: 1e07bb6c42ae64e4f95ad9441afa73b4, type: 3}
   PersistentVfxYOffset: 0.12
   SourceId: 3c0a7d18-9f42-4a6b-9c3e-5b1ca5e70001
+  DisplayName: Ficha de la banca
+  NameKey: hazard.chip
+  DescriptionKey: hazard.chip

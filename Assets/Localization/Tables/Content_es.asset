@@ -1201,6 +1201,64 @@ MonoBehaviour:
     m_Localized: Un cofre que muerde.
     m_Metadata:
       m_Items: []
+  - m_Id: 17130812583374848
+    m_Localized: Fuego
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17130812608540672
+    m_Localized: Quema a quien se queda adentro.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17130812608540673
+    m_Localized: Escarcha
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17130812608540674
+    m_Localized: 'Hielo del cubilete: pisarlo aturde, y el parche se rompe con la
+      pisada.'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17130812608540675
+    m_Localized: Ficha de la banca
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17130812608540676
+    m_Localized: "Pisala y cobr\xE1s su valor. La que vence se la queda la banca
+      \u2014 y lo cura."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17130812608540677
+    m_Localized: Fuego de mesa
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17130812608540678
+    m_Localized: 'Arde: golpea a quien termine su turno adentro.'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17130812608540679
+    m_Localized: Estela de hielo
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17130812608540680
+    m_Localized: Pisarla aturde, y cada parche se rompe con la pisada.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17130812612734976
+    m_Localized: Lluvia
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17130812625317888
+    m_Localized: Marca zonas y castiga al ciclo siguiente a quien siga adentro.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17130812646289408
+    m_Localized: Cofre
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17130812646289409
+    m_Localized: "Rompelo y fijate qu\xE9 guarda."
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

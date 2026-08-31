@@ -21,3 +21,6 @@ MonoBehaviour:
   Kind: 3
   CycleRounds: 2
   SourceId: 6c1f3a2e-7b4d-4a9e-9c3f-1a2b3c4d5e6f
+  DisplayName: Lluvia
+  NameKey: hazard.rain
+  DescriptionKey: hazard.rain

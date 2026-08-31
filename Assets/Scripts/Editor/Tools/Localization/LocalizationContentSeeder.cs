@@ -914,6 +914,39 @@ namespace Rollgeon.EditorTools.Localization
             Ui("prop.panel.type", "Objeto", "Object");
             Ui("prop.panel.leaves", "Deja", "Leaves");
 
+            // El panel de un hazard de sala (lluvia, escarcha, fichas): fila de tipo, etiqueta
+            // del golpe y la cadencia del pie.
+            Ui("hazard.panel.type", "Peligro de sala", "Room hazard");
+            Ui("hazard.panel.hit", "Golpe", "Hit");
+            Ui("hazard.panel.cycle", "Golpea cada {0} rondas", "Strikes every {0} rounds");
+
+            // Identidad por hazard. El stun del hielo lo aplica IceStunBinder (Damage 0 en el
+            // SO), por eso la frase habla de aturdir sin nombrar números.
+            Content("hazard.fire.name", "Fuego", "Fire");
+            Content("hazard.fire.desc",
+                "Quema a quien se queda adentro.",
+                "Burns whoever stays inside.");
+            Content("hazard.frost.name", "Escarcha", "Frost");
+            Content("hazard.frost.desc",
+                "Hielo del cubilete: pisarlo aturde, y el parche se rompe con la pisada.",
+                "Ice from her cup: stepping on it stuns, and the patch breaks underfoot.");
+            Content("hazard.chip.name", "Ficha de la banca", "House Chip");
+            Content("hazard.chip.desc",
+                "Pisala y cobrás su valor. La que vence se la queda la banca — y lo cura.",
+                "Step on it to collect its value. One that expires, the bank keeps — and it heals him.");
+            Content("hazard.table_fire.name", "Fuego de mesa", "Table Fire");
+            Content("hazard.table_fire.desc",
+                "Arde: golpea a quien termine su turno adentro.",
+                "Burning: strikes whoever ends their turn inside.");
+            Content("hazard.ice_trail.name", "Estela de hielo", "Ice Trail");
+            Content("hazard.ice_trail.desc",
+                "Pisarla aturde, y cada parche se rompe con la pisada.",
+                "Stepping on it stuns, and each patch breaks underfoot.");
+            Content("hazard.rain.name", "Lluvia", "Rain");
+            Content("hazard.rain.desc",
+                "Marca zonas y castiga al ciclo siguiente a quien siga adentro.",
+                "Marks zones and punishes whoever is still inside next cycle.");
+
             // Nombre + descripción por casilla del catálogo.
             Content("tile.spikes.name", "Pinchos", "Spikes");
             Content("tile.spikes.desc",
@@ -1039,6 +1072,13 @@ namespace Rollgeon.EditorTools.Localization
             Ui(Rollgeon.UI.ChestReveal.ChestRevealTextKeys.RarityUncommon, "Uncommon", "Uncommon");
             Ui(Rollgeon.UI.ChestReveal.ChestRevealTextKeys.RarityRare, "Rare", "Rare");
             Ui(Rollgeon.UI.ChestReveal.ChestRevealTextKeys.RarityLegendary, "Legendary", "Legendary");
+
+            // El tooltip del cofre de mundo. UNA sola identidad para el cofre real y el mímico
+            // camuflado — cualquier texto que los distinga convierte el hover en detector.
+            Content("chest.name", "Cofre", "Chest");
+            Content("chest.desc",
+                "Rompelo y fijate qué guarda.",
+                "Break it open and see what it holds.");
         }
 
         // ==================================================================

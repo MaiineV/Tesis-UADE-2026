@@ -679,6 +679,62 @@ namespace Rollgeon.EditorTools.HUD
                       $"{System.IO.Path.GetFileNameWithoutExtension(bossPath)}.Curse.");
         }
 
+        private const string MimicPrefabPath = "Assets/Prefabs/Enemies/ChestMimic_Prefab.prefab";
+
+        /// <summary>
+        /// Collider trigger en el root del mímico REVELADO. Sin collider, el AttachTooltip de
+        /// SpawnEnemy se va por su guard y el mímico activado pelea sin panel. Trigger y no
+        /// sólido: el pick de celda intersecta el plano del piso y no lo molesta. El mímico
+        /// camuflado no pasa por acá — su hover se lo pone ChestService por el mismo camino
+        /// que al cofre real, que es lo que lo hace indetectable.
+        /// </summary>
+        [MenuItem("Rollgeon/Tooltips/11 - Wire Mimic Reveal Collider")]
+        public static void WireMimicRevealCollider()
+        {
+            var root = PrefabUtility.LoadPrefabContents(MimicPrefabPath);
+            if (root == null)
+            {
+                Debug.LogError($"[TooltipCardSetupTools] Falta {MimicPrefabPath}.");
+                return;
+            }
+
+            try
+            {
+                if (root.GetComponentInChildren<Collider>(true) != null)
+                {
+                    Debug.Log("[TooltipCardSetupTools] El mímico ya tiene collider — nada que hacer.");
+                    return;
+                }
+
+                var box = root.AddComponent<BoxCollider>();
+                box.isTrigger = true;
+
+                // Dimensionado al arte cuando se puede (patrón BossVisualWrapperBuilder); si los
+                // bounds no computan fuera de escena, una caja de pawn parado alcanza.
+                var renderers = root.GetComponentsInChildren<Renderer>(true);
+                if (renderers.Length > 0)
+                {
+                    var bounds = renderers[0].bounds;
+                    for (int i = 1; i < renderers.Length; i++) bounds.Encapsulate(renderers[i].bounds);
+                    box.center = root.transform.InverseTransformPoint(bounds.center);
+                    box.size = bounds.size;
+                }
+                else
+                {
+                    box.center = new Vector3(0f, 0.5f, 0f);
+                    box.size = new Vector3(0.9f, 1f, 0.9f);
+                }
+
+                PrefabUtility.SaveAsPrefabAsset(root, MimicPrefabPath);
+                Debug.Log("[TooltipCardSetupTools] Collider trigger agregado al mímico revelado: " +
+                          "su panel de enemigo se cuelga solo en SpawnEnemy.");
+            }
+            finally
+            {
+                PrefabUtility.UnloadPrefabContents(root);
+            }
+        }
+
         [MenuItem("Rollgeon/Tooltips/3 - Wire Identity Band And Footer")]
         public static void WireIdentityBand()
         {

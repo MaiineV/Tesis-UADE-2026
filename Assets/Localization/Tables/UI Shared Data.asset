@@ -939,6 +939,18 @@ MonoBehaviour:
     m_Key: prop.panel.leaves
     m_Metadata:
       m_Items: []
+  - m_Id: 17130814152044544
+    m_Key: hazard.panel.type
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17130814210764800
+    m_Key: hazard.panel.hit
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17130814210764801
+    m_Key: hazard.panel.cycle
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

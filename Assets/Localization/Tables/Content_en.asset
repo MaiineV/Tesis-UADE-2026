@@ -1195,6 +1195,63 @@ MonoBehaviour:
     m_Localized: A chest that bites.
     m_Metadata:
       m_Items: []
+  - m_Id: 17130812583374848
+    m_Localized: Fire
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17130812608540672
+    m_Localized: Burns whoever stays inside.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17130812608540673
+    m_Localized: Frost
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17130812608540674
+    m_Localized: 'Ice from her cup: stepping on it stuns, and the patch breaks underfoot.'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17130812608540675
+    m_Localized: House Chip
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17130812608540676
+    m_Localized: "Step on it to collect its value. One that expires, the bank keeps
+      \u2014 and it heals him."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17130812608540677
+    m_Localized: Table Fire
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17130812608540678
+    m_Localized: 'Burning: strikes whoever ends their turn inside.'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17130812608540679
+    m_Localized: Ice Trail
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17130812608540680
+    m_Localized: Stepping on it stuns, and each patch breaks underfoot.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17130812612734976
+    m_Localized: Rain
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17130812625317888
+    m_Localized: Marks zones and punishes whoever is still inside next cycle.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17130812646289408
+    m_Localized: Chest
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17130812646289409
+    m_Localized: Break it open and see what it holds.
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

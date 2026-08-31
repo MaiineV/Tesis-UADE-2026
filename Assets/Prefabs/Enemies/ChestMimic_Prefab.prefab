@@ -791,6 +791,7 @@ GameObject:
   - component: {fileID: 4086186243771091409}
   - component: {fileID: 7769543229790650233}
   - component: {fileID: 8355023165956457310}
+  - component: {fileID: 8509168595601241882}
   m_Layer: 0
   m_Name: ChestMimic_Prefab
   m_TagString: Untagged
@@ -842,6 +843,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Rollgeon::Rollgeon.Entities.Visuals.EntityPawn
   _healthBar: {fileID: 33900389403134508}
+  _locomotion: 0
+  _blinkOutSeconds: 0.14
+  _blinkInSeconds: 0.14
 --- !u!114 &8355023165956457310
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -855,6 +859,27 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Rollgeon::Rollgeon.Feedback.PawnRegistryBinding
   _entityGuidString: 
+--- !u!65 &8509168595601241882
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4598999015062820065}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 1
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 0.9918662, y: 1.2095988, z: 1.2095988}
+  m_Center: {x: 0, y: 0.46893936, z: -0.017693043}
 --- !u!1 &4764985283194343788
 GameObject:
   m_ObjectHideFlags: 0
@@ -1205,6 +1230,7 @@ MonoBehaviour:
   _textFormat: '{0}/{1}'
   _barRoot: {fileID: 5339401911473914833}
   _offset: {x: 0, y: 3, z: 0}
+  _referenceZoom: 9
 --- !u!1 &5367527087616191076
 GameObject:
   m_ObjectHideFlags: 0

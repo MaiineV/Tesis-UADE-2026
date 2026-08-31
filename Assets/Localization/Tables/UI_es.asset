@@ -985,6 +985,18 @@ MonoBehaviour:
     m_Localized: Deja
     m_Metadata:
       m_Items: []
+  - m_Id: 17130814152044544
+    m_Localized: Peligro de sala
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17130814210764800
+    m_Localized: Golpe
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17130814210764801
+    m_Localized: Golpea cada {0} rondas
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

@@ -31,3 +31,6 @@ MonoBehaviour:
   PersistentVfxPrefab: {fileID: 0}
   PersistentVfxYOffset: 0.1
   SourceId: 3f1c9a52-84d7-4b60-9e13-2ac6f5d80b74
+  DisplayName: Escarcha
+  NameKey: hazard.frost
+  DescriptionKey: hazard.frost

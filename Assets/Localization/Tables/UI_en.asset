@@ -976,6 +976,18 @@ MonoBehaviour:
     m_Localized: Leaves
     m_Metadata:
       m_Items: []
+  - m_Id: 17130814152044544
+    m_Localized: Room hazard
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17130814210764800
+    m_Localized: Hit
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17130814210764801
+    m_Localized: Strikes every {0} rounds
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

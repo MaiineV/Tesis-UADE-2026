@@ -1151,6 +1151,62 @@ MonoBehaviour:
     m_Key: ChestMimic01.desc
     m_Metadata:
       m_Items: []
+  - m_Id: 17130812583374848
+    m_Key: hazard.fire.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17130812608540672
+    m_Key: hazard.fire.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17130812608540673
+    m_Key: hazard.frost.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17130812608540674
+    m_Key: hazard.frost.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17130812608540675
+    m_Key: hazard.chip.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17130812608540676
+    m_Key: hazard.chip.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17130812608540677
+    m_Key: hazard.table_fire.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17130812608540678
+    m_Key: hazard.table_fire.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17130812608540679
+    m_Key: hazard.ice_trail.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17130812608540680
+    m_Key: hazard.ice_trail.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17130812612734976
+    m_Key: hazard.rain.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17130812625317888
+    m_Key: hazard.rain.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17130812646289408
+    m_Key: chest.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17130812646289409
+    m_Key: chest.desc
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:
