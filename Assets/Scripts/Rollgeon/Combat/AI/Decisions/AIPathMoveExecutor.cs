@@ -23,6 +23,13 @@ namespace Rollgeon.Combat.AI.Decisions
             var health = context.Attributes?.GetAttribute<Health>(context.SelfGuid);
             if (health != null) currentHp = health.Value;
 
+            // Rango real de la ficha (atributo materializado por CreateRuntimeStats, con
+            // buffs). Sin atributo o ≤ 0 (enemigos viejos, fakes) planea como melee de 1,
+            // el comportamiento histórico.
+            int attackRange = 1;
+            var rangeAttr = context.Attributes?.GetAttribute<AttackRange>(context.SelfGuid);
+            if (rangeAttr != null && rangeAttr.ModifiedValue > 0) attackRange = rangeAttr.ModifiedValue;
+
             var request = new AIPathRequest
             {
                 SelfGuid = context.SelfGuid,
@@ -33,7 +40,7 @@ namespace Rollgeon.Combat.AI.Decisions
                 Intent = intent,
                 CurrentHp = currentHp,
                 MaxHp = Mathf.Max(1, context.SelfMaxHp),
-                AttackRange = 1,
+                AttackRange = attackRange,
                 TargetHpPct = -1,
                 Personality = context.Personality,
             };
