@@ -34,9 +34,6 @@ MonoBehaviour:
   - ComboId: combo.trio
     Faces: 0600000006000000060000000200000003000000
     Highlighted: 0101010000
-  - ComboId: combo.brute_force
-    Faces: 0400000005000000060000000200000003000000
-    Highlighted: 0101010000
   - ComboId: combo.full_house
     Faces: 0300000003000000030000000500000005000000
     Highlighted: 0101010101
