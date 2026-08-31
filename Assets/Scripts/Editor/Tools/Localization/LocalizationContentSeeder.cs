@@ -682,8 +682,14 @@ namespace Rollgeon.EditorTools.Localization
                 "Dispara de lejos; cortá la línea o cerrale la distancia.",
                 "Shoots from afar; break the line or close the gap.");
             Content("obj.dado_casa.brief",
-                "Rompelo para borrarle una categoría a la Generala.",
-                "Break it to erase one of the Generala's categories.");
+                "No ataca. Rompelo: por cada dado roto, la Generala pierde uno de sus combos.",
+                "It doesn't attack. Break it: for every die broken, the Generala loses one of her combos.");
+
+            // La bomba del Croupier (RoomObjectTooltipInfo arma su panel con estas keys).
+            Content("roomobj.croupier.bomba.name", "Bomba", "Bomb");
+            Content("roomobj.croupier.bomba.desc",
+                "Explota cuando se le termina la mecha y prende fuego las casillas de alrededor. Rompela antes, o alejate.",
+                "Blows up when its fuse runs out and sets the surrounding tiles on fire. Break it first, or get clear.");
             Content("healerEnemy.brief",
                 "Cura a los suyos antes que pegarte.",
                 "Heals its allies before it hits you.");
@@ -1401,8 +1407,8 @@ namespace Rollgeon.EditorTools.Localization
 
             Boss(GeneralaAssetBuilder.DiceEntityId,
                 "Dado de la Casa", "House Die",
-                "Parte de su mano, y en tu camino. Rompelo para borrarle una categoría.",
-                "Part of her hand, and in your way. Break it to erase a category.");
+                "Un dado gigante de la mano de la Generala.",
+                "A giant die from the Generala's hand.");
         }
 
         // ==================================================================

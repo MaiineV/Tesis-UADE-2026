@@ -967,7 +967,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 13919417973649416
-    m_Localized: Part of her hand, and in your way. Break it to erase a category.
+    m_Localized: A giant die from the Generala's hand.
     m_Metadata:
       m_Items: []
   - m_Id: 14364254574313472
@@ -1127,7 +1127,8 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 16873829850607618
-    m_Localized: Break it to erase one of the Generala's categories.
+    m_Localized: 'It doesn''t attack. Break it: for every die broken, the Generala
+      loses one of her combos.'
     m_Metadata:
       m_Items: []
   - m_Id: 16873829854801920
@@ -1250,6 +1251,15 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 17130812646289409
     m_Localized: Break it open and see what it holds.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17201829490126848
+    m_Localized: Bomb
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17201829544652800
+    m_Localized: Blows up when its fuse runs out and sets the surrounding tiles on
+      fire. Break it first, or get clear.
     m_Metadata:
       m_Items: []
   references:

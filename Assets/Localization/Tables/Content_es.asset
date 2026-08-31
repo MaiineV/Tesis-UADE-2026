@@ -972,7 +972,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 13919417973649416
-    m_Localized: "Parte de su mano, y en tu camino. Rompelo para borrarle una categor\xEDa."
+    m_Localized: Un dado gigante de la mano de la Generala.
     m_Metadata:
       m_Items: []
   - m_Id: 14364254574313472
@@ -1133,7 +1133,8 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 16873829850607618
-    m_Localized: "Rompelo para borrarle una categor\xEDa a la Generala."
+    m_Localized: 'No ataca. Rompelo: por cada dado roto, la Generala pierde uno de
+      sus combos.'
     m_Metadata:
       m_Items: []
   - m_Id: 16873829854801920
@@ -1257,6 +1258,15 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 17130812646289409
     m_Localized: "Rompelo y fijate qu\xE9 guarda."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17201829490126848
+    m_Localized: Bomba
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17201829544652800
+    m_Localized: Explota cuando se le termina la mecha y prende fuego las casillas
+      de alrededor. Rompela antes, o alejate.
     m_Metadata:
       m_Items: []
   references:
