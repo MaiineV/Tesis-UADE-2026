@@ -238,6 +238,13 @@ namespace Rollgeon.Combat.AI.Decisions
                     traitService.Register(id, EnemyToSpawn.CreateTraits());
                 }
 
+                // Un refuerzo Guardian proyecta su aura igual que uno spawneado por sala.
+                if (EnemyToSpawn.HasAura)
+                {
+                    Rollgeon.Combat.Auras.EnemyAuraService.ResolveOrCreate()
+                        .Register(id, EnemyToSpawn.AuraRadius, EnemyToSpawn.AuraFlatReduction);
+                }
+
                 // La barra world-space la inicializa quien spawnea: sin esto renderiza su default
                 // (0 HP) y nunca se bindea a los eventos de daño.
                 if (visuals != null && visuals.TryGetPawn(id, out var pawn) && pawn.HealthBar != null)
