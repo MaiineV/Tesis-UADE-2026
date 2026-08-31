@@ -16,6 +16,17 @@ namespace Rollgeon.PreConditions.Concretes
     /// directo del viejo AI-side check. Misma matemática, mismo fallback false si owner
     /// u opponent no están en grid.
     /// </remarks>
+    /// <summary>Restricción de alineación entre owner y target (fichas GDD: Skirmisher solo
+    /// diagonales, Sniper misma fila/columna).</summary>
+    public enum TargetAlignment
+    {
+        Any = 0,
+        /// <summary>Misma fila o columna exacta (dx == 0 xor dy == 0).</summary>
+        SameRowOrColumn = 1,
+        /// <summary>Diagonal exacta (|dx| == |dy|, ambos ≠ 0).</summary>
+        DiagonalOnly = 2,
+    }
+
     [Serializable, HideReferenceObjectPicker]
     public sealed class PcTargetInRange : BasePreCondition
     {
@@ -24,7 +35,26 @@ namespace Rollgeon.PreConditions.Concretes
 
         public DistanceMetric Metric = DistanceMetric.Manhattan;
 
-        public override string ConditionName => $"Target in {Metric} range ≤ {Range}";
+        [Tooltip("Restricción de alineación: solo diagonales (Skirmisher) o misma fila/columna (Sniper). " +
+                 "Se evalúa sobre el par de celdas más cercano entre ambos footprints.")]
+        public TargetAlignment Alignment = TargetAlignment.Any;
+
+        [Tooltip("Línea de visión: las celdas estrictamente intermedias de la línea recta tienen que " +
+                 "ser caminables y estar libres. Solo evalúa sobre líneas rectas (orto o diagonal " +
+                 "exacta); sin alineación, falla.")]
+        public bool RequireLineOfSight;
+
+        public override string ConditionName
+        {
+            get
+            {
+                var name = $"Target in {Metric} range ≤ {Range}";
+                if (Alignment == TargetAlignment.SameRowOrColumn) name += " (fila/columna)";
+                else if (Alignment == TargetAlignment.DiagonalOnly) name += " (diagonal)";
+                if (RequireLineOfSight) name += " +LoS";
+                return name;
+            }
+        }
 
         public override bool Evaluate(PreConditionContext context)
         {
@@ -44,7 +74,52 @@ namespace Rollgeon.PreConditions.Concretes
                 ? GridFootprint.ManhattanDistance(ownerCoord, ownerFp, opponentCoord, opponentFp)
                 : GridFootprint.ChebyshevDistance(ownerCoord, ownerFp, opponentCoord, opponentFp);
 
-            return dist <= Range;
+            if (dist > Range) return false;
+            if (Alignment == TargetAlignment.Any && !RequireLineOfSight) return true;
+
+            // Par de celdas más cercano entre ambos footprints (desempate: orden de iteración,
+            // determinista — row-major desde el ancla). Para dos 1×1 son sus celdas de siempre.
+            var a = ownerCoord;
+            var b = opponentCoord;
+            int bestPair = int.MaxValue;
+            foreach (var oc in grid.OccupiedCells(context.OwnerGuid))
+            {
+                foreach (var tc in grid.OccupiedCells(context.OpponentGuid))
+                {
+                    int d = oc.Manhattan(tc);
+                    if (d < bestPair) { bestPair = d; a = oc; b = tc; }
+                }
+            }
+
+            int dx = b.X - a.X;
+            int dy = b.Y - a.Y;
+            bool orthoAligned = (dx == 0) != (dy == 0); // misma fila o columna, no la misma celda
+            bool diagAligned = dx != 0 && Math.Abs(dx) == Math.Abs(dy);
+
+            if (Alignment == TargetAlignment.SameRowOrColumn && !orthoAligned) return false;
+            if (Alignment == TargetAlignment.DiagonalOnly && !diagAligned) return false;
+
+            if (RequireLineOfSight)
+            {
+                // LoS solo tiene sentido sobre una línea recta; fuera de ella, falla.
+                if (!orthoAligned && !diagAligned) return false;
+
+                int steps = Math.Max(Math.Abs(dx), Math.Abs(dy));
+                int sx = Math.Sign(dx);
+                int sy = Math.Sign(dy);
+                for (int i = 1; i < steps; i++)
+                {
+                    var c = new GridCoord(a.X + sx * i, a.Y + sy * i);
+                    if (!grid.IsWalkable(c)) return false;
+                    if (grid.TryGetOccupant(c, out var blocker)
+                        && blocker != context.OwnerGuid && blocker != context.OpponentGuid)
+                    {
+                        return false;
+                    }
+                }
+            }
+
+            return true;
         }
     }
 }

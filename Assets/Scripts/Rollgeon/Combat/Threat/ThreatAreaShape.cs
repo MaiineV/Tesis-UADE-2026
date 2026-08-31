@@ -96,6 +96,13 @@ namespace Rollgeon.Combat.Threat
         /// <see cref="ThreatAreaShape.ComputeConcentricRing"/>.
         /// </summary>
         ConcentricRing,
+
+        /// <summary>
+        /// Cruz centrada en el boss: los cuatro brazos ortogonales de largo <c>size</c>, sin
+        /// la celda central (el propio boss). Ancla en el boss (<see
+        /// cref="ThreatAreaShape.AnchorsOnSelf"/>).
+        /// </summary>
+        CrossAroundSelf,
     }
 
     /// <summary>Eje de corte para <see cref="ThreatShape.HalfRoom"/>.</summary>
@@ -193,6 +200,25 @@ namespace Rollgeon.Combat.Threat
                     result.UnionWith(ComputeConcentricRing(grid, size));
                     break;
                 }
+
+                case ThreatShape.CrossAroundSelf:
+                {
+                    // Brazos ortogonales de largo `size` desde el centro (el boss), sin la celda
+                    // central — un barrido en cruz no golpea al que lo hace.
+                    int len = size < 1 ? 1 : size;
+                    for (int i = 1; i <= len; i++)
+                    {
+                        var east = new GridCoord(center.X + i, center.Y);
+                        var west = new GridCoord(center.X - i, center.Y);
+                        var north = new GridCoord(center.X, center.Y + i);
+                        var south = new GridCoord(center.X, center.Y - i);
+                        if (IsValidTile(grid, east)) result.Add(east);
+                        if (IsValidTile(grid, west)) result.Add(west);
+                        if (IsValidTile(grid, north)) result.Add(north);
+                        if (IsValidTile(grid, south)) result.Add(south);
+                    }
+                    break;
+                }
             }
 
             return result;
@@ -205,7 +231,8 @@ namespace Rollgeon.Combat.Threat
         public static bool AnchorsOnSelf(ThreatShape shape) =>
             shape == ThreatShape.SquareAroundSelf ||
             shape == ThreatShape.AllExceptSquareAroundSelf ||
-            shape == ThreatShape.ColumnAroundSelf;
+            shape == ThreatShape.ColumnAroundSelf ||
+            shape == ThreatShape.CrossAroundSelf;
 
         /// <summary>
         /// Formas que salen del boss <b>hacia</b> el jugador. El caller tiene que resolver las dos
