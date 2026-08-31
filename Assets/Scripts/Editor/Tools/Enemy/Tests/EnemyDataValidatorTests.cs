@@ -79,21 +79,20 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         }
 
         [Test]
-        public void Validate_Footprint_MultiCell_WarnsFaseC()
+        public void Validate_Footprint_MultiCell_WarnsRemainingAnchorGaps()
         {
-            // Fase B: el movimiento multi-celda ya existe; el warning ahora avisa lo que
-            // sigue tratando al rectángulo como su ancla (targeting del jugador, AoE,
-            // casillas) y aplica a TODO multi-celda, con o sin nodos de movimiento.
+            // Fase C hecha: el warning queda acotado a lo que sigue por ancla (Hielo/Portal,
+            // formas de telegraph propias, collider) y aplica a TODO multi-celda.
             var so = Healthy();
             so.Footprint = new Vector2Int(2, 2);
             so.AIRoot = new AINode_Move();
             var issues = Validate(so);
-            Assert.IsTrue(Has(issues, EnemyIssueSeverity.Warning, "Fase C"));
-            Assert.IsFalse(Has(issues, EnemyIssueSeverity.Warning, "Fase B pendiente"));
+            Assert.IsTrue(Has(issues, EnemyIssueSeverity.Warning, "Hielo/Portal"));
+            Assert.IsFalse(Has(issues, EnemyIssueSeverity.Warning, "Fase C pendiente"));
 
             so.AIRoot = new AINode_Wait();
             so.Footprint = new Vector2Int(2, 1);
-            Assert.IsTrue(Has(Validate(so), EnemyIssueSeverity.Warning, "Fase C"));
+            Assert.IsTrue(Has(Validate(so), EnemyIssueSeverity.Warning, "Hielo/Portal"));
         }
 
         [Test]
