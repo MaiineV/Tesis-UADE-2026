@@ -28,6 +28,43 @@ namespace Rollgeon.Grid
         }
 
         /// <summary>
+        /// Distancia Manhattan mínima entre dos rectángulos (celda más cercana de A a celda
+        /// más cercana de B). 0 si se solapan; para dos 1×1 equivale a
+        /// <see cref="GridCoord.Manhattan"/>. O(1) por eje — no itera celdas.
+        /// </summary>
+        public static int ManhattanDistance(GridCoord anchorA, Vector2Int fpA, GridCoord anchorB, Vector2Int fpB)
+        {
+            AxisGaps(anchorA, fpA, anchorB, fpB, out int dx, out int dy);
+            return dx + dy;
+        }
+
+        /// <summary>Overload contra una celda única (footprint (1,1)).</summary>
+        public static int ManhattanDistance(GridCoord anchorA, Vector2Int fpA, GridCoord b)
+            => ManhattanDistance(anchorA, fpA, b, Unit);
+
+        /// <summary>Distancia Chebyshev mínima entre dos rectángulos. Ver <see cref="ManhattanDistance(GridCoord, Vector2Int, GridCoord, Vector2Int)"/>.</summary>
+        public static int ChebyshevDistance(GridCoord anchorA, Vector2Int fpA, GridCoord anchorB, Vector2Int fpB)
+        {
+            AxisGaps(anchorA, fpA, anchorB, fpB, out int dx, out int dy);
+            return Mathf.Max(dx, dy);
+        }
+
+        /// <summary>Overload contra una celda única (footprint (1,1)).</summary>
+        public static int ChebyshevDistance(GridCoord anchorA, Vector2Int fpA, GridCoord b)
+            => ChebyshevDistance(anchorA, fpA, b, Unit);
+
+        /// <summary>Separación por eje entre los intervalos de los dos rectángulos (0 = se tocan
+        /// o solapan en ese eje).</summary>
+        private static void AxisGaps(GridCoord anchorA, Vector2Int fpA, GridCoord anchorB, Vector2Int fpB,
+            out int dx, out int dy)
+        {
+            fpA = Normalize(fpA);
+            fpB = Normalize(fpB);
+            dx = Mathf.Max(0, Mathf.Max(anchorB.X - (anchorA.X + fpA.x - 1), anchorA.X - (anchorB.X + fpB.x - 1)));
+            dy = Mathf.Max(0, Mathf.Max(anchorB.Y - (anchorA.Y + fpA.y - 1), anchorA.Y - (anchorB.Y + fpB.y - 1)));
+        }
+
+        /// <summary>
         /// Desplazamiento desde el centro de la celda ancla hasta el centro del rectángulo,
         /// para que el pawn de un 2×2 quede en el medio de sus cuatro celdas.
         /// </summary>
