@@ -847,6 +847,14 @@ MonoBehaviour:
     m_Key: dicebag.cat.maldicion
     m_Metadata:
       m_Items: []
+  - m_Id: 17252903728173056
+    m_Key: action.reject.cooldown
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17252903774310400
+    m_Key: action.reject.item_unavailable
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

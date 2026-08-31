@@ -5,23 +5,30 @@ using Rollgeon.Effects;
 using Rollgeon.Effects.Selection;
 using Rollgeon.Grid;
 using Rollgeon.Items;
-using Rollgeon.Phase;
 using Rollgeon.Player;
 using Sirenix.OdinInspector;
+using TMPro;
 using UnityEngine;
+using LocalizedContent = Rollgeon.Localization.LocalizedContent;
 
 namespace Rollgeon.UI.HUD
 {
     /// <summary>
-    /// Contenedor de slots de items activos (arco, pocion, ...). Se suscribe a
-    /// <see cref="EventName.OnItemObtained"/>, <see cref="EventName.OnActiveItemUsed"/>,
-    /// <see cref="EventName.OnItemRemoved"/> y dispara el <see cref="ActiveItemSlotView.SetState"/>
-    /// correspondiente segun el itemId.
+    /// La barra de items activos del HUD. Tiene dos poblaciones:
+    /// <list type="bullet">
+    /// <item><b>Slots pinneados</b> (<see cref="_bindings"/>): posicionados y decorados a
+    /// mano en el prefab para un <c>ItemId</c> fijo — hoy la poción, que ademas es
+    /// display-only porque se consume via el boton Heal y no por click.</item>
+    /// <item><b>Slots dinamicos</b>: uno por cada item activo del inventario que
+    /// <i>no</i> tenga slot pinneado. Se instancian desde <see cref="_dynamicSlotPrefab"/>
+    /// dentro de <see cref="_dynamicContainer"/> y son clickeables — son la unica forma
+    /// de usar un item activo en el juego.</item>
+    /// </list>
     /// </summary>
     /// <remarks>
-    /// Plan §4.6. El numero de slots y sus <c>ItemId</c> se configura en Inspector
-    /// via <see cref="_bindings"/>. Si un <c>OnItemObtained</c> llega con un id que
-    /// no esta en <c>_bindings</c> se ignora silenciosamente (item no-active o sin slot).
+    /// Plan §4.6. El click pasa por <see cref="IInventoryService.CanActivateItem"/> antes
+    /// de activar: si esta bloqueado no se ejecuta nada y se muestra el motivo con
+    /// <see cref="ActionRejectToast"/>, mismo contrato que los chips de accion.
     /// </remarks>
     [AddComponentMenu("Rollgeon/UI/HUD/Active Items View")]
     public class ActiveItemsView : MonoBehaviour
@@ -43,10 +50,21 @@ namespace Rollgeon.UI.HUD
         }
 
         [Title("Active Items — Slot bindings")]
-        [InfoBox("Cada entrada mapea un ItemId del catalogo al ActiveItemSlotView " +
-                 "que lo representa. Sin bindings, los eventos se ignoran sin crashear.")]
+        [InfoBox("Slots pinneados: posicion y sprites a mano para un ItemId fijo. Todo " +
+                 "item activo que NO este en esta lista cae en la barra dinamica.")]
         [SerializeField]
         private List<ItemSlotBinding> _bindings = new List<ItemSlotBinding>();
+
+        [Title("Active Items — Barra dinamica")]
+        [InfoBox("Contenedor (con HorizontalLayoutGroup) donde se instancian los slots de " +
+                 "los items activos que no tienen binding pinneado. Sin contenedor o sin " +
+                 "prefab la barra queda vacia y solo funcionan los pinneados.")]
+        [SerializeField]
+        private RectTransform _dynamicContainer;
+
+        [SerializeField]
+        [Tooltip("Prefab del slot generico que se clona por item activo.")]
+        private ActiveItemSlotView _dynamicSlotPrefab;
 
         [ShowInInspector, ReadOnly]
         private Guid _playerGuid;
@@ -58,6 +76,15 @@ namespace Rollgeon.UI.HUD
         // espejo del flag de PlayerActionButtonsView, para que la ficha de poción
         // responda al mismo tiempo que los chips de acción.
         private bool _isPlayerTurn;
+
+        /// <summary>Pool reusable de slots dinamicos, en orden de creacion.</summary>
+        private readonly List<ActiveItemSlotView> _dynamicSlots = new List<ActiveItemSlotView>();
+
+        /// <summary>
+        /// ItemId que representa cada slot dinamico <i>visible</i>, en paralelo a los
+        /// primeros N de <see cref="_dynamicSlots"/>. El resto del pool esta apagado.
+        /// </summary>
+        private readonly List<string> _dynamicItemIds = new List<string>();
 
         public void Bind(Guid playerGuid)
         {
@@ -116,6 +143,16 @@ namespace Rollgeon.UI.HUD
                 var slot = _bindings[i].Slot;
                 if (slot != null) slot.OnClicked += HandleSlotClicked;
             }
+            // Los dinamicos se enganchan al crearse (EnsureDynamicSlots) y viven tanto
+            // como la vista, asi que aca solo cubrimos un re-Subscribe con el pool ya
+            // poblado — sin el, un OnDisable/OnEnable los dejaba mudos.
+            for (int i = 0; i < _dynamicSlots.Count; i++)
+            {
+                var slot = _dynamicSlots[i];
+                if (slot == null) continue;
+                slot.OnClicked -= HandleSlotClicked;
+                slot.OnClicked += HandleSlotClicked;
+            }
         }
 
         private void UnsubscribeSlotClicks()
@@ -125,19 +162,18 @@ namespace Rollgeon.UI.HUD
                 var slot = _bindings[i].Slot;
                 if (slot != null) slot.OnClicked -= HandleSlotClicked;
             }
+            for (int i = 0; i < _dynamicSlots.Count; i++)
+            {
+                if (_dynamicSlots[i] != null) _dynamicSlots[i].OnClicked -= HandleSlotClicked;
+            }
         }
+
+        // ==================================================================
+        // Click → activacion
+        // ==================================================================
 
         private void HandleSlotClicked(ActiveItemSlotView clicked)
         {
-            // En combate los ítems activos no se usan vía click — la lógica de combate
-            // (ej. botón de Heal) los consume desde la cadena de efectos del behavior.
-            if (ServiceLocator.TryGetService<IPhaseService>(out var phase)
-                && phase != null
-                && phase.CurrentBase != GamePhase.Exploration)
-            {
-                return;
-            }
-
             if (!ServiceLocator.TryGetService<IInventoryService>(out var inventory) || inventory == null)
             {
                 Debug.LogWarning(LogPrefix + "IInventoryService no registrado — no se puede activar el ítem.");
@@ -147,15 +183,72 @@ namespace Rollgeon.UI.HUD
             string clickedItemId = ResolveItemIdForSlot(clicked);
             if (string.IsNullOrEmpty(clickedItemId)) return;
 
+            // En combate un item usado fuera del turno propio igual le cobraria un roll
+            // al pool del jugador (TurnManager no mira de quien es el turno), asi que el
+            // gate de turno va antes que cualquier otra cosa.
+            if (IsCombatActive() && !_isPlayerTurn)
+            {
+                ShowReject(clicked, LocalizedContent.Ui(UiTextKeys.RejectNotYourTurn, "No es tu turno."));
+                return;
+            }
+
             int slotIndex = FindActiveSlotIndex(inventory, clickedItemId);
             if (slotIndex < 0)
             {
-                Debug.LogWarning(LogPrefix + $"No hay slot activo para ItemId='{clickedItemId}' en el inventario.");
+                ShowReject(clicked, LocalizedContent.Ui(UiTextKeys.RejectUsed, "Ya no te queda."));
                 return;
             }
 
             var ctx = BuildSelfTargetedContext();
+
+            var block = inventory.CanActivateItem(slotIndex, ctx);
+            if (block != ItemActivationBlock.None)
+            {
+                ShowReject(clicked, DescribeBlock(block));
+                return;
+            }
+
             inventory.ActivateItem(slotIndex, ctx);
+        }
+
+        /// <summary>Motivo localizado del rechazo, para el toast.</summary>
+        private static string DescribeBlock(ItemActivationBlock block)
+        {
+            switch (block)
+            {
+                case ItemActivationBlock.OnCooldown:
+                    return LocalizedContent.Ui(UiTextKeys.RejectOnCooldown, "Todavía en enfriamiento.");
+                case ItemActivationBlock.NotEnoughRolls:
+                    return LocalizedContent.Ui(UiTextKeys.RejectNoRolls, "No te alcanzan los rolls.");
+                case ItemActivationBlock.InvalidSlot:
+                case ItemActivationBlock.NotActiveItem:
+                    return LocalizedContent.Ui(UiTextKeys.RejectUsed, "Ya no te queda.");
+                default:
+                    return LocalizedContent.Ui(UiTextKeys.RejectItemUnavailable,
+                                               "No podés usar este objeto ahora.");
+            }
+        }
+
+        /// <summary>
+        /// Toast sobre el slot, mismo formato que <c>ExplorationActionButtonsView</c>:
+        /// título genérico + motivo concreto.
+        /// </summary>
+        private static void ShowReject(ActiveItemSlotView slot, string reason)
+        {
+            if (slot == null || string.IsNullOrEmpty(reason)) return;
+
+            string title = LocalizedContent.Ui(UiTextKeys.RejectTitle,
+                "Esta acción no puede ser realizada");
+            var label = slot.GetComponentInChildren<TMP_Text>(true);
+            ActionRejectToast.Show(slot.transform as RectTransform,
+                title + "\n" + reason, label != null ? label.font : null);
+        }
+
+        private static bool IsCombatActive()
+        {
+            return ServiceLocator.TryGetService<Rollgeon.Combat.Rolls.IRollPoolService>(out var rolls)
+                   && rolls != null
+                   && rolls.IsCombatActive;
         }
 
         private string ResolveItemIdForSlot(ActiveItemSlotView slot)
@@ -163,6 +256,11 @@ namespace Rollgeon.UI.HUD
             for (int i = 0; i < _bindings.Count; i++)
             {
                 if (_bindings[i].Slot == slot) return _bindings[i].ItemId;
+            }
+            int dynamicIndex = _dynamicSlots.IndexOf(slot);
+            if (dynamicIndex >= 0 && dynamicIndex < _dynamicItemIds.Count)
+            {
+                return _dynamicItemIds[dynamicIndex];
             }
             return null;
         }
@@ -223,7 +321,12 @@ namespace Rollgeon.UI.HUD
                 slot.SetState(ActiveItemState.Active);
                 slot.SetCount(CountInInventory(itemId));
             }
-            // else: item legitimo no-active / sin slot HUD — se ignora sin warning.
+            else
+            {
+                // Item activo sin slot pinneado → entra a la barra dinamica. Un pasivo
+                // simplemente no aparece en ActiveItems y el rebuild lo ignora.
+                RebuildDynamicSlots();
+            }
         }
 
         private void HandleActiveItemUsed(params object[] args)
@@ -244,6 +347,13 @@ namespace Rollgeon.UI.HUD
                 }
                 slot.SetCount(remaining);
             }
+            else
+            {
+                RebuildDynamicSlots();
+            }
+
+            // El uso puede haber prendido un cooldown o vaciado el pool: repintar todo.
+            RefreshAffordability();
         }
 
         private void HandleItemRemoved(params object[] args)
@@ -256,6 +366,10 @@ namespace Rollgeon.UI.HUD
                 int remaining = CountInInventory(itemId);
                 slot.SetState(remaining > 0 ? ActiveItemState.Active : ActiveItemState.Inactive);
                 slot.SetCount(remaining);
+            }
+            else
+            {
+                RebuildDynamicSlots();
             }
         }
 
@@ -334,7 +448,86 @@ namespace Rollgeon.UI.HUD
                 binding.Slot.SetCount(count);
             }
 
+            RebuildDynamicSlots();
+        }
+
+        // ==================================================================
+        // Barra dinamica
+        // ==================================================================
+
+        /// <summary>
+        /// Repuebla la barra con un slot por cada <c>ItemId</c> activo del inventario que
+        /// no tenga binding pinneado, agrupando las cargas repetidas en un solo slot con
+        /// contador. El pool se reusa y solo se apaga — mismo criterio que
+        /// <c>InventoryDrawerView.EnsureSlots</c>.
+        /// </summary>
+        public void RebuildDynamicSlots()
+        {
+            if (_dynamicContainer == null || _dynamicSlotPrefab == null) return;
+
+            _dynamicItemIds.Clear();
+            var counts = new List<int>();
+            var icons = new List<Sprite>();
+
+            if (ServiceLocator.TryGetService<IInventoryService>(out var inv) && inv != null)
+            {
+                var actives = inv.ActiveItems;
+                for (int i = 0; i < actives.Count; i++)
+                {
+                    var item = actives[i]?.Item;
+                    if (item == null || string.IsNullOrEmpty(item.ItemId)) continue;
+                    if (IsPinned(item.ItemId)) continue;
+
+                    int existing = _dynamicItemIds.IndexOf(item.ItemId);
+                    if (existing >= 0)
+                    {
+                        counts[existing]++;
+                    }
+                    else
+                    {
+                        _dynamicItemIds.Add(item.ItemId);
+                        counts.Add(1);
+                        icons.Add(item.Icon);
+                    }
+                }
+            }
+
+            EnsureDynamicSlots(_dynamicItemIds.Count);
+
+            for (int i = 0; i < _dynamicSlots.Count; i++)
+            {
+                var slot = _dynamicSlots[i];
+                if (slot == null) continue;
+
+                bool used = i < _dynamicItemIds.Count;
+                slot.gameObject.SetActive(used);
+                if (!used) continue;
+
+                slot.SetState(ActiveItemState.Active);
+                slot.SetIcon(icons[i]);
+                slot.SetCount(counts[i]);
+            }
+
             RefreshAffordability();
+        }
+
+        private bool IsPinned(string itemId)
+        {
+            for (int i = 0; i < _bindings.Count; i++)
+            {
+                if (string.Equals(_bindings[i].ItemId, itemId, StringComparison.Ordinal)) return true;
+            }
+            return false;
+        }
+
+        private void EnsureDynamicSlots(int needed)
+        {
+            while (_dynamicSlots.Count < needed)
+            {
+                var slot = Instantiate(_dynamicSlotPrefab, _dynamicContainer);
+                slot.OnClicked += HandleSlotClicked;
+                _dynamicSlots.Add(slot);
+            }
         }
 
         // ==================================================================
@@ -359,24 +552,47 @@ namespace Rollgeon.UI.HUD
         private void HandleRollsOrPhaseChanged(params object[] args) => RefreshAffordability();
 
         /// <summary>
-        /// Espejo de la regla de <see cref="PlayerActionButtonsView"/>: en combate,
-        /// durante el turno del jugador y con el pool en 0, todos los slots pintan el
-        /// rojo de "no te alcanza". Fuera de combate o de turno, siempre affordable.
+        /// Pinta de rojo lo que no se puede usar ahora. Los pinneados siguen la regla
+        /// vieja (pool de rolls durante el turno propio); los dinamicos preguntan el
+        /// motivo real a <see cref="IInventoryService.CanActivateItem"/>, asi el rojo
+        /// coincide exactamente con lo que el click va a rechazar.
         /// </summary>
         private void RefreshAffordability()
         {
-            bool affordable = true;
+            bool combat = IsCombatActive();
+            bool pinnedAffordable = true;
             if (_isPlayerTurn
                 && ServiceLocator.TryGetService<Rollgeon.Combat.Rolls.IRollPoolService>(out var rolls)
                 && rolls != null
                 && rolls.IsCombatActive)
             {
-                affordable = rolls.GetCurrent(_playerGuid) >= 1;
+                pinnedAffordable = rolls.GetCurrent(_playerGuid) >= 1;
             }
 
             for (int i = 0; i < _bindings.Count; i++)
             {
-                _bindings[i].Slot?.SetAffordable(affordable);
+                _bindings[i].Slot?.SetAffordable(pinnedAffordable);
+            }
+
+            if (_dynamicItemIds.Count == 0) return;
+
+            ServiceLocator.TryGetService<IInventoryService>(out var inv);
+            // Sin inventario no hay nada que evaluar; el rebuild ya dejo la barra vacia.
+            if (inv == null) return;
+
+            var ctx = BuildSelfTargetedContext();
+            for (int i = 0; i < _dynamicItemIds.Count && i < _dynamicSlots.Count; i++)
+            {
+                var slot = _dynamicSlots[i];
+                if (slot == null) continue;
+
+                bool usable = !combat || _isPlayerTurn;
+                if (usable)
+                {
+                    int index = FindActiveSlotIndex(inv, _dynamicItemIds[i]);
+                    usable = index >= 0 && inv.CanActivateItem(index, ctx) == ItemActivationBlock.None;
+                }
+                slot.SetAffordable(usable);
             }
         }
     }

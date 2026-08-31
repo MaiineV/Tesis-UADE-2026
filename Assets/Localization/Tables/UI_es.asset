@@ -893,6 +893,14 @@ MonoBehaviour:
     m_Localized: "Maldici\xF3n"
     m_Metadata:
       m_Items: []
+  - m_Id: 17252903728173056
+    m_Localized: Todavia en enfriamiento.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17252903774310400
+    m_Localized: No podes usar este objeto ahora.
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

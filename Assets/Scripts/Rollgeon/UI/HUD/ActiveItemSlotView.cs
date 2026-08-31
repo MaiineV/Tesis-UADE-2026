@@ -195,16 +195,35 @@ namespace Rollgeon.UI.HUD
 
         private void HandleClick()
         {
-            if (CurrentState != ActiveItemState.Active) return;
+            // Inactive = el slot no representa ningun item (barra vacia): no hay nada que
+            // rechazar. Depleted y Active-sin-recursos SI emiten, para que ActiveItemsView
+            // resuelva el motivo y muestre el toast en vez de tragarse el tap.
+            if (CurrentState == ActiveItemState.Inactive) return;
             OnClicked?.Invoke(this);
         }
 
+        // El boton queda interactable mientras el slot tenga un item detras, aunque no se
+        // pueda usar ahora — un boton no-interactable no dispara onClick y el jugador se
+        // queda sin saber por que. El gate real vive en ActiveItemsView.HandleSlotClicked.
         private void RefreshInteractable()
         {
             if (_button != null)
             {
-                _button.interactable = CurrentState == ActiveItemState.Active;
+                _button.interactable = CurrentState != ActiveItemState.Inactive;
             }
+        }
+
+        /// <summary>
+        /// Pisa el icono con el <c>ItemSO.Icon</c> del item que ocupa el slot. Lo usan los
+        /// slots que <see cref="ActiveItemsView"/> instancia en runtime, donde el sprite no
+        /// se puede cablear en Inspector porque el item se conoce recien en la run. En los
+        /// slots pinneados (poción) no se llama: ahí mandan los sprites serializados.
+        /// </summary>
+        public void SetIcon(Sprite sprite)
+        {
+            if (_icon == null) return;
+            _icon.sprite = sprite;
+            _icon.enabled = sprite != null;
         }
 
         /// <summary>

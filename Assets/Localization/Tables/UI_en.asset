@@ -884,6 +884,14 @@ MonoBehaviour:
     m_Localized: Curse
     m_Metadata:
       m_Items: []
+  - m_Id: 17252903728173056
+    m_Localized: Still on cooldown.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17252903774310400
+    m_Localized: You can't use this item right now.
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []
