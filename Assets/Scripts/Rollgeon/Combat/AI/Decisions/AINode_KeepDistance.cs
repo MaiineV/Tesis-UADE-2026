@@ -38,7 +38,8 @@ namespace Rollgeon.Combat.AI.Decisions
         public override string NodeName => "Keep Distance From Player";
 
         /// <summary>Key propia (≠ AINode_Move): kitear es una acción distinta de acercarse.</summary>
-        internal const string ActionKey = "__keep_distance";
+        // Público: el AITreeValidator (editor asmdef) lo usa para vetar ActionNames reservados.
+        public const string ActionKey = "__keep_distance";
 
         public override AIResult Tick(AIContext context)
         {

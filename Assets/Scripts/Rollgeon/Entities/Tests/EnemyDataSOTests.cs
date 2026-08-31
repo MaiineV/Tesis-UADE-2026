@@ -85,6 +85,36 @@ namespace Rollgeon.Entities.Tests
         }
 
         [Test]
+        public void CreateRuntimeStats_MaterializesAttackRange()
+        {
+            // Arrange
+            _so.BaseAttackRange = 24;
+
+            // Act
+            var attrs = _so.CreateRuntimeStats();
+
+            // Assert — el rango dejó de ser RESERVADO: viaja como atributo.
+            Assert.AreEqual(24, attrs.GetAttributeValue<AttackRange, int>());
+        }
+
+        [Test]
+        public void CreateRuntimeStats_AttackRange_RespectsTierOverride()
+        {
+            // Arrange — T2 con rango manual distinto del base.
+            _so.BaseAttackRange = 5;
+            _so.ExtraTiers.Add(new EnemyTier
+            {
+                Label = "T2",
+                MinFloor = 2,
+                AttackRange = new TierStat { Mode = StatMode.Manual, ManualValue = 8 },
+            });
+
+            // Act + Assert
+            Assert.AreEqual(8, _so.CreateRuntimeStats(2).GetAttributeValue<AttackRange, int>());
+            Assert.AreEqual(5, _so.CreateRuntimeStats(1).GetAttributeValue<AttackRange, int>());
+        }
+
+        [Test]
         public void CreateRuntimeBehaviors_ClonesPolymorphicBehaviors()
         {
             var template = new SupportHealBehavior { BaseHealAmount = 9 };

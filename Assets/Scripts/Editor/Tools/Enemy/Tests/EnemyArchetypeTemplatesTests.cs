@@ -103,6 +103,40 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         }
 
         [Test]
+        public void Templates_MainAttackGate_ReadsTheSheetRange()
+        {
+            // El gate principal (donde el rango del If coincidía con la ficha) pasa a leer el
+            // atributo AttackRange — la ficha es LA fuente, sin número duplicado. El Charger
+            // queda afuera a propósito: su If(1) es el contacto de la embestida, no su rango 2.
+            var withOwnerRange = new[]
+            {
+                "pursuer", "sweeper", "skirmisher", "kiter", "sniper", "artillery", "mago",
+                "healer", "guardian",
+            };
+
+            foreach (var id in withOwnerRange)
+            {
+                var so = Apply(EnemyArchetypeTemplates.Find(id));
+                Assert.IsTrue(AnyGateUsesOwnerRange(so), id + ": ningún PcTargetInRange lee la ficha");
+            }
+
+            Assert.IsFalse(AnyGateUsesOwnerRange(Apply(EnemyArchetypeTemplates.Find("charger"))),
+                "el If(1) del Charger es contacto de embestida, queda literal");
+        }
+
+        static bool AnyGateUsesOwnerRange(EnemyDataSO so)
+        {
+            foreach (var n in AITreeSerializer.Load(so.AIRoot).Nodes)
+            {
+                if (!(n is Rollgeon.Combat.AI.Decisions.AINode_If i) || i.Conditions == null) continue;
+                foreach (var pc in i.Conditions)
+                    if (pc is Rollgeon.PreConditions.Concretes.PcTargetInRange r && r.UseOwnerAttackRange)
+                        return true;
+            }
+            return false;
+        }
+
+        [Test]
         public void Charger_TelegraphUsesTheTemplateAttack()
         {
             var so = Apply(EnemyArchetypeTemplates.Find("charger"));

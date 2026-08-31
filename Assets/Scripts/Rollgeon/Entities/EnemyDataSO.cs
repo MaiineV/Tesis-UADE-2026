@@ -100,9 +100,10 @@ namespace Rollgeon.Entities
         public int MaxEnergy = 3;
 
         [MinValue(0)]
-        [Tooltip("Rango de ataque base (tiles). RESERVADO (#158): hoy ningun sistema de combate " +
-                 "lo consume — se autorea para tiers pero queda inerte hasta que exista un targeting " +
-                 "con rango. Wirearlo es follow-up.")]
+        [Tooltip("Rango de ataque base (tiles). Se materializa como atributo AttackRange al " +
+                 "spawnear (resuelto por tier, modificable por buffs): lo consumen el planner de " +
+                 "movimiento (scoring de posiciones de ataque) y PcTargetInRange con " +
+                 "UseOwnerAttackRange. 0 = sin rango declarado (los consumidores caen a 1/Range).")]
         public int BaseAttackRange = 1;
 
         // -----------------------------------------------------------------
@@ -231,6 +232,7 @@ namespace Rollgeon.Entities
             attrs.SetAttribute<Speed>(new Speed(ResolveStat(tier, t => t.Speed, BaseSpeed)));
             attrs.SetAttribute<Energy>(new Energy(ResolveStat(tier, t => t.Energy, MaxEnergy)));
             attrs.SetAttribute<HealStrength>(new HealStrength(ResolveStat(tier, t => t.HealStrength, BaseHealStrength)));
+            attrs.SetAttribute<AttackRange>(new AttackRange(ResolveStat(tier, t => t.AttackRange, BaseAttackRange)));
             attrs.SetAttribute<Shield>(new Shield(0));
             return attrs;
         }

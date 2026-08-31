@@ -50,6 +50,7 @@ namespace Rollgeon.PreConditions.Concretes
             StatType.Energy       => Get<Energy>(am, owner),
             StatType.Shield       => Get<Shield>(am, owner),
             StatType.HealStrength => Get<HealStrength>(am, owner),
+            StatType.AttackRange  => Get<AttackRange>(am, owner),
             _                     => 0,
         };
 

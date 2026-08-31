@@ -155,16 +155,21 @@ namespace Rollgeon.Editor.Tools.Enemy.Templates
 
         // ---- ramificación ---------------------------------------------------
 
+        /// <param name="useOwnerRange">True = el gate lee <c>AttackRange</c> de la ficha (atributo,
+        /// resuelto por tier) y <paramref name="range"/> queda de fallback. Para el gate PRINCIPAL
+        /// de ataque de una plantilla, así la ficha es LA fuente y no hay número duplicado.</param>
         public static AINode_If IfTargetInRange(int range, AIDecisionNode then, AIDecisionNode @else = null,
                                                 DistanceMetric metric = DistanceMetric.Manhattan,
                                                 BaseEnemyTargetSelector selector = null,
                                                 TargetAlignment alignment = TargetAlignment.Any,
-                                                bool lineOfSight = false)
+                                                bool lineOfSight = false,
+                                                bool useOwnerRange = false)
         {
             var n = new AINode_If { TargetSelector = selector ?? new TargetSelector_AlwaysPlayer(), Then = then, Else = @else };
             n.Conditions.Add(new PcTargetInRange
             {
                 Range = range, Metric = metric, Alignment = alignment, RequireLineOfSight = lineOfSight,
+                UseOwnerAttackRange = useOwnerRange,
             });
             return n;
         }

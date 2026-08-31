@@ -1,5 +1,6 @@
 using System;
 using Patterns;
+using Rollgeon.Attributes.Stats;
 using Rollgeon.Grid;
 using Sirenix.OdinInspector;
 using UnityEngine;
@@ -33,6 +34,11 @@ namespace Rollgeon.PreConditions.Concretes
         [MinValue(0)]
         public int Range = 1;
 
+        [Tooltip("Usa el rango de ataque de la ficha del owner (atributo AttackRange, resuelto " +
+                 "por tier y modificable por buffs) en vez de Range. Sin atributo (ej. el owner " +
+                 "es el jugador, o una ficha vieja con rango 0) cae a Range.")]
+        public bool UseOwnerAttackRange;
+
         public DistanceMetric Metric = DistanceMetric.Manhattan;
 
         [Tooltip("Restricción de alineación: solo diagonales (Skirmisher) o misma fila/columna (Sniper). " +
@@ -48,7 +54,9 @@ namespace Rollgeon.PreConditions.Concretes
         {
             get
             {
-                var name = $"Target in {Metric} range ≤ {Range}";
+                var name = UseOwnerAttackRange
+                    ? $"Target in {Metric} range ≤ AttackRange de la ficha (fallback {Range})"
+                    : $"Target in {Metric} range ≤ {Range}";
                 if (Alignment == TargetAlignment.SameRowOrColumn) name += " (fila/columna)";
                 else if (Alignment == TargetAlignment.DiagonalOnly) name += " (diagonal)";
                 if (RequireLineOfSight) name += " +LoS";
@@ -74,7 +82,17 @@ namespace Rollgeon.PreConditions.Concretes
                 ? GridFootprint.ManhattanDistance(ownerCoord, ownerFp, opponentCoord, opponentFp)
                 : GridFootprint.ChebyshevDistance(ownerCoord, ownerFp, opponentCoord, opponentFp);
 
-            if (dist > Range) return false;
+            // Rango efectivo: la ficha del owner si el designer lo pidió y existe; si no,
+            // el campo Range de siempre (back-compat con árboles ya autorados y PCs de héroe).
+            int range = Range;
+            if (UseOwnerAttackRange && context.Attributes != null)
+            {
+                int fromSheet = context.Attributes
+                    .GetAttributeModifiedValue<AttackRange, int>(context.OwnerGuid);
+                if (fromSheet > 0) range = fromSheet;
+            }
+
+            if (dist > range) return false;
             if (Alignment == TargetAlignment.Any && !RequireLineOfSight) return true;
 
             // Par de celdas más cercano entre ambos footprints (desempate: orden de iteración,

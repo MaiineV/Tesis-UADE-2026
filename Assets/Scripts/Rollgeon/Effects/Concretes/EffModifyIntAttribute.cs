@@ -121,6 +121,7 @@ namespace Rollgeon.Effects.Concretes
             StatType.Energy       => Apply<Energy>(attrs, target, amount, context),
             StatType.Shield       => Apply<Shield>(attrs, target, amount, context),
             StatType.HealStrength => Apply<HealStrength>(attrs, target, amount, context),
+            StatType.AttackRange  => Apply<AttackRange>(attrs, target, amount, context),
             _                     => true,
         };
 
