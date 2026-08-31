@@ -617,7 +617,9 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                 CajeroAssetBuilder.PopulateCritterData(critter);
 
                 Assert.AreEqual("minion.cajero_comision", critter.EntityId);
-                Assert.AreEqual("Comisión", critter.DisplayName);
+                Assert.AreEqual("Enemigo a Distancia", critter.DisplayName,
+                    "El refuerzo se lee como un ranged común más — un nombre propio le promete " +
+                    "al jugador una mecánica que no tiene.");
                 Assert.AreEqual(CajeroAssetBuilder.CritterHp, critter.BaseHP);
                 Assert.AreEqual(18, critter.BaseHP,
                     "Muere de un golpe de la mediana del piso 2 (24): sacárselos de encima cuesta " +

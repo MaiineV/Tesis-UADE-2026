@@ -164,7 +164,7 @@ MonoBehaviour:
       Entry: 8
       Data: 
   EntityId: minion.cajero_comision
-  DisplayName: "Comisi\xF3n"
+  DisplayName: Enemigo a Distancia
   Description: Vuela, tira de lejos, y le pone precio a huir.
   Portrait: {fileID: 133841030, guid: 7354be46d5bce5b44ae3fc20ec0cb47f, type: 3}
   WeaknessComboId: 

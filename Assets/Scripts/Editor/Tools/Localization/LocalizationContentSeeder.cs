@@ -676,9 +676,11 @@ namespace Rollgeon.EditorTools.Localization
             Content("boss.la_generala.brief",
                 "Suelta anillos eléctricos en oleadas — movete entre anillo y anillo.",
                 "Unleashes electric rings in waves — move between rings.");
+            // El refuerzo del Cajero es un ranged común más: misma identidad que RangedEnemy01
+            // a propósito — un nombre propio le prometía al jugador una mecánica que no tiene.
             Content("minion.cajero_comision.brief",
-                "Vuela, dispara de lejos y le pone precio a huir.",
-                "Flies, shoots from range, and puts a price on running.");
+                "Dispara de lejos; cortá la línea o cerrale la distancia.",
+                "Shoots from afar; break the line or close the gap.");
             Content("obj.dado_casa.brief",
                 "Rompelo para borrarle una categoría a la Generala.",
                 "Break it to erase one of the Generala's categories.");
@@ -1385,10 +1387,12 @@ namespace Rollgeon.EditorTools.Localization
                 "Te tira lejos y te llena el piso de monedas. Las que no levantás a tiempo se las lleva él, y cada una lo cura.",
                 "Throws you clear and litters the floor with coins. The ones you don't grab in time he takes back, and each one heals him.");
 
+            // Misma identidad que RangedEnemy01 a propósito: el refuerzo del Cajero es un
+            // ranged común más, no un personaje.
             Boss(CajeroAssetBuilder.CritterEntityId,
-                "Comisión", "The Commission",
-                "Vuela, tira de lejos, y le pone precio a huir.",
-                "Flies, shoots from range, and puts a price on running.");
+                "Enemigo a Distancia", "Ranged Enemy",
+                "Goblin con ataque a distancia, dispara con una ballesta.",
+                "A goblin with a ranged attack; fires a crossbow.");
 
             Boss(GeneralaAssetBuilder.BossEntityId,
                 "La Generala", "The Generala",

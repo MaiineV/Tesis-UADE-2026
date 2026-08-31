@@ -951,11 +951,11 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 13919417973649411
-    m_Localized: "Comisi\xF3n"
+    m_Localized: Enemigo a Distancia
     m_Metadata:
       m_Items: []
   - m_Id: 13919417973649412
-    m_Localized: Vuela, tira de lejos, y le pone precio a huir.
+    m_Localized: Goblin con ataque a distancia, dispara con una ballesta.
     m_Metadata:
       m_Items: []
   - m_Id: 13919417973649413
@@ -1129,7 +1129,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 16873829850607617
-    m_Localized: Vuela, dispara de lejos y le pone precio a huir.
+    m_Localized: "Dispara de lejos; cort\xE1 la l\xEDnea o cerrale la distancia."
     m_Metadata:
       m_Items: []
   - m_Id: 16873829850607618

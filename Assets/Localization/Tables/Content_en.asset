@@ -946,11 +946,11 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 13919417973649411
-    m_Localized: The Commission
+    m_Localized: Ranged Enemy
     m_Metadata:
       m_Items: []
   - m_Id: 13919417973649412
-    m_Localized: Flies, shoots from range, and puts a price on running.
+    m_Localized: A goblin with a ranged attack; fires a crossbow.
     m_Metadata:
       m_Items: []
   - m_Id: 13919417973649413
@@ -1123,7 +1123,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 16873829850607617
-    m_Localized: Flies, shoots from range, and puts a price on running.
+    m_Localized: Shoots from afar; break the line or close the gap.
     m_Metadata:
       m_Items: []
   - m_Id: 16873829850607618

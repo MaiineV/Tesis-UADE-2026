@@ -257,7 +257,9 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         public const string CritterAssetPath = "Assets/Rollgeon/Enemies/ED_Min_Comision.asset";
 
         /// <summary>
-        /// Lo que el Cajero invoca: su propia Comisión, no el ranged común del juego.
+        /// Lo que el Cajero invoca. Ficha propia por balance (más débil que el ranged común),
+        /// pero para el jugador se lee como un Enemigo a Distancia más: mismo nombre y mismos
+        /// textos, sin identidad propia.
         /// </summary>
         /// <remarks>
         /// Su kit no se puede autorar sobre <c>ED_RangedEnemy</c> —es el asset compartido de todos
@@ -268,7 +270,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         public const string CritterVisualPrefabPath = "Assets/Prefabs/Enemies/Bosses/PF_Min_Comision.prefab";
 
         public const string CritterEntityId = "minion.cajero_comision";
-        public const string CritterDisplayName = "Comisión";
+        public const string CritterDisplayName = "Enemigo a Distancia";
 
         /// <summary>Nombre corto para la carpeta y el prefijo de sus materiales clonados.</summary>
         public const string CritterName = "Comision";
