@@ -32,7 +32,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Templates
             new EnemyTemplate("pursuer", "Pursuer", EnemyArchetype.Melee,
                 "Se acerca por la ruta más corta y golpea a distancia 1 (daño = ATK).",
                 so => Fill(so, 75, 20, 4, 1, AttackPatternKind.ContactAdjacent, AttackTiming.Instant,
-                    atk => EnergyLoop(IfTargetInRange(1, AttackMelee(), Chase(3, 1))))),
+                    atk => EnergyLoop(IfTargetInRange(1, AttackMelee(), Chase(3, 1), useOwnerRange: true)))),
 
             new EnemyTemplate("charger", "Charger", EnemyArchetype.Melee,
                 "Se alinea a distancia 2 y telegrafía una banda de 3 casillas hacia el jugador; adyacente, " +
@@ -48,20 +48,22 @@ namespace Rollgeon.Editor.Tools.Enemy.Templates
                 "turno, sin telegraph). Solo golpea al jugador — sin friendly fire.",
                 so => Fill(so, 80, 15, 4, 1, AttackPatternKind.Cone, AttackTiming.Instant,
                     atk => EnergyLoop(
-                        IfTargetInRange(1, SweepCone(), Chase(3, 1), DistanceMetric.Chebyshev)))),
+                        IfTargetInRange(1, SweepCone(), Chase(3, 1), DistanceMetric.Chebyshev,
+                            useOwnerRange: true)))),
 
             new EnemyTemplate("skirmisher", "Skirmisher", EnemyArchetype.Ranged,
                 "Dispara SOLO en diagonal exacta a ≤4 (Chebyshev) y se reposiciona a distancia 3. El filtro " +
                 "gatea el disparo; el movimiento no busca posiciones diagonales (optimiza distancia).",
                 so => Fill(so, 50, 12, 5, 4, AttackPatternKind.ContactDiagonal, AttackTiming.Instant,
                     atk => EnergyLoop(IfTargetInRange(4, AttackRanged(), Kite(3, 3), DistanceMetric.Chebyshev,
-                        alignment: TargetAlignment.DiagonalOnly)))),
+                        alignment: TargetAlignment.DiagonalOnly, useOwnerRange: true)))),
 
             new EnemyTemplate("kiter", "Kiter", EnemyArchetype.Ranged,
                 "Dispara si el jugador está a ≤5 (diamante Manhattan) y mantiene distancia 3; si no, se acerca. " +
                 "Mismo árbol que ED_RangedEnemy.",
                 so => Fill(so, 50, 10, 5, 5, AttackPatternKind.DiamondArea, AttackTiming.Instant,
-                    atk => EnergyLoop(IfTargetInRange(5, Sequence(AttackRanged(), Kite(3, 3)), Chase(3, 3))))),
+                    atk => EnergyLoop(IfTargetInRange(5, Sequence(AttackRanged(), Kite(3, 3)), Chase(3, 3),
+                        useOwnerRange: true)))),
 
             new EnemyTemplate("sniper", "Sniper", EnemyArchetype.Ranged,
                 "En la misma fila/columna que el jugador, a ≤8 y con línea de visión libre, telegrafía la " +
@@ -69,27 +71,31 @@ namespace Rollgeon.Editor.Tools.Enemy.Templates
                 so => Fill(so, 45, 25, 4, 8, AttackPatternKind.StraightLine, AttackTiming.Telegraph,
                     atk => Sequence(ExecuteTelegraph(), EnergyLoop(
                         IfTargetInRange(8, Telegraph(ThreatShape.Row, 1, atk), Kite(2, 5),
-                            alignment: TargetAlignment.SameRowOrColumn, lineOfSight: true))))),
+                            alignment: TargetAlignment.SameRowOrColumn, lineOfSight: true,
+                            useOwnerRange: true))))),
 
             new EnemyTemplate("artillery", "Artillery", EnemyArchetype.Ranged,
                 "Casi no se mueve (SPD 1); a ≤6 telegrafía un 3×3 sobre el jugador y lo cobra al turno siguiente.",
                 so => Fill(so, 70, 25, 1, 6, AttackPatternKind.DiamondArea, AttackTiming.Telegraph,
                     atk => Sequence(ExecuteTelegraph(), EnergyLoop(
-                        IfTargetInRange(6, Telegraph(ThreatShape.SquareAroundPlayer, 1, atk), Wait()))))),
+                        IfTargetInRange(6, Telegraph(ThreatShape.SquareAroundPlayer, 1, atk), Wait(),
+                            useOwnerRange: true))))),
 
             new EnemyTemplate("mago", "Mago", EnemyArchetype.Ranged,
                 "A ≤5 telegrafía un 3×3 sobre el jugador y al turno siguiente lo prende con Fuego Temporal " +
                 "(2 rondas); si no, mantiene distancia 4. Requiere el asset " + FireTileName + ".",
                 so => Fill(so, 45, 10, 4, 5, AttackPatternKind.PersistentZone, AttackTiming.Telegraph,
                     atk => Sequence(Ignite(FindTile(FireTileName), 2), EnergyLoop(
-                        IfTargetInRange(5, Telegraph(ThreatShape.SquareAroundPlayer, 1, atk), Kite(3, 4)))))),
+                        IfTargetInRange(5, Telegraph(ThreatShape.SquareAroundPlayer, 1, atk), Kite(3, 4),
+                            useOwnerRange: true))))),
 
             new EnemyTemplate("healer", "Healer", EnemyArchetype.Support,
                 "Si hay un aliado herido, cura al de menos vida (HealStrength) a ≤2 o se le acerca; si no hay " +
                 "a quién curar, dispara y mantiene distancia 3. Mismo árbol que ED_Healer.",
                 so => Fill(so, 60, 10, 4, 2, AttackPatternKind.Unspecified, AttackTiming.Instant,
                     atk => EnergyLoop(IfAllyBelowMax(
-                        IfTargetInRange(2, HealAlly(), MoveToAlly(3, 2), selector: LowestHpAlly()),
+                        IfTargetInRange(2, HealAlly(), MoveToAlly(3, 2), selector: LowestHpAlly(),
+                            useOwnerRange: true),
                         Sequence(AttackRanged(), Kite(3, 3)))))),
 
             new EnemyTemplate("guardian", "Guardian", EnemyArchetype.Support,
@@ -98,7 +104,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Templates
                 so =>
                 {
                     Fill(so, 110, 15, 3, 1, AttackPatternKind.ContactAdjacent, AttackTiming.Instant,
-                        atk => EnergyLoop(IfTargetInRange(1, AttackMelee(), MoveToAlly(3, 1))));
+                        atk => EnergyLoop(IfTargetInRange(1, AttackMelee(), MoveToAlly(3, 1), useOwnerRange: true)));
                     so.AuraRadius = 2;
                     so.AuraFlatReduction = 5;
                 }),

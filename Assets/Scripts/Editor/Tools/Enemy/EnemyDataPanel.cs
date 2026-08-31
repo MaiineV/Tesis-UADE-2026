@@ -302,6 +302,7 @@ namespace Rollgeon.Editor.Tools.Enemy
             {
                 Prop("BaseHP", "Vida");
                 Prop("BaseAttack", "Ataque");
+                Prop("BaseAttackRange", "Rango de ataque");
                 Prop("BaseHealStrength", "Potencia de curación");
                 Prop("BaseSpeed", "Velocidad (iniciativa)");
                 Prop("MaxEnergy", "Energía máxima");
