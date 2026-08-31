@@ -63,6 +63,29 @@ namespace Rollgeon.PreConditions.Tests
         }
 
         [Test]
+        public void Evaluate_MultiCellOwner_AdjacentByNonAnchorCell_Passes()
+        {
+            // Owner 2×2 en (0,0) cubre (0,0)-(1,1); el opponent en (2,1) queda pegado a la
+            // celda (1,1) — desde el ANCLA la Manhattan sería 3 y fallaba.
+            _grid.LoadRoom(NavGraph.Rect(6, 6));
+            _grid.TryRegister(_ownerId, new GridCoord(0, 0), new UnityEngine.Vector2Int(2, 2));
+            _grid.Register(_opponentId, new GridCoord(2, 1));
+            Assert.IsTrue(new PcTargetInRange { Range = 1 }.Evaluate(Ctx(_ownerId, _opponentId)));
+        }
+
+        [Test]
+        public void Evaluate_MultiCellOwner_Chebyshev_UsesNearestCell()
+        {
+            _grid.LoadRoom(NavGraph.Rect(8, 8));
+            _grid.TryRegister(_ownerId, new GridCoord(0, 0), new UnityEngine.Vector2Int(2, 2));
+            _grid.Register(_opponentId, new GridCoord(3, 3)); // Chebyshev rect = 2, del ancla = 3
+            Assert.IsTrue(new PcTargetInRange { Range = 2, Metric = DistanceMetric.Chebyshev }
+                .Evaluate(Ctx(_ownerId, _opponentId)));
+            Assert.IsFalse(new PcTargetInRange { Range = 1, Metric = DistanceMetric.Chebyshev }
+                .Evaluate(Ctx(_ownerId, _opponentId)));
+        }
+
+        [Test]
         public void Evaluate_NoGrid_ReturnsFalse()
         {
             ServiceLocator.Clear();

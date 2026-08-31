@@ -1,6 +1,7 @@
 using System;
 using Rollgeon.Combat.AI.Readers;
 using Rollgeon.Grid;
+using Rollgeon.Movement;
 using Sirenix.OdinInspector;
 using Sirenix.Serialization;
 using UnityEngine;
@@ -54,7 +55,10 @@ namespace Rollgeon.Combat.AI.Decisions
                 return AIResult.Failed;
 
             int idealDist = IdealDistance?.Read(context) ?? 4;
-            int currentDist = selfCoord.Manhattan(playerCoord);
+            // Rect-a-rect (Fase B): distancia desde la celda más cercana del footprint.
+            var selfFp = context.Grid.GetFootprint(context.SelfGuid);
+            var playerFp = context.Grid.GetFootprint(context.PlayerGuid);
+            int currentDist = GridFootprint.ManhattanDistance(selfCoord, selfFp, playerCoord, playerFp);
             // BUG-061/PUL-014: mismo criterio que AINode_Move — "no hace falta kitear" y "no
             // HAY forma de kitear" son benignos, Succeeded (no-op) para que la Sequence siga.
             // Evidencia de que es seguro (grep de builders + assets, ver reporte del agente):
@@ -82,14 +86,18 @@ namespace Rollgeon.Combat.AI.Decisions
             }
             else
             {
-                var reachable = context.Movement.GetReachableTiles(selfCoord, maxSteps, includeOrigin: false);
+                // GetReachableAnchors respeta el footprint; los fakes sin la interfaz
+                // aditiva degradan al BFS 1×1.
+                var reachable = (context.Movement as IPathedMovementService)
+                        ?.GetReachableAnchors(context.SelfGuid, maxSteps)
+                    ?? context.Movement.GetReachableTiles(selfCoord, maxSteps, includeOrigin: false);
                 if (reachable == null || reachable.Count == 0) return AIResult.Succeeded; // sin candidato BFS
 
                 var best = selfCoord;
                 int bestScore = currentDist;
                 foreach (var candidate in reachable)
                 {
-                    int dist = Mathf.Min(candidate.Manhattan(playerCoord), idealDist);
+                    int dist = Mathf.Min(GridFootprint.ManhattanDistance(candidate, selfFp, playerCoord, playerFp), idealDist);
                     if (dist <= bestScore) continue;
                     bestScore = dist;
                     best = candidate;

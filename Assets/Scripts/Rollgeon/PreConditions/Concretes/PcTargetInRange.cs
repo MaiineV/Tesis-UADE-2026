@@ -35,9 +35,14 @@ namespace Rollgeon.PreConditions.Concretes
             if (!grid.TryGetPosition(context.OwnerGuid, out var ownerCoord)) return false;
             if (!grid.TryGetPosition(context.OpponentGuid, out var opponentCoord)) return false;
 
+            // Rect-a-rect (Fase B): la distancia se mide desde la celda más cercana de cada
+            // footprint — un 2×2 melee pegado por una celda no-ancla está "adyacente".
+            // Para dos 1×1 equivale a la matemática de siempre.
+            var ownerFp = grid.GetFootprint(context.OwnerGuid);
+            var opponentFp = grid.GetFootprint(context.OpponentGuid);
             int dist = Metric == DistanceMetric.Manhattan
-                ? ownerCoord.Manhattan(opponentCoord)
-                : ownerCoord.Chebyshev(opponentCoord);
+                ? GridFootprint.ManhattanDistance(ownerCoord, ownerFp, opponentCoord, opponentFp)
+                : GridFootprint.ChebyshevDistance(ownerCoord, ownerFp, opponentCoord, opponentFp);
 
             return dist <= Range;
         }

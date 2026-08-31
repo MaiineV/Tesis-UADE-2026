@@ -59,6 +59,13 @@ namespace Rollgeon.Combat.AI.Pathing
             var grid = ResolveGrid();
             if (grid == null || request.MaxSteps <= 0) return AIPathPlanResult.NoMove;
 
+            // Multi-celda (Fase B): planea footprint-aware pero CIEGO a hazards aunque haya
+            // casillas — LabelPlan razona celda por celda y la regla de activación de una
+            // casilla bajo un rectángulo es decisión de Fase C. La física real (path filter)
+            // sigue resolviendo por el ancla.
+            if (!GridFootprint.IsUnit(grid.GetFootprint(request.SelfGuid)))
+                return LegacyPlan(grid, request);
+
             var tiles = ResolveTiles();
             if (tiles == null || !tiles.HasAnySpecialTiles)
                 return LegacyPlan(grid, request);
@@ -72,8 +79,12 @@ namespace Rollgeon.Combat.AI.Pathing
 
         private static AIPathPlanResult LegacyPlan(IGridManager grid, in AIPathRequest r)
         {
-            var reachable = ReachableTiles(grid, r.Origin, r.MaxSteps);
-            int currentDist = r.Origin.Manhattan(r.TargetCoord);
+            // Footprint del self (Fase B): las distancias son rect-a-target (celda más
+            // cercana) y los candidatos son ANCLAS donde el rectángulo entero cabe. Para un
+            // 1×1 la matemática y el orden son idénticos al scoring legacy.
+            var fp = grid.GetFootprint(r.SelfGuid);
+            var reachable = ReachableTiles(grid, r.SelfGuid, fp, r.Origin, r.MaxSteps);
+            int currentDist = GridFootprint.ManhattanDistance(r.Origin, fp, r.TargetCoord);
             var best = r.Origin;
 
             if (r.Intent == MoveIntent.Approach)
@@ -82,7 +93,7 @@ namespace Rollgeon.Combat.AI.Pathing
                 int bestErr = Mathf.Abs(currentDist - r.DesiredRange);
                 foreach (var candidate in reachable)
                 {
-                    int err = Mathf.Abs(candidate.Manhattan(r.TargetCoord) - r.DesiredRange);
+                    int err = Mathf.Abs(GridFootprint.ManhattanDistance(candidate, fp, r.TargetCoord) - r.DesiredRange);
                     if (err < bestErr) { bestErr = err; best = candidate; }
                 }
             }
@@ -92,7 +103,7 @@ namespace Rollgeon.Combat.AI.Pathing
                 int bestScore = currentDist;
                 foreach (var candidate in reachable)
                 {
-                    int dist = Mathf.Min(candidate.Manhattan(r.TargetCoord), r.DesiredRange);
+                    int dist = Mathf.Min(GridFootprint.ManhattanDistance(candidate, fp, r.TargetCoord), r.DesiredRange);
                     if (dist <= bestScore) continue;
                     bestScore = dist;
                     best = candidate;
@@ -105,8 +116,11 @@ namespace Rollgeon.Combat.AI.Pathing
         }
 
         /// <summary>BFS calcado de <c>MovementService.GetReachableTiles</c> — el ORDEN de
-        /// descubrimiento importa: con scoring estricto, el primero entre iguales gana.</summary>
-        private static List<GridCoord> ReachableTiles(IGridManager grid, GridCoord origin, int range)
+        /// descubrimiento importa: con scoring estricto, el primero entre iguales gana.
+        /// El filtro es <c>CanPlace(ancla, fp, ignore: self)</c>: para 1×1 equivale al
+        /// <c>IsWalkable && !IsOccupied</c> de siempre (la celda propia ya está en visited).</summary>
+        private static List<GridCoord> ReachableTiles(IGridManager grid, Guid selfGuid, Vector2Int fp,
+            GridCoord origin, int range)
         {
             var result = new List<GridCoord>();
             if (range < 0) return result;
@@ -127,8 +141,7 @@ namespace Rollgeon.Combat.AI.Pathing
                 {
                     var n = edge.To;
                     if (visited.ContainsKey(n)) continue;
-                    if (!grid.IsWalkable(n)) continue;
-                    if (grid.IsOccupied(n)) continue;
+                    if (!grid.CanPlace(n, fp, ignore: selfGuid)) continue;
 
                     visited[n] = distance + 1;
                     queue.Enqueue(n);
