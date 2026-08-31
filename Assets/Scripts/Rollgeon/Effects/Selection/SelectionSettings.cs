@@ -376,9 +376,22 @@ namespace Rollgeon.Effects.Selection
                 valid[j] = tmp;
             }
 
+            // Dedupe por ocupante (Fase C): dos celdas del mismo footprint multi-celda son
+            // el mismo target — el auto-resolve no puede elegirlo dos veces.
+            ServiceLocator.TryGetService<IGridManager>(out var pickGrid);
+            var pickedOccupants = new HashSet<Guid>();
             var selected = new List<TargetRef>();
-            for (int i = 0; i < count; i++)
+            for (int i = 0; i < valid.Count && selected.Count < count; i++)
+            {
+                if (pickGrid != null
+                    && pickGrid.TryGetOccupant(valid[i].Coord, out var occupant)
+                    && occupant != Guid.Empty
+                    && !pickedOccupants.Add(occupant))
+                {
+                    continue;
+                }
                 selected.Add(valid[i]);
+            }
 
             return new TargetSelectionResult
             {
