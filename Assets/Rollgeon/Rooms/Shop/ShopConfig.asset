@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Rollgeon::Rollgeon.Shop.ShopConfigSO
   PriceMultiplier: 1
   PriceVariance: 0.1
-  MaxItemSlots: 3
+  MaxItemSlots: 6
   AllowRestock: 0
   RestockCost: 5
   MaxRestocks: 1
