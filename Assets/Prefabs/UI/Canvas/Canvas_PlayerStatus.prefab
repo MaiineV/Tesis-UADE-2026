@@ -2944,6 +2944,95 @@ MonoBehaviour:
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.ContentSizeFitter
   m_HorizontalFit: 0
   m_VerticalFit: 2
+--- !u!1 &4614145482089723694
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 3909725693769913951}
+  - component: {fileID: 5743265479377642585}
+  - component: {fileID: 1937248764141628689}
+  - component: {fileID: 4796119256163596969}
+  m_Layer: 0
+  m_Name: ChipScreenFlash
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!224 &3909725693769913951
+RectTransform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4614145482089723694}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 4579542396890523017}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 0, y: 0}
+  m_AnchorMax: {x: 1, y: 1}
+  m_AnchoredPosition: {x: 0, y: 0}
+  m_SizeDelta: {x: 0, y: 0}
+  m_Pivot: {x: 0.5, y: 0.5}
+--- !u!222 &5743265479377642585
+CanvasRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4614145482089723694}
+  m_CullTransparentMesh: 1
+--- !u!114 &1937248764141628689
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4614145482089723694}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
+  m_Material: {fileID: 0}
+  m_Color: {r: 1, g: 1, b: 1, a: 0}
+  m_RaycastTarget: 0
+  m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
+  m_Maskable: 1
+  m_OnCullStateChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  m_Sprite: {fileID: 0}
+  m_Type: 0
+  m_PreserveAspect: 0
+  m_FillCenter: 1
+  m_FillMethod: 4
+  m_FillAmount: 1
+  m_FillClockwise: 1
+  m_FillOrigin: 0
+  m_UseSpriteMesh: 0
+  m_PixelsPerUnitMultiplier: 1
+--- !u!114 &4796119256163596969
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4614145482089723694}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6b756a12932f631409d375a0761c4d73, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Rollgeon::Rollgeon.UI.HUD.Breakdown.ScreenFlashView
+  _image: {fileID: 1937248764141628689}
 --- !u!1 &4686116696807519671
 GameObject:
   m_ObjectHideFlags: 0
@@ -3751,6 +3840,7 @@ RectTransform:
   - {fileID: 4988331959284597082}
   - {fileID: 7625455548543324484}
   - {fileID: 5081576366728035916}
+  - {fileID: 3909725693769913951}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
@@ -5255,6 +5345,7 @@ GameObject:
   - component: {fileID: 7101884707650966416}
   - component: {fileID: 8822643947065262039}
   - component: {fileID: 8736128030442202764}
+  - component: {fileID: 7596409290558868377}
   m_Layer: 0
   m_Name: ActiveItemChip
   m_TagString: Untagged
@@ -5406,6 +5497,36 @@ MonoBehaviour:
   _mixedColor: {r: 0.92, g: 0.8, b: 0.35, a: 1}
   _positiveColor: {r: 0.45, g: 0.9, b: 0.5, a: 1}
   _armedTintFactor: 1.45
+--- !u!114 &7596409290558868377
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7381093981459135410}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4eebe52edf55e0e4a958891810636ec8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Rollgeon::Rollgeon.UI.HUD.ActiveItemChipJuice
+  _burst: {fileID: 1074379339914087484}
+  _flash: {fileID: 4796119256163596969}
+  _floatingText: {fileID: 0}
+  _rattleClip: {fileID: 8300000, guid: dba2c481d82f2314a96cba94cccbd3b9, type: 3}
+  _tickClip: {fileID: 8300000, guid: 4dd656509b1bbb9488a8b152457b96a4, type: 3}
+  _settleClip: {fileID: 8300000, guid: 8d4fb66aed2171944ba333ce01d0522b, type: 3}
+  _resolveClip: {fileID: 8300000, guid: 7a234dd193fe5504ba414454b05f8524, type: 3}
+  _enchantClip: {fileID: 8300000, guid: e9a87eb51b57908498d3fc5a6a927c60, type: 3}
+  _sfxVolume: 0.8
+  _tickMinInterval: 0.04
+  _hitstopSeconds: 0.06
+  _flashPeakAlphaMax: 0.22
+  _flashSeconds: 0.18
+  _burstIntensityMax: 1.1
+  _resolvePitchRange: {x: 0.85, y: 1.15}
+  _negativeText: Riesgo
+  _mixedText: Mixto
+  _positiveText: "\xA1Fuerte!"
 --- !u!1 &7661344218674049193
 GameObject:
   m_ObjectHideFlags: 0
