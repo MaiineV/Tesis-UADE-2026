@@ -35,7 +35,7 @@ namespace Rollgeon.Upgrades.Dice.PreConditions
     /// datos, y un gate de cara que no se puede evaluar no debe habilitar el efecto.
     /// </remarks>
     [Serializable, HideReferenceObjectPicker]
-    public sealed class PcCarrierFace : BasePreCondition
+    public sealed class PcCarrierFace : BasePreCondition, IReadsTriggerEffect
     {
         public CarrierFaceMode Mode = CarrierFaceMode.HasDuplicate;
 

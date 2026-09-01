@@ -131,6 +131,30 @@ namespace Rollgeon.UI.Tests
             Assert.Less(pair, generala, "Más dados contribuyentes deben subir la intensidad.");
         }
 
+        // ------------------------------------------------------------------
+        // FloorUnlessSkipping — piso de legibilidad del spinner (BUG-063)
+        // ------------------------------------------------------------------
+
+        [Test]
+        public void FloorUnlessSkipping_BajoElPisoSinSkip_DevuelveElPiso()
+        {
+            Assert.AreEqual(0.35f, BreakdownFeelMath.FloorUnlessSkipping(0.05f, 0.35f, skipping: false));
+        }
+
+        [Test]
+        public void FloorUnlessSkipping_SobreElPiso_Passthrough()
+        {
+            Assert.AreEqual(0.5f, BreakdownFeelMath.FloorUnlessSkipping(0.5f, 0.35f, skipping: false));
+        }
+
+        [Test]
+        public void FloorUnlessSkipping_ConSkip_IgnoraElPiso()
+        {
+            // El jugador pidió velocidad explícitamente: la secuencia se comprime
+            // igual que siempre.
+            Assert.AreEqual(0.05f, BreakdownFeelMath.FloorUnlessSkipping(0.05f, 0.35f, skipping: true));
+        }
+
         [Test]
         public void ComboCelebrateIntensity_SiempreEnRango01()
         {

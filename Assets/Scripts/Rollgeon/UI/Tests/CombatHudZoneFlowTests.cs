@@ -293,6 +293,45 @@ namespace Rollgeon.UI.Tests
             AssignPrivate(_flow, "_buttonsView", _buttonsView);
         }
 
+        // ------------------------------------------------------------------
+        // ShouldExitNow — regla pura del exit diferido tras el frame de gracia
+        // (BUG-082: los chips volvían antes de que el outro de dados arrancara)
+        // ------------------------------------------------------------------
+
+        [Test]
+        public void test_shouldExitNow_deferredRollingAndGatesFree_exits()
+        {
+            Assert.IsTrue(CombatHudZoneFlow.ShouldExitNow(
+                exitDeferred: true, rolling: true, outroPending: false, breakdownPending: false));
+        }
+
+        [Test]
+        public void test_shouldExitNow_outroStartedDuringGraceFrame_waits()
+        {
+            // El caso de BUG-082: el DiceZoneView arrancó su outro en el mismo
+            // dispatch — el End del outro re-dispara Changed y ahí sí salimos.
+            Assert.IsFalse(CombatHudZoneFlow.ShouldExitNow(
+                exitDeferred: true, rolling: true, outroPending: true, breakdownPending: false));
+        }
+
+        [Test]
+        public void test_shouldExitNow_breakdownReopened_waits()
+        {
+            Assert.IsFalse(CombatHudZoneFlow.ShouldExitNow(
+                exitDeferred: true, rolling: true, outroPending: false, breakdownPending: true));
+        }
+
+        [Test]
+        public void test_shouldExitNow_exitNoLongerDeferredOrNotRolling_noops()
+        {
+            // Un roll nuevo (EnterRolling) o un force (fin de turno) ya resolvieron
+            // la salida — el frame de gracia no debe salir dos veces.
+            Assert.IsFalse(CombatHudZoneFlow.ShouldExitNow(
+                exitDeferred: false, rolling: true, outroPending: false, breakdownPending: false));
+            Assert.IsFalse(CombatHudZoneFlow.ShouldExitNow(
+                exitDeferred: true, rolling: false, outroPending: false, breakdownPending: false));
+        }
+
         private static void AssignPrivate(object target, string fieldName, object value)
         {
             var field = target.GetType().GetField(fieldName, BindingFlags.Instance | BindingFlags.NonPublic);

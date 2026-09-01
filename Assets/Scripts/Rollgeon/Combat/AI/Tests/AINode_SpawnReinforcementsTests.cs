@@ -89,6 +89,28 @@ namespace Rollgeon.Combat.AI.Tests
         }
 
         [Test]
+        public void Tick_MultiCellReinforcement_RegistersWholeRectangleOnEdge()
+        {
+            // Fase C: el edge-picking usa CanPlace — el 2×2 entra completo, sin fallback 1×1.
+            _grid.LoadRoom(NavGraph.Rect(7, 7));
+            _enemyToSpawn.Footprint = new Vector2Int(2, 2);
+            var node = new AINode_SpawnReinforcements { EnemyToSpawn = _enemyToSpawn, Count = 2 };
+
+            var result = node.Tick(NewContext(Guid.NewGuid()));
+
+            Assert.AreEqual(AIResult.Succeeded, result);
+            Assert.AreEqual(2, _turnOrder.ParticipantCount);
+            foreach (var id in _turnOrder.OrderForRound)
+            {
+                Assert.AreEqual(new Vector2Int(2, 2), _grid.GetFootprint(id),
+                    "el refuerzo tiene que registrarse con su footprint, no 1×1");
+                Assert.IsTrue(_grid.TryGetPosition(id, out var anchor));
+                bool touchesEdge = anchor.X == 0 || anchor.X + 1 == 6 || anchor.Y == 0 || anchor.Y + 1 == 6;
+                Assert.IsTrue(touchesEdge, $"El rect anclado en {anchor} no toca el perímetro de la sala 7x7.");
+            }
+        }
+
+        [Test]
         public void Tick_RegistersSpawnedEntitiesInRegistryAndAttributes()
         {
             _grid.LoadRoom(NavGraph.Rect(5, 5));

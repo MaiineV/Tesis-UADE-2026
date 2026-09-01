@@ -11,7 +11,7 @@ using Rollgeon.PreConditions;
 namespace Rollgeon.Effects.Tests
 {
     /// <summary>
-    /// Regresión del bug del Special Attack: la Selection heredada del EffChain (oculta
+    /// Regresión del bug del viejo ataque a rango (slot 2, hoy Class Skill): la Selection heredada del EffChain (oculta
     /// por ShowSelection == false pero serializada en assets viejos con Range=1) gateaba
     /// el botón y el hover preview con un rango que nadie puede ver ni editar, mientras
     /// el targeting real usaba la selección de la fase 0 (Range=4).

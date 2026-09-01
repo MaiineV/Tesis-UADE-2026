@@ -17,7 +17,7 @@ namespace Rollgeon.Upgrades.Dice.PreConditions
     /// evaluable no habilita efectos (mismo criterio que <c>PcCarrierFace</c>).
     /// </remarks>
     [Serializable, HideReferenceObjectPicker]
-    public sealed class PcSlotCounterCompare : BasePreCondition
+    public sealed class PcSlotCounterCompare : BasePreCondition, IReadsTriggerEffect
     {
         [Tooltip("Clave del counter per-slot — la misma que usa el EffSlotCounter que lo alimenta.")]
         public string Key = "counter";

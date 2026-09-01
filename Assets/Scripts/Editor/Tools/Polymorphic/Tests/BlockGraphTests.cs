@@ -35,9 +35,29 @@ namespace Rollgeon.Editor.Tools.Polymorphic.Tests
             return item;
         }
 
-        static BlockGraphNode FindByTitle(BlockGraphModel.Result model, string title)
+        /// <summary>
+        /// Busca por el nombre del tipo, no por el título.
+        /// </summary>
+        /// <remarks>
+        /// El <c>Title</c> es texto de display y cambia a propósito — un nodo de efecto ahora dice
+        /// "Chain", no "EffChain", porque el grafo existe para que se lea qué hace el ítem. Un test
+        /// que ancla en el título se rompe cada vez que alguien mejora una etiqueta, sin que haya
+        /// pasado nada malo. El <c>Subtitle</c> es el nombre del tipo y sí es estructura.
+        /// </remarks>
+        static BlockGraphNode FindBySubtitle(BlockGraphModel.Result model, string subtitle)
         {
-            foreach (var n in model.AllNodes) if (n.Title == title) return n;
+            foreach (var n in model.AllNodes) if (n.Subtitle == subtitle) return n;
+            return null;
+        }
+
+        /// <summary>
+        /// El grupo de <c>OnActivate</c>. Se resuelve por path y no por indice porque el
+        /// ItemSO ahora proyecta tambien los tres grupos por banda del modelo nuevo, y
+        /// esos van primero por orden de declaracion.
+        /// </summary>
+        static BlockGraphNode ActivateGroup(BlockGraphModel.Result model)
+        {
+            foreach (var n in model.Root.Children) if (n.Path == "OnActivate") return n;
             return null;
         }
 
@@ -62,9 +82,11 @@ namespace Rollgeon.Editor.Tools.Polymorphic.Tests
             var model = BlockGraphModel.Build(item);
 
             Assert.AreEqual(BlockNodeKind.Root, model.Root.Kind);
-            Assert.AreEqual(1, model.Root.Children.Count);
+            // Tres grupos por banda (modelo nuevo) + OnActivate (camino viejo, todavia
+            // vivo) + BaseDamageOverride (Feature#0065, Furia Contenida).
+            Assert.AreEqual(5, model.Root.Children.Count);
 
-            var group = model.Root.Children[0];
+            var group = ActivateGroup(model);
             Assert.AreEqual(BlockNodeKind.Group, group.Kind);
             Assert.AreEqual("Heal", group.Title, "an EffectData titles itself with its Label");
             Assert.AreEqual("OnActivate", group.Path);
@@ -83,7 +105,7 @@ namespace Rollgeon.Editor.Tools.Polymorphic.Tests
             item.OnActivate.Effects.Add(new EffDealDamage());
 
             var model = BlockGraphModel.Build(item);
-            var group = model.Root.Children[0];
+            var group = ActivateGroup(model);
 
             Assert.AreEqual("EffAddShield", group.Children[0].Subtitle);
             Assert.AreEqual("EffHeal", group.Children[1].Subtitle);
@@ -103,8 +125,9 @@ namespace Rollgeon.Editor.Tools.Polymorphic.Tests
 
             var model = BlockGraphModel.Build(item);
 
-            var chainNode = FindByTitle(model, "EffChain");
+            var chainNode = FindBySubtitle(model, "EffChain");
             Assert.IsNotNull(chainNode, "the chain is a node of its own");
+            Assert.AreEqual("Chain", chainNode.Title, "el título es el nombre legible del efecto");
             Assert.AreEqual(2, chainNode.Children.Count, "one child per phase");
             Assert.AreEqual("Phase 1", chainNode.Children[0].Title);
             Assert.AreEqual("Phase 2", chainNode.Children[1].Title);
@@ -123,8 +146,8 @@ namespace Rollgeon.Editor.Tools.Polymorphic.Tests
             var model = BlockGraphModel.Build(item);
 
             Assert.AreEqual(0, model.Root.Column);
-            Assert.AreEqual(1, model.Root.Children[0].Column);
-            Assert.AreEqual(2, model.Root.Children[0].Children[0].Column);
+            Assert.AreEqual(1, ActivateGroup(model).Column);
+            Assert.AreEqual(2, ActivateGroup(model).Children[0].Column);
         }
 
         [Test]
@@ -134,7 +157,7 @@ namespace Rollgeon.Editor.Tools.Polymorphic.Tests
             item.OnActivate.PreConditions.Add(new PCComposite());
 
             var model = BlockGraphModel.Build(item);
-            var group = model.Root.Children[0];
+            var group = ActivateGroup(model);
 
             Assert.AreEqual(BlockNodeKind.Condition, group.Children[0].Kind);
         }
@@ -229,7 +252,7 @@ namespace Rollgeon.Editor.Tools.Polymorphic.Tests
             item.OnActivate.Effects.Add(new EffHeal());
 
             var model = BlockGraphModel.Build(item);
-            var effect = model.Root.Children[0].Children[0];
+            var effect = ActivateGroup(model).Children[0];
 
             Assert.IsTrue(effect.CanRemove);
             Assert.AreEqual(0, effect.SourceIndex, "it's element 0 of the Effects list");
@@ -263,7 +286,7 @@ namespace Rollgeon.Editor.Tools.Polymorphic.Tests
             item.OnActivate.Effects.Add(last);
 
             var model = BlockGraphModel.Build(item);
-            var middleNode = model.Root.Children[0].Children[1];
+            var middleNode = ActivateGroup(model).Children[1];
             Assert.AreSame(middle, middleNode.Value);
 
             // Simulate deleting the first one, which is what shifts every later index.
@@ -282,7 +305,7 @@ namespace Rollgeon.Editor.Tools.Polymorphic.Tests
             item.OnActivate.Effects.Add(new EffHeal());
 
             var model = BlockGraphModel.Build(item);
-            var group = model.Root.Children[0];
+            var group = ActivateGroup(model);
 
             Assert.AreEqual(-1, group.SourceIndex, "OnActivate is a single slot, not a list element");
             Assert.AreSame(item, group.Owner);

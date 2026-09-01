@@ -5,6 +5,9 @@ using Rollgeon.Combat.AI;
 using Rollgeon.Combat.AI.Decisions;
 using Rollgeon.Entities;
 using Rollgeon.Entities.Traits;
+// El Design de EnemyDataSO trae otro EnemyArchetype (planilla editor-only, Rollgeon.Entities):
+// acá el nombre pelado es SIEMPRE la familia runtime del panel.
+using EnemyArchetype = Rollgeon.Entities.Traits.EnemyArchetype;
 using Rollgeon.Entities.Visuals;
 using Rollgeon.Localization;
 using Rollgeon.Tiles;

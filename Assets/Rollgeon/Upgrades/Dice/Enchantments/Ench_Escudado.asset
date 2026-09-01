@@ -46,6 +46,9 @@ MonoBehaviour:
     - Name: 
       Entry: 8
       Data: 
+    - Name: _category
+      Entry: 3
+      Data: 3
     - Name: _allowedDiceTypes
       Entry: 7
       Data: 1|System.Collections.Generic.List`1[[Rollgeon.Dice.DiceType, Rollgeon]],
@@ -159,6 +162,9 @@ MonoBehaviour:
     - Name: RangeMode
       Entry: 3
       Data: 0
+    - Name: RangeFromMovementDie
+      Entry: 5
+      Data: false
     - Name: TargetMode
       Entry: 3
       Data: 0
@@ -295,14 +301,14 @@ MonoBehaviour:
   _faceFilter:
     rid: -2
   _triggers:
-  - rid: 8131244039720141468
+  - rid: 144068563111248721
   _capabilities: []
   references:
     version: 2
     RefIds:
     - rid: -2
       type: {class: , ns: , asm: }
-    - rid: 8131244039720141468
+    - rid: 144068563111248721
       type: {class: ExecuteEffectsOnDiceEvent, ns: Rollgeon.Upgrades.Dice.Triggers, asm: Rollgeon}
       data:
         Event: 5
@@ -315,10 +321,10 @@ MonoBehaviour:
         - Label: Effect Group
           PreConditions: []
           Effects:
-          - rid: 8131244039720141469
+          - rid: 144068563111248722
           TargetSelector:
             rid: -2
-    - rid: 8131244039720141469
+    - rid: 144068563111248722
       type: {class: EffModifyIntAttribute, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
       data:
         Selection:
@@ -328,6 +334,7 @@ MonoBehaviour:
           IsGlobal: 0
           Range: 1
           RangeMode: 0
+          RangeFromMovementDie: 0
           TargetMode: 0
           AoeShape: 0
           AoeRadius: 1
@@ -347,10 +354,10 @@ MonoBehaviour:
         _baseAmount: 1
         _comboMultiplier: 1
         _reader:
-          rid: 8131244039720141470
+          rid: 144068563111248723
         _readerMultiplier: 1
         _clampHealthToMax: 0
-    - rid: 8131244039720141470
+    - rid: 144068563111248723
       type: {class: ReadConstantInt, ns: Rollgeon.Effects.Readers, asm: Rollgeon}
       data:
         Value: 2

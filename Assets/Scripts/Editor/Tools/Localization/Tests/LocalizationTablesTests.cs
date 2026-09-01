@@ -44,6 +44,8 @@ namespace Rollgeon.Editor.Tools.Localization.Tests
             "menu.tab_general",
             "menu.tab_audio",
             "menu.audio_master",
+            // "Control" es control en los dos idiomas (categoría de encantamiento).
+            "dicebag.cat.control",
             // "Portal" es portal en los dos idiomas (Casillas Especiales).
             "tile.portal.name",
             // "Combo" se escribe igual en los dos idiomas y es el término que el juego ya
@@ -55,6 +57,7 @@ namespace Rollgeon.Editor.Tools.Localization.Tests
             Rollgeon.UI.ChestReveal.ChestRevealTextKeys.RarityUncommon,
             Rollgeon.UI.ChestReveal.ChestRevealTextKeys.RarityRare,
             Rollgeon.UI.ChestReveal.ChestRevealTextKeys.RarityLegendary,
+            Rollgeon.UI.ChestReveal.ChestRevealTextKeys.RarityGod,
             // BUG-041: sufijo de multiplicador de combo (" × 1.5") — símbolo + número
             // puro, sin palabras que traducir (mismo criterio que "Combo").
             "tooltip.effect.combo.multiplier_suffix",

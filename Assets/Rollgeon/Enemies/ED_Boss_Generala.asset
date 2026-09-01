@@ -1038,10 +1038,29 @@ MonoBehaviour:
     - Name: 
       Entry: 8
       Data: 
+    - Name: AIDetachedNodes
+      Entry: 7
+      Data: 72|System.Collections.Generic.List`1[[Rollgeon.Combat.AI.Decisions.AIDecisionNode,
+        Rollgeon]], mscorlib
+    - Name: 
+      Entry: 12
+      Data: 0
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
   EntityId: boss.la_generala
   DisplayName: La Generala
   Description: Rolls her own hand in the open. Break a die and you erase a category.
   Portrait: {fileID: -1548411135, guid: 2ea80cde72873384bac9f8c1ad22fc73, type: 3}
+  Design:
+    Archetype: 1
+    Pattern: 0
+    Timing: 2
+    Notes: "Cubiletazo de contacto; telegraphs: cuadrados dispersos, 3\xD73 sobre
+      el jugador, banda direccional; anillo de escarcha; dados de la casa."
   WeaknessComboId: combo.generala
   WeaknessMultiplierOverride: 1.5
   Curse: {fileID: 11400000, guid: fe76475bf4cca9a43a3341d900130b0b, type: 2}

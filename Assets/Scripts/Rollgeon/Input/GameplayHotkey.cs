@@ -12,7 +12,7 @@ namespace Rollgeon.Input
     {
         Move,
         Attack,
-        SpecialAttack,
+        ClassSkill,
         Heal,
         Roll,
         Confirm,
@@ -20,5 +20,6 @@ namespace Rollgeon.Input
         ForceDoor,
         Defense,
         ToggleMinimap,
+        CancelMove,
     }
 }

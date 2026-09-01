@@ -97,15 +97,15 @@ namespace Rollgeon.Heroes.Tests
             {
                 var movement     = MakeBase(HeroBehaviorSlot.Movement,      GamePhaseMask.All);
                 var baseAttack   = MakeBase(HeroBehaviorSlot.BaseAttack,    GamePhaseMask.Combat);
-                var specialAttack= MakeBase(HeroBehaviorSlot.SpecialAttack, GamePhaseMask.Combat);
+                var classSkill= MakeBase(HeroBehaviorSlot.ClassSkill, GamePhaseMask.Combat);
                 var healing      = MakeBase(HeroBehaviorSlot.Healing,       GamePhaseMask.All);
-                so.PhaseBehaviors.AddRange(new[] { movement, baseAttack, specialAttack, healing });
+                so.PhaseBehaviors.AddRange(new[] { movement, baseAttack, classSkill, healing });
 
                 var result = so.GetBehaviorsForPhase(GamePhase.Combat);
                 Assert.AreEqual(4, result.Count);
                 Assert.AreSame(movement,      result[0]);
                 Assert.AreSame(baseAttack,    result[1]);
-                Assert.AreSame(specialAttack, result[2]);
+                Assert.AreSame(classSkill, result[2]);
                 Assert.AreSame(healing,       result[3]);
             }
             finally { UnityEngine.Object.DestroyImmediate(so); }
@@ -122,20 +122,20 @@ namespace Rollgeon.Heroes.Tests
             {
                 var movement     = MakeBase(HeroBehaviorSlot.Movement,      GamePhaseMask.All);
                 var baseAttack   = MakeBase(HeroBehaviorSlot.BaseAttack,    GamePhaseMask.Combat);
-                var specialAttack= MakeBase(HeroBehaviorSlot.SpecialAttack, GamePhaseMask.Combat);
+                var classSkill= MakeBase(HeroBehaviorSlot.ClassSkill, GamePhaseMask.Combat);
                 var healing      = MakeBase(HeroBehaviorSlot.Healing,       GamePhaseMask.All);
                 var forceDoor    = MakeBase(HeroBehaviorSlot.ForceDoor,     GamePhaseMask.Combat);
                 var defense      = MakeBase(HeroBehaviorSlot.Defense,       GamePhaseMask.Combat);
                 // Orden de inserción distinto al del enum a propósito: el orden de
                 // salida lo dicta el enum, no la lista.
-                so.PhaseBehaviors.AddRange(new[] { defense, movement, baseAttack, specialAttack, healing, forceDoor });
+                so.PhaseBehaviors.AddRange(new[] { defense, movement, baseAttack, classSkill, healing, forceDoor });
 
                 var result = so.GetBehaviorsForPhase(GamePhase.Combat);
 
                 Assert.AreEqual(6, result.Count);
                 Assert.AreSame(movement,      result[0]);
                 Assert.AreSame(baseAttack,    result[1]);
-                Assert.AreSame(specialAttack, result[2]);
+                Assert.AreSame(classSkill, result[2]);
                 Assert.AreSame(healing,       result[3]);
                 Assert.AreSame(forceDoor,     result[4]);
                 Assert.AreSame(defense,       result[5]);
@@ -151,9 +151,9 @@ namespace Rollgeon.Heroes.Tests
             {
                 var movement     = MakeBase(HeroBehaviorSlot.Movement,      GamePhaseMask.All);
                 var baseAttack   = MakeBase(HeroBehaviorSlot.BaseAttack,    GamePhaseMask.Combat);
-                var specialAttack= MakeBase(HeroBehaviorSlot.SpecialAttack, GamePhaseMask.Combat);
+                var classSkill= MakeBase(HeroBehaviorSlot.ClassSkill, GamePhaseMask.Combat);
                 var healing      = MakeBase(HeroBehaviorSlot.Healing,       GamePhaseMask.All);
-                so.PhaseBehaviors.AddRange(new[] { movement, baseAttack, specialAttack, healing });
+                so.PhaseBehaviors.AddRange(new[] { movement, baseAttack, classSkill, healing });
 
                 var result = so.GetBehaviorsForPhase(GamePhase.Exploration);
                 Assert.AreEqual(2, result.Count);
@@ -178,8 +178,8 @@ namespace Rollgeon.Heroes.Tests
                 };
                 var healing      = MakeBase(HeroBehaviorSlot.Healing,       GamePhaseMask.All);
                 var baseAttack   = MakeBase(HeroBehaviorSlot.BaseAttack,    GamePhaseMask.Combat);
-                var specialAttack= MakeBase(HeroBehaviorSlot.SpecialAttack, GamePhaseMask.Combat);
-                so.PhaseBehaviors.AddRange(new[] { exploreMove, healing, baseAttack, specialAttack });
+                var classSkill= MakeBase(HeroBehaviorSlot.ClassSkill, GamePhaseMask.Combat);
+                so.PhaseBehaviors.AddRange(new[] { exploreMove, healing, baseAttack, classSkill });
 
                 var result = so.GetBehaviorsForPhase(GamePhase.Exploration);
                 Assert.AreEqual(2, result.Count);
@@ -197,7 +197,7 @@ namespace Rollgeon.Heroes.Tests
             {
                 var movement     = MakeBase(HeroBehaviorSlot.Movement,      GamePhaseMask.Exploration);
                 var baseAttack   = MakeBase(HeroBehaviorSlot.BaseAttack,    GamePhaseMask.Combat);
-                var specialAttack= MakeBase(HeroBehaviorSlot.SpecialAttack, GamePhaseMask.Combat);
+                var classSkill= MakeBase(HeroBehaviorSlot.ClassSkill, GamePhaseMask.Combat);
                 var healing      = MakeBase(HeroBehaviorSlot.Healing,       GamePhaseMask.Combat);
                 var custom       = new HeroActionBehavior
                 {
@@ -205,7 +205,7 @@ namespace Rollgeon.Heroes.Tests
                     IsBaseBehavior = false,
                     AllowedPhases = GamePhaseMask.Exploration,
                 };
-                so.PhaseBehaviors.AddRange(new[] { movement, baseAttack, specialAttack, healing, custom });
+                so.PhaseBehaviors.AddRange(new[] { movement, baseAttack, classSkill, healing, custom });
 
                 var result = so.GetBehaviorsForPhase(GamePhase.Exploration);
                 Assert.AreEqual(2, result.Count);
@@ -223,7 +223,7 @@ namespace Rollgeon.Heroes.Tests
             {
                 var movement     = MakeBase(HeroBehaviorSlot.Movement,      GamePhaseMask.Combat);
                 var baseAttack   = MakeBase(HeroBehaviorSlot.BaseAttack,    GamePhaseMask.Combat);
-                var specialAttack= MakeBase(HeroBehaviorSlot.SpecialAttack, GamePhaseMask.Combat);
+                var classSkill= MakeBase(HeroBehaviorSlot.ClassSkill, GamePhaseMask.Combat);
                 var healing      = MakeBase(HeroBehaviorSlot.Healing,       GamePhaseMask.Combat);
                 var combatCustom = new HeroActionBehavior
                 {
@@ -231,7 +231,7 @@ namespace Rollgeon.Heroes.Tests
                     IsBaseBehavior = false,
                     AllowedPhases = GamePhaseMask.Combat,
                 };
-                so.PhaseBehaviors.AddRange(new[] { movement, baseAttack, specialAttack, healing, combatCustom });
+                so.PhaseBehaviors.AddRange(new[] { movement, baseAttack, classSkill, healing, combatCustom });
 
                 var explorationResult = so.GetBehaviorsForPhase(GamePhase.Exploration);
                 Assert.AreEqual(0, explorationResult.Count);
@@ -600,7 +600,7 @@ namespace Rollgeon.Heroes.Tests
             public int GetCurrent(Guid entityId) => Current.TryGetValue(entityId, out var v) ? v : 0;
             public int GetMax(Guid entityId) => Cap;
             public int GetRollsPerTurn(Guid entityId) => 5;
-            public void AddPerTurnGrantBonus(int amount) { }
+            public void AddRollPoolBonus(int amount) { }
             public void RestoreCurrent(Guid entityId, int value)
                 => Current[entityId] = Math.Clamp(value, 0, Cap);
         }

@@ -204,6 +204,11 @@ namespace Rollgeon.Tutorial
                 _enchantAltarView = null;
             }
 
+            // Una ventana exclusiva abierta (BUG-019/BUG-068) es estado del tutorial:
+            // restaurar el gate ante cualquier teardown. Idempotente — no-op si no hay
+            // snapshot pendiente.
+            EndExclusiveStep();
+
             // Los íconos lockeados del marco son estado del tutorial — restaurarlos
             // ante cualquier teardown (el fin normal recarga escena, pero un abort no).
             var frame = ResolveCharacterFrame();
@@ -557,6 +562,19 @@ namespace Rollgeon.Tutorial
         // conviene decirlo ahora.
         private void ShowEscapeAftermath()
         {
+            // BUG-068 round 2: la cadena EscapeAftermath → CameraTeach → MapTeach corre
+            // sin lock de acciones, y CameraTeach es PassThrough (la cámara tiene que
+            // seguir viva) — el click-to-move de exploración quedaba usable y el jugador
+            // podía irse a otra sala e ignorar la lección. Lock TOTAL (Movement incluido)
+            // sostenido por los tres pasos; ShowShopDoorStep lo restaura. Lock primero y
+            // cancel después: cualquier re-armado en vuelo choca contra el gate.
+            BeginExclusiveStepAll();
+            if (ServiceLocator.TryGetService<Rollgeon.Exploration.IExplorationBehaviorService>(
+                    out var exploBehaviors))
+            {
+                exploBehaviors?.CancelSelection();
+            }
+
             _step = TutorialStep.EscapeAftermath;
             ShowStep(TutorialStep.EscapeAftermath, new TutorialStepDisplayRequest
             {
@@ -669,6 +687,11 @@ namespace Rollgeon.Tutorial
         /// <summary>Paso de la puerta de la tienda — cierra la cadena post-escape.</summary>
         private void ShowShopDoorStep()
         {
+            // BUG-068: fin de la cadena post-escape — restaura el gate (deslockea
+            // Movement) y dispara OnTutorialActionUnlocked, con el que
+            // ExplorationBehaviorService re-arma el click-to-move.
+            EndExclusiveStep();
+
             _step = TutorialStep.Shop;
             ShowStep(TutorialStep.Shop, new TutorialStepDisplayRequest
             {
@@ -696,6 +719,19 @@ namespace Rollgeon.Tutorial
             if (_gate == null) return;
             if (_exclusiveSnapshot == null) _exclusiveSnapshot = _gate.SnapshotLocked();
             _gate.LockAllExcept(allowed);
+        }
+
+        /// <summary>
+        /// BUG-068: variante sin slot permitido — lockea TODO, Movement incluido
+        /// (la cadena post-escape enseña cámara/mapa y ninguna acción corresponde).
+        /// Mismo contrato de snapshot-una-vez que <see cref="BeginExclusiveStep"/>:
+        /// encadenar pasos exclusivos no pisa el snapshot original.
+        /// </summary>
+        private void BeginExclusiveStepAll()
+        {
+            if (_gate == null) return;
+            if (_exclusiveSnapshot == null) _exclusiveSnapshot = _gate.SnapshotLocked();
+            _gate.LockAll();
         }
 
         /// <summary>
@@ -1346,6 +1382,10 @@ namespace Rollgeon.Tutorial
 
         private void OnShopItemPurchased(params object[] args)
         {
+            // El early-return con _step != Shop ya no puede tragarse una compra real:
+            // durante EscapeAftermath/CameraTeach/MapTeach el LockAll de BUG-068 impide
+            // salir de B, así que llegar a la tienda antes del paso Shop es imposible
+            // (antes, comprar con _step == CameraTeach dejaba C Locked para siempre).
             if (_step != TutorialStep.Shop) return;
 
             // C se re-abre (Uncleared, NO Cleared: los ObjectStates intactos hacen
@@ -1395,13 +1435,10 @@ namespace Rollgeon.Tutorial
         {
             if (_step != TutorialStep.Enchant) return;
 
-            ShowStep(TutorialStep.Enchant, new TutorialStepDisplayRequest
-            {
-                AnchorKind = TutorialAnchorKind.None,
-                Text = LocalizedContent.Ui(TutorialTextKeys.EnchantTable,
-                    "Elige un dado y tira de la palanca: aparecen 3 encantamientos y el que elijas se suma al dado."),
-                InputPolicy = TutorialInputPolicy.BlockUntilContinue,
-            }, ShowEnchantRerollHint);
+            ShowStep(TutorialStep.Enchant, AltarAnchoredRequest(
+                LocalizedContent.Ui(TutorialTextKeys.EnchantTable,
+                    "Elige un dado y tira de la palanca: aparecen 3 encantamientos y el que elijas se suma al dado.")),
+                ShowEnchantRerollHint);
         }
 
         // Segundo popup de la mesa: si la oferta no convence, se puede volver a
@@ -1409,13 +1446,39 @@ namespace Rollgeon.Tutorial
         // se explica — la economía del tutorial alcanza para pocas tiradas.
         private void ShowEnchantRerollHint()
         {
-            ShowStep(TutorialStep.Enchant, new TutorialStepDisplayRequest
+            ShowStep(TutorialStep.Enchant, AltarAnchoredRequest(
+                LocalizedContent.Ui(TutorialTextKeys.EnchantReroll,
+                    "¿Ninguno te convence? Tira de la palanca otra vez para ver 3 opciones nuevas: cada tirada cuesta más oro.")),
+                () => Overlay()?.Hide());
+        }
+
+        /// <summary>
+        /// BUG-036: los popups de la mesa iban con <c>AnchorKind.None</c> (= centrados)
+        /// justo sobre el panel del altar, también centrado — con sorting 29000 vs 100 lo
+        /// tapaban entero. Anclados al rect del panel, el layout adyacente del overlay
+        /// los coloca al costado con el recorte iluminando la mesa. Fallback a None si
+        /// la view no está (el overlay centra, comportamiento viejo).
+        /// </summary>
+        private TutorialStepDisplayRequest AltarAnchoredRequest(string text)
+        {
+            var request = new TutorialStepDisplayRequest
             {
                 AnchorKind = TutorialAnchorKind.None,
-                Text = LocalizedContent.Ui(TutorialTextKeys.EnchantReroll,
-                    "¿Ninguno te convence? Tira de la palanca otra vez para ver 3 opciones nuevas: cada tirada cuesta más oro."),
+                Text = text,
                 InputPolicy = TutorialInputPolicy.BlockUntilContinue,
-            }, () => Overlay()?.Hide());
+            };
+
+            if (_enchantAltarView == null)
+            {
+                _enchantAltarView = UnityEngine.Object.FindFirstObjectByType<EnchantmentAltarView>(
+                    FindObjectsInactive.Include);
+            }
+            if (_enchantAltarView != null && _enchantAltarView.TryGetPanelRect(out var panelRect))
+            {
+                request.AnchorKind = TutorialAnchorKind.RectTransform;
+                request.UiTarget = panelRect;
+            }
+            return request;
         }
 
         private void OnEnchantmentApplied(params object[] args)

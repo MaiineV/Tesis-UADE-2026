@@ -20,14 +20,30 @@ namespace Rollgeon.Loot
         [MinValue(0f)] public float Rare = 1f;
         [MinValue(0f)] public float Legendary = 1f;
 
+        // Dios (item-editor-spec.md §5.1): default 1f, igual que sus hermanos —
+        // uniforme salvo que Balance lo ajuste. Field nuevo en clase ya serializada:
+        // Odin lo completa con este default en los pools existentes sin migración.
+        [MinValue(0f)] public float God = 1f;
+
+        /// <summary>
+        /// Peso de la categoría. Switch exhaustivo A PROPÓSITO: antes de agregar
+        /// <see cref="ItemRarity.God"/> el <c>default:</c> devolvía <see cref="Common"/>
+        /// para cualquier valor no listado — un ítem Dios en un pool con Common en 0
+        /// pesaba como si el pool lo excluyera a él y no a Common. Ahora cada caso es
+        /// explícito.
+        /// </summary>
         public float WeightFor(ItemRarity rarity)
         {
             switch (rarity)
             {
+                case ItemRarity.Common: return Common;
                 case ItemRarity.Uncommon: return Uncommon;
                 case ItemRarity.Rare: return Rare;
                 case ItemRarity.Legendary: return Legendary;
-                default: return Common;
+                case ItemRarity.God: return God;
+                default:
+                    throw new System.ArgumentOutOfRangeException(
+                        nameof(rarity), rarity, "ItemRarity sin peso definido en RarityWeights.");
             }
         }
     }
@@ -109,7 +125,7 @@ namespace Rollgeon.Loot
         // categorías sigue ItemRarity ascendente, siempre.
         private List<KeyValuePair<ItemRarity, List<ItemSO>>> GroupValidByRarity()
         {
-            var result = new List<KeyValuePair<ItemRarity, List<ItemSO>>>(4);
+            var result = new List<KeyValuePair<ItemRarity, List<ItemSO>>>(5);
             if (Items == null) return result;
 
             foreach (ItemRarity rarity in System.Enum.GetValues(typeof(ItemRarity)))
@@ -118,6 +134,8 @@ namespace Rollgeon.Loot
                 for (int i = 0; i < Items.Count; i++)
                 {
                     if (Items[i] == null || Items[i].Rarity != rarity) continue;
+                    // Estilo Isaac: un UniquePerRun ya poseído no vuelve a dropear.
+                    if (UniquePerRunGate.IsBlocked(Items[i])) continue;
                     bucket ??= new List<ItemSO>();
                     bucket.Add(Items[i]);
                 }

@@ -102,9 +102,50 @@ namespace Rollgeon.Entities.Visuals
             // corriendo en el lugar cuando se le corta el path.
             SetMovementAnim(false);
 
+            // Un hard-stop pisa cualquier soft-stop pendiente (cruce de sala, snap).
+            _stopAtStepEnd = false;
+            _onStoppedAtStep = null;
+
             if (_moveAnim == null) return;
             StopCoroutine(_moveAnim);
             _moveAnim = null;
+        }
+
+        private bool _stopAtStepEnd;
+        private Action<GridCoord> _onStoppedAtStep;
+
+        /// <summary>
+        /// Soft-stop: pide frenar la caminata al COMPLETAR el step en curso, con el
+        /// pawn parado en una celda exacta. <paramref name="onStopped"/> recibe esa
+        /// celda ANTES del resync final (BUG-069) — es la ventana para truncar la
+        /// posición lógica del grid, que <c>MovementService.Move</c> ya adelantó al
+        /// destino. Devuelve <c>false</c> si no hay caminata que frenar (no está en
+        /// movimiento, locomoción Blink, o EditMode donde el path snapea).
+        /// </summary>
+        public bool RequestStopAtStepEnd(Action<GridCoord> onStopped)
+        {
+            if (!IsMoving || !Application.isPlaying) return false;
+            if (_locomotion == LocomotionStyle.Blink) return false;
+
+            _stopAtStepEnd = true;
+            _onStoppedAtStep = onStopped;
+            return true;
+        }
+
+        /// <summary>
+        /// Celdas que ocupa la entidad (ancho × alto desde el ancla). Solo afecta dónde se
+        /// dibuja el pawn: un 2×2 se centra entre sus cuatro celdas en vez de pararse en el ancla.
+        /// </summary>
+        public Vector2Int Footprint { get; private set; } = Vector2Int.one;
+
+        public void SetFootprint(Vector2Int footprint) => Footprint = GridFootprint.Normalize(footprint);
+
+        /// <summary>Posición del pawn para una celda lógica: centro del rectángulo + alto del pawn.</summary>
+        private Vector3 WorldFor(IGridManager grid, GridCoord anchor)
+        {
+            var pos = grid.GridToWorld(anchor) + GridFootprint.CenterOffset(Footprint, grid.TileSize);
+            pos.y += PawnYOffset;
+            return pos;
         }
 
         public void SnapToGrid(IGridManager grid, GridCoord coord)
@@ -112,9 +153,7 @@ namespace Rollgeon.Entities.Visuals
             if (grid == null) return;
             // Un snap es posición autoritativa: cualquier path en vuelo quedó obsoleto.
             StopMovement();
-            var pos = grid.GridToWorld(coord);
-            pos.y += PawnYOffset;
-            transform.position = pos;
+            transform.position = WorldFor(grid, coord);
         }
 
         /// <summary>
@@ -211,9 +250,7 @@ namespace Rollgeon.Entities.Visuals
 
             if (_blinkOutSeconds > 0f) yield return new WaitForSeconds(_blinkOutSeconds);
 
-            var endPos = grid.GridToWorld(to);
-            endPos.y += PawnYOffset;
-            transform.position = endPos;
+            transform.position = WorldFor(grid, to);
 
             if (_blinkInSeconds > 0f) yield return new WaitForSeconds(_blinkInSeconds);
 
@@ -260,8 +297,7 @@ namespace Rollgeon.Entities.Visuals
                 FaceCoord(prev, next);
 
                 Vector3 startPos = transform.position;
-                Vector3 endPos = grid.GridToWorld(next);
-                endPos.y += PawnYOffset;
+                Vector3 endPos = WorldFor(grid, next);
 
                 float elapsed = 0f;
                 while (elapsed < secondsPerStep)
@@ -273,6 +309,19 @@ namespace Rollgeon.Entities.Visuals
                 }
                 transform.position = endPos;
                 i++;
+
+                // Soft-stop (cancel del jugador): frenamos con el pawn parado en una
+                // celda exacta. El callback reconcilia la posición lógica del grid
+                // ANTES del resync BUG-069 de abajo — si la truncación funcionó, ese
+                // resync es no-op; si falló, snapea al destino lógico (sin desync).
+                if (_stopAtStepEnd)
+                {
+                    _stopAtStepEnd = false;
+                    var callback = _onStoppedAtStep;
+                    _onStoppedAtStep = null;
+                    callback?.Invoke(next);
+                    break;
+                }
             }
 
             // BUG-069: si el loop terminó por 'break' (reroute fallido), el transform se quedó
@@ -283,9 +332,7 @@ namespace Rollgeon.Entities.Visuals
             // GridToWorld(destination).
             if (grid.TryGetPosition(EntityGuid, out var logicalCoord))
             {
-                var syncPos = grid.GridToWorld(logicalCoord);
-                syncPos.y += PawnYOffset;
-                transform.position = syncPos;
+                transform.position = WorldFor(grid, logicalCoord);
             }
 
             SetMovementAnim(false);

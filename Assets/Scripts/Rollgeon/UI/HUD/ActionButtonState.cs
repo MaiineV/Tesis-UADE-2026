@@ -3,7 +3,7 @@ namespace Rollgeon.UI.HUD
     /// <summary>
     /// Estado visual/funcional de un boton de behavior en el HUD de combate.
     /// Un solo <see cref="PlayerActionButtonsView"/> orquesta los 4 botones
-    /// (Movement, BaseAttack, SpecialAttack, Healing) recomputando el estado
+    /// (Movement, BaseAttack, ClassSkill, Healing) recomputando el estado
     /// segun fase del turno, seleccion actual, y uso previo.
     /// </summary>
     public enum ActionButtonState

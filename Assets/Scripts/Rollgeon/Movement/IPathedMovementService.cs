@@ -39,6 +39,15 @@ namespace Rollgeon.Movement
         /// </summary>
         void SetPathFilter(IMovementPathFilter filter);
 
+        /// <summary>
+        /// Anclas alcanzables para <paramref name="entity"/> respetando su footprint
+        /// (Fase B: un 2×2 no entra por un pasillo de 1). Para un 1×1 el resultado y el
+        /// ORDEN de descubrimiento son idénticos a <see cref="IMovementService.GetReachableTiles"/>
+        /// — el scoring estricto de los nodos IA depende de ese orden. Default <c>null</c> =
+        /// "no soportado": el caller degrada a <c>GetReachableTiles</c>.
+        /// </summary>
+        List<GridCoord> GetReachableAnchors(Guid entity, int range) => null;
+
         /// <summary>Args: (entity, from, to).</summary>
         event Action<Guid, GridCoord, GridCoord> OnEntityTeleported;
     }

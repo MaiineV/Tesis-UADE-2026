@@ -1622,14 +1622,10 @@ public static class DiceTypeExt
     public static int MaxFace(this DiceType t) => t switch {
         DiceType.D4 => 4, DiceType.D6 => 6, DiceType.D8 => 8,
         DiceType.D10 => 10, DiceType.D12 => 12, DiceType.D20 => 20, _ => 6 };
-
-    public static int MaxPerBag(this DiceType t) => t switch {
-        DiceType.D4 => 5, DiceType.D6 => 5, DiceType.D8 => 4,
-        DiceType.D10 => 3, DiceType.D12 => 2, DiceType.D20 => 1, _ => 5 };
 }
 ```
 
-**Reglas del GD (Dice Builder).** 5 dados exactos por bolsa, máximos por tipo duros (sin pesos).
+**Reglas del GD (Dice Builder).** 5 dados exactos por bolsa, **sin tope de copias por tipo** (5×D20 es una bolsa válida). El tope por tipo (`MaxPerBag` / `DicePoolEntry.MaxInBag`) existió hasta agosto 2026 y se eliminó: el pool de una clase (`DiceBagPoolSO.Offerings`) ahora solo define *qué tipos* se ofrecen, y cualquier tipo ofrecido puede llenar la bolsa entera.
 
 ### 6.2 `DiceBagSO`
 
@@ -1647,10 +1643,6 @@ public class DiceBagSO : ScriptableObject
     {
         if (Dice.Count != 5)
             Debug.LogWarning($"{name}: DiceBag debe tener 5 dados (tiene {Dice.Count})");
-
-        foreach (var group in Dice.GroupBy(d => d))
-            if (group.Count() > group.Key.MaxPerBag())
-                Debug.LogWarning($"{name}: {group.Key} excede máximo ({group.Count()}/{group.Key.MaxPerBag()})");
     }
 }
 ```
@@ -4368,7 +4360,7 @@ public class ActionDefinitionSO : SerializedScriptableObject
 
 **Convención de naming de `ActionId`.** `<tipo>.<subtipo>.<nombre>`. Ejemplos:
 - `combo.full_house`, `combo.generala`
-- `attack.basic`, `attack.ranged`
+- `attack.basic`
 - `ability.berserker.frenzy`, `ability.necromancer.raise`
 - `item.potion.heal_small`, `item.bomb.poison`
 - `move`, `defend`, `interact`, `skill.heal`, `skill.force_door`
@@ -4492,6 +4484,54 @@ public class TurnOrderService
 - El encantamiento "Hielo d6" del GDD (ralentiza al enemigo que sacó un 6) aplica un `Modifier<int>` negativo con `Duration = 1` y `TickEvent = OnTurnFinished`.
 
 **Cross‑ref.** §2 (atributos — `Speed` declarado acá), §3 (modificadores de Speed), §12.2 (DamagePipeline), §D (UI de turn queue), §14.7 (RulesetSO define los rangos del speed die).
+
+### 12.8 Habilidad de Clase — Empuje del Guerrero (Feature#0055)
+
+> GDD: Combat System § "Habilidad de Clase, Empuje del Guerrero" + Turn System (tabla de acciones).
+> Reemplaza al viejo *Ataque especial / a rango*. Setup completo en `docs/setup/class-skill-push.md`.
+
+**Slot.** `HeroBehaviorSlot.ClassSkill = 2` (ex `SpecialAttack`, mismo valor serializado — chip, hotkey
+`E` y prefab no migran). Cada clase autora su propio behavior en ese slot; el Guerrero usa un
+`EffChain` de 1 fase (`Label = Push`, `BoardType = Attack`) cuyo efecto es `EffClassSkillPush` con
+selección `Occupied + BeforeRoll + Enemies + Range 1 (Manhattan)` — la adyacencia se exige al elegir
+objetivo, **antes** de tirar (compromiso ciego). El roll se cobra en ese click (`SpendRollForThrow`),
+los rerolls cuestan 1 roll cada uno como en Ataque.
+
+**Kind.** `RollActionKind.ClassSkill` (append). **No** es `IsCombatPayable`: una tirada de empuje no
+paga encantamientos de oro ni hooks de ítem filtrados por `Attack`.
+
+**Tabla.** `ClassSkillPushTableSO` (`Rollgeon/Heroes/Class Skill Push Table`): `Entries {ComboId,
+Tiles}` + `CollisionDamage` (10). `GetTiles(comboId)` devuelve 0 para combos sin entrada
+(`combo.brute_force`) o sin combo ⇒ la tirada se consume **sin efecto** — la única acción núcleo sin
+piso de dado más alto. `ResetToSpec()` carga los valores del GDD: Par 1, Doble Par 1, Suma 4
+(`combo.higher_number`) 2, Trío 2, Full House 3, Escalera 3, Póker 4, Generala 5.
+
+**Resolución.** `IClassSkillPushResolver.Resolve(pusher, target, distance, collisionDamage,
+stunTurns = 1)` (`Combat/Skills/Push`, bootstrap priority 82). Dirección =
+`CardinalExtensions.FromDelta(player, target)`. Cada eslabón llama a `IForcedMovementService.Push`
+(casillas especiales, hielo y portales intactos) y clasifica el choque con
+`ForcedMoveResult.BlockerGuid` (nuevo; `Empty` = pared / fuera de grilla, capturado **antes** de la
+reubicación de portal):
+
+| Bloqueador | Clasificación | Efecto |
+|---|---|---|
+| Sin ocupante (pared, borde) | `Wall` | `IStunService.ApplyStun(empujado, 1)` — pierde el turno |
+| Guid sin `Health` (`PropTileBlocker`), cofre (`IChestRegistry`), el propio jugador | `NonBreakable` | igual que pared |
+| Objeto de sala (`IRoomObjectCleanupService.Tracked`) | `Breakable` | daño de choque al empujado + daño letal (`Health + Shield`) al objeto por el `DamagePipeline` (el `CombatDeathWatcher` lo desregistra, `CollectBroken` ve una muerte normal). El empujado **no** avanza a la celda liberada. |
+| Entidad registrada con `Health > 0` | `Enemy` | daño de choque a **ambos**; si el bloqueador sigue vivo y queda remanente (`distance − TilesTraveled`), se empuja con las mismas reglas (cadena, misma dirección) |
+
+Daño de choque: `AttackKind.Environmental`, `SourceId = player` (crédito de kill), sin `ComboId` (sin
+weakness). Guardas: `visited` por entidad + `MaxChainDepth = 16`. Muerte a mitad del recorrido
+(pinchos) ⇒ eslabón `Died`, sin choque. El `PushOutcome` (lista de `PushHop`) queda logueado.
+
+**UI.** `DamageFormulaView` muestra `"{combo}: empuja N"` / `"Empuje - sin combo: sin efecto"`; la
+fase no tiene `EffDealDamage`/`EffAddShield`, así que el N×M breakdown nunca se emite.
+`HeroActionTooltip` → `action.class_skill`. Tutorial: el slot sigue bloqueado.
+
+**Autoría.** `Rollgeon → Heroes → Install Warrior Class Skill` (idempotente): crea la tabla y el
+bootstrap, los registra, y reemplaza in-place cada `EffDealDamage` del slot 2 de `CH_Warrior` y
+`CH_Warrior_Tutorial` por `EffClassSkillPush` (conserva el `EffPlaySequence` de golpe). Los
+`ClassHeroSO` son Odin — no editar el YAML a mano.
 
 **Cross‑ref §12.** §3 (modifiers direccionales), §4 (stats del héroe incluyen Incoming/Outgoing multipliers), §5 (EvaluateRoll), §6 (DiceRoller + Encantamientos), §6.5 (reroll budget), §10 (feedback), §13.4 (weakness).
 
@@ -4862,8 +4902,7 @@ diseñar para uno.**
 
 `ED_Healer.asset` lo confirma desde el otro lado: 1890 líneas y **cero `rid`**, porque
 `EnemyDataSO.AIRoot` es `[OdinSerialize]` sin `[SerializeReference]` — o sea el `EffectData` de los
-enemigos es directamente invisible a `SerializedObject`. Mismo caso: `EnemyCatalogSO` (ver el
-comentario en `EnemyEditorWindow`) y `BaseComboSO._extraEffects` (`protected` + `[OdinSerialize]`,
+enemigos es directamente invisible a `SerializedObject`. Mismo caso: `BaseComboSO._extraEffects` (`protected` + `[OdinSerialize]`,
 sin `[SerializeField]`).
 
 **Deuda: el racional de "doble cobertura" es inventado.** El docstring de `EffectData.cs` dice que
@@ -7738,6 +7777,41 @@ public class ItemCatalogSO : SerializedScriptableObject
 ```
 
 Pre-cargado en `ServiceBootstrapSO` (§1.1.1). Alimenta los `[ValueDropdown]` de todo SO que referencie un ítem.
+
+### 18.6 Deuda conocida — el inventario lleva las copias por `itemId`, no por copia
+
+El GDD de pasivas exige duplicados explícitamente: *"la obtención de ítems pasivos es
+infinita: no hay tope de copias en la run"* y *"Stacking: aditivo entre tiers y copias"*.
+`AddItem` los acepta — no hay guarda de duplicado para pasivos — pero los dos registros
+de bookkeeping del `InventoryService` están keyeados por `itemId`, así que **dos copias del
+mismo ítem son indistinguibles entre sí**.
+
+Dos síntomas, ambos silenciosos:
+
+1. **Perder una copia apaga las dos.** `UnbindPassiveHooks`
+   (`Assets/Scripts/Rollgeon/Items/InventoryService.cs:351`) desengancha *todos* los handlers
+   cuyo `itemId` matchee. Sacar una de dos copias deja a la otra en el inventario pero sin
+   suscripciones: el ítem sigue en la UI y ya no dispara. Aplica a cualquier pasivo con hooks.
+
+2. **Un modificador persistente queda aplicado para siempre.**
+   `_appliedModifierIds[item.ItemId] = modIds` (`InventoryService.cs:424`) **asigna**, no
+   acumula. La segunda copia pisa los `ModifierId` de la primera; al removerla se quitan los
+   de la segunda y los de la primera quedan sin dueño, imposibles de encontrar y de remover.
+   Hoy alcanza a `Item_BotasLigeras` y `Item_CorazaReforzada` — los únicos dos assets con
+   `PersistentModifiers` no vacíos.
+
+Lo que **sí** stackea bien es el bono de daño de combo: `GetComboBonusFor`
+(`InventoryService.cs:215`) recorre la lista de slots, no un diccionario, así que cada copia
+suma por separado.
+
+**Arreglo previsto.** Llevar ambos registros por *copia* (un handle por slot del inventario)
+en vez de por id, y que bind/unbind operen sobre una copia sola. Está contenido en
+`InventoryService`: el formato de save ya admite duplicados — `InventorySnapshot.PassiveItemIds`
+es una `List<string>` y el mismo id puede figurar dos veces — así que no hay migración.
+
+**No confundir con el estado con memoria por copia.** Contadores tipo Vértigo o Furia
+Contenida (§GDD pasivas) necesitan además un objeto de instancia en runtime que se persista;
+eso es un problema aparte y más grande. Esta deuda es solo el bookkeeping.
 
 **Cross‑ref §18.** §1.1.1 (bootstrap registra `ItemCatalogSO`), §3 (modificadores persistentes de pasivos), §8 (effects de activación y hooks), §14 (unlocks de ítems `ItemUnlockSO`), §15 (save via `InventoryState`), §17.F (shop vende ítems via `EffAddItemToInventory`).
 

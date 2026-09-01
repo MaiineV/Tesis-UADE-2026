@@ -194,7 +194,8 @@ namespace Rollgeon.Combat.AI.Decisions
             InMemoryEntityRegistry registry, TurnOrderService turnOrder)
         {
             var rng = context.Rng ?? new System.Random();
-            var tiles = PickEdgeSpawnTiles(grid, rng, Count);
+            var tiles = PickEdgeSpawnTiles(grid, rng, Count,
+                EnemyToSpawn != null ? EnemyToSpawn.EffectiveFootprint : GridFootprint.Unit);
             if (tiles.Count == 0) return null;
 
             ServiceLocator.TryGetService<IEnemyAIRegistry>(out var aiRegistry);
@@ -221,7 +222,12 @@ namespace Rollgeon.Combat.AI.Decisions
                     aiRegistry.Register(id, aiRoot, EnemyToSpawn.ResolveMaxHP(tier));
                 }
 
-                grid.Register(id, coord);
+                if (!grid.TryRegister(id, coord, EnemyToSpawn.EffectiveFootprint))
+                {
+                    // Los bordes se eligen celda a celda: un refuerzo multi-celda que no cabe entra 1×1.
+                    Debug.LogWarning($"[AINode_SpawnReinforcements] '{EnemyToSpawn.name}' no cabe con su footprint en {coord}: se registra 1×1.");
+                    grid.Register(id, coord);
+                }
                 visuals?.SpawnEnemy(id, EnemyToSpawn, coord);
 
                 // Sin registrar los traits, un refuerzo volador pisaría pinchos y un refuerzo jefe se
@@ -230,6 +236,13 @@ namespace Rollgeon.Combat.AI.Decisions
                     && traitService != null)
                 {
                     traitService.Register(id, EnemyToSpawn.CreateTraits());
+                }
+
+                // Un refuerzo Guardian proyecta su aura igual que uno spawneado por sala.
+                if (EnemyToSpawn.HasAura)
+                {
+                    Rollgeon.Combat.Auras.EnemyAuraService.ResolveOrCreate()
+                        .Register(id, EnemyToSpawn.AuraRadius, EnemyToSpawn.AuraFlatReduction);
                 }
 
                 // La barra world-space la inicializa quien spawnea: sin esto renderiza su default
@@ -260,7 +273,8 @@ namespace Rollgeon.Combat.AI.Decisions
         // Los tiles del perímetro se agrupan por lado y se reparten en orden aleatorio de lado para
         // que, con Count>=2, los refuerzos caigan en lados distintos en vez de apilados en uno solo.
         // Sala sin bounds reales o sin tiles de borde disponibles ⇒ lista vacía.
-        private static List<GridCoord> PickEdgeSpawnTiles(IGridManager grid, System.Random rng, int count)
+        private static List<GridCoord> PickEdgeSpawnTiles(IGridManager grid, System.Random rng, int count,
+            UnityEngine.Vector2Int footprint)
         {
             var result = new List<GridCoord>();
             var graph = grid.Graph;
@@ -280,9 +294,12 @@ namespace Rollgeon.Combat.AI.Decisions
 
             // 0=West (X==minX), 1=East (X==maxX), 2=South (Y==minY), 3=North (Y==maxY).
             var sides = new List<GridCoord>[] { new(), new(), new(), new() };
+            bool multiCell = !GridFootprint.IsUnit(footprint);
             foreach (var c in allCoords)
             {
-                if (!grid.IsWalkable(c) || grid.IsOccupied(c)) continue;
+                // Fase C: un refuerzo multi-celda solo elige celdas de borde donde su rect
+                // entero cabe (el rect crece hacia adentro de la sala desde el ancla).
+                if (multiCell ? !grid.CanPlace(c, footprint) : (!grid.IsWalkable(c) || grid.IsOccupied(c))) continue;
                 if (c.X == minX) sides[0].Add(c);
                 if (c.X == maxX) sides[1].Add(c);
                 if (c.Y == minY) sides[2].Add(c);

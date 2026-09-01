@@ -47,6 +47,9 @@ MonoBehaviour:
     - Name: 
       Entry: 8
       Data: 
+    - Name: _category
+      Entry: 3
+      Data: 1
     - Name: _allowedDiceTypes
       Entry: 7
       Data: 1|System.Collections.Generic.List`1[[Rollgeon.Dice.DiceType, Rollgeon]],
@@ -175,6 +178,9 @@ MonoBehaviour:
     - Name: RangeMode
       Entry: 3
       Data: 0
+    - Name: RangeFromMovementDie
+      Entry: 5
+      Data: false
     - Name: TargetMode
       Entry: 3
       Data: 0
@@ -287,14 +293,14 @@ MonoBehaviour:
   _faceFilter:
     rid: -2
   _triggers:
-  - rid: 144068445231645569
+  - rid: 144068563111248737
   _capabilities: []
   references:
     version: 2
     RefIds:
     - rid: -2
       type: {class: , ns: , asm: }
-    - rid: 144068445231645569
+    - rid: 144068563111248737
       type: {class: ExecuteEffectsOnDiceEvent, ns: Rollgeon.Upgrades.Dice.Triggers, asm: Rollgeon}
       data:
         Event: 3
@@ -305,17 +311,17 @@ MonoBehaviour:
         Effects:
         - Label: Effect Group
           PreConditions:
-          - rid: 144068445231645570
+          - rid: 144068563111248738
           Effects:
-          - rid: 144068445231645571
+          - rid: 144068563111248739
           TargetSelector:
             rid: -2
-    - rid: 144068445231645570
+    - rid: 144068563111248738
       type: {class: PcCarrierFace, ns: Rollgeon.Upgrades.Dice.PreConditions, asm: Rollgeon}
       data:
         _isConstantValue: 1
         Mode: 3
-    - rid: 144068445231645571
+    - rid: 144068563111248739
       type: {class: EffAddComboBonus, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
       data:
         Selection:
@@ -325,6 +331,7 @@ MonoBehaviour:
           IsGlobal: 0
           Range: 1
           RangeMode: 0
+          RangeFromMovementDie: 0
           TargetMode: 0
           AoeShape: 0
           AoeRadius: 1
@@ -339,7 +346,7 @@ MonoBehaviour:
           AutoResolve: 0
           AutoAccept: 1
         _amount:
-          rid: 144068445231645572
-    - rid: 144068445231645572
+          rid: 144068563111248740
+    - rid: 144068563111248740
       type: {class: ReadCarrierFace, ns: Rollgeon.Upgrades.Dice.Readers, asm: Rollgeon}
       data: 

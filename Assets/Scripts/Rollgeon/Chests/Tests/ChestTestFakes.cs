@@ -39,6 +39,7 @@ namespace Rollgeon.Chests.Tests
         public IReadOnlyList<InventorySlot> PassiveItems => Array.Empty<InventorySlot>();
         public IReadOnlyList<InventorySlot> ActiveItems => Array.Empty<InventorySlot>();
         public int MaxActiveSlots => 4;
+        public void AddActiveSlotBonus(int amount) { }
 
 #pragma warning disable 67
         public event Action<ItemSO, bool> OnItemChanged;
@@ -55,6 +56,8 @@ namespace Rollgeon.Chests.Tests
         public bool HasItem(string itemId) => false;
         public ItemSO GetItem(string itemId) => null;
         public bool ActivateItem(int activeSlotIndex, EffectContext ctx) => false;
+        public ItemActivationBlock CanActivateItem(int activeSlotIndex, EffectContext ctx)
+            => ItemActivationBlock.InvalidSlot;
         public int GetComboDamageBonusPreview(string comboId) => 0;
         public void TickCooldowns() { }
     }

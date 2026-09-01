@@ -33,7 +33,7 @@ namespace Rollgeon.UI.HUD
         // Serialized fields — behavior buttons
         // ======================================================================
 
-        [Title("Behavior Buttons (orden fijo: Movement / BaseAttack / SpecialAttack / Healing / ForceDoor / Defense)")]
+        [Title("Behavior Buttons (orden fijo: Movement / BaseAttack / ClassSkill / Healing / ForceDoor / Defense)")]
         [InfoBox("Cada ActionButton conoce su slot. El orden debe matchear el index " +
                  "que CombatHandoffService espera al disparar OnBehaviorSelected " +
                  "(índice de array == valor de HeroBehaviorSlot).")]
@@ -451,7 +451,7 @@ namespace Rollgeon.UI.HUD
             {
                 _hotkeys.Subscribe(GameplayHotkey.Move, OnHotkeyMove);
                 _hotkeys.Subscribe(GameplayHotkey.Attack, OnHotkeyAttack);
-                _hotkeys.Subscribe(GameplayHotkey.SpecialAttack, OnHotkeySpecial);
+                _hotkeys.Subscribe(GameplayHotkey.ClassSkill, OnHotkeyClassSkill);
                 _hotkeys.Subscribe(GameplayHotkey.Heal, OnHotkeyHeal);
                 _hotkeys.Subscribe(GameplayHotkey.ForceDoor, OnHotkeyForceDoor);
                 _hotkeys.Subscribe(GameplayHotkey.Defense, OnHotkeyDefense);
@@ -460,7 +460,7 @@ namespace Rollgeon.UI.HUD
             {
                 _hotkeys.Unsubscribe(GameplayHotkey.Move, OnHotkeyMove);
                 _hotkeys.Unsubscribe(GameplayHotkey.Attack, OnHotkeyAttack);
-                _hotkeys.Unsubscribe(GameplayHotkey.SpecialAttack, OnHotkeySpecial);
+                _hotkeys.Unsubscribe(GameplayHotkey.ClassSkill, OnHotkeyClassSkill);
                 _hotkeys.Unsubscribe(GameplayHotkey.Heal, OnHotkeyHeal);
                 _hotkeys.Unsubscribe(GameplayHotkey.ForceDoor, OnHotkeyForceDoor);
                 _hotkeys.Unsubscribe(GameplayHotkey.Defense, OnHotkeyDefense);
@@ -470,7 +470,7 @@ namespace Rollgeon.UI.HUD
 
         private void OnHotkeyMove(InputAction.CallbackContext _) => TriggerSlotHotkey(HeroBehaviorSlot.Movement);
         private void OnHotkeyAttack(InputAction.CallbackContext _) => TriggerSlotHotkey(HeroBehaviorSlot.BaseAttack);
-        private void OnHotkeySpecial(InputAction.CallbackContext _) => TriggerSlotHotkey(HeroBehaviorSlot.SpecialAttack);
+        private void OnHotkeyClassSkill(InputAction.CallbackContext _) => TriggerSlotHotkey(HeroBehaviorSlot.ClassSkill);
         private void OnHotkeyHeal(InputAction.CallbackContext _) => TriggerSlotHotkey(HeroBehaviorSlot.Healing);
         private void OnHotkeyForceDoor(InputAction.CallbackContext _) => TriggerSlotHotkey(HeroBehaviorSlot.ForceDoor);
         private void OnHotkeyDefense(InputAction.CallbackContext _) => TriggerSlotHotkey(HeroBehaviorSlot.Defense);
@@ -500,6 +500,18 @@ namespace Rollgeon.UI.HUD
 
         public void RecomputeButtonStates()
         {
+            // Aparte del estado: el estado es excluyente y se queda con la PRIMERA
+            // razon de la cascada, asi que un chip Locked por rango o por vida llena
+            // ocultaba que ademas no lo podias pagar. El flag solo se enciende cuando
+            // la falta de rolls es LA noticia: turno propio, sin accion en vuelo y sin
+            // modal — pintar rojo durante la animacion propia o el turno enemigo es
+            // ruido (BUG-074).
+            bool modalRollActive = _awaitingSelection
+                && ServiceLocator.TryGetService<IActionRollService>(out var modalRoll)
+                && modalRoll != null && modalRoll.IsActive;
+            bool flagUnaffordable = ShouldFlagUnaffordable(
+                _isPlayerTurn, _inChain, _rolled, modalRollActive, HasEnoughRolls());
+
             for (int i = 0; i < _buttons.Length; i++)
             {
                 if (_buttons[i] == null) continue;
@@ -507,11 +519,20 @@ namespace Rollgeon.UI.HUD
                 var behavior = ResolveBehaviorForSlot(i);
                 _buttons[i].SetState(ComputeStateForSlot(i, behavior));
 
-                // Aparte del estado: el estado es excluyente y se queda con la PRIMERA
-                // razon de la cascada, asi que un chip Locked por rango o por vida llena
-                // ocultaba que ademas no lo podias pagar. Sin behavior no opinamos.
-                if (behavior != null) _buttons[i].SetAffordable(HasEnoughRolls());
+                // Sin behavior no opinamos.
+                if (behavior != null) _buttons[i].SetAffordable(!flagUnaffordable);
             }
+        }
+
+        /// <summary>
+        /// Regla pura del flag ortogonal de affordability (BUG-074): rojo en TODAS las
+        /// fichas con behavior cuando es el turno del jugador, no hay accion en curso ni
+        /// modal abierto, y el pool no cubre ni 1 roll.
+        /// </summary>
+        internal static bool ShouldFlagUnaffordable(
+            bool isPlayerTurn, bool inChain, bool rolled, bool modalRollActive, bool hasRolls)
+        {
+            return isPlayerTurn && !inChain && !rolled && !modalRollActive && !hasRolls;
         }
 
         private ActionButtonState ComputeStateForSlot(int slotIndex, HeroActionBehavior behavior)
@@ -560,9 +581,11 @@ namespace Rollgeon.UI.HUD
                 return ActionButtonState.Locked;
             }
 
-            // §6.6: Movement con dado de Movimiento ya tirado — el roll está pagado y la
-            // selección no es cancelable (el handoff ignora los clicks de slot): Locked,
-            // no Available, para no prometer un switch que no va a pasar.
+            // Defensa: si el handoff reporta una selección NO cancelable (throw en
+            // vuelo, forced reroll), los slots quedan Locked para no prometer un
+            // switch que el handoff va a ignorar. Con el dado de Movimiento ya tirado
+            // la selección SÍ es cancelable (§6.6 revertido: se pierde el roll, no el
+            // turno), así que este branch ya no aplica a ese caso.
             if (_awaitingSelection
                 && ServiceLocator.TryGetService<Rollgeon.Combat.Handoff.ICombatHandoffService>(out var handoffSel)
                 && handoffSel != null && !handoffSel.HasCancellableSelection)

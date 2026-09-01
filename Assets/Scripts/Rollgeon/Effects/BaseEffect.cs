@@ -43,7 +43,7 @@ namespace Rollgeon.Effects
         /// (EffChain, EffForceDoor, etc.) — pero el campo heredado igual queda serializado
         /// en el asset con lo que tuviera autorado antes de ocultarse. Sin este guard, esa
         /// selection fantasma gateaba botones y previews con rangos que nadie puede ver ni
-        /// editar en el inspector (bug del Special Attack: gate a rango 1 con fase a rango 4).
+        /// editar en el inspector (bug histórico del viejo ataque a rango: gate a rango 1 con fase a rango 4).
         /// </summary>
         public virtual bool HasSelectionRequirement()
         {

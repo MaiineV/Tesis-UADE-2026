@@ -555,7 +555,11 @@ namespace Rollgeon.Combat.Threat
             if (!(args[0] is Guid entityGuid) || entityGuid == Guid.Empty) return;
             if (_instances.Count == 0) return;
             if (!ServiceLocator.TryGetService<IGridManager>(out var grid) || grid == null) return;
-            if (!grid.TryGetPosition(entityGuid, out var coord)) return;
+            if (!grid.TryGetPosition(entityGuid, out _)) return;
+
+            // Fase C: un footprint multi-celda arde si CUALQUIER celda cubierta pisa el hazard
+            // — y cobra UNA vez por instancia (la primera celda cubierta que matchea).
+            var covered = new List<GridCoord>(grid.OccupiedCells(entityGuid));
 
             foreach (var instance in new List<HazardInstance>(_instances.Values))
             {
@@ -563,7 +567,7 @@ namespace Rollgeon.Combat.Threat
                 if (!_instances.ContainsKey(instance.InstanceId)) continue;
                 if (instance.Definition == null) continue;
                 if (instance.Definition.Trigger != HazardTriggerMode.OnTurnEndInTile) continue;
-                if (!instance.Tiles.Contains(coord)) continue;
+                if (!TryFirstCovered(instance, covered, out var coord)) continue;
                 if (!ShouldBill(instance, entityGuid)) continue;
 
                 if (instance.SkipNextTick)
@@ -578,23 +582,52 @@ namespace Rollgeon.Combat.Threat
             }
         }
 
+        /// <summary>Primera celda cubierta por la entidad que cae dentro del hazard.</summary>
+        private static bool TryFirstCovered(HazardInstance instance, List<GridCoord> covered, out GridCoord hit)
+        {
+            for (int i = 0; i < covered.Count; i++)
+            {
+                if (instance.Tiles.Contains(covered[i]))
+                {
+                    hit = covered[i];
+                    return true;
+                }
+            }
+            hit = default;
+            return false;
+        }
+
         private void OnEntityMovedExternal(Guid entity, GridCoord from, GridCoord to, IReadOnlyList<GridCoord> path)
         {
             if (entity == Guid.Empty || _instances.Count == 0) return;
 
-            foreach (var coord in EnteredTiles(from, to, path))
-            {
-                // Re-snapshot per step: a trigger can consume tiles or expire an instance mid-scan.
-                foreach (var instance in new List<HazardInstance>(_instances.Values))
-                {
-                    // An earlier step of this same path may have consumed the instance's last tile.
-                    if (!_instances.ContainsKey(instance.InstanceId)) continue;
-                    if (instance.Definition == null) continue;
-                    if (instance.Definition.Trigger != HazardTriggerMode.OnEnter) continue;
-                    if (!instance.Tiles.Contains(coord)) continue;
-                    if (!ShouldBill(instance, entity)) continue;
+            // Fase C: el path que llega son ANCLAS; cada paso se expande a las celdas que el
+            // footprint cubre en ese paso, y una instancia dispara a lo sumo UNA vez por paso
+            // (dos celdas del mismo fuego bajo el rect = un cobro). Para 1×1 el paso cubre una
+            // sola celda y el comportamiento es el de siempre (sí re-dispara en pasos sucesivos).
+            var footprint = ServiceLocator.TryGetService<IGridManager>(out var grid) && grid != null
+                ? grid.GetFootprint(entity)
+                : GridFootprint.Unit;
 
-                    TriggerInstance(instance, entity, coord);
+            foreach (var stepAnchor in EnteredTiles(from, to, path))
+            {
+                var firedThisStep = new HashSet<HazardInstance>();
+                foreach (var coord in GridFootprint.Cells(stepAnchor, footprint))
+                {
+                    // Re-snapshot per step: a trigger can consume tiles or expire an instance mid-scan.
+                    foreach (var instance in new List<HazardInstance>(_instances.Values))
+                    {
+                        // An earlier step of this same path may have consumed the instance's last tile.
+                        if (!_instances.ContainsKey(instance.InstanceId)) continue;
+                        if (instance.Definition == null) continue;
+                        if (instance.Definition.Trigger != HazardTriggerMode.OnEnter) continue;
+                        if (!instance.Tiles.Contains(coord)) continue;
+                        if (firedThisStep.Contains(instance)) continue;
+                        if (!ShouldBill(instance, entity)) continue;
+
+                        firedThisStep.Add(instance);
+                        TriggerInstance(instance, entity, coord);
+                    }
                 }
             }
         }

@@ -18,11 +18,13 @@ namespace Rollgeon.UI.ChestReveal
         [Title("Refs")]
         [SerializeField] private Image _cellBg;
         [SerializeField] private Image _icon;
-        [SerializeField] private Image _goldIcon;
+        [SerializeField] private GameObject _goldIcon;
         [SerializeField] private TMP_Text _goldAmountLabel;
 
         [Title("Skin")]
-        [Tooltip("Fondo por rareza, indexado por ItemRarity (0=Common … 3=Legendary).")]
+        [Tooltip("Fondo por rareza, indexado por ItemRarity (0=Common … 4=God). Si el " +
+                 "array tiene menos de 5 entries (sheet sin sprite de God todavía), " +
+                 "Bind() clampea al último índice disponible — ver ChestRevealSetupTools.")]
         [SerializeField] private Sprite[] _rarityBackgrounds;
 
         public RectTransform Rect => (RectTransform)transform;
@@ -45,7 +47,7 @@ namespace Rollgeon.UI.ChestReveal
                 _icon.enabled = hasItemIcon;
             }
 
-            if (_goldIcon != null) _goldIcon.enabled = data.IsGold;
+            if (_goldIcon != null) _goldIcon.SetActive(data.IsGold);
             if (_goldAmountLabel != null)
             {
                 _goldAmountLabel.gameObject.SetActive(data.IsGold);

@@ -36,7 +36,7 @@ public abstract class BaseCatalogSO : SerializedScriptableObject, ICatalog {
 
 - **Uses:** `ICatalog` interface.
 - **Used by:** [[ActionCatalogSO]], [[ComboCatalogSO]],
-  [[EnemyCatalogSO]], [[BehaviorLibrarySO]], future catalogs (reward,
+  [[BehaviorLibrarySO]], future catalogs (reward,
   item, status, quest, feedback, room, entity, ruleset).
 
 ## Code

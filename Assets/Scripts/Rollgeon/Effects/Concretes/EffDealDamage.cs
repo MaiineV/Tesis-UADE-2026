@@ -257,11 +257,10 @@ namespace Rollgeon.Effects.Concretes
             if (context.SelectionResult?.SelectedTargets != null
                 && ServiceLocator.TryGetService<Grid.IGridManager>(out var grid))
             {
-                foreach (var target in context.SelectionResult.SelectedTargets)
-                {
-                    if (grid.TryGetOccupant(target.Coord, out var occupant) && occupant != Guid.Empty)
-                        result.Add(occupant);
-                }
+                // Dedupe por guid (Fase C): un footprint multi-celda cubierto por varias
+                // celdas del AoE cobra UNA vez, no una por celda.
+                result = grid.DistinctOccupants(
+                    System.Linq.Enumerable.Select(context.SelectionResult.SelectedTargets, t => t.Coord));
             }
 
             if (result.Count == 0 && context.TargetGuid != Guid.Empty)

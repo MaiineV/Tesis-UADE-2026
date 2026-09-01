@@ -121,7 +121,7 @@ namespace Rollgeon.Effects.Selection
         private bool ShowDynamicCount => ShowCount && !IsConstantSelectionCount;
 
         /// <summary>
-        /// True si la selección apunta a enemigos (ataque / ataque especial). Estos
+        /// True si la selección apunta a enemigos (ataque / habilidad de clase). Estos
         /// pintan TODO el rango geométrico con el tinte base "range" y los slots
         /// seleccionables (con enemigo) con "attack" por encima. Centraliza la condición
         /// antes duplicada inline en el hover preview y en el chain de combate.
@@ -151,16 +151,33 @@ namespace Rollgeon.Effects.Selection
         /// Rango efectivo del owner (§6.6). Con <see cref="RangeFromMovementDie"/>: la cara
         /// revelada del dado de Movimiento si hay tirada vigente; si no, la cara máxima del
         /// dado — el rango POTENCIAL, para que el gate del botón, el hover preview y el drag
-        /// pre-tirada sigan mostrando "hay algo alcanzable". Sin servicio registrado (tests,
-        /// exploración sin wiring) o sin el flag, el <see cref="Range"/> autorado.
+        /// pre-tirada sigan mostrando "hay algo alcanzable". En ambas ramas se suma el bonus
+        /// del stat <c>MoveRange</c> (reward "Movimiento+", BUG-85) para que gate, preview y
+        /// rango real queden coherentes. Sin servicio registrado (tests, exploración sin
+        /// wiring) o sin el flag, el <see cref="Range"/> autorado.
         /// </summary>
         public int ResolveEffectiveRange(Guid ownerGuid)
         {
             if (!RangeFromMovementDie) return Range;
             if (!ServiceLocator.TryGetService<IMovementDieService>(out var die) || die == null)
                 return Range;
-            if (die.TryGetActiveRange(ownerGuid, out var rolled)) return rolled;
-            return die.CurrentType.MaxFace();
+            // Piso 1: un malus de MoveRange (Guantelete Pesado) nunca deja al jugador
+            // sin poder moverse (GDD: "la velocidad no baja del mínimo").
+            int bonus = ResolveMoveRangeBonus(ownerGuid);
+            if (die.TryGetActiveRange(ownerGuid, out var rolled)) return Math.Max(1, rolled + bonus);
+            return Math.Max(1, die.CurrentType.MaxFace() + bonus);
+        }
+
+        // Bonus de MoveRange del owner; degrada a 0 sin AttributesManager o si la
+        // entidad no tiene el stat (enemigos, tests) — GetAttributeModifiedValue
+        // devuelve default sin loguear en ese caso.
+        private static int ResolveMoveRangeBonus(Guid ownerGuid)
+        {
+            if (ownerGuid == Guid.Empty) return 0;
+            if (!ServiceLocator.TryGetService<Rollgeon.Attributes.AttributesManager>(out var attrs)
+                || attrs == null)
+                return 0;
+            return attrs.GetAttributeModifiedValue<Rollgeon.Attributes.Stats.MoveRange, int>(ownerGuid);
         }
 
         public bool NeedsSelectionAt(SelectionTiming t)
@@ -376,9 +393,22 @@ namespace Rollgeon.Effects.Selection
                 valid[j] = tmp;
             }
 
+            // Dedupe por ocupante (Fase C): dos celdas del mismo footprint multi-celda son
+            // el mismo target — el auto-resolve no puede elegirlo dos veces.
+            ServiceLocator.TryGetService<IGridManager>(out var pickGrid);
+            var pickedOccupants = new HashSet<Guid>();
             var selected = new List<TargetRef>();
-            for (int i = 0; i < count; i++)
+            for (int i = 0; i < valid.Count && selected.Count < count; i++)
+            {
+                if (pickGrid != null
+                    && pickGrid.TryGetOccupant(valid[i].Coord, out var occupant)
+                    && occupant != Guid.Empty
+                    && !pickedOccupants.Add(occupant))
+                {
+                    continue;
+                }
                 selected.Add(valid[i]);
+            }
 
             return new TargetSelectionResult
             {

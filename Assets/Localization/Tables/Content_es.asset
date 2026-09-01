@@ -215,7 +215,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 5531895623681
-    m_Localized: +1 Roll por turno
+    m_Localized: Pool de rolls +1
     m_Metadata:
       m_Items: []
   - m_Id: 5531895623682
@@ -1016,263 +1016,706 @@ MonoBehaviour:
     m_Localized: "Tus combos ofensivos hacen da\xF1o extra mientras permanezcas ac\xE1."
     m_Metadata:
       m_Items: []
-  - m_Id: 15476475624660992
-    m_Localized: Candado
+  - m_Id: 17185034194485248
+    m_Localized: "+1 al pool de rolls: sube el m\xE1ximo y los rolls con los que
+      arranc\xE1s cada combate."
     m_Metadata:
       m_Items: []
-  - m_Id: 15476475679186944
-    m_Localized: Uno de tus dados queda trabado. Sortea otro cada turno.
+  - m_Id: 17185034236428288
+    m_Localized: "Vida m\xE1xima +25"
     m_Metadata:
       m_Items: []
-  - m_Id: 15491811094798336
-    m_Localized: Fuego de Bomba
+  - m_Id: 17185034236428289
+    m_Localized: Movimiento +1
     m_Metadata:
       m_Items: []
-  - m_Id: 15491811132547072
-    m_Localized: "Lo que deja una bomba al estallar. Quema mucho m\xE1s que el fuego
-      del pa\xF1o, y tampoco perdona al Croupier."
+  - m_Id: 17185034236428290
+    m_Localized: +1 celda de rango al dado de Movimiento en combate.
     m_Metadata:
       m_Items: []
-  - m_Id: 15516266093322240
-    m_Localized: Bola de fuego
+  - m_Id: 17283715951849472
+    m_Localized: Botas del Viento
     m_Metadata:
       m_Items: []
-  - m_Id: 15516266126876672
-    m_Localized: Prende un cono de fuego.
+  - m_Id: 17283715985403904
+    m_Localized: +2 movimiento base.
     m_Metadata:
       m_Items: []
-  - m_Id: 15516266126876673
-    m_Localized: Disparo
+  - m_Id: 17285590277255168
+    m_Localized: Guantes del Escalador
     m_Metadata:
       m_Items: []
-  - m_Id: 15516266126876674
-    m_Localized: 
+  - m_Id: 17285590277255169
+    m_Localized: "La Escalera hace +25 da\xF1o."
     m_Metadata:
       m_Items: []
-  - m_Id: 15516266126876675
-    m_Localized: Bombas
+  - m_Id: 17285792501428224
+    m_Localized: Botas del rayo
     m_Metadata:
       m_Items: []
-  - m_Id: 15516266126876676
-    m_Localized: Siembra <b>{1}</b> bombas al azar.
+  - m_Id: 17285792501428225
+    m_Localized: +3 de movimiento base.
     m_Metadata:
       m_Items: []
-  - m_Id: 15516266126876677
-    m_Localized: Detonar la bomba
+  - m_Id: 17286059955417088
+    m_Localized: Alas de Hermes
     m_Metadata:
       m_Items: []
-  - m_Id: 15516266126876678
-    m_Localized: 
+  - m_Id: 17286059955417089
+    m_Localized: +4 de movimiento base
     m_Metadata:
       m_Items: []
-  - m_Id: 15516266126876679
-    m_Localized: Lo que deja
+  - m_Id: 17290144389623808
+    m_Localized: Coraza de Hierro
     m_Metadata:
       m_Items: []
-  - m_Id: 15516266126876680
-    m_Localized: 'Deja fuego: <b>{0}</b> al entrar, <b>{1}</b> por turno, {2} rondas.'
+  - m_Id: 17290144389623809
+    m_Localized: "+35 de vida m\xE1xima."
     m_Metadata:
       m_Items: []
-  - m_Id: 16142169173585920
-    m_Localized: Debilidad
+  - m_Id: 17291279481532416
+    m_Localized: Coraza Templada
     m_Metadata:
       m_Items: []
-  - m_Id: 16142169202946048
-    m_Localized: "{0} le pega \xD7{1}."
+  - m_Id: 17291279481532417
+    m_Localized: "+45 vida m\xE1xima."
     m_Metadata:
       m_Items: []
-  - m_Id: 16142169202946049
-    m_Localized: Se teletransporta
+  - m_Id: 17291390181797888
+    m_Localized: "Coraza del Tit\xE1n"
     m_Metadata:
       m_Items: []
-  - m_Id: 16142169202946050
-    m_Localized: Salta a una casilla al lado tuyo, o al otro lado de la sala.
+  - m_Id: 17291390181797889
+    m_Localized: "+50 vida m\xE1xima."
     m_Metadata:
       m_Items: []
-  - m_Id: 16151112637673472
-    m_Localized: Casillas de fuego
+  - m_Id: 17294895571365888
+    m_Localized: "Talism\xE1n Vigoroso"
     m_Metadata:
       m_Items: []
-  - m_Id: 16151112667033600
-    m_Localized: "<b>{0}</b> al entrar en una casilla. <b>{1}</b> si empez\xE1s tu
-      turno sobre ella."
+  - m_Id: 17294895575560192
+    m_Localized: Recuperas 10HP al iniciar combate.
     m_Metadata:
       m_Items: []
-  - m_Id: 16155814888665088
+  - m_Id: 17296411766124544
+    m_Localized: Pico de Minero
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17296411770318848
+    m_Localized: +5 a la tirada de forzar puerta.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17300769589260288
+    m_Localized: Rodilleras de Obsidiana
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17300769589260289
+    m_Localized: +12 en tiradas de defensa.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17300896068497408
+    m_Localized: "Rodilleras del Basti\xF3n"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17300896068497409
+    m_Localized: +22 en tiradas de escudo
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17306392171212800
+    m_Localized: Guantelete Pesado
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17306392175407104
+    m_Localized: "+10 de da\xF1o base, a cambio de -1 en tirada de movimiento"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17318608383602688
+    m_Localized: 'Regeneracion de dados '
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17318608387796992
+    m_Localized: Recuperas 5HP por cada roll sin utilizar al final del turno.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17321473286172672
+    m_Localized: "Coraz\xF3n de la Fortuna"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17321473286172673
+    m_Localized: Recuperas 5HP por cada roll sin utilizar al final del turno.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17321622683086848
+    m_Localized: Tesoro de la Fortuna
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17321622687281152
+    m_Localized: Ganas 5 de oro cada roll sin utilizar al final del turno.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17322556813307904
+    m_Localized: Mochila Grande
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17322556813307905
+    m_Localized: "+1 slot de \xEDtems activos."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17323018375491584
+    m_Localized: Llamado de emergencia
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17323018375491585
+    m_Localized: +1 roll de dados permanente.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17325063912386560
+    m_Localized: Ficha del Segundo Aliento
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17325063912386561
+    m_Localized: "La primera vez que el jugador llegar\xEDa a 0 HP en la run, queda
+      en 1 HP en vez de morir.\n"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17331148496924672
+    m_Localized: "Corona del N\xFAmero Alto"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17331148496924673
+    m_Localized: "+10 de da\xF1o en el combo N\xFAmero Alto."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17331885440331776
+    m_Localized: Corona del Mayor
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17331885440331777
+    m_Localized: "+15 de da\xF1o en el combo N\xFAmero Alto."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17332682412617728
+    m_Localized: "Corona del M\xE1ximo"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17332682412617729
+    m_Localized: "+20 de da\xF1o en el combo N\xFAmero Alto."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17333112605601792
+    m_Localized: Corona de la Cima
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17333112605601793
+    m_Localized: "+30 de da\xF1o en el combo N\xFAmero Alto."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17333766250131456
+    m_Localized: Corona del Par
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17333766250131457
+    m_Localized: "+10 de da\xF1o al combo Par."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17334166307041280
+    m_Localized: Corona de los Iguales
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17334166307041281
+    m_Localized: "+15 de da\xF1o al combo Par."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17334912108818432
+    m_Localized: 'Corona de la Dualidad '
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17334912108818433
+    m_Localized: "+20 de da\xF1o en combo Par."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17335304825696256
+    m_Localized: Corona de los Gemelos
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17335304829890560
+    m_Localized: "+40 de da\xF1o en combo Par."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17335726969810944
+    m_Localized: Corona del Doble Par
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17335726969810945
+    m_Localized: "+10 de da\xF1o en el combo Doble Par."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17336154751070208
+    m_Localized: Corona de las Parejas
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17336154751070209
+    m_Localized: "+15 de da\xF1o en el combo Doble Par."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17336910547873792
+    m_Localized: Corona de los Amores
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17336910547873793
+    m_Localized: "+20 de da\xF1o en el combo Doble Par."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17337581590376448
+    m_Localized: Corona del Espejo
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17337581590376449
+    m_Localized: "+30 de da\xF1o en el combo Doble Par."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17338012546723840
+    m_Localized: "Corona del Tr\xEDo"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17338012546723841
+    m_Localized: "+10 de da\xF1o en el combo Trio."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17338241207595008
+    m_Localized: Corona del Triplete
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17338241207595009
+    m_Localized: "+15 de da\xF1o en el combo Tr\xEDo."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17338580367405056
+    m_Localized: Corona de la Trinidad
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17338580367405057
+    m_Localized: "+20 de da\xF1o en el combo Tr\xEDo."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17338790833385472
+    m_Localized: Corona del Triunvirato
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17338790833385473
+    m_Localized: "+30 de da\xF1o en el combo Tr\xEDo."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17339137832349696
+    m_Localized: "Corona del P\xF3ker "
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17339137832349697
+    m_Localized: "+10 de da\xF1o con el combo P\xF3ker."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17339426274635776
+    m_Localized: Corona del Cuarteto
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17339426274635777
+    m_Localized: "+15 de da\xF1o en el combo P\xF3ker."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17339656948772864
+    m_Localized: Corona de la Banda
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17339656948772865
+    m_Localized: "+20 de da\xF1o en el combo P\xF3ker."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17340098965499904
+    m_Localized: Corona de los Cuatro Reyes
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17340098965499905
+    m_Localized: "+30 de da\xF1o en el combo de P\xF3ker."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17340507348103168
+    m_Localized: Corona de la Escalera
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17340507348103169
+    m_Localized: "+10 de da\xF1o en el combo Escalera."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17340736537456640
+    m_Localized: Corona del Ascenso
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17340736537456641
+    m_Localized: "+15 de da\xF1o en el combo Escalera."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17340968432136192
+    m_Localized: "Corona de la Ascensi\xF3n"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17340968432136193
+    m_Localized: "+20 de da\xF1o en el combo Escalera."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17341224574087168
+    m_Localized: Corona del Camino Celestial
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17341224574087169
+    m_Localized: "+30 de da\xF1o en el combo Escalera."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17341427037335552
+    m_Localized: Corona de la Generala
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17341427037335553
+    m_Localized: "+10 de da\xF1o en el combo Generala."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17341875572011008
+    m_Localized: "Corona de la Perfecci\xF3n"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17341875572011009
+    m_Localized: "+10 de da\xF1o en el combo Generala."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17342111518388224
+    m_Localized: Corona Suprema
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17342111518388225
+    m_Localized: "+20 de da\xF1o en el combo Generala."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17342439924002816
+    m_Localized: Corona Divina
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17342439924002817
+    m_Localized: "+30 de da\xF1o en el combo Generala."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17342777909407744
+    m_Localized: Corona del Full
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17342777909407745
+    m_Localized: "+10 de da\xF1o en el combo Full House."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17342999574179840
+    m_Localized: Corona de la Familia
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17342999574179841
+    m_Localized: "+15 de da\xF1o en el combo Full House."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17343220853075968
+    m_Localized: Corona del Linaje
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17343220853075969
+    m_Localized: "+20 de da\xF1o en el combo Full House."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17343412033646592
+    m_Localized: Corona de la Casa Real
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17343412033646593
+    m_Localized: "+30 de da\xF1o en el combo Full House."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17566757004951552
+    m_Localized: Moneda Maldita
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17566757088837632
+    m_Localized: Los encantamientos del altar cuestan la mitad.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17566757822840832
+    m_Localized: Corredor Incansable
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17566757822840833
+    m_Localized: "+5 de da\xF1o por cada casilla recorrida antes de atacar."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17566758561038336
+    m_Localized: Piedra de Guardia
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17566758561038337
+    m_Localized: "+15 de da\xF1o si no te moviste este turno."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17566759316013056
+    m_Localized: Furia Contenida
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17566759316013057
+    m_Localized: "Tu da\xF1o base pasa a 0 y crece por cada ronda sin recibir da\xF1o.
+      Recibir da\xF1o lo reinicia."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593279981744128
     m_Localized: "Quema la sala y se teletransporta cuando lo alcanz\xE1s."
     m_Metadata:
       m_Items: []
-  - m_Id: 16825653756096512
-    m_Localized: Golpe marcado
-    m_Metadata:
-      m_Items: []
-  - m_Id: 16825653806428160
-    m_Localized: 
-    m_Metadata:
-      m_Items: []
-  - m_Id: 16825653806428161
-    m_Localized: Golpe
-    m_Metadata:
-      m_Items: []
-  - m_Id: 16825653806428162
-    m_Localized: 
-    m_Metadata:
-      m_Items: []
-  - m_Id: 16873829754138624
+  - m_Id: 17593280027881472
     m_Localized: "Pega m\xE1s fuerte cuanto m\xE1s oro llev\xE1s. Las fichas que
       dej\xE1s vencer se las queda."
     m_Metadata:
       m_Items: []
-  - m_Id: 16873829850607616
+  - m_Id: 17593280027881473
     m_Localized: "Suelta anillos el\xE9ctricos en oleadas, con huecos entre anillo
       y anillo."
     m_Metadata:
       m_Items: []
-  - m_Id: 16873829850607617
+  - m_Id: 17593280027881474
     m_Localized: "Dispara de lejos y se aleja cuando te le acerc\xE1s."
     m_Metadata:
       m_Items: []
-  - m_Id: 16873829850607618
+  - m_Id: 17593280027881475
     m_Localized: No ataca. Cada dado roto le saca un combo a la Generala.
     m_Metadata:
       m_Items: []
-  - m_Id: 16873829854801920
+  - m_Id: 17593280027881476
+    m_Localized: Bomba
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280027881477
+    m_Localized: Rompela y se lleva sus casillas marcadas.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280027881478
     m_Localized: Cura a los suyos antes que pegarte.
     m_Metadata:
       m_Items: []
-  - m_Id: 16873829854801921
+  - m_Id: 17593280027881479
     m_Localized: Corre hacia vos y pega de frente.
     m_Metadata:
       m_Items: []
-  - m_Id: 16873829854801922
+  - m_Id: 17593280027881480
     m_Localized: "Dispara de lejos y se aleja cuando te le acerc\xE1s."
     m_Metadata:
       m_Items: []
-  - m_Id: 16873829854801923
+  - m_Id: 17593280027881481
     m_Localized: "Se hace pasar por cofre y pega cuando te acerc\xE1s."
     m_Metadata:
       m_Items: []
-  - m_Id: 16873829854801924
+  - m_Id: 17593280027881482
     m_Localized: Pega de cerca.
     m_Metadata:
       m_Items: []
-  - m_Id: 16873829854801925
+  - m_Id: 17593280027881483
     m_Localized: Pega de cerca.
     m_Metadata:
       m_Items: []
-  - m_Id: 16873829854801926
+  - m_Id: 17593280027881484
     m_Localized: La banca retiene
     m_Metadata:
       m_Items: []
-  - m_Id: 16873829854801927
+  - m_Id: 17593280027881485
     m_Localized: "El oro que dej\xE1s vencer se lo queda la banca."
     m_Metadata:
       m_Items: []
-  - m_Id: 16873829854801928
+  - m_Id: 17593280027881486
     m_Localized: Mano vetada
     m_Metadata:
       m_Items: []
-  - m_Id: 16873829854801929
+  - m_Id: 17593280027881487
     m_Localized: "No pod\xE9s repetir el combo que acab\xE1s de anotar."
     m_Metadata:
       m_Items: []
-  - m_Id: 16873829888356352
-    m_Localized: Pinchos del Cajero
+  - m_Id: 17593280027881488
+    m_Localized: Casillas de fuego
     m_Metadata:
       m_Items: []
-  - m_Id: 16873829888356353
-    m_Localized: "Se desarman al pisarlos y se rearman solos. Duelen bastante m\xE1s
-      que los comunes."
+  - m_Id: 17593280027881489
+    m_Localized: "<b>{0}</b> al entrar en una casilla. <b>{1}</b> si empez\xE1s tu
+      turno sobre ella."
     m_Metadata:
       m_Items: []
-  - m_Id: 16873829980631040
-    m_Localized: "Un esp\xEDritu de la casa que remienda a los suyos."
+  - m_Id: 17593280027881490
+    m_Localized: Se teletransporta
     m_Metadata:
       m_Items: []
-  - m_Id: 16873829984825344
-    m_Localized: Soldado de la casa, cuerpo a cuerpo.
+  - m_Id: 17593280027881491
+    m_Localized: Salta a una casilla al lado tuyo, o al otro lado de la sala.
     m_Metadata:
       m_Items: []
-  - m_Id: 16873829984825345
-    m_Localized: "M\xEDmico"
+  - m_Id: 17593280027881492
+    m_Localized: Candado
     m_Metadata:
       m_Items: []
-  - m_Id: 16873829984825346
-    m_Localized: Un cofre que muerde.
+  - m_Id: 17593280027881493
+    m_Localized: Uno de tus dados queda trabado. Sortea otro cada turno.
     m_Metadata:
       m_Items: []
-  - m_Id: 17130812583374848
+  - m_Id: 17593280027881494
+    m_Localized: Bola de fuego
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280027881495
+    m_Localized: Prende un cono de fuego.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280027881496
+    m_Localized: Pleno y color
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280027881497
+    m_Localized: Prende la sala entera menos lo que rodea al jefe.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280027881498
+    m_Localized: Disparo
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280027881499
+    m_Localized: 
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280027881500
+    m_Localized: Bombas
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280027881501
+    m_Localized: Siembra <b>{1}</b> bombas al azar.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280027881502
+    m_Localized: Detonar la bomba
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280027881503
+    m_Localized: 
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280027881504
+    m_Localized: Golpe marcado
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280027881505
+    m_Localized: 
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280027881506
+    m_Localized: Golpe
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280027881507
+    m_Localized: 
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280027881508
+    m_Localized: Lo que deja
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280027881509
+    m_Localized: 'Deja fuego: <b>{0}</b> al entrar, <b>{1}</b> por turno, {2} rondas.'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280044658688
     m_Localized: Fuego
     m_Metadata:
       m_Items: []
-  - m_Id: 17130812608540672
+  - m_Id: 17593280044658689
     m_Localized: Quema a quien se queda adentro.
     m_Metadata:
       m_Items: []
-  - m_Id: 17130812608540673
+  - m_Id: 17593280044658690
     m_Localized: Escarcha
     m_Metadata:
       m_Items: []
-  - m_Id: 17130812608540674
+  - m_Id: 17593280044658691
     m_Localized: 'Hielo del cubilete: pisarlo aturde, y el parche se rompe con la
       pisada.'
     m_Metadata:
       m_Items: []
-  - m_Id: 17130812608540675
+  - m_Id: 17593280044658692
     m_Localized: Ficha de la banca
     m_Metadata:
       m_Items: []
-  - m_Id: 17130812608540676
+  - m_Id: 17593280044658693
     m_Localized: "Pisala y cobr\xE1s su valor. La que vence se la queda la banca
       \u2014 y lo cura."
     m_Metadata:
       m_Items: []
-  - m_Id: 17130812608540677
+  - m_Id: 17593280044658694
     m_Localized: Fuego de mesa
     m_Metadata:
       m_Items: []
-  - m_Id: 17130812608540678
+  - m_Id: 17593280044658695
     m_Localized: 'Arde: golpea a quien termine su turno adentro.'
     m_Metadata:
       m_Items: []
-  - m_Id: 17130812608540679
+  - m_Id: 17593280044658696
     m_Localized: Estela de hielo
     m_Metadata:
       m_Items: []
-  - m_Id: 17130812608540680
+  - m_Id: 17593280044658697
     m_Localized: Pisarla aturde, y cada parche se rompe con la pisada.
     m_Metadata:
       m_Items: []
-  - m_Id: 17130812612734976
+  - m_Id: 17593280044658698
     m_Localized: Lluvia
     m_Metadata:
       m_Items: []
-  - m_Id: 17130812625317888
+  - m_Id: 17593280044658699
     m_Localized: Marca zonas y castiga al ciclo siguiente a quien siga adentro.
     m_Metadata:
       m_Items: []
-  - m_Id: 17130812646289408
+  - m_Id: 17593280044658700
+    m_Localized: Fuego de Bomba
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280044658701
+    m_Localized: "Lo que deja una bomba al estallar. Quema mucho m\xE1s que el fuego
+      del pa\xF1o, y tampoco perdona al Croupier."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280044658702
+    m_Localized: Pinchos del Cajero
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280044658703
+    m_Localized: "Se desarman al pisarlos y se rearman solos. Duelen bastante m\xE1s
+      que los comunes."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280048852992
     m_Localized: Cofre
     m_Metadata:
       m_Items: []
-  - m_Id: 17130812646289409
+  - m_Id: 17593280048852993
     m_Localized: "Rompelo y fijate qu\xE9 guarda."
     m_Metadata:
       m_Items: []
-  - m_Id: 17201829490126848
-    m_Localized: Bomba
+  - m_Id: 17593280048852994
+    m_Localized: "Un esp\xEDritu de la casa que remienda a los suyos."
     m_Metadata:
       m_Items: []
-  - m_Id: 17201829544652800
-    m_Localized: Rompela y se lleva sus casillas marcadas.
+  - m_Id: 17593280048852995
+    m_Localized: Soldado de la casa, cuerpo a cuerpo.
     m_Metadata:
       m_Items: []
-  - m_Id: 17329585485967360
-    m_Localized: Pleno y color
+  - m_Id: 17593280048852996
+    m_Localized: "M\xEDmico"
     m_Metadata:
       m_Items: []
-  - m_Id: 17329585515327488
-    m_Localized: Prende la sala entera menos lo que rodea al jefe.
+  - m_Id: 17593280048852997
+    m_Localized: Un cofre que muerde.
     m_Metadata:
       m_Items: []
   references:

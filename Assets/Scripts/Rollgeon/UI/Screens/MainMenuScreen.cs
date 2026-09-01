@@ -67,7 +67,14 @@ namespace Rollgeon.UI.Screens
 
             if (_quitButton != null)
             {
+#if UNITY_WEBGL && !UNITY_EDITOR
+                // En WebGL Application.Quit() es no-op (el browser manda) — un botón
+                // "Salir" que no hace nada solo confunde: se oculta en la build de Itch.
+                // Salir es el último del stack, así que no queda hueco en el medio.
+                _quitButton.gameObject.SetActive(false);
+#else
                 _quitButton.onClick.AddListener(OnQuitClicked);
+#endif
             }
             else
             {

@@ -24,7 +24,7 @@ MonoBehaviour:
     SerializationNodes:
     - Name: _upgradeId
       Entry: 1
-      Data: char_rew.hp_plus_5
+      Data: char_rew.hp_plus_25
     - Name: _displayName
       Entry: 1
       Data: Max Health
@@ -55,7 +55,7 @@ MonoBehaviour:
       Data: 1|Rollgeon.Effects.Readers.ReadConstantInt, Rollgeon
     - Name: Value
       Entry: 3
-      Data: 50
+      Data: 25
     - Name: 
       Entry: 8
       Data: 
@@ -63,11 +63,11 @@ MonoBehaviour:
       Entry: 10
       Data: 0
   _amount:
-    rid: 6878114991212856052
+    rid: 3216492134191333778
   references:
     version: 2
     RefIds:
-    - rid: 6878114991212856052
+    - rid: 3216492134191333778
       type: {class: ReadConstantInt, ns: Rollgeon.Effects.Readers, asm: Rollgeon}
       data:
-        Value: 50
+        Value: 25

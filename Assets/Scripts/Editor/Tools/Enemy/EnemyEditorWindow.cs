@@ -1,5 +1,9 @@
+using System;
 using System.Collections.Generic;
+using Rollgeon.Combos;
 using Rollgeon.Editor.Tools.Enemy.AITree;
+using Rollgeon.Editor.Tools.Enemy.Builders;
+using Rollgeon.Editor.Tools.Enemy.Templates;
 using Rollgeon.Entities;
 using UnityEditor;
 using UnityEngine;
@@ -9,14 +13,21 @@ namespace Rollgeon.Editor.Tools.Enemy
 {
     /// <summary>
     /// Single editor window with a left enemy browser and a tabbed right panel:
-    /// "Enemy Data" (Odin-driven IMGUI) and "AI Tree" (GraphView).
+    /// "Ficha" (Odin-driven IMGUI) and "Árbol de IA" (GraphView).
     /// Pattern mirrors HeroClassEditorWindow but extends it with UIToolkit + GraphView.
+    /// La ventana es dueña de los diagnósticos: valida cada ficha fuera del draw (al cambiar
+    /// el proyecto, al deshacer o al editar) y se los empuja al panel y a la lista.
     /// </summary>
     public sealed class EnemyEditorWindow : EditorWindow
     {
-        const float LEFT_WIDTH = 220f;
+        const float LEFT_WIDTH = 240f;
+        static readonly string[] KindFilters = { "Todos", "Jefes", "Regulares", "Plantillas" };
+        const int KindTemplates = 3;
 
         readonly List<EnemyDataSO> _enemies = new List<EnemyDataSO>();
+        readonly Dictionary<EnemyDataSO, List<EnemyIssue>> _issues = new Dictionary<EnemyDataSO, List<EnemyIssue>>();
+        readonly Dictionary<EnemyDataSO, EnemyTreeSummary> _summaries = new Dictionary<EnemyDataSO, EnemyTreeSummary>();
+        ComboCatalogSO _comboCatalog;
         EnemyDataSO _selected;
         EnemyDataPanel _dataPanel;
         AIDecisionTreeGraphView _graphView;
@@ -28,17 +39,26 @@ namespace Rollgeon.Editor.Tools.Enemy
         Button _tabTree;
         int _tabIndex; // 0 = data, 1 = tree
 
+        string _search = string.Empty;
+        int _kindFilter;
+        int _archetypeFilter; // 0 = todos; i > 0 = EnemyArchetype (i - 1)
+        string[] _archetypeFilters;
         Vector2 _leftScroll;
 
-        [MenuItem("Tools/Enemy Editor")]
+        [MenuItem("Tools/Rollgeon/Editor de enemigos")]
         static void Open()
         {
-            var w = GetWindow<EnemyEditorWindow>("Enemy Editor");
+            var w = GetWindow<EnemyEditorWindow>("Editor de enemigos");
             w.minSize = new Vector2(960f, 540f);
         }
 
         void OnEnable()
         {
+            var labels = EnemyEditorVocab.LabelsOf<EnemyArchetype>();
+            _archetypeFilters = new string[labels.Length + 1];
+            _archetypeFilters[0] = "Todos los arquetipos";
+            Array.Copy(labels, 0, _archetypeFilters, 1, labels.Length);
+
             BuildUI();
             RefreshList();
             Undo.undoRedoPerformed += OnUndo;
@@ -47,6 +67,7 @@ namespace Rollgeon.Editor.Tools.Enemy
         void OnDisable()
         {
             Undo.undoRedoPerformed -= OnUndo;
+            if (_dataPanel != null) _dataPanel.Changed -= OnPanelChanged;
             _dataPanel?.Dispose();
             _graphView?.DisposeViews();
         }
@@ -61,6 +82,13 @@ namespace Rollgeon.Editor.Tools.Enemy
         {
             _dataPanel?.RebuildTree();
             if (_tabIndex == 1 && _selected != null) _graphView.Bind(_selected);
+            if (_selected != null) RecomputeOne(_selected);
+            _leftPanel?.MarkDirtyRepaint();
+        }
+
+        void OnPanelChanged()
+        {
+            if (_selected != null) RecomputeOne(_selected);
             _leftPanel?.MarkDirtyRepaint();
         }
 
@@ -80,8 +108,8 @@ namespace Rollgeon.Editor.Tools.Enemy
             root.Add(rightCol);
 
             var tabBar = new VisualElement { style = { flexDirection = FlexDirection.Row, height = 28, marginBottom = 4 } };
-            _tabData = MakeTab("Enemy Data", () => SwitchTab(0));
-            _tabTree = MakeTab("AI Tree",    () => SwitchTab(1));
+            _tabData = MakeTab("Ficha", () => SwitchTab(0));
+            _tabTree = MakeTab("Árbol de IA", () => SwitchTab(1));
             tabBar.Add(_tabData);
             tabBar.Add(_tabTree);
             rightCol.Add(tabBar);
@@ -90,6 +118,7 @@ namespace Rollgeon.Editor.Tools.Enemy
             rightCol.Add(_rightHost);
 
             _dataPanel = new EnemyDataPanel();
+            _dataPanel.Changed += OnPanelChanged;
             _dataPanelContainer = new IMGUIContainer(_dataPanel.Draw) { style = { flexGrow = 1 } };
 
             _graphView = new AIDecisionTreeGraphView(this) { style = { flexGrow = 1 } };
@@ -175,52 +204,165 @@ namespace Rollgeon.Editor.Tools.Enemy
             _tabTree.style.backgroundColor = index == 1 ? new Color(0.30f, 0.40f, 0.55f) : new Color(0.20f, 0.20f, 0.20f);
 
             if (index == 1 && _selected != null) _graphView.Bind(_selected);
+            // Volver a la ficha después de editar el árbol: los avisos del árbol cambian.
+            if (index == 0 && _selected != null) RecomputeOne(_selected);
         }
 
         // ---- Left list ----------------------------------------------------
 
         void DrawLeft()
         {
-            EditorGUILayout.LabelField("Enemies", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField("Enemigos", EditorStyles.boldLabel);
+
+            using (new EditorGUILayout.HorizontalScope(EditorStyles.toolbar))
+            {
+                string next = GUILayout.TextField(_search, EditorStyles.toolbarSearchField);
+                if (next != _search) _search = next;
+            }
+            _kindFilter = EditorGUILayout.Popup(_kindFilter, KindFilters);
+            _archetypeFilter = EditorGUILayout.Popup(_archetypeFilter, _archetypeFilters);
             EditorGUILayout.Space(4);
 
             _leftScroll = EditorGUILayout.BeginScrollView(_leftScroll);
 
             if (_enemies.Count == 0)
-                EditorGUILayout.HelpBox("No EnemyDataSO assets found.", MessageType.Info);
+                EditorGUILayout.HelpBox("No hay EnemyDataSO en el proyecto.", MessageType.Info);
 
+            int shown = 0;
             foreach (var e in _enemies)
             {
+                if (!Matches(e)) continue;
+                shown++;
                 bool isSel = e == _selected;
                 var prev = GUI.backgroundColor;
                 if (isSel) GUI.backgroundColor = new Color(0.45f, 0.75f, 1f);
 
-                string label = string.IsNullOrEmpty(e.DisplayName) ? e.name : e.DisplayName;
-                if (GUILayout.Button(label, GUILayout.Height(26f)))
+                if (GUILayout.Button(RowContent(e), GUILayout.Height(26f)))
                     Select(e);
 
                 GUI.backgroundColor = prev;
             }
+            if (shown == 0 && _enemies.Count > 0)
+                EditorGUILayout.LabelField("Ningún enemigo coincide con el filtro.", EditorStyles.miniLabel);
 
             EditorGUILayout.EndScrollView();
             EditorGUILayout.Space(8);
 
-            if (GUILayout.Button("+ Create Enemy", GUILayout.Height(24f)))
-                CreateNewEnemy();
+            if (GUILayout.Button("+ Nuevo enemigo ▾", GUILayout.Height(24f)))
+                ShowNewEnemyMenu();
 
-            if (_selected != null)
+            using (new EditorGUI.DisabledScope(_selected == null))
             {
-                EditorGUILayout.Space(4);
-                if (GUILayout.Button("Ping in Project", GUILayout.Height(20f)))
+                if (GUILayout.Button("Duplicar", GUILayout.Height(22f)))
+                {
+                    var copy = EnemyAssetOps.Duplicate(_selected);
+                    RefreshList();
+                    if (copy != null) Select(copy);
+                }
+                if (GUILayout.Button("Guardar como plantilla", GUILayout.Height(22f)))
+                {
+                    var tpl = EnemyAssetOps.SaveAsTemplate(_selected);
+                    RefreshList();
+                    if (tpl != null) { _kindFilter = KindTemplates; Select(tpl); }
+                }
+                if (GUILayout.Button("Mostrar en Project", GUILayout.Height(20f)))
                     EditorGUIUtility.PingObject(_selected);
             }
         }
+
+        /// <summary>
+        /// Vacío / arquetipos del GDD (en código, siempre disponibles) / plantillas del designer
+        /// (assets bajo la carpeta Templates). Los dos últimos abren directo el árbol.
+        /// </summary>
+        void ShowNewEnemyMenu()
+        {
+            var menu = new GenericMenu();
+            menu.AddItem(new GUIContent("Vacío"), false, () => Created(EnemyAssetOps.CreateNew(), openTree: false));
+            menu.AddSeparator(string.Empty);
+            foreach (var t in EnemyArchetypeTemplates.All)
+            {
+                var template = t;
+                string group = EnemyEditorVocab.LabelOf(template.Archetype);
+                menu.AddItem(new GUIContent($"Arquetipo GDD/{group}/{template.Name}"), false,
+                    () => Created(EnemyAssetOps.CreateFromTemplate(template), openTree: true));
+            }
+            menu.AddSeparator(string.Empty);
+            var user = EnemyTemplateCatalog.UserTemplates();
+            if (user.Count == 0)
+                menu.AddDisabledItem(new GUIContent("Plantillas propias/Sin plantillas guardadas"));
+            foreach (var tpl in user)
+            {
+                var template = tpl;
+                menu.AddItem(new GUIContent("Plantillas propias/" + LabelOf(template)), false,
+                    () => Created(EnemyAssetOps.CreateFromAsset(template), openTree: true));
+            }
+            menu.ShowAsContext();
+        }
+
+        void Created(EnemyDataSO so, bool openTree)
+        {
+            if (so == null) return;
+            if (_kindFilter == KindTemplates) _kindFilter = 0;
+            RefreshList();
+            Select(so);
+            if (openTree) SwitchTab(1);
+            _leftPanel?.MarkDirtyRepaint();
+        }
+
+        static string LabelOf(EnemyDataSO e) => string.IsNullOrEmpty(e.DisplayName) ? e.name : e.DisplayName;
+
+        GUIContent RowContent(EnemyDataSO e)
+        {
+            string text = LabelOf(e);
+            var archetype = e.Design != null ? e.Design.Archetype : EnemyArchetype.Unspecified;
+            string chip = EnemyEditorVocab.Chip(archetype);
+            if (!string.IsNullOrEmpty(chip)) text += $"  [{chip}]";
+            if (BossBuilderRegistry.TryGetBuilder(e, out _)) text += "  ⚙";
+            if (EnemyTemplateCatalog.IsTemplate(e)) text += "  [T]";
+            string footprint = EnemyEditorVocab.FootprintBadge(e.Footprint);
+            if (!string.IsNullOrEmpty(footprint)) text += "  " + footprint;
+
+            string tooltip = null;
+            if (_issues.TryGetValue(e, out var issues) && issues.Count > 0)
+            {
+                int errors = EnemyDataValidator.Count(issues, EnemyIssueSeverity.Error);
+                int warnings = EnemyDataValidator.Count(issues, EnemyIssueSeverity.Warning);
+                if (errors > 0) text += $"  ✕{errors}";
+                if (warnings > 0) text += $"  ⚠{warnings}";
+                var lines = new List<string>();
+                for (int i = 0; i < issues.Count && i < 3; i++) lines.Add(issues[i].ToString());
+                if (issues.Count > 3) lines.Add($"… y {issues.Count - 3} más");
+                tooltip = string.Join("\n", lines);
+            }
+            return new GUIContent(text, tooltip);
+        }
+
+        bool Matches(EnemyDataSO e)
+        {
+            // Las plantillas viven en su propia vista: no son enemigos jugables.
+            bool isTemplate = EnemyTemplateCatalog.IsTemplate(e);
+            if ((_kindFilter == KindTemplates) != isTemplate) return false;
+            if (_kindFilter == 1 && !e.IsBoss) return false;
+            if (_kindFilter == 2 && e.IsBoss) return false;
+
+            var archetype = e.Design != null ? e.Design.Archetype : EnemyArchetype.Unspecified;
+            if (_archetypeFilter > 0 && (int)archetype != _archetypeFilter - 1) return false;
+
+            if (string.IsNullOrWhiteSpace(_search)) return true;
+            string q = _search.Trim();
+            return Contains(e.DisplayName, q) || Contains(e.name, q) || Contains(e.EntityId, q)
+                || Contains(EnemyEditorVocab.LabelOf(archetype), q);
+        }
+
+        static bool Contains(string haystack, string needle)
+            => !string.IsNullOrEmpty(haystack) && haystack.IndexOf(needle, StringComparison.CurrentCultureIgnoreCase) >= 0;
 
         void Select(EnemyDataSO so)
         {
             if (_selected == so) return;
             _selected = so;
             _dataPanel.Bind(so);
+            PushDiagnostics(so);
             if (_tabIndex == 1) _graphView.Bind(so);
             _dataPanelContainer.MarkDirtyRepaint();
         }
@@ -234,6 +376,7 @@ namespace Rollgeon.Editor.Tools.Enemy
                 var asset = AssetDatabase.LoadAssetAtPath<EnemyDataSO>(path);
                 if (asset != null) _enemies.Add(asset);
             }
+            _enemies.Sort((a, b) => string.Compare(LabelOf(a), LabelOf(b), StringComparison.CurrentCultureIgnoreCase));
 
             if (_selected != null && !_enemies.Contains(_selected))
             {
@@ -241,39 +384,42 @@ namespace Rollgeon.Editor.Tools.Enemy
                 _dataPanel?.Bind(null);
                 _graphView?.Bind(null);
             }
+
+            RecomputeAll();
         }
 
-        void CreateNewEnemy()
+        // ---- diagnostics ---------------------------------------------------
+
+        void RecomputeAll()
         {
-            string folder = "Assets/Rollgeon/Enemies";
-            if (!AssetDatabase.IsValidFolder(folder))
-            {
-                System.IO.Directory.CreateDirectory(folder);
-                AssetDatabase.Refresh();
-            }
-            string path = AssetDatabase.GenerateUniqueAssetPath(folder + "/ED_NewEnemy.asset");
-            var so = ScriptableObject.CreateInstance<EnemyDataSO>();
-            AssetDatabase.CreateAsset(so, path);
-            AssetDatabase.SaveAssets();
-
-            RefreshList();
-            Select(so);
-
-            PingCatalogToHelpRegistration();
+            _comboCatalog = EnemyDataValidator.FindComboCatalog();
+            _issues.Clear();
+            _summaries.Clear();
+            foreach (var e in _enemies) Compute(e);
+            if (_selected != null) PushDiagnostics(_selected);
         }
 
-        /// <summary>
-        /// EnemyCatalogSO uses Odin's <c>[OdinSerialize]</c> on a private list, which is
-        /// invisible to <see cref="SerializedObject"/>. Auto-registering would require
-        /// reflection that's brittle across schema changes — instead we ping the catalog so
-        /// the user drags the new asset in via the standard inspector.
-        /// </summary>
-        void PingCatalogToHelpRegistration()
+        void RecomputeOne(EnemyDataSO so)
         {
-            var guids = AssetDatabase.FindAssets("t:EnemyCatalogSO");
-            if (guids.Length == 0) return;
-            var catalog = AssetDatabase.LoadAssetAtPath<EnemyCatalogSO>(AssetDatabase.GUIDToAssetPath(guids[0]));
-            EditorGUIUtility.PingObject(catalog);
+            if (so == null) return;
+            Compute(so);
+            if (so == _selected) PushDiagnostics(so);
+        }
+
+        void Compute(EnemyDataSO so)
+        {
+            var summary = EnemyTreeSummary.Build(so);
+            _summaries[so] = summary;
+            _issues[so] = EnemyDataValidator.Validate(so, _enemies, _comboCatalog, summary);
+        }
+
+        void PushDiagnostics(EnemyDataSO so)
+        {
+            if (so == null || _dataPanel == null) return;
+            _issues.TryGetValue(so, out var issues);
+            _summaries.TryGetValue(so, out var summary);
+            _dataPanel.SetDiagnostics(issues, summary);
+            _dataPanelContainer?.MarkDirtyRepaint();
         }
     }
 }

@@ -20,7 +20,7 @@ namespace Rollgeon.PreConditions.Concretes
     /// afirmar no debe habilitar gastos ni bloqueos.
     /// </remarks>
     [Serializable, HideReferenceObjectPicker]
-    public sealed class PcGoldCompare : BasePreCondition
+    public sealed class PcGoldCompare : BasePreCondition, IReadsTriggerEffect
     {
         public IntComparison Comparison = IntComparison.GreaterOrEqual;
 

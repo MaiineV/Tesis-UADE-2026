@@ -1,3 +1,4 @@
+using System;
 using Rollgeon.Grid;
 
 namespace Rollgeon.Tiles.Forced
@@ -8,7 +9,10 @@ namespace Rollgeon.Tiles.Forced
         /// <summary>Recorrió toda la distancia pedida (más las continuaciones de tiles).</summary>
         CompletedDistance = 0,
 
-        /// <summary>Chocó contra una celda no transitable u ocupada.</summary>
+        /// <summary>
+        /// Chocó contra una celda no transitable u ocupada. <see cref="ForcedMoveResult.BlockerGuid"/>
+        /// distingue pared (Empty) de ocupante.
+        /// </summary>
         Obstacle = 1,
 
         /// <summary>La unidad murió a mitad de la cadena (pinchos, fuego...).</summary>
@@ -31,12 +35,37 @@ namespace Rollgeon.Tiles.Forced
 
         public readonly bool TargetDied;
 
+        /// <summary>
+        /// Celda a la que no pudo entrar. Solo significativa con
+        /// <see cref="ForcedMoveStop.Obstacle"/>. Se captura en el momento del choque: con
+        /// portales la unidad puede terminar reubicada fuera de la línea de empuje, así que no
+        /// se puede reconstruir desde <see cref="FinalCoord"/>.
+        /// </summary>
+        public readonly GridCoord BlockedAt;
+
+        /// <summary>
+        /// Ocupante de <see cref="BlockedAt"/>. <c>Guid.Empty</c> = pared / fuera de grilla
+        /// (celda no transitable sin nadie encima).
+        /// </summary>
+        public readonly Guid BlockerGuid;
+
+        public bool BlockedByWall => StoppedBy == ForcedMoveStop.Obstacle && BlockerGuid == Guid.Empty;
+        public bool BlockedByEntity => StoppedBy == ForcedMoveStop.Obstacle && BlockerGuid != Guid.Empty;
+
         public ForcedMoveResult(GridCoord finalCoord, int tilesTraveled, ForcedMoveStop stoppedBy, bool targetDied)
+            : this(finalCoord, tilesTraveled, stoppedBy, targetDied, default, Guid.Empty)
+        {
+        }
+
+        public ForcedMoveResult(GridCoord finalCoord, int tilesTraveled, ForcedMoveStop stoppedBy, bool targetDied,
+            GridCoord blockedAt, Guid blockerGuid)
         {
             FinalCoord = finalCoord;
             TilesTraveled = tilesTraveled;
             StoppedBy = stoppedBy;
             TargetDied = targetDied;
+            BlockedAt = blockedAt;
+            BlockerGuid = blockerGuid;
         }
     }
 }

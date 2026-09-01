@@ -24,8 +24,7 @@ MonoBehaviour:
     - {fileID: 11400000, guid: e0ab14b92f2f6d14c9a451d43c0d8dc3, type: 2}
     - {fileID: 11400000, guid: 849cece4bceb1694c97e58743b3f80fd, type: 2}
     - {fileID: 11400000, guid: a9ae3400f007ffd4eac5f984d8d1e85f, type: 2}
-    - {fileID: 11400000, guid: 7f06d84d69aa67e418408330684cd299, type: 2}
-    SerializedBytesString:
+    SerializedBytesString: 
     Prefab: {fileID: 0}
     PrefabModificationsReferencedUnityObjects: []
     PrefabModifications: []
@@ -34,9 +33,9 @@ MonoBehaviour:
       Entry: 7
       Data: 0|System.Collections.Generic.List`1[[Rollgeon.Combos.BaseComboSO, Rollgeon]],
         mscorlib
-    - Name:
+    - Name: 
       Entry: 12
-      Data: 9
+      Data: 8
     - Name: 
       Entry: 10
       Data: 0
@@ -58,15 +57,12 @@ MonoBehaviour:
     - Name: 
       Entry: 10
       Data: 6
-    - Name:
+    - Name: 
       Entry: 10
       Data: 7
-    - Name:
-      Entry: 10
-      Data: 8
-    - Name:
+    - Name: 
       Entry: 13
-      Data:
+      Data: 
     - Name: 
       Entry: 8
       Data: 

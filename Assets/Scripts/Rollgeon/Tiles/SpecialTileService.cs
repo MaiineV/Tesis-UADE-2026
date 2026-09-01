@@ -460,22 +460,33 @@ namespace Rollgeon.Tiles
         public int GetFlatBonus(DamageContext ctx)
         {
             if (ctx == null || _instances.Count == 0) return 0;
-            if (!TryGetGrid(out var grid) || !grid.TryGetPosition(ctx.SourceId, out var coord)) return 0;
+            if (!TryGetGrid(out var grid) || !grid.TryGetPosition(ctx.SourceId, out var anchor)) return 0;
 
-            foreach (var instance in _instances.Values)
+            // Fase C: cualquier celda cubierta por el footprint cuenta como "parado sobre".
+            // El return en el primer match conserva el no-stacking (GDD §9): una unidad —
+            // ocupe una celda o un rectángulo — cobra el bono de UNA Fortaleza.
+            foreach (var coord in CoveredCells(grid, ctx.SourceId, anchor))
             {
-                var def = instance.Definition;
-                if (def == null || def.Category != TileEffectCategory.StatModifier) continue;
-                if ((def.Triggers & TileTrigger.OnRemainOn) == 0) continue;
-                if (!instance.Tiles.Contains(coord)) continue;
-                if (!ShouldAffect(instance, ctx.SourceId, coord)) continue;
+                foreach (var instance in _instances.Values)
+                {
+                    var def = instance.Definition;
+                    if (def == null || def.Category != TileEffectCategory.StatModifier) continue;
+                    if ((def.Triggers & TileTrigger.OnRemainOn) == 0) continue;
+                    if (!instance.Tiles.Contains(coord)) continue;
+                    if (!ShouldAffect(instance, ctx.SourceId, coord)) continue;
 
-                // Una sola casilla física por celda (GDD §9): la unidad ocupa UNA celda,
-                // así que las Fortalezas adyacentes no suman por construcción.
-                return def.ComboDamageBonus;
+                    return def.ComboDamageBonus;
+                }
             }
             return 0;
         }
+
+        /// <summary>
+        /// Celdas que el footprint de la entidad cubre parada con su ancla en
+        /// <paramref name="anchor"/> (para paths, el ancla del paso). 1×1 = solo el ancla.
+        /// </summary>
+        private static IEnumerable<GridCoord> CoveredCells(IGridManager grid, Guid entity, GridCoord anchor)
+            => GridFootprint.Cells(anchor, grid.GetFootprint(entity));
 
         // ======================================================================
         // Motor de triggers
@@ -489,25 +500,50 @@ namespace Rollgeon.Tiles
 
             var entryMask = EntryTriggerMask(kind);
 
-            foreach (var coord in enteredCoords)
+            foreach (var stepAnchor in enteredCoords)
             {
                 // Chequeo de muerte a mitad de cadena: CombatDeathWatcher desregistra del grid
                 // sincrónicamente al golpe letal — un muerto no sigue pisando casillas.
                 if (!TryGetGrid(out var grid) || !grid.TryGetPosition(entity, out _)) return;
 
-                // Re-snapshot por paso: un trigger puede expirar instancias a mitad de scan.
-                foreach (var instance in new List<SpecialTileInstance>(_instances.Values))
+                // Fase C: el path que llega son ANCLAS; cada paso se expande a las celdas que
+                // el footprint cubre, y una instancia dispara a lo sumo UNA vez por paso (dos
+                // celdas del mismo fuego bajo el rect = un cobro). Para 1×1 nada cambia.
+                var firedThisStep = new HashSet<Guid>();
+                foreach (var coord in CoveredCells(grid, entity, stepAnchor))
                 {
-                    if (!_instances.ContainsKey(instance.InstanceId)) continue;
-                    if (instance.Definition == null) continue;
-                    if ((instance.Definition.Triggers & entryMask) == 0) continue;
-                    if (!instance.Tiles.Contains(coord)) continue;
-                    if (!ShouldAffect(instance, entity, coord)) continue;
+                    // Re-snapshot por celda: un trigger puede expirar instancias a mitad de scan.
+                    foreach (var instance in new List<SpecialTileInstance>(_instances.Values))
+                    {
+                        if (!_instances.ContainsKey(instance.InstanceId)) continue;
+                        if (instance.Definition == null) continue;
+                        if ((instance.Definition.Triggers & entryMask) == 0) continue;
+                        if (firedThisStep.Contains(instance.InstanceId)) continue;
+                        if (!instance.Tiles.Contains(coord)) continue;
+                        if (!ShouldAffect(instance, entity, coord)) continue;
 
-                    var fired = ResolveFiredTrigger(instance.Definition.Triggers, kind);
-                    TriggerInstance(instance, entity, coord, fired, kind);
+                        firedThisStep.Add(instance.InstanceId);
+                        var fired = ResolveFiredTrigger(instance.Definition.Triggers, kind);
+                        TriggerInstance(instance, entity, coord, fired, kind,
+                            DisarmSet(grid, instance, entity, stepAnchor));
+                    }
                 }
             }
+        }
+
+        /// <summary>
+        /// Celdas de la instancia que el footprint pisa en este paso — las que se desarman en
+        /// un disparo con DisarmOnTrigger (un 2×2 sobre dos pinchos gasta ambos). 1×1 = la
+        /// celda disparada, como siempre. Null cuando la definición no desarma (no alocar).
+        /// </summary>
+        private static List<GridCoord> DisarmSet(IGridManager grid, SpecialTileInstance instance,
+            Guid entity, GridCoord anchor)
+        {
+            if (!instance.Definition.DisarmOnTrigger) return null;
+            var set = new List<GridCoord>();
+            foreach (var c in CoveredCells(grid, entity, anchor))
+                if (instance.Tiles.Contains(c)) set.Add(c);
+            return set;
         }
 
         /// <summary>Triggers que satisface una entrada según cómo llegó la unidad.</summary>
@@ -536,17 +572,25 @@ namespace Rollgeon.Tiles
         private void ResolveStand(Guid entity, TileTrigger trigger)
         {
             if (entity == Guid.Empty || _instances.Count == 0) return;
-            if (!TryGetGrid(out var grid) || !grid.TryGetPosition(entity, out var coord)) return;
+            if (!TryGetGrid(out var grid) || !grid.TryGetPosition(entity, out var anchor)) return;
 
-            foreach (var instance in new List<SpecialTileInstance>(_instances.Values))
+            // Fase C: "parado sobre" = cualquier celda cubierta; una vez por instancia.
+            var firedInstances = new HashSet<Guid>();
+            foreach (var coord in CoveredCells(grid, entity, anchor))
             {
-                if (!_instances.ContainsKey(instance.InstanceId)) continue;
-                if (instance.Definition == null) continue;
-                if ((instance.Definition.Triggers & trigger) == 0) continue;
-                if (!instance.Tiles.Contains(coord)) continue;
-                if (!ShouldAffect(instance, entity, coord)) continue;
+                foreach (var instance in new List<SpecialTileInstance>(_instances.Values))
+                {
+                    if (!_instances.ContainsKey(instance.InstanceId)) continue;
+                    if (instance.Definition == null) continue;
+                    if ((instance.Definition.Triggers & trigger) == 0) continue;
+                    if (firedInstances.Contains(instance.InstanceId)) continue;
+                    if (!instance.Tiles.Contains(coord)) continue;
+                    if (!ShouldAffect(instance, entity, coord)) continue;
 
-                TriggerInstance(instance, entity, coord, trigger, TileMovementKind.Voluntary);
+                    firedInstances.Add(instance.InstanceId);
+                    TriggerInstance(instance, entity, coord, trigger, TileMovementKind.Voluntary,
+                        DisarmSet(grid, instance, entity, anchor));
+                }
             }
         }
 
@@ -556,27 +600,32 @@ namespace Rollgeon.Tiles
             if (into == null) return;
             into.Clear();
             if (entity == Guid.Empty || _instances.Count == 0) return;
-            if (!TryGetGrid(out var grid) || !grid.TryGetPosition(entity, out var coord)) return;
+            if (!TryGetGrid(out var grid) || !grid.TryGetPosition(entity, out var anchor)) return;
 
-            foreach (var instance in _instances.Values)
+            // Fase C: el HUD ve la casilla bajo CUALQUIER celda cubierta (el dedupe por
+            // definición de abajo absorbe dos celdas del mismo fuego bajo el rect).
+            foreach (var coord in CoveredCells(grid, entity, anchor))
             {
-                var def = instance.Definition;
-                if (def == null) continue;
-                if (!instance.Tiles.Contains(coord)) continue;
-                // Mismos filtros que un disparo real: un ícono de "quemándose" sobre un fuego
-                // del que una Zona de Seguridad te protege sería mentirle al jugador.
-                if (!ShouldAffect(instance, entity, coord)) continue;
-
-                // Una sola entrada por definición: dos instancias del mismo fuego solapadas son
-                // la misma casilla para el que la pisa, y cobran lo mismo.
-                bool already = false;
-                for (int i = 0; i < into.Count; i++)
+                foreach (var instance in _instances.Values)
                 {
-                    if (into[i].Definition != def) continue;
-                    already = true;
-                    break;
+                    var def = instance.Definition;
+                    if (def == null) continue;
+                    if (!instance.Tiles.Contains(coord)) continue;
+                    // Mismos filtros que un disparo real: un ícono de "quemándose" sobre un fuego
+                    // del que una Zona de Seguridad te protege sería mentirle al jugador.
+                    if (!ShouldAffect(instance, entity, coord)) continue;
+
+                    // Una sola entrada por definición: dos instancias del mismo fuego solapadas son
+                    // la misma casilla para el que la pisa, y cobran lo mismo.
+                    bool already = false;
+                    for (int i = 0; i < into.Count; i++)
+                    {
+                        if (into[i].Definition != def) continue;
+                        already = true;
+                        break;
+                    }
+                    if (!already) into.Add(instance.ToInfo());
                 }
-                if (!already) into.Add(instance.ToInfo());
             }
         }
 
@@ -603,9 +652,27 @@ namespace Rollgeon.Tiles
             // propia incluida). Owner no-jefe (player u otro enemigo) se quema con la suya.
             if (def.OwnerBossImmune && traits.IsBoss && IsBossGuid(instance.OwnerGuid)) return false;
 
-            if (IsProtectedAt(coord, def.TileType, instance.InstanceId)) return false;
+            if (IsProtectedForEntity(entity, coord, def.TileType, instance.InstanceId)) return false;
 
             return true;
+        }
+
+        /// <summary>
+        /// SafeZone para footprints (Fase C): la unidad está protegida si CUALQUIER celda que
+        /// cubre cae dentro de la zona — no solo la celda que disparó. Para 1×1 equivale al
+        /// chequeo por coord de siempre.
+        /// </summary>
+        private bool IsProtectedForEntity(Guid entity, GridCoord triggeredCoord,
+            SpecialTileType tileType, Guid exceptInstanceId)
+        {
+            if (IsProtectedAt(triggeredCoord, tileType, exceptInstanceId)) return true;
+
+            if (TryGetGrid(out var grid) && !GridFootprint.IsUnit(grid.GetFootprint(entity)))
+            {
+                foreach (var c in grid.OccupiedCells(entity))
+                    if (IsProtectedAt(c, tileType, exceptInstanceId)) return true;
+            }
+            return false;
         }
 
         /// <summary>
@@ -634,7 +701,7 @@ namespace Rollgeon.Tiles
         /// evento con el que otros sistemas montan encima (el binder de estados vive afuera).
         /// </summary>
         private void TriggerInstance(SpecialTileInstance instance, Guid entity, GridCoord coord,
-            TileTrigger fired, TileMovementKind kind)
+            TileTrigger fired, TileMovementKind kind, List<GridCoord> disarmCoords = null)
         {
             var def = instance.Definition;
 
@@ -646,9 +713,16 @@ namespace Rollgeon.Tiles
 
             if (def.DisarmOnTrigger && instance.CellArmed != null)
             {
-                instance.CellArmed[coord] = false;
-                EventManager.Trigger(EventName.OnSpecialTileStateChanged,
-                    instance.InstanceId, coord, false);
+                // Fase C: un footprint desarma TODAS las celdas de la instancia que pisa
+                // (cobró una vez, gastó lo pisado). Sin set explícito, la celda disparada.
+                if (disarmCoords == null || disarmCoords.Count == 0)
+                    disarmCoords = new List<GridCoord> { coord };
+                foreach (var c in disarmCoords)
+                {
+                    instance.CellArmed[c] = false;
+                    EventManager.Trigger(EventName.OnSpecialTileStateChanged,
+                        instance.InstanceId, c, false);
+                }
             }
 
             SpawnTriggerVfx(def, coord);
@@ -921,11 +995,23 @@ namespace Rollgeon.Tiles
                 int traveled = 0;
                 var stop = ForcedMoveStop.CompletedDistance;
                 var kind = initialKind;
+                GridCoord blockedAt = default;
+                Guid blockerGuid = Guid.Empty;
 
                 if (!TryGetGrid(out var grid))
                     return new ForcedMoveResult(default, 0, ForcedMoveStop.Obstacle, false);
                 if (!TryGetPathedMovement(out var pathed))
                     return new ForcedMoveResult(default, 0, ForcedMoveStop.Obstacle, false);
+
+                // El choque se captura ANTES de cualquier reubicación (portal): el consumidor
+                // (empuje del Guerrero) necesita saber contra QUÉ frenó, y FinalCoord puede
+                // terminar fuera de la línea de empuje.
+                void Block(GridCoord next)
+                {
+                    stop = ForcedMoveStop.Obstacle;
+                    blockedAt = next;
+                    if (!grid.TryGetOccupant(next, out blockerGuid)) blockerGuid = Guid.Empty;
+                }
 
                 int budget = ChainBudget;
                 while (budget-- > 0)
@@ -960,11 +1046,11 @@ namespace Rollgeon.Tiles
                             {
                                 // El empuje muere contra el borde, pero nadie queda parado
                                 // sobre un portal: reubicación con fallback horario.
+                                Block(next);
                                 RelocateOffPortal(grid, pathed, entity, exit, ref dir, kind);
-                                stop = ForcedMoveStop.Obstacle;
                                 break;
                             }
-                            if (!pathed.CommitPath(entity, new List<GridCoord> { exit, next })) { stop = ForcedMoveStop.Obstacle; break; }
+                            if (!pathed.CommitPath(entity, new List<GridCoord> { exit, next })) { Block(next); break; }
                             remainingForced--;
                             traveled++;
                             ResolveEntries(entity, new[] { next }, kind);
@@ -986,8 +1072,8 @@ namespace Rollgeon.Tiles
                         // Hielo: la unidad sigue en la dirección de entrada hasta salir del
                         // hielo o chocar. Cada celda atravesada dispara sus propios triggers.
                         var next = dir.Step(current);
-                        if (!IsFreeCell(grid, next)) { stop = ForcedMoveStop.Obstacle; break; }
-                        if (!pathed.CommitPath(entity, new List<GridCoord> { current, next })) { stop = ForcedMoveStop.Obstacle; break; }
+                        if (!IsFreeCell(grid, next)) { Block(next); break; }
+                        if (!pathed.CommitPath(entity, new List<GridCoord> { current, next })) { Block(next); break; }
                         traveled++;
                         ResolveEntries(entity, new[] { next }, TileMovementKind.Slide);
                         continue;
@@ -999,8 +1085,8 @@ namespace Rollgeon.Tiles
                         // nada: el empuje ya lo está arrastrando (si el empuje TERMINA sobre
                         // hielo, la próxima iteración desliza).
                         var next = dir.Step(current);
-                        if (!IsFreeCell(grid, next)) { stop = ForcedMoveStop.Obstacle; break; }
-                        if (!pathed.CommitPath(entity, new List<GridCoord> { current, next })) { stop = ForcedMoveStop.Obstacle; break; }
+                        if (!IsFreeCell(grid, next)) { Block(next); break; }
+                        if (!pathed.CommitPath(entity, new List<GridCoord> { current, next })) { Block(next); break; }
                         remainingForced--;
                         traveled++;
                         ResolveEntries(entity, new[] { next }, kind);
@@ -1012,7 +1098,7 @@ namespace Rollgeon.Tiles
 
                 bool died = !grid.TryGetPosition(entity, out var finalCoord);
                 if (died) stop = ForcedMoveStop.Death;
-                return new ForcedMoveResult(finalCoord, traveled, stop, died);
+                return new ForcedMoveResult(finalCoord, traveled, stop, died, blockedAt, blockerGuid);
             }
             finally
             {

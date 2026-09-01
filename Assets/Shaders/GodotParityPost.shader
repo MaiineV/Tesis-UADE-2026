@@ -1,31 +1,58 @@
+// Post process de pantalla completa (FullScreenPassRendererFeature en PC_Renderer).
+// Hace 2 cosas independientes sobre el frame ya renderizado:
+//   1. Pixelado: snappea el sampleo a una grilla de bloques de N x N pixeles
+//      de pantalla real, con blend suave en el borde de cada bloque para
+//      evitar shimmer (mismo truco que SharpUpscale.shader).
+//   2. Lineas de tinta tipo comic: samplea depth y normal en una grilla de
+//      3x3 alrededor de cada pixel para detectar 2 tipos de borde:
+//        - Linea (silueta dura): el centro esta mas cerca que un vecino en
+//          mas que el umbral de profundidad. Color solido, sin blend con
+//          el fondo.
+//        - Crease (doblez interno suave): el vecino tiene una normal que se
+//          curva de forma convexa respecto al centro, sin ser una silueta
+//          dura. Se dibuja mas tenue y se suprime si el mismo punto tambien
+//          parece concavo (evita creases falsos en esquinas internas).
+// Los umbrales de profundidad se escalan segun que tan de canto mira la
+// superficie a la camara, porque una superficie casi de perfil (piso visto
+// muy angulado) tiene saltos de profundidad enormes por pura perspectiva,
+// no porque haya un borde real ahi.
 Shader "Hidden/Custom/GodotParity/Post"
 {
     Properties
     {
-        _PixelSize("Pixel Size", Float) = 4
-        _TexelOffset("Texel Offset", Vector) = (0,0,0,0)
-        _PixelationScreenSize("Screen Size", Vector) = (1920,1080,0.00052,0.00093)
+        [Header(Pixelado)]
+        _PixelSize ("Tamano de bloque en pixeles de pantalla", Range(1, 16)) = 4
+        _TexelOffset ("Offset sub pixel para paneo suave, normalmente 0", Vector) = (0,0,0,0)
+        _PixelationScreenSize ("Ancho, Alto, 1 sobre Ancho, 1 sobre Alto de pantalla", Vector) = (1920,1080,0.00052,0.00093)
 
-        _LineTint("Line Tint", Color) = (0,0,0,1)
-        _CreaseTint("Crease Tint", Color) = (0.833,0.833,0.833,1)
-        _FlipPalettes("Flip Palettes", Float) = 0
+        [Header(Lineas de silueta bordes duros)]
+        [Toggle] _LineOverlay ("Mezclar con el color de abajo en vez de pintar solido", Float) = 1
+        _LineTint ("Color de la linea", Color) = (0,0,0,1)
+        _LineAlpha ("Opacidad de la linea", Range(0,1)) = 0.5
 
-        _LineOverlay("Line Overlay", Float) = 1
-        _LineAlpha("Line Alpha", Range(0,1)) = 0.5
+        [Header(Creases doblez interno suave)]
+        [Toggle] _CreaseOverlay ("Mezclar con el color de abajo en vez de pintar solido", Float) = 1
+        _CreaseTint ("Color del crease", Color) = (0.833,0.833,0.833,1)
+        _CreaseAlpha ("Opacidad del crease", Range(0,1)) = 1
+        _CreaseFeather ("Ancho del degrade en el borde del crease", Range(0,0.5)) = 0
 
-        _CreaseOverlay("Crease Overlay", Float) = 1
-        _CreaseAlpha("Crease Alpha", Range(0,1)) = 1
+        [Header(Intercambiar colores)]
+        [Toggle] _FlipPalettes ("Usar el color de linea para crease y viceversa", Float) = 0
 
-        _KernelRadius("Kernel Radius", Range(0.5,4)) = 1
+        [Header(Deteccion de bordes)]
+        _KernelRadius ("Radio de muestreo en pixeles de la grilla 3x3", Range(0.5, 4)) = 1
+        _ZDeltaCutoff ("Diferencia de profundidad minima para contar como borde", Range(0, 1)) = 0.25
 
-        _ZDeltaCutoff("Z Delta Cutoff", Range(0,1)) = 0.25
-        _AngleZCutoff("Angle Z Cutoff", Range(0,1)) = 0.5
-        _AngleZScale("Angle Z Scale", Float) = 2
+        [Header(Angulo de canto)]
+        _AngleZCutoff ("A partir de que angulo de canto se vuelve mas permisivo, 0 mirando de frente, 1 de canto total", Range(0, 1)) = 0.5
+        _AngleZScale ("Cuanto se relaja el umbral de profundidad en angulos de canto, debe ser positivo", Range(-2, 2)) = 2
 
-        _ConvexCutoff("Convex Cutoff", Float) = 0.1
-        _CreaseFeather("Crease Feather", Range(0,0.5)) = 0
-        _ConcaveCutoff("Concave Cutoff", Float) = 0.01
-        _ConcaveZCutoff("Concave Z Cutoff", Float) = 0.5
+        [Header(Bordes convexos)]
+        _ConvexCutoff ("Que tan marcada tiene que ser la curva para contar como crease", Range(0, 2)) = 0.1
+
+        [Header(Supresion de bordes concavos)]
+        _ConcaveCutoff ("Que tan marcada tiene que ser la curva concava para cancelar el crease cercano", Range(0, 2)) = 0.01
+        _ConcaveZCutoff ("Diferencia de profundidad maxima para que la supresion concava aplique", Range(0, 1)) = 0.5
     }
 
     SubShader
@@ -50,27 +77,29 @@ Shader "Hidden/Custom/GodotParity/Post"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/DeclareDepthTexture.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/DeclareNormalsTexture.hlsl"
 
-            float _PixelSize;
-            float4 _TexelOffset;
-            float4 _PixelationScreenSize;
+            float _PixelSize;              // Tamano de bloque en pixeles de pantalla real
+            float4 _TexelOffset;           // Offset sub pixel manual, ver .xy
+            float4 _PixelationScreenSize;  // (ancho, alto, 1/ancho, 1/alto) — no se actualiza solo, debe coincidir con la resolucion real
 
-            float4 _LineTint;
-            float4 _CreaseTint;
-            float _FlipPalettes;
+            float4 _LineTint;    // Color de la linea de silueta (borde duro)
+            float4 _CreaseTint;  // Color del crease (doblez interno suave)
+            float _FlipPalettes; // >0.5: usa _CreaseTint para lineas y _LineTint para creases
 
-            float _LineOverlay;
+            float _LineOverlay;   // >0.5: mezcla con Composite() en vez de pintar solido
             float _LineAlpha;
-            float _CreaseOverlay;
+            float _CreaseOverlay; // >0.5: mezcla con Composite() en vez de pintar solido
             float _CreaseAlpha;
 
-            float _KernelRadius;
-            float _ZDeltaCutoff;
-            float _AngleZCutoff;
-            float _AngleZScale;
-            float _ConvexCutoff;
-            float _CreaseFeather;
-            float _ConcaveCutoff;
-            float _ConcaveZCutoff;
+            float _KernelRadius;   // Separacion en pixeles entre las 9 muestras de la grilla de deteccion
+            float _ZDeltaCutoff;   // Umbral base de diferencia de profundidad (mundo) para contar como borde
+            float _AngleZCutoff;   // Facing (0=de frente, 1=de canto) a partir del cual se relaja el umbral
+            float _AngleZScale;    // Cuanto se multiplica el umbral en superficies de canto — DEBE ser positivo,
+                                    // negativo hace lo contrario (encoge el umbral en angulos de canto) y
+                                    // hasLine se dispara en casi cualquier pixel ahi, oscureciendo toda la pantalla
+            float _ConvexCutoff;   // Magnitud minima de curvatura convexa para dibujar un crease
+            float _CreaseFeather;  // Ancho del smoothstep sobre _ConvexCutoff (0 = corte duro)
+            float _ConcaveCutoff;  // Magnitud minima de curvatura concava para suprimir el crease vecino
+            float _ConcaveZCutoff; // Diferencia de profundidad maxima para que la supresion concava aplique
 
             // Returns linear eye depth in world units, handling both projection modes.
             // LinearEyeDepth() uses the PERSPECTIVE formula and gives wrong results for

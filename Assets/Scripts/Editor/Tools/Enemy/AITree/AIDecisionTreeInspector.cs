@@ -29,6 +29,12 @@ namespace Rollgeon.Editor.Tools.Enemy.AITree
     {
         public VisualElement Root { get; }
 
+        /// <summary>Hijos de (nodo, slot) en orden de ejecución. Lo cablea el GraphView.</summary>
+        public Func<AIDecisionNode, int, List<AIDecisionNode>> GetChildren { get; set; }
+
+        /// <summary>(padre, slot, desde, hasta). Lo cablea el GraphView; se invoca fuera del draw IMGUI.</summary>
+        public Action<AIDecisionNode, int, int, int> MoveChild { get; set; }
+
         readonly Action _onChanged;
         readonly PolymorphicAuthoringContext _ctx = new PolymorphicAuthoringContext();
         EnemyDataSO _enemy;
@@ -59,7 +65,7 @@ namespace Rollgeon.Editor.Tools.Enemy.AITree
                 },
             };
 
-            _header = new Label("AI Node Inspector")
+            _header = new Label("Inspector de nodo")
             {
                 style =
                 {
@@ -70,7 +76,7 @@ namespace Rollgeon.Editor.Tools.Enemy.AITree
             };
             Root.Add(_header);
 
-            _emptyHint = new Label("Select a node in the graph to edit its parameters.")
+            _emptyHint = new Label("Seleccioná un nodo del grafo para editar sus parámetros.")
             {
                 style =
                 {
@@ -150,18 +156,20 @@ namespace Rollgeon.Editor.Tools.Enemy.AITree
             if (string.IsNullOrEmpty(_selectedPath))
             {
                 EditorGUILayout.HelpBox(
-                    "Este nodo no es alcanzable desde el AIRoot — no tiene un input port conectado a " +
-                    "un nodo que descienda del root, así que no se va a ejecutar en runtime.\n\n" +
-                    "Causas típicas:\n" +
-                    "• El nodo padre fue borrado y este quedó suelto.\n" +
-                    "• Re-rooteaste el árbol (Set as Root) y este quedó fuera del subárbol del nuevo root.\n" +
-                    "• Lo creaste pero todavía no lo conectaste.\n\n" +
-                    "Solución: arrastrá una conexión desde un output port (de un nodo conectado al árbol) " +
-                    "hacia el input port de este nodo. O borralo si no lo necesitás más.",
+                    "No se encontró este nodo en el asset (¿quedó de una edición deshecha?). " +
+                    "Cerrá y volvé a abrir el árbol; si persiste, borrá el nodo y crealo de nuevo.",
                     MessageType.Warning);
             }
             else
             {
+                if (_selectedPath.StartsWith(nameof(EnemyDataSO.AIDetachedNodes), StringComparison.Ordinal))
+                {
+                    EditorGUILayout.HelpBox(
+                        "Nodo suelto: no se ejecuta hasta conectarlo a la raíz. Se guarda igual para no perder el trabajo.",
+                        MessageType.Info);
+                    EditorGUILayout.Space(4);
+                }
+
                 EditorGUI.BeginChangeCheck();
 
                 switch (_selected)
@@ -180,6 +188,9 @@ namespace Rollgeon.Editor.Tools.Enemy.AITree
                         break;
                     case AINode_KeepDistance keepDistNode:
                         DrawKeepDistanceNode(keepDistNode);
+                        break;
+                    case AINode_Random randomNode:
+                        DrawRandomNode(randomNode);
                         break;
                     default:
                         DrawDefault();
@@ -200,17 +211,138 @@ namespace Rollgeon.Editor.Tools.Enemy.AITree
 
         // ---- per-subtype drawers -----------------------------------------
 
+        /// <summary>
+        /// Dibuja todos los miembros serializados del nodo salvo la topología (hijos), que se
+        /// edita por los puertos del grafo. Reemplaza las listas de campos a mano por tipo: con
+        /// 60 tipos de nodo, la lista se desactualizaba (TelegraphMark listaba un campo que no
+        /// existía y omitía cinco) y 50 tipos quedaban sin UI.
+        /// </summary>
+        /// <remarks>
+        /// Un slot polimórfico nulo (ej. <c>AINode_RotateBlock.DirectedIndex : AIIntReader</c>)
+        /// no muestra picker propio porque las bases llevan <c>[HideReferenceObjectPicker]</c>
+        /// (§13.6.1) — se le antepone el picker del proyecto, igual que en los drawers custom.
+        /// </remarks>
         void DrawDefault()
         {
-            var fields = AIDecisionNodeView.InlineFieldsOf(_selected);
-            if (fields.Length == 0)
+            var nodeProp = _ctx.At(_selectedPath);
+            if (nodeProp == null) return;
+
+            bool drewAny = DrawChildOrder(_selected, null);
+            for (int i = 0; i < nodeProp.Children.Count; i++)
+            {
+                var child = nodeProp.Children[i];
+                var entry = child.ValueEntry;
+                if (entry == null)
+                {
+                    // Grupos / métodos: Odin decide qué mostrar.
+                    child.Draw();
+                    drewAny = true;
+                    continue;
+                }
+
+                var declared = entry.BaseValueType;
+                if (AITreeTopology.IsTopologyMember(declared)) continue;
+
+                if (declared.IsAbstract || declared.IsInterface)
+                {
+                    var current = entry.WeakSmartValue;
+                    PolymorphicPicker.DrawSingle(
+                        child.NiceName, declared, current,
+                        newInstance => _ctx.Mutate(
+                            "Cambiar " + child.NiceName,
+                            () => entry.WeakSmartValue = newInstance));
+                    if (entry.WeakSmartValue != null)
+                    {
+                        EditorGUI.indentLevel++;
+                        child.Draw();
+                        EditorGUI.indentLevel--;
+                    }
+                    drewAny = true;
+                    continue;
+                }
+
+                child.Draw();
+                drewAny = true;
+            }
+
+            if (!drewAny)
             {
                 EditorGUILayout.HelpBox(
-                    "This node has no inline parameters — its behavior is fully determined by its children.",
+                    "Este nodo no tiene parámetros: su comportamiento lo definen sus hijos.",
                     MessageType.Info);
-                return;
             }
-            foreach (var fieldName in fields) DrawOdinProp(fieldName);
+        }
+
+        /// <summary>
+        /// Lista de hijos de un slot dinámico con ▲/▼. El movimiento se difiere a
+        /// <c>EditorApplication.delayCall</c>: <c>Save</c> reemplaza las listas de hijos y no hay
+        /// que hacerlo en medio del draw de Odin. Devuelve <c>true</c> si dibujó algo.
+        /// </summary>
+        bool DrawChildOrder(AIDecisionNode node, Action<int> drawExtraForChild)
+        {
+            var slots = AITreeTopology.SlotsOf(node);
+            int slot = -1;
+            for (int i = 0; i < slots.Count; i++) if (slots[i].IsDynamic) { slot = i; break; }
+            if (slot < 0 || GetChildren == null) return false;
+
+            var children = GetChildren(node, slot);
+            EditorGUILayout.LabelField("Hijos (orden de ejecución)", EditorStyles.boldLabel);
+            if (children == null || children.Count == 0)
+            {
+                EditorGUILayout.LabelField("Sin hijos conectados: usá el puerto \"+\" del nodo.", EditorStyles.miniLabel);
+                EditorGUILayout.Space(6);
+                return true;
+            }
+
+            for (int i = 0; i < children.Count; i++)
+            {
+                var child = children[i];
+                EditorGUILayout.BeginHorizontal();
+                EditorGUILayout.LabelField($"{i + 1}. {(child != null ? child.NodeName : "(vacío)")}", EditorStyles.boldLabel);
+                using (new EditorGUI.DisabledScope(i == 0))
+                {
+                    if (GUILayout.Button("▲", GUILayout.Width(24))) ScheduleMove(node, slot, i, i - 1);
+                }
+                using (new EditorGUI.DisabledScope(i == children.Count - 1))
+                {
+                    if (GUILayout.Button("▼", GUILayout.Width(24))) ScheduleMove(node, slot, i, i + 1);
+                }
+                EditorGUILayout.EndHorizontal();
+
+                if (drawExtraForChild != null)
+                {
+                    EditorGUI.indentLevel++;
+                    drawExtraForChild(i);
+                    EditorGUI.indentLevel--;
+                }
+            }
+            EditorGUILayout.Space(6);
+            return true;
+        }
+
+        void ScheduleMove(AIDecisionNode node, int slot, int from, int to)
+        {
+            var move = MoveChild;
+            if (move == null) return;
+            EditorApplication.delayCall += () => move(node, slot, from, to);
+        }
+
+        /// <summary>
+        /// Los hijos de Random se conectan por el puerto "Opciones"; acá se ordenan y se edita el
+        /// peso de cada uno. <c>Options.$i.Weight</c> es la ruta Odin del elemento <c>i</c>, que
+        /// tras cada commit coincide con el orden de los edges.
+        /// </summary>
+        void DrawRandomNode(AINode_Random node)
+        {
+            EditorGUILayout.HelpBox(
+                "Cada turno elige un hijo al azar. El peso es relativo (2 y 1 = 2/3 y 1/3).",
+                MessageType.None);
+
+            int count = node.Options != null ? node.Options.Count : 0;
+            DrawChildOrder(node, i =>
+            {
+                if (i < count) DrawOdinProp($"Options.${i}.Weight");
+            });
         }
 
         /// <summary>
@@ -222,17 +354,17 @@ namespace Rollgeon.Editor.Tools.Enemy.AITree
         void DrawIfNode(AINode_If node)
         {
             // Target Selector
-            EditorGUILayout.LabelField("Target Selector", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField("Selector de objetivo", EditorStyles.boldLabel);
             PolymorphicBlockDrawer.DrawSingleSlot(
-                _ctx, "Type", typeof(BaseEnemyTargetSelector), node.TargetSelector,
+                _ctx, "Tipo", typeof(BaseEnemyTargetSelector), node.TargetSelector,
                 Abs("TargetSelector"),
                 v => node.TargetSelector = (BaseEnemyTargetSelector)v,
-                "Change Target Selector");
+                "Cambiar selector de objetivo");
 
             EditorGUILayout.Space(8);
 
             // Conditions list (AND-evaluated)
-            EditorGUILayout.LabelField("Conditions (AND)", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField("Condiciones (AND)", EditorStyles.boldLabel);
             if (node.Conditions == null) node.Conditions = new List<BasePreCondition>();
             PolymorphicBlockDrawer.DrawPolymorphicListItems(_ctx, node.Conditions, Abs("Conditions"), "Condition");
             PolymorphicBlockDrawer.DrawAddButton(_ctx, "Condition", typeof(BasePreCondition), node.Conditions);
@@ -245,17 +377,17 @@ namespace Rollgeon.Editor.Tools.Enemy.AITree
         void DrawWhileNode(AINode_While node)
         {
             // Target Selector (mismo patrón que DrawIfNode)
-            EditorGUILayout.LabelField("Target Selector", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField("Selector de objetivo", EditorStyles.boldLabel);
             PolymorphicBlockDrawer.DrawSingleSlot(
-                _ctx, "Type", typeof(BaseEnemyTargetSelector), node.TargetSelector,
+                _ctx, "Tipo", typeof(BaseEnemyTargetSelector), node.TargetSelector,
                 Abs("TargetSelector"),
                 v => node.TargetSelector = (BaseEnemyTargetSelector)v,
-                "Change Target Selector");
+                "Cambiar selector de objetivo");
 
             EditorGUILayout.Space(8);
 
             // Conditions list (AND-evaluated, looped each iteration)
-            EditorGUILayout.LabelField("Conditions (AND, looped)", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField("Condiciones (AND, por iteración)", EditorStyles.boldLabel);
             if (node.Conditions == null) node.Conditions = new List<BasePreCondition>();
             PolymorphicBlockDrawer.DrawPolymorphicListItems(_ctx, node.Conditions, Abs("Conditions"), "Condition");
             PolymorphicBlockDrawer.DrawAddButton(_ctx, "Condition", typeof(BasePreCondition), node.Conditions);
@@ -263,7 +395,7 @@ namespace Rollgeon.Editor.Tools.Enemy.AITree
             EditorGUILayout.Space(8);
 
             // MaxIterations safeguard
-            EditorGUILayout.LabelField("Safeguard", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField("Tope de iteraciones", EditorStyles.boldLabel);
             DrawOdinProp("MaxIterations");
         }
 
@@ -277,9 +409,9 @@ namespace Rollgeon.Editor.Tools.Enemy.AITree
         {
             EditorGUILayout.LabelField("Behavior", EditorStyles.boldLabel);
             PolymorphicPicker.DrawSingle(
-                "Type", typeof(EnemyActionBehavior), node.Behavior,
+                "Tipo", typeof(EnemyActionBehavior), node.Behavior,
                 newInstance => _ctx.Mutate(
-                    "Change Behavior",
+                    "Cambiar behavior",
                     () => node.Behavior = (EnemyActionBehavior)newInstance));
 
             if (node.Behavior == null) return;
@@ -288,30 +420,30 @@ namespace Rollgeon.Editor.Tools.Enemy.AITree
             EditorGUILayout.Space(8);
 
             // Trigger / phases
-            EditorGUILayout.LabelField("Trigger / Phases", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField("Disparador / fases", EditorStyles.boldLabel);
             DrawOdinProp("Behavior.Trigger");
             DrawOdinProp("Behavior.AllowedPhases");
 
             EditorGUILayout.Space(6);
 
             // Action
-            EditorGUILayout.LabelField("Action", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField("Acción", EditorStyles.boldLabel);
             DrawOdinProp("Behavior.ActionName");
 
             EditorGUILayout.Space(6);
 
             // Target Selector — same picker pattern as DrawIfNode
-            EditorGUILayout.LabelField("Target Selector", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField("Selector de objetivo", EditorStyles.boldLabel);
             PolymorphicBlockDrawer.DrawSingleSlot(
-                _ctx, "Type", typeof(BaseEnemyTargetSelector), behavior.TargetSelector,
+                _ctx, "Tipo", typeof(BaseEnemyTargetSelector), behavior.TargetSelector,
                 Abs("Behavior.TargetSelector"),
                 v => behavior.TargetSelector = (BaseEnemyTargetSelector)v,
-                "Change Behavior Target Selector");
+                "Cambiar selector de objetivo del behavior");
 
             EditorGUILayout.Space(6);
 
             // Effects (List<EffectData>) — EffectData is concrete + has [HideReferenceObjectPicker]
-            EditorGUILayout.LabelField("Effect Pipeline", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField("Efectos (grupos con precondiciones)", EditorStyles.boldLabel);
             if (behavior.Effects == null) behavior.Effects = new List<EffectData>();
             PolymorphicBlockDrawer.DrawEffectDataList(
                 _ctx, behavior.Effects, Abs("Behavior.Effects"), PolymorphicBlockDrawer.Options.Enemy);
@@ -321,16 +453,16 @@ namespace Rollgeon.Editor.Tools.Enemy.AITree
         void DrawMoveNode(AINode_Move node)
         {
             // Target Selector (mismo patrón que DrawIfNode). Null = player.
-            EditorGUILayout.LabelField("Target Selector", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField("Selector de objetivo", EditorStyles.boldLabel);
             PolymorphicBlockDrawer.DrawSingleSlot(
-                _ctx, "Type", typeof(BaseEnemyTargetSelector), node.TargetSelector,
+                _ctx, "Tipo", typeof(BaseEnemyTargetSelector), node.TargetSelector,
                 Abs("TargetSelector"),
                 v => node.TargetSelector = (BaseEnemyTargetSelector)v,
-                "Change Target Selector");
+                "Cambiar selector de objetivo");
 
             EditorGUILayout.Space(8);
 
-            EditorGUILayout.LabelField("Max Steps", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField("Pasos máximos", EditorStyles.boldLabel);
             DrawIntReaderField("MaxSteps", node.MaxSteps,
                 r => { node.MaxSteps = r; });
             if (node.MaxSteps != null)
@@ -342,7 +474,7 @@ namespace Rollgeon.Editor.Tools.Enemy.AITree
 
             EditorGUILayout.Space(6);
 
-            EditorGUILayout.LabelField("Desired Range", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField("Distancia deseada", EditorStyles.boldLabel);
             DrawIntReaderField("DesiredRange", node.DesiredRange,
                 r => { node.DesiredRange = r; });
             if (node.DesiredRange != null)
@@ -356,13 +488,13 @@ namespace Rollgeon.Editor.Tools.Enemy.AITree
             DrawOdinProp("Retreat");
 
             EditorGUILayout.Space(6);
-            EditorGUILayout.LabelField("Legacy (fallback si Desired Range es null)", EditorStyles.miniBoldLabel);
+            EditorGUILayout.LabelField("Legado (fallback si Distancia deseada está vacía)", EditorStyles.miniBoldLabel);
             DrawOdinProp("StopAdjacent");
         }
 
         void DrawKeepDistanceNode(AINode_KeepDistance node)
         {
-            EditorGUILayout.LabelField("Max Steps", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField("Pasos máximos", EditorStyles.boldLabel);
             DrawIntReaderField("MaxSteps", node.MaxSteps,
                 r => { node.MaxSteps = r; });
             if (node.MaxSteps != null)
@@ -374,7 +506,7 @@ namespace Rollgeon.Editor.Tools.Enemy.AITree
 
             EditorGUILayout.Space(6);
 
-            EditorGUILayout.LabelField("Ideal Distance", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField("Distancia ideal", EditorStyles.boldLabel);
             DrawIntReaderField("IdealDistance", node.IdealDistance,
                 r => { node.IdealDistance = r; });
             if (node.IdealDistance != null)
@@ -390,7 +522,7 @@ namespace Rollgeon.Editor.Tools.Enemy.AITree
             PolymorphicPicker.DrawSingle(
                 label, typeof(AIIntReader), current,
                 newInstance => _ctx.Mutate(
-                    "Change " + label,
+                    "Cambiar " + label,
                     () => setter((AIIntReader)newInstance)));
         }
 
@@ -418,7 +550,7 @@ namespace Rollgeon.Editor.Tools.Enemy.AITree
         {
             if (_selected == null)
             {
-                _header.text = "AI Node Inspector";
+                _header.text = "Inspector de nodo";
                 _emptyHint.style.display = DisplayStyle.Flex;
             }
             else

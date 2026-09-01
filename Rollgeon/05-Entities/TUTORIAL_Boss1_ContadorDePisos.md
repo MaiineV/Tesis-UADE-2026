@@ -260,13 +260,10 @@ borralo. El orden de hijos del Sequence raíz, de arriba a abajo, debe ser:
 
 El árbol ya funciona, pero el boss tiene que spawnear. Pasos mínimos:
 
-1. **Registrar en el catálogo:** abrí tu `EnemyCatalogSO` (Project) y agregá
-   el `EnemyDataSO` del boss a la lista. (El botón `+ Create Enemy` ya te
-   hace ping al catálogo como recordatorio.)
-2. **Crear el encuentro:** Project → clic derecho → **Create → Rollgeon →
+1. **Crear el encuentro:** Project → clic derecho → **Create → Rollgeon →
    Dungeon → Enemy Setup**. En `Slots`, agregá un slot con
    `SpawnPointIndex = 0` y arrastrá el `EnemyDataSO` del boss.
-3. **Asignar a la sala:** en la `RoomSO` de la pelea de boss, agregá ese
+2. **Asignar a la sala:** en la `RoomSO` de la pelea de boss, agregá ese
    `EnemySetupSO` a `Possible Setups` (o usá un `EnemyPoolSO` si preferís
    pool aleatorio).
 

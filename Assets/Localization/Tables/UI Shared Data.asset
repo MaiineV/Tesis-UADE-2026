@@ -139,10 +139,6 @@ MonoBehaviour:
     m_Key: action.move
     m_Metadata:
       m_Items: []
-  - m_Id: 33290952929282
-    m_Key: action.special_attack
-    m_Metadata:
-      m_Items: []
   - m_Id: 33290952929283
     m_Key: action.force_door
     m_Metadata:
@@ -811,160 +807,220 @@ MonoBehaviour:
     m_Key: altar.confirm_hint
     m_Metadata:
       m_Items: []
-  - m_Id: 16084878164422656
+  - m_Id: 15429564853567488
+    m_Key: tooltip.effect.push.header
+    m_Metadata:
+      m_Items: []
+  - m_Id: 15429564908093440
+    m_Key: tooltip.effect.push.no_combo
+    m_Metadata:
+      m_Items: []
+  - m_Id: 15429564908093441
+    m_Key: formula.push.preview
+    m_Metadata:
+      m_Items: []
+  - m_Id: 15429564908093442
+    m_Key: formula.push.no_combo
+    m_Metadata:
+      m_Items: []
+  - m_Id: 15429564929064960
+    m_Key: action.class_skill
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16211047658389504
+    m_Key: dicebag.cat.ataque
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16211047712915456
+    m_Key: dicebag.cat.control
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16211047712915457
+    m_Key: dicebag.cat.defensa
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16211047712915458
+    m_Key: dicebag.cat.economia
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16211047712915459
+    m_Key: dicebag.cat.maldicion
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17252903728173056
+    m_Key: action.reject.cooldown
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17252903774310400
+    m_Key: action.reject.item_unavailable
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17261896722796544
+    m_Key: action.reject.action_used_turn
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17355423305682944
+    m_Key: action.reject.no_valid_target
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17355423393763328
+    m_Key: action.reject.no_active_item
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593281655271424
     m_Key: enemy.archetype.melee
     m_Metadata:
       m_Items: []
-  - m_Id: 16084878344777728
+  - m_Id: 17593281667854336
     m_Key: enemy.archetype.ranged
     m_Metadata:
       m_Items: []
-  - m_Id: 16084878344777729
+  - m_Id: 17593281667854337
     m_Key: enemy.archetype.support
     m_Metadata:
       m_Items: []
-  - m_Id: 16084878344777730
+  - m_Id: 17593281667854338
     m_Key: enemy.archetype.boss
     m_Metadata:
       m_Items: []
-  - m_Id: 16084878344777731
+  - m_Id: 17593281667854339
     m_Key: enemy.archetype.boss_format
     m_Metadata:
       m_Items: []
-  - m_Id: 16149703682879488
+  - m_Id: 17593281667854340
     m_Key: enemy.panel.next_turn
     m_Metadata:
       m_Items: []
-  - m_Id: 16191439641702400
-    m_Key: enemy.panel.weakness
-    m_Metadata:
-      m_Items: []
-  - m_Id: 16825655438012416
+  - m_Id: 17593281667854341
     m_Key: enemy.panel.player_curse
     m_Metadata:
       m_Items: []
-  - m_Id: 16825655454789632
+  - m_Id: 17593281672048640
     m_Key: attack_kind.combo_attack
     m_Metadata:
       m_Items: []
-  - m_Id: 16825655454789633
+  - m_Id: 17593281672048641
     m_Key: attack_kind.basic_attack
     m_Metadata:
       m_Items: []
-  - m_Id: 16825655454789634
+  - m_Id: 17593281672048642
     m_Key: attack_kind.damage_over_time
     m_Metadata:
       m_Items: []
-  - m_Id: 16825655454789635
+  - m_Id: 17593281672048643
     m_Key: attack_kind.environmental
     m_Metadata:
       m_Items: []
-  - m_Id: 16825655454789636
+  - m_Id: 17593281672048644
     m_Key: attack_kind.reaction
     m_Metadata:
       m_Items: []
-  - m_Id: 16825655454789637
+  - m_Id: 17593281672048645
     m_Key: attack_kind.scripted_ability
     m_Metadata:
       m_Items: []
-  - m_Id: 16825655454789638
+  - m_Id: 17593281672048646
     m_Key: enemy.panel.title_kind_format
     m_Metadata:
       m_Items: []
-  - m_Id: 16873831498969088
+  - m_Id: 17593281672048647
     m_Key: tile.category.format
     m_Metadata:
       m_Items: []
-  - m_Id: 16873831515746304
+  - m_Id: 17593281672048648
     m_Key: tile.category.damage
     m_Metadata:
       m_Items: []
-  - m_Id: 16873831515746305
+  - m_Id: 17593281672048649
     m_Key: tile.category.heal
     m_Metadata:
       m_Items: []
-  - m_Id: 16873831515746306
+  - m_Id: 17593281672048650
     m_Key: tile.category.status
     m_Metadata:
       m_Items: []
-  - m_Id: 16873831515746307
+  - m_Id: 17593281672048651
     m_Key: tile.category.buff
     m_Metadata:
       m_Items: []
-  - m_Id: 16873831515746308
+  - m_Id: 17593281672048652
     m_Key: tile.category.slide
     m_Metadata:
       m_Items: []
-  - m_Id: 16873831515746309
+  - m_Id: 17593281672048653
     m_Key: tile.category.teleport
     m_Metadata:
       m_Items: []
-  - m_Id: 16873831515746310
+  - m_Id: 17593281672048654
     m_Key: tile.category.warning
     m_Metadata:
       m_Items: []
-  - m_Id: 16873831515746311
+  - m_Id: 17593281672048655
     m_Key: tile.category.protection
     m_Metadata:
       m_Items: []
-  - m_Id: 16873831515746312
+  - m_Id: 17593281672048656
     m_Key: tile.panel.effect
     m_Metadata:
       m_Items: []
-  - m_Id: 16873831515746313
+  - m_Id: 17593281672048657
     m_Key: tile.panel.enter
     m_Metadata:
       m_Items: []
-  - m_Id: 16873831515746314
+  - m_Id: 17593281672048658
     m_Key: tile.panel.turn_start
     m_Metadata:
       m_Items: []
-  - m_Id: 16873831515746315
+  - m_Id: 17593281672048659
     m_Key: tile.panel.heal
     m_Metadata:
       m_Items: []
-  - m_Id: 16873831515746316
+  - m_Id: 17593281672048660
     m_Key: tile.panel.applies
     m_Metadata:
       m_Items: []
-  - m_Id: 16873831515746317
+  - m_Id: 17593281672048661
     m_Key: enemy.panel.on_the_floor
     m_Metadata:
       m_Items: []
-  - m_Id: 16873831515746318
+  - m_Id: 17593281672048662
     m_Key: prop.panel.type
     m_Metadata:
       m_Items: []
-  - m_Id: 16873831515746319
+  - m_Id: 17593281672048663
     m_Key: prop.panel.leaves
     m_Metadata:
       m_Items: []
-  - m_Id: 17130814152044544
-    m_Key: hazard.panel.type
-    m_Metadata:
-      m_Items: []
-  - m_Id: 17130814210764800
-    m_Key: hazard.panel.hit
-    m_Metadata:
-      m_Items: []
-  - m_Id: 17130814210764801
-    m_Key: hazard.panel.cycle
-    m_Metadata:
-      m_Items: []
-  - m_Id: 17325483355992064
+  - m_Id: 17593281672048664
     m_Key: prop.panel.fuse_tick
     m_Metadata:
       m_Items: []
-  - m_Id: 17325483397935104
+  - m_Id: 17593281672048665
     m_Key: prop.panel.fuse_blows
     m_Metadata:
       m_Items: []
-  - m_Id: 17325483397935105
+  - m_Id: 17593281672048666
     m_Key: prop.panel.on_blast
     m_Metadata:
       m_Items: []
-  - m_Id: 17325483397935106
+  - m_Id: 17593281672048667
     m_Key: prop.panel.blast_hit
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593281672048668
+    m_Key: hazard.panel.type
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593281672048669
+    m_Key: hazard.panel.hit
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593281672048670
+    m_Key: hazard.panel.cycle
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593281676242944
+    m_Key: chest.rarity.god
     m_Metadata:
       m_Items: []
   m_Metadata:

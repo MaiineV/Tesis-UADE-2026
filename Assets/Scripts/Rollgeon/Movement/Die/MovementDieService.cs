@@ -86,7 +86,7 @@ namespace Rollgeon.Movement.Die
                 // Se emite ANTES de presentar: si el presenter revela sincrónico (sin
                 // animación) el par abre/cierra queda en orden. Sin presenter no hay mesa.
                 EventManager.Trigger(EventName.OnMovementDieRollStarted, playerGuid, type);
-                if (_presenter.TryPresent(type, face, Reveal)) return;
+                if (_presenter.TryPresent(type, face, ResolveRangeBonus(playerGuid), Reveal)) return;
             }
             Reveal();
         }
@@ -128,6 +128,17 @@ namespace Rollgeon.Movement.Die
         {
             ClearActiveRange();
             LastFace = 0;
+        }
+
+        // Mismo bonus que SelectionSettings.ResolveEffectiveRange suma al rango real:
+        // se pasa al presenter solo para que el jugador VEA de dónde salió el rango.
+        private static int ResolveRangeBonus(Guid playerGuid)
+        {
+            if (playerGuid == Guid.Empty) return 0;
+            if (!ServiceLocator.TryGetService<Rollgeon.Attributes.AttributesManager>(out var attrs)
+                || attrs == null)
+                return 0;
+            return attrs.GetAttributeModifiedValue<Rollgeon.Attributes.Stats.MoveRange, int>(playerGuid);
         }
     }
 }

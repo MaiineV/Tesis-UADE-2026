@@ -57,6 +57,12 @@ namespace Rollgeon.GameCamera
         private EventManager.EventReceiver _onRoomEnteredHandler;
 
         static readonly int s_PixelPanOffset = Shader.PropertyToID("_PixelPanOffset");
+        static readonly int s_PixelationScreenSize = Shader.PropertyToID("_PixelationScreenSize");
+
+        // Última resolución subida a _PixelationScreenSize — evita subir el global
+        // todos los frames si la ventana no cambió de tamaño.
+        private int _lastPixelationScreenWidth;
+        private int _lastPixelationScreenHeight;
 
         public CameraFacing CurrentFacing => _currentFacing;
         public float CurrentZoom => _currentZoom;
@@ -229,6 +235,10 @@ namespace Rollgeon.GameCamera
 
         private void LateUpdate()
         {
+            // Independiente de _config/_rig: GodotParityPost.shader necesita la
+            // resolución real todo el tiempo, no solo cuando la cámara está armada.
+            UpdatePixelationScreenSizeGlobal();
+
             if (_config == null || _rig == null) return;
 
             if (_pendingStaticReanchor && _followTarget != null)
@@ -284,6 +294,28 @@ namespace Rollgeon.GameCamera
         /// El error de redondeo se empuja como _PixelPanOffset al SharpUpscale
         /// shader para compensar en UV y recuperar movimiento perfectamente suave.
         /// </summary>
+        /// <summary>
+        /// Sube la resolución real de pantalla a <c>_PixelationScreenSize</c>
+        /// (ancho, alto, 1/ancho, 1/alto), consumida por
+        /// <c>GodotParityPost.shader</c> para su grilla de pixelado. Sin esto el
+        /// shader queda con el default hardcodeado del material (1920x1080) — a
+        /// cualquier otra resolución, o si la ventana cambia de tamaño, la grilla
+        /// de bloques deja de coincidir con los píxeles reales de pantalla y el
+        /// pixel art se ve menos nítido. Solo sube el global cuando la resolución
+        /// realmente cambió (no todos los frames).
+        /// </summary>
+        private void UpdatePixelationScreenSizeGlobal()
+        {
+            int w = Screen.width;
+            int h = Screen.height;
+            if (w <= 0 || h <= 0) return;
+            if (w == _lastPixelationScreenWidth && h == _lastPixelationScreenHeight) return;
+
+            _lastPixelationScreenWidth = w;
+            _lastPixelationScreenHeight = h;
+            Shader.SetGlobalVector(s_PixelationScreenSize, new Vector4(w, h, 1f / w, 1f / h));
+        }
+
         private void ApplyPixelSnap()
         {
             if (_camera == null || !_camera.orthographic) return;

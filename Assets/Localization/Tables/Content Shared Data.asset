@@ -971,256 +971,696 @@ MonoBehaviour:
     m_Key: status.tile_attack.desc
     m_Metadata:
       m_Items: []
-  - m_Id: 15476475624660992
-    m_Key: status.dice_block.name
+  - m_Id: 17185034194485248
+    m_Key: char_rew.energy_plus_1.desc
     m_Metadata:
       m_Items: []
-  - m_Id: 15476475679186944
-    m_Key: status.dice_block.desc
+  - m_Id: 17185034236428288
+    m_Key: char_rew.hp_plus_25.name
     m_Metadata:
       m_Items: []
-  - m_Id: 15491811094798336
-    m_Key: tile.firecroupierbomba.name
+  - m_Id: 17185034236428289
+    m_Key: char_rew.move_plus_1.name
     m_Metadata:
       m_Items: []
-  - m_Id: 15491811132547072
-    m_Key: tile.firecroupierbomba.desc
+  - m_Id: 17185034236428290
+    m_Key: char_rew.move_plus_1.desc
     m_Metadata:
       m_Items: []
-  - m_Id: 15516266093322240
-    m_Key: intent.ignite.name
+  - m_Id: 17283715951849472
+    m_Key: botas.del.viento.name
     m_Metadata:
       m_Items: []
-  - m_Id: 15516266126876672
-    m_Key: intent.ignite.desc
+  - m_Id: 17283715985403904
+    m_Key: botas.del.viento.desc
     m_Metadata:
       m_Items: []
-  - m_Id: 15516266126876673
-    m_Key: intent.ranged_shot.name
+  - m_Id: 17285590277255168
+    m_Key: Guantes.escaladores.escalera.name
     m_Metadata:
       m_Items: []
-  - m_Id: 15516266126876674
-    m_Key: intent.ranged_shot.desc
+  - m_Id: 17285590277255169
+    m_Key: Guantes.escaladores.escalera.desc
     m_Metadata:
       m_Items: []
-  - m_Id: 15516266126876675
-    m_Key: intent.bomb_field.name
+  - m_Id: 17285792501428224
+    m_Key: botas.del.rayo.name
     m_Metadata:
       m_Items: []
-  - m_Id: 15516266126876676
-    m_Key: intent.bomb_field.desc
+  - m_Id: 17285792501428225
+    m_Key: botas.del.rayo.desc
     m_Metadata:
       m_Items: []
-  - m_Id: 15516266126876677
-    m_Key: intent.bomb_blast.name
+  - m_Id: 17286059955417088
+    m_Key: alas.de.hermes.name
     m_Metadata:
       m_Items: []
-  - m_Id: 15516266126876678
-    m_Key: intent.bomb_blast.desc
+  - m_Id: 17286059955417089
+    m_Key: alas.de.hermes.desc
     m_Metadata:
       m_Items: []
-  - m_Id: 15516266126876679
-    m_Key: intent.leaves.name
+  - m_Id: 17290144389623808
+    m_Key: coraza.de.hierro.name
     m_Metadata:
       m_Items: []
-  - m_Id: 15516266126876680
-    m_Key: intent.leaves.desc
+  - m_Id: 17290144389623809
+    m_Key: coraza.de.hierro.desc
     m_Metadata:
       m_Items: []
-  - m_Id: 16142169173585920
-    m_Key: enemy.weakness.name
+  - m_Id: 17291279481532416
+    m_Key: coraza.templada.name
     m_Metadata:
       m_Items: []
-  - m_Id: 16142169202946048
-    m_Key: enemy.weakness.desc
+  - m_Id: 17291279481532417
+    m_Key: coraza.templada.desc
     m_Metadata:
       m_Items: []
-  - m_Id: 16142169202946049
-    m_Key: ability.teleport.name
+  - m_Id: 17291390181797888
+    m_Key: coraza.del.titan.name
     m_Metadata:
       m_Items: []
-  - m_Id: 16142169202946050
-    m_Key: ability.teleport.desc
+  - m_Id: 17291390181797889
+    m_Key: coraza.del.titan.desc
     m_Metadata:
       m_Items: []
-  - m_Id: 16151112637673472
-    m_Key: enemy.fire_tiles.name
+  - m_Id: 17294895571365888
+    m_Key: talisman.vigoroso.name
     m_Metadata:
       m_Items: []
-  - m_Id: 16151112667033600
-    m_Key: enemy.fire_tiles.desc
+  - m_Id: 17294895575560192
+    m_Key: talisman.vigoroso.desc
     m_Metadata:
       m_Items: []
-  - m_Id: 16155814888665088
+  - m_Id: 17296411766124544
+    m_Key: pico.de.minero.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17296411770318848
+    m_Key: pico.de.minero.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17300769589260288
+    m_Key: rodilleras.de.obsidiana.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17300769589260289
+    m_Key: rodilleras.de.obsidiana.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17300896068497408
+    m_Key: rodilleras.del.bastion.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17300896068497409
+    m_Key: rodilleras.del.bastion.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17306392171212800
+    m_Key: guantelete.pesado.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17306392175407104
+    m_Key: guantelete.pesado.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17318608383602688
+    m_Key: regeneracion.de.dados.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17318608387796992
+    m_Key: regeneracion.de.dados.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17321473286172672
+    m_Key: "Coraz\xF3n de la Fortuna.name"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17321473286172673
+    m_Key: "Coraz\xF3n de la Fortuna.desc"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17321622683086848
+    m_Key: tesoro.de.la.fortuna.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17321622687281152
+    m_Key: tesoro.de.la.fortuna.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17322556813307904
+    m_Key: mochila.grande.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17322556813307905
+    m_Key: mochila.grande.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17323018375491584
+    m_Key: llamado.de.emergencia.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17323018375491585
+    m_Key: llamado.de.emergencia.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17325063912386560
+    m_Key: ficha.del.segundo.aliento.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17325063912386561
+    m_Key: ficha.del.segundo.aliento.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17331148496924672
+    m_Key: corona.del.numero.alto.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17331148496924673
+    m_Key: corona.del.numero.alto.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17331885440331776
+    m_Key: corona.del.mayor.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17331885440331777
+    m_Key: corona.del.mayor.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17332682412617728
+    m_Key: corona.del.maximo.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17332682412617729
+    m_Key: corona.del.maximo.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17333112605601792
+    m_Key: corona.de.la.cima.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17333112605601793
+    m_Key: corona.de.la.cima.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17333766250131456
+    m_Key: corona.del.par.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17333766250131457
+    m_Key: corona.del.par.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17334166307041280
+    m_Key: corona.de.los.iguales.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17334166307041281
+    m_Key: corona.de.los.iguales.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17334912108818432
+    m_Key: corona.de.la.dualidad.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17334912108818433
+    m_Key: corona.de.la.dualidad.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17335304825696256
+    m_Key: corona.de.los.gemelos.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17335304829890560
+    m_Key: corona.de.los.gemelos.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17335726969810944
+    m_Key: corona.del.doble.par.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17335726969810945
+    m_Key: corona.del.doble.par.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17336154751070208
+    m_Key: corona.de.las.parejas.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17336154751070209
+    m_Key: corona.de.las.parejas.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17336910547873792
+    m_Key: corona.de.los.amores.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17336910547873793
+    m_Key: corona.de.los.amores.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17337581590376448
+    m_Key: corona.del.espejo.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17337581590376449
+    m_Key: corona.del.espejo.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17338012546723840
+    m_Key: corona.del.trio.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17338012546723841
+    m_Key: corona.del.trio.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17338241207595008
+    m_Key: corona.del.triplete.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17338241207595009
+    m_Key: corona.del.triplete.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17338580367405056
+    m_Key: corona.de.la.trinidad.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17338580367405057
+    m_Key: corona.de.la.trinidad.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17338790833385472
+    m_Key: corona.del.triunvirato.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17338790833385473
+    m_Key: corona.del.triunvirato.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17339137832349696
+    m_Key: corona.del.poker.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17339137832349697
+    m_Key: corona.del.poker.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17339426274635776
+    m_Key: corona.del.cuarteto.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17339426274635777
+    m_Key: corona.del.cuarteto.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17339656948772864
+    m_Key: corona.de.la.banda.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17339656948772865
+    m_Key: corona.de.la.banda.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17340098965499904
+    m_Key: corona.de.los.cuatro.reyes.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17340098965499905
+    m_Key: corona.de.los.cuatro.reyes.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17340507348103168
+    m_Key: corona.de.la.escalera.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17340507348103169
+    m_Key: corona.de.la.escalera.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17340736537456640
+    m_Key: corona.del.ascenso.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17340736537456641
+    m_Key: corona.del.ascenso.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17340968432136192
+    m_Key: corona.de.la.ascension.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17340968432136193
+    m_Key: corona.de.la.ascension.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17341224574087168
+    m_Key: corona.del.camino.celestial.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17341224574087169
+    m_Key: corona.del.camino.celestial.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17341427037335552
+    m_Key: corona.de.la.generala.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17341427037335553
+    m_Key: corona.de.la.generala.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17341875572011008
+    m_Key: corona.de.la.perfeccion.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17341875572011009
+    m_Key: corona.de.la.perfeccion.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17342111518388224
+    m_Key: corona.suprema.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17342111518388225
+    m_Key: corona.suprema.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17342439924002816
+    m_Key: corona.divina.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17342439924002817
+    m_Key: corona.divina.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17342777909407744
+    m_Key: corona.del.full.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17342777909407745
+    m_Key: corona.del.full.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17342999574179840
+    m_Key: corona.de.la.familia.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17342999574179841
+    m_Key: corona.de.la.familia.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17343220853075968
+    m_Key: corona.del.linaje.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17343220853075969
+    m_Key: corona.del.linaje.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17343412033646592
+    m_Key: corona.de.la.casa.real.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17343412033646593
+    m_Key: corona.de.la.casa.real.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17566757004951552
+    m_Key: moneda.maldita.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17566757088837632
+    m_Key: moneda.maldita.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17566757822840832
+    m_Key: corredor.incansable.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17566757822840833
+    m_Key: corredor.incansable.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17566758561038336
+    m_Key: piedra.de.guardia.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17566758561038337
+    m_Key: piedra.de.guardia.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17566759316013056
+    m_Key: furia.contenida.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17566759316013057
+    m_Key: furia.contenida.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593279981744128
     m_Key: boss.croupier.brief
     m_Metadata:
       m_Items: []
-  - m_Id: 16825653756096512
-    m_Key: intent.telegraph.name
-    m_Metadata:
-      m_Items: []
-  - m_Id: 16825653806428160
-    m_Key: intent.telegraph.desc
-    m_Metadata:
-      m_Items: []
-  - m_Id: 16825653806428161
-    m_Key: intent.attack.name
-    m_Metadata:
-      m_Items: []
-  - m_Id: 16825653806428162
-    m_Key: intent.attack.desc
-    m_Metadata:
-      m_Items: []
-  - m_Id: 16873829754138624
+  - m_Id: 17593280027881472
     m_Key: boss.cashier.brief
     m_Metadata:
       m_Items: []
-  - m_Id: 16873829850607616
+  - m_Id: 17593280027881473
     m_Key: boss.la_generala.brief
     m_Metadata:
       m_Items: []
-  - m_Id: 16873829850607617
+  - m_Id: 17593280027881474
     m_Key: minion.cajero_comision.brief
     m_Metadata:
       m_Items: []
-  - m_Id: 16873829850607618
+  - m_Id: 17593280027881475
     m_Key: obj.dado_casa.brief
     m_Metadata:
       m_Items: []
-  - m_Id: 16873829854801920
-    m_Key: healerEnemy.brief
-    m_Metadata:
-      m_Items: []
-  - m_Id: 16873829854801921
-    m_Key: CardEnemy01.brief
-    m_Metadata:
-      m_Items: []
-  - m_Id: 16873829854801922
-    m_Key: RangedEnemy01.brief
-    m_Metadata:
-      m_Items: []
-  - m_Id: 16873829854801923
-    m_Key: ChestMimic01.brief
-    m_Metadata:
-      m_Items: []
-  - m_Id: 16873829854801924
-    m_Key: enemy_tutorial_melee_b.brief
-    m_Metadata:
-      m_Items: []
-  - m_Id: 16873829854801925
-    m_Key: enemy_tutorial_melee_c.brief
-    m_Metadata:
-      m_Items: []
-  - m_Id: 16873829854801926
-    m_Key: curse.bank_keeps.name
-    m_Metadata:
-      m_Items: []
-  - m_Id: 16873829854801927
-    m_Key: curse.bank_keeps.desc
-    m_Metadata:
-      m_Items: []
-  - m_Id: 16873829854801928
-    m_Key: curse.repeat_ban.name
-    m_Metadata:
-      m_Items: []
-  - m_Id: 16873829854801929
-    m_Key: curse.repeat_ban.desc
-    m_Metadata:
-      m_Items: []
-  - m_Id: 16873829888356352
-    m_Key: tile.spikes_cajero.name
-    m_Metadata:
-      m_Items: []
-  - m_Id: 16873829888356353
-    m_Key: tile.spikes_cajero.desc
-    m_Metadata:
-      m_Items: []
-  - m_Id: 16873829980631040
-    m_Key: healerEnemy.desc
-    m_Metadata:
-      m_Items: []
-  - m_Id: 16873829984825344
-    m_Key: CardEnemy01.desc
-    m_Metadata:
-      m_Items: []
-  - m_Id: 16873829984825345
-    m_Key: ChestMimic01.name
-    m_Metadata:
-      m_Items: []
-  - m_Id: 16873829984825346
-    m_Key: ChestMimic01.desc
-    m_Metadata:
-      m_Items: []
-  - m_Id: 17130812583374848
-    m_Key: hazard.fire.name
-    m_Metadata:
-      m_Items: []
-  - m_Id: 17130812608540672
-    m_Key: hazard.fire.desc
-    m_Metadata:
-      m_Items: []
-  - m_Id: 17130812608540673
-    m_Key: hazard.frost.name
-    m_Metadata:
-      m_Items: []
-  - m_Id: 17130812608540674
-    m_Key: hazard.frost.desc
-    m_Metadata:
-      m_Items: []
-  - m_Id: 17130812608540675
-    m_Key: hazard.chip.name
-    m_Metadata:
-      m_Items: []
-  - m_Id: 17130812608540676
-    m_Key: hazard.chip.desc
-    m_Metadata:
-      m_Items: []
-  - m_Id: 17130812608540677
-    m_Key: hazard.table_fire.name
-    m_Metadata:
-      m_Items: []
-  - m_Id: 17130812608540678
-    m_Key: hazard.table_fire.desc
-    m_Metadata:
-      m_Items: []
-  - m_Id: 17130812608540679
-    m_Key: hazard.ice_trail.name
-    m_Metadata:
-      m_Items: []
-  - m_Id: 17130812608540680
-    m_Key: hazard.ice_trail.desc
-    m_Metadata:
-      m_Items: []
-  - m_Id: 17130812612734976
-    m_Key: hazard.rain.name
-    m_Metadata:
-      m_Items: []
-  - m_Id: 17130812625317888
-    m_Key: hazard.rain.desc
-    m_Metadata:
-      m_Items: []
-  - m_Id: 17130812646289408
-    m_Key: chest.name
-    m_Metadata:
-      m_Items: []
-  - m_Id: 17130812646289409
-    m_Key: chest.desc
-    m_Metadata:
-      m_Items: []
-  - m_Id: 17201829490126848
+  - m_Id: 17593280027881476
     m_Key: roomobj.croupier.bomba.name
     m_Metadata:
       m_Items: []
-  - m_Id: 17201829544652800
+  - m_Id: 17593280027881477
     m_Key: roomobj.croupier.bomba.desc
     m_Metadata:
       m_Items: []
-  - m_Id: 17329585485967360
+  - m_Id: 17593280027881478
+    m_Key: healerEnemy.brief
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280027881479
+    m_Key: CardEnemy01.brief
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280027881480
+    m_Key: RangedEnemy01.brief
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280027881481
+    m_Key: ChestMimic01.brief
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280027881482
+    m_Key: enemy_tutorial_melee_b.brief
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280027881483
+    m_Key: enemy_tutorial_melee_c.brief
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280027881484
+    m_Key: curse.bank_keeps.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280027881485
+    m_Key: curse.bank_keeps.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280027881486
+    m_Key: curse.repeat_ban.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280027881487
+    m_Key: curse.repeat_ban.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280027881488
+    m_Key: enemy.fire_tiles.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280027881489
+    m_Key: enemy.fire_tiles.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280027881490
+    m_Key: ability.teleport.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280027881491
+    m_Key: ability.teleport.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280027881492
+    m_Key: status.dice_block.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280027881493
+    m_Key: status.dice_block.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280027881494
+    m_Key: intent.ignite.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280027881495
+    m_Key: intent.ignite.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280027881496
     m_Key: intent.burn_room.name
     m_Metadata:
       m_Items: []
-  - m_Id: 17329585515327488
+  - m_Id: 17593280027881497
     m_Key: intent.burn_room.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280027881498
+    m_Key: intent.ranged_shot.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280027881499
+    m_Key: intent.ranged_shot.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280027881500
+    m_Key: intent.bomb_field.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280027881501
+    m_Key: intent.bomb_field.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280027881502
+    m_Key: intent.bomb_blast.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280027881503
+    m_Key: intent.bomb_blast.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280027881504
+    m_Key: intent.telegraph.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280027881505
+    m_Key: intent.telegraph.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280027881506
+    m_Key: intent.attack.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280027881507
+    m_Key: intent.attack.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280027881508
+    m_Key: intent.leaves.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280027881509
+    m_Key: intent.leaves.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280044658688
+    m_Key: hazard.fire.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280044658689
+    m_Key: hazard.fire.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280044658690
+    m_Key: hazard.frost.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280044658691
+    m_Key: hazard.frost.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280044658692
+    m_Key: hazard.chip.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280044658693
+    m_Key: hazard.chip.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280044658694
+    m_Key: hazard.table_fire.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280044658695
+    m_Key: hazard.table_fire.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280044658696
+    m_Key: hazard.ice_trail.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280044658697
+    m_Key: hazard.ice_trail.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280044658698
+    m_Key: hazard.rain.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280044658699
+    m_Key: hazard.rain.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280044658700
+    m_Key: tile.firecroupierbomba.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280044658701
+    m_Key: tile.firecroupierbomba.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280044658702
+    m_Key: tile.spikes_cajero.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280044658703
+    m_Key: tile.spikes_cajero.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280048852992
+    m_Key: chest.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280048852993
+    m_Key: chest.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280048852994
+    m_Key: healerEnemy.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280048852995
+    m_Key: CardEnemy01.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280048852996
+    m_Key: ChestMimic01.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280048852997
+    m_Key: ChestMimic01.desc
     m_Metadata:
       m_Items: []
   m_Metadata:

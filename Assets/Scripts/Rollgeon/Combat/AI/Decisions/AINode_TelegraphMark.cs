@@ -26,7 +26,8 @@ namespace Rollgeon.Combat.AI.Decisions
     public sealed class AINode_TelegraphMark : AIActionNode
     {
         [Tooltip("Forma del área. Square=Boss1 (3×3), Row/Column=Boss2 (franja), HalfRoom=Boss3 (media sala), " +
-                 "SquareAroundSelf=Boss1 (área centrada en el propio boss).")]
+                 "SquareAroundSelf=Boss1 (área centrada en el propio boss), CrossAroundSelf=cruz de brazos " +
+                 "ortogonales de largo Size centrada en el boss (sin su celda).")]
         public ThreatShape Shape = ThreatShape.SquareAroundPlayer;
 
         [Tooltip("Radio para Square/SquareAroundSelf (1 ⇒ 3×3), ancho en casillas de la franja para Row/Column " +

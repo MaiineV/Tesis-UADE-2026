@@ -28,6 +28,9 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
     /// </remarks>
     public static class CajeroAssetBuilder
     {
+        /// <summary>Menú que regenera estos assets. Lo lee el Editor de enemigos para avisar que el builder pisa el árbol.</summary>
+        public const string MenuPath = "Tools/Rollgeon/Bosses/Build Cajero";
+
         // ---- Rutas -------------------------------------------------------
 
         public const string EnemyAssetPath = "Assets/Rollgeon/Enemies/ED_Boss_Cajero.asset";
@@ -402,12 +405,6 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         public const string AccentMaterial = "Mat_Brown";
 
         /// <summary>
-        /// Altura de la barra de vida: con el jefe a ~2 de alto, bajarla la mete dentro de la
-        /// silueta.
-        /// </summary>
-        public static readonly Vector3 HealthBarOffset = new Vector3(0f, 3f, 0f);
-
-        /// <summary>
         /// Tope del radio del capsule. El mech está en T-pose y sus bounds dan ~1.5, que taparía las
         /// cuatro casillas vecinas — y el jugador tiene que poder clickearlas (las monedas del piso
         /// y los pinchos de la sala).
@@ -467,7 +464,9 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
                 EntityId = EntityId,
                 BossName = "Cajero",
                 MaterialsFolder = materialsFolder,
-                HealthBarOffset = HealthBarOffset,
+                // El jefe muestra vida en la BossBarView del HUD; una barra world-space
+                // encima del pawn la duplicaría.
+                AddHealthBar = false,
                 Retints = new Dictionary<string, MaterialRetint>
                 {
                     { ShellMaterial, ShellRetint },
@@ -749,6 +748,14 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
             if (portrait != null) data.Portrait = portrait;
 
             data.AIRoot = BuildAIRoot(chip, critter);
+            data.AIDetachedNodes.Clear(); // el builder es fuente de verdad: nada suelto sobrevive
+            data.Design = new EnemyDesignSheet
+            {
+                Archetype = EnemyArchetype.Melee,
+                Pattern = AttackPatternKind.ContactAdjacent,
+                Timing = AttackTiming.Instant,
+                Notes = "Mandoble y empujón alternados a distancia 1; lluvia de monedas; caja fuerte; refuerzos (Comisión).",
+            };
         }
 
         // ---- La Comisión (ficha propia) -----------------------------------
@@ -802,6 +809,14 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
             }
 
             data.AIRoot = BuildCritterAIRoot();
+            data.AIDetachedNodes.Clear(); // el builder es fuente de verdad: nada suelto sobrevive
+            data.Design = new EnemyDesignSheet
+            {
+                Archetype = EnemyArchetype.Ranged,
+                Pattern = AttackPatternKind.DiamondArea,
+                Timing = AttackTiming.Instant,
+                Notes = "Dispara si el jugador está a ≤5 (Manhattan) y mantiene distancia 5; si no, se acerca.",
+            };
         }
 
         /// <summary>
@@ -867,7 +882,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
 
         // ---- MenuItem ----------------------------------------------------
 
-        [MenuItem("Tools/Rollgeon/Bosses/Build Cajero")]
+        [MenuItem(MenuPath)]
         public static void BuildCajeroAsset()
         {
             var chip = EnsureChipHazard();

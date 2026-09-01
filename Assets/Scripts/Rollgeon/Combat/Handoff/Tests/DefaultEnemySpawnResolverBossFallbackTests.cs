@@ -189,26 +189,31 @@ namespace Rollgeon.Combat.Handoff.Tests
         }
 
         [Test]
-        public void Resolve_ReentryBossRoom_NoMatchAnywhere_LogsErrorAndSkipsSilentlyOtherwise()
+        public void Resolve_ReentryBossRoom_NoMatchAnywhere_FallsBackToFreshSpawn()
         {
-            // Arrange — ningún fallback matchea: el EnemyDataSOId guardado no existe en
-            // PossibleSetups/EnemyPool/instance.Boss/BossPool. Antes esto era un `continue`
-            // mudo; ahora debe loguear un LogError explícito (nunca más silencioso).
+            // Arrange — ningún lookup matchea: el EnemyDataSOId guardado no existe en
+            // PossibleSetups/EnemyPool/instance.Boss/BossPool. Antes esto devolvía una
+            // lista VACÍA con states vivos ⇒ la sala iba a combate sin combatientes y
+            // el guard de CombatEnterState lo abortaba en fantasma (BUG-078). Ahora cae
+            // al plan de primer spawn, que garantiza boss vía instance.Boss.
             var roomPoolEnemy = CreateEnemy("PoolPlaceholder");
-            var unrelatedInstanceBoss = CreateEnemy("Anotador");
+            var instanceBoss = CreateEnemy("Anotador");
             var room = CreateBossRoom(CreatePool(roomPoolEnemy));
-            var instance = CreateResumeInstance(room, instanceBoss: unrelatedInstanceBoss,
+            var instance = CreateResumeInstance(room, instanceBoss: instanceBoss,
                 savedBoss: CreateEnemy("GhostBossNotRegisteredAnywhere"));
 
             var resolver = new DefaultEnemySpawnResolver(_registry, _attributes);
 
-            // Act & Assert
+            // Act & Assert — el LogError del lookup fallido sigue saliendo, más el
+            // warning del fallback.
             LogAssert.Expect(LogType.Error,
                 new Regex(".*LookupEnemyData.*ghostbossnotregisteredanywhere.*"));
+            LogAssert.Expect(LogType.Warning,
+                new Regex(".*Re-entry con states vivos pero 0 enemigos resueltos.*"));
             var result = resolver.Resolve(instance, new System.Random(42));
 
-            Assert.AreEqual(0, result.Count,
-                "sin ningún match, el enemigo se saltea (comportamiento previo preservado).");
+            Assert.GreaterOrEqual(result.Count, 1,
+                "con states vivos irresolubles debe spawnear un combate fresco, nunca vacío.");
         }
 
         [Test]

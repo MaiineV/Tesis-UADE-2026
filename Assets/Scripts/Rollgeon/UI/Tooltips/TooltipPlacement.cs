@@ -36,6 +36,37 @@ namespace Rollgeon.UI.Tooltips
     }
 
     /// <summary>
+    /// De qué lado del punto de anclaje se cuelga el panel (BUG-075). <c>Above</c> es el
+    /// comportamiento histórico (pivot inferior-centro ⇒ crece hacia arriba). <c>Below</c>
+    /// coloca el panel entero DEBAJO del punto — para tooltips de mundo anclados al
+    /// origen del pawn (los pies), donde crecer hacia arriba tapaba el modelo.
+    /// </summary>
+    public enum TooltipVerticalSide
+    {
+        Above = 0,
+        Below = 1,
+    }
+
+    /// <summary>Matemática pura del anclaje vertical — testeable sin canvas.</summary>
+    public static class TooltipVerticalPlacement
+    {
+        /// <summary>
+        /// Punto-pantalla donde debe caer el PIVOT del panel (inferior-centro) para que
+        /// quede del lado pedido del anclaje. <c>Above</c>: pivot en anchor + offset (el
+        /// panel crece hacia arriba desde ahí). <c>Below</c>: el TOPE del panel queda a
+        /// <paramref name="offset"/>.y por debajo del anclaje ⇒ pivot en
+        /// anchor − offset − altura del panel.
+        /// </summary>
+        public static Vector2 ComputeAnchorTarget(Vector2 screenPos, Vector2 offset,
+            float panelScreenHeight, TooltipVerticalSide side)
+        {
+            if (side == TooltipVerticalSide.Below)
+                return new Vector2(screenPos.x, screenPos.y - offset.y - panelScreenHeight);
+            return screenPos + offset;
+        }
+    }
+
+    /// <summary>
     /// Config de posicionamiento por-trigger, editable en Inspector. La comparten
     /// <see cref="UITooltipTrigger"/> y <see cref="WorldTooltipTrigger"/>.
     /// </summary>

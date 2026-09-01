@@ -24,6 +24,23 @@ namespace Rollgeon.Combat.Pipelines.Tests
             public bool ShouldPreventLethal(Guid targetId) => targetId == ProtectedId;
         }
 
+        /// <summary>Shape de "Segundo Aliento": resto de vida propio + carga consumible.</summary>
+        private sealed class StubSecondWindOverride : ILethalDamageOverride
+        {
+            public Guid ProtectedId;
+            public int RemainingHp = 1;
+            public int ConsumedCount;
+            public bool Spent;
+
+            public bool ShouldPreventLethal(Guid targetId) => !Spent && targetId == ProtectedId;
+            public int GetRemainingHp(Guid targetId) => RemainingHp;
+            public void NotifyLethalPrevented(Guid targetId)
+            {
+                ConsumedCount++;
+                Spent = true;
+            }
+        }
+
         [SetUp]
         public void SetUp()
         {
@@ -153,6 +170,48 @@ namespace Rollgeon.Combat.Pipelines.Tests
 
             Assert.AreEqual(0, _attrManager.GetAttribute<Health>(_targetId).Value);
             Assert.IsTrue(ctx.WasLethal);
+        }
+
+        // ---- Segundo Aliento: resto de vida propio + consumo one-shot -------------
+
+        [Test]
+        public void Resolve_SecondWindOverride_LeavesTargetAtItsOwnRemainingHp()
+        {
+            var wind = new StubSecondWindOverride { ProtectedId = _targetId, RemainingHp = 1 };
+            ServiceLocator.AddService<ILethalDamageOverride>(wind, ServiceScope.Run);
+
+            var ctx = Hit(250);
+
+            Assert.AreEqual(1, _attrManager.GetAttribute<Health>(_targetId).Value,
+                "el resto de vida lo decide el override (GetRemainingHp), no la constante");
+            Assert.IsFalse(ctx.WasLethal);
+            Assert.AreEqual(1, wind.ConsumedCount, "la salvada consume la carga (Notify)");
+        }
+
+        [Test]
+        public void Resolve_SecondWindSpent_NextLethalHitKills()
+        {
+            var wind = new StubSecondWindOverride { ProtectedId = _targetId, RemainingHp = 1 };
+            ServiceLocator.AddService<ILethalDamageOverride>(wind, ServiceScope.Run);
+            Hit(250); // consume la carga
+
+            var ctx = Hit(50);
+
+            Assert.IsTrue(ctx.WasLethal, "sin carga, la letalidad vuelve a ser normal");
+            Assert.AreEqual(1, wind.ConsumedCount, "no se re-consume");
+        }
+
+        [Test]
+        public void Resolve_OverrideReturningNonPositiveRemaining_ClampsToOne()
+        {
+            var wind = new StubSecondWindOverride { ProtectedId = _targetId, RemainingHp = 0 };
+            ServiceLocator.AddService<ILethalDamageOverride>(wind, ServiceScope.Run);
+
+            var ctx = Hit(250);
+
+            Assert.AreEqual(1, _attrManager.GetAttribute<Health>(_targetId).Value,
+                "un override no puede 'salvar matando' — piso 1");
+            Assert.IsFalse(ctx.WasLethal);
         }
     }
 }

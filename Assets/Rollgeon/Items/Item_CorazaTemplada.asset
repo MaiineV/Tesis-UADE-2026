@@ -1,0 +1,212 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c2ed187442a66944597b1888061baf1a, type: 3}
+  m_Name: Item_CorazaTemplada
+  m_EditorClassIdentifier: Rollgeon::Rollgeon.Items.ItemSO
+  serializationData:
+    SerializedFormat: 2
+    SerializedBytes: 
+    ReferencedUnityObjects: []
+    SerializedBytesString: 
+    Prefab: {fileID: 0}
+    PrefabModificationsReferencedUnityObjects: []
+    PrefabModifications: []
+    SerializationNodes:
+    - Name: PassiveHooks
+      Entry: 7
+      Data: 0|System.Collections.Generic.List`1[[Rollgeon.Items.PassiveItemHook,
+        Rollgeon]], mscorlib
+    - Name: 
+      Entry: 12
+      Data: 1
+    - Name: 
+      Entry: 7
+      Data: 1|Rollgeon.Items.PassiveItemHook, Rollgeon
+    - Name: Kind
+      Entry: 3
+      Data: 0
+    - Name: TriggerEvent
+      Entry: 3
+      Data: 67
+    - Name: ComboFilter
+      Entry: 7
+      Data: 2|Rollgeon.Upgrades.Dice.ComboFilter, Rollgeon
+    - Name: Mode
+      Entry: 3
+      Data: 1
+    - Name: ComboIds
+      Entry: 7
+      Data: 3|System.Collections.Generic.List`1[[System.String, mscorlib]], mscorlib
+    - Name: 
+      Entry: 12
+      Data: 0
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: ActionKindFilter
+      Entry: 3
+      Data: 0
+    - Name: Subject
+      Entry: 3
+      Data: 0
+    - Name: Effect
+      Entry: 7
+      Data: 4|Rollgeon.Effects.EffectData, Rollgeon
+    - Name: Label
+      Entry: 1
+      Data: Effect Group
+    - Name: PreConditions
+      Entry: 7
+      Data: 5|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
+        Rollgeon]], mscorlib
+    - Name: 
+      Entry: 12
+      Data: 0
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: Effects
+      Entry: 7
+      Data: 6|System.Collections.Generic.List`1[[Rollgeon.Effects.IEffect, Rollgeon]],
+        mscorlib
+    - Name: 
+      Entry: 12
+      Data: 0
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: TargetSelector
+      Entry: 6
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: PersistentModifiers
+      Entry: 7
+      Data: 7|System.Collections.Generic.List`1[[Rollgeon.Items.PersistentModifierDef,
+        Rollgeon]], mscorlib
+    - Name: 
+      Entry: 12
+      Data: 1
+    - Name: 
+      Entry: 7
+      Data: 8|Rollgeon.Items.PersistentModifierDef, Rollgeon
+    - Name: TargetStat
+      Entry: 7
+      Data: 9|System.RuntimeType, mscorlib
+    - Name: 
+      Entry: 1
+      Data: Rollgeon.Attributes.Stats.MaxHealth, Rollgeon
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: Operation
+      Entry: 3
+      Data: 0
+    - Name: Amount
+      Entry: 4
+      Data: 45
+    - Name: Direction
+      Entry: 3
+      Data: 2
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: OnActivate
+      Entry: 7
+      Data: 10|Rollgeon.Effects.EffectData, Rollgeon
+    - Name: Label
+      Entry: 1
+      Data: Effect Group
+    - Name: PreConditions
+      Entry: 7
+      Data: 11|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
+        Rollgeon]], mscorlib
+    - Name: 
+      Entry: 12
+      Data: 0
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: Effects
+      Entry: 7
+      Data: 12|System.Collections.Generic.List`1[[Rollgeon.Effects.IEffect, Rollgeon]],
+        mscorlib
+    - Name: 
+      Entry: 12
+      Data: 0
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: TargetSelector
+      Entry: 6
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+  ItemId: coraza.templada
+  DisplayName: Coraza Templada
+  Description: "+45 vida m\xE1xima."
+  Icon: {fileID: 1808964844, guid: ee12da05509c7a74686b1e1cc11cbd3e, type: 3}
+  Rarity: 2
+  FamilyId: coraza
+  VariantIndex: 2
+  Type: 0
+  OnActivate:
+    Label: Effect Group
+    PreConditions: []
+    Effects: []
+    TargetSelector:
+      rid: -2
+  Cooldown: 0
+  ConsumedOnUse: 0
+  ConsumesAction: 1
+  ActionId: 
+  WorldPrefab: {fileID: 0}
+  references:
+    version: 2
+    RefIds:
+    - rid: -2
+      type: {class: , ns: , asm: }

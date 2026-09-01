@@ -1,3 +1,5 @@
+using UnityEngine;
+
 namespace Rollgeon.UI.HUD
 {
     /// <summary>
@@ -31,6 +33,36 @@ namespace Rollgeon.UI.HUD
 
         /// <summary>Con 0 rolls el vaso descansa boca abajo sobre la mesa.</summary>
         public static bool IsFaceDown(int current) => current == 0;
+
+        // Swap de sprite a mitad del giro. El vaso tiene dos dibujos: parado
+        // (VasoGenerala) y boca abajo (VasoGeneralaFlip, ya dibujado invertido).
+        // En la mitad de cada media vuelta (90° y 270°) el vaso está horizontal
+        // y ambos sprites apuntan la boca al mismo lado: ahí se cambia el
+        // dibujo sin salto visual. Como el Flip ya viene invertido, mientras se
+        // muestra se compensa la rotación en -180 — así a 180° lógico el Flip
+        // queda a 0° físico (boca abajo real) en vez de girado (= parado otra vez).
+        private const float FlipSpriteEnterZ = 90f;
+        private const float FlipSpriteExitZ = 270f;
+        private const float FlipSpriteRotationOffset = -180f;
+
+        /// <summary>
+        /// True cuando el ángulo lógico (Z, en grados, cualquier winding) cae en
+        /// la mitad "boca abajo" de la vuelta: [90, 270) módulo 360.
+        /// </summary>
+        public static bool ShowsFlipSprite(float logicalZ)
+        {
+            float a = Mathf.Repeat(logicalZ, 360f);
+            return a >= FlipSpriteEnterZ && a < FlipSpriteExitZ;
+        }
+
+        /// <summary>
+        /// Rotación Z a aplicar al RectTransform para un ángulo lógico dado.
+        /// Con el sprite Flip visible se compensa el pre-invertido del dibujo;
+        /// sin sprite Flip cableado el ángulo físico es el lógico (comportamiento
+        /// previo: mismo dibujo girado 180°).
+        /// </summary>
+        public static float VisualZ(float logicalZ, bool flipSpriteShown)
+            => flipSpriteShown ? logicalZ + FlipSpriteRotationOffset : logicalZ;
 
         /// <summary>
         /// Clasifica el cambio de pool. <paramref name="previous"/> negativo

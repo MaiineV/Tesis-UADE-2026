@@ -79,8 +79,8 @@ namespace Rollgeon.UI.Tests
             _pool.RequiredBagSize = 5;
             _pool.Offerings = new List<DicePoolEntry>
             {
-                new DicePoolEntry { Type = DiceType.D6, MaxInBag = 5 },
-                new DicePoolEntry { Type = DiceType.D8, MaxInBag = 2 },
+                new DicePoolEntry { Type = DiceType.D6 },
+                new DicePoolEntry { Type = DiceType.D8 },
             };
             _hero.DiceBagPool = _pool;
 
@@ -154,18 +154,28 @@ namespace Rollgeon.UI.Tests
         }
 
         [Test]
-        public void AddDice_RejectsExceedingMaxInBagPerType()
+        public void AddDice_AcceptsFiveOfSameType_NoPerTypeCap()
         {
             Push();
-            // D8 tiene MaxInBag = 2. Intentar agregar 3 deberia rechazar el tercero.
-            InvokeAdd(DiceType.D8);
-            InvokeAdd(DiceType.D8);
-            InvokeAdd(DiceType.D8);
+            // Sin tope por tipo: 5 copias del mismo dado llenan la bolsa y habilitan Confirm.
+            for (int i = 0; i < 5; i++)
+                InvokeAdd(DiceType.D8);
 
             int d8Count = 0;
             foreach (var d in GetCurrentBag())
                 if (d == DiceType.D8) d8Count++;
-            Assert.AreEqual(2, d8Count, "MaxInBag por tipo debe respetarse.");
+            Assert.AreEqual(5, d8Count, "Los 5 D8 deben entrar — ya no hay tope por tipo.");
+            Assert.IsTrue(_confirmButton.interactable, "Confirm debe habilitarse con 5×D8.");
+        }
+
+        [Test]
+        public void AddDice_RejectsTypeNotOfferedInPool()
+        {
+            Push();
+            // D20 no está en las Offerings del pool de test — debe ignorarse.
+            InvokeAdd(DiceType.D20);
+
+            Assert.AreEqual(0, GetCurrentBag().Count, "Un tipo no ofrecido no debe entrar a la bolsa.");
         }
 
         [Test]

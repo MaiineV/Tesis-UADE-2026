@@ -278,6 +278,12 @@ namespace Rollgeon.UI.HUD.Breakdown
                 return;
             }
 
+            // BUG-063: la entrada del tambor es lo único que le dice al jugador QUÉ
+            // ítem le está pegando al combo — con game speed x4 + ramp al piso vivía
+            // <0.1s. Piso de duración real, salvo skip explícito.
+            bool skipping = _player.Skip != BreakdownSequencePlayer.SkipStage.None;
+            float minVisible = _settings != null ? _settings.GlobalModMinVisibleSeconds : 0.35f;
+
             _spinner.SetVisible(true);
             var current = _spinner.Current;
             if (current != null)
@@ -288,16 +294,22 @@ namespace Rollgeon.UI.HUD.Breakdown
             _juice?.OnFlightDeparted(current != null ? current.Rect : null,
                 step.Target == BreakdownTarget.MultM, dieIndex: -1);
 
+            float flight = BreakdownFeelMath.FloorUnlessSkipping(
+                D((_settings != null ? _settings.ProcFlightSeconds : 0.38f) * ramp),
+                minVisible, skipping);
+            float spin = BreakdownFeelMath.FloorUnlessSkipping(
+                D((_settings != null ? _settings.SpinnerSpinSeconds : 0.22f) * ramp),
+                minVisible * 0.6f, skipping);
+
             Fly(current != null ? current.Rect : null, target.Anchor,
                 FormatAmount(step), BreakdownIconResolver.Resolve(step.SourceAsset),
-                D((_settings != null ? _settings.ProcFlightSeconds : 0.38f) * ramp),
+                flight,
                 -(_settings != null ? _settings.ProcFlightArc : 110f),
                 () =>
                 {
                     ApplyStep(step);
                     _juice?.OnCascadeFall();
-                    _spinner.AdvanceToNext(D((_settings != null ? _settings.SpinnerSpinSeconds : 0.22f) * ramp),
-                        onDone);
+                    _spinner.AdvanceToNext(spin, onDone);
                 }, FlightTint(step));
         }
 

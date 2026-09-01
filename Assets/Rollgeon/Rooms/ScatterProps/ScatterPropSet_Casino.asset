@@ -1,0 +1,51 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a1492d7b8a794f647b95e40f80a95005, type: 3}
+  m_Name: ScatterPropSet_Casino
+  m_EditorClassIdentifier: Rollgeon::Rollgeon.Dungeon.ScatterPropSetSO
+  Entries:
+  - Prefab: {fileID: 919132149155446097, guid: 7c7674c42459f1c4d838fa78a495512d, type: 3}
+    Weight: 1
+    UniformScaleRange: {x: 0.35, y: 0.5}
+    CanTipOver: 0
+  - Prefab: {fileID: 919132149155446097, guid: 5dffa44662d2dfd478fc3ad67af87d4e, type: 3}
+    Weight: 1
+    UniformScaleRange: {x: 0.35, y: 0.5}
+    CanTipOver: 1
+  - Prefab: {fileID: 919132149155446097, guid: f66598a1f10c3d842b78952363f0e8c7, type: 3}
+    Weight: 1
+    UniformScaleRange: {x: 0.9, y: 1.1}
+    CanTipOver: 0
+  - Prefab: {fileID: 919132149155446097, guid: 790cd9b5aafc3c54cb997b5440e4ce1b, type: 3}
+    Weight: 1
+    UniformScaleRange: {x: 0.9, y: 1.1}
+    CanTipOver: 0
+  - Prefab: {fileID: 919132149155446097, guid: 474fe0806b036234498b3ed7d9e6c3ff, type: 3}
+    Weight: 1
+    UniformScaleRange: {x: 0.35, y: 0.5}
+    CanTipOver: 0
+  - Prefab: {fileID: 919132149155446097, guid: c79ae5247868d9948ab6b22f670d6fd7, type: 3}
+    Weight: 1
+    UniformScaleRange: {x: 0.35, y: 0.5}
+    CanTipOver: 0
+  - Prefab: {fileID: 919132149155446097, guid: 4ac6c87548a1c1b4caa37be85f229257, type: 3}
+    Weight: 1
+    UniformScaleRange: {x: 0.9, y: 1.1}
+    CanTipOver: 1
+  - Prefab: {fileID: 919132149155446097, guid: c4bc671b6784d5248a0e1b767e0c248c, type: 3}
+    Weight: 1
+    UniformScaleRange: {x: 0.35, y: 0.5}
+    CanTipOver: 1
+  - Prefab: {fileID: 919132149155446097, guid: 934243045901b8e4985c9170c3db29d7, type: 3}
+    Weight: 1
+    UniformScaleRange: {x: 0.35, y: 0.5}
+    CanTipOver: 0

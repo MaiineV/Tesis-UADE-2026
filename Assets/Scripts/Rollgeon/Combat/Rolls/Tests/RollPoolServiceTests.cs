@@ -321,31 +321,94 @@ namespace Rollgeon.Combat.Rolls.Tests
             Assert.AreEqual(0, _service.GetCurrent(_player));
         }
 
-        // --- Bonus por turno (reward "+1 Roll por turno") ----------------------
+        // --- Bonus de pool (reward "Rolls +1", BUG-85) --------------------------
 
         [Test]
-        public void PerTurnGrantBonus_RaisesTurnGrant()
+        public void should_raise_max_when_roll_pool_bonus_added()
         {
-            InitAndStartCombat();
-            _service.TrySpendRolls(_player, 5); // 0
+            // Arrange
+            _service.InitializeForEntity(_player);
 
-            _service.AddPerTurnGrantBonus(1);
+            // Act
+            _service.AddRollPoolBonus(2);
+
+            // Assert — el bonus sube el TECHO del pool, solo para el player.
+            Assert.AreEqual(17, _service.GetMax(_player));
+            Assert.AreEqual(15, _service.GetMax(Guid.NewGuid()),
+                "El bonus es exclusivo del player.");
+        }
+
+        [Test]
+        public void should_start_combat_with_base_start_plus_bonus()
+        {
+            // Arrange — reward reclamado en exploración, antes del combate.
+            _service.InitializeForEntity(_player);
+            _service.AddRollPoolBonus(2);
+
+            // Act
+            EventManager.Trigger(EventName.OnCombatStart, Guid.NewGuid());
+
+            // Assert — visible desde el primer turno: 5 base + 2 bonus.
+            Assert.AreEqual(7, _service.GetCurrent(_player));
+        }
+
+        [Test]
+        public void should_clamp_combat_start_to_raised_max()
+        {
+            // Arrange — arranque base ya en el cap: el bonus levanta ambos.
+            _ruleset.RollPool.RollsAtCombatStart = 15;
+            _service.InitializeForEntity(_player);
+            _service.AddRollPoolBonus(1);
+
+            // Act
+            EventManager.Trigger(EventName.OnCombatStart, Guid.NewGuid());
+
+            // Assert — 15 + 1 clampeado al max nuevo (16).
+            Assert.AreEqual(16, _service.GetCurrent(_player));
+        }
+
+        [Test]
+        public void should_trigger_rolls_changed_with_new_max_when_bonus_added()
+        {
+            // Arrange
+            _service.InitializeForEntity(_player);
+            _rollsChangedArgs.Clear();
+
+            // Act — el claim ocurre en exploración; el HUD refresca al instante.
+            _service.AddRollPoolBonus(1);
+
+            // Assert
+            Assert.AreEqual(1, _rollsChangedArgs.Count);
+            Assert.AreEqual(16, (int)_rollsChangedArgs[0][2]);
+        }
+
+        [Test]
+        public void should_not_grant_bonus_per_turn_anymore()
+        {
+            // Arrange — regresión del cambio de semántica: el bonus ya no infla el
+            // grant por turno (antes era su único efecto y resultaba invisible).
+            InitAndStartCombat();
+            _service.AddRollPoolBonus(3);
+            _service.TrySpendRolls(_player, _service.GetCurrent(_player)); // 0
+
+            // Act
             FinishPlayerTurn();
 
-            Assert.AreEqual(6, _service.GetCurrent(_player));
-            Assert.AreEqual(6, _service.GetRollsPerTurn(_player));
+            // Assert — el grant sigue siendo el base del ruleset.
+            Assert.AreEqual(5, _service.GetRollsPerTurn(_player));
+            Assert.AreEqual(5, _service.GetCurrent(_player));
         }
 
         [Test]
         public void RunStart_ResetsPlayerPoolAndBonus()
         {
             InitAndStartCombat();
-            _service.AddPerTurnGrantBonus(2);
+            _service.AddRollPoolBonus(2);
 
             EventManager.Trigger(EventName.OnRunStart, Guid.NewGuid(), "default");
 
             Assert.AreEqual(0, _service.GetCurrent(_player));
-            Assert.AreEqual(5, _service.GetRollsPerTurn(_player)); // bonus reseteado
+            Assert.AreEqual(15, _service.GetMax(Guid.NewGuid()), "bonus reseteado (cap base)");
             // El player quedó descacheado: gastar ya no es posible hasta re-init.
             Assert.IsFalse(_service.TrySpendRolls(_player, 1));
         }

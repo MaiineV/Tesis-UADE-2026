@@ -44,6 +44,15 @@ namespace Rollgeon.Entities
         // Weakness (§5 — T97b). NO renombrar estos 2 campos.
         // -----------------------------------------------------------------
 
+        // -----------------------------------------------------------------
+        // Ficha de diseño (GDD "Patrones de Ataque"). Solo metadata; ver EnemyDesignSheet.
+        // -----------------------------------------------------------------
+
+        [Title("Ficha de diseño (GDD)")]
+        [Tooltip("Arquetipo, patrón geométrico y timing según el GDD. Ningún sistema de runtime lo lee; " +
+                 "el Editor de enemigos lo usa para filtrar y para chequear coherencia con el árbol de IA.")]
+        public EnemyDesignSheet Design = new EnemyDesignSheet();
+
         [Title("Weakness (§5 — T97b)")]
         [ValueDropdown(nameof(GetComboIds))]
         [Tooltip("ComboId al que este enemigo es debil. Vacio = sin debilidad. " +
@@ -96,9 +105,10 @@ namespace Rollgeon.Entities
         public int MaxEnergy = 3;
 
         [MinValue(0)]
-        [Tooltip("Rango de ataque base (tiles). RESERVADO (#158): hoy ningun sistema de combate " +
-                 "lo consume — se autorea para tiers pero queda inerte hasta que exista un targeting " +
-                 "con rango. Wirearlo es follow-up.")]
+        [Tooltip("Rango de ataque base (tiles). Se materializa como atributo AttackRange al " +
+                 "spawnear (resuelto por tier, modificable por buffs): lo consumen el planner de " +
+                 "movimiento (scoring de posiciones de ataque) y PcTargetInRange con " +
+                 "UseOwnerAttackRange. 0 = sin rango declarado (los consumidores caen a 1/Range).")]
         public int BaseAttackRange = 1;
 
         // -----------------------------------------------------------------
@@ -157,7 +167,7 @@ namespace Rollgeon.Entities
         [Tooltip("Familia de combate que muestra el panel al pasarle el mouse. Unset = no muestra " +
                  "la fila; un enemigo mal etiquetado miente sobre cómo se lo pelea. Es OTRO eje que " +
                  "Personality, que es riesgo de pathing: un support puede ser agresivo.")]
-        public EnemyArchetype Archetype = EnemyArchetype.Unset;
+        public Rollgeon.Entities.Traits.EnemyArchetype Archetype = Rollgeon.Entities.Traits.EnemyArchetype.Unset;
 
         [Tooltip("Perfil de riesgo del pathing IA frente a casillas peligrosas (MinSurvivalHP + Caution). " +
                  "Todo el catálogo arranca en Normal.")]
@@ -167,12 +177,48 @@ namespace Rollgeon.Entities
         [Tooltip("Flag narrativo: este kamikaze ignora por completo el filtro de supervivencia del pathing.")]
         public bool KamikazeIgnoresSurvival;
 
+        [Title("Aura defensiva (0 = sin aura)")]
+        [Tooltip("Radio Manhattan (rect-a-rect) del aura: los ALIADOS a esta distancia o menos " +
+                 "reciben la reducción mientras el portador viva. 0 = sin aura.")]
+        [MinValue(0)]
+        public int AuraRadius;
+
+        [Tooltip("Puntos de daño que el aura descuenta de cada golpe entrante a los aliados " +
+                 "(piso de daño 1). Con varias auras aplica la mayor, no suman.")]
+        [MinValue(0)]
+        public int AuraFlatReduction;
+
+        /// <summary>True si este enemigo proyecta aura (radio y reducción positivos).</summary>
+        public bool HasAura => AuraRadius > 0 && AuraFlatReduction > 0;
+
+        [Title("Tamaño en grilla")]
+        [Tooltip("Celdas que ocupa (ancho × alto). (1,1) = enemigo común. El ancla es la celda inferior-izquierda " +
+                 "(min X, min Y): el marcador de spawn del layout es esa celda y el pawn se centra en el rectángulo. " +
+                 "Fase A: solo enemigos estáticos; el pathfinding y el targeting multi-celda son Fase B/C.")]
+        public Vector2Int Footprint = Vector2Int.one;
+
+        /// <summary>Footprint saneado (cada eje ≥ 1): lo único que lee el runtime.</summary>
+        public Vector2Int EffectiveFootprint => Grid.GridFootprint.Normalize(Footprint);
+
+        public bool HasMultiCellFootprint => !Grid.GridFootprint.IsUnit(EffectiveFootprint);
+
         [Title("AI Decision Tree (§7.5)")]
         [InfoBox("Árbol polimórfico que decide qué hace el enemigo cada turno. " +
                  "Null/vacío = fallback al BasicEnemyAI (siempre ataca). " +
                  "Clonado deep al spawn para evitar shared state entre instancias.")]
         [OdinSerialize]
         public AIDecisionNode AIRoot;
+
+        /// <summary>
+        /// Subárboles que el designer dejó sin conectar en el Editor de enemigos (raíces de cada
+        /// subárbol suelto). Persisten para no perder trabajo a medio armar; el runtime los ignora
+        /// (<see cref="CreateRuntimeAIRoot"/> solo copia <see cref="AIRoot"/>).
+        /// </summary>
+        [Title("Nodos sueltos (Editor de enemigos)")]
+        [InfoBox("Subárboles sin conectar que quedaron en el canvas del Editor de enemigos. El runtime los ignora; " +
+                 "editalos desde Tools → Editor de enemigos, no desde acá.")]
+        [OdinSerialize]
+        public List<AIDecisionNode> AIDetachedNodes = new List<AIDecisionNode>();
 
         // -----------------------------------------------------------------
         // Runtime builders.
@@ -196,6 +242,7 @@ namespace Rollgeon.Entities
             attrs.SetAttribute<Speed>(new Speed(ResolveStat(tier, t => t.Speed, BaseSpeed)));
             attrs.SetAttribute<Energy>(new Energy(ResolveStat(tier, t => t.Energy, MaxEnergy)));
             attrs.SetAttribute<HealStrength>(new HealStrength(ResolveStat(tier, t => t.HealStrength, BaseHealStrength)));
+            attrs.SetAttribute<AttackRange>(new AttackRange(ResolveStat(tier, t => t.AttackRange, BaseAttackRange)));
             attrs.SetAttribute<Shield>(new Shield(0));
             return attrs;
         }

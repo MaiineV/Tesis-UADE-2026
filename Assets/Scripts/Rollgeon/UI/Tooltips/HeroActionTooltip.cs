@@ -27,7 +27,7 @@ namespace Rollgeon.UI.Tooltips
             {
                 { HeroBehaviorSlot.Movement, "action.move" },
                 { HeroBehaviorSlot.BaseAttack, "action.attack" },
-                { HeroBehaviorSlot.SpecialAttack, "action.special_attack" },
+                { HeroBehaviorSlot.ClassSkill, "action.class_skill" },
                 { HeroBehaviorSlot.Healing, "action.heal" },
                 { HeroBehaviorSlot.ForceDoor, "action.force_door" },
                 { HeroBehaviorSlot.Defense, "action.defense" },

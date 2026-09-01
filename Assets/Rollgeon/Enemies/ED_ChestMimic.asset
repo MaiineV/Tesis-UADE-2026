@@ -122,6 +122,9 @@ MonoBehaviour:
     - Name: RangeMode
       Entry: 3
       Data: 0
+    - Name: RangeFromMovementDie
+      Entry: 5
+      Data: false
     - Name: TargetMode
       Entry: 3
       Data: 0
@@ -367,6 +370,9 @@ MonoBehaviour:
     - Name: RangeMode
       Entry: 3
       Data: 0
+    - Name: RangeFromMovementDie
+      Entry: 5
+      Data: false
     - Name: TargetMode
       Entry: 3
       Data: 0
@@ -584,6 +590,9 @@ MonoBehaviour:
     - Name: RangeMode
       Entry: 3
       Data: 0
+    - Name: RangeFromMovementDie
+      Entry: 5
+      Data: false
     - Name: TargetMode
       Entry: 3
       Data: 0
@@ -726,6 +735,9 @@ MonoBehaviour:
     - Name: RangeMode
       Entry: 3
       Data: 0
+    - Name: RangeFromMovementDie
+      Entry: 5
+      Data: false
     - Name: TargetMode
       Entry: 3
       Data: 0
@@ -831,6 +843,9 @@ MonoBehaviour:
     - Name: RangeMode
       Entry: 3
       Data: 0
+    - Name: RangeFromMovementDie
+      Entry: 5
+      Data: false
     - Name: TargetMode
       Entry: 3
       Data: 0
@@ -1198,11 +1213,29 @@ MonoBehaviour:
     - Name: 
       Entry: 8
       Data: 
+    - Name: AIDetachedNodes
+      Entry: 7
+      Data: 59|System.Collections.Generic.List`1[[Rollgeon.Combat.AI.Decisions.AIDecisionNode,
+        Rollgeon]], mscorlib
+    - Name: 
+      Entry: 12
+      Data: 0
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
   EntityId: ChestMimic01
   DisplayName: Mimic
   Description: 
   Portrait: {fileID: -1790906141, guid: 5103e983e850dbc408e171ce0b6f9714, type: 3}
-  WeaknessComboId:
+  Design:
+    Archetype: 1
+    Pattern: 1
+    Timing: 1
+    Notes: Sale del cofre; persigue y golpea a distancia 1.
+  WeaknessComboId: 
   WeaknessMultiplierOverride: 0
   Archetype: 1
   BaseHP: 60
@@ -1267,3 +1300,7 @@ MonoBehaviour:
   VisualPrefab: {fileID: 4598999015062820065, guid: a1882160b9f163746bd5a19126f84274, type: 3}
   MinGoldDrop: 3
   MaxGoldDrop: 5
+  IsFlying: 0
+  IsBoss: 0
+  Personality: 0
+  KamikazeIgnoresSurvival: 0

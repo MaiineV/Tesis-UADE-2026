@@ -32,16 +32,17 @@ namespace Rollgeon.Editor.Tools.RoomEditor
 
                 if (mode == RoomEditorWindow.SpawnGizmoMode.PreviewSet)
                 {
-                    DrawSingle(sp, config, previewSetIndex, isSelected);
+                    DrawSingle(layout, sp, config, previewSetIndex, isSelected);
                 }
                 else if (mode == RoomEditorWindow.SpawnGizmoMode.ColorPerSet)
                 {
-                    DrawStack(sp, config, isSelected);
+                    DrawStack(layout, sp, config, isSelected);
                 }
             }
         }
 
-        private static void DrawSingle(Transform sp, SpawnPointConfig config, int setIndex, bool isSelected)
+        private static void DrawSingle(RoomLayout layout, Transform sp, SpawnPointConfig config,
+            int setIndex, bool isSelected)
         {
             var enemy = config != null ? config.GetEnemyForSet(setIndex) : null;
             var color = enemy != null
@@ -49,14 +50,15 @@ namespace Rollgeon.Editor.Tools.RoomEditor
                 : new Color(0.55f, 0.55f, 0.55f);
 
             DrawDiamond(sp.position, color, isSelected);
+            DrawFootprint(layout, sp, enemy, color);
 
             string label = enemy != null
-                ? $"{sp.name} · {enemy.DisplayName ?? enemy.name}"
+                ? $"{sp.name} · {enemy.DisplayName ?? enemy.name}{FootprintSuffix(enemy)}"
                 : $"{sp.name} · (set {setIndex} empty)";
             DrawLabel(sp.position, label, color);
         }
 
-        private static void DrawStack(Transform sp, SpawnPointConfig config, bool isSelected)
+        private static void DrawStack(RoomLayout layout, Transform sp, SpawnPointConfig config, bool isSelected)
         {
             int count = config != null ? config.SetCount : 0;
             if (count == 0)
@@ -72,10 +74,48 @@ namespace Rollgeon.Editor.Tools.RoomEditor
                 var enemy = config.GetEnemyForSet(i);
                 var color = enemy != null ? RoomEditorWindow.ColorForSet(i) : new Color(0.4f, 0.4f, 0.4f);
                 DrawDiamond(pos, color, isSelected && i == 0);
+                DrawFootprint(layout, sp, enemy, color);
             }
 
             var topPos = sp.position + Vector3.up * (count * StackSpacingY);
             DrawLabel(topPos, $"{sp.name} · {count} set(s)", Color.white);
+        }
+
+        private static string FootprintSuffix(Rollgeon.Entities.EnemyDataSO enemy)
+        {
+            if (enemy == null || !enemy.HasMultiCellFootprint) return string.Empty;
+            var fp = enemy.EffectiveFootprint;
+            return $" · {fp.x}×{fp.y}";
+        }
+
+        /// <summary>
+        /// Rectángulo del footprint del enemigo asignado: min-corner = la celda del SP,
+        /// tamaño = footprint × TileSize (misma semántica que los blockers de
+        /// <see cref="RoomLayout.OnDrawGizmosSelected"/>). Es la posición DESEADA — en
+        /// runtime el ancla puede correrse hasta radio 3 si el rect no cabe.
+        /// </summary>
+        private static void DrawFootprint(RoomLayout layout, Transform sp,
+            Rollgeon.Entities.EnemyDataSO enemy, Color color)
+        {
+            if (layout == null || enemy == null || !enemy.HasMultiCellFootprint) return;
+
+            float ts = layout.TileSize;
+            if (ts <= 0f) ts = 1f;
+            var origin = layout.GetOrigin();
+            int cx = Mathf.FloorToInt((sp.position.x - origin.x) / ts);
+            int cy = Mathf.FloorToInt((sp.position.z - origin.z) / ts);
+            var fp = enemy.EffectiveFootprint;
+            float sx = fp.x * ts;
+            float sz = fp.y * ts;
+            var center = new Vector3(
+                origin.x + cx * ts + sx * 0.5f,
+                sp.position.y,
+                origin.z + cy * ts + sz * 0.5f);
+
+            var prev = Handles.color;
+            Handles.color = color;
+            Handles.DrawWireCube(center, new Vector3(sx, 0.02f, sz));
+            Handles.color = prev;
         }
 
         private static void DrawDiamond(Vector3 worldPos, Color color, bool isSelected)

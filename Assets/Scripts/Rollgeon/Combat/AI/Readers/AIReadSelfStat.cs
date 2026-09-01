@@ -27,6 +27,7 @@ namespace Rollgeon.Combat.AI.Readers
                 StatType.Energy => Get<Energy>(context, context.SelfGuid),
                 StatType.Shield => Get<Shield>(context, context.SelfGuid),
                 StatType.HealStrength => Get<HealStrength>(context, context.SelfGuid),
+                StatType.AttackRange => Get<AttackRange>(context, context.SelfGuid),
                 _ => 0,
             };
         }

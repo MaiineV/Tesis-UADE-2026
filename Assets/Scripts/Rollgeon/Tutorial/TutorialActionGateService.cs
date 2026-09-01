@@ -41,7 +41,7 @@ namespace Rollgeon.Tutorial
 
         /// <summary>
         /// Factory: crea el gate con el lock inicial del tutorial
-        /// ({BaseAttack, SpecialAttack, Healing, ForceDoor, Defense} — solo Movement
+        /// ({BaseAttack, ClassSkill, Healing, ForceDoor, Defense} — solo Movement
         /// libre; cada acción se desbloquea recién en su paso de enseñanza) y lo
         /// registra en <see cref="ServiceScope.Run"/>.
         /// </summary>
@@ -50,7 +50,7 @@ namespace Rollgeon.Tutorial
             var service = new TutorialActionGateService(hero, new[]
             {
                 HeroBehaviorSlot.BaseAttack,
-                HeroBehaviorSlot.SpecialAttack,
+                HeroBehaviorSlot.ClassSkill,
                 HeroBehaviorSlot.Healing,
                 HeroBehaviorSlot.ForceDoor,
                 HeroBehaviorSlot.Defense,
@@ -109,6 +109,20 @@ namespace Rollgeon.Tutorial
             foreach (HeroBehaviorSlot slot in Enum.GetValues(typeof(HeroBehaviorSlot)))
             {
                 if (slot != allowed) Lock(slot);
+            }
+        }
+
+        /// <summary>
+        /// Bloquea TODOS los slots (BUG-068: durante EscapeAftermath → CameraTeach →
+        /// MapTeach ninguna acción está permitida — ni siquiera Movement, o el jugador
+        /// se escapa de la sala e ignora la lección de cámara). Reusa <see cref="Lock"/>:
+        /// idempotente y con evento por slot que cambia.
+        /// </summary>
+        public void LockAll()
+        {
+            foreach (HeroBehaviorSlot slot in Enum.GetValues(typeof(HeroBehaviorSlot)))
+            {
+                Lock(slot);
             }
         }
 

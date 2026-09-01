@@ -55,20 +55,21 @@ namespace Rollgeon.Combat.Rolls
         /// <summary>Rolls disponibles. 0 fuera de combate o para entidades ≠ jugador.</summary>
         int GetCurrent(Guid entityId);
 
-        /// <summary>Tope de acumulación del pool (<c>RollPoolCap</c> del ruleset).</summary>
+        /// <summary>
+        /// Tope de acumulación del pool: <c>RollPoolCap</c> del ruleset + bonus
+        /// acumulado vía <see cref="AddRollPoolBonus"/> (solo para el player).
+        /// </summary>
         int GetMax(Guid entityId);
 
-        /// <summary>
-        /// Rolls otorgados al cierre de cada turno: <c>RollsPerTurn</c> del ruleset
-        /// + bonus acumulado vía <see cref="AddPerTurnGrantBonus"/>.
-        /// </summary>
+        /// <summary>Rolls otorgados al cierre de cada turno (<c>RollsPerTurn</c> del ruleset).</summary>
         int GetRollsPerTurn(Guid entityId);
 
         /// <summary>
-        /// Suma un bonus permanente (por run) al grant por turno — hook del reward
-        /// "+1 Roll por turno" (ex "Energía +1"). Se resetea en <c>OnRunStart</c>.
+        /// Suma un bonus permanente (por run) al pool — hook del reward "Rolls +1"
+        /// (ex "Energía +1", BUG-85): sube el máximo y los rolls con los que arranca
+        /// cada combate. Se resetea en <c>OnRunStart</c>.
         /// </summary>
-        void AddPerTurnGrantBonus(int amount);
+        void AddRollPoolBonus(int amount);
 
         /// <summary>
         /// Setea el pool a un valor guardado (combat resume) — sobrescribe el

@@ -20,11 +20,8 @@ MonoBehaviour:
     - {fileID: 11400000, guid: ec99a59ef8ef861449583c0c274d517f, type: 2}
     - {fileID: 11400000, guid: 370d5b15c1d775848b478ecfd48fc852, type: 2}
     - {fileID: 11400000, guid: 6c679df4635247742bfb3c632ba8e5da, type: 2}
-    - {fileID: 11400000, guid: 81a4a7d0704466148b012f4e3511b29e, type: 2}
     - {fileID: 11400000, guid: 03513e3bd0e0d8c43a28be53693a2338, type: 2}
-    - {fileID: 11400000, guid: e564ea620998f9340a5b37b6c85c1467, type: 2}
     - {fileID: 11400000, guid: 4aeb388a7c3a85c45b060416c58677ac, type: 2}
-    - {fileID: 11400000, guid: 8a3a70cb8be14c1498f001944023c68d, type: 2}
     - {fileID: 11400000, guid: 581d4aed3b87f0446bba1532b4de0c13, type: 2}
     - {fileID: 11400000, guid: 4ef6adcaa75741f489ef3fd38255db44, type: 2}
     - {fileID: 11400000, guid: e3f43d277e104ce49ad9ad2371b84f51, type: 2}
@@ -39,6 +36,9 @@ MonoBehaviour:
     - {fileID: 11400000, guid: 7bd3f557367e854479202ac8631b3f8a, type: 2}
     - {fileID: 11400000, guid: df3440ad4981d3d4da438161d8d72169, type: 2}
     - {fileID: 11400000, guid: 7aa7b8ac2c3691040b9a054eb5484b9a, type: 2}
+    - {fileID: 0}
+    - {fileID: 11400000, guid: 17c608d3e63b9f540a7083506407a737, type: 2}
+    - {fileID: 11400000, guid: 069a901c86abc7948bae90b6b67aec32, type: 2}
     SerializedBytesString: 
     Prefab: {fileID: 0}
     PrefabModificationsReferencedUnityObjects: []
@@ -113,6 +113,9 @@ MonoBehaviour:
       Data: 19
     - Name: 
       Entry: 10
+      Data: 0
+    - Name: 
+      Entry: 10
       Data: 20
     - Name: 
       Entry: 10
@@ -120,9 +123,6 @@ MonoBehaviour:
     - Name: 
       Entry: 10
       Data: 22
-    - Name: 
-      Entry: 10
-      Data: 0
     - Name: 
       Entry: 13
       Data: 
@@ -134,11 +134,8 @@ MonoBehaviour:
   - {fileID: 11400000, guid: ec99a59ef8ef861449583c0c274d517f, type: 2}
   - {fileID: 11400000, guid: 370d5b15c1d775848b478ecfd48fc852, type: 2}
   - {fileID: 11400000, guid: 6c679df4635247742bfb3c632ba8e5da, type: 2}
-  - {fileID: 11400000, guid: 81a4a7d0704466148b012f4e3511b29e, type: 2}
   - {fileID: 11400000, guid: 03513e3bd0e0d8c43a28be53693a2338, type: 2}
-  - {fileID: 11400000, guid: e564ea620998f9340a5b37b6c85c1467, type: 2}
   - {fileID: 11400000, guid: 4aeb388a7c3a85c45b060416c58677ac, type: 2}
-  - {fileID: 11400000, guid: 8a3a70cb8be14c1498f001944023c68d, type: 2}
   - {fileID: 11400000, guid: 581d4aed3b87f0446bba1532b4de0c13, type: 2}
   - {fileID: 11400000, guid: 4ef6adcaa75741f489ef3fd38255db44, type: 2}
   - {fileID: 11400000, guid: e3f43d277e104ce49ad9ad2371b84f51, type: 2}
@@ -154,8 +151,12 @@ MonoBehaviour:
   - {fileID: 11400000, guid: df3440ad4981d3d4da438161d8d72169, type: 2}
   - {fileID: 11400000, guid: 7aa7b8ac2c3691040b9a054eb5484b9a, type: 2}
   - {fileID: 11400000, guid: d221dfa7f9a81e94c9468cbe39aee201, type: 2}
+  - {fileID: 0}
+  - {fileID: 11400000, guid: 17c608d3e63b9f540a7083506407a737, type: 2}
+  - {fileID: 11400000, guid: 069a901c86abc7948bae90b6b67aec32, type: 2}
   Weights:
     Common: 70
     Uncommon: 25
     Rare: 5
     Legendary: 0
+    God: 1

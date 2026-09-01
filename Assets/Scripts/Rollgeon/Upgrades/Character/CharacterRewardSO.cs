@@ -61,5 +61,29 @@ namespace Rollgeon.Upgrades.Character
 
         /// <summary>Prefab 3D del visual sobre el pedestal. Null = sin visual.</summary>
         public GameObject WorldPrefab => _worldPrefab;
+
+#if UNITY_EDITOR
+        /// <summary>
+        /// Re-autorado por tooling (regla del repo: los .asset con Odin NO se
+        /// editan a mano — SerializationNodes renumera índices en silencio). Los
+        /// parámetros null/default no pisan el valor existente, salvo
+        /// <paramref name="targetStat"/> que siempre aplica.
+        /// </summary>
+        public void EditorAuthor(
+            CharacterRewardTargetStat targetStat,
+            EffectIntReader amount = null,
+            string upgradeId = null,
+            string displayName = null,
+            string description = null,
+            Sprite icon = null)
+        {
+            _targetStat = targetStat;
+            if (amount != null) _amount = amount;
+            if (upgradeId != null) _upgradeId = upgradeId;
+            if (displayName != null) _displayName = displayName;
+            if (description != null) _description = description;
+            if (icon != null) _icon = icon;
+        }
+#endif
     }
 }

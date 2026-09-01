@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using System.Linq;
 using Sirenix.OdinInspector;
 using UnityEngine;
 
@@ -9,9 +8,9 @@ namespace Rollgeon.Dice
     /// Bolsa de 5 dados que llevan el héroe. TECHNICAL.md §6.2.
     /// </summary>
     /// <remarks>
-    /// Reglas del GD: exactamente 5 dados; cada tipo respeta
-    /// <see cref="DiceTypeExt.MaxPerBag"/>. <see cref="OnValidate"/> emite warnings
-    /// no-bloqueantes para que el editor pueda autorear bolsas WIP sin romper.
+    /// Reglas del GD: exactamente 5 dados, sin tope de copias por tipo (5×D20 es
+    /// una bolsa válida). <see cref="OnValidate"/> emite warnings no-bloqueantes
+    /// para que el editor pueda autorear bolsas WIP sin romper.
     /// </remarks>
     [CreateAssetMenu(menuName = "Rollgeon/Dice Bag", fileName = "DiceBag")]
     public class DiceBagSO : ScriptableObject
@@ -33,16 +32,6 @@ namespace Rollgeon.Dice
             {
                 error = $"DiceBag debe tener {RequiredSize} dados (tiene {Dice?.Count ?? 0}).";
                 return false;
-            }
-
-            foreach (var group in Dice.GroupBy(d => d))
-            {
-                int max = group.Key.MaxPerBag();
-                if (group.Count() > max)
-                {
-                    error = $"{group.Key} excede máximo ({group.Count()}/{max}).";
-                    return false;
-                }
             }
 
             error = null;
@@ -67,15 +56,6 @@ namespace Rollgeon.Dice
             if (Dice.Count != RequiredSize)
             {
                 Debug.LogWarning($"{name}: DiceBag debe tener {RequiredSize} dados (tiene {Dice.Count}).", this);
-            }
-
-            foreach (var group in Dice.GroupBy(d => d))
-            {
-                int max = group.Key.MaxPerBag();
-                if (group.Count() > max)
-                {
-                    Debug.LogWarning($"{name}: {group.Key} excede máximo ({group.Count()}/{max}).", this);
-                }
             }
         }
     }

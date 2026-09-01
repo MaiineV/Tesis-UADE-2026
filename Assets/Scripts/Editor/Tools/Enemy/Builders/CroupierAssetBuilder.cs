@@ -31,6 +31,9 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
     /// </remarks>
     public static class CroupierAssetBuilder
     {
+        /// <summary>Menú que regenera estos assets. Lo lee el Editor de enemigos para avisar que el builder pisa el árbol.</summary>
+        public const string MenuPath = "Tools/Rollgeon/Bosses/Build Croupier";
+
         // ======================================================================
         // Rutas
         // ======================================================================
@@ -388,12 +391,6 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         public static readonly Color WaxShadow = new Color32(0x87, 0x71, 0x59, 0xFF);
 
         /// <summary>
-        /// Barra de vida más baja que el default de 3: el arte mide ~1.81 con galera, y a 3 quedaba
-        /// flotando sobre el sombrero.
-        /// </summary>
-        public static readonly Vector3 HealthBarOffset = new Vector3(0f, 2.4f, 0f);
-
-        /// <summary>
         /// Tope del radio del capsule. Los bounds de este rig dan ~0.95, que se come casi todo el
         /// tile vecino: el jugador tiene que poder clickear esas cuatro casillas para salir del
         /// fuego.
@@ -409,7 +406,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         // Menú
         // ======================================================================
 
-        [MenuItem("Tools/Rollgeon/Bosses/Build Croupier")]
+        [MenuItem(MenuPath)]
         public static void BuildCroupier()
         {
             var flame = BuildFireVfx();
@@ -460,7 +457,9 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
                 OutputPrefabPath = VisualPrefabPath,
                 EntityId = EntityId,
                 BossName = "Croupier",
-                HealthBarOffset = HealthBarOffset,
+                // El jefe muestra vida en la BossBarView del HUD; una barra world-space
+                // encima del pawn la duplicaría.
+                AddHealthBar = false,
                 Retints = new Dictionary<string, MaterialRetint>
                 {
                     // Levita, galera y moño: el smoking.
@@ -576,7 +575,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
 
             // Sus tres tiempos pegan de lejos: siembra, prende la banda que marcó, y dispara. El
             // panel lo lee "Jefe · Rango" — el prefijo sale del IsBoss de arriba.
-            data.Archetype = EnemyArchetype.Ranged;
+            data.Archetype = Rollgeon.Entities.Traits.EnemyArchetype.Ranged;
 
             data.BaseHealStrength = 0;
 
@@ -590,6 +589,14 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
             data.ExtraTiers = new List<EnemyTier>();
 
             data.AIRoot = BuildAIRoot(fire, bombs, bombFire);
+            data.AIDetachedNodes.Clear(); // el builder es fuente de verdad: nada suelto sobrevive
+            data.Design = new EnemyDesignSheet
+            {
+                Archetype = Rollgeon.Entities.EnemyArchetype.Ranged,
+                Pattern = AttackPatternKind.Cone,
+                Timing = AttackTiming.Telegraph,
+                Notes = "Cono direccional, disparo a distancia larga, bombas en cruz, teletransportes, fuego en sectores.",
+            };
         }
 
         /// <summary>

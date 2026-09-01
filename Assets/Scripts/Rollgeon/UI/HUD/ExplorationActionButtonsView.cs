@@ -28,7 +28,7 @@ namespace Rollgeon.UI.HUD
         private List<Button> _buttons = new List<Button>();
 
         [InfoBox("Slot asignado a cada button (mismo index que _buttons). " +
-                 "Movement=0, BaseAttack=1, SpecialAttack=2, Healing=3, ForceDoor/PassDoor=4.")]
+                 "Movement=0, BaseAttack=1, ClassSkill=2, Healing=3, ForceDoor/PassDoor=4.")]
         [SerializeField]
         private List<HeroBehaviorSlot> _slots = new List<HeroBehaviorSlot>();
 
@@ -302,7 +302,7 @@ namespace Rollgeon.UI.HUD
                 // suscribimos por consistencia con el mapeo global de teclas.
                 _hotkeys.Subscribe(GameplayHotkey.Move, OnHotkeyMove);
                 _hotkeys.Subscribe(GameplayHotkey.Attack, OnHotkeyAttack);
-                _hotkeys.Subscribe(GameplayHotkey.SpecialAttack, OnHotkeySpecial);
+                _hotkeys.Subscribe(GameplayHotkey.ClassSkill, OnHotkeyClassSkill);
                 _hotkeys.Subscribe(GameplayHotkey.Heal, OnHotkeyHeal);
                 // Force Door en exploración se dispara por la casilla roja (botón oculto),
                 // así que F cae en botón inactivo → no-op. Se suscribe por consistencia.
@@ -312,7 +312,7 @@ namespace Rollgeon.UI.HUD
             {
                 _hotkeys.Unsubscribe(GameplayHotkey.Move, OnHotkeyMove);
                 _hotkeys.Unsubscribe(GameplayHotkey.Attack, OnHotkeyAttack);
-                _hotkeys.Unsubscribe(GameplayHotkey.SpecialAttack, OnHotkeySpecial);
+                _hotkeys.Unsubscribe(GameplayHotkey.ClassSkill, OnHotkeyClassSkill);
                 _hotkeys.Unsubscribe(GameplayHotkey.Heal, OnHotkeyHeal);
                 _hotkeys.Unsubscribe(GameplayHotkey.ForceDoor, OnHotkeyForceDoor);
                 _hotkeys = null;
@@ -321,7 +321,7 @@ namespace Rollgeon.UI.HUD
 
         private void OnHotkeyMove(InputAction.CallbackContext _) => TriggerSlotHotkey(HeroBehaviorSlot.Movement);
         private void OnHotkeyAttack(InputAction.CallbackContext _) => TriggerSlotHotkey(HeroBehaviorSlot.BaseAttack);
-        private void OnHotkeySpecial(InputAction.CallbackContext _) => TriggerSlotHotkey(HeroBehaviorSlot.SpecialAttack);
+        private void OnHotkeyClassSkill(InputAction.CallbackContext _) => TriggerSlotHotkey(HeroBehaviorSlot.ClassSkill);
         private void OnHotkeyHeal(InputAction.CallbackContext _) => TriggerSlotHotkey(HeroBehaviorSlot.Healing);
         private void OnHotkeyForceDoor(InputAction.CallbackContext _) => TriggerSlotHotkey(HeroBehaviorSlot.ForceDoor);
 

@@ -63,7 +63,7 @@ namespace Rollgeon.Upgrades
             if (!ServiceLocator.TryGetService<Rollgeon.Combat.Rolls.IRollPoolService>(out var rolls)
                 || rolls == null)
                 return false;
-            rolls.AddPerTurnGrantBonus(amount);
+            rolls.AddRollPoolBonus(amount);
             return true;
         }
 
@@ -108,6 +108,7 @@ namespace Rollgeon.Upgrades
                 case CharacterRewardTargetStat.Health: return attrs.AddModifier<MaxHealth, int>(playerGuid, modifier);
                 case CharacterRewardTargetStat.Speed:  return attrs.AddModifier<Speed, int>(playerGuid, modifier);
                 case CharacterRewardTargetStat.Attack: return attrs.AddModifier<Attack, int>(playerGuid, modifier);
+                case CharacterRewardTargetStat.MoveRange: return attrs.AddModifier<MoveRange, int>(playerGuid, modifier);
                 default: return false;
             }
         }

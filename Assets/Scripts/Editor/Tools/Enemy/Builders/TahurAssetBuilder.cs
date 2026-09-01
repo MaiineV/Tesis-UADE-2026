@@ -24,6 +24,9 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
     /// </remarks>
     public static class TahurAssetBuilder
     {
+        /// <summary>Menú que regenera estos assets. Lo lee el Editor de enemigos para avisar que el builder pisa el árbol.</summary>
+        public const string MenuPath = "Tools/Rollgeon/Bosses/Build Tahur";
+
         // -----------------------------------------------------------------
         // Identidad + stats
         // -----------------------------------------------------------------
@@ -43,9 +46,6 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
 
         public const string BossName = "Tahur";
         public const string MaterialsFolder = "Assets/Rollgeon/Enemies/Materials/Tahur";
-
-        /// <summary>El arte mide ~1,81: con el default 3 de la utility la barra flota despegada.</summary>
-        public const float HealthBarHeight = 2.4f;
 
         public const string EntityId = "boss.tahur";
         public const string DisplayName = "El Tahúr";
@@ -315,7 +315,9 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
                 EntityId = EntityId,
                 BossName = BossName,
                 MaterialsFolder = MaterialsFolder,
-                HealthBarOffset = new Vector3(0f, HealthBarHeight, 0f),
+                // El jefe muestra vida en la BossBarView del HUD; una barra world-space
+                // encima del pawn la duplicaría.
+                AddHealthBar = false,
                 Retints = BuildRetints(),
             };
         }
@@ -362,13 +364,21 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
             if (portrait != null) data.Portrait = portrait;
 
             data.AIRoot = BuildAIRoot();
+            data.AIDetachedNodes.Clear(); // el builder es fuente de verdad: nada suelto sobrevive
+            data.Design = new EnemyDesignSheet
+            {
+                Archetype = EnemyArchetype.Melee,
+                Pattern = AttackPatternKind.Unspecified,
+                Timing = AttackTiming.Telegraph,
+                Notes = "Pinchazo de contacto; marca mesa/banca (apuesta), voltea carta, canta mano.",
+            };
         }
 
         // -----------------------------------------------------------------
         // Menú
         // -----------------------------------------------------------------
 
-        [MenuItem("Tools/Rollgeon/Bosses/Build Tahur")]
+        [MenuItem(MenuPath)]
         public static void BuildTahurAsset()
         {
             var data = AssetDatabase.LoadAssetAtPath<EnemyDataSO>(AssetPath);

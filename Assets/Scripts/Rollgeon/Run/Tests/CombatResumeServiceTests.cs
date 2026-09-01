@@ -238,6 +238,37 @@ namespace Rollgeon.Run.Tests
                 "es el turno del player vivo, no del enemigo");
         }
 
+        [Test]
+        public void TryBeginResume_SavedEnemyGuidMismatch_WithLiveEnemy_ReturnsFalse()
+        {
+            // Arrange — BUG-078: el enemigo guardado tiene un GUID que no matchea el
+            // respawneado (preservación rota). La cola filtrada quedaría solo-player,
+            // pero el boss SÍ está vivo entre los participantes: restaurar esa cola
+            // bypassea el guard de no-combatants y el player cicla solo su turno.
+            SetRoomCell(new Vector2Int(0, 0));
+            var player = Guid.NewGuid();
+            var savedEnemy = Guid.NewGuid();
+            var liveEnemy = Guid.NewGuid(); // respawneó con OTRO guid
+            var snap = new CombatResumeSnapshot
+            {
+                Active = true,
+                CurrentCell = new Vector2Int(0, 0),
+                PlayerGuid = player.ToString(),
+                ActiveEntityId = player.ToString(),
+            };
+            snap.Order.Add(player.ToString());
+            snap.Order.Add(savedEnemy.ToString());
+            Stage(snap);
+
+            // Act
+            bool ok = _svc.TryBeginResume(_turnOrder, new List<Guid> { player, liveEnemy }, player);
+
+            // Assert — se descarta el snapshot: el caller arma cola fresca con los vivos.
+            Assert.IsFalse(ok, "cola solo-player con enemigo vivo presente debe descartarse");
+            Assert.AreEqual(0, _turnOrder.ParticipantCount,
+                "TurnOrder no debe quedar restaurado con la cola corrupta");
+        }
+
         // ================================================================
         // Fase 4 — buffs/shields
         // ================================================================

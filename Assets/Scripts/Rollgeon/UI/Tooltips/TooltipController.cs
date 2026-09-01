@@ -226,6 +226,16 @@ namespace Rollgeon.UI.Tooltips
             => Show(text, null, screenPos, ownerId, placement);
 
         /// <summary>
+        /// Variante con lado vertical (BUG-075). <see cref="TooltipVerticalSide.Below"/>
+        /// cuelga el panel entero DEBAJO del punto de anclaje. Solo aplica en AutoFit; el
+        /// clamp a pantalla corre igual. Conservada por los triggers serializados que la
+        /// configuran — el panel de enemigos ya no la usa: vive fijo arriba a la derecha.
+        /// </summary>
+        public void Show(string text, Vector2 screenPos, int ownerId,
+            TooltipPlacementMode placement, TooltipVerticalSide side)
+            => Show(TooltipContent.FromText(text, null), screenPos, ownerId, placement, side);
+
+        /// <summary>
         /// Encabezado + columna de tarjetas, una por cosa en juego. Con <paramref name="cards"/>
         /// nulo o vacío el panel se comporta exactamente igual que antes: sólo el encabezado.
         /// </summary>
@@ -238,7 +248,8 @@ namespace Rollgeon.UI.Tooltips
         /// un <see cref="TooltipContent"/> que sólo trae texto.
         /// </summary>
         public void Show(in TooltipContent content, Vector2 screenPos, int ownerId,
-                         TooltipPlacementMode placement)
+                         TooltipPlacementMode placement,
+                         TooltipVerticalSide side = TooltipVerticalSide.Above)
         {
             // Cada Show arranca sin candado: el panel es compartido, y el trigger fijado lo
             // re-afirma después de su propio Show. Sin esto, el candado de un panel fijado
@@ -251,7 +262,7 @@ namespace Rollgeon.UI.Tooltips
 
             if (placement == TooltipPlacementMode.Beside) PlaceBeside(screenPos);
             else if (placement == TooltipPlacementMode.ScreenTopRight) PlaceTopRight();
-            else PlaceOver(screenPos, placement);
+            else PlaceOver(screenPos, placement, side);
 
             ClampToCanvas();
         }
@@ -274,12 +285,30 @@ namespace Rollgeon.UI.Tooltips
             _root.position = _hostCanvasRect.TransformPoint(local);
         }
 
-        private void PlaceOver(Vector2 screenPos, TooltipPlacementMode placement)
+        private void PlaceOver(Vector2 screenPos, TooltipPlacementMode placement,
+                               TooltipVerticalSide side)
         {
             if (_root != null) _root.pivot = GrowUpPivot;
-            PositionAt(placement == TooltipPlacementMode.Fixed
-                ? screenPos
-                : screenPos + _anchorOffset);
+
+            Vector2 target;
+            if (placement == TooltipPlacementMode.Fixed)
+            {
+                target = screenPos;
+            }
+            else if (side == TooltipVerticalSide.Below && _root != null)
+            {
+                // Medir la altura real del panel con el texto nuevo antes de colocarlo —
+                // colgar "debajo" necesita saber cuánto ocupa (BUG-075).
+                UnityEngine.UI.LayoutRebuilder.ForceRebuildLayoutImmediate(_root);
+                float panelScreenHeight = _root.rect.height * _root.lossyScale.y;
+                target = TooltipVerticalPlacement.ComputeAnchorTarget(
+                    screenPos, _anchorOffset, panelScreenHeight, side);
+            }
+            else
+            {
+                target = screenPos + _anchorOffset;
+            }
+            PositionAt(target);
         }
 
         /// <summary>
@@ -327,7 +356,8 @@ namespace Rollgeon.UI.Tooltips
         /// con el nuevo owner. Usado por click triggers (puerta).
         /// </summary>
         public void Toggle(string text, Vector2 screenPos, int ownerId,
-            TooltipPlacementMode placement = TooltipPlacementMode.AutoFit)
+            TooltipPlacementMode placement = TooltipPlacementMode.AutoFit,
+            TooltipVerticalSide side = TooltipVerticalSide.Above)
         {
             if (_visible && _currentOwnerId == ownerId)
             {
@@ -336,7 +366,7 @@ namespace Rollgeon.UI.Tooltips
             }
             else
             {
-                Show(text, screenPos, ownerId, placement);
+                Show(text, screenPos, ownerId, placement, side);
             }
         }
 

@@ -339,6 +339,12 @@ namespace Rollgeon.EditorTools.Localization
                 "Escudo: ATQ ({0}) + base del combo × multi de dados",
                 "Shield: ATK ({0}) + combo base × dice multiplier");
             Ui("tooltip.effect.shield.flat", "Escudo: +{0}", "Shield: +{0}");
+            // Feature#0055 — Habilidad de Clase: Empuje.
+            Ui("tooltip.effect.push.header", "Empuje: casillas según el combo", "Push: tiles by combo");
+            Ui("tooltip.effect.push.no_combo", "Sin combo: la tirada se pierde sin efecto",
+                "No combo: the roll is spent with no effect");
+            Ui("formula.push.preview", "{0}: empuja {1}", "{0}: push {1}");
+            Ui("formula.push.no_combo", "Empuje - sin combo: sin efecto", "Push - no combo: no effect");
 
             Ui("tooltip.effect.force_door.boss_room",
                 "El Boss debe ser vencido — no se puede forzar la puerta",
@@ -569,9 +575,18 @@ namespace Rollgeon.EditorTools.Localization
         {
             // Recompensas de personaje — se veían en inglés incluso en español.
             Content("char_rew.attack_plus_3.name", "Ataque +3", "Attack +3");
-            Content("char_rew.energy_plus_1.name", "+1 Roll por turno", "+1 Roll per turn");
-            Content("char_rew.hp_plus_5.name", "Vida máxima +5", "Max Health +5");
-            Content("char_rew.speed_plus_2.name", "Velocidad +2", "Speed +2");
+            // BUG-85: Energy pasó a subir el pool (máximo + arranque de combate).
+            Content("char_rew.energy_plus_1.name", "Pool de rolls +1", "Roll pool +1");
+            Content("char_rew.energy_plus_1.desc",
+                "+1 al pool de rolls: sube el máximo y los rolls con los que arrancás cada combate.",
+                "+1 to the roll pool: raises the max and the rolls you start each combat with.");
+            // El asset se llama HP_Plus5 pero su id real es hp_plus_25 (da 25).
+            Content("char_rew.hp_plus_25.name", "Vida máxima +25", "Max Health +25");
+            // BUG-85: Speed+ se re-autoró como Movimiento+ (MoveRange).
+            Content("char_rew.move_plus_1.name", "Movimiento +1", "Movement +1");
+            Content("char_rew.move_plus_1.desc",
+                "+1 celda de rango al dado de Movimiento en combate.",
+                "+1 cell of range on the Movement die in combat.");
 
             // Pasivas de combo.
             Content("combo.pass.gold_on_ladder.name", "Codicia en Escalera", "Greed on Ladder");
@@ -606,9 +621,9 @@ namespace Rollgeon.EditorTools.Localization
         {
             Ui(BuildHelpTextKeys.Pool,
                 "Estos son los dados de tu clase. Haz clic en uno para sumarlo a la bolsa; " +
-                "el número de cada fila dice cuántos puedes llevar de ese tipo.",
-                "These are your class dice. Click one to add it to your bag; the number on each " +
-                "row shows how many of that type you can carry.");
+                "puedes repetir el mismo tipo tantas veces como quieras.",
+                "These are your class dice. Click one to add it to your bag; you can repeat " +
+                "the same type as many times as you like.");
 
             Ui(BuildHelpTextKeys.Strip,
                 "Tu bolsa se arma aquí, siempre ordenada de menor a mayor. Haz clic en un dado " +
@@ -1060,11 +1075,14 @@ namespace Rollgeon.EditorTools.Localization
         private static void SeedDiceBag()
         {
             Ui(DiceBagTextKeys.Title, "Bolsa de Dados", "Dice Bag");
-            Ui(DiceBagTextKeys.SlotsCaption, "Encantamientos", "Enchantments");
-            // Van detrás del contador ("2 encantamientos"), así que en minúscula y sin punto.
-            Ui(DiceBagTextKeys.EnchSingular, "encantamiento", "enchantment");
-            Ui(DiceBagTextKeys.EnchPlural, "encantamientos", "enchantments");
             Ui(DiceBagTextKeys.NoEnchantments, "Sin encantamientos.", "No enchantments.");
+
+            // Labels de categoría del acordeón ("Ancla - Control").
+            Ui(DiceBagTextKeys.CatAtaque, "Ataque", "Attack");
+            Ui(DiceBagTextKeys.CatControl, "Control", "Control");
+            Ui(DiceBagTextKeys.CatDefensa, "Defensa", "Defense");
+            Ui(DiceBagTextKeys.CatEconomia, "Economía", "Economy");
+            Ui(DiceBagTextKeys.CatMaldicion, "Maldición", "Curse");
         }
 
         // ==================================================================
@@ -1105,6 +1123,9 @@ namespace Rollgeon.EditorTools.Localization
             Content("chest.desc",
                 "Rompelo y fijate qué guarda.",
                 "Break it open and see what it holds.");
+            // God (item-editor-spec.md §5.1): mismo criterio que sus hermanos — término
+            // de juego sin traducir. El re-run de este seeder queda pendiente del gate.
+            Ui(Rollgeon.UI.ChestReveal.ChestRevealTextKeys.RarityGod, "God", "God");
         }
 
         // ==================================================================
@@ -1258,7 +1279,9 @@ namespace Rollgeon.EditorTools.Localization
             Ui("nav.rooms", "Salas", "Rooms");
             Ui("action.attack", "Atacar", "Attack");
             Ui("action.move", "Mover", "Move");
-            Ui("action.special_attack", "Ataque especial", "Special Attack");
+            // Feature#0055: el slot 2 pasó de Ataque especial a Habilidad de Clase (genérica por
+            // clase — el tooltip del efecto lleva el detalle "Empuje").
+            Ui("action.class_skill", "Habilidad de clase", "Class Skill");
             Ui("action.force_door", "Forzar puerta", "Force Door");
             Ui("action.heal", "Curar", "Heal");
             // BUG-041: falta del slot Defense en la familia action.* — HeroActionTooltip

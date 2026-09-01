@@ -24,6 +24,9 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
     /// </remarks>
     public static class AnotadorAssetBuilder
     {
+        /// <summary>Menú que regenera estos assets. Lo lee el Editor de enemigos para avisar que el builder pisa el árbol.</summary>
+        public const string MenuPath = "Tools/Rollgeon/Bosses/Build Anotador";
+
         // ======================================================================
         // Identidad y rutas
         // ======================================================================
@@ -55,9 +58,6 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
 
         /// <summary>FPS del stepping — el mismo del resto del roster animado.</summary>
         public const int SteppedAnimationFps = 8;
-
-        /// <summary>Altura del canvas de vida, copiada del canvas de <c>ChestMimic_Prefab</c>.</summary>
-        public static readonly Vector3 HealthBarOffset = new Vector3(0f, 2.5f, 0f);
 
         /// <summary>
         /// El root del FBX mira -Z y el wrapper fuerza identidad en el hijo de arte: sin esto el
@@ -377,6 +377,14 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
             if (portrait != null) data.Portrait = portrait;
 
             data.AIRoot = BuildAIRoot(iceHazard);
+            data.AIDetachedNodes.Clear(); // el builder es fuente de verdad: nada suelto sobrevive
+            data.Design = new EnemyDesignSheet
+            {
+                Archetype = EnemyArchetype.Ranged,
+                Pattern = AttackPatternKind.TelegraphRowColumn,
+                Timing = AttackTiming.Telegraph,
+                Notes = "Mantiene distancia; lápiz a distancia, estela de hielo, telegraphs de fila/columna; desplaza combos vecinos.",
+            };
         }
 
         /// <summary>
@@ -418,8 +426,9 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
                 EntityId = EntityId,
                 BossName = BossName,
                 ArtChildName = ArtChildName,
-                AddHealthBar = true,
-                HealthBarOffset = HealthBarOffset,
+                // El jefe muestra vida en la BossBarView del HUD; una barra world-space
+                // encima del pawn la duplicaría.
+                AddHealthBar = false,
                 // Capsule y no Box: el cofre es alto y angosto cuando abre la tapa.
                 Collider = ColliderKind.Capsule,
                 Retints = null,
@@ -484,7 +493,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         // Menú — la única capa que escribe a disco
         // ======================================================================
 
-        [MenuItem("Tools/Rollgeon/Bosses/Build Anotador")]
+        [MenuItem(MenuPath)]
         public static void BuildAnotador()
         {
             var iceBurst = BuildIceBurstVfx();

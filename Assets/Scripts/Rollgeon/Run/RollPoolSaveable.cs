@@ -7,11 +7,13 @@ namespace Rollgeon.Run
 {
     /// <summary>
     /// <see cref="ISaveable"/> del Pool de Rolls (Feature#0050): persiste el bonus
-    /// por turno acumulado por rewards ("+1 Roll por turno"). El bonus vive como
-    /// estado del <see cref="RollPoolService"/> (no como modifier de atributo, a
-    /// diferencia del viejo MaxEnergy), así que sin este snapshot un save/load de
-    /// run lo perdería. El pool ACTUAL no se persiste acá: es combat-only y viaja
-    /// en <c>CombatResumeSnapshot.PlayerRolls</c>.
+    /// de pool acumulado por rewards ("Rolls +1": sube el máximo y el arranque de
+    /// combate — BUG-85). El bonus vive como estado del <see cref="RollPoolService"/>
+    /// (no como modifier de atributo, a diferencia del viejo MaxEnergy), así que sin
+    /// este snapshot un save/load de run lo perdería. El pool ACTUAL no se persiste
+    /// acá: es combat-only y viaja en <c>CombatResumeSnapshot.PlayerRolls</c>.
+    /// El campo del DTO conserva el nombre viejo (<c>PerTurnGrantBonus</c>) por
+    /// compatibilidad con saves de run existentes.
     /// </summary>
     public sealed class RollPoolSaveable : ISaveable, IDisposable
     {
@@ -23,7 +25,7 @@ namespace Rollgeon.Run
         {
             var snapshot = new RollPoolRunSnapshot();
             if (TryResolve(out var pool))
-                snapshot.PerTurnGrantBonus = pool.PerTurnGrantBonus;
+                snapshot.PerTurnGrantBonus = pool.RollPoolBonus;
             return snapshot;
         }
 
@@ -31,7 +33,7 @@ namespace Rollgeon.Run
         {
             if (state is not RollPoolRunSnapshot snapshot) return;
             if (TryResolve(out var pool))
-                pool.RestorePerTurnGrantBonus(snapshot.PerTurnGrantBonus);
+                pool.RestoreRollPoolBonus(snapshot.PerTurnGrantBonus);
         }
 
         /// <summary>Invocado por <c>ClearScope(Run)</c> — evita duplicados de SaveKey entre runs.</summary>
@@ -40,7 +42,7 @@ namespace Rollgeon.Run
             SaveSystem.Unregister(this);
         }
 
-        // RestorePerTurnGrantBonus no está en la interfaz — mismo downcast que usaba
+        // RestoreRollPoolBonus no está en la interfaz — mismo downcast que usaba
         // CombatResumeService con el EnergyService.
         private static bool TryResolve(out RollPoolService pool)
         {

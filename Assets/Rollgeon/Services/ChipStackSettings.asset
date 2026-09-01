@@ -16,6 +16,7 @@ MonoBehaviour:
   ShieldChip: {fileID: -18201817, guid: cca52ed63b2fdae4ca26627a5c6beed8, type: 3}
   EnergyChip: {fileID: -163928928, guid: cca52ed63b2fdae4ca26627a5c6beed8, type: 3}
   RollCup: {fileID: 399862200, guid: 6d08ba971f4eee34d9bae78b782c7dc4, type: 3}
+  RollCupFlip: {fileID: 581849072, guid: aaf2c45925ead8440b83990dfb233617, type: 3}
   GoldChipFlat: {fileID: -1590291716, guid: 55b21875323eef642a528fe5a0fd2874, type: 3}
   GoldChipTilted: {fileID: -332512725, guid: 55b21875323eef642a528fe5a0fd2874, type: 3}
   PotionFull: {fileID: -2101014440, guid: b6568abed2869da409ddf4c38de78986, type: 3}

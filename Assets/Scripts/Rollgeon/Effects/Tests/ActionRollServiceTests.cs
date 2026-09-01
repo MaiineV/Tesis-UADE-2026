@@ -109,6 +109,73 @@ namespace Rollgeon.Effects.Tests
             Assert.AreEqual(1, captured.RollsUsed);
         }
 
+        /// <summary>
+        /// Pico de Minero: el stat <c>ForceDoorRollBonus</c> se suma al total efectivo
+        /// de una tirada con <c>Kind == ForceDoor</c> — con o sin combo (acá: sin).
+        /// </summary>
+        [Test]
+        public void ForceDoorKind_AddsForceDoorRollBonusStat_ToEffectiveTotal()
+        {
+            // Arrange — jugador con +7 al stat de forzar puerta
+            var attrMgr = new Rollgeon.Attributes.AttributesManager();
+            ServiceLocator.AddService<Rollgeon.Attributes.AttributesManager>(attrMgr);
+            var attrs = new Rollgeon.Attributes.ModifiableAttributes();
+            attrs.SetAttribute<Rollgeon.Attributes.Stats.ForceDoorRollBonus>(
+                new Rollgeon.Attributes.Stats.ForceDoorRollBonus(7));
+            attrMgr.Register(_player, attrs);
+            try
+            {
+                _roller.NextRoll = new[] { 1, 1, 1, 1, 1 }; // suma 5, threshold 10
+
+                // Act
+                ActionRollOutcome captured = default;
+                var spec = SpecForceDoorNoConfirm();
+                spec.Kind = RollActionKind.ForceDoor;
+                _service.StartFlow(spec, _player, _bag, o => captured = o);
+                _service.SetHolds(new[] { true, true, true, true, true });
+                _service.Confirm();
+
+                // Assert — 5 de dados + 7 del stat cruza el threshold
+                Assert.AreEqual(12, captured.EffectiveTotal);
+                Assert.IsTrue(captured.PassedThreshold);
+            }
+            finally
+            {
+                attrMgr.Dispose();
+                ServiceLocator.Clear();
+            }
+        }
+
+        /// <summary>Una tirada que NO es ForceDoor no lee el stat — el bonus no leakea a Heal.</summary>
+        [Test]
+        public void HealKind_DoesNotReadForceDoorRollBonus()
+        {
+            var attrMgr = new Rollgeon.Attributes.AttributesManager();
+            ServiceLocator.AddService<Rollgeon.Attributes.AttributesManager>(attrMgr);
+            var attrs = new Rollgeon.Attributes.ModifiableAttributes();
+            attrs.SetAttribute<Rollgeon.Attributes.Stats.ForceDoorRollBonus>(
+                new Rollgeon.Attributes.Stats.ForceDoorRollBonus(7));
+            attrMgr.Register(_player, attrs);
+            try
+            {
+                _roller.NextRoll = new[] { 4, 4, 4, 4, 4 }; // suma 20
+
+                ActionRollOutcome captured = default;
+                var spec = SpecHeal();
+                spec.Kind = RollActionKind.Heal;
+                _service.StartFlow(spec, _player, _bag, o => captured = o);
+                _service.SetHolds(new[] { true, true, true, true, true });
+                _service.Confirm();
+
+                Assert.AreEqual(20, captured.EffectiveTotal, "sin bonus: el stat es solo de ForceDoor");
+            }
+            finally
+            {
+                attrMgr.Dispose();
+                ServiceLocator.Clear();
+            }
+        }
+
         [Test]
         public void BelowThreshold_OffersReroll_AndChargesOnAccept()
         {
@@ -729,7 +796,7 @@ namespace Rollgeon.Effects.Tests
             public int GetCurrent(Guid id) => CurrentRolls;
             public int GetMax(Guid id) => 99;
             public int GetRollsPerTurn(Guid id) => 5;
-            public void AddPerTurnGrantBonus(int amount) { }
+            public void AddRollPoolBonus(int amount) { }
             public void InitializeForEntity(Guid id) { }
             public void RestoreCurrent(Guid id, int value) => CurrentRolls = value;
         }

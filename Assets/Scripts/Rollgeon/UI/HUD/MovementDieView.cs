@@ -5,6 +5,7 @@ using Rollgeon.Dice;
 using Rollgeon.Movement.Die;
 using Rollgeon.UI.HUD.DiceAnim;
 using Sirenix.OdinInspector;
+using TMPro;
 using UnityEngine;
 
 namespace Rollgeon.UI.HUD
@@ -45,6 +46,11 @@ namespace Rollgeon.UI.HUD
                                  "preview de caras). Null = Resources/" + SettingsResourcePath + ".")]
         private DiceUiAnimationSettingsSO _animSettings;
 
+        [SerializeField, Tooltip("Opcional: label del bonus de MoveRange (Botas/Guantelete). " +
+                                 "Se muestra como \"+N\"/\"-N\" junto a la cara al aterrizar; " +
+                                 "oculto con bonus 0 o sin referencia.")]
+        private TextMeshProUGUI _bonusLabel;
+
         [Title("Rise (sube roleando)")]
         [SerializeField, MinValue(0f)] private float _riseSeconds = 0.45f;
         [SerializeField, MinValue(0f), Tooltip("Separación entre la ficha y el dado al aterrizar.")]
@@ -66,6 +72,7 @@ namespace Rollgeon.UI.HUD
         private IMovementDieService _service;
         private bool _bound;
         private Action _pendingReveal;
+        private int _pendingBonus;
         private Coroutine _routine;
 
         // ---- Lifecycle ---------------------------------------------------------
@@ -119,12 +126,14 @@ namespace Rollgeon.UI.HUD
         // ---- IMovementDiePresenter ---------------------------------------------
 
         /// <inheritdoc />
-        public bool TryPresent(DiceType type, int face, Action onRevealed)
+        public bool TryPresent(DiceType type, int face, int rangeBonus, Action onRevealed)
         {
             if (!_bound || _slot == null || !gameObject.activeInHierarchy) return false;
 
             StopRoutine();
             _pendingReveal = onRevealed;
+            _pendingBonus = rangeBonus;
+            if (_bonusLabel != null) _bonusLabel.gameObject.SetActive(false);
             _slot.Bind(type);
             _routine = StartCoroutine(RiseAndDrop(type, face));
             return true;
@@ -215,6 +224,7 @@ namespace Rollgeon.UI.HUD
             // Aterrizó: silueta frontal, cara real, y recién ahora se publica el rango.
             _slot.SetSpinRole(null);
             _slot.ShowFace(face);
+            ShowBonus(_pendingBonus);
             _routine = null;
             var reveal = _pendingReveal;
             _pendingReveal = null;
@@ -261,9 +271,24 @@ namespace Rollgeon.UI.HUD
             _routine = StartCoroutine(FadeOutAndHide());
         }
 
+        // El "+N" aparece recién con la cara firme: durante el spin sería ruido y
+        // spoilearía que hay modificador antes de saber sobre qué cara aplica.
+        private void ShowBonus(int bonus)
+        {
+            if (_bonusLabel == null) return;
+            if (bonus == 0)
+            {
+                _bonusLabel.gameObject.SetActive(false);
+                return;
+            }
+            _bonusLabel.text = bonus > 0 ? "+" + bonus : bonus.ToString();
+            _bonusLabel.gameObject.SetActive(true);
+        }
+
         private void HideInstant()
         {
             if (_slot != null) _slot.gameObject.SetActive(false);
+            if (_bonusLabel != null) _bonusLabel.gameObject.SetActive(false);
             if (_group != null) _group.alpha = 0f;
             if (_rect != null)
             {

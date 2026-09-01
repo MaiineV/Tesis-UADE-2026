@@ -127,6 +127,7 @@ namespace Rollgeon.UI.HUD
         {
             DiceOutroGate.Changed -= HandleOutroGateChanged;
             Rollgeon.Feedback.BreakdownUiGate.Changed -= HandleOutroGateChanged;
+            CancelSettleRoutine();
             _exitDeferred = false;
             if (_onFlowStart != null)
             {
@@ -177,6 +178,7 @@ namespace Rollgeon.UI.HUD
         {
             // Un roll nuevo puede llegar con el exit del confirm anterior todavía
             // diferido (chain phases): ese exit ya no corresponde — seguimos rolling.
+            CancelSettleRoutine();
             _exitDeferred = false;
             // Idempotente: OnChainStarted y el primer OnDiceRolled llegan seguidos.
             if (_rolling) return;
@@ -207,7 +209,47 @@ namespace Rollgeon.UI.HUD
         {
             if (!_exitDeferred || DiceOutroGate.OutroPending
                 || Rollgeon.Feedback.BreakdownUiGate.Pending) return;
+
+            // BUG-082: no salir en este mismo dispatch. Los suscriptores de
+            // BreakdownUiGate.Changed corren en orden de suscripción y este flow se
+            // suscribe en OnEnable — ANTES que el DiceZoneView, que recién se anota
+            // cuando difiere su outro. Salir acá ganaba la carrera: los chips volvían
+            // y un frame después los dados empezaban a volar por encima (Forzar
+            // Puerta, que no emite breakdown y expone la ventana). Un frame de gracia
+            // deja que el outro arranque; si arrancó, su End re-dispara Changed.
+            if (_settleRoutine != null) return;
+            _settleRoutine = StartCoroutine(ExitAfterGatesSettle());
+        }
+
+        private Coroutine _settleRoutine;
+
+        private System.Collections.IEnumerator ExitAfterGatesSettle()
+        {
+            yield return null;
+            _settleRoutine = null;
+            if (!ShouldExitNow(_exitDeferred, _rolling,
+                    DiceOutroGate.OutroPending, Rollgeon.Feedback.BreakdownUiGate.Pending))
+                yield break;
+
             ExitRolling(force: true);
+        }
+
+        private void CancelSettleRoutine()
+        {
+            if (_settleRoutine == null) return;
+            StopCoroutine(_settleRoutine);
+            _settleRoutine = null;
+        }
+
+        /// <summary>
+        /// Regla pura del exit diferido (BUG-082): salir solo si el exit sigue
+        /// pendiente, la zona sigue en rolling (no llegó un roll nuevo ni un force)
+        /// y ningún gate re-abrió en el frame de gracia.
+        /// </summary>
+        internal static bool ShouldExitNow(bool exitDeferred, bool rolling,
+            bool outroPending, bool breakdownPending)
+        {
+            return exitDeferred && rolling && !outroPending && !breakdownPending;
         }
 
         // ---- Breath / Punch ----------------------------------------------------

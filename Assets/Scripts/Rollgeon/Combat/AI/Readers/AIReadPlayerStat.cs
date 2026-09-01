@@ -30,6 +30,9 @@ namespace Rollgeon.Combat.AI.Readers
                 StatType.Energy => Get<Energy>(context, context.PlayerGuid),
                 StatType.Shield => Get<Shield>(context, context.PlayerGuid),
                 StatType.HealStrength => Get<HealStrength>(context, context.PlayerGuid),
+                // El jugador tampoco tiene AttackRange (es un stat de ficha enemiga):
+                // sin atributo registrado, Get devuelve 0.
+                StatType.AttackRange => Get<AttackRange>(context, context.PlayerGuid),
                 _ => 0,
             };
         }

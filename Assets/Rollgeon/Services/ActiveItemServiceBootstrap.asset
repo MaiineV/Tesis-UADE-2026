@@ -1,0 +1,19 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4e9618be76f0a1746be06d0c9ca64470, type: 3}
+  m_Name: ActiveItemServiceBootstrap
+  m_EditorClassIdentifier: Rollgeon::Rollgeon.Items.Active.ActiveItemServiceBootstrap
+  _catalog: {fileID: 11400000, guid: f4a2472a2987dc8429a6312d7039422c, type: 2}
+  _enchantmentPool:
+  - {fileID: 11400000, guid: f0216f8cf64a5ea478c9cc7b2a19034d, type: 2}
+  - {fileID: 11400000, guid: 2a7e5148f9f67034e878e3935b4ac0c5, type: 2}
+  - {fileID: 11400000, guid: 63932bd6df6c60242889734cd83ce726, type: 2}

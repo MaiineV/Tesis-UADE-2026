@@ -142,10 +142,6 @@ MonoBehaviour:
     m_Localized: Mover
     m_Metadata:
       m_Items: []
-  - m_Id: 33290952929282
-    m_Localized: Ataque especial
-    m_Metadata:
-      m_Items: []
   - m_Id: 33290952929283
     m_Localized: Forzar puerta
     m_Metadata:
@@ -453,8 +449,8 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 8535671167614976
-    m_Localized: "Estos son los dados de tu clase. Haz clic en uno para sumarlo a
-      la bolsa; el n\xFAmero de cada fila dice cu\xE1ntos puedes llevar de ese tipo."
+    m_Localized: Estos son los dados de tu clase. Haz clic en uno para sumarlo a
+      la bolsa; puedes repetir el mismo tipo tantas veces como quieras.
     m_Metadata:
       m_Items: []
   - m_Id: 8535671486382080
@@ -857,160 +853,220 @@ MonoBehaviour:
     m_Localized: Aprieta Confirmar para encantar el dado.
     m_Metadata:
       m_Items: []
-  - m_Id: 16084878164422656
-    m_Localized: Cuerpo a cuerpo
+  - m_Id: 15429564853567488
+    m_Localized: "Empuje: casillas seg\xFAn el combo"
     m_Metadata:
       m_Items: []
-  - m_Id: 16084878344777728
-    m_Localized: Rango
+  - m_Id: 15429564908093440
+    m_Localized: 'Sin combo: la tirada se pierde sin efecto'
     m_Metadata:
       m_Items: []
-  - m_Id: 16084878344777729
-    m_Localized: Soporte
+  - m_Id: 15429564908093441
+    m_Localized: '{0}: empuja {1}'
     m_Metadata:
       m_Items: []
-  - m_Id: 16084878344777730
-    m_Localized: Jefe
+  - m_Id: 15429564908093442
+    m_Localized: 'Empuje - sin combo: sin efecto'
     m_Metadata:
       m_Items: []
-  - m_Id: 16084878344777731
-    m_Localized: "Jefe \xB7 {0}"
+  - m_Id: 15429564929064960
+    m_Localized: Habilidad de clase
     m_Metadata:
       m_Items: []
-  - m_Id: 16149703682879488
-    m_Localized: "Pr\xF3ximo turno"
+  - m_Id: 16211047658389504
+    m_Localized: Ataque
     m_Metadata:
       m_Items: []
-  - m_Id: 16191439641702400
-    m_Localized: 'Debilidad: <b>{0}</b>'
+  - m_Id: 16211047712915456
+    m_Localized: Control
     m_Metadata:
       m_Items: []
-  - m_Id: 16825655438012416
+  - m_Id: 16211047712915457
+    m_Localized: Defensa
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16211047712915458
+    m_Localized: "Econom\xEDa"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 16211047712915459
     m_Localized: "Maldici\xF3n"
     m_Metadata:
       m_Items: []
-  - m_Id: 16825655454789632
+  - m_Id: 17252903728173056
+    m_Localized: Todavia en enfriamiento.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17252903774310400
+    m_Localized: No podes usar este objeto ahora.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17261896722796544
+    m_Localized: Ya usaste un objeto asi este turno.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17355423305682944
+    m_Localized: Sin objetivo valido.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17355423393763328
+    m_Localized: Sin item equipado.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593281655271424
+    m_Localized: Cuerpo a cuerpo
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593281667854336
+    m_Localized: Rango
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593281667854337
+    m_Localized: Soporte
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593281667854338
+    m_Localized: Jefe
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593281667854339
+    m_Localized: "Jefe \xB7 {0}"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593281667854340
+    m_Localized: "Pr\xF3ximo turno"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593281667854341
+    m_Localized: "Maldici\xF3n"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593281672048640
     m_Localized: Combo
     m_Metadata:
       m_Items: []
-  - m_Id: 16825655454789633
+  - m_Id: 17593281672048641
     m_Localized: "B\xE1sico"
     m_Metadata:
       m_Items: []
-  - m_Id: 16825655454789634
+  - m_Id: 17593281672048642
     m_Localized: "Da\xF1o sostenido"
     m_Metadata:
       m_Items: []
-  - m_Id: 16825655454789635
+  - m_Id: 17593281672048643
     m_Localized: 
     m_Metadata:
       m_Items: []
-  - m_Id: 16825655454789636
+  - m_Id: 17593281672048644
     m_Localized: "Reacci\xF3n"
     m_Metadata:
       m_Items: []
-  - m_Id: 16825655454789637
+  - m_Id: 17593281672048645
     m_Localized: Habilidad
     m_Metadata:
       m_Items: []
-  - m_Id: 16825655454789638
+  - m_Id: 17593281672048646
     m_Localized: "{0} \xB7 {1}"
     m_Metadata:
       m_Items: []
-  - m_Id: 16873831498969088
+  - m_Id: 17593281672048647
     m_Localized: "Casilla \xB7 {0}"
     m_Metadata:
       m_Items: []
-  - m_Id: 16873831515746304
+  - m_Id: 17593281672048648
     m_Localized: "Da\xF1o"
     m_Metadata:
       m_Items: []
-  - m_Id: 16873831515746305
+  - m_Id: 17593281672048649
     m_Localized: "Curaci\xF3n"
     m_Metadata:
       m_Items: []
-  - m_Id: 16873831515746306
+  - m_Id: 17593281672048650
     m_Localized: Estado
     m_Metadata:
       m_Items: []
-  - m_Id: 16873831515746307
+  - m_Id: 17593281672048651
     m_Localized: Mejora
     m_Metadata:
       m_Items: []
-  - m_Id: 16873831515746308
+  - m_Id: 17593281672048652
     m_Localized: Deslizamiento
     m_Metadata:
       m_Items: []
-  - m_Id: 16873831515746309
+  - m_Id: 17593281672048653
     m_Localized: Teletransporte
     m_Metadata:
       m_Items: []
-  - m_Id: 16873831515746310
+  - m_Id: 17593281672048654
     m_Localized: Advertencia
     m_Metadata:
       m_Items: []
-  - m_Id: 16873831515746311
+  - m_Id: 17593281672048655
     m_Localized: "Protecci\xF3n"
     m_Metadata:
       m_Items: []
-  - m_Id: 16873831515746312
+  - m_Id: 17593281672048656
     m_Localized: Efecto
     m_Metadata:
       m_Items: []
-  - m_Id: 16873831515746313
+  - m_Id: 17593281672048657
     m_Localized: Al entrar
     m_Metadata:
       m_Items: []
-  - m_Id: 16873831515746314
+  - m_Id: 17593281672048658
     m_Localized: Empezar el turno encima
     m_Metadata:
       m_Items: []
-  - m_Id: 16873831515746315
+  - m_Id: 17593281672048659
     m_Localized: Cura al terminar el turno
     m_Metadata:
       m_Items: []
-  - m_Id: 16873831515746316
+  - m_Id: 17593281672048660
     m_Localized: Aplica
     m_Metadata:
       m_Items: []
-  - m_Id: 16873831515746317
+  - m_Id: 17593281672048661
     m_Localized: En el piso
     m_Metadata:
       m_Items: []
-  - m_Id: 16873831515746318
+  - m_Id: 17593281672048662
     m_Localized: Objeto
     m_Metadata:
       m_Items: []
-  - m_Id: 16873831515746319
+  - m_Id: 17593281672048663
     m_Localized: Deja
     m_Metadata:
       m_Items: []
-  - m_Id: 17130814152044544
-    m_Localized: Peligro de sala
-    m_Metadata:
-      m_Items: []
-  - m_Id: 17130814210764800
-    m_Localized: Golpe
-    m_Metadata:
-      m_Items: []
-  - m_Id: 17130814210764801
-    m_Localized: Golpea cada {0} rondas
-    m_Metadata:
-      m_Items: []
-  - m_Id: 17325483355992064
+  - m_Id: 17593281672048664
     m_Localized: Se acorta la mecha
     m_Metadata:
       m_Items: []
-  - m_Id: 17325483397935104
+  - m_Id: 17593281672048665
     m_Localized: Explota
     m_Metadata:
       m_Items: []
-  - m_Id: 17325483397935105
+  - m_Id: 17593281672048666
     m_Localized: Al explotar
     m_Metadata:
       m_Items: []
-  - m_Id: 17325483397935106
+  - m_Id: 17593281672048667
     m_Localized: Golpe del estallido
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593281672048668
+    m_Localized: Peligro de sala
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593281672048669
+    m_Localized: Golpe
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593281672048670
+    m_Localized: Golpea cada {0} rondas
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593281676242944
+    m_Localized: God
     m_Metadata:
       m_Items: []
   references:
