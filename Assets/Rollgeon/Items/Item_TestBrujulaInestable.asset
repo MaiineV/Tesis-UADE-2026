@@ -606,29 +606,33 @@ MonoBehaviour:
     media, 5-6 fuerte.'
   Icon: {fileID: 1808964844, guid: ee12da05509c7a74686b1e1cc11cbd3e, type: 3}
   Rarity: 0
+  FamilyId: 
+  VariantIndex: 0
   Type: 1
-  PassiveHooks: []
+  UsesActiveSlot: 1
   ActiveDie: 1
-  Family: 0
+  ActiveFamily: 0
+  PrecisionTarget: 1
+  ControlParity: 0
   OnNegativeBand:
     Label: Banda negativa
     PreConditions: []
     Effects:
-    - rid: 7817893836777062679
+    - rid: 7817893847765353236
     TargetSelector:
       rid: -2
   OnMixedBand:
     Label: Banda mixta
     PreConditions: []
     Effects:
-    - rid: 7817893836777062680
+    - rid: 7817893847765353237
     TargetSelector:
       rid: -2
   OnPositiveBand:
     Label: Banda positiva
     PreConditions: []
     Effects:
-    - rid: 7817893836777062681
+    - rid: 7817893847765353238
     TargetSelector:
       rid: -2
   OnActivate:
@@ -647,7 +651,7 @@ MonoBehaviour:
     RefIds:
     - rid: -2
       type: {class: , ns: , asm: }
-    - rid: 7817893836777062679
+    - rid: 7817893847765353236
       type: {class: EffHeal, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
       data:
         Selection:
@@ -688,7 +692,7 @@ MonoBehaviour:
         _diceResultMultiplier: 1
         _sourceTag: eff.heal
         _selfHealOnNoTarget: 1
-    - rid: 7817893836777062680
+    - rid: 7817893847765353237
       type: {class: EffHeal, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
       data:
         Selection:
@@ -729,7 +733,7 @@ MonoBehaviour:
         _diceResultMultiplier: 1
         _sourceTag: eff.heal
         _selfHealOnNoTarget: 1
-    - rid: 7817893836777062681
+    - rid: 7817893847765353238
       type: {class: EffHeal, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
       data:
         Selection:

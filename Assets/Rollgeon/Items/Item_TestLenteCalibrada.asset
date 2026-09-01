@@ -609,6 +609,7 @@ MonoBehaviour:
   FamilyId: 
   VariantIndex: 0
   Type: 1
+  UsesActiveSlot: 1
   ActiveDie: 1
   ActiveFamily: 3
   PrecisionTarget: 4
@@ -617,21 +618,21 @@ MonoBehaviour:
     Label: Banda negativa
     PreConditions: []
     Effects:
-    - rid: 7817893837591020465
+    - rid: 7817893847765353227
     TargetSelector:
       rid: -2
   OnMixedBand:
     Label: Banda mixta
     PreConditions: []
     Effects:
-    - rid: 7817893837591020466
+    - rid: 7817893847765353228
     TargetSelector:
       rid: -2
   OnPositiveBand:
     Label: Banda positiva
     PreConditions: []
     Effects:
-    - rid: 7817893837591020467
+    - rid: 7817893847765353229
     TargetSelector:
       rid: -2
   OnActivate:
@@ -650,7 +651,7 @@ MonoBehaviour:
     RefIds:
     - rid: -2
       type: {class: , ns: , asm: }
-    - rid: 7817893837591020465
+    - rid: 7817893847765353227
       type: {class: EffHeal, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
       data:
         Selection:
@@ -691,7 +692,7 @@ MonoBehaviour:
         _diceResultMultiplier: 1
         _sourceTag: eff.heal
         _selfHealOnNoTarget: 1
-    - rid: 7817893837591020466
+    - rid: 7817893847765353228
       type: {class: EffHeal, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
       data:
         Selection:
@@ -732,7 +733,7 @@ MonoBehaviour:
         _diceResultMultiplier: 1
         _sourceTag: eff.heal
         _selfHealOnNoTarget: 1
-    - rid: 7817893837591020467
+    - rid: 7817893847765353229
       type: {class: EffHeal, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
       data:
         Selection:

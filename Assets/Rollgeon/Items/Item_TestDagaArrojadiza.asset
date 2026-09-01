@@ -519,27 +519,30 @@ MonoBehaviour:
   FamilyId: 
   VariantIndex: 0
   Type: 1
+  UsesActiveSlot: 1
   ActiveDie: 1
   ActiveFamily: 0
+  PrecisionTarget: 1
+  ControlParity: 0
   OnNegativeBand:
     Label: Banda negativa
     PreConditions: []
     Effects:
-    - rid: 7817893837591019755
+    - rid: 7817893847765353230
     TargetSelector:
       rid: -2
   OnMixedBand:
     Label: Banda mixta
     PreConditions: []
     Effects:
-    - rid: 7817893837591019756
+    - rid: 7817893847765353231
     TargetSelector:
       rid: -2
   OnPositiveBand:
     Label: Banda positiva
     PreConditions: []
     Effects:
-    - rid: 7817893837591019757
+    - rid: 7817893847765353232
     TargetSelector:
       rid: -2
   OnActivate:
@@ -558,7 +561,7 @@ MonoBehaviour:
     RefIds:
     - rid: -2
       type: {class: , ns: , asm: }
-    - rid: 7817893837591019755
+    - rid: 7817893847765353230
       type: {class: EffDealDamage, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
       data:
         Selection:
@@ -589,7 +592,7 @@ MonoBehaviour:
           rid: -2
         _readerMultiplier: 1
         _attackKind: 1
-    - rid: 7817893837591019756
+    - rid: 7817893847765353231
       type: {class: EffDealDamage, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
       data:
         Selection:
@@ -620,7 +623,7 @@ MonoBehaviour:
           rid: -2
         _readerMultiplier: 1
         _attackKind: 1
-    - rid: 7817893837591019757
+    - rid: 7817893847765353232
       type: {class: EffDealDamage, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
       data:
         Selection:
