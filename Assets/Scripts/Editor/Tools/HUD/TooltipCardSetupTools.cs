@@ -57,6 +57,20 @@ namespace Rollgeon.EditorTools.HUD
         private const float ParagraphFont = 26f;
 
 
+        /// <summary>
+        /// Aire entre el nombre y la familia en el renglón de identidad. Suelto y no pegado: con 8
+        /// la familia se leía como la última palabra del nombre.
+        /// </summary>
+        private const float FamilyGap = 24f;
+
+        /// <summary>
+        /// Cuánto se mete la columna de tarjetas para adentro de cada lado. Las tarjetas y el
+        /// header ocupan el MISMO ancho de rect, pero son placas 9-slice distintas (una de 128×72,
+        /// la otra de 90×90) y sus marcos no se dibujan igual de gruesos: al ojo la de abajo salía
+        /// más ancha. Esto es puro ajuste óptico — si sigue sin cerrar, se mueve este número.
+        /// </summary>
+        private const int CardsInset = 8;
+
         // Chico: vive en la fila del label, al lado de "PLAYER CURSE", no encabezando el título.
         private const float IconSize = 26f;
         private const float BadgeSize = 22f;
@@ -77,6 +91,11 @@ namespace Rollgeon.EditorTools.HUD
         // El marrón del párrafo del panel, para que la banda pertenezca al mismo tooltip.
         private static readonly Color PanelInk = new Color(0.14f, 0.10f, 0.07f);
         private static readonly Color PanelInkSoft = new Color(0.14f, 0.10f, 0.07f, 0.72f);
+
+        // La familia, al lado del nombre. Opaca y no el marrón al 72%: en letra chica el alfa la
+        // dejaba lavada sobre la placa hueso. Un tono distinto y no el del nombre para que se lea
+        // como etiqueta y no como parte del título.
+        private static readonly Color PanelInkFamily = new Color(0.36f, 0.26f, 0.17f);
 
         [MenuItem("Rollgeon/Tooltips/1 - Author Tooltip Card Prefab")]
         public static void AuthorCardPrefab()
@@ -225,6 +244,7 @@ namespace Rollgeon.EditorTools.HUD
 
                 var layout = Ensure<VerticalLayoutGroup>(cards.gameObject);
                 layout.spacing = 8;
+                layout.padding = new RectOffset(CardsInset, CardsInset, 0, 0);
                 layout.childAlignment = TextAnchor.UpperCenter;
                 layout.childControlWidth = true;
                 layout.childControlHeight = true;
@@ -767,7 +787,7 @@ namespace Rollgeon.EditorTools.HUD
                 // alineados abajo para que la familia, más chica, comparta la línea de base.
                 var titleRow = EnsureChildRect(identity, "TitleRow", Vector2.zero, Vector2.zero);
                 var titleRowLayout = Ensure<HorizontalLayoutGroup>(titleRow.gameObject);
-                titleRowLayout.spacing = 8;
+                titleRowLayout.spacing = FamilyGap;
                 titleRowLayout.childAlignment = TextAnchor.LowerLeft;
                 titleRowLayout.childControlWidth = true;
                 titleRowLayout.childControlHeight = true;
@@ -784,7 +804,8 @@ namespace Rollgeon.EditorTools.HUD
                 nameLabel.fontStyle = FontStyles.Bold;
                 nameLabel.textWrappingMode = TextWrappingModes.NoWrap;
 
-                var typeLabel = EnsureLabel(titleRow, "Type", 22f, TextAlignmentOptions.Left, PanelInkSoft);
+                var typeLabel = EnsureLabel(titleRow, "Type", 22f, TextAlignmentOptions.Left,
+                                            PanelInkFamily);
                 typeLabel.textWrappingMode = TextWrappingModes.NoWrap;
                 // El ancho fijo era de cuando vivía sola bajo el VLG; dentro de la fila volvería
                 // a imponer el ancho del panel entero.
@@ -828,6 +849,10 @@ namespace Rollgeon.EditorTools.HUD
                 {
                     paragraph.fontSize = ParagraphFont;
                     Ensure<LayoutElement>(paragraph.gameObject).preferredWidth = ContentWidth;
+
+                    // A la izquierda y no centrado: arranca en la misma vertical que el nombre de
+                    // arriba, y una frase de dos renglones centrada deja el segundo flotando.
+                    paragraph.alignment = TextAlignmentOptions.TopLeft;
                 }
 
                 return (so, p) =>
