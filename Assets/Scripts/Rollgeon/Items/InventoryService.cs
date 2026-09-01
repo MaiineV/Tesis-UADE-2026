@@ -114,6 +114,7 @@ namespace Rollgeon.Items
                 ApplyRollPoolBonus(item);
                 if (item.ActiveSlotBonus > 0) AddActiveSlotBonus(item.ActiveSlotBonus);
                 RegisterEnchantmentCostModifier(item);
+                RegisterEnchantmentWeightModifier(item);
             }
             else
             {
@@ -166,6 +167,7 @@ namespace Rollgeon.Items
                 RevertRollPoolBonus(item);
                 if (item.ActiveSlotBonus > 0) AddActiveSlotBonus(-item.ActiveSlotBonus);
                 UnregisterEnchantmentCostModifier(item);
+                UnregisterEnchantmentWeightModifier(item);
                 OnItemChanged?.Invoke(item, false);
                 EventManager.Trigger(EventName.OnItemRemoved, GetPlayerGuid(), itemId);
                 return true;
@@ -662,6 +664,29 @@ namespace Rollgeon.Items
         {
             if (item == null || !_registeredCostModifiers.Remove(item.ItemId)) return;
             if (ServiceLocator.TryGetService<IEnchantmentCostModifierService>(out var svc) && svc != null)
+                svc.Unregister(item.ItemId);
+        }
+
+        // ======================================================================
+        // Enchantment weight modifier (Moneda Maldita — mitad "caos")
+        // ======================================================================
+
+        private readonly HashSet<string> _registeredWeightModifiers = new();
+
+        private void RegisterEnchantmentWeightModifier(ItemSO item)
+        {
+            if (item.CursedEnchantmentWeightMultiplier <= 0f
+                || Mathf.Approximately(item.CursedEnchantmentWeightMultiplier, 1f)) return;
+            if (!ServiceLocator.TryGetService<IEnchantmentWeightModifierService>(out var svc) || svc == null)
+                return;
+            svc.Register(item.ItemId, item.CursedEnchantmentWeightMultiplier);
+            _registeredWeightModifiers.Add(item.ItemId);
+        }
+
+        private void UnregisterEnchantmentWeightModifier(ItemSO item)
+        {
+            if (item == null || !_registeredWeightModifiers.Remove(item.ItemId)) return;
+            if (ServiceLocator.TryGetService<IEnchantmentWeightModifierService>(out var svc) && svc != null)
                 svc.Unregister(item.ItemId);
         }
 

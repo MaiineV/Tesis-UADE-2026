@@ -1416,7 +1416,8 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 17566757088837632
-    m_Localized: Altar enchantments cost half as much.
+    m_Localized: Altar enchantments cost half, but cursed enchantments appear three
+      times as often.
     m_Metadata:
       m_Items: []
   - m_Id: 17566757822840832

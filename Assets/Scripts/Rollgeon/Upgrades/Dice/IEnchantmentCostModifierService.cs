@@ -7,8 +7,8 @@ namespace Rollgeon.Upgrades.Dice
     /// </summary>
     /// <remarks>
     /// La otra mitad de Moneda Maldita ("mayor probabilidad de encantamiento caos")
-    /// queda pendiente de que exista una categoría/tag de caos en los encantamientos —
-    /// hoy <c>WeightedEnchantment</c> no tiene taxonomía sobre la cual ponderar.
+    /// vive en <see cref="IEnchantmentWeightModifierService"/>: pondera los
+    /// encantamientos malditos (CapCursed / categoría Maldición) del pool del altar.
     /// </remarks>
     public interface IEnchantmentCostModifierService
     {

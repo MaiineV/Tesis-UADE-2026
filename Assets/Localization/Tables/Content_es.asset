@@ -1438,7 +1438,8 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 17566757088837632
-    m_Localized: Los encantamientos del altar cuestan la mitad.
+    m_Localized: "Los encantamientos del altar cuestan la mitad, pero los encantamientos
+      malditos aparecen tres veces m\xE1s seguido."
     m_Metadata:
       m_Items: []
   - m_Id: 17566757822840832

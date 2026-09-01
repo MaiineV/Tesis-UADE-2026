@@ -84,11 +84,15 @@ namespace Rollgeon.Upgrades.Dice
             int floorDepth,
             IReadOnlyCollection<EnchantmentSO> exclude)
         {
+            // Resuelto UNA vez por roll y aplicado idéntico en la acumulación y en el
+            // cursor — si difieren, la ruleta queda sesgada respecto del total.
+            float cursedMult = ResolveCursedWeightMultiplier();
+
             float total = 0f;
             for (int i = 0; i < Entries.Count; i++)
             {
                 if (!IsEligible(Entries[i], targetTypes, floorDepth, exclude)) continue;
-                total += Entries[i].Weight;
+                total += EffectiveWeight(Entries[i], cursedMult);
             }
             if (total <= 0f) return null;
 
@@ -97,7 +101,7 @@ namespace Rollgeon.Upgrades.Dice
             for (int i = 0; i < Entries.Count; i++)
             {
                 if (!IsEligible(Entries[i], targetTypes, floorDepth, exclude)) continue;
-                cursor += Entries[i].Weight;
+                cursor += EffectiveWeight(Entries[i], cursedMult);
                 if (pick <= cursor) return Entries[i].Enchantment;
             }
 
@@ -108,6 +112,31 @@ namespace Rollgeon.Upgrades.Dice
                     return Entries[i].Enchantment;
             }
             return null;
+        }
+
+        /// <summary>
+        /// Peso efectivo de la entry: el autorado, escalado por el multiplicador de
+        /// malditos cuando el encantamiento lo es (Moneda Maldita). El check de
+        /// elegibilidad (<c>Weight &lt;= 0</c>) sigue sobre el peso crudo.
+        /// </summary>
+        private static float EffectiveWeight(WeightedEnchantment entry, float cursedMult)
+        {
+            bool cursed = entry.Enchantment.IsCursed()
+                          || entry.Enchantment.Category == EnchantmentCategory.Maldicion;
+            return cursed ? entry.Weight * cursedMult : entry.Weight;
+        }
+
+        /// <summary>
+        /// Multiplicador de peso de malditos aportado por items. Degrada a 1 sin
+        /// servicio registrado (tests, tooling de editor) — mismo criterio permisivo
+        /// que <see cref="Rollgeon.Items.UniquePerRunGate"/>.
+        /// </summary>
+        private static float ResolveCursedWeightMultiplier()
+        {
+            return global::Patterns.ServiceLocator.TryGetService<IEnchantmentWeightModifierService>(out var svc)
+                   && svc != null
+                ? svc.ResolveCursedMultiplier()
+                : 1f;
         }
 
         private static bool IsEligible(

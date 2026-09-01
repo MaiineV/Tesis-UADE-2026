@@ -99,6 +99,13 @@ namespace Rollgeon.Items
         [MinValue(0.01f)]
         public float EnchantmentCostMultiplier = 1f;
 
+        [InfoBox("Multiplica el peso de los encantamientos malditos (CapCursed / categoría " +
+                 "Maldición) en el pool del altar mientras el item esté en el inventario. " +
+                 "Moneda Maldita: 3. 1 = sin efecto.")]
+        [ShowIf("@Type == ItemType.Passive")]
+        [MinValue(0.01f)]
+        public float CursedEnchantmentWeightMultiplier = 1f;
+
         [Title("Second Wind")]
         [InfoBox("Si está activo, la primera vez que el jugador llegaría a 0 HP queda con " +
                  "SecondWindRemainingHp en vez de morir, y el item SE CONSUME (se remueve " +
