@@ -427,8 +427,9 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
                 // cursor picando aire en las esquinas.
                 Collider = ColliderKind.Box,
 
-                AddHealthBar = true,
-                HealthBarOffset = fit.HealthBarOffset,
+                // La jefa muestra vida en la BossBarView del HUD; una barra world-space
+                // encima del pawn la duplicaría. El dado de la casa SÍ conserva la suya.
+                AddHealthBar = false,
 
                 // Las keys son los Mat_* compartidos a los que DiceBoss_Model.fbx remapea sus
                 // materiales por externalObjects. Cuáles son cuál sale del nombre que el FBX le

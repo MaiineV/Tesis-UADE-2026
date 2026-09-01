@@ -25,17 +25,23 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         // Constantes de estructura — replican GeneralDirector.prefab
         // ======================================================================
 
-        /// <summary>Sprite atlas de la barra: 3 sub-sprites (marco, fondo, relleno).</summary>
-        public const string HealthBarAtlasPath = "Assets/Art/UI/EnemiesHealthBar/EnemiesHealthbarv2.png";
+        /// <summary>Sprite atlas de la barra: 2 sub-sprites (pila de fichas, borde).</summary>
+        public const string HealthBarAtlasPath = "Assets/Art/UI/EnemiesHealthBar/EnemiesHealthbarv3.png";
 
-        /// <summary>Marco exterior — sub-sprite <c>_0</c> (94×18).</summary>
-        public const string HealthBarFrameSpriteName = "EnemiesHealthbarv2_0";
+        /// <summary>Borde siempre visible — sub-sprite <c>_1</c> (37×53).</summary>
+        public const string HealthBarFrameSpriteName = "EnemiesHealthbarv3_1";
 
-        /// <summary>Canaleta vacía — sub-sprite <c>_4</c> (85×3).</summary>
-        public const string HealthBarBackgroundSpriteName = "EnemiesHealthbarv2_4";
+        /// <summary>Pila de fichas que se vacía de arriba hacia abajo — sub-sprite <c>_0</c> (37×53).</summary>
+        public const string HealthBarFillSpriteName = "EnemiesHealthbarv3_0";
 
-        /// <summary>Barra que se consume — sub-sprite <c>_5</c> (85×3).</summary>
-        public const string HealthBarFillSpriteName = "EnemiesHealthbarv2_5";
+        /// <summary>Formato del HP: sólo la vida actual, estilo Mewgenics.</summary>
+        public const string HealthBarTextFormat = "{0}";
+
+        /// <summary>
+        /// Tinte del fondo: la misma pila de fichas apagada detrás del fill, para que la porción
+        /// de vida perdida siga mostrando la silueta completa.
+        /// </summary>
+        public static readonly Color HealthBarBackgroundTint = new Color(0.3f, 0.3f, 0.3f, 1f);
 
         /// <summary>Fuente pixel del proyecto — la misma que usa GeneralDirector.prefab.</summary>
         public const string HealthBarFontPath = "Assets/Fonts/m6x11plus SDF.asset";
@@ -45,10 +51,14 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         private const string ShaderName = "Rollgeon/PaletteCelLit";
 
         // Medidas de la barra, en unidades de mundo (el canvas es World Space y escala 1).
+        // BarSize respeta el aspect 37:53 de los sub-sprites v3 para que la pila no se deforme;
+        // el borde y el fondo comparten rect con el fill porque los sprites son del mismo tamaño.
+        // BarOffset negativo baja la barra por debajo del piso del canvas: el _offset serializado
+        // de cada prefab no se toca (varía por boss), pero la barra queda más pegada al enemigo.
         private static readonly Vector2 CanvasSize = new Vector2(3f, 1f);
-        private static readonly Vector2 FrameSize = new Vector2(3f, 0.5f);
-        private static readonly Vector2 BarSize = new Vector2(2.7982f, 0.2227f);
-        private static readonly Vector2 BarOffset = new Vector2(0.0067f, 0.0735f);
+        private static readonly Vector2 BarSize = new Vector2(0.44f, 0.63f);
+        private static readonly Vector2 BarOffset = new Vector2(0f, -0.3f);
+        private const float HealthTextFontSize = 0.35f;
 
         // Fallback de collider cuando el arte no reporta bounds usables (rig sin bake, prefab
         // vacío): mismas medidas que el capsule a mano de GeneralDirector.prefab.
@@ -446,15 +456,16 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         // ======================================================================
 
         /// <summary>
-        /// Replica la barra world-space de GeneralDirector.prefab: fondo + relleno + marco + texto,
-        /// con el <see cref="WorldSpaceHealthBar"/> cableado a sus piezas.
+        /// Barra world-space estilo Mewgenics: pila de fichas con fill vertical que se vacía de
+        /// arriba hacia abajo sobre la misma pila apagada de fondo, borde siempre visible encima
+        /// y el HP actual centrado, con el <see cref="WorldSpaceHealthBar"/> cableado a sus piezas.
         /// </summary>
         /// <remarks>
-        /// Sin <c>GraphicRaycaster</c> y con <c>raycastTarget = false</c> en las Images, a diferencia
-        /// del prefab de referencia: la barra flota sobre la cabeza del jefe y como raycast target se
-        /// come el hover que <c>CursorService</c> necesita para targetear al pawn.
+        /// Sin <c>GraphicRaycaster</c> y con <c>raycastTarget = false</c> en las Images: la barra
+        /// flota sobre la cabeza del jefe y como raycast target se come el hover que
+        /// <c>CursorService</c> necesita para targetear al pawn.
         /// </remarks>
-        private static WorldSpaceHealthBar BuildHealthBar(GameObject root, Vector3 offset)
+        internal static WorldSpaceHealthBar BuildHealthBar(GameObject root, Vector3 offset)
         {
             var canvasGo = new GameObject("Canvas");
             var canvasRect = canvasGo.AddComponent<RectTransform>();
@@ -480,8 +491,9 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
 
             var atlas = LoadHealthBarSprites();
 
-            // Orden de hijos = orden de dibujado: canaleta, relleno, marco encima, texto arriba.
-            CreateBarImage(canvasRect, "LifeBackground", atlas.background, filled: false);
+            // Orden de hijos = orden de dibujado: fondo apagado, relleno, borde encima, texto al
+            // frente.
+            CreateBackgroundImage(canvasRect, "LifeBackground", atlas.fill);
             var fill = CreateBarImage(canvasRect, "LifeFill", atlas.fill, filled: true);
             CreateFrameImage(canvasRect, "Frame", atlas.frame);
             var text = CreateHealthText(canvasRect);
@@ -490,7 +502,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
             var so = new SerializedObject(healthBar);
             SetRef(so, "_fillImage", fill);
             SetRef(so, "_hpText", text);
-            SetString(so, "_textFormat", "{0}/{1}");
+            SetString(so, "_textFormat", HealthBarTextFormat);
             SetRef(so, "_barRoot", canvasGo);
             SetVector3(so, "_offset", offset);
             so.ApplyModifiedPropertiesWithoutUndo();
@@ -498,7 +510,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
             return healthBar;
         }
 
-        private static Image CreateBarImage(RectTransform parent, string name, Sprite sprite, bool filled)
+        internal static Image CreateBarImage(RectTransform parent, string name, Sprite sprite, bool filled)
         {
             var go = new GameObject(name);
             var rect = go.AddComponent<RectTransform>();
@@ -516,9 +528,10 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
             image.raycastTarget = false;
             if (filled)
             {
+                // Origin Bottom: con fillAmount = HP ratio la pila se vacía de arriba hacia abajo.
                 image.type = Image.Type.Filled;
-                image.fillMethod = Image.FillMethod.Horizontal;
-                image.fillOrigin = (int)Image.OriginHorizontal.Left;
+                image.fillMethod = Image.FillMethod.Vertical;
+                image.fillOrigin = (int)Image.OriginVertical.Bottom;
                 image.fillAmount = 1f;
             }
             else
@@ -529,42 +542,38 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
             return image;
         }
 
-        private static Image CreateFrameImage(RectTransform parent, string name, Sprite sprite)
+        internal static Image CreateFrameImage(RectTransform parent, string name, Sprite sprite)
         {
-            var go = new GameObject(name);
-            var rect = go.AddComponent<RectTransform>();
-            rect.SetParent(parent, worldPositionStays: false);
-
-            rect.anchorMin = new Vector2(0.5f, 0f);
-            rect.anchorMax = new Vector2(0.5f, 0f);
-            rect.pivot = new Vector2(0.5f, 0f);
-            rect.anchoredPosition = Vector2.zero;
-            rect.sizeDelta = FrameSize;
-            rect.localScale = Vector3.one;
-
-            var image = go.AddComponent<Image>();
-            image.sprite = sprite;
-            image.type = Image.Type.Simple;
-            image.raycastTarget = false;
+            // Mismo rect que el fill: el borde v3_1 calza pixel-perfect sobre la pila v3_0.
+            var image = CreateBarImage(parent, name, sprite, filled: false);
             return image;
         }
 
-        private static TextMeshProUGUI CreateHealthText(RectTransform parent)
+        internal static Image CreateBackgroundImage(RectTransform parent, string name, Sprite sprite)
+        {
+            var image = CreateBarImage(parent, name, sprite, filled: false);
+            image.color = HealthBarBackgroundTint;
+            return image;
+        }
+
+        internal static TextMeshProUGUI CreateHealthText(RectTransform parent)
         {
             var go = new GameObject("HealthText");
             var rect = go.AddComponent<RectTransform>();
             rect.SetParent(parent, worldPositionStays: false);
 
-            rect.anchorMin = new Vector2(0.5f, 1f);
-            rect.anchorMax = new Vector2(0.5f, 1f);
-            rect.pivot = new Vector2(0.5f, 1f);
-            rect.anchoredPosition = Vector2.zero;
-            rect.sizeDelta = FrameSize;
+            // Centrado sobre la barra: la barra cuelga del borde inferior del canvas con pivot
+            // (0.5,0) y BarOffset de corrimiento, así que el centro visual queda a media BarSize.
+            rect.anchorMin = new Vector2(0.5f, 0f);
+            rect.anchorMax = new Vector2(0.5f, 0f);
+            rect.pivot = new Vector2(0.5f, 0.5f);
+            rect.anchoredPosition = new Vector2(BarOffset.x, BarOffset.y + BarSize.y * 0.5f);
+            rect.sizeDelta = BarSize;
             rect.localScale = Vector3.one;
 
             var text = go.AddComponent<TextMeshProUGUI>();
-            text.text = "0/0";
-            text.fontSize = 0.5f;
+            text.text = "0";
+            text.fontSize = HealthTextFontSize;
             text.fontStyle = FontStyles.Bold;
             text.alignment = TextAlignmentOptions.Center;
             text.color = Color.white;
@@ -581,35 +590,33 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
             return text;
         }
 
-        private static (Sprite frame, Sprite background, Sprite fill) LoadHealthBarSprites()
+        internal static (Sprite frame, Sprite fill) LoadHealthBarSprites()
         {
-            Sprite frame = null, background = null, fill = null;
+            Sprite frame = null, fill = null;
 
             var reps = AssetDatabase.LoadAllAssetRepresentationsAtPath(HealthBarAtlasPath);
             if (reps == null || reps.Length == 0)
             {
                 Debug.LogWarning($"[BossVisualWrapperBuilder] '{HealthBarAtlasPath}' no tiene " +
                                  $"sub-sprites — la barra sale sin gráficos.");
-                return (null, null, null);
+                return (null, null);
             }
 
             foreach (var rep in reps)
             {
                 if (!(rep is Sprite sprite)) continue;
                 if (sprite.name == HealthBarFrameSpriteName) frame = sprite;
-                else if (sprite.name == HealthBarBackgroundSpriteName) background = sprite;
                 else if (sprite.name == HealthBarFillSpriteName) fill = sprite;
             }
 
-            if (frame == null || background == null || fill == null)
+            if (frame == null || fill == null)
             {
                 Debug.LogWarning($"[BossVisualWrapperBuilder] Faltan sub-sprites en " +
-                                 $"'{HealthBarAtlasPath}' (marco={frame != null}, " +
-                                 $"fondo={background != null}, relleno={fill != null}). " +
-                                 $"¿Se reimportó el atlas con otro slicing?");
+                                 $"'{HealthBarAtlasPath}' (borde={frame != null}, " +
+                                 $"relleno={fill != null}). ¿Se reimportó el atlas con otro slicing?");
             }
 
-            return (frame, background, fill);
+            return (frame, fill);
         }
 
         // ======================================================================
@@ -800,7 +807,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         // Helpers
         // ======================================================================
 
-        private static void SetRef(SerializedObject so, string field, Object value)
+        internal static void SetRef(SerializedObject so, string field, Object value)
         {
             var prop = so.FindProperty(field);
             if (prop == null)
@@ -812,7 +819,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
             prop.objectReferenceValue = value;
         }
 
-        private static void SetString(SerializedObject so, string field, string value)
+        internal static void SetString(SerializedObject so, string field, string value)
         {
             var prop = so.FindProperty(field);
             if (prop != null) prop.stringValue = value;

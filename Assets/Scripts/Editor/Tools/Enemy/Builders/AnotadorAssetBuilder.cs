@@ -59,9 +59,6 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         /// <summary>FPS del stepping — el mismo del resto del roster animado.</summary>
         public const int SteppedAnimationFps = 8;
 
-        /// <summary>Altura del canvas de vida, copiada del canvas de <c>ChestMimic_Prefab</c>.</summary>
-        public static readonly Vector3 HealthBarOffset = new Vector3(0f, 2.5f, 0f);
-
         /// <summary>
         /// El root del FBX mira -Z y el wrapper fuerza identidad en el hijo de arte: sin esto el
         /// mímico entra a la sala de espaldas.
@@ -429,8 +426,9 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
                 EntityId = EntityId,
                 BossName = BossName,
                 ArtChildName = ArtChildName,
-                AddHealthBar = true,
-                HealthBarOffset = HealthBarOffset,
+                // El jefe muestra vida en la BossBarView del HUD; una barra world-space
+                // encima del pawn la duplicaría.
+                AddHealthBar = false,
                 // Capsule y no Box: el cofre es alto y angosto cuando abre la tapa.
                 Collider = ColliderKind.Capsule,
                 Retints = null,

@@ -75,13 +75,10 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         }
 
         [Test]
-        public void Spec_KeepsTheHealthBarWithinReachOfTheHat()
+        public void Spec_SkipsTheWorldSpaceBar_TheHudBossBarOwnsIt()
         {
-            Assert.IsTrue(_spec.AddHealthBar, "Sin barra el jefe no muestra vida en el mundo.");
-            Assert.Greater(_spec.HealthBarOffset.y, ArtHeight * 0.8f,
-                "La barra no puede quedar dentro del modelo.");
-            Assert.Less(_spec.HealthBarOffset.y, ArtHeight * 1.6f,
-                "Más arriba que esto y la barra flota despegada del sombrero.");
+            Assert.IsFalse(_spec.AddHealthBar,
+                "El jefe muestra vida en la BossBarView del HUD; la barra world-space la duplicaría.");
         }
 
         [Test]

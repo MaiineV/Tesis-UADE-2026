@@ -383,12 +383,6 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         public static readonly Color WaxShadow = new Color32(0x87, 0x71, 0x59, 0xFF);
 
         /// <summary>
-        /// Barra de vida más baja que el default de 3: el arte mide ~1.81 con galera, y a 3 quedaba
-        /// flotando sobre el sombrero.
-        /// </summary>
-        public static readonly Vector3 HealthBarOffset = new Vector3(0f, 2.4f, 0f);
-
-        /// <summary>
         /// Tope del radio del capsule. Los bounds de este rig dan ~0.95, que se come casi todo el
         /// tile vecino: el jugador tiene que poder clickear esas cuatro casillas para salir del
         /// fuego.
@@ -455,7 +449,9 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
                 OutputPrefabPath = VisualPrefabPath,
                 EntityId = EntityId,
                 BossName = "Croupier",
-                HealthBarOffset = HealthBarOffset,
+                // El jefe muestra vida en la BossBarView del HUD; una barra world-space
+                // encima del pawn la duplicaría.
+                AddHealthBar = false,
                 Retints = new Dictionary<string, MaterialRetint>
                 {
                     // Levita, galera y moño: el smoking.

@@ -126,12 +126,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         /// </summary>
         public const float BossColliderRadius = 0.5f;
 
-        /// <summary>Misma altura que el resto del roster (GeneralDirector, Healer, CardEnemy).</summary>
-        public static readonly Vector3 BossHealthBarOffset = new Vector3(0f, 3f, 0f);
-
-        /// <summary>
-        /// Más abajo que la del jefe: con las cuatro barras a la misma altura no se lee cuál es cuál.
-        /// </summary>
+        /// <summary>Altura de la barra del rodillo (la jefa no lleva barra world-space).</summary>
         public static readonly Vector3 ReelHealthBarOffset = new Vector3(0f, 2.2f, 0f);
 
         /// <summary>
@@ -444,8 +439,9 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
                 BossName = "Bandida",
                 MaterialsFolder = materialsFolder,
                 Collider = ColliderKind.Capsule,
-                AddHealthBar = true,
-                HealthBarOffset = BossHealthBarOffset,
+                // La jefa muestra vida en la BossBarView del HUD; una barra world-space
+                // encima del pawn la duplicaría. El rodillo SÍ conserva la suya.
+                AddHealthBar = false,
                 Retints = new Dictionary<string, MaterialRetint>
                 {
                     { "Mat_Gold", MaterialRetint.FromColors(CabinetLight, CabinetMid, CabinetShadow) },

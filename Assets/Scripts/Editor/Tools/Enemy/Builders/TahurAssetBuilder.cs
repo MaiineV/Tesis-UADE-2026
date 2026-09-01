@@ -47,9 +47,6 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         public const string BossName = "Tahur";
         public const string MaterialsFolder = "Assets/Rollgeon/Enemies/Materials/Tahur";
 
-        /// <summary>El arte mide ~1,81: con el default 3 de la utility la barra flota despegada.</summary>
-        public const float HealthBarHeight = 2.4f;
-
         public const string EntityId = "boss.tahur";
         public const string DisplayName = "El Tahúr";
 
@@ -318,7 +315,9 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
                 EntityId = EntityId,
                 BossName = BossName,
                 MaterialsFolder = MaterialsFolder,
-                HealthBarOffset = new Vector3(0f, HealthBarHeight, 0f),
+                // El jefe muestra vida en la BossBarView del HUD; una barra world-space
+                // encima del pawn la duplicaría.
+                AddHealthBar = false,
                 Retints = BuildRetints(),
             };
         }

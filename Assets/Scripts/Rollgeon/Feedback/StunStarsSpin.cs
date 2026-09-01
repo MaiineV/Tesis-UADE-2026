@@ -26,16 +26,26 @@ namespace Rollgeon.Feedback
         private float _bobFrequency = 1.5f;
 
         private Vector3 _restLocalPos;
+        private bool _restCaptured;
         private float _elapsed;
 
         private void OnEnable()
         {
-            _restLocalPos = transform.localPosition;
+            // La posición de reposo se captura recién en el primer Update: OnEnable corre
+            // DENTRO del Instantiate del binder, ANTES de que éste setee el offset sobre la
+            // cabeza — capturarla acá anclaba el bob a los pies del pawn.
+            _restCaptured = false;
             _elapsed = 0f;
         }
 
         private void Update()
         {
+            if (!_restCaptured)
+            {
+                _restLocalPos = transform.localPosition;
+                _restCaptured = true;
+            }
+
             _elapsed += Time.deltaTime;
             transform.Rotate(0f, _degreesPerSecond * Time.deltaTime, 0f, Space.Self);
 

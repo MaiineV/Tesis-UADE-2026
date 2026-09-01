@@ -167,7 +167,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         }
 
         [Test]
-        public void BossWrapper_HasTheGameplayComponentsAndTheHealthBar()
+        public void BossWrapper_HasTheGameplayComponents_ButNoWorldSpaceBar()
         {
             var pawn = _bossWrapper.GetComponent<EntityPawn>();
             var feedback = _bossWrapper.GetComponent<PawnMaterialFeedback>();
@@ -178,8 +178,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             Assert.IsNotNull(_bossWrapper.GetComponent<HitImpulseConsumer>(), "Falta HitImpulseConsumer.");
             Assert.Greater(GetArrayRefs(feedback, "_renderers").Count, 0,
                 "PawnMaterialFeedback quedó sin renderers cableados.");
-            Assert.IsNotNull(GetRef(pawn, "_healthBar"),
-                "EntityPawn._healthBar sin cablear: no hay barra que inicializar al spawnear el jefe.");
+            Assert.IsNull(GetRef(pawn, "_healthBar"),
+                "La jefa muestra vida en la BossBarView del HUD; la barra world-space la duplicaría.");
         }
 
         [Test]
@@ -285,11 +285,10 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         }
 
         [Test]
-        public void ReelWrapper_HangsItsBarLowerThanTheBossBar()
+        public void BossWrapper_SkipsTheWorldSpaceBar_TheHudBossBarOwnsIt()
         {
-            Assert.Less(BandidaAssetBuilder.ReelHealthBarOffset.y,
-                BandidaAssetBuilder.BossHealthBarOffset.y,
-                "La barra del rodillo dejó de estar más abajo que la del jefe.");
+            Assert.IsFalse(BandidaAssetBuilder.BuildBossWrapperSpec().AddHealthBar,
+                "La jefa muestra vida en la BossBarView del HUD; la barra world-space la duplicaría.");
         }
 
         [Test]

@@ -381,12 +381,6 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         public const string AccentMaterial = "Mat_Brown";
 
         /// <summary>
-        /// Altura de la barra de vida: con el jefe a ~2 de alto, bajarla la mete dentro de la
-        /// silueta.
-        /// </summary>
-        public static readonly Vector3 HealthBarOffset = new Vector3(0f, 3f, 0f);
-
-        /// <summary>
         /// Tope del radio del capsule. El mech está en T-pose y sus bounds dan ~1.5, que taparía las
         /// cuatro casillas vecinas — y el jugador tiene que poder clickearlas (las monedas del piso
         /// y los pinchos de la sala).
@@ -446,7 +440,9 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
                 EntityId = EntityId,
                 BossName = "Cajero",
                 MaterialsFolder = materialsFolder,
-                HealthBarOffset = HealthBarOffset,
+                // El jefe muestra vida en la BossBarView del HUD; una barra world-space
+                // encima del pawn la duplicaría.
+                AddHealthBar = false,
                 Retints = new Dictionary<string, MaterialRetint>
                 {
                     { ShellMaterial, ShellRetint },

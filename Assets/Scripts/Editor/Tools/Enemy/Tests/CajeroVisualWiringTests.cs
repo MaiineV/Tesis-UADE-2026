@@ -172,13 +172,12 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         }
 
         [Test]
-        public void Spec_HangsTheHealthBarWhereTheReferenceBossHasIt()
+        public void Spec_SkipsTheWorldSpaceBar_TheHudBossBarOwnsIt()
         {
             var spec = CajeroAssetBuilder.BuildWrapperSpec();
 
-            Assert.IsTrue(spec.AddHealthBar, "El jefe necesita barra world-space.");
-            Assert.AreEqual(3f, spec.HealthBarOffset.y, 0.001f,
-                "Misma altura que GeneralDirector.prefab, que anida este mismo personaje.");
+            Assert.IsFalse(spec.AddHealthBar,
+                "El jefe muestra vida en la BossBarView del HUD; la barra world-space la duplicaría.");
         }
 
         [Test]
