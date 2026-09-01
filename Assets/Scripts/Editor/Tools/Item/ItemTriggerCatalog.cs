@@ -146,6 +146,10 @@ namespace Rollgeon.Editor.Tools.Item
                 "El golpe acertó la debilidad del enemigo.", EventName.OnWeaknessHit),
 
             // --- Recursos ------------------------------------------------------
+            Bus("health.changed", "Cuando cambia tu vida",
+                "Daño o cura sobre el jugador, con la vida ya escrita. Lo emite " +
+                "PlayerHealthEventBridge — args: [jugador, vida actual, máximo].",
+                EventName.OnPlayerHealthChanged),
             Bus("shield.changed", "Cuando cambia tu escudo",
                 "Sube o baja.", EventName.OnShieldChanged),
             Bus("gold.changed", "Cuando cambia tu oro",

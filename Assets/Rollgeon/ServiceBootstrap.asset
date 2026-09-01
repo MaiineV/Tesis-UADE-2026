@@ -81,6 +81,7 @@ MonoBehaviour:
     - {fileID: 11400000, guid: b73c27342881cff449c4c3722981fcd1, type: 2}
     - {fileID: 11400000, guid: f1684290dea0e3442b62073a190fa227, type: 2}
     - {fileID: 11400000, guid: 8d44fdd0f99bf9d49aa3b73402d6e64a, type: 2}
+    - {fileID: 11400000, guid: 2100753cdfa1678479b86949d13a0129, type: 2}
     SerializedBytesString: 
     Prefab: {fileID: 0}
     PrefabModificationsReferencedUnityObjects: []
@@ -148,7 +149,7 @@ MonoBehaviour:
         Rollgeon]], mscorlib
     - Name: 
       Entry: 12
-      Data: 67
+      Data: 68
     - Name: 
       Entry: 7
       Data: 3|Rollgeon.Attributes.AttributesManagerBootstrap, Rollgeon
@@ -383,6 +384,9 @@ MonoBehaviour:
     - Name: 
       Entry: 10
       Data: 64
+    - Name: 
+      Entry: 10
+      Data: 65
     - Name: 
       Entry: 13
       Data: 
