@@ -1142,7 +1142,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 16873829854801921
-    m_Localized: "Corre al jugador m\xE1s cercano y pega de frente."
+    m_Localized: Corre hacia vos y pega de frente.
     m_Metadata:
       m_Items: []
   - m_Id: 16873829854801922

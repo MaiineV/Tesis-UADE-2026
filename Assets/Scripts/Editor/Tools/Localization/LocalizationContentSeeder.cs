@@ -696,8 +696,8 @@ namespace Rollgeon.EditorTools.Localization
                 "Cura a los suyos antes que pegarte.",
                 "Heals its allies before it hits you.");
             Content("CardEnemy01.brief",
-                "Corre al jugador más cercano y pega de frente.",
-                "Rushes the closest player and swings up close.");
+                "Corre hacia vos y pega de frente.",
+                "Runs straight at you and swings up close.");
             Content("RangedEnemy01.brief",
                 "Dispara de lejos; cortá la línea o cerrale la distancia.",
                 "Shoots from afar; break the line or close the gap.");
