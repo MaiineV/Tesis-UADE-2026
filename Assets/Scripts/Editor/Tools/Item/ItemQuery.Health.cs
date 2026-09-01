@@ -103,8 +103,22 @@ namespace Rollgeon.Editor.Tools.Item
 
                 if (item.PassiveHooks == null || item.PassiveHooks.Count == 0)
                 {
-                    findings.Add(new CatalogFinding(
-                        FindingSeverity.Warning, $"'{label}' es Passive sin hooks — nunca se dispara.", item));
+                    // Un pasivo sin hooks es válido si vive de las perillas de lifecycle
+                    // de ItemSO (Feature#0065): SecondWind, RollPoolBonus, ActiveSlotBonus,
+                    // multiplicador del altar u override de daño base. Solo sin NADA de
+                    // eso es un item que nunca hace nada.
+                    bool hasLifecycleKnob =
+                        item.SecondWind
+                        || item.RollPoolBonus > 0
+                        || item.ActiveSlotBonus > 0
+                        || (item.EnchantmentCostMultiplier > 0f
+                            && !UnityEngine.Mathf.Approximately(item.EnchantmentCostMultiplier, 1f))
+                        || (item.BaseDamageOverride != null && item.BaseDamageOverride.Enabled);
+                    if (!hasLifecycleKnob)
+                    {
+                        findings.Add(new CatalogFinding(
+                            FindingSeverity.Warning, $"'{label}' es Passive sin hooks — nunca se dispara.", item));
+                    }
                     continue;
                 }
 

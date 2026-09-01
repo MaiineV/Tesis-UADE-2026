@@ -1432,6 +1432,39 @@ MonoBehaviour:
     m_Localized: "+30 de da\xF1o en el combo Full House."
     m_Metadata:
       m_Items: []
+  - m_Id: 17566757004951552
+    m_Localized: Moneda Maldita
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17566757088837632
+    m_Localized: Los encantamientos del altar cuestan la mitad.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17566757822840832
+    m_Localized: Corredor Incansable
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17566757822840833
+    m_Localized: "+5 de da\xF1o por cada casilla recorrida antes de atacar."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17566758561038336
+    m_Localized: Piedra de Guardia
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17566758561038337
+    m_Localized: "+15 de da\xF1o si no te moviste este turno."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17566759316013056
+    m_Localized: Furia Contenida
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17566759316013057
+    m_Localized: "Tu da\xF1o base pasa a 0 y crece por cada ronda sin recibir da\xF1o.
+      Recibir da\xF1o lo reinicia."
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

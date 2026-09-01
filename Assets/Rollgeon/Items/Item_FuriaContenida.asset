@@ -10,7 +10,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: c2ed187442a66944597b1888061baf1a, type: 3}
-  m_Name: Item_MochilaGrande
+  m_Name: Item_FuriaContenida
   m_EditorClassIdentifier: Rollgeon::Rollgeon.Items.ItemSO
   serializationData:
     SerializedFormat: 2
@@ -39,9 +39,15 @@ MonoBehaviour:
       Data: 1|Rollgeon.Items.BaseDamageOverrideDef, Rollgeon
     - Name: Enabled
       Entry: 5
-      Data: false
+      Data: true
     - Name: BaseValue
-      Entry: 6
+      Entry: 7
+      Data: 2|Rollgeon.Effects.Readers.ReadCleanTurnStreakScaled, Rollgeon
+    - Name: PerTurnAmount
+      Entry: 4
+      Data: 2.5
+    - Name: 
+      Entry: 8
       Data: 
     - Name: Priority
       Entry: 3
@@ -51,13 +57,13 @@ MonoBehaviour:
       Data: 
     - Name: OnActivate
       Entry: 7
-      Data: 2|Rollgeon.Effects.EffectData, Rollgeon
+      Data: 3|Rollgeon.Effects.EffectData, Rollgeon
     - Name: Label
       Entry: 1
       Data: Effect Group
     - Name: PreConditions
       Entry: 7
-      Data: 3|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
+      Data: 4|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
         Rollgeon]], mscorlib
     - Name: 
       Entry: 12
@@ -70,7 +76,7 @@ MonoBehaviour:
       Data: 
     - Name: Effects
       Entry: 7
-      Data: 4|System.Collections.Generic.List`1[[Rollgeon.Effects.IEffect, Rollgeon]],
+      Data: 5|System.Collections.Generic.List`1[[Rollgeon.Effects.IEffect, Rollgeon]],
         mscorlib
     - Name: 
       Entry: 12
@@ -87,17 +93,18 @@ MonoBehaviour:
     - Name: 
       Entry: 8
       Data: 
-  ItemId: mochila.grande
-  DisplayName: Mochila Grande
-  Description: "+1 slot de \xEDtems activos."
-  Icon: {fileID: 1808964844, guid: ee12da05509c7a74686b1e1cc11cbd3e, type: 3}
-  Rarity: 3
+  ItemId: furia.contenida
+  DisplayName: Furia Contenida
+  Description: "Tu da\xF1o base pasa a 0 y crece por cada ronda sin recibir da\xF1o.
+    Recibir da\xF1o lo reinicia."
+  Icon: {fileID: 0}
+  Rarity: 4
   FamilyId: 
   VariantIndex: 0
   Type: 0
-  UniquePerRun: 0
+  UniquePerRun: 1
   RollPoolBonus: 0
-  ActiveSlotBonus: 1
+  ActiveSlotBonus: 0
   EnchantmentCostMultiplier: 1
   SecondWind: 0
   SecondWindRemainingHp: 1

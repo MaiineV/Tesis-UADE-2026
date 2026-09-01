@@ -10,7 +10,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: c2ed187442a66944597b1888061baf1a, type: 3}
-  m_Name: Item_MochilaGrande
+  m_Name: Item_MonedaMaldita
   m_EditorClassIdentifier: Rollgeon::Rollgeon.Items.ItemSO
   serializationData:
     SerializedFormat: 2
@@ -87,18 +87,18 @@ MonoBehaviour:
     - Name: 
       Entry: 8
       Data: 
-  ItemId: mochila.grande
-  DisplayName: Mochila Grande
-  Description: "+1 slot de \xEDtems activos."
-  Icon: {fileID: 1808964844, guid: ee12da05509c7a74686b1e1cc11cbd3e, type: 3}
+  ItemId: moneda.maldita
+  DisplayName: Moneda Maldita
+  Description: Los encantamientos del altar cuestan la mitad.
+  Icon: {fileID: 0}
   Rarity: 3
   FamilyId: 
   VariantIndex: 0
   Type: 0
-  UniquePerRun: 0
+  UniquePerRun: 1
   RollPoolBonus: 0
-  ActiveSlotBonus: 1
-  EnchantmentCostMultiplier: 1
+  ActiveSlotBonus: 0
+  EnchantmentCostMultiplier: 0.5
   SecondWind: 0
   SecondWindRemainingHp: 1
   OnActivate:
