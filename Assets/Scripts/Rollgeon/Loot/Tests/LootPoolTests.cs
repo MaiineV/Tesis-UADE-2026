@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using NUnit.Framework;
+using Patterns;
 using Rollgeon.Items;
 using UnityEngine;
 
@@ -172,6 +173,58 @@ namespace Rollgeon.Loot.Tests
             Assert.AreEqual(2, preview.Count);
             Assert.AreSame(itemA, preview[0]);
             Assert.AreSame(itemB, preview[1]);
+        }
+
+        [Test]
+        public void GetPreview_ShouldExcludeGateBlockedItems_WhenInventoryOwnsThem()
+        {
+            // Arrange — un UniquePerRun ya poseído no debe aparecer en el reel.
+            var owned = NewItem("loot.owned", ItemRarity.Common);
+            owned.UniquePerRun = true;
+            var free = NewItem("loot.free", ItemRarity.Common);
+            var pool = NewPool(new[] { owned, free }, new RarityWeights());
+
+            ServiceLocator.Clear();
+            var inv = new OwnershipOnlyInventory("loot.owned");
+            ServiceLocator.AddService<IInventoryService>(inv, ServiceScope.Global);
+            try
+            {
+                // Act
+                var preview = pool.GetPreview();
+
+                // Assert
+                Assert.AreEqual(1, preview.Count);
+                Assert.AreSame(free, preview[0]);
+            }
+            finally
+            {
+                ServiceLocator.Clear();
+            }
+        }
+
+        private sealed class OwnershipOnlyInventory : IInventoryService
+        {
+            private readonly string _ownedId;
+            public OwnershipOnlyInventory(string ownedId) { _ownedId = ownedId; }
+
+            public IReadOnlyList<InventorySlot> PassiveItems => System.Array.Empty<InventorySlot>();
+            public IReadOnlyList<InventorySlot> ActiveItems => System.Array.Empty<InventorySlot>();
+            public int MaxActiveSlots => 4;
+            public void AddActiveSlotBonus(int amount) { }
+
+#pragma warning disable CS0067
+            public event System.Action<ItemSO, bool> OnItemChanged;
+#pragma warning restore CS0067
+
+            public bool AddItem(ItemSO item) => false;
+            public bool RemoveItem(string itemId) => false;
+            public bool HasItem(string itemId) => itemId == _ownedId;
+            public ItemSO GetItem(string itemId) => null;
+            public bool ActivateItem(int i, Rollgeon.Effects.EffectContext ctx) => false;
+            public ItemActivationBlock CanActivateItem(int i, Rollgeon.Effects.EffectContext ctx)
+                => ItemActivationBlock.InvalidSlot;
+            public int GetComboDamageBonusPreview(string comboId) => 0;
+            public void TickCooldowns() { }
         }
 
         private List<ItemSO> RollSequence(LootPoolSO pool, int seed, int count)

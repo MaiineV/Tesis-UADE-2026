@@ -34,6 +34,13 @@ namespace Rollgeon.Items
         [MinValue(0)]
         public int VariantIndex;
 
+        [InfoBox("Opt-in: tener CUALQUIER item de esta familia en el inventario bloquea este " +
+                 "item en tiendas y loot (incluye duplicados de si mismo). Para pares " +
+                 "excluyentes por GDD (Corazon/Tesoro de la Fortuna). NO activar en familias " +
+                 "de variantes que deben convivir (corona, botas, coraza...).")]
+        [ShowIf("@!string.IsNullOrEmpty(FamilyId)")]
+        public bool FamilyExclusive;
+
         [Title("Type")]
         [EnumToggleButtons]
         public ItemType Type;
