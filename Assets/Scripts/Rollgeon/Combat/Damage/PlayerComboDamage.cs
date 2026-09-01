@@ -17,7 +17,8 @@ namespace Rollgeon.Combat.Damage
     {
         Damage,
         Shield,
-        Heal
+        Heal,
+        ForceDoor
     }
 
     /// <summary>

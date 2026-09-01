@@ -35,6 +35,7 @@ namespace Rollgeon.Combat.Damage
         private const string WeakCol = "c678dd";     // violeta — weakness
         private const string ShieldCol = "56b6c2";   // cyan — escudo
         private const string HealCol = "5fd068";     // verde — curación
+        private const string DoorCol = "d19a66";     // ocre — check de forzar puerta
 
         /// <summary>
         /// Desglosa la fórmula v3 compartida del combo del jugador desde el
@@ -51,12 +52,14 @@ namespace Rollgeon.Combat.Damage
             {
                 PlayerComboFormulaKind.Shield => ShieldCol,
                 PlayerComboFormulaKind.Heal => HealCol,
+                PlayerComboFormulaKind.ForceDoor => DoorCol,
                 _ => BandCompose,
             };
             string kindNoun = b.Kind switch
             {
                 PlayerComboFormulaKind.Shield => "escudo",
                 PlayerComboFormulaKind.Heal => "curación",
+                PlayerComboFormulaKind.ForceDoor => "check",
                 _ => "daño",
             };
             var sb = new StringBuilder(640);
@@ -64,6 +67,7 @@ namespace Rollgeon.Combat.Damage
             {
                 PlayerComboFormulaKind.Shield => Band(ShieldCol, "SHIELD · COMPOSICIÓN — escudo base del PLAYER"),
                 PlayerComboFormulaKind.Heal => Band(HealCol, "HEAL · COMPOSICIÓN — curación base del PLAYER"),
+                PlayerComboFormulaKind.ForceDoor => Band(DoorCol, "FORCE DOOR · COMPOSICIÓN — check del PLAYER"),
                 _ => Band(BandCompose, "DMG · COMPOSICIÓN — daño base del PLAYER"),
             });
             sb.Append("  ").Append(Col(Label, "src=" + Short(sourceId)));
@@ -106,6 +110,7 @@ namespace Rollgeon.Combat.Damage
               {
                   PlayerComboFormulaKind.Shield => "   → se suma al atributo Shield (EffAddShield)",
                   PlayerComboFormulaKind.Heal => "   → entra al HealPipeline como BaseHeal",
+                  PlayerComboFormulaKind.ForceDoor => "   → se compara contra el threshold de la puerta",
                   _ => "   → entra al DamagePipeline como BaseDamage",
               }));
 
