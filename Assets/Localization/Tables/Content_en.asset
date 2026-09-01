@@ -1095,7 +1095,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 16155814888665088
-    m_Localized: Burns the room and teleports when someone reaches him.
+    m_Localized: Burns the room and teleports when you reach him.
     m_Metadata:
       m_Items: []
   - m_Id: 16825653756096512

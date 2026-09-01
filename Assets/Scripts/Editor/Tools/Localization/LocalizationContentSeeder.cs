@@ -669,7 +669,7 @@ namespace Rollgeon.EditorTools.Localization
             // del parrafo) a proposito — el panel no lleva lore.
             Content("boss.croupier.brief",
                 "Quema la sala y se teletransporta cuando lo alcanzás.",
-                "Burns the room and teleports when someone reaches him.");
+                "Burns the room and teleports when you reach him.");
             Content("boss.cashier.brief",
                 "Pega más fuerte cuanto más oro llevás. Las fichas que dejás vencer se las queda.",
                 "Hits harder the more gold you carry. Chips you let expire, he keeps.");
