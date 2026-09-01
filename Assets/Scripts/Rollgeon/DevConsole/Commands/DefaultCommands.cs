@@ -31,6 +31,7 @@ namespace Rollgeon.DevConsole.Commands
             r.Register(new EquipActiveItemCommand());
             r.Register(new UnequipActiveItemCommand());
             r.Register(new ActiveItemStatusCommand());
+            r.Register(new EnchantActiveItemCommand());
 
             // Dados
             r.Register(new DiceCommand());

@@ -60,6 +60,70 @@ namespace Rollgeon.DevConsole.Commands
     }
 
     /// <summary>
+    /// Aplica un encantamiento al item equipado, pisando el que hubiera. Sin argumentos
+    /// lista el pool disponible.
+    /// </summary>
+    public sealed class EnchantActiveItemCommand : DevCommandBase
+    {
+        private static readonly ArgSpec[] _args =
+        {
+            new ArgSpec("enchantmentId", ArgKind.String, optional: true),
+        };
+
+        public override string Name => "enchantactive";
+        public override string Description => "Encanta el item activo equipado. Sin args lista el pool.";
+        public override IReadOnlyList<ArgSpec> Args => _args;
+
+        public override CommandResult Execute(IReadOnlyList<string> args, IDevConsoleContext ctx)
+        {
+            if (!RequireService<IEquippedActiveItemService>(ctx, out var equipped, out var e1)) return e1;
+
+            var pool = ResolvePool();
+            if (pool == null || pool.Count == 0)
+                return CommandResult.Fail("No hay pool de encantamientos cableado en el bootstrap.");
+
+            if (args.Count == 0)
+            {
+                var lines = new List<string>();
+                foreach (var e in pool)
+                    if (e != null) lines.Add($"  {e.EnchantmentId} — {e.DisplayName}: {e.DescribeEffect()}");
+                return CommandResult.Ok("Pool de encantamientos:\n" + string.Join("\n", lines));
+            }
+
+            ActiveItemEnchantmentSO picked = null;
+            foreach (var e in pool)
+                if (e != null && string.Equals(e.EnchantmentId, args[0], System.StringComparison.OrdinalIgnoreCase))
+                { picked = e; break; }
+
+            if (picked == null) return CommandResult.Fail($"Encantamiento desconocido: '{args[0]}'.");
+            if (!equipped.HasItem) return CommandResult.Fail("No hay item activo equipado.");
+
+            var previous = equipped.Enchantment;
+            equipped.ApplyEnchantment(picked);
+
+            string tail = previous != null ? $" (pisó a {previous.EnchantmentId})" : string.Empty;
+            return CommandResult.Ok($"{equipped.Current.DisplayName} ← {picked.DisplayName}: {picked.DescribeEffect()}{tail}.");
+        }
+
+        /// <summary>
+        /// El pool vive en el bootstrap, que no se registra en el ServiceLocator. Se lo
+        /// busca por AssetDatabase en editor; en build el comando no existe.
+        /// </summary>
+        private static IReadOnlyList<ActiveItemEnchantmentSO> ResolvePool()
+        {
+#if UNITY_EDITOR
+            foreach (var guid in UnityEditor.AssetDatabase.FindAssets("t:" + nameof(ActiveItemServiceBootstrap)))
+            {
+                var path = UnityEditor.AssetDatabase.GUIDToAssetPath(guid);
+                var boot = UnityEditor.AssetDatabase.LoadAssetAtPath<ActiveItemServiceBootstrap>(path);
+                if (boot != null) return boot.EnchantmentPool;
+            }
+#endif
+            return null;
+        }
+    }
+
+    /// <summary>
     /// Estado del slot: que hay equipado, su dado y familia, el reparto de bandas y por
     /// que esta bloqueado ahora mismo.
     /// </summary>
@@ -76,18 +140,26 @@ namespace Rollgeon.DevConsole.Commands
 
             var item = equipped.Current;
             int faces = item.ActiveDie.MaxFace();
-            var neg = ActiveItemBands.RangeOf(ActiveItemBand.Negative, faces);
-            var mix = ActiveItemBands.RangeOf(ActiveItemBand.Mixed, faces);
-            var pos = ActiveItemBands.RangeOf(ActiveItemBand.Positive, faces);
 
             string gate = "sin servicio de activacion";
             if (ServiceLocator.TryGetService<IActiveItemActivationService>(out var act) && act != null)
                 gate = act.CanActivate().ToString();
 
-            return CommandResult.Ok(
-                $"{item.DisplayName} ({item.ItemId}) — d{faces}, familia {item.ActiveFamily}\n" +
-                $"  negativa {neg.Min}-{neg.Max} | mixta {mix.Min}-{mix.Max} | positiva {pos.Min}-{pos.Max}\n" +
-                $"  gate: {gate}");
+            string ench = equipped.Enchantment == null
+                ? "sin encantamiento"
+                : $"{equipped.Enchantment.DisplayName} — {equipped.Enchantment.DescribeEffect()}"
+                  + (equipped.Enchantment.IsLimited ? $" [{equipped.EnchantmentUsesLeft} usos]" : string.Empty);
+
+            // Caras y no rangos: en Precision y Control las bandas no son contiguas.
+            var text = new System.Text.StringBuilder();
+            text.AppendLine($"{item.DisplayName} ({item.ItemId}) — d{faces}, familia {item.ActiveFamily}");
+            text.AppendLine($"  negativa {ActiveItemBands.DescribeFaces(ActiveItemBand.Negative, item)}"
+                          + $" | mixta {ActiveItemBands.DescribeFaces(ActiveItemBand.Mixed, item)}"
+                          + $" | positiva {ActiveItemBands.DescribeFaces(ActiveItemBand.Positive, item)}");
+            text.AppendLine($"  {ench}");
+            text.Append($"  gate: {gate}");
+
+            return CommandResult.Ok(text.ToString());
         }
     }
 }
