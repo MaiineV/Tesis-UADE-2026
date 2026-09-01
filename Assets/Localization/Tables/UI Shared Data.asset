@@ -859,6 +859,14 @@ MonoBehaviour:
     m_Key: action.reject.action_used_turn
     m_Metadata:
       m_Items: []
+  - m_Id: 17355423305682944
+    m_Key: action.reject.no_valid_target
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17355423393763328
+    m_Key: action.reject.no_active_item
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

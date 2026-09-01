@@ -905,6 +905,14 @@ MonoBehaviour:
     m_Localized: Ya usaste un objeto asi este turno.
     m_Metadata:
       m_Items: []
+  - m_Id: 17355423305682944
+    m_Localized: Sin objetivo valido.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17355423393763328
+    m_Localized: Sin item equipado.
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []
