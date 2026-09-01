@@ -58,10 +58,11 @@ namespace Rollgeon.UI.HUD
         private UITooltipTrigger _tooltip;
 
         [Title("Ficha — arte")]
-        [InfoBox("Un sprite por DiceType, en el orden del enum: D4, D6, D8, D10, D12, " +
-                 "D20, D3. Si falta el del dado del item, el icono se apaga.")]
+        [InfoBox("La silueta del dado sale del DiceShapeCatalog, el mismo que usan la mesa " +
+                 "de dados y los slots del modo classic. Vacio = se resuelve desde " +
+                 "Resources/Dice/DiceShapeCatalog.")]
         [SerializeField]
-        private Sprite[] _dieSprites = new Sprite[7];
+        private Rollgeon.Dice.DiceShapeCatalogSO _shapeCatalog;
 
         [SerializeField]
         [Tooltip("PLACEHOLDER: color de la ficha. Va a salir del pilar de combate del " +
@@ -325,12 +326,19 @@ namespace Rollgeon.UI.HUD
             _dieIcon.enabled = sprite != null;
         }
 
+        /// <summary>
+        /// Silueta del dado desde el catalogo compartido. No se guarda un array propio en
+        /// el prefab: el mapeo DiceType -> sprite ya vive en DiceShapeCatalogSO y
+        /// duplicarlo lo dejaria desincronizado cuando el arte cambie.
+        /// </summary>
         private Sprite SpriteFor(DiceType die)
         {
-            int index = (int)die;
-            if (_dieSprites == null || index < 0 || index >= _dieSprites.Length) return null;
-            return _dieSprites[index];
+            if (_resolvedCatalog == null)
+                _resolvedCatalog = Rollgeon.Dice.DiceShapeCatalogSO.Resolve(_shapeCatalog);
+            return _resolvedCatalog != null ? _resolvedCatalog.GetShape(die) : null;
         }
+
+        private Rollgeon.Dice.DiceShapeCatalogSO _resolvedCatalog;
 
         /// <summary>
         /// Rojo de "no lo podes usar ahora", el mismo que usan los chips de accion.
