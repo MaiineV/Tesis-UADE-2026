@@ -8,8 +8,21 @@ namespace Rollgeon.Items.Active
     {
         public readonly ItemSO Item;
 
-        /// <summary>Cara obtenida en el dado propio del item.</summary>
+        /// <summary>
+        /// Cara final, ya con el ajuste del encantamiento. Es la que decide la banda y la
+        /// que muestra la ficha.
+        /// </summary>
         public readonly int Roll;
+
+        /// <summary>
+        /// Cara cruda del dado, antes del encantamiento. Igual a <see cref="Roll"/> si no
+        /// hubo ajuste. El feedback la necesita para poder mostrar que el encantamiento
+        /// intervino en vez de que el dado salio distinto.
+        /// </summary>
+        public readonly int RawRoll;
+
+        /// <summary><c>true</c> si el encantamiento modifico el resultado.</summary>
+        public bool WasEnchanted => RawRoll != Roll;
 
         /// <summary>Banda en la que cayo <see cref="Roll"/>.</summary>
         public readonly ActiveItemBand Band;
@@ -17,12 +30,14 @@ namespace Rollgeon.Items.Active
         /// <summary><c>true</c> si el grupo de efectos de la banda corrio sin cortar.</summary>
         public readonly bool EffectsSucceeded;
 
-        public ActiveItemActivationResult(ItemSO item, int roll, ActiveItemBand band, bool effectsSucceeded)
+        public ActiveItemActivationResult(ItemSO item, int roll, ActiveItemBand band,
+            bool effectsSucceeded, int rawRoll)
         {
             Item = item;
             Roll = roll;
             Band = band;
             EffectsSucceeded = effectsSucceeded;
+            RawRoll = rawRoll;
         }
     }
 

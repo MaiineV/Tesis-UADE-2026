@@ -39,6 +39,33 @@ namespace Rollgeon.Items.Active
         ItemSO Clear();
 
         /// <summary>
+        /// Encantamiento aplicado al item equipado, o <c>null</c>. Maximo uno.
+        /// </summary>
+        ActiveItemEnchantmentSO Enchantment { get; }
+
+        /// <summary>
+        /// Usos que le quedan al encantamiento en este combate. <see cref="int.MaxValue"/>
+        /// si no tiene tope. Se resetea al empezar cada combate.
+        /// </summary>
+        int EnchantmentUsesLeft { get; }
+
+        /// <summary>
+        /// Aplica <paramref name="enchantment"/> al item equipado, <b>pisando</b> el que
+        /// hubiera. No coexisten y no hay opcion de conservar el viejo.
+        /// </summary>
+        /// <returns>
+        /// <c>false</c> si el slot esta vacio — un encantamiento sin item no tiene donde
+        /// vivir.
+        /// </returns>
+        bool ApplyEnchantment(ActiveItemEnchantmentSO enchantment);
+
+        /// <summary>
+        /// Descuenta un uso del encantamiento. No-op si no tiene tope o si no queda
+        /// ninguno.
+        /// </summary>
+        void ConsumeEnchantmentUse();
+
+        /// <summary>
         /// Disparado tras cada cambio del slot: <c>(equipado, descartado)</c>. Cualquiera
         /// de los dos puede ser <c>null</c>.
         /// </summary>

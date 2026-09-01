@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using Patterns;
 using Rollgeon.Combat.Rolls;
+using Rollgeon.Dice;
 using Rollgeon.Effects;
 using Rollgeon.Effects.Selection;
 using Rollgeon.Grid;
@@ -198,7 +199,13 @@ namespace Rollgeon.Items.Active
                 return null;
             }
 
-            int roll = _roller.Roll(item.ActiveDie);
+            int rawRoll = _roller.Roll(item.ActiveDie);
+
+            // §14, orden de operaciones: el encantamiento ajusta el resultado crudo y
+            // RECIEN despues se determina la banda. Al reves, el ajuste no cambiaria
+            // nada.
+            int roll = ApplyEnchantment(rawRoll, item.ActiveDie.MaxFace());
+
             // Por item y no por dado: Precision y Control tienen mecanismo propio.
             var band = ActiveItemBands.Resolve(roll, item);
 
@@ -209,9 +216,35 @@ namespace Rollgeon.Items.Active
             // se reporta es si corrio entera, para el feedback.
             bool ok = effects.TryExecute(ctx, BuildPreCtx(ctx));
 
-            var result = new ActiveItemActivationResult(item, roll, band, ok);
+            var result = new ActiveItemActivationResult(item, roll, band, ok, rawRoll);
             OnResolved?.Invoke(result);
             return result;
+        }
+
+        /// <summary>
+        /// Ajuste del encantamiento sobre el resultado crudo, si hay uno y le quedan usos.
+        /// </summary>
+        /// <remarks>
+        /// El clamp a <c>[1, faces]</c> es innegociable: el GDD prohibe que un
+        /// encantamiento saque el resultado del rango del dado. El tope propio del
+        /// modifier (ej. "máximo 5") ya deberia hacerlo, pero no se confia en la
+        /// autoria — un item mal configurado no puede romper la regla del sistema.
+        /// </remarks>
+        private int ApplyEnchantment(int rawRoll, int faces)
+        {
+            var ench = _equipped.Enchantment;
+            if (ench?.Modifier == null) return rawRoll;
+            if (ench.IsLimited && _equipped.EnchantmentUsesLeft <= 0) return rawRoll;
+            if (!ench.Modifier.AppliesTo(rawRoll, faces)) return rawRoll;
+
+            int adjusted = ench.Modifier.Apply(rawRoll, faces);
+            if (adjusted < 1) adjusted = 1;
+            if (adjusted > faces) adjusted = faces;
+
+            // Un ajuste que no cambia nada no gasta uso: seria regalar el limite.
+            if (adjusted != rawRoll) _equipped.ConsumeEnchantmentUse();
+
+            return adjusted;
         }
 
         // ======================================================================

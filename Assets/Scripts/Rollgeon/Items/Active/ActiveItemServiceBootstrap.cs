@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Patterns;
 using Patterns.Save;
 using Rollgeon.Patterns.Bootstrap;
@@ -24,6 +25,15 @@ namespace Rollgeon.Items.Active
                  "item equipado desde el save por su ItemId.")]
         private ItemCatalogSO _catalog;
 
+        [SerializeField]
+        [Tooltip("Pool propio de encantamientos del item activo. Separado de la lista de " +
+                 "33 de los dados de combate (GDD §23). Hace falta para restaurar el " +
+                 "encantamiento equipado desde el save.")]
+        private List<ActiveItemEnchantmentSO> _enchantmentPool = new List<ActiveItemEnchantmentSO>();
+
+        /// <summary>Pool completo, para la Sala de Encantamientos y la dev console.</summary>
+        public IReadOnlyList<ActiveItemEnchantmentSO> EnchantmentPool => _enchantmentPool;
+
         private EquippedActiveItemService _equipped;
 
         public int Priority => 61;
@@ -37,7 +47,7 @@ namespace Rollgeon.Items.Active
                                "el item activo no se va a poder restaurar del save.");
             }
 
-            _equipped = new EquippedActiveItemService(_catalog);
+            _equipped = new EquippedActiveItemService(_catalog, _enchantmentPool);
             ServiceLocator.AddService<IEquippedActiveItemService>(_equipped, ServiceScope.Run);
             SaveSystem.Register(_equipped);
 

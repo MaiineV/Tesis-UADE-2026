@@ -347,6 +347,18 @@ namespace Rollgeon.UI.HUD
             text.AppendLine($"{ActiveItemBands.DescribeFaces(ActiveItemBand.Negative, item)} riesgo");
             text.AppendLine($"{ActiveItemBands.DescribeFaces(ActiveItemBand.Mixed, item)} mixto");
             text.Append($"{ActiveItemBands.DescribeFaces(ActiveItemBand.Positive, item)} fuerte");
+
+            var ench = _equipped.Enchantment;
+            if (ench != null)
+            {
+                // La tabla de arriba es la del dado crudo. El encantamiento corre el
+                // resultado antes de la banda, asi que el jugador tiene que verlo junto a
+                // ella para entender a que se expone de verdad.
+                text.AppendLine();
+                string uses = ench.IsLimited ? $"  [{_equipped.EnchantmentUsesLeft} usos]" : string.Empty;
+                text.Append($"<i>{ench.DisplayName}: {ench.DescribeEffect()}</i>{uses}");
+            }
+
             return text.ToString();
         }
     }
