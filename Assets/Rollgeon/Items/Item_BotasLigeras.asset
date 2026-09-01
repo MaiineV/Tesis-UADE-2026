@@ -36,7 +36,7 @@ MonoBehaviour:
       Data: 0
     - Name: TriggerEvent
       Entry: 3
-      Data: 0
+      Data: 67
     - Name: ComboFilter
       Entry: 7
       Data: 2|Rollgeon.Upgrades.Dice.ComboFilter, Rollgeon
@@ -59,6 +59,9 @@ MonoBehaviour:
       Entry: 8
       Data: 
     - Name: ActionKindFilter
+      Entry: 3
+      Data: 0
+    - Name: Subject
       Entry: 3
       Data: 0
     - Name: Effect
@@ -187,8 +190,8 @@ MonoBehaviour:
   DisplayName: Botas Ligeras
   Description: +1 movimiento base.
   Icon: {fileID: 1808964844, guid: ee12da05509c7a74686b1e1cc11cbd3e, type: 3}
-  Rarity: 1
-  FamilyId: 
+  Rarity: 0
+  FamilyId: botas
   VariantIndex: 0
   Type: 0
   OnActivate:

@@ -687,7 +687,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 9716852768735248
-    m_Localized: "+2 vida m\xE1xima."
+    m_Localized: "+10 vida m\xE1xima."
     m_Metadata:
       m_Items: []
   - m_Id: 9716852768735249
@@ -767,7 +767,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 9716852768735268
-    m_Localized: Tienes +3 de escudo al inicio de cada combate.
+    m_Localized: +5 en tiradas de escudo.
     m_Metadata:
       m_Items: []
   - m_Id: 9716852768735269
@@ -775,7 +775,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 9716852768735270
-    m_Localized: Recuperas 1 HP al iniciar combate.
+    m_Localized: Recuperas 5 HP al iniciar combate.
     m_Metadata:
       m_Items: []
   - m_Id: 9716852768735271
@@ -1029,6 +1029,151 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 17185034236428290
     m_Localized: +1 celda de rango al dado de Movimiento en combate.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17283715951849472
+    m_Localized: Botas del Viento
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17283715985403904
+    m_Localized: +2 movimiento base.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17285590277255168
+    m_Localized: Guantes del Escalador
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17285590277255169
+    m_Localized: "La Escalera hace +25 da\xF1o."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17285792501428224
+    m_Localized: Botas del rayo
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17285792501428225
+    m_Localized: +3 de movimiento base.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17286059955417088
+    m_Localized: Alas de Hermes
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17286059955417089
+    m_Localized: +4 de movimiento base
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17290144389623808
+    m_Localized: Coraza de Hierro
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17290144389623809
+    m_Localized: "+35 de vida m\xE1xima."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17291279481532416
+    m_Localized: Coraza Templada
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17291279481532417
+    m_Localized: "+45 vida m\xE1xima."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17291390181797888
+    m_Localized: "Coraza del Tit\xE1n"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17291390181797889
+    m_Localized: "+50 vida m\xE1xima."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17294895571365888
+    m_Localized: "Talism\xE1n Vigoroso"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17294895575560192
+    m_Localized: Recuperas 10HP al iniciar combate.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17296411766124544
+    m_Localized: Pico de Minero
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17296411770318848
+    m_Localized: +5 a la tirada de forzar puerta
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17300769589260288
+    m_Localized: Rodilleras de Obsidiana
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17300769589260289
+    m_Localized: +12 en tiradas de defensa.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17300896068497408
+    m_Localized: "Rodilleras del Basti\xF3n"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17300896068497409
+    m_Localized: +22 en tiradas de escudo
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17306392171212800
+    m_Localized: Guantelete Pesado
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17306392175407104
+    m_Localized: "+10 de da\xF1o base, a cambio de -1 en tirada de movimiento"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17318608383602688
+    m_Localized: 'Regeneracion de dados '
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17318608387796992
+    m_Localized: Recuperas 5HP por cada roll sin utilizar al final del turno.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17321473286172672
+    m_Localized: "Coraz\xF3n de la Fortuna"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17321473286172673
+    m_Localized: Recuperas 5HP por cada roll sin utilizar al final del turno.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17321622683086848
+    m_Localized: Tesoro de la Fortuna
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17321622687281152
+    m_Localized: Ganas 5 de oro cada roll sin utilizar al final del turno.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17322556813307904
+    m_Localized: Mochila Grande
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17322556813307905
+    m_Localized: "+1 slot de \xEDtems activos."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17323018375491584
+    m_Localized: Llamado de emergencia
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17323018375491585
+    m_Localized: +1 roll de dados permanente.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17325063912386560
+    m_Localized: Ficha del Segundo Aliento
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17325063912386561
+    m_Localized: "La primera vez que el jugador llegar\xEDa a 0 HP en la run, queda
+      en 1 HP en vez de morir.\n"
     m_Metadata:
       m_Items: []
   references:
