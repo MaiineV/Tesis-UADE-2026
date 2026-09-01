@@ -117,7 +117,7 @@ MonoBehaviour:
       Data: 9|System.RuntimeType, mscorlib
     - Name: 
       Entry: 1
-      Data: Rollgeon.Attributes.Stats.Speed, Rollgeon
+      Data: Rollgeon.Attributes.Stats.MoveRange, Rollgeon
     - Name: 
       Entry: 8
       Data: 

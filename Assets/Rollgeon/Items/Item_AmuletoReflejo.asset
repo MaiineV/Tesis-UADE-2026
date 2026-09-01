@@ -63,7 +63,7 @@ MonoBehaviour:
       Data: 0
     - Name: Subject
       Entry: 3
-      Data: 0
+      Data: 1
     - Name: Effect
       Entry: 7
       Data: 4|Rollgeon.Effects.EffectData, Rollgeon
