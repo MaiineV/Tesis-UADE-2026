@@ -198,7 +198,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         [Test]
         public void BuildWrapper_LaysOutTheHealthBarPiecesInDrawOrder()
         {
-            // El marco tiene que dibujarse sobre el relleno, y el texto sobre todo.
+            // El fondo apagado va detrás del relleno, el borde encima, y el texto sobre todo.
             var canvas = _wrapper.transform.Find("Canvas");
             var expected = new[] { "LifeBackground", "LifeFill", "Frame", "HealthText" };
 
@@ -208,16 +208,19 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         }
 
         [Test]
-        public void BuildWrapper_MakesTheFillImageHorizontallyFilled()
+        public void BuildWrapper_MakesTheFillImageVerticallyFilledFromTheBottom()
         {
-            // Con type Simple la barra no se consumiría al recibir daño.
+            // Con type Simple la barra no se consumiría al recibir daño; con otro origin no se
+            // vaciaría de arriba hacia abajo (estilo Mewgenics).
             var fill = _wrapper.transform.Find("Canvas/LifeFill").GetComponent<Image>();
 
             Assert.IsNotNull(fill);
             Assert.AreEqual(Image.Type.Filled, fill.type);
-            Assert.AreEqual(Image.FillMethod.Horizontal, fill.fillMethod);
+            Assert.AreEqual(Image.FillMethod.Vertical, fill.fillMethod);
+            Assert.AreEqual((int)Image.OriginVertical.Bottom, fill.fillOrigin);
             Assert.AreEqual(1f, fill.fillAmount);
             Assert.IsNotNull(fill.sprite, "El relleno quedó sin sprite del atlas.");
+            Assert.AreEqual(BossVisualWrapperBuilder.HealthBarFillSpriteName, fill.sprite.name);
         }
 
         [Test]
@@ -229,7 +232,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             Assert.IsNotNull(GetRef(healthBar, "_fillImage"), "_fillImage sin cablear.");
             Assert.IsNotNull(GetRef(healthBar, "_hpText"), "_hpText sin cablear.");
             Assert.IsNotNull(GetRef(healthBar, "_barRoot"), "_barRoot sin cablear.");
-            Assert.AreEqual("{0}/{1}", GetString(healthBar, "_textFormat"));
+            Assert.AreEqual(BossVisualWrapperBuilder.HealthBarTextFormat,
+                GetString(healthBar, "_textFormat"));
         }
 
         [Test]

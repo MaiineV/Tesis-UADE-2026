@@ -49,14 +49,12 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         }
 
         [Test]
-        public void WrapperSpec_KeepsTheHealthBar_AtTheMimicsCanvasHeight()
+        public void WrapperSpec_SkipsTheWorldSpaceBar_TheHudBossBarOwnsIt()
         {
             var spec = AnotadorAssetBuilder.BuildWrapperSpec();
 
-            Assert.IsTrue(spec.AddHealthBar, "Un jefe sin barra de vida no se puede leer.");
-            Assert.Greater(spec.HealthBarOffset.y, 0f, "La barra va arriba del pawn, no dentro.");
-            Assert.AreEqual(2.5f, spec.HealthBarOffset.y, 0.001f,
-                "Misma altura que el canvas de ChestMimic_Prefab: es el mismo cuerpo.");
+            Assert.IsFalse(spec.AddHealthBar,
+                "El jefe muestra vida en la BossBarView del HUD; la barra world-space la duplicaría.");
         }
 
         [Test]

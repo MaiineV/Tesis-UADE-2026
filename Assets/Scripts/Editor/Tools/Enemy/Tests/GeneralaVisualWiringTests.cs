@@ -76,7 +76,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
 
             // Box y no Capsule: la torreta es ancha y baja y un capsule deja el cursor picando aire.
             Assert.AreEqual(ColliderKind.Box, spec.Collider);
-            Assert.IsTrue(spec.AddHealthBar);
+            Assert.IsFalse(spec.AddHealthBar,
+                "La jefa muestra vida en la BossBarView del HUD; la barra world-space la duplicaría.");
         }
 
         [Test]
@@ -114,18 +115,6 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             // Sin carpeta propia los clones caen sobre los materiales compartidos del casino.
             Assert.AreEqual(GeneralaAssetBuilder.MaterialsFolder, spec.MaterialsFolder);
             Assert.IsTrue(spec.MaterialsFolder.StartsWith(BossVisualWrapperBuilder.DefaultMaterialsRoot));
-        }
-
-        [Test]
-        public void BossSpec_PutsTheBarAboveTheFittedArt()
-        {
-            var fit = SampleBossFit();
-
-            var spec = GeneralaAssetBuilder.BuildBossSpec(fit, null);
-
-            Assert.AreEqual(fit.HealthBarOffset, spec.HealthBarOffset);
-            Assert.Greater(spec.HealthBarOffset.y, fit.Bounds.max.y,
-                "La barra tiene que quedar sobre el jefe, no dentro.");
         }
 
         [Test]

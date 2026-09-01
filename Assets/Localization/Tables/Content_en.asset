@@ -1026,6 +1026,391 @@ MonoBehaviour:
     m_Localized: +1 cell of range on the Movement die in combat.
     m_Metadata:
       m_Items: []
+  - m_Id: 17283715951849472
+    m_Localized: Botas del Viento
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17283715985403904
+    m_Localized: +2 movimiento base.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17285792501428224
+    m_Localized: Botas del rayo
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17285792501428225
+    m_Localized: +3 de movimiento base.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17286059955417088
+    m_Localized: Alas de Hermes
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17286059955417089
+    m_Localized: +4 de movimiento base
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17290144389623808
+    m_Localized: Coraza de Hierro
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17290144389623809
+    m_Localized: "+35 de vida m\xE1xima."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17291279481532416
+    m_Localized: Coraza Templada
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17291279481532417
+    m_Localized: "+45 vida m\xE1xima."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17291390181797888
+    m_Localized: "Coraza del Tit\xE1n"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17291390181797889
+    m_Localized: "+50 vida m\xE1xima."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17294895571365888
+    m_Localized: "Talism\xE1n Vigoroso"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17294895575560192
+    m_Localized: Recuperas 10HP al iniciar combate.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17296411766124544
+    m_Localized: Pico de Minero
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17296411770318848
+    m_Localized: +5 a la tirada de forzar puerta.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17300769589260288
+    m_Localized: Rodilleras de Obsidiana
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17300769589260289
+    m_Localized: +12 en tiradas de defensa.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17300896068497408
+    m_Localized: "Rodilleras del Basti\xF3n"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17300896068497409
+    m_Localized: +22 en tiradas de escudo
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17306392171212800
+    m_Localized: Guantelete Pesado
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17306392175407104
+    m_Localized: "+10 de da\xF1o base, a cambio de -1 en tirada de movimiento"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17318608383602688
+    m_Localized: 'Regeneracion de dados '
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17318608387796992
+    m_Localized: Recuperas 5HP por cada roll sin utilizar al final del turno.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17321622683086848
+    m_Localized: Tesoro de la Fortuna
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17321622687281152
+    m_Localized: Ganas 5 de oro por cada roll sobrante al final del turno
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17322556813307904
+    m_Localized: Mochila Grande
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17322556813307905
+    m_Localized: "+1 slot de \xEDtems activos."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17323018375491584
+    m_Localized: Llamado de emergencia
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17323018375491585
+    m_Localized: +1 roll de dados permanente.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17325063912386560
+    m_Localized: Ficha del Segundo Aliento
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17325063912386561
+    m_Localized: "La primera vez que el jugador llegar\xEDa a 0 HP en la run, queda
+      en 1 HP en vez de morir.\n"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17331148496924672
+    m_Localized: "Corona del N\xFAmero Alto"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17331148496924673
+    m_Localized: "+10 de da\xF1o en el combo N\xFAmero Alto."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17331885440331776
+    m_Localized: Corona del Mayor
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17331885440331777
+    m_Localized: "+15 de da\xF1o en el combo N\xFAmero Alto."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17332682412617728
+    m_Localized: "Corona del M\xE1ximo"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17332682412617729
+    m_Localized: "+20 de da\xF1o en el combo N\xFAmero Alto."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17333112605601792
+    m_Localized: Corona de la Cima
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17333112605601793
+    m_Localized: "+30 de da\xF1o en el combo N\xFAmero Alto."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17333766250131456
+    m_Localized: Corona del Par
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17333766250131457
+    m_Localized: "+10 de da\xF1o al combo Par."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17334166307041280
+    m_Localized: Corona de los iguales
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17334166307041281
+    m_Localized: "+15 de da\xF1o al combo Par."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17334912108818432
+    m_Localized: 'Corona de la Dualidad '
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17334912108818433
+    m_Localized: "+20 de da\xF1o en combo Par"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17335304825696256
+    m_Localized: Corona de los Gemelos
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17335304829890560
+    m_Localized: "+40 de da\xF1o en combo Par."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17335726969810944
+    m_Localized: Corona del Doble Par
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17335726969810945
+    m_Localized: "+10 de da\xF1o en el combo Doble Par."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17336154751070208
+    m_Localized: Corona de las Parejas
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17336154751070209
+    m_Localized: "+15 de da\xF1o en el combo Doble Par."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17336910547873792
+    m_Localized: Corona de los amores
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17336910547873793
+    m_Localized: "+20 de da\xF1o en el combo Doble Par."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17337581590376448
+    m_Localized: Corona del Espejo
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17337581590376449
+    m_Localized: "+30 de da\xF1o en el combo Doble Par."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17338012546723840
+    m_Localized: "Corona del Tr\xEDo"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17338012546723841
+    m_Localized: "+10 de da\xF1o en el combo Trio."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17338241207595008
+    m_Localized: Corona del Triplete
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17338241207595009
+    m_Localized: "+15 de da\xF1o en el combo Tr\xEDo."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17338580367405056
+    m_Localized: Corona de la Trinidad
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17338580367405057
+    m_Localized: "+20 de da\xF1o en el combo Tr\xEDo."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17338790833385472
+    m_Localized: Corona del Triunvirato
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17338790833385473
+    m_Localized: "+30 de da\xF1o en el combo Tr\xEDo."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17339137832349696
+    m_Localized: 'Corona del Poker '
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17339137832349697
+    m_Localized: "+10 de da\xF1o con el combo Poker."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17339426274635776
+    m_Localized: Corona del Cuarteto
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17339426274635777
+    m_Localized: "+15 de da\xF1o en el combo P\xF3ker."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17339656948772864
+    m_Localized: Corona de la Banda
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17339656948772865
+    m_Localized: "+20 de da\xF1o en el combo P\xF3ker."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17340098965499904
+    m_Localized: Corona de los Cuatro Reyes
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17340098965499905
+    m_Localized: "+30 de da\xF1o en el combo de P\xF3ker."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17340507348103168
+    m_Localized: Corona de la Escalera
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17340507348103169
+    m_Localized: "+10 de da\xF1o en el combo Escalera."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17340736537456640
+    m_Localized: Corona del Ascenso
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17340736537456641
+    m_Localized: "+15 de da\xF1o en el combo Escalera."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17340968432136192
+    m_Localized: "Corona de la Ascensi\xF3n"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17340968432136193
+    m_Localized: "+20 de da\xF1o en el combo Escalera."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17341224574087168
+    m_Localized: Corona del Camino Celestial
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17341224574087169
+    m_Localized: "+30 de da\xF1o en el combo Escalera."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17341427037335552
+    m_Localized: Corona de la Generala
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17341427037335553
+    m_Localized: "+10 de da\xF1o en el combo Generala."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17341875572011008
+    m_Localized: "Corona de la Perfecci\xF3n"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17341875572011009
+    m_Localized: "+10 de da\xF1o en el combo Generala."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17342111518388224
+    m_Localized: Corona Suprema
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17342111518388225
+    m_Localized: "+20 de da\xF1o en el combo Generala."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17342439924002816
+    m_Localized: Corona Divina
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17342439924002817
+    m_Localized: "+30 de da\xF1o en el combo Generala."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17342777909407744
+    m_Localized: Corona del Full
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17342777909407745
+    m_Localized: "+10 de da\xF1o en el combo Full House."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17342999574179840
+    m_Localized: Corona de la Familia
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17342999574179841
+    m_Localized: "+15 de da\xF1o en el combo Full House."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17343220853075968
+    m_Localized: Corona del Linaje
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17343220853075969
+    m_Localized: "+20 de da\xF1o en el combo Full House."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17343412033646592
+    m_Localized: Corona de la Casa Real
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17343412033646593
+    m_Localized: "+30 de da\xF1o en el combo Full House."
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

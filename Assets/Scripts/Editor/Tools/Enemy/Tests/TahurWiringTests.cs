@@ -363,14 +363,10 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         }
 
         [Test]
-        public void WrapperSpec_FloatsTheHealthBarAboveTheHead()
+        public void WrapperSpec_SkipsTheWorldSpaceBar_TheHudBossBarOwnsIt()
         {
-            // El arte mide ~1,81 de alto (collider a mano de SunkedGrand.prefab).
-            Assert.Greater(TahurAssetBuilder.BuildWrapperSpec().HealthBarOffset.y, 1.81f,
-                "La barra quedaría metida dentro del cuerpo.");
-            Assert.Less(TahurAssetBuilder.BuildWrapperSpec().HealthBarOffset.y, 3f,
-                "El default de 3 de la utility está dimensionado para el GeneralDirector, más alto: " +
-                "acá dejaría la barra flotando despegada de la cabeza.");
+            Assert.IsFalse(TahurAssetBuilder.BuildWrapperSpec().AddHealthBar,
+                "El jefe muestra vida en la BossBarView del HUD; la barra world-space la duplicaría.");
         }
 
         [Test]

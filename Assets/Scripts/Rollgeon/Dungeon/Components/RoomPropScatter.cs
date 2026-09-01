@@ -123,6 +123,7 @@ namespace Rollgeon.Dungeon.Components
                 instance.transform.localScale *= scale;
 
                 LiftToFloor(instance, cellCenter.y);
+                DisableShadows(instance);
             }
         }
 
@@ -186,6 +187,19 @@ namespace Rollgeon.Dungeon.Components
             for (int i = 1; i < renderers.Length; i++) bounds.Encapsulate(renderers[i].bounds);
 
             instance.transform.position += new Vector3(0f, floorY - bounds.min.y, 0f);
+        }
+
+        /// <summary>
+        /// Clutter chico tirado en el piso — mismo criterio que se aplicó a los tiles de piso y
+        /// zócalos de los room prefabs (perfilado con Frame Debugger: ~873 de los ~1500 draw
+        /// calls de una Combat room eran shadow maps de las antorchas, y esos objetos nunca
+        /// aportaban una sombra visible). Acá se hace en runtime, no en el prefab del FBX, porque
+        /// editar Cast Shadows en un asset de modelo importado no sobrevive al reimport.
+        /// </summary>
+        private static void DisableShadows(GameObject instance)
+        {
+            foreach (var r in instance.GetComponentsInChildren<Renderer>())
+                r.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
         }
 
         private static void AddTransformSeeds(Transform t, List<GridCoord> seeds, Vector3 origin, float tileSize)
