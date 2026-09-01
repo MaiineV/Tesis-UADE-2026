@@ -1129,7 +1129,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 16873829850607617
-    m_Localized: Dispara de lejos.
+    m_Localized: "Dispara de lejos y se aleja cuando te le acerc\xE1s."
     m_Metadata:
       m_Items: []
   - m_Id: 16873829850607618

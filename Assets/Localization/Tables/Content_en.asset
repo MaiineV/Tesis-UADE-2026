@@ -1123,7 +1123,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 16873829850607617
-    m_Localized: Shoots from afar.
+    m_Localized: Shoots from afar and backs away when you get close.
     m_Metadata:
       m_Items: []
   - m_Id: 16873829850607618

@@ -677,10 +677,12 @@ namespace Rollgeon.EditorTools.Localization
                 "Suelta anillos eléctricos en oleadas, con huecos entre anillo y anillo.",
                 "Unleashes electric rings in waves, with gaps between the rings.");
             // El refuerzo del Cajero es un ranged común más: misma identidad que RangedEnemy01
-            // a propósito — un nombre propio le prometía al jugador una mecánica que no tiene.
+            // a propósito — un nombre propio le prometía al jugador una mecánica que no tiene. La
+            // frase es la MISMA, palabra por palabra, y ahora es cierta de los dos: su árbol
+            // también se despega cuando lo tenés encima.
             Content("minion.cajero_comision.brief",
-                "Dispara de lejos.",
-                "Shoots from afar.");
+                "Dispara de lejos y se aleja cuando te le acercás.",
+                "Shoots from afar and backs away when you get close.");
             Content("obj.dado_casa.brief",
                 "No ataca. Cada dado roto le saca un combo a la Generala.",
                 "It doesn't attack. Every die broken takes a combo away from the Generala.");
