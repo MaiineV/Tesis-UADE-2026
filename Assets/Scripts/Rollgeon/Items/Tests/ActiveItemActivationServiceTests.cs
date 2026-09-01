@@ -263,7 +263,7 @@ namespace Rollgeon.Items.Tests
             item.DisplayName = id;
             item.Type = ItemType.Active;
             item.ActiveDie = die;
-            item.Family = ActiveItemFamily.Potencia;
+            item.ActiveFamily = ActiveItemFamily.Potencia;
             item.OnNegativeBand = new EffectData();
             item.OnNegativeBand.Effects.Add(new Eff_Tag { Tag = "neg" });
             item.OnMixedBand = new EffectData();

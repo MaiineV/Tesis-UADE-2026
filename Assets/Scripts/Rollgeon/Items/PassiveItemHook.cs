@@ -24,6 +24,27 @@ namespace Rollgeon.Items
         ComboPlayed = 1,
     }
 
+    /// <summary>
+    /// Cual de los Guid del evento tiene que ser el jugador para que el hook dispare.
+    /// APPEND-ONLY: se serializa el int del enum.
+    /// </summary>
+    /// <remarks>
+    /// Varios eventos del bus llevan dos entidades — <c>OnDamageIncoming</c> es
+    /// <c>[sourceGuid, targetGuid, damage]</c>. El hook siempre comparaba contra
+    /// <c>args[0]</c>, asi que un item colgado de <c>OnDamageIncoming</c> disparaba cuando el
+    /// jugador <b>pegaba</b>, no cuando le pegaban: lo contrario de lo que dice el nombre, y en
+    /// silencio. Con <see cref="Source"/> como default, todo asset ya autorado conserva
+    /// exactamente ese comportamiento.
+    /// </remarks>
+    public enum PassiveHookSubject
+    {
+        /// <summary>El jugador es <c>args[0]</c> — quien origina el evento. Default.</summary>
+        Source = 0,
+
+        /// <summary>El jugador es <c>args[1]</c> — quien lo recibe. Habilita "cuando te pegan".</summary>
+        Target = 1,
+    }
+
     [Serializable, HideReferenceObjectPicker]
     public class PassiveItemHook
     {
@@ -53,6 +74,14 @@ namespace Rollgeon.Items
                  "jugado (comportamiento previo, default).")]
         [OdinSerialize]
         public RollActionKind ActionKindFilter = RollActionKind.Unknown;
+
+        [ShowIf(nameof(Kind), PassiveHookKind.EventBus)]
+        [InfoBox("Quien tiene que ser el jugador en el evento. Source = el que lo origina " +
+                 "(args[0]); Target = el que lo recibe (args[1]). Solo cambia algo en eventos " +
+                 "con dos entidades: OnDamageIncoming/OnDamageOutgoing son [source, target, dmg], " +
+                 "asi que Target es 'cuando te pegan' y Source es 'cuando pegas'.")]
+        [OdinSerialize]
+        public PassiveHookSubject Subject = PassiveHookSubject.Source;
 
         [OdinSerialize]
         public EffectData Effect = new();

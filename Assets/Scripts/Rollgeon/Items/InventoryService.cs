@@ -332,10 +332,15 @@ namespace Rollgeon.Items
 
                 var capturedHook = hook;
                 var capturedItem = item;
+                // Que argumento del evento tiene que ser el jugador. Los eventos con dos entidades
+                // ([source, target, ...]) se leian siempre por args[0], asi que "cuando te pegan"
+                // era inexpresable: OnDamageIncoming disparaba al PEGAR. Default Source == 0
+                // mantiene byte a byte el comportamiento de todo hook ya autorado.
+                var subjectIndex = (int)hook.Subject;
                 EventManager.EventReceiver handler = args =>
                 {
-                    if (args == null || args.Length == 0) return;
-                    if (args[0] is Guid ownerId && ownerId != GetPlayerGuid()) return;
+                    if (args == null || args.Length <= subjectIndex) return;
+                    if (args[subjectIndex] is Guid ownerId && ownerId != GetPlayerGuid()) return;
 
                     var playerGuid = GetPlayerGuid();
                     var ctx = new EffectContext

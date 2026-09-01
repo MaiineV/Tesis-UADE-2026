@@ -38,7 +38,7 @@ namespace Rollgeon.DevConsole.Commands
 
             string tail = discarded != null ? $" (descartado: {discarded.ItemId})" : string.Empty;
             return CommandResult.Ok(
-                $"Equipado {item.DisplayName} — d{item.ActiveDie.MaxFace()}, familia {item.Family}{tail}.");
+                $"Equipado {item.DisplayName} — d{item.ActiveDie.MaxFace()}, familia {item.ActiveFamily}{tail}.");
         }
     }
 
@@ -85,7 +85,7 @@ namespace Rollgeon.DevConsole.Commands
                 gate = act.CanActivate().ToString();
 
             return CommandResult.Ok(
-                $"{item.DisplayName} ({item.ItemId}) — d{faces}, familia {item.Family}\n" +
+                $"{item.DisplayName} ({item.ItemId}) — d{faces}, familia {item.ActiveFamily}\n" +
                 $"  negativa {neg.Min}-{neg.Max} | mixta {mix.Min}-{mix.Max} | positiva {pos.Min}-{pos.Max}\n" +
                 $"  gate: {gate}");
         }

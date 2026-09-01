@@ -29,7 +29,7 @@ MonoBehaviour:
   Tiers:
   - Tier: 0
     MaxHP: 20
-    BodyColor: {r: 0.6901961, g: 0.5372549, b: 0.40784314, a: 1}
+    BodyColor: {r: 0.8392157, g: 0.827451, b: 0.80784315, a: 1}
     ChestPrefabOverride: {fileID: 0}
     BodyMaterialOverride: {fileID: 2100000, guid: b686d1ed60165f042a1d3ebd6a2ac6c0, type: 2}
     FittingsMaterialOverride: {fileID: 2100000, guid: c21b38af8e45cc14fa64a82d0051917c, type: 2}
@@ -39,7 +39,7 @@ MonoBehaviour:
     FallbackGold: 8
   - Tier: 1
     MaxHP: 30
-    BodyColor: {r: 0.7019608, g: 0.22745098, b: 0.12156863, a: 1}
+    BodyColor: {r: 0.22745098, g: 0.43137255, b: 0.64705884, a: 1}
     ChestPrefabOverride: {fileID: 0}
     BodyMaterialOverride: {fileID: 2100000, guid: cd32b95fe4fe2644aa6ee4d9a12671f4, type: 2}
     FittingsMaterialOverride: {fileID: 2100000, guid: c21b38af8e45cc14fa64a82d0051917c, type: 2}

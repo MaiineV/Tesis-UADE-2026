@@ -116,6 +116,44 @@ namespace Rollgeon.Patterns.Catalogs
             UnityEditor.EditorUtility.SetDirty(this);
             return true;
         }
+
+        /// <summary>
+        /// <b>Editor-only.</b> Quita <paramref name="entry"/> si estaba. Devuelve <c>false</c> si no
+        /// figuraba o es null.
+        /// </summary>
+        /// <remarks>
+        /// Contraparte de <see cref="EditorAdd"/>, y hace falta por el mismo motivo: <c>_entries</c>
+        /// es <c>[OdinSerialize]</c> y protected, invisible a <c>SerializedObject</c>. Sin esto,
+        /// borrar el asset de un entry deja un hueco null en la lista que solo se ve abriendo el
+        /// catálogo en el inspector — y todo lo que resuelve por id lo ignora en silencio.
+        /// </remarks>
+        public bool EditorRemove(T entry)
+        {
+            if (entry == null) return false;
+            if (!_entries.Contains(entry)) return false;
+
+            UnityEditor.Undo.RecordObject(this, "Remove from " + CatalogName);
+            _entries.Remove(entry);
+            UnityEditor.EditorUtility.SetDirty(this);
+            return true;
+        }
+
+        /// <summary>
+        /// <b>Editor-only.</b> Limpia los entries null. Devuelve cuántos sacó.
+        /// </summary>
+        /// <remarks>
+        /// Un asset borrado desde el Project window no pasa por <see cref="EditorRemove"/> y deja su
+        /// hueco. <c>ValidateNoNullEntries</c> lo marca en el inspector pero no lo arregla.
+        /// </remarks>
+        public int EditorRemoveNullEntries()
+        {
+            int removed = _entries.RemoveAll(e => e == null);
+            if (removed == 0) return 0;
+
+            UnityEditor.Undo.RecordObject(this, "Clean " + CatalogName);
+            UnityEditor.EditorUtility.SetDirty(this);
+            return removed;
+        }
 #endif
 
         // ---- Odin validators (privados, solo para el inspector) -----------------

@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using Rollgeon.Dice;
 using Rollgeon.Effects;
@@ -19,6 +20,20 @@ namespace Rollgeon.Items
         public Sprite Icon;
         public ItemRarity Rarity;
 
+        [Title("Family")]
+        [InfoBox("Agrupa las variantes de un mismo item (Botas, Coraza, Corona...). Vacio = item " +
+                 "suelto. Tambien es el tag que la lista del Item Editor usa para filtrar por familia.")]
+        public string FamilyId;
+
+        // Deliberadamente NO es la rareza ni se deriva de ItemRarity: hoy las variantes de una
+        // familia son tiers de rareza, pero cuando lleguen las plantillas <combo> del GDD (Corona
+        // del Par, Corona del Trio...) van a ordenarse por combo, no por tier. Atar el orden a
+        // ItemRarity hoy obligaria a migrar todas las familias existentes cuando eso pase.
+        // docs/tools/item-editor-spec.md D1/§2.
+        [InfoBox("Posicion dentro de la familia. No es la rareza — ver comentario en el codigo.")]
+        [MinValue(0)]
+        public int VariantIndex;
+
         [Title("Type")]
         [EnumToggleButtons]
         public ItemType Type;
@@ -27,7 +42,15 @@ namespace Rollgeon.Items
         [InfoBox("Se aplican automaticamente al obtener el item. Se remueven si el item se pierde.")]
         [ShowIf("@Type == ItemType.Passive")]
         [ListDrawerSettings(ShowFoldout = false)]
-        [OdinSerialize]
+        // [NonSerialized] apaga la serializacion nativa de Unity sobre este campo publico. Es la
+        // fuente del warning de doble serializacion de Odin en el inspector: siendo
+        // SerializedScriptableObject, OnAfterDeserialize repuebla todo miembro [OdinSerialize]
+        // desde serializationData DESPUES del paso nativo de Unity (ver el remark de
+        // PolymorphicAuthoringContext sobre el mismo mecanismo), asi que la copia nativa del YAML
+        // queda pisada en cada load — solo infla el .asset y dispara el warning. Verificado leyendo
+        // Item_AmuletoReflejo.asset: los hooks reales viven en serializationData.SerializationNodes;
+        // el bloque "PassiveHooks:" plano del YAML es la copia muerta que Odin ya avisa que sobra.
+        [NonSerialized, OdinSerialize]
         public List<PassiveItemHook> PassiveHooks = new();
 
         // ==================================================================
@@ -46,7 +69,7 @@ namespace Rollgeon.Items
         [Tooltip("Que busca el jugador en la tirada. Define cual banda es el mejor " +
                  "resultado de este item. Precision y Control tienen mecanismo propio y " +
                  "todavia no estan implementadas — caen en el reparto por tercios.")]
-        public ActiveItemFamily Family = ActiveItemFamily.Potencia;
+        public ActiveItemFamily ActiveFamily = ActiveItemFamily.Potencia;
 
         [Title("Active — Efectos por banda")]
         [InfoBox("Las tres bandas tienen que tener efecto: el GDD prohibe la rama de " +
