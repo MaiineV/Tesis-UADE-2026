@@ -39,14 +39,29 @@ simplemente no dispara nunca.
 | `Describe(hook)` | El "cuando" en una frase |
 | `IsPermanent(hook)` | El hook no usa evento: solo lleva modificadores persistentes |
 
-**No estan en el catalogo, y no por olvido:** `OnCombatStart` y `OnRunStart` llevan el id de la
-sala y de la run en `args[0]`, no el del jugador; `OnComboCrossed` se dispara con `Guid.Empty`; y
-`OnPlayerHealthChanged` no lo emite nadie en produccion. Los cuatro se ven perfectamente
-elegibles en el desplegable crudo y no disparan nunca — dos items del catalogo estan rotos hoy
-exactamente por eso.
+**Triggers nuevos del catalogo (Feature#0065):** `combat.start` (OnCombatStart con
+`Subject=None` — desactiva el filtro de entidad porque args[0] es la sala), `health.changed`
+(`OnPlayerHealthChanged [player, current, max]`, ahora SI lo emite `PlayerHealthEventBridge`) y
+`turn.rolls.leftover` (`OnPlayerTurnRollsLeftover` — suena ANTES del grant del pool, un
+`ReadCurrentRolls` lee ahi exactamente los rolls sobrantes).
+
+**No estan en el catalogo, y no por olvido:** `OnRunStart` lleva el id de la run en `args[0]`,
+no el del jugador, y `OnComboCrossed` se dispara con `Guid.Empty`. Se ven perfectamente
+elegibles en el desplegable crudo y no disparan nunca.
 
 `PersistentModifierDef`: `Type TargetStat`, `ModifierOperation Operation`, `float Amount`,
-`ModifierDirection Direction` (default `Intrinsic`).
+`ModifierDirection Direction` (default `Intrinsic`). Stats-canal utiles: `MoveRange` (+N al
+dado de movimiento, Botas), `ForceDoorRollBonus` (+N a la tirada de forzar puerta, Pico).
+
+**Perillas de lifecycle en `ItemSO`** (sin hooks — el item "hace" por estar en el inventario;
+`ItemQuery.Health` ya no marca "Passive sin hooks" cuando alguna esta seteada):
+`RollPoolBonus` (Llamado de Emergencia), `ActiveSlotBonus` (Mochila Grande),
+`EnchantmentCostMultiplier` (Moneda Maldita, 0.5), `SecondWind`+`SecondWindRemainingHp`
+(Ficha del Segundo Aliento — el item SE CONSUME al salvarte), `BaseDamageOverride`
+(`Enabled` + `BaseValue: EffectIntReader` — Furia Contenida con `ReadCleanTurnStreakScaled`,
+Egoista con `ReadCurrentGoldSqrtScaled`; categoria excluyente, gana el mayor `Priority`) y
+`UniquePerRun` (estilo Isaac: ya poseido — inventario o `ClassHeroSO.InnateItemIds` — no
+vuelve a salir en pools).
 
 ### `ComboPlayed` vs `EventBus`
 
@@ -57,10 +72,11 @@ exactamente por eso.
   no hay a quien comparar. Para bonos de daño suele llegar **un golpe tarde** (esa fue la causa
   de BUG-080).
 
-Eventos verificados como usables (del `InfoBox` del propio hook):
-`OnTurnStarted`, `OnTurnFinished`, `OnRollStarted`, `OnDiceRolled`, `OnRollResolved`,
-`OnDamageIncoming`, `OnDamageOutgoing`, `OnComboCrossed`, `OnWeaknessHit`,
-`OnPlayerHealthChanged`. El enum tiene mas; el resto no esta verificado.
+La lista curada y verificada de eventos usables vive en `ItemTriggerCatalog.All` — usar esos
+ids, no adivinar sobre el enum crudo. `Subject` ahora tiene `None` (= sin filtro de entidad,
+para eventos cuyo args[0] no es el jugador, ej. `combat.start`). En eventos de dos entidades,
+el guid que NO es el subject viaja como `TargetGuid` del contexto: con `damage.taken`, el
+target del efecto es el ATACANTE (asi funciona el Amuleto de Reflejo con `EffDealDamage`).
 
 ### `ActionKindFilter`
 
@@ -84,9 +100,9 @@ exponen propiedades con backing field `[OdinSerialize, SerializeReference]`.
 
 | Intencion | Efectos |
 |---|---|
-| Daño | `EffDealDamage`, `EffAddComboBonus`, `EffMultiplyComboDamage`, `EffBlockComboDamage`, `EffLowHpAttackBuff` |
-| Vida / defensa | `EffHeal`, `EffAddShield` |
-| Recursos | `EffModifyGold`, `EffModifyIntAttribute` |
+| Daño | `EffDealDamage`, `EffAddComboBonus`, `EffMultiplyComboDamage`, `EffBlockComboDamage`, `EffLowHpAttackBuff`, `EffThresholdCrossCombatBuff` (latch +Attack al cruzar %HP, 1x combate via lifetime Encounter — Instinto) |
+| Vida / defensa | `EffHeal` (tiene modo `FromReader`), `EffAddShield` |
+| Recursos | `EffModifyGold`, `EffModifyIntAttribute`, `EffAddRolls` (+N rolls al pool AHORA; el permanente va por `ItemSO.RollPoolBonus`) |
 | Inventario | `EffAddItemToInventory`, `EffRemoveInventoryItem` |
 | Movimiento / mundo | `EffMove`, `EffApplyImpulse`, `EffForceDoor`, `EffPassDoor` |
 | Composicion / presentacion | `EffChain`, `EffPlaySequence`, `EffPlayFeedback`, `EffClassSkillPush` |
@@ -103,6 +119,11 @@ No son intercambiables y el numero final difiere mucho. Preguntá cual, no elija
 
 Para valores dinamicos en lugar de constantes: `ReadCurrentGold`, `ReadCurrentGoldSqrtScaled`
 (`Factor`), `ReadComboCounter`, `ReadCarrierFace`, `ReadCarrierRollDelta`, `ReadDiceFace`.
+En `Rollgeon.Effects.Readers` (genericos, sirven en items): `ReadConstantInt`,
+`ReadEntityStat`, `ReadTilesMovedThisTurn` (`PerTileAmount` — Corredor Incansable),
+`ReadCleanTurnStreakScaled` (`PerTurnAmount` float con floor — Furia Contenida),
+`ReadCurrentRolls` (`PerRollAmount` — Corazon/Tesoro de la fortuna, con
+`turn.rolls.leftover`).
 
 Ejemplo real (`Item_Egoista`): `bono = floor(sqrt(oro_actual x 5))` via
 `new EffAddComboBonus { Amount = new ReadCurrentGoldSqrtScaled { Factor = 5f } }`.
@@ -113,7 +134,9 @@ Se evaluan en **AND**. Disponibles: `PCAdjacentToDoor`, `PCComboAvailable`, `PCC
 `PCEntityInRange`, `PCFirstRollOfCombat`, `PCHasIntAttribute`, `PCHasInventoryItem`,
 `PCHasModifier`, `PcAllyAliveExists`, `PcAllyBelowMaxExists`, `PcBossHandCombo`, `PcChance`,
 `PcGoldCompare`, `PcJackpotCountdown`, `PcNoComboThisRoll`, `PcOwnerAtRoomCenter`,
-`PcOwnerHpBelow`, `PcOwnerStatCompare`, `PcRoundNumber`, `PcTargetInRange`.
+`PcOwnerHpBelow`, `PcOwnerStatCompare`, `PcRoundNumber`, `PcTargetInRange`,
+`PcTilesMovedThisTurn` (`IntComparison` + `Value`; sin servicio = false — Piedra de Guardia
+con `Equal 0`).
 Para OR o anidamiento: `PCComposite`.
 
 ## API de alta (`Rollgeon.Editor.Tools.Item.ItemAuthoring`)
