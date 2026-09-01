@@ -163,15 +163,19 @@ namespace Rollgeon.Combat.Pipelines
                     // con un resto de vida y WasLethal queda false — el DeathWatcher
                     // nunca lo ve. Clampeado a la vida actual para no curar a un target
                     // que ya estaba por debajo del resto.
+                    ILethalDamageOverride firedOverride = null;
                     if (newHp <= 0
                         && ServiceLocator.TryGetService<ILethalDamageOverride>(out var lethalOverride)
                         && lethalOverride != null
                         && lethalOverride.ShouldPreventLethal(ctx.TargetId))
                     {
-                        newHp = currentHp < LethalOverrideRemainingHp
-                            ? currentHp
-                            : LethalOverrideRemainingHp;
+                        // El resto de vida lo decide el override (tutorial: const 10;
+                        // Segundo Aliento: 1), clampeado a la vida actual y piso 1 —
+                        // un override que devuelva <= 0 no puede "salvar matando".
+                        int remaining = Math.Max(1, lethalOverride.GetRemainingHp(ctx.TargetId));
+                        newHp = currentHp < remaining ? currentHp : remaining;
                         ctx.FinalDamage = currentHp - newHp;
+                        firedOverride = lethalOverride;
 
                         // BUG-062 (hardening): un golpe letal anulado en silencio es
                         // exactamente la firma del bug reportado ("inmortal permanente") —
@@ -189,6 +193,10 @@ namespace Rollgeon.Combat.Pipelines
 
                     _attributes.SetAttributeValue<Health, int>(ctx.TargetId, newHp);
                     ctx.WasLethal = newHp <= 0;
+
+                    // Con el HP ya escrito: cargas one-shot (Segundo Aliento) se consumen
+                    // acá — hacerlo antes reentraría el inventario en medio del cálculo.
+                    firedOverride?.NotifyLethalPrevented(ctx.TargetId);
                 }
                 else
                 {

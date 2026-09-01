@@ -17,5 +17,17 @@ namespace Rollgeon.Combat.Pipelines
     public interface ILethalDamageOverride
     {
         bool ShouldPreventLethal(Guid targetId);
+
+        /// <summary>
+        /// HP con los que queda el target salvado. Default: la constante histórica del
+        /// pipeline (tutorial). "Sello del Segundo Aliento" (GDD) devuelve 1.
+        /// </summary>
+        int GetRemainingHp(Guid targetId) => DamagePipeline.LethalOverrideRemainingHp;
+
+        /// <summary>
+        /// El pipeline YA aplicó la salvada (HP escrito). Punto para consumir cargas
+        /// one-shot (Segundo Aliento se remueve del inventario acá). Default no-op.
+        /// </summary>
+        void NotifyLethalPrevented(Guid targetId) { }
     }
 }
