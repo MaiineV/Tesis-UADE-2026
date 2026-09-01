@@ -28,6 +28,10 @@ namespace Rollgeon.UI
         public const string RejectNoValidTarget = "action.reject.no_valid_target";
         public const string RejectNoActiveItem = "action.reject.no_active_item";
 
+        // Ventana de decision de la ficha de item activo: tirada pendiente de aceptar
+        // o re-tirar (ActiveItemChipView).
+        public const string ActiveItemDecideHint = "hud.active_item.decide_hint";
+
         /// <summary>Todas las keys de esta clase, para validación en tests.</summary>
         public static IReadOnlyList<string> All { get; } = new[]
         {
@@ -35,6 +39,7 @@ namespace Rollgeon.UI
             RejectFullHealth, RejectNoDoor, RejectNotYourTurn, RejectNoPotion,
             RejectOnCooldown, RejectItemUnavailable,
             RejectNoValidTarget, RejectNoActiveItem,
+            ActiveItemDecideHint,
         };
     }
 }

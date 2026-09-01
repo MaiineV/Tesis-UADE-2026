@@ -8,106 +8,116 @@ namespace Rollgeon.UI.Tests
     /// <summary>
     /// Feel de la tirada de la ficha de ítem activo (GDD "Ítems Activos" §18/§19).
     /// Lógica pura, testeable sin escena — mismo patrón que <c>ChestRevealFeelMathTests</c>.
+    /// La tirada vive en dos segmentos: pendiente (giro + cara cruda sostenida hasta que
+    /// el jugador acepte o re-tire) y resolución (destello del encantamiento + hold final).
     /// </summary>
     [TestFixture]
     public sealed class ActiveItemRollFeelMathTests
     {
         private static readonly float Spin = ActiveItemRollFeelMath.SpinSeconds;
-        private const float RawHold = ActiveItemRollFeelMath.RawHoldSeconds;
         private const float Flash = ActiveItemRollFeelMath.EnchantFlashSeconds;
         private const float Hold = ActiveItemRollFeelMath.ResultHoldSeconds;
 
         // ------------------------------------------------------------------
-        // Fases sin encantamiento
+        // Segmento pendiente
         // ------------------------------------------------------------------
 
         [Test]
-        public void test_phases_withoutEnchantment_spinThenSettleThenIdle()
+        public void test_pending_spinsAndThenSettles()
         {
             // Act + Assert
-            Assert.AreEqual(ActiveItemRollPhase.Spinning,
-                ActiveItemRollFeelMath.PhaseAt(0f, wasEnchanted: false));
-            Assert.AreEqual(ActiveItemRollPhase.Spinning,
-                ActiveItemRollFeelMath.PhaseAt(Spin - 0.01f, wasEnchanted: false));
-            Assert.AreEqual(ActiveItemRollPhase.Settled,
-                ActiveItemRollFeelMath.PhaseAt(Spin, wasEnchanted: false));
             Assert.AreEqual(ActiveItemRollPhase.Idle,
-                ActiveItemRollFeelMath.PhaseAt(Spin + Hold, wasEnchanted: false));
+                ActiveItemRollFeelMath.PendingPhaseAt(-0.01f));
+            Assert.AreEqual(ActiveItemRollPhase.Spinning,
+                ActiveItemRollFeelMath.PendingPhaseAt(0f));
+            Assert.AreEqual(ActiveItemRollPhase.Spinning,
+                ActiveItemRollFeelMath.PendingPhaseAt(Spin - 0.01f));
+            Assert.AreEqual(ActiveItemRollPhase.Settled,
+                ActiveItemRollFeelMath.PendingPhaseAt(Spin));
         }
 
         [Test]
-        public void test_phases_withoutEnchantment_neverPassThroughTheEnchantedPhase()
+        public void test_pending_neverEndsByTime()
         {
-            // Arrange — una pausa en la cara cruda sin encantamiento seria una pausa sin
-            // nada que comunicar.
-            for (float t = 0f; t < ActiveItemRollFeelMath.TotalSeconds(false); t += 0.01f)
+            // Arrange — la cara cruda queda sostenida mientras el jugador decide si
+            // acepta o re-tira: no hay vuelta al reposo por tiempo.
+            Assert.AreEqual(ActiveItemRollPhase.Settled,
+                ActiveItemRollFeelMath.PendingPhaseAt(Spin + 60f),
+                "un minuto despues sigue esperando la decision");
+        }
+
+        [Test]
+        public void test_pendingScale_popsOnSettleAndReturnsToOne()
+        {
+            // Arrange — el pop marca que el dado se asento; durante el giro no hay nada
+            // que marcar, y la espera larga no puede quedar agrandada.
+            Assert.AreEqual(1f, ActiveItemRollFeelMath.PendingScaleAt(Spin * 0.5f), 0.001f,
+                "sin pop durante el giro");
+            Assert.Greater(ActiveItemRollFeelMath.PendingScaleAt(Spin), 1f,
+                "pop al asentarse");
+            Assert.AreEqual(1f, ActiveItemRollFeelMath.PendingScaleAt(Spin + 10f), 0.001f,
+                "la espera vuelve a escala de reposo");
+        }
+
+        // ------------------------------------------------------------------
+        // Segmento de resolucion
+        // ------------------------------------------------------------------
+
+        [Test]
+        public void test_resolve_withoutEnchantment_holdsAndThenIdles()
+        {
+            // Act + Assert
+            Assert.AreEqual(ActiveItemRollPhase.Holding,
+                ActiveItemRollFeelMath.ResolvePhaseAt(0f, wasEnchanted: false));
+            Assert.AreEqual(ActiveItemRollPhase.Idle,
+                ActiveItemRollFeelMath.ResolvePhaseAt(Hold + 0.01f, wasEnchanted: false));
+        }
+
+        [Test]
+        public void test_resolve_withoutEnchantment_neverPassesThroughTheEnchantedPhase()
+        {
+            // Arrange — un destello sin encantamiento seria un destello sin nada que
+            // comunicar.
+            for (float t = 0f; t < ActiveItemRollFeelMath.ResolveTotalSeconds(false); t += 0.01f)
             {
                 // Act
-                var phase = ActiveItemRollFeelMath.PhaseAt(t, wasEnchanted: false);
+                var phase = ActiveItemRollFeelMath.ResolvePhaseAt(t, wasEnchanted: false);
 
                 // Assert
                 Assert.AreNotEqual(ActiveItemRollPhase.Enchanted, phase, $"en t={t}");
             }
         }
 
-        // ------------------------------------------------------------------
-        // Fases con encantamiento
-        // ------------------------------------------------------------------
-
         [Test]
-        public void test_phases_withEnchantment_passThroughTheRawFaceFirst()
+        public void test_resolve_withEnchantment_flashesFirstAndThenHolds()
         {
-            // Arrange — el jugador tiene que ver la cara cruda antes de la ajustada, para
-            // leer que intervino el encantamiento y no que el dado salio distinto.
+            // Arrange — el salto cruda → ajustada ES el destello: la cruda ya se vio todo
+            // el segmento pendiente, y el destello marca que intervino el encantamiento.
 
             // Act + Assert
-            Assert.AreEqual(ActiveItemRollPhase.Settled,
-                ActiveItemRollFeelMath.PhaseAt(Spin, wasEnchanted: true));
             Assert.AreEqual(ActiveItemRollPhase.Enchanted,
-                ActiveItemRollFeelMath.PhaseAt(Spin + RawHold, wasEnchanted: true));
+                ActiveItemRollFeelMath.ResolvePhaseAt(0f, wasEnchanted: true));
             Assert.AreEqual(ActiveItemRollPhase.Holding,
-                ActiveItemRollFeelMath.PhaseAt(Spin + RawHold + Flash, wasEnchanted: true));
-            // El instante EXACTO de TotalSeconds no se afirma: la suma se recalcula en
-            // PhaseAt y difiere de TotalSeconds por un ULP, asi que fijar el borde seria
-            // testear el codegen. Lo que importa es que la animacion termine.
+                ActiveItemRollFeelMath.ResolvePhaseAt(Flash, wasEnchanted: true));
+            // El instante EXACTO de ResolveTotalSeconds no se afirma: la suma se recalcula
+            // en ResolvePhaseAt y puede diferir por un ULP — fijar el borde seria testear
+            // el codegen. Lo que importa es que la animacion termine.
             Assert.AreEqual(ActiveItemRollPhase.Idle,
-                ActiveItemRollFeelMath.PhaseAt(ActiveItemRollFeelMath.TotalSeconds(true) + 0.01f, true));
+                ActiveItemRollFeelMath.ResolvePhaseAt(
+                    ActiveItemRollFeelMath.ResolveTotalSeconds(true) + 0.01f, true));
         }
 
         [Test]
-        public void test_enchantedAnimation_takesLongerThanThePlainOne()
+        public void test_enchantedResolve_takesLongerThanThePlainOne()
         {
-            // Assert — la diferencia es exactamente la pausa en la cruda mas el destello.
-            Assert.Greater(ActiveItemRollFeelMath.TotalSeconds(true),
-                           ActiveItemRollFeelMath.TotalSeconds(false));
+            // Assert — la diferencia es exactamente el destello.
+            Assert.Greater(ActiveItemRollFeelMath.ResolveTotalSeconds(true),
+                           ActiveItemRollFeelMath.ResolveTotalSeconds(false));
         }
 
         // ------------------------------------------------------------------
-        // Cara mostrada
+        // Giro compartido
         // ------------------------------------------------------------------
-
-        [Test]
-        public void test_face_settlesOnTheRawRollAndThenOnTheFinalOne()
-        {
-            // Arrange — cara cruda 4, ajustada a 5 por el encantamiento.
-            const int raw = 4, final = 5;
-
-            // Act + Assert
-            Assert.AreEqual(raw, ActiveItemRollFeelMath.SettledFaceAt(
-                Spin, true, raw, final), "primero muestra la cruda");
-            Assert.AreEqual(final, ActiveItemRollFeelMath.SettledFaceAt(
-                Spin + RawHold, true, raw, final), "despues la ajustada");
-            Assert.AreEqual(final, ActiveItemRollFeelMath.SettledFaceAt(
-                Spin + RawHold + Flash, true, raw, final));
-        }
-
-        [Test]
-        public void test_face_withoutEnchantment_settlesStraightOnTheResult()
-        {
-            // Act + Assert
-            Assert.AreEqual(3, ActiveItemRollFeelMath.SettledFaceAt(
-                Spin, false, rawRoll: 3, finalRoll: 3));
-        }
 
         [Test]
         public void test_spinTicks_useTheSharedDiceChoreography()
@@ -168,16 +178,6 @@ namespace Rollgeon.UI.Tests
                 $"a mitad del giro pasaron solo {atHalf} de {tickCount} ticks — no arranca rapido");
         }
 
-
-        [Test]
-        public void test_theRawFaceIsShownLongEnoughToBeRead()
-        {
-            // Arrange — la pausa sobre la cara cruda es lo que hace legible que
-            // intervino el encantamiento. Si fuera demasiado corta, el jugador veria un
-            // salto de numero sin explicacion.
-            Assert.GreaterOrEqual(RawHold, 0.15f, "la pausa en la cara cruda es demasiado corta para leerse");
-        }
-
         // ------------------------------------------------------------------
         // Intensidad por banda
         // ------------------------------------------------------------------
@@ -213,37 +213,27 @@ namespace Rollgeon.UI.Tests
         }
 
         // ------------------------------------------------------------------
-        // Escala
+        // Escala de la resolucion
         // ------------------------------------------------------------------
 
         [Test]
-        public void test_scale_returnsToOneWhenIdle()
+        public void test_resolveScale_returnsToOneWhenIdle()
         {
             // Arrange — si no volviera a 1, la ficha quedaria agrandada para siempre.
-            float atEnd = ActiveItemRollFeelMath.ScaleAt(
-                ActiveItemRollFeelMath.TotalSeconds(false), false, ActiveItemBand.Positive);
+            float atEnd = ActiveItemRollFeelMath.ResolveScaleAt(
+                ActiveItemRollFeelMath.ResolveTotalSeconds(false) + 0.01f,
+                wasEnchanted: false, ActiveItemBand.Positive);
 
             // Assert
             Assert.AreEqual(1f, atEnd, 0.001f);
         }
 
         [Test]
-        public void test_scale_doesNotPopWhileSpinning()
-        {
-            // Arrange — el pop marca que el dado se asento; durante el giro no hay nada
-            // que marcar.
-            float mid = ActiveItemRollFeelMath.ScaleAt(Spin * 0.5f, false, ActiveItemBand.Positive);
-
-            // Assert
-            Assert.AreEqual(1f, mid, 0.001f);
-        }
-
-        [Test]
-        public void test_scale_popsHarderOnTheStrongerBand()
+        public void test_resolveScale_popsHarderOnTheStrongerBand()
         {
             // Act
-            float negative = ActiveItemRollFeelMath.ScaleAt(Spin, false, ActiveItemBand.Negative);
-            float positive = ActiveItemRollFeelMath.ScaleAt(Spin, false, ActiveItemBand.Positive);
+            float negative = ActiveItemRollFeelMath.ResolveScaleAt(0f, false, ActiveItemBand.Negative);
+            float positive = ActiveItemRollFeelMath.ResolveScaleAt(0f, false, ActiveItemBand.Positive);
 
             // Assert
             Assert.Greater(positive, negative);

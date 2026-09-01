@@ -131,6 +131,8 @@ namespace Rollgeon.UI.HUD
 
         private TurnButtonMode _appliedMode = TurnButtonMode.EndTurn;
         private IActionRollService _actionRoll;
+        private Rollgeon.Items.Active.IActiveItemActivationService _activeItem;
+        private bool _activeItemHooked;
         private IGameplayHotkeyService _hotkeys;
 
         /// <summary>Modo contextual vigente — Pass gana a Confirm, Confirm a EndTurn.</summary>
@@ -140,7 +142,8 @@ namespace Rollgeon.UI.HUD
             {
                 if (!_bound) return TurnButtonMode.EndTurn;
                 if (_chainPaidRollPending) return TurnButtonMode.Pass;
-                if (IsActionRollActive() || _inChain || _rolled) return TurnButtonMode.Confirm;
+                if (IsActionRollActive() || IsActiveItemAwaiting() || _inChain || _rolled)
+                    return TurnButtonMode.Confirm;
                 return TurnButtonMode.EndTurn;
             }
         }
@@ -202,8 +205,10 @@ namespace Rollgeon.UI.HUD
             if (_energyHighlight != null) _energyHighlight.Bind(playerGuid);
 
             // El ActionRollService es Run-scoped: la referencia se re-resuelve por
-            // combate para no quedar apuntando a un service de un run anterior.
+            // combate para no quedar apuntando a un service de un run anterior. Idem el
+            // service del item activo.
             _actionRoll = null;
+            UnhookActiveItem();
 
             if (_diceZone == null) _diceZone = UnityEngine.Object.FindFirstObjectByType<DiceZoneView>();
             if (_diceZone != null) _diceZone.DiceAnimationStateChanged += Refresh;
@@ -245,6 +250,7 @@ namespace Rollgeon.UI.HUD
             _inChain = false;
             _chainPaidRollPending = false;
             _actionRoll = null;
+            UnhookActiveItem();
             Refresh();
         }
 
@@ -283,6 +289,9 @@ namespace Rollgeon.UI.HUD
 
                 case TurnButtonMode.Confirm:
                     if (IsActionRollActive()) return _actionRoll.CanConfirm;
+                    // Tirada del item activo esperando decision: aceptar siempre se
+                    // puede (no cuesta nada) mientras sea el turno del jugador.
+                    if (IsActiveItemAwaiting()) return _isPlayerTurn;
                     // Mismo gate que tenía PlayerActionButtonsView: sin holds no hay
                     // combo posible y con dados girando el resultado no se reveló.
                     return _isPlayerTurn && _rolled && AnyDieHeld()
@@ -325,6 +334,41 @@ namespace Rollgeon.UI.HUD
             if (_actionRoll == null) ServiceLocator.TryGetService(out _actionRoll);
             return _actionRoll != null && _actionRoll.IsActive;
         }
+
+        // Resolucion perezosa como la del ActionRoll, con una diferencia: este service
+        // no se puede pollear barato en Update (la ventana se abre por evento), asi que
+        // al resolverlo nos colgamos de OnRollPending/OnResolved para re-gatear.
+        private bool IsActiveItemAwaiting()
+        {
+            if (_activeItem == null)
+            {
+                ServiceLocator.TryGetService(out _activeItem);
+                if (_activeItem != null && !_activeItemHooked)
+                {
+                    _activeItem.OnRollPending += HandleActiveItemPending;
+                    _activeItem.OnResolved += HandleActiveItemResolved;
+                    _activeItemHooked = true;
+                }
+            }
+            return _activeItem != null && _activeItem.IsAwaitingDecision;
+        }
+
+        private void UnhookActiveItem()
+        {
+            if (_activeItem != null && _activeItemHooked)
+            {
+                _activeItem.OnRollPending -= HandleActiveItemPending;
+                _activeItem.OnResolved -= HandleActiveItemResolved;
+            }
+            _activeItemHooked = false;
+            _activeItem = null;
+        }
+
+        private void HandleActiveItemPending(Rollgeon.Items.Active.ActiveItemPendingRoll _)
+            => Refresh();
+
+        private void HandleActiveItemResolved(Rollgeon.Items.Active.ActiveItemActivationResult _)
+            => Refresh();
 
         private bool AnyDieHeld()
         {
@@ -425,6 +469,15 @@ namespace Rollgeon.UI.HUD
                     if (IsActionRollActive())
                     {
                         _actionRoll.DeclineReroll();
+                        Refresh();
+                        return;
+                    }
+                    // Tirada del item activo esperando decision: Confirm = aceptar la
+                    // cara vigente. Mismo criterio que el ActionRoll — nunca disparar el
+                    // flow de combate con una ventana ajena abierta.
+                    if (IsActiveItemAwaiting())
+                    {
+                        _activeItem.AcceptRoll();
                         Refresh();
                         return;
                     }

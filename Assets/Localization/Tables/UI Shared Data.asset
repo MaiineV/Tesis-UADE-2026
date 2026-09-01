@@ -867,6 +867,10 @@ MonoBehaviour:
     m_Key: action.reject.no_active_item
     m_Metadata:
       m_Items: []
+  - m_Id: 17587744320700416
+    m_Key: hud.active_item.decide_hint
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:
