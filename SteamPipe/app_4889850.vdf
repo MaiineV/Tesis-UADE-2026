@@ -9,7 +9,7 @@
 "appbuild"
 {
 	"appid"			"4889850"
-	"desc"			"Rollgeon 0.3.4 — Release (no dev), develop @ bcc91e1f (tile status effects + energy per turn balance)"
+	"desc"			"Rollgeon 0.3.5 — Release (no dev), develop @ dd12d311 (Feature#0065 passive items QA fixes + movement die D6)"
 
 	// Ambos caen bajo Build/, que está gitignoreado.
 	"buildoutput"	"..\Build\SteamPipeOutput"
