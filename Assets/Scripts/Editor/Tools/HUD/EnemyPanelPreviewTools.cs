@@ -243,7 +243,7 @@ namespace Rollgeon.EditorTools.HUD
             // El MISMO reparto que la fila real: el bloque de próximo turno y la maldición en
             // la principal, y lo que mantiene en el paño al costado.
             string promotedKey = EnemyStatusIconsView.AppendNextTurnCard(
-                next, standing, owner, catalog, panelCards);
+                next, standing, owner, catalog, panelCards, data.Archetype);
             EnemyStatusIconsView.AppendCurseCard(data.Curse, catalog, panelCards);
             EnemyStatusIconsView.AppendStandingCards(standing, promotedKey, owner, catalog, applied);
         }

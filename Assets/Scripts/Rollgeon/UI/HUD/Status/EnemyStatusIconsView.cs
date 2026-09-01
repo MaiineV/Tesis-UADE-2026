@@ -4,6 +4,7 @@ using Patterns;
 using Rollgeon.Combat.AI;
 using Rollgeon.Combat.AI.Decisions;
 using Rollgeon.Entities;
+using Rollgeon.Entities.Traits;
 using Rollgeon.Entities.Visuals;
 using Rollgeon.Localization;
 using Rollgeon.Tiles;
@@ -203,7 +204,7 @@ namespace Rollgeon.UI.HUD.Status
                 && intents.TryRead(_entityGuid, _standing, _next))
             {
                 string promotedKey = AppendNextTurnCard(_next, _standing, _entityGuid, _catalog,
-                                                        _panelCards);
+                                                        _panelCards, Family());
                 AppendStandingCards(_standing, promotedKey, _entityGuid, _catalog, _applied);
             }
 
@@ -311,13 +312,14 @@ namespace Rollgeon.UI.HUD.Status
         /// </remarks>
         public static string AppendNextTurnCard(List<AIIntent> next, List<AIIntent> standing,
                                                 Guid owner, StatusIconCatalogSO catalog,
-                                                List<StatusIconState> into)
+                                                List<StatusIconState> into,
+                                                EnemyArchetype archetype = EnemyArchetype.Unset)
         {
             if (!TryPickOwn(next, owner, out var intent)
                 && !TryPickOwn(standing, owner, out intent))
                 return null;
 
-            into.Add(ToNextTurnState(intent, catalog));
+            into.Add(ToNextTurnState(intent, catalog, archetype));
             return intent.LabelKey;
         }
 
@@ -352,12 +354,13 @@ namespace Rollgeon.UI.HUD.Status
 
         // El tipo de ataque va en el título sólo acá: las tarjetas del costado hablan de efectos
         // y terreno, no de ataques, y un " · Básico" en ellas no calificaría nada.
-        private static StatusIconState ToNextTurnState(in AIIntent intent, StatusIconCatalogSO catalog)
+        private static StatusIconState ToNextTurnState(in AIIntent intent, StatusIconCatalogSO catalog,
+                                                      EnemyArchetype archetype = EnemyArchetype.Unset)
         {
             var state = ToState(intent, catalog, NextTurnEyebrow());
             return new StatusIconState(
                 state.Id,
-                AttackKindText.ComposeTitle(state.DisplayName, intent.Kind),
+                AttackKindText.ComposeTitle(TitleOf(intent, archetype), intent.Kind),
                 state.Description,
                 state.Icon,
                 active: true,
@@ -365,6 +368,26 @@ namespace Rollgeon.UI.HUD.Status
                 damage: state.Damage,
                 eyebrow: state.Eyebrow);
         }
+
+        /// <summary>
+        /// El título de la tarjeta. El nodo genérico del bestiario rotula todo igual —"Golpe"—
+        /// porque describe un <c>EffDealDamage</c> y no sabe de qué bicho cuelga: <c>AIContext</c>
+        /// no lleva la ficha. El panel sí la tiene, y la familia ya está impresa dos renglones más
+        /// arriba, así que la palabra sale de ahí: un tirador que pega desde cinco casillas no
+        /// "golpea".
+        /// </summary>
+        /// <remarks>
+        /// Sólo se pisa la key genérica. Un título autorado —el disparo de un jefe, la mecha de una
+        /// bomba— manda siempre: es una decisión de autoría y la familia no la conoce.
+        /// </remarks>
+        private static string TitleOf(in AIIntent intent, EnemyArchetype archetype)
+            => intent.LabelKey == AIIntentTextKeys.Attack && archetype == EnemyArchetype.Ranged
+                ? LocalizedContent.Name(AIIntentTextKeys.RangedShot,
+                                        AIIntentTextKeys.RangedShotFallback)
+                : LocalizedContent.Name(intent.LabelKey, intent.LabelFallback);
+
+        /// <summary>La familia de la ficha, o <c>Unset</c> sin ficha — que no pisa ningún título.</summary>
+        private EnemyArchetype Family() => _data != null ? _data.Archetype : EnemyArchetype.Unset;
 
         // Lo que le pertenece a otra cosa del paño se lee en ESA cosa. Las bombas del Croupier
         // publican una cruz cada una y el jefe las tickea a todas, así que sin esto su columna

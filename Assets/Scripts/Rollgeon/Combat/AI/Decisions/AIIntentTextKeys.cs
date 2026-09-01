@@ -20,6 +20,13 @@ namespace Rollgeon.Combat.AI.Decisions
         public const string BurnRoom = "intent.burn_room";
 
         public const string RangedShot = "intent.ranged_shot";
+
+        /// <summary>
+        /// Texto de autor del título del disparo. Con nombre porque lo piden dos lugares: el nodo
+        /// que dispara y el panel, que rotula así al bestiario ranged aunque su ataque venga del
+        /// nodo genérico. Dos literales iguales ya se habían separado una vez.
+        /// </summary>
+        public const string RangedShotFallback = "Disparo";
         public const string BombField = "intent.bomb_field";
         public const string BombBlast = "intent.bomb_blast";
 
