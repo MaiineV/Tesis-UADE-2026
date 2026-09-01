@@ -171,6 +171,20 @@ namespace Rollgeon.Combat.AI
             _running.Clear();
         }
 
+        /// <summary>
+        /// El MISMO contexto con el que este enemigo va a tickear su árbol, para poder leerlo sin
+        /// tickearlo. <c>null</c> si no tiene árbol registrado.
+        /// </summary>
+        /// <remarks>
+        /// Reusa <see cref="BuildContext"/> en vez de armar uno de lectura: a un contexto al que
+        /// le falte el <c>DamagePipeline</c>, <c>AINode_RangedShot.CanFire</c> le contesta que no
+        /// va a disparar cuando sí va a disparar.
+        /// </remarks>
+        public AIContext TryBuildReadContext(Guid enemyId)
+            => _registry.TryGet(enemyId, out var root, out var maxHp) && root != null
+                ? BuildContext(enemyId, maxHp)
+                : null;
+
         private AIContext BuildContext(Guid enemyId, int maxHp)
         {
             ServiceLocator.TryGetService<IGridManager>(out var grid);

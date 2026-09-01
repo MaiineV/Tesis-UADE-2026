@@ -8,6 +8,7 @@ using Rollgeon.Combat.Threat;
 using Rollgeon.Combos;
 using Rollgeon.Entities;
 using Rollgeon.Entities.Behaviors;
+using Rollgeon.Entities.Traits;
 using Rollgeon.Feedback;
 using Rollgeon.PreConditions;
 using Rollgeon.PreConditions.Concretes;
@@ -265,6 +266,13 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         public const string BombDefinitionId = "roomobj.croupier.bomba";
         public const string BombFireTilePath = "Assets/Rollgeon/Tiles/Tile_Fire_CroupierBomba.asset";
         public const string BombFireTileId = "TILE_FIRE_CROUPIER_BOMBA";
+
+        /// <summary>
+        /// Clave propia y no la del fuego del paño: las dos casillas conviven en la misma sala, se
+        /// dibujan con el mismo prefab y cobran 6/10 contra 15/15. Compartiendo clave, el tooltip
+        /// del fuego de bomba se titula con el nombre del otro.
+        /// </summary>
+        public const string BombFireContentKey = "tile.firecroupierbomba";
         public const string BombArtPrefabPath = "Assets/Art/3D/Models/Items/Bomb.fbx";
         public const string BombVisualPrefabPath = "Assets/Prefabs/Enemies/Bosses/PF_Obj_Bomba.prefab";
 
@@ -325,11 +333,11 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         public const int BombFireDamage = 15;
 
         /// <summary>
-        /// Lo que cobra el estallido en sí: <b>nada</b>, igual que el cono. Quien esté parado en la
-        /// cruz cuando prende paga los <see cref="BombFireDamage"/> al arrancar su turno ahí, que es
-        /// lo que le da el turno para salirse. Cobrar también al prender lo cobraría dos veces.
+        /// Lo que cobra el estallido en sí. Quedarse en la cruz cuesta esto al prender más los
+        /// <see cref="BombFireDamage"/> al arrancar el turno ahí: casi media barra del jugador por
+        /// ignorar UNA de las tres, que es el precio que la hace una pregunta y no un adorno.
         /// </summary>
-        public const int BombIgnitionDamage = 0;
+        public const int BombIgnitionDamage = 30;
 
         /// <summary>
         /// De acá sale el canal de amenaza de cada bomba (prefijo + su guid). Uno por bomba es lo que
@@ -565,6 +573,10 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
             // OwnerBossImmune && IsBoss && que el dueño sea este guid.
             data.IsBoss = true;
 
+            // Sus tres tiempos pegan de lejos: siembra, prende la banda que marcó, y dispara. El
+            // panel lo lee "Jefe · Rango" — el prefijo sale del IsBoss de arriba.
+            data.Archetype = Rollgeon.Entities.Traits.EnemyArchetype.Ranged;
+
             data.BaseHealStrength = 0;
 
             data.MinGoldDrop = MinGoldDrop;
@@ -580,7 +592,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
             data.AIDetachedNodes.Clear(); // el builder es fuente de verdad: nada suelto sobrevive
             data.Design = new EnemyDesignSheet
             {
-                Archetype = EnemyArchetype.Ranged,
+                Archetype = Rollgeon.Entities.EnemyArchetype.Ranged,
                 Pattern = AttackPatternKind.Cone,
                 Timing = AttackTiming.Telegraph,
                 Notes = "Cono direccional, disparo a distancia larga, bombas en cruz, teletransportes, fuego en sectores.",
@@ -633,6 +645,11 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
                         // sumaria SU turno de espera arriba del que ya da el orden y prenderia en
                         // N+2.
                         AnnounceTurns = 0,
+                        // Tarjeta propia: es el mismo nodo que la bola de fuego, pero de la bola
+                        // te corrés al costado y de esto sólo se sale llegando al hueco. Con la
+                        // key de siempre las dos se anuncian igual y la fase 2 pasa desapercibida.
+                        IntentLabelKey = AIIntentTextKeys.BurnRoom,
+                        IntentLabelFallback = "Pleno y color",
                         WindupFeedbackId = BossFeedbackIds.CroupierMeleeAnim,
                         // OFF, al reves que las bandas: el Pleno es el reloj mas corto de los tres,
                         // asi que relevar lo que tapa le recortaria la banda que ya venia ardiendo a
@@ -1234,6 +1251,9 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
             // sus reacomodos esquiven las casillas que hacen daño.
             tile.OwnerBossImmune = false;
 
+            tile.NameKey = BombFireContentKey;
+            tile.DescriptionKey = BombFireContentKey;
+
             if (basefire == null) return;
 
             tile.DefaultDurationRounds = basefire.DefaultDurationRounds;
@@ -1245,8 +1265,6 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
             tile.TriggerVfxYOffset = basefire.TriggerVfxYOffset;
             tile.EditorIcon = basefire.EditorIcon;
             tile.EditorColor = basefire.EditorColor;
-            tile.NameKey = basefire.NameKey;
-            tile.DescriptionKey = basefire.DescriptionKey;
         }
 
         // ======================================================================

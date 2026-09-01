@@ -531,6 +531,7 @@ MonoBehaviour:
       fuerte; refuerzos (Comisi\xF3n)."
   WeaknessComboId: combo.full_house
   WeaknessMultiplierOverride: 1.5
+  Curse: {fileID: 11400000, guid: 0e92b4d6bcb557b4684b8a969a2ace36, type: 2}
   BaseHP: 450
   BaseAttack: 20
   BaseHealStrength: 0
@@ -542,6 +543,7 @@ MonoBehaviour:
   MinGoldDrop: 30
   MaxGoldDrop: 60
   IsFlying: 0
-  IsBoss: 0
+  IsBoss: 1
+  Archetype: 2
   Personality: 0
   KamikazeIgnoresSurvival: 0

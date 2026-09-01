@@ -38,16 +38,6 @@ namespace Rollgeon.Entities.Visuals
                  "sigan legibles (BUG-050).")]
         private float _referenceZoom = 9f;
 
-        // BUG-050: la barra atraviesa paredes porque el Canvas World Space hereda ZTest
-        // LEqual del canvas y la geometria del mundo la recorta (incluida la pared "oculta"
-        // de WallOccluder, que sigue escribiendo depth via su clip() dithered). Materiales
-        // compartidos y cacheados estaticamente — un solo Material de Image y un clon del
-        // material de fuente por TMP_FontAsset distinto, reusados por TODAS las barras del
-        // juego en vez de instanciar uno por spawn.
-        private static Material s_OverlayImageMaterial;
-        private static bool s_OverlayImageMaterialResolved;
-        private static readonly Dictionary<Material, Material> s_OverlayTmpMaterials = new();
-
         private Guid _entityGuid;
         private int _maxHp;
         private bool _bound;
@@ -142,60 +132,9 @@ namespace Rollgeon.Entities.Visuals
             return Mathf.Clamp(orthographicSize / referenceZoom, minScale, maxScale);
         }
 
-        /// <summary>
-        /// Asigna el material overlay (ZTest Always) a todas las Image y TMP hijas, para
-        /// que la barra pinte siempre encima de la geometria del mundo. Fallback silencioso
-        /// al material del prefab si el shader no esta disponible (build sin el shader
-        /// stripeado, o falta de importacion).
-        /// </summary>
-        private void ApplyOverlayMaterials()
-        {
-            var overlayImageMat = GetOverlayImageMaterial();
-            if (overlayImageMat != null)
-            {
-                foreach (var img in GetComponentsInChildren<Image>(includeInactive: true))
-                    img.material = overlayImageMat;
-            }
-
-            foreach (var tmp in GetComponentsInChildren<TextMeshProUGUI>(includeInactive: true))
-            {
-                var overlayTmpMat = GetOverlayTmpMaterial(tmp.fontSharedMaterial);
-                if (overlayTmpMat != null)
-                    tmp.fontSharedMaterial = overlayTmpMat;
-            }
-        }
-
-        private static Material GetOverlayImageMaterial()
-        {
-            if (s_OverlayImageMaterialResolved) return s_OverlayImageMaterial;
-            s_OverlayImageMaterialResolved = true;
-
-            var shader = Shader.Find("OverlayUI");
-            if (shader == null) return null;
-
-            s_OverlayImageMaterial = new Material(shader) { name = "WorldSpaceHealthBar (Overlay)" };
-            return s_OverlayImageMaterial;
-        }
-
-        // Clona el material de fuente UNA vez por material de origen distinto (no por
-        // barra ni por TMP_FontAsset con caras multiples que comparten material) y
-        // reusa el clon — instanciar por barra hubiera significado un Material nuevo
-        // por cada enemigo/cofre spawneado en cada sala.
-        private static Material GetOverlayTmpMaterial(Material source)
-        {
-            if (source == null) return null;
-            if (s_OverlayTmpMaterials.TryGetValue(source, out var cached) && cached != null)
-                return cached;
-
-            var shader = Shader.Find("TextMeshPro/Distance Field Overlay");
-            if (shader == null) return null;
-
-            // El clon preserva atlas/face/outline del material de origen; solo el
-            // shader cambia a la variante Overlay (ZTest Always).
-            var overlay = new Material(source) { shader = shader, name = source.name + " (Overlay)" };
-            s_OverlayTmpMaterials[source] = overlay;
-            return overlay;
-        }
+        // El material overlay lo comparte toda la UI world-space del juego; ver
+        // WorldSpaceOverlayMaterials para el por que del ZTest y del cacheo estatico.
+        private void ApplyOverlayMaterials() => WorldSpaceOverlayMaterials.Apply(gameObject);
 
         private void HandleDamageResolved(DamageResolvedPayload payload)
         {

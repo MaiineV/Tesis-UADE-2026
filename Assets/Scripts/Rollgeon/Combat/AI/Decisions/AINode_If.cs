@@ -33,13 +33,23 @@ namespace Rollgeon.Combat.AI.Decisions
 
         public override string NodeName => "If";
 
+        /// <summary>
+        /// El MISMO veredicto que usa el tick, para que quien lea el árbol de afuera no tenga
+        /// una segunda copia de la aritmética que se despegue de esta.
+        /// </summary>
+        public bool Evaluate(AIContext context)
+        {
+            if (context == null) return false;
+
+            var target = EnemyTargetResolver.Resolve(TargetSelector, context, context.SelfGuid);
+            return BasePreCondition.EvaluateAll(Conditions, context.BuildPcContext(target));
+        }
+
         public override AIResult Tick(AIContext context)
         {
             if (context == null) return AIResult.Failed;
 
-            var target = EnemyTargetResolver.Resolve(TargetSelector, context, context.SelfGuid);
-            var pcCtx = context.BuildPcContext(target);
-            bool pass = BasePreCondition.EvaluateAll(Conditions, pcCtx);
+            bool pass = Evaluate(context);
 
             var branch = pass ? Then : Else;
             return branch?.Tick(context) ?? AIResult.Failed;
@@ -49,9 +59,7 @@ namespace Rollgeon.Combat.AI.Decisions
         {
             if (context == null) { onResult?.Invoke(AIResult.Failed); yield break; }
 
-            var target = EnemyTargetResolver.Resolve(TargetSelector, context, context.SelfGuid);
-            var pcCtx = context.BuildPcContext(target);
-            bool pass = BasePreCondition.EvaluateAll(Conditions, pcCtx);
+            bool pass = Evaluate(context);
 
             var branch = pass ? Then : Else;
             if (branch == null) { onResult?.Invoke(AIResult.Failed); yield break; }

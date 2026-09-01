@@ -43,7 +43,7 @@ MonoBehaviour:
         Rollgeon]], mscorlib
     - Name: 
       Entry: 12
-      Data: 2
+      Data: 3
     - Name: 
       Entry: 7
       Data: 3|Rollgeon.Combat.AI.Decisions.AINode_Selector, Rollgeon
@@ -56,7 +56,7 @@ MonoBehaviour:
       Data: 2
     - Name: 
       Entry: 7
-      Data: 5|Rollgeon.Combat.AI.Decisions.AINode_CashierRangedShot, Rollgeon
+      Data: 5|Rollgeon.Combat.AI.Decisions.AINode_RangedShot, Rollgeon
     - Name: Damage
       Entry: 3
       Data: 8
@@ -71,13 +71,13 @@ MonoBehaviour:
       Data: 1
     - Name: AnimFeedbackId
       Entry: 1
-      Data: anim.enemy.comision.bite
+      Data: anim.enemy.ranged.attack
     - Name: ImpactVfxFeedbackId
-      Entry: 6
-      Data: 
+      Entry: 1
+      Data: vfx.enemy.ranged.impact
     - Name: ImpactFeelFeedbackId
-      Entry: 6
-      Data: 
+      Entry: 1
+      Data: feel.enemy.ranged.impact
     - Name: 
       Entry: 8
       Data: 
@@ -108,10 +108,59 @@ MonoBehaviour:
       Data: 2
     - Name: 
       Entry: 7
-      Data: 9|Rollgeon.Combat.AI.Decisions.AINode_Move, Rollgeon
+      Data: 9|Rollgeon.Combat.AI.Decisions.AINode_KeepDistance, Rollgeon
     - Name: MaxSteps
       Entry: 7
       Data: 10|Rollgeon.Combat.AI.Readers.AIConstantInt, Rollgeon
+    - Name: Value
+      Entry: 3
+      Data: 3
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: IdealDistance
+      Entry: 7
+      Data: 11|Rollgeon.Combat.AI.Readers.AIConstantInt, Rollgeon
+    - Name: Value
+      Entry: 3
+      Data: 5
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 12|Rollgeon.Combat.AI.Decisions.AINode_Wait, Rollgeon
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 13|Rollgeon.Combat.AI.Decisions.AINode_Selector, Rollgeon
+    - Name: Children
+      Entry: 7
+      Data: 14|System.Collections.Generic.List`1[[Rollgeon.Combat.AI.Decisions.AIDecisionNode,
+        Rollgeon]], mscorlib
+    - Name: 
+      Entry: 12
+      Data: 2
+    - Name: 
+      Entry: 7
+      Data: 15|Rollgeon.Combat.AI.Decisions.AINode_Move, Rollgeon
+    - Name: MaxSteps
+      Entry: 7
+      Data: 16|Rollgeon.Combat.AI.Readers.AIConstantInt, Rollgeon
     - Name: Value
       Entry: 3
       Data: 3
@@ -123,7 +172,7 @@ MonoBehaviour:
       Data: 
     - Name: DesiredRange
       Entry: 7
-      Data: 11|Rollgeon.Combat.AI.Readers.AIConstantInt, Rollgeon
+      Data: 17|Rollgeon.Combat.AI.Readers.AIConstantInt, Rollgeon
     - Name: Value
       Entry: 3
       Data: 5
@@ -141,7 +190,7 @@ MonoBehaviour:
       Data: 
     - Name: 
       Entry: 7
-      Data: 12|Rollgeon.Combat.AI.Decisions.AINode_Wait, Rollgeon
+      Data: 18|Rollgeon.Combat.AI.Decisions.AINode_Wait, Rollgeon
     - Name: 
       Entry: 8
       Data: 
@@ -165,7 +214,7 @@ MonoBehaviour:
       Data: 
     - Name: AIDetachedNodes
       Entry: 7
-      Data: 13|System.Collections.Generic.List`1[[Rollgeon.Combat.AI.Decisions.AIDecisionNode,
+      Data: 19|System.Collections.Generic.List`1[[Rollgeon.Combat.AI.Decisions.AIDecisionNode,
         Rollgeon]], mscorlib
     - Name: 
       Entry: 12
@@ -177,16 +226,18 @@ MonoBehaviour:
       Entry: 8
       Data: 
   EntityId: minion.cajero_comision
-  DisplayName: "Comisi\xF3n"
-  Description: Vuela, tira de lejos, y le pone precio a huir.
-  Portrait: {fileID: 133841030, guid: 7354be46d5bce5b44ae3fc20ec0cb47f, type: 3}
+  DisplayName: Enemigo a Distancia
+  Description: Goblin con ataque a distancia, dispara con una ballesta.
+  Portrait: {fileID: -172214914, guid: 20ce88debfdaa06459d18ed604643892, type: 3}
   Design:
     Archetype: 2
     Pattern: 7
     Timing: 1
-    Notes: Mordisco a distancia 5 (Manhattan); se acerca si no llega.
+    Notes: "Dispara si el jugador est\xE1 a ≤5 (Manhattan) y mantiene distancia
+      5; si no, se acerca."
   WeaknessComboId: 
   WeaknessMultiplierOverride: 0
+  Curse: {fileID: 0}
   BaseHP: 18
   BaseAttack: 8
   BaseHealStrength: 0
@@ -194,10 +245,11 @@ MonoBehaviour:
   MaxEnergy: 1
   BaseAttackRange: 5
   ExtraTiers: []
-  VisualPrefab: {fileID: 1453312193095082628, guid: 65b4e9aba2ad03946bc8d8c65fb39e85, type: 3}
+  VisualPrefab: {fileID: 8816966952657547766, guid: d1bfc05133e86344e8c12884968c7854, type: 3}
   MinGoldDrop: 0
   MaxGoldDrop: 0
   IsFlying: 1
   IsBoss: 0
+  Archetype: 2
   Personality: 0
   KamikazeIgnoresSurvival: 0

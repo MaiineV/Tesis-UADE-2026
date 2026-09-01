@@ -109,6 +109,15 @@ namespace Rollgeon.Combat.Threat
                  "Generate a fresh one per definition; never reuse another hazard's id.")]
         public string SourceId = Guid.NewGuid().ToString();
 
+        [Tooltip("Nombre para editor/debug y fallback del tooltip. El nombre localizado sale de NameKey.")]
+        public string DisplayName;
+
+        [Tooltip("Key del nombre visible (tooltips). Sembrada por el seeder de localización.")]
+        public string NameKey;
+
+        [Tooltip("Key de la descripción visible (tooltips).")]
+        public string DescriptionKey;
+
         /// <summary>Alias of <see cref="ThreatTelegraphOverlay.DefaultTint"/> and the default for
         /// <see cref="OverlayTint"/>. Points at the overlay's constant rather than re-declaring the
         /// colour so the two can't drift apart.</summary>

@@ -21,3 +21,6 @@ MonoBehaviour:
   Kind: 2
   CycleRounds: 3
   SourceId: 06284e90-a5c8-45b5-af10-1272b25187d4
+  DisplayName: Fuego
+  NameKey: hazard.fire
+  DescriptionKey: hazard.fire

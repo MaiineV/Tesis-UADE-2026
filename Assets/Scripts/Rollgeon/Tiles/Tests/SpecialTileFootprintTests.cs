@@ -247,14 +247,14 @@ namespace Rollgeon.Tiles.Tests
         // ======================================================================
 
         [Test]
-        public void CollectTypesUnder_SeesTileUnderAnyCoveredCell()
+        public void CollectUnder_SeesTileUnderAnyCoveredCell()
         {
             _svc.Place(MakeFire(), new[] { new GridCoord(1, 1) });
 
-            var types = new List<SpecialTileType>();
-            _svc.CollectTypesUnder(_big, types);
+            var under = new List<SpecialTileInfo>();
+            _svc.CollectUnder(_big, under);
 
-            CollectionAssert.Contains(types, SpecialTileType.Fire);
+            Assert.IsTrue(under.Exists(i => i.Definition.TileType == SpecialTileType.Fire));
         }
 
         [Test]

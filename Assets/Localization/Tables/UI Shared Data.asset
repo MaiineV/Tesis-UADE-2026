@@ -867,6 +867,162 @@ MonoBehaviour:
     m_Key: action.reject.no_active_item
     m_Metadata:
       m_Items: []
+  - m_Id: 17593281655271424
+    m_Key: enemy.archetype.melee
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593281667854336
+    m_Key: enemy.archetype.ranged
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593281667854337
+    m_Key: enemy.archetype.support
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593281667854338
+    m_Key: enemy.archetype.boss
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593281667854339
+    m_Key: enemy.archetype.boss_format
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593281667854340
+    m_Key: enemy.panel.next_turn
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593281667854341
+    m_Key: enemy.panel.player_curse
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593281672048640
+    m_Key: attack_kind.combo_attack
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593281672048641
+    m_Key: attack_kind.basic_attack
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593281672048642
+    m_Key: attack_kind.damage_over_time
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593281672048643
+    m_Key: attack_kind.environmental
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593281672048644
+    m_Key: attack_kind.reaction
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593281672048645
+    m_Key: attack_kind.scripted_ability
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593281672048646
+    m_Key: enemy.panel.title_kind_format
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593281672048647
+    m_Key: tile.category.format
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593281672048648
+    m_Key: tile.category.damage
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593281672048649
+    m_Key: tile.category.heal
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593281672048650
+    m_Key: tile.category.status
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593281672048651
+    m_Key: tile.category.buff
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593281672048652
+    m_Key: tile.category.slide
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593281672048653
+    m_Key: tile.category.teleport
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593281672048654
+    m_Key: tile.category.warning
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593281672048655
+    m_Key: tile.category.protection
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593281672048656
+    m_Key: tile.panel.effect
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593281672048657
+    m_Key: tile.panel.enter
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593281672048658
+    m_Key: tile.panel.turn_start
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593281672048659
+    m_Key: tile.panel.heal
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593281672048660
+    m_Key: tile.panel.applies
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593281672048661
+    m_Key: enemy.panel.on_the_floor
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593281672048662
+    m_Key: prop.panel.type
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593281672048663
+    m_Key: prop.panel.leaves
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593281672048664
+    m_Key: prop.panel.fuse_tick
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593281672048665
+    m_Key: prop.panel.fuse_blows
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593281672048666
+    m_Key: prop.panel.on_blast
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593281672048667
+    m_Key: prop.panel.blast_hit
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593281672048668
+    m_Key: hazard.panel.type
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593281672048669
+    m_Key: hazard.panel.hit
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593281672048670
+    m_Key: hazard.panel.cycle
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593281676242944
+    m_Key: chest.rarity.god
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

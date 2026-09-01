@@ -31,3 +31,6 @@ MonoBehaviour:
   PersistentVfxPrefab: {fileID: 2863510167059283868, guid: 2b481875e1cbb8c4283eacfba95ed37f, type: 3}
   PersistentVfxYOffset: 0.1
   SourceId: c0a17e11-0002-4c00-b002-6f75706965f2
+  DisplayName: Fuego de mesa
+  NameKey: hazard.table_fire
+  DescriptionKey: hazard.table_fire

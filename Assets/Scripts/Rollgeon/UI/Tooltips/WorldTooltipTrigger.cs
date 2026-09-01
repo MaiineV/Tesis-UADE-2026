@@ -1,4 +1,8 @@
 using System;
+using System.Collections.Generic;
+using Patterns;
+using Rollgeon.Effects.Selection;
+using Rollgeon.UI.HUD.Status;
 using Sirenix.OdinInspector;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -39,6 +43,65 @@ namespace Rollgeon.UI.Tooltips
         /// </summary>
         public Func<string> TextProvider;
 
+        /// <summary>
+        /// Tarjetas del panel, bajo el encabezado que da <see cref="TextProvider"/>. <c>null</c> =
+        /// tooltip de texto y nada más.
+        /// </summary>
+        public Func<IReadOnlyList<StatusIconState>> CardsProvider;
+
+        /// <summary>
+        /// Tarjetas de la columna del costado — los estados que le aplicaron. <c>null</c> = el
+        /// panel no abre segunda columna.
+        /// </summary>
+        public Func<IReadOnlyList<StatusIconState>> SideCardsProvider;
+
+        /// <summary>
+        /// Tarjetas colgadas debajo de la caja. <c>null</c> = nada colgando.
+        /// </summary>
+        public Func<IReadOnlyList<StatusIconState>> BottomCardsProvider;
+
+        /// <summary>
+        /// Un renglón extra al pie del panel, debajo del texto de sabor y con su misma letra —
+        /// la debilidad del enemigo. <c>null</c> = el pie queda como lo trajo el contenido.
+        /// </summary>
+        public Func<string> FooterLineProvider;
+
+        /// <summary>
+        /// Provider de la banda de identidad — nombre, vitales y color al pie. Gana sobre
+        /// <see cref="TextProvider"/> cuando está: quien sabe describirse entero no tiene por qué
+        /// aplanarse a un párrafo.
+        /// </summary>
+        public Func<TooltipContent> ContentProvider;
+
+        /// <summary>
+        /// Entra (<c>true</c>) y sale (<c>false</c>) el hover. Lo consume quien además del texto
+        /// tiene que pintar algo — el tooltip se resuelve solo acá adentro.
+        /// </summary>
+        public event Action<bool> HoverChanged;
+
+        /// <summary>
+        /// Un click sobre el objeto fija el tooltip: el panel queda abierto con el mouse libre y
+        /// el contenido se re-muestra en cada turno. Solo lo prenden los enemigos. Fijar nunca
+        /// consume el click que selecciona objetivo: los clicks en modo targeting se ignoran, y
+        /// entrar en modo ataque suelta el fijado solo.
+        /// </summary>
+        public bool PinOnClick;
+
+        /// <summary>
+        /// El fijado volvió a mostrar el tooltip sin flanco de hover (cambio de turno, o el hover
+        /// de otro trigger que devolvió el panel). Lo consume quien pinta el preview de amenaza,
+        /// que solo escucha <see cref="HoverChanged"/> y se perdería estos re-dibujos.
+        /// </summary>
+        public event Action PinRefreshed;
+
+        /// <summary>Si este trigger tiene el tooltip fijado ahora.</summary>
+        public bool IsPinned => _pinned;
+
+        private bool _pinned;
+
+        // Un solo fijado en todo el combate: el panel es uno solo, así que fijar B suelta a A.
+        private static WorldTooltipTrigger s_pinned;
+
         [SerializeField] private WorldTooltipMode _mode = WorldTooltipMode.Click;
 
         /// <summary>
@@ -56,15 +119,21 @@ namespace Rollgeon.UI.Tooltips
 
                 // El hover activo muere con el cambio de modo: si se pasa a Click quedaría un
                 // tooltip abierto que ningún Update va a cerrar.
-                if (_hoverActive)
-                {
-                    _hoverActive = false;
-                    HideTooltip();
-                }
+                SetHover(false, null);
             }
         }
 
         [SerializeField] private TooltipPlacementSettings _placement = new TooltipPlacementSettings();
+
+        /// <summary>
+        /// Dónde se dibuja el panel respecto del objeto. Escribible por lo mismo que
+        /// <see cref="Mode"/>: los triggers que se cuelgan por código no pasan por el Inspector.
+        /// </summary>
+        public TooltipPlacementMode Placement
+        {
+            get => _placement.Mode;
+            set => _placement.Mode = value;
+        }
 
         [Tooltip("De qué lado del punto de anclaje cuelga el panel (solo AutoFit). Above = " +
                  "histórico (crece hacia arriba). Below = panel entero debajo del anclaje — " +
@@ -72,10 +141,9 @@ namespace Rollgeon.UI.Tooltips
         [SerializeField] private TooltipVerticalSide _verticalSide = TooltipVerticalSide.Above;
 
         /// <summary>
-        /// Lado vertical del panel. Escribible para triggers agregados por código
-        /// (<c>EntityVisualService.AttachTooltip</c> lo pone en <see cref="TooltipVerticalSide.Below"/>
-        /// para los enemigos); el default serializado (<c>Above</c>) preserva los triggers
-        /// existentes (puerta).
+        /// Lado vertical del panel (solo AutoFit). El default serializado (<c>Above</c>)
+        /// preserva los triggers existentes; el panel de enemigos ya no lo usa — vive fijo
+        /// arriba a la derecha vía <see cref="Placement"/>.
         /// </summary>
         public TooltipVerticalSide VerticalSide
         {
@@ -111,16 +179,10 @@ namespace Rollgeon.UI.Tooltips
 
             if (_mode == WorldTooltipMode.Hover)
             {
-                if (hitMe && !_hoverActive)
-                {
-                    _hoverActive = true;
-                    ShowTooltip(cam);
-                }
-                else if (!hitMe && _hoverActive)
-                {
-                    _hoverActive = false;
-                    HideTooltip();
-                }
+                if (PinOnClick && !pointerOverUI && MouseLeftPressedThisFrame())
+                    HandlePinClick(hitMe);
+
+                SetHover(hitMe || _pinned, cam);
                 return;
             }
 
@@ -130,20 +192,118 @@ namespace Rollgeon.UI.Tooltips
             }
         }
 
+        // El click de targeting es atacar (TileClickHandler): el fijado solo puede vivir en los
+        // clicks que hoy no hacen nada. Click sobre el objeto = toggle; click en el vacío con el
+        // tooltip fijado = soltar.
+        // Internal para los tests: simular el mouse acá probaría al raycast, no al fijado.
+        internal void HandlePinClick(bool hitMe)
+        {
+            if (IsSelectingTarget()) return;
+
+            // El click que confirma el objetivo resuelve la selección sincrónico, y este
+            // Update puede correr después en el mismo frame: IsSelecting ya da false, pero
+            // ese click fue de atacar — no puede fijar.
+            if (SelectionController.LastSelectionEndFrame == Time.frameCount) return;
+
+            if (hitMe)
+            {
+                if (_pinned) Unpin();
+                else Pin();
+            }
+            else if (_pinned)
+            {
+                Unpin();
+            }
+        }
+
+        private static bool IsSelectingTarget()
+            => ServiceLocator.TryGetService<ISelectionController>(out var selection)
+               && selection != null && selection.IsSelecting;
+
+        /// <summary>
+        /// Fija el tooltip de este trigger. Suelta al que estuviera fijado — el panel es uno.
+        /// Público para poder fijar/soltar sin simular el mouse (tests, tutorial).
+        /// </summary>
+        public void Pin()
+        {
+            if (_pinned) return;
+            if (s_pinned != null && s_pinned != this) s_pinned.Unpin();
+            s_pinned = this;
+            _pinned = true;
+
+            // Suscripciones solo en el flanco del fijado, y espejadas en Unpin: un pin que
+            // suscribe dos veces re-muestra el panel dos veces por turno.
+            EventManager.Subscribe(EventName.OnTurnStarted, HandlePinRefresh);
+            EventManager.Subscribe(EventName.OnActionSelectionStarted, HandleTargetingStarted);
+            EventManager.Subscribe(EventName.OnChainTargetSelectionStarted, HandleTargetingStarted);
+
+            if (TooltipController.Instance != null) TooltipController.Instance.SetPinned(true);
+        }
+
+        /// <summary>Suelta el fijado. El hover vigente (si lo hay) mantiene el panel abierto.</summary>
+        public void Unpin()
+        {
+            if (!_pinned) return;
+            _pinned = false;
+            if (s_pinned == this) s_pinned = null;
+
+            EventManager.UnSubscribe(EventName.OnTurnStarted, HandlePinRefresh);
+            EventManager.UnSubscribe(EventName.OnActionSelectionStarted, HandleTargetingStarted);
+            EventManager.UnSubscribe(EventName.OnChainTargetSelectionStarted, HandleTargetingStarted);
+
+            if (TooltipController.Instance != null) TooltipController.Instance.SetPinned(false);
+        }
+
+        // Los providers recolectan fresh en cada Show: re-mostrar ES el refresh del bloque de
+        // próximo turno mientras el panel está fijado, sin re-hoverear.
+        private void HandlePinRefresh(params object[] args)
+        {
+            if (!_pinned) return;
+
+            ShowTooltip(_camera != null ? _camera : Camera.main);
+            PinRefreshed?.Invoke();
+        }
+
+        // Al agarrar la ficha de atacar el panel se cierra solo: el click vuelve a ser 100% de
+        // seleccionar objetivo (decisión §6.2 del spec de tooltips).
+        private void HandleTargetingStarted(params object[] args)
+        {
+            Unpin();
+            if (!_hoverActive) return;
+            SetHover(false, null);
+        }
+
+        // UN raycast por frame compartido entre todos los triggers, no uno por trigger: con la
+        // sala prendida fuego hay ~112 casillas con trigger además de los enemigos, y un
+        // RaycastAll (que además aloca el array) por cada uno era el nuevo costo sostenido
+        // dominante. Todos comparten el mismo ray porque todos preguntan lo mismo: qué hay
+        // bajo el mouse. La distancia la fija el primero del frame — todos usan el default.
+        private static readonly RaycastHit[] s_sharedHits = new RaycastHit[64];
+        private static int s_sharedHitCount;
+        private static int s_sharedFrame = -1;
+        private static Camera s_sharedCam;
+
         private bool RaycastHitsMe(Camera cam, Vector2 mouseScreen)
         {
-            // Pixel-art pipeline: la cámara renderiza a un RT chiquito, así que
-            // pixelWidth/Height ≠ Screen.width/Height. Escalamos el mouse pos al
-            // viewport interno de la cámara antes del ScreenPointToRay. Mismo fix
-            // que TileClickHandler usa para sus raycasts.
-            var rtPos = new Vector2(
-                mouseScreen.x / Screen.width  * cam.pixelWidth,
-                mouseScreen.y / Screen.height * cam.pixelHeight);
-            var ray = cam.ScreenPointToRay(rtPos);
-            var hits = Physics.RaycastAll(ray, _raycastDistance);
-            for (int i = 0; i < hits.Length; i++)
+            if (s_sharedFrame != Time.frameCount || s_sharedCam != cam)
             {
-                var hitGo = hits[i].collider != null ? hits[i].collider.gameObject : null;
+                s_sharedFrame = Time.frameCount;
+                s_sharedCam = cam;
+
+                // Pixel-art pipeline: la cámara renderiza a un RT chiquito, así que
+                // pixelWidth/Height ≠ Screen.width/Height. Escalamos el mouse pos al
+                // viewport interno de la cámara antes del ScreenPointToRay. Mismo fix
+                // que TileClickHandler usa para sus raycasts.
+                var rtPos = new Vector2(
+                    mouseScreen.x / Screen.width  * cam.pixelWidth,
+                    mouseScreen.y / Screen.height * cam.pixelHeight);
+                var ray = cam.ScreenPointToRay(rtPos);
+                s_sharedHitCount = Physics.RaycastNonAlloc(ray, s_sharedHits, _raycastDistance);
+            }
+
+            for (int i = 0; i < s_sharedHitCount; i++)
+            {
+                var hitGo = s_sharedHits[i].collider != null ? s_sharedHits[i].collider.gameObject : null;
                 if (hitGo == null) continue;
                 if (hitGo == gameObject) return true;
                 if (hitGo.transform.IsChildOf(transform)) return true;
@@ -176,12 +336,61 @@ namespace Rollgeon.UI.Tooltips
 #endif
         }
 
+        // Único lugar que mueve _hoverActive: el flanco tiene que ser uno solo para que el
+        // evento no se dispare dos veces ni se saltee la salida.
+        private void SetHover(bool on, Camera cam)
+        {
+            if (_hoverActive == on) return;
+            _hoverActive = on;
+
+            if (on) ShowTooltip(cam);
+            else HideTooltip();
+
+            HoverChanged?.Invoke(on);
+        }
+
         private void ShowTooltip(Camera cam)
         {
-            string text = ResolveText();
-            if (string.IsNullOrEmpty(text) || TooltipController.Instance == null) return;
-            TooltipController.Instance.Show(text, ResolvePlacementScreenPos(cam), _ownerId,
-                _placement.Mode, _verticalSide);
+            var content = BuildContent();
+
+            // Con tarjetas o con banda el panel vale aunque el párrafo venga vacío: la columna
+            // ES el contenido.
+            if (content.IsEmpty) return;
+            if (TooltipController.Instance == null) return;
+
+            TooltipController.Instance.Show(
+                content, ResolvePlacementScreenPos(cam), _ownerId, _placement.Mode, _verticalSide);
+
+            // Cada Show pisa el candado del panel compartido; el dueño lo re-afirma. Así el
+            // hover de otro trigger sobre un panel fijado no deja el candado mintiendo.
+            if (_pinned) TooltipController.Instance.SetPinned(true);
+        }
+
+        private TooltipContent BuildContent()
+        {
+            var cards = CardsProvider?.Invoke();
+            var sideCards = SideCardsProvider?.Invoke();
+            var bottomCards = BottomCardsProvider?.Invoke();
+            if (ContentProvider == null) return TooltipContent.FromText(ResolveText(), cards);
+
+            // Las tarjetas siguen viniendo del CardsProvider aunque haya banda: las arma la fila
+            // que flota sobre la cabeza, y son la MISMA lista que esa fila pinta.
+            var content = ContentProvider.Invoke();
+            return new TooltipContent(
+                text: content.Text, name: content.Name, cards: cards,
+                flavor: ComposeFlavor(content.Flavor, FooterLineProvider?.Invoke()),
+                health: content.Health, maxHealth: content.MaxHealth, shield: content.Shield,
+                type: content.Type, sideCards: sideCards, bottomCards: bottomCards);
+        }
+
+        /// <summary>
+        /// El pie con su renglón extra debajo. Estático y público porque el preview de editor
+        /// arma este mismo panel sin combate y tiene que pegarlo igual.
+        /// </summary>
+        public static string ComposeFlavor(string flavor, string footerLine)
+        {
+            if (string.IsNullOrEmpty(footerLine)) return flavor;
+            return string.IsNullOrEmpty(flavor) ? footerLine : flavor + "\n" + footerLine;
         }
 
         private void ToggleTooltip(Camera cam)
@@ -214,6 +423,9 @@ namespace Rollgeon.UI.Tooltips
         // donde el user ve la puerta.
         private Vector2 ResolveAnchorScreenPos(Camera cam)
         {
+            // Sin cámara no hay proyección — pasa en el refresh del fijado fuera de una escena
+            // completa. ScreenTopRight ignora el punto igual.
+            if (cam == null) return Vector2.zero;
             Vector3 rtPos = cam.WorldToScreenPoint(transform.position);
             if (cam.pixelWidth <= 0 || cam.pixelHeight <= 0) return rtPos;
             return new Vector2(
@@ -223,13 +435,26 @@ namespace Rollgeon.UI.Tooltips
 
         private void HideTooltip()
         {
-            if (TooltipController.Instance != null) TooltipController.Instance.Hide(_ownerId);
+            if (TooltipController.Instance == null) return;
+
+            // Con otro trigger fijado, salir de este hover no cierra el panel: se lo devuelve al
+            // fijado, que lo re-muestra con su contenido (y su candado).
+            if (s_pinned != null && s_pinned != this && s_pinned._pinned)
+            {
+                s_pinned.ShowTooltip(s_pinned._camera != null ? s_pinned._camera : Camera.main);
+                s_pinned.PinRefreshed?.Invoke();
+                return;
+            }
+
+            TooltipController.Instance.Hide(_ownerId);
         }
 
+        // Levanta HoverChanged(false) a propósito: es lo que apaga el dibujo cuando el enemigo
+        // muere con el mouse encima. El fijado también muere con el dueño.
         private void OnDisable()
         {
-            _hoverActive = false;
-            HideTooltip();
+            Unpin();
+            SetHover(false, null);
         }
 
         private string ResolveText()

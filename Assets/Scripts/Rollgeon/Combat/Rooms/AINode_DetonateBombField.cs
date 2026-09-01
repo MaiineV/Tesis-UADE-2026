@@ -38,7 +38,7 @@ namespace Rollgeon.Combat.Rooms
     /// </para>
     /// </remarks>
     [Serializable, HideReferenceObjectPicker]
-    public sealed class AINode_DetonateBombField : AIActionNode
+    public sealed class AINode_DetonateBombField : AIActionNode, IAIIntentNode
     {
         [Tooltip("Casilla especial que deja el estallido. La misma que autora el nodo que siembra.")]
         public SpecialTileDefinitionSO FireTile;
@@ -70,6 +70,40 @@ namespace Rollgeon.Combat.Rooms
         public string DetonationFeelId;
 
         public override string NodeName => "Detonate Bomb Field";
+
+        /// <summary>
+        /// Este nodo no describe UNA cosa: describe una cruz por bomba en pie.
+        /// </summary>
+        public bool TryDescribeIntent(AIContext context, out AIIntent intent)
+        {
+            intent = default;
+            return false;
+        }
+
+        /// <inheritdoc />
+        public void DescribeIntents(AIContext context, List<AIIntent> into)
+        {
+            if (context == null || into == null || FireTile == null) return;
+
+            var field = BombFieldService.ResolveOrCreate();
+            int rounds = FireDurationRounds > 0 ? FireDurationRounds : FireTile.DefaultDurationRounds;
+
+            foreach (var (guid, cross) in field.Live(context.Attributes))
+            {
+                if (!field.TryGetFuse(guid, out int fuse)) continue;
+
+                // El daño es el del estallido en sí, que en el Croupier es CERO a propósito: todo
+                // lo que cobra una bomba es el fuego que deja. Anunciar un golpe sería mentir.
+                into.Add(new AIIntent(
+                    AIIntentTextKeys.BombBlast, "Estalla",
+                    IgnitionDamage, AttackKind.Environmental,
+                    tiles: cross,
+                    leaves: FireTile, leavesRounds: rounds,
+                    turnsAway: fuse - 1,
+                    channelKey: AINode_BombField.ChannelFor(context.SelfGuid, ChannelPrefix, guid),
+                    subjectGuid: guid));
+            }
+        }
 
         public override AIResult Tick(AIContext context)
         {

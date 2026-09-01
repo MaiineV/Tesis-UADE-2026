@@ -58,7 +58,7 @@ namespace Rollgeon.UI.HUD.Status
 
             if (_durationLabel != null)
             {
-                string badge = StatusTooltipText.ResolveDurationBadge(state);
+                string badge = StatusTooltipText.ResolveBadge(state);
                 _durationLabel.text = badge;
                 _durationLabel.gameObject.SetActive(badge.Length > 0);
             }

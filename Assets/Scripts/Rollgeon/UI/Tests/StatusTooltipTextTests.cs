@@ -122,5 +122,16 @@ namespace Rollgeon.UI.Tests
             Assert.AreEqual("1 Turno", StatusTooltipText.ResolveDurationBadge(Timed(1)));
             Assert.AreEqual(string.Empty, StatusTooltipText.ResolveDurationBadge(Passive(true)));
         }
+
+        [Test]
+        public void should_badge_a_card_with_the_bare_number()
+        {
+            // La ficha de la tarjeta es redonda y del ancho de un dígito: con "1 Turno" adentro
+            // TMP parte la frase en una letra por renglón y el badge se lee vertical al lado del
+            // título. La palabra la sigue diciendo la fila que flota sobre la cabeza.
+            Assert.AreEqual("3", StatusTooltipText.ResolveCardBadge(Timed(3)));
+            Assert.AreEqual("1", StatusTooltipText.ResolveCardBadge(Timed(1)));
+            Assert.AreEqual(string.Empty, StatusTooltipText.ResolveCardBadge(Passive(true)));
+        }
     }
 }

@@ -913,6 +913,162 @@ MonoBehaviour:
     m_Localized: Sin item equipado.
     m_Metadata:
       m_Items: []
+  - m_Id: 17593281655271424
+    m_Localized: Cuerpo a cuerpo
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593281667854336
+    m_Localized: Rango
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593281667854337
+    m_Localized: Soporte
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593281667854338
+    m_Localized: Jefe
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593281667854339
+    m_Localized: "Jefe \xB7 {0}"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593281667854340
+    m_Localized: "Pr\xF3ximo turno"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593281667854341
+    m_Localized: "Maldici\xF3n"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593281672048640
+    m_Localized: Combo
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593281672048641
+    m_Localized: "B\xE1sico"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593281672048642
+    m_Localized: "Da\xF1o sostenido"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593281672048643
+    m_Localized: 
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593281672048644
+    m_Localized: "Reacci\xF3n"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593281672048645
+    m_Localized: Habilidad
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593281672048646
+    m_Localized: "{0} \xB7 {1}"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593281672048647
+    m_Localized: "Casilla \xB7 {0}"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593281672048648
+    m_Localized: "Da\xF1o"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593281672048649
+    m_Localized: "Curaci\xF3n"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593281672048650
+    m_Localized: Estado
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593281672048651
+    m_Localized: Mejora
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593281672048652
+    m_Localized: Deslizamiento
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593281672048653
+    m_Localized: Teletransporte
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593281672048654
+    m_Localized: Advertencia
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593281672048655
+    m_Localized: "Protecci\xF3n"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593281672048656
+    m_Localized: Efecto
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593281672048657
+    m_Localized: Al entrar
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593281672048658
+    m_Localized: Empezar el turno encima
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593281672048659
+    m_Localized: Cura al terminar el turno
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593281672048660
+    m_Localized: Aplica
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593281672048661
+    m_Localized: En el piso
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593281672048662
+    m_Localized: Objeto
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593281672048663
+    m_Localized: Deja
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593281672048664
+    m_Localized: Se acorta la mecha
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593281672048665
+    m_Localized: Explota
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593281672048666
+    m_Localized: Al explotar
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593281672048667
+    m_Localized: Golpe del estallido
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593281672048668
+    m_Localized: Peligro de sala
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593281672048669
+    m_Localized: Golpe
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593281672048670
+    m_Localized: Golpea cada {0} rondas
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593281676242944
+    m_Localized: God
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

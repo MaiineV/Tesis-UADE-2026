@@ -22,7 +22,7 @@ namespace Rollgeon.Combat.AI.Decisions
     /// que se olvide la condición no puede convertirlo en un ataque de alcance infinito.
     /// </remarks>
     [Serializable, HideReferenceObjectPicker]
-    public class AINode_RangedShot : AIActionNode
+    public class AINode_RangedShot : AIActionNode, IAIIntentNode
     {
         [Tooltip("Daño directo del disparo.")]
         [MinValue(0)]
@@ -128,6 +128,38 @@ namespace Rollgeon.Combat.AI.Decisions
         /// Incluye el chequeo del pipeline y del daño: separarlos dejaría al camino coroutine
         /// reproduciendo el disparo de un golpe que nunca iba a cobrar.
         /// </remarks>
+        /// <summary>
+        /// Describe el disparo sobre la casilla del jugador.
+        /// </summary>
+        /// <remarks>
+        /// El disparo apunta al jugador y no a un lugar, así que la casilla no es un compromiso:
+        /// se recalcula en cada hover. Va por el mismo <see cref="CanFire"/> que el tick para que
+        /// un jefe de alcance corto quede honesto sin escribir nada más.
+        /// </remarks>
+        public bool TryDescribeIntent(AIContext context, out AIIntent intent)
+        {
+            intent = default;
+            if (!CanFire(context)) return false;
+            if (!context.Grid.TryGetPosition(context.PlayerGuid, out var playerCoord)) return false;
+
+            intent = new AIIntent(
+                AIIntentTextKeys.RangedShot, AIIntentTextKeys.RangedShotFallback,
+                Damage, Kind,
+                tiles: new[] { playerCoord });
+            return true;
+        }
+
+        /// <summary>
+        /// Como repertorio el disparo se afirma siempre: <see cref="CanFire"/> es el estado de
+        /// ESTE turno, y "qué sabe hacer" no depende de dónde esté parado el jugador.
+        /// </summary>
+        public bool TryDescribeOption(AIContext context, out AIIntent intent)
+        {
+            intent = new AIIntent(AIIntentTextKeys.RangedShot,
+                                  AIIntentTextKeys.RangedShotFallback, Damage, Kind);
+            return true;
+        }
+
         private bool CanFire(AIContext context)
         {
             if (context?.Grid == null) return false;

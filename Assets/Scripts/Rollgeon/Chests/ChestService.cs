@@ -232,6 +232,10 @@ namespace Rollgeon.Chests
                             _config.MimicHintDuration,
                             _config.MimicHintAngleDegrees);
                     }
+
+                    // A prueba de mímico por diseño: el hover va en ESTE camino, que es el mismo
+                    // para el cofre real y el disfrazado — mismo componente, mismo contenido.
+                    AttachHoverTooltip(pawn.gameObject, tier);
                 }
             }
 
@@ -246,6 +250,32 @@ namespace Rollgeon.Chests
 
             EventManager.Trigger(EventName.OnChestSpawned, guid, (int)tier, isMimic);
             return true;
+        }
+
+        /// <summary>
+        /// El hover del cofre: collider trigger (el prefab no trae ninguno) + el panel con
+        /// nombre, rareza y una línea. Trigger y no sólido, como casillas y bombas: el pick de
+        /// celda intersecta el plano del piso y no lo molesta.
+        /// </summary>
+        private static void AttachHoverTooltip(GameObject go, ItemRarity tier)
+        {
+            var info = go.GetComponent<ChestTooltipInfo>();
+            if (info == null) info = go.AddComponent<ChestTooltipInfo>();
+            info.Bind(tier);
+
+            if (go.GetComponentInChildren<Collider>(includeInactive: true) == null)
+            {
+                var collider = go.AddComponent<BoxCollider>();
+                collider.isTrigger = true;
+                collider.size = new Vector3(0.9f, 1f, 0.9f);
+                collider.center = new Vector3(0f, 0.5f, 0f);
+            }
+
+            var trigger = go.GetComponent<Rollgeon.UI.Tooltips.WorldTooltipTrigger>();
+            if (trigger == null) trigger = go.AddComponent<Rollgeon.UI.Tooltips.WorldTooltipTrigger>();
+            trigger.Mode = Rollgeon.UI.Tooltips.WorldTooltipMode.Hover;
+            trigger.Placement = Rollgeon.UI.Tooltips.TooltipPlacementMode.ScreenTopRight;
+            trigger.ContentProvider = info.BuildContent;
         }
 
         /// <summary>

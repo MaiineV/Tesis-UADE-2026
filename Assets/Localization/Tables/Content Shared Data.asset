@@ -1419,6 +1419,250 @@ MonoBehaviour:
     m_Key: furia.contenida.desc
     m_Metadata:
       m_Items: []
+  - m_Id: 17593279981744128
+    m_Key: boss.croupier.brief
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280027881472
+    m_Key: boss.cashier.brief
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280027881473
+    m_Key: boss.la_generala.brief
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280027881474
+    m_Key: minion.cajero_comision.brief
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280027881475
+    m_Key: obj.dado_casa.brief
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280027881476
+    m_Key: roomobj.croupier.bomba.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280027881477
+    m_Key: roomobj.croupier.bomba.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280027881478
+    m_Key: healerEnemy.brief
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280027881479
+    m_Key: CardEnemy01.brief
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280027881480
+    m_Key: RangedEnemy01.brief
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280027881481
+    m_Key: ChestMimic01.brief
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280027881482
+    m_Key: enemy_tutorial_melee_b.brief
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280027881483
+    m_Key: enemy_tutorial_melee_c.brief
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280027881484
+    m_Key: curse.bank_keeps.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280027881485
+    m_Key: curse.bank_keeps.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280027881486
+    m_Key: curse.repeat_ban.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280027881487
+    m_Key: curse.repeat_ban.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280027881488
+    m_Key: enemy.fire_tiles.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280027881489
+    m_Key: enemy.fire_tiles.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280027881490
+    m_Key: ability.teleport.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280027881491
+    m_Key: ability.teleport.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280027881492
+    m_Key: status.dice_block.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280027881493
+    m_Key: status.dice_block.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280027881494
+    m_Key: intent.ignite.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280027881495
+    m_Key: intent.ignite.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280027881496
+    m_Key: intent.burn_room.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280027881497
+    m_Key: intent.burn_room.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280027881498
+    m_Key: intent.ranged_shot.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280027881499
+    m_Key: intent.ranged_shot.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280027881500
+    m_Key: intent.bomb_field.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280027881501
+    m_Key: intent.bomb_field.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280027881502
+    m_Key: intent.bomb_blast.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280027881503
+    m_Key: intent.bomb_blast.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280027881504
+    m_Key: intent.telegraph.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280027881505
+    m_Key: intent.telegraph.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280027881506
+    m_Key: intent.attack.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280027881507
+    m_Key: intent.attack.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280027881508
+    m_Key: intent.leaves.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280027881509
+    m_Key: intent.leaves.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280044658688
+    m_Key: hazard.fire.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280044658689
+    m_Key: hazard.fire.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280044658690
+    m_Key: hazard.frost.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280044658691
+    m_Key: hazard.frost.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280044658692
+    m_Key: hazard.chip.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280044658693
+    m_Key: hazard.chip.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280044658694
+    m_Key: hazard.table_fire.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280044658695
+    m_Key: hazard.table_fire.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280044658696
+    m_Key: hazard.ice_trail.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280044658697
+    m_Key: hazard.ice_trail.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280044658698
+    m_Key: hazard.rain.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280044658699
+    m_Key: hazard.rain.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280044658700
+    m_Key: tile.firecroupierbomba.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280044658701
+    m_Key: tile.firecroupierbomba.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280044658702
+    m_Key: tile.spikes_cajero.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280044658703
+    m_Key: tile.spikes_cajero.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280048852992
+    m_Key: chest.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280048852993
+    m_Key: chest.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280048852994
+    m_Key: healerEnemy.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280048852995
+    m_Key: CardEnemy01.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280048852996
+    m_Key: ChestMimic01.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280048852997
+    m_Key: ChestMimic01.desc
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

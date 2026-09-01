@@ -30,3 +30,6 @@ MonoBehaviour:
   PersistentVfxPrefab: {fileID: 0}
   PersistentVfxYOffset: 0.1
   SourceId: b7d4f2a6-3c81-4e59-9a02-5f6d8c1e7b43
+  DisplayName: Estela de hielo
+  NameKey: hazard.ice_trail
+  DescriptionKey: hazard.ice_trail

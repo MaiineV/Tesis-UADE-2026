@@ -1237,6 +1237,7 @@ MonoBehaviour:
     Notes: Sale del cofre; persigue y golpea a distancia 1.
   WeaknessComboId: 
   WeaknessMultiplierOverride: 0
+  Archetype: 1
   BaseHP: 60
   BaseAttack: 20
   BaseHealStrength: 5
