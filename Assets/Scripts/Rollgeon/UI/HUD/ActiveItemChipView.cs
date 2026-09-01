@@ -69,9 +69,19 @@ namespace Rollgeon.UI.HUD
         private Color _placeholderTint = Color.white;
 
         [Title("Feel")]
-        [SerializeField, MinValue(0f)]
-        [Tooltip("Segundos que el numero obtenido queda visible antes de volver al reposo.")]
-        private float _rollDisplaySeconds = 1.2f;
+        [InfoBox("Los tiempos de la tirada viven en ActiveItemRollFeelMath, que es logica " +
+                 "pura y testeable. Aca solo van los colores por banda.")]
+        [SerializeField]
+        [Tooltip("Color del numero en banda negativa.")]
+        private Color _negativeColor = new Color(0.85f, 0.35f, 0.30f);
+
+        [SerializeField]
+        [Tooltip("Color del numero en banda mixta.")]
+        private Color _mixedColor = new Color(0.92f, 0.80f, 0.35f);
+
+        [SerializeField]
+        [Tooltip("Color del numero en banda positiva.")]
+        private Color _positiveColor = new Color(0.45f, 0.90f, 0.50f);
 
         [SerializeField, MinValue(1f)]
         [Tooltip("Cuanto se aclara la ficha mientras espera que elijas el objetivo.")]
@@ -83,7 +93,11 @@ namespace Rollgeon.UI.HUD
         private IEquippedActiveItemService _equipped;
         private IActiveItemActivationService _activation;
         private bool _bound;
-        private float _hideRollAt;
+        // Animacion de tirada en curso. _rollStartedAt < 0 = en reposo.
+        private float _rollStartedAt = -1f;
+        private ActiveItemActivationResult _lastResult;
+        private int _spinSeed;
+        private Vector3 _chipRestScale = Vector3.one;
 
         // ==================================================================
         // Lifecycle
@@ -166,12 +180,89 @@ namespace Rollgeon.UI.HUD
 
         private void Update()
         {
-            // El numero obtenido vuelve al reposo solo. Update en vez de coroutine para
-            // que un OnDisable a mitad no deje la ficha pegada mostrando la cara vieja.
-            if (_hideRollAt > 0f && Time.unscaledTime >= _hideRollAt)
+            // La animacion avanza por tiempo, no por coroutine: si el HUD se desactiva a
+            // mitad, la ficha no queda pegada mostrando la cara vieja.
+            if (_rollStartedAt < 0f) return;
+
+            float elapsed = Time.unscaledTime - _rollStartedAt;
+            if (elapsed >= ActiveItemRollFeelMath.TotalSeconds(_lastResult.WasEnchanted))
             {
-                _hideRollAt = 0f;
-                if (_rollLabel != null) _rollLabel.gameObject.SetActive(false);
+                EndRollAnimation();
+                return;
+            }
+
+            ApplyRollFrame(elapsed);
+        }
+
+        /// <summary>Pinta un cuadro de la animacion de tirada.</summary>
+        private void ApplyRollFrame(float elapsed)
+        {
+            bool enchanted = _lastResult.WasEnchanted;
+            int faces = _lastResult.Item != null ? _lastResult.Item.ActiveDie.MaxFace() : 6;
+
+            int face = ActiveItemRollFeelMath.FaceAt(
+                elapsed, enchanted, _lastResult.RawRoll, _lastResult.Roll, faces, _spinSeed);
+
+            var phase = ActiveItemRollFeelMath.PhaseAt(elapsed, enchanted);
+
+            if (_rollLabel != null)
+            {
+                _rollLabel.gameObject.SetActive(true);
+                _rollLabel.text = face.ToString();
+
+                _rollLabel.color = ColorForPhase(phase, face);
+            }
+
+            if (_chip != null)
+            {
+                float scale = ActiveItemRollFeelMath.ScaleAt(elapsed, enchanted, _lastResult.Band);
+                _chip.transform.localScale = _chipRestScale * scale;
+            }
+        }
+
+        private void EndRollAnimation()
+        {
+            _rollStartedAt = -1f;
+            if (_rollLabel != null) _rollLabel.gameObject.SetActive(false);
+            if (_chip != null) _chip.transform.localScale = _chipRestScale;
+            Refresh();
+        }
+
+        /// <summary>
+        /// Color del numero en un cuadro dado.
+        /// </summary>
+        /// <remarks>
+        /// Mientras gira el numero es adorno y va neutro, para no anticipar la banda antes
+        /// de que el dado frene.
+        /// <para>
+        /// En la pausa sobre la cara cruda se pinta la banda <b>de esa cara</b>, no la
+        /// final: si el encantamiento va a subir un 2 a un 3, el jugador tiene que ver
+        /// primero el rojo del 2 y despues el salto al amarillo. Pintar el color final
+        /// desde el principio spoilea la intervencion del encantamiento, que es
+        /// justamente lo que el GDD pide comunicar.
+        /// </para>
+        /// </remarks>
+        private Color ColorForPhase(ActiveItemRollPhase phase, int shownFace)
+        {
+            if (phase == ActiveItemRollPhase.Spinning) return Color.white;
+
+            if (phase == ActiveItemRollPhase.Settled && _lastResult.WasEnchanted)
+                return ColorFor(ActiveItemBands.Resolve(shownFace, _lastResult.Item));
+
+            return ColorFor(_lastResult.Band);
+        }
+
+        /// <summary>
+        /// Color por banda. Sale de la banda y no del numero: en Riesgo la negativa es un
+        /// buen resultado y en Precision el maximo del dado puede ser el peor.
+        /// </summary>
+        private Color ColorFor(ActiveItemBand band)
+        {
+            switch (band)
+            {
+                case ActiveItemBand.Negative: return _negativeColor;
+                case ActiveItemBand.Mixed: return _mixedColor;
+                default: return _positiveColor;
             }
         }
 
@@ -279,21 +370,17 @@ namespace Rollgeon.UI.HUD
 
         private void HandleResolved(ActiveItemActivationResult result)
         {
-            // El GDD: "el dado dentro del slot refleja el resultado obtenido brevemente
-            // antes de volver a su estado de reposo".
-            if (_rollLabel != null)
-            {
-                _rollLabel.gameObject.SetActive(true);
-                _rollLabel.text = result.Roll.ToString();
-            }
-            _hideRollAt = Time.unscaledTime + _rollDisplaySeconds;
+            // El GDD: el dado emerge del item equipado, y el slot vuelve al reposo apenas
+            // termina de mostrar el resultado.
+            _lastResult = result;
+            _rollStartedAt = Time.unscaledTime;
+            _spinSeed = Environment.TickCount;
 
+            if (_chip != null) _chipRestScale = _chip.transform.localScale;
+
+            ApplyRollFrame(0f);
             Refresh();
         }
-
-        // ==================================================================
-        // Texto
-        // ==================================================================
 
         /// <summary>Motivo localizado del bloqueo (§7).</summary>
         private static string DescribeBlock(ActiveItemBlock block)
