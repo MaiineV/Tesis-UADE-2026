@@ -988,6 +988,22 @@ MonoBehaviour:
     m_Localized: Strikes every {0} rounds
     m_Metadata:
       m_Items: []
+  - m_Id: 17325483355992064
+    m_Localized: The fuse burns down
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17325483397935104
+    m_Localized: It explodes
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17325483397935105
+    m_Localized: On explosion
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17325483397935106
+    m_Localized: Blast hit
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

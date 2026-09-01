@@ -1265,8 +1265,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 17201829544652800
-    m_Localized: Explota cuando se le termina la mecha y prende fuego las casillas
-      de alrededor. Rompela antes, o alejate.
+    m_Localized: Rompela y se lleva sus casillas marcadas.
     m_Metadata:
       m_Items: []
   references:

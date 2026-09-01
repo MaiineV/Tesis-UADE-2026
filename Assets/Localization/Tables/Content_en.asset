@@ -1258,8 +1258,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 17201829544652800
-    m_Localized: Blows up when its fuse runs out and sets the surrounding tiles on
-      fire. Break it first, or get clear.
+    m_Localized: Break it and its marked tiles go with it.
     m_Metadata:
       m_Items: []
   references:

@@ -997,6 +997,22 @@ MonoBehaviour:
     m_Localized: Golpea cada {0} rondas
     m_Metadata:
       m_Items: []
+  - m_Id: 17325483355992064
+    m_Localized: Se acorta la mecha
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17325483397935104
+    m_Localized: Explota
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17325483397935105
+    m_Localized: Al explotar
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17325483397935106
+    m_Localized: Golpe del estallido
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

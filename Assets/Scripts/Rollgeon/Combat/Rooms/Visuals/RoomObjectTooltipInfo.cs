@@ -16,8 +16,8 @@ namespace Rollgeon.Combat.Rooms.Visuals
 {
     /// <summary>
     /// Contenido del tooltip de un objeto que un jefe pone en la sala — la bomba del Croupier y su
-    /// mecha. Mismo reparto que casillas y enemigos: <see cref="BuildContent"/> es el header (con
-    /// la vida y la mecha al pie) y <see cref="CollectCards"/> los números del fuego que deja.
+    /// mecha. Mismo reparto que casillas y enemigos: <see cref="BuildContent"/> es el header y
+    /// <see cref="CollectCards"/> los dos bloques, el de la mecha y el de lo que deja al estallar.
     /// </summary>
     /// <remarks>
     /// Se rearma en cada hover en vez de guardar el string: el idioma puede cambiar en pleno
@@ -45,9 +45,16 @@ namespace Rollgeon.Combat.Rooms.Visuals
             _selfGuid = selfGuid;
         }
 
+        /// <summary>Etiquetas y títulos de los dos bloques del panel.</summary>
+        public const string FuseTickKey = "prop.panel.fuse_tick";
+        public const string FuseBlowsKey = "prop.panel.fuse_blows";
+        public const string OnBlastKey = "prop.panel.on_blast";
+        public const string BlastHitKey = "prop.panel.blast_hit";
+
         /// <summary>
-        /// El header del panel. La vida y la mecha van al pie: son estado vivo del objeto, no su
-        /// identidad, y como pie se refrescan con cada hover sin disputarle espacio a las tarjetas.
+        /// El header del panel: identidad y una frase, sin pie. La vida NO se muestra — ninguna
+        /// otra cosa del juego la pone en su panel y la barra sobre la cabeza ya la dice —, y la
+        /// mecha se mudó al bloque de próximo turno, que es donde el jugador ya la busca.
         /// </summary>
         public TooltipContent BuildContent()
         {
@@ -57,47 +64,66 @@ namespace Rollgeon.Combat.Rooms.Visuals
             return new TooltipContent(
                 text: LocalizedContent.Description(def.Id, string.Empty),
                 name: LocalizedContent.Name(def.Id, def.EffectiveDisplayName),
-                type: LocalizedContent.Ui("prop.panel.type", "Objeto"),
-                flavor: ComposeStatusFooter());
+                type: LocalizedContent.Ui("prop.panel.type", "Objeto"));
         }
 
         /// <summary>
-        /// Los números de lo que el estallido deja en el piso — el estallido en sí no cobra nada
-        /// (todo lo que hace una bomba es su fuego), así que las tarjetas son las de ESA casilla.
+        /// Los dos bloques, en el orden en que se leen. Arriba el próximo turno, igual que
+        /// cualquier enemigo: mientras haya plazo dice que la mecha se acorta, y el turno
+        /// anterior al estallido dice que explota. Abajo, siempre, lo que el estallido hace: es
+        /// lo que decide si vale la pena romperla, y eso se pregunta desde el primer turno.
         /// </summary>
         public IReadOnlyList<StatusIconState> CollectCards()
         {
             _cards.Clear();
-            if (TryFindBlast(out var intent) && intent.Leaves != null)
-            {
-                SpecialTileCards.Append(intent.Leaves, _cards,
-                    LocalizedContent.Ui("prop.panel.leaves", "Deja"));
-            }
+            if (!TryFindBlast(out var intent)) return _cards;
+
+            AppendFuseCard(intent);
+            AppendBlastCards(intent);
             return _cards;
         }
 
-        private string ComposeStatusFooter()
+        // El badge cuenta como el de cualquier intención: TurnsAway 0 es "en su próximo turno",
+        // así que ahí la mecha ya no se acorta — estalla, y el badge no tiene nada que contar.
+        private void AppendFuseCard(in AIIntent intent)
         {
-            var sb = new StringBuilder();
+            bool blowsNext = intent.TurnsAway <= 0;
 
-            if (ServiceLocator.TryGetService<AttributesManager>(out var attributes)
-                && attributes != null)
+            _cards.Add(new StatusIconState(
+                blowsNext ? FuseBlowsKey : FuseTickKey,
+                blowsNext
+                    ? LocalizedContent.Ui(FuseBlowsKey, "Explota")
+                    : LocalizedContent.Ui(FuseTickKey, "Se acorta la mecha"),
+                description: null,
+                icon: null,
+                active: true,
+                remainingTurns: blowsNext ? 0 : intent.TurnsAway,
+                style: StatusCardStyle.Terrain,
+                eyebrow: EnemyStatusIconsView.NextTurnEyebrow()));
+        }
+
+        // Un bloque solo: el golpe y el fuego que queda son la MISMA consecuencia. Por eso el
+        // fuego entra sin abrir bloque propio — dos etiquetas partirían en dos lo que pasa de una.
+        private void AppendBlastCards(in AIIntent intent)
+        {
+            string eyebrow = LocalizedContent.Ui(OnBlastKey, "Al explotar");
+
+            if (intent.Damage > 0)
             {
-                var health = attributes.GetAttribute<Health>(_selfGuid);
-                if (health != null)
-                    sb.Append(string.Format(
-                        LocalizedContent.Ui("prop.tooltip.health", "Vida: {0}"), health.Value));
+                _cards.Add(new StatusIconState(
+                    BlastHitKey,
+                    LocalizedContent.Ui(BlastHitKey, "Golpe del estallido"),
+                    description: null,
+                    icon: null,
+                    active: true,
+                    style: StatusCardStyle.Terrain,
+                    damage: intent.Damage,
+                    eyebrow: eyebrow));
+                eyebrow = null;
             }
 
-            if (TryFindBlast(out var intent))
-            {
-                if (sb.Length > 0) sb.Append('\n');
-                sb.Append(string.Format(
-                    LocalizedContent.Ui("prop.tooltip.fuse", "Estalla en {0} turnos"),
-                    Mathf.Max(0, intent.TurnsAway)));
-            }
-
-            return sb.Length > 0 ? sb.ToString() : null;
+            if (intent.Leaves == null) return;
+            SpecialTileCards.Append(intent.Leaves, _cards, eyebrow, opensBlock: eyebrow != null);
         }
 
         private bool TryFindBlast(out AIIntent blast)
@@ -127,21 +153,8 @@ namespace Rollgeon.Combat.Rooms.Visuals
             string description = LocalizedContent.Description(def.Id, string.Empty);
             if (!string.IsNullOrEmpty(description)) sb.AppendLine().Append(description);
 
-            AppendHealth(sb);
             AppendBlast(sb);
             return sb.ToString();
-        }
-
-        private void AppendHealth(StringBuilder sb)
-        {
-            if (!ServiceLocator.TryGetService<AttributesManager>(out var attributes) || attributes == null)
-                return;
-
-            var health = attributes.GetAttribute<Health>(_selfGuid);
-            if (health == null) return;
-
-            sb.AppendLine().Append(string.Format(
-                LocalizedContent.Ui("prop.tooltip.health", "Vida: {0}"), health.Value));
         }
 
         private void AppendBlast(StringBuilder sb)
@@ -158,8 +171,11 @@ namespace Rollgeon.Combat.Rooms.Visuals
                     LocalizedContent.Ui("prop.tooltip.fuse", "Estalla en {0} turnos"),
                     Mathf.Max(0, intent.TurnsAway)));
 
-                // El estallido en sí no cobra nada: todo lo que hace una bomba es el fuego que
-                // deja. Anunciar un golpe sería prometer un número que no existe.
+                if (intent.Damage > 0)
+                    sb.AppendLine()
+                      .Append(LocalizedContent.Ui(BlastHitKey, "Golpe del estallido"))
+                      .Append(": ").Append(intent.Damage);
+
                 var fire = intent.Leaves;
                 if (fire == null) return;
 

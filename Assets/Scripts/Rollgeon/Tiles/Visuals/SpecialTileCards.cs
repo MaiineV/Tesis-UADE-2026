@@ -21,14 +21,18 @@ namespace Rollgeon.Tiles.Visuals
         /// Una tarjeta por precio. Casillas sin números (portal, hielo, advertencia) no agregan
         /// nada: su descripción ya dice todo y una tarjeta vacía sería un recuadro sin contenido.
         /// <paramref name="eyebrowOverride"/> re-etiqueta el bloque cuando la casilla se describe
-        /// desde otro panel — el fuego que deja una bomba dice "Deja", no "Efecto".
+        /// desde otro panel — el fuego que deja una bomba dice "Al explotar", no "Efecto".
+        /// Con <paramref name="opensBlock"/> en <c>false</c> los precios entran sin etiqueta: el
+        /// bloque ya lo abrió quien llama, y una segunda partiría en dos una sola consecuencia.
         /// </summary>
         public static void Append(SpecialTileDefinitionSO def, List<StatusIconState> into,
-                                  string eyebrowOverride = null)
+                                  string eyebrowOverride = null, bool opensBlock = true)
         {
             if (def == null || into == null) return;
 
-            string eyebrow = eyebrowOverride ?? LocalizedContent.Ui(EffectKey, "Efecto");
+            string eyebrow = opensBlock
+                ? eyebrowOverride ?? LocalizedContent.Ui(EffectKey, "Efecto")
+                : null;
 
             if (def.EnterDamage > 0)
             {

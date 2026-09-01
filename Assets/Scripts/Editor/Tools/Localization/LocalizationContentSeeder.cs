@@ -685,11 +685,13 @@ namespace Rollgeon.EditorTools.Localization
                 "No ataca. Rompelo: por cada dado roto, la Generala pierde uno de sus combos.",
                 "It doesn't attack. Break it: for every die broken, the Generala loses one of her combos.");
 
-            // La bomba del Croupier (RoomObjectTooltipInfo arma su panel con estas keys).
+            // La bomba del Croupier (RoomObjectTooltipInfo arma su panel con estas keys). La frase
+            // dice lo único que ningún número del panel puede decir: que romperla le saca las
+            // casillas marcadas al paño.
             Content("roomobj.croupier.bomba.name", "Bomba", "Bomb");
             Content("roomobj.croupier.bomba.desc",
-                "Explota cuando se le termina la mecha y prende fuego las casillas de alrededor. Rompela antes, o alejate.",
-                "Blows up when its fuse runs out and sets the surrounding tiles on fire. Break it first, or get clear.");
+                "Rompela y se lleva sus casillas marcadas.",
+                "Break it and its marked tiles go with it.");
             Content("healerEnemy.brief",
                 "Cura a los suyos antes que pegarte.",
                 "Heals its allies before it hits you.");
@@ -921,6 +923,13 @@ namespace Rollgeon.EditorTools.Localization
             Ui("enemy.panel.on_the_floor", "En el piso", "On the floor");
             Ui("prop.panel.type", "Objeto", "Object");
             Ui("prop.panel.leaves", "Deja", "Leaves");
+
+            // Los dos bloques de la bomba: el plazo arriba (donde el jugador ya busca el próximo
+            // turno) y lo que hace al estallar abajo, como caja propia.
+            Ui("prop.panel.fuse_tick", "Se acorta la mecha", "The fuse burns down");
+            Ui("prop.panel.fuse_blows", "Explota", "It explodes");
+            Ui("prop.panel.on_blast", "Al explotar", "On explosion");
+            Ui("prop.panel.blast_hit", "Golpe del estallido", "Blast hit");
 
             // El panel de un hazard de sala (lluvia, escarcha, fichas): fila de tipo, etiqueta
             // del golpe y la cadencia del pie.

@@ -951,6 +951,22 @@ MonoBehaviour:
     m_Key: hazard.panel.cycle
     m_Metadata:
       m_Items: []
+  - m_Id: 17325483355992064
+    m_Key: prop.panel.fuse_tick
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17325483397935104
+    m_Key: prop.panel.fuse_blows
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17325483397935105
+    m_Key: prop.panel.on_blast
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17325483397935106
+    m_Key: prop.panel.blast_hit
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:
