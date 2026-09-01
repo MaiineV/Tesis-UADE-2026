@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using NUnit.Framework;
 using Patterns;
 using Rollgeon.Attributes;
@@ -236,8 +237,10 @@ namespace Rollgeon.Combat.AI.Tests
                 "quedaría sin bloque de próximo turno.");
             Assert.AreEqual(AIIntentTextKeys.Attack, intent.LabelKey);
             Assert.AreEqual(10, intent.Damage);
-            Assert.AreEqual(0, intent.Tiles.Count,
-                "Prometió casillas: el target del behavior se resuelve al ejecutar.");
+            Assert.AreEqual(1, intent.Tiles.Count,
+                "El golpe afirmado no pinta dónde cae: el panel dice Golpe y el piso calla.");
+            Assert.AreEqual(new GridCoord(2, 0), intent.Tiles.First(),
+                "La casilla prometida no es la del blanco que la ejecución va a resolver.");
         }
 
         [Test]
@@ -282,6 +285,36 @@ namespace Rollgeon.Combat.AI.Tests
             // Act + Assert
             Assert.IsFalse(node.TryDescribeIntent(Context(), out _),
                 "Anunció 'Golpe' por un behavior que solo mueve energía.");
+        }
+
+        /// <summary>
+        /// El guard de honestidad: la celda sale del selector que la ejecución va a usar, no de
+        /// "siempre el jugador". Un behavior que se pega a sí mismo pinta SU casilla.
+        /// </summary>
+        [Test]
+        public void Behavior_ConSelectorPropio_PintaLaCasillaDeEseBlanco()
+        {
+            var behavior = AttackBehavior(new Rollgeon.Effects.Concretes.EffDealDamage());
+            behavior.Effects[0].TargetSelector = new Rollgeon.Combat.AI.Targeting.TargetSelector_Self();
+            var node = new AINode_Behavior { Behavior = behavior };
+
+            Assert.IsTrue(node.TryDescribeIntent(Context(), out var intent));
+            Assert.AreEqual(new GridCoord(0, 0), intent.Tiles.First(),
+                "Pintó la casilla del jugador para un golpe cuyo selector apunta a otro blanco.");
+        }
+
+        /// <summary>Sin grilla no hay celda que afirmar — pero el golpe se anuncia igual: la
+        /// tarjeta del panel no depende de poder pintar el piso.</summary>
+        [Test]
+        public void Behavior_SinGrilla_DescribeSinCasillas()
+        {
+            var node = new AINode_Behavior { Behavior = AttackBehavior(new Rollgeon.Effects.Concretes.EffDealDamage()) };
+            var context = Context();
+            context.Grid = null;
+
+            Assert.IsTrue(node.TryDescribeIntent(context, out var intent),
+                "Sin grilla el golpe dejó de anunciarse: el panel perdería la tarjeta entera.");
+            Assert.AreEqual(0, intent.Tiles.Count);
         }
 
         private static EnemyActionBehavior AttackBehavior(Rollgeon.Effects.Concretes.EffDealDamage damage)
