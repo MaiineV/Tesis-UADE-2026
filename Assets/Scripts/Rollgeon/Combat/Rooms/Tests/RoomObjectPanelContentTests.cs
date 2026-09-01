@@ -113,6 +113,9 @@ namespace Rollgeon.Combat.Rooms.Tests
             Assert.AreEqual(RoomObjectTooltipInfo.FuseBlowsKey, cards[0].Id,
                 "El turno anterior al estallido sigue diciendo que la mecha se acorta: el " +
                 "jugador no se entera de que el que viene es el bueno.");
+            Assert.IsNull(cards[0].RemainingTurns,
+                "Quedó badge al lado de 'Explota': el 0 se dibuja igual que cualquier número y " +
+                "se lee como que faltan cero turnos.");
         }
 
         [Test]

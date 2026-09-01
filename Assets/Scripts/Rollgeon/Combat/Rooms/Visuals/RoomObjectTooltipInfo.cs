@@ -97,7 +97,9 @@ namespace Rollgeon.Combat.Rooms.Visuals
                 description: null,
                 icon: null,
                 active: true,
-                remainingTurns: blowsNext ? 0 : intent.TurnsAway,
+                // Sin badge cuando ya no queda nada que contar: un "0" al lado de "Explota" se
+                // lee como que faltan cero turnos, que es justo lo que la palabra ya dice.
+                remainingTurns: blowsNext ? (int?)null : intent.TurnsAway,
                 style: StatusCardStyle.Terrain,
                 eyebrow: EnemyStatusIconsView.NextTurnEyebrow()));
         }
