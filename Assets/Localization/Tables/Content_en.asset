@@ -1705,6 +1705,262 @@ MonoBehaviour:
     m_Localized: Recover 5 HP for each unused roll at the end of your turn.
     m_Metadata:
       m_Items: []
+  - m_Id: 17651850403999744
+    m_Localized: "Arca del N\xFAmero Alto"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17651850450137088
+    m_Localized: "+2 de oro al resolver el combo N\xFAmero Alto."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17652202935250944
+    m_Localized: Arca del Tesoro
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17652202935250945
+    m_Localized: "+4 de oro al resolver el combo N\xFAmero Alto."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17652503901728768
+    m_Localized: Arca de la Fortuna
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17652503901728769
+    m_Localized: "+6 de oro al resolver el combo N\xFAmero Alto."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17652763696918528
+    m_Localized: Arca de la Riqueza Eterna
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17652763696918529
+    m_Localized: "+9 de oro al resolver el combo N\xFAmero Alto."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17653195458572288
+    m_Localized: Arca del Par
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17653195458572289
+    m_Localized: +2 de oro al resolver el combo Par.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17653371552231424
+    m_Localized: Arca de los Iguales
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17653371552231425
+    m_Localized: +4 de oro al resolver el combo Par.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17653579472269312
+    m_Localized: Arca de la Pareja Dorada
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17653579472269313
+    m_Localized: +6 de oro al resolver el combo Par.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17653765401571328
+    m_Localized: Arca de los Dos Reyes
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17653765401571329
+    m_Localized: +9 de oro al resolver el combo Par.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17654076455350272
+    m_Localized: Arca del Doble Par
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17654076455350273
+    m_Localized: +2 de oro al resolver el combo Doble Par.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17654284044038144
+    m_Localized: Arca de la Fortuna Doble
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17654284044038145
+    m_Localized: +4 de oro al resolver el combo Doble Par.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17655029174726656
+    m_Localized: Arca de la Banda
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17655029174726657
+    m_Localized: +6 de oro al resolver el combo Doble Par.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17655244225081344
+    m_Localized: Arca del Espejo Dorado
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17655244225081345
+    m_Localized: +9 de oro al resolver el combo Doble Par.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17655432591273984
+    m_Localized: Arca del Trio
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17655432591273985
+    m_Localized: +2 de oro al resolver el combo Trio.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17655618231169024
+    m_Localized: Arca del Triple Botin
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17655618231169025
+    m_Localized: +4 de oro al resolver el combo Trio.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17655777614721024
+    m_Localized: Arca de la Trinidad Dorada
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17655777614721025
+    m_Localized: +6 de oro al resolver el combo Trio.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17656066937810944
+    m_Localized: Arca de los Tres Reyes
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17656066937810945
+    m_Localized: +9 de oro al resolver el combo Trio.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17656384035581952
+    m_Localized: Arca del Full House
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17656384035581953
+    m_Localized: +2 de oro al resolver el combo Full House.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17656712965484544
+    m_Localized: Arca de la Casa
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17656712965484545
+    m_Localized: +4 de oro al resolver el combo Full House.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17656971489800192
+    m_Localized: Arca del Linaje
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17656971489800193
+    m_Localized: +6 de oro al resolver el combo Full House.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17657168324292608
+    m_Localized: Arca de la Estirpe Dorada
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17657168324292609
+    m_Localized: +9 de oro al resolver el combo Full House.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17657531240640512
+    m_Localized: Arca del Poker
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17657531240640513
+    m_Localized: +2 de oro al resolver el combo Poker.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17657692465491968
+    m_Localized: Arca del Cuarteto
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17657692465491969
+    m_Localized: +4 de oro al resolver el combo Poker.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17657890432446464
+    m_Localized: Arca de los Cuatro Tesoros
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17657890432446465
+    m_Localized: +6 de oro al resolver el combo Poker.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17658054316486656
+    m_Localized: Arca de los Cuatro Reyes
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17658054316486657
+    m_Localized: +9 de oro al resolver el combo Poker.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17658370093051904
+    m_Localized: Arca de la Escalera
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17658370093051905
+    m_Localized: +2 de oro al resolver el combo Escalera.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17658535101165568
+    m_Localized: Arca del Ascenso
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17658535101165569
+    m_Localized: +4 de oro al resolver el combo Escalera.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17658669054652416
+    m_Localized: Arca del Camino Dorado
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17658669054652417
+    m_Localized: +6 de oro al resolver el combo Escalera.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17658905412071424
+    m_Localized: Arca del Camino Celestial
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17658905412071425
+    m_Localized: +9 de oro al resolver el combo Escalera.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17659331511414784
+    m_Localized: Arca de la Generala
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17659331511414785
+    m_Localized: +2 de oro al resolver el combo Generala.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17659578711109632
+    m_Localized: Arca de la Abundancia
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17659578711109633
+    m_Localized: +4 de oro al resolver el combo Generala.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17659776237662208
+    m_Localized: Arca de la Fortuna Suprema
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17659776237662209
+    m_Localized: +6 de oro al resolver el combo Generala.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17659953757384704
+    m_Localized: Arca del Tesoro Divino
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17659953757384705
+    m_Localized: +9 de oro al resolver el combo Generala.
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []
