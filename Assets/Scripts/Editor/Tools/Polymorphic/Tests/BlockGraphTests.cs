@@ -51,13 +51,13 @@ namespace Rollgeon.Editor.Tools.Polymorphic.Tests
         }
 
         /// <summary>
-        /// El grupo de <c>OnActivate</c> por Path, no por índice: ItemSO ganó más block
-        /// members (BaseDamageOverride, Furia Contenida) y el orden de Children sigue la
-        /// declaración de campos — anclar en [0] rompía con cada campo nuevo.
+        /// El grupo de <c>OnActivate</c>. Se resuelve por path y no por indice porque el
+        /// ItemSO ahora proyecta tambien los tres grupos por banda del modelo nuevo, y
+        /// esos van primero por orden de declaracion.
         /// </summary>
-        static BlockGraphNode OnActivateGroup(BlockGraphModel.Result model)
+        static BlockGraphNode ActivateGroup(BlockGraphModel.Result model)
         {
-            foreach (var n in model.AllNodes) if (n.Path == "OnActivate") return n;
+            foreach (var n in model.Root.Children) if (n.Path == "OnActivate") return n;
             return null;
         }
 
@@ -82,11 +82,11 @@ namespace Rollgeon.Editor.Tools.Polymorphic.Tests
             var model = BlockGraphModel.Build(item);
 
             Assert.AreEqual(BlockNodeKind.Root, model.Root.Kind);
-            // 2 grupos: BaseDamageOverride (block member nuevo de ItemSO) + OnActivate.
-            Assert.AreEqual(2, model.Root.Children.Count);
+            // Tres grupos por banda (modelo nuevo) + OnActivate (camino viejo, todavia
+            // vivo) + BaseDamageOverride (Feature#0065, Furia Contenida).
+            Assert.AreEqual(5, model.Root.Children.Count);
 
-            var group = OnActivateGroup(model);
-            Assert.IsNotNull(group);
+            var group = ActivateGroup(model);
             Assert.AreEqual(BlockNodeKind.Group, group.Kind);
             Assert.AreEqual("Heal", group.Title, "an EffectData titles itself with its Label");
             Assert.AreEqual("OnActivate", group.Path);
@@ -105,7 +105,7 @@ namespace Rollgeon.Editor.Tools.Polymorphic.Tests
             item.OnActivate.Effects.Add(new EffDealDamage());
 
             var model = BlockGraphModel.Build(item);
-            var group = OnActivateGroup(model);
+            var group = ActivateGroup(model);
 
             Assert.AreEqual("EffAddShield", group.Children[0].Subtitle);
             Assert.AreEqual("EffHeal", group.Children[1].Subtitle);
@@ -146,9 +146,8 @@ namespace Rollgeon.Editor.Tools.Polymorphic.Tests
             var model = BlockGraphModel.Build(item);
 
             Assert.AreEqual(0, model.Root.Column);
-            var group = OnActivateGroup(model);
-            Assert.AreEqual(1, group.Column);
-            Assert.AreEqual(2, group.Children[0].Column);
+            Assert.AreEqual(1, ActivateGroup(model).Column);
+            Assert.AreEqual(2, ActivateGroup(model).Children[0].Column);
         }
 
         [Test]
@@ -158,7 +157,7 @@ namespace Rollgeon.Editor.Tools.Polymorphic.Tests
             item.OnActivate.PreConditions.Add(new PCComposite());
 
             var model = BlockGraphModel.Build(item);
-            var group = OnActivateGroup(model);
+            var group = ActivateGroup(model);
 
             Assert.AreEqual(BlockNodeKind.Condition, group.Children[0].Kind);
         }
@@ -253,7 +252,7 @@ namespace Rollgeon.Editor.Tools.Polymorphic.Tests
             item.OnActivate.Effects.Add(new EffHeal());
 
             var model = BlockGraphModel.Build(item);
-            var effect = OnActivateGroup(model).Children[0];
+            var effect = ActivateGroup(model).Children[0];
 
             Assert.IsTrue(effect.CanRemove);
             Assert.AreEqual(0, effect.SourceIndex, "it's element 0 of the Effects list");
@@ -287,7 +286,7 @@ namespace Rollgeon.Editor.Tools.Polymorphic.Tests
             item.OnActivate.Effects.Add(last);
 
             var model = BlockGraphModel.Build(item);
-            var middleNode = OnActivateGroup(model).Children[1];
+            var middleNode = ActivateGroup(model).Children[1];
             Assert.AreSame(middle, middleNode.Value);
 
             // Simulate deleting the first one, which is what shifts every later index.
@@ -306,7 +305,7 @@ namespace Rollgeon.Editor.Tools.Polymorphic.Tests
             item.OnActivate.Effects.Add(new EffHeal());
 
             var model = BlockGraphModel.Build(item);
-            var group = OnActivateGroup(model);
+            var group = ActivateGroup(model);
 
             Assert.AreEqual(-1, group.SourceIndex, "OnActivate is a single slot, not a list element");
             Assert.AreSame(item, group.Owner);

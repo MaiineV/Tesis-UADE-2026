@@ -26,6 +26,13 @@ namespace Rollgeon.DevConsole.Commands
             r.Register(new ShopCommand());
             r.Register(new ChestCommand());
 
+            // Item activo (slot unico). Es la unica via de equiparlo: la tienda y los
+            // cofres todavia entregan por IInventoryService.AddItem.
+            r.Register(new EquipActiveItemCommand());
+            r.Register(new UnequipActiveItemCommand());
+            r.Register(new ActiveItemStatusCommand());
+            r.Register(new EnchantActiveItemCommand());
+
             // Dados
             r.Register(new DiceCommand());
             r.Register(new SetDiceCommand());

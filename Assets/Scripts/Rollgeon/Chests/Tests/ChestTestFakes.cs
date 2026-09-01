@@ -56,6 +56,8 @@ namespace Rollgeon.Chests.Tests
         public bool HasItem(string itemId) => false;
         public ItemSO GetItem(string itemId) => null;
         public bool ActivateItem(int activeSlotIndex, EffectContext ctx) => false;
+        public ItemActivationBlock CanActivateItem(int activeSlotIndex, EffectContext ctx)
+            => ItemActivationBlock.InvalidSlot;
         public int GetComboDamageBonusPreview(string comboId) => 0;
         public void TickCooldowns() { }
     }

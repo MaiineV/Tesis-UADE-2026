@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
+using Rollgeon.Dice;
 using Rollgeon.Effects;
+using Rollgeon.Items.Active;
 using Rollgeon.Shop;
 using Sirenix.OdinInspector;
 using Sirenix.Serialization;
@@ -101,8 +103,84 @@ namespace Rollgeon.Items
         [MinValue(1)]
         public int SecondWindRemainingHp = 1;
 
-        [Title("Active Effects")]
-        [InfoBox("Se ejecutan cuando el jugador activa el item. Pueden tener cooldown.")]
+        // ==================================================================
+        // Modelo nuevo (GDD "Ítems Activos"): slot unico, dado propio y bandas.
+        // ==================================================================
+
+        [Title("Active — Modelo")]
+        [InfoBox("Flag de MIGRACION. En true el item vive en el slot unico del HUD " +
+                 "(modelo del rework: dado propio, bandas, 1 roll por uso) y conseguirlo " +
+                 "descarta el que tuvieras. En false sigue el camino viejo: entra a " +
+                 "IInventoryService.ActiveItems y se usa por OnActivate.\n\n" +
+                 "Arranca en false a proposito. El GDD dice que el catalogo todavia no " +
+                 "esta migrado, y la pocion depende del camino viejo — prenderlo por " +
+                 "default la sacaria del inventario y romperia el boton Heal.")]
+        [ShowIf("@Type == ItemType.Active")]
+        public bool UsesActiveSlot;
+
+        [Title("Active — Dado y familia")]
+        [InfoBox("El item se activa pagando 1 roll y tirando SU dado. El resultado cae " +
+                 "en una de tres bandas y esa banda decide que efecto corre.")]
+        [ShowIf("@Type == ItemType.Active && UsesActiveSlot")]
+        [Tooltip("Dado propio del item (D4 a D20). Se tira dentro del slot del HUD, " +
+                 "nunca junto a los 5 dados de combate.")]
+        public DiceType ActiveDie = DiceType.D6;
+
+        [ShowIf("@Type == ItemType.Active")]
+        [Tooltip("Que busca el jugador en la tirada. Define cual banda es el mejor " +
+                 "resultado de este item. Precision y Control tienen mecanismo propio y " +
+                 "todavia no estan implementadas — caen en el reparto por tercios.")]
+        public ActiveItemFamily ActiveFamily = ActiveItemFamily.Potencia;
+
+        [ShowIf("@Type == ItemType.Active && ActiveFamily == Rollgeon.Items.Active.ActiveItemFamily.Precision")]
+        [InfoBox("Cara exacta que el item busca. Acertarla es banda positiva, quedar a 1 " +
+                 "es mixta, a 2 o mas es negativa.")]
+        [MinValue(1)]
+        public int PrecisionTarget = 1;
+
+        [ShowIf("@Type == ItemType.Active && ActiveFamily == Rollgeon.Items.Active.ActiveItemFamily.Control")]
+        [InfoBox("Paridad que el item busca. La banda cruza dos condiciones: coincidir la " +
+                 "paridad y caer en la mitad superior del dado.")]
+        public ActiveItemParity ControlParity = ActiveItemParity.Even;
+
+        [Title("Active — Efectos por banda")]
+        [InfoBox("Las tres bandas tienen que tener efecto: el GDD prohibe la rama de " +
+                 "'no pasa nada'. Lo que cambia entre bandas es la calidad, no si ocurre.")]
+        [ShowIf("@Type == ItemType.Active")]
+        [OdinSerialize]
+        public EffectData OnNegativeBand = new();
+
+        [ShowIf("@Type == ItemType.Active")]
+        [OdinSerialize]
+        public EffectData OnMixedBand = new();
+
+        [ShowIf("@Type == ItemType.Active")]
+        [OdinSerialize]
+        public EffectData OnPositiveBand = new();
+
+        /// <summary>
+        /// Grupo de efectos que corresponde a <paramref name="band"/>. Nunca null: un
+        /// item sin autorar esa banda devuelve un grupo vacio, que el pipeline trata como
+        /// no-op en vez de romper.
+        /// </summary>
+        public EffectData GetBandEffects(ActiveItemBand band)
+        {
+            switch (band)
+            {
+                case ActiveItemBand.Negative: return OnNegativeBand ??= new EffectData();
+                case ActiveItemBand.Mixed: return OnMixedBand ??= new EffectData();
+                default: return OnPositiveBand ??= new EffectData();
+            }
+        }
+
+        // ==================================================================
+        // Modelo viejo — sigue vivo hasta que se migre el catalogo.
+        // ==================================================================
+
+        [Title("Active Effects (legacy)")]
+        [InfoBox("Camino anterior al rework: un solo grupo de efectos, con cooldown y " +
+                 "usos. Lo consume IInventoryService.ActivateItem. El catalogo todavia " +
+                 "no esta migrado al modelo de bandas, asi que convive.")]
         [ShowIf("@Type == ItemType.Active")]
         [OdinSerialize]
         public EffectData OnActivate = new();

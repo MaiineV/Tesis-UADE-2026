@@ -6,6 +6,7 @@ using Patterns.Save;
 using Rollgeon.Attributes;
 using Rollgeon.Attributes.Modifiers;
 using Rollgeon.Combat.Actions;
+using Rollgeon.Combat.Rolls;
 using Rollgeon.Combos.Play;
 using Rollgeon.Effects;
 using Rollgeon.Effects.Concretes;
@@ -55,22 +56,33 @@ namespace Rollgeon.Items
 
         public event Action<ItemSO, bool> OnItemChanged;
 
-        private EventManager.EventReceiver _onTurnStartedTick;
+        /// <summary>
+        /// Handler de <see cref="EventName.OnTurnFinished"/> que baja los cooldowns.
+        /// Guardado en campo para poder desuscribir en <see cref="Dispose"/>.
+        /// </summary>
+        private readonly EventManager.EventReceiver _onTurnFinishedHandler;
 
         public InventoryService(ItemCatalogSO catalog, int maxActiveSlots)
         {
             _catalog = catalog;
             _maxActiveSlots = Mathf.Max(1, maxActiveSlots);
 
-            // Los cooldowns de items activos bajan al arrancar cada turno del jugador.
-            // Antes TickCooldowns no lo llamaba nadie en producción — un item con
-            // Cooldown > 0 quedaba inutilizable el resto de la run.
-            _onTurnStartedTick = args =>
-            {
-                if (args != null && args.Length > 0 && args[0] is Guid g && g == GetPlayerGuid())
-                    TickCooldowns();
-            };
-            EventManager.Subscribe(EventName.OnTurnStarted, _onTurnStartedTick);
+            // Sin esto TickCooldowns no lo llamaba nadie y un item con Cooldown > 0
+            // quedaba bloqueado para el resto de la run. Mismo patron de hook por turno
+            // que ComboBlockService / DiceBlockService.
+            _onTurnFinishedHandler = HandleTurnFinished;
+            EventManager.Subscribe(EventName.OnTurnFinished, _onTurnFinishedHandler);
+        }
+
+        /// <summary>
+        /// Solo el turno del jugador descuenta: el cooldown de un item se mide en turnos
+        /// propios, no en turnos de mesa.
+        /// </summary>
+        private void HandleTurnFinished(params object[] args)
+        {
+            if (args == null || args.Length < 1 || !(args[0] is Guid guid)) return;
+            if (guid != GetPlayerGuid()) return;
+            TickCooldowns();
         }
 
         // ======================================================================
@@ -81,6 +93,13 @@ namespace Rollgeon.Items
         {
             if (item == null) return false;
 
+            // Los items del modelo nuevo no entran al inventario: viven en el slot unico.
+            // El desvio va aca y no en cada fuente para que la tienda, los cofres y
+            // cualquier camino futuro caigan solos — todos pasan por AddItem.
+            if (item.Type == ItemType.Active && item.UsesActiveSlot)
+                return EquipInActiveSlot(item);
+
+            // MaxActiveSlots (base + bonus de Mochila Grande), no el campo crudo.
             if (item.Type == ItemType.Active && _activeItems.Count >= MaxActiveSlots)
                 return false;
 
@@ -105,6 +124,29 @@ namespace Rollgeon.Items
             // Centralizamos el OnItemObtained acá — antes solo lo disparaba EffAddItemToInventory,
             // entonces compras del shop / starting items no notificaban al HUD y el counter
             // quedaba stale hasta el próximo OnEnable de la sub-view.
+            EventManager.Trigger(EventName.OnItemObtained, GetPlayerGuid(), item.ItemId);
+            return true;
+        }
+
+        /// <summary>
+        /// Equipa en el slot unico. Conseguir un item activo descarta el que hubiera, con
+        /// su encantamiento — es el modelo del GDD, sin confirmacion ni recuperacion.
+        /// </summary>
+        /// <returns>
+        /// <c>false</c> si el servicio del slot no esta registrado. Devolverlo asi hace
+        /// que la tienda avise en vez de cobrar por un item que se perdio en el aire.
+        /// </returns>
+        private bool EquipInActiveSlot(ItemSO item)
+        {
+            if (!ServiceLocator.TryGetService<Active.IEquippedActiveItemService>(out var slot) || slot == null)
+            {
+                Debug.LogWarning($"[InventoryService] IEquippedActiveItemService no registrado — " +
+                                 $"'{item.ItemId}' no se puede equipar.");
+                return false;
+            }
+
+            slot.Equip(item);
+            OnItemChanged?.Invoke(item, true);
             EventManager.Trigger(EventName.OnItemObtained, GetPlayerGuid(), item.ItemId);
             return true;
         }
@@ -146,7 +188,8 @@ namespace Rollgeon.Items
         {
             if (string.IsNullOrEmpty(itemId)) return false;
             return _passiveItems.Any(s => s.Item != null && s.Item.ItemId == itemId)
-                || _activeItems.Any(s => s.Item != null && s.Item.ItemId == itemId);
+                || _activeItems.Any(s => s.Item != null && s.Item.ItemId == itemId)
+                || EquippedActiveItem(itemId) != null;
         }
 
         public ItemSO GetItem(string itemId)
@@ -154,44 +197,110 @@ namespace Rollgeon.Items
             if (string.IsNullOrEmpty(itemId)) return null;
             var slot = _passiveItems.FirstOrDefault(s => s.Item != null && s.Item.ItemId == itemId)
                     ?? _activeItems.FirstOrDefault(s => s.Item != null && s.Item.ItemId == itemId);
-            return slot?.Item;
+            return slot?.Item ?? EquippedActiveItem(itemId);
+        }
+
+        /// <summary>
+        /// El item del slot unico, si su id coincide. Las consultas de inventario tienen
+        /// que verlo: una precondicion como <c>PCHasInventoryItem</c> pregunta "tenes este
+        /// item", y tenerlo equipado cuenta.
+        /// </summary>
+        private static ItemSO EquippedActiveItem(string itemId)
+        {
+            if (!ServiceLocator.TryGetService<Active.IEquippedActiveItemService>(out var slot)
+                || slot?.Current == null) return null;
+            return slot.Current.ItemId == itemId ? slot.Current : null;
         }
 
         // ======================================================================
         // Activate (active items)
         // ======================================================================
 
-        public bool ActivateItem(int activeSlotIndex, EffectContext ctx)
+        /// <summary>
+        /// Espejo read-only de los gates de <see cref="ActivateItem"/>. Es la unica
+        /// fuente de verdad: <c>ActivateItem</c> lo llama primero, asi el rojo del HUD y
+        /// el rechazo real no pueden divergir.
+        /// </summary>
+        public ItemActivationBlock CanActivateItem(int activeSlotIndex, EffectContext ctx)
         {
-            if (activeSlotIndex < 0 || activeSlotIndex >= _activeItems.Count) return false;
+            if (activeSlotIndex < 0 || activeSlotIndex >= _activeItems.Count)
+                return ItemActivationBlock.InvalidSlot;
 
             var slot = _activeItems[activeSlotIndex];
-            if (slot.CurrentCooldown > 0) return false;
+            if (slot.CurrentCooldown > 0) return ItemActivationBlock.OnCooldown;
 
             var item = slot.Item;
-            if (item == null || item.Type != ItemType.Active) return false;
+            if (item == null || item.Type != ItemType.Active)
+                return ItemActivationBlock.NotActiveItem;
+
+            var playerGuid = ctx?.SourceGuid ?? GetPlayerGuid();
+
+            // Solo los items que consumen accion pasan por el TurnManager. Los gratis son
+            // side-effects: se pueden usar incluso en el turno enemigo.
+            if (item.ConsumesAction)
+            {
+                if (!ServiceLocator.TryGetService<TurnManager>(out var tm) || tm == null)
+                    return ItemActivationBlock.ForbiddenByRuleset;
+
+                if (!tm.CanExecute(BuildUseItemAction(item), playerGuid, out _))
+                {
+                    // TurnManager devuelve el motivo como string en ingles; en vez de
+                    // parsearlo, re-preguntamos cada regla por separado para que el HUD
+                    // pueda mostrar el motivo exacto.
+                    if (!tm.IsActingTurn(playerGuid))
+                        return ItemActivationBlock.NotYourTurn;
+
+                    bool poolEmpty = ServiceLocator.TryGetService<IRollPoolService>(out var rolls)
+                                     && rolls != null
+                                     && rolls.IsCombatActive
+                                     && rolls.GetCurrent(playerGuid) < 1;
+                    return poolEmpty
+                        ? ItemActivationBlock.NotEnoughRolls
+                        : ItemActivationBlock.ForbiddenByRuleset;
+                }
+            }
+
+            // Las precondiciones del OnActivate valen para las dos ramas. Antes la rama
+            // ConsumesAction solo las veia dentro de TurnManager.TryExecute — o sea,
+            // despues de cobrar el roll.
+            if (item.OnActivate != null && !item.OnActivate.CanBeExecuted(BuildPreCtx(ctx)))
+                return ItemActivationBlock.PreconditionFailed;
+
+            return ItemActivationBlock.None;
+        }
+
+        private static ActionDefinitionSO BuildUseItemAction(ItemSO item)
+        {
+            return new ActionDefinitionSO
+            {
+                ActionId = item.ResolvedActionId,
+                Type = ActionType.UseItem,
+                BackingAsset = item,
+                Effect = item.OnActivate,
+            };
+        }
+
+        public bool ActivateItem(int activeSlotIndex, EffectContext ctx)
+        {
+            var block = CanActivateItem(activeSlotIndex, ctx);
+            if (block != ItemActivationBlock.None)
+            {
+                if (block == ItemActivationBlock.ForbiddenByRuleset
+                    && !ServiceLocator.TryGetService<TurnManager>(out _))
+                {
+                    Debug.LogWarning("[InventoryService] TurnManager not registered — cannot enforce action economy.");
+                }
+                return false;
+            }
+
+            var slot = _activeItems[activeSlotIndex];
+            var item = slot.Item;
 
             if (item.ConsumesAction)
             {
-                if (!ServiceLocator.TryGetService<TurnManager>(out var tm))
-                {
-                    Debug.LogWarning("[InventoryService] TurnManager not registered — cannot enforce action economy.");
-                    return false;
-                }
-
-                var action = new ActionDefinitionSO
-                {
-                    ActionId = item.ResolvedActionId,
-                    Type = ActionType.UseItem,
-                    BackingAsset = item,
-                    Effect = item.OnActivate,
-                };
-
                 var playerGuid = ctx?.SourceGuid ?? GetPlayerGuid();
-                if (!tm.CanExecute(action, playerGuid, out _)) return false;
-
-                var ok = tm.TryExecute(action, playerGuid, ctx);
-                if (!ok) return false;
+                ServiceLocator.TryGetService<TurnManager>(out var tm);
+                if (!tm.TryExecute(BuildUseItemAction(item), playerGuid, ctx)) return false;
             }
             else
             {
@@ -655,12 +764,8 @@ namespace Rollgeon.Items
 
         public void Dispose()
         {
-            if (_onTurnStartedTick != null)
-            {
-                EventManager.UnSubscribe(EventName.OnTurnStarted, _onTurnStartedTick);
-                _onTurnStartedTick = null;
-            }
             SaveSystem.Unregister(this);
+            EventManager.UnSubscribe(EventName.OnTurnFinished, _onTurnFinishedHandler);
             ClearAllHooksAndModifiers();
             _passiveItems.Clear();
             _activeItems.Clear();
