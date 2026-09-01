@@ -65,12 +65,20 @@ namespace Rollgeon.Editor.Tools.Polymorphic.Tests
 
         // ---- containers to walk into ---------------------------------------
 
+        /// <summary>
+        /// Un ítem activo del modelo nuevo tiene un grupo de efectos por banda de
+        /// resultado, y el editor tiene que poder autorar los tres. <c>OnActivate</c>
+        /// sigue en la lista porque el catálogo todavía no se migró y el camino viejo
+        /// convive.
+        /// </summary>
         [Test]
-        public void BlockMembersOf_ItemSO_FindsHooksAndOnActivate()
+        public void BlockMembersOf_ItemSO_FindsHooksBandsAndOnActivate()
         {
             var names = NamesOf(PolymorphicMemberScanner.BlockMembersOf(typeof(ItemSO)));
 
-            CollectionAssert.AreEquivalent(new[] { "PassiveHooks", "OnActivate" }, names);
+            CollectionAssert.AreEquivalent(
+                new[] { "PassiveHooks", "OnNegativeBand", "OnMixedBand", "OnPositiveBand", "OnActivate" },
+                names);
         }
 
         [Test]

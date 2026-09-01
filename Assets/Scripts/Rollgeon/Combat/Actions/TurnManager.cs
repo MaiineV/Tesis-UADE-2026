@@ -44,6 +44,16 @@ namespace Rollgeon.Combat.Actions
         private ActionCatalogSO _actions;
         private RulesetSO _ruleset;
 
+        /// <summary>
+        /// Quien tiene el turno ahora, segun <see cref="EventName.OnTurnStarted"/>.
+        /// <see cref="Guid.Empty"/> fuera de turno (o fuera de combate, donde nadie lo
+        /// dispara). Solo lo consultan las acciones de tipo <see cref="ActionType.UseItem"/>.
+        /// </summary>
+        private Guid _actingGuid;
+
+        private EventManager.EventReceiver _onTurnStartedHandler;
+        private EventManager.EventReceiver _onTurnFinishedHandler;
+
         /// <summary>Corre despues de <see cref="RollPoolService"/> (<c>Priority=50</c>).</summary>
         public int Priority => 60;
 
@@ -65,13 +75,77 @@ namespace Rollgeon.Combat.Actions
             ServiceLocator.TryGetService<ActionCatalogSO>(out _actions);
             ServiceLocator.TryGetService<RulesetSO>(out _ruleset);
 
+            SubscribeTurnTracking();
             ServiceLocator.AddService<TurnManager>(this, ServiceScope.Global);
         }
 
         public void Dispose()
         {
+            UnsubscribeTurnTracking();
             _feedbackWaitDepth = 0;
             _feedbackContinuations.Clear();
+        }
+
+        // ======================================================================
+        // Turno actual + ActionIds de item gastados (solo ActionType.UseItem)
+        // ======================================================================
+
+        /// <summary>
+        /// El GDD de items activos pide que solo se usen en el turno propio (PRE-01).
+        /// Es una regla de items: el resto de las acciones no mira el turno, y ningun
+        /// tipo de accion tiene limite de repeticiones — el unico presupuesto son los
+        /// rolls (el GDD permite explicitamente usar el item dos veces en un turno).
+        /// </summary>
+        private void SubscribeTurnTracking()
+        {
+            if (_onTurnStartedHandler != null) return;
+
+            _onTurnStartedHandler = HandleTurnStarted;
+            _onTurnFinishedHandler = HandleTurnFinished;
+            EventManager.Subscribe(EventName.OnTurnStarted, _onTurnStartedHandler);
+            EventManager.Subscribe(EventName.OnTurnFinished, _onTurnFinishedHandler);
+        }
+
+        private void UnsubscribeTurnTracking()
+        {
+            if (_onTurnStartedHandler == null) return;
+
+            EventManager.UnSubscribe(EventName.OnTurnStarted, _onTurnStartedHandler);
+            EventManager.UnSubscribe(EventName.OnTurnFinished, _onTurnFinishedHandler);
+            _onTurnStartedHandler = null;
+            _onTurnFinishedHandler = null;
+            _actingGuid = Guid.Empty;
+        }
+
+        private void HandleTurnStarted(params object[] args)
+        {
+            if (args == null || args.Length < 1 || !(args[0] is Guid guid)) return;
+            _actingGuid = guid;
+        }
+
+        private void HandleTurnFinished(params object[] args)
+        {
+            if (args == null || args.Length < 1 || !(args[0] is Guid guid)) return;
+            if (guid != _actingGuid) return;
+            _actingGuid = Guid.Empty;
+        }
+
+        /// <summary>
+        /// Hook de EditMode tests: setea el actor del turno sin pasar por el bus.
+        /// </summary>
+        public void SetActingGuidForTests(Guid guid)
+        {
+            _actingGuid = guid;
+        }
+
+        /// <summary>
+        /// <c>true</c> si <paramref name="guid"/> tiene el turno. Fuera de combate nadie
+        /// dispara <c>OnTurnStarted</c>, asi que el turno no gatea nada.
+        /// </summary>
+        public bool IsActingTurn(Guid guid)
+        {
+            if (_rolls == null || !_rolls.IsCombatActive) return true;
+            return _actingGuid == guid;
         }
 
         // ======================================================================
@@ -115,6 +189,17 @@ namespace Rollgeon.Combat.Actions
             {
                 reason = $"Action '{action.ActionId}' is forbidden by the active ruleset.";
                 return false;
+            }
+
+            // Regla exclusiva de items activos (GDD, PRE-01): solo en tu turno. El
+            // resto de las acciones no mira el turno.
+            if (action.Type == ActionType.UseItem)
+            {
+                if (!IsActingTurn(playerGuid))
+                {
+                    reason = "Not your turn.";
+                    return false;
+                }
             }
 
             if (_rolls == null)
