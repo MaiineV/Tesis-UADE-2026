@@ -1268,6 +1268,14 @@ MonoBehaviour:
     m_Localized: Rompela y se lleva sus casillas marcadas.
     m_Metadata:
       m_Items: []
+  - m_Id: 17329585485967360
+    m_Localized: Pleno y color
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17329585515327488
+    m_Localized: Prende la sala entera menos lo que rodea al jefe.
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

@@ -78,6 +78,12 @@ MonoBehaviour:
     - Name: FailWhenNothingToBurn
       Entry: 5
       Data: false
+    - Name: IntentLabelKey
+      Entry: 1
+      Data: intent.burn_room
+    - Name: IntentLabelFallback
+      Entry: 1
+      Data: Pleno y color
     - Name: WindupFeedbackId
       Entry: 1
       Data: anim.boss.croupier.melee
@@ -650,6 +656,12 @@ MonoBehaviour:
     - Name: FailWhenNothingToBurn
       Entry: 5
       Data: false
+    - Name: IntentLabelKey
+      Entry: 6
+      Data: 
+    - Name: IntentLabelFallback
+      Entry: 6
+      Data: 
     - Name: WindupFeedbackId
       Entry: 1
       Data: anim.boss.croupier.melee
@@ -677,6 +689,12 @@ MonoBehaviour:
     - Name: FailWhenNothingToBurn
       Entry: 5
       Data: false
+    - Name: IntentLabelKey
+      Entry: 6
+      Data: 
+    - Name: IntentLabelFallback
+      Entry: 6
+      Data: 
     - Name: WindupFeedbackId
       Entry: 1
       Data: anim.boss.croupier.melee

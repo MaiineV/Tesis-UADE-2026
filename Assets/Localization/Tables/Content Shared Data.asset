@@ -1215,6 +1215,14 @@ MonoBehaviour:
     m_Key: roomobj.croupier.bomba.desc
     m_Metadata:
       m_Items: []
+  - m_Id: 17329585485967360
+    m_Key: intent.burn_room.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17329585515327488
+    m_Key: intent.burn_room.desc
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

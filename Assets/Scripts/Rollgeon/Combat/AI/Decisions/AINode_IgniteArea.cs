@@ -83,6 +83,22 @@ namespace Rollgeon.Combat.AI.Decisions
                  "log sale igual en los dos casos.")]
         public bool FailWhenNothingToBurn;
 
+        [Tooltip("Key de la tarjeta cuando este paso NO es la bola de fuego de siempre. Vacío = " +
+                 "intent.ignite. Un jefe que prende dos áreas distintas necesita que el panel las " +
+                 "distinga: con una sola key las dos se anuncian igual.")]
+        public string IntentLabelKey;
+
+        [Tooltip("Texto de autor de IntentLabelKey, por si la key no está en tabla.")]
+        public string IntentLabelFallback;
+
+        // El default vive acá y no en los campos para que un nodo viejo (sin las keys nuevas en su
+        // serialización) siga anunciándose como siempre.
+        private string LabelKey => string.IsNullOrEmpty(IntentLabelKey)
+            ? AIIntentTextKeys.Ignite : IntentLabelKey;
+
+        private string LabelFallback => string.IsNullOrEmpty(IntentLabelFallback)
+            ? "Bola de fuego" : IntentLabelFallback;
+
         /// <summary>
         /// Turnos que la marca lleva avisada sin prender. <c>[NonSerialized]</c> para que viva en la
         /// copia runtime del árbol y no en el asset: una pelea nueva arranca sin aviso a medias.
@@ -131,7 +147,7 @@ namespace Rollgeon.Combat.AI.Decisions
             // 10 por turno, 4 rondas" — los números que, apenas prende, ya muestra Fire Tiles.
             // El párrafo de las bombas sí los necesita, y por eso el payload sigue existiendo.
             intent = new AIIntent(
-                AIIntentTextKeys.Ignite, "Bola de fuego",
+                LabelKey, LabelFallback,
                 area.Damage, area.Kind,
                 tiles: area.Tiles,
                 turnsAway: AnnounceTurns,
@@ -152,8 +168,7 @@ namespace Rollgeon.Combat.AI.Decisions
                 return false;
             }
 
-            intent = new AIIntent(AIIntentTextKeys.Ignite, "Bola de fuego", 0,
-                                  AttackKind.Environmental);
+            intent = new AIIntent(LabelKey, LabelFallback, 0, AttackKind.Environmental);
             return true;
         }
 

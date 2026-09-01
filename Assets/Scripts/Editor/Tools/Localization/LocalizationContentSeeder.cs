@@ -778,6 +778,13 @@ namespace Rollgeon.EditorTools.Localization
 
             // Descripcion vacia a proposito, igual que el estallido: el titulo dice que hace, el
             // numero de la tarjeta dice cuanto, y "desde lejos" lo dice la familia del bicho.
+            // El Pleno del Croupier: mismo nodo que la bola de fuego, otra pregunta. De la bola te
+            // corrés al costado; de esto sólo se sale llegando al hueco.
+            Content(AIIntentTextKeys.BurnRoom + ".name", "Pleno y color", "Full House Burn");
+            Content(AIIntentTextKeys.BurnRoom + ".desc",
+                "Prende la sala entera menos lo que rodea al jefe.",
+                "Lights the whole room except what surrounds him.");
+
             Content(AIIntentTextKeys.RangedShot + ".name", "Te dispara", "Shoots You");
             Content(AIIntentTextKeys.RangedShot + ".desc", string.Empty, string.Empty);
 

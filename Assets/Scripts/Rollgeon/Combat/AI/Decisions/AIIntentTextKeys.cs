@@ -11,6 +11,14 @@ namespace Rollgeon.Combat.AI.Decisions
     public static class AIIntentTextKeys
     {
         public const string Ignite = "intent.ignite";
+
+        /// <summary>
+        /// El área que no es un cono sino el paño entero menos un hueco. Key propia porque el
+        /// mismo nodo prende las dos: con una sola, el jugador lee "Bola de fuego" para algo de
+        /// lo que no se escapa moviéndose al costado.
+        /// </summary>
+        public const string BurnRoom = "intent.burn_room";
+
         public const string RangedShot = "intent.ranged_shot";
         public const string BombField = "intent.bomb_field";
         public const string BombBlast = "intent.bomb_blast";
@@ -26,7 +34,7 @@ namespace Rollgeon.Combat.AI.Decisions
 
         public static readonly string[] All =
         {
-            Ignite, RangedShot, BombField, BombBlast, Telegraph, Attack, Leaves,
+            Ignite, BurnRoom, RangedShot, BombField, BombBlast, Telegraph, Attack, Leaves,
         };
 
         /// <summary>
@@ -40,6 +48,7 @@ namespace Rollgeon.Combat.AI.Decisions
         public static string RuleFallback(string key) => key switch
         {
             Ignite => "Prende un cono de fuego.",
+            BurnRoom => "Prende la sala entera menos lo que rodea al jefe.",
             // Vacía a propósito: el título dice qué hace, el número de la tarjeta dice cuánto, y
             // "desde lejos" lo dice la familia del bicho arriba del panel. No quedaba nada.
             RangedShot => string.Empty,

@@ -1261,6 +1261,14 @@ MonoBehaviour:
     m_Localized: Break it and its marked tiles go with it.
     m_Metadata:
       m_Items: []
+  - m_Id: 17329585485967360
+    m_Localized: Full House Burn
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17329585515327488
+    m_Localized: Lights the whole room except what surrounds him.
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

@@ -638,6 +638,11 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
                         // sumaria SU turno de espera arriba del que ya da el orden y prenderia en
                         // N+2.
                         AnnounceTurns = 0,
+                        // Tarjeta propia: es el mismo nodo que la bola de fuego, pero de la bola
+                        // te corrés al costado y de esto sólo se sale llegando al hueco. Con la
+                        // key de siempre las dos se anuncian igual y la fase 2 pasa desapercibida.
+                        IntentLabelKey = AIIntentTextKeys.BurnRoom,
+                        IntentLabelFallback = "Pleno y color",
                         WindupFeedbackId = BossFeedbackIds.CroupierMeleeAnim,
                         // OFF, al reves que las bandas: el Pleno es el reloj mas corto de los tres,
                         // asi que relevar lo que tapa le recortaria la banda que ya venia ardiendo a
