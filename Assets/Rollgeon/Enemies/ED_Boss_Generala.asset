@@ -1063,6 +1063,7 @@ MonoBehaviour:
       el jugador, banda direccional; anillo de escarcha; dados de la casa."
   WeaknessComboId: combo.generala
   WeaknessMultiplierOverride: 1.5
+  Curse: {fileID: 11400000, guid: fe76475bf4cca9a43a3341d900130b0b, type: 2}
   BaseHP: 240
   BaseAttack: 40
   BaseHealStrength: 0
@@ -1074,6 +1075,7 @@ MonoBehaviour:
   MinGoldDrop: 60
   MaxGoldDrop: 80
   IsFlying: 0
-  IsBoss: 0
+  IsBoss: 1
+  Archetype: 2
   Personality: 0
   KamikazeIgnoresSurvival: 0

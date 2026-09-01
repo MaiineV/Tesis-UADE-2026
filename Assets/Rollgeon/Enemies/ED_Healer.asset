@@ -1891,8 +1891,9 @@ MonoBehaviour:
     Timing: 1
     Notes: "Cura al aliado con menos vida a \u22642 (objetivo \xFAnico); si no hay
       a qui\xE9n curar, dispara y mantiene distancia 3."
-  WeaknessComboId: combo.double_pair
+  WeaknessComboId: 
   WeaknessMultiplierOverride: 0
+  Archetype: 3
   BaseHP: 60
   BaseAttack: 20
   BaseHealStrength: 20

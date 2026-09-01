@@ -91,11 +91,17 @@ namespace Rollgeon.Combat.Threat
         /// <inheritdoc />
         public bool TryConsume(Guid sourceGuid, out ThreatenedArea pending)
         {
+            if (!TryPeek(sourceGuid, out pending)) return false;
+            Pending.Remove(sourceGuid);
+            return true;
+        }
+
+        /// <inheritdoc />
+        public bool TryPeek(Guid sourceGuid, out ThreatenedArea pending)
+        {
             if (sourceGuid != Guid.Empty && Pending.TryGetValue(sourceGuid, out pending))
-            {
-                Pending.Remove(sourceGuid);
                 return true;
-            }
+
             pending = default;
             return false;
         }

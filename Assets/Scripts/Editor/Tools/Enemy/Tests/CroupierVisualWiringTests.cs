@@ -370,6 +370,39 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             AssertItBurnsItsOwner(fire);
         }
 
+        [Test]
+        public void TheTwoFires_DoNotShareTheirContentKey()
+        {
+            var fire = LoadFireTile();
+            var bombFire = AssetDatabase.LoadAssetAtPath<SpecialTileDefinitionSO>(
+                CroupierAssetBuilder.BombFireTilePath);
+            Assert.IsNotNull(fire, "Falta la casilla de fuego.");
+            Assert.IsNotNull(bombFire, "Falta la casilla de fuego de bomba.");
+
+            // Los dos fuegos comparten sala y prefab visual, así que el título del tooltip es lo
+            // único que los separa en pantalla — y cobran 6/10 contra 15/15.
+            Assert.AreNotEqual(fire.NameKey, bombFire.NameKey,
+                "El fuego de bomba volvió a titularse con el nombre del fuego del paño.");
+            Assert.AreNotEqual(fire.DescriptionKey, bombFire.DescriptionKey,
+                "El fuego de bomba volvió a describirse con la frase del fuego del paño.");
+
+            var rebuilt = ScriptableObject.CreateInstance<SpecialTileDefinitionSO>();
+            rebuilt.hideFlags = HideFlags.HideAndDontSave;
+            try
+            {
+                // Con basefire: es justo el camino que antes copiaba las dos claves.
+                CroupierAssetBuilder.ConfigureBombFireTile(rebuilt, fire);
+                Assert.AreEqual(CroupierAssetBuilder.BombFireContentKey, rebuilt.NameKey,
+                    "El builder volvió a copiarle la clave al fuego del paño.");
+                Assert.AreEqual(CroupierAssetBuilder.BombFireContentKey, rebuilt.DescriptionKey,
+                    "El builder volvió a copiarle la clave al fuego del paño.");
+            }
+            finally
+            {
+                Object.DestroyImmediate(rebuilt);
+            }
+        }
+
         /// <summary>Luma Rec. 601 — alcanza para ordenar los escalones de un ramp de cel shading.</summary>
         private static float Luminance(Color color) =>
             0.299f * color.r + 0.587f * color.g + 0.114f * color.b;

@@ -65,6 +65,11 @@ namespace Rollgeon.Entities
                  ">0 pisa el default global solo para este enemigo.")]
         public float WeaknessMultiplierOverride = 0f;
 
+        [Title("Player Curse")]
+        [Tooltip("La pasiva de este jefe sobre el jugador, para el bloque PLAYER CURSE de su " +
+                 "panel. Null = el bloque no existe (bestiario común y jefes sin maldición).")]
+        public BossCurseSO Curse;
+
         // -----------------------------------------------------------------
         // Base Stats — Content#0099.
         // -----------------------------------------------------------------
@@ -158,6 +163,11 @@ namespace Rollgeon.Entities
         [Tooltip("Jefe: inmune a las casillas especiales de las que es owner, salvo override en la definición " +
                  "de la casilla. También cambia cómo el kill credit y la protección de SafeZone lo tratan.")]
         public bool IsBoss;
+
+        [Tooltip("Familia de combate que muestra el panel al pasarle el mouse. Unset = no muestra " +
+                 "la fila; un enemigo mal etiquetado miente sobre cómo se lo pelea. Es OTRO eje que " +
+                 "Personality, que es riesgo de pathing: un support puede ser agresivo.")]
+        public Rollgeon.Entities.Traits.EnemyArchetype Archetype = Rollgeon.Entities.Traits.EnemyArchetype.Unset;
 
         [Tooltip("Perfil de riesgo del pathing IA frente a casillas peligrosas (MinSurvivalHP + Caution). " +
                  "Todo el catálogo arranca en Normal.")]

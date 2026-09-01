@@ -687,7 +687,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 9716852768735248
-    m_Localized: "+10 vida m\xE1xima."
+    m_Localized: "+2 vida m\xE1xima."
     m_Metadata:
       m_Items: []
   - m_Id: 9716852768735249
@@ -767,7 +767,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 9716852768735268
-    m_Localized: +5 en tiradas de escudo.
+    m_Localized: Tienes +3 de escudo al inicio de cada combate.
     m_Metadata:
       m_Items: []
   - m_Id: 9716852768735269
@@ -775,7 +775,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 9716852768735270
-    m_Localized: Recuperas 5 HP al iniciar combate.
+    m_Localized: Recuperas 1 HP al iniciar combate.
     m_Metadata:
       m_Items: []
   - m_Id: 9716852768735271
@@ -879,7 +879,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 12914473364717576
-    m_Localized: "Cura si TERMIN\xC1S tu turno encima. Pasar de largo no cura."
+    m_Localized: "Cura si <b>termin\xE1s</b> tu turno encima. Pasar de largo no cura."
     m_Metadata:
       m_Items: []
   - m_Id: 12914473364717577
@@ -929,7 +929,7 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 13172026638630912
     m_Localized: "Llamas de la banca: duran casi toda la mano y castigan fuerte a
-      quien se queda quieto. A su due\xF1o no lo tocan."
+      quien se queda quieto. Al Croupier tambi\xE9n lo queman."
     m_Metadata:
       m_Items: []
   - m_Id: 13919417931706368
@@ -937,7 +937,8 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 13919417973649408
-    m_Localized: "Quema el pa\xF1o que tiene delante y se va al borde cuando lo acorral\xE1s."
+    m_Localized: Siembra bombas, prende el suelo y dispara de lejos. Acorralalo y
+      se va al borde.
     m_Metadata:
       m_Items: []
   - m_Id: 13919417973649409
@@ -945,15 +946,16 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 13919417973649410
-    m_Localized: "Te agarra, te tira lejos, y se queda con lo que se te cay\xF3."
+    m_Localized: "Te tira lejos y te llena el piso de monedas. Las que no levant\xE1s
+      a tiempo se las lleva \xE9l, y cada una lo cura."
     m_Metadata:
       m_Items: []
   - m_Id: 13919417973649411
-    m_Localized: "Comisi\xF3n"
+    m_Localized: Enemigo a Distancia
     m_Metadata:
       m_Items: []
   - m_Id: 13919417973649412
-    m_Localized: Vuela, tira de lejos, y le pone precio a huir.
+    m_Localized: Goblin con ataque a distancia, dispara con una ballesta.
     m_Metadata:
       m_Items: []
   - m_Id: 13919417973649413
@@ -961,8 +963,8 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 13919417973649414
-    m_Localized: "Tira su propia mano a la vista. Rompele un dado y le borr\xE1s
-      una categor\xEDa."
+    m_Localized: "Tira su propia mano a la vista y te cobra la categor\xEDa que le
+      salga. Rompele un dado y le borr\xE1s una."
     m_Metadata:
       m_Items: []
   - m_Id: 13919417973649415
@@ -970,7 +972,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 13919417973649416
-    m_Localized: "Parte de su mano, y en tu camino. Rompelo para borrarle una categor\xEDa."
+    m_Localized: Un dado gigante de la mano de la Generala.
     m_Metadata:
       m_Items: []
   - m_Id: 14364254574313472
@@ -982,12 +984,12 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 14364254620450817
-    m_Localized: "Quem\xE1ndose"
+    m_Localized: Quemadura
     m_Metadata:
       m_Items: []
   - m_Id: 14364254620450818
-    m_Localized: "Est\xE1s sobre Fuego: recib\xEDs da\xF1o al inicio de tu turno
-      mientras sigas ac\xE1."
+    m_Localized: "<b>{0}</b> al entrar en una casilla. <b>{1}</b> si empez\xE1s tu
+      turno sobre ella."
     m_Metadata:
       m_Items: []
   - m_Id: 14364254620450819
@@ -1463,6 +1465,257 @@ MonoBehaviour:
   - m_Id: 17566759316013057
     m_Localized: "Tu da\xF1o base pasa a 0 y crece por cada ronda sin recibir da\xF1o.
       Recibir da\xF1o lo reinicia."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593279981744128
+    m_Localized: "Quema la sala y se teletransporta cuando lo alcanz\xE1s."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280027881472
+    m_Localized: "Pega m\xE1s fuerte cuanto m\xE1s oro llev\xE1s. Las fichas que
+      dej\xE1s vencer se las queda."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280027881473
+    m_Localized: "Suelta anillos el\xE9ctricos en oleadas, con huecos entre anillo
+      y anillo."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280027881474
+    m_Localized: "Dispara de lejos y se aleja cuando te le acerc\xE1s."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280027881475
+    m_Localized: No ataca. Cada dado roto le saca un combo a la Generala.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280027881476
+    m_Localized: Bomba
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280027881477
+    m_Localized: Rompela y se lleva sus casillas marcadas.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280027881478
+    m_Localized: Cura a los suyos antes que pegarte.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280027881479
+    m_Localized: Corre hacia vos y pega de frente.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280027881480
+    m_Localized: "Dispara de lejos y se aleja cuando te le acerc\xE1s."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280027881481
+    m_Localized: "Se hace pasar por cofre y pega cuando te acerc\xE1s."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280027881482
+    m_Localized: Pega de cerca.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280027881483
+    m_Localized: Pega de cerca.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280027881484
+    m_Localized: La banca retiene
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280027881485
+    m_Localized: "El oro que dej\xE1s vencer se lo queda la banca."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280027881486
+    m_Localized: Mano vetada
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280027881487
+    m_Localized: "No pod\xE9s repetir el combo que acab\xE1s de anotar."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280027881488
+    m_Localized: Casillas de fuego
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280027881489
+    m_Localized: "<b>{0}</b> al entrar en una casilla. <b>{1}</b> si empez\xE1s tu
+      turno sobre ella."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280027881490
+    m_Localized: Se teletransporta
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280027881491
+    m_Localized: Salta a una casilla al lado tuyo, o al otro lado de la sala.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280027881492
+    m_Localized: Candado
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280027881493
+    m_Localized: Uno de tus dados queda trabado. Sortea otro cada turno.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280027881494
+    m_Localized: Bola de fuego
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280027881495
+    m_Localized: Prende un cono de fuego.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280027881496
+    m_Localized: Pleno y color
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280027881497
+    m_Localized: Prende la sala entera menos lo que rodea al jefe.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280027881498
+    m_Localized: Disparo
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280027881499
+    m_Localized: 
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280027881500
+    m_Localized: Bombas
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280027881501
+    m_Localized: Siembra <b>{1}</b> bombas al azar.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280027881502
+    m_Localized: Detonar la bomba
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280027881503
+    m_Localized: 
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280027881504
+    m_Localized: Golpe marcado
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280027881505
+    m_Localized: 
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280027881506
+    m_Localized: Golpe
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280027881507
+    m_Localized: 
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280027881508
+    m_Localized: Lo que deja
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280027881509
+    m_Localized: 'Deja fuego: <b>{0}</b> al entrar, <b>{1}</b> por turno, {2} rondas.'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280044658688
+    m_Localized: Fuego
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280044658689
+    m_Localized: Quema a quien se queda adentro.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280044658690
+    m_Localized: Escarcha
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280044658691
+    m_Localized: 'Hielo del cubilete: pisarlo aturde, y el parche se rompe con la
+      pisada.'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280044658692
+    m_Localized: Ficha de la banca
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280044658693
+    m_Localized: "Pisala y cobr\xE1s su valor. La que vence se la queda la banca
+      \u2014 y lo cura."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280044658694
+    m_Localized: Fuego de mesa
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280044658695
+    m_Localized: 'Arde: golpea a quien termine su turno adentro.'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280044658696
+    m_Localized: Estela de hielo
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280044658697
+    m_Localized: Pisarla aturde, y cada parche se rompe con la pisada.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280044658698
+    m_Localized: Lluvia
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280044658699
+    m_Localized: Marca zonas y castiga al ciclo siguiente a quien siga adentro.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280044658700
+    m_Localized: Fuego de Bomba
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280044658701
+    m_Localized: "Lo que deja una bomba al estallar. Quema mucho m\xE1s que el fuego
+      del pa\xF1o, y tampoco perdona al Croupier."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280044658702
+    m_Localized: Pinchos del Cajero
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280044658703
+    m_Localized: "Se desarman al pisarlos y se rearman solos. Duelen bastante m\xE1s
+      que los comunes."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280048852992
+    m_Localized: Cofre
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280048852993
+    m_Localized: "Rompelo y fijate qu\xE9 guarda."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280048852994
+    m_Localized: "Un esp\xEDritu de la casa que remienda a los suyos."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280048852995
+    m_Localized: Soldado de la casa, cuerpo a cuerpo.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280048852996
+    m_Localized: "M\xEDmico"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280048852997
+    m_Localized: Un cofre que muerde.
     m_Metadata:
       m_Items: []
   references:

@@ -1237,6 +1237,7 @@ MonoBehaviour:
     Notes: "Persigue por la ruta m\xE1s corta y golpea a distancia 1."
   WeaknessComboId: 
   WeaknessMultiplierOverride: 0
+  Archetype: 1
   BaseHP: 75
   BaseAttack: 20
   BaseHealStrength: 5

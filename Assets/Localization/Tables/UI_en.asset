@@ -904,6 +904,162 @@ MonoBehaviour:
     m_Localized: No item equipped.
     m_Metadata:
       m_Items: []
+  - m_Id: 17593281655271424
+    m_Localized: Melee
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593281667854336
+    m_Localized: Ranged
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593281667854337
+    m_Localized: Support
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593281667854338
+    m_Localized: Boss
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593281667854339
+    m_Localized: "Boss \xB7 {0}"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593281667854340
+    m_Localized: Next turn
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593281667854341
+    m_Localized: Player Curse
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593281672048640
+    m_Localized: Combo
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593281672048641
+    m_Localized: Basic
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593281672048642
+    m_Localized: Damage Over Time
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593281672048643
+    m_Localized: 
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593281672048644
+    m_Localized: Reaction
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593281672048645
+    m_Localized: Ability
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593281672048646
+    m_Localized: "{0} \xB7 {1}"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593281672048647
+    m_Localized: "Tile \xB7 {0}"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593281672048648
+    m_Localized: Damage
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593281672048649
+    m_Localized: Healing
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593281672048650
+    m_Localized: Status
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593281672048651
+    m_Localized: Buff
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593281672048652
+    m_Localized: Slide
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593281672048653
+    m_Localized: Teleport
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593281672048654
+    m_Localized: Warning
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593281672048655
+    m_Localized: Protection
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593281672048656
+    m_Localized: Effect
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593281672048657
+    m_Localized: On enter
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593281672048658
+    m_Localized: Start your turn on it
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593281672048659
+    m_Localized: Heals at end of turn
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593281672048660
+    m_Localized: Applies
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593281672048661
+    m_Localized: On the floor
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593281672048662
+    m_Localized: Object
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593281672048663
+    m_Localized: Leaves
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593281672048664
+    m_Localized: The fuse burns down
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593281672048665
+    m_Localized: It explodes
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593281672048666
+    m_Localized: On explosion
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593281672048667
+    m_Localized: Blast hit
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593281672048668
+    m_Localized: Room hazard
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593281672048669
+    m_Localized: Hit
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593281672048670
+    m_Localized: Strikes every {0} rounds
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593281676242944
+    m_Localized: God
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

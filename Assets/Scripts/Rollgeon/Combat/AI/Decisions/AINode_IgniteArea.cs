@@ -50,7 +50,7 @@ namespace Rollgeon.Combat.AI.Decisions
     /// </para>
     /// </remarks>
     [Serializable, HideReferenceObjectPicker]
-    public sealed class AINode_IgniteArea : AIActionNode
+    public sealed class AINode_IgniteArea : AIActionNode, IAIIntentNode
     {
         [Required]
         [Tooltip("Definición de la casilla a plantar. Sin esto el nodo falla: es el daño entero del " +
@@ -83,6 +83,22 @@ namespace Rollgeon.Combat.AI.Decisions
                  "log sale igual en los dos casos.")]
         public bool FailWhenNothingToBurn;
 
+        [Tooltip("Key de la tarjeta cuando este paso NO es la bola de fuego de siempre. Vacío = " +
+                 "intent.ignite. Un jefe que prende dos áreas distintas necesita que el panel las " +
+                 "distinga: con una sola key las dos se anuncian igual.")]
+        public string IntentLabelKey;
+
+        [Tooltip("Texto de autor de IntentLabelKey, por si la key no está en tabla.")]
+        public string IntentLabelFallback;
+
+        // El default vive acá y no en los campos para que un nodo viejo (sin las keys nuevas en su
+        // serialización) siga anunciándose como siempre.
+        private string LabelKey => string.IsNullOrEmpty(IntentLabelKey)
+            ? AIIntentTextKeys.Ignite : IntentLabelKey;
+
+        private string LabelFallback => string.IsNullOrEmpty(IntentLabelFallback)
+            ? "Bola de fuego" : IntentLabelFallback;
+
         /// <summary>
         /// Turnos que la marca lleva avisada sin prender. <c>[NonSerialized]</c> para que viva en la
         /// copia runtime del árbol y no en el asset: una pelea nueva arranca sin aviso a medias.
@@ -106,6 +122,55 @@ namespace Rollgeon.Combat.AI.Decisions
         /// esperar: las casillas traen su propio visual y VFX.
         /// </summary>
         public override AIResult Tick(AIContext context) => Ignite(context);
+
+        /// <summary>
+        /// Describe el área que este paso va a prender, leída del servicio de amenaza.
+        /// </summary>
+        /// <remarks>
+        /// La describe el que la CONSUME y no el que la marca. La forma del cono se ancla al
+        /// tickear —detrás de la fuga— y un paso posterior del árbol puede descartarla en el
+        /// mismo turno, así que lo único que se puede afirmar es lo que ya quedó congelado acá.
+        /// Sin marca pendiente esto contesta <c>false</c>, que es exactamente el turno en que el
+        /// jefe sólo telegrafía y el turno en que se le canceló la banda.
+        /// </remarks>
+        public bool TryDescribeIntent(AIContext context, out AIIntent intent)
+        {
+            intent = default;
+            if (context == null || Definition == null) return false;
+            if (!ServiceLocator.TryGetService<IThreatenedAreaService>(out var threat) || threat == null)
+                return false;
+
+            var source = AINode_TelegraphMark.SourceKey(context.SelfGuid, ChannelId);
+            if (!threat.TryPeek(source, out var area)) return false;
+
+            // Sin leaves a propósito: con ellos la tarjeta arrastraba "Deja fuego: 6 al entrar,
+            // 10 por turno, 4 rondas" — los números que, apenas prende, ya muestra Fire Tiles.
+            // El párrafo de las bombas sí los necesita, y por eso el payload sigue existiendo.
+            intent = new AIIntent(
+                LabelKey, LabelFallback,
+                area.Damage, area.Kind,
+                tiles: area.Tiles,
+                turnsAway: AnnounceTurns,
+                channelKey: source);
+            return true;
+        }
+
+        /// <summary>
+        /// Como repertorio la bola de fuego se afirma sin marca pendiente: la marca es el estado
+        /// de ESTE ciclo, y sin ella la intención viva contesta <c>false</c> justo cuando el
+        /// panel lista qué más sabe hacer. Sin daño a propósito: el número vive en la marca.
+        /// </summary>
+        public bool TryDescribeOption(AIContext context, out AIIntent intent)
+        {
+            if (Definition == null)
+            {
+                intent = default;
+                return false;
+            }
+
+            intent = new AIIntent(LabelKey, LabelFallback, 0, AttackKind.Environmental);
+            return true;
+        }
 
         /// <inheritdoc />
         public override IEnumerator TickCoroutine(AIContext context, Action<AIResult> onResult)

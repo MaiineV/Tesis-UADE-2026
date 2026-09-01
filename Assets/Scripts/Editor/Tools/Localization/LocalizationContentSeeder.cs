@@ -1,6 +1,8 @@
 using UnityEditor;
 using UnityEngine;
+using Rollgeon.Combat.AI.Decisions;
 using Rollgeon.Editor.Tools.Enemy.Builders;
+using Rollgeon.Entities.Traits;
 using Rollgeon.Tutorial;
 using Rollgeon.UI;
 using Rollgeon.UI.HUD.Contract;
@@ -37,6 +39,8 @@ namespace Rollgeon.EditorTools.Localization
             SeedMiscContent();
             SeedBuildHelp();
             SeedStatusIcons();
+            SeedArchetypes();
+            SeedAttackKinds();
             SeedSpecialTiles();
             SeedContractDrawer();
             SeedPlayerIcons();
@@ -676,11 +680,85 @@ namespace Rollgeon.EditorTools.Localization
                 "No podés volver a usar un portal hasta que pase el efecto.",
                 "You cannot use a portal again until this wears off.");
 
+            // La frase tactica del panel: como pelea, en una linea. Distinta del .desc (el lore
+            // del parrafo) a proposito — el panel no lleva lore.
+            Content("boss.croupier.brief",
+                "Quema la sala y se teletransporta cuando lo alcanzás.",
+                "Burns the room and teleports when you reach him.");
+            Content("boss.cashier.brief",
+                "Pega más fuerte cuanto más oro llevás. Las fichas que dejás vencer se las queda.",
+                "Hits harder the more gold you carry. Chips you let expire, he keeps.");
+            Content("boss.la_generala.brief",
+                "Suelta anillos eléctricos en oleadas, con huecos entre anillo y anillo.",
+                "Unleashes electric rings in waves, with gaps between the rings.");
+            // El refuerzo del Cajero es un ranged común más: misma identidad que RangedEnemy01
+            // a propósito — un nombre propio le prometía al jugador una mecánica que no tiene. La
+            // frase es la MISMA, palabra por palabra, y ahora es cierta de los dos: su árbol
+            // también se despega cuando lo tenés encima.
+            Content("minion.cajero_comision.brief",
+                "Dispara de lejos y se aleja cuando te le acercás.",
+                "Shoots from afar and backs away when you get close.");
+            Content("obj.dado_casa.brief",
+                "No ataca. Cada dado roto le saca un combo a la Generala.",
+                "It doesn't attack. Every die broken takes a combo away from the Generala.");
+
+            // La bomba del Croupier (RoomObjectTooltipInfo arma su panel con estas keys). La frase
+            // dice lo único que ningún número del panel puede decir: que romperla le saca las
+            // casillas marcadas al paño.
+            Content("roomobj.croupier.bomba.name", "Bomba", "Bomb");
+            Content("roomobj.croupier.bomba.desc",
+                "Rompela y se lleva sus casillas marcadas.",
+                "Break it and its marked tiles go with it.");
+            Content("healerEnemy.brief",
+                "Cura a los suyos antes que pegarte.",
+                "Heals its allies before it hits you.");
+            Content("CardEnemy01.brief",
+                "Corre hacia vos y pega de frente.",
+                "Runs straight at you and swings up close.");
+            Content("RangedEnemy01.brief",
+                "Dispara de lejos y se aleja cuando te le acercás.",
+                "Shoots from afar and backs away when you get close.");
+            Content("ChestMimic01.brief",
+                "Se hace pasar por cofre y pega cuando te acercás.",
+                "Poses as a chest and strikes when you get close.");
+            Content("enemy_tutorial_melee_b.brief", "Pega de cerca.", "Hits up close.");
+            Content("enemy_tutorial_melee_c.brief", "Pega de cerca.", "Hits up close.");
+
+            // Maldiciones de jefe (bloque PLAYER CURSE). La del Croupier reusa status.dice_block.
+            Content("curse.bank_keeps.name", "La banca retiene", "The Bank Keeps");
+            Content("curse.bank_keeps.desc",
+                "El oro que dejás vencer se lo queda la banca.",
+                "Gold you let expire, the bank keeps.");
+            Content("curse.repeat_ban.name", "Mano vetada", "Banned Hand");
+            Content("curse.repeat_ban.desc",
+                "No podés repetir el combo que acabás de anotar.",
+                "You can't repeat the combo you just scored.");
+
+            Content("enemy.fire_tiles.name", "Casillas de fuego", "Fire Tiles");
+            // {0} = daño al entrar, {1} = al empezar el turno encima — la misma pareja que
+            // status.burn.desc, porque son las dos caras del mismo fuego.
+            Content("enemy.fire_tiles.desc",
+                "<b>{0}</b> al entrar en una casilla. <b>{1}</b> si empezás tu turno sobre ella.",
+                "<b>{0}</b> on entering a tile. <b>{1}</b> if you start your turn on it.");
+
+            Content("ability.teleport.name", "Se teletransporta", "Teleport");
+            Content("ability.teleport.desc",
+                "Salta a una casilla al lado tuyo, o al otro lado de la sala.",
+                "Jumps to a tile beside you, or across the room.");
+
             // Estados "parado sobre" (sin turnos: duran lo que dure la estadía en la casilla).
-            Content("status.burn.name", "Quemándose", "Burning");
+            Content("status.burn.name", "Quemadura", "Burn");
+            // {0} = daño al entrar, {1} = daño al empezar el turno encima. Los pasa
+            // TileStandStatusProvider.BurnState desde la definición que se está pisando: cuatro
+            // fuegos comparten el tipo y cobran 8/12, 6/10 y 15/15. El <b> va en la tabla para
+            // que la énfasis sea autorable por idioma.
             Content("status.burn.desc",
-                "Estás sobre Fuego: recibís daño al inicio de tu turno mientras sigas acá.",
-                "You are standing on Fire: you take damage at the start of your turn while you remain here.");
+                "<b>{0}</b> al entrar en una casilla. <b>{1}</b> si empezás tu turno sobre ella.",
+                "<b>{0}</b> on entering a tile. <b>{1}</b> if you start your turn on it.");
+            Content("status.dice_block.name", "Candado", "Padlock");
+            Content("status.dice_block.desc",
+                "Uno de tus dados queda trabado. Sortea otro cada turno.",
+                "One of your dice stays jammed. He draws another one every turn.");
             Content("status.tile_heal.name", "Casilla de Curación", "Healing Tile");
             Content("status.tile_heal.desc",
                 "Terminá tu turno acá para recuperar vida.",
@@ -693,6 +771,118 @@ namespace Rollgeon.EditorTools.Localization
             Content("status.tile_attack.desc",
                 "Tus combos ofensivos hacen daño extra mientras permanezcas acá.",
                 "Your offensive combos deal bonus damage while you stay here.");
+
+            SeedIntents();
+        }
+
+        /// <summary>
+        /// Lo que un enemigo va a hacer, en la tarjeta que sale al pasarle el mouse.
+        /// </summary>
+        /// <remarks>
+        /// Todas las reglas se formatean con la misma terna —{0} daño, {1} cantidad, {2} turnos—
+        /// y cada frase usa los que le sirven (ver <c>AIIntentText</c>). Las keys viven en
+        /// <c>AIIntentTextKeys.All</c> y hay un test que exige que todas estén acá: sin entry, la
+        /// tarjeta salía con el texto de autor en español aunque el juego corriera en inglés.
+        /// </remarks>
+        private static void SeedIntents()
+        {
+            Content(AIIntentTextKeys.Ignite + ".name", "Bola de fuego", "Fire Ball");
+            // Una frase y sin números: la forma. El dónde lo marca el piso y los números del
+            // fuego los lleva la tarjeta de Fire Tiles.
+            Content(AIIntentTextKeys.Ignite + ".desc",
+                "Prende un cono de fuego.",
+                "Lights a cone of fire.");
+
+            // Descripcion vacia a proposito, igual que el estallido: el titulo dice que hace, el
+            // numero de la tarjeta dice cuanto, y "desde lejos" lo dice la familia del bicho.
+            // El Pleno del Croupier: mismo nodo que la bola de fuego, otra pregunta. De la bola te
+            // corrés al costado; de esto sólo se sale llegando al hueco.
+            Content(AIIntentTextKeys.BurnRoom + ".name", "Pleno y color", "Full House Burn");
+            Content(AIIntentTextKeys.BurnRoom + ".desc",
+                "Prende la sala entera menos lo que rodea al jefe.",
+                "Lights the whole room except what surrounds him.");
+
+            Content(AIIntentTextKeys.RangedShot + ".name", "Disparo", "Shot");
+            Content(AIIntentTextKeys.RangedShot + ".desc", string.Empty, string.Empty);
+
+            Content(AIIntentTextKeys.BombField + ".name", "Bombas", "Bombs");
+            Content(AIIntentTextKeys.BombField + ".desc",
+                "Siembra <b>{1}</b> bombas al azar.",
+                "Spawns <b>{1}</b> random bombs.");
+
+            // Descripción vacía a propósito: el título dice qué pasa y el badge cuánto falta.
+            // La entry existe igual porque el guard la exige y para poder llenarla sin tocar código.
+            Content(AIIntentTextKeys.BombBlast + ".name", "Detonar la bomba", "Detonate the Bomb");
+            Content(AIIntentTextKeys.BombBlast + ".desc", string.Empty, string.Empty);
+
+            // Descripciones vacías: el título dice qué pasa y el número de la tarjeta cuánto.
+            // Las casillas marcadas del golpe telegrafiado ya se ven en el paño al hoverear.
+            Content(AIIntentTextKeys.Telegraph + ".name", "Golpe marcado", "Marked Strike");
+            Content(AIIntentTextKeys.Telegraph + ".desc", string.Empty, string.Empty);
+
+            Content(AIIntentTextKeys.Attack + ".name", "Golpe", "Strike");
+            Content(AIIntentTextKeys.Attack + ".desc", string.Empty, string.Empty);
+
+            Content(AIIntentTextKeys.Leaves + ".name", "Lo que deja", "What It Leaves");
+            Content(AIIntentTextKeys.Leaves + ".desc",
+                "Deja fuego: <b>{0}</b> al entrar, <b>{1}</b> por turno, {2} rondas.",
+                "Leaves fire: <b>{0}</b> on entering, <b>{1}</b> per turn, for {2} rounds.");
+        }
+
+        /// <summary>
+        /// La familia de combate que el panel de un enemigo dice de él (tabla UI).
+        /// </summary>
+        /// <remarks>
+        /// El prefijo del jefe es un formato y no una concatenación en código: así el separador
+        /// —y el orden, si algún idioma lo quiere al revés— es autorable por locale.
+        /// </remarks>
+        private static void SeedArchetypes()
+        {
+            Ui(EnemyArchetypeKeys.Melee, "Cuerpo a cuerpo", "Melee");
+            Ui(EnemyArchetypeKeys.Ranged, "Rango", "Ranged");
+            Ui(EnemyArchetypeKeys.Support, "Soporte", "Support");
+
+            Ui(EnemyArchetypeKeys.Boss, "Jefe", "Boss");
+            Ui(EnemyArchetypeKeys.BossFormat, "Jefe · {0}", "Boss · {0}");
+
+            // La fecha del ataque en su tarjeta del costado. En chico y arriba del título: es lo
+            // que lo distingue de lo que el jefe mantiene en el paño, que no lleva fecha.
+            Ui(EnemyStatusIconsView.NextTurnKey, "Próximo turno", "Next turn");
+
+            // La etiqueta del bloque de maldición del jefe, misma letra chica que la fecha.
+            Ui(EnemyStatusIconsView.PlayerCurseKey, "Maldición", "Player Curse");
+        }
+
+        /// <summary>
+        /// El tipo de ataque que la tarjeta de próximo turno suma al título (tabla UI).
+        /// </summary>
+        private static void SeedAttackKinds()
+        {
+            Ui(AttackKindTextKeys.ComboAttack, "Combo", "Combo");
+            Ui(AttackKindTextKeys.BasicAttack, "Básico", "Basic");
+            Ui(AttackKindTextKeys.DamageOverTime, "Daño sostenido", "Damage Over Time");
+            // Vacía a propósito: "Ambiental" en el título de un ataque no califica nada que
+            // el jugador pueda usar; la entry existe para poder llenarla sin tocar código.
+            Ui(AttackKindTextKeys.Environmental, string.Empty, string.Empty);
+            Ui(AttackKindTextKeys.Reaction, "Reacción", "Reaction");
+            Ui(AttackKindTextKeys.ScriptedAbility, "Habilidad", "Ability");
+
+            // Formato y no concatenación: el separador es autorable por locale, igual que el
+            // prefijo del jefe.
+            Ui(AttackKindTextKeys.TitleFormat, "{0} · {1}", "{0} · {1}");
+        }
+
+        /// <summary>
+        /// Re-siembra SOLO las familias. Mismo criterio que <see cref="SeedStatusIconsOnly"/>:
+        /// acotar el blast radius del seeder completo.
+        /// </summary>
+        [MenuItem("Rollgeon/Localization/Seed Enemy Archetypes")]
+        public static void SeedArchetypesOnly()
+        {
+            SeedArchetypes();
+            AssetDatabase.SaveAssets();
+            AssetDatabase.Refresh();
+            Debug.Log("[LocalizationContentSeeder] Familias de enemigo pobladas en la tabla UI.");
         }
 
         /// <summary>
@@ -735,6 +925,69 @@ namespace Rollgeon.EditorTools.Localization
             Ui("tile.tooltip.heal", "Cura al terminar el turno: {0}", "Heals at end of turn: {0}");
             Ui("tile.tooltip.duration", "Dura {0} rondas", "Lasts {0} rounds");
 
+            // El panel estructurado de una casilla: la fila de tipo del header y las etiquetas
+            // de sus tarjetas de números (los números viajan como dato, no en el texto).
+            Ui("tile.category.format", "Casilla · {0}", "Tile · {0}");
+            Ui("tile.category.damage", "Daño", "Damage");
+            Ui("tile.category.heal", "Curación", "Healing");
+            Ui("tile.category.status", "Estado", "Status");
+            Ui("tile.category.buff", "Mejora", "Buff");
+            Ui("tile.category.slide", "Deslizamiento", "Slide");
+            Ui("tile.category.teleport", "Teletransporte", "Teleport");
+            Ui("tile.category.warning", "Advertencia", "Warning");
+            Ui("tile.category.protection", "Protección", "Protection");
+            Ui("tile.panel.effect", "Efecto", "Effect");
+            Ui("tile.panel.enter", "Al entrar", "On enter");
+            Ui("tile.panel.turn_start", "Empezar el turno encima", "Start your turn on it");
+            Ui("tile.panel.heal", "Cura al terminar el turno", "Heals at end of turn");
+            Ui("tile.panel.applies", "Aplica", "Applies");
+
+            // La caja EN EL PISO del panel de un enemigo parado sobre una casilla especial, y el
+            // header de los objetos que un jefe pone en la sala (bombas).
+            Ui("enemy.panel.on_the_floor", "En el piso", "On the floor");
+            Ui("prop.panel.type", "Objeto", "Object");
+            Ui("prop.panel.leaves", "Deja", "Leaves");
+
+            // Los dos bloques de la bomba: el plazo arriba (donde el jugador ya busca el próximo
+            // turno) y lo que hace al estallar abajo, como caja propia.
+            Ui("prop.panel.fuse_tick", "Se acorta la mecha", "The fuse burns down");
+            Ui("prop.panel.fuse_blows", "Explota", "It explodes");
+            Ui("prop.panel.on_blast", "Al explotar", "On explosion");
+            Ui("prop.panel.blast_hit", "Golpe del estallido", "Blast hit");
+
+            // El panel de un hazard de sala (lluvia, escarcha, fichas): fila de tipo, etiqueta
+            // del golpe y la cadencia del pie.
+            Ui("hazard.panel.type", "Peligro de sala", "Room hazard");
+            Ui("hazard.panel.hit", "Golpe", "Hit");
+            Ui("hazard.panel.cycle", "Golpea cada {0} rondas", "Strikes every {0} rounds");
+
+            // Identidad por hazard. El stun del hielo lo aplica IceStunBinder (Damage 0 en el
+            // SO), por eso la frase habla de aturdir sin nombrar números.
+            Content("hazard.fire.name", "Fuego", "Fire");
+            Content("hazard.fire.desc",
+                "Quema a quien se queda adentro.",
+                "Burns whoever stays inside.");
+            Content("hazard.frost.name", "Escarcha", "Frost");
+            Content("hazard.frost.desc",
+                "Hielo del cubilete: pisarlo aturde, y el parche se rompe con la pisada.",
+                "Ice from her cup: stepping on it stuns, and the patch breaks underfoot.");
+            Content("hazard.chip.name", "Ficha de la banca", "House Chip");
+            Content("hazard.chip.desc",
+                "Pisala y cobrás su valor. La que vence se la queda la banca — y lo cura.",
+                "Step on it to collect its value. One that expires, the bank keeps — and it heals him.");
+            Content("hazard.table_fire.name", "Fuego de mesa", "Table Fire");
+            Content("hazard.table_fire.desc",
+                "Arde: golpea a quien termine su turno adentro.",
+                "Burning: strikes whoever ends their turn inside.");
+            Content("hazard.ice_trail.name", "Estela de hielo", "Ice Trail");
+            Content("hazard.ice_trail.desc",
+                "Pisarla aturde, y cada parche se rompe con la pisada.",
+                "Stepping on it stuns, and each patch breaks underfoot.");
+            Content("hazard.rain.name", "Lluvia", "Rain");
+            Content("hazard.rain.desc",
+                "Marca zonas y castiga al ciclo siguiente a quien siga adentro.",
+                "Marks zones and punishes whoever is still inside next cycle.");
+
             // Nombre + descripción por casilla del catálogo.
             Content("tile.spikes.name", "Pinchos", "Spikes");
             Content("tile.spikes.desc",
@@ -750,8 +1003,12 @@ namespace Rollgeon.EditorTools.Localization
                 "Fire that burns out on its own after a few rounds.");
             Content("tile.firecroupier.name", "Fuego de la Banca", "House Fire");
             Content("tile.firecroupier.desc",
-                "Llamas de la banca: duran casi toda la mano y castigan fuerte a quien se queda quieto. A su dueño no lo tocan.",
-                "The house's flames: they last most of the hand and punish anyone who stands still. They never touch their owner.");
+                "Llamas de la banca: duran casi toda la mano y castigan fuerte a quien se queda quieto. Al Croupier también lo queman.",
+                "The house's flames: they last most of the hand and punish anyone who stands still. They burn the Croupier too.");
+            Content("tile.firecroupierbomba.name", "Fuego de Bomba", "Bomb Fire");
+            Content("tile.firecroupierbomba.desc",
+                "Lo que deja una bomba al estallar. Quema mucho más que el fuego del paño, y tampoco perdona al Croupier.",
+                "What a bomb leaves when it blows. It burns far worse than the house fire, and it doesn't spare the Croupier either.");
             Content("tile.ice.name", "Hielo", "Ice");
             Content("tile.ice.desc",
                 "Te deslizás en la dirección en la que entraste hasta salir del hielo o chocar.",
@@ -766,8 +1023,8 @@ namespace Rollgeon.EditorTools.Localization
                 "Poisons you: damage at the start of each turn for several turns.");
             Content("tile.heal.name", "Curación", "Healing");
             Content("tile.heal.desc",
-                "Cura si TERMINÁS tu turno encima. Pasar de largo no cura.",
-                "Heals if you END your turn on it. Passing through does nothing.");
+                "Cura si <b>terminás</b> tu turno encima. Pasar de largo no cura.",
+                "Heals if you <b>end</b> your turn on it. Passing through does nothing.");
             Content("tile.strength.name", "Fortaleza", "Strength");
             Content("tile.strength.desc",
                 "Tus combos ofensivos pegan más fuerte mientras estés parado acá.",
@@ -788,6 +1045,12 @@ namespace Rollgeon.EditorTools.Localization
             Content("tile.safezone.desc",
                 "Protege de efectos específicos a cualquier unidad adentro.",
                 "Shields any unit inside from specific effects.");
+            // Key propia del pincho del Cajero: pega 20 contra los 12 del común, y el tooltip
+            // no puede presentarlo como el mismo objeto.
+            Content("tile.spikes_cajero.name", "Pinchos del Cajero", "Cashier's Spikes");
+            Content("tile.spikes_cajero.desc",
+                "Se desarman al pisarlos y se rearman solos. Duelen bastante más que los comunes.",
+                "Disarm when stepped on and rearm on their own. They hurt a fair bit more than the common ones.");
         }
 
         // ==================================================================
@@ -853,6 +1116,13 @@ namespace Rollgeon.EditorTools.Localization
             Ui(Rollgeon.UI.ChestReveal.ChestRevealTextKeys.RarityUncommon, "Uncommon", "Uncommon");
             Ui(Rollgeon.UI.ChestReveal.ChestRevealTextKeys.RarityRare, "Rare", "Rare");
             Ui(Rollgeon.UI.ChestReveal.ChestRevealTextKeys.RarityLegendary, "Legendary", "Legendary");
+
+            // El tooltip del cofre de mundo. UNA sola identidad para el cofre real y el mímico
+            // camuflado — cualquier texto que los distinga convierte el hover en detector.
+            Content("chest.name", "Cofre", "Chest");
+            Content("chest.desc",
+                "Rompelo y fijate qué guarda.",
+                "Break it open and see what it holds.");
             // God (item-editor-spec.md §5.1): mismo criterio que sus hermanos — término
             // de juego sin traducir. El re-run de este seeder queda pendiente del gate.
             Ui(Rollgeon.UI.ChestReveal.ChestRevealTextKeys.RarityGod, "God", "God");
@@ -1092,7 +1362,17 @@ namespace Rollgeon.EditorTools.Localization
             // Enemigos.
             Content("Boss01.name", "Jefe de Prueba", "Boss Test");
             Content("healerEnemy.name", "Sanador", "Healer");
+            Content("healerEnemy.desc",
+                "Un espíritu de la casa que remienda a los suyos.",
+                "A house spirit that patches up its own.");
             Content("CardEnemy01.name", "Enemigo Carta", "Card Enemy");
+            Content("CardEnemy01.desc",
+                "Soldado de la casa, cuerpo a cuerpo.",
+                "House soldier; fights up close.");
+            Content("ChestMimic01.name", "Mímico", "Mimic");
+            Content("ChestMimic01.desc",
+                "Un cofre que muerde.",
+                "A chest that bites.");
             Content("RangedEnemy01.name", "Enemigo a Distancia", "Ranged Enemy");
             Content("RangedEnemy01.desc",
                 "Goblin con ataque a distancia, dispara con una ballesta.",
@@ -1146,28 +1426,30 @@ namespace Rollgeon.EditorTools.Localization
             // están en el banco y nadie los pasa el mouse por encima.
             Boss(CroupierAssetBuilder.EntityId,
                 "El Croupier", "The Croupier",
-                "Quema el paño que tiene delante y se va al borde cuando lo acorralás.",
-                "Burns the ground in front of him and bolts for the edge when you crowd him.");
+                "Siembra bombas, prende el suelo y dispara de lejos. Acorralalo y se va al borde.",
+                "Sows bombs, lights the floor and shoots from range. Crowd him and he bolts for the edge.");
 
             Boss(CajeroAssetBuilder.EntityId,
                 "El Cajero", "The Cashier",
-                "Te agarra, te tira lejos, y se queda con lo que se te cayó.",
-                "Grabs you, throws you clear, and keeps whatever you dropped.");
+                "Te tira lejos y te llena el piso de monedas. Las que no levantás a tiempo se las lleva él, y cada una lo cura.",
+                "Throws you clear and litters the floor with coins. The ones you don't grab in time he takes back, and each one heals him.");
 
+            // Misma identidad que RangedEnemy01 a propósito: el refuerzo del Cajero es un
+            // ranged común más, no un personaje.
             Boss(CajeroAssetBuilder.CritterEntityId,
-                "Comisión", "The Commission",
-                "Vuela, tira de lejos, y le pone precio a huir.",
-                "Flies, shoots from range, and puts a price on running.");
+                "Enemigo a Distancia", "Ranged Enemy",
+                "Goblin con ataque a distancia, dispara con una ballesta.",
+                "A goblin with a ranged attack; fires a crossbow.");
 
             Boss(GeneralaAssetBuilder.BossEntityId,
                 "La Generala", "The Generala",
-                "Tira su propia mano a la vista. Rompele un dado y le borrás una categoría.",
-                "Rolls her own hand in the open. Break a die and you erase a category.");
+                "Tira su propia mano a la vista y te cobra la categoría que le salga. Rompele un dado y le borrás una.",
+                "Rolls her hand in the open and charges you whatever category it lands. Break a die and you erase one.");
 
             Boss(GeneralaAssetBuilder.DiceEntityId,
                 "Dado de la Casa", "House Die",
-                "Parte de su mano, y en tu camino. Rompelo para borrarle una categoría.",
-                "Part of her hand, and in your way. Break it to erase a category.");
+                "Un dado gigante de la mano de la Generala.",
+                "A giant die from the Generala's hand.");
         }
 
         // ==================================================================

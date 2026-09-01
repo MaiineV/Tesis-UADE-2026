@@ -1,12 +1,14 @@
 using System.Text;
 using Rollgeon.Localization;
+using Rollgeon.UI.HUD.Status;
 using Rollgeon.UI.Tooltips;
 using UnityEngine;
 
 namespace Rollgeon.Entities.Visuals
 {
     /// <summary>
-    /// Contenido del tooltip de un enemigo: nombre + descripción de su <see cref="EnemyDataSO"/>.
+    /// Lo que un enemigo sabe decir de sí mismo, en las dos formas que le piden: el panel
+    /// (<see cref="BuildContent"/>) y el párrafo (<see cref="BuildTooltip"/>).
     /// Lo pega <see cref="EntityVisualService"/> en el pawn al spawnearlo, junto a un
     /// <see cref="WorldTooltipTrigger"/> en modo Hover; el <c>TooltipResolver</c> lo encuentra solo.
     /// </summary>
@@ -17,9 +19,9 @@ namespace Rollgeon.Entities.Visuals
     /// describiéndose en el idioma anterior hasta el próximo combate.
     /// </para>
     /// <para>
-    /// La descripción es la única explicación de la pelea que el jugador puede leer sin morir
-    /// primero, así que tiene que decir lo que el jefe <i>hace ahora</i>. Un rediseño que cambia el
-    /// kit y deja la descripción vieja es peor que no tener tooltip: promete una pelea que no existe.
+    /// La descripción tiene que decir lo que el bicho <i>hace ahora</i>. Un rediseño que cambia el
+    /// kit y deja la descripción vieja es peor que no tener tooltip: promete una pelea que no
+    /// existe. Y donde sí se lee —el párrafo— no hay tarjetas al lado que la desmientan.
     /// </para>
     /// </remarks>
     [AddComponentMenu("Rollgeon/Entities/Enemy Tooltip Info")]
@@ -29,6 +31,52 @@ namespace Rollgeon.Entities.Visuals
 
         /// <summary>Llamado por <see cref="EntityVisualService"/> al instanciar el pawn.</summary>
         public void Bind(EnemyDataSO data) => _data = data;
+
+        /// <summary>
+        /// El contenido del panel: nombre, familia y una frase táctica de una línea (la key
+        /// <c>.brief</c>). <b>Sin lore y sin vitales.</b>
+        /// </summary>
+        /// <remarks>
+        /// El panel no lleva lore, y no es una cuestión de espacio: cualquier frase que resuma al
+        /// bicho repite alguna de sus tarjetas, porque las tarjetas <i>son</i> lo que hace. El
+        /// Croupier se describe con tres verbos y uno de los tres es siempre el ataque que se está
+        /// mostrando — teníamos "…y dispara de lejos" a un renglón de "Te dispara de lejos".
+        /// <para>
+        /// La descripción sigue viva y se lee por <see cref="BuildTooltip"/>, que es lo que usan
+        /// las bombas y los objetos que un jefe pone en el paño: ahí el tooltip es un párrafo y no
+        /// un panel, así que no hay tarjeta que pueda contradecirla.
+        /// </para>
+        /// <para>
+        /// <b>Ni vitales.</b> La barra de vida ya flota sobre la cabeza del bicho y es la que el
+        /// jugador mira mientras le pega; repetirla adentro del panel gasta una fila en un número
+        /// que está a dos centímetros, y encima desactualizado hasta el próximo hover.
+        /// </para>
+        /// </remarks>
+        public TooltipContent BuildContent()
+        {
+            var data = _data;
+            if (data == null) return default;
+
+            string id = data.EntityId;
+            string name = string.IsNullOrEmpty(id)
+                ? data.DisplayName
+                : LocalizedContent.Name(id, data.DisplayName);
+
+            // La frase táctica, no el lore: una línea de cómo pelea, autorada por bicho en la
+            // key .brief. Sin entry no se dibuja nada — el fallback vacío ES la decisión de que
+            // un enemigo sin frase no muestre una.
+            string brief = string.IsNullOrEmpty(id)
+                ? string.Empty
+                : LocalizedContent.FromTable(
+                    LocalizedContent.ContentTable, id + ".brief", string.Empty);
+
+            // La frase va como párrafo, no como pie: en el panel el párrafo vive pegado a la
+            // identidad (el bloque de header del mockup), y el pie quedaba abajo de las tarjetas.
+            return new TooltipContent(
+                text: brief,
+                name: name,
+                type: EnemyArchetypeText.Describe(data.Archetype, data.IsBoss));
+        }
 
         public string BuildTooltip()
         {

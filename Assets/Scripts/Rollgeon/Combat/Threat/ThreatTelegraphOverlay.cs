@@ -484,17 +484,38 @@ namespace Rollgeon.Combat.Threat
             }
         }
 
-        /// <summary>Naranja de advertencia: el default del overload sin color.</summary>
-        public static readonly Color DefaultTint = new Color(1f, 0.45f, 0.1f, 0.55f);
+        /// <summary>
+        /// Rojo de advertencia: el default del overload sin color. Rojo y no naranja: es la marca
+        /// de "esto te va a pegar", y el naranja se leía como decorado — el mismo matiz que el
+        /// fuego ya puesto de los hazards (0.85, 0.1, 0.05).
+        /// </summary>
+        public static readonly Color DefaultTint = new Color(0.9f, 0.12f, 0.06f, 0.55f);
 
         /// <summary>Cian de la zona segura (paleta de las fichas de jefe).</summary>
         public static readonly Color SafeTint = new Color(0.227f, 0.525f, 0.784f, 0.5f);
 
         /// <summary>
-        /// Los tres avisos comparten matiz porque el <i>cuándo</i> lo lee la opacidad, así que las
-        /// bandas no se pueden solapar: Incoming (máx 0.30) &lt; Marked (mín 0.35), Marked
-        /// (máx 0.65) &lt; Detonating (0.85).
+        /// Magenta de lo que todavía no pasó. Es el único aviso que no comparte el naranja, y por
+        /// eso el único que puede pintarse opaco.
         /// </summary>
+        /// <remarks>
+        /// Se elige contra el resto del paño de una pelea de jefe: el naranja de la amenaza puesta,
+        /// el dorado del sector del Croupier, el rojo del fuego de bomba, el cian de la zona segura,
+        /// el verde del peaje del Cajero y el violeta del telégrafo auxiliar.
+        /// </remarks>
+        public static readonly Color IncomingTint = new Color(1f, 0.25f, 0.6f, 0.55f);
+
+        /// <summary>
+        /// Marked y Detonating comparten matiz, así que entre ellos el <i>cuándo</i> lo lee la
+        /// opacidad y las bandas no se pueden solapar: Marked (máx 0.65) &lt; Detonating (0.85).
+        /// </summary>
+        /// <remarks>
+        /// Incoming queda afuera de esa escalera porque se separa por color. Cuando se dibujaba en
+        /// el mismo naranja, el techo de su banda era el piso de Marked y lo dejaba en 0.30 — casi
+        /// invisible justo en el aviso que el jugador pidió al pasar el mouse. Con matiz propio
+        /// puede pintarse tan sólido como haga falta sin confundirse con lo que ya está puesto, y
+        /// el <i>cuándo</i> lo dice el latido más lento.
+        /// </remarks>
         private static Dictionary<ThreatOverlayState, ThreatOverlayStateStyle> DefaultStyles() =>
             new Dictionary<ThreatOverlayState, ThreatOverlayStateStyle>
             {
@@ -518,8 +539,8 @@ namespace Rollgeon.Combat.Threat
                     ThreatOverlayState.Incoming, new ThreatOverlayStateStyle
                     {
                         State = ThreatOverlayState.Incoming,
-                        Tint = DefaultTint,
-                        MinAlpha = 0.18f, MaxAlpha = 0.30f, PulseSpeed = 1.2f,
+                        Tint = IncomingTint,
+                        MinAlpha = 0.40f, MaxAlpha = 0.60f, PulseSpeed = 1.2f,
                     }
                 },
                 {

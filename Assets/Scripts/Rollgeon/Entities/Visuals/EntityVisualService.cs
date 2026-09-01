@@ -111,14 +111,76 @@ namespace Rollgeon.Entities.Visuals
         private static void AttachTooltip(EntityPawn pawn, EnemyDataSO data)
         {
             if (pawn == null || data == null) return;
+
+            // El guard de collider tambien va aca arriba, y no solo dentro de AttachHoverTooltip:
+            // sin collider el pawn no queda ni con el componente de texto, que es lo que fija
+            // EntityVisualServiceTests.SpawnEnemy_AttachesNothing_WhenVisualHasNoCollider.
             if (pawn.GetComponentInChildren<Collider>(includeInactive: true) == null) return;
 
-            var go = pawn.gameObject;
-
-            var info = go.GetComponent<EnemyTooltipInfo>();
-            if (info == null) info = go.AddComponent<EnemyTooltipInfo>();
+            var info = pawn.gameObject.GetComponent<EnemyTooltipInfo>();
+            if (info == null) info = pawn.gameObject.AddComponent<EnemyTooltipInfo>();
+            var guid = pawn.EntityGuid;
             info.Bind(data);
 
+            var trigger = AttachHoverTooltip(pawn, info.BuildTooltip);
+            if (trigger == null) return;
+
+            // Su propia banda de identidad en vez del parrafo aplanado: el enemigo es lo unico en
+            // el juego que puede decir cuanta vida le queda mientras lo estas mirando.
+            trigger.ContentProvider = info.BuildContent;
+
+            // El preview vive en el MISMO trigger que el texto: un segundo raycast por enemigo por
+            // frame seria correr dos veces el mismo Update, y ademas el pipeline pixel-art escala
+            // el mouse a mano (ver WorldTooltipTrigger.RaycastHitsMe).
+            trigger.HoverChanged += on =>
+            {
+                var preview = Rollgeon.Combat.AI.EnemyIntentPreviewOverlay.ResolveOrCreate();
+                if (on) preview.Show(guid);
+                else preview.Clear();
+            };
+
+            // El click fija el panel (candado). Solo enemigos: fuera de targeting el click sobre
+            // un enemigo hoy no hace nada, así que el gesto está libre; en targeting el trigger
+            // lo ignora y el click sigue siendo 100% de apuntar.
+            trigger.PinOnClick = true;
+
+            // El fijado re-muestra sin flanco de hover (cambio de turno, o el hover de otro
+            // trigger que devolvió el panel) — el overlay de amenaza se repinta con él.
+            trigger.PinRefreshed += () =>
+                Rollgeon.Combat.AI.EnemyIntentPreviewOverlay.ResolveOrCreate().Show(guid);
+
+            // La fila sobre la cabeza y la columna del tooltip leen la MISMA lista: el icono que
+            // flota sobre el bicho y el de su tarjeta son el mismo sprite, que es lo que hace que
+            // el sistema se entienda sin tutorial.
+            var settings = Resources.Load<Rollgeon.UI.HUD.Status.EnemyStatusRowSettingsSO>(
+                Rollgeon.UI.HUD.Status.EnemyStatusRowSettingsSO.ResourcePath);
+            if (settings == null || settings.IconPrefab == null) return;
+
+            var row = Rollgeon.UI.HUD.Status.EnemyStatusIconsView.Create(pawn.transform, settings);
+            if (row == null) return;
+            row.Initialize(guid, settings.IconPrefab, settings.Catalog, data);
+
+            // Dos zonas con papeles distintos: la columna principal lleva el bloque de próximo
+            // turno (y la maldición del jefe); lo que le pasa y lo que mantiene en el paño va
+            // como fila de slots de ícono al pie del panel. La debilidad no sale en el panel:
+            // el mockup del spec lo dejó en header, próximo turno, maldición y estados.
+            trigger.CardsProvider = row.CollectPanelCards;
+            trigger.BottomCardsProvider = row.CollectBottomIcons;
+        }
+
+        /// <summary>
+        /// Cuelga un tooltip de hover en un pawn y devuelve el trigger. Publico porque los props
+        /// no pasan por <see cref="SpawnEnemy"/>: las bombas del Croupier las cuelga el nodo que
+        /// las siembra, que es el unico que sabe de quien son.
+        /// </summary>
+        /// <returns><c>null</c> si el pawn no tiene collider y no se colgo nada.</returns>
+        public static Rollgeon.UI.Tooltips.WorldTooltipTrigger AttachHoverTooltip(
+            EntityPawn pawn, Func<string> textProvider)
+        {
+            if (pawn == null) return null;
+            if (pawn.GetComponentInChildren<Collider>(includeInactive: true) == null) return null;
+
+            var go = pawn.gameObject;
             var trigger = go.GetComponent<Rollgeon.UI.Tooltips.WorldTooltipTrigger>();
             if (trigger == null) trigger = go.AddComponent<Rollgeon.UI.Tooltips.WorldTooltipTrigger>();
 
@@ -126,16 +188,16 @@ namespace Rollgeon.Entities.Visuals
             // y robarle ese click para abrir un panel rompería el input del combate.
             trigger.Mode = Rollgeon.UI.Tooltips.WorldTooltipMode.Hover;
 
-            // BUG-075: el anclaje es transform.position del pawn (los pies) y el panel
-            // crecía hacia arriba justo sobre el cuerpo del modelo. Debajo de los pies no
-            // tapa nada; el clamp del controller lo mete en pantalla si el enemigo está
-            // pegado al borde inferior.
-            trigger.VerticalSide = Rollgeon.UI.Tooltips.TooltipVerticalSide.Below;
+            // Panel fijo arriba a la derecha: una posición estable que el ojo aprende, en vez
+            // de un panel que salta con cada enemigo hovereado (decisión §8.2 del spec de
+            // tooltips). Nunca tapa al bicho porque no vive sobre el tablero.
+            trigger.Placement = Rollgeon.UI.Tooltips.TooltipPlacementMode.ScreenTopRight;
 
             // Explícito en vez de dejar que el TooltipResolver lo busque: el pawn del jefe cuelga
             // otros IHasTooltipInfo abajo (las casillas de sus props) y el auto-resolve devuelve el
             // primero que encuentra.
-            trigger.TextProvider = info.BuildTooltip;
+            trigger.TextProvider = textProvider;
+            return trigger;
         }
 
         public EntityPawn SpawnProp(Guid guid, GameObject prefab, GridCoord coord)

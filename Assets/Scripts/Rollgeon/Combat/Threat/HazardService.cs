@@ -127,6 +127,7 @@ namespace Rollgeon.Combat.Threat
             EnsureMovementSubscription();
             ShowInstanceOverlay(instance);
             SpawnPersistentVfx(instance);
+            SpawnHoverAnchor(instance);
             EventManager.Trigger(EventName.OnHazardActivated, instance.InstanceId);
             return instance.InstanceId;
         }
@@ -194,8 +195,10 @@ namespace Rollgeon.Combat.Threat
             foreach (var pair in _instances)
             {
                 if (hasOverlay) overlay.Clear(pair.Key);
-                // El VFX sí se apaga: es un GameObject en escena y sobrevive al teardown solo.
+                // El VFX y el hover sí se apagan: son GameObjects en escena y sobreviven al
+                // teardown solos.
                 ClearPersistentVfx(pair.Value);
+                ClearHoverAnchor(pair.Value);
             }
             _instances.Clear();
         }
@@ -207,6 +210,7 @@ namespace Rollgeon.Combat.Threat
             _instances.Remove(instanceId);
 
             ClearPersistentVfx(instance);
+            ClearHoverAnchor(instance);
             ClearOverlay(instanceId);
             EventManager.Trigger(EventName.OnHazardExpired, instanceId);
         }
@@ -357,6 +361,70 @@ namespace Rollgeon.Combat.Threat
             }
         }
 
+        /// <summary>
+        /// El hover de la instancia: una raíz con el tooltip del panel (header + card de golpe) y
+        /// un collider bajo y chato por casilla — los quads del overlay no pueden llevarlo (lo
+        /// prohíbe el TileClickHandler), así que el hover vive en objetos propios, como el de las
+        /// casillas especiales. No-op sin <see cref="IGridManager"/>: el hazard cobra igual, mudo.
+        /// </summary>
+        private static void SpawnHoverAnchor(HazardInstance instance)
+        {
+            if (instance.HoverAnchor != null) return;
+            if (!ServiceLocator.TryGetService<IGridManager>(out var grid) || grid == null) return;
+
+            var root = new GameObject($"HazardHover ({instance.Definition.name})");
+            var info = root.AddComponent<HazardTooltipInfo>();
+            info.Bind(instance.Definition);
+
+            var trigger = root.AddComponent<Rollgeon.UI.Tooltips.WorldTooltipTrigger>();
+            trigger.Mode = Rollgeon.UI.Tooltips.WorldTooltipMode.Hover;
+            trigger.Placement = Rollgeon.UI.Tooltips.TooltipPlacementMode.ScreenTopRight;
+            trigger.ContentProvider = info.BuildContent;
+            trigger.CardsProvider = info.CollectCards;
+
+            instance.HoverAnchor = root;
+            foreach (var coord in instance.Tiles)
+                SpawnHoverCell(instance, grid, coord);
+        }
+
+        private static void SpawnHoverCell(HazardInstance instance, IGridManager grid, GridCoord coord)
+        {
+            if (instance.HoverCells.ContainsKey(coord)) return;
+
+            var cell = new GameObject($"cell {coord}");
+            cell.transform.SetParent(instance.HoverAnchor.transform, worldPositionStays: false);
+            cell.transform.position = grid.GridToWorld(coord);
+
+            // Bajo y chato, calcado de SpecialTileVisualPool: acusa el hover sin molestar al
+            // input (el pick de celda intersecta el plano del piso).
+            var collider = cell.AddComponent<BoxCollider>();
+            collider.isTrigger = true;
+            collider.size = new Vector3(0.9f, 0.1f, 0.9f);
+            collider.center = new Vector3(0f, 0.05f, 0f);
+
+            instance.HoverCells[coord] = cell;
+        }
+
+        /// <summary>Suelta una casilla, o la raíz entera con <paramref name="coord"/> en <c>null</c>.</summary>
+        private static void ClearHoverAnchor(HazardInstance instance, GridCoord? coord = null)
+        {
+            if (instance == null) return;
+
+            if (coord.HasValue)
+            {
+                if (instance.HoverCells.TryGetValue(coord.Value, out var cell))
+                {
+                    DestroyVfx(cell);
+                    instance.HoverCells.Remove(coord.Value);
+                }
+                return;
+            }
+
+            DestroyVfx(instance.HoverAnchor);
+            instance.HoverAnchor = null;
+            instance.HoverCells.Clear();
+        }
+
         /// <summary>Apaga una casilla, o todas con <paramref name="coord"/> en <c>null</c>.</summary>
         private static void ClearPersistentVfx(HazardInstance instance, GridCoord? coord = null)
         {
@@ -449,8 +517,10 @@ namespace Rollgeon.Combat.Threat
             if (!instance.Definition.ConsumeOnTrigger) return;
             if (!instance.Tiles.Remove(coord)) return;
 
-            // La casilla gastada apaga su llama: si no, seguiría ardiendo una casilla que ya no cobra.
+            // La casilla gastada apaga su llama y su hover: si no, seguiría ardiendo (y
+            // hablando) una casilla que ya no cobra.
             ClearPersistentVfx(instance, coord);
+            ClearHoverAnchor(instance, coord);
 
             if (instance.Tiles.Count == 0)
             {
@@ -592,6 +662,15 @@ namespace Rollgeon.Combat.Threat
 
             /// <summary>Indexado por casilla para poder apagar sólo la que se consume.</summary>
             public readonly Dictionary<GridCoord, GameObject> PersistentVfx =
+                new Dictionary<GridCoord, GameObject>();
+
+            /// <summary>
+            /// Raíz del hover de la instancia (tooltip + trigger) con un collider hijo por
+            /// casilla. Hijos indexados para poder soltar sólo la casilla que se consume.
+            /// </summary>
+            public GameObject HoverAnchor;
+
+            public readonly Dictionary<GridCoord, GameObject> HoverCells =
                 new Dictionary<GridCoord, GameObject>();
 
             /// <summary>Rounds left before expiry; <c>0</c> means "never expires".</summary>

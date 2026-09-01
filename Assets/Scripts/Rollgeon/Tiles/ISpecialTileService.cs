@@ -53,10 +53,16 @@ namespace Rollgeon.Tiles
         bool HasAnySpecialTiles { get; }
 
         /// <summary>
-        /// Tipos de casilla armada que están afectando a la entidad en la celda que ocupa AHORA
+        /// Instancias armadas que están afectando a la entidad en la celda que ocupa AHORA
         /// (mismos filtros que un trigger: celda armada, affinity, ownership, Zona de Seguridad).
         /// Para el HUD de "parado sobre". No dispara nada; limpia y reusa <paramref name="into"/>.
         /// </summary>
-        void CollectTypesUnder(Guid entity, List<SpecialTileType> into);
+        /// <remarks>
+        /// Devuelve la <b>definición</b> y no el <see cref="SpecialTileType"/> porque cuatro
+        /// fuegos comparten el mismo tipo y cobran números distintos (8/12, 6/10, 15/15): con el
+        /// enum en la mano no hay forma de decirle al jugador cuánto le va a costar la casilla
+        /// que está pisando.
+        /// </remarks>
+        void CollectUnder(Guid entity, List<SpecialTileInfo> into);
     }
 }

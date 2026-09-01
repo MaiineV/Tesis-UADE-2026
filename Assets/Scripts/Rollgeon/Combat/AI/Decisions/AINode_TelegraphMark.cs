@@ -156,11 +156,11 @@ namespace Rollgeon.Combat.AI.Decisions
             // el dibujo de otro aviso apagado a medias).
             var source = SourceKey(context.SelfGuid, ChannelId);
 
+            // Marca y no pinta: el área se dibuja sólo al pasar el mouse por el enemigo
+            // (EnemyIntentPreviewOverlay). El turno del jefe dura segundos y ahí nadie lee; el
+            // jugador consulta el paño en el suyo, con tiempo para decidir dónde pararse —
+            // regla Mewgenics del spec de tooltips.
             threat.Mark(source, tiles, Damage, Kind);
-
-            // Overlay de sprites independiente del tinte del piso: el highlight de move/path del
-            // jugador pinta y limpia sus tiles a su antojo, y se llevaría puesto el warning.
-            ThreatTelegraphOverlay.ResolveOrCreate().Show(source, tiles);
 
             return AIResult.Succeeded;
         }

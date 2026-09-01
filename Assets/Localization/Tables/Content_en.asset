@@ -875,7 +875,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 12914473364717576
-    m_Localized: Heals if you END your turn on it. Passing through does nothing.
+    m_Localized: Heals if you <b>end</b> your turn on it. Passing through does nothing.
     m_Metadata:
       m_Items: []
   - m_Id: 12914473364717577
@@ -924,7 +924,7 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 13172026638630912
     m_Localized: 'The house''s flames: they last most of the hand and punish anyone
-      who stands still. They never touch their owner.'
+      who stands still. They burn the Croupier too.'
     m_Metadata:
       m_Items: []
   - m_Id: 13919417931706368
@@ -932,8 +932,8 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 13919417973649408
-    m_Localized: Burns the ground in front of him and bolts for the edge when you
-      crowd him.
+    m_Localized: Sows bombs, lights the floor and shoots from range. Crowd him and
+      he bolts for the edge.
     m_Metadata:
       m_Items: []
   - m_Id: 13919417973649409
@@ -941,15 +941,16 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 13919417973649410
-    m_Localized: Grabs you, throws you clear, and keeps whatever you dropped.
+    m_Localized: Throws you clear and litters the floor with coins. The ones you
+      don't grab in time he takes back, and each one heals him.
     m_Metadata:
       m_Items: []
   - m_Id: 13919417973649411
-    m_Localized: The Commission
+    m_Localized: Ranged Enemy
     m_Metadata:
       m_Items: []
   - m_Id: 13919417973649412
-    m_Localized: Flies, shoots from range, and puts a price on running.
+    m_Localized: A goblin with a ranged attack; fires a crossbow.
     m_Metadata:
       m_Items: []
   - m_Id: 13919417973649413
@@ -957,7 +958,8 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 13919417973649414
-    m_Localized: Rolls her own hand in the open. Break a die and you erase a category.
+    m_Localized: Rolls her hand in the open and charges you whatever category it
+      lands. Break a die and you erase one.
     m_Metadata:
       m_Items: []
   - m_Id: 13919417973649415
@@ -965,7 +967,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 13919417973649416
-    m_Localized: Part of her hand, and in your way. Break it to erase a category.
+    m_Localized: A giant die from the Generala's hand.
     m_Metadata:
       m_Items: []
   - m_Id: 14364254574313472
@@ -977,12 +979,12 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 14364254620450817
-    m_Localized: Burning
+    m_Localized: Burn
     m_Metadata:
       m_Items: []
   - m_Id: 14364254620450818
-    m_Localized: 'You are standing on Fire: you take damage at the start of your
-      turn while you remain here.'
+    m_Localized: <b>{0}</b> on entering a tile. <b>{1}</b> if you start your turn
+      on it.
     m_Metadata:
       m_Items: []
   - m_Id: 14364254620450819
@@ -1442,6 +1444,256 @@ MonoBehaviour:
   - m_Id: 17566759316013057
     m_Localized: Your base damage becomes 0 and grows each round you avoid damage.
       Taking damage resets it.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593279981744128
+    m_Localized: Burns the room and teleports when you reach him.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280027881472
+    m_Localized: Hits harder the more gold you carry. Chips you let expire, he keeps.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280027881473
+    m_Localized: Unleashes electric rings in waves, with gaps between the rings.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280027881474
+    m_Localized: Shoots from afar and backs away when you get close.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280027881475
+    m_Localized: It doesn't attack. Every die broken takes a combo away from the
+      Generala.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280027881476
+    m_Localized: Bomb
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280027881477
+    m_Localized: Break it and its marked tiles go with it.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280027881478
+    m_Localized: Heals its allies before it hits you.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280027881479
+    m_Localized: Runs straight at you and swings up close.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280027881480
+    m_Localized: Shoots from afar and backs away when you get close.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280027881481
+    m_Localized: Poses as a chest and strikes when you get close.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280027881482
+    m_Localized: Hits up close.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280027881483
+    m_Localized: Hits up close.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280027881484
+    m_Localized: The Bank Keeps
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280027881485
+    m_Localized: Gold you let expire, the bank keeps.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280027881486
+    m_Localized: Banned Hand
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280027881487
+    m_Localized: You can't repeat the combo you just scored.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280027881488
+    m_Localized: Fire Tiles
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280027881489
+    m_Localized: <b>{0}</b> on entering a tile. <b>{1}</b> if you start your turn
+      on it.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280027881490
+    m_Localized: Teleport
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280027881491
+    m_Localized: Jumps to a tile beside you, or across the room.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280027881492
+    m_Localized: Padlock
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280027881493
+    m_Localized: One of your dice stays jammed. He draws another one every turn.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280027881494
+    m_Localized: Fire Ball
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280027881495
+    m_Localized: Lights a cone of fire.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280027881496
+    m_Localized: Full House Burn
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280027881497
+    m_Localized: Lights the whole room except what surrounds him.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280027881498
+    m_Localized: Shot
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280027881499
+    m_Localized: 
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280027881500
+    m_Localized: Bombs
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280027881501
+    m_Localized: Spawns <b>{1}</b> random bombs.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280027881502
+    m_Localized: Detonate the Bomb
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280027881503
+    m_Localized: 
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280027881504
+    m_Localized: Marked Strike
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280027881505
+    m_Localized: 
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280027881506
+    m_Localized: Strike
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280027881507
+    m_Localized: 
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280027881508
+    m_Localized: What It Leaves
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280027881509
+    m_Localized: 'Leaves fire: <b>{0}</b> on entering, <b>{1}</b> per turn, for {2}
+      rounds.'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280044658688
+    m_Localized: Fire
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280044658689
+    m_Localized: Burns whoever stays inside.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280044658690
+    m_Localized: Frost
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280044658691
+    m_Localized: 'Ice from her cup: stepping on it stuns, and the patch breaks underfoot.'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280044658692
+    m_Localized: House Chip
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280044658693
+    m_Localized: "Step on it to collect its value. One that expires, the bank keeps
+      \u2014 and it heals him."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280044658694
+    m_Localized: Table Fire
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280044658695
+    m_Localized: 'Burning: strikes whoever ends their turn inside.'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280044658696
+    m_Localized: Ice Trail
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280044658697
+    m_Localized: Stepping on it stuns, and each patch breaks underfoot.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280044658698
+    m_Localized: Rain
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280044658699
+    m_Localized: Marks zones and punishes whoever is still inside next cycle.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280044658700
+    m_Localized: Bomb Fire
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280044658701
+    m_Localized: What a bomb leaves when it blows. It burns far worse than the house
+      fire, and it doesn't spare the Croupier either.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280044658702
+    m_Localized: Cashier's Spikes
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280044658703
+    m_Localized: Disarm when stepped on and rearm on their own. They hurt a fair
+      bit more than the common ones.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280048852992
+    m_Localized: Chest
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280048852993
+    m_Localized: Break it open and see what it holds.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280048852994
+    m_Localized: A house spirit that patches up its own.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280048852995
+    m_Localized: House soldier; fights up close.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280048852996
+    m_Localized: Mimic
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17593280048852997
+    m_Localized: A chest that bites.
     m_Metadata:
       m_Items: []
   references:

@@ -89,6 +89,14 @@ namespace Rollgeon.Combat.Tests
             var leftover = GameObject.Find("ThreatTelegraphOverlay");
             if (leftover != null) UnityEngine.Object.DestroyImmediate(leftover);
 
+            // Los anchors de hover son GameObjects en escena: un test que activa instancias y no
+            // las expira los dejaría vivos para el siguiente.
+            foreach (var root in UnityEngine.Object.FindObjectsByType<Rollgeon.Combat.Threat.HazardTooltipInfo>(
+                         FindObjectsInactive.Include, FindObjectsSortMode.None))
+            {
+                UnityEngine.Object.DestroyImmediate(root.gameObject);
+            }
+
             ServiceLocator.Clear();
             EventManager.ResetEventDictionary();
         }
@@ -505,6 +513,66 @@ namespace Rollgeon.Combat.Tests
             Assert.AreEqual(1, _triggeredEvents.Count, "Sin daño el evento sigue siendo obligatorio — es el hook del stun.");
             Assert.AreEqual(instanceId, _triggeredEvents[0].Key);
             Assert.AreEqual(_playerGuid, _triggeredEvents[0].Value);
+        }
+
+        // ======================================================================
+        // Hover (el anchor del tooltip)
+        // ======================================================================
+
+        [Test]
+        public void Activate_ConTiles_CuelgaElHoverConUnColliderPorCasilla()
+        {
+            // Arrange
+            var def = CreateInstanceDefinition(HazardTriggerMode.OnEnter, damage: 5);
+
+            // Act
+            _hazard.Activate(def, new[] { new GridCoord(2, 4), new GridCoord(3, 4) });
+
+            // Assert — los quads del overlay no pueden llevar collider (TileClickHandler), así
+            // que sin este anchor el hazard es invisible para el hover: cobra pero nunca habla.
+            var info = UnityEngine.Object.FindAnyObjectByType<Rollgeon.Combat.Threat.HazardTooltipInfo>();
+            Assert.IsNotNull(info, "La instancia quedó sin anchor de hover.");
+            var trigger = info.GetComponent<Rollgeon.UI.Tooltips.WorldTooltipTrigger>();
+            Assert.IsNotNull(trigger, "El anchor no tiene trigger de hover.");
+            Assert.IsNotNull(trigger.ContentProvider,
+                "El trigger quedó sin header estructurado: el hazard volvería al silencio.");
+            Assert.AreEqual(2, info.GetComponentsInChildren<BoxCollider>().Length,
+                "Cada casilla del hazard necesita su propio collider para que el mouse la acuse.");
+        }
+
+        [Test]
+        public void PisarUnaCasillaConsumible_SueltaSoloEseColliderDeHover()
+        {
+            // Arrange — hielo: se consume con la pisada. La casilla gastada tiene que dejar de
+            // hablar, pero la otra sigue armada y sigue teniendo tooltip.
+            var def = CreateInstanceDefinition(HazardTriggerMode.OnEnter, damage: 0);
+            def.ConsumeOnTrigger = true;
+            _hazard.Activate(def, new[] { new GridCoord(3, 4), new GridCoord(1, 4) });
+
+            // Act
+            _movement.RaiseMoved(_playerGuid, new GridCoord(4, 4), new GridCoord(3, 4), Path(
+                new GridCoord(4, 4), new GridCoord(3, 4)));
+
+            // Assert
+            var info = UnityEngine.Object.FindAnyObjectByType<Rollgeon.Combat.Threat.HazardTooltipInfo>();
+            Assert.IsNotNull(info, "El anchor entero se fue con una sola casilla consumida.");
+            Assert.AreEqual(1, info.GetComponentsInChildren<BoxCollider>().Length,
+                "La casilla gastada sigue acusando hover: hablaría una trampa que ya no existe.");
+        }
+
+        [Test]
+        public void Deactivate_TiraElHoverEntero()
+        {
+            // Arrange
+            var def = CreateInstanceDefinition(HazardTriggerMode.OnEnter, damage: 5);
+            var instanceId = _hazard.Activate(def, new[] { new GridCoord(2, 4) });
+
+            // Act
+            _hazard.Deactivate(instanceId);
+
+            // Assert
+            Assert.IsNull(UnityEngine.Object.FindAnyObjectByType<Rollgeon.Combat.Threat.HazardTooltipInfo>(),
+                "El hazard expiró y su hover quedó vivo: un tooltip de algo que ya no está.");
         }
 
         [Test]

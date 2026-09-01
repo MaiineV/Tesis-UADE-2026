@@ -184,18 +184,36 @@ namespace Rollgeon.Combat.Tests
         }
 
         [Test]
-        public void Show_UrgencyBands_NeverOverlapBetweenStates()
+        public void Show_UrgencyBands_NeverOverlapBetweenStatesThatShareAHue()
         {
-            // Arrange — el latido es la mitad del aviso que se lee sin mirar el patrón, así que las
-            // bandas no pueden solaparse: en ningún momento del pulso un Incoming puede verse tan
-            // opaco como un Marked, ni un Marked como un Detonating.
-            var incoming = _overlay.StyleOf(ThreatOverlayState.Incoming);
+            // Arrange — el latido es la mitad del aviso que se lee sin mirar el patrón, así que
+            // entre dos avisos del mismo color las bandas no pueden solaparse: en ningún momento
+            // del pulso un Marked puede verse tan opaco como un Detonating.
             var marked = _overlay.StyleOf(ThreatOverlayState.Marked);
             var detonating = _overlay.StyleOf(ThreatOverlayState.Detonating);
 
             // Assert
-            Assert.Less(incoming.MaxAlpha, marked.MinAlpha);
+            Assert.AreEqual(marked.Tint, detonating.Tint,
+                "Dejaron de compartir matiz. Si se separan por color, la escalera de alpha de abajo " +
+                "ya no es lo que los distingue y este test está midiendo la cosa equivocada.");
             Assert.Less(marked.MaxAlpha, detonating.MinAlpha);
+        }
+
+        [Test]
+        public void Incoming_SeparaPorColorYNoPorTransparencia()
+        {
+            // Arrange
+            var incoming = _overlay.StyleOf(ThreatOverlayState.Incoming);
+            var marked = _overlay.StyleOf(ThreatOverlayState.Marked);
+
+            // Assert
+            Assert.AreNotEqual(marked.Tint, incoming.Tint,
+                "Volvió al naranja de Marked. Compartiendo matiz, la única separación es el alpha, " +
+                "y como Incoming tiene que quedar por debajo del piso de Marked termina casi " +
+                "invisible — justo el aviso que el jugador pidió al pasar el mouse.");
+            Assert.GreaterOrEqual(incoming.MinAlpha, marked.MinAlpha,
+                "Lo que viene se dibuja más transparente que lo que ya está puesto. Los dos salen " +
+                "del mismo hover y son información nueva: el que se lee peor es el que se ignora.");
         }
 
         [Test]

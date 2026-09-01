@@ -33,15 +33,46 @@ namespace Rollgeon.UI.HUD.Status
         /// </summary>
         public readonly int? RemainingTurns;
 
+        /// <summary>
+        /// Cuántas copias hay de esto en juego. <c>null</c> = no es apilable. Va siempre en el
+        /// badge del ícono y nunca escrito dentro de la regla: si algún día traba dos dados,
+        /// cambia el número del badge y la frase no se toca.
+        /// </summary>
+        public readonly int? StackCount;
+
+        /// <summary>Ver <see cref="StatusCardStyle"/>.</summary>
+        public readonly StatusCardStyle Style;
+
+        /// <summary>
+        /// Renglón chico arriba del título — <c>Próximo turno</c>. Dice CUÁNDO pasa lo que la
+        /// tarjeta describe; null = la tarjeta no necesita fecha y el renglón no se dibuja.
+        /// </summary>
+        public readonly string Eyebrow;
+
+        /// <summary>
+        /// Lo que pega, pegado al título y <b>nunca</b> dentro de la frase. <c>null</c> = no pega
+        /// por sí mismo. Mismo argumento que <see cref="StackCount"/>: rebalancear cambia un
+        /// número del dato y no toca una línea de texto en ningún idioma.
+        /// </summary>
+        public readonly int? Damage;
+
+        // Los últimos van al final y con default para que los providers que ya existen y sus
+        // tests compilen sin tocarse.
         public StatusIconState(string id, string displayName, string description,
-                               Sprite icon, bool active, int? remainingTurns = null)
+                               Sprite icon, bool active, int? remainingTurns = null,
+                               int? stackCount = null, StatusCardStyle style = StatusCardStyle.Unit,
+                               int? damage = null, string eyebrow = null)
         {
+            Eyebrow = eyebrow;
             Id = id;
             DisplayName = displayName;
             Description = description;
             Icon = icon;
             Active = active;
             RemainingTurns = remainingTurns;
+            StackCount = stackCount;
+            Style = style;
+            Damage = damage;
         }
     }
 }

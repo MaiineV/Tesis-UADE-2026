@@ -260,7 +260,9 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         public const string CritterAssetPath = "Assets/Rollgeon/Enemies/ED_Min_Comision.asset";
 
         /// <summary>
-        /// Lo que el Cajero invoca: su propia Comisión, no el ranged común del juego.
+        /// Lo que el Cajero invoca. Ficha propia por balance (más débil que el ranged común),
+        /// pero para el jugador se lee como un Enemigo a Distancia más: mismo nombre y mismos
+        /// textos, sin identidad propia.
         /// </summary>
         /// <remarks>
         /// Su kit no se puede autorar sobre <c>ED_RangedEnemy</c> —es el asset compartido de todos
@@ -268,10 +270,32 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         /// </remarks>
         public const string ReinforcementAssetPath = CritterAssetPath;
 
+        /// <summary>
+        /// El ranged común, de donde la Comisión saca el aspecto: arte, retrato y descripción. Se
+        /// copian en cada build en vez de duplicarse acá para que no puedan divergir — que se lea
+        /// como un ranged más es la decisión de diseño, y dos fichas a mano ya habían derivado en
+        /// dos bichos distintos.
+        /// </summary>
+        /// <remarks>
+        /// <b>Fuente del aspecto y nada más.</b> El spawn apunta a <see cref="ReinforcementAssetPath"/>:
+        /// invocar este asset le daría al jugador dos bichos de 50 de vida a mitad de pelea, y hay
+        /// un test que lo prohíbe.
+        /// </remarks>
+        public const string SharedRangedAssetPath = "Assets/Rollgeon/Enemies/ED_RangedEnemy.asset";
+
+        /// <summary>
+        /// La presentación del disparo del ranged común, que la Comisión reusa entera. Los ids
+        /// viven autorados en <c>ED_RangedEnemy</c> y en el <c>FeedbackDB</c>; se nombran acá para
+        /// poder pedirlos desde el árbol.
+        /// </summary>
+        private const string SharedRangedShotAnim = "anim.enemy.ranged.attack";
+        private const string SharedRangedShotImpactVfx = "vfx.enemy.ranged.impact";
+        private const string SharedRangedShotImpactFeel = "feel.enemy.ranged.impact";
+
         public const string CritterVisualPrefabPath = "Assets/Prefabs/Enemies/Bosses/PF_Min_Comision.prefab";
 
         public const string CritterEntityId = "minion.cajero_comision";
-        public const string CritterDisplayName = "Comisión";
+        public const string CritterDisplayName = "Enemigo a Distancia";
 
         /// <summary>Nombre corto para la carpeta y el prefijo de sus materiales clonados.</summary>
         public const string CritterName = "Comision";
@@ -744,14 +768,12 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         /// Mismos cuidados que <see cref="PopulateEnemyData"/>: visual y retrato sólo se asignan si
         /// no son null, así un rebuild que sólo refresca números no deja al bicho sin cuerpo.
         /// </remarks>
-        public static void PopulateCritterData(
-            EnemyDataSO data, GameObject visualPrefab = null, Sprite portrait = null)
+        public static void PopulateCritterData(EnemyDataSO data, EnemyDataSO look = null)
         {
             if (data == null) return;
 
             data.EntityId = CritterEntityId;
             data.DisplayName = CritterDisplayName;
-            data.Description = "Vuela, tira de lejos, y le pone precio a huir.";
 
             data.BaseHP = CritterHp;
 
@@ -776,8 +798,15 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
             data.MinGoldDrop = 0;
             data.MaxGoldDrop = 0;
 
-            if (visualPrefab != null) data.VisualPrefab = visualPrefab;
-            if (portrait != null) data.Portrait = portrait;
+            // Todo lo que el jugador ve sale del ranged común, sin copia intermedia: arte,
+            // retrato y la frase del párrafo. Sin la ficha a mano queda lo que ya había — es un
+            // build parcial, no una razón para dejarlo sin arte.
+            if (look != null)
+            {
+                data.Description = look.Description;
+                if (look.VisualPrefab != null) data.VisualPrefab = look.VisualPrefab;
+                if (look.Portrait != null) data.Portrait = look.Portrait;
+            }
 
             data.AIRoot = BuildCritterAIRoot();
             data.AIDetachedNodes.Clear(); // el builder es fuente de verdad: nada suelto sobrevive
@@ -786,40 +815,58 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
                 Archetype = EnemyArchetype.Ranged,
                 Pattern = AttackPatternKind.DiamondArea,
                 Timing = AttackTiming.Instant,
-                Notes = "Mordisco a distancia 5 (Manhattan); se acerca si no llega.",
+                Notes = "Dispara si el jugador está a ≤5 (Manhattan) y mantiene distancia 5; si no, se acerca.",
             };
         }
 
         /// <summary>
-        /// Árbol de la Comisión: si el jugador está a tiro dispara, y si no vuela hacia él.
+        /// Árbol de la Comisión: si el jugador está a tiro dispara, se despega si lo tiene encima,
+        /// y si no vuela hacia él. El mismo reparto que el ranged común.
         /// </summary>
         /// <remarks>
-        /// Dispara primero y se mueve después: <see cref="AINode_Move"/> devuelve Running cuando se
-        /// mueve, y un Running corta el Sequence, así que con el orden invertido el turno en que
-        /// entra en rango se comería el disparo.
+        /// Dispara primero y se mueve después: los nodos de movimiento devuelven Running cuando se
+        /// mueven, y un Running corta el Sequence, así que con el orden invertido el turno en que
+        /// entra en rango se comería el disparo. Por lo mismo el retroceso va antes del approach:
+        /// el que corta el turno es el que resolvió que había que moverse.
         /// </remarks>
         public static AINode_Sequence BuildCritterAIRoot() => new AINode_Sequence
         {
             Children = new List<AIDecisionNode>
             {
                 WrapFallible(BuildCritterBite()),
+                WrapFallible(BuildCritterKeepDistance()),
                 WrapFallible(BuildCritterApproach()),
             },
         };
 
-        /// <summary>El disparo de la Comisión.</summary>
+        /// <summary>El disparo de la Comisión: el del ranged común, presentación incluida.</summary>
         /// <remarks>
-        /// El gesto va explícito y NO por el fallback del nodo: ese resuelve al disparo del jefe
-        /// (<c>Attack_Range</c> del mech), y el animator de la Comisión declara un solo trigger. Con
-        /// el fallback pediría un trigger que no tiene y dispararía muda.
+        /// El nodo base y no <see cref="AINode_CashierRangedShot"/>: esa subclase existe sólo para
+        /// defaultear a los feedbacks del jefe, y el minion disparaba con el gesto, el vfx y el
+        /// golpe de cámara de su jefe — era la mitad de lo que lo delataba como cosa suya. Queda
+        /// sin autor y así se deja: el tipo lo siguen nombrando los guards del árbol del Cajero.
+        /// Los tres ids van explícitos porque el base no tiene fallback: en vacío el paso se
+        /// saltea y el bicho cobra sin moverse.
         /// </remarks>
-        public static AINode_CashierRangedShot BuildCritterBite() => new AINode_CashierRangedShot
+        public static AINode_RangedShot BuildCritterBite() => new AINode_RangedShot
         {
             Damage = CritterDamage,
             Range = CritterRange,
             Metric = DistanceMetric.Manhattan,
             Kind = AttackKind.BasicAttack,
-            AnimFeedbackId = BossFeedbackIds.ComisionBiteAnim,
+            AnimFeedbackId = SharedRangedShotAnim,
+            ImpactVfxFeedbackId = SharedRangedShotImpactVfx,
+            ImpactFeelFeedbackId = SharedRangedShotImpactFeel,
+        };
+
+        /// <summary>
+        /// Lo que la separa del jugador cuando se le acerca, con los valores del ranged común
+        /// (3 pasos, distancia 5) — que son los mismos que su alcance y su vuelo por turno.
+        /// </summary>
+        public static AINode_KeepDistance BuildCritterKeepDistance() => new AINode_KeepDistance
+        {
+            MaxSteps = new AIConstantInt { Value = CritterMoveSteps },
+            IdealDistance = new AIConstantInt { Value = CritterRange },
         };
 
         /// <remarks>
@@ -848,25 +895,18 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
 
             var critter = LoadOrCreate<EnemyDataSO>(ReinforcementAssetPath);
 
-            // Load antes que Ensure: reconstruir el wrapper en cada rebuild de números le churnea el
-            // prefab y los materiales clonados sin cambiar nada. Pero uno que ya no anida el arte
-            // que pide el spec quedó viejo, y cargarlo dejaría al bicho en el rig anterior para
-            // siempre: un cambio de ArtPrefabPath no llegaría nunca al asset.
-            var critterWrapper = AssetDatabase.LoadAssetAtPath<GameObject>(CritterVisualPrefabPath);
-            if (critterWrapper == null || !NestsArt(CritterVisualPrefabPath, CritterArtPrefabPath))
+            // Su wrapper propio ya no se reconstruye: el aspecto lo pone el ranged común, así que
+            // rearmar PF_Min_Comision churnearía un prefab y sus materiales clonados que no
+            // alimentan a nadie. El prefab queda en disco — material disponible, no deuda.
+            var sharedRanged = AssetDatabase.LoadAssetAtPath<EnemyDataSO>(SharedRangedAssetPath);
+            if (sharedRanged == null)
             {
-                critterWrapper = EnsureCritterVisualPrefab();
-            }
-            else
-            {
-                // El guard de arriba sólo mira el rig, y la escala y el despegue viven en
-                // constantes aparte: sin esta pasada un cambio de CritterArtScale o de
-                // CritterHoverHeight no llegaría nunca al prefab. ApplyCritterFit no reescribe
-                // si ya estaban bien, así que no reintroduce churn.
-                ApplyCritterFit(CritterVisualPrefabPath);
+                Debug.LogWarning($"[CajeroAssetBuilder] No se encontró el ranged común en " +
+                                 $"'{SharedRangedAssetPath}': la Comisión queda con el arte que " +
+                                 "ya tenía y va a leerse como un bicho aparte.");
             }
 
-            PopulateCritterData(critter, critterWrapper, portrait);
+            PopulateCritterData(critter, sharedRanged);
             EditorUtility.SetDirty(critter);
 
             var data = LoadOrCreate<EnemyDataSO>(EnemyAssetPath);
@@ -890,7 +930,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
                       $"{MaxHealPerFight}; " +
                       $"visual: {NameOf(visual)}, retrato: {NameOf(portrait)}) + {CritterCount} × " +
                       $"'{NameOf(critter)}' ({critter.BaseHP} HP, {critter.BaseAttack} a " +
-                      $"≤{CritterRange}) al {CritterHpThreshold:P0}.");
+                      $"≤{CritterRange}, con el aspecto de '{NameOf(sharedRanged)}') al " +
+                      $"{CritterHpThreshold:P0}.");
 
             Debug.Log($"[CajeroAssetBuilder] Pinchos de la sala en '{SpikeTilePath}' " +
                       $"({NameOf(spikes)}: {SpikeDamage} al entrar, +{SpikeAIVirtualDamage} de costo " +
@@ -1262,8 +1303,10 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
             spikes.AIVirtualEnterDamage = SpikeAIVirtualDamage;
             spikes.AIAnnouncesLethal = false;
 
-            spikes.NameKey = "tile.spikes";
-            spikes.DescriptionKey = "tile.spikes";
+            // Key propia y no la del pincho genérico: éste pega 20 contra los 12 del común, y el
+            // tooltip no puede presentarlo como el mismo objeto.
+            spikes.NameKey = "tile.spikes_cajero";
+            spikes.DescriptionKey = "tile.spikes_cajero";
 
             // Mismo arte y mismo color de paleta que el pincho genérico: para el jugador es el mismo
             // objeto.

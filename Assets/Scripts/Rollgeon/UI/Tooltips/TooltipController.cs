@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+using Rollgeon.UI.HUD.Status;
 using Sirenix.OdinInspector;
 using TMPro;
 using UnityEngine;
@@ -45,8 +47,78 @@ namespace Rollgeon.UI.Tooltips
                  "pantalla cuando AutoFit re-posiciona el tooltip.")]
         [SerializeField] private float _screenPadding = 8f;
 
+        [Tooltip("Solo en modo Beside: cuánto se corre el panel al costado del punto de " +
+                 "anclaje y cuánto queda su borde superior por encima de él. En píxeles de " +
+                 "referencia del canvas — se escala con el scaleFactor, igual que el offset " +
+                 "de los triggers Fixed.")]
+        [SerializeField] private Vector2 _sideOffset = new Vector2(110f, 150f);
+
+        [Tooltip("Solo en modo ScreenTopRight: margen entre el panel y la esquina superior " +
+                 "derecha del canvas, en píxeles de referencia (unidades locales del canvas, " +
+                 "resolución-independientes). El margen vertical arranca debajo de la fila de " +
+                 "retratos del HUD, que vive pegada a ese mismo borde.")]
+        [SerializeField] private Vector2 _screenAnchorPadding = new Vector2(16f, 190f);
+
         [Tooltip("Canvas host. Si null, busca uno via GetComponentInParent en Awake.")]
         [SerializeField] private Canvas _hostCanvas;
+
+        [Tooltip("Contenedor de la columna de tarjetas (\"Cards\"), hermano de _text bajo " +
+                 "el panel. Null a propósito: sin cablear, el panel se comporta exactamente " +
+                 "como el tooltip de texto de siempre — es lo que mantiene vivos todos los " +
+                 "tooltips existentes y TooltipPlacementTests mientras se completa el wiring " +
+                 "del prefab (ver Rollgeon/Tooltips/2 - Wire Card Column Into Tooltip Panel).")]
+        [SerializeField] private RectTransform _cardsContainer;
+
+        [Tooltip("Prefab de una tarjeta de la columna. Null junto con _cardsContainer = " +
+                 "sin columna, mismo comportamiento que antes.")]
+        [SerializeField] private TooltipCardView _cardPrefab;
+
+        [Tooltip("Segunda columna, al costado de la de arriba: los estados que le aplicaron. " +
+                 "Null = caen en la columna de arriba, y el panel queda como antes.")]
+        [SerializeField] private RectTransform _sideCardsContainer;
+
+        [Tooltip("Fila colgada DEBAJO de la caja — los estados del bicho como slots de ícono. " +
+                 "Null = caen en la columna de adentro, y el panel queda como antes.")]
+        [SerializeField] private RectTransform _bottomCardsContainer;
+
+        [Tooltip("Prefab de un slot de la fila de abajo — la placa cuadrada de sólo ícono. " +
+                 "Null = usa el prefab de tarjeta y la fila sale con texto.")]
+        [SerializeField] private TooltipCardView _bottomCardPrefab;
+
+        [Title("Banda de identidad")]
+        [Tooltip("Nombre de la unidad. Null, como toda esta banda: un tooltip que no trae " +
+                 "identidad deja el bloque apagado y el panel es el de siempre.")]
+        [SerializeField] private TMP_Text _nameLabel;
+
+        [Tooltip("Familia de la unidad, debajo del nombre. Se apaga sola cuando el enemigo no " +
+                 "tiene familia autorada.")]
+        [SerializeField] private TMP_Text _typeLabel;
+
+        [SerializeField] private GameObject _vitalsRoot;
+        [SerializeField] private TMP_Text _hpLabel;
+
+        [Tooltip("El par ícono+número del escudo. Se apaga entero cuando la unidad no tiene: " +
+                 "un \"0\" al lado de un escudo se lee como que el escudo existe y está roto.")]
+        [SerializeField] private GameObject _shieldRoot;
+        [SerializeField] private TMP_Text _shieldLabel;
+
+        [Tooltip("Color de la unidad, al pie. Separado de _text porque no es información y no " +
+                 "puede quedarse con el arriba del panel.")]
+        [SerializeField] private TMP_Text _footerLabel;
+
+        [Tooltip("Indicador de fijado (candado), en la esquina del panel. Null, como todo lo " +
+                 "demás: sin cablear no hay candado y el panel es el de siempre.")]
+        [SerializeField] private GameObject _pinIndicator;
+
+        // El panel crece hacia arriba centrado sobre el punto: es lo que esperan los tooltips
+        // de texto. Beside lo cambia mientras dura, así que cada Show lo vuelve a fijar.
+        private static readonly Vector2 GrowUpPivot = new Vector2(0.5f, 0f);
+        private static readonly Vector2 HangRightPivot = new Vector2(0f, 1f);
+        private static readonly Vector2 HangLeftPivot = new Vector2(1f, 1f);
+
+        private readonly List<TooltipCardView> _cardSlots = new List<TooltipCardView>();
+        private readonly List<TooltipCardView> _sideCardSlots = new List<TooltipCardView>();
+        private readonly List<TooltipCardView> _bottomCardSlots = new List<TooltipCardView>();
 
         private RectTransform _hostCanvasRect;
         private bool _visible;
@@ -78,13 +150,35 @@ namespace Rollgeon.UI.Tooltips
         {
             if (_root == null && transform.childCount > 0)
                 _root = transform.GetChild(0) as RectTransform;
+            // El auto-resolve toma el primer TMP descendiente, y una vez que existe la columna
+            // ese primero puede ser el titulo de una tarjeta. Sin columna cableada el camino es
+            // identico al de siempre.
             if (_text == null)
-                _text = GetComponentInChildren<TMP_Text>(includeInactive: true);
+                _text = FindHeaderLabel();
 
             if (_hostCanvas == null) _hostCanvas = GetComponentInParent<Canvas>();
             _hostCanvasRect = _hostCanvas != null ? _hostCanvas.transform as RectTransform : null;
 
             EnsureOverlaySorting();
+        }
+
+        private TMP_Text FindHeaderLabel()
+        {
+            foreach (var candidate in GetComponentsInChildren<TMP_Text>(includeInactive: true))
+            {
+                if (_cardsContainer != null && candidate.transform.IsChildOf(_cardsContainer))
+                    continue;
+                if (_sideCardsContainer != null && candidate.transform.IsChildOf(_sideCardsContainer))
+                    continue;
+                if (_bottomCardsContainer != null && candidate.transform.IsChildOf(_bottomCardsContainer))
+                    continue;
+                // Los labels de la banda y del pie tampoco son el párrafo: si el auto-resolve
+                // se quedara con el nombre, un tooltip de texto escribiría en el renglón grande.
+                if (candidate == _nameLabel || candidate == _typeLabel || candidate == _hpLabel
+                    || candidate == _shieldLabel || candidate == _footerLabel) continue;
+                return candidate;
+            }
+            return null;
         }
 
         // El orden de jerarquía dentro del canvas HUD dejaba el tooltip DEBAJO de
@@ -129,21 +223,72 @@ namespace Rollgeon.UI.Tooltips
         /// posición configurada salvo que efectivamente se salga.
         /// </summary>
         public void Show(string text, Vector2 screenPos, int ownerId, TooltipPlacementMode placement)
-            => Show(text, screenPos, ownerId, placement, TooltipVerticalSide.Above);
+            => Show(text, null, screenPos, ownerId, placement);
 
         /// <summary>
         /// Variante con lado vertical (BUG-075). <see cref="TooltipVerticalSide.Below"/>
-        /// cuelga el panel entero DEBAJO del punto de anclaje — usado por los tooltips de
-        /// enemigos (anclados a los pies del pawn) para no tapar el modelo. Solo aplica en
-        /// AutoFit; el clamp a pantalla corre igual, así que un enemigo pegado al borde
-        /// inferior no deja el tooltip afuera.
+        /// cuelga el panel entero DEBAJO del punto de anclaje. Solo aplica en AutoFit; el
+        /// clamp a pantalla corre igual. Conservada por los triggers serializados que la
+        /// configuran — el panel de enemigos ya no la usa: vive fijo arriba a la derecha.
         /// </summary>
         public void Show(string text, Vector2 screenPos, int ownerId,
             TooltipPlacementMode placement, TooltipVerticalSide side)
+            => Show(TooltipContent.FromText(text, null), screenPos, ownerId, placement, side);
+
+        /// <summary>
+        /// Encabezado + columna de tarjetas, una por cosa en juego. Con <paramref name="cards"/>
+        /// nulo o vacío el panel se comporta exactamente igual que antes: sólo el encabezado.
+        /// </summary>
+        public void Show(string header, IReadOnlyList<StatusIconState> cards, Vector2 screenPos,
+                         int ownerId, TooltipPlacementMode placement)
+            => Show(TooltipContent.FromText(header, cards), screenPos, ownerId, placement);
+
+        /// <summary>
+        /// El camino completo: banda de identidad, columna y pie. Todo lo demás termina acá con
+        /// un <see cref="TooltipContent"/> que sólo trae texto.
+        /// </summary>
+        public void Show(in TooltipContent content, Vector2 screenPos, int ownerId,
+                         TooltipPlacementMode placement,
+                         TooltipVerticalSide side = TooltipVerticalSide.Above)
         {
-            if (_text != null) _text.text = text ?? string.Empty;
+            // Cada Show arranca sin candado: el panel es compartido, y el trigger fijado lo
+            // re-afirma después de su propio Show. Sin esto, el candado de un panel fijado
+            // sobrevivía al tooltip de la puerta.
+            SetPinned(false);
+
+            ApplyContent(content);
             _currentOwnerId = ownerId;
             SetVisible(true);
+
+            if (placement == TooltipPlacementMode.Beside) PlaceBeside(screenPos);
+            else if (placement == TooltipPlacementMode.ScreenTopRight) PlaceTopRight();
+            else PlaceOver(screenPos, placement, side);
+
+            ClampToCanvas();
+        }
+
+        /// <summary>
+        /// Ancla la esquina superior derecha del panel a la del canvas, menos el padding
+        /// configurado. Ignora el punto-pantalla del trigger: la gracia del modo es que el
+        /// panel viva siempre en el mismo lugar.
+        /// </summary>
+        private void PlaceTopRight()
+        {
+            if (_root == null || _hostCanvasRect == null) return;
+
+            // El rect local del canvas ya está en píxeles de referencia — el padding se
+            // aplica ahí y el TransformPoint lo lleva a la resolución real.
+            _root.pivot = HangLeftPivot;
+            var rect = _hostCanvasRect.rect;
+            var local = new Vector2(rect.xMax - _screenAnchorPadding.x,
+                                    rect.yMax - _screenAnchorPadding.y);
+            _root.position = _hostCanvasRect.TransformPoint(local);
+        }
+
+        private void PlaceOver(Vector2 screenPos, TooltipPlacementMode placement,
+                               TooltipVerticalSide side)
+        {
+            if (_root != null) _root.pivot = GrowUpPivot;
 
             Vector2 target;
             if (placement == TooltipPlacementMode.Fixed)
@@ -152,8 +297,8 @@ namespace Rollgeon.UI.Tooltips
             }
             else if (side == TooltipVerticalSide.Below && _root != null)
             {
-                // Medir la altura real del panel con el texto nuevo antes de colocarlo
-                // — colgar "debajo" necesita saber cuánto ocupa.
+                // Medir la altura real del panel con el texto nuevo antes de colocarlo —
+                // colgar "debajo" necesita saber cuánto ocupa (BUG-075).
                 UnityEngine.UI.LayoutRebuilder.ForceRebuildLayoutImmediate(_root);
                 float panelScreenHeight = _root.rect.height * _root.lossyScale.y;
                 target = TooltipVerticalPlacement.ComputeAnchorTarget(
@@ -164,7 +309,28 @@ namespace Rollgeon.UI.Tooltips
                 target = screenPos + _anchorOffset;
             }
             PositionAt(target);
-            ClampToCanvas();
+        }
+
+        /// <summary>
+        /// Cuelga el panel al costado del punto y hacia abajo: el borde superior arranca apenas
+        /// por encima del anclaje, así lo que disparó el tooltip queda a la vista al lado.
+        /// </summary>
+        private void PlaceBeside(Vector2 anchor)
+        {
+            if (_root == null) return;
+
+            float scale = _hostCanvas != null ? _hostCanvas.scaleFactor : 1f;
+            var offset = _sideOffset * scale;
+
+            _root.pivot = HangRightPivot;
+            PositionAt(anchor + offset);
+
+            // Si para entrar en pantalla habría que arrastrarlo a la izquierda, cuelga del otro
+            // lado: el clamp lo metería justo encima de lo que este modo evita tapar.
+            if (MeasureClampShift().x >= 0f) return;
+
+            _root.pivot = HangLeftPivot;
+            PositionAt(anchor + new Vector2(-offset.x, offset.y));
         }
 
         /// <summary>
@@ -237,7 +403,16 @@ namespace Rollgeon.UI.Tooltips
         /// </remarks>
         private void ClampToCanvas()
         {
-            if (_root == null || _hostCanvasRect == null) return;
+            var shift = MeasureClampShift();
+            if (shift.sqrMagnitude > 0.0001f)
+                _root.position += _hostCanvasRect.TransformVector(new Vector3(shift.x, shift.y, 0f));
+        }
+
+        // Cuánto habría que correr el panel para que entre. Separado del clamp porque el modo
+        // Beside lo pregunta ANTES de aplicarlo, para decidir de qué lado colgar.
+        private Vector2 MeasureClampShift()
+        {
+            if (_root == null || _hostCanvasRect == null) return Vector2.zero;
 
             // El TMP recién recibió texto nuevo — forzar layout para medir el tamaño real.
             UnityEngine.UI.LayoutRebuilder.ForceRebuildLayoutImmediate(_root);
@@ -247,9 +422,7 @@ namespace Rollgeon.UI.Tooltips
             Vector2 min = _hostCanvasRect.InverseTransformPoint(corners[0]);
             Vector2 max = _hostCanvasRect.InverseTransformPoint(corners[2]);
 
-            var shift = ComputeClampShift(min, max, _hostCanvasRect.rect, _screenPadding);
-            if (shift.sqrMagnitude > 0.0001f)
-                _root.position += _hostCanvasRect.TransformVector(new Vector3(shift.x, shift.y, 0f));
+            return ComputeClampShift(min, max, _hostCanvasRect.rect, _screenPadding);
         }
 
         /// <summary>
@@ -268,10 +441,135 @@ namespace Rollgeon.UI.Tooltips
             return shift;
         }
 
+        // Banda, parrafo, columna y pie en un solo lugar. Todos los campos menos _text son
+        // nullables a proposito: sin ellos el panel es exactamente el de siempre, que es lo que
+        // mantiene andando a todos los tooltips de texto que ya existen.
+        private void ApplyContent(in TooltipContent content)
+        {
+            int count = content.CardCount;
+
+            if (_text != null)
+            {
+                _text.text = content.Text ?? string.Empty;
+                // Sin nada mas el parrafo ES el tooltip y no se apaga nunca: apagarlo dejaria un
+                // panel vacio. Con banda o columna, un parrafo vacio solo agregaria un renglon
+                // alto de nada en el medio.
+                bool aloneInThePanel = count == 0 && !content.HasVitals
+                                       && string.IsNullOrEmpty(content.Name);
+                _text.gameObject.SetActive(aloneInThePanel || !string.IsNullOrEmpty(content.Text));
+            }
+
+            ApplyIdentity(content);
+
+            if (_footerLabel != null)
+            {
+                _footerLabel.text = content.Flavor ?? string.Empty;
+                _footerLabel.gameObject.SetActive(!string.IsNullOrEmpty(content.Flavor));
+            }
+
+            if (_cardsContainer == null || _cardPrefab == null) return;
+
+            // Sin los contenedores extra cableados, todo cae en la columna de adentro: el panel
+            // queda exactamente como antes en vez de perder tarjetas, que es lo que hace que estos
+            // slots puedan faltar de verdad.
+            var side = content.SideCards;
+            var bottom = content.BottomCards;
+
+            if (_bottomCardsContainer != null)
+                FillColumn(_bottomCardsContainer, _bottomCardSlots, bottom, null, _bottomCardPrefab);
+
+            if (_sideCardsContainer == null)
+            {
+                FillColumn(_cardsContainer, _cardSlots, content.Cards,
+                           Concat(side, _bottomCardsContainer == null ? bottom : null));
+                return;
+            }
+
+            FillColumn(_cardsContainer, _cardSlots, content.Cards,
+                       _bottomCardsContainer == null ? bottom : null);
+            FillColumn(_sideCardsContainer, _sideCardSlots, side, null);
+        }
+
+        // Solo corre en el panel a medio cablear: con los tres contenedores puestos nunca hay dos
+        // listas para la misma columna y esto no aloca.
+        private static IReadOnlyList<StatusIconState> Concat(IReadOnlyList<StatusIconState> a,
+                                                             IReadOnlyList<StatusIconState> b)
+        {
+            if (a == null || a.Count == 0) return b;
+            if (b == null || b.Count == 0) return a;
+
+            var merged = new List<StatusIconState>(a.Count + b.Count);
+            merged.AddRange(a);
+            merged.AddRange(b);
+            return merged;
+        }
+
+        private void ApplyIdentity(in TooltipContent content)
+        {
+            if (_nameLabel != null)
+            {
+                _nameLabel.text = content.Name ?? string.Empty;
+                _nameLabel.gameObject.SetActive(!string.IsNullOrEmpty(content.Name));
+            }
+
+            if (_typeLabel != null)
+            {
+                _typeLabel.text = content.Type ?? string.Empty;
+                _typeLabel.gameObject.SetActive(!string.IsNullOrEmpty(content.Type));
+            }
+
+            if (_vitalsRoot != null) _vitalsRoot.SetActive(content.HasVitals);
+            if (!content.HasVitals) return;
+
+            if (_hpLabel != null)
+                _hpLabel.text = $"{content.Health.Value}/{content.MaxHealth.Value}";
+
+            // Un escudo en cero no es un escudo roto, es que la unidad no usa escudo.
+            int shield = content.Shield ?? 0;
+            if (_shieldRoot != null) _shieldRoot.SetActive(shield > 0);
+            if (_shieldLabel != null && shield > 0) _shieldLabel.text = shield.ToString();
+        }
+
+        // Los slots se reusan y solo se apagan, igual que PlayerStatusIconsView.EnsureSlots: el
+        // panel se reabre en cada hover y destruir/instanciar por hover seria churn por mover el
+        // mouse.
+        //
+        // Dos listas y no una concatenada: concatenar alocaria una lista nueva en cada hover, y el
+        // caso de las dos juntas es solo el del panel sin segunda columna.
+        private void FillColumn(RectTransform container, List<TooltipCardView> slots,
+                                IReadOnlyList<StatusIconState> first,
+                                IReadOnlyList<StatusIconState> second,
+                                TooltipCardView prefab = null)
+        {
+            // Cada columna puede traer su propia forma de tarjeta (la fila de abajo usa la placa
+            // de sólo ícono); sin una propia, la tarjeta de siempre.
+            if (prefab == null) prefab = _cardPrefab;
+
+            int firstCount = first?.Count ?? 0;
+            int total = firstCount + (second?.Count ?? 0);
+
+            container.gameObject.SetActive(total > 0);
+            while (slots.Count < total) slots.Add(Instantiate(prefab, container));
+
+            for (int i = 0; i < slots.Count; i++)
+            {
+                bool used = i < total;
+                slots[i].gameObject.SetActive(used);
+                if (used) slots[i].Show(i < firstCount ? first[i] : second[i - firstCount]);
+            }
+        }
+
+        /// <summary>Prende/apaga el candado de fijado. Lo maneja el trigger dueño del pin.</summary>
+        public void SetPinned(bool pinned)
+        {
+            if (_pinIndicator != null) _pinIndicator.SetActive(pinned);
+        }
+
         private void SetVisible(bool visible)
         {
             _visible = visible;
             if (_root != null) _root.gameObject.SetActive(visible);
+            if (!visible) SetPinned(false);
             // overrideSorting no persiste si se seteó con el GO inactivo — re-aplicar
             // con el panel ya activo.
             if (visible) EnsureOverlaySorting();
@@ -297,22 +595,73 @@ namespace Rollgeon.UI.Tooltips
         /// </summary>
         internal void EditorPreview(string text, Vector2 screenPos, TooltipPlacementMode placement)
         {
+            EditorPreviewBegin();
+            Show(text, screenPos, EditorPreviewOwnerId, placement);
+        }
+
+        /// <summary>
+        /// El panel entero sin play mode: banda, familia, vitales, la columna y el costado.
+        /// </summary>
+        /// <remarks>
+        /// Público y no <c>internal</c> como su hermano de texto porque a este lo llama el autorado,
+        /// que vive en el assembly de editor y no ve los internals de este.
+        /// </remarks>
+        public void EditorPreview(in TooltipContent content, Vector2 screenPos,
+                                  TooltipPlacementMode placement)
+        {
+            EditorPreviewBegin();
+            Show(content, screenPos, EditorPreviewOwnerId, placement);
+        }
+
+        // Sin esto el panel se "activa" pero nunca se ve: activeSelf=true con un ancestro apagado
+        // sigue siendo invisible. Activar ANTES de Show para que el layout rebuild del clamp mida
+        // el tamaño real.
+        private void EditorPreviewBegin()
+        {
             EnsureRefs();
 
-            // Sin esto el panel se "activa" pero nunca se ve: activeSelf=true con un
-            // ancestro apagado sigue siendo invisible. Activar ANTES de Show para que
-            // el layout rebuild del clamp mida el tamaño real.
             for (var t = transform; t != null; t = t.parent)
             {
                 if (t.gameObject.activeSelf) continue;
                 t.gameObject.SetActive(true);
                 _editorPreviewActivated.Add(t.gameObject);
             }
-
-            Show(text, screenPos, EditorPreviewOwnerId, placement);
         }
 
-        internal void EditorPreviewHide()
+        /// <summary>
+        /// Tira las tarjetas ya instanciadas para que la próxima vuelta las cree del prefab de hoy.
+        /// </summary>
+        /// <remarks>
+        /// Los slots se crean con <c>Instantiate</c>, así que <b>no</b> son instancias de prefab y
+        /// no heredan nada de lo que se le cambie al asset después. Sin esto, tocar la tarjeta y
+        /// volver a previsualizar sigue mostrando las viejas — el panel se ve idéntico y parece
+        /// que el cambio no entró.
+        /// </remarks>
+        public void EditorPreviewResetCards()
+        {
+            EnsureRefs();
+            ResetSlots(_cardsContainer, _cardSlots);
+            ResetSlots(_sideCardsContainer, _sideCardSlots);
+            ResetSlots(_bottomCardsContainer, _bottomCardSlots);
+        }
+
+        // Barre los HIJOS del contenedor y no sólo la lista: las listas viven en el domain y el
+        // reload las vacía, pero las tarjetas instanciadas quedan en la escena. Con sólo la lista,
+        // cada preview post-recompilación apilaba una tarjeta nueva sobre la huérfana.
+        private static void ResetSlots(RectTransform container, List<TooltipCardView> slots)
+        {
+            slots.Clear();
+            if (container == null) return;
+
+            for (int i = container.childCount - 1; i >= 0; i--)
+            {
+                var child = container.GetChild(i);
+                if (child.GetComponent<TooltipCardView>() != null)
+                    DestroyImmediate(child.gameObject);
+            }
+        }
+
+        public void EditorPreviewHide()
         {
             EnsureRefs();
             HideForce();

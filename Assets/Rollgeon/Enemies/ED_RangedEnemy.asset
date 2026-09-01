@@ -2233,7 +2233,8 @@ MonoBehaviour:
     Notes: "Dispara si el jugador est\xE1 a \u22645 (Manhattan) y mantiene distancia
       3; si no, se acerca."
   WeaknessComboId: 
-  WeaknessMultiplierOverride: 0.14
+  WeaknessMultiplierOverride: 0
+  Archetype: 2
   BaseHP: 50
   BaseAttack: 10
   BaseHealStrength: 5

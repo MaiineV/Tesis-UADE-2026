@@ -185,32 +185,31 @@ namespace Rollgeon.Combat.Rooms.Tests
         }
 
         /// <summary>
-        /// El overlay no está en los bootstrap: lo crea el primero que pinta. Consultándolo con
-        /// TryGetService la primera siembra de la pelea caía antes de que existiera, y esas bombas
-        /// —las únicas que el jugador ve aparecer sin haber visto nunca un aviso— quedaban sin cruz.
+        /// Regla Mewgenics del spec de tooltips: sembrar MARCA cada cruz — para el hover y para
+        /// la detonación — pero no dibuja nada. El paño queda limpio hasta que el jugador pasa
+        /// el mouse por la bomba.
         /// </summary>
         [Test]
-        public void TheFirstSowingOfTheFight_PaintsItsCrosses_WithNoPainterRegisteredYet()
+        public void Sowing_MarksEveryCross_ButPaintsNothing()
         {
+            // Arrange — sin overlay registrado a propósito: la siembra ya no dibuja, así que no
+            // debe levantar uno ni fallar por su ausencia.
             ServiceLocator.RemoveService<IThreatOverlayService>();
-            // Show necesita el grid para ubicar los quads; en la pelea lo trae el bootstrap.
-            ServiceLocator.AddService<IGridManager>(_grid, ServiceScope.Global);
 
             var node = MakeNode(count: 4);
+
+            // Act
             node.Tick(_context);
 
-            Assert.IsTrue(ServiceLocator.TryGetService<IThreatOverlayService>(out var painter),
-                "La siembra tiene que levantar el overlay, no esperar a que otro nodo lo cree.");
-
-            var overlay = (ThreatTelegraphOverlay)painter;
-            foreach (var (guid, cross) in Live())
+            // Assert
+            foreach (var (guid, _) in Live())
             {
                 var channel = AINode_BombField.ChannelFor(_boss, node.ChannelPrefix, guid);
-                Assert.AreEqual(cross.Count, overlay.ActiveQuadsOf(channel).Count,
-                    "La bomba quedó sin cruz pintada.");
+                Assert.IsTrue(_threat.HasPending(channel),
+                    "La bomba quedó sin marca: sin ella no hay hover ni detonación.");
             }
-
-            overlay.Dispose();
+            Assert.IsFalse(ServiceLocator.TryGetService<IThreatOverlayService>(out _),
+                "La siembra levantó un overlay para pintar: el dibujo es del hover, no del sembrado.");
         }
 
         [Test]

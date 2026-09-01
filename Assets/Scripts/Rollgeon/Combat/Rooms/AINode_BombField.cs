@@ -41,7 +41,7 @@ namespace Rollgeon.Combat.Rooms
     /// </para>
     /// </remarks>
     [Serializable, HideReferenceObjectPicker]
-    public sealed class AINode_BombField : AIActionNode
+    public sealed class AINode_BombField : AIActionNode, IAIIntentNode
     {
         [Tooltip("La bomba a sembrar. RespawnDelayTurns tiene que ser 0: es lo que permite que la " +
                  "siembra reponga tanto lo detonado como lo roto a mano.")]
@@ -190,22 +190,19 @@ namespace Rollgeon.Combat.Rooms
         }
 
         /// <remarks>
-        /// <para>
-        /// Pasa por TODAS las que están en pie y no sólo por las nuevas. Lo que se pinta es lo que
+        /// Pasa por TODAS las que están en pie y no sólo por las nuevas. Lo que se marca es lo que
         /// <c>Sow</c> devuelve y no la cruz recién calculada: a una bomba ya armada le contesta la
-        /// suya, que es la que le va a estallar. Pintando la calculada, con las formas rotando, una
-        /// bomba vieja quedaría avisando el aspa de la generación nueva.
-        /// </para>
+        /// suya, que es la que le va a estallar. Con las formas rotando, una bomba vieja quedaría
+        /// avisando el aspa de la generación nueva.
         /// <para>
-        /// El overlay va por <c>ResolveOrCreate</c> y no por <c>TryGetService</c>: no está en los
-        /// bootstrap, lo crea el primero que pinta. Consultándolo, la primera siembra de la pelea
-        /// caía antes de que existiera y esas bombas quedaban sin cruz.
+        /// Marca y no pinta: la cruz se dibuja sólo al pasar el mouse por la bomba
+        /// (<c>EnemyIntentPreviewOverlay</c>). El paño queda limpio y leer el piso es una acción
+        /// del jugador — regla Mewgenics del spec de tooltips.
         /// </para>
         /// </remarks>
         private void MarkNewBombs(AIContext context, IGridManager grid, AINode_SpawnRoomObjects spawner)
         {
             ServiceLocator.TryGetService<IThreatenedAreaService>(out var threat);
-            var overlay = ThreatTelegraphOverlay.ResolveOrCreate();
 
             var field = BombFieldService.ResolveOrCreate();
 
@@ -219,8 +216,62 @@ namespace Rollgeon.Combat.Rooms
 
                 var channel = ChannelFor(context.SelfGuid, ChannelPrefix, guid);
                 threat?.Mark(channel, armed, IgnitionDamage, AttackKind.Environmental);
-                overlay?.Show(channel, armed);
+
+                AttachBombTooltip(context, guid);
             }
+        }
+
+        /// <summary>Describe la siembra: cuántas bombas y con qué mecha.</summary>
+        /// <remarks>
+        /// <b>Sin casillas a propósito.</b> Las ranuras las sortea <c>AINode_SpawnRoomObjects</c>
+        /// con <c>ScatteredFree</c> en el momento de sembrar, así que dónde van a caer no se sabe
+        /// hasta que caen. Un conjunto vacío significa "no se sabe", nunca "estimado".
+        /// </remarks>
+        public bool TryDescribeIntent(AIContext context, out AIIntent intent)
+        {
+            intent = default;
+            if (Definition == null) return false;
+
+            intent = new AIIntent(
+                AIIntentTextKeys.BombField, "Bombas",
+                damage: 0, kind: AttackKind.Environmental,
+                amount: Count, turnsAway: 0);
+            return true;
+        }
+
+        /// <summary>
+        /// Le cuelga a la bomba su propio hover: su tarjeta, su mecha y su cruz, no las del jefe.
+        /// </summary>
+        /// <remarks>
+        /// <c>MarkNewBombs</c> recorre TODAS las bombas en pie en cada siembra, no sólo las nuevas,
+        /// así que sale temprano si esta ya tiene su tooltip: re-suscribir el hover dejaría la cruz
+        /// pintándose dos veces por bomba y por siembra.
+        /// </remarks>
+        private void AttachBombTooltip(AIContext context, Guid bombGuid)
+        {
+            if (context.VisualService == null) return;
+            if (!context.VisualService.TryGetPawn(bombGuid, out var pawn) || pawn == null) return;
+            if (pawn.gameObject.GetComponent<Visuals.RoomObjectTooltipInfo>() != null) return;
+
+            var info = pawn.gameObject.AddComponent<Visuals.RoomObjectTooltipInfo>();
+            info.Bind(Definition, context.SelfGuid, bombGuid);
+
+            var trigger = Rollgeon.Entities.Visuals.EntityVisualService.AttachHoverTooltip(
+                pawn, info.BuildTooltip);
+            if (trigger == null) return;
+
+            // El mismo reparto que casillas y enemigos: header estructurado + tarjetas del fuego
+            // que deja. El BuildTooltip de arriba queda de fallback si alguien borra el provider.
+            trigger.ContentProvider = info.BuildContent;
+            trigger.CardsProvider = info.CollectCards;
+
+            var bossGuid = context.SelfGuid;
+            trigger.HoverChanged += on =>
+            {
+                var preview = EnemyIntentPreviewOverlay.ResolveOrCreate();
+                if (on) preview.ShowForSubject(bossGuid, bombGuid);
+                else preview.Clear();
+            };
         }
 
         /// <summary>Qué forma le toca a la siembra número <paramref name="sowing"/>, contando de 0.</summary>
