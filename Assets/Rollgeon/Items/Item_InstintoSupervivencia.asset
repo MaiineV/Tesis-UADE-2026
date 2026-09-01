@@ -36,7 +36,7 @@ MonoBehaviour:
       Data: 0
     - Name: TriggerEvent
       Entry: 3
-      Data: 41
+      Data: 48
     - Name: ComboFilter
       Entry: 7
       Data: 2|Rollgeon.Upgrades.Dice.ComboFilter, Rollgeon
@@ -92,7 +92,7 @@ MonoBehaviour:
       Data: 1
     - Name: 
       Entry: 7
-      Data: 7|Rollgeon.Effects.Concretes.EffAddShield, Rollgeon
+      Data: 7|Rollgeon.Effects.Concretes.EffThresholdCrossCombatBuff, Rollgeon
     - Name: Selection
       Entry: 7
       Data: 8|Rollgeon.Effects.Selection.SelectionSettings, Rollgeon
@@ -177,21 +177,12 @@ MonoBehaviour:
     - Name: 
       Entry: 8
       Data: 
-    - Name: _shieldSource
-      Entry: 3
-      Data: 0
-    - Name: _baseAmount
+    - Name: _hpThresholdPercent
+      Entry: 4
+      Data: 0.3
+    - Name: _attackBonus
       Entry: 3
       Data: 10
-    - Name: _comboMultiplier
-      Entry: 4
-      Data: 1
-    - Name: _reader
-      Entry: 6
-      Data: 
-    - Name: _readerMultiplier
-      Entry: 4
-      Data: 1
     - Name: 
       Entry: 8
       Data: 
