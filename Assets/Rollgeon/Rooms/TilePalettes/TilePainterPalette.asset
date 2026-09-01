@@ -135,3 +135,8 @@ MonoBehaviour:
     Icon: {fileID: 0}
     Type: 2
     IsBlocker: 1
+  - Label: AntorchaPie
+    Prefab: {fileID: 1574583714663146545, guid: a3fe1e74f4dd075449742a474e5fd535, type: 3}
+    Icon: {fileID: 0}
+    Type: 2
+    IsBlocker: 1

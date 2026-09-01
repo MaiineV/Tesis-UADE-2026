@@ -530,9 +530,7 @@ Transform:
   - {fileID: 6187405450346752827}
   - {fileID: 6845559728597922960}
   - {fileID: 7721116042642687861}
-  - {fileID: 6782656495331104406}
   - {fileID: 1082127315072505627}
-  - {fileID: 5539919891281281113}
   - {fileID: 7187152589858024111}
   - {fileID: 322245612563378973}
   - {fileID: 8620376633967616579}
@@ -556,6 +554,8 @@ Transform:
   - {fileID: 540083737352556295}
   - {fileID: 1998253824934397866}
   - {fileID: 8656838728990339909}
+  - {fileID: 7276897118572594789}
+  - {fileID: 126874520849297985}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &5898699619738018492
@@ -23783,6 +23783,96 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 897079557085885238, guid: 8f90cda41d089484cb7f0f103ed5b2a9, type: 3}
   m_PrefabInstance: {fileID: 4564057725539417862}
   m_PrefabAsset: {fileID: 0}
+--- !u!1001 &4564454587395242132
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 1711357143213522343}
+    m_Modifications:
+    - target: {fileID: 1574583714663146545, guid: a3fe1e74f4dd075449742a474e5fd535, type: 3}
+      propertyPath: m_Name
+      value: LongCandle
+      objectReference: {fileID: 0}
+    - target: {fileID: 6603552609226538737, guid: a3fe1e74f4dd075449742a474e5fd535, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 4.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 6603552609226538737, guid: a3fe1e74f4dd075449742a474e5fd535, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6603552609226538737, guid: a3fe1e74f4dd075449742a474e5fd535, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: -1.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 6603552609226538737, guid: a3fe1e74f4dd075449742a474e5fd535, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 0.7071068
+      objectReference: {fileID: 0}
+    - target: {fileID: 6603552609226538737, guid: a3fe1e74f4dd075449742a474e5fd535, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6603552609226538737, guid: a3fe1e74f4dd075449742a474e5fd535, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0.7071068
+      objectReference: {fileID: 0}
+    - target: {fileID: 6603552609226538737, guid: a3fe1e74f4dd075449742a474e5fd535, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6603552609226538737, guid: a3fe1e74f4dd075449742a474e5fd535, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6603552609226538737, guid: a3fe1e74f4dd075449742a474e5fd535, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6603552609226538737, guid: a3fe1e74f4dd075449742a474e5fd535, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 1574583714663146545, guid: a3fe1e74f4dd075449742a474e5fd535, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 2228963882061193713}
+  m_SourcePrefab: {fileID: 100100000, guid: a3fe1e74f4dd075449742a474e5fd535, type: 3}
+--- !u!1 &3063073129393085605 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 1574583714663146545, guid: a3fe1e74f4dd075449742a474e5fd535, type: 3}
+  m_PrefabInstance: {fileID: 4564454587395242132}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &2228963882061193713
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3063073129393085605}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6862515384497d34091ba5713cfb79b7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Rollgeon::Rollgeon.Grid.TileMarker
+  Coord:
+    X: 4
+    Y: -2
+  Layer: 0
+  Footprint: {x: 1, y: 1, z: 1}
+  FootprintOffset: {x: 0, y: 0, z: 0}
+  Type: 2
+  IsBlocker: 1
+--- !u!4 &7276897118572594789 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 6603552609226538737, guid: a3fe1e74f4dd075449742a474e5fd535, type: 3}
+  m_PrefabInstance: {fileID: 4564454587395242132}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &4589411034456099473
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -27182,100 +27272,6 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 897079557085885238, guid: 8f90cda41d089484cb7f0f103ed5b2a9, type: 3}
   m_PrefabInstance: {fileID: 5688612347488826081}
   m_PrefabAsset: {fileID: 0}
---- !u!1001 &5717919134575391609
-PrefabInstance:
-  m_ObjectHideFlags: 0
-  serializedVersion: 2
-  m_Modification:
-    serializedVersion: 3
-    m_TransformParent: {fileID: 1711357143213522343}
-    m_Modifications:
-    - target: {fileID: 1259590681202173423, guid: a5a0ae68f50486044a19959000c438f5, type: 3}
-      propertyPath: m_LocalPosition.x
-      value: 4.5
-      objectReference: {fileID: 0}
-    - target: {fileID: 1259590681202173423, guid: a5a0ae68f50486044a19959000c438f5, type: 3}
-      propertyPath: m_LocalPosition.y
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 1259590681202173423, guid: a5a0ae68f50486044a19959000c438f5, type: 3}
-      propertyPath: m_LocalPosition.z
-      value: -1.5
-      objectReference: {fileID: 0}
-    - target: {fileID: 1259590681202173423, guid: a5a0ae68f50486044a19959000c438f5, type: 3}
-      propertyPath: m_LocalRotation.w
-      value: 0.7071068
-      objectReference: {fileID: 0}
-    - target: {fileID: 1259590681202173423, guid: a5a0ae68f50486044a19959000c438f5, type: 3}
-      propertyPath: m_LocalRotation.x
-      value: -0
-      objectReference: {fileID: 0}
-    - target: {fileID: 1259590681202173423, guid: a5a0ae68f50486044a19959000c438f5, type: 3}
-      propertyPath: m_LocalRotation.y
-      value: 0.7071068
-      objectReference: {fileID: 0}
-    - target: {fileID: 1259590681202173423, guid: a5a0ae68f50486044a19959000c438f5, type: 3}
-      propertyPath: m_LocalRotation.z
-      value: -0
-      objectReference: {fileID: 0}
-    - target: {fileID: 1259590681202173423, guid: a5a0ae68f50486044a19959000c438f5, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 1259590681202173423, guid: a5a0ae68f50486044a19959000c438f5, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 1259590681202173423, guid: a5a0ae68f50486044a19959000c438f5, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 1887333293733642069, guid: a5a0ae68f50486044a19959000c438f5, type: 3}
-      propertyPath: m_Name
-      value: Huesoconcadlev03 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 8169437461216453911, guid: a5a0ae68f50486044a19959000c438f5, type: 3}
-      propertyPath: m_StaticEditorFlags
-      value: 2147483647
-      objectReference: {fileID: 0}
-    m_RemovedComponents: []
-    m_RemovedGameObjects: []
-    m_AddedGameObjects: []
-    m_AddedComponents:
-    - targetCorrespondingSourceObject: {fileID: 1887333293733642069, guid: a5a0ae68f50486044a19959000c438f5, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 8978693538167697549}
-  m_SourcePrefab: {fileID: 100100000, guid: a5a0ae68f50486044a19959000c438f5, type: 3}
---- !u!1 &6155020505088035884 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 1887333293733642069, guid: a5a0ae68f50486044a19959000c438f5, type: 3}
-  m_PrefabInstance: {fileID: 5717919134575391609}
-  m_PrefabAsset: {fileID: 0}
---- !u!114 &8978693538167697549
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6155020505088035884}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6862515384497d34091ba5713cfb79b7, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Rollgeon::Rollgeon.Grid.TileMarker
-  Coord:
-    X: 4
-    Y: -2
-  Layer: 0
-  Footprint: {x: 1, y: 1, z: 1}
-  FootprintOffset: {x: 0, y: 0, z: 0}
-  Type: 2
-  IsBlocker: 1
---- !u!4 &6782656495331104406 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 1259590681202173423, guid: a5a0ae68f50486044a19959000c438f5, type: 3}
-  m_PrefabInstance: {fileID: 5717919134575391609}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &5719259101129737929
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -30178,6 +30174,96 @@ MonoBehaviour:
   FootprintOffset: {x: 0, y: 0, z: 0}
   Type: 2
   IsBlocker: 1
+--- !u!1001 &6513955106584005808
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 1711357143213522343}
+    m_Modifications:
+    - target: {fileID: 1574583714663146545, guid: a3fe1e74f4dd075449742a474e5fd535, type: 3}
+      propertyPath: m_Name
+      value: LongCandle
+      objectReference: {fileID: 0}
+    - target: {fileID: 6603552609226538737, guid: a3fe1e74f4dd075449742a474e5fd535, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: -3.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 6603552609226538737, guid: a3fe1e74f4dd075449742a474e5fd535, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6603552609226538737, guid: a3fe1e74f4dd075449742a474e5fd535, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 2.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 6603552609226538737, guid: a3fe1e74f4dd075449742a474e5fd535, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 0.7071068
+      objectReference: {fileID: 0}
+    - target: {fileID: 6603552609226538737, guid: a3fe1e74f4dd075449742a474e5fd535, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6603552609226538737, guid: a3fe1e74f4dd075449742a474e5fd535, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0.7071068
+      objectReference: {fileID: 0}
+    - target: {fileID: 6603552609226538737, guid: a3fe1e74f4dd075449742a474e5fd535, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6603552609226538737, guid: a3fe1e74f4dd075449742a474e5fd535, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6603552609226538737, guid: a3fe1e74f4dd075449742a474e5fd535, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6603552609226538737, guid: a3fe1e74f4dd075449742a474e5fd535, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 1574583714663146545, guid: a3fe1e74f4dd075449742a474e5fd535, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 7329402097559550317}
+  m_SourcePrefab: {fileID: 100100000, guid: a3fe1e74f4dd075449742a474e5fd535, type: 3}
+--- !u!4 &126874520849297985 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 6603552609226538737, guid: a3fe1e74f4dd075449742a474e5fd535, type: 3}
+  m_PrefabInstance: {fileID: 6513955106584005808}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1 &5745533349788952705 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 1574583714663146545, guid: a3fe1e74f4dd075449742a474e5fd535, type: 3}
+  m_PrefabInstance: {fileID: 6513955106584005808}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &7329402097559550317
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5745533349788952705}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6862515384497d34091ba5713cfb79b7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Rollgeon::Rollgeon.Grid.TileMarker
+  Coord:
+    X: -4
+    Y: 2
+  Layer: 0
+  Footprint: {x: 1, y: 1, z: 1}
+  FootprintOffset: {x: 0, y: 0, z: 0}
+  Type: 2
+  IsBlocker: 1
 --- !u!1001 &6537901025270165935
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -31147,100 +31233,6 @@ Transform:
 MeshRenderer:
   m_CorrespondingSourceObject: {fileID: 1049265465950238860, guid: c38a4a5745898f44d8e2585e0ceae507, type: 3}
   m_PrefabInstance: {fileID: 6722669734979321184}
-  m_PrefabAsset: {fileID: 0}
---- !u!1001 &6745064886864422326
-PrefabInstance:
-  m_ObjectHideFlags: 0
-  serializedVersion: 2
-  m_Modification:
-    serializedVersion: 3
-    m_TransformParent: {fileID: 1711357143213522343}
-    m_Modifications:
-    - target: {fileID: 1259590681202173423, guid: a5a0ae68f50486044a19959000c438f5, type: 3}
-      propertyPath: m_LocalPosition.x
-      value: -3.5
-      objectReference: {fileID: 0}
-    - target: {fileID: 1259590681202173423, guid: a5a0ae68f50486044a19959000c438f5, type: 3}
-      propertyPath: m_LocalPosition.y
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 1259590681202173423, guid: a5a0ae68f50486044a19959000c438f5, type: 3}
-      propertyPath: m_LocalPosition.z
-      value: 2.5
-      objectReference: {fileID: 0}
-    - target: {fileID: 1259590681202173423, guid: a5a0ae68f50486044a19959000c438f5, type: 3}
-      propertyPath: m_LocalRotation.w
-      value: 0.7071068
-      objectReference: {fileID: 0}
-    - target: {fileID: 1259590681202173423, guid: a5a0ae68f50486044a19959000c438f5, type: 3}
-      propertyPath: m_LocalRotation.x
-      value: -0
-      objectReference: {fileID: 0}
-    - target: {fileID: 1259590681202173423, guid: a5a0ae68f50486044a19959000c438f5, type: 3}
-      propertyPath: m_LocalRotation.y
-      value: 0.7071068
-      objectReference: {fileID: 0}
-    - target: {fileID: 1259590681202173423, guid: a5a0ae68f50486044a19959000c438f5, type: 3}
-      propertyPath: m_LocalRotation.z
-      value: -0
-      objectReference: {fileID: 0}
-    - target: {fileID: 1259590681202173423, guid: a5a0ae68f50486044a19959000c438f5, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 1259590681202173423, guid: a5a0ae68f50486044a19959000c438f5, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 1259590681202173423, guid: a5a0ae68f50486044a19959000c438f5, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 1887333293733642069, guid: a5a0ae68f50486044a19959000c438f5, type: 3}
-      propertyPath: m_Name
-      value: Huesoconcadlev03 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 8169437461216453911, guid: a5a0ae68f50486044a19959000c438f5, type: 3}
-      propertyPath: m_StaticEditorFlags
-      value: 2147483647
-      objectReference: {fileID: 0}
-    m_RemovedComponents: []
-    m_RemovedGameObjects: []
-    m_AddedGameObjects: []
-    m_AddedComponents:
-    - targetCorrespondingSourceObject: {fileID: 1887333293733642069, guid: a5a0ae68f50486044a19959000c438f5, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 1716056412354587269}
-  m_SourcePrefab: {fileID: 100100000, guid: a5a0ae68f50486044a19959000c438f5, type: 3}
---- !u!1 &5164062408913804003 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 1887333293733642069, guid: a5a0ae68f50486044a19959000c438f5, type: 3}
-  m_PrefabInstance: {fileID: 6745064886864422326}
-  m_PrefabAsset: {fileID: 0}
---- !u!114 &1716056412354587269
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5164062408913804003}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6862515384497d34091ba5713cfb79b7, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Rollgeon::Rollgeon.Grid.TileMarker
-  Coord:
-    X: -4
-    Y: 2
-  Layer: 0
-  Footprint: {x: 1, y: 1, z: 1}
-  FootprintOffset: {x: 0, y: 0, z: 0}
-  Type: 2
-  IsBlocker: 1
---- !u!4 &5539919891281281113 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 1259590681202173423, guid: a5a0ae68f50486044a19959000c438f5, type: 3}
-  m_PrefabInstance: {fileID: 6745064886864422326}
   m_PrefabAsset: {fileID: 0}
 --- !u!1001 &6793747172504529181
 PrefabInstance:

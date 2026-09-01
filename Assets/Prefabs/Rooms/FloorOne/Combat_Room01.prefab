@@ -551,6 +551,7 @@ Transform:
   - {fileID: 3203554516313666055}
   - {fileID: 898063464630130854}
   - {fileID: 7156031147753786472}
+  - {fileID: 4078392170257968765}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &5898699619738018492
@@ -32848,6 +32849,97 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 897079557085885238, guid: 8f90cda41d089484cb7f0f103ed5b2a9, type: 3}
   m_PrefabInstance: {fileID: 7146745168462592153}
   m_PrefabAsset: {fileID: 0}
+--- !u!1001 &7151104941983584396
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 1711357143213522343}
+    m_Modifications:
+    - target: {fileID: 1574583714663146545, guid: a3fe1e74f4dd075449742a474e5fd535, type: 3}
+      propertyPath: m_Name
+      value: LongCandle
+      objectReference: {fileID: 0}
+    - target: {fileID: 6603552609226538737, guid: a3fe1e74f4dd075449742a474e5fd535, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: -0.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 6603552609226538737, guid: a3fe1e74f4dd075449742a474e5fd535, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6603552609226538737, guid: a3fe1e74f4dd075449742a474e5fd535, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 1.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 6603552609226538737, guid: a3fe1e74f4dd075449742a474e5fd535, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 0.7071068
+      objectReference: {fileID: 0}
+    - target: {fileID: 6603552609226538737, guid: a3fe1e74f4dd075449742a474e5fd535, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6603552609226538737, guid: a3fe1e74f4dd075449742a474e5fd535, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0.7071068
+      objectReference: {fileID: 0}
+    - target: {fileID: 6603552609226538737, guid: a3fe1e74f4dd075449742a474e5fd535, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6603552609226538737, guid: a3fe1e74f4dd075449742a474e5fd535, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6603552609226538737, guid: a3fe1e74f4dd075449742a474e5fd535, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6603552609226538737, guid: a3fe1e74f4dd075449742a474e5fd535, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects:
+    - {fileID: 2266350166866117466, guid: a3fe1e74f4dd075449742a474e5fd535, type: 3}
+    m_AddedGameObjects: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 1574583714663146545, guid: a3fe1e74f4dd075449742a474e5fd535, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 2749880738018940179}
+  m_SourcePrefab: {fileID: 100100000, guid: a3fe1e74f4dd075449742a474e5fd535, type: 3}
+--- !u!4 &4078392170257968765 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 6603552609226538737, guid: a3fe1e74f4dd075449742a474e5fd535, type: 3}
+  m_PrefabInstance: {fileID: 7151104941983584396}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1 &8568062581638722749 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 1574583714663146545, guid: a3fe1e74f4dd075449742a474e5fd535, type: 3}
+  m_PrefabInstance: {fileID: 7151104941983584396}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &2749880738018940179
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8568062581638722749}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6862515384497d34091ba5713cfb79b7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Rollgeon::Rollgeon.Grid.TileMarker
+  Coord:
+    X: -1
+    Y: 1
+  Layer: 0
+  Footprint: {x: 1, y: 1, z: 1}
+  FootprintOffset: {x: 0, y: 0, z: 0}
+  Type: 2
+  IsBlocker: 1
 --- !u!1001 &7171747933356136718
 PrefabInstance:
   m_ObjectHideFlags: 0
