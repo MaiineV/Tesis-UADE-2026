@@ -60,7 +60,7 @@ namespace Rollgeon.Combat.AI.Decisions
                     if (effect is not EffDealDamage damage) continue;
                     if (!damage.TryDescribePreviewDamage(context.SelfGuid, out int amount)) continue;
 
-                    intent = new AIIntent(AIIntentTextKeys.Attack, "Te ataca", amount, damage.Kind);
+                    intent = new AIIntent(AIIntentTextKeys.Attack, "Golpe", amount, damage.Kind);
                     return true;
                 }
             }

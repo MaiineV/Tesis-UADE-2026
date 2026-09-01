@@ -143,7 +143,7 @@ namespace Rollgeon.Combat.AI.Decisions
             if (!context.Grid.TryGetPosition(context.PlayerGuid, out var playerCoord)) return false;
 
             intent = new AIIntent(
-                AIIntentTextKeys.RangedShot, "Te dispara",
+                AIIntentTextKeys.RangedShot, "Disparo",
                 Damage, Kind,
                 tiles: new[] { playerCoord });
             return true;
@@ -155,7 +155,7 @@ namespace Rollgeon.Combat.AI.Decisions
         /// </summary>
         public bool TryDescribeOption(AIContext context, out AIIntent intent)
         {
-            intent = new AIIntent(AIIntentTextKeys.RangedShot, "Te dispara", Damage, Kind);
+            intent = new AIIntent(AIIntentTextKeys.RangedShot, "Disparo", Damage, Kind);
             return true;
         }
 

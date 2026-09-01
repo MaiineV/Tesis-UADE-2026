@@ -73,7 +73,7 @@ namespace Rollgeon.Editor.Tools.Localization.Tests
         {
             // "Detonar la bomba" ya dice qué pasa, y el badge dice cuántos turnos faltan.
             AIIntentTextKeys.BombBlast + ".desc",
-            // "Te dispara" más el número de la tarjeta ya lo dicen entero, y "desde lejos" lo
+            // "Disparo" más el número de la tarjeta ya lo dicen entero, y "desde lejos" lo
             // dice la fila de familia del panel.
             AIIntentTextKeys.RangedShot + ".desc",
             // Tarjetas de solo título: el número dice cuánto, y las casillas marcadas del golpe

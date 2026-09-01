@@ -785,7 +785,7 @@ namespace Rollgeon.EditorTools.Localization
                 "Prende la sala entera menos lo que rodea al jefe.",
                 "Lights the whole room except what surrounds him.");
 
-            Content(AIIntentTextKeys.RangedShot + ".name", "Te dispara", "Shoots You");
+            Content(AIIntentTextKeys.RangedShot + ".name", "Disparo", "Shot");
             Content(AIIntentTextKeys.RangedShot + ".desc", string.Empty, string.Empty);
 
             Content(AIIntentTextKeys.BombField + ".name", "Bombas", "Bombs");
@@ -803,7 +803,7 @@ namespace Rollgeon.EditorTools.Localization
             Content(AIIntentTextKeys.Telegraph + ".name", "Golpe marcado", "Marked Strike");
             Content(AIIntentTextKeys.Telegraph + ".desc", string.Empty, string.Empty);
 
-            Content(AIIntentTextKeys.Attack + ".name", "Te ataca", "Attacks You");
+            Content(AIIntentTextKeys.Attack + ".name", "Golpe", "Strike");
             Content(AIIntentTextKeys.Attack + ".desc", string.Empty, string.Empty);
 
             Content(AIIntentTextKeys.Leaves + ".name", "Lo que deja", "What It Leaves");

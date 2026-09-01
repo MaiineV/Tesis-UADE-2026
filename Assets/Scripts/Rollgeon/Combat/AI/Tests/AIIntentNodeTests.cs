@@ -281,7 +281,7 @@ namespace Rollgeon.Combat.AI.Tests
 
             // Act + Assert
             Assert.IsFalse(node.TryDescribeIntent(Context(), out _),
-                "Anunció 'Te ataca' por un behavior que solo mueve energía.");
+                "Anunció 'Golpe' por un behavior que solo mueve energía.");
         }
 
         private static EnemyActionBehavior AttackBehavior(Rollgeon.Effects.Concretes.EffDealDamage damage)

@@ -55,7 +55,7 @@ namespace Rollgeon.UI.Tests
             // El número no desapareció: se mudó al costado del título de la tarjeta, que es dónde
             // un rebalanceo lo cambia sin retraducir nada (ver TooltipCardViewDamageTests).
             Assert.IsEmpty(rule,
-                "\"Te dispara\" más su número ya lo dicen entero, y \"desde lejos\" lo dice la " +
+                "\"Disparo\" más su número ya lo dicen entero, y \"desde lejos\" lo dice la " +
                 "familia del bicho arriba del panel. No quedaba nada para una frase.");
         }
 

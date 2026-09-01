@@ -1037,7 +1037,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 15516266126876673
-    m_Localized: Shoots You
+    m_Localized: Shot
     m_Metadata:
       m_Items: []
   - m_Id: 15516266126876674
@@ -1107,7 +1107,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 16825653806428161
-    m_Localized: Attacks You
+    m_Localized: Strike
     m_Metadata:
       m_Items: []
   - m_Id: 16825653806428162
