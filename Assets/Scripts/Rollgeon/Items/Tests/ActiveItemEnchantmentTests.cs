@@ -50,6 +50,7 @@ namespace Rollgeon.Items.Tests
         [TearDown]
         public void TearDown()
         {
+            _service?.Dispose();
             _equipped?.Dispose();
             foreach (var o in _spawned) if (o != null) UnityEngine.Object.DestroyImmediate(o);
             _spawned.Clear();
@@ -119,7 +120,7 @@ namespace Rollgeon.Items.Tests
             _roller.Next = 4;
 
             // Act
-            var result = _service.Confirm(selection: null);
+            var result = ConfirmAndAccept();
 
             // Assert
             Assert.IsNotNull(result);
@@ -140,7 +141,7 @@ namespace Rollgeon.Items.Tests
             _roller.Next = 5;
 
             // Act
-            var result = _service.Confirm(selection: null);
+            var result = ConfirmAndAccept();
 
             // Assert
             Assert.AreEqual(5, result.Value.Roll, "el tope propio lo frena en 5");
@@ -156,7 +157,7 @@ namespace Rollgeon.Items.Tests
             _roller.Next = 3;
 
             // Act
-            var result = _service.Confirm(selection: null);
+            var result = ConfirmAndAccept();
 
             // Assert
             Assert.AreEqual(6, result.Value.Roll, "clampeado al maximo del dado");
@@ -171,7 +172,7 @@ namespace Rollgeon.Items.Tests
             _roller.Next = 3;
 
             // Act
-            var result = _service.Confirm(selection: null);
+            var result = ConfirmAndAccept();
 
             // Assert
             Assert.AreEqual(1, result.Value.Roll);
@@ -189,7 +190,7 @@ namespace Rollgeon.Items.Tests
             _roller.Next = 1;
 
             // Act
-            var result = _service.Confirm(selection: null);
+            var result = ConfirmAndAccept();
 
             // Assert
             Assert.AreEqual(2, result.Value.Roll);
@@ -211,8 +212,8 @@ namespace Rollgeon.Items.Tests
             _roller.Next = 3;
 
             // Act
-            var first = _service.Confirm(selection: null);
-            var second = _service.Confirm(selection: null);
+            var first = ConfirmAndAccept();
+            var second = ConfirmAndAccept();
 
             // Assert
             Assert.AreEqual(4, first.Value.Roll, "el primer uso ajusta");
@@ -229,7 +230,7 @@ namespace Rollgeon.Items.Tests
             _equipped.ApplyEnchantment(NewEnchantment("e.unavez",
                 new RollFlatBonus { Amount = 1 }, usesPerCombat: 1));
             _roller.Next = 3;
-            _service.Confirm(selection: null);
+            ConfirmAndAccept();
             Assert.AreEqual(0, _equipped.EnchantmentUsesLeft);
 
             // Act
@@ -237,7 +238,7 @@ namespace Rollgeon.Items.Tests
 
             // Assert
             Assert.AreEqual(1, _equipped.EnchantmentUsesLeft);
-            Assert.AreEqual(4, _service.Confirm(selection: null).Value.Roll);
+            Assert.AreEqual(4, ConfirmAndAccept().Value.Roll);
         }
 
         [Test]
@@ -251,7 +252,7 @@ namespace Rollgeon.Items.Tests
             _roller.Next = 3;
 
             // Act
-            var result = _service.Confirm(selection: null);
+            var result = ConfirmAndAccept();
 
             // Assert
             Assert.AreEqual(3, result.Value.Roll);
@@ -268,7 +269,7 @@ namespace Rollgeon.Items.Tests
 
             // Act + Assert
             for (int i = 0; i < 5; i++)
-                Assert.AreEqual(3, _service.Confirm(selection: null).Value.Roll);
+                Assert.AreEqual(3, ConfirmAndAccept().Value.Roll);
         }
 
         [Test]
@@ -279,7 +280,7 @@ namespace Rollgeon.Items.Tests
             _roller.Next = 4;
 
             // Act
-            var result = _service.Confirm(selection: null);
+            var result = ConfirmAndAccept();
 
             // Assert
             Assert.AreEqual(4, result.Value.Roll);
@@ -333,6 +334,13 @@ namespace Rollgeon.Items.Tests
         // ------------------------------------------------------------------
 
         private void EquipItem(DiceType die) => _equipped.Equip(NewActiveItem("item.test", die));
+
+        /// <summary>
+        /// Activacion completa sin reroll: confirma y acepta la cara que salio. El
+        /// encantamiento corre al aceptar, que es lo que estos tests miran.
+        /// </summary>
+        private ActiveItemActivationResult? ConfirmAndAccept()
+            => _service.Confirm(selection: null) != null ? _service.AcceptRoll() : null;
 
         private ItemSO NewActiveItem(string id, DiceType die)
         {

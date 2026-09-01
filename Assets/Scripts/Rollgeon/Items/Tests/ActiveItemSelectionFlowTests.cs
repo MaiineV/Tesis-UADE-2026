@@ -69,6 +69,8 @@ namespace Rollgeon.Items.Tests
         [TearDown]
         public void TearDown()
         {
+            _service?.Dispose();
+            _equipped?.Dispose();
             foreach (var o in _spawned) if (o != null) UnityEngine.Object.DestroyImmediate(o);
             _spawned.Clear();
             EventManager.ResetEventDictionary();
@@ -93,6 +95,8 @@ namespace Rollgeon.Items.Tests
             Assert.IsFalse(_service.IsSelecting, "no queda esperando target");
             Assert.AreEqual(0, _selection.BeginCalls, "no abre el selector");
             Assert.AreEqual(4, _rolls.Current[_player], "cobra en el acto");
+            Assert.IsTrue(_service.IsAwaitingDecision,
+                "la ventana de reroll tambien existe para los items sin seleccion");
         }
 
         [Test]
@@ -222,8 +226,10 @@ namespace Rollgeon.Items.Tests
             _service.BeginActivation();
             var picked = new GridCoord(2, 3);
 
-            // Act
+            // Act — el target queda fijo durante la ventana de decision y viaja a los
+            // efectos al aceptar.
             _selection.Complete(TargetAt(picked));
+            _service.AcceptRoll();
 
             // Assert
             Assert.AreEqual(picked, Eff_CaptureTarget.LastCoord);

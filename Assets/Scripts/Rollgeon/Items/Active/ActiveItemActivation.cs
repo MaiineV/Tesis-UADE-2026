@@ -42,6 +42,28 @@ namespace Rollgeon.Items.Active
     }
 
     /// <summary>
+    /// Tirada pendiente de decision: el dado ya salio pero el jugador todavia no acepto.
+    /// Lo consume el HUD para mostrar la cara y ofrecer el reroll.
+    /// </summary>
+    public readonly struct ActiveItemPendingRoll
+    {
+        public readonly ItemSO Item;
+
+        /// <summary>Cara cruda vigente, antes del encantamiento (ese corre al aceptar).</summary>
+        public readonly int RawRoll;
+
+        /// <summary>Cuantos rerolls ya se pagaron en esta activacion. 0 = primera tirada.</summary>
+        public readonly int RerollCount;
+
+        public ActiveItemPendingRoll(ItemSO item, int rawRoll, int rerollCount)
+        {
+            Item = item;
+            RawRoll = rawRoll;
+            RerollCount = rerollCount;
+        }
+    }
+
+    /// <summary>
     /// Ejecuta la activacion del item activo equipado. GDD "Ítems Activos" §22.
     /// </summary>
     /// <remarks>
@@ -49,10 +71,14 @@ namespace Rollgeon.Items.Active
     /// <list type="number">
     ///   <item>Tocar el boton no cuesta nada y solo abre la seleccion.</item>
     ///   <item>Al confirmar el target se cobra 1 roll. Ese es el punto de no retorno.</item>
-    ///   <item>La tirada va inmediatamente despues, sin ventana intermedia.</item>
-    ///   <item>La banda decide que grupo de efectos corre.</item>
+    ///   <item>La tirada va inmediatamente despues y queda <b>pendiente de decision</b>:
+    ///         el jugador puede re-tirar el dado pagando 1 roll por tirada (las veces que
+    ///         el pool aguante) o aceptar el resultado, igual que en ataque/defensa.</item>
+    ///   <item>Al aceptar corren el encantamiento, la banda y sus efectos.</item>
     /// </list>
-    /// Cancelar antes de confirmar es gratis; despues no se puede.
+    /// Cancelar antes de confirmar es gratis. Despues no: cada tirada pagada se queda
+    /// pagada (nunca hay reembolso), y la unica salida de la ventana de decision es
+    /// aceptar la cara vigente. El target elegido queda fijo durante toda la ventana.
     /// </remarks>
     public interface IActiveItemActivationService
     {
@@ -99,18 +125,56 @@ namespace Rollgeon.Items.Active
         event Action OnSelectionCancelled;
 
         /// <summary>
-        /// Confirma la activacion: cobra 1 roll, tira el dado y resuelve la banda.
+        /// Confirma la activacion: cobra 1 roll, tira el dado y deja la tirada
+        /// <b>pendiente de decision</b> (ver <see cref="AcceptRoll"/> y
+        /// <see cref="RequestReroll"/>). Los efectos todavia no corren.
         /// </summary>
         /// <param name="selection">
         /// Target ya elegido, o <c>null</c> para los items que activan directo sin paso
         /// de seleccion.
         /// </param>
         /// <returns>
-        /// El resultado, o <c>null</c> si la activacion fue rechazada (ver
+        /// La tirada pendiente, o <c>null</c> si la activacion fue rechazada (ver
         /// <see cref="CanActivate"/>) o no se pudo cobrar el roll. En ese caso no se
         /// cobro nada ni se tiro el dado.
         /// </returns>
-        ActiveItemActivationResult? Confirm(TargetSelectionResult selection);
+        ActiveItemPendingRoll? Confirm(TargetSelectionResult selection);
+
+        /// <summary><c>true</c> mientras hay una tirada esperando aceptar o re-tirar.</summary>
+        bool IsAwaitingDecision { get; }
+
+        /// <summary>La tirada pendiente de decision, o <c>null</c> si no hay ninguna.</summary>
+        ActiveItemPendingRoll? Pending { get; }
+
+        /// <summary>
+        /// <c>true</c> si hay tirada pendiente y el pool alcanza para pagar otro roll.
+        /// Read-only, sin efectos secundarios: el HUD lo consulta para gatear el boton.
+        /// </summary>
+        bool CanRequestReroll { get; }
+
+        /// <summary>
+        /// Re-tira el dado pagando 1 roll, como el reroll de ataque/defensa. La tirada
+        /// nueva reemplaza a la anterior y vuelve a quedar pendiente — se puede repetir
+        /// mientras el pool aguante.
+        /// </summary>
+        /// <returns>
+        /// <c>false</c> si no habia tirada pendiente o no se pudo cobrar. En ese caso la
+        /// cara vigente no cambia y la unica salida sigue siendo <see cref="AcceptRoll"/>.
+        /// </returns>
+        bool RequestReroll();
+
+        /// <summary>
+        /// Acepta la cara vigente y resuelve la activacion: encantamiento, banda y
+        /// efectos, en ese orden (§14). No cuesta nada.
+        /// </summary>
+        /// <returns>El resultado, o <c>null</c> si no habia tirada pendiente.</returns>
+        ActiveItemActivationResult? AcceptRoll();
+
+        /// <summary>
+        /// Disparado en cada tirada que queda pendiente de decision (la primera y cada
+        /// reroll). El HUD lo usa para girar el dado dentro del slot.
+        /// </summary>
+        event Action<ActiveItemPendingRoll> OnRollPending;
 
         /// <summary>
         /// Disparado tras cada activacion resuelta. El HUD lo usa para mostrar la cara
