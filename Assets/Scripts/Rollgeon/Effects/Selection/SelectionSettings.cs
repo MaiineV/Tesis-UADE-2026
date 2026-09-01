@@ -161,9 +161,11 @@ namespace Rollgeon.Effects.Selection
             if (!RangeFromMovementDie) return Range;
             if (!ServiceLocator.TryGetService<IMovementDieService>(out var die) || die == null)
                 return Range;
+            // Piso 1: un malus de MoveRange (Guantelete Pesado) nunca deja al jugador
+            // sin poder moverse (GDD: "la velocidad no baja del mínimo").
             int bonus = ResolveMoveRangeBonus(ownerGuid);
-            if (die.TryGetActiveRange(ownerGuid, out var rolled)) return rolled + bonus;
-            return die.CurrentType.MaxFace() + bonus;
+            if (die.TryGetActiveRange(ownerGuid, out var rolled)) return Math.Max(1, rolled + bonus);
+            return Math.Max(1, die.CurrentType.MaxFace() + bonus);
         }
 
         // Bonus de MoveRange del owner; degrada a 0 sin AttributesManager o si la

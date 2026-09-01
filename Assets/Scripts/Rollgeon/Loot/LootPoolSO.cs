@@ -134,6 +134,8 @@ namespace Rollgeon.Loot
                 for (int i = 0; i < Items.Count; i++)
                 {
                     if (Items[i] == null || Items[i].Rarity != rarity) continue;
+                    // Estilo Isaac: un UniquePerRun ya poseído no vuelve a dropear.
+                    if (UniquePerRunGate.IsBlocked(Items[i])) continue;
                     bucket ??= new List<ItemSO>();
                     bucket.Add(Items[i]);
                 }

@@ -82,8 +82,9 @@ namespace Rollgeon.Editor.Tools.Polymorphic.Tests
             var model = BlockGraphModel.Build(item);
 
             Assert.AreEqual(BlockNodeKind.Root, model.Root.Kind);
-            // Tres grupos por banda (modelo nuevo) + OnActivate (camino viejo, todavia vivo).
-            Assert.AreEqual(4, model.Root.Children.Count);
+            // Tres grupos por banda (modelo nuevo) + OnActivate (camino viejo, todavia
+            // vivo) + BaseDamageOverride (Feature#0065, Furia Contenida).
+            Assert.AreEqual(5, model.Root.Children.Count);
 
             var group = ActivateGroup(model);
             Assert.AreEqual(BlockNodeKind.Group, group.Kind);

@@ -553,7 +553,7 @@ namespace Rollgeon.ActionRolls
             _currentCombo = null;
             _currentComboFlatBase = 0;
             _currentComboDynamicBonus = 0;
-            _currentEffectiveTotal = heldSum;
+            _currentEffectiveTotal = heldSum + ResolveKindRollBonus();
             _currentComboResult = null;
             EmitComboMatched();
         }
@@ -586,14 +586,30 @@ namespace Rollgeon.ActionRolls
 
             _currentComboFlatBase = flatBase;
             _currentComboDynamicBonus = dynamicBonus;
-            _currentEffectiveTotal = flatBase + dynamicBonus;
+            _currentEffectiveTotal = flatBase + dynamicBonus + ResolveKindRollBonus();
 
             // Detección REAL para el outcome — índices relativos al subset holdeado
-            // (_currentHeldFaces). Invariante: EffectiveTotal del result == _currentEffectiveTotal
-            // porque ambos son flatBase + dynamicBonus.
+            // (_currentHeldFaces). El ComboDetectionResult NO lleva el bonus por tipo de
+            // tirada (ResolveKindRollBonus): es del ROLL, no del combo — viaja solo por
+            // _currentEffectiveTotal / outcome.EffectiveTotal.
             _currentComboResult = ComboDetectionResult.Match(
                 combo.ComboId, flatBase, detected.CountUsed,
                 detected.IsMatch ? detected.ContributingIndices : null, dynamicBonus);
+        }
+
+        /// <summary>
+        /// Bonus plano por TIPO de tirada, independiente del combo. Hoy solo Force Door
+        /// (stat <see cref="Rollgeon.Attributes.Stats.ForceDoorRollBonus"/>, items tipo
+        /// Pico de Minero). Degrada a 0 sin AttributesManager o sin el stat.
+        /// </summary>
+        private int ResolveKindRollBonus()
+        {
+            if (_spec.Kind != RollActionKind.ForceDoor) return 0;
+            if (_playerGuid == Guid.Empty) return 0;
+            if (!ServiceLocator.TryGetService<Rollgeon.Attributes.AttributesManager>(out var attrs)
+                || attrs == null)
+                return 0;
+            return attrs.GetAttributeModifiedValue<Rollgeon.Attributes.Stats.ForceDoorRollBonus, int>(_playerGuid);
         }
 
         // Publica el combo actual en el bus tipado para que el DamageFormulaView (y

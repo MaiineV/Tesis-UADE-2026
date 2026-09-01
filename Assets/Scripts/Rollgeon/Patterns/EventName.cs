@@ -401,5 +401,14 @@ namespace Patterns
         /// Movimiento con presenter (spin en la mesa). Abre la mesa de dados igual que
         /// <c>OnDiceRolled</c>/<c>OnChainStarted</c>. No se emite en reveals sincrónicos.</summary>
         OnMovementDieRollStarted,
+
+        // --- Roll pool: leftover al fin de turno -----------------------------------
+        // NOTA: al final absoluto del enum a propósito (ver OnReinforcementSpawned).
+        /// <summary>args: [Guid playerGuid, int leftover]. El turno del jugador terminó con
+        /// <c>leftover</c> rolls sin consumir en el pool. Lo emite <c>RollPoolService</c>
+        /// ANTES del grant por turno y del clamp: dentro de este dispatch,
+        /// <c>IRollPoolService.GetCurrent</c> == leftover (lo que <c>ReadCurrentRolls</c>
+        /// aprovecha). Items "Corazón/Tesoro de la fortuna" cuelgan de acá.</summary>
+        OnPlayerTurnRollsLeftover,
     }
 }

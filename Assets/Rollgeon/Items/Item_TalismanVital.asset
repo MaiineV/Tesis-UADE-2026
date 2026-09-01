@@ -63,7 +63,7 @@ MonoBehaviour:
       Data: 0
     - Name: Subject
       Entry: 3
-      Data: 0
+      Data: 2
     - Name: Effect
       Entry: 7
       Data: 4|Rollgeon.Effects.EffectData, Rollgeon
@@ -92,7 +92,7 @@ MonoBehaviour:
       Data: 1
     - Name: 
       Entry: 7
-      Data: 7|Rollgeon.Effects.Concretes.EffModifyIntAttribute, Rollgeon
+      Data: 7|Rollgeon.Effects.Concretes.EffHeal, Rollgeon
     - Name: Selection
       Entry: 7
       Data: 8|Rollgeon.Effects.Selection.SelectionSettings, Rollgeon
@@ -177,13 +177,7 @@ MonoBehaviour:
     - Name: 
       Entry: 8
       Data: 
-    - Name: TargetStat
-      Entry: 3
-      Data: 0
-    - Name: Operation
-      Entry: 3
-      Data: 0
-    - Name: _amountSource
+    - Name: _healSource
       Entry: 3
       Data: 0
     - Name: _baseAmount
@@ -198,9 +192,39 @@ MonoBehaviour:
     - Name: _readerMultiplier
       Entry: 4
       Data: 1
-    - Name: _clampHealthToMax
+    - Name: _isPercentOfMax
       Entry: 5
       Data: false
+    - Name: _useBuildDice
+      Entry: 5
+      Data: false
+    - Name: _healThreshold
+      Entry: 3
+      Data: 30
+    - Name: _healScaleFactor
+      Entry: 4
+      Data: 1
+    - Name: _healMaxCap
+      Entry: 3
+      Data: 0
+    - Name: _useDiceRoll
+      Entry: 5
+      Data: false
+    - Name: _diceCount
+      Entry: 3
+      Data: 1
+    - Name: _diceFaces
+      Entry: 3
+      Data: 10
+    - Name: _diceResultMultiplier
+      Entry: 3
+      Data: 1
+    - Name: _sourceTag
+      Entry: 1
+      Data: eff.heal
+    - Name: _selfHealOnNoTarget
+      Entry: 5
+      Data: true
     - Name: 
       Entry: 8
       Data: 

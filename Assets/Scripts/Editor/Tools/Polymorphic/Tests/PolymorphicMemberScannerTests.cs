@@ -76,8 +76,15 @@ namespace Rollgeon.Editor.Tools.Polymorphic.Tests
         {
             var names = NamesOf(PolymorphicMemberScanner.BlockMembersOf(typeof(ItemSO)));
 
+            // Unión Feature#0064 + #0065: las tres bandas del modelo nuevo de activos y
+            // BaseDamageOverride (su BaseValue es un EffectIntReader — picker escondido
+            // que la tool tiene que poder autorar, Furia Contenida).
             CollectionAssert.AreEquivalent(
-                new[] { "PassiveHooks", "OnNegativeBand", "OnMixedBand", "OnPositiveBand", "OnActivate" },
+                new[]
+                {
+                    "PassiveHooks", "BaseDamageOverride",
+                    "OnNegativeBand", "OnMixedBand", "OnPositiveBand", "OnActivate",
+                },
                 names);
         }
 

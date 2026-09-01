@@ -26,12 +26,12 @@ namespace Rollgeon.Editor.Tools.Item
     /// legible y una lista cerrada, para que lo que se ofrece sea lo que funciona.
     /// </para>
     /// <para>
-    /// <b>No están, y no por olvido:</b> <c>OnCombatStart</c> y <c>OnRunStart</c> llevan en
-    /// <c>args[0]</c> el id de la sala y de la run, no el del jugador, así que el filtro del hook
-    /// los descarta siempre; <c>OnComboCrossed</c> se dispara con <c>Guid.Empty</c>; y
-    /// <c>OnPlayerHealthChanged</c> no lo emite nadie en producción — la vida viaja por
-    /// <c>TypedEvent&lt;HealthChangedPayload&gt;</c>, al que un hook de ítem no llega. Los cuatro
-    /// se ven perfectamente elegibles en el desplegable crudo y no disparan nunca.
+    /// <b>No están, y no por olvido:</b> <c>OnRunStart</c> lleva en <c>args[0]</c> el id de la
+    /// run, no el del jugador, así que el filtro del hook lo descarta siempre; y
+    /// <c>OnComboCrossed</c> se dispara con <c>Guid.Empty</c>. Ambos se ven perfectamente
+    /// elegibles en el desplegable crudo y no disparan nunca. <c>OnCombatStart</c> (mismo
+    /// problema: args[0] es la sala) SÍ está, pero declarado con
+    /// <see cref="PassiveHookSubject.None"/>, que desactiva el filtro de entidad.
     /// </para>
     /// <para>
     /// <b>Al sumar una entrada</b>, confirmá contra el <c>EventManager.Trigger</c> real qué lleva
@@ -111,11 +111,21 @@ namespace Rollgeon.Editor.Tools.Item
                   "Dispara sólo con los combos que elijas, antes de que se aplique el daño.",
                   usesComboIds: true),
 
+            // --- Combate -------------------------------------------------------
+            Bus("combat.start", "Cuando entrás a un combate",
+                "Al iniciarse el combate de la sala. El evento lleva la sala, no al jugador, " +
+                "así que no filtra por entidad — el combate siempre es del jugador.",
+                EventName.OnCombatStart, PassiveHookSubject.None, filtersByEntity: false),
+
             // --- Turno ---------------------------------------------------------
             Bus("turn.start", "Cuando empieza tu turno",
                 "Al arrancar el turno del jugador.", EventName.OnTurnStarted),
             Bus("turn.end", "Cuando termina tu turno",
                 "Al cerrar el turno del jugador.", EventName.OnTurnFinished),
+            Bus("turn.rolls.leftover", "Al terminar tu turno con rolls sin usar",
+                "Suena ANTES de que el pool regale los rolls del turno siguiente: un reader " +
+                "de rolls (ReadCurrentRolls) lee acá exactamente los sobrantes.",
+                EventName.OnPlayerTurnRollsLeftover),
 
             // --- Tirada --------------------------------------------------------
             Bus("roll.start", "Cuando empezás a tirar",
@@ -140,6 +150,10 @@ namespace Rollgeon.Editor.Tools.Item
                 "El golpe acertó la debilidad del enemigo.", EventName.OnWeaknessHit),
 
             // --- Recursos ------------------------------------------------------
+            Bus("health.changed", "Cuando cambia tu vida",
+                "Daño o cura sobre el jugador, con la vida ya escrita. Lo emite " +
+                "PlayerHealthEventBridge — args: [jugador, vida actual, máximo].",
+                EventName.OnPlayerHealthChanged),
             Bus("shield.changed", "Cuando cambia tu escudo",
                 "Sube o baja.", EventName.OnShieldChanged),
             Bus("gold.changed", "Cuando cambia tu oro",

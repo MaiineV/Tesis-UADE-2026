@@ -181,6 +181,52 @@ namespace Rollgeon.Attributes
             return ok;
         }
 
+        /// <summary>
+        /// Variante runtime-<see cref="Type"/> de <see cref="AddModifier{TAttribute,TValue}"/>
+        /// para llamadores que solo tienen el tipo serializado del atributo
+        /// (ej. <c>PersistentModifierDef.TargetStat</c>). Dispara los mismos eventos.
+        /// </summary>
+        public bool AddModifier(Guid entityId, Type attributeType, Modifier<int> modifier)
+        {
+            if (modifier == null)
+            {
+                throw new ArgumentNullException(nameof(modifier));
+            }
+            if (attributeType == null)
+            {
+                return false;
+            }
+            var attrs = GetAttributes(entityId);
+            if (attrs == null)
+            {
+                return false;
+            }
+
+            IModifiable attr = null;
+            foreach (var kvp in attrs.EnumerateEntries())
+            {
+                if (kvp.Key == attributeType)
+                {
+                    attr = kvp.Value;
+                    break;
+                }
+            }
+            if (attr == null)
+            {
+                return false;
+            }
+
+            bool ok = attr.AddModifier<int>(modifier);
+            if (ok)
+            {
+                EventManager.Trigger(
+                    EventName.OnModifierAdded,
+                    entityId, attributeType, modifier.ModifierId);
+                EventManager.Trigger(EventName.OnAttributeChanged, entityId, attributeType);
+            }
+            return ok;
+        }
+
         public bool RemoveModifier<TAttribute, TValue>(Guid entityId, Guid modifierId)
             where TAttribute : class, IModifiable<TValue>
         {

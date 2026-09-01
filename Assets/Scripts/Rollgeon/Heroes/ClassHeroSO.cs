@@ -151,5 +151,12 @@ namespace Rollgeon.Heroes
         [InfoBox("Items que el jugador recibe automáticamente al arrancar la run. Ej: 1 poción de healing.")]
         [SerializeField]
         public List<ItemSO> StartingItems = new List<ItemSO>();
+
+        [InfoBox("ItemIds que esta clase 'posee' de nacimiento SIN tenerlos en el inventario " +
+                 "(ej. Warrior → instinto.supervivencia: su pasiva de clase ES ese item). Los " +
+                 "pools los tratan como ya obtenidos — un item UniquePerRun de esta lista no " +
+                 "aparece en tiendas/loot de las runs de esta clase (UniquePerRunGate).")]
+        [SerializeField]
+        public List<string> InnateItemIds = new List<string>();
     }
 }

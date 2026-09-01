@@ -79,6 +79,14 @@ namespace Rollgeon.Effects
         /// </summary>
         public int? ActionRollEffectiveTotal;
 
+        /// <summary>
+        /// ItemId del item pasivo cuyo hook armó este contexto. Null fuera del canal de
+        /// items. Permite a efectos/PCs derivar identidad estable por item (ej.
+        /// <c>ItemPassiveSourceId</c> para modifiers one-shot) sin acoplar el pipeline
+        /// genérico de efectos al inventario.
+        /// </summary>
+        public string SourceItemId;
+
         /// <summary>Behavior que armó este contexto — expone <c>SetBehaviorValue</c> (§9.3).</summary>
         public BaseBehavior SourceBehavior;
 

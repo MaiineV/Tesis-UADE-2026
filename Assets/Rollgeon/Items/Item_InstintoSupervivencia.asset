@@ -36,7 +36,7 @@ MonoBehaviour:
       Data: 0
     - Name: TriggerEvent
       Entry: 3
-      Data: 41
+      Data: 48
     - Name: ComboFilter
       Entry: 7
       Data: 2|Rollgeon.Upgrades.Dice.ComboFilter, Rollgeon
@@ -92,7 +92,7 @@ MonoBehaviour:
       Data: 1
     - Name: 
       Entry: 7
-      Data: 7|Rollgeon.Effects.Concretes.EffAddShield, Rollgeon
+      Data: 7|Rollgeon.Effects.Concretes.EffThresholdCrossCombatBuff, Rollgeon
     - Name: Selection
       Entry: 7
       Data: 8|Rollgeon.Effects.Selection.SelectionSettings, Rollgeon
@@ -177,21 +177,12 @@ MonoBehaviour:
     - Name: 
       Entry: 8
       Data: 
-    - Name: _shieldSource
-      Entry: 3
-      Data: 0
-    - Name: _baseAmount
+    - Name: _hpThresholdPercent
+      Entry: 4
+      Data: 0.3
+    - Name: _attackBonus
       Entry: 3
       Data: 10
-    - Name: _comboMultiplier
-      Entry: 4
-      Data: 1
-    - Name: _reader
-      Entry: 6
-      Data: 
-    - Name: _readerMultiplier
-      Entry: 4
-      Data: 1
     - Name: 
       Entry: 8
       Data: 
@@ -229,15 +220,30 @@ MonoBehaviour:
     - Name: 
       Entry: 8
       Data: 
+    - Name: BaseDamageOverride
+      Entry: 7
+      Data: 11|Rollgeon.Items.BaseDamageOverrideDef, Rollgeon
+    - Name: Enabled
+      Entry: 5
+      Data: false
+    - Name: BaseValue
+      Entry: 6
+      Data: 
+    - Name: Priority
+      Entry: 3
+      Data: 0
+    - Name: 
+      Entry: 8
+      Data: 
     - Name: OnActivate
       Entry: 7
-      Data: 11|Rollgeon.Effects.EffectData, Rollgeon
+      Data: 12|Rollgeon.Effects.EffectData, Rollgeon
     - Name: Label
       Entry: 1
       Data: Effect Group
     - Name: PreConditions
       Entry: 7
-      Data: 12|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
+      Data: 13|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
         Rollgeon]], mscorlib
     - Name: 
       Entry: 12
@@ -250,7 +256,7 @@ MonoBehaviour:
       Data: 
     - Name: Effects
       Entry: 7
-      Data: 13|System.Collections.Generic.List`1[[Rollgeon.Effects.IEffect, Rollgeon]],
+      Data: 14|System.Collections.Generic.List`1[[Rollgeon.Effects.IEffect, Rollgeon]],
         mscorlib
     - Name: 
       Entry: 12
@@ -275,6 +281,12 @@ MonoBehaviour:
   FamilyId: 
   VariantIndex: 0
   Type: 0
+  UniquePerRun: 1
+  RollPoolBonus: 0
+  ActiveSlotBonus: 0
+  EnchantmentCostMultiplier: 1
+  SecondWind: 0
+  SecondWindRemainingHp: 1
   OnActivate:
     Label: Effect Group
     PreConditions: []

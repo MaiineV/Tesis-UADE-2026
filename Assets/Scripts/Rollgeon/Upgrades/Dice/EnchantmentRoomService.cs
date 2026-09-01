@@ -82,7 +82,10 @@ namespace Rollgeon.Upgrades.Dice
                 return;
             }
 
-            int cost = _config != null ? _config.BaseCost : 0;
+            // Mismo costo que va a cobrar RollOffer (escalado por rolls previos y
+            // modificado por items) — antes acá se mostraba el BaseCost pelado y el
+            // altar mentía apenas la palanca escalaba.
+            int cost = ResolveCost();
             Guid playerGuid = ResolvePlayerGuid();
             EventManager.Trigger(EventName.OnEnchantmentAltarActivated, playerGuid, roomInstanceId, cost);
         }
@@ -90,10 +93,24 @@ namespace Rollgeon.Upgrades.Dice
         public int ResolveCost()
         {
             if (_config == null) return 0;
-            if (!ServiceLocator.TryGetService<IDiceEnchantmentService>(out var enchSvc)
-                || enchSvc?.Bag == null) return _config.BaseCost;
+            int baseCost = ServiceLocator.TryGetService<IDiceEnchantmentService>(out var enchSvc)
+                           && enchSvc?.Bag != null
+                ? _config.ResolveCost(enchSvc.Bag.GetDieCounter(RunCounterIndex, AltarRollKey))
+                : _config.BaseCost;
+            return ApplyCostModifiers(baseCost);
+        }
 
-            return _config.ResolveCost(enchSvc.Bag.GetDieCounter(RunCounterIndex, AltarRollKey));
+        // Items que abaratan/encarecen el altar (Moneda Maldita ×0.5). Piso 1:
+        // el descuento nunca deja el costo en 0 (GDD).
+        private static int ApplyCostModifiers(int baseCost)
+        {
+            if (baseCost <= 0) return baseCost;
+            if (!ServiceLocator.TryGetService<IEnchantmentCostModifierService>(out var mods)
+                || mods == null)
+                return baseCost;
+            float m = mods.ResolveMultiplier();
+            if (Mathf.Approximately(m, 1f)) return baseCost;
+            return Mathf.Max(1, Mathf.CeilToInt(baseCost * m));
         }
 
         public EnchantmentOffer? CurrentOffer => _currentOffer;
@@ -115,7 +132,7 @@ namespace Rollgeon.Upgrades.Dice
             }
 
             var bag = enchSvc.Bag;
-            int cost = _config.ResolveCost(bag.GetDieCounter(RunCounterIndex, AltarRollKey));
+            int cost = ApplyCostModifiers(_config.ResolveCost(bag.GetDieCounter(RunCounterIndex, AltarRollKey)));
 
             if (!ServiceLocator.TryGetService<IEconomyService>(out var economy) || economy == null)
                 return EnchantmentOfferResult.Fail("Economy service no registrado.");
@@ -269,7 +286,7 @@ namespace Rollgeon.Upgrades.Dice
             }
             else
             {
-                int cost = _config != null ? _config.BaseCost : 0;
+                int cost = ResolveCost();
                 altar.Configure(room.InstanceId, AltarSpawnPointKey, this, cost);
                 Debug.Log(LogPrefix + $"Altar instanciado en {spawnPoint.position} " +
                                       $"(parent={(parent != null ? parent.name : "null")}, " +

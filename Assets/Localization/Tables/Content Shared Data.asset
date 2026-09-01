@@ -1387,6 +1387,38 @@ MonoBehaviour:
     m_Key: corona.de.la.casa.real.desc
     m_Metadata:
       m_Items: []
+  - m_Id: 17566757004951552
+    m_Key: moneda.maldita.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17566757088837632
+    m_Key: moneda.maldita.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17566757822840832
+    m_Key: corredor.incansable.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17566757822840833
+    m_Key: corredor.incansable.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17566758561038336
+    m_Key: piedra.de.guardia.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17566758561038337
+    m_Key: piedra.de.guardia.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17566759316013056
+    m_Key: furia.contenida.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17566759316013057
+    m_Key: furia.contenida.desc
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

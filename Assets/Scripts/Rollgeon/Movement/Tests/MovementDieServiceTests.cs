@@ -296,12 +296,14 @@ namespace Rollgeon.Movement.Tests
             public int AbortCount;
             public DiceType LastType;
             public int LastFace;
+            public int LastRangeBonus;
 
-            public bool TryPresent(DiceType type, int face, Action onRevealed)
+            public bool TryPresent(DiceType type, int face, int rangeBonus, Action onRevealed)
             {
                 PresentCount++;
                 LastType = type;
                 LastFace = face;
+                LastRangeBonus = rangeBonus;
                 _pending = onRevealed;
                 return true;
             }

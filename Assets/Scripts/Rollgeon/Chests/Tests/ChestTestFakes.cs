@@ -39,6 +39,7 @@ namespace Rollgeon.Chests.Tests
         public IReadOnlyList<InventorySlot> PassiveItems => Array.Empty<InventorySlot>();
         public IReadOnlyList<InventorySlot> ActiveItems => Array.Empty<InventorySlot>();
         public int MaxActiveSlots => 4;
+        public void AddActiveSlotBonus(int amount) { }
 
 #pragma warning disable 67
         public event Action<ItemSO, bool> OnItemChanged;

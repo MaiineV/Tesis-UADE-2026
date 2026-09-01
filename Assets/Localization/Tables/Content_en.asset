@@ -1411,6 +1411,39 @@ MonoBehaviour:
     m_Localized: "+30 de da\xF1o en el combo Full House."
     m_Metadata:
       m_Items: []
+  - m_Id: 17566757004951552
+    m_Localized: Cursed Coin
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17566757088837632
+    m_Localized: Altar enchantments cost half as much.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17566757822840832
+    m_Localized: Tireless Runner
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17566757822840833
+    m_Localized: +5 damage for every tile you moved before attacking.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17566758561038336
+    m_Localized: Sentinel Stone
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17566758561038337
+    m_Localized: +15 damage if you did not move this turn.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17566759316013056
+    m_Localized: Pent-Up Fury
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17566759316013057
+    m_Localized: Your base damage becomes 0 and grows each round you avoid damage.
+      Taking damage resets it.
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

@@ -38,6 +38,12 @@ namespace Rollgeon.Items
         [EnumToggleButtons]
         public ItemType Type;
 
+        [Title("Pools")]
+        [InfoBox("Estilo Isaac: si está activo y el jugador YA lo tiene (inventario o innato " +
+                 "de su clase — ClassHeroSO.InnateItemIds), el item deja de salir en tiendas " +
+                 "y loot de esta run. Para items que el GDD marca \"no stackea\".")]
+        public bool UniquePerRun;
+
         [Title("Passive Effects")]
         [InfoBox("Se aplican automaticamente al obtener el item. Se remueven si el item se pierde.")]
         [ShowIf("@Type == ItemType.Passive")]
@@ -52,6 +58,50 @@ namespace Rollgeon.Items
         // el bloque "PassiveHooks:" plano del YAML es la copia muerta que Odin ya avisa que sobra.
         [NonSerialized, OdinSerialize]
         public List<PassiveItemHook> PassiveHooks = new();
+
+        [Title("Base Damage Override")]
+        [InfoBox("SOLO para la categoría de items que redefinen el daño base (Furia Contenida, " +
+                 "Egoísta — excluyentes entre sí por GDD). Mientras el item esté en el inventario, " +
+                 "dmg_base_PJ de la fórmula N×M lo resuelve el reader en cada golpe.")]
+        [ShowIf("@Type == ItemType.Passive")]
+        // Mismo mecanismo que PassiveHooks: [NonSerialized] apaga la copia nativa de Unity,
+        // el dato real vive en serializationData (SerializedScriptableObject).
+        [NonSerialized, OdinSerialize]
+        public BaseDamageOverrideDef BaseDamageOverride = new();
+
+        [Title("Roll Pool")]
+        [InfoBox("Bonus PERMANENTE al pool de rolls mientras el item esté en el inventario " +
+                 "(sube el máximo y los rolls de arranque de cada combate). Llamado de " +
+                 "Emergencia: 1. Se revierte al perder el item.")]
+        [ShowIf("@Type == ItemType.Passive")]
+        [MinValue(0)]
+        public int RollPoolBonus;
+
+        [Title("Active Slots")]
+        [InfoBox("Slots de items activos extra mientras el item esté en el inventario. " +
+                 "Mochila Grande: 1. Se revierte al perder el item.")]
+        [ShowIf("@Type == ItemType.Passive")]
+        [MinValue(0)]
+        public int ActiveSlotBonus;
+
+        [Title("Enchantment Altar")]
+        [InfoBox("Multiplicador del costo del altar de encantamiento mientras el item esté " +
+                 "en el inventario. Moneda Maldita: 0.5. 1 = sin efecto. El costo final " +
+                 "nunca baja de 1.")]
+        [ShowIf("@Type == ItemType.Passive")]
+        [MinValue(0.01f)]
+        public float EnchantmentCostMultiplier = 1f;
+
+        [Title("Second Wind")]
+        [InfoBox("Si está activo, la primera vez que el jugador llegaría a 0 HP queda con " +
+                 "SecondWindRemainingHp en vez de morir, y el item SE CONSUME (se remueve " +
+                 "del inventario) — eso implementa la carga única por run y su persistencia.")]
+        [ShowIf("@Type == ItemType.Passive")]
+        public bool SecondWind;
+
+        [ShowIf("@Type == ItemType.Passive && SecondWind")]
+        [MinValue(1)]
+        public int SecondWindRemainingHp = 1;
 
         // ==================================================================
         // Modelo nuevo (GDD "Ítems Activos"): slot unico, dado propio y bandas.

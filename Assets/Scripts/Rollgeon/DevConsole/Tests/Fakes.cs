@@ -79,6 +79,7 @@ namespace Rollgeon.DevConsole.Tests
         public IReadOnlyList<InventorySlot> PassiveItems => Array.Empty<InventorySlot>();
         public IReadOnlyList<InventorySlot> ActiveItems => Array.Empty<InventorySlot>();
         public int MaxActiveSlots { get; set; } = 3;
+        public void AddActiveSlotBonus(int amount) => MaxActiveSlots += amount;
 
         public bool AddItem(ItemSO item)
         {

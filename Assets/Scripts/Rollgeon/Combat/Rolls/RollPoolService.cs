@@ -267,6 +267,10 @@ namespace Rollgeon.Combat.Rolls
             if (!(args[0] is Guid entityId)) return;
             if (!_inCombat || !IsPlayer(entityId)) return;
 
+            // ANTES del grant/clamp: los suscriptores (items "de la fortuna") leen el
+            // pool todavía sin regalos — GetCurrent == leftover durante este dispatch.
+            EventManager.Trigger(EventName.OnPlayerTurnRollsLeftover, entityId, _current);
+
             int newVal = Math.Min(GetMax(entityId), _current + GetRollsPerTurn(entityId));
             if (newVal == _current) return; // no-op: no disparamos evento redundante.
 

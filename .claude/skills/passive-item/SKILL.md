@@ -265,7 +265,14 @@ return sb.ToString();
 `[quienPega, quienRecibe, danio]` y el hook compara al jugador contra `args[0]` por defecto, asi
 que colgarse de ese evento sin mas dispara **al pegar**. El catalogo tiene las dos entradas
 separadas (`damage.dealt.final` y `damage.taken`) y pone el `Subject` correcto. Si lo autoras a
-mano, `PassiveHookSubject.Target` es "cuando te pegan".
+mano, `PassiveHookSubject.Target` es "cuando te pegan" y `PassiveHookSubject.None` desactiva el
+filtro por completo (para eventos cuyo `args[0]` no es el jugador, ej. `combat.start`). En
+eventos de dos entidades, el guid que NO es el subject viaja como `TargetGuid` del contexto —
+con `damage.taken` + `EffDealDamage`, el daño va al atacante (Amuleto de Reflejo).
+
+**Items sin hooks son validos** si usan las perillas de lifecycle de `ItemSO` (Feature#0065):
+`RollPoolBonus`, `ActiveSlotBonus`, `EnchantmentCostMultiplier`, `SecondWind`,
+`BaseDamageOverride`, `UniquePerRun` — ver la seccion nueva del cheatsheet.
 
 ## Paso 4-bis — Familias de variantes
 

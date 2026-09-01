@@ -137,6 +137,9 @@ namespace Rollgeon.Shop
             if (exclude != null && exclude.Contains(rewardEntry)) return false;
             // Meta-progresión (#164): ítems gateados quedan fuera hasta desbloquearse.
             if (!MetaUnlockGate.IsAvailable(UnlockableCategory.ShopItem, rewardEntry.EntryId)) return false;
+            // Estilo Isaac: un UniquePerRun ya poseído (inventario o innato de clase)
+            // sale de la pool por el resto de la run.
+            if (Rollgeon.Items.UniquePerRunGate.IsBlocked(rewardEntry)) return false;
             return true;
         }
     }
