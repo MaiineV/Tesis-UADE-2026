@@ -674,16 +674,16 @@ namespace Rollgeon.EditorTools.Localization
                 "Pega más fuerte cuanto más oro llevás. Las fichas que dejás vencer se las queda.",
                 "Hits harder the more gold you carry. Chips you let expire, he keeps.");
             Content("boss.la_generala.brief",
-                "Suelta anillos eléctricos en oleadas — movete entre anillo y anillo.",
-                "Unleashes electric rings in waves — move between rings.");
+                "Suelta anillos eléctricos en oleadas, con huecos entre anillo y anillo.",
+                "Unleashes electric rings in waves, with gaps between the rings.");
             // El refuerzo del Cajero es un ranged común más: misma identidad que RangedEnemy01
             // a propósito — un nombre propio le prometía al jugador una mecánica que no tiene.
             Content("minion.cajero_comision.brief",
-                "Dispara de lejos; cortá la línea o cerrale la distancia.",
-                "Shoots from afar; break the line or close the gap.");
+                "Dispara de lejos.",
+                "Shoots from afar.");
             Content("obj.dado_casa.brief",
-                "No ataca. Rompelo: por cada dado roto, la Generala pierde uno de sus combos.",
-                "It doesn't attack. Break it: for every die broken, the Generala loses one of her combos.");
+                "No ataca. Cada dado roto le saca un combo a la Generala.",
+                "It doesn't attack. Every die broken takes a combo away from the Generala.");
 
             // La bomba del Croupier (RoomObjectTooltipInfo arma su panel con estas keys). La frase
             // dice lo único que ningún número del panel puede decir: que romperla le saca las
@@ -699,8 +699,8 @@ namespace Rollgeon.EditorTools.Localization
                 "Corre hacia vos y pega de frente.",
                 "Runs straight at you and swings up close.");
             Content("RangedEnemy01.brief",
-                "Dispara de lejos; cortá la línea o cerrale la distancia.",
-                "Shoots from afar; break the line or close the gap.");
+                "Dispara de lejos y se aleja cuando te le acercás.",
+                "Shoots from afar and backs away when you get close.");
             Content("ChestMimic01.brief",
                 "Se hace pasar por cofre y pega cuando te acercás.",
                 "Poses as a chest and strikes when you get close.");

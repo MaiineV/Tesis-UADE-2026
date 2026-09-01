@@ -1119,16 +1119,16 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 16873829850607616
-    m_Localized: "Unleashes electric rings in waves \u2014 move between rings."
+    m_Localized: Unleashes electric rings in waves, with gaps between the rings.
     m_Metadata:
       m_Items: []
   - m_Id: 16873829850607617
-    m_Localized: Shoots from afar; break the line or close the gap.
+    m_Localized: Shoots from afar.
     m_Metadata:
       m_Items: []
   - m_Id: 16873829850607618
-    m_Localized: 'It doesn''t attack. Break it: for every die broken, the Generala
-      loses one of her combos.'
+    m_Localized: It doesn't attack. Every die broken takes a combo away from the
+      Generala.
     m_Metadata:
       m_Items: []
   - m_Id: 16873829854801920
@@ -1140,7 +1140,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 16873829854801922
-    m_Localized: Shoots from afar; break the line or close the gap.
+    m_Localized: Shoots from afar and backs away when you get close.
     m_Metadata:
       m_Items: []
   - m_Id: 16873829854801923

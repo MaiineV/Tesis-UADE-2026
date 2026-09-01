@@ -1124,17 +1124,16 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 16873829850607616
-    m_Localized: "Suelta anillos el\xE9ctricos en oleadas \u2014 movete entre anillo
+    m_Localized: "Suelta anillos el\xE9ctricos en oleadas, con huecos entre anillo
       y anillo."
     m_Metadata:
       m_Items: []
   - m_Id: 16873829850607617
-    m_Localized: "Dispara de lejos; cort\xE1 la l\xEDnea o cerrale la distancia."
+    m_Localized: Dispara de lejos.
     m_Metadata:
       m_Items: []
   - m_Id: 16873829850607618
-    m_Localized: 'No ataca. Rompelo: por cada dado roto, la Generala pierde uno de
-      sus combos.'
+    m_Localized: No ataca. Cada dado roto le saca un combo a la Generala.
     m_Metadata:
       m_Items: []
   - m_Id: 16873829854801920
@@ -1146,7 +1145,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 16873829854801922
-    m_Localized: "Dispara de lejos; cort\xE1 la l\xEDnea o cerrale la distancia."
+    m_Localized: "Dispara de lejos y se aleja cuando te le acerc\xE1s."
     m_Metadata:
       m_Items: []
   - m_Id: 16873829854801923
