@@ -132,8 +132,10 @@ namespace Rollgeon.Combat.TurnState
             if (!_inCombat) return;
             if (payload.TargetGuid != GetPlayerGuid()) return;
             if (payload.FinalDamage <= 0) return;
+            bool changed = _cleanTurnStreak != 0;
             _cleanTurnStreak = 0;
             _damagedThisRound = true;
+            if (changed) EmitStreakChanged();
         }
 
         private void HandleTurnStarted(params object[] args)
@@ -143,12 +145,21 @@ namespace Rollgeon.Combat.TurnState
 
             // El turno del player como límite de ronda cubre los turnos enemigos
             // intermedios (donde cae el daño). La primera ronda del combate no suma.
-            if (_roundOpen && !_damagedThisRound) _cleanTurnStreak++;
+            if (_roundOpen && !_damagedThisRound)
+            {
+                _cleanTurnStreak++;
+                EmitStreakChanged();
+            }
             _roundOpen = true;
             _damagedThisRound = false;
             _tilesMovedThisTurn = 0;
             _consumePending = false;
         }
+
+        // Solo en cambios reales — los suscriptores (UI de daño base con Furia) re-leen
+        // el override; spamearlo en cada turno sin cambio sería ruido para nada.
+        private void EmitStreakChanged()
+            => EventManager.Trigger(EventName.OnCleanTurnStreakChanged, GetPlayerGuid(), _cleanTurnStreak);
 
         private void HandleCombatStart(params object[] args)
         {
@@ -163,12 +174,16 @@ namespace Rollgeon.Combat.TurnState
 
         private void ResetAll()
         {
+            // Emite solo si el reset ocurre DENTRO de combate con racha viva (no en el
+            // teardown de cada combate sin racha, ni en OnRunStart).
+            bool emit = _inCombat && _cleanTurnStreak != 0;
             _inCombat = false;
             _tilesMovedThisTurn = 0;
             _consumePending = false;
             _cleanTurnStreak = 0;
             _damagedThisRound = false;
             _roundOpen = false;
+            if (emit) EmitStreakChanged();
         }
 
         private static Guid GetPlayerGuid()

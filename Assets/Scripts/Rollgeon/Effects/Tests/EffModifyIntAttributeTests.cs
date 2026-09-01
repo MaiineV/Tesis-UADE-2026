@@ -460,5 +460,66 @@ namespace Rollgeon.Effects.Tests
             TargetGuid = Guid.Empty,
             lastResult = true,
         };
+
+        // ── Ruteo por DamagePipeline (hardening Furia Contenida) ────────
+
+        [Test]
+        public void SubtractHealth_WithPipelineRegistered_RoutesThroughShield()
+        {
+            // Arrange — el write directo salteaba el escudo y el payload manual con
+            // FinalDamage = amount cortaba la racha de Furia aunque el golpe fuera
+            // absorbible. Con pipeline registrado, el daño scripted entra por ahí.
+            var pipeline = new RecordingPipeline();
+            ServiceLocator.AddService<Rollgeon.Combat.Pipelines.IDamagePipeline>(
+                pipeline, ServiceScope.Run);
+            var eff = MakeConstant(StatType.Health, IntOperation.Subtract, 10);
+
+            // Act
+            eff.ApplyEffect(MakeCtx());
+
+            // Assert — el pipeline recibió el daño y el effect NO escribió Health directo.
+            Assert.AreEqual(1, pipeline.ResolveCalls);
+            Assert.AreEqual(10, pipeline.LastBaseDamage);
+            Assert.AreEqual(_sourceId, pipeline.LastTargetId);
+            Assert.AreEqual(50, _attrManager.GetAttributeValue<Health, int>(_sourceId),
+                "el write lo hace el pipeline (acá fake), nunca ambos");
+        }
+
+        [Test]
+        public void AddHealth_WithPipelineRegistered_StillWritesDirect()
+        {
+            // Arrange — solo Subtract rutea: los heals siguen el camino directo con
+            // su HealResolvedPayload (el pipeline es de daño).
+            var pipeline = new RecordingPipeline();
+            ServiceLocator.AddService<Rollgeon.Combat.Pipelines.IDamagePipeline>(
+                pipeline, ServiceScope.Run);
+            var eff = MakeConstant(StatType.Health, IntOperation.Add, 5);
+
+            // Act
+            eff.ApplyEffect(MakeCtx());
+
+            // Assert
+            Assert.AreEqual(0, pipeline.ResolveCalls);
+            Assert.AreEqual(55, _attrManager.GetAttributeValue<Health, int>(_sourceId));
+        }
+
+        private sealed class RecordingPipeline : Rollgeon.Combat.Pipelines.IDamagePipeline
+        {
+            public int ResolveCalls;
+            public int LastBaseDamage;
+            public Guid LastTargetId;
+
+            public Rollgeon.Combat.Pipelines.DamageContext Resolve(
+                Rollgeon.Combat.Pipelines.DamageContext ctx)
+            {
+                ResolveCalls++;
+                LastBaseDamage = ctx.BaseDamage;
+                LastTargetId = ctx.TargetId;
+                return ctx;
+            }
+
+            public Rollgeon.Combat.Pipelines.DamageContext Preview(
+                Rollgeon.Combat.Pipelines.DamageContext ctx) => ctx;
+        }
     }
 }

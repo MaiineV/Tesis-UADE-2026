@@ -410,5 +410,14 @@ namespace Patterns
         /// <c>IRollPoolService.GetCurrent</c> == leftover (lo que <c>ReadCurrentRolls</c>
         /// aprovecha). Items "Corazón/Tesoro de la fortuna" cuelgan de acá.</summary>
         OnPlayerTurnRollsLeftover,
+
+        // --- Turn state: racha de rondas limpias -----------------------------------
+        // NOTA: al final absoluto del enum a propósito (ver OnReinforcementSpawned).
+        /// <summary>args: [Guid playerGuid, int streak]. La racha de rondas limpias
+        /// (<c>IPlayerTurnStateService.CleanTurnStreak</c>) cambió de valor — incremento
+        /// al abrir ronda sin daño, o reset al perder vida. Solo se emite en cambios
+        /// REALES (no en cada turno). La UI de daño base (Furia Contenida) re-lee el
+        /// override al escucharlo; también sirve como TriggerEvent de PassiveItemHook.</summary>
+        OnCleanTurnStreakChanged,
     }
 }

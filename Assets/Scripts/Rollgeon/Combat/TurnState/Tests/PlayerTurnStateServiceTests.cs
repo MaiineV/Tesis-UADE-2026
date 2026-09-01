@@ -193,6 +193,71 @@ namespace Rollgeon.Combat.TurnState.Tests
         }
 
         [Test]
+        public void PartiallyShieldedHit_LeakToHealth_ResetsStreak()
+        {
+            // Regresión del reporte de QA ("se reinicia con daño al escudo"): la
+            // absorción PARCIAL sí resetea — el leak que pasó el escudo ES daño a vida
+            // (FinalDamage post-escudo > 0). Solo el golpe 100% absorbido perdona
+            // (FullyShieldedHit_DoesNotBreakTheStreak). Comportamiento por diseño.
+            StartCombat();
+            PlayerTurn();
+            PlayerTurn(); // streak 1
+            DamagePlayer(finalDamage: 2, shieldAbsorbed: 8); // escudo comió 8 de 10
+
+            Assert.AreEqual(0, _service.CleanTurnStreak);
+        }
+
+        [Test]
+        public void StreakChange_EmitsOnCleanTurnStreakChanged()
+        {
+            // Arrange — la UI de daño base (Furia) re-lee el override al escucharlo.
+            StartCombat();
+            var seen = new List<int>();
+            EventManager.EventReceiver listener = args => seen.Add((int)args[1]);
+            EventManager.Subscribe(EventName.OnCleanTurnStreakChanged, listener);
+            try
+            {
+                // Act — abre ronda (no emite), +1, +1, reset por daño.
+                PlayerTurn();
+                PlayerTurn();
+                PlayerTurn();
+                DamagePlayer(10);
+
+                // Assert
+                CollectionAssert.AreEqual(new[] { 1, 2, 0 }, seen);
+            }
+            finally
+            {
+                EventManager.UnSubscribe(EventName.OnCleanTurnStreakChanged, listener);
+            }
+        }
+
+        [Test]
+        public void StreakUnchanged_DoesNotEmit()
+        {
+            // Arrange — daño con racha ya en 0: no hay cambio, no hay evento.
+            StartCombat();
+            PlayerTurn();
+            int emitted = 0;
+            EventManager.EventReceiver listener = _ => emitted++;
+            EventManager.Subscribe(EventName.OnCleanTurnStreakChanged, listener);
+            try
+            {
+                // Act — racha 0 → 0 (dos golpes seguidos) y golpe 100% absorbido.
+                DamagePlayer(10);
+                DamagePlayer(10);
+                DamagePlayer(0, shieldAbsorbed: 12);
+
+                // Assert
+                Assert.AreEqual(0, emitted);
+            }
+            finally
+            {
+                EventManager.UnSubscribe(EventName.OnCleanTurnStreakChanged, listener);
+            }
+        }
+
+        [Test]
         public void CombatStart_ResetsEverything()
         {
             StartCombat();
