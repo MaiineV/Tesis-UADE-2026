@@ -45,7 +45,7 @@ MonoBehaviour:
       Data: 2|Rollgeon.Effects.Readers.ReadCleanTurnStreakScaled, Rollgeon
     - Name: PerTurnAmount
       Entry: 4
-      Data: 2.5
+      Data: 0.25
     - Name: 
       Entry: 8
       Data: 
@@ -55,7 +55,7 @@ MonoBehaviour:
     - Name: 
       Entry: 8
       Data: 
-    - Name: OnActivate
+    - Name: OnNegativeBand
       Entry: 7
       Data: 3|Rollgeon.Effects.EffectData, Rollgeon
     - Name: Label
@@ -93,6 +93,120 @@ MonoBehaviour:
     - Name: 
       Entry: 8
       Data: 
+    - Name: OnMixedBand
+      Entry: 7
+      Data: 6|Rollgeon.Effects.EffectData, Rollgeon
+    - Name: Label
+      Entry: 1
+      Data: Effect Group
+    - Name: PreConditions
+      Entry: 7
+      Data: 7|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
+        Rollgeon]], mscorlib
+    - Name: 
+      Entry: 12
+      Data: 0
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: Effects
+      Entry: 7
+      Data: 8|System.Collections.Generic.List`1[[Rollgeon.Effects.IEffect, Rollgeon]],
+        mscorlib
+    - Name: 
+      Entry: 12
+      Data: 0
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: TargetSelector
+      Entry: 6
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: OnPositiveBand
+      Entry: 7
+      Data: 9|Rollgeon.Effects.EffectData, Rollgeon
+    - Name: Label
+      Entry: 1
+      Data: Effect Group
+    - Name: PreConditions
+      Entry: 7
+      Data: 10|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
+        Rollgeon]], mscorlib
+    - Name: 
+      Entry: 12
+      Data: 0
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: Effects
+      Entry: 7
+      Data: 11|System.Collections.Generic.List`1[[Rollgeon.Effects.IEffect, Rollgeon]],
+        mscorlib
+    - Name: 
+      Entry: 12
+      Data: 0
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: TargetSelector
+      Entry: 6
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: OnActivate
+      Entry: 7
+      Data: 12|Rollgeon.Effects.EffectData, Rollgeon
+    - Name: Label
+      Entry: 1
+      Data: Effect Group
+    - Name: PreConditions
+      Entry: 7
+      Data: 13|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
+        Rollgeon]], mscorlib
+    - Name: 
+      Entry: 12
+      Data: 0
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: Effects
+      Entry: 7
+      Data: 14|System.Collections.Generic.List`1[[Rollgeon.Effects.IEffect, Rollgeon]],
+        mscorlib
+    - Name: 
+      Entry: 12
+      Data: 0
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: TargetSelector
+      Entry: 6
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
   ItemId: furia.contenida
   DisplayName: Furia Contenida
   Description: "Tu da\xF1o base pasa a 0 y crece por cada ronda sin recibir da\xF1o.
@@ -101,13 +215,38 @@ MonoBehaviour:
   Rarity: 4
   FamilyId: 
   VariantIndex: 0
+  FamilyExclusive: 0
   Type: 0
   UniquePerRun: 1
   RollPoolBonus: 0
   ActiveSlotBonus: 0
   EnchantmentCostMultiplier: 1
+  CursedEnchantmentWeightMultiplier: 1
   SecondWind: 0
   SecondWindRemainingHp: 1
+  UsesActiveSlot: 0
+  ActiveDie: 1
+  ActiveFamily: 0
+  PrecisionTarget: 1
+  ControlParity: 0
+  OnNegativeBand:
+    Label: Effect Group
+    PreConditions: []
+    Effects: []
+    TargetSelector:
+      rid: -2
+  OnMixedBand:
+    Label: Effect Group
+    PreConditions: []
+    Effects: []
+    TargetSelector:
+      rid: -2
+  OnPositiveBand:
+    Label: Effect Group
+    PreConditions: []
+    Effects: []
+    TargetSelector:
+      rid: -2
   OnActivate:
     Label: Effect Group
     PreConditions: []
