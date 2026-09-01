@@ -675,6 +675,68 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             }
         }
 
+        /// <summary>
+        /// El aspecto se copia del ranged común en cada build en vez de estar duplicado en las
+        /// constantes: dos fichas a mano ya habían derivado en dos bichos distintos (otro arte,
+        /// otro retrato, y una descripción que hablaba de una comisión que el bicho no cobra).
+        /// </summary>
+        [Test]
+        public void CritterData_TakesItsLookFromTheCommonRanged_WithoutTakingItsNumbers()
+        {
+            var critter = ScriptableObject.CreateInstance<EnemyDataSO>();
+            var look = ScriptableObject.CreateInstance<EnemyDataSO>();
+            critter.hideFlags = HideFlags.HideAndDontSave;
+            look.hideFlags = HideFlags.HideAndDontSave;
+            try
+            {
+                look.Description = "Goblin con ataque a distancia, dispara con una ballesta.";
+                look.VisualPrefab = new GameObject("look_visual") { hideFlags = HideFlags.HideAndDontSave };
+                look.Portrait = Sprite.Create(new Texture2D(2, 2), new Rect(0, 0, 2, 2), Vector2.zero);
+                look.BaseHP = 50;
+                look.BaseAttack = 10;
+
+                CajeroAssetBuilder.PopulateCritterData(critter, look);
+
+                Assert.AreEqual(look.Description, critter.Description,
+                    "La descripción sigue siendo propia: el párrafo del tooltip la delata como " +
+                    "personaje aparte.");
+                Assert.AreSame(look.VisualPrefab, critter.VisualPrefab,
+                    "Arte propio = el jugador ve dos bichos distintos, que es justo lo que no queremos.");
+                Assert.AreSame(look.Portrait, critter.Portrait,
+                    "El retrato sale en la cola de turnos: con uno propio se lee como cosa del jefe.");
+
+                Assert.AreEqual(CajeroAssetBuilder.CritterHp, critter.BaseHP,
+                    "Los números son suyos y los pone el balance: copiar los del común la vuelve un " +
+                    "segundo jefe de 50 de vida.");
+                Assert.AreEqual(CajeroAssetBuilder.CritterDamage, critter.BaseAttack);
+            }
+            finally
+            {
+                if (look.VisualPrefab != null) Object.DestroyImmediate(look.VisualPrefab);
+                if (look.Portrait != null) Object.DestroyImmediate(look.Portrait);
+                Object.DestroyImmediate(look);
+                Object.DestroyImmediate(critter);
+            }
+        }
+
+        /// <summary>
+        /// El asset del ranged común tiene que existir donde el builder lo busca: sin él la
+        /// Comisión queda con el arte que ya tenía y nadie se enteraría hasta ver la pelea.
+        /// </summary>
+        [Test]
+        public void SharedRangedAsset_IsWhereTheBuilderLooksForIt()
+        {
+            var look = AssetDatabase.LoadAssetAtPath<EnemyDataSO>(
+                CajeroAssetBuilder.SharedRangedAssetPath);
+
+            Assert.IsNotNull(look,
+                $"No hay EnemyDataSO en '{CajeroAssetBuilder.SharedRangedAssetPath}'.");
+            Assert.AreNotEqual(CajeroAssetBuilder.ReinforcementAssetPath,
+                CajeroAssetBuilder.SharedRangedAssetPath,
+                "El aspecto se copia de ahí, pero el spawn NO puede apuntar ahí: serían dos bichos " +
+                "de 50 de vida a mitad de pelea.");
+        }
+
         /// <summary>Las monedas del piso son un reloj, no un botín: un refuerzo que paga al morir le
         /// daría al jugador una fuente de oro que la sala no controla.</summary>
         [Test]
@@ -696,22 +758,69 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         }
 
         [Test]
-        public void CritterAI_ShootsFirstAndFliesAfter_SoArrivingDoesNotEatItsShot()
+        public void CritterAI_ShootsFirstAndMovesAfter_SoArrivingDoesNotEatItsShot()
         {
             var root = CajeroAssetBuilder.BuildCritterAIRoot();
 
             Assert.IsNotNull(root, "La Comisión necesita árbol propio: sin él cae al BasicEnemyAI.");
-            Assert.AreEqual(2, root.Children.Count, "Dispara y vuela, nada más.");
+            Assert.AreEqual(3, root.Children.Count, "Dispara, se despega y vuela, nada más.");
 
             int shotIdx = root.Children.FindIndex(c =>
-                Descendants(c).Any(n => n is AINode_CashierRangedShot));
+                Descendants(c).Any(n => n is AINode_RangedShot));
+            int keepIdx = root.Children.FindIndex(c =>
+                Descendants(c).Any(n => n is AINode_KeepDistance));
             int moveIdx = root.Children.FindIndex(c =>
                 Descendants(c).Any(n => n is AINode_Move));
 
             Assert.Greater(shotIdx, -1, "Falta el disparo.");
-            Assert.Greater(moveIdx, shotIdx,
-                "AINode_Move devuelve Running cuando se mueve, y un Running corta el Sequence: con " +
-                "el orden invertido, el turno en que entra en rango se le comería el disparo.");
+            Assert.Greater(keepIdx, shotIdx,
+                "Los nodos de movimiento devuelven Running cuando se mueven, y un Running corta el " +
+                "Sequence: con el orden invertido, el turno en que se despega se le comería el disparo.");
+            Assert.Greater(moveIdx, keepIdx,
+                "El approach va último: el que corta el turno tiene que ser el que resolvió que " +
+                "había que moverse, y despegarse manda sobre acercarse.");
+        }
+
+        /// <summary>
+        /// La frase de su ficha —compartida con el ranged común— dice que se aleja cuando te le
+        /// acercás. Sin este nodo era la única de las dos que mentía.
+        /// </summary>
+        [Test]
+        public void CritterAI_BacksAwayLikeTheCommonRanged()
+        {
+            var keep = Descendants(CajeroAssetBuilder.BuildCritterAIRoot())
+                .OfType<AINode_KeepDistance>()
+                .FirstOrDefault();
+
+            Assert.IsNotNull(keep, "La Comisión dejó de despegarse: pegada al jugador es un melee " +
+                                   "de 18 de vida que pega 8.");
+            Assert.AreEqual(CajeroAssetBuilder.CritterRange, ReadInt(keep.IdealDistance),
+                "Se despega hasta su alcance, que es el mismo 5 del ranged común.");
+            Assert.AreEqual(CajeroAssetBuilder.CritterMoveSteps, ReadInt(keep.MaxSteps),
+                "Los mismos 3 pasos del ranged común.");
+        }
+
+        /// <summary>
+        /// El jugador tiene que ver un ranged común más, y el disparo del jefe se veía distinto:
+        /// otro gesto, otro vfx y —sobre todo— sin impacto, porque la Comisión no tenía ni vfx ni
+        /// feel cableados.
+        /// </summary>
+        [Test]
+        public void CritterShot_WearsTheCommonRangedPresentation_NotItsBoss()
+        {
+            var shot = Descendants(CajeroAssetBuilder.BuildCritterAIRoot())
+                .OfType<AINode_RangedShot>()
+                .First();
+
+            Assert.AreEqual("anim.enemy.ranged.attack", shot.AnimFeedbackId,
+                "Volvió el gesto del jefe (o el del bite propio): el minion se delata como cosa suya.");
+            Assert.AreEqual("vfx.enemy.ranged.impact", shot.ImpactVfxFeedbackId,
+                "Sin el vfx compartido su disparo no revienta en el jugador y el común sí.");
+            Assert.AreEqual("feel.enemy.ranged.impact", shot.ImpactFeelFeedbackId,
+                "Sin el feel compartido su disparo no se siente y el común sí.");
+            Assert.IsFalse(shot is AINode_CashierRangedShot,
+                "La subclase defaultea a los feedbacks del Cajero: con ella, vaciar un id vuelve a " +
+                "poner al minion a disparar como el jefe.");
         }
 
         /// <summary>Camina hasta su alcance y no hasta el contacto: pegada al jugador muere de un golpe
@@ -720,7 +829,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         public void CritterAI_ShootsFromItsOwnRange_NotFromContact()
         {
             var root = CajeroAssetBuilder.BuildCritterAIRoot();
-            var shot = Descendants(root).OfType<AINode_CashierRangedShot>().First();
+            var shot = Descendants(root).OfType<AINode_RangedShot>().First();
             var move = Descendants(root).OfType<AINode_Move>().First();
 
             Assert.AreEqual(CajeroAssetBuilder.CritterRange, shot.Range,
