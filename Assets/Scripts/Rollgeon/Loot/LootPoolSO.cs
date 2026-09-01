@@ -116,7 +116,11 @@ namespace Rollgeon.Loot
             if (Items == null) return preview;
             for (int i = 0; i < Items.Count; i++)
             {
-                if (Items[i] != null) preview.Add(Items[i]);
+                if (Items[i] == null) continue;
+                // Mismo gate que el roll real: el reel no debe mostrar ítems que
+                // no pueden dropear (UniquePerRun poseído, familia excluyente).
+                if (UniquePerRunGate.IsBlocked(Items[i])) continue;
+                preview.Add(Items[i]);
             }
             return preview;
         }

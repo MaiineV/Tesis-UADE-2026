@@ -3,15 +3,17 @@ using Patterns;
 using PrimeTween;
 using Rollgeon.Attributes;
 using Rollgeon.Attributes.Stats;
+using Rollgeon.Combat.Damage;
 using TMPro;
 using UnityEngine;
 
 namespace Rollgeon.UI.HUD.Breakdown
 {
     /// <summary>
-    /// Espada + daño base del player a la izquierda del dice board. Muestra
-    /// <c>Attack.ModifiedValue</c> (base + bonos persistentes de items) — el mismo
-    /// término que la secuencia hace volar hacia N.
+    /// Espada + daño base del player a la izquierda del dice board. Muestra el MISMO
+    /// término que la fórmula usa como <c>dmg_base_PJ + bonos_PJ</c>: con un base damage
+    /// override activo (Furia Contenida, Egoísta), <c>override + bonos</c> con decimales;
+    /// sin override, <c>Attack.ModifiedValue</c> como siempre.
     /// </summary>
     public sealed class PlayerBaseDamageView : MonoBehaviour
     {
@@ -24,20 +26,25 @@ namespace Rollgeon.UI.HUD.Breakdown
         private Guid _playerGuid;
         private bool _bound;
         private Action<ComboMatchedPayload> _onMatched;
+        private EventManager.EventReceiver _onStreakChanged;
         private Tween _punch;
 
         public RectTransform Anchor => _flyAnchor != null ? _flyAnchor : (RectTransform)transform;
 
-        public int CurrentValue { get; private set; }
+        public float CurrentValue { get; private set; }
 
         public void Bind(Guid playerGuid)
         {
             if (_bound) Unbind();
             _playerGuid = playerGuid;
             // El ATQ cambia poco (items, buffs de pasiva) y el payload de match dispara en
-            // cada toggle de hold: refrescar ahí alcanza sin un canal de eventos nuevo.
+            // cada toggle de hold: refrescar ahí cubre lo estático. El override de Furia
+            // cambia ENTRE tiradas (racha por ronda), por eso además se escucha el evento
+            // de racha — sin él, la espada mostraba "5" congelado todo el combate (QA).
             _onMatched = _ => Refresh();
             TypedEvent<ComboMatchedPayload>.Subscribe(_onMatched);
+            _onStreakChanged = _ => Refresh();
+            EventManager.Subscribe(EventName.OnCleanTurnStreakChanged, _onStreakChanged);
             _bound = true;
             Refresh();
         }
@@ -49,6 +56,11 @@ namespace Rollgeon.UI.HUD.Breakdown
             {
                 TypedEvent<ComboMatchedPayload>.Unsubscribe(_onMatched);
                 _onMatched = null;
+            }
+            if (_onStreakChanged != null)
+            {
+                EventManager.UnSubscribe(EventName.OnCleanTurnStreakChanged, _onStreakChanged);
+                _onStreakChanged = null;
             }
             _bound = false;
         }
@@ -63,10 +75,23 @@ namespace Rollgeon.UI.HUD.Breakdown
 
         private void Refresh()
         {
-            CurrentValue = 0;
+            CurrentValue = 0f;
             if (ServiceLocator.TryGetService<AttributesManager>(out var attrs) && attrs != null)
-                CurrentValue = attrs.GetAttribute<Attack>(_playerGuid)?.ModifiedValue ?? 0;
-            if (_valueLabel != null) _valueLabel.text = CurrentValue.ToString();
+            {
+                var attack = attrs.GetAttribute<Attack>(_playerGuid);
+                int baseValue = attack?.Value ?? 0;
+                int bonos = (attack?.ModifiedValue ?? 0) - baseValue;
+
+                // Paridad con PlayerComboDamage.Resolve: el override pisa SOLO dmg_base_PJ;
+                // bonos_PJ (los +Attack de otros items) sobrevive encima.
+                if (ServiceLocator.TryGetService<IBaseDamageOverrideService>(out var overrides)
+                    && overrides != null
+                    && overrides.TryGetBaseDamage(_playerGuid, out var overridden))
+                    CurrentValue = overridden + bonos;
+                else
+                    CurrentValue = baseValue + bonos;
+            }
+            if (_valueLabel != null) _valueLabel.text = CurrentValue.ToString("0.##");
         }
 
         private void OnDisable()

@@ -69,9 +69,9 @@ namespace Rollgeon.Combat.Damage
             _entries.Remove(sourceId);
         }
 
-        public bool TryGetBaseDamage(Guid playerGuid, out int value)
+        public bool TryGetBaseDamage(Guid playerGuid, out float value)
         {
-            value = 0;
+            value = 0f;
             if (_entries.Count == 0) return false;
 
             Entry best = default;
@@ -88,7 +88,9 @@ namespace Rollgeon.Combat.Damage
             if (!found || best.Reader == null) return false;
 
             var ctx = new EffectContext { SourceGuid = playerGuid, TargetGuid = playerGuid };
-            value = Math.Max(0, best.Reader.Read(ctx));
+            // ReadFloat preserva las fracciones (Furia 0.25/ronda); el redondeo pasa
+            // una sola vez al final de la fórmula N×M, nunca acá.
+            value = Math.Max(0f, best.Reader.ReadFloat(ctx));
             return true;
         }
     }

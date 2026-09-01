@@ -109,7 +109,60 @@ namespace Rollgeon.Combat.Tests
             _service.Register("item.x", new ReadConstantInt { Value = -4 }, priority: 0);
 
             Assert.IsTrue(_service.TryGetBaseDamage(_player, out var value));
-            Assert.AreEqual(0, value, "un daño base negativo no existe");
+            Assert.AreEqual(0f, value, 0.0001f, "un daño base negativo no existe");
+        }
+
+        // ------------------------------------------------------------------
+        // Canal float (Furia Contenida): la fracción del reader sobrevive hasta
+        // el redondeo ÚNICO del final de la fórmula.
+        // ------------------------------------------------------------------
+
+        [Test]
+        public void TryGetBaseDamage_FractionalReader_PreservesFraction()
+        {
+            // Arrange
+            _service.Register("item.furia.test", new FractionalReader { Value = 0.5f }, priority: 0);
+
+            // Act + Assert — 0.5 llega entero, sin floor intermedio.
+            Assert.IsTrue(_service.TryGetBaseDamage(_player, out var value));
+            Assert.AreEqual(0.5f, value, 0.0001f);
+        }
+
+        [Test]
+        public void Resolve_FractionalBase_RoundsOnceAtEnd()
+        {
+            // Arrange — override 0.25: N = 10 combo + 0.25 base + 3 bonus = 13.25.
+            _service.Register("item.furia.test", new FractionalReader { Value = 0.25f }, priority: 0);
+
+            // Act
+            int total = ResolveDamage(out var b);
+
+            // Assert — un solo redondeo al final (AwayFromZero): 13.25 → 13.
+            Assert.AreEqual(0.25f, b.AttackBase, 0.0001f);
+            Assert.AreEqual(13.25f, b.N, 0.0001f);
+            Assert.AreEqual(13, total);
+        }
+
+        [Test]
+        public void Resolve_FractionalBase_HalfRoundsUp_AwayFromZero()
+        {
+            // Arrange — override 0.5: N = 13.5 → el redondeo canónico sube (nunca banker's).
+            _service.Register("item.furia.test", new FractionalReader { Value = 0.5f }, priority: 0);
+
+            // Act
+            int total = ResolveDamage(out _);
+
+            // Assert
+            Assert.AreEqual(14, total);
+        }
+
+        // Reader de prueba con fracción: Read (legacy int) floorea, ReadFloat preserva —
+        // mismo contrato que ReadCleanTurnStreakScaled.
+        private sealed class FractionalReader : EffectIntReader
+        {
+            public float Value;
+            public override int Read(Rollgeon.Effects.EffectContext context) => Mathf.FloorToInt(Value);
+            public override float ReadFloat(Rollgeon.Effects.EffectContext context) => Value;
         }
     }
 }

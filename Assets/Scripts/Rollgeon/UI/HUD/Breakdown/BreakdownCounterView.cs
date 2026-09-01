@@ -128,9 +128,13 @@ namespace Rollgeon.UI.HUD.Breakdown
             return _label != null ? _label.color : Color.white;
         }
 
-        /// <summary>N entero; M con un decimal ("1.0", "2.5") para que se lea como multi.</summary>
+        /// <summary>
+        /// N con decimales solo cuando los hay ("10", "10.25" — el base override de Furia
+        /// aporta fracción); M con un decimal ("1.0", "2.5") para que se lea como multi.
+        /// El roll-up del tween puede mostrar decimales transitorios: aceptado.
+        /// </summary>
         public static string Format(float value, bool isMultiplier)
-            => isMultiplier ? value.ToString("0.0#") : Mathf.RoundToInt(value).ToString();
+            => isMultiplier ? value.ToString("0.0#") : value.ToString("0.##");
 
         private void Render()
         {

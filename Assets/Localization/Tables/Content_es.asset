@@ -743,7 +743,8 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 9716852768735262
-    m_Localized: Al bajar de 30% HP obtienes +1 escudo.
+    m_Localized: "Cuando tu vida est\xE1 en 30 o menos, tu da\xF1o base aumenta en
+      5 puntos."
     m_Metadata:
       m_Items: []
   - m_Id: 9716852768735263
@@ -1439,7 +1440,8 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 17566757088837632
-    m_Localized: Los encantamientos del altar cuestan la mitad.
+    m_Localized: "Los encantamientos del altar cuestan la mitad, pero los encantamientos
+      malditos aparecen tres veces m\xE1s seguido."
     m_Metadata:
       m_Items: []
   - m_Id: 17566757822840832
@@ -1716,6 +1718,14 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 17593280048852997
     m_Localized: Un cofre que muerde.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17619294189961216
+    m_Localized: "Coraz\xF3n de la Fortuna"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17619294269652992
+    m_Localized: "Recuper\xE1s 5 HP por cada roll sin utilizar al final del turno."
     m_Metadata:
       m_Items: []
   references:

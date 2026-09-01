@@ -740,7 +740,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 9716852768735262
-    m_Localized: When you drop below 30% HP you gain +1 shield.
+    m_Localized: While your health is 30 or less, your base damage increases by 5.
     m_Metadata:
       m_Items: []
   - m_Id: 9716852768735263
@@ -1418,7 +1418,8 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 17566757088837632
-    m_Localized: Altar enchantments cost half as much.
+    m_Localized: Altar enchantments cost half, but cursed enchantments appear three
+      times as often.
     m_Metadata:
       m_Items: []
   - m_Id: 17566757822840832
@@ -1694,6 +1695,14 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 17593280048852997
     m_Localized: A chest that bites.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17619294189961216
+    m_Localized: Heart of Fortune
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17619294269652992
+    m_Localized: Recover 5 HP for each unused roll at the end of your turn.
     m_Metadata:
       m_Items: []
   references:

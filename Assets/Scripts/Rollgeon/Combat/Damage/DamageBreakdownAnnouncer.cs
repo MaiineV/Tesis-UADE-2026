@@ -123,6 +123,45 @@ namespace Rollgeon.Combat.Damage
         }
 
         /// <summary>
+        /// Variante de Forzar Puerta: mismo guion N×M con la fórmula del check
+        /// (<see cref="PlayerComboForceDoor"/> — base = combo.BaseDamage layered, no hay
+        /// tabla propia). Solo anuncia con combo real (sin combo no hay desglose que
+        /// animar), y anuncia AUNQUE el threshold falle: ver el número que no alcanzó es
+        /// feedback. El <c>ForceDoorRollBonus</c> de items no entra a la animación (flat
+        /// post-M, se muestra en el label del threshold). Payload sin target: no hay
+        /// paso de mitigación.
+        /// </summary>
+        public static void AnnounceForceDoor(EffectContext effCtx, EffForceDoor doorEff)
+        {
+            if (effCtx == null || doorEff == null) return;
+            if (effCtx.ComboResult is not { IsMatch: true } combo
+                || string.IsNullOrEmpty(combo.ComboId)) return;
+
+            if (ServiceLocator.TryGetService<IComboPlayService>(out var play)
+                && play != null && play.IsPlayWindowOpen && play.CurrentComboId != combo.ComboId)
+                return;
+
+            var dice = ContributingDiceResolver.ResolveFromContext(effCtx, combo.ContributingIndices);
+            Guid sourceId = effCtx.SourceEntity != null ? effCtx.SourceEntity.Guid : effCtx.SourceGuid;
+
+            PlayerComboForceDoor.Resolve(sourceId, combo.BaseDamage, dice,
+                doorEff.ComboMultiplier > 0f ? doorEff.ComboMultiplier : 1f, out var breakdown);
+            if (breakdown.Final <= 0) return; // bloqueado por scratch: nada que animar
+
+            TypedEvent<DamageBreakdownComputedPayload>.Raise(new DamageBreakdownComputedPayload
+            {
+                SourceGuid = sourceId,
+                TargetGuid = Guid.Empty,
+                ComboId = combo.ComboId,
+                Breakdown = breakdown,
+            });
+        }
+
+        /// <summary>El <see cref="EffForceDoor"/> de la fase (check de Forzar Puerta).</summary>
+        public static EffForceDoor FindForceDoor(EffectData group)
+            => FindIn<EffForceDoor>(group);
+
+        /// <summary>
         /// Busca el <see cref="EffDealDamage"/> dentro de UN grupo de efectos (fase de chain),
         /// bajando por <see cref="EffectTree"/> — mismo criterio que
         /// <c>HeroActionBehavior.FindFirstDealDamageEffect</c> pero acotado a la fase que se

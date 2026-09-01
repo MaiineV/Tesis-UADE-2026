@@ -59,6 +59,12 @@ namespace Rollgeon.ActionRolls
         private int[] _currentHeldIndices;
         private ComboDetectionResult? _currentComboResult;
 
+        // Dados contribuyentes de la tirada actual: los del combo si hay match; para
+        // Force Door sin combo, TODOS los holdeados (la fórmula N×M los suma como caras).
+        // Lo computa ResolveCurrentContributingDice() antes de EmitComboMatched — el
+        // payload y el N×M leen el mismo dato.
+        private IReadOnlyList<ContributingDie> _currentContributingDice;
+
         public ActionRollService(IDiceRoller roller, IRollPoolService rolls,
             ComboCatalogSO comboCatalog = null)
         {
@@ -468,6 +474,7 @@ namespace Rollgeon.ActionRolls
                 _currentComboResult = null;
                 _currentHeldFaces = null;
                 _currentHeldIndices = null;
+                _currentContributingDice = null;
                 return;
             }
 
@@ -514,7 +521,7 @@ namespace Rollgeon.ActionRolls
                 _currentComboDynamicBonus = 0;
                 _currentEffectiveTotal = 0;
                 _currentComboResult = null;
-                EmitComboMatched();
+                FinishRecompute();
                 return;
             }
 
@@ -530,7 +537,7 @@ namespace Rollgeon.ActionRolls
             {
                 _currentCombo = fromSheet;
                 ComputeComboTotals(fromSheet, heldDice, heldTypes);
-                EmitComboMatched();
+                FinishRecompute();
                 return;
             }
 
@@ -543,19 +550,96 @@ namespace Rollgeon.ActionRolls
                 {
                     _currentCombo = best;
                     ComputeComboTotals(best, heldDice, heldTypes);
-                    EmitComboMatched();
+                    FinishRecompute();
                     return;
                 }
             }
 
-            // 3) Sin combo del contrato — effective = suma cruda (fail path para Force Door,
-            //    base-only para Heal). El user va a ver "(no combo)" en el panel.
+            // 3) Sin combo del contrato — effective = suma cruda (base-only para Heal;
+            //    Force Door lo pisa con N×M en FinishRecompute). El user va a ver
+            //    "(no combo)" en el panel.
             _currentCombo = null;
             _currentComboFlatBase = 0;
             _currentComboDynamicBonus = 0;
             _currentEffectiveTotal = heldSum + ResolveKindRollBonus();
             _currentComboResult = null;
+            FinishRecompute();
+        }
+
+        // Cola común de RecomputeComboAndTotal — el orden importa: los suscriptores de
+        // ComboMatchedPayload pueblan el scratch de pasivas/encantamientos, y el N×M de
+        // Force Door lo lee (misma dependencia de orden que documenta DamageFormulaView
+        // sobre el preview de daño). Un suscriptor que lea CurrentEffectiveTotal
+        // sincrónicamente dentro del Raise ve el valor pre-N×M por un frame — el número
+        // exacto viaja en el outcome, no en ese snapshot.
+        private void FinishRecompute()
+        {
+            ResolveCurrentContributingDice();
             EmitComboMatched();
+            if (_spec.Kind == RollActionKind.ForceDoor)
+                _currentEffectiveTotal = ComputeForceDoorEffectiveTotal();
+        }
+
+        /// <summary>
+        /// Effective total de Force Door con la fórmula N×M del combate:
+        /// <c>RoundNxM(base_combo + Attack + Σcaras + bonos, M) + ForceDoorRollBonus</c>.
+        /// Sin combo, base 0 con todos los holdeados como caras. El bonus de items
+        /// (Pico de Minero) es flat post-multiplicador — "+5 a la tirada" literal.
+        /// </summary>
+        private int ComputeForceDoorEffectiveTotal()
+        {
+            // Sin dados holdeados no hay tirada que evaluar, pero el bonus del item se
+            // muestra apenas abre el panel (antes quedaba 0 seco). CanConfirm sigue
+            // exigiendo ≥1 hold, así que un "pase" con 0 dados es imposible.
+            if (_currentHeldFaces == null || _currentHeldFaces.Length == 0)
+                return ResolveKindRollBonus();
+
+            int nxm = PlayerComboForceDoor.Resolve(_playerGuid,
+                _currentCombo != null ? _currentComboFlatBase : 0,
+                _currentContributingDice,
+                ActionRollSpec.EffectiveComboMultiplier(in _spec));
+            return nxm + ResolveKindRollBonus();
+        }
+
+        // Computa los dados contribuyentes de la tirada actual (ver el campo). Con combo
+        // matcheado replica el mapeo del payload; para Force Door sin combo, todos los
+        // holdeados contribuyen — sin bag disponible se construyen a mano (Resolve solo
+        // lee .Face; el tipo es cosmético para la UI).
+        private void ResolveCurrentContributingDice()
+        {
+            _currentContributingDice = null;
+
+            IReadOnlyList<DiceType> bagDice = null;
+            if (ServiceLocator.TryGetService<Rollgeon.Upgrades.Dice.IDiceEnchantmentService>(out var enchants)
+                && enchants?.Bag != null)
+                bagDice = enchants.Bag.Dice;
+            else if (_bag != null)
+                bagDice = _bag.Dice;
+
+            if (_currentComboResult.HasValue && _currentComboResult.Value.IsMatch)
+            {
+                if (bagDice != null)
+                {
+                    _currentContributingDice = ContributingDiceResolver.ResolveDetailed(
+                        _currentComboResult.Value.ContributingIndices, _currentHeldIndices,
+                        _currentHeldFaces, bagDice);
+                }
+                return;
+            }
+
+            if (_spec.Kind != RollActionKind.ForceDoor) return;
+            if (_currentHeldFaces == null || _currentHeldFaces.Length == 0) return;
+
+            var all = new List<ContributingDie>(_currentHeldFaces.Length);
+            for (int i = 0; i < _currentHeldFaces.Length; i++)
+            {
+                int bagSlot = _currentHeldIndices != null && i < _currentHeldIndices.Length
+                    ? _currentHeldIndices[i] : -1;
+                var type = bagDice != null && bagSlot >= 0 && bagSlot < bagDice.Count
+                    ? bagDice[bagSlot] : DiceType.D6;
+                all.Add(new ContributingDie(bagSlot, _currentHeldFaces[i], type));
+            }
+            _currentContributingDice = all;
         }
 
         // Formula B con el layering de combate (espejo de DetectWithContractMods +
@@ -621,26 +705,12 @@ namespace Rollgeon.ActionRolls
             // no puede resolver "el carrier participó del combo" — el gate quedaba siempre
             // permisivo (o siempre bloqueado, según RequireCarrierParticipates) para los
             // encantamientos condicionales disparados desde un ActionRoll (Heal, Force Door).
-            // _currentComboResult.ContributingIndices son locales al subset holdeado
-            // (_currentHeldFaces); _currentHeldIndices mapea ese subset a bag slot — mismo
-            // contrato que ContributingDiceResolver usa en DiceZoneView.
-            IReadOnlyList<ContributingDie> contributingDice = null;
-            if (_currentComboResult.HasValue && _currentComboResult.Value.IsMatch)
-            {
-                IReadOnlyList<DiceType> bagDice = null;
-                if (ServiceLocator.TryGetService<Rollgeon.Upgrades.Dice.IDiceEnchantmentService>(out var enchants)
-                    && enchants?.Bag != null)
-                    bagDice = enchants.Bag.Dice;
-                else if (_bag != null)
-                    bagDice = _bag.Dice;
-
-                if (bagDice != null)
-                {
-                    contributingDice = ContributingDiceResolver.ResolveDetailed(
-                        _currentComboResult.Value.ContributingIndices, _currentHeldIndices,
-                        _currentHeldFaces, bagDice);
-                }
-            }
+            // El cálculo vive en ResolveCurrentContributingDice(); el payload solo lleva
+            // dados cuando hubo match — el all-held de Force Door sin combo es interno
+            // al N×M y no debe cambiar la semántica de los suscriptores.
+            IReadOnlyList<ContributingDie> contributingDice =
+                _currentComboResult.HasValue && _currentComboResult.Value.IsMatch
+                    ? _currentContributingDice : null;
 
             TypedEvent<ComboMatchedPayload>.Raise(new ComboMatchedPayload
             {

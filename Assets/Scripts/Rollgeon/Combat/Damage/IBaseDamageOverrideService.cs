@@ -31,8 +31,9 @@ namespace Rollgeon.Combat.Damage
 
         /// <summary>
         /// Evalúa el reader ganador con un contexto mínimo (<c>SourceGuid = playerGuid</c>).
-        /// <c>false</c> si no hay overrides.
+        /// <c>false</c> si no hay overrides. Float: las fracciones (Furia Contenida
+        /// 0.25/ronda) viajan enteras hasta el redondeo único de la fórmula N×M.
         /// </summary>
-        bool TryGetBaseDamage(Guid playerGuid, out int value);
+        bool TryGetBaseDamage(Guid playerGuid, out float value);
     }
 }

@@ -165,5 +165,109 @@ namespace Rollgeon.Upgrades.Dice.Tests
                 Assert.AreSame(b, result, "con `a` excluida, todos los rolls deberían devolver `b`");
             }
         }
+
+        // ---- Multiplicador de peso de malditos (Moneda Maldita) -------------
+
+        [Test]
+        public void Roll_FavoursCursedEntries_WhenWeightServiceMultiplies()
+        {
+            // Arrange — 1 maldito y 1 normal, peso 1 c/u; multiplicador enorme para
+            // que el sesgo sea inequívoco con seed fijo.
+            var cursed = MakeEnchantment("cursed", DiceType.D6);
+            cursed.EditorSetCategory(EnchantmentCategory.Maldicion);
+            var normal = MakeEnchantment("normal", DiceType.D6);
+            var pool = MakePool(
+                new WeightedEnchantment { Enchantment = cursed, Weight = 1f },
+                new WeightedEnchantment { Enchantment = normal, Weight = 1f }
+            );
+            var rng = new Random(42);
+
+            global::Patterns.ServiceLocator.Clear();
+            var service = new EnchantmentWeightModifierService();
+            service.Register();
+            service.Register("moneda.maldita", 1000f);
+            try
+            {
+                // Act
+                int cursedCount = 0;
+                for (int i = 0; i < 200; i++)
+                {
+                    if (pool.Roll(rng, DiceType.D6, floorDepth: 0) == cursed) cursedCount++;
+                }
+
+                // Assert — esperado ~199.8/200; umbral holgado y determinista por seed.
+                Assert.GreaterOrEqual(cursedCount, 190,
+                    $"con peso x1000 el maldito debería dominar (salió {cursedCount}/200)");
+            }
+            finally
+            {
+                service.Dispose();
+                global::Patterns.ServiceLocator.Clear();
+            }
+        }
+
+        [Test]
+        public void Roll_UsesRawWeights_WhenWeightServiceMissing()
+        {
+            // Arrange — degrade permisivo: sin servicio, pesos crudos, ambos salen.
+            var cursed = MakeEnchantment("cursed", DiceType.D6);
+            cursed.EditorSetCategory(EnchantmentCategory.Maldicion);
+            var normal = MakeEnchantment("normal", DiceType.D6);
+            var pool = MakePool(
+                new WeightedEnchantment { Enchantment = cursed, Weight = 1f },
+                new WeightedEnchantment { Enchantment = normal, Weight = 1f }
+            );
+            var rng = new Random(42);
+            global::Patterns.ServiceLocator.Clear();
+            var seen = new HashSet<EnchantmentSO>();
+
+            // Act
+            for (int i = 0; i < 100; i++) seen.Add(pool.Roll(rng, DiceType.D6, floorDepth: 0));
+
+            // Assert
+            Assert.IsTrue(seen.Contains(cursed));
+            Assert.IsTrue(seen.Contains(normal));
+        }
+
+        [Test]
+        public void Roll_DoesNotAffectNonCursedEntries_WhenServiceRegistered()
+        {
+            // Arrange — pool 100% normal: el multiplicador registrado no cambia nada.
+            var a = MakeEnchantment("a", DiceType.D6);
+            var b = MakeEnchantment("b", DiceType.D6);
+            var pool = MakePool(
+                new WeightedEnchantment { Enchantment = a, Weight = 1f },
+                new WeightedEnchantment { Enchantment = b, Weight = 1f }
+            );
+
+            global::Patterns.ServiceLocator.Clear();
+            var service = new EnchantmentWeightModifierService();
+            service.Register();
+            service.Register("moneda.maldita", 1000f);
+            try
+            {
+                // Act — misma seed con y sin multiplicador da la misma secuencia,
+                // porque ningún entry es maldito y los pesos efectivos no cambian.
+                var withService = RollSequence(pool, seed: 99, count: 50);
+                service.Unregister("moneda.maldita");
+                var withoutMult = RollSequence(pool, seed: 99, count: 50);
+
+                // Assert
+                CollectionAssert.AreEqual(withoutMult, withService);
+            }
+            finally
+            {
+                service.Dispose();
+                global::Patterns.ServiceLocator.Clear();
+            }
+        }
+
+        private List<EnchantmentSO> RollSequence(EnchantmentPoolSO pool, int seed, int count)
+        {
+            var rng = new Random(seed);
+            var sequence = new List<EnchantmentSO>(count);
+            for (int i = 0; i < count; i++) sequence.Add(pool.Roll(rng, DiceType.D6, floorDepth: 0));
+            return sequence;
+        }
     }
 }

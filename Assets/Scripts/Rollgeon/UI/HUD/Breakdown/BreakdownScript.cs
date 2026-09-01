@@ -53,7 +53,8 @@ namespace Rollgeon.UI.HUD.Breakdown
         /// <summary>Arranque de M: la perilla de la habilidad (intrínseca a la acción, usualmente 1.0).</summary>
         public float InitialM;
 
-        public int FinalN;
+        /// <summary>Float: el base damage override puede aportar fracción (Furia 0.25/ronda).</summary>
+        public float FinalN;
         public float FinalM;
         public int FinalTotal;
         public bool Blocked;

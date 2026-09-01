@@ -5,8 +5,11 @@ using Rollgeon.ActionRolls;
 using Rollgeon.Attributes;
 using Rollgeon.Attributes.Stats;
 using Rollgeon.Combat.AI;
+using Rollgeon.Combat.Damage;
 using Rollgeon.Combat.FSM;
 using Rollgeon.Combos;
+using Rollgeon.Dice;
+using Rollgeon.Player;
 using Rollgeon.Dungeon;
 using Rollgeon.Dungeon.Components;
 using Rollgeon.Dungeon.State;
@@ -42,11 +45,25 @@ namespace Rollgeon.Effects.Concretes
     {
         [Title("Force Door")]
         [Tooltip("Threshold mínimo del 'effective total' de la tirada para forzar la puerta " +
-                 "(solo aplica en combate). El effective total usa formula B: si la tirada " +
-                 "matchea un combo, vale combo.EffectiveTotal (piso + parte dinámica); sino, " +
-                 "vale la suma cruda de los pips.")]
+                 "(solo aplica en combate). El effective total usa la fórmula N×M del combate: " +
+                 "con combo, (base del combo + Attack + Σcaras + bonos) × multiplicador; sin " +
+                 "combo, base 0 con todos los dados holdeados como caras. El ForceDoorRollBonus " +
+                 "de items se suma flat después del multiplicador. DATO GD — calibrado para " +
+                 "Warrior 5×d6: sin combo solo pasa la tirada perfecta; Doble Par pasa con " +
+                 "caras altas; Escalera o mejor pasa siempre. Bags con d8/d20 inflan el no-combo.")]
         [Min(1)]
-        public int RequiredValue = 25;
+        public int RequiredValue = 35;
+
+        [Tooltip("Multiplicador de habilidad (M) del check N×M — misma perilla que el " +
+                 "_comboMultiplier de EffDealDamage. 1 = neutro.")]
+        [MinValue(0.01f)]
+        public float ComboMultiplier = 1f;
+
+        // Odin no corre field initializers al deserializar assets autorados antes de que
+        // el campo existiera — un asset viejo llega con 0 y multiplicaría todo a 0. Todo
+        // consumo interno pasa por acá (el spec normaliza aparte via
+        // ActionRollSpec.EffectiveComboMultiplier).
+        private float EffectiveMultiplier => ComboMultiplier > 0f ? ComboMultiplier : 1f;
 
         [Tooltip("Porcentaje del max HP que se curan los enemigos de la sala cuando " +
                  "se fuerza la puerta exitosamente en combate.")]
@@ -83,6 +100,7 @@ namespace Rollgeon.Effects.Concretes
                 // BUG-060: Forzar Puerta SIEMPRE excluida de encantamientos de oro, aunque
                 // solo tenga tirada en combate (decisión de diseño del usuario).
                 Kind = Rollgeon.Combat.Rolls.RollActionKind.ForceDoor,
+                ComboMultiplier = EffectiveMultiplier,
             };
             return true;
         }
@@ -98,9 +116,24 @@ namespace Rollgeon.Effects.Concretes
             if (IsBossRoom())
                 return LocalizedContent.Ui("tooltip.effect.force_door.boss_room",
                     "El Boss debe ser vencido — no se puede forzar la puerta");
-            return string.Format(
+
+            string body = string.Format(
                 LocalizedContent.Ui("tooltip.effect.force_door.threshold", "Puntaje a superar: {0}"),
                 RequiredValue);
+
+            // Bonus flat de items (Pico de Minero) — antes el tooltip mostraba el 25/35
+            // pelado y el +5 era invisible aunque funcionara.
+            var playerGuid = ServiceLocator.TryGetService<IPlayerService>(out var ps) && ps != null
+                ? ps.PlayerGuid : Guid.Empty;
+            int itemBonus = ResolveItemRollBonus(playerGuid);
+            if (itemBonus > 0)
+            {
+                body += "\n" + string.Format(
+                    LocalizedContent.Ui("tooltip.effect.force_door.item_bonus",
+                        "Bonus de objetos a tu tirada: +{0}"),
+                    itemBonus);
+            }
+            return body;
         }
 
         public override bool ApplyEffect(EffectContext context)
@@ -124,16 +157,17 @@ namespace Rollgeon.Effects.Concretes
                     return false;
                 }
 
-                // Prioridad: el ActionRollService ya computó el effective sobre los held dice.
-                // Si viene pre-computado, usarlo (sino el cálculo desde FinalRoll incluye los 5
-                // dados aunque el user holdeó un subset → el threshold se evalúa mal).
+                // Prioridad: el ActionRollService ya computó el N×M sobre los held dice.
+                // El fallback replica la MISMA fórmula (PlayerComboForceDoor) sobre
+                // KeptDice — el legacy usaba fórmula B sobre el roll completo y sin el
+                // bonus de items: doble cálculo con semántica distinta.
                 int effectiveTotal = context.ActionRollEffectiveTotal
-                    ?? ActionRollTotals.ResolveEffectiveTotal(context.DiceResult, context.ComboResult);
+                    ?? ComputeFallbackEffectiveTotal(context);
 
                 int rawSum = ActionRollTotals.SumOf(context.DiceResult);
                 bool sheetCombo = context.ComboResult is { IsMatch: true };
                 Debug.LogWarning($"[EffForceDoor] dice=[{string.Join(",", context.DiceResult)}] " +
-                                 $"rawSum={rawSum} sheetCombo={(sheetCombo ? context.ComboResult.Value.EffectiveTotal.ToString() : "(none)")} " +
+                                 $"rawSum={rawSum} sheetCombo={(sheetCombo ? context.ComboResult.Value.BaseDamage.ToString() : "(none)")} " +
                                  $"override={(context.ActionRollEffectiveTotal?.ToString() ?? "(none)")} " +
                                  $"effective={effectiveTotal} threshold={RequiredValue} " +
                                  $"→ {(effectiveTotal >= RequiredValue ? "PASA" : "FALLA")}");
@@ -178,6 +212,53 @@ namespace Rollgeon.Effects.Concretes
                 }
             }
             return entered;
+        }
+
+        /// <summary>
+        /// Fallback cuando el context llega sin <c>ActionRollEffectiveTotal</c> (solo
+        /// tests deberían caer acá — ambos callers de producción lo setean): misma
+        /// fórmula N×M de <see cref="PlayerComboForceDoor"/> sobre los KeptDice, más
+        /// el bonus flat de items.
+        /// </summary>
+        private int ComputeFallbackEffectiveTotal(EffectContext context)
+        {
+            Debug.LogWarning("[EffForceDoor] Sin ActionRollEffectiveTotal precomputado — " +
+                             "fallback N×M local sobre KeptDice/DiceResult.");
+
+            var faces = context.KeptDice ?? context.DiceResult;
+            if (faces == null || faces.Count == 0) return 0;
+
+            var sourceGuid = context.SourceEntity != null ? context.SourceEntity.Guid : context.SourceGuid;
+
+            int comboBase = 0;
+            var dice = new List<ContributingDie>(faces.Count);
+            if (context.ComboResult is { IsMatch: true } combo && combo.ContributingIndices != null)
+            {
+                comboBase = combo.BaseDamage;
+                for (int i = 0; i < combo.ContributingIndices.Count; i++)
+                {
+                    int local = combo.ContributingIndices[i];
+                    if (local < 0 || local >= faces.Count) continue;
+                    dice.Add(new ContributingDie(-1, faces[local], DiceType.D6));
+                }
+            }
+            else
+            {
+                for (int i = 0; i < faces.Count; i++)
+                    dice.Add(new ContributingDie(-1, faces[i], DiceType.D6));
+            }
+
+            int nxm = PlayerComboForceDoor.Resolve(sourceGuid, comboBase, dice, EffectiveMultiplier);
+            return nxm + ResolveItemRollBonus(sourceGuid);
+        }
+
+        /// <summary>Bonus flat de items a la tirada (stat ForceDoorRollBonus). Degrada a 0.</summary>
+        private static int ResolveItemRollBonus(Guid playerGuid)
+        {
+            if (playerGuid == Guid.Empty) return 0;
+            if (!ServiceLocator.TryGetService<AttributesManager>(out var attrs) || attrs == null)
+                return 0;
+            return attrs.GetAttributeModifiedValue<ForceDoorRollBonus, int>(playerGuid);
         }
 
         // Despawnea los pawns visuales + unregistra del grid para que los enemigos

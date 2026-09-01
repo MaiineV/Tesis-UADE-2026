@@ -60,6 +60,18 @@ namespace Rollgeon.ActionRolls
         /// </summary>
         public RollActionKind Kind;
 
+        /// <summary>
+        /// Multiplicador de habilidad (M) para tiradas que resuelven N×M (hoy solo
+        /// ForceDoor). 0 = sin setear (default del struct) — los consumidores
+        /// normalizan vía <see cref="EffectiveComboMultiplier"/>, nunca leen el
+        /// campo crudo.
+        /// </summary>
+        public float ComboMultiplier;
+
+        /// <summary>Multiplicador efectivo: el seteado, o 1 si el struct vino con default.</summary>
+        public static float EffectiveComboMultiplier(in ActionRollSpec spec)
+            => spec.ComboMultiplier > 0f ? spec.ComboMultiplier : 1f;
+
         public static ActionRollSpec Default => new ActionRollSpec
         {
             CostsRolls = false,

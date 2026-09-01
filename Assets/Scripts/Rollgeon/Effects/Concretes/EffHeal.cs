@@ -291,6 +291,21 @@ namespace Rollgeon.Effects.Concretes
                         TargetEntityGuid = targetGuid,
                     });
             }
+            else if (resolvedHeal > 0)
+            {
+                // Hooks de item (Corazón de la Fortuna al fin de turno) llegan sin
+                // SourceBehavior: el canal de arriba (ruta B, BehaviorValue → Feedback)
+                // no corre y el heal era invisible. Se emite directo al spawner — sin
+                // riesgo de duplicado: heal va SOLO por ruta B (no hay pipeline de heal
+                // que pinte por su lado, ver FeedbackManager.ShouldSuppressFloatingNumber)
+                // y las dos ramas de este if son excluyentes.
+                EventManager.Trigger(
+                    EventName.OnFloatingNumberRequested,
+                    targetGuid,
+                    Rollgeon.UI.HUD.FloatingNumberType.Heal,
+                    (float)resolvedHeal,
+                    Vector3.zero);
+            }
 
             return true;
         }

@@ -128,6 +128,25 @@ namespace Rollgeon.Effects.Concretes
         private bool Apply<TAttr>(AttributesManager attrs, Guid target, int amount, EffectContext context)
             where TAttr : class, IModifiable<int>
         {
+            // Daño scripted a Health: rutear por el DamagePipeline cuando está registrado.
+            // El write directo salteaba el escudo y emitía DamageResolvedPayload con
+            // FinalDamage = amount — un "golpe" 100% absorbible cortaba la racha de Furia
+            // Contenida igual. Vía pipeline, el escudo absorbe y el payload sale con el
+            // FinalDamage real post-escudo. Fallback al write directo para tests/contexts
+            // sin pipeline. Set/Multiply/Divide siguen directos (semántica absoluta).
+            if (TargetStat == StatType.Health && Operation == IntOperation.Subtract && amount > 0
+                && ServiceLocator.TryGetService<Rollgeon.Combat.Pipelines.IDamagePipeline>(out var pipeline)
+                && pipeline != null)
+            {
+                pipeline.Resolve(new Rollgeon.Combat.Pipelines.DamageContext
+                {
+                    SourceId = context?.SourceGuid ?? Guid.Empty,
+                    TargetId = target,
+                    BaseDamage = amount,
+                });
+                return true;
+            }
+
             int current = attrs.GetAttributeValue<TAttr, int>(target);
             int next;
             switch (Operation)

@@ -125,7 +125,12 @@ dividen también para acompañar la secuencia comprimida.
 - [ ] Sin combo (dado más alto): el fallback anuncia y la secuencia muestra la cara UNA vez.
 - [ ] Chain multi-fase: fase Attack con secuencia; fase Shield con secuencia N×M de
       escudo (sin paso de mitigación; total del choque == escudo ganado).
-- [ ] Action roll (Heal / Forzar Puerta): threshold intacto, sin breakdown.
+- [ ] Action roll Heal: breakdown N×M sin threshold (rama propia en DamageFormulaView).
+- [ ] Action roll Forzar Puerta: threshold visible + breakdown N×M con combo; el total
+      del breakdown == el check evaluado (el bonus de items va flat post-M, se ve en el
+      tooltip/label, no en la animación). Sin combo: label plano con el N×M igual.
+      Post-confirm: AnnounceForceDoor anuncia aunque el threshold falle; en éxito el
+      cambio de sala puede cortar la animación (aceptado — smoke).
 - [ ] Skip: 1 click acelera, 2 clicks saltan al choque con el total correcto (slam).
 - [ ] Player muere / combate se corta a mitad de secuencia: sin soft-lock (gate liberado).
 - [ ] Dados bloqueados por boss: "+N" solo en contribuyentes.

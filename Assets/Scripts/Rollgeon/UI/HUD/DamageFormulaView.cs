@@ -273,6 +273,26 @@ namespace Rollgeon.UI.HUD
                 return;
             }
 
+            // Force Door N×M: con combo matcheado, misma UI de breakdown que ataque/heal
+            // (base del combo layered + multiplicador del spec) pero con el THRESHOLD
+            // visible — el jugador compara el número que arma contra el que necesita.
+            // Sin combo cae a TryShowActionRollMode, que muestra el CurrentEffectiveTotal
+            // (ya N×M: Attack + Σpips + bonus de items).
+            if (_actionRollService != null && _actionRollService.IsActive
+                && _actionRollService.CurrentSpec.Kind == Rollgeon.Combat.Rolls.RollActionKind.ForceDoor
+                && !string.IsNullOrEmpty(_lastComboId) && _breakdownView != null)
+            {
+                var doorSpec = _actionRollService.CurrentSpec;
+                ShowThreshold(doorSpec.Threshold);
+                string doorComboName = !string.IsNullOrEmpty(_lastComboDisplayName)
+                    ? _lastComboDisplayName : "Combo";
+                var doorPreview = ResolveForceDoorPreviewArgs(_lastComboBaseDamage, in doorSpec);
+                _breakdownView.SetComboName(doorComboName);
+                _breakdownView.ShowPreview(doorPreview.Base, doorPreview.Multiplier);
+                ClearLabelKeepingBreakdown();
+                return;
+            }
+
             // Si hay una ActionRoll activa, mostrar threshold + combo seleccionado y SALIR
             // (no se evalúa la fórmula de daño, que no aplica para Heal/ForceDoor).
             if (TryShowActionRollMode()) return;
@@ -474,6 +494,14 @@ namespace Rollgeon.UI.HUD
             int healBaseFromSheet, EffHeal healEffect)
             => (healBaseFromSheet, healEffect?.ComboMultiplier ?? 1f);
 
+        // Par (base, multiplier) del preview de Force Door — la base es el flat layered
+        // que viajó en ComboMatchedPayload.BaseDamage (misma fuente que el announcer) y
+        // el multiplier viene normalizado del spec. Estático puro para testearlo sin
+        // Bind/SetBehavior, igual que ResolveHealPreviewArgs.
+        public static (int Base, float Multiplier) ResolveForceDoorPreviewArgs(
+            int comboFlatBase, in Rollgeon.ActionRolls.ActionRollSpec spec)
+            => (comboFlatBase, Rollgeon.ActionRolls.ActionRollSpec.EffectiveComboMultiplier(in spec));
+
         /// <summary>
         /// Aplica la mitigación real (weakness + escudo) del enemigo apuntado SIN
         /// side-effects, para que el label == golpe que va a recibir. Sin target devuelve
@@ -505,14 +533,7 @@ namespace Rollgeon.UI.HUD
             if (_actionRollService == null || !_actionRollService.IsActive) return false;
             var spec = _actionRollService.CurrentSpec;
 
-            // Threshold label visible con el puntaje a superar. Acciones sin umbral
-            // (Curarse N×M usa Threshold 0) no muestran un "Necesitas >= 0" fantasma.
-            if (_thresholdLabel != null)
-            {
-                bool hasThreshold = spec.Threshold > 0;
-                _thresholdLabel.gameObject.SetActive(hasThreshold);
-                if (hasThreshold) _thresholdLabel.text = $"Necesitas >= {spec.Threshold}";
-            }
+            ShowThreshold(spec.Threshold);
 
             // Formula label: combo actual seleccionado del action roll service.
             var combo = _actionRollService.CurrentCombo;
@@ -520,10 +541,31 @@ namespace Rollgeon.UI.HUD
             string actionTag = string.IsNullOrEmpty(spec.ActionLabel) ? "Acción" : spec.ActionLabel;
 
             if (combo != null)
+            {
                 RenderLabel($"{actionTag} - {Rollgeon.Localization.LocalizedContent.Name(combo.ComboId, combo.DisplayName)} ({effective})", effective);
+            }
+            else if (spec.Kind == Rollgeon.Combat.Rolls.RollActionKind.ForceDoor && effective > 0)
+            {
+                // Sin combo el N×M igual vale (Attack + Σpips + bonus de items) — antes
+                // acá se ocultaba el número real justo en el único caso donde la suma
+                // cruda podía pasar el threshold.
+                RenderLabel($"{actionTag} - {effective}", effective);
+            }
             else
+            {
                 RenderLabel($"{actionTag} - selecciona los dados de tu combo", 0);
+            }
             return true;
+        }
+
+        // Threshold label visible con el puntaje a superar. Acciones sin umbral
+        // (Curarse N×M usa Threshold 0) no muestran un "Necesitas >= 0" fantasma.
+        private void ShowThreshold(int threshold)
+        {
+            if (_thresholdLabel == null) return;
+            bool hasThreshold = threshold > 0;
+            _thresholdLabel.gameObject.SetActive(hasThreshold);
+            if (hasThreshold) _thresholdLabel.text = $"Necesitas >= {threshold}";
         }
 
         private void HideThreshold()

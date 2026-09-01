@@ -31,7 +31,7 @@ namespace Rollgeon.UI.Tests
             public void PlayGlobalMod(BreakdownStep s, Action d) => Step("global:" + s.Amount, d);
             public void PlayFinalClash(int total, Action d) => Step("clash:" + total, d);
             public void PlayMitigation(int total, Action d) => Step("mitigation:" + total, d);
-            public void ForceFinalState(int n, float m) => Calls.Add($"force:{n}x{m}");
+            public void ForceFinalState(float n, float m) => Calls.Add($"force:{n}x{m}");
         }
 
         private static BreakdownScript Script()

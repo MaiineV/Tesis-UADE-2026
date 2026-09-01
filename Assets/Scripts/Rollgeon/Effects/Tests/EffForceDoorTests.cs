@@ -207,6 +207,131 @@ namespace Rollgeon.Effects.Tests
         }
 
         // -----------------------------------------------------------------
+        // Force Door N×M (paridad service ↔ effect)
+        // -----------------------------------------------------------------
+
+        [Test]
+        public void ApplyEffect_PrefersPrecomputedActionRollEffectiveTotal()
+        {
+            // Arrange — el path de producción: el service ya computó el N×M; los
+            // dados del ctx son basura a propósito (no deben re-evaluarse).
+            var instance = CreateInstanceWithAdjacentDoor(DoorDirection.North);
+            _dungeon.CurrentInstance = instance;
+            _dungeon.EnterResult = true;
+            _effect.RequiredValue = 35;
+            var ctx = MakeCtx(new int[] { 1, 1, 1, 1, 1 });
+            ctx.ActionRollEffectiveTotal = 40;
+
+            // Act + Assert
+            Assert.IsTrue(_effect.ApplyEffect(ctx));
+            Assert.IsTrue(_dungeon.EnterCalled);
+        }
+
+        [Test]
+        public void ApplyEffect_FallbackWithoutPrecomputedTotal_UsesNxMOverKeptDice()
+        {
+            // Arrange — sin override: el fallback debe dar EXACTAMENTE el mismo número
+            // que el helper compartido (assert contra el helper, no constante mágica).
+            var instance = CreateInstanceWithAdjacentDoor(DoorDirection.North);
+            _dungeon.CurrentInstance = instance;
+            _dungeon.EnterResult = true;
+            _effect.RequiredValue = 30;
+
+            var kept = new[] { 4, 4, 4 };
+            var combo = Rollgeon.Combos.ComboDetectionResult.Match(
+                "combo.trio", baseDamage: 22, countUsed: 3,
+                contributingIndices: new[] { 0, 1, 2 }, dynamicBonus: 0);
+            var ctx = MakeCtx(new int[] { 4, 4, 4, 1, 1 });
+            ctx.KeptDice = kept;
+            ctx.ComboResult = combo;
+
+            var expectedDice = new[]
+            {
+                new Rollgeon.Combat.Damage.ContributingDie(-1, 4, Rollgeon.Dice.DiceType.D6),
+                new Rollgeon.Combat.Damage.ContributingDie(-1, 4, Rollgeon.Dice.DiceType.D6),
+                new Rollgeon.Combat.Damage.ContributingDie(-1, 4, Rollgeon.Dice.DiceType.D6),
+            };
+            int expected = Rollgeon.Combat.Damage.PlayerComboForceDoor.Resolve(
+                _playerGuid, 22, expectedDice, 1f);
+
+            // Act — N = 22 + 12 = 34 ≥ 30: pasa por la fórmula nueva (la B legacy
+            // sobre el roll completo habría dado 22 seco... y también los 5 dados).
+            bool result = _effect.ApplyEffect(ctx);
+
+            // Assert
+            Assert.AreEqual(34, expected, "sanity del helper");
+            Assert.IsTrue(result);
+            Assert.IsTrue(_dungeon.EnterCalled);
+        }
+
+        [Test]
+        public void TryGetRollSpec_CopiesComboMultiplierAndThreshold()
+        {
+            // Arrange
+            _effect.RequiredValue = 40;
+            _effect.ComboMultiplier = 1.5f;
+
+            // Act
+            bool got = _effect.TryGetRollSpec(_playerGuid, out var spec);
+
+            // Assert
+            Assert.IsTrue(got);
+            Assert.AreEqual(40, spec.Threshold);
+            Assert.AreEqual(1.5f, spec.ComboMultiplier, 0.0001f);
+        }
+
+        [Test]
+        public void TryGetRollSpec_ZeroSerializedMultiplier_NormalizesToOne()
+        {
+            // Arrange — gotcha Odin: un asset autorado antes del campo llega con 0
+            // (los field initializers no corren) y multiplicaría todo a 0.
+            _effect.ComboMultiplier = 0f;
+
+            // Act
+            _effect.TryGetRollSpec(_playerGuid, out var spec);
+
+            // Assert
+            Assert.AreEqual(1f, spec.ComboMultiplier, 0.0001f);
+        }
+
+        [Test]
+        public void BuildTooltip_WithForceDoorRollBonus_AppendsItemLine()
+        {
+            // Arrange — jugador con +5 del Pico de Minero.
+            var attrMgr = new Rollgeon.Attributes.AttributesManager();
+            ServiceLocator.AddService<Rollgeon.Attributes.AttributesManager>(attrMgr, ServiceScope.Run);
+            var attrs = new Rollgeon.Attributes.ModifiableAttributes();
+            attrs.SetAttribute<Rollgeon.Attributes.Stats.ForceDoorRollBonus>(
+                new Rollgeon.Attributes.Stats.ForceDoorRollBonus(5));
+            attrMgr.Register(_playerGuid, attrs);
+            ServiceLocator.AddService<Rollgeon.Player.IPlayerService>(
+                new FakePlayerServiceForForce(_playerGuid), ServiceScope.Run);
+            try
+            {
+                // Act
+                var text = _effect.BuildTooltip();
+
+                // Assert
+                Assert.IsNotNull(text);
+                StringAssert.Contains("+5", text);
+            }
+            finally
+            {
+                attrMgr.Dispose();
+            }
+        }
+
+        [Test]
+        public void TryGetRollSpec_OutOfCombat_ReturnsFalse()
+        {
+            // Documenta el scope D5: fuera de combate la puerta se abre sin tirada —
+            // exploración jamás arranca el flujo de action roll de Force Door.
+            _phase.CurrentBase = GamePhase.Exploration;
+
+            Assert.IsFalse(_effect.TryGetRollSpec(_playerGuid, out _));
+        }
+
+        // -----------------------------------------------------------------
         // Helpers
         // -----------------------------------------------------------------
 
@@ -285,6 +410,25 @@ namespace Rollgeon.Effects.Tests
             public void ResyncDoorVisuals(Guid id) { }
             public Bounds GetFloorBounds() => default;
             public IReadOnlyList<WallOccluder> GetCurrentRoomOccluders() => Array.Empty<WallOccluder>();
+        }
+
+        private sealed class FakePlayerServiceForForce : Rollgeon.Player.IPlayerService
+        {
+            public FakePlayerServiceForForce(Guid guid) { PlayerGuid = guid; }
+
+            public Guid PlayerGuid { get; }
+            public Guid RunId => Guid.Empty;
+            public Rollgeon.Heroes.ClassHeroSO CurrentHero => null;
+            public Rollgeon.Dice.DiceBagSO DiceBag => null;
+
+            public void SetPlayer(Rollgeon.Heroes.ClassHeroSO hero, Guid runId) { }
+            public void SetDiceBag(Rollgeon.Dice.DiceBagSO bag) { }
+            public void ClearPlayer() { }
+
+#pragma warning disable CS0067
+            public event Action<Rollgeon.Heroes.ClassHeroSO> OnPlayerSet;
+            public event Action OnPlayerCleared;
+#pragma warning restore CS0067
         }
 
         private sealed class FakePhaseServiceForForce : IPhaseService

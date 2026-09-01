@@ -16,15 +16,18 @@ namespace Rollgeon.Combat.Damage
         // ── Términos de N (aditivos) ──────────────────────────────────────
         /// <summary>Base del combo (0 en el fallback sin combo con detalle de bag).</summary>
         public int ComboBase;
-        /// <summary>dmg_base_PJ — <c>Attack.Value</c>.</summary>
-        public int AttackBase;
+        /// <summary>dmg_base_PJ — <c>Attack.Value</c>, o el base damage override (float:
+        /// Furia Contenida acumula 0.25/ronda y la fracción viaja hasta el redondeo final).</summary>
+        public float AttackBase;
         /// <summary>bonos_PJ — <c>Attack.ModifiedValue − Attack.Value</c>.</summary>
         public int AttackBonus;
         /// <summary>Σ caras de los dados contribuyentes.</summary>
         public int FacesSum;
         /// <summary>Σ BonusComboDamage de los 3 canales de scratch.</summary>
         public int AdditiveBonus;
-        public int N;
+        /// <summary>Suma de los términos aditivos — float: solo <see cref="AttackBase"/>
+        /// puede aportar fracción; el redondeo único vive en <c>RoundNxM(N, M)</c>.</summary>
+        public float N;
 
         // ── Términos de M (multiplicativos) ───────────────────────────────
         /// <summary>Producto de ComboDamageMultiplier de los 3 canales de scratch.</summary>

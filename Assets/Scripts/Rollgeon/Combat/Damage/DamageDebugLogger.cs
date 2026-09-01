@@ -35,6 +35,7 @@ namespace Rollgeon.Combat.Damage
         private const string WeakCol = "c678dd";     // violeta — weakness
         private const string ShieldCol = "56b6c2";   // cyan — escudo
         private const string HealCol = "5fd068";     // verde — curación
+        private const string DoorCol = "d19a66";     // ocre — check de forzar puerta
 
         /// <summary>
         /// Desglosa la fórmula v3 compartida del combo del jugador desde el
@@ -51,12 +52,14 @@ namespace Rollgeon.Combat.Damage
             {
                 PlayerComboFormulaKind.Shield => ShieldCol,
                 PlayerComboFormulaKind.Heal => HealCol,
+                PlayerComboFormulaKind.ForceDoor => DoorCol,
                 _ => BandCompose,
             };
             string kindNoun = b.Kind switch
             {
                 PlayerComboFormulaKind.Shield => "escudo",
                 PlayerComboFormulaKind.Heal => "curación",
+                PlayerComboFormulaKind.ForceDoor => "check",
                 _ => "daño",
             };
             var sb = new StringBuilder(640);
@@ -64,6 +67,7 @@ namespace Rollgeon.Combat.Damage
             {
                 PlayerComboFormulaKind.Shield => Band(ShieldCol, "SHIELD · COMPOSICIÓN — escudo base del PLAYER"),
                 PlayerComboFormulaKind.Heal => Band(HealCol, "HEAL · COMPOSICIÓN — curación base del PLAYER"),
+                PlayerComboFormulaKind.ForceDoor => Band(DoorCol, "FORCE DOOR · COMPOSICIÓN — check del PLAYER"),
                 _ => Band(BandCompose, "DMG · COMPOSICIÓN — daño base del PLAYER"),
             });
             sb.Append("  ").Append(Col(Label, "src=" + Short(sourceId)));
@@ -78,11 +82,11 @@ namespace Rollgeon.Combat.Damage
 
             // Términos de N — todo lo aditivo escala junto.
             sb.Append(Row("combo_base", b.ComboBase));
-            sb.Append(Row("+ dmg_base_PJ  (ATQ.Value)", b.AttackBase));
+            sb.Append(RowF("+ dmg_base_PJ  (ATQ.Value u override)", b.AttackBase));
             sb.Append(Row("+ bonos_PJ     (ATQ.Modified − Value)", b.AttackBonus));
             sb.Append(Row("+ Σ caras contribuyentes", b.FacesSum));
             sb.Append(Row("+ bono_combo   (passives + enchants + items)", b.AdditiveBonus));
-            sb.Append('\n').Append(Col(Label, "  N = ")).Append(Col(Accent, "<b>" + b.N + "</b>"));
+            sb.Append('\n').Append(Col(Label, "  N = ")).Append(Col(Accent, "<b>" + F(b.N) + "</b>"));
 
             // Términos de M.
             sb.Append('\n').Append(Col(Label, "  M = "))
@@ -100,12 +104,13 @@ namespace Rollgeon.Combat.Damage
             }
 
             sb.Append('\n').Append(Col(kindCol, "  ═ TOTAL = N × M = "))
-              .Append(Col(Label, $"{b.N} × {F(b.M)} = "))
+              .Append(Col(Label, $"{F(b.N)} × {F(b.M)} = "))
               .Append(Col(Accent, "<b>" + b.Final + "</b>"))
               .Append(Col(Label, b.Kind switch
               {
                   PlayerComboFormulaKind.Shield => "   → se suma al atributo Shield (EffAddShield)",
                   PlayerComboFormulaKind.Heal => "   → entra al HealPipeline como BaseHeal",
+                  PlayerComboFormulaKind.ForceDoor => "   → se compara contra el threshold de la puerta",
                   _ => "   → entra al DamagePipeline como BaseDamage",
               }));
 
@@ -171,6 +176,11 @@ namespace Rollgeon.Combat.Damage
 
         private static string Row(string label, int value)
             => "\n" + Col(Label, "  " + label + ": ") + "<b>" + value + "</b>";
+
+        // Variante float para los términos que pueden traer fracción (dmg_base_PJ con
+        // el override de Furia): enteros se imprimen igual que Row.
+        private static string RowF(string label, float value)
+            => "\n" + Col(Label, "  " + label + ": ") + "<b>" + F(value) + "</b>";
 
         private static string Num(float v) => Col(Accent, F(v));
 

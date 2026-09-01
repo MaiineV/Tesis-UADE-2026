@@ -27,8 +27,8 @@ namespace Rollgeon.UI.HUD.Breakdown
                 Blocked = bd.Blocked,
             };
 
-            int playerBase = bd.AttackBase + bd.AttackBonus;
-            if (playerBase != 0)
+            float playerBase = bd.AttackBase + bd.AttackBonus;
+            if (playerBase != 0f)
                 script.Steps.Add(new BreakdownStep
                 {
                     Kind = BreakdownStepKind.PlayerBase,
@@ -135,7 +135,7 @@ namespace Rollgeon.UI.HUD.Breakdown
                 if (step.Target == BreakdownTarget.BaseN) n += step.Amount;
                 else m *= step.Amount;
             }
-            return (int)Math.Round(n) == script.FinalN && Math.Abs(m - script.FinalM) < 1e-3;
+            return Math.Abs(n - script.FinalN) < 1e-3 && Math.Abs(m - script.FinalM) < 1e-3;
         }
     }
 }

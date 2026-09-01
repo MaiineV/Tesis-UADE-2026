@@ -216,9 +216,18 @@ namespace Rollgeon.Heroes
             {
                 var announceShield = FindFirstAddShieldEffect();
                 if (announceShield != null)
+                {
                     Rollgeon.Combat.Damage.DamageBreakdownAnnouncer.AnnounceShield(effCtx, announceShield);
+                }
                 else
-                    Rollgeon.Combat.Damage.DamageBreakdownAnnouncer.AnnounceHeal(effCtx, FindFirstHealEffect());
+                {
+                    var announceHeal = FindFirstHealEffect();
+                    if (announceHeal != null)
+                        Rollgeon.Combat.Damage.DamageBreakdownAnnouncer.AnnounceHeal(effCtx, announceHeal);
+                    else
+                        Rollgeon.Combat.Damage.DamageBreakdownAnnouncer.AnnounceForceDoor(
+                            effCtx, FindFirstForceDoorEffect());
+                }
             }
             try
             {
@@ -359,6 +368,32 @@ namespace Rollgeon.Heroes
             foreach (var child in EffectTree.DirectChildren(eff))
             {
                 var found = FindHealIn(child);
+                if (found != null) return found;
+            }
+            return null;
+        }
+
+        public EffForceDoor FindFirstForceDoorEffect()
+        {
+            if (Effects == null) return null;
+            foreach (var group in Effects)
+            {
+                if (group?.Effects == null) continue;
+                foreach (var eff in group.Effects)
+                {
+                    var found = FindForceDoorIn(eff);
+                    if (found != null) return found;
+                }
+            }
+            return null;
+        }
+
+        private static EffForceDoor FindForceDoorIn(IEffect eff)
+        {
+            if (eff is EffForceDoor door) return door;
+            foreach (var child in EffectTree.DirectChildren(eff))
+            {
+                var found = FindForceDoorIn(child);
                 if (found != null) return found;
             }
             return null;

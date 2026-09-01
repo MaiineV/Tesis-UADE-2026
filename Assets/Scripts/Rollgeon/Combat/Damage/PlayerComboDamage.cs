@@ -17,7 +17,8 @@ namespace Rollgeon.Combat.Damage
     {
         Damage,
         Shield,
-        Heal
+        Heal,
+        ForceDoor
     }
 
     /// <summary>
@@ -60,7 +61,7 @@ namespace Rollgeon.Combat.Damage
             IReadOnlyList<ContributingDie> contributingDice, float abilityMultiplier,
             PlayerComboFormulaKind kind, out DamageBreakdown breakdown)
         {
-            int dmgBasePJ = 0;
+            float dmgBasePJ = 0f;
             int bonosPJ = 0;
             if (ServiceLocator.TryGetService<AttributesManager>(out var attrs) && attrs != null)
             {
@@ -125,7 +126,7 @@ namespace Rollgeon.Combat.Damage
             if (contributingDice != null)
                 for (int i = 0; i < contributingDice.Count; i++) facesSum += contributingDice[i].Face;
 
-            int n = comboBaseDamage + dmgBasePJ + bonosPJ + facesSum + bonoCombo;
+            float n = comboBaseDamage + dmgBasePJ + bonosPJ + facesSum + bonoCombo;
             // La palanca de playtest entra en m y no en n para que escale el golpe entero y no sólo
             // el término aditivo. Con PlayerDamageDebug apagado esto es ×1 y la fórmula es la real.
             float m = scratchMultiplier * abilityMultiplier * PlayerDamageDebug.Multiplier;
@@ -157,8 +158,10 @@ namespace Rollgeon.Combat.Damage
         /// Redondeo canónico de la fórmula: mitades siempre para arriba en magnitud (6.5 → 7),
         /// nunca banker's rounding (<c>Mathf.RoundToInt</c> haría 6.5 → 6). Público para que el
         /// preview del HUD reproduzca exactamente el mismo número que el golpe real.
+        /// N es float desde el canal de base damage override (Furia 0.25/ronda): este es el
+        /// ÚNICO punto donde la fracción se redondea.
         /// </summary>
-        public static int RoundNxM(int n, float m)
+        public static int RoundNxM(float n, float m)
             => Math.Max(0, (int)Math.Round(n * (double)m, MidpointRounding.AwayFromZero));
 
         // Agrega el journal de un canal al desglose. Aloca solo si alguna fuente aportó.

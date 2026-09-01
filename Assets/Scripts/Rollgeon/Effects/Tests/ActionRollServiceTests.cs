@@ -146,6 +146,161 @@ namespace Rollgeon.Effects.Tests
             }
         }
 
+        // -------------------------------------------------------------------------
+        // Force Door N×M: el effective total usa la fórmula del combate
+        // (PlayerComboForceDoor) — con combo, base + Attack + Σcaras, escalado por M;
+        // sin combo, base 0 con todos los held como caras. El stat de items es flat
+        // post-multiplicador. Los kinds != ForceDoor conservan la fórmula B.
+        // -------------------------------------------------------------------------
+
+        [Test]
+        public void ForceDoorKind_NoCombo_UsesNxM_AttackPlusHeldSum_PlusFlatItemBonus()
+        {
+            // Arrange — Attack 5 + stat de item 7; sin combo posible.
+            var attrMgr = new Rollgeon.Attributes.AttributesManager();
+            ServiceLocator.AddService<Rollgeon.Attributes.AttributesManager>(attrMgr);
+            var attrs = new Rollgeon.Attributes.ModifiableAttributes();
+            attrs.SetAttribute<Rollgeon.Attributes.Stats.Attack>(new Rollgeon.Attributes.Stats.Attack(5));
+            attrs.SetAttribute<Rollgeon.Attributes.Stats.ForceDoorRollBonus>(
+                new Rollgeon.Attributes.Stats.ForceDoorRollBonus(7));
+            attrMgr.Register(_player, attrs);
+            try
+            {
+                _roller.NextRoll = new[] { 1, 1, 1, 1, 1 };
+                ActionRollOutcome captured = default;
+                var spec = SpecForceDoorNoConfirm();
+                spec.Kind = RollActionKind.ForceDoor;
+                _service.StartFlow(spec, _player, _bag, o => captured = o);
+                _service.SetHolds(new[] { true, true, true, true, true });
+
+                // Act
+                _service.Confirm();
+
+                // Assert — N = 0 + 5(ATQ) + 5(pips) = 10; M = 1 → 10 + 7 = 17.
+                Assert.AreEqual(17, captured.EffectiveTotal);
+                Assert.IsTrue(captured.PassedThreshold);
+            }
+            finally
+            {
+                attrMgr.Dispose();
+                ServiceLocator.Clear();
+            }
+        }
+
+        [Test]
+        public void ForceDoorKind_ComboMatched_UsesComboBasePlusAttackPlusFaces()
+        {
+            // Arrange — Generala base 22 + Attack 5; threshold 35 (el default nuevo).
+            var attrMgr = new Rollgeon.Attributes.AttributesManager();
+            ServiceLocator.AddService<Rollgeon.Attributes.AttributesManager>(attrMgr);
+            var attrs = new Rollgeon.Attributes.ModifiableAttributes();
+            attrs.SetAttribute<Rollgeon.Attributes.Stats.Attack>(new Rollgeon.Attributes.Stats.Attack(5));
+            attrMgr.Register(_player, attrs);
+            var catalog = MakeCatalogWithGenerala(baseDamage: 22);
+            var service = new ActionRollService(_roller, _energy, catalog);
+            try
+            {
+                _roller.NextRoll = new[] { 4, 4, 4, 4, 4 }; // heldSum 20
+                ActionRollOutcome captured = default;
+                var spec = SpecForceDoorNoConfirm(threshold: 35);
+                spec.Kind = RollActionKind.ForceDoor;
+                service.StartFlow(spec, _player, _bag, o => captured = o);
+                service.SetHolds(new[] { true, true, true, true, true });
+
+                // Act
+                service.Confirm();
+
+                // Assert — N = 22 + 5 + 20 = 47; M = 1 → 47 ≥ 35 pasa.
+                Assert.AreEqual(47, captured.EffectiveTotal);
+                Assert.IsTrue(captured.PassedThreshold);
+                // Anti-regresión del bug original: armar combo YA NO rinde menos que
+                // los pips sueltos (la fórmula B daba 22 seco y hacía fallar la tirada).
+                Assert.Greater(captured.EffectiveTotal, 20,
+                    "Armar combo debe rendir MÁS que la suma cruda de los mismos dados.");
+            }
+            finally
+            {
+                service.Dispose();
+                if (catalog != null) UnityEngine.Object.DestroyImmediate(catalog);
+                attrMgr.Dispose();
+                ServiceLocator.Clear();
+            }
+        }
+
+        [Test]
+        public void ForceDoorKind_ComboMultiplier_ScalesNxM_ButNotItemBonus()
+        {
+            // Arrange — Generala base 22, stat de item 5, multiplicador de habilidad 2.
+            var attrMgr = new Rollgeon.Attributes.AttributesManager();
+            ServiceLocator.AddService<Rollgeon.Attributes.AttributesManager>(attrMgr);
+            var attrs = new Rollgeon.Attributes.ModifiableAttributes();
+            attrs.SetAttribute<Rollgeon.Attributes.Stats.ForceDoorRollBonus>(
+                new Rollgeon.Attributes.Stats.ForceDoorRollBonus(5));
+            attrMgr.Register(_player, attrs);
+            var catalog = MakeCatalogWithGenerala(baseDamage: 22);
+            var service = new ActionRollService(_roller, _energy, catalog);
+            try
+            {
+                _roller.NextRoll = new[] { 4, 4, 4, 4, 4 };
+                ActionRollOutcome captured = default;
+                var spec = SpecForceDoorNoConfirm(threshold: 35);
+                spec.Kind = RollActionKind.ForceDoor;
+                spec.ComboMultiplier = 2f;
+                service.StartFlow(spec, _player, _bag, o => captured = o);
+                service.SetHolds(new[] { true, true, true, true, true });
+
+                // Act
+                service.Confirm();
+
+                // Assert — (N=42 × 2) + 5 = 89; NUNCA (42+5)×2 = 94: el "+5 a la
+                // tirada" del item es literal, no lo escala M.
+                Assert.AreEqual(89, captured.EffectiveTotal);
+            }
+            finally
+            {
+                service.Dispose();
+                if (catalog != null) UnityEngine.Object.DestroyImmediate(catalog);
+                attrMgr.Dispose();
+                ServiceLocator.Clear();
+            }
+        }
+
+        [Test]
+        public void HealKind_StillUsesFormulaB_Unchanged()
+        {
+            // Arrange — guard-rail: Heal conserva la fórmula B (base plana del combo,
+            // sin Attack ni Σcaras) aunque haya Attack registrado.
+            var attrMgr = new Rollgeon.Attributes.AttributesManager();
+            ServiceLocator.AddService<Rollgeon.Attributes.AttributesManager>(attrMgr);
+            var attrs = new Rollgeon.Attributes.ModifiableAttributes();
+            attrs.SetAttribute<Rollgeon.Attributes.Stats.Attack>(new Rollgeon.Attributes.Stats.Attack(5));
+            attrMgr.Register(_player, attrs);
+            var catalog = MakeCatalogWithGenerala(baseDamage: 100);
+            var service = new ActionRollService(_roller, _energy, catalog);
+            try
+            {
+                _roller.NextRoll = new[] { 4, 4, 4, 4, 4 };
+                ActionRollOutcome captured = default;
+                var spec = SpecHeal();
+                spec.Kind = RollActionKind.Heal;
+                service.StartFlow(spec, _player, _bag, o => captured = o);
+                service.SetHolds(new[] { true, true, true, true, true });
+
+                // Act
+                service.Confirm();
+
+                // Assert — fórmula B: base plana 100, sin +5 de Attack ni +20 de caras.
+                Assert.AreEqual(100, captured.EffectiveTotal);
+            }
+            finally
+            {
+                service.Dispose();
+                if (catalog != null) UnityEngine.Object.DestroyImmediate(catalog);
+                attrMgr.Dispose();
+                ServiceLocator.Clear();
+            }
+        }
+
         /// <summary>Una tirada que NO es ForceDoor no lee el stat — el bonus no leakea a Heal.</summary>
         [Test]
         public void HealKind_DoesNotReadForceDoorRollBonus()
