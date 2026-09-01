@@ -45,17 +45,32 @@ namespace Rollgeon.Items
 
         private readonly ItemCatalogSO _catalog;
         private readonly int _maxActiveSlots;
+        private int _activeSlotBonus;
 
         public IReadOnlyList<InventorySlot> PassiveItems => _passiveItems;
         public IReadOnlyList<InventorySlot> ActiveItems => _activeItems;
-        public int MaxActiveSlots => _maxActiveSlots;
+        public int MaxActiveSlots => _maxActiveSlots + Math.Max(0, _activeSlotBonus);
+
+        public void AddActiveSlotBonus(int amount) => _activeSlotBonus += amount;
 
         public event Action<ItemSO, bool> OnItemChanged;
+
+        private EventManager.EventReceiver _onTurnStartedTick;
 
         public InventoryService(ItemCatalogSO catalog, int maxActiveSlots)
         {
             _catalog = catalog;
             _maxActiveSlots = Mathf.Max(1, maxActiveSlots);
+
+            // Los cooldowns de items activos bajan al arrancar cada turno del jugador.
+            // Antes TickCooldowns no lo llamaba nadie en producción — un item con
+            // Cooldown > 0 quedaba inutilizable el resto de la run.
+            _onTurnStartedTick = args =>
+            {
+                if (args != null && args.Length > 0 && args[0] is Guid g && g == GetPlayerGuid())
+                    TickCooldowns();
+            };
+            EventManager.Subscribe(EventName.OnTurnStarted, _onTurnStartedTick);
         }
 
         // ======================================================================
@@ -66,7 +81,7 @@ namespace Rollgeon.Items
         {
             if (item == null) return false;
 
-            if (item.Type == ItemType.Active && _activeItems.Count >= _maxActiveSlots)
+            if (item.Type == ItemType.Active && _activeItems.Count >= MaxActiveSlots)
                 return false;
 
             var slot = new InventorySlot { Item = item, CurrentCooldown = 0 };
@@ -76,6 +91,10 @@ namespace Rollgeon.Items
                 _passiveItems.Add(slot);
                 BindPassiveHooks(item);
                 ApplyPersistentModifiers(item);
+                RegisterBaseDamageOverride(item);
+                ApplyRollPoolBonus(item);
+                if (item.ActiveSlotBonus > 0) AddActiveSlotBonus(item.ActiveSlotBonus);
+                RegisterEnchantmentCostModifier(item);
             }
             else
             {
@@ -101,6 +120,10 @@ namespace Rollgeon.Items
                 _passiveItems.RemoveAt(passiveIdx);
                 UnbindPassiveHooks(item);
                 RemovePersistentModifiers(item);
+                UnregisterBaseDamageOverride(item);
+                RevertRollPoolBonus(item);
+                if (item.ActiveSlotBonus > 0) AddActiveSlotBonus(-item.ActiveSlotBonus);
+                UnregisterEnchantmentCostModifier(item);
                 OnItemChanged?.Invoke(item, false);
                 EventManager.Trigger(EventName.OnItemRemoved, GetPlayerGuid(), itemId);
                 return true;
@@ -457,6 +480,83 @@ namespace Rollgeon.Items
         }
 
         // ======================================================================
+        // Base damage override (Furia Contenida / Egoísta) — lifecycle simétrico
+        // a los persistent modifiers: entra con el item, sale con el item.
+        // ======================================================================
+
+        private readonly HashSet<string> _registeredOverrides = new();
+
+        private void RegisterBaseDamageOverride(ItemSO item)
+        {
+            var def = item.BaseDamageOverride;
+            if (def == null || !def.Enabled || def.BaseValue == null) return;
+            if (!ServiceLocator.TryGetService<Rollgeon.Combat.Damage.IBaseDamageOverrideService>(out var svc)
+                || svc == null)
+            {
+                Debug.LogWarning("[InventoryService] IBaseDamageOverrideService no registrado — el " +
+                                 $"override de daño base de '{item.ItemId}' no se aplica.");
+                return;
+            }
+            svc.Register(item.ItemId, def.BaseValue, def.Priority);
+            _registeredOverrides.Add(item.ItemId);
+        }
+
+        private void UnregisterBaseDamageOverride(ItemSO item)
+        {
+            if (item == null || !_registeredOverrides.Remove(item.ItemId)) return;
+            if (ServiceLocator.TryGetService<Rollgeon.Combat.Damage.IBaseDamageOverrideService>(out var svc)
+                && svc != null)
+                svc.Unregister(item.ItemId);
+        }
+
+        // ======================================================================
+        // Roll pool bonus (Llamado de Emergencia) — permanente mientras el item
+        // esté en el inventario, revertido al perderlo.
+        // ======================================================================
+
+        private void ApplyRollPoolBonus(ItemSO item)
+        {
+            if (item.RollPoolBonus <= 0) return;
+            // Durante RestoreState NO se re-aplica: RollPoolSaveable ya persiste el
+            // bonus acumulado del pool — aplicarlo acá lo duplicaría en cada load.
+            if (_restoringState) return;
+            if (ServiceLocator.TryGetService<Rollgeon.Combat.Rolls.IRollPoolService>(out var rolls)
+                && rolls != null)
+                rolls.AddRollPoolBonus(item.RollPoolBonus);
+        }
+
+        private void RevertRollPoolBonus(ItemSO item)
+        {
+            if (item == null || item.RollPoolBonus <= 0) return;
+            if (ServiceLocator.TryGetService<Rollgeon.Combat.Rolls.IRollPoolService>(out var rolls)
+                && rolls != null)
+                rolls.AddRollPoolBonus(-item.RollPoolBonus);
+        }
+
+        // ======================================================================
+        // Enchantment cost modifier (Moneda Maldita)
+        // ======================================================================
+
+        private readonly HashSet<string> _registeredCostModifiers = new();
+
+        private void RegisterEnchantmentCostModifier(ItemSO item)
+        {
+            if (item.EnchantmentCostMultiplier <= 0f
+                || Mathf.Approximately(item.EnchantmentCostMultiplier, 1f)) return;
+            if (!ServiceLocator.TryGetService<IEnchantmentCostModifierService>(out var svc) || svc == null)
+                return;
+            svc.Register(item.ItemId, item.EnchantmentCostMultiplier);
+            _registeredCostModifiers.Add(item.ItemId);
+        }
+
+        private void UnregisterEnchantmentCostModifier(ItemSO item)
+        {
+            if (item == null || !_registeredCostModifiers.Remove(item.ItemId)) return;
+            if (ServiceLocator.TryGetService<IEnchantmentCostModifierService>(out var svc) && svc != null)
+                svc.Unregister(item.ItemId);
+        }
+
+        // ======================================================================
         // Helpers
         // ======================================================================
 
@@ -500,6 +600,8 @@ namespace Rollgeon.Items
             return state;
         }
 
+        private bool _restoringState;
+
         public void RestoreState(InventoryState state)
         {
             if (state == null || _catalog == null) return;
@@ -508,10 +610,18 @@ namespace Rollgeon.Items
             _activeItems.Clear();
             ClearAllHooksAndModifiers();
 
-            foreach (var id in state.PassiveItemIds)
+            _restoringState = true;
+            try
             {
-                var item = _catalog.GetById(id);
-                if (item != null) AddItem(item);
+                foreach (var id in state.PassiveItemIds)
+                {
+                    var item = _catalog.GetById(id);
+                    if (item != null) AddItem(item);
+                }
+            }
+            finally
+            {
+                _restoringState = false;
             }
 
             foreach (var snapshot in state.ActiveSlots)
@@ -545,6 +655,11 @@ namespace Rollgeon.Items
 
         public void Dispose()
         {
+            if (_onTurnStartedTick != null)
+            {
+                EventManager.UnSubscribe(EventName.OnTurnStarted, _onTurnStartedTick);
+                _onTurnStartedTick = null;
+            }
             SaveSystem.Unregister(this);
             ClearAllHooksAndModifiers();
             _passiveItems.Clear();
@@ -567,6 +682,28 @@ namespace Rollgeon.Items
                     attrMgr.RemoveAllModifiersBySource(sourceId);
             }
             _appliedModifierSources.Clear();
+
+            if (_registeredOverrides.Count > 0
+                && ServiceLocator.TryGetService<Rollgeon.Combat.Damage.IBaseDamageOverrideService>(out var bdo)
+                && bdo != null)
+            {
+                foreach (var id in _registeredOverrides)
+                    bdo.Unregister(id);
+            }
+            _registeredOverrides.Clear();
+
+            // El bonus de slots deriva 100% de los items: al limpiar items, vuelve a 0
+            // (RestoreState los re-agrega y lo re-acumula — sin esto, duplicaría).
+            _activeSlotBonus = 0;
+
+            if (_registeredCostModifiers.Count > 0
+                && ServiceLocator.TryGetService<IEnchantmentCostModifierService>(out var ecm)
+                && ecm != null)
+            {
+                foreach (var id in _registeredCostModifiers)
+                    ecm.Unregister(id);
+            }
+            _registeredCostModifiers.Clear();
         }
     }
 }

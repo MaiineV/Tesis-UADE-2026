@@ -24,7 +24,17 @@ namespace Rollgeon.Items
 
         void TickCooldowns();
 
+        /// <summary>
+        /// Slots de items activos disponibles: base del bootstrap + bonus de items
+        /// (Mochila Grande). Nunca menor que la base.
+        /// </summary>
         int MaxActiveSlots { get; }
+
+        /// <summary>
+        /// Suma (o resta, con negativo) al bonus de slots activos. Lifecycle de items:
+        /// entra con el item, se revierte al perderlo.
+        /// </summary>
+        void AddActiveSlotBonus(int amount);
 
         event Action<ItemSO, bool> OnItemChanged;
     }
