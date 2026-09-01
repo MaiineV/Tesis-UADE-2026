@@ -122,6 +122,10 @@ namespace Rollgeon.Editor.Tools.Item
                 "Al arrancar el turno del jugador.", EventName.OnTurnStarted),
             Bus("turn.end", "Cuando termina tu turno",
                 "Al cerrar el turno del jugador.", EventName.OnTurnFinished),
+            Bus("turn.rolls.leftover", "Al terminar tu turno con rolls sin usar",
+                "Suena ANTES de que el pool regale los rolls del turno siguiente: un reader " +
+                "de rolls (ReadCurrentRolls) lee acá exactamente los sobrantes.",
+                EventName.OnPlayerTurnRollsLeftover),
 
             // --- Tirada --------------------------------------------------------
             Bus("roll.start", "Cuando empezás a tirar",
