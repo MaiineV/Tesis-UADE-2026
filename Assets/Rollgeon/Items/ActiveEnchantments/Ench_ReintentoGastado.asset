@@ -1,0 +1,49 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5a33088aeed3fec429ed8072df447e2f, type: 3}
+  m_Name: Ench_ReintentoGastado
+  m_EditorClassIdentifier: Rollgeon::Rollgeon.Items.Active.ActiveItemEnchantmentSO
+  serializationData:
+    SerializedFormat: 2
+    SerializedBytes: 
+    ReferencedUnityObjects: []
+    SerializedBytesString: 
+    Prefab: {fileID: 0}
+    PrefabModificationsReferencedUnityObjects: []
+    PrefabModifications: []
+    SerializationNodes:
+    - Name: Modifier
+      Entry: 7
+      Data: 0|Rollgeon.Items.Active.RollFlatBonus, Rollgeon
+    - Name: Amount
+      Entry: 3
+      Data: 2
+    - Name: MaxResult
+      Entry: 3
+      Data: 5
+    - Name: 
+      Entry: 8
+      Data: 
+  EnchantmentId: ench.reintento
+  DisplayName: Reintento Gastado
+  Description: Una vez por combate, +2 al resultado. El limite resetea entre combates.
+  Modifier:
+    rid: 7817893837857358470
+  UsesPerCombat: 1
+  references:
+    version: 2
+    RefIds:
+    - rid: 7817893837857358470
+      type: {class: RollFlatBonus, ns: Rollgeon.Items.Active, asm: Rollgeon}
+      data:
+        Amount: 2
+        MaxResult: 5
