@@ -26,6 +26,114 @@ namespace Rollgeon.Items.Active
         }
 
         public event Action<ActiveItemActivationResult> OnResolved;
+        public event Action OnSelectionStarted;
+        public event Action OnSelectionCancelled;
+
+        public bool IsSelecting { get; private set; }
+
+        // ======================================================================
+        // Paso 1: tocar la ficha (gratis) → seleccion o activacion directa
+        // ======================================================================
+
+        public bool BeginActivation()
+        {
+            // Re-tocar la ficha con una seleccion abierta cancela, como el resto de las
+            // acciones del combate.
+            if (IsSelecting)
+            {
+                CancelActivation();
+                return false;
+            }
+
+            if (CanActivate() != ActiveItemBlock.None) return false;
+
+            var settings = ResolveSelectionSettings(_equipped.Current);
+            var playerGuid = ResolvePlayerGuid();
+
+            // Sin seleccion (o self-target): el GDD dice que estos items "activan de
+            // forma directa, sin paso de seleccion", y ahi el pago ocurre en el mismo
+            // instante que la activacion. No hay ventana de cancelacion.
+            if (settings == null || settings.SlotState == SlotState.Self)
+            {
+                Confirm(selection: null);
+                return true;
+            }
+
+            // El item pide target y no hay grilla para resolverlo. Activar igual seria
+            // cobrar el roll y aplicar el efecto sobre el jugador — peor que no hacer
+            // nada. Se rechaza.
+            if (!ServiceLocator.TryGetService<IGridManager>(out var grid)
+                || grid == null
+                || !grid.TryGetPosition(playerGuid, out var ownerPos))
+            {
+                Debug.LogWarning(LogPrefix + "el item pide objetivo pero no hay grilla — activacion rechazada.");
+                return false;
+            }
+
+            if (settings.AutoResolve)
+            {
+                Confirm(settings.AutoResolveTargets(ownerPos, playerGuid));
+                return true;
+            }
+
+            var validTargets = settings.ResolveValidTiles(ownerPos, playerGuid);
+            if (validTargets == null || validTargets.Count == 0) return false;
+
+            if (!ServiceLocator.TryGetService<ISelectionController>(out var controller) || controller == null)
+            {
+                Debug.LogWarning(LogPrefix + "ISelectionController no registrado — no se puede pedir target.");
+                return false;
+            }
+
+            IsSelecting = true;
+            controller.OnSelectionCompleted += HandleSelectionCompleted;
+            controller.BeginSelection(new SelectionRequest
+            {
+                Settings = settings,
+                ValidTargets = validTargets,
+                OwnerGuid = playerGuid,
+                HighlightStyle = "attack",
+            });
+
+            OnSelectionStarted?.Invoke();
+            return true;
+        }
+
+        public void CancelActivation()
+        {
+            if (!IsSelecting) return;
+
+            DetachSelection();
+            if (ServiceLocator.TryGetService<ISelectionController>(out var controller) && controller != null)
+                controller.CancelSelection();
+
+            OnSelectionCancelled?.Invoke();
+        }
+
+        /// <summary>
+        /// Paso 2: llega el target elegido. Confirmar cobra; cancelar no gasta el item,
+        /// que es lo que el GDD pide explicitamente.
+        /// </summary>
+        private void HandleSelectionCompleted(TargetSelectionResult result)
+        {
+            if (!IsSelecting) return;
+            DetachSelection();
+
+            if (result == null || !result.WasCompleted)
+            {
+                OnSelectionCancelled?.Invoke();
+                return;
+            }
+
+            Confirm(result);
+        }
+
+        private void DetachSelection()
+        {
+            IsSelecting = false;
+            if (ServiceLocator.TryGetService<ISelectionController>(out var controller) && controller != null)
+                controller.OnSelectionCompleted -= HandleSelectionCompleted;
+        }
 
         // ======================================================================
         // Gating (§6, §7)

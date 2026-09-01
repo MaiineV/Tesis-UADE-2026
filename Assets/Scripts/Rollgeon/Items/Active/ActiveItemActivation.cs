@@ -49,6 +49,41 @@ namespace Rollgeon.Items.Active
         ActiveItemBlock CanActivate();
 
         /// <summary>
+        /// Paso 1: el jugador toca la ficha. <b>No cuesta nada.</b> Si el item pide
+        /// target abre la seleccion y queda esperando; si activa directo, confirma en el
+        /// acto (ahi si se cobra).
+        /// </summary>
+        /// <returns>
+        /// <c>false</c> si la activacion esta bloqueada. <c>true</c> tanto si quedo
+        /// esperando seleccion como si ya resolvio — mirar <see cref="IsSelecting"/>.
+        /// </returns>
+        bool BeginActivation();
+
+        /// <summary>
+        /// <c>true</c> mientras se espera que el jugador elija target. En ese estado la
+        /// accion todavia no costo nada y se puede cancelar.
+        /// </summary>
+        bool IsSelecting { get; }
+
+        /// <summary>
+        /// Cancela la seleccion en curso sin costo. No-op si no habia ninguna. Despues
+        /// de confirmar el target ya no se puede cancelar: el roll esta cobrado.
+        /// </summary>
+        void CancelActivation();
+
+        /// <summary>
+        /// Disparado al abrir la seleccion de target. El HUD lo usa para marcar la ficha
+        /// como armada.
+        /// </summary>
+        event Action OnSelectionStarted;
+
+        /// <summary>
+        /// Disparado cuando la seleccion termina sin activar (el jugador cancelo o no
+        /// eligio nada). El item no se gasto.
+        /// </summary>
+        event Action OnSelectionCancelled;
+
+        /// <summary>
         /// Confirma la activacion: cobra 1 roll, tira el dado y resuelve la banda.
         /// </summary>
         /// <param name="selection">

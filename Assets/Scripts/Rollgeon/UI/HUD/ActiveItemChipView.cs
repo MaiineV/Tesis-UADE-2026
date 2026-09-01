@@ -73,6 +73,10 @@ namespace Rollgeon.UI.HUD
         [Tooltip("Segundos que el numero obtenido queda visible antes de volver al reposo.")]
         private float _rollDisplaySeconds = 1.2f;
 
+        [SerializeField, MinValue(1f)]
+        [Tooltip("Cuanto se aclara la ficha mientras espera que elijas el objetivo.")]
+        private float _armedTintFactor = 1.45f;
+
         [ShowInInspector, ReadOnly]
         private ActiveItemBlock _block = ActiveItemBlock.NoItemEquipped;
 
@@ -135,6 +139,10 @@ namespace Rollgeon.UI.HUD
             {
                 _activation.OnResolved -= HandleResolved;
                 _activation.OnResolved += HandleResolved;
+                _activation.OnSelectionStarted -= HandleRefreshNoArgs;
+                _activation.OnSelectionStarted += HandleRefreshNoArgs;
+                _activation.OnSelectionCancelled -= HandleRefreshNoArgs;
+                _activation.OnSelectionCancelled += HandleRefreshNoArgs;
             }
         }
 
@@ -168,6 +176,7 @@ namespace Rollgeon.UI.HUD
         }
 
         private void HandleRefresh(params object[] args) => Refresh();
+        private void HandleRefreshNoArgs() => Refresh();
         private void HandleEquippedChanged(ItemSO equipped, ItemSO discarded) => Refresh();
 
         // ==================================================================
@@ -197,7 +206,12 @@ namespace Rollgeon.UI.HUD
                 return;
             }
 
-            if (_chip != null) _chip.color = _placeholderTint;
+            // Armada = esperando que el jugador elija target. Todavia no costo nada y
+            // re-clickear cancela, asi que el estado tiene que leerse distinto del reposo.
+            bool arming = _activation != null && _activation.IsSelecting;
+            if (_chip != null)
+                _chip.color = arming ? _placeholderTint * _armedTintFactor : _placeholderTint;
+
             ApplyDieSprite();
             ApplyUnavailableTint();
         }
@@ -257,9 +271,10 @@ namespace Rollgeon.UI.HUD
                 return;
             }
 
-            // Fase 1: solo los items que activan directo, sin paso de seleccion. Los que
-            // piden target abren el selector — eso entra en la fase siguiente.
-            _activation.Confirm(selection: null);
+            // Gratis: si el item pide target abre la seleccion y espera; si activa
+            // directo, resuelve en el acto. El cobro nunca ocurre aca.
+            _activation.BeginActivation();
+            Refresh();
         }
 
         private void HandleResolved(ActiveItemActivationResult result)
