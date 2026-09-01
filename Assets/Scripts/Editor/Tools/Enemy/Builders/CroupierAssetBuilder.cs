@@ -330,11 +330,11 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         public const int BombFireDamage = 15;
 
         /// <summary>
-        /// Lo que cobra el estallido en sí: <b>nada</b>, igual que el cono. Quien esté parado en la
-        /// cruz cuando prende paga los <see cref="BombFireDamage"/> al arrancar su turno ahí, que es
-        /// lo que le da el turno para salirse. Cobrar también al prender lo cobraría dos veces.
+        /// Lo que cobra el estallido en sí. Quedarse en la cruz cuesta esto al prender más los
+        /// <see cref="BombFireDamage"/> al arrancar el turno ahí: casi media barra del jugador por
+        /// ignorar UNA de las tres, que es el precio que la hace una pregunta y no un adorno.
         /// </summary>
-        public const int BombIgnitionDamage = 0;
+        public const int BombIgnitionDamage = 30;
 
         /// <summary>
         /// De acá sale el canal de amenaza de cada bomba (prefijo + su guid). Uno por bomba es lo que

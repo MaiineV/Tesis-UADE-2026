@@ -120,7 +120,7 @@ MonoBehaviour:
       Data: 4
     - Name: IgnitionDamage
       Entry: 3
-      Data: 0
+      Data: 30
     - Name: ChannelPrefix
       Entry: 1
       Data: croupier.bomb.
@@ -297,7 +297,7 @@ MonoBehaviour:
       Data: 2
     - Name: IgnitionDamage
       Entry: 3
-      Data: 0
+      Data: 30
     - Name: ChannelPrefix
       Entry: 1
       Data: croupier.bomb.

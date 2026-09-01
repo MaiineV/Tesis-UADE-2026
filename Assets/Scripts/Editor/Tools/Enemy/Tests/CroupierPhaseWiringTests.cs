@@ -941,8 +941,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             Assert.AreEqual(CroupierAssetBuilder.BombFuseTurns, field.FuseTurns,
                 "La mecha no sale de la constante de la ficha.");
             Assert.AreEqual(CroupierAssetBuilder.BombIgnitionDamage, field.IgnitionDamage,
-                "El estallido en sí no cobra: quien quedó parado ahí paga al arrancar su turno, " +
-                "que es lo que le da el turno para salirse.");
+                "El estallido dejó de cobrar lo que dice la ficha: quedarse en la cruz tiene que " +
+                "doler al prender, además del fuego que queda.");
         }
 
         /// <summary>
