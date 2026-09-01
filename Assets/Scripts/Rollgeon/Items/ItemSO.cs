@@ -57,10 +57,21 @@ namespace Rollgeon.Items
         // Modelo nuevo (GDD "Ítems Activos"): slot unico, dado propio y bandas.
         // ==================================================================
 
+        [Title("Active — Modelo")]
+        [InfoBox("Flag de MIGRACION. En true el item vive en el slot unico del HUD " +
+                 "(modelo del rework: dado propio, bandas, 1 roll por uso) y conseguirlo " +
+                 "descarta el que tuvieras. En false sigue el camino viejo: entra a " +
+                 "IInventoryService.ActiveItems y se usa por OnActivate.\n\n" +
+                 "Arranca en false a proposito. El GDD dice que el catalogo todavia no " +
+                 "esta migrado, y la pocion depende del camino viejo — prenderlo por " +
+                 "default la sacaria del inventario y romperia el boton Heal.")]
+        [ShowIf("@Type == ItemType.Active")]
+        public bool UsesActiveSlot;
+
         [Title("Active — Dado y familia")]
         [InfoBox("El item se activa pagando 1 roll y tirando SU dado. El resultado cae " +
                  "en una de tres bandas y esa banda decide que efecto corre.")]
-        [ShowIf("@Type == ItemType.Active")]
+        [ShowIf("@Type == ItemType.Active && UsesActiveSlot")]
         [Tooltip("Dado propio del item (D4 a D20). Se tira dentro del slot del HUD, " +
                  "nunca junto a los 5 dados de combate.")]
         public DiceType ActiveDie = DiceType.D6;

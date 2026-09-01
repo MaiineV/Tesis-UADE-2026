@@ -84,6 +84,12 @@ namespace Rollgeon.Items
         {
             if (item == null) return false;
 
+            // Los items del modelo nuevo no entran al inventario: viven en el slot unico.
+            // El desvio va aca y no en cada fuente para que la tienda, los cofres y
+            // cualquier camino futuro caigan solos — todos pasan por AddItem.
+            if (item.Type == ItemType.Active && item.UsesActiveSlot)
+                return EquipInActiveSlot(item);
+
             if (item.Type == ItemType.Active && _activeItems.Count >= _maxActiveSlots)
                 return false;
 
@@ -104,6 +110,29 @@ namespace Rollgeon.Items
             // Centralizamos el OnItemObtained acá — antes solo lo disparaba EffAddItemToInventory,
             // entonces compras del shop / starting items no notificaban al HUD y el counter
             // quedaba stale hasta el próximo OnEnable de la sub-view.
+            EventManager.Trigger(EventName.OnItemObtained, GetPlayerGuid(), item.ItemId);
+            return true;
+        }
+
+        /// <summary>
+        /// Equipa en el slot unico. Conseguir un item activo descarta el que hubiera, con
+        /// su encantamiento — es el modelo del GDD, sin confirmacion ni recuperacion.
+        /// </summary>
+        /// <returns>
+        /// <c>false</c> si el servicio del slot no esta registrado. Devolverlo asi hace
+        /// que la tienda avise en vez de cobrar por un item que se perdio en el aire.
+        /// </returns>
+        private bool EquipInActiveSlot(ItemSO item)
+        {
+            if (!ServiceLocator.TryGetService<Active.IEquippedActiveItemService>(out var slot) || slot == null)
+            {
+                Debug.LogWarning($"[InventoryService] IEquippedActiveItemService no registrado — " +
+                                 $"'{item.ItemId}' no se puede equipar.");
+                return false;
+            }
+
+            slot.Equip(item);
+            OnItemChanged?.Invoke(item, true);
             EventManager.Trigger(EventName.OnItemObtained, GetPlayerGuid(), item.ItemId);
             return true;
         }
@@ -141,7 +170,8 @@ namespace Rollgeon.Items
         {
             if (string.IsNullOrEmpty(itemId)) return false;
             return _passiveItems.Any(s => s.Item != null && s.Item.ItemId == itemId)
-                || _activeItems.Any(s => s.Item != null && s.Item.ItemId == itemId);
+                || _activeItems.Any(s => s.Item != null && s.Item.ItemId == itemId)
+                || EquippedActiveItem(itemId) != null;
         }
 
         public ItemSO GetItem(string itemId)
@@ -149,7 +179,19 @@ namespace Rollgeon.Items
             if (string.IsNullOrEmpty(itemId)) return null;
             var slot = _passiveItems.FirstOrDefault(s => s.Item != null && s.Item.ItemId == itemId)
                     ?? _activeItems.FirstOrDefault(s => s.Item != null && s.Item.ItemId == itemId);
-            return slot?.Item;
+            return slot?.Item ?? EquippedActiveItem(itemId);
+        }
+
+        /// <summary>
+        /// El item del slot unico, si su id coincide. Las consultas de inventario tienen
+        /// que verlo: una precondicion como <c>PCHasInventoryItem</c> pregunta "tenes este
+        /// item", y tenerlo equipado cuenta.
+        /// </summary>
+        private static ItemSO EquippedActiveItem(string itemId)
+        {
+            if (!ServiceLocator.TryGetService<Active.IEquippedActiveItemService>(out var slot)
+                || slot?.Current == null) return null;
+            return slot.Current.ItemId == itemId ? slot.Current : null;
         }
 
         // ======================================================================
