@@ -5280,7 +5280,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 75, y: 330}
+  m_AnchoredPosition: {x: 64, y: 525}
   m_SizeDelta: {x: 110, y: 110}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &3200089216778946212
@@ -5311,7 +5311,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: -1519053883, guid: f3ece9c685d3ae44888c7a085817b313, type: 3}
+  m_Sprite: {fileID: -1506828337, guid: 73d48a075aa01ea47b565b1782961da1, type: 3}
   m_Type: 0
   m_PreserveAspect: 1
   m_FillCenter: 1
@@ -5378,9 +5378,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Rollgeon::Rollgeon.UI.Tooltips.UITooltipTrigger
   _placement:
-    Mode: 0
-    FixedAnchor: {fileID: 0}
-    FixedOffset: {x: 0, y: 0}
+    Mode: 1
+    FixedAnchor: {fileID: 5081576366728035916}
+    FixedOffset: {x: 220, y: -55}
   _previewText: "<b>Acci\xF3n</b>\nCosto: 2 de energ\xEDa\nDa\xF1o: ATQ (3) + puntaje
     del combo"
 --- !u!114 &8736128030442202764
@@ -5400,16 +5400,12 @@ MonoBehaviour:
   _rollLabel: {fileID: 3424763077700806204}
   _button: {fileID: 7101884707650966416}
   _tooltip: {fileID: 8822643947065262039}
-  _dieSprites:
-  - {fileID: 359414099, guid: cc9f2ad12a7a84f4eac85babace95875, type: 3}
-  - {fileID: 1178113197, guid: cc9f2ad12a7a84f4eac85babace95875, type: 3}
-  - {fileID: -703235995, guid: cc9f2ad12a7a84f4eac85babace95875, type: 3}
-  - {fileID: -1305715248, guid: cc9f2ad12a7a84f4eac85babace95875, type: 3}
-  - {fileID: -213345111, guid: cc9f2ad12a7a84f4eac85babace95875, type: 3}
-  - {fileID: 1496919688, guid: cc9f2ad12a7a84f4eac85babace95875, type: 3}
-  - {fileID: 1178113197, guid: cc9f2ad12a7a84f4eac85babace95875, type: 3}
-  _placeholderTint: {r: 0.91, g: 0.53, b: 0.23, a: 1}
-  _rollDisplaySeconds: 1.2
+  _shapeCatalog: {fileID: 0}
+  _placeholderTint: {r: 1, g: 1, b: 1, a: 1}
+  _negativeColor: {r: 0.85, g: 0.35, b: 0.3, a: 1}
+  _mixedColor: {r: 0.92, g: 0.8, b: 0.35, a: 1}
+  _positiveColor: {r: 0.45, g: 0.9, b: 0.5, a: 1}
+  _armedTintFactor: 1.45
 --- !u!1 &7661344218674049193
 GameObject:
   m_ObjectHideFlags: 0
