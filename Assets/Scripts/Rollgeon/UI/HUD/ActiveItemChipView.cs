@@ -3,6 +3,7 @@ using Patterns;
 using Rollgeon.Dice;
 using Rollgeon.Items;
 using Rollgeon.Items.Active;
+using Rollgeon.UI.HUD.DiceAnim;
 using Rollgeon.UI.Tooltips;
 using Sirenix.OdinInspector;
 using TMPro;
@@ -97,7 +98,28 @@ namespace Rollgeon.UI.HUD
         // Animacion de tirada en curso. _rollStartedAt < 0 = en reposo.
         private float _rollStartedAt = -1f;
         private ActiveItemActivationResult _lastResult;
-        private int _spinSeed;
+        // Plan del giro, armado una vez por tirada con la coreografia compartida.
+        private int _spinTickCount;
+        private int _sideSeed;
+        private int[] _previewFaces;
+        private bool _showPreviewFaces;
+
+        private const string AnimSettingsResourcePath = "Dice/DiceUiAnimationSettings";
+        private DiceUiAnimationSettingsSO _animSettings;
+
+        /// <summary>
+        /// Tuning de animacion de dados del proyecto. Es el mismo asset que usan los dados
+        /// de combate y el de movimiento: si alguien retoca el ritmo del giro alla, la ficha
+        /// lo sigue sola en vez de quedar desincronizada con su propio juego de constantes.
+        /// </summary>
+        private DiceUiAnimationSettingsSO ResolveAnimSettings()
+        {
+            if (_animSettings != null) return _animSettings;
+            _animSettings = Resources.Load<DiceUiAnimationSettingsSO>(AnimSettingsResourcePath);
+            if (_animSettings == null)
+                _animSettings = ScriptableObject.CreateInstance<DiceUiAnimationSettingsSO>();
+            return _animSettings;
+        }
         private Vector3 _chipRestScale = Vector3.one;
 
         // ==================================================================
@@ -195,23 +217,78 @@ namespace Rollgeon.UI.HUD
             ApplyRollFrame(elapsed);
         }
 
+        /// <summary>
+        /// Arma el giro con <see cref="DiceAnimChoreographer"/>: cuantos ticks entran, con
+        /// que lateral arranca la rotacion y que caras preview cicla. Se precalcula una vez
+        /// por tirada para que dos cuadros del mismo instante muestren lo mismo.
+        /// </summary>
+        private void BuildSpinPlan(ActiveItemActivationResult result)
+        {
+            var settings = ResolveAnimSettings();
+            var t = settings.ToTimings();
+            _showPreviewFaces = settings.ShowPreviewFacesDuringSpin;
+            _spinTickCount = DiceAnimChoreographer.TickCount(t.SpinSeconds, t.SpinTickSeconds);
+            _sideSeed = UnityEngine.Random.Range(0, 2);
+
+            int faceMax = DiceAnimChoreographer.PreviewFaceRange(
+                t.PreviewFaceMax, result.Item != null ? result.Item.ActiveDie.MaxFace() : 6);
+
+            var rng = new System.Random(Environment.TickCount);
+            _previewFaces = new int[_spinTickCount + 1];
+            int previous = 0;
+            for (int i = 1; i <= _spinTickCount; i++)
+            {
+                previous = DiceAnimChoreographer.NextPreviewFace(rng, faceMax, previous);
+                _previewFaces[i] = previous;
+            }
+        }
+
         /// <summary>Pinta un cuadro de la animacion de tirada.</summary>
         private void ApplyRollFrame(float elapsed)
         {
             bool enchanted = _lastResult.WasEnchanted;
-            int faces = _lastResult.Item != null ? _lastResult.Item.ActiveDie.MaxFace() : 6;
-
-            int face = ActiveItemRollFeelMath.FaceAt(
-                elapsed, enchanted, _lastResult.RawRoll, _lastResult.Roll, faces, _spinSeed);
-
             var phase = ActiveItemRollFeelMath.PhaseAt(elapsed, enchanted);
+            var dieType = _lastResult.Item != null ? _lastResult.Item.ActiveDie : DiceType.D6;
+
+            int face;
+            bool showNumber = true;
+            var role = Rollgeon.Dice.DiceShapeRole.Front;
+
+            if (phase == ActiveItemRollPhase.Spinning)
+            {
+                // El giro lo coreografia DiceAnimChoreographer, el mismo que los dados de
+                // combate: la silueta alterna frontal/laterales y el numero cicla caras
+                // preview, desacelerando hacia el reveal.
+                int tick = ActiveItemRollFeelMath.SpinTickAt(elapsed, _spinTickCount);
+                role = DiceAnimChoreographer.SpinRole(tick, _sideSeed);
+                face = tick >= 1 && _previewFaces != null && tick < _previewFaces.Length
+                    ? _previewFaces[tick]
+                    : _lastResult.RawRoll;
+                // Con el tuning shippeado el dado gira "en blanco" y el numero se revela al
+                // asentarse. Mostrarlo durante el giro convierte la animacion en un contador
+                // de numeros y tapa la rotacion de la silueta, que es lo que se tiene que leer.
+                showNumber = _showPreviewFaces;
+            }
+            else
+            {
+                face = ActiveItemRollFeelMath.SettledFaceAt(
+                    elapsed, enchanted, _lastResult.RawRoll, _lastResult.Roll);
+            }
+
+            if (_dieIcon != null)
+            {
+                var sprite = SpriteFor(dieType, role);
+                if (sprite != null) _dieIcon.sprite = sprite;
+            }
 
             if (_rollLabel != null)
             {
-                _rollLabel.gameObject.SetActive(true);
-                _rollLabel.text = face.ToString();
-
-                _rollLabel.color = ColorForPhase(phase, face);
+                _rollLabel.gameObject.SetActive(showNumber);
+                if (showNumber)
+                {
+                    _rollLabel.text = face.ToString();
+                    _rollLabel.color = ColorForPhase(phase, face);
+                }
             }
 
             if (_chip != null)
@@ -331,11 +408,12 @@ namespace Rollgeon.UI.HUD
         /// el prefab: el mapeo DiceType -> sprite ya vive en DiceShapeCatalogSO y
         /// duplicarlo lo dejaria desincronizado cuando el arte cambie.
         /// </summary>
-        private Sprite SpriteFor(DiceType die)
+        private Sprite SpriteFor(DiceType die,
+            Rollgeon.Dice.DiceShapeRole role = Rollgeon.Dice.DiceShapeRole.Front)
         {
             if (_resolvedCatalog == null)
                 _resolvedCatalog = Rollgeon.Dice.DiceShapeCatalogSO.Resolve(_shapeCatalog);
-            return _resolvedCatalog != null ? _resolvedCatalog.GetShape(die) : null;
+            return _resolvedCatalog != null ? _resolvedCatalog.GetShape(die, role) : null;
         }
 
         private Rollgeon.Dice.DiceShapeCatalogSO _resolvedCatalog;
@@ -382,7 +460,7 @@ namespace Rollgeon.UI.HUD
             // termina de mostrar el resultado.
             _lastResult = result;
             _rollStartedAt = Time.unscaledTime;
-            _spinSeed = Environment.TickCount;
+            BuildSpinPlan(result);
 
             if (_chip != null) _chipRestScale = _chip.transform.localScale;
 

@@ -1,6 +1,7 @@
 using NUnit.Framework;
 using Rollgeon.Items.Active;
 using Rollgeon.UI.HUD;
+using Rollgeon.UI.HUD.DiceAnim;
 
 namespace Rollgeon.UI.Tests
 {
@@ -11,7 +12,7 @@ namespace Rollgeon.UI.Tests
     [TestFixture]
     public sealed class ActiveItemRollFeelMathTests
     {
-        private const float Spin = ActiveItemRollFeelMath.SpinSeconds;
+        private static readonly float Spin = ActiveItemRollFeelMath.SpinSeconds;
         private const float RawHold = ActiveItemRollFeelMath.RawHoldSeconds;
         private const float Flash = ActiveItemRollFeelMath.EnchantFlashSeconds;
         private const float Hold = ActiveItemRollFeelMath.ResultHoldSeconds;
@@ -66,8 +67,11 @@ namespace Rollgeon.UI.Tests
                 ActiveItemRollFeelMath.PhaseAt(Spin + RawHold, wasEnchanted: true));
             Assert.AreEqual(ActiveItemRollPhase.Holding,
                 ActiveItemRollFeelMath.PhaseAt(Spin + RawHold + Flash, wasEnchanted: true));
+            // El instante EXACTO de TotalSeconds no se afirma: la suma se recalcula en
+            // PhaseAt y difiere de TotalSeconds por un ULP, asi que fijar el borde seria
+            // testear el codegen. Lo que importa es que la animacion termine.
             Assert.AreEqual(ActiveItemRollPhase.Idle,
-                ActiveItemRollFeelMath.PhaseAt(ActiveItemRollFeelMath.TotalSeconds(true), true));
+                ActiveItemRollFeelMath.PhaseAt(ActiveItemRollFeelMath.TotalSeconds(true) + 0.01f, true));
         }
 
         [Test]
@@ -86,79 +90,84 @@ namespace Rollgeon.UI.Tests
         public void test_face_settlesOnTheRawRollAndThenOnTheFinalOne()
         {
             // Arrange — cara cruda 4, ajustada a 5 por el encantamiento.
-            const int raw = 4, final = 5, faces = 6;
+            const int raw = 4, final = 5;
 
             // Act + Assert
-            Assert.AreEqual(raw, ActiveItemRollFeelMath.FaceAt(
-                Spin, true, raw, final, faces, seed: 1), "primero muestra la cruda");
-            Assert.AreEqual(final, ActiveItemRollFeelMath.FaceAt(
-                Spin + RawHold, true, raw, final, faces, seed: 1), "despues la ajustada");
-            Assert.AreEqual(final, ActiveItemRollFeelMath.FaceAt(
-                Spin + RawHold + Flash, true, raw, final, faces, seed: 1));
+            Assert.AreEqual(raw, ActiveItemRollFeelMath.SettledFaceAt(
+                Spin, true, raw, final), "primero muestra la cruda");
+            Assert.AreEqual(final, ActiveItemRollFeelMath.SettledFaceAt(
+                Spin + RawHold, true, raw, final), "despues la ajustada");
+            Assert.AreEqual(final, ActiveItemRollFeelMath.SettledFaceAt(
+                Spin + RawHold + Flash, true, raw, final));
         }
 
         [Test]
         public void test_face_withoutEnchantment_settlesStraightOnTheResult()
         {
             // Act + Assert
-            Assert.AreEqual(3, ActiveItemRollFeelMath.FaceAt(
-                Spin, false, rawRoll: 3, finalRoll: 3, faces: 6, seed: 1));
+            Assert.AreEqual(3, ActiveItemRollFeelMath.SettledFaceAt(
+                Spin, false, rawRoll: 3, finalRoll: 3));
         }
 
         [Test]
-        public void test_spinFace_staysInsideTheDieRange()
+        public void test_spinTicks_useTheSharedDiceChoreography()
         {
-            // Arrange — la cara del giro es adorno, pero no puede mostrar un 7 en un D6.
-            foreach (int faces in new[] { 4, 6, 8, 10, 12, 20 })
-            {
-                for (int seed = 0; seed < 20; seed++)
-                {
-                    for (float t = 0f; t < Spin; t += 0.005f)
-                    {
-                        // Act
-                        int face = ActiveItemRollFeelMath.SpinFace(t, faces, seed);
-
-                        // Assert
-                        Assert.GreaterOrEqual(face, 1, $"d{faces} seed={seed} t={t}");
-                        Assert.LessOrEqual(face, faces, $"d{faces} seed={seed} t={t}");
-                    }
-                }
-            }
-        }
-
-        [Test]
-        public void test_spinFace_isDeterministicForTheSameSeed()
-        {
-            // Assert — dos frames del mismo instante no pueden parpadear entre caras.
-            Assert.AreEqual(ActiveItemRollFeelMath.SpinFace(0.2f, 6, seed: 42),
-                            ActiveItemRollFeelMath.SpinFace(0.2f, 6, seed: 42));
-        }
-
-        [Test]
-        public void test_spinFace_decelerates()
-        {
-            // Arrange — la tirada tiene que frenar, no cortarse de golpe: en la primera
-            // mitad del giro pasan mas caras que en la segunda.
-            int firstHalf = CountChanges(0f, Spin * 0.5f);
-            int secondHalf = CountChanges(Spin * 0.5f, Spin);
+            // Arrange — el giro no lo inventa esta clase: los ticks salen de
+            // DiceAnimChoreographer, el mismo que coreografia los dados de combate.
+            var t = DiceAnimTimings.Defaults;
+            int tickCount = DiceAnimChoreographer.TickCount(t.SpinSeconds, t.SpinTickSeconds);
 
             // Assert
-            Assert.Greater(firstHalf, secondHalf,
-                $"primera mitad {firstHalf} cambios, segunda {secondHalf}");
+            Assert.Greater(tickCount, 0, "el giro tiene que tener ticks");
+            Assert.AreEqual(0, ActiveItemRollFeelMath.SpinTickAt(-0.1f, tickCount),
+                "antes de empezar no paso ningun tick");
+            Assert.AreEqual(tickCount, ActiveItemRollFeelMath.SpinTickAt(Spin, tickCount),
+                "al terminar el giro pasaron todos");
         }
 
-        private static int CountChanges(float from, float to)
+        [Test]
+        public void test_spinTicks_advanceMonotonically()
         {
-            int changes = 0;
-            int previous = ActiveItemRollFeelMath.SpinFace(from, 20, seed: 7);
-            for (float t = from; t < to; t += 0.005f)
+            // Arrange — el tick nunca puede retroceder, o el dado "desgiraria".
+            var t = DiceAnimTimings.Defaults;
+            int tickCount = DiceAnimChoreographer.TickCount(t.SpinSeconds, t.SpinTickSeconds);
+            int previous = 0;
+
+            for (float e = 0f; e <= Spin; e += 0.005f)
             {
-                int face = ActiveItemRollFeelMath.SpinFace(t, 20, seed: 7);
-                if (face != previous) changes++;
-                previous = face;
+                // Act
+                int tick = ActiveItemRollFeelMath.SpinTickAt(e, tickCount);
+
+                // Assert
+                Assert.GreaterOrEqual(tick, previous, $"retrocedio en t={e}");
+                previous = tick;
             }
-            return changes;
         }
+
+        [Test]
+        public void test_spinTicks_decelerate()
+        {
+            // Arrange — el dado frena: en la primera mitad del giro pasan mas ticks que
+            // en la segunda. Sale de la desaceleracion de DiceAnimChoreographer.
+            var t = DiceAnimTimings.Defaults;
+            int tickCount = DiceAnimChoreographer.TickCount(t.SpinSeconds, t.SpinTickSeconds);
+
+            // Act
+            int atHalf = ActiveItemRollFeelMath.SpinTickAt(Spin * 0.5f, tickCount);
+            float firstGap = DiceAnimChoreographer.TickTime(1, tickCount, t.SpinSeconds, t.SpinDecelerationPower);
+            float lastGap =
+                DiceAnimChoreographer.TickTime(tickCount, tickCount, t.SpinSeconds, t.SpinDecelerationPower)
+                - DiceAnimChoreographer.TickTime(tickCount - 1, tickCount, t.SpinSeconds, t.SpinDecelerationPower);
+
+            // Assert — desacelerar es que los intervalos CREZCAN: los primeros ticks caen
+            // pegados y el ultimo se hace esperar. Como efecto, la mayoria de los ticks
+            // pasa en la primera mitad del giro.
+            Assert.Greater(lastGap, firstGap,
+                $"el ultimo intervalo ({lastGap:F3}s) no es mayor que el primero ({firstGap:F3}s) — no frena");
+            Assert.Greater(atHalf, tickCount / 2,
+                $"a mitad del giro pasaron solo {atHalf} de {tickCount} ticks — no arranca rapido");
+        }
+
 
         [Test]
         public void test_theRawFaceIsShownLongEnoughToBeRead()

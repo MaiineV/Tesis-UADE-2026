@@ -1,4 +1,5 @@
 using Rollgeon.Items.Active;
+using Rollgeon.UI.HUD.DiceAnim;
 using UnityEngine;
 
 namespace Rollgeon.UI.HUD
@@ -43,8 +44,12 @@ namespace Rollgeon.UI.HUD
     /// </remarks>
     public static class ActiveItemRollFeelMath
     {
-        /// <summary>Duracion del giro, en segundos.</summary>
-        public const float SpinSeconds = 0.45f;
+        /// <summary>
+        /// Duracion del giro. Sale de <see cref="DiceAnimTimings.Defaults"/> para que el
+        /// dado del item gire al mismo ritmo que los de combate — lo que cambia es DONDE
+        /// gira (dentro de la ficha), no como.
+        /// </summary>
+        public static float SpinSeconds => DiceAnimTimings.Defaults.SpinSeconds;
 
         /// <summary>Cuanto se sostiene la cara cruda antes de aplicar el encantamiento.</summary>
         public const float RawHoldSeconds = 0.25f;
@@ -88,47 +93,38 @@ namespace Rollgeon.UI.HUD
                 : SpinSeconds + ResultHoldSeconds;
 
         /// <summary>
-        /// Cara a mostrar en un instante dado. Durante el giro es una cara arbitraria que
-        /// cambia cada vez menos seguido; despues es el resultado que corresponda a la
-        /// fase.
+        /// Cara <b>asentada</b> en un instante dado: la cruda hasta que el encantamiento
+        /// interviene, la final despues.
         /// </summary>
-        /// <param name="seed">
-        /// Semilla del giro, para que dos activaciones no muestren la misma secuencia. La
-        /// cara del giro es puro adorno: el resultado real ya esta decidido.
-        /// </param>
-        public static int FaceAt(float elapsed, bool wasEnchanted, int rawRoll, int finalRoll,
-            int faces, int seed)
+        /// <remarks>
+        /// No cubre el ciclado del giro: esas caras las decide
+        /// <see cref="DiceAnimChoreographer.NextPreviewFace"/>, la misma coreografia que
+        /// usan los dados de combate.
+        /// </remarks>
+        public static int SettledFaceAt(float elapsed, bool wasEnchanted, int rawRoll, int finalRoll)
         {
             var phase = PhaseAt(elapsed, wasEnchanted);
-            switch (phase)
-            {
-                case ActiveItemRollPhase.Spinning:
-                    return SpinFace(elapsed, faces, seed);
-                case ActiveItemRollPhase.Settled:
-                    return rawRoll;
-                default:
-                    return finalRoll;
-            }
+            return phase == ActiveItemRollPhase.Spinning || phase == ActiveItemRollPhase.Settled
+                ? rawRoll
+                : finalRoll;
         }
 
         /// <summary>
-        /// Cara del giro. Los cambios se espacian hacia el final (desaceleracion), asi la
-        /// tirada "frena" en vez de cortarse de golpe.
+        /// Indice del tick de giro (1-based) que corresponde a <paramref name="elapsed"/>,
+        /// o 0 si todavia no paso ninguno. Los ticks se espacian hacia el final segun
+        /// <see cref="DiceAnimChoreographer.TickTime"/>: el dado frena como uno fisico.
         /// </summary>
-        public static int SpinFace(float elapsed, int faces, int seed)
+        public static int SpinTickAt(float elapsed, int tickCount)
         {
-            if (faces < 1) return 1;
-
-            float t = Mathf.Clamp01(elapsed / SpinSeconds);
-
-            // Ticks acumulados con densidad decreciente: la integral de (1 - t) da el
-            // frenado. El factor fija cuantas caras pasan en total.
-            const float TotalTicks = 14f;
-            int tick = Mathf.FloorToInt(TotalTicks * (t * (2f - t)));
-
-            // Hash barato y determinista: mismo seed y mismo tick, misma cara.
-            int hash = (seed * 73856093) ^ (tick * 19349663);
-            return Mathf.Abs(hash % faces) + 1;
+            var t = DiceAnimTimings.Defaults;
+            int current = 0;
+            for (int i = 1; i <= tickCount; i++)
+            {
+                if (DiceAnimChoreographer.TickTime(i, tickCount, t.SpinSeconds, t.SpinDecelerationPower) > elapsed)
+                    break;
+                current = i;
+            }
+            return current;
         }
 
         /// <summary>
