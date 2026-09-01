@@ -987,6 +987,150 @@ MonoBehaviour:
     m_Key: char_rew.move_plus_1.desc
     m_Metadata:
       m_Items: []
+  - m_Id: 17283715951849472
+    m_Key: botas.del.viento.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17283715985403904
+    m_Key: botas.del.viento.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17285590277255168
+    m_Key: Guantes.escaladores.escalera.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17285590277255169
+    m_Key: Guantes.escaladores.escalera.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17285792501428224
+    m_Key: botas.del.rayo.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17285792501428225
+    m_Key: botas.del.rayo.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17286059955417088
+    m_Key: alas.de.hermes.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17286059955417089
+    m_Key: alas.de.hermes.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17290144389623808
+    m_Key: coraza.de.hierro.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17290144389623809
+    m_Key: coraza.de.hierro.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17291279481532416
+    m_Key: coraza.templada.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17291279481532417
+    m_Key: coraza.templada.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17291390181797888
+    m_Key: coraza.del.titan.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17291390181797889
+    m_Key: coraza.del.titan.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17294895571365888
+    m_Key: talisman.vigoroso.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17294895575560192
+    m_Key: talisman.vigoroso.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17296411766124544
+    m_Key: pico.de.minero.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17296411770318848
+    m_Key: pico.de.minero.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17300769589260288
+    m_Key: rodilleras.de.obsidiana.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17300769589260289
+    m_Key: rodilleras.de.obsidiana.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17300896068497408
+    m_Key: rodilleras.del.bastion.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17300896068497409
+    m_Key: rodilleras.del.bastion.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17306392171212800
+    m_Key: guantelete.pesado.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17306392175407104
+    m_Key: guantelete.pesado.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17318608383602688
+    m_Key: regeneracion.de.dados.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17318608387796992
+    m_Key: regeneracion.de.dados.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17321473286172672
+    m_Key: "Coraz\xF3n de la Fortuna.name"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17321473286172673
+    m_Key: "Coraz\xF3n de la Fortuna.desc"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17321622683086848
+    m_Key: tesoro.de.la.fortuna.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17321622687281152
+    m_Key: tesoro.de.la.fortuna.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17322556813307904
+    m_Key: mochila.grande.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17322556813307905
+    m_Key: mochila.grande.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17323018375491584
+    m_Key: llamado.de.emergencia.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17323018375491585
+    m_Key: llamado.de.emergencia.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17325063912386560
+    m_Key: ficha.del.segundo.aliento.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17325063912386561
+    m_Key: ficha.del.segundo.aliento.desc
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:
