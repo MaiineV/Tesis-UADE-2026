@@ -220,15 +220,30 @@ MonoBehaviour:
     - Name: 
       Entry: 8
       Data: 
+    - Name: BaseDamageOverride
+      Entry: 7
+      Data: 11|Rollgeon.Items.BaseDamageOverrideDef, Rollgeon
+    - Name: Enabled
+      Entry: 5
+      Data: false
+    - Name: BaseValue
+      Entry: 6
+      Data: 
+    - Name: Priority
+      Entry: 3
+      Data: 0
+    - Name: 
+      Entry: 8
+      Data: 
     - Name: OnActivate
       Entry: 7
-      Data: 11|Rollgeon.Effects.EffectData, Rollgeon
+      Data: 12|Rollgeon.Effects.EffectData, Rollgeon
     - Name: Label
       Entry: 1
       Data: Effect Group
     - Name: PreConditions
       Entry: 7
-      Data: 12|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
+      Data: 13|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
         Rollgeon]], mscorlib
     - Name: 
       Entry: 12
@@ -241,7 +256,7 @@ MonoBehaviour:
       Data: 
     - Name: Effects
       Entry: 7
-      Data: 13|System.Collections.Generic.List`1[[Rollgeon.Effects.IEffect, Rollgeon]],
+      Data: 14|System.Collections.Generic.List`1[[Rollgeon.Effects.IEffect, Rollgeon]],
         mscorlib
     - Name: 
       Entry: 12
@@ -266,6 +281,12 @@ MonoBehaviour:
   FamilyId: 
   VariantIndex: 0
   Type: 0
+  UniquePerRun: 1
+  RollPoolBonus: 0
+  ActiveSlotBonus: 0
+  EnchantmentCostMultiplier: 1
+  SecondWind: 0
+  SecondWindRemainingHp: 1
   OnActivate:
     Label: Effect Group
     PreConditions: []
