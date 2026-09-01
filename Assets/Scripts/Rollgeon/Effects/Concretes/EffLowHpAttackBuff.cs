@@ -52,6 +52,25 @@ namespace Rollgeon.Effects.Concretes
         public override string GetEffectName() =>
             $"Low HP Attack Buff (HP <= {_hpThreshold} -> +{_attackBonus} Attack)";
 
+        /// <summary>Umbral configurado — solo lectura, para tests de paridad de datos.</summary>
+        public int HpThreshold => _hpThreshold;
+
+        /// <summary>Bonus configurado — solo lectura, para tests de paridad de datos.</summary>
+        public int AttackBonus => _attackBonus;
+
+#if UNITY_EDITOR
+        /// <summary>
+        /// Setter para tooling de editor (autoría por código, ej. el hook del item
+        /// Instinto de Supervivencia). Mismo patrón que <c>EnchantmentSO.EditorSetCategory</c>:
+        /// los campos son privados a propósito y el YAML de Odin no se edita a mano.
+        /// </summary>
+        public void EditorSetConfig(int hpThreshold, int attackBonus)
+        {
+            _hpThreshold = hpThreshold;
+            _attackBonus = attackBonus;
+        }
+#endif
+
         public override bool ApplyEffect(EffectContext context)
         {
             if (context == null) return false;

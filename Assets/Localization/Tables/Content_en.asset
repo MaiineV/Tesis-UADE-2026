@@ -740,7 +740,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 9716852768735262
-    m_Localized: When you drop below 30% HP you gain +1 shield.
+    m_Localized: While your health is 30 or less, your base damage increases by 5.
     m_Metadata:
       m_Items: []
   - m_Id: 9716852768735263

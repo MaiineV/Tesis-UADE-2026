@@ -743,7 +743,8 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 9716852768735262
-    m_Localized: Al bajar de 30% HP obtienes +1 escudo.
+    m_Localized: "Cuando tu vida est\xE1 en 30 o menos, tu da\xF1o base aumenta en
+      5 puntos."
     m_Metadata:
       m_Items: []
   - m_Id: 9716852768735263
