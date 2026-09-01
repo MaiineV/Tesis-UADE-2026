@@ -9,8 +9,10 @@ namespace Rollgeon.Input
 {
     /// <summary>
     /// Router global del click derecho en combate (QoL): cancela la selección de
-    /// acción en curso (targeting de chain / tile de Movement) o, si no hay ninguna,
-    /// deselecciona todos los dados holdeados (Balatro-style). La decisión vive en
+    /// acción en curso (targeting de chain) o, si no hay ninguna, deselecciona
+    /// todos los dados holdeados (Balatro-style). El Movement esperando su tile se
+    /// cancela con la tecla X (<see cref="ExplorationMoveCancelController"/>), no
+    /// con click derecho. La decisión vive en
     /// <see cref="RightClickCancelPolicy"/>; la prioridad selección-vs-dados en
     /// <see cref="ICombatHandoffService.HasCancellableSelection"/>.
     /// </summary>

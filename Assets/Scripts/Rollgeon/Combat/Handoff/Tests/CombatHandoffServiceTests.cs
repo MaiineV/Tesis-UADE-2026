@@ -830,7 +830,7 @@ namespace Rollgeon.Combat.Handoff.Tests
         }
 
         // -------------------------------------------------------------------
-        // QoL: cancel por click derecho
+        // QoL: cancel por click derecho (chain) y tecla X (Movement)
         // -------------------------------------------------------------------
 
         [Test]
@@ -847,7 +847,7 @@ namespace Rollgeon.Combat.Handoff.Tests
         }
 
         [Test]
-        public void TryCancelFromRightClick_WithoutCombatHud_ReturnsFalse()
+        public void TryCancelMovementSelection_WithoutCombatHud_ReturnsFalse()
         {
             // Arrange — selección pendiente pero la pantalla actual no es el HUD de
             // combate (pausa, transición): el cancel global no debe operar a ciegas.
@@ -855,11 +855,32 @@ namespace Rollgeon.Combat.Handoff.Tests
             _spyScreen.Current = null;
 
             // Act / Assert
-            Assert.IsFalse(_service.TryCancelFromRightClick());
+            Assert.IsFalse(_service.TryCancelMovementSelection());
         }
 
         [Test]
-        public void TryCancelFromRightClick_AwaitingPlayerSelection_CancelsAndFreesState()
+        public void TryCancelFromRightClick_AwaitingPlayerSelection_DoesNotCancelMovement()
+        {
+            // Arrange — Movement esperando su tile: el click derecho ya NO lo cancela
+            // (pasó a la tecla X, mismo gesto que exploración). Tampoco debe contar
+            // como selección cancelable para el router (cae al deselect de dados).
+            var hudGo = new GameObject("CombatHUD");
+            _createdObjects.Add(hudGo);
+            _spyScreen.Current = hudGo.AddComponent<CombatHUDView>();
+            SetPrivateField(_service, "_awaitingPlayerSelection", true);
+            SetPrivateField(_service, "_selectedBehavior",
+                new HeroActionBehavior { ActionName = "Movement", NeedsDiceRoll = false });
+
+            // Act / Assert — la selección sigue pendiente después del click derecho,
+            // pero sigue siendo cancelable por la tecla X.
+            Assert.IsFalse(_service.HasCancellableSelection);
+            Assert.IsTrue(_service.IsMovementSelectionCancellable);
+            Assert.IsFalse(_service.TryCancelFromRightClick());
+            Assert.IsTrue((bool)GetPrivateField(_service, "_awaitingPlayerSelection"));
+        }
+
+        [Test]
+        public void TryCancelMovementSelection_AwaitingPlayerSelection_CancelsAndFreesState()
         {
             // Arrange — Movement esperando su tile. Sin ISelectionController registrado,
             // CancelPlayerSelection usa la limpieza defensiva (libera estado y emite
@@ -870,18 +891,17 @@ namespace Rollgeon.Combat.Handoff.Tests
             SetPrivateField(_service, "_awaitingPlayerSelection", true);
             SetPrivateField(_service, "_selectedBehavior",
                 new HeroActionBehavior { ActionName = "Movement", NeedsDiceRoll = false });
-            Assert.IsTrue(_service.HasCancellableSelection, "pre-condition");
 
             int behaviorExecutedCount = 0;
             EventManager.EventReceiver onExecuted = args => behaviorExecutedCount++;
             EventManager.Subscribe(EventName.OnBehaviorExecuted, onExecuted);
 
             // Act
-            var cancelled = _service.TryCancelFromRightClick();
+            var cancelled = _service.TryCancelMovementSelection();
 
             // Assert — canceló, liberó el estado y avisó a la UI para destrabarse.
             Assert.IsTrue(cancelled);
-            Assert.IsFalse(_service.HasCancellableSelection);
+            Assert.IsFalse((bool)GetPrivateField(_service, "_awaitingPlayerSelection"));
             Assert.AreEqual(1, behaviorExecutedCount,
                 "El cancel debe emitir OnBehaviorExecuted para liberar los slots de la UI.");
             EventManager.UnSubscribe(EventName.OnBehaviorExecuted, onExecuted);
@@ -1136,7 +1156,7 @@ namespace Rollgeon.Combat.Handoff.Tests
         }
 
         [Test]
-        public void MovementDie_AfterRoll_RightClickCancelsWithoutRefund()
+        public void MovementDie_AfterRoll_CancelMoveHotkeyCancelsWithoutRefund()
         {
             // Arrange — Movement con el dado ya tirado (roll pagado) esperando su tile.
             // §6.6 revertido: la selección se puede soltar; el roll pagado se pierde.
@@ -1154,9 +1174,8 @@ namespace Rollgeon.Combat.Handoff.Tests
             EventManager.EventReceiver onExecuted = _ => executed++;
             EventManager.Subscribe(EventName.OnBehaviorExecuted, onExecuted);
 
-            // Act / Assert — el click derecho cancela y libera todo el estado.
-            Assert.IsTrue(_service.HasCancellableSelection);
-            Assert.IsTrue(_service.TryCancelFromRightClick());
+            // Act / Assert — la tecla X cancela y libera todo el estado.
+            Assert.IsTrue(_service.TryCancelMovementSelection());
             Assert.IsFalse((bool)GetPrivateField(_service, "_awaitingPlayerSelection"));
             Assert.IsFalse((bool)GetPrivateField(_service, "_movementRollPrepaid"));
             Assert.IsNull(GetPrivateField(_service, "_selectedBehavior"));
@@ -1192,7 +1211,7 @@ namespace Rollgeon.Combat.Handoff.Tests
         }
 
         [Test]
-        public void MovementDie_LegacyMovement_StillCancellableByRightClick()
+        public void MovementDie_LegacyMovement_StillCancellableByCancelMoveHotkey()
         {
             // Arrange — sin dado (cobro-al-ejecutar): el cancel sigue siendo gratis.
             var hudGo = new GameObject("CombatHUD");
@@ -1204,8 +1223,7 @@ namespace Rollgeon.Combat.Handoff.Tests
                 new HeroActionBehavior { ActionName = "Movement", NeedsDiceRoll = false });
 
             // Act / Assert
-            Assert.IsTrue(_service.HasCancellableSelection);
-            Assert.IsTrue(_service.TryCancelFromRightClick());
+            Assert.IsTrue(_service.TryCancelMovementSelection());
             Assert.IsFalse((bool)GetPrivateField(_service, "_awaitingPlayerSelection"));
         }
 

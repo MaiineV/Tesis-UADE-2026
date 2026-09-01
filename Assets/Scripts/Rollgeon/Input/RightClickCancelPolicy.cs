@@ -6,7 +6,7 @@ namespace Rollgeon.Input
     public enum RightClickAction
     {
         None,
-        /// <summary>Cancelar la selección de acción en curso (targeting de chain o tile de Movement).</summary>
+        /// <summary>Cancelar la selección de acción en curso (targeting de chain; el tile de Movement se cancela con X).</summary>
         CancelSelection,
         /// <summary>Deseleccionar todos los dados holdeados (Balatro-style).</summary>
         DeselectAllDice,

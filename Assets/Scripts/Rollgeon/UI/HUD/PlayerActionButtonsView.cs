@@ -588,7 +588,8 @@ namespace Rollgeon.UI.HUD
             // turno), así que este branch ya no aplica a ese caso.
             if (_awaitingSelection
                 && ServiceLocator.TryGetService<Rollgeon.Combat.Handoff.ICombatHandoffService>(out var handoffSel)
-                && handoffSel != null && !handoffSel.HasCancellableSelection)
+                && handoffSel != null && !handoffSel.HasCancellableSelection
+                && !handoffSel.IsMovementSelectionCancellable)
             {
                 return ActionButtonState.Locked;
             }

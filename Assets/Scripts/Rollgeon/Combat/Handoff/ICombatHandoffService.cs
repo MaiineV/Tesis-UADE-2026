@@ -22,16 +22,33 @@ namespace Rollgeon.Combat.Handoff
         /// <summary>
         /// True si hay una selección de acción en curso que el click derecho puede
         /// cancelar limpiamente: targeting de chain (fase 0 pre-roll, o AfterRoll
-        /// esperando target) o un Movement esperando su tile. False con dados en el
-        /// aire o forced reroll pendiente.
+        /// esperando target). False con dados en el aire o forced reroll pendiente.
+        /// El Movement pendiente de tile NO entra acá — su cancel es la tecla X
+        /// (<see cref="TryCancelMovementSelection"/>), igual que en exploración.
         /// </summary>
         bool HasCancellableSelection { get; }
 
         /// <summary>
-        /// Cancel rápido por click derecho (QoL): prioridad targeting de chain, después
-        /// selección de tile pendiente. Nunca cuesta energía (los paths cancelables son
-        /// pre-cobro). Devuelve <c>true</c> si canceló algo.
+        /// Cancel rápido por click derecho (QoL): targeting de chain. Nunca cuesta
+        /// energía (los paths cancelables son pre-cobro). Devuelve <c>true</c> si
+        /// canceló algo.
         /// </summary>
         bool TryCancelFromRightClick();
+
+        /// <summary>
+        /// True si hay un Movement esperando su tile destino que se puede cancelar
+        /// (ver <see cref="TryCancelMovementSelection"/>). False con dados en el
+        /// aire o forced reroll pendiente — ahí la UI debe lockear los slots en vez
+        /// de prometer un switch que el handoff va a ignorar.
+        /// </summary>
+        bool IsMovementSelectionCancellable { get; }
+
+        /// <summary>
+        /// Cancela un Movement esperando su tile destino (hotkey <c>X</c>, mismo
+        /// gesto que el cancel de caminata en exploración). Con dado de Movimiento
+        /// ya tirado el roll pagado NO se reembolsa (§6.6 revertido); en el path
+        /// legacy el roll nunca se cobró. Devuelve <c>true</c> si canceló.
+        /// </summary>
+        bool TryCancelMovementSelection();
     }
 }

@@ -977,7 +977,7 @@ namespace Rollgeon.Combat.Handoff
         }
 
         // ======================================================================
-        // QoL: cancel por click derecho
+        // QoL: cancel por click derecho (chain) y tecla X (Movement)
         // ======================================================================
 
         /// <inheritdoc />
@@ -986,11 +986,6 @@ namespace Rollgeon.Combat.Handoff
             get
             {
                 if (_forcedRerollPending || ThrowBusy()) return false;
-                // §6.6 revertido: con el dado de Movimiento ya tirado el roll pagado NO
-                // se reembolsa, pero la selección se puede cancelar igual (click derecho,
-                // mismo slot u otro slot) — quedar forzado a moverse era peor que perder
-                // el roll.
-                if (_awaitingPlayerSelection) return true;
                 return IsChainTargetingCancellable();
             }
         }
@@ -1001,14 +996,31 @@ namespace Rollgeon.Combat.Handoff
             if (_forcedRerollPending || ThrowBusy()) return false;
             if (_screenManager?.Current is not CombatHUDView hud) return false;
 
-            if (TryCancelChainTargeting(hud)) return true;
+            return TryCancelChainTargeting(hud);
+        }
 
-            if (_awaitingPlayerSelection)
+        /// <inheritdoc />
+        public bool IsMovementSelectionCancellable
+        {
+            get
             {
-                CancelPlayerSelection();
-                return true;
+                if (_forcedRerollPending || ThrowBusy()) return false;
+                // §6.6 revertido: con el dado de Movimiento ya tirado el roll pagado
+                // NO se reembolsa, pero la selección se puede cancelar igual (tecla X,
+                // mismo slot u otro slot) — quedar forzado a moverse era peor que
+                // perder el roll.
+                return _awaitingPlayerSelection;
             }
-            return false;
+        }
+
+        /// <inheritdoc />
+        public bool TryCancelMovementSelection()
+        {
+            if (!IsMovementSelectionCancellable) return false;
+            if (_screenManager?.Current is not CombatHUDView) return false;
+
+            CancelPlayerSelection();
+            return true;
         }
 
         // Solo hay cancel LIMPIO de targeting de chain en dos ventanas: la fase 0

@@ -298,6 +298,10 @@ namespace Rollgeon.Upgrades.Dice.Tests
 
             public bool TryCancelFromRightClick() => false;
 
+            public bool IsMovementSelectionCancellable => false;
+
+            public bool TryCancelMovementSelection() => false;
+
             public void Dispose() { }
         }
 
