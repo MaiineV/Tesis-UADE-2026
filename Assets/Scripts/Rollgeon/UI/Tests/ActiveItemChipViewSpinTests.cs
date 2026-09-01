@@ -28,19 +28,27 @@ namespace Rollgeon.UI.Tests
         private ActiveItemChipView _chip;
         private TextMeshProUGUI _label;
         private Image _die;
+        private Image _background;
         private ItemSO _item;
 
         [SetUp]
         public void SetUp()
         {
+            // Espeja el prefab: el fondo de la ficha en el GO raiz (es el que se escala) y
+            // el dado como hijo.
             _go = new GameObject("Chip", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
-            _die = _go.GetComponent<Image>();
+            _background = _go.GetComponent<Image>();
+
+            var dieGo = new GameObject("DieIcon", typeof(RectTransform), typeof(CanvasRenderer));
+            dieGo.transform.SetParent(_go.transform, false);
+            _die = dieGo.AddComponent<Image>();
 
             var labelGo = new GameObject("RollLabel", typeof(RectTransform));
             labelGo.transform.SetParent(_go.transform, false);
             _label = labelGo.AddComponent<TextMeshProUGUI>();
 
             _chip = _go.AddComponent<ActiveItemChipView>();
+            AssignPrivate(_chip, "_chip", _background);
             AssignPrivate(_chip, "_dieIcon", _die);
             AssignPrivate(_chip, "_rollLabel", _label);
 
@@ -108,6 +116,56 @@ namespace Rollgeon.UI.Tests
             Assert.IsTrue(roles.Contains(DiceShapeRole.SideA) || roles.Contains(DiceShapeRole.SideB),
                 "el giro tiene que pasar por al menos un lateral — si no, no rota");
         }
+
+        // ------------------------------------------------------------------
+        // Escala de la ficha
+        // ------------------------------------------------------------------
+
+        [Test]
+        public void test_repeatedRolls_withoutLettingTheAnimationFinish_doNotGrowTheChip()
+        {
+            // Arrange — el bug: HandleResolved re-muestreaba la escala de reposo del
+            // transform que este mismo componente anima. Cada tirada cortada en pleno pop
+            // horneaba ese pop como nueva base y la ficha crecia x1.35 por uso, hasta tapar
+            // el HUD.
+            InvokePrivate(_chip, "Awake");
+            var rest = _go.transform.localScale;
+
+            // Act — ocho activaciones seguidas, cada una interrumpiendo el pop de la anterior.
+            for (int i = 0; i < 8; i++)
+            {
+                InvokePrivate(_chip, "HandleResolved", NewResult());
+                ApplyFrame(SpinSeconds + 0.001f); // el instante de maxima escala
+            }
+            InvokePrivate(_chip, "EndRollAnimation");
+
+            // Assert
+            Assert.AreEqual(rest.x, _go.transform.localScale.x, 0.0001f,
+                "la ficha tiene que volver a su escala de reposo, no acumular los pops");
+        }
+
+        [Test]
+        public void test_aNewRoll_returnsToRestBeforeAnimating()
+        {
+            // Arrange — una tirada nueva cancela la anterior; si arrancara desde el pop en
+            // curso, el pop nuevo saldria montado sobre el viejo.
+            InvokePrivate(_chip, "Awake");
+            var rest = _go.transform.localScale;
+            InvokePrivate(_chip, "HandleResolved", NewResult());
+            ApplyFrame(SpinSeconds + 0.001f);
+            Assert.Greater(_go.transform.localScale.x, rest.x, "el pop tiene que haber ocurrido");
+
+            // Act
+            InvokePrivate(_chip, "HandleResolved", NewResult());
+
+            // Assert
+            Assert.AreEqual(rest.x, _go.transform.localScale.x, 0.0001f);
+        }
+
+        /// <summary>Tirada de banda positiva: la de pop mas grande, el peor caso.</summary>
+        private ActiveItemActivationResult NewResult()
+            => new ActiveItemActivationResult(
+                _item, roll: 6, band: ActiveItemBand.Positive, effectsSucceeded: true, rawRoll: 6);
 
         // ------------------------------------------------------------------
         // Helpers

@@ -126,6 +126,21 @@ namespace Rollgeon.UI.HUD
         // Lifecycle
         // ==================================================================
 
+        /// <summary>
+        /// Captura la escala de reposo UNA vez, antes de que nada la anime.
+        /// </summary>
+        /// <remarks>
+        /// No se puede re-muestrear del transform mas tarde: este mismo componente lo
+        /// escala en <see cref="ApplyRollFrame"/>, asi que leerlo mientras hay una tirada
+        /// en curso hornea el pop como nueva base. Como <see cref="EndRollAnimation"/>
+        /// restaura a esa base, la ficha nunca vuelve a su tamaño y cada tirada
+        /// interrumpida multiplica la anterior.
+        /// </remarks>
+        private void Awake()
+        {
+            if (_chip != null) _chipRestScale = _chip.transform.localScale;
+        }
+
         private void OnEnable()
         {
             Bind();
@@ -462,7 +477,11 @@ namespace Rollgeon.UI.HUD
             _rollStartedAt = Time.unscaledTime;
             BuildSpinPlan(result);
 
-            if (_chip != null) _chipRestScale = _chip.transform.localScale;
+            // Una tirada nueva cancela la anterior: se vuelve al reposo antes de animar.
+            // El reposo es el capturado en Awake, nunca el tamaño que dejo el pop previo.
+            // Una tirada nueva cancela la anterior: se vuelve al reposo antes de animar.
+            // El reposo es el capturado en Awake, nunca el tamaño que dejo el pop previo.
+            if (_chip != null) _chip.transform.localScale = _chipRestScale;
 
             ApplyRollFrame(0f);
             Refresh();
