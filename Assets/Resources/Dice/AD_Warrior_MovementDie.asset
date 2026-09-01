@@ -12,4 +12,4 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 058167853c06730439157bc8a58b9f2f, type: 3}
   m_Name: AD_Warrior_MovementDie
   m_EditorClassIdentifier: Rollgeon::Rollgeon.Movement.Die.MovementDieSO
-  Type: 0
+  Type: 1

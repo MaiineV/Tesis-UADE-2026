@@ -12,7 +12,7 @@ namespace Rollgeon.Movement.Die
     [CreateAssetMenu(menuName = "Rollgeon/Dice/Movement Die", fileName = "AD_MovementDie")]
     public class MovementDieSO : ScriptableObject
     {
-        public const DiceType DefaultType = DiceType.D4;
+        public const DiceType DefaultType = DiceType.D6;
 
         [Tooltip("Tipo del dado. La cara tirada reemplaza el rango fijo del Movimiento en combate.")]
         [EnumToggleButtons]

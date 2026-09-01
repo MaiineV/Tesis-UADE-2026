@@ -64,20 +64,20 @@ namespace Rollgeon.Movement.Tests
         // ---- Entidad separada ------------------------------------------------
 
         [Test]
-        public void MovementDieSO_DefaultsToD4()
+        public void MovementDieSO_DefaultsToD6()
         {
             var die = Die(MovementDieSO.DefaultType);
-            Assert.AreEqual(DiceType.D4, die.Type);
-            Assert.AreEqual(4, die.MaxFace);
+            Assert.AreEqual(DiceType.D6, die.Type);
+            Assert.AreEqual(6, die.MaxFace);
         }
 
         [Test]
-        public void CurrentType_WithoutHeroDie_FallsBackToD4()
+        public void CurrentType_WithoutHeroDie_FallsBackToD6()
         {
             _player.SetPlayer(HeroWith(null), Guid.NewGuid());
             _service = new MovementDieService(_player);
 
-            Assert.AreEqual(DiceType.D4, _service.CurrentType);
+            Assert.AreEqual(DiceType.D6, _service.CurrentType);
         }
 
         [Test]

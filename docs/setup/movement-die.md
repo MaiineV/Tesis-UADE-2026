@@ -3,7 +3,7 @@
 > Estado al 2026-08-25: implementado y cableado vía MCP en `Feature#0054_MovementDie`.
 >
 > **Qué es**: Movimiento en combate ya no usa un rango fijo (`Range = 4`). Al arrastrar
-> el chip de Mover, se tira un **dado propio** (`MovementDieSO`, D4 por defecto) y la
+> el chip de Mover, se tira un **dado propio** (`MovementDieSO`, D6 por defecto) y la
 > cara revelada es la cantidad de casillas alcanzables (BFS por camino, como antes).
 > El dado **no ocupa slot** del `DiceBagSO` de combate, no recibe encantamientos ni
 > bloqueos de dados, y cambiar la build no lo modifica. Exploración sigue siendo
@@ -11,8 +11,8 @@
 
 ## El modelo
 
-- **Entidad**: `Rollgeon.Movement.Die.MovementDieSO { DiceType Type = D4 }`. Cada clase
-  lo referencia en `ClassHeroSO.StartingMovementDie` (null ⇒ D4).
+- **Entidad**: `Rollgeon.Movement.Die.MovementDieSO { DiceType Type = D6 }`. Cada clase
+  lo referencia en `ClassHeroSO.StartingMovementDie` (null ⇒ D6).
 - **Servicio**: `IMovementDieService` (Run scope, `MovementDieServiceBootstrap`,
   priority 79). Tira con un `System.Random` **propio** — no pasa por `IDiceRoller`:
   el roller registrado (`EnchantedDiceRoller`) aplica encantamientos por índice de slot
@@ -81,7 +81,7 @@ cancel gratis de BUG-013.
    (Create → Rollgeon → Movement → Movement Die Service Bootstrap) agregado a
    `Assets/Rollgeon/ServiceBootstrap.asset → ExtraServices`.
 2. `Assets/Resources/Dice/AD_Warrior_MovementDie.asset`
-   (Create → Rollgeon → Dice → Movement Die), `Type = D4`.
+   (Create → Rollgeon → Dice → Movement Die), `Type = D6`.
 3. `Assets/Rollgeon/Classes/CH_Warrior.asset`:
    - `StartingMovementDie` → `AD_Warrior_MovementDie`.
    - Behavior `Movement` (combate) → `EffMove.Selection.RangeFromMovementDie = true`.
