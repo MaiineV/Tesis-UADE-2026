@@ -82,11 +82,11 @@ namespace Rollgeon.Combat.Damage
 
             // Términos de N — todo lo aditivo escala junto.
             sb.Append(Row("combo_base", b.ComboBase));
-            sb.Append(Row("+ dmg_base_PJ  (ATQ.Value)", b.AttackBase));
+            sb.Append(RowF("+ dmg_base_PJ  (ATQ.Value u override)", b.AttackBase));
             sb.Append(Row("+ bonos_PJ     (ATQ.Modified − Value)", b.AttackBonus));
             sb.Append(Row("+ Σ caras contribuyentes", b.FacesSum));
             sb.Append(Row("+ bono_combo   (passives + enchants + items)", b.AdditiveBonus));
-            sb.Append('\n').Append(Col(Label, "  N = ")).Append(Col(Accent, "<b>" + b.N + "</b>"));
+            sb.Append('\n').Append(Col(Label, "  N = ")).Append(Col(Accent, "<b>" + F(b.N) + "</b>"));
 
             // Términos de M.
             sb.Append('\n').Append(Col(Label, "  M = "))
@@ -104,7 +104,7 @@ namespace Rollgeon.Combat.Damage
             }
 
             sb.Append('\n').Append(Col(kindCol, "  ═ TOTAL = N × M = "))
-              .Append(Col(Label, $"{b.N} × {F(b.M)} = "))
+              .Append(Col(Label, $"{F(b.N)} × {F(b.M)} = "))
               .Append(Col(Accent, "<b>" + b.Final + "</b>"))
               .Append(Col(Label, b.Kind switch
               {
@@ -176,6 +176,11 @@ namespace Rollgeon.Combat.Damage
 
         private static string Row(string label, int value)
             => "\n" + Col(Label, "  " + label + ": ") + "<b>" + value + "</b>";
+
+        // Variante float para los términos que pueden traer fracción (dmg_base_PJ con
+        // el override de Furia): enteros se imprimen igual que Row.
+        private static string RowF(string label, float value)
+            => "\n" + Col(Label, "  " + label + ": ") + "<b>" + F(value) + "</b>";
 
         private static string Num(float v) => Col(Accent, F(v));
 

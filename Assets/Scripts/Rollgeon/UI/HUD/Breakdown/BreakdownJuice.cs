@@ -84,7 +84,7 @@ namespace Rollgeon.UI.HUD.Breakdown
         // Ciclo — llamados por el director
         // ==================================================================
 
-        public void OnSequenceStart(int finalN, float finalM, int finalTotal)
+        public void OnSequenceStart(float finalN, float finalM, int finalTotal)
         {
             _finalTotal = finalTotal;
             _finalM = finalM;

@@ -17,8 +17,9 @@ namespace Rollgeon.UI.HUD.Breakdown
         void PlayFinalClash(int finalTotal, Action onDone);
         /// <summary>Mitigación visible post-choque (solo si difiere del total crudo).</summary>
         void PlayMitigation(int mitigatedTotal, Action onDone);
-        /// <summary>Skip total: pinta los contadores en su estado final, sin animar.</summary>
-        void ForceFinalState(int finalN, float finalM);
+        /// <summary>Skip total: pinta los contadores en su estado final, sin animar.
+        /// N es float — el base damage override puede aportar fracción (Furia).</summary>
+        void ForceFinalState(float finalN, float finalM);
     }
 
     /// <summary>

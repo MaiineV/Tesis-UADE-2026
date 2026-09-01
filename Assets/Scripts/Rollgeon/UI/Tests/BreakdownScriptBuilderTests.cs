@@ -176,6 +176,34 @@ namespace Rollgeon.UI.Tests
         }
 
         [Test]
+        public void Build_FractionalPlayerBase_Reconciles()
+        {
+            // Arrange — base override de Furia con fracción: N = 10 + 2.75 = 12.75.
+            var bd = new DamageBreakdown
+            {
+                ComboBase = 10,
+                AttackBase = 2.75f,
+                AttackBonus = 0,
+                FacesSum = 0,
+                AdditiveBonus = 0,
+                N = 12.75f,
+                ScratchMultiplier = 1f,
+                AbilityMultiplier = 1f,
+                M = 1f,
+                Final = 13, // RoundNxM(12.75, 1)
+            };
+
+            // Act
+            var script = BreakdownScriptBuilder.Build(bd);
+
+            // Assert — el paso PlayerBase lleva la fracción y el guion reconcilia
+            // contra FinalN float (antes casteaba a int y 12.75 nunca cerraba).
+            Assert.AreEqual(2.75f, script.Steps[0].Amount, 0.0001f);
+            Assert.AreEqual(12.75f, script.FinalN, 0.0001f);
+            Assert.IsTrue(script.Reconciled);
+        }
+
+        [Test]
         public void Build_Blocked_PassesFlagThrough()
         {
             var bd = new DamageBreakdown

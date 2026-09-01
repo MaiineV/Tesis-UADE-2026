@@ -405,7 +405,7 @@ namespace Rollgeon.UI.HUD.Breakdown
             });
         }
 
-        public void ForceFinalState(int finalN, float finalM)
+        public void ForceFinalState(float finalN, float finalM)
         {
             _breakdownView?.CounterN?.SetValue(finalN, isMultiplier: false);
             _breakdownView?.CounterM?.SetValue(finalM, isMultiplier: true);
@@ -494,7 +494,9 @@ namespace Rollgeon.UI.HUD.Breakdown
         private static string FormatAmount(BreakdownStep step)
             => step.Target == BreakdownTarget.MultM
                 ? "×" + step.Amount.ToString("0.0#")
-                : step.Amount.ToString("+0;-0");
+                // "+0.##" preserva la fracción del base override (Furia 2.75) y los
+                // enteros se siguen viendo igual que antes.
+                : step.Amount.ToString("+0.##;-0.##");
 
         // Todo lo que vuela hereda el color de su destino: azul hacia N, warm hacia M.
         private Color? FlightTint(BreakdownStep step)
