@@ -136,6 +136,9 @@ namespace Rollgeon.UI.HUD
             TypedEvent<DamageResolvedPayload>.Subscribe(_onDamageResolved);
             TypedEvent<HealResolvedPayload>.Subscribe(_onHealResolved);
             EventManager.Subscribe(EventName.OnShieldChanged, HandleShieldChanged);
+            // MaxHP puede subir sin heal/daño de por medio (item con modifier sobre
+            // MaxHealth): sin esto la pila fantasma queda stale hasta el próximo golpe.
+            EventManager.Subscribe(EventName.OnAttributeChanged, HandleAttributeChanged);
             _bound = true;
         }
 
@@ -154,6 +157,7 @@ namespace Rollgeon.UI.HUD
                 _onHealResolved = null;
             }
             EventManager.UnSubscribe(EventName.OnShieldChanged, HandleShieldChanged);
+            EventManager.UnSubscribe(EventName.OnAttributeChanged, HandleAttributeChanged);
             _bound = false;
         }
 
@@ -173,6 +177,15 @@ namespace Rollgeon.UI.HUD
         {
             if (args == null || args.Length < 2) return;
             if (!(args[0] is Guid entityGuid) || entityGuid != _playerGuid) return;
+            RefreshFromAuthoritative(animate: true);
+        }
+
+        private void HandleAttributeChanged(params object[] args)
+        {
+            if (args == null || args.Length < 2) return;
+            if (!(args[0] is Guid entityGuid) || entityGuid != _playerGuid) return;
+            if (!(args[1] is Type attrType) || attrType != typeof(MaxHealth)) return;
+            ResolveMaxHp();
             RefreshFromAuthoritative(animate: true);
         }
 
