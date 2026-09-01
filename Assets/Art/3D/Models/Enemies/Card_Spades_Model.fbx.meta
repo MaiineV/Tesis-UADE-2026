@@ -27,6 +27,11 @@ ModelImporter:
   - first:
       type: UnityEngine:Material
       assembly: UnityEngine.CoreModule
+      name: Enemy__pasted__PICXA
+    second: {fileID: 2100000, guid: 5ce492e085181c2479fe12102185cf81, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
       name: Enemy__pasted__wood
     second: {fileID: 2100000, guid: 1af478be00e22b045b5b357543ecd299, type: 2}
   materials:
