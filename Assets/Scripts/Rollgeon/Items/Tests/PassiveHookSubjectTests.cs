@@ -37,6 +37,7 @@ namespace Rollgeon.Items.Tests
             ServiceLocator.AddService<IPlayerService>(new FakePlayerService(_playerGuid));
 
             Eff_Record.Log.Clear();
+            Eff_CaptureContext.Captured.Clear();
             _service = new InventoryService(null, 4);
         }
 
@@ -52,6 +53,7 @@ namespace Rollgeon.Items.Tests
             _spawned.Clear();
             ServiceLocator.Clear();
             Eff_Record.Log.Clear();
+            Eff_CaptureContext.Captured.Clear();
         }
 
         ItemSO NewPassive(PassiveHookSubject subject)
@@ -160,7 +162,130 @@ namespace Rollgeon.Items.Tests
             CollectionAssert.IsEmpty(Eff_Record.Log);
         }
 
+        // ---- None: sin filtro de entidad --------------------------------------
+
+        /// <summary>
+        /// <c>OnCombatStart</c> lleva el roomId en args[0]: con Source/Target el hook no
+        /// dispara nunca (el bug del Talismán Vital). <c>None</c> desactiva el filtro.
+        /// </summary>
+        [Test]
+        public void SubjectNone_EventCarriesRoomGuid_Fires()
+        {
+            var item = ScriptableObject.CreateInstance<ItemSO>();
+            item.ItemId = "item.none";
+            item.Type = ItemType.Passive;
+            var hook = new PassiveItemHook
+            {
+                TriggerEvent = EventName.OnCombatStart,
+                Subject = PassiveHookSubject.None,
+            };
+            hook.Effect.Effects.Add(new Eff_Record { Tag = "None" });
+            item.PassiveHooks.Add(hook);
+            _spawned.Add(item);
+            _service.AddItem(item);
+
+            EventManager.Trigger(EventName.OnCombatStart, Guid.NewGuid());
+
+            CollectionAssert.AreEqual(new[] { "None" }, Eff_Record.Log,
+                "Subject=None no compara contra el jugador — dispara con el guid de la sala");
+        }
+
+        [Test]
+        public void SubjectSource_RoomGuidEvent_StillDoesNotFire()
+        {
+            var item = ScriptableObject.CreateInstance<ItemSO>();
+            item.ItemId = "item.room.target";
+            item.Type = ItemType.Passive;
+            var hook = new PassiveItemHook
+            {
+                TriggerEvent = EventName.OnCombatStart,
+                Subject = PassiveHookSubject.Source,
+            };
+            hook.Effect.Effects.Add(new Eff_Record { Tag = "room" });
+            item.PassiveHooks.Add(hook);
+            _spawned.Add(item);
+            _service.AddItem(item);
+
+            EventManager.Trigger(EventName.OnCombatStart, Guid.NewGuid());
+
+            CollectionAssert.IsEmpty(Eff_Record.Log,
+                "con filtro de entidad activo, el guid de la sala no matchea al jugador");
+        }
+
+        // ---- El "otro" guid viaja como TargetGuid ------------------------------
+
+        /// <summary>
+        /// Con <c>Subject=Target</c> en <c>OnDamageIncoming</c>, el TargetGuid del contexto
+        /// tiene que ser el ATACANTE: sin eso "reflejar daño" apuntaba al propio jugador
+        /// (bug del Amuleto de Reflejo).
+        /// </summary>
+        [Test]
+        public void SubjectTarget_AttackerTravelsAsContextTargetGuid()
+        {
+            _service.AddItem(NewCapturePassive(PassiveHookSubject.Target));
+
+            FireDamage(_enemyGuid, _playerGuid);
+
+            Assert.AreEqual(1, Eff_CaptureContext.Captured.Count);
+            Assert.AreEqual(_enemyGuid, Eff_CaptureContext.Captured[0].TargetGuid,
+                "el que pegó viaja como target del efecto — es a quién se refleja");
+            Assert.AreEqual(_playerGuid, Eff_CaptureContext.Captured[0].SourceGuid);
+        }
+
+        [Test]
+        public void SubjectSource_VictimTravelsAsContextTargetGuid()
+        {
+            _service.AddItem(NewCapturePassive(PassiveHookSubject.Source));
+
+            FireDamage(_playerGuid, _enemyGuid);
+
+            Assert.AreEqual(1, Eff_CaptureContext.Captured.Count);
+            Assert.AreEqual(_enemyGuid, Eff_CaptureContext.Captured[0].TargetGuid,
+                "al pegar, el enemigo golpeado es el target natural del efecto");
+        }
+
+        [Test]
+        public void EventBusHook_ExposesSourceItemId()
+        {
+            _service.AddItem(NewCapturePassive(PassiveHookSubject.Target));
+
+            FireDamage(_enemyGuid, _playerGuid);
+
+            Assert.AreEqual("item.capture", Eff_CaptureContext.Captured[0].SourceItemId,
+                "los efectos derivan identidad estable por item de acá (ItemPassiveSourceId)");
+        }
+
+        ItemSO NewCapturePassive(PassiveHookSubject subject)
+        {
+            var item = ScriptableObject.CreateInstance<ItemSO>();
+            item.ItemId = "item.capture";
+            item.Type = ItemType.Passive;
+            var hook = new PassiveItemHook
+            {
+                TriggerEvent = EventName.OnDamageIncoming,
+                Subject = subject,
+            };
+            hook.Effect.Effects.Add(new Eff_CaptureContext());
+            item.PassiveHooks.Add(hook);
+            _spawned.Add(item);
+            return item;
+        }
+
         // ---- helpers ---------------------------------------------------------
+
+        /// <summary>Captura el EffectContext con el que corrió, para asertar el plumbing.</summary>
+        [Serializable]
+        sealed class Eff_CaptureContext : BaseEffect
+        {
+            public static readonly List<EffectContext> Captured = new List<EffectContext>();
+
+            public override string GetEffectName() => "CaptureContext";
+            public override bool ApplyEffect(EffectContext context)
+            {
+                Captured.Add(context);
+                return true;
+            }
+        }
 
         /// <summary>Anota que corrió, para saber qué hook disparó.</summary>
         [Serializable]

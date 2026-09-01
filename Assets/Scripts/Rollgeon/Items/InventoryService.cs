@@ -25,7 +25,7 @@ namespace Rollgeon.Items
         /// <summary>
         /// Cada handler suscripto, con el item que lo puso. El <c>itemId</c> es lo que hace posible
         /// desenganchar un item sin tocar los de otro — ver <see cref="UnbindPassiveHooks"/>.
-        /// Misma clave que <see cref="_appliedModifierIds"/>, así los dos tratan igual a un item.
+        /// Misma clave que <see cref="_appliedModifierSources"/>, así los dos tratan igual a un item.
         /// </summary>
         private readonly List<(string itemId, EventName evt, EventManager.EventReceiver handler)> _hookHandlers = new();
 
@@ -35,7 +35,13 @@ namespace Rollgeon.Items
         /// por <c>itemId</c>.
         /// </summary>
         private readonly List<(string itemId, Action<ComboPlayedPayload> handler)> _comboPlayedHandlers = new();
-        private readonly Dictionary<string, List<Guid>> _appliedModifierIds = new();
+
+        /// <summary>
+        /// SourceId determinístico de los modifiers que aplicó cada item
+        /// (<see cref="ItemPassiveSourceId"/>). El remove barre por source, no por
+        /// ids de instancia: cubre también modifiers que agregó un effect del item.
+        /// </summary>
+        private readonly Dictionary<string, Guid> _appliedModifierSources = new();
 
         private readonly ItemCatalogSO _catalog;
         private readonly int _maxActiveSlots;
@@ -258,22 +264,43 @@ namespace Rollgeon.Items
                 // ([source, target, ...]) se leian siempre por args[0], asi que "cuando te pegan"
                 // era inexpresable: OnDamageIncoming disparaba al PEGAR. Default Source == 0
                 // mantiene byte a byte el comportamiento de todo hook ya autorado.
+                // None saltea el filtro: para eventos cuyo args[0] no es el jugador
+                // (OnCombatStart lleva el roomId y cortaba siempre — el Talismán Vital
+                // nunca disparó).
                 var subjectIndex = (int)hook.Subject;
+                var filterByEntity = hook.Subject != PassiveHookSubject.None;
                 EventManager.EventReceiver handler = args =>
                 {
-                    if (args == null || args.Length <= subjectIndex) return;
-                    if (args[subjectIndex] is Guid ownerId && ownerId != GetPlayerGuid()) return;
+                    if (filterByEntity)
+                    {
+                        if (args == null || args.Length <= subjectIndex) return;
+                        if (args[subjectIndex] is Guid ownerId && ownerId != GetPlayerGuid()) return;
+                    }
 
                     var playerGuid = GetPlayerGuid();
+                    // En eventos de dos entidades, el guid que NO es el subject viaja como
+                    // TargetGuid: con Subject=Target en OnDamageIncoming, el target del
+                    // efecto es el ATACANTE — sin esto "reflejar daño" era inexpresable
+                    // (el Amuleto de Reflejo se pegaba a sí mismo).
+                    var otherGuid = Guid.Empty;
+                    if (filterByEntity && args.Length >= 2)
+                    {
+                        var otherIndex = 1 - subjectIndex;
+                        if (otherIndex >= 0 && args[otherIndex] is Guid other && other != playerGuid)
+                            otherGuid = other;
+                    }
                     var ctx = new EffectContext
                     {
                         SourceGuid = playerGuid,
-                        TargetGuid = playerGuid,
+                        TargetGuid = otherGuid != Guid.Empty ? otherGuid : playerGuid,
+                        SourceItemId = capturedItem.ItemId,
                         lastResult = true,
                     };
                     var preCtx = new PreConditionContext
                     {
                         OwnerGuid = playerGuid,
+                        OpponentGuid = ctx.TargetGuid,
+                        Effect = ctx,
                     };
                     capturedHook.Effect.TryExecute(ctx, preCtx);
                 };
@@ -311,6 +338,7 @@ namespace Rollgeon.Items
                     KeptDice = payload.KeptDice,
                     KeptDiceOriginalIndices = payload.KeptDiceOriginalIndices,
                     ComboResult = payload.ComboResult,
+                    SourceItemId = capturedItem.ItemId,
                     lastResult = true,
                     TriggerContext = new ScratchTriggerContext
                     {
@@ -386,10 +414,8 @@ namespace Rollgeon.Items
             if (playerGuid == Guid.Empty) return;
             if (!ServiceLocator.TryGetService<AttributesManager>(out var attrMgr)) return;
 
-            var attrs = attrMgr.GetAttributes(playerGuid);
-            if (attrs == null) return;
-
-            var modIds = new List<Guid>();
+            var sourceId = ItemPassiveSourceId.For(item.ItemId);
+            bool applied = false;
 
             foreach (var hook in item.PassiveHooks)
             {
@@ -398,57 +424,36 @@ namespace Rollgeon.Items
                 {
                     if (def.TargetStat == null) continue;
 
-                    IModifiable attribute = null;
-                    foreach (var kvp in attrs.EnumerateEntries())
-                    {
-                        if (kvp.Key == def.TargetStat)
-                        {
-                            attribute = kvp.Value;
-                            break;
-                        }
-                    }
-                    if (attribute == null) continue;
-
                     var mod = new Modifier<int>(
                         (int)def.Amount,
                         def.Operation,
                         0,
                         playerGuid,
-                        playerGuid,
+                        sourceId,
                         def.Direction,
                         ModifierLifetime.Permanent,
                         default
                     );
 
-                    if (attribute.AddModifier(mod))
-                        modIds.Add(mod.ModifierId);
+                    // Va por AttributesManager y no por el IModifiable crudo: el HUD y
+                    // las pasivas reaccionan a OnModifierAdded/OnAttributeChanged, que
+                    // solo el manager emite (BUG de la Coraza: MaxHP subía en silencio).
+                    applied |= attrMgr.AddModifier(playerGuid, def.TargetStat, mod);
                 }
             }
 
-            if (modIds.Count > 0)
-                _appliedModifierIds[item.ItemId] = modIds;
+            if (applied)
+                _appliedModifierSources[item.ItemId] = sourceId;
         }
 
         private void RemovePersistentModifiers(ItemSO item)
         {
-            if (!_appliedModifierIds.TryGetValue(item.ItemId, out var modIds)) return;
+            if (item == null || !_appliedModifierSources.TryGetValue(item.ItemId, out var sourceId)) return;
 
-            var playerGuid = GetPlayerGuid();
-            if (playerGuid == Guid.Empty) return;
-            if (!ServiceLocator.TryGetService<AttributesManager>(out var attrMgr)) return;
+            if (ServiceLocator.TryGetService<AttributesManager>(out var attrMgr))
+                attrMgr.RemoveAllModifiersBySource(sourceId);
 
-            var attrs = attrMgr.GetAttributes(playerGuid);
-            if (attrs == null) return;
-
-            foreach (var modId in modIds)
-            {
-                foreach (var kvp in attrs.EnumerateEntries())
-                {
-                    kvp.Value.RemoveModifier(modId);
-                }
-            }
-
-            _appliedModifierIds.Remove(item.ItemId);
+            _appliedModifierSources.Remove(item.ItemId);
         }
 
         // ======================================================================
@@ -556,23 +561,12 @@ namespace Rollgeon.Items
                 TypedEvent<ComboPlayedPayload>.Unsubscribe(handler);
             _comboPlayedHandlers.Clear();
 
-            var playerGuid = GetPlayerGuid();
-            if (playerGuid != Guid.Empty && ServiceLocator.TryGetService<AttributesManager>(out var attrMgr))
+            if (ServiceLocator.TryGetService<AttributesManager>(out var attrMgr))
             {
-                var attrs = attrMgr.GetAttributes(playerGuid);
-                if (attrs != null)
-                {
-                    foreach (var modIds in _appliedModifierIds.Values)
-                    {
-                        foreach (var modId in modIds)
-                        {
-                            foreach (var kvp in attrs.EnumerateEntries())
-                                kvp.Value.RemoveModifier(modId);
-                        }
-                    }
-                }
+                foreach (var sourceId in _appliedModifierSources.Values)
+                    attrMgr.RemoveAllModifiersBySource(sourceId);
             }
-            _appliedModifierIds.Clear();
+            _appliedModifierSources.Clear();
         }
     }
 }
