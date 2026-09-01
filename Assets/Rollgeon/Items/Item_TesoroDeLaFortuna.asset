@@ -185,7 +185,7 @@ MonoBehaviour:
       Data: 10|Rollgeon.Effects.Readers.ReadCurrentRolls, Rollgeon
     - Name: PerRollAmount
       Entry: 3
-      Data: 2
+      Data: 5
     - Name: 
       Entry: 8
       Data: 
@@ -409,6 +409,7 @@ MonoBehaviour:
   RollPoolBonus: 0
   ActiveSlotBonus: 0
   EnchantmentCostMultiplier: 1
+  CursedEnchantmentWeightMultiplier: 1
   SecondWind: 0
   SecondWindRemainingHp: 1
   UsesActiveSlot: 0

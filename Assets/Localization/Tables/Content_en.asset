@@ -1445,6 +1445,14 @@ MonoBehaviour:
       Taking damage resets it.
     m_Metadata:
       m_Items: []
+  - m_Id: 17619294189961216
+    m_Localized: Heart of Fortune
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17619294269652992
+    m_Localized: Recover 5 HP for each unused roll at the end of your turn.
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

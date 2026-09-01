@@ -75,7 +75,25 @@ namespace Rollgeon.Effects.Concretes
             switch (Operation)
             {
                 case GoldOperation.Add:
-                    if (amount > 0) economy.Add(amount);
+                    if (amount > 0)
+                    {
+                        economy.Add(amount);
+                        // Floating "+XG" sobre quien lo gana (patrón EnemyGoldDropService).
+                        // Antes este effect no emitía NINGÚN feedback: Tesoro de la Fortuna
+                        // cobraba al fin de turno y el jugador no veía cuánto ni por qué —
+                        // clave porque el HUD ya muestra el pool POST-grant cuando el item
+                        // cobró sobre el leftover PRE-grant.
+                        Guid floatTarget = context?.TargetGuid is { } t && t != Guid.Empty
+                            ? t
+                            : context?.SourceGuid ?? Guid.Empty;
+                        if (floatTarget != Guid.Empty)
+                            EventManager.Trigger(
+                                EventName.OnFloatingNumberRequested,
+                                floatTarget,
+                                Rollgeon.UI.HUD.FloatingNumberType.Gold,
+                                (float)amount,
+                                Vector3.zero);
+                    }
                     return true;
 
                 case GoldOperation.Spend:

@@ -1467,6 +1467,14 @@ MonoBehaviour:
       Recibir da\xF1o lo reinicia."
     m_Metadata:
       m_Items: []
+  - m_Id: 17619294189961216
+    m_Localized: "Coraz\xF3n de la Fortuna"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17619294269652992
+    m_Localized: "Recuper\xE1s 5 HP por cada roll sin utilizar al final del turno."
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []
