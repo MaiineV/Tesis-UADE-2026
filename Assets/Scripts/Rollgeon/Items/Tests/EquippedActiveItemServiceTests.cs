@@ -151,11 +151,17 @@ namespace Rollgeon.Items.Tests
         [Test]
         public void test_captureState_storesTheItemId()
         {
-            // Arrange — el dado y la familia viven en el catalogo, no en la instancia.
+            // Arrange — el dado y la familia viven en el catalogo, no en la instancia, asi
+            // que solo se persiste el id (mas el encantamiento, que aca es null).
             _service.Equip(NewActive("item.a"));
 
-            // Act + Assert
-            Assert.AreEqual("item.a", _service.CaptureState());
+            // Act
+            var state = _service.CaptureState() as System.Collections.Generic.Dictionary<string, object>;
+
+            // Assert
+            Assert.IsNotNull(state);
+            Assert.AreEqual("item.a", state["itemId"]);
+            Assert.IsNull(state["enchantmentId"]);
         }
 
         [Test]
