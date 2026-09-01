@@ -81,6 +81,19 @@ namespace Rollgeon.Items.Tests
         }
 
         [Test]
+        public void test_canActivate_outOfCombatWithEmptySlot_reportsNotInCombatNotEmptySlot()
+        {
+            // Arrange — "completamente oculta fuera de combate" es la regla mas externa:
+            // manda sobre el slot vacio. Con la precedencia al reves la ficha se mostraba
+            // en exploracion diciendo "sin item equipado", que es justo lo que el GDD
+            // prohibe.
+            _rolls.InCombat = false;
+
+            // Act + Assert
+            Assert.AreEqual(ActiveItemBlock.NotInCombat, _service.CanActivate());
+        }
+
+        [Test]
         public void test_canActivate_withNoRolls_reportsNotEnoughRolls()
         {
             // Arrange — PRE-03.

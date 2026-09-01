@@ -33,16 +33,18 @@ namespace Rollgeon.Items.Active
 
         public ActiveItemBlock CanActivate()
         {
-            if (_equipped == null || !_equipped.HasItem) return ActiveItemBlock.NoItemEquipped;
-
-            // El pool de rolls solo existe en combate, asi que su ausencia ES la señal de
-            // que estamos fuera — es el mismo criterio que usa TurnManager.
+            // "Completamente oculta: fuera de combate" es la regla mas externa del GDD:
+            // va antes que el slot vacio, porque en exploracion la ficha no se muestra ni
+            // siquiera para decir que no hay item. El pool de rolls solo existe en
+            // combate, asi que su ausencia ES la señal — mismo criterio que TurnManager.
             if (!ServiceLocator.TryGetService<IRollPoolService>(out var rolls)
                 || rolls == null
                 || !rolls.IsCombatActive)
             {
                 return ActiveItemBlock.NotInCombat;
             }
+
+            if (_equipped == null || !_equipped.HasItem) return ActiveItemBlock.NoItemEquipped;
 
             var playerGuid = ResolvePlayerGuid();
 
