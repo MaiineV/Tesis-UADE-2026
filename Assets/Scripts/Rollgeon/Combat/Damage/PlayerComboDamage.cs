@@ -72,6 +72,17 @@ namespace Rollgeon.Combat.Damage
                 }
             }
 
+            // Items que REDEFINEN el daño base (Furia Contenida, Egoísta): reemplazan solo
+            // dmg_base_PJ — bonos_PJ (los +Attack de otros items) queda intacto a propósito,
+            // por eso no es un modifier Override sobre Attack. El breakdown refleja el valor
+            // overrideado ⇒ el preview del HUD queda en paridad gratis (mismo Resolve).
+            if (ServiceLocator.TryGetService<IBaseDamageOverrideService>(out var baseOverride)
+                && baseOverride != null
+                && baseOverride.TryGetBaseDamage(sourceId, out var overriddenBase))
+            {
+                dmgBasePJ = overriddenBase;
+            }
+
             int bonoCombo = 0;
             float scratchMultiplier = 1f;
             bool block = false;

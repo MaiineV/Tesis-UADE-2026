@@ -70,7 +70,10 @@ namespace Rollgeon.Editor.Tools.Polymorphic.Tests
         {
             var names = NamesOf(PolymorphicMemberScanner.BlockMembersOf(typeof(ItemSO)));
 
-            CollectionAssert.AreEquivalent(new[] { "PassiveHooks", "OnActivate" }, names);
+            // BaseDamageOverride es block member desde Feature#0065: su BaseValue es un
+            // EffectIntReader (picker escondido) que la tool tiene que poder autorar (Furia).
+            CollectionAssert.AreEquivalent(
+                new[] { "PassiveHooks", "BaseDamageOverride", "OnActivate" }, names);
         }
 
         [Test]
