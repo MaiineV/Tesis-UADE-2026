@@ -199,7 +199,8 @@ namespace Rollgeon.Items.Active
             }
 
             int roll = _roller.Roll(item.ActiveDie);
-            var band = ActiveItemBands.Resolve(roll, item.ActiveDie);
+            // Por item y no por dado: Precision y Control tienen mecanismo propio.
+            var band = ActiveItemBands.Resolve(roll, item);
 
             var ctx = BuildContext(playerGuid, selection);
             var effects = item.GetBandEffects(band);

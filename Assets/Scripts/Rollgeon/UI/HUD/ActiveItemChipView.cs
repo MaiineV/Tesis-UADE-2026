@@ -336,20 +336,18 @@ namespace Rollgeon.UI.HUD
 
             var item = _equipped.Current;
             int faces = item.ActiveDie.MaxFace();
-            var neg = ActiveItemBands.RangeOf(ActiveItemBand.Negative, faces);
-            var mix = ActiveItemBands.RangeOf(ActiveItemBand.Mixed, faces);
-            var pos = ActiveItemBands.RangeOf(ActiveItemBand.Positive, faces);
 
             string name = LocalizedContent.Name(item.ItemId,
                 string.IsNullOrEmpty(item.DisplayName) ? item.ItemId : item.DisplayName);
 
-            return $"<b>{name}</b>  ·  d{faces}\n" +
-                   $"{Range(neg)} riesgo\n" +
-                   $"{Range(mix)} mixto\n" +
-                   $"{Range(pos)} fuerte";
+            // Se listan las caras y no un rango: en Precision y Control las bandas no son
+            // contiguas (Control con paridad par sobre D6 da mixta en 2 y en 5).
+            var text = new System.Text.StringBuilder();
+            text.AppendLine($"<b>{name}</b>  ·  d{faces}");
+            text.AppendLine($"{ActiveItemBands.DescribeFaces(ActiveItemBand.Negative, item)} riesgo");
+            text.AppendLine($"{ActiveItemBands.DescribeFaces(ActiveItemBand.Mixed, item)} mixto");
+            text.Append($"{ActiveItemBands.DescribeFaces(ActiveItemBand.Positive, item)} fuerte");
+            return text.ToString();
         }
-
-        private static string Range((int Min, int Max) r)
-            => r.Min == r.Max ? r.Min.ToString() : $"{r.Min}-{r.Max}";
     }
 }

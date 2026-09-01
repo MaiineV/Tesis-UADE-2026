@@ -71,6 +71,17 @@ namespace Rollgeon.Items
                  "todavia no estan implementadas — caen en el reparto por tercios.")]
         public ActiveItemFamily ActiveFamily = ActiveItemFamily.Potencia;
 
+        [ShowIf("@Type == ItemType.Active && ActiveFamily == Rollgeon.Items.Active.ActiveItemFamily.Precision")]
+        [InfoBox("Cara exacta que el item busca. Acertarla es banda positiva, quedar a 1 " +
+                 "es mixta, a 2 o mas es negativa.")]
+        [MinValue(1)]
+        public int PrecisionTarget = 1;
+
+        [ShowIf("@Type == ItemType.Active && ActiveFamily == Rollgeon.Items.Active.ActiveItemFamily.Control")]
+        [InfoBox("Paridad que el item busca. La banda cruza dos condiciones: coincidir la " +
+                 "paridad y caer en la mitad superior del dado.")]
+        public ActiveItemParity ControlParity = ActiveItemParity.Even;
+
         [Title("Active — Efectos por banda")]
         [InfoBox("Las tres bandas tienen que tener efecto: el GDD prohibe la rama de " +
                  "'no pasa nada'. Lo que cambia entre bandas es la calidad, no si ocurre.")]
