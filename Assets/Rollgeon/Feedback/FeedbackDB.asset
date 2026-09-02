@@ -1784,6 +1784,52 @@ MonoBehaviour:
     BehaviorValueKey: 0
     ValueTarget: 1
     FloatingNumberSourceKey: 1
+  - FeedbackId: anim.enemy.sniper.attack
+    Type: 2
+    Position: 1
+    PositionReaderSO: {fileID: 0}
+    PlayerTarget: 0
+    PositionOffset: {x: 0, y: 0, z: 0}
+    Duration: 1.0667
+    CompletionMode: 0
+    VfxPrefab: {fileID: 0}
+    ShouldDestroyOnParticleEnd: 1
+    AudioClip: {fileID: 0}
+    Volume: 1
+    AnimTrigger: Attack
+    TargetSourcePawn: 1
+    FeelPlayerPrefab: {fileID: 0}
+    FeelIntensity: 1
+    DeathSpinDegrees: 720
+    DeathEndScale: 0
+    DeathRiseHeight: 0.35
+    DeathHideHealthBar: 1
+    BehaviorValueKey: 0
+    ValueTarget: 1
+    FloatingNumberSourceKey: 1
+  - FeedbackId: vfx.enemy.artillery.bomb
+    Type: 0
+    Position: 0
+    PositionReaderSO: {fileID: 0}
+    PlayerTarget: 0
+    PositionOffset: {x: 0, y: 0, z: 0}
+    Duration: 0.6
+    CompletionMode: 0
+    VfxPrefab: {fileID: 5996098344180056482, guid: 82b053ca077de4b4cbab2682b468864d, type: 3}
+    ShouldDestroyOnParticleEnd: 0
+    AudioClip: {fileID: 0}
+    Volume: 1
+    AnimTrigger: Attack
+    TargetSourcePawn: 1
+    FeelPlayerPrefab: {fileID: 0}
+    FeelIntensity: 1
+    DeathSpinDegrees: 720
+    DeathEndScale: 0
+    DeathRiseHeight: 0.35
+    DeathHideHealthBar: 1
+    BehaviorValueKey: 0
+    ValueTarget: 1
+    FloatingNumberSourceKey: 1
   _sequences:
   - SequenceId: death.enemy
     Steps:

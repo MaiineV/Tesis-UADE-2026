@@ -1,0 +1,297 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d35ab9bdc06b06940a12320c6ff63a49, type: 3}
+  m_Name: ED_Artillery
+  m_EditorClassIdentifier: Rollgeon::Rollgeon.Entities.EnemyDataSO
+  serializationData:
+    SerializedFormat: 2
+    SerializedBytes: 
+    ReferencedUnityObjects:
+    - {fileID: 11400000, guid: 3c55e676e1a160f4a840c0a83c847a24, type: 2}
+    SerializedBytesString: 
+    Prefab: {fileID: 0}
+    PrefabModificationsReferencedUnityObjects: []
+    PrefabModifications: []
+    SerializationNodes:
+    - Name: Behaviors
+      Entry: 7
+      Data: 0|System.Collections.Generic.List`1[[Rollgeon.Entities.Behaviors.BaseBehavior,
+        Rollgeon]], mscorlib
+    - Name: 
+      Entry: 12
+      Data: 0
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: AIRoot
+      Entry: 7
+      Data: 1|Rollgeon.Combat.AI.Decisions.AINode_If, Rollgeon
+    - Name: EditorNodeId
+      Entry: 6
+      Data: 
+    - Name: TargetSelector
+      Entry: 7
+      Data: 2|Rollgeon.Combat.AI.Targeting.TargetSelector_Self, Rollgeon
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: Conditions
+      Entry: 7
+      Data: 3|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
+        Rollgeon]], mscorlib
+    - Name: 
+      Entry: 12
+      Data: 1
+    - Name: 
+      Entry: 7
+      Data: 4|Rollgeon.PreConditions.Concretes.PcOwnerHasPendingTelegraph, Rollgeon
+    - Name: _isConstantValue
+      Entry: 5
+      Data: true
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: Then
+      Entry: 7
+      Data: 5|Rollgeon.Combat.AI.Decisions.AINode_Sequence, Rollgeon
+    - Name: EditorNodeId
+      Entry: 6
+      Data: 
+    - Name: Children
+      Entry: 7
+      Data: 6|System.Collections.Generic.List`1[[Rollgeon.Combat.AI.Decisions.AIDecisionNode,
+        Rollgeon]], mscorlib
+    - Name: 
+      Entry: 12
+      Data: 2
+    - Name: 
+      Entry: 7
+      Data: 7|Rollgeon.Combat.AI.Decisions.AINode_IgniteArea, Rollgeon
+    - Name: EditorNodeId
+      Entry: 6
+      Data: 
+    - Name: Definition
+      Entry: 10
+      Data: 0
+    - Name: DurationRounds
+      Entry: 3
+      Data: 0
+    - Name: ChannelId
+      Entry: 6
+      Data: 
+    - Name: AnnounceTurns
+      Entry: 3
+      Data: 0
+    - Name: RetireFullyReplaced
+      Entry: 5
+      Data: false
+    - Name: FailWhenNothingToBurn
+      Entry: 5
+      Data: false
+    - Name: IntentLabelKey
+      Entry: 6
+      Data: 
+    - Name: IntentLabelFallback
+      Entry: 6
+      Data: 
+    - Name: WindupFeedbackId
+      Entry: 1
+      Data: vfx.enemy.artillery.bomb
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 8|Rollgeon.Combat.AI.Decisions.AINode_KeepDistance, Rollgeon
+    - Name: EditorNodeId
+      Entry: 6
+      Data: 
+    - Name: MaxSteps
+      Entry: 7
+      Data: 9|Rollgeon.Combat.AI.Readers.AIConstantInt, Rollgeon
+    - Name: Value
+      Entry: 3
+      Data: 1
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: IdealDistance
+      Entry: 7
+      Data: 10|Rollgeon.Combat.AI.Readers.AIConstantInt, Rollgeon
+    - Name: Value
+      Entry: 3
+      Data: 3
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: Else
+      Entry: 7
+      Data: 11|Rollgeon.Combat.AI.Decisions.AINode_Sequence, Rollgeon
+    - Name: EditorNodeId
+      Entry: 6
+      Data: 
+    - Name: Children
+      Entry: 7
+      Data: 12|System.Collections.Generic.List`1[[Rollgeon.Combat.AI.Decisions.AIDecisionNode,
+        Rollgeon]], mscorlib
+    - Name: 
+      Entry: 12
+      Data: 2
+    - Name: 
+      Entry: 7
+      Data: 13|Rollgeon.Combat.AI.Decisions.AINode_TelegraphMark, Rollgeon
+    - Name: EditorNodeId
+      Entry: 6
+      Data: 
+    - Name: Shape
+      Entry: 3
+      Data: 14
+    - Name: Size
+      Entry: 3
+      Data: 1
+    - Name: Depth
+      Entry: 3
+      Data: 2
+    - Name: Count
+      Entry: 3
+      Data: 3
+    - Name: Columns
+      Entry: 3
+      Data: 3
+    - Name: Rows
+      Entry: 3
+      Data: 2
+    - Name: HalfAxis
+      Entry: 3
+      Data: 0
+    - Name: Damage
+      Entry: 3
+      Data: 15
+    - Name: Kind
+      Entry: 3
+      Data: 3
+    - Name: ChannelId
+      Entry: 6
+      Data: 
+    - Name: WindupFeedbackId
+      Entry: 1
+      Data: anim.enemy.ranged.attack
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 14|Rollgeon.Combat.AI.Decisions.AINode_KeepDistance, Rollgeon
+    - Name: EditorNodeId
+      Entry: 6
+      Data: 
+    - Name: MaxSteps
+      Entry: 7
+      Data: 15|Rollgeon.Combat.AI.Readers.AIConstantInt, Rollgeon
+    - Name: Value
+      Entry: 3
+      Data: 1
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: IdealDistance
+      Entry: 7
+      Data: 16|Rollgeon.Combat.AI.Readers.AIConstantInt, Rollgeon
+    - Name: Value
+      Entry: 3
+      Data: 3
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: AIDetachedNodes
+      Entry: 7
+      Data: 17|System.Collections.Generic.List`1[[Rollgeon.Combat.AI.Decisions.AIDecisionNode,
+        Rollgeon]], mscorlib
+    - Name: 
+      Entry: 12
+      Data: 0
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+  EntityId: enemy.artillery
+  DisplayName: Artillery
+  Description: 
+  Portrait: {fileID: 133841030, guid: 7354be46d5bce5b44ae3fc20ec0cb47f, type: 3}
+  Design:
+    Archetype: 2
+    Pattern: 7
+    Timing: 2
+    Notes: "Artillery: bombardea el \xE1rea diamante (cruz, radio 1) centrada en
+      el jugador. Sin LoS ni alineaci\xF3n (dispara en arco). Turno N: marca el \xE1rea.
+      Turno N+1: detona (da\xF1o directo) y planta fuego (Tile_Fire_Artillery) \u2014
+      mismo patr\xF3n que la bomba del Croupier. Movimiento m\xEDnimo: kitea 1 casilla
+      si te acerc\xE1s de m\xE1s."
+  WeaknessComboId: 
+  WeaknessMultiplierOverride: 0
+  Curse: {fileID: 0}
+  BaseHP: 35
+  BaseAttack: 15
+  BaseHealStrength: 5
+  BaseSpeed: 3
+  MaxEnergy: 3
+  BaseAttackRange: 0
+  ExtraTiers: []
+  VisualPrefab: {fileID: 7126624626522966521, guid: f7ac6f3588c37304eaee7a8d5efdcd43, type: 3}
+  MinGoldDrop: 3
+  MaxGoldDrop: 5
+  IsFlying: 0
+  IsBoss: 0
+  Archetype: 0
+  Personality: 0
+  KamikazeIgnoresSurvival: 0
+  AuraRadius: 0
+  AuraFlatReduction: 0
+  Footprint: {x: 1, y: 1}

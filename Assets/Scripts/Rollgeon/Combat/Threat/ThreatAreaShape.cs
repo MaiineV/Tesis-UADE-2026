@@ -103,6 +103,15 @@ namespace Rollgeon.Combat.Threat
         /// cref="ThreatAreaShape.AnchorsOnSelf"/>).
         /// </summary>
         CrossAroundSelf,
+
+        /// <summary>
+        /// Diamante (distancia Manhattan ≤ radio) centrado en el jugador, CON la celda central —
+        /// Ranged Artillery: bombardeo de área que cae sobre y alrededor del jugador. Radio 1 ⇒
+        /// cruz de 5 casillas (centro + 4 brazos de largo 1). A diferencia de
+        /// <see cref="SquareAroundPlayer"/> (Chebyshev, esquinas incluidas), acá las esquinas del
+        /// cuadrado quedan afuera — el área es más angosta en las diagonales.
+        /// </summary>
+        DiamondAroundPlayer,
     }
 
     /// <summary>Eje de corte para <see cref="ThreatShape.HalfRoom"/>.</summary>
@@ -216,6 +225,22 @@ namespace Rollgeon.Combat.Threat
                         if (IsValidTile(grid, west)) result.Add(west);
                         if (IsValidTile(grid, north)) result.Add(north);
                         if (IsValidTile(grid, south)) result.Add(south);
+                    }
+                    break;
+                }
+
+                case ThreatShape.DiamondAroundPlayer:
+                {
+                    // Distancia Manhattan ≤ radio, CON la celda central (a diferencia de
+                    // CrossAroundSelf, que la excluye a propósito porque el boss no se pega a sí
+                    // mismo — acá el centro es el jugador, y la bomba sí cae encima).
+                    int r = size < 0 ? 0 : size;
+                    for (int dx = -r; dx <= r; dx++)
+                    for (int dy = -r; dy <= r; dy++)
+                    {
+                        if (System.Math.Abs(dx) + System.Math.Abs(dy) > r) continue;
+                        var c = new GridCoord(center.X + dx, center.Y + dy);
+                        if (IsValidTile(grid, c)) result.Add(c);
                     }
                     break;
                 }

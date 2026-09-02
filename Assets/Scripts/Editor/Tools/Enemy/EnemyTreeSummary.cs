@@ -74,6 +74,7 @@ namespace Rollgeon.Editor.Tools.Enemy
                 case AINode_Move _:
                 case AINode_KeepDistance _:
                 case AINode_MoveToAlign _:
+                case AINode_MoveToLineOfSight _:
                 case AINode_TeleportNearTarget _:
                 case AINode_TeleportAwayToEdge _:
                 case AINode_TeleportToRoomCenter _:

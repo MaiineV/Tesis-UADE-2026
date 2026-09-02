@@ -89,7 +89,7 @@ MonoBehaviour:
       Data: 
     - Name: WindupFeedbackId
       Entry: 1
-      Data: anim.enemy.ranged.attack
+      Data: anim.enemy.sniper.attack
     - Name: ImpactEventKey
       Entry: 1
       Data: hit
@@ -250,7 +250,7 @@ MonoBehaviour:
       Data: 
     - Name: WindupFeedbackId
       Entry: 1
-      Data: anim.enemy.ranged.attack
+      Data: anim.enemy.sniper.attack
     - Name: ImpactEventKey
       Entry: 1
       Data: hit
@@ -574,7 +574,7 @@ MonoBehaviour:
   MaxEnergy: 3
   BaseAttackRange: 8
   ExtraTiers: []
-  VisualPrefab: {fileID: 7126624626522966521, guid: f7ac6f3588c37304eaee7a8d5efdcd43, type: 3}
+  VisualPrefab: {fileID: 6162128355907944373, guid: 93b50a39ce9d9cd4e8752d2b88eed17a, type: 3}
   MinGoldDrop: 3
   MaxGoldDrop: 5
   IsFlying: 0

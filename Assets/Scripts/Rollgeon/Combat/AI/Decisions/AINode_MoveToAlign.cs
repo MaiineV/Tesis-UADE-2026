@@ -1,8 +1,10 @@
 using System;
 using System.Collections.Generic;
+using Patterns;
 using Rollgeon.Combat.AI.Readers;
 using Rollgeon.Grid;
 using Rollgeon.Movement;
+using Rollgeon.Tiles;
 using Sirenix.OdinInspector;
 using Sirenix.Serialization;
 using UnityEngine;
@@ -86,9 +88,14 @@ namespace Rollgeon.Combat.AI.Decisions
             if (reachable == null || reachable.Count == 0) return AIResult.Succeeded;
 
             // Candidato alineado (misma fila/columna) Y con tiro libre, si se pide — el único
-            // objetivo "de verdad" de este nodo.
+            // objetivo "de verdad" de este nodo. Dos niveles: preferí uno que no le haga daño
+            // pisarlo (BUG de playtest: el Sniper se paraba en SU PROPIO fuego para conseguir el
+            // ángulo); si ninguno alcanzable está limpio, usar el mejor igual antes que congelarse.
+            ServiceLocator.TryGetService<ISpecialTileAIQuery>(out var hazardTiles);
             GridCoord? bestAligned = null;
             int bestAlignedScore = int.MaxValue;
+            GridCoord? bestAlignedSafe = null;
+            int bestAlignedSafeScore = int.MaxValue;
             foreach (var candidate in reachable)
             {
                 bool aligned = candidate.X == playerCoord.X || candidate.Y == playerCoord.Y;
@@ -99,9 +106,16 @@ namespace Rollgeon.Combat.AI.Decisions
 
                 int score = Mathf.Abs(candidate.Manhattan(playerCoord) - desiredRange);
                 if (score < bestAlignedScore) { bestAlignedScore = score; bestAligned = candidate; }
+
+                if (!AIMovementHazard.IsDamaging(hazardTiles, context.SelfGuid, candidate)
+                    && score < bestAlignedSafeScore)
+                {
+                    bestAlignedSafeScore = score;
+                    bestAlignedSafe = candidate;
+                }
             }
 
-            GridCoord? target = bestAligned;
+            GridCoord? target = bestAlignedSafe ?? bestAligned;
             bool moved;
             if (target != null)
             {
@@ -129,17 +143,17 @@ namespace Rollgeon.Combat.AI.Decisions
 
         /// <summary>
         /// De los candidatos alcanzables este turno, mueve al que tenga la MENOR distancia de
-        /// camino real hasta el jugador (BFS desde el jugador sobre todo el grafo walkable, sin
-        /// tope de pasos — solo para puntuar, la física real la sigue limitando <c>maxSteps</c>
-        /// vía <paramref name="reachable"/>). Rompe empates que la distancia Manhattan no puede:
-        /// un candidato "fuera de eje" que empieza a bordear un obstáculo ancho tiene menor
-        /// distancia de CAMINO que uno que sigue pegado contra la pared, aunque ambos midan
-        /// exactamente lo mismo en línea recta.
+        /// camino real hasta el jugador (<see cref="GridPathDistance"/> — BFS desde el jugador
+        /// sobre todo el grafo walkable, sin tope de pasos; la física real la sigue limitando
+        /// <c>maxSteps</c> vía <paramref name="reachable"/>). Rompe empates que la distancia
+        /// Manhattan no puede: un candidato "fuera de eje" que empieza a bordear un obstáculo
+        /// ancho tiene menor distancia de CAMINO que uno que sigue pegado contra la pared, aunque
+        /// ambos midan exactamente lo mismo en línea recta.
         /// </summary>
         private static bool TryApproachByPathDistance(AIContext context, IReadOnlyCollection<GridCoord> reachable,
             GridCoord selfCoord, GridCoord playerCoord)
         {
-            var pathDist = BfsPathDistances(context.Grid, playerCoord, context.SelfGuid, context.PlayerGuid);
+            var pathDist = GridPathDistance.ComputeFrom(context.Grid, playerCoord, context.SelfGuid, context.PlayerGuid);
 
             int currentDist = pathDist.TryGetValue(selfCoord, out var d0) ? d0 : int.MaxValue;
             GridCoord? best = null;
@@ -152,37 +166,6 @@ namespace Rollgeon.Combat.AI.Decisions
             }
 
             return best != null && context.Movement.Move(context.SelfGuid, best.Value);
-        }
-
-        /// <summary>
-        /// BFS de distancia (en tiles) desde <paramref name="from"/> hacia cada celda walkable
-        /// del grafo, ignorando el ocupante de <paramref name="selfGuid"/>/<paramref name="targetGuid"/>
-        /// (no deberían bloquearse la línea el uno al otro). Sin tope de pasos: es un mapa de
-        /// distancias para puntuar, no un movimiento real.
-        /// </summary>
-        private static Dictionary<GridCoord, int> BfsPathDistances(IGridManager grid, GridCoord from, Guid selfGuid, Guid targetGuid)
-        {
-            var dist = new Dictionary<GridCoord, int> { [from] = 0 };
-            if (grid == null) return dist;
-
-            var queue = new Queue<GridCoord>();
-            queue.Enqueue(from);
-            while (queue.Count > 0)
-            {
-                var current = queue.Dequeue();
-                int d = dist[current];
-                foreach (var edge in grid.Graph.GetNeighbors(current))
-                {
-                    var n = edge.To;
-                    if (dist.ContainsKey(n)) continue;
-                    if (!grid.IsWalkable(n)) continue;
-                    if (grid.TryGetOccupant(n, out var occupant) && occupant != selfGuid && occupant != targetGuid) continue;
-
-                    dist[n] = d + 1;
-                    queue.Enqueue(n);
-                }
-            }
-            return dist;
         }
 
         /// <summary>
