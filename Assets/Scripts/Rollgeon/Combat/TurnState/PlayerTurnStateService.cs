@@ -54,9 +54,15 @@ namespace Rollgeon.Combat.TurnState
         private int _cleanTurnStreak;
         private bool _damagedThisRound;
         private bool _roundOpen;
+        private string _lastComboId;
+        private int _comboVarietyStreak;
+        private int _attacksPlayedThisCombat;
+        private bool _attackPending;
 
         public int TilesMovedThisTurn => _tilesMovedThisTurn;
         public int CleanTurnStreak => _cleanTurnStreak;
+        public int ComboVarietyStreak => _comboVarietyStreak;
+        public int AttacksPlayedThisCombat => _attacksPlayedThisCombat;
 
         public PlayerTurnStateService(IMovementService movement)
         {
@@ -123,8 +129,33 @@ namespace Rollgeon.Combat.TurnState
         {
             if (!_inCombat) return;
             if (payload.SourceGuid != GetPlayerGuid()) return;
+
+            // Eco Menguante: el ataque anterior se materializa recién acá, así el reader
+            // del item (que corre después en este mismo dispatch) ve cuántos ataques hubo
+            // ANTES del actual — el primero del combate lee 0.
+            if (_attackPending)
+            {
+                _attacksPlayedThisCombat++;
+                _attackPending = false;
+            }
+
+            // Mosaico Errático: sí es sincrónico a propósito — el item tiene que leer la
+            // racha CON el combo en curso ("el segundo combo distinto ya paga").
+            if (payload.ActionKind.IsCombatPayable())
+                TrackComboVariety(payload.ComboId);
+
             if (payload.ActionKind != RollActionKind.Attack) return;
             _consumePending = true;
+            _attackPending = true;
+        }
+
+        private void TrackComboVariety(string comboId)
+        {
+            if (string.IsNullOrEmpty(comboId)) return;
+            if (_lastComboId == null) _comboVarietyStreak = 0;
+            else if (comboId != _lastComboId) _comboVarietyStreak++;
+            else _comboVarietyStreak = 0;
+            _lastComboId = comboId;
         }
 
         private void HandleDamageResolved(DamageResolvedPayload payload)
@@ -183,6 +214,10 @@ namespace Rollgeon.Combat.TurnState
             _cleanTurnStreak = 0;
             _damagedThisRound = false;
             _roundOpen = false;
+            _lastComboId = null;
+            _comboVarietyStreak = 0;
+            _attacksPlayedThisCombat = 0;
+            _attackPending = false;
             if (emit) EmitStreakChanged();
         }
 

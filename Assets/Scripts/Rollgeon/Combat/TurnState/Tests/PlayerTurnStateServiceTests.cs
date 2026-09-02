@@ -297,6 +297,138 @@ namespace Rollgeon.Combat.TurnState.Tests
             Assert.AreEqual(0, _service.TilesMovedThisTurn);
         }
 
+        // ---- combo variety (Mosaico Errático) --------------------------------------
+
+        void PlayCombo(string comboId, RollActionKind kind = RollActionKind.Attack)
+            => TypedEvent<ComboPlayedPayload>.Raise(new ComboPlayedPayload
+            {
+                SourceGuid = _player,
+                TargetGuid = _enemy,
+                ComboId = comboId,
+                ActionKind = kind,
+            });
+
+        [Test]
+        public void ComboVariety_FirstComboOfCombat_IsZero()
+        {
+            StartCombat();
+
+            PlayCombo("combo.pair");
+
+            Assert.AreEqual(0, _service.ComboVarietyStreak);
+        }
+
+        [Test]
+        public void ComboVariety_DistinctCombosChain_RepeatResets()
+        {
+            StartCombat();
+
+            PlayCombo("combo.pair");
+            PlayCombo("combo.trio");
+            Assert.AreEqual(1, _service.ComboVarietyStreak, "segundo combo distinto");
+            PlayCombo("combo.ladder");
+            Assert.AreEqual(2, _service.ComboVarietyStreak, "tercer combo distinto");
+
+            PlayCombo("combo.ladder");
+            Assert.AreEqual(0, _service.ComboVarietyStreak, "repetir el último reinicia");
+
+            PlayCombo("combo.pair");
+            Assert.AreEqual(1, _service.ComboVarietyStreak, "vuelve a encadenar contra el último jugado");
+        }
+
+        [Test]
+        public void ComboVariety_ReadInsideDispatch_AlreadyCountsCurrentCombo()
+        {
+            // El item lee dentro del mismo dispatch: el segundo combo distinto ya vale 1.
+            StartCombat();
+            PlayCombo("combo.pair");
+
+            int seen = -1;
+            Action<ComboPlayedPayload> reader = _ => seen = _service.ComboVarietyStreak;
+            TypedEvent<ComboPlayedPayload>.Subscribe(reader);
+            try { PlayCombo("combo.trio"); }
+            finally { TypedEvent<ComboPlayedPayload>.Unsubscribe(reader); }
+
+            Assert.AreEqual(1, seen);
+        }
+
+        [Test]
+        public void ComboVariety_MovementCombo_DoesNotCount()
+        {
+            StartCombat();
+            PlayCombo("combo.pair");
+
+            PlayCombo("combo.trio", RollActionKind.Movement);
+
+            Assert.AreEqual(0, _service.ComboVarietyStreak);
+        }
+
+        [Test]
+        public void ComboVariety_CombatStart_Resets()
+        {
+            StartCombat();
+            PlayCombo("combo.pair");
+            PlayCombo("combo.trio");
+
+            StartCombat();
+
+            Assert.AreEqual(0, _service.ComboVarietyStreak);
+            PlayCombo("combo.ladder");
+            Assert.AreEqual(0, _service.ComboVarietyStreak, "el primer combo del combate nuevo no compara con el anterior");
+        }
+
+        // ---- attacks played (Eco Menguante) ---------------------------------------
+
+        [Test]
+        public void AttacksPlayed_FirstAttackReadsZero_SecondReadsOne()
+        {
+            // Commit diferido: dentro del dispatch del ataque N el contador vale N-1.
+            StartCombat();
+            var seen = new List<int>();
+            Action<ComboPlayedPayload> reader = _ => seen.Add(_service.AttacksPlayedThisCombat);
+            TypedEvent<ComboPlayedPayload>.Subscribe(reader);
+            try
+            {
+                PlayAttackCombo();
+                PlayAttackCombo();
+                PlayAttackCombo();
+            }
+            finally { TypedEvent<ComboPlayedPayload>.Unsubscribe(reader); }
+
+            CollectionAssert.AreEqual(new[] { 0, 1, 2 }, seen);
+        }
+
+        [Test]
+        public void AttacksPlayed_HealCombo_DoesNotCountAsAttack()
+        {
+            StartCombat();
+            PlayAttackCombo();
+
+            PlayCombo("combo.pair", RollActionKind.Heal);
+            PlayCombo("combo.pair", RollActionKind.Heal);
+
+            // El ataque pendiente se materializó en el primer heal; los heals no suman.
+            Assert.AreEqual(1, _service.AttacksPlayedThisCombat);
+        }
+
+        [Test]
+        public void AttacksPlayed_CombatStart_Resets()
+        {
+            StartCombat();
+            PlayAttackCombo();
+            PlayAttackCombo();
+
+            StartCombat();
+
+            Assert.AreEqual(0, _service.AttacksPlayedThisCombat);
+            int seen = -1;
+            Action<ComboPlayedPayload> reader = _ => seen = _service.AttacksPlayedThisCombat;
+            TypedEvent<ComboPlayedPayload>.Subscribe(reader);
+            try { PlayAttackCombo(); }
+            finally { TypedEvent<ComboPlayedPayload>.Unsubscribe(reader); }
+            Assert.AreEqual(0, seen, "el pendiente del combate anterior no se arrastra");
+        }
+
         // ---- fakes ---------------------------------------------------------------
 
         sealed class FakeMovement : IMovementService
