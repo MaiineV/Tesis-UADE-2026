@@ -1,14 +1,14 @@
 using System;
+using System.Collections.Generic;
 
 namespace Rollgeon.Grid
 {
     /// <summary>
     /// Línea de visión entre dos celdas del grid, en cualquier ángulo (no solo ortogonal o
-    /// diagonal de 45°) — algoritmo de Bresenham. Complemento del chequeo de línea recta que ya
-    /// usa <c>PcTargetInRange.RequireLineOfSight</c> (ortogonal/diagonal únicamente, GDD Sniper):
-    /// ese sirve para atacantes que disparan en línea recta; este es para atacantes
-    /// omnidireccionales (ej. AoE en rango, GDD Ranged Kiter) que igual necesitan que la celda
-    /// puntual del target no esté tapada, sin exigir alineación.
+    /// diagonal de 45°) — algoritmo de Bresenham. Es LA línea de visión del juego: la exigen
+    /// todos los gates de ataque enemigo (<c>PcTargetInRange</c>, <c>PCEntityInRange</c>, los
+    /// auto-gates tipo <c>AINode_RangedShot.CanFire</c>), el filtrado de telegraphs dirigidos y
+    /// el overlay de alcance. Sobre pares alineados camina exactamente la línea recta.
     /// </summary>
     public static class GridLineOfSight
     {
@@ -38,6 +38,11 @@ namespace Rollgeon.Grid
             if (grid == null) return false;
             if (from.Equals(to)) return true;
 
+            // Grafo vacío = el stub infinito de los tests (misma convención que
+            // NavGraph.InBounds, que ahí devuelve true a todo): sin terreno cargado no hay
+            // paredes y solo bloquean los ocupantes.
+            bool hasTerrain = grid.Graph != null && !grid.Graph.IsEmpty;
+
             int x0 = from.X, y0 = from.Y;
             int x1 = to.X, y1 = to.Y;
             int dx = Math.Abs(x1 - x0);
@@ -62,14 +67,14 @@ namespace Rollgeon.Grid
                 {
                     var flankA = new GridCoord(x, prevY);
                     var flankB = new GridCoord(prevX, y);
-                    if (!IsClearOrEndpoint(grid, flankA, x1, y1, ignoreA, ignoreB)) return false;
-                    if (!IsClearOrEndpoint(grid, flankB, x1, y1, ignoreA, ignoreB)) return false;
+                    if (!IsClearOrEndpoint(grid, flankA, x1, y1, ignoreA, ignoreB, hasTerrain)) return false;
+                    if (!IsClearOrEndpoint(grid, flankB, x1, y1, ignoreA, ignoreB, hasTerrain)) return false;
                 }
 
                 if (x == x1 && y == y1) break; // llegamos al target — su celda nunca bloquea
 
                 var c = new GridCoord(x, y);
-                if (!grid.IsWalkable(c)) return false;
+                if (hasTerrain && !grid.IsWalkable(c)) return false;
                 if (grid.TryGetOccupant(c, out var occupant) && occupant != ignoreA && occupant != ignoreB)
                     return false;
             }
@@ -77,13 +82,25 @@ namespace Rollgeon.Grid
             return true;
         }
 
+        /// <summary>
+        /// Deja en <paramref name="tiles"/> solo las celdas con línea limpia desde
+        /// <paramref name="origin"/>. La celda del propio origen (si está en el set) se conserva.
+        /// In-place para no alocar: los llamadores (marcado de telegraphs) ya son dueños del set.
+        /// </summary>
+        public static void FilterVisible(IGridManager grid, GridCoord origin,
+                                         HashSet<GridCoord> tiles, Guid ignoreA, Guid ignoreB)
+        {
+            if (grid == null || tiles == null || tiles.Count == 0) return;
+            tiles.RemoveWhere(tile => !HasClearLine(grid, origin, tile, ignoreA, ignoreB));
+        }
+
         /// <summary>Celda de flanco de un corte diagonal: bloquea igual que cualquier celda de
         /// la línea, salvo que sea justo el target (su celda nunca bloquea, aunque el paso
         /// diagonal la haya usado de flanco en vez de pisarla directo).</summary>
-        private static bool IsClearOrEndpoint(IGridManager grid, GridCoord c, int targetX, int targetY, Guid ignoreA, Guid ignoreB)
+        private static bool IsClearOrEndpoint(IGridManager grid, GridCoord c, int targetX, int targetY, Guid ignoreA, Guid ignoreB, bool hasTerrain)
         {
             if (c.X == targetX && c.Y == targetY) return true;
-            if (!grid.IsWalkable(c)) return false;
+            if (hasTerrain && !grid.IsWalkable(c)) return false;
             if (grid.TryGetOccupant(c, out var occupant) && occupant != ignoreA && occupant != ignoreB) return false;
             return true;
         }

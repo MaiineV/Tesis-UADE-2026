@@ -169,34 +169,11 @@ namespace Rollgeon.Combat.AI.Decisions
         }
 
         /// <summary>
-        /// Mismo algoritmo que <c>PcTargetInRange.RequireLineOfSight</c> (no expuesto para
-        /// reusar desde acá): camina la línea recta entre las dos coords y falla si algún paso
-        /// intermedio no es transitable o tiene un ocupante que no sea ninguna de las dos partes.
-        /// Solo tiene sentido si <paramref name="from"/> y <paramref name="to"/> ya están
-        /// alineados — el caller es responsable de eso.
+        /// Delegado en <see cref="GridLineOfSight.HasClearLine"/> — la LOS única del proyecto.
+        /// Sobre pares alineados (el único caso que llega acá) Bresenham camina exactamente la
+        /// línea recta que antes caminaba la copia privada, con el mismo criterio de bloqueo.
         /// </summary>
         private static bool HasLineOfSight(IGridManager grid, GridCoord from, GridCoord to, Guid selfGuid, Guid targetGuid)
-        {
-            if (grid == null) return false;
-            int dx = to.X - from.X;
-            int dy = to.Y - from.Y;
-            int steps = Mathf.Max(Mathf.Abs(dx), Mathf.Abs(dy));
-            // Math.Sign, NO Mathf.Sign: Mathf.Sign(0f) devuelve 1 (nunca 0), así que con dx==0
-            // (el caso normal acá — misma columna) el paso quedaba en diagonal en vez de recto
-            // y la línea de chequeo caminaba por celdas que no tenían nada que ver con la
-            // columna real. BUG reportado en playtest: el Sniper se creía con tiro libre
-            // (diagonal despejada) mientras la mesa seguía tapando la columna real — mismo
-            // criterio que PcTargetInRange, que ya usa Math.Sign.
-            int sx = Math.Sign(dx);
-            int sy = Math.Sign(dy);
-            for (int i = 1; i < steps; i++)
-            {
-                var c = new GridCoord(from.X + sx * i, from.Y + sy * i);
-                if (!grid.IsWalkable(c)) return false;
-                if (grid.TryGetOccupant(c, out var blocker) && blocker != selfGuid && blocker != targetGuid)
-                    return false;
-            }
-            return true;
-        }
+            => GridLineOfSight.HasClearLine(grid, from, to, selfGuid, targetGuid);
     }
 }

@@ -96,7 +96,11 @@ namespace Rollgeon.Combat.AI.Bosses.Generala
             if (!context.Grid.TryGetPosition(context.SelfGuid, out var selfCoord)) return false;
             if (!context.Grid.TryGetPosition(context.PlayerGuid, out var playerCoord)) return false;
 
-            return Distance(selfCoord, playerCoord) <= Mathf.Max(1, Range);
+            if (Distance(selfCoord, playerCoord) > Mathf.Max(1, Range)) return false;
+
+            // LOS de proyecto: detrás de algo no hay cubiletazo.
+            return GridLineOfSight.HasClearLine(context.Grid, selfCoord, playerCoord,
+                                                context.SelfGuid, context.PlayerGuid);
         }
 
         private void Slam(AIContext context)

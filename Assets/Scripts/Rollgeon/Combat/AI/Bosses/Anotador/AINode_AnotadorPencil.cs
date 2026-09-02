@@ -6,6 +6,7 @@ using Rollgeon.Combat.Actions;
 using Rollgeon.Combat.Pipelines;
 using Rollgeon.Entities.Visuals;
 using Rollgeon.Feedback;
+using Rollgeon.Grid;
 using Rollgeon.PreConditions.Concretes;
 using Sirenix.OdinInspector;
 using UnityEngine;
@@ -86,6 +87,13 @@ namespace Rollgeon.Combat.AI.Decisions
                 ? selfCoord.Manhattan(playerCoord)
                 : selfCoord.Chebyshev(playerCoord);
             if (distance > Mathf.Max(1, Range)) return false;
+
+            // LOS de proyecto: detrás de algo no hay lápiz.
+            if (!GridLineOfSight.HasClearLine(context.Grid, selfCoord, playerCoord,
+                                              context.SelfGuid, context.PlayerGuid))
+            {
+                return false;
+            }
 
             return context.DamagePipeline != null && Damage > 0;
         }

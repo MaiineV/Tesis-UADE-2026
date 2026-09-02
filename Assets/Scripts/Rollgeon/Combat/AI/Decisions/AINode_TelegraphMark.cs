@@ -153,6 +153,20 @@ namespace Rollgeon.Combat.AI.Decisions
                 return AIResult.Failed;
             }
 
+            // LOS de proyecto, SOLO al marcar (lo marcado detona como siempre): las formas
+            // dirigidas se recortan a lo que el atacante realmente ve — la sombra detrás de una
+            // mesa/bomba no se marca ni cobra. Las de sala pasan de largo (IsLineOfSightGated).
+            if (ThreatAreaShape.IsLineOfSightGated(Shape)
+                && grid.TryGetPosition(context.SelfGuid, out var losOrigin))
+            {
+                GridLineOfSight.FilterVisible(grid, losOrigin, tiles,
+                                              context.SelfGuid, context.PlayerGuid);
+
+                // Área toda en sombra: el ataque no tiene nada que marcar. Failed y no
+                // Succeeded, así el Sequence/If de arriba puede caer a su plan B.
+                if (tiles.Count == 0) return AIResult.Failed;
+            }
+
             if (!ServiceLocator.TryGetService<IThreatenedAreaService>(out var threat) || threat == null)
             {
                 Debug.LogError("[AINode_TelegraphMark] IThreatenedAreaService no registrado. " +
