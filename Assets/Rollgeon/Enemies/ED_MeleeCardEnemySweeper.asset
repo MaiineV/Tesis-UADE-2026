@@ -129,7 +129,7 @@ MonoBehaviour:
       Data: true
     - Name: Metric
       Entry: 3
-      Data: 0
+      Data: 1
     - Name: Alignment
       Entry: 3
       Data: 0
@@ -179,6 +179,9 @@ MonoBehaviour:
       Entry: 3
       Data: 1
     - Name: ChannelId
+      Entry: 6
+      Data: 
+    - Name: WindupFeedbackId
       Entry: 6
       Data: 
     - Name: 
@@ -296,7 +299,7 @@ MonoBehaviour:
       Data: true
     - Name: Metric
       Entry: 3
-      Data: 0
+      Data: 1
     - Name: Alignment
       Entry: 3
       Data: 0
@@ -346,6 +349,9 @@ MonoBehaviour:
       Entry: 3
       Data: 1
     - Name: ChannelId
+      Entry: 6
+      Data: 
+    - Name: WindupFeedbackId
       Entry: 6
       Data: 
     - Name: 
@@ -436,7 +442,7 @@ MonoBehaviour:
       Data: true
     - Name: Metric
       Entry: 3
-      Data: 0
+      Data: 1
     - Name: Alignment
       Entry: 3
       Data: 0
@@ -486,6 +492,9 @@ MonoBehaviour:
       Entry: 3
       Data: 1
     - Name: ChannelId
+      Entry: 6
+      Data: 
+    - Name: WindupFeedbackId
       Entry: 6
       Data: 
     - Name: 
