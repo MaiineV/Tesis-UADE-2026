@@ -69,6 +69,8 @@ namespace Rollgeon.UI.HUD
         private static readonly Color BlockedColor = new Color(0.35f, 0.35f, 0.35f, 1f);
 
         private Color _defaultColor;
+        private Color _defaultLabelColor;
+        private bool _labelColorCaptured;
         private bool _blocked;
         private bool _held;
         private bool _hovered;
@@ -215,6 +217,22 @@ namespace Rollgeon.UI.HUD
         {
             CurrentFace = face;
             _diceLabel?.SetText(face.ToString());
+        }
+
+        /// <summary>
+        /// Tiñe el número (null = color autorado). Lo usa el dado de Movimiento para marcar
+        /// que la cara mostrada ya no es la tirada cruda: azul si un item la subió, rojo si
+        /// la bajó. Persistente hasta el próximo llamado — quien tiñe, destiñe.
+        /// </summary>
+        public void SetFaceTint(Color? tint)
+        {
+            if (_diceLabel == null) return;
+            if (!_labelColorCaptured)
+            {
+                _defaultLabelColor = _diceLabel.color;
+                _labelColorCaptured = true;
+            }
+            _diceLabel.color = tint ?? _defaultLabelColor;
         }
 
         /// <summary>

@@ -9,7 +9,6 @@ using Rollgeon.Movement.Die;
 using Rollgeon.UI.HUD.Breakdown;
 using Rollgeon.UI.HUD.DiceAnim;
 using Sirenix.OdinInspector;
-using TMPro;
 using UnityEngine;
 
 namespace Rollgeon.UI.HUD
@@ -50,14 +49,9 @@ namespace Rollgeon.UI.HUD
                                  "preview de caras). Null = Resources/" + SettingsResourcePath + ".")]
         private DiceUiAnimationSettingsSO _animSettings;
 
-        [SerializeField, Tooltip("Opcional: label del bonus de MoveRange (Botas/Guantelete). " +
-                                 "Se muestra como \"+N\"/\"-N\" junto a la cara al aterrizar; " +
-                                 "oculto con bonus 0 o sin referencia.")]
-        private TextMeshProUGUI _bonusLabel;
-
         [Title("Chips de item (\"Botas Ligeras +1\")")]
         [SerializeField, Tooltip("Opcional: chip INACTIVO (icono + label) que se clona por cada item que " +
-                                 "suma o resta al rango. Null = sin chips (solo el label agregado).")]
+                                 "suma o resta al rango. Null = sin chips: el número salta directo al total.")]
         private ModifierEntryView _chipTemplate;
         [SerializeField, Tooltip("Contenedor de los chips (layout vertical encima del dado). " +
                                  "Null = padre del template.")]
@@ -69,10 +63,20 @@ namespace Rollgeon.UI.HUD
         [SerializeField, Range(0f, 1f), Tooltip("Punch de escala del chip al aparecer (0 = sin pop).")]
         private float _chipPunch = 0.25f;
         [SerializeField, MinValue(0.05f)] private float _chipPunchSeconds = 0.3f;
-        [SerializeField] private Color _chipPositiveColor = new Color(1f, 0.788f, 0.235f); // #FFC93C, mismo del daño base
-        [SerializeField] private Color _chipNegativeColor = new Color(0.86f, 0.25f, 0.2f);
-        [SerializeField, Tooltip("Opcional: sonido de proc por chip (placeholder del breakdown).")]
+        [SerializeField, MinValue(0f), Tooltip("Cuánto quedan los chips a la vista antes de volar al dado.")]
+        private float _chipHoldSeconds = 0.45f;
+        [SerializeField, MinValue(0.05f), Tooltip("Duración del vuelo de cada chip hasta el centro del dado.")]
+        private float _chipFlySeconds = 0.22f;
+        [SerializeField, Range(0f, 1f), Tooltip("Punch del dado al absorber un chip (0 = sin punch).")]
+        private float _absorbPunch = 0.18f;
+        [SerializeField, Tooltip("Color del número del dado (y del monto del chip) cuando el rango SUBIÓ.")]
+        private Color _upColor = new Color(0.2f, 0.55f, 1f);
+        [SerializeField, Tooltip("Color del número del dado (y del monto del chip) cuando el rango BAJÓ.")]
+        private Color _downColor = new Color(0.86f, 0.25f, 0.2f);
+        [SerializeField, Tooltip("Opcional: sonido de proc al aparecer cada chip (placeholder del breakdown).")]
         private AudioClip _procClip;
+        [SerializeField, Tooltip("Opcional: golpe al absorber cada chip en el dado.")]
+        private AudioClip _absorbClip;
         [SerializeField, Range(0f, 1f)] private float _procVolume = 1f;
 
         [Title("Rise (sube roleando)")]
@@ -101,7 +105,6 @@ namespace Rollgeon.UI.HUD
         private readonly List<MovementRangeContribution> _pendingContributions = new List<MovementRangeContribution>();
         private readonly List<ModifierEntryView> _chips = new List<ModifierEntryView>();
         private readonly List<Tween> _chipTweens = new List<Tween>();
-        private Coroutine _chipRoutine;
 
         // ---- Lifecycle ---------------------------------------------------------
 
@@ -165,9 +168,9 @@ namespace Rollgeon.UI.HUD
             _pendingContributions.Clear();
             if (contributions != null)
                 for (int i = 0; i < contributions.Count; i++) _pendingContributions.Add(contributions[i]);
-            if (_bonusLabel != null) _bonusLabel.gameObject.SetActive(false);
             HideChips();
             _slot.Bind(type);
+            _slot.SetFaceTint(null);
             _routine = StartCoroutine(RiseAndDrop(type, face));
             return true;
         }
@@ -254,11 +257,15 @@ namespace Rollgeon.UI.HUD
             _rect.anchoredPosition = endPos;
             _rect.localScale = Vector3.one;
 
-            // Aterrizó: silueta frontal, cara real, y recién ahora se publica el rango.
+            // Aterrizó: silueta frontal y cara cruda. Los items todavía no sumaron.
             _slot.SetSpinRole(null);
             _slot.ShowFace(face);
-            ShowBonus(_pendingBonus);
-            PopChips();
+            _slot.SetFaceTint(null);
+
+            yield return AbsorbContributions(face, speed);
+
+            // Recién con el total en el dado se publica el rango: las casillas se pintan
+            // con el mismo número que el jugador está viendo.
             _routine = null;
             var reveal = _pendingReveal;
             _pendingReveal = null;
@@ -305,95 +312,142 @@ namespace Rollgeon.UI.HUD
             _routine = StartCoroutine(FadeOutAndHide());
         }
 
-        // El "+N" aparece recién con la cara firme: durante el spin sería ruido y
-        // spoilearía que hay modificador antes de saber sobre qué cara aplica.
-        private void ShowBonus(int bonus)
-        {
-            if (_bonusLabel == null) return;
-            if (bonus == 0)
-            {
-                _bonusLabel.gameObject.SetActive(false);
-                return;
-            }
-            _bonusLabel.text = bonus > 0 ? "+" + bonus : bonus.ToString();
-            _bonusLabel.gameObject.SetActive(true);
-        }
-
         // ---- Chips de item ------------------------------------------------------
 
-        // Un chip por item, apilados encima del dado y con un pequeño stagger para que se
-        // lean uno por uno (Botas +1, Guantelete -1). No demoran el reveal: el rango ya se
-        // publicó con la cara firme, el chip es solo la explicación de "por qué +N".
-        private void PopChips()
+        // Secuencia por item: pop del chip encima del dado → hold para leerlo → vuela al
+        // centro del dado y el número salta con su delta. Lo que no viene de un item
+        // (rewards "Movimiento+") se suma al final sin chip. El tint del número compara
+        // el total contra la cara cruda: azul si subió, rojo si bajó, autorado si quedó igual.
+        private IEnumerator AbsorbContributions(int face, float speed)
         {
-            if (_chipTemplate == null || _pendingContributions.Count == 0) return;
-            _chipRoutine = StartCoroutine(PopChipsRoutine());
+            int total = face;
+            int itemised = 0;
+            bool hasChips = _chipTemplate != null && _pendingContributions.Count > 0;
+
+            if (hasChips)
+            {
+                for (int i = 0; i < _pendingContributions.Count; i++)
+                {
+                    var contribution = _pendingContributions[i];
+                    var chip = ChipAt(i);
+                    string label = MovementDieChipFormat.Label(
+                        BreakdownIconResolver.ResolveDisplayName(contribution.SourceAsset),
+                        contribution.Delta, _upColor, _downColor);
+                    ResetChip(chip);
+                    chip.Show(BreakdownIconResolver.Resolve(contribution.SourceAsset), label, _chipFallbackIcon);
+                    if (_chipPunch > 0f)
+                        _chipTweens.Add(Tween.PunchScale(chip.transform, Vector3.one * _chipPunch,
+                                                         _chipPunchSeconds / speed, frequency: 3));
+                    PlaySfx(_procClip);
+                    if (i < _pendingContributions.Count - 1 && _chipStaggerSeconds > 0f)
+                        yield return new WaitForSeconds(_chipStaggerSeconds / speed);
+                }
+
+                if (_chipHoldSeconds > 0f) yield return new WaitForSeconds(_chipHoldSeconds / speed);
+
+                for (int i = 0; i < _pendingContributions.Count; i++)
+                {
+                    yield return FlyChipIntoDie(_chips[i], speed);
+                    int delta = _pendingContributions[i].Delta;
+                    itemised += delta;
+                    total += delta;
+                    ShowRunningTotal(total, face);
+                    if (_absorbPunch > 0f)
+                        _chipTweens.Add(Tween.PunchScale(_slot.transform, Vector3.one * _absorbPunch,
+                                                         _chipPunchSeconds / speed, frequency: 3));
+                    PlaySfx(_absorbClip);
+                }
+            }
+
+            // Resto no atribuible (o todo el bonus si no hay chips cableados). Mismo piso
+            // que SelectionSettings.ResolveEffectiveRange: el rango nunca baja de 1.
+            total = Mathf.Max(1, total + (_pendingBonus - itemised));
+            ShowRunningTotal(total, face);
         }
 
-        private IEnumerator PopChipsRoutine()
+        private void ShowRunningTotal(int total, int face)
         {
-            float speed = Mathf.Max(0.01f, Rollgeon.Timing.GameSpeedPrefs.Multiplier);
-            for (int i = 0; i < _pendingContributions.Count; i++)
+            _slot.ShowFace(total);
+            _slot.SetFaceTint(total > face ? _upColor : total < face ? (Color?)_downColor : null);
+        }
+
+        // El chip sale del layout (para que el stack de arriba se cierre solo) y viaja en
+        // espacio de mundo hasta el centro del dado achicándose y apagándose.
+        private IEnumerator FlyChipIntoDie(ModifierEntryView chip, float speed)
+        {
+            if (chip == null || !chip.gameObject.activeSelf) yield break;
+            var chipT = chip.transform;
+            var group = chip.GetComponent<CanvasGroup>();
+            chipT.SetParent(_rect, true);
+            chipT.SetAsLastSibling();
+            Vector3 from = chipT.position;
+            var slotRect = (RectTransform)_slot.transform;
+            Vector3 to = slotRect.TransformPoint(slotRect.rect.center);
+            float dur = _chipFlySeconds / speed;
+            for (float t = 0f; dur > 0f && t < dur; t += Time.deltaTime)
             {
-                var contribution = _pendingContributions[i];
-                var chip = ChipAt(i);
-                string label = MovementDieChipFormat.Label(
-                    BreakdownIconResolver.ResolveDisplayName(contribution.SourceAsset),
-                    contribution.Delta, _chipPositiveColor, _chipNegativeColor);
-                chip.transform.localScale = Vector3.one;
-                chip.Show(BreakdownIconResolver.Resolve(contribution.SourceAsset), label, _chipFallbackIcon);
-                if (_chipPunch > 0f)
-                    _chipTweens.Add(Tween.PunchScale(chip.transform, Vector3.one * _chipPunch,
-                                                     _chipPunchSeconds / speed, frequency: 3));
-                PlayProc();
-                if (i < _pendingContributions.Count - 1 && _chipStaggerSeconds > 0f)
-                    yield return new WaitForSeconds(_chipStaggerSeconds / speed);
+                float k = t / dur;
+                float e = k * k; // ease-in: arranca lento, "cae" dentro del dado
+                chipT.position = Vector3.LerpUnclamped(from, to, e);
+                chipT.localScale = Vector3.one * Mathf.Lerp(1f, 0.25f, e);
+                if (group != null) group.alpha = Mathf.Lerp(1f, 0.15f, e);
+                yield return null;
             }
-            _chipRoutine = null;
+            ResetChip(chip);
+            chip.Hide();
         }
 
         private ModifierEntryView ChipAt(int index)
         {
             while (_chips.Count <= index)
             {
-                var parent = _chipsRoot != null ? _chipsRoot : (RectTransform)_chipTemplate.transform.parent;
-                var chip = Instantiate(_chipTemplate, parent);
+                var chip = Instantiate(_chipTemplate, ChipsParent());
                 chip.name = _chipTemplate.name + "_" + _chips.Count;
+                if (chip.GetComponent<CanvasGroup>() == null) chip.gameObject.AddComponent<CanvasGroup>();
                 chip.Hide();
                 _chips.Add(chip);
             }
             return _chips[index];
         }
 
+        private RectTransform ChipsParent()
+            => _chipsRoot != null ? _chipsRoot : (RectTransform)_chipTemplate.transform.parent;
+
+        // Devuelve el chip al stack con escala/alpha limpios (pudo quedar a mitad de vuelo).
+        private void ResetChip(ModifierEntryView chip)
+        {
+            if (chip == null) return;
+            var parent = ChipsParent();
+            if (chip.transform.parent != parent) chip.transform.SetParent(parent, false);
+            chip.transform.localScale = Vector3.one;
+            var group = chip.GetComponent<CanvasGroup>();
+            if (group != null) group.alpha = 1f;
+        }
+
         private void HideChips()
         {
-            if (_chipRoutine != null)
-            {
-                StopCoroutine(_chipRoutine);
-                _chipRoutine = null;
-            }
             for (int i = 0; i < _chipTweens.Count; i++)
                 if (_chipTweens[i].isAlive) _chipTweens[i].Stop();
             _chipTweens.Clear();
+            if (_slot != null) _slot.transform.localScale = Vector3.one;
             for (int i = 0; i < _chips.Count; i++)
             {
                 if (_chips[i] == null) continue;
-                _chips[i].transform.localScale = Vector3.one;
+                ResetChip(_chips[i]);
                 _chips[i].Hide();
             }
         }
 
-        private void PlayProc()
+        private void PlaySfx(AudioClip clip)
         {
-            if (_procClip == null) return;
+            if (clip == null) return;
             if (ServiceLocator.TryGetService<IAudioService>(out var audio) && audio != null)
-                audio.PlaySfx2D(_procClip, _procVolume);
+                audio.PlaySfx2D(clip, _procVolume);
         }
 
         private void HideInstant()
         {
             if (_slot != null) _slot.gameObject.SetActive(false);
-            if (_bonusLabel != null) _bonusLabel.gameObject.SetActive(false);
             HideChips();
             if (_group != null) _group.alpha = 0f;
             if (_rect != null)
