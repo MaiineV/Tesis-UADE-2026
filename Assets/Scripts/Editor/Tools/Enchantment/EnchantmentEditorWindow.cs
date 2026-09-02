@@ -11,7 +11,9 @@ namespace Rollgeon.Editor.Tools.Enchantment
     /// Authoring window for <see cref="EnchantmentSO"/> — the dice channel of the in-run upgrade
     /// system, and by far the biggest body of authored content in the project.
     /// </summary>
-    public sealed class EnchantmentEditorWindow : BlockEditorWindow<EnchantmentSO>
+    // `partial` para que cada superficie del host viva en su propio archivo: las tabs se descubren
+    // por [BlockEditorTab] y no hay registro central, así que dos features no se pisan al agregarse.
+    public sealed partial class EnchantmentEditorWindow : BlockEditorWindow<EnchantmentSO>
     {
         [MenuItem("Tools/Enchantment Editor")]
         static void Open()
@@ -20,8 +22,45 @@ namespace Rollgeon.Editor.Tools.Enchantment
             w.minSize = new Vector2(1040f, 560f);
         }
 
-        protected override string DefaultFolder => "Assets/Rollgeon/Upgrades/Dice/Enchantments";
+        protected override string DefaultFolder => EnchantmentAuthoring.DefaultFolder;
         protected override string NewAssetName => "Ench_New";
+
+        // Cada superficie del host (lista, métricas, disparadores, textos) vive en su propio
+        // parcial y necesita recalcular lo que derive de la lista de assets. Como
+        // `OnAssetsRefreshed` se puede sobrescribir una sola vez por clase, el override vive acá y
+        // reparte a métodos parciales: cada archivo implementa el suyo sin conocer a los demás, y
+        // el que no lo necesite simplemente no lo implementa (el compilador borra la llamada).
+        partial void OnListAssetsRefreshed();
+        partial void OnMetricsAssetsRefreshed();
+        partial void OnTriggerAssetsRefreshed();
+        partial void OnLocalizationAssetsRefreshed();
+
+        // Mismo criterio: OnEnable/OnDisable se pueden sobrescribir una sola vez por clase, así que
+        // el override vive acá y reparte.
+        partial void OnLocalizationEnable();
+        partial void OnLocalizationDisable();
+
+        protected override void OnEnable()
+        {
+            base.OnEnable();
+            OnLocalizationEnable();
+        }
+
+        protected override void OnDisable()
+        {
+            OnLocalizationDisable();
+            base.OnDisable();
+        }
+
+        protected override void OnAssetsRefreshed()
+        {
+            base.OnAssetsRefreshed();
+            _healthFindingsCache = null;
+            OnListAssetsRefreshed();
+            OnMetricsAssetsRefreshed();
+            OnTriggerAssetsRefreshed();
+            OnLocalizationAssetsRefreshed();
+        }
 
         protected override string LabelOf(EnchantmentSO asset)
         {
@@ -43,25 +82,65 @@ namespace Rollgeon.Editor.Tools.Enchantment
             if (asset == null || string.IsNullOrEmpty(asset.UpgradeId)) return null;
 
             string id = asset.UpgradeId;
-            const string prefix = "ench.";
+            const string prefix = EnchantmentIdSlug.Prefix;
             if (id.StartsWith(prefix, System.StringComparison.OrdinalIgnoreCase))
                 id = id.Substring(prefix.Length);
 
             return "Ench_" + AssetNaming.PascalCaseId(id);
         }
 
+        // ---- salud por asset -------------------------------------------------------------------
+
+        // La salud completa (catálogo, pool, localización) recorre disco: calcularla en cada
+        // repaint del panel sería un escaneo por frame — misma trampa medida que el Catalog del
+        // shell. Se cachea y se suelta en OnAssetsRefreshed; lo editado sin guardar queda stale
+        // hasta el próximo cambio de proyecto, aceptable para avisos.
+        List<EnchantmentQuery.CatalogFinding> _healthFindingsCache;
+
+        /// <summary>
+        /// Hallazgos de salud del catálogo entero (estructura + localización), cacheados por
+        /// rebuild de la lista. Los consumen <see cref="DrawIssues"/> (filtrados al asset
+        /// seleccionado) y la tab de métricas — una sola pasada de disco para ambos.
+        /// </summary>
+        IReadOnlyList<EnchantmentQuery.CatalogFinding> HealthFindings
+        {
+            get
+            {
+                if (_healthFindingsCache == null)
+                {
+                    var all = EnchantmentQuery.GetAll();
+                    _healthFindingsCache = new List<EnchantmentQuery.CatalogFinding>(
+                        EnchantmentQuery.CheckCatalogHealth(all));
+                    _healthFindingsCache.AddRange(EnchantmentQuery.CheckLocalizationHealth(all));
+                }
+                return _healthFindingsCache;
+            }
+        }
+
+        /// <summary>Fuerza el recálculo de <see cref="HealthFindings"/> en la próxima lectura.</summary>
+        void InvalidateHealthFindings() => _healthFindingsCache = null;
+
         protected override void DrawIssues(EnchantmentSO asset)
         {
             if (asset == null) return;
 
-            bool hasTriggers = asset.Triggers != null && asset.Triggers.Count > 0;
-            bool hasCapabilities = asset.Capabilities != null && asset.Capabilities.Count > 0;
-            if (asset.FaceFilter == null && !hasTriggers && !hasCapabilities)
-                EditorGUILayout.HelpBox(
-                    "No face filter, no triggers and no capabilities — this enchantment does nothing.",
-                    MessageType.Warning);
+            foreach (var finding in HealthFindings)
+            {
+                if (finding.Asset != asset) continue;
+                EditorGUILayout.HelpBox(finding.Message, ToMessageType(finding.Severity));
+            }
 
             WarnAboutUnwired(asset);
+        }
+
+        static MessageType ToMessageType(EnchantmentQuery.FindingSeverity severity)
+        {
+            switch (severity)
+            {
+                case EnchantmentQuery.FindingSeverity.Error: return MessageType.Error;
+                case EnchantmentQuery.FindingSeverity.Warning: return MessageType.Warning;
+                default: return MessageType.Info;
+            }
         }
 
         /// <summary>
