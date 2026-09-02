@@ -2111,6 +2111,70 @@ MonoBehaviour:
     m_Key: lagrima.de.los.cuatro.reyes.desc
     m_Metadata:
       m_Items: []
+  - m_Id: 17679774955958272
+    m_Key: lagrima.de.la.vida.imperial.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17679774955958273
+    m_Key: lagrima.de.la.vida.imperial.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17680534624104448
+    m_Key: lagrima.de.escalera.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17680534624104449
+    m_Key: lagrima.de.escalera.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17680764178362368
+    m_Key: lagrima.del.ascenso.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17680764178362369
+    m_Key: lagrima.del.ascenso.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17681010086211584
+    m_Key: lagrima.de.la.ascension.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17681010086211585
+    m_Key: lagrima.de.la.ascension.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17681463234621440
+    m_Key: lagrima.del.camino.celestial.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17681463234621441
+    m_Key: lagrima.del.camino.celestial.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17681792235827200
+    m_Key: lagrima.de.la.generala.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17681792235827201
+    m_Key: lagrima.de.la.generala.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17685385777082368
+    m_Key: lagrima.de.la.plenitud.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17685385777082369
+    m_Key: lagrima.de.la.plenitud.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17685581164539904
+    m_Key: lagrima.de.la.perfeccion.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17685581164539905
+    m_Key: lagrima.de.la.perfeccion.desc
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

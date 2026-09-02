@@ -2145,6 +2145,70 @@ MonoBehaviour:
     m_Localized: +10HP al resolver combo Poker.
     m_Metadata:
       m_Items: []
+  - m_Id: 17679774955958272
+    m_Localized: "L\xE1grima de la Vida Imperial "
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17679774955958273
+    m_Localized: +15HP al resolver el combo Poker.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17680534624104448
+    m_Localized: "L\xE1grima de Escalera"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17680534624104449
+    m_Localized: +3HP al resolver el combo Escalera.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17680764178362368
+    m_Localized: "L\xE1grima del Ascenso"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17680764178362369
+    m_Localized: +5HP al resolver combo Escalera.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17681010086211584
+    m_Localized: "L\xE1grima de la Ascensi\xF3n"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17681010086211585
+    m_Localized: +10HP al resolver combo Escalera.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17681463234621440
+    m_Localized: "L\xE1grima del Camino Celestial"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17681463234621441
+    m_Localized: +15HP al resolver el combo Escalera.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17681792235827200
+    m_Localized: "L\xE1grima de la Generala"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17681792235827201
+    m_Localized: +3HP al resolver combo de Generala.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17685385777082368
+    m_Localized: "L\xE1grima de la Plenitud"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17685385777082369
+    m_Localized: +5HP al resolver el combo Generala.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17685581164539904
+    m_Localized: "L\xE1grima de la Perfecci\xF3n"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17685581164539905
+    m_Localized: +10HP al resolver el combo Generala.
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []
