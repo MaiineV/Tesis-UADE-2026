@@ -75,6 +75,15 @@ namespace Rollgeon.Combat.AI.Decisions
                  "consume (AINode_IgniteArea) tiene que declarar el MISMO canal.")]
         public string ChannelId;
 
+        [Title("Windup")]
+#if UNITY_EDITOR
+        [ValueDropdown(nameof(GetFeedbackIdsForDropdown))]
+#endif
+        [Tooltip("Feedback que corre AL MARCAR (turno N), después de guardar el área — para un " +
+                 "\"gesto de carga\" visible en el turno del telegraph. Vacío = se marca sin animación, " +
+                 "mismo comportamiento que antes de este campo.")]
+        public string WindupFeedbackId;
+
         public override string NodeName => string.IsNullOrEmpty(ChannelId)
             ? $"Telegraph Mark ({Shape}, dmg {Damage})"
             : $"Telegraph Mark [{ChannelId}] ({Shape}, dmg {Damage})";
@@ -164,5 +173,62 @@ namespace Rollgeon.Combat.AI.Decisions
 
             return AIResult.Succeeded;
         }
+
+        /// <summary>
+        /// Camino de play mode: marca igual que <see cref="Tick"/> (síncrono, la marca en sí no
+        /// tiene nada que esperar) y, si hay <see cref="WindupFeedbackId"/>, corre ese gesto
+        /// después — así el jugador ve al enemigo "cargar" en el turno que telegrafía, no recién
+        /// en el que cobra.
+        /// </summary>
+        public override System.Collections.IEnumerator TickCoroutine(AIContext context, Action<AIResult> onResult)
+        {
+            var result = Tick(context);
+            if (result != AIResult.Succeeded || string.IsNullOrEmpty(WindupFeedbackId)
+                || !ServiceLocator.TryGetService<Rollgeon.Feedback.IFeedbackService>(out var feedback) || feedback == null)
+            {
+                onResult?.Invoke(result);
+                yield break;
+            }
+
+            var step = new Rollgeon.Feedback.FeedbackSequenceStep
+            {
+                Source = Rollgeon.Feedback.StepSource.FeedbackRef,
+                FeedbackRefId = WindupFeedbackId,
+                StartMode = Rollgeon.Feedback.StepStartMode.Immediate,
+                EndMode = Rollgeon.Feedback.StepEndMode.OnDuration,
+                BlockSequence = true,
+            };
+
+            ServiceLocator.TryGetService<Rollgeon.Combat.Actions.TurnManager>(out var turn);
+            turn?.BeginFeedbackWait();
+            feedback.RequestFeedbackBlocking(new Rollgeon.Feedback.FeedbackRequest
+            {
+                IsSequence = true,
+                SequenceSteps = new List<Rollgeon.Feedback.FeedbackSequenceStep> { step },
+                SourceGuid = context.SelfGuid,
+                TargetGuid = context.PlayerGuid,
+            }, () => turn?.OnFeedbackComplete());
+
+            if (turn != null && turn.IsWaitingForFeedback)
+            {
+                var wait = Rollgeon.Combat.Actions.TurnManager.WaitForFeedbackCompletion(turn);
+                while (wait.MoveNext()) yield return wait.Current;
+            }
+
+            onResult?.Invoke(result);
+        }
+
+#if UNITY_EDITOR
+        private static IEnumerable<string> GetFeedbackIdsForDropdown()
+        {
+            foreach (var guid in UnityEditor.AssetDatabase.FindAssets("t:FeedbackDBSO"))
+            {
+                var path = UnityEditor.AssetDatabase.GUIDToAssetPath(guid);
+                var db = UnityEditor.AssetDatabase.LoadAssetAtPath<Rollgeon.Feedback.FeedbackDBSO>(path);
+                if (db == null) continue;
+                foreach (var id in db.GetAllFeedbackIds()) yield return id;
+            }
+        }
+#endif
     }
 }

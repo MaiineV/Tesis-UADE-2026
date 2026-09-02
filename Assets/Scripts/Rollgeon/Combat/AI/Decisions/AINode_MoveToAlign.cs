@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Rollgeon.Combat.AI.Readers;
 using Rollgeon.Grid;
 using Rollgeon.Movement;
@@ -12,15 +13,27 @@ namespace Rollgeon.Combat.AI.Decisions
     /// Movimiento "Sniper": busca la casilla alcanzable este turno que quede en la MISMA fila
     /// o columna que el jugador (línea de tiro recta), priorizando la que caiga lo más cerca
     /// posible de <see cref="DesiredRange"/>. Si ya está alineado, no se mueve. Si ninguna
-    /// casilla alcanzable alinea, se acerca en general (mismo criterio que Approach) para ir
-    /// ganando terreno turno a turno hasta que una alineación quede a tiro.
+    /// casilla alcanzable alinea, se acerca en general al jugador por DISTANCIA DE CAMINO real
+    /// (BFS sobre todo el grafo, no acotado al turno) para ir ganando terreno turno a turno,
+    /// rodeando obstáculos, hasta que una alineación quede a tiro.
     /// </summary>
     /// <remarks>
     /// No existía en el proyecto ningún <c>MoveIntent</c> de alineación (solo Approach/Kite en
     /// <see cref="Pathing.IAIPathPlanner"/>) — el resto de los Ranged (Skirmisher, Sniper stock)
     /// dependen de la suerte del pathing normal para caer alineados. Este nodo resuelve la
-    /// alineación a mano, mismo patrón BFS que usa <see cref="AINode_KeepDistance"/> cuando no
-    /// hay <c>PathPlanner</c> — no pasa por el planner porque no hay intent que le pida esto.
+    /// alineación a mano (el planner no tiene noción de "misma fila/columna").
+    /// </remarks>
+    /// <remarks>
+    /// El "acercarse en general" NO delega en <see cref="Pathing.IAIPathPlanner"/>: su fast path
+    /// sin casillas especiales (<c>AIPathPlanner.LegacyPlan</c>) puntúa por distancia Manhattan
+    /// en línea recta dentro de lo alcanzable este turno — el MISMO criterio miope que una BFS
+    /// propia, no un A* real al target. Contra un obstáculo ancho (mesa 4×2 en playtest), "seguir
+    /// derecho" y "bordear" empatan en ese puntaje mientras el obstáculo siga tapando, así que ni
+    /// el planner ni una heurística propia en línea recta detectan que rodear es más corto —
+    /// terminaba yendo derecho contra la mesa o oscilando de lado a lado sin converger (BUGs de
+    /// playtest). La distancia de CAMINO real (BFS completo, sin tope de pasos, solo para
+    /// puntuar candidatos) sí lo resuelve: decrece monótonamente apenas un desvío acorta el
+    /// camino real, aunque la distancia Manhattan cruda no mejore ese turno.
     /// </remarks>
     [Serializable, HideReferenceObjectPicker]
     public sealed class AINode_MoveToAlign : AIActionNode
@@ -33,6 +46,12 @@ namespace Rollgeon.Combat.AI.Decisions
         [Tooltip("Distancia Manhattan preferida una vez alineado — entre las casillas alineadas " +
                  "alcanzables, elige la más cercana a este valor (para no pegarse innecesariamente).")]
         public AIIntReader DesiredRange;
+
+        [Tooltip("Si está activo, alinear no alcanza: la casilla también necesita línea de visión " +
+                 "libre al jugador (para el Sniper — el Charger no la necesita, carga a ciegas). " +
+                 "Sin esto, un enemigo tapado por un obstáculo se considera 'ya alineado' y no " +
+                 "busca reposicionarse aunque no tenga tiro.")]
+        public bool RequireLineOfSight;
 
         public override string NodeName => "Move To Align (row/column)";
 
@@ -53,8 +72,9 @@ namespace Rollgeon.Combat.AI.Decisions
             if (!context.Grid.TryGetPosition(context.PlayerGuid, out var playerCoord))
                 return AIResult.Failed;
 
-            // Ya alineado — nada que hacer.
-            if (selfCoord.X == playerCoord.X || selfCoord.Y == playerCoord.Y)
+            // Ya alineado (y con tiro libre, si se pide) — nada que hacer.
+            bool selfAligned = selfCoord.X == playerCoord.X || selfCoord.Y == playerCoord.Y;
+            if (selfAligned && (!RequireLineOfSight || HasLineOfSight(context.Grid, selfCoord, playerCoord, context.SelfGuid, context.PlayerGuid)))
                 return AIResult.Succeeded;
 
             int maxSteps = MaxSteps?.Read(context) ?? 3;
@@ -65,33 +85,36 @@ namespace Rollgeon.Combat.AI.Decisions
                 ?? context.Movement.GetReachableTiles(selfCoord, maxSteps, includeOrigin: false);
             if (reachable == null || reachable.Count == 0) return AIResult.Succeeded;
 
+            // Candidato alineado (misma fila/columna) Y con tiro libre, si se pide — el único
+            // objetivo "de verdad" de este nodo.
             GridCoord? bestAligned = null;
             int bestAlignedScore = int.MaxValue;
-            GridCoord? bestApproach = null;
-            int bestApproachDist = selfCoord.Manhattan(playerCoord);
-
             foreach (var candidate in reachable)
             {
-                int dist = candidate.Manhattan(playerCoord);
                 bool aligned = candidate.X == playerCoord.X || candidate.Y == playerCoord.Y;
-                if (aligned)
-                {
-                    int score = Mathf.Abs(dist - desiredRange);
-                    if (score < bestAlignedScore) { bestAlignedScore = score; bestAligned = candidate; }
-                }
-                else if (dist < bestApproachDist)
-                {
-                    bestApproachDist = dist;
-                    bestApproach = candidate;
-                }
+                if (aligned && RequireLineOfSight
+                    && !HasLineOfSight(context.Grid, candidate, playerCoord, context.SelfGuid, context.PlayerGuid))
+                    aligned = false;
+                if (!aligned) continue;
+
+                int score = Mathf.Abs(candidate.Manhattan(playerCoord) - desiredRange);
+                if (score < bestAlignedScore) { bestAlignedScore = score; bestAligned = candidate; }
             }
 
-            // Prioridad: una casilla alineada alcanzable gana siempre sobre solo acercarse.
-            var target = bestAligned ?? bestApproach;
-            if (target == null) return AIResult.Succeeded; // ningún candidato mejora la situación
+            GridCoord? target = bestAligned;
+            bool moved;
+            if (target != null)
+            {
+                moved = context.Movement.Move(context.SelfGuid, target.Value);
+            }
+            else
+            {
+                // Sin candidato alineado+LoS a mano este turno: acercarse por distancia de
+                // CAMINO real (no Manhattan) para rodear obstáculos de forma convergente.
+                moved = TryApproachByPathDistance(context, reachable, selfCoord, playerCoord);
+            }
 
-            if (!context.Movement.Move(context.SelfGuid, target.Value))
-                return AIResult.Succeeded; // Move rechazó el destino (ocupado, etc.)
+            if (!moved) return AIResult.Succeeded; // nada mejoró la situación este turno
 
             context.MarkExecuted(ActionKey);
 
@@ -102,6 +125,95 @@ namespace Rollgeon.Combat.AI.Decisions
                 return AIResult.Running;
             }
             return AIResult.Succeeded;
+        }
+
+        /// <summary>
+        /// De los candidatos alcanzables este turno, mueve al que tenga la MENOR distancia de
+        /// camino real hasta el jugador (BFS desde el jugador sobre todo el grafo walkable, sin
+        /// tope de pasos — solo para puntuar, la física real la sigue limitando <c>maxSteps</c>
+        /// vía <paramref name="reachable"/>). Rompe empates que la distancia Manhattan no puede:
+        /// un candidato "fuera de eje" que empieza a bordear un obstáculo ancho tiene menor
+        /// distancia de CAMINO que uno que sigue pegado contra la pared, aunque ambos midan
+        /// exactamente lo mismo en línea recta.
+        /// </summary>
+        private static bool TryApproachByPathDistance(AIContext context, IReadOnlyCollection<GridCoord> reachable,
+            GridCoord selfCoord, GridCoord playerCoord)
+        {
+            var pathDist = BfsPathDistances(context.Grid, playerCoord, context.SelfGuid, context.PlayerGuid);
+
+            int currentDist = pathDist.TryGetValue(selfCoord, out var d0) ? d0 : int.MaxValue;
+            GridCoord? best = null;
+            int bestDist = currentDist;
+
+            foreach (var candidate in reachable)
+            {
+                if (!pathDist.TryGetValue(candidate, out var dist)) continue; // sin camino conocido
+                if (dist < bestDist) { bestDist = dist; best = candidate; }
+            }
+
+            return best != null && context.Movement.Move(context.SelfGuid, best.Value);
+        }
+
+        /// <summary>
+        /// BFS de distancia (en tiles) desde <paramref name="from"/> hacia cada celda walkable
+        /// del grafo, ignorando el ocupante de <paramref name="selfGuid"/>/<paramref name="targetGuid"/>
+        /// (no deberían bloquearse la línea el uno al otro). Sin tope de pasos: es un mapa de
+        /// distancias para puntuar, no un movimiento real.
+        /// </summary>
+        private static Dictionary<GridCoord, int> BfsPathDistances(IGridManager grid, GridCoord from, Guid selfGuid, Guid targetGuid)
+        {
+            var dist = new Dictionary<GridCoord, int> { [from] = 0 };
+            if (grid == null) return dist;
+
+            var queue = new Queue<GridCoord>();
+            queue.Enqueue(from);
+            while (queue.Count > 0)
+            {
+                var current = queue.Dequeue();
+                int d = dist[current];
+                foreach (var edge in grid.Graph.GetNeighbors(current))
+                {
+                    var n = edge.To;
+                    if (dist.ContainsKey(n)) continue;
+                    if (!grid.IsWalkable(n)) continue;
+                    if (grid.TryGetOccupant(n, out var occupant) && occupant != selfGuid && occupant != targetGuid) continue;
+
+                    dist[n] = d + 1;
+                    queue.Enqueue(n);
+                }
+            }
+            return dist;
+        }
+
+        /// <summary>
+        /// Mismo algoritmo que <c>PcTargetInRange.RequireLineOfSight</c> (no expuesto para
+        /// reusar desde acá): camina la línea recta entre las dos coords y falla si algún paso
+        /// intermedio no es transitable o tiene un ocupante que no sea ninguna de las dos partes.
+        /// Solo tiene sentido si <paramref name="from"/> y <paramref name="to"/> ya están
+        /// alineados — el caller es responsable de eso.
+        /// </summary>
+        private static bool HasLineOfSight(IGridManager grid, GridCoord from, GridCoord to, Guid selfGuid, Guid targetGuid)
+        {
+            if (grid == null) return false;
+            int dx = to.X - from.X;
+            int dy = to.Y - from.Y;
+            int steps = Mathf.Max(Mathf.Abs(dx), Mathf.Abs(dy));
+            // Math.Sign, NO Mathf.Sign: Mathf.Sign(0f) devuelve 1 (nunca 0), así que con dx==0
+            // (el caso normal acá — misma columna) el paso quedaba en diagonal en vez de recto
+            // y la línea de chequeo caminaba por celdas que no tenían nada que ver con la
+            // columna real. BUG reportado en playtest: el Sniper se creía con tiro libre
+            // (diagonal despejada) mientras la mesa seguía tapando la columna real — mismo
+            // criterio que PcTargetInRange, que ya usa Math.Sign.
+            int sx = Math.Sign(dx);
+            int sy = Math.Sign(dy);
+            for (int i = 1; i < steps; i++)
+            {
+                var c = new GridCoord(from.X + sx * i, from.Y + sy * i);
+                if (!grid.IsWalkable(c)) return false;
+                if (grid.TryGetOccupant(c, out var blocker) && blocker != selfGuid && blocker != targetGuid)
+                    return false;
+            }
+            return true;
         }
     }
 }
