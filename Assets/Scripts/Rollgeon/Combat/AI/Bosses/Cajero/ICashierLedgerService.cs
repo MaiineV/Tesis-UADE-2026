@@ -32,8 +32,13 @@ namespace Rollgeon.Combat.Cashier
         /// <summary><c>true</c> —y limpia el flag— si <paramref name="entityGuid"/> recibió daño desde la última consulta.</summary>
         bool ConsumeDamageTaken(Guid entityGuid);
 
-        /// <summary>Guarda <paramref name="percent"/> (0..1) del oro del jugador en la caja de <paramref name="ownerGuid"/> y devuelve cuánto guardó (0 si el jugador está seco o no hay economía).</summary>
-        int CollectTax(Guid ownerGuid, float percent);
+        /// <summary>
+        /// Guarda <paramref name="percent"/> (0..1) del oro del jugador en la caja de
+        /// <paramref name="ownerGuid"/> y devuelve cuánto guardó (0 si el jugador está seco o no hay
+        /// economía). Nunca cobra menos de <paramref name="minimum"/>, salvo que al jugador le quede
+        /// menos que eso: entonces cobra lo que haya.
+        /// </summary>
+        int CollectTax(Guid ownerGuid, float percent, int minimum = 0);
 
         void SetChipValueMultiplier(int multiplier);
 

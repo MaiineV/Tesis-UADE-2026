@@ -12,9 +12,11 @@ using UnityEngine;
 namespace Rollgeon.Combat.AI.Decisions
 {
     /// <summary>
-    /// El empujón del Cajero: pega <see cref="AINode_RangedShot.Damage"/> y manda al jugador
-    /// <see cref="PushTiles"/> casillas en línea recta hacia el lado opuesto al suyo, dejando
-    /// <see cref="CoinCount"/> monedas tiradas a lo largo del tumbo.
+    /// El empujón del Cajero: pega <see cref="AINode_RangedShot.Damage"/>, manda al jugador
+    /// <see cref="PushTiles"/> casillas en línea recta hacia el lado opuesto al suyo, y le cobra
+    /// <see cref="TaxPercent"/> del oro que lleve encima —nunca menos de <see cref="TaxMinimum"/>—
+    /// dejando <see cref="RefundPercent"/> de lo cobrado tirado en <see cref="CoinCount"/> monedas
+    /// a lo largo del tumbo.
     /// </summary>
     /// <remarks>
     /// <para>
@@ -42,15 +44,20 @@ namespace Rollgeon.Combat.AI.Decisions
         [MinValue(0)]
         public int CoinCount = 2;
 
-        [Tooltip("Valor mínimo en oro de una moneda del tumbo.")]
-        [MinValue(0)]
-        public int CoinMinValue = 6;
+        [Tooltip("Fracción del oro del jugador que le cobra cada empujón (0..1).")]
+        [PropertyRange(0f, 1f)]
+        public float TaxPercent = 0.10f;
 
-        [Tooltip("Valor máximo en oro de una moneda del tumbo, inclusive.")]
+        [Tooltip("Piso del cobro. Sin él un jugador con poco oro sale gratis del empujón.")]
         [MinValue(0)]
-        public int CoinMaxValue = 9;
+        public int TaxMinimum = 10;
 
-        public override string NodeName => $"Cajero — Empujón ({Damage} y {PushTiles} casillas)";
+        [Tooltip("Fracción de lo cobrado que vuelve al piso repartida entre las monedas (0..1). El resto se lo queda él.")]
+        [PropertyRange(0f, 1f)]
+        public float RefundPercent = 0.70f;
+
+        public override string NodeName =>
+            $"Cajero — Empujón ({Damage}, {PushTiles} casillas y {TaxPercent:P0} del oro)";
 
         public override AIResult Tick(AIContext context)
         {
@@ -111,6 +118,16 @@ namespace Rollgeon.Combat.AI.Decisions
         {
             if (Coin == null || CoinCount <= 0) return;
 
+            var ledger = CashierLedgerService.ResolveOrCreate();
+
+            // El cobro va primero y manda: lo que cae al piso es plata del jugador, no plata que
+            // aparece. Si sale seco no hay nada que tirar y el empujón se queda en golpe y tumbo.
+            int taken = ledger.CollectTax(context.SelfGuid, TaxPercent, TaxMinimum);
+            if (taken <= 0) return;
+
+            int refund = Mathf.FloorToInt(taken * RefundPercent);
+            if (refund <= 0) return;
+
             if (!ServiceLocator.TryGetService<IHazardService>(out var hazards) || hazards == null)
             {
                 Debug.LogWarning("[AINode_CajeroShove] IHazardService no registrado — sin él la " +
@@ -118,21 +135,44 @@ namespace Rollgeon.Combat.AI.Decisions
                 return;
             }
 
-            var ledger = CashierLedgerService.ResolveOrCreate();
-            var rng = context.Rng ?? new System.Random();
-
-            int dropped = 0;
+            // Las casillas se resuelven antes de repartir: una moneda que no encuentra dónde caer
+            // dejaría su parte del reembolso en el aire, y el jugador habría pagado por nada.
+            var cells = new List<GridCoord>();
             foreach (var coord in TumbleTiles(origin, away, traveled, PushTiles))
             {
-                if (dropped >= CoinCount) break;
+                if (cells.Count >= CoinCount) break;
                 if (!grid.InBounds(coord) || !grid.IsFree(coord)) continue;
+                cells.Add(coord);
+            }
 
-                var instanceId = hazards.Activate(Coin, new[] { coord });
+            if (cells.Count == 0) return;
+
+            int placed = 0;
+            for (int i = 0; i < cells.Count; i++)
+            {
+                int share = SplitShare(refund, cells.Count, i);
+                if (share <= 0) continue;
+
+                var instanceId = hazards.Activate(Coin, new[] { cells[i] });
                 if (instanceId == Guid.Empty) continue;
 
-                ledger.RegisterChip(instanceId, RollValue(rng), context.SelfGuid);
-                dropped++;
+                ledger.RegisterChip(instanceId, share, context.SelfGuid);
+                placed++;
             }
+
+            if (placed == 0)
+                Debug.LogWarning($"[AINode_CajeroShove] Cobró {taken} de oro y no pudo dejar " +
+                                 "ninguna moneda en el piso.");
+        }
+
+        /// <summary>
+        /// Reparte <paramref name="total"/> entre <paramref name="parts"/> monedas sin perder
+        /// monedas por el redondeo: las primeras <c>total % parts</c> se llevan una de más.
+        /// </summary>
+        private static int SplitShare(int total, int parts, int index)
+        {
+            if (parts <= 0) return 0;
+            return total / parts + (index < total % parts ? 1 : 0);
         }
 
         /// <summary>
@@ -172,11 +212,5 @@ namespace Rollgeon.Combat.AI.Decisions
             return coord;
         }
 
-        private int RollValue(System.Random rng)
-        {
-            int min = Mathf.Min(CoinMinValue, CoinMaxValue);
-            int max = Mathf.Max(CoinMinValue, CoinMaxValue);
-            return min == max ? min : rng.Next(min, max + 1);
-        }
     }
 }

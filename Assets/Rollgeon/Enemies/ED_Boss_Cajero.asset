@@ -39,6 +39,9 @@ MonoBehaviour:
     - Name: AIRoot
       Entry: 7
       Data: 1|Rollgeon.Combat.AI.Decisions.AINode_Sequence, Rollgeon
+    - Name: EditorNodeId
+      Entry: 6
+      Data: 
     - Name: Children
       Entry: 7
       Data: 2|System.Collections.Generic.List`1[[Rollgeon.Combat.AI.Decisions.AIDecisionNode,
@@ -49,6 +52,9 @@ MonoBehaviour:
     - Name: 
       Entry: 7
       Data: 3|Rollgeon.Combat.AI.Decisions.AINode_Selector, Rollgeon
+    - Name: EditorNodeId
+      Entry: 6
+      Data: 
     - Name: Children
       Entry: 7
       Data: 4|System.Collections.Generic.List`1[[Rollgeon.Combat.AI.Decisions.AIDecisionNode,
@@ -59,6 +65,9 @@ MonoBehaviour:
     - Name: 
       Entry: 7
       Data: 5|Rollgeon.Combat.AI.Decisions.AINode_If, Rollgeon
+    - Name: EditorNodeId
+      Entry: 6
+      Data: 
     - Name: TargetSelector
       Entry: 7
       Data: 6|Rollgeon.Combat.AI.Targeting.TargetSelector_Self, Rollgeon
@@ -93,9 +102,15 @@ MonoBehaviour:
     - Name: Then
       Entry: 7
       Data: 9|Rollgeon.Combat.AI.Decisions.AINode_Once, Rollgeon
+    - Name: EditorNodeId
+      Entry: 6
+      Data: 
     - Name: Child
       Entry: 7
       Data: 10|Rollgeon.Combat.AI.Decisions.AINode_SpawnReinforcements, Rollgeon
+    - Name: EditorNodeId
+      Entry: 6
+      Data: 
     - Name: EnemyToSpawn
       Entry: 10
       Data: 0
@@ -117,6 +132,9 @@ MonoBehaviour:
     - Name: Else
       Entry: 7
       Data: 11|Rollgeon.Combat.AI.Decisions.AINode_Wait, Rollgeon
+    - Name: EditorNodeId
+      Entry: 6
+      Data: 
     - Name: 
       Entry: 8
       Data: 
@@ -126,6 +144,9 @@ MonoBehaviour:
     - Name: 
       Entry: 7
       Data: 12|Rollgeon.Combat.AI.Decisions.AINode_Wait, Rollgeon
+    - Name: EditorNodeId
+      Entry: 6
+      Data: 
     - Name: 
       Entry: 8
       Data: 
@@ -141,6 +162,9 @@ MonoBehaviour:
     - Name: 
       Entry: 7
       Data: 13|Rollgeon.Combat.AI.Decisions.AINode_Selector, Rollgeon
+    - Name: EditorNodeId
+      Entry: 6
+      Data: 
     - Name: Children
       Entry: 7
       Data: 14|System.Collections.Generic.List`1[[Rollgeon.Combat.AI.Decisions.AIDecisionNode,
@@ -151,6 +175,9 @@ MonoBehaviour:
     - Name: 
       Entry: 7
       Data: 15|Rollgeon.Combat.AI.Decisions.AINode_Move, Rollgeon
+    - Name: EditorNodeId
+      Entry: 6
+      Data: 
     - Name: MaxSteps
       Entry: 7
       Data: 16|Rollgeon.Combat.AI.Readers.AIConstantInt, Rollgeon
@@ -184,6 +211,9 @@ MonoBehaviour:
     - Name: 
       Entry: 7
       Data: 18|Rollgeon.Combat.AI.Decisions.AINode_Wait, Rollgeon
+    - Name: EditorNodeId
+      Entry: 6
+      Data: 
     - Name: 
       Entry: 8
       Data: 
@@ -199,6 +229,9 @@ MonoBehaviour:
     - Name: 
       Entry: 7
       Data: 19|Rollgeon.Combat.AI.Decisions.AINode_Selector, Rollgeon
+    - Name: EditorNodeId
+      Entry: 6
+      Data: 
     - Name: Children
       Entry: 7
       Data: 20|System.Collections.Generic.List`1[[Rollgeon.Combat.AI.Decisions.AIDecisionNode,
@@ -209,6 +242,9 @@ MonoBehaviour:
     - Name: 
       Entry: 7
       Data: 21|Rollgeon.Combat.AI.Decisions.AINode_If, Rollgeon
+    - Name: EditorNodeId
+      Entry: 6
+      Data: 
     - Name: TargetSelector
       Entry: 7
       Data: 22|Rollgeon.Combat.AI.Targeting.TargetSelector_AlwaysPlayer, Rollgeon
@@ -231,9 +267,18 @@ MonoBehaviour:
     - Name: Range
       Entry: 3
       Data: 1
+    - Name: UseOwnerAttackRange
+      Entry: 5
+      Data: false
     - Name: Metric
       Entry: 3
       Data: 0
+    - Name: Alignment
+      Entry: 3
+      Data: 0
+    - Name: RequireLineOfSight
+      Entry: 5
+      Data: false
     - Name: 
       Entry: 8
       Data: 
@@ -246,6 +291,9 @@ MonoBehaviour:
     - Name: Then
       Entry: 7
       Data: 25|Rollgeon.Combat.AI.Decisions.AINode_Alternate, Rollgeon
+    - Name: EditorNodeId
+      Entry: 6
+      Data: 
     - Name: Children
       Entry: 7
       Data: 26|System.Collections.Generic.List`1[[Rollgeon.Combat.AI.Decisions.AIDecisionNode,
@@ -256,6 +304,9 @@ MonoBehaviour:
     - Name: 
       Entry: 7
       Data: 27|Rollgeon.Combat.AI.Decisions.AINode_Selector, Rollgeon
+    - Name: EditorNodeId
+      Entry: 6
+      Data: 
     - Name: Children
       Entry: 7
       Data: 28|System.Collections.Generic.List`1[[Rollgeon.Combat.AI.Decisions.AIDecisionNode,
@@ -266,6 +317,9 @@ MonoBehaviour:
     - Name: 
       Entry: 7
       Data: 29|Rollgeon.Combat.AI.Decisions.AINode_RangedShot, Rollgeon
+    - Name: EditorNodeId
+      Entry: 6
+      Data: 
     - Name: Damage
       Entry: 3
       Data: 20
@@ -293,6 +347,9 @@ MonoBehaviour:
     - Name: 
       Entry: 7
       Data: 30|Rollgeon.Combat.AI.Decisions.AINode_Wait, Rollgeon
+    - Name: EditorNodeId
+      Entry: 6
+      Data: 
     - Name: 
       Entry: 8
       Data: 
@@ -308,6 +365,9 @@ MonoBehaviour:
     - Name: 
       Entry: 7
       Data: 31|Rollgeon.Combat.AI.Decisions.AINode_Selector, Rollgeon
+    - Name: EditorNodeId
+      Entry: 6
+      Data: 
     - Name: Children
       Entry: 7
       Data: 32|System.Collections.Generic.List`1[[Rollgeon.Combat.AI.Decisions.AIDecisionNode,
@@ -318,6 +378,9 @@ MonoBehaviour:
     - Name: 
       Entry: 7
       Data: 33|Rollgeon.Combat.AI.Decisions.AINode_CajeroShove, Rollgeon
+    - Name: EditorNodeId
+      Entry: 6
+      Data: 
     - Name: Damage
       Entry: 3
       Data: 14
@@ -348,18 +411,24 @@ MonoBehaviour:
     - Name: CoinCount
       Entry: 3
       Data: 2
-    - Name: CoinMinValue
+    - Name: TaxPercent
+      Entry: 4
+      Data: 0.1
+    - Name: TaxMinimum
       Entry: 3
-      Data: 6
-    - Name: CoinMaxValue
-      Entry: 3
-      Data: 9
+      Data: 10
+    - Name: RefundPercent
+      Entry: 4
+      Data: 0.7
     - Name: 
       Entry: 8
       Data: 
     - Name: 
       Entry: 7
       Data: 34|Rollgeon.Combat.AI.Decisions.AINode_Wait, Rollgeon
+    - Name: EditorNodeId
+      Entry: 6
+      Data: 
     - Name: 
       Entry: 8
       Data: 
@@ -384,6 +453,9 @@ MonoBehaviour:
     - Name: Else
       Entry: 7
       Data: 35|Rollgeon.Combat.AI.Decisions.AINode_Wait, Rollgeon
+    - Name: EditorNodeId
+      Entry: 6
+      Data: 
     - Name: 
       Entry: 8
       Data: 
@@ -393,6 +465,9 @@ MonoBehaviour:
     - Name: 
       Entry: 7
       Data: 36|Rollgeon.Combat.AI.Decisions.AINode_Wait, Rollgeon
+    - Name: EditorNodeId
+      Entry: 6
+      Data: 
     - Name: 
       Entry: 8
       Data: 
@@ -408,6 +483,9 @@ MonoBehaviour:
     - Name: 
       Entry: 7
       Data: 37|Rollgeon.Combat.AI.Decisions.AINode_Selector, Rollgeon
+    - Name: EditorNodeId
+      Entry: 6
+      Data: 
     - Name: Children
       Entry: 7
       Data: 38|System.Collections.Generic.List`1[[Rollgeon.Combat.AI.Decisions.AIDecisionNode,
@@ -418,6 +496,9 @@ MonoBehaviour:
     - Name: 
       Entry: 7
       Data: 39|Rollgeon.Combat.AI.Decisions.AINode_CajeroCoinRain, Rollgeon
+    - Name: EditorNodeId
+      Entry: 6
+      Data: 
     - Name: Coin
       Entry: 10
       Data: 1
@@ -442,6 +523,9 @@ MonoBehaviour:
     - Name: 
       Entry: 7
       Data: 40|Rollgeon.Combat.AI.Decisions.AINode_Wait, Rollgeon
+    - Name: EditorNodeId
+      Entry: 6
+      Data: 
     - Name: 
       Entry: 8
       Data: 
@@ -457,6 +541,9 @@ MonoBehaviour:
     - Name: 
       Entry: 7
       Data: 41|Rollgeon.Combat.AI.Decisions.AINode_Selector, Rollgeon
+    - Name: EditorNodeId
+      Entry: 6
+      Data: 
     - Name: Children
       Entry: 7
       Data: 42|System.Collections.Generic.List`1[[Rollgeon.Combat.AI.Decisions.AIDecisionNode,
@@ -467,6 +554,9 @@ MonoBehaviour:
     - Name: 
       Entry: 7
       Data: 43|Rollgeon.Combat.AI.Decisions.AINode_CajeroCoinVault, Rollgeon
+    - Name: EditorNodeId
+      Entry: 6
+      Data: 
     - Name: Coin
       Entry: 10
       Data: 1
@@ -485,6 +575,9 @@ MonoBehaviour:
     - Name: 
       Entry: 7
       Data: 44|Rollgeon.Combat.AI.Decisions.AINode_Wait, Rollgeon
+    - Name: EditorNodeId
+      Entry: 6
+      Data: 
     - Name: 
       Entry: 8
       Data: 
@@ -521,7 +614,8 @@ MonoBehaviour:
       Data: 
   EntityId: boss.cashier
   DisplayName: El Cajero
-  Description: "Te agarra, te tira lejos, y se queda con lo que se te cay\xF3."
+  Description: "Te tira lejos y te saca oro, y parte de esa plata cae al piso. La
+    que no levant\xE1s a tiempo se la lleva \xE9l, y cada una lo cura."
   Portrait: {fileID: 133841030, guid: 7354be46d5bce5b44ae3fc20ec0cb47f, type: 3}
   Design:
     Archetype: 1
@@ -547,3 +641,6 @@ MonoBehaviour:
   Archetype: 2
   Personality: 0
   KamikazeIgnoresSurvival: 0
+  AuraRadius: 0
+  AuraFlatReduction: 0
+  Footprint: {x: 1, y: 1}

@@ -142,9 +142,36 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         /// <summary>Casillas del tumbo. Frena en seco contra una caja fuerte o contra la pared.</summary>
         public const int ShovePushTiles = 3;
 
+        /// <summary>Fracción del oro del jugador que se lleva cada empujón.</summary>
+        /// <remarks>
+        /// Porcentaje y no monto fijo porque el empujón sale cada dos turnos: en una pelea de doce
+        /// son seis cobros, y cualquier número fijo multiplicado por seis funde al que viene con
+        /// poco y es ruido para el que viene cargado. El porcentaje decae solo, porque cada cobro se
+        /// calcula sobre lo que quedó.
+        /// </remarks>
+        public const float ShoveTaxPercent = 0.10f;
+
+        /// <summary>
+        /// Piso del cobro: sin él un jugador sin oro sería inmune a media pelea —no le sacaría nada,
+        /// no caerían monedas— justo cuando peor viene.
+        /// </summary>
+        public const int ShoveTaxMinimum = 10;
+
+        /// <summary>
+        /// Parte de lo cobrado que vuelve al piso repartida entre las monedas del tumbo. El resto se
+        /// lo queda él y no vuelve nunca.
+        /// </summary>
+        public const float ShoveRefundPercent = 0.70f;
+
         // ---- Las monedas -------------------------------------------------
 
+        /// <summary>
+        /// Valor de una moneda de la <b>lluvia</b>, la que suelta la sala. Las del empujón no salen
+        /// de acá: valen <see cref="ShoveRefundPercent"/> de lo que te cobró, porque son tu plata.
+        /// </summary>
         public const int ChipMinValue = 6;
+
+        /// <inheritdoc cref="ChipMinValue"/>
         public const int ChipMaxValue = 9;
 
         /// <summary>Monedas que suelta la sala por tanda.</summary>
@@ -597,7 +624,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
 
         /// <summary>
         /// El empujón: <see cref="ShoveDamage"/> y <see cref="ShovePushTiles"/> casillas de tumbo,
-        /// con <see cref="ChipCount"/> monedas tiradas en el camino.
+        /// con el cobro del <see cref="ShoveTaxPercent"/> y <see cref="ChipCount"/> monedas de esa
+        /// plata tiradas en el camino.
         /// </summary>
         public static AINode_CajeroShove BuildShove(HazardDefinitionSO chip = null) =>
             new AINode_CajeroShove
@@ -609,8 +637,9 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
                 PushTiles = ShovePushTiles,
                 Coin = chip,
                 CoinCount = ChipCount,
-                CoinMinValue = ChipMinValue,
-                CoinMaxValue = ChipMaxValue,
+                TaxPercent = ShoveTaxPercent,
+                TaxMinimum = ShoveTaxMinimum,
+                RefundPercent = ShoveRefundPercent,
                 AnimFeedbackId = BossFeedbackIds.CajeroMeleeAnim,
                 ImpactVfxFeedbackId = BossFeedbackIds.CajeroImpactVfx,
                 ImpactFeelFeedbackId = BossFeedbackIds.CajeroImpactFeel,
@@ -721,9 +750,11 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
 
             data.EntityId = EntityId;
             data.DisplayName = DisplayName;
-            // Interpolado y no escrito a mano: un literal acá se queda viejo cuando se tunea la
-            // constante.
-            data.Description = "Te agarra, te tira lejos, y se queda con lo que se te cayó.";
+
+            // Fallback: lo que el jugador lee sale de boss.cashier.desc, que se resuelve por
+            // EntityId. Copia literal de esa entrada para que las dos no puedan divergir.
+            data.Description = "Te tira lejos y te saca oro, y parte de esa plata cae al piso. " +
+                               "La que no levantás a tiempo se la lleva él, y cada una lo cura.";
 
             data.BaseHP = BaseHP;
             data.BaseAttack = BaseAttack;
@@ -924,8 +955,10 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
             Debug.Log($"[CajeroAssetBuilder] '{EnemyId(data)}' actualizado en '{EnemyAssetPath}' " +
                       $"(ficha: {BaseHP} HP, mandoble {HeavyDamage} y empujón {ShoveDamage} + " +
                       $"{ShovePushTiles} casillas, alcance {MeleeRange}, camina {ChaseSteps}; " +
-                      $"monedas: {CoinsPerRain} cada {CoinRainEveryNRounds} rondas + {ChipCount} por " +
-                      $"empujón, {ChipMinValue}-{ChipMaxValue}g, duran {ChipDurationRounds} rondas, " +
+                      $"monedas: {CoinsPerRain} cada {CoinRainEveryNRounds} rondas de " +
+                      $"{ChipMinValue}-{ChipMaxValue}g + {ChipCount} por empujón con el " +
+                      $"{ShoveRefundPercent:P0} del {ShoveTaxPercent:P0} cobrado " +
+                      $"(mín. {ShoveTaxMinimum}), duran {ChipDurationRounds} rondas, " +
                       $"se vencen de a una y cada una cura {HealPerExpiredCoin} con techo " +
                       $"{MaxHealPerFight}; " +
                       $"visual: {NameOf(visual)}, retrato: {NameOf(portrait)}) + {CritterCount} × " +
@@ -1280,7 +1313,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
             var spikes = LoadOrCreate<SpecialTileDefinitionSO>(SpikeTilePath);
 
             spikes.TileId = SpikeTileId;
-            spikes.DisplayName = "Pinchos de la Caja";
+            spikes.DisplayName = "Pinchos del Cajero";
             spikes.TileType = SpecialTileType.Spikes;
 
             // OnForcedMovementInto es lo que hace que el tumbo del empujón cobre las casillas que

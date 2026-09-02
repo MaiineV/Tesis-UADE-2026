@@ -240,12 +240,30 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
 
             Assert.AreEqual(CajeroAssetBuilder.ChipCount, shove.CoinCount,
                 "Las monedas del tumbo salen de la ficha, no del default del nodo.");
-            Assert.AreEqual(CajeroAssetBuilder.ChipMinValue, shove.CoinMinValue);
-            Assert.AreEqual(CajeroAssetBuilder.ChipMaxValue, shove.CoinMaxValue);
 
             Assert.AreEqual(BossFeedbackIds.CajeroMeleeAnim, shove.AnimFeedbackId);
             Assert.AreEqual(BossFeedbackIds.CajeroImpactVfx, shove.ImpactVfxFeedbackId);
             Assert.AreEqual(BossFeedbackIds.CajeroImpactFeel, shove.ImpactFeelFeedbackId);
+        }
+
+        [Test]
+        public void Shove_ChargesTheSheetsCutOfYourGold_AndGivesMostOfItBack()
+        {
+            var shove = FindNode<AINode_CajeroShove>();
+
+            Assert.AreEqual(CajeroAssetBuilder.ShoveTaxPercent, shove.TaxPercent, 0.0001f,
+                "El cobro sale de la ficha, no del default del nodo.");
+            Assert.AreEqual(CajeroAssetBuilder.ShoveTaxMinimum, shove.TaxMinimum);
+            Assert.AreEqual(CajeroAssetBuilder.ShoveRefundPercent, shove.RefundPercent, 0.0001f);
+
+            Assert.Greater(shove.TaxMinimum, 0,
+                "Sin piso, el jugador sin oro es inmune a media pelea: no le sacaría nada, no " +
+                "caerían monedas, y el reloj de la sala desaparecería justo para el que peor viene.");
+            Assert.Less(shove.RefundPercent, 1f,
+                "Si volviera todo, el empujón dejaría de costar oro y sería sólo un traslado de " +
+                "plata del bolsillo al piso.");
+            Assert.Greater(shove.RefundPercent, 0f,
+                "Si no volviera nada, no habría razón para caminar la sala y el jefe sería melee puro.");
         }
 
         [Test]

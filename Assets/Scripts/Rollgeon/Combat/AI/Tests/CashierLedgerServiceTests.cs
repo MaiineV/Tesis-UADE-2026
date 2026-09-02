@@ -109,6 +109,37 @@ namespace Rollgeon.Combat.AI.Tests
         }
 
         [Test]
+        public void CollectTax_ThinWallet_ChargesTheFloorInsteadOfThePercent()
+        {
+            _economy.ResetTo(50);
+
+            Assert.AreEqual(10, _ledger.CollectTax(_boss, 0.1f, 10),
+                "10% de 50 son 5, y el piso lo levanta a 10.");
+            Assert.AreEqual(40, _economy.CurrentGold);
+        }
+
+        [Test]
+        public void CollectTax_FatWallet_IgnoresTheFloor()
+        {
+            _economy.ResetTo(400);
+
+            Assert.AreEqual(40, _ledger.CollectTax(_boss, 0.1f, 10),
+                "El piso es un piso, no un techo ni un monto fijo.");
+        }
+
+        [Test]
+        public void CollectTax_LessGoldThanTheFloor_TakesWhatIsLeft()
+        {
+            _economy.ResetTo(4);
+
+            Assert.AreEqual(4, _ledger.CollectTax(_boss, 0.1f, 10),
+                "El piso no puede cobrar lo que no hay; si pidiera 10 el Spend fallaría y el " +
+                "jugador casi seco saldría gratis, que es justo lo que el piso viene a impedir.");
+            Assert.AreEqual(0, _economy.CurrentGold);
+            Assert.AreEqual(4, _ledger.VaultedGold);
+        }
+
+        [Test]
         public void CollectTax_WithoutEconomy_IsNoOp()
         {
             ServiceLocator.RemoveService<IEconomyService>();

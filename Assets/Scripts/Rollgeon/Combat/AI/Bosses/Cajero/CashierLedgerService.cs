@@ -90,13 +90,22 @@ namespace Rollgeon.Combat.Cashier
             return _damaged.Remove(entityGuid);
         }
 
-        public int CollectTax(Guid ownerGuid, float percent)
+        public int CollectTax(Guid ownerGuid, float percent, int minimum = 0)
         {
             if (ownerGuid == Guid.Empty || percent <= 0f) return 0;
             if (!ServiceLocator.TryGetService<IEconomyService>(out var economy) || economy == null) return 0;
 
+            int gold = economy.CurrentGold;
+            if (gold <= 0) return 0;
+
             // Floor: el arqueo nunca redondea a favor de la casa (40% de 99 = 39, no 40).
-            int take = Mathf.FloorToInt(economy.CurrentGold * percent);
+            int take = Mathf.FloorToInt(gold * percent);
+            if (take < minimum) take = minimum;
+
+            // Sin el techo, el piso le pide a Spend más de lo que hay y el cobro entero se cae:
+            // el jugador casi seco saldría gratis, que es justo lo que el piso viene a impedir.
+            if (take > gold) take = gold;
+
             if (take <= 0) return 0;
             if (!economy.Spend(take)) return 0;
 
