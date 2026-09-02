@@ -3421,7 +3421,8 @@ Forzar Puerta (sept 2026): el anunciador emite el desglose con o sin combo (sin
 combo: base 0 + todos los dados holdeados) y lleva `Threshold` en el payload. Con
 umbral, el reproductor corre `PlayThresholdClash` tras el choque N×M en lugar de la
 mitigación: el total sube a la izquierda, el umbral sale a la derecha, chocan sobre
-el candado y el mayor queda; el candado abre (sprite `Padlock_1`) o tiembla cerrado.
+el candado y el mayor queda; el candado abre (el arco, `PadlockShackle.png`, se
+levanta y se inclina separándose del cuerpo `PadlockBody.png`) o tiembla cerrado.
 Recién al liberar el gate `EffForceDoor` cruza la sala y aborta el combate. El
 `ForceDoorRollBonus` de items (Pico de Minero) entra a N como aditivo journaleado
 (vuela con el icono del item), ya no es flat post-multiplicador.
