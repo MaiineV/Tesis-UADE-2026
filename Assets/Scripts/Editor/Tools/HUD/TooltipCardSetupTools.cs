@@ -1,4 +1,5 @@
 using System.IO;
+using Rollgeon.Editor.Tools.Enemy.Builders;
 using Rollgeon.UI.HUD.Status;
 using Rollgeon.UI.Tooltips;
 using TMPro;
@@ -38,6 +39,14 @@ namespace Rollgeon.EditorTools.HUD
         // ancho que lo ate, su preferido es el del texto ENTERO en un renglón, y el panel se
         // estiraba hasta ahí — el color del bicho decidía el ancho del tooltip.
         private const float ContentWidth = 350f;
+
+        // La pila de vida respeta el aspect 37:53 de los sub-sprites v3, igual que
+        // BossVisualWrapperBuilder.BarSize: cualquier otra proporción la deforma.
+        private static readonly Vector2 HealthBarSize = new Vector2(37f, 53f);
+
+        // Misma relación fuente:ancho que la barra de la cabeza (fuente 0.35 sobre 0.44 de
+        // ancho): el número ocupa la pila igual que arriba del bicho.
+        private const float HealthBarFontSize = 29f;
 
         // Más angosta que el panel: con tres ataques en la columna, tarjetas del ancho de la caja
         // hacían que el costado pesara más que el bicho que describe.
@@ -814,15 +823,46 @@ namespace Rollgeon.EditorTools.HUD
                 var vitals = EnsureChildRect(identity, "Vitals", Vector2.zero, Vector2.zero);
                 var vitalsLayout = Ensure<HorizontalLayoutGroup>(vitals.gameObject);
                 vitalsLayout.spacing = 10;
-                vitalsLayout.childAlignment = TextAnchor.MiddleCenter;
+                // A la izquierda, en la misma vertical que arranca el nombre.
+                vitalsLayout.childAlignment = TextAnchor.MiddleLeft;
                 vitalsLayout.childControlWidth = true;
                 vitalsLayout.childControlHeight = true;
                 vitalsLayout.childForceExpandWidth = false;
                 vitalsLayout.childForceExpandHeight = false;
 
-                EnsureIcon(vitals, "HeartIcon", LoadSlice(HeartChipId), new Vector2(55f, 37f));
-                var hpLabel = EnsureLabel(vitals, "Hp", 34f, TextAlignmentOptions.Left, PanelInk);
+                // La vida es LITERAL la pila de la cabeza (BossVisualWrapperBuilder.BuildHealthBar):
+                // mismos sprites, mismo orden de capas y el HP actual centrado en su misma fuente.
+                var heart = vitals.Find("HeartIcon");
+                if (heart != null) Object.DestroyImmediate(heart.gameObject);
+
+                var barSprites = BossVisualWrapperBuilder.LoadHealthBarSprites();
+                var barRect = EnsureChildRect(vitals, "HealthBar", Vector2.zero, HealthBarSize);
+                var barElement = Ensure<LayoutElement>(barRect.gameObject);
+                barElement.preferredWidth = HealthBarSize.x;
+                barElement.preferredHeight = HealthBarSize.y;
+
+                var lifeBackground = EnsureStretchedImage(barRect, "LifeBackground", barSprites.fill);
+                lifeBackground.color = BossVisualWrapperBuilder.HealthBarBackgroundTint;
+                var lifeFill = EnsureStretchedImage(barRect, "LifeFill", barSprites.fill);
+                lifeFill.type = Image.Type.Filled;
+                lifeFill.fillMethod = Image.FillMethod.Vertical;
+                lifeFill.fillOrigin = (int)Image.OriginVertical.Bottom;
+                lifeFill.fillAmount = 1f;
+                var lifeFrame = EnsureStretchedImage(barRect, "Frame", barSprites.frame);
+                lifeBackground.transform.SetSiblingIndex(0);
+                lifeFill.transform.SetSiblingIndex(1);
+                lifeFrame.transform.SetSiblingIndex(2);
+
+                // Migración del panel autorado: "Hp" vivía suelto en la fila, al lado del corazón.
+                Reparent(vitals, "Hp", barRect);
+                var hpLabel = EnsureLabel(barRect, "Hp", HealthBarFontSize,
+                                          TextAlignmentOptions.Center, Color.white);
                 hpLabel.fontStyle = FontStyles.Bold;
+                Stretch(hpLabel.rectTransform);
+                var hpFont = AssetDatabase.LoadAssetAtPath<TMP_FontAsset>(
+                    BossVisualWrapperBuilder.HealthBarFontPath);
+                if (hpFont != null) hpLabel.font = hpFont;
+                hpLabel.transform.SetAsLastSibling();
 
                 var shield = EnsureChildRect(vitals, "Shield", Vector2.zero, Vector2.zero);
                 var shieldLayout = Ensure<HorizontalLayoutGroup>(shield.gameObject);
@@ -861,6 +901,7 @@ namespace Rollgeon.EditorTools.HUD
                     so.FindProperty("_typeLabel").objectReferenceValue = typeLabel;
                     so.FindProperty("_vitalsRoot").objectReferenceValue = vitals.gameObject;
                     so.FindProperty("_hpLabel").objectReferenceValue = hpLabel;
+                    so.FindProperty("_hpFill").objectReferenceValue = lifeFill;
                     so.FindProperty("_shieldRoot").objectReferenceValue = shield.gameObject;
                     so.FindProperty("_shieldLabel").objectReferenceValue = shieldLabel;
                     so.FindProperty("_footerLabel").objectReferenceValue = footer;
@@ -869,6 +910,7 @@ namespace Rollgeon.EditorTools.HUD
                     // porque Ensure* agrega al final. Y adentro de la fila, la familia a la
                     // DERECHA del nombre.
                     titleRow.SetSiblingIndex(0);
+                    vitals.SetSiblingIndex(1);
                     nameLabel.transform.SetSiblingIndex(0);
                     typeLabel.transform.SetSiblingIndex(1);
 
@@ -953,6 +995,25 @@ namespace Rollgeon.EditorTools.HUD
             image.preserveAspect = true;
             image.raycastTarget = false;
             return image;
+        }
+
+        /// <summary>Capa de la pila estirada al rect del padre: las tres calzan pixel-perfect.</summary>
+        private static Image EnsureStretchedImage(RectTransform parent, string name, Sprite sprite)
+        {
+            var rect = EnsureChildRect(parent, name, Vector2.zero, Vector2.zero);
+            Stretch(rect);
+            var image = Ensure<Image>(rect.gameObject);
+            image.sprite = sprite;
+            image.raycastTarget = false;
+            return image;
+        }
+
+        private static void Stretch(RectTransform rect)
+        {
+            rect.anchorMin = Vector2.zero;
+            rect.anchorMax = Vector2.one;
+            rect.offsetMin = Vector2.zero;
+            rect.offsetMax = Vector2.zero;
         }
 
         private static Sprite LoadSlice(long internalId)

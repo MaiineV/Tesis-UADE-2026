@@ -1,4 +1,9 @@
+using System;
 using System.Text;
+using Patterns;
+using Rollgeon.Attributes;
+using Rollgeon.Attributes.Stats;
+using Rollgeon.Combat.AI;
 using Rollgeon.Localization;
 using Rollgeon.UI.HUD.Status;
 using Rollgeon.UI.Tooltips;
@@ -28,13 +33,18 @@ namespace Rollgeon.Entities.Visuals
     public sealed class EnemyTooltipInfo : MonoBehaviour, IHasTooltipInfo
     {
         private EnemyDataSO _data;
+        private Guid _guid;
 
         /// <summary>Llamado por <see cref="EntityVisualService"/> al instanciar el pawn.</summary>
-        public void Bind(EnemyDataSO data) => _data = data;
+        public void Bind(EnemyDataSO data, Guid guid)
+        {
+            _data = data;
+            _guid = guid;
+        }
 
         /// <summary>
-        /// El contenido del panel: nombre, familia y una frase táctica de una línea (la key
-        /// <c>.brief</c>). <b>Sin lore y sin vitales.</b>
+        /// El contenido del panel: nombre, familia, la vida leída en este hover y una frase
+        /// táctica de una línea (la key <c>.brief</c>). <b>Sin lore.</b>
         /// </summary>
         /// <remarks>
         /// El panel no lleva lore, y no es una cuestión de espacio: cualquier frase que resuma al
@@ -45,11 +55,6 @@ namespace Rollgeon.Entities.Visuals
         /// La descripción sigue viva y se lee por <see cref="BuildTooltip"/>, que es lo que usan
         /// las bombas y los objetos que un jefe pone en el paño: ahí el tooltip es un párrafo y no
         /// un panel, así que no hay tarjeta que pueda contradecirla.
-        /// </para>
-        /// <para>
-        /// <b>Ni vitales.</b> La barra de vida ya flota sobre la cabeza del bicho y es la que el
-        /// jugador mira mientras le pega; repetirla adentro del panel gasta una fila en un número
-        /// que está a dos centímetros, y encima desactualizado hasta el próximo hover.
         /// </para>
         /// </remarks>
         public TooltipContent BuildContent()
@@ -70,12 +75,33 @@ namespace Rollgeon.Entities.Visuals
                 : LocalizedContent.FromTable(
                     LocalizedContent.ContentTable, id + ".brief", string.Empty);
 
+            var (health, maxHealth) = ReadVitals();
+
             // La frase va como párrafo, no como pie: en el panel el párrafo vive pegado a la
             // identidad (el bloque de header del mockup), y el pie quedaba abajo de las tarjetas.
             return new TooltipContent(
                 text: brief,
                 name: name,
+                health: health,
+                maxHealth: maxHealth,
                 type: EnemyArchetypeText.Describe(data.Archetype, data.IsBoss));
+        }
+
+        // El max no vive en el atributo — el daño escribe sobre Health.Value — así que la
+        // referencia tier-aware es la que todos los caminos de spawn dejan en el registry de AI.
+        // Se relee en cada hover, como el resto del contenido: el número sale fresco aunque el
+        // panel venga fijado del turno pasado.
+        private (int? health, int? maxHealth) ReadVitals()
+        {
+            if (_guid == Guid.Empty) return (null, null);
+            if (!ServiceLocator.TryGetService<IEnemyAIRegistry>(out var registry) || registry == null)
+                return (null, null);
+            if (!registry.TryGet(_guid, out _, out int max) || max <= 0) return (null, null);
+            if (!ServiceLocator.TryGetService<AttributesManager>(out var attrs) || attrs == null)
+                return (null, null);
+
+            int current = Mathf.Clamp(attrs.GetAttributeValue<Health, int>(_guid), 0, max);
+            return (current, max);
         }
 
         public string BuildTooltip()

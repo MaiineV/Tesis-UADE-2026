@@ -28,6 +28,7 @@ namespace Rollgeon.UI.Tests
         private TextMeshProUGUI _type;
         private GameObject _vitals;
         private TextMeshProUGUI _hp;
+        private Image _hpFill;
         private GameObject _shield;
         private TextMeshProUGUI _shieldValue;
         private TextMeshProUGUI _footer;
@@ -44,6 +45,8 @@ namespace Rollgeon.UI.Tests
             _type = Label("Type", _panel);
             _vitals = Child("Vitals", _panel).gameObject;
             _hp = Label("Hp", _vitals.transform);
+            _hpFill = Child("HealthBar", _vitals.transform).gameObject.AddComponent<Image>();
+            _hpFill.type = Image.Type.Filled;
             _shield = Child("Shield", _vitals.transform).gameObject;
             _shieldValue = Label("Value", _shield.transform);
             _text = Label("Text", _panel);
@@ -57,6 +60,7 @@ namespace Rollgeon.UI.Tests
             SetPrivate("_typeLabel", _type);
             SetPrivate("_vitalsRoot", _vitals);
             SetPrivate("_hpLabel", _hp);
+            SetPrivate("_hpFill", _hpFill);
             SetPrivate("_shieldRoot", _shield);
             SetPrivate("_shieldLabel", _shieldValue);
             SetPrivate("_footerLabel", _footer);
@@ -102,8 +106,12 @@ namespace Rollgeon.UI.Tests
             Assert.IsTrue(_name.gameObject.activeSelf);
             Assert.AreEqual("The Croupier", _name.text);
             Assert.IsTrue(_vitals.activeSelf);
-            StringAssert.Contains("180", _hp.text);
-            StringAssert.Contains("250", _hp.text);
+            Assert.AreEqual("180", _hp.text,
+                "El número de la pila es el HP actual solo, como sobre la cabeza del bicho: el " +
+                "max no va en texto, lo cuenta el fill.");
+            Assert.AreEqual(180f / 250f, _hpFill.fillAmount, 0.001f,
+                "El fill de la pila lleva el ratio HP/max — es lo que reemplaza al número de " +
+                "max que ya no se escribe.");
         }
 
         [Test]

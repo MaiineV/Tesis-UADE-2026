@@ -3,6 +3,7 @@ using Rollgeon.UI.HUD.Status;
 using Sirenix.OdinInspector;
 using TMPro;
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace Rollgeon.UI.Tooltips
 {
@@ -96,6 +97,10 @@ namespace Rollgeon.UI.Tooltips
 
         [SerializeField] private GameObject _vitalsRoot;
         [SerializeField] private TMP_Text _hpLabel;
+
+        [Tooltip("Fill vertical de la pila de vida — la misma barra que flota sobre la cabeza " +
+                 "del bicho. fillAmount = HP actual / max.")]
+        [SerializeField] private Image _hpFill;
 
         [Tooltip("El par ícono+número del escudo. Se apaga entero cuando la unidad no tiene: " +
                  "un \"0\" al lado de un escudo se lee como que el escudo existe y está roto.")]
@@ -521,8 +526,14 @@ namespace Rollgeon.UI.Tooltips
             if (_vitalsRoot != null) _vitalsRoot.SetActive(content.HasVitals);
             if (!content.HasVitals) return;
 
+            // Número y pila como sobre la cabeza: el label lleva el HP actual solo y el max
+            // lo cuenta el fill.
             if (_hpLabel != null)
-                _hpLabel.text = $"{content.Health.Value}/{content.MaxHealth.Value}";
+                _hpLabel.text = content.Health.Value.ToString();
+            if (_hpFill != null)
+                _hpFill.fillAmount = content.MaxHealth.Value > 0
+                    ? Mathf.Clamp01(content.Health.Value / (float)content.MaxHealth.Value)
+                    : 0f;
 
             // Un escudo en cero no es un escudo roto, es que la unidad no usa escudo.
             int shield = content.Shield ?? 0;
