@@ -92,15 +92,19 @@ namespace Rollgeon.UI.HUD.Status
             rect.anchorMax = Vector2.zero;
             rect.pivot = new Vector2(0.5f, 0.5f);
             rect.sizeDelta = new Vector2(settings.IconSize * 5f, settings.IconSize);
-            rect.localScale = Vector3.one;
+            // El prefab del slot está autorado en píxeles de HUD: sin esta escala un píxel es
+            // una unidad de mundo, y el badge de turnos de una bomba tapaba la pantalla.
+            rect.localScale = Vector3.one * settings.WorldScale;
             rect.localRotation = Quaternion.identity;
             rect.localPosition = settings.Offset;
 
             var layout = go.AddComponent<HorizontalLayoutGroup>();
             layout.spacing = settings.Spacing;
             layout.childAlignment = TextAnchor.MiddleCenter;
-            layout.childControlWidth = true;
-            layout.childControlHeight = true;
+            // Sin controlar el tamaño: el root del slot no tiene LayoutElement y controlarlo lo
+            // colapsa a 0 — quedaba visible sólo el badge de turnos, que tiene rect fijo.
+            layout.childControlWidth = false;
+            layout.childControlHeight = false;
             layout.childForceExpandWidth = false;
             layout.childForceExpandHeight = false;
 

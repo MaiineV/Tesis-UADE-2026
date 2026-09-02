@@ -31,5 +31,9 @@ namespace Rollgeon.UI.HUD.Status
         [Tooltip("orthographicSize de referencia al que la fila queda a escala 1x. El mismo que " +
                  "usa la barra de vida, para que crezcan juntas al alejar la cámara.")]
         public float ReferenceZoom = 9f;
+
+        [Tooltip("Escala del canvas world-space: convierte los píxeles del prefab (72x76 el " +
+                 "ícono) a unidades de mundo.")]
+        public float WorldScale = 0.01f;
     }
 }
