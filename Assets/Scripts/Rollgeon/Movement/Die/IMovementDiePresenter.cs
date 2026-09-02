@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Rollgeon.Dice;
 
 namespace Rollgeon.Movement.Die
@@ -16,8 +17,12 @@ namespace Rollgeon.Movement.Die
         /// <paramref name="rangeBonus"/> es el bonus/malus de <c>MoveRange</c> del jugador
         /// (Botas/Guantelete): la view lo muestra junto a la cara al aterrizar para que el
         /// "+N" del item se LEA en la tirada, igual que un bonus en un roll de ataque.
+        /// <paramref name="contributions"/> desglosa ese bonus por item (ver
+        /// <see cref="MovementRangeAttribution"/>) para anunciar "Botas Ligeras +1" sobre el
+        /// dado; puede venir vacío (sin items de MoveRange) y NUNCA es null.
         /// </summary>
-        bool TryPresent(DiceType type, int face, int rangeBonus, Action onRevealed);
+        bool TryPresent(DiceType type, int face, int rangeBonus,
+                        IReadOnlyList<MovementRangeContribution> contributions, Action onRevealed);
 
         /// <summary>Corta la animación en curso sin invocar el callback y limpia el visual.</summary>
         void Abort();
