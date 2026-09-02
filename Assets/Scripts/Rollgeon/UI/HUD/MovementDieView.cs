@@ -1,8 +1,12 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using Patterns;
+using PrimeTween;
+using Rollgeon.Audio;
 using Rollgeon.Dice;
 using Rollgeon.Movement.Die;
+using Rollgeon.UI.HUD.Breakdown;
 using Rollgeon.UI.HUD.DiceAnim;
 using Sirenix.OdinInspector;
 using TMPro;
@@ -51,6 +55,26 @@ namespace Rollgeon.UI.HUD
                                  "oculto con bonus 0 o sin referencia.")]
         private TextMeshProUGUI _bonusLabel;
 
+        [Title("Chips de item (\"Botas Ligeras +1\")")]
+        [SerializeField, Tooltip("Opcional: chip INACTIVO (icono + label) que se clona por cada item que " +
+                                 "suma o resta al rango. Null = sin chips (solo el label agregado).")]
+        private ModifierEntryView _chipTemplate;
+        [SerializeField, Tooltip("Contenedor de los chips (layout vertical encima del dado). " +
+                                 "Null = padre del template.")]
+        private RectTransform _chipsRoot;
+        [SerializeField, Tooltip("Icono cuando el item no tiene sprite autorado.")]
+        private Sprite _chipFallbackIcon;
+        [SerializeField, MinValue(0f), Tooltip("Espera entre chips cuando hay más de un item.")]
+        private float _chipStaggerSeconds = 0.12f;
+        [SerializeField, Range(0f, 1f), Tooltip("Punch de escala del chip al aparecer (0 = sin pop).")]
+        private float _chipPunch = 0.25f;
+        [SerializeField, MinValue(0.05f)] private float _chipPunchSeconds = 0.3f;
+        [SerializeField] private Color _chipPositiveColor = new Color(1f, 0.788f, 0.235f); // #FFC93C, mismo del daño base
+        [SerializeField] private Color _chipNegativeColor = new Color(0.86f, 0.25f, 0.2f);
+        [SerializeField, Tooltip("Opcional: sonido de proc por chip (placeholder del breakdown).")]
+        private AudioClip _procClip;
+        [SerializeField, Range(0f, 1f)] private float _procVolume = 1f;
+
         [Title("Rise (sube roleando)")]
         [SerializeField, MinValue(0f)] private float _riseSeconds = 0.45f;
         [SerializeField, MinValue(0f), Tooltip("Separación entre la ficha y el dado al aterrizar.")]
@@ -74,6 +98,10 @@ namespace Rollgeon.UI.HUD
         private Action _pendingReveal;
         private int _pendingBonus;
         private Coroutine _routine;
+        private readonly List<MovementRangeContribution> _pendingContributions = new List<MovementRangeContribution>();
+        private readonly List<ModifierEntryView> _chips = new List<ModifierEntryView>();
+        private readonly List<Tween> _chipTweens = new List<Tween>();
+        private Coroutine _chipRoutine;
 
         // ---- Lifecycle ---------------------------------------------------------
 
@@ -126,14 +154,19 @@ namespace Rollgeon.UI.HUD
         // ---- IMovementDiePresenter ---------------------------------------------
 
         /// <inheritdoc />
-        public bool TryPresent(DiceType type, int face, int rangeBonus, Action onRevealed)
+        public bool TryPresent(DiceType type, int face, int rangeBonus,
+                               IReadOnlyList<MovementRangeContribution> contributions, Action onRevealed)
         {
             if (!_bound || _slot == null || !gameObject.activeInHierarchy) return false;
 
             StopRoutine();
             _pendingReveal = onRevealed;
             _pendingBonus = rangeBonus;
+            _pendingContributions.Clear();
+            if (contributions != null)
+                for (int i = 0; i < contributions.Count; i++) _pendingContributions.Add(contributions[i]);
             if (_bonusLabel != null) _bonusLabel.gameObject.SetActive(false);
+            HideChips();
             _slot.Bind(type);
             _routine = StartCoroutine(RiseAndDrop(type, face));
             return true;
@@ -225,6 +258,7 @@ namespace Rollgeon.UI.HUD
             _slot.SetSpinRole(null);
             _slot.ShowFace(face);
             ShowBonus(_pendingBonus);
+            PopChips();
             _routine = null;
             var reveal = _pendingReveal;
             _pendingReveal = null;
@@ -285,10 +319,82 @@ namespace Rollgeon.UI.HUD
             _bonusLabel.gameObject.SetActive(true);
         }
 
+        // ---- Chips de item ------------------------------------------------------
+
+        // Un chip por item, apilados encima del dado y con un pequeño stagger para que se
+        // lean uno por uno (Botas +1, Guantelete -1). No demoran el reveal: el rango ya se
+        // publicó con la cara firme, el chip es solo la explicación de "por qué +N".
+        private void PopChips()
+        {
+            if (_chipTemplate == null || _pendingContributions.Count == 0) return;
+            _chipRoutine = StartCoroutine(PopChipsRoutine());
+        }
+
+        private IEnumerator PopChipsRoutine()
+        {
+            float speed = Mathf.Max(0.01f, Rollgeon.Timing.GameSpeedPrefs.Multiplier);
+            for (int i = 0; i < _pendingContributions.Count; i++)
+            {
+                var contribution = _pendingContributions[i];
+                var chip = ChipAt(i);
+                string label = MovementDieChipFormat.Label(
+                    BreakdownIconResolver.ResolveDisplayName(contribution.SourceAsset),
+                    contribution.Delta, _chipPositiveColor, _chipNegativeColor);
+                chip.transform.localScale = Vector3.one;
+                chip.Show(BreakdownIconResolver.Resolve(contribution.SourceAsset), label, _chipFallbackIcon);
+                if (_chipPunch > 0f)
+                    _chipTweens.Add(Tween.PunchScale(chip.transform, Vector3.one * _chipPunch,
+                                                     _chipPunchSeconds / speed, frequency: 3));
+                PlayProc();
+                if (i < _pendingContributions.Count - 1 && _chipStaggerSeconds > 0f)
+                    yield return new WaitForSeconds(_chipStaggerSeconds / speed);
+            }
+            _chipRoutine = null;
+        }
+
+        private ModifierEntryView ChipAt(int index)
+        {
+            while (_chips.Count <= index)
+            {
+                var parent = _chipsRoot != null ? _chipsRoot : (RectTransform)_chipTemplate.transform.parent;
+                var chip = Instantiate(_chipTemplate, parent);
+                chip.name = _chipTemplate.name + "_" + _chips.Count;
+                chip.Hide();
+                _chips.Add(chip);
+            }
+            return _chips[index];
+        }
+
+        private void HideChips()
+        {
+            if (_chipRoutine != null)
+            {
+                StopCoroutine(_chipRoutine);
+                _chipRoutine = null;
+            }
+            for (int i = 0; i < _chipTweens.Count; i++)
+                if (_chipTweens[i].isAlive) _chipTweens[i].Stop();
+            _chipTweens.Clear();
+            for (int i = 0; i < _chips.Count; i++)
+            {
+                if (_chips[i] == null) continue;
+                _chips[i].transform.localScale = Vector3.one;
+                _chips[i].Hide();
+            }
+        }
+
+        private void PlayProc()
+        {
+            if (_procClip == null) return;
+            if (ServiceLocator.TryGetService<IAudioService>(out var audio) && audio != null)
+                audio.PlaySfx2D(_procClip, _procVolume);
+        }
+
         private void HideInstant()
         {
             if (_slot != null) _slot.gameObject.SetActive(false);
             if (_bonusLabel != null) _bonusLabel.gameObject.SetActive(false);
+            HideChips();
             if (_group != null) _group.alpha = 0f;
             if (_rect != null)
             {
