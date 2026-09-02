@@ -1961,6 +1961,190 @@ MonoBehaviour:
     m_Localized: +9 de oro al resolver el combo Generala.
     m_Metadata:
       m_Items: []
+  - m_Id: 17663438099935232
+    m_Localized: "L\xE1grima del N\xFAmero Alto "
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17663438099935233
+    m_Localized: "+3HP cuando resolves el combo N\xFAmero Alto."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17664642464968704
+    m_Localized: "L\xE1grima de la Cima"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17664642464968705
+    m_Localized: "+5HP al resolver el combo de N\xFAmero Alto."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17665764047024128
+    m_Localized: "L\xE1grima del M\xE1ximo"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17665764047024129
+    m_Localized: "+10HP cuando resolves el combo N\xFAmero Alto."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17666434531684352
+    m_Localized: "L\xE1grima Celestial"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17666434531684353
+    m_Localized: "+15HP al resolver el combo N\xFAmero Alto."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17666773171400704
+    m_Localized: "L\xE1grima del Par"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17666773171400705
+    m_Localized: +3HP al resolver el combo Par.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17667966006292480
+    m_Localized: "L\xE1grima de los Iguales"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17667966006292481
+    m_Localized: +5HP al resolver el combo Par.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17668242146684928
+    m_Localized: "L\xE1grima de los Gemelos"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17668242146684929
+    m_Localized: +10HP al resolver el combo Par.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17668491556777984
+    m_Localized: "L\xE1grima de los Dos Eternos"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17668491556777985
+    m_Localized: +15HP al resolver el combo Par.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17668768288567296
+    m_Localized: "L\xE1grima del Doble Par"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17668768288567297
+    m_Localized: +3HP al resolver el combo Doble Par.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17668979413053440
+    m_Localized: "L\xE1grima de los Vinculos"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17668979413053441
+    m_Localized: +5HP al resolver el combo Doble Par.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17669438366380032
+    m_Localized: "L\xE1grima del Duplicado"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17669438366380033
+    m_Localized: +10HP al resolver el combo Doble Par.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17671520196587520
+    m_Localized: "L\xE1grima del Reflejo Dorado"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17671520196587521
+    m_Localized: +15HP al resolver el combo Doble Par.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17672515643338752
+    m_Localized: "L\xE1grima del Trio"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17672515643338753
+    m_Localized: +3HP al resolver el combo Trio.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17672720308596736
+    m_Localized: "L\xE1grima del Triple"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17672720308596737
+    m_Localized: +5HP al resolver el combo Trio.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17672938596954112
+    m_Localized: "L\xE1grima de la Trinidad"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17672938596954113
+    m_Localized: +10HP al resolver el combo Trio.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17673235272658944
+    m_Localized: "L\xE1grima de los Tres Eternos"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17673235272658945
+    m_Localized: +15HP al resolver el combo Trio.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17673440302821376
+    m_Localized: "L\xE1grima del Full House"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17673440302821377
+    m_Localized: +3HP al resolver el combo de Full House.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17673663217496064
+    m_Localized: "L\xE1grima de la Familia"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17673663217496065
+    m_Localized: +5HP al resolver el combo de Full House.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17674521745387520
+    m_Localized: "L\xE1grima del Linaje"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17674521745387521
+    m_Localized: +10HP al resolver el combo Full House.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17674908321804288
+    m_Localized: "L\xE1grima de la Estirpe Eterna"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17674908321804289
+    m_Localized: +15HP al resolver el combo Full House.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17676705266495488
+    m_Localized: "L\xE1grima del Poker"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17676705266495489
+    m_Localized: +3HP al resolver el combo de Poker.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17677766232469504
+    m_Localized: "L\xE1grima del Cuarteto"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17677766232469505
+    m_Localized: +5HP al resolver combo Poker.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17678145762455552
+    m_Localized: "L\xE1grima de los Cuatro Reyes"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17678145762455553
+    m_Localized: +10HP al resolver combo Poker.
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

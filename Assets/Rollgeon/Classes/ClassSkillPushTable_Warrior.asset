@@ -16,11 +16,11 @@ MonoBehaviour:
   - ComboId: combo.pair
     Tiles: 1
   - ComboId: combo.double_pair
-    Tiles: 1
+    Tiles: 2
   - ComboId: combo.higher_number
     Tiles: 0
   - ComboId: combo.trio
-    Tiles: 2
+    Tiles: 3
   - ComboId: combo.full_house
     Tiles: 3
   - ComboId: combo.ladder
