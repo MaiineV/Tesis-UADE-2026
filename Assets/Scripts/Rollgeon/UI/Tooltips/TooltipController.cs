@@ -17,7 +17,8 @@ namespace Rollgeon.UI.Tooltips
         public static TooltipController Instance { get; private set; }
 
         // Por encima de InteractionPromptView (25000): nada debería tapar al tooltip.
-        private const int OverlaySortingOrder = 30000;
+        // Internal: StatusHoverBubble se apila un paso por encima del panel.
+        internal const int OverlaySortingOrder = 30000;
 
         [Required("Arrastrar el RectTransform del panel visual (Image + TMP).")]
         [SerializeField] private RectTransform _root;
@@ -139,8 +140,10 @@ namespace Rollgeon.UI.Tooltips
             return null;
         }
 
-        // overrideSorting saca al tooltip de la pelea de orden del HUD. Sin GraphicRaycaster
-        // a propósito: nunca intercepta el mouse.
+        // overrideSorting saca al tooltip de la pelea de orden del HUD. El GraphicRaycaster
+        // existe SOLO para las placas de la fila del pie (TooltipStatusSlotHover): todo el
+        // resto del panel mantiene raycastTarget=false, así que el mouse sigue pasando de
+        // largo salvo exactamente sobre un slot.
         private void EnsureOverlaySorting()
         {
             if (_root == null) return;
@@ -152,6 +155,9 @@ namespace Rollgeon.UI.Tooltips
             }
             rootCanvas.overrideSorting = true;
             rootCanvas.sortingOrder = OverlaySortingOrder;
+
+            if (Application.isPlaying && !_root.TryGetComponent<GraphicRaycaster>(out _))
+                _root.gameObject.AddComponent<GraphicRaycaster>();
         }
 
         private void OnDestroy()

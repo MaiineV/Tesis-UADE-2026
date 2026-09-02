@@ -71,6 +71,24 @@ namespace Rollgeon.UI.Tests
         }
 
         [Test]
+        public void Show_GuardaElEstadoCompleto_ParaLaBurbujaDelHover()
+        {
+            // Arrange
+            var state = new StatusIconState("status.stun", "Aturdido",
+                                            "Pierde su turno.", _sprite, active: true,
+                                            remainingTurns: 2);
+
+            // Act
+            _view.Show(state);
+
+            // Assert — TooltipStatusSlotHover arma su burbuja de CurrentState: si la tarjeta
+            // no lo retiene tal cual, la burbuja mostraría otro estado que la placa.
+            Assert.AreEqual("status.stun", _view.CurrentState.Id);
+            Assert.AreEqual(2, _view.CurrentState.RemainingTurns);
+            Assert.AreEqual("Aturdido", _view.CurrentState.DisplayName);
+        }
+
+        [Test]
         public void SinArte_ElBloqueDelIconoSeVaEntero()
         {
             _view.Show(new StatusIconState("intent.bomb_field", "Siembra bombas",

@@ -20,3 +20,6 @@ using System.Runtime.CompilerServices;
 // HeroActionTooltip.ResolveActionNameKey: el mapeo slot→key de localización se testea
 // como función pura, sin montar el runtime de Localization.
 [assembly: InternalsVisibleTo("Rollgeon.UI.Tests")]
+// AllEnemyRangesOverlay.Repaint(order): la selección de quién se pinta se testea contra
+// una lista de guids, sin armar un TurnOrderService real con initiative para cada caso.
+[assembly: InternalsVisibleTo("Rollgeon.Combat.AI.Tests")]

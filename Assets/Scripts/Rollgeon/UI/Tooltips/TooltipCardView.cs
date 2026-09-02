@@ -44,9 +44,17 @@ namespace Rollgeon.UI.Tooltips
         /// <summary>Id del estado que esta tarjeta está mostrando — la columna lo usa para reusarla.</summary>
         public string CardId { get; private set; }
 
+        /// <summary>
+        /// El estado completo que la tarjeta muestra ahora. <see cref="TooltipStatusSlotHover"/>
+        /// arma su burbuja de acá — la tarjeta ya lo tiene y pedirlo de vuelta al provider
+        /// desincronizaría burbuja y placa.
+        /// </summary>
+        public StatusIconState CurrentState { get; private set; }
+
         public void Show(in StatusIconState state)
         {
             CardId = state.Id;
+            CurrentState = state;
             name = string.IsNullOrEmpty(state.Id) ? "TooltipCard" : $"TooltipCard_{state.Id}";
 
             // Sin arte el bloque del ícono se va entero: prendido reservaría su ancho y el
