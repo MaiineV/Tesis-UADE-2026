@@ -96,28 +96,25 @@ namespace Rollgeon.Editor.Tools.HUD.Tests
         }
 
         [Test]
-        public void LaFamiliaVaEnElRenglonDelNombre_ALaDerecha()
+        public void LaFamiliaVaDebajoDelNombre()
         {
             var panel = LoadPanel();
 
-            // "The Croupier   Boss · Ranged" en un solo renglón (pedido del 30/08 — pisa la
-            // versión apilada del mockup). Si el path falta, falta re-correr los menús
-            // Rollgeon/Tooltips/8 y 3 sobre el prefab.
+            // Si los paths faltan, falta re-correr los menús Rollgeon/Tooltips/8 y 3.
             var name = panel.Find("HeaderBox/Identity/TitleRow/Name");
-            var type = panel.Find("HeaderBox/Identity/TitleRow/Type");
+            var type = panel.Find("HeaderBox/Identity/Type");
             Assert.IsNotNull(name, "El panel no tiene 'HeaderBox/Identity/TitleRow/Name'.");
             Assert.IsNotNull(type,
-                "La familia no está en el renglón del nombre: 'Boss · Ranged' va a la DERECHA " +
-                "de 'The Croupier'.");
-            Assert.Greater(type.GetSiblingIndex(), name.GetSiblingIndex(),
-                "La familia quedó ANTES del nombre en la fila: se lee 'Boss · Ranged " +
-                "The Croupier'.");
+                "La familia va DEBAJO del renglón del nombre, como hija directa de Identity.");
+            Assert.IsNull(panel.Find("HeaderBox/Identity/TitleRow/Type"),
+                "La familia sigue adentro del renglón del nombre.");
+            Assert.Greater(type.GetSiblingIndex(), type.parent.Find("TitleRow").GetSiblingIndex(),
+                "La familia quedó ARRIBA del renglón del nombre.");
 
             var element = type.GetComponent<LayoutElement>();
             if (element != null)
                 Assert.Less(element.preferredWidth, 0f,
-                    "El Type conserva un preferredWidth fijo: adentro de la fila del nombre " +
-                    "eso ensancha el panel entero.");
+                    "El Type conserva un preferredWidth fijo: eso ensancha el panel entero.");
         }
 
         [Test]

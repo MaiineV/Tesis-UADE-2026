@@ -59,7 +59,7 @@ namespace Rollgeon.UI.Tooltips
         [Tooltip("Nombre de la unidad. Null = banda apagada.")]
         [SerializeField] private TMP_Text _nameLabel;
 
-        [Tooltip("Familia de la unidad, al lado del nombre.")]
+        [Tooltip("Familia de la unidad, debajo del nombre.")]
         [SerializeField] private TMP_Text _typeLabel;
 
         [SerializeField] private GameObject _vitalsRoot;

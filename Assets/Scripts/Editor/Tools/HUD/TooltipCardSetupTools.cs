@@ -61,9 +61,6 @@ namespace Rollgeon.EditorTools.HUD
         private const float ParagraphFont = 26f;
 
 
-        /// <summary>Con menos aire, la familia se lee como la última palabra del nombre.</summary>
-        private const float FamilyGap = 24f;
-
         /// <summary>
         /// Cuánto se mete la columna de tarjetas para adentro de cada lado: las placas 9-slice
         /// del header y de las tarjetas no dibujan sus marcos igual de gruesos. Ajuste óptico.
@@ -734,26 +731,27 @@ namespace Rollgeon.EditorTools.HUD
                 identityLayout.childForceExpandHeight = false;
                 Ensure<LayoutElement>(identity.gameObject).preferredWidth = ContentWidth;
 
-                // Alineados abajo: la familia, más chica, comparte la línea de base del nombre.
+                // Alineados abajo: la vida comparte la línea de base del nombre.
                 var titleRow = EnsureChildRect(identity, "TitleRow", Vector2.zero, Vector2.zero);
                 var titleRowLayout = Ensure<HorizontalLayoutGroup>(titleRow.gameObject);
-                titleRowLayout.spacing = FamilyGap;
+                titleRowLayout.spacing = 12f;
                 titleRowLayout.childAlignment = TextAnchor.LowerLeft;
                 titleRowLayout.childControlWidth = true;
                 titleRowLayout.childControlHeight = true;
                 titleRowLayout.childForceExpandWidth = false;
                 titleRowLayout.childForceExpandHeight = false;
 
-                // En un prefab viejo, Name/Type/Vitals pueden vivir un nivel arriba; sin
-                // moverlos, los Ensure* crearían un segundo juego.
+                // En un prefab viejo los hijos pueden vivir en otro nivel; sin moverlos, los
+                // Ensure* crearían un segundo juego. Type baja del renglón del nombre.
                 Reparent(identity, "Name", titleRow);
-                Reparent(identity, "Type", titleRow);
+                Reparent(titleRow, "Type", identity);
 
                 var nameLabel = EnsureLabel(titleRow, "Name", 31f, TextAlignmentOptions.Left, PanelInk);
                 nameLabel.fontStyle = FontStyles.Bold;
                 nameLabel.textWrappingMode = TextWrappingModes.NoWrap;
 
-                var typeLabel = EnsureLabel(titleRow, "Type", 22f, TextAlignmentOptions.Left,
+                // La familia, en su propio renglón debajo del nombre.
+                var typeLabel = EnsureLabel(identity, "Type", 22f, TextAlignmentOptions.Left,
                                             PanelInkFamily);
                 typeLabel.textWrappingMode = TextWrappingModes.NoWrap;
                 // Sin ancho propio: un preferredWidth fijo impondría el ancho del panel entero.
@@ -852,10 +850,10 @@ namespace Rollgeon.EditorTools.HUD
 
                     // Orden explícito porque Ensure* agrega al final.
                     titleRow.SetSiblingIndex(0);
-                    nameLabel.transform.SetSiblingIndex(0);
                     typeLabel.transform.SetSiblingIndex(1);
-                    spacer.SetSiblingIndex(2);
-                    vitals.SetSiblingIndex(3);
+                    nameLabel.transform.SetSiblingIndex(0);
+                    spacer.SetSiblingIndex(1);
+                    vitals.SetSiblingIndex(2);
 
                     // Lo que necesitás mientras peleás va primero.
                     identity.SetAsFirstSibling();
