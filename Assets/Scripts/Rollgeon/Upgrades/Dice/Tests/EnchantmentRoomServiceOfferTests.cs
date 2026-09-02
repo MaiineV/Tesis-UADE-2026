@@ -431,5 +431,120 @@ namespace Rollgeon.Upgrades.Dice.Tests
             Assert.AreEqual(3, _enchSvc.Bag.GetEnchantmentCount(0));
             CollectionAssert.AreEqual(applied, _enchSvc.Bag.GetEnchantments(0));
         }
+        // ====================================================================
+        // RollOffer — slot maldito garantizado (Moneda Maldita)
+        // ====================================================================
+
+        private sealed class FakeWeightService : IEnchantmentWeightModifierService
+        {
+            public float Multiplier = 1f;
+            public void Register(string sourceId, float cursedWeightMultiplier) { }
+            public void Unregister(string sourceId) { }
+            public float ResolveCursedMultiplier() => Multiplier;
+        }
+
+        private EnchantmentSO MakeCursed(string id, IFaceFilter filter = null)
+        {
+            var ench = MakeEnchantment(id, filter);
+            typeof(EnchantmentSO).GetField("_capabilities", BindingFlags.NonPublic | BindingFlags.Instance)
+                ?.SetValue(ench, new List<IEnchantmentCapability> { new CapCursed() });
+            return ench;
+        }
+
+        private EnchantmentSO[] MakeManyPlain(int count)
+        {
+            var result = new EnchantmentSO[count];
+            for (int i = 0; i < count; i++) result[i] = MakeEnchantment("ench.plain." + i);
+            return result;
+        }
+
+        private static bool AnyCursed(IReadOnlyList<EnchantmentSO> options)
+        {
+            for (int i = 0; i < options.Count; i++)
+                if (EnchantmentPoolSO.IsCursedForPool(options[i])) return true;
+            return false;
+        }
+
+        [Test]
+        public void RollOffer_CursedMultiplierActive_EveryOfferIncludesACursedOption()
+        {
+            // Arrange — 8 normales + 1 maldito: sin garantía, 2 de cada 3 ofertas
+            // saldrían sin maldito aun con el ×3.
+            var bag = MakeBag(DiceType.D6);
+            var config = MakeConfig(baseCost: 10);
+            var plain = MakeManyPlain(8);
+            var cursed = MakeCursed("ench.cursed");
+            var pool = MakePool(plain.Concat(new[] { cursed }).ToArray());
+            BuildHarness(config, pool, bag, startingGold: 100000);
+            ServiceLocator.AddService<IEnchantmentWeightModifierService>(
+                new FakeWeightService { Multiplier = 3f }, ServiceScope.Global);
+
+            for (int seed = 1; seed <= 40; seed++)
+            {
+                _roomSvc.ConfigureForTests(new System.Random(seed));
+                _roomSvc.ClearOffer();
+
+                // Act
+                var result = _roomSvc.RollOffer(Guid.NewGuid());
+
+                // Assert
+                Assert.IsTrue(result.Success, result.ErrorMessage);
+                Assert.AreEqual(EnchantmentRoomService.OfferSize, result.Offer.Options.Count, "seed " + seed);
+                CollectionAssert.AllItemsAreUnique(result.Offer.Options, "seed " + seed);
+                Assert.IsTrue(AnyCursed(result.Offer.Options), "seed " + seed + ": oferta sin maldito con Moneda Maldita activa");
+            }
+        }
+
+        [Test]
+        public void RollOffer_NoCursedMultiplier_OffersCanComeWithoutCursed()
+        {
+            // Arrange — mismo pool, sin item: la garantía NO debe activarse.
+            var bag = MakeBag(DiceType.D6);
+            var config = MakeConfig(baseCost: 10);
+            var plain = MakeManyPlain(8);
+            var cursed = MakeCursed("ench.cursed");
+            var pool = MakePool(plain.Concat(new[] { cursed }).ToArray());
+            BuildHarness(config, pool, bag, startingGold: 100000);
+            ServiceLocator.AddService<IEnchantmentWeightModifierService>(
+                new FakeWeightService { Multiplier = 1f }, ServiceScope.Global);
+
+            int withoutCursed = 0;
+            for (int seed = 1; seed <= 40; seed++)
+            {
+                _roomSvc.ConfigureForTests(new System.Random(seed));
+                _roomSvc.ClearOffer();
+                var result = _roomSvc.RollOffer(Guid.NewGuid());
+                Assert.IsTrue(result.Success, result.ErrorMessage);
+                if (!AnyCursed(result.Offer.Options)) withoutCursed++;
+            }
+
+            Assert.Greater(withoutCursed, 0, "sin multiplicador la oferta no debe forzar malditos");
+        }
+
+        [Test]
+        public void RollOffer_CursedGuarantee_CursedIncoherentWithEveryDie_LeavesOfferIntact()
+        {
+            // Arrange — el único maldito es "solo impares" y el único dado ya tiene
+            // "solo pares": no hay maldito válido → la oferta queda con los 3 normales.
+            var bag = MakeBag(DiceType.D6);
+            var config = MakeConfig(baseCost: 10);
+            var evens = MakeEnchantment("ench.evens", filter: new ParityFilter { Allowed = Parity.Even });
+            var plain = MakeManyPlain(5);
+            var cursedOdds = MakeCursed("ench.cursed.odds", filter: new ParityFilter { Allowed = Parity.Odd });
+            var pool = MakePool(plain.Concat(new[] { cursedOdds }).ToArray());
+            BuildHarness(config, pool, bag, startingGold: 100000);
+            ServiceLocator.AddService<IEnchantmentWeightModifierService>(
+                new FakeWeightService { Multiplier = 3f }, ServiceScope.Global);
+            _enchSvc.Apply(0, evens);
+
+            // Act
+            var result = _roomSvc.RollOffer(Guid.NewGuid());
+
+            // Assert
+            Assert.IsTrue(result.Success, result.ErrorMessage);
+            Assert.AreEqual(EnchantmentRoomService.OfferSize, result.Offer.Options.Count);
+            CollectionAssert.DoesNotContain(result.Offer.Options, cursedOdds);
+            CollectionAssert.AllItemsAreUnique(result.Offer.Options);
+        }
     }
 }

@@ -145,8 +145,7 @@ namespace Rollgeon.Upgrades.Dice
             var exclude = new HashSet<EnchantmentSO>();
             var options = new List<EnchantmentSO>(OfferSize);
             int floorDepth = ResolveFloorDepth();
-            const int MaxAttempts = 24;
-            for (int attempt = 0; attempt < MaxAttempts && options.Count < OfferSize; attempt++)
+            for (int attempt = 0; attempt < MaxRollAttempts && options.Count < OfferSize; attempt++)
             {
                 var rolled = _pool.Roll(_rng, bag.Dice, floorDepth, exclude);
                 if (rolled == null) break;
@@ -157,6 +156,8 @@ namespace Rollgeon.Upgrades.Dice
                 if (!IsValidForAnyDie(enchSvc, bag, rolled)) continue;
                 options.Add(rolled);
             }
+
+            EnsureCursedGuarantee(options, exclude, enchSvc, bag, floorDepth);
 
             if (options.Count == 0)
             {
@@ -203,6 +204,48 @@ namespace Rollgeon.Upgrades.Dice
             return EnchantmentRollResult.Ok(chosen, offer.GoldPaid, apply.ProjectedFaces);
         }
 
+        /// <summary>
+        /// Moneda Maldita: con multiplicador de malditos activo, la oferta trae AL MENOS
+        /// un maldito. El ×3 sobre el pool real (5 Caos de 34, todos peso 1) dejaba ~1 de
+        /// cada 3 ofertas sin ninguno — el item prometía algo que la ruleta no cumplía.
+        /// Si ya salió uno, no toca nada; si no, rolea solo-malditos y lo mete en el
+        /// último slot (o lo agrega si la oferta vino corta). Sin candidato maldito válido
+        /// para algún dado, la oferta queda como estaba.
+        /// </summary>
+        private void EnsureCursedGuarantee(
+            List<EnchantmentSO> options,
+            HashSet<EnchantmentSO> exclude,
+            IDiceEnchantmentService enchSvc,
+            RuntimeDiceBag bag,
+            int floorDepth)
+        {
+            if (!IsCursedGuaranteeActive()) return;
+            for (int i = 0; i < options.Count; i++)
+            {
+                if (EnchantmentPoolSO.IsCursedForPool(options[i])) return;
+            }
+
+            for (int attempt = 0; attempt < MaxRollAttempts; attempt++)
+            {
+                var rolled = _pool.Roll(_rng, bag.Dice, floorDepth, exclude, EnchantmentPoolSO.IsCursedForPool);
+                if (rolled == null || exclude.Contains(rolled)) return;
+                exclude.Add(rolled);
+                if (!IsValidForAnyDie(enchSvc, bag, rolled)) continue;
+
+                if (options.Count < OfferSize) options.Add(rolled);
+                else options[options.Count - 1] = rolled;
+                return;
+            }
+        }
+
+        /// <summary>Hay una fuente (item) escalando el peso de malditos por encima de 1.</summary>
+        private static bool IsCursedGuaranteeActive()
+        {
+            return ServiceLocator.TryGetService<IEnchantmentWeightModifierService>(out var svc)
+                   && svc != null
+                   && svc.ResolveCursedMultiplier() > 1.001f;
+        }
+
         private static bool IsValidForAnyDie(IDiceEnchantmentService enchSvc, RuntimeDiceBag bag, EnchantmentSO ench)
         {
             for (int i = 0; i < bag.Dice.Count; i++)
@@ -218,6 +261,9 @@ namespace Rollgeon.Upgrades.Dice
 
         /// <summary>Opciones reveladas por roll — GDD: 3.</summary>
         public const int OfferSize = 3;
+
+        /// <summary>Tope de rolls por pasada contra el pool (candidatos incoherentes se descartan).</summary>
+        private const int MaxRollAttempts = 24;
 
         private const string AltarRollKey = "altar_roll_count";
 
