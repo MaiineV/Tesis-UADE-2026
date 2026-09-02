@@ -1,29 +1,20 @@
 using System.Collections.Generic;
+using Rollgeon.EditorTools.Localization;
 using Rollgeon.Items;
-using Rollgeon.Localization;
-using UnityEditor;
-using UnityEditor.Localization;
-using UnityEngine.Localization;
-using UnityEngine.Localization.Tables;
 
 namespace Rollgeon.Editor.Tools.Item
 {
     /// <summary>
-    /// Los textos localizados de un ítem, por idioma.
+    /// Los textos localizados de un ítem, por idioma. Wrapper fino sobre
+    /// <see cref="ContentLocalizationBridge"/> — la plomería de Unity.Localization vive
+    /// allá (compartida con encantamientos); acá queda solo lo tipado a <see cref="ItemSO"/>.
     /// </summary>
     /// <remarks>
-    /// <para>
-    /// Junta todas las llamadas a Unity.Localization en un lugar, igual que
-    /// <see cref="ItemShopPriceBridge"/> hace con el <c>ShopPool</c>: el resto de la tool habla de
-    /// "el nombre en español", no de colecciones, <c>SharedTableData</c> y <c>LocaleIdentifier</c>.
-    /// </para>
-    /// <para>
     /// <b>Por qué existe.</b> <c>ItemSO.DisplayName</c> no es lo que ve el jugador — es el fallback.
     /// <c>LocalizedContent.Name(itemId, so.DisplayName)</c> devuelve la entrada de la tabla
     /// <c>Content</c> si existe, y como el asistente siembra las dos keys al crear, el campo del
     /// asset queda pisado desde el minuto cero. Editarlo en la tool no cambiaba nada en el juego y
     /// nada lo avisaba: los textos reales sólo se podían tocar abriendo la ventana de Localization.
-    /// </para>
     /// </remarks>
     public static class ItemLocalizationBridge
     {
@@ -44,83 +35,28 @@ namespace Rollgeon.Editor.Tools.Item
         }
 
         /// <summary>Los códigos de locale del proyecto (<c>es</c>, <c>en</c>), en orden estable.</summary>
-        public static IReadOnlyList<string> Locales()
-        {
-            var result = new List<string>();
-            foreach (var locale in LocalizationEditorSettings.GetLocales())
-                if (locale != null) result.Add(locale.Identifier.Code);
+        public static IReadOnlyList<string> Locales() => ContentLocalizationBridge.Locales();
 
-            // Alfabético y no el orden del proyecto: así la botonera no se reordena sola cuando
-            // alguien agrega un idioma.
-            result.Sort(System.StringComparer.Ordinal);
-            return result;
-        }
-
-        public static string DisplayNameOf(string localeCode)
-        {
-            foreach (var locale in LocalizationEditorSettings.GetLocales())
-                if (locale != null && locale.Identifier.Code == localeCode)
-                    return locale.LocaleName;
-            return localeCode;
-        }
+        public static string DisplayNameOf(string localeCode) => ContentLocalizationBridge.DisplayNameOf(localeCode);
 
         /// <summary>Lo que hay hoy en la tabla para <paramref name="itemId"/> en ese idioma.</summary>
         public static Entry Read(string itemId, string localeCode)
         {
-            var table = TableFor(localeCode);
-            if (table == null || string.IsNullOrEmpty(itemId)) return default;
-
-            return new Entry(
-                table.GetEntry(itemId + LocalizedContent.NameSuffix)?.Value,
-                table.GetEntry(itemId + LocalizedContent.DescSuffix)?.Value);
+            var entry = ContentLocalizationBridge.Read(itemId, localeCode);
+            return new Entry(entry.Name, entry.Description);
         }
 
         /// <summary>
-        /// Escribe el nombre y la descripción de un idioma, con Undo.
+        /// Escribe el nombre y la descripción de un idioma, con Undo. Crea la key en la
+        /// <c>SharedTableData</c> si falta.
         /// </summary>
-        /// <remarks>
-        /// Crea la key en la <c>SharedTableData</c> si falta: un ítem cuya key nunca se sembró (o a
-        /// la que le borraron la entrada) tiene que poder empezar a traducirse desde acá igual.
-        /// </remarks>
         public static void Write(string itemId, string localeCode, string name, string description)
-        {
-            if (string.IsNullOrEmpty(itemId)) return;
-
-            var collection = LocalizationEditorSettings.GetStringTableCollection(LocalizedContent.ContentTable);
-            if (collection == null) return;
-
-            var table = collection.GetTable(new LocaleIdentifier(localeCode)) as StringTable;
-            if (table == null) return;
-
-            Undo.RecordObjects(
-                new UnityEngine.Object[] { table, collection.SharedData }, "Edit Item Text");
-
-            SetEntry(collection, table, itemId + LocalizedContent.NameSuffix, name);
-            SetEntry(collection, table, itemId + LocalizedContent.DescSuffix, description);
-
-            EditorUtility.SetDirty(table);
-            EditorUtility.SetDirty(collection.SharedData);
-        }
-
-        static void SetEntry(StringTableCollection collection, StringTable table, string key, string value)
-        {
-            if (collection.SharedData.GetEntry(key) == null) collection.SharedData.AddKey(key);
-
-            var entry = table.GetEntry(key);
-            if (entry == null) table.AddEntry(key, value ?? string.Empty);
-            else entry.Value = value ?? string.Empty;
-        }
-
-        static StringTable TableFor(string localeCode)
-        {
-            var collection = LocalizationEditorSettings.GetStringTableCollection(LocalizedContent.ContentTable);
-            return collection?.GetTable(new LocaleIdentifier(localeCode)) as StringTable;
-        }
+            => ContentLocalizationBridge.Write(itemId, localeCode, name, description, "Edit Item Text");
 
         /// <summary>
         /// El idioma en el que se autora el proyecto. Es el que sincroniza el fallback del asset.
         /// </summary>
-        public const string AuthoringLocale = "es";
+        public const string AuthoringLocale = ContentLocalizationBridge.AuthoringLocale;
 
         /// <summary>Lo que el juego mostraría hoy: la tabla si tiene entrada, si no el campo del asset.</summary>
         public static string EffectiveName(ItemSO item, string localeCode) =>
