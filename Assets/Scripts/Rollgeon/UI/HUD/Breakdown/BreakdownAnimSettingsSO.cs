@@ -46,6 +46,28 @@ namespace Rollgeon.UI.HUD.Breakdown
         [MinValue(0.05f), Tooltip("Vuelo del '-X' de mitigación hacia el total.")]
         public float MitigationSeconds = 0.3f;
 
+        [Title("Candado (Forzar Puerta, post-choque)")]
+        [MinValue(0f), Tooltip("Split: el total sube a la izquierda y el umbral sale del centro a la derecha.")]
+        public float ThresholdSplitSeconds = 0.18f;
+
+        [Tooltip("Desplazamiento del split en px (x: hacia afuera de cada lado; y: cuánto sube el total).")]
+        public Vector2 ThresholdSplitPixels = new Vector2(90f, 24f);
+
+        [MinValue(0.05f), Tooltip("Viaje de ambos valores hacia el candado (acelerando).")]
+        public float ThresholdTravelSeconds = 0.22f;
+
+        [MinValue(0f), Tooltip("Hold del resultado (candado abierto/cerrado) antes de liberar el gate.")]
+        public float ThresholdHoldSeconds = 0.6f;
+
+        [MinValue(0f), Tooltip("Amplitud de la sacudida del candado cuando queda cerrado.")]
+        public float PadlockShakePixels = 10f;
+
+        [Tooltip("Tinte del valor que pierde el choque (y del total cuando el candado queda cerrado).")]
+        public Color ThresholdFailColor = new Color32(0xC9, 0x4A, 0x4A, 0xFF);
+
+        [Tooltip("Tinte del total cuando el candado se abre.")]
+        public Color ThresholdPassColor = new Color32(0x8A, 0xD9, 0x7A, 0xFF);
+
         [Title("Skip / seguridad")]
         [MinValue(1f), Tooltip("Multiplicador de velocidad del primer click de skip.")]
         public float SkipSpeedMultiplier = 3f;
