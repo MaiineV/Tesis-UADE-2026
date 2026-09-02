@@ -293,14 +293,14 @@ MonoBehaviour:
   _faceFilter:
     rid: -2
   _triggers:
-  - rid: 144068563111248737
+  - rid: 7496091007886557882
   _capabilities: []
   references:
     version: 2
     RefIds:
     - rid: -2
       type: {class: , ns: , asm: }
-    - rid: 144068563111248737
+    - rid: 7496091007886557882
       type: {class: ExecuteEffectsOnDiceEvent, ns: Rollgeon.Upgrades.Dice.Triggers, asm: Rollgeon}
       data:
         Event: 3
@@ -311,17 +311,17 @@ MonoBehaviour:
         Effects:
         - Label: Effect Group
           PreConditions:
-          - rid: 144068563111248738
+          - rid: 7496091007886557883
           Effects:
-          - rid: 144068563111248739
+          - rid: 7496091007886557884
           TargetSelector:
             rid: -2
-    - rid: 144068563111248738
+    - rid: 7496091007886557883
       type: {class: PcCarrierFace, ns: Rollgeon.Upgrades.Dice.PreConditions, asm: Rollgeon}
       data:
         _isConstantValue: 1
         Mode: 3
-    - rid: 144068563111248739
+    - rid: 7496091007886557884
       type: {class: EffAddComboBonus, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
       data:
         Selection:
@@ -346,7 +346,7 @@ MonoBehaviour:
           AutoResolve: 0
           AutoAccept: 1
         _amount:
-          rid: 144068563111248740
-    - rid: 144068563111248740
+          rid: 7496091007886557885
+    - rid: 7496091007886557885
       type: {class: ReadCarrierFace, ns: Rollgeon.Upgrades.Dice.Readers, asm: Rollgeon}
       data: 

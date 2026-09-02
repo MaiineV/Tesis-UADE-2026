@@ -107,12 +107,12 @@ MonoBehaviour:
     rid: -2
   _triggers: []
   _capabilities:
-  - rid: 144068563111248720
+  - rid: 7496091007886557871
   references:
     version: 2
     RefIds:
     - rid: -2
       type: {class: , ns: , asm: }
-    - rid: 144068563111248720
+    - rid: 7496091007886557871
       type: {class: CapLadderStep, ns: Rollgeon.Upgrades.Dice, asm: Rollgeon}
       data: 

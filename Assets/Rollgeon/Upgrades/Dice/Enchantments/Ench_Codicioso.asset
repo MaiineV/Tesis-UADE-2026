@@ -10,7 +10,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 08bf22a1c42d65542958afff3896bd74, type: 3}
-  m_Name: Ench_Codicioso 2
+  m_Name: Ench_Codicioso
   m_EditorClassIdentifier: Rollgeon::Rollgeon.Upgrades.Dice.EnchantmentSO
   serializationData:
     SerializedFormat: 2
@@ -26,10 +26,10 @@ MonoBehaviour:
       Data: ench.codicioso
     - Name: _displayName
       Entry: 1
-      Data: El Caudal
+      Data: Codicioso
     - Name: _description
       Entry: 1
-      Data: El dado participa en combo Doble Par y suma +3 de oro.
+      Data: El dado participa en combo Escalera y suma +5 de oro.
     - Name: _icon
       Entry: 6
       Data: 
@@ -48,7 +48,7 @@ MonoBehaviour:
       Data: 
     - Name: _category
       Entry: 3
-      Data: 4
+      Data: 7
     - Name: _allowedDiceTypes
       Entry: 7
       Data: 1|System.Collections.Generic.List`1[[Rollgeon.Dice.DiceType, Rollgeon]],
@@ -92,7 +92,7 @@ MonoBehaviour:
       Data: 1
     - Name: 
       Entry: 1
-      Data: combo.double_pair
+      Data: combo.ladder
     - Name: 
       Entry: 13
       Data: 
@@ -233,7 +233,7 @@ MonoBehaviour:
       Data: 13|Rollgeon.Effects.Readers.ReadConstantInt, Rollgeon
     - Name: Value
       Entry: 3
-      Data: 3
+      Data: 5
     - Name: 
       Entry: 8
       Data: 
@@ -286,30 +286,30 @@ MonoBehaviour:
   _faceFilter:
     rid: -2
   _triggers:
-  - rid: 3569511772791767492
+  - rid: 7496091007886557847
   _capabilities: []
   references:
     version: 2
     RefIds:
     - rid: -2
       type: {class: , ns: , asm: }
-    - rid: 3569511772791767492
+    - rid: 7496091007886557847
       type: {class: ExecuteEffectsOnDiceEvent, ns: Rollgeon.Upgrades.Dice.Triggers, asm: Rollgeon}
       data:
         Event: 5
         Filter:
           Mode: 2
           ComboIds:
-          - combo.double_pair
+          - combo.ladder
         RequireCarrierParticipates: 1
         Effects:
         - Label: Effect Group
           PreConditions: []
           Effects:
-          - rid: 3569511772791767493
+          - rid: 7496091007886557848
           TargetSelector:
             rid: -2
-    - rid: 3569511772791767493
+    - rid: 7496091007886557848
       type: {class: EffModifyGold, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
       data:
         Selection:
@@ -335,9 +335,9 @@ MonoBehaviour:
           AutoAccept: 1
         Operation: 0
         _amount:
-          rid: 3569511772791767494
+          rid: 7496091007886557849
         _failChainIfInsufficient: 1
-    - rid: 3569511772791767494
+    - rid: 7496091007886557849
       type: {class: ReadConstantInt, ns: Rollgeon.Effects.Readers, asm: Rollgeon}
       data:
-        Value: 3
+        Value: 5

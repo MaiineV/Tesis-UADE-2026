@@ -48,7 +48,7 @@ MonoBehaviour:
       Data: 
     - Name: _category
       Entry: 3
-      Data: 5
+      Data: 6
     - Name: _allowedDiceTypes
       Entry: 7
       Data: 1|System.Collections.Generic.List`1[[Rollgeon.Dice.DiceType, Rollgeon]],
@@ -101,12 +101,12 @@ MonoBehaviour:
     rid: -2
   _triggers: []
   _capabilities:
-  - rid: 144068563111248692
+  - rid: 7496091007886557834
   references:
     version: 2
     RefIds:
     - rid: -2
       type: {class: , ns: , asm: }
-    - rid: 144068563111248692
+    - rid: 7496091007886557834
       type: {class: CapPreventHolding, ns: Rollgeon.Upgrades.Dice, asm: Rollgeon}
       data: 
