@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Rollgeon.Dice;
@@ -68,21 +69,38 @@ namespace Rollgeon.Upgrades.Dice
             int floorDepth,
             IReadOnlyCollection<EnchantmentSO> exclude = null)
         {
+            return Roll(rng, targetTypes, floorDepth, exclude, filter: null);
+        }
+
+        /// <summary>
+        /// Variante con predicado extra sobre el encantamiento (ej. "solo malditos" para el
+        /// slot garantizado de Moneda Maldita). El filtro se aplica en las dos pasadas —
+        /// incluida la que ignora el exclude — así un roll "solo malditos" nunca devuelve
+        /// un bendecido por fallback.
+        /// </summary>
+        public EnchantmentSO Roll(
+            System.Random rng,
+            IReadOnlyList<DiceType> targetTypes,
+            int floorDepth,
+            IReadOnlyCollection<EnchantmentSO> exclude,
+            Func<EnchantmentSO, bool> filter)
+        {
             if (Entries == null || Entries.Count == 0) return null;
             if (targetTypes == null || targetTypes.Count == 0) return null;
 
-            EnchantmentSO picked = TryRollFiltered(rng, targetTypes, floorDepth, exclude);
+            EnchantmentSO picked = TryRollFiltered(rng, targetTypes, floorDepth, exclude, filter);
             if (picked != null) return picked;
 
             // Fallback: ignorar el exclude por si todos los compatibles ya están aplicados.
-            return TryRollFiltered(rng, targetTypes, floorDepth, exclude: null);
+            return TryRollFiltered(rng, targetTypes, floorDepth, exclude: null, filter);
         }
 
         private EnchantmentSO TryRollFiltered(
             System.Random rng,
             IReadOnlyList<DiceType> targetTypes,
             int floorDepth,
-            IReadOnlyCollection<EnchantmentSO> exclude)
+            IReadOnlyCollection<EnchantmentSO> exclude,
+            Func<EnchantmentSO, bool> filter)
         {
             // Resuelto UNA vez por roll y aplicado idéntico en la acumulación y en el
             // cursor — si difieren, la ruleta queda sesgada respecto del total.
@@ -91,7 +109,7 @@ namespace Rollgeon.Upgrades.Dice
             float total = 0f;
             for (int i = 0; i < Entries.Count; i++)
             {
-                if (!IsEligible(Entries[i], targetTypes, floorDepth, exclude)) continue;
+                if (!IsEligible(Entries[i], targetTypes, floorDepth, exclude, filter)) continue;
                 total += EffectiveWeight(Entries[i], cursedMult);
             }
             if (total <= 0f) return null;
@@ -100,7 +118,7 @@ namespace Rollgeon.Upgrades.Dice
             float cursor = 0f;
             for (int i = 0; i < Entries.Count; i++)
             {
-                if (!IsEligible(Entries[i], targetTypes, floorDepth, exclude)) continue;
+                if (!IsEligible(Entries[i], targetTypes, floorDepth, exclude, filter)) continue;
                 cursor += EffectiveWeight(Entries[i], cursedMult);
                 if (pick <= cursor) return Entries[i].Enchantment;
             }
@@ -108,7 +126,7 @@ namespace Rollgeon.Upgrades.Dice
             // Floating point drift — fallback al último eligible.
             for (int i = Entries.Count - 1; i >= 0; i--)
             {
-                if (IsEligible(Entries[i], targetTypes, floorDepth, exclude))
+                if (IsEligible(Entries[i], targetTypes, floorDepth, exclude, filter))
                     return Entries[i].Enchantment;
             }
             return null;
@@ -121,12 +139,23 @@ namespace Rollgeon.Upgrades.Dice
         /// </summary>
         private static float EffectiveWeight(WeightedEnchantment entry, float cursedMult)
         {
+            return IsCursedForPool(entry.Enchantment) ? entry.Weight * cursedMult : entry.Weight;
+        }
+
+        /// <summary>
+        /// "Maldito" a efectos del pool: <see cref="EnchantmentCapabilityQueries.IsCursed"/>
+        /// o categoría Caos. Es el mismo criterio que escala el peso con Moneda Maldita y
+        /// el que usa el slot garantizado del altar — si difieren, el item promete una cosa
+        /// y la ruleta entrega otra.
+        /// </summary>
+        public static bool IsCursedForPool(EnchantmentSO ench)
+        {
+            if (ench == null) return false;
             // Caos = taxonomía GDD vigente; Maldicion queda como legacy por si un asset
             // viejo no pasó por Assign Categories.
-            bool cursed = entry.Enchantment.IsCursed()
-                          || entry.Enchantment.Category == EnchantmentCategory.Caos
-                          || entry.Enchantment.Category == EnchantmentCategory.Maldicion;
-            return cursed ? entry.Weight * cursedMult : entry.Weight;
+            return ench.IsCursed()
+                   || ench.Category == EnchantmentCategory.Caos
+                   || ench.Category == EnchantmentCategory.Maldicion;
         }
 
         /// <summary>
@@ -146,9 +175,11 @@ namespace Rollgeon.Upgrades.Dice
             WeightedEnchantment entry,
             IReadOnlyList<DiceType> targetTypes,
             int floorDepth,
-            IReadOnlyCollection<EnchantmentSO> exclude)
+            IReadOnlyCollection<EnchantmentSO> exclude,
+            Func<EnchantmentSO, bool> filter)
         {
             if (entry == null || entry.Enchantment == null) return false;
+            if (filter != null && !filter(entry.Enchantment)) return false;
             if (entry.Weight <= 0f) return false;
             if (entry.MinFloorDepth > floorDepth) return false;
             if (!IsCompatibleWithAny(entry.Enchantment, targetTypes)) return false;

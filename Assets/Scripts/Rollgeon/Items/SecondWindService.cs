@@ -35,12 +35,16 @@ namespace Rollgeon.Items
         {
             var item = FindSecondWindItem(targetId);
             if (item == null) return;
-            if (ServiceLocator.TryGetService<IInventoryService>(out var inv) && inv != null)
-            {
-                inv.RemoveItem(item.ItemId);
-                Debug.Log($"[SecondWindService] '{item.ItemId}' consumido — el jugador quedó " +
-                          $"en {Mathf.Max(1, item.SecondWindRemainingHp)} HP en vez de morir.");
-            }
+            if (!ServiceLocator.TryGetService<IInventoryService>(out var inv) || inv == null) return;
+
+            int remaining = Mathf.Max(1, item.SecondWindRemainingHp);
+            inv.RemoveItem(item.ItemId);
+            Debug.Log($"[SecondWindService] '{item.ItemId}' consumido — el jugador quedó " +
+                      $"en {remaining} HP en vez de morir.");
+
+            // Después de remover: un listener que relea el inventario ya no encuentra la
+            // carga, y el toast de la HUD recibe el SO para nombrarlo.
+            EventManager.Trigger(EventName.OnSecondWindTriggered, targetId, item, remaining);
         }
 
         private static ItemSO FindSecondWindItem(Guid targetId)

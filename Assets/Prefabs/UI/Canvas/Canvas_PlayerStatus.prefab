@@ -609,6 +609,7 @@ GameObject:
   - component: {fileID: 1720057983741314572}
   - component: {fileID: 4026281828689607698}
   - component: {fileID: 6153165306766953016}
+  - component: {fileID: 2383840586990976641}
   m_Layer: 0
   m_Name: HealthStack
   m_TagString: Untagged
@@ -665,6 +666,23 @@ MonoBehaviour:
   _stack: {fileID: 4026281828689607698}
   _label: {fileID: 3293974934458348137}
   _settings: {fileID: 11400000, guid: 2e2f61ebe8fd02d4cb7ef3296918fbc9, type: 2}
+--- !u!114 &2383840586990976641
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 984159568906696452}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 243128866e580324da38bcea8badfd1e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Rollgeon::Rollgeon.UI.HUD.SecondWindFeedbackView
+  _anchor: {fileID: 0}
+  _font: {fileID: 0}
+  _color: {r: 1, g: 0.85, b: 0.35, a: 1}
+  _punch: 0.2
+  _punchSeconds: 0.35
 --- !u!1 &1095665818293773097
 GameObject:
   m_ObjectHideFlags: 0

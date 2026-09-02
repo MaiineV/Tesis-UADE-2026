@@ -1069,6 +1069,26 @@ MonoBehaviour:
     m_Localized: God
     m_Metadata:
       m_Items: []
+  - m_Id: 18000814696218624
+    m_Localized: "\xA1Segundo Aliento!"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18000814771716096
+    m_Localized: "{0} te dej\xF3 en {1} HP."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18000814796881920
+    m_Localized: Caos
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18000814796881921
+    m_Localized: Recursos
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18000814796881922
+    m_Localized: Movimiento
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

@@ -267,6 +267,15 @@ namespace Rollgeon.EditorTools.Localization
                 "Combo repetido: 0 daño",
                 "Repeated combo: 0 damage");
 
+            // Toast de Segundo Aliento sobre la pila de vida (SecondWindFeedbackView):
+            // {0} = nombre del item consumido, {1} = HP con los que quedó el jugador.
+            Ui(UiTextKeys.SecondWindTitle,
+                "¡Segundo Aliento!",
+                "Second Wind!");
+            Ui(UiTextKeys.SecondWindBody,
+                "{0} te dejó en {1} HP.",
+                "{0} left you at {1} HP.");
+
             // Toast al tocar un chip de acción no usable (ActionRejectToast):
             // título + motivo concreto resuelto por PlayerActionButtonsView.
             Ui(UiTextKeys.RejectTitle,
@@ -1212,9 +1221,11 @@ namespace Rollgeon.EditorTools.Localization
                 "El Póker hace +25 daño.",
                 "The Poker deals +25 damage.");
 
+            // Feature#0065 lo pasó de escudo a daño base — el seed tiene que decir lo mismo
+            // que el ItemSO o re-seedear pisa la tabla con el texto viejo.
             Item("instinto.supervivencia", "Instinto de Supervivencia", "Survival Instinct",
-                "Al bajar de 30% HP obtienes +1 escudo.",
-                "When you drop below 30% HP you gain +1 shield.");
+                "Cuando tu vida está en 30 o menos, tu daño base aumenta en 5 puntos.",
+                "When your health is 30 or less, your base damage increases by 5.");
 
             Item("moneda.suerte.par", "Moneda de la suerte", "Lucky Coin",
                 "Cada Par da +2 oro.",

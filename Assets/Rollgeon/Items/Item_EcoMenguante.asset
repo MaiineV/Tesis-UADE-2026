@@ -403,7 +403,7 @@ MonoBehaviour:
   DisplayName: Eco Menguante
   Description: "Empez\xE1s cada combate con da\xF1o x5. Cada ataque lo reduce en
     0.1, hasta x1."
-  Icon: {fileID: 0}
+  Icon: {fileID: 1808964844, guid: ee12da05509c7a74686b1e1cc11cbd3e, type: 3}
   Rarity: 2
   FamilyId: 
   VariantIndex: 0

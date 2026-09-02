@@ -84,10 +84,16 @@ MonoBehaviour:
         Rollgeon]], mscorlib
     - Name: 
       Entry: 12
-      Data: 1
+      Data: 2
     - Name: 
       Entry: 7
       Data: 4|Rollgeon.Upgrades.Dice.CapPreventHolding, Rollgeon
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 5|Rollgeon.Upgrades.Dice.CapCursed, Rollgeon
     - Name: 
       Entry: 8
       Data: 
@@ -101,12 +107,16 @@ MonoBehaviour:
     rid: -2
   _triggers: []
   _capabilities:
-  - rid: 7496091007886557834
+  - rid: 7465468513999127027
+  - rid: 7465468513999127028
   references:
     version: 2
     RefIds:
     - rid: -2
       type: {class: , ns: , asm: }
-    - rid: 7496091007886557834
+    - rid: 7465468513999127027
       type: {class: CapPreventHolding, ns: Rollgeon.Upgrades.Dice, asm: Rollgeon}
+      data: 
+    - rid: 7465468513999127028
+      type: {class: CapCursed, ns: Rollgeon.Upgrades.Dice, asm: Rollgeon}
       data: 
