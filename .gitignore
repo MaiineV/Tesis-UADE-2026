@@ -159,3 +159,6 @@ Rollgeon/.obsidian/core-plugins.json
 # El template sin token vive en docs/setup/docsapp-api.md.
 /.env
 /.env.*
+# Alternativa al .env para agents que no pueden tocar archivos `.env*`:
+# `.secrets/docsapp.env`, mismo formato. docsapp.ps1 lo carga como fallback.
+/.secrets/
