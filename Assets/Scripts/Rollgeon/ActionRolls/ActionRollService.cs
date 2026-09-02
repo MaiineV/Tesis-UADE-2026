@@ -582,9 +582,10 @@ namespace Rollgeon.ActionRolls
 
         /// <summary>
         /// Effective total de Force Door con la fórmula N×M del combate:
-        /// <c>RoundNxM(base_combo + Attack + Σcaras + bonos, M) + ForceDoorRollBonus</c>.
+        /// <c>RoundNxM(base_combo + Attack + Σcaras + bonos + ForceDoorRollBonus, M)</c>.
         /// Sin combo, base 0 con todos los holdeados como caras. El bonus de items
-        /// (Pico de Minero) es flat post-multiplicador — "+5 a la tirada" literal.
+        /// (Pico de Minero) entra a N dentro de <see cref="PlayerComboForceDoor.Resolve"/>
+        /// (journaleado para la animación) — NO se suma acá.
         /// </summary>
         private int ComputeForceDoorEffectiveTotal()
         {
@@ -594,11 +595,10 @@ namespace Rollgeon.ActionRolls
             if (_currentHeldFaces == null || _currentHeldFaces.Length == 0)
                 return ResolveKindRollBonus();
 
-            int nxm = PlayerComboForceDoor.Resolve(_playerGuid,
+            return PlayerComboForceDoor.Resolve(_playerGuid,
                 _currentCombo != null ? _currentComboFlatBase : 0,
                 _currentContributingDice,
                 ActionRollSpec.EffectiveComboMultiplier(in _spec));
-            return nxm + ResolveKindRollBonus();
         }
 
         // Computa los dados contribuyentes de la tirada actual (ver el campo). Con combo

@@ -125,36 +125,66 @@ namespace Rollgeon.Combat.Damage
         /// <summary>
         /// Variante de Forzar Puerta: mismo guion N×M con la fórmula del check
         /// (<see cref="PlayerComboForceDoor"/> — base = combo.BaseDamage layered, no hay
-        /// tabla propia). Solo anuncia con combo real (sin combo no hay desglose que
-        /// animar), y anuncia AUNQUE el threshold falle: ver el número que no alcanzó es
-        /// feedback. El <c>ForceDoorRollBonus</c> de items no entra a la animación (flat
-        /// post-M, se muestra en el label del threshold). Payload sin target: no hay
-        /// paso de mitigación.
+        /// tabla propia). Anuncia con o sin combo (sin combo: base 0 y TODOS los dados
+        /// holdeados como caras, espejo de <c>ActionRollService</c>), y anuncia AUNQUE el
+        /// threshold falle: el choque contra el candado es el feedback del fallo. Solo
+        /// calla sin tirada (fuera de combate la puerta se abre sin dados). El payload
+        /// lleva el <see cref="DamageBreakdownComputedPayload.Threshold"/> para que el
+        /// director corra el paso de candado en lugar de la mitigación (sin target).
         /// </summary>
         public static void AnnounceForceDoor(EffectContext effCtx, EffForceDoor doorEff)
         {
             if (effCtx == null || doorEff == null) return;
-            if (effCtx.ComboResult is not { IsMatch: true } combo
-                || string.IsNullOrEmpty(combo.ComboId)) return;
+            var faces = effCtx.KeptDice ?? effCtx.DiceResult;
+            if (faces == null || faces.Count == 0) return;
 
-            if (ServiceLocator.TryGetService<IComboPlayService>(out var play)
+            bool hasCombo = effCtx.ComboResult is { IsMatch: true } matched
+                            && !string.IsNullOrEmpty(matched.ComboId);
+            var combo = hasCombo ? effCtx.ComboResult.Value : default;
+
+            if (hasCombo
+                && ServiceLocator.TryGetService<IComboPlayService>(out var play)
                 && play != null && play.IsPlayWindowOpen && play.CurrentComboId != combo.ComboId)
                 return;
 
-            var dice = ContributingDiceResolver.ResolveFromContext(effCtx, combo.ContributingIndices);
+            var dice = hasCombo
+                ? ContributingDiceResolver.ResolveFromContext(effCtx, combo.ContributingIndices)
+                : ResolveAllKeptDice(effCtx, faces);
             Guid sourceId = effCtx.SourceEntity != null ? effCtx.SourceEntity.Guid : effCtx.SourceGuid;
 
-            PlayerComboForceDoor.Resolve(sourceId, combo.BaseDamage, dice,
+            PlayerComboForceDoor.Resolve(sourceId, hasCombo ? combo.BaseDamage : 0, dice,
                 doorEff.ComboMultiplier > 0f ? doorEff.ComboMultiplier : 1f, out var breakdown);
-            if (breakdown.Final <= 0) return; // bloqueado por scratch: nada que animar
+            if (breakdown.Blocked) return; // bloqueado por scratch: nada que animar
 
             TypedEvent<DamageBreakdownComputedPayload>.Raise(new DamageBreakdownComputedPayload
             {
                 SourceGuid = sourceId,
                 TargetGuid = Guid.Empty,
-                ComboId = combo.ComboId,
+                ComboId = hasCombo ? combo.ComboId : string.Empty,
                 Breakdown = breakdown,
+                Threshold = doorEff.RequiredValue,
             });
+        }
+
+        // Sin combo todos los holdeados contribuyen (índices identidad). Con bag disponible
+        // el resolver mapea slot + tipo; sin bag (tests) se construyen a mano como hace el
+        // fallback de EffForceDoor — Resolve solo lee .Face.
+        private static System.Collections.Generic.IReadOnlyList<ContributingDie>
+            ResolveAllKeptDice(EffectContext effCtx, System.Collections.Generic.IReadOnlyList<int> faces)
+        {
+            var identity = new int[faces.Count];
+            for (int i = 0; i < identity.Length; i++) identity[i] = i;
+
+            var detailed = ContributingDiceResolver.ResolveFromContext(effCtx, identity);
+            if (detailed != null) return detailed;
+
+            var manual = new ContributingDie[faces.Count];
+            for (int i = 0; i < manual.Length; i++)
+            {
+                int bagSlot = ContributingDiceResolver.ResolveBagSlot(i, effCtx.KeptDiceOriginalIndices);
+                manual[i] = new ContributingDie(bagSlot, faces[i], Rollgeon.Dice.DiceType.D6);
+            }
+            return manual;
         }
 
         /// <summary>El <see cref="EffForceDoor"/> de la fase (check de Forzar Puerta).</summary>
@@ -212,5 +242,10 @@ namespace Rollgeon.Combat.Damage
         public Guid TargetGuid;
         public string ComboId;
         public DamageBreakdown Breakdown;
+        /// <summary>
+        /// Umbral a superar (Forzar Puerta). 0 = sin umbral: el director corre la
+        /// mitigación normal; &gt;0 = corre el choque contra el candado tras el N×M.
+        /// </summary>
+        public int Threshold;
     }
 }
