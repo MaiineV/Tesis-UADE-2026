@@ -62,6 +62,15 @@ namespace Rollgeon.UI.HUD.Breakdown
         [MinValue(0f), Tooltip("Amplitud de la sacudida del candado cuando queda cerrado.")]
         public float PadlockShakePixels = 10f;
 
+        [MinValue(0f), Tooltip("Cuánto sube el arco del candado al abrirse (px).")]
+        public float PadlockShackleLiftPixels = 16f;
+
+        [Tooltip("Inclinación del arco al abrirse (grados; negativo = hacia la derecha).")]
+        public float PadlockShackleTiltDegrees = -22f;
+
+        [MinValue(0f), Tooltip("Duración de la apertura del arco (0 = instantánea).")]
+        public float PadlockOpenSeconds = 0.2f;
+
         [Tooltip("Tinte del valor que pierde el choque (y del total cuando el candado queda cerrado).")]
         public Color ThresholdFailColor = new Color32(0xC9, 0x4A, 0x4A, 0xFF);
 

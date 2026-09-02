@@ -45,15 +45,14 @@ namespace Rollgeon.UI.HUD.Breakdown
         [Tooltip("Sprite del popup de mitigación post-choque (escudo). Opcional.")]
         [SerializeField] private Sprite _mitigationSprite;
 
-        [Tooltip("Candado del choque contra el umbral (Forzar Puerta). Hijo del ClashAnchor, " +
-                 "inactivo en reposo. Sin wiring el paso solo hace hold y sigue.")]
-        [SerializeField] private Image _padlock;
+        [Tooltip("Raíz del candado del choque contra el umbral (Forzar Puerta): hijo del " +
+                 "ClashAnchor, inactivo en reposo, con Body y Shackle como hijos. Sin wiring " +
+                 "el paso solo hace hold y sigue.")]
+        [SerializeField] private RectTransform _padlock;
 
-        [Tooltip("Frame cerrado del candado (se restaura al inicio de cada choque).")]
-        [SerializeField] private Sprite _padlockClosed;
-
-        [Tooltip("Frame abierto del candado (cuando el total supera el umbral).")]
-        [SerializeField] private Sprite _padlockOpen;
+        [Tooltip("Arco del candado (Image hijo de la raíz). Al aprobar se levanta y se " +
+                 "inclina para que se lea abierto; en reposo vuelve a su posición autorada.")]
+        [SerializeField] private RectTransform _padlockShackle;
 
         [Tooltip("Label del umbral a superar. Hermano de ClashLabel, inactivo en reposo.")]
         [SerializeField] private TextMeshProUGUI _thresholdLabel;
@@ -76,6 +75,9 @@ namespace Rollgeon.UI.HUD.Breakdown
         private bool _homesCached;
         private Vector2 _clashLabelHome;
         private bool _clashHomeCached;
+        private Vector2 _shackleHome;
+        private Quaternion _shackleHomeRotation;
+        private bool _shackleHomeCached;
         private Tween _padlockShake;
 
         public void Bind(Guid playerGuid)
@@ -441,12 +443,13 @@ namespace Rollgeon.UI.HUD.Breakdown
             }
 
             CacheClashLabelHome();
+            CacheShackleHome();
 
-            // Estado inicial: candado cerrado en su posición autorada; umbral nace en el
-            // centro (donde está el total) y ambos se separan.
+            // Estado inicial: candado cerrado (arco en su home) en su posición autorada;
+            // umbral nace en el centro (donde está el total) y ambos se separan.
             if (_padlockShake.isAlive) _padlockShake.Stop();
-            if (_padlockClosed != null) _padlock.sprite = _padlockClosed;
-            _padlock.transform.localScale = Vector3.one;
+            RestoreShackle();
+            _padlock.localScale = Vector3.one;
             _padlock.gameObject.SetActive(true);
 
             var totalRect = _clashLabel.rectTransform;
@@ -472,10 +475,10 @@ namespace Rollgeon.UI.HUD.Breakdown
 
             float split = D(_settings != null ? _settings.ThresholdSplitSeconds : 0.18f);
             var px = _settings != null ? _settings.ThresholdSplitPixels : new Vector2(90f, 24f);
-            var meetTotal = ProjectToSibling(totalRect, _padlock.rectTransform);
-            var meetThreshold = ProjectToSibling(thresholdRect, _padlock.rectTransform);
+            var meetTotal = ProjectToSibling(totalRect, _padlock);
+            var meetThreshold = ProjectToSibling(thresholdRect, _padlock);
 
-            Tween.PunchScale(_padlock.transform, Vector3.one * 0.2f, D(0.16f), frequency: 1);
+            Tween.PunchScale(_padlock, Vector3.one * 0.2f, D(0.16f), frequency: 1);
             Tween.Scale(thresholdRect, Vector3.one, split * 0.8f, Ease.OutBack);
             Tween.UIAnchoredPosition(totalRect, meetTotal + new Vector2(-px.x, px.y), split, Ease.OutQuad);
             Tween.UIAnchoredPosition(thresholdRect, meetThreshold + new Vector2(px.x, 0f), split, Ease.OutQuad)
@@ -507,19 +510,19 @@ namespace Rollgeon.UI.HUD.Breakdown
 
             if (passed)
             {
-                if (_padlockOpen != null) _padlock.sprite = _padlockOpen;
                 winner.color = pass;
-                Tween.PunchScale(_padlock.transform, Vector3.one * 0.3f, D(0.2f), frequency: 2);
-                _juice?.OnPadlockOpened(_padlock.rectTransform);
+                OpenShackle();
+                Tween.PunchScale(_padlock, Vector3.one * 0.3f, D(0.2f), frequency: 2);
+                _juice?.OnPadlockOpened(_padlock);
             }
             else
             {
                 winner.color = fail;
                 float shake = _settings != null ? _settings.PadlockShakePixels : 10f;
                 if (shake > 0f)
-                    _padlockShake = Tween.ShakeLocalPosition(_padlock.transform,
+                    _padlockShake = Tween.ShakeLocalPosition(_padlock,
                         new Vector3(shake, shake * 0.4f, 0f), D(0.3f), frequency: 14);
-                _juice?.OnPadlockShut(_padlock.rectTransform);
+                _juice?.OnPadlockShut(_padlock);
             }
 
             HoldThreshold(onDone);
@@ -539,6 +542,42 @@ namespace Rollgeon.UI.HUD.Breakdown
             _clashHomeCached = true;
         }
 
+        private void CacheShackleHome()
+        {
+            if (_shackleHomeCached || _padlockShackle == null) return;
+            _shackleHome = _padlockShackle.anchoredPosition;
+            _shackleHomeRotation = _padlockShackle.localRotation;
+            _shackleHomeCached = true;
+        }
+
+        private void RestoreShackle()
+        {
+            if (!_shackleHomeCached || _padlockShackle == null) return;
+            _padlockShackle.anchoredPosition = _shackleHome;
+            _padlockShackle.localRotation = _shackleHomeRotation;
+        }
+
+        // El arco se despega del cuerpo: sube y se inclina hacia un lado (OutBack, con
+        // un rebote corto) — la lectura de "abierto" viene de la separación, no de un
+        // sprite distinto. Con ReducedMotion queda directo en la pose abierta.
+        private void OpenShackle()
+        {
+            if (_padlockShackle == null || !_shackleHomeCached) return;
+            float lift = _settings != null ? _settings.PadlockShackleLiftPixels : 16f;
+            float tilt = _settings != null ? _settings.PadlockShackleTiltDegrees : -22f;
+            var target = _shackleHome + new Vector2(lift * 0.25f, lift);
+            var rotation = _shackleHomeRotation * Quaternion.Euler(0f, 0f, tilt);
+            float dur = D(_settings != null ? _settings.PadlockOpenSeconds : 0.2f);
+            if (dur <= 0.02f || DiceAnim.DiceUiMotionPrefs.ReducedMotion)
+            {
+                _padlockShackle.anchoredPosition = target;
+                _padlockShackle.localRotation = rotation;
+                return;
+            }
+            Tween.UIAnchoredPosition(_padlockShackle, target, dur, Ease.OutBack);
+            Tween.LocalRotation(_padlockShackle, rotation, dur, Ease.OutBack);
+        }
+
         // Cierre del paso de candado (normal/abort/timeout): todo vuelve a reposo para
         // que el próximo choque N×M arranque limpio.
         private void ResetThresholdStage()
@@ -546,9 +585,10 @@ namespace Rollgeon.UI.HUD.Breakdown
             if (_padlockShake.isAlive) _padlockShake.Stop();
             if (_padlock != null)
             {
-                _padlock.transform.localScale = Vector3.one;
+                _padlock.localScale = Vector3.one;
                 _padlock.gameObject.SetActive(false);
             }
+            RestoreShackle();
             if (_thresholdLabel != null)
             {
                 _thresholdLabel.transform.localScale = Vector3.one;
