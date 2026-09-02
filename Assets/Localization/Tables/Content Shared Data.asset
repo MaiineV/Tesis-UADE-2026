@@ -2191,6 +2191,46 @@ MonoBehaviour:
     m_Key: ench.el_caudal.desc
     m_Metadata:
       m_Items: []
+  - m_Id: 17988676544020480
+    m_Key: jackpot.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17988676606935040
+    m_Key: jackpot.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17988679589085184
+    m_Key: ultima.carta.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17988679589085185
+    m_Key: ultima.carta.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17988680314699776
+    m_Key: mosaico.erratico.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17988680314699777
+    m_Key: mosaico.erratico.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17988681023537152
+    m_Key: eco.menguante.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17988681023537153
+    m_Key: eco.menguante.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17988681744957440
+    m_Key: compas.salteado.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17988681744957441
+    m_Key: compas.salteado.desc
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

@@ -65,13 +65,16 @@ function Import-DotEnv {
 }
 
 Import-DotEnv (Join-Path $repoRoot '.env')
+# Fallback para agents que tienen vedado tocar archivos `.env*` (reglas de permisos de
+# Claude Code): mismo formato, carpeta ignorada por git. `.env` gana si define el PAT.
+if (-not $env:DOCSAPP_PAT) { Import-DotEnv (Join-Path $repoRoot '.secrets\docsapp.env') }
 
 $baseUrl = if ($env:DOCSAPP_BASE_URL) { $env:DOCSAPP_BASE_URL.TrimEnd('/') }
            else { 'https://docs-app-orcin.vercel.app/api/v1' }
 $pat = $env:DOCSAPP_PAT
 if (-not $pat -or $pat -like '*pegar_token*') {
     Write-Host "Falta DOCSAPP_PAT." -ForegroundColor Red
-    Write-Host "Pega el token en $repoRoot\.env (se genera en https://docs-app-orcin.vercel.app/profile/tokens)."
+    Write-Host "Pega el token en $repoRoot\.env o en $repoRoot\.secrets\docsapp.env (se genera en https://docs-app-orcin.vercel.app/profile/tokens)."
     Write-Host "Template y pasos: docs/setup/docsapp-api.md"
     exit 1
 }

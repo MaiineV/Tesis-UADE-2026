@@ -1384,7 +1384,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 17341875572011009
-    m_Localized: "+10 de da\xF1o en el combo Generala."
+    m_Localized: "+15 de da\xF1o en el combo Generala."
     m_Metadata:
       m_Items: []
   - m_Id: 17342111518388224
@@ -2246,6 +2246,49 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 17931574780657664
     m_Localized: El dado participa en un Doble Par y suma +3 de oro.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17988676544020480
+    m_Localized: Jackpot
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17988676606935040
+    m_Localized: "+5 de da\xF1o por cada dado que muestre un 7 en tu ataque."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17988679589085184
+    m_Localized: "\xDAltima Carta"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17988679589085185
+    m_Localized: "+30 de da\xF1o si atac\xE1s sin rolls disponibles."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17988680314699776
+    m_Localized: "Mosaico Err\xE1tico"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17988680314699777
+    m_Localized: "+2 de da\xF1o por cada combo distinto al anterior que encadenes
+      en el combate. Repetir un combo reinicia el bono."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17988681023537152
+    m_Localized: Eco Menguante
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17988681023537153
+    m_Localized: "Empez\xE1s cada combate con da\xF1o x5. Cada ataque lo reduce en
+      0.1, hasta x1."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17988681744957440
+    m_Localized: "Comp\xE1s Salteado"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17988681744957441
+    m_Localized: "Tus Escaleras tambi\xE9n valen salteando un n\xFAmero: 3-5-7-9-11
+      o 2-4-6-8-10."
     m_Metadata:
       m_Items: []
   references:

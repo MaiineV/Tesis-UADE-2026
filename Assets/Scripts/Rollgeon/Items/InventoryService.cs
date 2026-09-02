@@ -112,6 +112,7 @@ namespace Rollgeon.Items
                 ApplyPersistentModifiers(item);
                 RegisterBaseDamageOverride(item);
                 ApplyRollPoolBonus(item);
+                RegisterComboRules(item);
                 if (item.ActiveSlotBonus > 0) AddActiveSlotBonus(item.ActiveSlotBonus);
                 RegisterEnchantmentCostModifier(item);
                 RegisterEnchantmentWeightModifier(item);
@@ -165,6 +166,7 @@ namespace Rollgeon.Items
                 RemovePersistentModifiers(item);
                 UnregisterBaseDamageOverride(item);
                 RevertRollPoolBonus(item);
+                UnregisterComboRules(item);
                 if (item.ActiveSlotBonus > 0) AddActiveSlotBonus(-item.ActiveSlotBonus);
                 UnregisterEnchantmentCostModifier(item);
                 UnregisterEnchantmentWeightModifier(item);
@@ -642,6 +644,32 @@ namespace Rollgeon.Items
             if (ServiceLocator.TryGetService<Rollgeon.Combat.Rolls.IRollPoolService>(out var rolls)
                 && rolls != null)
                 rolls.AddRollPoolBonus(-item.RollPoolBonus);
+        }
+
+        // ======================================================================
+        // Combo rules (Compás Salteado) — la regla vive mientras el item esté en
+        // el inventario; el servicio sostiene la regla por fuente (ItemId).
+        // ======================================================================
+
+        private void RegisterComboRules(ItemSO item)
+        {
+            if (!item.LadderSkippedStep) return;
+            if (!ServiceLocator.TryGetService<Rollgeon.Combos.Rules.IComboRuleService>(out var rules)
+                || rules == null)
+            {
+                Debug.LogWarning("[InventoryService] IComboRuleService no registrado — la regla de " +
+                                 $"Escalera salteada de '{item.ItemId}' no se aplica.");
+                return;
+            }
+            rules.AddLadderSkippedStep(item.ItemId);
+        }
+
+        private void UnregisterComboRules(ItemSO item)
+        {
+            if (item == null || !item.LadderSkippedStep) return;
+            if (ServiceLocator.TryGetService<Rollgeon.Combos.Rules.IComboRuleService>(out var rules)
+                && rules != null)
+                rules.RemoveLadderSkippedStep(item.ItemId);
         }
 
         // ======================================================================

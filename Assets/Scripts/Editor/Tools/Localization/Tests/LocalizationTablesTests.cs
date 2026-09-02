@@ -48,6 +48,8 @@ namespace Rollgeon.Editor.Tools.Localization.Tests
             "dicebag.cat.control",
             // "Portal" es portal en los dos idiomas (Casillas Especiales).
             "tile.portal.name",
+            // "Jackpot" es el término de casino en los dos idiomas (item pasivo).
+            "jackpot.name",
             // "Combo" se escribe igual en los dos idiomas y es el término que el juego ya
             // usa sin traducir en el resto del HUD.
             Rollgeon.UI.HUD.Contract.ContractTextKeys.HeaderName,

@@ -1158,259 +1158,259 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 17331148496924672
-    m_Localized: "Corona del N\xFAmero Alto"
+    m_Localized: Crown of the High Number
     m_Metadata:
       m_Items: []
   - m_Id: 17331148496924673
-    m_Localized: "+10 de da\xF1o en el combo N\xFAmero Alto."
+    m_Localized: +10 damage on the High Number combo.
     m_Metadata:
       m_Items: []
   - m_Id: 17331885440331776
-    m_Localized: Corona del Mayor
+    m_Localized: Crown of the Elder
     m_Metadata:
       m_Items: []
   - m_Id: 17331885440331777
-    m_Localized: "+15 de da\xF1o en el combo N\xFAmero Alto."
+    m_Localized: +15 damage on the High Number combo.
     m_Metadata:
       m_Items: []
   - m_Id: 17332682412617728
-    m_Localized: "Corona del M\xE1ximo"
+    m_Localized: Crown of the Maximum
     m_Metadata:
       m_Items: []
   - m_Id: 17332682412617729
-    m_Localized: "+20 de da\xF1o en el combo N\xFAmero Alto."
+    m_Localized: +20 damage on the High Number combo.
     m_Metadata:
       m_Items: []
   - m_Id: 17333112605601792
-    m_Localized: Corona de la Cima
+    m_Localized: Crown of the Summit
     m_Metadata:
       m_Items: []
   - m_Id: 17333112605601793
-    m_Localized: "+30 de da\xF1o en el combo N\xFAmero Alto."
+    m_Localized: +30 damage on the High Number combo.
     m_Metadata:
       m_Items: []
   - m_Id: 17333766250131456
-    m_Localized: Corona del Par
+    m_Localized: Crown of the Pair
     m_Metadata:
       m_Items: []
   - m_Id: 17333766250131457
-    m_Localized: "+10 de da\xF1o al combo Par."
+    m_Localized: +10 damage on the Pair combo.
     m_Metadata:
       m_Items: []
   - m_Id: 17334166307041280
-    m_Localized: Corona de los iguales
+    m_Localized: Crown of the Equals
     m_Metadata:
       m_Items: []
   - m_Id: 17334166307041281
-    m_Localized: "+15 de da\xF1o al combo Par."
+    m_Localized: +15 damage on the Pair combo.
     m_Metadata:
       m_Items: []
   - m_Id: 17334912108818432
-    m_Localized: 'Corona de la Dualidad '
+    m_Localized: Crown of Duality
     m_Metadata:
       m_Items: []
   - m_Id: 17334912108818433
-    m_Localized: "+20 de da\xF1o en combo Par"
+    m_Localized: +20 damage on the Pair combo.
     m_Metadata:
       m_Items: []
   - m_Id: 17335304825696256
-    m_Localized: Corona de los Gemelos
+    m_Localized: Crown of the Twins
     m_Metadata:
       m_Items: []
   - m_Id: 17335304829890560
-    m_Localized: "+40 de da\xF1o en combo Par."
+    m_Localized: +40 damage on the Pair combo.
     m_Metadata:
       m_Items: []
   - m_Id: 17335726969810944
-    m_Localized: Corona del Doble Par
+    m_Localized: Crown of the Double Pair
     m_Metadata:
       m_Items: []
   - m_Id: 17335726969810945
-    m_Localized: "+10 de da\xF1o en el combo Doble Par."
+    m_Localized: +10 damage on the Double Pair combo.
     m_Metadata:
       m_Items: []
   - m_Id: 17336154751070208
-    m_Localized: Corona de las Parejas
+    m_Localized: Crown of the Couples
     m_Metadata:
       m_Items: []
   - m_Id: 17336154751070209
-    m_Localized: "+15 de da\xF1o en el combo Doble Par."
+    m_Localized: +15 damage on the Double Pair combo.
     m_Metadata:
       m_Items: []
   - m_Id: 17336910547873792
-    m_Localized: Corona de los amores
+    m_Localized: Crown of the Lovers
     m_Metadata:
       m_Items: []
   - m_Id: 17336910547873793
-    m_Localized: "+20 de da\xF1o en el combo Doble Par."
+    m_Localized: +20 damage on the Double Pair combo.
     m_Metadata:
       m_Items: []
   - m_Id: 17337581590376448
-    m_Localized: Corona del Espejo
+    m_Localized: Crown of the Mirror
     m_Metadata:
       m_Items: []
   - m_Id: 17337581590376449
-    m_Localized: "+30 de da\xF1o en el combo Doble Par."
+    m_Localized: +30 damage on the Double Pair combo.
     m_Metadata:
       m_Items: []
   - m_Id: 17338012546723840
-    m_Localized: "Corona del Tr\xEDo"
+    m_Localized: Crown of the Trio
     m_Metadata:
       m_Items: []
   - m_Id: 17338012546723841
-    m_Localized: "+10 de da\xF1o en el combo Trio."
+    m_Localized: +10 damage on the Trio combo.
     m_Metadata:
       m_Items: []
   - m_Id: 17338241207595008
-    m_Localized: Corona del Triplete
+    m_Localized: Crown of the Triplet
     m_Metadata:
       m_Items: []
   - m_Id: 17338241207595009
-    m_Localized: "+15 de da\xF1o en el combo Tr\xEDo."
+    m_Localized: +15 damage on the Trio combo.
     m_Metadata:
       m_Items: []
   - m_Id: 17338580367405056
-    m_Localized: Corona de la Trinidad
+    m_Localized: Crown of the Trinity
     m_Metadata:
       m_Items: []
   - m_Id: 17338580367405057
-    m_Localized: "+20 de da\xF1o en el combo Tr\xEDo."
+    m_Localized: +20 damage on the Trio combo.
     m_Metadata:
       m_Items: []
   - m_Id: 17338790833385472
-    m_Localized: Corona del Triunvirato
+    m_Localized: Crown of the Triumvirate
     m_Metadata:
       m_Items: []
   - m_Id: 17338790833385473
-    m_Localized: "+30 de da\xF1o en el combo Tr\xEDo."
+    m_Localized: +30 damage on the Trio combo.
     m_Metadata:
       m_Items: []
   - m_Id: 17339137832349696
-    m_Localized: 'Corona del Poker '
+    m_Localized: Crown of the Poker
     m_Metadata:
       m_Items: []
   - m_Id: 17339137832349697
-    m_Localized: "+10 de da\xF1o con el combo Poker."
+    m_Localized: +10 damage on the Poker combo.
     m_Metadata:
       m_Items: []
   - m_Id: 17339426274635776
-    m_Localized: Corona del Cuarteto
+    m_Localized: Crown of the Quartet
     m_Metadata:
       m_Items: []
   - m_Id: 17339426274635777
-    m_Localized: "+15 de da\xF1o en el combo P\xF3ker."
+    m_Localized: +15 damage on the Poker combo.
     m_Metadata:
       m_Items: []
   - m_Id: 17339656948772864
-    m_Localized: Corona de la Banda
+    m_Localized: Crown of the Band
     m_Metadata:
       m_Items: []
   - m_Id: 17339656948772865
-    m_Localized: "+20 de da\xF1o en el combo P\xF3ker."
+    m_Localized: +20 damage on the Poker combo.
     m_Metadata:
       m_Items: []
   - m_Id: 17340098965499904
-    m_Localized: Corona de los Cuatro Reyes
+    m_Localized: Crown of the Four Kings
     m_Metadata:
       m_Items: []
   - m_Id: 17340098965499905
-    m_Localized: "+30 de da\xF1o en el combo de P\xF3ker."
+    m_Localized: +30 damage on the Poker combo.
     m_Metadata:
       m_Items: []
   - m_Id: 17340507348103168
-    m_Localized: Corona de la Escalera
+    m_Localized: Crown of the Straight
     m_Metadata:
       m_Items: []
   - m_Id: 17340507348103169
-    m_Localized: "+10 de da\xF1o en el combo Escalera."
+    m_Localized: +10 damage on the Straight combo.
     m_Metadata:
       m_Items: []
   - m_Id: 17340736537456640
-    m_Localized: Corona del Ascenso
+    m_Localized: Crown of the Ascent
     m_Metadata:
       m_Items: []
   - m_Id: 17340736537456641
-    m_Localized: "+15 de da\xF1o en el combo Escalera."
+    m_Localized: +15 damage on the Straight combo.
     m_Metadata:
       m_Items: []
   - m_Id: 17340968432136192
-    m_Localized: "Corona de la Ascensi\xF3n"
+    m_Localized: Crown of the Ascension
     m_Metadata:
       m_Items: []
   - m_Id: 17340968432136193
-    m_Localized: "+20 de da\xF1o en el combo Escalera."
+    m_Localized: +20 damage on the Straight combo.
     m_Metadata:
       m_Items: []
   - m_Id: 17341224574087168
-    m_Localized: Corona del Camino Celestial
+    m_Localized: Crown of the Celestial Path
     m_Metadata:
       m_Items: []
   - m_Id: 17341224574087169
-    m_Localized: "+30 de da\xF1o en el combo Escalera."
+    m_Localized: +30 damage on the Straight combo.
     m_Metadata:
       m_Items: []
   - m_Id: 17341427037335552
-    m_Localized: Corona de la Generala
+    m_Localized: Crown of the Generala
     m_Metadata:
       m_Items: []
   - m_Id: 17341427037335553
-    m_Localized: "+10 de da\xF1o en el combo Generala."
+    m_Localized: +10 damage on the Generala combo.
     m_Metadata:
       m_Items: []
   - m_Id: 17341875572011008
-    m_Localized: "Corona de la Perfecci\xF3n"
+    m_Localized: Crown of Perfection
     m_Metadata:
       m_Items: []
   - m_Id: 17341875572011009
-    m_Localized: "+10 de da\xF1o en el combo Generala."
+    m_Localized: +15 damage on the Generala combo.
     m_Metadata:
       m_Items: []
   - m_Id: 17342111518388224
-    m_Localized: Corona Suprema
+    m_Localized: Supreme Crown
     m_Metadata:
       m_Items: []
   - m_Id: 17342111518388225
-    m_Localized: "+20 de da\xF1o en el combo Generala."
+    m_Localized: +20 damage on the Generala combo.
     m_Metadata:
       m_Items: []
   - m_Id: 17342439924002816
-    m_Localized: Corona Divina
+    m_Localized: Divine Crown
     m_Metadata:
       m_Items: []
   - m_Id: 17342439924002817
-    m_Localized: "+30 de da\xF1o en el combo Generala."
+    m_Localized: +30 damage on the Generala combo.
     m_Metadata:
       m_Items: []
   - m_Id: 17342777909407744
-    m_Localized: Corona del Full
+    m_Localized: Crown of the Full
     m_Metadata:
       m_Items: []
   - m_Id: 17342777909407745
-    m_Localized: "+10 de da\xF1o en el combo Full House."
+    m_Localized: +10 damage on the Full House combo.
     m_Metadata:
       m_Items: []
   - m_Id: 17342999574179840
-    m_Localized: Corona de la Familia
+    m_Localized: Crown of the Family
     m_Metadata:
       m_Items: []
   - m_Id: 17342999574179841
-    m_Localized: "+15 de da\xF1o en el combo Full House."
+    m_Localized: +15 damage on the Full House combo.
     m_Metadata:
       m_Items: []
   - m_Id: 17343220853075968
-    m_Localized: Corona del Linaje
+    m_Localized: Crown of the Lineage
     m_Metadata:
       m_Items: []
   - m_Id: 17343220853075969
-    m_Localized: "+20 de da\xF1o en el combo Full House."
+    m_Localized: +20 damage on the Full House combo.
     m_Metadata:
       m_Items: []
   - m_Id: 17343412033646592
-    m_Localized: Corona de la Casa Real
+    m_Localized: Crown of the Royal House
     m_Metadata:
       m_Items: []
   - m_Id: 17343412033646593
-    m_Localized: "+30 de da\xF1o en el combo Full House."
+    m_Localized: +30 damage on the Full House combo.
     m_Metadata:
       m_Items: []
   - m_Id: 17566757004951552
@@ -1706,515 +1706,515 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 17651850403999744
-    m_Localized: "Arca del N\xFAmero Alto"
+    m_Localized: Ark of the High Number
     m_Metadata:
       m_Items: []
   - m_Id: 17651850450137088
-    m_Localized: "+2 de oro al resolver el combo N\xFAmero Alto."
+    m_Localized: +2 gold when you resolve the High Number combo.
     m_Metadata:
       m_Items: []
   - m_Id: 17652202935250944
-    m_Localized: Arca del Tesoro
+    m_Localized: Ark of the Treasure
     m_Metadata:
       m_Items: []
   - m_Id: 17652202935250945
-    m_Localized: "+4 de oro al resolver el combo N\xFAmero Alto."
+    m_Localized: +4 gold when you resolve the High Number combo.
     m_Metadata:
       m_Items: []
   - m_Id: 17652503901728768
-    m_Localized: Arca de la Fortuna
+    m_Localized: Ark of Fortune
     m_Metadata:
       m_Items: []
   - m_Id: 17652503901728769
-    m_Localized: "+6 de oro al resolver el combo N\xFAmero Alto."
+    m_Localized: +6 gold when you resolve the High Number combo.
     m_Metadata:
       m_Items: []
   - m_Id: 17652763696918528
-    m_Localized: Arca de la Riqueza Eterna
+    m_Localized: Ark of Eternal Wealth
     m_Metadata:
       m_Items: []
   - m_Id: 17652763696918529
-    m_Localized: "+9 de oro al resolver el combo N\xFAmero Alto."
+    m_Localized: +9 gold when you resolve the High Number combo.
     m_Metadata:
       m_Items: []
   - m_Id: 17653195458572288
-    m_Localized: Arca del Par
+    m_Localized: Ark of the Pair
     m_Metadata:
       m_Items: []
   - m_Id: 17653195458572289
-    m_Localized: +2 de oro al resolver el combo Par.
+    m_Localized: +2 gold when you resolve the Pair combo.
     m_Metadata:
       m_Items: []
   - m_Id: 17653371552231424
-    m_Localized: Arca de los Iguales
+    m_Localized: Ark of the Equals
     m_Metadata:
       m_Items: []
   - m_Id: 17653371552231425
-    m_Localized: +4 de oro al resolver el combo Par.
+    m_Localized: +4 gold when you resolve the Pair combo.
     m_Metadata:
       m_Items: []
   - m_Id: 17653579472269312
-    m_Localized: Arca de la Pareja Dorada
+    m_Localized: Ark of the Golden Couple
     m_Metadata:
       m_Items: []
   - m_Id: 17653579472269313
-    m_Localized: +6 de oro al resolver el combo Par.
+    m_Localized: +6 gold when you resolve the Pair combo.
     m_Metadata:
       m_Items: []
   - m_Id: 17653765401571328
-    m_Localized: Arca de los Dos Reyes
+    m_Localized: Ark of the Two Kings
     m_Metadata:
       m_Items: []
   - m_Id: 17653765401571329
-    m_Localized: +9 de oro al resolver el combo Par.
+    m_Localized: +9 gold when you resolve the Pair combo.
     m_Metadata:
       m_Items: []
   - m_Id: 17654076455350272
-    m_Localized: Arca del Doble Par
+    m_Localized: Ark of the Double Pair
     m_Metadata:
       m_Items: []
   - m_Id: 17654076455350273
-    m_Localized: +2 de oro al resolver el combo Doble Par.
+    m_Localized: +2 gold when you resolve the Double Pair combo.
     m_Metadata:
       m_Items: []
   - m_Id: 17654284044038144
-    m_Localized: Arca de la Fortuna Doble
+    m_Localized: Ark of Double Fortune
     m_Metadata:
       m_Items: []
   - m_Id: 17654284044038145
-    m_Localized: +4 de oro al resolver el combo Doble Par.
+    m_Localized: +4 gold when you resolve the Double Pair combo.
     m_Metadata:
       m_Items: []
   - m_Id: 17655029174726656
-    m_Localized: Arca de la Banda
+    m_Localized: Ark of the Band
     m_Metadata:
       m_Items: []
   - m_Id: 17655029174726657
-    m_Localized: +6 de oro al resolver el combo Doble Par.
+    m_Localized: +6 gold when you resolve the Double Pair combo.
     m_Metadata:
       m_Items: []
   - m_Id: 17655244225081344
-    m_Localized: Arca del Espejo Dorado
+    m_Localized: Ark of the Golden Mirror
     m_Metadata:
       m_Items: []
   - m_Id: 17655244225081345
-    m_Localized: +9 de oro al resolver el combo Doble Par.
+    m_Localized: +9 gold when you resolve the Double Pair combo.
     m_Metadata:
       m_Items: []
   - m_Id: 17655432591273984
-    m_Localized: Arca del Trio
+    m_Localized: Ark of the Trio
     m_Metadata:
       m_Items: []
   - m_Id: 17655432591273985
-    m_Localized: +2 de oro al resolver el combo Trio.
+    m_Localized: +2 gold when you resolve the Trio combo.
     m_Metadata:
       m_Items: []
   - m_Id: 17655618231169024
-    m_Localized: Arca del Triple Botin
+    m_Localized: Ark of the Triple Loot
     m_Metadata:
       m_Items: []
   - m_Id: 17655618231169025
-    m_Localized: +4 de oro al resolver el combo Trio.
+    m_Localized: +4 gold when you resolve the Trio combo.
     m_Metadata:
       m_Items: []
   - m_Id: 17655777614721024
-    m_Localized: Arca de la Trinidad Dorada
+    m_Localized: Ark of the Golden Trinity
     m_Metadata:
       m_Items: []
   - m_Id: 17655777614721025
-    m_Localized: +6 de oro al resolver el combo Trio.
+    m_Localized: +6 gold when you resolve the Trio combo.
     m_Metadata:
       m_Items: []
   - m_Id: 17656066937810944
-    m_Localized: Arca de los Tres Reyes
+    m_Localized: Ark of the Three Kings
     m_Metadata:
       m_Items: []
   - m_Id: 17656066937810945
-    m_Localized: +9 de oro al resolver el combo Trio.
+    m_Localized: +9 gold when you resolve the Trio combo.
     m_Metadata:
       m_Items: []
   - m_Id: 17656384035581952
-    m_Localized: Arca del Full House
+    m_Localized: Ark of the Full House
     m_Metadata:
       m_Items: []
   - m_Id: 17656384035581953
-    m_Localized: +2 de oro al resolver el combo Full House.
+    m_Localized: +2 gold when you resolve the Full House combo.
     m_Metadata:
       m_Items: []
   - m_Id: 17656712965484544
-    m_Localized: Arca de la Casa
+    m_Localized: Ark of the House
     m_Metadata:
       m_Items: []
   - m_Id: 17656712965484545
-    m_Localized: +4 de oro al resolver el combo Full House.
+    m_Localized: +4 gold when you resolve the Full House combo.
     m_Metadata:
       m_Items: []
   - m_Id: 17656971489800192
-    m_Localized: Arca del Linaje
+    m_Localized: Ark of the Lineage
     m_Metadata:
       m_Items: []
   - m_Id: 17656971489800193
-    m_Localized: +6 de oro al resolver el combo Full House.
+    m_Localized: +6 gold when you resolve the Full House combo.
     m_Metadata:
       m_Items: []
   - m_Id: 17657168324292608
-    m_Localized: Arca de la Estirpe Dorada
+    m_Localized: Ark of the Golden Bloodline
     m_Metadata:
       m_Items: []
   - m_Id: 17657168324292609
-    m_Localized: +9 de oro al resolver el combo Full House.
+    m_Localized: +9 gold when you resolve the Full House combo.
     m_Metadata:
       m_Items: []
   - m_Id: 17657531240640512
-    m_Localized: Arca del Poker
+    m_Localized: Ark of the Poker
     m_Metadata:
       m_Items: []
   - m_Id: 17657531240640513
-    m_Localized: +2 de oro al resolver el combo Poker.
+    m_Localized: +2 gold when you resolve the Poker combo.
     m_Metadata:
       m_Items: []
   - m_Id: 17657692465491968
-    m_Localized: Arca del Cuarteto
+    m_Localized: Ark of the Quartet
     m_Metadata:
       m_Items: []
   - m_Id: 17657692465491969
-    m_Localized: +4 de oro al resolver el combo Poker.
+    m_Localized: +4 gold when you resolve the Poker combo.
     m_Metadata:
       m_Items: []
   - m_Id: 17657890432446464
-    m_Localized: Arca de los Cuatro Tesoros
+    m_Localized: Ark of the Four Treasures
     m_Metadata:
       m_Items: []
   - m_Id: 17657890432446465
-    m_Localized: +6 de oro al resolver el combo Poker.
+    m_Localized: +6 gold when you resolve the Poker combo.
     m_Metadata:
       m_Items: []
   - m_Id: 17658054316486656
-    m_Localized: Arca de los Cuatro Reyes
+    m_Localized: Ark of the Four Kings
     m_Metadata:
       m_Items: []
   - m_Id: 17658054316486657
-    m_Localized: +9 de oro al resolver el combo Poker.
+    m_Localized: +9 gold when you resolve the Poker combo.
     m_Metadata:
       m_Items: []
   - m_Id: 17658370093051904
-    m_Localized: Arca de la Escalera
+    m_Localized: Ark of the Straight
     m_Metadata:
       m_Items: []
   - m_Id: 17658370093051905
-    m_Localized: +2 de oro al resolver el combo Escalera.
+    m_Localized: +2 gold when you resolve the Straight combo.
     m_Metadata:
       m_Items: []
   - m_Id: 17658535101165568
-    m_Localized: Arca del Ascenso
+    m_Localized: Ark of the Ascent
     m_Metadata:
       m_Items: []
   - m_Id: 17658535101165569
-    m_Localized: +4 de oro al resolver el combo Escalera.
+    m_Localized: +4 gold when you resolve the Straight combo.
     m_Metadata:
       m_Items: []
   - m_Id: 17658669054652416
-    m_Localized: Arca del Camino Dorado
+    m_Localized: Ark of the Golden Path
     m_Metadata:
       m_Items: []
   - m_Id: 17658669054652417
-    m_Localized: +6 de oro al resolver el combo Escalera.
+    m_Localized: +6 gold when you resolve the Straight combo.
     m_Metadata:
       m_Items: []
   - m_Id: 17658905412071424
-    m_Localized: Arca del Camino Celestial
+    m_Localized: Ark of the Celestial Path
     m_Metadata:
       m_Items: []
   - m_Id: 17658905412071425
-    m_Localized: +9 de oro al resolver el combo Escalera.
+    m_Localized: +9 gold when you resolve the Straight combo.
     m_Metadata:
       m_Items: []
   - m_Id: 17659331511414784
-    m_Localized: Arca de la Generala
+    m_Localized: Ark of the Generala
     m_Metadata:
       m_Items: []
   - m_Id: 17659331511414785
-    m_Localized: +2 de oro al resolver el combo Generala.
+    m_Localized: +2 gold when you resolve the Generala combo.
     m_Metadata:
       m_Items: []
   - m_Id: 17659578711109632
-    m_Localized: Arca de la Abundancia
+    m_Localized: Ark of Abundance
     m_Metadata:
       m_Items: []
   - m_Id: 17659578711109633
-    m_Localized: +4 de oro al resolver el combo Generala.
+    m_Localized: +4 gold when you resolve the Generala combo.
     m_Metadata:
       m_Items: []
   - m_Id: 17659776237662208
-    m_Localized: Arca de la Fortuna Suprema
+    m_Localized: Ark of Supreme Fortune
     m_Metadata:
       m_Items: []
   - m_Id: 17659776237662209
-    m_Localized: +6 de oro al resolver el combo Generala.
+    m_Localized: +6 gold when you resolve the Generala combo.
     m_Metadata:
       m_Items: []
   - m_Id: 17659953757384704
-    m_Localized: Arca del Tesoro Divino
+    m_Localized: Ark of the Divine Treasure
     m_Metadata:
       m_Items: []
   - m_Id: 17659953757384705
-    m_Localized: +9 de oro al resolver el combo Generala.
+    m_Localized: +9 gold when you resolve the Generala combo.
     m_Metadata:
       m_Items: []
   - m_Id: 17663438099935232
-    m_Localized: "L\xE1grima del N\xFAmero Alto "
+    m_Localized: Tear of the High Number
     m_Metadata:
       m_Items: []
   - m_Id: 17663438099935233
-    m_Localized: "+3HP cuando resolves el combo N\xFAmero Alto."
+    m_Localized: +3 HP when you resolve the High Number combo.
     m_Metadata:
       m_Items: []
   - m_Id: 17664642464968704
-    m_Localized: "L\xE1grima de la Cima"
+    m_Localized: Tear of the Summit
     m_Metadata:
       m_Items: []
   - m_Id: 17664642464968705
-    m_Localized: "+5HP al resolver el combo de N\xFAmero Alto."
+    m_Localized: +5 HP when you resolve the High Number combo.
     m_Metadata:
       m_Items: []
   - m_Id: 17665764047024128
-    m_Localized: "L\xE1grima del M\xE1ximo"
+    m_Localized: Tear of the Maximum
     m_Metadata:
       m_Items: []
   - m_Id: 17665764047024129
-    m_Localized: "+10HP cuando resolves el combo N\xFAmero Alto."
+    m_Localized: +10 HP when you resolve the High Number combo.
     m_Metadata:
       m_Items: []
   - m_Id: 17666434531684352
-    m_Localized: "L\xE1grima Celestial"
+    m_Localized: Celestial Tear
     m_Metadata:
       m_Items: []
   - m_Id: 17666434531684353
-    m_Localized: "+15HP al resolver el combo N\xFAmero Alto."
+    m_Localized: +15 HP when you resolve the High Number combo.
     m_Metadata:
       m_Items: []
   - m_Id: 17666773171400704
-    m_Localized: "L\xE1grima del Par"
+    m_Localized: Tear of the Pair
     m_Metadata:
       m_Items: []
   - m_Id: 17666773171400705
-    m_Localized: +3HP al resolver el combo Par.
+    m_Localized: +3 HP when you resolve the Pair combo.
     m_Metadata:
       m_Items: []
   - m_Id: 17667966006292480
-    m_Localized: "L\xE1grima de los Iguales"
+    m_Localized: Tear of the Equals
     m_Metadata:
       m_Items: []
   - m_Id: 17667966006292481
-    m_Localized: +5HP al resolver el combo Par.
+    m_Localized: +5 HP when you resolve the Pair combo.
     m_Metadata:
       m_Items: []
   - m_Id: 17668242146684928
-    m_Localized: "L\xE1grima de los Gemelos"
+    m_Localized: Tear of the Twins
     m_Metadata:
       m_Items: []
   - m_Id: 17668242146684929
-    m_Localized: +10HP al resolver el combo Par.
+    m_Localized: +10 HP when you resolve the Pair combo.
     m_Metadata:
       m_Items: []
   - m_Id: 17668491556777984
-    m_Localized: "L\xE1grima de los Dos Eternos"
+    m_Localized: Tear of the Two Eternals
     m_Metadata:
       m_Items: []
   - m_Id: 17668491556777985
-    m_Localized: +15HP al resolver el combo Par.
+    m_Localized: +15 HP when you resolve the Pair combo.
     m_Metadata:
       m_Items: []
   - m_Id: 17668768288567296
-    m_Localized: "L\xE1grima del Doble Par"
+    m_Localized: Tear of the Double Pair
     m_Metadata:
       m_Items: []
   - m_Id: 17668768288567297
-    m_Localized: +3HP al resolver el combo Doble Par.
+    m_Localized: +3 HP when you resolve the Double Pair combo.
     m_Metadata:
       m_Items: []
   - m_Id: 17668979413053440
-    m_Localized: "L\xE1grima de los Vinculos"
+    m_Localized: Tear of the Bonds
     m_Metadata:
       m_Items: []
   - m_Id: 17668979413053441
-    m_Localized: +5HP al resolver el combo Doble Par.
+    m_Localized: +5 HP when you resolve the Double Pair combo.
     m_Metadata:
       m_Items: []
   - m_Id: 17669438366380032
-    m_Localized: "L\xE1grima del Duplicado"
+    m_Localized: Tear of the Duplicate
     m_Metadata:
       m_Items: []
   - m_Id: 17669438366380033
-    m_Localized: +10HP al resolver el combo Doble Par.
+    m_Localized: +10 HP when you resolve the Double Pair combo.
     m_Metadata:
       m_Items: []
   - m_Id: 17671520196587520
-    m_Localized: "L\xE1grima del Reflejo Dorado"
+    m_Localized: Tear of the Golden Reflection
     m_Metadata:
       m_Items: []
   - m_Id: 17671520196587521
-    m_Localized: +15HP al resolver el combo Doble Par.
+    m_Localized: +15 HP when you resolve the Double Pair combo.
     m_Metadata:
       m_Items: []
   - m_Id: 17672515643338752
-    m_Localized: "L\xE1grima del Trio"
+    m_Localized: Tear of the Trio
     m_Metadata:
       m_Items: []
   - m_Id: 17672515643338753
-    m_Localized: +3HP al resolver el combo Trio.
+    m_Localized: +3 HP when you resolve the Trio combo.
     m_Metadata:
       m_Items: []
   - m_Id: 17672720308596736
-    m_Localized: "L\xE1grima del Triple"
+    m_Localized: Tear of the Triple
     m_Metadata:
       m_Items: []
   - m_Id: 17672720308596737
-    m_Localized: +5HP al resolver el combo Trio.
+    m_Localized: +5 HP when you resolve the Trio combo.
     m_Metadata:
       m_Items: []
   - m_Id: 17672938596954112
-    m_Localized: "L\xE1grima de la Trinidad"
+    m_Localized: Tear of the Trinity
     m_Metadata:
       m_Items: []
   - m_Id: 17672938596954113
-    m_Localized: +10HP al resolver el combo Trio.
+    m_Localized: +10 HP when you resolve the Trio combo.
     m_Metadata:
       m_Items: []
   - m_Id: 17673235272658944
-    m_Localized: "L\xE1grima de los Tres Eternos"
+    m_Localized: Tear of the Three Eternals
     m_Metadata:
       m_Items: []
   - m_Id: 17673235272658945
-    m_Localized: +15HP al resolver el combo Trio.
+    m_Localized: +15 HP when you resolve the Trio combo.
     m_Metadata:
       m_Items: []
   - m_Id: 17673440302821376
-    m_Localized: "L\xE1grima del Full House"
+    m_Localized: Tear of the Full House
     m_Metadata:
       m_Items: []
   - m_Id: 17673440302821377
-    m_Localized: +3HP al resolver el combo de Full House.
+    m_Localized: +3 HP when you resolve the Full House combo.
     m_Metadata:
       m_Items: []
   - m_Id: 17673663217496064
-    m_Localized: "L\xE1grima de la Familia"
+    m_Localized: Tear of the Family
     m_Metadata:
       m_Items: []
   - m_Id: 17673663217496065
-    m_Localized: +5HP al resolver el combo de Full House.
+    m_Localized: +5 HP when you resolve the Full House combo.
     m_Metadata:
       m_Items: []
   - m_Id: 17674521745387520
-    m_Localized: "L\xE1grima del Linaje"
+    m_Localized: Tear of the Lineage
     m_Metadata:
       m_Items: []
   - m_Id: 17674521745387521
-    m_Localized: +10HP al resolver el combo Full House.
+    m_Localized: +10 HP when you resolve the Full House combo.
     m_Metadata:
       m_Items: []
   - m_Id: 17674908321804288
-    m_Localized: "L\xE1grima de la Estirpe Eterna"
+    m_Localized: Tear of the Eternal Bloodline
     m_Metadata:
       m_Items: []
   - m_Id: 17674908321804289
-    m_Localized: +15HP al resolver el combo Full House.
+    m_Localized: +15 HP when you resolve the Full House combo.
     m_Metadata:
       m_Items: []
   - m_Id: 17676705266495488
-    m_Localized: "L\xE1grima del Poker"
+    m_Localized: Tear of the Poker
     m_Metadata:
       m_Items: []
   - m_Id: 17676705266495489
-    m_Localized: +3HP al resolver el combo de Poker.
+    m_Localized: +3 HP when you resolve the Poker combo.
     m_Metadata:
       m_Items: []
   - m_Id: 17677766232469504
-    m_Localized: "L\xE1grima del Cuarteto"
+    m_Localized: Tear of the Quartet
     m_Metadata:
       m_Items: []
   - m_Id: 17677766232469505
-    m_Localized: +5HP al resolver combo Poker.
+    m_Localized: +5 HP when you resolve the Poker combo.
     m_Metadata:
       m_Items: []
   - m_Id: 17678145762455552
-    m_Localized: "L\xE1grima de los Cuatro Reyes"
+    m_Localized: Tear of the Four Kings
     m_Metadata:
       m_Items: []
   - m_Id: 17678145762455553
-    m_Localized: +10HP al resolver combo Poker.
+    m_Localized: +10 HP when you resolve the Poker combo.
     m_Metadata:
       m_Items: []
   - m_Id: 17679774955958272
-    m_Localized: "L\xE1grima de la Vida Imperial "
+    m_Localized: Tear of Imperial Life
     m_Metadata:
       m_Items: []
   - m_Id: 17679774955958273
-    m_Localized: +15HP al resolver el combo Poker.
+    m_Localized: +15 HP when you resolve the Poker combo.
     m_Metadata:
       m_Items: []
   - m_Id: 17680534624104448
-    m_Localized: "L\xE1grima de Escalera"
+    m_Localized: Tear of the Straight
     m_Metadata:
       m_Items: []
   - m_Id: 17680534624104449
-    m_Localized: +3HP al resolver el combo Escalera.
+    m_Localized: +3 HP when you resolve the Straight combo.
     m_Metadata:
       m_Items: []
   - m_Id: 17680764178362368
-    m_Localized: "L\xE1grima del Ascenso"
+    m_Localized: Tear of the Ascent
     m_Metadata:
       m_Items: []
   - m_Id: 17680764178362369
-    m_Localized: +5HP al resolver combo Escalera.
+    m_Localized: +5 HP when you resolve the Straight combo.
     m_Metadata:
       m_Items: []
   - m_Id: 17681010086211584
-    m_Localized: "L\xE1grima de la Ascensi\xF3n"
+    m_Localized: Tear of the Ascension
     m_Metadata:
       m_Items: []
   - m_Id: 17681010086211585
-    m_Localized: +10HP al resolver combo Escalera.
+    m_Localized: +10 HP when you resolve the Straight combo.
     m_Metadata:
       m_Items: []
   - m_Id: 17681463234621440
-    m_Localized: "L\xE1grima del Camino Celestial"
+    m_Localized: Tear of the Celestial Path
     m_Metadata:
       m_Items: []
   - m_Id: 17681463234621441
-    m_Localized: +15HP al resolver el combo Escalera.
+    m_Localized: +15 HP when you resolve the Straight combo.
     m_Metadata:
       m_Items: []
   - m_Id: 17681792235827200
-    m_Localized: "L\xE1grima de la Generala"
+    m_Localized: Tear of the Generala
     m_Metadata:
       m_Items: []
   - m_Id: 17681792235827201
-    m_Localized: +3HP al resolver combo de Generala.
+    m_Localized: +3 HP when you resolve the Generala combo.
     m_Metadata:
       m_Items: []
   - m_Id: 17685385777082368
-    m_Localized: "L\xE1grima de la Plenitud"
+    m_Localized: Tear of Plenitude
     m_Metadata:
       m_Items: []
   - m_Id: 17685385777082369
-    m_Localized: +5HP al resolver el combo Generala.
+    m_Localized: +5 HP when you resolve the Generala combo.
     m_Metadata:
       m_Items: []
   - m_Id: 17685581164539904
-    m_Localized: "L\xE1grima de la Perfecci\xF3n"
+    m_Localized: Tear of Perfection
     m_Metadata:
       m_Items: []
   - m_Id: 17685581164539905
-    m_Localized: +10HP al resolver el combo Generala.
+    m_Localized: +10 HP when you resolve the Generala combo.
     m_Metadata:
       m_Items: []
   - m_Id: 17685758289997824
-    m_Localized: "L\xE1grima de la Vida Absoluta"
+    m_Localized: Tear of Absolute Life
     m_Metadata:
       m_Items: []
   - m_Id: 17685758289997825
-    m_Localized: +15HP al resolver combo Generala.
+    m_Localized: +15 HP when you resolve the Generala combo.
     m_Metadata:
       m_Items: []
   - m_Id: 17931574738714624
@@ -2223,6 +2223,49 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 17931574780657664
     m_Localized: The die joins a Double Pair and grants +3 gold.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17988676544020480
+    m_Localized: Jackpot
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17988676606935040
+    m_Localized: +5 damage for each die showing a 7 in your attack.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17988679589085184
+    m_Localized: Last Card
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17988679589085185
+    m_Localized: +30 damage when you attack with no rolls left.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17988680314699776
+    m_Localized: Erratic Mosaic
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17988680314699777
+    m_Localized: +2 damage for each combo different from the last one you chain in
+      a fight. Repeating a combo resets the bonus.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17988681023537152
+    m_Localized: Waning Echo
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17988681023537153
+    m_Localized: Start every fight at x5 damage. Each attack lowers it by 0.1, down
+      to x1.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17988681744957440
+    m_Localized: Skipped Beat
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17988681744957441
+    m_Localized: 'Your Straights also count when skipping one number: 3-5-7-9-11
+      or 2-4-6-8-10.'
     m_Metadata:
       m_Items: []
   references:

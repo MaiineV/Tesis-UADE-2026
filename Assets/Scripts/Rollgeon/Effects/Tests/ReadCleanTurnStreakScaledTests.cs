@@ -64,6 +64,8 @@ namespace Rollgeon.Effects.Tests
             public int Streak;
             public int TilesMovedThisTurn => 0;
             public int CleanTurnStreak => Streak;
+            public int ComboVarietyStreak => 0;
+            public int AttacksPlayedThisCombat => 0;
         }
     }
 }

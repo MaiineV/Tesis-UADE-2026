@@ -105,11 +105,12 @@ namespace Rollgeon.Editor.Tools.Item
                 {
                     // Un pasivo sin hooks es válido si vive de las perillas de lifecycle
                     // de ItemSO (Feature#0065): SecondWind, RollPoolBonus, ActiveSlotBonus,
-                    // multiplicador del altar u override de daño base. Solo sin NADA de
-                    // eso es un item que nunca hace nada.
+                    // multiplicador del altar, override de daño base o regla de combo. Solo
+                    // sin NADA de eso es un item que nunca hace nada.
                     bool hasLifecycleKnob =
                         item.SecondWind
                         || item.RollPoolBonus > 0
+                        || item.LadderSkippedStep
                         || item.ActiveSlotBonus > 0
                         || (item.EnchantmentCostMultiplier > 0f
                             && !UnityEngine.Mathf.Approximately(item.EnchantmentCostMultiplier, 1f))

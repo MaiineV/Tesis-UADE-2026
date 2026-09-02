@@ -84,6 +84,13 @@ namespace Rollgeon.Items
         [MinValue(0)]
         public int RollPoolBonus;
 
+        [Title("Combo Rules")]
+        [InfoBox("Mientras el item esté en el inventario, la Escalera también acepta progresiones " +
+                 "con un valor omitido (paso 2, cualquier paridad: 3-5-7-9-11, 2-4-6-8-10). " +
+                 "Sigue siendo combo.ladder. Compás Salteado. Se revierte al perder el item.")]
+        [ShowIf("@Type == ItemType.Passive")]
+        public bool LadderSkippedStep;
+
         [Title("Active Slots")]
         [InfoBox("Slots de items activos extra mientras el item esté en el inventario. " +
                  "Mochila Grande: 1. Se revierte al perder el item.")]
