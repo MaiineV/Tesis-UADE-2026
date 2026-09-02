@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using Patterns;
 using Rollgeon.Combat.AI.Decisions;
+using Rollgeon.Grid;
 using Rollgeon.Player;
 
 namespace Rollgeon.Combat.AI
@@ -50,6 +51,23 @@ namespace Rollgeon.Combat.AI
             if (context == null) return false;
 
             AIIntentWalker.Collect(root, context, standing, next, options);
+            return true;
+        }
+
+        /// <inheritdoc />
+        public bool TryReadReach(Guid enemyId, HashSet<GridCoord> into)
+        {
+            into?.Clear();
+            if (into == null) return false;
+
+            if (!IsPlayerTurn()) return false;
+            if (enemyId == Guid.Empty || _registry == null || _readContext == null) return false;
+            if (!_registry.TryGet(enemyId, out var root, out _) || root == null) return false;
+
+            var context = _readContext(enemyId);
+            if (context == null) return false;
+
+            EnemyAttackReach.Collect(root, context, into);
             return true;
         }
 
