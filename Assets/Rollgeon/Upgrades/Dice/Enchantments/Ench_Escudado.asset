@@ -29,7 +29,7 @@ MonoBehaviour:
       Data: Escudado
     - Name: _description
       Entry: 1
-      Data: Si se utiliza en un combo de full house da 2 mas de escudo.
+      Data: Si se utiliza en un combo de poker da 15 mas de escudo.
     - Name: _icon
       Entry: 6
       Data: 
@@ -92,7 +92,7 @@ MonoBehaviour:
       Data: 1
     - Name: 
       Entry: 1
-      Data: combo.full_house
+      Data: combo.poker
     - Name: 
       Entry: 13
       Data: 
@@ -245,7 +245,7 @@ MonoBehaviour:
       Data: 13|Rollgeon.Effects.Readers.ReadConstantInt, Rollgeon
     - Name: Value
       Entry: 3
-      Data: 2
+      Data: 15
     - Name: 
       Entry: 8
       Data: 
@@ -301,30 +301,30 @@ MonoBehaviour:
   _faceFilter:
     rid: -2
   _triggers:
-  - rid: 144068563111248721
+  - rid: 3569511772791767505
   _capabilities: []
   references:
     version: 2
     RefIds:
     - rid: -2
       type: {class: , ns: , asm: }
-    - rid: 144068563111248721
+    - rid: 3569511772791767505
       type: {class: ExecuteEffectsOnDiceEvent, ns: Rollgeon.Upgrades.Dice.Triggers, asm: Rollgeon}
       data:
         Event: 5
         Filter:
           Mode: 2
           ComboIds:
-          - combo.full_house
+          - combo.poker
         RequireCarrierParticipates: 1
         Effects:
         - Label: Effect Group
           PreConditions: []
           Effects:
-          - rid: 144068563111248722
+          - rid: 3569511772791767506
           TargetSelector:
             rid: -2
-    - rid: 144068563111248722
+    - rid: 3569511772791767506
       type: {class: EffModifyIntAttribute, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
       data:
         Selection:
@@ -354,10 +354,10 @@ MonoBehaviour:
         _baseAmount: 1
         _comboMultiplier: 1
         _reader:
-          rid: 144068563111248723
+          rid: 3569511772791767507
         _readerMultiplier: 1
         _clampHealthToMax: 0
-    - rid: 144068563111248723
+    - rid: 3569511772791767507
       type: {class: ReadConstantInt, ns: Rollgeon.Effects.Readers, asm: Rollgeon}
       data:
-        Value: 2
+        Value: 15

@@ -292,15 +292,15 @@ MonoBehaviour:
   _faceFilter:
     rid: -2
   _triggers:
-  - rid: 144068563111248681
+  - rid: 3569511772791767479
   _capabilities:
-  - rid: 144068563111248682
+  - rid: 3569511772791767480
   references:
     version: 2
     RefIds:
     - rid: -2
       type: {class: , ns: , asm: }
-    - rid: 144068563111248681
+    - rid: 3569511772791767479
       type: {class: ExecuteEffectsOnDiceEvent, ns: Rollgeon.Upgrades.Dice.Triggers, asm: Rollgeon}
       data:
         Event: 3
@@ -311,22 +311,22 @@ MonoBehaviour:
         Effects:
         - Label: Effect Group
           PreConditions:
-          - rid: 144068563111248683
+          - rid: 3569511772791767481
           Effects:
-          - rid: 144068563111248684
+          - rid: 3569511772791767482
           TargetSelector:
             rid: -2
-    - rid: 144068563111248682
+    - rid: 3569511772791767480
       type: {class: CapCursed, ns: Rollgeon.Upgrades.Dice, asm: Rollgeon}
       data: 
-    - rid: 144068563111248683
+    - rid: 3569511772791767481
       type: {class: PcChance, ns: Rollgeon.PreConditions.Concretes, asm: Rollgeon}
       data:
         _isConstantValue: 1
         Mode: 0
         Chance: 0.5
         OneIn: 5
-    - rid: 144068563111248684
+    - rid: 3569511772791767482
       type: {class: EffBlockComboDamage, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
       data:
         Selection:

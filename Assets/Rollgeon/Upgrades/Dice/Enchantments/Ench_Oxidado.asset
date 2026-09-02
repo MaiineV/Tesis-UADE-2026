@@ -29,7 +29,8 @@ MonoBehaviour:
       Data: Oxidado
     - Name: _description
       Entry: 1
-      Data: El dado pierde 1 de su resultado final (minimo 1).
+      Data: El dado no suma en el resultado final, a cambio, si participa en un combo
+        genera +2 de oro.
     - Name: _icon
       Entry: 6
       Data: 
@@ -134,7 +135,7 @@ MonoBehaviour:
         mscorlib
     - Name: 
       Entry: 12
-      Data: 1
+      Data: 2
     - Name: 
       Entry: 7
       Data: 10|Rollgeon.Effects.Concretes.EffAddComboBonus, Rollgeon
@@ -235,6 +236,111 @@ MonoBehaviour:
       Entry: 8
       Data: 
     - Name: 
+      Entry: 7
+      Data: 14|Rollgeon.Effects.Concretes.EffModifyGold, Rollgeon
+    - Name: Selection
+      Entry: 7
+      Data: 15|Rollgeon.Effects.Selection.SelectionSettings, Rollgeon
+    - Name: SlotState
+      Entry: 3
+      Data: 1
+    - Name: Timing
+      Entry: 3
+      Data: 0
+    - Name: EntityFilter
+      Entry: 3
+      Data: 2
+    - Name: IsGlobal
+      Entry: 5
+      Data: false
+    - Name: Range
+      Entry: 3
+      Data: 1
+    - Name: RangeMode
+      Entry: 3
+      Data: 0
+    - Name: RangeFromMovementDie
+      Entry: 5
+      Data: false
+    - Name: TargetMode
+      Entry: 3
+      Data: 0
+    - Name: AoeShape
+      Entry: 3
+      Data: 0
+    - Name: AoeRadius
+      Entry: 3
+      Data: 1
+    - Name: PatternRows
+      Entry: 3
+      Data: 1
+    - Name: PatternCols
+      Entry: 3
+      Data: 1
+    - Name: PatternCenter
+      Entry: 7
+      Data: UnityEngine.Vector2Int, UnityEngine.CoreModule
+    - Name: 
+      Entry: 3
+      Data: 0
+    - Name: 
+      Entry: 3
+      Data: 0
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: PatternFlat
+      Entry: 7
+      Data: 16|System.Boolean[], mscorlib
+    - Name: 
+      Entry: 14
+      Data: 1
+    - Name: 
+      Entry: 5
+      Data: true
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: IsConstantSelectionCount
+      Entry: 5
+      Data: true
+    - Name: SelectionCount
+      Entry: 3
+      Data: 1
+    - Name: SelectionCountReader
+      Entry: 6
+      Data: 
+    - Name: AutoResolve
+      Entry: 5
+      Data: false
+    - Name: AutoAccept
+      Entry: 5
+      Data: true
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: Operation
+      Entry: 3
+      Data: 0
+    - Name: _amount
+      Entry: 7
+      Data: 17|Rollgeon.Effects.Readers.ReadConstantInt, Rollgeon
+    - Name: Value
+      Entry: 3
+      Data: 2
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: _failChainIfInsufficient
+      Entry: 5
+      Data: true
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
       Entry: 13
       Data: 
     - Name: 
@@ -263,14 +369,14 @@ MonoBehaviour:
       Data: 
     - Name: _capabilities
       Entry: 7
-      Data: 14|System.Collections.Generic.List`1[[Rollgeon.Upgrades.Dice.IEnchantmentCapability,
+      Data: 18|System.Collections.Generic.List`1[[Rollgeon.Upgrades.Dice.IEnchantmentCapability,
         Rollgeon]], mscorlib
     - Name: 
       Entry: 12
       Data: 1
     - Name: 
       Entry: 7
-      Data: 15|Rollgeon.Upgrades.Dice.CapCursed, Rollgeon
+      Data: 19|Rollgeon.Upgrades.Dice.CapCursed, Rollgeon
     - Name: 
       Entry: 8
       Data: 
@@ -283,15 +389,15 @@ MonoBehaviour:
   _faceFilter:
     rid: -2
   _triggers:
-  - rid: 144068563111248715
+  - rid: 3569511772791767485
   _capabilities:
-  - rid: 144068563111248716
+  - rid: 3569511772791767486
   references:
     version: 2
     RefIds:
     - rid: -2
       type: {class: , ns: , asm: }
-    - rid: 144068563111248715
+    - rid: 3569511772791767485
       type: {class: ExecuteEffectsOnDiceEvent, ns: Rollgeon.Upgrades.Dice.Triggers, asm: Rollgeon}
       data:
         Event: 2
@@ -303,13 +409,14 @@ MonoBehaviour:
         - Label: Effect Group
           PreConditions: []
           Effects:
-          - rid: 144068563111248717
+          - rid: 3569511772791767487
+          - rid: 3569511772791767489
           TargetSelector:
             rid: -2
-    - rid: 144068563111248716
+    - rid: 3569511772791767486
       type: {class: CapCursed, ns: Rollgeon.Upgrades.Dice, asm: Rollgeon}
       data: 
-    - rid: 144068563111248717
+    - rid: 3569511772791767487
       type: {class: EffAddComboBonus, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
       data:
         Selection:
@@ -334,8 +441,40 @@ MonoBehaviour:
           AutoResolve: 0
           AutoAccept: 1
         _amount:
-          rid: 144068563111248718
-    - rid: 144068563111248718
+          rid: 3569511772791767488
+    - rid: 3569511772791767488
       type: {class: ReadConstantInt, ns: Rollgeon.Effects.Readers, asm: Rollgeon}
       data:
         Value: -1
+    - rid: 3569511772791767489
+      type: {class: EffModifyGold, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
+      data:
+        Selection:
+          SlotState: 1
+          Timing: 0
+          EntityFilter: 2
+          IsGlobal: 0
+          Range: 1
+          RangeMode: 0
+          RangeFromMovementDie: 0
+          TargetMode: 0
+          AoeShape: 0
+          AoeRadius: 1
+          PatternRows: 1
+          PatternCols: 1
+          PatternCenter: {x: 0, y: 0}
+          PatternFlat: 01
+          IsConstantSelectionCount: 1
+          SelectionCount: 1
+          SelectionCountReader:
+            rid: -2
+          AutoResolve: 0
+          AutoAccept: 1
+        Operation: 0
+        _amount:
+          rid: 3569511772791767490
+        _failChainIfInsufficient: 1
+    - rid: 3569511772791767490
+      type: {class: ReadConstantInt, ns: Rollgeon.Effects.Readers, asm: Rollgeon}
+      data:
+        Value: 2

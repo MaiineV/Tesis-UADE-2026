@@ -29,7 +29,7 @@ MonoBehaviour:
       Data: Avaro
     - Name: _description
       Entry: 1
-      Data: Otorga 3 de oro extra al completar un combo de trio o superior.
+      Data: "Otorga 3 de oro extra al completar un combo de 3 o m\xE1s dados iguales."
     - Name: _icon
       Entry: 6
       Data: 
@@ -292,14 +292,14 @@ MonoBehaviour:
   _faceFilter:
     rid: -2
   _triggers:
-  - rid: 144068563111248678
+  - rid: 3569511772791767502
   _capabilities: []
   references:
     version: 2
     RefIds:
     - rid: -2
       type: {class: , ns: , asm: }
-    - rid: 144068563111248678
+    - rid: 3569511772791767502
       type: {class: ExecuteEffectsOnDiceEvent, ns: Rollgeon.Upgrades.Dice.Triggers, asm: Rollgeon}
       data:
         Event: 5
@@ -314,10 +314,10 @@ MonoBehaviour:
         - Label: Effect Group
           PreConditions: []
           Effects:
-          - rid: 144068563111248679
+          - rid: 3569511772791767503
           TargetSelector:
             rid: -2
-    - rid: 144068563111248679
+    - rid: 3569511772791767503
       type: {class: EffModifyGold, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
       data:
         Selection:
@@ -343,9 +343,9 @@ MonoBehaviour:
           AutoAccept: 1
         Operation: 0
         _amount:
-          rid: 144068563111248680
+          rid: 3569511772791767504
         _failChainIfInsufficient: 1
-    - rid: 144068563111248680
+    - rid: 3569511772791767504
       type: {class: ReadConstantInt, ns: Rollgeon.Effects.Readers, asm: Rollgeon}
       data:
         Value: 3
