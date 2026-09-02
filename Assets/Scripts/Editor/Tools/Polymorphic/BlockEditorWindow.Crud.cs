@@ -63,6 +63,18 @@ namespace Rollgeon.Editor.Tools.Polymorphic
         protected virtual void OnAssetDuplicated(T source, T copy) { }
 
         /// <summary>
+        /// Lets the host take over the Delete button.
+        /// </summary>
+        /// <returns><c>true</c> when the host handled it; the shell then deletes nothing.</returns>
+        /// <remarks>
+        /// Exists for the same reason as <see cref="TryBeginCreate"/>: the shell's delete only
+        /// removes the file, but a family whose creation writes catalog, pool and localization
+        /// entries needs its deletion to clean the same four places — and only a domain service
+        /// knows them. A host that takes over owns the confirmation dialog too.
+        /// </remarks>
+        protected virtual bool TryBeginDelete(T selected) => false;
+
+        /// <summary>
         /// Re-scans the project and selects <paramref name="asset"/>. The way a host flow that
         /// created assets on its own (a wizard, a variant generator) hands control back to the shell.
         /// </summary>
@@ -133,6 +145,7 @@ namespace Rollgeon.Editor.Tools.Polymorphic
         void DeleteSelected()
         {
             if (_selected == null) return;
+            if (TryBeginDelete(_selected)) return;
             if (!EditorUtility.DisplayDialog(
                     "Delete asset",
                     $"Delete '{LabelOf(_selected)}'? This cannot be undone.\n\nAnything referencing it " +

@@ -174,7 +174,7 @@ namespace Rollgeon.Upgrades.Dice.Tests
             // Arrange — 1 maldito y 1 normal, peso 1 c/u; multiplicador enorme para
             // que el sesgo sea inequívoco con seed fijo.
             var cursed = MakeEnchantment("cursed", DiceType.D6);
-            cursed.EditorSetCategory(EnchantmentCategory.Maldicion);
+            cursed.EditorSetCategory(EnchantmentCategory.Caos);
             var normal = MakeEnchantment("normal", DiceType.D6);
             var pool = MakePool(
                 new WeightedEnchantment { Enchantment = cursed, Weight = 1f },
@@ -211,7 +211,7 @@ namespace Rollgeon.Upgrades.Dice.Tests
         {
             // Arrange — degrade permisivo: sin servicio, pesos crudos, ambos salen.
             var cursed = MakeEnchantment("cursed", DiceType.D6);
-            cursed.EditorSetCategory(EnchantmentCategory.Maldicion);
+            cursed.EditorSetCategory(EnchantmentCategory.Caos);
             var normal = MakeEnchantment("normal", DiceType.D6);
             var pool = MakePool(
                 new WeightedEnchantment { Enchantment = cursed, Weight = 1f },

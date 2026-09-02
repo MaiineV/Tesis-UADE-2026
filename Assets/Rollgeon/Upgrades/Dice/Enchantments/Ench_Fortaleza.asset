@@ -49,7 +49,7 @@ MonoBehaviour:
       Data: 
     - Name: _category
       Entry: 3
-      Data: 3
+      Data: 7
     - Name: _allowedDiceTypes
       Entry: 7
       Data: 1|System.Collections.Generic.List`1[[Rollgeon.Dice.DiceType, Rollgeon]],
@@ -311,14 +311,14 @@ MonoBehaviour:
   _faceFilter:
     rid: -2
   _triggers:
-  - rid: 3569511772791767508
+  - rid: 7496091007886557850
   _capabilities: []
   references:
     version: 2
     RefIds:
     - rid: -2
       type: {class: , ns: , asm: }
-    - rid: 3569511772791767508
+    - rid: 7496091007886557850
       type: {class: ExecuteEffectsOnDiceEvent, ns: Rollgeon.Upgrades.Dice.Triggers, asm: Rollgeon}
       data:
         Event: 5
@@ -329,17 +329,17 @@ MonoBehaviour:
         Effects:
         - Label: Effect Group
           PreConditions:
-          - rid: 3569511772791767509
+          - rid: 7496091007886557851
           Effects:
-          - rid: 3569511772791767510
+          - rid: 7496091007886557852
           TargetSelector:
             rid: -2
-    - rid: 3569511772791767509
+    - rid: 7496091007886557851
       type: {class: PcCarrierFace, ns: Rollgeon.Upgrades.Dice.PreConditions, asm: Rollgeon}
       data:
         _isConstantValue: 1
         Mode: 0
-    - rid: 3569511772791767510
+    - rid: 7496091007886557852
       type: {class: EffModifyIntAttribute, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
       data:
         Selection:
@@ -369,10 +369,10 @@ MonoBehaviour:
         _baseAmount: 1
         _comboMultiplier: 1
         _reader:
-          rid: 3569511772791767511
+          rid: 7496091007886557853
         _readerMultiplier: 1
         _clampHealthToMax: 0
-    - rid: 3569511772791767511
+    - rid: 7496091007886557853
       type: {class: ReadConstantInt, ns: Rollgeon.Effects.Readers, asm: Rollgeon}
       data:
         Value: 30

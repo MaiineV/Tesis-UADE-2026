@@ -49,7 +49,7 @@ MonoBehaviour:
       Data: 
     - Name: _category
       Entry: 3
-      Data: 1
+      Data: 2
     - Name: _allowedDiceTypes
       Entry: 7
       Data: 1|System.Collections.Generic.List`1[[Rollgeon.Dice.DiceType, Rollgeon]],
@@ -102,12 +102,12 @@ MonoBehaviour:
       Entry: 8
       Data: 
   _faceFilter:
-    rid: 144068563111248735
+    rid: 7496091007886557880
   _triggers: []
   _capabilities: []
   references:
     version: 2
     RefIds:
-    - rid: 144068563111248735
+    - rid: 7496091007886557880
       type: {class: MinHalfMaxFilter, ns: Rollgeon.Upgrades.Dice.Filters, asm: Rollgeon}
       data: 

@@ -49,7 +49,7 @@ MonoBehaviour:
       Data: 
     - Name: _category
       Entry: 3
-      Data: 1
+      Data: 2
     - Name: _allowedDiceTypes
       Entry: 7
       Data: 1|System.Collections.Generic.List`1[[Rollgeon.Dice.DiceType, Rollgeon]],
@@ -290,14 +290,14 @@ MonoBehaviour:
   _faceFilter:
     rid: -2
   _triggers:
-  - rid: 144068563111248675
+  - rid: 7496091007886557814
   _capabilities: []
   references:
     version: 2
     RefIds:
     - rid: -2
       type: {class: , ns: , asm: }
-    - rid: 144068563111248675
+    - rid: 7496091007886557814
       type: {class: ExecuteEffectsOnDiceEvent, ns: Rollgeon.Upgrades.Dice.Triggers, asm: Rollgeon}
       data:
         Event: 3
@@ -308,17 +308,17 @@ MonoBehaviour:
         Effects:
         - Label: Effect Group
           PreConditions:
-          - rid: 144068563111248676
+          - rid: 7496091007886557815
           Effects:
-          - rid: 144068563111248677
+          - rid: 7496091007886557816
           TargetSelector:
             rid: -2
-    - rid: 144068563111248676
+    - rid: 7496091007886557815
       type: {class: PcCarrierFace, ns: Rollgeon.Upgrades.Dice.PreConditions, asm: Rollgeon}
       data:
         _isConstantValue: 1
         Mode: 3
-    - rid: 144068563111248677
+    - rid: 7496091007886557816
       type: {class: EffMultiplyComboDamage, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
       data:
         Selection:

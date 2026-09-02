@@ -108,12 +108,12 @@ MonoBehaviour:
     rid: -2
   _triggers: []
   _capabilities:
-  - rid: 144068563111248693
+  - rid: 7496091007886557835
   references:
     version: 2
     RefIds:
     - rid: -2
       type: {class: , ns: , asm: }
-    - rid: 144068563111248693
+    - rid: 7496091007886557835
       type: {class: CapRerollKeepHighest, ns: Rollgeon.Upgrades.Dice, asm: Rollgeon}
       data: 

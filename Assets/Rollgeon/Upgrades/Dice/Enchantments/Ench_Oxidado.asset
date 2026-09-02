@@ -49,7 +49,7 @@ MonoBehaviour:
       Data: 
     - Name: _category
       Entry: 3
-      Data: 5
+      Data: 6
     - Name: _allowedDiceTypes
       Entry: 7
       Data: 1|System.Collections.Generic.List`1[[Rollgeon.Dice.DiceType, Rollgeon]],
@@ -389,15 +389,15 @@ MonoBehaviour:
   _faceFilter:
     rid: -2
   _triggers:
-  - rid: 3569511772791767485
+  - rid: 7496091007886557864
   _capabilities:
-  - rid: 3569511772791767486
+  - rid: 7496091007886557865
   references:
     version: 2
     RefIds:
     - rid: -2
       type: {class: , ns: , asm: }
-    - rid: 3569511772791767485
+    - rid: 7496091007886557864
       type: {class: ExecuteEffectsOnDiceEvent, ns: Rollgeon.Upgrades.Dice.Triggers, asm: Rollgeon}
       data:
         Event: 2
@@ -409,14 +409,14 @@ MonoBehaviour:
         - Label: Effect Group
           PreConditions: []
           Effects:
-          - rid: 3569511772791767487
-          - rid: 3569511772791767489
+          - rid: 7496091007886557866
+          - rid: 7496091007886557867
           TargetSelector:
             rid: -2
-    - rid: 3569511772791767486
+    - rid: 7496091007886557865
       type: {class: CapCursed, ns: Rollgeon.Upgrades.Dice, asm: Rollgeon}
       data: 
-    - rid: 3569511772791767487
+    - rid: 7496091007886557866
       type: {class: EffAddComboBonus, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
       data:
         Selection:
@@ -441,12 +441,8 @@ MonoBehaviour:
           AutoResolve: 0
           AutoAccept: 1
         _amount:
-          rid: 3569511772791767488
-    - rid: 3569511772791767488
-      type: {class: ReadConstantInt, ns: Rollgeon.Effects.Readers, asm: Rollgeon}
-      data:
-        Value: -1
-    - rid: 3569511772791767489
+          rid: 7496091007886557868
+    - rid: 7496091007886557867
       type: {class: EffModifyGold, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
       data:
         Selection:
@@ -472,9 +468,13 @@ MonoBehaviour:
           AutoAccept: 1
         Operation: 0
         _amount:
-          rid: 3569511772791767490
+          rid: 7496091007886557869
         _failChainIfInsufficient: 1
-    - rid: 3569511772791767490
+    - rid: 7496091007886557868
+      type: {class: ReadConstantInt, ns: Rollgeon.Effects.Readers, asm: Rollgeon}
+      data:
+        Value: -1
+    - rid: 7496091007886557869
       type: {class: ReadConstantInt, ns: Rollgeon.Effects.Readers, asm: Rollgeon}
       data:
         Value: 2

@@ -48,7 +48,7 @@ MonoBehaviour:
       Data: 
     - Name: _category
       Entry: 3
-      Data: 5
+      Data: 6
     - Name: _allowedDiceTypes
       Entry: 7
       Data: 1|System.Collections.Generic.List`1[[Rollgeon.Dice.DiceType, Rollgeon]],
@@ -447,15 +447,15 @@ MonoBehaviour:
   _faceFilter:
     rid: -2
   _triggers:
-  - rid: 144068563111248743
+  - rid: 7496091007886557887
   _capabilities:
-  - rid: 144068563111248744
+  - rid: 7496091007886557888
   references:
     version: 2
     RefIds:
     - rid: -2
       type: {class: , ns: , asm: }
-    - rid: 144068563111248743
+    - rid: 7496091007886557887
       type: {class: ExecuteEffectsOnDiceEvent, ns: Rollgeon.Upgrades.Dice.Triggers, asm: Rollgeon}
       data:
         Event: 5
@@ -466,29 +466,29 @@ MonoBehaviour:
         Effects:
         - Label: Effect Group
           PreConditions:
-          - rid: 144068563111248745
+          - rid: 7496091007886557889
           Effects:
-          - rid: 144068563111248746
+          - rid: 7496091007886557890
           TargetSelector:
             rid: -2
         - Label: Effect Group
           PreConditions:
-          - rid: 144068563111248747
+          - rid: 7496091007886557891
           Effects:
-          - rid: 144068563111248748
+          - rid: 7496091007886557892
           TargetSelector:
             rid: -2
-    - rid: 144068563111248744
+    - rid: 7496091007886557888
       type: {class: CapCursed, ns: Rollgeon.Upgrades.Dice, asm: Rollgeon}
       data: 
-    - rid: 144068563111248745
+    - rid: 7496091007886557889
       type: {class: PcGoldCompare, ns: Rollgeon.PreConditions.Concretes, asm: Rollgeon}
       data:
         _isConstantValue: 1
         Comparison: 5
         Value:
-          rid: 144068563111248749
-    - rid: 144068563111248746
+          rid: 7496091007886557893
+    - rid: 7496091007886557890
       type: {class: EffModifyGold, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
       data:
         Selection:
@@ -514,16 +514,16 @@ MonoBehaviour:
           AutoAccept: 1
         Operation: 1
         _amount:
-          rid: 144068563111248749
+          rid: 7496091007886557893
         _failChainIfInsufficient: 0
-    - rid: 144068563111248747
+    - rid: 7496091007886557891
       type: {class: PcGoldCompare, ns: Rollgeon.PreConditions.Concretes, asm: Rollgeon}
       data:
         _isConstantValue: 1
         Comparison: 2
         Value:
-          rid: 144068563111248749
-    - rid: 144068563111248748
+          rid: 7496091007886557893
+    - rid: 7496091007886557892
       type: {class: EffBlockComboDamage, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
       data:
         Selection:
@@ -547,7 +547,7 @@ MonoBehaviour:
             rid: -2
           AutoResolve: 0
           AutoAccept: 1
-    - rid: 144068563111248749
+    - rid: 7496091007886557893
       type: {class: ReadConstantInt, ns: Rollgeon.Effects.Readers, asm: Rollgeon}
       data:
         Value: 2

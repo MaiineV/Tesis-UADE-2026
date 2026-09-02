@@ -290,7 +290,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 5531895623699
-    m_Localized: El dado participa en cualquier combo y suma +3 de oro.
+    m_Localized: El dado participa en una Escalera y suma +5 de oro.
     m_Metadata:
       m_Items: []
   - m_Id: 5531895623700
@@ -2238,6 +2238,14 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 17685758289997825
     m_Localized: +15HP al resolver combo Generala.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17931574738714624
+    m_Localized: El Caudal
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17931574780657664
+    m_Localized: El dado participa en un Doble Par y suma +3 de oro.
     m_Metadata:
       m_Items: []
   references:
