@@ -48,7 +48,7 @@ namespace Rollgeon.Effects.Concretes
                  "(solo aplica en combate). El effective total usa la fórmula N×M del combate: " +
                  "con combo, (base del combo + Attack + Σcaras + bonos) × multiplicador; sin " +
                  "combo, base 0 con todos los dados holdeados como caras. El ForceDoorRollBonus " +
-                 "de items se suma flat después del multiplicador. DATO GD — calibrado para " +
+                 "de items entra a N (antes del multiplicador). DATO GD — calibrado para " +
                  "Warrior 5×d6: sin combo solo pasa la tirada perfecta; Doble Par pasa con " +
                  "caras altas; Escalera o mejor pasa siempre. Bags con d8/d20 inflan el no-combo.")]
         [Min(1)]
@@ -183,6 +183,34 @@ namespace Rollgeon.Effects.Concretes
                 return false;
             }
 
+            if (!inCombat)
+                return ResolveForcedDoor(dungeon, instance, direction, inCombat: false);
+
+            // En combate el cruce se difiere hasta que la secuencia de breakdown (N×M +
+            // choque contra el candado) libere su gate: si cruzáramos acá, el teardown del
+            // HUD abortaría la animación en el mismo frame y la puerta "pasaría sola".
+            // Sin gate pendiente (director sin bindear, tests) corre sincrónico. El efecto
+            // ya quedó aceptado (el check pasó) — el resultado del cruce se loguea en la
+            // continuación.
+            Rollgeon.Feedback.BreakdownUiGate.RunWhenIdle(() =>
+            {
+                if (!ReferenceEquals(dungeon.CurrentRoomInstance, instance))
+                {
+                    Debug.LogWarning("[EffForceDoor] La sala cambió mientras corría la secuencia " +
+                                     "de breakdown — cruce diferido descartado.");
+                    return;
+                }
+                if (!ResolveForcedDoor(dungeon, instance, direction, inCombat: true))
+                    Debug.LogWarning("[EffForceDoor] Cruce diferido falló: EnterRoomByDoor devolvió false.");
+            });
+            return true;
+        }
+
+        // Side-effects del pase exitoso: cura + despawn de enemigos (solo combate), marca
+        // la puerta como forzada, cruza y, en combate, cierra el combate como Aborted.
+        private bool ResolveForcedDoor(IDungeonService dungeon, RoomInstance instance,
+            DoorDirection direction, bool inCombat)
+        {
             if (inCombat)
             {
                 HealCurrentRoomEnemies(instance, EnemyHealPercentOnSuccess);
@@ -217,8 +245,8 @@ namespace Rollgeon.Effects.Concretes
         /// <summary>
         /// Fallback cuando el context llega sin <c>ActionRollEffectiveTotal</c> (solo
         /// tests deberían caer acá — ambos callers de producción lo setean): misma
-        /// fórmula N×M de <see cref="PlayerComboForceDoor"/> sobre los KeptDice, más
-        /// el bonus flat de items.
+        /// fórmula N×M de <see cref="PlayerComboForceDoor"/> sobre los KeptDice (el
+        /// bonus de items ya va dentro de N).
         /// </summary>
         private int ComputeFallbackEffectiveTotal(EffectContext context)
         {
@@ -248,8 +276,8 @@ namespace Rollgeon.Effects.Concretes
                     dice.Add(new ContributingDie(-1, faces[i], DiceType.D6));
             }
 
-            int nxm = PlayerComboForceDoor.Resolve(sourceGuid, comboBase, dice, EffectiveMultiplier);
-            return nxm + ResolveItemRollBonus(sourceGuid);
+            // El bonus de items (ForceDoorRollBonus) ya entra a N dentro de Resolve.
+            return PlayerComboForceDoor.Resolve(sourceGuid, comboBase, dice, EffectiveMultiplier);
         }
 
         /// <summary>Bonus flat de items a la tirada (stat ForceDoorRollBonus). Degrada a 0.</summary>

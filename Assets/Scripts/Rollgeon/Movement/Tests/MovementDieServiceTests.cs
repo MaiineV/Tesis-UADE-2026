@@ -249,6 +249,23 @@ namespace Rollgeon.Movement.Tests
         }
 
         [Test]
+        public void Roll_WithPresenter_PassesEmptyContributions_WhenNoInventoryIsRegistered()
+        {
+            // Sin AttributesManager/IInventoryService (tests, enemigos) el presenter igual
+            // recibe una lista — vacía, nunca null — para no ramificar la view.
+            _player.SetPlayer(HeroWith(Die(DiceType.D4)), Guid.NewGuid());
+            _service = new MovementDieService(_player, seed: 7);
+            var presenter = new SpyPresenter();
+            _service.SetPresenter(presenter);
+
+            _service.Roll(Guid.NewGuid(), _ => { });
+
+            Assert.IsNotNull(presenter.LastContributions);
+            Assert.IsEmpty(presenter.LastContributions);
+            presenter.Finish();
+        }
+
+        [Test]
         public void Roll_WithPresenter_EmitsRollStartedBeforeRolled_AndNothingWithoutPresenter()
         {
             // Arrange — la mesa abre con RollStarted y cierra con Rolled: el orden importa.
@@ -297,13 +314,16 @@ namespace Rollgeon.Movement.Tests
             public DiceType LastType;
             public int LastFace;
             public int LastRangeBonus;
+            public IReadOnlyList<MovementRangeContribution> LastContributions;
 
-            public bool TryPresent(DiceType type, int face, int rangeBonus, Action onRevealed)
+            public bool TryPresent(DiceType type, int face, int rangeBonus,
+                                   IReadOnlyList<MovementRangeContribution> contributions, Action onRevealed)
             {
                 PresentCount++;
                 LastType = type;
                 LastFace = face;
                 LastRangeBonus = rangeBonus;
+                LastContributions = contributions;
                 _pending = onRevealed;
                 return true;
             }

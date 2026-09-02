@@ -11,8 +11,8 @@ namespace Rollgeon.Combat.Tests
     /// <summary>
     /// Tests de <see cref="PlayerComboForceDoor.Resolve"/>: el check de Forzar Puerta
     /// es la MISMA aritmética v3 que el daño (N = base + ATQ + Σcaras + bonos; M), solo
-    /// que rotulada como <see cref="PlayerComboFormulaKind.ForceDoor"/>. El bonus flat
-    /// de items (ForceDoorRollBonus) NO entra acá — lo suma el caller post-M.
+    /// que rotulada como <see cref="PlayerComboFormulaKind.ForceDoor"/>. El bonus de
+    /// items (ForceDoorRollBonus) entra a N y queda journaleado para la animación.
     /// </summary>
     [TestFixture]
     public class PlayerComboForceDoorTests
@@ -81,6 +81,61 @@ namespace Rollgeon.Combat.Tests
 
             // Assert
             Assert.AreEqual(51, total);
+        }
+
+        [Test]
+        public void Resolve_ForceDoorRollBonus_EntersN_AndIsJournaledAsItemSource()
+        {
+            // Arrange — stat +5 del item (Pico de Minero) registrado en el jugador.
+            var a = new ModifiableAttributes();
+            a.SetAttribute<ForceDoorRollBonus>(new ForceDoorRollBonus(5));
+            _attrs.Register(_player, a);
+            ServiceLocator.AddService<AttributesManager>(_attrs, ServiceScope.Global);
+
+            // Act — N = 22 + 12 + 5 = 39; M = 1.
+            int total = PlayerComboForceDoor.Resolve(_player, 22, DiceOf(4, 4, 4), 1f, out var bd);
+
+            // Assert — el bonus vive en N (AdditiveBonus) y tiene entrada en el journal
+            // para que el breakdown lo haga volar como modificador global.
+            Assert.AreEqual(39, total);
+            Assert.AreEqual(5, bd.AdditiveBonus);
+            Assert.IsNotNull(bd.Sources);
+            Assert.AreEqual(1, bd.Sources.Count);
+            Assert.AreEqual(Rollgeon.Upgrades.Dice.ScratchSourceKind.Item, bd.Sources[0].Kind);
+            Assert.AreEqual(5, bd.Sources[0].BonusDelta);
+            Assert.AreEqual(-1, bd.Sources[0].BagSlot);
+        }
+
+        [Test]
+        public void Resolve_ForceDoorRollBonus_IsScaledByMultiplier()
+        {
+            // Arrange — (22 + 12 + 5) × 2 = 78: el item ya no es flat post-M.
+            var a = new ModifiableAttributes();
+            a.SetAttribute<ForceDoorRollBonus>(new ForceDoorRollBonus(5));
+            _attrs.Register(_player, a);
+            ServiceLocator.AddService<AttributesManager>(_attrs, ServiceScope.Global);
+
+            // Act
+            int total = PlayerComboForceDoor.Resolve(_player, 22, DiceOf(4, 4, 4), 2f);
+
+            // Assert
+            Assert.AreEqual(78, total);
+        }
+
+        [Test]
+        public void Resolve_DamageKind_IgnoresForceDoorRollBonus()
+        {
+            // Arrange — el stat solo aplica al check de puerta, nunca al daño.
+            var a = new ModifiableAttributes();
+            a.SetAttribute<ForceDoorRollBonus>(new ForceDoorRollBonus(5));
+            _attrs.Register(_player, a);
+            ServiceLocator.AddService<AttributesManager>(_attrs, ServiceScope.Global);
+
+            // Act
+            int total = PlayerComboDamage.Resolve(_player, 22, DiceOf(4, 4, 4));
+
+            // Assert
+            Assert.AreEqual(34, total);
         }
     }
 }

@@ -45,6 +45,18 @@ namespace Rollgeon.UI.HUD.Breakdown
         [Tooltip("Sprite del popup de mitigación post-choque (escudo). Opcional.")]
         [SerializeField] private Sprite _mitigationSprite;
 
+        [Tooltip("Raíz del candado del choque contra el umbral (Forzar Puerta): hijo del " +
+                 "ClashAnchor, inactivo en reposo, con Body y Shackle como hijos. Sin wiring " +
+                 "el paso solo hace hold y sigue.")]
+        [SerializeField] private RectTransform _padlock;
+
+        [Tooltip("Arco del candado (Image hijo de la raíz). Al aprobar se levanta y se " +
+                 "inclina para que se lea abierto; en reposo vuelve a su posición autorada.")]
+        [SerializeField] private RectTransform _padlockShackle;
+
+        [Tooltip("Label del umbral a superar. Hermano de ClashLabel, inactivo en reposo.")]
+        [SerializeField] private TextMeshProUGUI _thresholdLabel;
+
         [Tooltip("Juice de la secuencia (sonidos/flash/shake/partículas). Opcional — " +
                  "fire-and-forget, nunca participa de la cadena onDone.")]
         [SerializeField] private BreakdownJuice _juice;
@@ -61,6 +73,12 @@ namespace Rollgeon.UI.HUD.Breakdown
         private BreakdownScript _script;
         private Vector2 _counterNHome, _counterMHome;
         private bool _homesCached;
+        private Vector2 _clashLabelHome;
+        private bool _clashHomeCached;
+        private Vector2 _shackleHome;
+        private Quaternion _shackleHomeRotation;
+        private bool _shackleHomeCached;
+        private Tween _padlockShake;
 
         public void Bind(Guid playerGuid)
         {
@@ -117,8 +135,10 @@ namespace Rollgeon.UI.HUD.Breakdown
             PopulateSpinner(_script);
             if (_skipButton != null) _skipButton.gameObject.SetActive(true);
 
-            int? mitigated = ComputeMitigatedTotal(payload, _script.FinalTotal);
-            _player.Play(_script, this, mitigated, EndSequence);
+            // Con umbral (Forzar Puerta) el post-choque es el candado, nunca la mitigación.
+            int? threshold = payload.Threshold > 0 ? payload.Threshold : (int?)null;
+            int? mitigated = threshold.HasValue ? null : ComputeMitigatedTotal(payload, _script.FinalTotal);
+            _player.Play(_script, this, mitigated, threshold, EndSequence);
             _timeout = StartCoroutine(TimeoutRoutine());
         }
 
@@ -139,6 +159,7 @@ namespace Rollgeon.UI.HUD.Breakdown
             RestoreCounters();
             if (_clashRoll.isAlive) _clashRoll.Stop();
             if (_clashLabel != null) _clashLabel.gameObject.SetActive(false);
+            ResetThresholdStage();
             ReleaseGate();
         }
 
@@ -403,6 +424,183 @@ namespace Rollgeon.UI.HUD.Breakdown
                 d.ShowClashTotal(mitigatedTotal);
                 d.Gap(onDone);
             });
+        }
+
+        // ==================================================================
+        // Choque contra el umbral (Forzar Puerta)
+        // ==================================================================
+
+        public void PlayThresholdClash(int finalTotal, int threshold, Action onDone)
+        {
+            bool passed = finalTotal >= threshold;
+            if (_clashLabel == null || _thresholdLabel == null || _padlock == null)
+            {
+                // Sin wiring del candado: el total ya quedó en pantalla tras el choque N×M;
+                // solo sonorizar el resultado y sostener.
+                if (passed) _juice?.OnPadlockOpened(null); else _juice?.OnPadlockShut(null);
+                HoldThreshold(onDone);
+                return;
+            }
+
+            CacheClashLabelHome();
+            CacheShackleHome();
+
+            // Estado inicial: candado cerrado (arco en su home) en su posición autorada;
+            // umbral nace en el centro (donde está el total) y ambos se separan.
+            if (_padlockShake.isAlive) _padlockShake.Stop();
+            RestoreShackle();
+            _padlock.localScale = Vector3.one;
+            _padlock.gameObject.SetActive(true);
+
+            var totalRect = _clashLabel.rectTransform;
+            var thresholdRect = _thresholdLabel.rectTransform;
+            _thresholdLabel.text = threshold.ToString();
+            _thresholdLabel.color = Color.white;
+            thresholdRect.anchoredPosition = ProjectToSibling(thresholdRect, totalRect);
+            thresholdRect.localScale = Vector3.zero;
+            _thresholdLabel.gameObject.SetActive(true);
+            // Mismo outline que ShowClashTotal le da al total — recién tras SetActive
+            // (material interno del TMP vivo).
+            _thresholdLabel.outlineWidth = 0.2f;
+            _thresholdLabel.outlineColor = new Color32(0x0A, 0x0A, 0x0C, 0xFF);
+
+            bool instant = _player.Skip == BreakdownSequencePlayer.SkipStage.Jump
+                           || DiceAnim.DiceUiMotionPrefs.ReducedMotion;
+            if (instant)
+            {
+                thresholdRect.localScale = Vector3.one;
+                ResolveThresholdImpact(passed, onDone);
+                return;
+            }
+
+            float split = D(_settings != null ? _settings.ThresholdSplitSeconds : 0.18f);
+            var px = _settings != null ? _settings.ThresholdSplitPixels : new Vector2(90f, 24f);
+            var meetTotal = ProjectToSibling(totalRect, _padlock);
+            var meetThreshold = ProjectToSibling(thresholdRect, _padlock);
+
+            Tween.PunchScale(_padlock, Vector3.one * 0.2f, D(0.16f), frequency: 1);
+            Tween.Scale(thresholdRect, Vector3.one, split * 0.8f, Ease.OutBack);
+            Tween.UIAnchoredPosition(totalRect, meetTotal + new Vector2(-px.x, px.y), split, Ease.OutQuad);
+            Tween.UIAnchoredPosition(thresholdRect, meetThreshold + new Vector2(px.x, 0f), split, Ease.OutQuad)
+                .OnComplete(this, d => d.LaunchThresholdTravel(meetTotal, meetThreshold, passed, onDone));
+        }
+
+        private void LaunchThresholdTravel(Vector2 meetTotal, Vector2 meetThreshold, bool passed, Action onDone)
+        {
+            float travel = D(_settings != null ? _settings.ThresholdTravelSeconds : 0.22f);
+            Tween.UIAnchoredPosition(_clashLabel.rectTransform, meetTotal, travel, Ease.InQuad);
+            Tween.UIAnchoredPosition(_thresholdLabel.rectTransform, meetThreshold, travel, Ease.InQuad)
+                .OnComplete(this, d => d.ResolveThresholdImpact(passed, onDone));
+        }
+
+        // Impacto sobre el candado: el mayor queda (punch), el menor se rompe. Empate
+        // (total == umbral) pasa — el check es >=.
+        private void ResolveThresholdImpact(bool passed, Action onDone)
+        {
+            var winner = passed ? _clashLabel : _thresholdLabel;
+            var loser = passed ? _thresholdLabel : _clashLabel;
+            var fail = _settings != null ? _settings.ThresholdFailColor : new Color(0.79f, 0.29f, 0.29f);
+            var pass = _settings != null ? _settings.ThresholdPassColor : new Color(0.54f, 0.85f, 0.48f);
+
+            _juice?.OnClashSlam();
+            Tween.PunchScale(winner.transform, Vector3.one * 0.35f, D(0.18f), frequency: 2);
+            loser.color = fail;
+            Tween.Scale(loser.transform, Vector3.zero, D(0.12f), Ease.InBack)
+                .OnComplete(loser, l => l.gameObject.SetActive(false));
+
+            if (passed)
+            {
+                winner.color = pass;
+                OpenShackle();
+                Tween.PunchScale(_padlock, Vector3.one * 0.3f, D(0.2f), frequency: 2);
+                _juice?.OnPadlockOpened(_padlock);
+            }
+            else
+            {
+                winner.color = fail;
+                float shake = _settings != null ? _settings.PadlockShakePixels : 10f;
+                if (shake > 0f)
+                    _padlockShake = Tween.ShakeLocalPosition(_padlock,
+                        new Vector3(shake, shake * 0.4f, 0f), D(0.3f), frequency: 14);
+                _juice?.OnPadlockShut(_padlock);
+            }
+
+            HoldThreshold(onDone);
+        }
+
+        private void HoldThreshold(Action onDone)
+        {
+            float hold = D(_settings != null ? _settings.ThresholdHoldSeconds : 0.6f);
+            if (hold <= 0f) Gap(onDone);
+            else Tween.Delay(this, hold, d => d.Gap(onDone));
+        }
+
+        private void CacheClashLabelHome()
+        {
+            if (_clashHomeCached || _clashLabel == null) return;
+            _clashLabelHome = _clashLabel.rectTransform.anchoredPosition;
+            _clashHomeCached = true;
+        }
+
+        private void CacheShackleHome()
+        {
+            if (_shackleHomeCached || _padlockShackle == null) return;
+            _shackleHome = _padlockShackle.anchoredPosition;
+            _shackleHomeRotation = _padlockShackle.localRotation;
+            _shackleHomeCached = true;
+        }
+
+        private void RestoreShackle()
+        {
+            if (!_shackleHomeCached || _padlockShackle == null) return;
+            _padlockShackle.anchoredPosition = _shackleHome;
+            _padlockShackle.localRotation = _shackleHomeRotation;
+        }
+
+        // El arco se despega del cuerpo: sube y se inclina hacia un lado (OutBack, con
+        // un rebote corto) — la lectura de "abierto" viene de la separación, no de un
+        // sprite distinto. Con ReducedMotion queda directo en la pose abierta.
+        private void OpenShackle()
+        {
+            if (_padlockShackle == null || !_shackleHomeCached) return;
+            float lift = _settings != null ? _settings.PadlockShackleLiftPixels : 16f;
+            float tilt = _settings != null ? _settings.PadlockShackleTiltDegrees : -22f;
+            var target = _shackleHome + new Vector2(lift * 0.25f, lift);
+            var rotation = _shackleHomeRotation * Quaternion.Euler(0f, 0f, tilt);
+            float dur = D(_settings != null ? _settings.PadlockOpenSeconds : 0.2f);
+            if (dur <= 0.02f || DiceAnim.DiceUiMotionPrefs.ReducedMotion)
+            {
+                _padlockShackle.anchoredPosition = target;
+                _padlockShackle.localRotation = rotation;
+                return;
+            }
+            Tween.UIAnchoredPosition(_padlockShackle, target, dur, Ease.OutBack);
+            Tween.LocalRotation(_padlockShackle, rotation, dur, Ease.OutBack);
+        }
+
+        // Cierre del paso de candado (normal/abort/timeout): todo vuelve a reposo para
+        // que el próximo choque N×M arranque limpio.
+        private void ResetThresholdStage()
+        {
+            if (_padlockShake.isAlive) _padlockShake.Stop();
+            if (_padlock != null)
+            {
+                _padlock.localScale = Vector3.one;
+                _padlock.gameObject.SetActive(false);
+            }
+            RestoreShackle();
+            if (_thresholdLabel != null)
+            {
+                _thresholdLabel.transform.localScale = Vector3.one;
+                _thresholdLabel.color = Color.white;
+                _thresholdLabel.gameObject.SetActive(false);
+            }
+            if (_clashLabel != null)
+            {
+                _clashLabel.transform.localScale = Vector3.one;
+                _clashLabel.color = Color.white;
+                if (_clashHomeCached) _clashLabel.rectTransform.anchoredPosition = _clashLabelHome;
+            }
         }
 
         public void ForceFinalState(float finalN, float finalM)

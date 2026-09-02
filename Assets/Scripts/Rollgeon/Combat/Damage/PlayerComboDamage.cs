@@ -122,6 +122,13 @@ namespace Rollgeon.Combat.Damage
                 AppendJournal(ref sources, sPlay);
             }
 
+            // Forzar Puerta: el bonus de items (Pico de Minero, stat ForceDoorRollBonus) entra
+            // a N como un aditivo más — decisión de diseño 2026-09-02: antes era flat post-M y
+            // quedaba fuera de la animación de breakdown. Cada modifier se journalea con su
+            // ItemSO para que el vuelo muestre el icono del item.
+            if (kind == PlayerComboFormulaKind.ForceDoor)
+                bonoCombo += AppendForceDoorItemBonus(sourceId, ref sources);
+
             int facesSum = 0;
             if (contributingDice != null)
                 for (int i = 0; i < contributingDice.Count; i++) facesSum += contributingDice[i].Face;
@@ -163,6 +170,75 @@ namespace Rollgeon.Combat.Damage
         /// </summary>
         public static int RoundNxM(float n, float m)
             => Math.Max(0, (int)Math.Round(n * (double)m, MidpointRounding.AwayFromZero));
+
+        /// <summary>
+        /// Suma el stat <see cref="ForceDoorRollBonus"/> del jugador y journalea cada modifier
+        /// como fuente <see cref="ScratchSourceKind.Item"/>. La atribución al ItemSO se hace
+        /// por <c>Modifier.SourceId == ItemPassiveSourceId.For(ItemId)</c> sobre el inventario;
+        /// sin match (tests, modifiers de otra fuente) la entrada va sin asset y el builder
+        /// la anima igual, sin icono. Devuelve el total aportado (0 sin stat / sin manager).
+        /// </summary>
+        private static int AppendForceDoorItemBonus(Guid sourceId, ref List<ScratchContribution> sources)
+        {
+            if (!ServiceLocator.TryGetService<AttributesManager>(out var attrs) || attrs == null)
+                return 0;
+            var stat = attrs.GetAttribute<ForceDoorRollBonus>(sourceId);
+            if (stat == null) return 0;
+
+            int total = stat.ModifiedValue;
+            if (total == 0) return 0;
+
+            ServiceLocator.TryGetService<Rollgeon.Items.IInventoryService>(out var inventory);
+            var modifiers = stat.GetRawModifiers();
+            int journaled = 0;
+            if (modifiers != null)
+            {
+                for (int i = 0; i < modifiers.Count; i++)
+                {
+                    var mod = modifiers[i];
+                    if (mod == null || mod.Amount == 0) continue;
+                    var item = FindItemBySourceId(inventory, mod.SourceId);
+                    sources ??= new List<ScratchContribution>(2);
+                    sources.Add(new ScratchContribution(ScratchSourceKind.Item,
+                        item != null ? item.ItemId : "ForceDoorRollBonus", item,
+                        bagSlot: -1, bonusDelta: mod.Amount, multiplierFactor: 1f, setBlock: false));
+                    journaled += mod.Amount;
+                }
+            }
+
+            // El valor raw del stat (sin modifiers) o un modifier no-aditivo dejan un resto
+            // sin journal: una entrada genérica mantiene el guion reconciliado.
+            int remainder = total - journaled;
+            if (remainder != 0)
+            {
+                sources ??= new List<ScratchContribution>(1);
+                sources.Add(new ScratchContribution(ScratchSourceKind.Item, "ForceDoorRollBonus",
+                    null, bagSlot: -1, bonusDelta: remainder, multiplierFactor: 1f, setBlock: false));
+            }
+            return total;
+        }
+
+        private static Rollgeon.Items.ItemSO FindItemBySourceId(
+            Rollgeon.Items.IInventoryService inventory, Guid modifierSourceId)
+        {
+            if (inventory == null || modifierSourceId == Guid.Empty) return null;
+            var found = FindItemIn(inventory.PassiveItems, modifierSourceId);
+            return found ?? FindItemIn(inventory.ActiveItems, modifierSourceId);
+        }
+
+        private static Rollgeon.Items.ItemSO FindItemIn(
+            IReadOnlyList<Rollgeon.Items.InventorySlot> slots, Guid modifierSourceId)
+        {
+            if (slots == null) return null;
+            for (int i = 0; i < slots.Count; i++)
+            {
+                var item = slots[i]?.Item;
+                if (item == null || string.IsNullOrEmpty(item.ItemId)) continue;
+                if (Rollgeon.Items.ItemPassiveSourceId.For(item.ItemId) == modifierSourceId)
+                    return item;
+            }
+            return null;
+        }
 
         // Agrega el journal de un canal al desglose. Aloca solo si alguna fuente aportó.
         private static void AppendJournal(ref List<ScratchContribution> sources, EnchantmentScratch scratch)

@@ -104,6 +104,59 @@ namespace Rollgeon.Effects.Tests
         }
 
         [Test]
+        public void InCombat_Success_WithBreakdownGatePending_DefersCrossingUntilGateEnds()
+        {
+            // Arrange — la secuencia de breakdown (N×M + candado) está corriendo.
+            var instance = CreateInstanceWithAdjacentDoor(DoorDirection.North);
+            _dungeon.CurrentInstance = instance;
+            _dungeon.EnterResult = true;
+            Rollgeon.Feedback.BreakdownUiGate.Begin();
+            try
+            {
+                // Act — el check pasa, pero el cruce espera al gate.
+                bool result = _effect.ApplyEffect(MakeCtx(new int[] { 6, 6, 6, 6, 6 }));
+
+                // Assert — aceptado, sin cruzar todavía.
+                Assert.IsTrue(result);
+                Assert.IsFalse(_dungeon.EnterCalled);
+                instance.ObjectStates.TryGet<DoorState>(DoorDirection.North.DoorStateKey(), out var ds);
+                Assert.IsFalse(ds.Forced);
+            }
+            finally
+            {
+                Rollgeon.Feedback.BreakdownUiGate.End();
+            }
+
+            // Al liberar el gate recién cruza y marca la puerta.
+            Assert.IsTrue(_dungeon.EnterCalled);
+            Assert.AreEqual(DoorDirection.North, _dungeon.LastEnterDirection);
+            instance.ObjectStates.TryGet<DoorState>(DoorDirection.North.DoorStateKey(), out var after);
+            Assert.IsTrue(after.Forced);
+        }
+
+        [Test]
+        public void InCombat_Success_GatePending_RoomChangedMeanwhile_DiscardsDeferredCrossing()
+        {
+            var instance = CreateInstanceWithAdjacentDoor(DoorDirection.North);
+            _dungeon.CurrentInstance = instance;
+            _dungeon.EnterResult = true;
+            Rollgeon.Feedback.BreakdownUiGate.Begin();
+            try
+            {
+                Assert.IsTrue(_effect.ApplyEffect(MakeCtx(new int[] { 6, 6, 6, 6, 6 })));
+                _dungeon.CurrentInstance = null; // el combate se cerró por otro camino
+            }
+            finally
+            {
+                UnityEngine.TestTools.LogAssert.Expect(LogType.Warning,
+                    new System.Text.RegularExpressions.Regex("cruce diferido descartado"));
+                Rollgeon.Feedback.BreakdownUiGate.End();
+            }
+
+            Assert.IsFalse(_dungeon.EnterCalled);
+        }
+
+        [Test]
         public void DiceSum_BelowThreshold_ReturnsFalse_DoesNotEnter()
         {
             var instance = CreateInstanceWithAdjacentDoor(DoorDirection.North);

@@ -1792,6 +1792,21 @@ public interface IMovementDieService {              // ServiceScope.Run, bootstr
   roleando, hace drop-in encima de la ficha, muestra la cara y recién ahí publica el rango;
   queda visible hasta elegir destino (`OnCleared` → fade-out). Sin cablear, el reveal es
   sincrónico.
+- **Atribución por item (sep 2026).** El presenter recibe además
+  `IReadOnlyList<MovementRangeContribution>` (`SourceAsset` = `ItemSO`, `Delta`): lo arma
+  `MovementRangeAttribution` cruzando `MoveRange.GetRawModifiers()` con el inventario por
+  `ItemPassiveSourceId.For(ItemId)` (solo `Add`/`Subtract`; un item con varios modifiers se
+  colapsa; fuentes no-item — rewards "Movimiento+" — no tienen chip pero sí se suman al
+  final). Secuencia en `MovementDieView` al aterrizar: cara cruda → un chip
+  `ModifierEntryView` por contribución (pop + SFX de proc, stagger) → hold → cada chip
+  vuela al centro del dado y el número salta con su delta (punch + SFX) → resto no
+  atribuible → piso 1 (mismo que `SelectionSettings.ResolveEffectiveRange`). El número
+  queda **azul si el total subió, rojo si bajó** (`DiceSlotView.SetFaceTint`, mismos
+  colores que el monto del chip); autorado si quedó igual. **El reveal del rango se
+  publica recién al terminar la absorción**, para que las casillas se pinten con el mismo
+  número que muestra el dado. Todo dividido por `GameSpeedPrefs`; `Abort`/`HideInstant`
+  cortan la secuencia y devuelven los chips al stack. El label agregado "+N" viejo se
+  eliminó: el total vive en el propio dado. Texto del chip: `MovementDieChipFormat.Label`.
 - **Comprometida tras tirar.** Con `_movementRollPrepaid`, `HasCancellableSelection` es
   false: ni click derecho ni clicks de slot cancelan (la UI muestra los demás slots
   Locked); End Turn sigue soltando la selección y pierde el roll.
@@ -3404,6 +3419,28 @@ contra teardowns fuera de orden.
 | "Multi‑hit con stagger" | Un solo step `FeedbackRef` FloatingNumber — cada `FloatingNumberBehaviorValue` en la lista tiene su `Delay` propio |
 | "Fire‑and‑forget particle de ambiente" | `BlockSequence = false` — la secuencia reporta complete sin esperarlo |
 | "Wait de 0.3s entre dos VFX" | Step intermedio `InlineWait` con `WaitDuration = 0.3`, `AfterPrevious` |
+
+**10.8.4 Gate de la secuencia de breakdown (`BreakdownUiGate`)**.
+
+La animación N×M del HUD (`BreakdownSequenceDirector`, prefab `Canvas_ActionRoll`)
+levanta `BreakdownUiGate` desde que recibe `DamageBreakdownComputedPayload` hasta
+que termina el choque. Mientras está pendiente, el `FeedbackManager` no despacha
+secuencias y los teardowns de dados se difieren. Para gameplay que debe esperar la
+animación sin feedback de golpe de por medio, usar
+`BreakdownUiGate.RunWhenIdle(Action)`: corre sincrónico si no hay secuencia (tests,
+exploración, director sin bindear) y diferido hasta la transición a 0 si la hay.
+Consumidores: el avance de fase del chain (`CombatHandoffService`) y el cruce de
+sala de `EffForceDoor` en combate.
+
+Forzar Puerta (sept 2026): el anunciador emite el desglose con o sin combo (sin
+combo: base 0 + todos los dados holdeados) y lleva `Threshold` en el payload. Con
+umbral, el reproductor corre `PlayThresholdClash` tras el choque N×M en lugar de la
+mitigación: el total sube a la izquierda, el umbral sale a la derecha, chocan sobre
+el candado y el mayor queda; el candado abre (el arco, `PadlockShackle.png`, se
+levanta y se inclina separándose del cuerpo `PadlockBody.png`) o tiembla cerrado.
+Recién al liberar el gate `EffForceDoor` cruza la sala y aborta el combate. El
+`ForceDoorRollBonus` de items (Pico de Minero) entra a N como aditivo journaleado
+(vuela con el icono del item), ya no es flat post-multiplicador.
 
 ### 10.9 Efecto autor — `EffPlayFeedback`
 

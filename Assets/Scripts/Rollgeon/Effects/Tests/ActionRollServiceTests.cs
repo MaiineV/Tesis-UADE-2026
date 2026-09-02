@@ -149,12 +149,12 @@ namespace Rollgeon.Effects.Tests
         // -------------------------------------------------------------------------
         // Force Door N×M: el effective total usa la fórmula del combate
         // (PlayerComboForceDoor) — con combo, base + Attack + Σcaras, escalado por M;
-        // sin combo, base 0 con todos los held como caras. El stat de items es flat
-        // post-multiplicador. Los kinds != ForceDoor conservan la fórmula B.
+        // sin combo, base 0 con todos los held como caras. El stat de items entra a N
+        // (pre-multiplicador). Los kinds != ForceDoor conservan la fórmula B.
         // -------------------------------------------------------------------------
 
         [Test]
-        public void ForceDoorKind_NoCombo_UsesNxM_AttackPlusHeldSum_PlusFlatItemBonus()
+        public void ForceDoorKind_NoCombo_UsesNxM_AttackPlusHeldSum_PlusItemBonusInN()
         {
             // Arrange — Attack 5 + stat de item 7; sin combo posible.
             var attrMgr = new Rollgeon.Attributes.AttributesManager();
@@ -176,7 +176,7 @@ namespace Rollgeon.Effects.Tests
                 // Act
                 _service.Confirm();
 
-                // Assert — N = 0 + 5(ATQ) + 5(pips) = 10; M = 1 → 10 + 7 = 17.
+                // Assert — N = 0 + 5(ATQ) + 5(pips) + 7(item) = 17; M = 1 → 17.
                 Assert.AreEqual(17, captured.EffectiveTotal);
                 Assert.IsTrue(captured.PassedThreshold);
             }
@@ -228,7 +228,7 @@ namespace Rollgeon.Effects.Tests
         }
 
         [Test]
-        public void ForceDoorKind_ComboMultiplier_ScalesNxM_ButNotItemBonus()
+        public void ForceDoorKind_ComboMultiplier_ScalesNxM_IncludingItemBonus()
         {
             // Arrange — Generala base 22, stat de item 5, multiplicador de habilidad 2.
             var attrMgr = new Rollgeon.Attributes.AttributesManager();
@@ -252,9 +252,9 @@ namespace Rollgeon.Effects.Tests
                 // Act
                 service.Confirm();
 
-                // Assert — (N=42 × 2) + 5 = 89; NUNCA (42+5)×2 = 94: el "+5 a la
-                // tirada" del item es literal, no lo escala M.
-                Assert.AreEqual(89, captured.EffectiveTotal);
+                // Assert — (42 + 5) × 2 = 94: el +5 del item es un aditivo más de N y
+                // M escala todo (decisión 2026-09-02; antes era flat post-M → 89).
+                Assert.AreEqual(94, captured.EffectiveTotal);
             }
             finally
             {

@@ -17,6 +17,12 @@ namespace Rollgeon.UI.HUD.Breakdown
         void PlayFinalClash(int finalTotal, Action onDone);
         /// <summary>Mitigación visible post-choque (solo si difiere del total crudo).</summary>
         void PlayMitigation(int mitigatedTotal, Action onDone);
+        /// <summary>
+        /// Choque del total contra un umbral sobre el candado (Forzar Puerta). Reemplaza a
+        /// la mitigación cuando hay umbral; el stage decide abierto/cerrado con
+        /// <c>total &gt;= threshold</c>.
+        /// </summary>
+        void PlayThresholdClash(int finalTotal, int threshold, Action onDone);
         /// <summary>Skip total: pinta los contadores en su estado final, sin animar.
         /// N es float — el base damage override puede aportar fracción (Furia).</summary>
         void ForceFinalState(float finalN, float finalM);
@@ -35,6 +41,7 @@ namespace Rollgeon.UI.HUD.Breakdown
         private IBreakdownStage _stage;
         private Action _onFinished;
         private int? _mitigatedTotal;
+        private int? _threshold;
         private int _index;
         private bool _running;
         private bool _clashPlayed;
@@ -45,11 +52,19 @@ namespace Rollgeon.UI.HUD.Breakdown
 
         public void Play(BreakdownScript script, IBreakdownStage stage,
             int? mitigatedTotal, Action onFinished)
+            => Play(script, stage, mitigatedTotal, null, onFinished);
+
+        /// <param name="threshold">Umbral de Forzar Puerta: con valor, tras el choque N×M
+        /// corre <see cref="IBreakdownStage.PlayThresholdClash"/> en vez de la mitigación.
+        /// El salto (skip Jump) también pasa por él: el resultado del candado siempre se ve.</param>
+        public void Play(BreakdownScript script, IBreakdownStage stage,
+            int? mitigatedTotal, int? threshold, Action onFinished)
         {
             _script = script;
             _stage = stage;
             _onFinished = onFinished;
             _mitigatedTotal = mitigatedTotal;
+            _threshold = threshold;
             _index = 0;
             _clashPlayed = false;
             Done = false;
@@ -112,7 +127,9 @@ namespace Rollgeon.UI.HUD.Breakdown
             _stage.PlayFinalClash(_script.FinalTotal, () =>
             {
                 if (!_running) return;
-                if (_mitigatedTotal.HasValue && _mitigatedTotal.Value != _script.FinalTotal)
+                if (_threshold.HasValue)
+                    _stage.PlayThresholdClash(_script.FinalTotal, _threshold.Value, Finish);
+                else if (_mitigatedTotal.HasValue && _mitigatedTotal.Value != _script.FinalTotal)
                     _stage.PlayMitigation(_mitigatedTotal.Value, Finish);
                 else
                     Finish();

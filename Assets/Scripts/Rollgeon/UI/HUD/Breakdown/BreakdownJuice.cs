@@ -59,6 +59,10 @@ namespace Rollgeon.UI.HUD.Breakdown
         [SerializeField, Optional] private AudioClip _clashImpactClip;
         [SerializeField, Optional] private AudioClip _shieldClankClip;
         [SerializeField, Optional] private AudioClip _weaknessSparkleClip;
+        [SerializeField, Optional, Tooltip("Candado que se abre (Forzar Puerta pasa).")]
+        private AudioClip _padlockOpenClip;
+        [SerializeField, Optional, Tooltip("Candado que aguanta (Forzar Puerta falla).")]
+        private AudioClip _padlockShutClip;
         [SerializeField, Range(0f, 1f)] private float _sfxVolume = 0.8f;
 
         private readonly List<(Graphic graphic, Color rest)> _dimmedSlots =
@@ -314,6 +318,22 @@ namespace Rollgeon.UI.HUD.Breakdown
         {
             if (!Particles || _impactBurst == null) return;
             _impactBurst.Burst(ToBurstSpace(at), Vector2.down, 0.5f);
+        }
+
+        /// <summary>Forzar Puerta pasó: el candado se abre — clank + chispas hacia arriba.</summary>
+        public void OnPadlockOpened(RectTransform at)
+        {
+            PlaySfx(_padlockOpenClip != null ? _padlockOpenClip : _weaknessSparkleClip,
+                _sfxVolume, 1f, isImportant: true);
+            if (!Particles || _impactBurst == null || at == null) return;
+            _impactBurst.Burst(ToBurstSpace(at), Vector2.up, 0.6f);
+        }
+
+        /// <summary>Forzar Puerta falló: el candado aguanta — thud seco, sin chispas.</summary>
+        public void OnPadlockShut(RectTransform at)
+        {
+            PlaySfx(_padlockShutClip != null ? _padlockShutClip : _shieldClankClip,
+                _sfxVolume, 0.7f, isImportant: true);
         }
 
         /// <summary>
