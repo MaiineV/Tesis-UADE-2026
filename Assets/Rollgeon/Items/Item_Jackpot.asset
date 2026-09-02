@@ -396,7 +396,7 @@ MonoBehaviour:
   ItemId: jackpot
   DisplayName: Jackpot
   Description: "+5 de da\xF1o por cada dado que muestre un 7 en tu ataque."
-  Icon: {fileID: 0}
+  Icon: {fileID: 1808964844, guid: ee12da05509c7a74686b1e1cc11cbd3e, type: 3}
   Rarity: 1
   FamilyId: 
   VariantIndex: 0
