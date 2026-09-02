@@ -24,11 +24,9 @@ namespace Rollgeon.UI.Tooltips
         {
             if (trigger == null) return null;
 
-            // Mismo GO + padres.
             var info = trigger.GetComponentInParent<IHasTooltipInfo>();
             if (info == null)
             {
-                // Hijos (incluso inactivos).
                 info = trigger.GetComponentInChildren<IHasTooltipInfo>(includeInactive: true);
             }
 

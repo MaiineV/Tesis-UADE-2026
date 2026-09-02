@@ -17,11 +17,9 @@ namespace Rollgeon.UI.Tooltips
     /// </summary>
     public static class HeroActionTooltip
     {
-        // BUG-041: el nombre venía crudo de ActionName (texto libre autorado en el SO,
-        // nunca localizado). Mapeo por Slot — más confiable que matchear ActionName como
-        // string: un diseñador puede retipear el nombre visible sin romper la key. Solo
-        // es confiable cuando IsBaseBehavior es true (ver comentario del campo Slot en
-        // HeroActionBehavior — sin eso, Slot puede quedar en su default sin significado).
+        // Mapeo por Slot y no por ActionName: un diseñador puede retipear el nombre visible
+        // sin romper la key. Solo es confiable cuando IsBaseBehavior es true — sin eso, Slot
+        // puede quedar en su default sin significado.
         private static readonly Dictionary<HeroBehaviorSlot, string> BaseSlotKeys =
             new Dictionary<HeroBehaviorSlot, string>
             {
@@ -59,19 +57,11 @@ namespace Rollgeon.UI.Tooltips
         }
 
         /// <summary>
-        /// Key de la tabla UI para el nombre de <paramref name="behavior"/>, o
-        /// <c>null</c> si no hay mapeo confiable (el caller cae al
-        /// <see cref="HeroActionBehavior.ActionName"/> crudo). Separado de
-        /// <see cref="ResolveActionName"/> para poder testear la DECISIÓN de mapeo sin
-        /// depender de que la Localization runtime esté inicializada (EditMode).
-        /// <para>
-        /// "Pass door" es el único caso especial: comparte el slot
-        /// <see cref="HeroBehaviorSlot.ForceDoor"/> con "Force Door" como variante
-        /// contextual con <c>IsBaseBehavior = false</c> — el mapeo por Slot no alcanza a
-        /// distinguirlas, así que matchea por ActionName contra la key ya seedeada
-        /// <c>action.pass_door</c> (la misma que usa el chip fijo de
-        /// <c>Canvas_ExplorationHUD.prefab</c>).
-        /// </para>
+        /// Key de la tabla UI para el nombre, o <c>null</c> sin mapeo confiable (el caller cae
+        /// al <see cref="HeroActionBehavior.ActionName"/> crudo). Separado de
+        /// <see cref="ResolveActionName"/> para testear el mapeo sin Localization inicializada.
+        /// "Pass door" matchea por ActionName: comparte slot con "Force Door" como variante
+        /// con <c>IsBaseBehavior = false</c>, y el mapeo por Slot no las distingue.
         /// </summary>
         internal static string ResolveActionNameKey(HeroActionBehavior behavior)
         {

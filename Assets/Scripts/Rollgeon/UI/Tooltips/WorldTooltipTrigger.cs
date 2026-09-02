@@ -26,13 +26,8 @@ namespace Rollgeon.UI.Tooltips
     /// en el GameObject. El texto se ancla al punto-pantalla del objeto.
     /// </summary>
     /// <remarks>
-    /// <b>Por qué Update + Physics.Raycast en lugar de OnMouseDown / OnMouseEnter</b>:
-    /// los callbacks legacy del MonoBehaviour son interceptados por Unity cuando hay un
-    /// Canvas con GraphicRaycaster cubriendo la pantalla (típico en juegos con HUD que
-    /// ocupa toda la pantalla aunque sea con paneles transparentes). El raycast manual
-    /// chequea explícitamente <see cref="EventSystem.IsPointerOverGameObject"/> y, si el
-    /// cursor NO está sobre UI, hace su propio <see cref="Physics.Raycast"/> y dispara
-    /// si pega a este collider. Funciona aunque el HUD ocupe toda la pantalla.
+    /// Update + raycast manual en lugar de OnMouseEnter/Down: los callbacks legacy los
+    /// intercepta un Canvas con GraphicRaycaster que cubra la pantalla, y el HUD la cubre.
     /// </remarks>
     [AddComponentMenu("Rollgeon/UI/Tooltips/World Tooltip Trigger")]
     public sealed class WorldTooltipTrigger : MonoBehaviour
@@ -135,16 +130,12 @@ namespace Rollgeon.UI.Tooltips
             set => _placement.Mode = value;
         }
 
-        [Tooltip("De qué lado del punto de anclaje cuelga el panel (solo AutoFit). Above = " +
-                 "histórico (crece hacia arriba). Below = panel entero debajo del anclaje — " +
-                 "para pawns cuyo origen son los pies y el panel tapaba el modelo (BUG-075).")]
+        [Tooltip("De qué lado del punto de anclaje cuelga el panel (solo AutoFit). Below = " +
+                 "panel entero debajo del anclaje — para pawns cuyo origen son los pies y el " +
+                 "panel taparía el modelo.")]
         [SerializeField] private TooltipVerticalSide _verticalSide = TooltipVerticalSide.Above;
 
-        /// <summary>
-        /// Lado vertical del panel (solo AutoFit). El default serializado (<c>Above</c>)
-        /// preserva los triggers existentes; el panel de enemigos ya no lo usa — vive fijo
-        /// arriba a la derecha vía <see cref="Placement"/>.
-        /// </summary>
+        /// <summary>Lado vertical del panel (solo AutoFit).</summary>
         public TooltipVerticalSide VerticalSide
         {
             get => _verticalSide;
@@ -265,7 +256,7 @@ namespace Rollgeon.UI.Tooltips
         }
 
         // Al agarrar la ficha de atacar el panel se cierra solo: el click vuelve a ser 100% de
-        // seleccionar objetivo (decisión §6.2 del spec de tooltips).
+        // seleccionar objetivo.
         private void HandleTargetingStarted(params object[] args)
         {
             Unpin();
@@ -273,11 +264,9 @@ namespace Rollgeon.UI.Tooltips
             SetHover(false, null);
         }
 
-        // UN raycast por frame compartido entre todos los triggers, no uno por trigger: con la
-        // sala prendida fuego hay ~112 casillas con trigger además de los enemigos, y un
-        // RaycastAll (que además aloca el array) por cada uno era el nuevo costo sostenido
-        // dominante. Todos comparten el mismo ray porque todos preguntan lo mismo: qué hay
-        // bajo el mouse. La distancia la fija el primero del frame — todos usan el default.
+        // UN raycast por frame compartido entre todos los triggers: con la sala prendida fuego
+        // hay ~112 casillas con trigger, y un raycast por cada una domina el costo sostenido.
+        // La distancia la fija el primero del frame — todos usan el default.
         private static readonly RaycastHit[] s_sharedHits = new RaycastHit[64];
         private static int s_sharedHitCount;
         private static int s_sharedFrame = -1;
@@ -290,10 +279,9 @@ namespace Rollgeon.UI.Tooltips
                 s_sharedFrame = Time.frameCount;
                 s_sharedCam = cam;
 
-                // Pixel-art pipeline: la cámara renderiza a un RT chiquito, así que
-                // pixelWidth/Height ≠ Screen.width/Height. Escalamos el mouse pos al
-                // viewport interno de la cámara antes del ScreenPointToRay. Mismo fix
-                // que TileClickHandler usa para sus raycasts.
+                // Pixel-art: la cámara renderiza a un RT chiquito (pixelWidth/Height ≠
+                // Screen.width/Height) — el mouse se escala al viewport interno antes del
+                // ScreenPointToRay, igual que TileClickHandler.
                 var rtPos = new Vector2(
                     mouseScreen.x / Screen.width  * cam.pixelWidth,
                     mouseScreen.y / Screen.height * cam.pixelHeight);
@@ -401,11 +389,8 @@ namespace Rollgeon.UI.Tooltips
                 _placement.Mode, _verticalSide);
         }
 
-        // Punto-pantalla final según el modo: AutoFit ancla al objeto 3D (el controller
-        // suma su offset global y clampea a pantalla); Fixed ancla al RectTransform de UI
-        // configurado + offset en píxeles de referencia (resolución-independiente). Fixed
-        // SIN anchor cae al objeto 3D + offset en píxeles reales — para tooltips de mundo
-        // conviene configurar un anchor de UI o usar AutoFit.
+        // AutoFit ancla al objeto 3D; Fixed al RectTransform configurado + offset en píxeles
+        // de referencia. Fixed SIN anchor cae al objeto 3D + offset en píxeles reales.
         private Vector2 ResolvePlacementScreenPos(Camera cam)
         {
             if (_placement.Mode == TooltipPlacementMode.Fixed && _placement.FixedAnchor != null)
@@ -417,10 +402,8 @@ namespace Rollgeon.UI.Tooltips
                 : objScreen;
         }
 
-        // WorldToScreenPoint devuelve coords del viewport interno de la cámara — para
-        // pixel-art que renderiza a un RT chiquito, eso es del RT, no del Screen real.
-        // Re-escalamos al Screen para que el TooltipController (Canvas Overlay) ancle
-        // donde el user ve la puerta.
+        // WorldToScreenPoint devuelve coords del RT interno de la cámara pixel-art, no del
+        // Screen real — se re-escala para que el canvas ancle donde el user ve el objeto.
         private Vector2 ResolveAnchorScreenPos(Camera cam)
         {
             // Sin cámara no hay proyección — pasa en el refresh del fijado fuera de una escena

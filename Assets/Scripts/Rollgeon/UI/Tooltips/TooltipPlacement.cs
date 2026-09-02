@@ -36,10 +36,9 @@ namespace Rollgeon.UI.Tooltips
     }
 
     /// <summary>
-    /// De qué lado del punto de anclaje se cuelga el panel (BUG-075). <c>Above</c> es el
-    /// comportamiento histórico (pivot inferior-centro ⇒ crece hacia arriba). <c>Below</c>
-    /// coloca el panel entero DEBAJO del punto — para tooltips de mundo anclados al
-    /// origen del pawn (los pies), donde crecer hacia arriba tapaba el modelo.
+    /// De qué lado del punto de anclaje se cuelga el panel. <c>Above</c> crece hacia arriba
+    /// (pivot inferior-centro); <c>Below</c> coloca el panel entero DEBAJO del punto — para
+    /// anclas en los pies del pawn, donde crecer hacia arriba tapa el modelo.
     /// </summary>
     public enum TooltipVerticalSide
     {
@@ -108,25 +107,11 @@ namespace Rollgeon.UI.Tooltips
         }
 
         /// <summary>
-        /// Punto-pantalla del BORDE SUPERIOR de un rect de UI, centrado en X (no el pivot
-        /// — <c>rect.position</c> es el pivot, y triggers con pivot (0,0) o (0.5,0)
-        /// (PocionSlot, botones de combate) quedaban con el tooltip descolgado hacia un
-        /// costado). Usado por <see cref="Tooltips.UITooltipTrigger"/> en modo AutoFit —
-        /// el único caller. Para Canvas Screen Space Overlay, el world point ya está en
-        /// screen-space; para Camera/World se proyecta con la cámara del canvas.
+        /// Punto-pantalla del BORDE SUPERIOR de un rect de UI, centrado en X. Al borde y no
+        /// al centro: con el offset chico del controller, anclar al centro deja el panel
+        /// montado sobre el propio elemento que lo disparó. El modo Fixed NO pasa por acá —
+        /// centra su propio anchor y el offset lo autora el diseñador a mano.
         /// </summary>
-        /// <remarks>
-        /// BUG-041: antes anclaba al CENTRO del rect. Con el offset chico del
-        /// <c>TooltipController</c> (12px por default) el borde inferior del panel
-        /// quedaba DENTRO del elemento — el tooltip de curación tapado por el propio
-        /// botón/cursor que lo disparó. Ancorar al borde superior deja el panel entero
-        /// por encima del elemento antes de sumar el offset del controller.
-        /// <para>
-        /// El modo Fixed (<see cref="TooltipPlacementSettings.ResolveFixedScreenPos"/>) NO
-        /// pasa por este método — sigue centrando su propio anchor, así que los triggers
-        /// Fixed (offset autorado a mano, ej. chips de combate) no cambian.
-        /// </para>
-        /// </remarks>
         public static Vector2 ScreenPosOf(RectTransform rect)
         {
             if (rect == null) return Vector2.zero;
@@ -143,9 +128,8 @@ namespace Rollgeon.UI.Tooltips
             return RectTransformUtility.WorldToScreenPoint(canvas.worldCamera, worldTopEdge);
         }
 
-        // Centro real del rect (no el pivot) — sigue siendo lo que usa el modo Fixed vía
-        // ResolveFixedScreenPos: ahí el offset lo autora el diseñador a mano, así que el
-        // punto de partida no debe moverse con el fix de AutoFit (BUG-041).
+        // Centro real del rect (no el pivot): el punto de partida del modo Fixed, cuyo
+        // offset está autorado a mano y no debe moverse.
         private static Vector2 ScreenPosOf(RectTransform rect, Canvas canvas)
         {
             if (rect == null) return Vector2.zero;

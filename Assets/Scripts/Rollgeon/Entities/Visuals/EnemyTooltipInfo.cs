@@ -18,16 +18,9 @@ namespace Rollgeon.Entities.Visuals
     /// <see cref="WorldTooltipTrigger"/> en modo Hover; el <c>TooltipResolver</c> lo encuentra solo.
     /// </summary>
     /// <remarks>
-    /// <para>
-    /// <b>Guarda el SO, no el texto.</b> El texto se arma en cada hover para que el idioma vigente
-    /// mande: si se cachea al spawnear, cambiar de locale a mitad de un combate deja al enemigo
-    /// describiéndose en el idioma anterior hasta el próximo combate.
-    /// </para>
-    /// <para>
-    /// La descripción tiene que decir lo que el bicho <i>hace ahora</i>. Un rediseño que cambia el
-    /// kit y deja la descripción vieja es peor que no tener tooltip: promete una pelea que no
-    /// existe. Y donde sí se lee —el párrafo— no hay tarjetas al lado que la desmientan.
-    /// </para>
+    /// <b>Guarda el SO, no el texto.</b> El texto se arma en cada hover para que el idioma
+    /// vigente mande: cacheado al spawnear, un cambio de locale a mitad de combate deja al
+    /// enemigo describiéndose en el idioma anterior.
     /// </remarks>
     [AddComponentMenu("Rollgeon/Entities/Enemy Tooltip Info")]
     public sealed class EnemyTooltipInfo : MonoBehaviour, IHasTooltipInfo
@@ -44,19 +37,10 @@ namespace Rollgeon.Entities.Visuals
 
         /// <summary>
         /// El contenido del panel: nombre, familia, la vida leída en este hover y una frase
-        /// táctica de una línea (la key <c>.brief</c>). <b>Sin lore.</b>
+        /// táctica de una línea (la key <c>.brief</c>). Sin lore: cualquier frase que resuma
+        /// al bicho repite sus tarjetas. La descripción larga vive en <see cref="BuildTooltip"/>
+        /// (bombas y objetos del jefe, donde el tooltip es un párrafo y no un panel).
         /// </summary>
-        /// <remarks>
-        /// El panel no lleva lore, y no es una cuestión de espacio: cualquier frase que resuma al
-        /// bicho repite alguna de sus tarjetas, porque las tarjetas <i>son</i> lo que hace. El
-        /// Croupier se describe con tres verbos y uno de los tres es siempre el ataque que se está
-        /// mostrando — teníamos "…y dispara de lejos" a un renglón de "Te dispara de lejos".
-        /// <para>
-        /// La descripción sigue viva y se lee por <see cref="BuildTooltip"/>, que es lo que usan
-        /// las bombas y los objetos que un jefe pone en el paño: ahí el tooltip es un párrafo y no
-        /// un panel, así que no hay tarjeta que pueda contradecirla.
-        /// </para>
-        /// </remarks>
         public TooltipContent BuildContent()
         {
             var data = _data;
@@ -67,9 +51,8 @@ namespace Rollgeon.Entities.Visuals
                 ? data.DisplayName
                 : LocalizedContent.Name(id, data.DisplayName);
 
-            // La frase táctica, no el lore: una línea de cómo pelea, autorada por bicho en la
-            // key .brief. Sin entry no se dibuja nada — el fallback vacío ES la decisión de que
-            // un enemigo sin frase no muestre una.
+            // Sin entry no se dibuja nada: el fallback vacío ES la decisión de que un enemigo
+            // sin frase autorada no muestre una.
             string brief = string.IsNullOrEmpty(id)
                 ? string.Empty
                 : LocalizedContent.FromTable(
@@ -77,8 +60,8 @@ namespace Rollgeon.Entities.Visuals
 
             var (health, maxHealth) = ReadVitals();
 
-            // La frase va como párrafo, no como pie: en el panel el párrafo vive pegado a la
-            // identidad (el bloque de header del mockup), y el pie quedaba abajo de las tarjetas.
+            // Como párrafo y no como pie: el párrafo vive pegado a la identidad; el pie queda
+            // abajo de las tarjetas.
             return new TooltipContent(
                 text: brief,
                 name: name,

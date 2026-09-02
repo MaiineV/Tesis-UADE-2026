@@ -15,11 +15,9 @@ namespace Rollgeon.UI.Tooltips
     /// (background + texto) que se toggle-a por activeSelf.
     /// </summary>
     /// <remarks>
-    /// <b>Layout esperado:</b> un sub-GameObject "Panel" con Image de fondo + TMP_Text hijo.
-    /// El panel debe tener pivot inferior-centro (0.5, 0): crece hacia arriba, centrado
-    /// sobre el punto de anclaje. En AutoFit ese punto ya es el BORDE SUPERIOR del
-    /// elemento (ver <see cref="TooltipPlacement.ScreenPosOf"/>, BUG-041) — el offset
-    /// default suma un margen chico encima para que no quede pegado.
+    /// El panel (<see cref="_root"/>) debe tener pivot inferior-centro (0.5, 0): crece hacia
+    /// arriba, centrado sobre el punto de anclaje — que en AutoFit ya es el borde superior
+    /// del elemento.
     /// </remarks>
     [AddComponentMenu("Rollgeon/UI/Tooltips/Tooltip Controller")]
     public sealed class TooltipController : MonoBehaviour
@@ -36,12 +34,8 @@ namespace Rollgeon.UI.Tooltips
         [Required("Arrastrar el TMP_Text donde se escribe el texto.")]
         [SerializeField] private TMP_Text _text;
 
-        [Tooltip("Offset en píxeles desde el punto-pantalla del anchor. Default (0, 12): " +
-                 "en AutoFit el anchor ya es el borde SUPERIOR del rect (BUG-041) y el " +
-                 "panel tiene pivot inferior-centro, así que este offset es el margen " +
-                 "extra por encima del elemento. Solo aplica en modo AutoFit — en Fixed " +
-                 "no se suma (el trigger ya resolvió su propia posición), pero igual se " +
-                 "clampea a pantalla.")]
+        [Tooltip("Margen extra por encima del elemento, en píxeles. Solo AutoFit — en Fixed " +
+                 "el trigger ya resolvió su propia posición.")]
         [SerializeField] private Vector2 _anchorOffset = new Vector2(0f, 12f);
 
         [Tooltip("Margen mínimo en píxeles del canvas entre el panel y el borde de la " +
@@ -63,11 +57,8 @@ namespace Rollgeon.UI.Tooltips
         [Tooltip("Canvas host. Si null, busca uno via GetComponentInParent en Awake.")]
         [SerializeField] private Canvas _hostCanvas;
 
-        [Tooltip("Contenedor de la columna de tarjetas (\"Cards\"), hermano de _text bajo " +
-                 "el panel. Null a propósito: sin cablear, el panel se comporta exactamente " +
-                 "como el tooltip de texto de siempre — es lo que mantiene vivos todos los " +
-                 "tooltips existentes y TooltipPlacementTests mientras se completa el wiring " +
-                 "del prefab (ver Rollgeon/Tooltips/2 - Wire Card Column Into Tooltip Panel).")]
+        [Tooltip("Contenedor de la columna de tarjetas (\"Cards\"). Null = sin columna: el " +
+                 "panel se comporta como el tooltip de texto de siempre.")]
         [SerializeField] private RectTransform _cardsContainer;
 
         [Tooltip("Prefab de una tarjeta de la columna. Null junto con _cardsContainer = " +
@@ -91,7 +82,7 @@ namespace Rollgeon.UI.Tooltips
                  "identidad deja el bloque apagado y el panel es el de siempre.")]
         [SerializeField] private TMP_Text _nameLabel;
 
-        [Tooltip("Familia de la unidad, debajo del nombre. Se apaga sola cuando el enemigo no " +
+        [Tooltip("Familia de la unidad, al lado del nombre. Se apaga sola cuando el enemigo no " +
                  "tiene familia autorada.")]
         [SerializeField] private TMP_Text _typeLabel;
 
@@ -127,10 +118,8 @@ namespace Rollgeon.UI.Tooltips
 
         private RectTransform _hostCanvasRect;
         private bool _visible;
-        // Identifica al trigger dueño del tooltip actual. Las llamadas a Hide(ownerId) solo
-        // cierran si coinciden — evita que el hover-exit de la poción cierre un tooltip
-        // que recién abrió un click en la puerta. Toggle(ownerId) cierra si coincide,
-        // sino muestra con nuevo owner.
+        // Dueño del tooltip actual: Hide(ownerId) solo cierra si coincide, para que el
+        // hover-exit de un trigger no cierre el panel que abrió otro.
         private int _currentOwnerId;
 
         private void Awake()
@@ -147,17 +136,14 @@ namespace Rollgeon.UI.Tooltips
             SetVisible(false);
         }
 
-        // Auto-resolve si no se cableo en Inspector (convencion: primer RectTransform
-        // hijo es _root, primer TMP_Text descendiente es _text). Esto deja el setup
-        // "agregar componente y crear sub-objetos Panel/Text" funcionando sin Drag&Drop.
-        // Separado de Awake para que el preview de editor funcione sin play mode.
+        // Auto-resolve por convencion (primer RectTransform hijo = _root, primer TMP_Text
+        // descendiente = _text). Separado de Awake para que el preview de editor funcione
+        // sin play mode.
         private void EnsureRefs()
         {
             if (_root == null && transform.childCount > 0)
                 _root = transform.GetChild(0) as RectTransform;
-            // El auto-resolve toma el primer TMP descendiente, y una vez que existe la columna
-            // ese primero puede ser el titulo de una tarjeta. Sin columna cableada el camino es
-            // identico al de siempre.
+            // Con columna, el primer TMP descendiente puede ser el titulo de una tarjeta.
             if (_text == null)
                 _text = FindHeaderLabel();
 
@@ -186,10 +172,9 @@ namespace Rollgeon.UI.Tooltips
             return null;
         }
 
-        // El orden de jerarquía dentro del canvas HUD dejaba el tooltip DEBAJO de
-        // pantallas hermanas (ej. el panel del Altar de Encantamiento). Un Canvas
-        // anidado con overrideSorting lo saca de esa pelea. Sin GraphicRaycaster
-        // a propósito: el tooltip nunca debe interceptar el mouse.
+        // Canvas anidado con overrideSorting: el orden de jerarquía del HUD puede dejar el
+        // tooltip debajo de pantallas hermanas. Sin GraphicRaycaster a propósito: el tooltip
+        // nunca debe interceptar el mouse.
         private void EnsureOverlaySorting()
         {
             if (_root == null) return;
@@ -231,10 +216,8 @@ namespace Rollgeon.UI.Tooltips
             => Show(text, null, screenPos, ownerId, placement);
 
         /// <summary>
-        /// Variante con lado vertical (BUG-075). <see cref="TooltipVerticalSide.Below"/>
-        /// cuelga el panel entero DEBAJO del punto de anclaje. Solo aplica en AutoFit; el
-        /// clamp a pantalla corre igual. Conservada por los triggers serializados que la
-        /// configuran — el panel de enemigos ya no la usa: vive fijo arriba a la derecha.
+        /// Variante con lado vertical: <see cref="TooltipVerticalSide.Below"/> cuelga el panel
+        /// entero DEBAJO del punto de anclaje. Solo aplica en AutoFit; el clamp corre igual.
         /// </summary>
         public void Show(string text, Vector2 screenPos, int ownerId,
             TooltipPlacementMode placement, TooltipVerticalSide side)
@@ -256,9 +239,8 @@ namespace Rollgeon.UI.Tooltips
                          TooltipPlacementMode placement,
                          TooltipVerticalSide side = TooltipVerticalSide.Above)
         {
-            // Cada Show arranca sin candado: el panel es compartido, y el trigger fijado lo
-            // re-afirma después de su propio Show. Sin esto, el candado de un panel fijado
-            // sobrevivía al tooltip de la puerta.
+            // Cada Show arranca sin candado: el panel es compartido y el trigger fijado lo
+            // re-afirma después de su propio Show.
             SetPinned(false);
 
             ApplyContent(content);
@@ -302,8 +284,7 @@ namespace Rollgeon.UI.Tooltips
             }
             else if (side == TooltipVerticalSide.Below && _root != null)
             {
-                // Medir la altura real del panel con el texto nuevo antes de colocarlo —
-                // colgar "debajo" necesita saber cuánto ocupa (BUG-075).
+                // Colgar "debajo" necesita la altura real del panel con el texto nuevo.
                 UnityEngine.UI.LayoutRebuilder.ForceRebuildLayoutImmediate(_root);
                 float panelScreenHeight = _root.rect.height * _root.lossyScale.y;
                 target = TooltipVerticalPlacement.ComputeAnchorTarget(
@@ -396,16 +377,8 @@ namespace Rollgeon.UI.Tooltips
 
         /// <summary>
         /// Re-posiciona el panel lo mínimo necesario para que quede COMPLETO dentro del
-        /// rect del canvas (con <see cref="_screenPadding"/> de margen). El default de
-        /// anchor abajo-derecha hacía que tooltips cerca del borde quedaran cortados.
+        /// rect del canvas (con <see cref="_screenPadding"/> de margen).
         /// </summary>
-        /// <remarks>
-        /// <see cref="RectTransform.GetWorldCorners"/> devuelve los 4 vértices reales del
-        /// rect ya resueltos (pivot incluido) — el cálculo de bordes es agnóstico al pivot
-        /// del panel, así que el pivot inferior-centro (0.5, 0) no necesita casos especiales
-        /// acá; el shift se aplica sobre <c>_root.position</c> (el pivot), que desplaza el
-        /// rect completo por igual sin importar dónde esté el pivot dentro de él.
-        /// </remarks>
         private void ClampToCanvas()
         {
             var shift = MeasureClampShift();
@@ -446,9 +419,8 @@ namespace Rollgeon.UI.Tooltips
             return shift;
         }
 
-        // Banda, parrafo, columna y pie en un solo lugar. Todos los campos menos _text son
-        // nullables a proposito: sin ellos el panel es exactamente el de siempre, que es lo que
-        // mantiene andando a todos los tooltips de texto que ya existen.
+        // Todos los campos menos _text son nullables a proposito: sin ellos el panel es
+        // exactamente el tooltip de texto de siempre.
         private void ApplyContent(in TooltipContent content)
         {
             int count = content.CardCount;
@@ -456,9 +428,8 @@ namespace Rollgeon.UI.Tooltips
             if (_text != null)
             {
                 _text.text = content.Text ?? string.Empty;
-                // Sin nada mas el parrafo ES el tooltip y no se apaga nunca: apagarlo dejaria un
-                // panel vacio. Con banda o columna, un parrafo vacio solo agregaria un renglon
-                // alto de nada en el medio.
+                // Solo, el parrafo ES el tooltip y no se apaga; con banda o columna, un
+                // parrafo vacio solo agregaria un renglon de aire en el medio.
                 bool aloneInThePanel = count == 0 && !content.HasVitals
                                        && string.IsNullOrEmpty(content.Name);
                 _text.gameObject.SetActive(aloneInThePanel || !string.IsNullOrEmpty(content.Text));
@@ -474,9 +445,8 @@ namespace Rollgeon.UI.Tooltips
 
             if (_cardsContainer == null || _cardPrefab == null) return;
 
-            // Sin los contenedores extra cableados, todo cae en la columna de adentro: el panel
-            // queda exactamente como antes en vez de perder tarjetas, que es lo que hace que estos
-            // slots puedan faltar de verdad.
+            // Sin los contenedores extra cableados, todo cae en la columna de adentro:
+            // el panel no pierde tarjetas por un slot sin cablear.
             var side = content.SideCards;
             var bottom = content.BottomCards;
 
@@ -541,12 +511,8 @@ namespace Rollgeon.UI.Tooltips
             if (_shieldLabel != null && shield > 0) _shieldLabel.text = shield.ToString();
         }
 
-        // Los slots se reusan y solo se apagan, igual que PlayerStatusIconsView.EnsureSlots: el
-        // panel se reabre en cada hover y destruir/instanciar por hover seria churn por mover el
-        // mouse.
-        //
-        // Dos listas y no una concatenada: concatenar alocaria una lista nueva en cada hover, y el
-        // caso de las dos juntas es solo el del panel sin segunda columna.
+        // Los slots se reusan y solo se apagan: destruir/instanciar por hover seria churn.
+        // Dos listas y no una concatenada, para no alocar en cada hover.
         private void FillColumn(RectTransform container, List<TooltipCardView> slots,
                                 IReadOnlyList<StatusIconState> first,
                                 IReadOnlyList<StatusIconState> second,
@@ -591,18 +557,14 @@ namespace Rollgeon.UI.Tooltips
         // de ningún trigger real.
         internal const int EditorPreviewOwnerId = int.MinValue;
 
-        // Ancestros (incluido este GO) que el preview activó porque estaban inactivos
-        // en la escena de edición — el TooltipController vive apagado hasta que el
-        // sistema de pantallas lo activa en runtime. Se restauran al ocultar el preview.
+        // Ancestros que el preview activó porque estaban inactivos en la escena de edición;
+        // se restauran al ocultar el preview.
         private readonly System.Collections.Generic.List<GameObject> _editorPreviewActivated =
             new System.Collections.Generic.List<GameObject>();
 
         /// <summary>
-        /// Muestra el panel real con texto de ejemplo SIN play mode, para previsualizar
-        /// en el Game view qué espacio ocupa el tooltip en la posición configurada.
-        /// Invocado por los botones de preview de los triggers. Activa temporalmente la
-        /// jerarquía del controller si está inactiva (se restaura en
-        /// <see cref="EditorPreviewHide"/>).
+        /// Muestra el panel real con texto de ejemplo SIN play mode. Activa temporalmente la
+        /// jerarquía del controller si está inactiva (se restaura en <see cref="EditorPreviewHide"/>).
         /// </summary>
         internal void EditorPreview(string text, Vector2 screenPos, TooltipPlacementMode placement)
         {
@@ -643,10 +605,8 @@ namespace Rollgeon.UI.Tooltips
         /// Tira las tarjetas ya instanciadas para que la próxima vuelta las cree del prefab de hoy.
         /// </summary>
         /// <remarks>
-        /// Los slots se crean con <c>Instantiate</c>, así que <b>no</b> son instancias de prefab y
-        /// no heredan nada de lo que se le cambie al asset después. Sin esto, tocar la tarjeta y
-        /// volver a previsualizar sigue mostrando las viejas — el panel se ve idéntico y parece
-        /// que el cambio no entró.
+        /// Los slots se crean con <c>Instantiate</c>: no son instancias de prefab y no heredan
+        /// los cambios posteriores del asset.
         /// </remarks>
         public void EditorPreviewResetCards()
         {
@@ -656,9 +616,8 @@ namespace Rollgeon.UI.Tooltips
             ResetSlots(_bottomCardsContainer, _bottomCardSlots);
         }
 
-        // Barre los HIJOS del contenedor y no sólo la lista: las listas viven en el domain y el
-        // reload las vacía, pero las tarjetas instanciadas quedan en la escena. Con sólo la lista,
-        // cada preview post-recompilación apilaba una tarjeta nueva sobre la huérfana.
+        // Barre los HIJOS del contenedor y no sólo la lista: el domain reload vacía la lista
+        // pero las tarjetas instanciadas quedan huérfanas en la escena.
         private static void ResetSlots(RectTransform container, List<TooltipCardView> slots)
         {
             slots.Clear();

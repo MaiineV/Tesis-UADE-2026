@@ -13,7 +13,7 @@ namespace Rollgeon.UI.Tooltips
     /// <remarks>
     /// Igual que <see cref="Rollgeon.UI.HUD.Status.StatusEffectIconView"/>: la columna recicla
     /// slots instanciados inactivos, así que <c>Awake</c> nunca corre en el primer uso — nada
-    /// acá puede depender de él (ver <c>StatusEffectIconView.cs:55-57</c>).
+    /// acá puede depender de él.
     /// </remarks>
     [AddComponentMenu("Rollgeon/UI/Tooltips/Tooltip Card View")]
     public class TooltipCardView : MonoBehaviour
