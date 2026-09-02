@@ -4,15 +4,9 @@ using Rollgeon.UI.HUD.Status;
 namespace Rollgeon.UI.Tooltips
 {
     /// <summary>
-    /// Todo lo que puede llevar un tooltip. Un blob de texto es el caso degenerado: sólo
-    /// <see cref="Text"/>.
+    /// Todo lo que puede llevar un tooltip. <see cref="Text"/> (párrafo) y <see cref="Name"/>
+    /// (identidad) conviven a propósito: un solo campo obligaría a adivinar cuál es.
     /// </summary>
-    /// <remarks>
-    /// <see cref="Text"/> y <see cref="Name"/> conviven a propósito. El primero es el párrafo que
-    /// pasan los siete tooltips que ya existen — puerta, casilla, acción, cofre — y se dibuja tal
-    /// cual. El segundo es la identidad de una unidad, que encabeza su propia banda con los
-    /// números al lado. Un solo campo obligaría a adivinar cuál de las dos cosas es.
-    /// </remarks>
     public readonly struct TooltipContent
     {
         /// <summary>Párrafo suelto. Es lo único que trae un tooltip de texto.</summary>
@@ -21,11 +15,7 @@ namespace Rollgeon.UI.Tooltips
         /// <summary>Nombre de la unidad, encabezando la banda de identidad.</summary>
         public readonly string Name;
 
-        /// <summary>
-        /// Familia de la unidad — <c>Jefe · Rango</c>. Va pegada al nombre y no al título: las dos
-        /// son identidad, y el título es el hijo más ancho del panel, así que meterla ahí es lo
-        /// que hace que el panel se ensanche. Vacía = no se dibuja la fila.
-        /// </summary>
+        /// <summary>Familia de la unidad — <c>Jefe · Rango</c>. Vacía = no se dibuja.</summary>
         public readonly string Type;
 
         public readonly int? Health;
@@ -35,24 +25,16 @@ namespace Rollgeon.UI.Tooltips
         /// <summary>Lo que va a hacer: la columna de arriba.</summary>
         public readonly IReadOnlyList<StatusIconState> Cards;
 
-        /// <summary>
-        /// Lo que le pasa: la columna del costado. Va al costado y no debajo para que aturdir a un
-        /// enemigo no estire el panel hacia abajo justo cuando lo estás leyendo.
-        /// </summary>
+        /// <summary>Lo que le pasa: al costado, para no estirar el panel mientras se lee.</summary>
         public readonly IReadOnlyList<StatusIconState> SideCards;
 
-        /// <summary>
-        /// Tarjetas colgadas DEBAJO de la caja — la debilidad. Afuera y no adentro por lo mismo
-        /// que <see cref="SideCards"/>: lo que se agrega o se va no puede reacomodar el panel que
-        /// se está leyendo.
-        /// </summary>
+        /// <summary>Debajo de la caja (la debilidad), por lo mismo que <see cref="SideCards"/>.</summary>
         public readonly IReadOnlyList<StatusIconState> BottomCards;
 
         /// <summary>Color de la unidad, al pie y en chico. Nunca arriba: no es información.</summary>
         public readonly string Flavor;
 
-        // type va al final y con default para que nada de lo que ya construye un TooltipContent
-        // —los siete tooltips de texto incluidos— tenga que tocarse.
+        // Parámetros nuevos al final y con default: los llamadores existentes no se tocan.
         public TooltipContent(string text = null, string name = null,
                               IReadOnlyList<StatusIconState> cards = null, string flavor = null,
                               int? health = null, int? maxHealth = null, int? shield = null,

@@ -26,25 +26,19 @@ namespace Rollgeon.UI.Tooltips
         [SerializeField, Required] private GameObject _badge;
         [SerializeField, Required] private TextMeshProUGUI _badgeLabel;
 
-        [Tooltip("Lo que pega, a la derecha del título. Se apaga cuando la intención no pega por " +
-                 "sí misma.")]
+        [Tooltip("Lo que pega, a la derecha del título.")]
         [SerializeField] private TextMeshProUGUI _damageLabel;
 
-        [Tooltip("Renglón chico arriba del título — 'Próximo turno'. Se apaga cuando el estado " +
-                 "no trae fecha.")]
+        [Tooltip("Renglón chico arriba del título — 'Próximo turno'.")]
         [SerializeField] private TextMeshProUGUI _eyebrowLabel;
 
-        [Tooltip("Línea debajo del label del bloque (NEXT TURN, PLAYER CURSE). Se apaga cuando " +
-                 "no hay label o no hay nada debajo que separar.")]
+        [Tooltip("Línea debajo del label del bloque.")]
         [SerializeField] private GameObject _divider;
 
-        [Tooltip("La fila del label del bloque — ícono + eyebrow. Se apaga entera cuando el " +
-                 "estado no trae ninguno de los dos. Null en prefabs sin la fila: cada pieza " +
-                 "se apaga sola.")]
+        [Tooltip("Fila ícono + eyebrow. Null en prefabs sin la fila.")]
         [SerializeField] private GameObject _labelRow;
 
-        [Tooltip("La fila del título y el daño. Se apaga entera en las tarjetas que son sólo " +
-                 "label y regla — la maldición del jefe no lleva título.")]
+        [Tooltip("Fila título + daño. Se apaga en tarjetas de sólo label y regla.")]
         [SerializeField] private GameObject _headerRow;
 
         /// <summary>Id del estado que esta tarjeta está mostrando — la columna lo usa para reusarla.</summary>
@@ -55,13 +49,11 @@ namespace Rollgeon.UI.Tooltips
             CardId = state.Id;
             name = string.IsNullOrEmpty(state.Id) ? "TooltipCard" : $"TooltipCard_{state.Id}";
 
-            // Sin arte el bloque del ícono se va entero, no sólo el Image: dejarlo prendido
-            // reservaría su ancho en la fila y el título arrancaría corrido contra un hueco.
-            // El estilo no entra en esta cuenta: Terrain dice de qué habla la tarjeta, no su forma.
+            // Sin arte el bloque del ícono se va entero: prendido reservaría su ancho y el
+            // título arrancaría corrido contra un hueco.
             bool hasIcon = state.Icon != null;
 
-            // Siempre a la izquierda, con o sin ícono: en una columna de tarjetas mezcladas los
-            // títulos centrados bailaban de x según cuál tenía arte.
+            // Siempre a la izquierda: centrados, bailaban de x según cuál tenía arte.
             bool hasTitle = !string.IsNullOrEmpty(state.DisplayName);
             if (_titleLabel != null)
             {
@@ -86,8 +78,7 @@ namespace Rollgeon.UI.Tooltips
 
                 if (_badge != null)
                 {
-                    // El stack va siempre acá, nunca dentro de la regla: si algún día traba
-                    // dos dados en vez de uno, cambia este número y la frase no se toca.
+                    // El stack nunca va dentro de la regla: cambia el número, no la frase.
                     string badge = StatusTooltipText.ResolveCardBadge(state);
                     if (_badgeLabel != null) _badgeLabel.text = badge;
                     _badge.SetActive(badge.Length > 0);
@@ -101,12 +92,10 @@ namespace Rollgeon.UI.Tooltips
                 _eyebrowLabel.gameObject.SetActive(hasEyebrow);
             }
 
-            // El ícono vive en la fila del label (el candado al lado de PLAYER CURSE): sin
-            // ninguno de los dos la fila entera se va, no queda un renglón de aire.
+            // Sin ícono ni eyebrow la fila entera se va, no queda un renglón de aire.
             if (_labelRow != null) _labelRow.SetActive(hasIcon || hasEyebrow);
 
-            // Nunca dentro de la frase: si algún día el disparo pega 30 en vez de 24, cambia este
-            // número y no hay que retraducir nada. Es el mismo trato que el badge del stack.
+            // Nunca dentro de la frase: cambiar el número no obliga a retraducir.
             if (_damageLabel != null)
             {
                 _damageLabel.text = state.Damage?.ToString() ?? string.Empty;
@@ -122,8 +111,7 @@ namespace Rollgeon.UI.Tooltips
                 _ruleLabel.gameObject.SetActive(hasRule);
             }
 
-            // El divisor subraya el label del bloque, no parte el contenido: se prende con label
-            // arriba y algo abajo. Sin label la tarjeta es de un solo bloque y la línea sobra.
+            // Se prende con label arriba y algo abajo; sin label la línea sobra.
             if (_divider != null)
                 _divider.SetActive(hasEyebrow && (hasTitle || hasRule || state.Damage.HasValue));
         }

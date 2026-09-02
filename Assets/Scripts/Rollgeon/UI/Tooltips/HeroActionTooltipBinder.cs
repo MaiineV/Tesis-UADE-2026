@@ -7,40 +7,28 @@ using UnityEngine;
 namespace Rollgeon.UI.Tooltips
 {
     /// <summary>
-    /// Binder genérico configurable: cuelga este componente junto a un
-    /// <see cref="UITooltipTrigger"/> o <see cref="WorldTooltipTrigger"/> y elegí qué
-    /// slot del hero resolver. El texto se arma cada hover/click leyendo el primer
-    /// <see cref="IHasTooltipInfo"/> que encuentre en los effects del behavior.
+    /// Binder genérico: junto a un trigger, resuelve el slot del hero elegido y arma el
+    /// texto en cada hover. Lo que no vive en el hero usa un <see cref="IHasTooltipInfo"/>
+    /// local y el trigger lo auto-resuelve sin binder.
     /// </summary>
-    /// <remarks>
-    /// Reemplaza la necesidad de crear un binder por dominio (Heal, ForceDoor, etc).
-    /// Para casos que NO viven en el hero (cofre, enemigo, item de inventario), poné
-    /// un <see cref="IHasTooltipInfo"/> en el componente local y el trigger lo
-    /// auto-resuelve sin binder vía <see cref="TooltipResolver"/>.
-    /// </remarks>
     [AddComponentMenu("Rollgeon/UI/Tooltips/Hero Action Tooltip Binder")]
     public sealed class HeroActionTooltipBinder : MonoBehaviour
     {
         [Tooltip("Slot del hero a resolver (Movement, BaseAttack, Healing, ForceDoor, etc.).")]
         [SerializeField] private HeroBehaviorSlot _slot = HeroBehaviorSlot.Healing;
 
-        [Tooltip("Fase usada para resolver el behavior. Default Combat; usar Exploration " +
-                 "si el behavior solo existe en exploración.")]
+        [Tooltip("Fase usada para resolver el behavior.")]
         [SerializeField] private GamePhase _resolvePhase = GamePhase.Combat;
 
-        [Tooltip("Si true, el tooltip solo se muestra cuando IPhaseService.CurrentBase == Combat. " +
-                 "Útil para acciones que solo aplican en combat (ej. Forzar Puerta).")]
+        [Tooltip("Solo mostrar el tooltip durante combate.")]
         [SerializeField] private bool _onlyDuringCombat;
 
         private UITooltipTrigger _uiTrigger;
         private WorldTooltipTrigger _worldTrigger;
 
         /// <summary>
-        /// Pisa los campos del binder en runtime (post-Awake). Usado por callers que
-        /// hacen <c>AddComponent</c> dinámico (ej. <c>DoorController.EnsureTooltipComponents</c>):
-        /// AddComponent dispara Awake inmediato con los defaults; <c>Configure</c> los corrige.
-        /// BuildText lee los campos cada hover/click, así que la nueva config se respeta sin
-        /// re-cablear los triggers.
+        /// Para AddComponent dinámico: Awake corre con los defaults y esto los corrige;
+        /// BuildText lee los campos en cada hover.
         /// </summary>
         public void Configure(HeroBehaviorSlot slot, GamePhase resolvePhase, bool onlyDuringCombat)
         {
@@ -59,9 +47,7 @@ namespace Rollgeon.UI.Tooltips
         }
 
         /// <summary>
-        /// Para binders puestos en un GO que no es el del trigger (ej. binder en root
-        /// del DoorController, triggers en cada mesh hijo). Configura todos los triggers
-        /// descendientes con el mismo provider.
+        /// Configura los triggers descendientes cuando el binder no vive en el GO del trigger.
         /// </summary>
         public void ConfigureExternalTriggers()
         {

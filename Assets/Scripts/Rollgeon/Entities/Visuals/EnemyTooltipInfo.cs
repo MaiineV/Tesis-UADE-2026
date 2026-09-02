@@ -12,16 +12,10 @@ using UnityEngine;
 namespace Rollgeon.Entities.Visuals
 {
     /// <summary>
-    /// Lo que un enemigo sabe decir de sí mismo, en las dos formas que le piden: el panel
-    /// (<see cref="BuildContent"/>) y el párrafo (<see cref="BuildTooltip"/>).
-    /// Lo pega <see cref="EntityVisualService"/> en el pawn al spawnearlo, junto a un
-    /// <see cref="WorldTooltipTrigger"/> en modo Hover; el <c>TooltipResolver</c> lo encuentra solo.
+    /// El panel (<see cref="BuildContent"/>) y el párrafo (<see cref="BuildTooltip"/>) del
+    /// enemigo; lo pega <see cref="EntityVisualService"/> al spawnear. Guarda el SO y no el
+    /// texto: se arma en cada hover para que un cambio de locale no lo deje viejo.
     /// </summary>
-    /// <remarks>
-    /// <b>Guarda el SO, no el texto.</b> El texto se arma en cada hover para que el idioma
-    /// vigente mande: cacheado al spawnear, un cambio de locale a mitad de combate deja al
-    /// enemigo describiéndose en el idioma anterior.
-    /// </remarks>
     [AddComponentMenu("Rollgeon/Entities/Enemy Tooltip Info")]
     public sealed class EnemyTooltipInfo : MonoBehaviour, IHasTooltipInfo
     {
@@ -36,10 +30,8 @@ namespace Rollgeon.Entities.Visuals
         }
 
         /// <summary>
-        /// El contenido del panel: nombre, familia, la vida leída en este hover y una frase
-        /// táctica de una línea (la key <c>.brief</c>). Sin lore: cualquier frase que resuma
-        /// al bicho repite sus tarjetas. La descripción larga vive en <see cref="BuildTooltip"/>
-        /// (bombas y objetos del jefe, donde el tooltip es un párrafo y no un panel).
+        /// Nombre, familia, vida y la frase táctica (key <c>.brief</c>). Sin lore: cualquier
+        /// resumen repite las tarjetas; la descripción larga vive en <see cref="BuildTooltip"/>.
         /// </summary>
         public TooltipContent BuildContent()
         {
@@ -51,8 +43,7 @@ namespace Rollgeon.Entities.Visuals
                 ? data.DisplayName
                 : LocalizedContent.Name(id, data.DisplayName);
 
-            // Sin entry no se dibuja nada: el fallback vacío ES la decisión de que un enemigo
-            // sin frase autorada no muestre una.
+            // El fallback vacío ES la decisión: un enemigo sin frase autorada no muestra una.
             string brief = string.IsNullOrEmpty(id)
                 ? string.Empty
                 : LocalizedContent.FromTable(
@@ -60,8 +51,7 @@ namespace Rollgeon.Entities.Visuals
 
             var (health, maxHealth) = ReadVitals();
 
-            // Como párrafo y no como pie: el párrafo vive pegado a la identidad; el pie queda
-            // abajo de las tarjetas.
+            // Como párrafo y no como pie: el pie queda abajo de las tarjetas.
             return new TooltipContent(
                 text: brief,
                 name: name,
@@ -70,10 +60,8 @@ namespace Rollgeon.Entities.Visuals
                 type: EnemyArchetypeText.Describe(data.Archetype, data.IsBoss));
         }
 
-        // El max no vive en el atributo — el daño escribe sobre Health.Value — así que la
-        // referencia tier-aware es la que todos los caminos de spawn dejan en el registry de AI.
-        // Se relee en cada hover, como el resto del contenido: el número sale fresco aunque el
-        // panel venga fijado del turno pasado.
+        // El max no vive en el atributo (el daño escribe sobre Health.Value): la referencia
+        // tier-aware es la que todos los spawns dejan en el registry de AI. Se relee por hover.
         private (int? health, int? maxHealth) ReadVitals()
         {
             if (_guid == Guid.Empty) return (null, null);
@@ -92,8 +80,7 @@ namespace Rollgeon.Entities.Visuals
             var data = _data;
             if (data == null) return string.Empty;
 
-            // El EntityId es la key de localización de la familia Name/Description; sin él, el
-            // fallback autorado en el SO es todo lo que hay.
+            // Sin EntityId, el fallback autorado en el SO es todo lo que hay.
             string id = data.EntityId;
             string name = string.IsNullOrEmpty(id)
                 ? data.DisplayName
@@ -102,8 +89,7 @@ namespace Rollgeon.Entities.Visuals
                 ? data.Description
                 : LocalizedContent.Description(id, data.Description);
 
-            // Sin nombre ni descripción se devuelve vacío y el trigger no abre nada: un panel con
-            // el nombre del asset adentro es peor que la ausencia de tooltip.
+            // Vacío = el trigger no abre nada: mejor sin tooltip que el nombre del asset.
             bool hasName = !string.IsNullOrWhiteSpace(name);
             bool hasDescription = !string.IsNullOrWhiteSpace(description);
             if (!hasName && !hasDescription) return string.Empty;

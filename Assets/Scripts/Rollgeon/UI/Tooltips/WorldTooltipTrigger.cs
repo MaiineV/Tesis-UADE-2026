@@ -32,60 +32,36 @@ namespace Rollgeon.UI.Tooltips
     [AddComponentMenu("Rollgeon/UI/Tooltips/World Tooltip Trigger")]
     public sealed class WorldTooltipTrigger : MonoBehaviour
     {
-        /// <summary>
-        /// Provider del texto. Si <c>null</c> al primer uso, el trigger intenta auto-resolver
-        /// un <see cref="IHasTooltipInfo"/> en este GameObject o en sus padres/hijos.
-        /// </summary>
+        /// <summary>Texto. Null al primer uso = auto-resolve de <see cref="IHasTooltipInfo"/>.</summary>
         public Func<string> TextProvider;
 
-        /// <summary>
-        /// Tarjetas del panel, bajo el encabezado que da <see cref="TextProvider"/>. <c>null</c> =
-        /// tooltip de texto y nada más.
-        /// </summary>
+        /// <summary>Tarjetas del panel. Null = tooltip de texto y nada más.</summary>
         public Func<IReadOnlyList<StatusIconState>> CardsProvider;
 
-        /// <summary>
-        /// Tarjetas de la columna del costado — los estados que le aplicaron. <c>null</c> = el
-        /// panel no abre segunda columna.
-        /// </summary>
+        /// <summary>Columna del costado: los estados que le aplicaron.</summary>
         public Func<IReadOnlyList<StatusIconState>> SideCardsProvider;
 
-        /// <summary>
-        /// Tarjetas colgadas debajo de la caja. <c>null</c> = nada colgando.
-        /// </summary>
+        /// <summary>Tarjetas colgadas debajo de la caja.</summary>
         public Func<IReadOnlyList<StatusIconState>> BottomCardsProvider;
 
-        /// <summary>
-        /// Un renglón extra al pie del panel, debajo del texto de sabor y con su misma letra —
-        /// la debilidad del enemigo. <c>null</c> = el pie queda como lo trajo el contenido.
-        /// </summary>
+        /// <summary>Renglón extra al pie (la debilidad).</summary>
         public Func<string> FooterLineProvider;
 
-        /// <summary>
-        /// Provider de la banda de identidad — nombre, vitales y color al pie. Gana sobre
-        /// <see cref="TextProvider"/> cuando está: quien sabe describirse entero no tiene por qué
-        /// aplanarse a un párrafo.
-        /// </summary>
+        /// <summary>Banda de identidad. Gana sobre <see cref="TextProvider"/> cuando está.</summary>
         public Func<TooltipContent> ContentProvider;
 
-        /// <summary>
-        /// Entra (<c>true</c>) y sale (<c>false</c>) el hover. Lo consume quien además del texto
-        /// tiene que pintar algo — el tooltip se resuelve solo acá adentro.
-        /// </summary>
+        /// <summary>Flanco de hover, para quien además del tooltip pinta algo.</summary>
         public event Action<bool> HoverChanged;
 
         /// <summary>
-        /// Un click sobre el objeto fija el tooltip: el panel queda abierto con el mouse libre y
-        /// el contenido se re-muestra en cada turno. Solo lo prenden los enemigos. Fijar nunca
-        /// consume el click que selecciona objetivo: los clicks en modo targeting se ignoran, y
-        /// entrar en modo ataque suelta el fijado solo.
+        /// Click fija el tooltip (solo enemigos). Nunca consume el click de targeting, y
+        /// entrar en modo ataque suelta el fijado.
         /// </summary>
         public bool PinOnClick;
 
         /// <summary>
-        /// El fijado volvió a mostrar el tooltip sin flanco de hover (cambio de turno, o el hover
-        /// de otro trigger que devolvió el panel). Lo consume quien pinta el preview de amenaza,
-        /// que solo escucha <see cref="HoverChanged"/> y se perdería estos re-dibujos.
+        /// El fijado re-mostró el panel sin flanco de hover; el preview de amenaza solo
+        /// escucha <see cref="HoverChanged"/> y se perdería estos re-dibujos.
         /// </summary>
         public event Action PinRefreshed;
 
@@ -99,11 +75,7 @@ namespace Rollgeon.UI.Tooltips
 
         [SerializeField] private WorldTooltipMode _mode = WorldTooltipMode.Click;
 
-        /// <summary>
-        /// Modo de activación. Escribible para los triggers que se agregan por código: el default
-        /// serializado es <see cref="WorldTooltipMode.Click"/> (la puerta), y un
-        /// <c>AddComponent</c> no puede elegir otro desde el Inspector.
-        /// </summary>
+        /// <summary>Escribible para los triggers agregados por código.</summary>
         public WorldTooltipMode Mode
         {
             get => _mode;
@@ -112,27 +84,21 @@ namespace Rollgeon.UI.Tooltips
                 if (_mode == value) return;
                 _mode = value;
 
-                // El hover activo muere con el cambio de modo: si se pasa a Click quedaría un
-                // tooltip abierto que ningún Update va a cerrar.
+                // Pasar a Click dejaría un hover abierto que ningún Update cierra.
                 SetHover(false, null);
             }
         }
 
         [SerializeField] private TooltipPlacementSettings _placement = new TooltipPlacementSettings();
 
-        /// <summary>
-        /// Dónde se dibuja el panel respecto del objeto. Escribible por lo mismo que
-        /// <see cref="Mode"/>: los triggers que se cuelgan por código no pasan por el Inspector.
-        /// </summary>
+        /// <summary>Escribible por lo mismo que <see cref="Mode"/>.</summary>
         public TooltipPlacementMode Placement
         {
             get => _placement.Mode;
             set => _placement.Mode = value;
         }
 
-        [Tooltip("De qué lado del punto de anclaje cuelga el panel (solo AutoFit). Below = " +
-                 "panel entero debajo del anclaje — para pawns cuyo origen son los pies y el " +
-                 "panel taparía el modelo.")]
+        [Tooltip("Below = panel debajo del anclaje (solo AutoFit), para no tapar al pawn.")]
         [SerializeField] private TooltipVerticalSide _verticalSide = TooltipVerticalSide.Above;
 
         /// <summary>Lado vertical del panel (solo AutoFit).</summary>
@@ -162,7 +128,6 @@ namespace Rollgeon.UI.Tooltips
             if (cam == null) return;
             if (!TryGetMouseScreenPos(out var mouseScreen)) return;
 
-            // Si el cursor está sobre UI (botón, panel del HUD), no procesar hits del mundo.
             bool pointerOverUI = EventSystem.current != null
                                  && EventSystem.current.IsPointerOverGameObject();
 
@@ -183,17 +148,14 @@ namespace Rollgeon.UI.Tooltips
             }
         }
 
-        // El click de targeting es atacar (TileClickHandler): el fijado solo puede vivir en los
-        // clicks que hoy no hacen nada. Click sobre el objeto = toggle; click en el vacío con el
-        // tooltip fijado = soltar.
-        // Internal para los tests: simular el mouse acá probaría al raycast, no al fijado.
+        // El fijado vive solo en los clicks que hoy no hacen nada: targeting es atacar.
+        // Internal para los tests: simular el mouse probaría al raycast, no al fijado.
         internal void HandlePinClick(bool hitMe)
         {
             if (IsSelectingTarget()) return;
 
-            // El click que confirma el objetivo resuelve la selección sincrónico, y este
-            // Update puede correr después en el mismo frame: IsSelecting ya da false, pero
-            // ese click fue de atacar — no puede fijar.
+            // El click que confirma objetivo resuelve la selección en el mismo frame:
+            // IsSelecting ya da false, pero ese click fue de atacar.
             if (SelectionController.LastSelectionEndFrame == Time.frameCount) return;
 
             if (hitMe)
@@ -211,10 +173,7 @@ namespace Rollgeon.UI.Tooltips
             => ServiceLocator.TryGetService<ISelectionController>(out var selection)
                && selection != null && selection.IsSelecting;
 
-        /// <summary>
-        /// Fija el tooltip de este trigger. Suelta al que estuviera fijado — el panel es uno.
-        /// Público para poder fijar/soltar sin simular el mouse (tests, tutorial).
-        /// </summary>
+        /// <summary>Fija este trigger y suelta al anterior. Público para tests/tutorial.</summary>
         public void Pin()
         {
             if (_pinned) return;
@@ -222,8 +181,7 @@ namespace Rollgeon.UI.Tooltips
             s_pinned = this;
             _pinned = true;
 
-            // Suscripciones solo en el flanco del fijado, y espejadas en Unpin: un pin que
-            // suscribe dos veces re-muestra el panel dos veces por turno.
+            // Solo en el flanco y espejado en Unpin: doble suscripción re-muestra dos veces.
             EventManager.Subscribe(EventName.OnTurnStarted, HandlePinRefresh);
             EventManager.Subscribe(EventName.OnActionSelectionStarted, HandleTargetingStarted);
             EventManager.Subscribe(EventName.OnChainTargetSelectionStarted, HandleTargetingStarted);
@@ -245,8 +203,7 @@ namespace Rollgeon.UI.Tooltips
             if (TooltipController.Instance != null) TooltipController.Instance.SetPinned(false);
         }
 
-        // Los providers recolectan fresh en cada Show: re-mostrar ES el refresh del bloque de
-        // próximo turno mientras el panel está fijado, sin re-hoverear.
+        // Re-mostrar ES el refresh: los providers recolectan fresh en cada Show.
         private void HandlePinRefresh(params object[] args)
         {
             if (!_pinned) return;
@@ -255,8 +212,7 @@ namespace Rollgeon.UI.Tooltips
             PinRefreshed?.Invoke();
         }
 
-        // Al agarrar la ficha de atacar el panel se cierra solo: el click vuelve a ser 100% de
-        // seleccionar objetivo.
+        // Al agarrar la ficha de atacar el panel se cierra: el click vuelve a ser de targeting.
         private void HandleTargetingStarted(params object[] args)
         {
             Unpin();
@@ -264,9 +220,8 @@ namespace Rollgeon.UI.Tooltips
             SetHover(false, null);
         }
 
-        // UN raycast por frame compartido entre todos los triggers: con la sala prendida fuego
-        // hay ~112 casillas con trigger, y un raycast por cada una domina el costo sostenido.
-        // La distancia la fija el primero del frame — todos usan el default.
+        // UN raycast por frame compartido: ~112 casillas con trigger en la sala prendida
+        // fuego; uno por trigger dominaba el costo sostenido.
         private static readonly RaycastHit[] s_sharedHits = new RaycastHit[64];
         private static int s_sharedHitCount;
         private static int s_sharedFrame = -1;
@@ -279,9 +234,8 @@ namespace Rollgeon.UI.Tooltips
                 s_sharedFrame = Time.frameCount;
                 s_sharedCam = cam;
 
-                // Pixel-art: la cámara renderiza a un RT chiquito (pixelWidth/Height ≠
-                // Screen.width/Height) — el mouse se escala al viewport interno antes del
-                // ScreenPointToRay, igual que TileClickHandler.
+                // La cámara pixel-art renderiza a un RT chico: el mouse se escala al viewport
+                // interno antes del ScreenPointToRay (mismo fix que TileClickHandler).
                 var rtPos = new Vector2(
                     mouseScreen.x / Screen.width  * cam.pixelWidth,
                     mouseScreen.y / Screen.height * cam.pixelHeight);
@@ -324,8 +278,7 @@ namespace Rollgeon.UI.Tooltips
 #endif
         }
 
-        // Único lugar que mueve _hoverActive: el flanco tiene que ser uno solo para que el
-        // evento no se dispare dos veces ni se saltee la salida.
+        // Único lugar que mueve _hoverActive: un solo flanco, sin dobles disparos.
         private void SetHover(bool on, Camera cam)
         {
             if (_hoverActive == on) return;
@@ -341,16 +294,14 @@ namespace Rollgeon.UI.Tooltips
         {
             var content = BuildContent();
 
-            // Con tarjetas o con banda el panel vale aunque el párrafo venga vacío: la columna
-            // ES el contenido.
+            // Con tarjetas o banda el panel vale aunque el párrafo venga vacío.
             if (content.IsEmpty) return;
             if (TooltipController.Instance == null) return;
 
             TooltipController.Instance.Show(
                 content, ResolvePlacementScreenPos(cam), _ownerId, _placement.Mode, _verticalSide);
 
-            // Cada Show pisa el candado del panel compartido; el dueño lo re-afirma. Así el
-            // hover de otro trigger sobre un panel fijado no deja el candado mintiendo.
+            // Cada Show pisa el candado del panel compartido; el dueño lo re-afirma.
             if (_pinned) TooltipController.Instance.SetPinned(true);
         }
 
@@ -361,8 +312,7 @@ namespace Rollgeon.UI.Tooltips
             var bottomCards = BottomCardsProvider?.Invoke();
             if (ContentProvider == null) return TooltipContent.FromText(ResolveText(), cards);
 
-            // Las tarjetas siguen viniendo del CardsProvider aunque haya banda: las arma la fila
-            // que flota sobre la cabeza, y son la MISMA lista que esa fila pinta.
+            // Las tarjetas son la MISMA lista que pinta la fila sobre la cabeza.
             var content = ContentProvider.Invoke();
             return new TooltipContent(
                 text: content.Text, name: content.Name, cards: cards,
@@ -371,10 +321,7 @@ namespace Rollgeon.UI.Tooltips
                 type: content.Type, sideCards: sideCards, bottomCards: bottomCards);
         }
 
-        /// <summary>
-        /// El pie con su renglón extra debajo. Estático y público porque el preview de editor
-        /// arma este mismo panel sin combate y tiene que pegarlo igual.
-        /// </summary>
+        /// <summary>Estático y público: el preview de editor arma el mismo pie sin combate.</summary>
         public static string ComposeFlavor(string flavor, string footerLine)
         {
             if (string.IsNullOrEmpty(footerLine)) return flavor;
@@ -406,8 +353,7 @@ namespace Rollgeon.UI.Tooltips
         // Screen real — se re-escala para que el canvas ancle donde el user ve el objeto.
         private Vector2 ResolveAnchorScreenPos(Camera cam)
         {
-            // Sin cámara no hay proyección — pasa en el refresh del fijado fuera de una escena
-            // completa. ScreenTopRight ignora el punto igual.
+            // Sin cámara no hay proyección (refresh del fijado fuera de una escena completa).
             if (cam == null) return Vector2.zero;
             Vector3 rtPos = cam.WorldToScreenPoint(transform.position);
             if (cam.pixelWidth <= 0 || cam.pixelHeight <= 0) return rtPos;
@@ -420,8 +366,7 @@ namespace Rollgeon.UI.Tooltips
         {
             if (TooltipController.Instance == null) return;
 
-            // Con otro trigger fijado, salir de este hover no cierra el panel: se lo devuelve al
-            // fijado, que lo re-muestra con su contenido (y su candado).
+            // Con otro trigger fijado, salir del hover le devuelve el panel al fijado.
             if (s_pinned != null && s_pinned != this && s_pinned._pinned)
             {
                 s_pinned.ShowTooltip(s_pinned._camera != null ? s_pinned._camera : Camera.main);
@@ -432,8 +377,7 @@ namespace Rollgeon.UI.Tooltips
             TooltipController.Instance.Hide(_ownerId);
         }
 
-        // Levanta HoverChanged(false) a propósito: es lo que apaga el dibujo cuando el enemigo
-        // muere con el mouse encima. El fijado también muere con el dueño.
+        // HoverChanged(false) a propósito: apaga el dibujo cuando el dueño muere con hover.
         private void OnDisable()
         {
             Unpin();
@@ -449,8 +393,7 @@ namespace Rollgeon.UI.Tooltips
 #if UNITY_EDITOR
         [Title("Preview (solo editor)")]
         [TextArea(2, 5)]
-        [Tooltip("Texto de ejemplo usado por el botón de preview — elegí uno del largo " +
-                 "real esperado para ver cuánto espacio ocupa el panel.")]
+        [Tooltip("Texto de ejemplo del botón de preview.")]
         [SerializeField] private string _previewText =
             "<b>Forzar Puerta</b>\nCosto: 2 de energía\nPuntaje a superar: 25";
 
