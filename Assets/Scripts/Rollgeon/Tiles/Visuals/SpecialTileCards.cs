@@ -24,9 +24,12 @@ namespace Rollgeon.Tiles.Visuals
         /// desde otro panel — el fuego que deja una bomba dice "Al explotar", no "Efecto".
         /// Con <paramref name="opensBlock"/> en <c>false</c> los precios entran sin etiqueta: el
         /// bloque ya lo abrió quien llama, y una segunda partiría en dos una sola consecuencia.
+        /// Con <paramref name="includeTurnStart"/> en <c>false</c> se omite el precio por empezar
+        /// el turno encima: ese es del panel de la casilla, no del objeto que la deja.
         /// </summary>
         public static void Append(SpecialTileDefinitionSO def, List<StatusIconState> into,
-                                  string eyebrowOverride = null, bool opensBlock = true)
+                                  string eyebrowOverride = null, bool opensBlock = true,
+                                  bool includeTurnStart = true)
         {
             if (def == null || into == null) return;
 
@@ -40,7 +43,7 @@ namespace Rollgeon.Tiles.Visuals
                     def.EnterDamage, ref eyebrow);
             }
 
-            if (def.TurnStartDamage > 0)
+            if (includeTurnStart && def.TurnStartDamage > 0)
             {
                 Add(into, "tile.card.turn_start",
                     LocalizedContent.Ui(TurnStartKey, "Empezar el turno encima"),
