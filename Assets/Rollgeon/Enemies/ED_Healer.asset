@@ -36,446 +36,26 @@ MonoBehaviour:
       Data: 
     - Name: AIRoot
       Entry: 7
-      Data: 1|Rollgeon.Combat.AI.Decisions.AINode_Sequence, Rollgeon
-    - Name: Children
-      Entry: 7
-      Data: 2|System.Collections.Generic.List`1[[Rollgeon.Combat.AI.Decisions.AIDecisionNode,
-        Rollgeon]], mscorlib
-    - Name: 
-      Entry: 12
-      Data: 2
-    - Name: 
-      Entry: 7
-      Data: 3|Rollgeon.Combat.AI.Decisions.AINode_Behavior, Rollgeon
-    - Name: Behavior
-      Entry: 7
-      Data: 4|Rollgeon.Entities.Behaviors.EnemyActionBehavior, Rollgeon
-    - Name: Trigger
-      Entry: 3
-      Data: 0
-    - Name: AllowedPhases
-      Entry: 3
-      Data: 18446744073709551613
-    - Name: ActionName
-      Entry: 1
-      Data: Recharge Energy
+      Data: 1|Rollgeon.Combat.AI.Decisions.AINode_If, Rollgeon
+    - Name: EditorNodeId
+      Entry: 6
+      Data: 
     - Name: TargetSelector
       Entry: 7
-      Data: 5|Rollgeon.Combat.AI.Targeting.TargetSelector_Self, Rollgeon
-    - Name: 
-      Entry: 8
-      Data: 
-    - Name: Effects
-      Entry: 7
-      Data: 6|System.Collections.Generic.List`1[[Rollgeon.Effects.EffectData, Rollgeon]],
-        mscorlib
-    - Name: 
-      Entry: 12
-      Data: 1
-    - Name: 
-      Entry: 7
-      Data: 7|Rollgeon.Effects.EffectData, Rollgeon
-    - Name: Label
-      Entry: 1
-      Data: Effect Group
-    - Name: PreConditions
-      Entry: 7
-      Data: 8|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
-        Rollgeon]], mscorlib
-    - Name: 
-      Entry: 12
-      Data: 0
-    - Name: 
-      Entry: 13
-      Data: 
-    - Name: 
-      Entry: 8
-      Data: 
-    - Name: Effects
-      Entry: 7
-      Data: 9|System.Collections.Generic.List`1[[Rollgeon.Effects.IEffect, Rollgeon]],
-        mscorlib
-    - Name: 
-      Entry: 12
-      Data: 1
-    - Name: 
-      Entry: 7
-      Data: 10|Rollgeon.Effects.Concretes.EffModifyIntAttribute, Rollgeon
-    - Name: Selection
-      Entry: 7
-      Data: 11|Rollgeon.Effects.Selection.SelectionSettings, Rollgeon
-    - Name: SlotState
-      Entry: 3
-      Data: 0
-    - Name: Timing
-      Entry: 3
-      Data: 0
-    - Name: EntityFilter
-      Entry: 3
-      Data: 2
-    - Name: IsGlobal
-      Entry: 5
-      Data: false
-    - Name: Range
-      Entry: 3
-      Data: 1
-    - Name: RangeMode
-      Entry: 3
-      Data: 0
-    - Name: RangeFromMovementDie
-      Entry: 5
-      Data: false
-    - Name: TargetMode
-      Entry: 3
-      Data: 0
-    - Name: AoeShape
-      Entry: 3
-      Data: 0
-    - Name: AoeRadius
-      Entry: 3
-      Data: 0
-    - Name: PatternRows
-      Entry: 3
-      Data: 0
-    - Name: PatternCols
-      Entry: 3
-      Data: 0
-    - Name: PatternCenter
-      Entry: 7
-      Data: UnityEngine.Vector2Int, UnityEngine.CoreModule
-    - Name: 
-      Entry: 3
-      Data: 0
-    - Name: 
-      Entry: 3
-      Data: 0
-    - Name: 
-      Entry: 8
-      Data: 
-    - Name: PatternFlat
-      Entry: 6
-      Data: 
-    - Name: IsConstantSelectionCount
-      Entry: 5
-      Data: true
-    - Name: SelectionCount
-      Entry: 3
-      Data: 1
-    - Name: SelectionCountReader
-      Entry: 6
-      Data: 
-    - Name: AutoResolve
-      Entry: 5
-      Data: false
-    - Name: AutoAccept
-      Entry: 5
-      Data: true
-    - Name: 
-      Entry: 8
-      Data: 
-    - Name: TargetStat
-      Entry: 3
-      Data: 3
-    - Name: Operation
-      Entry: 3
-      Data: 4
-    - Name: _amountSource
-      Entry: 3
-      Data: 0
-    - Name: _baseAmount
-      Entry: 3
-      Data: 3
-    - Name: _comboMultiplier
-      Entry: 4
-      Data: 1
-    - Name: _reader
-      Entry: 6
-      Data: 
-    - Name: _readerMultiplier
-      Entry: 4
-      Data: 1
-    - Name: _clampHealthToMax
-      Entry: 5
-      Data: false
-    - Name: 
-      Entry: 8
-      Data: 
-    - Name: 
-      Entry: 13
-      Data: 
-    - Name: 
-      Entry: 8
-      Data: 
-    - Name: TargetSelector
-      Entry: 6
-      Data: 
-    - Name: 
-      Entry: 8
-      Data: 
-    - Name: 
-      Entry: 13
-      Data: 
-    - Name: 
-      Entry: 8
-      Data: 
-    - Name: 
-      Entry: 8
-      Data: 
-    - Name: 
-      Entry: 8
-      Data: 
-    - Name: 
-      Entry: 7
-      Data: 12|Rollgeon.Combat.AI.Decisions.AINode_While, Rollgeon
-    - Name: TargetSelector
-      Entry: 7
-      Data: 13|Rollgeon.Combat.AI.Targeting.TargetSelector_Self, Rollgeon
+      Data: 2|Rollgeon.Combat.AI.Targeting.TargetSelector_Self, Rollgeon
     - Name: 
       Entry: 8
       Data: 
     - Name: Conditions
       Entry: 7
-      Data: 14|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
+      Data: 3|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
         Rollgeon]], mscorlib
     - Name: 
       Entry: 12
       Data: 1
     - Name: 
       Entry: 7
-      Data: 15|Rollgeon.PreConditions.Concretes.PcOwnerStatCompare, Rollgeon
-    - Name: _isConstantValue
-      Entry: 5
-      Data: true
-    - Name: Stat
-      Entry: 3
-      Data: 3
-    - Name: Comparison
-      Entry: 3
-      Data: 4
-    - Name: Value
-      Entry: 3
-      Data: 0
-    - Name: UseModified
-      Entry: 5
-      Data: true
-    - Name: 
-      Entry: 8
-      Data: 
-    - Name: 
-      Entry: 13
-      Data: 
-    - Name: 
-      Entry: 8
-      Data: 
-    - Name: Body
-      Entry: 7
-      Data: 16|Rollgeon.Combat.AI.Decisions.AINode_Sequence, Rollgeon
-    - Name: Children
-      Entry: 7
-      Data: 17|System.Collections.Generic.List`1[[Rollgeon.Combat.AI.Decisions.AIDecisionNode,
-        Rollgeon]], mscorlib
-    - Name: 
-      Entry: 12
-      Data: 2
-    - Name: 
-      Entry: 7
-      Data: 18|Rollgeon.Combat.AI.Decisions.AINode_Behavior, Rollgeon
-    - Name: Behavior
-      Entry: 7
-      Data: 19|Rollgeon.Entities.Behaviors.EnemyActionBehavior, Rollgeon
-    - Name: Trigger
-      Entry: 3
-      Data: 0
-    - Name: AllowedPhases
-      Entry: 3
-      Data: 18446744073709551613
-    - Name: ActionName
-      Entry: 1
-      Data: Remove Energy
-    - Name: TargetSelector
-      Entry: 7
-      Data: 20|Rollgeon.Combat.AI.Targeting.TargetSelector_Self, Rollgeon
-    - Name: 
-      Entry: 8
-      Data: 
-    - Name: Effects
-      Entry: 7
-      Data: 21|System.Collections.Generic.List`1[[Rollgeon.Effects.EffectData, Rollgeon]],
-        mscorlib
-    - Name: 
-      Entry: 12
-      Data: 1
-    - Name: 
-      Entry: 7
-      Data: 22|Rollgeon.Effects.EffectData, Rollgeon
-    - Name: Label
-      Entry: 1
-      Data: Effect Group
-    - Name: PreConditions
-      Entry: 7
-      Data: 23|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
-        Rollgeon]], mscorlib
-    - Name: 
-      Entry: 12
-      Data: 0
-    - Name: 
-      Entry: 13
-      Data: 
-    - Name: 
-      Entry: 8
-      Data: 
-    - Name: Effects
-      Entry: 7
-      Data: 24|System.Collections.Generic.List`1[[Rollgeon.Effects.IEffect, Rollgeon]],
-        mscorlib
-    - Name: 
-      Entry: 12
-      Data: 1
-    - Name: 
-      Entry: 7
-      Data: 25|Rollgeon.Effects.Concretes.EffModifyIntAttribute, Rollgeon
-    - Name: Selection
-      Entry: 7
-      Data: 26|Rollgeon.Effects.Selection.SelectionSettings, Rollgeon
-    - Name: SlotState
-      Entry: 3
-      Data: 0
-    - Name: Timing
-      Entry: 3
-      Data: 0
-    - Name: EntityFilter
-      Entry: 3
-      Data: 2
-    - Name: IsGlobal
-      Entry: 5
-      Data: false
-    - Name: Range
-      Entry: 3
-      Data: 1
-    - Name: RangeMode
-      Entry: 3
-      Data: 0
-    - Name: RangeFromMovementDie
-      Entry: 5
-      Data: false
-    - Name: TargetMode
-      Entry: 3
-      Data: 0
-    - Name: AoeShape
-      Entry: 3
-      Data: 0
-    - Name: AoeRadius
-      Entry: 3
-      Data: 0
-    - Name: PatternRows
-      Entry: 3
-      Data: 0
-    - Name: PatternCols
-      Entry: 3
-      Data: 0
-    - Name: PatternCenter
-      Entry: 7
-      Data: UnityEngine.Vector2Int, UnityEngine.CoreModule
-    - Name: 
-      Entry: 3
-      Data: 0
-    - Name: 
-      Entry: 3
-      Data: 0
-    - Name: 
-      Entry: 8
-      Data: 
-    - Name: PatternFlat
-      Entry: 6
-      Data: 
-    - Name: IsConstantSelectionCount
-      Entry: 5
-      Data: true
-    - Name: SelectionCount
-      Entry: 3
-      Data: 1
-    - Name: SelectionCountReader
-      Entry: 6
-      Data: 
-    - Name: AutoResolve
-      Entry: 5
-      Data: false
-    - Name: AutoAccept
-      Entry: 5
-      Data: true
-    - Name: 
-      Entry: 8
-      Data: 
-    - Name: TargetStat
-      Entry: 3
-      Data: 3
-    - Name: Operation
-      Entry: 3
-      Data: 1
-    - Name: _amountSource
-      Entry: 3
-      Data: 0
-    - Name: _baseAmount
-      Entry: 3
-      Data: 1
-    - Name: _comboMultiplier
-      Entry: 4
-      Data: 1
-    - Name: _reader
-      Entry: 6
-      Data: 
-    - Name: _readerMultiplier
-      Entry: 4
-      Data: 1
-    - Name: _clampHealthToMax
-      Entry: 5
-      Data: false
-    - Name: 
-      Entry: 8
-      Data: 
-    - Name: 
-      Entry: 13
-      Data: 
-    - Name: 
-      Entry: 8
-      Data: 
-    - Name: TargetSelector
-      Entry: 6
-      Data: 
-    - Name: 
-      Entry: 8
-      Data: 
-    - Name: 
-      Entry: 13
-      Data: 
-    - Name: 
-      Entry: 8
-      Data: 
-    - Name: 
-      Entry: 8
-      Data: 
-    - Name: 
-      Entry: 8
-      Data: 
-    - Name: 
-      Entry: 7
-      Data: 27|Rollgeon.Combat.AI.Decisions.AINode_If, Rollgeon
-    - Name: TargetSelector
-      Entry: 7
-      Data: 28|Rollgeon.Combat.AI.Targeting.TargetSelector_AlwaysPlayer, Rollgeon
-    - Name: 
-      Entry: 8
-      Data: 
-    - Name: Conditions
-      Entry: 7
-      Data: 29|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
-        Rollgeon]], mscorlib
-    - Name: 
-      Entry: 12
-      Data: 1
-    - Name: 
-      Entry: 7
-      Data: 30|Rollgeon.PreConditions.Concretes.PcAllyBelowMaxExists, Rollgeon
+      Data: 4|Rollgeon.PreConditions.Concretes.PcAllyBelowMaxExists, Rollgeon
     - Name: _isConstantValue
       Entry: 5
       Data: true
@@ -490,10 +70,13 @@ MonoBehaviour:
       Data: 
     - Name: Then
       Entry: 7
-      Data: 31|Rollgeon.Combat.AI.Decisions.AINode_If, Rollgeon
+      Data: 5|Rollgeon.Combat.AI.Decisions.AINode_If, Rollgeon
+    - Name: EditorNodeId
+      Entry: 6
+      Data: 
     - Name: TargetSelector
       Entry: 7
-      Data: 32|Rollgeon.Combat.AI.Targeting.TargetSelector_ByAttribute, Rollgeon
+      Data: 6|Rollgeon.Combat.AI.Targeting.TargetSelector_ByAttribute, Rollgeon
     - Name: Relation
       Entry: 3
       Data: 1
@@ -523,23 +106,32 @@ MonoBehaviour:
       Data: 
     - Name: Conditions
       Entry: 7
-      Data: 33|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
+      Data: 7|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
         Rollgeon]], mscorlib
     - Name: 
       Entry: 12
       Data: 1
     - Name: 
       Entry: 7
-      Data: 34|Rollgeon.PreConditions.Concretes.PcTargetInRange, Rollgeon
+      Data: 8|Rollgeon.PreConditions.Concretes.PcTargetInRange, Rollgeon
     - Name: _isConstantValue
       Entry: 5
       Data: true
     - Name: Range
       Entry: 3
       Data: 2
+    - Name: UseOwnerAttackRange
+      Entry: 5
+      Data: false
     - Name: Metric
       Entry: 3
       Data: 0
+    - Name: Alignment
+      Entry: 3
+      Data: 0
+    - Name: RequireLineOfSight
+      Entry: 5
+      Data: false
     - Name: 
       Entry: 8
       Data: 
@@ -551,22 +143,25 @@ MonoBehaviour:
       Data: 
     - Name: Then
       Entry: 7
-      Data: 35|Rollgeon.Combat.AI.Decisions.AINode_Behavior, Rollgeon
+      Data: 9|Rollgeon.Combat.AI.Decisions.AINode_Behavior, Rollgeon
+    - Name: EditorNodeId
+      Entry: 6
+      Data: 
     - Name: Behavior
       Entry: 7
-      Data: 36|Rollgeon.Entities.Behaviors.EnemyActionBehavior, Rollgeon
+      Data: 10|Rollgeon.Entities.Behaviors.EnemyActionBehavior, Rollgeon
     - Name: Trigger
       Entry: 3
-      Data: 0
+      Data: 1
     - Name: AllowedPhases
       Entry: 3
       Data: 18446744073709551615
     - Name: ActionName
       Entry: 1
-      Data: Enemy Action
+      Data: Curar
     - Name: TargetSelector
       Entry: 7
-      Data: 37|Rollgeon.Combat.AI.Targeting.TargetSelector_ByAttribute, Rollgeon
+      Data: 11|Rollgeon.Combat.AI.Targeting.TargetSelector_ByAttribute, Rollgeon
     - Name: Relation
       Entry: 3
       Data: 1
@@ -594,22 +189,37 @@ MonoBehaviour:
     - Name: 
       Entry: 8
       Data: 
+    - Name: UseArea
+      Entry: 5
+      Data: false
+    - Name: AreaShape
+      Entry: 3
+      Data: 6
+    - Name: AreaSize
+      Entry: 3
+      Data: 1
+    - Name: AreaDepth
+      Entry: 3
+      Data: 3
+    - Name: AreaFilter
+      Entry: 3
+      Data: 8
     - Name: Effects
       Entry: 7
-      Data: 38|System.Collections.Generic.List`1[[Rollgeon.Effects.EffectData, Rollgeon]],
+      Data: 12|System.Collections.Generic.List`1[[Rollgeon.Effects.EffectData, Rollgeon]],
         mscorlib
     - Name: 
       Entry: 12
       Data: 1
     - Name: 
       Entry: 7
-      Data: 39|Rollgeon.Effects.EffectData, Rollgeon
+      Data: 13|Rollgeon.Effects.EffectData, Rollgeon
     - Name: Label
       Entry: 1
       Data: Effect Group
     - Name: PreConditions
       Entry: 7
-      Data: 40|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
+      Data: 14|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
         Rollgeon]], mscorlib
     - Name: 
       Entry: 12
@@ -622,17 +232,17 @@ MonoBehaviour:
       Data: 
     - Name: Effects
       Entry: 7
-      Data: 41|System.Collections.Generic.List`1[[Rollgeon.Effects.IEffect, Rollgeon]],
+      Data: 15|System.Collections.Generic.List`1[[Rollgeon.Effects.IEffect, Rollgeon]],
         mscorlib
     - Name: 
       Entry: 12
       Data: 3
     - Name: 
       Entry: 7
-      Data: 42|Rollgeon.Effects.Concretes.EffPlaySequence, Rollgeon
+      Data: 16|Rollgeon.Effects.Concretes.EffPlaySequence, Rollgeon
     - Name: Selection
       Entry: 7
-      Data: 43|Rollgeon.Effects.Selection.SelectionSettings, Rollgeon
+      Data: 17|Rollgeon.Effects.Selection.SelectionSettings, Rollgeon
     - Name: SlotState
       Entry: 3
       Data: 1
@@ -662,13 +272,13 @@ MonoBehaviour:
       Data: 0
     - Name: AoeRadius
       Entry: 3
-      Data: 0
+      Data: 1
     - Name: PatternRows
       Entry: 3
-      Data: 0
+      Data: 1
     - Name: PatternCols
       Entry: 3
-      Data: 0
+      Data: 1
     - Name: PatternCenter
       Entry: 7
       Data: UnityEngine.Vector2Int, UnityEngine.CoreModule
@@ -682,7 +292,19 @@ MonoBehaviour:
       Entry: 8
       Data: 
     - Name: PatternFlat
-      Entry: 6
+      Entry: 7
+      Data: 18|System.Boolean[], mscorlib
+    - Name: 
+      Entry: 14
+      Data: 1
+    - Name: 
+      Entry: 5
+      Data: true
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
       Data: 
     - Name: IsConstantSelectionCount
       Entry: 5
@@ -704,14 +326,14 @@ MonoBehaviour:
       Data: 
     - Name: _steps
       Entry: 7
-      Data: 44|System.Collections.Generic.List`1[[Rollgeon.Feedback.FeedbackSequenceStep,
+      Data: 19|System.Collections.Generic.List`1[[Rollgeon.Feedback.FeedbackSequenceStep,
         Rollgeon]], mscorlib
     - Name: 
       Entry: 12
       Data: 1
     - Name: 
       Entry: 7
-      Data: 45|Rollgeon.Feedback.FeedbackSequenceStep, Rollgeon
+      Data: 20|Rollgeon.Feedback.FeedbackSequenceStep, Rollgeon
     - Name: Source
       Entry: 3
       Data: 0
@@ -734,7 +356,42 @@ MonoBehaviour:
       Entry: 3
       Data: 1
     - Name: InlineEffects
+      Entry: 7
+      Data: 21|Rollgeon.Effects.EffectData, Rollgeon
+    - Name: Label
+      Entry: 1
+      Data: Effect Group
+    - Name: PreConditions
+      Entry: 7
+      Data: 22|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
+        Rollgeon]], mscorlib
+    - Name: 
+      Entry: 12
+      Data: 0
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: Effects
+      Entry: 7
+      Data: 23|System.Collections.Generic.List`1[[Rollgeon.Effects.IEffect, Rollgeon]],
+        mscorlib
+    - Name: 
+      Entry: 12
+      Data: 0
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: TargetSelector
       Entry: 6
+      Data: 
+    - Name: 
+      Entry: 8
       Data: 
     - Name: StartMode
       Entry: 3
@@ -774,10 +431,10 @@ MonoBehaviour:
       Data: 
     - Name: 
       Entry: 7
-      Data: 46|Rollgeon.Effects.Concretes.EffModifyIntAttribute, Rollgeon
+      Data: 24|Rollgeon.Effects.Concretes.EffModifyIntAttribute, Rollgeon
     - Name: Selection
       Entry: 7
-      Data: 47|Rollgeon.Effects.Selection.SelectionSettings, Rollgeon
+      Data: 25|Rollgeon.Effects.Selection.SelectionSettings, Rollgeon
     - Name: SlotState
       Entry: 3
       Data: 1
@@ -786,13 +443,13 @@ MonoBehaviour:
       Data: 0
     - Name: EntityFilter
       Entry: 3
-      Data: 1
+      Data: 2
     - Name: IsGlobal
       Entry: 5
       Data: false
     - Name: Range
       Entry: 3
-      Data: 2
+      Data: 1
     - Name: RangeMode
       Entry: 3
       Data: 0
@@ -807,13 +464,13 @@ MonoBehaviour:
       Data: 0
     - Name: AoeRadius
       Entry: 3
-      Data: 0
+      Data: 1
     - Name: PatternRows
       Entry: 3
-      Data: 0
+      Data: 1
     - Name: PatternCols
       Entry: 3
-      Data: 0
+      Data: 1
     - Name: PatternCenter
       Entry: 7
       Data: UnityEngine.Vector2Int, UnityEngine.CoreModule
@@ -827,7 +484,19 @@ MonoBehaviour:
       Entry: 8
       Data: 
     - Name: PatternFlat
-      Entry: 6
+      Entry: 7
+      Data: 26|System.Boolean[], mscorlib
+    - Name: 
+      Entry: 14
+      Data: 1
+    - Name: 
+      Entry: 5
+      Data: true
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
       Data: 
     - Name: IsConstantSelectionCount
       Entry: 5
@@ -864,7 +533,7 @@ MonoBehaviour:
       Data: 1
     - Name: _reader
       Entry: 7
-      Data: 48|Rollgeon.Effects.Readers.ReadEntityStat, Rollgeon
+      Data: 27|Rollgeon.Effects.Readers.ReadEntityStat, Rollgeon
     - Name: Entity
       Entry: 3
       Data: 0
@@ -888,10 +557,10 @@ MonoBehaviour:
       Data: 
     - Name: 
       Entry: 7
-      Data: 49|Rollgeon.Effects.Concretes.EffPlaySequence, Rollgeon
+      Data: 28|Rollgeon.Effects.Concretes.EffPlaySequence, Rollgeon
     - Name: Selection
       Entry: 7
-      Data: 50|Rollgeon.Effects.Selection.SelectionSettings, Rollgeon
+      Data: 29|Rollgeon.Effects.Selection.SelectionSettings, Rollgeon
     - Name: SlotState
       Entry: 3
       Data: 1
@@ -921,13 +590,13 @@ MonoBehaviour:
       Data: 0
     - Name: AoeRadius
       Entry: 3
-      Data: 0
+      Data: 1
     - Name: PatternRows
       Entry: 3
-      Data: 0
+      Data: 1
     - Name: PatternCols
       Entry: 3
-      Data: 0
+      Data: 1
     - Name: PatternCenter
       Entry: 7
       Data: UnityEngine.Vector2Int, UnityEngine.CoreModule
@@ -941,7 +610,19 @@ MonoBehaviour:
       Entry: 8
       Data: 
     - Name: PatternFlat
-      Entry: 6
+      Entry: 7
+      Data: 30|System.Boolean[], mscorlib
+    - Name: 
+      Entry: 14
+      Data: 1
+    - Name: 
+      Entry: 5
+      Data: true
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
       Data: 
     - Name: IsConstantSelectionCount
       Entry: 5
@@ -963,14 +644,14 @@ MonoBehaviour:
       Data: 
     - Name: _steps
       Entry: 7
-      Data: 51|System.Collections.Generic.List`1[[Rollgeon.Feedback.FeedbackSequenceStep,
+      Data: 31|System.Collections.Generic.List`1[[Rollgeon.Feedback.FeedbackSequenceStep,
         Rollgeon]], mscorlib
     - Name: 
       Entry: 12
       Data: 3
     - Name: 
       Entry: 7
-      Data: 52|Rollgeon.Feedback.FeedbackSequenceStep, Rollgeon
+      Data: 32|Rollgeon.Feedback.FeedbackSequenceStep, Rollgeon
     - Name: Source
       Entry: 3
       Data: 0
@@ -993,7 +674,42 @@ MonoBehaviour:
       Entry: 3
       Data: 1
     - Name: InlineEffects
+      Entry: 7
+      Data: 33|Rollgeon.Effects.EffectData, Rollgeon
+    - Name: Label
+      Entry: 1
+      Data: Effect Group
+    - Name: PreConditions
+      Entry: 7
+      Data: 34|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
+        Rollgeon]], mscorlib
+    - Name: 
+      Entry: 12
+      Data: 0
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: Effects
+      Entry: 7
+      Data: 35|System.Collections.Generic.List`1[[Rollgeon.Effects.IEffect, Rollgeon]],
+        mscorlib
+    - Name: 
+      Entry: 12
+      Data: 0
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: TargetSelector
       Entry: 6
+      Data: 
+    - Name: 
+      Entry: 8
       Data: 
     - Name: StartMode
       Entry: 3
@@ -1024,7 +740,7 @@ MonoBehaviour:
       Data: 
     - Name: 
       Entry: 7
-      Data: 53|Rollgeon.Feedback.FeedbackSequenceStep, Rollgeon
+      Data: 36|Rollgeon.Feedback.FeedbackSequenceStep, Rollgeon
     - Name: Source
       Entry: 3
       Data: 0
@@ -1047,7 +763,42 @@ MonoBehaviour:
       Entry: 3
       Data: 1
     - Name: InlineEffects
+      Entry: 7
+      Data: 37|Rollgeon.Effects.EffectData, Rollgeon
+    - Name: Label
+      Entry: 1
+      Data: Effect Group
+    - Name: PreConditions
+      Entry: 7
+      Data: 38|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
+        Rollgeon]], mscorlib
+    - Name: 
+      Entry: 12
+      Data: 0
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: Effects
+      Entry: 7
+      Data: 39|System.Collections.Generic.List`1[[Rollgeon.Effects.IEffect, Rollgeon]],
+        mscorlib
+    - Name: 
+      Entry: 12
+      Data: 0
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: TargetSelector
       Entry: 6
+      Data: 
+    - Name: 
+      Entry: 8
       Data: 
     - Name: StartMode
       Entry: 3
@@ -1078,7 +829,7 @@ MonoBehaviour:
       Data: 
     - Name: 
       Entry: 7
-      Data: 54|Rollgeon.Feedback.FeedbackSequenceStep, Rollgeon
+      Data: 40|Rollgeon.Feedback.FeedbackSequenceStep, Rollgeon
     - Name: Source
       Entry: 3
       Data: 0
@@ -1101,7 +852,42 @@ MonoBehaviour:
       Entry: 3
       Data: 1
     - Name: InlineEffects
+      Entry: 7
+      Data: 41|Rollgeon.Effects.EffectData, Rollgeon
+    - Name: Label
+      Entry: 1
+      Data: Effect Group
+    - Name: PreConditions
+      Entry: 7
+      Data: 42|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
+        Rollgeon]], mscorlib
+    - Name: 
+      Entry: 12
+      Data: 0
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: Effects
+      Entry: 7
+      Data: 43|System.Collections.Generic.List`1[[Rollgeon.Effects.IEffect, Rollgeon]],
+        mscorlib
+    - Name: 
+      Entry: 12
+      Data: 0
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: TargetSelector
       Entry: 6
+      Data: 
+    - Name: 
+      Entry: 8
       Data: 
     - Name: StartMode
       Entry: 3
@@ -1165,10 +951,13 @@ MonoBehaviour:
       Data: 
     - Name: Else
       Entry: 7
-      Data: 55|Rollgeon.Combat.AI.Decisions.AINode_Move, Rollgeon
+      Data: 44|Rollgeon.Combat.AI.Decisions.AINode_Move, Rollgeon
+    - Name: EditorNodeId
+      Entry: 6
+      Data: 
     - Name: MaxSteps
       Entry: 7
-      Data: 56|Rollgeon.Combat.AI.Readers.AIReadSelfStat, Rollgeon
+      Data: 45|Rollgeon.Combat.AI.Readers.AIReadSelfStat, Rollgeon
     - Name: Stat
       Entry: 3
       Data: 2
@@ -1180,19 +969,37 @@ MonoBehaviour:
       Data: 
     - Name: TargetSelector
       Entry: 7
-      Data: 57|Rollgeon.Combat.AI.Targeting.TargetSelector_Nearest, Rollgeon
+      Data: 46|Rollgeon.Combat.AI.Targeting.TargetSelector_ByAttribute, Rollgeon
     - Name: Relation
       Entry: 3
       Data: 1
+    - Name: Stat
+      Entry: 3
+      Data: 0
+    - Name: Mode
+      Entry: 3
+      Data: 0
+    - Name: UseModifiedValue
+      Entry: 5
+      Data: true
     - Name: SkipDead
       Entry: 5
       Data: true
+    - Name: UseTiebreaker
+      Entry: 5
+      Data: false
+    - Name: TiebreakStat
+      Entry: 3
+      Data: 2
+    - Name: TiebreakMode
+      Entry: 3
+      Data: 0
     - Name: 
       Entry: 8
       Data: 
     - Name: DesiredRange
       Entry: 7
-      Data: 58|Rollgeon.Combat.AI.Readers.AIConstantInt, Rollgeon
+      Data: 47|Rollgeon.Combat.AI.Readers.AIConstantInt, Rollgeon
     - Name: Value
       Entry: 3
       Data: 2
@@ -1213,51 +1020,108 @@ MonoBehaviour:
       Data: 
     - Name: Else
       Entry: 7
-      Data: 59|Rollgeon.Combat.AI.Decisions.AINode_Sequence, Rollgeon
-    - Name: Children
+      Data: 48|Rollgeon.Combat.AI.Decisions.AINode_If, Rollgeon
+    - Name: EditorNodeId
+      Entry: 6
+      Data: 
+    - Name: TargetSelector
       Entry: 7
-      Data: 60|System.Collections.Generic.List`1[[Rollgeon.Combat.AI.Decisions.AIDecisionNode,
+      Data: 49|Rollgeon.Combat.AI.Targeting.TargetSelector_AlwaysPlayer, Rollgeon
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: Conditions
+      Entry: 7
+      Data: 50|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
         Rollgeon]], mscorlib
     - Name: 
       Entry: 12
-      Data: 2
+      Data: 1
     - Name: 
       Entry: 7
-      Data: 61|Rollgeon.Combat.AI.Decisions.AINode_Behavior, Rollgeon
-    - Name: Behavior
-      Entry: 7
-      Data: 62|Rollgeon.Entities.Behaviors.EnemyActionBehavior, Rollgeon
-    - Name: Trigger
+      Data: 51|Rollgeon.PreConditions.Concretes.PcTargetInRange, Rollgeon
+    - Name: _isConstantValue
+      Entry: 5
+      Data: true
+    - Name: Range
+      Entry: 3
+      Data: 1
+    - Name: UseOwnerAttackRange
+      Entry: 5
+      Data: true
+    - Name: Metric
+      Entry: 3
+      Data: 1
+    - Name: Alignment
       Entry: 3
       Data: 0
+    - Name: RequireLineOfSight
+      Entry: 5
+      Data: false
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: Then
+      Entry: 7
+      Data: 52|Rollgeon.Combat.AI.Decisions.AINode_Behavior, Rollgeon
+    - Name: EditorNodeId
+      Entry: 6
+      Data: 
+    - Name: Behavior
+      Entry: 7
+      Data: 53|Rollgeon.Entities.Behaviors.EnemyActionBehavior, Rollgeon
+    - Name: Trigger
+      Entry: 3
+      Data: 1
     - Name: AllowedPhases
       Entry: 3
-      Data: 4
+      Data: 18446744073709551615
     - Name: ActionName
       Entry: 1
       Data: Attack
     - Name: TargetSelector
       Entry: 7
-      Data: 63|Rollgeon.Combat.AI.Targeting.TargetSelector_AlwaysPlayer, Rollgeon
+      Data: 54|Rollgeon.Combat.AI.Targeting.TargetSelector_AlwaysPlayer, Rollgeon
     - Name: 
       Entry: 8
       Data: 
+    - Name: UseArea
+      Entry: 5
+      Data: false
+    - Name: AreaShape
+      Entry: 3
+      Data: 6
+    - Name: AreaSize
+      Entry: 3
+      Data: 1
+    - Name: AreaDepth
+      Entry: 3
+      Data: 3
+    - Name: AreaFilter
+      Entry: 3
+      Data: 8
     - Name: Effects
       Entry: 7
-      Data: 64|System.Collections.Generic.List`1[[Rollgeon.Effects.EffectData, Rollgeon]],
+      Data: 55|System.Collections.Generic.List`1[[Rollgeon.Effects.EffectData, Rollgeon]],
         mscorlib
     - Name: 
       Entry: 12
       Data: 1
     - Name: 
       Entry: 7
-      Data: 65|Rollgeon.Effects.EffectData, Rollgeon
+      Data: 56|Rollgeon.Effects.EffectData, Rollgeon
     - Name: Label
       Entry: 1
       Data: Effect Group
     - Name: PreConditions
       Entry: 7
-      Data: 66|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
+      Data: 57|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
         Rollgeon]], mscorlib
     - Name: 
       Entry: 12
@@ -1270,17 +1134,17 @@ MonoBehaviour:
       Data: 
     - Name: Effects
       Entry: 7
-      Data: 67|System.Collections.Generic.List`1[[Rollgeon.Effects.IEffect, Rollgeon]],
+      Data: 58|System.Collections.Generic.List`1[[Rollgeon.Effects.IEffect, Rollgeon]],
         mscorlib
     - Name: 
       Entry: 12
       Data: 3
     - Name: 
       Entry: 7
-      Data: 68|Rollgeon.Effects.Concretes.EffPlaySequence, Rollgeon
+      Data: 59|Rollgeon.Effects.Concretes.EffPlaySequence, Rollgeon
     - Name: Selection
       Entry: 7
-      Data: 69|Rollgeon.Effects.Selection.SelectionSettings, Rollgeon
+      Data: 60|Rollgeon.Effects.Selection.SelectionSettings, Rollgeon
     - Name: SlotState
       Entry: 3
       Data: 1
@@ -1310,13 +1174,13 @@ MonoBehaviour:
       Data: 0
     - Name: AoeRadius
       Entry: 3
-      Data: 0
+      Data: 1
     - Name: PatternRows
       Entry: 3
-      Data: 0
+      Data: 1
     - Name: PatternCols
       Entry: 3
-      Data: 0
+      Data: 1
     - Name: PatternCenter
       Entry: 7
       Data: UnityEngine.Vector2Int, UnityEngine.CoreModule
@@ -1330,7 +1194,19 @@ MonoBehaviour:
       Entry: 8
       Data: 
     - Name: PatternFlat
-      Entry: 6
+      Entry: 7
+      Data: 61|System.Boolean[], mscorlib
+    - Name: 
+      Entry: 14
+      Data: 1
+    - Name: 
+      Entry: 5
+      Data: true
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
       Data: 
     - Name: IsConstantSelectionCount
       Entry: 5
@@ -1352,14 +1228,14 @@ MonoBehaviour:
       Data: 
     - Name: _steps
       Entry: 7
-      Data: 70|System.Collections.Generic.List`1[[Rollgeon.Feedback.FeedbackSequenceStep,
+      Data: 62|System.Collections.Generic.List`1[[Rollgeon.Feedback.FeedbackSequenceStep,
         Rollgeon]], mscorlib
     - Name: 
       Entry: 12
       Data: 1
     - Name: 
       Entry: 7
-      Data: 71|Rollgeon.Feedback.FeedbackSequenceStep, Rollgeon
+      Data: 63|Rollgeon.Feedback.FeedbackSequenceStep, Rollgeon
     - Name: Source
       Entry: 3
       Data: 0
@@ -1382,7 +1258,42 @@ MonoBehaviour:
       Entry: 3
       Data: 1
     - Name: InlineEffects
+      Entry: 7
+      Data: 64|Rollgeon.Effects.EffectData, Rollgeon
+    - Name: Label
+      Entry: 1
+      Data: Effect Group
+    - Name: PreConditions
+      Entry: 7
+      Data: 65|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
+        Rollgeon]], mscorlib
+    - Name: 
+      Entry: 12
+      Data: 0
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: Effects
+      Entry: 7
+      Data: 66|System.Collections.Generic.List`1[[Rollgeon.Effects.IEffect, Rollgeon]],
+        mscorlib
+    - Name: 
+      Entry: 12
+      Data: 0
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: TargetSelector
       Entry: 6
+      Data: 
+    - Name: 
+      Entry: 8
       Data: 
     - Name: StartMode
       Entry: 3
@@ -1422,10 +1333,10 @@ MonoBehaviour:
       Data: 
     - Name: 
       Entry: 7
-      Data: 72|Rollgeon.Effects.Concretes.EffDealDamage, Rollgeon
+      Data: 67|Rollgeon.Effects.Concretes.EffDealDamage, Rollgeon
     - Name: Selection
       Entry: 7
-      Data: 73|Rollgeon.Effects.Selection.SelectionSettings, Rollgeon
+      Data: 68|Rollgeon.Effects.Selection.SelectionSettings, Rollgeon
     - Name: SlotState
       Entry: 3
       Data: 1
@@ -1455,13 +1366,13 @@ MonoBehaviour:
       Data: 0
     - Name: AoeRadius
       Entry: 3
-      Data: 0
+      Data: 1
     - Name: PatternRows
       Entry: 3
-      Data: 0
+      Data: 1
     - Name: PatternCols
       Entry: 3
-      Data: 0
+      Data: 1
     - Name: PatternCenter
       Entry: 7
       Data: UnityEngine.Vector2Int, UnityEngine.CoreModule
@@ -1475,7 +1386,19 @@ MonoBehaviour:
       Entry: 8
       Data: 
     - Name: PatternFlat
-      Entry: 6
+      Entry: 7
+      Data: 69|System.Boolean[], mscorlib
+    - Name: 
+      Entry: 14
+      Data: 1
+    - Name: 
+      Entry: 5
+      Data: true
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
       Data: 
     - Name: IsConstantSelectionCount
       Entry: 5
@@ -1506,7 +1429,7 @@ MonoBehaviour:
       Data: 1
     - Name: _reader
       Entry: 7
-      Data: 74|Rollgeon.Effects.Readers.ReadEntityStat, Rollgeon
+      Data: 70|Rollgeon.Effects.Readers.ReadEntityStat, Rollgeon
     - Name: Entity
       Entry: 3
       Data: 0
@@ -1530,10 +1453,10 @@ MonoBehaviour:
       Data: 
     - Name: 
       Entry: 7
-      Data: 75|Rollgeon.Effects.Concretes.EffPlaySequence, Rollgeon
+      Data: 71|Rollgeon.Effects.Concretes.EffPlaySequence, Rollgeon
     - Name: Selection
       Entry: 7
-      Data: 76|Rollgeon.Effects.Selection.SelectionSettings, Rollgeon
+      Data: 72|Rollgeon.Effects.Selection.SelectionSettings, Rollgeon
     - Name: SlotState
       Entry: 3
       Data: 1
@@ -1563,13 +1486,13 @@ MonoBehaviour:
       Data: 0
     - Name: AoeRadius
       Entry: 3
-      Data: 0
+      Data: 1
     - Name: PatternRows
       Entry: 3
-      Data: 0
+      Data: 1
     - Name: PatternCols
       Entry: 3
-      Data: 0
+      Data: 1
     - Name: PatternCenter
       Entry: 7
       Data: UnityEngine.Vector2Int, UnityEngine.CoreModule
@@ -1583,7 +1506,19 @@ MonoBehaviour:
       Entry: 8
       Data: 
     - Name: PatternFlat
-      Entry: 6
+      Entry: 7
+      Data: 73|System.Boolean[], mscorlib
+    - Name: 
+      Entry: 14
+      Data: 1
+    - Name: 
+      Entry: 5
+      Data: true
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
       Data: 
     - Name: IsConstantSelectionCount
       Entry: 5
@@ -1605,14 +1540,14 @@ MonoBehaviour:
       Data: 
     - Name: _steps
       Entry: 7
-      Data: 77|System.Collections.Generic.List`1[[Rollgeon.Feedback.FeedbackSequenceStep,
+      Data: 74|System.Collections.Generic.List`1[[Rollgeon.Feedback.FeedbackSequenceStep,
         Rollgeon]], mscorlib
     - Name: 
       Entry: 12
       Data: 3
     - Name: 
       Entry: 7
-      Data: 78|Rollgeon.Feedback.FeedbackSequenceStep, Rollgeon
+      Data: 75|Rollgeon.Feedback.FeedbackSequenceStep, Rollgeon
     - Name: Source
       Entry: 3
       Data: 0
@@ -1635,7 +1570,42 @@ MonoBehaviour:
       Entry: 3
       Data: 1
     - Name: InlineEffects
+      Entry: 7
+      Data: 76|Rollgeon.Effects.EffectData, Rollgeon
+    - Name: Label
+      Entry: 1
+      Data: Effect Group
+    - Name: PreConditions
+      Entry: 7
+      Data: 77|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
+        Rollgeon]], mscorlib
+    - Name: 
+      Entry: 12
+      Data: 0
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: Effects
+      Entry: 7
+      Data: 78|System.Collections.Generic.List`1[[Rollgeon.Effects.IEffect, Rollgeon]],
+        mscorlib
+    - Name: 
+      Entry: 12
+      Data: 0
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: TargetSelector
       Entry: 6
+      Data: 
+    - Name: 
+      Entry: 8
       Data: 
     - Name: StartMode
       Entry: 3
@@ -1689,7 +1659,42 @@ MonoBehaviour:
       Entry: 3
       Data: 1
     - Name: InlineEffects
+      Entry: 7
+      Data: 80|Rollgeon.Effects.EffectData, Rollgeon
+    - Name: Label
+      Entry: 1
+      Data: Effect Group
+    - Name: PreConditions
+      Entry: 7
+      Data: 81|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
+        Rollgeon]], mscorlib
+    - Name: 
+      Entry: 12
+      Data: 0
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: Effects
+      Entry: 7
+      Data: 82|System.Collections.Generic.List`1[[Rollgeon.Effects.IEffect, Rollgeon]],
+        mscorlib
+    - Name: 
+      Entry: 12
+      Data: 0
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: TargetSelector
       Entry: 6
+      Data: 
+    - Name: 
+      Entry: 8
       Data: 
     - Name: StartMode
       Entry: 3
@@ -1720,7 +1725,7 @@ MonoBehaviour:
       Data: 
     - Name: 
       Entry: 7
-      Data: 80|Rollgeon.Feedback.FeedbackSequenceStep, Rollgeon
+      Data: 83|Rollgeon.Feedback.FeedbackSequenceStep, Rollgeon
     - Name: Source
       Entry: 3
       Data: 0
@@ -1743,7 +1748,42 @@ MonoBehaviour:
       Entry: 3
       Data: 1
     - Name: InlineEffects
+      Entry: 7
+      Data: 84|Rollgeon.Effects.EffectData, Rollgeon
+    - Name: Label
+      Entry: 1
+      Data: Effect Group
+    - Name: PreConditions
+      Entry: 7
+      Data: 85|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
+        Rollgeon]], mscorlib
+    - Name: 
+      Entry: 12
+      Data: 0
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: Effects
+      Entry: 7
+      Data: 86|System.Collections.Generic.List`1[[Rollgeon.Effects.IEffect, Rollgeon]],
+        mscorlib
+    - Name: 
+      Entry: 12
+      Data: 0
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: TargetSelector
       Entry: 6
+      Data: 
+    - Name: 
+      Entry: 8
       Data: 
     - Name: StartMode
       Entry: 3
@@ -1805,12 +1845,15 @@ MonoBehaviour:
     - Name: 
       Entry: 8
       Data: 
-    - Name: 
+    - Name: Else
       Entry: 7
-      Data: 81|Rollgeon.Combat.AI.Decisions.AINode_KeepDistance, Rollgeon
+      Data: 87|Rollgeon.Combat.AI.Decisions.AINode_KeepDistance, Rollgeon
+    - Name: EditorNodeId
+      Entry: 6
+      Data: 
     - Name: MaxSteps
       Entry: 7
-      Data: 82|Rollgeon.Combat.AI.Readers.AIReadSelfStat, Rollgeon
+      Data: 88|Rollgeon.Combat.AI.Readers.AIReadSelfStat, Rollgeon
     - Name: Stat
       Entry: 3
       Data: 2
@@ -1822,7 +1865,7 @@ MonoBehaviour:
       Data: 
     - Name: IdealDistance
       Entry: 7
-      Data: 83|Rollgeon.Combat.AI.Readers.AIConstantInt, Rollgeon
+      Data: 89|Rollgeon.Combat.AI.Readers.AIConstantInt, Rollgeon
     - Name: Value
       Entry: 3
       Data: 3
@@ -1833,36 +1876,6 @@ MonoBehaviour:
       Entry: 8
       Data: 
     - Name: 
-      Entry: 13
-      Data: 
-    - Name: 
-      Entry: 8
-      Data: 
-    - Name: 
-      Entry: 8
-      Data: 
-    - Name: 
-      Entry: 8
-      Data: 
-    - Name: 
-      Entry: 13
-      Data: 
-    - Name: 
-      Entry: 8
-      Data: 
-    - Name: 
-      Entry: 8
-      Data: 
-    - Name: MaxIterations
-      Entry: 3
-      Data: 16
-    - Name: 
-      Entry: 8
-      Data: 
-    - Name: 
-      Entry: 13
-      Data: 
-    - Name: 
       Entry: 8
       Data: 
     - Name: 
@@ -1870,7 +1883,7 @@ MonoBehaviour:
       Data: 
     - Name: AIDetachedNodes
       Entry: 7
-      Data: 84|System.Collections.Generic.List`1[[Rollgeon.Combat.AI.Decisions.AIDecisionNode,
+      Data: 90|System.Collections.Generic.List`1[[Rollgeon.Combat.AI.Decisions.AIDecisionNode,
         Rollgeon]], mscorlib
     - Name: 
       Entry: 12
@@ -1893,7 +1906,7 @@ MonoBehaviour:
       a qui\xE9n curar, dispara y mantiene distancia 3."
   WeaknessComboId: 
   WeaknessMultiplierOverride: 0
-  Archetype: 3
+  Curse: {fileID: 0}
   BaseHP: 60
   BaseAttack: 20
   BaseHealStrength: 20
@@ -1958,5 +1971,9 @@ MonoBehaviour:
   MaxGoldDrop: 5
   IsFlying: 0
   IsBoss: 0
+  Archetype: 3
   Personality: 0
   KamikazeIgnoresSurvival: 0
+  AuraRadius: 0
+  AuraFlatReduction: 0
+  Footprint: {x: 1, y: 1}

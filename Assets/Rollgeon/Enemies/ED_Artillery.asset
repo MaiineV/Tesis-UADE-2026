@@ -107,11 +107,11 @@ MonoBehaviour:
       Entry: 5
       Data: false
     - Name: IntentLabelKey
-      Entry: 6
-      Data: 
+      Entry: 1
+      Data: intent.artillery.ignite
     - Name: IntentLabelFallback
-      Entry: 6
-      Data: 
+      Entry: 1
+      Data: Bombardeo
     - Name: WindupFeedbackId
       Entry: 1
       Data: vfx.enemy.artillery.bomb

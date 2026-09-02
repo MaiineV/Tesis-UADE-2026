@@ -35,7 +35,17 @@ namespace Rollgeon.Editor.Tools.Enemy
         public bool UsesBehaviorsList;
 
         public bool HasMovement => MovementNodes.Count > 0;
-        public bool KeepsDistance => MovementNodes.Contains(typeof(AINode_KeepDistance));
+
+        // Los tres hermanos "MoveTo*" (Align/LineOfSight/Diagonal) también mantienen distancia
+        // por diseño — buscan una casilla a un DesiredRange preferido, igual que KeepDistance,
+        // solo que además exigen una condición geométrica (fila/columna, LoS, diagonal). Sin
+        // esto, un Ranged que se reposiciona con uno de ellos en vez de KeepDistance disparaba
+        // el falso "no mantiene distancia" del validador (ej. Skirmisher con MoveToDiagonal).
+        public bool KeepsDistance =>
+            MovementNodes.Contains(typeof(AINode_KeepDistance)) ||
+            MovementNodes.Contains(typeof(AINode_MoveToAlign)) ||
+            MovementNodes.Contains(typeof(AINode_MoveToLineOfSight)) ||
+            MovementNodes.Contains(typeof(AINode_MoveToDiagonal));
 
         public static EnemyTreeSummary Build(EnemyDataSO so)
         {
@@ -75,6 +85,7 @@ namespace Rollgeon.Editor.Tools.Enemy
                 case AINode_KeepDistance _:
                 case AINode_MoveToAlign _:
                 case AINode_MoveToLineOfSight _:
+                case AINode_MoveToDiagonal _:
                 case AINode_TeleportNearTarget _:
                 case AINode_TeleportAwayToEdge _:
                 case AINode_TeleportToRoomCenter _:

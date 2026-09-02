@@ -175,8 +175,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Rollgeon::Rollgeon.Dungeon.Components.SpawnPointConfig
   EnemySets:
-  - {fileID: 11400000, guid: aa8154a1c110e7f43923d033431fca88, type: 2}
-  - {fileID: 11400000, guid: 17f155b9990d4874e8f38f2eda8a961f, type: 2}
+  - {fileID: 11400000, guid: 67e9b22252f591b4b8eaf6fa644d0d93, type: 2}
+  - {fileID: 11400000, guid: 67e9b22252f591b4b8eaf6fa644d0d93, type: 2}
   SetTierWeights: []
 --- !u!1 &1243341517869317661
 GameObject:
