@@ -1792,6 +1792,16 @@ public interface IMovementDieService {              // ServiceScope.Run, bootstr
   roleando, hace drop-in encima de la ficha, muestra la cara y recién ahí publica el rango;
   queda visible hasta elegir destino (`OnCleared` → fade-out). Sin cablear, el reveal es
   sincrónico.
+- **Atribución por item (sep 2026).** El presenter recibe además
+  `IReadOnlyList<MovementRangeContribution>` (`SourceAsset` = `ItemSO`, `Delta`): lo arma
+  `MovementRangeAttribution` cruzando `MoveRange.GetRawModifiers()` con el inventario por
+  `ItemPassiveSourceId.For(ItemId)` (solo `Add`/`Subtract`; un item con varios modifiers se
+  colapsa; fuentes no-item — rewards "Movimiento+" — no tienen chip pero sí cuentan en el
+  label agregado "+N"). `MovementDieView` clona un `ModifierEntryView` inactivo
+  (`_chipTemplate`) por contribución al aterrizar: "Botas Ligeras +1" / "Guantelete Pesado -1"
+  con icono, punch-scale (PrimeTween) y SFX de proc (`IAudioService.PlaySfx2D`), apilados
+  encima del dado con stagger dividido por `GameSpeedPrefs`. No demoran el reveal y se van
+  con el dado (`HideInstant`/`Abort` los ocultan). Texto: `MovementDieChipFormat.Label`.
 - **Comprometida tras tirar.** Con `_movementRollPrepaid`, `HasCancellableSelection` es
   false: ni click derecho ni clicks de slot cancelan (la UI muestra los demás slots
   Locked); End Turn sigue soltando la selección y pierde el roll.
