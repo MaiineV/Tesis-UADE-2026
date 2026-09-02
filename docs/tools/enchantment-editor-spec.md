@@ -1,6 +1,6 @@
 # Enchantment Editor — espejo del Item Editor
 
-> Feature#0068 (2026-09). Este doc registra los **deltas** contra
+> Feature#0069 (2026-09). Este doc registra los **deltas** contra
 > [`item-editor-spec.md`](item-editor-spec.md); todo lo que no se nombra acá (los seis bloques
 > de la tool, la regla transversal de Dirty/Undo del §7, el límite de atomicidad del §7.1, el
 > mandato de único punto de entrada del §6.7) aplica igual, palabra por palabra.
