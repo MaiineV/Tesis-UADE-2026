@@ -287,7 +287,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 5531895623699
-    m_Localized: The die joins any combo and grants +3 gold.
+    m_Localized: The die joins a Ladder and grants +5 gold.
     m_Metadata:
       m_Items: []
   - m_Id: 5531895623700
@@ -2215,6 +2215,14 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 17685758289997825
     m_Localized: +15HP al resolver combo Generala.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17931574738714624
+    m_Localized: Windfall
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17931574780657664
+    m_Localized: The die joins a Double Pair and grants +3 gold.
     m_Metadata:
       m_Items: []
   references:

@@ -18,6 +18,9 @@ namespace Rollgeon.UI.HUD.DiceBag
         public const string CatDefensa = "dicebag.cat.defensa";
         public const string CatEconomia = "dicebag.cat.economia";
         public const string CatMaldicion = "dicebag.cat.maldicion";
+        public const string CatCaos = "dicebag.cat.caos";
+        public const string CatRecursos = "dicebag.cat.recursos";
+        public const string CatMovimiento = "dicebag.cat.movimiento";
 
         /// <summary>Key del label de una categoría; null para None (la UI omite el segmento).</summary>
         public static string CategoryKey(EnchantmentCategory category) => category switch
@@ -27,6 +30,9 @@ namespace Rollgeon.UI.HUD.DiceBag
             EnchantmentCategory.Defensa => CatDefensa,
             EnchantmentCategory.Economia => CatEconomia,
             EnchantmentCategory.Maldicion => CatMaldicion,
+            EnchantmentCategory.Caos => CatCaos,
+            EnchantmentCategory.Recursos => CatRecursos,
+            EnchantmentCategory.Movimiento => CatMovimiento,
             _ => null,
         };
     }

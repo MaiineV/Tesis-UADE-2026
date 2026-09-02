@@ -48,7 +48,7 @@ MonoBehaviour:
       Data: 
     - Name: _category
       Entry: 3
-      Data: 5
+      Data: 6
     - Name: _allowedDiceTypes
       Entry: 7
       Data: 1|System.Collections.Generic.List`1[[Rollgeon.Dice.DiceType, Rollgeon]],
@@ -292,15 +292,15 @@ MonoBehaviour:
   _faceFilter:
     rid: -2
   _triggers:
-  - rid: 3569511772791767479
+  - rid: 7496091007886557820
   _capabilities:
-  - rid: 3569511772791767480
+  - rid: 7496091007886557821
   references:
     version: 2
     RefIds:
     - rid: -2
       type: {class: , ns: , asm: }
-    - rid: 3569511772791767479
+    - rid: 7496091007886557820
       type: {class: ExecuteEffectsOnDiceEvent, ns: Rollgeon.Upgrades.Dice.Triggers, asm: Rollgeon}
       data:
         Event: 3
@@ -311,22 +311,22 @@ MonoBehaviour:
         Effects:
         - Label: Effect Group
           PreConditions:
-          - rid: 3569511772791767481
+          - rid: 7496091007886557822
           Effects:
-          - rid: 3569511772791767482
+          - rid: 7496091007886557823
           TargetSelector:
             rid: -2
-    - rid: 3569511772791767480
+    - rid: 7496091007886557821
       type: {class: CapCursed, ns: Rollgeon.Upgrades.Dice, asm: Rollgeon}
       data: 
-    - rid: 3569511772791767481
+    - rid: 7496091007886557822
       type: {class: PcChance, ns: Rollgeon.PreConditions.Concretes, asm: Rollgeon}
       data:
         _isConstantValue: 1
         Mode: 0
         Chance: 0.5
         OneIn: 5
-    - rid: 3569511772791767482
+    - rid: 7496091007886557823
       type: {class: EffBlockComboDamage, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
       data:
         Selection:

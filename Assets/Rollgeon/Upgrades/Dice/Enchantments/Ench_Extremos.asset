@@ -104,12 +104,12 @@ MonoBehaviour:
       Entry: 8
       Data: 
   _faceFilter:
-    rid: 144068563111248708
+    rid: 7496091007886557855
   _triggers: []
   _capabilities: []
   references:
     version: 2
     RefIds:
-    - rid: 144068563111248708
+    - rid: 7496091007886557855
       type: {class: ExtremesFilter, ns: Rollgeon.Upgrades.Dice.Filters, asm: Rollgeon}
       data: 

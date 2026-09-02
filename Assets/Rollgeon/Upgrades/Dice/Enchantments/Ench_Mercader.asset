@@ -48,7 +48,7 @@ MonoBehaviour:
       Data: 
     - Name: _category
       Entry: 3
-      Data: 4
+      Data: 7
     - Name: _allowedDiceTypes
       Entry: 7
       Data: 1|System.Collections.Generic.List`1[[Rollgeon.Dice.DiceType, Rollgeon]],
@@ -286,14 +286,14 @@ MonoBehaviour:
   _faceFilter:
     rid: -2
   _triggers:
-  - rid: 3569511772791767512
+  - rid: 7496091007886557861
   _capabilities: []
   references:
     version: 2
     RefIds:
     - rid: -2
       type: {class: , ns: , asm: }
-    - rid: 3569511772791767512
+    - rid: 7496091007886557861
       type: {class: ExecuteEffectsOnDiceEvent, ns: Rollgeon.Upgrades.Dice.Triggers, asm: Rollgeon}
       data:
         Event: 5
@@ -306,10 +306,10 @@ MonoBehaviour:
         - Label: Effect Group
           PreConditions: []
           Effects:
-          - rid: 3569511772791767513
+          - rid: 7496091007886557862
           TargetSelector:
             rid: -2
-    - rid: 3569511772791767513
+    - rid: 7496091007886557862
       type: {class: EffModifyGold, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
       data:
         Selection:
@@ -335,9 +335,9 @@ MonoBehaviour:
           AutoAccept: 1
         Operation: 0
         _amount:
-          rid: 3569511772791767514
+          rid: 7496091007886557863
         _failChainIfInsufficient: 1
-    - rid: 3569511772791767514
+    - rid: 7496091007886557863
       type: {class: ReadConstantInt, ns: Rollgeon.Effects.Readers, asm: Rollgeon}
       data:
         Value: 6

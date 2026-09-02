@@ -43,6 +43,15 @@ namespace Rollgeon.Upgrades.Dice
         /// <summary>#D1365A — Maldición (rojo vida, mismo hex que Cursed).</summary>
         public static readonly Color32 Maldicion = new Color32(0xD1, 0x36, 0x5A, 0xFF);
 
+        /// <summary>#D1365A — Caos (taxonomía GDD; hereda el rojo de Maldición/Cursed).</summary>
+        public static readonly Color32 Caos = new Color32(0xD1, 0x36, 0x5A, 0xFF);
+
+        /// <summary>#D9A44E — Recursos (taxonomía GDD; hereda el dorado de Economía/oro).</summary>
+        public static readonly Color32 Recursos = new Color32(0xD9, 0xA4, 0x4E, 0xFF);
+
+        /// <summary>#63E063 — Movimiento (verde curación, FloatingNumberPalette.Heal).</summary>
+        public static readonly Color32 Movimiento = new Color32(0x63, 0xE0, 0x63, 0xFF);
+
         public static Color32 CategoryColor(EnchantmentCategory category) => category switch
         {
             EnchantmentCategory.Ataque => Ataque,
@@ -50,6 +59,9 @@ namespace Rollgeon.Upgrades.Dice
             EnchantmentCategory.Defensa => Defensa,
             EnchantmentCategory.Economia => Economia,
             EnchantmentCategory.Maldicion => Maldicion,
+            EnchantmentCategory.Caos => Caos,
+            EnchantmentCategory.Recursos => Recursos,
+            EnchantmentCategory.Movimiento => Movimiento,
             _ => Blessed,
         };
 

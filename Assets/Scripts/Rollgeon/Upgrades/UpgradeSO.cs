@@ -70,5 +70,26 @@ namespace Rollgeon.Upgrades
 
         /// <summary>Icono opcional. Puede quedar null hasta el pipeline de arte.</summary>
         public Sprite Icon => _icon;
+
+#if UNITY_EDITOR
+        // Setters editor-only para tooling de autoría (EnchantmentAuthoring, builders).
+        // Los assets son Odin — nunca editar el YAML a mano; asignar por código +
+        // SetDirty + SaveAssets. Mismo patrón que EnchantmentSO.EditorSetCategory.
+
+        /// <summary>
+        /// Editor-only. El id es clave de save: renombrarlo en un asset publicado
+        /// rompe partidas guardadas — usar el flujo de rename de la tool, no esto suelto.
+        /// </summary>
+        public void EditorSetUpgradeId(string upgradeId) => _upgradeId = upgradeId;
+
+        /// <summary>Editor-only.</summary>
+        public void EditorSetDisplayName(string displayName) => _displayName = displayName;
+
+        /// <summary>Editor-only.</summary>
+        public void EditorSetDescription(string description) => _description = description;
+
+        /// <summary>Editor-only.</summary>
+        public void EditorSetIcon(Sprite icon) => _icon = icon;
+#endif
     }
 }
