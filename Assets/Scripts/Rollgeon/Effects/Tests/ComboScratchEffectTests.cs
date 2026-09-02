@@ -112,6 +112,25 @@ namespace Rollgeon.Effects.Tests
         }
 
         [Test]
+        public void EffMultiplyComboDamage_WithReader_UsesReadFloatOverConstant()
+        {
+            // Arrange — la constante queda en 2 pero el reader (Eco Menguante) manda.
+            var ctx = BuildScratchContext(out var scratch);
+            var eff = new EffMultiplyComboDamage
+            {
+                Multiplier = 2f,
+                MultiplierReader = new ReadAttackDecayMultiplier { Start = 4.9f, DecayPerAttack = 0.1f, Min = 1f },
+            };
+
+            // Act — sin IPlayerTurnStateService el reader devuelve Start.
+            bool result = eff.Apply(ctx);
+
+            // Assert — la fracción viaja entera al scratch.
+            Assert.IsTrue(result);
+            Assert.AreEqual(4.9f, scratch.ComboDamageMultiplier, 0.0001f);
+        }
+
+        [Test]
         public void EffMultiplyComboDamage_WithoutTriggerContext_ReturnsFalse()
         {
             // Arrange
