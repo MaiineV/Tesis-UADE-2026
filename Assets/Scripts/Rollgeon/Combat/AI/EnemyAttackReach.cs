@@ -16,8 +16,9 @@ namespace Rollgeon.Combat.AI
     /// </summary>
     /// <remarks>
     /// Es la lectura estática de los gates de rango que el árbol ya declara — el
-    /// <see cref="PcTargetInRange"/> de un <see cref="AINode_If"/> que envuelve un ataque, o el
-    /// auto-gate de un <see cref="AINode_RangedShot"/> — nunca una simulación del turno.
+    /// <see cref="PcTargetInRange"/> o <see cref="PCEntityInRange"/> de un
+    /// <see cref="AINode_If"/> que envuelve un ataque, o el auto-gate de un
+    /// <see cref="AINode_RangedShot"/> — nunca una simulación del turno.
     /// Sobre-aproxima siempre a favor del jugador: la línea de visión y las condiciones hermanas
     /// del If se ignoran (un blocker puede morir o correrse dentro del turno del jugador), así
     /// que puede pintar de más pero nunca de menos. No baja por <c>AINode_Random</c> (límite de
@@ -119,10 +120,20 @@ namespace Rollgeon.Combat.AI
                 List<Gate> gates = null;
                 foreach (var condition in branch.Conditions)
                 {
-                    if (condition is not PcTargetInRange pc) continue;
-                    gates ??= new List<Gate>();
-                    gates.Add(new Gate(EffectiveRange(pc, context), pc.Metric, pc.Alignment,
-                                       footprintAware: true));
+                    if (condition is PcTargetInRange pc)
+                    {
+                        gates ??= new List<Gate>();
+                        gates.Add(new Gate(EffectiveRange(pc, context), pc.Metric, pc.Alignment,
+                                           footprintAware: true));
+                    }
+                    // El bestiario melee (y el mímico) gatean con PCEntityInRange: ancla-a-ancla,
+                    // sin ficha, sin alineación y sin línea de visión — réplica de su Evaluate.
+                    else if (condition is PCEntityInRange entityGate)
+                    {
+                        gates ??= new List<Gate>();
+                        gates.Add(new Gate(entityGate.MaxRange, entityGate.Metric,
+                                           TargetAlignment.Any, footprintAware: false));
+                    }
                 }
                 if (gates != null) descriptors.Add(gates);
             }

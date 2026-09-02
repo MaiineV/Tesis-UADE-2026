@@ -57,6 +57,22 @@ namespace Rollgeon.Combat.AI.Tests
         }
 
         [Test]
+        public void GateEntityInRange_ElDelMeleeAutorado_PintaSoloLasCuatroOrtogonales()
+        {
+            // ED_MeleeCardEnemy no gatea con PcTargetInRange sino con PCEntityInRange
+            // (MaxRange 1, Manhattan, ancla-a-ancla): sin reconocerlo, el hover del melee
+            // salia sin alcance pintado.
+            var root = new AINode_If { Then = MeleeAttack() };
+            root.Conditions.Add(new PCEntityInRange { MaxRange = 1, Metric = DistanceMetric.Manhattan });
+
+            EnemyAttackReach.Collect(root, Context(), _reach);
+
+            CollectionAssert.AreEquivalent(Cells((3, 4), (5, 4), (4, 3), (4, 5)), _reach,
+                "El gate PCEntityInRange del melee autorado tiene que pintar igual que un " +
+                "PcTargetInRange de rango 1: las cuatro ortogonales y nada mas.");
+        }
+
+        [Test]
         public void GateChebyshev1_PintaLasOchoDeAlrededor()
         {
             var root = Gate(1, MeleeAttack(), metric: DistanceMetric.Chebyshev);
