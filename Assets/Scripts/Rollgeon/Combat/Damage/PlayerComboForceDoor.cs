@@ -14,10 +14,10 @@ namespace Rollgeon.Combat.Damage
     /// Sin combo, el caller pasa <c>comboFlatBase = 0</c> y TODOS los dados holdeados
     /// como contribuyentes (N = Attack + Σpips + bonos) — monotónico: holdear más nunca
     /// resta, y armar combo siempre mejora (suma base y habilita M &gt; 1).
-    /// El <c>ForceDoorRollBonus</c> de items (Pico de Minero) NO entra acá: es flat
-    /// post-multiplicador y lo suma el caller (<c>ActionRollService</c> / el fallback de
-    /// <c>EffForceDoor</c>) para que "+5 a la tirada" sea literal, independiente del
-    /// tuning de M.
+    /// El <c>ForceDoorRollBonus</c> de items (Pico de Minero) entra a N como un aditivo
+    /// más (lo lee <see cref="PlayerComboDamage.Resolve"/> cuando el kind es ForceDoor) y
+    /// se journalea con el ItemSO para que la animación de breakdown lo haga volar con
+    /// icono. Ningún caller lo suma aparte.
     /// </remarks>
     public static class PlayerComboForceDoor
     {

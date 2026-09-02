@@ -1258,22 +1258,7 @@ namespace Rollgeon.Combat.Handoff
         // Difiere la continuación hasta que la secuencia de breakdown libere su gate.
         // Sin secuencia en curso (fase sin combo, director sin bindear) corre sincrónico.
         private static void RunAfterBreakdownSequence(Action continuation)
-        {
-            if (!BreakdownUiGate.Pending)
-            {
-                continuation();
-                return;
-            }
-
-            Action handler = null;
-            handler = () =>
-            {
-                if (BreakdownUiGate.Pending) return; // ref-count: esperar la transición a 0
-                BreakdownUiGate.Changed -= handler;
-                continuation();
-            };
-            BreakdownUiGate.Changed += handler;
-        }
+            => BreakdownUiGate.RunWhenIdle(continuation);
 
         /// <summary>
         /// Segunda mitad de <see cref="ExecuteChainPhase"/>: emite el roll resuelto y

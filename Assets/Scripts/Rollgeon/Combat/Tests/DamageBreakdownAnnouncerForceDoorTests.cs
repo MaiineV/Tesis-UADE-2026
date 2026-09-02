@@ -10,8 +10,9 @@ namespace Rollgeon.Combat.Tests
 {
     /// <summary>
     /// Cobertura de <see cref="DamageBreakdownAnnouncer.AnnounceForceDoor"/>: emite el
-    /// payload N×M con combo real (aunque el threshold vaya a fallar — ver el número es
-    /// feedback), y no emite sin combo (no hay desglose que animar) ni con effect null.
+    /// payload N×M con o sin combo (aunque el threshold vaya a fallar — el choque contra
+    /// el candado es el feedback), siempre con el umbral, y no emite sin tirada ni con
+    /// effect null.
     /// </summary>
     [TestFixture]
     public class DamageBreakdownAnnouncerForceDoorTests
@@ -71,19 +72,43 @@ namespace Rollgeon.Combat.Tests
             Assert.AreEqual(22, _payload.Breakdown.Final);
             Assert.AreEqual("combo.trio", _payload.ComboId);
             Assert.AreEqual(Guid.Empty, _payload.TargetGuid);
+            Assert.AreEqual(99, _payload.Threshold);
         }
 
         [Test]
-        public void AnnounceForceDoor_NoCombo_DoesNotRaise()
+        public void AnnounceForceDoor_NoCombo_RaisesWithBaseZero_AllHeldDice_AndThreshold()
         {
-            // Arrange — sin match no hay desglose que animar (el label plano cubre).
-            var eff = new EffForceDoor();
+            // Arrange — sin match igual hay desglose: base 0 y todos los holdeados como
+            // caras (espejo del N×M sin combo del ActionRollService).
+            var eff = new EffForceDoor { RequiredValue = 35 };
             var ctx = new EffectContext
             {
                 SourceGuid = _player,
                 DiceResult = new[] { 3, 4, 5, 1, 2 },
+                KeptDice = new[] { 3, 4, 5 },
+                KeptDiceOriginalIndices = new[] { 0, 1, 2 },
                 ComboResult = ComboDetectionResult.NoMatch(),
             };
+
+            // Act
+            DamageBreakdownAnnouncer.AnnounceForceDoor(ctx, eff);
+
+            // Assert — sin bag el resolver construye los dados a mano: N = 0 + 12.
+            Assert.IsTrue(_received);
+            Assert.AreEqual(0, _payload.Breakdown.ComboBase);
+            Assert.AreEqual(12, _payload.Breakdown.FacesSum);
+            Assert.AreEqual(12, _payload.Breakdown.Final);
+            Assert.AreEqual(3, _payload.Breakdown.Dice.Count);
+            Assert.AreEqual(string.Empty, _payload.ComboId);
+            Assert.AreEqual(35, _payload.Threshold);
+        }
+
+        [Test]
+        public void AnnounceForceDoor_NoDice_DoesNotRaise()
+        {
+            // Arrange — fuera de combate la puerta se abre sin tirada: nada que animar.
+            var eff = new EffForceDoor();
+            var ctx = new EffectContext { SourceGuid = _player };
 
             // Act
             DamageBreakdownAnnouncer.AnnounceForceDoor(ctx, eff);

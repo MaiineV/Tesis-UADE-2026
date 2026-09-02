@@ -35,6 +35,32 @@ namespace Rollgeon.Feedback
             if (_count == 0) Changed?.Invoke();
         }
 
+        /// <summary>
+        /// Corre <paramref name="continuation"/> cuando el gate esté libre: sincrónico si
+        /// nada está pendiente (flujos sin secuencia — exploración, tests, director sin
+        /// bindear — no cambian), o diferido hasta la transición a 0. El gate SIEMPRE
+        /// baja (timeout del director + failsafe del FeedbackManager + abort en teardown),
+        /// así que no hay soft-lock. Un solo disparo.
+        /// </summary>
+        public static void RunWhenIdle(System.Action continuation)
+        {
+            if (continuation == null) return;
+            if (!Pending)
+            {
+                continuation();
+                return;
+            }
+
+            System.Action handler = null;
+            handler = () =>
+            {
+                if (Pending) return; // ref-count: esperar la transición a 0
+                Changed -= handler;
+                continuation();
+            };
+            Changed += handler;
+        }
+
         // Sin domain reload (Enter Play Mode Options), los estáticos sobreviven entre
         // plays: un gate colgado bloquearía todos los feedbacks del combate.
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]

@@ -31,6 +31,8 @@ namespace Rollgeon.UI.Tests
             public void PlayGlobalMod(BreakdownStep s, Action d) => Step("global:" + s.Amount, d);
             public void PlayFinalClash(int total, Action d) => Step("clash:" + total, d);
             public void PlayMitigation(int total, Action d) => Step("mitigation:" + total, d);
+            public void PlayThresholdClash(int total, int threshold, Action d)
+                => Step($"threshold:{total}vs{threshold}", d);
             public void ForceFinalState(float n, float m) => Calls.Add($"force:{n}x{m}");
         }
 
@@ -77,6 +79,42 @@ namespace Rollgeon.UI.Tests
             player.Play(Script(), stage, mitigatedTotal: 14, () => { });
 
             Assert.AreEqual("mitigation:14", stage.Calls[stage.Calls.Count - 1]);
+        }
+
+        [Test]
+        public void Play_WithThreshold_PlaysThresholdClashAfterClash_NotMitigation()
+        {
+            var stage = new RecordingStage();
+            var player = new BreakdownSequencePlayer();
+            int finished = 0;
+
+            // Umbral + mitigación a la vez: el umbral manda (Forzar Puerta no tiene target).
+            player.Play(Script(), stage, mitigatedTotal: 14, threshold: 35, () => finished++);
+
+            int clashIdx = stage.Calls.IndexOf("clash:20");
+            Assert.GreaterOrEqual(clashIdx, 0);
+            Assert.AreEqual("threshold:20vs35", stage.Calls[clashIdx + 1]);
+            Assert.IsFalse(stage.Calls.Contains("mitigation:14"));
+            Assert.IsTrue(player.Done);
+            Assert.AreEqual(1, finished);
+        }
+
+        [Test]
+        public void RequestSkip_Jump_StillPlaysThresholdClash()
+        {
+            var stage = new RecordingStage { PendingDone = () => { } };
+            var player = new BreakdownSequencePlayer();
+            player.Play(Script(), stage, mitigatedTotal: null, threshold: 35, () => { });
+
+            player.RequestSkip();
+            player.RequestSkip();
+            var pending = stage.PendingDone;
+            stage.PendingDone = null;
+            pending();
+
+            // El salto acorta los pasos pero el resultado del candado siempre se ve.
+            Assert.AreEqual("threshold:20vs35", stage.Calls[stage.Calls.Count - 1]);
+            Assert.IsTrue(player.Done);
         }
 
         [Test]
