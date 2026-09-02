@@ -1792,6 +1792,21 @@ public interface IMovementDieService {              // ServiceScope.Run, bootstr
   roleando, hace drop-in encima de la ficha, muestra la cara y recién ahí publica el rango;
   queda visible hasta elegir destino (`OnCleared` → fade-out). Sin cablear, el reveal es
   sincrónico.
+- **Atribución por item (sep 2026).** El presenter recibe además
+  `IReadOnlyList<MovementRangeContribution>` (`SourceAsset` = `ItemSO`, `Delta`): lo arma
+  `MovementRangeAttribution` cruzando `MoveRange.GetRawModifiers()` con el inventario por
+  `ItemPassiveSourceId.For(ItemId)` (solo `Add`/`Subtract`; un item con varios modifiers se
+  colapsa; fuentes no-item — rewards "Movimiento+" — no tienen chip pero sí se suman al
+  final). Secuencia en `MovementDieView` al aterrizar: cara cruda → un chip
+  `ModifierEntryView` por contribución (pop + SFX de proc, stagger) → hold → cada chip
+  vuela al centro del dado y el número salta con su delta (punch + SFX) → resto no
+  atribuible → piso 1 (mismo que `SelectionSettings.ResolveEffectiveRange`). El número
+  queda **azul si el total subió, rojo si bajó** (`DiceSlotView.SetFaceTint`, mismos
+  colores que el monto del chip); autorado si quedó igual. **El reveal del rango se
+  publica recién al terminar la absorción**, para que las casillas se pinten con el mismo
+  número que muestra el dado. Todo dividido por `GameSpeedPrefs`; `Abort`/`HideInstant`
+  cortan la secuencia y devuelven los chips al stack. El label agregado "+N" viejo se
+  eliminó: el total vive en el propio dado. Texto del chip: `MovementDieChipFormat.Label`.
 - **Comprometida tras tirar.** Con `_movementRollPrepaid`, `HasCancellableSelection` es
   false: ni click derecho ni clicks de slot cancelan (la UI muestra los demás slots
   Locked); End Turn sigue soltando la selección y pierde el roll.

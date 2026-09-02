@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Patterns;
 using Rollgeon.Dice;
 using Rollgeon.Player;
@@ -20,6 +21,7 @@ namespace Rollgeon.Movement.Die
 
         private IMovementDiePresenter _presenter;
         private DiceType? _typeOverride;
+        private readonly List<MovementRangeContribution> _contributions = new List<MovementRangeContribution>();
 
         private Guid _activeGuid;
         private int _activeRange;
@@ -86,7 +88,8 @@ namespace Rollgeon.Movement.Die
                 // Se emite ANTES de presentar: si el presenter revela sincrónico (sin
                 // animación) el par abre/cierra queda en orden. Sin presenter no hay mesa.
                 EventManager.Trigger(EventName.OnMovementDieRollStarted, playerGuid, type);
-                if (_presenter.TryPresent(type, face, ResolveRangeBonus(playerGuid), Reveal)) return;
+                MovementRangeAttribution.Resolve(playerGuid, _contributions);
+                if (_presenter.TryPresent(type, face, ResolveRangeBonus(playerGuid), _contributions, Reveal)) return;
             }
             Reveal();
         }
