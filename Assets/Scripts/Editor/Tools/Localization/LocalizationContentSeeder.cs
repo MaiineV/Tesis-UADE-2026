@@ -267,6 +267,15 @@ namespace Rollgeon.EditorTools.Localization
                 "Combo repetido: 0 daño",
                 "Repeated combo: 0 damage");
 
+            // Toast de Segundo Aliento sobre la pila de vida (SecondWindFeedbackView):
+            // {0} = nombre del item consumido, {1} = HP con los que quedó el jugador.
+            Ui(UiTextKeys.SecondWindTitle,
+                "¡Segundo Aliento!",
+                "Second Wind!");
+            Ui(UiTextKeys.SecondWindBody,
+                "{0} te dejó en {1} HP.",
+                "{0} left you at {1} HP.");
+
             // Toast al tocar un chip de acción no usable (ActionRejectToast):
             // título + motivo concreto resuelto por PlayerActionButtonsView.
             Ui(UiTextKeys.RejectTitle,

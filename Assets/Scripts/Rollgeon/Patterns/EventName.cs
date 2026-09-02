@@ -419,5 +419,14 @@ namespace Patterns
         /// REALES (no en cada turno). La UI de daño base (Furia Contenida) re-lee el
         /// override al escucharlo; también sirve como TriggerEvent de PassiveItemHook.</summary>
         OnCleanTurnStreakChanged,
+
+        // --- Items: Segundo Aliento ------------------------------------------------
+        // NOTA: al final absoluto del enum a propósito (ver OnReinforcementSpawned).
+        /// <summary>args: [Guid playerGuid, ItemSO item, int remainingHp]. Un golpe letal
+        /// fue anulado por un item con <c>ItemSO.SecondWind</c>: el jugador quedó en
+        /// <c>remainingHp</c> y el item YA salió del inventario. Lleva el SO (no el id)
+        /// porque al dispararse ya no está en el inventario para resolverlo. La HUD lo
+        /// consume para el toast "¡Segundo Aliento!" (SecondWindFeedbackView).</summary>
+        OnSecondWindTriggered,
     }
 }
