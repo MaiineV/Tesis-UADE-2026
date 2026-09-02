@@ -2231,6 +2231,30 @@ MonoBehaviour:
     m_Key: compas.salteado.desc
     m_Metadata:
       m_Items: []
+  - m_Id: 18006931305492480
+    m_Key: pico.de.hierro.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18006931339046912
+    m_Key: pico.de.hierro.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18007144338386944
+    m_Key: pico.de.diamante.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18007144338386945
+    m_Key: pico.de.diamante.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18007242111807488
+    m_Key: pico.del.demoledor.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18007242111807489
+    m_Key: pico.del.demoledor.desc
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

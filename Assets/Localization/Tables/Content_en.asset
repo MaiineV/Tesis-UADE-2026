@@ -2268,6 +2268,30 @@ MonoBehaviour:
       or 2-4-6-8-10.'
     m_Metadata:
       m_Items: []
+  - m_Id: 18006931305492480
+    m_Localized: Pico de Hierro
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18006931339046912
+    m_Localized: +12 a la tirada de forzar puerta.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18007144338386944
+    m_Localized: Pico de Diamante
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18007144338386945
+    m_Localized: +20 a la tirada de forzar puerta.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18007242111807488
+    m_Localized: Pico del Demoledor
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18007242111807489
+    m_Localized: +35 a la tirada de forzar puerta.
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []
