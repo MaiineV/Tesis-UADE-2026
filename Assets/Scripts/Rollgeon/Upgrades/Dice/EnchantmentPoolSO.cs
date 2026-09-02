@@ -121,7 +121,10 @@ namespace Rollgeon.Upgrades.Dice
         /// </summary>
         private static float EffectiveWeight(WeightedEnchantment entry, float cursedMult)
         {
+            // Caos = taxonomía GDD vigente; Maldicion queda como legacy por si un asset
+            // viejo no pasó por Assign Categories.
             bool cursed = entry.Enchantment.IsCursed()
+                          || entry.Enchantment.Category == EnchantmentCategory.Caos
                           || entry.Enchantment.Category == EnchantmentCategory.Maldicion;
             return cursed ? entry.Weight * cursedMult : entry.Weight;
         }

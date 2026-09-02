@@ -84,6 +84,28 @@ namespace Rollgeon.Upgrades.Dice
         /// YAML a mano; asignar por código + SetDirty + SaveAssets).
         /// </summary>
         public void EditorSetCategory(EnchantmentCategory category) => _category = category;
+
+        /// <summary>Editor-only. Null = sin restricción de caras.</summary>
+        public void EditorSetFaceFilter(IFaceFilter filter) => _faceFilter = filter;
+
+        /// <summary>Editor-only. Pisa la lista entera; lista vacía = aplica a todos.</summary>
+        public void EditorSetAllowedDiceTypes(List<DiceType> types)
+            => _allowedDiceTypes = types ?? new List<DiceType>();
+
+        /// <summary>Editor-only. Agrega sin pisar los triggers existentes.</summary>
+        public void EditorAddTrigger(IEnchantmentTrigger trigger)
+        {
+            _triggers ??= new List<IEnchantmentTrigger>();
+            _triggers.Add(trigger);
+        }
+
+        /// <summary>Editor-only. Pisa la lista entera de triggers.</summary>
+        public void EditorSetTriggers(List<IEnchantmentTrigger> triggers)
+            => _triggers = triggers ?? new List<IEnchantmentTrigger>();
+
+        /// <summary>Editor-only. Pisa la lista entera de capabilities.</summary>
+        public void EditorSetCapabilities(List<IEnchantmentCapability> capabilities)
+            => _capabilities = capabilities ?? new List<IEnchantmentCapability>();
 #endif
 
         /// <summary>Tipos de dado válidos. Empty = todos.</summary>

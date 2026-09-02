@@ -391,8 +391,12 @@ namespace Rollgeon.EditorTools.Localization
                 "Once per combat you can reroll this die and keep the higher result.");
 
             Ench("codicioso", "Codicioso", "Covetous",
-                "El dado participa en cualquier combo y suma +3 de oro.",
-                "The die joins any combo and grants +3 gold.");
+                "El dado participa en una Escalera y suma +5 de oro.",
+                "The die joins a Ladder and grants +5 gold.");
+
+            Ench("el_caudal", "El Caudal", "Windfall",
+                "El dado participa en un Doble Par y suma +3 de oro.",
+                "The die joins a Double Pair and grants +3 gold.");
 
             Ench("comodin", "Comodín", "Wild",
                 "Este dado cuenta como cualquier número para propósitos de combo (escaleras, trío, generala).",
@@ -1083,6 +1087,10 @@ namespace Rollgeon.EditorTools.Localization
             Ui(DiceBagTextKeys.CatDefensa, "Defensa", "Defense");
             Ui(DiceBagTextKeys.CatEconomia, "Economía", "Economy");
             Ui(DiceBagTextKeys.CatMaldicion, "Maldición", "Curse");
+            // Taxonomía GDD 2026-09 (Defensa/Economía/Maldición quedan como legacy).
+            Ui(DiceBagTextKeys.CatCaos, "Caos", "Chaos");
+            Ui(DiceBagTextKeys.CatRecursos, "Recursos", "Resources");
+            Ui(DiceBagTextKeys.CatMovimiento, "Movimiento", "Movement");
         }
 
         // ==================================================================
