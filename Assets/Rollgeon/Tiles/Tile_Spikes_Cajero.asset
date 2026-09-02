@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Tile_Spikes_Cajero
   m_EditorClassIdentifier: Rollgeon::Rollgeon.Tiles.SpecialTileDefinitionSO
   TileId: TILE_SPIKES_CAJERO
-  DisplayName: Pinchos de la Caja
+  DisplayName: Pinchos del Cajero
   TileType: 0
   Triggers: 33
   Category: 0
