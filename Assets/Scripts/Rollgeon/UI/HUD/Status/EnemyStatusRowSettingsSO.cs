@@ -19,8 +19,12 @@ namespace Rollgeon.UI.HUD.Status
                  "enemigo y el de su tarjeta tienen que ser la misma imagen.")]
         public StatusIconCatalogSO Catalog;
 
-        [Tooltip("Offset local sobre el pawn. Por encima de la barra de vida, que va en 2.")]
+        [Tooltip("Offset local sobre el pawn, solo para uno sin barra de vida.")]
         public Vector3 Offset = new Vector3(0f, 2.6f, 0f);
+
+        [Tooltip("Alto del centro de la fila sobre la barra de vida, en unidades de mundo. " +
+                 "Escala con el zoom, igual que la barra.")]
+        public float LiftAboveBar = 1f;
 
         [Tooltip("Lado del ícono en píxeles de canvas.")]
         public float IconSize = 28f;
