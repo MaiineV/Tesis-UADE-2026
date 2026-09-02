@@ -49,6 +49,13 @@ namespace Rollgeon.EditorTools.HUD
         // nombre (31) para que la vida no le compita.
         private const float HealthBarFontSize = 29f;
 
+        // El renglón del título alinea rects por el fondo, pero el rect de un TMP guarda 15/90
+        // del cuerpo para el descender (m6x11plus): la base del nombre queda a ~5px del fondo,
+        // y el número — centrado contra la pila, que es más alta que él — caía ~1px por encima
+        // de esa base, con la pila asomando otro tanto sobre el techo del nombre. Bajar el grupo
+        // este píxel empareja las dos líneas de base. Puro ajuste óptico, como CardsInset.
+        private const int VitalsBaselineDrop = 1;
+
         // Más angosta que el panel: con tres ataques en la columna, tarjetas del ancho de la caja
         // hacían que el costado pesara más que el bicho que describe.
         private const float CardWidth = 300f;
@@ -832,6 +839,9 @@ namespace Rollgeon.EditorTools.HUD
                 var vitalsLayout = Ensure<HorizontalLayoutGroup>(vitals.gameObject);
                 vitalsLayout.spacing = 10;
                 vitalsLayout.childAlignment = TextAnchor.MiddleLeft;
+                // Padding negativo abajo: los hijos cuelgan ese píxel por debajo del rect y el
+                // grupo entero baja respecto del renglón (ver VitalsBaselineDrop).
+                vitalsLayout.padding = new RectOffset(0, 0, 0, -VitalsBaselineDrop);
                 vitalsLayout.childControlWidth = true;
                 vitalsLayout.childControlHeight = true;
                 vitalsLayout.childForceExpandWidth = false;
