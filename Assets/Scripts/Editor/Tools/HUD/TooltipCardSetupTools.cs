@@ -44,8 +44,8 @@ namespace Rollgeon.EditorTools.HUD
         // BossVisualWrapperBuilder.BarSize: cualquier otra proporción la deforma.
         private static readonly Vector2 HealthBarSize = new Vector2(37f, 53f);
 
-        // Misma relación fuente:ancho que la barra de la cabeza (fuente 0.35 sobre 0.44 de
-        // ancho): el número ocupa la pila igual que arriba del bicho.
+        // Techo del auto-size del número: la relación fuente:ancho de la barra de la cabeza
+        // (0.35 sobre 0.44). Con "60/60" el auto-size baja de acá lo que haga falta.
         private const float HealthBarFontSize = 29f;
 
         // Más angosta que el panel: con tres ataques en la columna, tarjetas del ancho de la caja
@@ -820,10 +820,16 @@ namespace Rollgeon.EditorTools.HUD
                 // a imponer el ancho del panel entero.
                 Ensure<LayoutElement>(typeLabel.gameObject).preferredWidth = -1f;
 
-                var vitals = EnsureChildRect(identity, "Vitals", Vector2.zero, Vector2.zero);
+                // La vida vive en el MISMO renglón que la identidad, a la derecha de todo —
+                // "Healer   Support   [pila]". El spacer flexible la empuja al borde.
+                var spacer = EnsureChildRect(titleRow, "Spacer", Vector2.zero, Vector2.zero);
+                Ensure<LayoutElement>(spacer.gameObject).flexibleWidth = 1f;
+
+                // Migración del panel autorado: Vitals vivía como fila propia bajo Identity.
+                Reparent(identity, "Vitals", titleRow);
+                var vitals = EnsureChildRect(titleRow, "Vitals", Vector2.zero, Vector2.zero);
                 var vitalsLayout = Ensure<HorizontalLayoutGroup>(vitals.gameObject);
                 vitalsLayout.spacing = 10;
-                // A la izquierda, en la misma vertical que arranca el nombre.
                 vitalsLayout.childAlignment = TextAnchor.MiddleLeft;
                 vitalsLayout.childControlWidth = true;
                 vitalsLayout.childControlHeight = true;
@@ -858,6 +864,11 @@ namespace Rollgeon.EditorTools.HUD
                 var hpLabel = EnsureLabel(barRect, "Hp", HealthBarFontSize,
                                           TextAlignmentOptions.Center, Color.white);
                 hpLabel.fontStyle = FontStyles.Bold;
+                // "60/60" tiene más dígitos que el "60" de la cabeza: el auto-size baja la
+                // fuente justo lo necesario para que el par entre en la pila.
+                hpLabel.enableAutoSizing = true;
+                hpLabel.fontSizeMax = HealthBarFontSize;
+                hpLabel.fontSizeMin = 8f;
                 Stretch(hpLabel.rectTransform);
                 var hpFont = AssetDatabase.LoadAssetAtPath<TMP_FontAsset>(
                     BossVisualWrapperBuilder.HealthBarFontPath);
@@ -910,9 +921,10 @@ namespace Rollgeon.EditorTools.HUD
                     // porque Ensure* agrega al final. Y adentro de la fila, la familia a la
                     // DERECHA del nombre.
                     titleRow.SetSiblingIndex(0);
-                    vitals.SetSiblingIndex(1);
                     nameLabel.transform.SetSiblingIndex(0);
                     typeLabel.transform.SetSiblingIndex(1);
+                    spacer.SetSiblingIndex(2);
+                    vitals.SetSiblingIndex(3);
 
                     // Identidad arriba, párrafo y columna en el medio, color al pie. El orden es
                     // el contenido del tooltip: lo que necesitás mientras peleás va primero.

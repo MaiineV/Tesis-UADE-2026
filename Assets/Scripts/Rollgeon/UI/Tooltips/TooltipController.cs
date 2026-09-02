@@ -526,10 +526,10 @@ namespace Rollgeon.UI.Tooltips
             if (_vitalsRoot != null) _vitalsRoot.SetActive(content.HasVitals);
             if (!content.HasVitals) return;
 
-            // Número y pila como sobre la cabeza: el label lleva el HP actual solo y el max
-            // lo cuenta el fill.
+            // A diferencia de la cabeza (sólo el actual), acá el número lleva también el
+            // máximo: el tooltip es donde se lee con calma cuánto le falta.
             if (_hpLabel != null)
-                _hpLabel.text = content.Health.Value.ToString();
+                _hpLabel.text = $"{content.Health.Value}/{content.MaxHealth.Value}";
             if (_hpFill != null)
                 _hpFill.fillAmount = content.MaxHealth.Value > 0
                     ? Mathf.Clamp01(content.Health.Value / (float)content.MaxHealth.Value)

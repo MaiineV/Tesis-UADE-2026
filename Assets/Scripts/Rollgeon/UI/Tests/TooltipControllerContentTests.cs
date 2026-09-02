@@ -106,9 +106,9 @@ namespace Rollgeon.UI.Tests
             Assert.IsTrue(_name.gameObject.activeSelf);
             Assert.AreEqual("The Croupier", _name.text);
             Assert.IsTrue(_vitals.activeSelf);
-            Assert.AreEqual("180", _hp.text,
-                "El número de la pila es el HP actual solo, como sobre la cabeza del bicho: el " +
-                "max no va en texto, lo cuenta el fill.");
+            Assert.AreEqual("180/250", _hp.text,
+                "El número del tooltip lleva actual y máximo — a diferencia de la barra de la " +
+                "cabeza, que muestra sólo el actual.");
             Assert.AreEqual(180f / 250f, _hpFill.fillAmount, 0.001f,
                 "El fill de la pila lleva el ratio HP/max — es lo que reemplaza al número de " +
                 "max que ya no se escribe.");
