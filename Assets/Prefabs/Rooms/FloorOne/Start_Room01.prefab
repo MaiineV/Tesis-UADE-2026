@@ -230,6 +230,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3ae2df9ab3a16c547b41073a59a00681, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Rollgeon::Rollgeon.UI.Tooltips.WorldTooltipTrigger
+  PinOnClick: 0
   _mode: 0
   _placement:
     Mode: 0

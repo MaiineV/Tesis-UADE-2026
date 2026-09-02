@@ -1,0 +1,76 @@
+{
+    "Entries": [
+        {
+            "Id": "ff3e0c13a37847dd9b3ff44f3f4c9510",
+            "Index": 0,
+            "TypeName": "AINode_Sequence",
+            "Position": {
+                "x": 0.0,
+                "y": 0.0
+            }
+        },
+        {
+            "Id": "17199c682bcc4c8ab6733528afe7b0ec",
+            "Index": 1,
+            "TypeName": "AINode_Behavior",
+            "Position": {
+                "x": 280.0,
+                "y": 160.0
+            }
+        },
+        {
+            "Id": "6ce7fc31d8604835812f9c5b8cf50154",
+            "Index": 2,
+            "TypeName": "AINode_While",
+            "Position": {
+                "x": 280.0,
+                "y": 320.0
+            }
+        },
+        {
+            "Id": "bef515b3eb8747fdae196fd7da973f50",
+            "Index": 3,
+            "TypeName": "AINode_Sequence",
+            "Position": {
+                "x": 560.0,
+                "y": 480.0
+            }
+        },
+        {
+            "Id": "28a9013d495441d3bb0be50ca69255be",
+            "Index": 4,
+            "TypeName": "AINode_Behavior",
+            "Position": {
+                "x": 840.0,
+                "y": 640.0
+            }
+        },
+        {
+            "Id": "52142be668f64d86911f936b5c96c017",
+            "Index": 5,
+            "TypeName": "AINode_If",
+            "Position": {
+                "x": 840.0,
+                "y": 800.0
+            }
+        },
+        {
+            "Id": "c5815b9f85be429193f417604611b5a7",
+            "Index": 6,
+            "TypeName": "AINode_Behavior",
+            "Position": {
+                "x": 1120.0,
+                "y": 960.0
+            }
+        },
+        {
+            "Id": "ec40d087a5824b148c87e5cd4eb66c8f",
+            "Index": 7,
+            "TypeName": "AINode_Move",
+            "Position": {
+                "x": 1120.0,
+                "y": 1121.0
+            }
+        }
+    ]
+}

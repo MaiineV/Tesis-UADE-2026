@@ -151,6 +151,7 @@ MonoBehaviour:
     - {fileID: 11400000, guid: 3d552458c762e8e44bd3998354b2d865, type: 2}
     - {fileID: 11400000, guid: 2febfb8195f92ff40a279b7df5261d52, type: 2}
     - {fileID: 11400000, guid: d8f08599ee8022c44b1a2e676c8ad14d, type: 2}
+    - {fileID: 11400000, guid: 21a57142597900b4d85a54a4839e0500, type: 2}
     SerializedBytesString: 
     Prefab: {fileID: 0}
     PrefabModificationsReferencedUnityObjects: []
@@ -180,7 +181,7 @@ MonoBehaviour:
         Rollgeon]], mscorlib
     - Name: 
       Entry: 12
-      Data: 137
+      Data: 138
     - Name: 
       Entry: 7
       Data: Rollgeon.Shop.WeightedShopItem, Rollgeon
@@ -2648,6 +2649,24 @@ MonoBehaviour:
       Entry: 8
       Data: 
     - Name: 
+      Entry: 7
+      Data: Rollgeon.Shop.WeightedShopItem, Rollgeon
+    - Name: Item
+      Entry: 10
+      Data: 135
+    - Name: Weight
+      Entry: 4
+      Data: 1
+    - Name: BasePrice
+      Entry: 3
+      Data: 100
+    - Name: MinFloorDepth
+      Entry: 3
+      Data: 0
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
       Entry: 13
       Data: 
     - Name: 
@@ -3206,4 +3225,8 @@ MonoBehaviour:
   - Item: {fileID: 11400000, guid: d8f08599ee8022c44b1a2e676c8ad14d, type: 2}
     Weight: 1
     BasePrice: 60
+    MinFloorDepth: 0
+  - Item: {fileID: 11400000, guid: 21a57142597900b4d85a54a4839e0500, type: 2}
+    Weight: 1
+    BasePrice: 100
     MinFloorDepth: 0
