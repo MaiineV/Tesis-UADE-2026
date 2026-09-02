@@ -3405,6 +3405,27 @@ contra teardowns fuera de orden.
 | "Fire‑and‑forget particle de ambiente" | `BlockSequence = false` — la secuencia reporta complete sin esperarlo |
 | "Wait de 0.3s entre dos VFX" | Step intermedio `InlineWait` con `WaitDuration = 0.3`, `AfterPrevious` |
 
+**10.8.4 Gate de la secuencia de breakdown (`BreakdownUiGate`)**.
+
+La animación N×M del HUD (`BreakdownSequenceDirector`, prefab `Canvas_ActionRoll`)
+levanta `BreakdownUiGate` desde que recibe `DamageBreakdownComputedPayload` hasta
+que termina el choque. Mientras está pendiente, el `FeedbackManager` no despacha
+secuencias y los teardowns de dados se difieren. Para gameplay que debe esperar la
+animación sin feedback de golpe de por medio, usar
+`BreakdownUiGate.RunWhenIdle(Action)`: corre sincrónico si no hay secuencia (tests,
+exploración, director sin bindear) y diferido hasta la transición a 0 si la hay.
+Consumidores: el avance de fase del chain (`CombatHandoffService`) y el cruce de
+sala de `EffForceDoor` en combate.
+
+Forzar Puerta (sept 2026): el anunciador emite el desglose con o sin combo (sin
+combo: base 0 + todos los dados holdeados) y lleva `Threshold` en el payload. Con
+umbral, el reproductor corre `PlayThresholdClash` tras el choque N×M en lugar de la
+mitigación: el total sube a la izquierda, el umbral sale a la derecha, chocan sobre
+el candado y el mayor queda; el candado abre (sprite `Padlock_1`) o tiembla cerrado.
+Recién al liberar el gate `EffForceDoor` cruza la sala y aborta el combate. El
+`ForceDoorRollBonus` de items (Pico de Minero) entra a N como aditivo journaleado
+(vuela con el icono del item), ya no es flat post-multiplicador.
+
 ### 10.9 Efecto autor — `EffPlayFeedback`
 
 El único puente oficial entre la pipeline de efectos (§8) y la de feedback es:
