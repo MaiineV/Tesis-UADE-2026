@@ -42,10 +42,11 @@ namespace Rollgeon.EditorTools.HUD
 
         // La pila de vida respeta el aspect 37:53 de los sub-sprites v3, igual que
         // BossVisualWrapperBuilder.BarSize: cualquier otra proporción la deforma.
-        private static readonly Vector2 HealthBarSize = new Vector2(37f, 53f);
+        // A 0.6x del sub-sprite: como chip inline, del alto del renglon del nombre.
+        private static readonly Vector2 HealthBarSize = new Vector2(37f, 53f) * 0.6f;
 
-        // Techo del auto-size del número: la relación fuente:ancho de la barra de la cabeza
-        // (0.35 sobre 0.44). Con "60/60" el auto-size baja de acá lo que haga falta.
+        // El número vive al lado de la pila, no adentro: tamaño fijo, un paso abajo del
+        // nombre (31) para que la vida no le compita.
         private const float HealthBarFontSize = 29f;
 
         // Más angosta que el panel: con tres ataques en la columna, tarjetas del ancho de la caja
@@ -859,21 +860,20 @@ namespace Rollgeon.EditorTools.HUD
                 lifeFill.transform.SetSiblingIndex(1);
                 lifeFrame.transform.SetSiblingIndex(2);
 
-                // Migración del panel autorado: "Hp" vivía suelto en la fila, al lado del corazón.
-                Reparent(vitals, "Hp", barRect);
-                var hpLabel = EnsureLabel(barRect, "Hp", HealthBarFontSize,
-                                          TextAlignmentOptions.Center, Color.white);
+                // El número va AFUERA de la pila, a su izquierda — "50/50 [pila]" — así el par
+                // entra entero sin achicarse adentro del ícono. Migración incluida: "Hp" vivió
+                // adentro de la pila (estirado y con auto-size) y antes suelto en la fila.
+                Reparent(barRect, "Hp", vitals);
+                var hpLabel = EnsureLabel(vitals, "Hp", HealthBarFontSize,
+                                          TextAlignmentOptions.Right, PanelInk);
                 hpLabel.fontStyle = FontStyles.Bold;
-                // "60/60" tiene más dígitos que el "60" de la cabeza: el auto-size baja la
-                // fuente justo lo necesario para que el par entre en la pila.
-                hpLabel.enableAutoSizing = true;
-                hpLabel.fontSizeMax = HealthBarFontSize;
-                hpLabel.fontSizeMin = 8f;
-                Stretch(hpLabel.rectTransform);
+                hpLabel.enableAutoSizing = false;
+                hpLabel.textWrappingMode = TextWrappingModes.NoWrap;
                 var hpFont = AssetDatabase.LoadAssetAtPath<TMP_FontAsset>(
                     BossVisualWrapperBuilder.HealthBarFontPath);
                 if (hpFont != null) hpLabel.font = hpFont;
-                hpLabel.transform.SetAsLastSibling();
+                hpLabel.transform.SetSiblingIndex(0);
+                barRect.SetSiblingIndex(1);
 
                 var shield = EnsureChildRect(vitals, "Shield", Vector2.zero, Vector2.zero);
                 var shieldLayout = Ensure<HorizontalLayoutGroup>(shield.gameObject);
