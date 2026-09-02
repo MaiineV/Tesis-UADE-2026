@@ -104,8 +104,12 @@ cancel gratis de BUG-013.
    32×32 e `Label` TMP m6x11plus 24 auto-size, `ModifierEntryView` con `_icon`/`_label` y
    `_labelColor` pergamino claro). `MovementDieView._chipTemplate` → ese `ModifierEntryView`,
    `_chipsRoot` → `ChipsRoot`, `_procClip` → `Assets/Sounds/Breakdown/sfx_breakdown_proc_item.wav`
-   (mismo placeholder del breakdown). `_chipFallbackIcon` queda en None: sin sprite el
-   `Image` del icono se apaga solo. Sin `_chipTemplate` la view no muestra chips y no loguea.
+   y `_absorbClip` → `sfx_breakdown_thunk.wav` (placeholders del breakdown).
+   `_chipFallbackIcon` queda en None: sin sprite el `Image` del icono se apaga solo. Sin
+   `_chipTemplate` la view no muestra chips: el número salta directo al total.
+   El hijo `Slot/BonusLabel` ("+N" agregado) se **borró** del prefab: el total ahora se
+   suma en el número del dado (azul si subió, rojo si bajó — `_upColor`/`_downColor`).
+   Tuning: `_chipHoldSeconds` (0.45), `_chipFlySeconds` (0.22), `_absorbPunch` (0.18).
 
 Para otra clase: crear su `MovementDieSO`, asignarlo en `StartingMovementDie` y activar
 `RangeFromMovementDie` en el `EffMove` de su Movement de combate.

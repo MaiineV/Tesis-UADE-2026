@@ -1796,12 +1796,17 @@ public interface IMovementDieService {              // ServiceScope.Run, bootstr
   `IReadOnlyList<MovementRangeContribution>` (`SourceAsset` = `ItemSO`, `Delta`): lo arma
   `MovementRangeAttribution` cruzando `MoveRange.GetRawModifiers()` con el inventario por
   `ItemPassiveSourceId.For(ItemId)` (solo `Add`/`Subtract`; un item con varios modifiers se
-  colapsa; fuentes no-item — rewards "Movimiento+" — no tienen chip pero sí cuentan en el
-  label agregado "+N"). `MovementDieView` clona un `ModifierEntryView` inactivo
-  (`_chipTemplate`) por contribución al aterrizar: "Botas Ligeras +1" / "Guantelete Pesado -1"
-  con icono, punch-scale (PrimeTween) y SFX de proc (`IAudioService.PlaySfx2D`), apilados
-  encima del dado con stagger dividido por `GameSpeedPrefs`. No demoran el reveal y se van
-  con el dado (`HideInstant`/`Abort` los ocultan). Texto: `MovementDieChipFormat.Label`.
+  colapsa; fuentes no-item — rewards "Movimiento+" — no tienen chip pero sí se suman al
+  final). Secuencia en `MovementDieView` al aterrizar: cara cruda → un chip
+  `ModifierEntryView` por contribución (pop + SFX de proc, stagger) → hold → cada chip
+  vuela al centro del dado y el número salta con su delta (punch + SFX) → resto no
+  atribuible → piso 1 (mismo que `SelectionSettings.ResolveEffectiveRange`). El número
+  queda **azul si el total subió, rojo si bajó** (`DiceSlotView.SetFaceTint`, mismos
+  colores que el monto del chip); autorado si quedó igual. **El reveal del rango se
+  publica recién al terminar la absorción**, para que las casillas se pinten con el mismo
+  número que muestra el dado. Todo dividido por `GameSpeedPrefs`; `Abort`/`HideInstant`
+  cortan la secuencia y devuelven los chips al stack. El label agregado "+N" viejo se
+  eliminó: el total vive en el propio dado. Texto del chip: `MovementDieChipFormat.Label`.
 - **Comprometida tras tirar.** Con `_movementRollPrepaid`, `HasCancellableSelection` es
   false: ni click derecho ni clicks de slot cancelan (la UI muestra los demás slots
   Locked); End Turn sigue soltando la selección y pierde el roll.
