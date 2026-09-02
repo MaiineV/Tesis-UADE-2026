@@ -1,6 +1,11 @@
 using System;
 using System.Collections.Generic;
 using NUnit.Framework;
+using Patterns;
+using Rollgeon.Attributes;
+using Rollgeon.Attributes.Stats;
+using Rollgeon.Combat.AI;
+using Rollgeon.Combat.AI.Decisions;
 using UnityEngine;
 
 namespace Rollgeon.Entities.Visuals.Tests
@@ -44,12 +49,12 @@ namespace Rollgeon.Entities.Visuals.Tests
             return data;
         }
 
-        private EnemyTooltipInfo MakeInfo(EnemyDataSO data)
+        private EnemyTooltipInfo MakeInfo(EnemyDataSO data, Guid guid = default)
         {
             var go = new GameObject("Pawn") { hideFlags = HideFlags.HideAndDontSave };
             _created.Add(go);
             var info = go.AddComponent<EnemyTooltipInfo>();
-            if (data != null) info.Bind(data);
+            if (data != null) info.Bind(data, guid);
             return info;
         }
 
@@ -91,12 +96,50 @@ namespace Rollgeon.Entities.Visuals.Tests
         }
 
         [Test]
-        public void BuildContent_NoTraeVitales_QueYaEstanSobreLaCabeza()
+        public void BuildContent_TraeLaVidaDelRegistroYLosAtributos()
         {
-            var content = MakeInfo(MakeData("El Croupier", "Siembra bombas.")).BuildContent();
+            var guid = Guid.NewGuid();
 
-            // La barra de vida flota sobre el bicho y es la que el jugador mira mientras le pega.
-            // Repetirla adentro del panel gasta una fila en un número que está a dos centímetros.
+            var attrs = new AttributesManager();
+            var ma = new ModifiableAttributes();
+            ma.EnsureInitialized();
+            ma.SetAttribute<Health>(new Health(180));
+            attrs.Register(guid, ma);
+
+            // El max de referencia sale del registry de AI (todos los spawns lo dejan ahí): el
+            // atributo no lo guarda, porque el daño escribe sobre Health.Value.
+            var registry = new EnemyAIRegistry();
+            registry.Register(guid, new AINode_Wait(), 250);
+
+            ServiceLocator.AddService<AttributesManager>(attrs);
+            ServiceLocator.AddService<IEnemyAIRegistry>(registry);
+            try
+            {
+                var content = MakeInfo(MakeData("El Croupier", "Siembra bombas."), guid)
+                    .BuildContent();
+
+                Assert.IsTrue(content.HasVitals,
+                    "La banda tiene que traer la vida: la pila del panel es la misma que flota " +
+                    "sobre la cabeza y sin vitales no se dibuja.");
+                Assert.AreEqual(180, content.Health);
+                Assert.AreEqual(250, content.MaxHealth);
+            }
+            finally
+            {
+                ServiceLocator.RemoveService<AttributesManager>();
+                ServiceLocator.RemoveService<IEnemyAIRegistry>();
+                attrs.Dispose();
+            }
+        }
+
+        [Test]
+        public void BuildContent_SinServiciosDeCombate_NoTraeVitalesYNoRompe()
+        {
+            // El preview de editor arma este panel sin combate: sin registry ni atributos la
+            // banda sale sin vida, no con una excepción ni con un 0/0.
+            var content = MakeInfo(MakeData("El Croupier", "Siembra bombas."), Guid.NewGuid())
+                .BuildContent();
+
             Assert.IsFalse(content.HasVitals);
             Assert.IsNull(content.Shield);
         }
@@ -115,7 +158,7 @@ namespace Rollgeon.Entities.Visuals.Tests
             // Arrange
             var neverBound = MakeInfo(null);
             var unbound = MakeInfo(MakeData("El Croupier", "Enciende sectores del paño."));
-            unbound.Bind(null);
+            unbound.Bind(null, Guid.Empty);
 
             // Act + Assert — vacío y no un panel en blanco: el trigger no abre nada con texto vacío.
             Assert.IsEmpty(neverBound.BuildTooltip(),

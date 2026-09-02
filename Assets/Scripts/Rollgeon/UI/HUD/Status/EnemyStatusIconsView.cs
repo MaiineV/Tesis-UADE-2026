@@ -57,6 +57,8 @@ namespace Rollgeon.UI.HUD.Status
         private StatusIconCatalogSO _catalog;
         private RectTransform _container;
         private Vector3 _offset;
+        private Transform _healthBar;
+        private float _liftAboveBar = 1f;
         private float _referenceZoom = 9f;
         private Vector3 _baseScale = Vector3.one;
         private bool _bound;
@@ -92,23 +94,33 @@ namespace Rollgeon.UI.HUD.Status
             rect.anchorMax = Vector2.zero;
             rect.pivot = new Vector2(0.5f, 0.5f);
             rect.sizeDelta = new Vector2(settings.IconSize * 5f, settings.IconSize);
-            rect.localScale = Vector3.one;
+            // El prefab del slot está autorado en píxeles de HUD: sin esta escala un píxel es
+            // una unidad de mundo, y el badge de turnos de una bomba tapaba la pantalla.
+            rect.localScale = Vector3.one * settings.WorldScale;
             rect.localRotation = Quaternion.identity;
-            rect.localPosition = settings.Offset;
 
             var layout = go.AddComponent<HorizontalLayoutGroup>();
             layout.spacing = settings.Spacing;
             layout.childAlignment = TextAnchor.MiddleCenter;
-            layout.childControlWidth = true;
-            layout.childControlHeight = true;
+            // Sin controlar el tamaño: el root del slot no tiene LayoutElement y controlarlo lo
+            // colapsa a 0 — quedaba visible sólo el badge de turnos, que tiene rect fijo.
+            layout.childControlWidth = false;
+            layout.childControlHeight = false;
             layout.childForceExpandWidth = false;
             layout.childForceExpandHeight = false;
 
             var view = go.AddComponent<EnemyStatusIconsView>();
             view._container = rect;
             view._offset = settings.Offset;
+            view._liftAboveBar = settings.LiftAboveBar;
             view._referenceZoom = settings.ReferenceZoom;
             view._baseScale = rect.localScale;
+
+            // Sobre la barra de vida del pawn y no a una altura global: cada bicho la lleva
+            // a otra altura. Sin barra, el Offset del settings.
+            var bar = pawnRoot.GetComponentInChildren<WorldSpaceHealthBar>(includeInactive: true);
+            view._healthBar = bar != null ? bar.transform : null;
+            rect.localPosition = view.RowPosition(1f);
 
             WorldSpaceOverlayMaterials.Apply(go);
             return view;
@@ -498,6 +510,7 @@ namespace Rollgeon.UI.HUD.Status
 
         private void LateUpdate()
         {
+            float scale = 1f;
             var cam = Camera.main;
             if (cam != null)
             {
@@ -505,12 +518,22 @@ namespace Rollgeon.UI.HUD.Status
 
                 if (cam.orthographic)
                 {
-                    float scale = WorldSpaceHealthBar.ComputeZoomScale(cam.orthographicSize, _referenceZoom);
+                    scale = WorldSpaceHealthBar.ComputeZoomScale(cam.orthographicSize, _referenceZoom);
                     transform.localScale = _baseScale * scale;
                 }
             }
 
-            transform.localPosition = _offset;
+            transform.localPosition = RowPosition(scale);
+        }
+
+        // La y de la barra se lee viva: la barra re-aplica su propio offset cada frame.
+        private Vector3 RowPosition(float zoomScale)
+        {
+            var pos = _offset;
+            if (_healthBar != null && transform.parent != null)
+                pos.y = transform.parent.InverseTransformPoint(_healthBar.position).y
+                        + _liftAboveBar * zoomScale;
+            return pos;
         }
 
         // Sin filtro por guid: los eventos de casilla traen un instanceId, no una entidad, así que

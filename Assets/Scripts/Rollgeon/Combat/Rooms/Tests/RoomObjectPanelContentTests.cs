@@ -128,20 +128,31 @@ namespace Rollgeon.Combat.Rooms.Tests
             var cards = _info.CollectCards();
 
             // Assert — golpe primero, y el fuego que deja detrás, en el MISMO bloque.
-            Assert.AreEqual(4, cards.Count,
-                "El bloque del estallido no trae el golpe más los dos precios del fuego.");
+            Assert.AreEqual(3, cards.Count,
+                "El bloque del estallido no trae el golpe más el precio de entrar al fuego.");
             Assert.AreEqual(RoomObjectTooltipInfo.BlastHitKey, cards[1].Id);
             Assert.AreEqual(BlastDamage, cards[1].Damage,
                 "El golpe del estallido no viaja como dato.");
             Assert.AreEqual(FireEnter, cards[2].Damage);
-            Assert.AreEqual(FireTurnStart, cards[3].Damage);
 
             Assert.IsFalse(string.IsNullOrEmpty(cards[1].Eyebrow),
                 "El golpe no abre el bloque: sin etiqueta se lee pegado al de la mecha.");
             Assert.IsNull(cards[2].Eyebrow,
                 "El fuego abrió un bloque propio: el golpe y lo que queda ardiendo son la misma " +
                 "consecuencia, y dos etiquetas la parten en dos.");
-            Assert.IsNull(cards[3].Eyebrow);
+        }
+
+        [Test]
+        public void ElPrecioPorEmpezarElTurnoEnElFuego_NoEntraEnElPanelDeLaBomba()
+        {
+            // Ese precio es del panel del fuego: puesto en la bomba se lee como algo que ELLA cobra.
+            Publish(turnsAway: 2);
+
+            var cards = _info.CollectCards();
+
+            foreach (var card in cards)
+                Assert.AreNotEqual("tile.card.turn_start", card.Id,
+                    "El precio por quedarse en el fuego volvió al panel de la bomba.");
         }
 
         [Test]
@@ -154,7 +165,7 @@ namespace Rollgeon.Combat.Rooms.Tests
             var cards = _info.CollectCards();
 
             // Assert
-            Assert.AreEqual(3, cards.Count, "Apareció una tarjeta de golpe sin golpe que mostrar.");
+            Assert.AreEqual(2, cards.Count, "Apareció una tarjeta de golpe sin golpe que mostrar.");
             Assert.IsFalse(string.IsNullOrEmpty(cards[1].Eyebrow),
                 "Sin golpe, el bloque tiene que abrirlo el fuego: si no, queda sin etiqueta.");
         }

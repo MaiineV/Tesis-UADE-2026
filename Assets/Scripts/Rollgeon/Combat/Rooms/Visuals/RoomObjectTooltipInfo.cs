@@ -125,7 +125,9 @@ namespace Rollgeon.Combat.Rooms.Visuals
             }
 
             if (intent.Leaves == null) return;
-            SpecialTileCards.Append(intent.Leaves, _cards, eyebrow, opensBlock: eyebrow != null);
+            // El precio por empezar el turno en el fuego es del panel del fuego, no de la bomba.
+            SpecialTileCards.Append(intent.Leaves, _cards, eyebrow, opensBlock: eyebrow != null,
+                                    includeTurnStart: false);
         }
 
         private bool TryFindBlast(out AIIntent blast)

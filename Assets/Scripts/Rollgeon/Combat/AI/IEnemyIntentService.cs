@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Rollgeon.Combat.AI.Decisions;
+using Rollgeon.Grid;
 
 namespace Rollgeon.Combat.AI
 {
@@ -23,5 +24,16 @@ namespace Rollgeon.Combat.AI
         /// </remarks>
         bool TryRead(Guid enemyId, List<AIIntent> standing, List<AIIntent> next,
                      List<AIIntent> options = null);
+
+        /// <summary>
+        /// Llena <paramref name="into"/> con el alcance del arma del enemigo: las celdas desde
+        /// las que su ataque pega, medidas desde donde está parado y sin contar su movimiento
+        /// (ver <see cref="EnemyAttackReach"/>). El set se limpia antes.
+        /// </summary>
+        /// <remarks>
+        /// Mismo gate temporal que <see cref="TryRead"/>. Tiene default para que un lector
+        /// parcial (fakes, paneles que no pintan piso) no deba saber de alcances.
+        /// </remarks>
+        bool TryReadReach(Guid enemyId, HashSet<GridCoord> into) => false;
     }
 }

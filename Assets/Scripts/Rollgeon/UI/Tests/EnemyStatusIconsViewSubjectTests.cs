@@ -5,6 +5,7 @@ using Patterns;
 using Rollgeon.Combat.AI;
 using Rollgeon.Combat.AI.Decisions;
 using Rollgeon.Combat.Pipelines;
+using Rollgeon.Entities.Visuals;
 using Rollgeon.UI.HUD.Status;
 using UnityEngine;
 using Object = UnityEngine.Object;
@@ -409,6 +410,51 @@ namespace Rollgeon.UI.Tests
             {
                 Object.DestroyImmediate(sprite);
                 Object.DestroyImmediate(tex);
+            }
+        }
+
+        [Test]
+        public void LaFila_SeCuelgaSobreLaBarraDeVida()
+        {
+            var pawn = new GameObject("Pawn");
+            var settings = ScriptableObject.CreateInstance<EnemyStatusRowSettingsSO>();
+            try
+            {
+                var barGo = new GameObject("Canvas", typeof(RectTransform));
+                barGo.transform.SetParent(pawn.transform, worldPositionStays: false);
+                barGo.transform.localPosition = new Vector3(0f, 1.2f, 0f);
+                barGo.AddComponent<WorldSpaceHealthBar>();
+                settings.LiftAboveBar = 1f;
+
+                var row = EnemyStatusIconsView.Create(pawn.transform, settings);
+
+                Assert.AreEqual(2.2f, row.transform.localPosition.y, 1e-3f,
+                    "La fila va colgada de la altura de la barra de vida del pawn, no del " +
+                    "Offset global: cada bicho lleva la barra a otra altura.");
+            }
+            finally
+            {
+                Object.DestroyImmediate(pawn);
+                Object.DestroyImmediate(settings);
+            }
+        }
+
+        [Test]
+        public void SinBarraDeVida_LaFilaUsaElOffsetDelSettings()
+        {
+            var pawn = new GameObject("Pawn");
+            var settings = ScriptableObject.CreateInstance<EnemyStatusRowSettingsSO>();
+            try
+            {
+                var row = EnemyStatusIconsView.Create(pawn.transform, settings);
+
+                Assert.AreEqual(settings.Offset.y, row.transform.localPosition.y, 1e-3f,
+                    "Sin barra de vida, la fila cae al Offset del settings.");
+            }
+            finally
+            {
+                Object.DestroyImmediate(pawn);
+                Object.DestroyImmediate(settings);
             }
         }
 

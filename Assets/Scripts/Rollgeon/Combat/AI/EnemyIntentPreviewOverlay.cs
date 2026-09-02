@@ -15,7 +15,9 @@ namespace Rollgeon.Combat.AI
     /// <remarks>
     /// El dibujo sale del hover y no del turno del enemigo: su turno dura segundos y ahí nadie
     /// lee. Lo que pinta no se re-simula nunca — son las áreas que el enemigo ya dejó
-    /// comprometidas más la casilla del jugador para un ataque a distancia.
+    /// comprometidas, la casilla del jugador para un ataque a distancia, y el alcance del arma
+    /// leído de los gates que el árbol ya declara (<see cref="EnemyAttackReach"/>): estático,
+    /// sin contar su movimiento.
     /// </remarks>
     public sealed class EnemyIntentPreviewOverlay
     {
@@ -25,12 +27,16 @@ namespace Rollgeon.Combat.AI
         /// <summary>Canal de lo que viene en el próximo turno.</summary>
         private const string NextChannel = "hover.next";
 
+        /// <summary>Canal del alcance del arma — hasta dónde llega, no dónde va a caer.</summary>
+        private const string RangeChannel = "hover.range";
+
         private static EnemyIntentPreviewOverlay s_instance;
 
         private readonly List<AIIntent> _standing = new();
         private readonly List<AIIntent> _next = new();
         private readonly HashSet<GridCoord> _standingCells = new();
         private readonly HashSet<GridCoord> _nextCells = new();
+        private readonly HashSet<GridCoord> _reachCells = new();
 
         private Guid _painted;
         private Guid _paintedSubject;
@@ -56,6 +62,9 @@ namespace Rollgeon.Combat.AI
         public static Guid NextSource(Guid enemyId)
             => AINode_AuxTelegraph.ChannelGuid(enemyId, NextChannel);
 
+        public static Guid RangeSource(Guid enemyId)
+            => AINode_AuxTelegraph.ChannelGuid(enemyId, RangeChannel);
+
         /// <summary>
         /// Pinta lo que es del enemigo mismo: sus marcas y su próximo ataque. Lo que generan sus
         /// objetos (las bombas) no entra — cada uno tiene su propio hover.
@@ -76,6 +85,7 @@ namespace Rollgeon.Combat.AI
             var overlay = ThreatTelegraphOverlay.ResolveOrCreate();
             overlay?.Clear(StandingSource(_painted));
             overlay?.Clear(NextSource(_painted));
+            overlay?.Clear(RangeSource(_painted));
             _painted = Guid.Empty;
         }
 
@@ -101,6 +111,14 @@ namespace Rollgeon.Combat.AI
             // todavía puede caer en otro lado, la marca que el jefe ya congeló no.
             _nextCells.ExceptWith(_standingCells);
 
+            // El alcance es del arma del enemigo, no de sus objetos: el hover de una bomba
+            // cuenta su cruz y nada más. Y de los tres avisos es el menos urgente, así que en
+            // el empate por una celda pierde contra los otros dos.
+            _reachCells.Clear();
+            if (!hasSubject) intents.TryReadReach(enemyId, _reachCells);
+            _reachCells.ExceptWith(_standingCells);
+            _reachCells.ExceptWith(_nextCells);
+
             var overlay = ThreatTelegraphOverlay.ResolveOrCreate();
             if (overlay == null) return;
 
@@ -108,6 +126,9 @@ namespace Rollgeon.Combat.AI
                 overlay.Show(StandingSource(enemyId), _standingCells, ThreatOverlayState.Marked);
             if (_nextCells.Count > 0)
                 overlay.Show(NextSource(enemyId), _nextCells, ThreatOverlayState.Incoming);
+            if (_reachCells.Count > 0)
+                overlay.Show(RangeSource(enemyId), _reachCells, ThreatOverlayState.Incoming,
+                             ThreatTelegraphOverlay.ReachTint);
 
             _painted = enemyId;
         }

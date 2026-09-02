@@ -10,18 +10,13 @@ using Rollgeon.Localization;
 namespace Rollgeon.UI.Tooltips
 {
     /// <summary>
-    /// Builder compartido del texto de tooltip de una acción de hero: header con el
-    /// nombre + costo en rolls + body aportado por los effects
-    /// (<see cref="IHasTooltipInfo"/>). Nunca devuelve vacío: sin body queda el
-    /// header + costo como fallback genérico.
+    /// Texto de tooltip de una acción de hero: nombre + costo + body de los effects.
+    /// Nunca vacío: sin body queda header + costo.
     /// </summary>
     public static class HeroActionTooltip
     {
-        // BUG-041: el nombre venía crudo de ActionName (texto libre autorado en el SO,
-        // nunca localizado). Mapeo por Slot — más confiable que matchear ActionName como
-        // string: un diseñador puede retipear el nombre visible sin romper la key. Solo
-        // es confiable cuando IsBaseBehavior es true (ver comentario del campo Slot en
-        // HeroActionBehavior — sin eso, Slot puede quedar en su default sin significado).
+        // Por Slot y no por ActionName: retipear el nombre visible no rompe la key. Solo
+        // confiable con IsBaseBehavior true.
         private static readonly Dictionary<HeroBehaviorSlot, string> BaseSlotKeys =
             new Dictionary<HeroBehaviorSlot, string>
             {
@@ -40,7 +35,6 @@ namespace Rollgeon.UI.Tooltips
             var sb = new StringBuilder();
             sb.Append("<b>").Append(ResolveActionName(behavior)).Append("</b>");
 
-            // Pool de Rolls: toda acción cuesta 1 roll por tirada — costo uniforme.
             sb.AppendLine().Append(
                 LocalizedContent.Ui("tooltip.hero_action.cost_per_roll", "Costo: 1 Roll por tirada"));
 
@@ -51,7 +45,6 @@ namespace Rollgeon.UI.Tooltips
             return sb.ToString();
         }
 
-        /// <summary>Nombre localizado de la acción, resuelto vía <see cref="ResolveActionNameKey"/>.</summary>
         private static string ResolveActionName(HeroActionBehavior behavior)
         {
             var key = ResolveActionNameKey(behavior);
@@ -59,19 +52,8 @@ namespace Rollgeon.UI.Tooltips
         }
 
         /// <summary>
-        /// Key de la tabla UI para el nombre de <paramref name="behavior"/>, o
-        /// <c>null</c> si no hay mapeo confiable (el caller cae al
-        /// <see cref="HeroActionBehavior.ActionName"/> crudo). Separado de
-        /// <see cref="ResolveActionName"/> para poder testear la DECISIÓN de mapeo sin
-        /// depender de que la Localization runtime esté inicializada (EditMode).
-        /// <para>
-        /// "Pass door" es el único caso especial: comparte el slot
-        /// <see cref="HeroBehaviorSlot.ForceDoor"/> con "Force Door" como variante
-        /// contextual con <c>IsBaseBehavior = false</c> — el mapeo por Slot no alcanza a
-        /// distinguirlas, así que matchea por ActionName contra la key ya seedeada
-        /// <c>action.pass_door</c> (la misma que usa el chip fijo de
-        /// <c>Canvas_ExplorationHUD.prefab</c>).
-        /// </para>
+        /// Key de la tabla UI del nombre, o <c>null</c> sin mapeo confiable. Separado para
+        /// testear el mapeo sin Localization inicializada.
         /// </summary>
         internal static string ResolveActionNameKey(HeroActionBehavior behavior)
         {
@@ -80,6 +62,7 @@ namespace Rollgeon.UI.Tooltips
             if (behavior.IsBaseBehavior && BaseSlotKeys.TryGetValue(behavior.Slot, out var key))
                 return key;
 
+            // "Pass door" comparte slot con "Force Door" (IsBaseBehavior false): va por nombre.
             if (string.Equals(behavior.ActionName, "Pass door", StringComparison.OrdinalIgnoreCase))
                 return "action.pass_door";
 
@@ -87,9 +70,7 @@ namespace Rollgeon.UI.Tooltips
         }
 
         /// <summary>
-        /// Primer texto no-vacío aportado por los effects. Recursa dentro de
-        /// <see cref="EffChain"/> concatenando las fases (los ataques del guerrero
-        /// envuelven daño + escudo en fases de chain — sin recursión no habría texto).
+        /// Primer texto no-vacío de los effects, recursando en las fases de <see cref="EffChain"/>.
         /// </summary>
         public static string FirstEffectTooltip(List<EffectData> effects, in TooltipContext context)
         {
@@ -108,9 +89,7 @@ namespace Rollgeon.UI.Tooltips
 
         private static string TooltipFrom(IEffect eff, in TooltipContext context)
         {
-            // Los efectos compuestos (chain con fases, secuencia con steps InlineEffect)
-            // concatenan el texto de lo que anidan. EffectTree es quien sabe cuáles anidan
-            // — acá solo se recorre.
+            // Los compuestos concatenan lo que anidan; EffectTree sabe cuáles anidan.
             var children = EffectTree.DirectChildren(eff);
             if (children.Count > 0)
             {

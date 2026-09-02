@@ -180,6 +180,94 @@ namespace Rollgeon.Combat.AI.Tests
                 "de al lado sin pasar por el vacío, así que nadie más apaga el anterior.");
         }
 
+        [Test]
+        public void ElAlcanceDelAtaque_SePintaEnSuPropioCanalYEnRojo()
+        {
+            _intents.Reach.UnionWith(Cells((2, 3), (4, 3), (3, 2), (3, 4)));
+
+            _preview.Show(_boss);
+
+            var alcance = _overlay.Painted.Single(
+                p => p.Source == EnemyIntentPreviewOverlay.RangeSource(_boss));
+            CollectionAssert.AreEquivalent(Cells((2, 3), (4, 3), (3, 2), (3, 4)), alcance.Cells,
+                "El alcance del arma no llegó entero a la grilla: el jugador no puede leer " +
+                "hasta dónde le pegan antes de decidir cuánto acercarse.");
+            Assert.AreEqual(ThreatOverlayState.Incoming, alcance.State,
+                "El alcance se dibujó con la alarma de lo ya comprometido. Es el aviso menos " +
+                "urgente de los tres: pulso lento de fondo, no la marca que ya está congelada.");
+            Assert.AreEqual(ThreatTelegraphOverlay.ReachTint, alcance.Tint,
+                "El alcance salió sin su rojo propio. Con el tint default del estado se lee " +
+                "idéntico al próximo golpe (magenta) o a lo comprometido (rojo de DefaultTint).");
+        }
+
+        [Test]
+        public void ElAlcance_NoTapaLoQueYaEstaPuestoNiLoProximo()
+        {
+            _intents.Standing.Add(Intent(Cells((2, 2))));
+            _intents.Next.Add(Intent(Cells((3, 3))));
+            _intents.Reach.UnionWith(Cells((2, 2), (3, 3), (4, 4)));
+
+            _preview.Show(_boss);
+
+            var alcance = _overlay.Painted.Single(
+                p => p.Source == EnemyIntentPreviewOverlay.RangeSource(_boss));
+            CollectionAssert.AreEquivalent(Cells((4, 4)), alcance.Cells,
+                "Una celda comprometida o del próximo golpe se llevó además el quad del " +
+                "alcance: dos avisos apilados se leen como una amenaza distinta. En el empate " +
+                "el alcance pierde — es el menos urgente de los tres.");
+        }
+
+        [Test]
+        public void Clear_ApagaTambienElCanalDeAlcance()
+        {
+            _intents.Reach.UnionWith(Cells((1, 2)));
+            _preview.Show(_boss);
+
+            _preview.Clear();
+
+            CollectionAssert.Contains(_overlay.Cleared, EnemyIntentPreviewOverlay.RangeSource(_boss),
+                "El rojo del alcance quedó encendido después de sacar el mouse. Clear sólo " +
+                "conocía los canales viejos y el nuevo quedó huérfano en el paño.");
+        }
+
+        [Test]
+        public void ElHoverDeUnaBomba_NoPintaElAlcanceDelDueno()
+        {
+            var bomba = Guid.NewGuid();
+            _intents.Standing.Add(Intent(Cells((1, 1)), subject: bomba));
+            _intents.Reach.UnionWith(Cells((2, 3), (4, 3)));
+
+            _preview.ShowForSubject(_boss, bomba);
+
+            Assert.IsFalse(_overlay.Painted.Any(
+                    p => p.Source == EnemyIntentPreviewOverlay.RangeSource(_boss)),
+                "El hover de una bomba encendió el alcance del arma de su dueño. La bomba " +
+                "cuenta su cruz y nada más; el arma del jefe se lee sobre su cuerpo.");
+        }
+
+        [Test]
+        public void SiElServicioNoSabeDeAlcances_ElRestoSePintaIgual()
+        {
+            ServiceLocator.Clear();
+            ServiceLocator.AddService<IPlayerService>(_players);
+            var minimo = new MinimalIntentService();
+            minimo.Standing.Add(Intent(Cells((1, 1))));
+            ServiceLocator.AddService<IEnemyIntentService>(minimo);
+            ServiceLocator.AddService<IThreatOverlayService>(_overlay, ServiceScope.Global);
+            var preview = new EnemyIntentPreviewOverlay();
+
+            preview.Show(_boss);
+
+            Assert.IsTrue(_overlay.Painted.Any(
+                    p => p.Source == EnemyIntentPreviewOverlay.StandingSource(_boss)),
+                "Un servicio que sólo sabe de intents dejó de pintar lo que sí sabía: el " +
+                "default de TryReadReach existe para que un lector parcial siga funcionando.");
+            Assert.IsFalse(_overlay.Painted.Any(
+                    p => p.Source == EnemyIntentPreviewOverlay.RangeSource(_boss)),
+                "Sin implementación de alcance apareció igual un canal de alcance: alguien " +
+                "está inventando celdas que el servicio nunca afirmó.");
+        }
+
         private static AIIntent Intent(IReadOnlyCollection<GridCoord> tiles, Guid subject = default)
             => new AIIntent("test.intent", "prueba", 10, AttackKind.Environmental, tiles,
                             subjectGuid: subject);
@@ -192,6 +280,7 @@ namespace Rollgeon.Combat.AI.Tests
             public bool CanRead = true;
             public readonly List<AIIntent> Standing = new();
             public readonly List<AIIntent> Next = new();
+            public readonly HashSet<GridCoord> Reach = new();
 
             public bool TryRead(Guid enemyId, List<AIIntent> standing, List<AIIntent> next,
                                 List<AIIntent> options = null)
@@ -205,28 +294,53 @@ namespace Rollgeon.Combat.AI.Tests
                 next?.AddRange(Next);
                 return true;
             }
+
+            public bool TryReadReach(Guid enemyId, HashSet<GridCoord> into)
+            {
+                into?.Clear();
+                if (!CanRead || into == null) return false;
+
+                foreach (var cell in Reach) into.Add(cell);
+                return true;
+            }
         }
 
         private sealed class SpyThreatOverlay : IThreatOverlayService
         {
-            public readonly List<(Guid Source, List<GridCoord> Cells, ThreatOverlayState State)> Painted = new();
+            public readonly List<(Guid Source, List<GridCoord> Cells, ThreatOverlayState State, Color? Tint)> Painted = new();
             public readonly List<Guid> Cleared = new();
 
             public void Show(Guid sourceGuid, IEnumerable<GridCoord> tiles)
-                => Record(sourceGuid, tiles, ThreatOverlayState.Marked);
+                => Record(sourceGuid, tiles, ThreatOverlayState.Marked, null);
 
             public void Show(Guid sourceGuid, IEnumerable<GridCoord> tiles, Color tint)
-                => Record(sourceGuid, tiles, ThreatOverlayState.Marked);
+                => Record(sourceGuid, tiles, ThreatOverlayState.Marked, tint);
 
             public void Show(Guid sourceGuid, IEnumerable<GridCoord> tiles, ThreatOverlayState state,
                              Color? tint = null)
-                => Record(sourceGuid, tiles, state);
+                => Record(sourceGuid, tiles, state, tint);
 
             public void Clear(Guid sourceGuid) => Cleared.Add(sourceGuid);
             public void ClearAll() => Painted.Clear();
 
-            private void Record(Guid source, IEnumerable<GridCoord> tiles, ThreatOverlayState state)
-                => Painted.Add((source, new List<GridCoord>(tiles), state));
+            private void Record(Guid source, IEnumerable<GridCoord> tiles, ThreatOverlayState state,
+                                Color? tint)
+                => Painted.Add((source, new List<GridCoord>(tiles), state, tint));
+        }
+
+        private sealed class MinimalIntentService : IEnemyIntentService
+        {
+            public readonly List<AIIntent> Standing = new();
+
+            public bool TryRead(Guid enemyId, List<AIIntent> standing, List<AIIntent> next,
+                                List<AIIntent> options = null)
+            {
+                standing?.Clear();
+                next?.Clear();
+                options?.Clear();
+                standing?.AddRange(Standing);
+                return true;
+            }
         }
 
         private sealed class StubPlayerService : IPlayerService
