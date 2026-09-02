@@ -59,9 +59,17 @@ dado de movimiento, Botas), `ForceDoorRollBonus` (+N a la tirada de forzar puert
 `EnchantmentCostMultiplier` (Moneda Maldita, 0.5), `SecondWind`+`SecondWindRemainingHp`
 (Ficha del Segundo Aliento — el item SE CONSUME al salvarte), `BaseDamageOverride`
 (`Enabled` + `BaseValue: EffectIntReader` — Furia Contenida con `ReadCleanTurnStreakScaled`,
-Egoista con `ReadCurrentGoldSqrtScaled`; categoria excluyente, gana el mayor `Priority`) y
-`UniquePerRun` (estilo Isaac: ya poseido — inventario o `ClassHeroSO.InnateItemIds` — no
-vuelve a salir en pools).
+Egoista con `ReadCurrentGoldSqrtScaled`; categoria excluyente, gana el mayor `Priority`),
+`LadderSkippedStep` (Compas Salteado — la Escalera acepta paso 2 en cualquier paridad
+mientras el item este en el inventario; sigue siendo `combo.ladder`, lo sostiene
+`IComboRuleService` por ItemId) y `UniquePerRun` (estilo Isaac: ya poseido — inventario o
+`ClassHeroSO.InnateItemIds` — no vuelve a salir en pools).
+
+**Estado por combate que los readers leen** (`IPlayerTurnStateService`): `TilesMovedThisTurn`,
+`CleanTurnStreak` (Furia), `ComboVarietyStreak` (Mosaico Erratico — combos distintos
+encadenados, se actualiza DENTRO del dispatch de ComboPlayed asi el combo en curso ya cuenta)
+y `AttacksPlayedThisCombat` (Eco Menguante — ataques YA ejecutados, commit diferido: el
+primer ataque lee 0). El servicio se suscribe en bootstrap, antes que los hooks de items.
 
 ### `ComboPlayed` vs `EventBus`
 
@@ -100,7 +108,7 @@ exponen propiedades con backing field `[OdinSerialize, SerializeReference]`.
 
 | Intencion | Efectos |
 |---|---|
-| Daño | `EffDealDamage`, `EffAddComboBonus`, `EffMultiplyComboDamage`, `EffBlockComboDamage`, `EffLowHpAttackBuff`, `EffThresholdCrossCombatBuff` (latch +Attack al cruzar %HP, 1x combate via lifetime Encounter — Instinto) |
+| Daño | `EffDealDamage`, `EffAddComboBonus`, `EffMultiplyComboDamage` (constante `Multiplier` o `MultiplierReader: EffectIntReader` via `ReadFloat` — Eco Menguante), `EffBlockComboDamage`, `EffLowHpAttackBuff`, `EffThresholdCrossCombatBuff` (latch +Attack al cruzar %HP, 1x combate via lifetime Encounter — Instinto) |
 | Vida / defensa | `EffHeal` (tiene modo `FromReader`), `EffAddShield` |
 | Recursos | `EffModifyGold`, `EffModifyIntAttribute`, `EffAddRolls` (+N rolls al pool AHORA; el permanente va por `ItemSO.RollPoolBonus`) |
 | Inventario | `EffAddItemToInventory`, `EffRemoveInventoryItem` |
@@ -123,7 +131,13 @@ En `Rollgeon.Effects.Readers` (genericos, sirven en items): `ReadConstantInt`,
 `ReadEntityStat`, `ReadTilesMovedThisTurn` (`PerTileAmount` — Corredor Incansable),
 `ReadCleanTurnStreakScaled` (`PerTurnAmount` float con floor — Furia Contenida),
 `ReadCurrentRolls` (`PerRollAmount` — Corazon/Tesoro de la fortuna, con
-`turn.rolls.leftover`).
+`turn.rolls.leftover`), `ReadComboVarietyStreakScaled` (`PerStepAmount` — Mosaico Erratico),
+`ReadAttackDecayMultiplier` (`Start`/`DecayPerAttack`/`Min`, float — Eco Menguante, como
+`MultiplierReader` de `EffMultiplyComboDamage`), `ReadDiceShowingFace` (`Face` + `PerDieAmount`
+— Jackpot; cuenta `KeptDice` del contexto, asi que SOLO sirve en hooks ComboPlayed).
+
+"Daño base +X" del GDD = `EffAddComboBonus`: en la formula v3 todo lo aditivo vive en N y se
+multiplica por M igual (Mosaico, Ultima Carta, Jackpot van por ahi).
 
 Ejemplo real (`Item_Egoista`): `bono = floor(sqrt(oro_actual x 5))` via
 `new EffAddComboBonus { Amount = new ReadCurrentGoldSqrtScaled { Factor = 5f } }`.
@@ -136,7 +150,8 @@ Se evaluan en **AND**. Disponibles: `PCAdjacentToDoor`, `PCComboAvailable`, `PCC
 `PcGoldCompare`, `PcJackpotCountdown`, `PcNoComboThisRoll`, `PcOwnerAtRoomCenter`,
 `PcOwnerHpBelow`, `PcOwnerStatCompare`, `PcRoundNumber`, `PcTargetInRange`,
 `PcTilesMovedThisTurn` (`IntComparison` + `Value`; sin servicio = false — Piedra de Guardia
-con `Equal 0`).
+con `Equal 0`), `PcRollPoolCompare` (`IntComparison` + `Value` contra los rolls disponibles;
+sin servicio / fuera de combate = false — Ultima Carta con `Equal 0`).
 Para OR o anidamiento: `PCComposite`.
 
 ## API de alta (`Rollgeon.Editor.Tools.Item.ItemAuthoring`)
