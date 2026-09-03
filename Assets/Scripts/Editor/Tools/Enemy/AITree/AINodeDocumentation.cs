@@ -538,8 +538,9 @@ namespace Rollgeon.Editor.Tools.Enemy.AITree
                 "El empujón del Cajero: hereda de RangedShot con Range = 1 (rango, daño, giro y " +
                 "presentación ya vienen de ahí) y además manda al jugador PushTiles casillas en línea " +
                 "recta hacia el lado opuesto. Le cobra TaxPercent del oro que lleve encima (nunca menos de " +
-                "TaxMinimum) y deja RefundPercent de eso tirado en CoinCount monedas a lo largo del tumbo: " +
-                "lo que cae al piso es plata del jugador. El tumbo frena contra paredes y blockers y cobra las " +
+                "TaxMinimum) y deja RefundPercent de eso tirado en CoinCount monedas repartidas al azar por " +
+                "la sala (separadas CoinMinSeparation): lo que cae al piso es plata del jugador, y va lejos " +
+                "para que ir a buscarla cueste un desvío. El tumbo frena contra paredes y blockers y cobra las " +
                 "casillas atravesadas (pinchos incluidos).",
 
             [typeof(AINode_CashierCounterToll)] =

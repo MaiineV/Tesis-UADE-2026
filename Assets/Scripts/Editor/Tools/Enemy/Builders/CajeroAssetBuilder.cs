@@ -196,7 +196,13 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         /// </remarks>
         public const int ChipDurationRounds = 2;
 
-        /// <summary>Monedas que se le caen al jugador en cada empujón, repartidas por el tumbo.</summary>
+        /// <summary>
+        /// Monedas que se le caen al jugador en cada empujón, repartidas al azar por la sala.
+        /// </summary>
+        /// <remarks>
+        /// Por la sala y no sobre el tumbo: en el recorrido quedaban a un paso y recuperarlas no
+        /// costaba el desvío que la mecánica cobra. Lejos, ir a buscarlas compite con pegarle.
+        /// </remarks>
         public const int ChipCount = 2;
 
         /// <summary>Id estable del hazard-ficha: el servicio de hazards keyea por él. Hex válido —
@@ -638,6 +644,10 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
                 TaxPercent = ShoveTaxPercent,
                 TaxMinimum = ShoveTaxMinimum,
                 RefundPercent = ShoveRefundPercent,
+
+                // La misma separación que la lluvia: las dos fuentes reparten por la sala, y dos
+                // monedas pegadas son un solo viaje en cualquiera de las dos.
+                CoinMinSeparation = CoinRainMinSeparation,
                 AnimFeedbackId = BossFeedbackIds.CajeroMeleeAnim,
                 ImpactVfxFeedbackId = BossFeedbackIds.CajeroImpactVfx,
                 ImpactFeelFeedbackId = BossFeedbackIds.CajeroImpactFeel,

@@ -420,6 +420,9 @@ MonoBehaviour:
     - Name: RefundPercent
       Entry: 4
       Data: 0.7
+    - Name: CoinMinSeparation
+      Entry: 3
+      Data: 2
     - Name: 
       Entry: 8
       Data: 

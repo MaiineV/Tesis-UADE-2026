@@ -264,6 +264,12 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                 "plata del bolsillo al piso.");
             Assert.Greater(shove.RefundPercent, 0f,
                 "Si no volviera nada, no habría razón para caminar la sala y el jefe sería melee puro.");
+
+            Assert.AreEqual(CajeroAssetBuilder.CoinRainMinSeparation, shove.CoinMinSeparation,
+                "Las dos fuentes de monedas reparten por la sala con el mismo criterio.");
+            Assert.Greater(shove.CoinMinSeparation, 1,
+                "Sin separación las dos monedas pueden caer pegadas, y entonces recuperarlas es un " +
+                "solo viaje: el empujón te cobra dos veces y te devuelve en un desvío.");
         }
 
         [Test]

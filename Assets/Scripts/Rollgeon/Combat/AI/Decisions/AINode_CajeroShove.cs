@@ -16,7 +16,7 @@ namespace Rollgeon.Combat.AI.Decisions
     /// <see cref="PushTiles"/> casillas en línea recta hacia el lado opuesto al suyo, y le cobra
     /// <see cref="TaxPercent"/> del oro que lleve encima —nunca menos de <see cref="TaxMinimum"/>—
     /// dejando <see cref="RefundPercent"/> de lo cobrado tirado en <see cref="CoinCount"/> monedas
-    /// a lo largo del tumbo.
+    /// repartidas al azar por la sala.
     /// </summary>
     /// <remarks>
     /// <para>
@@ -27,7 +27,8 @@ namespace Rollgeon.Combat.AI.Decisions
     /// <para>
     /// El tumbo no lo camina este nodo: lo delega en <see cref="IForcedMovementService"/>, que es
     /// quien frena en seco contra una pared o un blocker, cobra las casillas atravesadas (los
-    /// pinchos que cruce) y levanta las monedas que ya estuvieran en el recorrido.
+    /// pinchos que cruce) y levanta las monedas que ya estuvieran en el recorrido — las de este
+    /// empujón caen después, y en otra parte.
     /// </para>
     /// </remarks>
     [Serializable, HideReferenceObjectPicker]
@@ -40,7 +41,7 @@ namespace Rollgeon.Combat.AI.Decisions
         [Tooltip("Definición del hazard-moneda que queda en el piso. Sin ella el empujón sólo pega y tira.")]
         public HazardDefinitionSO Coin;
 
-        [Tooltip("Monedas que se le caen al jugador a lo largo del tumbo.")]
+        [Tooltip("Monedas que se le caen al jugador, repartidas al azar por la sala.")]
         [MinValue(0)]
         public int CoinCount = 2;
 
@@ -55,6 +56,10 @@ namespace Rollgeon.Combat.AI.Decisions
         [Tooltip("Fracción de lo cobrado que vuelve al piso repartida entre las monedas (0..1). El resto se lo queda él.")]
         [PropertyRange(0f, 1f)]
         public float RefundPercent = 0.70f;
+
+        [Tooltip("Distancia Chebyshev mínima entre las monedas que deja. Dos pegadas son un solo viaje.")]
+        [MinValue(0)]
+        public int CoinMinSeparation = 2;
 
         public override string NodeName =>
             $"Cajero — Empujón ({Damage}, {PushTiles} casillas y {TaxPercent:P0} del oro)";
@@ -110,11 +115,10 @@ namespace Rollgeon.Combat.AI.Decisions
             // terminó y las monedas serían pickups que nadie va a levantar.
             if (result.TargetDied) return;
 
-            DropCoins(context, grid, origin, away, result.TilesTraveled);
+            DropCoins(context, grid);
         }
 
-        private void DropCoins(
-            AIContext context, IGridManager grid, GridCoord origin, Cardinal away, int traveled)
+        private void DropCoins(AIContext context, IGridManager grid)
         {
             if (Coin == null || CoinCount <= 0) return;
 
@@ -139,16 +143,17 @@ namespace Rollgeon.Combat.AI.Decisions
                 return;
             }
 
-            // Las casillas se resuelven antes de repartir: una moneda que no encuentra dónde caer
-            // dejaría su parte del reembolso en el aire, y el jugador habría pagado por nada.
-            var cells = new List<GridCoord>();
-            foreach (var coord in TumbleTiles(origin, away, traveled, PushTiles))
-            {
-                if (cells.Count >= CoinCount) break;
-                if (!grid.InBounds(coord) || !grid.IsFree(coord)) continue;
-                cells.Add(coord);
-            }
+            // Repartidas por la sala y no sobre el tumbo: la plata tiene que quedar lejos para que
+            // ir a buscarla sea una decisión. En el recorrido quedaba a un paso, y recuperarla no
+            // costaba el desvío que la mecánica cobra.
+            //
+            // Corre DESPUÉS de que el empuje resolvió, así IsFree ve al jugador en su casilla final
+            // y no le deja una moneda debajo — la casilla dispara al ENTRAR, y ya está parado ahí.
+            var cells = CajeroCoinScatter.PickTiles(
+                grid, hazards, context.Rng, CoinCount, CoinMinSeparation);
 
+            // El reparto se calcula sobre las que salieron: una moneda sin casilla dejaría su parte
+            // del reembolso en el aire, y el jugador ya pagó.
             if (cells.Count == 0) return;
 
             int placed = 0;
@@ -177,43 +182,6 @@ namespace Rollgeon.Combat.AI.Decisions
         {
             if (parts <= 0) return 0;
             return total / parts + (index < total % parts ? 1 : 0);
-        }
-
-        /// <summary>
-        /// Casillas del tumbo donde puede quedar plata, en orden de preferencia: las intermedias
-        /// (1..<paramref name="traveled"/>−1) y, como último recurso, la de partida.
-        /// </summary>
-        /// <remarks>
-        /// <para>
-        /// La casilla FINAL nunca entra: el jugador termina parado ahí y la moneda dispara al
-        /// entrar, así que sería plata que no se puede levantar sin salir y volver. La de partida es
-        /// el último recurso, para el tumbo que frena en seco antes de tener intermedias.
-        /// </para>
-        /// <para>
-        /// Las monedas se colocan DESPUÉS de que el empuje resolvió: el servicio de movimiento
-        /// forzado camina cada paso de verdad, así que una moneda puesta antes sobre la línea del
-        /// tumbo se la levantaría el propio tumbo.
-        /// </para>
-        /// <para>
-        /// El recorrido se reconstruye a mano porque <c>ForcedMoveResult</c> devuelve la celda final
-        /// y el conteo de pasos, no el camino. Va clampeado a <paramref name="pushTiles"/>: si una
-        /// continuación de casilla siguió empujando, esos pasos extra ya no están sobre esta línea
-        /// recta y pondrían monedas en casillas por las que el jugador nunca pasó.
-        /// </para>
-        /// </remarks>
-        private static IEnumerable<GridCoord> TumbleTiles(
-            GridCoord origin, Cardinal away, int traveled, int pushTiles)
-        {
-            int straight = Mathf.Min(traveled, pushTiles);
-            for (int i = 1; i < straight; i++) yield return Offset(origin, away, i);
-            yield return origin;
-        }
-
-        private static GridCoord Offset(GridCoord from, Cardinal dir, int steps)
-        {
-            var coord = from;
-            for (int i = 0; i < steps; i++) coord = dir.Step(coord);
-            return coord;
         }
 
     }
