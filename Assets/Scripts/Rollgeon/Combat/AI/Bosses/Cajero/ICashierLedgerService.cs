@@ -33,12 +33,16 @@ namespace Rollgeon.Combat.Cashier
         bool ConsumeDamageTaken(Guid entityGuid);
 
         /// <summary>
-        /// Guarda <paramref name="percent"/> (0..1) del oro del jugador en la caja de
-        /// <paramref name="ownerGuid"/> y devuelve cuánto guardó (0 si el jugador está seco o no hay
-        /// economía). Nunca cobra menos de <paramref name="minimum"/>, salvo que al jugador le quede
-        /// menos que eso: entonces cobra lo que haya.
+        /// Le cobra al jugador <paramref name="percent"/> (0..1) del oro que lleve encima y devuelve
+        /// cuánto le sacó (0 si está seco o no hay economía). Nunca cobra menos de
+        /// <paramref name="minimum"/>, salvo que al jugador le quede menos que eso: entonces cobra
+        /// lo que haya.
         /// </summary>
-        int CollectTax(Guid ownerGuid, float percent, int minimum = 0);
+        /// <param name="refundOnDeath">
+        /// Con <c>true</c> lo cobrado entra a la caja de <paramref name="ownerGuid"/>, y matarlo se
+        /// lo devuelve entero al jugador. Con <c>false</c> la plata sale del juego.
+        /// </param>
+        int CollectTax(Guid ownerGuid, float percent, int minimum = 0, bool refundOnDeath = true);
 
         void SetChipValueMultiplier(int multiplier);
 

@@ -122,7 +122,11 @@ namespace Rollgeon.Combat.AI.Decisions
 
             // El cobro va primero y manda: lo que cae al piso es plata del jugador, no plata que
             // aparece. Si sale seco no hay nada que tirar y el empujón se queda en golpe y tumbo.
-            int taken = ledger.CollectTax(context.SelfGuid, TaxPercent, TaxMinimum);
+            //
+            // refundOnDeath: false — lo que no se levanta del piso se pierde, y punto. En la caja
+            // volvería entero al matarlo, y entre eso y las monedas el jugador saldría ganando.
+            int taken = ledger.CollectTax(
+                context.SelfGuid, TaxPercent, TaxMinimum, refundOnDeath: false);
             if (taken <= 0) return;
 
             int refund = Mathf.FloorToInt(taken * RefundPercent);

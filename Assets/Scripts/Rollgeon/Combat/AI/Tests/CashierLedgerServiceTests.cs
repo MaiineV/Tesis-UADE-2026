@@ -109,6 +109,24 @@ namespace Rollgeon.Combat.AI.Tests
         }
 
         [Test]
+        public void CollectTax_WithoutRefundOnDeath_TakesTheGoldOutOfTheGame()
+        {
+            int collected = _ledger.CollectTax(_boss, 0.4f, refundOnDeath: false);
+
+            Assert.AreEqual(40, collected, "Cobrar es cobrar: el reembolso no cambia cuánto saca.");
+            Assert.AreEqual(60, _economy.CurrentGold);
+            Assert.AreEqual(0, _ledger.VaultedGold,
+                "Entró a la caja, y la caja se le devuelve entera al jugador cuando el jefe muere: " +
+                "el cobro del empujón sería un préstamo, y con las monedas del piso encima el " +
+                "jugador terminaría la pelea con más oro del que le sacaron.");
+
+            EventManager.Trigger(EventName.OnEntityDestroyed, _boss);
+
+            Assert.AreEqual(60, _economy.CurrentGold,
+                "Matarlo le devolvió la plata. Lo que el jugador no levanta del piso se pierde.");
+        }
+
+        [Test]
         public void CollectTax_ThinWallet_ChargesTheFloorInsteadOfThePercent()
         {
             _economy.ResetTo(50);

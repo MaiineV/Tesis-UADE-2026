@@ -90,7 +90,7 @@ namespace Rollgeon.Combat.Cashier
             return _damaged.Remove(entityGuid);
         }
 
-        public int CollectTax(Guid ownerGuid, float percent, int minimum = 0)
+        public int CollectTax(Guid ownerGuid, float percent, int minimum = 0, bool refundOnDeath = true)
         {
             if (ownerGuid == Guid.Empty || percent <= 0f) return 0;
             if (!ServiceLocator.TryGetService<IEconomyService>(out var economy) || economy == null) return 0;
@@ -109,8 +109,14 @@ namespace Rollgeon.Combat.Cashier
             if (take <= 0) return 0;
             if (!economy.Spend(take)) return 0;
 
-            _vaultOwner = ownerGuid;
-            _vaultedGold += take;
+            // Sin dueño de caja el oro no vuelve al morir: es plata que sale del juego. Ver
+            // OnEntityDestroyedExternal, que le devuelve al jugador todo lo que la caja tenga.
+            if (refundOnDeath)
+            {
+                _vaultOwner = ownerGuid;
+                _vaultedGold += take;
+            }
+
             return take;
         }
 
