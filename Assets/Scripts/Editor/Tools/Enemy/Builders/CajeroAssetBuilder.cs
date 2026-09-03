@@ -494,7 +494,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         /// <item>La persecución.</item>
         /// <item>El ciclo de ataque: pegado a vos, <c>Alternate[mandoble, empujón]</c>.</item>
         /// <item>Las monedas de la sala, cada <see cref="CoinRainEveryNRounds"/> rondas.</item>
-        /// <item>La caja: vence monedas y lo cura con lo que nadie levantó.</item>
+        /// <item>La caja: vence las monedas que nadie levantó, de a una por turno.</item>
         /// </list>
         /// Todo lo que puede devolver Failed va en <c>Selector[acción, Wait]</c>.
         /// </summary>

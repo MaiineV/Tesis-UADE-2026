@@ -740,9 +740,6 @@ namespace Rollgeon.EditorTools.Localization
             Content("boss.cashier.brief",
                 "Te tira tres casillas y te cobra oro en cada empujón. Lo que dejes vencer en el piso lo perdés.",
                 "Throws you three tiles and charges you gold on every shove. Whatever you let expire on the floor is lost.");
-            Content("boss.cashier.desc",
-                "Te tira lejos y te saca oro, y parte de esa plata cae al piso. La que no levantás a tiempo se pierde.",
-                "Throws you clear and takes your gold, and some of it lands on the floor. Whatever you don't grab in time is gone.");
             Content("boss.la_generala.brief",
                 "Suelta anillos eléctricos en oleadas, con huecos entre anillo y anillo.",
                 "Unleashes electric rings in waves, with gaps between the rings.");
@@ -1509,8 +1506,8 @@ namespace Rollgeon.EditorTools.Localization
 
             Boss(CajeroAssetBuilder.EntityId,
                 "El Cajero", "The Cashier",
-                "Te tira lejos y te llena el piso de monedas. Las que no levantás a tiempo se las lleva él, y cada una lo cura.",
-                "Throws you clear and litters the floor with coins. The ones you don't grab in time he takes back, and each one heals him.");
+                "Te tira lejos y te saca oro, y parte de esa plata cae al piso. La que no levantás a tiempo se pierde.",
+                "Throws you clear and takes your gold, and some of it lands on the floor. Whatever you don't grab in time is gone.");
 
             // Misma identidad que RangedEnemy01 a propósito: el refuerzo del Cajero es un
             // ranged común más, no un personaje.
