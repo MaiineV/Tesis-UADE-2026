@@ -80,6 +80,13 @@ namespace Rollgeon.Combat.FSM
         public CombatOutcome? PendingOutcome { get; set; }
 
         /// <summary>
+        /// Pedido de cortar la fase enemiga (Segundo Aliento): al próximo <c>EnemyDone</c>
+        /// el turno vuelve al jugador aunque queden enemigos sin actuar. Lo consume y
+        /// limpia <c>EnemyTurnState.Exit</c>.
+        /// </summary>
+        public bool EnemyPhaseCutRequested { get; set; }
+
+        /// <summary>
         /// Lista cacheada de participantes. <see cref="CombatEnterState"/> la
         /// pasa a <c>TurnOrder.BuildForCombat</c>.
         /// </summary>
