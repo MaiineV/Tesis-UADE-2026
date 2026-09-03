@@ -598,16 +598,16 @@ namespace Rollgeon.EditorTools.HUD
         private const string GeneralaPath = "Assets/Rollgeon/Enemies/ED_Boss_Generala.asset";
 
         /// <summary>
-        /// Las maldiciones del Cajero (siempre activa) y de la Generala (gateada por contrato).
+        /// Las maldiciones del Cajero (gateada por monedas en el piso) y de la Generala (por contrato).
         /// </summary>
         [MenuItem("Rollgeon/Tooltips/10 - Author Cajero And Generala Curses")]
         public static void AuthorCajeroAndGeneralaCurses()
         {
-            AuthorCurse<Rollgeon.Entities.BossCurseSO>(CajeroCursePath, CajeroPath, curse =>
+            AuthorCurse<Rollgeon.Entities.CoinClockCurseSO>(CajeroCursePath, CajeroPath, curse =>
             {
                 curse.CurseId = "curse.bank_keeps";
-                curse.DisplayName = "La banca retiene";
-                curse.Description = "El oro que dejás vencer se lo queda la banca.";
+                curse.DisplayName = "La banca no espera";
+                curse.Description = "Lo que dejás vencer en el piso se pierde.";
                 curse.Icon = AssetDatabase.LoadAssetAtPath<Sprite>(CoinPath);
             });
 

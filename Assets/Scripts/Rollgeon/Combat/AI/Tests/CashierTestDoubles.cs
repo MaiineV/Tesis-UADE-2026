@@ -101,5 +101,7 @@ namespace Rollgeon.Combat.AI.Tests
         }
 
         public int GetChipValue(Guid hazardInstanceId) => LastChipValue;
+
+        public int ChipsOnFloor { get; set; }
     }
 }

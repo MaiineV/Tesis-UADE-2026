@@ -51,12 +51,15 @@ namespace Rollgeon.Combat.Cashier
 
         /// <summary>
         /// Paga <paramref name="value"/> cuando el hazard se dispare; si expira sin cobrarse no paga
-        /// a nadie, y si el que la pisa es su dueño tampoco. Levantar una ficha también soborna.
+        /// a nadie, y si el que la pisa es su dueño tampoco.
         /// </summary>
         void RegisterChip(Guid hazardInstanceId, int value, Guid ownerGuid);
 
         /// <summary>Valor de una ficha viva, o 0 si ese id no es una ficha del Cajero.</summary>
         int GetChipValue(Guid hazardInstanceId);
+
+        /// <summary>Monedas con el reloj corriendo. Lo lee <c>CoinClockCurseSO</c> para mostrar la tarjeta sólo cuando hay algo que perder.</summary>
+        int ChipsOnFloor { get; }
 
         /// <summary>Último escalón que el jefe resolvió al marcar, tal cual lo va a pegar. <c>null</c> antes de la primera marca.</summary>
         CashierTierSnapshot? LastTier { get; }

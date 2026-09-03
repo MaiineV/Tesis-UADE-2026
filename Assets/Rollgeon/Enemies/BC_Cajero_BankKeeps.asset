@@ -9,9 +9,9 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e57a6490b53f4e7c8ef1ca0c0f3b077e, type: 3}
+  m_Script: {fileID: 11500000, guid: 9d8b138b09d945d4ca4736068ddabfc5, type: 3}
   m_Name: BC_Cajero_BankKeeps
-  m_EditorClassIdentifier: Rollgeon::Rollgeon.Entities.BossCurseSO
+  m_EditorClassIdentifier: Rollgeon::Rollgeon.Entities.CoinClockCurseSO
   CurseId: curse.bank_keeps
   DisplayName: La banca no espera
   Description: "Lo que dej\xE1s vencer en el piso se pierde."

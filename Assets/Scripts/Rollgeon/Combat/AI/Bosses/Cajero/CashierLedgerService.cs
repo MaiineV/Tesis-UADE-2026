@@ -152,6 +152,8 @@ namespace Rollgeon.Combat.Cashier
         public int GetChipValue(Guid hazardInstanceId)
             => _chips.TryGetValue(hazardInstanceId, out var chip) ? chip.Value : 0;
 
+        public int ChipsOnFloor => _chips.Count;
+
         public CashierTierSnapshot? LastTier => _lastTier;
 
         public void ReportTier(int rank, int damage, int gold, int stepUp, int stepDown)
