@@ -153,6 +153,45 @@ namespace Rollgeon.Combat.Tests
         }
 
         [Test]
+        public void Resolve_OutBreakdown_ReportsScratchMultiplierBonus()
+        {
+            // Arrange — dos canales suman +2 y +1 al bono de M; ability 0.75
+            ServiceLocator.AddService<IComboPassiveService>(new FakeComboPassiveService
+            {
+                Scratch = new EnchantmentScratch { ComboMultiplierBonus = 2f, ComboDamageMultiplier = 3f }
+            }, ServiceScope.Global);
+            ServiceLocator.AddService<IComboPlayService>(new FakeComboPlayService
+            {
+                Scratch = new EnchantmentScratch { ComboMultiplierBonus = 1f }
+            }, ServiceScope.Global);
+
+            // Act
+            PlayerComboDamage.Resolve(_player, 10, null, 0.75f, PlayerComboFormulaKind.Damage, out var b);
+
+            // Assert — M = (1 + 3) × 3 × 0.75 = 9
+            Assert.AreEqual(3f, b.ScratchMultiplierBonus, 0.0001f);
+            Assert.AreEqual(3f, b.ScratchMultiplier, 0.0001f);
+            Assert.AreEqual(9f, b.M, 0.0001f);
+            Assert.AreEqual(90, b.Final);
+        }
+
+        [Test]
+        public void Resolve_Sources_CarriesMultiplierBonusDelta()
+        {
+            var playScratch = new EnchantmentScratch { ComboMultiplierBonus = 2f };
+            playScratch.RecordContribution(new ScratchContribution(
+                ScratchSourceKind.Item, "piedra.angular", null, -1, 0, 1f, false, multiplierBonusDelta: 2f));
+            ServiceLocator.AddService<IComboPlayService>(
+                new FakeComboPlayService { Scratch = playScratch }, ServiceScope.Global);
+
+            PlayerComboDamage.Resolve(_player, 10, null, 1f, PlayerComboFormulaKind.Damage, out var b);
+
+            Assert.AreEqual(1, b.Sources.Count);
+            Assert.AreEqual(2f, b.Sources[0].MultiplierBonusDelta, 0.0001f);
+            Assert.AreEqual(30, b.Final);
+        }
+
+        [Test]
         public void Resolve_Sources_AggregatesJournals_PassivesThenPlay()
         {
             // Arrange — cada canal trae su journal ya capturado por el dispatch

@@ -71,6 +71,8 @@ namespace Rollgeon.Effects.Tests
             public int CleanTurnStreak => 0;
             public int ComboVarietyStreak => 0;
             public int AttacksPlayedThisCombat => Attacks;
+            public System.Collections.Generic.IReadOnlyList<string> ComboHistoryThisCombat => System.Array.Empty<string>();
+            public int CombosPlayedThisCombat => 0;
         }
     }
 }

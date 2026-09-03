@@ -89,7 +89,8 @@ namespace Rollgeon.Combat.Damage
             sb.Append('\n').Append(Col(Label, "  N = ")).Append(Col(Accent, "<b>" + F(b.N) + "</b>"));
 
             // Términos de M.
-            sb.Append('\n').Append(Col(Label, "  M = "))
+            sb.Append('\n').Append(Col(Label, "  M = (1 + "))
+              .Append(Num(b.ScratchMultiplierBonus)).Append(Col(Label, ") (add) × "))
               .Append(Num(b.ScratchMultiplier)).Append(Col(Label, " (scratch) × "))
               .Append(Num(b.AbilityMultiplier)).Append(Col(Label, " (ability) = "))
               .Append(Col(Accent, "<b>" + F(b.M) + "</b>"));

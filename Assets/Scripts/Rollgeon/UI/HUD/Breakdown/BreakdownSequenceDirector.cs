@@ -267,7 +267,7 @@ namespace Rollgeon.UI.HUD.Breakdown
 
             // Popup con presencia: el glow/sonido telegrafiá el proc y recién ahí vuela.
             _juice?.OnProcPopup(from, BreakdownIconResolver.Resolve(step.SourceAsset),
-                step.SourceAsset, step.Target == BreakdownTarget.MultM);
+                step.SourceAsset, TowardM(step));
             float popup = D((_settings != null ? _settings.ProcPopupSeconds : 0.12f) * ramp);
             if (popup <= 0f) LaunchProc(step, from, target, ramp, onDone);
             else Tween.Delay(this, popup, d => d.LaunchProc(step, from, target, ramp, onDone));
@@ -276,7 +276,7 @@ namespace Rollgeon.UI.HUD.Breakdown
         private void LaunchProc(BreakdownStep step, RectTransform from,
             BreakdownCounterView target, float ramp, Action onDone)
         {
-            _juice?.OnFlightDeparted(from, step.Target == BreakdownTarget.MultM, dieIndex: -1);
+            _juice?.OnFlightDeparted(from, TowardM(step), dieIndex: -1);
             Fly(from, target.Anchor, FormatAmount(step),
                 BreakdownIconResolver.Resolve(step.SourceAsset),
                 D((_settings != null ? _settings.ProcFlightSeconds : 0.38f) * ramp),
@@ -313,7 +313,7 @@ namespace Rollgeon.UI.HUD.Breakdown
                 _juice?.OnCascadeTelegraph(current);
             }
             _juice?.OnFlightDeparted(current != null ? current.Rect : null,
-                step.Target == BreakdownTarget.MultM, dieIndex: -1);
+                TowardM(step), dieIndex: -1);
 
             float flight = BreakdownFeelMath.FloorUnlessSkipping(
                 D((_settings != null ? _settings.ProcFlightSeconds : 0.38f) * ramp),
@@ -675,32 +675,38 @@ namespace Rollgeon.UI.HUD.Breakdown
             var counter = TargetCounter(step);
             if (counter == null) return;
 
-            bool isM = step.Target == BreakdownTarget.MultM;
+            bool isM = TowardM(step);
             float final = isM ? (_script?.FinalM ?? 0f) : (_script?.FinalN ?? 0f);
             float i01 = BreakdownFeelMath.PunchIntensity01(step.Amount, final);
             float intensity = 1f + i01 * ((_settings != null ? _settings.PunchIntensityMax : 2f) - 1f);
             float rot = (_settings != null ? _settings.PunchRotationMaxDegrees : 4f) * i01 * (isM ? 1.5f : 1f);
 
-            counter.AddAndPunch(step.Amount, intensity, rot);
+            if (step.Target == BreakdownTarget.AddM)
+                counter.AddMultiplierBonusAndPunch(step.Amount, intensity, rot);
+            else
+                counter.AddAndPunch(step.Amount, intensity, rot);
             _juice?.OnCounterImpact(counter, isM, dieIndex,
                 BreakdownFeelMath.Accumulate01(counter.Value, final));
         }
 
+        // AddM y MultM viajan los dos al contador M; solo cambia cómo lo mueven.
+        private static bool TowardM(BreakdownStep step) => step.Target != BreakdownTarget.BaseN;
+
         private BreakdownCounterView TargetCounter(BreakdownStep step)
-            => step.Target == BreakdownTarget.MultM ? _breakdownView?.CounterM : _breakdownView?.CounterN;
+            => TowardM(step) ? _breakdownView?.CounterM : _breakdownView?.CounterN;
 
         private static string FormatAmount(BreakdownStep step)
             => step.Target == BreakdownTarget.MultM
                 ? "×" + step.Amount.ToString("0.0#")
                 // "+0.##" preserva la fracción del base override (Furia 2.75) y los
-                // enteros se siguen viendo igual que antes.
+                // enteros se siguen viendo igual que antes; AddM cae acá ("+2", "+0.05").
                 : step.Amount.ToString("+0.##;-0.##");
 
         // Todo lo que vuela hereda el color de su destino: azul hacia N, warm hacia M.
         private Color? FlightTint(BreakdownStep step)
         {
             if (_settings == null) return null;
-            return step.Target == BreakdownTarget.MultM
+            return TowardM(step)
                 ? _settings.CounterMWarmColor
                 : _settings.CounterNColor;
         }

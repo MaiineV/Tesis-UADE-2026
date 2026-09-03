@@ -20,6 +20,8 @@ namespace Rollgeon.UI.HUD.Breakdown
 
         private bool _isMultiplier;
         private float _value;
+        // Estado bipartito del M en curso (Core × (1 + Σadd)) — solo se usa en modo multiplicador.
+        private MultiplierCounterState _m;
         private Tween _punch;
         private Tween _rotJiggle;
         private Tween _flash;
@@ -62,6 +64,7 @@ namespace Rollgeon.UI.HUD.Breakdown
         {
             if (_roll.isAlive) _roll.Stop();
             _value = value;
+            _m = MultiplierCounterState.At(value);
             _isMultiplier = isMultiplier;
             Render();
         }
@@ -79,9 +82,11 @@ namespace Rollgeon.UI.HUD.Breakdown
             }
             _isMultiplier = isMultiplier;
             if (_roll.isAlive) _roll.Stop();
+            _m = MultiplierCounterState.At(value);
             _roll = Tween.Custom(this, _value, value, seconds, (view, v) =>
             {
                 view._value = v;
+                view._m = MultiplierCounterState.At(v);
                 view.Render();
             }, Ease.OutQuad);
         }
@@ -90,7 +95,36 @@ namespace Rollgeon.UI.HUD.Breakdown
         public void AddAndPunch(float amount, float punchIntensity = 1f, float rotationDegrees = 0f)
         {
             if (_roll.isAlive) _roll.Stop();
-            _value = _isMultiplier ? _value * amount : _value + amount;
+            if (_isMultiplier)
+            {
+                _m.Multiply(amount);
+                _value = _m.Value;
+            }
+            else
+            {
+                _value += amount;
+            }
+            Render();
+            Punch(punchIntensity, rotationDegrees);
+        }
+
+        /// <summary>
+        /// Aplica un bono ADITIVO sobre el 1 de M (pasos AddM: Piedra Angular "+2") con punch.
+        /// El valor mostrado sigue siendo <c>Core × (1 + Σadd)</c>, así que un "+2" con ability
+        /// 0.75 mueve el contador 1.5 — es lo que dice la fórmula.
+        /// </summary>
+        public void AddMultiplierBonusAndPunch(float bonus, float punchIntensity = 1f, float rotationDegrees = 0f)
+        {
+            if (_roll.isAlive) _roll.Stop();
+            if (_isMultiplier)
+            {
+                _m.AddBonus(bonus);
+                _value = _m.Value;
+            }
+            else
+            {
+                _value += bonus;
+            }
             Render();
             Punch(punchIntensity, rotationDegrees);
         }

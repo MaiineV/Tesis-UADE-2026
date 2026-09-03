@@ -227,6 +227,60 @@ namespace Rollgeon.Combat.Tests
         }
 
         // Fake mínimo: solo LastComboScratch importa para la fórmula.
+        // ---- Canal aditivo sobre M: M = (1 + Σbonus) × Πmult × ability ----------------
+
+        [Test]
+        public void Resolve_MultiplierBonus_AddsToOneBeforeScaling()
+        {
+            // Piedra Angular: +2 sobre el 1 de M → ×3 sin otros factores.
+            ServiceLocator.AddService<IComboPassiveService>(new FakeComboPassiveService
+            {
+                Scratch = new EnchantmentScratch { ComboMultiplierBonus = 2f }
+            }, ServiceScope.Global);
+
+            Assert.AreEqual(30, PlayerComboDamage.Resolve(_player, 10, null));
+        }
+
+        [Test]
+        public void Resolve_MultiplierBonus_ComposesAdditivelyAcrossChannels_ThenMultiplies()
+        {
+            ServiceLocator.AddService<IComboPassiveService>(new FakeComboPassiveService
+            {
+                Scratch = new EnchantmentScratch { ComboMultiplierBonus = 2f, ComboDamageMultiplier = 2f }
+            }, ServiceScope.Global);
+            ServiceLocator.AddService<IComboPlayService>(new FakeComboPlayService
+            {
+                Scratch = new EnchantmentScratch { ComboMultiplierBonus = 1f, ComboDamageMultiplier = 1.5f }
+            }, ServiceScope.Global);
+
+            // M = (1 + 2 + 1) × (2 × 1.5) = 12 → 120
+            Assert.AreEqual(120, PlayerComboDamage.Resolve(_player, 10, null));
+        }
+
+        [Test]
+        public void Resolve_MultiplierBonus_ScalesWithAbilityMultiplier()
+        {
+            ServiceLocator.AddService<IComboPlayService>(new FakeComboPlayService
+            {
+                Scratch = new EnchantmentScratch { ComboMultiplierBonus = 1f }
+            }, ServiceScope.Global);
+
+            // M = (1 + 1) × 0.75 = 1.5 → 15
+            Assert.AreEqual(15, PlayerComboDamage.Resolve(_player, 10, null, abilityMultiplier: 0.75f));
+        }
+
+        [Test]
+        public void Resolve_MultiplierBonusNegative_ClampsAtZero()
+        {
+            // Sin clamp propio: (1 − 2) deja M negativo y RoundNxM corta en 0.
+            ServiceLocator.AddService<IComboPassiveService>(new FakeComboPassiveService
+            {
+                Scratch = new EnchantmentScratch { ComboMultiplierBonus = -2f }
+            }, ServiceScope.Global);
+
+            Assert.AreEqual(0, PlayerComboDamage.Resolve(_player, 10, null));
+        }
+
         private sealed class FakeComboPassiveService : IComboPassiveService
         {
             public EnchantmentScratch Scratch;

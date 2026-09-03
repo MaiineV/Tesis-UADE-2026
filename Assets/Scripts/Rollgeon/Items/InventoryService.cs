@@ -113,6 +113,7 @@ namespace Rollgeon.Items
                 RegisterBaseDamageOverride(item);
                 ApplyRollPoolBonus(item);
                 RegisterComboRules(item);
+                RegisterHealingRules(item);
                 if (item.ActiveSlotBonus > 0) AddActiveSlotBonus(item.ActiveSlotBonus);
                 RegisterEnchantmentCostModifier(item);
                 RegisterEnchantmentWeightModifier(item);
@@ -167,6 +168,7 @@ namespace Rollgeon.Items
                 UnregisterBaseDamageOverride(item);
                 RevertRollPoolBonus(item);
                 UnregisterComboRules(item);
+                UnregisterHealingRules(item);
                 if (item.ActiveSlotBonus > 0) AddActiveSlotBonus(-item.ActiveSlotBonus);
                 UnregisterEnchantmentCostModifier(item);
                 UnregisterEnchantmentWeightModifier(item);
@@ -430,6 +432,9 @@ namespace Rollgeon.Items
                         SourceGuid = playerGuid,
                         TargetGuid = otherGuid != Guid.Empty ? otherGuid : playerGuid,
                         SourceItemId = capturedItem.ItemId,
+                        // Eventos de tirada (OnRollResolved: [guid, caras, kind, combo]) traen
+                        // los dados: sin esto un reader de dados (Bolsa del Impar) leía null.
+                        DiceResult = FindDiceArg(args),
                         lastResult = true,
                     };
                     var preCtx = new PreConditionContext
@@ -444,6 +449,16 @@ namespace Rollgeon.Items
                 EventManager.Subscribe(hook.TriggerEvent, handler);
                 _hookHandlers.Add((item.ItemId, hook.TriggerEvent, handler));
             }
+        }
+
+        // El primer arg que sea una lista de enteros es la tirada (contrato de OnRollResolved /
+        // OnDiceRolled). Null si el evento no lleva dados — los readers de dados devuelven 0.
+        private static IReadOnlyList<int> FindDiceArg(object[] args)
+        {
+            if (args == null) return null;
+            for (int i = 0; i < args.Length; i++)
+                if (args[i] is IReadOnlyList<int> dice) return dice;
+            return null;
         }
 
         private void BindComboPlayedHook(ItemSO item, PassiveItemHook hook)
@@ -673,6 +688,34 @@ namespace Rollgeon.Items
         }
 
         // ======================================================================
+        // Healing rules (Ayuno) — mismo patrón que las reglas de combo.
+        // ======================================================================
+
+        private readonly HashSet<string> _registeredHealingRules = new();
+
+        private void RegisterHealingRules(ItemSO item)
+        {
+            if (!item.BlocksPassiveItemHealing) return;
+            if (!ServiceLocator.TryGetService<Rollgeon.Combat.Healing.IHealingRuleService>(out var rules)
+                || rules == null)
+            {
+                Debug.LogWarning("[InventoryService] IHealingRuleService no registrado — el bloqueo de " +
+                                 $"curas de '{item.ItemId}' no se aplica.");
+                return;
+            }
+            rules.AddPassiveHealingBlock(item.ItemId);
+            _registeredHealingRules.Add(item.ItemId);
+        }
+
+        private void UnregisterHealingRules(ItemSO item)
+        {
+            if (item == null || !_registeredHealingRules.Remove(item.ItemId)) return;
+            if (ServiceLocator.TryGetService<Rollgeon.Combat.Healing.IHealingRuleService>(out var rules)
+                && rules != null)
+                rules.RemovePassiveHealingBlock(item.ItemId);
+        }
+
+        // ======================================================================
         // Enchantment cost modifier (Moneda Maldita)
         // ======================================================================
 
@@ -862,6 +905,15 @@ namespace Rollgeon.Items
                     ecm.Unregister(id);
             }
             _registeredCostModifiers.Clear();
+
+            if (_registeredHealingRules.Count > 0
+                && ServiceLocator.TryGetService<Rollgeon.Combat.Healing.IHealingRuleService>(out var hrs)
+                && hrs != null)
+            {
+                foreach (var id in _registeredHealingRules)
+                    hrs.RemovePassiveHealingBlock(id);
+            }
+            _registeredHealingRules.Clear();
         }
     }
 }

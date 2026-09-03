@@ -2599,6 +2599,62 @@ MonoBehaviour:
     m_Key: boss.tahur.desc
     m_Metadata:
       m_Items: []
+  - m_Id: 18299679601246208
+    m_Key: segunda.oportunidad.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18299679638994944
+    m_Key: segunda.oportunidad.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18299679659966464
+    m_Key: dados.en.reserva.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18299679659966465
+    m_Key: dados.en.reserva.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18299679659966466
+    m_Key: piedra.angular.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18299679659966467
+    m_Key: piedra.angular.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18299679659966468
+    m_Key: fuente.magica.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18299679659966469
+    m_Key: fuente.magica.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18299679659966470
+    m_Key: vertigo.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18299679659966471
+    m_Key: vertigo.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18299679659966472
+    m_Key: bolsa.del.impar.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18299679659966473
+    m_Key: bolsa.del.impar.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18299679659966474
+    m_Key: ayuno.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18299679659966475
+    m_Key: ayuno.desc
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

@@ -1088,6 +1088,14 @@ MonoBehaviour:
     m_Localized: Explodes in {0} turns
     m_Metadata:
       m_Items: []
+  - m_Id: 18299681299939328
+    m_Localized: It broke!
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18299681333493760
+    m_Localized: '{0} ran out of power and is gone.'
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

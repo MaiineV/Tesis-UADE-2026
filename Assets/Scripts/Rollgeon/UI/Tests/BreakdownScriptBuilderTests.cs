@@ -15,12 +15,111 @@ namespace Rollgeon.UI.Tests
     [TestFixture]
     public class BreakdownScriptBuilderTests
     {
-        private static ScratchContribution Enchant(int bagSlot, int bonus, float factor = 1f)
+        private static ScratchContribution Enchant(int bagSlot, int bonus, float factor = 1f, float multBonus = 0f)
             => new ScratchContribution(ScratchSourceKind.Enchantment, $"ench.slot{bagSlot}",
-                null, bagSlot, bonus, factor, false);
+                null, bagSlot, bonus, factor, false, multBonus);
 
-        private static ScratchContribution Item(string id, int bonus, float factor = 1f)
-            => new ScratchContribution(ScratchSourceKind.Item, id, null, -1, bonus, factor, false);
+        private static ScratchContribution Item(string id, int bonus, float factor = 1f, float multBonus = 0f)
+            => new ScratchContribution(ScratchSourceKind.Item, id, null, -1, bonus, factor, false, multBonus);
+
+        // ---- Canal aditivo sobre M (AddM) ----------------------------------------------
+
+        [Test]
+        public void Build_SourceWithMultiplierBonus_EmitsAddMStep()
+        {
+            // Piedra Angular: +2 sobre el 1 de M → M = 1 × (1 + 2) = 3
+            var bd = new DamageBreakdown
+            {
+                ComboBase = 10,
+                N = 10,
+                ScratchMultiplierBonus = 2f,
+                ScratchMultiplier = 1f,
+                AbilityMultiplier = 1f,
+                M = 3f,
+                Final = 30,
+                Sources = new List<ScratchContribution> { Item("piedra.angular", 0, multBonus: 2f) },
+            };
+
+            var script = BreakdownScriptBuilder.Build(bd);
+
+            Assert.AreEqual(1, script.Steps.Count);
+            Assert.AreEqual(BreakdownStepKind.GlobalMod, script.Steps[0].Kind);
+            Assert.AreEqual(BreakdownTarget.AddM, script.Steps[0].Target);
+            Assert.AreEqual(2f, script.Steps[0].Amount, 0.0001f);
+            Assert.IsTrue(script.Reconciled);
+        }
+
+        [Test]
+        public void Build_MixedAddsAndMults_ReconcilesInJournalOrder()
+        {
+            // ×1.5 primero, +2 después, ability 0.75 → M = 0.75 × (1 + 2) × 1.5 = 3.375
+            var bd = new DamageBreakdown
+            {
+                ComboBase = 10,
+                N = 10,
+                ScratchMultiplierBonus = 2f,
+                ScratchMultiplier = 1.5f,
+                AbilityMultiplier = 0.75f,
+                M = 3.375f,
+                Final = 34,
+                Sources = new List<ScratchContribution>
+                {
+                    Item("item.gemelo", 0, factor: 1.5f),
+                    Item("piedra.angular", 0, multBonus: 2f),
+                },
+            };
+
+            var script = BreakdownScriptBuilder.Build(bd);
+
+            Assert.AreEqual(2, script.Steps.Count);
+            Assert.AreEqual(BreakdownTarget.MultM, script.Steps[0].Target);
+            Assert.AreEqual(BreakdownTarget.AddM, script.Steps[1].Target);
+            Assert.IsTrue(script.Reconciled, "el orden AddM/MultM del journal no cambia el M final");
+        }
+
+        [Test]
+        public void Build_SourceWithBonusAddMAndMult_EmitsThreeSteps_BaseN_AddM_MultM()
+        {
+            var bd = new DamageBreakdown
+            {
+                ComboBase = 10,
+                AdditiveBonus = 2,
+                N = 12,
+                ScratchMultiplierBonus = 1f,
+                ScratchMultiplier = 2f,
+                AbilityMultiplier = 1f,
+                M = 4f,
+                Final = 48,
+                Sources = new List<ScratchContribution> { Item("item.todo", 2, factor: 2f, multBonus: 1f) },
+            };
+
+            var script = BreakdownScriptBuilder.Build(bd);
+
+            Assert.AreEqual(3, script.Steps.Count);
+            Assert.AreEqual(BreakdownTarget.BaseN, script.Steps[0].Target);
+            Assert.AreEqual(BreakdownTarget.AddM, script.Steps[1].Target);
+            Assert.AreEqual(BreakdownTarget.MultM, script.Steps[2].Target);
+            Assert.IsTrue(script.Reconciled);
+        }
+
+        [Test]
+        public void Build_MultiplierBonusMissingFromJournal_MarksNotReconciled()
+        {
+            var bd = new DamageBreakdown
+            {
+                ComboBase = 10,
+                N = 10,
+                ScratchMultiplierBonus = 2f,
+                ScratchMultiplier = 1f,
+                AbilityMultiplier = 1f,
+                M = 3f,
+                Final = 30,
+            };
+
+            var script = BreakdownScriptBuilder.Build(bd);
+
+            Assert.IsFalse(script.Reconciled);
+        }
 
         [Test]
         public void Build_OrdersSteps_PlayerBase_DiceBySlotWithProcs_ThenGlobals()

@@ -32,6 +32,10 @@ namespace Rollgeon.UI
         public const string SecondWindTitle = "item.second_wind.title";
         public const string SecondWindBody = "item.second_wind.body";
 
+        // Toast de item roto (ItemBrokeDownFeedbackView): {0} = item. Eco Menguante al llegar a x1.
+        public const string ItemBrokeDownTitle = "item.broke_down.title";
+        public const string ItemBrokeDownBody = "item.broke_down.body";
+
         /// <summary>Todas las keys de esta clase, para validación en tests.</summary>
         public static IReadOnlyList<string> All { get; } = new[]
         {
@@ -40,6 +44,7 @@ namespace Rollgeon.UI
             RejectOnCooldown, RejectItemUnavailable,
             RejectNoValidTarget, RejectNoActiveItem,
             SecondWindTitle, SecondWindBody,
+            ItemBrokeDownTitle, ItemBrokeDownBody,
         };
     }
 }

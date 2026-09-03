@@ -13,10 +13,11 @@ namespace Rollgeon.Combos.Concretes
     /// </para>
     /// <para>
     /// <b>Compás Salteado</b> (<see cref="IComboRuleService.LadderAllowsSkippedStep"/>): con la
-    /// regla activa también vale una progresión de paso 2 en cualquier paridad
-    /// (<c>[3,5,7,9,11]</c>, <c>[2,4,6,8,10]</c>). Sigue siendo el mismo combo — mismo id, mismo
-    /// base, mismas pasivas de Escalera. Sin servicio registrado rige la regla estándar, así
-    /// que el preview del HUD y el golpe real (ambos pasan por acá) siempre coinciden.
+    /// regla activa cada salto entre valores consecutivos puede ser 1 o 2, mezclados
+    /// (<c>[3,5,7,9,11]</c>, <c>[2,4,6,8,10]</c>, <c>[5,7,9,10,11]</c> — decisión GD 2026-09-03:
+    /// la escalera "mixta" también vale). Sigue siendo el mismo combo — mismo id, mismo base,
+    /// mismas pasivas de Escalera. Sin servicio registrado rige la regla estándar, así que el
+    /// preview del HUD y el golpe real (ambos pasan por acá) siempre coinciden.
     /// </para>
     /// </summary>
     [CreateAssetMenu(menuName = "Rollgeon/Combos/Escalera", fileName = "Combo_Escalera")]
@@ -31,14 +32,19 @@ namespace Rollgeon.Combos.Concretes
             if (finalDice == null || finalDice.Length < StraightLength) return false;
             var distinct = finalDice.Distinct().OrderBy(d => d).ToArray();
             if (distinct.Length != StraightLength) return false;
-            if (HasConstantStep(distinct, 1)) return true;
-            return LadderAllowsSkippedStep() && HasConstantStep(distinct, SkippedStep);
+            if (HasStepsWithin(distinct, 1, 1)) return true;
+            return LadderAllowsSkippedStep() && HasStepsWithin(distinct, 1, SkippedStep);
         }
 
-        private static bool HasConstantStep(int[] sorted, int step)
+        // Cada salto entre vecinos ordenados tiene que caer en [minStep, maxStep]; con
+        // min == max es la regla estándar de paso constante.
+        private static bool HasStepsWithin(int[] sorted, int minStep, int maxStep)
         {
             for (int i = 1; i < sorted.Length; i++)
-                if (sorted[i] - sorted[i - 1] != step) return false;
+            {
+                int step = sorted[i] - sorted[i - 1];
+                if (step < minStep || step > maxStep) return false;
+            }
             return true;
         }
 

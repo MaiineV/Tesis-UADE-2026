@@ -27,205 +27,7 @@ MonoBehaviour:
         Rollgeon]], mscorlib
     - Name: 
       Entry: 12
-      Data: 1
-    - Name: 
-      Entry: 7
-      Data: 1|Rollgeon.Items.PassiveItemHook, Rollgeon
-    - Name: Kind
-      Entry: 3
-      Data: 1
-    - Name: TriggerEvent
-      Entry: 3
       Data: 0
-    - Name: ComboFilter
-      Entry: 7
-      Data: 2|Rollgeon.Upgrades.Dice.ComboFilter, Rollgeon
-    - Name: Mode
-      Entry: 3
-      Data: 1
-    - Name: ComboIds
-      Entry: 7
-      Data: 3|System.Collections.Generic.List`1[[System.String, mscorlib]], mscorlib
-    - Name: 
-      Entry: 12
-      Data: 0
-    - Name: 
-      Entry: 13
-      Data: 
-    - Name: 
-      Entry: 8
-      Data: 
-    - Name: 
-      Entry: 8
-      Data: 
-    - Name: ActionKindFilter
-      Entry: 3
-      Data: 1
-    - Name: Subject
-      Entry: 3
-      Data: 0
-    - Name: Effect
-      Entry: 7
-      Data: 4|Rollgeon.Effects.EffectData, Rollgeon
-    - Name: Label
-      Entry: 1
-      Data: Effect Group
-    - Name: PreConditions
-      Entry: 7
-      Data: 5|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
-        Rollgeon]], mscorlib
-    - Name: 
-      Entry: 12
-      Data: 0
-    - Name: 
-      Entry: 13
-      Data: 
-    - Name: 
-      Entry: 8
-      Data: 
-    - Name: Effects
-      Entry: 7
-      Data: 6|System.Collections.Generic.List`1[[Rollgeon.Effects.IEffect, Rollgeon]],
-        mscorlib
-    - Name: 
-      Entry: 12
-      Data: 1
-    - Name: 
-      Entry: 7
-      Data: 7|Rollgeon.Effects.Concretes.EffMultiplyComboDamage, Rollgeon
-    - Name: Selection
-      Entry: 7
-      Data: 8|Rollgeon.Effects.Selection.SelectionSettings, Rollgeon
-    - Name: SlotState
-      Entry: 3
-      Data: 1
-    - Name: Timing
-      Entry: 3
-      Data: 0
-    - Name: EntityFilter
-      Entry: 3
-      Data: 2
-    - Name: IsGlobal
-      Entry: 5
-      Data: false
-    - Name: Range
-      Entry: 3
-      Data: 1
-    - Name: RangeMode
-      Entry: 3
-      Data: 0
-    - Name: RangeFromMovementDie
-      Entry: 5
-      Data: false
-    - Name: TargetMode
-      Entry: 3
-      Data: 0
-    - Name: AoeShape
-      Entry: 3
-      Data: 0
-    - Name: AoeRadius
-      Entry: 3
-      Data: 1
-    - Name: PatternRows
-      Entry: 3
-      Data: 1
-    - Name: PatternCols
-      Entry: 3
-      Data: 1
-    - Name: PatternCenter
-      Entry: 7
-      Data: UnityEngine.Vector2Int, UnityEngine.CoreModule
-    - Name: 
-      Entry: 3
-      Data: 0
-    - Name: 
-      Entry: 3
-      Data: 0
-    - Name: 
-      Entry: 8
-      Data: 
-    - Name: PatternFlat
-      Entry: 7
-      Data: 9|System.Boolean[], mscorlib
-    - Name: 
-      Entry: 14
-      Data: 1
-    - Name: 
-      Entry: 5
-      Data: true
-    - Name: 
-      Entry: 13
-      Data: 
-    - Name: 
-      Entry: 8
-      Data: 
-    - Name: IsConstantSelectionCount
-      Entry: 5
-      Data: true
-    - Name: SelectionCount
-      Entry: 3
-      Data: 1
-    - Name: SelectionCountReader
-      Entry: 6
-      Data: 
-    - Name: AutoResolve
-      Entry: 5
-      Data: false
-    - Name: AutoAccept
-      Entry: 5
-      Data: true
-    - Name: 
-      Entry: 8
-      Data: 
-    - Name: _multiplier
-      Entry: 4
-      Data: 1
-    - Name: _multiplierReader
-      Entry: 7
-      Data: 10|Rollgeon.Effects.Readers.ReadAttackDecayMultiplier, Rollgeon
-    - Name: Start
-      Entry: 4
-      Data: 5
-    - Name: DecayPerAttack
-      Entry: 4
-      Data: 0.1
-    - Name: Min
-      Entry: 4
-      Data: 1
-    - Name: 
-      Entry: 8
-      Data: 
-    - Name: 
-      Entry: 8
-      Data: 
-    - Name: 
-      Entry: 13
-      Data: 
-    - Name: 
-      Entry: 8
-      Data: 
-    - Name: TargetSelector
-      Entry: 6
-      Data: 
-    - Name: 
-      Entry: 8
-      Data: 
-    - Name: PersistentModifiers
-      Entry: 7
-      Data: 11|System.Collections.Generic.List`1[[Rollgeon.Items.PersistentModifierDef,
-        Rollgeon]], mscorlib
-    - Name: 
-      Entry: 12
-      Data: 0
-    - Name: 
-      Entry: 13
-      Data: 
-    - Name: 
-      Entry: 8
-      Data: 
-    - Name: 
-      Entry: 8
-      Data: 
     - Name: 
       Entry: 13
       Data: 
@@ -234,7 +36,7 @@ MonoBehaviour:
       Data: 
     - Name: BaseDamageOverride
       Entry: 7
-      Data: 12|Rollgeon.Items.BaseDamageOverrideDef, Rollgeon
+      Data: 1|Rollgeon.Items.BaseDamageOverrideDef, Rollgeon
     - Name: Enabled
       Entry: 5
       Data: false
@@ -247,15 +49,36 @@ MonoBehaviour:
     - Name: 
       Entry: 8
       Data: 
+    - Name: DecayingMultiplier
+      Entry: 7
+      Data: 2|Rollgeon.Items.DecayingMultiplierDef, Rollgeon
+    - Name: Enabled
+      Entry: 5
+      Data: true
+    - Name: Start
+      Entry: 4
+      Data: 5
+    - Name: DecayPerCombo
+      Entry: 4
+      Data: 0.2
+    - Name: Min
+      Entry: 4
+      Data: 1
+    - Name: BreakAtMin
+      Entry: 5
+      Data: true
+    - Name: 
+      Entry: 8
+      Data: 
     - Name: OnNegativeBand
       Entry: 7
-      Data: 13|Rollgeon.Effects.EffectData, Rollgeon
+      Data: 3|Rollgeon.Effects.EffectData, Rollgeon
     - Name: Label
       Entry: 1
       Data: Effect Group
     - Name: PreConditions
       Entry: 7
-      Data: 14|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
+      Data: 4|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
         Rollgeon]], mscorlib
     - Name: 
       Entry: 12
@@ -268,7 +91,7 @@ MonoBehaviour:
       Data: 
     - Name: Effects
       Entry: 7
-      Data: 15|System.Collections.Generic.List`1[[Rollgeon.Effects.IEffect, Rollgeon]],
+      Data: 5|System.Collections.Generic.List`1[[Rollgeon.Effects.IEffect, Rollgeon]],
         mscorlib
     - Name: 
       Entry: 12
@@ -287,13 +110,13 @@ MonoBehaviour:
       Data: 
     - Name: OnMixedBand
       Entry: 7
-      Data: 16|Rollgeon.Effects.EffectData, Rollgeon
+      Data: 6|Rollgeon.Effects.EffectData, Rollgeon
     - Name: Label
       Entry: 1
       Data: Effect Group
     - Name: PreConditions
       Entry: 7
-      Data: 17|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
+      Data: 7|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
         Rollgeon]], mscorlib
     - Name: 
       Entry: 12
@@ -306,7 +129,7 @@ MonoBehaviour:
       Data: 
     - Name: Effects
       Entry: 7
-      Data: 18|System.Collections.Generic.List`1[[Rollgeon.Effects.IEffect, Rollgeon]],
+      Data: 8|System.Collections.Generic.List`1[[Rollgeon.Effects.IEffect, Rollgeon]],
         mscorlib
     - Name: 
       Entry: 12
@@ -325,13 +148,13 @@ MonoBehaviour:
       Data: 
     - Name: OnPositiveBand
       Entry: 7
-      Data: 19|Rollgeon.Effects.EffectData, Rollgeon
+      Data: 9|Rollgeon.Effects.EffectData, Rollgeon
     - Name: Label
       Entry: 1
       Data: Effect Group
     - Name: PreConditions
       Entry: 7
-      Data: 20|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
+      Data: 10|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
         Rollgeon]], mscorlib
     - Name: 
       Entry: 12
@@ -344,7 +167,7 @@ MonoBehaviour:
       Data: 
     - Name: Effects
       Entry: 7
-      Data: 21|System.Collections.Generic.List`1[[Rollgeon.Effects.IEffect, Rollgeon]],
+      Data: 11|System.Collections.Generic.List`1[[Rollgeon.Effects.IEffect, Rollgeon]],
         mscorlib
     - Name: 
       Entry: 12
@@ -363,13 +186,13 @@ MonoBehaviour:
       Data: 
     - Name: OnActivate
       Entry: 7
-      Data: 22|Rollgeon.Effects.EffectData, Rollgeon
+      Data: 12|Rollgeon.Effects.EffectData, Rollgeon
     - Name: Label
       Entry: 1
       Data: Effect Group
     - Name: PreConditions
       Entry: 7
-      Data: 23|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
+      Data: 13|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
         Rollgeon]], mscorlib
     - Name: 
       Entry: 12
@@ -382,7 +205,7 @@ MonoBehaviour:
       Data: 
     - Name: Effects
       Entry: 7
-      Data: 24|System.Collections.Generic.List`1[[Rollgeon.Effects.IEffect, Rollgeon]],
+      Data: 14|System.Collections.Generic.List`1[[Rollgeon.Effects.IEffect, Rollgeon]],
         mscorlib
     - Name: 
       Entry: 12
@@ -412,6 +235,7 @@ MonoBehaviour:
   UniquePerRun: 1
   RollPoolBonus: 0
   LadderSkippedStep: 0
+  BlocksPassiveItemHealing: 0
   ActiveSlotBonus: 0
   EnchantmentCostMultiplier: 1
   CursedEnchantmentWeightMultiplier: 1

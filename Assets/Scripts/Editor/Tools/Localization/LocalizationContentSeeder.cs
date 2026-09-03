@@ -277,6 +277,15 @@ namespace Rollgeon.EditorTools.Localization
                 "{0} te dejó en {1} HP.",
                 "{0} left you at {1} HP.");
 
+            // Toast de item roto (ItemBrokeDownFeedbackView): Eco Menguante al agotar su
+            // multiplicador. {0} = nombre del item.
+            Ui(UiTextKeys.ItemBrokeDownTitle,
+                "¡Se rompió!",
+                "It broke!");
+            Ui(UiTextKeys.ItemBrokeDownBody,
+                "{0} agotó su poder y desapareció.",
+                "{0} ran out of power and is gone.");
+
             // Toast al tocar un chip de acción no usable (ActionRejectToast):
             // título + motivo concreto resuelto por PlayerActionButtonsView.
             Ui(UiTextKeys.RejectTitle,

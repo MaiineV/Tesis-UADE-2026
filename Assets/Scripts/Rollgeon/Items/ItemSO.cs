@@ -76,6 +76,17 @@ namespace Rollgeon.Items
         [NonSerialized, OdinSerialize]
         public BaseDamageOverrideDef BaseDamageOverride = new();
 
+        [Title("Decaying Multiplier")]
+        [InfoBox("Multiplicador de ATAQUE que arranca en Start al adquirir el item y baja " +
+                 "DecayPerCombo con CADA combo de combate jugado (ataque, defensa o cura) en la " +
+                 "run — persiste entre combates y en el save. Al tocar Min el item se rompe " +
+                 "(se remueve con toast) si BreakAtMin. Eco Menguante: 5 / 0.2 / 1.")]
+        [ShowIf("@Type == ItemType.Passive")]
+        // Mismo mecanismo que PassiveHooks: [NonSerialized] apaga la copia nativa de Unity,
+        // el dato real vive en serializationData (SerializedScriptableObject).
+        [NonSerialized, OdinSerialize]
+        public DecayingMultiplierDef DecayingMultiplier = new();
+
         [Title("Roll Pool")]
         [InfoBox("Bonus PERMANENTE al pool de rolls mientras el item esté en el inventario " +
                  "(sube el máximo y los rolls de arranque de cada combate). Llamado de " +
@@ -90,6 +101,13 @@ namespace Rollgeon.Items
                  "Sigue siendo combo.ladder. Compás Salteado. Se revierte al perder el item.")]
         [ShowIf("@Type == ItemType.Passive")]
         public bool LadderSkippedStep;
+
+        [Title("Healing Rules")]
+        [InfoBox("Mientras el item esté en el inventario, las curas que vienen de items PASIVOS " +
+                 "(Talismán Vital, Corazón de la Fortuna, Lágrimas…) se ignoran. Ayuno. No toca " +
+                 "curas de clase, pociones ni Segundo Aliento. Se revierte al perder el item.")]
+        [ShowIf("@Type == ItemType.Passive")]
+        public bool BlocksPassiveItemHealing;
 
         [Title("Active Slots")]
         [InfoBox("Slots de items activos extra mientras el item esté en el inventario. " +

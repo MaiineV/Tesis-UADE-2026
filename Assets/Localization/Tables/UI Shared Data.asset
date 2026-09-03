@@ -1051,6 +1051,14 @@ MonoBehaviour:
     m_Key: prop.tooltip.fuse
     m_Metadata:
       m_Items: []
+  - m_Id: 18299681299939328
+    m_Key: item.broke_down.title
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18299681333493760
+    m_Key: item.broke_down.body
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:
