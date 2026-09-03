@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Patterns;
+using Rollgeon.Upgrades.Dice;
 using Rollgeon.ActionRolls;
 using Rollgeon.Combat.Actions;
 using Rollgeon.Combat.Rolls;
@@ -312,6 +313,10 @@ namespace Rollgeon.Combat.Handoff
 
         private void RollViaThrow(Guid playerGuid, DiceBagSO bag, IDiceRoller roller)
         {
+            // Ancla: mano fresca ⇒ ningún dado viene guardado.
+            if (ServiceLocator.TryGetService<IDiceHoldStreakService>(out var streaks) && streaks != null)
+                streaks.OnFreshRoll();
+
             if (ServiceLocator.TryGetService<IDiceThrowService>(out var throwSvc) && throwSvc != null)
             {
                 throwSvc.RequestRoll(playerGuid, bag, faces => _lastFaces = faces);
@@ -323,6 +328,11 @@ namespace Rollgeon.Combat.Handoff
 
         private void RerollViaThrow(Guid playerGuid, DiceBagSO bag, IDiceRoller roller, bool[] keep)
         {
+            // Ancla: los keep=true suman una tirada guardada; los que vuelan vuelven a 0.
+            // Se reporta al pedir el reroll (la máscara ya es definitiva), no al reveal.
+            if (ServiceLocator.TryGetService<IDiceHoldStreakService>(out var streaks) && streaks != null)
+                streaks.OnReroll(keep);
+
             if (ServiceLocator.TryGetService<IDiceThrowService>(out var throwSvc) && throwSvc != null)
             {
                 throwSvc.RequestReroll(playerGuid, bag, _lastFaces, keep, faces => _lastFaces = faces);
@@ -1097,7 +1107,7 @@ namespace Rollgeon.Combat.Handoff
 
             // keep all-false = vuela la mano entera; los dados bloqueados (Boss 1)
             // quedan forzados a keep=true como en cualquier reroll.
-            var keep = KeepForcingBlockedDice(new bool[_lastFaces.Length], _lastFaces.Length);
+            var keep = ApplyKeepConstraints(new bool[_lastFaces.Length], _lastFaces.Length);
 
             // Holds marcados durante la ventana del delay quedarían fuera de sync
             // con el reveal nuevo — se limpian antes de re-tirar.
@@ -1124,7 +1134,7 @@ namespace Rollgeon.Combat.Handoff
             // quedan. El keepOverride del grab-to-reroll ya es un keep físico (los no
             // agarrados) y NO pasa por el mapeo.
             // Boss 1 (§2): forzamos keep=true en los dados bloqueados para que NO se re-rolleen.
-            var keep = KeepForcingBlockedDice(
+            var keep = ApplyKeepConstraints(
                 keepOverride ?? KeepFromSelection(hud.GetCurrentKeep(), _lastFaces?.Length ?? 0),
                 _lastFaces?.Length ?? 0);
 
@@ -1770,14 +1780,25 @@ namespace Rollgeon.Combat.Handoff
             return result;
         }
 
-        // Boss 1 (§2): el dado bloqueado NO se puede re-rollear. Fuerza keep=true en los índices
-        // bloqueados para que el roller conserve su cara en el reroll.
-        private static bool[] KeepForcingBlockedDice(bool[] keep, int diceLen)
+        // Restricciones sobre la máscara keep que el jugador NO controla:
+        // - Boss 1 (§2): el dado bloqueado NO se puede re-rollear ⇒ keep=true.
+        // - Lento (CapPreventHolding): el dado NO se puede guardar ⇒ keep=false, aunque el
+        //   HUD lo tenga marcado (el gate de DiceZoneView ya lo impide; esto cubre el
+        //   grab-to-reroll y cualquier keepOverride programático).
+        // El bloqueo gana sobre Lento: un dado bloqueado no puede volar aunque sea Lento.
+        public static bool[] ApplyKeepConstraints(bool[] keep, int diceLen)
         {
             var result = CopyKeep(keep, diceLen);
+
+            bool hasBag = ServiceLocator.TryGetService<IDiceEnchantmentService>(out var ench) && ench?.Bag != null;
+            if (hasBag)
+                for (int i = 0; i < result.Length; i++)
+                    if (ench.Bag.SlotHasCapability<CapPreventHolding>(i)) result[i] = false;
+
             if (ServiceLocator.TryGetService<Rollgeon.Combat.DiceBlock.IDiceBlockService>(out var db) && db != null)
                 for (int i = 0; i < result.Length; i++)
                     if (db.IsBlocked(i)) result[i] = true;
+
             return result;
         }
 

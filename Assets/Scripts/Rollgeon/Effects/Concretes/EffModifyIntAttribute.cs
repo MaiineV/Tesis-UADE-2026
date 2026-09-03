@@ -80,6 +80,13 @@ namespace Rollgeon.Effects.Concretes
 
         public override string GetEffectName() => $"Modify {TargetStat} ({Operation})";
 
+        /// <summary>Setter de autoría (tooling/tests): fuente Constant con el monto dado.</summary>
+        public void EditorSetConstantAmount(int amount)
+        {
+            _amountSource = DamageSource.Constant;
+            _baseAmount = amount;
+        }
+
         public override bool ApplyEffect(EffectContext context)
         {
             if (context == null) return false;
@@ -229,27 +236,7 @@ namespace Rollgeon.Effects.Concretes
         /// fuente conocida ⇒ <see cref="int.MaxValue"/> (no capea). Mismo criterio que
         /// <c>RunController.BuildMaxHpResolver</c>.
         /// </summary>
-        private static int ResolveMaxHp(Guid target)
-        {
-            if (ServiceLocator.TryGetService<IEnemyAIRegistry>(out var aiRegistry)
-                && aiRegistry != null
-                && aiRegistry.TryGet(target, out _, out var maxHp)
-                && maxHp > 0)
-            {
-                return maxHp;
-            }
-
-            if (ServiceLocator.TryGetService<IPlayerService>(out var players)
-                && players != null
-                && players.PlayerGuid == target)
-            {
-                // BUG-022: incluye los grants in-run (MaxHealth.ModifiedValue), con
-                // fallback interno a BaseMaxHp.
-                int resolved = Rollgeon.Player.PlayerMaxHp.Resolve(target);
-                if (resolved > 0) return resolved;
-            }
-
-            return int.MaxValue;
-        }
+        // Resolución compartida con las preconditions de umbral de HP (PcTargetHpBelow).
+        private static int ResolveMaxHp(Guid target) => Rollgeon.Combat.MaxHpResolver.Resolve(target);
     }
 }

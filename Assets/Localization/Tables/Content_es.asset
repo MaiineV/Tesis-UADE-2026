@@ -256,8 +256,8 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 5531895623691
-    m_Localized: "Si este dado se bloquea entre tiradas, su resultado aumenta +1
-      por tirada bloqueada (m\xE1x +3)."
+    m_Localized: "Si guard\xE1s este dado entre tiradas, aporta +5 de da\xF1o por
+      cada tirada que pase sin relanzarlo (m\xE1x +15). Se pierde al relanzarlo."
     m_Metadata:
       m_Items: []
   - m_Id: 5531895623692
@@ -265,7 +265,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 5531895623693
-    m_Localized: "Otorga 3 de oro extra al completar un combo de tr\xEDo o superior."
+    m_Localized: "Otorga 5 de oro al completar un tr\xEDo, p\xF3ker o generala."
     m_Metadata:
       m_Items: []
   - m_Id: 5531895623694
@@ -315,7 +315,8 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 5531895623705
-    m_Localized: "Si se utiliza en un combo de full house da 2 m\xE1s de escudo."
+    m_Localized: "Si este dado participa en un p\xF3ker, gener\xE1s 15 puntos de
+      escudo."
     m_Metadata:
       m_Items: []
   - m_Id: 5531895623706
@@ -331,8 +332,8 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 5531895623709
-    m_Localized: "El dado muestra su valor m\xE1ximo y participa en combo; genera
-      2 puntos de escudo."
+    m_Localized: "Si este dado saca su valor m\xE1ximo y participa en un combo, gener\xE1s
+      30 puntos de escudo."
     m_Metadata:
       m_Items: []
   - m_Id: 5531895623710
@@ -340,7 +341,8 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 5531895623711
-    m_Localized: 50% de chance de que el dado no cuente para el combo.
+    m_Localized: "En cada tirada, 50% de que este dado no sume da\xF1o y 50% de que
+      sume el doble. Sigue contando para formar el combo."
     m_Metadata:
       m_Items: []
   - m_Id: 5531895623712
@@ -382,7 +384,8 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 5531895623721
-    m_Localized: Este dado no se puede bloquear entre tiradas.
+    m_Localized: "Este dado no se puede guardar entre tiradas: siempre se relanza.
+      A cambio, suma +5 de da\xF1o cuando participa en un combo."
     m_Metadata:
       m_Items: []
   - m_Id: 5531895623722
@@ -390,7 +393,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 5531895623723
-    m_Localized: Otorga 5 de oro al completar una escalera.
+    m_Localized: Si este dado participa en una generala, otorga 12 de oro.
     m_Metadata:
       m_Items: []
   - m_Id: 5531895623724
@@ -449,7 +452,8 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 5531899817985
-    m_Localized: "El dado pierde 1 de su resultado final (m\xEDnimo 1)."
+    m_Localized: "Este dado no suma da\xF1o, pero cada vez que participa en un combo
+      genera +2 de oro."
     m_Metadata:
       m_Items: []
   - m_Id: 5531899817986
@@ -473,7 +477,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 5531899817991
-    m_Localized: Suma +2 al resultado final del dado.
+    m_Localized: "Este dado aporta +2 de da\xF1o cuando participa en un combo."
     m_Metadata:
       m_Items: []
   - m_Id: 5531899817992
@@ -498,8 +502,8 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 5531899817997
-    m_Localized: Cada vez que participa en un combo consume 2 de oro. Sin oro no
-      puede participar.
+    m_Localized: "Cada vez que participa en un combo consume 2 de oro y suma +0,2
+      al multiplicador. Sin oro, el combo no hace da\xF1o."
     m_Metadata:
       m_Items: []
   - m_Id: 5531899817998
@@ -515,8 +519,8 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 5531899818001
-    m_Localized: "Al sacar el m\xE1ximo, el resultado se duplica. Al sacar el m\xEDnimo,
-      vale 0."
+    m_Localized: "Al sacar el m\xE1ximo, este dado aporta el doble de da\xF1o. Con
+      cualquier otra cara aporta la mitad."
     m_Metadata:
       m_Items: []
   - m_Id: 5531975315456
@@ -2728,6 +2732,51 @@ MonoBehaviour:
   - m_Id: 18299679659966475
     m_Localized: "No recib\xEDs curaci\xF3n de items pasivos. A cambio, todos tus
       multiplicadores de combo suman +3."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18332491544969216
+    m_Localized: Vampiro
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18332491591106560
+    m_Localized: "Cada vez que este dado participa en un combo, perd\xE9s 5 de vida
+      y el multiplicador sube +0,3. Con 5 de vida o menos, el dado no suma da\xF1o."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18332491591106561
+    m_Localized: Solitario
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18332491591106562
+    m_Localized: "Si este dado queda fuera del combo que jug\xE1s, genera +2 de oro."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18332491591106563
+    m_Localized: Enfiestado
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18332491591106564
+    m_Localized: "Con cara impar, este dado aporta el triple de da\xF1o. Con cara
+      par no aporta da\xF1o. Sigue contando para formar el combo."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18332491591106565
+    m_Localized: Racha
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18332491591106566
+    m_Localized: "Por cada combo consecutivo en el que participe en este combate,
+      aporta +3 de da\xF1o m\xE1s (+3, +6, +9\u2026). Se reinicia si queda fuera
+      de un combo."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18332491591106567
+    m_Localized: Ejecutor
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18332491591106568
+    m_Localized: "Si este dado participa en un combo contra un enemigo con 25% de
+      vida o menos, aporta +12 de da\xF1o."
     m_Metadata:
       m_Items: []
   references:

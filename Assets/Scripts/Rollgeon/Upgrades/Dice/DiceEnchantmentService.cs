@@ -85,6 +85,7 @@ namespace Rollgeon.Upgrades.Dice
             EventManager.Subscribe(EventName.OnRollResolved, OnRollResolvedHandler);
             EventManager.Subscribe(EventName.OnDiceRolled, OnDiceRolledHandler);
             EventManager.Subscribe(EventName.OnTurnFinished, OnTurnFinishedHandler);
+            EventManager.Subscribe(EventName.OnCombatStart, OnCombatStartHandler);
             TypedEvent<ComboMatchedPayload>.Subscribe(OnComboMatchedHandler);
             TypedEvent<ComboPlayedPayload>.Subscribe(OnComboPlayedHandler);
             _subscribed = true;
@@ -98,6 +99,7 @@ namespace Rollgeon.Upgrades.Dice
             EventManager.UnSubscribe(EventName.OnRollResolved, OnRollResolvedHandler);
             EventManager.UnSubscribe(EventName.OnDiceRolled, OnDiceRolledHandler);
             EventManager.UnSubscribe(EventName.OnTurnFinished, OnTurnFinishedHandler);
+            EventManager.UnSubscribe(EventName.OnCombatStart, OnCombatStartHandler);
             TypedEvent<ComboMatchedPayload>.Unsubscribe(OnComboMatchedHandler);
             TypedEvent<ComboPlayedPayload>.Unsubscribe(OnComboPlayedHandler);
             _subscribed = false;
@@ -211,6 +213,17 @@ namespace Rollgeon.Upgrades.Dice
                 DiceResult = _lastFinalRoll,
             };
             DispatchTurnFinished(effectCtx);
+        }
+
+        // Schema EventName.OnCombatStart: args = [Guid roomInstanceId] — sin entity. El
+        // source es el jugador (dueño del bag); sin player service no hay a quién atribuir.
+        private void OnCombatStartHandler(params object[] args)
+        {
+            if (Bag == null) return;
+            if (!ServiceLocator.TryGetService<IPlayerService>(out var ps) || ps == null) return;
+
+            var effectCtx = new EffectContext { SourceGuid = ps.PlayerGuid };
+            DispatchCombatStarted(effectCtx);
         }
 
         private void OnComboMatchedHandler(ComboMatchedPayload payload)
@@ -336,6 +349,18 @@ namespace Rollgeon.Upgrades.Dice
             ForEachEnchantment(ctx, (trigger, c) =>
             {
                 if (trigger is IOnTurnFinishedTrigger r) r.OnTurnFinished(c);
+            });
+            ApplyScratchSideEffects(scratch);
+        }
+
+        private void DispatchCombatStarted(EffectContext effectCtx)
+        {
+            if (Bag == null) return;
+            var scratch = new EnchantmentScratch();
+            var ctx = new EnchantmentTriggerContext { Effect = effectCtx, Scratch = scratch };
+            ForEachEnchantment(ctx, (trigger, c) =>
+            {
+                if (trigger is IOnCombatStartedTrigger r) r.OnCombatStarted(c);
             });
             ApplyScratchSideEffects(scratch);
         }

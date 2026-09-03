@@ -102,6 +102,10 @@ namespace Rollgeon.Editor.Tools.Enchantment
                 "turn.finished", "Al terminar tu turno",
                 "Fin del turno del jugador, con la tirada ya gastada.",
                 EnchantmentHookEvent.TurnFinished),
+            new TriggerOption(
+                "combat.started", "Al empezar un combate",
+                "Arranca una pelea. Para resetear counters por dado que duran 'hasta terminar el combate' (Racha).",
+                EnchantmentHookEvent.CombatStarted),
         };
 
         /// <summary>

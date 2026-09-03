@@ -29,7 +29,7 @@ MonoBehaviour:
       Data: Pesado
     - Name: _description
       Entry: 1
-      Data: Suma +2 al resultado final del dado.
+      Data: "Este dado aporta +2 de da\xF1o cuando participa en un combo."
     - Name: _icon
       Entry: 6
       Data: 
@@ -83,7 +83,7 @@ MonoBehaviour:
       Data: 3|Rollgeon.Upgrades.Dice.Triggers.ExecuteEffectsOnDiceEvent, Rollgeon
     - Name: Event
       Entry: 3
-      Data: 2
+      Data: 3
     - Name: Filter
       Entry: 7
       Data: 4|Rollgeon.Upgrades.Dice.ComboFilter, Rollgeon
@@ -107,7 +107,7 @@ MonoBehaviour:
       Data: 
     - Name: RequireCarrierParticipates
       Entry: 5
-      Data: false
+      Data: true
     - Name: Effects
       Entry: 7
       Data: 6|System.Collections.Generic.List`1[[Rollgeon.Effects.EffectData, Rollgeon]],
@@ -283,29 +283,29 @@ MonoBehaviour:
   _faceFilter:
     rid: -2
   _triggers:
-  - rid: 7496091007886557824
+  - rid: 7465468535394271952
   _capabilities: []
   references:
     version: 2
     RefIds:
     - rid: -2
       type: {class: , ns: , asm: }
-    - rid: 7496091007886557824
+    - rid: 7465468535394271952
       type: {class: ExecuteEffectsOnDiceEvent, ns: Rollgeon.Upgrades.Dice.Triggers, asm: Rollgeon}
       data:
-        Event: 2
+        Event: 3
         Filter:
           Mode: 1
           ComboIds: []
-        RequireCarrierParticipates: 0
+        RequireCarrierParticipates: 1
         Effects:
         - Label: Effect Group
           PreConditions: []
           Effects:
-          - rid: 7496091007886557825
+          - rid: 7465468535394271953
           TargetSelector:
             rid: -2
-    - rid: 7496091007886557825
+    - rid: 7465468535394271953
       type: {class: EffAddComboBonus, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
       data:
         Selection:
@@ -330,8 +330,8 @@ MonoBehaviour:
           AutoResolve: 0
           AutoAccept: 1
         _amount:
-          rid: 7496091007886557826
-    - rid: 7496091007886557826
+          rid: 7465468535394271954
+    - rid: 7465468535394271954
       type: {class: ReadConstantInt, ns: Rollgeon.Effects.Readers, asm: Rollgeon}
       data:
         Value: 2

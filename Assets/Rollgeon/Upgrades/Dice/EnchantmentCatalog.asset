@@ -50,6 +50,11 @@ MonoBehaviour:
     - {fileID: 11400000, guid: bc51e8dc5712271498ada74e8a0ca951, type: 2}
     - {fileID: 11400000, guid: 0910661f147f2e24ea2f17a84215b7cf, type: 2}
     - {fileID: 11400000, guid: 474155d10aed41847a43f9be4719263f, type: 2}
+    - {fileID: 11400000, guid: 60728ded0d406244f8e01095b9df70b4, type: 2}
+    - {fileID: 11400000, guid: 44fcc3a475587a443b27ce0c75c91e10, type: 2}
+    - {fileID: 11400000, guid: c6a89ed15af13e54dbc7bf307f36a5eb, type: 2}
+    - {fileID: 11400000, guid: 608cd22cdb7b63942a146ec13b981abe, type: 2}
+    - {fileID: 11400000, guid: ca374d8978bfaba4589834e035f1885f, type: 2}
     SerializedBytesString: 
     Prefab: {fileID: 0}
     PrefabModificationsReferencedUnityObjects: []
@@ -61,7 +66,7 @@ MonoBehaviour:
         Rollgeon]], mscorlib
     - Name: 
       Entry: 12
-      Data: 35
+      Data: 40
     - Name: 
       Entry: 10
       Data: 0
@@ -167,6 +172,21 @@ MonoBehaviour:
     - Name: 
       Entry: 10
       Data: 33
+    - Name: 
+      Entry: 10
+      Data: 34
+    - Name: 
+      Entry: 10
+      Data: 35
+    - Name: 
+      Entry: 10
+      Data: 36
+    - Name: 
+      Entry: 10
+      Data: 37
+    - Name: 
+      Entry: 10
+      Data: 38
     - Name: 
       Entry: 13
       Data: 

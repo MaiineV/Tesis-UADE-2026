@@ -2655,6 +2655,46 @@ MonoBehaviour:
     m_Key: ayuno.desc
     m_Metadata:
       m_Items: []
+  - m_Id: 18332491544969216
+    m_Key: ench.vampiro.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18332491591106560
+    m_Key: ench.vampiro.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18332491591106561
+    m_Key: ench.solitario.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18332491591106562
+    m_Key: ench.solitario.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18332491591106563
+    m_Key: ench.enfiestado.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18332491591106564
+    m_Key: ench.enfiestado.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18332491591106565
+    m_Key: ench.racha.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18332491591106566
+    m_Key: ench.racha.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18332491591106567
+    m_Key: ench.ejecutor.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18332491591106568
+    m_Key: ench.ejecutor.desc
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

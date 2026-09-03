@@ -29,7 +29,7 @@ MonoBehaviour:
       Data: Mercader
     - Name: _description
       Entry: 1
-      Data: Otorga 6 de oro al completar una escalera.
+      Data: Si este dado participa en una generala, otorga 12 de oro.
     - Name: _icon
       Entry: 6
       Data: 
@@ -92,7 +92,7 @@ MonoBehaviour:
       Data: 1
     - Name: 
       Entry: 1
-      Data: combo.ladder
+      Data: combo.generala
     - Name: 
       Entry: 13
       Data: 
@@ -104,7 +104,7 @@ MonoBehaviour:
       Data: 
     - Name: RequireCarrierParticipates
       Entry: 5
-      Data: false
+      Data: true
     - Name: Effects
       Entry: 7
       Data: 6|System.Collections.Generic.List`1[[Rollgeon.Effects.EffectData, Rollgeon]],
@@ -233,7 +233,7 @@ MonoBehaviour:
       Data: 13|Rollgeon.Effects.Readers.ReadConstantInt, Rollgeon
     - Name: Value
       Entry: 3
-      Data: 6
+      Data: 12
     - Name: 
       Entry: 8
       Data: 
@@ -286,30 +286,30 @@ MonoBehaviour:
   _faceFilter:
     rid: -2
   _triggers:
-  - rid: 7496091007886557861
+  - rid: 7465468535394271970
   _capabilities: []
   references:
     version: 2
     RefIds:
     - rid: -2
       type: {class: , ns: , asm: }
-    - rid: 7496091007886557861
+    - rid: 7465468535394271970
       type: {class: ExecuteEffectsOnDiceEvent, ns: Rollgeon.Upgrades.Dice.Triggers, asm: Rollgeon}
       data:
         Event: 5
         Filter:
           Mode: 2
           ComboIds:
-          - combo.ladder
-        RequireCarrierParticipates: 0
+          - combo.generala
+        RequireCarrierParticipates: 1
         Effects:
         - Label: Effect Group
           PreConditions: []
           Effects:
-          - rid: 7496091007886557862
+          - rid: 7465468535394271971
           TargetSelector:
             rid: -2
-    - rid: 7496091007886557862
+    - rid: 7465468535394271971
       type: {class: EffModifyGold, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
       data:
         Selection:
@@ -335,9 +335,9 @@ MonoBehaviour:
           AutoAccept: 1
         Operation: 0
         _amount:
-          rid: 7496091007886557863
+          rid: 7465468535394271972
         _failChainIfInsufficient: 1
-    - rid: 7496091007886557863
+    - rid: 7465468535394271972
       type: {class: ReadConstantInt, ns: Rollgeon.Effects.Readers, asm: Rollgeon}
       data:
-        Value: 6
+        Value: 12
