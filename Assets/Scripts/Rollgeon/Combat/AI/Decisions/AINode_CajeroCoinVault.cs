@@ -49,7 +49,7 @@ namespace Rollgeon.Combat.AI.Decisions
 
         [Tooltip("Rondas que vive una moneda desde que este nodo la ve por primera vez.")]
         [MinValue(1)]
-        public int LifetimeRounds = 3;
+        public int LifetimeRounds = 2;
 
         /// <summary>
         /// Monedas con reloj, en el orden en que se van a cobrar. Lista y no diccionario: cuando hay

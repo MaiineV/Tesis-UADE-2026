@@ -17,7 +17,7 @@ namespace Rollgeon.Combat.AI.Tests
     [TestFixture]
     public class AINode_CajeroCoinVaultTests
     {
-        private const int LifetimeRounds = 3;
+        private const int LifetimeRounds = 2;
         private const int BossMaxHp = 350;
 
         /// <summary>Lastimado a propósito: con el jefe lleno, "no se curó" pasaría igual por el clamp

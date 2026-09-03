@@ -194,7 +194,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         /// (el servicio de hazards expira las dos igual). Es el vencimiento de cada moneda y no el de
         /// la tanda: el nodo se cobra <b>una por turno</b>.
         /// </remarks>
-        public const int ChipDurationRounds = 3;
+        public const int ChipDurationRounds = 2;
 
         /// <summary>Monedas que se le caen al jugador en cada empujón, repartidas por el tumbo.</summary>
         public const int ChipCount = 2;
@@ -1254,8 +1254,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
             chip.Kind = AttackKind.Environmental;
 
             // 0 = no vence sola. AINode_CajeroCoinVault tiene que ser el ÚNICO que la mate: el
-            // servicio de hazards expira igual una moneda cobrada y una vencida, y sólo la vencida
-            // cura al jefe. Ver ChipDurationRounds para la vida real de la moneda.
+            // servicio de hazards expira igual una cobrada y una vencida, y desde afuera no se
+            // pueden distinguir. Ver ChipDurationRounds para la vida real de la moneda.
             chip.DurationRounds = 0;
 
             chip.Shape = ThreatShape.Column; // Inerte: las monedas se activan con la overload de tiles.
