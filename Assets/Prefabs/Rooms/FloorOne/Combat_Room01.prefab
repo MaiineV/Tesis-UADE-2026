@@ -309,7 +309,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Rollgeon::Rollgeon.Dungeon.Components.SpawnPointConfig
   EnemySets:
   - {fileID: 11400000, guid: bd09322156bff014eb7ea6072e3fec09, type: 2}
-  - {fileID: 11400000, guid: bd09322156bff014eb7ea6072e3fec09, type: 2}
+  - {fileID: 11400000, guid: aa8154a1c110e7f43923d033431fca88, type: 2}
   SetTierWeights: []
 --- !u!1 &2377401603453474217
 GameObject:
@@ -4160,7 +4160,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Rollgeon::Rollgeon.Dungeon.Components.SpawnPointConfig
   EnemySets:
   - {fileID: 11400000, guid: 2de77bd68f3190f48ae82e94a0141e10, type: 2}
-  - {fileID: 11400000, guid: 2de77bd68f3190f48ae82e94a0141e10, type: 2}
+  - {fileID: 11400000, guid: 71c7972ae81afc0489205813099bdd13, type: 2}
   SetTierWeights: []
 --- !u!1 &6165503670069606601
 GameObject:
