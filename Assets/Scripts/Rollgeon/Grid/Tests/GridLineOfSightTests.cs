@@ -1,5 +1,9 @@
 using System;
+using System.Collections.Generic;
 using NUnit.Framework;
+using Patterns;
+using Rollgeon.Effects.Selection;
+using Rollgeon.Entities;
 
 namespace Rollgeon.Grid.Tests
 {
@@ -10,6 +14,15 @@ namespace Rollgeon.Grid.Tests
     [TestFixture]
     public sealed class GridLineOfSightTests
     {
+        private sealed class StubQuery : IEntityQueryService
+        {
+            public Func<Guid, Guid, EntityFilterMask> Relationship;
+            public IEnumerable<Entity> GetAllEnemiesOf(Guid ownerGuid) { yield break; }
+            public IEnumerable<Entity> GetAllAlliesOf(Guid ownerGuid) { yield break; }
+            public EntityFilterMask GetRelationship(Guid owner, Guid target)
+                => Relationship?.Invoke(owner, target) ?? EntityFilterMask.None;
+        }
+
         private GridManager _grid;
         private Guid _self;
         private Guid _target;
@@ -17,6 +30,8 @@ namespace Rollgeon.Grid.Tests
         [SetUp]
         public void SetUp()
         {
+            ServiceLocator.Clear();
+
             // Arrange compartido: sala 9×9, atacante y objetivo en la misma fila.
             _grid = new GridManager();
             _grid.LoadRoom(NavGraph.Rect(9, 9));
@@ -25,6 +40,9 @@ namespace Rollgeon.Grid.Tests
             _grid.Register(_self, new GridCoord(0, 4));
             _grid.Register(_target, new GridCoord(6, 4));
         }
+
+        [TearDown]
+        public void TearDown() => ServiceLocator.Clear();
 
         [Test]
         public void should_be_clear_when_nothing_stands_between()
@@ -42,6 +60,42 @@ namespace Rollgeon.Grid.Tests
             // Act + Assert
             Assert.IsFalse(GridLineOfSight.HasClearLine(
                 _grid, new GridCoord(0, 4), new GridCoord(6, 4), _self, _target));
+        }
+
+        [Test]
+        public void should_not_block_when_the_occupant_is_an_ally_of_the_attacker()
+        {
+            // Arrange: otro enemigo (aliado de _self) parado en el medio de la fila, con un
+            // IEntityQueryService que los declara aliados entre sí.
+            var otherEnemy = Guid.NewGuid();
+            _grid.Register(otherEnemy, new GridCoord(3, 4));
+            ServiceLocator.AddService<IEntityQueryService>(new StubQuery
+            {
+                Relationship = (owner, target) => EntityFilterMask.Allies,
+            }, ServiceScope.Global);
+
+            // Act + Assert
+            Assert.IsTrue(GridLineOfSight.HasClearLine(
+                _grid, new GridCoord(0, 4), new GridCoord(6, 4), _self, _target),
+                "Los enemigos entre ellos no se tapan la línea — generaba situaciones raras " +
+                "con varios amontonados (feedback de playtest).");
+        }
+
+        [Test]
+        public void should_still_block_when_the_occupant_is_not_an_ally_of_the_attacker()
+        {
+            // Arrange: mismo escenario, pero el servicio dice que NO son aliados (ej. un prop
+            // neutral, o una entidad de otro bando) — sigue bloqueando como siempre.
+            var neutral = Guid.NewGuid();
+            _grid.Register(neutral, new GridCoord(3, 4));
+            ServiceLocator.AddService<IEntityQueryService>(new StubQuery
+            {
+                Relationship = (owner, target) => EntityFilterMask.None,
+            }, ServiceScope.Global);
+
+            Assert.IsFalse(GridLineOfSight.HasClearLine(
+                _grid, new GridCoord(0, 4), new GridCoord(6, 4), _self, _target),
+                "Un ocupante que NO es aliado del atacante sigue bloqueando la línea.");
         }
 
         [Test]

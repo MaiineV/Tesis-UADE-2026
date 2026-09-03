@@ -29,3 +29,5 @@ MonoBehaviour:
     Icon: {fileID: -17862878, guid: ebbf8db95b2966645b4a7070d253083c, type: 3}
   - Id: intent.bomb_blast
     Icon: {fileID: -900020473, guid: ebbf8db95b2966645b4a7070d253083c, type: 3}
+  - Id: status.guardian_aura
+    Icon: {fileID: 21300000, guid: 437b28541470d984bbdf86ae9e16237e, type: 3}

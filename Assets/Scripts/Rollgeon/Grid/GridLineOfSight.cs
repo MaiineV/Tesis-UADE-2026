@@ -1,5 +1,8 @@
 using System;
 using System.Collections.Generic;
+using Patterns;
+using Rollgeon.Effects.Selection;
+using Rollgeon.Entities;
 
 namespace Rollgeon.Grid
 {
@@ -75,8 +78,7 @@ namespace Rollgeon.Grid
 
                 var c = new GridCoord(x, y);
                 if (hasTerrain && !grid.IsWalkable(c)) return false;
-                if (grid.TryGetOccupant(c, out var occupant) && occupant != ignoreA && occupant != ignoreB)
-                    return false;
+                if (Blocks(grid, c, ignoreA, ignoreB)) return false;
             }
 
             return true;
@@ -101,7 +103,35 @@ namespace Rollgeon.Grid
         {
             if (c.X == targetX && c.Y == targetY) return true;
             if (hasTerrain && !grid.IsWalkable(c)) return false;
-            if (grid.TryGetOccupant(c, out var occupant) && occupant != ignoreA && occupant != ignoreB) return false;
+            if (Blocks(grid, c, ignoreA, ignoreB)) return false;
+            return true;
+        }
+
+        /// <summary>
+        /// <c>true</c> si la celda tiene un ocupante que corta la línea. Ni <paramref name="ignoreA"/>
+        /// (el atacante) ni <paramref name="ignoreB"/> (el target) bloquean nunca; tampoco un
+        /// ALIADO del atacante — feedback de playtest: varios enemigos amontonados se tapaban
+        /// el tiro entre ellos y generaba situaciones raras (el jugador veía a un enemigo
+        /// "esperando" sin motivo visible porque otro le tapaba la línea).
+        /// </summary>
+        /// <remarks>
+        /// Sin <see cref="IEntityQueryService"/> registrado (tests con un <c>GridManager</c>
+        /// pelado, sin <c>ServiceLocator</c> armado) se preserva el comportamiento viejo —
+        /// cualquier ocupante que no sea ignoreA/ignoreB bloquea — mismo criterio conservador
+        /// que <c>hasTerrain</c> usa para el grafo vacío.
+        /// </remarks>
+        private static bool Blocks(IGridManager grid, GridCoord c, Guid ignoreA, Guid ignoreB)
+        {
+            if (!grid.TryGetOccupant(c, out var occupant)) return false;
+            if (occupant == ignoreA || occupant == ignoreB) return false;
+
+            if (ignoreA != Guid.Empty
+                && ServiceLocator.TryGetService<IEntityQueryService>(out var query) && query != null
+                && (query.GetRelationship(ignoreA, occupant) & EntityFilterMask.Allies) != 0)
+            {
+                return false;
+            }
+
             return true;
         }
     }

@@ -278,6 +278,13 @@ namespace Rollgeon.UI.HUD
                 SpawnOrDefer(reduced.Text, reduced.Tint, screenPos, reduced.Scale, reduced.Motion);
             }
 
+            // La reducción del aura del Guardian NO se anuncia como número flotante — feedback del
+            // usuario: "no se entiende, dice -5 de aura, lo descartaría". La señal en pantalla pasa
+            // a ser un ícono de escudo+número junto a la barra de vida del aliado protegido
+            // (EnemyStatusIconsView, pendiente de wiring — ver EnemyAuraService.TryGetActiveReduction),
+            // que puede reusar este mismo TypedEvent<DamageResolvedPayload> para su pulso de
+            // "consumido" — payload.IncomingFlatReduction sigue viajando acá para eso.
+
             var style = FloatingNumberFormat.ForDamage(payload.FinalDamage, incoming, payload.WeaknessHit);
             SpawnOrDefer(style.Text, style.Tint, screenPos, style.Scale, style.Motion);
         }
