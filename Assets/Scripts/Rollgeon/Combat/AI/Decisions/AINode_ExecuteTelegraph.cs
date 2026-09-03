@@ -203,16 +203,30 @@ namespace Rollgeon.Combat.AI.Decisions
         }
 
         /// <summary>
-        /// Gira al boss hacia el jugador antes del windup. Sin esto queda mirando en la
-        /// dirección en la que kiteó el turno anterior y ataca de espaldas.
+        /// Gira al boss hacia el CENTRO CONGELADO del área que está cobrando antes del windup.
+        /// Sin esto queda mirando en la dirección en la que kiteó el turno anterior y ataca de
+        /// espaldas.
         /// </summary>
+        /// <remarks>
+        /// El centro congelado (<see cref="LastThreatenedAreaCenter"/>) y no la posición VIVA del
+        /// jugador: si esquivó fuera del área marcada, girar hacia donde está parado ahora hace
+        /// que un whiff (<see cref="Resolve"/> no le pega porque ya no está adentro) se vea como
+        /// que sí conectó — el mismo bug de playtest que tenía <c>ArtilleryBombDrop</c> antes de
+        /// este fix. Sin centro guardado (llamada fuera del flujo esperado) cae a la posición
+        /// actual del jugador como aproximación razonable.
+        /// </remarks>
         private static void FaceTarget(AIContext context)
         {
-            if (context?.Grid == null || context.PlayerGuid == Guid.Empty) return;
+            if (context?.Grid == null || context.SelfGuid == Guid.Empty) return;
             if (!ServiceLocator.TryGetService<Entities.Visuals.IEntityVisualService>(out var visuals) || visuals == null) return;
             if (!visuals.TryGetPawn(context.SelfGuid, out var pawn) || pawn == null) return;
             if (!context.Grid.TryGetPosition(context.SelfGuid, out var from)) return;
-            if (!context.Grid.TryGetPosition(context.PlayerGuid, out var to)) return;
+
+            GridCoord to;
+            if (!LastThreatenedAreaCenter.TryGet(context.SelfGuid, out to)
+                && !context.Grid.TryGetPosition(context.PlayerGuid, out to))
+                return;
+
             pawn.FaceCoord(from, to);
         }
 
