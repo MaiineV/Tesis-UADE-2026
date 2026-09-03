@@ -71,6 +71,7 @@ namespace Rollgeon.Combat.FSM
         // OnTurnStarted solo sale con un combate corriendo, y el skipper es inerte si
         // IStunService no esta registrado.
         private StunTurnSkipper _stunSkipper;
+        private SecondWindPhaseCutter _secondWindCutter;
 
         // Freeze flag: stub. Ver class remarks.
         private bool _phaseFrozen;
@@ -136,6 +137,20 @@ namespace Rollgeon.Combat.FSM
                 SendEnemyDone);
             _stunSkipper.Attach();
 
+            // Segundo Aliento: si la ficha salva al jugador durante la fase enemiga, el
+            // proximo EnemyDone devuelve el turno al jugador (los enemigos que faltaban no
+            // actuan). Solo levanta el flag del contexto — EnemyTurnState hace el resto.
+            _secondWindCutter = new SecondWindPhaseCutter(
+                () => _context?.PlayerId ?? Guid.Empty,
+                () => _fsm != null && _fsm.Current is States.EnemyTurnState,
+                () =>
+                {
+                    if (_context == null) return;
+                    _context.EnemyPhaseCutRequested = true;
+                    Debug.Log("[CombatController] Segundo Aliento: fase enemiga cortada — el turno vuelve al jugador.", this);
+                });
+            _secondWindCutter.Attach();
+
             // Expone este controller como ICombatStarter / ICombatSignaller para que
             // CombatHandoffService + RunController (scope Run, registrados en
             // GameplayBootstrapper.Start) los resuelvan sin stubs. AddService es upsert
@@ -162,6 +177,8 @@ namespace Rollgeon.Combat.FSM
 
             _stunSkipper?.Dispose();
             _stunSkipper = null;
+            _secondWindCutter?.Dispose();
+            _secondWindCutter = null;
 
             if (_fsm != null && _fsm.IsRunning)
             {
