@@ -133,7 +133,8 @@ namespace Rollgeon.Editor.Tools.Item
             Bus("roll.dice", "Cuando salen los dados",
                 "Resultado crudo, ANTES de los rerolls.", EventName.OnDiceRolled),
             Bus("roll.resolved", "Cuando la tirada queda firme",
-                "Después de todos los rerolls — es el resultado con el que se juega.",
+                "Después de todos los rerolls — es el resultado con el que se juega. Trae los " +
+                "dados: los readers de dados (ReadDiceCountByParity, ReadDiceShowingFace) leen acá.",
                 EventName.OnRollResolved),
 
             // --- Daño ----------------------------------------------------------

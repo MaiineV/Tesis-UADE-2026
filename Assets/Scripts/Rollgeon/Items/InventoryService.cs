@@ -430,6 +430,9 @@ namespace Rollgeon.Items
                         SourceGuid = playerGuid,
                         TargetGuid = otherGuid != Guid.Empty ? otherGuid : playerGuid,
                         SourceItemId = capturedItem.ItemId,
+                        // Eventos de tirada (OnRollResolved: [guid, caras, kind, combo]) traen
+                        // los dados: sin esto un reader de dados (Bolsa del Impar) leía null.
+                        DiceResult = FindDiceArg(args),
                         lastResult = true,
                     };
                     var preCtx = new PreConditionContext
@@ -444,6 +447,16 @@ namespace Rollgeon.Items
                 EventManager.Subscribe(hook.TriggerEvent, handler);
                 _hookHandlers.Add((item.ItemId, hook.TriggerEvent, handler));
             }
+        }
+
+        // El primer arg que sea una lista de enteros es la tirada (contrato de OnRollResolved /
+        // OnDiceRolled). Null si el evento no lleva dados — los readers de dados devuelven 0.
+        private static IReadOnlyList<int> FindDiceArg(object[] args)
+        {
+            if (args == null) return null;
+            for (int i = 0; i < args.Length; i++)
+                if (args[i] is IReadOnlyList<int> dice) return dice;
+            return null;
         }
 
         private void BindComboPlayedHook(ItemSO item, PassiveItemHook hook)

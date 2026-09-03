@@ -191,6 +191,36 @@ namespace Rollgeon.Items.Tests
                 "the handler was bound, so it must be unbound regardless of the SO's current state");
         }
 
+        // ---- dados en hooks de bus ----------------------------------------------
+
+        /// <summary>
+        /// OnRollResolved lleva la tirada como arg: un hook de bus (Bolsa del Impar) tiene
+        /// que verla en <c>EffectContext.DiceResult</c>; sin dados en el evento queda null.
+        /// </summary>
+        [Test]
+        public void EventBusHook_RollEventWithDice_ExposesDiceResultToTheEffect()
+        {
+            var item = ScriptableObject.CreateInstance<ItemSO>();
+            item.ItemId = "item.dice";
+            item.DisplayName = "item.dice";
+            item.Type = ItemType.Passive;
+            var hook = new PassiveItemHook { TriggerEvent = EventName.OnRollResolved };
+            hook.Effect.Effects.Add(new Eff_RecordDice());
+            item.PassiveHooks.Add(hook);
+            _spawned.Add(item);
+            _service.AddItem(item);
+
+            var faces = new[] { 1, 4, 7, 8 };
+            EventManager.Trigger(EventName.OnRollResolved, _playerGuid, (IReadOnlyList<int>)faces,
+                Rollgeon.Combat.Rolls.RollActionKind.Attack, null);
+            EventManager.Trigger(EventName.OnRollResolved, _playerGuid);
+
+            Assert.AreEqual(2, Eff_RecordDice.Seen.Count);
+            CollectionAssert.AreEqual(faces, Eff_RecordDice.Seen[0]);
+            Assert.IsNull(Eff_RecordDice.Seen[1], "un evento sin dados no inventa una tirada");
+            Eff_RecordDice.Seen.Clear();
+        }
+
         // ---- helpers ---------------------------------------------------------
 
         /// <summary>Records that it ran, so a test can tell which item's hook fired.</summary>
@@ -204,6 +234,20 @@ namespace Rollgeon.Items.Tests
             public override bool ApplyEffect(EffectContext context)
             {
                 Log.Add(Tag);
+                return true;
+            }
+        }
+
+        /// <summary>Captures the dice the context carried (null when the event had none).</summary>
+        [Serializable]
+        sealed class Eff_RecordDice : BaseEffect
+        {
+            public static readonly List<IReadOnlyList<int>> Seen = new List<IReadOnlyList<int>>();
+
+            public override string GetEffectName() => "RecordDice";
+            public override bool ApplyEffect(EffectContext context)
+            {
+                Seen.Add(context.DiceResult);
                 return true;
             }
         }

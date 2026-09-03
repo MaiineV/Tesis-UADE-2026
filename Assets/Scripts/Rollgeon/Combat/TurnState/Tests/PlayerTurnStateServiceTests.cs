@@ -431,6 +431,69 @@ namespace Rollgeon.Combat.TurnState.Tests
 
         // ---- fakes ---------------------------------------------------------------
 
+        // ---- combo history (Vértigo / Piedra Angular) ------------------------------
+
+        [Test]
+        public void ComboHistory_EmptyOutsideCombat_AndIgnoresCombosBeforeStart()
+        {
+            PlayCombo("combo.pair");
+
+            Assert.AreEqual(0, _service.CombosPlayedThisCombat);
+            Assert.AreEqual(0, _service.ComboHistoryThisCombat.Count);
+        }
+
+        [Test]
+        public void ComboHistory_AppendsCombatCombosInOrder_IncludingRepeats()
+        {
+            StartCombat();
+
+            PlayCombo("combo.pair");
+            PlayCombo("combo.trio", RollActionKind.Defense);
+            PlayCombo("combo.pair", RollActionKind.Heal);
+
+            CollectionAssert.AreEqual(new[] { "combo.pair", "combo.trio", "combo.pair" },
+                _service.ComboHistoryThisCombat);
+            Assert.AreEqual(3, _service.CombosPlayedThisCombat);
+        }
+
+        [Test]
+        public void ComboHistory_IgnoresMovementCombos()
+        {
+            StartCombat();
+
+            PlayCombo("combo.trio", RollActionKind.Movement);
+
+            Assert.AreEqual(0, _service.CombosPlayedThisCombat);
+        }
+
+        [Test]
+        public void ComboHistory_ReadInsideDispatch_AlreadyIncludesCurrentCombo()
+        {
+            StartCombat();
+            int seen = -1;
+            Action<ComboPlayedPayload> reader = _ => seen = _service.CombosPlayedThisCombat;
+            TypedEvent<ComboPlayedPayload>.Subscribe(reader);
+            try { PlayCombo("combo.pair"); }
+            finally { TypedEvent<ComboPlayedPayload>.Unsubscribe(reader); }
+
+            Assert.AreEqual(1, seen, "Piedra Angular pregunta 'Equal 1' desde el hook del primer combo");
+        }
+
+        [Test]
+        public void ComboHistory_ResetsOnCombatBoundaries()
+        {
+            StartCombat();
+            PlayCombo("combo.pair");
+            PlayCombo("combo.trio");
+
+            EventManager.Trigger(EventName.OnCombatEnd, _room);
+            Assert.AreEqual(0, _service.CombosPlayedThisCombat, "fin de combate limpia");
+
+            StartCombat();
+            PlayCombo("combo.ladder");
+            Assert.AreEqual(1, _service.CombosPlayedThisCombat, "el combate nuevo arranca de cero");
+        }
+
         sealed class FakeMovement : IMovementService
         {
             public event Action<Guid, GridCoord, GridCoord, IReadOnlyList<GridCoord>> OnEntityMoved;
