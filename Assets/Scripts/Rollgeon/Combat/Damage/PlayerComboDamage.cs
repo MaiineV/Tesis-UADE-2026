@@ -25,7 +25,7 @@ namespace Rollgeon.Combat.Damage
     /// Fórmula v3 del daño de combo del jugador (decisión de diseño 2026-08-09, N×M exacto):
     /// <code>
     /// N = daño_combo_base + dmg_base_PJ + bonos_PJ + Σ(caras contribuyentes) + bono_combo
-    /// M = scratch_multiplier × ability_multiplier
+    /// M = (1 + scratch_multiplier_bonus) × scratch_multiplier × ability_multiplier
     /// DAÑO = round(N × M)   (mitades siempre para arriba: 6.5 → 7)
     /// </code>
     /// Todo lo aditivo vive en N y TODO N se escala por M — a diferencia de v2, donde
@@ -33,7 +33,10 @@ namespace Rollgeon.Combat.Damage
     /// por tipo de dado (EV/3.5) desaparece: un d20 pesa más porque sus caras son más altas.
     /// <c>ability_multiplier</c> es la perilla por habilidad (ej. golpe rápido = 0.75 en
     /// <c>CH_Warrior.asset</c>); <c>scratch_multiplier</c> es el producto de los
-    /// <c>ComboDamageMultiplier</c> de los 3 canales de scratch.
+    /// <c>ComboDamageMultiplier</c> de los 3 canales de scratch y
+    /// <c>scratch_multiplier_bonus</c> la suma de sus <c>ComboMultiplierBonus</c> (items
+    /// "+X al multiplicador": Piedra Angular, Ayuno, Vértigo… — decisión GD 2026-09-03: el
+    /// aditivo entra sobre el 1 de M, así +2 sin otros factores es ×3).
     /// </summary>
     /// <remarks>
     /// Código puro/estático para testear la fórmula aislada. Solo aplica al ataque de combo del
@@ -86,6 +89,7 @@ namespace Rollgeon.Combat.Damage
 
             int bonoCombo = 0;
             float scratchMultiplier = 1f;
+            float scratchMultiplierBonus = 0f;
             bool block = false;
             List<ScratchContribution> sources = null;
 
@@ -95,6 +99,7 @@ namespace Rollgeon.Combat.Damage
             {
                 bonoCombo += sPassives.BonusComboDamage;
                 scratchMultiplier *= sPassives.ComboDamageMultiplier;
+                scratchMultiplierBonus += sPassives.ComboMultiplierBonus;
                 block |= sPassives.BlockComboDamage;
                 AppendJournal(ref sources, sPassives);
             }
@@ -104,6 +109,7 @@ namespace Rollgeon.Combat.Damage
             {
                 bonoCombo += sEnchants.BonusComboDamage;
                 scratchMultiplier *= sEnchants.ComboDamageMultiplier;
+                scratchMultiplierBonus += sEnchants.ComboMultiplierBonus;
                 block |= sEnchants.BlockComboDamage;
                 AppendJournal(ref sources, sEnchants);
             }
@@ -118,6 +124,7 @@ namespace Rollgeon.Combat.Damage
             {
                 bonoCombo += sPlay.BonusComboDamage;
                 scratchMultiplier *= sPlay.ComboDamageMultiplier;
+                scratchMultiplierBonus += sPlay.ComboMultiplierBonus;
                 block |= sPlay.BlockComboDamage;
                 AppendJournal(ref sources, sPlay);
             }
@@ -136,7 +143,10 @@ namespace Rollgeon.Combat.Damage
             float n = comboBaseDamage + dmgBasePJ + bonosPJ + facesSum + bonoCombo;
             // La palanca de playtest entra en m y no en n para que escale el golpe entero y no sólo
             // el término aditivo. Con PlayerDamageDebug apagado esto es ×1 y la fórmula es la real.
-            float m = scratchMultiplier * abilityMultiplier * PlayerDamageDebug.Multiplier;
+            // El aditivo entra sobre el "1" de M — sin clamp: un aditivo negativo que deje M
+            // bajo 0 ya lo corta RoundNxM en 0.
+            float m = (1f + scratchMultiplierBonus) * scratchMultiplier * abilityMultiplier
+                      * PlayerDamageDebug.Multiplier;
             int total = block ? 0 : RoundNxM(n, m);
 
             breakdown = new DamageBreakdown
@@ -148,6 +158,7 @@ namespace Rollgeon.Combat.Damage
                 FacesSum = facesSum,
                 AdditiveBonus = bonoCombo,
                 N = n,
+                ScratchMultiplierBonus = scratchMultiplierBonus,
                 ScratchMultiplier = scratchMultiplier,
                 AbilityMultiplier = abilityMultiplier,
                 M = m,

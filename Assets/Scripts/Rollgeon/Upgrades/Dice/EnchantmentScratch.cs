@@ -18,8 +18,8 @@ namespace Rollgeon.Upgrades.Dice
     /// <para>
     /// <b>Composición.</b> Múltiples triggers (incluso de encantamientos distintos
     /// en distintos dados) escriben al mismo scratch. El orden de dispatch lo
-    /// determina el service; los efectos se suman (BonusGold) o multiplican
-    /// (ComboDamageMultiplier) según corresponda.
+    /// determina el service; los efectos se suman (BonusGold, ComboMultiplierBonus) o
+    /// multiplican (ComboDamageMultiplier) según corresponda.
     /// </para>
     /// </remarks>
     public sealed class EnchantmentScratch
@@ -36,6 +36,13 @@ namespace Rollgeon.Upgrades.Dice
         /// entre triggers. Aplica igual al escudo de fase defensa (fórmula compartida v3).
         /// </summary>
         public float ComboDamageMultiplier = 1f;
+
+        /// <summary>
+        /// Bono ADITIVO sobre el "1" de M: <c>M = (1 + Σ esto) × Π ComboDamageMultiplier ×
+        /// ability</c>. Suma entre triggers (+2 y +3 = +5, nunca ×). Float: Vértigo aporta
+        /// 0.05 por combo. Aplica igual al escudo/cura (fórmula compartida).
+        /// </summary>
+        public float ComboMultiplierBonus;
 
         /// <summary>
         /// Si algún trigger setea este flag a <c>true</c>, el resultado del combo se anula
@@ -91,6 +98,7 @@ namespace Rollgeon.Upgrades.Dice
         {
             BonusComboDamage = 0;
             ComboDamageMultiplier = 1f;
+            ComboMultiplierBonus = 0f;
             BlockComboDamage = false;
             BonusGold = 0;
             BonusShield = 0;

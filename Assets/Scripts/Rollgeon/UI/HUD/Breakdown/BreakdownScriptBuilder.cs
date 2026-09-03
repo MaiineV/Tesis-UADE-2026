@@ -109,6 +109,18 @@ namespace Rollgeon.UI.HUD.Breakdown
                         SourceId = src.SourceId,
                         SourceAsset = src.SourceAsset,
                     });
+                // Por fuente: N → AddM → MultM. El orden entre AddM y MultM no afecta el
+                // resultado (el contador compone Core × (1 + Σadd)); solo la lectura.
+                if (Math.Abs(src.MultiplierBonusDelta) > MultiplierEpsilon)
+                    script.Steps.Add(new BreakdownStep
+                    {
+                        Kind = kind,
+                        BagSlot = src.BagSlot,
+                        Amount = src.MultiplierBonusDelta,
+                        Target = BreakdownTarget.AddM,
+                        SourceId = src.SourceId,
+                        SourceAsset = src.SourceAsset,
+                    });
                 if (Math.Abs(src.MultiplierFactor - 1f) > MultiplierEpsilon)
                     script.Steps.Add(new BreakdownStep
                     {
@@ -122,19 +134,25 @@ namespace Rollgeon.UI.HUD.Breakdown
             }
         }
 
-        // InitialN + Σ(aportes a N) debe dar FinalN, e InitialM × Π(factores) debe dar
-        // FinalM. Si una fuente escribió al scratch sin pasar por el journal, no cierra:
-        // el flag avisa al director que fuerce los finales.
+        // InitialN + Σ(aportes a N) debe dar FinalN, e InitialM × (1 + Σ AddM) × Π(MultM)
+        // debe dar FinalM. Si una fuente escribió al scratch sin pasar por el journal, no
+        // cierra: el flag avisa al director que fuerce los finales.
         private static bool CheckReconciliation(BreakdownScript script)
         {
             double n = script.InitialN;
-            double m = script.InitialM;
+            double addSum = 0;
+            double mult = 1;
             for (int i = 0; i < script.Steps.Count; i++)
             {
                 var step = script.Steps[i];
-                if (step.Target == BreakdownTarget.BaseN) n += step.Amount;
-                else m *= step.Amount;
+                switch (step.Target)
+                {
+                    case BreakdownTarget.BaseN: n += step.Amount; break;
+                    case BreakdownTarget.AddM: addSum += step.Amount; break;
+                    default: mult *= step.Amount; break;
+                }
             }
+            double m = script.InitialM * (1 + addSum) * mult;
             return Math.Abs(n - script.FinalN) < 1e-3 && Math.Abs(m - script.FinalM) < 1e-3;
         }
     }

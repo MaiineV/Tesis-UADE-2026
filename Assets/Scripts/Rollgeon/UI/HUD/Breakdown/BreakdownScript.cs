@@ -6,7 +6,10 @@ namespace Rollgeon.UI.HUD.Breakdown
     public enum BreakdownTarget
     {
         BaseN,
+        /// <summary>Factor multiplicativo sobre M ("×1.5").</summary>
         MultM,
+        /// <summary>Bono aditivo sobre el "1" de M ("+2"): M = ability × (1 + Σadd) × Πmult.</summary>
+        AddM,
     }
 
     public enum BreakdownStepKind
@@ -29,7 +32,8 @@ namespace Rollgeon.UI.HUD.Breakdown
         /// <summary>Slot del dado (Die/DieProc); -1 cuando no aplica.</summary>
         public int BagSlot = -1;
 
-        /// <summary>Aporte: delta aditivo si Target=BaseN, factor si Target=MultM.</summary>
+        /// <summary>Aporte: delta aditivo si Target=BaseN, factor si Target=MultM, bono
+        /// aditivo sobre el 1 de M si Target=AddM.</summary>
         public float Amount;
 
         public BreakdownTarget Target = BreakdownTarget.BaseN;

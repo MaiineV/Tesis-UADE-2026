@@ -40,9 +40,14 @@ namespace Rollgeon.Upgrades.Dice
         /// <summary>La fuente activó el bloqueo total del combo.</summary>
         public readonly bool SetBlock;
 
+        /// <summary>Aporte ADITIVO al bono de M (ComboMultiplierBonus). 0 = neutro.</summary>
+        public readonly float MultiplierBonusDelta;
+
+        // multiplierBonusDelta va último y opcional a propósito: los ctors posicionales de
+        // tests y los nombrados de PlayerComboDamage siguen compilando sin tocarse.
         public ScratchContribution(ScratchSourceKind kind, string sourceId,
             UnityEngine.Object sourceAsset, int bagSlot, int bonusDelta,
-            float multiplierFactor, bool setBlock)
+            float multiplierFactor, bool setBlock, float multiplierBonusDelta = 0f)
         {
             Kind = kind;
             SourceId = sourceId;
@@ -51,10 +56,11 @@ namespace Rollgeon.Upgrades.Dice
             BonusDelta = bonusDelta;
             MultiplierFactor = multiplierFactor;
             SetBlock = setBlock;
+            MultiplierBonusDelta = multiplierBonusDelta;
         }
 
         public override string ToString()
-            => $"{Kind}:{SourceId} (+{BonusDelta}, ×{MultiplierFactor}{(SetBlock ? ", BLOCK" : "")})";
+            => $"{Kind}:{SourceId} (+{BonusDelta}, ×{MultiplierFactor}, +M{MultiplierBonusDelta}{(SetBlock ? ", BLOCK" : "")})";
     }
 
     /// <summary>
@@ -66,17 +72,20 @@ namespace Rollgeon.Upgrades.Dice
     {
         public readonly int Bonus;
         public readonly float Multiplier;
+        public readonly float MultiplierBonus;
         public readonly bool Block;
 
-        private ScratchSnapshot(int bonus, float multiplier, bool block)
+        private ScratchSnapshot(int bonus, float multiplier, float multiplierBonus, bool block)
         {
             Bonus = bonus;
             Multiplier = multiplier;
+            MultiplierBonus = multiplierBonus;
             Block = block;
         }
 
         public static ScratchSnapshot Of(EnchantmentScratch s)
-            => new ScratchSnapshot(s.BonusComboDamage, s.ComboDamageMultiplier, s.BlockComboDamage);
+            => new ScratchSnapshot(s.BonusComboDamage, s.ComboDamageMultiplier,
+                s.ComboMultiplierBonus, s.BlockComboDamage);
 
         public static void RecordDelta(EnchantmentScratch scratch, in ScratchSnapshot before,
             ScratchSourceKind kind, string sourceId, UnityEngine.Object sourceAsset, int bagSlot)
@@ -87,12 +96,15 @@ namespace Rollgeon.Upgrades.Dice
             float factor = Math.Abs(before.Multiplier) < 1e-6f
                 ? scratch.ComboDamageMultiplier
                 : scratch.ComboDamageMultiplier / before.Multiplier;
+            // El bono de M compone aditivamente: delta, no absoluto (misma semántica que Bonus).
+            float multBonusDelta = scratch.ComboMultiplierBonus - before.MultiplierBonus;
             bool setBlock = scratch.BlockComboDamage && !before.Block;
 
-            if (bonusDelta == 0 && Math.Abs(factor - 1f) < 1e-4f && !setBlock) return;
+            if (bonusDelta == 0 && Math.Abs(factor - 1f) < 1e-4f
+                && Math.Abs(multBonusDelta) < 1e-4f && !setBlock) return;
 
             scratch.RecordContribution(new ScratchContribution(
-                kind, sourceId, sourceAsset, bagSlot, bonusDelta, factor, setBlock));
+                kind, sourceId, sourceAsset, bagSlot, bonusDelta, factor, setBlock, multBonusDelta));
         }
     }
 }

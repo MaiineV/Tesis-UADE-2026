@@ -177,5 +177,67 @@ namespace Rollgeon.Effects.Tests
             // Assert
             Assert.IsFalse(result);
         }
+
+        // ---- EffAddComboMultiplier (canal aditivo sobre M) ---------------------------
+
+        [Test]
+        public void EffAddComboMultiplier_Constant_AddsToComboMultiplierBonus()
+        {
+            var ctx = BuildScratchContext(out var scratch);
+            var eff = new EffAddComboMultiplier { Amount = 2f };
+
+            bool ok = eff.Apply(ctx);
+
+            Assert.IsTrue(ok);
+            Assert.AreEqual(2f, scratch.ComboMultiplierBonus, 0.0001f);
+            Assert.AreEqual(1f, scratch.ComboDamageMultiplier, 0.0001f, "no toca el canal multiplicativo");
+        }
+
+        [Test]
+        public void EffAddComboMultiplier_AccumulatesAdditivelyAcrossApplies()
+        {
+            var ctx = BuildScratchContext(out var scratch);
+
+            new EffAddComboMultiplier { Amount = 2f }.Apply(ctx);
+            ctx.lastResult = true;
+            new EffAddComboMultiplier { Amount = 3f }.Apply(ctx);
+
+            Assert.AreEqual(5f, scratch.ComboMultiplierBonus, 0.0001f, "+2 y +3 suman, nunca multiplican");
+        }
+
+        [Test]
+        public void EffAddComboMultiplier_WithReader_UsesReadFloatTimesScale()
+        {
+            var ctx = BuildScratchContext(out var scratch);
+            var eff = new EffAddComboMultiplier
+            {
+                Amount = 99f,
+                AmountReader = new ReadConstantInt { Value = 4 },
+                ReaderScale = 0.05f,
+            };
+
+            eff.Apply(ctx);
+
+            Assert.AreEqual(0.2f, scratch.ComboMultiplierBonus, 0.0001f, "reader × scale pisa la constante");
+        }
+
+        [Test]
+        public void EffAddComboMultiplier_WithoutTriggerContext_ReturnsFalseAndWarns()
+        {
+            var ctx = new EffectContext();
+            var eff = new EffAddComboMultiplier { Amount = 2f };
+            LogAssert.Expect(LogType.Warning,
+                "[EffAddComboMultiplier] sin ScratchTriggerContext — este efecto solo funciona dentro de un dispatch de trigger de combo.");
+
+            bool ok = eff.Apply(ctx);
+
+            Assert.IsFalse(ok);
+        }
+
+        [Test]
+        public void EffAddComboMultiplier_IsComboScratchWriter()
+        {
+            Assert.IsInstanceOf<IComboScratchWriter>(new EffAddComboMultiplier());
+        }
     }
 }
