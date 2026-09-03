@@ -2269,8 +2269,8 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 17988680314699777
-    m_Localized: "+2 de da\xF1o por cada combo distinto al anterior que encadenes
-      en el combate. Repetir un combo reinicia el bono."
+    m_Localized: "Encaden\xE1 combos distintos al anterior: el 2\xBA paga +4 de da\xF1o,
+      el 3\xBA +6, el 4\xBA +8\u2026 Repetir el \xFAltimo reinicia la cadena."
     m_Metadata:
       m_Items: []
   - m_Id: 17988681023537152
@@ -2669,6 +2669,65 @@ MonoBehaviour:
   - m_Id: 18278206983208979
     m_Localized: "La banca canta tu mano antes de que la juegues. Armarla exacta
       paga; pasarse es codicia \u2014 y el pozo lleva la cuenta de la codicia."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18299679601246208
+    m_Localized: Segunda Oportunidad
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18299679638994944
+    m_Localized: Al atacar, +3 al multiplicador por cada roll que te quede sin usar.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18299679659966464
+    m_Localized: Dados en Reserva
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18299679659966465
+    m_Localized: Al atacar, +2 al multiplicador por cada dado tirado que no holdeaste.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18299679659966466
+    m_Localized: Piedra Angular
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18299679659966467
+    m_Localized: El primer combo de cada combate suma +2 al multiplicador.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18299679659966468
+    m_Localized: "Fuente M\xE1gica"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18299679659966469
+    m_Localized: "El dado m\xE1s alto de tu combo suma su cara al multiplicador (no
+      al da\xF1o base)."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18299679659966470
+    m_Localized: "V\xE9rtigo"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18299679659966471
+    m_Localized: Cada combo del combate suma +0.05 al multiplicador. Un Par lo reinicia
+      a 0.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18299679659966472
+    m_Localized: Bolsa del Impar
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18299679659966473
+    m_Localized: +3 de oro por cada dado impar en cada tirada, con o sin combo.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18299679659966474
+    m_Localized: Ayuno
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18299679659966475
+    m_Localized: "No recib\xEDs curaci\xF3n de items pasivos. A cambio, todos tus
+      multiplicadores de combo suman +3."
     m_Metadata:
       m_Items: []
   references:

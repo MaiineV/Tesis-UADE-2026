@@ -1097,6 +1097,14 @@ MonoBehaviour:
     m_Localized: Estalla en {0} turnos
     m_Metadata:
       m_Items: []
+  - m_Id: 18299681299939328
+    m_Localized: "\xA1Se rompi\xF3!"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18299681333493760
+    m_Localized: "{0} agot\xF3 su poder y desapareci\xF3."
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

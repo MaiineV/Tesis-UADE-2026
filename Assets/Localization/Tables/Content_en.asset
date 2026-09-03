@@ -2246,8 +2246,8 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 17988680314699777
-    m_Localized: +2 damage for each combo different from the last one you chain in
-      a fight. Repeating a combo resets the bonus.
+    m_Localized: "Chain combos different from the last one: the 2nd pays +4 damage,
+      the 3rd +6, the 4th +8\u2026 Repeating the last one resets the chain."
     m_Metadata:
       m_Items: []
   - m_Id: 17988681023537152
@@ -2660,6 +2660,67 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 17285590277255169
     m_Localized: The Straight deals +25 damage.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18299679601246208
+    m_Localized: Second Chance
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18299679638994944
+    m_Localized: When you attack, +3 to the multiplier for each unused roll you still
+      have.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18299679659966464
+    m_Localized: Dice in Reserve
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18299679659966465
+    m_Localized: When you attack, +2 to the multiplier for each rolled die you did
+      not hold.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18299679659966466
+    m_Localized: Keystone
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18299679659966467
+    m_Localized: The first combo of each combat adds +2 to the multiplier.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18299679659966468
+    m_Localized: Magic Fountain
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18299679659966469
+    m_Localized: The highest die in your combo adds its face to the multiplier (not
+      to base damage).
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18299679659966470
+    m_Localized: Vertigo
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18299679659966471
+    m_Localized: Each combo in the combat adds +0.05 to the multiplier. A Pair resets
+      it to 0.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18299679659966472
+    m_Localized: Odd Purse
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18299679659966473
+    m_Localized: +3 gold for each odd die in every roll, combo or not.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18299679659966474
+    m_Localized: Fasting
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18299679659966475
+    m_Localized: You receive no healing from passive items. In exchange, all your
+      combo multipliers get +3.
     m_Metadata:
       m_Items: []
   references:
