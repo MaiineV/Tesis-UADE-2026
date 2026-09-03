@@ -2695,6 +2695,30 @@ MonoBehaviour:
     m_Key: ench.ejecutor.desc
     m_Metadata:
       m_Items: []
+  - m_Id: 18353398669819904
+    m_Key: tarjeta.de.credito.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18353398736928768
+    m_Key: tarjeta.de.credito.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18353399701618688
+    m_Key: rezagado.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18353399701618689
+    m_Key: rezagado.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18353400586616832
+    m_Key: peaje.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18353400590811136
+    m_Key: peaje.desc
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

@@ -199,6 +199,9 @@ MonoBehaviour:
     - {fileID: 11400000, guid: 0fd7362a600132645b6d304ef5392adc, type: 2}
     - {fileID: 11400000, guid: 32bc730a80c20324d9252d72beb6edec, type: 2}
     - {fileID: 11400000, guid: 97281903f4689514894c33ba3a1659b2, type: 2}
+    - {fileID: 11400000, guid: cf6799eef55a8ca418ac1a07555f46bc, type: 2}
+    - {fileID: 11400000, guid: a2d3fc3b6ad9d0e41aff2d473ece2705, type: 2}
+    - {fileID: 11400000, guid: d075c4bf7f79e9e4f94ae1336d32ef33, type: 2}
     SerializedBytesString: 
     Prefab: {fileID: 0}
     PrefabModificationsReferencedUnityObjects: []
@@ -228,7 +231,7 @@ MonoBehaviour:
         Rollgeon]], mscorlib
     - Name: 
       Entry: 12
-      Data: 185
+      Data: 188
     - Name: 
       Entry: 7
       Data: Rollgeon.Shop.WeightedShopItem, Rollgeon
@@ -3560,6 +3563,60 @@ MonoBehaviour:
       Entry: 8
       Data: 
     - Name: 
+      Entry: 7
+      Data: Rollgeon.Shop.WeightedShopItem, Rollgeon
+    - Name: Item
+      Entry: 10
+      Data: 183
+    - Name: Weight
+      Entry: 4
+      Data: 1
+    - Name: BasePrice
+      Entry: 3
+      Data: 60
+    - Name: MinFloorDepth
+      Entry: 3
+      Data: 0
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: Rollgeon.Shop.WeightedShopItem, Rollgeon
+    - Name: Item
+      Entry: 10
+      Data: 184
+    - Name: Weight
+      Entry: 4
+      Data: 1
+    - Name: BasePrice
+      Entry: 3
+      Data: 100
+    - Name: MinFloorDepth
+      Entry: 3
+      Data: 0
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: Rollgeon.Shop.WeightedShopItem, Rollgeon
+    - Name: Item
+      Entry: 10
+      Data: 185
+    - Name: Weight
+      Entry: 4
+      Data: 1
+    - Name: BasePrice
+      Entry: 3
+      Data: 100
+    - Name: MinFloorDepth
+      Entry: 3
+      Data: 0
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
       Entry: 13
       Data: 
     - Name: 
@@ -4310,4 +4367,16 @@ MonoBehaviour:
   - Item: {fileID: 11400000, guid: 97281903f4689514894c33ba3a1659b2, type: 2}
     Weight: 1
     BasePrice: 120
+    MinFloorDepth: 0
+  - Item: {fileID: 11400000, guid: cf6799eef55a8ca418ac1a07555f46bc, type: 2}
+    Weight: 1
+    BasePrice: 60
+    MinFloorDepth: 0
+  - Item: {fileID: 11400000, guid: a2d3fc3b6ad9d0e41aff2d473ece2705, type: 2}
+    Weight: 1
+    BasePrice: 100
+    MinFloorDepth: 0
+  - Item: {fileID: 11400000, guid: d075c4bf7f79e9e4f94ae1336d32ef33, type: 2}
+    Weight: 1
+    BasePrice: 100
     MinFloorDepth: 0
