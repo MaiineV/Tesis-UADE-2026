@@ -1248,6 +1248,19 @@ namespace Rollgeon.EditorTools.Localization
                 "Cuanto más oro tienes, más daño haces.",
                 "The more gold you have, the more damage you deal.");
 
+            // Feature#0074 — Tarjeta / Rezagado / Peaje.
+            Item("tarjeta.de.credito", "Tarjeta de Crédito", "Credit Card",
+                "Tu oro puede bajar hasta -30: comprá a crédito y pagá la deuda con lo que ganes.",
+                "Your gold can drop to -30: buy on credit and pay the debt back with what you earn.");
+
+            Item("rezagado", "Rezagado", "Straggler",
+                "Al adquirirlo se fija en tu combo menos usado: ese combo hace +50% de daño el resto de la run.",
+                "On pickup it locks onto your least-used combo: that combo deals +50% damage for the rest of the run.");
+
+            Item("peaje", "Peaje", "Toll",
+                "Al entrar a una sala de combate normal podés pagar 15 + 10 por piso de oro para limpiarla sin pelear. Sin botín.",
+                "When entering a regular combat room you may pay 15 + 10 per floor in gold to clear it without fighting. No loot.");
+
             Item("escudo.imperial.poker", "Escudo Imperial", "Imperial Shield",
                 "Cada Póker genera +2 escudo.",
                 "Each Poker grants +2 shield.");
