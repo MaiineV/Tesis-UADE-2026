@@ -61,6 +61,7 @@ namespace Rollgeon.UI.HUD.Status
         private float _liftAboveBar = 1f;
         private float _referenceZoom = 9f;
         private Vector3 _baseScale = Vector3.one;
+        private bool _showFloatingRow;
         private bool _bound;
         private Action<DamageResolvedPayload> _onDamageResolved;
         private GuardianAuraBadgeView _auraBadge;
@@ -117,6 +118,7 @@ namespace Rollgeon.UI.HUD.Status
             view._liftAboveBar = settings.LiftAboveBar;
             view._referenceZoom = settings.ReferenceZoom;
             view._baseScale = rect.localScale;
+            view._showFloatingRow = settings.ShowFloatingRow;
 
             // Sobre la barra de vida del pawn y no a una altura global: cada bicho la lleva
             // a otra altura. Sin barra, el Offset del settings.
@@ -297,11 +299,19 @@ namespace Rollgeon.UI.HUD.Status
 
             Recollect();
 
-            // La fila sigue siendo UNA aunque el panel tenga dos columnas: el ícono que flota
-            // sobre el bicho y el de su tarjeta tienen que ser el mismo sprite, que es lo que hace
-            // que el sistema se entienda sin tutorial. Su ataque primero, que es lo que se lee.
-            int shown = Draw(_panelCards, 0);
-            shown = Draw(_applied, shown);
+            // La fila flotante es opt-in por settings (apagada desde el 03/09): los estados se
+            // leen en el panel del tooltip. El Recollect de arriba sigue corriendo igual — es
+            // la fuente de las tarjetas del panel — y el badge de aura no es parte de la fila.
+            int shown = 0;
+            if (_showFloatingRow)
+            {
+                // La fila sigue siendo UNA aunque el panel tenga dos columnas: el ícono que flota
+                // sobre el bicho y el de su tarjeta tienen que ser el mismo sprite, que es lo que
+                // hace que el sistema se entienda sin tutorial. Su ataque primero, que es lo que
+                // se lee.
+                shown = Draw(_panelCards, 0);
+                shown = Draw(_applied, shown);
+            }
 
             for (int i = shown; i < _slots.Count; i++)
                 _slots[i].gameObject.SetActive(false);

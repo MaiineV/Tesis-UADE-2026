@@ -1080,6 +1080,14 @@ MonoBehaviour:
     m_Localized: Movement
     m_Metadata:
       m_Items: []
+  - m_Id: 18278208505741312
+    m_Localized: 'Item bonus to your roll: +{0}'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18278208577044480
+    m_Localized: Explodes in {0} turns
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

@@ -1039,7 +1039,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 17283715985403904
-    m_Localized: +2 movimiento base.
+    m_Localized: +2 de movimiento base.
     m_Metadata:
       m_Items: []
   - m_Id: 17285590277255168
@@ -1051,7 +1051,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 17285792501428224
-    m_Localized: Botas del rayo
+    m_Localized: Botas del Rayo
     m_Metadata:
       m_Items: []
   - m_Id: 17285792501428225
@@ -1063,7 +1063,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 17286059955417089
-    m_Localized: +4 de movimiento base
+    m_Localized: +4 de movimiento base.
     m_Metadata:
       m_Items: []
   - m_Id: 17290144389623808
@@ -1079,7 +1079,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 17291279481532417
-    m_Localized: "+45 vida m\xE1xima."
+    m_Localized: "+45 de vida m\xE1xima."
     m_Metadata:
       m_Items: []
   - m_Id: 17291390181797888
@@ -1087,7 +1087,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 17291390181797889
-    m_Localized: "+50 vida m\xE1xima."
+    m_Localized: "+50 de vida m\xE1xima."
     m_Metadata:
       m_Items: []
   - m_Id: 17294895571365888
@@ -1119,7 +1119,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 17300896068497409
-    m_Localized: +22 en tiradas de escudo
+    m_Localized: +22 en tiradas de escudo.
     m_Metadata:
       m_Items: []
   - m_Id: 17306392171212800
@@ -1127,11 +1127,11 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 17306392175407104
-    m_Localized: "+10 de da\xF1o base, a cambio de -1 en tirada de movimiento"
+    m_Localized: "+10 de da\xF1o base, a cambio de -1 en tirada de movimiento."
     m_Metadata:
       m_Items: []
   - m_Id: 17318608383602688
-    m_Localized: 'Regeneracion de dados '
+    m_Localized: "Regeneraci\xF3n de Dados"
     m_Metadata:
       m_Items: []
   - m_Id: 17318608387796992
@@ -1143,7 +1143,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 17321473286172673
-    m_Localized: Recuperas 5HP por cada roll sin utilizar al final del turno.
+    m_Localized: Recuperas 5HP por cada roll sin utilizar.
     m_Metadata:
       m_Items: []
   - m_Id: 17321622683086848
@@ -1163,7 +1163,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 17323018375491584
-    m_Localized: Llamado de emergencia
+    m_Localized: Llamado de Emergencia
     m_Metadata:
       m_Items: []
   - m_Id: 17323018375491585
@@ -1176,7 +1176,7 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 17325063912386561
     m_Localized: "La primera vez que el jugador llegar\xEDa a 0 HP en la run, queda
-      en 1 HP en vez de morir.\n"
+      en 1 HP en vez de morir."
     m_Metadata:
       m_Items: []
   - m_Id: 17331148496924672
@@ -2328,7 +2328,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 18023236037341185
-    m_Localized: "+10 de escudo al resvolver el combo N\xFAmero Alto."
+    m_Localized: "+10 de escudo al resolver el combo N\xFAmero Alto."
     m_Metadata:
       m_Items: []
   - m_Id: 18023381688741888
@@ -2412,11 +2412,11 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 18025853626970112
-    m_Localized: "Vig\xEDa del Trio"
+    m_Localized: "Vig\xEDa del Tr\xEDo"
     m_Metadata:
       m_Items: []
   - m_Id: 18025853626970113
-    m_Localized: +5 de escudo al resolver el combo Trio.
+    m_Localized: "+5 de escudo al resolver el combo Tr\xEDo."
     m_Metadata:
       m_Items: []
   - m_Id: 18025924280020992
@@ -2424,7 +2424,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 18025924280020993
-    m_Localized: +10 de escudo al resolver el combo Trio.
+    m_Localized: "+10 de escudo al resolver el combo Tr\xEDo."
     m_Metadata:
       m_Items: []
   - m_Id: 18026042286764032
@@ -2432,7 +2432,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 18026042286764033
-    m_Localized: +15 de escudo al resolver el combo Trio.
+    m_Localized: "+15 de escudo al resolver el combo Tr\xEDo."
     m_Metadata:
       m_Items: []
   - m_Id: 18026255139303424
@@ -2440,11 +2440,11 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 18026255139303425
-    m_Localized: +20 de escudo por cada Trio.
+    m_Localized: "+20 de escudo por cada Tr\xEDo."
     m_Metadata:
       m_Items: []
   - m_Id: 18026403529584640
-    m_Localized: "Vig\xEDa del Full House."
+    m_Localized: "Vig\xEDa del Full House"
     m_Metadata:
       m_Items: []
   - m_Id: 18026403529584641
@@ -2480,7 +2480,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 18027213252554753
-    m_Localized: +5 al resolver combo de Escalera.
+    m_Localized: +5 de escudo al resolver el combo Escalera.
     m_Metadata:
       m_Items: []
   - m_Id: 18027382681464832
@@ -2500,7 +2500,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 18027612961337344
-    m_Localized: "Vig\xEDa de la Muralla "
+    m_Localized: "Vig\xEDa de la Muralla"
     m_Metadata:
       m_Items: []
   - m_Id: 18027612961337345
@@ -2508,11 +2508,11 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 18027718045429760
-    m_Localized: "Vig\xEDa del Poker"
+    m_Localized: "Vig\xEDa del P\xF3ker"
     m_Metadata:
       m_Items: []
   - m_Id: 18027718045429761
-    m_Localized: +5 de escudo al resolver el combo Poker.
+    m_Localized: "+5 de escudo al resolver el combo P\xF3ker."
     m_Metadata:
       m_Items: []
   - m_Id: 18027793463209984
@@ -2520,7 +2520,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 18027793463209985
-    m_Localized: +10 de escudo al resolver el combo Poker.
+    m_Localized: "+10 de escudo al resolver el combo P\xF3ker."
     m_Metadata:
       m_Items: []
   - m_Id: 18027895984582656
@@ -2528,7 +2528,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 18027895984582657
-    m_Localized: +15 de escudo al resolver el combo de Poker.
+    m_Localized: "+15 de escudo al resolver el combo P\xF3ker."
     m_Metadata:
       m_Items: []
   - m_Id: 18028000674410496
@@ -2536,7 +2536,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 18028000674410497
-    m_Localized: +20 de escudo al resolver el combo Poker.
+    m_Localized: "+20 de escudo al resolver el combo P\xF3ker."
     m_Metadata:
       m_Items: []
   - m_Id: 18029536846639104
@@ -2569,6 +2569,106 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 18029803176554497
     m_Localized: +20 de escudo al resolver el combo Generala.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18278206953848832
+    m_Localized: "Fuego de Artiller\xEDa"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18278206974820352
+    m_Localized: "Rescoldo del ob\xFAs de la Artiller\xEDa: quema fuerte al caer
+      y sigue ardiendo cada turno encima."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18278206983208960
+    m_Localized: "Artiller\xEDa"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18278206983208961
+    m_Localized: "Ob\xFAs de la casa: bombardea de lejos y deja el piso ardiendo
+      donde cae el tiro."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18278206983208962
+    m_Localized: Embestidor
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18278206983208963
+    m_Localized: "Se alinea, marca el pasillo y embiste. No te quedes en su l\xEDnea."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18278206983208964
+    m_Localized: "Guardi\xE1n"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18278206983208965
+    m_Localized: "Protege a los suyos: los aliados cercanos reciben menos da\xF1o
+      mientras siga en pie."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18278206983208966
+    m_Localized: Escaramuzador
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18278206983208967
+    m_Localized: 'Tirador inquieto: dispara de lejos y se reacomoda en diagonal para
+      que no lo arrincones.'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18278206983208968
+    m_Localized: Francotirador
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18278206983208969
+    m_Localized: "Dispara desde la otra punta de la sala. Cortale la l\xEDnea de
+      visi\xF3n o pag\xE1 el tiro."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18278206983208970
+    m_Localized: Carta Barredora
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18278206983208971
+    m_Localized: 'Soldado de la casa que marca un barrido: su golpe cubre varias
+      casillas de una.'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18278206983208972
+    m_Localized: La Bandida
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18278206983208973
+    m_Localized: "Una tragamonedas de tres rodillos atornillada a la pared. No te
+      persigue: cuenta hacia el jackpot. Romp\xE9 cualquier rodillo para cancelar
+      la cuenta."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18278206983208974
+    m_Localized: Rodillo
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18278206983208975
+    m_Localized: "Uno de los tres rodillos de La Bandida. Cualquier golpe cancela
+      la cuenta del jackpot, pero romper uno cuesta casi todo un turno \u2014 y la
+      casilla que deja arde."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18278206983208976
+    m_Localized: El Anotador
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18278206983208977
+    m_Localized: "El que lleva la planilla. No juega contra vos: te corrige el puntaje
+      mientras tir\xE1s, y nunca a tu favor."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18278206983208978
+    m_Localized: "El Tah\xFAr"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18278206983208979
+    m_Localized: "La banca canta tu mano antes de que la juegues. Armarla exacta
+      paga; pasarse es codicia \u2014 y el pozo lleva la cuenta de la codicia."
     m_Metadata:
       m_Items: []
   references:

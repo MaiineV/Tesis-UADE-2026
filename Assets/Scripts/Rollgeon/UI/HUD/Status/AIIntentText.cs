@@ -23,7 +23,11 @@ namespace Rollgeon.UI.HUD.Status
     {
         public static string Describe(in AIIntent intent)
         {
-            string rule = Format(intent.LabelKey, intent.Damage, intent.Amount, intent.TurnsAway);
+            // El slot {0} de toda regla es daño: viaja ya formateado con el indicador
+            // pegado a la derecha, así cada frase lo hereda sin tocar las traducciones.
+            string rule = Format(intent.LabelKey,
+                Rollgeon.UI.Utility.IconSpriteTags.DamageAmount(intent.Damage),
+                intent.Amount, intent.TurnsAway);
 
             // Una intención sin frase propia se explica con su título y el badge de la mecha, y
             // tampoco arrastra lo que deja: vaciar su entry en la tabla ES pedir esa tarjeta.
@@ -31,7 +35,9 @@ namespace Rollgeon.UI.HUD.Status
             if (intent.Leaves == null) return rule;
 
             string leaves = Format(AIIntentTextKeys.Leaves,
-                intent.Leaves.EnterDamage, intent.Leaves.TurnStartDamage, intent.LeavesRounds);
+                Rollgeon.UI.Utility.IconSpriteTags.DamageAmount(intent.Leaves.EnterDamage),
+                Rollgeon.UI.Utility.IconSpriteTags.DamageAmount(intent.Leaves.TurnStartDamage),
+                intent.LeavesRounds);
 
             return string.IsNullOrEmpty(leaves) ? rule : rule + " " + leaves;
         }

@@ -1089,6 +1089,14 @@ MonoBehaviour:
     m_Localized: Movimiento
     m_Metadata:
       m_Items: []
+  - m_Id: 18278208505741312
+    m_Localized: 'Bonus de objetos a tu tirada: +{0}'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18278208577044480
+    m_Localized: Estalla en {0} turnos
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

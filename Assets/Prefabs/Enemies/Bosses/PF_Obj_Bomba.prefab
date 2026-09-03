@@ -230,7 +230,7 @@ MonoBehaviour:
   _hpText: {fileID: 3075507043983794009}
   _textFormat: '{0}'
   _barRoot: {fileID: 4568343032223011510}
-  _offset: {x: 0, y: 1.5999999, z: 0}
+  _offset: {x: 0, y: 2.2, z: 0}
   _referenceZoom: 9
 --- !u!1 &5154797464521634239
 GameObject:

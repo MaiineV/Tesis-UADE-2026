@@ -33,5 +33,23 @@ namespace Rollgeon.UI.Utility
 
         public static string SpriteTag(string iconName)
             => $"<sprite name=\"{iconName}\">";
+
+        /// <summary>
+        /// Glifo del indicador de daño. Vive en el atlas <c>TMP_DmgIndicator</c>, fallback
+        /// del default (installer <c>Rollgeon → UI → Wire Damage Indicator TMP Sprite</c>).
+        /// </summary>
+        public const string DamageIconName = "DmgIndicator";
+
+        /// <summary>
+        /// Un monto de daño con el ícono a su derecha (separados por un espacio) — TODO
+        /// texto de tooltip que muestre daño pasa por acá, así el indicador es uno solo
+        /// y escala con la fuente.
+        /// </summary>
+        public static string DamageAmount(int amount)
+            => amount + " " + SpriteTag(DamageIconName);
+
+        /// <summary>El ícono suelto, para cerrar una fórmula de daño no numérica.</summary>
+        public static string DamageTag()
+            => SpriteTag(DamageIconName);
     }
 }

@@ -51,7 +51,9 @@ namespace Rollgeon.EditorTools.HUD
 
         private const float PanelOpenX = 24f;
         private static readonly float PanelClosedX = -(PanelSize.x + 40f);
-        private const float PanelTopY = -136f;
+        // -168 y no -136: el top del panel pisaba los últimos ~16px del marco del
+        // personaje (cluster en y-24 + marco de 128) — pedido de playtest del 03/09.
+        private const float PanelTopY = -168f;
 
         [MenuItem("Rollgeon/Inventory Drawer/Setup New Inventory")]
         public static void SetupAll()

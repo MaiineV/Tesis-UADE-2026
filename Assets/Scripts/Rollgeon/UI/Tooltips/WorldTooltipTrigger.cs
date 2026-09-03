@@ -138,7 +138,12 @@ namespace Rollgeon.UI.Tooltips
                 if (PinOnClick && !pointerOverUI && MouseLeftPressedThisFrame())
                     HandlePinClick(hitMe);
 
-                SetHover(hitMe || _pinned, cam);
+                // Con una selección de target activa el panel se re-mostraba por hover
+                // y su fila de slots (el único raycastable del panel) colgaba sobre el
+                // enemigo: el click de atacar caía "sobre UI" y TileClickHandler lo
+                // tragaba — había que clickear afuera y de vuelta. Durante targeting
+                // el tooltip no se muestra y el click llega limpio.
+                SetHover(ShouldShowHover(hitMe, _pinned, IsSelectingTarget()), cam);
                 return;
             }
 
@@ -172,6 +177,13 @@ namespace Rollgeon.UI.Tooltips
         private static bool IsSelectingTarget()
             => ServiceLocator.TryGetService<ISelectionController>(out var selection)
                && selection != null && selection.IsSelecting;
+
+        /// <summary>
+        /// Si el hover debe mostrar el panel este frame. Estático puro — el seam de
+        /// test del fix "targeting con tooltip abierto traga el click de atacar".
+        /// </summary>
+        internal static bool ShouldShowHover(bool hitMe, bool pinned, bool selecting)
+            => !selecting && (hitMe || pinned);
 
         /// <summary>Fija este trigger y suelta al anterior. Público para tests/tutorial.</summary>
         public void Pin()

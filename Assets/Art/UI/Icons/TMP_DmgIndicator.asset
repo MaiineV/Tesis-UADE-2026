@@ -10,7 +10,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 84a92b25f83d49b9bc132d206b370281, type: 3}
-  m_Name: RollgeonIcons
+  m_Name: TMP_DmgIndicator
   m_EditorClassIdentifier: Unity.TextMeshPro::TMPro.TMP_SpriteAsset
   m_Version: 1.1.0
   m_FaceInfo:
@@ -35,86 +35,41 @@ MonoBehaviour:
     m_StrikethroughOffset: 0
     m_StrikethroughThickness: 0
     m_TabWidth: 0
-  m_Material: {fileID: 9091068831716079209}
-  spriteSheet: {fileID: 2800000, guid: 7918a0b2000098342b92e450ecd32e4f, type: 3}
+  m_Material: {fileID: 7259960862784542079}
+  spriteSheet: {fileID: 2800000, guid: cfdba2c5bf61f84488f66ea495d321d2, type: 3}
   m_SpriteCharacterTable:
   - m_ElementType: 2
     m_Unicode: 65534
     m_GlyphIndex: 0
-    m_Scale: 1
-    m_Name: Energy
-  - m_ElementType: 2
-    m_Unicode: 65534
-    m_GlyphIndex: 1
-    m_Scale: 1
-    m_Name: Gold
-  - m_ElementType: 2
-    m_Unicode: 65534
-    m_GlyphIndex: 2
-    m_Scale: 1
-    m_Name: Health
+    m_Scale: 0.7
+    m_Name: DmgIndicator
   m_GlyphTable:
   - m_Index: 0
     m_Metrics:
-      m_Width: 185
-      m_Height: 186
+      m_Width: 18
+      m_Height: 18
       m_HorizontalBearingX: 0
-      m_HorizontalBearingY: 167.4
-      m_HorizontalAdvance: 185
-    m_GlyphRect:
-      m_X: 0
-      m_Y: 206
-      m_Width: 185
-      m_Height: 186
-    m_Scale: 1
-    m_AtlasIndex: 0
-    m_ClassDefinitionType: 0
-    sprite: {fileID: -7404273912201274490, guid: 7918a0b2000098342b92e450ecd32e4f, type: 3}
-  - m_Index: 1
-    m_Metrics:
-      m_Width: 207
-      m_Height: 204
-      m_HorizontalBearingX: 0
-      m_HorizontalBearingY: 183.59999
-      m_HorizontalAdvance: 207
+      m_HorizontalBearingY: 16.199999
+      m_HorizontalAdvance: 18
     m_GlyphRect:
       m_X: 0
       m_Y: 0
-      m_Width: 207
-      m_Height: 204
+      m_Width: 18
+      m_Height: 18
     m_Scale: 1
     m_AtlasIndex: 0
     m_ClassDefinitionType: 0
-    sprite: {fileID: 5618026609613044863, guid: 7918a0b2000098342b92e450ecd32e4f, type: 3}
-  - m_Index: 2
-    m_Metrics:
-      m_Width: 186
-      m_Height: 186
-      m_HorizontalBearingX: 0
-      m_HorizontalBearingY: 167.4
-      m_HorizontalAdvance: 186
-    m_GlyphRect:
-      m_X: 209
-      m_Y: 0
-      m_Width: 186
-      m_Height: 186
-    m_Scale: 1
-    m_AtlasIndex: 0
-    m_ClassDefinitionType: 0
-    sprite: {fileID: 3070148713985423590, guid: 7918a0b2000098342b92e450ecd32e4f, type: 3}
+    sprite: {fileID: -6895602717231026171, guid: cfdba2c5bf61f84488f66ea495d321d2, type: 3}
   spriteInfoList: []
-  fallbackSpriteAssets:
-  - {fileID: 11400000, guid: c41005c129ba4d66911b75229fd70b45, type: 2}
-  - {fileID: 0}
-  - {fileID: 11400000, guid: 51eb65ff78317d84a8f75d4d0c3ab600, type: 2}
---- !u!21 &9091068831716079209
+  fallbackSpriteAssets: []
+--- !u!21 &7259960862784542079
 Material:
   serializedVersion: 8
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: RollgeonIcons Material
+  m_Name: TMP_DmgIndicator Material
   m_Shader: {fileID: 4800000, guid: cf81c85f95fe47e1a27f6ae460cf182c, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
@@ -131,7 +86,7 @@ Material:
     serializedVersion: 3
     m_TexEnvs:
     - _MainTex:
-        m_Texture: {fileID: 2800000, guid: 7918a0b2000098342b92e450ecd32e4f, type: 3}
+        m_Texture: {fileID: 2800000, guid: cfdba2c5bf61f84488f66ea495d321d2, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     m_Ints: []

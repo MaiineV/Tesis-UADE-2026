@@ -2511,6 +2511,94 @@ MonoBehaviour:
     m_Key: vigia.de.la.fortaleza.divina.desc
     m_Metadata:
       m_Items: []
+  - m_Id: 18278206953848832
+    m_Key: tile.fireartillery.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18278206974820352
+    m_Key: tile.fireartillery.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18278206983208960
+    m_Key: enemy.artillery.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18278206983208961
+    m_Key: enemy.artillery.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18278206983208962
+    m_Key: enemy.charger.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18278206983208963
+    m_Key: enemy.charger.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18278206983208964
+    m_Key: enemy.guardian.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18278206983208965
+    m_Key: enemy.guardian.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18278206983208966
+    m_Key: enemy.skirmisher.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18278206983208967
+    m_Key: enemy.skirmisher.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18278206983208968
+    m_Key: enemy.sniper.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18278206983208969
+    m_Key: enemy.sniper.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18278206983208970
+    m_Key: CardEnemySweeper.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18278206983208971
+    m_Key: CardEnemySweeper.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18278206983208972
+    m_Key: boss.one_armed.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18278206983208973
+    m_Key: boss.one_armed.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18278206983208974
+    m_Key: obj.reel.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18278206983208975
+    m_Key: obj.reel.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18278206983208976
+    m_Key: boss.scorekeeper.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18278206983208977
+    m_Key: boss.scorekeeper.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18278206983208978
+    m_Key: boss.tahur.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18278206983208979
+    m_Key: boss.tahur.desc
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:
