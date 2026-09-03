@@ -1056,8 +1056,8 @@ namespace Rollgeon.EditorTools.Localization
             // no puede presentarlo como el mismo objeto.
             Content("tile.spikes_cajero.name", "Pinchos del Cajero", "Cashier's Spikes");
             Content("tile.spikes_cajero.desc",
-                "Se desarman al pisarlos y se rearman solos. Duelen bastante más que los comunes.",
-                "Disarm when stepped on and rearm on their own. They hurt a fair bit more than the common ones.");
+                "Cobran cada vez que los cruzás: no se gastan. Duelen bastante más que los comunes.",
+                "They charge every time you cross them - they never wear out. They hurt a fair bit more than the common ones.");
         }
 
         // ==================================================================

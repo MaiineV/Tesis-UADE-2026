@@ -528,6 +528,35 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         }
 
         [Test]
+        public void SpikeTile_NeverWearsOut_SoTheFieldStaysAWallForHim()
+        {
+            var spikes = ScriptableObject.CreateInstance<SpecialTileDefinitionSO>();
+            try
+            {
+                CajeroAssetBuilder.PopulateSpikeTile(spikes);
+
+                Assert.IsFalse(spikes.DisarmOnTrigger,
+                    "Volvió el desarme: un pincho disparado quedaría bajado, el pathing lo lee como " +
+                    "suelo limpio, y cada pincho que el jugador gasta le abre al jefe un pasillo " +
+                    "justo después de haberlo pagado. Las diez casillas cobran todas las veces.");
+                Assert.IsFalse(spikes.RearmOnRoundWrap,
+                    "Rearmar sin desarme no hace nada, y deja leyendo que hay una ventana en la que " +
+                    "el campo se abre.");
+
+                Assert.AreEqual(0, spikes.DefaultDurationRounds,
+                    "Terreno de la sala, no algo que el jefe pone: no vence.");
+                Assert.AreEqual(CajeroAssetBuilder.SpikeDamage, spikes.EnterDamage);
+                Assert.IsTrue(spikes.Triggers.HasFlag(TileTrigger.OnForcedMovementInto),
+                    "Sin OnForcedMovementInto el tumbo cruza los pinchos gratis, y el empujón deja " +
+                    "de meter al jugador adonde duele.");
+            }
+            finally
+            {
+                Object.DestroyImmediate(spikes);
+            }
+        }
+
+        [Test]
         public void CritterGate_SpawnsTwoOfThemAtFiftyPercentHp()
         {
             var gate = FindGateAtPercent<AINode_SpawnReinforcements>(CajeroAssetBuilder.CritterHpThreshold);

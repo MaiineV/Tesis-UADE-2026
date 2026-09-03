@@ -28,8 +28,8 @@ MonoBehaviour:
   ComboDamageBonus: 0
   MoveRangeBonus: 0
   DefaultDurationRounds: 0
-  DisarmOnTrigger: 1
-  RearmOnRoundWrap: 1
+  DisarmOnTrigger: 0
+  RearmOnRoundWrap: 0
   OwnerBossImmune: 1
   TelegraphPayload: {fileID: 0}
   TelegraphRounds: 1

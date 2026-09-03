@@ -1689,8 +1689,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 17593280044658703
-    m_Localized: "Se desarman al pisarlos y se rearman solos. Duelen bastante m\xE1s
-      que los comunes."
+    m_Localized: "Cobran cada vez que los cruz\xE1s: no se gastan. Duelen bastante m\xE1s que los comunes."
     m_Metadata:
       m_Items: []
   - m_Id: 17593280048852992

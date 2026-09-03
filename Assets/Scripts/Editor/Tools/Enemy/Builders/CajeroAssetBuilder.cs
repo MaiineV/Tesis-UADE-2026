@@ -217,8 +217,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         public const int SpikeDamage = 20;
 
         /// <summary>
-        /// Costo virtual que hace que el pathing lea un pincho armado como <b>intransitable</b> y no
-        /// como caro.
+        /// Costo virtual que hace que el pathing lea un pincho como <b>intransitable</b> y no como
+        /// caro. Sin desarme son las diez, toda la pelea.
         /// </summary>
         /// <remarks>
         /// <c>AIPathPlanner.ComputeHazardPenalty</c> es <c>ceil(daño / HP × 10 × Caution)</c> y
@@ -229,7 +229,12 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         /// <para>
         /// Va atado a <see cref="BaseHP"/>, no a un número suelto: la saturación es la suma dando la
         /// vida entera del jefe, así que <b>tocarle la vida obliga a recalcular esto</b> o el pincho
-        /// armado vuelve a ser sólo caro y el jefe se camina sus propios pinchos.
+        /// vuelve a ser sólo caro y el jefe se camina sus propios pinchos.
+        /// </para>
+        /// <para>
+        /// Con los pinchos permanentes esto es lo único que lo mantiene afuera, y no hay ventana en
+        /// la que el campo se abra: por eso el layout los deja sueltos —ninguno tocando a otro— para
+        /// que nunca formen barrera y siempre le quede ruta hasta el jugador.
         /// </para>
         /// </remarks>
         public const int SpikeAIVirtualDamage = 430;
@@ -659,14 +664,12 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
             };
 
         /// <summary>
-        /// La persecución: <see cref="ChaseSteps"/> pasos hacia el jugador, esquivando los pinchos
-        /// armados.
+        /// La persecución: <see cref="ChaseSteps"/> pasos hacia el jugador, esquivando los pinchos.
         /// </summary>
         /// <remarks>
         /// El esquive no está acá: sale del planner, que lee el costo de cada casilla especial. Lo
-        /// que lo hace tratar un pincho armado como intransitable es
-        /// <see cref="SpikeAIVirtualDamage"/>; uno ya disparado queda desarmado hasta el cierre de
-        /// ronda y el planner lo pisa.
+        /// que lo hace tratarlos como intransitables es <see cref="SpikeAIVirtualDamage"/>, y no se
+        /// gastan: los diez siguen siendo muro para él toda la pelea.
         /// <para>
         /// <c>Retreat = false</c>: no kitea nunca. Si ya está pegado el nodo sale por Failed y el
         /// Selector lo absorbe.
@@ -1282,25 +1285,12 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         }
 
         /// <summary>
-        /// Crea (o actualiza) los pinchos de la sala del Cajero: cobran <see cref="SpikeDamage"/> al
-        /// entrar —también empujado—, se bajan al dispararse y se rearman al cerrar la ronda.
+        /// Escribe la ficha de los pinchos sobre <paramref name="spikes"/>, sin el arte. Pura: no
+        /// toca AssetDatabase ni marca dirty — mismo reparto que <see cref="PopulateEnemyData"/>.
         /// </summary>
-        /// <remarks>
-        /// <para>
-        /// <b>Este builder crea la definición, no las coloca.</b> Las casillas las escribe
-        /// <c>BossRoomBuilder</c> en <c>RoomLayout.SpecialTilePlacements</c> de
-        /// <c>Boss_Room_Cajero</c>, leyendo <see cref="SpikePlanCells"/>, y van por la lista de
-        /// permanentes y no por un slot.
-        /// </para>
-        /// <para>
-        /// Al venir de la sala el owner queda vacío, y eso es lo que hace que el jefe <b>no</b> sea
-        /// inmune: <c>SpecialTileService.ShouldAffect</c> exime a un jefe sólo de las casillas cuyo
-        /// owner es un jefe.
-        /// </para>
-        /// </remarks>
-        public static SpecialTileDefinitionSO EnsureSpikeTile()
+        public static void PopulateSpikeTile(SpecialTileDefinitionSO spikes)
         {
-            var spikes = LoadOrCreate<SpecialTileDefinitionSO>(SpikeTilePath);
+            if (spikes == null) return;
 
             spikes.TileId = SpikeTileId;
             spikes.DisplayName = "Pinchos del Cajero";
@@ -1318,10 +1308,12 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
             // Permanentes: son terreno de la sala, no algo que el jefe pone.
             spikes.DefaultDurationRounds = 0;
 
-            // "Armado sí, bajado no": un pincho disparado queda bajado hasta el cierre de ronda, y el
-            // pathing lo lee.
-            spikes.DisarmOnTrigger = true;
-            spikes.RearmOnRoundWrap = true;
+            // No se gastan: la casilla cobra cada vez que la cruzás, y el segundo empujón por el
+            // mismo lugar sale igual que el primero. Con desarme, cada pincho disparado le abría al
+            // jefe un pasillo por un turno —el pathing lee el bajado como suelo limpio— y el campo
+            // dejaba de ser muro justo cuando el jugador ya había pagado por gastarlo.
+            spikes.DisarmOnTrigger = false;
+            spikes.RearmOnRoundWrap = false;
 
             spikes.AIVirtualEnterDamage = SpikeAIVirtualDamage;
             spikes.AIAnnouncesLethal = false;
@@ -1330,6 +1322,29 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
             // tooltip no puede presentarlo como el mismo objeto.
             spikes.NameKey = "tile.spikes_cajero";
             spikes.DescriptionKey = "tile.spikes_cajero";
+        }
+
+        /// <summary>
+        /// Crea (o actualiza) los pinchos de la sala del Cajero: cobran <see cref="SpikeDamage"/> al
+        /// entrar —también empujado— y <b>no se gastan</b>: la misma casilla cobra todas las veces.
+        /// </summary>
+        /// <remarks>
+        /// <para>
+        /// <b>Este builder crea la definición, no las coloca.</b> Las casillas las escribe
+        /// <c>BossRoomBuilder</c> en <c>RoomLayout.SpecialTilePlacements</c> de
+        /// <c>Boss_Room_Cajero</c>, leyendo <see cref="SpikePlanCells"/>, y van por la lista de
+        /// permanentes y no por un slot.
+        /// </para>
+        /// <para>
+        /// Al venir de la sala el owner queda vacío, y eso es lo que hace que el jefe <b>no</b> sea
+        /// inmune: <c>SpecialTileService.ShouldAffect</c> exime a un jefe sólo de las casillas cuyo
+        /// owner es un jefe.
+        /// </para>
+        /// </remarks>
+        public static SpecialTileDefinitionSO EnsureSpikeTile()
+        {
+            var spikes = LoadOrCreate<SpecialTileDefinitionSO>(SpikeTilePath);
+            PopulateSpikeTile(spikes);
 
             // Mismo arte y mismo color de paleta que el pincho genérico: para el jugador es el mismo
             // objeto.

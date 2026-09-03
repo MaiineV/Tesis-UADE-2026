@@ -1667,8 +1667,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 17593280044658703
-    m_Localized: Disarm when stepped on and rearm on their own. They hurt a fair
-      bit more than the common ones.
+    m_Localized: "They charge every time you cross them - they never wear out. They hurt a fair bit more than the common ones."
     m_Metadata:
       m_Items: []
   - m_Id: 17593280048852992
