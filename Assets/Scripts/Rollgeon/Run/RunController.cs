@@ -264,6 +264,10 @@ namespace Rollgeon.Run
                     ServiceScope.Run);
             }
 
+            // 6b. Peaje: oferta de saltear combate — debe existir antes de que
+            // ExplorationController procese la primera sala.
+            Rollgeon.Items.CombatTollService.CreateAndRegister();
+
             // 7. Exploration
             ExplorationController.CreateAndRegister();
 
