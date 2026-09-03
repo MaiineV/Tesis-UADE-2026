@@ -29,7 +29,7 @@ MonoBehaviour:
       Data: Escudado
     - Name: _description
       Entry: 1
-      Data: Si se utiliza en un combo de poker da 15 mas de escudo.
+      Data: "Si este dado participa en un p\xF3ker, gener\xE1s 15 puntos de escudo."
     - Name: _icon
       Entry: 6
       Data: 
@@ -140,7 +140,7 @@ MonoBehaviour:
       Data: 1
     - Name: 
       Entry: 7
-      Data: 10|Rollgeon.Effects.Concretes.EffModifyIntAttribute, Rollgeon
+      Data: 10|Rollgeon.Effects.Concretes.EffAddShield, Rollgeon
     - Name: Selection
       Entry: 7
       Data: 11|Rollgeon.Effects.Selection.SelectionSettings, Rollgeon
@@ -225,36 +225,21 @@ MonoBehaviour:
     - Name: 
       Entry: 8
       Data: 
-    - Name: TargetStat
-      Entry: 3
-      Data: 4
-    - Name: Operation
+    - Name: _shieldSource
       Entry: 3
       Data: 0
-    - Name: _amountSource
-      Entry: 3
-      Data: 2
     - Name: _baseAmount
       Entry: 3
-      Data: 1
+      Data: 15
     - Name: _comboMultiplier
       Entry: 4
       Data: 1
     - Name: _reader
-      Entry: 7
-      Data: 13|Rollgeon.Effects.Readers.ReadConstantInt, Rollgeon
-    - Name: Value
-      Entry: 3
-      Data: 15
-    - Name: 
-      Entry: 8
+      Entry: 6
       Data: 
     - Name: _readerMultiplier
       Entry: 4
       Data: 1
-    - Name: _clampHealthToMax
-      Entry: 5
-      Data: false
     - Name: 
       Entry: 8
       Data: 
@@ -287,7 +272,7 @@ MonoBehaviour:
       Data: 
     - Name: _capabilities
       Entry: 7
-      Data: 14|System.Collections.Generic.List`1[[Rollgeon.Upgrades.Dice.IEnchantmentCapability,
+      Data: 13|System.Collections.Generic.List`1[[Rollgeon.Upgrades.Dice.IEnchantmentCapability,
         Rollgeon]], mscorlib
     - Name: 
       Entry: 12
@@ -301,14 +286,14 @@ MonoBehaviour:
   _faceFilter:
     rid: -2
   _triggers:
-  - rid: 7496091007886557872
+  - rid: 7465468535394271973
   _capabilities: []
   references:
     version: 2
     RefIds:
     - rid: -2
       type: {class: , ns: , asm: }
-    - rid: 7496091007886557872
+    - rid: 7465468535394271973
       type: {class: ExecuteEffectsOnDiceEvent, ns: Rollgeon.Upgrades.Dice.Triggers, asm: Rollgeon}
       data:
         Event: 5
@@ -321,11 +306,11 @@ MonoBehaviour:
         - Label: Effect Group
           PreConditions: []
           Effects:
-          - rid: 7496091007886557873
+          - rid: 7465468535394271974
           TargetSelector:
             rid: -2
-    - rid: 7496091007886557873
-      type: {class: EffModifyIntAttribute, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
+    - rid: 7465468535394271974
+      type: {class: EffAddShield, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
       data:
         Selection:
           SlotState: 1
@@ -348,16 +333,9 @@ MonoBehaviour:
             rid: -2
           AutoResolve: 0
           AutoAccept: 1
-        TargetStat: 4
-        Operation: 0
-        _amountSource: 2
-        _baseAmount: 1
+        _shieldSource: 0
+        _baseAmount: 15
         _comboMultiplier: 1
         _reader:
-          rid: 7496091007886557874
+          rid: -2
         _readerMultiplier: 1
-        _clampHealthToMax: 0
-    - rid: 7496091007886557874
-      type: {class: ReadConstantInt, ns: Rollgeon.Effects.Readers, asm: Rollgeon}
-      data:
-        Value: 15

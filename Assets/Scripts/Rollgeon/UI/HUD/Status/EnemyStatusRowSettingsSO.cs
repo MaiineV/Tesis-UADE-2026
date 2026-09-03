@@ -12,6 +12,13 @@ namespace Rollgeon.UI.HUD.Status
     {
         public const string ResourcePath = "UI/EnemyStatusRowSettings";
 
+        [Tooltip("Dibuja la fila de íconos flotando sobre la cabeza. Apagada (decisión 03/09): " +
+                 "los estados se leen en el panel del tooltip; la fila duplicaba esa info y " +
+                 "ensuciaba la lectura del bicho. El objeto igual se crea — es la fuente de las " +
+                 "tarjetas del panel y del badge de aura del Guardian. Bool nuevo deserializa " +
+                 "FALSE en el asset ya autorado: apagada por defecto, se re-activa tildando acá.")]
+        public bool ShowFloatingRow;
+
         [Tooltip("Prefab de un ícono suelto. Se reusa el mismo que la fila del player.")]
         public StatusEffectIconView IconPrefab;
 

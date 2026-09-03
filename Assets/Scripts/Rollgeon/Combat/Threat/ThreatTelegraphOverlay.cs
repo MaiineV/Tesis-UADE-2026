@@ -506,12 +506,12 @@ namespace Rollgeon.Combat.Threat
         public static readonly Color IncomingTint = new Color(1f, 0.25f, 0.6f, 0.55f);
 
         /// <summary>
-        /// Rojo claro del alcance de un arma en el hover. No es <see cref="DefaultTint"/> — ese
-        /// matiz ya significa "comprometido" en el canal standing del mismo hover — ni el
-        /// rojo-fuego de los hazards (0.85, 0.1, 0.05): "hasta acá llega" tiene que poder
-        /// convivir en pantalla con los dos.
+        /// Amarillo apagado del alcance de un arma (hover individual y toggle global de ALT).
+        /// Amarillo y no rojo: "hasta acá llega" es informativo, no una amenaza puesta, y el
+        /// rojo lo hacía leer como daño ya comprometido. Apagado a pedido de diseño — matiz y
+        /// alfa provisorios hasta la pasada de color final.
         /// </summary>
-        public static readonly Color ReachTint = new Color(1f, 0.30f, 0.20f, 0.55f);
+        public static readonly Color ReachTint = new Color(0.85f, 0.78f, 0.35f, 0.5f);
 
         /// <summary>
         /// Marked y Detonating comparten matiz, así que entre ellos el <i>cuándo</i> lo lee la

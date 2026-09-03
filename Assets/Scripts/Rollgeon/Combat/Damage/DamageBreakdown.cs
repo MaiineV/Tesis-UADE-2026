@@ -29,11 +29,16 @@ namespace Rollgeon.Combat.Damage
         /// puede aportar fracción; el redondeo único vive en <c>RoundNxM(N, M)</c>.</summary>
         public float N;
 
-        // ── Términos de M (multiplicativos) ───────────────────────────────
+        // ── Términos de M ─────────────────────────────────────────────────
+        /// <summary>Σ ComboMultiplierBonus de los 3 canales de scratch. Entra como
+        /// <c>(1 + esto)</c> al producto de M; 0 = neutro.</summary>
+        public float ScratchMultiplierBonus;
         /// <summary>Producto de ComboDamageMultiplier de los 3 canales de scratch.</summary>
         public float ScratchMultiplier;
         /// <summary>Perilla por habilidad (ej. golpe rápido 0.75).</summary>
         public float AbilityMultiplier;
+        /// <summary><c>(1 + ScratchMultiplierBonus) × ScratchMultiplier × AbilityMultiplier</c>
+        /// (× la palanca de playtest si está prendida).</summary>
         public float M;
 
         // ── Resultado ─────────────────────────────────────────────────────

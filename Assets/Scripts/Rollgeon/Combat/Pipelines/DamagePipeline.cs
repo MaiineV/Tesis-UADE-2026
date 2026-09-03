@@ -227,6 +227,7 @@ namespace Rollgeon.Combat.Pipelines
                 BlockedByShield = ctx.BlockedByShield,
                 ShieldBroken = shieldBroken,
                 IncomingMultiplier = ctx.IncomingMultiplier,
+                IncomingFlatReduction = ctx.IncomingFlatReduction,
             });
 
             DamageDebugLogger.LogApplication(ctx, shieldBefore, hpBefore, hpAfter);

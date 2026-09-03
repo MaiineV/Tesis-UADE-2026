@@ -72,22 +72,43 @@ namespace Rollgeon.Combat.Auras
         /// <inheritdoc />
         public int GetFlatReduction(DamageContext ctx)
         {
-            if (ctx == null || _auras.Count == 0 || ctx.TargetId == Guid.Empty) return 0;
+            if (ctx == null || ctx.TargetId == Guid.Empty) return 0;
+            return BestReductionFor(ctx.TargetId);
+        }
+
+        /// <summary>
+        /// Consulta pull, sin depender de que llegue un golpe: la MEJOR reducción activa que
+        /// protege a <paramref name="allyGuid"/> ahora mismo. Mismo alcance/criterio que
+        /// <see cref="GetFlatReduction"/> — pensado para UI que necesita mostrar "¿estoy
+        /// protegido, por cuánto?" en cualquier momento (ej. un badge junto a la vida), no sólo
+        /// en el instante del hit.
+        /// </summary>
+        public bool TryGetActiveReduction(Guid allyGuid, out int amount)
+        {
+            amount = BestReductionFor(allyGuid);
+            return amount > 0;
+        }
+
+        /// <summary>Escaneo compartido: la mayor <c>FlatReduction</c> de un portador vivo, aliado
+        /// de <paramref name="targetGuid"/> (no el propio portador) y a ≤ <c>Radius</c> rect-a-rect.</summary>
+        private int BestReductionFor(Guid targetGuid)
+        {
+            if (_auras.Count == 0 || targetGuid == Guid.Empty) return 0;
             if (!ServiceLocator.TryGetService<IGridManager>(out var grid) || grid == null) return 0;
             if (!ServiceLocator.TryGetService<IEntityQueryService>(out var query) || query == null) return 0;
-            if (!grid.TryGetPosition(ctx.TargetId, out var targetAnchor)) return 0;
+            if (!grid.TryGetPosition(targetGuid, out var targetAnchor)) return 0;
 
-            var targetFp = grid.GetFootprint(ctx.TargetId);
+            var targetFp = grid.GetFootprint(targetGuid);
             int best = 0;
             foreach (var pair in _auras)
             {
                 var owner = pair.Key;
-                if (owner == ctx.TargetId) continue; // la ficha protege ALIADOS, no al portador
+                if (owner == targetGuid) continue; // la ficha protege ALIADOS, no al portador
                 if (pair.Value.FlatReduction <= best) continue;
                 // Portador fuera de la grilla = muerto (CombatDeathWatcher lo desregistra
                 // sincrónicamente en el golpe letal): el aura se apaga sola.
                 if (!grid.TryGetPosition(owner, out var ownerAnchor)) continue;
-                if ((query.GetRelationship(owner, ctx.TargetId) & Effects.Selection.EntityFilterMask.Allies) == 0)
+                if ((query.GetRelationship(owner, targetGuid) & Effects.Selection.EntityFilterMask.Allies) == 0)
                     continue;
 
                 int dist = GridFootprint.ManhattanDistance(

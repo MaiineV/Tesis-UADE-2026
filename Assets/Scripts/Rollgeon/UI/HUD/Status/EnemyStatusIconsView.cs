@@ -61,7 +61,10 @@ namespace Rollgeon.UI.HUD.Status
         private float _liftAboveBar = 1f;
         private float _referenceZoom = 9f;
         private Vector3 _baseScale = Vector3.one;
+        private bool _showFloatingRow;
         private bool _bound;
+        private Action<DamageResolvedPayload> _onDamageResolved;
+        private GuardianAuraBadgeView _auraBadge;
 
         /// <summary>
         /// Arma la fila world-space sobre <paramref name="pawnRoot"/> y la devuelve sin bindear.
@@ -115,6 +118,7 @@ namespace Rollgeon.UI.HUD.Status
             view._liftAboveBar = settings.LiftAboveBar;
             view._referenceZoom = settings.ReferenceZoom;
             view._baseScale = rect.localScale;
+            view._showFloatingRow = settings.ShowFloatingRow;
 
             // Sobre la barra de vida del pawn y no a una altura global: cada bicho la lleva
             // a otra altura. Sin barra, el Offset del settings.
@@ -143,6 +147,9 @@ namespace Rollgeon.UI.HUD.Status
             EventManager.Subscribe(EventName.OnSpecialTileExpired, HandleRefreshEvent);
             EventManager.Subscribe(EventName.OnEntityDestroyed, HandleEntityDestroyed);
 
+            _onDamageResolved = HandleDamageResolved;
+            TypedEvent<DamageResolvedPayload>.Subscribe(_onDamageResolved);
+
             _bound = true;
             Refresh();
         }
@@ -156,6 +163,12 @@ namespace Rollgeon.UI.HUD.Status
             EventManager.UnSubscribe(EventName.OnSpecialTilePlaced, HandleRefreshEvent);
             EventManager.UnSubscribe(EventName.OnSpecialTileExpired, HandleRefreshEvent);
             EventManager.UnSubscribe(EventName.OnEntityDestroyed, HandleEntityDestroyed);
+
+            if (_onDamageResolved != null)
+            {
+                TypedEvent<DamageResolvedPayload>.Unsubscribe(_onDamageResolved);
+                _onDamageResolved = null;
+            }
 
             _bound = false;
         }
@@ -286,14 +299,48 @@ namespace Rollgeon.UI.HUD.Status
 
             Recollect();
 
-            // La fila sigue siendo UNA aunque el panel tenga dos columnas: el ícono que flota
-            // sobre el bicho y el de su tarjeta tienen que ser el mismo sprite, que es lo que hace
-            // que el sistema se entienda sin tutorial. Su ataque primero, que es lo que se lee.
-            int shown = Draw(_panelCards, 0);
-            shown = Draw(_applied, shown);
+            // La fila flotante es opt-in por settings (apagada desde el 03/09): los estados se
+            // leen en el panel del tooltip. El Recollect de arriba sigue corriendo igual — es
+            // la fuente de las tarjetas del panel — y el badge de aura no es parte de la fila.
+            int shown = 0;
+            if (_showFloatingRow)
+            {
+                // La fila sigue siendo UNA aunque el panel tenga dos columnas: el ícono que flota
+                // sobre el bicho y el de su tarjeta tienen que ser el mismo sprite, que es lo que
+                // hace que el sistema se entienda sin tutorial. Su ataque primero, que es lo que
+                // se lee.
+                shown = Draw(_panelCards, 0);
+                shown = Draw(_applied, shown);
+            }
 
             for (int i = shown; i < _slots.Count; i++)
                 _slots[i].gameObject.SetActive(false);
+
+            RefreshAuraBadge();
+        }
+
+        // El aura del Guardian NO pasa por la fila genérica de íconos (badge chico de esquina,
+        // pensado para contador de turnos) — feedback del usuario: "por qué no hacés lo mismo
+        // que con la vida". GuardianAuraBadgeView vive colgado del propio Canvas de la barra de
+        // vida y comparte su mismo tratamiento (texto bold+outline superpuesto al ícono, no
+        // separado). Lazy: sólo se instancia la primera vez que hay algo que mostrar.
+        private void RefreshAuraBadge()
+        {
+            if (_healthBar == null) return;
+
+            if (!Rollgeon.Combat.Auras.EnemyAuraService.ResolveOrCreate()
+                    .TryGetActiveReduction(_entityGuid, out int amount))
+            {
+                _auraBadge?.Hide();
+                return;
+            }
+
+            if (_auraBadge == null)
+            {
+                var icon = _catalog != null ? _catalog.Resolve(GuardianAuraBadgeView.StateId) : null;
+                _auraBadge = GuardianAuraBadgeView.Create(_healthBar, icon);
+            }
+            _auraBadge?.Show(amount);
         }
 
         // La fila muestra SOLO lo que tiene ícono y habla de la unidad. Una tarjeta de terreno
@@ -545,6 +592,15 @@ namespace Rollgeon.UI.HUD.Status
             if (args == null || args.Length < 1) return;
             if (!(args[0] is Guid guid) || guid != _entityGuid) return;
             gameObject.SetActive(false);
+        }
+
+        // El badge de vida pulsa en el instante exacto del golpe reducido — el número que
+        // muestra ya lo mantiene correcto el Refresh() normal (OnTurnStarted/OnTurnFinished);
+        // esto es sólo la reacción visual del golpe puntual.
+        private void HandleDamageResolved(DamageResolvedPayload payload)
+        {
+            if (payload.TargetGuid != _entityGuid || payload.IncomingFlatReduction <= 0) return;
+            _auraBadge?.Pulse();
         }
     }
 }

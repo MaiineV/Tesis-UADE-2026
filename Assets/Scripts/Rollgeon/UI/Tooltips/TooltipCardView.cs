@@ -44,9 +44,17 @@ namespace Rollgeon.UI.Tooltips
         /// <summary>Id del estado que esta tarjeta está mostrando — la columna lo usa para reusarla.</summary>
         public string CardId { get; private set; }
 
+        /// <summary>
+        /// El estado completo que la tarjeta muestra ahora. <see cref="TooltipStatusSlotHover"/>
+        /// arma su burbuja de acá — la tarjeta ya lo tiene y pedirlo de vuelta al provider
+        /// desincronizaría burbuja y placa.
+        /// </summary>
+        public StatusIconState CurrentState { get; private set; }
+
         public void Show(in StatusIconState state)
         {
             CardId = state.Id;
+            CurrentState = state;
             name = string.IsNullOrEmpty(state.Id) ? "TooltipCard" : $"TooltipCard_{state.Id}";
 
             // Sin arte el bloque del ícono se va entero: prendido reservaría su ancho y el
@@ -98,8 +106,18 @@ namespace Rollgeon.UI.Tooltips
             // Nunca dentro de la frase: cambiar el número no obliga a retraducir.
             if (_damageLabel != null)
             {
-                _damageLabel.text = state.Damage?.ToString() ?? string.Empty;
+                _damageLabel.text = state.Damage.HasValue
+                    ? Rollgeon.UI.Utility.IconSpriteTags.DamageAmount(state.Damage.Value)
+                    : string.Empty;
                 _damageLabel.gameObject.SetActive(state.Damage.HasValue);
+
+                // El submesh del sprite inline nace en runtime y con el rect crudo el
+                // ícono queda despegado del número — el offset calibrado lo sostiene
+                // este componente (los slots se instancian por código, no hay prefab
+                // que lo traiga puesto).
+                if (state.Damage.HasValue
+                    && !_damageLabel.TryGetComponent<TMPSubMeshRectOffset>(out _))
+                    _damageLabel.gameObject.AddComponent<TMPSubMeshRectOffset>();
             }
 
             if (_headerRow != null) _headerRow.SetActive(hasTitle || state.Damage.HasValue);

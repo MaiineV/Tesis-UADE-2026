@@ -28,6 +28,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             // Assert — los 5 Scratch + EffClassSkillPush afuera; lo genérico sigue.
             CollectionAssert.DoesNotContain(effects, typeof(EffAddComboBonus));
             CollectionAssert.DoesNotContain(effects, typeof(EffMultiplyComboDamage));
+            CollectionAssert.DoesNotContain(effects, typeof(EffAddComboMultiplier));
             CollectionAssert.DoesNotContain(effects, typeof(EffBlockComboDamage));
             CollectionAssert.DoesNotContain(effects, typeof(EffClassSkillPush));
             CollectionAssert.Contains(effects, typeof(EffDealDamage));

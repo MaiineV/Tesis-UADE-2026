@@ -68,12 +68,13 @@ namespace Rollgeon.Upgrades.Dice.Tests
             // El tooling del editor detecta lo no-wireado por reflexión sobre este
             // atributo — las capabilities sin consumidor deben declararlo.
             // CapForceRerollOnTurn ya no está: la wireó ForcedRerollCapabilityService
-            // (BUG-030).
+            // (BUG-030). CapPreventHolding tampoco: la consumen DiceZoneView.CanChangeHold y
+            // CombatHandoffService.ApplyKeepConstraints (Feature#0073). CapAnchorAccumulate
+            // se retiró: Ancla lee IDiceHoldStreakService vía ReadCarrierHoldStreak.
             var capabilityTypes = new[]
             {
-                typeof(CapPreventHolding), typeof(CapWildcard), typeof(CapLadderStep),
+                typeof(CapWildcard), typeof(CapLadderStep),
                 typeof(CapMimeticCopy), typeof(CapRerollKeepHighest),
-                typeof(CapAnchorAccumulate),
             };
 
             foreach (var type in capabilityTypes)
@@ -82,6 +83,14 @@ namespace Rollgeon.Upgrades.Dice.Tests
                     $"{type.Name} debe estar marcada [NotYetWired] hasta que exista su consumidor.");
                 Assert.IsTrue(typeof(IEnchantmentCapability).IsAssignableFrom(type));
             }
+        }
+
+        [Test]
+        public void CapPreventHolding_IsWired_DoesNotCarryNotYetWired()
+        {
+            // Feature#0073: consumidores reales = DiceZoneView.CanChangeHold +
+            // CombatHandoffService.ApplyKeepConstraints. Si rompe, alguien la re-marcó.
+            Assert.IsNull(typeof(CapPreventHolding).GetCustomAttribute<NotYetWiredAttribute>());
         }
 
         [Test]

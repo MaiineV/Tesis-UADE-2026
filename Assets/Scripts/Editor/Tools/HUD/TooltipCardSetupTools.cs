@@ -53,6 +53,12 @@ namespace Rollgeon.EditorTools.HUD
         // Chico a propósito: más lejos deja de leerse como algo de ESTE bicho.
         private const float SideColumnGap = 14f;
 
+        // La fila del pie entra de los bordes de la caja (left/right del rect): el marco
+        // 9-slice del panel pinta más grueso a la izquierda y la fila lo pisaba al fijar
+        // el tooltip.
+        private const float BottomInsetLeft = 20f;
+        private const float BottomInsetRight = 6f;
+
         // El aire interno del header: el tooltip entero se escala desde acá.
         private const int HeaderPadX = 26;
         private const int HeaderPadY = 22;
@@ -344,6 +350,8 @@ namespace Rollgeon.EditorTools.HUD
                 bottom.pivot = new Vector2(0.5f, 1f);
                 bottom.sizeDelta = new Vector2(0f, 0f);
                 bottom.anchoredPosition = new Vector2(0f, -SideColumnGap);
+                bottom.offsetMin = new Vector2(BottomInsetLeft, bottom.offsetMin.y);
+                bottom.offsetMax = new Vector2(-BottomInsetRight, bottom.offsetMax.y);
 
                 // Dos layout groups en el mismo GO pelean: un VerticalLayoutGroup previo se
                 // tira antes de asegurar el horizontal.
@@ -386,7 +394,9 @@ namespace Rollgeon.EditorTools.HUD
             var background = Ensure<Image>(root);
             background.sprite = LoadSlice(CardPlateId);
             background.type = Image.Type.Sliced;
-            background.raycastTarget = false;
+            // La ÚNICA superficie del tooltip que intercepta el mouse: el hover de la placa
+            // abre la burbuja de detalle (TooltipStatusSlotHover). Icon/Badge quedan en false.
+            background.raycastTarget = true;
 
             var element = Ensure<LayoutElement>(root);
             element.preferredWidth = SlotSize;
@@ -422,6 +432,7 @@ namespace Rollgeon.EditorTools.HUD
 
             // Sin labels a propósito: TooltipCardView null-guardea cada pieza.
             var view = Ensure<TooltipCardView>(root);
+            Ensure<TooltipStatusSlotHover>(root);
             var so = new SerializedObject(view);
             so.FindProperty("_iconRoot").objectReferenceValue = iconRect.gameObject;
             so.FindProperty("_icon").objectReferenceValue = iconImage;

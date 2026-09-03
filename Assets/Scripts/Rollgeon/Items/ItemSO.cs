@@ -76,6 +76,17 @@ namespace Rollgeon.Items
         [NonSerialized, OdinSerialize]
         public BaseDamageOverrideDef BaseDamageOverride = new();
 
+        [Title("Decaying Multiplier")]
+        [InfoBox("Multiplicador de ATAQUE que arranca en Start al adquirir el item y baja " +
+                 "DecayPerCombo con CADA combo de combate jugado (ataque, defensa o cura) en la " +
+                 "run — persiste entre combates y en el save. Al tocar Min el item se rompe " +
+                 "(se remueve con toast) si BreakAtMin. Eco Menguante: 5 / 0.2 / 1.")]
+        [ShowIf("@Type == ItemType.Passive")]
+        // Mismo mecanismo que PassiveHooks: [NonSerialized] apaga la copia nativa de Unity,
+        // el dato real vive en serializationData (SerializedScriptableObject).
+        [NonSerialized, OdinSerialize]
+        public DecayingMultiplierDef DecayingMultiplier = new();
+
         [Title("Roll Pool")]
         [InfoBox("Bonus PERMANENTE al pool de rolls mientras el item esté en el inventario " +
                  "(sube el máximo y los rolls de arranque de cada combate). Llamado de " +
@@ -83,6 +94,20 @@ namespace Rollgeon.Items
         [ShowIf("@Type == ItemType.Passive")]
         [MinValue(0)]
         public int RollPoolBonus;
+
+        [Title("Combo Rules")]
+        [InfoBox("Mientras el item esté en el inventario, la Escalera también acepta progresiones " +
+                 "con un valor omitido (paso 2, cualquier paridad: 3-5-7-9-11, 2-4-6-8-10). " +
+                 "Sigue siendo combo.ladder. Compás Salteado. Se revierte al perder el item.")]
+        [ShowIf("@Type == ItemType.Passive")]
+        public bool LadderSkippedStep;
+
+        [Title("Healing Rules")]
+        [InfoBox("Mientras el item esté en el inventario, las curas que vienen de items PASIVOS " +
+                 "(Talismán Vital, Corazón de la Fortuna, Lágrimas…) se ignoran. Ayuno. No toca " +
+                 "curas de clase, pociones ni Segundo Aliento. Se revierte al perder el item.")]
+        [ShowIf("@Type == ItemType.Passive")]
+        public bool BlocksPassiveItemHealing;
 
         [Title("Active Slots")]
         [InfoBox("Slots de items activos extra mientras el item esté en el inventario. " +
@@ -116,6 +141,31 @@ namespace Rollgeon.Items
         [ShowIf("@Type == ItemType.Passive && SecondWind")]
         [MinValue(1)]
         public int SecondWindRemainingHp = 1;
+
+        [Title("Gold Floor")]
+        [InfoBox("Piso del oro del jugador mientras el item esté en el inventario: la tienda, " +
+                 "el altar y cualquier Spend pueden dejar el balance en deuda hasta este valor. " +
+                 "Tarjeta de Crédito: -30. 0 = sin efecto. Con varios items gana el más bajo. " +
+                 "Se revierte al perder el item (la deuda existente queda).")]
+        [ShowIf("@Type == ItemType.Passive")]
+        [MaxValue(0)]
+        public int GoldFloor;
+
+        [Title("Least Used Combo Bonus")]
+        [InfoBox("Al adquirir el item se elige UNA vez el combo con menos matches de la run " +
+                 "(desempate: orden de la hoja del héroe) y ese combo suma MultiplierBonus al " +
+                 "canal aditivo de M en cada ataque. Rezagado: 0.5 (+50%). Persiste en el save.")]
+        [ShowIf("@Type == ItemType.Passive")]
+        [NonSerialized, OdinSerialize]
+        public LeastUsedComboBonusDef LeastUsedComboBonus = new();
+
+        [Title("Combat Toll")]
+        [InfoBox("Al entrar a una sala de combate estándar (no Boss) ofrece pagar " +
+                 "BaseCost + CostPerFloor × piso para limpiarla sin pelear: sin enemigos, sin " +
+                 "loot, puertas abiertas. Peaje: 15 / 10 (piso 1 = 25).")]
+        [ShowIf("@Type == ItemType.Passive")]
+        [NonSerialized, OdinSerialize]
+        public CombatTollDef CombatToll = new();
 
         // ==================================================================
         // Modelo nuevo (GDD "Ítems Activos"): slot unico, dado propio y bandas.

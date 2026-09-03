@@ -111,6 +111,17 @@ namespace Rollgeon.Upgrades.Dice.UI
         private CanvasGroup _descriptionCanvasGroup;
         private int _reelsPending;
 
+        // La escala autorada del panel (el "más grande" pedido por diseño vive en el
+        // prefab): los tweens de open/close escalan RELATIVO a esta base, no a one.
+        private Vector3 _panelBaseScale = Vector3.one;
+        private bool _panelBaseScaleCaptured;
+
+        // Telón oscuro entre el gameplay y el HUD mientras la mesa está abierta. Se
+        // crea por código en un canvas propio: por encima del render del mundo
+        // (Canvas_Display, order 0) y por debajo de todo el HUD (orders 10+).
+        private const int BackdropSortingOrder = 5;
+        private CanvasGroup _backdrop;
+
         // ====================================================================
         // Lifecycle
         // ====================================================================
@@ -169,6 +180,7 @@ namespace Rollgeon.Upgrades.Dice.UI
         {
             if (_panelRoot == null || !_panelRoot.activeSelf) return;
             _panelRoot.SetActive(false);
+            HideBackdropImmediate();
             RestorePanelPose();
             ClearRoomOffer();
 
@@ -235,6 +247,7 @@ namespace Rollgeon.Upgrades.Dice.UI
             _closing = false;
             _spinning = false;
             _panelRoot.SetActive(true);
+            ShowBackdrop();
 
             ClearSelections();
             ClearRoomOffer();
@@ -263,15 +276,17 @@ namespace Rollgeon.Upgrades.Dice.UI
             if (!CanJuice() || _panelRoot == null || !_panelRoot.activeSelf)
             {
                 if (_panelRoot != null) _panelRoot.SetActive(false);
+                HideBackdropImmediate();
                 return;
             }
 
             _closing = true;
+            FadeOutBackdrop(_uiSettings.CloseDuration, _uiSettings.CloseEase);
             EnsurePanelRefs();
             Tween.StopAll(onTarget: _panelRect);
             Tween.StopAll(onTarget: _panelCanvasGroup);
             _panelCanvasGroup.blocksRaycasts = false; // el fade-out no debe comer clicks
-            Tween.Scale(_panelRect, Vector3.one * _uiSettings.OpenScaleFrom,
+            Tween.Scale(_panelRect, _panelBaseScale * _uiSettings.OpenScaleFrom,
                 _uiSettings.CloseDuration, _uiSettings.CloseEase, useUnscaledTime: true);
             Tween.Alpha(_panelCanvasGroup, 0f, _uiSettings.CloseDuration, _uiSettings.CloseEase,
                     useUnscaledTime: true)
@@ -282,6 +297,7 @@ namespace Rollgeon.Upgrades.Dice.UI
         {
             _closing = false;
             if (_panelRoot != null) _panelRoot.SetActive(false);
+            HideBackdropImmediate();
             RestorePanelPose();
         }
 
@@ -291,9 +307,9 @@ namespace Rollgeon.Upgrades.Dice.UI
             EnsurePanelRefs();
             Tween.StopAll(onTarget: _panelRect);
             Tween.StopAll(onTarget: _panelCanvasGroup);
-            _panelRect.localScale = Vector3.one * _uiSettings.OpenScaleFrom;
+            _panelRect.localScale = _panelBaseScale * _uiSettings.OpenScaleFrom;
             _panelCanvasGroup.alpha = 0f;
-            Tween.Scale(_panelRect, Vector3.one, _uiSettings.OpenDuration, _uiSettings.OpenEase,
+            Tween.Scale(_panelRect, _panelBaseScale, _uiSettings.OpenDuration, _uiSettings.OpenEase,
                 useUnscaledTime: true);
             Tween.Alpha(_panelCanvasGroup, 1f, _uiSettings.OpenDuration, Ease.OutQuad,
                 useUnscaledTime: true);
@@ -315,25 +331,112 @@ namespace Rollgeon.Upgrades.Dice.UI
                 _panelCanvasGroup = _panelRoot.GetComponent<CanvasGroup>();
                 if (_panelCanvasGroup == null) _panelCanvasGroup = _panelRoot.AddComponent<CanvasGroup>();
             }
+            // Una sola vez y ANTES de cualquier tween: capturada a mitad de un
+            // open-juice se llevaría la escala transitoria como base.
+            if (!_panelBaseScaleCaptured && _panelRect != null)
+            {
+                _panelBaseScale = _panelRect.localScale;
+                _panelBaseScaleCaptured = true;
+            }
         }
 
         private void StopPanelTweens()
         {
             if (_panelRect != null) Tween.StopAll(onTarget: _panelRect);
             if (_panelCanvasGroup != null) Tween.StopAll(onTarget: _panelCanvasGroup);
+            if (_backdrop != null) Tween.StopAll(onTarget: _backdrop);
             if (_descriptionCanvasGroup != null) Tween.StopAll(onTarget: _descriptionCanvasGroup);
             _spinning = false; // los reels en vuelo los frena cada slot (OnDisable / SetEmpty)
         }
 
         private void RestorePanelPose()
         {
-            if (_panelRect != null) _panelRect.localScale = Vector3.one;
+            EnsurePanelRefs();
+            if (_panelRect != null) _panelRect.localScale = _panelBaseScale;
             if (_panelCanvasGroup != null)
             {
                 _panelCanvasGroup.alpha = 1f;
                 _panelCanvasGroup.blocksRaycasts = true;
             }
             if (_descriptionCanvasGroup != null) _descriptionCanvasGroup.alpha = 1f;
+        }
+
+        // ====================================================================
+        // Backdrop
+        // ====================================================================
+
+        private void ShowBackdrop()
+        {
+            float targetAlpha = _uiSettings != null ? _uiSettings.BackdropAlpha : 0.55f;
+            if (targetAlpha <= 0f) return;
+            if (!EnsureBackdrop()) return;
+
+            Tween.StopAll(onTarget: _backdrop);
+            _backdrop.gameObject.SetActive(true);
+
+            // overrideSorting no persiste tras un SetActive(false) — re-afirmar
+            // con el GO ya activo (mismo gotcha que TooltipController).
+            var canvas = _backdrop.GetComponent<Canvas>();
+            canvas.overrideSorting = true;
+            canvas.sortingOrder = BackdropSortingOrder;
+
+            if (CanJuice())
+            {
+                _backdrop.alpha = 0f;
+                Tween.Alpha(_backdrop, targetAlpha, _uiSettings.OpenDuration, Ease.OutQuad,
+                    useUnscaledTime: true);
+            }
+            else
+            {
+                _backdrop.alpha = targetAlpha;
+            }
+        }
+
+        private void FadeOutBackdrop(float duration, Ease ease)
+        {
+            if (_backdrop == null || !_backdrop.gameObject.activeSelf) return;
+            Tween.StopAll(onTarget: _backdrop);
+            Tween.Alpha(_backdrop, 0f, duration, ease, useUnscaledTime: true);
+        }
+
+        private void HideBackdropImmediate()
+        {
+            if (_backdrop == null) return;
+            Tween.StopAll(onTarget: _backdrop);
+            _backdrop.gameObject.SetActive(false);
+        }
+
+        /// <summary>
+        /// El telón vive en un canvas propio y NO en el del altar: el del altar
+        /// sortea en 100 (taparía al HUD) y este tiene que quedar entre el render
+        /// del mundo (order 0) y el HUD (orders 10+).
+        /// </summary>
+        private bool EnsureBackdrop()
+        {
+            if (_backdrop != null) return true;
+
+            var hostCanvas = GetComponentInParent<Canvas>();
+            if (hostCanvas == null) return false;
+
+            var go = new GameObject("AltarBackdrop",
+                typeof(RectTransform), typeof(Canvas), typeof(UnityEngine.UI.GraphicRaycaster),
+                typeof(Image), typeof(CanvasGroup));
+            var rect = (RectTransform)go.transform;
+            rect.SetParent(hostCanvas.rootCanvas.transform, worldPositionStays: false);
+            rect.SetAsFirstSibling();
+            rect.anchorMin = Vector2.zero;
+            rect.anchorMax = Vector2.one;
+            rect.offsetMin = Vector2.zero;
+            rect.offsetMax = Vector2.zero;
+
+            var image = go.GetComponent<Image>();
+            image.color = Color.black;
+            // Come los clicks que irían al mundo; el HUD sortea por encima y los
+            // suyos le llegan igual (el raycast elige el canvas de order más alto).
+            image.raycastTarget = true;
+
+            _backdrop = go.GetComponent<CanvasGroup>();
+            return true;
         }
 
         private void ApplyCaptions()

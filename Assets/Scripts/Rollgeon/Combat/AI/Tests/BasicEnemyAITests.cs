@@ -4,6 +4,7 @@ using Patterns;
 using Rollgeon.Attributes;
 using Rollgeon.Attributes.Stats;
 using Rollgeon.Combat.Pipelines;
+using Rollgeon.Grid;
 using Rollgeon.Player;
 using Rollgeon.Heroes;
 
@@ -99,6 +100,37 @@ namespace Rollgeon.Combat.AI.Tests
             int hp = _attrManager.GetAttribute<Health>(_playerId).Value;
             Assert.AreEqual(100, hp, "Player HP should be unchanged for zero-attack enemy.");
             Assert.AreEqual(1, _turnCompleteCount, "Turn complete should still be invoked.");
+        }
+
+        // ── 2b. Sin línea de visión no pega ─────────────────────────────
+
+        [Test]
+        public void HandleEnemyTurn_WithBlockedLineOfSight_SkipsAttackAndCompletesTurn()
+        {
+            // Arrange — grid real en el locator con un bloqueo entre enemigo y jugador.
+            RegisterEnemy(_enemyId, attack: 10);
+            var grid = new GridManager();
+            grid.LoadRoom(NavGraph.Rect(9, 9));
+            grid.Register(_enemyId, new GridCoord(0, 4));
+            grid.Register(_playerId, new GridCoord(5, 4));
+            grid.Register(Guid.NewGuid(), new GridCoord(2, 4));
+            ServiceLocator.AddService<IGridManager>(grid);
+            var ai = CreateAI();
+
+            try
+            {
+                // Act
+                ai.HandleEnemyTurn(_enemyId);
+
+                // Assert — hasta el fallback respeta que detrás de algo no se pega.
+                int hp = _attrManager.GetAttribute<Health>(_playerId).Value;
+                Assert.AreEqual(100, hp, "Player HP should be unchanged without line of sight.");
+                Assert.AreEqual(1, _turnCompleteCount, "Turn complete should still be invoked.");
+            }
+            finally
+            {
+                ServiceLocator.Clear();
+            }
         }
 
         // ── 3. Always signals turn complete ─────────────────────────────

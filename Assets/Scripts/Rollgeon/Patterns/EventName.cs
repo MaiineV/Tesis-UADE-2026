@@ -419,5 +419,33 @@ namespace Patterns
         /// REALES (no en cada turno). La UI de daño base (Furia Contenida) re-lee el
         /// override al escucharlo; también sirve como TriggerEvent de PassiveItemHook.</summary>
         OnCleanTurnStreakChanged,
+
+        // --- Items: Segundo Aliento ------------------------------------------------
+        // NOTA: al final absoluto del enum a propósito (ver OnReinforcementSpawned).
+        /// <summary>args: [Guid playerGuid, ItemSO item, int remainingHp]. Un golpe letal
+        /// fue anulado por un item con <c>ItemSO.SecondWind</c>: el jugador quedó en
+        /// <c>remainingHp</c> y el item YA salió del inventario. Lleva el SO (no el id)
+        /// porque al dispararse ya no está en el inventario para resolverlo. La HUD lo
+        /// consume para el toast "¡Segundo Aliento!" (SecondWindFeedbackView).</summary>
+        OnSecondWindTriggered,
+
+        // --- Items: multiplicador decreciente ----------------------------------------
+        // NOTA: al final absoluto del enum a propósito (ver OnReinforcementSpawned).
+        /// <summary>args: [Guid playerGuid, ItemSO item, int combosPlayed]. Un item con
+        /// <c>ItemSO.DecayingMultiplier</c> (Eco Menguante) llegó a su piso y SE ROMPIÓ: ya
+        /// salió del inventario. Lleva el SO (no el id) por lo mismo que OnSecondWindTriggered.
+        /// La HUD lo consume para el toast "se rompió" (ItemBrokeDownFeedbackView).</summary>
+        OnItemBrokeDown,
+
+        // --- Items: Rezagado / Peaje (Feature#0074) ----------------------------------
+        /// <summary>args: [Guid playerGuid, ItemSO item, string comboId]. Un item con
+        /// <c>ItemSO.LeastUsedComboBonus</c> (Rezagado) acaba de fijar su combo — se
+        /// dispara una sola vez por run al adquirirlo (no en restore).</summary>
+        OnLeastUsedComboAssigned,
+
+        /// <summary>args: [Guid playerGuid, Guid roomInstanceId, int goldPaid]. El jugador
+        /// pagó el peaje (<c>ItemSO.CombatToll</c>) y la sala de combate quedó limpia sin
+        /// pelear. No pasa por OnCombatEnd: no cuenta como victoria.</summary>
+        OnCombatTollPaid,
     }
 }

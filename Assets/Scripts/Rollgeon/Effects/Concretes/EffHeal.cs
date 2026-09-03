@@ -237,6 +237,18 @@ namespace Rollgeon.Effects.Concretes
             var amount = ResolveArgs(context).BaseAmount;
             if (amount <= 0) return true;
 
+            // Ayuno: las curas que vienen de un item pasivo (SourceItemId solo lo setean los
+            // hooks de items) se ignoran mientras la regla esté activa. No corta la cadena:
+            // el resto del hook (oro, etc.) sigue.
+            if (!string.IsNullOrEmpty(context.SourceItemId)
+                && ServiceLocator.TryGetService<Rollgeon.Combat.Healing.IHealingRuleService>(out var healRules)
+                && healRules != null && healRules.PassiveItemHealingBlocked)
+            {
+                Debug.Log($"[EffHeal] Cura de '{context.SourceItemId}' ignorada — curación de items " +
+                          "pasivos bloqueada (Ayuno).");
+                return true;
+            }
+
             var targetGuid = Guid.Empty;
             if (context.SelectionResult?.FirstSelectedCoord is GridCoord coord)
             {

@@ -58,9 +58,10 @@ namespace Rollgeon.UI.Tests
             // Act
             _view.Show(state);
 
-            // Assert
+            // Assert — el monto viaja con el indicador de daño pegado a su derecha (03/09).
             Assert.IsTrue(_damage.gameObject.activeSelf);
-            Assert.AreEqual("24", _damage.text);
+            Assert.AreEqual(
+                Rollgeon.UI.Utility.IconSpriteTags.DamageAmount(24), _damage.text);
             Assert.IsFalse(_rule.gameObject.activeSelf,
                 "La tarjeta de sólo título dejó la regla prendida y vacía: un renglón alto de nada " +
                 "debajo del nombre del ataque.");
@@ -92,7 +93,8 @@ namespace Rollgeon.UI.Tests
             _view.Show(state);
 
             // Assert
-            Assert.AreEqual("12", _damage.text);
+            Assert.AreEqual(
+                Rollgeon.UI.Utility.IconSpriteTags.DamageAmount(12), _damage.text);
             StringAssert.DoesNotContain("12", _rule.text);
         }
 

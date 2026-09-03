@@ -48,6 +48,17 @@ namespace Patterns
         /// mínimo de 1).
         /// </remarks>
         public float IncomingMultiplier;
+
+        /// <summary>
+        /// Puntos descontados por <c>IIncomingFlatDamageReducerProvider</c> (aura defensiva del
+        /// Guardian, Support del GDD) en el stage 3b. <c>0</c> = ninguna aura activa alcanzó a esta
+        /// entidad en este golpe.
+        /// </summary>
+        /// <remarks>
+        /// Es un struct, así que un payload armado a mano lo trae en <c>0</c> — mismo criterio que
+        /// <see cref="IncomingMultiplier"/>, "hubo reducción" se trata como <c>&gt; 0</c>.
+        /// </remarks>
+        public int IncomingFlatReduction;
     }
 
     /// <summary>

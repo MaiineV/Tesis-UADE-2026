@@ -178,7 +178,8 @@ namespace Rollgeon.Combat.Rooms.Visuals
                 if (intent.Damage > 0)
                     sb.AppendLine()
                       .Append(LocalizedContent.Ui(BlastHitKey, "Golpe del estallido"))
-                      .Append(": ").Append(intent.Damage);
+                      .Append(": ")
+                      .Append(Rollgeon.UI.Utility.IconSpriteTags.DamageAmount(intent.Damage));
 
                 var fire = intent.Leaves;
                 if (fire == null) return;
@@ -186,11 +187,11 @@ namespace Rollgeon.Combat.Rooms.Visuals
                 if (fire.EnterDamage > 0)
                     sb.AppendLine().Append(string.Format(
                         LocalizedContent.Ui("tile.tooltip.enterdamage", "Daño al entrar: {0}"),
-                        fire.EnterDamage));
+                        Rollgeon.UI.Utility.IconSpriteTags.DamageAmount(fire.EnterDamage)));
                 if (fire.TurnStartDamage > 0)
                     sb.AppendLine().Append(string.Format(
                         LocalizedContent.Ui("tile.tooltip.turndamage", "Daño por turno encima: {0}"),
-                        fire.TurnStartDamage));
+                        Rollgeon.UI.Utility.IconSpriteTags.DamageAmount(fire.TurnStartDamage)));
                 if (intent.LeavesRounds > 0)
                     sb.AppendLine().Append(string.Format(
                         LocalizedContent.Ui("tile.tooltip.duration", "Dura {0} rondas"),

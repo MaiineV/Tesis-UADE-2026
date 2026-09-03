@@ -1023,6 +1023,42 @@ MonoBehaviour:
     m_Key: chest.rarity.god
     m_Metadata:
       m_Items: []
+  - m_Id: 18000814696218624
+    m_Key: item.second_wind.title
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18000814771716096
+    m_Key: item.second_wind.body
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18000814796881920
+    m_Key: dicebag.cat.caos
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18000814796881921
+    m_Key: dicebag.cat.recursos
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18000814796881922
+    m_Key: dicebag.cat.movimiento
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18278208505741312
+    m_Key: tooltip.effect.force_door.item_bonus
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18278208577044480
+    m_Key: prop.tooltip.fuse
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18299681299939328
+    m_Key: item.broke_down.title
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18299681333493760
+    m_Key: item.broke_down.body
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

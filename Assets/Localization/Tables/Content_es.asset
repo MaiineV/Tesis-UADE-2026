@@ -256,8 +256,8 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 5531895623691
-    m_Localized: "Si este dado se bloquea entre tiradas, su resultado aumenta +1
-      por tirada bloqueada (m\xE1x +3)."
+    m_Localized: "Si guard\xE1s este dado entre tiradas, aporta +5 de da\xF1o por
+      cada tirada que pase sin relanzarlo (m\xE1x +15). Se pierde al relanzarlo."
     m_Metadata:
       m_Items: []
   - m_Id: 5531895623692
@@ -265,7 +265,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 5531895623693
-    m_Localized: "Otorga 3 de oro extra al completar un combo de tr\xEDo o superior."
+    m_Localized: "Otorga 5 de oro al completar un tr\xEDo, p\xF3ker o generala."
     m_Metadata:
       m_Items: []
   - m_Id: 5531895623694
@@ -315,7 +315,8 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 5531895623705
-    m_Localized: "Si se utiliza en un combo de full house da 2 m\xE1s de escudo."
+    m_Localized: "Si este dado participa en un p\xF3ker, gener\xE1s 15 puntos de
+      escudo."
     m_Metadata:
       m_Items: []
   - m_Id: 5531895623706
@@ -331,8 +332,8 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 5531895623709
-    m_Localized: "El dado muestra su valor m\xE1ximo y participa en combo; genera
-      2 puntos de escudo."
+    m_Localized: "Si este dado saca su valor m\xE1ximo y participa en un combo, gener\xE1s
+      30 puntos de escudo."
     m_Metadata:
       m_Items: []
   - m_Id: 5531895623710
@@ -340,7 +341,8 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 5531895623711
-    m_Localized: 50% de chance de que el dado no cuente para el combo.
+    m_Localized: "En cada tirada, 50% de que este dado no sume da\xF1o y 50% de que
+      sume el doble. Sigue contando para formar el combo."
     m_Metadata:
       m_Items: []
   - m_Id: 5531895623712
@@ -382,7 +384,8 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 5531895623721
-    m_Localized: Este dado no se puede bloquear entre tiradas.
+    m_Localized: "Este dado no se puede guardar entre tiradas: siempre se relanza.
+      A cambio, suma +5 de da\xF1o cuando participa en un combo."
     m_Metadata:
       m_Items: []
   - m_Id: 5531895623722
@@ -390,7 +393,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 5531895623723
-    m_Localized: Otorga 5 de oro al completar una escalera.
+    m_Localized: Si este dado participa en una generala, otorga 12 de oro.
     m_Metadata:
       m_Items: []
   - m_Id: 5531895623724
@@ -449,7 +452,8 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 5531899817985
-    m_Localized: "El dado pierde 1 de su resultado final (m\xEDnimo 1)."
+    m_Localized: "Este dado no suma da\xF1o, pero cada vez que participa en un combo
+      genera +2 de oro."
     m_Metadata:
       m_Items: []
   - m_Id: 5531899817986
@@ -473,7 +477,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 5531899817991
-    m_Localized: Suma +2 al resultado final del dado.
+    m_Localized: "Este dado aporta +2 de da\xF1o cuando participa en un combo."
     m_Metadata:
       m_Items: []
   - m_Id: 5531899817992
@@ -498,8 +502,8 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 5531899817997
-    m_Localized: Cada vez que participa en un combo consume 2 de oro. Sin oro no
-      puede participar.
+    m_Localized: "Cada vez que participa en un combo consume 2 de oro y suma +0,2
+      al multiplicador. Sin oro, el combo no hace da\xF1o."
     m_Metadata:
       m_Items: []
   - m_Id: 5531899817998
@@ -515,8 +519,8 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 5531899818001
-    m_Localized: "Al sacar el m\xE1ximo, el resultado se duplica. Al sacar el m\xEDnimo,
-      vale 0."
+    m_Localized: "Al sacar el m\xE1ximo, este dado aporta el doble de da\xF1o. Con
+      cualquier otra cara aporta la mitad."
     m_Metadata:
       m_Items: []
   - m_Id: 5531975315456
@@ -1038,7 +1042,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 17283715985403904
-    m_Localized: +2 movimiento base.
+    m_Localized: +2 de movimiento base.
     m_Metadata:
       m_Items: []
   - m_Id: 17285590277255168
@@ -1050,7 +1054,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 17285792501428224
-    m_Localized: Botas del rayo
+    m_Localized: Botas del Rayo
     m_Metadata:
       m_Items: []
   - m_Id: 17285792501428225
@@ -1062,7 +1066,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 17286059955417089
-    m_Localized: +4 de movimiento base
+    m_Localized: +4 de movimiento base.
     m_Metadata:
       m_Items: []
   - m_Id: 17290144389623808
@@ -1078,7 +1082,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 17291279481532417
-    m_Localized: "+45 vida m\xE1xima."
+    m_Localized: "+45 de vida m\xE1xima."
     m_Metadata:
       m_Items: []
   - m_Id: 17291390181797888
@@ -1086,7 +1090,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 17291390181797889
-    m_Localized: "+50 vida m\xE1xima."
+    m_Localized: "+50 de vida m\xE1xima."
     m_Metadata:
       m_Items: []
   - m_Id: 17294895571365888
@@ -1118,7 +1122,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 17300896068497409
-    m_Localized: +22 en tiradas de escudo
+    m_Localized: +22 en tiradas de escudo.
     m_Metadata:
       m_Items: []
   - m_Id: 17306392171212800
@@ -1126,11 +1130,11 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 17306392175407104
-    m_Localized: "+10 de da\xF1o base, a cambio de -1 en tirada de movimiento"
+    m_Localized: "+10 de da\xF1o base, a cambio de -1 en tirada de movimiento."
     m_Metadata:
       m_Items: []
   - m_Id: 17318608383602688
-    m_Localized: 'Regeneracion de dados '
+    m_Localized: "Regeneraci\xF3n de Dados"
     m_Metadata:
       m_Items: []
   - m_Id: 17318608387796992
@@ -1142,7 +1146,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 17321473286172673
-    m_Localized: Recuperas 5HP por cada roll sin utilizar al final del turno.
+    m_Localized: Recuperas 5HP por cada roll sin utilizar.
     m_Metadata:
       m_Items: []
   - m_Id: 17321622683086848
@@ -1162,7 +1166,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 17323018375491584
-    m_Localized: Llamado de emergencia
+    m_Localized: Llamado de Emergencia
     m_Metadata:
       m_Items: []
   - m_Id: 17323018375491585
@@ -1175,7 +1179,7 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 17325063912386561
     m_Localized: "La primera vez que el jugador llegar\xEDa a 0 HP en la run, queda
-      en 1 HP en vez de morir.\n"
+      en 1 HP en vez de morir."
     m_Metadata:
       m_Items: []
   - m_Id: 17331148496924672
@@ -1383,7 +1387,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 17341875572011009
-    m_Localized: "+10 de da\xF1o en el combo Generala."
+    m_Localized: "+15 de da\xF1o en el combo Generala."
     m_Metadata:
       m_Items: []
   - m_Id: 17342111518388224
@@ -2242,6 +2246,560 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 17931574780657664
     m_Localized: El dado participa en un Doble Par y suma +3 de oro.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17988676544020480
+    m_Localized: Jackpot
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17988676606935040
+    m_Localized: "+5 de da\xF1o por cada dado que muestre un 7 en tu ataque."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17988679589085184
+    m_Localized: "\xDAltima Carta"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17988679589085185
+    m_Localized: "+30 de da\xF1o si atac\xE1s sin rolls disponibles."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17988680314699776
+    m_Localized: "Mosaico Err\xE1tico"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17988680314699777
+    m_Localized: "Encaden\xE1 combos distintos al anterior: el 2\xBA paga +4 de da\xF1o,
+      el 3\xBA +6, el 4\xBA +8\u2026 Repetir el \xFAltimo reinicia la cadena."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17988681023537152
+    m_Localized: Eco Menguante
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17988681023537153
+    m_Localized: "Empez\xE1s cada combate con da\xF1o x5. Cada ataque lo reduce en
+      0.1, hasta x1."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17988681744957440
+    m_Localized: "Comp\xE1s Salteado"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17988681744957441
+    m_Localized: "Tus Escaleras tambi\xE9n valen salteando un n\xFAmero: 3-5-7-9-11
+      o 2-4-6-8-10."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18006931305492480
+    m_Localized: Pico de Hierro
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18006931339046912
+    m_Localized: +12 a la tirada de forzar puerta.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18007144338386944
+    m_Localized: Pico de Diamante
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18007144338386945
+    m_Localized: +20 a la tirada de forzar puerta.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18007242111807488
+    m_Localized: Pico del Demoledor
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18007242111807489
+    m_Localized: +35 a la tirada de forzar puerta.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18022894868459520
+    m_Localized: "Vig\xEDa del N\xFAmero Alto"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18022894872653824
+    m_Localized: "+5 de escudo al resolver el combo N\xFAmero Alto."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18023236037341184
+    m_Localized: "Vig\xEDa de la Cima"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18023236037341185
+    m_Localized: "+10 de escudo al resolver el combo N\xFAmero Alto."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18023381688741888
+    m_Localized: "Vig\xEDa del M\xE1ximo"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18023381688741889
+    m_Localized: "+15 de escudo al resolver el combo N\xFAmero Alto."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18023488412807168
+    m_Localized: "Vig\xEDa del Basti\xF3n Celestial"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18023488412807169
+    m_Localized: "+20 de escudo al resolver el combo N\xFAmero Alto."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18023998893158400
+    m_Localized: "Vig\xEDa del Par"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18023998893158401
+    m_Localized: +5 de escudo al resolver el combo Par.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18024098700816384
+    m_Localized: "Vig\xEDa de los Iguales"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18024098700816385
+    m_Localized: +10 de escudo al resolver el combo Par.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18024208977457152
+    m_Localized: "Vig\xEDa de los Gemelos"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18024208977457153
+    m_Localized: +15 de escudo al resolver el combo Par.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18024295791161344
+    m_Localized: "Vig\xEDa de la Guardia Gemela"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18024295791161345
+    m_Localized: +20 de escudo al resolver el combo Par.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18024682531155968
+    m_Localized: "Vig\xEDa del Doble Par"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18024682531155969
+    m_Localized: +5 de escudo al resolver el combo Doble Par.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18024775716007936
+    m_Localized: "Vig\xEDa de las Parejas"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18024775716007937
+    m_Localized: +10 de escudo al resolver el combo Doble Par.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18024961439789056
+    m_Localized: "Vig\xEDa del Espejo"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18024961439789057
+    m_Localized: +15 de escudo al resolver el combo Doble Par.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18025077580066816
+    m_Localized: "Vig\xEDa de la Contraparte"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18025077580066817
+    m_Localized: +20 de escudo al resolver el combo Doble Par.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18025853626970112
+    m_Localized: "Vig\xEDa del Tr\xEDo"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18025853626970113
+    m_Localized: "+5 de escudo al resolver el combo Tr\xEDo."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18025924280020992
+    m_Localized: "Vig\xEDa del Triple"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18025924280020993
+    m_Localized: "+10 de escudo al resolver el combo Tr\xEDo."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18026042286764032
+    m_Localized: "Vig\xEDa de la Trinidad"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18026042286764033
+    m_Localized: "+15 de escudo al resolver el combo Tr\xEDo."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18026255139303424
+    m_Localized: "Vig\xEDa de los Tres Guardianes"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18026255139303425
+    m_Localized: "+20 de escudo por cada Tr\xEDo."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18026403529584640
+    m_Localized: "Vig\xEDa del Full House"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18026403529584641
+    m_Localized: +5 de escudo al resolver el combo Full House.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18026492981506048
+    m_Localized: "Vig\xEDa de la Familia"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18026492981506049
+    m_Localized: +10 de escudo al resolver el combo Full House.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18026574036430848
+    m_Localized: "Vig\xEDa del Linaje"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18026574036430849
+    m_Localized: +15 de escudo al resolver el combo Full House.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18026664373350400
+    m_Localized: "Vig\xEDa de la Casa Real"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18026664373350401
+    m_Localized: +20 de escudo al resolver el combo Full House.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18027213252554752
+    m_Localized: "Vig\xEDa de la Escalera"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18027213252554753
+    m_Localized: +5 de escudo al resolver el combo Escalera.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18027382681464832
+    m_Localized: "Vig\xEDa del Ascenso"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18027382681464833
+    m_Localized: +10 de escudo al resolver el combo Escalera.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18027510133780480
+    m_Localized: "Vig\xEDa del Torbellino"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18027510133780481
+    m_Localized: +15 de escudo al resolver el combo Escalera.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18027612961337344
+    m_Localized: "Vig\xEDa de la Muralla"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18027612961337345
+    m_Localized: +20 de escudo al completar el combo Escalera.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18027718045429760
+    m_Localized: "Vig\xEDa del P\xF3ker"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18027718045429761
+    m_Localized: "+5 de escudo al resolver el combo P\xF3ker."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18027793463209984
+    m_Localized: "Vig\xEDa del Cuarteto"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18027793463209985
+    m_Localized: "+10 de escudo al resolver el combo P\xF3ker."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18027895984582656
+    m_Localized: "Vig\xEDa de los Cuatro Reyes"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18027895984582657
+    m_Localized: "+15 de escudo al resolver el combo P\xF3ker."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18028000674410496
+    m_Localized: "Vig\xEDa de la Guardia Imperial"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18028000674410497
+    m_Localized: "+20 de escudo al resolver el combo P\xF3ker."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18029536846639104
+    m_Localized: "Vig\xEDa de la Generala"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18029536846639105
+    m_Localized: +5 de escudo al resolver el combo Generala.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18029631075872768
+    m_Localized: "Vig\xEDa de la Plenitud"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18029631075872769
+    m_Localized: +10 de escudo al resolver el combo Generala.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18029713586221056
+    m_Localized: "Vig\xEDa del Basti\xF3n"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18029713586221057
+    m_Localized: +15 de escudo al resolver el combo Generala.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18029803176554496
+    m_Localized: "Vig\xEDa de la Fortaleza Divina"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18029803176554497
+    m_Localized: +20 de escudo al resolver el combo Generala.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18278206953848832
+    m_Localized: "Fuego de Artiller\xEDa"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18278206974820352
+    m_Localized: "Rescoldo del ob\xFAs de la Artiller\xEDa: quema fuerte al caer
+      y sigue ardiendo cada turno encima."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18278206983208960
+    m_Localized: "Artiller\xEDa"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18278206983208961
+    m_Localized: "Ob\xFAs de la casa: bombardea de lejos y deja el piso ardiendo
+      donde cae el tiro."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18278206983208962
+    m_Localized: Embestidor
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18278206983208963
+    m_Localized: "Se alinea, marca el pasillo y embiste. No te quedes en su l\xEDnea."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18278206983208964
+    m_Localized: "Guardi\xE1n"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18278206983208965
+    m_Localized: "Protege a los suyos: los aliados cercanos reciben menos da\xF1o
+      mientras siga en pie."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18278206983208966
+    m_Localized: Escaramuzador
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18278206983208967
+    m_Localized: 'Tirador inquieto: dispara de lejos y se reacomoda en diagonal para
+      que no lo arrincones.'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18278206983208968
+    m_Localized: Francotirador
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18278206983208969
+    m_Localized: "Dispara desde la otra punta de la sala. Cortale la l\xEDnea de
+      visi\xF3n o pag\xE1 el tiro."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18278206983208970
+    m_Localized: Carta Barredora
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18278206983208971
+    m_Localized: 'Soldado de la casa que marca un barrido: su golpe cubre varias
+      casillas de una.'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18278206983208972
+    m_Localized: La Bandida
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18278206983208973
+    m_Localized: "Una tragamonedas de tres rodillos atornillada a la pared. No te
+      persigue: cuenta hacia el jackpot. Romp\xE9 cualquier rodillo para cancelar
+      la cuenta."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18278206983208974
+    m_Localized: Rodillo
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18278206983208975
+    m_Localized: "Uno de los tres rodillos de La Bandida. Cualquier golpe cancela
+      la cuenta del jackpot, pero romper uno cuesta casi todo un turno \u2014 y la
+      casilla que deja arde."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18278206983208976
+    m_Localized: El Anotador
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18278206983208977
+    m_Localized: "El que lleva la planilla. No juega contra vos: te corrige el puntaje
+      mientras tir\xE1s, y nunca a tu favor."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18278206983208978
+    m_Localized: "El Tah\xFAr"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18278206983208979
+    m_Localized: "La banca canta tu mano antes de que la juegues. Armarla exacta
+      paga; pasarse es codicia \u2014 y el pozo lleva la cuenta de la codicia."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18299679601246208
+    m_Localized: Segunda Oportunidad
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18299679638994944
+    m_Localized: Al atacar, +3 al multiplicador por cada roll que te quede sin usar.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18299679659966464
+    m_Localized: Dados en Reserva
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18299679659966465
+    m_Localized: Al atacar, +2 al multiplicador por cada dado tirado que no holdeaste.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18299679659966466
+    m_Localized: Piedra Angular
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18299679659966467
+    m_Localized: El primer combo de cada combate suma +2 al multiplicador.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18299679659966468
+    m_Localized: "Fuente M\xE1gica"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18299679659966469
+    m_Localized: "El dado m\xE1s alto de tu combo suma su cara al multiplicador (no
+      al da\xF1o base)."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18299679659966470
+    m_Localized: "V\xE9rtigo"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18299679659966471
+    m_Localized: Cada combo del combate suma +0.05 al multiplicador. Un Par lo reinicia
+      a 0.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18299679659966472
+    m_Localized: Bolsa del Impar
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18299679659966473
+    m_Localized: +3 de oro por cada dado impar en cada tirada, con o sin combo.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18299679659966474
+    m_Localized: Ayuno
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18299679659966475
+    m_Localized: "No recib\xEDs curaci\xF3n de items pasivos. A cambio, todos tus
+      multiplicadores de combo suman +3."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18332491544969216
+    m_Localized: Vampiro
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18332491591106560
+    m_Localized: "Cada vez que este dado participa en un combo, perd\xE9s 5 de vida
+      y el multiplicador sube +0,3. Con 5 de vida o menos, el dado no suma da\xF1o."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18332491591106561
+    m_Localized: Solitario
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18332491591106562
+    m_Localized: "Si este dado queda fuera del combo que jug\xE1s, genera +2 de oro."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18332491591106563
+    m_Localized: Enfiestado
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18332491591106564
+    m_Localized: "Con cara impar, este dado aporta el triple de da\xF1o. Con cara
+      par no aporta da\xF1o. Sigue contando para formar el combo."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18332491591106565
+    m_Localized: Racha
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18332491591106566
+    m_Localized: "Por cada combo consecutivo en el que participe en este combate,
+      aporta +3 de da\xF1o m\xE1s (+3, +6, +9\u2026). Se reinicia si queda fuera
+      de un combo."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18332491591106567
+    m_Localized: Ejecutor
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18332491591106568
+    m_Localized: "Si este dado participa en un combo contra un enemigo con 25% de
+      vida o menos, aporta +12 de da\xF1o."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18353398669819904
+    m_Localized: "Tarjeta de Cr\xE9dito"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18353398736928768
+    m_Localized: "Tu oro puede bajar hasta -30: compr\xE1 a cr\xE9dito y pag\xE1
+      la deuda con lo que ganes."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18353399701618688
+    m_Localized: Rezagado
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18353399701618689
+    m_Localized: "Al adquirirlo se fija en tu combo menos usado: ese combo hace +50%
+      de da\xF1o el resto de la run."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18353400586616832
+    m_Localized: Peaje
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18353400590811136
+    m_Localized: "Al entrar a una sala de combate normal pod\xE9s pagar 15 + 10 por
+      piso de oro para limpiarla sin pelear. Sin bot\xEDn."
     m_Metadata:
       m_Items: []
   references:

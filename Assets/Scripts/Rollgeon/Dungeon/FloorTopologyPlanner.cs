@@ -267,6 +267,17 @@ namespace Rollgeon.Dungeon
             // Combat abajo) debe estar acá; si falta, su count infla el target
             // pero la cell cae al fallback de Combat y la sala nunca aparece.
             var specialOrder = new[] { RoomType.Shop, RoomType.Potion, RoomType.Enchantment };
+
+            // En pisos chicos el anillo podía comerse TODAS las celdas libres y las
+            // especiales se caían con solo un warning — Enchantment, última del orden,
+            // era la primera (runs enteras sin sala de encantamiento). Antes de colocar
+            // se crece la topología con celdas nuevas a distancia de grafo ≥3 de todo
+            // boss: fuera del anillo por construcción, el invariante de BUG-064 queda
+            // intacto y las especiales siempre entran.
+            int specialsNeeded = 0;
+            foreach (var type in specialOrder)
+                if (resolved.TryGetValue(type, out var sc) && sc > 0) specialsNeeded += sc;
+            GrowTopologyForSpecials(cells, remaining, bossCells, specialsNeeded, rng);
             foreach (var type in specialOrder)
             {
                 if (!resolved.TryGetValue(type, out var count) || count <= 0) continue;
@@ -315,6 +326,92 @@ namespace Rollgeon.Dungeon
                 assignments[cell] = PickRandom(combatPool, rng);
 
             return assignments;
+        }
+
+        /// <summary>
+        /// Agrega celdas nuevas hasta que <paramref name="remaining"/> alcance para las
+        /// especiales pedidas. Solo crece en fronteras cuya distancia de grafo al boss
+        /// más cercano quede en ≥3 — nunca dentro del anillo reservado de BUG-064.
+        /// </summary>
+        /// <remarks>
+        /// Si no existe frontera segura (piso degenerado, boss a ≤2 de todo), no agrega
+        /// nada: la colocación corta como siempre y el warning existente lo reporta.
+        /// </remarks>
+        internal static void GrowTopologyForSpecials(
+            List<Vector2Int> cells, HashSet<Vector2Int> remaining,
+            List<Vector2Int> bossCells, int specialsNeeded, System.Random rng)
+        {
+            int deficit = specialsNeeded - remaining.Count;
+            if (deficit <= 0) return;
+
+            // Multi-source BFS desde los bosses: la distancia decide qué frontera es
+            // segura. Celdas sin entry = inalcanzables desde un boss = siempre seguras.
+            var cellSet = new HashSet<Vector2Int>(cells);
+            var dist = new Dictionary<Vector2Int, int>();
+            var queue = new Queue<Vector2Int>();
+            if (bossCells != null)
+            {
+                foreach (var b in bossCells)
+                {
+                    if (!cellSet.Contains(b) || dist.ContainsKey(b)) continue;
+                    dist[b] = 0;
+                    queue.Enqueue(b);
+                }
+            }
+            while (queue.Count > 0)
+            {
+                var cur = queue.Dequeue();
+                foreach (var step in CardinalSteps)
+                {
+                    var next = cur + step;
+                    if (!cellSet.Contains(next) || dist.ContainsKey(next)) continue;
+                    dist[next] = dist[cur] + 1;
+                    queue.Enqueue(next);
+                }
+            }
+
+            while (deficit > 0)
+            {
+                // La distancia de una candidata sería 1 + el mínimo de sus vecinas ya
+                // colocadas: se exige que TODAS estén a ≥2, no basta con crecer desde
+                // una lejana si otra vecina la dejaría pegada al anillo.
+                var candidates = new HashSet<Vector2Int>();
+                foreach (var cell in cellSet)
+                {
+                    foreach (var step in CardinalSteps)
+                    {
+                        var c = cell + step;
+                        if (cellSet.Contains(c) || candidates.Contains(c)) continue;
+
+                        int minNeighbor = int.MaxValue;
+                        foreach (var s2 in CardinalSteps)
+                        {
+                            var n = c + s2;
+                            if (!cellSet.Contains(n)) continue;
+                            int dn = dist.TryGetValue(n, out var v) ? v : int.MaxValue;
+                            if (dn < minNeighbor) minNeighbor = dn;
+                        }
+                        if (minNeighbor < 2) continue;
+                        candidates.Add(c);
+                    }
+                }
+                if (candidates.Count == 0) return;
+
+                var chosen = PickRandomFromSet(candidates, rng);
+                cells.Add(chosen);
+                cellSet.Add(chosen);
+                remaining.Add(chosen);
+
+                int best = int.MaxValue;
+                foreach (var step in CardinalSteps)
+                {
+                    var n = chosen + step;
+                    if (dist.TryGetValue(n, out var dn) && dn != int.MaxValue && dn + 1 < best)
+                        best = dn + 1;
+                }
+                if (best != int.MaxValue) dist[chosen] = best;
+                deficit--;
+            }
         }
 
         internal static Dictionary<RoomType, List<RoomSO>> BuildPoolsByType(FloorLayoutSO layout)

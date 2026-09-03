@@ -183,7 +183,10 @@ namespace Rollgeon.Combat.Tests
             RegisterPlayerAttackWithFlatBonus(baseValue: 5, flatBonus: 2);
             var passives = new FakeComboPassiveService
             {
-                Scratch = new EnchantmentScratch { BonusComboDamage = 4, ComboDamageMultiplier = 1.5f }
+                Scratch = new EnchantmentScratch
+                {
+                    BonusComboDamage = 4, ComboDamageMultiplier = 1.5f, ComboMultiplierBonus = 0.5f,
+                }
             };
             ServiceLocator.AddService<IComboPassiveService>(passives, ServiceScope.Global);
             var dice = DiceOf((DiceType.D6, 4), (DiceType.D20, 12));
@@ -191,9 +194,21 @@ namespace Rollgeon.Combat.Tests
             int shield = PlayerComboShield.Resolve(_player, 7, dice, abilityMultiplier: 0.75f);
             int damage = PlayerComboDamage.Resolve(_player, 7, dice, abilityMultiplier: 0.75f);
 
-            // N = 7 + 5 + 2 + 16 + 4 = 34; M = 1.5 × 0.75 = 1.125 → 38.25 → 38
-            Assert.AreEqual(38, shield);
+            // N = 7 + 5 + 2 + 16 + 4 = 34; M = (1 + 0.5) × 1.5 × 0.75 = 1.6875 → 57.375 → 57
+            Assert.AreEqual(57, shield);
             Assert.AreEqual(damage, shield);
+        }
+
+        [Test]
+        public void Resolve_MultiplierBonus_AppliesToShield()
+        {
+            // Ayuno "+3 a todos los multiplicadores" también escala el escudo (fórmula compartida).
+            ServiceLocator.AddService<IComboPassiveService>(new FakeComboPassiveService
+            {
+                Scratch = new EnchantmentScratch { ComboMultiplierBonus = 2f }
+            }, ServiceScope.Global);
+
+            Assert.AreEqual(30, PlayerComboShield.Resolve(_player, 10, null));
         }
 
         [Test]

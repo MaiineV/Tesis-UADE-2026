@@ -77,12 +77,15 @@ namespace Rollgeon.Tiles.Visuals
                 sb.AppendLine().Append(description);
 
             // Números duros del GDD §16: daño esperado / curación visible en el tooltip.
+            // Los montos de daño viajan con el indicador pegado a la derecha (IconSpriteTags).
             if (def.EnterDamage > 0)
                 sb.AppendLine().Append(string.Format(
-                    LocalizedContent.Ui("tile.tooltip.enterdamage", "Daño al entrar: {0}"), def.EnterDamage));
+                    LocalizedContent.Ui("tile.tooltip.enterdamage", "Daño al entrar: {0}"),
+                    Rollgeon.UI.Utility.IconSpriteTags.DamageAmount(def.EnterDamage)));
             if (def.TurnStartDamage > 0)
                 sb.AppendLine().Append(string.Format(
-                    LocalizedContent.Ui("tile.tooltip.turndamage", "Daño por turno encima: {0}"), def.TurnStartDamage));
+                    LocalizedContent.Ui("tile.tooltip.turndamage", "Daño por turno encima: {0}"),
+                    Rollgeon.UI.Utility.IconSpriteTags.DamageAmount(def.TurnStartDamage)));
             if (def.HealAmount > 0)
                 sb.AppendLine().Append(string.Format(
                     LocalizedContent.Ui("tile.tooltip.heal", "Cura al terminar el turno: {0}"), def.HealAmount));

@@ -1,6 +1,8 @@
 using NUnit.Framework;
+using Patterns;
 using Rollgeon.Combos;
 using Rollgeon.Combos.Concretes;
+using Rollgeon.Combos.Rules;
 using UnityEngine;
 
 namespace Rollgeon.Combos.Tests
@@ -262,6 +264,117 @@ namespace Rollgeon.Combos.Tests
         {
             var result = _sut.Detect(new[] { 1, 1, 2, 3, 4 });
             Assert.IsFalse(result.IsMatch);
+        }
+
+        // ---- Compás Salteado (IComboRuleService.LadderAllowsSkippedStep) ----------
+
+        [Test]
+        public void Escalera_SkippedStep_WithoutRule_DoesNotMatch()
+        {
+            // Arrange — sin servicio registrado rige la regla estándar.
+            ServiceLocator.Clear();
+
+            // Act + Assert
+            Assert.IsFalse(_sut.Detect(new[] { 3, 5, 7, 9, 11 }).IsMatch);
+            Assert.IsFalse(_sut.Detect(new[] { 2, 4, 6, 8, 10 }).IsMatch);
+        }
+
+        [Test]
+        public void Escalera_SkippedStep_WithRule_MatchesBothParities_AsLadder()
+        {
+            // Arrange
+            ServiceLocator.Clear();
+            var rules = new ComboRuleService();
+            ServiceLocator.AddService<IComboRuleService>(rules, ServiceScope.Global);
+            rules.AddLadderSkippedStep("compas.salteado");
+            try
+            {
+                // Act
+                var odd = _sut.Detect(new[] { 3, 5, 7, 9, 11 });
+                var even = _sut.Detect(new[] { 10, 2, 6, 8, 4 });
+
+                // Assert — mismo combo, mismo base, todos los dados contribuyen.
+                Assert.IsTrue(odd.IsMatch);
+                Assert.IsTrue(even.IsMatch);
+                Assert.AreEqual(ComboId.Straight, odd.ComboId);
+                Assert.AreEqual(35, odd.BaseDamage);
+                Assert.AreEqual(5, even.CountUsed);
+            }
+            finally { ServiceLocator.Clear(); }
+        }
+
+        [Test]
+        public void Escalera_SkippedStep_WithRule_StillRejectsIrregularSteps()
+        {
+            // Arrange
+            ServiceLocator.Clear();
+            var rules = new ComboRuleService();
+            ServiceLocator.AddService<IComboRuleService>(rules, ServiceScope.Global);
+            rules.AddLadderSkippedStep("compas.salteado");
+            try
+            {
+                // Act + Assert — un salto de 3 (aunque el resto sea regular) y paso 3 constante
+                // no son escalera; la regla estándar sigue valiendo.
+                Assert.IsFalse(_sut.Detect(new[] { 1, 3, 5, 7, 10 }).IsMatch);
+                Assert.IsFalse(_sut.Detect(new[] { 1, 4, 7, 10, 13 }).IsMatch);
+                Assert.IsFalse(_sut.Detect(new[] { 1, 2, 3, 5, 8 }).IsMatch);
+                Assert.IsTrue(_sut.Detect(new[] { 1, 2, 3, 4, 5 }).IsMatch, "la regla estándar sigue valiendo");
+            }
+            finally { ServiceLocator.Clear(); }
+        }
+
+        [Test]
+        public void Escalera_SkippedStep_WithRule_MixedSteps_MatchAsLadder()
+        {
+            // Arrange — decisión GD 2026-09-03: saltos de 1 y 2 mezclados también son escalera.
+            ServiceLocator.Clear();
+            var rules = new ComboRuleService();
+            ServiceLocator.AddService<IComboRuleService>(rules, ServiceScope.Global);
+            rules.AddLadderSkippedStep("compas.salteado");
+            try
+            {
+                // Act
+                var reported = _sut.Detect(new[] { 5, 7, 9, 10, 11 });
+                var tailSkip = _sut.Detect(new[] { 1, 2, 3, 4, 6 });
+                var shuffled = _sut.Detect(new[] { 7, 1, 4, 6, 2 });
+
+                // Assert
+                Assert.IsTrue(reported.IsMatch, "5-7-9-10-11 (el caso reportado en QA)");
+                Assert.IsTrue(tailSkip.IsMatch, "1-2-3-4-6");
+                Assert.IsTrue(shuffled.IsMatch, "1-2-4-6-7 desordenada");
+                Assert.AreEqual(ComboId.Straight, reported.ComboId);
+                Assert.AreEqual(35, reported.BaseDamage);
+                Assert.AreEqual(5, reported.CountUsed);
+            }
+            finally { ServiceLocator.Clear(); }
+        }
+
+        [Test]
+        public void Escalera_MixedSteps_WithoutRule_DoesNotMatch()
+        {
+            ServiceLocator.Clear();
+
+            Assert.IsFalse(_sut.Detect(new[] { 5, 7, 9, 10, 11 }).IsMatch);
+            Assert.IsFalse(_sut.Detect(new[] { 1, 2, 3, 4, 6 }).IsMatch);
+        }
+
+        [Test]
+        public void Escalera_SkippedStep_RuleRemoved_BackToStandard()
+        {
+            // Arrange
+            ServiceLocator.Clear();
+            var rules = new ComboRuleService();
+            ServiceLocator.AddService<IComboRuleService>(rules, ServiceScope.Global);
+            rules.AddLadderSkippedStep("compas.salteado");
+            try
+            {
+                // Act
+                rules.RemoveLadderSkippedStep("compas.salteado");
+
+                // Assert
+                Assert.IsFalse(_sut.Detect(new[] { 3, 5, 7, 9, 11 }).IsMatch);
+            }
+            finally { ServiceLocator.Clear(); }
         }
     }
 

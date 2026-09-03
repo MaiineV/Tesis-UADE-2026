@@ -45,10 +45,11 @@ namespace Rollgeon.PreConditions.Concretes
                  "Se evalúa sobre el par de celdas más cercano entre ambos footprints.")]
         public TargetAlignment Alignment = TargetAlignment.Any;
 
-        [Tooltip("Línea de visión: las celdas estrictamente intermedias de la línea recta tienen que " +
-                 "ser caminables y estar libres. Solo evalúa sobre líneas rectas (orto o diagonal " +
-                 "exacta); sin alineación, falla.")]
-        public bool RequireLineOfSight;
+        // NOTA: "estar a tiro" incluye VER al target — la línea de visión (Bresenham, cualquier
+        // ángulo, GridLineOfSight) es parte del gate, siempre. Reemplaza al viejo flag
+        // RequireLineOfSight (línea recta que fallaba sin alineación): los assets que lo
+        // serializaron lo dropean en silencio al deserializar. Alcanza también al gate de heal
+        // del Healer, a propósito: se cura a quien se ve.
 
         public override string ConditionName
         {
@@ -59,8 +60,7 @@ namespace Rollgeon.PreConditions.Concretes
                     : $"Target in {Metric} range ≤ {Range}";
                 if (Alignment == TargetAlignment.SameRowOrColumn) name += " (fila/columna)";
                 else if (Alignment == TargetAlignment.DiagonalOnly) name += " (diagonal)";
-                if (RequireLineOfSight) name += " +LoS";
-                return name;
+                return name + " +LoS";
             }
         }
 
@@ -93,10 +93,10 @@ namespace Rollgeon.PreConditions.Concretes
             }
 
             if (dist > range) return false;
-            if (Alignment == TargetAlignment.Any && !RequireLineOfSight) return true;
 
             // Par de celdas más cercano entre ambos footprints (desempate: orden de iteración,
             // determinista — row-major desde el ancla). Para dos 1×1 son sus celdas de siempre.
+            // Se computa SIEMPRE: la alineación y la línea de visión se miden sobre este par.
             var a = ownerCoord;
             var b = opponentCoord;
             int bestPair = int.MaxValue;
@@ -117,27 +117,9 @@ namespace Rollgeon.PreConditions.Concretes
             if (Alignment == TargetAlignment.SameRowOrColumn && !orthoAligned) return false;
             if (Alignment == TargetAlignment.DiagonalOnly && !diagAligned) return false;
 
-            if (RequireLineOfSight)
-            {
-                // LoS solo tiene sentido sobre una línea recta; fuera de ella, falla.
-                if (!orthoAligned && !diagAligned) return false;
-
-                int steps = Math.Max(Math.Abs(dx), Math.Abs(dy));
-                int sx = Math.Sign(dx);
-                int sy = Math.Sign(dy);
-                for (int i = 1; i < steps; i++)
-                {
-                    var c = new GridCoord(a.X + sx * i, a.Y + sy * i);
-                    if (!grid.IsWalkable(c)) return false;
-                    if (grid.TryGetOccupant(c, out var blocker)
-                        && blocker != context.OwnerGuid && blocker != context.OpponentGuid)
-                    {
-                        return false;
-                    }
-                }
-            }
-
-            return true;
+            // Detrás de algo no hay tiro (ni cura): Bresenham a cualquier ángulo. Sobre pares
+            // alineados camina exactamente la línea recta del viejo RequireLineOfSight.
+            return GridLineOfSight.HasClearLine(grid, a, b, context.OwnerGuid, context.OpponentGuid);
         }
     }
 }

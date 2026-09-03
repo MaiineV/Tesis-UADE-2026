@@ -112,9 +112,12 @@ namespace Rollgeon.Items
                 ApplyPersistentModifiers(item);
                 RegisterBaseDamageOverride(item);
                 ApplyRollPoolBonus(item);
+                RegisterComboRules(item);
+                RegisterHealingRules(item);
                 if (item.ActiveSlotBonus > 0) AddActiveSlotBonus(item.ActiveSlotBonus);
                 RegisterEnchantmentCostModifier(item);
                 RegisterEnchantmentWeightModifier(item);
+                RegisterGoldFloor(item);
             }
             else
             {
@@ -165,9 +168,12 @@ namespace Rollgeon.Items
                 RemovePersistentModifiers(item);
                 UnregisterBaseDamageOverride(item);
                 RevertRollPoolBonus(item);
+                UnregisterComboRules(item);
+                UnregisterHealingRules(item);
                 if (item.ActiveSlotBonus > 0) AddActiveSlotBonus(-item.ActiveSlotBonus);
                 UnregisterEnchantmentCostModifier(item);
                 UnregisterEnchantmentWeightModifier(item);
+                UnregisterGoldFloor(item);
                 OnItemChanged?.Invoke(item, false);
                 EventManager.Trigger(EventName.OnItemRemoved, GetPlayerGuid(), itemId);
                 return true;
@@ -428,6 +434,9 @@ namespace Rollgeon.Items
                         SourceGuid = playerGuid,
                         TargetGuid = otherGuid != Guid.Empty ? otherGuid : playerGuid,
                         SourceItemId = capturedItem.ItemId,
+                        // Eventos de tirada (OnRollResolved: [guid, caras, kind, combo]) traen
+                        // los dados: sin esto un reader de dados (Bolsa del Impar) leía null.
+                        DiceResult = FindDiceArg(args),
                         lastResult = true,
                     };
                     var preCtx = new PreConditionContext
@@ -442,6 +451,16 @@ namespace Rollgeon.Items
                 EventManager.Subscribe(hook.TriggerEvent, handler);
                 _hookHandlers.Add((item.ItemId, hook.TriggerEvent, handler));
             }
+        }
+
+        // El primer arg que sea una lista de enteros es la tirada (contrato de OnRollResolved /
+        // OnDiceRolled). Null si el evento no lleva dados — los readers de dados devuelven 0.
+        private static IReadOnlyList<int> FindDiceArg(object[] args)
+        {
+            if (args == null) return null;
+            for (int i = 0; i < args.Length; i++)
+                if (args[i] is IReadOnlyList<int> dice) return dice;
+            return null;
         }
 
         private void BindComboPlayedHook(ItemSO item, PassiveItemHook hook)
@@ -621,6 +640,27 @@ namespace Rollgeon.Items
         }
 
         // ======================================================================
+        // Gold floor (Tarjeta de Crédito) — el piso vive en el EconomyService bajo
+        // el item id; entra con el item, sale con el item (sin confiscar deuda).
+        // ======================================================================
+
+        private void RegisterGoldFloor(ItemSO item)
+        {
+            if (item == null || item.GoldFloor >= 0) return;
+            if (ServiceLocator.TryGetService<Rollgeon.Economy.IEconomyService>(out var economy)
+                && economy != null)
+                economy.SetGoldFloor(item.ItemId, item.GoldFloor);
+        }
+
+        private void UnregisterGoldFloor(ItemSO item)
+        {
+            if (item == null || item.GoldFloor >= 0) return;
+            if (ServiceLocator.TryGetService<Rollgeon.Economy.IEconomyService>(out var economy)
+                && economy != null)
+                economy.ClearGoldFloor(item.ItemId);
+        }
+
+        // ======================================================================
         // Roll pool bonus (Llamado de Emergencia) — permanente mientras el item
         // esté en el inventario, revertido al perderlo.
         // ======================================================================
@@ -642,6 +682,60 @@ namespace Rollgeon.Items
             if (ServiceLocator.TryGetService<Rollgeon.Combat.Rolls.IRollPoolService>(out var rolls)
                 && rolls != null)
                 rolls.AddRollPoolBonus(-item.RollPoolBonus);
+        }
+
+        // ======================================================================
+        // Combo rules (Compás Salteado) — la regla vive mientras el item esté en
+        // el inventario; el servicio sostiene la regla por fuente (ItemId).
+        // ======================================================================
+
+        private void RegisterComboRules(ItemSO item)
+        {
+            if (!item.LadderSkippedStep) return;
+            if (!ServiceLocator.TryGetService<Rollgeon.Combos.Rules.IComboRuleService>(out var rules)
+                || rules == null)
+            {
+                Debug.LogWarning("[InventoryService] IComboRuleService no registrado — la regla de " +
+                                 $"Escalera salteada de '{item.ItemId}' no se aplica.");
+                return;
+            }
+            rules.AddLadderSkippedStep(item.ItemId);
+        }
+
+        private void UnregisterComboRules(ItemSO item)
+        {
+            if (item == null || !item.LadderSkippedStep) return;
+            if (ServiceLocator.TryGetService<Rollgeon.Combos.Rules.IComboRuleService>(out var rules)
+                && rules != null)
+                rules.RemoveLadderSkippedStep(item.ItemId);
+        }
+
+        // ======================================================================
+        // Healing rules (Ayuno) — mismo patrón que las reglas de combo.
+        // ======================================================================
+
+        private readonly HashSet<string> _registeredHealingRules = new();
+
+        private void RegisterHealingRules(ItemSO item)
+        {
+            if (!item.BlocksPassiveItemHealing) return;
+            if (!ServiceLocator.TryGetService<Rollgeon.Combat.Healing.IHealingRuleService>(out var rules)
+                || rules == null)
+            {
+                Debug.LogWarning("[InventoryService] IHealingRuleService no registrado — el bloqueo de " +
+                                 $"curas de '{item.ItemId}' no se aplica.");
+                return;
+            }
+            rules.AddPassiveHealingBlock(item.ItemId);
+            _registeredHealingRules.Add(item.ItemId);
+        }
+
+        private void UnregisterHealingRules(ItemSO item)
+        {
+            if (item == null || !_registeredHealingRules.Remove(item.ItemId)) return;
+            if (ServiceLocator.TryGetService<Rollgeon.Combat.Healing.IHealingRuleService>(out var rules)
+                && rules != null)
+                rules.RemovePassiveHealingBlock(item.ItemId);
         }
 
         // ======================================================================
@@ -834,6 +928,15 @@ namespace Rollgeon.Items
                     ecm.Unregister(id);
             }
             _registeredCostModifiers.Clear();
+
+            if (_registeredHealingRules.Count > 0
+                && ServiceLocator.TryGetService<Rollgeon.Combat.Healing.IHealingRuleService>(out var hrs)
+                && hrs != null)
+            {
+                foreach (var id in _registeredHealingRules)
+                    hrs.RemovePassiveHealingBlock(id);
+            }
+            _registeredHealingRules.Clear();
         }
     }
 }

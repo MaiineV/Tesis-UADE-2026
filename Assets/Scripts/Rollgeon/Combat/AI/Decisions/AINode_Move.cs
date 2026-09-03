@@ -38,6 +38,14 @@ namespace Rollgeon.Combat.AI.Decisions
                  "Si false, demasiado cerca = no se mueve.")]
         public bool Retreat;
 
+        [Tooltip("Si true, 'ya estoy a DesiredRange' no alcanza para no-opear: también exige " +
+                 "línea de visión clara al target. Sin esto, un enemigo puede quedar trabado " +
+                 "para siempre a la distancia justa pero sin ver a su target (ej. el jugador " +
+                 "parado en el medio tapándole la vista al Healer hacia su aliado herido) — " +
+                 "el nodo cree que ya llegó y nunca reintenta reposicionarse. Default false: " +
+                 "no cambia nada para los árboles ya autorados que usan este nodo.")]
+        public bool RequireLineOfSight;
+
         [Tooltip("DEPRECADO — usar DesiredRange. Solo fallback cuando DesiredRange es null: " +
                  "true => rango 1 (frena adyacente), false => rango 0.")]
         public bool StopAdjacent = true;
@@ -79,14 +87,54 @@ namespace Rollgeon.Combat.AI.Decisions
             // trabado para siempre). Ver AIWrapFallible/Isolate en los builders de bosses:
             // son Selector[Move, Wait] — con Wait siempre Succeeded, este cambio no altera
             // su resultado final, solo evita el salto a Wait.
-            if (currentDist == desiredRange) return AIResult.Succeeded;        // ya en la banda
+            bool alreadyInBand = currentDist == desiredRange;
+            // RequireLineOfSight: "en la banda" no alcanza si desde acá no se ve al target —
+            // sin este chequeo el nodo se auto-engaña ("ya llegué") y nunca reintenta.
+            if (alreadyInBand && RequireLineOfSight
+                && !GridLineOfSight.HasClearLine(context.Grid, selfCoord, targetCoord, context.SelfGuid, targetGuid))
+            {
+                alreadyInBand = false;
+            }
+            if (alreadyInBand) return AIResult.Succeeded;                     // ya en la banda (y con LoS si se pidió)
             if (currentDist < desiredRange && !Retreat) return AIResult.Succeeded; // muy cerca, kite off
 
             int maxSteps = MaxSteps?.Read(context) ?? 3;
 
+            if (RequireLineOfSight)
+            {
+                // El IAIPathPlanner no tiene noción de línea de visión (AIPathRequest no lleva ese
+                // dato) — con RequireLineOfSight se resuelve acá mismo, sin pasar por el planner,
+                // priorizando candidatos con LoS clara por sobre ajustar la distancia exacta: ver
+                // al target es el propósito entero de este approach.
+                var reachableLos = (context.Movement as IPathedMovementService)
+                        ?.GetReachableAnchors(context.SelfGuid, maxSteps)
+                    ?? context.Movement.GetReachableTiles(selfCoord, maxSteps, includeOrigin: false);
+                if (reachableLos == null || reachableLos.Count == 0) return AIResult.Succeeded;
+
+                var bestLos = selfCoord;
+                bool bestHasLos = false;
+                int bestLosErr = Mathf.Abs(currentDist - desiredRange);
+                foreach (var candidate in reachableLos)
+                {
+                    int dist = GridFootprint.ManhattanDistance(candidate, selfFp, targetCoord, targetFp);
+                    int err = Mathf.Abs(dist - desiredRange);
+                    bool hasLos = GridLineOfSight.HasClearLine(
+                        context.Grid, candidate, targetCoord, context.SelfGuid, targetGuid);
+
+                    bool better = (hasLos && !bestHasLos) || (hasLos == bestHasLos && err < bestLosErr);
+                    if (!better) continue;
+
+                    bestHasLos = hasLos;
+                    bestLosErr = err;
+                    bestLos = candidate;
+                }
+
+                if (bestLos == selfCoord) return AIResult.Succeeded; // ningún tile alcanzable mejora
+                if (!context.Movement.Move(context.SelfGuid, bestLos)) return AIResult.Succeeded;
+            }
             // Con planner en el contexto, la decisión es suya (conciencia de casillas
             // especiales; con sala limpia su resultado es idéntico al scoring de abajo).
-            if (context.PathPlanner != null)
+            else if (context.PathPlanner != null)
             {
                 if (!AIPathMoveExecutor.TryPlanAndMove(context, targetCoord, maxSteps, desiredRange,
                         Pathing.MoveIntent.Approach))

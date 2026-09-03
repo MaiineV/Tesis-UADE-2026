@@ -71,7 +71,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Templates
                 so => Fill(so, 45, 25, 4, 8, AttackPatternKind.StraightLine, AttackTiming.Telegraph,
                     atk => Sequence(ExecuteTelegraph(), EnergyLoop(
                         IfTargetInRange(8, Telegraph(ThreatShape.Row, 1, atk), Kite(2, 5),
-                            alignment: TargetAlignment.SameRowOrColumn, lineOfSight: true,
+                            alignment: TargetAlignment.SameRowOrColumn,
                             useOwnerRange: true))))),
 
             new EnemyTemplate("artillery", "Artillery", EnemyArchetype.Ranged,

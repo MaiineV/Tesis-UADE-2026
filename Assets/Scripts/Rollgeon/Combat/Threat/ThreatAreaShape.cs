@@ -269,6 +269,24 @@ namespace Rollgeon.Combat.Threat
             shape == ThreatShape.DirectionalCone;
 
         /// <summary>
+        /// Formas cuyo telegraph se filtra por línea de visión desde el atacante al marcar: lo
+        /// que el atacante apunta o barre desde su cuerpo (cuadrados sobre el jugador, filas,
+        /// bandas, conos, cruces). Las mecánicas de sala —sectores, particiones, anillos,
+        /// dispersos, media sala, todo-menos-la-mesa— quedan afuera: no "apuntan" y
+        /// agujerearlas por props las volvería ilegibles.
+        /// </summary>
+        public static bool IsLineOfSightGated(ThreatShape shape) =>
+            shape == ThreatShape.SquareAroundPlayer ||
+            shape == ThreatShape.DiamondAroundPlayer ||
+            shape == ThreatShape.Row ||
+            shape == ThreatShape.Column ||
+            shape == ThreatShape.DirectionalBand ||
+            shape == ThreatShape.DirectionalCone ||
+            shape == ThreatShape.SquareAroundSelf ||
+            shape == ThreatShape.ColumnAroundSelf ||
+            shape == ThreatShape.CrossAroundSelf;
+
+        /// <summary>
         /// Toda la sala caminable menos el cuadrado de radio <paramref name="radius"/> (1 ⇒ 3×3)
         /// centrado en <paramref name="self"/> — La Banca del Tahúr: cobra en todos lados salvo
         /// La Mesa, el 3×3 que el jefe arrastra consigo.

@@ -111,5 +111,52 @@ namespace Rollgeon.Upgrades.Dice.Tests
 
             Assert.IsTrue(scratch.Journal == null || scratch.Journal.Count == 0);
         }
+
+        // ---- Canal aditivo sobre M (ComboMultiplierBonus) ---------------------------
+
+        [Test]
+        public void Reset_ClearsComboMultiplierBonus()
+        {
+            var scratch = new EnchantmentScratch { ComboMultiplierBonus = 2f };
+
+            scratch.Reset();
+
+            Assert.AreEqual(0f, scratch.ComboMultiplierBonus, 0.0001f);
+        }
+
+        [Test]
+        public void RecordDelta_MultiplierBonusChanged_RecordsDeltaNotAbsolute()
+        {
+            // Arrange — otra fuente ya dejó +1 en el bono de M
+            var scratch = new EnchantmentScratch { ComboMultiplierBonus = 1f };
+            var before = ScratchSnapshot.Of(scratch);
+
+            // Act — esta fuente suma +2 (total +3)
+            scratch.ComboMultiplierBonus += 2f;
+            ScratchSnapshot.RecordDelta(scratch, in before,
+                ScratchSourceKind.Item, "piedra.angular", null, bagSlot: -1);
+
+            // Assert — el aporte propio (2), no el acumulado (3); los otros canales neutros
+            var entry = scratch.Journal[0];
+            Assert.AreEqual(2f, entry.MultiplierBonusDelta, 0.0001f);
+            Assert.AreEqual(0, entry.BonusDelta);
+            Assert.AreEqual(1f, entry.MultiplierFactor, 0.0001f);
+            Assert.IsFalse(entry.SetBlock);
+        }
+
+        [Test]
+        public void RecordDelta_MultiplierBonusOnly_IsNotNeutral()
+        {
+            var scratch = new EnchantmentScratch();
+            var before = ScratchSnapshot.Of(scratch);
+
+            scratch.ComboMultiplierBonus += 0.05f; // Vértigo: un combo
+            ScratchSnapshot.RecordDelta(scratch, in before,
+                ScratchSourceKind.Item, "vertigo", null, bagSlot: -1);
+
+            Assert.IsNotNull(scratch.Journal);
+            Assert.AreEqual(1, scratch.Journal.Count);
+            Assert.AreEqual(0.05f, scratch.Journal[0].MultiplierBonusDelta, 0.0001f);
+        }
     }
 }

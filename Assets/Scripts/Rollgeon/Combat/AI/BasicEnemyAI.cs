@@ -1,8 +1,10 @@
 using System;
+using Patterns;
 using Rollgeon.Attributes;
 using Rollgeon.Attributes.Stats;
 using Rollgeon.Combat.Handoff;
 using Rollgeon.Combat.Pipelines;
+using Rollgeon.Grid;
 using Rollgeon.Player;
 using UnityEngine;
 
@@ -61,6 +63,19 @@ namespace Rollgeon.Combat.AI
             }
 
             Guid playerGuid = _playerService.PlayerGuid;
+
+            // LOS de proyecto: hasta el fallback respeta que detrás de algo no se pega. Sin
+            // grid resuelto o sin posiciones (fixtures viejos de EditMode) degrada a pegar
+            // como siempre — el fallback nunca chequeó geometría y romperlo sería peor.
+            if (ServiceLocator.TryGetService<IGridManager>(out var grid) && grid != null
+                && grid.TryGetPosition(enemyId, out var selfCoord)
+                && grid.TryGetPosition(playerGuid, out var playerCoord)
+                && !GridLineOfSight.HasClearLine(grid, selfCoord, playerCoord, enemyId, playerGuid))
+            {
+                Debug.Log($"[BasicEnemyAI] Enemy {enemyId} has no line of sight to the player — skipping attack.");
+                _onTurnComplete();
+                return;
+            }
 
             var ctx = new DamageContext
             {

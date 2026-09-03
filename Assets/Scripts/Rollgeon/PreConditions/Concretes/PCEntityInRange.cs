@@ -47,7 +47,12 @@ namespace Rollgeon.PreConditions.Concretes
                 ? ownerCoord.Manhattan(opponentCoord)
                 : ownerCoord.Chebyshev(opponentCoord);
 
-            return dist <= MaxRange;
+            if (dist > MaxRange) return false;
+
+            // Estar a tiro incluye ver al target: mismo criterio que PcTargetInRange. A rango 1
+            // no hay celdas intermedias y esto es un no-op.
+            return GridLineOfSight.HasClearLine(
+                grid, ownerCoord, opponentCoord, context.OwnerGuid, context.OpponentGuid);
         }
     }
 }

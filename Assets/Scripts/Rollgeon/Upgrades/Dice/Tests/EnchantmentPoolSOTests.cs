@@ -269,5 +269,63 @@ namespace Rollgeon.Upgrades.Dice.Tests
             for (int i = 0; i < count; i++) sequence.Add(pool.Roll(rng, DiceType.D6, floorDepth: 0));
             return sequence;
         }
+        // ---- Roll con filtro (slot garantizado de Moneda Maldita) -------------
+
+        private static void SetCursed(EnchantmentSO ench)
+        {
+            var field = typeof(EnchantmentSO).GetField("_capabilities", BindingFlags.NonPublic | BindingFlags.Instance);
+            field.SetValue(ench, new List<IEnchantmentCapability> { new CapCursed() });
+        }
+
+        [Test]
+        public void Roll_WithFilter_OnlyReturnsMatchingEntries()
+        {
+            var a = MakeEnchantment("a");
+            var b = MakeEnchantment("b");
+            var c = MakeEnchantment("c");
+            var cursed = MakeEnchantment("cursed");
+            SetCursed(cursed);
+            var pool = MakePool(
+                new WeightedEnchantment { Enchantment = a, Weight = 10f },
+                new WeightedEnchantment { Enchantment = b, Weight = 10f },
+                new WeightedEnchantment { Enchantment = c, Weight = 10f },
+                new WeightedEnchantment { Enchantment = cursed, Weight = 1f });
+            var rng = new Random(7);
+
+            for (int i = 0; i < 50; i++)
+            {
+                var picked = pool.Roll(rng, new[] { DiceType.D6 }, 0, null, EnchantmentPoolSO.IsCursedForPool);
+                Assert.AreSame(cursed, picked, "roll #" + i + " devolvio un no-maldito con filtro solo-malditos");
+            }
+        }
+
+        [Test]
+        public void Roll_WithFilter_NoMatch_ReturnsNullEvenOnExcludeFallback()
+        {
+            var a = MakeEnchantment("a");
+            var pool = MakePool(new WeightedEnchantment { Enchantment = a, Weight = 1f });
+
+            // El fallback que ignora el exclude también tiene que respetar el filtro.
+            var picked = pool.Roll(new Random(1), new[] { DiceType.D6 }, 0,
+                exclude: new HashSet<EnchantmentSO> { a }, filter: EnchantmentPoolSO.IsCursedForPool);
+
+            Assert.IsNull(picked);
+        }
+
+        [Test]
+        public void IsCursedForPool_CapCursedOrCaosCategory_True_OtherwiseFalse()
+        {
+            var plain = MakeEnchantment("plain");
+            var capped = MakeEnchantment("capped");
+            SetCursed(capped);
+            var caos = MakeEnchantment("caos");
+            typeof(EnchantmentSO).GetField("_category", BindingFlags.NonPublic | BindingFlags.Instance)
+                .SetValue(caos, EnchantmentCategory.Caos);
+
+            Assert.IsFalse(EnchantmentPoolSO.IsCursedForPool(plain));
+            Assert.IsTrue(EnchantmentPoolSO.IsCursedForPool(capped));
+            Assert.IsTrue(EnchantmentPoolSO.IsCursedForPool(caos));
+            Assert.IsFalse(EnchantmentPoolSO.IsCursedForPool(null));
+        }
     }
 }

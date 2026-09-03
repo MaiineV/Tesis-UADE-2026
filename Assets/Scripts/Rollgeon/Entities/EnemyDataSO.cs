@@ -169,6 +169,12 @@ namespace Rollgeon.Entities
                  "Personality, que es riesgo de pathing: un support puede ser agresivo.")]
         public Rollgeon.Entities.Traits.EnemyArchetype Archetype = Rollgeon.Entities.Traits.EnemyArchetype.Unset;
 
+        [Tooltip("Texto libre (ES) del renglón de tipo/familia de la tooltip. Vacío = usa el " +
+                 "Archetype de arriba (localizado, con prefijo de Jefe). Si lo escribís, va " +
+                 "TAL CUAL — incluido el 'Jefe · ' si corresponde. La tabla de localización, " +
+                 "si tiene la key <EntityId>.type, le gana a este campo.")]
+        public string TooltipType;
+
         [Tooltip("Perfil de riesgo del pathing IA frente a casillas peligrosas (MinSurvivalHP + Caution). " +
                  "Todo el catálogo arranca en Normal.")]
         public AIPersonality Personality = AIPersonality.Normal;

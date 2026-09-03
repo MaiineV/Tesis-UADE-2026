@@ -34,6 +34,7 @@ Description/Icon` (en `UpgradeSO`), `EditorSetCategory/FaceFilter/AllowedDiceTyp
 | `roll.resolved` | RollResolved | La tirada firme tras rerolls | El momento para leer la cara definitiva |
 | `applied` | EnchantmentApplied | Una vez, al encantar el dado | — |
 | `turn.finished` | TurnFinished | Fin del turno del jugador | — |
+| `combat.started` | CombatStarted | Arranca un combate (sin tirada en el contexto) | Para resetear counters por dado (Racha) |
 
 `Apply`/`Match`/`Describe` espejo de `ItemTriggerCatalog`. `Filter.Mode = None` en un hook de
 combo equivale a `AnyCombo` (asi lo trata el runtime y asi lo matchea el catalogo).
@@ -75,12 +76,14 @@ apply se rechaza si la interseccion queda vacia (`EnchantmentConfigSO.MinFacesAf
 |---|---|---|
 | `CapForceRerollOnTurn` | `TriggerOnTurn` | ✅ cableada (`ForcedRerollCapabilityService`) |
 | `CapCursed` | — | ✅ cableada — marca "maldito": color de titulo + multiplicador de peso |
-| `CapPreventHolding` | — | ⚠️ `[NotYetWired]` |
+| `CapPreventHolding` | — | ✅ cableada (Lento): `DiceZoneView.CanChangeHold` bloquea el hold y `CombatHandoffService.ApplyKeepConstraints` fuerza el reroll |
 | `CapWildcard` | — | ⚠️ `[NotYetWired]` |
 | `CapLadderStep` | — | ⚠️ `[NotYetWired]` |
 | `CapMimeticCopy` | — | ⚠️ `[NotYetWired]` |
 | `CapRerollKeepHighest` | — | ⚠️ `[NotYetWired]` |
-| `CapAnchorAccumulate` | `MaxAccumulation` | ⚠️ `[NotYetWired]` |
+
+`CapAnchorAccumulate` **ya no existe** (Feature#0073): Ancla se autora como bono de combo con
+el reader `ReadCarrierHoldStreak` (abajo).
 
 **No diseñar contenido nuevo sobre las `[NotYetWired]`** — configuran y no hacen nada in-game.
 `IsCursed()` = tener una `CapCursed`; es **ortogonal a la categoria** (mitad_inferior es maldito
@@ -112,10 +115,29 @@ en `Assets/Scripts/Rollgeon/Effects/Concretes/` y `Upgrades/Dice/Effects/`):
 - **Del canal dados**: `EffSlotCounter { Increment/Reset }` (contador por slot),
   `EffRemoveEnchantment` (un solo uso — al final de la cadena).
 - **Readers**: `ReadConstantInt`, `ReadCarrierFace` (la cara que saco el dado),
-  `ReadCarrierRollDelta`, `ReadDiceFace`, `ReadComboCounter`, `ReadCurrentGold`,
-  `ReadCurrentGoldSqrtScaled`.
+  `ReadCarrierRollDelta`, `ReadDiceFace`, `ReadComboCounter` (contador GLOBAL de un combo id),
+  `ReadSlotCounter { Key, Multiplier, Offset, MaxCount }` (contador POR DADO de `EffSlotCounter`),
+  `ReadCarrierHoldStreak { PerRoll, MaxRolls }` (tiradas consecutivas guardado — Ancla),
+  `ReadCurrentGold`, `ReadCurrentGoldSqrtScaled`.
 - **Precondiciones**: `PcCarrierFace { OnMaxFace, ... }` (exige `RequireCarrierParticipates`),
-  `PcSlotCounterCompare`, y las genericas (`PcChance`, `PcOwnerHpBelow`, `PcGoldCompare`).
+  `PcCarrierParticipates { Negate }` (para bridges con `RequireCarrierParticipates=false` que
+  reaccionan en ambos casos — Solitario, Racha), `PcSlotCounterCompare`, `PcTargetHpBelow`
+  (umbral de remate; solo en ComboPlayed, donde hay target real), y las genericas (`PcChance`,
+  `PcOwnerHpBelow`, `PcGoldCompare`).
+
+### El "canal por dado": cuanto vale ESTE dado en N
+
+No existe una cara efectiva por dado. "El dado no suma / vale doble / vale mitad" se autora como
+`EffAddComboBonus` con `ReadCarrierRollDelta` en **ComboMatched + RequireCarrierParticipates**:
+el delta entra a N y el breakdown lo muestra como proc del dado (journal por BagSlot), en
+preview y en el golpe real por igual. Ops: `Exclude` (-cara, Oxidado), `Double` (+cara),
+`DoubleMaxHalveRest` (Volátil), `TripleOddZeroEven` (Enfiestado), mas los legacy `Invert`,
+`ClampMinToHalfMax`, `DoubleMaxZeroMin`. **Nunca en RollResolved**: ese dispatch descarta el
+bono de combo (solo materializa oro/escudo).
+
+Azar por tirada (Frágil): la moneda se tira en `DiceRolled` (`EffSlotCounter Reset` + grupo
+`PcChance → Increment`) y el preview solo la LEE (`PcSlotCounterCompare`), asi el resultado no
+cambia con cada toggle de hold.
 
 Patron "cada 3 combos, +50": `EffSlotCounter{Increment}` + `PcSlotCounterCompare{>=3}` gateando
 el bono + `EffSlotCounter{Reset}`.

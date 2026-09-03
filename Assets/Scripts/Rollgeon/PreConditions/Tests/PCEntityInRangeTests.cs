@@ -68,6 +68,21 @@ namespace Rollgeon.PreConditions.Tests
         }
 
         [Test]
+        public void Evaluate_LineOfSightBlockedByOccupant_Fails()
+        {
+            // Arrange — a rango pero con un bloqueo en el medio de la fila: la LOS es parte
+            // del gate (misma regla que PcTargetInRange).
+            _grid.LoadRoom(NavGraph.Rect(8, 8));
+            _grid.Register(_ownerId, new GridCoord(0, 3));
+            _grid.Register(_opponentId, new GridCoord(4, 3));
+            _grid.Register(Guid.NewGuid(), new GridCoord(2, 3));
+            var pc = new PCEntityInRange { MaxRange = 6 };
+
+            // Act + Assert
+            Assert.IsFalse(pc.Evaluate(Ctx(_ownerId, _opponentId)));
+        }
+
+        [Test]
         public void Evaluate_SameTile_PassesWithRangeZero()
         {
             // Arrange — el GridManager real impone 1 entity por tile (Register

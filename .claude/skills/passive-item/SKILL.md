@@ -272,7 +272,8 @@ con `damage.taken` + `EffDealDamage`, el daño va al atacante (Amuleto de Reflej
 
 **Items sin hooks son validos** si usan las perillas de lifecycle de `ItemSO` (Feature#0065):
 `RollPoolBonus`, `ActiveSlotBonus`, `EnchantmentCostMultiplier`, `SecondWind`,
-`BaseDamageOverride`, `UniquePerRun` — ver la seccion nueva del cheatsheet.
+`BaseDamageOverride`, `LadderSkippedStep`, `BlocksPassiveItemHealing`, `DecayingMultiplier`,
+`UniquePerRun` — ver la seccion nueva del cheatsheet.
 
 ## Paso 4-bis — Familias de variantes
 

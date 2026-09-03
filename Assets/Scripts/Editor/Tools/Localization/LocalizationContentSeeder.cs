@@ -49,6 +49,7 @@ namespace Rollgeon.EditorTools.Localization
             SeedChest();
             SeedMenuChrome();
             SeedContentBaseline();
+            SeedPassiveItems();
 
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
@@ -267,6 +268,24 @@ namespace Rollgeon.EditorTools.Localization
                 "Combo repetido: 0 daño",
                 "Repeated combo: 0 damage");
 
+            // Toast de Segundo Aliento sobre la pila de vida (SecondWindFeedbackView):
+            // {0} = nombre del item consumido, {1} = HP con los que quedó el jugador.
+            Ui(UiTextKeys.SecondWindTitle,
+                "¡Segundo Aliento!",
+                "Second Wind!");
+            Ui(UiTextKeys.SecondWindBody,
+                "{0} te dejó en {1} HP.",
+                "{0} left you at {1} HP.");
+
+            // Toast de item roto (ItemBrokeDownFeedbackView): Eco Menguante al agotar su
+            // multiplicador. {0} = nombre del item.
+            Ui(UiTextKeys.ItemBrokeDownTitle,
+                "¡Se rompió!",
+                "It broke!");
+            Ui(UiTextKeys.ItemBrokeDownBody,
+                "{0} agotó su poder y desapareció.",
+                "{0} ran out of power and is gone.");
+
             // Toast al tocar un chip de acción no usable (ActionRejectToast):
             // título + motivo concreto resuelto por PlayerActionButtonsView.
             Ui(UiTextKeys.RejectTitle,
@@ -324,6 +343,14 @@ namespace Rollgeon.EditorTools.Localization
                 "Damage: ATK ({0}) + combo score");
             Ui("tooltip.effect.damage.flat", "Daño: {0}", "Damage: {0}");
 
+            // Renglón extra de Forzar Puerta cuando hay picos u otros ítems sumando.
+            Ui("tooltip.effect.force_door.item_bonus",
+                "Bonus de objetos a tu tirada: +{0}",
+                "Item bonus to your roll: +{0}");
+
+            // Mecha de una bomba de sala en su tooltip de mundo.
+            Ui("prop.tooltip.fuse", "Estalla en {0} turnos", "Explodes in {0} turns");
+
             Ui("tooltip.effect.heal.combo_header",
                 "Curación: ATQ ({0}) + base del combo × multi de dados",
                 "Healing: ATK ({0}) + combo base × dice multiplier");
@@ -375,12 +402,12 @@ namespace Rollgeon.EditorTools.Localization
                 "The minimum result is always half the maximum, rounded up. A sharpened d6 never rolls below 3.");
 
             Ench("ancla", "Ancla", "Anchor",
-                "Si este dado se bloquea entre tiradas, su resultado aumenta +1 por tirada bloqueada (máx +3).",
-                "If this die is held between rolls, its result increases by +1 per held roll (max +3).");
+                "Si guardás este dado entre tiradas, aporta +5 de daño por cada tirada que pase sin relanzarlo (máx +15). Se pierde al relanzarlo.",
+                "If you hold this die between rolls, it adds +5 damage per roll it stays held (max +15). Lost when rerolled.");
 
             Ench("avaro", "Avaro", "Miser",
-                "Otorga 3 de oro extra al completar un combo de trío o superior.",
-                "Grants 3 extra gold when you complete a trio combo or better.");
+                "Otorga 5 de oro al completar un trío, póker o generala.",
+                "Grants 5 gold when you complete a trio, four of a kind or five of a kind.");
 
             Ench("caras_centrales", "Caras Centrales", "Middle Faces",
                 "Bloquea el cuarto superior e inferior. d8:{3,4,5,6} d12:{4,5,6,7,8,9}",
@@ -407,20 +434,20 @@ namespace Rollgeon.EditorTools.Localization
                 "For straights, this die counts as both its value and its value+1 at the same time.");
 
             Ench("escudado", "Escudado", "Shielded",
-                "Si se utiliza en un combo de full house da 2 más de escudo.",
-                "If used in a full house combo it grants 2 extra shield.");
+                "Si este dado participa en un póker, generás 15 puntos de escudo.",
+                "If this die takes part in a four of a kind, you gain 15 shield.");
 
             Ench("extremos", "Extremos", "Extremes",
                 "Solo muestra el cuarto superior e inferior. d8:{1,2,7,8} d12:{1,2,3,10,11,12}",
                 "Only shows the top and bottom quarter. d8:{1,2,7,8} d12:{1,2,3,10,11,12}");
 
             Ench("fortaleza", "Fortaleza", "Fortress",
-                "El dado muestra su valor máximo y participa en combo; genera 2 puntos de escudo.",
-                "The die shows its maximum value and joins the combo; it generates 2 shield points.");
+                "Si este dado saca su valor máximo y participa en un combo, generás 30 puntos de escudo.",
+                "If this die rolls its maximum and takes part in a combo, you gain 30 shield.");
 
             Ench("fragil", "Frágil", "Fragile",
-                "50% de chance de que el dado no cuente para el combo.",
-                "50% chance the die doesn't count toward the combo.");
+                "En cada tirada, 50% de que este dado no sume daño y 50% de que sume el doble. Sigue contando para formar el combo.",
+                "Each roll, 50% chance this die adds no damage and 50% it adds double. It still counts toward forming the combo.");
 
             Ench("gemelo", "Gemelo", "Twin",
                 "Si este dado muestra el mismo número que otro en la tirada, ambos valen x1.5 para el combo.",
@@ -439,12 +466,12 @@ namespace Rollgeon.EditorTools.Localization
                 "The result becomes max+1 minus the result. A d6 that rolls 1 counts as 6.");
 
             Ench("lento", "Lento", "Sluggish",
-                "Este dado no se puede bloquear entre tiradas.",
-                "This die cannot be held between rolls.");
+                "Este dado no se puede guardar entre tiradas: siempre se relanza. A cambio, suma +5 de daño cuando participa en un combo.",
+                "This die can't be held between rolls: it always rerolls. In exchange it adds +5 damage when it takes part in a combo.");
 
             Ench("mercader", "Mercader", "Merchant",
-                "Otorga 5 de oro al completar una escalera.",
-                "Grants 5 gold when you complete a straight.");
+                "Si este dado participa en una generala, otorga 12 de oro.",
+                "If this die takes part in a five of a kind, it grants 12 gold.");
 
             Ench("mimetico", "Mimético", "Mimic",
                 "Copia el resultado del último dado vuelto a tirar en esta tirada para propósitos de combo.",
@@ -471,8 +498,8 @@ namespace Rollgeon.EditorTools.Localization
                 "This die only rolls even numbers.");
 
             Ench("oxidado", "Oxidado", "Rusty",
-                "El dado pierde 1 de su resultado final (mínimo 1).",
-                "The die loses 1 from its final result (minimum 1).");
+                "Este dado no suma daño, pero cada vez que participa en un combo genera +2 de oro.",
+                "This die adds no damage, but each time it takes part in a combo it generates +2 gold.");
 
             Ench("par", "Par", "Even",
                 "Solo muestra caras pares. d6:{2,4,6} d8:{2,4,6,8} d12:{2,4,6,8,10,12}",
@@ -483,8 +510,8 @@ namespace Rollgeon.EditorTools.Localization
                 "If this die rolls an odd number it multiplies x3; otherwise x0.");
 
             Ench("pesado", "Pesado", "Heavy",
-                "Suma +2 al resultado final del dado.",
-                "Adds +2 to the die's final result.");
+                "Este dado aporta +2 de daño cuando participa en un combo.",
+                "This die adds +2 damage when it takes part in a combo.");
 
             Ench("primo", "Primo", "Prime",
                 "Solo muestra números primos. d12:{2,3,5,7,11}",
@@ -495,16 +522,37 @@ namespace Rollgeon.EditorTools.Localization
                 "If 2 or more dice show the same number in the final roll, this die adds its value to the combo twice.");
 
             Ench("sediento", "Sediento", "Thirsty",
-                "Cada vez que participa en un combo consume 2 de oro. Sin oro no puede participar.",
-                "Each time it joins a combo it consumes 2 gold. With no gold it can't take part.");
+                "Cada vez que participa en un combo consume 2 de oro y suma +0,2 al multiplicador. Sin oro, el combo no hace daño.",
+                "Each time it joins a combo it consumes 2 gold and adds +0.2 to the multiplier. With no gold, the combo deals no damage.");
 
             Ench("torpe", "Torpe", "Clumsy",
                 "Obliga a volver a tirar todos los dados en el turno 2 del combate.",
                 "Forces a full reroll on turn 2 of the combat.");
 
             Ench("volatil", "Volátil", "Volatile",
-                "Al sacar el máximo, el resultado se duplica. Al sacar el mínimo, vale 0.",
-                "On a maximum roll the result doubles. On a minimum roll it's worth 0.");
+                "Al sacar el máximo, este dado aporta el doble de daño. Con cualquier otra cara aporta la mitad.",
+                "On its maximum this die deals double damage. On any other face it deals half.");
+
+            // Feature#0073 — encantamientos del GDD que faltaban en el catálogo.
+            Ench("vampiro", "Vampiro", "Vampire",
+                "Cada vez que este dado participa en un combo, perdés 5 de vida y el multiplicador sube +0,3. Con 5 de vida o menos, el dado no suma daño.",
+                "Each time this die takes part in a combo you lose 5 health and the multiplier rises by +0.3. At 5 health or less the die adds no damage.");
+
+            Ench("solitario", "Solitario", "Loner",
+                "Si este dado queda fuera del combo que jugás, genera +2 de oro.",
+                "If this die is left out of the combo you play, it generates +2 gold.");
+
+            Ench("enfiestado", "Enfiestado", "Party Animal",
+                "Con cara impar, este dado aporta el triple de daño. Con cara par no aporta daño. Sigue contando para formar el combo.",
+                "On an odd face this die deals triple damage. On an even face it deals none. It still counts toward forming the combo.");
+
+            Ench("racha", "Racha", "Streak",
+                "Por cada combo consecutivo en el que participe en este combate, aporta +3 de daño más (+3, +6, +9…). Se reinicia si queda fuera de un combo.",
+                "For each consecutive combo it takes part in this combat, it adds +3 more damage (+3, +6, +9…). Resets if it's left out of a combo.");
+
+            Ench("ejecutor", "Ejecutor", "Executioner",
+                "Si este dado participa en un combo contra un enemigo con 25% de vida o menos, aporta +12 de daño.",
+                "If this die takes part in a combo against an enemy at 25% health or less, it adds +12 damage.");
         }
 
         // ==================================================================
@@ -1012,6 +1060,10 @@ namespace Rollgeon.EditorTools.Localization
             Content("tile.firecroupier.desc",
                 "Llamas de la banca: duran casi toda la mano y castigan fuerte a quien se queda quieto. Al Croupier también lo queman.",
                 "The house's flames: they last most of the hand and punish anyone who stands still. They burn the Croupier too.");
+            Content("tile.fireartillery.name", "Fuego de Artillería", "Artillery Fire");
+            Content("tile.fireartillery.desc",
+                "Rescoldo del obús de la Artillería: quema fuerte al caer y sigue ardiendo cada turno encima.",
+                "Embers from the Artillery's shell: burns hard on impact and keeps burning each turn standing on it.");
             Content("tile.firecroupierbomba.name", "Fuego de Bomba", "Bomb Fire");
             Content("tile.firecroupierbomba.desc",
                 "Lo que deja una bomba al estallar. Quema mucho más que el fuego del paño, y tampoco perdona al Croupier.",
@@ -1199,6 +1251,19 @@ namespace Rollgeon.EditorTools.Localization
                 "Cuanto más oro tienes, más daño haces.",
                 "The more gold you have, the more damage you deal.");
 
+            // Feature#0074 — Tarjeta / Rezagado / Peaje.
+            Item("tarjeta.de.credito", "Tarjeta de Crédito", "Credit Card",
+                "Tu oro puede bajar hasta -30: comprá a crédito y pagá la deuda con lo que ganes.",
+                "Your gold can drop to -30: buy on credit and pay the debt back with what you earn.");
+
+            Item("rezagado", "Rezagado", "Straggler",
+                "Al adquirirlo se fija en tu combo menos usado: ese combo hace +50% de daño el resto de la run.",
+                "On pickup it locks onto your least-used combo: that combo deals +50% damage for the rest of the run.");
+
+            Item("peaje", "Peaje", "Toll",
+                "Al entrar a una sala de combate normal podés pagar 15 + 10 por piso de oro para limpiarla sin pelear. Sin botín.",
+                "When entering a regular combat room you may pay 15 + 10 per floor in gold to clear it without fighting. No loot.");
+
             Item("escudo.imperial.poker", "Escudo Imperial", "Imperial Shield",
                 "Cada Póker genera +2 escudo.",
                 "Each Poker grants +2 shield.");
@@ -1215,9 +1280,11 @@ namespace Rollgeon.EditorTools.Localization
                 "El Póker hace +25 daño.",
                 "The Poker deals +25 damage.");
 
+            // Feature#0065 lo pasó de escudo a daño base — el seed tiene que decir lo mismo
+            // que el ItemSO o re-seedear pisa la tabla con el texto viejo.
             Item("instinto.supervivencia", "Instinto de Supervivencia", "Survival Instinct",
-                "Al bajar de 30% HP obtienes +1 escudo.",
-                "When you drop below 30% HP you gain +1 shield.");
+                "Cuando tu vida está en 30 o menos, tu daño base aumenta en 5 puntos.",
+                "When your health is 30 or less, your base damage increases by 5.");
 
             Item("moneda.suerte.par", "Moneda de la suerte", "Lucky Coin",
                 "Cada Par da +2 oro.",
@@ -1461,6 +1528,285 @@ namespace Rollgeon.EditorTools.Localization
                 "Dado de la Casa", "House Die",
                 "Un dado gigante de la mano de la Generala.",
                 "A giant die from the Generala's hand.");
+
+            // Bestiario nuevo (salas del 03/09). Frases cortas de hover: dicen lo que
+            // el bicho HACE, y solo mecánicas que el kit realmente tiene.
+            Boss("enemy.artillery",
+                "Artillería", "Artillery",
+                "Obús de la casa: bombardea de lejos y deja el piso ardiendo donde cae el tiro.",
+                "House howitzer: shells from afar and leaves the floor burning where the shot lands.");
+            Boss("enemy.charger",
+                "Embestidor", "Charger",
+                "Se alinea, marca el pasillo y embiste. No te quedes en su línea.",
+                "Lines up, marks the lane and charges. Don't stand in its path.");
+            Boss("enemy.guardian",
+                "Guardián", "Guardian",
+                "Protege a los suyos: los aliados cercanos reciben menos daño mientras siga en pie.",
+                "Shields its own: nearby allies take less damage while it stands.");
+            Boss("enemy.skirmisher",
+                "Escaramuzador", "Skirmisher",
+                "Tirador inquieto: dispara de lejos y se reacomoda en diagonal para que no lo arrincones.",
+                "Restless shooter: fires from range and slips away diagonally so you can't corner it.");
+            Boss("enemy.sniper",
+                "Francotirador", "Sniper",
+                "Dispara desde la otra punta de la sala. Cortale la línea de visión o pagá el tiro.",
+                "Fires from across the room. Break its line of sight or pay for the shot.");
+            Boss("CardEnemySweeper",
+                "Carta Barredora", "Sweeper Card",
+                "Soldado de la casa que marca un barrido: su golpe cubre varias casillas de una.",
+                "House soldier that marks a sweep: its blow covers several tiles at once.");
+
+            // Bosses del pool nuevo + el rodillo de La Bandida. Mismo criterio que los
+            // tres de arriba: texto de pergamino de hover, conciso y mecánico.
+            Boss("boss.one_armed",
+                "La Bandida", "The One-Armed Bandit",
+                "Una tragamonedas de tres rodillos atornillada a la pared. No te persigue: " +
+                "cuenta hacia el jackpot. Rompé cualquier rodillo para cancelar la cuenta.",
+                "A three-reel slot machine bolted to the wall. It never chases you: " +
+                "it counts to the jackpot. Break any reel to cancel the count.");
+            Boss("obj.reel",
+                "Rodillo", "Reel",
+                "Uno de los tres rodillos de La Bandida. Cualquier golpe cancela la cuenta del " +
+                "jackpot, pero romper uno cuesta casi todo un turno — y la casilla que deja arde.",
+                "One of La Bandida's three reels. Any hit cancels the jackpot count, but " +
+                "breaking one costs most of a turn — and the tile it leaves behind burns.");
+            Boss("boss.scorekeeper",
+                "El Anotador", "The Scorekeeper",
+                "El que lleva la planilla. No juega contra vos: te corrige el puntaje " +
+                "mientras tirás, y nunca a tu favor.",
+                "The one who keeps the sheet. He doesn't play against you: he corrects " +
+                "your score as you roll — and never in your favor.");
+            Boss("boss.tahur",
+                "El Tahúr", "The Cardsharp",
+                "La banca canta tu mano antes de que la juegues. Armarla exacta paga; " +
+                "pasarse es codicia — y el pozo lleva la cuenta de la codicia.",
+                "The bank calls your hand before you play it. Building it exactly pays " +
+                "out; overshooting is greed — and the pot keeps count of greed.");
+        }
+
+        // ==================================================================
+        // Ítems pasivos
+        // ==================================================================
+
+        /// <summary>
+        /// Los ítems creados por la tool de items entraban a la tabla con ES en las dos
+        /// columnas (o EN vacío) — deuda que los tests de tabla venían marcando. Acá
+        /// quedan absorbidos con su EN real, y de paso los typos de ES (trailing spaces,
+        /// "resvolver", puntos sueltos) se normalizan. Fuente de verdad: este método.
+        /// </summary>
+        private static void SeedPassiveItems()
+        {
+            // Movimiento.
+            Item("botas.del.viento", "Botas del Viento", "Wind Boots",
+                "+2 de movimiento base.", "+2 base movement.");
+            Item("botas.del.rayo", "Botas del Rayo", "Lightning Boots",
+                "+3 de movimiento base.", "+3 base movement.");
+            Item("alas.de.hermes", "Alas de Hermes", "Wings of Hermes",
+                "+4 de movimiento base.", "+4 base movement.");
+
+            // Vida máxima.
+            Item("coraza.de.hierro", "Coraza de Hierro", "Iron Plate",
+                "+35 de vida máxima.", "+35 max health.");
+            Item("coraza.templada", "Coraza Templada", "Tempered Plate",
+                "+45 de vida máxima.", "+45 max health.");
+            Item("coraza.del.titan", "Coraza del Titán", "Titan's Plate",
+                "+50 de vida máxima.", "+50 max health.");
+
+            // Curación / sostén.
+            Item("talisman.vigoroso", "Talismán Vigoroso", "Vigorous Talisman",
+                "Recuperas 10HP al iniciar combate.", "Recover 10 HP when combat starts.");
+            Item("regeneracion.de.dados", "Regeneración de Dados", "Dice Regeneration",
+                "Recuperas 5HP por cada roll sin utilizar al final del turno.",
+                "Recover 5 HP for each unused roll at the end of your turn.");
+            Item("Corazón de la Fortuna", "Corazón de la Fortuna", "Heart of Fortune",
+                "Recuperas 5HP por cada roll sin utilizar.",
+                "Recover 5 HP for each unused roll.");
+            Item("ficha.del.segundo.aliento", "Ficha del Segundo Aliento", "Second Wind Chip",
+                "La primera vez que el jugador llegaría a 0 HP en la run, queda en 1 HP en vez de morir.",
+                "The first time you would hit 0 HP in a run, you stay at 1 HP instead of dying.");
+
+            // Forzar puerta.
+            Item("pico.de.minero", "Pico de Minero", "Miner's Pick",
+                "+5 a la tirada de forzar puerta.", "+5 to force-door rolls.");
+            Item("pico.de.hierro", "Pico de Hierro", "Iron Pick",
+                "+12 a la tirada de forzar puerta.", "+12 to force-door rolls.");
+            Item("pico.de.diamante", "Pico de Diamante", "Diamond Pick",
+                "+20 a la tirada de forzar puerta.", "+20 to force-door rolls.");
+            Item("pico.del.demoledor", "Pico del Demoledor", "Wrecker's Pick",
+                "+35 a la tirada de forzar puerta.", "+35 to force-door rolls.");
+
+            // Defensa / daño.
+            Item("rodilleras.de.obsidiana", "Rodilleras de Obsidiana", "Obsidian Kneepads",
+                "+12 en tiradas de defensa.", "+12 to defense rolls.");
+            Item("rodilleras.del.bastion", "Rodilleras del Bastión", "Bastion Kneepads",
+                "+22 en tiradas de escudo.", "+22 to shield rolls.");
+            Item("guantelete.pesado", "Guantelete Pesado", "Heavy Gauntlet",
+                "+10 de daño base, a cambio de -1 en tirada de movimiento.",
+                "+10 base damage, at the cost of -1 to movement rolls.");
+            Item("Guantes.escaladores.escalera", "Guantes del Escalador", "Climber's Gloves",
+                "La Escalera hace +25 daño.", "The Straight deals +25 damage.");
+
+            // Utilidad.
+            Content("tesoro.de.la.fortuna.name", "Tesoro de la Fortuna", "Treasure of Fortune");
+            Item("mochila.grande", "Mochila Grande", "Big Backpack",
+                "+1 slot de ítems activos.", "+1 active item slot.");
+            Item("llamado.de.emergencia", "Llamado de Emergencia", "Emergency Call",
+                "+1 roll de dados permanente.", "+1 permanent dice roll.");
+
+            // Vigías — escudo al resolver un combo. Familia entera, un tier por línea.
+            Content("vigia.del.numero.alto.desc",
+                "+5 de escudo al resolver el combo Número Alto.",
+                "+5 shield when resolving the Higher Number combo.");
+            Item("vigia.de.la.cima", "Vigía de la Cima", "Watcher of the Summit",
+                "+10 de escudo al resolver el combo Número Alto.",
+                "+10 shield when resolving the Higher Number combo.");
+            Item("vigia.del.maximo", "Vigía del Máximo", "Watcher of the Maximum",
+                "+15 de escudo al resolver el combo Número Alto.",
+                "+15 shield when resolving the Higher Number combo.");
+            Item("vigia.del.bastion.celestial", "Vigía del Bastión Celestial", "Watcher of the Celestial Bastion",
+                "+20 de escudo al resolver el combo Número Alto.",
+                "+20 shield when resolving the Higher Number combo.");
+
+            Item("vigia.del.par", "Vigía del Par", "Watcher of the Pair",
+                "+5 de escudo al resolver el combo Par.",
+                "+5 shield when resolving the Pair combo.");
+            Item("vigia.de.los.iguales", "Vigía de los Iguales", "Watcher of the Equals",
+                "+10 de escudo al resolver el combo Par.",
+                "+10 shield when resolving the Pair combo.");
+            Item("vigia.de.los.gemelos", "Vigía de los Gemelos", "Watcher of the Twins",
+                "+15 de escudo al resolver el combo Par.",
+                "+15 shield when resolving the Pair combo.");
+            Item("vigia.de.la.guardia.gemela", "Vigía de la Guardia Gemela", "Watcher of the Twin Guard",
+                "+20 de escudo al resolver el combo Par.",
+                "+20 shield when resolving the Pair combo.");
+
+            Item("vigia.del.doble.par", "Vigía del Doble Par", "Watcher of the Double Pair",
+                "+5 de escudo al resolver el combo Doble Par.",
+                "+5 shield when resolving the Double Pair combo.");
+            Item("vigia.de.las.parejas", "Vigía de las Parejas", "Watcher of the Pairs",
+                "+10 de escudo al resolver el combo Doble Par.",
+                "+10 shield when resolving the Double Pair combo.");
+            Item("vigia.del.espejo", "Vigía del Espejo", "Watcher of the Mirror",
+                "+15 de escudo al resolver el combo Doble Par.",
+                "+15 shield when resolving the Double Pair combo.");
+            Item("vigia.de.la.contraparte", "Vigía de la Contraparte", "Watcher of the Counterpart",
+                "+20 de escudo al resolver el combo Doble Par.",
+                "+20 shield when resolving the Double Pair combo.");
+
+            Item("vigia.del.trio", "Vigía del Trío", "Watcher of the Trio",
+                "+5 de escudo al resolver el combo Trío.",
+                "+5 shield when resolving the Trio combo.");
+            Item("vigia.del.triple", "Vigía del Triple", "Watcher of the Triple",
+                "+10 de escudo al resolver el combo Trío.",
+                "+10 shield when resolving the Trio combo.");
+            Item("vigia.de.la.trinidad", "Vigía de la Trinidad", "Watcher of the Trinity",
+                "+15 de escudo al resolver el combo Trío.",
+                "+15 shield when resolving the Trio combo.");
+            Item("vigia.de.los.tres.guardianes", "Vigía de los Tres Guardianes", "Watcher of the Three Guardians",
+                "+20 de escudo por cada Trío.",
+                "+20 shield for each Trio.");
+
+            Item("vigia.del.full.house", "Vigía del Full House", "Watcher of the Full House",
+                "+5 de escudo al resolver el combo Full House.",
+                "+5 shield when resolving the Full House combo.");
+            Item("vigia.de.la.familia", "Vigía de la Familia", "Watcher of the Family",
+                "+10 de escudo al resolver el combo Full House.",
+                "+10 shield when resolving the Full House combo.");
+            Item("vigia.del.linaje", "Vigía del Linaje", "Watcher of the Lineage",
+                "+15 de escudo al resolver el combo Full House.",
+                "+15 shield when resolving the Full House combo.");
+            Item("vigia.de.la.casa.real", "Vigía de la Casa Real", "Watcher of the Royal House",
+                "+20 de escudo al resolver el combo Full House.",
+                "+20 shield when resolving the Full House combo.");
+
+            Item("vigia.de.la.escalera", "Vigía de la Escalera", "Watcher of the Straight",
+                "+5 de escudo al resolver el combo Escalera.",
+                "+5 shield when resolving the Straight combo.");
+            Item("vigia.del.ascenso", "Vigía del Ascenso", "Watcher of the Climb",
+                "+10 de escudo al resolver el combo Escalera.",
+                "+10 shield when resolving the Straight combo.");
+            Item("vigia.del.torbellino", "Vigía del Torbellino", "Watcher of the Whirlwind",
+                "+15 de escudo al resolver el combo Escalera.",
+                "+15 shield when resolving the Straight combo.");
+            Item("vigia.de.la.muralla", "Vigía de la Muralla", "Watcher of the Wall",
+                "+20 de escudo al completar el combo Escalera.",
+                "+20 shield when completing the Straight combo.");
+
+            Item("vigia.del.poker", "Vigía del Póker", "Watcher of Poker",
+                "+5 de escudo al resolver el combo Póker.",
+                "+5 shield when resolving the Poker combo.");
+            Item("vigia.del.cuarteto", "Vigía del Cuarteto", "Watcher of the Quartet",
+                "+10 de escudo al resolver el combo Póker.",
+                "+10 shield when resolving the Poker combo.");
+            Item("vigia.de.los.cuatro.reyes", "Vigía de los Cuatro Reyes", "Watcher of the Four Kings",
+                "+15 de escudo al resolver el combo Póker.",
+                "+15 shield when resolving the Poker combo.");
+            Item("vigia.de.la.guardia.imperial", "Vigía de la Guardia Imperial", "Watcher of the Imperial Guard",
+                "+20 de escudo al resolver el combo Póker.",
+                "+20 shield when resolving the Poker combo.");
+
+            Item("vigia.de.la.generala", "Vigía de la Generala", "Watcher of the Generala",
+                "+5 de escudo al resolver el combo Generala.",
+                "+5 shield when resolving the Generala combo.");
+            Item("vigia.de.la.plenitud", "Vigía de la Plenitud", "Watcher of Plenty",
+                "+10 de escudo al resolver el combo Generala.",
+                "+10 shield when resolving the Generala combo.");
+            Item("vigia.del.bastion", "Vigía del Bastión", "Watcher of the Bastion",
+                "+15 de escudo al resolver el combo Generala.",
+                "+15 shield when resolving the Generala combo.");
+            Item("vigia.de.la.fortaleza.divina", "Vigía de la Fortaleza Divina", "Watcher of the Divine Fortress",
+                "+20 de escudo al resolver el combo Generala.",
+                "+20 shield when resolving the Generala combo.");
+        }
+
+        // ==================================================================
+        // Tooltips de enemigos desde los SOs
+        // ==================================================================
+
+        /// <summary>
+        /// Vuelca a la tabla Content los textos de tooltip autorados en los
+        /// <c>EnemyDataSO</c> (<c>&lt;id&gt;.name</c> / <c>.desc</c> / <c>.type</c>).
+        /// Solo agrega keys FALTANTES — nunca pisa una entry curada a mano acá — y el
+        /// EN queda marcado <c>[EN] …</c> como pendiente de traducción (así el par pasa
+        /// los tests de tabla: EN no vacío y distinto de ES).
+        /// </summary>
+        [MenuItem("Rollgeon/Localization/Seed Enemy Tooltips From SOs")]
+        public static void SeedEnemyTooltipsFromSOs()
+        {
+            var collection = UnityEditor.Localization.LocalizationEditorSettings
+                .GetStringTableCollection(ContentTable);
+            if (collection == null)
+            {
+                Debug.LogError("[LocalizationContentSeeder] No existe la colección Content.");
+                return;
+            }
+
+            int added = 0;
+            foreach (var guid in AssetDatabase.FindAssets("t:EnemyDataSO"))
+            {
+                var so = AssetDatabase.LoadAssetAtPath<Rollgeon.Entities.EnemyDataSO>(
+                    AssetDatabase.GUIDToAssetPath(guid));
+                if (so == null || string.IsNullOrWhiteSpace(so.EntityId)) continue;
+
+                string id = so.EntityId.Trim();
+                added += SeedIfMissing(collection, id + ".name", so.DisplayName);
+                added += SeedIfMissing(collection, id + ".desc", so.Description);
+                added += SeedIfMissing(collection, id + ".type", so.TooltipType);
+            }
+
+            AssetDatabase.SaveAssets();
+            Debug.Log($"[LocalizationContentSeeder] Tooltips de enemigos: {added} key(s) " +
+                      "nuevas desde SOs (EN marcado [EN], traducir en el seeder).");
+        }
+
+        private static int SeedIfMissing(
+            UnityEditor.Localization.StringTableCollection collection, string key, string es)
+        {
+            if (string.IsNullOrWhiteSpace(es)) return 0;
+            if (collection.SharedData.GetEntry(key) != null) return 0;
+
+            Content(key, es, "[EN] " + es);
+            return 1;
         }
 
         // ==================================================================

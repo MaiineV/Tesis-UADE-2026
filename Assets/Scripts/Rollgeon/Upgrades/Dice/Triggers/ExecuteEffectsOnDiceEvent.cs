@@ -30,6 +30,9 @@ namespace Rollgeon.Upgrades.Dice.Triggers
 
         /// <summary>El combo se jugó (acción confirmada, pre-daño). Respeta Filter.</summary>
         ComboPlayed,
+
+        /// <summary>Arrancó un combate. Para resetear counters por dado (Racha).</summary>
+        CombatStarted,
     }
 
     /// <summary>
@@ -51,7 +54,8 @@ namespace Rollgeon.Upgrades.Dice.Triggers
     [Serializable, HideReferenceObjectPicker]
     public sealed class ExecuteEffectsOnDiceEvent :
         IOnEnchantmentAppliedTrigger, IOnDiceRolledTrigger, IOnRollResolvedTrigger,
-        IOnComboMatchedTrigger, IOnTurnFinishedTrigger, IOnComboPlayedTrigger
+        IOnComboMatchedTrigger, IOnTurnFinishedTrigger, IOnComboPlayedTrigger,
+        IOnCombatStartedTrigger
     {
         [Title("Event")]
         [Tooltip("Evento del canal dados que dispara los efectos.")]
@@ -83,6 +87,7 @@ namespace Rollgeon.Upgrades.Dice.Triggers
         public void OnComboMatched(EnchantmentTriggerContext ctx) => RunIf(EnchantmentHookEvent.ComboMatched, ctx);
         public void OnTurnFinished(EnchantmentTriggerContext ctx) => RunIf(EnchantmentHookEvent.TurnFinished, ctx);
         public void OnComboPlayed(EnchantmentTriggerContext ctx) => RunIf(EnchantmentHookEvent.ComboPlayed, ctx);
+        public void OnCombatStarted(EnchantmentTriggerContext ctx) => RunIf(EnchantmentHookEvent.CombatStarted, ctx);
 
         private void RunIf(EnchantmentHookEvent hookEvent, EnchantmentTriggerContext ctx)
         {
@@ -118,11 +123,18 @@ namespace Rollgeon.Upgrades.Dice.Triggers
                         Channel = ScratchChannel.DiceEnchantment,
                     },
                 };
+                // Attributes / OwnerMaxHp: sin esto las PCs genéricas de stats (PcOwnerStatCompare
+                // devuelve true sin Attributes; PcOwnerHpBelow devuelve false sin OwnerMaxHp)
+                // no sirven en el canal dados — Vampiro las necesita para no matar al jugador.
+                Rollgeon.Attributes.AttributesManager attrs = null;
+                global::Patterns.ServiceLocator.TryGetService(out attrs);
                 var preCtx = new PreConditionContext
                 {
                     OwnerGuid = fx.SourceGuid,
                     OpponentGuid = fx.TargetGuid,
                     Effect = fx,
+                    Attributes = attrs,
+                    OwnerMaxHp = Rollgeon.Combat.MaxHpResolver.TryResolve(fx.SourceGuid, out int maxHp) ? maxHp : (int?)null,
                 };
 
                 data.TryExecute(fx, preCtx);
@@ -135,8 +147,15 @@ namespace Rollgeon.Upgrades.Dice.Triggers
         /// se asumen relativos al bag directamente.
         /// </summary>
         private static bool CarrierParticipates(EnchantmentTriggerContext ctx)
+            => CarrierParticipates(ctx.Effect, ctx.Slot.BagSlotIndex);
+
+        /// <summary>
+        /// Regla compartida con <c>PcCarrierParticipates</c>: el dado del bag slot
+        /// <paramref name="carrierBagSlot"/> participa si algún índice de contribución del
+        /// combo mapea a él. Sin combo o sin contribuyentes: false (conservador).
+        /// </summary>
+        public static bool CarrierParticipates(EffectContext eff, int carrierBagSlot)
         {
-            var eff = ctx.Effect;
             var combo = eff?.ComboResult;
             if (combo == null || !combo.Value.IsMatch) return false;
 
@@ -144,11 +163,10 @@ namespace Rollgeon.Upgrades.Dice.Triggers
             if (contributing == null || contributing.Count == 0) return false;
 
             var map = eff.KeptDiceOriginalIndices;
-            int carrier = ctx.Slot.BagSlotIndex;
             for (int i = 0; i < contributing.Count; i++)
             {
                 int bagIndex = Rollgeon.Combat.Damage.ContributingDiceResolver.ResolveBagSlot(contributing[i], map);
-                if (bagIndex == carrier) return true;
+                if (bagIndex == carrierBagSlot) return true;
             }
             return false;
         }

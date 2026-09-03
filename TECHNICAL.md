@@ -1400,7 +1400,7 @@ Mapeados 1:1 con los combos del GD:
 | `ComboSum4` | Suma de los 4 más altos | 25 |
 | `ComboThreeOfKind` | 3 iguales | 28 |
 | `ComboFullHouse` | Trío + par | 40 |
-| `ComboStraight` | 5 consecutivos | 35 |
+| `ComboStraight` | 5 consecutivos (o paso 2 con `IComboRuleService.LadderAllowsSkippedStep` — Compás Salteado, mismo id) | 35 |
 | `ComboPoker` | 4 iguales | 60 |
 | `ComboGenerala` | 5 iguales | 100 |
 | `ComboThreeSixes` | ≥3 dados en 6 | 42 |
@@ -1421,6 +1421,21 @@ public class ComboFullHouse : BaseComboSO
     }
 }
 ```
+
+#### 5.2.1 Reglas de combo alterables por items — `IComboRuleService`
+
+`Rollgeon.Combos.Rules.IComboRuleService` (impl `ComboRuleService`, bootstrap
+`ComboRuleServiceBootstrap` en `ExtraServices`, priority 55 — antes de `InventoryService`).
+Sostiene reglas por fuente (`ItemId`): la regla vive mientras al menos un item la registre
+y se limpia en `OnRunStart`. `InventoryService` la registra/quita al entrar/salir el item
+(perilla `ItemSO.LadderSkippedStep`).
+
+Única regla hoy: `LadderAllowsSkippedStep` — `Combo_Escalera.Matches` acepta, además del
+paso 1, una progresión de 5 valores distintos con paso constante 2 en cualquier paridad
+(`3-5-7-9-11`, `2-4-6-8-10`). Decisión GD 2026-09-02: sigue siendo `combo.ladder` (mismo
+base, mismas Coronas/Arcas/Lágrimas de Escalera). El concreto consulta el servicio por
+`ServiceLocator` en cada `Matches`, así que el preview del HUD y el golpe real coinciden;
+sin servicio (tests, edit mode) rige la regla estándar.
 
 ### 5.3 `ContractSheet`
 
@@ -7576,6 +7591,13 @@ public class ItemSO : SerializedScriptableObject
     [ListDrawerSettings(ShowFoldout = false)]
     [OdinSerialize]
     public List<PassiveItemHook> PassiveHooks = new();
+
+    // Perillas de lifecycle (Feature#0065+): el item "hace" por estar en el inventario, sin hooks.
+    // InventoryService las aplica/revierte al entrar/salir. RollPoolBonus, ActiveSlotBonus,
+    // EnchantmentCostMultiplier, SecondWind, BaseDamageOverride, UniquePerRun y
+    // LadderSkippedStep (Compás Salteado — registra la regla en IComboRuleService, §5.2.1).
+    [ShowIf("@Type == ItemType.Passive")]
+    public bool LadderSkippedStep;
 
     [Title("Active Effects")]
     [InfoBox("Se ejecutan cuando el jugador activa el ítem. Pueden tener cooldown.")]

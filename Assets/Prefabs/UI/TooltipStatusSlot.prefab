@@ -13,6 +13,7 @@ GameObject:
   - component: {fileID: 7121107122786416832}
   - component: {fileID: 2164821836212984905}
   - component: {fileID: 9032469352254998102}
+  - component: {fileID: 918212302217283117}
   m_Layer: 0
   m_Name: TooltipStatusSlot
   m_TagString: Untagged
@@ -62,7 +63,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
-  m_RaycastTarget: 0
+  m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
   m_OnCullStateChanged:
@@ -121,6 +122,18 @@ MonoBehaviour:
   _divider: {fileID: 0}
   _labelRow: {fileID: 0}
   _headerRow: {fileID: 0}
+--- !u!114 &918212302217283117
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4100763690059058148}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dfb4e31d462b67947b0612d03c007fcf, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Rollgeon::Rollgeon.UI.Tooltips.TooltipStatusSlotHover
 --- !u!1 &6408609653335122502
 GameObject:
   m_ObjectHideFlags: 0

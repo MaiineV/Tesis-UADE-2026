@@ -41,6 +41,11 @@ DOCSAPP_HOWTO_DOC_ID=dcefb40b-aff4-4de5-aedf-090af986a6c5
 > Si el token se filtra: revocarlo en `/profile/tokens` y generar otro. No va en
 > `CLAUDE.md`, ni en scripts, ni en un doc del workspace.
 
+**Alternativa para agents:** las reglas de permisos de Claude Code (`.claude/settings.json`)
+prohíben leer o escribir cualquier `.env*`, así que un agent no puede crear ese archivo. El
+mismo contenido puede vivir en `.secrets/docsapp.env` (carpeta gitignoreada); `docsapp.ps1`
+lo carga como fallback cuando `.env` no define `DOCSAPP_PAT`.
+
 ## 3. Usarlo
 
 Hay un cliente en `tools/docsapp/docsapp.ps1` que levanta el `.env` solo:

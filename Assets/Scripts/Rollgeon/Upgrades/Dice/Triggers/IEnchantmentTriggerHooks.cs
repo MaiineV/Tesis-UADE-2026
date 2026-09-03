@@ -81,4 +81,13 @@ namespace Rollgeon.Upgrades.Dice.Triggers
     {
         void OnComboPlayed(EnchantmentTriggerContext ctx);
     }
+
+    /// <summary>
+    /// Dispara al arrancar un combate. Útil para resetear counters por dado que viven
+    /// "hasta terminar el combate" (Racha). <c>ctx.Effect.DiceResult</c> es null.
+    /// </summary>
+    public interface IOnCombatStartedTrigger : IEnchantmentTrigger
+    {
+        void OnCombatStarted(EnchantmentTriggerContext ctx);
+    }
 }

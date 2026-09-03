@@ -162,13 +162,13 @@ namespace Rollgeon.Editor.Tools.Enemy.Templates
                                                 DistanceMetric metric = DistanceMetric.Manhattan,
                                                 BaseEnemyTargetSelector selector = null,
                                                 TargetAlignment alignment = TargetAlignment.Any,
-                                                bool lineOfSight = false,
                                                 bool useOwnerRange = false)
         {
+            // Sin flag de LoS: PcTargetInRange la exige SIEMPRE (Bresenham a cualquier ángulo).
             var n = new AINode_If { TargetSelector = selector ?? new TargetSelector_AlwaysPlayer(), Then = then, Else = @else };
             n.Conditions.Add(new PcTargetInRange
             {
-                Range = range, Metric = metric, Alignment = alignment, RequireLineOfSight = lineOfSight,
+                Range = range, Metric = metric, Alignment = alignment,
                 UseOwnerAttackRange = useOwnerRange,
             });
             return n;

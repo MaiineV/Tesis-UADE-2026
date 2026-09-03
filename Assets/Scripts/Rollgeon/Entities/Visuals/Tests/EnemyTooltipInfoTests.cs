@@ -59,22 +59,38 @@ namespace Rollgeon.Entities.Visuals.Tests
         }
 
         [Test]
-        public void BuildContent_NoTraeLore_AunqueElSOTengaDescripcion()
+        public void BuildContent_SinBrief_ElParrafoCaeALaDescripcionDelSO()
         {
+            // Arrange — el id no tiene entry .brief ni .desc en la tabla.
             var info = MakeInfo(MakeData("El Croupier", "Siembra bombas y dispara de lejos."));
 
+            // Act
             var content = info.BuildContent();
 
-            // El panel no lleva el lore del .desc: su frase es OTRA key (.brief), y un enemigo
-            // sin frase autorada no muestra ninguna. El lore sigue vivo en BuildTooltip.
-            Assert.IsEmpty(content.Text ?? string.Empty,
-                "El .desc se coló en el panel: la frase táctica sale de .brief, y este id no " +
-                "tiene entry.");
+            // Assert — decisión del 03/09 (caso "Artillery"): lo que se autora en la tool
+            // tiene que verse en el panel; sin frase .brief, el párrafo es la descripción
+            // de la ficha. La .brief autorada sigue ganando cuando existe.
+            Assert.AreEqual("Siembra bombas y dispara de lejos.", content.Text,
+                "Sin .brief en la tabla, el párrafo del panel es la Description del SO.");
             // La frase viaja como párrafo (el bloque de header del mockup), no como pie: el pie
             // quedaba abajo de las tarjetas y el header la quiere pegada al nombre.
             Assert.IsEmpty(content.Flavor ?? string.Empty,
                 "Algo llegó al pie del panel: el enemigo ya no manda nada ahí.");
             StringAssert.Contains("Siembra bombas", info.BuildTooltip());
+        }
+
+        [Test]
+        public void BuildContent_SinBriefNiDescripcion_ElParrafoQuedaVacio()
+        {
+            // Arrange — ficha sin descripción autorada.
+            var info = MakeInfo(MakeData("El Croupier", description: null));
+
+            // Act
+            var content = info.BuildContent();
+
+            // Assert — sin nada autorado no se inventa párrafo.
+            Assert.IsEmpty(content.Text ?? string.Empty,
+                "Sin .brief ni Description, el panel no debe mostrar párrafo.");
         }
 
         [Test]
@@ -90,6 +106,40 @@ namespace Rollgeon.Entities.Visuals.Tests
             // de jefe la envuelva en vez de reemplazarla.
             Assert.IsNotEmpty(type);
             StringAssert.Contains(
+                Rollgeon.UI.HUD.Status.EnemyArchetypeText.Describe(
+                    Rollgeon.Entities.Traits.EnemyArchetype.Ranged, isBoss: false),
+                type);
+        }
+
+        [Test]
+        public void BuildContent_ElTipoAutoradoEnElSO_PisaAlArchetype()
+        {
+            // Arrange — el id no existe en la tabla Content, así que gana el campo del SO.
+            var data = MakeData("Guardián", "Protege a los suyos.");
+            data.Archetype = Rollgeon.Entities.Traits.EnemyArchetype.Ranged;
+            data.TooltipType = "Jefe · Centinela";
+
+            // Act
+            string type = MakeInfo(data).BuildContent().Type;
+
+            // Assert — el texto de la tool va tal cual: quien lo autora decide todo el
+            // renglón, prefijo de jefe incluido.
+            Assert.AreEqual("Jefe · Centinela", type);
+        }
+
+        [Test]
+        public void BuildContent_TipoAutoradoEnBlanco_CaeAlArchetype()
+        {
+            // Arrange — whitespace no cuenta como autorado.
+            var data = MakeData("Guardián", "Protege a los suyos.");
+            data.Archetype = Rollgeon.Entities.Traits.EnemyArchetype.Ranged;
+            data.TooltipType = "   ";
+
+            // Act
+            string type = MakeInfo(data).BuildContent().Type;
+
+            // Assert — deriva del Archetype como siempre.
+            Assert.AreEqual(
                 Rollgeon.UI.HUD.Status.EnemyArchetypeText.Describe(
                     Rollgeon.Entities.Traits.EnemyArchetype.Ranged, isBoss: false),
                 type);

@@ -52,6 +52,13 @@ namespace Rollgeon.Effects.Concretes
 
         public DamageSource ShieldSource => _shieldSource;
         public int BaseAmount => _baseAmount;
+
+        /// <summary>Setter de autoría (tooling/tests): fuente Constant con el monto dado.</summary>
+        public void EditorSetConstantAmount(int amount)
+        {
+            _shieldSource = DamageSource.Constant;
+            _baseAmount = amount;
+        }
         public float ComboMultiplier => _comboMultiplier;
 
         public override string GetEffectName() => "Add Shield";

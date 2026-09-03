@@ -46,6 +46,14 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         /// <summary>Fuente pixel del proyecto — la misma que usa GeneralDirector.prefab.</summary>
         public const string HealthBarFontPath = "Assets/Fonts/m6x11plus SDF.asset";
 
+        /// <summary>
+        /// Layer del canvas de la barra. La Main Camera renderiza el mundo pixelado a baja
+        /// resolución y excluye este layer; <c>WorldUiCameraSync</c> lo dibuja aparte a resolución
+        /// nativa. En Default la barra entra a la pasada pixelada y la pila de 37×53 queda aplastada
+        /// a ~12×18 píxeles reales — el puré rosa ilegible de las bombas del Croupier.
+        /// </summary>
+        public const string HealthBarLayerName = "WorldUI";
+
         public const string DefaultMaterialsRoot = "Assets/Rollgeon/Enemies/Materials";
 
         private const string ShaderName = "Rollgeon/PaletteCelLit";
@@ -470,6 +478,13 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
             var canvasGo = new GameObject("Canvas");
             var canvasRect = canvasGo.AddComponent<RectTransform>();
             canvasRect.SetParent(root.transform, worldPositionStays: false);
+
+            // Lo que cuenta para el culling del canvas es el layer del GameObject del Canvas; los
+            // hijos pueden quedar en Default (así están los prefabs de enemigos comunes).
+            int worldUiLayer = LayerMask.NameToLayer(HealthBarLayerName);
+            if (worldUiLayer >= 0) canvasGo.layer = worldUiLayer;
+            else Debug.LogWarning($"[BossVisualWrapperBuilder] Layer '{HealthBarLayerName}' no " +
+                                  "existe en TagManager — la barra caerá a la cámara pixelada.");
 
             var canvas = canvasGo.AddComponent<Canvas>();
             canvas.renderMode = RenderMode.WorldSpace;

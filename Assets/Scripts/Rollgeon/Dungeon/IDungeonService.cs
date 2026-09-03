@@ -85,6 +85,14 @@ namespace Rollgeon.Dungeon
         bool SetRoomState(Guid instanceId, RoomState state);
 
         /// <summary>
+        /// Limpia una sala SIN pasar por combate (Peaje): estado Cleared + puertas
+        /// desbloqueadas + visuales + <c>OnRoomCleared</c>. Es el mismo bloque que corre
+        /// <c>OnCombatEnd(Victory)</c>, sin contar como victoria. Default member para
+        /// no romper los fakes: degrada a <see cref="SetRoomState"/>.
+        /// </summary>
+        bool MarkRoomCleared(Guid instanceId) => SetRoomState(instanceId, RoomState.Cleared);
+
+        /// <summary>
         /// Refresca visuales de puertas de una sala instanciada — llamar sobre la sala
         /// cuyo prefab muestra la puerta cuando un gate externo cambió el estado de
         /// una VECINA (ej. desbloquear la tienda del tutorial refresca la sala actual).

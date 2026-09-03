@@ -556,6 +556,11 @@ namespace Rollgeon.UI.HUD
                 && db != null && db.IsBlocked(i))
                 return false;
 
+            // Lento (CapPreventHolding): el dado no se puede guardar — siempre vuela.
+            // Espejo de CombatHandoffService.ApplyKeepConstraints para el reroll real.
+            if (EnchantmentCapabilityQueries.PlayerSlotHasCapability<CapPreventHolding>(i))
+                return false;
+
             // Un dado que todavía gira no se holdea — el botón ya está deshabilitado
             // durante el spin, esto cubre invocaciones programáticas (hotkeys, tests).
             if (_animator != null && _animator.IsSlotSpinning(i)) return false;
