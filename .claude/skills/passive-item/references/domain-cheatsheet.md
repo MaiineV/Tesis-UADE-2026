@@ -67,7 +67,17 @@ curas cuyo contexto trae `SourceItemId`, o sea las de hooks de items pasivos; lo
 `IHealingRuleService` por ItemId), `DecayingMultiplier` (`Enabled` + `Start`/`DecayPerCombo`/
 `Min`/`BreakAtMin` — Eco Menguante: multiplica solo ATAQUES, descuenta con cualquier combo de
 combate, contador de RUN guardado en el save, al tocar `Min` el item SE ROMPE con toast; lo
-aplica `DecayingMultiplierService`, no hace falta hook) y `UniquePerRun` (estilo Isaac: ya
+aplica `DecayingMultiplierService`, no hace falta hook), `GoldFloor` (Tarjeta de Credito: -30 —
+piso del oro en `IEconomyService`, Spend/CanAfford dejan al jugador en deuda hasta ahi; el
+inventario lo registra por ItemId y al perder el item la deuda queda), `LeastUsedComboBonus`
+(`Enabled` + `MultiplierBonus` — Rezagado: al adquirir elige UNA vez el combo con menos matches
+de la run via `IComboCountersService`, empate = orden de la hoja del heroe, y suma al canal
+aditivo de M solo en ese combo y solo en ataques; lo aplica `LeastUsedComboService`, guardado
+en el save `run.item_least_used_combo`), `CombatToll` (`Enabled` + `BaseCost`/`CostPerFloor` —
+Peaje: al entrar a una sala Combat estandar (nunca Boss) `CombatTollService` ofrece pagar
+`Base + PerFloor × piso` para limpiarla sin pelear: no dispara `OnCombatTriggered`, asi que no
+hay enemigos ni loot; el prompt es `InteractionPromptView.ShowChoice`, F = pagar, Esc = pelear)
+y `UniquePerRun` (estilo Isaac: ya
 poseido — inventario o `ClassHeroSO.InnateItemIds` — no vuelve a salir en pools).
 
 **Estado por combate que los readers leen** (`IPlayerTurnStateService`): `TilesMovedThisTurn`,
