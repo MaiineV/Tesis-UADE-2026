@@ -402,12 +402,12 @@ namespace Rollgeon.EditorTools.Localization
                 "The minimum result is always half the maximum, rounded up. A sharpened d6 never rolls below 3.");
 
             Ench("ancla", "Ancla", "Anchor",
-                "Si este dado se bloquea entre tiradas, su resultado aumenta +1 por tirada bloqueada (máx +3).",
-                "If this die is held between rolls, its result increases by +1 per held roll (max +3).");
+                "Si guardás este dado entre tiradas, aporta +5 de daño por cada tirada que pase sin relanzarlo (máx +15). Se pierde al relanzarlo.",
+                "If you hold this die between rolls, it adds +5 damage per roll it stays held (max +15). Lost when rerolled.");
 
             Ench("avaro", "Avaro", "Miser",
-                "Otorga 3 de oro extra al completar un combo de trío o superior.",
-                "Grants 3 extra gold when you complete a trio combo or better.");
+                "Otorga 5 de oro al completar un trío, póker o generala.",
+                "Grants 5 gold when you complete a trio, four of a kind or five of a kind.");
 
             Ench("caras_centrales", "Caras Centrales", "Middle Faces",
                 "Bloquea el cuarto superior e inferior. d8:{3,4,5,6} d12:{4,5,6,7,8,9}",
@@ -434,20 +434,20 @@ namespace Rollgeon.EditorTools.Localization
                 "For straights, this die counts as both its value and its value+1 at the same time.");
 
             Ench("escudado", "Escudado", "Shielded",
-                "Si se utiliza en un combo de full house da 2 más de escudo.",
-                "If used in a full house combo it grants 2 extra shield.");
+                "Si este dado participa en un póker, generás 15 puntos de escudo.",
+                "If this die takes part in a four of a kind, you gain 15 shield.");
 
             Ench("extremos", "Extremos", "Extremes",
                 "Solo muestra el cuarto superior e inferior. d8:{1,2,7,8} d12:{1,2,3,10,11,12}",
                 "Only shows the top and bottom quarter. d8:{1,2,7,8} d12:{1,2,3,10,11,12}");
 
             Ench("fortaleza", "Fortaleza", "Fortress",
-                "El dado muestra su valor máximo y participa en combo; genera 2 puntos de escudo.",
-                "The die shows its maximum value and joins the combo; it generates 2 shield points.");
+                "Si este dado saca su valor máximo y participa en un combo, generás 30 puntos de escudo.",
+                "If this die rolls its maximum and takes part in a combo, you gain 30 shield.");
 
             Ench("fragil", "Frágil", "Fragile",
-                "50% de chance de que el dado no cuente para el combo.",
-                "50% chance the die doesn't count toward the combo.");
+                "En cada tirada, 50% de que este dado no sume daño y 50% de que sume el doble. Sigue contando para formar el combo.",
+                "Each roll, 50% chance this die adds no damage and 50% it adds double. It still counts toward forming the combo.");
 
             Ench("gemelo", "Gemelo", "Twin",
                 "Si este dado muestra el mismo número que otro en la tirada, ambos valen x1.5 para el combo.",
@@ -466,12 +466,12 @@ namespace Rollgeon.EditorTools.Localization
                 "The result becomes max+1 minus the result. A d6 that rolls 1 counts as 6.");
 
             Ench("lento", "Lento", "Sluggish",
-                "Este dado no se puede bloquear entre tiradas.",
-                "This die cannot be held between rolls.");
+                "Este dado no se puede guardar entre tiradas: siempre se relanza. A cambio, suma +5 de daño cuando participa en un combo.",
+                "This die can't be held between rolls: it always rerolls. In exchange it adds +5 damage when it takes part in a combo.");
 
             Ench("mercader", "Mercader", "Merchant",
-                "Otorga 5 de oro al completar una escalera.",
-                "Grants 5 gold when you complete a straight.");
+                "Si este dado participa en una generala, otorga 12 de oro.",
+                "If this die takes part in a five of a kind, it grants 12 gold.");
 
             Ench("mimetico", "Mimético", "Mimic",
                 "Copia el resultado del último dado vuelto a tirar en esta tirada para propósitos de combo.",
@@ -498,8 +498,8 @@ namespace Rollgeon.EditorTools.Localization
                 "This die only rolls even numbers.");
 
             Ench("oxidado", "Oxidado", "Rusty",
-                "El dado pierde 1 de su resultado final (mínimo 1).",
-                "The die loses 1 from its final result (minimum 1).");
+                "Este dado no suma daño, pero cada vez que participa en un combo genera +2 de oro.",
+                "This die adds no damage, but each time it takes part in a combo it generates +2 gold.");
 
             Ench("par", "Par", "Even",
                 "Solo muestra caras pares. d6:{2,4,6} d8:{2,4,6,8} d12:{2,4,6,8,10,12}",
@@ -510,8 +510,8 @@ namespace Rollgeon.EditorTools.Localization
                 "If this die rolls an odd number it multiplies x3; otherwise x0.");
 
             Ench("pesado", "Pesado", "Heavy",
-                "Suma +2 al resultado final del dado.",
-                "Adds +2 to the die's final result.");
+                "Este dado aporta +2 de daño cuando participa en un combo.",
+                "This die adds +2 damage when it takes part in a combo.");
 
             Ench("primo", "Primo", "Prime",
                 "Solo muestra números primos. d12:{2,3,5,7,11}",
@@ -522,16 +522,37 @@ namespace Rollgeon.EditorTools.Localization
                 "If 2 or more dice show the same number in the final roll, this die adds its value to the combo twice.");
 
             Ench("sediento", "Sediento", "Thirsty",
-                "Cada vez que participa en un combo consume 2 de oro. Sin oro no puede participar.",
-                "Each time it joins a combo it consumes 2 gold. With no gold it can't take part.");
+                "Cada vez que participa en un combo consume 2 de oro y suma +0,2 al multiplicador. Sin oro, el combo no hace daño.",
+                "Each time it joins a combo it consumes 2 gold and adds +0.2 to the multiplier. With no gold, the combo deals no damage.");
 
             Ench("torpe", "Torpe", "Clumsy",
                 "Obliga a volver a tirar todos los dados en el turno 2 del combate.",
                 "Forces a full reroll on turn 2 of the combat.");
 
             Ench("volatil", "Volátil", "Volatile",
-                "Al sacar el máximo, el resultado se duplica. Al sacar el mínimo, vale 0.",
-                "On a maximum roll the result doubles. On a minimum roll it's worth 0.");
+                "Al sacar el máximo, este dado aporta el doble de daño. Con cualquier otra cara aporta la mitad.",
+                "On its maximum this die deals double damage. On any other face it deals half.");
+
+            // Feature#0073 — encantamientos del GDD que faltaban en el catálogo.
+            Ench("vampiro", "Vampiro", "Vampire",
+                "Cada vez que este dado participa en un combo, perdés 5 de vida y el multiplicador sube +0,3. Con 5 de vida o menos, el dado no suma daño.",
+                "Each time this die takes part in a combo you lose 5 health and the multiplier rises by +0.3. At 5 health or less the die adds no damage.");
+
+            Ench("solitario", "Solitario", "Loner",
+                "Si este dado queda fuera del combo que jugás, genera +2 de oro.",
+                "If this die is left out of the combo you play, it generates +2 gold.");
+
+            Ench("enfiestado", "Enfiestado", "Party Animal",
+                "Con cara impar, este dado aporta el triple de daño. Con cara par no aporta daño. Sigue contando para formar el combo.",
+                "On an odd face this die deals triple damage. On an even face it deals none. It still counts toward forming the combo.");
+
+            Ench("racha", "Racha", "Streak",
+                "Por cada combo consecutivo en el que participe en este combate, aporta +3 de daño más (+3, +6, +9…). Se reinicia si queda fuera de un combo.",
+                "For each consecutive combo it takes part in this combat, it adds +3 more damage (+3, +6, +9…). Resets if it's left out of a combo.");
+
+            Ench("ejecutor", "Ejecutor", "Executioner",
+                "Si este dado participa en un combo contra un enemigo con 25% de vida o menos, aporta +12 de daño.",
+                "If this die takes part in a combo against an enemy at 25% health or less, it adds +12 damage.");
         }
 
         // ==================================================================

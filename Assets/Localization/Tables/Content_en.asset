@@ -254,8 +254,8 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 5531895623691
-    m_Localized: If this die is held between rolls, its result increases by +1 per
-      held roll (max +3).
+    m_Localized: If you hold this die between rolls, it adds +5 damage per roll it
+      stays held (max +15). Lost when rerolled.
     m_Metadata:
       m_Items: []
   - m_Id: 5531895623692
@@ -263,7 +263,8 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 5531895623693
-    m_Localized: Grants 3 extra gold when you complete a trio combo or better.
+    m_Localized: Grants 5 gold when you complete a trio, four of a kind or five of
+      a kind.
     m_Metadata:
       m_Items: []
   - m_Id: 5531895623694
@@ -313,7 +314,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 5531895623705
-    m_Localized: If used in a full house combo it grants 2 extra shield.
+    m_Localized: If this die takes part in a four of a kind, you gain 15 shield.
     m_Metadata:
       m_Items: []
   - m_Id: 5531895623706
@@ -329,8 +330,8 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 5531895623709
-    m_Localized: The die shows its maximum value and joins the combo; it generates
-      2 shield points.
+    m_Localized: If this die rolls its maximum and takes part in a combo, you gain
+      30 shield.
     m_Metadata:
       m_Items: []
   - m_Id: 5531895623710
@@ -338,7 +339,8 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 5531895623711
-    m_Localized: 50% chance the die doesn't count toward the combo.
+    m_Localized: Each roll, 50% chance this die adds no damage and 50% it adds double.
+      It still counts toward forming the combo.
     m_Metadata:
       m_Items: []
   - m_Id: 5531895623712
@@ -380,7 +382,8 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 5531895623721
-    m_Localized: This die cannot be held between rolls.
+    m_Localized: 'This die can''t be held between rolls: it always rerolls. In exchange
+      it adds +5 damage when it takes part in a combo.'
     m_Metadata:
       m_Items: []
   - m_Id: 5531895623722
@@ -388,7 +391,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 5531895623723
-    m_Localized: Grants 5 gold when you complete a straight.
+    m_Localized: If this die takes part in a five of a kind, it grants 12 gold.
     m_Metadata:
       m_Items: []
   - m_Id: 5531895623724
@@ -445,7 +448,8 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 5531899817985
-    m_Localized: The die loses 1 from its final result (minimum 1).
+    m_Localized: This die adds no damage, but each time it takes part in a combo
+      it generates +2 gold.
     m_Metadata:
       m_Items: []
   - m_Id: 5531899817986
@@ -469,7 +473,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 5531899817991
-    m_Localized: Adds +2 to the die's final result.
+    m_Localized: This die adds +2 damage when it takes part in a combo.
     m_Metadata:
       m_Items: []
   - m_Id: 5531899817992
@@ -494,8 +498,8 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 5531899817997
-    m_Localized: Each time it joins a combo it consumes 2 gold. With no gold it can't
-      take part.
+    m_Localized: Each time it joins a combo it consumes 2 gold and adds +0.2 to the
+      multiplier. With no gold, the combo deals no damage.
     m_Metadata:
       m_Items: []
   - m_Id: 5531899817998
@@ -511,8 +515,8 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 5531899818001
-    m_Localized: On a maximum roll the result doubles. On a minimum roll it's worth
-      0.
+    m_Localized: On its maximum this die deals double damage. On any other face it
+      deals half.
     m_Metadata:
       m_Items: []
   - m_Id: 5531975315456
@@ -2721,6 +2725,50 @@ MonoBehaviour:
   - m_Id: 18299679659966475
     m_Localized: You receive no healing from passive items. In exchange, all your
       combo multipliers get +3.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18332491544969216
+    m_Localized: Vampire
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18332491591106560
+    m_Localized: Each time this die takes part in a combo you lose 5 health and the
+      multiplier rises by +0.3. At 5 health or less the die adds no damage.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18332491591106561
+    m_Localized: Loner
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18332491591106562
+    m_Localized: If this die is left out of the combo you play, it generates +2 gold.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18332491591106563
+    m_Localized: Party Animal
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18332491591106564
+    m_Localized: On an odd face this die deals triple damage. On an even face it
+      deals none. It still counts toward forming the combo.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18332491591106565
+    m_Localized: Streak
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18332491591106566
+    m_Localized: "For each consecutive combo it takes part in this combat, it adds
+      +3 more damage (+3, +6, +9\u2026). Resets if it's left out of a combo."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18332491591106567
+    m_Localized: Executioner
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18332491591106568
+    m_Localized: If this die takes part in a combo against an enemy at 25% health
+      or less, it adds +12 damage.
     m_Metadata:
       m_Items: []
   references:
