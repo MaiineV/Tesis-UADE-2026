@@ -2246,8 +2246,8 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 17988680314699777
-    m_Localized: +2 damage for each combo different from the last one you chain in
-      a fight. Repeating a combo resets the bonus.
+    m_Localized: "Chain combos different from the last one: the 2nd pays +4 damage,
+      the 3rd +6, the 4th +8\u2026 Repeating the last one resets the chain."
     m_Metadata:
       m_Items: []
   - m_Id: 17988681023537152

@@ -2269,8 +2269,8 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 17988680314699777
-    m_Localized: "+2 de da\xF1o por cada combo distinto al anterior que encadenes
-      en el combate. Repetir un combo reinicia el bono."
+    m_Localized: "Encaden\xE1 combos distintos al anterior: el 2\xBA paga +4 de da\xF1o,
+      el 3\xBA +6, el 4\xBA +8\u2026 Repetir el \xFAltimo reinicia la cadena."
     m_Metadata:
       m_Items: []
   - m_Id: 17988681023537152
