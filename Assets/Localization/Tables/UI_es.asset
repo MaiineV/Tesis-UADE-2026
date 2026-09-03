@@ -1105,6 +1105,54 @@ MonoBehaviour:
     m_Localized: "{0} agot\xF3 su poder y desapareci\xF3."
     m_Metadata:
       m_Items: []
+  - m_Id: 18369314903064576
+    m_Localized: "\xA1Contanos qu\xE9 te pareci\xF3!"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18369314961784832
+    m_Localized: "Un minuto y segu\xEDs jugando. Nos ayuda a mejorar el juego."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18369314961784833
+    m_Localized: Enviar
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18369314961784834
+    m_Localized: Omitir
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18369314961784835
+    m_Localized: Quiero participar del sorteo de keys
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18369314961784836
+    m_Localized: Tu email (solo para el sorteo)
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18369314961784837
+    m_Localized: Faltan responder las preguntas marcadas.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18369314961784838
+    m_Localized: "Ese email no parece v\xE1lido."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18369314961784839
+    m_Localized: "\xA1Gracias! Respuesta guardada."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18369314961784840
+    m_Localized: "Enviando\u2026"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18369314961784841
+    m_Localized: "\xA1Gracias! Respuesta enviada."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18369314961784842
+    m_Localized: "\xA1Gracias! Guardada, se env\xEDa cuando haya conexi\xF3n."
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

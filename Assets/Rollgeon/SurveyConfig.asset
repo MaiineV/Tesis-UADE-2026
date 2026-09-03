@@ -1,0 +1,65 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d981757152170594984d729f01dd2c53, type: 3}
+  m_Name: SurveyConfig
+  m_EditorClassIdentifier: Rollgeon::Rollgeon.Survey.SurveyConfigSO
+  Enabled: 0
+  EventId: evento-2026
+  TriggerFloorIndex: 0
+  EndpointUrl: 
+  SharedSecret: 
+  TimeoutSeconds: 10
+  AskEmailForRaffle: 1
+  AutoCloseSeconds: 1.5
+  Questions:
+  - Id: fun
+    Type: 0
+    TextEs: "\xBFCu\xE1nto te divertiste?"
+    TextEn: How much fun did you have?
+    OptionsEs: []
+    OptionsEn: []
+    Required: 1
+    MaxLength: 240
+  - Id: clarity
+    Type: 0
+    TextEs: "\xBFQu\xE9 tan claras fueron las reglas de los dados?"
+    TextEn: How clear were the dice rules?
+    OptionsEs: []
+    OptionsEn: []
+    Required: 1
+    MaxLength: 240
+  - Id: favorite
+    Type: 1
+    TextEs: "\xBFQu\xE9 fue lo que m\xE1s te gust\xF3?"
+    TextEn: What did you like the most?
+    OptionsEs:
+    - Los dados
+    - Los combos
+    - Los enemigos
+    - El arte
+    - Otro
+    OptionsEn:
+    - The dice
+    - The combos
+    - The enemies
+    - The art
+    - Other
+    Required: 1
+    MaxLength: 240
+  - Id: change
+    Type: 2
+    TextEs: "\xBFQu\xE9 cambiar\xEDas?"
+    TextEn: What would you change?
+    OptionsEs: []
+    OptionsEn: []
+    Required: 0
+    MaxLength: 240

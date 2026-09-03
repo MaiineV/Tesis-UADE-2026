@@ -1059,6 +1059,54 @@ MonoBehaviour:
     m_Key: item.broke_down.body
     m_Metadata:
       m_Items: []
+  - m_Id: 18369314903064576
+    m_Key: survey.title
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18369314961784832
+    m_Key: survey.subtitle
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18369314961784833
+    m_Key: survey.send
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18369314961784834
+    m_Key: survey.skip
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18369314961784835
+    m_Key: survey.raffle_optin
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18369314961784836
+    m_Key: survey.email_placeholder
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18369314961784837
+    m_Key: survey.required_hint
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18369314961784838
+    m_Key: survey.status_invalid_email
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18369314961784839
+    m_Key: survey.status_saved
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18369314961784840
+    m_Key: survey.status_sending
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18369314961784841
+    m_Key: survey.status_sent
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18369314961784842
+    m_Key: survey.status_offline
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:
