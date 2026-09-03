@@ -106,8 +106,18 @@ namespace Rollgeon.UI.Tooltips
             // Nunca dentro de la frase: cambiar el número no obliga a retraducir.
             if (_damageLabel != null)
             {
-                _damageLabel.text = state.Damage?.ToString() ?? string.Empty;
+                _damageLabel.text = state.Damage.HasValue
+                    ? Rollgeon.UI.Utility.IconSpriteTags.DamageAmount(state.Damage.Value)
+                    : string.Empty;
                 _damageLabel.gameObject.SetActive(state.Damage.HasValue);
+
+                // El submesh del sprite inline nace en runtime y con el rect crudo el
+                // ícono queda despegado del número — el offset calibrado lo sostiene
+                // este componente (los slots se instancian por código, no hay prefab
+                // que lo traiga puesto).
+                if (state.Damage.HasValue
+                    && !_damageLabel.TryGetComponent<TMPSubMeshRectOffset>(out _))
+                    _damageLabel.gameObject.AddComponent<TMPSubMeshRectOffset>();
             }
 
             if (_headerRow != null) _headerRow.SetActive(hasTitle || state.Damage.HasValue);

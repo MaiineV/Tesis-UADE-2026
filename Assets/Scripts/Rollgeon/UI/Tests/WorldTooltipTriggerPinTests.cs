@@ -187,5 +187,26 @@ namespace Rollgeon.UI.Tests
             // sería trabajo por frame de combate que nadie pidió.
             Assert.IsFalse(refreshed);
         }
+
+        [Test]
+        public void ConSeleccionActiva_ElHoverNoMuestraTooltip()
+        {
+            // Arrange + Act + Assert — con targeting activo el panel colgaría sobre el
+            // enemigo y su fila raycastable tragaría el click de atacar (el bug del
+            // click-afuera-y-de-vuelta): hover y pin quedan suprimidos por igual.
+            Assert.IsFalse(WorldTooltipTrigger.ShouldShowHover(hitMe: true, pinned: false, selecting: true));
+            Assert.IsFalse(WorldTooltipTrigger.ShouldShowHover(hitMe: false, pinned: true, selecting: true));
+            Assert.IsFalse(WorldTooltipTrigger.ShouldShowHover(hitMe: true, pinned: true, selecting: true));
+        }
+
+        [Test]
+        public void SinSeleccion_ElHoverMuestraConHitOPin()
+        {
+            // Arrange + Act + Assert — el comportamiento de siempre no cambia fuera
+            // del targeting: hit muestra, pin sostiene, y sin ninguno no hay panel.
+            Assert.IsTrue(WorldTooltipTrigger.ShouldShowHover(hitMe: true, pinned: false, selecting: false));
+            Assert.IsTrue(WorldTooltipTrigger.ShouldShowHover(hitMe: false, pinned: true, selecting: false));
+            Assert.IsFalse(WorldTooltipTrigger.ShouldShowHover(hitMe: false, pinned: false, selecting: false));
+        }
     }
 }

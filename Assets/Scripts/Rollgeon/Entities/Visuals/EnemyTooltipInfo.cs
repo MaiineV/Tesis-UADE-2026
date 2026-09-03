@@ -43,11 +43,19 @@ namespace Rollgeon.Entities.Visuals
                 ? data.DisplayName
                 : LocalizedContent.Name(id, data.DisplayName);
 
-            // El fallback vacío ES la decisión: un enemigo sin frase autorada no muestra una.
             string brief = string.IsNullOrEmpty(id)
                 ? string.Empty
                 : LocalizedContent.FromTable(
                     LocalizedContent.ContentTable, id + ".brief", string.Empty);
+
+            // Sin frase .brief autorada, el párrafo cae a la descripción de la ficha
+            // (tabla .desc → SO). Antes el fallback era vacío a propósito; se cambió el
+            // 03/09: lo que se autora en la tool de enemigos tiene que verse en el panel,
+            // no solo en el codex.
+            if (string.IsNullOrWhiteSpace(brief))
+                brief = string.IsNullOrEmpty(id)
+                    ? data.Description ?? string.Empty
+                    : LocalizedContent.Description(id, data.Description);
 
             var (health, maxHealth) = ReadVitals();
 
@@ -57,7 +65,27 @@ namespace Rollgeon.Entities.Visuals
                 name: name,
                 health: health,
                 maxHealth: maxHealth,
-                type: EnemyArchetypeText.Describe(data.Archetype, data.IsBoss));
+                type: ResolveTypeText(data));
+        }
+
+        /// <summary>
+        /// Renglón de tipo/familia: tabla (<c>&lt;id&gt;.type</c>) → texto autorado en el
+        /// SO (<see cref="EnemyDataSO.TooltipType"/>) → derivado del Archetype. El texto
+        /// autorado va tal cual — quien lo escribe decide también el prefijo de Jefe.
+        /// </summary>
+        internal static string ResolveTypeText(EnemyDataSO data)
+        {
+            string id = data.EntityId;
+            if (!string.IsNullOrEmpty(id))
+            {
+                string localized = LocalizedContent.FromTable(
+                    LocalizedContent.ContentTable, id + ".type", string.Empty);
+                if (!string.IsNullOrEmpty(localized)) return localized;
+            }
+
+            if (!string.IsNullOrWhiteSpace(data.TooltipType)) return data.TooltipType;
+
+            return EnemyArchetypeText.Describe(data.Archetype, data.IsBoss);
         }
 
         // El max no vive en el atributo (el daño escribe sobre Health.Value): la referencia

@@ -159,6 +159,34 @@ namespace Rollgeon.Dungeon.Tests
         }
 
         [Test]
+        public void Generate_RingEatsAllFreeCells_GrowsTopologyAndPlacesAllSpecials()
+        {
+            // Arrange — piso mínimo donde el anillo del boss (BUG-064) se come todas
+            // las celdas libres: sin el growth, las especiales degradaban a warning y
+            // la run salía sin sala de encantamiento.
+            var layout = Layout(
+                Slot(RoomType.Start, 1, Room("start", RoomType.Start)),
+                Slot(RoomType.Boss, 1, Room("boss", RoomType.Boss)),
+                Slot(RoomType.Shop, 1, Room("shop", RoomType.Shop)),
+                Slot(RoomType.Potion, 1, Room("potion", RoomType.Potion)),
+                Slot(RoomType.Enchantment, 1, Room("ench", RoomType.Enchantment)));
+
+            for (int seed = 0; seed < 50; seed++)
+            {
+                // Act
+                var plan = FloorTopologyPlanner.Generate(layout, seed);
+
+                // Assert — cada especial colocada exactamente una vez, para todo seed.
+                Assert.AreEqual(1, plan.Types.Values.Count(t => t == RoomType.Shop),
+                    $"seed {seed}: Shop no quedó colocada exactamente una vez.");
+                Assert.AreEqual(1, plan.Types.Values.Count(t => t == RoomType.Potion),
+                    $"seed {seed}: Potion no quedó colocada exactamente una vez.");
+                Assert.AreEqual(1, plan.Types.Values.Count(t => t == RoomType.Enchantment),
+                    $"seed {seed}: Enchantment no quedó colocada exactamente una vez.");
+            }
+        }
+
+        [Test]
         public void Generate_SlotPoolHasWrongType_CellInheritsPooledRoomType()
         {
             // Arrange — el slot Shop quedó (por error de datos) pooled con una sala Start.

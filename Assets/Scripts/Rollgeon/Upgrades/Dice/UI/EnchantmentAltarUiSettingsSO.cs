@@ -22,6 +22,11 @@ namespace Rollgeon.Upgrades.Dice.UI
         public float CloseDuration = 0.12f;
         public Ease CloseEase = Ease.InQuad;
 
+        [Header("Panel — backdrop")]
+        [Tooltip("Alpha del telón oscuro que separa la mesa del gameplay mientras está abierta. " +
+                 "0 = sin backdrop.")]
+        [Range(0f, 1f)] public float BackdropAlpha = 0.55f;
+
         [Header("Cards — entrada escalonada")]
         [Tooltip("Escala inicial de cada card al entrar (escala+alpha — no posición, para no pelear con el layout group).")]
         public float CardEnterScaleFrom = 0.9f;
