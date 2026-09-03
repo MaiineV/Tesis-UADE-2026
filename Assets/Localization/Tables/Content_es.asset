@@ -947,7 +947,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 13919417973649410
-    m_Localized: "Te tira lejos y te saca oro, y parte de esa plata cae al piso. La que no levant\xE1s a tiempo se la lleva \xE9l, y cada una lo cura."
+    m_Localized: "Te tira lejos y te saca oro, y parte de esa plata cae al piso. La que no levant\xE1s a tiempo se pierde."
     m_Metadata:
       m_Items: []
   - m_Id: 13919417973649411
@@ -1473,7 +1473,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 17593280027881472
-    m_Localized: "Te tira tres casillas y te cobra oro en cada empuj\xF3n. Lo que dejes vencer en el piso lo cura."
+    m_Localized: "Te tira tres casillas y te cobra oro en cada empuj\xF3n. Lo que dejes vencer en el piso lo perd\xE9s."
     m_Metadata:
       m_Items: []
   - m_Id: 17593280027881473
@@ -1648,8 +1648,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 17593280044658693
-    m_Localized: "Pisala y cobr\xE1s su valor. La que vence se la queda la banca
-      \u2014 y lo cura."
+    m_Localized: "Pisala y cobr\xE1s su valor. La que vence se pierde."
     m_Metadata:
       m_Items: []
   - m_Id: 17593280044658694

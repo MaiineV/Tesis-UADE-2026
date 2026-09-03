@@ -528,17 +528,18 @@ namespace Rollgeon.Editor.Tools.Enemy.AITree
 
             [typeof(AINode_CajeroCoinVault)] =
                 "'La caja': le pone reloj (LifetimeRounds) a cada moneda del piso y, cuando una se vence " +
-                "sin que nadie la levante, se la lleva y cura al jefe HealPerCoin, hasta MaxHealPerFight " +
-                "en toda la pelea. Cobra UNA moneda por turno, nunca la tanda entera: las cuatro de una " +
-                "lluvia se pagan a lo largo de cuatro turnos.\n\n" +
+                "sin que nadie la levante, se la lleva. No cura al jefe: la plata simplemente se pierde. " +
+                "Se lleva UNA moneda por turno, nunca la tanda entera: las cuatro de una lluvia se " +
+                "pierden a lo largo de cuatro turnos.\n\n" +
                 "Descubre las monedas por barrido de las instancias vivas, así que va después de los " +
                 "nodos que las sueltan.",
 
             [typeof(AINode_CajeroShove)] =
                 "El empujón del Cajero: hereda de RangedShot con Range = 1 (rango, daño, giro y " +
                 "presentación ya vienen de ahí) y además manda al jugador PushTiles casillas en línea " +
-                "recta hacia el lado opuesto, dejando CoinCount monedas (Coin, CoinMinValue–CoinMaxValue) " +
-                "tiradas a lo largo del tumbo. El tumbo frena contra paredes y blockers y cobra las " +
+                "recta hacia el lado opuesto. Le cobra TaxPercent del oro que lleve encima (nunca menos de " +
+                "TaxMinimum) y deja RefundPercent de eso tirado en CoinCount monedas a lo largo del tumbo: " +
+                "lo que cae al piso es plata del jugador. El tumbo frena contra paredes y blockers y cobra las " +
                 "casillas atravesadas (pinchos incluidos).",
 
             [typeof(AINode_CashierCounterToll)] =

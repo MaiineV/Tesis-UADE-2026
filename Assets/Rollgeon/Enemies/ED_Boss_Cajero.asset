@@ -510,10 +510,10 @@ MonoBehaviour:
       Data: 3
     - Name: MinValue
       Entry: 3
-      Data: 6
+      Data: 5
     - Name: MaxValue
       Entry: 3
-      Data: 9
+      Data: 5
     - Name: MinSeparation
       Entry: 3
       Data: 2
@@ -563,12 +563,6 @@ MonoBehaviour:
     - Name: LifetimeRounds
       Entry: 3
       Data: 3
-    - Name: HealPerCoin
-      Entry: 3
-      Data: 12
-    - Name: MaxHealPerFight
-      Entry: 3
-      Data: 60
     - Name: 
       Entry: 8
       Data: 
@@ -615,7 +609,7 @@ MonoBehaviour:
   EntityId: boss.cashier
   DisplayName: El Cajero
   Description: "Te tira lejos y te saca oro, y parte de esa plata cae al piso. La
-    que no levant\xE1s a tiempo se la lleva \xE9l, y cada una lo cura."
+    que no levant\xE1s a tiempo se pierde."
   Portrait: {fileID: 133841030, guid: 7354be46d5bce5b44ae3fc20ec0cb47f, type: 3}
   Design:
     Archetype: 1

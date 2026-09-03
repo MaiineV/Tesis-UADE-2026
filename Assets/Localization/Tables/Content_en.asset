@@ -941,7 +941,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 13919417973649410
-    m_Localized: "Throws you clear and takes your gold, and some of it lands on the floor. The ones you don't grab in time he takes back, and each one heals him."
+    m_Localized: "Throws you clear and takes your gold, and some of it lands on the floor. Whatever you don't grab in time is gone."
     m_Metadata:
       m_Items: []
   - m_Id: 13919417973649411
@@ -1451,7 +1451,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 17593280027881472
-    m_Localized: "Throws you three tiles and charges you gold on every shove. What you let expire on the floor heals him."
+    m_Localized: "Throws you three tiles and charges you gold on every shove. Whatever you let expire on the floor is lost."
     m_Metadata:
       m_Items: []
   - m_Id: 17593280027881473
@@ -1626,8 +1626,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 17593280044658693
-    m_Localized: "Step on it to collect its value. One that expires, the bank keeps
-      \u2014 and it heals him."
+    m_Localized: "Step on it to collect its value. One that expires is lost."
     m_Metadata:
       m_Items: []
   - m_Id: 17593280044658694

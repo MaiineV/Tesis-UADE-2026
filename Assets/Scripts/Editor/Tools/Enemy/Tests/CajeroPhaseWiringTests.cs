@@ -73,7 +73,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             Assert.IsEmpty(Descendants(_root).OfType<AINode_TelegraphMarkGoldScaled>().ToList(),
                 "Volvió la columna escalada por oro: el oro dejó de ser la unidad de daño del jefe.");
             Assert.IsEmpty(Descendants(_root).OfType<AINode_CashierAudit>().ToList(),
-                "Volvió el arqueo: la curación del jefe ahora sale de las monedas vencidas, con techo.");
+                "Volvió el arqueo, que cobra oro Y lo cura: el cobro es del empujón, y no se cura con nada.");
             Assert.IsEmpty(Descendants(_root).OfType<AINode_KeepDistance>().ToList(),
                 "Volvió el repliegue. Es melee puro: alejarse le deja el turno sin ataque posible.");
             Assert.IsEmpty(Descendants(_root).OfType<AINode_Behavior>().ToList(),
@@ -273,8 +273,11 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
 
             Assert.AreEqual(CajeroAssetBuilder.CoinsPerRain, rain.Count);
             Assert.AreEqual(CajeroAssetBuilder.CoinRainEveryNRounds, rain.EveryNRounds);
-            Assert.AreEqual(CajeroAssetBuilder.ChipMinValue, rain.MinValue);
-            Assert.AreEqual(CajeroAssetBuilder.ChipMaxValue, rain.MaxValue);
+            Assert.AreEqual(CajeroAssetBuilder.ChipValue, rain.MinValue);
+            Assert.AreEqual(CajeroAssetBuilder.ChipValue, rain.MaxValue);
+            Assert.AreEqual(rain.MinValue, rain.MaxValue,
+                "La moneda de la sala vale fijo: un rango hace que la tanda valga un número que el " +
+                "jugador no puede leer del piso, y no cambia ninguna decisión suya.");
             Assert.AreEqual(CajeroAssetBuilder.CoinRainMinSeparation, rain.MinSeparation);
             Assert.Greater(rain.MinSeparation, 1,
                 "\"Repartidas por la sala\" es media mecánica: cada moneda tiene que ser un punto al " +
@@ -282,21 +285,14 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         }
 
         [Test]
-        public void CoinVault_CarriesTheClockAndTheHealCeilingFromTheSheet()
+        public void CoinVault_CarriesTheClockFromTheSheet()
         {
             var vault = FindNode<AINode_CajeroCoinVault>();
 
             Assert.AreEqual(CajeroAssetBuilder.ChipDurationRounds, vault.LifetimeRounds,
                 "El reloj de la moneda vive en este nodo, no en el DurationRounds del hazard: el " +
-                "servicio expira igual una moneda levantada y una vencida, y sólo la segunda cura.");
-            Assert.AreEqual(CajeroAssetBuilder.HealPerExpiredCoin, vault.HealPerCoin);
-            Assert.AreEqual(CajeroAssetBuilder.MaxHealPerFight, vault.MaxHealPerFight);
-
-            Assert.Greater(vault.MaxHealPerFight, 0,
-                "Techo 0 apaga la curación entera: las monedas dejan de tener consecuencia y la " +
-                "mecánica central de la sala se queda sin apuesta.");
-            Assert.Less(vault.MaxHealPerFight, CajeroAssetBuilder.BaseHP,
-                "El techo de curación llegó a valer una vida entera: la pelea puede no terminar.");
+                "servicio expira igual una moneda levantada y una vencida, y desde afuera no se " +
+                "pueden distinguir.");
         }
 
         /// <summary>La caja reconoce el piso comparando <c>info.Definition == Coin</c>: con definiciones
@@ -894,10 +890,6 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                     "La ficha escribe una vida distinta de la que dice su constante.");
                 Assert.AreEqual(CajeroAssetBuilder.BaseAttack, data.BaseAttack,
                     "La ficha escribe un mandoble distinto del que dice su constante.");
-                Assert.Greater(data.BaseHP, CajeroAssetBuilder.MaxHealPerFight * 4,
-                    "La curación por monedas vencidas dejó de ser presupuesto aparte y pasó a ser " +
-                    "una fracción gruesa de su vida: la pelea es larga para que el jugador pueda " +
-                    "elegir varias veces entre pegarle y juntar, no para que se cure de vuelta.");
                 Assert.AreEqual(CajeroAssetBuilder.MeleeRange, data.BaseAttackRange,
                     "Melee puro: no tiene nada a distancia.");
                 Assert.AreEqual(30, data.MinGoldDrop, "Drop de piso 2: 30-60.");

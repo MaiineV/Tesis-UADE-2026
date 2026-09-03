@@ -105,8 +105,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         public const string DisplayName = "El Cajero";
 
         /// <summary>
-        /// Vida del jefe de piso 2. Lo que se cura con monedas vencidas es presupuesto aparte
-        /// (<see cref="MaxHealPerFight"/>): suma turnos sin figurar acá.
+        /// Vida del jefe de piso 2. Pelados: no se cura con nada, así que lo que aguanta es
+        /// exactamente esto.
         /// </summary>
         public const int BaseHP = 450;
 
@@ -166,13 +166,15 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         // ---- Las monedas -------------------------------------------------
 
         /// <summary>
-        /// Valor de una moneda de la <b>lluvia</b>, la que suelta la sala. Las del empujón no salen
-        /// de acá: valen <see cref="ShoveRefundPercent"/> de lo que te cobró, porque son tu plata.
+        /// Valor de una moneda de la <b>lluvia</b>, la que suelta la sala. Fijo y no un rango: son
+        /// cuatro por tanda, y que cada una valga distinto no cambia ninguna decisión —sólo hace
+        /// que la tanda valga un número que el jugador no puede leer del piso.
         /// </summary>
-        public const int ChipMinValue = 6;
-
-        /// <inheritdoc cref="ChipMinValue"/>
-        public const int ChipMaxValue = 9;
+        /// <remarks>
+        /// Las del empujón no salen de acá: valen <see cref="ShoveRefundPercent"/> de lo que te
+        /// cobró, porque son tu plata.
+        /// </remarks>
+        public const int ChipValue = 5;
 
         /// <summary>Monedas que suelta la sala por tanda.</summary>
         public const int CoinsPerRain = 4;
@@ -182,15 +184,6 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
 
         /// <summary>Distancia Chebyshev mínima entre dos monedas de la misma tanda.</summary>
         public const int CoinRainMinSeparation = 2;
-
-        /// <summary>HP que le devuelve al jefe cada moneda que el jugador deja vencer.</summary>
-        public const int HealPerExpiredCoin = 12;
-
-        /// <summary>
-        /// Techo de curación en toda la pelea: alcanzado el techo las monedas vencidas siguen
-        /// desapareciendo, pero ya no lo curan.
-        /// </summary>
-        public const int MaxHealPerFight = 60;
 
         /// <summary>
         /// Rondas que vive una moneda en el piso.
@@ -652,19 +645,17 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
                 Coin = chip,
                 Count = CoinsPerRain,
                 EveryNRounds = CoinRainEveryNRounds,
-                MinValue = ChipMinValue,
-                MaxValue = ChipMaxValue,
+                MinValue = ChipValue,
+                MaxValue = ChipValue,
                 MinSeparation = CoinRainMinSeparation,
             };
 
-        /// <summary>El reloj de las monedas y el techo de curación de la pelea.</summary>
+        /// <summary>El reloj de las monedas: la que nadie levanta se pierde, y no lo cura.</summary>
         public static AINode_CajeroCoinVault BuildCoinVault(HazardDefinitionSO chip) =>
             new AINode_CajeroCoinVault
             {
                 Coin = chip,
                 LifetimeRounds = ChipDurationRounds,
-                HealPerCoin = HealPerExpiredCoin,
-                MaxHealPerFight = MaxHealPerFight,
             };
 
         /// <summary>
@@ -754,7 +745,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
             // Fallback: lo que el jugador lee sale de boss.cashier.desc, que se resuelve por
             // EntityId. Copia literal de esa entrada para que las dos no puedan divergir.
             data.Description = "Te tira lejos y te saca oro, y parte de esa plata cae al piso. " +
-                               "La que no levantás a tiempo se la lleva él, y cada una lo cura.";
+                               "La que no levantás a tiempo se pierde.";
 
             data.BaseHP = BaseHP;
             data.BaseAttack = BaseAttack;
@@ -956,11 +947,10 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
                       $"(ficha: {BaseHP} HP, mandoble {HeavyDamage} y empujón {ShoveDamage} + " +
                       $"{ShovePushTiles} casillas, alcance {MeleeRange}, camina {ChaseSteps}; " +
                       $"monedas: {CoinsPerRain} cada {CoinRainEveryNRounds} rondas de " +
-                      $"{ChipMinValue}-{ChipMaxValue}g + {ChipCount} por empujón con el " +
+                      $"{ChipValue}g + {ChipCount} por empujón con el " +
                       $"{ShoveRefundPercent:P0} del {ShoveTaxPercent:P0} cobrado " +
                       $"(mín. {ShoveTaxMinimum}), duran {ChipDurationRounds} rondas, " +
-                      $"se vencen de a una y cada una cura {HealPerExpiredCoin} con techo " +
-                      $"{MaxHealPerFight}; " +
+                      $"y se vencen de a una sin curarlo; " +
                       $"visual: {NameOf(visual)}, retrato: {NameOf(portrait)}) + {CritterCount} × " +
                       $"'{NameOf(critter)}' ({critter.BaseHP} HP, {critter.BaseAttack} a " +
                       $"≤{CritterRange}, con el aspecto de '{NameOf(sharedRanged)}') al " +

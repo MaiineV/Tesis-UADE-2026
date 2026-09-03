@@ -690,8 +690,11 @@ namespace Rollgeon.EditorTools.Localization
                 "Quema la sala y se teletransporta cuando lo alcanzás.",
                 "Burns the room and teleports when you reach him.");
             Content("boss.cashier.brief",
-                "Pega más fuerte cuanto más oro llevás. Las fichas que dejás vencer se las queda.",
-                "Hits harder the more gold you carry. Chips you let expire, he keeps.");
+                "Te tira tres casillas y te cobra oro en cada empujón. Lo que dejes vencer en el piso lo perdés.",
+                "Throws you three tiles and charges you gold on every shove. Whatever you let expire on the floor is lost.");
+            Content("boss.cashier.desc",
+                "Te tira lejos y te saca oro, y parte de esa plata cae al piso. La que no levantás a tiempo se pierde.",
+                "Throws you clear and takes your gold, and some of it lands on the floor. Whatever you don't grab in time is gone.");
             Content("boss.la_generala.brief",
                 "Suelta anillos eléctricos en oleadas, con huecos entre anillo y anillo.",
                 "Unleashes electric rings in waves, with gaps between the rings.");
@@ -977,8 +980,8 @@ namespace Rollgeon.EditorTools.Localization
                 "Ice from her cup: stepping on it stuns, and the patch breaks underfoot.");
             Content("hazard.chip.name", "Ficha de la banca", "House Chip");
             Content("hazard.chip.desc",
-                "Pisala y cobrás su valor. La que vence se la queda la banca — y lo cura.",
-                "Step on it to collect its value. One that expires, the bank keeps — and it heals him.");
+                "Pisala y cobrás su valor. La que vence se pierde.",
+                "Step on it to collect its value. One that expires is lost.");
             Content("hazard.table_fire.name", "Fuego de mesa", "Table Fire");
             Content("hazard.table_fire.desc",
                 "Arde: golpea a quien termine su turno adentro.",
