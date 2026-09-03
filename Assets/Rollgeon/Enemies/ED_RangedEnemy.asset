@@ -97,10 +97,13 @@ MonoBehaviour:
       Data: 
     - Name: IdealDistance
       Entry: 7
-      Data: 7|Rollgeon.Combat.AI.Readers.AIConstantInt, Rollgeon
-    - Name: Value
+      Data: 7|Rollgeon.Combat.AI.Readers.AIReadSelfStat, Rollgeon
+    - Name: Stat
       Entry: 3
-      Data: 5
+      Data: 6
+    - Name: UseModified
+      Entry: 5
+      Data: true
     - Name: 
       Entry: 8
       Data: 
@@ -137,7 +140,7 @@ MonoBehaviour:
       Data: 5
     - Name: UseOwnerAttackRange
       Entry: 5
-      Data: false
+      Data: true
     - Name: Metric
       Entry: 3
       Data: 0
@@ -957,19 +960,25 @@ MonoBehaviour:
       Data: 
     - Name: Range
       Entry: 7
-      Data: 50|Rollgeon.Combat.AI.Readers.AIConstantInt, Rollgeon
-    - Name: Value
+      Data: 50|Rollgeon.Combat.AI.Readers.AIReadSelfStat, Rollgeon
+    - Name: Stat
       Entry: 3
-      Data: 5
+      Data: 6
+    - Name: UseModified
+      Entry: 5
+      Data: true
     - Name: 
       Entry: 8
       Data: 
     - Name: DesiredRange
       Entry: 7
-      Data: 51|Rollgeon.Combat.AI.Readers.AIConstantInt, Rollgeon
-    - Name: Value
+      Data: 51|Rollgeon.Combat.AI.Readers.AIReadSelfStat, Rollgeon
+    - Name: Stat
       Entry: 3
-      Data: 5
+      Data: 6
+    - Name: UseModified
+      Entry: 5
+      Data: true
     - Name: 
       Entry: 8
       Data: 
@@ -1013,7 +1022,7 @@ MonoBehaviour:
   BaseHealStrength: 5
   BaseSpeed: 5
   MaxEnergy: 2
-  BaseAttackRange: 1
+  BaseAttackRange: 5
   ExtraTiers:
   - Label: T2
     MinFloor: 2
@@ -1022,8 +1031,8 @@ MonoBehaviour:
       Multiplier: 1
       ManualValue: 80
     Attack:
-      Mode: 1
-      Multiplier: 15
+      Mode: 0
+      Multiplier: 1.5
       ManualValue: 0
     Speed:
       Mode: 0
@@ -1048,8 +1057,8 @@ MonoBehaviour:
       Multiplier: 1
       ManualValue: 120
     Attack:
-      Mode: 1
-      Multiplier: 20
+      Mode: 0
+      Multiplier: 2
       ManualValue: 0
     Speed:
       Mode: 0

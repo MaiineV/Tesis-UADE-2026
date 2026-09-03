@@ -99,6 +99,31 @@ namespace Rollgeon.Grid.Tests
         }
 
         [Test]
+        public void should_not_block_when_the_two_endpoints_are_allies_even_if_the_occupant_is_unrelated()
+        {
+            // Arrange: _self y _target son aliados entre sí (ej. Healer -> aliado a curar); el
+            // ocupante del medio (el jugador) no tiene relación de alianza con ninguno de los
+            // dos — sólo importa la relación entre los DOS EXTREMOS del chequeo, no la del
+            // ocupante.
+            var player = Guid.NewGuid();
+            _grid.Register(player, new GridCoord(3, 4));
+            ServiceLocator.AddService<IEntityQueryService>(new StubQuery
+            {
+                Relationship = (owner, target) =>
+                    (owner == _self && target == _target) || (owner == _target && target == _self)
+                        ? EntityFilterMask.Allies
+                        : EntityFilterMask.None,
+            }, ServiceScope.Global);
+
+            // Act + Assert
+            Assert.IsTrue(GridLineOfSight.HasClearLine(
+                _grid, new GridCoord(0, 4), new GridCoord(6, 4), _self, _target),
+                "El jugador (o cualquier ocupante sin relación con ninguno de los dos) nunca " +
+                "bloquea la línea entre dos aliados — sólo el terreno lo hace (Healer trabado " +
+                "por el jugador parado justo en el medio, BUG-live reportado en playtest).");
+        }
+
+        [Test]
         public void should_block_when_a_wall_cell_interrupts_the_line()
         {
             // Arrange: (3,4) no caminable — pared.

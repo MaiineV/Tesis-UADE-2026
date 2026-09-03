@@ -55,5 +55,14 @@ namespace Rollgeon.PreConditions
         /// es permisivo (true) o veto (false) según su semántica de gating.
         /// </summary>
         public EffectContext Effect;
+
+        /// <summary>
+        /// Consulta si una <c>ActionKey</c> (<see cref="Rollgeon.Combat.AI.Decisions.AINode_Move.ActionKey"/>
+        /// y análogos) ya se ejecutó este turno — delega a <c>AIContext.HasExecuted</c>. Lo
+        /// popula el bridge AI (<c>AIContextPcExtensions.BuildPcContext</c>); <c>null</c> en
+        /// otros callers. Las PCs interesadas (<c>PcActionExecuted</c>) deben tolerar null
+        /// permisivamente.
+        /// </summary>
+        public Func<string, bool> HasExecutedAction;
     }
 }

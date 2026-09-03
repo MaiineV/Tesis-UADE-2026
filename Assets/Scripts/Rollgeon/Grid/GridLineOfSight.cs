@@ -115,21 +115,33 @@ namespace Rollgeon.Grid
         /// "esperando" sin motivo visible porque otro le tapaba la línea).
         /// </summary>
         /// <remarks>
-        /// Sin <see cref="IEntityQueryService"/> registrado (tests con un <c>GridManager</c>
-        /// pelado, sin <c>ServiceLocator</c> armado) se preserva el comportamiento viejo —
-        /// cualquier ocupante que no sea ignoreA/ignoreB bloquea — mismo criterio conservador
-        /// que <c>hasTerrain</c> usa para el grafo vacío.
+        /// <para>
+        /// Cuando <paramref name="ignoreA"/> e <paramref name="ignoreB"/> son ALIADOS entre sí (ej.
+        /// un Healer chequeando si ve a su aliado herido para curarlo), NINGÚN ocupante bloquea —
+        /// ni siquiera el jugador. Sin esta regla el jugador podía pararse justo en el medio y
+        /// "tapar" la cura sin que el Healer supiera reaccionar (el fallback de movimiento no sabe
+        /// de LoS, así que el enemigo quedaba trabado para siempre en vez de reposicionarse) —
+        /// decisión explícita: el jugador nunca bloquea LoS entre dos enemigos aliados entre sí,
+        /// sólo el terreno lo hace. Fuera de ese caso (ej. un enemigo apuntándole al jugador), el
+        /// jugador sigue bloqueando como cualquier ocupante.
+        /// </para>
         /// </remarks>
         private static bool Blocks(IGridManager grid, GridCoord c, Guid ignoreA, Guid ignoreB)
         {
             if (!grid.TryGetOccupant(c, out var occupant)) return false;
             if (occupant == ignoreA || occupant == ignoreB) return false;
 
-            if (ignoreA != Guid.Empty
-                && ServiceLocator.TryGetService<IEntityQueryService>(out var query) && query != null
-                && (query.GetRelationship(ignoreA, occupant) & EntityFilterMask.Allies) != 0)
+            if (ignoreA != Guid.Empty && ignoreB != Guid.Empty
+                && ServiceLocator.TryGetService<IEntityQueryService>(out var query) && query != null)
             {
-                return false;
+                // Chequeo entre dos aliados (ej. Healer → aliado a curar): nada vivo bloquea, ni
+                // siquiera el jugador — sólo el terreno.
+                if ((query.GetRelationship(ignoreA, ignoreB) & EntityFilterMask.Allies) != 0)
+                    return false;
+
+                // Regla original: un aliado del atacante nunca le tapa el tiro (enemigos amontonados).
+                if ((query.GetRelationship(ignoreA, occupant) & EntityFilterMask.Allies) != 0)
+                    return false;
             }
 
             return true;
