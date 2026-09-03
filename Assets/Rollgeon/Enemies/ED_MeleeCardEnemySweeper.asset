@@ -133,9 +133,6 @@ MonoBehaviour:
     - Name: Alignment
       Entry: 3
       Data: 0
-    - Name: RequireLineOfSight
-      Entry: 5
-      Data: false
     - Name: 
       Entry: 8
       Data: 
@@ -303,9 +300,6 @@ MonoBehaviour:
     - Name: Alignment
       Entry: 3
       Data: 0
-    - Name: RequireLineOfSight
-      Entry: 5
-      Data: false
     - Name: 
       Entry: 8
       Data: 
@@ -446,9 +440,6 @@ MonoBehaviour:
     - Name: Alignment
       Entry: 3
       Data: 0
-    - Name: RequireLineOfSight
-      Entry: 5
-      Data: false
     - Name: 
       Entry: 8
       Data: 
@@ -546,7 +537,7 @@ MonoBehaviour:
   EntityId: CardEnemySweeper
   DisplayName: CardEnemySweeper
   Description: 
-  Portrait: {fileID: -1536292150, guid: 0f3b18568ea971e44b0fad7a7eff5b31, type: 3}
+  Portrait: {fileID: 1241074374, guid: afb0f04145bd30749bb686aea490fc8a, type: 3}
   Design:
     Archetype: 1
     Pattern: 6

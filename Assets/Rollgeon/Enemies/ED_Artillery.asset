@@ -264,7 +264,7 @@ MonoBehaviour:
   EntityId: enemy.artillery
   DisplayName: Artillery
   Description: 
-  Portrait: {fileID: 133841030, guid: 7354be46d5bce5b44ae3fc20ec0cb47f, type: 3}
+  Portrait: {fileID: 786344447, guid: afb0f04145bd30749bb686aea490fc8a, type: 3}
   Design:
     Archetype: 2
     Pattern: 7
