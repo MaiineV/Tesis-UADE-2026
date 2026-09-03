@@ -75,6 +75,12 @@ namespace Rollgeon.Combat.AI.Decisions
                  "consume (AINode_IgniteArea) tiene que declarar el MISMO canal.")]
         public string ChannelId;
 
+        [Tooltip("Si true, no recorta el área a lo que el jefe ve — para ataques que arquean por " +
+                 "encima de obstáculos (ej. artillería/mortero). Default false: mismo comportamiento " +
+                 "de siempre (las shapes de IsLineOfSightGated se recortan a lo visible, y sin nada " +
+                 "visible el paso falla — ver AINode_TelegraphMark.Tick).")]
+        public bool IgnoreLineOfSight;
+
         [Title("Windup")]
 #if UNITY_EDITOR
         [ValueDropdown(nameof(GetFeedbackIdsForDropdown))]
@@ -156,7 +162,10 @@ namespace Rollgeon.Combat.AI.Decisions
             // LOS de proyecto, SOLO al marcar (lo marcado detona como siempre): las formas
             // dirigidas se recortan a lo que el atacante realmente ve — la sombra detrás de una
             // mesa/bomba no se marca ni cobra. Las de sala pasan de largo (IsLineOfSightGated).
-            if (ThreatAreaShape.IsLineOfSightGated(Shape)
+            // IgnoreLineOfSight se salta el recorte entero: pensado para ataques que arquean por
+            // encima de obstáculos (artillería) y no deberían fallar el turno entero por un muro
+            // en el medio.
+            if (!IgnoreLineOfSight && ThreatAreaShape.IsLineOfSightGated(Shape)
                 && grid.TryGetPosition(context.SelfGuid, out var losOrigin))
             {
                 GridLineOfSight.FilterVisible(grid, losOrigin, tiles,
