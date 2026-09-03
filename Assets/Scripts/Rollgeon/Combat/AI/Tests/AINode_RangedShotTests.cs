@@ -137,6 +137,23 @@ namespace Rollgeon.Combat.AI.Tests
             Assert.AreEqual(ShotDamage, _pipeline.Resolved[0].BaseDamage);
         }
 
+        // ---- Línea de visión ------------------------------------------------
+
+        [Test]
+        public void test_shot_blockedLineOfSight_failsWithoutDamage()
+        {
+            // Arrange — jugador a rango pero con un prop bloqueante en el medio de la fila.
+            PlacePlayerAt(new GridCoord(BossCoord.X + 3, BossCoord.Y));
+            _grid.Register(Guid.NewGuid(), new GridCoord(BossCoord.X + 1, BossCoord.Y));
+
+            // Act
+            var result = NewNode().Tick(NewContext());
+
+            // Assert — detrás de algo no hay disparo: el árbol cae a su plan B.
+            Assert.AreEqual(AIResult.Failed, result);
+            Assert.IsEmpty(_pipeline.Resolved);
+        }
+
         // ---- Fuera de rango -------------------------------------------------
 
         [Test]

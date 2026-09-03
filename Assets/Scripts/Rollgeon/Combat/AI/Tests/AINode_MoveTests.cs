@@ -136,6 +136,77 @@ namespace Rollgeon.Combat.AI.Tests
         }
 
         [Test]
+        public void Tick_AlreadyAtDesiredRange_RequireLineOfSightFalse_BlockedByOccupant_StaysPutAnyway()
+        {
+            // Arrange — self(0,2), player(4,2) dist 4 == DesiredRange; un ocupante bloquea la
+            // línea recta en (2,2). Sin RequireLineOfSight, "ya en la banda" no mira la LoS.
+            _grid.Register(_self, new GridCoord(0, 2));
+            _grid.Register(_player, new GridCoord(4, 2));
+            _grid.Register(Guid.NewGuid(), new GridCoord(2, 2));
+            var node = new AINode_Move { MaxSteps = Const(10), DesiredRange = Const(4) };
+
+            // Act
+            var result = node.Tick(Ctx());
+
+            // Assert
+            Assert.AreEqual(AIResult.Succeeded, result);
+            _grid.TryGetPosition(_self, out var pos);
+            Assert.AreEqual(new GridCoord(0, 2), pos,
+                "Sin RequireLineOfSight, 'ya en la banda' no considera la línea de visión.");
+        }
+
+        [Test]
+        public void Tick_AlreadyAtDesiredRange_RequireLineOfSightTrue_BlockedByOccupant_RepositionsForClearLine()
+        {
+            // Arrange — misma geometría, pero con RequireLineOfSight=true: la distancia sola no
+            // alcanza si el ocupante en (2,2) tapa la línea recta — el nodo (que antes se
+            // conformaba con "ya estoy a la distancia justa") debe reposicionarse a un tile con
+            // línea de visión clara. Regresión del bug live: el Healer quedaba trabado para
+            // siempre cuando el jugador se paraba justo entre él y su aliado herido.
+            _grid.Register(_self, new GridCoord(0, 2));
+            _grid.Register(_player, new GridCoord(4, 2));
+            _grid.Register(Guid.NewGuid(), new GridCoord(2, 2));
+            var node = new AINode_Move
+            {
+                MaxSteps = Const(10), DesiredRange = Const(4), RequireLineOfSight = true,
+            };
+
+            // Act
+            var result = node.Tick(Ctx());
+
+            // Assert
+            Assert.AreEqual(AIResult.Succeeded, result);
+            _grid.TryGetPosition(_self, out var pos);
+            Assert.AreNotEqual(new GridCoord(0, 2), pos,
+                "Con RequireLineOfSight, no debe quedarse en un tile sin línea de visión al target.");
+            Assert.IsTrue(
+                GridLineOfSight.HasClearLine(_grid, pos, new GridCoord(4, 2), _self, _player),
+                "El tile elegido debe tener línea de visión clara al target.");
+        }
+
+        [Test]
+        public void Tick_RequireLineOfSightTrue_AlreadyClear_DoesNotMove()
+        {
+            // Arrange — mismo DesiredRange, sin ningún bloqueo: con RequireLineOfSight=true debe
+            // seguir siendo no-op si ya ve al target (no fuerza movimiento innecesario).
+            _grid.Register(_self, new GridCoord(0, 2));
+            _grid.Register(_player, new GridCoord(4, 2));
+            var node = new AINode_Move
+            {
+                MaxSteps = Const(10), DesiredRange = Const(4), RequireLineOfSight = true,
+            };
+
+            // Act
+            var result = node.Tick(Ctx());
+
+            // Assert
+            Assert.AreEqual(AIResult.Succeeded, result);
+            _grid.TryGetPosition(_self, out var pos);
+            Assert.AreEqual(new GridCoord(0, 2), pos,
+                "Con línea de visión ya clara, RequireLineOfSight no debe forzar movimiento.");
+        }
+
+        [Test]
         public void Tick_BackCompat_NullTargetNullRange_StopsAdjacentToPlayer()
         {
             // Arrange — comportamiento legacy: Target null ⇒ player, DesiredRange null +

@@ -19,9 +19,11 @@ namespace Rollgeon.Combat.AI
     /// <see cref="PcTargetInRange"/> o <see cref="PCEntityInRange"/> de un
     /// <see cref="AINode_If"/> que envuelve un ataque, o el auto-gate de un
     /// <see cref="AINode_RangedShot"/> — nunca una simulación del turno.
-    /// Sobre-aproxima siempre a favor del jugador: la línea de visión y las condiciones hermanas
-    /// del If se ignoran (un blocker puede morir o correrse dentro del turno del jugador), así
-    /// que puede pintar de más pero nunca de menos. No baja por <c>AINode_Random</c> (límite de
+    /// Filtra por línea de visión (<see cref="GridLineOfSight"/>): los gates de ataque la
+    /// exigen, así que una celda en sombra ya NO es una celda desde la que te pegan y pintarla
+    /// sería mentir al revés. La sobre-aproximación vieja ("un blocker puede morir en tu turno")
+    /// se retiró junto con ella: el resto de las condiciones hermanas del If se siguen
+    /// ignorando. No baja por <c>AINode_Random</c> (límite de
     /// <see cref="AIIntentWalker.CollectNodes{T}"/>, compartido con otros lectores del árbol).
     /// El alcance viaja por acá y no por <see cref="AIIntent.Tiles"/>: Tiles es dónde cae,
     /// y su invariante ("vacío = no se sabe") sigue intacto.
@@ -77,11 +79,38 @@ namespace Rollgeon.Combat.AI
             {
                 if (selfCells.Contains(cell)) continue;
                 candidates++;
-                if (AnyDescriptorReaches(descriptors, grid, context, anchor, footprint, cell))
+                if (!AnyDescriptorReaches(descriptors, grid, context, anchor, footprint, cell))
+                    continue;
+                if (HasLineOfSight(grid, context, anchor, cell))
                     into.Add(cell);
             }
 
             if (candidates > 0 && into.Count == candidates) into.Clear();
+        }
+
+        /// <summary>
+        /// Línea limpia desde la celda propia más cercana a <paramref name="cell"/> — el mismo
+        /// par sobre el que los gates miden alineación. El jugador se ignora como bloqueante:
+        /// la celda evaluada es una posición hipotética suya, y su cuerpo actual no puede
+        /// taparse a sí mismo.
+        /// </summary>
+        private static bool HasLineOfSight(IGridManager grid, AIContext context,
+                                           GridCoord anchor, GridCoord cell)
+        {
+            var nearest = anchor;
+            int best = int.MaxValue;
+            foreach (var own in grid.OccupiedCells(context.SelfGuid))
+            {
+                int d = own.Manhattan(cell);
+                if (d < best)
+                {
+                    best = d;
+                    nearest = own;
+                }
+            }
+
+            return GridLineOfSight.HasClearLine(grid, nearest, cell,
+                                                context.SelfGuid, context.PlayerGuid);
         }
 
         /// <summary>

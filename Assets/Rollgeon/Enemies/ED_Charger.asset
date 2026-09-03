@@ -212,9 +212,6 @@ MonoBehaviour:
     - Name: Alignment
       Entry: 3
       Data: 0
-    - Name: RequireLineOfSight
-      Entry: 5
-      Data: false
     - Name: 
       Entry: 8
       Data: 
@@ -1082,9 +1079,6 @@ MonoBehaviour:
     - Name: Alignment
       Entry: 3
       Data: 0
-    - Name: RequireLineOfSight
-      Entry: 5
-      Data: false
     - Name: 
       Entry: 8
       Data: 
@@ -1909,9 +1903,6 @@ MonoBehaviour:
     - Name: Alignment
       Entry: 3
       Data: 1
-    - Name: RequireLineOfSight
-      Entry: 5
-      Data: false
     - Name: 
       Entry: 8
       Data: 
@@ -2012,7 +2003,7 @@ MonoBehaviour:
   EntityId: enemy.charger
   DisplayName: Charger
   Description: 
-  Portrait: {fileID: 133841030, guid: 7354be46d5bce5b44ae3fc20ec0cb47f, type: 3}
+  Portrait: {fileID: -1325774086, guid: afb0f04145bd30749bb686aea490fc8a, type: 3}
   Design:
     Archetype: 1
     Pattern: 3
@@ -2028,7 +2019,7 @@ MonoBehaviour:
   BaseHP: 90
   BaseAttack: 20
   BaseHealStrength: 5
-  BaseSpeed: 4
+  BaseSpeed: 8
   MaxEnergy: 3
   BaseAttackRange: 5
   ExtraTiers: []

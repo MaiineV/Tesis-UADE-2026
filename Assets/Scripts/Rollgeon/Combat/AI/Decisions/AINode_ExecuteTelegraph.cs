@@ -68,6 +68,12 @@ namespace Rollgeon.Combat.AI.Decisions
                 yield break;
             }
 
+            // Antes del windup: un VFX de impacto (ej. ArtilleryBombDrop) que dispara el propio
+            // gesto ya no puede volver a leer la marca — TryConsumePending la sacó del servicio
+            // recién. Le dejamos el centro congelado acá, con tiempo de sobra antes de que el
+            // windup lo instancie.
+            LastThreatenedAreaCenter.Set(context.SelfGuid, LastThreatenedAreaCenter.ComputeCenter(area.Tiles));
+
             FaceTarget(context);
 
             bool resolved = false;

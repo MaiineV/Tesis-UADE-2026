@@ -124,7 +124,7 @@ namespace Rollgeon.PreConditions.Tests
 
             var pc = new PcTargetInRange
             {
-                Range = 8, Alignment = TargetAlignment.SameRowOrColumn, RequireLineOfSight = true,
+                Range = 8, Alignment = TargetAlignment.SameRowOrColumn,
             };
             Assert.IsTrue(pc.Evaluate(Ctx(_ownerId, _opponentId)));
         }
@@ -139,7 +139,7 @@ namespace Rollgeon.PreConditions.Tests
 
             var pc = new PcTargetInRange
             {
-                Range = 8, Alignment = TargetAlignment.SameRowOrColumn, RequireLineOfSight = true,
+                Range = 8, Alignment = TargetAlignment.SameRowOrColumn,
             };
             Assert.IsFalse(pc.Evaluate(Ctx(_ownerId, _opponentId)));
         }
@@ -158,9 +158,34 @@ namespace Rollgeon.PreConditions.Tests
 
             var pc = new PcTargetInRange
             {
-                Range = 8, Alignment = TargetAlignment.SameRowOrColumn, RequireLineOfSight = true,
+                Range = 8, Alignment = TargetAlignment.SameRowOrColumn,
             };
             Assert.IsFalse(pc.Evaluate(Ctx(_ownerId, _opponentId)));
+        }
+
+        [Test]
+        public void Evaluate_AnyAngle_LineOfSightBlockedByOccupant_Fails()
+        {
+            // Arrange — diagonal pura sin exigir alineación: la LOS es de TODOS los gates,
+            // no solo de los alineados (el viejo RequireLineOfSight fallaba sin línea recta).
+            _grid.LoadRoom(NavGraph.Rect(8, 8));
+            _grid.Register(_ownerId, new GridCoord(0, 0));
+            _grid.Register(_opponentId, new GridCoord(4, 4));
+            _grid.Register(Guid.NewGuid(), new GridCoord(2, 2)); // bloqueo en el medio
+
+            // Act + Assert
+            Assert.IsFalse(new PcTargetInRange { Range = 8 }.Evaluate(Ctx(_ownerId, _opponentId)),
+                "Detrás de algo no hay tiro, tampoco a ángulo libre.");
+        }
+
+        [Test]
+        public void Evaluate_AnyAngle_ClearDiagonal_Passes()
+        {
+            _grid.LoadRoom(NavGraph.Rect(8, 8));
+            _grid.Register(_ownerId, new GridCoord(0, 0));
+            _grid.Register(_opponentId, new GridCoord(4, 4));
+
+            Assert.IsTrue(new PcTargetInRange { Range = 8 }.Evaluate(Ctx(_ownerId, _opponentId)));
         }
 
         [Test]
@@ -174,7 +199,7 @@ namespace Rollgeon.PreConditions.Tests
 
             var pc = new PcTargetInRange
             {
-                Range = 8, Alignment = TargetAlignment.SameRowOrColumn, RequireLineOfSight = true,
+                Range = 8, Alignment = TargetAlignment.SameRowOrColumn,
             };
             Assert.IsTrue(pc.Evaluate(Ctx(_ownerId, _opponentId)));
         }

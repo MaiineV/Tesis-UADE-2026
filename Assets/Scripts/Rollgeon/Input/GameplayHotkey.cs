@@ -21,5 +21,8 @@ namespace Rollgeon.Input
         Defense,
         ToggleMinimap,
         CancelMove,
+        // Al final SIEMPRE: el enum viaja serializado por int y meter un valor en el
+        // medio corre todos los hooks existentes (gotcha de EventName).
+        ToggleEnemyRanges,
     }
 }

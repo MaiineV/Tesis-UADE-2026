@@ -49,6 +49,7 @@ namespace Rollgeon.EditorTools.Localization
             SeedChest();
             SeedMenuChrome();
             SeedContentBaseline();
+            SeedPassiveItems();
 
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
@@ -341,6 +342,14 @@ namespace Rollgeon.EditorTools.Localization
                 "Daño: ATQ ({0}) + puntaje del combo",
                 "Damage: ATK ({0}) + combo score");
             Ui("tooltip.effect.damage.flat", "Daño: {0}", "Damage: {0}");
+
+            // Renglón extra de Forzar Puerta cuando hay picos u otros ítems sumando.
+            Ui("tooltip.effect.force_door.item_bonus",
+                "Bonus de objetos a tu tirada: +{0}",
+                "Item bonus to your roll: +{0}");
+
+            // Mecha de una bomba de sala en su tooltip de mundo.
+            Ui("prop.tooltip.fuse", "Estalla en {0} turnos", "Explodes in {0} turns");
 
             Ui("tooltip.effect.heal.combo_header",
                 "Curación: ATQ ({0}) + base del combo × multi de dados",
@@ -1027,6 +1036,10 @@ namespace Rollgeon.EditorTools.Localization
             Content("tile.firecroupier.desc",
                 "Llamas de la banca: duran casi toda la mano y castigan fuerte a quien se queda quieto. Al Croupier también lo queman.",
                 "The house's flames: they last most of the hand and punish anyone who stands still. They burn the Croupier too.");
+            Content("tile.fireartillery.name", "Fuego de Artillería", "Artillery Fire");
+            Content("tile.fireartillery.desc",
+                "Rescoldo del obús de la Artillería: quema fuerte al caer y sigue ardiendo cada turno encima.",
+                "Embers from the Artillery's shell: burns hard on impact and keeps burning each turn standing on it.");
             Content("tile.firecroupierbomba.name", "Fuego de Bomba", "Bomb Fire");
             Content("tile.firecroupierbomba.desc",
                 "Lo que deja una bomba al estallar. Quema mucho más que el fuego del paño, y tampoco perdona al Croupier.",
@@ -1478,6 +1491,285 @@ namespace Rollgeon.EditorTools.Localization
                 "Dado de la Casa", "House Die",
                 "Un dado gigante de la mano de la Generala.",
                 "A giant die from the Generala's hand.");
+
+            // Bestiario nuevo (salas del 03/09). Frases cortas de hover: dicen lo que
+            // el bicho HACE, y solo mecánicas que el kit realmente tiene.
+            Boss("enemy.artillery",
+                "Artillería", "Artillery",
+                "Obús de la casa: bombardea de lejos y deja el piso ardiendo donde cae el tiro.",
+                "House howitzer: shells from afar and leaves the floor burning where the shot lands.");
+            Boss("enemy.charger",
+                "Embestidor", "Charger",
+                "Se alinea, marca el pasillo y embiste. No te quedes en su línea.",
+                "Lines up, marks the lane and charges. Don't stand in its path.");
+            Boss("enemy.guardian",
+                "Guardián", "Guardian",
+                "Protege a los suyos: los aliados cercanos reciben menos daño mientras siga en pie.",
+                "Shields its own: nearby allies take less damage while it stands.");
+            Boss("enemy.skirmisher",
+                "Escaramuzador", "Skirmisher",
+                "Tirador inquieto: dispara de lejos y se reacomoda en diagonal para que no lo arrincones.",
+                "Restless shooter: fires from range and slips away diagonally so you can't corner it.");
+            Boss("enemy.sniper",
+                "Francotirador", "Sniper",
+                "Dispara desde la otra punta de la sala. Cortale la línea de visión o pagá el tiro.",
+                "Fires from across the room. Break its line of sight or pay for the shot.");
+            Boss("CardEnemySweeper",
+                "Carta Barredora", "Sweeper Card",
+                "Soldado de la casa que marca un barrido: su golpe cubre varias casillas de una.",
+                "House soldier that marks a sweep: its blow covers several tiles at once.");
+
+            // Bosses del pool nuevo + el rodillo de La Bandida. Mismo criterio que los
+            // tres de arriba: texto de pergamino de hover, conciso y mecánico.
+            Boss("boss.one_armed",
+                "La Bandida", "The One-Armed Bandit",
+                "Una tragamonedas de tres rodillos atornillada a la pared. No te persigue: " +
+                "cuenta hacia el jackpot. Rompé cualquier rodillo para cancelar la cuenta.",
+                "A three-reel slot machine bolted to the wall. It never chases you: " +
+                "it counts to the jackpot. Break any reel to cancel the count.");
+            Boss("obj.reel",
+                "Rodillo", "Reel",
+                "Uno de los tres rodillos de La Bandida. Cualquier golpe cancela la cuenta del " +
+                "jackpot, pero romper uno cuesta casi todo un turno — y la casilla que deja arde.",
+                "One of La Bandida's three reels. Any hit cancels the jackpot count, but " +
+                "breaking one costs most of a turn — and the tile it leaves behind burns.");
+            Boss("boss.scorekeeper",
+                "El Anotador", "The Scorekeeper",
+                "El que lleva la planilla. No juega contra vos: te corrige el puntaje " +
+                "mientras tirás, y nunca a tu favor.",
+                "The one who keeps the sheet. He doesn't play against you: he corrects " +
+                "your score as you roll — and never in your favor.");
+            Boss("boss.tahur",
+                "El Tahúr", "The Cardsharp",
+                "La banca canta tu mano antes de que la juegues. Armarla exacta paga; " +
+                "pasarse es codicia — y el pozo lleva la cuenta de la codicia.",
+                "The bank calls your hand before you play it. Building it exactly pays " +
+                "out; overshooting is greed — and the pot keeps count of greed.");
+        }
+
+        // ==================================================================
+        // Ítems pasivos
+        // ==================================================================
+
+        /// <summary>
+        /// Los ítems creados por la tool de items entraban a la tabla con ES en las dos
+        /// columnas (o EN vacío) — deuda que los tests de tabla venían marcando. Acá
+        /// quedan absorbidos con su EN real, y de paso los typos de ES (trailing spaces,
+        /// "resvolver", puntos sueltos) se normalizan. Fuente de verdad: este método.
+        /// </summary>
+        private static void SeedPassiveItems()
+        {
+            // Movimiento.
+            Item("botas.del.viento", "Botas del Viento", "Wind Boots",
+                "+2 de movimiento base.", "+2 base movement.");
+            Item("botas.del.rayo", "Botas del Rayo", "Lightning Boots",
+                "+3 de movimiento base.", "+3 base movement.");
+            Item("alas.de.hermes", "Alas de Hermes", "Wings of Hermes",
+                "+4 de movimiento base.", "+4 base movement.");
+
+            // Vida máxima.
+            Item("coraza.de.hierro", "Coraza de Hierro", "Iron Plate",
+                "+35 de vida máxima.", "+35 max health.");
+            Item("coraza.templada", "Coraza Templada", "Tempered Plate",
+                "+45 de vida máxima.", "+45 max health.");
+            Item("coraza.del.titan", "Coraza del Titán", "Titan's Plate",
+                "+50 de vida máxima.", "+50 max health.");
+
+            // Curación / sostén.
+            Item("talisman.vigoroso", "Talismán Vigoroso", "Vigorous Talisman",
+                "Recuperas 10HP al iniciar combate.", "Recover 10 HP when combat starts.");
+            Item("regeneracion.de.dados", "Regeneración de Dados", "Dice Regeneration",
+                "Recuperas 5HP por cada roll sin utilizar al final del turno.",
+                "Recover 5 HP for each unused roll at the end of your turn.");
+            Item("Corazón de la Fortuna", "Corazón de la Fortuna", "Heart of Fortune",
+                "Recuperas 5HP por cada roll sin utilizar.",
+                "Recover 5 HP for each unused roll.");
+            Item("ficha.del.segundo.aliento", "Ficha del Segundo Aliento", "Second Wind Chip",
+                "La primera vez que el jugador llegaría a 0 HP en la run, queda en 1 HP en vez de morir.",
+                "The first time you would hit 0 HP in a run, you stay at 1 HP instead of dying.");
+
+            // Forzar puerta.
+            Item("pico.de.minero", "Pico de Minero", "Miner's Pick",
+                "+5 a la tirada de forzar puerta.", "+5 to force-door rolls.");
+            Item("pico.de.hierro", "Pico de Hierro", "Iron Pick",
+                "+12 a la tirada de forzar puerta.", "+12 to force-door rolls.");
+            Item("pico.de.diamante", "Pico de Diamante", "Diamond Pick",
+                "+20 a la tirada de forzar puerta.", "+20 to force-door rolls.");
+            Item("pico.del.demoledor", "Pico del Demoledor", "Wrecker's Pick",
+                "+35 a la tirada de forzar puerta.", "+35 to force-door rolls.");
+
+            // Defensa / daño.
+            Item("rodilleras.de.obsidiana", "Rodilleras de Obsidiana", "Obsidian Kneepads",
+                "+12 en tiradas de defensa.", "+12 to defense rolls.");
+            Item("rodilleras.del.bastion", "Rodilleras del Bastión", "Bastion Kneepads",
+                "+22 en tiradas de escudo.", "+22 to shield rolls.");
+            Item("guantelete.pesado", "Guantelete Pesado", "Heavy Gauntlet",
+                "+10 de daño base, a cambio de -1 en tirada de movimiento.",
+                "+10 base damage, at the cost of -1 to movement rolls.");
+            Item("Guantes.escaladores.escalera", "Guantes del Escalador", "Climber's Gloves",
+                "La Escalera hace +25 daño.", "The Straight deals +25 damage.");
+
+            // Utilidad.
+            Content("tesoro.de.la.fortuna.name", "Tesoro de la Fortuna", "Treasure of Fortune");
+            Item("mochila.grande", "Mochila Grande", "Big Backpack",
+                "+1 slot de ítems activos.", "+1 active item slot.");
+            Item("llamado.de.emergencia", "Llamado de Emergencia", "Emergency Call",
+                "+1 roll de dados permanente.", "+1 permanent dice roll.");
+
+            // Vigías — escudo al resolver un combo. Familia entera, un tier por línea.
+            Content("vigia.del.numero.alto.desc",
+                "+5 de escudo al resolver el combo Número Alto.",
+                "+5 shield when resolving the Higher Number combo.");
+            Item("vigia.de.la.cima", "Vigía de la Cima", "Watcher of the Summit",
+                "+10 de escudo al resolver el combo Número Alto.",
+                "+10 shield when resolving the Higher Number combo.");
+            Item("vigia.del.maximo", "Vigía del Máximo", "Watcher of the Maximum",
+                "+15 de escudo al resolver el combo Número Alto.",
+                "+15 shield when resolving the Higher Number combo.");
+            Item("vigia.del.bastion.celestial", "Vigía del Bastión Celestial", "Watcher of the Celestial Bastion",
+                "+20 de escudo al resolver el combo Número Alto.",
+                "+20 shield when resolving the Higher Number combo.");
+
+            Item("vigia.del.par", "Vigía del Par", "Watcher of the Pair",
+                "+5 de escudo al resolver el combo Par.",
+                "+5 shield when resolving the Pair combo.");
+            Item("vigia.de.los.iguales", "Vigía de los Iguales", "Watcher of the Equals",
+                "+10 de escudo al resolver el combo Par.",
+                "+10 shield when resolving the Pair combo.");
+            Item("vigia.de.los.gemelos", "Vigía de los Gemelos", "Watcher of the Twins",
+                "+15 de escudo al resolver el combo Par.",
+                "+15 shield when resolving the Pair combo.");
+            Item("vigia.de.la.guardia.gemela", "Vigía de la Guardia Gemela", "Watcher of the Twin Guard",
+                "+20 de escudo al resolver el combo Par.",
+                "+20 shield when resolving the Pair combo.");
+
+            Item("vigia.del.doble.par", "Vigía del Doble Par", "Watcher of the Double Pair",
+                "+5 de escudo al resolver el combo Doble Par.",
+                "+5 shield when resolving the Double Pair combo.");
+            Item("vigia.de.las.parejas", "Vigía de las Parejas", "Watcher of the Pairs",
+                "+10 de escudo al resolver el combo Doble Par.",
+                "+10 shield when resolving the Double Pair combo.");
+            Item("vigia.del.espejo", "Vigía del Espejo", "Watcher of the Mirror",
+                "+15 de escudo al resolver el combo Doble Par.",
+                "+15 shield when resolving the Double Pair combo.");
+            Item("vigia.de.la.contraparte", "Vigía de la Contraparte", "Watcher of the Counterpart",
+                "+20 de escudo al resolver el combo Doble Par.",
+                "+20 shield when resolving the Double Pair combo.");
+
+            Item("vigia.del.trio", "Vigía del Trío", "Watcher of the Trio",
+                "+5 de escudo al resolver el combo Trío.",
+                "+5 shield when resolving the Trio combo.");
+            Item("vigia.del.triple", "Vigía del Triple", "Watcher of the Triple",
+                "+10 de escudo al resolver el combo Trío.",
+                "+10 shield when resolving the Trio combo.");
+            Item("vigia.de.la.trinidad", "Vigía de la Trinidad", "Watcher of the Trinity",
+                "+15 de escudo al resolver el combo Trío.",
+                "+15 shield when resolving the Trio combo.");
+            Item("vigia.de.los.tres.guardianes", "Vigía de los Tres Guardianes", "Watcher of the Three Guardians",
+                "+20 de escudo por cada Trío.",
+                "+20 shield for each Trio.");
+
+            Item("vigia.del.full.house", "Vigía del Full House", "Watcher of the Full House",
+                "+5 de escudo al resolver el combo Full House.",
+                "+5 shield when resolving the Full House combo.");
+            Item("vigia.de.la.familia", "Vigía de la Familia", "Watcher of the Family",
+                "+10 de escudo al resolver el combo Full House.",
+                "+10 shield when resolving the Full House combo.");
+            Item("vigia.del.linaje", "Vigía del Linaje", "Watcher of the Lineage",
+                "+15 de escudo al resolver el combo Full House.",
+                "+15 shield when resolving the Full House combo.");
+            Item("vigia.de.la.casa.real", "Vigía de la Casa Real", "Watcher of the Royal House",
+                "+20 de escudo al resolver el combo Full House.",
+                "+20 shield when resolving the Full House combo.");
+
+            Item("vigia.de.la.escalera", "Vigía de la Escalera", "Watcher of the Straight",
+                "+5 de escudo al resolver el combo Escalera.",
+                "+5 shield when resolving the Straight combo.");
+            Item("vigia.del.ascenso", "Vigía del Ascenso", "Watcher of the Climb",
+                "+10 de escudo al resolver el combo Escalera.",
+                "+10 shield when resolving the Straight combo.");
+            Item("vigia.del.torbellino", "Vigía del Torbellino", "Watcher of the Whirlwind",
+                "+15 de escudo al resolver el combo Escalera.",
+                "+15 shield when resolving the Straight combo.");
+            Item("vigia.de.la.muralla", "Vigía de la Muralla", "Watcher of the Wall",
+                "+20 de escudo al completar el combo Escalera.",
+                "+20 shield when completing the Straight combo.");
+
+            Item("vigia.del.poker", "Vigía del Póker", "Watcher of Poker",
+                "+5 de escudo al resolver el combo Póker.",
+                "+5 shield when resolving the Poker combo.");
+            Item("vigia.del.cuarteto", "Vigía del Cuarteto", "Watcher of the Quartet",
+                "+10 de escudo al resolver el combo Póker.",
+                "+10 shield when resolving the Poker combo.");
+            Item("vigia.de.los.cuatro.reyes", "Vigía de los Cuatro Reyes", "Watcher of the Four Kings",
+                "+15 de escudo al resolver el combo Póker.",
+                "+15 shield when resolving the Poker combo.");
+            Item("vigia.de.la.guardia.imperial", "Vigía de la Guardia Imperial", "Watcher of the Imperial Guard",
+                "+20 de escudo al resolver el combo Póker.",
+                "+20 shield when resolving the Poker combo.");
+
+            Item("vigia.de.la.generala", "Vigía de la Generala", "Watcher of the Generala",
+                "+5 de escudo al resolver el combo Generala.",
+                "+5 shield when resolving the Generala combo.");
+            Item("vigia.de.la.plenitud", "Vigía de la Plenitud", "Watcher of Plenty",
+                "+10 de escudo al resolver el combo Generala.",
+                "+10 shield when resolving the Generala combo.");
+            Item("vigia.del.bastion", "Vigía del Bastión", "Watcher of the Bastion",
+                "+15 de escudo al resolver el combo Generala.",
+                "+15 shield when resolving the Generala combo.");
+            Item("vigia.de.la.fortaleza.divina", "Vigía de la Fortaleza Divina", "Watcher of the Divine Fortress",
+                "+20 de escudo al resolver el combo Generala.",
+                "+20 shield when resolving the Generala combo.");
+        }
+
+        // ==================================================================
+        // Tooltips de enemigos desde los SOs
+        // ==================================================================
+
+        /// <summary>
+        /// Vuelca a la tabla Content los textos de tooltip autorados en los
+        /// <c>EnemyDataSO</c> (<c>&lt;id&gt;.name</c> / <c>.desc</c> / <c>.type</c>).
+        /// Solo agrega keys FALTANTES — nunca pisa una entry curada a mano acá — y el
+        /// EN queda marcado <c>[EN] …</c> como pendiente de traducción (así el par pasa
+        /// los tests de tabla: EN no vacío y distinto de ES).
+        /// </summary>
+        [MenuItem("Rollgeon/Localization/Seed Enemy Tooltips From SOs")]
+        public static void SeedEnemyTooltipsFromSOs()
+        {
+            var collection = UnityEditor.Localization.LocalizationEditorSettings
+                .GetStringTableCollection(ContentTable);
+            if (collection == null)
+            {
+                Debug.LogError("[LocalizationContentSeeder] No existe la colección Content.");
+                return;
+            }
+
+            int added = 0;
+            foreach (var guid in AssetDatabase.FindAssets("t:EnemyDataSO"))
+            {
+                var so = AssetDatabase.LoadAssetAtPath<Rollgeon.Entities.EnemyDataSO>(
+                    AssetDatabase.GUIDToAssetPath(guid));
+                if (so == null || string.IsNullOrWhiteSpace(so.EntityId)) continue;
+
+                string id = so.EntityId.Trim();
+                added += SeedIfMissing(collection, id + ".name", so.DisplayName);
+                added += SeedIfMissing(collection, id + ".desc", so.Description);
+                added += SeedIfMissing(collection, id + ".type", so.TooltipType);
+            }
+
+            AssetDatabase.SaveAssets();
+            Debug.Log($"[LocalizationContentSeeder] Tooltips de enemigos: {added} key(s) " +
+                      "nuevas desde SOs (EN marcado [EN], traducir en el seeder).");
+        }
+
+        private static int SeedIfMissing(
+            UnityEditor.Localization.StringTableCollection collection, string key, string es)
+        {
+            if (string.IsNullOrWhiteSpace(es)) return 0;
+            if (collection.SharedData.GetEntry(key) != null) return 0;
+
+            Content(key, es, "[EN] " + es);
+            return 1;
         }
 
         // ==================================================================

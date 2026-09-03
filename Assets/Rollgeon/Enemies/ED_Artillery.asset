@@ -15,8 +15,7 @@ MonoBehaviour:
   serializationData:
     SerializedFormat: 2
     SerializedBytes: 
-    ReferencedUnityObjects:
-    - {fileID: 11400000, guid: 3c55e676e1a160f4a840c0a83c847a24, type: 2}
+    ReferencedUnityObjects: []
     SerializedBytesString: 
     Prefab: {fileID: 0}
     PrefabModificationsReferencedUnityObjects: []
@@ -84,37 +83,16 @@ MonoBehaviour:
       Data: 2
     - Name: 
       Entry: 7
-      Data: 7|Rollgeon.Combat.AI.Decisions.AINode_IgniteArea, Rollgeon
+      Data: 7|Rollgeon.Combat.AI.Decisions.AINode_ExecuteTelegraph, Rollgeon
     - Name: EditorNodeId
       Entry: 6
       Data: 
-    - Name: Definition
-      Entry: 10
-      Data: 0
-    - Name: DurationRounds
-      Entry: 3
-      Data: 0
-    - Name: ChannelId
-      Entry: 6
-      Data: 
-    - Name: AnnounceTurns
-      Entry: 3
-      Data: 0
-    - Name: RetireFullyReplaced
-      Entry: 5
-      Data: false
-    - Name: FailWhenNothingToBurn
-      Entry: 5
-      Data: false
-    - Name: IntentLabelKey
-      Entry: 1
-      Data: intent.artillery.ignite
-    - Name: IntentLabelFallback
-      Entry: 1
-      Data: Bombardeo
     - Name: WindupFeedbackId
       Entry: 1
       Data: vfx.enemy.artillery.bomb
+    - Name: ImpactEventKey
+      Entry: 1
+      Data: hit
     - Name: 
       Entry: 8
       Data: 
@@ -178,7 +156,7 @@ MonoBehaviour:
       Data: 14
     - Name: Size
       Entry: 3
-      Data: 1
+      Data: 2
     - Name: Depth
       Entry: 3
       Data: 2
@@ -203,9 +181,12 @@ MonoBehaviour:
     - Name: ChannelId
       Entry: 6
       Data: 
+    - Name: IgnoreLineOfSight
+      Entry: 5
+      Data: true
     - Name: WindupFeedbackId
       Entry: 1
-      Data: anim.enemy.ranged.attack
+      Data: anim.enemy.artillery.charge
     - Name: 
       Entry: 8
       Data: 
@@ -264,16 +245,16 @@ MonoBehaviour:
   EntityId: enemy.artillery
   DisplayName: Artillery
   Description: 
-  Portrait: {fileID: 133841030, guid: 7354be46d5bce5b44ae3fc20ec0cb47f, type: 3}
+  Portrait: {fileID: 786344447, guid: afb0f04145bd30749bb686aea490fc8a, type: 3}
   Design:
     Archetype: 2
     Pattern: 7
     Timing: 2
-    Notes: "Artillery: bombardea el \xE1rea diamante (cruz, radio 1) centrada en
-      el jugador. Sin LoS ni alineaci\xF3n (dispara en arco). Turno N: marca el \xE1rea.
-      Turno N+1: detona (da\xF1o directo) y planta fuego (Tile_Fire_Artillery) \u2014
-      mismo patr\xF3n que la bomba del Croupier. Movimiento m\xEDnimo: kitea 1 casilla
-      si te acerc\xE1s de m\xE1s."
+    Notes: "Artillery: bombardea el \xE1rea diamante (cruz, radio 2 Manhattan) centrada
+      en el jugador. Sin LoS ni alineaci\xF3n (dispara en arco). Turno N: marca el
+      \xE1rea y carga el disparo (anim Charge). Turno N+1: detona con da\xF1o directo
+      \u2014 sin dejar fuego. Movimiento m\xEDnimo: kitea 1 casilla si te acerc\xE1s
+      de m\xE1s."
   WeaknessComboId: 
   WeaknessMultiplierOverride: 0
   Curse: {fileID: 0}

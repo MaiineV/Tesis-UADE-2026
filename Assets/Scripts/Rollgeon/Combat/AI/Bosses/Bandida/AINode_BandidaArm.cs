@@ -104,7 +104,11 @@ namespace Rollgeon.Combat.AI.Bosses.Bandida
             int distance = Metric == DistanceMetric.Manhattan
                 ? selfCoord.Manhattan(playerCoord)
                 : selfCoord.Chebyshev(playerCoord);
-            return distance <= Mathf.Max(1, Range);
+            if (distance > Mathf.Max(1, Range)) return false;
+
+            // LOS de proyecto: detrás de algo no hay brazo.
+            return GridLineOfSight.HasClearLine(context.Grid, selfCoord, playerCoord,
+                                                context.SelfGuid, context.PlayerGuid);
         }
 
         private void Strike(AIContext context)

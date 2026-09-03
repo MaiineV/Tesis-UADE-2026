@@ -8768,7 +8768,7 @@ MonoBehaviour:
   m_spriteAsset: {fileID: 0}
   m_tintAllSprites: 0
   m_StyleSheet: {fileID: 0}
-  m_TextStyleHashCode: 0
+  m_TextStyleHashCode: -1183493901
   m_overrideHtmlColors: 0
   m_faceColor:
     serializedVersion: 2
@@ -9226,7 +9226,7 @@ MonoBehaviour:
   m_spriteAsset: {fileID: 0}
   m_tintAllSprites: 0
   m_StyleSheet: {fileID: 0}
-  m_TextStyleHashCode: 0
+  m_TextStyleHashCode: -1183493901
   m_overrideHtmlColors: 0
   m_faceColor:
     serializedVersion: 2
@@ -9363,7 +9363,7 @@ MonoBehaviour:
   m_spriteAsset: {fileID: 0}
   m_tintAllSprites: 0
   m_StyleSheet: {fileID: 0}
-  m_TextStyleHashCode: 0
+  m_TextStyleHashCode: -1183493901
   m_overrideHtmlColors: 0
   m_faceColor:
     serializedVersion: 2
@@ -9487,7 +9487,7 @@ MonoBehaviour:
   m_fontMaterials: []
   m_fontColor32:
     serializedVersion: 2
-    rgba: 4294967295
+    rgba: 4293059559
   m_fontColor: {r: 0.90588236, g: 0.8901961, b: 0.8862745, a: 1}
   m_enableVertexGradient: 0
   m_colorMode: 3
@@ -9625,7 +9625,7 @@ MonoBehaviour:
   m_fontMaterials: []
   m_fontColor32:
     serializedVersion: 2
-    rgba: 4286215007
+    rgba: 4291872450
   m_fontColor: {r: 0.761, g: 0.776, b: 0.816, a: 1}
   m_enableVertexGradient: 0
   m_colorMode: 3
@@ -14751,7 +14751,7 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   m_Sprite: {fileID: 1316527702, guid: dac8bb8f9f8670c4b865c496b361929c, type: 3}
-  m_Type: 0
+  m_Type: 1
   m_PreserveAspect: 0
   m_FillCenter: 1
   m_FillMethod: 4
@@ -14759,7 +14759,7 @@ MonoBehaviour:
   m_FillClockwise: 1
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
-  m_PixelsPerUnitMultiplier: 1
+  m_PixelsPerUnitMultiplier: 0.2
 --- !u!225 &577667429610198208
 CanvasGroup:
   m_ObjectHideFlags: 0
@@ -14958,7 +14958,7 @@ MonoBehaviour:
   m_spriteAsset: {fileID: 0}
   m_tintAllSprites: 0
   m_StyleSheet: {fileID: 0}
-  m_TextStyleHashCode: 0
+  m_TextStyleHashCode: -1183493901
   m_overrideHtmlColors: 0
   m_faceColor:
     serializedVersion: 2
@@ -15083,7 +15083,7 @@ MonoBehaviour:
   m_fontMaterials: []
   m_fontColor32:
     serializedVersion: 2
-    rgba: 4286215007
+    rgba: 4291872450
   m_fontColor: {r: 0.761, g: 0.776, b: 0.816, a: 1}
   m_enableVertexGradient: 0
   m_colorMode: 3
@@ -15386,7 +15386,7 @@ MonoBehaviour:
   m_fontMaterials: []
   m_fontColor32:
     serializedVersion: 2
-    rgba: 4294967295
+    rgba: 4293059559
   m_fontColor: {r: 0.90588236, g: 0.8901961, b: 0.8862745, a: 1}
   m_enableVertexGradient: 0
   m_colorMode: 3
@@ -21333,7 +21333,7 @@ MonoBehaviour:
   m_spriteAsset: {fileID: 0}
   m_tintAllSprites: 0
   m_StyleSheet: {fileID: 0}
-  m_TextStyleHashCode: 0
+  m_TextStyleHashCode: -1183493901
   m_overrideHtmlColors: 0
   m_faceColor:
     serializedVersion: 2
@@ -22185,7 +22185,7 @@ MonoBehaviour:
   m_spriteAsset: {fileID: 0}
   m_tintAllSprites: 0
   m_StyleSheet: {fileID: 0}
-  m_TextStyleHashCode: 0
+  m_TextStyleHashCode: -1183493901
   m_overrideHtmlColors: 0
   m_faceColor:
     serializedVersion: 2
@@ -27576,6 +27576,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 1869361253374754864, guid: 9423ff0929dc9434887177805221eaa0, type: 3}
+      propertyPath: m_SortingLayer
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 2057196803147995203, guid: 9423ff0929dc9434887177805221eaa0, type: 3}
       propertyPath: m_Name
       value: DiceSlotView (2)
@@ -27688,6 +27692,10 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1119867649953799426, guid: 9423ff0929dc9434887177805221eaa0, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1869361253374754864, guid: 9423ff0929dc9434887177805221eaa0, type: 3}
+      propertyPath: m_SortingLayer
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 2057196803147995203, guid: 9423ff0929dc9434887177805221eaa0, type: 3}
@@ -27804,6 +27812,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 1869361253374754864, guid: 9423ff0929dc9434887177805221eaa0, type: 3}
+      propertyPath: m_SortingLayer
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 2057196803147995203, guid: 9423ff0929dc9434887177805221eaa0, type: 3}
       propertyPath: m_Name
       value: DiceSlotView
@@ -27918,6 +27930,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 1869361253374754864, guid: 9423ff0929dc9434887177805221eaa0, type: 3}
+      propertyPath: m_SortingLayer
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 2057196803147995203, guid: 9423ff0929dc9434887177805221eaa0, type: 3}
       propertyPath: m_Name
       value: DiceSlotView (4)
@@ -28030,6 +28046,10 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1119867649953799426, guid: 9423ff0929dc9434887177805221eaa0, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1869361253374754864, guid: 9423ff0929dc9434887177805221eaa0, type: 3}
+      propertyPath: m_SortingLayer
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 2057196803147995203, guid: 9423ff0929dc9434887177805221eaa0, type: 3}

@@ -106,6 +106,30 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         }
 
         [Test]
+        public void EveryHealthBarPrefab_PutsTheCanvasOnTheWorldUiLayer()
+        {
+            // La Main Camera renderiza el mundo pixelado y excluye WorldUI; WorldUiCameraSync
+            // dibuja ese layer aparte a resolución nativa. Un canvas en Default entra a la pasada
+            // pixelada y la pila de 37×53 queda aplastada en un puré ilegible — el bug de las
+            // bombas del Croupier (y el dado de La Generala y la Comisión, construidos por el
+            // mismo builder sin layer).
+            int worldUiLayer = LayerMask.NameToLayer(BossVisualWrapperBuilder.HealthBarLayerName);
+            Assert.GreaterOrEqual(worldUiLayer, 0,
+                $"El layer '{BossVisualWrapperBuilder.HealthBarLayerName}' no existe en TagManager.");
+
+            foreach (var path in FindHealthBarPrefabPaths())
+            {
+                var bar = LoadBar(path);
+                var canvas = bar.GetComponentInChildren<Canvas>(includeInactive: true);
+
+                Assert.IsNotNull(canvas, $"'{path}': la barra no tiene Canvas.");
+                Assert.AreEqual(worldUiLayer, canvas.gameObject.layer,
+                    $"'{path}': el Canvas de la barra tiene que estar en el layer " +
+                    $"'{BossVisualWrapperBuilder.HealthBarLayerName}' o se renderiza pixelado.");
+            }
+        }
+
+        [Test]
         public void EveryHealthBarPrefab_ShowsOnlyCurrentHp()
         {
             // El centrado del texto lo cubre BuildWrapper (mismo helper); acá alcanza con el

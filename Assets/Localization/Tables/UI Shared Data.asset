@@ -1043,12 +1043,12 @@ MonoBehaviour:
     m_Key: dicebag.cat.movimiento
     m_Metadata:
       m_Items: []
-  - m_Id: 18295244879740928
-    m_Key: item.broke_down.title
+  - m_Id: 18278208505741312
+    m_Key: tooltip.effect.force_door.item_bonus
     m_Metadata:
       m_Items: []
-  - m_Id: 18295244951044096
-    m_Key: item.broke_down.body
+  - m_Id: 18278208577044480
+    m_Key: prop.tooltip.fuse
     m_Metadata:
       m_Items: []
   m_Metadata:

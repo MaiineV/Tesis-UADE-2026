@@ -160,18 +160,45 @@ namespace Rollgeon.Combat.AI.Tests
         }
 
         [Test]
-        public void ConLineaDeVisionExigida_PintaIgualConUnBloqueoEnElMedio()
+        public void UnBloqueoEnElMedio_DejaDeSombraLasCeldasDeAtras()
         {
+            // Antes esto pintaba igual (sobre-aproximación deliberada). Hoy los ataques
+            // respetan LOS, así que pintar la celda tapada sería mentir al revés: mostrar
+            // como amenazada una celda desde la que el enemigo NO puede pegar.
             Register(new GridCoord(5, 4), hp: 10);
-            var root = Gate(8, MeleeAttack(), alignment: TargetAlignment.SameRowOrColumn,
-                            lineOfSight: true);
+            var root = Gate(8, MeleeAttack(), alignment: TargetAlignment.SameRowOrColumn);
 
             EnemyAttackReach.Collect(root, Context(), _reach);
 
-            Assert.IsTrue(_reach.Contains(new GridCoord(7, 4)),
-                "La celda detrás del blocker se dejó de pintar. La línea de visión se ignora a " +
-                "propósito: el blocker puede morir o correrse dentro del turno del jugador, y un " +
-                "alcance que pinta de menos es una promesa de seguridad falsa.");
+            Assert.IsFalse(_reach.Contains(new GridCoord(7, 4)),
+                "La celda detrás del blocker se pintó. Los gates de ataque exigen línea de " +
+                "visión: el alcance tiene que mostrar la misma sombra que aplica el ataque.");
+            Assert.IsFalse(_reach.Contains(new GridCoord(6, 4)),
+                "La celda inmediatamente detrás del blocker también está en sombra.");
+            Assert.IsTrue(_reach.Contains(new GridCoord(3, 4)),
+                "Del lado sin obstáculo la fila sigue pintada.");
+        }
+
+        [Test]
+        public void DiamanteManhattan_ConColumnaDeBloqueos_PintaElAreaConSombra()
+        {
+            // El diagrama de "los ejemplos": rango Manhattan 4 desde E=(4,4) con una columna
+            // de obstáculos X en (6,3),(6,4),(6,5) — el este detrás de las X queda en sombra,
+            // el resto del diamante intacto.
+            Register(new GridCoord(6, 3), hp: 10);
+            Register(new GridCoord(6, 4), hp: 10);
+            Register(new GridCoord(6, 5), hp: 10);
+            _grid.Unregister(_player); // fuera del diamante: el jugador no participa del dibujo
+            var root = Gate(4, MeleeAttack());
+
+            EnemyAttackReach.Collect(root, Context(), _reach);
+
+            foreach (var shadowed in Cells((7, 4), (8, 4), (7, 3), (7, 5)))
+                Assert.IsFalse(_reach.Contains(shadowed),
+                    $"{shadowed} está detrás de la columna de bloqueos y no debería pintarse.");
+            foreach (var visible in Cells((5, 4), (3, 4), (5, 3), (0, 4), (4, 8)))
+                Assert.IsTrue(_reach.Contains(visible),
+                    $"{visible} tiene línea limpia y tiene que seguir pintada.");
         }
 
         [Test]
@@ -330,7 +357,7 @@ namespace Rollgeon.Combat.AI.Tests
         private static AINode_If Gate(int range, AIDecisionNode then,
                                       DistanceMetric metric = DistanceMetric.Manhattan,
                                       TargetAlignment alignment = TargetAlignment.Any,
-                                      bool useOwnerRange = false, bool lineOfSight = false)
+                                      bool useOwnerRange = false)
             => new AINode_If
             {
                 Conditions = new List<BasePreCondition>
@@ -341,7 +368,6 @@ namespace Rollgeon.Combat.AI.Tests
                         Metric = metric,
                         Alignment = alignment,
                         UseOwnerAttackRange = useOwnerRange,
-                        RequireLineOfSight = lineOfSight,
                     },
                 },
                 Then = then,

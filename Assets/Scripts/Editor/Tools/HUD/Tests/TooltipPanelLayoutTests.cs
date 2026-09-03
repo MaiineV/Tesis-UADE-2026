@@ -172,6 +172,14 @@ namespace Rollgeon.Editor.Tools.HUD.Tests
                 "Quedó el VerticalLayoutGroup viejo conviviendo con la fila: dos layout groups " +
                 "en el mismo GO pelean por los hijos.");
 
+            // left 20 / right 6: sin el inset, la fila pisa el marco 9-slice del panel al
+            // fijar el tooltip.
+            var bottomRect = (RectTransform)bottom;
+            Assert.AreEqual(20f, bottomRect.offsetMin.x, 0.01f,
+                "BottomCards perdió el left de 20 del rect.");
+            Assert.AreEqual(-6f, bottomRect.offsetMax.x, 0.01f,
+                "BottomCards perdió el right de 6 del rect.");
+
             var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(TooltipPrefabPath);
             var controller = prefab.GetComponentInChildren<TooltipController>(includeInactive: true);
             var slot = new SerializedObject(controller)

@@ -1089,12 +1089,12 @@ MonoBehaviour:
     m_Localized: Movimiento
     m_Metadata:
       m_Items: []
-  - m_Id: 18295244879740928
-    m_Localized: "\xA1Se rompi\xF3!"
+  - m_Id: 18278208505741312
+    m_Localized: 'Bonus de objetos a tu tirada: +{0}'
     m_Metadata:
       m_Items: []
-  - m_Id: 18295244951044096
-    m_Localized: "{0} agot\xF3 su poder y desapareci\xF3."
+  - m_Id: 18278208577044480
+    m_Localized: Estalla en {0} turnos
     m_Metadata:
       m_Items: []
   references:

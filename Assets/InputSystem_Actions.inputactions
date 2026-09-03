@@ -1221,6 +1221,15 @@
                     "processors": "",
                     "interactions": "",
                     "initialStateCheck": false
+                },
+                {
+                    "name": "ToggleEnemyRanges",
+                    "type": "Button",
+                    "id": "b0a1e900-0000-4000-8000-00000000000c",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
                 }
             ],
             "bindings": [
@@ -1342,6 +1351,17 @@
                     "processors": "",
                     "groups": "Keyboard&Mouse",
                     "action": "CancelMove",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "b0a1e900-0000-4000-8000-00000000010c",
+                    "path": "<Keyboard>/leftAlt",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "Keyboard&Mouse",
+                    "action": "ToggleEnemyRanges",
                     "isComposite": false,
                     "isPartOfComposite": false
                 }

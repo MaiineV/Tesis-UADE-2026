@@ -107,6 +107,13 @@ namespace Rollgeon.Combat.AI.Bosses.Tahur
                 : selfCoord.Chebyshev(playerCoord);
             if (distance > Mathf.Max(1, Range)) return false;
 
+            // LOS de proyecto: detrás de algo no hay bastonazo.
+            if (!GridLineOfSight.HasClearLine(context.Grid, selfCoord, playerCoord,
+                                              context.SelfGuid, context.PlayerGuid))
+            {
+                return false;
+            }
+
             return context.DamagePipeline != null && Damage > 0;
         }
 

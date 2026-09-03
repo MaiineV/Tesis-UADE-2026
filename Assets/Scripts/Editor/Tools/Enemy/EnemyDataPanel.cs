@@ -198,6 +198,7 @@ namespace Rollgeon.Editor.Tools.Enemy
             Prop("EntityId", "Id de entidad");
             Prop("DisplayName", "Nombre visible");
             Prop("Description", "Descripción");
+            Prop("TooltipType", "Tipo (tooltip)");
 
             // ObjectField a mano por la misma razón que Visual Prefab (ver DrawVisual): Odin
             // pierde el drag-drop de UnityEngine.Object dentro de un IMGUIContainer.

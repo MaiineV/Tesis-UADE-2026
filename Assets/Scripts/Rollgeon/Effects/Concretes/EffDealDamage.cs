@@ -115,6 +115,8 @@ namespace Rollgeon.Effects.Concretes
                         sb.Append(string.Format(
                             LocalizedContent.Ui("tooltip.effect.combo.multiplier_suffix", " × {0}"),
                             _comboMultiplier.ToString("0.##")));
+                    // La fórmula no tiene un monto único: el indicador cierra la expresión.
+                    sb.Append(' ').Append(Rollgeon.UI.Utility.IconSpriteTags.DamageTag());
                     sb.AppendLine();
                     sb.Append(LocalizedContent.Ui("tooltip.effect.combo.no_combo_fallback",
                         "Sin combo: ATQ + dado más alto elegido"));
@@ -123,12 +125,14 @@ namespace Rollgeon.Effects.Concretes
                 case DamageSource.FromReader when _reader != null:
                     return string.Format(
                         LocalizedContent.Ui("tooltip.effect.damage.flat", "Daño: {0}"),
-                        Mathf.RoundToInt(_reader.Read(context.ToReaderContext()) * _readerMultiplier));
+                        Rollgeon.UI.Utility.IconSpriteTags.DamageAmount(
+                            Mathf.RoundToInt(_reader.Read(context.ToReaderContext()) * _readerMultiplier)));
                 case DamageSource.FromReader:
                     return null;
                 default:
                     return string.Format(
-                        LocalizedContent.Ui("tooltip.effect.damage.flat", "Daño: {0}"), _baseAmount);
+                        LocalizedContent.Ui("tooltip.effect.damage.flat", "Daño: {0}"),
+                        Rollgeon.UI.Utility.IconSpriteTags.DamageAmount(_baseAmount));
             }
         }
 
