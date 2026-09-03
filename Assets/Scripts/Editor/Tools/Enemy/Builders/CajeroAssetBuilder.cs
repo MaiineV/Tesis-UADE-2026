@@ -389,41 +389,6 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         /// <summary>Nombre del hijo con la barra de vida world-space que arma el wrapper.</summary>
         private const string HealthBarChildName = "Canvas";
 
-        // Los cinco slots del rig alado, nombrados por FUNCIÓN y no por material fuente porque el
-        // retinte cruza colores: los tres amarillos son los discos que lleva encima, Mat_Black es la
-        // masa del cuerpo y Mat_Bone son las alas.
-        public const string CritterChipFaceMaterial = "Mat_Yellow";
-        public const string CritterChipEdgeMaterial = "Mat_DarkYellow";
-        public const string CritterChipShineMaterial = "Mat_LightYellow";
-        public const string CritterBodyMaterial = "Mat_Black";
-        public const string CritterAccentMaterial = "Mat_Bone";
-
-        // Plata y no oro: los discos en plata leen "cambio chico" contra el oro fuerte del jefe.
-        private static readonly MaterialRetint CritterChipShineRetint = MaterialRetint.FromColors(
-            new Color(0.97f, 0.98f, 1.00f),
-            new Color(0.82f, 0.85f, 0.90f),
-            new Color(0.55f, 0.58f, 0.64f));
-
-        private static readonly MaterialRetint CritterChipFaceRetint = MaterialRetint.FromColors(
-            new Color(0.88f, 0.90f, 0.94f),
-            new Color(0.70f, 0.73f, 0.79f),
-            new Color(0.40f, 0.43f, 0.49f));
-
-        private static readonly MaterialRetint CritterChipEdgeRetint = MaterialRetint.FromColors(
-            new Color(0.68f, 0.71f, 0.77f),
-            new Color(0.48f, 0.51f, 0.57f),
-            new Color(0.24f, 0.26f, 0.31f));
-
-        private static readonly MaterialRetint CritterBodyRetint = MaterialRetint.FromColors(
-            new Color(0.13f, 0.32f, 0.22f),
-            new Color(0.07f, 0.20f, 0.14f),
-            new Color(0.03f, 0.09f, 0.07f));
-
-        private static readonly MaterialRetint CritterAccentRetint = MaterialRetint.FromColors(
-            new Color(0.88f, 0.89f, 0.92f),
-            new Color(0.63f, 0.65f, 0.70f),
-            new Color(0.31f, 0.33f, 0.38f));
-
         // ---- Vestuario ---------------------------------------------------
 
         // Materiales del arte (Assets/Art/3D/Materials). Los cinco que usa el mech, nombrados por
@@ -1068,14 +1033,10 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
                 // sólo el valor con el que nace el wrapper.
                 HealthBarOffset = new Vector3(0f, CritterHoverHeight + CritterBarClearance, 0f),
 
-                Retints = new Dictionary<string, MaterialRetint>
-                {
-                    { CritterChipShineMaterial, CritterChipShineRetint },
-                    { CritterChipFaceMaterial, CritterChipFaceRetint },
-                    { CritterChipEdgeMaterial, CritterChipEdgeRetint },
-                    { CritterBodyMaterial, CritterBodyRetint },
-                    { CritterAccentMaterial, CritterAccentRetint },
-                },
+                // Sin retintes: usa los materiales del rig tal como vienen. No lleva paleta propia
+                // — es personal de la casa, no una especie aparte, y una paleta inventada la vuelve
+                // un enemigo nuevo que hay que aprender a leer a mitad de la pelea. Sin entradas acá
+                // el wrapper no clona ni swapea nada, así que MaterialsFolder queda inerte.
             };
         }
 
