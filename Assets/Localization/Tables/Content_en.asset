@@ -2292,6 +2292,262 @@ MonoBehaviour:
     m_Localized: +35 a la tirada de forzar puerta.
     m_Metadata:
       m_Items: []
+  - m_Id: 18022894868459520
+    m_Localized: "V\xEDgia del N\xFAmero Alto"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18022894872653824
+    m_Localized: "+5 de escudo al resolver el combo N\xFAmero Alto."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18023236037341184
+    m_Localized: "Vig\xEDa de la Cima"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18023236037341185
+    m_Localized: "+10 de escudo al resvolver el combo N\xFAmero Alto."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18023381688741888
+    m_Localized: "Vig\xEDa del M\xE1ximo"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18023381688741889
+    m_Localized: "+15 de escudo al resolver el combo N\xFAmero Alto."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18023488412807168
+    m_Localized: "Vig\xEDa del Basti\xF3n Celestial"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18023488412807169
+    m_Localized: "+20 de escudo al resolver el combo N\xFAmero Alto."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18023998893158400
+    m_Localized: "Vig\xEDa del Par"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18023998893158401
+    m_Localized: +5 de escudo al resolver el combo Par.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18024098700816384
+    m_Localized: "Vig\xEDa de los Iguales"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18024098700816385
+    m_Localized: +10 de escudo al resolver el combo Par.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18024208977457152
+    m_Localized: "Vig\xEDa de los Gemelos"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18024208977457153
+    m_Localized: +15 de escudo al resolver el combo Par.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18024295791161344
+    m_Localized: "Vig\xEDa de la Guardia Gemela"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18024295791161345
+    m_Localized: +20 de escudo al resolver el combo Par.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18024682531155968
+    m_Localized: "Vig\xEDa del Doble Par"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18024682531155969
+    m_Localized: +5 de escudo al resolver el combo Doble Par.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18024775716007936
+    m_Localized: "Vig\xEDa de las Parejas"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18024775716007937
+    m_Localized: +10 de escudo al resolver el combo Doble Par.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18024961439789056
+    m_Localized: "Vig\xEDa del Espejo"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18024961439789057
+    m_Localized: +15 de escudo al resolver el combo Doble Par.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18025077580066816
+    m_Localized: "Vig\xEDa de la Contraparte"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18025077580066817
+    m_Localized: +20 de escudo al resolver el combo Doble Par.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18025853626970112
+    m_Localized: "Vig\xEDa del Trio"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18025853626970113
+    m_Localized: +5 de escudo al resolver el combo Trio.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18025924280020992
+    m_Localized: "Vig\xEDa del Triple"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18025924280020993
+    m_Localized: +10 de escudo al resolver el combo Trio.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18026042286764032
+    m_Localized: "Vig\xEDa de la Trinidad"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18026042286764033
+    m_Localized: +15 de escudo al resolver el combo Trio.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18026255139303424
+    m_Localized: "Vig\xEDa de los Tres Guardianes"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18026255139303425
+    m_Localized: +20 de escudo por cada Trio.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18026403529584640
+    m_Localized: "Vig\xEDa del Full House."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18026403529584641
+    m_Localized: +5 de escudo al resolver el combo Full House.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18026492981506048
+    m_Localized: "Vig\xEDa de la Familia"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18026492981506049
+    m_Localized: +10 de escudo al resolver el combo Full House.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18026574036430848
+    m_Localized: "Vig\xEDa del Linaje"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18026574036430849
+    m_Localized: +15 de escudo al resolver el combo Full House.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18026664373350400
+    m_Localized: "Vig\xEDa de la Casa Real"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18026664373350401
+    m_Localized: +20 de escudo al resolver el combo Full House.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18027213252554752
+    m_Localized: "Vig\xEDa de la Escalera"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18027213252554753
+    m_Localized: +5 al resolver combo de Escalera.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18027382681464832
+    m_Localized: "Vig\xEDa del Ascenso"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18027382681464833
+    m_Localized: +10 de escudo al resolver el combo Escalera.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18027510133780480
+    m_Localized: "Vig\xEDa del Torbellino"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18027510133780481
+    m_Localized: +15 de escudo al resolver el combo Escalera.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18027612961337344
+    m_Localized: "Vig\xEDa de la Muralla "
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18027612961337345
+    m_Localized: +20 de escudo al completar el combo Escalera.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18027718045429760
+    m_Localized: "Vig\xEDa del Poker"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18027718045429761
+    m_Localized: +5 de escudo al resolver el combo Poker.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18027793463209984
+    m_Localized: "Vig\xEDa del Cuarteto"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18027793463209985
+    m_Localized: +10 de escudo al resolver el combo Poker.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18027895984582656
+    m_Localized: "Vig\xEDa de los Cuatro Reyes"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18027895984582657
+    m_Localized: +15 de escudo al resolver el combo de Poker.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18028000674410496
+    m_Localized: "Vig\xEDa de la Guardia Imperial"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18028000674410497
+    m_Localized: +20 de escudo al resolver el combo Poker.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18029536846639104
+    m_Localized: "Vig\xEDa de la Generala"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18029536846639105
+    m_Localized: +5 de escudo al resolver el combo Generala.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18029631075872768
+    m_Localized: "Vig\xEDa de la Plenitud"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18029631075872769
+    m_Localized: +10 de escudo al resolver el combo Generala.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18029713586221056
+    m_Localized: "Vig\xEDa del Basti\xF3n"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18029713586221057
+    m_Localized: +15 de escudo al resolver el combo Generala.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18029803176554496
+    m_Localized: "Vig\xEDa de la Fortaleza Divina"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18029803176554497
+    m_Localized: +20 de escudo al resolver el combo Generala.
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

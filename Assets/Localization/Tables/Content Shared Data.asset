@@ -2255,6 +2255,262 @@ MonoBehaviour:
     m_Key: pico.del.demoledor.desc
     m_Metadata:
       m_Items: []
+  - m_Id: 18022894868459520
+    m_Key: vigia.del.numero.alto.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18022894872653824
+    m_Key: vigia.del.numero.alto.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18023236037341184
+    m_Key: vigia.de.la.cima.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18023236037341185
+    m_Key: vigia.de.la.cima.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18023381688741888
+    m_Key: vigia.del.maximo.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18023381688741889
+    m_Key: vigia.del.maximo.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18023488412807168
+    m_Key: vigia.del.bastion.celestial.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18023488412807169
+    m_Key: vigia.del.bastion.celestial.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18023998893158400
+    m_Key: vigia.del.par.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18023998893158401
+    m_Key: vigia.del.par.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18024098700816384
+    m_Key: vigia.de.los.iguales.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18024098700816385
+    m_Key: vigia.de.los.iguales.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18024208977457152
+    m_Key: vigia.de.los.gemelos.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18024208977457153
+    m_Key: vigia.de.los.gemelos.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18024295791161344
+    m_Key: vigia.de.la.guardia.gemela.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18024295791161345
+    m_Key: vigia.de.la.guardia.gemela.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18024682531155968
+    m_Key: vigia.del.doble.par.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18024682531155969
+    m_Key: vigia.del.doble.par.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18024775716007936
+    m_Key: vigia.de.las.parejas.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18024775716007937
+    m_Key: vigia.de.las.parejas.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18024961439789056
+    m_Key: vigia.del.espejo.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18024961439789057
+    m_Key: vigia.del.espejo.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18025077580066816
+    m_Key: vigia.de.la.contraparte.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18025077580066817
+    m_Key: vigia.de.la.contraparte.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18025853626970112
+    m_Key: vigia.del.trio.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18025853626970113
+    m_Key: vigia.del.trio.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18025924280020992
+    m_Key: vigia.del.triple.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18025924280020993
+    m_Key: vigia.del.triple.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18026042286764032
+    m_Key: vigia.de.la.trinidad.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18026042286764033
+    m_Key: vigia.de.la.trinidad.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18026255139303424
+    m_Key: vigia.de.los.tres.guardianes.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18026255139303425
+    m_Key: vigia.de.los.tres.guardianes.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18026403529584640
+    m_Key: vigia.del.full.house.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18026403529584641
+    m_Key: vigia.del.full.house.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18026492981506048
+    m_Key: vigia.de.la.familia.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18026492981506049
+    m_Key: vigia.de.la.familia.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18026574036430848
+    m_Key: vigia.del.linaje.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18026574036430849
+    m_Key: vigia.del.linaje.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18026664373350400
+    m_Key: vigia.de.la.casa.real.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18026664373350401
+    m_Key: vigia.de.la.casa.real.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18027213252554752
+    m_Key: vigia.de.la.escalera.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18027213252554753
+    m_Key: vigia.de.la.escalera.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18027382681464832
+    m_Key: vigia.del.ascenso.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18027382681464833
+    m_Key: vigia.del.ascenso.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18027510133780480
+    m_Key: vigia.del.torbellino.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18027510133780481
+    m_Key: vigia.del.torbellino.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18027612961337344
+    m_Key: vigia.de.la.muralla.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18027612961337345
+    m_Key: vigia.de.la.muralla.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18027718045429760
+    m_Key: vigia.del.poker.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18027718045429761
+    m_Key: vigia.del.poker.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18027793463209984
+    m_Key: vigia.del.cuarteto.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18027793463209985
+    m_Key: vigia.del.cuarteto.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18027895984582656
+    m_Key: vigia.de.los.cuatro.reyes.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18027895984582657
+    m_Key: vigia.de.los.cuatro.reyes.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18028000674410496
+    m_Key: vigia.de.la.guardia.imperial.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18028000674410497
+    m_Key: vigia.de.la.guardia.imperial.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18029536846639104
+    m_Key: vigia.de.la.generala.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18029536846639105
+    m_Key: vigia.de.la.generala.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18029631075872768
+    m_Key: vigia.de.la.plenitud.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18029631075872769
+    m_Key: vigia.de.la.plenitud.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18029713586221056
+    m_Key: vigia.del.bastion.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18029713586221057
+    m_Key: vigia.del.bastion.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18029803176554496
+    m_Key: vigia.de.la.fortaleza.divina.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18029803176554497
+    m_Key: vigia.de.la.fortaleza.divina.desc
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:
