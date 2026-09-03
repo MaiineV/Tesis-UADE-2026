@@ -29,7 +29,8 @@ MonoBehaviour:
       Data: Volatil
     - Name: _description
       Entry: 1
-      Data: Al sacar el maximo el resultado se duplica. Al sacar el minimo vale 0.
+      Data: "Al sacar el m\xE1ximo, este dado aporta el doble de da\xF1o. Con cualquier
+        otra cara aporta la mitad."
     - Name: _icon
       Entry: 6
       Data: 
@@ -55,13 +56,7 @@ MonoBehaviour:
         mscorlib
     - Name: 
       Entry: 12
-      Data: 2
-    - Name: 
-      Entry: 3
-      Data: 4
-    - Name: 
-      Entry: 3
-      Data: 5
+      Data: 0
     - Name: 
       Entry: 13
       Data: 
@@ -83,7 +78,7 @@ MonoBehaviour:
       Data: 3|Rollgeon.Upgrades.Dice.Triggers.ExecuteEffectsOnDiceEvent, Rollgeon
     - Name: Event
       Entry: 3
-      Data: 2
+      Data: 3
     - Name: Filter
       Entry: 7
       Data: 4|Rollgeon.Upgrades.Dice.ComboFilter, Rollgeon
@@ -107,7 +102,7 @@ MonoBehaviour:
       Data: 
     - Name: RequireCarrierParticipates
       Entry: 5
-      Data: false
+      Data: true
     - Name: Effects
       Entry: 7
       Data: 6|System.Collections.Generic.List`1[[Rollgeon.Effects.EffectData, Rollgeon]],
@@ -233,7 +228,7 @@ MonoBehaviour:
       Data: 13|Rollgeon.Upgrades.Dice.Readers.ReadCarrierRollDelta, Rollgeon
     - Name: Op
       Entry: 3
-      Data: 2
+      Data: 5
     - Name: 
       Entry: 8
       Data: 
@@ -283,29 +278,29 @@ MonoBehaviour:
   _faceFilter:
     rid: -2
   _triggers:
-  - rid: 7496091007886557877
+  - rid: 7465468535394271975
   _capabilities: []
   references:
     version: 2
     RefIds:
     - rid: -2
       type: {class: , ns: , asm: }
-    - rid: 7496091007886557877
+    - rid: 7465468535394271975
       type: {class: ExecuteEffectsOnDiceEvent, ns: Rollgeon.Upgrades.Dice.Triggers, asm: Rollgeon}
       data:
-        Event: 2
+        Event: 3
         Filter:
           Mode: 1
           ComboIds: []
-        RequireCarrierParticipates: 0
+        RequireCarrierParticipates: 1
         Effects:
         - Label: Effect Group
           PreConditions: []
           Effects:
-          - rid: 7496091007886557878
+          - rid: 7465468535394271976
           TargetSelector:
             rid: -2
-    - rid: 7496091007886557878
+    - rid: 7465468535394271976
       type: {class: EffAddComboBonus, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
       data:
         Selection:
@@ -330,8 +325,8 @@ MonoBehaviour:
           AutoResolve: 0
           AutoAccept: 1
         _amount:
-          rid: 7496091007886557879
-    - rid: 7496091007886557879
+          rid: 7465468535394271977
+    - rid: 7465468535394271977
       type: {class: ReadCarrierRollDelta, ns: Rollgeon.Upgrades.Dice.Readers, asm: Rollgeon}
       data:
-        Op: 2
+        Op: 5

@@ -29,7 +29,7 @@ MonoBehaviour:
       Data: Avaro
     - Name: _description
       Entry: 1
-      Data: "Otorga 3 de oro extra al completar un combo de 3 o m\xE1s dados iguales."
+      Data: "Otorga 5 de oro al completar un tr\xEDo, p\xF3ker o generala."
     - Name: _icon
       Entry: 6
       Data: 
@@ -239,7 +239,7 @@ MonoBehaviour:
       Data: 13|Rollgeon.Effects.Readers.ReadConstantInt, Rollgeon
     - Name: Value
       Entry: 3
-      Data: 3
+      Data: 5
     - Name: 
       Entry: 8
       Data: 
@@ -292,14 +292,14 @@ MonoBehaviour:
   _faceFilter:
     rid: -2
   _triggers:
-  - rid: 7496091007886557817
+  - rid: 7465468535394271937
   _capabilities: []
   references:
     version: 2
     RefIds:
     - rid: -2
       type: {class: , ns: , asm: }
-    - rid: 7496091007886557817
+    - rid: 7465468535394271937
       type: {class: ExecuteEffectsOnDiceEvent, ns: Rollgeon.Upgrades.Dice.Triggers, asm: Rollgeon}
       data:
         Event: 5
@@ -314,10 +314,10 @@ MonoBehaviour:
         - Label: Effect Group
           PreConditions: []
           Effects:
-          - rid: 7496091007886557818
+          - rid: 7465468535394271938
           TargetSelector:
             rid: -2
-    - rid: 7496091007886557818
+    - rid: 7465468535394271938
       type: {class: EffModifyGold, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
       data:
         Selection:
@@ -343,9 +343,9 @@ MonoBehaviour:
           AutoAccept: 1
         Operation: 0
         _amount:
-          rid: 7496091007886557819
+          rid: 7465468535394271939
         _failChainIfInsufficient: 1
-    - rid: 7496091007886557819
+    - rid: 7465468535394271939
       type: {class: ReadConstantInt, ns: Rollgeon.Effects.Readers, asm: Rollgeon}
       data:
-        Value: 3
+        Value: 5

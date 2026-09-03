@@ -29,8 +29,8 @@ MonoBehaviour:
       Data: Fortaleza
     - Name: _description
       Entry: 1
-      Data: El dado muestra su valor maximo y participa en combo, genera 30 puntos
-        de escudo.
+      Data: "Si este dado saca su valor m\xE1ximo y participa en un combo, gener\xE1s
+        30 puntos de escudo."
     - Name: _icon
       Entry: 6
       Data: 
@@ -150,7 +150,7 @@ MonoBehaviour:
       Data: 1
     - Name: 
       Entry: 7
-      Data: 11|Rollgeon.Effects.Concretes.EffModifyIntAttribute, Rollgeon
+      Data: 11|Rollgeon.Effects.Concretes.EffAddShield, Rollgeon
     - Name: Selection
       Entry: 7
       Data: 12|Rollgeon.Effects.Selection.SelectionSettings, Rollgeon
@@ -235,36 +235,21 @@ MonoBehaviour:
     - Name: 
       Entry: 8
       Data: 
-    - Name: TargetStat
-      Entry: 3
-      Data: 4
-    - Name: Operation
+    - Name: _shieldSource
       Entry: 3
       Data: 0
-    - Name: _amountSource
-      Entry: 3
-      Data: 2
     - Name: _baseAmount
       Entry: 3
-      Data: 1
+      Data: 30
     - Name: _comboMultiplier
       Entry: 4
       Data: 1
     - Name: _reader
-      Entry: 7
-      Data: 14|Rollgeon.Effects.Readers.ReadConstantInt, Rollgeon
-    - Name: Value
-      Entry: 3
-      Data: 30
-    - Name: 
-      Entry: 8
+      Entry: 6
       Data: 
     - Name: _readerMultiplier
       Entry: 4
       Data: 1
-    - Name: _clampHealthToMax
-      Entry: 5
-      Data: false
     - Name: 
       Entry: 8
       Data: 
@@ -297,7 +282,7 @@ MonoBehaviour:
       Data: 
     - Name: _capabilities
       Entry: 7
-      Data: 15|System.Collections.Generic.List`1[[Rollgeon.Upgrades.Dice.IEnchantmentCapability,
+      Data: 14|System.Collections.Generic.List`1[[Rollgeon.Upgrades.Dice.IEnchantmentCapability,
         Rollgeon]], mscorlib
     - Name: 
       Entry: 12
@@ -311,14 +296,14 @@ MonoBehaviour:
   _faceFilter:
     rid: -2
   _triggers:
-  - rid: 7496091007886557850
+  - rid: 7465468535394271967
   _capabilities: []
   references:
     version: 2
     RefIds:
     - rid: -2
       type: {class: , ns: , asm: }
-    - rid: 7496091007886557850
+    - rid: 7465468535394271967
       type: {class: ExecuteEffectsOnDiceEvent, ns: Rollgeon.Upgrades.Dice.Triggers, asm: Rollgeon}
       data:
         Event: 5
@@ -329,18 +314,18 @@ MonoBehaviour:
         Effects:
         - Label: Effect Group
           PreConditions:
-          - rid: 7496091007886557851
+          - rid: 7465468535394271968
           Effects:
-          - rid: 7496091007886557852
+          - rid: 7465468535394271969
           TargetSelector:
             rid: -2
-    - rid: 7496091007886557851
+    - rid: 7465468535394271968
       type: {class: PcCarrierFace, ns: Rollgeon.Upgrades.Dice.PreConditions, asm: Rollgeon}
       data:
         _isConstantValue: 1
         Mode: 0
-    - rid: 7496091007886557852
-      type: {class: EffModifyIntAttribute, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
+    - rid: 7465468535394271969
+      type: {class: EffAddShield, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
       data:
         Selection:
           SlotState: 1
@@ -363,16 +348,9 @@ MonoBehaviour:
             rid: -2
           AutoResolve: 0
           AutoAccept: 1
-        TargetStat: 4
-        Operation: 0
-        _amountSource: 2
-        _baseAmount: 1
+        _shieldSource: 0
+        _baseAmount: 30
         _comboMultiplier: 1
         _reader:
-          rid: 7496091007886557853
+          rid: -2
         _readerMultiplier: 1
-        _clampHealthToMax: 0
-    - rid: 7496091007886557853
-      type: {class: ReadConstantInt, ns: Rollgeon.Effects.Readers, asm: Rollgeon}
-      data:
-        Value: 30
