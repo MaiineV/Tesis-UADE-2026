@@ -1504,11 +1504,11 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 17593280027881484
-    m_Localized: The Bank Keeps
+    m_Localized: The Bank Doesn't Wait
     m_Metadata:
       m_Items: []
   - m_Id: 17593280027881485
-    m_Localized: Gold you let expire, the bank keeps.
+    m_Localized: Whatever you let expire on the floor is lost.
     m_Metadata:
       m_Items: []
   - m_Id: 17593280027881486

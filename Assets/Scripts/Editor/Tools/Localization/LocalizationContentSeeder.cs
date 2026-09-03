@@ -780,10 +780,10 @@ namespace Rollgeon.EditorTools.Localization
             Content("enemy_tutorial_melee_c.brief", "Pega de cerca.", "Hits up close.");
 
             // Maldiciones de jefe (bloque PLAYER CURSE). La del Croupier reusa status.dice_block.
-            Content("curse.bank_keeps.name", "La banca retiene", "The Bank Keeps");
+            Content("curse.bank_keeps.name", "La banca no espera", "The Bank Doesn't Wait");
             Content("curse.bank_keeps.desc",
-                "El oro que dejás vencer se lo queda la banca.",
-                "Gold you let expire, the bank keeps.");
+                "Lo que dejás vencer en el piso se pierde.",
+                "Whatever you let expire on the floor is lost.");
             Content("curse.repeat_ban.name", "Mano vetada", "Banned Hand");
             Content("curse.repeat_ban.desc",
                 "No podés repetir el combo que acabás de anotar.",

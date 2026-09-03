@@ -13,6 +13,6 @@ MonoBehaviour:
   m_Name: BC_Cajero_BankKeeps
   m_EditorClassIdentifier: Rollgeon::Rollgeon.Entities.BossCurseSO
   CurseId: curse.bank_keeps
-  DisplayName: La banca retiene
-  Description: "El oro que dej\xE1s vencer se lo queda la banca."
+  DisplayName: La banca no espera
+  Description: "Lo que dej\xE1s vencer en el piso se pierde."
   Icon: {fileID: -1590291716, guid: 55b21875323eef642a528fe5a0fd2874, type: 3}

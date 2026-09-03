@@ -1526,11 +1526,11 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 17593280027881484
-    m_Localized: La banca retiene
+    m_Localized: La banca no espera
     m_Metadata:
       m_Items: []
   - m_Id: 17593280027881485
-    m_Localized: "El oro que dej\xE1s vencer se lo queda la banca."
+    m_Localized: "Lo que dej\xE1s vencer en el piso se pierde."
     m_Metadata:
       m_Items: []
   - m_Id: 17593280027881486
