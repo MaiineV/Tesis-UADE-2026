@@ -2019,7 +2019,7 @@ MonoBehaviour:
   BaseHP: 90
   BaseAttack: 20
   BaseHealStrength: 5
-  BaseSpeed: 4
+  BaseSpeed: 8
   MaxEnergy: 3
   BaseAttackRange: 5
   ExtraTiers: []

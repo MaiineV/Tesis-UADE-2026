@@ -559,7 +559,7 @@ MonoBehaviour:
   WeaknessMultiplierOverride: 0
   Curse: {fileID: 0}
   BaseHP: 45
-  BaseAttack: 25
+  BaseAttack: 40
   BaseHealStrength: 5
   BaseSpeed: 4
   MaxEnergy: 3

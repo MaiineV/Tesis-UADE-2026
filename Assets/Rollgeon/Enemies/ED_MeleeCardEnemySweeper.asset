@@ -549,7 +549,7 @@ MonoBehaviour:
   WeaknessMultiplierOverride: 0
   Curse: {fileID: 0}
   BaseHP: 75
-  BaseAttack: 20
+  BaseAttack: 35
   BaseHealStrength: 5
   BaseSpeed: 4
   MaxEnergy: 3
@@ -564,7 +564,7 @@ MonoBehaviour:
     Attack:
       Mode: 1
       Multiplier: 1
-      ManualValue: 30
+      ManualValue: 40
     Speed:
       Mode: 0
       Multiplier: 1.1
@@ -590,7 +590,7 @@ MonoBehaviour:
     Attack:
       Mode: 1
       Multiplier: 1
-      ManualValue: 40
+      ManualValue: 45
     Speed:
       Mode: 0
       Multiplier: 1.2
