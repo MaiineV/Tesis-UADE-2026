@@ -117,6 +117,7 @@ namespace Rollgeon.Items
                 if (item.ActiveSlotBonus > 0) AddActiveSlotBonus(item.ActiveSlotBonus);
                 RegisterEnchantmentCostModifier(item);
                 RegisterEnchantmentWeightModifier(item);
+                RegisterGoldFloor(item);
             }
             else
             {
@@ -172,6 +173,7 @@ namespace Rollgeon.Items
                 if (item.ActiveSlotBonus > 0) AddActiveSlotBonus(-item.ActiveSlotBonus);
                 UnregisterEnchantmentCostModifier(item);
                 UnregisterEnchantmentWeightModifier(item);
+                UnregisterGoldFloor(item);
                 OnItemChanged?.Invoke(item, false);
                 EventManager.Trigger(EventName.OnItemRemoved, GetPlayerGuid(), itemId);
                 return true;
@@ -635,6 +637,27 @@ namespace Rollgeon.Items
             if (ServiceLocator.TryGetService<Rollgeon.Combat.Damage.IBaseDamageOverrideService>(out var svc)
                 && svc != null)
                 svc.Unregister(item.ItemId);
+        }
+
+        // ======================================================================
+        // Gold floor (Tarjeta de Crédito) — el piso vive en el EconomyService bajo
+        // el item id; entra con el item, sale con el item (sin confiscar deuda).
+        // ======================================================================
+
+        private void RegisterGoldFloor(ItemSO item)
+        {
+            if (item == null || item.GoldFloor >= 0) return;
+            if (ServiceLocator.TryGetService<Rollgeon.Economy.IEconomyService>(out var economy)
+                && economy != null)
+                economy.SetGoldFloor(item.ItemId, item.GoldFloor);
+        }
+
+        private void UnregisterGoldFloor(ItemSO item)
+        {
+            if (item == null || item.GoldFloor >= 0) return;
+            if (ServiceLocator.TryGetService<Rollgeon.Economy.IEconomyService>(out var economy)
+                && economy != null)
+                economy.ClearGoldFloor(item.ItemId);
         }
 
         // ======================================================================

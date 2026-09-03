@@ -2771,6 +2771,33 @@ MonoBehaviour:
       or less, it adds +12 damage.
     m_Metadata:
       m_Items: []
+  - m_Id: 18353398669819904
+    m_Localized: Credit Card
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18353398736928768
+    m_Localized: 'Your gold can drop to -30: buy on credit and pay the debt back
+      with what you earn.'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18353399701618688
+    m_Localized: Straggler
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18353399701618689
+    m_Localized: 'On pickup it locks onto your least-used combo: that combo deals
+      +50% damage for the rest of the run.'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18353400586616832
+    m_Localized: Toll
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18353400590811136
+    m_Localized: When entering a regular combat room you may pay 15 + 10 per floor
+      in gold to clear it without fighting. No loot.
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

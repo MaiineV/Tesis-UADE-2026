@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using TMPro;
 using UnityEngine;
+using UnityEngine.InputSystem;
 using UnityEngine.UI;
 using Object = UnityEngine.Object;
 
@@ -90,6 +91,28 @@ namespace Rollgeon.UI.HUD
         }
 
         /// <summary>Oculta el panel SOLO si <paramref name="ownerId"/> es el dueño actual.</summary>
+        /// <summary>
+        /// Prompt de DECISIÓN: dos botones (confirmar / secundario) y polling de teclado
+        /// propio, para callers sin MonoBehaviour (servicios). Los callers clásicos de
+        /// <see cref="Show(int, in InteractionPromptContent, Action)"/> siguen leyendo la
+        /// tecla ellos mismos — acá el prompt es el único que la lee, así no se duplica.
+        /// El botón de confirmar respeta <c>CanAfford</c>; el secundario siempre está activo.
+        /// </summary>
+        public static void ShowChoice(int ownerId, in InteractionPromptContent content, Action onConfirm,
+            Key confirmKey, string secondaryKeyHint, string secondaryVerb, Action onSecondary, Key secondaryKey)
+        {
+            EnsureInstance();
+            _instance.ShowContent(ownerId, in content, onConfirm);
+            _instance.EnableChoice(confirmKey, secondaryKeyHint, secondaryVerb, onSecondary, secondaryKey);
+        }
+
+        /// <summary><c>true</c> mientras un prompt de <see cref="ShowChoice"/> está visible.</summary>
+        public static bool IsChoiceActive => _instance != null && _instance.ChoiceActive;
+
+        /// <summary>Simula el click del botón secundario (tests / dev console).</summary>
+        public static void ConfirmForTests() => _instance?.HandleConfirmClicked();
+        public static void SecondaryForTests() => _instance?.HandleSecondaryClicked();
+
         public static void Hide(int ownerId)
         {
             if (_instance == null) return;
@@ -191,6 +214,17 @@ namespace Rollgeon.UI.HUD
             private TextMeshProUGUI _confirmText;
             private Action _confirmCallback;
 
+            // Modo decisión (ShowChoice): segundo botón + polling de teclado propio.
+            private GameObject _secondaryGO;
+            private Button _secondaryButton;
+            private TextMeshProUGUI _secondaryText;
+            private Action _secondaryCallback;
+            private Key _confirmKey = Key.None;
+            private Key _secondaryKey = Key.None;
+            private bool _choiceActive;
+
+            public bool ChoiceActive => _choiceActive && _hasOwner;
+
             private Vector2 _shownAnchoredPos;
             private Vector2 _hiddenAnchoredPos;
 
@@ -287,6 +321,7 @@ namespace Rollgeon.UI.HUD
                 _footerText.richText = true;
 
                 BuildConfirmButton();
+                BuildSecondaryButton();
 
                 _panelGO.SetActive(false);
             }
@@ -325,10 +360,87 @@ namespace Rollgeon.UI.HUD
                 _confirmGO.SetActive(false);
             }
 
-            private void HandleConfirmClicked()
+            public void HandleConfirmClicked()
             {
                 if (!_hasOwner) return;
                 _confirmCallback?.Invoke();
+            }
+
+            public void HandleSecondaryClicked()
+            {
+                if (!_hasOwner || !_choiceActive) return;
+                _secondaryCallback?.Invoke();
+            }
+
+            private void BuildSecondaryButton()
+            {
+                _secondaryGO = new GameObject("SecondaryButton", typeof(RectTransform));
+                _secondaryGO.transform.SetParent(_panelRect, worldPositionStays: false);
+
+                var image = _secondaryGO.AddComponent<Image>();
+                image.color = ButtonColor;
+                image.raycastTarget = true;
+
+                _secondaryButton = _secondaryGO.AddComponent<Button>();
+                _secondaryButton.targetGraphic = image;
+                var colors = _secondaryButton.colors;
+                colors.highlightedColor = ButtonHighlight;
+                colors.pressedColor = ButtonHighlight;
+                _secondaryButton.colors = colors;
+                _secondaryButton.onClick.AddListener(HandleSecondaryClicked);
+
+                var layoutElement = _secondaryGO.AddComponent<LayoutElement>();
+                layoutElement.preferredHeight = 44f;
+
+                _secondaryText = BuildTmpChild(_secondaryGO.transform, "Label", 24f, FontStyles.Bold, Color.white, wrap: false);
+                _secondaryText.alignment = TextAlignmentOptions.Center;
+                _secondaryText.richText = true;
+
+                var labelRect = (RectTransform)_secondaryText.transform;
+                labelRect.anchorMin = Vector2.zero;
+                labelRect.anchorMax = Vector2.one;
+                labelRect.offsetMin = Vector2.zero;
+                labelRect.offsetMax = Vector2.zero;
+
+                _secondaryGO.SetActive(false);
+            }
+
+            public void EnableChoice(Key confirmKey, string secondaryKeyHint, string secondaryVerb,
+                Action onSecondary, Key secondaryKey)
+            {
+                _choiceActive = true;
+                _confirmKey = confirmKey;
+                _secondaryKey = secondaryKey;
+                _secondaryCallback = onSecondary;
+                _secondaryText.text = BuildConfirmLabel(secondaryKeyHint, secondaryVerb);
+                _secondaryGO.SetActive(true);
+                LayoutRebuilder.ForceRebuildLayoutImmediate(_panelRect);
+            }
+
+            private void ClearChoice()
+            {
+                _choiceActive = false;
+                _confirmKey = Key.None;
+                _secondaryKey = Key.None;
+                _secondaryCallback = null;
+                if (_secondaryGO != null) _secondaryGO.SetActive(false);
+            }
+
+            // Solo en modo decisión: los callers clásicos leen su tecla ellos mismos.
+            private void Update()
+            {
+                if (!_choiceActive || !_hasOwner) return;
+                var keyboard = Keyboard.current;
+                if (keyboard == null) return;
+
+                if (_confirmKey != Key.None && keyboard[_confirmKey].wasPressedThisFrame
+                    && _confirmButton.interactable)
+                {
+                    HandleConfirmClicked();
+                    return;
+                }
+                if (_secondaryKey != Key.None && keyboard[_secondaryKey].wasPressedThisFrame)
+                    HandleSecondaryClicked();
             }
 
             private static TextMeshProUGUI BuildTmpChild(Transform parent, string name, float fontSize,
@@ -350,6 +462,7 @@ namespace Rollgeon.UI.HUD
                 _currentOwnerId = ownerId;
                 _hasOwner = true;
                 _confirmCallback = onConfirm;
+                ClearChoice(); // un Show clásico sobre un prompt de decisión lo degrada a un botón.
 
                 _titleText.text = content.Title ?? string.Empty;
 
@@ -410,6 +523,7 @@ namespace Rollgeon.UI.HUD
             {
                 _hasOwner = false;
                 _confirmCallback = null;
+                ClearChoice();
                 // Apagar raycasts ya mismo — el fade-out no debe seguir comiendo clicks.
                 _canvasGroup.blocksRaycasts = false;
                 _canvasGroup.interactable = false;

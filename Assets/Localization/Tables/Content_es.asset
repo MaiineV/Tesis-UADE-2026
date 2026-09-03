@@ -2779,6 +2779,33 @@ MonoBehaviour:
       vida o menos, aporta +12 de da\xF1o."
     m_Metadata:
       m_Items: []
+  - m_Id: 18353398669819904
+    m_Localized: "Tarjeta de Cr\xE9dito"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18353398736928768
+    m_Localized: "Tu oro puede bajar hasta -30: compr\xE1 a cr\xE9dito y pag\xE1
+      la deuda con lo que ganes."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18353399701618688
+    m_Localized: Rezagado
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18353399701618689
+    m_Localized: "Al adquirirlo se fija en tu combo menos usado: ese combo hace +50%
+      de da\xF1o el resto de la run."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18353400586616832
+    m_Localized: Peaje
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18353400590811136
+    m_Localized: "Al entrar a una sala de combate normal pod\xE9s pagar 15 + 10 por
+      piso de oro para limpiarla sin pelear. Sin bot\xEDn."
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

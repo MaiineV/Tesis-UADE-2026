@@ -105,11 +105,14 @@ namespace Rollgeon.Exploration
             switch (room.Type)
             {
                 case RoomType.Combat:
+                    // Peaje: un ICombatSkipOffer registrado puede ofrecer pagar en vez de
+                    // pelear. Solo salas estándar — Boss nunca se saltea.
+                    if (TryOfferSkip(instance)) break;
+                    StartCombat(instance);
+                    break;
+
                 case RoomType.Boss:
-                    _isExploring = false;
-                    EventManager.Trigger(EventName.OnCombatTriggered,
-                        instance.InstanceId, room.RoomId, room.Type);
-                    _phase.ReplacePhase(GamePhase.Combat);
+                    StartCombat(instance);
                     break;
 
                 case RoomType.Shop:
@@ -125,6 +128,32 @@ namespace Rollgeon.Exploration
                 case RoomType.Start:
                     break;
             }
+        }
+
+        private void StartCombat(RoomInstance instance)
+        {
+            var room = instance.Template;
+            _isExploring = false;
+            EventManager.Trigger(EventName.OnCombatTriggered,
+                instance.InstanceId, room.RoomId, room.Type);
+            _phase.ReplacePhase(GamePhase.Combat);
+        }
+
+        private bool TryOfferSkip(RoomInstance instance)
+        {
+            if (!ServiceLocator.TryGetService<ICombatSkipOffer>(out var offer) || offer == null)
+                return false;
+
+            return offer.TryOffer(instance, () =>
+            {
+                // El callback llega diferido (prompt): solo pelea si seguimos explorando la
+                // misma sala y nadie la limpió mientras tanto.
+                if (!_isExploring) return;
+                var current = _dungeon.CurrentRoomInstance;
+                if (current == null || current.InstanceId != instance.InstanceId) return;
+                if (current.State == RoomState.Cleared) return;
+                StartCombat(current);
+            });
         }
     }
 }

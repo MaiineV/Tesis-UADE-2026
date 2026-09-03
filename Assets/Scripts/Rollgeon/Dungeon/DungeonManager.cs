@@ -887,8 +887,18 @@ namespace Rollgeon.Dungeon
             if (args[1] is not CombatOutcome outcome) return;
             if (outcome != CombatOutcome.Victory) return;
 
-            if (!_instances.TryGetValue(roomInstanceId, out var instance)) return;
-            if (instance.State == RoomState.Cleared) return;
+            MarkRoomCleared(roomInstanceId);
+        }
+
+        /// <summary>
+        /// Bloque compartido entre la victoria en combate y el Peaje (limpiar sin pelear):
+        /// estado, puertas, visuales y <c>OnRoomCleared</c>. Devuelve <c>false</c> si la
+        /// sala no existe o ya estaba limpia.
+        /// </summary>
+        public bool MarkRoomCleared(Guid roomInstanceId)
+        {
+            if (!_instances.TryGetValue(roomInstanceId, out var instance)) return false;
+            if (instance.State == RoomState.Cleared) return false;
 
             instance.State = RoomState.Cleared;
 
@@ -925,6 +935,8 @@ namespace Rollgeon.Dungeon
                     runCtx != null ? runCtx.RunId : Guid.Empty,
                     runCtx != null ? runCtx.FloorIndex : 0);
             }
+
+            return true;
         }
 
         /// <summary>
