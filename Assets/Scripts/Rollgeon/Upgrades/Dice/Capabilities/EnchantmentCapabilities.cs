@@ -15,8 +15,11 @@ namespace Rollgeon.Upgrades.Dice
     {
     }
 
-    /// <summary>"Lento": el dado no puede holdearse entre rerolls.</summary>
-    [NotYetWired("Marcador nomas: el roll service todavia no consulta esta restriccion al holdear.")]
+    /// <summary>
+    /// "Lento": el dado no puede holdearse entre rerolls — siempre vuela. Consumidores:
+    /// <c>DiceZoneView.CanChangeHold</c> (gate del toggle) y
+    /// <c>CombatHandoffService.ApplyKeepConstraints</c> (fuerza keep=false en el reroll).
+    /// </summary>
     [Serializable, HideReferenceObjectPicker]
     public sealed class CapPreventHolding : IEnchantmentCapability
     {
@@ -62,15 +65,6 @@ namespace Rollgeon.Upgrades.Dice
         public int TriggerOnTurn = 2;
     }
 
-    /// <summary>"Ancla": acumula bonus por turnos consecutivos holdeado, hasta un tope.</summary>
-    [NotYetWired("El roll service todavia no expone hold-detection, asi que el contador nunca sube. Configurable pero sin efecto.")]
-    [Serializable, HideReferenceObjectPicker]
-    public sealed class CapAnchorAccumulate : IEnchantmentCapability
-    {
-        [MinValue(1)]
-        public int MaxAccumulation = 3;
-    }
-
     /// <summary>
     /// Maldición: el encantamiento es un downside puro. La UI pinta el dado con el
     /// visual maldito (negativo + banda oscura) en vez del holo. Consumidor:
@@ -100,6 +94,39 @@ namespace Rollgeon.Upgrades.Dice
                 if (caps[i] is CapCursed) return true;
 
             return false;
+        }
+
+        /// <summary><c>true</c> si el encantamiento declara una capability de tipo <typeparamref name="T"/>. Null-safe.</summary>
+        public static bool HasCapability<T>(this EnchantmentSO enchantment) where T : class, IEnchantmentCapability
+        {
+            var caps = enchantment?.Capabilities;
+            if (caps == null) return false;
+            for (int i = 0; i < caps.Count; i++)
+                if (caps[i] is T) return true;
+            return false;
+        }
+
+        /// <summary>
+        /// <c>true</c> si ALGÚN encantamiento del dado <paramref name="bagSlot"/> declara
+        /// <typeparamref name="T"/>. Es la consulta que hacen los gates de hold/reroll
+        /// (Lento). Null-safe y tolerante a índices fuera de rango.
+        /// </summary>
+        public static bool SlotHasCapability<T>(this RuntimeDiceBag bag, int bagSlot) where T : class, IEnchantmentCapability
+        {
+            if (bag == null || bagSlot < 0 || bagSlot >= bag.Dice.Count) return false;
+            var slots = bag.GetEnchantments(bagSlot);
+            if (slots == null) return false;
+            for (int i = 0; i < slots.Count; i++)
+                if (slots[i].HasCapability<T>()) return true;
+            return false;
+        }
+
+        /// <summary>Atajo con el service del locator: false si el bag no está inicializado.</summary>
+        public static bool PlayerSlotHasCapability<T>(int bagSlot) where T : class, IEnchantmentCapability
+        {
+            return global::Patterns.ServiceLocator.TryGetService<IDiceEnchantmentService>(out var ench)
+                   && ench?.Bag != null
+                   && ench.Bag.SlotHasCapability<T>(bagSlot);
         }
     }
 }

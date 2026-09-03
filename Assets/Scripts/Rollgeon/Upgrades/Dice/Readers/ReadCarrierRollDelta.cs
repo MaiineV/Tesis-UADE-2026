@@ -15,8 +15,22 @@ namespace Rollgeon.Upgrades.Dice.Readers
         /// <summary>Afilado: la cara no baja de ceil(max/2); delta = max(0, mínimo - cara).</summary>
         ClampMinToHalfMax,
 
-        /// <summary>Volátil: cara máxima duplica (+cara); cara 1 anula (-1); resto 0.</summary>
+        /// <summary>Volátil legacy: cara máxima duplica (+cara); cara 1 anula (-1); resto 0.</summary>
         DoubleMaxZeroMin,
+
+        // APPEND-ONLY: los SOs serializan el int del enum.
+
+        /// <summary>"El dado no suma": delta = -cara. El dado sigue contando para matchear el combo.</summary>
+        Exclude,
+
+        /// <summary>"El dado vale el doble": delta = +cara.</summary>
+        Double,
+
+        /// <summary>Volátil GDD: cara máxima duplica (+cara); el resto vale ceil(cara/2) (delta = ceil(cara/2) - cara).</summary>
+        DoubleMaxHalveRest,
+
+        /// <summary>Enfiestado: impar triplica (+2·cara); par aporta 0 (-cara).</summary>
+        TripleOddZeroEven,
     }
 
     /// <summary>
@@ -57,6 +71,19 @@ namespace Rollgeon.Upgrades.Dice.Readers
                     if (face == maxFace) return face;
                     if (face == 1) return -1;
                     return 0;
+
+                case CarrierRollDeltaOp.Exclude:
+                    return -face;
+
+                case CarrierRollDeltaOp.Double:
+                    return face;
+
+                case CarrierRollDeltaOp.DoubleMaxHalveRest:
+                    // ceil para que ninguna cara valga 0 (un d20 con 1 sigue aportando 1).
+                    return face == maxFace ? face : (face + 1) / 2 - face;
+
+                case CarrierRollDeltaOp.TripleOddZeroEven:
+                    return (face % 2) != 0 ? 2 * face : -face;
 
                 default:
                     return 0;

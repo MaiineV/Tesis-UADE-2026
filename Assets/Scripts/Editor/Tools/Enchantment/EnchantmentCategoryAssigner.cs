@@ -38,6 +38,7 @@ namespace Rollgeon.EditorTools.Enchantment
             ["ench.oxidado"] = EnchantmentCategory.Caos,
             ["ench.sediento"] = EnchantmentCategory.Caos,
             ["ench.torpe"] = EnchantmentCategory.Caos,
+            ["ench.vampiro"] = EnchantmentCategory.Caos,
 
             // 💰 Recursos — generan oro/escudo al usar el dado.
             ["ench.avaro"] = EnchantmentCategory.Recursos,
@@ -47,6 +48,7 @@ namespace Rollgeon.EditorTools.Enchantment
             ["ench.fortaleza"] = EnchantmentCategory.Recursos,
             ["ench.gold_on_roll"] = EnchantmentCategory.Recursos,
             ["ench.mercader"] = EnchantmentCategory.Recursos,
+            ["ench.solitario"] = EnchantmentCategory.Recursos,
 
             // ⚔️ Ataque — daño o multiplicador a partir de una condición.
             ["ench.ancla"] = EnchantmentCategory.Ataque,
@@ -54,6 +56,9 @@ namespace Rollgeon.EditorTools.Enchantment
             ["ench.pesado"] = EnchantmentCategory.Ataque,
             ["ench.resonante"] = EnchantmentCategory.Ataque,
             ["ench.volatil"] = EnchantmentCategory.Ataque,
+            ["ench.enfiestado"] = EnchantmentCategory.Ataque,
+            ["ench.racha"] = EnchantmentCategory.Ataque,
+            ["ench.ejecutor"] = EnchantmentCategory.Ataque,
 
             // 🎛️ Control — restringen caras, modifican valores o alteran combos.
             ["ench.afilado"] = EnchantmentCategory.Control,
