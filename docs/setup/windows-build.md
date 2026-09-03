@@ -106,17 +106,21 @@ con la key cruda si el contenido falta.
 
 ## Variante sin Steam
 
-Para distribuir el `.exe` fuera de Steam (jurados, itch, etc.): mismo build
-pero con `BuildPlayerOptions.extraScriptingDefines = ["DISABLESTEAMWORKS"]`
-y salida a `Build/Windows64NoSteam`. El define apaga Steamworks.NET y nuestro
-stack de Steam (que degrada a un warning único) **solo para esa build**, sin
-tocar los defines del proyecto. No hay entry point de menú — se llama a
-`BuildPipeline.BuildPlayer` por script (la 0.3.4 salió así).
+Para distribuir el `.exe` fuera de Steam (jurados, itch, etc.):
+**Rollgeon → Build → Windows 64 (Sin Steam)** → `Build/Windows64NoSteam`. Es el
+mismo build con `BuildPlayerOptions.extraScriptingDefines = ["DISABLESTEAMWORKS"]`:
+el define apaga Steamworks.NET y nuestro stack de Steam (que degrada a un warning
+único) **solo para esa build**, sin tocar los defines del proyecto. El script
+borra del output `steam_appid.txt` (lo copia el postprocessor igual) y
+`Rollgeon_Data/Plugins/x86_64/steam_api64.dll` — nada los usa con el define
+activo. Al zipear, excluir `Rollgeon_BurstDebugInformation_DoNotShip`.
 
-Después de buildear, borrar del output `steam_appid.txt` (lo copia el
-postprocessor igual) y `Rollgeon_Data/Plugins/x86_64/steam_api64.dll` —
-nada los usa con el define activo. Al zipear, excluir
-`Rollgeon_BurstDebugInformation_DoNotShip`.
+**Rollgeon → Build → Windows 64 (Evento)** → `Build/Windows64Event` es la misma
+variante más el define `ROLLGEON_EVENT_BUILD`, que fuerza el cuestionario in-game
+para ferias/expos (ver [`event-survey.md`](./event-survey.md)).
+
+Ambas variantes comparten `Validate()` con la build de Steam: los defines extra
+no aparecen en `PlayerSettings`, así que el chequeo de `STEAMWORKS_NET` pasa igual.
 
 ## Cosas que NO son bugs
 
