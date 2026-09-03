@@ -2231,6 +2231,62 @@ MonoBehaviour:
     m_Key: compas.salteado.desc
     m_Metadata:
       m_Items: []
+  - m_Id: 18295734690562048
+    m_Key: segunda.oportunidad.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18295734749282304
+    m_Key: segunda.oportunidad.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18295735609114624
+    m_Key: dados.en.reserva.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18295735609114625
+    m_Key: dados.en.reserva.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18295736355700736
+    m_Key: piedra.angular.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18295736355700737
+    m_Key: piedra.angular.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18295737119064064
+    m_Key: fuente.magica.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18295737119064065
+    m_Key: fuente.magica.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18295737878233088
+    m_Key: vertigo.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18295737878233089
+    m_Key: vertigo.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18295738587070464
+    m_Key: bolsa.del.impar.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18295738587070465
+    m_Key: bolsa.del.impar.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18295739530788864
+    m_Key: ayuno.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18295739530788865
+    m_Key: ayuno.desc
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

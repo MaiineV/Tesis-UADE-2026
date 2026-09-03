@@ -2268,6 +2268,67 @@ MonoBehaviour:
       or 2-4-6-8-10.'
     m_Metadata:
       m_Items: []
+  - m_Id: 18295734690562048
+    m_Localized: Second Chance
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18295734749282304
+    m_Localized: When you attack, +3 to the multiplier for each unused roll you still
+      have.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18295735609114624
+    m_Localized: Dice in Reserve
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18295735609114625
+    m_Localized: When you attack, +2 to the multiplier for each rolled die you did
+      not hold.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18295736355700736
+    m_Localized: Keystone
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18295736355700737
+    m_Localized: The first combo of each combat adds +2 to the multiplier.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18295737119064064
+    m_Localized: Magic Fountain
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18295737119064065
+    m_Localized: The highest die in your combo adds its face to the multiplier (not
+      to base damage).
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18295737878233088
+    m_Localized: Vertigo
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18295737878233089
+    m_Localized: Each combo in the combat adds +0.05 to the multiplier. A Pair resets
+      it to 0.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18295738587070464
+    m_Localized: Odd Purse
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18295738587070465
+    m_Localized: +3 gold for each odd die in every roll, combo or not.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18295739530788864
+    m_Localized: Fasting
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18295739530788865
+    m_Localized: You receive no healing from passive items. In exchange, all your
+      combo multipliers get +3.
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []
