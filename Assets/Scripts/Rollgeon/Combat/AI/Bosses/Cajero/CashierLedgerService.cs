@@ -234,27 +234,7 @@ namespace Rollgeon.Combat.Cashier
 
             _chips.Remove(instanceId);
             PayPlayer(entityGuid, chip.Value);
-
-            // Levantar una ficha soborna gratis: el oro que paga es justo lo que sube el escalón.
-            ArmBribeWindow();
-            AnnounceBribe(chip.Owner);
         }
-
-        /// <summary>Avisa sobre el jefe y no sobre quien levantó la ficha: lo que cambió es cuánto pega él.</summary>
-        private void AnnounceBribe(Guid bossGuid)
-        {
-            if (bossGuid == Guid.Empty) return;
-
-            EventManager.Trigger(
-                EventName.OnFloatingNumberRequested,
-                bossGuid,
-                FloatingNumberType.Status,
-                BribeAnnouncement,
-                Vector3.zero);
-        }
-
-        /// <summary>Sólo caracteres del atlas de <c>m6x11plus</c>: no tiene <c>é</c> ni <c>·</c>, y un glifo que falta sale como cuadradito.</summary>
-        private const string BribeAnnouncement = "Soborno: -1 escalón";
 
         private void OnHazardExpiredExternal(params object[] args)
         {

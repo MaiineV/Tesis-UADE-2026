@@ -319,98 +319,19 @@ namespace Rollgeon.Combat.AI.Tests
         }
 
         [Test]
-        public void Chip_PickedUpByThePlayer_AlsoBribesTheBoss_ForThreeRounds()
-        {
-            var chipId = Guid.NewGuid();
-            _ledger.RegisterChip(chipId, 8, _boss);
-
-            EventManager.Trigger(EventName.OnHazardTriggered, chipId, _player);
-
-            Assert.AreEqual(1, _ledger.DamageStepDown, "Devolverle la ficha le baja un escalón.");
-            Assert.AreEqual(3, _ledger.BribeRoundsLeft);
-            Assert.AreEqual(108, _economy.CurrentGold, "…y el oro de la ficha se cobra igual: son dos cosas.");
-
-            FireRound(1);
-            FireRound(2);
-            Assert.AreEqual(1, _ledger.DamageStepDown, "Misma ventana que el soborno pago: 3 rondas.");
-            FireRound(3);
-            Assert.AreEqual(0, _ledger.DamageStepDown);
-        }
-
-        [Test]
-        public void Chip_BribeIsFree_NeverChargesTheBribeCost()
-        {
-            // El soborno de lista cuesta 35; el de la ficha es el pago EN ficha.
-            var chipId = Guid.NewGuid();
-            _ledger.RegisterChip(chipId, 6, _boss);
-
-            EventManager.Trigger(EventName.OnHazardTriggered, chipId, _player);
-
-            Assert.AreEqual(106, _economy.CurrentGold,
-                "Cobrarle además los 35 dejaría la ficha en pérdida neta y nadie la levantaría.");
-        }
-
-        [Test]
-        public void Chip_SteppedOnByItsOwner_DoesNotBribe()
-        {
-            var chipId = Guid.NewGuid();
-            _ledger.RegisterChip(chipId, 8, _boss);
-
-            EventManager.Trigger(EventName.OnHazardTriggered, chipId, _boss);
-
-            Assert.AreEqual(0, _ledger.DamageStepDown, "El jefe no se soborna solo pisando sus fichas.");
-        }
-
-        [Test]
-        public void Chip_ExpiredWithoutPickup_DoesNotBribe()
-        {
-            var chipId = Guid.NewGuid();
-            _ledger.RegisterChip(chipId, 9, _boss);
-
-            EventManager.Trigger(EventName.OnHazardExpired, chipId);
-            EventManager.Trigger(EventName.OnHazardTriggered, chipId, _player);
-
-            Assert.AreEqual(0, _ledger.DamageStepDown, "Ignorar las fichas no soborna.");
-        }
-
-        [Test]
-        public void Chip_TwoInARow_RestartTheWindow_NeverStackTiers()
-        {
-            var first = Guid.NewGuid();
-            var second = Guid.NewGuid();
-            _ledger.RegisterChip(first, 6, _boss);
-            _ledger.RegisterChip(second, 6, _boss);
-
-            EventManager.Trigger(EventName.OnHazardTriggered, first, _player);
-            FireRound(1);
-            FireRound(2);
-            EventManager.Trigger(EventName.OnHazardTriggered, second, _player);
-
-            Assert.AreEqual(1, _ledger.DamageStepDown,
-                "Juntar fichas no apila escalones — si no, tres seguidas lo congelan.");
-            FireRound(3);
-            FireRound(4);
-            Assert.AreEqual(1, _ledger.DamageStepDown, "La ventana arrancó de nuevo con la segunda ficha.");
-            FireRound(5);
-            Assert.AreEqual(0, _ledger.DamageStepDown);
-        }
-
-        [Test]
-        public void Chip_Bribe_AnnouncesItselfOverTheBoss_AsText()
+        public void Chip_PickedUp_PaysAndAnnouncesNothing()
         {
             var chipId = Guid.NewGuid();
             _ledger.RegisterChip(chipId, 7, _boss);
 
-            var announcedOver = new List<Guid>();
-            var announcedText = new List<object>();
+            var announced = new List<object>();
             EventManager.EventReceiver capture = args =>
             {
                 if (args == null || args.Length < 3) return;
                 if (!(args[1] is Rollgeon.UI.HUD.FloatingNumberType type)) return;
                 if (type != Rollgeon.UI.HUD.FloatingNumberType.Status) return;
 
-                announcedOver.Add((Guid)args[0]);
-                announcedText.Add(args[2]);
+                announced.Add(args[2]);
             };
             EventManager.Subscribe(EventName.OnFloatingNumberRequested, capture);
 
@@ -423,11 +344,11 @@ namespace Rollgeon.Combat.AI.Tests
                 EventManager.UnSubscribe(EventName.OnFloatingNumberRequested, capture);
             }
 
-            CollectionAssert.AreEqual(new[] { _boss }, announcedOver,
-                "El soborno se anuncia sobre el jefe, no sobre quien levantó la ficha.");
-            Assert.AreEqual(1, announcedText.Count);
-            Assert.IsInstanceOf<string>(announcedText[0],
-                "'-1 escalón' no es una cantidad: viaja como texto o el formato le antepone un '+'.");
+            Assert.AreEqual(107, _economy.CurrentGold, "La ficha paga su valor y nada más.");
+            Assert.AreEqual(0, _ledger.DamageStepDown,
+                "Los escalones se fueron con el rediseno: levantar una ficha no le descuenta nada.");
+            CollectionAssert.IsEmpty(announced,
+                "Sin escalones no hay descuento que anunciar, y el cartel prometia una mecanica que no corre.");
         }
 
         [Test]
