@@ -428,5 +428,13 @@ namespace Patterns
         /// porque al dispararse ya no está en el inventario para resolverlo. La HUD lo
         /// consume para el toast "¡Segundo Aliento!" (SecondWindFeedbackView).</summary>
         OnSecondWindTriggered,
+
+        // --- Items: multiplicador decreciente ----------------------------------------
+        // NOTA: al final absoluto del enum a propósito (ver OnReinforcementSpawned).
+        /// <summary>args: [Guid playerGuid, ItemSO item, int combosPlayed]. Un item con
+        /// <c>ItemSO.DecayingMultiplier</c> (Eco Menguante) llegó a su piso y SE ROMPIÓ: ya
+        /// salió del inventario. Lleva el SO (no el id) por lo mismo que OnSecondWindTriggered.
+        /// La HUD lo consume para el toast "se rompió" (ItemBrokeDownFeedbackView).</summary>
+        OnItemBrokeDown,
     }
 }

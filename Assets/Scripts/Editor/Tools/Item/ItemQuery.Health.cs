@@ -111,6 +111,8 @@ namespace Rollgeon.Editor.Tools.Item
                         item.SecondWind
                         || item.RollPoolBonus > 0
                         || item.LadderSkippedStep
+                        || item.BlocksPassiveItemHealing
+                        || (item.DecayingMultiplier != null && item.DecayingMultiplier.Enabled)
                         || item.ActiveSlotBonus > 0
                         || (item.EnchantmentCostMultiplier > 0f
                             && !UnityEngine.Mathf.Approximately(item.EnchantmentCostMultiplier, 1f))

@@ -1043,6 +1043,14 @@ MonoBehaviour:
     m_Key: dicebag.cat.movimiento
     m_Metadata:
       m_Items: []
+  - m_Id: 18295244879740928
+    m_Key: item.broke_down.title
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18295244951044096
+    m_Key: item.broke_down.body
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

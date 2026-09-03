@@ -76,6 +76,17 @@ namespace Rollgeon.Items
         [NonSerialized, OdinSerialize]
         public BaseDamageOverrideDef BaseDamageOverride = new();
 
+        [Title("Decaying Multiplier")]
+        [InfoBox("Multiplicador de ATAQUE que arranca en Start al adquirir el item y baja " +
+                 "DecayPerCombo con CADA combo de combate jugado (ataque, defensa o cura) en la " +
+                 "run — persiste entre combates y en el save. Al tocar Min el item se rompe " +
+                 "(se remueve con toast) si BreakAtMin. Eco Menguante: 5 / 0.2 / 1.")]
+        [ShowIf("@Type == ItemType.Passive")]
+        // Mismo mecanismo que PassiveHooks: [NonSerialized] apaga la copia nativa de Unity,
+        // el dato real vive en serializationData (SerializedScriptableObject).
+        [NonSerialized, OdinSerialize]
+        public DecayingMultiplierDef DecayingMultiplier = new();
+
         [Title("Roll Pool")]
         [InfoBox("Bonus PERMANENTE al pool de rolls mientras el item esté en el inventario " +
                  "(sube el máximo y los rolls de arranque de cada combate). Llamado de " +
