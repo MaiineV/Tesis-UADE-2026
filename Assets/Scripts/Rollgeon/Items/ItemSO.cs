@@ -91,6 +91,13 @@ namespace Rollgeon.Items
         [ShowIf("@Type == ItemType.Passive")]
         public bool LadderSkippedStep;
 
+        [Title("Healing Rules")]
+        [InfoBox("Mientras el item esté en el inventario, las curas que vienen de items PASIVOS " +
+                 "(Talismán Vital, Corazón de la Fortuna, Lágrimas…) se ignoran. Ayuno. No toca " +
+                 "curas de clase, pociones ni Segundo Aliento. Se revierte al perder el item.")]
+        [ShowIf("@Type == ItemType.Passive")]
+        public bool BlocksPassiveItemHealing;
+
         [Title("Active Slots")]
         [InfoBox("Slots de items activos extra mientras el item esté en el inventario. " +
                  "Mochila Grande: 1. Se revierte al perder el item.")]

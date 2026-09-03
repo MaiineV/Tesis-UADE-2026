@@ -113,6 +113,7 @@ namespace Rollgeon.Items
                 RegisterBaseDamageOverride(item);
                 ApplyRollPoolBonus(item);
                 RegisterComboRules(item);
+                RegisterHealingRules(item);
                 if (item.ActiveSlotBonus > 0) AddActiveSlotBonus(item.ActiveSlotBonus);
                 RegisterEnchantmentCostModifier(item);
                 RegisterEnchantmentWeightModifier(item);
@@ -167,6 +168,7 @@ namespace Rollgeon.Items
                 UnregisterBaseDamageOverride(item);
                 RevertRollPoolBonus(item);
                 UnregisterComboRules(item);
+                UnregisterHealingRules(item);
                 if (item.ActiveSlotBonus > 0) AddActiveSlotBonus(-item.ActiveSlotBonus);
                 UnregisterEnchantmentCostModifier(item);
                 UnregisterEnchantmentWeightModifier(item);
@@ -686,6 +688,34 @@ namespace Rollgeon.Items
         }
 
         // ======================================================================
+        // Healing rules (Ayuno) — mismo patrón que las reglas de combo.
+        // ======================================================================
+
+        private readonly HashSet<string> _registeredHealingRules = new();
+
+        private void RegisterHealingRules(ItemSO item)
+        {
+            if (!item.BlocksPassiveItemHealing) return;
+            if (!ServiceLocator.TryGetService<Rollgeon.Combat.Healing.IHealingRuleService>(out var rules)
+                || rules == null)
+            {
+                Debug.LogWarning("[InventoryService] IHealingRuleService no registrado — el bloqueo de " +
+                                 $"curas de '{item.ItemId}' no se aplica.");
+                return;
+            }
+            rules.AddPassiveHealingBlock(item.ItemId);
+            _registeredHealingRules.Add(item.ItemId);
+        }
+
+        private void UnregisterHealingRules(ItemSO item)
+        {
+            if (item == null || !_registeredHealingRules.Remove(item.ItemId)) return;
+            if (ServiceLocator.TryGetService<Rollgeon.Combat.Healing.IHealingRuleService>(out var rules)
+                && rules != null)
+                rules.RemovePassiveHealingBlock(item.ItemId);
+        }
+
+        // ======================================================================
         // Enchantment cost modifier (Moneda Maldita)
         // ======================================================================
 
@@ -875,6 +905,15 @@ namespace Rollgeon.Items
                     ecm.Unregister(id);
             }
             _registeredCostModifiers.Clear();
+
+            if (_registeredHealingRules.Count > 0
+                && ServiceLocator.TryGetService<Rollgeon.Combat.Healing.IHealingRuleService>(out var hrs)
+                && hrs != null)
+            {
+                foreach (var id in _registeredHealingRules)
+                    hrs.RemovePassiveHealingBlock(id);
+            }
+            _registeredHealingRules.Clear();
         }
     }
 }
