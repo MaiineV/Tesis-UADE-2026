@@ -60,14 +60,21 @@ dado de movimiento, Botas), `ForceDoorRollBonus` (+N a la tirada de forzar puert
 (Ficha del Segundo Aliento — el item SE CONSUME al salvarte), `BaseDamageOverride`
 (`Enabled` + `BaseValue: EffectIntReader` — Furia Contenida con `ReadCleanTurnStreakScaled`,
 Egoista con `ReadCurrentGoldSqrtScaled`; categoria excluyente, gana el mayor `Priority`),
-`LadderSkippedStep` (Compas Salteado — la Escalera acepta paso 2 en cualquier paridad
+`LadderSkippedStep` (Compas Salteado — la Escalera acepta saltos de 1 o 2 mezclados
 mientras el item este en el inventario; sigue siendo `combo.ladder`, lo sostiene
-`IComboRuleService` por ItemId) y `UniquePerRun` (estilo Isaac: ya poseido — inventario o
-`ClassHeroSO.InnateItemIds` — no vuelve a salir en pools).
+`IComboRuleService` por ItemId), `BlocksPassiveItemHealing` (Ayuno — `EffHeal` ignora las
+curas cuyo contexto trae `SourceItemId`, o sea las de hooks de items pasivos; lo sostiene
+`IHealingRuleService` por ItemId), `DecayingMultiplier` (`Enabled` + `Start`/`DecayPerCombo`/
+`Min`/`BreakAtMin` — Eco Menguante: multiplica solo ATAQUES, descuenta con cualquier combo de
+combate, contador de RUN guardado en el save, al tocar `Min` el item SE ROMPE con toast; lo
+aplica `DecayingMultiplierService`, no hace falta hook) y `UniquePerRun` (estilo Isaac: ya
+poseido — inventario o `ClassHeroSO.InnateItemIds` — no vuelve a salir en pools).
 
 **Estado por combate que los readers leen** (`IPlayerTurnStateService`): `TilesMovedThisTurn`,
 `CleanTurnStreak` (Furia), `ComboVarietyStreak` (Mosaico Erratico — combos distintos
-encadenados, se actualiza DENTRO del dispatch de ComboPlayed asi el combo en curso ya cuenta)
+encadenados, se actualiza DENTRO del dispatch de ComboPlayed asi el combo en curso ya cuenta),
+`ComboHistoryThisCombat` / `CombosPlayedThisCombat` (historial ordenado de combos de combate,
+incluye el en curso — Vertigo, Piedra Angular)
 y `AttacksPlayedThisCombat` (Eco Menguante — ataques YA ejecutados, commit diferido: el
 primer ataque lee 0). El servicio se suscribe en bootstrap, antes que los hooks de items.
 
@@ -108,7 +115,7 @@ exponen propiedades con backing field `[OdinSerialize, SerializeReference]`.
 
 | Intencion | Efectos |
 |---|---|
-| Daño | `EffDealDamage`, `EffAddComboBonus`, `EffMultiplyComboDamage` (constante `Multiplier` o `MultiplierReader: EffectIntReader` via `ReadFloat` — Eco Menguante), `EffBlockComboDamage`, `EffLowHpAttackBuff`, `EffThresholdCrossCombatBuff` (latch +Attack al cruzar %HP, 1x combate via lifetime Encounter — Instinto) |
+| Daño | `EffDealDamage`, `EffAddComboBonus`, `EffMultiplyComboDamage` (constante `Multiplier` o `MultiplierReader: EffectIntReader` via `ReadFloat`), `EffAddComboMultiplier` (**"+X al multiplicador"** del GDD: `Amount` float o `AmountReader` × `ReaderScale`; suma sobre el 1 de M — `M = (1 + Σadd) × Πmult × ability`, +2 sin otros factores = ×3 — Piedra Angular, Ayuno, Segunda Oportunidad, Fuente Magica, Dados en Reserva, Vertigo), `EffBlockComboDamage`, `EffLowHpAttackBuff`, `EffThresholdCrossCombatBuff` (latch +Attack al cruzar %HP, 1x combate via lifetime Encounter — Instinto) |
 | Vida / defensa | `EffHeal` (tiene modo `FromReader`), `EffAddShield` |
 | Recursos | `EffModifyGold`, `EffModifyIntAttribute`, `EffAddRolls` (+N rolls al pool AHORA; el permanente va por `ItemSO.RollPoolBonus`) |
 | Inventario | `EffAddItemToInventory`, `EffRemoveInventoryItem` |
@@ -131,10 +138,17 @@ En `Rollgeon.Effects.Readers` (genericos, sirven en items): `ReadConstantInt`,
 `ReadEntityStat`, `ReadTilesMovedThisTurn` (`PerTileAmount` — Corredor Incansable),
 `ReadCleanTurnStreakScaled` (`PerTurnAmount` float con floor — Furia Contenida),
 `ReadCurrentRolls` (`PerRollAmount` — Corazon/Tesoro de la fortuna, con
-`turn.rolls.leftover`), `ReadComboVarietyStreakScaled` (`PerStepAmount` — Mosaico Erratico),
-`ReadAttackDecayMultiplier` (`Start`/`DecayPerAttack`/`Min`, float — Eco Menguante, como
-`MultiplierReader` de `EffMultiplyComboDamage`), `ReadDiceShowingFace` (`Face` + `PerDieAmount`
-— Jackpot; cuenta `KeptDice` del contexto, asi que SOLO sirve en hooks ComboPlayed).
+`turn.rolls.leftover`), `ReadComboVarietyStreakScaled` (`PerStepAmount` — Mosaico Erratico:
+cadena de 2+ paga largo × PerStep, cadena de 1 paga 0), `ReadAttackDecayMultiplier`
+(`Start`/`DecayPerAttack`/`Min`, float — LEGACY: Eco Menguante ahora usa la perilla
+`DecayingMultiplier`), `ReadDiceShowingFace` (`Face` + `PerDieAmount` — Jackpot; cuenta
+`KeptDice`), `ReadCombosSinceLastCombo` (`ResetComboId` — combos del combate despues del
+ultimo X, incluye el en curso — Vertigo con `combo.pair` × scale 0.05),
+`ReadHighestContributingDie` (cara mas alta de los dados que FORMAN el combo — Fuente Magica),
+`ReadUnusedDiceCount` (dados tirados y no holdeados — Dados en Reserva × scale 2),
+`ReadDiceCountByParity` (`Parity` + `PerDieAmount` — Bolsa del Impar; lee `DiceResult`, la
+tirada entera). Los readers de dados funcionan en hooks ComboPlayed y en `roll.resolved` /
+`roll.dice` (los hooks de bus copian la tirada del evento a `DiceResult`).
 
 "Daño base +X" del GDD = `EffAddComboBonus`: en la formula v3 todo lo aditivo vive en N y se
 multiplica por M igual (Mosaico, Ultima Carta, Jackpot van por ahi).
@@ -151,7 +165,9 @@ Se evaluan en **AND**. Disponibles: `PCAdjacentToDoor`, `PCComboAvailable`, `PCC
 `PcOwnerHpBelow`, `PcOwnerStatCompare`, `PcRoundNumber`, `PcTargetInRange`,
 `PcTilesMovedThisTurn` (`IntComparison` + `Value`; sin servicio = false — Piedra de Guardia
 con `Equal 0`), `PcRollPoolCompare` (`IntComparison` + `Value` contra los rolls disponibles;
-sin servicio / fuera de combate = false — Ultima Carta con `Equal 0`).
+sin servicio / fuera de combate = false — Ultima Carta con `Equal 0`),
+`PcCombosPlayedThisCombat` (`IntComparison` + `Value` contra los combos de combate jugados,
+INCLUYE el en curso — Piedra Angular con `Equal 1`).
 Para OR o anidamiento: `PCComposite`.
 
 ## API de alta (`Rollgeon.Editor.Tools.Item.ItemAuthoring`)
