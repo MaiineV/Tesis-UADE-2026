@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Patterns;
 using Patterns.Save;
 using UnityEngine;
@@ -20,12 +21,30 @@ namespace Rollgeon.Economy
     /// </summary>
     public sealed class EconomyService : IEconomyService, ISaveable, IDisposable
     {
+        // Cota dura del restore: un save nunca debería traer menos que el piso más
+        // profundo autorable (Tarjeta de Crédito = −30) — el clamp protege contra basura.
+        private const int AbsoluteMinGold = -1000;
+
         private readonly int _startingGold;
         private int _gold;
+
+        // Pisos registrados por fuente (item id). Gana el más bajo; vacío = 0.
+        private readonly Dictionary<string, int> _floors = new Dictionary<string, int>();
 
         private EventManager.EventReceiver _onRunStart;
 
         public int CurrentGold => _gold;
+
+        public int MinGold
+        {
+            get
+            {
+                int min = 0;
+                foreach (var floor in _floors.Values)
+                    if (floor < min) min = floor;
+                return min;
+            }
+        }
 
         public EconomyService(int startingGold)
         {
@@ -47,15 +66,31 @@ namespace Rollgeon.Economy
         public bool Spend(int amount)
         {
             if (amount <= 0) return true;
-            if (_gold < amount) return false;
+            if (_gold - amount < MinGold) return false;
             _gold -= amount;
             EventManager.Trigger(EventName.OnGoldChanged, _gold, -amount);
             return true;
         }
 
-        public bool CanAfford(int amount) => amount <= 0 || _gold >= amount;
+        public bool CanAfford(int amount) => amount <= 0 || _gold - amount >= MinGold;
 
         public void ResetTo(int amount) => SetGold(Mathf.Max(0, amount));
+
+        // ---------------------------------------------------------------- gold floor
+
+        public void SetGoldFloor(string sourceId, int floor)
+        {
+            if (string.IsNullOrEmpty(sourceId) || floor >= 0) return;
+            _floors[sourceId] = floor;
+        }
+
+        public void ClearGoldFloor(string sourceId)
+        {
+            if (string.IsNullOrEmpty(sourceId)) return;
+            // Sin confiscar: si el jugador quedó en deuda, la deuda sigue hasta que
+            // sume oro. Solo se cierra la puerta a endeudarse más.
+            _floors.Remove(sourceId);
+        }
 
         // ---------------------------------------------------------------- run reset
 
@@ -84,7 +119,9 @@ namespace Rollgeon.Economy
 
         public void RestoreState(object state)
         {
-            if (state is int gold) SetGold(Mathf.Max(0, gold));
+            // Un save con oro negativo es legítimo (deuda de Tarjeta de Crédito). El piso
+            // real lo re-registra el inventario al restaurar el item; acá solo se filtra basura.
+            if (state is int gold) SetGold(Mathf.Max(AbsoluteMinGold, gold));
         }
 
         // ---------------------------------------------------------------- IDisposable

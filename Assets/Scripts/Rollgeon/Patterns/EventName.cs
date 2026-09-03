@@ -436,5 +436,16 @@ namespace Patterns
         /// salió del inventario. Lleva el SO (no el id) por lo mismo que OnSecondWindTriggered.
         /// La HUD lo consume para el toast "se rompió" (ItemBrokeDownFeedbackView).</summary>
         OnItemBrokeDown,
+
+        // --- Items: Rezagado / Peaje (Feature#0074) ----------------------------------
+        /// <summary>args: [Guid playerGuid, ItemSO item, string comboId]. Un item con
+        /// <c>ItemSO.LeastUsedComboBonus</c> (Rezagado) acaba de fijar su combo — se
+        /// dispara una sola vez por run al adquirirlo (no en restore).</summary>
+        OnLeastUsedComboAssigned,
+
+        /// <summary>args: [Guid playerGuid, Guid roomInstanceId, int goldPaid]. El jugador
+        /// pagó el peaje (<c>ItemSO.CombatToll</c>) y la sala de combate quedó limpia sin
+        /// pelear. No pasa por OnCombatEnd: no cuenta como victoria.</summary>
+        OnCombatTollPaid,
     }
 }

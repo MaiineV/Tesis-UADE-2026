@@ -142,6 +142,31 @@ namespace Rollgeon.Items
         [MinValue(1)]
         public int SecondWindRemainingHp = 1;
 
+        [Title("Gold Floor")]
+        [InfoBox("Piso del oro del jugador mientras el item esté en el inventario: la tienda, " +
+                 "el altar y cualquier Spend pueden dejar el balance en deuda hasta este valor. " +
+                 "Tarjeta de Crédito: -30. 0 = sin efecto. Con varios items gana el más bajo. " +
+                 "Se revierte al perder el item (la deuda existente queda).")]
+        [ShowIf("@Type == ItemType.Passive")]
+        [MaxValue(0)]
+        public int GoldFloor;
+
+        [Title("Least Used Combo Bonus")]
+        [InfoBox("Al adquirir el item se elige UNA vez el combo con menos matches de la run " +
+                 "(desempate: orden de la hoja del héroe) y ese combo suma MultiplierBonus al " +
+                 "canal aditivo de M en cada ataque. Rezagado: 0.5 (+50%). Persiste en el save.")]
+        [ShowIf("@Type == ItemType.Passive")]
+        [NonSerialized, OdinSerialize]
+        public LeastUsedComboBonusDef LeastUsedComboBonus = new();
+
+        [Title("Combat Toll")]
+        [InfoBox("Al entrar a una sala de combate estándar (no Boss) ofrece pagar " +
+                 "BaseCost + CostPerFloor × piso para limpiarla sin pelear: sin enemigos, sin " +
+                 "loot, puertas abiertas. Peaje: 15 / 10 (piso 1 = 25).")]
+        [ShowIf("@Type == ItemType.Passive")]
+        [NonSerialized, OdinSerialize]
+        public CombatTollDef CombatToll = new();
+
         // ==================================================================
         // Modelo nuevo (GDD "Ítems Activos"): slot unico, dado propio y bandas.
         // ==================================================================
