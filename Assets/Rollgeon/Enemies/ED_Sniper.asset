@@ -99,6 +99,9 @@ MonoBehaviour:
     - Name: IntentLabelFallback
       Entry: 1
       Data: Anillo de Fichas
+    - Name: RequireSourceInPosition
+      Entry: 5
+      Data: false
     - Name: 
       Entry: 8
       Data: 
@@ -272,6 +275,9 @@ MonoBehaviour:
     - Name: IntentLabelFallback
       Entry: 1
       Data: Anillo de Fichas
+    - Name: RequireSourceInPosition
+      Entry: 5
+      Data: false
     - Name: 
       Entry: 8
       Data: 
