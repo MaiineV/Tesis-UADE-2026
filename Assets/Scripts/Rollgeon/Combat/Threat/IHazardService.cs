@@ -31,7 +31,9 @@ namespace Rollgeon.Combat.Threat
         /// id. Each call creates an independent instance. Returns <see cref="Guid.Empty"/> and does
         /// nothing when <paramref name="definition"/> is null or <paramref name="tiles"/> is empty.
         /// </summary>
-        Guid Activate(HazardDefinitionSO definition, IEnumerable<GridCoord> tiles);
+        /// <param name="ownerGuid">Quién la puso, o Empty si es de la sala: el hover de la instancia le pregunta a su árbol qué le va a pasar.</param>
+        Guid Activate(HazardDefinitionSO definition, IEnumerable<GridCoord> tiles,
+                      Guid ownerGuid = default);
 
         /// <summary><c>true</c> if <paramref name="definition"/> (by its SourceGuid) is active.</summary>
         bool IsActive(HazardDefinitionSO definition);

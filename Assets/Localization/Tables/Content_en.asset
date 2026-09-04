@@ -945,8 +945,8 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 13919417973649410
-    m_Localized: Throws you clear and litters the floor with coins. The ones you
-      don't grab in time he takes back, and each one heals him.
+    m_Localized: Throws you clear and takes your gold, and some of it lands on the
+      floor. Whatever you don't grab in time is gone.
     m_Metadata:
       m_Items: []
   - m_Id: 13919417973649411
@@ -1456,7 +1456,8 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 17593280027881472
-    m_Localized: Hits harder the more gold you carry. Chips you let expire, he keeps.
+    m_Localized: Throws you three tiles and charges you gold on every shove. Whatever
+      you let expire on the floor is lost.
     m_Metadata:
       m_Items: []
   - m_Id: 17593280027881473
@@ -1505,11 +1506,11 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 17593280027881484
-    m_Localized: The Bank Keeps
+    m_Localized: The Bank Doesn't Wait
     m_Metadata:
       m_Items: []
   - m_Id: 17593280027881485
-    m_Localized: Gold you let expire, the bank keeps.
+    m_Localized: Whatever you let expire on the floor is lost.
     m_Metadata:
       m_Items: []
   - m_Id: 17593280027881486
@@ -1631,8 +1632,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 17593280044658693
-    m_Localized: "Step on it to collect its value. One that expires, the bank keeps
-      \u2014 and it heals him."
+    m_Localized: Step on it to collect its value. One that expires is lost.
     m_Metadata:
       m_Items: []
   - m_Id: 17593280044658694
@@ -1673,8 +1673,8 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 17593280044658703
-    m_Localized: Disarm when stepped on and rearm on their own. They hurt a fair
-      bit more than the common ones.
+    m_Localized: They charge every time you cross them - they never wear out. They
+      hurt a fair bit more than the common ones.
     m_Metadata:
       m_Items: []
   - m_Id: 17593280048852992
@@ -2865,6 +2865,46 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 18479643847999488
     m_Localized: 6+ HP
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18490583970410496
+    m_Localized: Shove
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18490584037519360
+    m_Localized: Shoves you <b>{1}</b> tiles and takes a cut of the gold you carry.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18490584037519361
+    m_Localized: The Vault Takes It
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18490584037519362
+    m_Localized: 
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18490584037519363
+    m_Localized: Coins Expiring
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18490584037519364
+    m_Localized: The vault takes one per turn; <b>{1}</b> left on the floor.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18490584037519365
+    m_Localized: Cannon Shot
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18490584037519366
+    m_Localized: "Marks a 3\xD73 area where you stand and fires on it next turn."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18490584037519367
+    m_Localized: Cannon Shot
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18490584037519368
+    m_Localized: It lands on the marked area, not on where you are.
     m_Metadata:
       m_Items: []
   references:

@@ -951,8 +951,8 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 13919417973649410
-    m_Localized: "Te tira lejos y te llena el piso de monedas. Las que no levant\xE1s
-      a tiempo se las lleva \xE9l, y cada una lo cura."
+    m_Localized: "Te tira lejos y te saca oro, y parte de esa plata cae al piso.
+      La que no levant\xE1s a tiempo se pierde."
     m_Metadata:
       m_Items: []
   - m_Id: 13919417973649411
@@ -1478,8 +1478,8 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 17593280027881472
-    m_Localized: "Pega m\xE1s fuerte cuanto m\xE1s oro llev\xE1s. Las fichas que
-      dej\xE1s vencer se las queda."
+    m_Localized: "Te tira tres casillas y te cobra oro en cada empuj\xF3n. Lo que
+      dejes vencer en el piso lo perd\xE9s."
     m_Metadata:
       m_Items: []
   - m_Id: 17593280027881473
@@ -1528,11 +1528,11 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 17593280027881484
-    m_Localized: La banca retiene
+    m_Localized: La banca no espera
     m_Metadata:
       m_Items: []
   - m_Id: 17593280027881485
-    m_Localized: "El oro que dej\xE1s vencer se lo queda la banca."
+    m_Localized: "Lo que dej\xE1s vencer en el piso se pierde."
     m_Metadata:
       m_Items: []
   - m_Id: 17593280027881486
@@ -1654,8 +1654,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 17593280044658693
-    m_Localized: "Pisala y cobr\xE1s su valor. La que vence se la queda la banca
-      \u2014 y lo cura."
+    m_Localized: "Pisala y cobr\xE1s su valor. La que vence se pierde."
     m_Metadata:
       m_Items: []
   - m_Id: 17593280044658694
@@ -1696,8 +1695,8 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 17593280044658703
-    m_Localized: "Se desarman al pisarlos y se rearman solos. Duelen bastante m\xE1s
-      que los comunes."
+    m_Localized: "Cobran cada vez que los cruz\xE1s: no se gastan. Duelen bastante
+      m\xE1s que los comunes."
     m_Metadata:
       m_Items: []
   - m_Id: 17593280048852992
@@ -2874,6 +2873,48 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 18479643847999488
     m_Localized: 6+ vida
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18490583970410496
+    m_Localized: "Empuj\xF3n"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18490584037519360
+    m_Localized: Te empuja <b>{1}</b> casillas y te cobra parte del oro que lleves
+      encima.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18490584037519361
+    m_Localized: Se la lleva la caja
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18490584037519362
+    m_Localized: 
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18490584037519363
+    m_Localized: Monedas venciendo
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18490584037519364
+    m_Localized: La caja se lleva una por turno; quedan <b>{1}</b> en el piso.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18490584037519365
+    m_Localized: "Ca\xF1onazo"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18490584037519366
+    m_Localized: "Marca un \xE1rea de 3\xD73 donde est\xE9s parado y la cobra al
+      turno siguiente."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18490584037519367
+    m_Localized: "Ca\xF1onazo"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18490584037519368
+    m_Localized: "Cae en el \xE1rea marcada, no donde est\xE9s."
     m_Metadata:
       m_Items: []
   references:

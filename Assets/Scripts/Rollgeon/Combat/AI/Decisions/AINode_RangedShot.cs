@@ -46,6 +46,13 @@ namespace Rollgeon.Combat.AI.Decisions
                  "limpia el nodo falla y el Selector[Shot, Wait] se lo come.")]
         public bool IgnoreLineOfSight;
 
+        [Tooltip("Key de la tarjeta cuando este paso no es un disparo (un golpe a Range 1). " +
+                 "Vacío = intent.ranged_shot.")]
+        public string IntentLabelKey;
+
+        [Tooltip("Texto de autor de IntentLabelKey, por si la key no est\u00e1 en tabla.")]
+        public string IntentLabelFallback;
+
         [Title("Presentación")]
 #if UNITY_EDITOR
         [ValueDropdown(nameof(GetFeedbackIdsForDropdown))]
@@ -84,6 +91,19 @@ namespace Rollgeon.Combat.AI.Decisions
         protected virtual string ResolvedImpactVfxFeedbackId => ImpactVfxFeedbackId;
 
         protected virtual string ResolvedImpactFeelFeedbackId => ImpactFeelFeedbackId;
+
+        /// <summary>En la propiedad y no en el campo: un nodo ya serializado, sin las keys nuevas, se anuncia igual.</summary>
+        protected virtual string DefaultLabelKey => AIIntentTextKeys.RangedShot;
+
+        protected virtual string DefaultLabelFallback => AIIntentTextKeys.RangedShotFallback;
+
+        protected virtual int IntentAmount => 0;
+
+        private string LabelKey =>
+            string.IsNullOrEmpty(IntentLabelKey) ? DefaultLabelKey : IntentLabelKey;
+
+        private string LabelFallback =>
+            string.IsNullOrEmpty(IntentLabelFallback) ? DefaultLabelFallback : IntentLabelFallback;
 
         /// <summary>
         /// Camino síncrono (EditMode / escenas sin <c>CoroutineHost</c>): cobra el disparo en el
@@ -149,9 +169,8 @@ namespace Rollgeon.Combat.AI.Decisions
             if (!context.Grid.TryGetPosition(context.PlayerGuid, out var playerCoord)) return false;
 
             intent = new AIIntent(
-                AIIntentTextKeys.RangedShot, AIIntentTextKeys.RangedShotFallback,
-                Damage, Kind,
-                tiles: new[] { playerCoord });
+                LabelKey, LabelFallback, Damage, Kind,
+                tiles: new[] { playerCoord }, amount: IntentAmount);
             return true;
         }
 
@@ -161,8 +180,7 @@ namespace Rollgeon.Combat.AI.Decisions
         /// </summary>
         public bool TryDescribeOption(AIContext context, out AIIntent intent)
         {
-            intent = new AIIntent(AIIntentTextKeys.RangedShot,
-                                  AIIntentTextKeys.RangedShotFallback, Damage, Kind);
+            intent = new AIIntent(LabelKey, LabelFallback, Damage, Kind, amount: IntentAmount);
             return true;
         }
 

@@ -1,4 +1,8 @@
+using System;
 using System.Collections.Generic;
+using Patterns;
+using Rollgeon.Combat.AI;
+using Rollgeon.Combat.AI.Decisions;
 using Rollgeon.Localization;
 using Rollgeon.UI.HUD.Status;
 using Rollgeon.UI.Tooltips;
@@ -19,12 +23,26 @@ namespace Rollgeon.Combat.Threat
     [AddComponentMenu("Rollgeon/Combat/Hazard Tooltip Info")]
     public sealed class HazardTooltipInfo : MonoBehaviour, IHasTooltipInfo
     {
+        /// <summary>Rótulos de la tarjeta de reloj.</summary>
+        public const string ClockTicksKey = "hazard.panel.clock_ticks";
+        public const string ClockDueKey = "hazard.panel.clock_due";
+
         private readonly List<StatusIconState> _cards = new();
+        private readonly List<AIIntent> _standing = new();
+        private readonly List<AIIntent> _next = new();
 
         private HazardDefinitionSO _definition;
+        private Guid _instanceId;
+        private Guid _ownerGuid;
 
-        /// <summary>Llamado por quien arma el anchor al activar la instancia.</summary>
-        public void Bind(HazardDefinitionSO definition) => _definition = definition;
+        /// <summary>Sin dueño a quien preguntarle (hazard de sala) la ficha va sin reloj.</summary>
+        public void Bind(HazardDefinitionSO definition, Guid instanceId = default,
+                         Guid ownerGuid = default)
+        {
+            _definition = definition;
+            _instanceId = instanceId;
+            _ownerGuid = ownerGuid;
+        }
 
         /// <summary>El header del panel: nombre, la fila "Peligro de sala" y su comportamiento.</summary>
         public TooltipContent BuildContent()
@@ -43,11 +61,14 @@ namespace Rollgeon.Combat.Threat
                 flavor: ComposeCadence(def));
         }
 
-        /// <summary>El golpe como dato. Un hazard sin daño (las fichas) no saca tarjeta.</summary>
+        /// <summary>Arriba el reloj de esta instancia si su dueño lo publica; abajo el golpe. Un hazard sin daño no saca la segunda.</summary>
         public IReadOnlyList<StatusIconState> CollectCards()
         {
             _cards.Clear();
             var def = _definition;
+
+            if (TryReadOwnClock(out int turnsLeft)) AppendClockCard(turnsLeft);
+
             if (def != null && def.Damage > 0)
             {
                 _cards.Add(new StatusIconState(
@@ -57,6 +78,42 @@ namespace Rollgeon.Combat.Threat
                     eyebrow: LocalizedContent.Ui("tile.panel.effect", "Efecto")));
             }
             return _cards;
+        }
+
+        /// <summary>El reloj de ESTA instancia, buscado por subject igual que la mecha de cada bomba.</summary>
+        private bool TryReadOwnClock(out int turnsLeft)
+        {
+            turnsLeft = 0;
+            if (_ownerGuid == Guid.Empty || _instanceId == Guid.Empty) return false;
+            if (!ServiceLocator.TryGetService<IEnemyIntentService>(out var intents) || intents == null)
+                return false;
+            if (!intents.TryRead(_ownerGuid, _standing, _next)) return false;
+
+            foreach (var intent in _standing)
+            {
+                if (intent.SubjectGuid != _instanceId) continue;
+                turnsLeft = intent.TurnsAway;
+                return true;
+            }
+            return false;
+        }
+
+        // 0 turnos no lleva badge: el título ya dice que se la lleva ahora.
+        private void AppendClockCard(int turnsLeft)
+        {
+            bool due = turnsLeft <= 0;
+
+            _cards.Add(new StatusIconState(
+                due ? ClockDueKey : ClockTicksKey,
+                due
+                    ? LocalizedContent.Ui(ClockDueKey, "Se la lleva la caja")
+                    : LocalizedContent.Ui(ClockTicksKey, "Se vence"),
+                description: null,
+                icon: null,
+                active: true,
+                remainingTurns: due ? (int?)null : turnsLeft,
+                style: StatusCardStyle.Terrain,
+                eyebrow: EnemyStatusIconsView.NextTurnEyebrow()));
         }
 
         /// <summary>Fallback de texto plano para quien no cablea los providers.</summary>

@@ -12,17 +12,16 @@ using UnityEngine;
 
 namespace Rollgeon.Combat.AI.Tests
 {
-    // Los tres números están duplicados de CajeroAssetBuilder, que vive en un assembly de Editor
-    // y no se puede referenciar desde acá.
+    // LifetimeRounds está duplicado de CajeroAssetBuilder, que vive en un assembly de Editor y no
+    // se puede referenciar desde acá.
     [TestFixture]
     public class AINode_CajeroCoinVaultTests
     {
-        private const int HealPerCoin = 12;
-        private const int MaxHealPerFight = 60;
-        private const int LifetimeRounds = 3;
+        private const int LifetimeRounds = 2;
         private const int BossMaxHp = 350;
 
-        /// <summary>Suficientemente lastimado para que el techo entero entre sin tocar el máximo.</summary>
+        /// <summary>Lastimado a propósito: con el jefe lleno, "no se curó" pasaría igual por el clamp
+        /// al máximo y el test no probaría nada.</summary>
         private const int BossStartHp = 100;
 
         private AttributesManager _attributes;
@@ -61,7 +60,7 @@ namespace Rollgeon.Combat.AI.Tests
         }
 
         [Test]
-        public void ACoinNobodyPicksUp_ExpiresAndHealsHim()
+        public void ACoinNobodyPicksUp_ExpiresAndIsLostWithoutHealingHim()
         {
             var node = NewNode();
             var coin = DropCoin();
@@ -70,15 +69,16 @@ namespace Rollgeon.Combat.AI.Tests
             var result = node.Tick(NewContext(round: LifetimeRounds));
 
             Assert.AreEqual(AIResult.Succeeded, result, "El vencimiento no se cobró.");
-            Assert.AreEqual(BossStartHp + HealPerCoin, BossHp(),
-                "La moneda venció y el jefe no se curó: es todo el castigo por dejarla en el piso.");
+            Assert.AreEqual(BossStartHp, BossHp(),
+                "La moneda vencida lo curó. La plata que el jugador deja vencer se pierde y nada más: " +
+                "lo que dejó de ganar es todo el precio, y el jefe no tiene forma de recuperar vida.");
             CollectionAssert.Contains(_hazards.Deactivated, coin,
-                "La moneda vencida sigue en el piso: el jugador podría levantarla después de que ya " +
-                "le pagó al jefe, o sea cobrar dos veces por la misma moneda.");
+                "La moneda vencida sigue en el piso: el jugador la levantaría pasado el plazo, y el " +
+                "plazo dejaría de significar algo.");
         }
 
         [Test]
-        public void ACoinThatIsNotDueYet_StaysOnTheFloorAndHealsNothing()
+        public void ACoinThatIsNotDueYet_StaysOnTheFloor()
         {
             var node = NewNode();
             DropCoin();
@@ -86,27 +86,28 @@ namespace Rollgeon.Combat.AI.Tests
             node.Tick(NewContext(round: 0));
             for (int round = 1; round < LifetimeRounds; round++) node.Tick(NewContext(round));
 
-            Assert.AreEqual(BossStartHp, BossHp(),
+            Assert.IsEmpty(_hazards.Deactivated,
                 $"Se cobró antes de las {LifetimeRounds} rondas: al jugador le queda menos tiempo " +
                 "para llegar a la moneda que el que la ficha promete.");
-            Assert.IsEmpty(_hazards.Deactivated, "La moneda desapareció antes de vencer.");
         }
 
         // El reloj vive en el nodo porque el servicio de hazards expira igual la levantada y la
-        // vencida: desde afuera no se pueden distinguir, y la levantada no cura.
+        // vencida: desde afuera no se pueden distinguir.
         [Test]
-        public void ACoinThePlayerPickedUp_IsForgottenWithoutHealing()
+        public void ACoinThePlayerPickedUp_IsForgotten()
         {
             var node = NewNode();
             var coin = DropCoin();
 
             node.Tick(NewContext(round: 0));
             _hazards.Pickup(coin);
-            node.Tick(NewContext(round: LifetimeRounds));
+            var result = node.Tick(NewContext(round: LifetimeRounds));
 
-            Assert.AreEqual(BossStartHp, BossHp(),
-                "Cobró por una moneda que el jugador había levantado: levantarla es exactamente la " +
-                "jugada que la mecánica premia, y así pagaría lo mismo que ignorarla.");
+            Assert.AreEqual(AIResult.Failed, result,
+                "Venció una moneda que el jugador había levantado: levantarla es la jugada que la " +
+                "mecánica premia, y el nodo la sigue contando como si estuviera en el piso.");
+            CollectionAssert.DoesNotContain(_hazards.Deactivated, coin,
+                "Apagó una instancia que ya no existía.");
         }
 
         [Test]
@@ -119,7 +120,6 @@ namespace Rollgeon.Combat.AI.Tests
             node.Tick(NewContext(round: 0));
             node.Tick(NewContext(round: LifetimeRounds));
 
-            Assert.AreEqual(BossStartHp, BossHp(), "Se curó con algo que no era una moneda.");
             CollectionAssert.DoesNotContain(_hazards.Deactivated, other,
                 "Apagó un hazard ajeno: la caja sólo administra las monedas del Cajero.");
         }
@@ -127,7 +127,7 @@ namespace Rollgeon.Combat.AI.Tests
         [Test]
         public void ARainOfCoins_ExpiresOnePerTurn_NotTheWholeBatchInOneBeat()
         {
-            // CajeroAssetBuilder.CoinsPerRain: la tanda que suelta la sala.
+            // Más monedas que las que deja un golpe: el punto es que la caja no vacíe el piso de una.
             const int coinsPerRain = 4;
 
             var node = NewNode();
@@ -143,104 +143,143 @@ namespace Rollgeon.Combat.AI.Tests
                     $"Se llevó {_hazards.Deactivated.Count} monedas en {taken} turno(s). Las cuatro " +
                     "vencen juntas y de a una es el diseño: la tanda entera en un tick le devuelve " +
                     "casi todo el techo de la pelea de un saque.");
-                Assert.AreEqual(taken * HealPerCoin, BossHp() - BossStartHp,
-                    "La curación no acompañó el ritmo: una moneda por turno es una curación por turno.");
                 Assert.AreEqual(coinsPerRain - taken, _hazards.Count,
                     "Las monedas que todavía no le tocaron turno tienen que seguir en el piso y " +
                     "levantables: si desaparecen con la primera, el jugador nunca llega a ninguna.");
             }
         }
 
+        /// <summary>Reemplaza al viejo test del techo de curación: sin techo, lo que hay que sostener
+        /// con volumen es que ninguna cantidad de monedas vencidas le devuelve vida.</summary>
         [Test]
-        public void MoreCoinsThanTheCeilingCanPay_HealsExactlyTheCeiling()
+        public void ManyExpiredCoins_NeverGiveHimBackAnyHealth()
         {
+            const int coins = 6;
+
             var node = NewNode();
-            int coins = MaxHealPerFight / HealPerCoin + 1; // Una más de las que el techo alcanza a pagar.
             var dropped = new List<Guid>();
             for (int i = 0; i < coins; i++) dropped.Add(DropCoin());
 
             node.Tick(NewContext(round: 0));
             Drain(node, fromRound: LifetimeRounds, coins);
 
-            Assert.AreEqual(MaxHealPerFight, BossHp() - BossStartHp,
-                $"Se curó {BossHp() - BossStartHp} con {coins} monedas vencidas. El techo de la " +
-                $"pelea es {MaxHealPerFight}: por encima, dejarle monedas deja de tener un precio " +
-                "acotado y la pelea puede no terminar.");
+            Assert.AreEqual(BossStartHp, BossHp(),
+                $"Se curó {BossHp() - BossStartHp} con {coins} monedas vencidas. Sin curación, los " +
+                "450 de vida de la ficha son exactamente lo que aguanta, y la pelea dura lo que dice " +
+                "que dura.");
             CollectionAssert.AreEquivalent(dropped, _hazards.Deactivated,
-                "Alguna moneda quedó en el piso con el techo alcanzado. Lo que se agota es la " +
-                "curación, no el vencimiento: dejarla ahí la convierte en plata gratis para el jugador.");
+                "Alguna moneda quedó en el piso: vencerlas no depende de nada que se agote.");
         }
 
+        // ---- El reloj que el jugador lee en el hover de la moneda -------------------
+
         [Test]
-        public void CoinsThatRotAfterTheCeiling_StillVanishButHealNothing()
+        public void ACoinWithTimeLeft_AnnouncesTheTurnsItReallyHas()
         {
             var node = NewNode();
-            int coinsToTheCeiling = MaxHealPerFight / HealPerCoin;
-            for (int i = 0; i < coinsToTheCeiling; i++) DropCoin();
-
+            var coin = DropCoin();
             node.Tick(NewContext(round: 0));
-            int lastDrainRound = Drain(node, fromRound: LifetimeRounds, coinsToTheCeiling);
-            Assert.AreEqual(MaxHealPerFight, BossHp() - BossStartHp, "Fixture: el techo no se alcanzó.");
 
-            // Las rondas van DESPUÉS del drenaje: el reloj se cuenta desde el tick que la descubre,
-            // y volver atrás la dejaría con un vencimiento que ya pasó antes de existir.
-            var late = DropCoin();
-            node.Tick(NewContext(lastDrainRound + 1));
-            node.Tick(NewContext(lastDrainRound + 1 + LifetimeRounds));
+            var announced = DescribeCoins(node, round: 0);
 
-            Assert.AreEqual(MaxHealPerFight, BossHp() - BossStartHp,
-                "El techo se recargó: es por PELEA, no por tanda de monedas.");
-            CollectionAssert.Contains(_hazards.Deactivated, late,
-                "Con el techo alcanzado la moneda dejó de vencerse y se quedó en el piso: pasada esa " +
-                "línea, ignorarlas sería gratis y juntarlas dejaría de ser la jugada.");
+            Assert.AreEqual(1, announced.Count, "Una moneda en el piso, una tarjeta.");
+            Assert.AreEqual(coin, announced[0].SubjectGuid, "La tarjeta va dirigida a la moneda.");
+            Assert.AreEqual(LifetimeRounds, announced[0].TurnsAway);
         }
 
         [Test]
-        public void ACoinThatRotsWhileHeIsAtFullHp_DoesNotSpendTheCeiling()
+        public void ARainOfCoins_AnnouncesWhenEachOneReallyGoes_NotAllAtZero()
         {
-            GiveBossHealth(BossMaxHp);
+            const int coinsPerRain = 4;
+
+            var node = NewNode();
+            for (int i = 0; i < coinsPerRain; i++) DropCoin();
+            node.Tick(NewContext(round: 0)); // Las cuatro con el MISMO vencimiento.
+
+            var announced = DescribeCoins(node, LifetimeRounds);
+
+            CollectionAssert.AreEqual(new[] { 0, 1, 2, 3 },
+                announced.Select(i => i.TurnsAway).ToArray(),
+                "Vencen juntas pero se cobra una por turno: cuatro ceros serían tres mentiras.");
+        }
+
+        [Test]
+        public void ACoinThePlayerPickedUp_StopsBeingAnnounced()
+        {
+            var node = NewNode();
+            var picked = DropCoin();
+            var left = DropCoin();
+
+            node.Tick(NewContext(round: 0));
+            _hazards.Pickup(picked);
+            node.Tick(NewContext(round: 0));
+
+            var announced = DescribeCoins(node, round: 0);
+
+            Assert.AreEqual(1, announced.Count, "La levantada ya no tiene reloj.");
+            Assert.AreEqual(left, announced[0].SubjectGuid);
+        }
+
+        [Test]
+        public void AVaultThatNeverRan_AnnouncesNothing()
+        {
             var node = NewNode();
             DropCoin();
 
+            CollectionAssert.IsEmpty(Describe(node, round: 0));
+        }
+
+        // ---- El resumen que lee el panel del jefe -----------------------------------
+
+        /// <summary>Las per-moneda van dirigidas a su instancia y el panel del jefe las descarta, así
+        /// que sin este resumen su columna queda vacía: el reloj es su mecánica y no se ve en él.</summary>
+        [Test]
+        public void TheBossPanel_GetsOneCardForTheWholeClock_NotOnePerCoin()
+        {
+            const int coinsPerRain = 4;
+
+            var node = NewNode();
+            for (int i = 0; i < coinsPerRain; i++) DropCoin();
             node.Tick(NewContext(round: 0));
-            node.Tick(NewContext(round: LifetimeRounds));
-            Assert.AreEqual(BossMaxHp, BossHp(), "Fixture: no tenía vida que recuperar.");
 
-            GiveBossHealth(BossStartHp);
-            int coinsToTheCeiling = MaxHealPerFight / HealPerCoin;
-            for (int i = 0; i < coinsToTheCeiling; i++) DropCoin();
+            var mine = Describe(node, round: 1).Where(i => i.SubjectGuid == Guid.Empty).ToList();
 
-            node.Tick(NewContext(round: LifetimeRounds));
-            Drain(node, fromRound: LifetimeRounds * 2, coinsToTheCeiling);
-
-            Assert.AreEqual(MaxHealPerFight, BossHp() - BossStartHp,
-                "La moneda que venció con el jefe lleno le comió presupuesto de curación. Así, " +
-                "dejarle monedas mientras está intacto es la forma de anularle la mecánica sin " +
-                "haberle costado nada — y al revés, el jefe pierde vida que la ficha le prometió.");
+            Assert.AreEqual(1, mine.Count, "Una sola tarjeta del jefe, no cuatro.");
+            Assert.AreEqual(AIIntentTextKeys.CashierCoins, mine[0].LabelKey);
+            Assert.AreEqual(coinsPerRain, mine[0].Amount, "El {1} de la frase son las monedas vivas.");
+            Assert.AreEqual(LifetimeRounds - 1, mine[0].TurnsAway,
+                "El badge tiene que contar hasta la PRIMERA que se lleva, no hasta la última.");
         }
 
         [Test]
-        public void ItNeverHealsPastHisMaxHp()
+        public void TheClockSummary_GoesAwayWithTheLastCoin()
         {
-            GiveBossHealth(BossMaxHp - 1);
             var node = NewNode();
-            DropCoin();
-
+            var coin = DropCoin();
             node.Tick(NewContext(round: 0));
-            node.Tick(NewContext(round: LifetimeRounds));
+            _hazards.Pickup(coin);
+            node.Tick(NewContext(round: 0));
 
-            Assert.AreEqual(BossMaxHp, BossHp(),
-                "Se pasó del máximo: la barra de jefe queda mostrando más vida de la que la ficha " +
-                "dice que tiene.");
+            CollectionAssert.IsEmpty(Describe(node, round: 0),
+                "Sin monedas en el piso el jefe sigue mostrando un reloj que ya no corre.");
         }
+
+        private List<AIIntent> Describe(AINode_CajeroCoinVault node, int round)
+        {
+            var into = new List<AIIntent>();
+            node.DescribeIntents(NewContext(round), into);
+            return into;
+        }
+
+        /// <summary>Sólo las dirigidas a una moneda: el resumen del jefe viaja en la misma lista.</summary>
+        private List<AIIntent> DescribeCoins(AINode_CajeroCoinVault node, int round) =>
+            Describe(node, round).Where(i => i.SubjectGuid != Guid.Empty).ToList();
 
         private static AINode_CajeroCoinVault NewNodeWith(HazardDefinitionSO coin) =>
             new AINode_CajeroCoinVault
             {
                 Coin = coin,
                 LifetimeRounds = LifetimeRounds,
-                HealPerCoin = HealPerCoin,
-                MaxHealPerFight = MaxHealPerFight,
             };
 
         private AINode_CajeroCoinVault NewNode() => NewNodeWith(_coin);
@@ -305,7 +344,8 @@ namespace Rollgeon.Combat.AI.Tests
 
             public void Activate(HazardDefinitionSO definition) { }
 
-            public Guid Activate(HazardDefinitionSO definition, IEnumerable<GridCoord> tiles)
+            public Guid Activate(HazardDefinitionSO definition, IEnumerable<GridCoord> tiles,
+                                 Guid ownerGuid = default)
             {
                 if (definition == null || tiles == null) return Guid.Empty;
 

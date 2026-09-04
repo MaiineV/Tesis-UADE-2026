@@ -89,6 +89,8 @@ namespace Rollgeon.Editor.Tools.Localization.Tests
             // telegrafiado ya se ven en el paño.
             AIIntentTextKeys.Telegraph + ".desc",
             AIIntentTextKeys.Attack + ".desc",
+            // Como la mecha: "Se la lleva la caja" ya dice qué pasa y el badge cuántos turnos faltan.
+            AIIntentTextKeys.CashierVault + ".desc",
             // "Ambiental" en el título de un ataque no califica nada que el jugador pueda usar.
             Rollgeon.UI.HUD.Status.AttackKindTextKeys.Environmental,
         };

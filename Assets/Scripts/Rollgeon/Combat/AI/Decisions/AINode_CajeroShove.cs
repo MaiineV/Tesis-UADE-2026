@@ -12,9 +12,11 @@ using UnityEngine;
 namespace Rollgeon.Combat.AI.Decisions
 {
     /// <summary>
-    /// El empujón del Cajero: pega <see cref="AINode_RangedShot.Damage"/> y manda al jugador
-    /// <see cref="PushTiles"/> casillas en línea recta hacia el lado opuesto al suyo, dejando
-    /// <see cref="CoinCount"/> monedas tiradas a lo largo del tumbo.
+    /// El empujón del Cajero: pega <see cref="AINode_RangedShot.Damage"/>, manda al jugador
+    /// <see cref="PushTiles"/> casillas en línea recta hacia el lado opuesto al suyo, y le cobra
+    /// <see cref="TaxPercent"/> del oro que lleve encima —nunca menos de <see cref="TaxMinimum"/>—
+    /// dejando <see cref="RefundPercent"/> de lo cobrado tirado en <see cref="CoinCount"/> monedas
+    /// repartidas al azar por la sala.
     /// </summary>
     /// <remarks>
     /// <para>
@@ -25,7 +27,8 @@ namespace Rollgeon.Combat.AI.Decisions
     /// <para>
     /// El tumbo no lo camina este nodo: lo delega en <see cref="IForcedMovementService"/>, que es
     /// quien frena en seco contra una pared o un blocker, cobra las casillas atravesadas (los
-    /// pinchos que cruce) y levanta las monedas que ya estuvieran en el recorrido.
+    /// pinchos que cruce) y levanta las monedas que ya estuvieran en el recorrido — las de este
+    /// empujón caen después, y en otra parte.
     /// </para>
     /// </remarks>
     [Serializable, HideReferenceObjectPicker]
@@ -38,19 +41,34 @@ namespace Rollgeon.Combat.AI.Decisions
         [Tooltip("Definición del hazard-moneda que queda en el piso. Sin ella el empujón sólo pega y tira.")]
         public HazardDefinitionSO Coin;
 
-        [Tooltip("Monedas que se le caen al jugador a lo largo del tumbo.")]
+        [Tooltip("Monedas que se le caen al jugador, repartidas al azar por la sala.")]
         [MinValue(0)]
         public int CoinCount = 2;
 
-        [Tooltip("Valor mínimo en oro de una moneda del tumbo.")]
-        [MinValue(0)]
-        public int CoinMinValue = 6;
+        [Tooltip("Fracción del oro del jugador que le cobra cada empujón (0..1).")]
+        [PropertyRange(0f, 1f)]
+        public float TaxPercent = 0.10f;
 
-        [Tooltip("Valor máximo en oro de una moneda del tumbo, inclusive.")]
+        [Tooltip("Piso del cobro. Sin él un jugador con poco oro sale gratis del empujón.")]
         [MinValue(0)]
-        public int CoinMaxValue = 9;
+        public int TaxMinimum = 10;
 
-        public override string NodeName => $"Cajero — Empujón ({Damage} y {PushTiles} casillas)";
+        [Tooltip("Fracción de lo cobrado que vuelve al piso repartida entre las monedas (0..1). El resto se lo queda él.")]
+        [PropertyRange(0f, 1f)]
+        public float RefundPercent = 0.70f;
+
+        [Tooltip("Distancia Chebyshev mínima entre las monedas que deja. Dos pegadas son un solo viaje.")]
+        [MinValue(0)]
+        public int CoinMinSeparation = 2;
+
+        public override string NodeName =>
+            $"Cajero — Empujón ({Damage}, {PushTiles} casillas y {TaxPercent:P0} del oro)";
+
+        protected override string DefaultLabelKey => AIIntentTextKeys.CashierShove;
+
+        protected override string DefaultLabelFallback => "Empujón";
+
+        protected override int IntentAmount => PushTiles;
 
         public override AIResult Tick(AIContext context)
         {
@@ -103,13 +121,26 @@ namespace Rollgeon.Combat.AI.Decisions
             // terminó y las monedas serían pickups que nadie va a levantar.
             if (result.TargetDied) return;
 
-            DropCoins(context, grid, origin, away, result.TilesTraveled);
+            DropCoins(context, grid);
         }
 
-        private void DropCoins(
-            AIContext context, IGridManager grid, GridCoord origin, Cardinal away, int traveled)
+        private void DropCoins(AIContext context, IGridManager grid)
         {
             if (Coin == null || CoinCount <= 0) return;
+
+            var ledger = CashierLedgerService.ResolveOrCreate();
+
+            // El cobro va primero y manda: lo que cae al piso es plata del jugador, no plata que
+            // aparece. Si sale seco no hay nada que tirar y el empujón se queda en golpe y tumbo.
+            //
+            // refundOnDeath: false — lo que no se levanta del piso se pierde, y punto. En la caja
+            // volvería entero al matarlo, y entre eso y las monedas el jugador saldría ganando.
+            int taken = ledger.CollectTax(
+                context.SelfGuid, TaxPercent, TaxMinimum, refundOnDeath: false);
+            if (taken <= 0) return;
+
+            int refund = Mathf.FloorToInt(taken * RefundPercent);
+            if (refund <= 0) return;
 
             if (!ServiceLocator.TryGetService<IHazardService>(out var hazards) || hazards == null)
             {
@@ -118,65 +149,46 @@ namespace Rollgeon.Combat.AI.Decisions
                 return;
             }
 
-            var ledger = CashierLedgerService.ResolveOrCreate();
-            var rng = context.Rng ?? new System.Random();
+            // Repartidas por la sala y no sobre el tumbo: la plata tiene que quedar lejos para que
+            // ir a buscarla sea una decisión. En el recorrido quedaba a un paso, y recuperarla no
+            // costaba el desvío que la mecánica cobra.
+            //
+            // Corre DESPUÉS de que el empuje resolvió, así IsFree ve al jugador en su casilla final
+            // y no le deja una moneda debajo — la casilla dispara al ENTRAR, y ya está parado ahí.
+            var cells = CajeroCoinScatter.PickTiles(
+                grid, hazards, context.Rng, CoinCount, CoinMinSeparation);
 
-            int dropped = 0;
-            foreach (var coord in TumbleTiles(origin, away, traveled, PushTiles))
+            // El reparto se calcula sobre las que salieron: una moneda sin casilla dejaría su parte
+            // del reembolso en el aire, y el jugador ya pagó.
+            if (cells.Count == 0) return;
+
+            int placed = 0;
+            for (int i = 0; i < cells.Count; i++)
             {
-                if (dropped >= CoinCount) break;
-                if (!grid.InBounds(coord) || !grid.IsFree(coord)) continue;
+                int share = SplitShare(refund, cells.Count, i);
+                if (share <= 0) continue;
 
-                var instanceId = hazards.Activate(Coin, new[] { coord });
+                var instanceId = hazards.Activate(Coin, new[] { cells[i] }, context.SelfGuid);
                 if (instanceId == Guid.Empty) continue;
 
-                ledger.RegisterChip(instanceId, RollValue(rng), context.SelfGuid);
-                dropped++;
+                ledger.RegisterChip(instanceId, share, context.SelfGuid);
+                placed++;
             }
+
+            if (placed == 0)
+                Debug.LogWarning($"[AINode_CajeroShove] Cobró {taken} de oro y no pudo dejar " +
+                                 "ninguna moneda en el piso.");
         }
 
         /// <summary>
-        /// Casillas del tumbo donde puede quedar plata, en orden de preferencia: las intermedias
-        /// (1..<paramref name="traveled"/>−1) y, como último recurso, la de partida.
+        /// Reparte <paramref name="total"/> entre <paramref name="parts"/> monedas sin perder
+        /// monedas por el redondeo: las primeras <c>total % parts</c> se llevan una de más.
         /// </summary>
-        /// <remarks>
-        /// <para>
-        /// La casilla FINAL nunca entra: el jugador termina parado ahí y la moneda dispara al
-        /// entrar, así que sería plata que no se puede levantar sin salir y volver. La de partida es
-        /// el último recurso, para el tumbo que frena en seco antes de tener intermedias.
-        /// </para>
-        /// <para>
-        /// Las monedas se colocan DESPUÉS de que el empuje resolvió: el servicio de movimiento
-        /// forzado camina cada paso de verdad, así que una moneda puesta antes sobre la línea del
-        /// tumbo se la levantaría el propio tumbo.
-        /// </para>
-        /// <para>
-        /// El recorrido se reconstruye a mano porque <c>ForcedMoveResult</c> devuelve la celda final
-        /// y el conteo de pasos, no el camino. Va clampeado a <paramref name="pushTiles"/>: si una
-        /// continuación de casilla siguió empujando, esos pasos extra ya no están sobre esta línea
-        /// recta y pondrían monedas en casillas por las que el jugador nunca pasó.
-        /// </para>
-        /// </remarks>
-        private static IEnumerable<GridCoord> TumbleTiles(
-            GridCoord origin, Cardinal away, int traveled, int pushTiles)
+        private static int SplitShare(int total, int parts, int index)
         {
-            int straight = Mathf.Min(traveled, pushTiles);
-            for (int i = 1; i < straight; i++) yield return Offset(origin, away, i);
-            yield return origin;
+            if (parts <= 0) return 0;
+            return total / parts + (index < total % parts ? 1 : 0);
         }
 
-        private static GridCoord Offset(GridCoord from, Cardinal dir, int steps)
-        {
-            var coord = from;
-            for (int i = 0; i < steps; i++) coord = dir.Step(coord);
-            return coord;
-        }
-
-        private int RollValue(System.Random rng)
-        {
-            int min = Mathf.Min(CoinMinValue, CoinMaxValue);
-            int max = Mathf.Max(CoinMinValue, CoinMaxValue);
-            return min == max ? min : rng.Next(min, max + 1);
-        }
     }
 }

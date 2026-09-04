@@ -76,6 +76,17 @@ namespace Rollgeon.Feedback
         // ---- El Cajero ----
         public const string CajeroMeleeAnim      = "anim.boss.cajero.melee";
         public const string CajeroShotAnim       = "anim.boss.cajero.shot";
+
+        /// <summary>Gesto propio: con el <c>Attack_Melee</c> del mandoble los dos tiempos del ciclo se veían iguales.</summary>
+        public const string CajeroShoveAnim      = "anim.boss.cajero.shove";
+
+        /// <summary>
+        /// El turno en que apunta el cañonazo, antes de dispararlo. Comparte el <c>Idle_Var</c> del
+        /// empujón porque el rig declara tres triggers y el jefe tiene cuatro tiempos; nunca
+        /// conviven (el empujón es pegado y el aviso es de lejos). Id propio igual: cuando arte le
+        /// autore un clip se cambia acá y nada más.
+        /// </summary>
+        public const string CajeroAimAnim        = "anim.boss.cajero.aim";
         public const string CajeroImpactVfx      = "vfx.boss.cajero.impact";
         public const string CajeroShotImpactVfx  = "vfx.boss.cajero.shot_impact";
         public const string CajeroImpactFeel     = "feel.boss.cajero.impact";

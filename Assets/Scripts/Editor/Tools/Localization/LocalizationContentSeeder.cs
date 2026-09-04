@@ -746,8 +746,8 @@ namespace Rollgeon.EditorTools.Localization
                 "Quema la sala y se teletransporta cuando lo alcanzás.",
                 "Burns the room and teleports when you reach him.");
             Content("boss.cashier.brief",
-                "Pega más fuerte cuanto más oro llevás. Las fichas que dejás vencer se las queda.",
-                "Hits harder the more gold you carry. Chips you let expire, he keeps.");
+                "Te tira tres casillas y te cobra oro en cada empujón. Lo que dejes vencer en el piso lo perdés.",
+                "Throws you three tiles and charges you gold on every shove. Whatever you let expire on the floor is lost.");
             Content("boss.la_generala.brief",
                 "Suelta anillos eléctricos en oleadas, con huecos entre anillo y anillo.",
                 "Unleashes electric rings in waves, with gaps between the rings.");
@@ -785,10 +785,10 @@ namespace Rollgeon.EditorTools.Localization
             Content("enemy_tutorial_melee_c.brief", "Pega de cerca.", "Hits up close.");
 
             // Maldiciones de jefe (bloque PLAYER CURSE). La del Croupier reusa status.dice_block.
-            Content("curse.bank_keeps.name", "La banca retiene", "The Bank Keeps");
+            Content("curse.bank_keeps.name", "La banca no espera", "The Bank Doesn't Wait");
             Content("curse.bank_keeps.desc",
-                "El oro que dejás vencer se lo queda la banca.",
-                "Gold you let expire, the bank keeps.");
+                "Lo que dejás vencer en el piso se pierde.",
+                "Whatever you let expire on the floor is lost.");
             Content("curse.repeat_ban.name", "Mano vetada", "Banned Hand");
             Content("curse.repeat_ban.desc",
                 "No podés repetir el combo que acabás de anotar.",
@@ -882,6 +882,30 @@ namespace Rollgeon.EditorTools.Localization
 
             Content(AIIntentTextKeys.Attack + ".name", "Golpe", "Strike");
             Content(AIIntentTextKeys.Attack + ".desc", string.Empty, string.Empty);
+
+            Content(AIIntentTextKeys.CashierShove + ".name", "Empujón", "Shove");
+            Content(AIIntentTextKeys.CashierShove + ".desc",
+                "Te empuja <b>{1}</b> casillas y te cobra parte del oro que lleves encima.",
+                "Shoves you <b>{1}</b> tiles and takes a cut of the gold you carry.");
+
+            Content(AIIntentTextKeys.CashierVault + ".name", "Se la lleva la caja", "The Vault Takes It");
+            Content(AIIntentTextKeys.CashierVault + ".desc", string.Empty, string.Empty);
+
+            Content(AIIntentTextKeys.CashierCoins + ".name", "Monedas venciendo", "Coins Expiring");
+            Content(AIIntentTextKeys.CashierCoins + ".desc",
+                "La caja se lleva una por turno; quedan <b>{1}</b> en el piso.",
+                "The vault takes one per turn; <b>{1}</b> left on the floor.");
+
+            // Dos keys y no una: el turno que avisa y el que cobra dicen cosas distintas.
+            Content(AIIntentTextKeys.CashierSlam + ".name", "Cañonazo", "Cannon Shot");
+            Content(AIIntentTextKeys.CashierSlam + ".desc",
+                "Marca un área de 3×3 donde estés parado y la cobra al turno siguiente.",
+                "Marks a 3×3 area where you stand and fires on it next turn.");
+
+            Content(AIIntentTextKeys.CashierSlamDue + ".name", "Cañonazo", "Cannon Shot");
+            Content(AIIntentTextKeys.CashierSlamDue + ".desc",
+                "Cae en el área marcada, no donde estés.",
+                "It lands on the marked area, not on where you are.");
 
             Content(AIIntentTextKeys.Leaves + ".name", "Lo que deja", "What It Leaves");
             Content(AIIntentTextKeys.Leaves + ".desc",
@@ -1020,6 +1044,9 @@ namespace Rollgeon.EditorTools.Localization
             Ui("hazard.panel.type", "Peligro de sala", "Room hazard");
             Ui("hazard.panel.hit", "Golpe", "Hit");
             Ui("hazard.panel.cycle", "Golpea cada {0} rondas", "Strikes every {0} rounds");
+            Ui(Rollgeon.Combat.Threat.HazardTooltipInfo.ClockTicksKey, "Se vence", "Expiring");
+            Ui(Rollgeon.Combat.Threat.HazardTooltipInfo.ClockDueKey,
+                "Se la lleva la caja", "The vault takes it");
 
             // Identidad por hazard. El stun del hielo lo aplica IceStunBinder (Damage 0 en el
             // SO), por eso la frase habla de aturdir sin nombrar números.
@@ -1033,8 +1060,8 @@ namespace Rollgeon.EditorTools.Localization
                 "Ice from her cup: stepping on it stuns, and the patch breaks underfoot.");
             Content("hazard.chip.name", "Ficha de la banca", "House Chip");
             Content("hazard.chip.desc",
-                "Pisala y cobrás su valor. La que vence se la queda la banca — y lo cura.",
-                "Step on it to collect its value. One that expires, the bank keeps — and it heals him.");
+                "Pisala y cobrás su valor. La que vence se pierde.",
+                "Step on it to collect its value. One that expires is lost.");
             Content("hazard.table_fire.name", "Fuego de mesa", "Table Fire");
             Content("hazard.table_fire.desc",
                 "Arde: golpea a quien termine su turno adentro.",
@@ -1113,8 +1140,8 @@ namespace Rollgeon.EditorTools.Localization
             // no puede presentarlo como el mismo objeto.
             Content("tile.spikes_cajero.name", "Pinchos del Cajero", "Cashier's Spikes");
             Content("tile.spikes_cajero.desc",
-                "Se desarman al pisarlos y se rearman solos. Duelen bastante más que los comunes.",
-                "Disarm when stepped on and rearm on their own. They hurt a fair bit more than the common ones.");
+                "Cobran cada vez que los cruzás: no se gastan. Duelen bastante más que los comunes.",
+                "They charge every time you cross them - they never wear out. They hurt a fair bit more than the common ones.");
         }
 
         // ==================================================================
@@ -1517,8 +1544,8 @@ namespace Rollgeon.EditorTools.Localization
 
             Boss(CajeroAssetBuilder.EntityId,
                 "El Cajero", "The Cashier",
-                "Te tira lejos y te llena el piso de monedas. Las que no levantás a tiempo se las lleva él, y cada una lo cura.",
-                "Throws you clear and litters the floor with coins. The ones you don't grab in time he takes back, and each one heals him.");
+                "Te tira lejos y te saca oro, y parte de esa plata cae al piso. La que no levantás a tiempo se pierde.",
+                "Throws you clear and takes your gold, and some of it lands on the floor. Whatever you don't grab in time is gone.");
 
             // Misma identidad que RangedEnemy01 a propósito: el refuerzo del Cajero es un
             // ranged común más, no un personaje.

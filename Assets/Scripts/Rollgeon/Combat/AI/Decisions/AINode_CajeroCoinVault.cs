@@ -1,11 +1,9 @@
 using System;
 using System.Collections.Generic;
 using Patterns;
-using Rollgeon.Attributes;
-using Rollgeon.Attributes.Stats;
+using Rollgeon.Combat.Pipelines;
 using Rollgeon.Combat.Threat;
 using Rollgeon.Grid;
-using Rollgeon.UI.HUD;
 using Sirenix.OdinInspector;
 using UnityEngine;
 
@@ -13,15 +11,18 @@ namespace Rollgeon.Combat.AI.Decisions
 {
     /// <summary>
     /// La caja del Cajero: le pone reloj a cada moneda del piso y, cuando una se vence sin que
-    /// nadie la levante, se la lleva y lo cura <see cref="HealPerCoin"/> — hasta un techo de
-    /// <see cref="MaxHealPerFight"/> en toda la pelea. <b>Una por turno</b>, nunca una tanda entera.
+    /// nadie la levante, se la lleva. <b>Una por turno</b>, nunca una tanda entera.
     /// </summary>
     /// <remarks>
     /// <para>
+    /// La moneda vencida <b>no le devuelve nada</b>: la plata simplemente se pierde. Lo que el
+    /// jugador deja vencer es lo que dejó de ganar, y ése es todo el precio.
+    /// </para>
+    /// <para>
     /// De a una y no una tanda entera: el nodo tickea una vez por turno del jefe, así que "una por
     /// tick" ya es "una por ronda" y las cuatro monedas de una tanda —que nacen con el mismo
-    /// reloj— se pagan a lo largo de cuatro turnos en vez de casi todo el
-    /// <see cref="MaxHealPerFight"/> de golpe.
+    /// reloj— se pierden a lo largo de cuatro turnos, dándole al jugador la chance de llegar a
+    /// las últimas.
     /// </para>
     /// <para>
     /// El reloj es de este nodo y no del <c>DurationRounds</c> de la moneda porque el servicio de
@@ -35,13 +36,13 @@ namespace Rollgeon.Combat.AI.Decisions
     /// antes, cada moneda viviría una ronda de más.
     /// </para>
     /// <para>
-    /// Vencimientos y curación acumulada son <c>[NonSerialized]</c>: viven en la copia runtime del
-    /// árbol y no en el asset, así que el techo de curación arranca en cero en cada pelea nueva sin
-    /// depender de ningún evento de teardown.
+    /// Los vencimientos son <c>[NonSerialized]</c>: viven en la copia runtime del árbol y no en el
+    /// asset, así que los relojes arrancan limpios en cada pelea nueva sin depender de ningún
+    /// evento de teardown.
     /// </para>
     /// </remarks>
     [Serializable, HideReferenceObjectPicker]
-    public sealed class AINode_CajeroCoinVault : AIActionNode
+    public sealed class AINode_CajeroCoinVault : AIActionNode, IAIIntentNode
     {
         [Tooltip("Definición del hazard-moneda a vigilar. Tiene que ser la MISMA que sueltan los " +
                  "nodos de monedas, o el nodo no reconoce nada.")]
@@ -49,26 +50,16 @@ namespace Rollgeon.Combat.AI.Decisions
 
         [Tooltip("Rondas que vive una moneda desde que este nodo la ve por primera vez.")]
         [MinValue(1)]
-        public int LifetimeRounds = 3;
-
-        [Tooltip("HP que le devuelve al jefe cada moneda vencida.")]
-        [MinValue(0)]
-        public int HealPerCoin = 12;
-
-        [Tooltip("Techo de curación por pelea. Alcanzado, las monedas siguen venciéndose pero ya " +
-                 "no lo curan.")]
-        [MinValue(0)]
-        public int MaxHealPerFight = 60;
+        public int LifetimeRounds = 2;
 
         /// <summary>
         /// Monedas con reloj, en el orden en que se van a cobrar. Lista y no diccionario: cuando hay
         /// varias vencidas a la vez hay que elegir UNA, y el orden es parte de la regla.
         /// </summary>
         [NonSerialized] private List<CoinClock> _clocks;
-        [NonSerialized] private int _healed;
 
         public override string NodeName =>
-            $"Cajero — Caja (de a una: {HealPerCoin} por moneda, techo {MaxHealPerFight})";
+            $"Cajero — Caja (vence una por turno a las {LifetimeRounds} rondas)";
 
         public override AIResult Tick(AIContext context)
         {
@@ -86,17 +77,53 @@ namespace Rollgeon.Combat.AI.Decisions
             var coin = _clocks[due];
             _clocks.RemoveAt(due);
 
-            // La moneda se va igual con el techo alcanzado: lo que se agota es la curación, no el
-            // vencimiento. Dejarla en el piso convertiría el techo en plata gratis.
             hazards.Deactivate(coin.InstanceId);
-            Collect(context);
 
             return AIResult.Succeeded;
         }
 
+        /// <summary>No describe UNA cosa: describe el reloj de cada moneda del piso.</summary>
+        public bool TryDescribeIntent(AIContext context, out AIIntent intent)
+        {
+            intent = default;
+            return false;
+        }
+
+        /// <summary>
+        /// Dos lecturas del mismo reloj: una por moneda y dirigida a ella —el hover la encuentra por
+        /// subject y el panel del jefe la descarta— más una del jefe, que es la única que su panel
+        /// deja pasar.
+        /// </summary>
+        public void DescribeIntents(AIContext context, List<AIIntent> into)
+        {
+            if (context == null || into == null || _clocks == null || _clocks.Count == 0) return;
+
+            int soonest = int.MaxValue;
+            int queued = 0;
+            for (int i = 0; i < _clocks.Count; i++)
+            {
+                // Se cobra una por turno: sin el lugar en la cola, cuatro vencidas dirían lo mismo.
+                int left = _clocks[i].Deadline - context.RoundIndex;
+                if (left <= 0) left = queued++;
+                if (left < soonest) soonest = left;
+
+                into.Add(new AIIntent(
+                    AIIntentTextKeys.CashierVault, "Se la lleva la caja",
+                    damage: 0, kind: AttackKind.Environmental,
+                    turnsAway: left,
+                    subjectGuid: _clocks[i].InstanceId));
+            }
+
+            into.Add(new AIIntent(
+                AIIntentTextKeys.CashierCoins, "Monedas venciendo",
+                damage: 0, kind: AttackKind.Environmental,
+                amount: _clocks.Count,
+                turnsAway: soonest));
+        }
+
         /// <summary>
         /// Le pone reloj a las monedas nuevas y suelta las que ya no están: ésas las levantó el
-        /// jugador (o las limpió el teardown) y no curan a nadie.
+        /// jugador (o las limpió el teardown) y ya cobró su valor.
         /// </summary>
         /// <remarks>
         /// Las nuevas entran ordenadas por casilla y no en el orden en que las devuelve el servicio
@@ -179,48 +206,6 @@ namespace Rollgeon.Combat.AI.Decisions
                 Deadline = deadline;
                 Tile = tile;
             }
-        }
-
-        private void Collect(AIContext context)
-        {
-            if (HealPerCoin <= 0) return;
-
-            int budget = MaxHealPerFight - _healed;
-            if (budget <= 0) return;
-
-            int heal = Mathf.Min(HealPerCoin, budget);
-            var attrs = context.Attributes;
-            if (attrs == null) ServiceLocator.TryGetService<AttributesManager>(out attrs);
-            if (attrs == null)
-            {
-                Debug.LogWarning("[AINode_CajeroCoinVault] AttributesManager no disponible — la " +
-                                 "moneda se vence pero el jefe no se cura.");
-                return;
-            }
-
-            // SelfMaxHp es el cap del spawn (misma fuente que PcOwnerHpBelow). Sin baseline no se
-            // clampea: preferimos curar de más antes que comerse la curación entera.
-            int maxHp = context.SelfMaxHp > 0 ? context.SelfMaxHp : int.MaxValue;
-
-            int before = attrs.GetAttributeValue<Health, int>(context.SelfGuid);
-            attrs.Modify<Health, int>(context.SelfGuid, current =>
-            {
-                int healed = current + heal;
-                return healed > maxHp ? maxHp : healed;
-            });
-            int landed = Mathf.Max(0, attrs.GetAttributeValue<Health, int>(context.SelfGuid) - before);
-
-            // El techo cuenta lo que ENTRÓ, no lo que se ofreció: una moneda que se vence con el
-            // jefe lleno no tiene que gastarle presupuesto de curación que todavía no usó.
-            _healed += landed;
-            if (landed <= 0) return;
-
-            EventManager.Trigger(
-                EventName.OnFloatingNumberRequested,
-                context.SelfGuid,
-                FloatingNumberType.Heal,
-                (float)landed,
-                Vector3.zero);
         }
     }
 }

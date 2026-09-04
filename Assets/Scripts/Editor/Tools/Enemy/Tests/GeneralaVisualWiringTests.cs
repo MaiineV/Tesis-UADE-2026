@@ -39,12 +39,19 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             }
         }
 
+        /// <summary>Los props salieron por decisión de arte. Se afirma sobre el prefab que carga el
+        /// juego y no sobre el builder: el builder los reponía en cada rebuild, así que lo que hay
+        /// que fijar es que el rebuild ya no los traiga.</summary>
         [Test]
-        public void CupProp_Exists_BecauseTheCupIsHerSecondAttack()
+        public void TheBossPrefab_HangsNoProps()
         {
-            Assert.IsNotNull(
-                AssetDatabase.LoadAssetAtPath<GameObject>(GeneralaAssetBuilder.CupPropPrefabPath),
-                $"Falta la caja de dados en '{GeneralaAssetBuilder.CupPropPrefabPath}'.");
+            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(
+                GeneralaAssetBuilder.BossVisualPrefabPath);
+            Assert.IsNotNull(prefab, $"No se pudo cargar {GeneralaAssetBuilder.BossVisualPrefabPath}.");
+
+            foreach (var prop in new[] { "Cubilete", "Estandarte" })
+                Assert.IsNull(prefab.transform.Find(prop),
+                    $"Volvió el prop '{prop}': un rebuild del wrapper lo repuso.");
         }
 
         [Test]
@@ -206,58 +213,6 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             Assert.AreEqual(1f, fit.Scale, 0.0001f);
             Assert.AreEqual(0f, fit.Lift, 0.0001f);
             Assert.AreEqual(2.6f, fit.HealthBarOffset.y, 0.0001f);
-        }
-
-        [Test]
-        public void CupProp_RestsOnTheFloorTouchingHerRightSide()
-        {
-            // Bounds con el pivot corrido, como los trae el prop de la sala.
-            var fit = SampleBossFit();
-            var cup = new Bounds(new Vector3(1.5f, 0.2f, -1.5f), new Vector3(0.5f, 0.4f, 0.5f));
-
-            var prop = GeneralaAssetBuilder.BuildCupProp(fit, cup);
-            float scale = prop.LocalScale.x;
-
-            Assert.AreEqual(GeneralaAssetBuilder.CupPropPrefabPath, prop.PrefabPath);
-            Assert.AreEqual(scale, prop.LocalScale.y, 0.0001f, "La escala tiene que ser uniforme.");
-
-            Assert.AreEqual(0f, prop.LocalPosition.y + cup.min.y * scale, 0.001f,
-                "El cubilete tiene que apoyar en el piso, no flotar.");
-            Assert.AreEqual(fit.Bounds.max.x, prop.LocalPosition.x + cup.min.x * scale, 0.001f,
-                "La cara izquierda del cubilete tiene que tocar el costado del casco.");
-            Assert.AreEqual(GeneralaAssetBuilder.CupHeight, cup.size.y * scale, 0.001f,
-                "El cubilete tiene que quedar del alto pedido.");
-        }
-
-        [Test]
-        public void BannerProp_GoesBehindHerBack_OnTheFloor()
-        {
-            var fit = SampleBossFit();
-            var banner = new Bounds(new Vector3(3.4f, 2.5f, -5.2f), new Vector3(1f, 1.5f, 0.1f));
-
-            bool ok = GeneralaAssetBuilder.TryBuildBannerProp(fit, banner, out var prop);
-            float scale = prop != null ? prop.LocalScale.x : 0f;
-
-            Assert.IsTrue(ok, "Un banner de 1.5 de alto entra de sobra en el rango de escala.");
-            Assert.AreEqual(fit.Bounds.min.z, prop.LocalPosition.z + banner.max.z * scale, 0.001f,
-                "El estandarte va a la espalda: el arte mira a +Z.");
-            Assert.AreEqual(0f, prop.LocalPosition.y + banner.min.y * scale, 0.001f,
-                "Un estandarte flotando en el aire es peor que no tener estandarte.");
-            Assert.AreEqual(GeneralaAssetBuilder.BannerHeight, banner.size.y * scale, 0.001f);
-        }
-
-        [Test]
-        public void BannerProp_IsSkipped_WhenItWouldNeedAnAbsurdScale()
-        {
-            var fit = SampleBossFit();
-            var tiny = new Bounds(Vector3.zero, new Vector3(0.05f, 0.05f, 0.01f));   // ×24
-            var huge = new Bounds(Vector3.zero, new Vector3(6f, 10f, 0.2f));         // ×0.12
-
-            // El prop es opcional a propósito: antes que deformarlo, no va.
-            Assert.IsFalse(GeneralaAssetBuilder.TryBuildBannerProp(fit, tiny, out _));
-            Assert.IsFalse(GeneralaAssetBuilder.TryBuildBannerProp(fit, huge, out _));
-            Assert.IsFalse(GeneralaAssetBuilder.TryBuildBannerProp(fit, default, out _),
-                "Bounds degenerados tampoco pueden colgar nada.");
         }
 
         /// <summary>Fit de un jefe ya ajustado: 1 de ancho, 2 de alto, apoyado en el piso.</summary>
