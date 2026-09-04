@@ -43,7 +43,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0}
   m_AnchorMax: {x: 0.5, y: 0}
-  m_AnchoredPosition: {x: 170, y: 5}
+  m_AnchoredPosition: {x: 209.19133, y: 5}
   m_SizeDelta: {x: 100, y: 100}
   m_Pivot: {x: 0.5, y: 0}
 --- !u!222 &1606027858350403986
@@ -74,7 +74,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: -82396921, guid: d9c8010d59b9fb840b4e32c323e48742, type: 3}
+  m_Sprite: {fileID: -93443171, guid: f3ece9c685d3ae44888c7a085817b313, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -146,7 +146,7 @@ MonoBehaviour:
   _costLabelFormat: '{0}'
   _zeroCostText: 
   _baseColor: {r: 1, g: 1, b: 1, a: 1}
-  _highlightSprite: {fileID: -707948687, guid: d9c8010d59b9fb840b4e32c323e48742, type: 3}
+  _highlightSprite: {fileID: -1942933173, guid: f3ece9c685d3ae44888c7a085817b313, type: 3}
   _selectedScale: 1.08
   _glowColor: {r: 1, g: 0.95, b: 0.4, a: 1}
   _glowSpeed: 3
@@ -606,7 +606,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
-  m_Color: {r: 0.882353, g: 0.75294125, b: 0.6666667, a: 1}
+  m_Color: {r: 0.11764706, g: 0.14117648, b: 0.18039216, a: 1}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -803,7 +803,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0}
   m_AnchorMax: {x: 0.5, y: 0}
-  m_AnchoredPosition: {x: 30, y: 5}
+  m_AnchoredPosition: {x: -75.74199, y: 5}
   m_SizeDelta: {x: 100, y: 100}
   m_Pivot: {x: 0.5, y: 0}
 --- !u!222 &4063582250799059910
@@ -834,7 +834,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: -82396921, guid: d9c8010d59b9fb840b4e32c323e48742, type: 3}
+  m_Sprite: {fileID: 1886116552, guid: f3ece9c685d3ae44888c7a085817b313, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -906,7 +906,7 @@ MonoBehaviour:
   _costLabelFormat: '{0}'
   _zeroCostText: 
   _baseColor: {r: 1, g: 1, b: 1, a: 1}
-  _highlightSprite: {fileID: -707948687, guid: d9c8010d59b9fb840b4e32c323e48742, type: 3}
+  _highlightSprite: {fileID: 1134420265, guid: f3ece9c685d3ae44888c7a085817b313, type: 3}
   _selectedScale: 1.08
   _glowColor: {r: 1, g: 0.95, b: 0.4, a: 1}
   _glowSpeed: 3
@@ -1364,7 +1364,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0}
   m_AnchorMax: {x: 0.5, y: 0}
-  m_AnchoredPosition: {x: -110, y: 5}
+  m_AnchoredPosition: {x: -215.74199, y: 5}
   m_SizeDelta: {x: 100, y: 100}
   m_Pivot: {x: 0.5, y: 0}
 --- !u!222 &2660111484131484413
@@ -1395,7 +1395,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: -82396921, guid: d9c8010d59b9fb840b4e32c323e48742, type: 3}
+  m_Sprite: {fileID: 1886116552, guid: f3ece9c685d3ae44888c7a085817b313, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -1467,7 +1467,7 @@ MonoBehaviour:
   _costLabelFormat: '{0}'
   _zeroCostText: 
   _baseColor: {r: 1, g: 1, b: 1, a: 1}
-  _highlightSprite: {fileID: -707948687, guid: d9c8010d59b9fb840b4e32c323e48742, type: 3}
+  _highlightSprite: {fileID: 1134420265, guid: f3ece9c685d3ae44888c7a085817b313, type: 3}
   _selectedScale: 1.08
   _glowColor: {r: 1, g: 0.95, b: 0.4, a: 1}
   _glowSpeed: 3
@@ -1890,7 +1890,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 995867419, guid: 0e83ef559e7126e4d89b611c7be3f0df, type: 3}
+  m_Sprite: {fileID: 487492542, guid: c2fddca92856efb4f8356cb0ce73e042, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -2283,7 +2283,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0}
   m_AnchorMax: {x: 0.5, y: 0}
-  m_AnchoredPosition: {x: 310, y: 5}
+  m_AnchoredPosition: {x: 349.19128, y: 5}
   m_SizeDelta: {x: 100, y: 100}
   m_Pivot: {x: 0.5, y: 0}
 --- !u!222 &1155815193643848171
@@ -2314,7 +2314,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: -82396921, guid: d9c8010d59b9fb840b4e32c323e48742, type: 3}
+  m_Sprite: {fileID: -93443171, guid: f3ece9c685d3ae44888c7a085817b313, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -2386,7 +2386,7 @@ MonoBehaviour:
   _costLabelFormat: '{0}'
   _zeroCostText: 
   _baseColor: {r: 1, g: 1, b: 1, a: 1}
-  _highlightSprite: {fileID: -707948687, guid: d9c8010d59b9fb840b4e32c323e48742, type: 3}
+  _highlightSprite: {fileID: -1942933173, guid: f3ece9c685d3ae44888c7a085817b313, type: 3}
   _selectedScale: 1.08
   _glowColor: {r: 1, g: 0.95, b: 0.4, a: 1}
   _glowSpeed: 3
@@ -3335,7 +3335,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0}
   m_AnchorMax: {x: 0.5, y: 0}
-  m_AnchoredPosition: {x: -250, y: 5}
+  m_AnchoredPosition: {x: -355.74197, y: 5}
   m_SizeDelta: {x: 100, y: 100}
   m_Pivot: {x: 0.5, y: 0}
 --- !u!222 &4997511798790630527
@@ -3366,7 +3366,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: -82396921, guid: d9c8010d59b9fb840b4e32c323e48742, type: 3}
+  m_Sprite: {fileID: -1519053883, guid: f3ece9c685d3ae44888c7a085817b313, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -3438,7 +3438,7 @@ MonoBehaviour:
   _costLabelFormat: '{0}'
   _zeroCostText: 
   _baseColor: {r: 1, g: 1, b: 1, a: 1}
-  _highlightSprite: {fileID: -707948687, guid: d9c8010d59b9fb840b4e32c323e48742, type: 3}
+  _highlightSprite: {fileID: 1154103058, guid: f3ece9c685d3ae44888c7a085817b313, type: 3}
   _selectedScale: 1.08
   _glowColor: {r: 1, g: 0.95, b: 0.4, a: 1}
   _glowSpeed: 3
@@ -4510,14 +4510,14 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
-  m_Color: {r: 0.882353, g: 0.75294125, b: 0.6666667, a: 1}
+  m_Color: {r: 0, g: 0, b: 0, a: 1}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 995867419, guid: 0e83ef559e7126e4d89b611c7be3f0df, type: 3}
+  m_Sprite: {fileID: 487492542, guid: c2fddca92856efb4f8356cb0ce73e042, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -6142,7 +6142,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 130, y: 300}
+  m_AnchoredPosition: {x: 280, y: 300}
   m_SizeDelta: {x: 100, y: 100}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!1 &7966033815866751470
@@ -6311,7 +6311,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 2, y: -1.0999985}
+  m_AnchoredPosition: {x: 3, y: -3}
   m_SizeDelta: {x: 100, y: 100}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &4749218535907460702
@@ -6335,7 +6335,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
-  m_Color: {r: 0.882353, g: 0.75294125, b: 0.6666667, a: 1}
+  m_Color: {r: 0.11764706, g: 0.14117648, b: 0.18039216, a: 1}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -6485,7 +6485,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
-  m_Color: {r: 0.882353, g: 0.75294125, b: 0.6666667, a: 1}
+  m_Color: {r: 0.11764706, g: 0.14117648, b: 0.18039216, a: 1}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -6832,7 +6832,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0}
   m_AnchorMax: {x: 0.5, y: 0}
-  m_AnchoredPosition: {x: 450, y: 5}
+  m_AnchoredPosition: {x: 63.175232, y: 5}
   m_SizeDelta: {x: 100, y: 100}
   m_Pivot: {x: 0.5, y: 0}
 --- !u!222 &480011211064059530
@@ -6863,7 +6863,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: -82396921, guid: d9c8010d59b9fb840b4e32c323e48742, type: 3}
+  m_Sprite: {fileID: 1907304020, guid: f3ece9c685d3ae44888c7a085817b313, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -6935,7 +6935,7 @@ MonoBehaviour:
   _costLabelFormat: '{0}'
   _zeroCostText: 
   _baseColor: {r: 1, g: 1, b: 1, a: 1}
-  _highlightSprite: {fileID: -707948687, guid: d9c8010d59b9fb840b4e32c323e48742, type: 3}
+  _highlightSprite: {fileID: 2130262553, guid: f3ece9c685d3ae44888c7a085817b313, type: 3}
   _selectedScale: 1.08
   _glowColor: {r: 1, g: 0.95, b: 0.4, a: 1}
   _glowSpeed: 3
