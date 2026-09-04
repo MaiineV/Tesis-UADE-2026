@@ -95,10 +95,10 @@ MonoBehaviour:
       Data: hit
     - Name: IntentLabelKey
       Entry: 1
-      Data: intent.sniper.chip_ring
+      Data: intent.sniper.dead_on_ball
     - Name: IntentLabelFallback
       Entry: 1
-      Data: Anillo de Fichas
+      Data: Bolilla Certera
     - Name: RequireSourceInPosition
       Entry: 5
       Data: false
@@ -196,6 +196,15 @@ MonoBehaviour:
     - Name: WindupFeedbackId
       Entry: 6
       Data: 
+    - Name: KeepSquareWhole
+      Entry: 5
+      Data: false
+    - Name: IntentLabelKey
+      Entry: 6
+      Data: 
+    - Name: IntentLabelFallback
+      Entry: 6
+      Data: 
     - Name: 
       Entry: 8
       Data: 
@@ -271,10 +280,10 @@ MonoBehaviour:
       Data: hit
     - Name: IntentLabelKey
       Entry: 1
-      Data: intent.sniper.chip_ring
+      Data: intent.sniper.dead_on_ball
     - Name: IntentLabelFallback
       Entry: 1
-      Data: Anillo de Fichas
+      Data: Bolilla Certera
     - Name: RequireSourceInPosition
       Entry: 5
       Data: false
@@ -370,6 +379,15 @@ MonoBehaviour:
       Entry: 5
       Data: false
     - Name: WindupFeedbackId
+      Entry: 6
+      Data: 
+    - Name: KeepSquareWhole
+      Entry: 5
+      Data: false
+    - Name: IntentLabelKey
+      Entry: 6
+      Data: 
+    - Name: IntentLabelFallback
       Entry: 6
       Data: 
     - Name: 
@@ -510,6 +528,15 @@ MonoBehaviour:
       Entry: 5
       Data: false
     - Name: WindupFeedbackId
+      Entry: 6
+      Data: 
+    - Name: KeepSquareWhole
+      Entry: 5
+      Data: false
+    - Name: IntentLabelKey
+      Entry: 6
+      Data: 
+    - Name: IntentLabelFallback
       Entry: 6
       Data: 
     - Name: 

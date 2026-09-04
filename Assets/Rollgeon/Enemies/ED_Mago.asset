@@ -107,11 +107,11 @@ MonoBehaviour:
       Entry: 5
       Data: false
     - Name: IntentLabelKey
-      Entry: 6
-      Data: 
+      Entry: 1
+      Data: intent.mago.burning_roll
     - Name: IntentLabelFallback
-      Entry: 6
-      Data: 
+      Entry: 1
+      Data: Tirada Ardiente
     - Name: WindupFeedbackId
       Entry: 1
       Data: anim.enemy.healer.cast
@@ -315,6 +315,15 @@ MonoBehaviour:
     - Name: WindupFeedbackId
       Entry: 1
       Data: anim.enemy.mago.charge
+    - Name: KeepSquareWhole
+      Entry: 5
+      Data: false
+    - Name: IntentLabelKey
+      Entry: 6
+      Data: 
+    - Name: IntentLabelFallback
+      Entry: 6
+      Data: 
     - Name: 
       Entry: 8
       Data: 

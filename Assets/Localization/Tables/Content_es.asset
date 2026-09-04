@@ -150,7 +150,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 5406620151809
-    m_Localized: Sanador
+    m_Localized: Esqueleto Cantinero
     m_Metadata:
       m_Items: []
   - m_Id: 5406620151810
@@ -1708,7 +1708,10 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 17593280048852994
-    m_Localized: "Un esp\xEDritu de la casa que remienda a los suyos."
+    m_Localized: "Un esqueleto vestido de bartender que apoya a sus aliados desde
+      media distancia, lanz\xE1ndoles botellas curativas para mantenerlos en pie.
+      Si todos sus aliados caen, deja de curar y usa esas mismas botellas como proyectiles
+      contra el jugador."
     m_Metadata:
       m_Items: []
   - m_Id: 17593280048852995
@@ -2605,12 +2608,14 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 18278206983208964
-    m_Localized: "Guardi\xE1n"
+    m_Localized: Ruleta Viviente
     m_Metadata:
       m_Items: []
   - m_Id: 18278206983208965
-    m_Localized: "Protege a los suyos: los aliados cercanos reciben menos da\xF1o
-      mientras siga en pie."
+    m_Localized: "Una ruleta de casino enorme que rueda de aliado en aliado, otorg\xE1ndoles
+      escudos protectores. Es la clase tanque del grupo \u2014 su prioridad es mantener
+      con vida a sus compa\xF1eros, no atacar. Si queda sola en combate, embiste
+      directamente al jugador en cuerpo a cuerpo."
     m_Metadata:
       m_Items: []
   - m_Id: 18278206983208966
@@ -2624,13 +2629,13 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 18278206983208968
-    m_Localized: Stackpot
+    m_Localized: Bolillero Francotirador
     m_Metadata:
       m_Items: []
   - m_Id: 18278206983208969
-    m_Localized: "Una torre de fichas de casino que flota y gira lentamente en el
-      aire. Si el jugador se acerca, se aleja manteniendo distancia, buscando siempre
-      el \xE1ngulo perfecto para atacar."
+    m_Localized: "Una m\xE1quina de bolillero que se mantiene a m\xE1xima distancia
+      del jugador, girando lentamente mientras acumula presi\xF3n antes de disparar.
+      Ataca \xFAnicamente de frente, en l\xEDnea recta."
     m_Metadata:
       m_Items: []
   - m_Id: 18278206983208970
@@ -3004,6 +3009,71 @@ MonoBehaviour:
   - m_Id: 18504181340094481
     m_Localized: "Espinas dejadas por el jugador. El primer enemigo que entra recibe
       da\xF1o y su movimiento termina."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18622766255013888
+    m_Localized: Mago Dado
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18622766292762624
+    m_Localized: "Un hechicero encapuchado con un dado gigante flotando en lugar
+      de cabeza. Ataca a distancia telegrafiando el \xE1rea antes de invocar una
+      descarga de fuego que prende el escenario."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18622766292762625
+    m_Localized: Bolilla Certera
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18622766292762626
+    m_Localized: "Dispara una bolilla a alta velocidad en l\xEDnea recta hacia el
+      jugador, infligiendo da\xF1o pesado a quien est\xE9 en su trayectoria."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18622766292762627
+    m_Localized: Tirada Ardiente
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18622766292762628
+    m_Localized: "Marca un \xE1rea del escenario y, tras un breve retraso, la incendia,
+      da\xF1ando a quien quede dentro y dejando fuego residual que sigue haciendo
+      da\xF1o con el tiempo."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18622766292762629
+    m_Localized: Trago Sanador
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18622766292762630
+    m_Localized: "Lanza una botella a un aliado dentro de rango medio, cur\xE1ndolo
+      al impactar."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18622766292762631
+    m_Localized: "\xDAltima Ronda"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18622766292762632
+    m_Localized: "Al quedarse sin aliados vivos, lanza botellas directamente al jugador
+      desde rango medio, infligiendo da\xF1o en lugar de las curaciones."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18622766292762633
+    m_Localized: Giro Protector
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18622766292762634
+    m_Localized: "Se acerca al aliado m\xE1s cercano y le otorga un escudo que absorbe
+      da\xF1o antes de seguir rodando hacia el siguiente."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18622766292762635
+    m_Localized: Envite Final
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18622766292762636
+    m_Localized: "Al quedar sin aliados, embiste con todo su peso al jugador si est\xE1
+      adyacente, infligiendo da\xF1o pesado."
     m_Metadata:
       m_Items: []
   references:

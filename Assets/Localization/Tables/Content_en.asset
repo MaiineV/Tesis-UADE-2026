@@ -148,7 +148,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 5406620151809
-    m_Localized: Healer
+    m_Localized: Skeleton Bartender
     m_Metadata:
       m_Items: []
   - m_Id: 5406620151810
@@ -1686,7 +1686,10 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 17593280048852994
-    m_Localized: A house spirit that patches up its own.
+    m_Localized: A skeleton dressed as a bartender that supports its allies from
+      mid-range, throwing healing bottles to keep them standing. If all its allies
+      fall, it stops healing and hurls those same bottles as projectiles at the player
+      instead.
     m_Metadata:
       m_Items: []
   - m_Id: 17593280048852995
@@ -2583,11 +2586,14 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 18278206983208964
-    m_Localized: Guardian
+    m_Localized: Living Roulette
     m_Metadata:
       m_Items: []
   - m_Id: 18278206983208965
-    m_Localized: 'Shields its own: nearby allies take less damage while it stands.'
+    m_Localized: "A massive casino roulette wheel that rolls from ally to ally, granting
+      them protective shields. It's the group's tank \u2014 its priority is keeping
+      its allies alive, not attacking. If left alone in combat, it charges directly
+      at the player in melee."
     m_Metadata:
       m_Items: []
   - m_Id: 18278206983208966
@@ -2600,13 +2606,13 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 18278206983208968
-    m_Localized: Stackpot
+    m_Localized: Bingo Sniper
     m_Metadata:
       m_Items: []
   - m_Id: 18278206983208969
-    m_Localized: A tower of casino chips that hovers and spins slowly in the air.
-      If the player gets close, it retreats to keep its distance, always seeking
-      the perfect angle to attack.
+    m_Localized: A bingo ball machine that keeps maximum distance from the player,
+      spinning slowly while it builds pressure before firing. Attacks only in a straight
+      line, head-on.
     m_Metadata:
       m_Items: []
   - m_Id: 18278206983208970
@@ -2991,6 +2997,70 @@ MonoBehaviour:
   - m_Id: 18504181340094481
     m_Localized: Thorns left by the player. The first enemy entering takes damage
       and stops moving.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18622766255013888
+    m_Localized: Dice Mage
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18622766292762624
+    m_Localized: A hooded sorcerer with a giant die floating where its head should
+      be. Attacks at range by telegraphing an area before calling down a blast of
+      fire that ignites the battlefield.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18622766292762625
+    m_Localized: Dead-On Ball
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18622766292762626
+    m_Localized: Fires a ball at high speed in a straight line toward the player,
+      dealing heavy damage to anyone in its path.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18622766292762627
+    m_Localized: Burning Roll
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18622766292762628
+    m_Localized: Marks an area of the battlefield and, after a short delay, sets
+      it ablaze, damaging anyone caught inside and leaving residual fire that continues
+      dealing damage over time.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18622766292762629
+    m_Localized: Healing Shot
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18622766292762630
+    m_Localized: Throws a bottle at an ally within mid-range, healing them on impact.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18622766292762631
+    m_Localized: Last Call
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18622766292762632
+    m_Localized: Once all its allies are dead, throws bottles directly at the player
+      from mid-range, dealing damage instead of healing.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18622766292762633
+    m_Localized: Protective Spin
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18622766292762634
+    m_Localized: Moves to the nearest ally and grants them a shield that absorbs
+      damage before rolling on to the next.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18622766292762635
+    m_Localized: Final Wager
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18622766292762636
+    m_Localized: Once out of allies, slams its full weight into the player if adjacent,
+      dealing heavy damage.
     m_Metadata:
       m_Items: []
   references:

@@ -41,8 +41,11 @@ namespace Rollgeon.EditorTools.Enemy
                 typeof(AINode_ExecuteTelegraph), "intent.artillery.coin_drop", "Lluvia de Monedas"),
             new Entry("Assets/Rollgeon/Enemies/ED_MeleeCardEnemySweeper.asset",
                 typeof(AINode_ExecuteTelegraph), "intent.card_spades.thrust", "Estocada Anunciada"),
+            // Corrección 04/09: el Bingo es el Bolillero Francotirador, no Stackpot.
             new Entry("Assets/Rollgeon/Enemies/ED_Sniper.asset",
-                typeof(AINode_ExecuteTelegraph), "intent.sniper.chip_ring", "Anillo de Fichas"),
+                typeof(AINode_ExecuteTelegraph), "intent.sniper.dead_on_ball", "Bolilla Certera"),
+            new Entry("Assets/Rollgeon/Enemies/ED_Mago.asset",
+                typeof(AINode_IgniteArea), "intent.mago.burning_roll", "Tirada Ardiente"),
             new Entry("Assets/Rollgeon/Enemies/ED_Charger.asset",
                 typeof(AINode_ExecuteCharge), "intent.charger.charge_roll", "Embiste y Rueda"),
             new Entry("Assets/Rollgeon/Enemies/ED_Skirmisher.asset",

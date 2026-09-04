@@ -1999,6 +1999,15 @@ MonoBehaviour:
     - Name: WindupFeedbackId
       Entry: 1
       Data: anim.enemy.charger.charge
+    - Name: KeepSquareWhole
+      Entry: 5
+      Data: false
+    - Name: IntentLabelKey
+      Entry: 6
+      Data: 
+    - Name: IntentLabelFallback
+      Entry: 6
+      Data: 
     - Name: 
       Entry: 8
       Data: 

@@ -2895,6 +2895,62 @@ MonoBehaviour:
     m_Key: tile.spikes_sendero.desc
     m_Metadata:
       m_Items: []
+  - m_Id: 18622766255013888
+    m_Key: enemy.mago.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18622766292762624
+    m_Key: enemy.mago.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18622766292762625
+    m_Key: intent.sniper.dead_on_ball.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18622766292762626
+    m_Key: intent.sniper.dead_on_ball.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18622766292762627
+    m_Key: intent.mago.burning_roll.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18622766292762628
+    m_Key: intent.mago.burning_roll.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18622766292762629
+    m_Key: intent.healer.healing_shot.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18622766292762630
+    m_Key: intent.healer.healing_shot.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18622766292762631
+    m_Key: intent.healer.last_call.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18622766292762632
+    m_Key: intent.healer.last_call.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18622766292762633
+    m_Key: intent.guardian.protective_spin.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18622766292762634
+    m_Key: intent.guardian.protective_spin.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18622766292762635
+    m_Key: intent.guardian.final_wager.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18622766292762636
+    m_Key: intent.guardian.final_wager.desc
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

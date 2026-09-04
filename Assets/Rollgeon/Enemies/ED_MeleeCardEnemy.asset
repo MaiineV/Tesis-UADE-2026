@@ -227,6 +227,9 @@ MonoBehaviour:
     - Name: _readerMultiplier
       Entry: 4
       Data: 1
+    - Name: _targetSelf
+      Entry: 5
+      Data: false
     - Name: _clampHealthToMax
       Entry: 5
       Data: false
@@ -493,6 +496,9 @@ MonoBehaviour:
     - Name: _readerMultiplier
       Entry: 4
       Data: 1
+    - Name: _targetSelf
+      Entry: 5
+      Data: false
     - Name: _clampHealthToMax
       Entry: 5
       Data: false

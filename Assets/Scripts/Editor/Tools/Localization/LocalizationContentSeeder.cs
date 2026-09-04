@@ -1473,10 +1473,15 @@ namespace Rollgeon.EditorTools.Localization
 
             // Enemigos.
             Content("Boss01.name", "Jefe de Prueba", "Boss Test");
-            Content("healerEnemy.name", "Sanador", "Healer");
+            // Renombrado por "traducciones faltantes.txt" (04/09).
+            Content("healerEnemy.name", "Esqueleto Cantinero", "Skeleton Bartender");
             Content("healerEnemy.desc",
-                "Un espíritu de la casa que remienda a los suyos.",
-                "A house spirit that patches up its own.");
+                "Un esqueleto vestido de bartender que apoya a sus aliados desde media distancia, " +
+                "lanzándoles botellas curativas para mantenerlos en pie. Si todos sus aliados caen, " +
+                "deja de curar y usa esas mismas botellas como proyectiles contra el jugador.",
+                "A skeleton dressed as a bartender that supports its allies from mid-range, throwing " +
+                "healing bottles to keep them standing. If all its allies fall, it stops healing and " +
+                "hurls those same bottles as projectiles at the player instead.");
             // Renombrado por el sheet "traduccion enemigos.txt" (04/09).
             Content("CardEnemy01.name", "Guerrero de Corazones", "Heart Warrior");
             Content("CardEnemy01.desc",
@@ -1581,21 +1586,39 @@ namespace Rollgeon.EditorTools.Localization
                 "Given room, it charges in a straight line, slamming into the player and knocking them " +
                 "back; if already in melee range, it simply strikes without needing to charge.");
             Boss("enemy.guardian",
-                "Guardián", "Guardian",
-                "Protege a los suyos: los aliados cercanos reciben menos daño mientras siga en pie.",
-                "Shields its own: nearby allies take less damage while it stands.");
+                "Ruleta Viviente", "Living Roulette",
+                "Una ruleta de casino enorme que rueda de aliado en aliado, otorgándoles escudos " +
+                "protectores. Es la clase tanque del grupo — su prioridad es mantener con vida a " +
+                "sus compañeros, no atacar. Si queda sola en combate, embiste directamente al " +
+                "jugador en cuerpo a cuerpo.",
+                "A massive casino roulette wheel that rolls from ally to ally, granting them " +
+                "protective shields. It's the group's tank — its priority is keeping its allies " +
+                "alive, not attacking. If left alone in combat, it charges directly at the player " +
+                "in melee.");
+            Boss("enemy.mago",
+                "Mago Dado", "Dice Mage",
+                "Un hechicero encapuchado con un dado gigante flotando en lugar de cabeza. Ataca a " +
+                "distancia telegrafiando el área antes de invocar una descarga de fuego que prende " +
+                "el escenario.",
+                "A hooded sorcerer with a giant die floating where its head should be. Attacks at " +
+                "range by telegraphing an area before calling down a blast of fire that ignites " +
+                "the battlefield.");
             Boss("enemy.skirmisher",
                 "Chiplash", "Chiplash",
                 "Una ficha de casino de otro color que flota erráticamente. Ataca desde las diagonales " +
                 "y luego se reposiciona rápidamente para volver a golpear desde un nuevo ángulo.",
                 "A different-colored casino chip that hovers erratically. Attacks from the diagonals, " +
                 "then quickly repositions to strike again from a new angle.");
+            // Corrección de mapeo (04/09): el Bingo_Animated es el Bolillero Francotirador
+            // del sheet, no Stackpot — Stackpot (torre de fichas, anillo diamante) todavía
+            // no tiene asset; sus textos quedan en intent.sniper.chip_ring como reserva.
             Boss("enemy.sniper",
-                "Stackpot", "Stackpot",
-                "Una torre de fichas de casino que flota y gira lentamente en el aire. Si el jugador " +
-                "se acerca, se aleja manteniendo distancia, buscando siempre el ángulo perfecto para atacar.",
-                "A tower of casino chips that hovers and spins slowly in the air. If the player gets " +
-                "close, it retreats to keep its distance, always seeking the perfect angle to attack.");
+                "Bolillero Francotirador", "Bingo Sniper",
+                "Una máquina de bolillero que se mantiene a máxima distancia del jugador, girando " +
+                "lentamente mientras acumula presión antes de disparar. Ataca únicamente de frente, " +
+                "en línea recta.",
+                "A bingo ball machine that keeps maximum distance from the player, spinning slowly " +
+                "while it builds pressure before firing. Attacks only in a straight line, head-on.");
             Boss("CardEnemySweeper",
                 "Guerrero de Picas", "Spade Warrior",
                 "Un naipe viviente armado con una lanza larga. Prefiere mantener distancia y " +
@@ -1628,12 +1651,51 @@ namespace Rollgeon.EditorTools.Localization
                 "lanza dañando todo lo que quede en esa línea.",
                 "Marks a line of tiles in front of it and, after a short delay, thrusts the spear " +
                 "forward, damaging anything caught in that line.");
+            // Reserva para Stackpot (torre de fichas), que aún no tiene asset.
             Boss("intent.sniper.chip_ring",
                 "Anillo de Fichas", "Chip Ring",
                 "Ataca a distancia dentro de un área en forma de diamante alrededor de sí misma, " +
                 "dañando al jugador si queda dentro de esa zona.",
                 "Attacks at range within a diamond-shaped area around itself, damaging the player " +
                 "if caught inside that zone.");
+            Boss("intent.sniper.dead_on_ball",
+                "Bolilla Certera", "Dead-On Ball",
+                "Dispara una bolilla a alta velocidad en línea recta hacia el jugador, infligiendo " +
+                "daño pesado a quien esté en su trayectoria.",
+                "Fires a ball at high speed in a straight line toward the player, dealing heavy " +
+                "damage to anyone in its path.");
+            Boss("intent.mago.burning_roll",
+                "Tirada Ardiente", "Burning Roll",
+                "Marca un área del escenario y, tras un breve retraso, la incendia, dañando a quien " +
+                "quede dentro y dejando fuego residual que sigue haciendo daño con el tiempo.",
+                "Marks an area of the battlefield and, after a short delay, sets it ablaze, damaging " +
+                "anyone caught inside and leaving residual fire that continues dealing damage over time.");
+
+            // Cantinero y Ruleta: sus kits actuales no publican intents (curan/aurean por
+            // Behaviors de ficha) — estas keys quedan LISTAS para cuando sus árboles
+            // adopten nodos con IntentLabelKey.
+            Boss("intent.healer.healing_shot",
+                "Trago Sanador", "Healing Shot",
+                "Lanza una botella a un aliado dentro de rango medio, curándolo al impactar.",
+                "Throws a bottle at an ally within mid-range, healing them on impact.");
+            Boss("intent.healer.last_call",
+                "Última Ronda", "Last Call",
+                "Al quedarse sin aliados vivos, lanza botellas directamente al jugador desde rango " +
+                "medio, infligiendo daño en lugar de las curaciones.",
+                "Once all its allies are dead, throws bottles directly at the player from mid-range, " +
+                "dealing damage instead of healing.");
+            Boss("intent.guardian.protective_spin",
+                "Giro Protector", "Protective Spin",
+                "Se acerca al aliado más cercano y le otorga un escudo que absorbe daño antes de " +
+                "seguir rodando hacia el siguiente.",
+                "Moves to the nearest ally and grants them a shield that absorbs damage before " +
+                "rolling on to the next.");
+            Boss("intent.guardian.final_wager",
+                "Envite Final", "Final Wager",
+                "Al quedar sin aliados, embiste con todo su peso al jugador si está adyacente, " +
+                "infligiendo daño pesado.",
+                "Once out of allies, slams its full weight into the player if adjacent, dealing " +
+                "heavy damage.");
             Boss("intent.skirmisher.x_slash",
                 "Corte en X", "X Slash",
                 "Dispara un proyectil en diagonal hacia el jugador y permanece en su posición hasta " +
