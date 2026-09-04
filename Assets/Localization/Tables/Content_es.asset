@@ -2723,7 +2723,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 18299679659966473
-    m_Localized: +3 de oro por cada dado impar en cada tirada, con o sin combo.
+    m_Localized: "+3 de oro por cada dado impar que forme parte del combo que jug\xE1s."
     m_Metadata:
       m_Items: []
   - m_Id: 18299679659966474
