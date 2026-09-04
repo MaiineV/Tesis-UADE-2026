@@ -183,6 +183,18 @@ namespace Rollgeon.Entities
         [Tooltip("Flag narrativo: este kamikaze ignora por completo el filtro de supervivencia del pathing.")]
         public bool KamikazeIgnoresSurvival;
 
+        [Tooltip("Sin sangre: queda afuera del pool de Sangrado/drenaje (Feature#0084, Blood Transfusion) " +
+                 "tanto como fuente como como target.")]
+        public bool Bloodless;
+
+        [Tooltip("No se puede desplazar por empuje/atracción/swap (Feature#0084: Grapple Claw, Probability Drive). " +
+                 "Los jefes ya son inamovibles por tamaño/regla propia; este flag es para no-jefes fijos.")]
+        public bool Immovable;
+
+        [Tooltip("Inmune a Aturdido. El caller (ej. CombatantQuery.IsStunnable) debe chequear " +
+                 "esto antes de aplicar Stun — el servicio de Stun no lo hace por su cuenta.")]
+        public bool StunImmune;
+
         [Title("Aura defensiva (0 = sin aura)")]
         [Tooltip("Radio Manhattan (rect-a-rect) del aura: los ALIADOS a esta distancia o menos " +
                  "reciben la reducción mientras el portador viva. 0 = sin aura.")]
@@ -342,7 +354,8 @@ namespace Rollgeon.Entities
         /// Traits runtime de este enemigo, listos para <c>IUnitTraitService.Register</c>.
         /// </summary>
         public UnitTraits CreateTraits()
-            => new UnitTraits(IsFlying, IsBoss, Personality, KamikazeIgnoresSurvival);
+            => new UnitTraits(IsFlying, IsBoss, Personality, KamikazeIgnoresSurvival,
+                Bloodless, Immovable, StunImmune);
 
         /// <summary>
         /// Devuelve copias deep de los <see cref="Behaviors"/> declarados en el SO.

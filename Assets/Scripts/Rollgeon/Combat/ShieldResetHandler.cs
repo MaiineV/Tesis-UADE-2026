@@ -9,10 +9,18 @@ namespace Rollgeon.Combat
     public sealed class ShieldResetHandler : IDisposable
     {
         private readonly AttributesManager _attributes;
+        private readonly IShieldPersistenceService _persistence;
 
-        public ShieldResetHandler(AttributesManager attributes)
+        /// <param name="persistence">
+        /// Opcional (Feature#0084, Coin Shield): si la entidad tiene la marca de
+        /// persistencia activa, este turno SALTEA el reset y la marca se consume — el
+        /// escudo vuelve a resetearse normalmente en el siguiente. <c>null</c> = sin
+        /// persistencia disponible, comportamiento idéntico al de antes.
+        /// </param>
+        public ShieldResetHandler(AttributesManager attributes, IShieldPersistenceService persistence = null)
         {
             _attributes = attributes ?? throw new ArgumentNullException(nameof(attributes));
+            _persistence = persistence;
             EventManager.Subscribe(EventName.OnTurnStarted, OnTurnStarted);
             // BUG-062 (hardening): el reset por turno es la vía normal — un escudo
             // legítimamente persiste DURANTE el combate entre golpes, hasta el próximo
@@ -34,6 +42,10 @@ namespace Rollgeon.Combat
         {
             if (args == null || args.Length < 1 || !(args[0] is Guid entityGuid))
                 return;
+
+            // Coin Shield (Feature#0084): la marca de persistencia se consume UNA vez —
+            // este turno no resetea, el próximo ya no tiene marca y resetea normal.
+            if (_persistence?.TryConsume(entityGuid) == true) return;
 
             ResetShield(entityGuid);
         }

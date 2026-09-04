@@ -536,6 +536,7 @@ namespace Rollgeon.UI.HUD.Status
             // dicha ad-hoc (aparecía recién al primer bloqueo), y ahora la dice el bloque
             // PLAYER CURSE desde el turno 1 (AppendCurseCard, con el BossCurseSO del jefe).
             _providers.Add(new PoisonStatusProvider(_catalog));
+            _providers.Add(new BleedStatusProvider(_catalog));
             _providers.Add(new StunStatusProvider(_catalog));
             _providers.Add(new TileStandStatusProvider(_catalog));
 
