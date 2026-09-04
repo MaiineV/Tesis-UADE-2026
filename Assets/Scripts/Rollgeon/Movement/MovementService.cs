@@ -270,6 +270,24 @@ namespace Rollgeon.Movement
         }
 
         /// <inheritdoc />
+        public bool Swap(Guid a, Guid b)
+        {
+            if (!_grid.TryGetPosition(a, out var coordA)) return false;
+            if (!_grid.TryGetPosition(b, out var coordB)) return false;
+
+            // Unregister + Register (no Move): Move rechaza el destino "ocupado" por la otra
+            // entidad — acá las dos celdas quedan libres al mismo tiempo a propósito.
+            _grid.Unregister(a);
+            _grid.Unregister(b);
+            _grid.Register(a, coordB);
+            _grid.Register(b, coordA);
+
+            OnEntityTeleported?.Invoke(a, coordA, coordB);
+            OnEntityTeleported?.Invoke(b, coordB, coordA);
+            return true;
+        }
+
+        /// <inheritdoc />
         public List<GridCoord> GetReachableAnchors(Guid entity, int range)
         {
             var result = new List<GridCoord>();

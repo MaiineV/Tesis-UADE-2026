@@ -765,6 +765,12 @@ namespace Rollgeon.Tiles
             SpawnTriggerVfx(def, coord);
             EventManager.Trigger(EventName.OnSpecialTileTriggered,
                 instance.InstanceId, entity, (int)fired);
+
+            // Un solo uso: a diferencia de DisarmOnTrigger (rearmable), esta instancia se va
+            // entera. Los loops de ResolveEntries/ResolveStand re-snapshotean por celda/instancia,
+            // así que expirar acá adentro no rompe la iteración en curso.
+            if (def.RemoveOnTrigger)
+                ExpireInstance(instance.InstanceId);
         }
 
         // ======================================================================

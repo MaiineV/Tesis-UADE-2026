@@ -50,5 +50,14 @@ namespace Rollgeon.Movement
 
         /// <summary>Args: (entity, from, to).</summary>
         event Action<Guid, GridCoord, GridCoord> OnEntityTeleported;
+
+        /// <summary>
+        /// Intercambia las posiciones de dos entidades ya registradas (Probability Drive: dos
+        /// enemigos se cruzan). Dispara <see cref="OnEntityTeleported"/> para cada una — mismo
+        /// evento que <see cref="Teleport"/>, no hay "entrada" a ninguna celda intermedia.
+        /// Default member: <c>false</c> = "no soportado" para fakes de test existentes.
+        /// </summary>
+        /// <returns><c>false</c> si <paramref name="a"/> o <paramref name="b"/> no están registradas.</returns>
+        bool Swap(Guid a, Guid b) => false;
     }
 }
