@@ -38,7 +38,8 @@ namespace Rollgeon.Combat.Damage
     /// "+X al multiplicador": Piedra Angular, Ayuno, Vértigo… — decisión GD 2026-09-03: el
     /// aditivo entra sobre el 1 de M, así +2 sin otros factores es ×3) más las caras de los
     /// dados movidos a M (<c>EnchantmentScratch.DiceMovedToMultiplier</c>, Fuente Mágica),
-    /// que a cambio salen de Σcaras.
+    /// que a cambio salen de Σcaras. Con kind Heal, las reglas de curación de la poción
+    /// (<c>IHealingRuleService.PotionHealMultiplier</c>, Ayuno ×0.5) entran como factor de M.
     /// </summary>
     /// <remarks>
     /// Código puro/estático para testear la fórmula aislada. Solo aplica al ataque de combo del
@@ -141,6 +142,12 @@ namespace Rollgeon.Combat.Damage
             // ItemSO para que el vuelo muestre el icono del item.
             if (kind == PlayerComboFormulaKind.ForceDoor)
                 bonoCombo += AppendForceDoorItemBonus(sourceId, ref sources);
+
+            // Curación de la poción (acción Curarse): las reglas de items (Ayuno ×0.5) entran
+            // a M como un factor más, journaleadas con su ItemSO para que el desglose muestre
+            // "Ayuno ×0.5" volando a M — la cura real y la animación salen del mismo número.
+            if (kind == PlayerComboFormulaKind.Heal)
+                scratchMultiplier *= AppendPotionHealRules(ref sources);
 
             // Dados movidos a M (Fuente Mágica): su cara NO entra a Σcaras y SÍ al bono
             // aditivo de M. Se resuelve acá y no restando en N desde el efecto para que el
@@ -270,6 +277,33 @@ namespace Rollgeon.Combat.Damage
                     return item;
             }
             return null;
+        }
+
+        /// <summary>
+        /// Multiplica los factores de <see cref="Rollgeon.Combat.Healing.IHealingRuleService"/>
+        /// sobre la curación de la poción y journalea cada uno como fuente
+        /// <see cref="ScratchSourceKind.Item"/> con su ItemSO (icono). 1 sin servicio / sin fuentes.
+        /// </summary>
+        private static float AppendPotionHealRules(ref List<ScratchContribution> sources)
+        {
+            if (!ServiceLocator.TryGetService<Rollgeon.Combat.Healing.IHealingRuleService>(out var rules)
+                || rules == null)
+                return 1f;
+            var perSource = rules.PotionHealMultiplierSources;
+            if (perSource == null || perSource.Count == 0) return 1f;
+
+            ServiceLocator.TryGetService<Rollgeon.Items.IInventoryService>(out var inventory);
+            float product = 1f;
+            foreach (var kv in perSource)
+            {
+                if (kv.Value <= 0f || Math.Abs(kv.Value - 1f) < 1e-4f) continue;
+                product *= kv.Value;
+                sources ??= new List<ScratchContribution>(2);
+                sources.Add(new ScratchContribution(ScratchSourceKind.Item, kv.Key,
+                    inventory?.GetItem(kv.Key), bagSlot: -1, bonusDelta: 0,
+                    multiplierFactor: kv.Value, setBlock: false));
+            }
+            return product;
         }
 
         // Agrega el journal de un canal al desglose. Aloca solo si alguna fuente aportó.

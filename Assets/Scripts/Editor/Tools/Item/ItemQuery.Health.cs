@@ -115,6 +115,8 @@ namespace Rollgeon.Editor.Tools.Item
                         || item.RollPoolBonus > 0
                         || item.LadderSkippedStep
                         || item.BlocksPassiveItemHealing
+                        || (item.PotionHealMultiplier > 0f
+                            && !UnityEngine.Mathf.Approximately(item.PotionHealMultiplier, 1f))
                         || (item.DecayingMultiplier != null && item.DecayingMultiplier.Enabled)
                         || item.ActiveSlotBonus > 0
                         || (item.EnchantmentCostMultiplier > 0f

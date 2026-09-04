@@ -721,15 +721,17 @@ namespace Rollgeon.Items
 
         private void RegisterHealingRules(ItemSO item)
         {
-            if (!item.BlocksPassiveItemHealing) return;
+            bool scalesPotion = HasPotionHealMultiplier(item);
+            if (!item.BlocksPassiveItemHealing && !scalesPotion) return;
             if (!ServiceLocator.TryGetService<Rollgeon.Combat.Healing.IHealingRuleService>(out var rules)
                 || rules == null)
             {
-                Debug.LogWarning("[InventoryService] IHealingRuleService no registrado — el bloqueo de " +
-                                 $"curas de '{item.ItemId}' no se aplica.");
+                Debug.LogWarning("[InventoryService] IHealingRuleService no registrado — las reglas de " +
+                                 $"curación de '{item.ItemId}' no se aplican.");
                 return;
             }
-            rules.AddPassiveHealingBlock(item.ItemId);
+            if (item.BlocksPassiveItemHealing) rules.AddPassiveHealingBlock(item.ItemId);
+            if (scalesPotion) rules.AddPotionHealMultiplier(item.ItemId, item.PotionHealMultiplier);
             _registeredHealingRules.Add(item.ItemId);
         }
 
@@ -738,8 +740,16 @@ namespace Rollgeon.Items
             if (item == null || !_registeredHealingRules.Remove(item.ItemId)) return;
             if (ServiceLocator.TryGetService<Rollgeon.Combat.Healing.IHealingRuleService>(out var rules)
                 && rules != null)
+            {
+                // Los dos Remove son no-op si el item no registró ese canal.
                 rules.RemovePassiveHealingBlock(item.ItemId);
+                rules.RemovePotionHealMultiplier(item.ItemId);
+            }
         }
+
+        // 1 = sin efecto; 0 o negativo no son autorables (MinValue en el SO) y se ignoran.
+        private static bool HasPotionHealMultiplier(ItemSO item)
+            => item.PotionHealMultiplier > 0f && !Mathf.Approximately(item.PotionHealMultiplier, 1f);
 
         // ======================================================================
         // Enchantment cost modifier (Moneda Maldita)
@@ -937,7 +947,10 @@ namespace Rollgeon.Items
                 && hrs != null)
             {
                 foreach (var id in _registeredHealingRules)
+                {
                     hrs.RemovePassiveHealingBlock(id);
+                    hrs.RemovePotionHealMultiplier(id);
+                }
             }
             _registeredHealingRules.Clear();
         }

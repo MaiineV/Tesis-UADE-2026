@@ -2731,8 +2731,8 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 18299679659966475
-    m_Localized: "No recib\xEDs curaci\xF3n de items pasivos. A cambio, todos tus
-      multiplicadores de combo suman +3."
+    m_Localized: "Tu poci\xF3n cura la mitad. A cambio, todos tus multiplicadores de combo
+      suman +3."
     m_Metadata:
       m_Items: []
   - m_Id: 18332491544969216
