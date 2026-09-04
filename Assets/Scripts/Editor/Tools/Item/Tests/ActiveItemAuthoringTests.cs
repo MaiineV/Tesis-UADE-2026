@@ -49,6 +49,11 @@ namespace Rollgeon.Editor.Tools.Item.Tests
             foreach (var itemId in _itemIdsToCleanUpLocalization)
                 ContentLocalizationBridge.RemoveEntityKeys(itemId, "Test Cleanup");
 
+            // RemoveEntityKeys solo marca dirty: sin este guardado las tablas Content_*
+            // quedan en disco con las entradas de prueba (CreateOrSkip si guarda).
+            if (_itemIdsToCleanUpLocalization.Count > 0)
+                AssetDatabase.SaveAssets();
+
             Object.DestroyImmediate(_catalog);
             Object.DestroyImmediate(_pool);
 
