@@ -452,8 +452,8 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 5531899817985
-    m_Localized: "Este dado no suma da\xF1o, pero cada vez que participa en un combo
-      genera +2 de oro."
+    m_Localized: "Cuando participa en un combo, este dado no suma da\xF1o y genera
+      +2 de oro."
     m_Metadata:
       m_Items: []
   - m_Id: 5531899817986
@@ -519,8 +519,8 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 5531899818001
-    m_Localized: "Al sacar el m\xE1ximo, este dado aporta el doble de da\xF1o. Con
-      cualquier otra cara aporta la mitad."
+    m_Localized: "Cuando participa en un combo: si saca el m\xE1ximo aporta el doble
+      de da\xF1o; con cualquier otra cara aporta la mitad."
     m_Metadata:
       m_Items: []
   - m_Id: 5531975315456

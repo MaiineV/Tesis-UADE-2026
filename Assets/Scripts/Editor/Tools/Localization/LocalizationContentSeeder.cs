@@ -503,9 +503,10 @@ namespace Rollgeon.EditorTools.Localization
                 "Este dado solo saca números pares.",
                 "This die only rolls even numbers.");
 
+            // Fix#0081: solo actúa cuando participa de un combo real — en Número Alto vale su cara.
             Ench("oxidado", "Oxidado", "Rusty",
-                "Este dado no suma daño, pero cada vez que participa en un combo genera +2 de oro.",
-                "This die adds no damage, but each time it takes part in a combo it generates +2 gold.");
+                "Cuando participa en un combo, este dado no suma daño y genera +2 de oro.",
+                "When it takes part in a combo, this die adds no damage and generates +2 gold.");
 
             Ench("par", "Par", "Even",
                 "Solo muestra caras pares. d6:{2,4,6} d8:{2,4,6,8} d12:{2,4,6,8,10,12}",
@@ -536,9 +537,10 @@ namespace Rollgeon.EditorTools.Localization
                 "Obliga a volver a tirar todos los dados en el turno 2 del combate.",
                 "Forces a full reroll on turn 2 of the combat.");
 
+            // Fix#0081: misma regla que Oxidado — solo en combos reales.
             Ench("volatil", "Volátil", "Volatile",
-                "Al sacar el máximo, este dado aporta el doble de daño. Con cualquier otra cara aporta la mitad.",
-                "On its maximum this die deals double damage. On any other face it deals half.");
+                "Cuando participa en un combo: si saca el máximo aporta el doble de daño; con cualquier otra cara aporta la mitad.",
+                "When it takes part in a combo: on its maximum it deals double damage; on any other face it deals half.");
 
             // Feature#0073 — encantamientos del GDD que faltaban en el catálogo.
             Ench("vampiro", "Vampiro", "Vampire",

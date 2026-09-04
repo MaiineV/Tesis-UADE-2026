@@ -448,8 +448,8 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 5531899817985
-    m_Localized: This die adds no damage, but each time it takes part in a combo
-      it generates +2 gold.
+    m_Localized: When it takes part in a combo, this die adds no damage and generates
+      +2 gold.
     m_Metadata:
       m_Items: []
   - m_Id: 5531899817986
@@ -515,8 +515,8 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 5531899818001
-    m_Localized: On its maximum this die deals double damage. On any other face it
-      deals half.
+    m_Localized: 'When it takes part in a combo: on its maximum it deals double damage;
+      on any other face it deals half.'
     m_Metadata:
       m_Items: []
   - m_Id: 5531975315456
