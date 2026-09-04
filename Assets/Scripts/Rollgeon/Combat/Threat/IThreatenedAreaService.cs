@@ -60,6 +60,13 @@ namespace Rollgeon.Combat.Threat
 
         /// <summary>Descarta todas las áreas pendientes. Usado en <c>OnCombatEnd</c> / <c>OnRunEnd</c>.</summary>
         void ClearAll();
+
+        /// <summary>
+        /// <c>true</c> si <paramref name="coord"/> cae dentro de CUALQUIER área pendiente (unión de
+        /// todas las fuentes). Default member: consumidores existentes (mocks/fakes de test) no
+        /// se rompen por este agregado; <see cref="ThreatenedAreaService"/> lo implementa de verdad.
+        /// </summary>
+        bool IsThreatened(GridCoord coord) => false;
     }
 
     /// <summary>Snapshot inmutable de un área amenazada pendiente.</summary>

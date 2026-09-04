@@ -3067,6 +3067,82 @@ MonoBehaviour:
     m_Localized: "Weakness: hits with the {0} combo deal \xD7{1} damage."
     m_Metadata:
       m_Items: []
+  - m_Id: 18719323256438784
+    m_Localized: "Bleeding \xD7{0}"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18719323273216000
+    m_Localized: You take damage at the start of each turn for every Bleed stack.
+      Bleeding again ADDS new stacks.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18723604852293632
+    m_Localized: Blood Transfusion
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18723604852293633
+    m_Localized: 'Roll your own D10: on 1-3 it redistributes the room''s enemy health,
+      and on 4-10 it drains the enemy with the most HP and heals you for the damage
+      dealt.'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18723604852293634
+    m_Localized: Coin Shield
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18723604852293635
+    m_Localized: 'Roll a D4 like a coin flip: even keeps your current shield until
+      your next turn, odd hands out shield to you and every living enemy.'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18723604852293636
+    m_Localized: Grapple Claw
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18723604852293637
+    m_Localized: 'Pick a direction and roll a D6: you pull yourself or your hooked
+      target that many tiles, and on 1-2 the chain also drags a nearby enemy.'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18723604852293638
+    m_Localized: Justa de Justicia
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18723604852293639
+    m_Localized: 'Pick a direction and roll a D12: you charge that many tiles, the
+      first enemy hit takes that much damage, and gets shoved according to the roll''s
+      band.'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18723604852293640
+    m_Localized: Probability Drive
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18723604852293641
+    m_Localized: 'Pick a center tile and roll a D4: you teleport to a nearby safe
+      spot, ranging from an erratic jump on 1 to choosing between three options on
+      4.'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18723604852293642
+    m_Localized: Blood D6
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18723604852293643
+    m_Localized: 'Roll a D6 before your next valid combo: it adds bonus damage that
+      spreads across several enemies on low faces and concentrates on the main target
+      on high faces.'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18723604852293644
+    m_Localized: Bottle'o Thunder
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18723604852293645
+    m_Localized: 'Pick an enemy and roll a D4: it stuns between 1 and 4 chained targets
+      and always leaves 2 Electric Puddles on the ground.'
+    m_Metadata:
+      m_Items: []
   - m_Id: 18720942286798848
     m_Localized: Shove
     m_Metadata:

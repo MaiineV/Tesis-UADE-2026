@@ -150,12 +150,16 @@ namespace Rollgeon.DevConsole.Commands
                 : $"{equipped.Enchantment.DisplayName} — {equipped.Enchantment.DescribeEffect()}"
                   + (equipped.Enchantment.IsLimited ? $" [{equipped.EnchantmentUsesLeft} usos]" : string.Empty);
 
-            // Caras y no rangos: en Precision y Control las bandas no son contiguas.
+            // Caras y no rangos: en Precision/Control las bandas no son contiguas, y en
+            // Binary/Gradient/Hierarchy directamente no hay 3 bandas fijas.
             var text = new System.Text.StringBuilder();
-            text.AppendLine($"{item.DisplayName} ({item.ItemId}) — d{faces}, familia {item.ActiveFamily}");
-            text.AppendLine($"  negativa {ActiveItemBands.DescribeFaces(ActiveItemBand.Negative, item)}"
-                          + $" | mixta {ActiveItemBands.DescribeFaces(ActiveItemBand.Mixed, item)}"
-                          + $" | positiva {ActiveItemBands.DescribeFaces(ActiveItemBand.Positive, item)}");
+            text.AppendLine($"{item.DisplayName} ({item.ItemId}) — d{faces}, "
+                          + $"resolucion {item.ActiveResolution}, familia {item.ActiveFamily}");
+
+            var rows = ActiveItemBands.DescribeStructure(item);
+            var rowParts = new List<string>();
+            foreach (var row in rows) rowParts.Add($"{row.Label} {row.Faces}");
+            text.AppendLine("  " + string.Join(" | ", rowParts));
             text.AppendLine($"  {ench}");
             text.Append($"  gate: {gate}");
 

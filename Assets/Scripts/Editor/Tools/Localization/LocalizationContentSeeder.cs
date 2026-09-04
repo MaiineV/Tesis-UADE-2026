@@ -748,6 +748,13 @@ namespace Rollgeon.EditorTools.Localization
                 "Perdés tu próximo turno.",
                 "You lose your next turn.");
 
+            // Sangrado (Feature#0085): a diferencia de Veneno, acumula stacks — el nombre
+            // lleva un placeholder {0} para el conteo de stacks vivos (BleedStatusProvider).
+            Content("status.bleed.name", "Sangrado ×{0}", "Bleeding ×{0}");
+            Content("status.bleed.desc",
+                "Recibís daño al inicio de cada turno por cada stack de Sangrado. Volver a sangrar SUMA stacks nuevos.",
+                "You take damage at the start of each turn for every Bleed stack. Bleeding again ADDS new stacks.");
+
             // Cooldown post-portal (con turnos, tickea como veneno/stun).
             Content("status.tp_delay.name", "Recién teletransportado", "Teleport Fatigue");
             Content("status.tp_delay.desc",

@@ -289,6 +289,11 @@ namespace Rollgeon.UI.HUD
 
                 case TurnButtonMode.Confirm:
                     if (IsActionRollActive()) return _actionRoll.CanConfirm;
+                    // Eleccion post-tirada (§A5) abierta: se resuelve clickeando un tile,
+                    // no con este boton — deshabilitado hasta que se elija o se abandone
+                    // (fin de turno/combate). Distinto del roll pendiente: ahi Confirm SI
+                    // hace algo (aceptar la cara).
+                    if (_activeItem != null && _activeItem.IsAwaitingChoice) return false;
                     // Tirada del item activo esperando decision: aceptar siempre se
                     // puede (no cuesta nada) mientras sea el turno del jugador.
                     if (IsActiveItemAwaiting()) return _isPlayerTurn;
@@ -337,7 +342,10 @@ namespace Rollgeon.UI.HUD
 
         // Resolucion perezosa como la del ActionRoll, con una diferencia: este service
         // no se puede pollear barato en Update (la ventana se abre por evento), asi que
-        // al resolverlo nos colgamos de OnRollPending/OnResolved para re-gatear.
+        // al resolverlo nos colgamos de OnRollPending/OnResolved/OnChoicePending/
+        // OnChoiceResolved para re-gatear. La eleccion post-tirada (§A5) es una segunda
+        // ventana propia, encima de la del roll — ninguna de las dos deja pasar End
+        // Turn/Confirm.
         private bool IsActiveItemAwaiting()
         {
             if (_activeItem == null)
@@ -347,10 +355,12 @@ namespace Rollgeon.UI.HUD
                 {
                     _activeItem.OnRollPending += HandleActiveItemPending;
                     _activeItem.OnResolved += HandleActiveItemResolved;
+                    _activeItem.OnChoicePending += HandleActiveItemChoiceChanged;
+                    _activeItem.OnChoiceResolved += HandleActiveItemChoiceChanged;
                     _activeItemHooked = true;
                 }
             }
-            return _activeItem != null && _activeItem.IsAwaitingDecision;
+            return _activeItem != null && (_activeItem.IsAwaitingDecision || _activeItem.IsAwaitingChoice);
         }
 
         private void UnhookActiveItem()
@@ -359,6 +369,8 @@ namespace Rollgeon.UI.HUD
             {
                 _activeItem.OnRollPending -= HandleActiveItemPending;
                 _activeItem.OnResolved -= HandleActiveItemResolved;
+                _activeItem.OnChoicePending -= HandleActiveItemChoiceChanged;
+                _activeItem.OnChoiceResolved -= HandleActiveItemChoiceChanged;
             }
             _activeItemHooked = false;
             _activeItem = null;
@@ -368,6 +380,9 @@ namespace Rollgeon.UI.HUD
             => Refresh();
 
         private void HandleActiveItemResolved(Rollgeon.Items.Active.ActiveItemActivationResult _)
+            => Refresh();
+
+        private void HandleActiveItemChoiceChanged()
             => Refresh();
 
         private bool AnyDieHeld()

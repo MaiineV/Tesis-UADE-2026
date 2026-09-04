@@ -3080,6 +3080,84 @@ MonoBehaviour:
     m_Localized: "Debilidad: los golpes con el combo {0} le hacen \xD7{1} de da\xF1o."
     m_Metadata:
       m_Items: []
+  - m_Id: 18719323256438784
+    m_Localized: "Sangrado \xD7{0}"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18719323273216000
+    m_Localized: "Recib\xEDs da\xF1o al inicio de cada turno por cada stack de Sangrado.
+      Volver a sangrar SUMA stacks nuevos."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18723604852293632
+    m_Localized: Blood Transfusion
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18723604852293633
+    m_Localized: "Tira un D10 propio: en 1-3 redistribuye la vida de los enemigos
+      de la sala, y en 4-10 drena al enemigo con m\xE1s vida y te cura por el da\xF1o
+      infligido."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18723604852293634
+    m_Localized: Coin Shield
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18723604852293635
+    m_Localized: "Tira un D4 como si fuera una moneda: par conserva tu escudo actual
+      hasta tu pr\xF3ximo turno, impar reparte escudo entre vos y todos los enemigos
+      vivos."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18723604852293636
+    m_Localized: Grapple Claw
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18723604852293637
+    m_Localized: "Eleg\xED una direcci\xF3n y tir\xE1 un D6: te acerc\xE1s o atra\xE9s
+      al objetivo enganchado esa cantidad de casillas, y con 1-2 la cadena arrastra
+      tambi\xE9n a un enemigo cercano."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18723604852293638
+    m_Localized: Justa de Justicia
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18723604852293639
+    m_Localized: "Eleg\xED una direcci\xF3n y tir\xE1 un D12: carg\xE1s esa cantidad
+      de casillas, el primer enemigo golpeado recibe ese da\xF1o y se empuja seg\xFAn
+      la banda del resultado."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18723604852293640
+    m_Localized: Probability Drive
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18723604852293641
+    m_Localized: "Eleg\xED una casilla central y tir\xE1 un D4: te teletransport\xE1s
+      a un destino seguro cercano, desde un salto err\xE1tico en 1 hasta elegir entre
+      tres opciones en 4."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18723604852293642
+    m_Localized: Blood D6
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18723604852293643
+    m_Localized: "Tir\xE1 un D6 antes de tu pr\xF3ximo combo v\xE1lido: agrega un
+      bonus de da\xF1o que en caras bajas se dispersa entre varios enemigos y en
+      caras altas se concentra en el objetivo principal."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18723604852293644
+    m_Localized: Bottle'o Thunder
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18723604852293645
+    m_Localized: "Eleg\xED un enemigo y tir\xE1 un D4: aturde entre 1 y 4 objetivos
+      encadenados y siempre deja 2 Charcos El\xE9ctricos en el terreno."
+    m_Metadata:
+      m_Items: []
   - m_Id: 18720942286798848
     m_Localized: "Empuj\xF3n"
     m_Metadata:

@@ -646,12 +646,17 @@ namespace Rollgeon.UI.HUD
                 string.IsNullOrEmpty(item.DisplayName) ? item.ItemId : item.DisplayName);
 
             // Se listan las caras y no un rango: en Precision y Control las bandas no son
-            // contiguas (Control con paridad par sobre D6 da mixta en 2 y en 5).
+            // contiguas (Control con paridad par sobre D6 da mixta en 2 y en 5), y en
+            // Binary/Gradient/Hierarchy directamente no hay 3 bandas fijas — DescribeStructure
+            // devuelve las filas reales del item (2 en Binary, 1 en Gradient/Hierarchy).
             var text = new System.Text.StringBuilder();
             text.AppendLine($"<b>{name}</b>  ·  d{faces}");
-            text.AppendLine($"{ActiveItemBands.DescribeFaces(ActiveItemBand.Negative, item)} riesgo");
-            text.AppendLine($"{ActiveItemBands.DescribeFaces(ActiveItemBand.Mixed, item)} mixto");
-            text.Append($"{ActiveItemBands.DescribeFaces(ActiveItemBand.Positive, item)} fuerte");
+            var rows = ActiveItemBands.DescribeStructure(item);
+            for (int i = 0; i < rows.Count; i++)
+            {
+                if (i > 0) text.AppendLine();
+                text.Append($"{rows[i].Faces} {rows[i].Label}");
+            }
 
             var ench = _equipped.Enchantment;
             if (ench != null)

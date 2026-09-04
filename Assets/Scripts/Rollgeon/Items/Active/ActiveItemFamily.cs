@@ -6,10 +6,13 @@ namespace Rollgeon.Items.Active
     /// GDD "Ítems Activos" §24.
     /// </summary>
     /// <remarks>
-    /// Las bandas se calculan siempre por tercios proporcionales sobre el rango del dado
-    /// (<see cref="ActiveItemBands"/>), <b>salvo</b> <see cref="Precision"/> y
-    /// <see cref="Control"/>, que tienen mecanismos propios. Esos dos quedan fuera de la
-    /// fase 1 y hoy caen en el calculo por tercios — ver <see cref="ActiveItemBands"/>.
+    /// Las bandas se calculan por tercios proporcionales sobre el rango del dado
+    /// (<see cref="ActiveItemBands.Resolve(int,int)"/>), <b>salvo</b> <see cref="Precision"/>
+    /// y <see cref="Control"/>, que resuelven con su propio mecanismo — distancia al
+    /// valor objetivo y paridad + mitad superior del dado respectivamente. Ver
+    /// <see cref="ActiveItemBands.ResolvePrecision"/> y <see cref="ActiveItemBands.ResolveControl"/>.
+    /// Estas dos familias solo tienen sentido con <see cref="ActiveItemResolution.Bands"/>:
+    /// Binary/Gradient/Hierarchy no las consultan.
     /// </remarks>
     public enum ActiveItemFamily
     {
@@ -44,8 +47,8 @@ namespace Rollgeon.Items.Active
     {
         /// <summary>
         /// <c>true</c> si la familia resuelve sus bandas con un mecanismo propio en vez
-        /// de los tercios proporcionales. Hoy solo lo usa el editor/validacion: ambas
-        /// estan pendientes de implementar y caen en el calculo por tercios.
+        /// de los tercios proporcionales (ver <see cref="ActiveItemBands.Resolve(int,ItemSO)"/>).
+        /// Hoy solo lo usa el editor/validacion.
         /// </summary>
         public static bool HasCustomBandMechanism(this ActiveItemFamily family)
             => family == ActiveItemFamily.Precision || family == ActiveItemFamily.Control;

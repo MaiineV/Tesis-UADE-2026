@@ -239,5 +239,88 @@ namespace Rollgeon.UI.Tests
             Assert.Greater(positive, negative);
             Assert.Greater(negative, 1f, "la banda negativa igual se siente — no es un no-evento");
         }
+
+        // ------------------------------------------------------------------
+        // Feature#0085 — intensidad por estructura de resolucion
+        // ------------------------------------------------------------------
+
+        [Test]
+        public void test_intensity_bands_matchesTheLegacyBandTable()
+        {
+            // Arrange — Bands tiene que seguir leyendo la tabla vieja tal cual.
+            var resolution = new ActiveItemRollResolution(6, 6, 6, ActiveItemBand.Positive,
+                ActiveItemResolution.Bands, magnitude: 0);
+
+            // Act + Assert
+            Assert.AreEqual(ActiveItemRollFeelMath.Intensity01(ActiveItemBand.Positive),
+                ActiveItemRollFeelMath.Intensity01(resolution), 0.0001f);
+        }
+
+        [TestCase(ActiveItemBand.Negative, 0.55f)]
+        [TestCase(ActiveItemBand.Positive, 1f)]
+        public void test_intensity_binary_hasNoMixedStep(ActiveItemBand band, float expected)
+        {
+            // Arrange — Binary no tiene banda mixta: solo dos escalones.
+            var resolution = new ActiveItemRollResolution(1, 1, 4, band, ActiveItemResolution.Binary, magnitude: 0);
+
+            // Act + Assert
+            Assert.AreEqual(expected, ActiveItemRollFeelMath.Intensity01(resolution), 0.0001f);
+        }
+
+        [Test]
+        public void test_intensity_gradient_scalesContinuouslyWithMagnitude01()
+        {
+            // Arrange — cara 1 de 6 (Magnitude01 = 0) vs cara 6 de 6 (Magnitude01 = 1).
+            var low = new ActiveItemRollResolution(1, 1, 6, ActiveItemBand.Negative,
+                ActiveItemResolution.Gradient, magnitude: 1);
+            var high = new ActiveItemRollResolution(6, 6, 6, ActiveItemBand.Positive,
+                ActiveItemResolution.Gradient, magnitude: 6);
+
+            // Act + Assert
+            Assert.AreEqual(0.25f, ActiveItemRollFeelMath.Intensity01(low), 0.0001f);
+            Assert.AreEqual(1f, ActiveItemRollFeelMath.Intensity01(high), 0.0001f);
+        }
+
+        [Test]
+        public void test_intensity_hierarchy_scalesContinuouslyWithMagnitude01()
+        {
+            // Arrange — mitad del rango (D4, cara 3 → Magnitude01 = 2/3).
+            var mid = new ActiveItemRollResolution(3, 3, 4, ActiveItemBand.Mixed,
+                ActiveItemResolution.Hierarchy, magnitude: 3);
+
+            // Act
+            float expected = 0.25f + 0.75f * mid.Magnitude01;
+
+            // Assert
+            Assert.AreEqual(expected, ActiveItemRollFeelMath.Intensity01(mid), 0.0001f);
+        }
+
+        [Test]
+        public void test_hitstop_bandsAndBinary_reservedForPositive()
+        {
+            // Arrange
+            var positive = new ActiveItemRollResolution(6, 6, 6, ActiveItemBand.Positive,
+                ActiveItemResolution.Bands, magnitude: 0);
+            var negative = new ActiveItemRollResolution(1, 1, 6, ActiveItemBand.Negative,
+                ActiveItemResolution.Binary, magnitude: 0);
+
+            // Act + Assert
+            Assert.IsTrue(ActiveItemRollFeelMath.HitstopAllowed(positive));
+            Assert.IsFalse(ActiveItemRollFeelMath.HitstopAllowed(negative));
+        }
+
+        [Test]
+        public void test_hitstop_gradientAndHierarchy_requiresMaxFace()
+        {
+            // Arrange — sin banda positiva "de verdad": el criterio pasa a ser la cara maxima.
+            var maxFace = new ActiveItemRollResolution(6, 6, 6, ActiveItemBand.Positive,
+                ActiveItemResolution.Gradient, magnitude: 6);
+            var notMaxFace = new ActiveItemRollResolution(5, 5, 6, ActiveItemBand.Positive,
+                ActiveItemResolution.Gradient, magnitude: 5);
+
+            // Act + Assert
+            Assert.IsTrue(ActiveItemRollFeelMath.HitstopAllowed(maxFace));
+            Assert.IsFalse(ActiveItemRollFeelMath.HitstopAllowed(notMaxFace));
+        }
     }
 }

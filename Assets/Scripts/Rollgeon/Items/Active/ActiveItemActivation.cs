@@ -1,4 +1,5 @@
 using System;
+using Rollgeon.Dice;
 using Rollgeon.Effects.Selection;
 
 namespace Rollgeon.Items.Active
@@ -30,14 +31,31 @@ namespace Rollgeon.Items.Active
         /// <summary><c>true</c> si el grupo de efectos de la banda corrio sin cortar.</summary>
         public readonly bool EffectsSucceeded;
 
+        /// <summary>
+        /// Resolucion completa (Feature#0085): cara, banda, estructura y magnitud. Los
+        /// campos <see cref="Roll"/>/<see cref="Band"/> se conservan por compatibilidad —
+        /// son <c>Resolution.Face</c>/<c>Resolution.Band</c> desagregados.
+        /// </summary>
+        public readonly ActiveItemRollResolution Resolution;
+
         public ActiveItemActivationResult(ItemSO item, int roll, ActiveItemBand band,
             bool effectsSucceeded, int rawRoll)
+            : this(item, roll, band, effectsSucceeded, rawRoll,
+                new ActiveItemRollResolution(roll, rawRoll,
+                    item != null ? item.ActiveDie.MaxFace() : 6, band,
+                    item != null ? item.ActiveResolution : ActiveItemResolution.Bands, 0))
+        {
+        }
+
+        public ActiveItemActivationResult(ItemSO item, int roll, ActiveItemBand band,
+            bool effectsSucceeded, int rawRoll, ActiveItemRollResolution resolution)
         {
             Item = item;
             Roll = roll;
             Band = band;
             EffectsSucceeded = effectsSucceeded;
             RawRoll = rawRoll;
+            Resolution = resolution;
         }
     }
 
@@ -181,5 +199,26 @@ namespace Rollgeon.Items.Active
         /// obtenida dentro del slot antes de volver al estado de reposo.
         /// </summary>
         event Action<ActiveItemActivationResult> OnResolved;
+
+        /// <summary>
+        /// <c>true</c> mientras un efecto de banda pidio una eleccion post-tirada
+        /// (Feature#0085 §A5, Probability Drive cara 4) y todavia no se resolvio.
+        /// <see cref="CanActivate"/> devuelve <see cref="ActiveItemBlock.AwaitingDecision"/>
+        /// en este estado — es la misma "ventana abierta" que la del roll pendiente, solo
+        /// que ya paso la banda y el efecto espera un tile.
+        /// </summary>
+        bool IsAwaitingChoice { get; }
+
+        /// <summary>
+        /// Disparado cuando se abre la seleccion de la eleccion post-tirada (despues de
+        /// <see cref="OnResolved"/> de la misma activacion). El HUD lo usa para bloquear
+        /// End Turn/Confirm mientras dura.
+        /// </summary>
+        event Action OnChoicePending;
+
+        /// <summary>
+        /// Disparado cuando la eleccion post-tirada termina, elegida o abandonada.
+        /// </summary>
+        event Action OnChoiceResolved;
     }
 }

@@ -87,6 +87,14 @@ namespace Rollgeon.Tiles
         [Tooltip("La celda se desarma al disparar y no vuelve a disparar hasta rearmarse (Pinchos).")]
         public bool DisarmOnTrigger;
 
+        [Tooltip("La casilla desaparece la primera vez que dispara (charcos eléctricos de ítem: " +
+                 "un solo uso, no se desarma — se va).")]
+        [SerializeField]
+        private bool _removeOnTrigger;
+
+        /// <summary>La instancia se expira (no solo se desarma) apenas dispara una vez.</summary>
+        public bool RemoveOnTrigger => _removeOnTrigger;
+
         [Tooltip("Las celdas desarmadas se rearman en cada wrap de ronda (Pinchos: 'listo para el próximo ciclo').")]
         public bool RearmOnRoundWrap;
 
