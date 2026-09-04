@@ -84,6 +84,9 @@ MonoBehaviour:
     - Name: Alignment
       Entry: 3
       Data: 0
+    - Name: IgnoreLineOfSight
+      Entry: 5
+      Data: false
     - Name: 
       Entry: 8
       Data: 
@@ -1017,6 +1020,9 @@ MonoBehaviour:
     - Name: Retreat
       Entry: 5
       Data: false
+    - Name: RequireLineOfSight
+      Entry: 5
+      Data: false
     - Name: StopAdjacent
       Entry: 5
       Data: true
@@ -1072,7 +1078,7 @@ MonoBehaviour:
   EntityId: enemy.guardian
   DisplayName: Guardian
   Description: 
-  Portrait: {fileID: 0}
+  Portrait: {fileID: -1194735857, guid: 750dfaeb67b07294f9aeb2e713975d25, type: 3}
   Design:
     Archetype: 3
     Pattern: 1
@@ -1096,6 +1102,7 @@ MonoBehaviour:
   IsFlying: 0
   IsBoss: 0
   Archetype: 0
+  TooltipType: 
   Personality: 0
   KamikazeIgnoresSurvival: 0
   AuraRadius: 2

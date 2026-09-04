@@ -248,13 +248,24 @@ namespace Rollgeon.Entities.Visuals
         {
             FaceCoord(from, to);
 
+            // _blinkOutSeconds tiene que matchear la duración real del clip "desaparecer"
+            // (Teleport_1): el Animator sólo deja pasar a Teleport_2 cuando ESE clip llega al
+            // 100% de su propio largo (exit time) — no cuando este wait corta.
             if (_blinkOutSeconds > 0f) yield return new WaitForSeconds(_blinkOutSeconds);
 
             transform.position = WorldFor(grid, to);
 
+            // Movement=false apenas Teleport_1 terminó (no después de esperar encima
+            // _blinkInSeconds): recién ahí el Animator puede evaluar la transición a
+            // Teleport_2, y necesita encontrarla ya en la celda nueva. Antes este flag se
+            // apagaba DESPUÉS del wait de abajo, así que Teleport_2 arrancaba tarde — después
+            // de que el turno ya daba el movimiento por terminado.
+            SetMovementAnim(false);
+
+            // _blinkInSeconds = duración real del clip "aparecer" (Teleport_2): el turno se
+            // sigue reteniendo mientras ese clip corre, aunque el Animator bool ya cambió.
             if (_blinkInSeconds > 0f) yield return new WaitForSeconds(_blinkInSeconds);
 
-            SetMovementAnim(false);
             _moveAnim = null;
         }
 

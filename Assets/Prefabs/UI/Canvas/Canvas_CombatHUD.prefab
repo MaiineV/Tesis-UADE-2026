@@ -74,7 +74,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: -93443171, guid: f3ece9c685d3ae44888c7a085817b313, type: 3}
+  m_Sprite: {fileID: 947047402, guid: 5c704c45b65247f4c8f2d7ab672d2ced, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -146,7 +146,7 @@ MonoBehaviour:
   _costLabelFormat: '{0}'
   _zeroCostText: 
   _baseColor: {r: 1, g: 1, b: 1, a: 1}
-  _highlightSprite: {fileID: -1942933173, guid: f3ece9c685d3ae44888c7a085817b313, type: 3}
+  _highlightSprite: {fileID: -1530713673, guid: 5c704c45b65247f4c8f2d7ab672d2ced, type: 3}
   _selectedScale: 1.08
   _glowColor: {r: 1, g: 0.95, b: 0.4, a: 1}
   _glowSpeed: 3
@@ -2314,7 +2314,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: -93443171, guid: f3ece9c685d3ae44888c7a085817b313, type: 3}
+  m_Sprite: {fileID: 947047402, guid: 5c704c45b65247f4c8f2d7ab672d2ced, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -2386,7 +2386,7 @@ MonoBehaviour:
   _costLabelFormat: '{0}'
   _zeroCostText: 
   _baseColor: {r: 1, g: 1, b: 1, a: 1}
-  _highlightSprite: {fileID: -1942933173, guid: f3ece9c685d3ae44888c7a085817b313, type: 3}
+  _highlightSprite: {fileID: -1530713673, guid: 5c704c45b65247f4c8f2d7ab672d2ced, type: 3}
   _selectedScale: 1.08
   _glowColor: {r: 1, g: 0.95, b: 0.4, a: 1}
   _glowSpeed: 3
