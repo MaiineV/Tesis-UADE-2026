@@ -44437,6 +44437,10 @@ PrefabInstance:
       propertyPath: m_StaticEditorFlags
       value: 2147483647
       objectReference: {fileID: 0}
+    - target: {fileID: 4231408920687601601, guid: b59b68fec08abe64bb0833390e365a11, type: 3}
+      propertyPath: Direction
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 8475490939673076207, guid: b59b68fec08abe64bb0833390e365a11, type: 3}
       propertyPath: m_Name
       value: Cartel1
@@ -55835,6 +55839,10 @@ PrefabInstance:
     - target: {fileID: 2194717221979429117, guid: b59b68fec08abe64bb0833390e365a11, type: 3}
       propertyPath: m_StaticEditorFlags
       value: 2147483647
+      objectReference: {fileID: 0}
+    - target: {fileID: 4231408920687601601, guid: b59b68fec08abe64bb0833390e365a11, type: 3}
+      propertyPath: Direction
+      value: 3
       objectReference: {fileID: 0}
     - target: {fileID: 8475490939673076207, guid: b59b68fec08abe64bb0833390e365a11, type: 3}
       propertyPath: m_Name
