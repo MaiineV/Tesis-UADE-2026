@@ -37,6 +37,9 @@ namespace Rollgeon.GameCamera
         // recenter (entrada a sala) porque ahí el pawn puede no estar reposicionado aún;
         // LateUpdate corre después de los Updates/eventos, con el pawn ya en su spawn.
         private bool _pendingStaticReanchor;
+        // El próximo reanclado viene de un cruce de puerta (OnRoomCrossed): en vez de
+        // snapear, el foco panea desde la sala saliente hasta la nueva (Feature#0086).
+        private bool _pendingRoomPan;
         private bool _isPanning;
         private bool _isFloorView;
         private float _pendingDragPixels;
@@ -49,12 +52,14 @@ namespace Rollgeon.GameCamera
         private Tween _rotationTween;
         private Tween _zoomTween;
         private Tween _recenterTween;
+        private Tween _roomPanTween;
 
         private float _shakeAmplitude;
         private float _shakeDuration;
         private float _shakeElapsed;
 
         private EventManager.EventReceiver _onRoomEnteredHandler;
+        private EventManager.EventReceiver _onRoomCrossedHandler;
 
         static readonly int s_PixelPanOffset = Shader.PropertyToID("_PixelPanOffset");
         static readonly int s_PixelationScreenSize = Shader.PropertyToID("_PixelationScreenSize");
@@ -66,6 +71,9 @@ namespace Rollgeon.GameCamera
 
         public CameraFacing CurrentFacing => _currentFacing;
         public float CurrentZoom => _currentZoom;
+        /// <summary>Foco anclado del modo estático — expuesto para tests del paneo entre salas.</summary>
+        internal Vector3 StaticFocus => _staticFocus;
+        internal bool IsRoomPanning => _roomPanTween.isAlive;
         public Transform FollowTarget => _followTarget;
         public bool IsPanning => _isPanning;
         public bool IsFloorView => _isFloorView;
@@ -107,6 +115,11 @@ namespace Rollgeon.GameCamera
                 _onRoomEnteredHandler = HandleRoomEntered;
                 EventManager.Subscribe(EventName.OnRoomEntered, _onRoomEnteredHandler);
             }
+            if (_onRoomCrossedHandler == null)
+            {
+                _onRoomCrossedHandler = HandleRoomCrossed;
+                EventManager.Subscribe(EventName.OnRoomCrossed, _onRoomCrossedHandler);
+            }
 
             RefreshWallOcclusion();
 
@@ -120,6 +133,10 @@ namespace Rollgeon.GameCamera
         }
 
         private void HandleRoomEntered(params object[] args) => RefreshWallOcclusion();
+
+        // Llega después de OnRoomEntered en el mismo stack (RoomGridLoader ya pidió el
+        // reanclado); LateUpdate lo consume junto con _pendingStaticReanchor.
+        private void HandleRoomCrossed(params object[] args) => _pendingRoomPan = true;
 
         /// <summary>
         /// Autowire para uso en la scene de gameplay: resuelve el
@@ -154,6 +171,12 @@ namespace Rollgeon.GameCamera
                 EventManager.UnSubscribe(EventName.OnRoomEntered, _onRoomEnteredHandler);
                 _onRoomEnteredHandler = null;
             }
+            if (_onRoomCrossedHandler != null)
+            {
+                EventManager.UnSubscribe(EventName.OnRoomCrossed, _onRoomCrossedHandler);
+                _onRoomCrossedHandler = null;
+            }
+            if (_roomPanTween.isAlive) _roomPanTween.Stop();
 
             if (ServiceLocator.TryGetService<ICameraService>(out var current)
                 && ReferenceEquals(current, this))
@@ -191,6 +214,7 @@ namespace Rollgeon.GameCamera
             _followTarget = target;
             SetPanImmediate(HomeOffset);
             _isPanning = false;
+            StopRoomPan();
 
             if (target != null)
             {
@@ -241,12 +265,7 @@ namespace Rollgeon.GameCamera
 
             if (_config == null || _rig == null) return;
 
-            if (_pendingStaticReanchor && _followTarget != null)
-            {
-                _staticFocus = ResolveStaticFocus();
-                _hasStaticFocus = true;
-                _pendingStaticReanchor = false;
-            }
+            ApplyPendingReanchor();
 
             SmoothPanOffset();
 
@@ -268,6 +287,66 @@ namespace Rollgeon.GameCamera
 
             // Después del snap: el shake es ruido deliberado, no queremos que el snap lo coma.
             ApplyShake();
+        }
+
+        /// <summary>
+        /// Consume el reanclado diferido del foco estático. Corre en <c>LateUpdate</c>
+        /// (el pawn ya está en su spawn); internal para que los tests EditMode, donde
+        /// LateUpdate no corre, lo invoquen a mano.
+        /// <para>
+        /// Si el reanclado viene de un cruce de puerta (<see cref="EventName.OnRoomCrossed"/>)
+        /// el foco panea desde la sala saliente hasta la nueva con
+        /// <see cref="CameraConfigSO.RoomPanSeconds"/>; en cualquier otro caso (primera
+        /// sala del piso, resume, reduced motion, sin Play Mode) snapea. En ambos casos,
+        /// cuando el foco aterriza se emite <see cref="EventName.OnCameraRoomPanFinished"/>
+        /// para que <c>DungeonManager</c> apague la sala saliente (Feature#0086).
+        /// </para>
+        /// </summary>
+        internal void ApplyPendingReanchor()
+        {
+            if (!_pendingStaticReanchor || _followTarget == null) return;
+            _pendingStaticReanchor = false;
+
+            bool panRequested = _pendingRoomPan;
+            _pendingRoomPan = false;
+
+            var newFocus = ResolveStaticFocus();
+            StopRoomPan();
+
+            bool canPan = panRequested && _hasStaticFocus && _config != null
+                && _config.RoomPanSeconds > 0f
+                && Application.isPlaying
+                && !UI.HUD.DiceAnim.DiceUiMotionPrefs.ReducedMotion;
+
+            if (!canPan)
+            {
+                _staticFocus = newFocus;
+                _hasStaticFocus = true;
+                if (panRequested) FinishRoomPan();
+                return;
+            }
+
+            var startFocus = _staticFocus;
+            _roomPanTween = Tween.Custom(
+                startValue: 0f,
+                endValue: 1f,
+                duration: _config.RoomPanSeconds,
+                onValueChange: t => _staticFocus = Vector3.LerpUnclamped(startFocus, newFocus, t),
+                ease: _config.RoomPanEase)
+                .OnComplete(this, self => self.FinishRoomPan(), warnIfTargetDestroyed: false);
+        }
+
+        private void StopRoomPan()
+        {
+            if (_roomPanTween.isAlive) _roomPanTween.Stop();
+        }
+
+        private void FinishRoomPan()
+        {
+            Guid roomId = Guid.Empty;
+            if (ServiceLocator.TryGetService<IDungeonService>(out var dungeon) && dungeon != null)
+                roomId = dungeon.CurrentRoomInstance?.InstanceId ?? Guid.Empty;
+            EventManager.Trigger(EventName.OnCameraRoomPanFinished, roomId);
         }
 
         // Punto base sobre el que se encuadra la cámara. En modo follow = posición actual
