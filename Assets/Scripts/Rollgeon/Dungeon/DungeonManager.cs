@@ -957,16 +957,12 @@ namespace Rollgeon.Dungeon
 
                 instance.SpawnedEnemies.RemoveAt(idx);
 
-                // Match contra EnemySpawnState correspondiente → mark IsDead.
-                foreach (var kv in instance.ObjectStates.Enumerate())
-                {
-                    if (kv.Value is EnemySpawnState es && !es.IsDead
-                        && es.SpawnPointIndex == idx)
-                    {
-                        es.IsDead = true;
-                        break;
-                    }
-                }
+                // SpawnedEnemies (vivos, en orden de spawn) y los states vivos ordenados
+                // por SpawnPointIndex son listas paralelas: la posición idx es el mismo
+                // enemigo en ambas. Parear por valor de SpawnPointIndex no sirve porque
+                // el índice tiene huecos (spawn points vacíos del set, muertes previas).
+                var aliveStates = RoomEnemyStateSync.CollectAliveStatesInSpawnOrder(instance);
+                if (idx < aliveStates.Count) aliveStates[idx].IsDead = true;
 
                 return;
             }
