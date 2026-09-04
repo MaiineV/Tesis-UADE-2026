@@ -31,8 +31,9 @@ namespace Rollgeon.Combat.AI.Decisions
     public sealed class AINode_ShowGuardAura : AIActionNode
     {
         [OdinSerialize]
-        [Tooltip("Radio Manhattan a chequear — usar el mismo valor que AuraRadius en la ficha " +
-                 "del enemigo (Support). No se lee de ahí: es un parámetro propio, igual que el " +
+        [Tooltip("Radio Chebyshev a chequear — usar el mismo valor que AuraRadius en la ficha " +
+                 "del enemigo (Support), mismo criterio que el gate de ataque melee (8 casillas " +
+                 "alrededor con radio 1). No se lee de ahí: es un parámetro propio, igual que el " +
                  "resto de los nodos del árbol.")]
         public AIIntReader Radius;
 
@@ -56,7 +57,7 @@ namespace Rollgeon.Combat.AI.Decisions
             if (radius <= 0) return AIResult.Succeeded;
 
             var tiles = ThreatAreaShape.Compute(
-                context.Grid, selfCoord, ThreatShape.DiamondAroundPlayer, radius, HalfRoomAxis.Vertical);
+                context.Grid, selfCoord, ThreatShape.SquareAroundPlayer, radius, HalfRoomAxis.Vertical);
 
             if (!string.IsNullOrEmpty(CoverageAnimTrigger)
                 && CoversLivingAlly(context, tiles, selfCoord)
