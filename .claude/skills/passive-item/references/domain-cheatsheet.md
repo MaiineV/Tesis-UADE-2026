@@ -126,8 +126,8 @@ exponen propiedades con backing field `[OdinSerialize, SerializeReference]`.
 | Intencion | Efectos |
 |---|---|
 | Daño | `EffDealDamage`, `EffAddComboBonus`, `EffMultiplyComboDamage` (constante `Multiplier` o `MultiplierReader: EffectIntReader` via `ReadFloat`), `EffAddComboMultiplier` (**"+X al multiplicador"** del GDD: `Amount` float o `AmountReader` × `ReaderScale`; suma sobre el 1 de M — `M = (1 + Σadd) × Πmult × ability`, +2 sin otros factores = ×3 — Piedra Angular, Ayuno, Segunda Oportunidad, Fuente Magica, Dados en Reserva, Vertigo), `EffBlockComboDamage`, `EffLowHpAttackBuff`, `EffThresholdCrossCombatBuff` (latch +Attack al cruzar %HP, 1x combate via lifetime Encounter — Instinto) |
-| Vida / defensa | `EffHeal` (tiene modo `FromReader`), `EffAddShield` |
-| Recursos | `EffModifyGold`, `EffModifyIntAttribute`, `EffAddRolls` (+N rolls al pool AHORA; el permanente va por `ItemSO.RollPoolBonus`) |
+| Vida / defensa | `EffHeal` (tiene modo `FromReader`; **es la ÚNICA forma de curar al jugador desde un item** — se auto-cura y respeta Ayuno), `EffAddShield` |
+| Recursos | `EffModifyGold`, `EffModifyIntAttribute` (**nunca para Health/Add**: cura al `TargetGuid` del hook, que en ComboPlayed y en `damage.taken`/`damage.dealt.final` es el rival — las 32 Lágrimas curaban al enemigo, Fix#0051; el health check lo marca como error), `EffAddRolls` (+N rolls al pool AHORA; el permanente va por `ItemSO.RollPoolBonus`) |
 | Inventario | `EffAddItemToInventory`, `EffRemoveInventoryItem` |
 | Movimiento / mundo | `EffMove`, `EffApplyImpulse`, `EffForceDoor`, `EffPassDoor` |
 | Composicion / presentacion | `EffChain`, `EffPlaySequence`, `EffPlayFeedback`, `EffClassSkillPush` |
