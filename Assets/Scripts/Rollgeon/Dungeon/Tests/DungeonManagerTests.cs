@@ -7,6 +7,7 @@ using Patterns;
 using Rollgeon.Combat.FSM;
 using Rollgeon.Dungeon.Components;
 using Rollgeon.Dungeon.State;
+using Rollgeon.GameCamera;
 using Rollgeon.UI.Tooltips;
 using UnityEngine;
 using Object = UnityEngine.Object;
@@ -880,6 +881,147 @@ namespace Rollgeon.Dungeon.Tests
             ctrl.SetState(DoorVisualState.Open);
             Assert.IsTrue(trigger.enabled,
                 "Volver a Open debe rehabilitar el tooltip.");
+        }
+
+        // -----------------------------------------------------------------
+        // Cruce de sala — sala saliente viva durante el paneo (Feature#0086)
+        // -----------------------------------------------------------------
+
+        // Prefab con los 4 DoorSlots: sin ellos el generador poda todas las conexiones
+        // (Conexión sin puerta) y no queda ninguna puerta que cruzar.
+        private void GenerateFloorWithPrefabs()
+        {
+            var prefab = CreateRoomPrefabWithOrphanDoors();
+            var layout = CreateLayout();
+            foreach (var slot in layout.Slots)
+                foreach (var room in slot.Pool)
+                    room.RoomPrefab = prefab;
+            _manager.GenerateFloor(layout, 42);
+        }
+
+        private RoomInstance CrossAnyDoor()
+        {
+            var from = _manager.CurrentRoomInstance;
+            var dir = from.Connections.Keys.First();
+            Assume.That(_manager.EnterRoomByDoor(dir), Is.True);
+            return from;
+        }
+
+        [Test]
+        public void EnterRoomByDoor_WithCameraService_KeepsLeavingRoomActiveUntilPanFinished()
+        {
+            // Arrange
+            ServiceLocator.AddService<ICameraService>(new FakeCameraService(), ServiceScope.Global);
+            GenerateFloorWithPrefabs();
+
+            // Act
+            var leaving = CrossAnyDoor();
+            var current = _manager.CurrentRoomInstance;
+
+            // Assert — ambas visibles mientras la cámara panea.
+            Assert.IsTrue(leaving.SpawnedPrefab.activeSelf, "La sala saliente sigue activa durante el paneo.");
+            Assert.IsTrue(current.SpawnedPrefab.activeSelf);
+            Assert.AreSame(leaving, _manager.LeavingRoomInstance);
+
+            // Act — la cámara aterriza.
+            EventManager.Trigger(EventName.OnCameraRoomPanFinished, current.InstanceId);
+
+            // Assert
+            Assert.IsFalse(leaving.SpawnedPrefab.activeSelf, "Al terminar el paneo la saliente se apaga.");
+            Assert.IsTrue(current.SpawnedPrefab.activeSelf);
+            Assert.IsNull(_manager.LeavingRoomInstance);
+        }
+
+        [Test]
+        public void EnterRoomByDoor_WithoutCameraService_DeactivatesLeavingRoomImmediately()
+        {
+            // Arrange — sin cámara nadie emitiría OnCameraRoomPanFinished.
+            GenerateFloorWithPrefabs();
+
+            // Act
+            var leaving = CrossAnyDoor();
+
+            // Assert
+            Assert.IsFalse(leaving.SpawnedPrefab.activeSelf);
+            Assert.IsTrue(_manager.CurrentRoomInstance.SpawnedPrefab.activeSelf);
+            Assert.IsNull(_manager.LeavingRoomInstance);
+        }
+
+        [Test]
+        public void EnterRoomByDoor_FiresOnRoomCrossed_WithFromAndTo_AfterOnRoomEntered()
+        {
+            // Arrange
+            GenerateFloorWithPrefabs();
+            var order = new List<string>();
+            Guid from = Guid.Empty, to = Guid.Empty;
+            EventManager.Subscribe(EventName.OnRoomEntered, _ => order.Add("entered"));
+            EventManager.Subscribe(EventName.OnRoomCrossed, args =>
+            {
+                order.Add("crossed");
+                from = (Guid)args[0];
+                to = (Guid)args[1];
+            });
+
+            // Act
+            var leaving = CrossAnyDoor();
+
+            // Assert
+            CollectionAssert.AreEqual(new[] { "entered", "crossed" }, order);
+            Assert.AreEqual(leaving.InstanceId, from);
+            Assert.AreEqual(_manager.CurrentRoomInstance.InstanceId, to);
+        }
+
+        [Test]
+        public void GenerateFloor_DoesNotFireOnRoomCrossed()
+        {
+            // Arrange
+            bool crossed = false;
+            EventManager.Subscribe(EventName.OnRoomCrossed, _ => crossed = true);
+
+            // Act
+            GenerateFloorWithPrefabs();
+
+            // Assert — la primera sala del piso no es un cruce.
+            Assert.IsFalse(crossed);
+        }
+
+        [Test]
+        public void EnterRoomByDoor_Twice_BeforePanFinished_ReleasesPreviousLeavingRoom()
+        {
+            // Arrange
+            ServiceLocator.AddService<ICameraService>(new FakeCameraService(), ServiceScope.Global);
+            GenerateFloorWithPrefabs();
+            var first = CrossAnyDoor();
+            var second = _manager.CurrentRoomInstance;
+            _manager.SetRoomState(second.InstanceId, RoomState.Cleared);
+
+            // Act — segundo cruce antes de que la cámara aterrice.
+            CrossAnyDoor();
+            var third = _manager.CurrentRoomInstance;
+
+            // Assert — solo la recién dejada queda lingering.
+            Assert.IsFalse(first.SpawnedPrefab.activeSelf, "La saliente anterior se apaga en el acto.");
+            Assert.IsTrue(second.SpawnedPrefab.activeSelf);
+            Assert.IsTrue(third.SpawnedPrefab.activeSelf);
+            Assert.AreSame(second, _manager.LeavingRoomInstance);
+        }
+
+        private sealed class FakeCameraService : ICameraService
+        {
+            public CameraFacing CurrentFacing => CameraFacing.N;
+            public float CurrentZoom => 1f;
+            public Transform FollowTarget => null;
+            public bool IsPanning => false;
+            public bool IsFloorView => false;
+            public void RotateBy45(bool clockwise) { }
+            public void PanBy(Vector2 screenDelta) { }
+            public void ZoomBy(float scrollDelta) { }
+            public void RecenterOnPlayer(bool instant = false) { }
+            public void SetFollowTarget(Transform target) { }
+            public void Shake(float amplitude, float durationSeconds) { }
+            public event Action<CameraFacing> FacingChanged { add { } remove { } }
+            public event Action<bool> FloorViewToggled { add { } remove { } }
+            public event Action<float> ZoomChanged { add { } remove { } }
         }
 
         private static void InvokeAwake(object target)
