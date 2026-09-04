@@ -5,9 +5,10 @@
 > **Qué es**: Movimiento en combate ya no usa un rango fijo (`Range = 4`). Al arrastrar
 > el chip de Mover, se tira un **dado propio** (`MovementDieSO`, D6 por defecto) y la
 > cara revelada es la cantidad de casillas alcanzables (BFS por camino, como antes).
-> El dado **no ocupa slot** del `DiceBagSO` de combate, no recibe encantamientos ni
-> bloqueos de dados, y cambiar la build no lo modifica. Exploración sigue siendo
-> click-to-move libre (Range 20, sin dado).
+> El dado **no ocupa slot** del `DiceBagSO` de combate, no recibe bloqueos de dados, y
+> cambiar la build no lo modifica. Desde Feature#0077 recibe encantamientos de categoría
+> Movimiento y caras extra por su propio carril (ver sección al final). Exploración sigue
+> siendo click-to-move libre (Range 20, sin dado).
 
 ## El modelo
 
@@ -128,9 +129,64 @@ Para otra clase: crear su `MovementDieSO`, asignarlo en `StartingMovementDie` y 
   legacy sin servicio.
 - `UI/Tests/ActionDragPolicyTests.cs` — `RequiresTileDrop` con el flag.
 
+## Encantamientos y caras extra (Feature#0077, 2026-09-04)
+
+> Reemplaza el "no recibe encantamientos" de arriba. GDD "Listado encantamientos", regla
+> especial: los encantamientos de 🗺️ Movimiento van **solo** al dado de Movimiento y ninguna
+> otra categoría puede ir ahí. GDD "Dice Builder": el dado no cambia de tipo, **suma caras**.
+
+### Modelo: el carril de Movimiento en `RuntimeDiceBag`
+
+- El dado no vive en el bag, pero su lista de encantamientos sí: `RuntimeDiceBag` tiene un
+  carril aparte indexado por el sentinela **`EnchantmentSlotRef.MovementDieSlot = -2`**
+  (`-1` es `RunCounterIndex`, el contador de rolls del altar; los dos viven en
+  `EnchantmentSlotRef`). Mismo append + tombstones, mismos counters `(bag, slot, key)`, mismo
+  save (`RuntimeDiceBagSnapshot.MovementEnchantments` + `MovementExtraFaces`, lista aparte
+  para que saves viejos restauren igual).
+- `DiceEnchantmentService` rutea `ValidateApply/Apply/Remove/ComputeAllowedFaces` y el
+  `ForEachEnchantment` del dispatch por el carril. El tipo base lo resuelve
+  `ResolveMovementDieType()` (`IMovementDieService.CurrentType`, fallback D6). La **regla de
+  categoría** vive en un solo lugar: `EnchantmentTargeting.AppliesTo(ench, set)`
+  (Movimiento ⇔ `EnchantmentTargetSet.MovementDie`), aplicada en `ValidateApply` — cubre
+  altar, DevConsole y tests.
+- **Caras extra**: `IDiceEnchantmentService.AddMovementDieFaces(delta)` /
+  `MovementDieMaxFace` / `ComputeMovementDieFaces()`. `MovementDieService.Roll` elige
+  uniforme entre las caras válidas (filtros + extra) con su RNG propio;
+  `IMovementDieService.MaxFace` es el rango potencial pre-tirada
+  (`SelectionSettings.ResolveEffectiveRange`). La fuente real de caras queda pendiente de
+  diseño; la de prueba es la DevConsole.
+- **Hook `PlayerMoved`**: `EffMove` usa `IMovementService.TryMove` (devuelve el path) y emite
+  `TypedEvent<EntityWalkedPayload>` solo en movimiento voluntario (empujes, portales y
+  teleports no). El service lo despacha en combate para el jugador con `TilesTraversed` y
+  `TilesTraversedThisTurn` (reset en `OnTurnFinished` del jugador / `OnCombatStart`).
+  `ReadTilesTraversed { Multiplier, CapPerTurn, CapPerExtraCopy }` da el "por casilla
+  recorrida" con tope por turno sin counters; varias copias suben el tope, no duplican.
+- Primer encantamiento: **Baluarte móvil** (`ench.baluarte_movil`): `player.moved` →
+  `EffAddShield` con `ReadTilesTraversed{6, +3}`. El escudo lo limpia `ShieldResetHandler`.
+
+### Altar: carousel Ataque ↔ Movimiento
+
+`EnchantmentAltarView` gana `_attackSetRoot`, `_moveSetRoot`, `_moveDieSlot`, `_arrowLeft`,
+`_arrowRight` (todos Optional — sin wiring la mesa queda como antes). La palanca llama
+`IEnchantmentRoomService.RollOffer(room, set)` con el set visible: Ataque ⇒ nunca Movimiento;
+Movimiento ⇒ solo Movimiento (`EnchantmentPoolSO.Roll` con `filter` de categoría en ambos).
+`ConfirmChoice` rutea por `EnchantmentOffer.TargetSet` (Movimiento ⇒ siempre el carril).
+Cambiar de set descarta la oferta activa (oro hundido, como re-tirar). Wiring del prefab
+`Canvas_EnchantmentAltar` (vía MCP): `EnchantmentAltarPanel/DiceShelf` (`RectMask2D`) →
+`SetAttack` (los `DieSlot0..4` reparentados) y `SetMove` (`MoveDieSlot`, copia de `DieSlot0`,
+centrado); `ArrowLeft`/`ArrowRight` hermanos de la repisa con `Assets/Art/UI/Arrow/Arrow.png`.
+Tuning en `EnchantmentAltarUiSettingsSO`: `SetSwitchDuration/Ease/SlideX`.
+
+### DevConsole
+
+`mdie info | faces <±n> | add <enchId> | remove <slot> | list` (alias `movedie`).
+
 ## Follow-ups (fuera de alcance)
 
 - Throw manual 2D/3D del dado (anchor propio en `DiceThrow2DPresenter`).
 - Rig del DevConsole para el dado de Movimiento.
-- Encantamientos / upgrades del dado y ofrecerlo en el build screen.
+- Fuente real de caras extra (diseño) y ofrecer el dado en el build screen.
+- Los otros 6 encantamientos de Movimiento del GDD (Torbellino, Incendiario, Rastro tóxico,
+  Carga, Paso etéreo, Sendero de espinas): Carga y Baluarte comparten `player.moved`.
+- `DiceBagView` (drawer de la bolsa) no lista el carril; el HUD del dado no muestra "+N caras".
 - Skin `DiceBoardType.Movement`; preview de rango en hover muestra la cara máxima.
