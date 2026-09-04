@@ -3019,6 +3019,14 @@ MonoBehaviour:
     m_Key: bottle.o.thunder.desc
     m_Metadata:
       m_Items: []
+  - m_Id: 18720942286798848
+    m_Key: intent.cashier.shove.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18720942332936192
+    m_Key: intent.cashier.shove.desc
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

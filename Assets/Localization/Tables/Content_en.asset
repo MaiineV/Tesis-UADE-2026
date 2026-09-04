@@ -3143,6 +3143,15 @@ MonoBehaviour:
       and always leaves 2 Electric Puddles on the ground.'
     m_Metadata:
       m_Items: []
+  - m_Id: 18720942286798848
+    m_Localized: Shove
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18720942332936192
+    m_Localized: Strikes and shoves you several tiles away from the counter, taking
+      a cut of your gold.
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

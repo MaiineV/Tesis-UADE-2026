@@ -960,6 +960,12 @@ MonoBehaviour:
     - Name: 
       Entry: 8
       Data: 
+    - Name: IntentLabelKey
+      Entry: 6
+      Data: 
+    - Name: IntentLabelFallback
+      Entry: 6
+      Data: 
     - Name: 
       Entry: 8
       Data: 
@@ -1107,7 +1113,7 @@ MonoBehaviour:
       Data: 56|Rollgeon.Combat.AI.Readers.AIConstantInt, Rollgeon
     - Name: Value
       Entry: 3
-      Data: 2
+      Data: 1
     - Name: 
       Entry: 8
       Data: 
@@ -1147,9 +1153,10 @@ MonoBehaviour:
     Archetype: 3
     Pattern: 1
     Timing: 1
-    Notes: 'Support: aura defensiva (radio 2, -5 dano plano a aliados) mientras vive.
-      Ataque de contacto 1x1 solo si el jugador llega adyacente; si no, se mueve
-      hacia el aliado con menos HP (nunca ambas cosas en el mismo turno).'
+    Notes: 'Support: aura defensiva (8 casillas alrededor, radio 1 Chebyshev, -5
+      dano plano a aliados) mientras vive. Ataque de contacto 1x1 solo si el jugador
+      llega adyacente; si no, se mueve hacia el aliado con menos HP (nunca ambas
+      cosas en el mismo turno).'
   WeaknessComboId: 
   WeaknessMultiplierOverride: 0
   Curse: {fileID: 0}
@@ -1169,6 +1176,6 @@ MonoBehaviour:
   TooltipType: 
   Personality: 0
   KamikazeIgnoresSurvival: 0
-  AuraRadius: 2
+  AuraRadius: 1
   AuraFlatReduction: 5
   Footprint: {x: 1, y: 1}

@@ -3158,6 +3158,15 @@ MonoBehaviour:
       encadenados y siempre deja 2 Charcos El\xE9ctricos en el terreno."
     m_Metadata:
       m_Items: []
+  - m_Id: 18720942286798848
+    m_Localized: "Empuj\xF3n"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18720942332936192
+    m_Localized: "Te golpea y te empuja varias casillas lejos del mostrador, llev\xE1ndose
+      parte de tu oro."
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

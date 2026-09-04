@@ -8,12 +8,12 @@ using Rollgeon.Grid;
 namespace Rollgeon.Combat.Auras
 {
     /// <summary>
-    /// Auras defensivas declaradas en <see cref="EnemyDataSO"/> (Guardian del GDD: "aliados a
-    /// ≤2 casillas reciben +defensa"). Pull on-demand, espejo de la Fortaleza: en cada golpe,
-    /// si algún portador registrado sigue en la grilla (vivo — <c>CombatDeathWatcher</c>
-    /// desregistra al morir), es ALIADO del target y está a ≤ radio (Manhattan rect-a-rect),
-    /// el pipeline descuenta su reducción. Cero bookkeeping: el aura se apaga sola al morir
-    /// o alejarse el portador.
+    /// Auras defensivas declaradas en <see cref="EnemyDataSO"/> (Guardian del GDD: "aliados en
+    /// las 8 casillas alrededor reciben +defensa"). Pull on-demand, espejo de la Fortaleza: en
+    /// cada golpe, si algún portador registrado sigue en la grilla (vivo — <c>CombatDeathWatcher</c>
+    /// desregistra al morir), es ALIADO del target y está a ≤ radio (Chebyshev rect-a-rect, mismo
+    /// criterio que el gate de ataque melee), el pipeline descuenta su reducción. Cero bookkeeping:
+    /// el aura se apaga sola al morir o alejarse el portador.
     /// </summary>
     /// <remarks>
     /// Sin stacking: con varias auras alcanzando al target aplica la MAYOR. El portador no se
@@ -90,7 +90,8 @@ namespace Rollgeon.Combat.Auras
         }
 
         /// <summary>Escaneo compartido: la mayor <c>FlatReduction</c> de un portador vivo, aliado
-        /// de <paramref name="targetGuid"/> (no el propio portador) y a ≤ <c>Radius</c> rect-a-rect.</summary>
+        /// de <paramref name="targetGuid"/> (no el propio portador) y a ≤ <c>Radius</c> Chebyshev
+        /// rect-a-rect.</summary>
         private int BestReductionFor(Guid targetGuid)
         {
             if (_auras.Count == 0 || targetGuid == Guid.Empty) return 0;
@@ -111,7 +112,7 @@ namespace Rollgeon.Combat.Auras
                 if ((query.GetRelationship(owner, targetGuid) & Effects.Selection.EntityFilterMask.Allies) == 0)
                     continue;
 
-                int dist = GridFootprint.ManhattanDistance(
+                int dist = GridFootprint.ChebyshevDistance(
                     ownerAnchor, grid.GetFootprint(owner), targetAnchor, targetFp);
                 if (dist > pair.Value.Radius) continue;
 
