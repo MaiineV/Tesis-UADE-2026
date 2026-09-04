@@ -44,6 +44,17 @@ namespace Rollgeon.UI.HUD
         [SerializeField]
         private ChipStackSettingsSO _settings;
 
+        [Title("Gold Chips — Deuda")]
+        [Tooltip("Ficha que aparece con oro negativo (deuda de Tarjeta de Crédito). Hija aparte, " +
+                 "arranca inactiva. Opcional: sin ella solo se tiñe el número. Sin sprite toma " +
+                 "GoldChipFlat del settings.")]
+        [SerializeField]
+        private Image _debtChip;
+
+        [Tooltip("Tinte del número y de la ficha de deuda mientras el oro es negativo.")]
+        [SerializeField]
+        private Color _debtTint = new Color(0.86f, 0.25f, 0.25f);
+
         [ShowInInspector, ReadOnly]
         private int _displayedGold;
 
@@ -55,12 +66,16 @@ namespace Rollgeon.UI.HUD
         private CanvasGroup _tiltedGroup;
         private Vector2 _tiltedRestPos;
         private bool _tiltedRestCaptured;
+        private bool _debtShown;
+        private bool _labelRestColorCaptured;
+        private Color _labelRestColor;
         private readonly List<int> _chipBuffer = new List<int>();
 
         private void Awake()
         {
             ConfigureStack();
             CacheTilted();
+            CacheDebt();
         }
 
         private void ConfigureStack()
@@ -87,10 +102,29 @@ namespace Rollgeon.UI.HUD
             _tiltedChip.raycastTarget = false;
         }
 
+        // La ficha de deuda es una Image plana (no pasa por ChipStackView): no se anima con la
+        // pila, solo aparece/desaparece. Sin sprite en el prefab toma la ficha plana del settings
+        // para que la deuda se lea como "una ficha de oro en rojo".
+        private void CacheDebt()
+        {
+            if (_debtChip == null) return;
+
+            if (_debtChip.sprite == null && _settings != null && _settings.GoldChipFlat != null)
+            {
+                _debtChip.sprite = _settings.GoldChipFlat;
+                ((RectTransform)_debtChip.transform).sizeDelta =
+                    _settings.GoldChipFlat.rect.size * Mathf.Max(1f, _settings.ChipScale);
+            }
+            _debtChip.color = _debtTint;
+            _debtChip.raycastTarget = false;
+            _debtChip.gameObject.SetActive(_debtShown);
+        }
+
         private void OnEnable()
         {
             ConfigureStack();
             CacheTilted();
+            CacheDebt();
             Subscribe();
             FetchInitialState();
         }
@@ -177,8 +211,34 @@ namespace Rollgeon.UI.HUD
             }
 
             if (_label != null) _label.text = ChipStackMath.FormatGoldLabel(gold);
+            ApplyDebtState(ChipStackMath.IsDebt(gold));
             _displayedGold = gold;
             _hasValue = true;
+        }
+
+        /// <summary>
+        /// Con oro negativo la pila queda vacía (no hay fichas negativas) y el "-12" solo se
+        /// leía como un número raro. Tiñe el número y prende la ficha de deuda; al volver a
+        /// ≥0 restaura el color original del label (capturado la primera vez).
+        /// </summary>
+        private void ApplyDebtState(bool debt)
+        {
+            if (_label != null)
+            {
+                if (!_labelRestColorCaptured)
+                {
+                    _labelRestColor = _label.color;
+                    _labelRestColorCaptured = true;
+                }
+                _label.color = debt ? _debtTint : _labelRestColor;
+            }
+
+            if (_debtChip != null && debt != _debtShown)
+            {
+                if (debt) CacheDebt();
+                _debtChip.gameObject.SetActive(debt);
+            }
+            _debtShown = debt;
         }
 
         private void SetTiltedShown(bool shown, bool animate)
