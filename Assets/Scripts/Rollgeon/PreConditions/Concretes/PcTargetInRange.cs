@@ -45,6 +45,11 @@ namespace Rollgeon.PreConditions.Concretes
                  "Se evalúa sobre el par de celdas más cercano entre ambos footprints.")]
         public TargetAlignment Alignment = TargetAlignment.Any;
 
+        [Tooltip("Si true, el gate mide s\u00f3lo distancia y alineaci\u00f3n \u2014 para ataques que " +
+                 "arquean o atraviesan (mismo campo que AINode_TelegraphMark y AINode_RangedShot). " +
+                 "Default false: ver al target es parte de estar a tiro.")]
+        public bool IgnoreLineOfSight;
+
         // NOTA: "estar a tiro" incluye VER al target — la línea de visión (Bresenham, cualquier
         // ángulo, GridLineOfSight) es parte del gate, siempre. Reemplaza al viejo flag
         // RequireLineOfSight (línea recta que fallaba sin alineación): los assets que lo
@@ -60,7 +65,7 @@ namespace Rollgeon.PreConditions.Concretes
                     : $"Target in {Metric} range ≤ {Range}";
                 if (Alignment == TargetAlignment.SameRowOrColumn) name += " (fila/columna)";
                 else if (Alignment == TargetAlignment.DiagonalOnly) name += " (diagonal)";
-                return name + " +LoS";
+                return IgnoreLineOfSight ? name : name + " +LoS";
             }
         }
 
@@ -119,7 +124,8 @@ namespace Rollgeon.PreConditions.Concretes
 
             // Detrás de algo no hay tiro (ni cura): Bresenham a cualquier ángulo. Sobre pares
             // alineados camina exactamente la línea recta del viejo RequireLineOfSight.
-            return GridLineOfSight.HasClearLine(grid, a, b, context.OwnerGuid, context.OpponentGuid);
+            return IgnoreLineOfSight
+                   || GridLineOfSight.HasClearLine(grid, a, b, context.OwnerGuid, context.OpponentGuid);
         }
     }
 }

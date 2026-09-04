@@ -750,6 +750,11 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
                                         Depth = ConeDepth,
                                         Damage = 0,
                                         Kind = AttackKind.Environmental,
+                                        // Sus propias bombas son ocupantes de la grilla y el cono
+                                        // se marca DESPUES de sembrarlas: con el recorte por
+                                        // vision se cegaba solo y el tiempo de quema no prendia
+                                        // nada.
+                                        IgnoreLineOfSight = true,
                                     }),
                                 },
                             },
@@ -810,6 +815,10 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
                                         Damage = ShotDamage,
                                         Range = ShotRange,
                                         Kind = AttackKind.BasicAttack,
+                                        // Tira por encima del mobiliario y de sus bombas: es el
+                                        // unico ataque directo del ciclo y con el gate de vision
+                                        // el turno entero se iba en Wait.
+                                        IgnoreLineOfSight = true,
                                         // Los tres ids explicitos: vacios el nodo degrada a silencio
                                         // sin dar rojo, y el ataque sale sin gesto.
                                         AnimFeedbackId = BossFeedbackIds.CroupierRangeAnim,
@@ -931,7 +940,14 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
             {
                 Conditions = new List<BasePreCondition>
                 {
-                    new PcTargetInRange { Range = FleeTriggerRange, Metric = DistanceMetric.Manhattan },
+                    // Sin vision: lo que dispara la fuga es tenerlo cerca, y detras de una bomba
+                    // sigue estando cerca.
+                    new PcTargetInRange
+                    {
+                        Range = FleeTriggerRange,
+                        Metric = DistanceMetric.Manhattan,
+                        IgnoreLineOfSight = true,
+                    },
                 },
                 Then = reaction,
                 Else = new AINode_Wait(),

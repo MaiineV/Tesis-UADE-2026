@@ -43,13 +43,18 @@ namespace Rollgeon.Combat.AI
             public readonly TargetAlignment Alignment;
             public readonly bool FootprintAware;
 
+            /// <summary>El nodo replicado se salta la línea de visión, así que su alcance
+            /// tampoco se recorta: pintar menos sería mentirle al jugador al revés.</summary>
+            public readonly bool IgnoresLineOfSight;
+
             public Gate(int range, DistanceMetric metric, TargetAlignment alignment,
-                        bool footprintAware)
+                        bool footprintAware, bool ignoresLineOfSight = false)
             {
                 Range = range;
                 Metric = metric;
                 Alignment = alignment;
                 FootprintAware = footprintAware;
+                IgnoresLineOfSight = ignoresLineOfSight;
             }
         }
 
@@ -79,9 +84,10 @@ namespace Rollgeon.Combat.AI
             {
                 if (selfCells.Contains(cell)) continue;
                 candidates++;
-                if (!AnyDescriptorReaches(descriptors, grid, context, anchor, footprint, cell))
+                if (!AnyDescriptorReaches(descriptors, grid, context, anchor, footprint, cell,
+                                          out bool ignoresLineOfSight))
                     continue;
-                if (HasLineOfSight(grid, context, anchor, cell))
+                if (ignoresLineOfSight || HasLineOfSight(grid, context, anchor, cell))
                     into.Add(cell);
             }
 
@@ -129,7 +135,7 @@ namespace Rollgeon.Combat.AI
                 descriptors.Add(new List<Gate>
                 {
                     new Gate(Mathf.Max(1, shot.Range), shot.Metric, TargetAlignment.Any,
-                             footprintAware: false),
+                             footprintAware: false, ignoresLineOfSight: shot.IgnoreLineOfSight),
                 });
             }
 
@@ -153,7 +159,8 @@ namespace Rollgeon.Combat.AI
                     {
                         gates ??= new List<Gate>();
                         gates.Add(new Gate(EffectiveRange(pc, context), pc.Metric, pc.Alignment,
-                                           footprintAware: true));
+                                           footprintAware: true,
+                                           ignoresLineOfSight: pc.IgnoreLineOfSight));
                     }
                     // El bestiario melee (y el mímico) gatean con PCEntityInRange: ancla-a-ancla,
                     // sin ficha, sin alineación y sin línea de visión — réplica de su Evaluate.
@@ -212,10 +219,19 @@ namespace Rollgeon.Combat.AI
             return range;
         }
 
+        /// <summary>
+        /// <paramref name="ignoresLineOfSight"/> sale en true si algún descriptor que alcanza la
+        /// celda se salta la línea de visión en TODOS sus gates: los de un mismo descriptor se
+        /// exigen con AND, así que alcanza con que uno la pida para que la sombra siga tapando.
+        /// </summary>
         private static bool AnyDescriptorReaches(List<List<Gate>> descriptors, IGridManager grid,
                                                  AIContext context, GridCoord anchor,
-                                                 Vector2Int footprint, GridCoord cell)
+                                                 Vector2Int footprint, GridCoord cell,
+                                                 out bool ignoresLineOfSight)
         {
+            ignoresLineOfSight = false;
+            bool reached = false;
+
             foreach (var gates in descriptors)
             {
                 bool all = true;
@@ -225,9 +241,23 @@ namespace Rollgeon.Combat.AI
                     all = false;
                     break;
                 }
-                if (all) return true;
+                if (!all) continue;
+
+                reached = true;
+                if (!AllIgnoreLineOfSight(gates)) continue;
+
+                ignoresLineOfSight = true;
+                return true;
             }
-            return false;
+
+            return reached;
+        }
+
+        private static bool AllIgnoreLineOfSight(List<Gate> gates)
+        {
+            foreach (var gate in gates)
+                if (!gate.IgnoresLineOfSight) return false;
+            return true;
         }
 
         private static bool Reaches(in Gate gate, IGridManager grid, AIContext context,
