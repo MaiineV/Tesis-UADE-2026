@@ -261,6 +261,7 @@ namespace Rollgeon.UI.HUD.Status
             _providers.Add(new ClassPassiveStatusProvider());
             _providers.Add(new PoisonStatusProvider(_statusIconCatalog));
             _providers.Add(new BleedStatusProvider(_statusIconCatalog));
+            _providers.Add(new BloodD6StatusProvider(_statusIconCatalog));
             _providers.Add(new StunStatusProvider(_statusIconCatalog));
             _providers.Add(new TileStandStatusProvider(_statusIconCatalog));
             _providers.Add(new TeleportCooldownStatusProvider(_statusIconCatalog));
