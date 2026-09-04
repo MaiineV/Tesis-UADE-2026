@@ -2775,6 +2775,14 @@ MonoBehaviour:
     m_Key: ench.vampiro.lock
     m_Metadata:
       m_Items: []
+  - m_Id: 18492291566190592
+    m_Key: ench.baluarte_movil.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18492291612327936
+    m_Key: ench.baluarte_movil.desc
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

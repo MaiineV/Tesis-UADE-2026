@@ -2867,6 +2867,14 @@ MonoBehaviour:
     m_Localized: 6+ HP
     m_Metadata:
       m_Items: []
+  - m_Id: 18492291566190592
+    m_Localized: Mobile Bulwark
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18492291612327936
+    m_Localized: Gain 1 shield per tile you walk (max 6 per turn).
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

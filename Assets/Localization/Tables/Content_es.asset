@@ -2876,6 +2876,15 @@ MonoBehaviour:
     m_Localized: 6+ vida
     m_Metadata:
       m_Items: []
+  - m_Id: 18492291566190592
+    m_Localized: "Baluarte m\xF3vil"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18492291612327936
+    m_Localized: "Por cada casilla que recorr\xE9s, gan\xE1s 1 de escudo (m\xE1x.
+      6 por turno)."
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []
