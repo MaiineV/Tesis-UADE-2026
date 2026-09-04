@@ -77,5 +77,25 @@ namespace Rollgeon.Upgrades.Dice
         /// en <c>OnRunStart</c> via <c>IPlayerService.DiceBag</c>.
         /// </summary>
         void InitializeFromBag(DiceBagSO bag);
+
+        // ---- Dado de Movimiento (§6.6) — carril EnchantmentSlotRef.MovementDieSlot ----
+
+        /// <summary>
+        /// Cara máxima efectiva del dado de Movimiento: tipo base (clase / override) más las
+        /// caras extra sumadas en la run. Sin bag ⇒ solo el tipo base.
+        /// </summary>
+        int MovementDieMaxFace { get; }
+
+        /// <summary>
+        /// Suma caras al dado de Movimiento (GDD Dice Builder: el dado no cambia de tipo, gana
+        /// caras). Clamp a 0 hacia abajo. Devuelve el total de caras extra. Persiste con el bag.
+        /// </summary>
+        int AddMovementDieFaces(int delta);
+
+        /// <summary>
+        /// Caras válidas del dado de Movimiento: <c>1..MovementDieMaxFace</c> compuesto con los
+        /// face filters de su carril. Vacío sin bag — el roller cae a su RNG plano.
+        /// </summary>
+        IReadOnlyCollection<int> ComputeMovementDieFaces();
     }
 }

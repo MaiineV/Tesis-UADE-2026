@@ -17,11 +17,32 @@ namespace Rollgeon.Upgrades.Dice
     [Serializable]
     public readonly struct EnchantmentSlotRef
     {
+        /// <summary>
+        /// Índice sentinela del <b>dado de Movimiento</b> (§6.6) dentro del espacio de
+        /// <see cref="BagSlotIndex"/>: el carril de encantamientos y los counters del dado
+        /// viven en <c>RuntimeDiceBag</c> bajo este índice, así todo el plumbing index-based
+        /// (dispatch, save, counters, DevConsole) lo reusa sin un servicio aparte.
+        /// </summary>
+        public const int MovementDieSlot = -2;
+
+        /// <summary>
+        /// Índice sentinela del contador global de la run (rolls pagados del altar). Solo
+        /// counters — nunca hay lista de encantamientos acá. Todos los sentinelas viven en
+        /// este struct para que no colisionen.
+        /// </summary>
+        public const int RunCounterIndex = -1;
+
         /// <summary>Tipo del dado que carga (D3..D20).</summary>
         public readonly DiceType Type;
 
-        /// <summary>Índice del dado dentro del <c>DiceBagSO</c> (0..4).</summary>
+        /// <summary>
+        /// Índice del dado dentro del <c>DiceBagSO</c> (0..4), o <see cref="MovementDieSlot"/>
+        /// para el dado de Movimiento.
+        /// </summary>
         public readonly int BagSlotIndex;
+
+        /// <summary><c>true</c> si el slot pertenece al dado de Movimiento.</summary>
+        public bool IsMovementDie => BagSlotIndex == MovementDieSlot;
 
         /// <summary>
         /// Índice del encantamiento dentro de la lista del dado (orden de append,

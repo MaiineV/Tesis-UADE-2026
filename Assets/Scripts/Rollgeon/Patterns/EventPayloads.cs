@@ -240,4 +240,30 @@ namespace Patterns
         /// vacío — la UI debe degradar (repetir ganador + fillers de oro).</summary>
         public IReadOnlyList<Rollgeon.Items.ItemSO> PoolPreview;
     }
+
+    /// <summary>
+    /// Payload tipado para "una entidad caminó por voluntad propia" — lo emite
+    /// <c>EffMove</c> tras un <c>IMovementService.TryMove</c> exitoso. Empujes, portales,
+    /// deslizamientos y teleports NO pasan por acá (van por <c>Move</c>/<c>CommitPath</c>/
+    /// <c>Teleport</c> sin efecto): es la señal que los encantamientos del dado de
+    /// Movimiento ("por cada casilla recorrida voluntariamente") consumen. Canalizado
+    /// únicamente vía <c>TypedEvent&lt;EntityWalkedPayload&gt;</c>.
+    /// </summary>
+    public struct EntityWalkedPayload
+    {
+        /// <summary>Entidad que caminó.</summary>
+        public Guid EntityGuid;
+
+        /// <summary>Celda de origen.</summary>
+        public Rollgeon.Grid.GridCoord From;
+
+        /// <summary>Celda final (post-filtro de path).</summary>
+        public Rollgeon.Grid.GridCoord To;
+
+        /// <summary>Path efectivamente caminado, índice 0 = origen.</summary>
+        public IReadOnlyList<Rollgeon.Grid.GridCoord> Path;
+
+        /// <summary>Casillas recorridas = <c>Path.Count - 1</c>. Siempre ≥ 1.</summary>
+        public int TilesTraversed;
+    }
 }

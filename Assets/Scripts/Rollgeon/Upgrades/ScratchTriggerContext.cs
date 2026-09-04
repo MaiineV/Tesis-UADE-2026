@@ -36,5 +36,11 @@ namespace Rollgeon.Upgrades
 
         /// <summary>Canal que originó el dispatch.</summary>
         public ScratchChannel Channel;
+
+        /// <summary>Hook <c>PlayerMoved</c>: casillas de este movimiento. 0 en otros hooks.</summary>
+        public int TilesTraversed;
+
+        /// <summary>Hook <c>PlayerMoved</c>: casillas acumuladas en el turno, este movimiento incluido.</summary>
+        public int TilesTraversedThisTurn;
     }
 }
