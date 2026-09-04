@@ -58,11 +58,20 @@ namespace Rollgeon.Dungeon
 
         private EventManager.EventReceiver _onCombatEndHandler;
         private EventManager.EventReceiver _onEntityDestroyedHandler;
+        private EventManager.EventReceiver _onCameraRoomPanFinishedHandler;
+
+        // Sala saliente que sigue activa mientras la cámara panea hacia la nueva
+        // (Feature#0086). Se apaga al recibir OnCameraRoomPanFinished, o antes si
+        // llega otro cruce / se limpia el piso.
+        private Guid? _leavingRoomId;
 
         public RoomSO CurrentRoom => CurrentRoomInstance?.Template;
 
         public RoomInstance CurrentRoomInstance =>
             _currentId != Guid.Empty && _instances.TryGetValue(_currentId, out var ri) ? ri : null;
+
+        public RoomInstance LeavingRoomInstance =>
+            _leavingRoomId.HasValue && _instances.TryGetValue(_leavingRoomId.Value, out var ri) ? ri : null;
 
         public int CurrentFloorSeed { get; private set; }
 
@@ -72,8 +81,10 @@ namespace Rollgeon.Dungeon
         {
             _onCombatEndHandler = OnCombatEnd;
             _onEntityDestroyedHandler = OnEntityDestroyed;
+            _onCameraRoomPanFinishedHandler = OnCameraRoomPanFinished;
             EventManager.Subscribe(EventName.OnCombatEnd, _onCombatEndHandler);
             EventManager.Subscribe(EventName.OnEntityDestroyed, _onEntityDestroyedHandler);
+            EventManager.Subscribe(EventName.OnCameraRoomPanFinished, _onCameraRoomPanFinishedHandler);
         }
 
         public void GenerateFloor(FloorLayoutSO layout, int seed)
@@ -301,6 +312,11 @@ namespace Rollgeon.Dungeon
                 EventManager.UnSubscribe(EventName.OnEntityDestroyed, _onEntityDestroyedHandler);
                 _onEntityDestroyedHandler = null;
             }
+            if (_onCameraRoomPanFinishedHandler != null)
+            {
+                EventManager.UnSubscribe(EventName.OnCameraRoomPanFinished, _onCameraRoomPanFinishedHandler);
+                _onCameraRoomPanFinishedHandler = null;
+            }
 
             // Captura el estado final al cache y suelta la registration — sin esto la
             // próxima run registraría un 2do DungeonManager con la misma SaveKey (#0028).
@@ -513,14 +529,42 @@ namespace Rollgeon.Dungeon
 
             DeactivateCurrentRoomCombat();
 
+            // Un cruce encadenado antes de que la cámara aterrice: la sala que venía
+            // lingering se apaga ya, solo la recién dejada queda visible durante el paneo.
+            ReleaseLeavingRoom();
+
+            var previousId = _currentId;
             _currentId = neighborId;
             MarkVisited(neighborId);
+
+            // La sala saliente queda activa hasta OnCameraRoomPanFinished para que el
+            // paneo tenga algo que mostrar. Sin camera service (tests, headless) nadie
+            // emitiría ese evento — se apaga en el acto como antes.
+            bool cameraWillPan = previousId != Guid.Empty
+                && ServiceLocator.TryGetService<ICameraService>(out var cam) && cam != null;
+            _leavingRoomId = cameraWillPan ? previousId : null;
 
             RefreshRoomVisibility();
 
             EventManager.Trigger(EventName.OnRoomEntered, _currentId,
                 CurrentRoom != null ? CurrentRoom.RoomId : string.Empty);
+            EventManager.Trigger(EventName.OnRoomCrossed, previousId, _currentId);
             return true;
+        }
+
+        private void OnCameraRoomPanFinished(params object[] _) => ReleaseLeavingRoom();
+
+        private void ReleaseLeavingRoom()
+        {
+            if (!_leavingRoomId.HasValue) return;
+            var leavingId = _leavingRoomId.Value;
+            _leavingRoomId = null;
+            if (leavingId == _currentId) return;
+            if (_instances.TryGetValue(leavingId, out var leaving)
+                && leaving.SpawnedPrefab != null && leaving.SpawnedPrefab.activeSelf)
+            {
+                leaving.SpawnedPrefab.SetActive(false);
+            }
         }
 
         private static void StopPlayerPawnMovement()
@@ -809,10 +853,11 @@ namespace Rollgeon.Dungeon
             foreach (var instance in _instances.Values)
             {
                 if (instance.SpawnedPrefab == null) continue;
-                bool isCurrent = instance.InstanceId == _currentId;
-                if (instance.SpawnedPrefab.activeSelf != isCurrent)
+                bool visible = instance.InstanceId == _currentId
+                    || (_leavingRoomId.HasValue && instance.InstanceId == _leavingRoomId.Value);
+                if (instance.SpawnedPrefab.activeSelf != visible)
                 {
-                    instance.SpawnedPrefab.SetActive(isCurrent);
+                    instance.SpawnedPrefab.SetActive(visible);
                 }
             }
         }
@@ -989,6 +1034,7 @@ namespace Rollgeon.Dungeon
             _shells.Clear();
             _cellIndex.Clear();
             _currentId = Guid.Empty;
+            _leavingRoomId = null;
             _lastEntryDirection = null;
         }
 
