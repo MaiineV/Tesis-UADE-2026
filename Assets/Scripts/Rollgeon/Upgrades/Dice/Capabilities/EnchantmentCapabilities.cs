@@ -111,6 +111,14 @@ namespace Rollgeon.Upgrades.Dice
     /// Queries sobre las capabilities de un encantamiento. Viven del lado dominio para
     /// que futuros consumidores (pricing de tienda, tooltips) no dependan de UI.
     /// </summary>
+    /// <summary>
+    /// Paso etéreo (dado de Movimiento): el dueño atraviesa unidades al caminar — las celdas
+    /// ocupadas cuentan como paso intermedio en BFS y A*, nunca como destino. Las paredes
+    /// siguen bloqueando. Consumida por <c>EtherealMovementPolicy</c>.
+    /// </summary>
+    [Serializable]
+    public sealed class CapEtherealMovement : IEnchantmentCapability { }
+
     public static class EnchantmentCapabilityQueries
     {
         /// <summary><c>true</c> si el encantamiento declara <see cref="CapCursed"/>. Null-safe.</summary>

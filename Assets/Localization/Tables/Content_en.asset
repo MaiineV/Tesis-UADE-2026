@@ -2875,6 +2875,58 @@ MonoBehaviour:
     m_Localized: Gain 1 shield per tile you walk (max 6 per turn).
     m_Metadata:
       m_Items: []
+  - m_Id: 18500349075832832
+    m_Localized: Whirlwind
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18500349096804352
+    m_Localized: When you roll the movement die, every enemy teleports to a random
+      tile and you move +2.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18500350317346816
+    m_Localized: Incendiary
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18500350317346817
+    m_Localized: 'Every tile you walk burns for 2 turns: enemies entering or starting
+      their turn there take 3 damage.'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18500351370117120
+    m_Localized: Toxic Trail
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18500351370117121
+    m_Localized: 'Every tile you walk leaves a toxic trail for 2 turns: the first
+      enemy entering gets poisoned for 2 turns.'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18500352418693120
+    m_Localized: Charge
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18500352418693121
+    m_Localized: Gain +1 base damage per tile you walk until the end of the turn.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18500353429520384
+    m_Localized: Ethereal Step
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18500353429520385
+    m_Localized: You move through units. You cannot end your movement on one.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18500354306129920
+    m_Localized: Thorn Path
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18500354306129921
+    m_Localized: 'Every tile you walk leaves Thorns for 1 turn: the first enemy entering
+      takes 2 damage and stops moving.'
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

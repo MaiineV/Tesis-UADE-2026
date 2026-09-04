@@ -300,6 +300,50 @@ namespace Rollgeon.Upgrades.Dice.Tests
             Assert.AreEqual((2, 2, Lane), trigger.Calls[1]);
         }
 
+        private sealed class RecordingRollTrigger : IOnMovementDieRolledTrigger
+        {
+            public readonly List<int> Faces = new List<int>();
+            public void OnMovementDieRolled(EnchantmentTriggerContext ctx) => Faces.Add(ctx.MovementDieFace);
+        }
+
+        [Test]
+        public void PlayerMoved_CarriesTheWalkedPath()
+        {
+            var playerGuid = RegisterPlayerAndService();
+            IReadOnlyList<GridCoord> seen = null;
+            var trigger = new PathTrigger(p => seen = p);
+            _svc.Apply(Lane, MakeEnchantment("ench.move", EnchantmentCategory.Movimiento, null, trigger));
+            EventManager.Trigger(EventName.OnCombatStart, Guid.NewGuid());
+
+            Walk(playerGuid, 3);
+
+            Assert.IsNotNull(seen);
+            Assert.AreEqual(4, seen.Count);
+            Assert.AreEqual(new GridCoord(0, 0), seen[0]);
+        }
+
+        private sealed class PathTrigger : IOnPlayerMovedTrigger
+        {
+            private readonly Action<IReadOnlyList<GridCoord>> _onPath;
+            public PathTrigger(Action<IReadOnlyList<GridCoord>> onPath) { _onPath = onPath; }
+            public void OnPlayerMoved(EnchantmentTriggerContext ctx) => _onPath(ctx.Path);
+        }
+
+        [Test]
+        public void MovementDieRolled_InCombat_DispatchesWithTheFace()
+        {
+            var playerGuid = RegisterPlayerAndService();
+            var trigger = new RecordingRollTrigger();
+            _svc.Apply(Lane, MakeEnchantment("ench.torb", EnchantmentCategory.Movimiento, null, trigger));
+
+            EventManager.Trigger(EventName.OnMovementDieRolled, playerGuid, 5, DiceType.D6); // sin combate
+            EventManager.Trigger(EventName.OnCombatStart, Guid.NewGuid());
+            EventManager.Trigger(EventName.OnMovementDieRolled, Guid.NewGuid(), 2, DiceType.D6); // otro guid
+            EventManager.Trigger(EventName.OnMovementDieRolled, playerGuid, 4, DiceType.D6);
+
+            CollectionAssert.AreEqual(new[] { 4 }, trigger.Faces);
+        }
+
         [Test]
         public void PlayerMoved_OutsideCombatOrOtherEntity_DoesNotDispatch()
         {

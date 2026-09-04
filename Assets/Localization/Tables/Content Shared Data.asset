@@ -2783,6 +2783,54 @@ MonoBehaviour:
     m_Key: ench.baluarte_movil.desc
     m_Metadata:
       m_Items: []
+  - m_Id: 18500349075832832
+    m_Key: ench.torbellino.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18500349096804352
+    m_Key: ench.torbellino.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18500350317346816
+    m_Key: ench.incendiario.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18500350317346817
+    m_Key: ench.incendiario.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18500351370117120
+    m_Key: ench.rastro_toxico.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18500351370117121
+    m_Key: ench.rastro_toxico.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18500352418693120
+    m_Key: ench.carga.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18500352418693121
+    m_Key: ench.carga.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18500353429520384
+    m_Key: ench.paso_etereo.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18500353429520385
+    m_Key: ench.paso_etereo.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18500354306129920
+    m_Key: ench.sendero_de_espinas.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18500354306129921
+    m_Key: ench.sendero_de_espinas.desc
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

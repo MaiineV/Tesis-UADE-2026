@@ -40,6 +40,9 @@ namespace Rollgeon.Upgrades.Dice
         {
             var service = new DiceEnchantmentService(_config);
             service.Register();
+            // Paso etéreo: el pathfinding consulta esta política por ServiceLocator.
+            ServiceLocator.AddService<Rollgeon.Movement.IMovementTraversalPolicy>(
+                new EtherealMovementPolicy(), ServiceScope.Global);
         }
     }
 }

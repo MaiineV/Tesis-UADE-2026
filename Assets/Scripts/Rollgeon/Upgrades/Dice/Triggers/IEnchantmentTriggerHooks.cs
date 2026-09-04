@@ -100,4 +100,14 @@ namespace Rollgeon.Upgrades.Dice.Triggers
     {
         void OnPlayerMoved(EnchantmentTriggerContext ctx);
     }
+
+    /// <summary>
+    /// El dado de Movimiento reveló su cara (acción de Mover en combate). El contexto trae
+    /// <c>MovementDieFace</c>. Dispara ANTES de elegir el destino: un modificador de
+    /// MoveRange aplicado acá entra al rango de ese mismo movimiento.
+    /// </summary>
+    public interface IOnMovementDieRolledTrigger : IEnchantmentTrigger
+    {
+        void OnMovementDieRolled(EnchantmentTriggerContext ctx);
+    }
 }

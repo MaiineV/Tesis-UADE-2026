@@ -2885,6 +2885,60 @@ MonoBehaviour:
       6 por turno)."
     m_Metadata:
       m_Items: []
+  - m_Id: 18500349075832832
+    m_Localized: Torbellino
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18500349096804352
+    m_Localized: "Al tirar el dado de Movimiento, todos los enemigos se teletransportan
+      a casillas al azar y te mov\xE9s +2."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18500350317346816
+    m_Localized: Incendiario
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18500350317346817
+    m_Localized: "Cada casilla que recorr\xE9s queda en llamas 2 turnos: los enemigos
+      que entran o empiezan su turno ah\xED reciben 3 de da\xF1o."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18500351370117120
+    m_Localized: "Rastro t\xF3xico"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18500351370117121
+    m_Localized: "Cada casilla que recorr\xE9s deja un rastro t\xF3xico 2 turnos:
+      el primer enemigo que entra queda envenenado 2 turnos."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18500352418693120
+    m_Localized: Carga
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18500352418693121
+    m_Localized: "Por cada casilla que recorr\xE9s, +1 de da\xF1o base hasta el final
+      del turno."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18500353429520384
+    m_Localized: "Paso et\xE9reo"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18500353429520385
+    m_Localized: "Atraves\xE1s unidades al moverte. No pod\xE9s terminar el movimiento
+      sobre una."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18500354306129920
+    m_Localized: Sendero de espinas
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18500354306129921
+    m_Localized: "Cada casilla que recorr\xE9s deja Espinas 1 turno: el primer enemigo
+      que entra recibe 2 de da\xF1o y su movimiento termina."
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

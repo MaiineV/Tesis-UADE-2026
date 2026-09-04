@@ -53,7 +53,7 @@ namespace Rollgeon.Upgrades.Dice.Readers
             if (CapPerTurn <= 0) return tiles * Multiplier;
 
             var slot = trig.Slot.Value;
-            int copies = CountLiveCopies(slot, out bool isFirstCopy);
+            int copies = MovementLaneCopies.Count(slot, out bool isFirstCopy);
             if (!isFirstCopy) return 0;
 
             int cap = CapPerTurn + CapPerExtraCopy * Math.Max(0, copies - 1);
@@ -61,38 +61,6 @@ namespace Rollgeon.Upgrades.Dice.Readers
             int before = total - tiles;
             int counted = Math.Min(total, cap) - Math.Min(before, cap);
             return Math.Max(0, counted) * Multiplier;
-        }
-
-        /// <summary>
-        /// Copias vivas (no tombstone) del mismo encantamiento en el dado portador. Sin bag
-        /// registrado se asume una sola copia, y el slot actual como la primera.
-        /// </summary>
-        private static int CountLiveCopies(EnchantmentSlotRef slot, out bool isFirstCopy)
-        {
-            isFirstCopy = true;
-            if (!ServiceLocator.TryGetService<IDiceEnchantmentService>(out var svc)
-                || svc == null || svc.Bag == null)
-                return 1;
-
-            var slots = svc.Bag.GetEnchantments(slot.BagSlotIndex);
-            var self = svc.Bag.GetEnchantmentAt(slot.BagSlotIndex, slot.EnchantmentSlotIndex);
-            if (self == null) return 1;
-
-            int copies = 0;
-            for (int i = 0; i < slots.Count; i++)
-            {
-                var other = slots[i];
-                if (other == null || !SameEnchantment(other, self)) continue;
-                if (copies == 0) isFirstCopy = i == slot.EnchantmentSlotIndex;
-                copies++;
-            }
-            return Math.Max(1, copies);
-        }
-
-        private static bool SameEnchantment(EnchantmentSO a, EnchantmentSO b)
-        {
-            if (ReferenceEquals(a, b)) return true;
-            return !string.IsNullOrEmpty(a.UpgradeId) && a.UpgradeId == b.UpgradeId;
         }
     }
 }

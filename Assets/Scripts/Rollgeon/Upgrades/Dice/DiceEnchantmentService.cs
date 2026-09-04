@@ -91,6 +91,7 @@ namespace Rollgeon.Upgrades.Dice
             EventManager.Subscribe(EventName.OnTurnFinished, OnTurnFinishedHandler);
             EventManager.Subscribe(EventName.OnCombatStart, OnCombatStartHandler);
             EventManager.Subscribe(EventName.OnCombatEnd, OnCombatEndHandler);
+            EventManager.Subscribe(EventName.OnMovementDieRolled, OnMovementDieRolledHandler);
             TypedEvent<ComboMatchedPayload>.Subscribe(OnComboMatchedHandler);
             TypedEvent<ComboPlayedPayload>.Subscribe(OnComboPlayedHandler);
             TypedEvent<EntityWalkedPayload>.Subscribe(OnEntityWalkedHandler);
@@ -107,6 +108,7 @@ namespace Rollgeon.Upgrades.Dice
             EventManager.UnSubscribe(EventName.OnTurnFinished, OnTurnFinishedHandler);
             EventManager.UnSubscribe(EventName.OnCombatStart, OnCombatStartHandler);
             EventManager.UnSubscribe(EventName.OnCombatEnd, OnCombatEndHandler);
+            EventManager.UnSubscribe(EventName.OnMovementDieRolled, OnMovementDieRolledHandler);
             TypedEvent<ComboMatchedPayload>.Unsubscribe(OnComboMatchedHandler);
             TypedEvent<ComboPlayedPayload>.Unsubscribe(OnComboPlayedHandler);
             TypedEvent<EntityWalkedPayload>.Unsubscribe(OnEntityWalkedHandler);
@@ -244,7 +246,33 @@ namespace Rollgeon.Upgrades.Dice
 
             _tilesWalkedThisTurn += payload.TilesTraversed;
             var effectCtx = new EffectContext { SourceGuid = payload.EntityGuid };
-            DispatchPlayerMoved(effectCtx, payload.TilesTraversed, _tilesWalkedThisTurn);
+            DispatchPlayerMoved(effectCtx, payload.TilesTraversed, _tilesWalkedThisTurn, payload.Path);
+        }
+
+        /// <summary>
+        /// Schema EventName.OnMovementDieRolled: [Guid playerGuid, int face, DiceType]. Dispara
+        /// en el reveal, antes de elegir destino — solo en combate y para el dueño del bag.
+        /// </summary>
+        private void OnMovementDieRolledHandler(params object[] args)
+        {
+            if (Bag == null || !_inCombat) return;
+            if (args == null || args.Length < 2) return;
+            if (!(args[0] is Guid playerGuid) || !(args[1] is int face)) return;
+            if (!ServiceLocator.TryGetService<IPlayerService>(out var ps) || ps == null) return;
+            if (ps.PlayerGuid != playerGuid) return;
+
+            var scratch = new EnchantmentScratch();
+            var ctx = new EnchantmentTriggerContext
+            {
+                Effect = new EffectContext { SourceGuid = playerGuid },
+                Scratch = scratch,
+                MovementDieFace = face,
+            };
+            ForEachEnchantment(ctx, (trigger, c) =>
+            {
+                if (trigger is IOnMovementDieRolledTrigger r) r.OnMovementDieRolled(c);
+            });
+            ApplyScratchSideEffects(scratch);
         }
 
         // Schema EventName.OnCombatStart: args = [Guid roomInstanceId] — sin entity. El
@@ -399,7 +427,8 @@ namespace Rollgeon.Upgrades.Dice
             ApplyScratchSideEffects(scratch);
         }
 
-        private void DispatchPlayerMoved(EffectContext effectCtx, int tiles, int tilesThisTurn)
+        private void DispatchPlayerMoved(EffectContext effectCtx, int tiles, int tilesThisTurn,
+            IReadOnlyList<Rollgeon.Grid.GridCoord> path)
         {
             if (Bag == null) return;
             var scratch = new EnchantmentScratch();
@@ -409,6 +438,7 @@ namespace Rollgeon.Upgrades.Dice
                 Scratch = scratch,
                 TilesTraversed = tiles,
                 TilesTraversedThisTurn = tilesThisTurn,
+                Path = path,
             };
             ForEachEnchantment(ctx, (trigger, c) =>
             {
