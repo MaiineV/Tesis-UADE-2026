@@ -5386,6 +5386,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1711357143213522343}
     m_Modifications:
+    - target: {fileID: 4231408920687601601, guid: b59b68fec08abe64bb0833390e365a11, type: 3}
+      propertyPath: Direction
+      value: 5
+      objectReference: {fileID: 0}
     - target: {fileID: 8475490939673076207, guid: b59b68fec08abe64bb0833390e365a11, type: 3}
       propertyPath: m_Name
       value: Cartel1
@@ -15868,6 +15872,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1711357143213522343}
     m_Modifications:
+    - target: {fileID: 5415917490452881594, guid: 7f56c1a3ea36f0444afedf57bbba76a0, type: 3}
+      propertyPath: Direction
+      value: 3
+      objectReference: {fileID: 0}
     - target: {fileID: 6109365140253393249, guid: 7f56c1a3ea36f0444afedf57bbba76a0, type: 3}
       propertyPath: m_LocalPosition.x
       value: 3.47
@@ -19545,6 +19553,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1711357143213522343}
     m_Modifications:
+    - target: {fileID: 5415917490452881594, guid: 7f56c1a3ea36f0444afedf57bbba76a0, type: 3}
+      propertyPath: Direction
+      value: 7
+      objectReference: {fileID: 0}
     - target: {fileID: 6109365140253393249, guid: 7f56c1a3ea36f0444afedf57bbba76a0, type: 3}
       propertyPath: m_LocalPosition.x
       value: -5.061
@@ -37595,6 +37607,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1711357143213522343}
     m_Modifications:
+    - target: {fileID: 5415917490452881594, guid: 7f56c1a3ea36f0444afedf57bbba76a0, type: 3}
+      propertyPath: Direction
+      value: 3
+      objectReference: {fileID: 0}
     - target: {fileID: 6109365140253393249, guid: 7f56c1a3ea36f0444afedf57bbba76a0, type: 3}
       propertyPath: m_LocalPosition.x
       value: 6.053

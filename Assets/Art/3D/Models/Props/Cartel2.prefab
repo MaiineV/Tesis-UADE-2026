@@ -11,6 +11,7 @@ GameObject:
   - component: {fileID: 5980556330294906646}
   - component: {fileID: 5422325707887442407}
   - component: {fileID: 31346680333138695}
+  - component: {fileID: 622766578155677833}
   m_Layer: 0
   m_Name: Cartel2
   m_TagString: Untagged
@@ -96,3 +97,19 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!114 &622766578155677833
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2451200069386383070}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e314d43e25d7ca44fa60a92045ee9c91, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Rollgeon::Rollgeon.GameCamera.WallOccluder
+  Direction: 0
+  ManualOverride: 0
+  _renderers:
+  - {fileID: 31346680333138695}

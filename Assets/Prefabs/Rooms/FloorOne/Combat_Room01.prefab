@@ -20870,6 +20870,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1711357143213522343}
     m_Modifications:
+    - target: {fileID: 5415917490452881594, guid: 7f56c1a3ea36f0444afedf57bbba76a0, type: 3}
+      propertyPath: Direction
+      value: 5
+      objectReference: {fileID: 0}
     - target: {fileID: 6109365140253393249, guid: 7f56c1a3ea36f0444afedf57bbba76a0, type: 3}
       propertyPath: m_LocalPosition.x
       value: -2.57
@@ -25663,6 +25667,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1711357143213522343}
     m_Modifications:
+    - target: {fileID: 622766578155677833, guid: 99affbef0d8a908429122feb53a9a19e, type: 3}
+      propertyPath: Direction
+      value: 3
+      objectReference: {fileID: 0}
     - target: {fileID: 2451200069386383070, guid: 99affbef0d8a908429122feb53a9a19e, type: 3}
       propertyPath: m_Name
       value: Cartel2 (1)
@@ -26306,6 +26314,10 @@ PrefabInstance:
       propertyPath: m_StaticEditorFlags
       value: 2147483647
       objectReference: {fileID: 0}
+    - target: {fileID: 4231408920687601601, guid: b59b68fec08abe64bb0833390e365a11, type: 3}
+      propertyPath: Direction
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 8475490939673076207, guid: b59b68fec08abe64bb0833390e365a11, type: 3}
       propertyPath: m_Name
       value: Cartel1 (1)
@@ -26385,7 +26397,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Rollgeon::Rollgeon.Grid.TileMarker
   Coord:
     X: 5
-    Y: -3
+    Y: 3
   Layer: 1
   Footprint: {x: 1, y: 1, z: 1}
   FootprintOffset: {x: 0, y: 0, z: 0}
@@ -29087,6 +29099,10 @@ PrefabInstance:
       propertyPath: m_StaticEditorFlags
       value: 2147483647
       objectReference: {fileID: 0}
+    - target: {fileID: 4231408920687601601, guid: b59b68fec08abe64bb0833390e365a11, type: 3}
+      propertyPath: Direction
+      value: 3
+      objectReference: {fileID: 0}
     - target: {fileID: 8475490939673076207, guid: b59b68fec08abe64bb0833390e365a11, type: 3}
       propertyPath: m_Name
       value: Cartel1
@@ -29672,6 +29688,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1711357143213522343}
     m_Modifications:
+    - target: {fileID: 5415917490452881594, guid: 7f56c1a3ea36f0444afedf57bbba76a0, type: 3}
+      propertyPath: Direction
+      value: 5
+      objectReference: {fileID: 0}
     - target: {fileID: 6109365140253393249, guid: 7f56c1a3ea36f0444afedf57bbba76a0, type: 3}
       propertyPath: m_LocalPosition.x
       value: -5.048
@@ -39117,6 +39137,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1711357143213522343}
     m_Modifications:
+    - target: {fileID: 622766578155677833, guid: 99affbef0d8a908429122feb53a9a19e, type: 3}
+      propertyPath: Direction
+      value: 7
+      objectReference: {fileID: 0}
     - target: {fileID: 2451200069386383070, guid: 99affbef0d8a908429122feb53a9a19e, type: 3}
       propertyPath: m_Name
       value: Cartel2
@@ -39815,6 +39839,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1711357143213522343}
     m_Modifications:
+    - target: {fileID: 5415917490452881594, guid: 7f56c1a3ea36f0444afedf57bbba76a0, type: 3}
+      propertyPath: Direction
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 6109365140253393249, guid: 7f56c1a3ea36f0444afedf57bbba76a0, type: 3}
       propertyPath: m_LocalPosition.x
       value: -1.53
