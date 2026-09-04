@@ -883,6 +883,22 @@ namespace Rollgeon.EditorTools.Localization
             Content(AIIntentTextKeys.CashierVault + ".name", "Se la lleva la caja", "The Vault Takes It");
             Content(AIIntentTextKeys.CashierVault + ".desc", string.Empty, string.Empty);
 
+            Content(AIIntentTextKeys.CashierCoins + ".name", "Monedas venciendo", "Coins Expiring");
+            Content(AIIntentTextKeys.CashierCoins + ".desc",
+                "La caja se lleva una por turno; quedan <b>{1}</b> en el piso.",
+                "The vault takes one per turn; <b>{1}</b> left on the floor.");
+
+            // Dos keys y no una: el turno que avisa y el que cobra dicen cosas distintas.
+            Content(AIIntentTextKeys.CashierSlam + ".name", "Cañonazo", "Cannon Shot");
+            Content(AIIntentTextKeys.CashierSlam + ".desc",
+                "Marca un área de 3×3 donde estés parado y la cobra al turno siguiente.",
+                "Marks a 3×3 area where you stand and fires on it next turn.");
+
+            Content(AIIntentTextKeys.CashierSlamDue + ".name", "Cañonazo", "Cannon Shot");
+            Content(AIIntentTextKeys.CashierSlamDue + ".desc",
+                "Cae en el área marcada, no donde estés.",
+                "It lands on the marked area, not on where you are.");
+
             Content(AIIntentTextKeys.Leaves + ".name", "Lo que deja", "What It Leaves");
             Content(AIIntentTextKeys.Leaves + ".desc",
                 "Deja fuego: <b>{0}</b> al entrar, <b>{1}</b> por turno, {2} rondas.",

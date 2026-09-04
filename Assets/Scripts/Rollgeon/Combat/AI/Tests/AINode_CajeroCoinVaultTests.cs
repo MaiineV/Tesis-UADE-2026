@@ -180,7 +180,7 @@ namespace Rollgeon.Combat.AI.Tests
             var coin = DropCoin();
             node.Tick(NewContext(round: 0));
 
-            var announced = Describe(node, round: 0);
+            var announced = DescribeCoins(node, round: 0);
 
             Assert.AreEqual(1, announced.Count, "Una moneda en el piso, una tarjeta.");
             Assert.AreEqual(coin, announced[0].SubjectGuid, "La tarjeta va dirigida a la moneda.");
@@ -196,7 +196,7 @@ namespace Rollgeon.Combat.AI.Tests
             for (int i = 0; i < coinsPerRain; i++) DropCoin();
             node.Tick(NewContext(round: 0)); // Las cuatro con el MISMO vencimiento.
 
-            var announced = Describe(node, LifetimeRounds);
+            var announced = DescribeCoins(node, LifetimeRounds);
 
             CollectionAssert.AreEqual(new[] { 0, 1, 2, 3 },
                 announced.Select(i => i.TurnsAway).ToArray(),
@@ -214,7 +214,7 @@ namespace Rollgeon.Combat.AI.Tests
             _hazards.Pickup(picked);
             node.Tick(NewContext(round: 0));
 
-            var announced = Describe(node, round: 0);
+            var announced = DescribeCoins(node, round: 0);
 
             Assert.AreEqual(1, announced.Count, "La levantada ya no tiene reloj.");
             Assert.AreEqual(left, announced[0].SubjectGuid);
@@ -229,12 +229,51 @@ namespace Rollgeon.Combat.AI.Tests
             CollectionAssert.IsEmpty(Describe(node, round: 0));
         }
 
+        // ---- El resumen que lee el panel del jefe -----------------------------------
+
+        /// <summary>Las per-moneda van dirigidas a su instancia y el panel del jefe las descarta, así
+        /// que sin este resumen su columna queda vacía: el reloj es su mecánica y no se ve en él.</summary>
+        [Test]
+        public void TheBossPanel_GetsOneCardForTheWholeClock_NotOnePerCoin()
+        {
+            const int coinsPerRain = 4;
+
+            var node = NewNode();
+            for (int i = 0; i < coinsPerRain; i++) DropCoin();
+            node.Tick(NewContext(round: 0));
+
+            var mine = Describe(node, round: 1).Where(i => i.SubjectGuid == Guid.Empty).ToList();
+
+            Assert.AreEqual(1, mine.Count, "Una sola tarjeta del jefe, no cuatro.");
+            Assert.AreEqual(AIIntentTextKeys.CashierCoins, mine[0].LabelKey);
+            Assert.AreEqual(coinsPerRain, mine[0].Amount, "El {1} de la frase son las monedas vivas.");
+            Assert.AreEqual(LifetimeRounds - 1, mine[0].TurnsAway,
+                "El badge tiene que contar hasta la PRIMERA que se lleva, no hasta la última.");
+        }
+
+        [Test]
+        public void TheClockSummary_GoesAwayWithTheLastCoin()
+        {
+            var node = NewNode();
+            var coin = DropCoin();
+            node.Tick(NewContext(round: 0));
+            _hazards.Pickup(coin);
+            node.Tick(NewContext(round: 0));
+
+            CollectionAssert.IsEmpty(Describe(node, round: 0),
+                "Sin monedas en el piso el jefe sigue mostrando un reloj que ya no corre.");
+        }
+
         private List<AIIntent> Describe(AINode_CajeroCoinVault node, int round)
         {
             var into = new List<AIIntent>();
             node.DescribeIntents(NewContext(round), into);
             return into;
         }
+
+        /// <summary>Sólo las dirigidas a una moneda: el resumen del jefe viaja en la misma lista.</summary>
+        private List<AIIntent> DescribeCoins(AINode_CajeroCoinVault node, int round) =>
+            Describe(node, round).Where(i => i.SubjectGuid != Guid.Empty).ToList();
 
         private static AINode_CajeroCoinVault NewNodeWith(HazardDefinitionSO coin) =>
             new AINode_CajeroCoinVault

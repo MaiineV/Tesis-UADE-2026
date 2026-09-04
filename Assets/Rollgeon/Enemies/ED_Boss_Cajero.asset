@@ -202,6 +202,9 @@ MonoBehaviour:
     - Name: Retreat
       Entry: 5
       Data: false
+    - Name: RequireLineOfSight
+      Entry: 5
+      Data: false
     - Name: StopAdjacent
       Entry: 5
       Data: true
@@ -247,7 +250,7 @@ MonoBehaviour:
       Data: 
     - Name: TargetSelector
       Entry: 7
-      Data: 22|Rollgeon.Combat.AI.Targeting.TargetSelector_AlwaysPlayer, Rollgeon
+      Data: 22|Rollgeon.Combat.AI.Targeting.TargetSelector_Self, Rollgeon
     - Name: 
       Entry: 8
       Data: 
@@ -260,7 +263,62 @@ MonoBehaviour:
       Data: 1
     - Name: 
       Entry: 7
-      Data: 24|Rollgeon.PreConditions.Concretes.PcTargetInRange, Rollgeon
+      Data: 24|Rollgeon.PreConditions.Concretes.PcOwnerHasPendingTelegraph, Rollgeon
+    - Name: _isConstantValue
+      Entry: 5
+      Data: true
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: Then
+      Entry: 7
+      Data: 25|Rollgeon.Combat.AI.Decisions.AINode_ExecuteTelegraph, Rollgeon
+    - Name: EditorNodeId
+      Entry: 6
+      Data: 
+    - Name: WindupFeedbackId
+      Entry: 1
+      Data: anim.boss.cajero.shot
+    - Name: ImpactEventKey
+      Entry: 1
+      Data: hit
+    - Name: IntentLabelKey
+      Entry: 1
+      Data: intent.cashier_slam_due
+    - Name: IntentLabelFallback
+      Entry: 1
+      Data: "Ca\xF1onazo"
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: Else
+      Entry: 7
+      Data: 26|Rollgeon.Combat.AI.Decisions.AINode_If, Rollgeon
+    - Name: EditorNodeId
+      Entry: 6
+      Data: 
+    - Name: TargetSelector
+      Entry: 7
+      Data: 27|Rollgeon.Combat.AI.Targeting.TargetSelector_AlwaysPlayer, Rollgeon
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: Conditions
+      Entry: 7
+      Data: 28|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
+        Rollgeon]], mscorlib
+    - Name: 
+      Entry: 12
+      Data: 1
+    - Name: 
+      Entry: 7
+      Data: 29|Rollgeon.PreConditions.Concretes.PcTargetInRange, Rollgeon
     - Name: _isConstantValue
       Entry: 5
       Data: true
@@ -276,7 +334,7 @@ MonoBehaviour:
     - Name: Alignment
       Entry: 3
       Data: 0
-    - Name: RequireLineOfSight
+    - Name: IgnoreLineOfSight
       Entry: 5
       Data: false
     - Name: 
@@ -290,33 +348,33 @@ MonoBehaviour:
       Data: 
     - Name: Then
       Entry: 7
-      Data: 25|Rollgeon.Combat.AI.Decisions.AINode_Alternate, Rollgeon
+      Data: 30|Rollgeon.Combat.AI.Decisions.AINode_Alternate, Rollgeon
     - Name: EditorNodeId
       Entry: 6
       Data: 
     - Name: Children
       Entry: 7
-      Data: 26|System.Collections.Generic.List`1[[Rollgeon.Combat.AI.Decisions.AIDecisionNode,
+      Data: 31|System.Collections.Generic.List`1[[Rollgeon.Combat.AI.Decisions.AIDecisionNode,
         Rollgeon]], mscorlib
     - Name: 
       Entry: 12
       Data: 2
     - Name: 
       Entry: 7
-      Data: 27|Rollgeon.Combat.AI.Decisions.AINode_Selector, Rollgeon
+      Data: 32|Rollgeon.Combat.AI.Decisions.AINode_Selector, Rollgeon
     - Name: EditorNodeId
       Entry: 6
       Data: 
     - Name: Children
       Entry: 7
-      Data: 28|System.Collections.Generic.List`1[[Rollgeon.Combat.AI.Decisions.AIDecisionNode,
+      Data: 33|System.Collections.Generic.List`1[[Rollgeon.Combat.AI.Decisions.AIDecisionNode,
         Rollgeon]], mscorlib
     - Name: 
       Entry: 12
       Data: 2
     - Name: 
       Entry: 7
-      Data: 29|Rollgeon.Combat.AI.Decisions.AINode_RangedShot, Rollgeon
+      Data: 34|Rollgeon.Combat.AI.Decisions.AINode_RangedShot, Rollgeon
     - Name: EditorNodeId
       Entry: 6
       Data: 
@@ -332,6 +390,9 @@ MonoBehaviour:
     - Name: Kind
       Entry: 3
       Data: 1
+    - Name: IgnoreLineOfSight
+      Entry: 5
+      Data: false
     - Name: IntentLabelKey
       Entry: 1
       Data: intent.attack
@@ -352,7 +413,7 @@ MonoBehaviour:
       Data: 
     - Name: 
       Entry: 7
-      Data: 30|Rollgeon.Combat.AI.Decisions.AINode_Wait, Rollgeon
+      Data: 35|Rollgeon.Combat.AI.Decisions.AINode_Wait, Rollgeon
     - Name: EditorNodeId
       Entry: 6
       Data: 
@@ -370,20 +431,20 @@ MonoBehaviour:
       Data: 
     - Name: 
       Entry: 7
-      Data: 31|Rollgeon.Combat.AI.Decisions.AINode_Selector, Rollgeon
+      Data: 36|Rollgeon.Combat.AI.Decisions.AINode_Selector, Rollgeon
     - Name: EditorNodeId
       Entry: 6
       Data: 
     - Name: Children
       Entry: 7
-      Data: 32|System.Collections.Generic.List`1[[Rollgeon.Combat.AI.Decisions.AIDecisionNode,
+      Data: 37|System.Collections.Generic.List`1[[Rollgeon.Combat.AI.Decisions.AIDecisionNode,
         Rollgeon]], mscorlib
     - Name: 
       Entry: 12
       Data: 2
     - Name: 
       Entry: 7
-      Data: 33|Rollgeon.Combat.AI.Decisions.AINode_CajeroShove, Rollgeon
+      Data: 38|Rollgeon.Combat.AI.Decisions.AINode_CajeroShove, Rollgeon
     - Name: EditorNodeId
       Entry: 6
       Data: 
@@ -399,6 +460,15 @@ MonoBehaviour:
     - Name: Kind
       Entry: 3
       Data: 1
+    - Name: IgnoreLineOfSight
+      Entry: 5
+      Data: false
+    - Name: IntentLabelKey
+      Entry: 6
+      Data: 
+    - Name: IntentLabelFallback
+      Entry: 6
+      Data: 
     - Name: AnimFeedbackId
       Entry: 1
       Data: anim.boss.cajero.shove
@@ -434,7 +504,7 @@ MonoBehaviour:
       Data: 
     - Name: 
       Entry: 7
-      Data: 34|Rollgeon.Combat.AI.Decisions.AINode_Wait, Rollgeon
+      Data: 39|Rollgeon.Combat.AI.Decisions.AINode_Wait, Rollgeon
     - Name: EditorNodeId
       Entry: 6
       Data: 
@@ -461,9 +531,57 @@ MonoBehaviour:
       Data: 
     - Name: Else
       Entry: 7
-      Data: 35|Rollgeon.Combat.AI.Decisions.AINode_Wait, Rollgeon
+      Data: 40|Rollgeon.Combat.AI.Decisions.AINode_TelegraphMark, Rollgeon
     - Name: EditorNodeId
       Entry: 6
+      Data: 
+    - Name: Shape
+      Entry: 3
+      Data: 0
+    - Name: Size
+      Entry: 3
+      Data: 1
+    - Name: Depth
+      Entry: 3
+      Data: 2
+    - Name: Count
+      Entry: 3
+      Data: 3
+    - Name: Columns
+      Entry: 3
+      Data: 3
+    - Name: Rows
+      Entry: 3
+      Data: 2
+    - Name: HalfAxis
+      Entry: 3
+      Data: 0
+    - Name: Damage
+      Entry: 3
+      Data: 28
+    - Name: Kind
+      Entry: 3
+      Data: 1
+    - Name: ChannelId
+      Entry: 6
+      Data: 
+    - Name: IgnoreLineOfSight
+      Entry: 5
+      Data: true
+    - Name: KeepSquareWhole
+      Entry: 5
+      Data: true
+    - Name: WindupFeedbackId
+      Entry: 1
+      Data: anim.boss.cajero.aim
+    - Name: IntentLabelKey
+      Entry: 1
+      Data: intent.cashier_slam
+    - Name: IntentLabelFallback
+      Entry: 1
+      Data: "Ca\xF1onazo"
+    - Name: 
+      Entry: 8
       Data: 
     - Name: 
       Entry: 8
@@ -473,7 +591,7 @@ MonoBehaviour:
       Data: 
     - Name: 
       Entry: 7
-      Data: 36|Rollgeon.Combat.AI.Decisions.AINode_Wait, Rollgeon
+      Data: 41|Rollgeon.Combat.AI.Decisions.AINode_Wait, Rollgeon
     - Name: EditorNodeId
       Entry: 6
       Data: 
@@ -491,20 +609,20 @@ MonoBehaviour:
       Data: 
     - Name: 
       Entry: 7
-      Data: 37|Rollgeon.Combat.AI.Decisions.AINode_Selector, Rollgeon
+      Data: 42|Rollgeon.Combat.AI.Decisions.AINode_Selector, Rollgeon
     - Name: EditorNodeId
       Entry: 6
       Data: 
     - Name: Children
       Entry: 7
-      Data: 38|System.Collections.Generic.List`1[[Rollgeon.Combat.AI.Decisions.AIDecisionNode,
+      Data: 43|System.Collections.Generic.List`1[[Rollgeon.Combat.AI.Decisions.AIDecisionNode,
         Rollgeon]], mscorlib
     - Name: 
       Entry: 12
       Data: 2
     - Name: 
       Entry: 7
-      Data: 39|Rollgeon.Combat.AI.Decisions.AINode_CajeroCoinRain, Rollgeon
+      Data: 44|Rollgeon.Combat.AI.Decisions.AINode_CajeroCoinRain, Rollgeon
     - Name: EditorNodeId
       Entry: 6
       Data: 
@@ -531,7 +649,7 @@ MonoBehaviour:
       Data: 
     - Name: 
       Entry: 7
-      Data: 40|Rollgeon.Combat.AI.Decisions.AINode_Wait, Rollgeon
+      Data: 45|Rollgeon.Combat.AI.Decisions.AINode_Wait, Rollgeon
     - Name: EditorNodeId
       Entry: 6
       Data: 
@@ -549,20 +667,20 @@ MonoBehaviour:
       Data: 
     - Name: 
       Entry: 7
-      Data: 41|Rollgeon.Combat.AI.Decisions.AINode_Selector, Rollgeon
+      Data: 46|Rollgeon.Combat.AI.Decisions.AINode_Selector, Rollgeon
     - Name: EditorNodeId
       Entry: 6
       Data: 
     - Name: Children
       Entry: 7
-      Data: 42|System.Collections.Generic.List`1[[Rollgeon.Combat.AI.Decisions.AIDecisionNode,
+      Data: 47|System.Collections.Generic.List`1[[Rollgeon.Combat.AI.Decisions.AIDecisionNode,
         Rollgeon]], mscorlib
     - Name: 
       Entry: 12
       Data: 2
     - Name: 
       Entry: 7
-      Data: 43|Rollgeon.Combat.AI.Decisions.AINode_CajeroCoinVault, Rollgeon
+      Data: 48|Rollgeon.Combat.AI.Decisions.AINode_CajeroCoinVault, Rollgeon
     - Name: EditorNodeId
       Entry: 6
       Data: 
@@ -577,7 +695,7 @@ MonoBehaviour:
       Data: 
     - Name: 
       Entry: 7
-      Data: 44|Rollgeon.Combat.AI.Decisions.AINode_Wait, Rollgeon
+      Data: 49|Rollgeon.Combat.AI.Decisions.AINode_Wait, Rollgeon
     - Name: EditorNodeId
       Entry: 6
       Data: 
@@ -604,7 +722,7 @@ MonoBehaviour:
       Data: 
     - Name: AIDetachedNodes
       Entry: 7
-      Data: 45|System.Collections.Generic.List`1[[Rollgeon.Combat.AI.Decisions.AIDecisionNode,
+      Data: 50|System.Collections.Generic.List`1[[Rollgeon.Combat.AI.Decisions.AIDecisionNode,
         Rollgeon]], mscorlib
     - Name: 
       Entry: 12
@@ -624,8 +742,9 @@ MonoBehaviour:
     Archetype: 1
     Pattern: 1
     Timing: 1
-    Notes: "Mandoble y empuj\xF3n alternados a distancia 1; lluvia de monedas; caja
-      fuerte; refuerzos (Comisi\xF3n)."
+    Notes: "Mandoble y empuj\xF3n alternados a distancia 1; fuera de alcance marca
+      un 3\xD73 sobre el jugador y lo cobra al turno siguiente; lluvia de monedas;
+      caja fuerte; refuerzos (Comisi\xF3n)."
   WeaknessComboId: combo.full_house
   WeaknessMultiplierOverride: 1.5
   Curse: {fileID: 11400000, guid: 0e92b4d6bcb557b4684b8a969a2ace36, type: 2}
@@ -642,6 +761,7 @@ MonoBehaviour:
   IsFlying: 0
   IsBoss: 1
   Archetype: 2
+  TooltipType: 
   Personality: 0
   KamikazeIgnoresSurvival: 0
   AuraRadius: 0

@@ -107,6 +107,8 @@ namespace Rollgeon.Editor.Tools
             yield return Spec.Anim(CajeroShotAnim, "Attack_Range");
             // 'Idle_Var' y no 'Attack_Melee': es el otro tiempo del mismo ciclo melee.
             yield return Spec.Anim(CajeroShoveAnim, "Idle_Var");
+            // Comparte el clip del empujón: los tres triggers del rig ya están tomados.
+            yield return Spec.Anim(CajeroAimAnim, "Idle_Var");
             yield return Spec.Vfx(CajeroImpactVfx, MeleeImpactVfxPath);
             yield return Spec.Vfx(CajeroShotImpactVfx, RangedImpactVfxPath);
             yield return Spec.Feel(CajeroImpactFeel, MeleeImpactFeelPath);

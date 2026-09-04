@@ -41,7 +41,22 @@ namespace Rollgeon.Combat.AI.Decisions
                  "daño cae cuando el feedback termina por duración, no en el golpe.")]
         public string ImpactEventKey = "hit";
 
+        [Title("Tarjeta")]
+        [Tooltip("Key de la tarjeta al cobrar. Vacío = intent.telegraph (\"Golpe marcado\").")]
+        public string IntentLabelKey;
+
+        [Tooltip("Texto de autor de IntentLabelKey, por si la key no está en tabla.")]
+        public string IntentLabelFallback;
+
         public override string NodeName => "Execute Telegraph (turn N+1)";
+
+        // En propiedades y no en los campos: un nodo ya serializado, sin las keys nuevas, se
+        // anuncia igual que siempre.
+        private string LabelKey =>
+            string.IsNullOrEmpty(IntentLabelKey) ? AIIntentTextKeys.Telegraph : IntentLabelKey;
+
+        private string LabelFallback =>
+            string.IsNullOrEmpty(IntentLabelFallback) ? "Golpe marcado" : IntentLabelFallback;
 
         /// <summary>
         /// Camino síncrono (EditMode / escenas sin <c>CoroutineHost</c>). Resuelve como
@@ -105,8 +120,7 @@ namespace Rollgeon.Combat.AI.Decisions
                 return false;
             if (!threat.TryPeek(context.SelfGuid, out var area)) return false;
 
-            intent = new AIIntent(AIIntentTextKeys.Telegraph, "Golpe marcado",
-                                  area.Damage, area.Kind, area.Tiles);
+            intent = new AIIntent(LabelKey, LabelFallback, area.Damage, area.Kind, area.Tiles);
             return true;
         }
 

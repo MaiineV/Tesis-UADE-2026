@@ -89,17 +89,23 @@ namespace Rollgeon.Combat.AI.Decisions
             return false;
         }
 
-        /// <summary>Una por moneda y dirigida a ella: el hover la encuentra por subject, y el panel del jefe la descarta.</summary>
+        /// <summary>
+        /// Dos lecturas del mismo reloj: una por moneda y dirigida a ella —el hover la encuentra por
+        /// subject y el panel del jefe la descarta— más una del jefe, que es la única que su panel
+        /// deja pasar.
+        /// </summary>
         public void DescribeIntents(AIContext context, List<AIIntent> into)
         {
-            if (context == null || into == null || _clocks == null) return;
+            if (context == null || into == null || _clocks == null || _clocks.Count == 0) return;
 
+            int soonest = int.MaxValue;
             int queued = 0;
             for (int i = 0; i < _clocks.Count; i++)
             {
                 // Se cobra una por turno: sin el lugar en la cola, cuatro vencidas dirían lo mismo.
                 int left = _clocks[i].Deadline - context.RoundIndex;
                 if (left <= 0) left = queued++;
+                if (left < soonest) soonest = left;
 
                 into.Add(new AIIntent(
                     AIIntentTextKeys.CashierVault, "Se la lleva la caja",
@@ -107,6 +113,12 @@ namespace Rollgeon.Combat.AI.Decisions
                     turnsAway: left,
                     subjectGuid: _clocks[i].InstanceId));
             }
+
+            into.Add(new AIIntent(
+                AIIntentTextKeys.CashierCoins, "Monedas venciendo",
+                damage: 0, kind: AttackKind.Environmental,
+                amount: _clocks.Count,
+                turnsAway: soonest));
         }
 
         /// <summary>

@@ -82,12 +82,6 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         /// <summary>Wrapper de gameplay que arma <see cref="BossVisualWrapperBuilder"/>.</summary>
         public const string VisualPrefabPath = "Assets/Prefabs/Enemies/Bosses/PF_Boss_Cajero.prefab";
 
-        /// <summary>Caja de fichas, parenteada al costado del jefe. Es lo que dice de un vistazo
-        /// que la plata es su tema.</summary>
-        public const string ChipsBoxPropPath = "Assets/Prefabs/Props/CajaFichasv01.prefab";
-
-        public const string ChipsBoxPropName = "ChipsBox";
-
         /// <summary>
         /// Retrato del jefe: la cara de <c>MechaBoss_Animated</c>, el rig que viste. Ver
         /// <see cref="BossPortraitLibrary"/> y <see cref="EnsurePortrait"/>.
@@ -162,6 +156,17 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         /// lo queda él y no vuelve nunca.
         /// </summary>
         public const float ShoveRefundPercent = 0.70f;
+
+        // ---- El cañonazo -------------------------------------------------
+
+        /// <summary>
+        /// El área marcada que suelta cuando camina y no llega. Pega más que el mandoble porque se
+        /// esquiva: el jugador tiene un turno entero para salirse.
+        /// </summary>
+        public const int SlamDamage = 28;
+
+        /// <summary>Radio del área: <c>2·radio+1</c>, o sea 3×3 contando la casilla del centro.</summary>
+        public const int SlamRadius = 1;
 
         // ---- Las monedas -------------------------------------------------
 
@@ -407,12 +412,6 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         /// </summary>
         public const float ColliderRadiusCap = 0.5f;
 
-        // La caja va al costado derecho y algo atrás para no tapar la silueta, y a escala 0.65 para
-        // que no se meta en la casilla vecina (en las salas va a 1 y ocupa un tile entero).
-        public static readonly Vector3 ChipsBoxLocalPosition = new Vector3(0.45f, 0f, -0.2f);
-        public static readonly Vector3 ChipsBoxLocalEuler = new Vector3(0f, -25f, 0f);
-        public static readonly Vector3 ChipsBoxLocalScale = new Vector3(0.65f, 0.65f, 0.65f);
-
         // Oro de banca: la carcasa —la superficie más grande del mech— se lo queda entera, con canto
         // y brillo en su propio ramp por tono (si los tres compartieran colores el volumen saldría
         // plano). Las placas van a verde fieltro para cortar el bloque dorado.
@@ -471,17 +470,10 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
                     { BodyMaterial, BodyRetint },
                     { AccentMaterial, AccentRetint },
                 },
-                Props = new List<BossPropSpec>
-                {
-                    new BossPropSpec
-                    {
-                        PrefabPath = ChipsBoxPropPath,
-                        Name = ChipsBoxPropName,
-                        LocalPosition = ChipsBoxLocalPosition,
-                        LocalEuler = ChipsBoxLocalEuler,
-                        LocalScale = ChipsBoxLocalScale,
-                    },
-                },
+                // Vacío por decisión de arte: el jefe va pelado. Va explícito y no ausente para que
+                // se lea que es una decisión — el wrapper se reconstruye entero en cada build, así
+                // que cualquier prop que vuelva acá vuelve también a todos los prefabs guardados.
+                Props = new List<BossPropSpec>(),
             };
         }
 
@@ -492,7 +484,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         /// <list type="number">
         /// <item>Gate de las Comisiones (50% HP) → <c>Once → SpawnReinforcements ×2</c>.</item>
         /// <item>La persecución.</item>
-        /// <item>El ciclo de ataque: pegado a vos, <c>Alternate[mandoble, empujón]</c>.</item>
+        /// <item>El ataque: cobra el cañonazo marcado, o <c>Alternate[mandoble, empujón]</c> si te
+        /// tiene pegado, o marca un 3×3 donde estés si camina y no llega.</item>
         /// <item>Las monedas de la sala, cada <see cref="CoinRainEveryNRounds"/> rondas.</item>
         /// <item>La caja: vence las monedas que nadie levantó, de a una por turno.</item>
         /// </list>
@@ -535,23 +528,78 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         }
 
         /// <summary>
-        /// El ciclo de ataque, con el gate de rango <b>por fuera</b> del <c>Alternate</c>.
+        /// El ataque del turno, que es uno de tres y nunca dos: cobrar el cañonazo que marcó, o
+        /// pegar si lo tiene pegado, o marcar uno nuevo si camina y no llega.
         /// </summary>
         /// <remarks>
+        /// <para>
+        /// El gate de marca pendiente va por fuera del de rango para que <b>cobrar sea el ataque del
+        /// turno</b>: suelto, un jugador que se le acerca con la marca puesta comería el cañonazo y
+        /// el mandoble en el mismo turno.
+        /// </para>
+        /// <para>
         /// <c>AINode_Alternate</c> avanza el índice ANTES de tickear y no lo devuelve si el hijo
         /// falla, así que con los golpes auto-gateados por rango cada turno que el jefe pasa
-        /// caminando le quemaría un turno del ciclo. Con el <c>If</c> afuera el índice sólo avanza en
-        /// los turnos en que pega.
+        /// caminando le quemaría un turno del ciclo. Con los <c>If</c> afuera el índice sólo avanza
+        /// en los turnos en que pega.
+        /// </para>
         /// </remarks>
         public static AINode_If BuildAttackGate(HazardDefinitionSO chip = null) => new AINode_If
         {
-            TargetSelector = new TargetSelector_AlwaysPlayer(),
-            Conditions = new List<BasePreCondition>
+            TargetSelector = new TargetSelector_Self(),
+            Conditions = new List<BasePreCondition> { new PcOwnerHasPendingTelegraph() },
+            Then = BuildSlamExecute(),
+            Else = new AINode_If
             {
-                new PcTargetInRange { Range = MeleeRange, Metric = DistanceMetric.Manhattan },
+                TargetSelector = new TargetSelector_AlwaysPlayer(),
+                Conditions = new List<BasePreCondition>
+                {
+                    new PcTargetInRange { Range = MeleeRange, Metric = DistanceMetric.Manhattan },
+                },
+                Then = BuildAttackCycle(chip),
+                Else = BuildSlamMark(),
             },
-            Then = BuildAttackCycle(chip),
-            Else = new AINode_Wait(),
+        };
+
+        /// <summary>
+        /// El aviso del cañonazo: marca el 3×3 sobre la casilla del jugador y no pega este turno.
+        /// </summary>
+        /// <remarks>
+        /// <para>
+        /// <c>IgnoreLineOfSight</c>: arquea por encima. Con el filtro puesto, el área promediaba
+        /// <b>5.46 de 9</b> casillas y en el 13.7% de las posiciones quedaba vacía —ahí el nodo
+        /// falla y el jefe pierde el turno sin que nada lo explique—, casi todo por las cajas
+        /// fuertes y por la regla de no cortar esquinas del LoS, que borra diagonales sueltas y se
+        /// lee como un bug del cuadrado. Las cajas siguen siendo cobertura de lo que importa: frenan
+        /// el tumbo del empujón.
+        /// </para>
+        /// <para>
+        /// <c>KeepSquareWhole</c>: contra una pared el cuadrado se corre hacia adentro en vez de
+        /// salir mordido. En una esquina llegaba a marcar 3 casillas.
+        /// </para>
+        /// </remarks>
+        public static AINode_TelegraphMark BuildSlamMark() => new AINode_TelegraphMark
+        {
+            Shape = ThreatShape.SquareAroundPlayer,
+            Size = SlamRadius,
+            Damage = SlamDamage,
+            Kind = AttackKind.BasicAttack,
+            IgnoreLineOfSight = true,
+            KeepSquareWhole = true,
+            IntentLabelKey = AIIntentTextKeys.CashierSlam,
+            IntentLabelFallback = "Cañonazo",
+            WindupFeedbackId = BossFeedbackIds.CajeroAimAnim,
+        };
+
+        /// <summary>
+        /// El disparo: cobra lo que marcó el turno pasado, con el gesto ranged del rig — el único de
+        /// sus tres triggers que ningún otro tiempo usa.
+        /// </summary>
+        public static AINode_ExecuteTelegraph BuildSlamExecute() => new AINode_ExecuteTelegraph
+        {
+            WindupFeedbackId = BossFeedbackIds.CajeroShotAnim,
+            IntentLabelKey = AIIntentTextKeys.CashierSlamDue,
+            IntentLabelFallback = "Cañonazo",
         };
 
         /// <summary>
@@ -758,7 +806,9 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
                 Archetype = EnemyArchetype.Melee,
                 Pattern = AttackPatternKind.ContactAdjacent,
                 Timing = AttackTiming.Instant,
-                Notes = "Mandoble y empujón alternados a distancia 1; lluvia de monedas; caja fuerte; refuerzos (Comisión).",
+                Notes = "Mandoble y empujón alternados a distancia 1; fuera de alcance marca un " +
+                        "3×3 sobre el jugador y lo cobra al turno siguiente; lluvia de monedas; " +
+                        "caja fuerte; refuerzos (Comisión).",
             };
         }
 
@@ -927,7 +977,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
 
             Debug.Log($"[CajeroAssetBuilder] '{EnemyId(data)}' actualizado en '{EnemyAssetPath}' " +
                       $"(ficha: {BaseHP} HP, mandoble {HeavyDamage} y empujón {ShoveDamage} + " +
-                      $"{ShovePushTiles} casillas, alcance {MeleeRange}, camina {ChaseSteps}; " +
+                      $"{ShovePushTiles} casillas, alcance {MeleeRange}, camina {ChaseSteps}, " +
+                      $"cañonazo {SlamDamage} en {2 * SlamRadius + 1}×{2 * SlamRadius + 1}; " +
                       $"monedas: {CoinsPerRain} cada {CoinRainEveryNRounds} rondas de " +
                       $"{ChipValue}g + {ChipCount} por empujón con el " +
                       $"{ShoveRefundPercent:P0} del {ShoveTaxPercent:P0} cobrado " +

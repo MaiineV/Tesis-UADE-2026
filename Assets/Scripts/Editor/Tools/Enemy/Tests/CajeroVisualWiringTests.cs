@@ -153,22 +153,14 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             Assert.Greater(body.g, body.b);
         }
 
+        /// <summary>Los props salieron por decisión de arte. El guard va acá porque el wrapper se
+        /// reconstruye entero en cada build: un prop que vuelva al spec se repone solo en el prefab
+        /// guardado y pisa la edición hecha a mano.</summary>
         [Test]
-        public void Spec_CarriesTheChipTrayProp_ScaledDownToStayOnItsTile()
+        public void Spec_CarriesNoProps_TheBossGoesBare()
         {
-            var spec = CajeroAssetBuilder.BuildWrapperSpec();
-
-            Assert.AreEqual(1, spec.Props.Count, "Un solo prop: la caja de fichas.");
-            var prop = spec.Props[0];
-
-            Assert.AreEqual(CajeroAssetBuilder.ChipsBoxPropPath, prop.PrefabPath);
-            Assert.AreEqual(CajeroAssetBuilder.ChipsBoxPropName, prop.Name);
-            Assert.AreEqual(0f, prop.LocalPosition.y, 0.001f,
-                "La caja apoya en el mismo plano que los pies del jefe.");
-            Assert.AreNotEqual(0f, prop.LocalPosition.x,
-                "La caja va a un costado, no dentro de la silueta.");
-            Assert.Less(prop.LocalScale.x, 1f,
-                "A escala 1 la caja ocupa un tile entero y se mete en la casilla vecina.");
+            CollectionAssert.IsEmpty(CajeroAssetBuilder.BuildWrapperSpec().Props,
+                "Volvió un prop al spec del Cajero.");
         }
 
         [Test]
@@ -248,15 +240,14 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         }
 
         [Test]
-        public void Wrapper_ParentsTheChipTrayBesideTheBoss()
+        public void Wrapper_HangsNothingButItsArt()
         {
-            var tray = _wrapper.transform.Find(CajeroAssetBuilder.ChipsBoxPropName);
+            var extras = _wrapper.transform.Cast<Transform>()
+                .Select(c => c.name)
+                .Where(n => n != "Art")
+                .ToList();
 
-            Assert.IsNotNull(tray, $"Falta el prop '{CajeroAssetBuilder.ChipsBoxPropName}'.");
-            Assert.Greater(tray.GetComponentsInChildren<Renderer>(true).Length, 0,
-                "La caja quedó sin renderers: ¿se instanció el prefab equivocado?");
-            Assert.AreEqual(CajeroAssetBuilder.ChipsBoxLocalPosition.x, tray.localPosition.x, 0.001f);
-            Assert.AreEqual(CajeroAssetBuilder.ChipsBoxLocalScale.x, tray.localScale.x, 0.001f);
+            CollectionAssert.IsEmpty(extras, "El wrapper colgó algo que no es el arte del jefe.");
         }
 
         [Test]
@@ -347,8 +338,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                 "El rebuild cambió el GUID: ED_Boss_Cajero.VisualPrefab quedaría en null.");
             Assert.AreEqual(1, second.GetComponents<EntityPawn>().Length,
                 "El rebuild duplicó componentes.");
-            Assert.AreEqual(1, CountNamed(second.transform, CajeroAssetBuilder.ChipsBoxPropName),
-                "El rebuild duplicó la caja de fichas.");
+            Assert.AreEqual(0, CountNamed(second.transform, "ChipsBox"),
+                "El rebuild volvió a colgar la caja de fichas.");
         }
 
         [Test]

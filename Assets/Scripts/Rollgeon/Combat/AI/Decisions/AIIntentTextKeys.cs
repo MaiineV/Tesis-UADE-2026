@@ -36,6 +36,15 @@ namespace Rollgeon.Combat.AI.Decisions
         /// <summary>Lo que le queda a una moneda antes de que la caja se la lleve.</summary>
         public const string CashierVault = "intent.cashier_vault";
 
+        /// <summary>El reloj de las monedas resumido en el panel del jefe, no en el de cada moneda.</summary>
+        public const string CashierCoins = "intent.cashier_coins";
+
+        /// <summary>El turno en que avisa el 3×3. Key propia: el aviso y el cobro dicen cosas distintas.</summary>
+        public const string CashierSlam = "intent.cashier_slam";
+
+        /// <summary>El turno en que lo cobra, con el área ya congelada.</summary>
+        public const string CashierSlamDue = "intent.cashier_slam_due";
+
         /// <summary>La marca telegrafiada ya congelada, leída por el nodo que la cobra.</summary>
         public const string Telegraph = "intent.telegraph";
 
@@ -48,7 +57,7 @@ namespace Rollgeon.Combat.AI.Decisions
         public static readonly string[] All =
         {
             Ignite, BurnRoom, RangedShot, BombField, BombBlast, Telegraph, Attack, Leaves,
-            CashierShove, CashierVault,
+            CashierShove, CashierVault, CashierCoins, CashierSlam, CashierSlamDue,
         };
 
         /// <summary>
@@ -76,6 +85,9 @@ namespace Rollgeon.Combat.AI.Decisions
             Attack => string.Empty,
             CashierShove => "Te empuja <b>{1}</b> casillas y te cobra parte del oro que lleves encima.",
             CashierVault => string.Empty,
+            CashierCoins => "La caja se lleva una por turno; quedan <b>{1}</b> en el piso.",
+            CashierSlam => "Marca un área de 3×3 donde estés parado y la cobra al turno siguiente.",
+            CashierSlamDue => "Cae en el área marcada, no donde estés.",
             Leaves => "Deja fuego: <b>{0}</b> al entrar, <b>{1}</b> por turno, {2} rondas.",
             _ => string.Empty,
         };

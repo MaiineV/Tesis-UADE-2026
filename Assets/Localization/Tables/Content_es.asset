@@ -2822,6 +2822,31 @@ MonoBehaviour:
     m_Localized: 
     m_Metadata:
       m_Items: []
+  - m_Id: 18452754435338240
+    m_Localized: Monedas venciendo
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18452754477281280
+    m_Localized: La caja se lleva una por turno; quedan <b>{1}</b> en el piso.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18452754477281281
+    m_Localized: "Ca\xF1onazo"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18452754477281282
+    m_Localized: "Marca un \xE1rea de 3\xD73 donde est\xE9s parado y la cobra al
+      turno siguiente."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18452754477281283
+    m_Localized: "Ca\xF1onazo"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18452754477281284
+    m_Localized: "Cae en el \xE1rea marcada, no donde est\xE9s."
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

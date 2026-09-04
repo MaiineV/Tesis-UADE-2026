@@ -261,12 +261,6 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         public const string DiceVisualPrefabPath = "Assets/Prefabs/Enemies/Bosses/PF_Obj_DadoCasa.prefab";
         public const string DicePortraitTexturePath = "Assets/Art/2D/Symbols/Sprites/Casino_0051.png";
 
-        /// <summary>El cubilete: la caja de dados de la mesa, a un costado de la torreta.</summary>
-        public const string CupPropPrefabPath = "Assets/Prefabs/Props/CajaDadosv01.prefab";
-
-        /// <summary>Estandarte a la espalda. Se saltea solo si el prop no cierra de tamaño.</summary>
-        public const string BannerPropPrefabPath = "Assets/Prefabs/Props/BanderaParedv01.prefab";
-
         public const string MaterialsFolder = BossVisualWrapperBuilder.DefaultMaterialsRoot + "/" + BossName;
 
         /// <summary>Nombre del hijo que envuelve el arte — el default de <see cref="BossWrapperSpec"/>.</summary>
@@ -284,12 +278,6 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         // como caja, no como dado. 0.8 deja aire alrededor y sigue siendo pickeable.
         public const float DiceTargetHeight = 0.8f;
         public const float DiceMaxWidth = 0.85f;
-
-        /// <summary>Alto del cubilete apoyado al lado suyo.</summary>
-        public const float CupHeight = 0.35f;
-
-        /// <summary>Alto del estandarte. Se rechaza el prop si para llegar hay que deformarlo.</summary>
-        public const float BannerHeight = 1.2f;
 
         private const float BossBarClearance = 0.6f;
         private const float DiceBarClearance = 0.3f;
@@ -387,7 +375,10 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         {
             var fit = BossArtFitter.Measure(BossArtPrefabPath, BossTargetHeight, BossMaxWidth, BossBarClearance);
 
-            var wrapper = BossVisualWrapperBuilder.BuildWrapper(BuildBossSpec(fit, BuildBossProps(fit)));
+            // Sin props por decisión de arte: la jefa va pelada. El wrapper se reconstruye
+            // entero en cada build, así que un prop que vuelva acá vuelve al prefab guardado.
+            var wrapper = BossVisualWrapperBuilder.BuildWrapper(
+                BuildBossSpec(fit, new List<BossPropSpec>()));
             if (wrapper == null) return null;
 
             BossArtFitter.Apply(BossVisualPrefabPath, fit);
@@ -467,83 +458,6 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
                 // bandeja apunta a un material que ya no existe en el proyecto).
             };
         }
-
-        /// <summary>
-        /// Props del jefe: el cubilete siempre, el estandarte sólo si el prop cierra de tamaño. Las
-        /// medidas salen de los bounds reales, así que un prop reexportado más grande no descoloca
-        /// nada — se recalcula en el próximo build.
-        /// </summary>
-        public static List<BossPropSpec> BuildBossProps(BossArtFitter.ArtFit fit)
-        {
-            var props = new List<BossPropSpec>();
-
-            if (BossArtFitter.TryMeasurePrefab(CupPropPrefabPath, out var cupBounds))
-                props.Add(BuildCupProp(fit, cupBounds));
-
-            if (BossArtFitter.TryMeasurePrefab(BannerPropPrefabPath, out var bannerBounds)
-                && TryBuildBannerProp(fit, bannerBounds, out var banner))
-            {
-                props.Add(banner);
-            }
-
-            return props;
-        }
-
-        /// <summary>
-        /// Cubilete apoyado en el piso y pegado al costado derecho del casco, sin meterse dentro.
-        /// </summary>
-        /// <remarks>
-        /// Las cuentas van contra los bordes de los bounds y no contra los extents porque ni el jefe
-        /// ni el prop tienen el pivot en el centro de su volumen: el de la caja de dados viene del
-        /// transform de la sala donde se autoró. Restando <c>min</c> / sumando <c>max</c> el prop
-        /// apoya y toca sin importar dónde caiga su pivot.
-        /// </remarks>
-        public static BossPropSpec BuildCupProp(BossArtFitter.ArtFit fit, Bounds cupBounds)
-        {
-            float scale = BossArtFitter.FitScale(cupBounds, CupHeight, maxWidth: CupHeight * 2f);
-            var scaled = BossArtFitter.ScaleBounds(cupBounds, scale);
-
-            return new BossPropSpec
-            {
-                PrefabPath = CupPropPrefabPath,
-                Name = "Cubilete",
-                LocalScale = Vector3.one * scale,
-                LocalPosition = new Vector3(
-                    fit.Bounds.max.x - scaled.min.x,
-                    -scaled.min.y,
-                    fit.Bounds.center.z - scaled.center.z),
-            };
-        }
-
-        /// <summary>
-        /// Estandarte a la espalda. Devuelve false — y no cuelga nada — si para llegar al alto
-        /// pedido hay que escalar el prop fuera de rango.
-        /// </summary>
-        public static bool TryBuildBannerProp(BossArtFitter.ArtFit fit, Bounds bannerBounds, out BossPropSpec prop)
-        {
-            prop = null;
-            if (bannerBounds.size.y <= Mathf.Epsilon) return false;
-
-            float raw = BannerHeight / bannerBounds.size.y;
-            if (raw < BossArtFitter.MinArtScale || raw > BossArtFitter.MaxArtScale) return false;
-
-            var scaled = BossArtFitter.ScaleBounds(bannerBounds, raw);
-
-            prop = new BossPropSpec
-            {
-                PrefabPath = BannerPropPrefabPath,
-                Name = "Estandarte",
-                LocalScale = Vector3.one * raw,
-
-                // -Z es la espalda: el arte mira a +Z (los cañones están en z positivo).
-                LocalPosition = new Vector3(
-                    fit.Bounds.center.x - scaled.center.x,
-                    -scaled.min.y,
-                    fit.Bounds.min.z - scaled.max.z),
-            };
-            return true;
-        }
-
 
         /// <summary>
         /// Deja el dado de la bandeja física en condiciones de ser un pawn de mesa.

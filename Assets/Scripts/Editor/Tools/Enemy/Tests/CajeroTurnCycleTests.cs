@@ -1,10 +1,12 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using NUnit.Framework;
 using Patterns;
 using Rollgeon.Combat.AI;
 using Rollgeon.Combat.AI.Decisions;
 using Rollgeon.Combat.Pipelines;
+using Rollgeon.Combat.Threat;
 using Rollgeon.Editor.Tools.Enemy.Builders;
 using Rollgeon.Grid;
 using Rollgeon.Tiles.Forced;
@@ -31,6 +33,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         private GridManager _grid;
         private SpyDamagePipeline _pipeline;
         private FakeForcedMovementService _forced;
+        private ThreatenedAreaService _threat;
         private Guid _boss;
         private Guid _player;
 
@@ -49,6 +52,11 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
 
             _forced = new FakeForcedMovementService();
             ServiceLocator.AddService<IForcedMovementService>(_forced, ServiceScope.Global);
+
+            // El real y no un fake: el cañonazo marca y cobra contra este servicio, y lo que
+            // se verifica acá es justamente el ida y vuelta entre los dos turnos.
+            _threat = new ThreatenedAreaService();
+            ServiceLocator.AddService<IThreatenedAreaService>(_threat, ServiceScope.Global);
 
             _boss = Guid.NewGuid();
             _player = Guid.NewGuid();
@@ -97,21 +105,106 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         {
             var gate = CajeroAssetBuilder.BuildAttackGate();
 
-            // Turno 1: lejos. El gate cae al Else (Wait) y el ciclo no llega a tickear.
+            // Turno 1: lejos. Marca el cañonazo y el ciclo no llega a tickear.
             Assert.IsTrue(_grid.Move(_player, AwayTile), "Fixture: el jugador tiene que poder alejarse.");
             gate.Tick(NewContext(0));
             Assert.IsEmpty(Damages(), "Pegó a distancia 3: los dos golpes son de contacto.");
 
+            // Turno 2: vuelve a pegarse. Cobrar la marca es el ataque del turno y falla porque el
+            // jugador ya no está en el área — pero tampoco toca el ciclo.
             Assert.IsTrue(_grid.Move(_player, GluedTile), "Fixture: el jugador tiene que poder volver.");
             gate.Tick(NewContext(1));
+            Assert.IsEmpty(Damages(), "Se salió del área marcada: el cañonazo no le cobra nada.");
+
+            gate.Tick(NewContext(2));
 
             CollectionAssert.AreEqual(new[] { CajeroAssetBuilder.HeavyDamage }, Damages(),
-                "El turno de caminata le gastó un lugar del ciclo: el primer golpe que conecta salió " +
-                "empujón en vez de mandoble. El If de rango tiene que quedar POR FUERA del Alternate.");
+                "Los turnos sin golpe le gastaron un lugar del ciclo: el primer golpe que conecta " +
+                "salió empujón en vez de mandoble. El If de rango tiene que quedar POR FUERA del " +
+                "Alternate, y el del cañonazo por fuera de los dos.");
+        }
+
+        /// <summary>El agujero que cierra el cañonazo: caminar y no llegar era un turno en el que no
+        /// pasaba absolutamente nada.</summary>
+        [Test]
+        public void OutOfReach_HeMarksAndCollectsIt_WhenThePlayerStaysPut()
+        {
+            var gate = CajeroAssetBuilder.BuildAttackGate();
+            Assert.IsTrue(_grid.Move(_player, AwayTile), "Fixture: el jugador tiene que poder alejarse.");
+
+            gate.Tick(NewContext(0));
+            Assert.IsEmpty(Damages(), "El aviso no pega: el jugador tiene su turno para salirse.");
+
+            gate.Tick(NewContext(1));
+
+            CollectionAssert.AreEqual(new[] { CajeroAssetBuilder.SlamDamage }, Damages(),
+                "Se quedó parado en el área marcada y no le cobró nada: el turno de caminata vuelve " +
+                "a ser un turno perdido.");
+        }
+
+        /// <summary>El bug de playtest: contra la pared el cuadrado salía mordido —en una esquina
+        /// llegaba a 3 casillas— y no había forma de leer qué estaba amenazado. <b>Esto sólo se
+        /// reproduce con un grafo real</b>: con el NavGraph vacío de la mayoría de los fixtures
+        /// <c>HasNode</c> contesta true a todo y no recorta nada.</summary>
+        [Test]
+        public void TheSlam_MarksAWholeSquare_EvenWithThePlayerAgainstTheWall()
+        {
+            var gate = CajeroAssetBuilder.BuildAttackGate();
+            var corner = new GridCoord(0, 0);
+            Assert.IsTrue(_grid.Move(_player, corner), "Fixture: el jugador tiene que llegar a la esquina.");
+
+            gate.Tick(NewContext(0));
+
+            Assert.IsTrue(_threat.TryPeek(_boss, out var area), "No marcó nada estando en la esquina.");
+
+            int whole = (2 * CajeroAssetBuilder.SlamRadius + 1) * (2 * CajeroAssetBuilder.SlamRadius + 1);
+            Assert.AreEqual(whole, area.Tiles.Count,
+                "El cuadrado salió mordido contra la pared en vez de correrse hacia adentro.");
+            CollectionAssert.Contains(area.Tiles.ToList(), corner,
+                "Se corrió tanto que el jugador quedó fuera del área que se centra en él.");
+        }
+
+        /// <summary>Un cañonazo arquea. Con el filtro de visión puesto, lo que se interponga le come
+        /// casillas al cuadrado —y en el 13.7% de las posiciones lo dejaba vacío, o sea el jefe
+        /// perdía el turno de marca sin que nada lo explicara.</summary>
+        [Test]
+        public void TheSlam_IgnoresWhatBlocksHisView_BecauseItArcs()
+        {
+            var gate = CajeroAssetBuilder.BuildAttackGate();
+            Assert.IsTrue(_grid.Move(_player, AwayTile), "Fixture: el jugador tiene que poder alejarse.");
+
+            // Justo en la línea entre los dos, como una caja fuerte de la sala real.
+            _grid.Register(Guid.NewGuid(), new GridCoord(BossTile.X + 1, BossTile.Y));
+
+            gate.Tick(NewContext(0));
+
+            Assert.IsTrue(_threat.TryPeek(_boss, out var area), "No marcó nada con algo en el medio.");
+
+            int whole = (2 * CajeroAssetBuilder.SlamRadius + 1) * (2 * CajeroAssetBuilder.SlamRadius + 1);
+            Assert.AreEqual(whole, area.Tiles.Count,
+                "Volvió el recorte por línea de visión: el cuadrado se lee roto y a veces no marca nada.");
+        }
+
+        /// <summary>Salirse del 3×3 lo anula entero: no hay daño reducido por quedar al borde.</summary>
+        [Test]
+        public void TheSlam_MissesCompletely_WhenThePlayerStepsOutOfTheMarkedArea()
+        {
+            var gate = CajeroAssetBuilder.BuildAttackGate();
+            Assert.IsTrue(_grid.Move(_player, AwayTile), "Fixture: el jugador tiene que poder alejarse.");
+            gate.Tick(NewContext(0));
+
+            // Cuatro filas arriba: fuera del 3×3 centrado en AwayTile y fuera de contacto.
+            Assert.IsTrue(_grid.Move(_player, new GridCoord(AwayTile.X, AwayTile.Y - 4)),
+                "Fixture: el jugador tiene que poder esquivar.");
+            gate.Tick(NewContext(1));
+
+            Assert.IsEmpty(Damages(),
+                "Cobró fuera del área: el aviso deja de ser una decisión y pasa a ser un impuesto.");
         }
 
         /// <summary>Un <c>Failed</c> acá abortaría el Sequence del turno y se llevaría las monedas, la
-        /// caja y la persecución: el jefe se quedaría clavado justo en los turnos que camina.</summary>
+        /// caja y la persecución: el jefe se quedaría clavado justo en los turnos que camina. Ahora
+        /// el Succeeded sale de haber marcado el cañonazo, no de un <c>Wait</c>.</summary>
         [Test]
         public void AttackGate_SucceedsOutOfRange_SoTheRestOfTheTurnStillRuns()
         {

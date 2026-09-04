@@ -2735,6 +2735,30 @@ MonoBehaviour:
     m_Key: intent.cashier_vault.desc
     m_Metadata:
       m_Items: []
+  - m_Id: 18452754435338240
+    m_Key: intent.cashier_coins.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18452754477281280
+    m_Key: intent.cashier_coins.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18452754477281281
+    m_Key: intent.cashier_slam.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18452754477281282
+    m_Key: intent.cashier_slam.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18452754477281283
+    m_Key: intent.cashier_slam_due.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18452754477281284
+    m_Key: intent.cashier_slam_due.desc
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:
