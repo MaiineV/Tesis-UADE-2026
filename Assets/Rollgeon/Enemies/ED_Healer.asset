@@ -1128,10 +1128,13 @@ MonoBehaviour:
       Data: 
     - Name: MaxSteps
       Entry: 7
-      Data: 58|Rollgeon.Combat.AI.Readers.AIConstantInt, Rollgeon
-    - Name: Value
+      Data: 58|Rollgeon.Combat.AI.Readers.AIReadSelfStat, Rollgeon
+    - Name: Stat
       Entry: 3
-      Data: 3
+      Data: 2
+    - Name: UseModified
+      Entry: 5
+      Data: true
     - Name: 
       Entry: 8
       Data: 
@@ -2109,10 +2112,13 @@ MonoBehaviour:
       Data: 
     - Name: MaxSteps
       Entry: 7
-      Data: 108|Rollgeon.Combat.AI.Readers.AIConstantInt, Rollgeon
-    - Name: Value
+      Data: 108|Rollgeon.Combat.AI.Readers.AIReadSelfStat, Rollgeon
+    - Name: Stat
       Entry: 3
-      Data: 3
+      Data: 2
+    - Name: UseModified
+      Entry: 5
+      Data: true
     - Name: 
       Entry: 8
       Data: 
