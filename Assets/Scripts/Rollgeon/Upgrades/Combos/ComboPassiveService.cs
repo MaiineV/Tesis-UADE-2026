@@ -323,11 +323,15 @@ namespace Rollgeon.Upgrades.Combos
             var passives = GetPassivesFor(payload.ComboId);
             if (passives.Count == 0) return;
 
+            // Fix#0081: el preview dispara antes del OnRollResolved de esta tirada — las
+            // caras vigentes viajan en el payload; _lastFinalRoll es solo fallback legacy.
+            var faces = payload.DiceResult ?? _lastFinalRoll;
+
             var effectCtx = new EffectContext
             {
                 SourceGuid = payload.SourceGuid,
-                DiceResult = _lastFinalRoll,
-                ComboResult = ComboDetectionResult.Match(payload.BaseDamage, _lastFinalRoll?.Count ?? 0,
+                DiceResult = faces,
+                ComboResult = ComboDetectionResult.Match(payload.BaseDamage, faces?.Count ?? 0,
                     payload.DynamicBonus),
             };
 

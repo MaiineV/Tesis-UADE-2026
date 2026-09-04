@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Tile_Spikes_Cajero
   m_EditorClassIdentifier: Rollgeon::Rollgeon.Tiles.SpecialTileDefinitionSO
   TileId: TILE_SPIKES_CAJERO
-  DisplayName: Pinchos de la Caja
+  DisplayName: Pinchos del Cajero
   TileType: 0
   Triggers: 33
   Category: 0
@@ -28,8 +28,8 @@ MonoBehaviour:
   ComboDamageBonus: 0
   MoveRangeBonus: 0
   DefaultDurationRounds: 0
-  DisarmOnTrigger: 1
-  RearmOnRoundWrap: 1
+  DisarmOnTrigger: 0
+  RearmOnRoundWrap: 0
   OwnerBossImmune: 1
   TelegraphPayload: {fileID: 0}
   TelegraphRounds: 1

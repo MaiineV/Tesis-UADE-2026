@@ -199,6 +199,33 @@ namespace Rollgeon.Combat.AI.Tests
                 "habría causado el jugador por pasar el mouse.");
         }
 
+        /// <summary>Con cuatro jefes cobrando marcas, la key genérica los deja a todos diciendo
+        /// "Golpe marcado" con la descripción vacía.</summary>
+        [Test]
+        public void ExecuteTelegraph_ConKeyAutorada_UsaLaSuyaYNoLaGenerica()
+        {
+            _threat.Mark(_boss, new[] { new GridCoord(2, 0) }, damage: 28, AttackKind.BasicAttack);
+            var execute = new AINode_ExecuteTelegraph
+            {
+                IntentLabelKey = "intent.test_slam_due",
+                IntentLabelFallback = "Cañonazo",
+            };
+
+            Assert.IsTrue(execute.TryDescribeIntent(Context(), out var intent));
+            Assert.AreEqual("intent.test_slam_due", intent.LabelKey);
+            Assert.AreEqual("Cañonazo", intent.LabelFallback);
+        }
+
+        [Test]
+        public void ExecuteTelegraph_SinKeyAutorada_SigueUsandoLaGenerica()
+        {
+            _threat.Mark(_boss, new[] { new GridCoord(2, 0) }, damage: 25, AttackKind.BasicAttack);
+
+            Assert.IsTrue(new AINode_ExecuteTelegraph().TryDescribeIntent(Context(), out var intent));
+            Assert.AreEqual(AIIntentTextKeys.Telegraph, intent.LabelKey,
+                "Los jefes que no autoran nada tienen que anunciarse igual que siempre.");
+        }
+
         [Test]
         public void ExecuteTelegraph_SinMarca_NoPrometeNada()
         {
@@ -337,14 +364,33 @@ namespace Rollgeon.Combat.AI.Tests
                 .GetField(field, System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
                 .SetValue(target, value);
 
+        /// <summary>El nodo que ANUNCIA sigue callado por default: ancla su forma al tickear y detrás
+        /// de la fuga, un paso posterior del árbol puede descartarla en el mismo turno, y una forma
+        /// dispersa consumiría el azar del turno real sólo para dibujar un preview. Quien la
+        /// describe es el nodo que la consume, leyéndola ya congelada.</summary>
         [Test]
-        public void TelegraphMark_NoDescribeIntencion()
+        public void TelegraphMark_SinKeyAutorada_NoDescribeIntencion()
         {
-            Assert.IsFalse(typeof(IAIIntentNode).IsAssignableFrom(typeof(AINode_TelegraphMark)),
-                "El nodo que ANUNCIA no puede describirse: ancla su forma al tickear y detrás de " +
-                "la fuga, un paso posterior del árbol puede descartarla en el mismo turno, y una " +
-                "forma dispersa consumiría el azar del turno real sólo para dibujar un preview. " +
-                "Lo describe el nodo que la consume, leyéndola ya congelada.");
+            Assert.IsFalse(((IAIIntentNode)ConeMark()).TryDescribeIntent(Context(), out _),
+                "El aviso volvió a hablar sin que nadie lo autore: los cuatro jefes que lo usan " +
+                "ganan una tarjeta que promete una forma que todavía no existe.");
+        }
+
+        /// <summary>La excepción: el jefe en cuyo turno marcar ES la acción, que si no deja el panel
+        /// vacío. Aun autorado no promete casillas.</summary>
+        [Test]
+        public void TelegraphMark_ConKeyAutorada_DescribeElGolpeSinCasillas()
+        {
+            var mark = ConeMark();
+            mark.Damage = 28;
+            mark.IntentLabelKey = "intent.test_slam";
+            mark.IntentLabelFallback = "Cañonazo";
+
+            Assert.IsTrue(((IAIIntentNode)mark).TryDescribeIntent(Context(), out var intent));
+            Assert.AreEqual("intent.test_slam", intent.LabelKey);
+            Assert.AreEqual(28, intent.Damage);
+            CollectionAssert.IsEmpty(intent.Tiles,
+                "Todavía te queda un turno para moverte: prometer casillas ahora es una estimación.");
         }
 
         [Test]

@@ -452,8 +452,8 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 5531899817985
-    m_Localized: "Este dado no suma da\xF1o, pero cada vez que participa en un combo
-      genera +2 de oro."
+    m_Localized: "Cuando participa en un combo, este dado no suma da\xF1o y genera
+      +2 de oro."
     m_Metadata:
       m_Items: []
   - m_Id: 5531899817986
@@ -519,8 +519,8 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 5531899818001
-    m_Localized: "Al sacar el m\xE1ximo, este dado aporta el doble de da\xF1o. Con
-      cualquier otra cara aporta la mitad."
+    m_Localized: "Cuando participa en un combo: si saca el m\xE1ximo aporta el doble
+      de da\xF1o; con cualquier otra cara aporta la mitad."
     m_Metadata:
       m_Items: []
   - m_Id: 5531975315456
@@ -951,8 +951,8 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 13919417973649410
-    m_Localized: "Te tira lejos y te llena el piso de monedas. Las que no levant\xE1s
-      a tiempo se las lleva \xE9l, y cada una lo cura."
+    m_Localized: "Te tira lejos y te saca oro, y parte de esa plata cae al piso.
+      La que no levant\xE1s a tiempo se pierde."
     m_Metadata:
       m_Items: []
   - m_Id: 13919417973649411
@@ -1478,8 +1478,8 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 17593280027881472
-    m_Localized: "Pega m\xE1s fuerte cuanto m\xE1s oro llev\xE1s. Las fichas que
-      dej\xE1s vencer se las queda."
+    m_Localized: "Te tira tres casillas y te cobra oro en cada empuj\xF3n. Lo que
+      dejes vencer en el piso lo perd\xE9s."
     m_Metadata:
       m_Items: []
   - m_Id: 17593280027881473
@@ -1528,11 +1528,11 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 17593280027881484
-    m_Localized: La banca retiene
+    m_Localized: La banca no espera
     m_Metadata:
       m_Items: []
   - m_Id: 17593280027881485
-    m_Localized: "El oro que dej\xE1s vencer se lo queda la banca."
+    m_Localized: "Lo que dej\xE1s vencer en el piso se pierde."
     m_Metadata:
       m_Items: []
   - m_Id: 17593280027881486
@@ -1654,8 +1654,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 17593280044658693
-    m_Localized: "Pisala y cobr\xE1s su valor. La que vence se la queda la banca
-      \u2014 y lo cura."
+    m_Localized: "Pisala y cobr\xE1s su valor. La que vence se pierde."
     m_Metadata:
       m_Items: []
   - m_Id: 17593280044658694
@@ -1696,8 +1695,8 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 17593280044658703
-    m_Localized: "Se desarman al pisarlos y se rearman solos. Duelen bastante m\xE1s
-      que los comunes."
+    m_Localized: "Cobran cada vez que los cruz\xE1s: no se gastan. Duelen bastante
+      m\xE1s que los comunes."
     m_Metadata:
       m_Items: []
   - m_Id: 17593280048852992
@@ -2876,94 +2875,46 @@ MonoBehaviour:
     m_Localized: 6+ vida
     m_Metadata:
       m_Items: []
-  - m_Id: 18492291566190592
-    m_Localized: "Baluarte m\xF3vil"
+  - m_Id: 18490583970410496
+    m_Localized: "Empuj\xF3n"
     m_Metadata:
       m_Items: []
-  - m_Id: 18492291612327936
-    m_Localized: "Por cada casilla que recorr\xE9s, gan\xE1s 1 de escudo (m\xE1x.
-      6 por turno)."
+  - m_Id: 18490584037519360
+    m_Localized: Te empuja <b>{1}</b> casillas y te cobra parte del oro que lleves
+      encima.
     m_Metadata:
       m_Items: []
-  - m_Id: 18500349075832832
-    m_Localized: Torbellino
+  - m_Id: 18490584037519361
+    m_Localized: Se la lleva la caja
     m_Metadata:
       m_Items: []
-  - m_Id: 18500349096804352
-    m_Localized: "Al tirar el dado de Movimiento, todos los enemigos se teletransportan
-      a casillas al azar y te mov\xE9s +2."
+  - m_Id: 18490584037519362
+    m_Localized: 
     m_Metadata:
       m_Items: []
-  - m_Id: 18500350317346816
-    m_Localized: Incendiario
+  - m_Id: 18490584037519363
+    m_Localized: Monedas venciendo
     m_Metadata:
       m_Items: []
-  - m_Id: 18500350317346817
-    m_Localized: "Cada casilla que recorr\xE9s queda en llamas 2 turnos: los enemigos
-      que entran o empiezan su turno ah\xED reciben 3 de da\xF1o."
+  - m_Id: 18490584037519364
+    m_Localized: La caja se lleva una por turno; quedan <b>{1}</b> en el piso.
     m_Metadata:
       m_Items: []
-  - m_Id: 18500351370117120
-    m_Localized: "Rastro t\xF3xico"
+  - m_Id: 18490584037519365
+    m_Localized: "Ca\xF1onazo"
     m_Metadata:
       m_Items: []
-  - m_Id: 18500351370117121
-    m_Localized: "Cada casilla que recorr\xE9s deja un rastro t\xF3xico 2 turnos:
-      el primer enemigo que entra queda envenenado 2 turnos."
+  - m_Id: 18490584037519366
+    m_Localized: "Marca un \xE1rea de 3\xD73 donde est\xE9s parado y la cobra al
+      turno siguiente."
     m_Metadata:
       m_Items: []
-  - m_Id: 18500352418693120
-    m_Localized: Carga
+  - m_Id: 18490584037519367
+    m_Localized: "Ca\xF1onazo"
     m_Metadata:
       m_Items: []
-  - m_Id: 18500352418693121
-    m_Localized: "Por cada casilla que recorr\xE9s, +1 de da\xF1o base hasta el final
-      del turno."
-    m_Metadata:
-      m_Items: []
-  - m_Id: 18500353429520384
-    m_Localized: "Paso et\xE9reo"
-    m_Metadata:
-      m_Items: []
-  - m_Id: 18500353429520385
-    m_Localized: "Atraves\xE1s unidades al moverte. No pod\xE9s terminar el movimiento
-      sobre una."
-    m_Metadata:
-      m_Items: []
-  - m_Id: 18500354306129920
-    m_Localized: Sendero de espinas
-    m_Metadata:
-      m_Items: []
-  - m_Id: 18500354306129921
-    m_Localized: "Cada casilla que recorr\xE9s deja Espinas 1 turno: el primer enemigo
-      que entra recibe 2 de da\xF1o y su movimiento termina."
-    m_Metadata:
-      m_Items: []
-  - m_Id: 18503278809759744
-    m_Localized: Llamas de Incendiario
-    m_Metadata:
-      m_Items: []
-  - m_Id: 18503278818148352
-    m_Localized: "Casilla en llamas dejada por el jugador. Los enemigos que entran
-      o empiezan su turno aqu\xED reciben da\xF1o."
-    m_Metadata:
-      m_Items: []
-  - m_Id: 18503278822342656
-    m_Localized: "Rastro t\xF3xico"
-    m_Metadata:
-      m_Items: []
-  - m_Id: 18503278822342657
-    m_Localized: "Rastro t\xF3xico dejado por el jugador. El primer enemigo que entra
-      queda envenenado."
-    m_Metadata:
-      m_Items: []
-  - m_Id: 18503278822342658
-    m_Localized: Espinas del sendero
-    m_Metadata:
-      m_Items: []
-  - m_Id: 18503278822342659
-    m_Localized: "Espinas dejadas por el jugador. El primer enemigo que entra recibe
-      da\xF1o y su movimiento termina."
+  - m_Id: 18490584037519368
+    m_Localized: "Cae en el \xE1rea marcada, no donde est\xE9s."
     m_Metadata:
       m_Items: []
   references:

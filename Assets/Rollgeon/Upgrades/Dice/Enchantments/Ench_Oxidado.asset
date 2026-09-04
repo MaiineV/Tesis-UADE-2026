@@ -29,8 +29,8 @@ MonoBehaviour:
       Data: Oxidado
     - Name: _description
       Entry: 1
-      Data: "Este dado no suma da\xF1o, pero cada vez que participa en un combo genera
-        +2 de oro."
+      Data: "Cuando participa en un combo, este dado no suma da\xF1o y genera +2
+        de oro."
     - Name: _icon
       Entry: 6
       Data: 
@@ -84,7 +84,7 @@ MonoBehaviour:
       Data: 4|Rollgeon.Upgrades.Dice.ComboFilter, Rollgeon
     - Name: Mode
       Entry: 3
-      Data: 4
+      Data: 1
     - Name: ComboIds
       Entry: 7
       Data: 5|System.Collections.Generic.List`1[[System.String, mscorlib]], mscorlib
@@ -473,31 +473,31 @@ MonoBehaviour:
   _faceFilter:
     rid: -2
   _triggers:
-  - rid: 7465468544398131265
-  - rid: 7465468544398131266
+  - rid: 7496091044072391047
+  - rid: 7496091044072391048
   _capabilities:
-  - rid: 7465468544398131267
+  - rid: 7496091044072391049
   references:
     version: 2
     RefIds:
     - rid: -2
       type: {class: , ns: , asm: }
-    - rid: 7465468544398131265
+    - rid: 7496091044072391047
       type: {class: ExecuteEffectsOnDiceEvent, ns: Rollgeon.Upgrades.Dice.Triggers, asm: Rollgeon}
       data:
         Event: 3
         Filter:
-          Mode: 4
+          Mode: 1
           ComboIds: []
         RequireCarrierParticipates: 1
         Effects:
         - Label: Effect Group
           PreConditions: []
           Effects:
-          - rid: 7465468544398131268
+          - rid: 7496091044072391050
           TargetSelector:
             rid: -2
-    - rid: 7465468544398131266
+    - rid: 7496091044072391048
       type: {class: ExecuteEffectsOnDiceEvent, ns: Rollgeon.Upgrades.Dice.Triggers, asm: Rollgeon}
       data:
         Event: 5
@@ -509,13 +509,13 @@ MonoBehaviour:
         - Label: Effect Group
           PreConditions: []
           Effects:
-          - rid: 7465468544398131269
+          - rid: 7496091044072391051
           TargetSelector:
             rid: -2
-    - rid: 7465468544398131267
+    - rid: 7496091044072391049
       type: {class: CapCursed, ns: Rollgeon.Upgrades.Dice, asm: Rollgeon}
       data: 
-    - rid: 7465468544398131268
+    - rid: 7496091044072391050
       type: {class: EffMutateCarrierFace, ns: Rollgeon.Upgrades.Dice.Effects, asm: Rollgeon}
       data:
         Selection:
@@ -540,8 +540,8 @@ MonoBehaviour:
           AutoResolve: 0
           AutoAccept: 1
         _delta:
-          rid: 7465468544398131270
-    - rid: 7465468544398131269
+          rid: 7496091044072391052
+    - rid: 7496091044072391051
       type: {class: EffModifyGold, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
       data:
         Selection:
@@ -567,13 +567,13 @@ MonoBehaviour:
           AutoAccept: 1
         Operation: 0
         _amount:
-          rid: 7465468544398131271
+          rid: 7496091044072391053
         _failChainIfInsufficient: 1
-    - rid: 7465468544398131270
+    - rid: 7496091044072391052
       type: {class: ReadCarrierRollDelta, ns: Rollgeon.Upgrades.Dice.Readers, asm: Rollgeon}
       data:
         Op: 3
-    - rid: 7465468544398131271
+    - rid: 7496091044072391053
       type: {class: ReadConstantInt, ns: Rollgeon.Effects.Readers, asm: Rollgeon}
       data:
         Value: 2

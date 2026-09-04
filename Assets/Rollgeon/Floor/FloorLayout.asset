@@ -54,6 +54,7 @@ MonoBehaviour:
       Max: 1
     Pool:
     - {fileID: 11400000, guid: 32d4f3001b74d8d4d9a76f74a12b45f4, type: 2}
+    - {fileID: 11400000, guid: 217e0bd547af4374999f4b413511c792, type: 2}
   - Type: 5
     Count:
       Mode: 0

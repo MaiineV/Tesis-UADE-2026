@@ -32,8 +32,17 @@ namespace Rollgeon.Combat.Cashier
         /// <summary><c>true</c> —y limpia el flag— si <paramref name="entityGuid"/> recibió daño desde la última consulta.</summary>
         bool ConsumeDamageTaken(Guid entityGuid);
 
-        /// <summary>Guarda <paramref name="percent"/> (0..1) del oro del jugador en la caja de <paramref name="ownerGuid"/> y devuelve cuánto guardó (0 si el jugador está seco o no hay economía).</summary>
-        int CollectTax(Guid ownerGuid, float percent);
+        /// <summary>
+        /// Le cobra al jugador <paramref name="percent"/> (0..1) del oro que lleve encima y devuelve
+        /// cuánto le sacó (0 si está seco o no hay economía). Nunca cobra menos de
+        /// <paramref name="minimum"/>, salvo que al jugador le quede menos que eso: entonces cobra
+        /// lo que haya.
+        /// </summary>
+        /// <param name="refundOnDeath">
+        /// Con <c>true</c> lo cobrado entra a la caja de <paramref name="ownerGuid"/>, y matarlo se
+        /// lo devuelve entero al jugador. Con <c>false</c> la plata sale del juego.
+        /// </param>
+        int CollectTax(Guid ownerGuid, float percent, int minimum = 0, bool refundOnDeath = true);
 
         void SetChipValueMultiplier(int multiplier);
 
@@ -42,12 +51,15 @@ namespace Rollgeon.Combat.Cashier
 
         /// <summary>
         /// Paga <paramref name="value"/> cuando el hazard se dispare; si expira sin cobrarse no paga
-        /// a nadie, y si el que la pisa es su dueño tampoco. Levantar una ficha también soborna.
+        /// a nadie, y si el que la pisa es su dueño tampoco.
         /// </summary>
         void RegisterChip(Guid hazardInstanceId, int value, Guid ownerGuid);
 
         /// <summary>Valor de una ficha viva, o 0 si ese id no es una ficha del Cajero.</summary>
         int GetChipValue(Guid hazardInstanceId);
+
+        /// <summary>Monedas con el reloj corriendo. Lo lee <c>CoinClockCurseSO</c> para mostrar la tarjeta sólo cuando hay algo que perder.</summary>
+        int ChipsOnFloor { get; }
 
         /// <summary>Último escalón que el jefe resolvió al marcar, tal cual lo va a pegar. <c>null</c> antes de la primera marca.</summary>
         CashierTierSnapshot? LastTier { get; }

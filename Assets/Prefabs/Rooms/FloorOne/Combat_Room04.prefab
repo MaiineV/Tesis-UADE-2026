@@ -177,6 +177,7 @@ MonoBehaviour:
   EnemySets:
   - {fileID: 11400000, guid: 74c004a30b6148a44ac284ea910d377a, type: 2}
   - {fileID: 11400000, guid: 74c004a30b6148a44ac284ea910d377a, type: 2}
+  - {fileID: 11400000, guid: bd09322156bff014eb7ea6072e3fec09, type: 2}
   SetTierWeights: []
 --- !u!1 &1243341517869317661
 GameObject:
@@ -4320,6 +4321,7 @@ MonoBehaviour:
   EnemySets:
   - {fileID: 11400000, guid: 74c004a30b6148a44ac284ea910d377a, type: 2}
   - {fileID: 11400000, guid: bd09322156bff014eb7ea6072e3fec09, type: 2}
+  - {fileID: 11400000, guid: 17f155b9990d4874e8f38f2eda8a961f, type: 2}
   SetTierWeights: []
 --- !u!1 &8717734928713740649
 GameObject:
@@ -4428,6 +4430,7 @@ MonoBehaviour:
   EnemySets:
   - {fileID: 11400000, guid: bd09322156bff014eb7ea6072e3fec09, type: 2}
   - {fileID: 11400000, guid: 2de77bd68f3190f48ae82e94a0141e10, type: 2}
+  - {fileID: 11400000, guid: 51332d7277c9fb44386741043c8f321d, type: 2}
   SetTierWeights: []
 --- !u!1 &9164651964538120661
 GameObject:

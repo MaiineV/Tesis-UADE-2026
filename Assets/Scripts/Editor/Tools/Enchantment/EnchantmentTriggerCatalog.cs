@@ -40,7 +40,7 @@ namespace Rollgeon.Editor.Tools.Enchantment
             /// <summary>
             /// Cualquier selección jugable, Número Alto incluido (setea
             /// <c>Filter.Mode = AnyIncludingHigherNumber</c>). Para propiedades del dado
-            /// (Oxidado no suma nunca), no para condiciones de combo.
+            /// (Invertido, Enfiestado), no para condiciones de combo.
             /// </summary>
             public readonly bool IncludesHigherNumber;
 

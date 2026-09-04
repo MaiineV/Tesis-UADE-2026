@@ -2775,84 +2775,44 @@ MonoBehaviour:
     m_Key: ench.vampiro.lock
     m_Metadata:
       m_Items: []
-  - m_Id: 18492291566190592
-    m_Key: ench.baluarte_movil.name
+  - m_Id: 18490583970410496
+    m_Key: intent.cashier_shove.name
     m_Metadata:
       m_Items: []
-  - m_Id: 18492291612327936
-    m_Key: ench.baluarte_movil.desc
+  - m_Id: 18490584037519360
+    m_Key: intent.cashier_shove.desc
     m_Metadata:
       m_Items: []
-  - m_Id: 18500349075832832
-    m_Key: ench.torbellino.name
+  - m_Id: 18490584037519361
+    m_Key: intent.cashier_vault.name
     m_Metadata:
       m_Items: []
-  - m_Id: 18500349096804352
-    m_Key: ench.torbellino.desc
+  - m_Id: 18490584037519362
+    m_Key: intent.cashier_vault.desc
     m_Metadata:
       m_Items: []
-  - m_Id: 18500350317346816
-    m_Key: ench.incendiario.name
+  - m_Id: 18490584037519363
+    m_Key: intent.cashier_coins.name
     m_Metadata:
       m_Items: []
-  - m_Id: 18500350317346817
-    m_Key: ench.incendiario.desc
+  - m_Id: 18490584037519364
+    m_Key: intent.cashier_coins.desc
     m_Metadata:
       m_Items: []
-  - m_Id: 18500351370117120
-    m_Key: ench.rastro_toxico.name
+  - m_Id: 18490584037519365
+    m_Key: intent.cashier_slam.name
     m_Metadata:
       m_Items: []
-  - m_Id: 18500351370117121
-    m_Key: ench.rastro_toxico.desc
+  - m_Id: 18490584037519366
+    m_Key: intent.cashier_slam.desc
     m_Metadata:
       m_Items: []
-  - m_Id: 18500352418693120
-    m_Key: ench.carga.name
+  - m_Id: 18490584037519367
+    m_Key: intent.cashier_slam_due.name
     m_Metadata:
       m_Items: []
-  - m_Id: 18500352418693121
-    m_Key: ench.carga.desc
-    m_Metadata:
-      m_Items: []
-  - m_Id: 18500353429520384
-    m_Key: ench.paso_etereo.name
-    m_Metadata:
-      m_Items: []
-  - m_Id: 18500353429520385
-    m_Key: ench.paso_etereo.desc
-    m_Metadata:
-      m_Items: []
-  - m_Id: 18500354306129920
-    m_Key: ench.sendero_de_espinas.name
-    m_Metadata:
-      m_Items: []
-  - m_Id: 18500354306129921
-    m_Key: ench.sendero_de_espinas.desc
-    m_Metadata:
-      m_Items: []
-  - m_Id: 18503278809759744
-    m_Key: tile.fire_incendiario.name
-    m_Metadata:
-      m_Items: []
-  - m_Id: 18503278818148352
-    m_Key: tile.fire_incendiario.desc
-    m_Metadata:
-      m_Items: []
-  - m_Id: 18503278822342656
-    m_Key: tile.poison_rastro.name
-    m_Metadata:
-      m_Items: []
-  - m_Id: 18503278822342657
-    m_Key: tile.poison_rastro.desc
-    m_Metadata:
-      m_Items: []
-  - m_Id: 18503278822342658
-    m_Key: tile.spikes_sendero.name
-    m_Metadata:
-      m_Items: []
-  - m_Id: 18503278822342659
-    m_Key: tile.spikes_sendero.desc
+  - m_Id: 18490584037519368
+    m_Key: intent.cashier_slam_due.desc
     m_Metadata:
       m_Items: []
   m_Metadata:

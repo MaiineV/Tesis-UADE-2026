@@ -448,8 +448,8 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 5531899817985
-    m_Localized: This die adds no damage, but each time it takes part in a combo
-      it generates +2 gold.
+    m_Localized: When it takes part in a combo, this die adds no damage and generates
+      +2 gold.
     m_Metadata:
       m_Items: []
   - m_Id: 5531899817986
@@ -515,8 +515,8 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 5531899818001
-    m_Localized: On its maximum this die deals double damage. On any other face it
-      deals half.
+    m_Localized: 'When it takes part in a combo: on its maximum it deals double damage;
+      on any other face it deals half.'
     m_Metadata:
       m_Items: []
   - m_Id: 5531975315456
@@ -945,8 +945,8 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 13919417973649410
-    m_Localized: Throws you clear and litters the floor with coins. The ones you
-      don't grab in time he takes back, and each one heals him.
+    m_Localized: Throws you clear and takes your gold, and some of it lands on the
+      floor. Whatever you don't grab in time is gone.
     m_Metadata:
       m_Items: []
   - m_Id: 13919417973649411
@@ -1456,7 +1456,8 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 17593280027881472
-    m_Localized: Hits harder the more gold you carry. Chips you let expire, he keeps.
+    m_Localized: Throws you three tiles and charges you gold on every shove. Whatever
+      you let expire on the floor is lost.
     m_Metadata:
       m_Items: []
   - m_Id: 17593280027881473
@@ -1505,11 +1506,11 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 17593280027881484
-    m_Localized: The Bank Keeps
+    m_Localized: The Bank Doesn't Wait
     m_Metadata:
       m_Items: []
   - m_Id: 17593280027881485
-    m_Localized: Gold you let expire, the bank keeps.
+    m_Localized: Whatever you let expire on the floor is lost.
     m_Metadata:
       m_Items: []
   - m_Id: 17593280027881486
@@ -1631,8 +1632,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 17593280044658693
-    m_Localized: "Step on it to collect its value. One that expires, the bank keeps
-      \u2014 and it heals him."
+    m_Localized: Step on it to collect its value. One that expires is lost.
     m_Metadata:
       m_Items: []
   - m_Id: 17593280044658694
@@ -1673,8 +1673,8 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 17593280044658703
-    m_Localized: Disarm when stepped on and rearm on their own. They hurt a fair
-      bit more than the common ones.
+    m_Localized: They charge every time you cross them - they never wear out. They
+      hurt a fair bit more than the common ones.
     m_Metadata:
       m_Items: []
   - m_Id: 17593280048852992
@@ -2867,90 +2867,44 @@ MonoBehaviour:
     m_Localized: 6+ HP
     m_Metadata:
       m_Items: []
-  - m_Id: 18492291566190592
-    m_Localized: Mobile Bulwark
+  - m_Id: 18490583970410496
+    m_Localized: Shove
     m_Metadata:
       m_Items: []
-  - m_Id: 18492291612327936
-    m_Localized: Gain 1 shield per tile you walk (max 6 per turn).
+  - m_Id: 18490584037519360
+    m_Localized: Shoves you <b>{1}</b> tiles and takes a cut of the gold you carry.
     m_Metadata:
       m_Items: []
-  - m_Id: 18500349075832832
-    m_Localized: Whirlwind
+  - m_Id: 18490584037519361
+    m_Localized: The Vault Takes It
     m_Metadata:
       m_Items: []
-  - m_Id: 18500349096804352
-    m_Localized: When you roll the movement die, every enemy teleports to a random
-      tile and you move +2.
+  - m_Id: 18490584037519362
+    m_Localized: 
     m_Metadata:
       m_Items: []
-  - m_Id: 18500350317346816
-    m_Localized: Incendiary
+  - m_Id: 18490584037519363
+    m_Localized: Coins Expiring
     m_Metadata:
       m_Items: []
-  - m_Id: 18500350317346817
-    m_Localized: 'Every tile you walk burns for 2 turns: enemies entering or starting
-      their turn there take 3 damage.'
+  - m_Id: 18490584037519364
+    m_Localized: The vault takes one per turn; <b>{1}</b> left on the floor.
     m_Metadata:
       m_Items: []
-  - m_Id: 18500351370117120
-    m_Localized: Toxic Trail
+  - m_Id: 18490584037519365
+    m_Localized: Cannon Shot
     m_Metadata:
       m_Items: []
-  - m_Id: 18500351370117121
-    m_Localized: 'Every tile you walk leaves a toxic trail for 2 turns: the first
-      enemy entering gets poisoned for 2 turns.'
+  - m_Id: 18490584037519366
+    m_Localized: "Marks a 3\xD73 area where you stand and fires on it next turn."
     m_Metadata:
       m_Items: []
-  - m_Id: 18500352418693120
-    m_Localized: Charge
+  - m_Id: 18490584037519367
+    m_Localized: Cannon Shot
     m_Metadata:
       m_Items: []
-  - m_Id: 18500352418693121
-    m_Localized: Gain +1 base damage per tile you walk until the end of the turn.
-    m_Metadata:
-      m_Items: []
-  - m_Id: 18500353429520384
-    m_Localized: Ethereal Step
-    m_Metadata:
-      m_Items: []
-  - m_Id: 18500353429520385
-    m_Localized: You move through units. You cannot end your movement on one.
-    m_Metadata:
-      m_Items: []
-  - m_Id: 18500354306129920
-    m_Localized: Thorn Path
-    m_Metadata:
-      m_Items: []
-  - m_Id: 18500354306129921
-    m_Localized: 'Every tile you walk leaves Thorns for 1 turn: the first enemy entering
-      takes 2 damage and stops moving.'
-    m_Metadata:
-      m_Items: []
-  - m_Id: 18503278809759744
-    m_Localized: Incendiary Flames
-    m_Metadata:
-      m_Items: []
-  - m_Id: 18503278818148352
-    m_Localized: Burning tile left by the player. Enemies entering or starting their
-      turn here take damage.
-    m_Metadata:
-      m_Items: []
-  - m_Id: 18503278822342656
-    m_Localized: Toxic Trail
-    m_Metadata:
-      m_Items: []
-  - m_Id: 18503278822342657
-    m_Localized: Toxic trail left by the player. The first enemy entering gets poisoned.
-    m_Metadata:
-      m_Items: []
-  - m_Id: 18503278822342658
-    m_Localized: Path Thorns
-    m_Metadata:
-      m_Items: []
-  - m_Id: 18503278822342659
-    m_Localized: Thorns left by the player. The first enemy entering takes damage
-      and stops moving.
+  - m_Id: 18490584037519368
+    m_Localized: It lands on the marked area, not on where you are.
     m_Metadata:
       m_Items: []
   references:

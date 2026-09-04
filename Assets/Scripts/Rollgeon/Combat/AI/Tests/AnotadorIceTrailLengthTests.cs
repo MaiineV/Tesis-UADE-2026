@@ -181,7 +181,8 @@ namespace Rollgeon.Combat.AI.Tests
 
             public void Activate(HazardDefinitionSO definition) { }
 
-            public Guid Activate(HazardDefinitionSO definition, IEnumerable<GridCoord> tiles)
+            public Guid Activate(HazardDefinitionSO definition, IEnumerable<GridCoord> tiles,
+                                 Guid ownerGuid = default)
             {
                 if (definition == null || tiles == null) return Guid.Empty;
 

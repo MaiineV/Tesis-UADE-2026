@@ -29,8 +29,8 @@ MonoBehaviour:
       Data: Volatil
     - Name: _description
       Entry: 1
-      Data: "Al sacar el m\xE1ximo, este dado aporta el doble de da\xF1o. Con cualquier
-        otra cara aporta la mitad."
+      Data: "Cuando participa en un combo: si saca el m\xE1ximo aporta el doble de
+        da\xF1o; con cualquier otra cara aporta la mitad."
     - Name: _icon
       Entry: 6
       Data: 
@@ -84,7 +84,7 @@ MonoBehaviour:
       Data: 4|Rollgeon.Upgrades.Dice.ComboFilter, Rollgeon
     - Name: Mode
       Entry: 3
-      Data: 4
+      Data: 1
     - Name: ComboIds
       Entry: 7
       Data: 5|System.Collections.Generic.List`1[[System.String, mscorlib]], mscorlib
@@ -278,29 +278,29 @@ MonoBehaviour:
   _faceFilter:
     rid: -2
   _triggers:
-  - rid: 7465468544398131280
+  - rid: 7496091044072391054
   _capabilities: []
   references:
     version: 2
     RefIds:
     - rid: -2
       type: {class: , ns: , asm: }
-    - rid: 7465468544398131280
+    - rid: 7496091044072391054
       type: {class: ExecuteEffectsOnDiceEvent, ns: Rollgeon.Upgrades.Dice.Triggers, asm: Rollgeon}
       data:
         Event: 3
         Filter:
-          Mode: 4
+          Mode: 1
           ComboIds: []
         RequireCarrierParticipates: 1
         Effects:
         - Label: Effect Group
           PreConditions: []
           Effects:
-          - rid: 7465468544398131281
+          - rid: 7496091044072391055
           TargetSelector:
             rid: -2
-    - rid: 7465468544398131281
+    - rid: 7496091044072391055
       type: {class: EffMutateCarrierFace, ns: Rollgeon.Upgrades.Dice.Effects, asm: Rollgeon}
       data:
         Selection:
@@ -325,8 +325,8 @@ MonoBehaviour:
           AutoResolve: 0
           AutoAccept: 1
         _delta:
-          rid: 7465468544398131282
-    - rid: 7465468544398131282
+          rid: 7496091044072391056
+    - rid: 7496091044072391056
       type: {class: ReadCarrierRollDelta, ns: Rollgeon.Upgrades.Dice.Readers, asm: Rollgeon}
       data:
         Op: 5

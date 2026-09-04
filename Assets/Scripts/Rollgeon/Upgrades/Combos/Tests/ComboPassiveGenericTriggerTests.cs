@@ -313,6 +313,61 @@ namespace Rollgeon.Upgrades.Combos.Tests
             CollectionAssert.AreEqual(faces, trigger.Calls[0].Ctx.Effect.DiceResult);
         }
 
+        private sealed class RecordingComboMatchedTrigger : IOnComboPassiveMatchedTrigger
+        {
+            public readonly List<ComboPassiveContext> Calls = new List<ComboPassiveContext>();
+            public void OnComboMatched(ComboPassiveContext ctx) => Calls.Add(ctx);
+        }
+
+        [Test]
+        public void ComboMatched_UsesPayloadDiceResult_NotThePreviousResolvedRoll()
+        {
+            // Arrange — Fix#0081: el preview dispara ANTES del OnRollResolved de esta tirada;
+            // lo que el service cacheó es la acción anterior.
+            TriggerRunStart();
+            var trigger = new RecordingComboMatchedTrigger();
+            AddToRunState(MakePassive("p1", "combo.par", trigger));
+            EventManager.Trigger(EventName.OnRollResolved, Guid.NewGuid(),
+                (IReadOnlyList<int>)new List<int> { 1, 1, 1 });
+            var current = new List<int> { 4, 4, 6 };
+
+            // Act
+            TypedEvent<ComboMatchedPayload>.Raise(new ComboMatchedPayload
+            {
+                SourceGuid = Guid.NewGuid(),
+                ComboId = "combo.par",
+                BaseDamage = 10,
+                DiceResult = current,
+            });
+
+            // Assert
+            Assert.AreEqual(1, trigger.Calls.Count);
+            CollectionAssert.AreEqual(current, trigger.Calls[0].Effect.DiceResult);
+        }
+
+        [Test]
+        public void ComboMatched_PayloadWithoutDiceResult_FallsBackToLastResolvedRoll()
+        {
+            // Arrange — emisor legacy sin caras: se conserva el comportamiento viejo.
+            TriggerRunStart();
+            var trigger = new RecordingComboMatchedTrigger();
+            AddToRunState(MakePassive("p1", "combo.par", trigger));
+            var previous = new List<int> { 1, 1, 1 };
+            EventManager.Trigger(EventName.OnRollResolved, Guid.NewGuid(), (IReadOnlyList<int>)previous);
+
+            // Act
+            TypedEvent<ComboMatchedPayload>.Raise(new ComboMatchedPayload
+            {
+                SourceGuid = Guid.NewGuid(),
+                ComboId = "combo.par",
+                BaseDamage = 10,
+            });
+
+            // Assert
+            Assert.AreEqual(1, trigger.Calls.Count);
+            CollectionAssert.AreEqual(previous, trigger.Calls[0].Effect.DiceResult);
+        }
+
         [Test]
         public void DamageResolvedTypedEvent_PopulatesDamagePayload()
         {
