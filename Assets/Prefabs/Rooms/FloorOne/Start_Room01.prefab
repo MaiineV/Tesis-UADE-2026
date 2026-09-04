@@ -155,7 +155,6 @@ GameObject:
   m_Component:
   - component: {fileID: 6328570724190670655}
   - component: {fileID: 8111030931873427058}
-  - component: {fileID: 6616247621717009882}
   - component: {fileID: 2867537146888488354}
   - component: {fileID: 5336964536310563221}
   m_Layer: 0
@@ -203,21 +202,6 @@ MonoBehaviour:
   _meshClosed: {fileID: 6531042403954363869}
   _wallPlug: {fileID: 595992902658532138}
   _meshWallFill: {fileID: 3952005848670817403}
---- !u!114 &6616247621717009882
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 629644367849725670}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a2cfef84d4eec8c46ad4f5c70c9e5c70, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Rollgeon::Rollgeon.UI.Tooltips.HeroActionTooltipBinder
-  _slot: 4
-  _resolvePhase: 2
-  _onlyDuringCombat: 1
 --- !u!114 &2867537146888488354
 MonoBehaviour:
   m_ObjectHideFlags: 0

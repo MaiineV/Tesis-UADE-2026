@@ -1117,6 +1117,14 @@ MonoBehaviour:
     m_Localized: '{0}: +{1} de oro'
     m_Metadata:
       m_Items: []
+  - m_Id: 18643322647969792
+    m_Localized: Puerta forzable
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18643322681524224
+    m_Localized: "Pod\xE9s intentar abrirla con Forzar Puerta{0}."
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

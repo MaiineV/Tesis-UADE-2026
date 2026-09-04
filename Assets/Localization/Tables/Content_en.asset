@@ -2601,8 +2601,8 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 18278206983208967
-    m_Localized: A unique casino chip that hovers erratically. Attacks from the diagonals,
-      then quickly repositions to strike again from a new angle.
+    m_Localized: A different-colored casino chip that hovers erratically. Attacks
+      from the diagonals, then quickly repositions to strike again from a new angle.
     m_Metadata:
       m_Items: []
   - m_Id: 18278206983208968

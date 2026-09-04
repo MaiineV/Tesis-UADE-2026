@@ -354,6 +354,12 @@ namespace Rollgeon.EditorTools.Localization
                 "Bonus de objetos a tu tirada: +{0}",
                 "Item bonus to your roll: +{0}");
 
+            // Tooltip corto de la puerta en combate ({0} = " (Y)" con el hotkey vivo, o vacío).
+            Ui("door.forceable.title", "Puerta forzable", "Forceable door");
+            Ui("door.forceable.body",
+                "Podés intentar abrirla con Forzar Puerta{0}.",
+                "You can try to open it with Force Door{0}.");
+
             // Mecha de una bomba de sala en su tooltip de mundo.
             Ui("prop.tooltip.fuse", "Estalla en {0} turnos", "Explodes in {0} turns");
 
