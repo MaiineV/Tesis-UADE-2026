@@ -1651,6 +1651,11 @@ namespace Rollgeon.EditorTools.Localization
                 "lanza dañando todo lo que quede en esa línea.",
                 "Marks a line of tiles in front of it and, after a short delay, thrusts the spear " +
                 "forward, damaging anything caught in that line.");
+            // La regla del slot de debilidad del panel de enemigo — {0} combo, {1} multi.
+            Content("enemy.weakness.desc",
+                "Debilidad: los golpes con el combo {0} le hacen ×{1} de daño.",
+                "Weakness: hits with the {0} combo deal ×{1} damage.");
+
             // Reserva para Stackpot (torre de fichas), que aún no tiene asset.
             Boss("intent.sniper.chip_ring",
                 "Anillo de Fichas", "Chip Ring",

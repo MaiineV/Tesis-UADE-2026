@@ -115,8 +115,8 @@ namespace Rollgeon.UI.Screens
                 _heroNameLabel.text = LocalizedContent.Name(_selectedHero.EntityId, _selectedHero.DisplayName ?? "");
             if (_heroDescriptionLabel != null && _selectedHero != null)
                 _heroDescriptionLabel.text = LocalizedContent.Description(_selectedHero.EntityId, _selectedHero.Description ?? "");
-            if (_heroPortrait != null && _selectedHero != null && _selectedHero.Portrait != null)
-                _heroPortrait.sprite = _selectedHero.Portrait;
+            if (_heroPortrait != null && _selectedHero != null && _selectedHero.TurnOrderIcon != null)
+                _heroPortrait.sprite = _selectedHero.TurnOrderIcon;
 
             // Populate dice bag (builder o legacy)
             PopulateDiceBag();

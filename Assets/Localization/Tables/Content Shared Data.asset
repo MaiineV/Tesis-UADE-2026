@@ -2951,6 +2951,10 @@ MonoBehaviour:
     m_Key: intent.guardian.final_wager.desc
     m_Metadata:
       m_Items: []
+  - m_Id: 18628743662501888
+    m_Key: enemy.weakness.desc
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

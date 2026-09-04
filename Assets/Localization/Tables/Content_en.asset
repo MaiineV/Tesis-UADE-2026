@@ -3063,6 +3063,10 @@ MonoBehaviour:
       dealing heavy damage.
     m_Metadata:
       m_Items: []
+  - m_Id: 18628743662501888
+    m_Localized: "Weakness: hits with the {0} combo deal \xD7{1} damage."
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

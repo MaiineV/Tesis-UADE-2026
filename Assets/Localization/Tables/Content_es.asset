@@ -3076,6 +3076,10 @@ MonoBehaviour:
       adyacente, infligiendo da\xF1o pesado."
     m_Metadata:
       m_Items: []
+  - m_Id: 18628743662501888
+    m_Localized: "Debilidad: los golpes con el combo {0} le hacen \xD7{1} de da\xF1o."
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []
