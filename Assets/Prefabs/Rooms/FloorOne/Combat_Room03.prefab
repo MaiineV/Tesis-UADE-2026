@@ -549,6 +549,9 @@ Transform:
   - {fileID: 2782302632845541255}
   - {fileID: 8205538177039015411}
   - {fileID: 8872092252770208542}
+  - {fileID: 5959015241986234335}
+  - {fileID: 5332317161341919376}
+  - {fileID: 131045598486880588}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &5898699619738018492
@@ -824,14 +827,6 @@ MonoBehaviour:
         Y: 1
       Height: -0.00003245473
     - Coord:
-        X: 5
-        Y: 4
-      Height: -0.00003245473
-    - Coord:
-        X: 5
-        Y: 5
-      Height: -0.00003245473
-    - Coord:
         X: 1
         Y: 5
       Height: -0.00003245473
@@ -921,10 +916,6 @@ MonoBehaviour:
       Height: -0.00003245473
     - Coord:
         X: 2
-        Y: 4
-      Height: -0.00003245473
-    - Coord:
-        X: 4
         Y: 4
       Height: -0.00003245473
     - Coord:
@@ -2623,34 +2614,6 @@ MonoBehaviour:
       To:
         X: 5
         Y: 1
-      Cost: 1
-    - From:
-        X: 5
-        Y: 4
-      To:
-        X: 5
-        Y: 5
-      Cost: 1
-    - From:
-        X: 5
-        Y: 5
-      To:
-        X: 5
-        Y: 4
-      Cost: 1
-    - From:
-        X: 5
-        Y: 4
-      To:
-        X: 4
-        Y: 4
-      Cost: 1
-    - From:
-        X: 4
-        Y: 4
-      To:
-        X: 5
-        Y: 4
       Cost: 1
     - From:
         X: 1
@@ -15963,7 +15926,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e314d43e25d7ca44fa60a92045ee9c91, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Rollgeon::Rollgeon.GameCamera.WallOccluder
-  Direction: 5
+  Direction: 6
   ManualOverride: 0
   _renderers:
   - {fileID: 130251722831178548}
@@ -22207,6 +22170,96 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 897079557085885238, guid: 8f90cda41d089484cb7f0f103ed5b2a9, type: 3}
   m_PrefabInstance: {fileID: 4352290700909184536}
   m_PrefabAsset: {fileID: 0}
+--- !u!1001 &4389627362902701280
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 1711357143213522343}
+    m_Modifications:
+    - target: {fileID: 3923012682263187222, guid: beb8d9718de8b9b48afac131385f9b7a, type: 3}
+      propertyPath: m_Name
+      value: barrilv01
+      objectReference: {fileID: 0}
+    - target: {fileID: 4411987851551839660, guid: beb8d9718de8b9b48afac131385f9b7a, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 5.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 4411987851551839660, guid: beb8d9718de8b9b48afac131385f9b7a, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4411987851551839660, guid: beb8d9718de8b9b48afac131385f9b7a, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 5.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 4411987851551839660, guid: beb8d9718de8b9b48afac131385f9b7a, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: -0.00000004371139
+      objectReference: {fileID: 0}
+    - target: {fileID: 4411987851551839660, guid: beb8d9718de8b9b48afac131385f9b7a, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4411987851551839660, guid: beb8d9718de8b9b48afac131385f9b7a, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4411987851551839660, guid: beb8d9718de8b9b48afac131385f9b7a, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4411987851551839660, guid: beb8d9718de8b9b48afac131385f9b7a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4411987851551839660, guid: beb8d9718de8b9b48afac131385f9b7a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4411987851551839660, guid: beb8d9718de8b9b48afac131385f9b7a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 3923012682263187222, guid: beb8d9718de8b9b48afac131385f9b7a, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 7593322845547251228}
+  m_SourcePrefab: {fileID: 100100000, guid: beb8d9718de8b9b48afac131385f9b7a, type: 3}
+--- !u!4 &131045598486880588 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 4411987851551839660, guid: beb8d9718de8b9b48afac131385f9b7a, type: 3}
+  m_PrefabInstance: {fileID: 4389627362902701280}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1 &763995566806940662 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 3923012682263187222, guid: beb8d9718de8b9b48afac131385f9b7a, type: 3}
+  m_PrefabInstance: {fileID: 4389627362902701280}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &7593322845547251228
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 763995566806940662}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6862515384497d34091ba5713cfb79b7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Rollgeon::Rollgeon.Grid.TileMarker
+  Coord:
+    X: 5
+    Y: 5
+  Layer: 0
+  Footprint: {x: 1, y: 1, z: 1}
+  FootprintOffset: {x: 0, y: 0, z: 0}
+  Type: 2
+  IsBlocker: 1
 --- !u!1001 &4395592789160748500
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -36116,6 +36169,96 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 897079557085885238, guid: 8f90cda41d089484cb7f0f103ed5b2a9, type: 3}
   m_PrefabInstance: {fileID: 8035884287124545926}
   m_PrefabAsset: {fileID: 0}
+--- !u!1001 &8036721196574458483
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 1711357143213522343}
+    m_Modifications:
+    - target: {fileID: 3923012682263187222, guid: beb8d9718de8b9b48afac131385f9b7a, type: 3}
+      propertyPath: m_Name
+      value: barrilv01
+      objectReference: {fileID: 0}
+    - target: {fileID: 4411987851551839660, guid: beb8d9718de8b9b48afac131385f9b7a, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 4.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 4411987851551839660, guid: beb8d9718de8b9b48afac131385f9b7a, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4411987851551839660, guid: beb8d9718de8b9b48afac131385f9b7a, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 4.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 4411987851551839660, guid: beb8d9718de8b9b48afac131385f9b7a, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: -0.00000004371139
+      objectReference: {fileID: 0}
+    - target: {fileID: 4411987851551839660, guid: beb8d9718de8b9b48afac131385f9b7a, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4411987851551839660, guid: beb8d9718de8b9b48afac131385f9b7a, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4411987851551839660, guid: beb8d9718de8b9b48afac131385f9b7a, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4411987851551839660, guid: beb8d9718de8b9b48afac131385f9b7a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4411987851551839660, guid: beb8d9718de8b9b48afac131385f9b7a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4411987851551839660, guid: beb8d9718de8b9b48afac131385f9b7a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 3923012682263187222, guid: beb8d9718de8b9b48afac131385f9b7a, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 5192954318190663387}
+  m_SourcePrefab: {fileID: 100100000, guid: beb8d9718de8b9b48afac131385f9b7a, type: 3}
+--- !u!4 &5959015241986234335 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 4411987851551839660, guid: beb8d9718de8b9b48afac131385f9b7a, type: 3}
+  m_PrefabInstance: {fileID: 8036721196574458483}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1 &6483349919578590565 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 3923012682263187222, guid: beb8d9718de8b9b48afac131385f9b7a, type: 3}
+  m_PrefabInstance: {fileID: 8036721196574458483}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &5192954318190663387
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6483349919578590565}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6862515384497d34091ba5713cfb79b7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Rollgeon::Rollgeon.Grid.TileMarker
+  Coord:
+    X: 4
+    Y: 4
+  Layer: 0
+  Footprint: {x: 1, y: 1, z: 1}
+  FootprintOffset: {x: 0, y: 0, z: 0}
+  Type: 2
+  IsBlocker: 1
 --- !u!1001 &8106719162291025081
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -38060,6 +38203,96 @@ MeshRenderer:
 Transform:
   m_CorrespondingSourceObject: {fileID: 897079557085885238, guid: 8780a362dbcd7014d81aa5aa4ed42417, type: 3}
   m_PrefabInstance: {fileID: 8542348211701005041}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1001 &8591378970486191420
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 1711357143213522343}
+    m_Modifications:
+    - target: {fileID: 3923012682263187222, guid: beb8d9718de8b9b48afac131385f9b7a, type: 3}
+      propertyPath: m_Name
+      value: barrilv01
+      objectReference: {fileID: 0}
+    - target: {fileID: 4411987851551839660, guid: beb8d9718de8b9b48afac131385f9b7a, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 5.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 4411987851551839660, guid: beb8d9718de8b9b48afac131385f9b7a, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4411987851551839660, guid: beb8d9718de8b9b48afac131385f9b7a, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 4.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 4411987851551839660, guid: beb8d9718de8b9b48afac131385f9b7a, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: -0.00000004371139
+      objectReference: {fileID: 0}
+    - target: {fileID: 4411987851551839660, guid: beb8d9718de8b9b48afac131385f9b7a, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4411987851551839660, guid: beb8d9718de8b9b48afac131385f9b7a, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4411987851551839660, guid: beb8d9718de8b9b48afac131385f9b7a, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4411987851551839660, guid: beb8d9718de8b9b48afac131385f9b7a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4411987851551839660, guid: beb8d9718de8b9b48afac131385f9b7a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4411987851551839660, guid: beb8d9718de8b9b48afac131385f9b7a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 3923012682263187222, guid: beb8d9718de8b9b48afac131385f9b7a, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 8169348698310104355}
+  m_SourcePrefab: {fileID: 100100000, guid: beb8d9718de8b9b48afac131385f9b7a, type: 3}
+--- !u!1 &4705103379476609578 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 3923012682263187222, guid: beb8d9718de8b9b48afac131385f9b7a, type: 3}
+  m_PrefabInstance: {fileID: 8591378970486191420}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &8169348698310104355
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4705103379476609578}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6862515384497d34091ba5713cfb79b7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Rollgeon::Rollgeon.Grid.TileMarker
+  Coord:
+    X: 5
+    Y: 4
+  Layer: 0
+  Footprint: {x: 1, y: 1, z: 1}
+  FootprintOffset: {x: 0, y: 0, z: 0}
+  Type: 2
+  IsBlocker: 1
+--- !u!4 &5332317161341919376 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 4411987851551839660, guid: beb8d9718de8b9b48afac131385f9b7a, type: 3}
+  m_PrefabInstance: {fileID: 8591378970486191420}
   m_PrefabAsset: {fileID: 0}
 --- !u!1001 &8605762820717945756
 PrefabInstance:
