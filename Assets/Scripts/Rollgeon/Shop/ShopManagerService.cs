@@ -363,6 +363,8 @@ namespace Rollgeon.Shop
             {
                 case ItemSO item:
                     return item.WorldPrefab;
+                case Rollgeon.Upgrades.Combos.ComboPassiveSO passive:
+                    return passive.WorldPrefab;
                 default:
                     return null;
             }
