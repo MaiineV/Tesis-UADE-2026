@@ -164,6 +164,26 @@ Para otra clase: crear su `MovementDieSO`, asignarlo en `StartingMovementDie` y 
 - Primer encantamiento: **Baluarte móvil** (`ench.baluarte_movil`): `player.moved` →
   `EffAddShield` con `ReadTilesTraversed{6, +3}`. El escudo lo limpia `ShieldResetHandler`.
 
+### Los 7 encantamientos de Movimiento del GDD (todos autorados, categoría Movimiento)
+
+| Encantamiento | Disparador | Piezas | Desvíos vs GDD |
+|---|---|---|---|
+| Baluarte móvil | `player.moved` | `EffAddShield` + `ReadTilesTraversed{cap 6, +3/copia}` | — |
+| Carga | `player.moved` | `EffAddTemporaryModifier{Attack, ReadTilesTraversed}` (muere en `OnTurnFinished`) | — |
+| Incendiario | `player.moved` | `EffPlaceTrailTiles{Tile_Fire_Incendiario, 2 rondas, +1/copia}` (3 dmg al entrar / al empezar turno) | el daño no escala por copia |
+| Rastro tóxico | `player.moved` | `EffPlaceTrailTiles{Tile_Poison_Rastro, 2 rondas, +1/copia}` (veneno 2 turnos × 5, primer enemigo) | "2 acumulaciones" = 2 turnos; sin stacks reales |
+| Sendero de espinas | `player.moved` | `EffPlaceTrailTiles{Tile_Spikes_Sendero, 1 ronda, +1/copia}` (2 dmg, `EndsMovementOnEnter`) | el daño no escala por copia |
+| Paso etéreo | sin trigger | `CapEtherealMovement` → `EtherealMovementPolicy` (BFS/A* atraviesan unidades, nunca destino) | solo unidades; paredes bloquean |
+| Torbellino | `movement.die_rolled` | `EffTeleportEnemiesRandomly` + `EffAddTemporaryModifier{MoveRange +2, OnlyFirstCopy}` | dispara al tirar el dado (no en combos) |
+
+Infra agregada para esto: `EnchantmentHookEvent.MovementDieRolled` (+ `IOnMovementDieRolledTrigger`,
+suscripto a `OnMovementDieRolled`), `ScratchTriggerContext.Path/MovementDieFace`,
+`SpecialTileDefinitionSO.OwnerAndAlliesImmune/EndsMovementOnEnter` (el terminador de path y el
+motor de cadenas frenan sin deslizar), `IMovementService.GetReachableTilesFor(entity, …)` +
+`IMovementTraversalPolicy` (registrada por `DiceEnchantmentBootstrap`), `MovementLaneCopies`
+(stacking: solo la primera copia actúa). Los rastros se colocan con el jugador ya en destino:
+la celda de origen queda libre y recibe casilla; el destino no.
+
 ### Altar: carousel Ataque ↔ Movimiento
 
 `EnchantmentAltarView` gana `_attackSetRoot`, `_moveSetRoot`, `_moveDieSlot`, `_arrowLeft`,
@@ -186,7 +206,7 @@ Tuning en `EnchantmentAltarUiSettingsSO`: `SetSwitchDuration/Ease/SlideX`.
 - Throw manual 2D/3D del dado (anchor propio en `DiceThrow2DPresenter`).
 - Rig del DevConsole para el dado de Movimiento.
 - Fuente real de caras extra (diseño) y ofrecer el dado en el build screen.
-- Los otros 6 encantamientos de Movimiento del GDD (Torbellino, Incendiario, Rastro tóxico,
-  Carga, Paso etéreo, Sendero de espinas): Carga y Baluarte comparten `player.moved`.
+- Iconos de los 7 encantamientos de Movimiento (warning de auditoría aceptado); VFX propio para
+  las casillas de rastro (hoy reusan los visuales de fuego/veneno/pinchos).
 - `DiceBagView` (drawer de la bolsa) no lista el carril; el HUD del dado no muestra "+N caras".
 - Skin `DiceBoardType.Movement`; preview de rango en hover muestra la cara máxima.

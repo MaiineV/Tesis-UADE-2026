@@ -260,7 +260,7 @@ return "OK id=" + r.UpgradeId + " path=" + r.AssetPath;
 
 ### Elegir el disparador
 
-`EnchantmentHookEvent` tiene solo 8 miembros y todos funcionan — aca el enemigo no es un enum
+`EnchantmentHookEvent` tiene solo 9 miembros y todos funcionan — aca el enemigo no es un enum
 gigante como en items, es la **semantica**: `ComboMatched` es preview y re-dispara por toggle
 de hold (Paso 2.5). `EnchantmentTriggerCatalog` lleva esa trampa en el dato (`ScratchOnly`):
 

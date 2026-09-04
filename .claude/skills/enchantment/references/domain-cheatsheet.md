@@ -37,7 +37,8 @@ Description/Icon` (en `UpgradeSO`), `EditorSetCategory/FaceFilter/AllowedDiceTyp
 | `applied` | EnchantmentApplied | Una vez, al encantar el dado | — |
 | `turn.finished` | TurnFinished | Fin del turno del jugador | — |
 | `combat.started` | CombatStarted | Arranca un combate (sin tirada en el contexto) | Para resetear counters por dado (Racha) |
-| `player.moved` | PlayerMoved | El jugador camino por voluntad propia en combate (`EffMove`) | Solo tiene sentido en categoria `Movimiento` (dado de Movimiento); empujes/portales no cuentan; leer casillas con `ReadTilesTraversed` |
+| `player.moved` | PlayerMoved | El jugador camino por voluntad propia en combate (`EffMove`) | Solo tiene sentido en categoria `Movimiento` (dado de Movimiento); empujes/portales no cuentan; leer casillas con `ReadTilesTraversed`, el path viene en `ScratchTriggerContext.Path` |
+| `movement.die_rolled` | MovementDieRolled | El dado de Movimiento revelo su cara, ANTES de elegir destino | Solo `Movimiento`; un `+N` a MoveRange aca entra a ese mismo movimiento (Torbellino) |
 
 `Apply`/`Match`/`Describe` espejo de `ItemTriggerCatalog`. `Filter.Mode = None` en un hook de
 combo equivale a `AnyCombo` (asi lo trata el runtime y asi lo matchea el catalogo).
@@ -180,6 +181,21 @@ grant — solo la primera copia lee y cada copia extra sube el tope. Baluarte mo
 El escudo expira solo (`ShieldResetHandler`, al inicio del turno del dueño). Las caras extra del
 dado (`IDiceEnchantmentService.AddMovementDieFaces`, DevConsole `mdie faces <n>`) entran al set
 de caras que los `IFaceFilter` filtran.
+
+Piezas del dado de Movimiento (`Upgrades/Dice/Effects/`), todas con stacking via
+`MovementLaneCopies` (solo la primera copia actua; las extra escalan un parametro):
+- **`EffPlaceTrailTiles { Definition, DurationRounds, ExtraRoundsPerCopy, IncludeDestination }`** —
+  deja una `SpecialTileDefinitionSO` en cada celda ABANDONADA del path (Incendiario /
+  Rastro toxico / Sendero de espinas con `Tile_Fire_Incendiario` / `Tile_Poison_Rastro` /
+  `Tile_Spikes_Sendero`). Las definiciones usan `OwnerAndAlliesImmune` (el jugador no se quema con
+  su rastro) y `EndsMovementOnEnter` (espinas frenan al enemigo). Dano/veneno son fijos por
+  definicion: el stacking solo suma duracion (desvio data-only vs GDD).
+- **`EffAddTemporaryModifier { Stat: Attack|MoveRange, Amount|Reader, DurationTurns, OnlyFirstCopy }`** —
+  modificador `ModifierLifetime.Turns` que muere en el proximo `OnTurnFinished` (Carga: Attack ×
+  `ReadTilesTraversed`; Torbellino: +2 MoveRange en `movement.die_rolled`).
+- **`EffTeleportEnemiesRandomly`** — todos los enemigos a celdas libres alcanzables al azar (Torbellino).
+- **`CapEtherealMovement`** (capability, sin trigger) — Paso etereo: `EtherealMovementPolicy` hace
+  que BFS/A* del jugador atraviesen unidades (nunca como destino; paredes bloquean).
 
 ## API de alta (`Rollgeon.Editor.Tools.Enchantment`)
 
