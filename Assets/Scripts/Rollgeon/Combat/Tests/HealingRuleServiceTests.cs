@@ -76,10 +76,57 @@ namespace Rollgeon.Combat.Tests
         public void RunStart_ClearsRules()
         {
             _service.AddPassiveHealingBlock("ayuno");
+            _service.AddPotionHealMultiplier("ayuno", 0.5f);
 
             EventManager.Trigger(EventName.OnRunStart, Guid.NewGuid());
 
             Assert.IsFalse(_service.PassiveItemHealingBlocked);
+            Assert.AreEqual(1f, _service.PotionHealMultiplier, 0.0001f);
+            Assert.AreEqual(0, _service.PotionHealMultiplierSources.Count);
+        }
+
+        // ---- Multiplicador de la poción (Ayuno ×0.5) ----------------------------------
+
+        [Test]
+        public void Default_PotionHealMultiplierIsOne()
+        {
+            Assert.AreEqual(1f, _service.PotionHealMultiplier, 0.0001f);
+            Assert.AreEqual(0, _service.PotionHealMultiplierSources.Count);
+        }
+
+        [Test]
+        public void AddPotionHealMultiplier_MultipliesAcrossSources_RemoveRestores()
+        {
+            _service.AddPotionHealMultiplier("ayuno", 0.5f);
+            _service.AddPotionHealMultiplier("otro", 2f);
+            Assert.AreEqual(1f, _service.PotionHealMultiplier, 0.0001f);
+            Assert.AreEqual(0.5f, _service.PotionHealMultiplierSources["ayuno"], 0.0001f);
+
+            _service.RemovePotionHealMultiplier("otro");
+            Assert.AreEqual(0.5f, _service.PotionHealMultiplier, 0.0001f);
+
+            _service.RemovePotionHealMultiplier("ayuno");
+            Assert.AreEqual(1f, _service.PotionHealMultiplier, 0.0001f);
+        }
+
+        [Test]
+        public void AddPotionHealMultiplier_SameSourceTwice_ReplacesInsteadOfStacking()
+        {
+            _service.AddPotionHealMultiplier("ayuno", 0.5f);
+            _service.AddPotionHealMultiplier("ayuno", 0.5f);
+
+            Assert.AreEqual(0.5f, _service.PotionHealMultiplier, 0.0001f);
+        }
+
+        [Test]
+        public void AddPotionHealMultiplier_NonPositiveOrEmptySource_IsIgnored()
+        {
+            _service.AddPotionHealMultiplier("ayuno", 0f);
+            _service.AddPotionHealMultiplier("ayuno", -1f);
+            _service.AddPotionHealMultiplier("", 0.5f);
+
+            Assert.AreEqual(1f, _service.PotionHealMultiplier, 0.0001f);
+            Assert.AreEqual(0, _service.PotionHealMultiplierSources.Count);
         }
     }
 }

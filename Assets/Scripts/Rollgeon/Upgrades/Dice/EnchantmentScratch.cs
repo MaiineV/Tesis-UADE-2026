@@ -86,6 +86,26 @@ namespace Rollgeon.Upgrades.Dice
         public void RecordContribution(in ScratchContribution c)
             => (_journal ??= new List<ScratchContribution>(4)).Add(c);
 
+        // Lazy: null hasta el primer dado movido — casi ningún combo lo usa.
+        private List<int> _diceToMultiplier;
+
+        /// <summary>
+        /// Bag slots de los dados contribuyentes cuya cara sale de Σcaras (N) y entra al bono
+        /// aditivo de M (Fuente Mágica: "el dado más alto del combo suma su cara al
+        /// multiplicador, no al daño base"). El efecto solo marca el slot; mover la cara la
+        /// hace <c>PlayerComboDamage.Resolve</c>, así el desglose muestra el dado volando a M
+        /// en vez de entrar a N y restarse después. <c>null</c> = ninguno.
+        /// </summary>
+        public IReadOnlyList<int> DiceMovedToMultiplier => _diceToMultiplier;
+
+        /// <summary>Marca <paramref name="bagSlot"/> para que su cara cuente en M y no en N. Idempotente.</summary>
+        public void MoveDieToMultiplier(int bagSlot)
+        {
+            if (bagSlot < 0) return;
+            _diceToMultiplier ??= new List<int>(2);
+            if (!_diceToMultiplier.Contains(bagSlot)) _diceToMultiplier.Add(bagSlot);
+        }
+
         /// <summary>Aplica una operación sobre un recurso, acumulándola para el evento.</summary>
         public void Modify(ResourceTarget target, ResourceOperation op, int amount)
         {
@@ -104,6 +124,7 @@ namespace Rollgeon.Upgrades.Dice
             BonusShield = 0;
             _resources.Clear();
             _journal?.Clear();
+            _diceToMultiplier?.Clear();
         }
     }
 }

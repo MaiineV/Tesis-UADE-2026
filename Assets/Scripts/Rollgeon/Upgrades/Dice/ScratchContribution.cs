@@ -43,11 +43,21 @@ namespace Rollgeon.Upgrades.Dice
         /// <summary>Aporte ADITIVO al bono de M (ComboMultiplierBonus). 0 = neutro.</summary>
         public readonly float MultiplierBonusDelta;
 
-        // multiplierBonusDelta va último y opcional a propósito: los ctors posicionales de
-        // tests y los nombrados de PlayerComboDamage siguen compilando sin tocarse.
+        /// <summary>
+        /// Bag slot del dado contribuyente que esta fuente movió de N a M
+        /// (<see cref="EnchantmentScratch.MoveDieToMultiplier"/>, Fuente Mágica); -1 si no
+        /// movió ninguno. Una entrada por dado movido, con los demás canales en neutro: la UI
+        /// la usa para ponerle el icono de la fuente al dado que vuela a M.
+        /// </summary>
+        public readonly int MovedDieBagSlot;
+
+        // multiplierBonusDelta y movedDieBagSlot van últimos y opcionales a propósito: los
+        // ctors posicionales de tests y los nombrados de PlayerComboDamage siguen compilando
+        // sin tocarse.
         public ScratchContribution(ScratchSourceKind kind, string sourceId,
             UnityEngine.Object sourceAsset, int bagSlot, int bonusDelta,
-            float multiplierFactor, bool setBlock, float multiplierBonusDelta = 0f)
+            float multiplierFactor, bool setBlock, float multiplierBonusDelta = 0f,
+            int movedDieBagSlot = -1)
         {
             Kind = kind;
             SourceId = sourceId;
@@ -57,10 +67,12 @@ namespace Rollgeon.Upgrades.Dice
             MultiplierFactor = multiplierFactor;
             SetBlock = setBlock;
             MultiplierBonusDelta = multiplierBonusDelta;
+            MovedDieBagSlot = movedDieBagSlot;
         }
 
         public override string ToString()
-            => $"{Kind}:{SourceId} (+{BonusDelta}, ×{MultiplierFactor}, +M{MultiplierBonusDelta}{(SetBlock ? ", BLOCK" : "")})";
+            => $"{Kind}:{SourceId} (+{BonusDelta}, ×{MultiplierFactor}, +M{MultiplierBonusDelta}" +
+               $"{(SetBlock ? ", BLOCK" : "")}{(MovedDieBagSlot >= 0 ? $", slot{MovedDieBagSlot}→M" : "")})";
     }
 
     /// <summary>
@@ -74,18 +86,22 @@ namespace Rollgeon.Upgrades.Dice
         public readonly float Multiplier;
         public readonly float MultiplierBonus;
         public readonly bool Block;
+        /// <summary>Cantidad de dados movidos a M antes de la fuente (la lista solo crece).</summary>
+        public readonly int MovedDice;
 
-        private ScratchSnapshot(int bonus, float multiplier, float multiplierBonus, bool block)
+        private ScratchSnapshot(int bonus, float multiplier, float multiplierBonus, bool block,
+            int movedDice)
         {
             Bonus = bonus;
             Multiplier = multiplier;
             MultiplierBonus = multiplierBonus;
             Block = block;
+            MovedDice = movedDice;
         }
 
         public static ScratchSnapshot Of(EnchantmentScratch s)
             => new ScratchSnapshot(s.BonusComboDamage, s.ComboDamageMultiplier,
-                s.ComboMultiplierBonus, s.BlockComboDamage);
+                s.ComboMultiplierBonus, s.BlockComboDamage, s.DiceMovedToMultiplier?.Count ?? 0);
 
         public static void RecordDelta(EnchantmentScratch scratch, in ScratchSnapshot before,
             ScratchSourceKind kind, string sourceId, UnityEngine.Object sourceAsset, int bagSlot)
@@ -100,11 +116,20 @@ namespace Rollgeon.Upgrades.Dice
             float multBonusDelta = scratch.ComboMultiplierBonus - before.MultiplierBonus;
             bool setBlock = scratch.BlockComboDamage && !before.Block;
 
-            if (bonusDelta == 0 && Math.Abs(factor - 1f) < 1e-4f
-                && Math.Abs(multBonusDelta) < 1e-4f && !setBlock) return;
+            bool neutral = bonusDelta == 0 && Math.Abs(factor - 1f) < 1e-4f
+                           && Math.Abs(multBonusDelta) < 1e-4f && !setBlock;
+            if (!neutral)
+                scratch.RecordContribution(new ScratchContribution(
+                    kind, sourceId, sourceAsset, bagSlot, bonusDelta, factor, setBlock, multBonusDelta));
 
-            scratch.RecordContribution(new ScratchContribution(
-                kind, sourceId, sourceAsset, bagSlot, bonusDelta, factor, setBlock, multBonusDelta));
+            // Dados movidos a M por esta fuente: una entrada neutra por dado, para que el
+            // desglose le ponga el icono de la fuente al dado que vuela a M.
+            var moved = scratch.DiceMovedToMultiplier;
+            if (moved == null) return;
+            for (int i = before.MovedDice; i < moved.Count; i++)
+                scratch.RecordContribution(new ScratchContribution(
+                    kind, sourceId, sourceAsset, bagSlot: -1, bonusDelta: 0, multiplierFactor: 1f,
+                    setBlock: false, multiplierBonusDelta: 0f, movedDieBagSlot: moved[i]));
         }
     }
 }

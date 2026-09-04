@@ -270,7 +270,10 @@ namespace Rollgeon.UI.HUD.Breakdown
             float ramp = ConsumeStepRamp();
             var slot = _diceZone != null ? _diceZone.GetSlotView(step.BagSlot) : null;
             var from = ResolveDieAnchor(slot);
-            if (from == null || _breakdownView?.CounterN == null) { ApplyStep(step); onDone(); return; }
+            // Un dado movido a M (Fuente Mágica) vuela al multiplicador con el icono de la
+            // fuente que lo movió; el resto va a N sin icono.
+            var target = TargetCounter(step);
+            if (from == null || target == null) { ApplyStep(step); onDone(); return; }
 
             int idx = _dieIndex++; // local: los closures de abajo usan ESTE índice (pitch/juice)
 
@@ -278,10 +281,10 @@ namespace Rollgeon.UI.HUD.Breakdown
                 Tween.PunchScale(slot.transform, Vector3.one * 0.12f, D(0.12f * ramp), frequency: 1);
             slot?.SetContribution(null); // el label se "despega": desde acá vuela el valor
             if (slot != null) _juice?.OnDieLaunch(slot, idx);
-            _juice?.OnFlightDeparted(from, towardM: false, dieIndex: idx);
+            _juice?.OnFlightDeparted(from, TowardM(step), dieIndex: idx);
 
-            Fly(from, _breakdownView.CounterN.Anchor,
-                FormatAmount(step), null,
+            Fly(from, target.Anchor,
+                FormatAmount(step), BreakdownIconResolver.Resolve(step.SourceAsset),
                 D((_settings != null ? _settings.FlightSeconds : 0.32f) * ramp), Arc(), () =>
                 {
                     ApplyStep(step, idx);
