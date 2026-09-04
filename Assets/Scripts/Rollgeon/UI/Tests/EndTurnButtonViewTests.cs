@@ -391,6 +391,12 @@ namespace Rollgeon.UI.Tests
 
             public bool CanRequestReroll => false;
             public bool IsSelecting => false;
+            public bool IsAwaitingChoice => false;
+
+#pragma warning disable 67 // el fake nunca dispara la fase de eleccion
+            public event Action OnChoicePending;
+            public event Action OnChoiceResolved;
+#pragma warning restore 67
 
             public Rollgeon.Items.Active.ActiveItemBlock CanActivate()
                 => Rollgeon.Items.Active.ActiveItemBlock.None;

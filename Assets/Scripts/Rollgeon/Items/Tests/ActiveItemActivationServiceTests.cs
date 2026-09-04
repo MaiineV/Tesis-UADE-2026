@@ -46,6 +46,10 @@ namespace Rollgeon.Items.Tests
             _service = new ActiveItemActivationService(_equipped, _roller);
 
             Eff_Tag.Log.Clear();
+            Eff_CaptureRollContext.Last = null;
+            Eff_CaptureRollContext.LastItem = null;
+            Eff_CaptureRollContext.LastSourceItemId = null;
+            Pc_CapturePreCtx.LastEffect = null;
         }
 
         [TearDown]
@@ -447,8 +451,176 @@ namespace Rollgeon.Items.Tests
         }
 
         // ------------------------------------------------------------------
+        // Feature#0084: trigger context, SourceItemId, PreConditionContext.Effect
+        // ------------------------------------------------------------------
+
+        [Test]
+        public void test_accept_effectReceivesActiveItemRollTriggerContext_withFaceBandAndMagnitude()
+        {
+            // Arrange — Gradient para que Magnitude == Face (Bands/Binary la dejan en 0).
+            var item = NewGradientItem("item.gradient", DiceType.D6);
+            _roller.Next = 4;
+            _service.Confirm(selection: null);
+
+            // Act
+            _service.AcceptRoll();
+
+            // Assert
+            Assert.IsNotNull(Eff_CaptureRollContext.Last);
+            Assert.AreEqual(4, Eff_CaptureRollContext.Last.Face);
+            Assert.AreEqual(4, Eff_CaptureRollContext.Last.RawFace);
+            Assert.AreEqual(6, Eff_CaptureRollContext.Last.Faces);
+            Assert.AreEqual(4, Eff_CaptureRollContext.Last.Magnitude);
+            Assert.AreEqual(item, Eff_CaptureRollContext.LastItem);
+        }
+
+        [Test]
+        public void test_accept_setsSourceItemIdOnTheEffectContext()
+        {
+            // Arrange — roll=1 en D6 Bands cae en negativa: la captura vive ahi.
+            var item = NewCaptureItem("item.source", DiceType.D6);
+            _roller.Next = 1;
+            _service.Confirm(selection: null);
+
+            // Act
+            _service.AcceptRoll();
+
+            // Assert
+            Assert.AreEqual("item.source", Eff_CaptureRollContext.LastSourceItemId);
+        }
+
+        [Test]
+        public void test_accept_populatesPreConditionContextEffect()
+        {
+            // Arrange — la precondicion cuelga del grupo que va a correr (positiva, roll=6).
+            var item = NewItem("item.precheck", DiceType.D6);
+            item.OnPositiveBand.PreConditions.Add(new Pc_CapturePreCtx());
+            _roller.Next = 6;
+            _service.Confirm(selection: null);
+
+            // Act
+            _service.AcceptRoll();
+
+            // Assert
+            Assert.IsNotNull(Pc_CapturePreCtx.LastEffect, "PreConditionContext.Effect tiene que viajar");
+            Assert.IsInstanceOf<ActiveItemRollTriggerContext>(Pc_CapturePreCtx.LastEffect.TriggerContext);
+        }
+
+        [Test]
+        public void test_pcActiveItemFaceCompare_gatesOnTheResolvedFace()
+        {
+            // Arrange — Greater/6 solo pasa con la cara maxima.
+            var item = NewItem("item.gated", DiceType.D6);
+            item.OnPositiveBand.PreConditions.Add(new Rollgeon.PreConditions.Concretes.PcActiveItemFaceCompare
+            {
+                Comparison = Rollgeon.PreConditions.Concretes.IntComparison.GreaterOrEqual,
+                Value = 6,
+            });
+            _roller.Next = 6;
+            _service.Confirm(selection: null);
+
+            // Act
+            var result = _service.AcceptRoll();
+
+            // Assert
+            Assert.IsTrue(result.Value.EffectsSucceeded);
+            CollectionAssert.AreEqual(new[] { "pos" }, Eff_Tag.Log);
+        }
+
+        [Test]
+        public void test_pcActiveItemFaceCompare_blocksWhenFaceDoesNotMatch()
+        {
+            // Arrange
+            var item = NewItem("item.gated2", DiceType.D6);
+            item.OnMixedBand.PreConditions.Add(new Rollgeon.PreConditions.Concretes.PcActiveItemFaceCompare
+            {
+                Comparison = Rollgeon.PreConditions.Concretes.IntComparison.Equal,
+                Value = 99,
+            });
+            _roller.Next = 3; // banda mixta
+            _service.Confirm(selection: null);
+
+            // Act
+            var result = _service.AcceptRoll();
+
+            // Assert — la precondicion no matchea: el grupo no corre, EffectsSucceeded false.
+            Assert.IsFalse(result.Value.EffectsSucceeded);
+            CollectionAssert.IsEmpty(Eff_Tag.Log);
+        }
+
+        // ------------------------------------------------------------------
         // Helpers
         // ------------------------------------------------------------------
+
+        private ItemSO NewGradientItem(string id, DiceType die)
+        {
+            var item = ScriptableObject.CreateInstance<ItemSO>();
+            item.ItemId = id;
+            item.DisplayName = id;
+            item.Type = ItemType.Active;
+            item.ActiveDie = die;
+            item.ActiveResolution = ActiveItemResolution.Gradient;
+            item.OnNegativeBand = new EffectData();
+            item.OnMixedBand = new EffectData();
+            item.OnPositiveBand = new EffectData();
+            item.OnPositiveBand.Effects.Add(new Eff_CaptureRollContext());
+            _spawned.Add(item);
+            _equipped.Equip(item);
+            return item;
+        }
+
+        /// <summary>Item Bands (legacy) con la captura en las 3 bandas — corre cual sea la que salga.</summary>
+        private ItemSO NewCaptureItem(string id, DiceType die)
+        {
+            var item = ScriptableObject.CreateInstance<ItemSO>();
+            item.ItemId = id;
+            item.DisplayName = id;
+            item.Type = ItemType.Active;
+            item.ActiveDie = die;
+            item.OnNegativeBand = new EffectData();
+            item.OnNegativeBand.Effects.Add(new Eff_CaptureRollContext());
+            item.OnMixedBand = new EffectData();
+            item.OnMixedBand.Effects.Add(new Eff_CaptureRollContext());
+            item.OnPositiveBand = new EffectData();
+            item.OnPositiveBand.Effects.Add(new Eff_CaptureRollContext());
+            _spawned.Add(item);
+            _equipped.Equip(item);
+            return item;
+        }
+
+        /// <summary>Anota el ActiveItemRollTriggerContext y el SourceItemId que le llegaron.</summary>
+        [Serializable]
+        private sealed class Eff_CaptureRollContext : BaseEffect
+        {
+            public static ActiveItemRollTriggerContext Last;
+            public static ItemSO LastItem;
+            public static string LastSourceItemId;
+
+            public override string GetEffectName() => "CaptureRollContext";
+
+            public override bool ApplyEffect(EffectContext context)
+            {
+                LastSourceItemId = context?.SourceItemId;
+                ActiveItemRollTriggerContext.TryGet(context, out Last);
+                LastItem = Last?.Item;
+                return true;
+            }
+        }
+
+        /// <summary>Anota el PreConditionContext.Effect que le llego a Evaluate.</summary>
+        [Serializable]
+        private sealed class Pc_CapturePreCtx : Rollgeon.PreConditions.BasePreCondition
+        {
+            public static Rollgeon.Effects.EffectContext LastEffect;
+
+            public override string ConditionName => "CapturePreCtx";
+
+            public override bool Evaluate(Rollgeon.PreConditions.PreConditionContext context)
+            {
+                LastEffect = context?.Effect;
+                return true;
+            }
+        }
 
         private ItemSO NewItem(string id, DiceType die)
         {

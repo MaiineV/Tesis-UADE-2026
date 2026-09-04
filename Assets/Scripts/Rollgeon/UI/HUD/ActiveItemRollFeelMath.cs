@@ -203,5 +203,46 @@ namespace Rollgeon.UI.HUD
         /// desenlace, que es la banda positiva.
         /// </summary>
         public static bool HitstopAllowed(ActiveItemBand band) => band == ActiveItemBand.Positive;
+
+        // ==================================================================
+        // Feature#0084 — intensidad por estructura de resolucion
+        // ==================================================================
+
+        /// <summary>
+        /// Intensidad 0..1 segun la estructura de resolucion completa. Bands usa la
+        /// tabla de <see cref="Intensity01(ActiveItemBand)"/> tal cual. Binary no tiene
+        /// banda mixta: Negative 0.55, Positive 1. Gradient/Hierarchy escalan de forma
+        /// continua con <see cref="ActiveItemRollResolution.Magnitude01"/> — la cara mas
+        /// alta siempre pega mas fuerte, sin el escalon de 3 bandas.
+        /// </summary>
+        public static float Intensity01(in ActiveItemRollResolution resolution)
+        {
+            switch (resolution.Structure)
+            {
+                case ActiveItemResolution.Binary:
+                    return resolution.Band == ActiveItemBand.Positive ? 1f : 0.55f;
+                case ActiveItemResolution.Gradient:
+                case ActiveItemResolution.Hierarchy:
+                    return 0.25f + 0.75f * resolution.Magnitude01;
+                default:
+                    return Intensity01(resolution.Band);
+            }
+        }
+
+        /// <summary>
+        /// <c>true</c> si esta resolucion amerita hit-stop. Bands/Binary: banda positiva,
+        /// igual que <see cref="HitstopAllowed(ActiveItemBand)"/>. Gradient/Hierarchy no
+        /// tienen banda positiva "de verdad" (todo corre por <c>OnPositiveBand</c>): el
+        /// criterio pasa a ser la cara maxima del dado.
+        /// </summary>
+        public static bool HitstopAllowed(in ActiveItemRollResolution resolution)
+        {
+            if (resolution.Structure == ActiveItemResolution.Gradient
+                || resolution.Structure == ActiveItemResolution.Hierarchy)
+            {
+                return resolution.Face == resolution.Faces;
+            }
+            return resolution.Band == ActiveItemBand.Positive;
+        }
     }
 }
