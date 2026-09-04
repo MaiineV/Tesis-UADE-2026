@@ -652,9 +652,24 @@ namespace Rollgeon.Tiles
             // propia incluida). Owner no-jefe (player u otro enemigo) se quema con la suya.
             if (def.OwnerBossImmune && traits.IsBoss && IsBossGuid(instance.OwnerGuid)) return false;
 
+            // Rastros del jugador (Incendiario, Rastro tóxico, Espinas): ni el dueño ni sus
+            // aliados los activan.
+            if (def.OwnerAndAlliesImmune && IsOwnerOrAlly(instance.OwnerGuid, entity)) return false;
+
             if (IsProtectedForEntity(entity, coord, def.TileType, instance.InstanceId)) return false;
 
             return true;
+        }
+
+        private static bool IsOwnerOrAlly(Guid owner, Guid entity)
+        {
+            if (owner == Guid.Empty) return false;
+            if (owner == entity) return true;
+            if (!ServiceLocator.TryGetService<Rollgeon.Entities.IEntityQueryService>(out var query)
+                || query == null)
+                return false;
+            var relation = query.GetRelationship(owner, entity);
+            return (relation & Rollgeon.Effects.Selection.EntityFilterMask.Allies) != 0;
         }
 
         /// <summary>
@@ -1067,6 +1082,14 @@ namespace Rollgeon.Tiles
                         continue;
                     }
 
+                    // Espinas (EndsMovementOnEnter): la unidad frena ahí, sin deslizar. El daño
+                    // de entrada ya se resolvió en ResolveEntries.
+                    if (onTerminator && terminator.Definition.EndsMovementOnEnter
+                        && terminator.Definition.Category != TileEffectCategory.ForcedSlide)
+                    {
+                        break;
+                    }
+
                     if (onTerminator && remainingForced == 0)
                     {
                         // Hielo: la unidad sigue en la dirección de entrada hasta salir del
@@ -1151,7 +1174,10 @@ namespace Rollgeon.Tiles
 
                 bool portal = def.Category == TileEffectCategory.Teleport;
                 bool ice = def.Category == TileEffectCategory.ForcedSlide;
-                if (!portal && !ice) continue;
+                // Espinas del dado de Movimiento: terminan el movimiento como el hielo, sin
+                // deslizar ni teletransportar.
+                bool stopper = def.EndsMovementOnEnter;
+                if (!portal && !ice && !stopper) continue;
                 if (!instance.Tiles.Contains(coord)) continue;
                 if (portal && !HasValidPortalExit(instance)) continue;
                 // En cooldown post-teleport el portal es una celda común: no trunca el path

@@ -1,0 +1,51 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6832fe6d91866cd45a01ae006873d323, type: 3}
+  m_Name: Tile_Spikes_Sendero
+  m_EditorClassIdentifier: Rollgeon::Rollgeon.Tiles.SpecialTileDefinitionSO
+  TileId: TILE_SPIKES_SENDERO
+  DisplayName: Espinas del sendero
+  TileType: 0
+  Triggers: 33
+  Category: 0
+  Affinity: 1
+  DamageKind: 3
+  EnterDamage: 2
+  TurnStartDamage: 0
+  HealAmount: 0
+  StatusKind: 0
+  StatusTurns: 0
+  StatusTickDamage: 0
+  ComboDamageBonus: 0
+  MoveRangeBonus: 0
+  DefaultDurationRounds: 1
+  DisarmOnTrigger: 1
+  RearmOnRoundWrap: 0
+  OwnerBossImmune: 0
+  OwnerAndAlliesImmune: 1
+  EndsMovementOnEnter: 1
+  TelegraphPayload: {fileID: 0}
+  TelegraphRounds: 1
+  TeleportCooldownTurns: 2
+  ProtectedTileTypes: 
+  VisualPrefab: {fileID: 1508115570389179148, guid: f9b4763d566a93b499fc44e1bba810fc, type: 3}
+  VisualYOffset: 0.02
+  OverlayTint: {r: 0, g: 0, b: 0, a: 0}
+  TriggerVfxPrefab: {fileID: 0}
+  TriggerVfxLifetime: 2
+  TriggerVfxYOffset: 0.1
+  AIVirtualEnterDamage: 0
+  AIAnnouncesLethal: 0
+  EditorIcon: {fileID: 0}
+  EditorColor: {r: 0.3, g: 0.3, b: 0.34, a: 1}
+  NameKey: tile.spikes_sendero
+  DescriptionKey: tile.spikes
