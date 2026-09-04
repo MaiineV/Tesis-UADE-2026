@@ -1096,6 +1096,54 @@ MonoBehaviour:
     m_Localized: '{0} ran out of power and is gone.'
     m_Metadata:
       m_Items: []
+  - m_Id: 18369314903064576
+    m_Localized: Tell us what you think!
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18369314961784832
+    m_Localized: One minute and you're back. It helps us improve the game.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18369314961784833
+    m_Localized: Send
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18369314961784834
+    m_Localized: Skip
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18369314961784835
+    m_Localized: I want to enter the key giveaway
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18369314961784836
+    m_Localized: Your email (giveaway only)
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18369314961784837
+    m_Localized: Please answer the highlighted questions.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18369314961784838
+    m_Localized: That email doesn't look valid.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18369314961784839
+    m_Localized: Thanks! Response saved.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18369314961784840
+    m_Localized: "Sending\u2026"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18369314961784841
+    m_Localized: Thanks! Response sent.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18369314961784842
+    m_Localized: Thanks! Saved, it will be sent when online.
+    m_Metadata:
+      m_Items: []
   - m_Id: 18436415117258752
     m_Localized: Expiring
     m_Metadata:

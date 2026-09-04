@@ -65,6 +65,9 @@ namespace Rollgeon.DevConsole.Commands
             // Telemetría (Feature#0029)
             r.Register(new AnalyticsCommand());
 
+            // Encuesta de evento (Feature#0074)
+            r.Register(new SurveyCommand());
+
             // Help último — necesita el registry ya armado.
             r.Register(new HelpCommand(r));
             return r;

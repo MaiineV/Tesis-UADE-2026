@@ -46,22 +46,21 @@ namespace Rollgeon.UI.Screens
                 return;
             }
 
-            if (screens.Current is PauseMenuOverlay)
+            // La decisión vive en PauseHotkeyRule (testeable sin teclado).
+            switch (PauseHotkeyRule.Resolve(screens.Current))
             {
-                // Pause al top → resume. PauseMenuOverlay.OnPopped popea el phase overlay.
-                screens.PopOverlay();
-            }
-            else if (screens.Current is OptionsScreen)
-            {
-                // Opciones (abiertas desde la pausa) al top → cerrarlas y volver
-                // a la pausa. Sin esta rama se pusheaba OTRA pausa encima y se
-                // duplicaba el PhaseOverlay.Pause.
-                screens.PopOverlay();
-            }
-            else
-            {
-                // Sin pausar → abrir. Mismo path que RoomNavigationView.OnPauseClicked.
-                screens.PushOverlay<PauseMenuOverlay>();
+                case PauseHotkeyAction.Pop:
+                    // PauseMenuOverlay.OnPopped popea el phase overlay.
+                    screens.PopOverlay();
+                    break;
+
+                case PauseHotkeyAction.Push:
+                    // Sin pausar → abrir. Mismo path que RoomNavigationView.OnPauseClicked.
+                    screens.PushOverlay<PauseMenuOverlay>();
+                    break;
+
+                case PauseHotkeyAction.Ignore:
+                    break;
             }
         }
     }
