@@ -220,7 +220,7 @@ namespace Rollgeon.Effects.Selection
                 if (RangeMode == RangeMode.PathReachable
                     && ServiceLocator.TryGetService<IMovementService>(out var movement))
                 {
-                    foreach (var coord in movement.GetReachableTiles(ownerPosition, ResolveEffectiveRange(ownerGuid)))
+                    foreach (var coord in movement.GetReachableTilesFor(ownerGuid, ownerPosition, ResolveEffectiveRange(ownerGuid)))
                     {
                         if (PassesSlotFilters(grid, coord, ownerPosition, ownerGuid))
                             result.Add(TargetRef.At(coord));
@@ -274,7 +274,7 @@ namespace Rollgeon.Effects.Selection
             if (RangeMode == RangeMode.PathReachable
                 && ServiceLocator.TryGetService<IMovementService>(out var movement))
             {
-                foreach (var coord in movement.GetReachableTiles(ownerPosition, ResolveEffectiveRange(ownerGuid)))
+                foreach (var coord in movement.GetReachableTilesFor(ownerGuid, ownerPosition, ResolveEffectiveRange(ownerGuid)))
                     if (coord != ownerPosition) result.Add(coord);
                 return result;
             }

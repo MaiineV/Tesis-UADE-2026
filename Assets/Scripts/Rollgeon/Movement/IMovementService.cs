@@ -23,6 +23,14 @@ namespace Rollgeon.Movement
         List<GridCoord> GetReachableTiles(GridCoord origin, int range, bool includeOrigin = false);
 
         /// <summary>
+        /// Igual que <see cref="GetReachableTiles"/> pero para una entidad concreta: aplica la
+        /// <see cref="IMovementTraversalPolicy"/> (Paso etéreo atraviesa unidades). Default
+        /// interface member para los fakes; la impl real lo override.
+        /// </summary>
+        List<GridCoord> GetReachableTilesFor(Guid entity, GridCoord origin, int range, bool includeOrigin = false)
+            => GetReachableTiles(origin, range, includeOrigin);
+
+        /// <summary>
         /// Camino BFS <paramref name="from"/> → <paramref name="to"/>. Devuelve lista
         /// incluyendo origen y destino si hay ruta; vacía si no.
         /// </summary>
