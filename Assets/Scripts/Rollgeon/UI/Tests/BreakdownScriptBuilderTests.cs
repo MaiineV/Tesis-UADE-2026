@@ -22,6 +22,60 @@ namespace Rollgeon.UI.Tests
         private static ScratchContribution Item(string id, int bonus, float factor = 1f, float multBonus = 0f)
             => new ScratchContribution(ScratchSourceKind.Item, id, null, -1, bonus, factor, false, multBonus);
 
+        private static ScratchContribution FaceMutator(int bagSlot, int faceDelta, string id = "ench.oxidado")
+            => new ScratchContribution(ScratchSourceKind.Enchantment, id, null, bagSlot, 0, 1f, false, 0f, faceDelta);
+
+        // ---- Cara efectiva (Fix#0053) ---------------------------------------------------
+
+        [Test]
+        public void Build_FaceMutatedDie_FliesAsItsEffectiveFace_WithTheMutatorAsSource_AndNoProc()
+        {
+            // Oxidado: cara 6 → 0. bd.Dice ya trae la efectiva; el journal solo atribuye.
+            var bd = new DamageBreakdown
+            {
+                ComboBase = 10,
+                FacesSum = 0,
+                N = 10,
+                AbilityMultiplier = 1f,
+                M = 1f,
+                Final = 10,
+                Dice = new List<ContributingDie> { new ContributingDie(0, 0, DiceType.D6) },
+                Sources = new List<ScratchContribution> { FaceMutator(0, -6) },
+            };
+
+            var script = BreakdownScriptBuilder.Build(bd);
+
+            Assert.AreEqual(1, script.Steps.Count, "un solo paso: el dado, sin proc que lo deshaga");
+            Assert.AreEqual(BreakdownStepKind.Die, script.Steps[0].Kind);
+            Assert.AreEqual(0f, script.Steps[0].Amount);
+            Assert.AreEqual("ench.oxidado", script.Steps[0].SourceId);
+            Assert.IsTrue(script.Reconciled);
+        }
+
+        [Test]
+        public void Build_DieWithBonusProcButNoMutation_HasNoSourceOnTheDieStep()
+        {
+            var bd = new DamageBreakdown
+            {
+                ComboBase = 10,
+                FacesSum = 4,
+                N = 19,
+                AbilityMultiplier = 1f,
+                M = 1f,
+                Final = 19,
+                Dice = new List<ContributingDie> { new ContributingDie(0, 4, DiceType.D6) },
+                Sources = new List<ScratchContribution> { Enchant(0, 5) },
+            };
+
+            var script = BreakdownScriptBuilder.Build(bd);
+
+            Assert.AreEqual(2, script.Steps.Count);
+            Assert.IsNull(script.Steps[0].SourceId);
+            Assert.AreEqual(BreakdownStepKind.DieProc, script.Steps[1].Kind);
+            Assert.AreEqual(5f, script.Steps[1].Amount);
+            Assert.IsTrue(script.Reconciled);
+        }
+
         // ---- Canal aditivo sobre M (AddM) ----------------------------------------------
 
         [Test]

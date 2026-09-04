@@ -73,6 +73,31 @@ namespace Rollgeon.Upgrades.Dice
 
         public IReadOnlyDictionary<ResourceTarget, ResourceAccumulator> Resources => _resources;
 
+        // Lazy: casi ningún evento muta caras — sin entradas no se aloca el diccionario.
+        private Dictionary<int, int> _faceDeltas;
+
+        /// <summary>
+        /// Deltas sobre la CARA con la que cada dado (por bag slot) entra a Σcaras de la fórmula
+        /// v3: "no suma" = −cara, "doble" = +cara, etc. A diferencia de
+        /// <see cref="BonusComboDamage"/>, cambia el término del dado mismo, así el breakdown
+        /// muestra el dado valiendo 0 / mitad / doble en vez de "+6" seguido de "−6". Solo
+        /// afecta al daño: la detección del combo sigue viendo la cara tirada. Suma entre
+        /// triggers del mismo slot.
+        /// </summary>
+        public IReadOnlyDictionary<int, int> FaceDeltas => _faceDeltas;
+
+        public void AddFaceDelta(int bagSlot, int delta)
+        {
+            if (delta == 0 || bagSlot < 0) return;
+            _faceDeltas ??= new Dictionary<int, int>(2);
+            _faceDeltas.TryGetValue(bagSlot, out int current);
+            _faceDeltas[bagSlot] = current + delta;
+        }
+
+        /// <summary>Delta acumulado de la cara del dado en <paramref name="bagSlot"/>; 0 si nadie la tocó.</summary>
+        public int GetFaceDelta(int bagSlot)
+            => _faceDeltas != null && _faceDeltas.TryGetValue(bagSlot, out int delta) ? delta : 0;
+
         // Lazy: null hasta la primera entrada — un evento sin fuentes de combo no aloca nada.
         private List<ScratchContribution> _journal;
 
@@ -103,6 +128,7 @@ namespace Rollgeon.Upgrades.Dice
             BonusGold = 0;
             BonusShield = 0;
             _resources.Clear();
+            _faceDeltas?.Clear();
             _journal?.Clear();
         }
     }

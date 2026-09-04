@@ -281,6 +281,54 @@ namespace Rollgeon.Combat.Tests
             Assert.AreEqual(0, PlayerComboDamage.Resolve(_player, 10, null));
         }
 
+        // ---- Cara efectiva por dado (FaceDeltas, Fix#0053) --------------------------------
+
+        [Test]
+        public void Resolve_FaceDelta_ChangesTheDieTermNotTheBonus()
+        {
+            // Oxidado en slot 0 (cara 6 → 0); el dado del slot 1 no se toca.
+            var scratch = new EnchantmentScratch();
+            scratch.AddFaceDelta(0, -6);
+            ServiceLocator.AddService<IComboPassiveService>(new FakeComboPassiveService { Scratch = scratch }, ServiceScope.Global);
+            var dice = DiceOf((DiceType.D6, 6), (DiceType.D6, 4));
+
+            int total = PlayerComboDamage.Resolve(_player, 10, dice, 1f, PlayerComboFormulaKind.Damage, out var bd);
+
+            Assert.AreEqual(14, total);
+            Assert.AreEqual(4, bd.FacesSum);
+            Assert.AreEqual(0, bd.AdditiveBonus);
+            Assert.AreEqual(0, bd.Dice[0].Face, "el breakdown lleva la cara efectiva");
+            Assert.AreEqual(4, bd.Dice[1].Face);
+            Assert.AreEqual(0, bd.Dice[0].BagSlot);
+        }
+
+        [Test]
+        public void Resolve_FaceDeltas_SumAcrossChannels_AndClampAtZero()
+        {
+            // Preview (−4) + at-played (−4) sobre una cara 6 → nunca negativo.
+            var matched = new EnchantmentScratch();
+            matched.AddFaceDelta(0, -4);
+            var played = new EnchantmentScratch();
+            played.AddFaceDelta(0, -4);
+            ServiceLocator.AddService<IComboPassiveService>(new FakeComboPassiveService { Scratch = matched }, ServiceScope.Global);
+            ServiceLocator.AddService<IComboPlayService>(new FakeComboPlayService { Scratch = played }, ServiceScope.Global);
+
+            int total = PlayerComboDamage.Resolve(_player, 10, DiceOf((DiceType.D6, 6)), 1f, PlayerComboFormulaKind.Damage, out var bd);
+
+            Assert.AreEqual(10, total);
+            Assert.AreEqual(0, bd.Dice[0].Face);
+        }
+
+        [Test]
+        public void ApplyFaceDeltas_WithoutMutations_ReturnsTheSameList()
+        {
+            var dice = DiceOf((DiceType.D6, 3));
+
+            var result = PlayerComboDamage.ApplyFaceDeltas(dice, new EnchantmentScratch(), null, null);
+
+            Assert.AreSame(dice, result);
+        }
+
         private sealed class FakeComboPassiveService : IComboPassiveService
         {
             public EnchantmentScratch Scratch;

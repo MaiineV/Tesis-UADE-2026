@@ -398,8 +398,9 @@ namespace Rollgeon.Upgrades.Dice
                     var triggers = ench.Triggers;
                     if (triggers == null) continue;
                     // Snapshot-delta por (dado, encantamiento): atribuye al journal lo que
-                    // ESTE encantamiento aportó al combo. Neutro = cero entradas.
-                    var before = ctx.Scratch != null ? ScratchSnapshot.Of(ctx.Scratch) : default;
+                    // ESTE encantamiento aportó al combo, cara del dado incluida. Neutro =
+                    // cero entradas.
+                    var before = ctx.Scratch != null ? ScratchSnapshot.Of(ctx.Scratch, b) : default;
                     for (int t = 0; t < triggers.Count; t++)
                     {
                         var trigger = triggers[t];

@@ -66,13 +66,21 @@ namespace Rollgeon.UI.HUD.Breakdown
                 for (int i = 0; i < ordered.Count; i++)
                 {
                     var die = ordered[i];
+                    List<ScratchContribution> procs = null;
+                    perDie?.TryGetValue(die.BagSlot, out procs);
+                    // bd.Dice ya trae la cara EFECTIVA (PlayerComboDamage.ApplyFaceDeltas): el
+                    // dado vuela valiendo 0 / mitad / doble, y el mutador que lo transformó viaja
+                    // como icono del mismo paso — no como un proc aparte que deshace la cara.
+                    var mutator = FirstFaceMutator(procs);
                     script.Steps.Add(new BreakdownStep
                     {
                         Kind = BreakdownStepKind.Die,
                         BagSlot = die.BagSlot,
                         Amount = die.Face,
+                        SourceId = mutator?.SourceId,
+                        SourceAsset = mutator?.SourceAsset,
                     });
-                    if (perDie != null && perDie.TryGetValue(die.BagSlot, out var procs))
+                    if (procs != null)
                     {
                         AddSourceSteps(script, procs, BreakdownStepKind.DieProc);
                         perDie.Remove(die.BagSlot);
@@ -91,6 +99,15 @@ namespace Rollgeon.UI.HUD.Breakdown
 
             script.Reconciled = CheckReconciliation(script);
             return script;
+        }
+
+        // La primera fuente del dado que mutó su cara (Oxidado/Volátil/…); null si ninguna.
+        private static ScratchContribution? FirstFaceMutator(List<ScratchContribution> procs)
+        {
+            if (procs == null) return null;
+            for (int i = 0; i < procs.Count; i++)
+                if (procs[i].FaceDelta != 0) return procs[i];
+            return null;
         }
 
         private static void AddSourceSteps(
