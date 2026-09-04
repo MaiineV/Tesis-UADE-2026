@@ -93,6 +93,9 @@ MonoBehaviour:
     - Name: ImpactEventKey
       Entry: 1
       Data: hit
+    - Name: RequireSourceInPosition
+      Entry: 5
+      Data: true
     - Name: 
       Entry: 8
       Data: 
@@ -272,6 +275,9 @@ MonoBehaviour:
     - Name: ImpactEventKey
       Entry: 1
       Data: hit
+    - Name: RequireSourceInPosition
+      Entry: 5
+      Data: true
     - Name: 
       Entry: 8
       Data: 
