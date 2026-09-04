@@ -49,7 +49,18 @@ namespace Rollgeon.Editor.Tools.Item
                     CollectMagnitudes(hook?.Effect, into, 0, new HashSet<EffectData>());
 
             if (item.Type == ItemType.Active)
+            {
                 CollectMagnitudes(item.OnActivate, into, 0, new HashSet<EffectData>());
+
+                // Feature#0084: mismo motivo que GetEffectTypes — el modelo nuevo dispara desde
+                // los grupos por banda/estructura, no desde OnActivate.
+                if (item.UsesActiveSlot)
+                {
+                    CollectMagnitudes(item.OnNegativeBand, into, 0, new HashSet<EffectData>());
+                    CollectMagnitudes(item.OnMixedBand, into, 0, new HashSet<EffectData>());
+                    CollectMagnitudes(item.OnPositiveBand, into, 0, new HashSet<EffectData>());
+                }
+            }
 
             return into;
         }

@@ -33,7 +33,19 @@ namespace Rollgeon.Editor.Tools.Item
                     CollectEffectTypes(hook?.Effect, types, 0, new HashSet<EffectData>());
 
             if (item.Type == ItemType.Active)
+            {
                 CollectEffectTypes(item.OnActivate, types, 0, new HashSet<EffectData>());
+
+                // Feature#0084: el modelo nuevo (UsesActiveSlot) no dispara por OnActivate —
+                // corre uno de los grupos por banda/estructura. Sin esto, todo item del rework
+                // reportaba cero efectos aunque tuviera OnPositiveBand cargado.
+                if (item.UsesActiveSlot)
+                {
+                    CollectEffectTypes(item.OnNegativeBand, types, 0, new HashSet<EffectData>());
+                    CollectEffectTypes(item.OnMixedBand, types, 0, new HashSet<EffectData>());
+                    CollectEffectTypes(item.OnPositiveBand, types, 0, new HashSet<EffectData>());
+                }
+            }
 
             return types;
         }
