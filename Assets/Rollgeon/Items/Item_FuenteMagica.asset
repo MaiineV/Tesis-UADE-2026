@@ -489,7 +489,7 @@ MonoBehaviour:
   ConsumedOnUse: 0
   ConsumesAction: 1
   ActionId: 
-  WorldPrefab: {fileID: 0}
+  WorldPrefab: {fileID: 1876872228215118303, guid: 9b410e729639d164ab375904bc74681b, type: 3}
   references:
     version: 2
     RefIds:
