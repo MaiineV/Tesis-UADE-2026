@@ -11,7 +11,7 @@ namespace Rollgeon.Effects.Concretes
     /// Suma al bono ADITIVO del multiplicador del combo en curso
     /// (<c>EnchantmentScratch.ComboMultiplierBonus</c>): en la fórmula N×M,
     /// <c>M = (1 + Σ bonos) × Π factores × ability</c>. Es el "+X al multiplicador" del GDD
-    /// (Piedra Angular +2, Ayuno +3, Segunda Oportunidad +3 por roll, Vértigo +0.05 por
+    /// (Piedra Angular +2, Ayuno +3, Segunda Oportunidad +1.5 por roll, Vértigo +0.05 por
     /// combo…). Hermano aditivo de <see cref="EffMultiplyComboDamage"/>: +2 y +3 de dos
     /// fuentes dan +5, nunca ×.
     /// </summary>
@@ -39,7 +39,8 @@ namespace Rollgeon.Effects.Concretes
         private EffectIntReader _amountReader;
 
         [Tooltip("Multiplica lo que devuelve el reader (los readers son enteros). Segunda " +
-                 "Oportunidad: 3 por roll; Dados en Reserva: 2 por dado; Vértigo: 0.05 por combo.")]
+                 "Oportunidad: 1.5 por roll (era 3; playtest 2026-09-04); Dados en Reserva: 2 por " +
+                 "dado; Vértigo: 0.05 por combo.")]
         [ShowIf("@_amountReader != null")]
         [SerializeField]
         private float _readerScale = 1f;

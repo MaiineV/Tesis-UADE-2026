@@ -154,7 +154,7 @@ namespace Rollgeon.Editor.Tools.Item
                             item));
 
                     if (hook.Kind != PassiveHookKind.ComboPlayed) continue;
-                    if (hook.ComboFilter?.Mode != ComboFilterMode.ComboIds) continue;
+                    if (hook.ComboFilter == null || !hook.ComboFilter.UsesComboIds) continue;
                     if (hook.ComboFilter.ComboIds == null) continue;
 
                     foreach (var comboId in hook.ComboFilter.ComboIds)

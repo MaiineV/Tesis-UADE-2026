@@ -447,5 +447,13 @@ namespace Patterns
         /// pagó el peaje (<c>ItemSO.CombatToll</c>) y la sala de combate quedó limpia sin
         /// pelear. No pasa por OnCombatEnd: no cuenta como victoria.</summary>
         OnCombatTollPaid,
+
+        // --- Items: oro otorgado por un item (Fix#0077) --------------------------------
+        /// <summary>args: [Guid playerGuid, string itemId, int amount]. Un ITEM le sumó oro al
+        /// jugador vía <c>EffModifyGold</c> (Bolsa del Impar, Tesoro de la Fortuna…). Se emite
+        /// además de OnGoldChanged (que no dice de dónde vino) y del floating "+XG" sobre el
+        /// sprite del jugador (que en la tirada nadie mira). La HUD lo consume para el toast
+        /// sobre la pila de oro (ItemGoldFeedbackView).</summary>
+        OnItemGoldGranted,
     }
 }

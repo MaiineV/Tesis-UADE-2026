@@ -2259,8 +2259,8 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 17988681023537153
-    m_Localized: Start every fight at x5 damage. Each attack lowers it by 0.1, down
-      to x1.
+    m_Localized: Your attack damage starts at x3 when you pick it up. Every combo
+      you play lowers it by 0.2; at x1 the item breaks.
     m_Metadata:
       m_Items: []
   - m_Id: 17988681744957440
@@ -2671,8 +2671,8 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 18299679638994944
-    m_Localized: When you attack, +3 to the multiplier for each unused roll you still
-      have.
+    m_Localized: When you attack, +1.5 to the multiplier for each unused roll you
+      still have.
     m_Metadata:
       m_Items: []
   - m_Id: 18299679659966464
@@ -2697,8 +2697,8 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 18299679659966469
-    m_Localized: The highest die in your combo adds its face to the multiplier (not
-      to base damage).
+    m_Localized: The highest die in your combo leaves base damage and adds its face
+      to the multiplier. Doesn't apply to Higher Number.
     m_Metadata:
       m_Items: []
   - m_Id: 18299679659966470

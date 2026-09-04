@@ -36,6 +36,9 @@ namespace Rollgeon.UI
         public const string ItemBrokeDownTitle = "item.broke_down.title";
         public const string ItemBrokeDownBody = "item.broke_down.body";
 
+        // Toast de oro otorgado por un item (ItemGoldFeedbackView): {0} = item, {1} = oro.
+        public const string ItemGoldGrantedBody = "item.gold_granted.body";
+
         /// <summary>Todas las keys de esta clase, para validación en tests.</summary>
         public static IReadOnlyList<string> All { get; } = new[]
         {
@@ -45,6 +48,7 @@ namespace Rollgeon.UI
             RejectNoValidTarget, RejectNoActiveItem,
             SecondWindTitle, SecondWindBody,
             ItemBrokeDownTitle, ItemBrokeDownBody,
+            ItemGoldGrantedBody,
         };
     }
 }
