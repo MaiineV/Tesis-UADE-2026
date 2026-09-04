@@ -137,5 +137,91 @@ namespace Rollgeon.Combat.AI.Tests
             Assert.IsTrue(dx != 0 && Math.Abs(dx) == Math.Abs(dy),
                 $"Debería haber quedado en diagonal exacta; quedó en {c}.");
         }
+
+        // ------------------------------------------------------------------
+        // RequireLineOfSight — deadlock del Skirmisher reportado en playtest
+        // ------------------------------------------------------------------
+
+        /// <summary>
+        /// La geometría exacta del playtest, trasladada al origen: el Skirmisher en diagonal
+        /// exacta a Chebyshev 2, dentro de su DesiredRange y de su AttackRange, pero con los DOS
+        /// flancos del segundo paso diagonal bloqueados — la regla de no cortar esquinas de
+        /// <c>GridLineOfSight</c> le niega el tiro. Su gate de ataque pide LoS y dice que no;
+        /// el nodo de movimiento decía "ya llegué" y no se movía. Deadlock.
+        /// </summary>
+        private void ArrangeCorneredDiagonal()
+        {
+            var graph = NavGraph.Rect(15, 15);
+            graph.RemoveNode(new GridCoord(5, 6)); // flanco A
+            graph.RemoveNode(new GridCoord(6, 5)); // flanco B
+            _grid.LoadRoom(graph);
+            _grid.Register(_player, new GridCoord(5, 5));
+            _grid.Register(_self, new GridCoord(7, 7));
+        }
+
+        [Test]
+        public void DiagonalWithoutLineOfSight_RequireLos_RepositionsInsteadOfFreezing()
+        {
+            // Arrange
+            ArrangeCorneredDiagonal();
+            Assert.IsFalse(
+                GridLineOfSight.HasClearLine(_grid, new GridCoord(7, 7), new GridCoord(5, 5), _self, _player),
+                "Premisa del test: desde (7,7) NO hay tiro a (5,5).");
+            var node = new AINode_MoveToDiagonal
+            {
+                MaxSteps = Const(3),
+                DesiredRange = Const(2),
+                RequireLineOfSight = true,
+            };
+
+            // Act
+            var result = node.Tick(Ctx());
+
+            // Assert
+            Assert.AreEqual(AIResult.Succeeded, result);
+            Assert.AreNotEqual(new GridCoord(7, 7), SelfCoord(),
+                "En diagonal pero sin tiro: tiene que reposicionarse, no quedarse clavado.");
+        }
+
+        [Test]
+        public void DiagonalWithoutLineOfSight_RequireLos_EndsUpWithAClearShot()
+        {
+            // Arrange
+            ArrangeCorneredDiagonal();
+            var node = new AINode_MoveToDiagonal
+            {
+                MaxSteps = Const(3),
+                DesiredRange = Const(2),
+                RequireLineOfSight = true,
+            };
+
+            // Act
+            for (int turn = 0; turn < 10; turn++) node.Tick(Ctx());
+
+            // Assert — el objetivo real del nodo: quedar en diagonal Y con tiro.
+            var c = SelfCoord();
+            int dx = 5 - c.X, dy = 5 - c.Y;
+            Assert.IsTrue(dx != 0 && Math.Abs(dx) == Math.Abs(dy),
+                $"Debería estar en diagonal exacta; quedó en {c}.");
+            Assert.IsTrue(
+                GridLineOfSight.HasClearLine(_grid, c, new GridCoord(5, 5), _self, _player),
+                $"Y con línea de visión limpia; quedó en {c}.");
+        }
+
+        [Test]
+        public void DiagonalWithoutLineOfSight_RequireLosOff_KeepsLegacyBehaviour()
+        {
+            // Arrange — con el flag apagado el nodo se comporta como antes: la LoS no le importa.
+            // Default false para no re-interpretar árboles ya serializados que no lo autoraron.
+            ArrangeCorneredDiagonal();
+            var node = new AINode_MoveToDiagonal { MaxSteps = Const(3), DesiredRange = Const(2) };
+
+            // Act
+            var result = node.Tick(Ctx());
+
+            // Assert
+            Assert.AreEqual(AIResult.Succeeded, result);
+            Assert.AreEqual(new GridCoord(7, 7), SelfCoord());
+        }
     }
 }
