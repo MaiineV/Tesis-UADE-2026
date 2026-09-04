@@ -33,6 +33,58 @@ namespace Rollgeon.Upgrades.Dice.Tests
         }
 
         [Test]
+        public void RecordDelta_DieMovedToMultiplier_RecordsANeutralEntryPerMovedDie()
+        {
+            // Arrange
+            var scratch = new EnchantmentScratch();
+            var before = ScratchSnapshot.Of(scratch);
+
+            // Act — Fuente Mágica marca el slot 2 sin tocar bonus/multiplicador
+            scratch.MoveDieToMultiplier(2);
+            ScratchSnapshot.RecordDelta(scratch, in before,
+                ScratchSourceKind.Item, "fuente.magica", null, bagSlot: -1);
+
+            // Assert — una entrada neutra que solo atribuye el dado movido
+            Assert.AreEqual(1, scratch.Journal.Count);
+            var entry = scratch.Journal[0];
+            Assert.AreEqual("fuente.magica", entry.SourceId);
+            Assert.AreEqual(2, entry.MovedDieBagSlot);
+            Assert.AreEqual(0, entry.BonusDelta);
+            Assert.AreEqual(1f, entry.MultiplierFactor, 0.0001f);
+            Assert.AreEqual(0f, entry.MultiplierBonusDelta, 0.0001f);
+            Assert.IsFalse(entry.SetBlock);
+        }
+
+        [Test]
+        public void RecordDelta_DieMovedBeforeTheSnapshot_IsNotAttributedAgain()
+        {
+            // Arrange — otra fuente ya movió el slot 2
+            var scratch = new EnchantmentScratch();
+            scratch.MoveDieToMultiplier(2);
+            var before = ScratchSnapshot.Of(scratch);
+
+            // Act — esta fuente repite el mismo slot (idempotente) y no aporta nada más
+            scratch.MoveDieToMultiplier(2);
+            ScratchSnapshot.RecordDelta(scratch, in before,
+                ScratchSourceKind.Item, "otro.item", null, bagSlot: -1);
+
+            // Assert
+            Assert.IsNull(scratch.Journal);
+            Assert.AreEqual(1, scratch.DiceMovedToMultiplier.Count);
+        }
+
+        [Test]
+        public void Reset_ClearsMovedDice()
+        {
+            var scratch = new EnchantmentScratch();
+            scratch.MoveDieToMultiplier(1);
+
+            scratch.Reset();
+
+            Assert.IsTrue(scratch.DiceMovedToMultiplier == null || scratch.DiceMovedToMultiplier.Count == 0);
+        }
+
+        [Test]
         public void RecordDelta_MultiplierChanged_RecordsFactorNotAbsolute()
         {
             // Arrange — otro trigger ya dejó el multi en ×2

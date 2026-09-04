@@ -14,7 +14,8 @@ namespace Rollgeon.Combat.AI.Decisions
     /// <summary>
     /// Movimiento "Sniper": busca la casilla alcanzable este turno que quede en la MISMA fila
     /// o columna que el jugador (línea de tiro recta), priorizando la que caiga lo más cerca
-    /// posible de <see cref="DesiredRange"/>. Si ya está alineado, no se mueve. Si ninguna
+    /// posible de <see cref="DesiredRange"/>. Si ya está alineado <b>y dentro de esa distancia</b>,
+    /// no se mueve. Si ninguna
     /// casilla alcanzable alinea, se acerca en general al jugador por DISTANCIA DE CAMINO real
     /// (BFS sobre todo el grafo, no acotado al turno) para ir ganando terreno turno a turno,
     /// rodeando obstáculos, hasta que una alineación quede a tiro.
@@ -46,7 +47,9 @@ namespace Rollgeon.Combat.AI.Decisions
 
         [OdinSerialize]
         [Tooltip("Distancia Manhattan preferida una vez alineado — entre las casillas alineadas " +
-                 "alcanzables, elige la más cercana a este valor (para no pegarse innecesariamente).")]
+                 "alcanzables, elige la más cercana a este valor (para no pegarse innecesariamente). " +
+                 "También es el tope para considerarse 'ya en posición': alineado pero MÁS LEJOS " +
+                 "que esto sigue acercándose. Vacío = sin tope (comportamiento viejo).")]
         public AIIntReader DesiredRange;
 
         [Tooltip("Si está activo, alinear no alcanza: la casilla también necesita línea de visión " +
@@ -74,13 +77,23 @@ namespace Rollgeon.Combat.AI.Decisions
             if (!context.Grid.TryGetPosition(context.PlayerGuid, out var playerCoord))
                 return AIResult.Failed;
 
-            // Ya alineado (y con tiro libre, si se pide) — nada que hacer.
+            // "Ya llegué" = alineado + (tiro libre, si se pide) + DENTRO de DesiredRange.
+            // El chequeo de distancia no estaba (BUG de playtest, Charger/bolas de pool): un
+            // enemigo que comparte fila o columna con el jugador se consideraba en posición a
+            // CUALQUIER distancia, así que no se movía, el gate de ataque y el de telegraph le
+            // fallaban por estar lejos, y caía en Wait todos los turnos hasta que el jugador se
+            // movía y rompía la alineación. Se llega ahí seguido parándose DETRÁS de otro enemigo
+            // sobre la misma línea: los aliados no cortan LoS (ver GridLineOfSight.Blocks), así
+            // que el de atrás se creía perfectamente en posición.
+            // Con DesiredRange sin autorar (null) se conserva el comportamiento viejo: sin tope.
+            int desiredRange = DesiredRange?.Read(context) ?? int.MaxValue;
             bool selfAligned = selfCoord.X == playerCoord.X || selfCoord.Y == playerCoord.Y;
-            if (selfAligned && (!RequireLineOfSight || HasLineOfSight(context.Grid, selfCoord, playerCoord, context.SelfGuid, context.PlayerGuid)))
+            bool selfHasLos = !RequireLineOfSight
+                || HasLineOfSight(context.Grid, selfCoord, playerCoord, context.SelfGuid, context.PlayerGuid);
+            if (selfAligned && selfHasLos && selfCoord.Manhattan(playerCoord) <= desiredRange)
                 return AIResult.Succeeded;
 
             int maxSteps = MaxSteps?.Read(context) ?? 3;
-            int desiredRange = DesiredRange?.Read(context) ?? int.MaxValue;
 
             var reachable = (context.Movement as IPathedMovementService)
                     ?.GetReachableAnchors(context.SelfGuid, maxSteps)
@@ -96,6 +109,18 @@ namespace Rollgeon.Combat.AI.Decisions
             int bestAlignedScore = int.MaxValue;
             GridCoord? bestAlignedSafe = null;
             int bestAlignedSafeScore = int.MaxValue;
+
+            // Semilla con la casilla ACTUAL cuando ya es un candidato válido (alineada + LoS) pero
+            // quedó fuera de banda: así sólo se mueve a una estrictamente mejor. Sin la semilla,
+            // ahora que "alineado" ya no corta arriba, empataría con otra casilla igual de buena y
+            // oscilaría entre las dos turno a turno.
+            if (selfAligned && selfHasLos)
+            {
+                bestAlignedScore = Mathf.Abs(selfCoord.Manhattan(playerCoord) - desiredRange);
+                if (!AIMovementHazard.IsDamaging(hazardTiles, context.SelfGuid, selfCoord))
+                    bestAlignedSafeScore = bestAlignedScore;
+            }
+
             foreach (var candidate in reachable)
             {
                 bool aligned = candidate.X == playerCoord.X || candidate.Y == playerCoord.Y;

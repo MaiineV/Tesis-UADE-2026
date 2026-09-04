@@ -398,6 +398,7 @@ namespace Rollgeon.UI.Screens
             // Sin cable de Inspector: es un overlay de mundo, no una sub-view del HUD — el
             // HUD solo le presta su ciclo de bind para que ALT viva lo que vive el combate.
             Rollgeon.Combat.AI.AllEnemyRangesOverlay.ResolveOrCreate().Bind();
+            Rollgeon.Combat.AI.AllEnemyTelegraphsOverlay.ResolveOrCreate().Bind();
 
             _subViewsBound = true;
         }
@@ -424,6 +425,7 @@ namespace Rollgeon.UI.Screens
             if (_combatMinimap != null) _combatMinimap.Unbind();
             if (_rightPanelSwitcher != null) _rightPanelSwitcher.Unbind();
             Rollgeon.Combat.AI.AllEnemyRangesOverlay.ResolveOrCreate().Unbind();
+            Rollgeon.Combat.AI.AllEnemyTelegraphsOverlay.ResolveOrCreate().Unbind();
             _subViewsBound = false;
         }
 

@@ -259,15 +259,42 @@ MonoBehaviour:
     - Name: 
       Entry: 8
       Data: 
+    - Name: LeastUsedComboBonus
+      Entry: 7
+      Data: 13|Rollgeon.Items.LeastUsedComboBonusDef, Rollgeon
+    - Name: Enabled
+      Entry: 5
+      Data: false
+    - Name: MultiplierBonus
+      Entry: 4
+      Data: 0.5
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: CombatToll
+      Entry: 7
+      Data: 14|Rollgeon.Items.CombatTollDef, Rollgeon
+    - Name: Enabled
+      Entry: 5
+      Data: false
+    - Name: BaseCost
+      Entry: 3
+      Data: 15
+    - Name: CostPerFloor
+      Entry: 3
+      Data: 10
+    - Name: 
+      Entry: 8
+      Data: 
     - Name: OnNegativeBand
       Entry: 7
-      Data: 13|Rollgeon.Effects.EffectData, Rollgeon
+      Data: 15|Rollgeon.Effects.EffectData, Rollgeon
     - Name: Label
       Entry: 1
       Data: Effect Group
     - Name: PreConditions
       Entry: 7
-      Data: 14|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
+      Data: 16|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
         Rollgeon]], mscorlib
     - Name: 
       Entry: 12
@@ -280,7 +307,7 @@ MonoBehaviour:
       Data: 
     - Name: Effects
       Entry: 7
-      Data: 15|System.Collections.Generic.List`1[[Rollgeon.Effects.IEffect, Rollgeon]],
+      Data: 17|System.Collections.Generic.List`1[[Rollgeon.Effects.IEffect, Rollgeon]],
         mscorlib
     - Name: 
       Entry: 12
@@ -299,13 +326,13 @@ MonoBehaviour:
       Data: 
     - Name: OnMixedBand
       Entry: 7
-      Data: 16|Rollgeon.Effects.EffectData, Rollgeon
+      Data: 18|Rollgeon.Effects.EffectData, Rollgeon
     - Name: Label
       Entry: 1
       Data: Effect Group
     - Name: PreConditions
       Entry: 7
-      Data: 17|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
+      Data: 19|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
         Rollgeon]], mscorlib
     - Name: 
       Entry: 12
@@ -318,7 +345,7 @@ MonoBehaviour:
       Data: 
     - Name: Effects
       Entry: 7
-      Data: 18|System.Collections.Generic.List`1[[Rollgeon.Effects.IEffect, Rollgeon]],
+      Data: 20|System.Collections.Generic.List`1[[Rollgeon.Effects.IEffect, Rollgeon]],
         mscorlib
     - Name: 
       Entry: 12
@@ -337,13 +364,13 @@ MonoBehaviour:
       Data: 
     - Name: OnPositiveBand
       Entry: 7
-      Data: 19|Rollgeon.Effects.EffectData, Rollgeon
+      Data: 21|Rollgeon.Effects.EffectData, Rollgeon
     - Name: Label
       Entry: 1
       Data: Effect Group
     - Name: PreConditions
       Entry: 7
-      Data: 20|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
+      Data: 22|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
         Rollgeon]], mscorlib
     - Name: 
       Entry: 12
@@ -356,7 +383,7 @@ MonoBehaviour:
       Data: 
     - Name: Effects
       Entry: 7
-      Data: 21|System.Collections.Generic.List`1[[Rollgeon.Effects.IEffect, Rollgeon]],
+      Data: 23|System.Collections.Generic.List`1[[Rollgeon.Effects.IEffect, Rollgeon]],
         mscorlib
     - Name: 
       Entry: 12
@@ -375,13 +402,13 @@ MonoBehaviour:
       Data: 
     - Name: OnActivate
       Entry: 7
-      Data: 22|Rollgeon.Effects.EffectData, Rollgeon
+      Data: 24|Rollgeon.Effects.EffectData, Rollgeon
     - Name: Label
       Entry: 1
       Data: Effect Group
     - Name: PreConditions
       Entry: 7
-      Data: 23|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
+      Data: 25|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
         Rollgeon]], mscorlib
     - Name: 
       Entry: 12
@@ -394,7 +421,7 @@ MonoBehaviour:
       Data: 
     - Name: Effects
       Entry: 7
-      Data: 24|System.Collections.Generic.List`1[[Rollgeon.Effects.IEffect, Rollgeon]],
+      Data: 26|System.Collections.Generic.List`1[[Rollgeon.Effects.IEffect, Rollgeon]],
         mscorlib
     - Name: 
       Entry: 12
@@ -413,8 +440,8 @@ MonoBehaviour:
       Data: 
   ItemId: ayuno
   DisplayName: Ayuno
-  Description: "No recib\xEDs curaci\xF3n de items pasivos. A cambio, todos tus multiplicadores
-    de combo suman +3."
+  Description: "Tu poci\xF3n cura la mitad. A cambio, todos tus multiplicadores de
+    combo suman +3."
   Icon: {fileID: 1808964844, guid: ee12da05509c7a74686b1e1cc11cbd3e, type: 3}
   Rarity: 4
   FamilyId: 
@@ -424,12 +451,14 @@ MonoBehaviour:
   UniquePerRun: 1
   RollPoolBonus: 0
   LadderSkippedStep: 0
-  BlocksPassiveItemHealing: 1
+  BlocksPassiveItemHealing: 0
+  PotionHealMultiplier: 0.5
   ActiveSlotBonus: 0
   EnchantmentCostMultiplier: 1
   CursedEnchantmentWeightMultiplier: 1
   SecondWind: 0
   SecondWindRemainingHp: 1
+  GoldFloor: 0
   UsesActiveSlot: 0
   ActiveDie: 1
   ActiveFamily: 0
@@ -463,7 +492,7 @@ MonoBehaviour:
   ConsumedOnUse: 0
   ConsumesAction: 1
   ActionId: 
-  WorldPrefab: {fileID: 0}
+  WorldPrefab: {fileID: 3920533655158951115, guid: 7fce9acc11e3846449ac6e6ba712d832, type: 3}
   references:
     version: 2
     RefIds:

@@ -264,7 +264,7 @@ namespace Rollgeon.Combat.AI.Tests
         }
 
         [Test]
-        public void Tick_TargetResolvesEmpty_Fails()
+        public void Tick_TargetResolvesEmpty_SucceedsAsNoOpWithoutMoving()
         {
             // Arrange — Target null ⇒ AlwaysPlayer ⇒ PlayerGuid vacío ⇒ Guid.Empty.
             _grid.Register(_self, new GridCoord(0, 0));
@@ -275,12 +275,15 @@ namespace Rollgeon.Combat.AI.Tests
             // Act
             var result = node.Tick(ctx);
 
-            // Assert
-            Assert.AreEqual(AIResult.Failed, result);
+            // Assert — "no hay a quién ir" es benigno, no un error: con Failed el Sequence padre
+            // abortaba el turno entero y se comía los nodos HERMANOS (BUG del Guardian/Healer).
+            Assert.AreEqual(AIResult.Succeeded, result);
+            _grid.TryGetPosition(_self, out var after);
+            Assert.AreEqual(new GridCoord(0, 0), after, "Sin target no se mueve a ningún lado.");
         }
 
         [Test]
-        public void Tick_TargetNotOnGrid_Fails()
+        public void Tick_TargetNotOnGrid_SucceedsAsNoOpWithoutMoving()
         {
             // Arrange — player con guid válido pero sin posición en grilla.
             _grid.Register(_self, new GridCoord(0, 0));
@@ -290,7 +293,63 @@ namespace Rollgeon.Combat.AI.Tests
             var result = node.Tick(Ctx());
 
             // Assert
-            Assert.AreEqual(AIResult.Failed, result);
+            Assert.AreEqual(AIResult.Succeeded, result);
+            _grid.TryGetPosition(_self, out var after);
+            Assert.AreEqual(new GridCoord(0, 0), after);
+        }
+
+        [Test]
+        public void Tick_CustomSelectorFindsNobody_DoesNotRetargetThePlayer()
+        {
+            // Arrange — el selector no encuentra aliado (no hay ninguno registrado) y el player
+            // está lejos. El nodo NO debe redirigirse al player: eso invertiría la intención
+            // autorada (un Healer backline terminaría persiguiendo al jugador).
+            _grid.Register(_self, new GridCoord(0, 0));
+            _grid.Register(_player, new GridCoord(8, 0));
+
+            var attrs = new AttributesManager();
+            ServiceLocator.AddService<AttributesManager>(attrs);
+            ServiceLocator.AddService<IEntityQueryService>(new RelationshipQueryStub());
+
+            var ctx = Ctx();
+            ctx.Attributes = attrs;
+            var node = new AINode_Move
+            {
+                MaxSteps = Const(10),
+                DesiredRange = Const(1),
+                TargetSelector = new TargetSelector_ByAttribute { Relation = EntityFilterMask.Allies },
+            };
+
+            // Act
+            var result = node.Tick(ctx);
+
+            // Assert
+            Assert.AreEqual(AIResult.Succeeded, result);
+            _grid.TryGetPosition(_self, out var after);
+            Assert.AreEqual(new GridCoord(0, 0), after, "No debe caminar hacia el player.");
+        }
+
+        [Test]
+        public void Sequence_MoveWithoutTarget_StillRunsLaterSiblings()
+        {
+            // Regresión directa del bug del Guardian: el Move sin target le abortaba la Sequence
+            // y nunca corría el ShowGuardAura que venía después.
+            _grid.Register(_self, new GridCoord(0, 0));
+            var ctx = Ctx();
+            ctx.PlayerGuid = Guid.Empty;
+
+            var marker = new MarkerNode();
+            var seq = new AINode_Sequence
+            {
+                Children = new List<AIDecisionNode> { new AINode_Move { MaxSteps = Const(10) }, marker },
+            };
+
+            // Act
+            var result = seq.Tick(ctx);
+
+            // Assert
+            Assert.AreEqual(AIResult.Succeeded, result);
+            Assert.IsTrue(marker.Ticked, "El hermano posterior al Move tiene que correr igual.");
         }
 
         [Test]
@@ -304,6 +363,17 @@ namespace Rollgeon.Combat.AI.Tests
         }
 
         // ----- in-memory stub --------------------------------------------
+
+        /// <summary>Nodo testigo: sólo registra que lo tickearon.</summary>
+        private sealed class MarkerNode : AIDecisionNode
+        {
+            public bool Ticked;
+            public override AIResult Tick(AIContext context)
+            {
+                Ticked = true;
+                return AIResult.Succeeded;
+            }
+        }
 
         private sealed class RelationshipQueryStub : IEntityQueryService
         {

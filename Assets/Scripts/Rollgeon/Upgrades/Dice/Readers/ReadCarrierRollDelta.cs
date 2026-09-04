@@ -35,9 +35,10 @@ namespace Rollgeon.Upgrades.Dice.Readers
 
     /// <summary>
     /// Delta entre la cara transformada y la original del dado CARRIER. Centraliza la
-    /// matemática de los "mutadores de roll" legacy (Invertido / Afilado / Volátil) que
-    /// hoy son aproximaciones MVP vía <c>BonusComboDamage</c> — cuando exista mutación
-    /// per-die real, los assets cambian este reader por el efecto nuevo sin tocar infra.
+    /// matemática de los "mutadores de roll" (Invertido / Afilado / Volátil / Oxidado…).
+    /// Se consume desde <c>EffMutateCarrierFace</c>, que lo escribe como cara efectiva del
+    /// dado (Fix#0053); dentro de <c>EffAddComboBonus</c> es el patrón viejo (el dado sumaba
+    /// y un proc lo deshacía) y la auditoría de assets lo rechaza.
     /// </summary>
     /// <remarks>Devuelve 0 sin trigger context, sin caras o con índice fuera de rango.</remarks>
     [Serializable, HideReferenceObjectPicker]

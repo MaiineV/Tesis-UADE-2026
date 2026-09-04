@@ -87,12 +87,28 @@ namespace Rollgeon.Tiles
         [Tooltip("La celda se desarma al disparar y no vuelve a disparar hasta rearmarse (Pinchos).")]
         public bool DisarmOnTrigger;
 
+        [Tooltip("La casilla desaparece la primera vez que dispara (charcos eléctricos de ítem: " +
+                 "un solo uso, no se desarma — se va).")]
+        [SerializeField]
+        private bool _removeOnTrigger;
+
+        /// <summary>La instancia se expira (no solo se desarma) apenas dispara una vez.</summary>
+        public bool RemoveOnTrigger => _removeOnTrigger;
+
         [Tooltip("Las celdas desarmadas se rearman en cada wrap de ronda (Pinchos: 'listo para el próximo ciclo').")]
         public bool RearmOnRoundWrap;
 
         [Tooltip("Regla de ownership: los jefes no son afectados por casillas cuyo owner es un jefe. " +
                  "Apagar esto es la 'disposición en contrario' del GDD §15.")]
         public bool OwnerBossImmune = true;
+
+        [Tooltip("El dueño de la casilla y sus aliados no la activan (rastros del dado de Movimiento: " +
+                 "'el jugador y sus aliados no reciben daño por sus propias llamas').")]
+        public bool OwnerAndAlliesImmune;
+
+        [Tooltip("Entrar en la casilla termina el movimiento de la unidad afectada (Sendero de espinas), " +
+                 "igual que el hielo trunca el path. Se evalúa con los mismos filtros de afectación.")]
+        public bool EndsMovementOnEnter;
 
         [Header("Telegraph")]
         [Tooltip("Qué casilla spawnea al vencer la advertencia (solo Category = Telegraph).")]

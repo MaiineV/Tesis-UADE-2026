@@ -5,9 +5,10 @@
 > **Qué es**: Movimiento en combate ya no usa un rango fijo (`Range = 4`). Al arrastrar
 > el chip de Mover, se tira un **dado propio** (`MovementDieSO`, D6 por defecto) y la
 > cara revelada es la cantidad de casillas alcanzables (BFS por camino, como antes).
-> El dado **no ocupa slot** del `DiceBagSO` de combate, no recibe encantamientos ni
-> bloqueos de dados, y cambiar la build no lo modifica. Exploración sigue siendo
-> click-to-move libre (Range 20, sin dado).
+> El dado **no ocupa slot** del `DiceBagSO` de combate, no recibe bloqueos de dados, y
+> cambiar la build no lo modifica. Desde Feature#0077 recibe encantamientos de categoría
+> Movimiento y caras extra por su propio carril (ver sección al final). Exploración sigue
+> siendo click-to-move libre (Range 20, sin dado).
 
 ## El modelo
 
@@ -128,9 +129,115 @@ Para otra clase: crear su `MovementDieSO`, asignarlo en `StartingMovementDie` y 
   legacy sin servicio.
 - `UI/Tests/ActionDragPolicyTests.cs` — `RequiresTileDrop` con el flag.
 
+## Encantamientos y caras extra (Feature#0077, 2026-09-04)
+
+> Reemplaza el "no recibe encantamientos" de arriba. GDD "Listado encantamientos", regla
+> especial: los encantamientos de 🗺️ Movimiento van **solo** al dado de Movimiento y ninguna
+> otra categoría puede ir ahí. GDD "Dice Builder": el dado no cambia de tipo, **suma caras**.
+
+### Modelo: el carril de Movimiento en `RuntimeDiceBag`
+
+- El dado no vive en el bag, pero su lista de encantamientos sí: `RuntimeDiceBag` tiene un
+  carril aparte indexado por el sentinela **`EnchantmentSlotRef.MovementDieSlot = -2`**
+  (`-1` es `RunCounterIndex`, el contador de rolls del altar; los dos viven en
+  `EnchantmentSlotRef`). Mismo append + tombstones, mismos counters `(bag, slot, key)`, mismo
+  save (`RuntimeDiceBagSnapshot.MovementEnchantments` + `MovementExtraFaces`, lista aparte
+  para que saves viejos restauren igual).
+- `DiceEnchantmentService` rutea `ValidateApply/Apply/Remove/ComputeAllowedFaces` y el
+  `ForEachEnchantment` del dispatch por el carril. El tipo base lo resuelve
+  `ResolveMovementDieType()` (`IMovementDieService.CurrentType`, fallback D6). La **regla de
+  categoría** vive en un solo lugar: `EnchantmentTargeting.AppliesTo(ench, set)`
+  (Movimiento ⇔ `EnchantmentTargetSet.MovementDie`), aplicada en `ValidateApply` — cubre
+  altar, DevConsole y tests.
+- **Caras extra**: `IDiceEnchantmentService.AddMovementDieFaces(delta)` /
+  `MovementDieMaxFace` / `ComputeMovementDieFaces()`. `MovementDieService.Roll` elige
+  uniforme entre las caras válidas (filtros + extra) con su RNG propio;
+  `IMovementDieService.MaxFace` es el rango potencial pre-tirada
+  (`SelectionSettings.ResolveEffectiveRange`). La fuente real de caras queda pendiente de
+  diseño; la de prueba es la DevConsole.
+- **Hook `PlayerMoved`**: `EffMove` usa `IMovementService.TryMove` (devuelve el path) y emite
+  `TypedEvent<EntityWalkedPayload>` solo en movimiento voluntario (empujes, portales y
+  teleports no). El service lo despacha en combate para el jugador con `TilesTraversed` y
+  `TilesTraversedThisTurn` (reset en `OnTurnFinished` del jugador / `OnCombatStart`).
+  `ReadTilesTraversed { Multiplier, CapPerTurn, CapPerExtraCopy }` da el "por casilla
+  recorrida" con tope por turno sin counters; varias copias suben el tope, no duplican.
+- Primer encantamiento: **Baluarte móvil** (`ench.baluarte_movil`): `player.moved` →
+  `EffAddShield` con `ReadTilesTraversed{sin tope}` (Fix#0083 sacó el tope de 6 por turno —
+  con tope, un primer movimiento largo dejaba a los siguientes en 0 y parecía roto). El escudo
+  lo limpia `ShieldResetHandler`. En el canal dados no hay behavior, así que `EffAddShield`
+  pide el "+N" flotante directo por `OnFloatingNumberRequested`.
+
+### Los 7 encantamientos de Movimiento del GDD (todos autorados, categoría Movimiento)
+
+| Encantamiento | Disparador | Piezas | Desvíos vs GDD |
+|---|---|---|---|
+| Baluarte móvil | `player.moved` | `EffAddShield` + `ReadTilesTraversed{sin tope}` + "+N" flotante | sin tope por turno (decisión 2026-09-04); sin tope el reader no gatea copias: cada copia suma +1/casilla |
+| Carga | `player.moved` | `EffAddTemporaryModifier{Attack, ReadTilesTraversed}` (muere en `OnTurnFinished`) | — |
+| Incendiario | `player.moved` | `EffPlaceTrailTiles{Tile_Fire_Incendiario, 2 rondas, +1/copia}` (3 dmg al entrar / al empezar turno) | el daño no escala por copia |
+| Rastro tóxico | `player.moved` | `EffPlaceTrailTiles{Tile_Poison_Rastro, 2 rondas, +1/copia}` (veneno 2 turnos × 5, primer enemigo) | "2 acumulaciones" = 2 turnos; sin stacks reales |
+| Sendero de espinas | `player.moved` | `EffPlaceTrailTiles{Tile_Spikes_Sendero, 1 ronda, +1/copia}` (2 dmg, `EndsMovementOnEnter`) | el daño no escala por copia |
+| Paso etéreo | sin trigger | `CapEtherealMovement` → `EtherealMovementPolicy` (BFS/A* atraviesan unidades, nunca destino) | solo unidades; paredes bloquean |
+| Torbellino | `movement.die_rolled` | `EffTeleportEnemiesRandomly` + `EffAddMovementDieBonus{+2, OnlyFirstCopy}` (chip "Torbellino +2" en el dado, patrón Botas) | dispara al tirar el dado (no en combos); el +2 es de ESA tirada, no un modifier hasta fin de turno |
+
+Infra agregada para esto: `EnchantmentHookEvent.MovementDieRolled` (+ `IOnMovementDieRolledTrigger`,
+suscripto a `OnMovementDieRolled`), `ScratchTriggerContext.Path/MovementDieFace`,
+`SpecialTileDefinitionSO.OwnerAndAlliesImmune/EndsMovementOnEnter` (el terminador de path y el
+motor de cadenas frenan sin deslizar), `IMovementService.GetReachableTilesFor(entity, …)` +
+`IMovementTraversalPolicy` (registrada por `DiceEnchantmentBootstrap`), `MovementLaneCopies`
+(stacking: solo la primera copia actúa). Los rastros se colocan con el jugador ya en destino:
+la celda de origen queda libre y recibe casilla; el destino no.
+
+### Pase de bugs Fix#0083 (2026-09-04)
+
+- **Hook `MovementDieRolled` corre al TIRAR, no en el reveal.** `MovementDieService.Roll` llama
+  `IDiceEnchantmentService.DispatchMovementDieRolled(player, face)` con la cara ya decidida y
+  antes de animar; el service ya NO se suscribe a `EventName.OnMovementDieRolled` (ese evento
+  sigue saliendo en el reveal para el HUD). El scratch gana `MovementDieBonus` y el journal
+  `MovementDieBonusDelta`: `MovementDieService` suma el bono al rango activo (`face + bono`;
+  MoveRange se sigue sumando en `ResolveEffectiveRange`) y traduce cada entrada del journal a
+  un `MovementRangeContribution{EnchantmentSO, delta}` → `MovementDieView` lo anima como chip
+  igual que "Botas Ligeras +1" (`BreakdownIconResolver` ya resuelve `UpgradeSO`). Torbellino
+  usa `EffAddMovementDieBonus{Amount 2, OnlyFirstCopy}`; `EffAddTemporaryModifier{MoveRange}`
+  queda disponible pero aplica recién desde la SIGUIENTE acción (y dura hasta fin de turno).
+- **Paso etéreo no aplicaba**: `EnchantmentCapabilityQueries.SlotHasCapability` rechazaba
+  índices negativos y el carril es `MovementDieSlot = -2` — ahora usa `RuntimeDiceBag.IsValidIndex`.
+  De yapa: `IMovementService.FindPathFor(entity, …)` / `CanPassThroughUnits(entity)` para que
+  el preview de path (`SelectionController`) muestre el camino que cruza unidades y
+  `EntityPawn.AnimatePathCoroutine` no re-rutee/aborte al pisar la celda ocupada.
+- **Rastros con arte progresivo**: la lógica sigue instantánea (el grid ya movió), pero
+  `SpecialTileService` difiere el visual de cada celda hasta que el pawn del dueño la abandona.
+  Piezas: `EntityPawn.OnCellLeft/OnWalkEnded + IsWalkingThrough`, `IPawnWalkTracker`
+  (lo implementa `EntityVisualService`, Run scope) y la cola `_deferredVisuals` del tile
+  service (se limpia al expirar/mover/reset; un stop o despawn del pawn la flushea). Sin
+  tracker (tests, escenas sin visuales) aparece todo al instante.
+- **Teleport (Torbellino)**: `EntityVisualService.OnEntityTeleported` llama
+  `Physics.SyncTransforms()` tras el snap para que un pick en el mismo frame vea el collider
+  en la celda nueva. El pick resuelve por `pawn.EntityGuid → grid.TryGetPosition`, así que un
+  enemigo sin collider en su prefab cae al plano del piso (no hay cache de posición).
+
+### Altar: carousel Ataque ↔ Movimiento
+
+`EnchantmentAltarView` gana `_attackSetRoot`, `_moveSetRoot`, `_moveDieSlot`, `_arrowLeft`,
+`_arrowRight` (todos Optional — sin wiring la mesa queda como antes). La palanca llama
+`IEnchantmentRoomService.RollOffer(room, set)` con el set visible: Ataque ⇒ nunca Movimiento;
+Movimiento ⇒ solo Movimiento (`EnchantmentPoolSO.Roll` con `filter` de categoría en ambos).
+`ConfirmChoice` rutea por `EnchantmentOffer.TargetSet` (Movimiento ⇒ siempre el carril).
+Cambiar de set descarta la oferta activa (oro hundido, como re-tirar). Wiring del prefab
+`Canvas_EnchantmentAltar` (vía MCP): `EnchantmentAltarPanel/DiceShelf` (`RectMask2D`) →
+`SetAttack` (los `DieSlot0..4` reparentados) y `SetMove` (`MoveDieSlot`, copia de `DieSlot0`,
+centrado); `ArrowLeft`/`ArrowRight` hermanos de la repisa con `Assets/Art/UI/Arrow/Arrow.png`.
+Tuning en `EnchantmentAltarUiSettingsSO`: `SetSwitchDuration/Ease/SlideX`.
+
+### DevConsole
+
+`mdie info | faces <±n> | add <enchId> | remove <slot> | list` (alias `movedie`).
+
 ## Follow-ups (fuera de alcance)
 
 - Throw manual 2D/3D del dado (anchor propio en `DiceThrow2DPresenter`).
 - Rig del DevConsole para el dado de Movimiento.
-- Encantamientos / upgrades del dado y ofrecerlo en el build screen.
+- Fuente real de caras extra (diseño) y ofrecer el dado en el build screen.
+- Iconos de los 7 encantamientos de Movimiento (warning de auditoría aceptado); VFX propio para
+  las casillas de rastro (hoy reusan los visuales de fuego/veneno/pinchos).
+- `DiceBagView` (drawer de la bolsa) no lista el carril; el HUD del dado no muestra "+N caras".
 - Skin `DiceBoardType.Movement`; preview de rango en hover muestra la cara máxima.

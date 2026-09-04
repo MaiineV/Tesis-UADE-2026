@@ -149,11 +149,15 @@ namespace Rollgeon.Dungeon
             EnsureShellMaterials();
 
             var current = _dungeon.CurrentRoomInstance;
+            var leaving = _dungeon.LeavingRoomInstance;
             var rooms = _dungeon.GetAllRoomInstances();
             foreach (var (id, go) in _shellGOs)
             {
                 if (go == null) continue;
-                bool isCurrent = current != null && id == current.InstanceId;
+                // La saliente sigue como prefab world durante el paneo (Feature#0086):
+                // sin shell encima o se superponen cubo y sala.
+                bool isCurrent = (current != null && id == current.InstanceId)
+                    || (leaving != null && id == leaving.InstanceId);
                 // Fog of war (#158): solo salas descubiertas (visitadas o vecinas conectadas
                 // a una visitada). La sala actual se muestra como prefab world, no como shell.
                 bool visible = _isFloorView && !isCurrent && IsDiscovered(id, rooms);

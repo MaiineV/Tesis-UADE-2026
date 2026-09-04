@@ -24,11 +24,19 @@ namespace Rollgeon.Upgrades.Dice
         /// <summary>Oro que costó este roll.</summary>
         public int GoldPaid { get; }
 
-        public EnchantmentOffer(Guid roomInstanceId, IReadOnlyList<EnchantmentSO> options, int goldPaid)
+        /// <summary>
+        /// Set para el que se roleó (el visible en la repisa al tirar). Decide a qué dado
+        /// va la confirmación: Movimiento ⇒ siempre el dado de Movimiento.
+        /// </summary>
+        public EnchantmentTargetSet TargetSet { get; }
+
+        public EnchantmentOffer(Guid roomInstanceId, IReadOnlyList<EnchantmentSO> options, int goldPaid,
+            EnchantmentTargetSet targetSet = EnchantmentTargetSet.CombatDice)
         {
             RoomInstanceId = roomInstanceId;
             Options = options ?? Array.Empty<EnchantmentSO>();
             GoldPaid = goldPaid;
+            TargetSet = targetSet;
         }
     }
 

@@ -71,7 +71,7 @@ MonoBehaviour:
     - Name: Alignment
       Entry: 3
       Data: 2
-    - Name: RequireLineOfSight
+    - Name: IgnoreLineOfSight
       Entry: 5
       Data: false
     - Name: 
@@ -858,6 +858,12 @@ MonoBehaviour:
     - Name: 
       Entry: 8
       Data: 
+    - Name: IntentLabelKey
+      Entry: 1
+      Data: intent.skirmisher.x_slash
+    - Name: IntentLabelFallback
+      Entry: 1
+      Data: Corte en X
     - Name: 
       Entry: 8
       Data: 
@@ -885,6 +891,9 @@ MonoBehaviour:
     - Name: 
       Entry: 8
       Data: 
+    - Name: RequireLineOfSight
+      Entry: 5
+      Data: true
     - Name: 
       Entry: 8
       Data: 
@@ -907,7 +916,7 @@ MonoBehaviour:
   EntityId: enemy.skirmisher
   DisplayName: Skirmisher
   Description: 
-  Portrait: {fileID: -172214914, guid: 20ce88debfdaa06459d18ed604643892, type: 3}
+  Portrait: {fileID: 2137510266, guid: 5854c90019d7bec45a7eae78e058123b, type: 3}
   Design:
     Archetype: 2
     Pattern: 2
@@ -934,6 +943,7 @@ MonoBehaviour:
   IsFlying: 0
   IsBoss: 0
   Archetype: 0
+  TooltipType: 
   Personality: 0
   KamikazeIgnoresSurvival: 0
   AuraRadius: 0

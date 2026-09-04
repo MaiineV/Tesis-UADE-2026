@@ -16,7 +16,7 @@ MonoBehaviour:
     SerializedFormat: 2
     SerializedBytes: 
     ReferencedUnityObjects:
-    - {fileID: 2080456881282250630, guid: 736c017d706370f45b17aecfb3b09058, type: 3}
+    - {fileID: 1840214525166665668, guid: 51a8f578151d0014cbaddad9a9c112b3, type: 3}
     SerializedBytesString: 
     Prefab: {fileID: 0}
     PrefabModificationsReferencedUnityObjects: []
@@ -63,11 +63,11 @@ MonoBehaviour:
       Entry: 10
       Data: 0
   _amount:
-    rid: 3216492134191333778
+    rid: 5966855096767610962
   references:
     version: 2
     RefIds:
-    - rid: 3216492134191333778
+    - rid: 5966855096767610962
       type: {class: ReadConstantInt, ns: Rollgeon.Effects.Readers, asm: Rollgeon}
       data:
         Value: 25

@@ -298,11 +298,16 @@ namespace Rollgeon.EditorTools.HUD
         [MenuItem("Rollgeon/Tooltips/6 - Wire Pin Indicator")]
         public static void WirePinIndicator()
         {
-            var padlock = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Art/UI/Unlocks/Padlock.png");
-            if (padlock == null)
+            // Cuerpo + arco por separado (los mismos sprites que el candado de forzar
+            // puerta): el arco se anima solo — se cierra al fijar, se abre al soltar
+            // (TooltipPinLockView). Proporciones del candado del breakdown (80×80,
+            // body 75×52.5 @-17.5, shackle 50×25 @8.75) a escala del indicador de 22px.
+            var body = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Art/UI/Unlocks/PadlockBody.png");
+            var shackleSprite = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Art/UI/Unlocks/PadlockShackle.png");
+            if (body == null || shackleSprite == null)
             {
-                Debug.LogError("[TooltipCardSetupTools] Falta Assets/Art/UI/Unlocks/Padlock.png " +
-                               "(o no está importado como Sprite).");
+                Debug.LogError("[TooltipCardSetupTools] Faltan PadlockBody/PadlockShackle en " +
+                               "Assets/Art/UI/Unlocks (o no están importados como Sprite).");
                 return;
             }
 
@@ -316,11 +321,37 @@ namespace Rollgeon.EditorTools.HUD
                 pin.anchorMax = new Vector2(1f, 1f);
                 pin.pivot = new Vector2(1f, 1f);
                 pin.anchoredPosition = new Vector2(-6f, -6f);
+                // DESPUÉS de EnsureChildRect (que resetea a one). La view lo respeta
+                // como base scale.
+                pin.localScale = Vector3.one * 1.5f;
 
-                var image = Ensure<Image>(pin.gameObject);
-                image.sprite = padlock;
-                image.preserveAspect = true;
-                image.raycastTarget = false;
+                // Versión vieja: una sola Image con el candado entero en el root. El
+                // root pasa a ser contenedor puro — la Image legacy se va.
+                var stale = pin.GetComponent<Image>();
+                if (stale != null) Object.DestroyImmediate(stale);
+
+                // El arco DETRÁS del cuerpo (primer sibling): al abrirse asoma por
+                // arriba, y su base queda tapada por el cuerpo como en el candado real.
+                // y=4.3 y no el 2.4 proporcional del breakdown: a 22px el arco quedaba
+                // embutido casi entero en el cuerpo — cerrado tiene que verse como el
+                // candado normal, con el arco claramente por encima.
+                var shackle = EnsureChildRect(pin, "Shackle", new Vector2(0f, 4.3f), new Vector2(13.8f, 6.9f));
+                var shackleImage = Ensure<Image>(shackle.gameObject);
+                shackleImage.sprite = shackleSprite;
+                shackleImage.preserveAspect = true;
+                shackleImage.raycastTarget = false;
+                shackle.SetAsFirstSibling();
+
+                var bodyRect = EnsureChildRect(pin, "Body", new Vector2(0f, -4.8f), new Vector2(20.6f, 14.4f));
+                var bodyImage = Ensure<Image>(bodyRect.gameObject);
+                bodyImage.sprite = body;
+                bodyImage.preserveAspect = true;
+                bodyImage.raycastTarget = false;
+
+                var view = Ensure<Rollgeon.UI.Tooltips.TooltipPinLockView>(pin.gameObject);
+                var viewSo = new SerializedObject(view);
+                viewSo.FindProperty("_shackle").objectReferenceValue = shackle;
+                viewSo.ApplyModifiedPropertiesWithoutUndo();
 
                 pin.gameObject.SetActive(false);
 
@@ -331,7 +362,7 @@ namespace Rollgeon.EditorTools.HUD
                 };
             });
 
-            Debug.Log("[TooltipCardSetupTools] Candado de fijado cableado en el panel.");
+            Debug.Log("[TooltipCardSetupTools] Candado animado de fijado cableado en el panel.");
         }
 
         [MenuItem("Rollgeon/Tooltips/5 - Wire Bottom Cards")]
@@ -598,16 +629,16 @@ namespace Rollgeon.EditorTools.HUD
         private const string GeneralaPath = "Assets/Rollgeon/Enemies/ED_Boss_Generala.asset";
 
         /// <summary>
-        /// Las maldiciones del Cajero (siempre activa) y de la Generala (gateada por contrato).
+        /// Las maldiciones del Cajero (gateada por monedas en el piso) y de la Generala (por contrato).
         /// </summary>
         [MenuItem("Rollgeon/Tooltips/10 - Author Cajero And Generala Curses")]
         public static void AuthorCajeroAndGeneralaCurses()
         {
-            AuthorCurse<Rollgeon.Entities.BossCurseSO>(CajeroCursePath, CajeroPath, curse =>
+            AuthorCurse<Rollgeon.Entities.CoinClockCurseSO>(CajeroCursePath, CajeroPath, curse =>
             {
                 curse.CurseId = "curse.bank_keeps";
-                curse.DisplayName = "La banca retiene";
-                curse.Description = "El oro que dejás vencer se lo queda la banca.";
+                curse.DisplayName = "La banca no espera";
+                curse.Description = "Lo que dejás vencer en el piso se pierde.";
                 curse.Icon = AssetDatabase.LoadAssetAtPath<Sprite>(CoinPath);
             });
 

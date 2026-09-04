@@ -117,5 +117,58 @@ namespace Rollgeon.Effects.Tests
             Assert.AreEqual(0, new ReadDiceCountByParity().Read(new EffectContext()));
             Assert.AreEqual(0, new ReadDiceCountByParity().Read(null));
         }
+
+        [Test]
+        public void DiceCountByParity_DefaultScope_IsWholeRoll()
+        {
+            // Los assets ya autorados (sin el campo) deserializan 0 = WholeRoll.
+            Assert.AreEqual(DiceParityScope.WholeRoll, new ReadDiceCountByParity().Scope);
+        }
+
+        [Test]
+        public void DiceCountByParity_ComboDice_CountsOnlyTheDiceThatFormTheCombo()
+        {
+            // Bolsa del Impar: 3-3-5-4-6 con par de 3 (índices 0 y 1) → el 5 impar sobra → 2 × 3 = 6.
+            var ctx = new EffectContext
+            {
+                DiceResult = new[] { 3, 3, 5, 4, 6 },
+                ComboResult = ComboDetectionResult.Match("combo.pair", 8, 2, new[] { 0, 1 }),
+            };
+
+            Assert.AreEqual(6, new ReadDiceCountByParity
+            {
+                Parity = DiceParity.Odd, Scope = DiceParityScope.ComboDice, PerDieAmount = 3,
+            }.Read(ctx));
+        }
+
+        [Test]
+        public void DiceCountByParity_ComboDice_UsesTheKeptSubsetIndexSpace()
+        {
+            // Holdeó [5, 5, 4] de una bolsa 1-4-5-5-4; el par son los índices 0 y 1 del subset.
+            var ctx = new EffectContext
+            {
+                DiceResult = new[] { 1, 4, 5, 5, 4 },
+                KeptDice = new[] { 5, 5, 4 },
+                ComboResult = ComboDetectionResult.Match("combo.pair", 8, 2, new[] { 0, 1 }),
+            };
+
+            Assert.AreEqual(2, new ReadDiceCountByParity
+            {
+                Parity = DiceParity.Odd, Scope = DiceParityScope.ComboDice, PerDieAmount = 1,
+            }.Read(ctx));
+        }
+
+        [Test]
+        public void DiceCountByParity_ComboDice_WithoutCombo_ReturnsZero()
+        {
+            var reader = new ReadDiceCountByParity { Scope = DiceParityScope.ComboDice, PerDieAmount = 3 };
+
+            Assert.AreEqual(0, reader.Read(new EffectContext { DiceResult = new[] { 1, 3, 5 } }));
+            Assert.AreEqual(0, reader.Read(new EffectContext
+            {
+                DiceResult = new[] { 1, 3, 5 },
+                ComboResult = ComboDetectionResult.NoMatch(),
+            }));
+        }
     }
 }

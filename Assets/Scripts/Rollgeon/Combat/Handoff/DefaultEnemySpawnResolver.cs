@@ -174,12 +174,14 @@ namespace Rollgeon.Combat.Handoff
             }
 
             // 2. Primer spawn de la sala.
+            // El índice del plan ES el índice de spawn point: una entry vacía (set con
+            // ese spawn point sin enemigo) deja el hueco y NO corre a los siguientes.
             var plan = BuildSpawnPlan(room, layout, rng, instance.Boss);
-            int spawnIndex = 0;
-            foreach (var planned in plan)
+            for (int spawnIndex = 0; spawnIndex < plan.Count; spawnIndex++)
             {
-                var enemyData = planned.Enemy;
+                var enemyData = plan[spawnIndex].Enemy;
                 if (enemyData == null) continue;
+                var planned = plan[spawnIndex];
 
                 var id = RegisterEnemy(enemyData, planned.Tier, spawnIndex, instance, layout, rng);
                 if (id != Guid.Empty)
@@ -197,7 +199,6 @@ namespace Rollgeon.Combat.Handoff
                         Tier = planned.Tier
                     });
                 }
-                spawnIndex++;
             }
 
             return result;
@@ -236,50 +237,8 @@ namespace Rollgeon.Combat.Handoff
             }
 
             // SpawnPointConfig path: per-spawn-point enemy sets on the prefab.
-            if (layout != null && layout.EnemySpawnPoints != null && layout.EnemySpawnPoints.Count > 0)
-            {
-                var configs = new List<SpawnPointConfig>();
-                foreach (var sp in layout.EnemySpawnPoints)
-                {
-                    if (sp == null) continue;
-                    var config = sp.GetComponent<SpawnPointConfig>();
-                    if (config != null && config.SetCount > 0)
-                        configs.Add(config);
-                }
-
-                if (configs.Count > 0)
-                {
-                    int minSets = int.MaxValue;
-                    foreach (var c in configs)
-                        if (c.SetCount < minSets) minSets = c.SetCount;
-
-                    int setIndex = rng.Next(0, minSets);
-
-                    var plan = new List<PlannedSpawn>();
-                    foreach (var sp in layout.EnemySpawnPoints)
-                    {
-                        if (sp == null) continue;
-                        var config = sp.GetComponent<SpawnPointConfig>();
-                        var enemy = config != null ? config.GetEnemyForSet(setIndex) : null;
-
-                        if (enemy != null)
-                        {
-                            plan.Add(new PlannedSpawn(enemy, enemy.ResolveTierForFloor(floor)));
-                        }
-                        else if (room.EnemyPool != null)
-                        {
-                            var idxs = room.EnemyPool.RollForSpawnIndices(1, rng);
-                            if (idxs.Count > 0 && idxs[0] >= 0)
-                            {
-                                var e = room.EnemyPool.Entries[idxs[0]].Item;
-                                int tier = e != null ? e.ResolveTierForFloor(floor) : 1;
-                                plan.Add(new PlannedSpawn(e, tier));
-                            }
-                        }
-                    }
-                    return plan;
-                }
-            }
+            var fromConfigs = BuildPlanFromSpawnPointConfigs(room, layout, rng, floor);
+            if (fromConfigs != null) return fromConfigs;
 
             // Legacy path: PossibleSetups then EnemyPool.
             var fromSetups = BuildPlanFromSetups(room, rng, floor);
@@ -300,6 +259,65 @@ namespace Rollgeon.Combat.Handoff
                 list.Add(new PlannedSpawn(e, tier));
             }
             return list;
+        }
+
+        /// <summary>
+        /// Plan desde los <see cref="SpawnPointConfig"/> del prefab: se elige UN set
+        /// para toda la sala y cada spawn point aporta su enemigo de ese set.
+        /// <para>
+        /// El plan queda alineado 1:1 con <see cref="RoomLayout.EnemySpawnPoints"/>:
+        /// un spawn point sin enemigo en el set elegido produce una entry vacía y
+        /// simplemente no spawnea nada. Así un mismo prefab autorea formaciones
+        /// distintas (2 enemigos en un set, 4 en otro) sin rellenar huecos con el
+        /// <see cref="RoomSO.EnemyPool"/>.
+        /// </para>
+        /// <c>null</c> si no hay configs con sets, o si el set elegido no tiene
+        /// ningún enemigo (data rota) — el caller sigue con su fallback para que la
+        /// sala no entre a combate sin combatientes.
+        /// </summary>
+        private static List<PlannedSpawn> BuildPlanFromSpawnPointConfigs(
+            RoomSO room, RoomLayout layout, System.Random rng, int floor)
+        {
+            if (layout == null || layout.EnemySpawnPoints == null || layout.EnemySpawnPoints.Count == 0)
+                return null;
+
+            int minSets = int.MaxValue;
+            foreach (var sp in layout.EnemySpawnPoints)
+            {
+                if (sp == null) continue;
+                var config = sp.GetComponent<SpawnPointConfig>();
+                if (config != null && config.SetCount > 0 && config.SetCount < minSets)
+                    minSets = config.SetCount;
+            }
+            if (minSets == int.MaxValue) return null;
+
+            int setIndex = rng.Next(0, minSets);
+
+            var plan = new List<PlannedSpawn>(layout.EnemySpawnPoints.Count);
+            bool anyEnemy = false;
+            foreach (var sp in layout.EnemySpawnPoints)
+            {
+                var config = sp != null ? sp.GetComponent<SpawnPointConfig>() : null;
+                var enemy = config != null ? config.GetEnemyForSet(setIndex) : null;
+                if (enemy != null)
+                {
+                    anyEnemy = true;
+                    plan.Add(new PlannedSpawn(enemy, enemy.ResolveTierForFloor(floor)));
+                }
+                else
+                {
+                    plan.Add(new PlannedSpawn(null, 1));
+                }
+            }
+
+            if (!anyEnemy)
+            {
+                Debug.LogWarning(
+                    $"[DefaultEnemySpawnResolver] room='{room.RoomId}': el set {setIndex} no tiene " +
+                    "enemigo en ningún spawn point — fallback a PossibleSetups/EnemyPool.");
+                return null;
+            }
+            return plan;
         }
 
         /// <summary>

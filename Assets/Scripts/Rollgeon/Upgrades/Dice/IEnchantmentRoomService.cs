@@ -30,18 +30,24 @@ namespace Rollgeon.Upgrades.Dice
         int ResolveCost();
 
         /// <summary>
-        /// Paga un roll y revela hasta 3 encantamientos distintos, cada uno
-        /// aplicable a AL MENOS un dado del bag (compatibilidad + coherencia
-        /// pre-filtrada). Si no hay ningún candidato válido, falla SIN cobrar.
-        /// Reemplaza cualquier oferta previa.
+        /// Paga un roll y revela hasta 3 encantamientos distintos para el set visible en la
+        /// repisa (<paramref name="targetSet"/>): con <see cref="EnchantmentTargetSet.CombatDice"/>
+        /// cada uno es aplicable a AL MENOS un dado del bag (compatibilidad + coherencia
+        /// pre-filtrada) y nunca es de Movimiento; con
+        /// <see cref="EnchantmentTargetSet.MovementDie"/> son SOLO de categoría Movimiento,
+        /// validados contra el dado de Movimiento. Si no hay ningún candidato válido, falla
+        /// SIN cobrar. Reemplaza cualquier oferta previa.
         /// </summary>
-        EnchantmentOfferResult RollOffer(Guid roomInstanceId);
+        EnchantmentOfferResult RollOffer(Guid roomInstanceId,
+            EnchantmentTargetSet targetSet = EnchantmentTargetSet.CombatDice);
 
         /// <summary>
         /// Confirma la elección: aplica la opción <paramref name="optionIndex"/>
         /// de la oferta activa al dado <paramref name="bagIndex"/> (se SUMA,
-        /// nunca reemplaza) y limpia la oferta. Si el apply falla (ej. el dado
-        /// elegido no es coherente con esa opción), la oferta se conserva.
+        /// nunca reemplaza) y limpia la oferta. Con una oferta de Movimiento el destino es
+        /// siempre el dado de Movimiento (<c>EnchantmentSlotRef.MovementDieSlot</c>) y
+        /// <paramref name="bagIndex"/> se ignora. Si el apply falla (ej. el dado elegido no
+        /// es coherente con esa opción), la oferta se conserva.
         /// </summary>
         EnchantmentRollResult ConfirmChoice(int optionIndex, int bagIndex);
 

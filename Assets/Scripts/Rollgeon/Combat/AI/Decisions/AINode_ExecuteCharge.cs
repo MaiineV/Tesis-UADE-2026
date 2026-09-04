@@ -50,6 +50,21 @@ namespace Rollgeon.Combat.AI.Decisions
         [Min(0f)]
         public float BlockedDamageBonus = 0.5f;
 
+        [Tooltip("Key de Content del nombre autorado del ataque (ej. 'intent.charger.charge_roll'). " +
+                 "Vacío = el genérico 'Carga marcada'.")]
+        public string IntentLabelKey;
+
+        [Tooltip("Fallback ES del nombre autorado si la key no está en la tabla.")]
+        public string IntentLabelFallback;
+
+        [Title("Reposicionamiento del atacante")]
+        [Tooltip("Si true, antes de resolver revalida que el propio Charger siga en rango " +
+                 "(Chebyshev) + LoS del CENTRO de la banda que marcó, desde su posición ACTUAL — " +
+                 "si lo empujaron fuera de la línea de carga entre que marcó y que cobra, la carga " +
+                 "da al aire en vez de reubicarlo desde donde ya no está. Default false: mismo " +
+                 "comportamiento de siempre.")]
+        public bool RequireSourceInPosition;
+
         public override string NodeName => "Execute Charge (turn N+1)";
 
         public override AIResult Tick(AIContext context)
@@ -66,6 +81,10 @@ namespace Rollgeon.Combat.AI.Decisions
                 onResult?.Invoke(AIResult.Succeeded);
                 yield break;
             }
+
+            // Mismo criterio que AINode_ExecuteTelegraph: el FaceTarget de abajo necesita el
+            // centro YA congelado, y TryConsumePending recién sacó la marca del servicio.
+            LastThreatenedAreaCenter.Set(context.SelfGuid, LastThreatenedAreaCenter.ComputeCenter(area.Tiles));
 
             FaceTarget(context);
 
@@ -92,7 +111,9 @@ namespace Rollgeon.Combat.AI.Decisions
                 return false;
             if (!threat.TryPeek(context.SelfGuid, out var area)) return false;
 
-            intent = new AIIntent(AIIntentTextKeys.Telegraph, "Carga marcada", area.Damage, area.Kind, area.Tiles);
+            intent = string.IsNullOrEmpty(IntentLabelKey)
+                ? new AIIntent(AIIntentTextKeys.Telegraph, "Carga marcada", area.Damage, area.Kind, area.Tiles)
+                : new AIIntent(IntentLabelKey, IntentLabelFallback, area.Damage, area.Kind, area.Tiles);
             return true;
         }
 
@@ -135,6 +156,13 @@ namespace Rollgeon.Combat.AI.Decisions
                 return;
             }
 
+            if (RequireSourceInPosition && !SourceStillInPosition(context, area))
+            {
+                // El propio Charger es al que empujaron fuera de la línea — whiff, nadie se mueve.
+                EventManager.Trigger(EventName.OnThreatenedAreaResolved, context.SelfGuid, false);
+                return;
+            }
+
             if (!grid.TryGetPosition(context.SelfGuid, out var selfCoord)
                 || !grid.TryGetPosition(context.PlayerGuid, out var playerCoord))
                 return;
@@ -171,14 +199,52 @@ namespace Rollgeon.Combat.AI.Decisions
             EventManager.Trigger(EventName.OnThreatenedAreaResolved, context.SelfGuid, hit);
         }
 
+        /// <remarks>
+        /// Gira hacia el centro CONGELADO de la banda marcada, no la posición viva del jugador —
+        /// mismo criterio y mismo motivo que <c>AINode_ExecuteTelegraph.FaceTarget</c>: un whiff
+        /// (esquivó la línea de carga) no debe verse como que el Charger igual te encaró y pegó.
+        /// </remarks>
         private static void FaceTarget(AIContext context)
         {
-            if (context?.Grid == null || context.PlayerGuid == Guid.Empty) return;
+            if (context?.Grid == null || context.SelfGuid == Guid.Empty) return;
             if (!ServiceLocator.TryGetService<Entities.Visuals.IEntityVisualService>(out var visuals) || visuals == null) return;
             if (!visuals.TryGetPawn(context.SelfGuid, out var pawn) || pawn == null) return;
             if (!context.Grid.TryGetPosition(context.SelfGuid, out var from)) return;
-            if (!context.Grid.TryGetPosition(context.PlayerGuid, out var to)) return;
+
+            GridCoord to;
+            if (!LastThreatenedAreaCenter.TryGet(context.SelfGuid, out to)
+                && !context.Grid.TryGetPosition(context.PlayerGuid, out to))
+                return;
+
             pawn.FaceCoord(from, to);
+        }
+
+        /// <summary>
+        /// <c>true</c> si, desde su posición ACTUAL, el Charger todavía llega (rango Chebyshev +
+        /// LoS) al centro de la banda que marcó. Mismo criterio que
+        /// <c>AINode_ExecuteTelegraph.SourceStillInPosition</c> — acá lo que importa es si el
+        /// propio Charger se movió, no el jugador (eso ya lo resuelve el <c>OccupiesAny</c> de
+        /// arriba).
+        /// </summary>
+        private static bool SourceStillInPosition(AIContext context, ThreatenedArea area)
+        {
+            var grid = context?.Grid;
+            if (grid == null || context.SelfGuid == Guid.Empty) return false;
+            if (!grid.TryGetPosition(context.SelfGuid, out var selfCoord)) return false;
+
+            var center = LastThreatenedAreaCenter.ComputeCenter(area.Tiles);
+
+            int range = 1;
+            if (context.Attributes != null)
+            {
+                int fromSheet = context.Attributes
+                    .GetAttributeModifiedValue<Rollgeon.Attributes.Stats.AttackRange, int>(context.SelfGuid);
+                if (fromSheet > 0) range = fromSheet;
+            }
+
+            if (selfCoord.Chebyshev(center) > range) return false;
+
+            return GridLineOfSight.HasClearLine(grid, selfCoord, center, context.SelfGuid, context.PlayerGuid);
         }
 
         private IEnumerator PlayWindup(AIContext context, Action onImpact)

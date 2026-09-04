@@ -291,7 +291,10 @@ namespace Rollgeon.UI.HUD.DragDrop
             if (!ServiceLocator.TryGetService<IGridManager>(out var grid) || grid == null)
                 return false;
 
-            var resolved = PawnPicker.ResolveCoord(ray, grid);
+            // La máscara sale de la acción ARRASTRADA, no de la selección viva: se puede
+            // arrastrar durante un movimiento armado, y su máscara (ningún pawn) pisaría
+            // un drop de ataque sobre el modelo del enemigo.
+            var resolved = PawnPicker.ResolveCoord(ray, grid, SelectionPickMask.For(_selection));
             if (resolved == null) return false;
 
             coord = resolved.Value;

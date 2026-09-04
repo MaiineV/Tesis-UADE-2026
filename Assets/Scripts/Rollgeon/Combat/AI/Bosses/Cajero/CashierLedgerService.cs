@@ -90,18 +90,33 @@ namespace Rollgeon.Combat.Cashier
             return _damaged.Remove(entityGuid);
         }
 
-        public int CollectTax(Guid ownerGuid, float percent)
+        public int CollectTax(Guid ownerGuid, float percent, int minimum = 0, bool refundOnDeath = true)
         {
             if (ownerGuid == Guid.Empty || percent <= 0f) return 0;
             if (!ServiceLocator.TryGetService<IEconomyService>(out var economy) || economy == null) return 0;
 
+            int gold = economy.CurrentGold;
+            if (gold <= 0) return 0;
+
             // Floor: el arqueo nunca redondea a favor de la casa (40% de 99 = 39, no 40).
-            int take = Mathf.FloorToInt(economy.CurrentGold * percent);
+            int take = Mathf.FloorToInt(gold * percent);
+            if (take < minimum) take = minimum;
+
+            // Sin el techo, el piso le pide a Spend más de lo que hay y el cobro entero se cae:
+            // el jugador casi seco saldría gratis, que es justo lo que el piso viene a impedir.
+            if (take > gold) take = gold;
+
             if (take <= 0) return 0;
             if (!economy.Spend(take)) return 0;
 
-            _vaultOwner = ownerGuid;
-            _vaultedGold += take;
+            // Sin dueño de caja el oro no vuelve al morir: es plata que sale del juego. Ver
+            // OnEntityDestroyedExternal, que le devuelve al jugador todo lo que la caja tenga.
+            if (refundOnDeath)
+            {
+                _vaultOwner = ownerGuid;
+                _vaultedGold += take;
+            }
+
             return take;
         }
 
@@ -136,6 +151,8 @@ namespace Rollgeon.Combat.Cashier
 
         public int GetChipValue(Guid hazardInstanceId)
             => _chips.TryGetValue(hazardInstanceId, out var chip) ? chip.Value : 0;
+
+        public int ChipsOnFloor => _chips.Count;
 
         public CashierTierSnapshot? LastTier => _lastTier;
 
@@ -219,27 +236,7 @@ namespace Rollgeon.Combat.Cashier
 
             _chips.Remove(instanceId);
             PayPlayer(entityGuid, chip.Value);
-
-            // Levantar una ficha soborna gratis: el oro que paga es justo lo que sube el escalón.
-            ArmBribeWindow();
-            AnnounceBribe(chip.Owner);
         }
-
-        /// <summary>Avisa sobre el jefe y no sobre quien levantó la ficha: lo que cambió es cuánto pega él.</summary>
-        private void AnnounceBribe(Guid bossGuid)
-        {
-            if (bossGuid == Guid.Empty) return;
-
-            EventManager.Trigger(
-                EventName.OnFloatingNumberRequested,
-                bossGuid,
-                FloatingNumberType.Status,
-                BribeAnnouncement,
-                Vector3.zero);
-        }
-
-        /// <summary>Sólo caracteres del atlas de <c>m6x11plus</c>: no tiene <c>é</c> ni <c>·</c>, y un glifo que falta sale como cuadradito.</summary>
-        private const string BribeAnnouncement = "Soborno: -1 escalón";
 
         private void OnHazardExpiredExternal(params object[] args)
         {

@@ -97,6 +97,13 @@ namespace Rollgeon.UI.HUD
 
         public static string FormatGoldLabel(int gold) => gold.ToString();
 
+        /// <summary>
+        /// Oro negativo = deuda (Tarjeta de Crédito baja el piso a −30). La pila no puede
+        /// mostrar fichas negativas, así que la vista marca la deuda con el número teñido
+        /// y una ficha de deuda aparte.
+        /// </summary>
+        public static bool IsDebt(int gold) => gold < 0;
+
         /// <summary>Qué muestra la pila de oro: fichas planas + si va la inclinada.</summary>
         public readonly struct GoldVisual
         {

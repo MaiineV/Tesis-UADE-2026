@@ -67,6 +67,19 @@ namespace Rollgeon.Editor.Tools.Localization.Tests
             // y orden, sin palabras que traducir.
             Rollgeon.UI.HUD.Status.AttackKindTextKeys.ComboAttack,
             Rollgeon.UI.HUD.Status.AttackKindTextKeys.TitleFormat,
+            // Nombre propio de enemigo del sheet: Chiplash es marca, igual en los dos
+            // idiomas. (El sniper dejó de ser Stackpot — ahora Bolillero/Bingo Sniper.)
+            "enemy.skirmisher.name",
+            // Feature#0085 — Ítems Activos rediseñados: decisión del usuario, "nombre del
+            // doc en ES y EN, solo se traduce la descripción" (los 7 nombres son términos
+            // de juego/marca en inglés, igual que "Combo"/"Jackpot" más arriba).
+            "blood.transfusion.name",
+            "coin.shield.name",
+            "grapple.claw.name",
+            "justa.de.justicia.name",
+            "probability.drive.name",
+            "blood.d6.name",
+            "bottle.o.thunder.name",
         };
 
         /// <summary>
@@ -85,6 +98,8 @@ namespace Rollgeon.Editor.Tools.Localization.Tests
             // telegrafiado ya se ven en el paño.
             AIIntentTextKeys.Telegraph + ".desc",
             AIIntentTextKeys.Attack + ".desc",
+            // Como la mecha: "Se la lleva la caja" ya dice qué pasa y el badge cuántos turnos faltan.
+            AIIntentTextKeys.CashierVault + ".desc",
             // "Ambiental" en el título de un ataque no califica nada que el jugador pueda usar.
             Rollgeon.UI.HUD.Status.AttackKindTextKeys.Environmental,
         };

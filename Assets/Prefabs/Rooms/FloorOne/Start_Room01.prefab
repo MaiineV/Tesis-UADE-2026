@@ -155,7 +155,6 @@ GameObject:
   m_Component:
   - component: {fileID: 6328570724190670655}
   - component: {fileID: 8111030931873427058}
-  - component: {fileID: 6616247621717009882}
   - component: {fileID: 2867537146888488354}
   - component: {fileID: 5336964536310563221}
   m_Layer: 0
@@ -203,21 +202,6 @@ MonoBehaviour:
   _meshClosed: {fileID: 6531042403954363869}
   _wallPlug: {fileID: 595992902658532138}
   _meshWallFill: {fileID: 3952005848670817403}
---- !u!114 &6616247621717009882
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 629644367849725670}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a2cfef84d4eec8c46ad4f5c70c9e5c70, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Rollgeon::Rollgeon.UI.Tooltips.HeroActionTooltipBinder
-  _slot: 4
-  _resolvePhase: 2
-  _onlyDuringCombat: 1
 --- !u!114 &2867537146888488354
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -19105,6 +19089,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1711357143213522343}
     m_Modifications:
+    - target: {fileID: 5415917490452881594, guid: 7f56c1a3ea36f0444afedf57bbba76a0, type: 3}
+      propertyPath: Direction
+      value: 7
+      objectReference: {fileID: 0}
     - target: {fileID: 6109365140253393249, guid: 7f56c1a3ea36f0444afedf57bbba76a0, type: 3}
       propertyPath: m_LocalPosition.x
       value: -2.456
@@ -29312,6 +29300,10 @@ PrefabInstance:
       propertyPath: m_StaticEditorFlags
       value: 2147483647
       objectReference: {fileID: 0}
+    - target: {fileID: 4231408920687601601, guid: b59b68fec08abe64bb0833390e365a11, type: 3}
+      propertyPath: Direction
+      value: 3
+      objectReference: {fileID: 0}
     - target: {fileID: 8475490939673076207, guid: b59b68fec08abe64bb0833390e365a11, type: 3}
       propertyPath: m_Name
       value: Cartel1
@@ -31835,7 +31827,7 @@ PrefabInstance:
     - target: {fileID: 7885387794739382763, guid: 44c6fbee28cc5d24c91d5f8bf154b6a3, type: 3}
       propertyPath: 'm_Materials.Array.data[3]'
       value: 
-      objectReference: {fileID: 2100000, guid: 1800e9f2299478a4c9c3d9aa31d6f133, type: 2}
+      objectReference: {fileID: 2100000, guid: f08dc6eab10e51441ad4582ccbbcd95a, type: 2}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -41954,6 +41946,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1711357143213522343}
     m_Modifications:
+    - target: {fileID: 5415917490452881594, guid: 7f56c1a3ea36f0444afedf57bbba76a0, type: 3}
+      propertyPath: Direction
+      value: 3
+      objectReference: {fileID: 0}
     - target: {fileID: 6109365140253393249, guid: 7f56c1a3ea36f0444afedf57bbba76a0, type: 3}
       propertyPath: m_LocalPosition.x
       value: 3.533

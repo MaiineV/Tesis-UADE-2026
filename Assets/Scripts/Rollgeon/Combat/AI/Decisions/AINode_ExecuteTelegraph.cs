@@ -41,6 +41,24 @@ namespace Rollgeon.Combat.AI.Decisions
                  "daño cae cuando el feedback termina por duración, no en el golpe.")]
         public string ImpactEventKey = "hit";
 
+        [Tooltip("Key de Content del nombre autorado del ataque (ej. 'intent.artillery.coin_drop'). " +
+                 "Vacío = el genérico 'Golpe marcado'. La tabla resuelve <key>.name y <key>.desc.")]
+        public string IntentLabelKey;
+
+        [Tooltip("Fallback ES del nombre autorado si la key no está en la tabla.")]
+        public string IntentLabelFallback;
+
+        [Title("Reposicionamiento del atacante")]
+        [Tooltip("Si true, antes de aplicar el daño revalida que el propio atacante siga en " +
+                 "rango (Chebyshev) + LoS del CENTRO del área marcada, desde su posición ACTUAL " +
+                 "— para golpes anclados al propio cuerpo (ej. un tajo cuerpo a cuerpo): si lo " +
+                 "empujaron fuera de posición entre que marcó y que cobra, el golpe da al aire en " +
+                 "vez de conectar desde donde ya no está. Default false: el daño se resuelve " +
+                 "puramente contra el área congelada, sin importar dónde terminó el atacante — " +
+                 "correcto para ataques a distancia/ambientales (una bomba ya lanzada no debería " +
+                 "cancelarse porque empujaste a quien la tiró).")]
+        public bool RequireSourceInPosition;
+
         public override string NodeName => "Execute Telegraph (turn N+1)";
 
         /// <summary>
@@ -105,8 +123,13 @@ namespace Rollgeon.Combat.AI.Decisions
                 return false;
             if (!threat.TryPeek(context.SelfGuid, out var area)) return false;
 
-            intent = new AIIntent(AIIntentTextKeys.Telegraph, "Golpe marcado",
-                                  area.Damage, area.Kind, area.Tiles);
+            // El nombre autorado (la tool de enemigos / sheet de traducciones) pisa el
+            // genérico — mismo criterio que los nodos de boss con key propia.
+            intent = string.IsNullOrEmpty(IntentLabelKey)
+                ? new AIIntent(AIIntentTextKeys.Telegraph, "Golpe marcado",
+                               area.Damage, area.Kind, area.Tiles)
+                : new AIIntent(IntentLabelKey, IntentLabelFallback,
+                               area.Damage, area.Kind, area.Tiles);
             return true;
         }
 
@@ -203,16 +226,30 @@ namespace Rollgeon.Combat.AI.Decisions
         }
 
         /// <summary>
-        /// Gira al boss hacia el jugador antes del windup. Sin esto queda mirando en la
-        /// dirección en la que kiteó el turno anterior y ataca de espaldas.
+        /// Gira al boss hacia el CENTRO CONGELADO del área que está cobrando antes del windup.
+        /// Sin esto queda mirando en la dirección en la que kiteó el turno anterior y ataca de
+        /// espaldas.
         /// </summary>
+        /// <remarks>
+        /// El centro congelado (<see cref="LastThreatenedAreaCenter"/>) y no la posición VIVA del
+        /// jugador: si esquivó fuera del área marcada, girar hacia donde está parado ahora hace
+        /// que un whiff (<see cref="Resolve"/> no le pega porque ya no está adentro) se vea como
+        /// que sí conectó — el mismo bug de playtest que tenía <c>ArtilleryBombDrop</c> antes de
+        /// este fix. Sin centro guardado (llamada fuera del flujo esperado) cae a la posición
+        /// actual del jugador como aproximación razonable.
+        /// </remarks>
         private static void FaceTarget(AIContext context)
         {
-            if (context?.Grid == null || context.PlayerGuid == Guid.Empty) return;
+            if (context?.Grid == null || context.SelfGuid == Guid.Empty) return;
             if (!ServiceLocator.TryGetService<Entities.Visuals.IEntityVisualService>(out var visuals) || visuals == null) return;
             if (!visuals.TryGetPawn(context.SelfGuid, out var pawn) || pawn == null) return;
             if (!context.Grid.TryGetPosition(context.SelfGuid, out var from)) return;
-            if (!context.Grid.TryGetPosition(context.PlayerGuid, out var to)) return;
+
+            GridCoord to;
+            if (!LastThreatenedAreaCenter.TryGet(context.SelfGuid, out to)
+                && !context.Grid.TryGetPosition(context.PlayerGuid, out to))
+                return;
+
             pawn.FaceCoord(from, to);
         }
 
@@ -221,9 +258,18 @@ namespace Rollgeon.Combat.AI.Decisions
         /// antes deja medio segundo de tiles muertos mientras el boss carga el golpe. Se apaga
         /// siempre que ejecutemos, haya o no impacto.
         /// </remarks>
-        private static void Resolve(AIContext context, ThreatenedArea area)
+        private void Resolve(AIContext context, ThreatenedArea area)
         {
             ClearOverlay(context);
+
+            if (RequireSourceInPosition && !SourceStillInPosition(context, area))
+            {
+                // El atacante ya no está donde marcó — el golpe da al aire, no al jugador. Mismo
+                // criterio que "el jugador esquivó": Failed acá abortaría el turno del jefe, así
+                // que se resuelve como whiff (hit=false, sin daño) y se sigue de largo.
+                EventManager.Trigger(EventName.OnThreatenedAreaResolved, context.SelfGuid, false);
+                return;
+            }
 
             bool hit = false;
             var grid = context.Grid;
@@ -266,6 +312,34 @@ namespace Rollgeon.Combat.AI.Decisions
             }
 
             EventManager.Trigger(EventName.OnThreatenedAreaResolved, context.SelfGuid, hit);
+        }
+
+        /// <summary>
+        /// <c>true</c> si, desde su posición ACTUAL, el atacante todavía llega (rango Chebyshev +
+        /// LoS) al centro del área que marcó. Mismo par de chequeos que <c>PcTargetInRange</c> usa
+        /// para autorizar la marca, pero contra el centro CONGELADO en vez de la posición viva del
+        /// jugador — acá lo que importa es si el propio atacante se movió, no si el jugador lo hizo
+        /// (eso ya lo resuelve el <c>OccupiesAny</c> de más abajo).
+        /// </summary>
+        private static bool SourceStillInPosition(AIContext context, ThreatenedArea area)
+        {
+            var grid = context?.Grid;
+            if (grid == null || context.SelfGuid == Guid.Empty) return false;
+            if (!grid.TryGetPosition(context.SelfGuid, out var selfCoord)) return false;
+
+            var center = LastThreatenedAreaCenter.ComputeCenter(area.Tiles);
+
+            int range = 1;
+            if (context.Attributes != null)
+            {
+                int fromSheet = context.Attributes
+                    .GetAttributeModifiedValue<Rollgeon.Attributes.Stats.AttackRange, int>(context.SelfGuid);
+                if (fromSheet > 0) range = fromSheet;
+            }
+
+            if (selfCoord.Chebyshev(center) > range) return false;
+
+            return GridLineOfSight.HasClearLine(grid, selfCoord, center, context.SelfGuid, context.PlayerGuid);
         }
 
         // Odin puede instanciar el nodo sin correr field initializers, así que el guard

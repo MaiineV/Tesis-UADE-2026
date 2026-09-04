@@ -71,6 +71,14 @@ namespace Rollgeon.Effects.Concretes
         [Tooltip("Multiplicador aplicado al resultado del reader.")]
         private float _readerMultiplier = 1f;
 
+        [Title("Target")]
+        [SerializeField]
+        [Tooltip("Aplica sobre el SourceGuid (quien dispara) ignorando el TargetGuid del contexto. " +
+                 "Para costos propios del jugador (Vampiro paga 5 de vida al jugar): en un hook de " +
+                 "combo jugado el TargetGuid es el ENEMIGO. Como costo, no pasa por el DamagePipeline " +
+                 "(el escudo no lo absorbe).")]
+        private bool _targetSelf;
+
         [Title("Clamp")]
         [SerializeField, ShowIf(nameof(TargetStat), StatType.Health)]
         [Tooltip("Si true (solo Health), el resultado se capea a la vida máxima del target. " +
@@ -87,13 +95,25 @@ namespace Rollgeon.Effects.Concretes
             _baseAmount = amount;
         }
 
+        /// <summary>
+        /// Aplica sobre quien dispara, no sobre el target del contexto. Costos propios
+        /// (Vampiro): un hook de combo jugado trae al enemigo como TargetGuid.
+        /// </summary>
+        public bool TargetSelf
+        {
+            get => _targetSelf;
+            set => _targetSelf = value;
+        }
+
         public override bool ApplyEffect(EffectContext context)
         {
             if (context == null) return false;
 
             int amount = ResolveAmount(context);
 
-            Guid target = context.TargetGuid != Guid.Empty ? context.TargetGuid : context.SourceGuid;
+            Guid target = _targetSelf
+                ? context.SourceGuid
+                : context.TargetGuid != Guid.Empty ? context.TargetGuid : context.SourceGuid;
             if (target == Guid.Empty)
             {
                 Debug.LogWarning("[EffModifyIntAttribute] No target resolved (TargetGuid and SourceGuid both empty) — aborting chain.");
@@ -140,8 +160,10 @@ namespace Rollgeon.Effects.Concretes
             // FinalDamage = amount — un "golpe" 100% absorbible cortaba la racha de Furia
             // Contenida igual. Vía pipeline, el escudo absorbe y el payload sale con el
             // FinalDamage real post-escudo. Fallback al write directo para tests/contexts
-            // sin pipeline. Set/Multiply/Divide siguen directos (semántica absoluta).
+            // sin pipeline. Set/Multiply/Divide siguen directos (semántica absoluta). Un costo
+            // propio (_targetSelf) tampoco pasa: no es un golpe, el escudo no lo absorbe.
             if (TargetStat == StatType.Health && Operation == IntOperation.Subtract && amount > 0
+                && !_targetSelf
                 && ServiceLocator.TryGetService<Rollgeon.Combat.Pipelines.IDamagePipeline>(out var pipeline)
                 && pipeline != null)
             {

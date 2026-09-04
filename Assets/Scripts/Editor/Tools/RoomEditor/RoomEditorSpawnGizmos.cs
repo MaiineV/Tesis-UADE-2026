@@ -49,12 +49,13 @@ namespace Rollgeon.Editor.Tools.RoomEditor
                 ? RoomEditorWindow.ColorForSet(setIndex)
                 : new Color(0.55f, 0.55f, 0.55f);
 
-            DrawDiamond(sp.position, color, isSelected);
+            // Hollow marker: this spawn point spawns nothing for the previewed set.
+            DrawDiamond(sp.position, color, isSelected, hollow: enemy == null);
             DrawFootprint(layout, sp, enemy, color);
 
             string label = enemy != null
                 ? $"{sp.name} · {enemy.DisplayName ?? enemy.name}{FootprintSuffix(enemy)}"
-                : $"{sp.name} · (set {setIndex} empty)";
+                : $"{sp.name} · (set {setIndex}: nothing spawns)";
             DrawLabel(sp.position, label, color);
         }
 
@@ -73,7 +74,7 @@ namespace Rollgeon.Editor.Tools.RoomEditor
                 var pos = sp.position + Vector3.up * (i * StackSpacingY);
                 var enemy = config.GetEnemyForSet(i);
                 var color = enemy != null ? RoomEditorWindow.ColorForSet(i) : new Color(0.4f, 0.4f, 0.4f);
-                DrawDiamond(pos, color, isSelected && i == 0);
+                DrawDiamond(pos, color, isSelected && i == 0, hollow: enemy == null);
                 DrawFootprint(layout, sp, enemy, color);
             }
 
@@ -118,7 +119,7 @@ namespace Rollgeon.Editor.Tools.RoomEditor
             Handles.color = prev;
         }
 
-        private static void DrawDiamond(Vector3 worldPos, Color color, bool isSelected)
+        private static void DrawDiamond(Vector3 worldPos, Color color, bool isSelected, bool hollow = false)
         {
             float size = HandleUtility.GetHandleSize(worldPos) * DiamondRadius;
 
@@ -131,7 +132,15 @@ namespace Rollgeon.Editor.Tools.RoomEditor
             }
 
             Handles.color = color;
-            Handles.DrawSolidDisc(worldPos, Vector3.up, size);
+            if (hollow)
+            {
+                Handles.DrawWireDisc(worldPos, Vector3.up, size);
+                Handles.DrawWireDisc(worldPos, Vector3.up, size * 0.6f);
+            }
+            else
+            {
+                Handles.DrawSolidDisc(worldPos, Vector3.up, size);
+            }
 
             Handles.color = Color.black;
             Handles.DrawWireDisc(worldPos, Vector3.up, size);

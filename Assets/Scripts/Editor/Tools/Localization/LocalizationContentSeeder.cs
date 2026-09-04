@@ -286,6 +286,12 @@ namespace Rollgeon.EditorTools.Localization
                 "{0} agotó su poder y desapareció.",
                 "{0} ran out of power and is gone.");
 
+            // Toast sobre la pila de oro cuando un item da oro (ItemGoldFeedbackView):
+            // {0} = nombre del item, {1} = oro otorgado.
+            Ui(UiTextKeys.ItemGoldGrantedBody,
+                "{0}: +{1} de oro",
+                "{0}: +{1} gold");
+
             // Toast al tocar un chip de acción no usable (ActionRejectToast):
             // título + motivo concreto resuelto por PlayerActionButtonsView.
             Ui(UiTextKeys.RejectTitle,
@@ -312,6 +318,12 @@ namespace Rollgeon.EditorTools.Localization
             Ui(UiTextKeys.RejectNoPotion,
                 "No tienes poción disponible.",
                 "You have no potion available.");
+
+            // Ventana de decision de la ficha de item activo: el tooltip explica los dos
+            // gestos mientras la tirada espera (ActiveItemChipView).
+            Ui(UiTextKeys.ActiveItemDecideHint,
+                "Click: re-tirar (-1 Roll) · Confirmar: aceptar",
+                "Click: reroll (-1 Roll) · Confirm: accept");
         }
 
         // ==================================================================
@@ -347,6 +359,12 @@ namespace Rollgeon.EditorTools.Localization
             Ui("tooltip.effect.force_door.item_bonus",
                 "Bonus de objetos a tu tirada: +{0}",
                 "Item bonus to your roll: +{0}");
+
+            // Tooltip corto de la puerta en combate ({0} = " (Y)" con el hotkey vivo, o vacío).
+            Ui("door.forceable.title", "Puerta forzable", "Forceable door");
+            Ui("door.forceable.body",
+                "Podés intentar abrirla con Forzar Puerta{0}.",
+                "You can try to open it with Force Door{0}.");
 
             // Mecha de una bomba de sala en su tooltip de mundo.
             Ui("prop.tooltip.fuse", "Estalla en {0} turnos", "Explodes in {0} turns");
@@ -446,8 +464,8 @@ namespace Rollgeon.EditorTools.Localization
                 "If this die rolls its maximum and takes part in a combo, you gain 30 shield.");
 
             Ench("fragil", "Frágil", "Fragile",
-                "En cada tirada, 50% de que este dado no sume daño y 50% de que sume el doble. Sigue contando para formar el combo.",
-                "Each roll, 50% chance this die adds no damage and 50% it adds double. It still counts toward forming the combo.");
+                "Al jugarlo, 50% de que este dado no sume daño y 50% de que sume el doble. Sigue contando para formar el combo.",
+                "When played, 50% chance this die adds no damage and 50% it adds double. It still counts toward forming the combo.");
 
             Ench("gemelo", "Gemelo", "Twin",
                 "Si este dado muestra el mismo número que otro en la tirada, ambos valen x1.5 para el combo.",
@@ -497,9 +515,10 @@ namespace Rollgeon.EditorTools.Localization
                 "Este dado solo saca números pares.",
                 "This die only rolls even numbers.");
 
+            // Fix#0081: solo actúa cuando participa de un combo real — en Número Alto vale su cara.
             Ench("oxidado", "Oxidado", "Rusty",
-                "Este dado no suma daño, pero cada vez que participa en un combo genera +2 de oro.",
-                "This die adds no damage, but each time it takes part in a combo it generates +2 gold.");
+                "Cuando participa en un combo, este dado no suma daño y genera +2 de oro.",
+                "When it takes part in a combo, this die adds no damage and generates +2 gold.");
 
             Ench("par", "Par", "Even",
                 "Solo muestra caras pares. d6:{2,4,6} d8:{2,4,6,8} d12:{2,4,6,8,10,12}",
@@ -522,21 +541,24 @@ namespace Rollgeon.EditorTools.Localization
                 "If 2 or more dice show the same number in the final roll, this die adds its value to the combo twice.");
 
             Ench("sediento", "Sediento", "Thirsty",
-                "Cada vez que participa en un combo consume 2 de oro y suma +0,2 al multiplicador. Sin oro, el combo no hace daño.",
-                "Each time it joins a combo it consumes 2 gold and adds +0.2 to the multiplier. With no gold, the combo deals no damage.");
+                "Cada vez que participa en un combo consume 2 de oro y suma +0,2 al multiplicador. Sin 2 de oro, el dado no se puede seleccionar.",
+                "Each time it joins a combo it consumes 2 gold and adds +0.2 to the multiplier. Without 2 gold, the die can't be selected.");
+            Content("ench.sediento.lock", "2 oro", "2 gold");
 
             Ench("torpe", "Torpe", "Clumsy",
                 "Obliga a volver a tirar todos los dados en el turno 2 del combate.",
                 "Forces a full reroll on turn 2 of the combat.");
 
+            // Fix#0081: misma regla que Oxidado — solo en combos reales.
             Ench("volatil", "Volátil", "Volatile",
-                "Al sacar el máximo, este dado aporta el doble de daño. Con cualquier otra cara aporta la mitad.",
-                "On its maximum this die deals double damage. On any other face it deals half.");
+                "Cuando participa en un combo: si saca el máximo aporta el doble de daño; con cualquier otra cara aporta la mitad.",
+                "When it takes part in a combo: on its maximum it deals double damage; on any other face it deals half.");
 
             // Feature#0073 — encantamientos del GDD que faltaban en el catálogo.
             Ench("vampiro", "Vampiro", "Vampire",
-                "Cada vez que este dado participa en un combo, perdés 5 de vida y el multiplicador sube +0,3. Con 5 de vida o menos, el dado no suma daño.",
-                "Each time this die takes part in a combo you lose 5 health and the multiplier rises by +0.3. At 5 health or less the die adds no damage.");
+                "Cada vez que este dado participa en un combo, perdés 5 de vida y el multiplicador sube +0,3. Con 5 de vida o menos, el dado no se puede seleccionar.",
+                "Each time this die takes part in a combo you lose 5 health and the multiplier rises by +0.3. At 5 health or less the die can't be selected.");
+            Content("ench.vampiro.lock", "6+ vida", "6+ HP");
 
             Ench("solitario", "Solitario", "Loner",
                 "Si este dado queda fuera del combo que jugás, genera +2 de oro.",
@@ -547,8 +569,8 @@ namespace Rollgeon.EditorTools.Localization
                 "On an odd face this die deals triple damage. On an even face it deals none. It still counts toward forming the combo.");
 
             Ench("racha", "Racha", "Streak",
-                "Por cada combo consecutivo en el que participe en este combate, aporta +3 de daño más (+3, +6, +9…). Se reinicia si queda fuera de un combo.",
-                "For each consecutive combo it takes part in this combat, it adds +3 more damage (+3, +6, +9…). Resets if it's left out of a combo.");
+                "Por cada combo consecutivo en el que participe en este combate, aporta +3 de daño más (+3, +6, +9…). Se reinicia si queda fuera de un combo o si jugás Número Alto.",
+                "For each consecutive combo it takes part in this combat, it adds +3 more damage (+3, +6, +9…). Resets if it's left out of a combo or if you play High Number.");
 
             Ench("ejecutor", "Ejecutor", "Executioner",
                 "Si este dado participa en un combo contra un enemigo con 25% de vida o menos, aporta +12 de daño.",
@@ -726,6 +748,13 @@ namespace Rollgeon.EditorTools.Localization
                 "Perdés tu próximo turno.",
                 "You lose your next turn.");
 
+            // Sangrado (Feature#0085): a diferencia de Veneno, acumula stacks — el nombre
+            // lleva un placeholder {0} para el conteo de stacks vivos (BleedStatusProvider).
+            Content("status.bleed.name", "Sangrado ×{0}", "Bleeding ×{0}");
+            Content("status.bleed.desc",
+                "Recibís daño al inicio de cada turno por cada stack de Sangrado. Volver a sangrar SUMA stacks nuevos.",
+                "You take damage at the start of each turn for every Bleed stack. Bleeding again ADDS new stacks.");
+
             // Cooldown post-portal (con turnos, tickea como veneno/stun).
             Content("status.tp_delay.name", "Recién teletransportado", "Teleport Fatigue");
             Content("status.tp_delay.desc",
@@ -738,8 +767,8 @@ namespace Rollgeon.EditorTools.Localization
                 "Quema la sala y se teletransporta cuando lo alcanzás.",
                 "Burns the room and teleports when you reach him.");
             Content("boss.cashier.brief",
-                "Pega más fuerte cuanto más oro llevás. Las fichas que dejás vencer se las queda.",
-                "Hits harder the more gold you carry. Chips you let expire, he keeps.");
+                "Te tira tres casillas y te cobra oro en cada empujón. Lo que dejes vencer en el piso lo perdés.",
+                "Throws you three tiles and charges you gold on every shove. Whatever you let expire on the floor is lost.");
             Content("boss.la_generala.brief",
                 "Suelta anillos eléctricos en oleadas, con huecos entre anillo y anillo.",
                 "Unleashes electric rings in waves, with gaps between the rings.");
@@ -777,10 +806,10 @@ namespace Rollgeon.EditorTools.Localization
             Content("enemy_tutorial_melee_c.brief", "Pega de cerca.", "Hits up close.");
 
             // Maldiciones de jefe (bloque PLAYER CURSE). La del Croupier reusa status.dice_block.
-            Content("curse.bank_keeps.name", "La banca retiene", "The Bank Keeps");
+            Content("curse.bank_keeps.name", "La banca no espera", "The Bank Doesn't Wait");
             Content("curse.bank_keeps.desc",
-                "El oro que dejás vencer se lo queda la banca.",
-                "Gold you let expire, the bank keeps.");
+                "Lo que dejás vencer en el piso se pierde.",
+                "Whatever you let expire on the floor is lost.");
             Content("curse.repeat_ban.name", "Mano vetada", "Banned Hand");
             Content("curse.repeat_ban.desc",
                 "No podés repetir el combo que acabás de anotar.",
@@ -874,6 +903,30 @@ namespace Rollgeon.EditorTools.Localization
 
             Content(AIIntentTextKeys.Attack + ".name", "Golpe", "Strike");
             Content(AIIntentTextKeys.Attack + ".desc", string.Empty, string.Empty);
+
+            Content(AIIntentTextKeys.CashierShove + ".name", "Empujón", "Shove");
+            Content(AIIntentTextKeys.CashierShove + ".desc",
+                "Te empuja <b>{1}</b> casillas y te cobra parte del oro que lleves encima.",
+                "Shoves you <b>{1}</b> tiles and takes a cut of the gold you carry.");
+
+            Content(AIIntentTextKeys.CashierVault + ".name", "Se la lleva la caja", "The Vault Takes It");
+            Content(AIIntentTextKeys.CashierVault + ".desc", string.Empty, string.Empty);
+
+            Content(AIIntentTextKeys.CashierCoins + ".name", "Monedas venciendo", "Coins Expiring");
+            Content(AIIntentTextKeys.CashierCoins + ".desc",
+                "La caja se lleva una por turno; quedan <b>{1}</b> en el piso.",
+                "The vault takes one per turn; <b>{1}</b> left on the floor.");
+
+            // Dos keys y no una: el turno que avisa y el que cobra dicen cosas distintas.
+            Content(AIIntentTextKeys.CashierSlam + ".name", "Cañonazo", "Cannon Shot");
+            Content(AIIntentTextKeys.CashierSlam + ".desc",
+                "Marca un área de 3×3 donde estés parado y la cobra al turno siguiente.",
+                "Marks a 3×3 area where you stand and fires on it next turn.");
+
+            Content(AIIntentTextKeys.CashierSlamDue + ".name", "Cañonazo", "Cannon Shot");
+            Content(AIIntentTextKeys.CashierSlamDue + ".desc",
+                "Cae en el área marcada, no donde estés.",
+                "It lands on the marked area, not on where you are.");
 
             Content(AIIntentTextKeys.Leaves + ".name", "Lo que deja", "What It Leaves");
             Content(AIIntentTextKeys.Leaves + ".desc",
@@ -1012,6 +1065,9 @@ namespace Rollgeon.EditorTools.Localization
             Ui("hazard.panel.type", "Peligro de sala", "Room hazard");
             Ui("hazard.panel.hit", "Golpe", "Hit");
             Ui("hazard.panel.cycle", "Golpea cada {0} rondas", "Strikes every {0} rounds");
+            Ui(Rollgeon.Combat.Threat.HazardTooltipInfo.ClockTicksKey, "Se vence", "Expiring");
+            Ui(Rollgeon.Combat.Threat.HazardTooltipInfo.ClockDueKey,
+                "Se la lleva la caja", "The vault takes it");
 
             // Identidad por hazard. El stun del hielo lo aplica IceStunBinder (Damage 0 en el
             // SO), por eso la frase habla de aturdir sin nombrar números.
@@ -1025,8 +1081,8 @@ namespace Rollgeon.EditorTools.Localization
                 "Ice from her cup: stepping on it stuns, and the patch breaks underfoot.");
             Content("hazard.chip.name", "Ficha de la banca", "House Chip");
             Content("hazard.chip.desc",
-                "Pisala y cobrás su valor. La que vence se la queda la banca — y lo cura.",
-                "Step on it to collect its value. One that expires, the bank keeps — and it heals him.");
+                "Pisala y cobrás su valor. La que vence se pierde.",
+                "Step on it to collect its value. One that expires is lost.");
             Content("hazard.table_fire.name", "Fuego de mesa", "Table Fire");
             Content("hazard.table_fire.desc",
                 "Arde: golpea a quien termine su turno adentro.",
@@ -1105,8 +1161,8 @@ namespace Rollgeon.EditorTools.Localization
             // no puede presentarlo como el mismo objeto.
             Content("tile.spikes_cajero.name", "Pinchos del Cajero", "Cashier's Spikes");
             Content("tile.spikes_cajero.desc",
-                "Se desarman al pisarlos y se rearman solos. Duelen bastante más que los comunes.",
-                "Disarm when stepped on and rearm on their own. They hurt a fair bit more than the common ones.");
+                "Cobran cada vez que los cruzás: no se gastan. Duelen bastante más que los comunes.",
+                "They charge every time you cross them - they never wear out. They hurt a fair bit more than the common ones.");
         }
 
         // ==================================================================
@@ -1247,6 +1303,19 @@ namespace Rollgeon.EditorTools.Localization
             Item("egoista", "El egoísta", "The Selfish One",
                 "Cuanto más oro tienes, más daño haces.",
                 "The more gold you have, the more damage you deal.");
+
+            // Feature#0074 — Tarjeta / Rezagado / Peaje.
+            Item("tarjeta.de.credito", "Tarjeta de Crédito", "Credit Card",
+                "Tu oro puede bajar hasta -30: comprá a crédito y pagá la deuda con lo que ganes.",
+                "Your gold can drop to -30: buy on credit and pay the debt back with what you earn.");
+
+            Item("rezagado", "Rezagado", "Straggler",
+                "Al adquirirlo se fija en tu combo menos usado: ese combo hace +50% de daño el resto de la run.",
+                "On pickup it locks onto your least-used combo: that combo deals +50% damage for the rest of the run.");
+
+            Item("peaje", "Peaje", "Toll",
+                "Al entrar a una sala de combate normal podés pagar 15 + 10 por piso de oro para limpiarla sin pelear. Sin botín.",
+                "When entering a regular combat room you may pay 15 + 10 per floor in gold to clear it without fighting. No loot.");
 
             Item("escudo.imperial.poker", "Escudo Imperial", "Imperial Shield",
                 "Cada Póker genera +2 escudo.",
@@ -1423,14 +1492,22 @@ namespace Rollgeon.EditorTools.Localization
 
             // Enemigos.
             Content("Boss01.name", "Jefe de Prueba", "Boss Test");
-            Content("healerEnemy.name", "Sanador", "Healer");
+            // Renombrado por "traducciones faltantes.txt" (04/09).
+            Content("healerEnemy.name", "Esqueleto Cantinero", "Skeleton Bartender");
             Content("healerEnemy.desc",
-                "Un espíritu de la casa que remienda a los suyos.",
-                "A house spirit that patches up its own.");
-            Content("CardEnemy01.name", "Enemigo Carta", "Card Enemy");
+                "Un esqueleto vestido de bartender que apoya a sus aliados desde media distancia, " +
+                "lanzándoles botellas curativas para mantenerlos en pie. Si todos sus aliados caen, " +
+                "deja de curar y usa esas mismas botellas como proyectiles contra el jugador.",
+                "A skeleton dressed as a bartender that supports its allies from mid-range, throwing " +
+                "healing bottles to keep them standing. If all its allies fall, it stops healing and " +
+                "hurls those same bottles as projectiles at the player instead.");
+            // Renombrado por el sheet "traduccion enemigos.txt" (04/09).
+            Content("CardEnemy01.name", "Guerrero de Corazones", "Heart Warrior");
             Content("CardEnemy01.desc",
-                "Soldado de la casa, cuerpo a cuerpo.",
-                "House soldier; fights up close.");
+                "Un naipe viviente con armadura liviana y una espada corta. Ataca cuerpo a cuerpo " +
+                "con golpes rápidos, persiguiendo al jugador sin descanso.",
+                "A living playing card in light armor wielding a short sword. Attacks in melee with " +
+                "quick strikes, relentlessly chasing the player.");
             Content("ChestMimic01.name", "Mímico", "Mimic");
             Content("ChestMimic01.desc",
                 "Un cofre que muerde.",
@@ -1493,8 +1570,8 @@ namespace Rollgeon.EditorTools.Localization
 
             Boss(CajeroAssetBuilder.EntityId,
                 "El Cajero", "The Cashier",
-                "Te tira lejos y te llena el piso de monedas. Las que no levantás a tiempo se las lleva él, y cada una lo cura.",
-                "Throws you clear and litters the floor with coins. The ones you don't grab in time he takes back, and each one heals him.");
+                "Te tira lejos y te saca oro, y parte de esa plata cae al piso. La que no levantás a tiempo se pierde.",
+                "Throws you clear and takes your gold, and some of it lands on the floor. Whatever you don't grab in time is gone.");
 
             // Misma identidad que RangedEnemy01 a propósito: el refuerzo del Cajero es un
             // ranged común más, no un personaje.
@@ -1513,32 +1590,148 @@ namespace Rollgeon.EditorTools.Localization
                 "Un dado gigante de la mano de la Generala.",
                 "A giant die from the Generala's hand.");
 
-            // Bestiario nuevo (salas del 03/09). Frases cortas de hover: dicen lo que
-            // el bicho HACE, y solo mecánicas que el kit realmente tiene.
+            // Bestiario del sheet "traduccion enemigos.txt" (04/09) — textos autorados
+            // por el equipo; NO reescribirlos acá sin actualizar el sheet.
             Boss("enemy.artillery",
-                "Artillería", "Artillery",
-                "Obús de la casa: bombardea de lejos y deja el piso ardiendo donde cae el tiro.",
-                "House howitzer: shells from afar and leaves the floor burning where the shot lands.");
+                "La Tragamonedas Viviente", "The Living Slot",
+                "Una tragamonedas oxidada que se mantiene a distancia y dispara proyectiles al jugador desde lejos.",
+                "A rusted slot machine that stays at range and fires projectiles at the player from afar.");
             Boss("enemy.charger",
-                "Embestidor", "Charger",
-                "Se alinea, marca el pasillo y embiste. No te quedes en su línea.",
-                "Lines up, marks the lane and charges. Don't stand in its path.");
+                "Ojos de Billar", "Billiard Eyes",
+                "Una bola de billar con ojos propios que persigue al jugador rodando a toda velocidad. " +
+                "Si tiene espacio, embiste en línea recta empujándolo lejos de su camino; si ya está " +
+                "a melee, simplemente golpea sin necesidad de embestir.",
+                "A billiard ball with eyes of its own that chases the player, rolling at full speed. " +
+                "Given room, it charges in a straight line, slamming into the player and knocking them " +
+                "back; if already in melee range, it simply strikes without needing to charge.");
             Boss("enemy.guardian",
-                "Guardián", "Guardian",
-                "Protege a los suyos: los aliados cercanos reciben menos daño mientras siga en pie.",
-                "Shields its own: nearby allies take less damage while it stands.");
+                "Ruleta Viviente", "Living Roulette",
+                "Una ruleta de casino enorme que rueda de aliado en aliado, otorgándoles escudos " +
+                "protectores. Es la clase tanque del grupo — su prioridad es mantener con vida a " +
+                "sus compañeros, no atacar. Si queda sola en combate, embiste directamente al " +
+                "jugador en cuerpo a cuerpo.",
+                "A massive casino roulette wheel that rolls from ally to ally, granting them " +
+                "protective shields. It's the group's tank — its priority is keeping its allies " +
+                "alive, not attacking. If left alone in combat, it charges directly at the player " +
+                "in melee.");
+            Boss("enemy.mago",
+                "Mago Dado", "Dice Mage",
+                "Un hechicero encapuchado con un dado gigante flotando en lugar de cabeza. Ataca a " +
+                "distancia telegrafiando el área antes de invocar una descarga de fuego que prende " +
+                "el escenario.",
+                "A hooded sorcerer with a giant die floating where its head should be. Attacks at " +
+                "range by telegraphing an area before calling down a blast of fire that ignites " +
+                "the battlefield.");
             Boss("enemy.skirmisher",
-                "Escaramuzador", "Skirmisher",
-                "Tirador inquieto: dispara de lejos y se reacomoda en diagonal para que no lo arrincones.",
-                "Restless shooter: fires from range and slips away diagonally so you can't corner it.");
+                "Chiplash", "Chiplash",
+                "Una ficha de casino de otro color que flota erráticamente. Ataca desde las diagonales " +
+                "y luego se reposiciona rápidamente para volver a golpear desde un nuevo ángulo.",
+                "A different-colored casino chip that hovers erratically. Attacks from the diagonals, " +
+                "then quickly repositions to strike again from a new angle.");
+            // Corrección de mapeo (04/09): el Bingo_Animated es el Bolillero Francotirador
+            // del sheet, no Stackpot — Stackpot (torre de fichas, anillo diamante) todavía
+            // no tiene asset; sus textos quedan en intent.sniper.chip_ring como reserva.
             Boss("enemy.sniper",
-                "Francotirador", "Sniper",
-                "Dispara desde la otra punta de la sala. Cortale la línea de visión o pagá el tiro.",
-                "Fires from across the room. Break its line of sight or pay for the shot.");
+                "Bolillero Francotirador", "Bingo Sniper",
+                "Una máquina de bolillero que se mantiene a máxima distancia del jugador, girando " +
+                "lentamente mientras acumula presión antes de disparar. Ataca únicamente de frente, " +
+                "en línea recta.",
+                "A bingo ball machine that keeps maximum distance from the player, spinning slowly " +
+                "while it builds pressure before firing. Attacks only in a straight line, head-on.");
             Boss("CardEnemySweeper",
-                "Carta Barredora", "Sweeper Card",
-                "Soldado de la casa que marca un barrido: su golpe cubre varias casillas de una.",
-                "House soldier that marks a sweep: its blow covers several tiles at once.");
+                "Guerrero de Picas", "Spade Warrior",
+                "Un naipe viviente armado con una lanza larga. Prefiere mantener distancia y " +
+                "telegrafiar sus embestidas antes de golpear.",
+                "A living playing card wielding a long spear. Prefers to keep distance and telegraph " +
+                "its thrusts before striking.");
+
+            // Nombres de ataque del mismo sheet — las cards de próximo turno los levantan
+            // vía el IntentLabelKey autorado en los nodos (installer Author Attack Names).
+            Boss("intent.artillery.coin_drop",
+                "Lluvia de Monedas", "Coin Drop",
+                "Marca una loseta y deja caer una lluvia de monedas pesadas sobre esa zona tras un " +
+                "breve retraso, dañando a quien quede atrapado dentro.",
+                "Marks a tile and rains a shower of heavy coins on that area after a short delay, " +
+                "damaging anyone caught inside.");
+            Boss("intent.charger.charge_roll",
+                "Embiste y Rueda", "Charge and Roll",
+                "Carga en línea recta hacia el jugador, golpeándolo y empujándolo varias losetas en la " +
+                "dirección del impacto. Si el jugador ya está adyacente, ataca directamente sin cargar.",
+                "Charges in a straight line toward the player, hitting them and knocking them back " +
+                "several tiles in the direction of impact. If the player is already adjacent, it " +
+                "attacks directly without charging.");
+            Boss("intent.card_hearts.slash",
+                "Corte Carmesí", "Crimson Slash",
+                "Un tajo veloz con la espada al enemigo adyacente, infligiendo daño moderado.",
+                "A fast sword strike against an adjacent enemy, dealing moderate damage.");
+            Boss("intent.card_spades.thrust",
+                "Estocada Anunciada", "Announced Thrust",
+                "Marca una línea de losetas frente a él y, tras un breve retraso, embiste con la " +
+                "lanza dañando todo lo que quede en esa línea.",
+                "Marks a line of tiles in front of it and, after a short delay, thrusts the spear " +
+                "forward, damaging anything caught in that line.");
+            // El empujón melee del Cajero (el cañonazo ya tiene intent.cashier_slam).
+            Boss("intent.cashier.shove",
+                "Empujón", "Shove",
+                "Te golpea y te empuja varias casillas lejos del mostrador, llevándose parte de tu oro.",
+                "Strikes and shoves you several tiles away from the counter, taking a cut of your gold.");
+
+            // La regla del slot de debilidad del panel de enemigo — {0} combo, {1} multi.
+            Content("enemy.weakness.desc",
+                "Debilidad: los golpes con el combo {0} le hacen ×{1} de daño.",
+                "Weakness: hits with the {0} combo deal ×{1} damage.");
+
+            // Reserva para Stackpot (torre de fichas), que aún no tiene asset.
+            Boss("intent.sniper.chip_ring",
+                "Anillo de Fichas", "Chip Ring",
+                "Ataca a distancia dentro de un área en forma de diamante alrededor de sí misma, " +
+                "dañando al jugador si queda dentro de esa zona.",
+                "Attacks at range within a diamond-shaped area around itself, damaging the player " +
+                "if caught inside that zone.");
+            Boss("intent.sniper.dead_on_ball",
+                "Bolilla Certera", "Dead-On Ball",
+                "Dispara una bolilla a alta velocidad en línea recta hacia el jugador, infligiendo " +
+                "daño pesado a quien esté en su trayectoria.",
+                "Fires a ball at high speed in a straight line toward the player, dealing heavy " +
+                "damage to anyone in its path.");
+            Boss("intent.mago.burning_roll",
+                "Tirada Ardiente", "Burning Roll",
+                "Marca un área del escenario y, tras un breve retraso, la incendia, dañando a quien " +
+                "quede dentro y dejando fuego residual que sigue haciendo daño con el tiempo.",
+                "Marks an area of the battlefield and, after a short delay, sets it ablaze, damaging " +
+                "anyone caught inside and leaving residual fire that continues dealing damage over time.");
+
+            // Cantinero y Ruleta: sus kits actuales no publican intents (curan/aurean por
+            // Behaviors de ficha) — estas keys quedan LISTAS para cuando sus árboles
+            // adopten nodos con IntentLabelKey.
+            Boss("intent.healer.healing_shot",
+                "Trago Sanador", "Healing Shot",
+                "Lanza una botella a un aliado dentro de rango medio, curándolo al impactar.",
+                "Throws a bottle at an ally within mid-range, healing them on impact.");
+            Boss("intent.healer.last_call",
+                "Última Ronda", "Last Call",
+                "Al quedarse sin aliados vivos, lanza botellas directamente al jugador desde rango " +
+                "medio, infligiendo daño en lugar de las curaciones.",
+                "Once all its allies are dead, throws bottles directly at the player from mid-range, " +
+                "dealing damage instead of healing.");
+            Boss("intent.guardian.protective_spin",
+                "Giro Protector", "Protective Spin",
+                "Se acerca al aliado más cercano y le otorga un escudo que absorbe daño antes de " +
+                "seguir rodando hacia el siguiente.",
+                "Moves to the nearest ally and grants them a shield that absorbs damage before " +
+                "rolling on to the next.");
+            Boss("intent.guardian.final_wager",
+                "Envite Final", "Final Wager",
+                "Al quedar sin aliados, embiste con todo su peso al jugador si está adyacente, " +
+                "infligiendo daño pesado.",
+                "Once out of allies, slams its full weight into the player if adjacent, dealing " +
+                "heavy damage.");
+            Boss("intent.skirmisher.x_slash",
+                "Corte en X", "X Slash",
+                "Dispara un proyectil en diagonal hacia el jugador y permanece en su posición hasta " +
+                "que el jugador se acerca.",
+                "Fires a single diagonal projectile at the player and stays in place until the " +
+                "player gets close.");
 
             // Bosses del pool nuevo + el rodillo de La Bandida. Mismo criterio que los
             // tres de arriba: texto de pergamino de hover, conciso y mecánico.

@@ -51,6 +51,8 @@ namespace Rollgeon.Combat.AI.Tests
         public bool DamageTaken { get; set; }
         public int CollectTaxCalls { get; private set; }
         public float LastTaxPercent { get; private set; }
+        public int LastTaxMinimum { get; private set; }
+        public bool LastTaxRefundOnDeath { get; private set; }
         public int NextTaxAmount { get; set; }
         public int RegisteredChips { get; private set; }
         public int LastChipValue { get; private set; }
@@ -63,11 +65,13 @@ namespace Rollgeon.Combat.AI.Tests
             return true;
         }
 
-        public int CollectTax(Guid ownerGuid, float percent)
+        public int CollectTax(Guid ownerGuid, float percent, int minimum = 0, bool refundOnDeath = true)
         {
             CollectTaxCalls++;
             LastTaxPercent = percent;
-            VaultedGold += NextTaxAmount;
+            LastTaxMinimum = minimum;
+            LastTaxRefundOnDeath = refundOnDeath;
+            if (refundOnDeath) VaultedGold += NextTaxAmount;
             return NextTaxAmount;
         }
 
@@ -97,5 +101,7 @@ namespace Rollgeon.Combat.AI.Tests
         }
 
         public int GetChipValue(Guid hazardInstanceId) => LastChipValue;
+
+        public int ChipsOnFloor { get; set; }
     }
 }

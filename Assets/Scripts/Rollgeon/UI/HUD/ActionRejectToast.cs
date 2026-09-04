@@ -41,6 +41,13 @@ namespace Rollgeon.UI.HUD
             rect.SetParent(rootCanvas.transform, worldPositionStays: false);
             rect.SetAsLastSibling();
 
+            // Canvas propio POR ENCIMA del tooltip (30000): el hover del chip abre su
+            // tooltip a la vez que el toast, y el motivo de "no podés" tapado por la
+            // tooltip era ilegible. +20: también sobre la burbuja de estados (30001).
+            var toastCanvas = go.AddComponent<Canvas>();
+            toastCanvas.overrideSorting = true;
+            toastCanvas.sortingOrder = Rollgeon.UI.Tooltips.TooltipController.OverlaySortingOrder + 20;
+
             // Encima del chip: borde superior del rect del chip + un colchón, en
             // píxeles de pantalla (ScreenSpaceOverlay: world == píxeles).
             var corners = new Vector3[4];

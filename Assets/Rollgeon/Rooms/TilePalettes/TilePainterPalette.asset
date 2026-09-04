@@ -140,3 +140,8 @@ MonoBehaviour:
     Icon: {fileID: 0}
     Type: 2
     IsBlocker: 1
+  - Label: Silla
+    Prefab: {fileID: 2868566323626294485, guid: c62562ed4fe39884b93ad94c340c4a68, type: 3}
+    Icon: {fileID: 0}
+    Type: 0
+    IsBlocker: 1

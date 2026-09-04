@@ -536,6 +536,7 @@ namespace Rollgeon.UI.HUD.Status
             // dicha ad-hoc (aparecía recién al primer bloqueo), y ahora la dice el bloque
             // PLAYER CURSE desde el turno 1 (AppendCurseCard, con el BossCurseSO del jefe).
             _providers.Add(new PoisonStatusProvider(_catalog));
+            _providers.Add(new BleedStatusProvider(_catalog));
             _providers.Add(new StunStatusProvider(_catalog));
             _providers.Add(new TileStandStatusProvider(_catalog));
 
@@ -590,8 +591,19 @@ namespace Rollgeon.UI.HUD.Status
         private void HandleEntityDestroyed(params object[] args)
         {
             if (args == null || args.Length < 1) return;
-            if (!(args[0] is Guid guid) || guid != _entityGuid) return;
-            gameObject.SetActive(false);
+            if (!(args[0] is Guid guid)) return;
+
+            if (guid == _entityGuid)
+            {
+                gameObject.SetActive(false);
+                return;
+            }
+
+            // Si murió OTRO bicho (ej. el Guardian que nos cubría), el badge del aura queda
+            // con el último valor pintado hasta el próximo OnTurnStarted/OnTurnFinished —
+            // EnemyAuraService ya deja de contarlo (pull, en vivo), pero nadie nos avisa de
+            // refrescar antes. Un Refresh() acá cierra ese hueco sin esperar al próximo turno.
+            Refresh();
         }
 
         // El badge de vida pulsa en el instante exacto del golpe reducido — el número que

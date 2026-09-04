@@ -92,6 +92,15 @@ namespace Rollgeon.Upgrades.Dice.UI
 
         public Vector2 DieSelectedOutlineDistance = new Vector2(4f, -4f);
 
+        [Header("Slot machine — carousel de sets (Ataque ↔ Movimiento)")]
+        [Tooltip("Duración del giro entre el set de Ataque y el de Movimiento.")]
+        public float SetSwitchDuration = 0.25f;
+
+        public Ease SetSwitchEase = Ease.OutCubic;
+
+        [Tooltip("Cuánto se desplaza en X el set que sale / desde dónde entra el otro (px).")]
+        public float SetSwitchSlideX = 220f;
+
         [Header("Slot machine — botón Confirmar")]
         [Tooltip("Medio ciclo del pulso de brillo (dim→bright). El loop es infinito mientras esté listo.")]
         public float ConfirmPulseHalfDuration = 0.9f;

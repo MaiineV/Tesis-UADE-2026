@@ -311,7 +311,7 @@ RectTransform:
   m_AnchorMin: {x: 0.5, y: 0}
   m_AnchorMax: {x: 0.5, y: 0}
   m_AnchoredPosition: {x: 0, y: 0.014999986}
-  m_SizeDelta: {x: 0.44, y: 0.63}
+  m_SizeDelta: {x: 0.55, y: 0.63}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &7773440740571854690
 CanvasRenderer:
@@ -385,7 +385,7 @@ MonoBehaviour:
   m_lineSpacingMax: 0
   m_paragraphSpacing: 0
   m_charWidthMaxAdj: 0
-  m_TextWrappingMode: 1
+  m_TextWrappingMode: 0
   m_wordWrappingRatios: 0.4
   m_overflowMode: 0
   m_linkedTextComponent: {fileID: 0}
@@ -701,7 +701,7 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 1.2250729, y: 1.1249999, z: 0.5866492}
+  m_Size: {x: 0.95, y: 1.1249999, z: 0.5866492}
   m_Center: {x: 0, y: 0.56249994, z: 0.0079707205}
 --- !u!114 &7725628793044012135
 MonoBehaviour:

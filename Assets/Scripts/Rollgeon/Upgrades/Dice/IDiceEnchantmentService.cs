@@ -77,5 +77,35 @@ namespace Rollgeon.Upgrades.Dice
         /// en <c>OnRunStart</c> via <c>IPlayerService.DiceBag</c>.
         /// </summary>
         void InitializeFromBag(DiceBagSO bag);
+
+        // ---- Dado de Movimiento (§6.6) — carril EnchantmentSlotRef.MovementDieSlot ----
+
+        /// <summary>
+        /// Cara máxima efectiva del dado de Movimiento: tipo base (clase / override) más las
+        /// caras extra sumadas en la run. Sin bag ⇒ solo el tipo base.
+        /// </summary>
+        int MovementDieMaxFace { get; }
+
+        /// <summary>
+        /// Suma caras al dado de Movimiento (GDD Dice Builder: el dado no cambia de tipo, gana
+        /// caras). Clamp a 0 hacia abajo. Devuelve el total de caras extra. Persiste con el bag.
+        /// </summary>
+        int AddMovementDieFaces(int delta);
+
+        /// <summary>
+        /// Caras válidas del dado de Movimiento: <c>1..MovementDieMaxFace</c> compuesto con los
+        /// face filters de su carril. Vacío sin bag — el roller cae a su RNG plano.
+        /// </summary>
+        IReadOnlyCollection<int> ComputeMovementDieFaces();
+
+        /// <summary>
+        /// Despacha el hook <c>MovementDieRolled</c> del carril con la cara ya decidida. Lo llama
+        /// <c>MovementDieService.Roll</c> ANTES de animar el reveal: el scratch devuelto trae
+        /// <see cref="EnchantmentScratch.MovementDieBonus"/> (Torbellino +2) y su atribución en el
+        /// journal para que el dado lo muestre como chip y lo sume al rango de ESE movimiento.
+        /// Null fuera de combate, sin bag, o si <paramref name="playerGuid"/> no es el dueño.
+        /// Default para los fakes; la impl real lo override.
+        /// </summary>
+        EnchantmentScratch DispatchMovementDieRolled(Guid playerGuid, int face) => null;
     }
 }

@@ -165,7 +165,7 @@ namespace Rollgeon.Effects.Selection
             // sin poder moverse (GDD: "la velocidad no baja del mínimo").
             int bonus = ResolveMoveRangeBonus(ownerGuid);
             if (die.TryGetActiveRange(ownerGuid, out var rolled)) return Math.Max(1, rolled + bonus);
-            return Math.Max(1, die.CurrentType.MaxFace() + bonus);
+            return Math.Max(1, die.MaxFace + bonus);
         }
 
         // Bonus de MoveRange del owner; degrada a 0 sin AttributesManager o si la
@@ -220,7 +220,7 @@ namespace Rollgeon.Effects.Selection
                 if (RangeMode == RangeMode.PathReachable
                     && ServiceLocator.TryGetService<IMovementService>(out var movement))
                 {
-                    foreach (var coord in movement.GetReachableTiles(ownerPosition, ResolveEffectiveRange(ownerGuid)))
+                    foreach (var coord in movement.GetReachableTilesFor(ownerGuid, ownerPosition, ResolveEffectiveRange(ownerGuid)))
                     {
                         if (PassesSlotFilters(grid, coord, ownerPosition, ownerGuid))
                             result.Add(TargetRef.At(coord));
@@ -274,7 +274,7 @@ namespace Rollgeon.Effects.Selection
             if (RangeMode == RangeMode.PathReachable
                 && ServiceLocator.TryGetService<IMovementService>(out var movement))
             {
-                foreach (var coord in movement.GetReachableTiles(ownerPosition, ResolveEffectiveRange(ownerGuid)))
+                foreach (var coord in movement.GetReachableTilesFor(ownerGuid, ownerPosition, ResolveEffectiveRange(ownerGuid)))
                     if (coord != ownerPosition) result.Add(coord);
                 return result;
             }

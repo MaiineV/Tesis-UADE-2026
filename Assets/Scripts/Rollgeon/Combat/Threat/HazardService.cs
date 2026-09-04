@@ -106,7 +106,8 @@ namespace Rollgeon.Combat.Threat
         }
 
         /// <inheritdoc />
-        public Guid Activate(HazardDefinitionSO definition, IEnumerable<GridCoord> tiles)
+        public Guid Activate(HazardDefinitionSO definition, IEnumerable<GridCoord> tiles,
+                             Guid ownerGuid = default)
         {
             if (definition == null || tiles == null) return Guid.Empty;
 
@@ -120,6 +121,7 @@ namespace Rollgeon.Combat.Threat
                 InstanceId = Guid.NewGuid(),
                 Definition = definition,
                 Tiles = set,
+                OwnerGuid = ownerGuid,
                 RemainingRounds = definition.DurationRounds < 0 ? 0 : definition.DurationRounds,
             };
             _instances[instance.InstanceId] = instance;
@@ -374,7 +376,7 @@ namespace Rollgeon.Combat.Threat
 
             var root = new GameObject($"HazardHover ({instance.Definition.name})");
             var info = root.AddComponent<HazardTooltipInfo>();
-            info.Bind(instance.Definition);
+            info.Bind(instance.Definition, instance.InstanceId, instance.OwnerGuid);
 
             var trigger = root.AddComponent<Rollgeon.UI.Tooltips.WorldTooltipTrigger>();
             trigger.Mode = Rollgeon.UI.Tooltips.WorldTooltipMode.Hover;
@@ -659,6 +661,8 @@ namespace Rollgeon.Combat.Threat
             public Guid InstanceId;
             public HazardDefinitionSO Definition;
             public HashSet<GridCoord> Tiles;
+
+            public Guid OwnerGuid;
 
             /// <summary>Indexado por casilla para poder apagar sólo la que se consume.</summary>
             public readonly Dictionary<GridCoord, GameObject> PersistentVfx =

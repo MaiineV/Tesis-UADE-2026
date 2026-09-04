@@ -40,5 +40,24 @@ namespace Rollgeon.Economy
         /// el service es Global y no se resetea solo entre runs.
         /// </summary>
         void ResetTo(int amount);
+
+        /// <summary>
+        /// Piso del balance: <see cref="Spend"/> nunca deja el oro por debajo de este
+        /// valor. <c>0</c> sin modificadores; negativo con Tarjeta de Crédito (−30).
+        /// Default members para no romper los fakes que solo implementan el contrato base.
+        /// </summary>
+        int MinGold => 0;
+
+        /// <summary>
+        /// Registra un piso de oro bajo <paramref name="sourceId"/> (item id). Con varios
+        /// registrados gana el más bajo. <paramref name="floor"/> ≥ 0 es no-op.
+        /// </summary>
+        void SetGoldFloor(string sourceId, int floor) { }
+
+        /// <summary>
+        /// Quita el piso de <paramref name="sourceId"/>. No confisca oro: una deuda
+        /// existente queda y se salda con el próximo <see cref="Add"/>.
+        /// </summary>
+        void ClearGoldFloor(string sourceId) { }
     }
 }

@@ -101,16 +101,16 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                 "BossFeedbackInstaller.");
         }
 
-        /// <summary>Tres jefes no entran: el Croupier detona con su propio nodo, el Cajero no telegrafía
-        /// nada (melee de alcance 1) y La Generala prende su anillo con un <c>AINode_IgniteArea</c>
-        /// (ver <see cref="EveryIgnitedAreaPlaysSomething"/>). Los árboles se arman <b>dentro</b> del
-        /// test: una excepción al recolectar el source hace desaparecer el fixture entero en vez de
-        /// reportar rojo.</summary>
+        /// <summary>Dos jefes no entran: el Croupier detona con su propio nodo y La Generala prende su
+        /// anillo con un <c>AINode_IgniteArea</c> (ver <see cref="EveryIgnitedAreaPlaysSomething"/>).
+        /// Los árboles se arman <b>dentro</b> del test: una excepción al recolectar el source hace
+        /// desaparecer el fixture entero en vez de reportar rojo.</summary>
         private static IEnumerable<TestCaseData> TelegraphCases()
         {
             yield return Case("El Anotador", () => AnotadorAssetBuilder.BuildAIRoot(null));
             yield return Case("La Bandida", () => BandidaAssetBuilder.BuildAIRoot(null, null));
             yield return Case("El Tahúr", () => TahurAssetBuilder.BuildAIRoot());
+            yield return Case("El Cajero", () => CajeroAssetBuilder.BuildAIRoot(null, null));
         }
 
         private static TestCaseData Case(string bossName, System.Func<object> buildRoot) =>
@@ -136,8 +136,9 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             }
         }
 
-        /// <summary>El Cajero no marca áreas: lo que en los demás cubre el telegraph acá lo cubren sus dos
-        /// golpes, y un golpe sin gesto no falla en runtime — simplemente no se ve.</summary>
+        /// <summary>Sus dos golpes de contacto, aparte del cañonazo que ya cubre
+        /// <see cref="EveryTelegraphedAttack_PlaysSomething"/>: un golpe sin gesto no falla en
+        /// runtime, simplemente no se ve.</summary>
         [Test]
         public void TheCajeroHitsWithAGesture()
         {

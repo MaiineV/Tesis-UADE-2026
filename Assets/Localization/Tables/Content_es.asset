@@ -150,11 +150,11 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 5406620151809
-    m_Localized: Sanador
+    m_Localized: Esqueleto Cantinero
     m_Metadata:
       m_Items: []
   - m_Id: 5406620151810
-    m_Localized: Enemigo Carta
+    m_Localized: Guerrero de Corazones
     m_Metadata:
       m_Items: []
   - m_Id: 5406620151811
@@ -341,8 +341,8 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 5531895623711
-    m_Localized: "En cada tirada, 50% de que este dado no sume da\xF1o y 50% de que
-      sume el doble. Sigue contando para formar el combo."
+    m_Localized: "Al jugarlo, 50% de que este dado no sume da\xF1o y 50% de que sume
+      el doble. Sigue contando para formar el combo."
     m_Metadata:
       m_Items: []
   - m_Id: 5531895623712
@@ -452,8 +452,8 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 5531899817985
-    m_Localized: "Este dado no suma da\xF1o, pero cada vez que participa en un combo
-      genera +2 de oro."
+    m_Localized: "Cuando participa en un combo, este dado no suma da\xF1o y genera
+      +2 de oro."
     m_Metadata:
       m_Items: []
   - m_Id: 5531899817986
@@ -502,8 +502,8 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 5531899817997
-    m_Localized: "Cada vez que participa en un combo consume 2 de oro y suma +0,2
-      al multiplicador. Sin oro, el combo no hace da\xF1o."
+    m_Localized: Cada vez que participa en un combo consume 2 de oro y suma +0,2
+      al multiplicador. Sin 2 de oro, el dado no se puede seleccionar.
     m_Metadata:
       m_Items: []
   - m_Id: 5531899817998
@@ -519,8 +519,8 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 5531899818001
-    m_Localized: "Al sacar el m\xE1ximo, este dado aporta el doble de da\xF1o. Con
-      cualquier otra cara aporta la mitad."
+    m_Localized: "Cuando participa en un combo: si saca el m\xE1ximo aporta el doble
+      de da\xF1o; con cualquier otra cara aporta la mitad."
     m_Metadata:
       m_Items: []
   - m_Id: 5531975315456
@@ -951,8 +951,8 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 13919417973649410
-    m_Localized: "Te tira lejos y te llena el piso de monedas. Las que no levant\xE1s
-      a tiempo se las lleva \xE9l, y cada una lo cura."
+    m_Localized: "Te tira lejos y te saca oro, y parte de esa plata cae al piso.
+      La que no levant\xE1s a tiempo se pierde."
     m_Metadata:
       m_Items: []
   - m_Id: 13919417973649411
@@ -1478,8 +1478,8 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 17593280027881472
-    m_Localized: "Pega m\xE1s fuerte cuanto m\xE1s oro llev\xE1s. Las fichas que
-      dej\xE1s vencer se las queda."
+    m_Localized: "Te tira tres casillas y te cobra oro en cada empuj\xF3n. Lo que
+      dejes vencer en el piso lo perd\xE9s."
     m_Metadata:
       m_Items: []
   - m_Id: 17593280027881473
@@ -1528,11 +1528,11 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 17593280027881484
-    m_Localized: La banca retiene
+    m_Localized: La banca no espera
     m_Metadata:
       m_Items: []
   - m_Id: 17593280027881485
-    m_Localized: "El oro que dej\xE1s vencer se lo queda la banca."
+    m_Localized: "Lo que dej\xE1s vencer en el piso se pierde."
     m_Metadata:
       m_Items: []
   - m_Id: 17593280027881486
@@ -1654,8 +1654,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 17593280044658693
-    m_Localized: "Pisala y cobr\xE1s su valor. La que vence se la queda la banca
-      \u2014 y lo cura."
+    m_Localized: "Pisala y cobr\xE1s su valor. La que vence se pierde."
     m_Metadata:
       m_Items: []
   - m_Id: 17593280044658694
@@ -1696,8 +1695,8 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 17593280044658703
-    m_Localized: "Se desarman al pisarlos y se rearman solos. Duelen bastante m\xE1s
-      que los comunes."
+    m_Localized: "Cobran cada vez que los cruz\xE1s: no se gastan. Duelen bastante
+      m\xE1s que los comunes."
     m_Metadata:
       m_Items: []
   - m_Id: 17593280048852992
@@ -1709,11 +1708,15 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 17593280048852994
-    m_Localized: "Un esp\xEDritu de la casa que remienda a los suyos."
+    m_Localized: "Un esqueleto vestido de bartender que apoya a sus aliados desde
+      media distancia, lanz\xE1ndoles botellas curativas para mantenerlos en pie.
+      Si todos sus aliados caen, deja de curar y usa esas mismas botellas como proyectiles
+      contra el jugador."
     m_Metadata:
       m_Items: []
   - m_Id: 17593280048852995
-    m_Localized: Soldado de la casa, cuerpo a cuerpo.
+    m_Localized: "Un naipe viviente con armadura liviana y una espada corta. Ataca
+      cuerpo a cuerpo con golpes r\xE1pidos, persiguiendo al jugador sin descanso."
     m_Metadata:
       m_Items: []
   - m_Id: 17593280048852996
@@ -2282,8 +2285,8 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 17988681023537153
-    m_Localized: "Empez\xE1s cada combate con da\xF1o x5. Cada ataque lo reduce en
-      0.1, hasta x1."
+    m_Localized: "Tu da\xF1o de ataque arranca en x3 al conseguirlo. Cada combo que
+      jug\xE1s lo baja 0.2; al llegar a x1 el item se rompe."
     m_Metadata:
       m_Items: []
   - m_Id: 17988681744957440
@@ -2585,56 +2588,63 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 18278206983208960
-    m_Localized: "Artiller\xEDa"
+    m_Localized: La Tragamonedas Viviente
     m_Metadata:
       m_Items: []
   - m_Id: 18278206983208961
-    m_Localized: "Ob\xFAs de la casa: bombardea de lejos y deja el piso ardiendo
-      donde cae el tiro."
+    m_Localized: Una tragamonedas oxidada que se mantiene a distancia y dispara proyectiles
+      al jugador desde lejos.
     m_Metadata:
       m_Items: []
   - m_Id: 18278206983208962
-    m_Localized: Embestidor
+    m_Localized: Ojos de Billar
     m_Metadata:
       m_Items: []
   - m_Id: 18278206983208963
-    m_Localized: "Se alinea, marca el pasillo y embiste. No te quedes en su l\xEDnea."
+    m_Localized: "Una bola de billar con ojos propios que persigue al jugador rodando
+      a toda velocidad. Si tiene espacio, embiste en l\xEDnea recta empuj\xE1ndolo
+      lejos de su camino; si ya est\xE1 a melee, simplemente golpea sin necesidad
+      de embestir."
     m_Metadata:
       m_Items: []
   - m_Id: 18278206983208964
-    m_Localized: "Guardi\xE1n"
+    m_Localized: Ruleta Viviente
     m_Metadata:
       m_Items: []
   - m_Id: 18278206983208965
-    m_Localized: "Protege a los suyos: los aliados cercanos reciben menos da\xF1o
-      mientras siga en pie."
+    m_Localized: "Una ruleta de casino enorme que rueda de aliado en aliado, otorg\xE1ndoles
+      escudos protectores. Es la clase tanque del grupo \u2014 su prioridad es mantener
+      con vida a sus compa\xF1eros, no atacar. Si queda sola en combate, embiste
+      directamente al jugador en cuerpo a cuerpo."
     m_Metadata:
       m_Items: []
   - m_Id: 18278206983208966
-    m_Localized: Escaramuzador
+    m_Localized: Chiplash
     m_Metadata:
       m_Items: []
   - m_Id: 18278206983208967
-    m_Localized: 'Tirador inquieto: dispara de lejos y se reacomoda en diagonal para
-      que no lo arrincones.'
+    m_Localized: "Una ficha de casino de otro color que flota err\xE1ticamente. Ataca
+      desde las diagonales y luego se reposiciona r\xE1pidamente para volver a golpear
+      desde un nuevo \xE1ngulo."
     m_Metadata:
       m_Items: []
   - m_Id: 18278206983208968
-    m_Localized: Francotirador
+    m_Localized: Bolillero Francotirador
     m_Metadata:
       m_Items: []
   - m_Id: 18278206983208969
-    m_Localized: "Dispara desde la otra punta de la sala. Cortale la l\xEDnea de
-      visi\xF3n o pag\xE1 el tiro."
+    m_Localized: "Una m\xE1quina de bolillero que se mantiene a m\xE1xima distancia
+      del jugador, girando lentamente mientras acumula presi\xF3n antes de disparar.
+      Ataca \xFAnicamente de frente, en l\xEDnea recta."
     m_Metadata:
       m_Items: []
   - m_Id: 18278206983208970
-    m_Localized: Carta Barredora
+    m_Localized: Guerrero de Picas
     m_Metadata:
       m_Items: []
   - m_Id: 18278206983208971
-    m_Localized: 'Soldado de la casa que marca un barrido: su golpe cubre varias
-      casillas de una.'
+    m_Localized: Un naipe viviente armado con una lanza larga. Prefiere mantener
+      distancia y telegrafiar sus embestidas antes de golpear.
     m_Metadata:
       m_Items: []
   - m_Id: 18278206983208972
@@ -2680,7 +2690,8 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 18299679638994944
-    m_Localized: Al atacar, +3 al multiplicador por cada roll que te quede sin usar.
+    m_Localized: Al atacar, +1.5 al multiplicador por cada roll que te quede sin
+      usar.
     m_Metadata:
       m_Items: []
   - m_Id: 18299679659966464
@@ -2704,8 +2715,8 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 18299679659966469
-    m_Localized: "El dado m\xE1s alto de tu combo suma su cara al multiplicador (no
-      al da\xF1o base)."
+    m_Localized: "El dado m\xE1s alto de tu combo sale del da\xF1o base y suma su
+      cara al multiplicador. No aplica a N\xFAmero Mayor."
     m_Metadata:
       m_Items: []
   - m_Id: 18299679659966470
@@ -2722,7 +2733,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 18299679659966473
-    m_Localized: +3 de oro por cada dado impar en cada tirada, con o sin combo.
+    m_Localized: "+3 de oro por cada dado impar que forme parte del combo que jug\xE1s."
     m_Metadata:
       m_Items: []
   - m_Id: 18299679659966474
@@ -2730,8 +2741,8 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 18299679659966475
-    m_Localized: "No recib\xEDs curaci\xF3n de items pasivos. A cambio, todos tus
-      multiplicadores de combo suman +3."
+    m_Localized: "Tu poci\xF3n cura la mitad. A cambio, todos tus multiplicadores
+      de combo suman +3."
     m_Metadata:
       m_Items: []
   - m_Id: 18332491544969216
@@ -2740,7 +2751,7 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 18332491591106560
     m_Localized: "Cada vez que este dado participa en un combo, perd\xE9s 5 de vida
-      y el multiplicador sube +0,3. Con 5 de vida o menos, el dado no suma da\xF1o."
+      y el multiplicador sube +0,3. Con 5 de vida o menos, el dado no se puede seleccionar."
     m_Metadata:
       m_Items: []
   - m_Id: 18332491591106561
@@ -2767,7 +2778,7 @@ MonoBehaviour:
   - m_Id: 18332491591106566
     m_Localized: "Por cada combo consecutivo en el que participe en este combate,
       aporta +3 de da\xF1o m\xE1s (+3, +6, +9\u2026). Se reinicia si queda fuera
-      de un combo."
+      de un combo o si jug\xE1s N\xFAmero Alto."
     m_Metadata:
       m_Items: []
   - m_Id: 18332491591106567
@@ -2777,6 +2788,383 @@ MonoBehaviour:
   - m_Id: 18332491591106568
     m_Localized: "Si este dado participa en un combo contra un enemigo con 25% de
       vida o menos, aporta +12 de da\xF1o."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18353398669819904
+    m_Localized: "Tarjeta de Cr\xE9dito"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18353398736928768
+    m_Localized: "Tu oro puede bajar hasta -30: compr\xE1 a cr\xE9dito y pag\xE1
+      la deuda con lo que ganes."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18353399701618688
+    m_Localized: Rezagado
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18353399701618689
+    m_Localized: "Al adquirirlo se fija en tu combo menos usado: ese combo hace +50%
+      de da\xF1o el resto de la run."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18353400586616832
+    m_Localized: Peaje
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18353400590811136
+    m_Localized: "Al entrar a una sala de combate normal pod\xE9s pagar 15 + 10 por
+      piso de oro para limpiarla sin pelear. Sin bot\xEDn."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18475382250242048
+    m_Localized: Lluvia de Monedas
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18475382304768000
+    m_Localized: "Marca una loseta y deja caer una lluvia de monedas pesadas sobre
+      esa zona tras un breve retraso, da\xF1ando a quien quede atrapado dentro."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18475382304768001
+    m_Localized: Embiste y Rueda
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18475382304768002
+    m_Localized: "Carga en l\xEDnea recta hacia el jugador, golpe\xE1ndolo y empuj\xE1ndolo
+      varias losetas en la direcci\xF3n del impacto. Si el jugador ya est\xE1 adyacente,
+      ataca directamente sin cargar."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18475382304768003
+    m_Localized: "Corte Carmes\xED"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18475382304768004
+    m_Localized: "Un tajo veloz con la espada al enemigo adyacente, infligiendo da\xF1o
+      moderado."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18475382304768005
+    m_Localized: Estocada Anunciada
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18475382304768006
+    m_Localized: "Marca una l\xEDnea de losetas frente a \xE9l y, tras un breve retraso,
+      embiste con la lanza da\xF1ando todo lo que quede en esa l\xEDnea."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18475382304768007
+    m_Localized: Anillo de Fichas
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18475382304768008
+    m_Localized: "Ataca a distancia dentro de un \xE1rea en forma de diamante alrededor
+      de s\xED misma, da\xF1ando al jugador si queda dentro de esa zona."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18475382304768009
+    m_Localized: Corte en X
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18475382304768010
+    m_Localized: "Dispara un proyectil en diagonal hacia el jugador y permanece en
+      su posici\xF3n hasta que el jugador se acerca."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18479643793473536
+    m_Localized: 2 oro
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18479643847999488
+    m_Localized: 6+ vida
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18490583970410496
+    m_Localized: "Empuj\xF3n"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18490584037519360
+    m_Localized: Te empuja <b>{1}</b> casillas y te cobra parte del oro que lleves
+      encima.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18490584037519361
+    m_Localized: Se la lleva la caja
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18490584037519362
+    m_Localized: 
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18490584037519363
+    m_Localized: Monedas venciendo
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18490584037519364
+    m_Localized: La caja se lleva una por turno; quedan <b>{1}</b> en el piso.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18490584037519365
+    m_Localized: "Ca\xF1onazo"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18490584037519366
+    m_Localized: "Marca un \xE1rea de 3\xD73 donde est\xE9s parado y la cobra al
+      turno siguiente."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18490584037519367
+    m_Localized: "Ca\xF1onazo"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18490584037519368
+    m_Localized: "Cae en el \xE1rea marcada, no donde est\xE9s."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18504181256208384
+    m_Localized: "Baluarte m\xF3vil"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18504181335900160
+    m_Localized: "Por cada casilla que recorr\xE9s, gan\xE1s 1 de escudo."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18504181340094464
+    m_Localized: Torbellino
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18504181340094465
+    m_Localized: "Al tirar el dado de Movimiento, todos los enemigos se teletransportan
+      a casillas al azar y te mov\xE9s +2."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18504181340094466
+    m_Localized: Incendiario
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18504181340094467
+    m_Localized: "Cada casilla que recorr\xE9s queda en llamas 2 turnos: los enemigos
+      que entran o empiezan su turno ah\xED reciben 3 de da\xF1o."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18504181340094468
+    m_Localized: "Rastro t\xF3xico"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18504181340094469
+    m_Localized: "Cada casilla que recorr\xE9s deja un rastro t\xF3xico 2 turnos:
+      el primer enemigo que entra queda envenenado 2 turnos."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18504181340094470
+    m_Localized: Carga
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18504181340094471
+    m_Localized: "Por cada casilla que recorr\xE9s, +1 de da\xF1o base hasta el final
+      del turno."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18504181340094472
+    m_Localized: "Paso et\xE9reo"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18504181340094473
+    m_Localized: "Atraves\xE1s unidades al moverte. No pod\xE9s terminar el movimiento
+      sobre una."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18504181340094474
+    m_Localized: Sendero de espinas
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18504181340094475
+    m_Localized: "Cada casilla que recorr\xE9s deja Espinas 1 turno: el primer enemigo
+      que entra recibe 2 de da\xF1o y su movimiento termina."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18504181340094476
+    m_Localized: Llamas de Incendiario
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18504181340094477
+    m_Localized: "Casilla en llamas dejada por el jugador. Los enemigos que entran
+      o empiezan su turno aqu\xED reciben da\xF1o."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18504181340094478
+    m_Localized: "Rastro t\xF3xico"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18504181340094479
+    m_Localized: "Rastro t\xF3xico dejado por el jugador. El primer enemigo que entra
+      queda envenenado."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18504181340094480
+    m_Localized: Espinas del sendero
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18504181340094481
+    m_Localized: "Espinas dejadas por el jugador. El primer enemigo que entra recibe
+      da\xF1o y su movimiento termina."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18622766255013888
+    m_Localized: Mago Dado
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18622766292762624
+    m_Localized: "Un hechicero encapuchado con un dado gigante flotando en lugar
+      de cabeza. Ataca a distancia telegrafiando el \xE1rea antes de invocar una
+      descarga de fuego que prende el escenario."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18622766292762625
+    m_Localized: Bolilla Certera
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18622766292762626
+    m_Localized: "Dispara una bolilla a alta velocidad en l\xEDnea recta hacia el
+      jugador, infligiendo da\xF1o pesado a quien est\xE9 en su trayectoria."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18622766292762627
+    m_Localized: Tirada Ardiente
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18622766292762628
+    m_Localized: "Marca un \xE1rea del escenario y, tras un breve retraso, la incendia,
+      da\xF1ando a quien quede dentro y dejando fuego residual que sigue haciendo
+      da\xF1o con el tiempo."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18622766292762629
+    m_Localized: Trago Sanador
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18622766292762630
+    m_Localized: "Lanza una botella a un aliado dentro de rango medio, cur\xE1ndolo
+      al impactar."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18622766292762631
+    m_Localized: "\xDAltima Ronda"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18622766292762632
+    m_Localized: "Al quedarse sin aliados vivos, lanza botellas directamente al jugador
+      desde rango medio, infligiendo da\xF1o en lugar de las curaciones."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18622766292762633
+    m_Localized: Giro Protector
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18622766292762634
+    m_Localized: "Se acerca al aliado m\xE1s cercano y le otorga un escudo que absorbe
+      da\xF1o antes de seguir rodando hacia el siguiente."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18622766292762635
+    m_Localized: Envite Final
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18622766292762636
+    m_Localized: "Al quedar sin aliados, embiste con todo su peso al jugador si est\xE1
+      adyacente, infligiendo da\xF1o pesado."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18628743662501888
+    m_Localized: "Debilidad: los golpes con el combo {0} le hacen \xD7{1} de da\xF1o."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18719323256438784
+    m_Localized: "Sangrado \xD7{0}"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18719323273216000
+    m_Localized: "Recib\xEDs da\xF1o al inicio de cada turno por cada stack de Sangrado.
+      Volver a sangrar SUMA stacks nuevos."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18723604852293632
+    m_Localized: Blood Transfusion
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18723604852293633
+    m_Localized: "Tira un D10 propio: en 1-3 redistribuye la vida de los enemigos
+      de la sala, y en 4-10 drena al enemigo con m\xE1s vida y te cura por el da\xF1o
+      infligido."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18723604852293634
+    m_Localized: Coin Shield
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18723604852293635
+    m_Localized: "Tira un D4 como si fuera una moneda: par conserva tu escudo actual
+      hasta tu pr\xF3ximo turno, impar reparte escudo entre vos y todos los enemigos
+      vivos."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18723604852293636
+    m_Localized: Grapple Claw
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18723604852293637
+    m_Localized: "Eleg\xED una direcci\xF3n y tir\xE1 un D6: te acerc\xE1s o atra\xE9s
+      al objetivo enganchado esa cantidad de casillas, y con 1-2 la cadena arrastra
+      tambi\xE9n a un enemigo cercano."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18723604852293638
+    m_Localized: Justa de Justicia
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18723604852293639
+    m_Localized: "Eleg\xED una direcci\xF3n y tir\xE1 un D12: carg\xE1s esa cantidad
+      de casillas, el primer enemigo golpeado recibe ese da\xF1o y se empuja seg\xFAn
+      la banda del resultado."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18723604852293640
+    m_Localized: Probability Drive
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18723604852293641
+    m_Localized: "Eleg\xED una casilla central y tir\xE1 un D4: te teletransport\xE1s
+      a un destino seguro cercano, desde un salto err\xE1tico en 1 hasta elegir entre
+      tres opciones en 4."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18723604852293642
+    m_Localized: Blood D6
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18723604852293643
+    m_Localized: "Tir\xE1 un D6 antes de tu pr\xF3ximo combo v\xE1lido: agrega un
+      bonus de da\xF1o que en caras bajas se dispersa entre varios enemigos y en
+      caras altas se concentra en el objetivo principal."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18723604852293644
+    m_Localized: Bottle'o Thunder
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18723604852293645
+    m_Localized: "Eleg\xED un enemigo y tir\xE1 un D4: aturde entre 1 y 4 objetivos
+      encadenados y siempre deja 2 Charcos El\xE9ctricos en el terreno."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18720942286798848
+    m_Localized: "Empuj\xF3n"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18720942332936192
+    m_Localized: "Te golpea y te empuja varias casillas lejos del mostrador, llev\xE1ndose
+      parte de tu oro."
     m_Metadata:
       m_Items: []
   references:

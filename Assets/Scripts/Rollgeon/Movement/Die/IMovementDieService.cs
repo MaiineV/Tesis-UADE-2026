@@ -17,8 +17,15 @@ namespace Rollgeon.Movement.Die
     /// </remarks>
     public interface IMovementDieService
     {
-        /// <summary>Tipo del dado en uso (override runtime, si no el de la clase, si no D4).</summary>
+        /// <summary>Tipo del dado en uso (override runtime, si no el de la clase, si no D6).</summary>
         DiceType CurrentType { get; }
+
+        /// <summary>
+        /// Cara máxima efectiva: la del <see cref="CurrentType"/> más las caras extra sumadas
+        /// en la run (carril del dado en <c>IDiceEnchantmentService</c>). Es el rango
+        /// <i>potencial</i> pre-tirada que usan gate, hover y preview.
+        /// </summary>
+        int MaxFace { get; }
 
         /// <summary>Última cara revelada (0 si nunca se tiró en este combate).</summary>
         int LastFace { get; }

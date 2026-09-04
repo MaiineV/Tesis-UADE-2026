@@ -78,6 +78,15 @@ MonoBehaviour:
     - Name: Kind
       Entry: 3
       Data: 1
+    - Name: IgnoreLineOfSight
+      Entry: 5
+      Data: false
+    - Name: IntentLabelKey
+      Entry: 6
+      Data: 
+    - Name: IntentLabelFallback
+      Entry: 6
+      Data: 
     - Name: AnimFeedbackId
       Entry: 1
       Data: anim.enemy.ranged.attack
@@ -129,10 +138,13 @@ MonoBehaviour:
       Data: 
     - Name: MaxSteps
       Entry: 7
-      Data: 10|Rollgeon.Combat.AI.Readers.AIConstantInt, Rollgeon
-    - Name: Value
+      Data: 10|Rollgeon.Combat.AI.Readers.AIReadSelfStat, Rollgeon
+    - Name: Stat
       Entry: 3
-      Data: 3
+      Data: 2
+    - Name: UseModified
+      Entry: 5
+      Data: true
     - Name: 
       Entry: 8
       Data: 
@@ -187,10 +199,13 @@ MonoBehaviour:
       Data: 
     - Name: MaxSteps
       Entry: 7
-      Data: 16|Rollgeon.Combat.AI.Readers.AIConstantInt, Rollgeon
-    - Name: Value
+      Data: 16|Rollgeon.Combat.AI.Readers.AIReadSelfStat, Rollgeon
+    - Name: Stat
       Entry: 3
-      Data: 3
+      Data: 2
+    - Name: UseModified
+      Entry: 5
+      Data: true
     - Name: 
       Entry: 8
       Data: 
@@ -207,6 +222,9 @@ MonoBehaviour:
       Entry: 8
       Data: 
     - Name: Retreat
+      Entry: 5
+      Data: false
+    - Name: RequireLineOfSight
       Entry: 5
       Data: false
     - Name: StopAdjacent
@@ -257,7 +275,7 @@ MonoBehaviour:
       Data: 
   EntityId: minion.cajero_comision
   DisplayName: Enemigo a Distancia
-  Description: Fichas voladoras con ataque a distancia, dispara con una ballesta.
+  Description: Goblin con ataque a distancia, dispara con una ballesta.
   Portrait: {fileID: -172214914, guid: 20ce88debfdaa06459d18ed604643892, type: 3}
   Design:
     Archetype: 2
@@ -281,6 +299,7 @@ MonoBehaviour:
   IsFlying: 1
   IsBoss: 0
   Archetype: 2
+  TooltipType: 
   Personality: 0
   KamikazeIgnoresSurvival: 0
   AuraRadius: 0

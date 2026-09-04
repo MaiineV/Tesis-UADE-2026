@@ -1,11 +1,17 @@
 using System;
 using System.Collections.Generic;
+using System.Reflection;
 using NUnit.Framework;
 using Patterns;
 using Rollgeon.Dice;
+using Rollgeon.Effects;
 using Rollgeon.Heroes;
 using Rollgeon.Movement.Die;
 using Rollgeon.Player;
+using Rollgeon.Upgrades;
+using Rollgeon.Upgrades.Dice;
+using Rollgeon.Upgrades.Dice.Effects;
+using Rollgeon.Upgrades.Dice.Triggers;
 using UnityEngine;
 
 namespace Rollgeon.Movement.Tests
@@ -19,6 +25,7 @@ namespace Rollgeon.Movement.Tests
     {
         private PlayerService _player;
         private MovementDieService _service;
+        private DiceEnchantmentService _ench;
         private readonly List<ScriptableObject> _created = new List<ScriptableObject>();
 
         [SetUp]
@@ -33,6 +40,8 @@ namespace Rollgeon.Movement.Tests
         {
             _service?.Dispose();
             _service = null;
+            _ench?.Dispose();
+            _ench = null;
             foreach (var so in _created) if (so != null) UnityEngine.Object.DestroyImmediate(so);
             _created.Clear();
             ServiceLocator.Clear();
@@ -295,6 +304,120 @@ namespace Rollgeon.Movement.Tests
             CollectionAssert.AreEqual(new[] { "started", "rolled" }, order);
             EventManager.UnSubscribe(EventName.OnMovementDieRollStarted, onStarted);
             EventManager.UnSubscribe(EventName.OnMovementDieRolled, onRolled);
+        }
+
+        // ---- Bono de la tirada (Torbellino, hook MovementDieRolled) ----------
+
+        private EnchantmentSO MakeBonusEnchantment(string id, int amount)
+        {
+            var bridge = new ExecuteEffectsOnDiceEvent { Event = EnchantmentHookEvent.MovementDieRolled };
+            bridge.Effects.Add(new EffectData { Effects = { new EffAddMovementDieBonus { Amount = amount } } });
+
+            var ench = ScriptableObject.CreateInstance<EnchantmentSO>();
+            ench.name = id;
+            _created.Add(ench);
+            typeof(UpgradeSO).GetField("_upgradeId", BindingFlags.NonPublic | BindingFlags.Instance)
+                ?.SetValue(ench, id);
+            typeof(EnchantmentSO).GetField("_category", BindingFlags.NonPublic | BindingFlags.Instance)
+                ?.SetValue(ench, EnchantmentCategory.Movimiento);
+            typeof(EnchantmentSO).GetField("_triggers", BindingFlags.NonPublic | BindingFlags.Instance)
+                ?.SetValue(ench, new List<IEnchantmentTrigger> { bridge });
+            return ench;
+        }
+
+        // El service de encantamientos real con el carril poblado: DispatchMovementDieRolled
+        // exige combate activo y que el guid sea el del dueño del bag (IPlayerService).
+        private Guid RegisterPlayerWithMovementLane(params EnchantmentSO[] lane)
+        {
+            _player.SetPlayer(HeroWith(Die(DiceType.D4)), Guid.NewGuid());
+            ServiceLocator.AddService<IPlayerService>(_player, ServiceScope.Global);
+
+            var bag = Bag(DiceType.D6, DiceType.D6, DiceType.D6, DiceType.D6, DiceType.D6);
+            _created.Add(bag);
+            _ench = new DiceEnchantmentService(config: null);
+            _ench.InitializeFromBag(bag);
+            _ench.Register();
+            foreach (var e in lane) _ench.Bag.AddEnchantment(EnchantmentSlotRef.MovementDieSlot, e);
+            return _player.PlayerGuid;
+        }
+
+        [Test]
+        public void Roll_WithMovementDieBonusEnchantment_AddsItToTheRange_AndPresentsAChip()
+        {
+            var ench = MakeBonusEnchantment("ench.torbellino", 2);
+            var guid = RegisterPlayerWithMovementLane(ench);
+            _service = new MovementDieService(_player, seed: 7);
+            var presenter = new SpyPresenter();
+            _service.SetPresenter(presenter);
+            EventManager.Trigger(EventName.OnCombatStart, Guid.NewGuid());
+
+            int revealed = 0;
+            _service.Roll(guid, f => revealed = f);
+
+            // El bono viaja al presenter ANTES de animar, como el de las Botas.
+            Assert.AreEqual(2, presenter.LastRangeBonus);
+            Assert.AreEqual(1, presenter.LastContributions.Count);
+            Assert.AreSame(ench, presenter.LastContributions[0].SourceAsset, "chip con el icono del encantamiento");
+            Assert.AreEqual(2, presenter.LastContributions[0].Delta);
+
+            presenter.Finish();
+
+            Assert.AreEqual(presenter.LastFace, revealed, "se revela la cara cruda");
+            Assert.AreEqual(presenter.LastFace, _service.LastFace);
+            Assert.IsTrue(_service.TryGetActiveRange(guid, out var range));
+            Assert.AreEqual(presenter.LastFace + 2, range, "el rango activo lleva el bono de la tirada");
+        }
+
+        [Test]
+        public void Roll_MovementDieBonus_DoesNotCarryOverToTheNextRoll()
+        {
+            var guid = RegisterPlayerWithMovementLane(MakeBonusEnchantment("ench.torbellino", 2));
+            _service = new MovementDieService(_player, seed: 7);
+            var presenter = new SpyPresenter();
+            _service.SetPresenter(presenter);
+            EventManager.Trigger(EventName.OnCombatStart, Guid.NewGuid());
+
+            _service.Roll(guid, _ => { });
+            presenter.Finish();
+            _service.ClearActiveRange();
+            _service.Roll(guid, _ => { });
+            presenter.Finish();
+
+            Assert.AreEqual(2, presenter.LastRangeBonus, "+2 por tirada, no +4 acumulado");
+            Assert.AreEqual(1, presenter.LastContributions.Count);
+            Assert.IsTrue(_service.TryGetActiveRange(guid, out var range));
+            Assert.AreEqual(presenter.LastFace + 2, range);
+        }
+
+        [Test]
+        public void Roll_OutsideCombat_IgnoresTheMovementDieBonus()
+        {
+            var guid = RegisterPlayerWithMovementLane(MakeBonusEnchantment("ench.torbellino", 2));
+            _service = new MovementDieService(_player, seed: 7);
+            var presenter = new SpyPresenter();
+            _service.SetPresenter(presenter);
+
+            _service.Roll(guid, _ => { });
+
+            Assert.AreEqual(0, presenter.LastRangeBonus);
+            Assert.IsEmpty(presenter.LastContributions);
+            presenter.Finish();
+            Assert.IsTrue(_service.TryGetActiveRange(guid, out var range));
+            Assert.AreEqual(presenter.LastFace, range);
+        }
+
+        [Test]
+        public void Roll_WithoutPresenter_StillAppliesTheMovementDieBonusToTheRange()
+        {
+            var guid = RegisterPlayerWithMovementLane(MakeBonusEnchantment("ench.torbellino", 2));
+            _service = new MovementDieService(_player, seed: 7);
+            EventManager.Trigger(EventName.OnCombatStart, Guid.NewGuid());
+
+            int revealed = 0;
+            _service.Roll(guid, f => revealed = f);
+
+            Assert.IsTrue(_service.TryGetActiveRange(guid, out var range));
+            Assert.AreEqual(revealed + 2, range);
         }
 
         // ---- Fakes -----------------------------------------------------------

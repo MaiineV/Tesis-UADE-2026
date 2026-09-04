@@ -23,7 +23,7 @@ namespace Rollgeon.Combat.AI.Decisions
     /// <see cref="SourceKey"/>).
     /// </remarks>
     [Serializable, HideReferenceObjectPicker]
-    public sealed class AINode_TelegraphMark : AIActionNode
+    public sealed class AINode_TelegraphMark : AIActionNode, IAIIntentNode
     {
         [Tooltip("Forma del área. Square=Boss1 (3×3), Row/Column=Boss2 (franja), HalfRoom=Boss3 (media sala), " +
                  "SquareAroundSelf=Boss1 (área centrada en el propio boss), CrossAroundSelf=cruz de brazos " +
@@ -90,6 +90,22 @@ namespace Rollgeon.Combat.AI.Decisions
                  "mismo comportamiento que antes de este campo.")]
         public string WindupFeedbackId;
 
+        [Tooltip("Sólo para Square/SquareAroundPlayer. Si el cuadrado se sale de la sala o pisa una " +
+                 "casilla que no existe en el grafo, corre el centro hacia adentro hasta que entre " +
+                 "entero. El jugador queda DENTRO del área pero no siempre en el medio: contra una " +
+                 "pared se lee mucho mejor que un cuadrado mordido. Sin esto un 3×3 en una esquina " +
+                 "marca 3 ó 4 casillas.")]
+        public bool KeepSquareWhole;
+
+        [Title("Tarjeta")]
+        [Tooltip("Key de la tarjeta del turno de aviso. Vacío = no publica nada, que es el default " +
+                 "de siempre: la forma se ancla al tickear y un paso posterior puede descartarla, " +
+                 "así que sólo la autora el jefe en cuyo turno marcar ES la acción.")]
+        public string IntentLabelKey;
+
+        [Tooltip("Texto de autor de IntentLabelKey, por si la key no está en tabla.")]
+        public string IntentLabelFallback;
+
         public override string NodeName => string.IsNullOrEmpty(ChannelId)
             ? $"Telegraph Mark ({Shape}, dmg {Damage})"
             : $"Telegraph Mark [{ChannelId}] ({Shape}, dmg {Damage})";
@@ -109,6 +125,19 @@ namespace Rollgeon.Combat.AI.Decisions
             => selfGuid == Guid.Empty || string.IsNullOrEmpty(channelId)
                 ? selfGuid
                 : AINode_AuxTelegraph.ChannelGuid(selfGuid, channelId);
+
+        /// <summary>
+        /// Sin casillas a propósito: la forma se ancla recién al tickear y el jugador todavía
+        /// tiene su turno para moverse, así que prometerlas sería una estimación.
+        /// </summary>
+        public bool TryDescribeIntent(AIContext context, out AIIntent intent)
+        {
+            intent = default;
+            if (string.IsNullOrEmpty(IntentLabelKey)) return false;
+
+            intent = new AIIntent(IntentLabelKey, IntentLabelFallback, Damage, Kind);
+            return true;
+        }
 
         public override AIResult Tick(AIContext context)
         {
@@ -152,6 +181,9 @@ namespace Rollgeon.Combat.AI.Decisions
             {
                 if (!grid.TryGetPosition(context.PlayerGuid, out var playerCoord)) return AIResult.Failed;
                 tiles = ThreatAreaShape.Compute(grid, playerCoord, Shape, Size, HalfAxis);
+
+                if (KeepSquareWhole && Shape == ThreatShape.SquareAroundPlayer)
+                    tiles = SlideUntilWhole(grid, playerCoord, tiles);
             }
             if (tiles.Count == 0)
             {
@@ -194,7 +226,51 @@ namespace Rollgeon.Combat.AI.Decisions
             // regla Mewgenics del spec de tooltips.
             threat.Mark(source, tiles, Damage, Kind);
 
+            FaceMarkedArea(context, tiles);
+
             return AIResult.Succeeded;
+        }
+
+        /// <summary>
+        /// Prueba centros cada vez más lejos del jugador y se queda con el primero cuyo cuadrado
+        /// entra entero. El corrimiento nunca pasa de <see cref="Size"/>, así que el jugador siempre
+        /// queda adentro. Si ningún centro sirve —sala más chica que la forma— devuelve el recorte.
+        /// </summary>
+        private HashSet<GridCoord> SlideUntilWhole(IGridManager grid, GridCoord player,
+                                                   HashSet<GridCoord> clipped)
+        {
+            int whole = (2 * Size + 1) * (2 * Size + 1);
+            if (clipped.Count >= whole) return clipped;
+
+            for (int ring = 1; ring <= Size; ring++)
+            {
+                for (int dx = -ring; dx <= ring; dx++)
+                for (int dy = -ring; dy <= ring; dy++)
+                {
+                    if (Math.Max(Math.Abs(dx), Math.Abs(dy)) != ring) continue;
+
+                    var moved = ThreatAreaShape.Compute(
+                        grid, new GridCoord(player.X + dx, player.Y + dy), Shape, Size, HalfAxis);
+                    if (moved.Count >= whole) return moved;
+                }
+            }
+
+            return clipped;
+        }
+
+        /// <summary>
+        /// Gira hacia el centro de lo recién marcado. Sin esto el jefe se queda con la
+        /// orientación que traía del movimiento anterior durante todo el turno de aviso — como si
+        /// no estuviera apuntando a nada, y recién gira de golpe un turno después, al ejecutar.
+        /// </summary>
+        private static void FaceMarkedArea(AIContext context, HashSet<GridCoord> tiles)
+        {
+            if (context?.Grid == null || context.SelfGuid == Guid.Empty) return;
+            if (!context.Grid.TryGetPosition(context.SelfGuid, out var selfCoord)) return;
+            if (!ServiceLocator.TryGetService<Entities.Visuals.IEntityVisualService>(out var visuals) || visuals == null) return;
+            if (!visuals.TryGetPawn(context.SelfGuid, out var pawn) || pawn == null) return;
+
+            pawn.FaceCoord(selfCoord, LastThreatenedAreaCenter.ComputeCenter(tiles));
         }
 
         /// <summary>

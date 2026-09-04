@@ -109,7 +109,7 @@ MonoBehaviour:
         mscorlib
     - Name: 
       Entry: 12
-      Data: 2
+      Data: 1
     - Name: 
       Entry: 7
       Data: 7|Rollgeon.Effects.EffectData, Rollgeon
@@ -269,164 +269,6 @@ MonoBehaviour:
       Entry: 8
       Data: 
     - Name: 
-      Entry: 7
-      Data: 14|Rollgeon.Effects.EffectData, Rollgeon
-    - Name: Label
-      Entry: 1
-      Data: Effect Group
-    - Name: PreConditions
-      Entry: 7
-      Data: 15|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
-        Rollgeon]], mscorlib
-    - Name: 
-      Entry: 12
-      Data: 1
-    - Name: 
-      Entry: 7
-      Data: 16|Rollgeon.PreConditions.Concretes.PcOwnerStatCompare, Rollgeon
-    - Name: _isConstantValue
-      Entry: 5
-      Data: true
-    - Name: Stat
-      Entry: 3
-      Data: 0
-    - Name: Comparison
-      Entry: 3
-      Data: 3
-    - Name: Value
-      Entry: 3
-      Data: 5
-    - Name: UseModified
-      Entry: 5
-      Data: true
-    - Name: 
-      Entry: 8
-      Data: 
-    - Name: 
-      Entry: 13
-      Data: 
-    - Name: 
-      Entry: 8
-      Data: 
-    - Name: Effects
-      Entry: 7
-      Data: 17|System.Collections.Generic.List`1[[Rollgeon.Effects.IEffect, Rollgeon]],
-        mscorlib
-    - Name: 
-      Entry: 12
-      Data: 1
-    - Name: 
-      Entry: 7
-      Data: 18|Rollgeon.Effects.Concretes.EffAddComboBonus, Rollgeon
-    - Name: Selection
-      Entry: 7
-      Data: 19|Rollgeon.Effects.Selection.SelectionSettings, Rollgeon
-    - Name: SlotState
-      Entry: 3
-      Data: 1
-    - Name: Timing
-      Entry: 3
-      Data: 0
-    - Name: EntityFilter
-      Entry: 3
-      Data: 2
-    - Name: IsGlobal
-      Entry: 5
-      Data: false
-    - Name: Range
-      Entry: 3
-      Data: 1
-    - Name: RangeMode
-      Entry: 3
-      Data: 0
-    - Name: RangeFromMovementDie
-      Entry: 5
-      Data: false
-    - Name: TargetMode
-      Entry: 3
-      Data: 0
-    - Name: AoeShape
-      Entry: 3
-      Data: 0
-    - Name: AoeRadius
-      Entry: 3
-      Data: 1
-    - Name: PatternRows
-      Entry: 3
-      Data: 1
-    - Name: PatternCols
-      Entry: 3
-      Data: 1
-    - Name: PatternCenter
-      Entry: 7
-      Data: UnityEngine.Vector2Int, UnityEngine.CoreModule
-    - Name: 
-      Entry: 3
-      Data: 0
-    - Name: 
-      Entry: 3
-      Data: 0
-    - Name: 
-      Entry: 8
-      Data: 
-    - Name: PatternFlat
-      Entry: 7
-      Data: 20|System.Boolean[], mscorlib
-    - Name: 
-      Entry: 14
-      Data: 1
-    - Name: 
-      Entry: 5
-      Data: true
-    - Name: 
-      Entry: 13
-      Data: 
-    - Name: 
-      Entry: 8
-      Data: 
-    - Name: IsConstantSelectionCount
-      Entry: 5
-      Data: true
-    - Name: SelectionCount
-      Entry: 3
-      Data: 1
-    - Name: SelectionCountReader
-      Entry: 6
-      Data: 
-    - Name: AutoResolve
-      Entry: 5
-      Data: false
-    - Name: AutoAccept
-      Entry: 5
-      Data: true
-    - Name: 
-      Entry: 8
-      Data: 
-    - Name: _amount
-      Entry: 7
-      Data: 21|Rollgeon.Upgrades.Dice.Readers.ReadCarrierRollDelta, Rollgeon
-    - Name: Op
-      Entry: 3
-      Data: 3
-    - Name: 
-      Entry: 8
-      Data: 
-    - Name: 
-      Entry: 8
-      Data: 
-    - Name: 
-      Entry: 13
-      Data: 
-    - Name: 
-      Entry: 8
-      Data: 
-    - Name: TargetSelector
-      Entry: 6
-      Data: 
-    - Name: 
-      Entry: 8
-      Data: 
-    - Name: 
       Entry: 13
       Data: 
     - Name: 
@@ -437,19 +279,19 @@ MonoBehaviour:
       Data: 
     - Name: 
       Entry: 7
-      Data: 22|Rollgeon.Upgrades.Dice.Triggers.ExecuteEffectsOnDiceEvent, Rollgeon
+      Data: 14|Rollgeon.Upgrades.Dice.Triggers.ExecuteEffectsOnDiceEvent, Rollgeon
     - Name: Event
       Entry: 3
       Data: 5
     - Name: Filter
       Entry: 7
-      Data: 23|Rollgeon.Upgrades.Dice.ComboFilter, Rollgeon
+      Data: 15|Rollgeon.Upgrades.Dice.ComboFilter, Rollgeon
     - Name: Mode
       Entry: 3
       Data: 1
     - Name: ComboIds
       Entry: 7
-      Data: 24|System.Collections.Generic.List`1[[System.String, mscorlib]], mscorlib
+      Data: 16|System.Collections.Generic.List`1[[System.String, mscorlib]], mscorlib
     - Name: 
       Entry: 12
       Data: 0
@@ -467,27 +309,27 @@ MonoBehaviour:
       Data: true
     - Name: Effects
       Entry: 7
-      Data: 25|System.Collections.Generic.List`1[[Rollgeon.Effects.EffectData, Rollgeon]],
+      Data: 17|System.Collections.Generic.List`1[[Rollgeon.Effects.EffectData, Rollgeon]],
         mscorlib
     - Name: 
       Entry: 12
       Data: 1
     - Name: 
       Entry: 7
-      Data: 26|Rollgeon.Effects.EffectData, Rollgeon
+      Data: 18|Rollgeon.Effects.EffectData, Rollgeon
     - Name: Label
       Entry: 1
       Data: Effect Group
     - Name: PreConditions
       Entry: 7
-      Data: 27|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
+      Data: 19|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
         Rollgeon]], mscorlib
     - Name: 
       Entry: 12
       Data: 1
     - Name: 
       Entry: 7
-      Data: 28|Rollgeon.PreConditions.Concretes.PcOwnerStatCompare, Rollgeon
+      Data: 20|Rollgeon.PreConditions.Concretes.PcOwnerStatCompare, Rollgeon
     - Name: _isConstantValue
       Entry: 5
       Data: true
@@ -514,17 +356,17 @@ MonoBehaviour:
       Data: 
     - Name: Effects
       Entry: 7
-      Data: 29|System.Collections.Generic.List`1[[Rollgeon.Effects.IEffect, Rollgeon]],
+      Data: 21|System.Collections.Generic.List`1[[Rollgeon.Effects.IEffect, Rollgeon]],
         mscorlib
     - Name: 
       Entry: 12
       Data: 1
     - Name: 
       Entry: 7
-      Data: 30|Rollgeon.Effects.Concretes.EffModifyIntAttribute, Rollgeon
+      Data: 22|Rollgeon.Effects.Concretes.EffModifyIntAttribute, Rollgeon
     - Name: Selection
       Entry: 7
-      Data: 31|Rollgeon.Effects.Selection.SelectionSettings, Rollgeon
+      Data: 23|Rollgeon.Effects.Selection.SelectionSettings, Rollgeon
     - Name: SlotState
       Entry: 3
       Data: 1
@@ -575,7 +417,7 @@ MonoBehaviour:
       Data: 
     - Name: PatternFlat
       Entry: 7
-      Data: 32|System.Boolean[], mscorlib
+      Data: 24|System.Boolean[], mscorlib
     - Name: 
       Entry: 14
       Data: 1
@@ -627,6 +469,9 @@ MonoBehaviour:
     - Name: _readerMultiplier
       Entry: 4
       Data: 1
+    - Name: _targetSelf
+      Entry: 5
+      Data: true
     - Name: _clampHealthToMax
       Entry: 5
       Data: false
@@ -662,14 +507,57 @@ MonoBehaviour:
       Data: 
     - Name: _capabilities
       Entry: 7
-      Data: 33|System.Collections.Generic.List`1[[Rollgeon.Upgrades.Dice.IEnchantmentCapability,
+      Data: 25|System.Collections.Generic.List`1[[Rollgeon.Upgrades.Dice.IEnchantmentCapability,
+        Rollgeon]], mscorlib
+    - Name: 
+      Entry: 12
+      Data: 2
+    - Name: 
+      Entry: 7
+      Data: 26|Rollgeon.Upgrades.Dice.CapCursed, Rollgeon
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 7
+      Data: 27|Rollgeon.Upgrades.Dice.CapSelectionRequirement, Rollgeon
+    - Name: Conditions
+      Entry: 7
+      Data: 28|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
         Rollgeon]], mscorlib
     - Name: 
       Entry: 12
       Data: 1
     - Name: 
       Entry: 7
-      Data: 34|Rollgeon.Upgrades.Dice.CapCursed, Rollgeon
+      Data: 29|Rollgeon.PreConditions.Concretes.PcOwnerStatCompare, Rollgeon
+    - Name: _isConstantValue
+      Entry: 5
+      Data: true
+    - Name: Stat
+      Entry: 3
+      Data: 0
+    - Name: Comparison
+      Entry: 3
+      Data: 4
+    - Name: Value
+      Entry: 3
+      Data: 5
+    - Name: UseModified
+      Entry: 5
+      Data: true
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: LockLabel
+      Entry: 1
+      Data: 6+ vida
     - Name: 
       Entry: 8
       Data: 
@@ -682,16 +570,17 @@ MonoBehaviour:
   _faceFilter:
     rid: -2
   _triggers:
-  - rid: 7465468535394272153
-  - rid: 7465468535394272154
+  - rid: 7465468544398131272
+  - rid: 7465468544398131273
   _capabilities:
-  - rid: 7465468535394272155
+  - rid: 7465468544398131274
+  - rid: 7465468544398131275
   references:
     version: 2
     RefIds:
     - rid: -2
       type: {class: , ns: , asm: }
-    - rid: 7465468535394272153
+    - rid: 7465468544398131272
       type: {class: ExecuteEffectsOnDiceEvent, ns: Rollgeon.Upgrades.Dice.Triggers, asm: Rollgeon}
       data:
         Event: 3
@@ -702,19 +591,12 @@ MonoBehaviour:
         Effects:
         - Label: Effect Group
           PreConditions:
-          - rid: 7465468535394272156
+          - rid: 7465468544398131276
           Effects:
-          - rid: 7465468535394272157
+          - rid: 7465468544398131277
           TargetSelector:
             rid: -2
-        - Label: Effect Group
-          PreConditions:
-          - rid: 7465468535394272158
-          Effects:
-          - rid: 7465468535394272159
-          TargetSelector:
-            rid: -2
-    - rid: 7465468535394272154
+    - rid: 7465468544398131273
       type: {class: ExecuteEffectsOnDiceEvent, ns: Rollgeon.Upgrades.Dice.Triggers, asm: Rollgeon}
       data:
         Event: 5
@@ -725,15 +607,19 @@ MonoBehaviour:
         Effects:
         - Label: Effect Group
           PreConditions:
-          - rid: 7465468535394272160
+          - rid: 7465468544398131278
           Effects:
-          - rid: 7465468535394272161
+          - rid: 7465468544398131279
           TargetSelector:
             rid: -2
-    - rid: 7465468535394272155
+    - rid: 7465468544398131274
       type: {class: CapCursed, ns: Rollgeon.Upgrades.Dice, asm: Rollgeon}
       data: 
-    - rid: 7465468535394272156
+    - rid: 7465468544398131275
+      type: {class: CapSelectionRequirement, ns: Rollgeon.Upgrades.Dice, asm: Rollgeon}
+      data:
+        LockLabel: 6+ vida
+    - rid: 7465468544398131276
       type: {class: PcOwnerStatCompare, ns: Rollgeon.PreConditions.Concretes, asm: Rollgeon}
       data:
         _isConstantValue: 1
@@ -741,7 +627,7 @@ MonoBehaviour:
         Comparison: 4
         Value: 5
         UseModified: 1
-    - rid: 7465468535394272157
+    - rid: 7465468544398131277
       type: {class: EffAddComboMultiplier, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
       data:
         Selection:
@@ -769,41 +655,7 @@ MonoBehaviour:
         _amountReader:
           rid: -2
         _readerScale: 1
-    - rid: 7465468535394272158
-      type: {class: PcOwnerStatCompare, ns: Rollgeon.PreConditions.Concretes, asm: Rollgeon}
-      data:
-        _isConstantValue: 1
-        Stat: 0
-        Comparison: 3
-        Value: 5
-        UseModified: 1
-    - rid: 7465468535394272159
-      type: {class: EffAddComboBonus, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
-      data:
-        Selection:
-          SlotState: 1
-          Timing: 0
-          EntityFilter: 2
-          IsGlobal: 0
-          Range: 1
-          RangeMode: 0
-          RangeFromMovementDie: 0
-          TargetMode: 0
-          AoeShape: 0
-          AoeRadius: 1
-          PatternRows: 1
-          PatternCols: 1
-          PatternCenter: {x: 0, y: 0}
-          PatternFlat: 01
-          IsConstantSelectionCount: 1
-          SelectionCount: 1
-          SelectionCountReader:
-            rid: -2
-          AutoResolve: 0
-          AutoAccept: 1
-        _amount:
-          rid: 7465468535394272162
-    - rid: 7465468535394272160
+    - rid: 7465468544398131278
       type: {class: PcOwnerStatCompare, ns: Rollgeon.PreConditions.Concretes, asm: Rollgeon}
       data:
         _isConstantValue: 1
@@ -811,7 +663,7 @@ MonoBehaviour:
         Comparison: 4
         Value: 5
         UseModified: 1
-    - rid: 7465468535394272161
+    - rid: 7465468544398131279
       type: {class: EffModifyIntAttribute, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
       data:
         Selection:
@@ -843,8 +695,5 @@ MonoBehaviour:
         _reader:
           rid: -2
         _readerMultiplier: 1
+        _targetSelf: 1
         _clampHealthToMax: 0
-    - rid: 7465468535394272162
-      type: {class: ReadCarrierRollDelta, ns: Rollgeon.Upgrades.Dice.Readers, asm: Rollgeon}
-      data:
-        Op: 3

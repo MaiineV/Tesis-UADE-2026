@@ -17,7 +17,7 @@ MonoBehaviour:
     SerializedBytes: 
     ReferencedUnityObjects:
     - {fileID: 21300000, guid: ce435fe40bff4da41aadc577ebfb27d7, type: 3}
-    - {fileID: 2080456881282250630, guid: 6e2d47840a6bfe64bb79f67203b41137, type: 3}
+    - {fileID: 6699139846381388073, guid: e12f431a623053341ba86b2bbef6e7f2, type: 3}
     SerializedBytesString: 
     Prefab: {fileID: 0}
     PrefabModificationsReferencedUnityObjects: []
@@ -125,6 +125,9 @@ MonoBehaviour:
     - Name: RangeMode
       Entry: 3
       Data: 0
+    - Name: RangeFromMovementDie
+      Entry: 5
+      Data: false
     - Name: TargetMode
       Entry: 3
       Data: 0
@@ -239,13 +242,13 @@ MonoBehaviour:
   _flatDamageBonus:
     rid: -2
   _extraTriggers:
-  - rid: 8131244039720141471
+  - rid: 5966855096767610958
   references:
     version: 2
     RefIds:
     - rid: -2
       type: {class: , ns: , asm: }
-    - rid: 8131244039720141471
+    - rid: 5966855096767610958
       type: {class: ExecuteEffectsOnEvent, ns: Rollgeon.Upgrades.Combos.Triggers.Concretes, asm: Rollgeon}
       data:
         Event: 10
@@ -253,10 +256,10 @@ MonoBehaviour:
         - Label: Effect Group
           PreConditions: []
           Effects:
-          - rid: 8131244039720141472
+          - rid: 5966855096767610959
           TargetSelector:
             rid: -2
-    - rid: 8131244039720141472
+    - rid: 5966855096767610959
       type: {class: EffModifyGold, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
       data:
         Selection:
@@ -266,6 +269,7 @@ MonoBehaviour:
           IsGlobal: 0
           Range: 1
           RangeMode: 0
+          RangeFromMovementDie: 0
           TargetMode: 0
           AoeShape: 0
           AoeRadius: 1
@@ -281,9 +285,9 @@ MonoBehaviour:
           AutoAccept: 1
         Operation: 0
         _amount:
-          rid: 8131244039720141473
+          rid: 5966855096767610960
         _failChainIfInsufficient: 1
-    - rid: 8131244039720141473
+    - rid: 5966855096767610960
       type: {class: ReadConstantInt, ns: Rollgeon.Effects.Readers, asm: Rollgeon}
       data:
         Value: 3

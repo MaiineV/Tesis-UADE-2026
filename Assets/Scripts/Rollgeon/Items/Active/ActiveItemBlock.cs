@@ -30,5 +30,11 @@ namespace Rollgeon.Items.Active
 
         /// <summary>No hay ningun target valido para lo que pide el item (PRE-04).</summary>
         NoValidTarget = 5,
+
+        /// <summary>
+        /// Hay una tirada pendiente de decision (aceptar o re-tirar). No se puede abrir
+        /// otra activacion hasta resolverla.
+        /// </summary>
+        AwaitingDecision = 6,
     }
 }

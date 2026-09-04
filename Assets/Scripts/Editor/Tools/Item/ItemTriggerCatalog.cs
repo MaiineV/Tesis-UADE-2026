@@ -105,7 +105,7 @@ namespace Rollgeon.Editor.Tools.Item
         {
             // --- Combo ---------------------------------------------------------
             Combo("combo.any", "Cuando jugás cualquier combo",
-                  "Dispara con cualquier combo confirmado, antes de que se aplique el daño.",
+                  "Dispara con cualquier combo confirmado, antes de que se aplique el daño. Número Alto NO cuenta (matchea cualquier tirada); para incluirlo, elegilo explícito en 'un combo específico'.",
                   usesComboIds: false),
             Combo("combo.ids", "Cuando jugás un combo específico",
                   "Dispara sólo con los combos que elijas, antes de que se aplique el daño.",
@@ -157,6 +157,12 @@ namespace Rollgeon.Editor.Tools.Item
                 EventName.OnPlayerHealthChanged),
             Bus("shield.changed", "Cuando cambia tu escudo",
                 "Sube o baja.", EventName.OnShieldChanged),
+            Bus("attribute.changed", "Cuando cambia cualquier atributo tuyo",
+                "Vida, ataque, escudo, velocidad... incluido cuando entra o sale un modificador. " +
+                "Lo emite AttributesManager — args: [jugador, tipo del atributo]. Es el disparador " +
+                "de Instinto de Supervivencia: el efecto relee la vida y decide solo. Para reaccionar " +
+                "únicamente a la vida, preferir 'Cuando cambia tu vida'.",
+                EventName.OnAttributeChanged),
             Bus("gold.changed", "Cuando cambia tu oro",
                 "El evento no lleva a quién le cambió, así que no filtra por entidad — para el " +
                 "oro da igual, es del jugador.",

@@ -116,6 +116,14 @@ namespace Rollgeon.Combat.Threat
         /// <inheritdoc />
         public void ClearAll() => Pending.Clear();
 
+        /// <inheritdoc />
+        public bool IsThreatened(GridCoord coord)
+        {
+            foreach (var area in Pending.Values)
+                if (area.Contains(coord)) return true;
+            return false;
+        }
+
         /// <summary>
         /// Snapshot de las áreas pendientes para persistencia. Se restaura vía <see cref="Mark"/>
         /// con los mismos datos. No consume.

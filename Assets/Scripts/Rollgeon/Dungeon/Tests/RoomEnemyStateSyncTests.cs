@@ -108,5 +108,28 @@ namespace Rollgeon.Dungeon.Tests
             var instance = new RoomInstance { InstanceId = Guid.NewGuid() };
             Assert.DoesNotThrow(() => RoomEnemyStateSync.SnapshotLiveEnemies(instance));
         }
+
+        [Test]
+        public void CollectAliveStatesInSpawnOrder_SkipsDeadAndSortsByIndex_WithGaps()
+        {
+            // Formación con hueco (spawn point 1 vacío) y una muerte previa en el 0:
+            // el pareo posicional con SpawnedEnemies debe dar [2, 4], nunca por valor.
+            var instance = new RoomInstance { InstanceId = Guid.NewGuid() };
+            instance.ObjectStates.Set("enemy_4", new EnemySpawnState { SpawnPointIndex = 4, IsDead = false });
+            instance.ObjectStates.Set("enemy_0", new EnemySpawnState { SpawnPointIndex = 0, IsDead = true });
+            instance.ObjectStates.Set("enemy_2", new EnemySpawnState { SpawnPointIndex = 2, IsDead = false });
+
+            var alive = RoomEnemyStateSync.CollectAliveStatesInSpawnOrder(instance);
+
+            Assert.AreEqual(2, alive.Count);
+            Assert.AreEqual(2, alive[0].SpawnPointIndex);
+            Assert.AreEqual(4, alive[1].SpawnPointIndex);
+        }
+
+        [Test]
+        public void CollectAliveStatesInSpawnOrder_NullInstance_ReturnsEmpty()
+        {
+            Assert.AreEqual(0, RoomEnemyStateSync.CollectAliveStatesInSpawnOrder(null).Count);
+        }
     }
 }

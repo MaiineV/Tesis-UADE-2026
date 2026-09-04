@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Patterns;
 using Rollgeon.Grid;
 using UnityEngine;
 
@@ -28,6 +29,16 @@ namespace Rollgeon.Movement
         public event Action<Guid, GridCoord, GridCoord> OnEntityTeleported;
 
         public List<GridCoord> GetReachableTiles(GridCoord origin, int range, bool includeOrigin = false)
+            => ReachableCore(origin, range, includeOrigin, passThroughUnits: false);
+
+        public List<GridCoord> GetReachableTilesFor(Guid entity, GridCoord origin, int range, bool includeOrigin = false)
+            => ReachableCore(origin, range, includeOrigin, CanPassThroughUnits(entity));
+
+        /// <summary>
+        /// Paso etéreo: con <paramref name="passThroughUnits"/> las celdas ocupadas se recorren
+        /// como paso intermedio pero no se ofrecen como destino.
+        /// </summary>
+        private List<GridCoord> ReachableCore(GridCoord origin, int range, bool includeOrigin, bool passThroughUnits)
         {
             var result = new List<GridCoord>();
             if (range < 0) return result;
@@ -41,7 +52,8 @@ namespace Rollgeon.Movement
                 var current = queue.Dequeue();
                 int distance = visited[current];
 
-                if (distance > 0 || includeOrigin) result.Add(current);
+                bool occupied = distance > 0 && _grid.IsOccupied(current);
+                if ((distance > 0 || includeOrigin) && !occupied) result.Add(current);
                 if (distance == range) continue;
 
                 foreach (var edge in _grid.Graph.GetNeighbors(current))
@@ -49,7 +61,7 @@ namespace Rollgeon.Movement
                     var n = edge.To;
                     if (visited.ContainsKey(n)) continue;
                     if (!_grid.IsWalkable(n)) continue;
-                    if (_grid.IsOccupied(n)) continue;
+                    if (_grid.IsOccupied(n) && !passThroughUnits) continue;
 
                     visited[n] = distance + 1;
                     queue.Enqueue(n);
@@ -59,7 +71,26 @@ namespace Rollgeon.Movement
             return result;
         }
 
-        public List<GridCoord> FindPath(GridCoord from, GridCoord to)
+        public bool CanPassThroughUnits(Guid entity)
+        {
+            return entity != Guid.Empty
+                   && ServiceLocator.TryGetService<IMovementTraversalPolicy>(out var policy)
+                   && policy != null
+                   && policy.CanPassThroughUnits(entity);
+        }
+
+        public List<GridCoord> FindPath(GridCoord from, GridCoord to) => FindPathCore(from, to, passThroughUnits: false);
+
+        /// <summary>Mismo branch que <see cref="TryMove"/>: el preview muestra el camino que se va a caminar.</summary>
+        public List<GridCoord> FindPathFor(Guid entity, GridCoord from, GridCoord to)
+        {
+            var fp = _grid.GetFootprint(entity);
+            return GridFootprint.IsUnit(fp)
+                ? FindPathCore(from, to, CanPassThroughUnits(entity))
+                : FindPathRect(entity, fp, from, to);
+        }
+
+        private List<GridCoord> FindPathCore(GridCoord from, GridCoord to, bool passThroughUnits)
         {
             if (from == to) return new List<GridCoord> { from };
             if (!_grid.IsWalkable(to)) return new List<GridCoord>();
@@ -96,8 +127,8 @@ namespace Rollgeon.Movement
                     var n = edge.To;
                     if (!_grid.IsWalkable(n)) continue;
                     // Tile ocupado bloquea el paso, salvo el destino (chequeado al inicio,
-                    // así que llegar acá implica destino libre).
-                    if (_grid.IsOccupied(n) && n != to) continue;
+                    // así que llegar acá implica destino libre) — o con Paso etéreo.
+                    if (_grid.IsOccupied(n) && n != to && !passThroughUnits) continue;
 
                     int tentativeG = gScore[current] + 1;
                     if (gScore.TryGetValue(n, out var existingG) && tentativeG >= existingG) continue;
@@ -126,8 +157,11 @@ namespace Rollgeon.Movement
             return path;
         }
 
-        public bool Move(Guid entity, GridCoord destination)
+        public bool Move(Guid entity, GridCoord destination) => TryMove(entity, destination, out _);
+
+        public bool TryMove(Guid entity, GridCoord destination, out IReadOnlyList<GridCoord> walkedPath)
         {
+            walkedPath = null;
             if (!_grid.TryGetPosition(entity, out var from))
             {
                 Debug.LogWarning($"[MovementService] Move: entidad {entity} no registrada en grid.");
@@ -139,7 +173,7 @@ namespace Rollgeon.Movement
             // FindPath público de siempre (mismo código, misma semántica).
             var fp = _grid.GetFootprint(entity);
             var path = GridFootprint.IsUnit(fp)
-                ? FindPath(from, destination)
+                ? FindPathCore(from, destination, CanPassThroughUnits(entity))
                 : FindPathRect(entity, fp, from, destination);
             if (path.Count == 0) return false;
 
@@ -151,6 +185,7 @@ namespace Rollgeon.Movement
             var target = effective[effective.Count - 1];
             if (!_grid.Move(entity, target)) return false;
 
+            walkedPath = effective;
             OnEntityMoved?.Invoke(entity, from, target, effective);
             return true;
         }
@@ -231,6 +266,24 @@ namespace Rollgeon.Movement
             if (!_grid.Move(entity, to)) return false;
 
             OnEntityTeleported?.Invoke(entity, from, to);
+            return true;
+        }
+
+        /// <inheritdoc />
+        public bool Swap(Guid a, Guid b)
+        {
+            if (!_grid.TryGetPosition(a, out var coordA)) return false;
+            if (!_grid.TryGetPosition(b, out var coordB)) return false;
+
+            // Unregister + Register (no Move): Move rechaza el destino "ocupado" por la otra
+            // entidad — acá las dos celdas quedan libres al mismo tiempo a propósito.
+            _grid.Unregister(a);
+            _grid.Unregister(b);
+            _grid.Register(a, coordB);
+            _grid.Register(b, coordA);
+
+            OnEntityTeleported?.Invoke(a, coordA, coordB);
+            OnEntityTeleported?.Invoke(b, coordB, coordA);
             return true;
         }
 

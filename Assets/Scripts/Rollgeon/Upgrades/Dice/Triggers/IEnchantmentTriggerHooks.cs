@@ -90,4 +90,26 @@ namespace Rollgeon.Upgrades.Dice.Triggers
     {
         void OnCombatStarted(EnchantmentTriggerContext ctx);
     }
+
+    /// <summary>
+    /// El jugador caminó por voluntad propia en combate (<c>EntityWalkedPayload</c>). El
+    /// contexto trae <c>TilesTraversed</c> (este movimiento) y <c>TilesTraversedThisTurn</c>
+    /// (acumulado). Diseñado para el dado de Movimiento (§6.6).
+    /// </summary>
+    public interface IOnPlayerMovedTrigger : IEnchantmentTrigger
+    {
+        void OnPlayerMoved(EnchantmentTriggerContext ctx);
+    }
+
+    /// <summary>
+    /// El dado de Movimiento se tiró (acción de Mover en combate): la cara ya está decidida
+    /// (<c>MovementDieFace</c>) pero todavía NO se animó el reveal. Lo despacha
+    /// <c>MovementDieService.Roll</c> vía <c>IDiceEnchantmentService.DispatchMovementDieRolled</c>,
+    /// no el evento <c>OnMovementDieRolled</c> (que sale en el reveal, tarde). Un
+    /// <c>EffAddMovementDieBonus</c> acá suma a la tirada y se ve como chip en el dado.
+    /// </summary>
+    public interface IOnMovementDieRolledTrigger : IEnchantmentTrigger
+    {
+        void OnMovementDieRolled(EnchantmentTriggerContext ctx);
+    }
 }

@@ -12,7 +12,7 @@ using UnityEngine;
 namespace Rollgeon.Combat.Tests
 {
     /// <summary>
-    /// Aura del Guardian: reduce el daño entrante de los ALIADOS a ≤ radio mientras el
+    /// Aura del Guardian: reduce el daño entrante de los ALIADOS a ≤ radio Chebyshev mientras el
     /// portador siga en la grilla; sin stacking (aplica la mayor); el portador no se protege.
     /// </summary>
     [TestFixture]
@@ -78,15 +78,24 @@ namespace Rollgeon.Combat.Tests
         [Test]
         public void Ally_WithinRadius_GetsReduction()
         {
-            _grid.Register(_ally, new GridCoord(4, 2)); // Manhattan 2
+            _grid.Register(_ally, new GridCoord(4, 2)); // Chebyshev 2
             Assert.AreEqual(5, ReductionFor(_ally));
         }
 
         [Test]
         public void Ally_OutsideRadius_NoReduction()
         {
-            _grid.Register(_ally, new GridCoord(5, 2)); // Manhattan 3
+            _grid.Register(_ally, new GridCoord(5, 2)); // Chebyshev 3
             Assert.AreEqual(0, ReductionFor(_ally));
+        }
+
+        [Test]
+        public void Ally_DiagonallyWithinRadius_GetsReduction()
+        {
+            // (4,4) vs guardián en (2,2): Manhattan 4 (fuera de un radio 2 Manhattan), pero
+            // Chebyshev 2 (dentro) — este es el caso que distingue la métrica nueva de la vieja.
+            _grid.Register(_ally, new GridCoord(4, 4));
+            Assert.AreEqual(5, ReductionFor(_ally));
         }
 
         [Test]

@@ -148,11 +148,11 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 5406620151809
-    m_Localized: Healer
+    m_Localized: Skeleton Bartender
     m_Metadata:
       m_Items: []
   - m_Id: 5406620151810
-    m_Localized: Card Enemy
+    m_Localized: Heart Warrior
     m_Metadata:
       m_Items: []
   - m_Id: 5406620151811
@@ -339,8 +339,8 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 5531895623711
-    m_Localized: Each roll, 50% chance this die adds no damage and 50% it adds double.
-      It still counts toward forming the combo.
+    m_Localized: When played, 50% chance this die adds no damage and 50% it adds
+      double. It still counts toward forming the combo.
     m_Metadata:
       m_Items: []
   - m_Id: 5531895623712
@@ -448,8 +448,8 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 5531899817985
-    m_Localized: This die adds no damage, but each time it takes part in a combo
-      it generates +2 gold.
+    m_Localized: When it takes part in a combo, this die adds no damage and generates
+      +2 gold.
     m_Metadata:
       m_Items: []
   - m_Id: 5531899817986
@@ -499,7 +499,7 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 5531899817997
     m_Localized: Each time it joins a combo it consumes 2 gold and adds +0.2 to the
-      multiplier. With no gold, the combo deals no damage.
+      multiplier. Without 2 gold, the die can't be selected.
     m_Metadata:
       m_Items: []
   - m_Id: 5531899817998
@@ -515,8 +515,8 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 5531899818001
-    m_Localized: On its maximum this die deals double damage. On any other face it
-      deals half.
+    m_Localized: 'When it takes part in a combo: on its maximum it deals double damage;
+      on any other face it deals half.'
     m_Metadata:
       m_Items: []
   - m_Id: 5531975315456
@@ -945,8 +945,8 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 13919417973649410
-    m_Localized: Throws you clear and litters the floor with coins. The ones you
-      don't grab in time he takes back, and each one heals him.
+    m_Localized: Throws you clear and takes your gold, and some of it lands on the
+      floor. Whatever you don't grab in time is gone.
     m_Metadata:
       m_Items: []
   - m_Id: 13919417973649411
@@ -1456,7 +1456,8 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 17593280027881472
-    m_Localized: Hits harder the more gold you carry. Chips you let expire, he keeps.
+    m_Localized: Throws you three tiles and charges you gold on every shove. Whatever
+      you let expire on the floor is lost.
     m_Metadata:
       m_Items: []
   - m_Id: 17593280027881473
@@ -1505,11 +1506,11 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 17593280027881484
-    m_Localized: The Bank Keeps
+    m_Localized: The Bank Doesn't Wait
     m_Metadata:
       m_Items: []
   - m_Id: 17593280027881485
-    m_Localized: Gold you let expire, the bank keeps.
+    m_Localized: Whatever you let expire on the floor is lost.
     m_Metadata:
       m_Items: []
   - m_Id: 17593280027881486
@@ -1631,8 +1632,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 17593280044658693
-    m_Localized: "Step on it to collect its value. One that expires, the bank keeps
-      \u2014 and it heals him."
+    m_Localized: Step on it to collect its value. One that expires is lost.
     m_Metadata:
       m_Items: []
   - m_Id: 17593280044658694
@@ -1673,8 +1673,8 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 17593280044658703
-    m_Localized: Disarm when stepped on and rearm on their own. They hurt a fair
-      bit more than the common ones.
+    m_Localized: They charge every time you cross them - they never wear out. They
+      hurt a fair bit more than the common ones.
     m_Metadata:
       m_Items: []
   - m_Id: 17593280048852992
@@ -1686,11 +1686,15 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 17593280048852994
-    m_Localized: A house spirit that patches up its own.
+    m_Localized: A skeleton dressed as a bartender that supports its allies from
+      mid-range, throwing healing bottles to keep them standing. If all its allies
+      fall, it stops healing and hurls those same bottles as projectiles at the player
+      instead.
     m_Metadata:
       m_Items: []
   - m_Id: 17593280048852995
-    m_Localized: House soldier; fights up close.
+    m_Localized: A living playing card in light armor wielding a short sword. Attacks
+      in melee with quick strikes, relentlessly chasing the player.
     m_Metadata:
       m_Items: []
   - m_Id: 17593280048852996
@@ -2259,8 +2263,8 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 17988681023537153
-    m_Localized: Start every fight at x5 damage. Each attack lowers it by 0.1, down
-      to x1.
+    m_Localized: Your attack damage starts at x3 when you pick it up. Every combo
+      you play lowers it by 0.2; at x1 the item breaks.
     m_Metadata:
       m_Items: []
   - m_Id: 17988681744957440
@@ -2562,55 +2566,62 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 18278206983208960
-    m_Localized: Artillery
+    m_Localized: The Living Slot
     m_Metadata:
       m_Items: []
   - m_Id: 18278206983208961
-    m_Localized: 'House howitzer: shells from afar and leaves the floor burning where
-      the shot lands.'
+    m_Localized: A rusted slot machine that stays at range and fires projectiles
+      at the player from afar.
     m_Metadata:
       m_Items: []
   - m_Id: 18278206983208962
-    m_Localized: Charger
+    m_Localized: Billiard Eyes
     m_Metadata:
       m_Items: []
   - m_Id: 18278206983208963
-    m_Localized: Lines up, marks the lane and charges. Don't stand in its path.
+    m_Localized: A billiard ball with eyes of its own that chases the player, rolling
+      at full speed. Given room, it charges in a straight line, slamming into the
+      player and knocking them back; if already in melee range, it simply strikes
+      without needing to charge.
     m_Metadata:
       m_Items: []
   - m_Id: 18278206983208964
-    m_Localized: Guardian
+    m_Localized: Living Roulette
     m_Metadata:
       m_Items: []
   - m_Id: 18278206983208965
-    m_Localized: 'Shields its own: nearby allies take less damage while it stands.'
+    m_Localized: "A massive casino roulette wheel that rolls from ally to ally, granting
+      them protective shields. It's the group's tank \u2014 its priority is keeping
+      its allies alive, not attacking. If left alone in combat, it charges directly
+      at the player in melee."
     m_Metadata:
       m_Items: []
   - m_Id: 18278206983208966
-    m_Localized: Skirmisher
+    m_Localized: Chiplash
     m_Metadata:
       m_Items: []
   - m_Id: 18278206983208967
-    m_Localized: 'Restless shooter: fires from range and slips away diagonally so
-      you can''t corner it.'
+    m_Localized: A different-colored casino chip that hovers erratically. Attacks
+      from the diagonals, then quickly repositions to strike again from a new angle.
     m_Metadata:
       m_Items: []
   - m_Id: 18278206983208968
-    m_Localized: Sniper
+    m_Localized: Bingo Sniper
     m_Metadata:
       m_Items: []
   - m_Id: 18278206983208969
-    m_Localized: Fires from across the room. Break its line of sight or pay for the
-      shot.
+    m_Localized: A bingo ball machine that keeps maximum distance from the player,
+      spinning slowly while it builds pressure before firing. Attacks only in a straight
+      line, head-on.
     m_Metadata:
       m_Items: []
   - m_Id: 18278206983208970
-    m_Localized: Sweeper Card
+    m_Localized: Spade Warrior
     m_Metadata:
       m_Items: []
   - m_Id: 18278206983208971
-    m_Localized: 'House soldier that marks a sweep: its blow covers several tiles
-      at once.'
+    m_Localized: A living playing card wielding a long spear. Prefers to keep distance
+      and telegraph its thrusts before striking.
     m_Metadata:
       m_Items: []
   - m_Id: 18278206983208972
@@ -2671,8 +2682,8 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 18299679638994944
-    m_Localized: When you attack, +3 to the multiplier for each unused roll you still
-      have.
+    m_Localized: When you attack, +1.5 to the multiplier for each unused roll you
+      still have.
     m_Metadata:
       m_Items: []
   - m_Id: 18299679659966464
@@ -2697,8 +2708,8 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 18299679659966469
-    m_Localized: The highest die in your combo adds its face to the multiplier (not
-      to base damage).
+    m_Localized: The highest die in your combo leaves base damage and adds its face
+      to the multiplier. Doesn't apply to Higher Number.
     m_Metadata:
       m_Items: []
   - m_Id: 18299679659966470
@@ -2715,7 +2726,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 18299679659966473
-    m_Localized: +3 gold for each odd die in every roll, combo or not.
+    m_Localized: +3 gold for each odd die that is part of the combo you play.
     m_Metadata:
       m_Items: []
   - m_Id: 18299679659966474
@@ -2723,8 +2734,8 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 18299679659966475
-    m_Localized: You receive no healing from passive items. In exchange, all your
-      combo multipliers get +3.
+    m_Localized: Your potion heals half as much. In exchange, all your combo multipliers
+      get +3.
     m_Metadata:
       m_Items: []
   - m_Id: 18332491544969216
@@ -2733,7 +2744,7 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 18332491591106560
     m_Localized: Each time this die takes part in a combo you lose 5 health and the
-      multiplier rises by +0.3. At 5 health or less the die adds no damage.
+      multiplier rises by +0.3. At 5 health or less the die can't be selected.
     m_Metadata:
       m_Items: []
   - m_Id: 18332491591106561
@@ -2759,7 +2770,8 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 18332491591106566
     m_Localized: "For each consecutive combo it takes part in this combat, it adds
-      +3 more damage (+3, +6, +9\u2026). Resets if it's left out of a combo."
+      +3 more damage (+3, +6, +9\u2026). Resets if it's left out of a combo or if
+      you play High Number."
     m_Metadata:
       m_Items: []
   - m_Id: 18332491591106567
@@ -2769,6 +2781,375 @@ MonoBehaviour:
   - m_Id: 18332491591106568
     m_Localized: If this die takes part in a combo against an enemy at 25% health
       or less, it adds +12 damage.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18353398669819904
+    m_Localized: Credit Card
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18353398736928768
+    m_Localized: 'Your gold can drop to -30: buy on credit and pay the debt back
+      with what you earn.'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18353399701618688
+    m_Localized: Straggler
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18353399701618689
+    m_Localized: 'On pickup it locks onto your least-used combo: that combo deals
+      +50% damage for the rest of the run.'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18353400586616832
+    m_Localized: Toll
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18353400590811136
+    m_Localized: When entering a regular combat room you may pay 15 + 10 per floor
+      in gold to clear it without fighting. No loot.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18475382250242048
+    m_Localized: Coin Drop
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18475382304768000
+    m_Localized: Marks a tile and rains a shower of heavy coins on that area after
+      a short delay, damaging anyone caught inside.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18475382304768001
+    m_Localized: Charge and Roll
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18475382304768002
+    m_Localized: Charges in a straight line toward the player, hitting them and knocking
+      them back several tiles in the direction of impact. If the player is already
+      adjacent, it attacks directly without charging.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18475382304768003
+    m_Localized: Crimson Slash
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18475382304768004
+    m_Localized: A fast sword strike against an adjacent enemy, dealing moderate
+      damage.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18475382304768005
+    m_Localized: Announced Thrust
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18475382304768006
+    m_Localized: Marks a line of tiles in front of it and, after a short delay, thrusts
+      the spear forward, damaging anything caught in that line.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18475382304768007
+    m_Localized: Chip Ring
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18475382304768008
+    m_Localized: Attacks at range within a diamond-shaped area around itself, damaging
+      the player if caught inside that zone.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18475382304768009
+    m_Localized: X Slash
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18475382304768010
+    m_Localized: Fires a single diagonal projectile at the player and stays in place
+      until the player gets close.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18479643793473536
+    m_Localized: 2 gold
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18479643847999488
+    m_Localized: 6+ HP
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18490583970410496
+    m_Localized: Shove
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18490584037519360
+    m_Localized: Shoves you <b>{1}</b> tiles and takes a cut of the gold you carry.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18490584037519361
+    m_Localized: The Vault Takes It
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18490584037519362
+    m_Localized: 
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18490584037519363
+    m_Localized: Coins Expiring
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18490584037519364
+    m_Localized: The vault takes one per turn; <b>{1}</b> left on the floor.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18490584037519365
+    m_Localized: Cannon Shot
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18490584037519366
+    m_Localized: "Marks a 3\xD73 area where you stand and fires on it next turn."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18490584037519367
+    m_Localized: Cannon Shot
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18490584037519368
+    m_Localized: It lands on the marked area, not on where you are.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18504181256208384
+    m_Localized: Mobile Bulwark
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18504181335900160
+    m_Localized: Gain 1 shield per tile you walk.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18504181340094464
+    m_Localized: Whirlwind
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18504181340094465
+    m_Localized: When you roll the movement die, every enemy teleports to a random
+      tile and you move +2.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18504181340094466
+    m_Localized: Incendiary
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18504181340094467
+    m_Localized: 'Every tile you walk burns for 2 turns: enemies entering or starting
+      their turn there take 3 damage.'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18504181340094468
+    m_Localized: Toxic Trail
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18504181340094469
+    m_Localized: 'Every tile you walk leaves a toxic trail for 2 turns: the first
+      enemy entering gets poisoned for 2 turns.'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18504181340094470
+    m_Localized: Charge
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18504181340094471
+    m_Localized: Gain +1 base damage per tile you walk until the end of the turn.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18504181340094472
+    m_Localized: Ethereal Step
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18504181340094473
+    m_Localized: You move through units. You cannot end your movement on one.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18504181340094474
+    m_Localized: Thorn Path
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18504181340094475
+    m_Localized: 'Every tile you walk leaves Thorns for 1 turn: the first enemy entering
+      takes 2 damage and stops moving.'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18504181340094476
+    m_Localized: Incendiary Flames
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18504181340094477
+    m_Localized: Burning tile left by the player. Enemies entering or starting their
+      turn here take damage.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18504181340094478
+    m_Localized: Toxic Trail
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18504181340094479
+    m_Localized: Toxic trail left by the player. The first enemy entering gets poisoned.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18504181340094480
+    m_Localized: Path Thorns
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18504181340094481
+    m_Localized: Thorns left by the player. The first enemy entering takes damage
+      and stops moving.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18622766255013888
+    m_Localized: Dice Mage
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18622766292762624
+    m_Localized: A hooded sorcerer with a giant die floating where its head should
+      be. Attacks at range by telegraphing an area before calling down a blast of
+      fire that ignites the battlefield.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18622766292762625
+    m_Localized: Dead-On Ball
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18622766292762626
+    m_Localized: Fires a ball at high speed in a straight line toward the player,
+      dealing heavy damage to anyone in its path.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18622766292762627
+    m_Localized: Burning Roll
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18622766292762628
+    m_Localized: Marks an area of the battlefield and, after a short delay, sets
+      it ablaze, damaging anyone caught inside and leaving residual fire that continues
+      dealing damage over time.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18622766292762629
+    m_Localized: Healing Shot
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18622766292762630
+    m_Localized: Throws a bottle at an ally within mid-range, healing them on impact.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18622766292762631
+    m_Localized: Last Call
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18622766292762632
+    m_Localized: Once all its allies are dead, throws bottles directly at the player
+      from mid-range, dealing damage instead of healing.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18622766292762633
+    m_Localized: Protective Spin
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18622766292762634
+    m_Localized: Moves to the nearest ally and grants them a shield that absorbs
+      damage before rolling on to the next.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18622766292762635
+    m_Localized: Final Wager
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18622766292762636
+    m_Localized: Once out of allies, slams its full weight into the player if adjacent,
+      dealing heavy damage.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18628743662501888
+    m_Localized: "Weakness: hits with the {0} combo deal \xD7{1} damage."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18719323256438784
+    m_Localized: "Bleeding \xD7{0}"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18719323273216000
+    m_Localized: You take damage at the start of each turn for every Bleed stack.
+      Bleeding again ADDS new stacks.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18723604852293632
+    m_Localized: Blood Transfusion
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18723604852293633
+    m_Localized: 'Roll your own D10: on 1-3 it redistributes the room''s enemy health,
+      and on 4-10 it drains the enemy with the most HP and heals you for the damage
+      dealt.'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18723604852293634
+    m_Localized: Coin Shield
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18723604852293635
+    m_Localized: 'Roll a D4 like a coin flip: even keeps your current shield until
+      your next turn, odd hands out shield to you and every living enemy.'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18723604852293636
+    m_Localized: Grapple Claw
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18723604852293637
+    m_Localized: 'Pick a direction and roll a D6: you pull yourself or your hooked
+      target that many tiles, and on 1-2 the chain also drags a nearby enemy.'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18723604852293638
+    m_Localized: Justa de Justicia
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18723604852293639
+    m_Localized: 'Pick a direction and roll a D12: you charge that many tiles, the
+      first enemy hit takes that much damage, and gets shoved according to the roll''s
+      band.'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18723604852293640
+    m_Localized: Probability Drive
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18723604852293641
+    m_Localized: 'Pick a center tile and roll a D4: you teleport to a nearby safe
+      spot, ranging from an erratic jump on 1 to choosing between three options on
+      4.'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18723604852293642
+    m_Localized: Blood D6
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18723604852293643
+    m_Localized: 'Roll a D6 before your next valid combo: it adds bonus damage that
+      spreads across several enemies on low faces and concentrates on the main target
+      on high faces.'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18723604852293644
+    m_Localized: Bottle'o Thunder
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18723604852293645
+    m_Localized: 'Pick an enemy and roll a D4: it stuns between 1 and 4 chained targets
+      and always leaves 2 Electric Puddles on the ground.'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18720942286798848
+    m_Localized: Shove
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18720942332936192
+    m_Localized: Strikes and shoves you several tiles away from the counter, taking
+      a cut of your gold.
     m_Metadata:
       m_Items: []
   references:

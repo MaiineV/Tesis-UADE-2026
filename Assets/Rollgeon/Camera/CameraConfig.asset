@@ -323,6 +323,8 @@ MonoBehaviour:
   EnableRecenterInput: 1
   RecenterTweenSeconds: 0.4
   RecenterEase: 7
+  RoomPanSeconds: 0.35
+  RoomPanEase: 10
   EnableWallOcclusion: 1
   WallFadeSeconds: 0.2
   EnablePixelSnap: 1

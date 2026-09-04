@@ -109,6 +109,14 @@ namespace Rollgeon.Items
         [ShowIf("@Type == ItemType.Passive")]
         public bool BlocksPassiveItemHealing;
 
+        [InfoBox("Multiplica la curación de la poción (acción Curarse: consume potion.healing y " +
+                 "cura por la fórmula N×M) mientras el item esté en el inventario. Entra a M y " +
+                 "se ve en el desglose con el icono del item. Ayuno: 0.5. 1 = sin efecto. Con " +
+                 "varios items se multiplican. No toca curas de items pasivos ni Segundo Aliento.")]
+        [ShowIf("@Type == ItemType.Passive")]
+        [MinValue(0.01f)]
+        public float PotionHealMultiplier = 1f;
+
         [Title("Active Slots")]
         [InfoBox("Slots de items activos extra mientras el item esté en el inventario. " +
                  "Mochila Grande: 1. Se revierte al perder el item.")]
@@ -142,6 +150,31 @@ namespace Rollgeon.Items
         [MinValue(1)]
         public int SecondWindRemainingHp = 1;
 
+        [Title("Gold Floor")]
+        [InfoBox("Piso del oro del jugador mientras el item esté en el inventario: la tienda, " +
+                 "el altar y cualquier Spend pueden dejar el balance en deuda hasta este valor. " +
+                 "Tarjeta de Crédito: -30. 0 = sin efecto. Con varios items gana el más bajo. " +
+                 "Se revierte al perder el item (la deuda existente queda).")]
+        [ShowIf("@Type == ItemType.Passive")]
+        [MaxValue(0)]
+        public int GoldFloor;
+
+        [Title("Least Used Combo Bonus")]
+        [InfoBox("Al adquirir el item se elige UNA vez el combo con menos matches de la run " +
+                 "(desempate: orden de la hoja del héroe) y ese combo suma MultiplierBonus al " +
+                 "canal aditivo de M en cada ataque. Rezagado: 0.5 (+50%). Persiste en el save.")]
+        [ShowIf("@Type == ItemType.Passive")]
+        [NonSerialized, OdinSerialize]
+        public LeastUsedComboBonusDef LeastUsedComboBonus = new();
+
+        [Title("Combat Toll")]
+        [InfoBox("Al entrar a una sala de combate estándar (no Boss) ofrece pagar " +
+                 "BaseCost + CostPerFloor × piso para limpiarla sin pelear: sin enemigos, sin " +
+                 "loot, puertas abiertas. Peaje: 15 / 10 (piso 1 = 25).")]
+        [ShowIf("@Type == ItemType.Passive")]
+        [NonSerialized, OdinSerialize]
+        public CombatTollDef CombatToll = new();
+
         // ==================================================================
         // Modelo nuevo (GDD "Ítems Activos"): slot unico, dado propio y bandas.
         // ==================================================================
@@ -171,36 +204,78 @@ namespace Rollgeon.Items
                  "todavia no estan implementadas — caen en el reparto por tercios.")]
         public ActiveItemFamily ActiveFamily = ActiveItemFamily.Potencia;
 
-        [ShowIf("@Type == ItemType.Active && ActiveFamily == Rollgeon.Items.Active.ActiveItemFamily.Precision")]
+        [ShowIf("@Type == ItemType.Active && ActiveFamily == Rollgeon.Items.Active.ActiveItemFamily.Precision " +
+                "&& ActiveResolution == Rollgeon.Items.Active.ActiveItemResolution.Bands")]
         [InfoBox("Cara exacta que el item busca. Acertarla es banda positiva, quedar a 1 " +
                  "es mixta, a 2 o mas es negativa.")]
         [MinValue(1)]
         public int PrecisionTarget = 1;
 
-        [ShowIf("@Type == ItemType.Active && ActiveFamily == Rollgeon.Items.Active.ActiveItemFamily.Control")]
+        [ShowIf("@Type == ItemType.Active && ActiveFamily == Rollgeon.Items.Active.ActiveItemFamily.Control " +
+                "&& ActiveResolution == Rollgeon.Items.Active.ActiveItemResolution.Bands")]
         [InfoBox("Paridad que el item busca. La banda cruza dos condiciones: coincidir la " +
                  "paridad y caer en la mitad superior del dado.")]
         public ActiveItemParity ControlParity = ActiveItemParity.Even;
 
+        [Title("Active — Estructura de resolucion")]
+        [InfoBox("Feature#0085. Define cuantos grupos de efectos tiene el item y como se " +
+                 "calcula la banda/magnitud desde la cara. Bands = el modelo original " +
+                 "(3 grupos, tercios o cortes custom). Binary = 2 grupos por paridad " +
+                 "(Coin Shield). Gradient/Hierarchy = 1 grupo (OnPositiveBand); la cara " +
+                 "ES la magnitud/nivel del efecto (Grapple Claw, Blood D6, Bottle'o Thunder).")]
+        [ShowIf("@Type == ItemType.Active && UsesActiveSlot")]
+        public ActiveItemResolution ActiveResolution = ActiveItemResolution.Bands;
+
+        [ShowIf("@Type == ItemType.Active && ActiveResolution == Rollgeon.Items.Active.ActiveItemResolution.Bands")]
+        [InfoBox("0 = tercios proporcionales (default). >0 fija el corte exacto: cara mas " +
+                 "alta que todavia cae en banda negativa. Probability Drive (D4): 1.")]
+        [MinValue(0)]
+        public int NegativeMaxFace = 0;
+
+        [ShowIf("@Type == ItemType.Active && ActiveResolution == Rollgeon.Items.Active.ActiveItemResolution.Bands")]
+        [InfoBox("0 = tercios proporcionales (default). >0 fija el corte exacto: cara mas " +
+                 "alta que todavia cae en banda mixta. Probability Drive (D4): 3.")]
+        [MinValue(0)]
+        public int MixedMaxFace = 0;
+
+        [ShowIf("@Type == ItemType.Active && ActiveResolution == Rollgeon.Items.Active.ActiveItemResolution.Binary")]
+        [InfoBox("Paridad que corresponde al resultado POSITIVO (OnPositiveBand). La otra " +
+                 "paridad corre OnNegativeBand — un Binary no tiene banda mixta. " +
+                 "Coin Shield: Even (par conserva el escudo propio).")]
+        public ActiveItemParity BinaryPositiveParity = ActiveItemParity.Even;
+
         [Title("Active — Efectos por banda")]
-        [InfoBox("Las tres bandas tienen que tener efecto: el GDD prohibe la rama de " +
-                 "'no pasa nada'. Lo que cambia entre bandas es la calidad, no si ocurre.")]
-        [ShowIf("@Type == ItemType.Active")]
+        [InfoBox("Las bandas/grupos que aplican a la estructura elegida tienen que tener " +
+                 "efecto: el GDD prohibe la rama de 'no pasa nada'. Lo que cambia entre " +
+                 "ellas es la calidad, no si ocurre.")]
+        [ShowIf("@Type == ItemType.Active && (ActiveResolution == Rollgeon.Items.Active.ActiveItemResolution.Bands " +
+                "|| ActiveResolution == Rollgeon.Items.Active.ActiveItemResolution.Binary)")]
         [OdinSerialize]
         public EffectData OnNegativeBand = new();
 
-        [ShowIf("@Type == ItemType.Active")]
+        [ShowIf("@Type == ItemType.Active && ActiveResolution == Rollgeon.Items.Active.ActiveItemResolution.Bands")]
         [OdinSerialize]
         public EffectData OnMixedBand = new();
 
         [ShowIf("@Type == ItemType.Active")]
+        [InfoBox("En Gradient/Hierarchy este es el UNICO grupo: corre en cada activacion, " +
+                 "cual sea la cara (\"Al resolver\").",
+                 InfoMessageType.None,
+                 nameof(IsGradientOrHierarchy))]
         [OdinSerialize]
         public EffectData OnPositiveBand = new();
 
+        // Odin VisibleIf de InfoBox espera un nombre de miembro (mismo patron que
+        // ShowAoeMovementWarning en SelectionSettings) en vez de una expresion "@" inline.
+        private bool IsGradientOrHierarchy
+            => ActiveResolution == ActiveItemResolution.Gradient
+               || ActiveResolution == ActiveItemResolution.Hierarchy;
+
         /// <summary>
-        /// Grupo de efectos que corresponde a <paramref name="band"/>. Nunca null: un
-        /// item sin autorar esa banda devuelve un grupo vacio, que el pipeline trata como
-        /// no-op en vez de romper.
+        /// Grupo de efectos que corresponde a <paramref name="band"/> dentro del modelo
+        /// de <see cref="ActiveItemResolution.Bands"/> (3 grupos). Nunca null: un item sin
+        /// autorar esa banda devuelve un grupo vacio, que el pipeline trata como no-op en
+        /// vez de romper. Para el resto de las estructuras usar <see cref="GetEffectsFor"/>.
         /// </summary>
         public EffectData GetBandEffects(ActiveItemBand band)
         {
@@ -209,6 +284,32 @@ namespace Rollgeon.Items
                 case ActiveItemBand.Negative: return OnNegativeBand ??= new EffectData();
                 case ActiveItemBand.Mixed: return OnMixedBand ??= new EffectData();
                 default: return OnPositiveBand ??= new EffectData();
+            }
+        }
+
+        /// <summary>
+        /// Grupo de efectos que corresponde al resultado ya resuelto, segun la
+        /// <see cref="ActiveResolution"/> del item: Bands → los 3 grupos por banda;
+        /// Binary → <see cref="OnNegativeBand"/> (otra paridad) / <see cref="OnPositiveBand"/>
+        /// (paridad positiva) — nunca Mixed; Gradient/Hierarchy → siempre
+        /// <see cref="OnPositiveBand"/> (unico grupo, la cara decide la magnitud/nivel
+        /// adentro del efecto, no cual grupo corre).
+        /// </summary>
+        public EffectData GetEffectsFor(in ActiveItemRollResolution resolution)
+        {
+            switch (ActiveResolution)
+            {
+                case ActiveItemResolution.Binary:
+                    return resolution.Band == ActiveItemBand.Positive
+                        ? (OnPositiveBand ??= new EffectData())
+                        : (OnNegativeBand ??= new EffectData());
+
+                case ActiveItemResolution.Gradient:
+                case ActiveItemResolution.Hierarchy:
+                    return OnPositiveBand ??= new EffectData();
+
+                default:
+                    return GetBandEffects(resolution.Band);
             }
         }
 

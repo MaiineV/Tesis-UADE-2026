@@ -196,8 +196,10 @@ namespace Rollgeon.UI.Tooltips
                          TooltipPlacementMode placement,
                          TooltipVerticalSide side = TooltipVerticalSide.Above)
         {
-            // El panel es compartido: cada Show arranca sin candado y el fijado lo re-afirma.
-            SetPinned(false);
+            // El panel es compartido: cada Show arranca sin candado y el fijado lo
+            // re-afirma. Reset INSTANTÁNEO, no un unpin animado: la tooltip de otra
+            // cosa no debe reproducir la apertura del candado ajeno.
+            ResetPinVisual();
 
             ApplyContent(content);
             _currentOwnerId = ownerId;
@@ -472,14 +474,37 @@ namespace Rollgeon.UI.Tooltips
         /// <summary>Prende/apaga el candado de fijado. Lo maneja el trigger dueño del pin.</summary>
         public void SetPinned(bool pinned)
         {
-            if (_pinIndicator != null) _pinIndicator.SetActive(pinned);
+            if (_pinIndicator == null) return;
+
+            // Con la view animada, el candado se cierra al fijar y se abre antes de
+            // irse; sin ella (panel viejo, tests), el SetActive de siempre.
+            if (_pinIndicator.TryGetComponent<TooltipPinLockView>(out var view))
+                view.SetPinned(pinned);
+            else
+                _pinIndicator.SetActive(pinned);
+        }
+
+        // Apagado visual instantáneo, sin tocar el estado lógico del pin: lo usan el
+        // reset de cada Show y el cierre del panel. Un tween de apertura interrumpido
+        // por esto no puede dejar el candado colgado (quedaba cerrado en TODAS las
+        // tooltips hasta el próximo fijado).
+        private void ResetPinVisual()
+        {
+            if (_pinIndicator == null) return;
+
+            if (_pinIndicator.TryGetComponent<TooltipPinLockView>(out var view))
+                view.HideImmediate();
+            else
+                _pinIndicator.SetActive(false);
         }
 
         private void SetVisible(bool visible)
         {
             _visible = visible;
             if (_root != null) _root.gameObject.SetActive(visible);
-            if (!visible) SetPinned(false);
+            // Reset visual, no unpin lógico: el panel puede cerrarse (hover que se va)
+            // con el fijado vigente — al re-mostrarse, el dueño lo re-afirma.
+            if (!visible) ResetPinVisual();
             // overrideSorting no persiste si se seteó con el GO inactivo — re-aplicar
             // con el panel ya activo.
             if (visible) EnsureOverlaySorting();

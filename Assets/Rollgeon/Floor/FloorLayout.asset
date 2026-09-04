@@ -31,12 +31,13 @@ MonoBehaviour:
       Mode: 1
       Fixed: 4
       Min: 4
-      Max: 7
+      Max: 8
     Pool:
     - {fileID: 11400000, guid: 029dae47a1824234ebdb4e679f435815, type: 2}
     - {fileID: 11400000, guid: 1b81ef71a035c014d96cecd2bf6bec1b, type: 2}
     - {fileID: 11400000, guid: 080423e7076a55949bcba43140e7e373, type: 2}
     - {fileID: 11400000, guid: 222e96d91ca6fe046b26b9f788feda3f, type: 2}
+    - {fileID: 11400000, guid: 6ac11746ca17b6b49a2a7b13edd1699b, type: 2}
   - Type: 3
     Count:
       Mode: 0
@@ -53,6 +54,7 @@ MonoBehaviour:
       Max: 1
     Pool:
     - {fileID: 11400000, guid: 32d4f3001b74d8d4d9a76f74a12b45f4, type: 2}
+    - {fileID: 11400000, guid: 217e0bd547af4374999f4b413511c792, type: 2}
   - Type: 5
     Count:
       Mode: 0

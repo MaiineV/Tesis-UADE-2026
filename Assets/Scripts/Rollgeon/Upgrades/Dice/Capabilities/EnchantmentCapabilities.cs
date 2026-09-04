@@ -1,6 +1,10 @@
 using System;
+using System.Collections.Generic;
 using Rollgeon.Attributes;
+using Rollgeon.PreConditions;
 using Sirenix.OdinInspector;
+using Sirenix.Serialization;
+using UnityEngine;
 
 namespace Rollgeon.Upgrades.Dice
 {
@@ -16,13 +20,41 @@ namespace Rollgeon.Upgrades.Dice
     }
 
     /// <summary>
-    /// "Lento": el dado no puede holdearse entre rerolls — siempre vuela. Consumidores:
-    /// <c>DiceZoneView.CanChangeHold</c> (gate del toggle) y
+    /// "Lento": el dado no puede guardarse entre rerolls — siempre vuela. Consumidor:
     /// <c>CombatHandoffService.ApplyKeepConstraints</c> (fuerza keep=false en el reroll).
+    /// NO bloquea la selección: en este juego seleccionar es armar la mano del combo, y
+    /// Lento tiene que poder jugarse (Fix#0053). En modo clásico (seleccionado = se queda)
+    /// <c>DiceZoneView</c> suelta su hold al arrancar el reroll para que el reveal lo procese.
     /// </summary>
     [Serializable, HideReferenceObjectPicker]
     public sealed class CapPreventHolding : IEnchantmentCapability
     {
+    }
+
+    /// <summary>
+    /// "Sediento" / "Vampiro": el dado solo se puede seleccionar (armar combo) mientras se
+    /// cumplan TODAS las <see cref="Conditions"/> — sin 2 de oro, con 5 de vida o menos…
+    /// Cuando fallan, el dado queda con candado (mismo visual que el bloqueo del Boss 1),
+    /// no entra a ningún combo y un hold viejo se suelta. Consumidor:
+    /// <see cref="DiceSelectionLocks"/> (lo consultan <c>DiceZoneView</c> y
+    /// <c>CombatHandoffService</c>).
+    /// </summary>
+    /// <remarks>
+    /// Las condiciones se evalúan con el contexto del jugador (Attributes, OwnerGuid, MaxHp),
+    /// sin tirada ni combo: <c>PcGoldCompare</c>, <c>PcOwnerStatCompare</c>, <c>PcOwnerHpBelow</c>
+    /// sirven; las carrier-aware (<c>PcCarrierFace</c>) no tienen sentido acá.
+    /// </remarks>
+    [Serializable, HideReferenceObjectPicker]
+    public sealed class CapSelectionRequirement : IEnchantmentCapability
+    {
+        [Tooltip("Todas deben cumplirse para que el dado sea seleccionable.")]
+        [OdinSerialize]
+        [ListDrawerSettings(ShowFoldout = false)]
+        public List<BasePreCondition> Conditions = new List<BasePreCondition>();
+
+        [Tooltip("Texto corto sobre el candado (fallback). Se localiza con la clave " +
+                 "'<upgradeId>.lock' de la tabla Content si existe.")]
+        public string LockLabel = string.Empty;
     }
 
     /// <summary>"Comodín": el dado cuenta como cualquier número para combos.</summary>
@@ -79,6 +111,14 @@ namespace Rollgeon.Upgrades.Dice
     /// Queries sobre las capabilities de un encantamiento. Viven del lado dominio para
     /// que futuros consumidores (pricing de tienda, tooltips) no dependan de UI.
     /// </summary>
+    /// <summary>
+    /// Paso etéreo (dado de Movimiento): el dueño atraviesa unidades al caminar — las celdas
+    /// ocupadas cuentan como paso intermedio en BFS y A*, nunca como destino. Las paredes
+    /// siguen bloqueando. Consumida por <c>EtherealMovementPolicy</c>.
+    /// </summary>
+    [Serializable]
+    public sealed class CapEtherealMovement : IEnchantmentCapability { }
+
     public static class EnchantmentCapabilityQueries
     {
         /// <summary><c>true</c> si el encantamiento declara <see cref="CapCursed"/>. Null-safe.</summary>
@@ -113,7 +153,10 @@ namespace Rollgeon.Upgrades.Dice
         /// </summary>
         public static bool SlotHasCapability<T>(this RuntimeDiceBag bag, int bagSlot) where T : class, IEnchantmentCapability
         {
-            if (bag == null || bagSlot < 0 || bagSlot >= bag.Dice.Count) return false;
+            // IsValidIndex y no un rango a mano: el carril del dado de Movimiento es el
+            // sentinela negativo MovementDieSlot, y un `bagSlot < 0` lo dejaba sin capabilities
+            // (Paso etéreo nunca aplicaba).
+            if (bag == null || !bag.IsValidIndex(bagSlot)) return false;
             var slots = bag.GetEnchantments(bagSlot);
             if (slots == null) return false;
             for (int i = 0; i < slots.Count; i++)

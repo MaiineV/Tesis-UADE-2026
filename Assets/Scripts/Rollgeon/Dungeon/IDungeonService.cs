@@ -28,6 +28,13 @@ namespace Rollgeon.Dungeon
         RoomInstance CurrentRoomInstance { get; }
 
         /// <summary>
+        /// Sala que el jugador acaba de dejar y que sigue activa mientras la cámara
+        /// panea hacia la nueva (Feature#0086). <c>null</c> fuera de un cruce en vuelo.
+        /// Default para fakes de test que no modelan la transición.
+        /// </summary>
+        RoomInstance LeavingRoomInstance => null;
+
+        /// <summary>
         /// Seed con el que se generó el piso actual. Los sistemas que rollean
         /// contenido por sala (tienda) derivan de acá para que un piso regenerado
         /// desde save (mismo seed) produzca el mismo contenido. Default 0 para
@@ -83,6 +90,14 @@ namespace Rollgeon.Dungeon
         /// </summary>
         /// <returns><c>false</c> si el instanceId no existe en el piso.</returns>
         bool SetRoomState(Guid instanceId, RoomState state);
+
+        /// <summary>
+        /// Limpia una sala SIN pasar por combate (Peaje): estado Cleared + puertas
+        /// desbloqueadas + visuales + <c>OnRoomCleared</c>. Es el mismo bloque que corre
+        /// <c>OnCombatEnd(Victory)</c>, sin contar como victoria. Default member para
+        /// no romper los fakes: degrada a <see cref="SetRoomState"/>.
+        /// </summary>
+        bool MarkRoomCleared(Guid instanceId) => SetRoomState(instanceId, RoomState.Cleared);
 
         /// <summary>
         /// Refresca visuales de puertas de una sala instanciada — llamar sobre la sala

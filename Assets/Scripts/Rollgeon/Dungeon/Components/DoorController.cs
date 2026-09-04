@@ -82,32 +82,63 @@ namespace Rollgeon.Dungeon.Components
             ApplyTooltipGate();
         }
 
-        // Auto-attach del tooltip de "Forzar Puerta": un solo WorldTooltipTrigger en el
-        // root del DoorController (siempre active). El trigger usa Physics.Raycast manual
-        // que acepta hits en cualquier descendant — cubre los meshes hijos sin necesidad
-        // de un trigger por cada uno. El binder vive en el mismo GO.
+        // Un HeroActionTooltipBinder serializado en el prefab (quedó de cuando el
+        // tooltip era el de la acción) corre su Awake DESPUÉS del nuestro y pisa el
+        // TextProvider. Start corre después de todos los Awake: la última palabra la
+        // tiene el mensaje corto de puerta.
+        private void Start() => EnsureTooltipComponents();
+
+        // Auto-attach del tooltip de puerta: un solo WorldTooltipTrigger en el root del
+        // DoorController (siempre active). El trigger usa Physics.Raycast manual que
+        // acepta hits en cualquier descendant — cubre los meshes hijos sin necesidad de
+        // un trigger por cada uno.
+        //
+        // Antes mostraba el tooltip COMPLETO de la acción Forzar Puerta (costo, bonus de
+        // ítems) sobre la propia puerta; pedido de playtest 04/09: mismo lugar que el
+        // panel de enemigos (esquina superior derecha) y un mensaje corto de "esto se
+        // puede forzar" — el detalle de la acción vive en el chip del HUD.
         private void EnsureTooltipComponents()
         {
-            if (GetComponent<WorldTooltipTrigger>() == null)
-                gameObject.AddComponent<WorldTooltipTrigger>();
+            var trigger = GetComponent<WorldTooltipTrigger>();
+            if (trigger == null)
+                trigger = gameObject.AddComponent<WorldTooltipTrigger>();
 
-            var binder = GetComponent<HeroActionTooltipBinder>();
-            if (binder == null)
-            {
-                binder = gameObject.AddComponent<HeroActionTooltipBinder>();
-                // AddComponent disparó Awake con defaults (Healing). Configure los pisa
-                // a la semántica de Forzar Puerta antes de que se invoque BuildText.
-                binder.Configure(HeroBehaviorSlot.ForceDoor, GamePhase.Combat, onlyDuringCombat: true);
-            }
+            trigger.Placement = TooltipPlacementMode.ScreenTopRight;
+            trigger.TextProvider = BuildDoorTooltip;
 
-            // El trigger del root ya quedó configurado por el Awake del binder.
-            // ConfigureExternalTriggers es no-op acá pero queda como hook por si en el
-            // futuro hay triggers en hijos (caso de prefabs custom).
-            binder.ConfigureExternalTriggers();
+            // Un binder viejo (runs anteriores de este método) pisaría el provider.
+            var staleBinder = GetComponent<HeroActionTooltipBinder>();
+            if (staleBinder != null) Destroy(staleBinder);
 
             // En Exploración el cruce de puertas ya no es por click directo: el player
             // selecciona la casilla "frente a puerta" (roja) durante el movimiento y eso
             // dispara EnterRoomByDoor. En combate sigue siendo Force Door (con tirada).
+        }
+
+        // Solo durante combate (fuera de él la puerta se cruza caminando, sin tirada) y
+        // con la tecla viva de la acción cuando el servicio de hotkeys está presente.
+        private string BuildDoorTooltip()
+        {
+            if (!global::Patterns.ServiceLocator.TryGetService<IPhaseService>(out var phase)
+                || phase == null || phase.CurrentBase != GamePhase.Combat)
+            {
+                return null;
+            }
+
+            string keyHint = string.Empty;
+            if (global::Patterns.ServiceLocator.TryGetService<Rollgeon.Input.IGameplayHotkeyService>(
+                    out var hotkeys) && hotkeys != null)
+            {
+                string key = hotkeys.GetKeyHint(Rollgeon.Input.GameplayHotkey.ForceDoor);
+                if (!string.IsNullOrEmpty(key)) keyHint = $" ({key})";
+            }
+
+            string title = Rollgeon.Localization.LocalizedContent.Ui(
+                "door.forceable.title", "Puerta forzable");
+            string body = string.Format(Rollgeon.Localization.LocalizedContent.Ui(
+                "door.forceable.body", "Podés intentar abrirla con Forzar Puerta{0}."), keyHint);
+
+            return $"<b>{title}</b>\n{body}";
         }
 
         public void SetState(DoorVisualState state)

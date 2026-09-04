@@ -93,6 +93,16 @@ namespace Rollgeon.Effects.Concretes
                                 Rollgeon.UI.HUD.FloatingNumberType.Gold,
                                 (float)amount,
                                 Vector3.zero);
+
+                        // Toast sobre la pila de oro del HUD: el floating de arriba sale sobre el
+                        // sprite del jugador y durante la tirada la mirada está en la mesa — la
+                        // Bolsa del Impar cobraba y el jugador no se enteraba (playtest 2026-09-04).
+                        if (!string.IsNullOrEmpty(context?.SourceItemId))
+                            EventManager.Trigger(
+                                EventName.OnItemGoldGranted,
+                                context.SourceGuid,
+                                context.SourceItemId,
+                                amount);
                     }
                     return true;
 

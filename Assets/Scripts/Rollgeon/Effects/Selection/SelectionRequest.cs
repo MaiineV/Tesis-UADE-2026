@@ -6,6 +6,18 @@ namespace Rollgeon.Effects.Selection
 {
     public class SelectionRequest
     {
+        /// <summary>
+        /// Preview de trayectoria por hover, para selecciones por direccion (Items
+        /// Activos §A4: Justa de Justicia, Grapple Claw). Devuelve las casillas a pintar
+        /// para el proxy hovered, o null/vacio para no pintar nada extra. Null = sin
+        /// preview de trayectoria (comportamiento intacto: combate y el resto de
+        /// selecciones no lo setean).
+        /// </summary>
+        public Func<GridCoord, IReadOnlyList<GridCoord>> HoverPreview;
+
+        /// <summary>Estilo del preview de <see cref="HoverPreview"/>. Default "path".</summary>
+        public string HoverPreviewStyle = "path";
+
         public SelectionSettings Settings;
         public List<TargetRef> ValidTargets;
         public Guid OwnerGuid;

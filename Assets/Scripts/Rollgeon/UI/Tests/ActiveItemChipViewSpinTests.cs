@@ -14,7 +14,9 @@ namespace Rollgeon.UI.Tests
     /// <summary>
     /// El giro de la ficha de ítem activo tiene que ser el del dado, no un contador de
     /// números: la silueta rota con <see cref="DiceAnimChoreographer"/> y el resultado se
-    /// revela recién al asentarse.
+    /// revela recién al asentarse. El giro vive en el segmento <b>pendiente</b>
+    /// (<c>OnRollPending</c>): la cara cruda queda sostenida hasta que el jugador acepte
+    /// o re-tire.
     /// <para>
     /// Regresión: la primera versión ciclaba números durante todo el giro e ignoraba
     /// <c>ShowPreviewFacesDuringSpin</c>, que el proyecto shippea en <c>false</c>. El número
@@ -78,9 +80,13 @@ namespace Rollgeon.UI.Tests
             ApplyFrame(SpinSeconds - 0.01f);
             Assert.IsFalse(_label.gameObject.activeSelf, "el número no va durante el giro");
 
-            // Al asentarse aparece el resultado.
+            // Al asentarse aparece la cara cruda, que queda sostenida hasta la decision.
             ApplyFrame(SpinSeconds);
             Assert.IsTrue(_label.gameObject.activeSelf, "al asentarse tiene que revelarse");
+            Assert.AreEqual("4", _label.text);
+            ApplyFrame(SpinSeconds + 5f);
+            Assert.IsTrue(_label.gameObject.activeSelf,
+                "la cara pendiente no se apaga por tiempo: espera la decision");
             Assert.AreEqual("4", _label.text);
         }
 
@@ -124,19 +130,22 @@ namespace Rollgeon.UI.Tests
         [Test]
         public void test_repeatedRolls_withoutLettingTheAnimationFinish_doNotGrowTheChip()
         {
-            // Arrange — el bug: HandleResolved re-muestreaba la escala de reposo del
-            // transform que este mismo componente anima. Cada tirada cortada en pleno pop
-            // horneaba ese pop como nueva base y la ficha crecia x1.35 por uso, hasta tapar
-            // el HUD.
+            // Arrange — el bug: la view re-muestreaba la escala de reposo del transform
+            // que este mismo componente anima. Cada tirada cortada en pleno pop horneaba
+            // ese pop como nueva base y la ficha crecia por uso, hasta tapar el HUD. Los
+            // rerolls hacen ese corte todo el tiempo: cada uno reinicia el giro.
             InvokePrivate(_chip, "Awake");
             var rest = _go.transform.localScale;
 
-            // Act — ocho activaciones seguidas, cada una interrumpiendo el pop de la anterior.
+            // Act — ocho tiradas seguidas, cada una interrumpiendo el pop de la anterior,
+            // y una resolucion cortada en pleno pop del payoff.
             for (int i = 0; i < 8; i++)
             {
-                InvokePrivate(_chip, "HandleResolved", NewResult());
-                ApplyFrame(SpinSeconds + 0.001f); // el instante de maxima escala
+                InvokePrivate(_chip, "HandleRollPending", NewPending(rerollCount: i));
+                ApplyFrame(SpinSeconds + 0.001f); // el instante de maxima escala del asentado
             }
+            InvokePrivate(_chip, "HandleResolved", NewResult());
+            InvokePrivate(_chip, "ApplyResolveFrame", 0.001f);
             InvokePrivate(_chip, "EndRollAnimation");
 
             // Assert
@@ -147,22 +156,43 @@ namespace Rollgeon.UI.Tests
         [Test]
         public void test_aNewRoll_returnsToRestBeforeAnimating()
         {
-            // Arrange — una tirada nueva cancela la anterior; si arrancara desde el pop en
-            // curso, el pop nuevo saldria montado sobre el viejo.
+            // Arrange — una tirada nueva (un reroll) cancela la anterior; si arrancara
+            // desde el pop en curso, el pop nuevo saldria montado sobre el viejo.
             InvokePrivate(_chip, "Awake");
             var rest = _go.transform.localScale;
-            InvokePrivate(_chip, "HandleResolved", NewResult());
+            InvokePrivate(_chip, "HandleRollPending", NewPending(rerollCount: 0));
             ApplyFrame(SpinSeconds + 0.001f);
             Assert.Greater(_go.transform.localScale.x, rest.x, "el pop tiene que haber ocurrido");
 
             // Act
-            InvokePrivate(_chip, "HandleResolved", NewResult());
+            InvokePrivate(_chip, "HandleRollPending", NewPending(rerollCount: 1));
 
             // Assert
             Assert.AreEqual(rest.x, _go.transform.localScale.x, 0.0001f);
         }
 
-        /// <summary>Tirada de banda positiva: la de pop mas grande, el peor caso.</summary>
+        [Test]
+        public void test_resolve_popsScaledByBandAndShowsTheFinalFace()
+        {
+            // Arrange — el payoff va en la resolucion, escalado por banda.
+            InvokePrivate(_chip, "Awake");
+            var rest = _go.transform.localScale;
+            InvokePrivate(_chip, "HandleRollPending", NewPending(rerollCount: 0));
+            ApplyFrame(SpinSeconds + 5f);
+
+            // Act
+            InvokePrivate(_chip, "HandleResolved", NewResult());
+            InvokePrivate(_chip, "ApplyResolveFrame", 0.001f);
+
+            // Assert
+            Assert.AreEqual("6", _label.text, "la cara final, no la cruda");
+            Assert.Greater(_go.transform.localScale.x, rest.x, "el pop del payoff");
+        }
+
+        private ActiveItemPendingRoll NewPending(int rerollCount)
+            => new ActiveItemPendingRoll(_item, rawRoll: 4, rerollCount: rerollCount);
+
+        /// <summary>Resolucion de banda positiva: la de pop mas grande, el peor caso.</summary>
         private ActiveItemActivationResult NewResult()
             => new ActiveItemActivationResult(
                 _item, roll: 6, band: ActiveItemBand.Positive, effectsSucceeded: true, rawRoll: 6);
@@ -173,22 +203,19 @@ namespace Rollgeon.UI.Tests
 
         private static float SpinSeconds => ActiveItemRollFeelMath.SpinSeconds;
 
-        /// <summary>Deja la ficha en medio de una tirada de 4, sin encantamiento.</summary>
+        /// <summary>Deja la ficha en medio de una tirada pendiente de 4.</summary>
         private void BeginRoll(bool showPreviewFaces)
         {
-            // rawRoll == roll ⇒ WasEnchanted es false, que es el caso que interesa acá:
-            // sin encantamiento el reveal es directo, sin la pausa en la cara cruda.
-            var result = new ActiveItemActivationResult(
-                _item, roll: 4, band: ActiveItemBand.Positive, effectsSucceeded: true, rawRoll: 4);
-            AssignPrivate(_chip, "_lastResult", result);
-            InvokePrivate(_chip, "BuildSpinPlan", result);
+            var pending = NewPending(rerollCount: 0);
+            AssignPrivate(_chip, "_pending", pending);
+            InvokePrivate(_chip, "BuildSpinPlan", pending);
             // BuildSpinPlan levanta el asset del proyecto; el test fija el flag a mano para
             // cubrir las dos ramas sin depender de cómo esté tuneado hoy.
             AssignPrivate(_chip, "_showPreviewFaces", showPreviewFaces);
         }
 
         private void ApplyFrame(float elapsed)
-            => InvokePrivate(_chip, "ApplyRollFrame", elapsed);
+            => InvokePrivate(_chip, "ApplyPendingFrame", elapsed);
 
         private static void AssignPrivate(object target, string field, object value)
             => Field(target, field).SetValue(target, value);

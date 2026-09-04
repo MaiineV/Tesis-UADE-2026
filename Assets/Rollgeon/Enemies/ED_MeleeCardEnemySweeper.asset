@@ -93,6 +93,15 @@ MonoBehaviour:
     - Name: ImpactEventKey
       Entry: 1
       Data: hit
+    - Name: IntentLabelKey
+      Entry: 1
+      Data: intent.card_spades.thrust
+    - Name: IntentLabelFallback
+      Entry: 1
+      Data: Estocada Anunciada
+    - Name: RequireSourceInPosition
+      Entry: 5
+      Data: false
     - Name: 
       Entry: 8
       Data: 
@@ -133,6 +142,9 @@ MonoBehaviour:
     - Name: Alignment
       Entry: 3
       Data: 0
+    - Name: IgnoreLineOfSight
+      Entry: 5
+      Data: false
     - Name: 
       Entry: 8
       Data: 
@@ -178,7 +190,19 @@ MonoBehaviour:
     - Name: ChannelId
       Entry: 6
       Data: 
+    - Name: IgnoreLineOfSight
+      Entry: 5
+      Data: false
     - Name: WindupFeedbackId
+      Entry: 1
+      Data: anim.enemy.melee.charge
+    - Name: KeepSquareWhole
+      Entry: 5
+      Data: false
+    - Name: IntentLabelKey
+      Entry: 6
+      Data: 
+    - Name: IntentLabelFallback
       Entry: 6
       Data: 
     - Name: 
@@ -192,10 +216,13 @@ MonoBehaviour:
       Data: 
     - Name: MaxSteps
       Entry: 7
-      Data: 14|Rollgeon.Combat.AI.Readers.AIConstantInt, Rollgeon
-    - Name: Value
+      Data: 14|Rollgeon.Combat.AI.Readers.AIReadSelfStat, Rollgeon
+    - Name: Stat
       Entry: 3
-      Data: 3
+      Data: 2
+    - Name: UseModified
+      Entry: 5
+      Data: true
     - Name: 
       Entry: 8
       Data: 
@@ -215,6 +242,9 @@ MonoBehaviour:
       Entry: 8
       Data: 
     - Name: Retreat
+      Entry: 5
+      Data: false
+    - Name: RequireLineOfSight
       Entry: 5
       Data: false
     - Name: StopAdjacent
@@ -260,6 +290,15 @@ MonoBehaviour:
     - Name: ImpactEventKey
       Entry: 1
       Data: hit
+    - Name: IntentLabelKey
+      Entry: 1
+      Data: intent.card_spades.thrust
+    - Name: IntentLabelFallback
+      Entry: 1
+      Data: Estocada Anunciada
+    - Name: RequireSourceInPosition
+      Entry: 5
+      Data: false
     - Name: 
       Entry: 8
       Data: 
@@ -300,6 +339,9 @@ MonoBehaviour:
     - Name: Alignment
       Entry: 3
       Data: 0
+    - Name: IgnoreLineOfSight
+      Entry: 5
+      Data: false
     - Name: 
       Entry: 8
       Data: 
@@ -345,7 +387,19 @@ MonoBehaviour:
     - Name: ChannelId
       Entry: 6
       Data: 
+    - Name: IgnoreLineOfSight
+      Entry: 5
+      Data: false
     - Name: WindupFeedbackId
+      Entry: 1
+      Data: anim.enemy.melee.charge
+    - Name: KeepSquareWhole
+      Entry: 5
+      Data: false
+    - Name: IntentLabelKey
+      Entry: 6
+      Data: 
+    - Name: IntentLabelFallback
       Entry: 6
       Data: 
     - Name: 
@@ -372,10 +426,13 @@ MonoBehaviour:
       Data: 
     - Name: MaxSteps
       Entry: 7
-      Data: 28|Rollgeon.Combat.AI.Readers.AIConstantInt, Rollgeon
-    - Name: Value
+      Data: 28|Rollgeon.Combat.AI.Readers.AIReadSelfStat, Rollgeon
+    - Name: Stat
       Entry: 3
-      Data: 3
+      Data: 2
+    - Name: UseModified
+      Entry: 5
+      Data: true
     - Name: 
       Entry: 8
       Data: 
@@ -395,6 +452,9 @@ MonoBehaviour:
       Entry: 8
       Data: 
     - Name: Retreat
+      Entry: 5
+      Data: false
+    - Name: RequireLineOfSight
       Entry: 5
       Data: false
     - Name: StopAdjacent
@@ -440,6 +500,9 @@ MonoBehaviour:
     - Name: Alignment
       Entry: 3
       Data: 0
+    - Name: IgnoreLineOfSight
+      Entry: 5
+      Data: false
     - Name: 
       Entry: 8
       Data: 
@@ -485,7 +548,19 @@ MonoBehaviour:
     - Name: ChannelId
       Entry: 6
       Data: 
+    - Name: IgnoreLineOfSight
+      Entry: 5
+      Data: false
     - Name: WindupFeedbackId
+      Entry: 1
+      Data: anim.enemy.melee.charge
+    - Name: KeepSquareWhole
+      Entry: 5
+      Data: false
+    - Name: IntentLabelKey
+      Entry: 6
+      Data: 
+    - Name: IntentLabelFallback
       Entry: 6
       Data: 
     - Name: 
@@ -613,6 +688,7 @@ MonoBehaviour:
   IsFlying: 0
   IsBoss: 0
   Archetype: 1
+  TooltipType: 
   Personality: 0
   KamikazeIgnoresSurvival: 0
   AuraRadius: 0

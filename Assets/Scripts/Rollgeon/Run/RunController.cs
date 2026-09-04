@@ -221,8 +221,10 @@ namespace Rollgeon.Run
             var healPipeline = new HealPipeline(attributes, BuildMaxHpResolver(playerService));
             ServiceLocator.AddService<IHealPipeline>(healPipeline, ServiceScope.Run);
 
-            // 5b. Shield reset handler
-            var shieldReset = new ShieldResetHandler(attributes);
+            // 5b. Shield reset handler + persistencia (Feature#0085, Coin Shield cara par).
+            var shieldPersistence = new ShieldPersistenceService();
+            ServiceLocator.AddService<IShieldPersistenceService>(shieldPersistence, ServiceScope.Run);
+            var shieldReset = new ShieldResetHandler(attributes, shieldPersistence);
             ServiceLocator.AddService<ShieldResetHandler>(shieldReset, ServiceScope.Run);
 
             // 6. Enemy AI — reutiliza attributes + playerService resueltos arriba.
@@ -263,6 +265,10 @@ namespace Rollgeon.Run
                     new EnemyIntentService(aiRegistry, playerService, treeAI.TryBuildReadContext),
                     ServiceScope.Run);
             }
+
+            // 6b. Peaje: oferta de saltear combate — debe existir antes de que
+            // ExplorationController procese la primera sala.
+            Rollgeon.Items.CombatTollService.CreateAndRegister();
 
             // 7. Exploration
             ExplorationController.CreateAndRegister();

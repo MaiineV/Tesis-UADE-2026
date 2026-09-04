@@ -1151,6 +1151,28 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 18369314961784842
     m_Localized: "\xA1Gracias! Guardada, se env\xEDa cuando haya conexi\xF3n."
+  - m_Id: 18436415117258752
+    m_Localized: Se vence
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18436415125647360
+    m_Localized: Se la lleva la caja
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18457182589714432
+    m_Localized: '{0}: +{1} de oro'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18643322647969792
+    m_Localized: Puerta forzable
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18643322681524224
+    m_Localized: "Pod\xE9s intentar abrirla con Forzar Puerta{0}."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 17587744320700416
+    m_Localized: "Click: re-tirar (-1 Roll) \xB7 Confirmar: aceptar"
     m_Metadata:
       m_Items: []
   references:

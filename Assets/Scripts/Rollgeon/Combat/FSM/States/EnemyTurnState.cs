@@ -89,8 +89,30 @@ namespace Rollgeon.Combat.FSM.States
 
             // OnTurnFinished con Guid cacheado — cursor aun no cambio.
             EventManager.Trigger(EventName.OnTurnFinished, _actingGuid);
+
+            bool cut = Context.EnemyPhaseCutRequested;
+            Context.EnemyPhaseCutRequested = false;
+
             // Advance solo si el combate sigue (ver PlayerTurnState.Exit).
-            if (input != CombatInput.CombatEnded)
+            if (input == CombatInput.CombatEnded) return;
+
+            if (cut) AdvanceToPlayer();
+            else Context.TurnOrder.Advance();
+        }
+
+        /// <summary>
+        /// Segundo Aliento: salta a los enemigos que quedaban moviendo el cursor hasta el
+        /// jugador por el mismo <c>Advance()</c> de siempre — el wrap dispara
+        /// <c>OnTurnQueueBuilt</c> y sube <c>RoundIndex</c> como en cualquier ronda que
+        /// termina. Los enemigos salteados no reciben OnTurnStarted/Finished. Acotado al
+        /// largo del orden: si el jugador no está, degrada al Advance único.
+        /// </summary>
+        private void AdvanceToPlayer()
+        {
+            var order = Context.TurnOrder.OrderForRound;
+            int budget = order != null ? order.Count : 1;
+            Context.TurnOrder.Advance();
+            for (int i = 1; i < budget && Context.TurnOrder.Current != Context.PlayerId; i++)
             {
                 Context.TurnOrder.Advance();
             }
@@ -106,6 +128,14 @@ namespace Rollgeon.Combat.FSM.States
                     if (order == null || order.Count == 0)
                     {
                         next = ExitRef;
+                        return true;
+                    }
+
+                    // Segundo Aliento: la fase enemiga se corta — el turno vuelve al jugador
+                    // sin importar quién seguía. Exit mueve el cursor hasta él.
+                    if (Context.EnemyPhaseCutRequested)
+                    {
+                        next = Player;
                         return true;
                     }
 

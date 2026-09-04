@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Rollgeon.Combat.Pipelines;
 
 namespace Patterns
 {
@@ -59,6 +60,21 @@ namespace Patterns
         /// <see cref="IncomingMultiplier"/>, "hubo reducción" se trata como <c>&gt; 0</c>.
         /// </remarks>
         public int IncomingFlatReduction;
+
+        /// <summary>
+        /// Clasificación del golpe (<see cref="DamageContext.Kind"/>) — Feature#0085 (Blood D6):
+        /// distinguir un combo de Ataque real de daño ambiental/DoT/reacción sin tener que
+        /// re-consultar el <c>DamageContext</c> original. Default <c>ComboAttack</c> (0) para
+        /// payloads armados a mano en tests viejos que no lo seteaban.
+        /// </summary>
+        public AttackKind Kind;
+
+        /// <summary>
+        /// ComboId que generó el golpe (<see cref="DamageContext.ComboId"/>), o vacío/null si
+        /// no vino de un combo. Feature#0085 (Blood D6): identifica el combo de Ataque que
+        /// está esperando para consumir su carga.
+        /// </summary>
+        public string ComboId;
     }
 
     /// <summary>
@@ -165,6 +181,16 @@ namespace Patterns
         /// golpe) en vez de una copia paralela. <c>null</c> = sin combo o sin bag disponible.
         /// </summary>
         public IReadOnlyList<Rollgeon.Combat.Damage.ContributingDie> ContributingDice;
+
+        /// <summary>
+        /// Tirada COMPLETA en curso, indexada por bag slot (misma forma que
+        /// <see cref="ComboPlayedPayload.DiceResult"/>). Es la fuente de verdad de la cara de
+        /// cada dado para los suscriptores del preview: los emisores disparan en cada toggle de
+        /// hold, ANTES de <c>OnRollResolved</c>, así que cualquier "última tirada" cacheada por
+        /// un service es la de la acción ANTERIOR (Fix#0081: Oxidado/Volátil leían esa cara
+        /// vieja). <c>null</c> = emisor legacy sin caras.
+        /// </summary>
+        public IReadOnlyList<int> DiceResult;
     }
 
     /// <summary>
@@ -239,5 +265,31 @@ namespace Patterns
         /// <summary>Ítems del pool del tier, relleno para el reel gacha. Puede ser
         /// vacío — la UI debe degradar (repetir ganador + fillers de oro).</summary>
         public IReadOnlyList<Rollgeon.Items.ItemSO> PoolPreview;
+    }
+
+    /// <summary>
+    /// Payload tipado para "una entidad caminó por voluntad propia" — lo emite
+    /// <c>EffMove</c> tras un <c>IMovementService.TryMove</c> exitoso. Empujes, portales,
+    /// deslizamientos y teleports NO pasan por acá (van por <c>Move</c>/<c>CommitPath</c>/
+    /// <c>Teleport</c> sin efecto): es la señal que los encantamientos del dado de
+    /// Movimiento ("por cada casilla recorrida voluntariamente") consumen. Canalizado
+    /// únicamente vía <c>TypedEvent&lt;EntityWalkedPayload&gt;</c>.
+    /// </summary>
+    public struct EntityWalkedPayload
+    {
+        /// <summary>Entidad que caminó.</summary>
+        public Guid EntityGuid;
+
+        /// <summary>Celda de origen.</summary>
+        public Rollgeon.Grid.GridCoord From;
+
+        /// <summary>Celda final (post-filtro de path).</summary>
+        public Rollgeon.Grid.GridCoord To;
+
+        /// <summary>Path efectivamente caminado, índice 0 = origen.</summary>
+        public IReadOnlyList<Rollgeon.Grid.GridCoord> Path;
+
+        /// <summary>Casillas recorridas = <c>Path.Count - 1</c>. Siempre ≥ 1.</summary>
+        public int TilesTraversed;
     }
 }

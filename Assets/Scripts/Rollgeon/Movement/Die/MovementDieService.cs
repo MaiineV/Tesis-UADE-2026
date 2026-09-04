@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Patterns;
 using Rollgeon.Dice;
 using Rollgeon.Player;
+using Rollgeon.Upgrades.Dice;
 using UnityEngine;
 
 namespace Rollgeon.Movement.Die
@@ -22,6 +23,7 @@ namespace Rollgeon.Movement.Die
         private IMovementDiePresenter _presenter;
         private DiceType? _typeOverride;
         private readonly List<MovementRangeContribution> _contributions = new List<MovementRangeContribution>();
+        private readonly List<MovementRangeContribution> _itemContributions = new List<MovementRangeContribution>();
 
         private Guid _activeGuid;
         private int _activeRange;
@@ -52,6 +54,17 @@ namespace Rollgeon.Movement.Die
 
         public int LastFace { get; private set; }
 
+        public int MaxFace
+        {
+            get
+            {
+                if (ServiceLocator.TryGetService<IDiceEnchantmentService>(out var ench)
+                    && ench != null && ench.IsReady)
+                    return ench.MovementDieMaxFace;
+                return CurrentType.MaxFace();
+            }
+        }
+
         public void SetTypeOverride(DiceType? type) => _typeOverride = type;
 
         public void SetPresenter(IMovementDiePresenter presenter) => _presenter = presenter;
@@ -65,16 +78,25 @@ namespace Rollgeon.Movement.Die
             }
 
             var type = CurrentType;
-            int face = _rng.Next(1, type.MaxFace() + 1);
+            int face = PickFace(type);
             int generation = ++_generation;
             _revealPending = true;
+
+            // Hook MovementDieRolled ANTES de presentar: el bono de la tirada (Torbellino +2)
+            // tiene que entrar al rango de ESTE movimiento y verse como chip en el dado, igual
+            // que las Botas. Despachado en el reveal llegaba tarde para las dos cosas.
+            _contributions.Clear();
+            int enchantmentBonus = ResolveEnchantmentBonus(playerGuid, face, _contributions);
 
             void Reveal()
             {
                 if (generation != _generation) return; // Clear / fin de combate lo invalidó
                 _revealPending = false;
                 _activeGuid = playerGuid;
-                _activeRange = face;
+                // El rango activo lleva el bono de la tirada; la cara cruda sigue siendo lo que
+                // se revela (callback, OnRolled, evento) — MoveRange se suma después en
+                // SelectionSettings.ResolveEffectiveRange, como siempre.
+                _activeRange = face + enchantmentBonus;
                 _hasActive = true;
                 LastFace = face;
                 onRevealed?.Invoke(face);
@@ -88,10 +110,42 @@ namespace Rollgeon.Movement.Die
                 // Se emite ANTES de presentar: si el presenter revela sincrónico (sin
                 // animación) el par abre/cierra queda en orden. Sin presenter no hay mesa.
                 EventManager.Trigger(EventName.OnMovementDieRollStarted, playerGuid, type);
-                MovementRangeAttribution.Resolve(playerGuid, _contributions);
-                if (_presenter.TryPresent(type, face, ResolveRangeBonus(playerGuid), _contributions, Reveal)) return;
+                // Chips en orden de aplicación: primero los encantamientos del dado, después los items.
+                MovementRangeAttribution.Resolve(playerGuid, _itemContributions);
+                _contributions.AddRange(_itemContributions);
+                int rangeBonus = enchantmentBonus + ResolveRangeBonus(playerGuid);
+                if (_presenter.TryPresent(type, face, rangeBonus, _contributions, Reveal)) return;
             }
             Reveal();
+        }
+
+        /// <summary>
+        /// Despacha el hook del carril de encantamientos y traduce el journal a chips: cada fuente
+        /// que aportó al bono de la tirada (<c>MovementDieBonusDelta</c>) es una contribución con
+        /// su asset (icono + nombre). Devuelve el bono total; 0 sin service, fuera de combate o
+        /// sin encantamientos que escriban.
+        /// </summary>
+        private static int ResolveEnchantmentBonus(Guid playerGuid, int face, List<MovementRangeContribution> into)
+        {
+            if (playerGuid == Guid.Empty) return 0;
+            if (!ServiceLocator.TryGetService<IDiceEnchantmentService>(out var ench)
+                || ench == null || !ench.IsReady)
+                return 0;
+
+            var scratch = ench.DispatchMovementDieRolled(playerGuid, face);
+            if (scratch == null) return 0;
+
+            var journal = scratch.Journal;
+            if (journal != null)
+            {
+                for (int i = 0; i < journal.Count; i++)
+                {
+                    var entry = journal[i];
+                    if (entry.MovementDieBonusDelta == 0) continue;
+                    into.Add(new MovementRangeContribution(entry.SourceAsset, entry.MovementDieBonusDelta));
+                }
+            }
+            return scratch.MovementDieBonus;
         }
 
         public bool TryGetActiveRange(Guid playerGuid, out int range)
@@ -131,6 +185,30 @@ namespace Rollgeon.Movement.Die
         {
             ClearActiveRange();
             LastFace = 0;
+        }
+
+        /// <summary>
+        /// Cara tirada. Con el carril de encantamientos del dado listo, elige uniforme entre
+        /// las caras válidas (filtros + caras extra), como <c>EnchantedDiceRoller.PickFromSet</c>;
+        /// sin él, RNG plano sobre el tipo. En ambos casos consume UNA muestra del RNG propio.
+        /// </summary>
+        private int PickFace(DiceType type)
+        {
+            IReadOnlyCollection<int> faces = null;
+            if (ServiceLocator.TryGetService<IDiceEnchantmentService>(out var ench)
+                && ench != null && ench.IsReady)
+                faces = ench.ComputeMovementDieFaces();
+
+            if (faces == null || faces.Count == 0) return _rng.Next(1, type.MaxFace() + 1);
+
+            int idx = _rng.Next(0, faces.Count);
+            int i = 0;
+            foreach (var f in faces)
+            {
+                if (i == idx) return f;
+                i++;
+            }
+            return type.MaxFace();
         }
 
         // Mismo bonus que SelectionSettings.ResolveEffectiveRange suma al rango real:

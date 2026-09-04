@@ -99,6 +99,15 @@ MonoBehaviour:
     - Name: BlockedDamageBonus
       Entry: 4
       Data: 0.5
+    - Name: IntentLabelKey
+      Entry: 1
+      Data: intent.charger.charge_roll
+    - Name: IntentLabelFallback
+      Entry: 1
+      Data: Embiste y Rueda
+    - Name: RequireSourceInPosition
+      Entry: 5
+      Data: false
     - Name: 
       Entry: 8
       Data: 
@@ -110,10 +119,13 @@ MonoBehaviour:
       Data: 
     - Name: MaxSteps
       Entry: 7
-      Data: 9|Rollgeon.Combat.AI.Readers.AIConstantInt, Rollgeon
-    - Name: Value
+      Data: 9|Rollgeon.Combat.AI.Readers.AIReadSelfStat, Rollgeon
+    - Name: Stat
       Entry: 3
-      Data: 3
+      Data: 2
+    - Name: UseModified
+      Entry: 5
+      Data: true
     - Name: 
       Entry: 8
       Data: 
@@ -128,7 +140,7 @@ MonoBehaviour:
       Data: 
     - Name: RequireLineOfSight
       Entry: 5
-      Data: false
+      Data: true
     - Name: 
       Entry: 8
       Data: 
@@ -172,6 +184,15 @@ MonoBehaviour:
     - Name: BlockedDamageBonus
       Entry: 4
       Data: 0.5
+    - Name: IntentLabelKey
+      Entry: 1
+      Data: intent.charger.charge_roll
+    - Name: IntentLabelFallback
+      Entry: 1
+      Data: Embiste y Rueda
+    - Name: RequireSourceInPosition
+      Entry: 5
+      Data: false
     - Name: 
       Entry: 8
       Data: 
@@ -212,6 +233,9 @@ MonoBehaviour:
     - Name: Alignment
       Entry: 3
       Data: 0
+    - Name: IgnoreLineOfSight
+      Entry: 5
+      Data: false
     - Name: 
       Entry: 8
       Data: 
@@ -996,6 +1020,12 @@ MonoBehaviour:
     - Name: 
       Entry: 8
       Data: 
+    - Name: IntentLabelKey
+      Entry: 6
+      Data: 
+    - Name: IntentLabelFallback
+      Entry: 6
+      Data: 
     - Name: 
       Entry: 8
       Data: 
@@ -1020,10 +1050,13 @@ MonoBehaviour:
       Data: 
     - Name: MaxSteps
       Entry: 7
-      Data: 56|Rollgeon.Combat.AI.Readers.AIConstantInt, Rollgeon
-    - Name: Value
+      Data: 56|Rollgeon.Combat.AI.Readers.AIReadSelfStat, Rollgeon
+    - Name: Stat
       Entry: 3
-      Data: 3
+      Data: 2
+    - Name: UseModified
+      Entry: 5
+      Data: true
     - Name: 
       Entry: 8
       Data: 
@@ -1038,7 +1071,7 @@ MonoBehaviour:
       Data: 
     - Name: RequireLineOfSight
       Entry: 5
-      Data: false
+      Data: true
     - Name: 
       Entry: 8
       Data: 
@@ -1079,6 +1112,9 @@ MonoBehaviour:
     - Name: Alignment
       Entry: 3
       Data: 0
+    - Name: IgnoreLineOfSight
+      Entry: 5
+      Data: false
     - Name: 
       Entry: 8
       Data: 
@@ -1863,6 +1899,12 @@ MonoBehaviour:
     - Name: 
       Entry: 8
       Data: 
+    - Name: IntentLabelKey
+      Entry: 6
+      Data: 
+    - Name: IntentLabelFallback
+      Entry: 6
+      Data: 
     - Name: 
       Entry: 8
       Data: 
@@ -1903,6 +1945,9 @@ MonoBehaviour:
     - Name: Alignment
       Entry: 3
       Data: 1
+    - Name: IgnoreLineOfSight
+      Entry: 5
+      Data: false
     - Name: 
       Entry: 8
       Data: 
@@ -1948,14 +1993,32 @@ MonoBehaviour:
     - Name: ChannelId
       Entry: 6
       Data: 
+    - Name: IgnoreLineOfSight
+      Entry: 5
+      Data: false
     - Name: WindupFeedbackId
       Entry: 1
       Data: anim.enemy.charger.charge
+    - Name: KeepSquareWhole
+      Entry: 5
+      Data: false
+    - Name: IntentLabelKey
+      Entry: 6
+      Data: 
+    - Name: IntentLabelFallback
+      Entry: 6
+      Data: 
     - Name: 
       Entry: 8
       Data: 
     - Name: Else
+      Entry: 7
+      Data: 102|Rollgeon.Combat.AI.Decisions.AINode_Wait, Rollgeon
+    - Name: EditorNodeId
       Entry: 6
+      Data: 
+    - Name: 
+      Entry: 8
       Data: 
     - Name: 
       Entry: 8
@@ -1989,7 +2052,7 @@ MonoBehaviour:
       Data: 
     - Name: AIDetachedNodes
       Entry: 7
-      Data: 102|System.Collections.Generic.List`1[[Rollgeon.Combat.AI.Decisions.AIDecisionNode,
+      Data: 103|System.Collections.Generic.List`1[[Rollgeon.Combat.AI.Decisions.AIDecisionNode,
         Rollgeon]], mscorlib
     - Name: 
       Entry: 12
@@ -2029,6 +2092,7 @@ MonoBehaviour:
   IsFlying: 0
   IsBoss: 0
   Archetype: 0
+  TooltipType: 
   Personality: 0
   KamikazeIgnoresSurvival: 0
   AuraRadius: 0

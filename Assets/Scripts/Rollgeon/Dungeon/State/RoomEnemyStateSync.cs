@@ -22,6 +22,23 @@ namespace Rollgeon.Dungeon.State
     /// </summary>
     public static class RoomEnemyStateSync
     {
+        /// <summary>
+        /// <see cref="EnemySpawnState"/>s vivos en el mismo orden que
+        /// <see cref="RoomInstance.SpawnedEnemies"/>: por <c>SpawnPointIndex</c>
+        /// ascendente. El índice puede tener huecos (spawn points vacíos en el set
+        /// elegido, enemigos ya muertos), así que el pareo es siempre posicional
+        /// sobre esta lista y nunca <c>SpawnPointIndex == posición</c>.
+        /// </summary>
+        public static List<EnemySpawnState> CollectAliveStatesInSpawnOrder(RoomInstance instance)
+        {
+            var aliveStates = new List<EnemySpawnState>();
+            if (instance?.ObjectStates == null) return aliveStates;
+            foreach (var kv in instance.ObjectStates.Enumerate())
+                if (kv.Value is EnemySpawnState s && !s.IsDead) aliveStates.Add(s);
+            aliveStates.Sort((a, b) => a.SpawnPointIndex.CompareTo(b.SpawnPointIndex));
+            return aliveStates;
+        }
+
         public static void SnapshotLiveEnemies(RoomInstance instance)
         {
             if (instance?.SpawnedEnemies == null || instance.SpawnedEnemies.Count == 0) return;
@@ -29,10 +46,7 @@ namespace Rollgeon.Dungeon.State
             ServiceLocator.TryGetService<AttributesManager>(out var attributes);
             ServiceLocator.TryGetService<IGridManager>(out var grid);
 
-            var aliveStates = new List<EnemySpawnState>();
-            foreach (var kv in instance.ObjectStates.Enumerate())
-                if (kv.Value is EnemySpawnState s && !s.IsDead) aliveStates.Add(s);
-            aliveStates.Sort((a, b) => a.SpawnPointIndex.CompareTo(b.SpawnPointIndex));
+            var aliveStates = CollectAliveStatesInSpawnOrder(instance);
 
             int pairCount = Math.Min(instance.SpawnedEnemies.Count, aliveStates.Count);
             for (int i = 0; i < pairCount; i++)

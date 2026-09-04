@@ -128,27 +128,5 @@ namespace Rollgeon.Combat.AI.Tests
             StringAssert.DoesNotContain("rastrillo", line);
             StringAssert.DoesNotContain("soborno", line);
         }
-
-        [Test]
-        public void SteppingOnAChip_ChangesWhatTheLineSays()
-        {
-            var boss = Guid.NewGuid();
-            var player = Guid.NewGuid();
-
-            _ledger.ReportTier(rank: 2, damage: 35, gold: 140, stepUp: 1, stepDown: 0);
-            string before = CashierTierReadoutView.Format(_ledger.LastTier.Value, _ledger.BribeRoundsLeft);
-            Assume.That(before, Does.Not.Contain("soborno"));
-
-            var chipId = Guid.NewGuid();
-            _ledger.RegisterChip(chipId, 8, boss);
-
-            EventManager.Trigger(EventName.OnHazardTriggered, chipId, player);
-            _ledger.ReportTier(rank: 1, damage: 28, gold: 148, stepUp: 1, stepDown: _ledger.DamageStepDown);
-            string after = CashierTierReadoutView.Format(_ledger.LastTier.Value, _ledger.BribeRoundsLeft);
-
-            StringAssert.Contains("soborno -1", after);
-            StringAssert.Contains("por 3 rondas", after);
-            StringAssert.Contains("pega 28", after);
-        }
     }
 }

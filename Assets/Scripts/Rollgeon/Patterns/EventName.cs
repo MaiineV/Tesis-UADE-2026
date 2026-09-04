@@ -268,6 +268,10 @@ namespace Patterns
         OnCameraRecentered,
         /// <summary>args: [float amplitude, float durationSeconds]. Feedback pide un camera shake; el CameraService lo consume (§17.E.10, TODO v8).</summary>
         OnCameraShakeRequested,
+        /// <summary>args: [System.Guid fromInstanceId, System.Guid toInstanceId]. El jugador cruzó una puerta entre dos salas del mismo piso — se emite DESPUÉS de OnRoomEntered, solo en cruces (no al generar el piso ni al resumir un save). La cámara panea y el toast de sala lo consumen (Feature#0086).</summary>
+        OnRoomCrossed,
+        /// <summary>args: [System.Guid roomInstanceId]. El foco de la cámara aterrizó en la sala nueva tras un OnRoomCrossed (fin del paneo o snap). DungeonManager apaga recién ahí la sala saliente (Feature#0086).</summary>
+        OnCameraRoomPanFinished,
 
         // --- Tutorial ------------------------------------------------------------
         /// <summary>args: [Rollgeon.Heroes.HeroBehaviorSlot slot]. El tutorial desbloqueó una acción — los HUDs recomputan estados de botones.</summary>
@@ -436,5 +440,57 @@ namespace Patterns
         /// salió del inventario. Lleva el SO (no el id) por lo mismo que OnSecondWindTriggered.
         /// La HUD lo consume para el toast "se rompió" (ItemBrokeDownFeedbackView).</summary>
         OnItemBrokeDown,
+
+        // --- Items: Rezagado / Peaje (Feature#0074) ----------------------------------
+        /// <summary>args: [Guid playerGuid, ItemSO item, string comboId]. Un item con
+        /// <c>ItemSO.LeastUsedComboBonus</c> (Rezagado) acaba de fijar su combo — se
+        /// dispara una sola vez por run al adquirirlo (no en restore).</summary>
+        OnLeastUsedComboAssigned,
+
+        /// <summary>args: [Guid playerGuid, Guid roomInstanceId, int goldPaid]. El jugador
+        /// pagó el peaje (<c>ItemSO.CombatToll</c>) y la sala de combate quedó limpia sin
+        /// pelear. No pasa por OnCombatEnd: no cuenta como victoria.</summary>
+        OnCombatTollPaid,
+
+        // --- Items: oro otorgado por un item (Fix#0077) --------------------------------
+        /// <summary>args: [Guid playerGuid, string itemId, int amount]. Un ITEM le sumó oro al
+        /// jugador vía <c>EffModifyGold</c> (Bolsa del Impar, Tesoro de la Fortuna…). Se emite
+        /// además de OnGoldChanged (que no dice de dónde vino) y del floating "+XG" sobre el
+        /// sprite del jugador (que en la tirada nadie mira). La HUD lo consume para el toast
+        /// sobre la pila de oro (ItemGoldFeedbackView).</summary>
+        OnItemGoldGranted,
+
+        // --- Combat/Status: Sangrado (Feature#0085) ------------------------------------
+        // NOTA: al final absoluto del enum a propósito (ver OnReinforcementSpawned).
+        /// <summary>args: [Guid entityGuid, int stacks]. Se agregó (o sumó) un stack de
+        /// Sangrado a <c>entityGuid</c> — a diferencia de Veneno, Sangrado ACUMULA stacks
+        /// en vez de refrescar. <c>stacks</c> es el total vigente tras el apply.</summary>
+        OnBleedApplied,
+
+        /// <summary>args: [Guid entityGuid, int damage, int stacks]. Tick de Sangrado al
+        /// inicio del turno de <c>entityGuid</c>: <c>damage</c> es el daño total de ESTE
+        /// tick (10 × stacks vivos), <c>stacks</c> los que quedan vigentes después de
+        /// decrementar y descartar los vencidos.</summary>
+        OnBleedTicked,
+
+        /// <summary>args: [Guid entityGuid]. El último stack de Sangrado de <c>entityGuid</c>
+        /// expiró (0 stacks restantes).</summary>
+        OnBleedExpired,
+
+        // --- Items: Blood D6 (Feature#0085) ---------------------------------------------
+        /// <summary>args: [Guid ownerGuid, int face]. El item Blood D6 armó su carga con la
+        /// cara <c>face</c> — queda a la espera del próximo combo de Ataque resuelto.</summary>
+        OnBloodD6Armed,
+
+        /// <summary>args: [Guid ownerGuid, int bonus]. La carga de Blood D6 se consumió: el
+        /// combo de Ataque en curso terminó de resolverse y <c>bonus</c> daño extra se
+        /// repartió entre los receptores.</summary>
+        OnBloodD6Consumed,
+
+        // --- Combat: persistencia de escudo (Feature#0085, Coin Shield) -----------------
+        /// <summary>args: [Guid entityGuid]. <c>ShieldPersistenceService</c> marcó a
+        /// <c>entityGuid</c> para saltear su próximo reset de escudo por inicio de turno
+        /// (<c>ShieldResetHandler.OnTurnStarted</c> lo consume una única vez).</summary>
+        OnShieldPersisted,
     }
 }

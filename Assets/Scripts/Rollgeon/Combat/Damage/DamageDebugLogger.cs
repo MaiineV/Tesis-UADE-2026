@@ -85,6 +85,8 @@ namespace Rollgeon.Combat.Damage
             sb.Append(RowF("+ dmg_base_PJ  (ATQ.Value u override)", b.AttackBase));
             sb.Append(Row("+ bonos_PJ     (ATQ.Modified − Value)", b.AttackBonus));
             sb.Append(Row("+ Σ caras contribuyentes", b.FacesSum));
+            if (b.MovedFacesSum != 0)
+                sb.Append(Row("  (caras movidas a M, fuera de N)", b.MovedFacesSum));
             sb.Append(Row("+ bono_combo   (passives + enchants + items)", b.AdditiveBonus));
             sb.Append('\n').Append(Col(Label, "  N = ")).Append(Col(Accent, "<b>" + F(b.N) + "</b>"));
 

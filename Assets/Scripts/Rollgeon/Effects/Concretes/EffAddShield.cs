@@ -59,6 +59,17 @@ namespace Rollgeon.Effects.Concretes
             _shieldSource = DamageSource.Constant;
             _baseAmount = amount;
         }
+
+        /// <summary>
+        /// Setter de autoría (tooling/tests): fuente FromReader — el escudo lo resuelve el
+        /// reader en runtime (ej. <c>ReadTilesTraversed</c> para Baluarte móvil).
+        /// </summary>
+        public void EditorSetReader(EffectIntReader reader, float multiplier = 1f)
+        {
+            _shieldSource = DamageSource.FromReader;
+            _reader = reader;
+            _readerMultiplier = multiplier;
+        }
         public float ComboMultiplier => _comboMultiplier;
 
         public override string GetEffectName() => "Add Shield";
@@ -194,6 +205,14 @@ namespace Rollgeon.Effects.Concretes
                         Value = amount,
                         TargetEntityGuid = targetGuid,
                     });
+            }
+            else
+            {
+                // Canal dados / items (Baluarte móvil al caminar): sin behavior no hay
+                // FeedbackDB que pinte el número, así que el "+N" sale directo por la ruta
+                // legacy del spawner — el jugador tiene que ver cuándo el escudo sumó.
+                EventManager.Trigger(EventName.OnFloatingNumberRequested, targetGuid,
+                    Rollgeon.UI.HUD.FloatingNumberType.Shield, (float)amount, Vector3.zero);
             }
 
             return true;

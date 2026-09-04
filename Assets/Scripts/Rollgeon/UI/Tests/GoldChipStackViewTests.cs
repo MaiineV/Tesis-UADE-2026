@@ -31,6 +31,7 @@ namespace Rollgeon.UI.Tests
         private ChipStackView _stack;
         private TextMeshProUGUI _label;
         private Image _tilted;
+        private Image _debt;
         private ChipStackSettingsSO _settings;
         private FakeEconomyService _economy;
 
@@ -57,10 +58,16 @@ namespace Rollgeon.UI.Tests
             _tilted = tiltedGo.AddComponent<Image>();
             tiltedGo.SetActive(false);
 
+            var debtGo = new GameObject("DebtChip", typeof(RectTransform));
+            debtGo.transform.SetParent(_go.transform, false);
+            _debt = debtGo.AddComponent<Image>();
+            debtGo.SetActive(false);
+
             AssignPrivate(_view, "_stack", _stack);
             AssignPrivate(_view, "_label", _label);
             AssignPrivate(_view, "_settings", _settings);
             AssignPrivate(_view, "_tiltedChip", _tilted);
+            AssignPrivate(_view, "_debtChip", _debt);
 
             // El GO nunca se activa en el fixture — OnEnable se invoca directo
             // (mismo patrón que ExplorationHUDViewTests con OnDisable).
@@ -133,7 +140,64 @@ namespace Rollgeon.UI.Tests
             Assert.AreEqual("7", _label.text);
         }
 
+        // ---------------- deuda (Tarjeta de Crédito) ----------------
+
+        [Test]
+        public void test_gold_hud_negative_gold_shows_debt_chip_and_tints_label()
+        {
+            // Arrange
+            var restColor = _label.color;
+            var debtTint = (Color)GetPrivate(_view, "_debtTint");
+
+            // Act
+            EventManager.Trigger(EventName.OnGoldChanged, -12, -12);
+
+            // Assert
+            Assert.AreEqual(0, _stack.DisplayedCount, "No hay fichas negativas.");
+            Assert.IsFalse(_tilted.gameObject.activeSelf);
+            Assert.IsTrue(_debt.gameObject.activeSelf, "La ficha de deuda marca el oro negativo.");
+            Assert.AreEqual(debtTint, _debt.color);
+            Assert.AreEqual(debtTint, _label.color);
+            Assert.AreNotEqual(restColor, _label.color);
+            Assert.AreEqual("-12", _label.text);
+        }
+
+        [Test]
+        public void test_gold_hud_back_to_non_negative_hides_debt_chip_and_restores_label_color()
+        {
+            // Arrange
+            var restColor = _label.color;
+            EventManager.Trigger(EventName.OnGoldChanged, -12, -12);
+
+            // Act
+            EventManager.Trigger(EventName.OnGoldChanged, 0, 12);
+
+            // Assert
+            Assert.IsFalse(_debt.gameObject.activeSelf);
+            Assert.AreEqual(restColor, _label.color);
+            Assert.AreEqual("0", _label.text);
+        }
+
+        [Test]
+        public void test_gold_hud_non_negative_gold_never_shows_debt_chip()
+        {
+            // Act
+            EventManager.Trigger(EventName.OnGoldChanged, 3, 3);
+            EventManager.Trigger(EventName.OnGoldChanged, 9, 6);
+
+            // Assert
+            Assert.IsFalse(_debt.gameObject.activeSelf);
+        }
+
         // ---------------- helpers ----------------
+
+        private static object GetPrivate(object target, string fieldName)
+        {
+            var field = target.GetType().GetField(fieldName,
+                System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+            Assert.IsNotNull(field, $"Field '{fieldName}' no encontrado en {target.GetType().Name}.");
+            return field.GetValue(target);
+        }
 
         private static void AssignPrivate(object target, string fieldName, object value)
         {

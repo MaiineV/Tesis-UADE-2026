@@ -70,15 +70,23 @@ namespace Rollgeon.UI.HUD.Status
             // La debilidad como slot — la piedrita rota del mockup. Hasta que ese arte llegue
             // al catálogo, el ícono del propio combo lo suple: es el mismo que el badge de la
             // barra del jefe, así que el jugador ya lo vio, y encima dice A QUÉ es débil.
-            if (TryDescribeWeakness(ownerGuid, out string comboName, out Sprite comboIcon))
+            if (TryDescribeWeakness(ownerGuid, out string comboName, out Sprite comboIcon,
+                                    out float multiplier))
             {
                 Sprite icon = _catalog != null ? _catalog.Resolve(WeaknessId) : null;
                 if (icon == null) icon = comboIcon;
 
+                // El nombre del combo solo ("Full House") no explica un pingo (playtest
+                // 04/09): la burbuja del hover necesita la regla con su número.
+                string description = LocalizedContent.DescriptionFormat(
+                    WeaknessId,
+                    "Debilidad: los golpes con el combo {0} le hacen ×{1} de daño.",
+                    comboName, multiplier.ToString("0.##"));
+
                 into.Add(new StatusIconState(
                     WeaknessId,
                     comboName,
-                    null,
+                    description,
                     icon,
                     active: true,
                     style: StatusCardStyle.Trait));
@@ -89,13 +97,14 @@ namespace Rollgeon.UI.HUD.Status
         /// El nombre localizado del combo al que es débil, o <c>null</c> sin debilidad registrada.
         /// </summary>
         public string WeaknessComboName(Guid ownerGuid)
-            => TryDescribeWeakness(ownerGuid, out string name, out _) ? name : null;
+            => TryDescribeWeakness(ownerGuid, out string name, out _, out _) ? name : null;
 
         private static bool TryDescribeWeakness(Guid ownerGuid, out string comboName,
-                                                out Sprite comboIcon)
+                                                out Sprite comboIcon, out float multiplier)
         {
             comboName = null;
             comboIcon = null;
+            multiplier = 0f;
 
             if (ownerGuid == Guid.Empty) return false;
             if (!ServiceLocator.TryGetService<IWeaknessRegistry>(out var registry) || registry == null)
@@ -103,12 +112,25 @@ namespace Rollgeon.UI.HUD.Status
             if (!registry.TryGet(ownerGuid, out var weakness)) return false;
             if (string.IsNullOrEmpty(weakness.comboId)) return false;
 
+            // Efectivo = override del enemigo o el default del ruleset — la MISMA
+            // resolución que el badge de la barra de jefe (BossBarView).
+            multiplier = weakness.mult > 0f ? weakness.mult : DefaultWeaknessMultiplier();
+
             var combo = ResolveCombo(weakness.comboId);
             comboName = combo != null
                 ? LocalizedContent.Name(combo.ComboId, combo.DisplayName)
                 : weakness.comboId;
             comboIcon = combo != null ? combo.Icon : null;
             return true;
+        }
+
+        // Sin RulesetSO registrado (tooling, tests) cae al default de fábrica (1.5).
+        private static float DefaultWeaknessMultiplier()
+        {
+            ServiceLocator.TryGetService<Rollgeon.Balance.RulesetSO>(out var ruleset);
+            return ruleset != null && ruleset.Weakness != null
+                ? ruleset.Weakness.DefaultMultiplier
+                : new Rollgeon.Balance.WeaknessConfig().DefaultMultiplier;
         }
 
         private static bool Teleports(EnemyDataSO data)

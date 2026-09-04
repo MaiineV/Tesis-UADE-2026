@@ -520,25 +520,28 @@ namespace Rollgeon.Editor.Tools.Enemy.AITree
             // --- El Cajero --------------------------------------------------------------
 
             [typeof(AINode_CajeroCoinRain)] =
-                "'Lluvia de monedas': cada EveryNRounds rondas suelta Count monedas (Coin, valor entre " +
-                "MinValue y MaxValue, separadas al menos MinSeparation casillas) repartidas por la sala. " +
-                "Es el reloj de la pelea: juntarlas obliga al jugador a caminar con el jefe persiguiéndolo.\n\n" +
-                "Las monedas nacen permanentes; las vence CoinVault. Su Failed ('todavía no toca tanda') " +
-                "es benigno: va en Selector[CoinRain, Wait].",
+                "'Monedas del golpe': suelta Count monedas (Coin, valor entre MinValue y MaxValue, " +
+                "separadas al menos MinSeparation casillas) repartidas por la sala. Sin reloj propio: " +
+                "va colgado DETRÁS del golpe en un Sequence, así que sólo paga si el golpe conectó. " +
+                "Juntarlas obliga al jugador a caminar con el jefe persiguiéndolo.\n\n" +
+                "Las monedas nacen permanentes; las vence CoinVault. Su Failed ('sala sin casilla " +
+                "libre') es benigno: va en Selector[CoinRain, Wait].",
 
             [typeof(AINode_CajeroCoinVault)] =
                 "'La caja': le pone reloj (LifetimeRounds) a cada moneda del piso y, cuando una se vence " +
-                "sin que nadie la levante, se la lleva y cura al jefe HealPerCoin, hasta MaxHealPerFight " +
-                "en toda la pelea. Cobra UNA moneda por turno, nunca la tanda entera: las cuatro de una " +
-                "lluvia se pagan a lo largo de cuatro turnos.\n\n" +
+                "sin que nadie la levante, se la lleva. No cura al jefe: la plata simplemente se pierde. " +
+                "Se lleva UNA moneda por turno, nunca la tanda entera: las cuatro de una lluvia se " +
+                "pierden a lo largo de cuatro turnos.\n\n" +
                 "Descubre las monedas por barrido de las instancias vivas, así que va después de los " +
                 "nodos que las sueltan.",
 
             [typeof(AINode_CajeroShove)] =
                 "El empujón del Cajero: hereda de RangedShot con Range = 1 (rango, daño, giro y " +
                 "presentación ya vienen de ahí) y además manda al jugador PushTiles casillas en línea " +
-                "recta hacia el lado opuesto, dejando CoinCount monedas (Coin, CoinMinValue–CoinMaxValue) " +
-                "tiradas a lo largo del tumbo. El tumbo frena contra paredes y blockers y cobra las " +
+                "recta hacia el lado opuesto. Le cobra TaxPercent del oro que lleve encima (nunca menos de " +
+                "TaxMinimum) y deja RefundPercent de eso tirado en CoinCount monedas repartidas al azar por " +
+                "la sala (separadas CoinMinSeparation): lo que cae al piso es plata del jugador, y va lejos " +
+                "para que ir a buscarla cueste un desvío. El tumbo frena contra paredes y blockers y cobra las " +
                 "casillas atravesadas (pinchos incluidos).",
 
             [typeof(AINode_CashierCounterToll)] =

@@ -4,8 +4,9 @@ using Rollgeon.Dice;
 namespace Rollgeon.Items.Active
 {
     /// <summary>
-    /// Reparte el rango de un dado en las tres bandas de resultado de un item activo,
-    /// por tercios proporcionales. GDD "Ítems Activos" §20.
+    /// Reparte el rango de un dado en las bandas de resultado de un item activo, segun
+    /// su <see cref="ActiveItemResolution"/>. GDD "Ítems Activos" §20 (modelo original,
+    /// tercios) y Feature#0085 §A2 (cortes custom, binario, gradiente, jerarquia).
     /// </summary>
     /// <remarks>
     /// <code>
@@ -20,7 +21,9 @@ namespace Rollgeon.Items.Active
     /// <para>
     /// Con <c>floor</c>, en dados donde N no es multiplo de 3 el remanente cae en la
     /// banda positiva (D4 reparte 1/1/2). El GDD lo marca como consecuencia conocida y
-    /// ajustable en balance, no como bug.
+    /// ajustable en balance, no como bug. Un item puede fijar sus propios cortes
+    /// (<c>ItemSO.NegativeMaxFace</c>/<c>MixedMaxFace</c>, 0 = tercios) para expresar
+    /// rangos como el D4 1/2-3/4 de Probability Drive.
     /// </para>
     /// <para>
     /// Clase pura, sin dependencias de Unity ni de servicios: es la unica fuente de
@@ -32,15 +35,15 @@ namespace Rollgeon.Items.Active
     {
         /// <summary>
         /// Banda a la que pertenece <paramref name="roll"/> en un dado de
-        /// <paramref name="faces"/> caras. Valores fuera de <c>[1, faces]</c> se
-        /// clampean — un encantamiento no puede empujar el resultado fuera del dado
-        /// (GDD §20, "Clamps").
+        /// <paramref name="faces"/> caras, por tercios proporcionales. Valores fuera de
+        /// <c>[1, faces]</c> se clampean — un encantamiento no puede empujar el resultado
+        /// fuera del dado (GDD §20, "Clamps").
         /// </summary>
         public static ActiveItemBand Resolve(int roll, int faces)
         {
             if (faces < 1) return ActiveItemBand.Negative;
 
-            int clamped = roll < 1 ? 1 : (roll > faces ? faces : roll);
+            int clamped = Clamp(roll, faces);
 
             if (clamped <= NegativeMax(faces)) return ActiveItemBand.Negative;
             if (clamped <= MixedMax(faces)) return ActiveItemBand.Mixed;
@@ -50,16 +53,17 @@ namespace Rollgeon.Items.Active
         /// <inheritdoc cref="Resolve(int,int)"/>
         public static ActiveItemBand Resolve(int roll, DiceType die) => Resolve(roll, die.MaxFace());
 
-        /// <summary>Cara mas alta que todavia cae en la banda negativa (<c>Corte1</c>).</summary>
+        /// <summary>Cara mas alta que todavia cae en la banda negativa (<c>Corte1</c>), por tercios.</summary>
         public static int NegativeMax(int faces) => faces / 3;
 
-        /// <summary>Cara mas alta que todavia cae en la banda mixta (<c>Corte2</c>).</summary>
+        /// <summary>Cara mas alta que todavia cae en la banda mixta (<c>Corte2</c>), por tercios.</summary>
         public static int MixedMax(int faces) => 2 * faces / 3;
 
         /// <summary>
-        /// Rango inclusivo <c>[min, max]</c> de una banda, para el tooltip del HUD (el
-        /// GDD pide mostrar la tabla de bandas del dado del item antes de activarlo, §18).
-        /// Una banda puede quedar vacia si <c>min &gt; max</c>.
+        /// Rango inclusivo <c>[min, max]</c> de una banda por tercios, para el tooltip del
+        /// HUD (el GDD pide mostrar la tabla de bandas del dado del item antes de
+        /// activarlo, §18). Una banda puede quedar vacia si <c>min &gt; max</c>. No conoce
+        /// cortes custom — para eso ver <see cref="DescribeStructure"/>.
         /// </summary>
         public static (int Min, int Max) RangeOf(ActiveItemBand band, int faces)
         {
@@ -79,27 +83,85 @@ namespace Rollgeon.Items.Active
             => RangeOf(band, die.MaxFace());
 
         // ==================================================================
-        // Mecanismos propios de familia (GDD §24, TBD-22 resuelto)
+        // Cortes custom (Feature#0085 §A2) — solo estructura Bands
         // ==================================================================
 
         /// <summary>
-        /// Banda segun la familia del item. <see cref="ActiveItemFamily.Precision"/> y
-        /// <see cref="ActiveItemFamily.Control"/> no usan tercios: tienen mecanismo
-        /// propio. El resto cae en <see cref="Resolve(int,int)"/>.
+        /// Banda de <paramref name="roll"/> segun cortes explicitos. <c>negMaxFace</c>/
+        /// <c>mixedMaxFace</c> en <c>0</c> caen a los tercios proporcionales
+        /// (<see cref="Resolve(int,int)"/>) — es el mismo contrato que
+        /// <c>ItemSO.NegativeMaxFace</c>/<c>MixedMaxFace</c>.
+        /// </summary>
+        public static ActiveItemBand ResolveCuts(int roll, int faces, int negMaxFace, int mixedMaxFace)
+        {
+            if (faces < 1) return ActiveItemBand.Negative;
+
+            int clamped = Clamp(roll, faces);
+            int negMax = negMaxFace > 0 ? negMaxFace : NegativeMax(faces);
+            int mixedMax = mixedMaxFace > 0 ? mixedMaxFace : MixedMax(faces);
+
+            if (clamped <= negMax) return ActiveItemBand.Negative;
+            if (clamped <= mixedMax) return ActiveItemBand.Mixed;
+            return ActiveItemBand.Positive;
+        }
+
+        // ==================================================================
+        // Binario (Feature#0085 §A2) — estructura Binary
+        // ==================================================================
+
+        /// <summary>
+        /// Binario por paridad: <c>Positive</c> si la paridad de <paramref name="roll"/>
+        /// coincide con <paramref name="positiveParity"/>, <c>Negative</c> si no. Nunca
+        /// devuelve <see cref="ActiveItemBand.Mixed"/> — un item Binary no tiene banda
+        /// mixta (2 grupos de efectos, no 3).
+        /// </summary>
+        public static ActiveItemBand ResolveBinary(int roll, int faces, ActiveItemParity positiveParity)
+        {
+            if (faces < 1) return ActiveItemBand.Negative;
+
+            int clamped = Clamp(roll, faces);
+            bool isEven = clamped % 2 == 0;
+            bool matchesPositive = isEven == (positiveParity == ActiveItemParity.Even);
+            return matchesPositive ? ActiveItemBand.Positive : ActiveItemBand.Negative;
+        }
+
+        // ==================================================================
+        // Mecanismos propios de familia (GDD §24, TBD-22 resuelto) — dentro de Bands
+        // ==================================================================
+
+        /// <summary>
+        /// Banda segun la estructura y (dentro de <see cref="ActiveItemResolution.Bands"/>)
+        /// la familia del item. <see cref="ActiveItemFamily.Precision"/> y
+        /// <see cref="ActiveItemFamily.Control"/> no usan tercios/cortes: tienen mecanismo
+        /// propio. <see cref="ActiveItemResolution.Binary"/> resuelve por paridad.
+        /// <see cref="ActiveItemResolution.Gradient"/>/<see cref="ActiveItemResolution.Hierarchy"/>
+        /// usan tercios solo como "banda de feel" (color/intensidad del HUD) — el grupo de
+        /// efectos que corre siempre es <c>OnPositiveBand</c>, ver <see cref="ItemSO.GetEffectsFor"/>.
         /// </summary>
         public static ActiveItemBand Resolve(int roll, ItemSO item)
         {
             if (item == null) return ActiveItemBand.Negative;
 
             int faces = item.ActiveDie.MaxFace();
-            switch (item.ActiveFamily)
+            switch (item.ActiveResolution)
             {
-                case ActiveItemFamily.Precision:
-                    return ResolvePrecision(roll, faces, item.PrecisionTarget);
-                case ActiveItemFamily.Control:
-                    return ResolveControl(roll, faces, item.ControlParity);
-                default:
+                case ActiveItemResolution.Binary:
+                    return ResolveBinary(roll, faces, item.BinaryPositiveParity);
+
+                case ActiveItemResolution.Gradient:
+                case ActiveItemResolution.Hierarchy:
                     return Resolve(roll, faces);
+
+                default:
+                    switch (item.ActiveFamily)
+                    {
+                        case ActiveItemFamily.Precision:
+                            return ResolvePrecision(roll, faces, item.PrecisionTarget);
+                        case ActiveItemFamily.Control:
+                            return ResolveControl(roll, faces, item.ControlParity);
+                        default:
+                            return ResolveCuts(roll, faces, item.NegativeMaxFace, item.MixedMaxFace);
+                    }
             }
         }
 
@@ -161,6 +223,104 @@ namespace Rollgeon.Items.Active
             => value < 1 ? 1 : (value > faces ? faces : value);
 
         // ==================================================================
+        // Resolucion completa (Feature#0085 §A2)
+        // ==================================================================
+
+        /// <summary>
+        /// Resuelve <paramref name="roll"/> (ya con el ajuste del encantamiento aplicado)
+        /// contra <paramref name="item"/> y arma el <see cref="ActiveItemRollResolution"/>
+        /// completo: cara, banda y magnitud. <c>Face</c> y <c>RawFace</c> quedan iguales —
+        /// para diferenciarlos (cara cruda vs. post-encantamiento) usar el overload de 3
+        /// argumentos.
+        /// </summary>
+        public static ActiveItemRollResolution ResolveRoll(int roll, ItemSO item)
+            => ResolveRoll(roll, roll, item);
+
+        /// <summary>
+        /// <inheritdoc cref="ResolveRoll(int,ItemSO)"/> <paramref name="rawRoll"/> es la
+        /// cara cruda (antes del encantamiento); <paramref name="roll"/> es la que decide
+        /// la banda y la magnitud.
+        /// </summary>
+        public static ActiveItemRollResolution ResolveRoll(int rawRoll, int roll, ItemSO item)
+        {
+            int faces = item != null ? item.ActiveDie.MaxFace() : 6;
+            int face = Clamp(roll, faces);
+            int rawFace = Clamp(rawRoll, faces);
+            var band = Resolve(roll, item);
+            var structure = item != null ? item.ActiveResolution : ActiveItemResolution.Bands;
+            bool isMagnitude = structure == ActiveItemResolution.Gradient
+                                || structure == ActiveItemResolution.Hierarchy;
+            int magnitude = isMagnitude ? face : 0;
+
+            return new ActiveItemRollResolution(face, rawFace, faces, band, structure, magnitude);
+        }
+
+        // ==================================================================
+        // Validacion (Feature#0085 §A1)
+        // ==================================================================
+
+        /// <summary>
+        /// Valida la configuracion de resolucion del item. <c>false</c> con
+        /// <paramref name="error"/> describiendo el primer problema encontrado.
+        /// </summary>
+        /// <remarks>
+        /// Bands: si hay cortes custom (alguno de los dos &gt; 0) tienen que cumplir
+        /// <c>1 &lt;= NegativeMaxFace &lt; MixedMaxFace &lt; Faces</c>; ademas ninguna
+        /// banda puede quedar sin caras (el GDD prohibe "no pasa nada"). Binary: el dado
+        /// tiene que tener caras pares (si no, la paridad no reparte parejo). Gradient/
+        /// Hierarchy: sin restricciones propias — un solo grupo siempre corre.
+        /// </remarks>
+        public static bool Validate(ItemSO item, out string error)
+        {
+            error = null;
+            if (item == null)
+            {
+                error = "item nulo.";
+                return false;
+            }
+
+            int faces = item.ActiveDie.MaxFace();
+
+            switch (item.ActiveResolution)
+            {
+                case ActiveItemResolution.Binary:
+                    if (faces % 2 != 0)
+                    {
+                        error = $"Binary requiere un dado de caras pares (d{faces} no sirve).";
+                        return false;
+                    }
+                    return true;
+
+                case ActiveItemResolution.Gradient:
+                case ActiveItemResolution.Hierarchy:
+                    return true;
+
+                default: // Bands
+                    if (item.NegativeMaxFace > 0 || item.MixedMaxFace > 0)
+                    {
+                        bool valid = item.NegativeMaxFace >= 1
+                                     && item.NegativeMaxFace < item.MixedMaxFace
+                                     && item.MixedMaxFace < faces;
+                        if (!valid)
+                        {
+                            error = "cortes invalidos: se requiere 1 <= NegativeMaxFace < MixedMaxFace < Faces "
+                                    + $"(NegativeMaxFace={item.NegativeMaxFace}, MixedMaxFace={item.MixedMaxFace}, Faces={faces}).";
+                            return false;
+                        }
+                    }
+
+                    if (FacesOf(ActiveItemBand.Negative, item).Count == 0
+                        || FacesOf(ActiveItemBand.Mixed, item).Count == 0
+                        || FacesOf(ActiveItemBand.Positive, item).Count == 0)
+                    {
+                        error = "hay una banda sin caras — el GDD prohibe la rama de 'no pasa nada'.";
+                        return false;
+                    }
+                    return true;
+            }
+        }
+
+        // ==================================================================
         // Caras por banda — para el tooltip
         // ==================================================================
 
@@ -206,6 +366,53 @@ namespace Rollgeon.Items.Active
             }
 
             return string.Join(", ", parts);
+        }
+
+        /// <summary>
+        /// Filas <c>(Label, Faces)</c> para el tooltip del HUD y el comando de consola
+        /// <c>activeitem</c> — una fila por grupo de efectos real del item, con las caras
+        /// que lo disparan como texto compacto. Reemplaza mostrar 3 bandas fijas: un
+        /// Binary tiene 2, un Gradient/Hierarchy 1 sola ("Al resolver").
+        /// </summary>
+        public static IReadOnlyList<(string Label, string Faces)> DescribeStructure(ItemSO item)
+        {
+            var rows = new List<(string, string)>();
+            if (item == null) return rows;
+
+            int faces = item.ActiveDie.MaxFace();
+
+            switch (item.ActiveResolution)
+            {
+                case ActiveItemResolution.Binary:
+                    bool positiveIsEven = item.BinaryPositiveParity == ActiveItemParity.Even;
+                    rows.Add(("negativa", DescribeParityFaces(faces, !positiveIsEven)));
+                    rows.Add(("positiva", DescribeParityFaces(faces, positiveIsEven)));
+                    return rows;
+
+                case ActiveItemResolution.Gradient:
+                    rows.Add(("al resolver — magnitud = cara", $"1-{faces}"));
+                    return rows;
+
+                case ActiveItemResolution.Hierarchy:
+                    rows.Add(("al resolver — niveles = cara", $"1-{faces}"));
+                    return rows;
+
+                default:
+                    rows.Add(("negativa", DescribeFaces(ActiveItemBand.Negative, item)));
+                    rows.Add(("mixta", DescribeFaces(ActiveItemBand.Mixed, item)));
+                    rows.Add(("positiva", DescribeFaces(ActiveItemBand.Positive, item)));
+                    return rows;
+            }
+        }
+
+        private static string DescribeParityFaces(int faces, bool even)
+        {
+            var list = new List<int>();
+            for (int i = 1; i <= faces; i++)
+                if ((i % 2 == 0) == even) list.Add(i);
+
+            if (list.Count == 0) return "—";
+            return string.Join(", ", list);
         }
     }
 }

@@ -33,6 +33,24 @@ namespace Rollgeon.Editor.Tools.RoomEditor
             return max;
         }
 
+        /// <summary>
+        /// Spawn points that have an enemy assigned for <paramref name="setIndex"/>.
+        /// An empty slot is a legit formation choice (nothing spawns there for that
+        /// set), so this is a summary for the designer, not an error count.
+        /// </summary>
+        public static int CountFilledForSet(RoomLayout layout, int setIndex)
+        {
+            if (layout == null || layout.EnemySpawnPoints == null) return 0;
+            int filled = 0;
+            foreach (var sp in layout.EnemySpawnPoints)
+            {
+                if (sp == null) continue;
+                var config = sp.GetComponent<SpawnPointConfig>();
+                if (config != null && config.GetEnemyForSet(setIndex) != null) filled++;
+            }
+            return filled;
+        }
+
         /// <summary>Appends a null entry to <c>EnemySets</c> on every <see cref="SpawnPointConfig"/> in the room.</summary>
         public static void AddSetSlot(RoomLayout layout)
         {
@@ -219,15 +237,15 @@ namespace Rollgeon.Editor.Tools.RoomEditor
             if (mismatched > 0)
                 report.Issues.Add($"{mismatched} config(s) have fewer than {max} sets. Use 'Normalize' to pad with nulls.");
 
-            // 4. Null EnemyDataSO slots.
-            int nullSlots = 0;
-            foreach (var c in configs)
+            // 4. Sets with no enemy on any spawn point. Individual empty slots are
+            //    fine (that spawn point stays empty for the set), but a fully empty
+            //    set would send the room to combat with nobody in it — the resolver
+            //    falls back to PossibleSetups/EnemyPool and logs a warning.
+            for (int s = 0; s < max; s++)
             {
-                if (c == null || c.EnemySets == null) continue;
-                foreach (var e in c.EnemySets) if (e == null) nullSlots++;
+                if (CountFilledForSet(layout, s) == 0)
+                    report.Issues.Add($"Set {s} has no enemy on any spawn point. Assign at least one or remove the set.");
             }
-            if (nullSlots > 0)
-                report.Issues.Add($"{nullSlots} null EnemyDataSO slot(s). The resolver will fall back to RoomSO.EnemyPool for these.");
 
             return report;
         }

@@ -24,12 +24,26 @@ namespace Rollgeon.Effects.Concretes
         [OdinSerialize, SerializeReference]
         private EffectIntReader _amount = new ReadConstantInt();
 
+        // bool y no "scale = 1f": Odin no corre field initializers al deserializar, así que un
+        // float nuevo quedaría en 0 en todos los EffAddComboBonus ya autorados. false (0) preserva
+        // byte a byte el comportamiento previo.
+        [Tooltip("Resta el valor en vez de sumarlo. Fuente Mágica: saca el dado más alto de N " +
+                 "(ReadHighestContributingDie) para que solo cuente en M.")]
+        [SerializeField]
+        private bool _subtract;
+
         protected override bool ShowSelection => false;
 
         public EffectIntReader Amount
         {
             get => _amount;
             set => _amount = value;
+        }
+
+        public bool Subtract
+        {
+            get => _subtract;
+            set => _subtract = value;
         }
 
         public override string GetEffectName() => "Add Combo Bonus";
@@ -45,7 +59,8 @@ namespace Rollgeon.Effects.Concretes
                 return false;
             }
 
-            trig.Scratch.BonusComboDamage += _amount?.Read(context) ?? 0;
+            int amount = _amount?.Read(context) ?? 0;
+            trig.Scratch.BonusComboDamage += _subtract ? -amount : amount;
             return true;
         }
     }

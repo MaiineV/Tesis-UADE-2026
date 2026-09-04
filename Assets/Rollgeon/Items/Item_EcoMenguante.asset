@@ -57,7 +57,7 @@ MonoBehaviour:
       Data: true
     - Name: Start
       Entry: 4
-      Data: 5
+      Data: 3
     - Name: DecayPerCombo
       Entry: 4
       Data: 0.2
@@ -70,15 +70,42 @@ MonoBehaviour:
     - Name: 
       Entry: 8
       Data: 
+    - Name: LeastUsedComboBonus
+      Entry: 7
+      Data: 3|Rollgeon.Items.LeastUsedComboBonusDef, Rollgeon
+    - Name: Enabled
+      Entry: 5
+      Data: false
+    - Name: MultiplierBonus
+      Entry: 4
+      Data: 0.5
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: CombatToll
+      Entry: 7
+      Data: 4|Rollgeon.Items.CombatTollDef, Rollgeon
+    - Name: Enabled
+      Entry: 5
+      Data: false
+    - Name: BaseCost
+      Entry: 3
+      Data: 15
+    - Name: CostPerFloor
+      Entry: 3
+      Data: 10
+    - Name: 
+      Entry: 8
+      Data: 
     - Name: OnNegativeBand
       Entry: 7
-      Data: 3|Rollgeon.Effects.EffectData, Rollgeon
+      Data: 5|Rollgeon.Effects.EffectData, Rollgeon
     - Name: Label
       Entry: 1
       Data: Effect Group
     - Name: PreConditions
       Entry: 7
-      Data: 4|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
+      Data: 6|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
         Rollgeon]], mscorlib
     - Name: 
       Entry: 12
@@ -91,7 +118,7 @@ MonoBehaviour:
       Data: 
     - Name: Effects
       Entry: 7
-      Data: 5|System.Collections.Generic.List`1[[Rollgeon.Effects.IEffect, Rollgeon]],
+      Data: 7|System.Collections.Generic.List`1[[Rollgeon.Effects.IEffect, Rollgeon]],
         mscorlib
     - Name: 
       Entry: 12
@@ -110,13 +137,13 @@ MonoBehaviour:
       Data: 
     - Name: OnMixedBand
       Entry: 7
-      Data: 6|Rollgeon.Effects.EffectData, Rollgeon
+      Data: 8|Rollgeon.Effects.EffectData, Rollgeon
     - Name: Label
       Entry: 1
       Data: Effect Group
     - Name: PreConditions
       Entry: 7
-      Data: 7|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
+      Data: 9|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
         Rollgeon]], mscorlib
     - Name: 
       Entry: 12
@@ -129,7 +156,7 @@ MonoBehaviour:
       Data: 
     - Name: Effects
       Entry: 7
-      Data: 8|System.Collections.Generic.List`1[[Rollgeon.Effects.IEffect, Rollgeon]],
+      Data: 10|System.Collections.Generic.List`1[[Rollgeon.Effects.IEffect, Rollgeon]],
         mscorlib
     - Name: 
       Entry: 12
@@ -148,13 +175,13 @@ MonoBehaviour:
       Data: 
     - Name: OnPositiveBand
       Entry: 7
-      Data: 9|Rollgeon.Effects.EffectData, Rollgeon
+      Data: 11|Rollgeon.Effects.EffectData, Rollgeon
     - Name: Label
       Entry: 1
       Data: Effect Group
     - Name: PreConditions
       Entry: 7
-      Data: 10|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
+      Data: 12|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
         Rollgeon]], mscorlib
     - Name: 
       Entry: 12
@@ -167,7 +194,7 @@ MonoBehaviour:
       Data: 
     - Name: Effects
       Entry: 7
-      Data: 11|System.Collections.Generic.List`1[[Rollgeon.Effects.IEffect, Rollgeon]],
+      Data: 13|System.Collections.Generic.List`1[[Rollgeon.Effects.IEffect, Rollgeon]],
         mscorlib
     - Name: 
       Entry: 12
@@ -186,13 +213,13 @@ MonoBehaviour:
       Data: 
     - Name: OnActivate
       Entry: 7
-      Data: 12|Rollgeon.Effects.EffectData, Rollgeon
+      Data: 14|Rollgeon.Effects.EffectData, Rollgeon
     - Name: Label
       Entry: 1
       Data: Effect Group
     - Name: PreConditions
       Entry: 7
-      Data: 13|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
+      Data: 15|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
         Rollgeon]], mscorlib
     - Name: 
       Entry: 12
@@ -205,7 +232,7 @@ MonoBehaviour:
       Data: 
     - Name: Effects
       Entry: 7
-      Data: 14|System.Collections.Generic.List`1[[Rollgeon.Effects.IEffect, Rollgeon]],
+      Data: 16|System.Collections.Generic.List`1[[Rollgeon.Effects.IEffect, Rollgeon]],
         mscorlib
     - Name: 
       Entry: 12
@@ -224,9 +251,9 @@ MonoBehaviour:
       Data: 
   ItemId: eco.menguante
   DisplayName: Eco Menguante
-  Description: "Empez\xE1s cada combate con da\xF1o x5. Cada ataque lo reduce en
-    0.1, hasta x1."
-  Icon: {fileID: 1808964844, guid: ee12da05509c7a74686b1e1cc11cbd3e, type: 3}
+  Description: "Tu da\xF1o de ataque arranca en x3 al conseguirlo. Cada combo que
+    jug\xE1s lo baja 0.2; al llegar a x1 el item se rompe."
+  Icon: {fileID: -26662485, guid: 956c96499facb124fb3ffd26bd8ee18e, type: 3}
   Rarity: 2
   FamilyId: 
   VariantIndex: 0
@@ -236,11 +263,13 @@ MonoBehaviour:
   RollPoolBonus: 0
   LadderSkippedStep: 0
   BlocksPassiveItemHealing: 0
+  PotionHealMultiplier: 1
   ActiveSlotBonus: 0
   EnchantmentCostMultiplier: 1
   CursedEnchantmentWeightMultiplier: 1
   SecondWind: 0
   SecondWindRemainingHp: 1
+  GoldFloor: 0
   UsesActiveSlot: 0
   ActiveDie: 1
   ActiveFamily: 0
@@ -274,7 +303,7 @@ MonoBehaviour:
   ConsumedOnUse: 0
   ConsumesAction: 1
   ActionId: 
-  WorldPrefab: {fileID: 0}
+  WorldPrefab: {fileID: 3991169858038482749, guid: f544ad363c5b5214c8d3665ecfe6440a, type: 3}
   references:
     version: 2
     RefIds:

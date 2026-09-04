@@ -50,6 +50,8 @@ namespace Rollgeon.Effects.Selection
 
         public bool IsSelecting => _request != null;
 
+        public SelectionSettings ActiveSettings => _request?.Settings;
+
         /// <summary>
         /// Frame en el que terminó la última selección, completada o cancelada. El click que
         /// confirma el objetivo la resuelve sincrónico, y los Update que corren después en ese
@@ -156,6 +158,39 @@ namespace Rollgeon.Effects.Selection
             // heal) usan estilos distintos y no tienen sentido como "camino A*".
             var style = _request.HighlightStyle ?? "move";
 
+            // Preview de trayectoria por dirección (A4: Justa de Justicia/Grapple Claw).
+            // El request expone HoverPreview cuando algún efecto de banda implementa
+            // targeting direccional (Diseño A4) — es independiente de TargetMode, así que
+            // se resuelve ANTES de la rama AoE. Espejo de esa rama: SIEMPRE ClearAll tanto
+            // al pintar como al limpiar, porque la trayectoria puede exceder _validCoords
+            // igual que el área AoE excede su rango.
+            if (_request.HoverPreview != null)
+            {
+                if (!coord.HasValue || !_validCoords.Contains(coord.Value))
+                {
+                    ClearWideOverlayPreview(style);
+                    return;
+                }
+
+                if (ServiceLocator.TryGetService<ITileHighlightService>(out var hlDir))
+                {
+                    hlDir.ClearAll();
+                    if (!_suppressRange)
+                    {
+                        RepaintRange(hlDir);
+                        hlDir.Highlight(_validCoords, style);
+                    }
+
+                    var trajectory = _request.HoverPreview(coord.Value);
+                    if (trajectory != null)
+                        hlDir.Highlight(trajectory, _request.HoverPreviewStyle ?? PathHighlightStyle);
+
+                    RepaintDoors(hlDir);
+                    _hasPathPreview = true; // mismo flag: "hay overlay de hover que limpiar"
+                }
+                return;
+            }
+
             // Preview del área AoE: al apuntar un ancla válida se pinta el área que sería
             // afectada. El área puede exceder el rango pintado (clipea a grilla, no al
             // Range del caster), así que tanto el repintado como la limpieza hacen
@@ -166,7 +201,7 @@ namespace Rollgeon.Effects.Selection
             {
                 if (!coord.HasValue || !_validCoords.Contains(coord.Value))
                 {
-                    ClearAoePreview(style);
+                    ClearWideOverlayPreview(style);
                     return;
                 }
 
@@ -207,7 +242,9 @@ namespace Rollgeon.Effects.Selection
                 return;
             }
 
-            var path = movement.FindPath(origin, coord.Value);
+            // FindPathFor y no FindPath: con Paso etéreo el camino real cruza unidades y el
+            // preview tiene que mostrar ESE camino, no un rodeo (o nada) que después no se camina.
+            var path = movement.FindPathFor(_request.OwnerGuid, origin, coord.Value);
             if (path == null || path.Count < 2)
             {
                 ClearPathPreview(style);
@@ -232,10 +269,11 @@ namespace Rollgeon.Effects.Selection
             }
         }
 
-        // Limpia el overlay AoE de un hover anterior. A diferencia de ClearPathPreview,
-        // SIEMPRE hace ClearAll: el área AoE puede exceder _rangeCoords/_validCoords y
-        // repintar solo esos sets dejaría celdas naranjas pegadas.
-        private void ClearAoePreview(string rangeStyle)
+        // Limpia un overlay "ancho" (AoE o trayectoria direccional) de un hover anterior.
+        // A diferencia de ClearPathPreview, SIEMPRE hace ClearAll: ambos previews pueden
+        // exceder _rangeCoords/_validCoords y repintar solo esos sets dejaría celdas
+        // pegadas fuera del área/trayectoria real.
+        private void ClearWideOverlayPreview(string rangeStyle)
         {
             if (!_hasPathPreview) return;
             if (ServiceLocator.TryGetService<ITileHighlightService>(out var highlight))

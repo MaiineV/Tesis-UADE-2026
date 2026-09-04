@@ -84,6 +84,9 @@ MonoBehaviour:
     - Name: Alignment
       Entry: 3
       Data: 0
+    - Name: IgnoreLineOfSight
+      Entry: 5
+      Data: false
     - Name: 
       Entry: 8
       Data: 
@@ -957,18 +960,58 @@ MonoBehaviour:
     - Name: 
       Entry: 8
       Data: 
+    - Name: IntentLabelKey
+      Entry: 6
+      Data: 
+    - Name: IntentLabelFallback
+      Entry: 6
+      Data: 
     - Name: 
       Entry: 8
       Data: 
     - Name: Else
       Entry: 7
-      Data: 46|Rollgeon.Combat.AI.Decisions.AINode_Move, Rollgeon
+      Data: 46|Rollgeon.Combat.AI.Decisions.AINode_If, Rollgeon
+    - Name: EditorNodeId
+      Entry: 6
+      Data: 
+    - Name: TargetSelector
+      Entry: 7
+      Data: 47|Rollgeon.Combat.AI.Targeting.TargetSelector_Self, Rollgeon
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: Conditions
+      Entry: 7
+      Data: 48|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
+        Rollgeon]], mscorlib
+    - Name: 
+      Entry: 12
+      Data: 1
+    - Name: 
+      Entry: 7
+      Data: 49|Rollgeon.PreConditions.Concretes.PcAllyAliveExists, Rollgeon
+    - Name: _isConstantValue
+      Entry: 5
+      Data: true
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: Then
+      Entry: 7
+      Data: 50|Rollgeon.Combat.AI.Decisions.AINode_Move, Rollgeon
     - Name: EditorNodeId
       Entry: 6
       Data: 
     - Name: MaxSteps
       Entry: 7
-      Data: 47|Rollgeon.Combat.AI.Readers.AIConstantInt, Rollgeon
+      Data: 51|Rollgeon.Combat.AI.Readers.AIConstantInt, Rollgeon
     - Name: Value
       Entry: 3
       Data: 3
@@ -977,7 +1020,7 @@ MonoBehaviour:
       Data: 
     - Name: TargetSelector
       Entry: 7
-      Data: 48|Rollgeon.Combat.AI.Targeting.TargetSelector_ByAttribute, Rollgeon
+      Data: 52|Rollgeon.Combat.AI.Targeting.TargetSelector_ByAttribute, Rollgeon
     - Name: Relation
       Entry: 3
       Data: 1
@@ -1007,7 +1050,7 @@ MonoBehaviour:
       Data: 
     - Name: DesiredRange
       Entry: 7
-      Data: 49|Rollgeon.Combat.AI.Readers.AIConstantInt, Rollgeon
+      Data: 53|Rollgeon.Combat.AI.Readers.AIConstantInt, Rollgeon
     - Name: Value
       Entry: 3
       Data: 1
@@ -1015,6 +1058,36 @@ MonoBehaviour:
       Entry: 8
       Data: 
     - Name: Retreat
+      Entry: 5
+      Data: false
+    - Name: RequireLineOfSight
+      Entry: 5
+      Data: false
+    - Name: StopAdjacent
+      Entry: 5
+      Data: true
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: Else
+      Entry: 7
+      Data: 54|Rollgeon.Combat.AI.Decisions.AINode_Move, Rollgeon
+    - Name: EditorNodeId
+      Entry: 6
+      Data: 
+    - Name: MaxSteps
+      Entry: 9
+      Data: 51
+    - Name: TargetSelector
+      Entry: 6
+      Data: 
+    - Name: DesiredRange
+      Entry: 9
+      Data: 53
+    - Name: Retreat
+      Entry: 5
+      Data: false
+    - Name: RequireLineOfSight
       Entry: 5
       Data: false
     - Name: StopAdjacent
@@ -1027,17 +1100,20 @@ MonoBehaviour:
       Entry: 8
       Data: 
     - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
       Entry: 7
-      Data: 50|Rollgeon.Combat.AI.Decisions.AINode_ShowGuardAura, Rollgeon
+      Data: 55|Rollgeon.Combat.AI.Decisions.AINode_ShowGuardAura, Rollgeon
     - Name: EditorNodeId
       Entry: 6
       Data: 
     - Name: Radius
       Entry: 7
-      Data: 51|Rollgeon.Combat.AI.Readers.AIConstantInt, Rollgeon
+      Data: 56|Rollgeon.Combat.AI.Readers.AIConstantInt, Rollgeon
     - Name: Value
       Entry: 3
-      Data: 2
+      Data: 1
     - Name: 
       Entry: 8
       Data: 
@@ -1058,7 +1134,7 @@ MonoBehaviour:
       Data: 
     - Name: AIDetachedNodes
       Entry: 7
-      Data: 52|System.Collections.Generic.List`1[[Rollgeon.Combat.AI.Decisions.AIDecisionNode,
+      Data: 57|System.Collections.Generic.List`1[[Rollgeon.Combat.AI.Decisions.AIDecisionNode,
         Rollgeon]], mscorlib
     - Name: 
       Entry: 12
@@ -1072,14 +1148,15 @@ MonoBehaviour:
   EntityId: enemy.guardian
   DisplayName: Guardian
   Description: 
-  Portrait: {fileID: 0}
+  Portrait: {fileID: -1194735857, guid: 750dfaeb67b07294f9aeb2e713975d25, type: 3}
   Design:
     Archetype: 3
     Pattern: 1
     Timing: 1
-    Notes: 'Support: aura defensiva (radio 2, -5 dano plano a aliados) mientras vive.
-      Ataque de contacto 1x1 solo si el jugador llega adyacente; si no, se mueve
-      hacia el aliado con menos HP (nunca ambas cosas en el mismo turno).'
+    Notes: 'Support: aura defensiva (8 casillas alrededor, radio 1 Chebyshev, -5
+      dano plano a aliados) mientras vive. Ataque de contacto 1x1 solo si el jugador
+      llega adyacente; si no, se mueve hacia el aliado con menos HP (nunca ambas
+      cosas en el mismo turno).'
   WeaknessComboId: 
   WeaknessMultiplierOverride: 0
   Curse: {fileID: 0}
@@ -1096,8 +1173,9 @@ MonoBehaviour:
   IsFlying: 0
   IsBoss: 0
   Archetype: 0
+  TooltipType: 
   Personality: 0
   KamikazeIgnoresSurvival: 0
-  AuraRadius: 2
+  AuraRadius: 1
   AuraFlatReduction: 5
   Footprint: {x: 1, y: 1}

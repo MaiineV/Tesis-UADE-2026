@@ -117,6 +117,7 @@ namespace Rollgeon.Items
                 if (item.ActiveSlotBonus > 0) AddActiveSlotBonus(item.ActiveSlotBonus);
                 RegisterEnchantmentCostModifier(item);
                 RegisterEnchantmentWeightModifier(item);
+                RegisterGoldFloor(item);
             }
             else
             {
@@ -172,6 +173,7 @@ namespace Rollgeon.Items
                 if (item.ActiveSlotBonus > 0) AddActiveSlotBonus(-item.ActiveSlotBonus);
                 UnregisterEnchantmentCostModifier(item);
                 UnregisterEnchantmentWeightModifier(item);
+                UnregisterGoldFloor(item);
                 OnItemChanged?.Invoke(item, false);
                 EventManager.Trigger(EventName.OnItemRemoved, GetPlayerGuid(), itemId);
                 return true;
@@ -371,7 +373,10 @@ namespace Rollgeon.Items
                     foreach (var eff in hook.Effect.Effects)
                     {
                         if (eff is EffAddComboBonus bonus && bonus.Amount != null)
-                            total += bonus.Amount.Read(ctx);
+                        {
+                            int amount = bonus.Amount.Read(ctx);
+                            total += bonus.Subtract ? -amount : amount;
+                        }
                     }
                 }
             }
@@ -638,6 +643,27 @@ namespace Rollgeon.Items
         }
 
         // ======================================================================
+        // Gold floor (Tarjeta de Crédito) — el piso vive en el EconomyService bajo
+        // el item id; entra con el item, sale con el item (sin confiscar deuda).
+        // ======================================================================
+
+        private void RegisterGoldFloor(ItemSO item)
+        {
+            if (item == null || item.GoldFloor >= 0) return;
+            if (ServiceLocator.TryGetService<Rollgeon.Economy.IEconomyService>(out var economy)
+                && economy != null)
+                economy.SetGoldFloor(item.ItemId, item.GoldFloor);
+        }
+
+        private void UnregisterGoldFloor(ItemSO item)
+        {
+            if (item == null || item.GoldFloor >= 0) return;
+            if (ServiceLocator.TryGetService<Rollgeon.Economy.IEconomyService>(out var economy)
+                && economy != null)
+                economy.ClearGoldFloor(item.ItemId);
+        }
+
+        // ======================================================================
         // Roll pool bonus (Llamado de Emergencia) — permanente mientras el item
         // esté en el inventario, revertido al perderlo.
         // ======================================================================
@@ -695,15 +721,17 @@ namespace Rollgeon.Items
 
         private void RegisterHealingRules(ItemSO item)
         {
-            if (!item.BlocksPassiveItemHealing) return;
+            bool scalesPotion = HasPotionHealMultiplier(item);
+            if (!item.BlocksPassiveItemHealing && !scalesPotion) return;
             if (!ServiceLocator.TryGetService<Rollgeon.Combat.Healing.IHealingRuleService>(out var rules)
                 || rules == null)
             {
-                Debug.LogWarning("[InventoryService] IHealingRuleService no registrado — el bloqueo de " +
-                                 $"curas de '{item.ItemId}' no se aplica.");
+                Debug.LogWarning("[InventoryService] IHealingRuleService no registrado — las reglas de " +
+                                 $"curación de '{item.ItemId}' no se aplican.");
                 return;
             }
-            rules.AddPassiveHealingBlock(item.ItemId);
+            if (item.BlocksPassiveItemHealing) rules.AddPassiveHealingBlock(item.ItemId);
+            if (scalesPotion) rules.AddPotionHealMultiplier(item.ItemId, item.PotionHealMultiplier);
             _registeredHealingRules.Add(item.ItemId);
         }
 
@@ -712,8 +740,16 @@ namespace Rollgeon.Items
             if (item == null || !_registeredHealingRules.Remove(item.ItemId)) return;
             if (ServiceLocator.TryGetService<Rollgeon.Combat.Healing.IHealingRuleService>(out var rules)
                 && rules != null)
+            {
+                // Los dos Remove son no-op si el item no registró ese canal.
                 rules.RemovePassiveHealingBlock(item.ItemId);
+                rules.RemovePotionHealMultiplier(item.ItemId);
+            }
         }
+
+        // 1 = sin efecto; 0 o negativo no son autorables (MinValue en el SO) y se ignoran.
+        private static bool HasPotionHealMultiplier(ItemSO item)
+            => item.PotionHealMultiplier > 0f && !Mathf.Approximately(item.PotionHealMultiplier, 1f);
 
         // ======================================================================
         // Enchantment cost modifier (Moneda Maldita)
@@ -911,7 +947,10 @@ namespace Rollgeon.Items
                 && hrs != null)
             {
                 foreach (var id in _registeredHealingRules)
+                {
                     hrs.RemovePassiveHealingBlock(id);
+                    hrs.RemovePotionHealMultiplier(id);
+                }
             }
             _registeredHealingRules.Clear();
         }

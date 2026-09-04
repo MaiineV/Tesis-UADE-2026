@@ -55,6 +55,17 @@ namespace Rollgeon.Upgrades.Dice.UI
         [InfoBox("Las 5 posiciones de la repisa de la máquina, izquierda a derecha.")]
         [SerializeField] private AltarDieSlotView[] _dieSlots;
 
+        [Title("Slot machine — carousel de sets")]
+        [InfoBox("Flechas a los lados de la repisa: giran entre el set de Ataque (5 dados) y el de " +
+                 "Movimiento (1 dado). La palanca ofrece según el set visible: con Movimiento SOLO " +
+                 "encantamientos de esa categoría, con Ataque nunca uno de Movimiento. Sin wiring, " +
+                 "la mesa queda como antes (solo Ataque).")]
+        [SerializeField, Optional] private RectTransform _attackSetRoot;
+        [SerializeField, Optional] private RectTransform _moveSetRoot;
+        [SerializeField, Optional] private AltarDieSlotView _moveDieSlot;
+        [SerializeField, Optional] private Button _arrowLeft;
+        [SerializeField, Optional] private Button _arrowRight;
+
         [Title("Slot machine — palanca")]
         [SerializeField] private AltarLeverView _lever;
 
@@ -104,6 +115,13 @@ namespace Rollgeon.Upgrades.Dice.UI
         private Guid _currentRoomInstanceId;
         private int _selectedOptionIndex = -1;
         private int _selectedBagIndex = -1;
+        // El dado de Movimiento vive en un índice negativo (sentinela), así que "hay dado
+        // elegido" no puede leerse de _selectedBagIndex >= 0.
+        private bool _hasSelectedDie;
+        private EnchantmentTargetSet _selectedSet = EnchantmentTargetSet.CombatDice;
+        private bool _switchingSet;
+        private CanvasGroup _attackSetGroup;
+        private CanvasGroup _moveSetGroup;
         private bool _spinning;
         private bool _closing;
         private RectTransform _panelRect;
@@ -149,6 +167,9 @@ namespace Rollgeon.Upgrades.Dice.UI
                     _dieSlots[i].Configure(i, HandleDieClicked);
                 }
             }
+            if (_moveDieSlot != null) _moveDieSlot.Configure(EnchantmentSlotRef.MovementDieSlot, HandleDieClicked);
+            if (_arrowLeft != null) _arrowLeft.onClick.AddListener(HandleArrowClicked);
+            if (_arrowRight != null) _arrowRight.onClick.AddListener(HandleArrowClicked);
         }
 
         private void OnDestroy()
@@ -157,6 +178,8 @@ namespace Rollgeon.Upgrades.Dice.UI
             if (_confirmButton != null && _confirmButton.Button != null)
                 _confirmButton.Button.onClick.RemoveListener(HandleConfirmClicked);
             if (_lever != null) _lever.OnPulled -= HandleLeverPulled;
+            if (_arrowLeft != null) _arrowLeft.onClick.RemoveListener(HandleArrowClicked);
+            if (_arrowRight != null) _arrowRight.onClick.RemoveListener(HandleArrowClicked);
         }
 
         private void OnEnable() => Subscribe();
@@ -252,6 +275,8 @@ namespace Rollgeon.Upgrades.Dice.UI
             ClearSelections();
             ClearRoomOffer();
             ResetOptionSlots();
+            // La mesa siempre abre en el set de Ataque (mock del carousel).
+            ShowSetImmediate(EnchantmentTargetSet.CombatDice);
             BindDiceShelf();
             if (_confirmButton != null) _confirmButton.SetReady(false);
 
@@ -346,6 +371,7 @@ namespace Rollgeon.Upgrades.Dice.UI
             if (_panelCanvasGroup != null) Tween.StopAll(onTarget: _panelCanvasGroup);
             if (_backdrop != null) Tween.StopAll(onTarget: _backdrop);
             if (_descriptionCanvasGroup != null) Tween.StopAll(onTarget: _descriptionCanvasGroup);
+            StopSetTweens();
             _spinning = false; // los reels en vuelo los frena cada slot (OnDisable / SetEmpty)
         }
 
@@ -459,7 +485,39 @@ namespace Rollgeon.Upgrades.Dice.UI
         // Repisa de dados
         // ====================================================================
 
+        /// <summary>Repisa del set visible. Sin wiring del carousel, solo el set de Ataque.</summary>
         private void BindDiceShelf()
+        {
+            if (_selectedSet == EnchantmentTargetSet.MovementDie && _moveDieSlot != null)
+            {
+                BindMoveShelf();
+                return;
+            }
+            BindAttackShelf();
+        }
+
+        private void BindMoveShelf()
+        {
+            if (!ServiceLocator.TryGetService<IDiceEnchantmentService>(out var enchSvc)
+                || enchSvc == null || !enchSvc.IsReady || enchSvc.Bag == null)
+            {
+                Debug.LogWarning(LogPrefix + "DiceEnchantmentService no listo — no se puede mostrar el dado de Movimiento.");
+                ShowError(LocalizedContent.Ui("altar.load_error",
+                    "No se pudieron cargar los dados — cierra la mesa y vuelve a intentar."));
+                return;
+            }
+
+            var type = DiceEnchantmentService.ResolveMovementDieType();
+            var enchants = enchSvc.Bag.GetEnchantments(EnchantmentSlotRef.MovementDieSlot);
+            int extraFaces = enchSvc.Bag.MovementExtraFaces;
+            _moveDieSlot.SetOccupied(true);
+            _moveDieSlot.Bind(
+                _diceUiSettings != null ? _diceUiSettings.GetSprite(type) : null,
+                enchSvc.MovementDieMaxFace.ToString(),
+                () => BuildMovementDieTooltip(enchants, extraFaces));
+        }
+
+        private void BindAttackShelf()
         {
             if (_dieSlots == null || _dieSlots.Length == 0)
             {
@@ -499,11 +557,21 @@ namespace Rollgeon.Upgrades.Dice.UI
 
         private void RefreshDiceSelectable()
         {
-            if (_dieSlots == null) return;
             var option = GetSelectedOption();
             bool anyValid = false;
-
             ServiceLocator.TryGetService<IDiceEnchantmentService>(out var enchSvc);
+
+            if (_selectedSet == EnchantmentTargetSet.MovementDie && _moveDieSlot != null)
+            {
+                bool moveValid = option != null && enchSvc != null
+                                 && enchSvc.ValidateApply(EnchantmentSlotRef.MovementDieSlot, option).Success;
+                _moveDieSlot.SetSelectable(moveValid);
+                if (option != null && !moveValid)
+                    Debug.LogWarning(LogPrefix + "La opción elegida no aplica al dado de Movimiento.");
+                return;
+            }
+
+            if (_dieSlots == null) return;
             for (int i = 0; i < _dieSlots.Length; i++)
             {
                 var slot = _dieSlots[i];
@@ -525,6 +593,8 @@ namespace Rollgeon.Upgrades.Dice.UI
         private void ClearDiceSelection()
         {
             _selectedBagIndex = -1;
+            _hasSelectedDie = false;
+            if (_moveDieSlot != null) _moveDieSlot.SetSelected(false);
             if (_dieSlots == null) return;
             foreach (var slot in _dieSlots)
             {
@@ -534,12 +604,17 @@ namespace Rollgeon.Upgrades.Dice.UI
 
         private void HandleDieClicked(int bagIndex)
         {
-            if (_spinning || _selectedOptionIndex < 0) return;
+            if (_spinning || _switchingSet || _selectedOptionIndex < 0) return;
 
             _selectedBagIndex = bagIndex;
-            for (int i = 0; i < _dieSlots.Length; i++)
+            _hasSelectedDie = true;
+            if (_moveDieSlot != null) _moveDieSlot.SetSelected(bagIndex == EnchantmentSlotRef.MovementDieSlot);
+            if (_dieSlots != null)
             {
-                if (_dieSlots[i] != null) _dieSlots[i].SetSelected(i == bagIndex);
+                for (int i = 0; i < _dieSlots.Length; i++)
+                {
+                    if (_dieSlots[i] != null) _dieSlots[i].SetSelected(i == bagIndex);
+                }
             }
             if (_confirmButton != null) _confirmButton.SetReady(true);
             SetDescriptionHint(DescriptionHint.Confirm);
@@ -551,14 +626,15 @@ namespace Rollgeon.Upgrades.Dice.UI
 
         private void HandleLeverPulled()
         {
-            if (_spinning) return;
+            if (_spinning || _switchingSet) return;
             if (!ServiceLocator.TryGetService<IEnchantmentRoomService>(out var roomSvc) || roomSvc == null)
             {
                 Debug.LogWarning(LogPrefix + "RoomService no registrado — la palanca no puede rolear.");
                 return;
             }
 
-            var result = roomSvc.RollOffer(_currentRoomInstanceId);
+            // La oferta es del set visible: Movimiento ⇒ solo encantamientos de Movimiento.
+            var result = roomSvc.RollOffer(_currentRoomInstanceId, _selectedSet);
             if (!result.Success)
             {
                 ShowError(result.ErrorMessage);
@@ -580,7 +656,7 @@ namespace Rollgeon.Upgrades.Dice.UI
                 _costLabel.text = cost.ToString();
 
             if (_lever != null)
-                _lever.SetInteractable(!_spinning && CanAfford(cost));
+                _lever.SetInteractable(!_spinning && !_switchingSet && CanAfford(cost));
         }
 
         private bool CanAfford(int cost)
@@ -618,9 +694,10 @@ namespace Rollgeon.Upgrades.Dice.UI
 
             _spinning = true;
             RefreshLeverAndCost(); // apaga la palanca durante el spin
+            SetArrowsInteractable(false);
             SetOptionsInteractable(false);
 
-            var cycleNames = BuildCycleNames(offer);
+            var cycleNames = BuildCycleNames(offer, _selectedSet);
             _reelsPending = 0;
 
             for (int i = 0; i < _optionSlots.Length; i++)
@@ -664,22 +741,24 @@ namespace Rollgeon.Upgrades.Dice.UI
         {
             _spinning = false;
             SetOptionsInteractable(true);
+            SetArrowsInteractable(true);
             SetDescriptionHint(DescriptionHint.ChooseOption);
             RefreshLeverAndCost(); // el costo subió (escala global) y la palanca vuelve (re-roll)
         }
 
         /// <summary>
-        /// Nombres que ciclan durante el spin: el catálogo completo da variedad;
-        /// fallback a las opciones de la oferta si no está registrado.
+        /// Nombres que ciclan durante el spin: el catálogo completo (filtrado al set visible —
+        /// en Movimiento solo desfilan los de esa categoría) da variedad; fallback a las
+        /// opciones de la oferta si no está registrado.
         /// </summary>
-        private static List<string> BuildCycleNames(EnchantmentOffer offer)
+        private static List<string> BuildCycleNames(EnchantmentOffer offer, EnchantmentTargetSet set)
         {
             var names = new List<string>();
             if (ServiceLocator.TryGetService<EnchantmentCatalogSO>(out var catalog) && catalog != null)
             {
                 foreach (var entry in catalog.Entries)
                 {
-                    if (entry == null) continue;
+                    if (entry == null || !EnchantmentTargeting.AppliesTo(entry, set)) continue;
                     names.Add(EnchantmentOptionSlotView.FormatName(entry));
                 }
             }
@@ -789,7 +868,7 @@ namespace Rollgeon.Upgrades.Dice.UI
 
         private void HandleConfirmClicked()
         {
-            if (_spinning || _selectedOptionIndex < 0 || _selectedBagIndex < 0) return;
+            if (_spinning || _switchingSet || _selectedOptionIndex < 0 || !_hasSelectedDie) return;
             if (!ServiceLocator.TryGetService<IEnchantmentRoomService>(out var roomSvc) || roomSvc == null)
             {
                 Debug.LogWarning(LogPrefix + "RoomService no registrado — no se puede confirmar.");
@@ -827,6 +906,127 @@ namespace Rollgeon.Upgrades.Dice.UI
         {
             if (ServiceLocator.TryGetService<IEnchantmentRoomService>(out var roomSvc) && roomSvc != null)
                 roomSvc.ClearOffer();
+        }
+
+        // ====================================================================
+        // Carousel de sets (Ataque ↔ Movimiento)
+        // ====================================================================
+
+        private bool HasCarousel => _attackSetRoot != null && _moveSetRoot != null && _moveDieSlot != null;
+
+        /// <summary>
+        /// Ambas flechas alternan (son dos sets). Cambiar de set descarta la oferta activa
+        /// —misma semántica que re-tirar la palanca: el oro es costo hundido— para que nunca
+        /// quede una oferta de un set con la repisa del otro a la vista.
+        /// </summary>
+        private void HandleArrowClicked()
+        {
+            if (_spinning || _switchingSet || !HasCarousel) return;
+            var next = _selectedSet == EnchantmentTargetSet.CombatDice
+                ? EnchantmentTargetSet.MovementDie
+                : EnchantmentTargetSet.CombatDice;
+
+            ClearRoomOffer();
+            ClearSelections();
+            ResetOptionSlots();
+            if (_confirmButton != null) _confirmButton.SetReady(false);
+            SetDescriptionHint(DescriptionHint.PullLever);
+
+            var outgoing = SetRoot(_selectedSet);
+            var outgoingGroup = SetGroup(_selectedSet);
+            _selectedSet = next;
+            BindDiceShelf();
+            var incoming = SetRoot(next);
+            var incomingGroup = SetGroup(next);
+            RefreshLeverAndCost();
+
+            if (!CanJuice() || outgoing == null || incoming == null)
+            {
+                ShowSetImmediate(next);
+                return;
+            }
+
+            // El set visible sale hacia la izquierda y el otro entra desde la derecha (gira
+            // siempre en el mismo sentido: con dos sets, cualquier flecha da la misma vuelta).
+            float slide = _uiSettings.SetSwitchSlideX;
+            float duration = _uiSettings.SetSwitchDuration;
+            var ease = _uiSettings.SetSwitchEase;
+            StopSetTweens();
+            _switchingSet = true;
+            SetArrowsInteractable(false);
+
+            incoming.gameObject.SetActive(true);
+            incoming.anchoredPosition = new Vector2(slide, 0f);
+            incomingGroup.alpha = 0f;
+            incomingGroup.blocksRaycasts = false;
+            outgoingGroup.blocksRaycasts = false;
+
+            Tween.UIAnchoredPosition(outgoing, new Vector2(-slide, 0f), duration, ease, useUnscaledTime: true);
+            Tween.Alpha(outgoingGroup, 0f, duration, ease, useUnscaledTime: true);
+            Tween.UIAnchoredPosition(incoming, Vector2.zero, duration, ease, useUnscaledTime: true);
+            Tween.Alpha(incomingGroup, 1f, duration, ease, useUnscaledTime: true)
+                .OnComplete(this, self => self.FinishSetSwitch());
+        }
+
+        private void FinishSetSwitch()
+        {
+            _switchingSet = false;
+            ShowSetImmediate(_selectedSet);
+            SetArrowsInteractable(true);
+            RefreshLeverAndCost();
+        }
+
+        /// <summary>Pone el set elegido en reposo (visible, centrado) y esconde el otro.</summary>
+        private void ShowSetImmediate(EnchantmentTargetSet set)
+        {
+            _selectedSet = HasCarousel ? set : EnchantmentTargetSet.CombatDice;
+            _switchingSet = false;
+            if (!HasCarousel) return;
+            StopSetTweens();
+            Place(_attackSetRoot, SetGroup(EnchantmentTargetSet.CombatDice), _selectedSet == EnchantmentTargetSet.CombatDice);
+            Place(_moveSetRoot, SetGroup(EnchantmentTargetSet.MovementDie), _selectedSet == EnchantmentTargetSet.MovementDie);
+            SetArrowsInteractable(true);
+
+            static void Place(RectTransform root, CanvasGroup group, bool visible)
+            {
+                root.anchoredPosition = Vector2.zero;
+                group.alpha = visible ? 1f : 0f;
+                group.blocksRaycasts = visible;
+                group.interactable = visible;
+                root.gameObject.SetActive(visible);
+            }
+        }
+
+        private RectTransform SetRoot(EnchantmentTargetSet set)
+            => set == EnchantmentTargetSet.MovementDie ? _moveSetRoot : _attackSetRoot;
+
+        private CanvasGroup SetGroup(EnchantmentTargetSet set)
+        {
+            var root = SetRoot(set);
+            if (root == null) return null;
+            ref var cached = ref (set == EnchantmentTargetSet.MovementDie ? ref _moveSetGroup : ref _attackSetGroup);
+            if (cached == null)
+            {
+                cached = root.GetComponent<CanvasGroup>();
+                if (cached == null) cached = root.gameObject.AddComponent<CanvasGroup>();
+            }
+            return cached;
+        }
+
+        private void StopSetTweens()
+        {
+            if (_attackSetRoot != null) Tween.StopAll(onTarget: _attackSetRoot);
+            if (_moveSetRoot != null) Tween.StopAll(onTarget: _moveSetRoot);
+            if (_attackSetGroup != null) Tween.StopAll(onTarget: _attackSetGroup);
+            if (_moveSetGroup != null) Tween.StopAll(onTarget: _moveSetGroup);
+            _switchingSet = false;
+        }
+
+        private void SetArrowsInteractable(bool interactable)
+        {
+            bool on = interactable && HasCarousel;
+            if (_arrowLeft != null) _arrowLeft.interactable = on;
+            if (_arrowRight != null) _arrowRight.interactable = on;
         }
 
         // ====================================================================
@@ -890,6 +1090,19 @@ namespace Rollgeon.Upgrades.Dice.UI
                 lines.Add($"• {name} — {LocalizedContent.Description(ench.UpgradeId, ench.Description)}");
             }
             return lines.Count > 0 ? string.Join("\n", lines) : none;
+        }
+
+        /// <summary>
+        /// Tooltip del dado de Movimiento: sus encantamientos (o el placeholder) más la
+        /// línea de caras extra sumadas en la run, si hay.
+        /// </summary>
+        public static string BuildMovementDieTooltip(IReadOnlyList<EnchantmentSO> slots, int extraFaces)
+        {
+            string body = BuildDiceTooltip(slots);
+            if (extraFaces <= 0) return body;
+            string faces = string.Format(
+                LocalizedContent.Ui("altar.extra_faces", "+{0} caras sumadas en la run"), extraFaces);
+            return $"{body}\n<size=85%>{faces}</size>";
         }
 
         // ====================================================================
