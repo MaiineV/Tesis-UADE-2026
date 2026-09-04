@@ -3,6 +3,7 @@ using MoreMountains.Feedbacks;
 using Patterns;
 using PrimeTween;
 using Rollgeon.Audio;
+using Rollgeon.Combos;
 using Rollgeon.UI.HUD.DiceAnim;
 using Sirenix.OdinInspector;
 using UnityEngine;
@@ -320,7 +321,7 @@ namespace Rollgeon.UI.HUD
             // ANTES del dedupe: la llama sostenida sigue a la selección vigente, no al
             // cambio de combo — sacar un dado del par tiene que apagar SU llama aunque
             // el comboId no cambie a nada nuevo.
-            UpdateComboFlames(comboId.Length > 0 ? payload.ContributingDice : null);
+            UpdateComboFlames(payload.ContributingDice, comboId);
 
             // Dispara solo cuando el combo CAMBIA a uno nuevo — el payload llega en
             // cada toggle de hold y repetir el flourish sería spam.
@@ -346,20 +347,29 @@ namespace Rollgeon.UI.HUD
 
         // Llama sostenida SOLO en los dados que arman el combo vigente — feedback de
         // estado continuo mientras el jugador mira su selección (el burst grande del
-        // play lo dispara BreakdownJuice al confirmar). Null = todo apagado.
+        // play lo dispara BreakdownJuice al confirmar). Sin combo = todo apagado. El tier
+        // (mitad baja / alta del catálogo) se resuelve una vez por payload, no por slot.
         private void UpdateComboFlames(
-            System.Collections.Generic.IReadOnlyList<Rollgeon.Combat.Damage.ContributingDie> contributing)
+            System.Collections.Generic.IReadOnlyList<Rollgeon.Combat.Damage.ContributingDie> contributing,
+            string comboId)
         {
             if (_animator == null) return;
-            bool allow = Application.isPlaying && !DiceUiMotionPrefs.ReducedMotion;
+            // Durante el outro, RefreshDiceBlock re-corre la detección con los holds viejos
+            // y volvería a prender la llama en dados que ya están volando al centro.
+            bool allow = Application.isPlaying && !DiceUiMotionPrefs.ReducedMotion
+                && !_animator.IsOutroPlaying && contributing != null;
+            int tier = allow ? ComboFlameTier.Resolve(ResolveComboCatalog(), comboId) : ComboFlameTier.Off;
             for (int i = 0; i < _animator.SlotCount; i++)
             {
                 var slot = _animator.GetSlotAnimator(i);
                 if (slot == null) continue;
-                bool on = allow && contributing != null && ContainsBagSlot(contributing, i);
-                slot.GetComponent<DiceSlotJuice>()?.SetComboFlame(on);
+                bool on = tier != ComboFlameTier.Off && ContainsBagSlot(contributing, i);
+                slot.GetComponent<DiceSlotJuice>()?.SetComboFlame(on ? tier : ComboFlameTier.Off);
             }
         }
+
+        private static ComboCatalogSO ResolveComboCatalog()
+            => ServiceLocator.TryGetService<ComboCatalogSO>(out var catalog) ? catalog : null;
 
         // Bumps escalonados SOLO sobre los dados que arman el combo: "estos cuentan".
         // Sin lista (payload viejo/sin bag) cae al comportamiento anterior: todos los kept.
