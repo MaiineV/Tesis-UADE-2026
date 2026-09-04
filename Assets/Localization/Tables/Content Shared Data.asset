@@ -2955,6 +2955,14 @@ MonoBehaviour:
     m_Key: enemy.weakness.desc
     m_Metadata:
       m_Items: []
+  - m_Id: 18719323256438784
+    m_Key: status.bleed.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18719323273216000
+    m_Key: status.bleed.desc
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

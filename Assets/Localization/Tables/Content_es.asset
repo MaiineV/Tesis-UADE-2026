@@ -3080,6 +3080,15 @@ MonoBehaviour:
     m_Localized: "Debilidad: los golpes con el combo {0} le hacen \xD7{1} de da\xF1o."
     m_Metadata:
       m_Items: []
+  - m_Id: 18719323256438784
+    m_Localized: "Sangrado \xD7{0}"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18719323273216000
+    m_Localized: "Recib\xEDs da\xF1o al inicio de cada turno por cada stack de Sangrado.
+      Volver a sangrar SUMA stacks nuevos."
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

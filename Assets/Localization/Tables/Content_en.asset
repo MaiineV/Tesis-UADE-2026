@@ -3067,6 +3067,15 @@ MonoBehaviour:
     m_Localized: "Weakness: hits with the {0} combo deal \xD7{1} damage."
     m_Metadata:
       m_Items: []
+  - m_Id: 18719323256438784
+    m_Localized: "Bleeding \xD7{0}"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18719323273216000
+    m_Localized: You take damage at the start of each turn for every Bleed stack.
+      Bleeding again ADDS new stacks.
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []
