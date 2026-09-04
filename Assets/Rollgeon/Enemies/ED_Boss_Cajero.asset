@@ -742,11 +742,11 @@ MonoBehaviour:
       Entry: 5
       Data: false
     - Name: IntentLabelKey
-      Entry: 6
-      Data: 
+      Entry: 1
+      Data: intent.cashier.shove
     - Name: IntentLabelFallback
-      Entry: 6
-      Data: 
+      Entry: 1
+      Data: "Empuj\xF3n"
     - Name: AnimFeedbackId
       Entry: 1
       Data: anim.boss.cajero.shove

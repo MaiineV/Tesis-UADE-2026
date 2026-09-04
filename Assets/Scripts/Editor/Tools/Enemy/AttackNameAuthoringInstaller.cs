@@ -46,6 +46,10 @@ namespace Rollgeon.EditorTools.Enemy
                 typeof(AINode_ExecuteTelegraph), "intent.sniper.dead_on_ball", "Bolilla Certera"),
             new Entry("Assets/Rollgeon/Enemies/ED_Mago.asset",
                 typeof(AINode_IgniteArea), "intent.mago.burning_roll", "Tirada Ardiente"),
+            // El shove hereda de RangedShot y sin key propia anunciaba "Disparo" (playtest
+            // 04/09). Tipo EXACTO: no toca el RangedShot real del mismo árbol.
+            new Entry("Assets/Rollgeon/Enemies/ED_Boss_Cajero.asset",
+                typeof(AINode_CajeroShove), "intent.cashier.shove", "Empujón"),
             new Entry("Assets/Rollgeon/Enemies/ED_Charger.asset",
                 typeof(AINode_ExecuteCharge), "intent.charger.charge_roll", "Embiste y Rueda"),
             new Entry("Assets/Rollgeon/Enemies/ED_Skirmisher.asset",

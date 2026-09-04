@@ -1663,6 +1663,12 @@ namespace Rollgeon.EditorTools.Localization
                 "lanza dañando todo lo que quede en esa línea.",
                 "Marks a line of tiles in front of it and, after a short delay, thrusts the spear " +
                 "forward, damaging anything caught in that line.");
+            // El empujón melee del Cajero (el cañonazo ya tiene intent.cashier_slam).
+            Boss("intent.cashier.shove",
+                "Empujón", "Shove",
+                "Te golpea y te empuja varias casillas lejos del mostrador, llevándose parte de tu oro.",
+                "Strikes and shoves you several tiles away from the counter, taking a cut of your gold.");
+
             // La regla del slot de debilidad del panel de enemigo — {0} combo, {1} multi.
             Content("enemy.weakness.desc",
                 "Debilidad: los golpes con el combo {0} le hacen ×{1} de daño.",
