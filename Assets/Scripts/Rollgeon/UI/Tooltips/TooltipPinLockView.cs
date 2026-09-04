@@ -45,19 +45,65 @@ namespace Rollgeon.UI.Tooltips
             _baseScale = transform.localScale;
         }
 
+        /// <summary>
+        /// Apaga el candado YA, sin animación y sin tocar el estado lógico del pin.
+        /// Es el reset que corre cada <c>Show</c> del panel compartido: la tooltip de
+        /// otra cosa no debe mostrar el candado del fijado (ni reproducir su apertura
+        /// — el bug del "se desbloquea" al hoverear otro enemigo). El dueño del pin lo
+        /// re-afirma en SU Show y el candado reaparece cerrado sin re-animar.
+        /// </summary>
+        public void HideImmediate()
+        {
+            StopTweens();
+            RestoreHome();
+            transform.localScale = _baseScale;
+            gameObject.SetActive(false);
+        }
+
         public void SetPinned(bool pinned)
         {
-            if (pinned == _pinned) return;
-            _pinned = pinned;
-
             if (_shackle == null || DiceUiMotionPrefs.ReducedMotion)
             {
+                _pinned = pinned;
                 gameObject.SetActive(pinned);
                 return;
             }
 
-            if (pinned) PlayClose();
-            else PlayOpen();
+            if (pinned)
+            {
+                // Ya fijado y visible: no-op (los refresh del panel re-afirman seguido).
+                if (_pinned && gameObject.activeSelf) return;
+
+                // Solo el flanco false→true anima el cierre; la re-afirmación tras un
+                // HideImmediate (el pin volvió a mostrarse) aparece cerrado directo.
+                bool freshlyPinned = !_pinned;
+                _pinned = true;
+                if (freshlyPinned) PlayClose();
+                else ShowClosedImmediate();
+            }
+            else
+            {
+                if (!_pinned)
+                {
+                    // Estado ya suelto pero visual colgado (tween interrumpido por un
+                    // cierre del panel): limpiar — el bug del candado en TODAS las tooltips.
+                    if (gameObject.activeSelf) HideImmediate();
+                    return;
+                }
+
+                _pinned = false;
+                if (gameObject.activeInHierarchy) PlayOpen();
+                else HideImmediate();
+            }
+        }
+
+        private void ShowClosedImmediate()
+        {
+            gameObject.SetActive(true);
+            CacheHome();
+            StopTweens();
+            RestoreHome();
+            transform.localScale = _baseScale;
         }
 
         private void PlayClose()
