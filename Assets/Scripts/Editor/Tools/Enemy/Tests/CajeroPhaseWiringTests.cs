@@ -260,8 +260,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             Assert.AreEqual(ThreatShape.SquareAroundPlayer, mark.Shape,
                 "El área se centra en el jugador y no en el jefe: es donde estás parado al marcar.");
             Assert.AreEqual(CajeroAssetBuilder.SlamRadius, mark.Size);
-            Assert.AreEqual(5, 2 * mark.Size + 1,
-                "5×5 contando la casilla del centro: salirse exige tres casillas de movimiento.");
+            Assert.AreEqual(3, 2 * mark.Size + 1,
+                "3×3 contando la casilla del centro: salirse exige dos casillas de movimiento.");
             Assert.AreEqual(CajeroAssetBuilder.SlamDamage, mark.Damage,
                 "Cableado desde la constante de la ficha, no del default del nodo.");
             Assert.Greater(mark.Damage, CajeroAssetBuilder.HeavyDamage,

@@ -167,8 +167,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         /// </summary>
         public const int SlamDamage = 28;
 
-        /// <summary>Radio del área: <c>2·radio+1</c>, o sea 5×5 contando la casilla del centro.</summary>
-        public const int SlamRadius = 2;
+        /// <summary>Radio del área: <c>2·radio+1</c>, o sea 3×3 contando la casilla del centro.</summary>
+        public const int SlamRadius = 1;
 
         /// <summary>
         /// Desde esta distancia (Manhattan) es artillero: no camina, marca y dispara plantado. Por
@@ -490,7 +490,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         /// <item>La persecución, sólo si te tiene a menos de <see cref="CannonStandoff"/>. Lejos se
         /// planta: es artillero.</item>
         /// <item>El ataque: cobra el cañonazo marcado (y recarga si seguís lejos), o
-        /// <c>Alternate[mandoble, empujón]</c> si te tiene pegado, o marca un 5×5 donde estés. Los
+        /// <c>Alternate[mandoble, empujón]</c> si te tiene pegado, o marca un 3×3 donde estés. Los
         /// dos golpes dejan <see cref="CoinsPerHit"/> monedas por la sala.</item>
         /// <item>La caja: vence las monedas que nadie levantó, de a una por turno.</item>
         /// </list>
@@ -603,7 +603,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         };
 
         /// <summary>
-        /// El aviso del cañonazo: marca el 5×5 sobre la casilla del jugador y no pega este turno.
+        /// El aviso del cañonazo: marca el 3×3 sobre la casilla del jugador y no pega este turno.
         /// </summary>
         /// <remarks>
         /// <para>
@@ -888,7 +888,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
                 Pattern = AttackPatternKind.ContactAdjacent,
                 Timing = AttackTiming.Instant,
                 Notes = "Mandoble y empujón alternados a distancia 1, cada golpe deja monedas " +
-                        "por la sala; a 5 o más se planta, marca un 5×5 sobre el jugador, lo cobra " +
+                        "por la sala; a 5 o más se planta, marca un 3×3 sobre el jugador, lo cobra " +
                         "al turno siguiente y recarga si sigue lejos; caja fuerte; refuerzos (Comisión).",
             };
         }
