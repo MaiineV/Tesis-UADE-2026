@@ -85,5 +85,35 @@ namespace Rollgeon.Movement.Tests
             var reach = _movement.GetReachableTiles(new GridCoord(0, 0), 4);
             CollectionAssert.AreEquivalent(new[] { new GridCoord(1, 0) }, reach);
         }
+
+        [Test]
+        public void FindPathFor_CrossesTheUnitWithPolicy_WhileFindPathStaysBlind()
+        {
+            ServiceLocator.AddService<IMovementTraversalPolicy>(new PolicyFor(_mover), ServiceScope.Global);
+            var from = new GridCoord(0, 0);
+            var to = new GridCoord(4, 0);
+
+            var forMover = _movement.FindPathFor(_mover, from, to);
+            var plain = _movement.FindPath(from, to);
+            var forBlocker = _movement.FindPathFor(_blocker, from, to);
+
+            // El preview de la UI tiene que mostrar el mismo camino que después camina TryMove.
+            Assert.AreEqual(5, forMover.Count);
+            Assert.AreEqual(new GridCoord(2, 0), forMover[2]);
+            Assert.IsEmpty(plain, "sin entidad no hay política que aplicar");
+            Assert.IsEmpty(forBlocker, "otra entidad sigue bloqueada");
+        }
+
+        [Test]
+        public void CanPassThroughUnits_FollowsTheRegisteredPolicy()
+        {
+            Assert.IsFalse(_movement.CanPassThroughUnits(_mover), "sin política nadie atraviesa");
+
+            ServiceLocator.AddService<IMovementTraversalPolicy>(new PolicyFor(_mover), ServiceScope.Global);
+
+            Assert.IsTrue(_movement.CanPassThroughUnits(_mover));
+            Assert.IsFalse(_movement.CanPassThroughUnits(_blocker));
+            Assert.IsFalse(_movement.CanPassThroughUnits(Guid.Empty));
+        }
     }
 }

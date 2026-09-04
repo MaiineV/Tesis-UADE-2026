@@ -209,7 +209,9 @@ namespace Rollgeon.Effects.Selection
                 return;
             }
 
-            var path = movement.FindPath(origin, coord.Value);
+            // FindPathFor y no FindPath: con Paso etéreo el camino real cruza unidades y el
+            // preview tiene que mostrar ESE camino, no un rodeo (o nada) que después no se camina.
+            var path = movement.FindPathFor(_request.OwnerGuid, origin, coord.Value);
             if (path == null || path.Count < 2)
             {
                 ClearPathPreview(style);
