@@ -124,7 +124,7 @@ namespace Rollgeon.Grid
             if (!ServiceLocator.TryGetService<IGridManager>(out var grid)) return;
 
             var ray = cam.ScreenPointToRay(rtPos);
-            var hovered = ResolveCoordUnderCursor(ray, grid);
+            var hovered = ResolveCoordUnderCursor(ray, grid, controller);
 
             if (Nullable.Equals(hovered, _lastHoveredCoord)) return;
             _lastHoveredCoord = hovered;
@@ -195,7 +195,7 @@ namespace Rollgeon.Grid
             Debug.Log($"[TileClickHandler] Raycast from screenPos={screenPos} rtPos={rtPos}");
             var ray = cam.ScreenPointToRay(rtPos);
 
-            var clicked = ResolveCoordUnderCursor(ray, grid);
+            var clicked = ResolveCoordUnderCursor(ray, grid, controller);
             if (clicked == null)
             {
                 Debug.Log("[TileClickHandler] No tile under cursor");
@@ -208,9 +208,12 @@ namespace Rollgeon.Grid
 
         /// <summary>
         /// Resuelve la celda bajo el cursor: la del pawn apuntado (click/hover sobre el
-        /// enemigo = su celda, CNF-002), si no la del piso. Ver <see cref="PawnPicker"/>.
+        /// enemigo = su celda, CNF-002), si no la del piso. Qué pawns cuentan lo decide la
+        /// acción activa: un movimiento no ve a ninguno (el click sobre un enemigo cae al
+        /// piso de abajo), un ataque no ve al héroe. Ver <see cref="PawnPicker"/> y
+        /// <see cref="SelectionPickMask"/>.
         /// </summary>
-        private GridCoord? ResolveCoordUnderCursor(Ray ray, IGridManager grid)
-            => PawnPicker.ResolveCoord(ray, grid);
+        private static GridCoord? ResolveCoordUnderCursor(Ray ray, IGridManager grid, ISelectionController controller)
+            => PawnPicker.ResolveCoord(ray, grid, SelectionPickMask.For(controller.ActiveSettings));
     }
 }
