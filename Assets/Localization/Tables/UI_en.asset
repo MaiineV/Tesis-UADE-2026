@@ -1142,6 +1142,8 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 18369314961784842
     m_Localized: Thanks! Saved, it will be sent when online.
+    m_Metadata:
+      m_Items: []
   - m_Id: 18436415117258752
     m_Localized: Expiring
     m_Metadata:
