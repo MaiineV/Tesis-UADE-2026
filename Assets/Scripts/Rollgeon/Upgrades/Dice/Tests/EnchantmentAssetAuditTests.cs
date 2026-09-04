@@ -259,6 +259,46 @@ namespace Rollgeon.Upgrades.Dice.Tests
         }
 
         /// <summary>
+        /// Fix#0081 (decisión GD 2026-09-04): Oxidado y Volátil solo actúan cuando el dado
+        /// participa de un combo REAL — en Número Alto valen su cara y Oxidado no paga oro.
+        /// Con <c>AnyIncludingHigherNumber</c> "cuando participa en un combo" era "siempre".
+        /// </summary>
+        [TestCase("Assets/Rollgeon/Upgrades/Dice/Enchantments/Ench_Oxidado.asset")]
+        [TestCase("Assets/Rollgeon/Upgrades/Dice/Enchantments/Ench_Volatil.asset")]
+        public void ComboGatedFaceMutators_OnlyFireOnRealCombosWithTheCarrierInside(string path)
+        {
+            // Arrange
+            var ench = AssetDatabase.LoadAssetAtPath<EnchantmentSO>(path);
+            Assert.IsNotNull(ench, path);
+            Assert.IsNotNull(ench.Triggers, path);
+
+            // Act
+            int comboHooks = 0;
+            bool mutatesFace = false;
+            foreach (var trigger in ench.Triggers)
+            {
+                if (!(trigger is Triggers.ExecuteEffectsOnDiceEvent bridge)) continue;
+                bool isComboHook = bridge.Event == Triggers.EnchantmentHookEvent.ComboMatched
+                                || bridge.Event == Triggers.EnchantmentHookEvent.ComboPlayed;
+                if (!isComboHook) continue;
+                comboHooks++;
+
+                // Assert — cada hook de combo excluye Número Alto y exige al carrier adentro.
+                Assert.AreEqual(ComboFilterMode.AnyCombo, bridge.Filter?.Mode,
+                    $"{path}: {bridge.Event} debe usar AnyCombo (Número Alto no cuenta como combo)");
+                Assert.IsTrue(bridge.RequireCarrierParticipates,
+                    $"{path}: {bridge.Event} debe exigir que el dado participe del combo");
+
+                foreach (var group in bridge.Effects ?? new List<EffectData>())
+                    foreach (var effect in group?.Effects ?? new List<IEffect>())
+                        mutatesFace |= effect is Rollgeon.Upgrades.Dice.Effects.EffMutateCarrierFace;
+            }
+
+            Assert.Greater(comboHooks, 0, $"{path}: sin hooks de combo");
+            Assert.IsTrue(mutatesFace, $"{path}: la mutación de cara debe seguir viviendo en un hook de combo");
+        }
+
+        /// <summary>
         /// Espejo del audit BUG-017 para el canal combos: en pasivas, el hook
         /// ComboMatched es preview (re-dispara por toggle de hold) — los efectos de
         /// apply directo (oro, escudo…) van en ComboPlayed; en preview solo writers

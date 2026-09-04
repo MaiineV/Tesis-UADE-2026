@@ -29,8 +29,9 @@ namespace Rollgeon.Upgrades.Dice
 
         /// <summary>
         /// Cualquier selección jugable, Número Alto incluido. Para mutaciones de cara que son
-        /// una propiedad del dado y no una condición de combo (Oxidado no suma NUNCA, Volátil
-        /// vale mitad/doble en cualquier jugada).
+        /// una propiedad del dado y no una condición de combo (Invertido, Enfiestado, Frágil).
+        /// Oxidado y Volátil NO van acá: por decisión GD (2026-09-04) solo mutan cuando el dado
+        /// participa de un combo real — en Número Alto valen su cara.
         /// </summary>
         AnyIncludingHigherNumber,
     }

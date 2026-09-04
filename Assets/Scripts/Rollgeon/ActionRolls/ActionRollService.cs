@@ -720,6 +720,8 @@ namespace Rollgeon.ActionRolls
                 BaseDamage = _currentComboFlatBase,
                 DynamicBonus = _currentComboDynamicBonus,
                 ContributingDice = contributingDice,
+                // Tirada completa en curso — OnRollResolved recién sale al confirmar.
+                DiceResult = _currentRoll,
             });
         }
 
