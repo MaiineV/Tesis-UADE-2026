@@ -37,6 +37,9 @@ MonoBehaviour:
     - Name: AIRoot
       Entry: 7
       Data: 1|Rollgeon.Combat.AI.Decisions.AINode_Sequence, Rollgeon
+    - Name: EditorNodeId
+      Entry: 6
+      Data: 
     - Name: Children
       Entry: 7
       Data: 2|System.Collections.Generic.List`1[[Rollgeon.Combat.AI.Decisions.AIDecisionNode,
@@ -47,6 +50,9 @@ MonoBehaviour:
     - Name: 
       Entry: 7
       Data: 3|Rollgeon.Combat.AI.Decisions.AINode_Behavior, Rollgeon
+    - Name: EditorNodeId
+      Entry: 6
+      Data: 
     - Name: Behavior
       Entry: 7
       Data: 4|Rollgeon.Entities.Behaviors.EnemyActionBehavior, Rollgeon
@@ -65,6 +71,21 @@ MonoBehaviour:
     - Name: 
       Entry: 8
       Data: 
+    - Name: UseArea
+      Entry: 5
+      Data: false
+    - Name: AreaShape
+      Entry: 3
+      Data: 0
+    - Name: AreaSize
+      Entry: 3
+      Data: 0
+    - Name: AreaDepth
+      Entry: 3
+      Data: 0
+    - Name: AreaFilter
+      Entry: 3
+      Data: 0
     - Name: Effects
       Entry: 7
       Data: 6|System.Collections.Generic.List`1[[Rollgeon.Effects.EffectData, Rollgeon]],
@@ -236,12 +257,21 @@ MonoBehaviour:
     - Name: 
       Entry: 8
       Data: 
+    - Name: IntentLabelKey
+      Entry: 1
+      Data: intent.card_hearts.slash
+    - Name: IntentLabelFallback
+      Entry: 1
+      Data: "Corte Carmes\xED"
     - Name: 
       Entry: 8
       Data: 
     - Name: 
       Entry: 7
       Data: 14|Rollgeon.Combat.AI.Decisions.AINode_While, Rollgeon
+    - Name: EditorNodeId
+      Entry: 6
+      Data: 
     - Name: TargetSelector
       Entry: 7
       Data: 15|Rollgeon.Combat.AI.Targeting.TargetSelector_Self, Rollgeon
@@ -285,6 +315,9 @@ MonoBehaviour:
     - Name: Body
       Entry: 7
       Data: 18|Rollgeon.Combat.AI.Decisions.AINode_Sequence, Rollgeon
+    - Name: EditorNodeId
+      Entry: 6
+      Data: 
     - Name: Children
       Entry: 7
       Data: 19|System.Collections.Generic.List`1[[Rollgeon.Combat.AI.Decisions.AIDecisionNode,
@@ -295,6 +328,9 @@ MonoBehaviour:
     - Name: 
       Entry: 7
       Data: 20|Rollgeon.Combat.AI.Decisions.AINode_Behavior, Rollgeon
+    - Name: EditorNodeId
+      Entry: 6
+      Data: 
     - Name: Behavior
       Entry: 7
       Data: 21|Rollgeon.Entities.Behaviors.EnemyActionBehavior, Rollgeon
@@ -313,6 +349,21 @@ MonoBehaviour:
     - Name: 
       Entry: 8
       Data: 
+    - Name: UseArea
+      Entry: 5
+      Data: false
+    - Name: AreaShape
+      Entry: 3
+      Data: 0
+    - Name: AreaSize
+      Entry: 3
+      Data: 0
+    - Name: AreaDepth
+      Entry: 3
+      Data: 0
+    - Name: AreaFilter
+      Entry: 3
+      Data: 0
     - Name: Effects
       Entry: 7
       Data: 23|System.Collections.Generic.List`1[[Rollgeon.Effects.EffectData, Rollgeon]],
@@ -472,12 +523,21 @@ MonoBehaviour:
     - Name: 
       Entry: 8
       Data: 
+    - Name: IntentLabelKey
+      Entry: 1
+      Data: intent.card_hearts.slash
+    - Name: IntentLabelFallback
+      Entry: 1
+      Data: "Corte Carmes\xED"
     - Name: 
       Entry: 8
       Data: 
     - Name: 
       Entry: 7
       Data: 30|Rollgeon.Combat.AI.Decisions.AINode_If, Rollgeon
+    - Name: EditorNodeId
+      Entry: 6
+      Data: 
     - Name: TargetSelector
       Entry: 7
       Data: 31|Rollgeon.Combat.AI.Targeting.TargetSelector_AlwaysPlayer, Rollgeon
@@ -515,6 +575,9 @@ MonoBehaviour:
     - Name: Then
       Entry: 7
       Data: 34|Rollgeon.Combat.AI.Decisions.AINode_Behavior, Rollgeon
+    - Name: EditorNodeId
+      Entry: 6
+      Data: 
     - Name: Behavior
       Entry: 7
       Data: 35|Rollgeon.Entities.Behaviors.EnemyActionBehavior, Rollgeon
@@ -533,6 +596,21 @@ MonoBehaviour:
     - Name: 
       Entry: 8
       Data: 
+    - Name: UseArea
+      Entry: 5
+      Data: false
+    - Name: AreaShape
+      Entry: 3
+      Data: 0
+    - Name: AreaSize
+      Entry: 3
+      Data: 0
+    - Name: AreaDepth
+      Entry: 3
+      Data: 0
+    - Name: AreaFilter
+      Entry: 3
+      Data: 0
     - Name: Effects
       Entry: 7
       Data: 37|System.Collections.Generic.List`1[[Rollgeon.Effects.EffectData, Rollgeon]],
@@ -1147,12 +1225,21 @@ MonoBehaviour:
     - Name: 
       Entry: 8
       Data: 
+    - Name: IntentLabelKey
+      Entry: 1
+      Data: intent.card_hearts.slash
+    - Name: IntentLabelFallback
+      Entry: 1
+      Data: "Corte Carmes\xED"
     - Name: 
       Entry: 8
       Data: 
     - Name: Else
       Entry: 7
       Data: 55|Rollgeon.Combat.AI.Decisions.AINode_Move, Rollgeon
+    - Name: EditorNodeId
+      Entry: 6
+      Data: 
     - Name: MaxSteps
       Entry: 7
       Data: 56|Rollgeon.Combat.AI.Readers.AIConstantInt, Rollgeon
@@ -1178,6 +1265,9 @@ MonoBehaviour:
       Entry: 8
       Data: 
     - Name: Retreat
+      Entry: 5
+      Data: false
+    - Name: RequireLineOfSight
       Entry: 5
       Data: false
     - Name: StopAdjacent
@@ -1237,7 +1327,7 @@ MonoBehaviour:
     Notes: "Persigue por la ruta m\xE1s corta y golpea a distancia 1."
   WeaknessComboId: 
   WeaknessMultiplierOverride: 0
-  Archetype: 1
+  Curse: {fileID: 0}
   BaseHP: 75
   BaseAttack: 20
   BaseHealStrength: 5
@@ -1302,5 +1392,10 @@ MonoBehaviour:
   MaxGoldDrop: 5
   IsFlying: 0
   IsBoss: 0
+  Archetype: 1
+  TooltipType: 
   Personality: 0
   KamikazeIgnoresSurvival: 0
+  AuraRadius: 0
+  AuraFlatReduction: 0
+  Footprint: {x: 1, y: 1}

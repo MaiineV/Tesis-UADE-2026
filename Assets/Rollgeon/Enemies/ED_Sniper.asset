@@ -93,6 +93,12 @@ MonoBehaviour:
     - Name: ImpactEventKey
       Entry: 1
       Data: hit
+    - Name: IntentLabelKey
+      Entry: 1
+      Data: intent.sniper.chip_ring
+    - Name: IntentLabelFallback
+      Entry: 1
+      Data: Anillo de Fichas
     - Name: 
       Entry: 8
       Data: 
@@ -260,6 +266,12 @@ MonoBehaviour:
     - Name: ImpactEventKey
       Entry: 1
       Data: hit
+    - Name: IntentLabelKey
+      Entry: 1
+      Data: intent.sniper.chip_ring
+    - Name: IntentLabelFallback
+      Entry: 1
+      Data: Anillo de Fichas
     - Name: 
       Entry: 8
       Data: 

@@ -152,7 +152,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 5406620151810
-    m_Localized: Card Enemy
+    m_Localized: Heart Warrior
     m_Metadata:
       m_Items: []
   - m_Id: 5406620151811
@@ -1690,7 +1690,8 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 17593280048852995
-    m_Localized: House soldier; fights up close.
+    m_Localized: A living playing card in light armor wielding a short sword. Attacks
+      in melee with quick strikes, relentlessly chasing the player.
     m_Metadata:
       m_Items: []
   - m_Id: 17593280048852996
@@ -2562,20 +2563,23 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 18278206983208960
-    m_Localized: Artillery
+    m_Localized: The Living Slot
     m_Metadata:
       m_Items: []
   - m_Id: 18278206983208961
-    m_Localized: 'House howitzer: shells from afar and leaves the floor burning where
-      the shot lands.'
+    m_Localized: A rusted slot machine that stays at range and fires projectiles
+      at the player from afar.
     m_Metadata:
       m_Items: []
   - m_Id: 18278206983208962
-    m_Localized: Charger
+    m_Localized: Billiard Eyes
     m_Metadata:
       m_Items: []
   - m_Id: 18278206983208963
-    m_Localized: Lines up, marks the lane and charges. Don't stand in its path.
+    m_Localized: A billiard ball with eyes of its own that chases the player, rolling
+      at full speed. Given room, it charges in a straight line, slamming into the
+      player and knocking them back; if already in melee range, it simply strikes
+      without needing to charge.
     m_Metadata:
       m_Items: []
   - m_Id: 18278206983208964
@@ -2587,30 +2591,31 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 18278206983208966
-    m_Localized: Skirmisher
+    m_Localized: Chiplash
     m_Metadata:
       m_Items: []
   - m_Id: 18278206983208967
-    m_Localized: 'Restless shooter: fires from range and slips away diagonally so
-      you can''t corner it.'
+    m_Localized: A different-colored casino chip that hovers erratically. Attacks
+      from the diagonals, then quickly repositions to strike again from a new angle.
     m_Metadata:
       m_Items: []
   - m_Id: 18278206983208968
-    m_Localized: Sniper
+    m_Localized: Stackpot
     m_Metadata:
       m_Items: []
   - m_Id: 18278206983208969
-    m_Localized: Fires from across the room. Break its line of sight or pay for the
-      shot.
+    m_Localized: A tower of casino chips that hovers and spins slowly in the air.
+      If the player gets close, it retreats to keep its distance, always seeking
+      the perfect angle to attack.
     m_Metadata:
       m_Items: []
   - m_Id: 18278206983208970
-    m_Localized: Sweeper Card
+    m_Localized: Spade Warrior
     m_Metadata:
       m_Items: []
   - m_Id: 18278206983208971
-    m_Localized: 'House soldier that marks a sweep: its blow covers several tiles
-      at once.'
+    m_Localized: A living playing card wielding a long spear. Prefers to keep distance
+      and telegraph its thrusts before striking.
     m_Metadata:
       m_Items: []
   - m_Id: 18278206983208972
@@ -2796,6 +2801,61 @@ MonoBehaviour:
   - m_Id: 18353400590811136
     m_Localized: When entering a regular combat room you may pay 15 + 10 per floor
       in gold to clear it without fighting. No loot.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18475382250242048
+    m_Localized: Coin Drop
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18475382304768000
+    m_Localized: Marks a tile and rains a shower of heavy coins on that area after
+      a short delay, damaging anyone caught inside.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18475382304768001
+    m_Localized: Charge and Roll
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18475382304768002
+    m_Localized: Charges in a straight line toward the player, hitting them and knocking
+      them back several tiles in the direction of impact. If the player is already
+      adjacent, it attacks directly without charging.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18475382304768003
+    m_Localized: Crimson Slash
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18475382304768004
+    m_Localized: A fast sword strike against an adjacent enemy, dealing moderate
+      damage.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18475382304768005
+    m_Localized: Announced Thrust
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18475382304768006
+    m_Localized: Marks a line of tiles in front of it and, after a short delay, thrusts
+      the spear forward, damaging anything caught in that line.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18475382304768007
+    m_Localized: Chip Ring
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18475382304768008
+    m_Localized: Attacks at range within a diamond-shaped area around itself, damaging
+      the player if caught inside that zone.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18475382304768009
+    m_Localized: X Slash
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18475382304768010
+    m_Localized: Fires a single diagonal projectile at the player and stays in place
+      until the player gets close.
     m_Metadata:
       m_Items: []
   references:

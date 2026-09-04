@@ -2719,6 +2719,54 @@ MonoBehaviour:
     m_Key: peaje.desc
     m_Metadata:
       m_Items: []
+  - m_Id: 18475382250242048
+    m_Key: intent.artillery.coin_drop.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18475382304768000
+    m_Key: intent.artillery.coin_drop.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18475382304768001
+    m_Key: intent.charger.charge_roll.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18475382304768002
+    m_Key: intent.charger.charge_roll.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18475382304768003
+    m_Key: intent.card_hearts.slash.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18475382304768004
+    m_Key: intent.card_hearts.slash.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18475382304768005
+    m_Key: intent.card_spades.thrust.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18475382304768006
+    m_Key: intent.card_spades.thrust.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18475382304768007
+    m_Key: intent.sniper.chip_ring.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18475382304768008
+    m_Key: intent.sniper.chip_ring.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18475382304768009
+    m_Key: intent.skirmisher.x_slash.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18475382304768010
+    m_Key: intent.skirmisher.x_slash.desc
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

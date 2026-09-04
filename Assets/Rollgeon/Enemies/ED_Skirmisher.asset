@@ -71,7 +71,7 @@ MonoBehaviour:
     - Name: Alignment
       Entry: 3
       Data: 2
-    - Name: RequireLineOfSight
+    - Name: IgnoreLineOfSight
       Entry: 5
       Data: false
     - Name: 
@@ -858,6 +858,12 @@ MonoBehaviour:
     - Name: 
       Entry: 8
       Data: 
+    - Name: IntentLabelKey
+      Entry: 1
+      Data: intent.skirmisher.x_slash
+    - Name: IntentLabelFallback
+      Entry: 1
+      Data: Corte en X
     - Name: 
       Entry: 8
       Data: 
@@ -934,6 +940,7 @@ MonoBehaviour:
   IsFlying: 0
   IsBoss: 0
   Archetype: 0
+  TooltipType: 
   Personality: 0
   KamikazeIgnoresSurvival: 0
   AuraRadius: 0
