@@ -108,6 +108,28 @@ namespace Rollgeon.Editor.Tools.Item.Tests
             }
         }
 
+        /// <summary>
+        /// Instinto de Supervivencia (y la pasiva CP_Warrior) cuelgan de <c>OnAttributeChanged</c>
+        /// con <c>Subject = Source</c>. El evento lo emite <c>AttributesManager</c> y el hook
+        /// dispara en runtime (verificado en Play Mode, Fix#0052); sin la entrada, la salud del
+        /// catálogo lo reportaba como "nunca se va a ejecutar" — un falso positivo.
+        /// </summary>
+        [Test]
+        public void Match_AttributeChangedHook_IsTheInstintoOption()
+        {
+            var hook = new PassiveItemHook
+            {
+                Kind = PassiveHookKind.EventBus,
+                TriggerEvent = EventName.OnAttributeChanged,
+                Subject = PassiveHookSubject.Source,
+            };
+
+            var option = ItemTriggerCatalog.Match(hook);
+
+            Assert.IsNotNull(option);
+            Assert.AreEqual("attribute.changed", option.Value.Id);
+        }
+
         [Test]
         public void Match_EventOutsideTheCatalog_IsNull()
         {
