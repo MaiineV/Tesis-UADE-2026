@@ -67,6 +67,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         {
             "Assets/Art/3D/Animations/Enemies/Mecha/Anim_Mecha_AttackMelee.anim",
             "Assets/Art/3D/Animations/Enemies/Mecha/Anim_Mecha_AttackRange.anim",
+            "Assets/Art/3D/Animations/Enemies/Mecha/Anim_MechaBoss_Push.anim",
         };
 
         /// <summary>
