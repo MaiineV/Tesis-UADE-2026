@@ -14,7 +14,7 @@ namespace Rollgeon.Combat.AI.Decisions
     /// Movimiento "Ranged diagonal" (GDD: ataque a distancia solo en diagonales exactas): busca
     /// la casilla alcanzable este turno que quede en diagonal EXACTA con el jugador
     /// (|dx| == |dy|, dx != 0), priorizando la que caiga lo más cerca posible de
-    /// <see cref="DesiredRange"/>. Si ya está en diagonal, no se mueve. Si ninguna casilla
+    /// <see cref="DesiredRange"/>. Si ya está en diagonal <b>y dentro de esa distancia</b>, no se mueve. Si ninguna casilla
     /// alcanzable alinea, se acerca en general al jugador por distancia de CAMINO real hasta que
     /// una diagonal quede a tiro.
     /// </summary>
@@ -39,8 +39,17 @@ namespace Rollgeon.Combat.AI.Decisions
 
         [OdinSerialize]
         [Tooltip("Distancia Chebyshev preferida una vez en diagonal — entre las casillas diagonales " +
-                 "alcanzables, elige la más cercana a este valor.")]
+                 "alcanzables, elige la más cercana a este valor. También es el tope para " +
+                 "considerarse 'ya en posición': en diagonal pero MÁS LEJOS que esto sigue " +
+                 "acercándose. Vacío = sin tope (comportamiento viejo).")]
         public AIIntReader DesiredRange;
+
+        [Tooltip("Si está activo, estar en diagonal no alcanza: la casilla también necesita línea " +
+                 "de visión libre al jugador. Sin esto, un enemigo tapado por la esquina de un " +
+                 "obstáculo se considera 'ya en posición' y no busca reposicionarse aunque su " +
+                 "propio gate de ataque le esté diciendo que no tiene tiro — se queda clavado en " +
+                 "diagonal para siempre. Prendelo siempre que el ataque del árbol pida LoS.")]
+        public bool RequireLineOfSight;
 
         public override string NodeName => "Move To Diagonal";
 
@@ -59,8 +68,20 @@ namespace Rollgeon.Combat.AI.Decisions
             if (!context.Grid.TryGetPosition(context.PlayerGuid, out var playerCoord))
                 return AIResult.Failed;
 
-            // Ya en diagonal exacta — nada que hacer.
-            if (IsDiagonal(selfCoord, playerCoord)) return AIResult.Succeeded;
+            // "Ya llegué" = en diagonal exacta + DENTRO de DesiredRange (Chebyshev). El chequeo de
+            // distancia no estaba (mismo BUG de playtest que AINode_MoveToAlign, ver su comentario):
+            // un enemigo en diagonal exacta se consideraba en posición a CUALQUIER distancia, no se
+            // movía más, y sus gates de ataque le fallaban por estar lejos — turno tras turno hasta
+            // que el jugador se movía y rompía la diagonal.
+            // El tope sólo rige si DesiredRange está autorado (null = sin tope, comportamiento
+            // viejo); el default del SCORING de abajo sigue siendo 2, para no re-interpretar
+            // árboles viejos que dejaron el campo en blanco.
+            int arrivedWithin = DesiredRange?.Read(context) ?? int.MaxValue;
+            bool selfDiagonal = IsDiagonal(selfCoord, playerCoord);
+            bool selfHasLos = !RequireLineOfSight
+                || HasLineOfSight(context.Grid, selfCoord, playerCoord, context.SelfGuid, context.PlayerGuid);
+            if (selfDiagonal && selfHasLos && selfCoord.Chebyshev(playerCoord) <= arrivedWithin)
+                return AIResult.Succeeded;
 
             int maxSteps = MaxSteps?.Read(context) ?? 3;
             int desiredRange = DesiredRange?.Read(context) ?? 2;
@@ -75,9 +96,23 @@ namespace Rollgeon.Combat.AI.Decisions
             int bestDiagonalScore = int.MaxValue;
             GridCoord? bestDiagonalSafe = null;
             int bestDiagonalSafeScore = int.MaxValue;
+
+            // Semilla con la casilla ACTUAL si ya está en diagonal pero fuera de banda: sólo vale
+            // moverse a una estrictamente mejor. Sin esto, ahora que "en diagonal" ya no corta
+            // arriba, empataría con otra diagonal igual de buena y oscilaría turno a turno.
+            if (selfDiagonal && selfHasLos)
+            {
+                bestDiagonalScore = Mathf.Abs(selfCoord.Chebyshev(playerCoord) - desiredRange);
+                if (!AIMovementHazard.IsDamaging(hazardTiles, context.SelfGuid, selfCoord))
+                    bestDiagonalSafeScore = bestDiagonalScore;
+            }
+
             foreach (var candidate in reachable)
             {
                 if (!IsDiagonal(candidate, playerCoord)) continue;
+                if (RequireLineOfSight
+                    && !HasLineOfSight(context.Grid, candidate, playerCoord, context.SelfGuid, context.PlayerGuid))
+                    continue;
 
                 int score = Mathf.Abs(candidate.Chebyshev(playerCoord) - desiredRange);
                 if (score < bestDiagonalScore) { bestDiagonalScore = score; bestDiagonal = candidate; }
@@ -143,5 +178,14 @@ namespace Rollgeon.Combat.AI.Decisions
 
             return best != null && context.Movement.Move(context.SelfGuid, best.Value);
         }
+
+        /// <summary>
+        /// Delegado en <see cref="GridLineOfSight.HasClearLine"/> — la LOS única del proyecto,
+        /// con su regla de no cortar esquinas: sobre una diagonal exacta, un paso cuyos DOS
+        /// flancos estén bloqueados no da tiro aunque las celdas de la línea estén libres. Es
+        /// justamente el caso que dejaba al Skirmisher clavado.
+        /// </summary>
+        private static bool HasLineOfSight(IGridManager grid, GridCoord from, GridCoord to, Guid selfGuid, Guid targetGuid)
+            => GridLineOfSight.HasClearLine(grid, from, to, selfGuid, targetGuid);
     }
 }

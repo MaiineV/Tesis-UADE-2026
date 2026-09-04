@@ -17,6 +17,14 @@ namespace Rollgeon.PreConditions.Concretes
     /// (todo entity que no sea el owner) — mantiene paridad con el comportamiento previo
     /// para no romper tests/escenas legacy.
     /// </remarks>
+    /// <remarks>
+    /// "Vivo" se mide con <c>Health.Value</c>, no con <c>ModifiedValue</c>: es la convención del
+    /// resto del proyecto (<c>TargetSelector_ByAttribute.IsDead</c>, <c>TargetSelector_Nearest</c>,
+    /// <c>PcAllyBelowMaxExists</c>, <c>BombFieldService</c>, <c>AliveEnemiesCountReader</c>). Con
+    /// <c>ModifiedValue</c> este gate podía decir "hay un aliado vivo" para un aliado que el
+    /// selector del <c>AINode_Move</c> siguiente descartaba por muerto — el nodo se quedaba sin
+    /// target y le abortaba el turno entero al Guardian.
+    /// </remarks>
     [Serializable, HideReferenceObjectPicker]
     public sealed class PcAllyAliveExists : BasePreCondition
     {
@@ -36,7 +44,7 @@ namespace Rollgeon.PreConditions.Concretes
                     if (ally == null) continue;
                     if (ally.Guid == context.OwnerGuid) continue;
                     var hp = attrs.GetAttribute<Health>(ally.Guid);
-                    if (hp != null && hp.ModifiedValue > 0) return true;
+                    if (hp != null && hp.Value > 0) return true;
                 }
                 return false;
             }
@@ -46,7 +54,7 @@ namespace Rollgeon.PreConditions.Concretes
             {
                 if (kvp.Key == context.OwnerGuid) continue;
                 var hp = attrs.GetAttribute<Health>(kvp.Key);
-                if (hp != null && hp.ModifiedValue > 0) return true;
+                if (hp != null && hp.Value > 0) return true;
             }
             return false;
         }

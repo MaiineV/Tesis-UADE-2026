@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Rollgeon.Combat.AI.Readers;
 using Rollgeon.Combat.AI.Targeting;
 using Rollgeon.Grid;
@@ -64,13 +65,22 @@ namespace Rollgeon.Combat.AI.Decisions
             if (context.HasExecuted(ActionKey)) return AIResult.Succeeded;
             if (context.Grid == null || context.Movement == null) return AIResult.Failed;
 
+            // "El selector no encontró a nadie" y "el target no está en el grid" son benignos, no
+            // errores: no hay a dónde caminar este turno y punto. Succeeded (no-op) — con Failed,
+            // un AINode_Sequence padre abortaba el turno ENTERO y se comía los nodos HERMANOS (el
+            // ShowGuardAura del Guardian, el intento de curación del Healer). Es la continuación
+            // del fix BUG-061/PUL-014, que ya convirtió los otros casos benignos de este nodo en
+            // Succeeded y dejó éstos afuera por olvido.
+            // A propósito NO se redirige al jugador como fallback: eso alteraría la intención
+            // autorada del nodo (un Healer backline terminaría caminando hacia el jugador). Los
+            // árboles que quieren perseguir sin aliados ya lo expresan con su propia rama Else.
             var targetGuid = EnemyTargetResolver.Resolve(TargetSelector, context, context.SelfGuid);
-            if (targetGuid == Guid.Empty) return AIResult.Failed;
+            if (targetGuid == Guid.Empty) return AIResult.Succeeded;
 
             if (!context.Grid.TryGetPosition(context.SelfGuid, out var selfCoord))
                 return AIResult.Failed;
             if (!context.Grid.TryGetPosition(targetGuid, out var targetCoord))
-                return AIResult.Failed;
+                return AIResult.Succeeded;
 
             int desiredRange = DesiredRange?.Read(context) ?? (StopAdjacent ? 1 : 0);
             // Rect-a-rect (Fase B): la distancia se mide desde la celda más cercana de cada
@@ -154,14 +164,40 @@ namespace Rollgeon.Combat.AI.Decisions
                 // Score único: minimizar |dist(target) - desiredRange|. Cubre acercarse,
                 // frenar en la banda y alejar (kite) con la misma pasada. Strict '<' =>
                 // determinista y, ante empate con quedarse quieto, no se mueve.
+                // Veto de retroceso + fase 2, en paridad con AIPathPlanner (ver TerrainPathCost y
+                // UnstickApproach ahí para el criterio completo). Sólo al acercarse: el mapa de
+                // terreno es null cuando ya está en banda o demasiado cerca, y el veto queda inerte.
+                var terrain = currentDist > desiredRange
+                    ? GridPathDistance.ComputeFrom(context.Grid, targetCoord, context.SelfGuid, targetGuid, occupantCost: 0)
+                    : null;
+                int originTerrain = PathCostOf(terrain, selfCoord);
+
                 var best = selfCoord;
                 int bestErr = Mathf.Abs(currentDist - desiredRange);
                 foreach (var candidate in reachable)
                 {
                     int err = Mathf.Abs(GridFootprint.ManhattanDistance(candidate, selfFp, targetCoord, targetFp) - desiredRange);
-                    if (err < bestErr)
+                    if (err >= bestErr) continue;
+                    if (PathCostOf(terrain, candidate) > originTerrain) continue;
+                    bestErr = err;
+                    best = candidate;
+                }
+
+                // Fase 2 (desbloqueo): si Manhattan no encontró nada mejor, puede ser que la línea
+                // recta esté tapada (pared, mesa, otro enemigo) y CUALQUIER casilla alcanzable
+                // empeore el score aunque sea la que empieza a rodear. Ahí decide el costo de
+                // camino REAL. Paridad exacta con AIPathPlanner.UnstickApproach — ver su remarks
+                // para el criterio y el porqué de no filtrar por error de Manhattan.
+                if (best == selfCoord && currentDist > desiredRange)
+                {
+                    // Acá SÍ con penalidad de ocupante: rodear aliados es el punto del desbloqueo.
+                    var pathCost = GridPathDistance.ComputeFrom(context.Grid, targetCoord, context.SelfGuid, targetGuid);
+                    int bestCost = PathCostOf(pathCost, selfCoord);
+                    foreach (var candidate in reachable)
                     {
-                        bestErr = err;
+                        int c = PathCostOf(pathCost, candidate);
+                        if (c >= bestCost) continue; // '<' estricto: empate ⇒ no mover
+                        bestCost = c;
                         best = candidate;
                     }
                 }
@@ -183,6 +219,14 @@ namespace Rollgeon.Combat.AI.Decisions
                 return AIResult.Running;
             }
             return AIResult.Succeeded;
+        }
+
+        /// <summary>Costo de camino de una celda; <see cref="int.MaxValue"/> si no hay ruta (o si
+        /// no se computó el mapa, lo que deja el veto inerte).</summary>
+        private static int PathCostOf(Dictionary<GridCoord, int> pathCost, GridCoord c)
+        {
+            if (pathCost == null) return int.MaxValue;
+            return pathCost.TryGetValue(c, out var v) ? v : int.MaxValue;
         }
     }
 }
