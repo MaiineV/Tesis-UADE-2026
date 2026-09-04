@@ -93,6 +93,9 @@ MonoBehaviour:
     - Name: ImpactEventKey
       Entry: 1
       Data: hit
+    - Name: RequireSourceInPosition
+      Entry: 5
+      Data: true
     - Name: 
       Entry: 8
       Data: 
@@ -185,8 +188,8 @@ MonoBehaviour:
       Entry: 5
       Data: false
     - Name: WindupFeedbackId
-      Entry: 6
-      Data: 
+      Entry: 1
+      Data: anim.enemy.melee.charge
     - Name: 
       Entry: 8
       Data: 
@@ -272,6 +275,9 @@ MonoBehaviour:
     - Name: ImpactEventKey
       Entry: 1
       Data: hit
+    - Name: RequireSourceInPosition
+      Entry: 5
+      Data: true
     - Name: 
       Entry: 8
       Data: 
@@ -364,8 +370,8 @@ MonoBehaviour:
       Entry: 5
       Data: false
     - Name: WindupFeedbackId
-      Entry: 6
-      Data: 
+      Entry: 1
+      Data: anim.enemy.melee.charge
     - Name: 
       Entry: 8
       Data: 
@@ -516,8 +522,8 @@ MonoBehaviour:
       Entry: 5
       Data: false
     - Name: WindupFeedbackId
-      Entry: 6
-      Data: 
+      Entry: 1
+      Data: anim.enemy.melee.charge
     - Name: 
       Entry: 8
       Data: 

@@ -472,7 +472,14 @@ namespace Rollgeon.UI.Tooltips
         /// <summary>Prende/apaga el candado de fijado. Lo maneja el trigger dueño del pin.</summary>
         public void SetPinned(bool pinned)
         {
-            if (_pinIndicator != null) _pinIndicator.SetActive(pinned);
+            if (_pinIndicator == null) return;
+
+            // Con la view animada, el candado se cierra al fijar y se abre antes de
+            // irse; sin ella (panel viejo, tests), el SetActive de siempre.
+            if (_pinIndicator.TryGetComponent<TooltipPinLockView>(out var view))
+                view.SetPinned(pinned);
+            else
+                _pinIndicator.SetActive(pinned);
         }
 
         private void SetVisible(bool visible)

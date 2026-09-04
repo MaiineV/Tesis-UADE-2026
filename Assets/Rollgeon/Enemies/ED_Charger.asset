@@ -99,6 +99,9 @@ MonoBehaviour:
     - Name: BlockedDamageBonus
       Entry: 4
       Data: 0.5
+    - Name: RequireSourceInPosition
+      Entry: 5
+      Data: true
     - Name: 
       Entry: 8
       Data: 
@@ -175,6 +178,9 @@ MonoBehaviour:
     - Name: BlockedDamageBonus
       Entry: 4
       Data: 0.5
+    - Name: RequireSourceInPosition
+      Entry: 5
+      Data: true
     - Name: 
       Entry: 8
       Data: 

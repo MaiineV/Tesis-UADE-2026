@@ -23,7 +23,7 @@ namespace Rollgeon.UI.Tests
             => new ScratchContribution(ScratchSourceKind.Item, id, null, -1, bonus, factor, false, multBonus);
 
         private static ScratchContribution FaceMutator(int bagSlot, int faceDelta, string id = "ench.oxidado")
-            => new ScratchContribution(ScratchSourceKind.Enchantment, id, null, bagSlot, 0, 1f, false, 0f, faceDelta);
+            => new ScratchContribution(ScratchSourceKind.Enchantment, id, null, bagSlot, 0, 1f, false, 0f, faceDelta: faceDelta);
 
         // ---- Cara efectiva (Fix#0053) ---------------------------------------------------
 
@@ -73,6 +73,78 @@ namespace Rollgeon.UI.Tests
             Assert.IsNull(script.Steps[0].SourceId);
             Assert.AreEqual(BreakdownStepKind.DieProc, script.Steps[1].Kind);
             Assert.AreEqual(5f, script.Steps[1].Amount);
+            Assert.IsTrue(script.Reconciled);
+        }
+
+        // ---- Dado movido a M (Fuente Mágica) ---------------------------------------------
+
+        [Test]
+        public void Build_DieMovedToMultiplier_FliesToAddM_WithTheMoverSource_AndReconciles()
+        {
+            // Trío 4-4-6, el 6 (slot 2) va a M: N = 10 + 8 = 18; M = 1 + 6 = 7 → 126.
+            var bd = new DamageBreakdown
+            {
+                ComboBase = 10,
+                FacesSum = 8,
+                MovedFacesSum = 6,
+                N = 18,
+                ScratchMultiplierBonus = 6f,
+                ScratchMultiplier = 1f,
+                AbilityMultiplier = 1f,
+                M = 7f,
+                Final = 126,
+                Dice = new[]
+                {
+                    new ContributingDie(0, 4, DiceType.D6),
+                    new ContributingDie(1, 4, DiceType.D6),
+                    new ContributingDie(2, 6, DiceType.D6),
+                },
+                DiceMovedToMultiplier = new[] { 2 },
+                Sources = new List<ScratchContribution>
+                {
+                    new ScratchContribution(ScratchSourceKind.Item, "fuente.magica", null, -1,
+                        0, 1f, false, 0f, movedDieBagSlot: 2),
+                },
+            };
+
+            var script = BreakdownScriptBuilder.Build(bd);
+
+            // La entrada neutra del journal no genera paso global: solo etiqueta al dado.
+            Assert.AreEqual(3, script.Steps.Count);
+            Assert.AreEqual(BreakdownStepKind.Die, script.Steps[0].Kind);
+            Assert.AreEqual(BreakdownTarget.BaseN, script.Steps[0].Target);
+            Assert.IsNull(script.Steps[0].SourceId);
+            Assert.AreEqual(BreakdownStepKind.Die, script.Steps[2].Kind);
+            Assert.AreEqual(2, script.Steps[2].BagSlot);
+            Assert.AreEqual(BreakdownTarget.AddM, script.Steps[2].Target);
+            Assert.AreEqual(6f, script.Steps[2].Amount, 0.0001f);
+            Assert.AreEqual("fuente.magica", script.Steps[2].SourceId);
+            Assert.IsTrue(script.Reconciled);
+        }
+
+        [Test]
+        public void Build_DieMovedToMultiplier_WithoutJournal_StillFliesToAddM()
+        {
+            var bd = new DamageBreakdown
+            {
+                ComboBase = 0,
+                FacesSum = 0,
+                MovedFacesSum = 5,
+                N = 0,
+                ScratchMultiplierBonus = 5f,
+                ScratchMultiplier = 1f,
+                AbilityMultiplier = 1f,
+                M = 6f,
+                Final = 0,
+                Dice = new[] { new ContributingDie(3, 5, DiceType.D6) },
+                DiceMovedToMultiplier = new[] { 3 },
+            };
+
+            var script = BreakdownScriptBuilder.Build(bd);
+
+            Assert.AreEqual(1, script.Steps.Count);
+            Assert.AreEqual(BreakdownTarget.AddM, script.Steps[0].Target);
+            Assert.IsNull(script.Steps[0].SourceId);
             Assert.IsTrue(script.Reconciled);
         }
 

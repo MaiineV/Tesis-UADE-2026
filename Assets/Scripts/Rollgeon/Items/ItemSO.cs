@@ -109,6 +109,14 @@ namespace Rollgeon.Items
         [ShowIf("@Type == ItemType.Passive")]
         public bool BlocksPassiveItemHealing;
 
+        [InfoBox("Multiplica la curación de la poción (acción Curarse: consume potion.healing y " +
+                 "cura por la fórmula N×M) mientras el item esté en el inventario. Entra a M y " +
+                 "se ve en el desglose con el icono del item. Ayuno: 0.5. 1 = sin efecto. Con " +
+                 "varios items se multiplican. No toca curas de items pasivos ni Segundo Aliento.")]
+        [ShowIf("@Type == ItemType.Passive")]
+        [MinValue(0.01f)]
+        public float PotionHealMultiplier = 1f;
+
         [Title("Active Slots")]
         [InfoBox("Slots de items activos extra mientras el item esté en el inventario. " +
                  "Mochila Grande: 1. Se revierte al perder el item.")]

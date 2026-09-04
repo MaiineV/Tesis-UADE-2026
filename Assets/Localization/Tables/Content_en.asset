@@ -2715,7 +2715,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 18299679659966473
-    m_Localized: +3 gold for each odd die in every roll, combo or not.
+    m_Localized: +3 gold for each odd die that is part of the combo you play.
     m_Metadata:
       m_Items: []
   - m_Id: 18299679659966474
@@ -2723,8 +2723,8 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 18299679659966475
-    m_Localized: You receive no healing from passive items. In exchange, all your
-      combo multipliers get +3.
+    m_Localized: Your potion heals half as much. In exchange, all your combo multipliers
+      get +3.
     m_Metadata:
       m_Items: []
   - m_Id: 18332491544969216
