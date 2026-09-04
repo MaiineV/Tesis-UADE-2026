@@ -891,6 +891,9 @@ MonoBehaviour:
     - Name: 
       Entry: 8
       Data: 
+    - Name: RequireLineOfSight
+      Entry: 5
+      Data: true
     - Name: 
       Entry: 8
       Data: 
