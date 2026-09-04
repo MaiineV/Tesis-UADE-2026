@@ -275,5 +275,61 @@ namespace Rollgeon.Editor.Tools.RoomEditor.Tests
             Assert.IsTrue(report.Issues.Exists(i => i.Contains("fewer than")),
                 "Expected mismatch warning, got: " + string.Join(" | ", report.Issues));
         }
+
+        [Test]
+        public void should_report_no_issues_when_Validate_called_with_partially_empty_set()
+        {
+            // Arrange — Set 0 = 2 enemigos, Set 1 = 1 enemigo: dos formaciones legítimas.
+            var layout = MakeLayout();
+            var goblin = MakeEnemy("Goblin");
+            var sp1 = SpawnPointOps.AddSpawnPoint(layout, Vector3.zero, initialSetCount: 0);
+            var sp2 = SpawnPointOps.AddSpawnPoint(layout, Vector3.right, initialSetCount: 0);
+            sp1.GetComponent<SpawnPointConfig>().EnemySets.AddRange(new[] { goblin, goblin });
+            sp2.GetComponent<SpawnPointConfig>().EnemySets.AddRange(new[] { goblin, null });
+
+            // Act
+            var report = SpawnPointOps.Validate(layout);
+
+            // Assert
+            Assert.AreEqual(0, report.Issues.Count, "Expected no issues, got: " + string.Join(" | ", report.Issues));
+        }
+
+        [Test]
+        public void should_report_empty_set_when_Validate_called_with_set_without_enemies()
+        {
+            // Arrange — Set 1 no tiene enemigo en ningún spawn point.
+            var layout = MakeLayout();
+            var goblin = MakeEnemy("Goblin");
+            var sp1 = SpawnPointOps.AddSpawnPoint(layout, Vector3.zero, initialSetCount: 0);
+            var sp2 = SpawnPointOps.AddSpawnPoint(layout, Vector3.right, initialSetCount: 0);
+            sp1.GetComponent<SpawnPointConfig>().EnemySets.AddRange(new[] { goblin, null });
+            sp2.GetComponent<SpawnPointConfig>().EnemySets.AddRange(new[] { goblin, null });
+
+            // Act
+            var report = SpawnPointOps.Validate(layout);
+
+            // Assert
+            Assert.AreEqual(1, report.Issues.Count, "got: " + string.Join(" | ", report.Issues));
+            StringAssert.Contains("Set 1 has no enemy", report.Issues[0]);
+        }
+
+        [Test]
+        public void should_count_spawn_points_with_enemy_when_CountFilledForSet_called()
+        {
+            // Arrange
+            var layout = MakeLayout();
+            var goblin = MakeEnemy("Goblin");
+            var sp1 = SpawnPointOps.AddSpawnPoint(layout, Vector3.zero, initialSetCount: 0);
+            var sp2 = SpawnPointOps.AddSpawnPoint(layout, Vector3.right, initialSetCount: 0);
+            var sp3 = SpawnPointOps.AddSpawnPoint(layout, Vector3.forward, initialSetCount: 0);
+            sp1.GetComponent<SpawnPointConfig>().EnemySets.AddRange(new[] { goblin, goblin });
+            sp2.GetComponent<SpawnPointConfig>().EnemySets.AddRange(new[] { goblin, null });
+            sp3.GetComponent<SpawnPointConfig>().EnemySets.AddRange(new EnemyDataSO[] { null, null });
+
+            // Act / Assert
+            Assert.AreEqual(2, SpawnPointOps.CountFilledForSet(layout, 0));
+            Assert.AreEqual(1, SpawnPointOps.CountFilledForSet(layout, 1));
+            Assert.AreEqual(0, SpawnPointOps.CountFilledForSet(layout, 2), "set inexistente => 0");
+        }
     }
 }

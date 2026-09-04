@@ -161,6 +161,58 @@ namespace Rollgeon.Editor.Tools.RoomEditor
                     SceneView.RepaintAll();
                 }
             }
+
+            if (setCount > 0) DrawSetFormationSummary(setCount);
+        }
+
+        /// <summary>
+        /// One row per set with how many spawn points it fills, so the designer can
+        /// read the formations at a glance (a set may deliberately leave spawn points
+        /// empty). Clicking a row previews that set in the scene.
+        /// </summary>
+        private void DrawSetFormationSummary(int setCount)
+        {
+            EditorGUILayout.Space(4);
+            EditorGUILayout.HelpBox(
+                "A spawn point left empty for a set spawns nothing when that set is rolled. " +
+                "Use it to give one room several formations (e.g. Set 0 = 2 enemies, Set 1 = 4).",
+                MessageType.None);
+
+            int spCount = 0;
+            if (_target.EnemySpawnPoints != null)
+                foreach (var sp in _target.EnemySpawnPoints) if (sp != null) spCount++;
+
+            for (int s = 0; s < setCount; s++)
+            {
+                int filled = SpawnPointOps.CountFilledForSet(_target, s);
+                bool isPreview = s == _previewSetIndex;
+                using (new EditorGUILayout.HorizontalScope())
+                {
+                    var swatchRect = GUILayoutUtility.GetRect(14, 14, GUILayout.Width(14));
+                    EditorGUI.DrawRect(swatchRect, ColorForSet(s));
+
+                    var labelStyle = isPreview ? EditorStyles.boldLabel : EditorStyles.label;
+                    EditorGUILayout.LabelField($"Set {s}", labelStyle, GUILayout.Width(48));
+
+                    var prevColor = GUI.contentColor;
+                    if (filled == 0) GUI.contentColor = new Color(1f, 0.6f, 0.6f);
+                    string summary = filled == 0
+                        ? $"0 / {spCount} spawn points — spawns nothing!"
+                        : $"{filled} / {spCount} spawn points";
+                    EditorGUILayout.LabelField(summary, EditorStyles.miniLabel);
+                    GUI.contentColor = prevColor;
+
+                    GUILayout.FlexibleSpace();
+                    using (new EditorGUI.DisabledScope(isPreview))
+                    {
+                        if (GUILayout.Button("Preview", GUILayout.Width(64)))
+                        {
+                            _previewSetIndex = s;
+                            SceneView.RepaintAll();
+                        }
+                    }
+                }
+            }
         }
 
         // ============================ List section ============================
@@ -291,7 +343,9 @@ namespace Rollgeon.Editor.Tools.RoomEditor
                     {
                         var swatchRect = GUILayoutUtility.GetRect(14, 14, GUILayout.Width(14));
                         EditorGUI.DrawRect(swatchRect, ColorForSet(s));
-                        EditorGUILayout.LabelField($"Set {s}", GUILayout.Width(48));
+                        EditorGUILayout.LabelField(
+                            new GUIContent($"Set {s}", "Leave empty (None) to spawn nothing here when this set is rolled."),
+                            GUILayout.Width(48));
 
                         EditorGUI.BeginChangeCheck();
                         var next = EditorGUILayout.ObjectField(element.objectReferenceValue, typeof(EnemyDataSO), allowSceneObjects: false);
