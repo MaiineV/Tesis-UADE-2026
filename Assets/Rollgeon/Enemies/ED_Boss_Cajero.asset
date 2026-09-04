@@ -443,7 +443,7 @@ MonoBehaviour:
       Data: 0
     - Name: Size
       Entry: 3
-      Data: 2
+      Data: 1
     - Name: Depth
       Entry: 3
       Data: 2
@@ -818,7 +818,7 @@ MonoBehaviour:
       Data: 0
     - Name: Size
       Entry: 3
-      Data: 2
+      Data: 1
     - Name: Depth
       Entry: 3
       Data: 2
@@ -963,7 +963,7 @@ MonoBehaviour:
     Pattern: 1
     Timing: 1
     Notes: "Mandoble y empuj\xF3n alternados a distancia 1, cada golpe deja monedas
-      por la sala; a 5 o m\xE1s se planta, marca un 5\xD75 sobre el jugador, lo cobra
+      por la sala; a 5 o m\xE1s se planta, marca un 3\xD73 sobre el jugador, lo cobra
       al turno siguiente y recarga si sigue lejos; caja fuerte; refuerzos (Comisi\xF3n)."
   WeaknessComboId: combo.full_house
   WeaknessMultiplierOverride: 1.5
