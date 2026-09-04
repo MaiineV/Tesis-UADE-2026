@@ -411,6 +411,7 @@ namespace Rollgeon.Exploration.Tests
             public bool CancelCalled;
             public bool IsSelecting => SelectionStarted && !CancelCalled;
             public bool CanOverlayHoverPreview => !IsSelecting;
+            public SelectionSettings ActiveSettings => null;
 
             public void BeginSelection(SelectionRequest request)
             {

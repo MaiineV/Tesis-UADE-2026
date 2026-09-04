@@ -50,6 +50,8 @@ namespace Rollgeon.Effects.Selection
 
         public bool IsSelecting => _request != null;
 
+        public SelectionSettings ActiveSettings => _request?.Settings;
+
         /// <summary>
         /// Frame en el que terminó la última selección, completada o cancelada. El click que
         /// confirma el objetivo la resuelve sincrónico, y los Update que corren después en ese
