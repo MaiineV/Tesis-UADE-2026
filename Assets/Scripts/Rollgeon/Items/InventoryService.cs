@@ -373,7 +373,10 @@ namespace Rollgeon.Items
                     foreach (var eff in hook.Effect.Effects)
                     {
                         if (eff is EffAddComboBonus bonus && bonus.Amount != null)
-                            total += bonus.Amount.Read(ctx);
+                        {
+                            int amount = bonus.Amount.Read(ctx);
+                            total += bonus.Subtract ? -amount : amount;
+                        }
                     }
                 }
             }

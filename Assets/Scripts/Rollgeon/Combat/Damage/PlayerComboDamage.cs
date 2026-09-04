@@ -36,7 +36,9 @@ namespace Rollgeon.Combat.Damage
     /// <c>ComboDamageMultiplier</c> de los 3 canales de scratch y
     /// <c>scratch_multiplier_bonus</c> la suma de sus <c>ComboMultiplierBonus</c> (items
     /// "+X al multiplicador": Piedra Angular, Ayuno, Vértigo… — decisión GD 2026-09-03: el
-    /// aditivo entra sobre el 1 de M, así +2 sin otros factores es ×3).
+    /// aditivo entra sobre el 1 de M, así +2 sin otros factores es ×3) más las caras de los
+    /// dados movidos a M (<c>EnchantmentScratch.DiceMovedToMultiplier</c>, Fuente Mágica),
+    /// que a cambio salen de Σcaras.
     /// </summary>
     /// <remarks>
     /// Código puro/estático para testear la fórmula aislada. Solo aplica al ataque de combo del
@@ -92,6 +94,7 @@ namespace Rollgeon.Combat.Damage
             float scratchMultiplierBonus = 0f;
             bool block = false;
             List<ScratchContribution> sources = null;
+            List<int> movedDice = null;
 
             var sPassives = ServiceLocator.TryGetService<IComboPassiveService>(out var passives)
                 ? passives?.LastComboScratch : null;
@@ -102,6 +105,7 @@ namespace Rollgeon.Combat.Damage
                 scratchMultiplierBonus += sPassives.ComboMultiplierBonus;
                 block |= sPassives.BlockComboDamage;
                 AppendJournal(ref sources, sPassives);
+                AppendMovedDice(ref movedDice, sPassives);
             }
             var sEnchants = ServiceLocator.TryGetService<IDiceEnchantmentService>(out var enchants)
                 ? enchants?.LastComboScratch : null;
@@ -112,6 +116,7 @@ namespace Rollgeon.Combat.Damage
                 scratchMultiplierBonus += sEnchants.ComboMultiplierBonus;
                 block |= sEnchants.BlockComboDamage;
                 AppendJournal(ref sources, sEnchants);
+                AppendMovedDice(ref movedDice, sEnchants);
             }
             // Canal at-played: bonos inyectados por items/pasivas en la ventana de combo
             // jugado (ComboPlayedPayload). Se lee de LastPlayScratch (persiste más allá de
@@ -127,6 +132,7 @@ namespace Rollgeon.Combat.Damage
                 scratchMultiplierBonus += sPlay.ComboMultiplierBonus;
                 block |= sPlay.BlockComboDamage;
                 AppendJournal(ref sources, sPlay);
+                AppendMovedDice(ref movedDice, sPlay);
             }
 
             // Forzar Puerta: el bonus de items (Pico de Minero, stat ForceDoorRollBonus) entra
@@ -136,9 +142,22 @@ namespace Rollgeon.Combat.Damage
             if (kind == PlayerComboFormulaKind.ForceDoor)
                 bonoCombo += AppendForceDoorItemBonus(sourceId, ref sources);
 
+            // Dados movidos a M (Fuente Mágica): su cara NO entra a Σcaras y SÍ al bono
+            // aditivo de M. Se resuelve acá y no restando en N desde el efecto para que el
+            // desglose muestre el dado volando a M — antes entraba a N y se descontaba
+            // después, y el jugador leía que contaba en los dos (playtest 2026-09-04).
             int facesSum = 0;
+            int movedFacesSum = 0;
             if (contributingDice != null)
-                for (int i = 0; i < contributingDice.Count; i++) facesSum += contributingDice[i].Face;
+            {
+                for (int i = 0; i < contributingDice.Count; i++)
+                {
+                    var die = contributingDice[i];
+                    if (movedDice != null && movedDice.Contains(die.BagSlot)) movedFacesSum += die.Face;
+                    else facesSum += die.Face;
+                }
+            }
+            scratchMultiplierBonus += movedFacesSum;
 
             float n = comboBaseDamage + dmgBasePJ + bonosPJ + facesSum + bonoCombo;
             // La palanca de playtest entra en m y no en n para que escale el golpe entero y no sólo
@@ -156,6 +175,8 @@ namespace Rollgeon.Combat.Damage
                 AttackBase = dmgBasePJ,
                 AttackBonus = bonosPJ,
                 FacesSum = facesSum,
+                MovedFacesSum = movedFacesSum,
+                DiceMovedToMultiplier = movedDice,
                 AdditiveBonus = bonoCombo,
                 N = n,
                 ScratchMultiplierBonus = scratchMultiplierBonus,
@@ -258,6 +279,16 @@ namespace Rollgeon.Combat.Damage
             if (journal == null || journal.Count == 0) return;
             sources ??= new List<ScratchContribution>(journal.Count);
             for (int i = 0; i < journal.Count; i++) sources.Add(journal[i]);
+        }
+
+        // Une los dados movidos a M de un canal. Aloca solo si alguien movió alguno.
+        private static void AppendMovedDice(ref List<int> moved, EnchantmentScratch scratch)
+        {
+            var slots = scratch.DiceMovedToMultiplier;
+            if (slots == null || slots.Count == 0) return;
+            moved ??= new List<int>(slots.Count);
+            for (int i = 0; i < slots.Count; i++)
+                if (!moved.Contains(slots[i])) moved.Add(slots[i]);
         }
     }
 }
