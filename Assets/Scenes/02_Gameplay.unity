@@ -3034,6 +3034,26 @@ PrefabInstance:
       propertyPath: m_IsActive
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 1533381281780925615, guid: b303602a1cf723249b68ca33354910f3, type: 3}
+      propertyPath: m_LocalScale.x
+      value: 1.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 1533381281780925615, guid: b303602a1cf723249b68ca33354910f3, type: 3}
+      propertyPath: m_LocalScale.y
+      value: 1.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 1533381281780925615, guid: b303602a1cf723249b68ca33354910f3, type: 3}
+      propertyPath: m_LocalScale.z
+      value: 1.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 1533381281780925615, guid: b303602a1cf723249b68ca33354910f3, type: 3}
+      propertyPath: m_AnchoredPosition.x
+      value: -4
+      objectReference: {fileID: 0}
+    - target: {fileID: 1533381281780925615, guid: b303602a1cf723249b68ca33354910f3, type: 3}
+      propertyPath: m_AnchoredPosition.y
+      value: 15
+      objectReference: {fileID: 0}
     - target: {fileID: 1738081214427944259, guid: b303602a1cf723249b68ca33354910f3, type: 3}
       propertyPath: m_TextStyleHashCode
       value: -1183493901
