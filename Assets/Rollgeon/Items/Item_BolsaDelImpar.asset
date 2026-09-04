@@ -503,7 +503,7 @@ MonoBehaviour:
   ConsumedOnUse: 0
   ConsumesAction: 1
   ActionId: 
-  WorldPrefab: {fileID: 0}
+  WorldPrefab: {fileID: 7732256368400829464, guid: 4e5bd353a0cb30743bff9392bde9c5db, type: 3}
   references:
     version: 2
     RefIds:

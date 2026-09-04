@@ -493,6 +493,7 @@ MonoBehaviour:
   RollPoolBonus: 0
   LadderSkippedStep: 0
   BlocksPassiveItemHealing: 0
+  PotionHealMultiplier: 1
   ActiveSlotBonus: 0
   EnchantmentCostMultiplier: 1
   CursedEnchantmentWeightMultiplier: 1
@@ -532,7 +533,7 @@ MonoBehaviour:
   ConsumedOnUse: 0
   ConsumesAction: 1
   ActionId: 
-  WorldPrefab: {fileID: 0}
+  WorldPrefab: {fileID: 5065653928041330168, guid: 48662ee2c5c7be946b71024a799626ec, type: 3}
   references:
     version: 2
     RefIds:
