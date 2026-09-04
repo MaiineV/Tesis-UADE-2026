@@ -41,6 +41,13 @@ namespace Rollgeon.Combat.AI.Decisions
                  "daño cae cuando el feedback termina por duración, no en el golpe.")]
         public string ImpactEventKey = "hit";
 
+        [Tooltip("Key de Content del nombre autorado del ataque (ej. 'intent.artillery.coin_drop'). " +
+                 "Vacío = el genérico 'Golpe marcado'. La tabla resuelve <key>.name y <key>.desc.")]
+        public string IntentLabelKey;
+
+        [Tooltip("Fallback ES del nombre autorado si la key no está en la tabla.")]
+        public string IntentLabelFallback;
+
         [Title("Reposicionamiento del atacante")]
         [Tooltip("Si true, antes de aplicar el daño revalida que el propio atacante siga en " +
                  "rango (Chebyshev) + LoS del CENTRO del área marcada, desde su posición ACTUAL " +
@@ -116,8 +123,13 @@ namespace Rollgeon.Combat.AI.Decisions
                 return false;
             if (!threat.TryPeek(context.SelfGuid, out var area)) return false;
 
-            intent = new AIIntent(AIIntentTextKeys.Telegraph, "Golpe marcado",
-                                  area.Damage, area.Kind, area.Tiles);
+            // El nombre autorado (la tool de enemigos / sheet de traducciones) pisa el
+            // genérico — mismo criterio que los nodos de boss con key propia.
+            intent = string.IsNullOrEmpty(IntentLabelKey)
+                ? new AIIntent(AIIntentTextKeys.Telegraph, "Golpe marcado",
+                               area.Damage, area.Kind, area.Tiles)
+                : new AIIntent(IntentLabelKey, IntentLabelFallback,
+                               area.Damage, area.Kind, area.Tiles);
             return true;
         }
 

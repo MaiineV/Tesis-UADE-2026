@@ -50,6 +50,13 @@ namespace Rollgeon.Combat.AI.Decisions
         [Min(0f)]
         public float BlockedDamageBonus = 0.5f;
 
+        [Tooltip("Key de Content del nombre autorado del ataque (ej. 'intent.charger.charge_roll'). " +
+                 "Vacío = el genérico 'Carga marcada'.")]
+        public string IntentLabelKey;
+
+        [Tooltip("Fallback ES del nombre autorado si la key no está en la tabla.")]
+        public string IntentLabelFallback;
+
         [Title("Reposicionamiento del atacante")]
         [Tooltip("Si true, antes de resolver revalida que el propio Charger siga en rango " +
                  "(Chebyshev) + LoS del CENTRO de la banda que marcó, desde su posición ACTUAL — " +
@@ -104,7 +111,9 @@ namespace Rollgeon.Combat.AI.Decisions
                 return false;
             if (!threat.TryPeek(context.SelfGuid, out var area)) return false;
 
-            intent = new AIIntent(AIIntentTextKeys.Telegraph, "Carga marcada", area.Damage, area.Kind, area.Tiles);
+            intent = string.IsNullOrEmpty(IntentLabelKey)
+                ? new AIIntent(AIIntentTextKeys.Telegraph, "Carga marcada", area.Damage, area.Kind, area.Tiles)
+                : new AIIntent(IntentLabelKey, IntentLabelFallback, area.Damage, area.Kind, area.Tiles);
             return true;
         }
 

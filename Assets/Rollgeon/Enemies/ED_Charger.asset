@@ -99,9 +99,15 @@ MonoBehaviour:
     - Name: BlockedDamageBonus
       Entry: 4
       Data: 0.5
+    - Name: IntentLabelKey
+      Entry: 1
+      Data: intent.charger.charge_roll
+    - Name: IntentLabelFallback
+      Entry: 1
+      Data: Embiste y Rueda
     - Name: RequireSourceInPosition
       Entry: 5
-      Data: true
+      Data: false
     - Name: 
       Entry: 8
       Data: 
@@ -178,9 +184,15 @@ MonoBehaviour:
     - Name: BlockedDamageBonus
       Entry: 4
       Data: 0.5
+    - Name: IntentLabelKey
+      Entry: 1
+      Data: intent.charger.charge_roll
+    - Name: IntentLabelFallback
+      Entry: 1
+      Data: Embiste y Rueda
     - Name: RequireSourceInPosition
       Entry: 5
-      Data: true
+      Data: false
     - Name: 
       Entry: 8
       Data: 
@@ -1007,6 +1019,12 @@ MonoBehaviour:
       Data: 
     - Name: 
       Entry: 8
+      Data: 
+    - Name: IntentLabelKey
+      Entry: 6
+      Data: 
+    - Name: IntentLabelFallback
+      Entry: 6
       Data: 
     - Name: 
       Entry: 8
@@ -1880,6 +1898,12 @@ MonoBehaviour:
       Data: 
     - Name: 
       Entry: 8
+      Data: 
+    - Name: IntentLabelKey
+      Entry: 6
+      Data: 
+    - Name: IntentLabelFallback
+      Entry: 6
       Data: 
     - Name: 
       Entry: 8

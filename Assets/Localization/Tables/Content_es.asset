@@ -154,7 +154,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 5406620151810
-    m_Localized: Enemigo Carta
+    m_Localized: Guerrero de Corazones
     m_Metadata:
       m_Items: []
   - m_Id: 5406620151811
@@ -1713,7 +1713,8 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 17593280048852995
-    m_Localized: Soldado de la casa, cuerpo a cuerpo.
+    m_Localized: "Un naipe viviente con armadura liviana y una espada corta. Ataca
+      cuerpo a cuerpo con golpes r\xE1pidos, persiguiendo al jugador sin descanso."
     m_Metadata:
       m_Items: []
   - m_Id: 17593280048852996
@@ -2585,20 +2586,23 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 18278206983208960
-    m_Localized: "Artiller\xEDa"
+    m_Localized: La Tragamonedas Viviente
     m_Metadata:
       m_Items: []
   - m_Id: 18278206983208961
-    m_Localized: "Ob\xFAs de la casa: bombardea de lejos y deja el piso ardiendo
-      donde cae el tiro."
+    m_Localized: Una tragamonedas oxidada que se mantiene a distancia y dispara proyectiles
+      al jugador desde lejos.
     m_Metadata:
       m_Items: []
   - m_Id: 18278206983208962
-    m_Localized: Embestidor
+    m_Localized: Ojos de Billar
     m_Metadata:
       m_Items: []
   - m_Id: 18278206983208963
-    m_Localized: "Se alinea, marca el pasillo y embiste. No te quedes en su l\xEDnea."
+    m_Localized: "Una bola de billar con ojos propios que persigue al jugador rodando
+      a toda velocidad. Si tiene espacio, embiste en l\xEDnea recta empuj\xE1ndolo
+      lejos de su camino; si ya est\xE1 a melee, simplemente golpea sin necesidad
+      de embestir."
     m_Metadata:
       m_Items: []
   - m_Id: 18278206983208964
@@ -2611,30 +2615,32 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 18278206983208966
-    m_Localized: Escaramuzador
+    m_Localized: Chiplash
     m_Metadata:
       m_Items: []
   - m_Id: 18278206983208967
-    m_Localized: 'Tirador inquieto: dispara de lejos y se reacomoda en diagonal para
-      que no lo arrincones.'
+    m_Localized: "Una ficha de casino de otro color que flota err\xE1ticamente. Ataca
+      desde las diagonales y luego se reposiciona r\xE1pidamente para volver a golpear
+      desde un nuevo \xE1ngulo."
     m_Metadata:
       m_Items: []
   - m_Id: 18278206983208968
-    m_Localized: Francotirador
+    m_Localized: Stackpot
     m_Metadata:
       m_Items: []
   - m_Id: 18278206983208969
-    m_Localized: "Dispara desde la otra punta de la sala. Cortale la l\xEDnea de
-      visi\xF3n o pag\xE1 el tiro."
+    m_Localized: "Una torre de fichas de casino que flota y gira lentamente en el
+      aire. Si el jugador se acerca, se aleja manteniendo distancia, buscando siempre
+      el \xE1ngulo perfecto para atacar."
     m_Metadata:
       m_Items: []
   - m_Id: 18278206983208970
-    m_Localized: Carta Barredora
+    m_Localized: Guerrero de Picas
     m_Metadata:
       m_Items: []
   - m_Id: 18278206983208971
-    m_Localized: 'Soldado de la casa que marca un barrido: su golpe cubre varias
-      casillas de una.'
+    m_Localized: Un naipe viviente armado con una lanza larga. Prefiere mantener
+      distancia y telegrafiar sus embestidas antes de golpear.
     m_Metadata:
       m_Items: []
   - m_Id: 18278206983208972
@@ -2731,8 +2737,8 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 18299679659966475
-    m_Localized: "Tu poci\xF3n cura la mitad. A cambio, todos tus multiplicadores de combo
-      suman +3."
+    m_Localized: "Tu poci\xF3n cura la mitad. A cambio, todos tus multiplicadores
+      de combo suman +3."
     m_Metadata:
       m_Items: []
   - m_Id: 18332491544969216
@@ -2807,11 +2813,66 @@ MonoBehaviour:
       piso de oro para limpiarla sin pelear. Sin bot\xEDn."
     m_Metadata:
       m_Items: []
-  - m_Id: 18475600874487808
+  - m_Id: 18475382250242048
+    m_Localized: Lluvia de Monedas
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18475382304768000
+    m_Localized: "Marca una loseta y deja caer una lluvia de monedas pesadas sobre
+      esa zona tras un breve retraso, da\xF1ando a quien quede atrapado dentro."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18475382304768001
+    m_Localized: Embiste y Rueda
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18475382304768002
+    m_Localized: "Carga en l\xEDnea recta hacia el jugador, golpe\xE1ndolo y empuj\xE1ndolo
+      varias losetas en la direcci\xF3n del impacto. Si el jugador ya est\xE1 adyacente,
+      ataca directamente sin cargar."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18475382304768003
+    m_Localized: "Corte Carmes\xED"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18475382304768004
+    m_Localized: "Un tajo veloz con la espada al enemigo adyacente, infligiendo da\xF1o
+      moderado."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18475382304768005
+    m_Localized: Estocada Anunciada
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18475382304768006
+    m_Localized: "Marca una l\xEDnea de losetas frente a \xE9l y, tras un breve retraso,
+      embiste con la lanza da\xF1ando todo lo que quede en esa l\xEDnea."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18475382304768007
+    m_Localized: Anillo de Fichas
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18475382304768008
+    m_Localized: "Ataca a distancia dentro de un \xE1rea en forma de diamante alrededor
+      de s\xED misma, da\xF1ando al jugador si queda dentro de esa zona."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18475382304768009
+    m_Localized: Corte en X
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18475382304768010
+    m_Localized: "Dispara un proyectil en diagonal hacia el jugador y permanece en
+      su posici\xF3n hasta que el jugador se acerca."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18479643793473536
     m_Localized: 2 oro
     m_Metadata:
       m_Items: []
-  - m_Id: 18475600941596672
+  - m_Id: 18479643847999488
     m_Localized: 6+ vida
     m_Metadata:
       m_Items: []
