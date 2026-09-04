@@ -90,12 +90,21 @@ namespace Rollgeon.Combat.AI.Pathing
             if (r.Intent == MoveIntent.Approach)
             {
                 // AINode_Move: minimizar |dist − desired|, '<' estricto (empate ⇒ no mover).
+                var terrain = TerrainPathCost(grid, r, currentDist);
+                int originTerrain = PathCostOf(terrain, r.Origin);
+
                 int bestErr = Mathf.Abs(currentDist - r.DesiredRange);
                 foreach (var candidate in reachable)
                 {
                     int err = Mathf.Abs(GridFootprint.ManhattanDistance(candidate, fp, r.TargetCoord) - r.DesiredRange);
-                    if (err < bestErr) { bestErr = err; best = candidate; }
+                    if (err >= bestErr) continue;
+                    if (PathCostOf(terrain, candidate) > originTerrain) continue; // veto de retroceso
+                    bestErr = err;
+                    best = candidate;
                 }
+
+                if (best == r.Origin)
+                    return UnstickApproach(grid, r, reachable, currentDist);
             }
             else
             {
@@ -112,6 +121,107 @@ namespace Rollgeon.Combat.AI.Pathing
 
             if (best == r.Origin) return AIPathPlanResult.NoMove;
             // Path null: el ejecutor usa el Move clásico, con el mismo A* y los mismos eventos.
+            return new AIPathPlanResult(true, best, null);
+        }
+
+        /// <summary>
+        /// Mapa de distancia de camino SÓLO por terreno (ocupantes transparentes), o <c>null</c>
+        /// si el mover no está intentando acercarse. Alimenta el <b>veto de retroceso</b>.
+        /// </summary>
+        /// <remarks>
+        /// <para>
+        /// <b>Por qué hace falta un veto y no alcanza con la fase 2.</b> La fase 2 mete al enemigo
+        /// en el rodeo, pero el paso greedy de Manhattan de la fase 1 lo saca al turno siguiente:
+        /// desde la casilla del desvío, volver contra la pared "mejora" la distancia en línea recta.
+        /// El resultado era oscilar entre dos casillas para siempre en vez de rodear. Con el veto,
+        /// un candidato que acorta la recta pero ALARGA el camino real no se toma nunca.
+        /// </para>
+        /// <para>
+        /// <b>Ocupantes transparentes a propósito</b> (<c>occupantCost: 0</c>): el veto es sobre la
+        /// geometría del terreno, que es estable. Penalizar ocupantes acá haría que un aliado
+        /// parado en la ruta vetara movimientos perfectamente buenos. Rodear ALIADOS es trabajo de
+        /// la fase 2, que sí usa la penalidad.
+        /// </para>
+        /// <para>
+        /// <b>Sólo al acercarse</b> (<paramref name="currentDist"/> &gt; DesiredRange): un mover que
+        /// está DEMASIADO CERCA y tiene que abrirse necesita justamente alejarse, y ahí el
+        /// razonamiento se invierte. En sala abierta el costo de camino es igual a la Manhattan, así
+        /// que acercarse en recta nunca alarga el camino y el veto no dispara jamás: paridad exacta
+        /// con el scoring legacy.
+        /// </para>
+        /// </remarks>
+        private static Dictionary<GridCoord, int> TerrainPathCost(IGridManager grid, in AIPathRequest r, int currentDist)
+            => currentDist > r.DesiredRange
+                ? GridPathDistance.ComputeFrom(grid, r.TargetCoord, r.SelfGuid, Guid.Empty, occupantCost: 0)
+                : null;
+
+        /// <summary>Costo de camino de una celda; <see cref="int.MaxValue"/> si no hay ruta (o si
+        /// no se computó el mapa, lo que deja el veto inerte).</summary>
+        private static int PathCostOf(Dictionary<GridCoord, int> pathCost, GridCoord c)
+        {
+            if (pathCost == null) return int.MaxValue;
+            return pathCost.TryGetValue(c, out var v) ? v : int.MaxValue;
+        }
+
+        /// <summary>
+        /// Fase 2 (desbloqueo): mueve al candidato con MENOR costo de camino real al target,
+        /// exigiendo que sea estrictamente menor que el del origen. Sólo corre cuando la fase 1
+        /// (Manhattan) ya devolvió "quedarse quieto".
+        /// </summary>
+        /// <remarks>
+        /// <para>
+        /// <b>El problema.</b> El scoring de arriba es Manhattan en línea recta contra el baseline
+        /// de no moverse, con '&lt;' estricto. Si algo tapa la recta — una pared, una mesa, u otro
+        /// enemigo — ninguna casilla alcanzable baja el error (moverse en perpendicular lo mantiene
+        /// o lo empeora) y el enemigo queda congelado PARA SIEMPRE, porque nada cambia solo: se
+        /// destraba recién cuando el jugador se mueve. Es el bug del Guardian parado en la sala y
+        /// el de dos enemigos apilados en la misma línea.
+        /// </para>
+        /// <para>
+        /// <b>Por qué NO se filtra por error de Manhattan.</b> Rodear un obstáculo ancho exige
+        /// alejarse en línea recta uno o dos turnos; un filtro tipo "que no empeore la Manhattan"
+        /// descartaría exactamente las casillas que empiezan a bordear y esta fase no encontraría
+        /// nada. El costo de camino ya contabiliza el rodeo: la casilla que se aleja en recta pero
+        /// acorta la ruta REAL es la que gana, y como ese costo decrece monótonamente el
+        /// reposicionamiento converge en vez de oscilar.
+        /// </para>
+        /// <para>
+        /// <b>Por qué la guarda de banda.</b> Sólo se desbloquea a quien está MÁS LEJOS que su
+        /// <see cref="AIPathRequest.DesiredRange"/>. Sin eso, un ranged ya a tiro pero con una
+        /// pared que obliga a un camino larguísimo se pondría a caminar alrededor sin motivo:
+        /// "en banda pero sin línea de visión" lo resuelve el nodo (<c>RequireLineOfSight</c>), no
+        /// el planner, que ni siquiera modela LoS.
+        /// </para>
+        /// <para>
+        /// En sala abierta el costo de camino coincide con la Manhattan, así que la fase 1 ya
+        /// resolvió y acá no se llega nunca: el comportamiento previo queda intacto.
+        /// </para>
+        /// <para>
+        /// <b>Footprint.</b> <see cref="GridPathDistance"/> razona celda a celda y no sabe si un
+        /// rectángulo entra; se usa sólo para PUNTUAR y el set de candidatos ya lo filtró
+        /// <c>CanPlace</c>, así que un score levemente optimista para un 2×2 es preferible a
+        /// congelarlo.
+        /// </para>
+        /// </remarks>
+        private static AIPathPlanResult UnstickApproach(IGridManager grid, in AIPathRequest r,
+            List<GridCoord> reachable, int currentDist)
+        {
+            if (currentDist <= r.DesiredRange) return AIPathPlanResult.NoMove;
+            if (reachable == null || reachable.Count == 0) return AIPathPlanResult.NoMove;
+
+            var pathCost = GridPathDistance.ComputeFrom(grid, r.TargetCoord, r.SelfGuid, Guid.Empty);
+
+            int bestCost = pathCost.TryGetValue(r.Origin, out var originCost) ? originCost : int.MaxValue;
+            var best = r.Origin;
+            foreach (var candidate in reachable)
+            {
+                if (!pathCost.TryGetValue(candidate, out var c)) continue; // sin camino conocido
+                if (c >= bestCost) continue;                               // '<' estricto: empate ⇒ no mover
+                bestCost = c;
+                best = candidate;
+            }
+
+            if (best == r.Origin) return AIPathPlanResult.NoMove;
             return new AIPathPlanResult(true, best, null);
         }
 
@@ -242,7 +352,7 @@ namespace Rollgeon.Combat.AI.Pathing
                 }
             }
 
-            return SelectDestination(tiles, byCoord, r, profile, minSurvival);
+            return SelectDestination(grid, tiles, byCoord, r, profile, minSurvival);
         }
 
         /// <summary>Frontera de Pareto por celda: se descartan las labels dominadas
@@ -278,7 +388,7 @@ namespace Rollgeon.Combat.AI.Pathing
         // ======================================================================
 
         // r y profile van por valor: las lambdas de abajo no pueden capturar parámetros 'in'.
-        private AIPathPlanResult SelectDestination(ISpecialTileAIQuery tiles,
+        private AIPathPlanResult SelectDestination(IGridManager grid, ISpecialTileAIQuery tiles,
             Dictionary<GridCoord, List<Label>> byCoord, AIPathRequest r,
             AIPersonalityProfile profile, float minSurvival)
         {
@@ -326,6 +436,14 @@ namespace Rollgeon.Combat.AI.Pathing
             int bestScore = Err(r.Origin, r) * BandWeight;
             Label chosen = null;
 
+            // Candidatos que sobrevivieron los gates de hazard de abajo — los únicos elegibles
+            // para la fase de desbloqueo: destrabar a un enemigo nunca puede saltearse el filtro
+            // de supervivencia ni la regla 5 de "pisar peligro a propósito".
+            var eligible = new List<Label>();
+
+            var terrain = TerrainPathCost(grid, r, r.Origin.Manhattan(r.TargetCoord));
+            int originTerrain = PathCostOf(terrain, r.Origin);
+
             foreach (var c in candidates)
             {
                 tiles.TryGetTileFor(c.Coord, r.SelfGuid, DirInto(c), out var view);
@@ -353,6 +471,13 @@ namespace Rollgeon.Combat.AI.Pathing
                     if (gainFinal <= stayPenalty) continue;
                 }
 
+                eligible.Add(c);
+
+                // Mismo veto de retroceso que el fast path: si acercarse en línea recta alarga el
+                // camino REAL, no se toma — si no, la fase de desbloqueo de abajo mete al enemigo
+                // en el rodeo y este scoring lo saca al turno siguiente, oscilando para siempre.
+                if (PathCostOf(terrain, c.Coord) > originTerrain) continue;
+
                 int benefit = ResolveBenefitValue(tiles, c, view, r, minErr);
                 int score = Err(c.Coord, r) * BandWeight + (c.Cost - benefit);
                 if (score < bestScore)
@@ -362,12 +487,41 @@ namespace Rollgeon.Combat.AI.Pathing
                 }
             }
 
+            // Mismo desbloqueo que el fast path, sobre los candidatos que ya pasaron los gates:
+            // sin esto, una sala CON casillas especiales congela igual que una sin ellas.
+            chosen ??= UnstickApproachLabel(grid, eligible, r);
+
             if (chosen == null) return AIPathPlanResult.NoMove;
 
             var path = new List<GridCoord>();
             for (var l = chosen; l != null; l = l.Parent) path.Add(l.Coord);
             path.Reverse();
             return new AIPathPlanResult(true, chosen.Coord, path);
+        }
+
+        /// <summary>
+        /// La misma fase de desbloqueo que <see cref="UnstickApproach"/>, sobre los labels que ya
+        /// pasaron los gates de supervivencia y hazard. Ver ahí el porqué del criterio.
+        /// </summary>
+        private static Label UnstickApproachLabel(IGridManager grid, List<Label> eligible, in AIPathRequest r)
+        {
+            if (r.Intent != MoveIntent.Approach) return null;
+            if (eligible == null || eligible.Count == 0) return null;
+            if (r.Origin.Manhattan(r.TargetCoord) <= r.DesiredRange) return null;
+
+            var pathCost = GridPathDistance.ComputeFrom(grid, r.TargetCoord, r.SelfGuid, Guid.Empty);
+
+            int bestCost = pathCost.TryGetValue(r.Origin, out var originCost) ? originCost : int.MaxValue;
+            Label chosen = null;
+            foreach (var c in eligible)
+            {
+                if (!pathCost.TryGetValue(c.Coord, out var cost)) continue;
+                if (cost >= bestCost) continue; // '<' estricto: empate ⇒ no mover
+                bestCost = cost;
+                chosen = c;
+            }
+
+            return chosen;
         }
 
         private static Cardinal DirInto(Label label)
