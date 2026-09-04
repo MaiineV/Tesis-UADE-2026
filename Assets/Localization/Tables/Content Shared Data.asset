@@ -2963,6 +2963,62 @@ MonoBehaviour:
     m_Key: status.bleed.desc
     m_Metadata:
       m_Items: []
+  - m_Id: 18723604852293632
+    m_Key: blood.transfusion.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18723604852293633
+    m_Key: blood.transfusion.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18723604852293634
+    m_Key: coin.shield.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18723604852293635
+    m_Key: coin.shield.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18723604852293636
+    m_Key: grapple.claw.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18723604852293637
+    m_Key: grapple.claw.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18723604852293638
+    m_Key: justa.de.justicia.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18723604852293639
+    m_Key: justa.de.justicia.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18723604852293640
+    m_Key: probability.drive.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18723604852293641
+    m_Key: probability.drive.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18723604852293642
+    m_Key: blood.d6.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18723604852293643
+    m_Key: blood.d6.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18723604852293644
+    m_Key: bottle.o.thunder.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18723604852293645
+    m_Key: bottle.o.thunder.desc
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

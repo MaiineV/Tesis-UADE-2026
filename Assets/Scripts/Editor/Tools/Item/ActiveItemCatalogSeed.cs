@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using Rollgeon.Dice;
 using Rollgeon.Items;
 using Rollgeon.Items.Active;
+using Rollgeon.Editor.Tools.Item.ActiveItemBuilders;
 using UnityEditor;
 
 namespace Rollgeon.Editor.Tools.Item
@@ -19,9 +20,9 @@ namespace Rollgeon.Editor.Tools.Item
     /// queda fuera de alcance de Feature#0084 (ver el plan, "Fuera de alcance").
     /// </para>
     /// <para>
-    /// <b><c>BuildEffects</c> vacío a propósito.</b> Los efectos concretos (<c>Eff*</c>) los
-    /// arman otros agentes en paralelo contra las interfaces de la Parte A del plan — esta
-    /// clase solo fija identidad, dado y estructura de resolución. Fase 2 completa cada lambda.
+    /// <b><c>BuildEffects</c> delega en <c>ActiveItemBuilders/*</c>.</b> Esta clase fija
+    /// identidad, dado y estructura de resolución; cada builder arma los grupos de banda con
+    /// los <c>Eff*</c> concretos del item.
     /// </para>
     /// </remarks>
     public static class ActiveItemCatalogSeed
@@ -46,8 +47,7 @@ namespace Rollgeon.Editor.Tools.Item
                 // Los tercios de D10 darian 4-6 mixta; el doc pide 4-7.
                 NegativeMaxFace = 3,
                 MixedMaxFace = 7,
-                // TODO(Feature#0084 fase 2): EffBloodRedistribute / EffBloodDrain.
-                BuildEffects = null,
+                BuildEffects = BloodTransfusionBuilder.Build,
             },
             new ActiveItemCreationSpec
             {
@@ -64,8 +64,7 @@ namespace Rollgeon.Editor.Tools.Item
                 Die = DiceType.D4,
                 Resolution = ActiveItemResolution.Binary,
                 BinaryPositiveParity = ActiveItemParity.Even,
-                // TODO(Feature#0084 fase 2): EffAddShieldToAll / EffPersistShield.
-                BuildEffects = null,
+                BuildEffects = CoinShieldBuilder.Build,
             },
             new ActiveItemCreationSpec
             {
@@ -81,8 +80,7 @@ namespace Rollgeon.Editor.Tools.Item
                 BasePrice = 60,
                 Die = DiceType.D6,
                 Resolution = ActiveItemResolution.Gradient,
-                // TODO(Feature#0084 fase 2): EffGrappleClaw.
-                BuildEffects = null,
+                BuildEffects = GrappleClawBuilder.Build,
             },
             new ActiveItemCreationSpec
             {
@@ -98,8 +96,7 @@ namespace Rollgeon.Editor.Tools.Item
                 BasePrice = 60,
                 Die = DiceType.D12,
                 Resolution = ActiveItemResolution.Bands,
-                // TODO(Feature#0084 fase 2): EffJoustCharge.
-                BuildEffects = null,
+                BuildEffects = JustaDeJusticiaBuilder.Build,
             },
             new ActiveItemCreationSpec
             {
@@ -117,8 +114,7 @@ namespace Rollgeon.Editor.Tools.Item
                 Resolution = ActiveItemResolution.Bands,
                 NegativeMaxFace = 1,
                 MixedMaxFace = 3,
-                // TODO(Feature#0084 fase 2): EffProbabilityDistortion / Jump / Choice.
-                BuildEffects = null,
+                BuildEffects = ProbabilityDriveBuilder.Build,
             },
             new ActiveItemCreationSpec
             {
@@ -134,8 +130,7 @@ namespace Rollgeon.Editor.Tools.Item
                 BasePrice = 60,
                 Die = DiceType.D6,
                 Resolution = ActiveItemResolution.Gradient,
-                // TODO(Feature#0084 fase 2): EffBloodD6Charge + BloodD6Service.
-                BuildEffects = null,
+                BuildEffects = BloodD6Builder.Build,
             },
             new ActiveItemCreationSpec
             {
@@ -149,8 +144,7 @@ namespace Rollgeon.Editor.Tools.Item
                 BasePrice = 60,
                 Die = DiceType.D4,
                 Resolution = ActiveItemResolution.Hierarchy,
-                // TODO(Feature#0084 fase 2): EffChainStun + EffSpawnRuntimeTile.
-                BuildEffects = null,
+                BuildEffects = BottleOThunderBuilder.Build,
             },
         };
 
@@ -176,6 +170,11 @@ namespace Rollgeon.Editor.Tools.Item
             }
 
             var (created, skipped) = ActiveItemAuthoring.CreateAll(Specs(), catalog, shopPool, out var report);
+
+            // Las tablas de localizacion se editan via Undo: si despues corre un test que
+            // llama Undo.PerformUndo (AITreeTopologyTests, PolymorphicAuthoringContextTests)
+            // las keys sembradas se revierten y el siguiente SaveAssets las borra del disco.
+            Undo.ClearAll();
             AssetDatabase.SaveAssets();
 
             return $"ActiveItemCatalogSeed: {created} creados, {skipped} salteados.\n{report}";
