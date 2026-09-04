@@ -759,6 +759,9 @@ namespace Rollgeon.UI.HUD
                 BaseDamage = baseDmg,
                 DynamicBonus = detection.IsMatch ? detection.DynamicBonus : 0,
                 ContributingDice = contributingDice,
+                // Caras de ESTA tirada (1:1 con el bag): el service de encantos no tiene
+                // otra fuente hasta OnRollResolved, que acá recién dispara al ejecutar.
+                DiceResult = _currentFaces,
             });
 
             // DESPUÉS del Raise: los services de encantos ya poblaron LastComboScratch

@@ -242,12 +242,19 @@ namespace Rollgeon.Upgrades.Dice
             // (el fallback documentado de ResolveBagSlot) es exactamente la identidad correcta.
             var contributingBagSlots = ToBagSlots(payload.ContributingDice);
 
+            // Fix#0081: las caras salen del payload, no de _lastFinalRoll. ComboMatched es
+            // preview (toggle de hold) y dispara ANTES del OnRollResolved de esta tirada —
+            // _lastFinalRoll todavía es la acción ANTERIOR (o null en la primera), así que
+            // ReadCarrierRollDelta (Oxidado / Volátil / Enfiestado) mutaba la cara vieja.
+            // El fallback queda solo para emisores legacy sin caras.
+            var faces = payload.DiceResult ?? _lastFinalRoll;
+
             var effectCtx = new EffectContext
             {
                 SourceGuid = payload.SourceGuid,
-                DiceResult = _lastFinalRoll,
+                DiceResult = faces,
                 ComboResult = ComboDetectionResult.Match(payload.ComboId, payload.BaseDamage,
-                    _lastFinalRoll?.Count ?? 0, contributingBagSlots, payload.DynamicBonus),
+                    faces?.Count ?? 0, contributingBagSlots, payload.DynamicBonus),
             };
             var scratch = DispatchComboMatched(effectCtx, payload.ComboId);
             LastComboScratch = scratch;

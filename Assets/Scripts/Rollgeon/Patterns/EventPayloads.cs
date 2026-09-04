@@ -165,6 +165,16 @@ namespace Patterns
         /// golpe) en vez de una copia paralela. <c>null</c> = sin combo o sin bag disponible.
         /// </summary>
         public IReadOnlyList<Rollgeon.Combat.Damage.ContributingDie> ContributingDice;
+
+        /// <summary>
+        /// Tirada COMPLETA en curso, indexada por bag slot (misma forma que
+        /// <see cref="ComboPlayedPayload.DiceResult"/>). Es la fuente de verdad de la cara de
+        /// cada dado para los suscriptores del preview: los emisores disparan en cada toggle de
+        /// hold, ANTES de <c>OnRollResolved</c>, así que cualquier "última tirada" cacheada por
+        /// un service es la de la acción ANTERIOR (Fix#0081: Oxidado/Volátil leían esa cara
+        /// vieja). <c>null</c> = emisor legacy sin caras.
+        /// </summary>
+        public IReadOnlyList<int> DiceResult;
     }
 
     /// <summary>
