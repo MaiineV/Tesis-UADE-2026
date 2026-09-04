@@ -1,6 +1,10 @@
 using System;
+using System.Collections.Generic;
 using Rollgeon.Attributes;
+using Rollgeon.PreConditions;
 using Sirenix.OdinInspector;
+using Sirenix.Serialization;
+using UnityEngine;
 
 namespace Rollgeon.Upgrades.Dice
 {
@@ -16,13 +20,41 @@ namespace Rollgeon.Upgrades.Dice
     }
 
     /// <summary>
-    /// "Lento": el dado no puede holdearse entre rerolls — siempre vuela. Consumidores:
-    /// <c>DiceZoneView.CanChangeHold</c> (gate del toggle) y
+    /// "Lento": el dado no puede guardarse entre rerolls — siempre vuela. Consumidor:
     /// <c>CombatHandoffService.ApplyKeepConstraints</c> (fuerza keep=false en el reroll).
+    /// NO bloquea la selección: en este juego seleccionar es armar la mano del combo, y
+    /// Lento tiene que poder jugarse (Fix#0053). En modo clásico (seleccionado = se queda)
+    /// <c>DiceZoneView</c> suelta su hold al arrancar el reroll para que el reveal lo procese.
     /// </summary>
     [Serializable, HideReferenceObjectPicker]
     public sealed class CapPreventHolding : IEnchantmentCapability
     {
+    }
+
+    /// <summary>
+    /// "Sediento" / "Vampiro": el dado solo se puede seleccionar (armar combo) mientras se
+    /// cumplan TODAS las <see cref="Conditions"/> — sin 2 de oro, con 5 de vida o menos…
+    /// Cuando fallan, el dado queda con candado (mismo visual que el bloqueo del Boss 1),
+    /// no entra a ningún combo y un hold viejo se suelta. Consumidor:
+    /// <see cref="DiceSelectionLocks"/> (lo consultan <c>DiceZoneView</c> y
+    /// <c>CombatHandoffService</c>).
+    /// </summary>
+    /// <remarks>
+    /// Las condiciones se evalúan con el contexto del jugador (Attributes, OwnerGuid, MaxHp),
+    /// sin tirada ni combo: <c>PcGoldCompare</c>, <c>PcOwnerStatCompare</c>, <c>PcOwnerHpBelow</c>
+    /// sirven; las carrier-aware (<c>PcCarrierFace</c>) no tienen sentido acá.
+    /// </remarks>
+    [Serializable, HideReferenceObjectPicker]
+    public sealed class CapSelectionRequirement : IEnchantmentCapability
+    {
+        [Tooltip("Todas deben cumplirse para que el dado sea seleccionable.")]
+        [OdinSerialize]
+        [ListDrawerSettings(ShowFoldout = false)]
+        public List<BasePreCondition> Conditions = new List<BasePreCondition>();
+
+        [Tooltip("Texto corto sobre el candado (fallback). Se localiza con la clave " +
+                 "'<upgradeId>.lock' de la tabla Content si existe.")]
+        public string LockLabel = string.Empty;
     }
 
     /// <summary>"Comodín": el dado cuenta como cualquier número para combos.</summary>

@@ -44,6 +44,32 @@ namespace Rollgeon.Editor.Tools.Enchantment.Tests
             }
         }
 
+        [TestCase("combo.matched.all", EnchantmentHookEvent.ComboMatched)]
+        [TestCase("combo.played.all", EnchantmentHookEvent.ComboPlayed)]
+        public void IncludingHigherNumberOptions_RoundTrip_ThroughApplyAndMatch(string id, EnchantmentHookEvent evt)
+        {
+            // Fix#0053: las mutaciones de cara valen en toda jugada, Número Alto incluido.
+            var option = EnchantmentTriggerCatalog.All.First(o => o.Id == id);
+            var trigger = new ExecuteEffectsOnDiceEvent();
+
+            EnchantmentTriggerCatalog.Apply(trigger, option);
+
+            Assert.AreEqual(evt, trigger.Event);
+            Assert.AreEqual(ComboFilterMode.AnyIncludingHigherNumber, trigger.Filter.Mode);
+            Assert.AreEqual(id, EnchantmentTriggerCatalog.Match(trigger)?.Id);
+        }
+
+        [Test]
+        public void AnyComboOption_DoesNotMatchATriggerThatIncludesHigherNumber()
+        {
+            var any = EnchantmentTriggerCatalog.All.First(o => o.Id == "combo.matched.any");
+            var trigger = new ExecuteEffectsOnDiceEvent();
+            EnchantmentTriggerCatalog.Apply(trigger, any);
+
+            Assert.AreEqual(ComboFilterMode.AnyCombo, trigger.Filter.Mode);
+            Assert.AreEqual("combo.matched.any", EnchantmentTriggerCatalog.Match(trigger)?.Id);
+        }
+
         [Test]
         public void All_ComboMatchedOptions_AreScratchOnly()
         {

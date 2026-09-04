@@ -2767,6 +2767,14 @@ MonoBehaviour:
     m_Key: intent.skirmisher.x_slash.desc
     m_Metadata:
       m_Items: []
+  - m_Id: 18479643793473536
+    m_Key: ench.sediento.lock
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18479643847999488
+    m_Key: ench.vampiro.lock
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

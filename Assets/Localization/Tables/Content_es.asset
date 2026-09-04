@@ -341,8 +341,8 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 5531895623711
-    m_Localized: "En cada tirada, 50% de que este dado no sume da\xF1o y 50% de que
-      sume el doble. Sigue contando para formar el combo."
+    m_Localized: "Al jugarlo, 50% de que este dado no sume da\xF1o y 50% de que sume
+      el doble. Sigue contando para formar el combo."
     m_Metadata:
       m_Items: []
   - m_Id: 5531895623712
@@ -502,8 +502,8 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 5531899817997
-    m_Localized: "Cada vez que participa en un combo consume 2 de oro y suma +0,2
-      al multiplicador. Sin oro, el combo no hace da\xF1o."
+    m_Localized: Cada vez que participa en un combo consume 2 de oro y suma +0,2
+      al multiplicador. Sin 2 de oro, el dado no se puede seleccionar.
     m_Metadata:
       m_Items: []
   - m_Id: 5531899817998
@@ -2737,8 +2737,8 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 18299679659966475
-    m_Localized: "Tu poci\xF3n cura la mitad. A cambio, todos tus multiplicadores de combo
-      suman +3."
+    m_Localized: "Tu poci\xF3n cura la mitad. A cambio, todos tus multiplicadores
+      de combo suman +3."
     m_Metadata:
       m_Items: []
   - m_Id: 18332491544969216
@@ -2747,7 +2747,7 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 18332491591106560
     m_Localized: "Cada vez que este dado participa en un combo, perd\xE9s 5 de vida
-      y el multiplicador sube +0,3. Con 5 de vida o menos, el dado no suma da\xF1o."
+      y el multiplicador sube +0,3. Con 5 de vida o menos, el dado no se puede seleccionar."
     m_Metadata:
       m_Items: []
   - m_Id: 18332491591106561
@@ -2774,7 +2774,7 @@ MonoBehaviour:
   - m_Id: 18332491591106566
     m_Localized: "Por cada combo consecutivo en el que participe en este combate,
       aporta +3 de da\xF1o m\xE1s (+3, +6, +9\u2026). Se reinicia si queda fuera
-      de un combo."
+      de un combo o si jug\xE1s N\xFAmero Alto."
     m_Metadata:
       m_Items: []
   - m_Id: 18332491591106567
@@ -2866,6 +2866,14 @@ MonoBehaviour:
   - m_Id: 18475382304768010
     m_Localized: "Dispara un proyectil en diagonal hacia el jugador y permanece en
       su posici\xF3n hasta que el jugador se acerca."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18479643793473536
+    m_Localized: 2 oro
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18479643847999488
+    m_Localized: 6+ vida
     m_Metadata:
       m_Items: []
   references:

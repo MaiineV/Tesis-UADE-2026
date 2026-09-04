@@ -66,20 +66,26 @@ namespace Rollgeon.UI.HUD.Breakdown
                 for (int i = 0; i < ordered.Count; i++)
                 {
                     var die = ordered[i];
+                    List<ScratchContribution> procs = null;
+                    perDie?.TryGetValue(die.BagSlot, out procs);
                     // Dado movido a M (Fuente Mágica): vuela al multiplicador como bono
                     // aditivo, con el icono de la fuente que lo movió — nunca pasa por N.
+                    // Si nadie lo movió, bd.Dice ya trae la cara EFECTIVA
+                    // (PlayerComboDamage.ApplyFaceDeltas): el dado vuela valiendo 0 / mitad /
+                    // doble, y el mutador que lo transformó viaja como icono del mismo paso —
+                    // no como un proc aparte que deshace la cara.
                     bool towardM = IsMovedToMultiplier(bd.DiceMovedToMultiplier, die.BagSlot);
-                    var mover = towardM ? FindMover(bd.Sources, die.BagSlot) : null;
+                    var source = towardM ? FindMover(bd.Sources, die.BagSlot) : FirstFaceMutator(procs);
                     script.Steps.Add(new BreakdownStep
                     {
                         Kind = BreakdownStepKind.Die,
                         BagSlot = die.BagSlot,
                         Amount = die.Face,
                         Target = towardM ? BreakdownTarget.AddM : BreakdownTarget.BaseN,
-                        SourceId = mover?.SourceId,
-                        SourceAsset = mover?.SourceAsset,
+                        SourceId = source?.SourceId,
+                        SourceAsset = source?.SourceAsset,
                     });
-                    if (perDie != null && perDie.TryGetValue(die.BagSlot, out var procs))
+                    if (procs != null)
                     {
                         AddSourceSteps(script, procs, BreakdownStepKind.DieProc);
                         perDie.Remove(die.BagSlot);
@@ -98,6 +104,15 @@ namespace Rollgeon.UI.HUD.Breakdown
 
             script.Reconciled = CheckReconciliation(script);
             return script;
+        }
+
+        // La primera fuente del dado que mutó su cara (Oxidado/Volátil/…); null si ninguna.
+        private static ScratchContribution? FirstFaceMutator(List<ScratchContribution> procs)
+        {
+            if (procs == null) return null;
+            for (int i = 0; i < procs.Count; i++)
+                if (procs[i].FaceDelta != 0) return procs[i];
+            return null;
         }
 
         private static bool IsMovedToMultiplier(IReadOnlyList<int> moved, int bagSlot)

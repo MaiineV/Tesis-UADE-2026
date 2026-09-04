@@ -205,8 +205,23 @@ namespace Rollgeon.Editor.Tools.Enchantment
                             $"'{label}' usa PcCarrierFace sin RequireCarrierParticipates — el gate del carrier no filtra por combo real.",
                             ench));
 
+                    if (bridge.Event == EnchantmentHookEvent.ComboPlayed && CostsHealthToTheHookTarget(bridge))
+                        findings.Add(new CatalogFinding(
+                            FindingSeverity.Error,
+                            $"'{label}' resta vida con EffModifyIntAttribute (Health/Subtract) en ComboPlayed sin " +
+                            "TargetSelf: el TargetGuid de ese hook es el enemigo, así que golpea al rival en vez " +
+                            "de cobrarle al jugador (Vampiro, Fix#0053).",
+                            ench));
+
+                    if (isComboHook && UsesFaceDeltaAsComboBonus(bridge))
+                        findings.Add(new CatalogFinding(
+                            FindingSeverity.Error,
+                            $"'{label}' usa ReadCarrierRollDelta dentro de EffAddComboBonus: el dado suma su cara " +
+                            "y un proc la deshace ('suma y resta a la vez'). Mutar la cara va por EffMutateCarrierFace.",
+                            ench));
+
                     if (isComboHook
-                        && bridge.Filter is { Mode: ComboFilterMode.ComboIds, ComboIds: not null })
+                        && bridge.Filter is { ComboIds: not null } && bridge.Filter.UsesComboIds)
                     {
                         foreach (var comboId in bridge.Filter.ComboIds)
                         {
@@ -241,6 +256,48 @@ namespace Rollgeon.Editor.Tools.Enchantment
                         ench));
                 }
             }
+        }
+
+        /// <summary>
+        /// <c>EffModifyIntAttribute</c> resuelve el target como <c>TargetGuid ?? SourceGuid</c>, y
+        /// en un hook <c>ComboPlayed</c> ese guid es el objetivo del ataque. Un costo de vida
+        /// autorado así le pega al enemigo (Vampiro pre-Fix#0053, misma clase de bug que las
+        /// Lágrimas de Fix#0051). El costo propio lleva <c>TargetSelf</c>.
+        /// </summary>
+        static bool CostsHealthToTheHookTarget(ExecuteEffectsOnDiceEvent bridge)
+        {
+            if (bridge.Effects == null) return false;
+            foreach (var group in bridge.Effects)
+            {
+                if (group?.Effects == null) continue;
+                foreach (var effect in group.Effects)
+                    if (effect is Rollgeon.Effects.Concretes.EffModifyIntAttribute mod
+                        && mod.TargetStat == StatType.Health
+                        && mod.Operation == Rollgeon.Effects.Concretes.IntOperation.Subtract
+                        && !mod.TargetSelf)
+                        return true;
+            }
+            return false;
+        }
+
+        /// <summary>
+        /// Patrón viejo del "canal por dado": <c>EffAddComboBonus(ReadCarrierRollDelta)</c> mete
+        /// la transformación de la cara en bono_combo, así que el breakdown muestra la cara y
+        /// después el proc que la corrige. Desde Fix#0053 la cara efectiva va por
+        /// <c>EffMutateCarrierFace</c>.
+        /// </summary>
+        static bool UsesFaceDeltaAsComboBonus(ExecuteEffectsOnDiceEvent bridge)
+        {
+            if (bridge.Effects == null) return false;
+            foreach (var group in bridge.Effects)
+            {
+                if (group?.Effects == null) continue;
+                foreach (var effect in group.Effects)
+                    if (effect is Rollgeon.Effects.Concretes.EffAddComboBonus bonus
+                        && bonus.Amount is Rollgeon.Upgrades.Dice.Readers.ReadCarrierRollDelta)
+                        return true;
+            }
+            return false;
         }
 
         static EnchantmentCatalogSO LoadDefaultCatalog()

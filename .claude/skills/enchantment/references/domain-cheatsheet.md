@@ -26,10 +26,12 @@ Description/Icon` (en `UpgradeSO`), `EditorSetCategory/FaceFilter/AllowedDiceTyp
 
 | Id | Evento | Cuando | Trampa |
 |---|---|---|---|
-| `combo.played.any` | ComboPlayed | Se jugo cualquier combo (apply, pre-daño) | — |
+| `combo.played.any` | ComboPlayed | Se jugo cualquier combo REAL (apply, pre-daño) | Numero Alto no cuenta |
 | `combo.played.ids` | ComboPlayed | Se jugaron los combos elegidos | Sin combos elegidos no dispara nunca |
-| `combo.matched.any` | ComboMatched | Preview de cualquier combo | **Solo scratch-writers** (BUG-017) |
+| `combo.played.all` | ComboPlayed | Cualquier jugada, Numero Alto incluido | Solo para propiedades del dado (Fragil) |
+| `combo.matched.any` | ComboMatched | Preview de cualquier combo REAL | **Solo scratch-writers** (BUG-017); Numero Alto no cuenta |
 | `combo.matched.ids` | ComboMatched | Preview de los combos elegidos | Idem |
+| `combo.matched.all` | ComboMatched | Preview de cualquier jugada, Numero Alto incluido | Para `EffMutateCarrierFace`; solo scratch-writers |
 | `roll.dice` | DiceRolled | Cada tirada cruda, pre-reroll | Dispara aunque despues se rerolee |
 | `roll.resolved` | RollResolved | La tirada firme tras rerolls | El momento para leer la cara definitiva |
 | `applied` | EnchantmentApplied | Una vez, al encantar el dado | — |
@@ -38,6 +40,16 @@ Description/Icon` (en `UpgradeSO`), `EditorSetCategory/FaceFilter/AllowedDiceTyp
 
 `Apply`/`Match`/`Describe` espejo de `ItemTriggerCatalog`. `Filter.Mode = None` en un hook de
 combo equivale a `AnyCombo` (asi lo trata el runtime y asi lo matchea el catalogo).
+
+### Numero Alto NO es un combo (Fix#0053)
+
+`combo.higher_number` matchea cualquier seleccion no vacia y contribuye UN solo dado (el mas
+alto): como condicion "cuando participa en un combo" seria "siempre, si es el mas alto".
+Decision GD 2026-09-04: `AnyCombo`/`None`/`ExcludeComboIds` lo excluyen — en encantamientos
+**y en items pasivos** (mismo `ComboFilter`). Entra solo por `AnyIncludingHigherNumber`
+(catalogo `.all`) o listandolo explicito en `ComboIds` ("Arca del Numero Alto"). Regla de
+autoria: la mutacion de cara es una propiedad del dado ⇒ `.all`; el bono/costo "cuando
+participa en un combo" ⇒ `.any`.
 
 ### ComboMatched vs ComboPlayed (BUG-017)
 
@@ -76,7 +88,8 @@ apply se rechaza si la interseccion queda vacia (`EnchantmentConfigSO.MinFacesAf
 |---|---|---|
 | `CapForceRerollOnTurn` | `TriggerOnTurn` | ✅ cableada (`ForcedRerollCapabilityService`) |
 | `CapCursed` | — | ✅ cableada — marca "maldito": color de titulo + multiplicador de peso |
-| `CapPreventHolding` | — | ✅ cableada (Lento): `DiceZoneView.CanChangeHold` bloquea el hold y `CombatHandoffService.ApplyKeepConstraints` fuerza el reroll |
+| `CapPreventHolding` | — | ✅ cableada (Lento): `CombatHandoffService.ApplyKeepConstraints` fuerza el reroll. **No** bloquea la seleccion (seleccionar = armar la mano; Lento se juega) |
+| `CapSelectionRequirement` | `Conditions` (PCs del dueño), `LockLabel` | ✅ cableada (Sediento/Vampiro): si alguna condicion falla el dado queda con candado (`DiceSelectionLocks`): no se selecciona, no entra al combo. Label localizable en `<id>.lock` |
 | `CapWildcard` | — | ⚠️ `[NotYetWired]` |
 | `CapLadderStep` | — | ⚠️ `[NotYetWired]` |
 | `CapMimeticCopy` | — | ⚠️ `[NotYetWired]` |
@@ -127,17 +140,28 @@ en `Assets/Scripts/Rollgeon/Effects/Concretes/` y `Upgrades/Dice/Effects/`):
 
 ### El "canal por dado": cuanto vale ESTE dado en N
 
-No existe una cara efectiva por dado. "El dado no suma / vale doble / vale mitad" se autora como
-`EffAddComboBonus` con `ReadCarrierRollDelta` en **ComboMatched + RequireCarrierParticipates**:
-el delta entra a N y el breakdown lo muestra como proc del dado (journal por BagSlot), en
-preview y en el golpe real por igual. Ops: `Exclude` (-cara, Oxidado), `Double` (+cara),
-`DoubleMaxHalveRest` (Volátil), `TripleOddZeroEven` (Enfiestado), mas los legacy `Invert`,
-`ClampMinToHalfMax`, `DoubleMaxZeroMin`. **Nunca en RollResolved**: ese dispatch descarta el
-bono de combo (solo materializa oro/escudo).
+"El dado no suma / vale doble / vale mitad" se autora con **`EffMutateCarrierFace`** (reader
+`ReadCarrierRollDelta`) en **ComboMatched · `combo.matched.all` · RequireCarrierParticipates**:
+escribe `FaceDeltas[bagSlot]` en el scratch y la formula usa la cara EFECTIVA del dado
+(`PlayerComboDamage.ApplyFaceDeltas`, clamp en 0). El breakdown anima al dado valiendo 0 /
+mitad / doble con el icono del encantamiento, y el label "+N" del HUD muestra lo mismo. Ops:
+`Exclude` (-cara, Oxidado), `Double` (+cara), `DoubleMaxHalveRest` (Volátil),
+`TripleOddZeroEven` (Enfiestado, impar ×3), `Invert` (Invertido), mas `ClampMinToHalfMax` y
+`DoubleMaxZeroMin`. Va en `.all` porque es una propiedad del dado: vale tambien en Numero
+Alto. **Nunca en RollResolved** (ese dispatch descarta el scratch de combo). El patron viejo
+`EffAddComboBonus(ReadCarrierRollDelta)` esta prohibido por la auditoria (el dado sumaba y un
+proc lo deshacia: "suma y resta a la vez").
 
-Azar por tirada (Frágil): la moneda se tira en `DiceRolled` (`EffSlotCounter Reset` + grupo
-`PcChance → Increment`) y el preview solo la LEE (`PcSlotCounterCompare`), asi el resultado no
-cambia con cada toggle de hold.
+Azar al jugar (Frágil): la moneda se resuelve en **ComboPlayed · `combo.played.all`**, no en
+la tirada, asi el preview no la spoilea: `[EffSlotCounter Reset]` → `[PcChance 0.5 →
+Increment + EffMutateCarrierFace(Double)]` → `[PcSlotCounterCompare < 1 →
+EffMutateCarrierFace(Exclude)]`. El daño real lee `LastPlayScratch`, asi que la cara mutada
+llega al golpe.
+
+Costos propios (Vampiro): `EffModifyIntAttribute{Health, Subtract, TargetSelf=true}` en
+ComboPlayed — sin `TargetSelf` el target del hook es el ENEMIGO (auditoria roja). No pasa por
+el DamagePipeline (el escudo no absorbe un costo). El "no se puede usar sin recurso" es una
+`CapSelectionRequirement`, no una rama del trigger.
 
 Patron "cada 3 combos, +50": `EffSlotCounter{Increment}` + `PcSlotCounterCompare{>=3}` gateando
 el bono + `EffSlotCounter{Reset}`.

@@ -336,11 +336,28 @@ namespace Rollgeon.UI.HUD
             if (args[0] is not Guid guid || guid != _playerGuid) return;
             if (RerollSelectionPrefs.KeepSelected && !IsGrabRerollMode())
             {
+                // Lento vuela aunque esté seleccionado (ApplyKeepConstraints): se suelta su
+                // hold ANTES de armar la máscara para que el reveal procese su cara nueva
+                // en vez de saltearlo como lockeado.
+                ReleaseHoldsThatAlwaysReroll();
                 _pendingRerollMask = ComplementOfHeldStates();
                 return;
             }
             _pendingRerollMask = AnyDieHeld() ? GetHeldStates() : null;
             ClearHolds();
+        }
+
+        private void ReleaseHoldsThatAlwaysReroll()
+        {
+            if (_heldStates == null) return;
+            for (int i = 0; i < _heldStates.Length; i++)
+            {
+                if (!_heldStates[i]) continue;
+                if (!EnchantmentCapabilityQueries.PlayerSlotHasCapability<CapPreventHolding>(i)) continue;
+                _heldStates[i] = false;
+                _resolvedSlots?[i]?.SetHeld(false);
+                _animator?.SetRaised(i, false);
+            }
         }
 
         // Clásico: "estos volaron" = los no seleccionados. Sin holds (mano entera
@@ -415,7 +432,12 @@ namespace Rollgeon.UI.HUD
 
             for (int i = 0; i < _resolvedSlots.Length; i++)
             {
-                bool blocked = db != null && db.IsBlocked(i);
+                bool bossBlocked = db != null && db.IsBlocked(i);
+                // Sediento / Vampiro: mismo candado que el boss, pero derivado del estado del
+                // jugador (oro / vida) — se re-evalúa en cada reveal, que es cuando cambia.
+                string lockLabel = null;
+                bool locked = !bossBlocked && DiceSelectionLocks.IsPlayerSlotLocked(i, out lockLabel);
+                bool blocked = bossBlocked || locked;
                 if (blocked && _heldStates != null && i < _heldStates.Length)
                 {
                     _heldStates[i] = false; // un dado bloqueado no puede quedar holdeado
@@ -423,9 +445,11 @@ namespace Rollgeon.UI.HUD
                     // raise explícitamente o el dado queda flotando bloqueado.
                     _animator?.SetRaised(i, false);
                 }
-                // La etiqueta dice QUIÉN se llevó el dado (el número que cantó el Croupier). Sin
-                // ella, el jugador ve un candado y no tiene cómo atarlo al sector encendido del paño.
-                _resolvedSlots[i]?.SetBlocked(blocked, blocked ? db.LabelOf(i) : null);
+                // La etiqueta dice QUIÉN se llevó el dado (el número que cantó el Croupier) o
+                // QUÉ falta para usarlo ("2 oro"). Sin ella, el jugador ve un candado y no
+                // tiene cómo atarlo a su causa.
+                string label = bossBlocked ? db.LabelOf(i) : locked ? lockLabel : null;
+                _resolvedSlots[i]?.SetBlocked(blocked, label);
             }
             PropagateHoldsToActionRoll();
             RunComboDetection();
@@ -610,9 +634,11 @@ namespace Rollgeon.UI.HUD
                 && db != null && db.IsBlocked(i))
                 return false;
 
-            // Lento (CapPreventHolding): el dado no se puede guardar — siempre vuela.
-            // Espejo de CombatHandoffService.ApplyKeepConstraints para el reroll real.
-            if (EnchantmentCapabilityQueries.PlayerSlotHasCapability<CapPreventHolding>(i))
+            // Sediento / Vampiro (CapSelectionRequirement): sin el recurso, el dado tiene
+            // candado y no arma combo. Lento (CapPreventHolding) NO gatea acá: seleccionar
+            // es armar la mano, y Lento tiene que poder jugarse — su "no se guarda" vive en
+            // CombatHandoffService.ApplyKeepConstraints (Fix#0053).
+            if (DiceSelectionLocks.IsPlayerSlotLocked(i, out _))
                 return false;
 
             // Un dado que todavía gira no se holdea — el botón ya está deshabilitado
@@ -672,16 +698,11 @@ namespace Rollgeon.UI.HUD
         {
             if (_currentFaces == null) return;
 
-            // Boss 1 (§2): la preview de combo excluye los dados bloqueados, igual que la
-            // resolución real en CombatHandoffService.
-            var comboKeep = _heldStates;
-            if (ServiceLocator.TryGetService<Rollgeon.Combat.DiceBlock.IDiceBlockService>(out var db)
-                && db != null && db.BlockedIndices.Count > 0 && _heldStates != null)
-            {
-                comboKeep = (bool[])_heldStates.Clone();
-                for (int i = 0; i < comboKeep.Length; i++)
-                    if (db.IsBlocked(i)) comboKeep[i] = false;
-            }
+            // Boss 1 (§2) y candados de encantamiento (Sediento/Vampiro): la preview de combo
+            // excluye los dados bloqueados, igual que la resolución real en CombatHandoffService.
+            var comboKeep = _heldStates != null
+                ? CombatHandoffService.KeepExcludingBlockedDice(_heldStates, _heldStates.Length)
+                : null;
 
             var keptDice = CombatHandoffService.FilterKeptDice(_currentFaces, comboKeep);
             var keptOriginalIndices = CombatHandoffService.FilterKeptIndices(comboKeep, _currentFaces.Length);
@@ -767,12 +788,17 @@ namespace Rollgeon.UI.HUD
                     {
                         if (contributingDice[i].BagSlot != slot) continue;
                         int total = contributingDice[i].Face;
+                        // Cara mutada (Oxidado/Volátil) + bonos del dado: el label muestra lo
+                        // que ESTE dado va a poner en N, nunca bajo 0 (mismo clamp que la fórmula).
+                        int faceDelta = enchants?.LastComboScratch?.GetFaceDelta(slot) ?? 0;
                         if (journal != null)
                         {
                             for (int j = 0; j < journal.Count; j++)
                                 if (journal[j].BagSlot == slot) bonus += journal[j].BonusDelta;
                         }
-                        amount = total + bonus;
+                        int effectiveFace = faceDelta == 0 ? total : Math.Max(0, total + faceDelta);
+                        amount = effectiveFace + bonus;
+                        bonus += effectiveFace - total;
                         break;
                     }
                 }

@@ -149,17 +149,23 @@ namespace Rollgeon.Combat.Damage
             if (kind == PlayerComboFormulaKind.Heal)
                 scratchMultiplier *= AppendPotionHealRules(ref sources);
 
-            // Dados movidos a M (Fuente Mágica): su cara NO entra a Σcaras y SÍ al bono
-            // aditivo de M. Se resuelve acá y no restando en N desde el efecto para que el
-            // desglose muestre el dado volando a M — antes entraba a N y se descontaba
+            // Cara efectiva por dado: los encantamientos que mutan la cara (Oxidado no suma,
+            // Volátil mitad/doble, Enfiestado triple/cero) escriben FaceDeltas por bag slot en
+            // el scratch. Se aplican acá, sobre el término del dado, para que el breakdown
+            // anime al dado valiendo lo que vale y no "+6" seguido de "−6".
+            var effectiveDice = ApplyFaceDeltas(contributingDice, sPassives, sEnchants, sPlay);
+
+            // Dados movidos a M (Fuente Mágica): su cara (ya efectiva) NO entra a Σcaras y SÍ
+            // al bono aditivo de M. Se resuelve acá y no restando en N desde el efecto para
+            // que el desglose muestre el dado volando a M — antes entraba a N y se descontaba
             // después, y el jugador leía que contaba en los dos (playtest 2026-09-04).
             int facesSum = 0;
             int movedFacesSum = 0;
-            if (contributingDice != null)
+            if (effectiveDice != null)
             {
-                for (int i = 0; i < contributingDice.Count; i++)
+                for (int i = 0; i < effectiveDice.Count; i++)
                 {
-                    var die = contributingDice[i];
+                    var die = effectiveDice[i];
                     if (movedDice != null && movedDice.Contains(die.BagSlot)) movedFacesSum += die.Face;
                     else facesSum += die.Face;
                 }
@@ -192,7 +198,7 @@ namespace Rollgeon.Combat.Damage
                 M = m,
                 Blocked = block,
                 Final = total,
-                Dice = contributingDice,
+                Dice = effectiveDice,
                 Sources = sources,
             };
 
@@ -209,6 +215,38 @@ namespace Rollgeon.Combat.Damage
         /// </summary>
         public static int RoundNxM(float n, float m)
             => Math.Max(0, (int)Math.Round(n * (double)m, MidpointRounding.AwayFromZero));
+
+        /// <summary>
+        /// Cara efectiva de cada dado contribuyente: cara tirada + Σ <c>FaceDeltas</c> de los
+        /// canales de scratch para su bag slot, nunca bajo 0 (un dado no resta daño aunque se
+        /// apilen mutaciones). Devuelve la misma lista cuando ningún canal mutó caras — el caso
+        /// común no aloca. Público para que la UI reproduzca el mismo número que el golpe.
+        /// </summary>
+        public static IReadOnlyList<ContributingDie> ApplyFaceDeltas(
+            IReadOnlyList<ContributingDie> dice,
+            EnchantmentScratch passives, EnchantmentScratch enchants, EnchantmentScratch play)
+        {
+            if (dice == null || dice.Count == 0) return dice;
+            if (!HasFaceDeltas(passives) && !HasFaceDeltas(enchants) && !HasFaceDeltas(play)) return dice;
+
+            var result = new List<ContributingDie>(dice.Count);
+            for (int i = 0; i < dice.Count; i++)
+            {
+                var die = dice[i];
+                int delta = FaceDeltaOf(passives, die.BagSlot)
+                            + FaceDeltaOf(enchants, die.BagSlot)
+                            + FaceDeltaOf(play, die.BagSlot);
+                int face = delta == 0 ? die.Face : Math.Max(0, die.Face + delta);
+                result.Add(new ContributingDie(die.BagSlot, face, die.Type));
+            }
+            return result;
+        }
+
+        private static bool HasFaceDeltas(EnchantmentScratch s)
+            => s?.FaceDeltas != null && s.FaceDeltas.Count > 0;
+
+        private static int FaceDeltaOf(EnchantmentScratch s, int bagSlot)
+            => s != null && bagSlot >= 0 ? s.GetFaceDelta(bagSlot) : 0;
 
         /// <summary>
         /// Suma el stat <see cref="ForceDoorRollBonus"/> del jugador y journalea cada modifier

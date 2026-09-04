@@ -51,13 +51,19 @@ namespace Rollgeon.Upgrades.Dice
         /// </summary>
         public readonly int MovedDieBagSlot;
 
-        // multiplierBonusDelta y movedDieBagSlot van últimos y opcionales a propósito: los
-        // ctors posicionales de tests y los nombrados de PlayerComboDamage siguen compilando
-        // sin tocarse.
+        /// <summary>
+        /// Delta sobre la cara del dado portador (<see cref="EnchantmentScratch.AddFaceDelta"/>).
+        /// 0 = la fuente no mutó la cara. Solo tiene sentido con <see cref="BagSlot"/> ≥ 0.
+        /// </summary>
+        public readonly int FaceDelta;
+
+        // multiplierBonusDelta, movedDieBagSlot y faceDelta van últimos y opcionales a
+        // propósito: los ctors posicionales de tests y los nombrados de PlayerComboDamage
+        // siguen compilando sin tocarse.
         public ScratchContribution(ScratchSourceKind kind, string sourceId,
             UnityEngine.Object sourceAsset, int bagSlot, int bonusDelta,
             float multiplierFactor, bool setBlock, float multiplierBonusDelta = 0f,
-            int movedDieBagSlot = -1)
+            int movedDieBagSlot = -1, int faceDelta = 0)
         {
             Kind = kind;
             SourceId = sourceId;
@@ -68,10 +74,12 @@ namespace Rollgeon.Upgrades.Dice
             SetBlock = setBlock;
             MultiplierBonusDelta = multiplierBonusDelta;
             MovedDieBagSlot = movedDieBagSlot;
+            FaceDelta = faceDelta;
         }
 
         public override string ToString()
             => $"{Kind}:{SourceId} (+{BonusDelta}, ×{MultiplierFactor}, +M{MultiplierBonusDelta}" +
+               $"{(FaceDelta != 0 ? ", cara" + FaceDelta.ToString("+0;-0") : "")}" +
                $"{(SetBlock ? ", BLOCK" : "")}{(MovedDieBagSlot >= 0 ? $", slot{MovedDieBagSlot}→M" : "")})";
     }
 
@@ -89,19 +97,32 @@ namespace Rollgeon.Upgrades.Dice
         /// <summary>Cantidad de dados movidos a M antes de la fuente (la lista solo crece).</summary>
         public readonly int MovedDice;
 
+        /// <summary>Delta de cara del slot observado antes de la fuente; 0 si la foto no mira un slot.</summary>
+        public readonly int FaceDelta;
+
         private ScratchSnapshot(int bonus, float multiplier, float multiplierBonus, bool block,
-            int movedDice)
+            int movedDice, int faceDelta)
         {
             Bonus = bonus;
             Multiplier = multiplier;
             MultiplierBonus = multiplierBonus;
             Block = block;
             MovedDice = movedDice;
+            FaceDelta = faceDelta;
         }
 
         public static ScratchSnapshot Of(EnchantmentScratch s)
             => new ScratchSnapshot(s.BonusComboDamage, s.ComboDamageMultiplier,
-                s.ComboMultiplierBonus, s.BlockComboDamage, s.DiceMovedToMultiplier?.Count ?? 0);
+                s.ComboMultiplierBonus, s.BlockComboDamage, s.DiceMovedToMultiplier?.Count ?? 0, faceDelta: 0);
+
+        /// <summary>
+        /// Foto que además mira la cara del dado en <paramref name="bagSlot"/>: la usa el canal
+        /// dados para atribuir al journal la mutación de cara que dejó cada encantamiento.
+        /// </summary>
+        public static ScratchSnapshot Of(EnchantmentScratch s, int bagSlot)
+            => new ScratchSnapshot(s.BonusComboDamage, s.ComboDamageMultiplier,
+                s.ComboMultiplierBonus, s.BlockComboDamage, s.DiceMovedToMultiplier?.Count ?? 0,
+                s.GetFaceDelta(bagSlot));
 
         public static void RecordDelta(EnchantmentScratch scratch, in ScratchSnapshot before,
             ScratchSourceKind kind, string sourceId, UnityEngine.Object sourceAsset, int bagSlot)
@@ -115,12 +136,15 @@ namespace Rollgeon.Upgrades.Dice
             // El bono de M compone aditivamente: delta, no absoluto (misma semántica que Bonus).
             float multBonusDelta = scratch.ComboMultiplierBonus - before.MultiplierBonus;
             bool setBlock = scratch.BlockComboDamage && !before.Block;
+            // La cara solo se atribuye a fuentes por dado: una global (bagSlot -1) no la mira.
+            int faceDelta = bagSlot >= 0 ? scratch.GetFaceDelta(bagSlot) - before.FaceDelta : 0;
 
             bool neutral = bonusDelta == 0 && Math.Abs(factor - 1f) < 1e-4f
-                           && Math.Abs(multBonusDelta) < 1e-4f && !setBlock;
+                           && Math.Abs(multBonusDelta) < 1e-4f && !setBlock && faceDelta == 0;
             if (!neutral)
                 scratch.RecordContribution(new ScratchContribution(
-                    kind, sourceId, sourceAsset, bagSlot, bonusDelta, factor, setBlock, multBonusDelta));
+                    kind, sourceId, sourceAsset, bagSlot, bonusDelta, factor, setBlock, multBonusDelta,
+                    faceDelta: faceDelta));
 
             // Dados movidos a M por esta fuente: una entrada neutra por dado, para que el
             // desglose le ponga el icono de la fuente al dado que vuela a M.

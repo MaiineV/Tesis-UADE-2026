@@ -283,6 +283,8 @@ namespace Rollgeon.UI.HUD.Breakdown
             if (slot != null) _juice?.OnDieLaunch(slot, idx);
             _juice?.OnFlightDeparted(from, TowardM(step), dieIndex: idx);
 
+            // Con la cara mutada por un encantamiento (Oxidado "+0", Volátil "+12") el icono
+            // del mutador viaja pegado al valor: es la única pista de por qué el dado vale eso.
             Fly(from, target.Anchor,
                 FormatAmount(step), BreakdownIconResolver.Resolve(step.SourceAsset),
                 D((_settings != null ? _settings.FlightSeconds : 0.32f) * ramp), Arc(), () =>
