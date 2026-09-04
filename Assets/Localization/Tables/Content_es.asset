@@ -2922,8 +2922,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 18504181335900160
-    m_Localized: "Por cada casilla que recorr\xE9s, gan\xE1s 1 de escudo (m\xE1x.
-      6 por turno)."
+    m_Localized: "Por cada casilla que recorr\xE9s, gan\xE1s 1 de escudo."
     m_Metadata:
       m_Items: []
   - m_Id: 18504181340094464

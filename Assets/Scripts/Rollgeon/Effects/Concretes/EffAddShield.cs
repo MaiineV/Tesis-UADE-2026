@@ -206,6 +206,14 @@ namespace Rollgeon.Effects.Concretes
                         TargetEntityGuid = targetGuid,
                     });
             }
+            else
+            {
+                // Canal dados / items (Baluarte móvil al caminar): sin behavior no hay
+                // FeedbackDB que pinte el número, así que el "+N" sale directo por la ruta
+                // legacy del spawner — el jugador tiene que ver cuándo el escudo sumó.
+                EventManager.Trigger(EventName.OnFloatingNumberRequested, targetGuid,
+                    Rollgeon.UI.HUD.FloatingNumberType.Shield, (float)amount, Vector3.zero);
+            }
 
             return true;
         }
