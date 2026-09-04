@@ -13,24 +13,52 @@ using UnityEngine;
 namespace Rollgeon.Items.Active
 {
     /// <inheritdoc cref="IActiveItemActivationService"/>
-    public sealed class ActiveItemActivationService : IActiveItemActivationService
+    public sealed class ActiveItemActivationService : IActiveItemActivationService, IDisposable
     {
         private const string LogPrefix = "[ActiveItemActivationService] ";
 
         private readonly IEquippedActiveItemService _equipped;
         private readonly IActiveItemDieRoller _roller;
+        private readonly EventManager.EventReceiver _onCombatEndHandler;
+
+        // Ventana de decision (aceptar / re-tirar). El item y el target se congelan al
+        // confirmar: un equip o un cambio de grilla a mitad de la ventana no la corrompe.
+        private ItemSO _pendingItem;
+        private TargetSelectionResult _pendingSelection;
+        private Guid _pendingGuid;
+        private int _pendingRawRoll;
+        private int _pendingRerolls;
+        private bool _hasPending;
 
         public ActiveItemActivationService(IEquippedActiveItemService equipped, IActiveItemDieRoller roller)
         {
             _equipped = equipped;
             _roller = roller ?? new ActiveItemDieRoller();
+
+            // Si el combate se cierra con la decision abierta, la tirada se descarta sin
+            // correr efectos: OnCombatEnd llega despues del teardown del combate y
+            // ejecutar la banda ahi pegaria sobre una sala ya desarmada. El roll pagado
+            // no se devuelve — la regla de "nunca reembolsar" es la misma del reroll de
+            // ataque/defensa.
+            _onCombatEndHandler = _ => DiscardPending();
+            EventManager.Subscribe(EventName.OnCombatEnd, _onCombatEndHandler);
         }
 
+        public void Dispose()
+            => EventManager.UnSubscribe(EventName.OnCombatEnd, _onCombatEndHandler);
+
         public event Action<ActiveItemActivationResult> OnResolved;
+        public event Action<ActiveItemPendingRoll> OnRollPending;
         public event Action OnSelectionStarted;
         public event Action OnSelectionCancelled;
 
         public bool IsSelecting { get; private set; }
+
+        public bool IsAwaitingDecision => _hasPending;
+
+        public ActiveItemPendingRoll? Pending => _hasPending
+            ? new ActiveItemPendingRoll(_pendingItem, _pendingRawRoll, _pendingRerolls)
+            : (ActiveItemPendingRoll?)null;
 
         // ======================================================================
         // Paso 1: tocar la ficha (gratis) → seleccion o activacion directa
@@ -155,6 +183,11 @@ namespace Rollgeon.Items.Active
 
             if (_equipped == null || !_equipped.HasItem) return ActiveItemBlock.NoItemEquipped;
 
+            // Con una tirada esperando aceptar/re-tirar no se abre otra activacion: la
+            // ventana se resuelve primero. Va antes que el chequeo de rolls porque el
+            // motivo real del bloqueo es la decision pendiente, no el pool.
+            if (_hasPending) return ActiveItemBlock.AwaitingDecision;
+
             var playerGuid = ResolvePlayerGuid();
 
             if (ServiceLocator.TryGetService<Rollgeon.Combat.Actions.TurnManager>(out var turns)
@@ -178,10 +211,10 @@ namespace Rollgeon.Items.Active
         public const int RollCost = 1;
 
         // ======================================================================
-        // Confirmacion (§22): cobrar → tirar → banda → efecto
+        // Confirmacion (§22): cobrar → tirar → decidir (aceptar / re-tirar)
         // ======================================================================
 
-        public ActiveItemActivationResult? Confirm(TargetSelectionResult selection)
+        public ActiveItemPendingRoll? Confirm(TargetSelectionResult selection)
         {
             var block = CanActivate();
             if (block != ActiveItemBlock.None) return null;
@@ -199,11 +232,68 @@ namespace Rollgeon.Items.Active
                 return null;
             }
 
-            int rawRoll = _roller.Roll(item.ActiveDie);
+            // La tirada queda pendiente de decision: el activo se re-tira como ataque y
+            // defensa, solo que con un dado. Los efectos corren recien en AcceptRoll.
+            _pendingItem = item;
+            _pendingSelection = selection;
+            _pendingGuid = playerGuid;
+            _pendingRawRoll = _roller.Roll(item.ActiveDie);
+            _pendingRerolls = 0;
+            _hasPending = true;
+
+            var pending = new ActiveItemPendingRoll(item, _pendingRawRoll, 0);
+            OnRollPending?.Invoke(pending);
+            return pending;
+        }
+
+        public bool CanRequestReroll
+            => _hasPending
+               && ServiceLocator.TryGetService<IRollPoolService>(out IRollPoolService rolls)
+               && rolls != null
+               && rolls.GetCurrent(_pendingGuid) >= RollCost;
+
+        public bool RequestReroll()
+        {
+            if (!_hasPending)
+            {
+                Debug.LogWarning(LogPrefix + "RequestReroll sin tirada pendiente — ignorado.");
+                return false;
+            }
+
+            // Mismo contrato que el reroll de combate: cada re-tirada cuesta 1 roll y con
+            // el pool en 0 no pasa nada — la cara vigente queda y la salida es aceptar.
+            // El boton deberia estar apagado via CanRequestReroll; esto es el guard.
+            ServiceLocator.TryGetService<IRollPoolService>(out IRollPoolService rolls);
+            if (rolls == null || !rolls.TrySpendRolls(_pendingGuid, RollCost))
+            {
+                Debug.Log(LogPrefix + "reroll bloqueado — pool vacio. La cara vigente queda.");
+                return false;
+            }
+
+            _pendingRawRoll = _roller.Roll(_pendingItem.ActiveDie);
+            _pendingRerolls++;
+
+            OnRollPending?.Invoke(new ActiveItemPendingRoll(_pendingItem, _pendingRawRoll, _pendingRerolls));
+            return true;
+        }
+
+        public ActiveItemActivationResult? AcceptRoll()
+        {
+            if (!_hasPending) return null;
+
+            var item = _pendingItem;
+            var selection = _pendingSelection;
+            var playerGuid = _pendingGuid;
+            int rawRoll = _pendingRawRoll;
+
+            // La ventana se cierra ANTES de correr efectos: si un efecto dispara un
+            // refresh del HUD, este ya no tiene que ver una decision abierta.
+            DiscardPending();
 
             // §14, orden de operaciones: el encantamiento ajusta el resultado crudo y
             // RECIEN despues se determina la banda. Al reves, el ajuste no cambiaria
-            // nada.
+            // nada. Corre sobre la cara aceptada, no sobre cada reroll intermedio: un
+            // uso limitado no se gasta en tiradas que el jugador descarto.
             int roll = ApplyEnchantment(rawRoll, item.ActiveDie.MaxFace());
 
             // Por item y no por dado: Precision y Control tienen mecanismo propio.
@@ -219,6 +309,16 @@ namespace Rollgeon.Items.Active
             var result = new ActiveItemActivationResult(item, roll, band, ok, rawRoll);
             OnResolved?.Invoke(result);
             return result;
+        }
+
+        private void DiscardPending()
+        {
+            _hasPending = false;
+            _pendingItem = null;
+            _pendingSelection = null;
+            _pendingGuid = Guid.Empty;
+            _pendingRawRoll = 0;
+            _pendingRerolls = 0;
         }
 
         /// <summary>

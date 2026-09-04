@@ -1125,6 +1125,10 @@ MonoBehaviour:
     m_Localized: "Pod\xE9s intentar abrirla con Forzar Puerta{0}."
     m_Metadata:
       m_Items: []
+  - m_Id: 17587744320700416
+    m_Localized: "Click: re-tirar (-1 Roll) \xB7 Confirmar: aceptar"
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

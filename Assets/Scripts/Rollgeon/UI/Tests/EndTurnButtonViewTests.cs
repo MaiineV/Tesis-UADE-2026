@@ -43,6 +43,7 @@ namespace Rollgeon.UI.Tests
         public void Teardown()
         {
             EventManager.ResetEventDictionary();
+            ServiceLocator.Clear();
             // El view se suscribe al toggle de holds (re-gateo del Confirm) — sin el
             // Clear, un test que no desbindea dejaría el handler colgado para otros
             // fixtures que disparen el payload.
@@ -342,6 +343,88 @@ namespace Rollgeon.UI.Tests
             Assert.AreEqual(TurnButtonMode.Confirm, _view.CurrentMode,
                 "Pagado el roll, el botón vuelve a Confirm para la tirada nueva.");
             Assert.IsTrue(_button.interactable);
+        }
+
+        // ==================================================================
+        // Ventana de decision del item activo (aceptar / re-tirar)
+        // ==================================================================
+
+        [Test]
+        public void ActiveItemPending_EntersConfirmMode_AndClickAccepts()
+        {
+            // Arrange — con la tirada del activo esperando decision, el boton pasa a
+            // Confirm y el click acepta la cara vigente (nunca dispara el flow de combate).
+            var fake = new FakeActiveItemActivation();
+            ServiceLocator.AddService<Rollgeon.Items.Active.IActiveItemActivationService>(fake);
+            _view.Bind(_playerGuid);
+            EventManager.Trigger(EventName.OnTurnStarted, _playerGuid);
+            bool confirmFired = false, endTurnFired = false;
+            _view.OnConfirmPressed.AddListener(() => confirmFired = true);
+            _view.OnEndTurnPressed.AddListener(() => endTurnFired = true);
+
+            // Act
+            fake.RaisePending();
+
+            // Assert
+            Assert.AreEqual(TurnButtonMode.Confirm, _view.CurrentMode,
+                "Con la tirada del activo pendiente el boton ofrece Confirm.");
+            Assert.IsTrue(_button.interactable, "Aceptar no cuesta nada — habilitado.");
+
+            _button.onClick.Invoke();
+            Assert.AreEqual(1, fake.AcceptCalls, "el click acepta la cara vigente");
+            Assert.IsFalse(confirmFired, "no debe disparar el confirm del flow de combate");
+            Assert.IsFalse(endTurnFired, "no debe cerrar el turno");
+            Assert.AreEqual(TurnButtonMode.EndTurn, _view.CurrentMode,
+                "resuelta la tirada, el boton vuelve a End Turn");
+        }
+
+        private sealed class FakeActiveItemActivation
+            : Rollgeon.Items.Active.IActiveItemActivationService
+        {
+            public int AcceptCalls { get; private set; }
+            public bool IsAwaitingDecision { get; private set; }
+
+            public Rollgeon.Items.Active.ActiveItemPendingRoll? Pending
+                => IsAwaitingDecision
+                    ? new Rollgeon.Items.Active.ActiveItemPendingRoll(null, 1, 0)
+                    : (Rollgeon.Items.Active.ActiveItemPendingRoll?)null;
+
+            public bool CanRequestReroll => false;
+            public bool IsSelecting => false;
+
+            public Rollgeon.Items.Active.ActiveItemBlock CanActivate()
+                => Rollgeon.Items.Active.ActiveItemBlock.None;
+
+            public bool BeginActivation() => false;
+            public void CancelActivation() { }
+
+            public Rollgeon.Items.Active.ActiveItemPendingRoll? Confirm(
+                Rollgeon.Effects.Selection.TargetSelectionResult selection) => null;
+
+            public bool RequestReroll() => false;
+
+            public Rollgeon.Items.Active.ActiveItemActivationResult? AcceptRoll()
+            {
+                AcceptCalls++;
+                IsAwaitingDecision = false;
+                var result = new Rollgeon.Items.Active.ActiveItemActivationResult(
+                    null, 1, Rollgeon.Items.Active.ActiveItemBand.Negative, true, 1);
+                OnResolved?.Invoke(result);
+                return result;
+            }
+
+            public void RaisePending()
+            {
+                IsAwaitingDecision = true;
+                OnRollPending?.Invoke(new Rollgeon.Items.Active.ActiveItemPendingRoll(null, 1, 0));
+            }
+
+            public event Action<Rollgeon.Items.Active.ActiveItemPendingRoll> OnRollPending;
+            public event Action<Rollgeon.Items.Active.ActiveItemActivationResult> OnResolved;
+#pragma warning disable CS0067
+            public event Action OnSelectionStarted;
+            public event Action OnSelectionCancelled;
+#pragma warning restore CS0067
         }
 
         // ==================================================================

@@ -1116,6 +1116,10 @@ MonoBehaviour:
     m_Localized: You can try to open it with Force Door{0}.
     m_Metadata:
       m_Items: []
+  - m_Id: 17587744320700416
+    m_Localized: "Click: reroll (-1 Roll) \xB7 Confirm: accept"
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

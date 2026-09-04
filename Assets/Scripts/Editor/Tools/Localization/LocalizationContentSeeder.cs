@@ -318,6 +318,12 @@ namespace Rollgeon.EditorTools.Localization
             Ui(UiTextKeys.RejectNoPotion,
                 "No tienes poción disponible.",
                 "You have no potion available.");
+
+            // Ventana de decision de la ficha de item activo: el tooltip explica los dos
+            // gestos mientras la tirada espera (ActiveItemChipView).
+            Ui(UiTextKeys.ActiveItemDecideHint,
+                "Click: re-tirar (-1 Roll) · Confirmar: aceptar",
+                "Click: reroll (-1 Roll) · Confirm: accept");
         }
 
         // ==================================================================
