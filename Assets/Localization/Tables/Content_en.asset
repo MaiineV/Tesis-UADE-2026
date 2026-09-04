@@ -2912,7 +2912,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 18504181335900160
-    m_Localized: Gain 1 shield per tile you walk (max 6 per turn).
+    m_Localized: Gain 1 shield per tile you walk.
     m_Metadata:
       m_Items: []
   - m_Id: 18504181340094464

@@ -174,13 +174,16 @@ Los encantamientos de categoria `Movimiento` viven en el carril
 `EnchantmentSlotRef.MovementDieSlot` (-2) del `RuntimeDiceBag` — mismo dispatch, counters y
 save que los 5 dados. El hook es **`player.moved`** (solo movimiento voluntario del jugador en
 combate: `EffMove`; empujes, portales y teleports no cuentan) y las casillas se leen con
-**`ReadTilesTraversed { Multiplier, CapPerTurn, CapPerExtraCopy }`**: el tope por turno sale del
-acumulado del contexto (sin counters) y varias copias del mismo encantamiento no duplican el
-grant — solo la primera copia lee y cada copia extra sube el tope. Baluarte movil =
-`EffAddShield.EditorSetReader(new ReadTilesTraversed { CapPerTurn = 6, CapPerExtraCopy = 3 })`.
-El escudo expira solo (`ShieldResetHandler`, al inicio del turno del dueño). Las caras extra del
-dado (`IDiceEnchantmentService.AddMovementDieFaces`, DevConsole `mdie faces <n>`) entran al set
-de caras que los `IFaceFilter` filtran.
+**`ReadTilesTraversed { Multiplier, CapPerTurn, CapPerExtraCopy }`**: el tope por turno (si hay)
+sale del acumulado del contexto (sin counters) y con tope varias copias del mismo encantamiento
+no duplican el grant — solo la primera copia lee y cada copia extra sube el tope. **Sin tope
+(`CapPerTurn = 0`) el reader NO gatea copias: cada copia suma.** Baluarte movil (desde
+Fix#0083, decision de diseno 2026-09-04: sin tope) =
+`EffAddShield.EditorSetReader(new ReadTilesTraversed { CapPerTurn = 0 })`. El escudo expira solo
+(`ShieldResetHandler`, al inicio del turno del dueño); sin behavior (canal dados) `EffAddShield`
+pide el "+N" flotante por `OnFloatingNumberRequested`. Las caras extra del dado
+(`IDiceEnchantmentService.AddMovementDieFaces`, DevConsole `mdie faces <n>`) entran al set de
+caras que los `IFaceFilter` filtran.
 
 Piezas del dado de Movimiento (`Upgrades/Dice/Effects/`), todas con stacking via
 `MovementLaneCopies` (solo la primera copia actua; las extra escalan un parametro):
@@ -189,10 +192,18 @@ Piezas del dado de Movimiento (`Upgrades/Dice/Effects/`), todas con stacking via
   Rastro toxico / Sendero de espinas con `Tile_Fire_Incendiario` / `Tile_Poison_Rastro` /
   `Tile_Spikes_Sendero`). Las definiciones usan `OwnerAndAlliesImmune` (el jugador no se quema con
   su rastro) y `EndsMovementOnEnter` (espinas frenan al enemigo). Dano/veneno son fijos por
-  definicion: el stacking solo suma duracion (desvio data-only vs GDD).
+  definicion: el stacking solo suma duracion (desvio data-only vs GDD). La logica coloca las
+  casillas al instante; el ARTE de cada celda aparece cuando el pawn del dueño la abandona
+  (`IPawnWalkTracker` + spawn diferido de `SpecialTileService`, Fix#0083).
 - **`EffAddTemporaryModifier { Stat: Attack|MoveRange, Amount|Reader, DurationTurns, OnlyFirstCopy }`** —
   modificador `ModifierLifetime.Turns` que muere en el proximo `OnTurnFinished` (Carga: Attack ×
-  `ReadTilesTraversed`; Torbellino: +2 MoveRange en `movement.die_rolled`).
+  `ReadTilesTraversed`). OJO: `MoveRange` acá aplica recien desde la SIGUIENTE accion de Mover y
+  se arrastra hasta fin de turno — para "+N en esta tirada" usar `EffAddMovementDieBonus`.
+- **`EffAddMovementDieBonus { Amount, OnlyFirstCopy }`** — solo en `movement.die_rolled`: suma a
+  la TIRADA del dado de Movimiento (scratch `MovementDieBonus`, atribuido en el journal), entra
+  al rango de ese movimiento y el dado lo anima como chip "Torbellino +2" con el icono del
+  encantamiento (patron Botas). El hook corre al tirar, antes del reveal
+  (`IDiceEnchantmentService.DispatchMovementDieRolled`), no por el evento `OnMovementDieRolled`.
 - **`EffTeleportEnemiesRandomly`** — todos los enemigos a celdas libres alcanzables al azar (Torbellino).
 - **`CapEtherealMovement`** (capability, sin trigger) — Paso etereo: `EtherealMovementPolicy` hace
   que BFS/A* del jugador atraviesen unidades (nunca como destino; paredes bloquean).

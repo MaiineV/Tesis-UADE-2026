@@ -71,7 +71,7 @@ namespace Rollgeon.Movement
             return result;
         }
 
-        private static bool CanPassThroughUnits(Guid entity)
+        public bool CanPassThroughUnits(Guid entity)
         {
             return entity != Guid.Empty
                    && ServiceLocator.TryGetService<IMovementTraversalPolicy>(out var policy)
@@ -80,6 +80,15 @@ namespace Rollgeon.Movement
         }
 
         public List<GridCoord> FindPath(GridCoord from, GridCoord to) => FindPathCore(from, to, passThroughUnits: false);
+
+        /// <summary>Mismo branch que <see cref="TryMove"/>: el preview muestra el camino que se va a caminar.</summary>
+        public List<GridCoord> FindPathFor(Guid entity, GridCoord from, GridCoord to)
+        {
+            var fp = _grid.GetFootprint(entity);
+            return GridFootprint.IsUnit(fp)
+                ? FindPathCore(from, to, CanPassThroughUnits(entity))
+                : FindPathRect(entity, fp, from, to);
+        }
 
         private List<GridCoord> FindPathCore(GridCoord from, GridCoord to, bool passThroughUnits)
         {

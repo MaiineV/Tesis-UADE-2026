@@ -42,6 +42,9 @@ namespace Rollgeon.Entities.Visuals
             _instance = new EntityVisualService(grid, movement);
             ServiceLocator.AddService<IEntityVisualService>(_instance, ServiceScope.Run);
             ServiceLocator.AddService<IEntityPositionResolver>(_instance, ServiceScope.Run);
+            // Rastros del dado de Movimiento: SpecialTileService difiere el arte de la casilla
+            // hasta que el pawn del dueño la cruza.
+            ServiceLocator.AddService<IPawnWalkTracker>(_instance, ServiceScope.Run);
         }
     }
 }

@@ -74,6 +74,33 @@ namespace Rollgeon.Entities.Visuals
 
         public bool IsMoving => _moveAnim != null;
 
+        /// <summary>
+        /// La caminata abandonó una celda: el pawn llegó a la siguiente. Args: (pawn, celda
+        /// abandonada). Lo consume el visual diferido de las casillas de rastro — la casilla
+        /// aparece recién cuando el cuerpo ya la cruzó.
+        /// </summary>
+        public event Action<EntityPawn, GridCoord> OnCellLeft;
+
+        /// <summary>La caminata terminó: llegó, abortó el reroute, o la cortó un stop/snap con path en vuelo.</summary>
+        public event Action<EntityPawn> OnWalkEnded;
+
+        // Estado de la caminata en curso (solo Walk): path y el índice de la celda de la que el
+        // pawn está saliendo. Lo lee IsWalkingThrough para saber qué celdas aún no abandonó.
+        private List<GridCoord> _walkPath;
+        private int _walkFromIndex;
+
+        /// <summary>
+        /// <c>true</c> si hay una caminata en curso y <paramref name="coord"/> es la celda de la
+        /// que el pawn está saliendo o una por venir — todavía no la abandonó.
+        /// </summary>
+        public bool IsWalkingThrough(GridCoord coord)
+        {
+            if (_moveAnim == null || _walkPath == null) return false;
+            for (int i = _walkFromIndex; i < _walkPath.Count; i++)
+                if (_walkPath[i] == coord) return true;
+            return false;
+        }
+
         public void Bind(Guid guid, PawnKind kind)
         {
             EntityGuid = guid;
@@ -108,7 +135,16 @@ namespace Rollgeon.Entities.Visuals
 
             if (_moveAnim == null) return;
             StopCoroutine(_moveAnim);
+            EndWalk();
+        }
+
+        // Único cierre de una caminata (feliz, abortada o cortada): los visuales diferidos que
+        // esperaban al pawn se liberan acá, así un stop nunca los deja colgados.
+        private void EndWalk()
+        {
             _moveAnim = null;
+            _walkPath = null;
+            OnWalkEnded?.Invoke(this);
         }
 
         private bool _stopAtStepEnd;
@@ -281,6 +317,13 @@ namespace Rollgeon.Entities.Visuals
             var path = new List<GridCoord>(initialPath);
             var destination = path[path.Count - 1];
 
+            // Paso etéreo: el path autorizado cruza unidades a propósito — re-rutear al pisar
+            // una celda ocupada abortaría la caminata justo en la celda que hay que atravesar.
+            bool passThroughUnits = movement != null && movement.CanPassThroughUnits(EntityGuid);
+
+            _walkPath = path;
+            _walkFromIndex = 0;
+
             int i = 1;
             while (i < path.Count)
             {
@@ -289,9 +332,9 @@ namespace Rollgeon.Entities.Visuals
 
                 // Recalc on block: si el próximo tile fue ocupado por otra entidad mientras
                 // animábamos, intentar rodear. Si no hay alternativa, abortamos en prev.
-                if (movement != null && IsBlockedByOther(grid, next))
+                if (movement != null && !passThroughUnits && IsBlockedByOther(grid, next))
                 {
-                    var rerouted = movement.FindPath(prev, destination);
+                    var rerouted = movement.FindPathFor(EntityGuid, prev, destination);
                     if (rerouted == null || rerouted.Count < 2)
                     {
                         // No hay forma de seguir — paramos acá. La posición lógica en grid
@@ -301,11 +344,14 @@ namespace Rollgeon.Entities.Visuals
                         break;
                     }
                     path = rerouted;
+                    _walkPath = path;
+                    _walkFromIndex = 0;
                     i = 1;
                     continue;
                 }
 
                 FaceCoord(prev, next);
+                _walkFromIndex = i - 1;
 
                 Vector3 startPos = transform.position;
                 Vector3 endPos = WorldFor(grid, next);
@@ -320,6 +366,9 @@ namespace Rollgeon.Entities.Visuals
                 }
                 transform.position = endPos;
                 i++;
+                // Recién con el cuerpo en `next` se abandonó `prev`: la casilla de rastro que
+                // quedó ahí puede aparecer sin que el pawn la pise "antes de tiempo".
+                OnCellLeft?.Invoke(this, prev);
 
                 // Soft-stop (cancel del jugador): frenamos con el pawn parado en una
                 // celda exacta. El callback reconcilia la posición lógica del grid
@@ -347,7 +396,7 @@ namespace Rollgeon.Entities.Visuals
             }
 
             SetMovementAnim(false);
-            _moveAnim = null;
+            EndWalk();
         }
 
         /// <summary>

@@ -37,6 +37,21 @@ namespace Rollgeon.Movement
         List<GridCoord> FindPath(GridCoord from, GridCoord to);
 
         /// <summary>
+        /// Igual que <see cref="FindPath"/> pero para una entidad concreta: aplica la
+        /// <see cref="IMovementTraversalPolicy"/> (Paso etéreo) y el footprint, igual que el
+        /// camino que <see cref="TryMove"/> termina caminando. Es el path que la UI debe
+        /// previsualizar. Default interface member para los fakes; la impl real lo override.
+        /// </summary>
+        List<GridCoord> FindPathFor(Guid entity, GridCoord from, GridCoord to) => FindPath(from, to);
+
+        /// <summary>
+        /// <c>true</c> si <paramref name="entity"/> atraviesa unidades como paso intermedio
+        /// (Paso etéreo). La capa visual lo consulta para no re-rutear al pisar una celda
+        /// ocupada que el path autorizó. Default <c>false</c>.
+        /// </summary>
+        bool CanPassThroughUnits(Guid entity) => false;
+
+        /// <summary>
         /// Ejecuta el movimiento de <paramref name="entity"/> a <paramref name="destination"/>
         /// (si alcanzable). Devuelve <c>true</c> si se movió (incluyendo caso origen == destino).
         /// </summary>

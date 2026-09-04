@@ -153,7 +153,10 @@ namespace Rollgeon.Upgrades.Dice
         /// </summary>
         public static bool SlotHasCapability<T>(this RuntimeDiceBag bag, int bagSlot) where T : class, IEnchantmentCapability
         {
-            if (bag == null || bagSlot < 0 || bagSlot >= bag.Dice.Count) return false;
+            // IsValidIndex y no un rango a mano: el carril del dado de Movimiento es el
+            // sentinela negativo MovementDieSlot, y un `bagSlot < 0` lo dejaba sin capabilities
+            // (Paso etéreo nunca aplicaba).
+            if (bag == null || !bag.IsValidIndex(bagSlot)) return false;
             var slots = bag.GetEnchantments(bagSlot);
             if (slots == null) return false;
             for (int i = 0; i < slots.Count; i++)

@@ -29,8 +29,7 @@ MonoBehaviour:
       Data: "Baluarte m\xF3vil"
     - Name: _description
       Entry: 1
-      Data: "Por cada casilla que recorr\xE9s, gan\xE1s 1 de escudo (m\xE1x. 6 por
-        turno)."
+      Data: "Por cada casilla que recorr\xE9s, gan\xE1s 1 de escudo."
     - Name: _icon
       Entry: 6
       Data: 
@@ -240,10 +239,10 @@ MonoBehaviour:
       Data: 1
     - Name: CapPerTurn
       Entry: 3
-      Data: 6
+      Data: 0
     - Name: CapPerExtraCopy
       Entry: 3
-      Data: 3
+      Data: 0
     - Name: 
       Entry: 8
       Data: 
@@ -296,14 +295,14 @@ MonoBehaviour:
   _faceFilter:
     rid: -2
   _triggers:
-  - rid: 7465468544698811244
+  - rid: 7496091045338546393
   _capabilities: []
   references:
     version: 2
     RefIds:
     - rid: -2
       type: {class: , ns: , asm: }
-    - rid: 7465468544698811244
+    - rid: 7496091045338546393
       type: {class: ExecuteEffectsOnDiceEvent, ns: Rollgeon.Upgrades.Dice.Triggers, asm: Rollgeon}
       data:
         Event: 7
@@ -315,10 +314,10 @@ MonoBehaviour:
         - Label: "Baluarte m\xF3vil +1/casilla"
           PreConditions: []
           Effects:
-          - rid: 7465468544698811245
+          - rid: 7496091045338546394
           TargetSelector:
             rid: -2
-    - rid: 7465468544698811245
+    - rid: 7496091045338546394
       type: {class: EffAddShield, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
       data:
         Selection:
@@ -346,11 +345,11 @@ MonoBehaviour:
         _baseAmount: 5
         _comboMultiplier: 1
         _reader:
-          rid: 7465468544698811246
+          rid: 7496091045338546395
         _readerMultiplier: 1
-    - rid: 7465468544698811246
+    - rid: 7496091045338546395
       type: {class: ReadTilesTraversed, ns: Rollgeon.Upgrades.Dice.Readers, asm: Rollgeon}
       data:
         Multiplier: 1
-        CapPerTurn: 6
-        CapPerExtraCopy: 3
+        CapPerTurn: 0
+        CapPerExtraCopy: 0

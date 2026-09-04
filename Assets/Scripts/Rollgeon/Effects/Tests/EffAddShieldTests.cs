@@ -117,6 +117,39 @@ namespace Rollgeon.Effects.Tests
         }
 
         [Test]
+        public void Constant_WithoutBehavior_RequestsAFloatingShieldNumber()
+        {
+            // Canal dados / items (Baluarte móvil): sin behavior no hay FeedbackDB — el "+N"
+            // sale por la ruta legacy del spawner para que el jugador vea que sumó.
+            var requests = new List<object[]>();
+            EventManager.EventReceiver onRequested = args => requests.Add(args);
+            EventManager.Subscribe(EventName.OnFloatingNumberRequested, onRequested);
+            var eff = CreateConstantEffect(4);
+
+            eff.ApplyEffect(MakeCtx());
+
+            EventManager.UnSubscribe(EventName.OnFloatingNumberRequested, onRequested);
+            Assert.AreEqual(1, requests.Count);
+            Assert.AreEqual(_sourceId, requests[0][0]);
+            Assert.AreEqual(Rollgeon.UI.HUD.FloatingNumberType.Shield, requests[0][1]);
+            Assert.AreEqual(4f, (float)requests[0][2]);
+        }
+
+        [Test]
+        public void Constant_WithBehavior_DoesNotDuplicateTheFloatingNumber()
+        {
+            int requests = 0;
+            EventManager.EventReceiver onRequested = _ => requests++;
+            EventManager.Subscribe(EventName.OnFloatingNumberRequested, onRequested);
+            var eff = CreateConstantEffect(4);
+
+            eff.ApplyEffect(MakeCtx(new TestBehavior()));
+
+            EventManager.UnSubscribe(EventName.OnFloatingNumberRequested, onRequested);
+            Assert.AreEqual(0, requests, "con behavior el número lo pinta el pipeline de feedback");
+        }
+
+        [Test]
         public void ZeroAmount_ReturnsTrue_NoSideEffects()
         {
             var eff = CreateConstantEffect(0);

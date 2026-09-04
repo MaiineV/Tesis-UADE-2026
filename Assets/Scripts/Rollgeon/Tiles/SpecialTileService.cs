@@ -4,6 +4,7 @@ using Patterns;
 using Rollgeon.Combat;
 using Rollgeon.Combat.Pipelines;
 using Rollgeon.Entities.Traits;
+using Rollgeon.Entities.Visuals;
 using Rollgeon.Grid;
 using Rollgeon.Movement;
 using Rollgeon.Patterns.Bootstrap;
@@ -58,6 +59,19 @@ namespace Rollgeon.Tiles
         // que los tests que no autoran VisualPrefab siguen sin parir GameObjects.
         private readonly Visuals.SpecialTileVisualPool _visualPool = new Visuals.SpecialTileVisualPool();
 
+        // Visuales diferidos de los rastros: (instancia, celda) cuyo arte espera a que el pawn
+        // del dueño cruce la celda. Solo arte — la instancia ya está en _instances y dispara
+        // igual. La suscripción al tracker vive mientras haya algo pendiente.
+        private readonly List<DeferredVisual> _deferredVisuals = new List<DeferredVisual>();
+        private IPawnWalkTracker _walkTrackerSubscribedTo;
+
+        private struct DeferredVisual
+        {
+            public Guid InstanceId;
+            public Guid Owner;
+            public GridCoord Coord;
+        }
+
         private EventManager.EventReceiver _onTurnQueueBuiltHandler;
         private EventManager.EventReceiver _onTurnStartedHandler;
         private EventManager.EventReceiver _onTurnFinishedHandler;
@@ -109,6 +123,13 @@ namespace Rollgeon.Tiles
             _playerGuidResolver = playerGuidResolver ?? DefaultPlayerGuidResolver;
             SubscribeHandlers();
         }
+
+        /// <summary>Visuales alquilados de la instancia (tests del spawn diferido). -1 si no existe.</summary>
+        public int VisualCountForTests(Guid instanceId)
+            => _instances.TryGetValue(instanceId, out var instance) ? instance.Visuals.Count : -1;
+
+        /// <summary>Celdas cuyo arte espera a que el dueño las cruce (tests del spawn diferido).</summary>
+        public int DeferredVisualCountForTests => _deferredVisuals.Count;
 
         /// <summary>Registra (o pisa) el handler de una categoría. Extensión sin refactor.</summary>
         public void RegisterEffectHandler(ITileEffectHandler handler)
@@ -286,6 +307,7 @@ namespace Rollgeon.Tiles
             var set = new HashSet<GridCoord>(newCoords);
             if (set.Count == 0) return;
 
+            DropDeferredVisuals(instance.InstanceId);
             ClearVisuals(instance);
             instance.Tiles = set;
 
@@ -761,6 +783,7 @@ namespace Rollgeon.Tiles
                 pair.LinkedInstanceId = Guid.Empty;
             }
 
+            DropDeferredVisuals(instanceId);
             ClearVisuals(instance);
             EventManager.Trigger(EventName.OnSpecialTileExpired, instanceId);
         }
@@ -768,6 +791,7 @@ namespace Rollgeon.Tiles
         private void ResetAll()
         {
             UnsubscribeMovement();
+            UnsubscribeWalkTracker();
 
             // Sin OnSpecialTileExpired en teardown: los listeners no deben correr reacciones
             // de "la casilla se apagó" con el combate/la sala ya desmantelados.
@@ -1266,22 +1290,108 @@ namespace Rollgeon.Tiles
             }
             if (!ServiceLocator.TryGetService<IGridManager>(out var grid) || grid == null) return;
 
+            var tracker = ResolveWalkTracker();
             foreach (var coord in instance.Tiles)
             {
                 if (instance.Visuals.ContainsKey(coord)) continue;
 
-                var world = grid.GridToWorld(coord) + Vector3.up * instance.Definition.VisualYOffset;
-                var visual = _visualPool.Rent(prefab, world);
-                if (visual == null) continue;
+                // Rastro del dueño (Incendiario / Rastro tóxico / Sendero): la lógica ya colocó
+                // la casilla porque el grid ya movió, pero el cuerpo del pawn recién arranca a
+                // caminar — el arte espera a que cruce la celda. Sin tracker o con el pawn
+                // quieto (casillas de jefe, hazards) aparece al instante, como siempre.
+                if (tracker != null && instance.OwnerGuid != Guid.Empty
+                    && tracker.IsWalkingThrough(instance.OwnerGuid, coord))
+                {
+                    DeferVisual(instance, coord, tracker);
+                    continue;
+                }
 
-                visual.Go.name = $"{prefab.name} (tile {coord})";
-                instance.Visuals[coord] = visual;
-
-                // Re-bindeo en CADA alquiler, no al crear el clon: uno reciclado viene atado a
-                // la instancia anterior y contestaría por una casilla que ya se apagó.
-                if (visual.Binding != null) visual.Binding.Bind(instance.InstanceId, coord);
-                if (visual.Tooltip != null) visual.Tooltip.Bind(instance.Definition, instance.RemainingRounds);
+                SpawnVisualAt(instance, coord, grid, prefab);
             }
+        }
+
+        private void SpawnVisualAt(SpecialTileInstance instance, GridCoord coord, IGridManager grid, GameObject prefab)
+        {
+            var world = grid.GridToWorld(coord) + Vector3.up * instance.Definition.VisualYOffset;
+            var visual = _visualPool.Rent(prefab, world);
+            if (visual == null) return;
+
+            visual.Go.name = $"{prefab.name} (tile {coord})";
+            instance.Visuals[coord] = visual;
+
+            // Re-bindeo en CADA alquiler, no al crear el clon: uno reciclado viene atado a
+            // la instancia anterior y contestaría por una casilla que ya se apagó.
+            if (visual.Binding != null) visual.Binding.Bind(instance.InstanceId, coord);
+            if (visual.Tooltip != null) visual.Tooltip.Bind(instance.Definition, instance.RemainingRounds);
+        }
+
+        // ---- Spawn diferido (rastros) ------------------------------------------
+
+        private IPawnWalkTracker ResolveWalkTracker()
+        {
+            if (_walkTrackerSubscribedTo != null) return _walkTrackerSubscribedTo;
+            return ServiceLocator.TryGetService<IPawnWalkTracker>(out var tracker) ? tracker : null;
+        }
+
+        private void DeferVisual(SpecialTileInstance instance, GridCoord coord, IPawnWalkTracker tracker)
+        {
+            _deferredVisuals.Add(new DeferredVisual
+            {
+                InstanceId = instance.InstanceId,
+                Owner = instance.OwnerGuid,
+                Coord = coord,
+            });
+            if (_walkTrackerSubscribedTo != null) return;
+
+            tracker.OnCellLeft += OnPawnCellLeft;
+            tracker.OnWalkEnded += OnPawnWalkEnded;
+            _walkTrackerSubscribedTo = tracker;
+        }
+
+        private void UnsubscribeWalkTracker()
+        {
+            _deferredVisuals.Clear();
+            if (_walkTrackerSubscribedTo == null) return;
+            _walkTrackerSubscribedTo.OnCellLeft -= OnPawnCellLeft;
+            _walkTrackerSubscribedTo.OnWalkEnded -= OnPawnWalkEnded;
+            _walkTrackerSubscribedTo = null;
+        }
+
+        private void DropDeferredVisuals(Guid instanceId)
+        {
+            for (int i = _deferredVisuals.Count - 1; i >= 0; i--)
+                if (_deferredVisuals[i].InstanceId == instanceId) _deferredVisuals.RemoveAt(i);
+            if (_deferredVisuals.Count == 0) UnsubscribeWalkTracker();
+        }
+
+        private void OnPawnCellLeft(Guid entity, GridCoord coord) => RevealDeferredVisuals(entity, coord);
+
+        private void OnPawnWalkEnded(Guid entity) => RevealDeferredVisuals(entity, null);
+
+        // Revela lo que esperaba al dueño: la celda abandonada, o todo si la caminata terminó
+        // (llegó, abortó o la cortó un snap). Una instancia que expiró o mudó sus celdas mientras
+        // tanto ya no tiene nada que mostrar.
+        private void RevealDeferredVisuals(Guid owner, GridCoord? coord)
+        {
+            if (_deferredVisuals.Count == 0) return;
+            ServiceLocator.TryGetService<IGridManager>(out var grid);
+
+            for (int i = _deferredVisuals.Count - 1; i >= 0; i--)
+            {
+                var pending = _deferredVisuals[i];
+                if (pending.Owner != owner) continue;
+                if (coord.HasValue && pending.Coord != coord.Value) continue;
+                _deferredVisuals.RemoveAt(i);
+
+                if (grid == null) continue;
+                if (!_instances.TryGetValue(pending.InstanceId, out var instance)) continue;
+                if (!instance.Tiles.Contains(pending.Coord) || instance.Visuals.ContainsKey(pending.Coord)) continue;
+                var prefab = instance.Definition?.VisualPrefab;
+                if (prefab == null) continue;
+                SpawnVisualAt(instance, pending.Coord, grid, prefab);
+            }
+
+            if (_deferredVisuals.Count == 0) UnsubscribeWalkTracker();
         }
 
         /// <summary>Placeholder sin arte: quads tintados del overlay de amenazas. Solo en
