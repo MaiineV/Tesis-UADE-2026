@@ -2927,6 +2927,32 @@ MonoBehaviour:
       takes 2 damage and stops moving.'
     m_Metadata:
       m_Items: []
+  - m_Id: 18503278809759744
+    m_Localized: Incendiary Flames
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18503278818148352
+    m_Localized: Burning tile left by the player. Enemies entering or starting their
+      turn here take damage.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18503278822342656
+    m_Localized: Toxic Trail
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18503278822342657
+    m_Localized: Toxic trail left by the player. The first enemy entering gets poisoned.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18503278822342658
+    m_Localized: Path Thorns
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18503278822342659
+    m_Localized: Thorns left by the player. The first enemy entering takes damage
+      and stops moving.
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

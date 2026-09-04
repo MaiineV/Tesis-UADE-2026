@@ -2939,6 +2939,33 @@ MonoBehaviour:
       que entra recibe 2 de da\xF1o y su movimiento termina."
     m_Metadata:
       m_Items: []
+  - m_Id: 18503278809759744
+    m_Localized: Llamas de Incendiario
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18503278818148352
+    m_Localized: "Casilla en llamas dejada por el jugador. Los enemigos que entran
+      o empiezan su turno aqu\xED reciben da\xF1o."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18503278822342656
+    m_Localized: "Rastro t\xF3xico"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18503278822342657
+    m_Localized: "Rastro t\xF3xico dejado por el jugador. El primer enemigo que entra
+      queda envenenado."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18503278822342658
+    m_Localized: Espinas del sendero
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18503278822342659
+    m_Localized: "Espinas dejadas por el jugador. El primer enemigo que entra recibe
+      da\xF1o y su movimiento termina."
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

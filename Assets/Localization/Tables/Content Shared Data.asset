@@ -2831,6 +2831,30 @@ MonoBehaviour:
     m_Key: ench.sendero_de_espinas.desc
     m_Metadata:
       m_Items: []
+  - m_Id: 18503278809759744
+    m_Key: tile.fire_incendiario.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18503278818148352
+    m_Key: tile.fire_incendiario.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18503278822342656
+    m_Key: tile.poison_rastro.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18503278822342657
+    m_Key: tile.poison_rastro.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18503278822342658
+    m_Key: tile.spikes_sendero.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18503278822342659
+    m_Key: tile.spikes_sendero.desc
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:
