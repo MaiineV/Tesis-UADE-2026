@@ -2623,8 +2623,8 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 18278206983208967
-    m_Localized: "Una ficha de casino de otro color que flota err\xE1ticamente. Ataca
-      desde las diagonales y luego se reposiciona r\xE1pidamente para volver a golpear
+    m_Localized: "Una ficha de casino unica que flota err\xE1ticamente. Ataca desde
+      las diagonales y luego se reposiciona r\xE1pidamente para volver a golpear
       desde un nuevo \xE1ngulo."
     m_Metadata:
       m_Items: []
