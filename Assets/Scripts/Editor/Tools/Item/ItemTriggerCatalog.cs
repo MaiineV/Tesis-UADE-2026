@@ -105,7 +105,7 @@ namespace Rollgeon.Editor.Tools.Item
         {
             // --- Combo ---------------------------------------------------------
             Combo("combo.any", "Cuando jugás cualquier combo",
-                  "Dispara con cualquier combo confirmado, antes de que se aplique el daño.",
+                  "Dispara con cualquier combo confirmado, antes de que se aplique el daño. Número Alto NO cuenta (matchea cualquier tirada); para incluirlo, elegilo explícito en 'un combo específico'.",
                   usesComboIds: false),
             Combo("combo.ids", "Cuando jugás un combo específico",
                   "Dispara sólo con los combos que elijas, antes de que se aplique el daño.",
