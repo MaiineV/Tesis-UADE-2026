@@ -63,6 +63,17 @@ namespace Rollgeon.UI.HUD
         private EventManager.EventReceiver _onChainPhaseStarted;
         private EventManager.EventReceiver _onChainCompleted;
 
+        // Playtest 2026-09-04: tras el choque N×M el total final debe quedar en pantalla
+        // mientras la acción resuelve. Lo pisaban dos cosas: al liberar el gate se repintaba
+        // SIEMPRE (re-mostrando el preview del combo ya jugado) y los repintados ungated
+        // post-secuencia (crease de target apagado) hacían lo mismo. _repaintDeferred
+        // recupera SOLO los UpdateFormula que el gate tragó; _comboConsumed marca que el
+        // combo actual ya se anunció/animó y no debe volver a previsualizarse hasta que
+        // llegue un estado nuevo (otra tirada, otro behavior, otra fase, Clear).
+        private bool _repaintDeferred;
+        private bool _comboConsumed;
+        private Action<DamageBreakdownComputedPayload> _onBreakdownComputed;
+
         // Board type vigente del value text (color + tag por tipo). Dedup para no re-lanzar
         // el tween de color en cada update.
         private DiceBoardType _boardType = DiceBoardType.Default;
@@ -101,13 +112,25 @@ namespace Rollgeon.UI.HUD
             _onComboMatched = OnComboMatched;
             TypedEvent<ComboMatchedPayload>.Subscribe(_onComboMatched);
 
+            // El announcer publica el breakdown al confirmar, antes de que corra ningún
+            // efecto: desde acá el combo mostrado está jugado y su preview es historia.
+            _onBreakdownComputed = payload =>
+            {
+                if (payload.SourceGuid == _playerGuid) _comboConsumed = true;
+            };
+            TypedEvent<DamageBreakdownComputedPayload>.Subscribe(_onBreakdownComputed);
+
             // Subscribir al action roll service para detectar modo ActionRoll y refrescar
             // el threshold/combo cuando el service cambia de fase.
             if (ServiceLocator.TryGetService<IActionRollService>(out _actionRollService)
                 && _actionRollService != null)
             {
-                _onActionRollPhase = _ =>
+                _onActionRollPhase = phase =>
                 {
+                    // Resolved es la fase que dispara el confirm en plena secuencia: el combo
+                    // sigue consumido. Cualquier otra (nueva acción, cancel, inactivo) es un
+                    // estado nuevo y la fórmula vuelve a pintar normal.
+                    if (phase != ActionRollPhase.Resolved) _comboConsumed = false;
                     // Exploración (Heal/Forzar Puerta): el board type sale del spec activo.
                     if (_actionRollService != null && _actionRollService.IsActive)
                         SetBoardType(_actionRollService.CurrentSpec.BoardType);
@@ -121,6 +144,7 @@ namespace Rollgeon.UI.HUD
             {
                 if (args.Length < 2 || (Guid)args[0] != _playerGuid) return;
                 _inDefensePhase = (int)args[1] > 0;
+                _comboConsumed = false; // fase nueva: el mismo combo se previsualiza para escudo
                 UpdateFormula();
             };
             _onChainCompleted = args =>
@@ -146,13 +170,20 @@ namespace Rollgeon.UI.HUD
             Rollgeon.Feedback.BreakdownUiGate.Changed += HandleBreakdownGateChanged;
 
             _bound = true;
+            _repaintDeferred = false;
+            _comboConsumed = false;
             ClearFormula();
             HideThreshold();
         }
 
         private void HandleBreakdownGateChanged()
         {
-            if (!Rollgeon.Feedback.BreakdownUiGate.Pending) UpdateFormula();
+            // Solo si el gate tragó un repintado. Sin esto, cada fin de secuencia repintaba
+            // y el ataque (que no re-entra durante la suya) volvía a mostrar el preview del
+            // combo recién jugado encima del total del choque.
+            if (Rollgeon.Feedback.BreakdownUiGate.Pending || !_repaintDeferred) return;
+            _repaintDeferred = false;
+            UpdateFormula();
         }
 
         public void Unbind()
@@ -170,6 +201,11 @@ namespace Rollgeon.UI.HUD
             {
                 TypedEvent<ComboMatchedPayload>.Unsubscribe(_onComboMatched);
                 _onComboMatched = null;
+            }
+            if (_onBreakdownComputed != null)
+            {
+                TypedEvent<DamageBreakdownComputedPayload>.Unsubscribe(_onBreakdownComputed);
+                _onBreakdownComputed = null;
             }
             if (_actionRollService != null && _onActionRollPhase != null)
             {
@@ -200,6 +236,8 @@ namespace Rollgeon.UI.HUD
             _lastContributingDice = null;
             _currentTargetGuid = Guid.Empty;
             _inDefensePhase = false;
+            _repaintDeferred = false;
+            _comboConsumed = false;
             _bound = false;
             _bindCount = 0;
             ClearFormula();
@@ -209,6 +247,7 @@ namespace Rollgeon.UI.HUD
         public void SetBehavior(HeroActionBehavior behavior)
         {
             _currentBehavior = behavior;
+            _comboConsumed = false;
             UpdateFormula();
         }
 
@@ -220,6 +259,7 @@ namespace Rollgeon.UI.HUD
             _lastComboBaseDamage = 0;
             _lastContributingDice = null;
             _inDefensePhase = false;
+            _comboConsumed = false;
             ClearFormula();
             HideThreshold();
         }
@@ -231,6 +271,7 @@ namespace Rollgeon.UI.HUD
             _lastComboId = payload.ComboId;
             _lastComboBaseDamage = payload.BaseDamage;
             _lastContributingDice = payload.ContributingDice;
+            _comboConsumed = false; // tirada nueva: hay un combo fresco que previsualizar
             UpdateFormula();
         }
 
@@ -244,7 +285,20 @@ namespace Rollgeon.UI.HUD
             // al confirmar, ActionRollService cambia de fase y dispara este método en
             // plena secuencia (ataque/escudo zafaban porque nada re-entra durante la
             // suya). El repintado diferido llega por HandleBreakdownGateChanged.
-            if (Rollgeon.Feedback.BreakdownUiGate.Pending) return;
+            if (Rollgeon.Feedback.BreakdownUiGate.Pending)
+            {
+                _repaintDeferred = true;
+                return;
+            }
+
+            // Combo ya jugado: el director dejó el total del choque en pantalla y este
+            // método lo pisaría (re-mostrando el preview inicial o apagándolo con el Hide
+            // de abajo). Hasta que llegue un estado nuevo, solo se vacía el label.
+            if (_comboConsumed)
+            {
+                ClearLabelKeepingBreakdown();
+                return;
+            }
 
             // Default: el N×M solo aplica al modo daño-por-combo — la rama de abajo lo
             // re-muestra; cualquier otra rama (action roll, defensa, degradados) lo apaga.

@@ -23,7 +23,7 @@ MonoBehaviour:
     - {fileID: 8300000, guid: 0d9f293a2a9417b499105b93cc1a037a, type: 3}
     - {fileID: 8300000, guid: 97b613556540d2b40b5e94deefb8b195, type: 3}
     Boss:
-    - {fileID: 8300000, guid: 4a9e140cd53afa24ca5c091071170c33, type: 3}
+    - {fileID: 8300000, guid: 367f43e60275fbe46a0411acf37b21ab, type: 3}
   - Exploration:
     - {fileID: 8300000, guid: 9138b5d40d4c925438a2ad7b27824f74, type: 3}
     - {fileID: 8300000, guid: f6c7041a0eec38e48960973fcde8542f, type: 3}
@@ -33,7 +33,7 @@ MonoBehaviour:
     - {fileID: 8300000, guid: e765c2a8584bd4f4ebf95a9810e4b76e, type: 3}
     - {fileID: 8300000, guid: 135c3c8f40adb4449b9ce63a6aad3c75, type: 3}
     Boss:
-    - {fileID: 8300000, guid: 7a0de484c61cd404cb2519bda1630134, type: 3}
+    - {fileID: 8300000, guid: 63e8adcdf0d787049bcde529b0349b19, type: 3}
   - Exploration:
     - {fileID: 8300000, guid: 02d4d481f26f1b240bce0e0934a87472, type: 3}
     - {fileID: 8300000, guid: 166cb6628e45d5f409269daeb1b02490, type: 3}
@@ -43,6 +43,6 @@ MonoBehaviour:
     - {fileID: 8300000, guid: 88bcdf6be528df54883c549eff2b141c, type: 3}
     - {fileID: 8300000, guid: 05557a0b894fde84893bca11f2e46075, type: 3}
     Boss:
-    - {fileID: 8300000, guid: 49f533cbc6a481444ae73d96ceb96c66, type: 3}
+    - {fileID: 8300000, guid: 49f9cbcee61651f47a859be73046eebd, type: 3}
   DefaultFadeSeconds: 1.5
   CombatFadeSeconds: 0.8

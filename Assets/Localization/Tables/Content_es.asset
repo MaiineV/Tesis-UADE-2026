@@ -2282,8 +2282,8 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 17988681023537153
-    m_Localized: "Empez\xE1s cada combate con da\xF1o x5. Cada ataque lo reduce en
-      0.1, hasta x1."
+    m_Localized: "Tu da\xF1o de ataque arranca en x3 al conseguirlo. Cada combo que
+      jug\xE1s lo baja 0.2; al llegar a x1 el item se rompe."
     m_Metadata:
       m_Items: []
   - m_Id: 17988681744957440
@@ -2680,7 +2680,8 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 18299679638994944
-    m_Localized: Al atacar, +3 al multiplicador por cada roll que te quede sin usar.
+    m_Localized: Al atacar, +1.5 al multiplicador por cada roll que te quede sin
+      usar.
     m_Metadata:
       m_Items: []
   - m_Id: 18299679659966464
@@ -2704,8 +2705,8 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 18299679659966469
-    m_Localized: "El dado m\xE1s alto de tu combo suma su cara al multiplicador (no
-      al da\xF1o base)."
+    m_Localized: "El dado m\xE1s alto de tu combo sale del da\xF1o base y suma su
+      cara al multiplicador. No aplica a N\xFAmero Mayor."
     m_Metadata:
       m_Items: []
   - m_Id: 18299679659966470

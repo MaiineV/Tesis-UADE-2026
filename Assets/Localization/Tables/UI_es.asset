@@ -1105,6 +1105,10 @@ MonoBehaviour:
     m_Localized: "{0} agot\xF3 su poder y desapareci\xF3."
     m_Metadata:
       m_Items: []
+  - m_Id: 18457182589714432
+    m_Localized: '{0}: +{1} de oro'
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

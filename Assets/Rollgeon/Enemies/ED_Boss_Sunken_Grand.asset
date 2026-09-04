@@ -39,6 +39,9 @@ MonoBehaviour:
     - Name: AIRoot
       Entry: 7
       Data: 1|Rollgeon.Combat.AI.Decisions.AINode_Sequence, Rollgeon
+    - Name: EditorNodeId
+      Entry: 6
+      Data: 
     - Name: Children
       Entry: 7
       Data: 2|System.Collections.Generic.List`1[[Rollgeon.Combat.AI.Decisions.AIDecisionNode,
@@ -49,6 +52,9 @@ MonoBehaviour:
     - Name: 
       Entry: 7
       Data: 3|Rollgeon.Combat.AI.Decisions.AINode_ExecuteTelegraph, Rollgeon
+    - Name: EditorNodeId
+      Entry: 6
+      Data: 
     - Name: WindupFeedbackId
       Entry: 1
       Data: anim.enemy.sunken_grand.range
@@ -61,6 +67,9 @@ MonoBehaviour:
     - Name: 
       Entry: 7
       Data: 4|Rollgeon.Combat.AI.Decisions.AINode_Selector, Rollgeon
+    - Name: EditorNodeId
+      Entry: 6
+      Data: 
     - Name: Children
       Entry: 7
       Data: 5|System.Collections.Generic.List`1[[Rollgeon.Combat.AI.Decisions.AIDecisionNode,
@@ -71,6 +80,9 @@ MonoBehaviour:
     - Name: 
       Entry: 7
       Data: 6|Rollgeon.Combat.AI.Decisions.AINode_KeepDistance, Rollgeon
+    - Name: EditorNodeId
+      Entry: 6
+      Data: 
     - Name: MaxSteps
       Entry: 7
       Data: 7|Rollgeon.Combat.AI.Readers.AIConstantInt, Rollgeon
@@ -95,6 +107,9 @@ MonoBehaviour:
     - Name: 
       Entry: 7
       Data: 9|Rollgeon.Combat.AI.Decisions.AINode_Wait, Rollgeon
+    - Name: EditorNodeId
+      Entry: 6
+      Data: 
     - Name: 
       Entry: 8
       Data: 
@@ -110,6 +125,9 @@ MonoBehaviour:
     - Name: 
       Entry: 7
       Data: 10|Rollgeon.Combat.AI.Decisions.AINode_If, Rollgeon
+    - Name: EditorNodeId
+      Entry: 6
+      Data: 
     - Name: TargetSelector
       Entry: 7
       Data: 11|Rollgeon.Combat.AI.Targeting.TargetSelector_Self, Rollgeon
@@ -144,9 +162,15 @@ MonoBehaviour:
     - Name: Then
       Entry: 7
       Data: 14|Rollgeon.Combat.AI.Decisions.AINode_Once, Rollgeon
+    - Name: EditorNodeId
+      Entry: 6
+      Data: 
     - Name: Child
       Entry: 7
       Data: 15|Rollgeon.Combat.AI.Decisions.AINode_ApplyStatModifier, Rollgeon
+    - Name: EditorNodeId
+      Entry: 6
+      Data: 
     - Name: AttackDelta
       Entry: 3
       Data: 0
@@ -168,6 +192,9 @@ MonoBehaviour:
     - Name: Else
       Entry: 7
       Data: 16|Rollgeon.Combat.AI.Decisions.AINode_Wait, Rollgeon
+    - Name: EditorNodeId
+      Entry: 6
+      Data: 
     - Name: 
       Entry: 8
       Data: 
@@ -177,6 +204,9 @@ MonoBehaviour:
     - Name: 
       Entry: 7
       Data: 17|Rollgeon.Combat.AI.Decisions.AINode_Selector, Rollgeon
+    - Name: EditorNodeId
+      Entry: 6
+      Data: 
     - Name: Children
       Entry: 7
       Data: 18|System.Collections.Generic.List`1[[Rollgeon.Combat.AI.Decisions.AIDecisionNode,
@@ -187,6 +217,9 @@ MonoBehaviour:
     - Name: 
       Entry: 7
       Data: 19|Rollgeon.Combat.AI.Decisions.AINode_If, Rollgeon
+    - Name: EditorNodeId
+      Entry: 6
+      Data: 
     - Name: TargetSelector
       Entry: 7
       Data: 20|Rollgeon.Combat.AI.Targeting.TargetSelector_Self, Rollgeon
@@ -221,9 +254,15 @@ MonoBehaviour:
     - Name: Then
       Entry: 7
       Data: 23|Rollgeon.Combat.AI.Decisions.AINode_Once, Rollgeon
+    - Name: EditorNodeId
+      Entry: 6
+      Data: 
     - Name: Child
       Entry: 7
       Data: 24|Rollgeon.Combat.AI.Decisions.AINode_ActivateHazard, Rollgeon
+    - Name: EditorNodeId
+      Entry: 6
+      Data: 
     - Name: Hazard
       Entry: 10
       Data: 0
@@ -236,6 +275,9 @@ MonoBehaviour:
     - Name: Else
       Entry: 7
       Data: 25|Rollgeon.Combat.AI.Decisions.AINode_Wait, Rollgeon
+    - Name: EditorNodeId
+      Entry: 6
+      Data: 
     - Name: 
       Entry: 8
       Data: 
@@ -245,6 +287,9 @@ MonoBehaviour:
     - Name: 
       Entry: 7
       Data: 26|Rollgeon.Combat.AI.Decisions.AINode_Wait, Rollgeon
+    - Name: EditorNodeId
+      Entry: 6
+      Data: 
     - Name: 
       Entry: 8
       Data: 
@@ -260,6 +305,9 @@ MonoBehaviour:
     - Name: 
       Entry: 7
       Data: 27|Rollgeon.Combat.AI.Decisions.AINode_Selector, Rollgeon
+    - Name: EditorNodeId
+      Entry: 6
+      Data: 
     - Name: Children
       Entry: 7
       Data: 28|System.Collections.Generic.List`1[[Rollgeon.Combat.AI.Decisions.AIDecisionNode,
@@ -270,6 +318,9 @@ MonoBehaviour:
     - Name: 
       Entry: 7
       Data: 29|Rollgeon.Combat.AI.Decisions.AINode_If, Rollgeon
+    - Name: EditorNodeId
+      Entry: 6
+      Data: 
     - Name: TargetSelector
       Entry: 7
       Data: 30|Rollgeon.Combat.AI.Targeting.TargetSelector_Self, Rollgeon
@@ -304,6 +355,9 @@ MonoBehaviour:
     - Name: Then
       Entry: 7
       Data: 33|Rollgeon.Combat.AI.Decisions.AINode_SpawnReinforcements, Rollgeon
+    - Name: EditorNodeId
+      Entry: 6
+      Data: 
     - Name: EnemyToSpawn
       Entry: 10
       Data: 1
@@ -322,6 +376,9 @@ MonoBehaviour:
     - Name: Else
       Entry: 7
       Data: 34|Rollgeon.Combat.AI.Decisions.AINode_Wait, Rollgeon
+    - Name: EditorNodeId
+      Entry: 6
+      Data: 
     - Name: 
       Entry: 8
       Data: 
@@ -331,6 +388,9 @@ MonoBehaviour:
     - Name: 
       Entry: 7
       Data: 35|Rollgeon.Combat.AI.Decisions.AINode_Wait, Rollgeon
+    - Name: EditorNodeId
+      Entry: 6
+      Data: 
     - Name: 
       Entry: 8
       Data: 
@@ -346,6 +406,9 @@ MonoBehaviour:
     - Name: 
       Entry: 7
       Data: 36|Rollgeon.Combat.AI.Decisions.AINode_Selector, Rollgeon
+    - Name: EditorNodeId
+      Entry: 6
+      Data: 
     - Name: Children
       Entry: 7
       Data: 37|System.Collections.Generic.List`1[[Rollgeon.Combat.AI.Decisions.AIDecisionNode,
@@ -356,6 +419,9 @@ MonoBehaviour:
     - Name: 
       Entry: 7
       Data: 38|Rollgeon.Combat.AI.Decisions.AINode_Alternate, Rollgeon
+    - Name: EditorNodeId
+      Entry: 6
+      Data: 
     - Name: Children
       Entry: 7
       Data: 39|System.Collections.Generic.List`1[[Rollgeon.Combat.AI.Decisions.AIDecisionNode,
@@ -366,6 +432,9 @@ MonoBehaviour:
     - Name: 
       Entry: 7
       Data: 40|Rollgeon.Combat.AI.Decisions.AINode_Sequence, Rollgeon
+    - Name: EditorNodeId
+      Entry: 6
+      Data: 
     - Name: Children
       Entry: 7
       Data: 41|System.Collections.Generic.List`1[[Rollgeon.Combat.AI.Decisions.AIDecisionNode,
@@ -376,6 +445,9 @@ MonoBehaviour:
     - Name: 
       Entry: 7
       Data: 42|Rollgeon.Combat.AI.Decisions.AINode_ExecuteTelegraph, Rollgeon
+    - Name: EditorNodeId
+      Entry: 6
+      Data: 
     - Name: WindupFeedbackId
       Entry: 6
       Data: 
@@ -388,6 +460,9 @@ MonoBehaviour:
     - Name: 
       Entry: 7
       Data: 43|Rollgeon.Combat.AI.Decisions.AINode_Selector, Rollgeon
+    - Name: EditorNodeId
+      Entry: 6
+      Data: 
     - Name: Children
       Entry: 7
       Data: 44|System.Collections.Generic.List`1[[Rollgeon.Combat.AI.Decisions.AIDecisionNode,
@@ -398,6 +473,9 @@ MonoBehaviour:
     - Name: 
       Entry: 7
       Data: 45|Rollgeon.Combat.AI.Decisions.AINode_Move, Rollgeon
+    - Name: EditorNodeId
+      Entry: 6
+      Data: 
     - Name: MaxSteps
       Entry: 7
       Data: 46|Rollgeon.Combat.AI.Readers.AIConstantInt, Rollgeon
@@ -425,6 +503,9 @@ MonoBehaviour:
     - Name: Retreat
       Entry: 5
       Data: false
+    - Name: RequireLineOfSight
+      Entry: 5
+      Data: false
     - Name: StopAdjacent
       Entry: 5
       Data: true
@@ -434,6 +515,9 @@ MonoBehaviour:
     - Name: 
       Entry: 7
       Data: 49|Rollgeon.Combat.AI.Decisions.AINode_Wait, Rollgeon
+    - Name: EditorNodeId
+      Entry: 6
+      Data: 
     - Name: 
       Entry: 8
       Data: 
@@ -449,6 +533,9 @@ MonoBehaviour:
     - Name: 
       Entry: 7
       Data: 50|Rollgeon.Combat.AI.Decisions.AINode_TelegraphMark, Rollgeon
+    - Name: EditorNodeId
+      Entry: 6
+      Data: 
     - Name: Shape
       Entry: 3
       Data: 6
@@ -479,6 +566,12 @@ MonoBehaviour:
     - Name: ChannelId
       Entry: 6
       Data: 
+    - Name: IgnoreLineOfSight
+      Entry: 5
+      Data: false
+    - Name: WindupFeedbackId
+      Entry: 6
+      Data: 
     - Name: 
       Entry: 8
       Data: 
@@ -494,6 +587,9 @@ MonoBehaviour:
     - Name: 
       Entry: 7
       Data: 51|Rollgeon.Combat.AI.Decisions.AINode_Sequence, Rollgeon
+    - Name: EditorNodeId
+      Entry: 6
+      Data: 
     - Name: Children
       Entry: 7
       Data: 52|System.Collections.Generic.List`1[[Rollgeon.Combat.AI.Decisions.AIDecisionNode,
@@ -504,6 +600,9 @@ MonoBehaviour:
     - Name: 
       Entry: 7
       Data: 53|Rollgeon.Combat.AI.Decisions.AINode_ExecuteTelegraph, Rollgeon
+    - Name: EditorNodeId
+      Entry: 6
+      Data: 
     - Name: WindupFeedbackId
       Entry: 6
       Data: 
@@ -516,6 +615,9 @@ MonoBehaviour:
     - Name: 
       Entry: 7
       Data: 54|Rollgeon.Combat.AI.Decisions.AINode_Selector, Rollgeon
+    - Name: EditorNodeId
+      Entry: 6
+      Data: 
     - Name: Children
       Entry: 7
       Data: 55|System.Collections.Generic.List`1[[Rollgeon.Combat.AI.Decisions.AIDecisionNode,
@@ -526,6 +628,9 @@ MonoBehaviour:
     - Name: 
       Entry: 7
       Data: 56|Rollgeon.Combat.AI.Decisions.AINode_Move, Rollgeon
+    - Name: EditorNodeId
+      Entry: 6
+      Data: 
     - Name: MaxSteps
       Entry: 7
       Data: 57|Rollgeon.Combat.AI.Readers.AIConstantInt, Rollgeon
@@ -553,6 +658,9 @@ MonoBehaviour:
     - Name: Retreat
       Entry: 5
       Data: false
+    - Name: RequireLineOfSight
+      Entry: 5
+      Data: false
     - Name: StopAdjacent
       Entry: 5
       Data: true
@@ -562,6 +670,9 @@ MonoBehaviour:
     - Name: 
       Entry: 7
       Data: 60|Rollgeon.Combat.AI.Decisions.AINode_Wait, Rollgeon
+    - Name: EditorNodeId
+      Entry: 6
+      Data: 
     - Name: 
       Entry: 8
       Data: 
@@ -577,6 +688,9 @@ MonoBehaviour:
     - Name: 
       Entry: 7
       Data: 61|Rollgeon.Combat.AI.Decisions.AINode_TelegraphMark, Rollgeon
+    - Name: EditorNodeId
+      Entry: 6
+      Data: 
     - Name: Shape
       Entry: 3
       Data: 4
@@ -607,6 +721,12 @@ MonoBehaviour:
     - Name: ChannelId
       Entry: 6
       Data: 
+    - Name: IgnoreLineOfSight
+      Entry: 5
+      Data: false
+    - Name: WindupFeedbackId
+      Entry: 6
+      Data: 
     - Name: 
       Entry: 8
       Data: 
@@ -631,6 +751,9 @@ MonoBehaviour:
     - Name: 
       Entry: 7
       Data: 62|Rollgeon.Combat.AI.Decisions.AINode_Wait, Rollgeon
+    - Name: EditorNodeId
+      Entry: 6
+      Data: 
     - Name: 
       Entry: 8
       Data: 
@@ -646,6 +769,9 @@ MonoBehaviour:
     - Name: 
       Entry: 7
       Data: 63|Rollgeon.Combat.AI.Decisions.AINode_RotateBlock, Rollgeon
+    - Name: EditorNodeId
+      Entry: 6
+      Data: 
     - Name: Target
       Entry: 3
       Data: 0
@@ -690,7 +816,7 @@ MonoBehaviour:
       Entry: 8
       Data: 
   EntityId: boss.sunken_grand
-  DisplayName: The Sunken Grand
+  DisplayName: The Sunken Grand OLD
   Description: 'He has been calculating odds in the casino for centuries. He doesn''t
     need to guess what combo the player is going to roll: it is enough for him to
     take a part of the equation out of it. He speaks during combat making cool statistical
@@ -705,6 +831,7 @@ MonoBehaviour:
       de s\xED; activa hazards; refuerzos."
   WeaknessComboId: 
   WeaknessMultiplierOverride: 0
+  Curse: {fileID: 0}
   BaseHP: 200
   BaseAttack: 20
   BaseHealStrength: 3
@@ -717,5 +844,10 @@ MonoBehaviour:
   MaxGoldDrop: 23
   IsFlying: 0
   IsBoss: 0
+  Archetype: 0
+  TooltipType: 
   Personality: 0
   KamikazeIgnoresSurvival: 0
+  AuraRadius: 0
+  AuraFlatReduction: 0
+  Footprint: {x: 1, y: 1}

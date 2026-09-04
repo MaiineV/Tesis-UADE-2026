@@ -77,6 +77,41 @@ namespace Rollgeon.Effects.Tests
         }
 
         [Test]
+        public void test_add_combo_bonus_subtract_flag_removes_reader_value_from_bonus()
+        {
+            // Arrange — Fuente Mágica: el dado más alto (6) sale de N vía Subtract.
+            var ctx = BuildScratchContext(out var scratch);
+            scratch.BonusComboDamage = 2;
+            var eff = new EffAddComboBonus
+            {
+                Amount = new ReadConstantInt { Value = 6 },
+                Subtract = true,
+            };
+
+            // Act
+            bool result = eff.Apply(ctx);
+
+            // Assert
+            Assert.IsTrue(result);
+            Assert.AreEqual(-4, scratch.BonusComboDamage);
+        }
+
+        [Test]
+        public void test_add_combo_bonus_subtract_default_false_keeps_additive_behavior()
+        {
+            // Arrange — assets viejos deserializan Subtract=false (Odin no corre initializers).
+            var ctx = BuildScratchContext(out var scratch);
+            var eff = new EffAddComboBonus { Amount = new ReadConstantInt { Value = 6 } };
+
+            // Act
+            eff.Apply(ctx);
+
+            // Assert
+            Assert.IsFalse(eff.Subtract);
+            Assert.AreEqual(6, scratch.BonusComboDamage);
+        }
+
+        [Test]
         public void EffAddComboBonus_WithoutTriggerContext_ReturnsFalseAndWarns()
         {
             // Arrange — contexto de behavior común, sin dispatch de trigger de combo.

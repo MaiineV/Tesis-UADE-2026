@@ -10,7 +10,9 @@ namespace Rollgeon.Effects.Readers
     /// Multiplicador que arranca en <see cref="Start"/> al empezar el combate y baja
     /// <see cref="DecayPerAttack"/> por cada ataque YA ejecutado
     /// (<see cref="IPlayerTurnStateService.AttacksPlayedThisCombat"/>), con piso en
-    /// <see cref="Min"/>. Para "Eco Menguante" (GDD: x5.0 → -0.1 por ataque → mínimo x1.0).
+    /// <see cref="Min"/>. Nació para "Eco Menguante" (GDD: x5.0 → -0.1 por ataque → mínimo
+    /// x1.0); el item hoy usa <c>ItemSO.DecayingMultiplier</c> (x3.0, −0.2 por combo de RUN) y
+    /// este reader queda como pieza genérica por-combate.
     /// Pensado como <c>MultiplierReader</c> de <c>EffMultiplyComboDamage</c>.
     /// </summary>
     /// <remarks>

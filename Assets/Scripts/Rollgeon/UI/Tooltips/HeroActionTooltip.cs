@@ -35,6 +35,17 @@ namespace Rollgeon.UI.Tooltips
             var sb = new StringBuilder();
             sb.Append("<b>").Append(ResolveActionName(behavior)).Append("</b>");
 
+            // El hotkey va en la MISMA línea que el título pero contra el borde derecho
+            // del panel (decisión 04/09: la tecla salió de al lado del chip y vive acá).
+            // Truco TMP: un salto de línea con line-height 0 vuelve al mismo renglón, el
+            // bloque align=right empuja la tecla a la otra punta, y se restaura todo
+            // antes del salto real.
+            string key = ResolveHotkeyHint(behavior);
+            if (!string.IsNullOrEmpty(key))
+                sb.Append("<line-height=0>\n<align=right>")
+                  .Append(key)
+                  .Append("</align><line-height=100%>");
+
             sb.AppendLine().Append(
                 LocalizedContent.Ui("tooltip.hero_action.cost_per_roll", "Costo: 1 Roll por tirada"));
 
@@ -67,6 +78,31 @@ namespace Rollgeon.UI.Tooltips
                 return "action.pass_door";
 
             return null;
+        }
+
+        // El mismo criterio que los subscribes de PlayerActionButtonsView: cada slot
+        // base tiene su hotkey. "Pass door" comparte slot (y tecla) con Force Door.
+        private static readonly Dictionary<HeroBehaviorSlot, Rollgeon.Input.GameplayHotkey> SlotHotkeys =
+            new Dictionary<HeroBehaviorSlot, Rollgeon.Input.GameplayHotkey>
+            {
+                { HeroBehaviorSlot.Movement, Rollgeon.Input.GameplayHotkey.Move },
+                { HeroBehaviorSlot.BaseAttack, Rollgeon.Input.GameplayHotkey.Attack },
+                { HeroBehaviorSlot.ClassSkill, Rollgeon.Input.GameplayHotkey.ClassSkill },
+                { HeroBehaviorSlot.Healing, Rollgeon.Input.GameplayHotkey.Heal },
+                { HeroBehaviorSlot.ForceDoor, Rollgeon.Input.GameplayHotkey.ForceDoor },
+                { HeroBehaviorSlot.Defense, Rollgeon.Input.GameplayHotkey.Defense },
+            };
+
+        /// <summary>
+        /// La tecla viva del slot, del binding vigente (rebind/gamepad-proof). Vacío
+        /// sin servicio (EditMode) o sin mapeo — el título queda solo, sin hueco.
+        /// </summary>
+        private static string ResolveHotkeyHint(HeroActionBehavior behavior)
+        {
+            if (!SlotHotkeys.TryGetValue(behavior.Slot, out var hotkey)) return null;
+            if (!global::Patterns.ServiceLocator.TryGetService<Rollgeon.Input.IGameplayHotkeyService>(
+                    out var svc) || svc == null) return null;
+            return svc.GetKeyHint(hotkey);
         }
 
         /// <summary>

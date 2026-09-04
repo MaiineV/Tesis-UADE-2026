@@ -1755,6 +1755,81 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2075625122068408047}
   m_CullTransparentMesh: 1
+--- !u!1 &2150869289768025372
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 8357467949279063220}
+  - component: {fileID: 2599613164533134437}
+  - component: {fileID: 8628468771901239534}
+  m_Layer: 0
+  m_Name: DebtChip
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 0
+--- !u!224 &8357467949279063220
+RectTransform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2150869289768025372}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 8818364308689539755}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 0.5, y: 0}
+  m_AnchorMax: {x: 0.5, y: 0}
+  m_AnchoredPosition: {x: 0, y: 50}
+  m_SizeDelta: {x: 32, y: 32}
+  m_Pivot: {x: 0.5, y: 0}
+--- !u!222 &2599613164533134437
+CanvasRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2150869289768025372}
+  m_CullTransparentMesh: 1
+--- !u!114 &8628468771901239534
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2150869289768025372}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
+  m_Material: {fileID: 0}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_RaycastTarget: 0
+  m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
+  m_Maskable: 1
+  m_OnCullStateChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  m_Sprite: {fileID: 0}
+  m_Type: 0
+  m_PreserveAspect: 0
+  m_FillCenter: 1
+  m_FillMethod: 4
+  m_FillAmount: 1
+  m_FillClockwise: 1
+  m_FillOrigin: 0
+  m_UseSpriteMesh: 0
+  m_PixelsPerUnitMultiplier: 1
 --- !u!1 &2402347796935305727
 GameObject:
   m_ObjectHideFlags: 0
@@ -5453,6 +5528,7 @@ GameObject:
   - component: {fileID: 8818364308689539755}
   - component: {fileID: 702322916724626718}
   - component: {fileID: 3644440604294730392}
+  - component: {fileID: 6782821935268982031}
   m_Layer: 0
   m_Name: GoldStack
   m_TagString: Untagged
@@ -5474,6 +5550,7 @@ RectTransform:
   m_Children:
   - {fileID: 6841541884335417548}
   - {fileID: 5263083087912354546}
+  - {fileID: 8357467949279063220}
   m_Father: {fileID: 3821334965633188410}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
@@ -5510,6 +5587,25 @@ MonoBehaviour:
   _tiltedChip: {fileID: 7688348406230304281}
   _label: {fileID: 135019705656249135}
   _settings: {fileID: 11400000, guid: 2e2f61ebe8fd02d4cb7ef3296918fbc9, type: 2}
+  _debtChip: {fileID: 8628468771901239534}
+  _debtTint: {r: 0.86, g: 0.25, b: 0.25, a: 1}
+--- !u!114 &6782821935268982031
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7661344218674049193}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4e2cc22847c6f424facc5bf0535e02ac, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Rollgeon::Rollgeon.UI.HUD.ItemGoldFeedbackView
+  _anchor: {fileID: 8818364308689539755}
+  _font: {fileID: 0}
+  _color: {r: 0.95, g: 0.78, b: 0.3, a: 1}
+  _punch: 0.12
+  _punchSeconds: 0.3
 --- !u!1 &7692317240743046525
 GameObject:
   m_ObjectHideFlags: 0

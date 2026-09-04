@@ -1230,6 +1230,51 @@
                     "processors": "",
                     "interactions": "",
                     "initialStateCheck": false
+                },
+                {
+                    "name": "SelectDie1",
+                    "type": "Button",
+                    "id": "7a60ba32-f95d-4494-96b5-1c7210f7d037",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                },
+                {
+                    "name": "SelectDie2",
+                    "type": "Button",
+                    "id": "dfd27292-5e39-4766-b3c8-723dc6622d3b",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                },
+                {
+                    "name": "SelectDie3",
+                    "type": "Button",
+                    "id": "e6a9d51a-8f4c-4f39-8d98-4b693731220b",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                },
+                {
+                    "name": "SelectDie4",
+                    "type": "Button",
+                    "id": "b957f676-17b9-4d1b-80aa-22738d491c05",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                },
+                {
+                    "name": "SelectDie5",
+                    "type": "Button",
+                    "id": "f2715413-e52c-464d-8549-162426c98045",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
                 }
             ],
             "bindings": [
@@ -1313,7 +1358,7 @@
                 {
                     "name": "",
                     "id": "b0a1e900-0000-4000-8000-000000000108",
-                    "path": "<Keyboard>/f",
+                    "path": "<Keyboard>/y",
                     "interactions": "",
                     "processors": "",
                     "groups": "Keyboard&Mouse",
@@ -1324,7 +1369,7 @@
                 {
                     "name": "",
                     "id": "b0a1e900-0000-4000-8000-000000000109",
-                    "path": "<Keyboard>/d",
+                    "path": "<Keyboard>/r",
                     "interactions": "",
                     "processors": "",
                     "groups": "Keyboard&Mouse",
@@ -1362,6 +1407,61 @@
                     "processors": "",
                     "groups": "Keyboard&Mouse",
                     "action": "ToggleEnemyRanges",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "cf258812-9cca-4b10-a5e6-af17007c0bc0",
+                    "path": "<Keyboard>/1",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "Keyboard&Mouse",
+                    "action": "SelectDie1",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "3743813a-8836-4811-8931-119d1caedc21",
+                    "path": "<Keyboard>/2",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "Keyboard&Mouse",
+                    "action": "SelectDie2",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "1daed81e-3a2d-4323-9ba0-fe118661a58d",
+                    "path": "<Keyboard>/3",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "Keyboard&Mouse",
+                    "action": "SelectDie3",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "74aa1793-8878-4d36-acef-012fcf56f91a",
+                    "path": "<Keyboard>/4",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "Keyboard&Mouse",
+                    "action": "SelectDie4",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "a19b1f12-9f71-4fdb-a4d8-bb93166735ba",
+                    "path": "<Keyboard>/5",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "Keyboard&Mouse",
+                    "action": "SelectDie5",
                     "isComposite": false,
                     "isPartOfComposite": false
                 }

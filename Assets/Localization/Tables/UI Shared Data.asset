@@ -1059,6 +1059,10 @@ MonoBehaviour:
     m_Key: item.broke_down.body
     m_Metadata:
       m_Items: []
+  - m_Id: 18457182589714432
+    m_Key: item.gold_granted.body
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

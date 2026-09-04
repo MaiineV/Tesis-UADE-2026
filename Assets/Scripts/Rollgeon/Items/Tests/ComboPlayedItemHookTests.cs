@@ -245,5 +245,62 @@ namespace Rollgeon.Items.Tests
             play.EndPlay();
             play.Dispose();
         }
+
+        // ================================================================
+        // Cura desde un item (Fix#0051 — las Lágrimas curaban al enemigo)
+        // ================================================================
+
+        /// <summary>
+        /// El hook ComboPlayed viaja con <c>TargetGuid</c> = objetivo de la acción (el enemigo
+        /// atacado). Un <c>EffHeal</c> con self-heal tiene que ignorarlo y curar al jugador:
+        /// con <c>EffModifyIntAttribute</c> Health/Add la cura caía sobre ese target.
+        /// </summary>
+        [Test]
+        public void ComboPlayedHook_EffHeal_HealsThePlayer_NotTheActionTarget()
+        {
+            // Arrange
+            var pipeline = new SpyHealPipeline();
+            ServiceLocator.AddService<Rollgeon.Combat.Pipelines.IHealPipeline>(pipeline);
+
+            var item = ScriptableObject.CreateInstance<ItemSO>();
+            item.ItemId = "item.lagrima";
+            item.DisplayName = "item.lagrima";
+            item.Type = ItemType.Passive;
+            var hook = new PassiveItemHook
+            {
+                Kind = PassiveHookKind.ComboPlayed,
+                ComboFilter = new ComboFilter { Mode = ComboFilterMode.ComboIds, ComboIds = new List<string> { "combo.par" } },
+            };
+            hook.Effect.Effects.Add(new EffHeal());
+            item.PassiveHooks.Add(hook);
+            _created.Add(item);
+            _service.AddItem(item);
+
+            var enemyGuid = Guid.NewGuid();
+            var payload = BuildPayload("combo.par");
+            payload.TargetGuid = enemyGuid;
+
+            // Act — el par se jugó ATACANDO a un enemigo.
+            TypedEvent<ComboPlayedPayload>.Raise(payload);
+
+            // Assert
+            Assert.AreEqual(1, pipeline.Resolved.Count);
+            Assert.AreEqual(_playerGuid, pipeline.Resolved[0].TargetId, "la cura del item es para el jugador");
+            Assert.AreNotEqual(enemyGuid, pipeline.Resolved[0].TargetId);
+            Assert.Greater(pipeline.Resolved[0].BaseHeal, 0);
+        }
+
+        private sealed class SpyHealPipeline : Rollgeon.Combat.Pipelines.IHealPipeline
+        {
+            public readonly List<Rollgeon.Combat.Pipelines.HealContext> Resolved =
+                new List<Rollgeon.Combat.Pipelines.HealContext>();
+
+            public Rollgeon.Combat.Pipelines.HealContext Resolve(Rollgeon.Combat.Pipelines.HealContext ctx)
+            {
+                ctx.FinalHeal = ctx.BaseHeal;
+                Resolved.Add(ctx);
+                return ctx;
+            }
+        }
     }
 }
