@@ -67,6 +67,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         {
             "Assets/Art/3D/Animations/Enemies/Mecha/Anim_Mecha_AttackMelee.anim",
             "Assets/Art/3D/Animations/Enemies/Mecha/Anim_Mecha_AttackRange.anim",
+            "Assets/Art/3D/Animations/Enemies/Mecha/Anim_MechaBoss_Push.anim",
         };
 
         /// <summary>
@@ -114,7 +115,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         public const int MaxGoldDrop = 60;
         public const float WeaknessMultiplier = 1.5f;
 
-        /// <summary>Alcance de sus dos ataques. Melee puro: no tiene nada a distancia.</summary>
+        /// <summary>Alcance de sus dos golpes. Lo de lejos es el cañón, que no tiene alcance.</summary>
         public const int MeleeRange = 1;
 
         /// <summary>
@@ -161,13 +162,20 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         // ---- El cañonazo -------------------------------------------------
 
         /// <summary>
-        /// El área marcada que suelta cuando camina y no llega. Pega más que el mandoble porque se
+        /// El área marcada que suelta cuando no te tiene pegado. Pega más que el mandoble porque se
         /// esquiva: el jugador tiene un turno entero para salirse.
         /// </summary>
         public const int SlamDamage = 28;
 
-        /// <summary>Radio del área: <c>2·radio+1</c>, o sea 3×3 contando la casilla del centro.</summary>
-        public const int SlamRadius = 1;
+        /// <summary>Radio del área: <c>2·radio+1</c>, o sea 5×5 contando la casilla del centro.</summary>
+        public const int SlamRadius = 2;
+
+        /// <summary>
+        /// Desde esta distancia (Manhattan) es artillero: no camina, marca y dispara plantado. Por
+        /// debajo vuelve a perseguir. Es <c>ChaseSteps + MeleeRange</c>: la distancia a la que ya se
+        /// lo veía marcar cuando caminaba y no llegaba.
+        /// </summary>
+        public const int CannonStandoff = 5;
 
         // ---- Las monedas -------------------------------------------------
 
@@ -479,10 +487,11 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         /// Árbol del Cajero. Sequence raíz de 4 hijos:
         /// <list type="number">
         /// <item>Gate de las Comisiones (50% HP) → <c>Once → SpawnReinforcements ×2</c>.</item>
-        /// <item>La persecución, salvo el turno que dispara.</item>
-        /// <item>El ataque: cobra el cañonazo marcado, o <c>Alternate[mandoble, empujón]</c> si te
-        /// tiene pegado, o marca un 3×3 donde estés si camina y no llega. Los dos golpes dejan
-        /// <see cref="CoinsPerHit"/> monedas por la sala.</item>
+        /// <item>La persecución, sólo si te tiene a menos de <see cref="CannonStandoff"/>. Lejos se
+        /// planta: es artillero.</item>
+        /// <item>El ataque: cobra el cañonazo marcado (y recarga si seguís lejos), o
+        /// <c>Alternate[mandoble, empujón]</c> si te tiene pegado, o marca un 5×5 donde estés. Los
+        /// dos golpes dejan <see cref="CoinsPerHit"/> monedas por la sala.</item>
         /// <item>La caja: vence las monedas que nadie levantó, de a una por turno.</item>
         /// </list>
         /// Todo lo que puede devolver Failed va en <c>Selector[acción, Wait]</c>.
@@ -492,7 +501,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         /// La <b>persecución va antes del golpe</b>, y ahí está toda la diferencia entre empujarte y
         /// caminar con vos, y empujarte y dejarte ir. Si arranca el turno pegado,
         /// <c>AINode_Move</c> devuelve Failed —ya está en la banda— y nada lo mueve después del
-        /// tumbo, así que el empujón se lee. Si arranca lejos, cierra y pega en el mismo turno:
+        /// tumbo, así que el empujón se lee. Si arranca cerca, cierra y pega en el mismo turno:
         /// <see cref="BuildChase"/> apunta a <see cref="MeleeRange"/>, que es exactamente el rango
         /// que pide el gate del ataque.
         /// </para>
@@ -523,8 +532,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         }
 
         /// <summary>
-        /// El ataque del turno, que es uno de tres y nunca dos: cobrar el cañonazo que marcó, o
-        /// pegar si lo tiene pegado, o marcar uno nuevo si camina y no llega.
+        /// El ataque del turno, que es uno de tres y nunca dos: cobrar el cañonazo que marcó (y
+        /// recargarlo si seguís lejos), o pegar si lo tiene pegado, o marcar uno nuevo si no.
         /// </summary>
         /// <remarks>
         /// <para>
@@ -543,7 +552,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         {
             TargetSelector = new TargetSelector_Self(),
             Conditions = new List<BasePreCondition> { new PcOwnerHasPendingTelegraph() },
-            Then = BuildSlamExecute(),
+            Then = BuildSlamFire(),
             Else = new AINode_If
             {
                 TargetSelector = new TargetSelector_AlwaysPlayer(),
@@ -557,7 +566,44 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         };
 
         /// <summary>
-        /// El aviso del cañonazo: marca el 3×3 sobre la casilla del jugador y no pega este turno.
+        /// "Te tengo cerca": a menos de <see cref="CannonStandoff"/>. Mide distancia y no visión —
+        /// una caja fuerte en el medio no lo vuelve artillero a dos casillas.
+        /// </summary>
+        public static PcTargetInRange WithinStandoff() => new PcTargetInRange
+        {
+            Range = CannonStandoff - 1,
+            Metric = DistanceMetric.Manhattan,
+            IgnoreLineOfSight = true,
+        };
+
+        /// <summary>
+        /// El turno del disparo: cobra la marca y, si seguís lejos, deja la siguiente puesta. Cerca
+        /// sólo cobra — el turno que viene ya es de los golpes.
+        /// </summary>
+        /// <remarks>
+        /// <c>AINode_ExecuteTelegraph</c> devuelve Succeeded aunque hayas esquivado, así que el
+        /// <c>Sequence</c> siempre llega a la recarga.
+        /// </remarks>
+        public static AINode_Sequence BuildSlamFire() => new AINode_Sequence
+        {
+            Children = new List<AIDecisionNode>
+            {
+                BuildSlamExecute(),
+                BuildSlamReload(),
+            },
+        };
+
+        /// <summary>La recarga: vuelve a marcar sólo si te quedaste a <see cref="CannonStandoff"/> o más.</summary>
+        public static AINode_If BuildSlamReload() => new AINode_If
+        {
+            TargetSelector = new TargetSelector_AlwaysPlayer(),
+            Conditions = new List<BasePreCondition> { WithinStandoff() },
+            Then = new AINode_Wait(),
+            Else = BuildSlamMark(),
+        };
+
+        /// <summary>
+        /// El aviso del cañonazo: marca el 5×5 sobre la casilla del jugador y no pega este turno.
         /// </summary>
         /// <remarks>
         /// <para>
@@ -587,8 +633,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         };
 
         /// <summary>
-        /// El disparo: cobra lo que marcó el turno pasado, con el gesto ranged del rig — el único de
-        /// sus tres triggers que ningún otro tiempo usa.
+        /// El disparo: cobra lo que marcó el turno pasado, con el gesto ranged del rig, que ningún
+        /// otro tiempo usa.
         /// </summary>
         public static AINode_ExecuteTelegraph BuildSlamExecute() => new AINode_ExecuteTelegraph
         {
@@ -728,20 +774,20 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         };
 
         /// <summary>
-        /// La persecución, salvo el turno en que cobra el cañonazo: ahí se planta y dispara.
+        /// La persecución, sólo cuando te tiene a menos de <see cref="CannonStandoff"/>. Lejos se
+        /// planta: es artillero y el cañón llega solo.
         /// </summary>
         /// <remarks>
-        /// El área quedó anclada donde estabas parado, así que si además caminara, el jugador vería
-        /// al jefe encima suyo y el golpe cayendo en otro lado. Plantado, el disparo se lee: apuntó
-        /// ahí, se quedó ahí, pegó ahí. Marca sí caminando —si no, kiteando no te alcanza nunca y
-        /// sus dos golpes cuerpo a cuerpo no existen.
+        /// Camina también el turno que dispara si te acercaste: el área quedó anclada donde estabas,
+        /// así que el cobro no depende de dónde esté él, y cerrar es lo que trae los dos golpes de
+        /// contacto al turno siguiente.
         /// </remarks>
         public static AINode_If BuildChaseGate() => new AINode_If
         {
-            TargetSelector = new TargetSelector_Self(),
-            Conditions = new List<BasePreCondition> { new PcOwnerHasPendingTelegraph() },
-            Then = new AINode_Wait(),
-            Else = BuildChase(),
+            TargetSelector = new TargetSelector_AlwaysPlayer(),
+            Conditions = new List<BasePreCondition> { WithinStandoff() },
+            Then = BuildChase(),
+            Else = new AINode_Wait(),
         };
 
         /// <summary>
@@ -842,8 +888,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
                 Pattern = AttackPatternKind.ContactAdjacent,
                 Timing = AttackTiming.Instant,
                 Notes = "Mandoble y empujón alternados a distancia 1, cada golpe deja monedas " +
-                        "por la sala; fuera de alcance marca un 3×3 sobre el jugador y lo cobra " +
-                        "al turno siguiente, plantado; caja fuerte; refuerzos (Comisión).",
+                        "por la sala; a 5 o más se planta, marca un 5×5 sobre el jugador, lo cobra " +
+                        "al turno siguiente y recarga si sigue lejos; caja fuerte; refuerzos (Comisión).",
             };
         }
 

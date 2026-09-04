@@ -44,15 +44,16 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             Assert.IsNotNull(_heavyBlow, "El mandoble no está en el árbol del asset.");
             Assert.IsNotNull(_shove, "El empujón no está en el árbol del asset.");
 
+            // Dos marcas del mismo BuildSlamMark: la del turno sin marca y la recarga del artillero.
             var marks = new List<AINode_TelegraphMark>();
             AIIntentWalker.CollectNodes(root, marks);
-            _slamMark = marks.Count == 1 ? marks[0] : null;
+            _slamMark = marks.Count > 0 ? marks[0] : null;
 
             var executes = new List<AINode_ExecuteTelegraph>();
             AIIntentWalker.CollectNodes(root, executes);
             _slamExecute = executes.Count == 1 ? executes[0] : null;
 
-            Assert.IsNotNull(_slamMark, "El aviso del cañonazo no está en el árbol del asset (o hay más de uno).");
+            Assert.IsNotNull(_slamMark, "El aviso del cañonazo no está en el árbol del asset.");
             Assert.IsNotNull(_slamExecute, "El cobro del cañonazo no está en el árbol del asset (o hay más de uno).");
         }
 

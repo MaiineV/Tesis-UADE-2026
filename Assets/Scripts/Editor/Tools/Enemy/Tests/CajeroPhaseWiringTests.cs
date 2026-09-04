@@ -16,6 +16,7 @@ using Rollgeon.EditorTools;
 using Rollgeon.Entities;
 using Rollgeon.Feedback;
 using Rollgeon.Grid;
+using Rollgeon.PreConditions;
 using Rollgeon.PreConditions.Concretes;
 using Rollgeon.Tiles;
 using Rollgeon.Tiles.Authoring;
@@ -220,12 +221,31 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         {
             var pending = PendingGate();
 
-            Assert.IsInstanceOf<AINode_ExecuteTelegraph>(pending.Then,
-                "El gate de marca pendiente tiene que cobrarla en su Then.");
+            var fire = pending.Then as AINode_Sequence;
+            Assert.IsNotNull(fire, "El gate de marca pendiente tiene que cobrarla en su Then.");
+            Assert.IsInstanceOf<AINode_ExecuteTelegraph>(fire.Children.FirstOrDefault(),
+                "El cobro va primero: la recarga marca sobre el área que acaba de detonar.");
             Assert.IsEmpty(Descendants(pending.Then).OfType<AINode_Alternate>().ToList(),
                 "El ciclo melee quedó del lado del cobro: el jefe pega dos veces en el turno que dispara.");
             Assert.IsNotNull(Descendants(pending.Else).OfType<AINode_Alternate>().FirstOrDefault(),
                 "El ciclo melee tiene que colgar de la rama sin marca pendiente.");
+        }
+
+        /// <summary>Lejos es artillero: dispara y deja la siguiente puesta en el mismo turno. Cerca sólo
+        /// cobra — el turno que viene ya es de los golpes.</summary>
+        [Test]
+        public void AfterFiring_HeReloadsOnlyIfYouStayedFar()
+        {
+            var fire = (AINode_Sequence)PendingGate().Then;
+
+            Assert.AreEqual(2, fire.Children.Count, "Cobro y recarga, nada más.");
+            var reload = fire.Children[1] as AINode_If;
+            Assert.IsNotNull(reload, "La recarga tiene que ser un If por distancia.");
+            AssertStandoff(reload.Conditions);
+            Assert.IsInstanceOf<AINode_Wait>(reload.Then,
+                "Cerca no recarga: si te acercaste, el turno siguiente es de los golpes.");
+            Assert.IsInstanceOf<AINode_TelegraphMark>(reload.Else,
+                "Lejos tiene que volver a marcar, o el artillero dispara una vez y se queda mirando.");
         }
 
         /// <summary>El paso que reemplaza al <c>Wait</c>: caminar y no llegar deja de ser un turno
@@ -240,7 +260,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             Assert.AreEqual(ThreatShape.SquareAroundPlayer, mark.Shape,
                 "El área se centra en el jugador y no en el jefe: es donde estás parado al marcar.");
             Assert.AreEqual(CajeroAssetBuilder.SlamRadius, mark.Size);
-            Assert.AreEqual(3, 2 * mark.Size + 1, "3×3 contando la casilla del centro.");
+            Assert.AreEqual(5, 2 * mark.Size + 1,
+                "5×5 contando la casilla del centro: salirse exige tres casillas de movimiento.");
             Assert.AreEqual(CajeroAssetBuilder.SlamDamage, mark.Damage,
                 "Cableado desde la constante de la ficha, no del default del nodo.");
             Assert.Greater(mark.Damage, CajeroAssetBuilder.HeavyDamage,
@@ -258,30 +279,38 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         [Test]
         public void TheSlam_AimsAndFiresWithDifferentGestures()
         {
-            var mark = Descendants(_root).OfType<AINode_TelegraphMark>().Single();
+            var marks = Descendants(_root).OfType<AINode_TelegraphMark>().ToList();
             var execute = Descendants(_root).OfType<AINode_ExecuteTelegraph>().Single();
 
-            Assert.AreEqual(BossFeedbackIds.CajeroAimAnim, mark.WindupFeedbackId,
-                "El turno de aviso sin gesto es un turno en que el jefe camina y nada más.");
+            Assert.AreEqual(2, marks.Count, "Dos marcas: la del turno sin marca y la recarga del artillero.");
             Assert.AreEqual(BossFeedbackIds.CajeroShotAnim, execute.WindupFeedbackId,
-                "El disparo usa el gesto ranged del rig, el único de sus tres que ningún otro " +
-                "tiempo ocupa.");
-            Assert.AreNotEqual(mark.WindupFeedbackId, execute.WindupFeedbackId,
-                "Apuntar y disparar con el mismo id son dos turnos que se ven iguales.");
+                "El disparo usa el gesto ranged del rig, que ningún otro tiempo ocupa.");
+            foreach (var mark in marks)
+            {
+                Assert.AreEqual(BossFeedbackIds.CajeroAimAnim, mark.WindupFeedbackId,
+                    "El turno de aviso sin gesto es un turno en que el jefe no hace nada visible.");
+                Assert.AreNotEqual(mark.WindupFeedbackId, execute.WindupFeedbackId,
+                    "Apuntar y disparar con el mismo id son dos turnos que se ven iguales.");
+            }
         }
 
-        /// <summary>El área quedó anclada donde estabas al marcar: si además caminara, el jugador vería
-        /// al jefe encima suyo y el golpe cayendo en otro lado.</summary>
+        /// <summary>A <see cref="CajeroAssetBuilder.CannonStandoff"/> o más es artillero: se planta y
+        /// el cañón llega solo. Más cerca persigue — incluido el turno que dispara: el área quedó
+        /// anclada donde estabas, así que caminar no le cambia el cobro.</summary>
         [Test]
-        public void TheTurnHeFires_HeStandsStill()
+        public void FarAway_HePlantsAndAims_CloseHeChases()
         {
             var gate = ChaseGate();
 
-            Assert.IsInstanceOf<AINode_Wait>(gate.Then,
-                "Con marca pendiente el jefe volvió a caminar: dispara a una casilla y está en otra.");
-            Assert.IsNotNull(Descendants(gate.Else).OfType<AINode_Move>().FirstOrDefault(),
-                "La persecución tiene que seguir corriendo los turnos sin marca — incluido el que " +
-                "marca. Sin eso, kiteando no te alcanza nunca y sus dos golpes pegados no existen.");
+            AssertStandoff(gate.Conditions);
+            Assert.IsInstanceOf<AINode_Move>(gate.Then,
+                "Cerca tiene que perseguir: sin eso sus dos golpes de contacto no existen.");
+            Assert.IsInstanceOf<AINode_Wait>(gate.Else,
+                "Lejos volvió a caminar: deja de ser artillero y el jugador nunca ve el cañón dos " +
+                "veces seguidas.");
+            Assert.IsEmpty(gate.Conditions.OfType<PcOwnerHasPendingTelegraph>().ToList(),
+                "La caminata volvió a depender de la marca pendiente: si te acercaste, camina hacia " +
+                "vos y dispara.");
         }
 
         [Test]
@@ -1237,28 +1266,41 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         }
 
         /// <summary>El <c>If</c> que decide si cobra la marca; el de rango cuelga de su <c>Else</c>.</summary>
-        /// <remarks>Desambigua por el <c>Then</c>: el gate que frena la caminata lee la misma
-        /// precondición y va antes en el árbol.</remarks>
         private AINode_If PendingGate()
         {
-            var gate = PendingGates().FirstOrDefault(g => g.Then is AINode_ExecuteTelegraph);
+            var gate = Descendants(_root).OfType<AINode_If>().FirstOrDefault(
+                g => g.Conditions != null && g.Conditions.OfType<PcOwnerHasPendingTelegraph>().Any()
+                     && Descendants(g.Then).OfType<AINode_ExecuteTelegraph>().Any());
 
             Assert.IsNotNull(gate, "No hay gate de marca pendiente: el cañonazo nunca se cobra.");
             return gate;
         }
 
-        /// <summary>El <c>If</c> que le saca la caminata al turno del disparo.</summary>
+        /// <summary>El <c>If</c> que decide si persigue o se planta.</summary>
         private AINode_If ChaseGate()
         {
-            var gate = PendingGates().FirstOrDefault(g => Descendants(g).OfType<AINode_Move>().Any());
+            var gate = Descendants(_root).OfType<AINode_If>()
+                .FirstOrDefault(g => g.Then is AINode_Move || g.Else is AINode_Move);
 
-            Assert.IsNotNull(gate, "La persecución dejó de estar gateada por la marca pendiente.");
+            Assert.IsNotNull(gate, "La persecución dejó de estar gateada por distancia.");
             return gate;
         }
 
-        private IEnumerable<AINode_If> PendingGates() =>
-            Descendants(_root).OfType<AINode_If>().Where(
-                g => g.Conditions != null && g.Conditions.OfType<PcOwnerHasPendingTelegraph>().Any());
+        /// <summary>El gate de distancia del artillero: "cerca" es hasta una casilla antes de
+        /// <see cref="CajeroAssetBuilder.CannonStandoff"/>.</summary>
+        private static void AssertStandoff(List<BasePreCondition> conditions)
+        {
+            var range = conditions?.OfType<PcTargetInRange>().SingleOrDefault();
+
+            Assert.IsNotNull(range, "El gate no condiciona por distancia.");
+            Assert.AreEqual(CajeroAssetBuilder.CannonStandoff - 1, range.Range,
+                "A 5 ya es artillero: el gate de \"cerca\" tiene que cerrar una casilla antes.");
+            Assert.AreEqual(DistanceMetric.Manhattan, range.Metric,
+                "Misma métrica que el resto del árbol.");
+            Assert.IsTrue(range.IgnoreLineOfSight,
+                "Mide distancia, no visión: una caja fuerte en el medio no lo vuelve artillero a dos " +
+                "casillas.");
+        }
 
         private AINode_If RangeGate()
         {
