@@ -293,6 +293,139 @@ namespace Rollgeon.Editor.Tools.Enchantment.Tests
                 f.Severity == EnchantmentQuery.FindingSeverity.Error && f.Message.Contains("combo.que_no_existe")));
         }
 
+        [Test]
+        public void CheckCatalogHealth_UnknownComboId_InExcludeMode_IsAnError()
+        {
+            // Arrange — Fix#0053: ExcludeComboIds también lista ids y también se valida.
+            var ench = MakeEnchantment("ench.excluye_falso", "Excluye Falso", EnchantmentCategory.Control);
+            var trigger = new ExecuteEffectsOnDiceEvent
+            {
+                Event = EnchantmentHookEvent.ComboPlayed,
+                Effects = new List<EffectData> { new() { Effects = new List<IEffect> { new EffAddComboBonus() } } },
+            };
+            trigger.Filter.Mode = ComboFilterMode.ExcludeComboIds;
+            trigger.Filter.ComboIds = new List<string> { "combo.que_no_existe" };
+            ench.EditorAddTrigger(trigger);
+
+            var catalog = Create<EnchantmentCatalogSO>();
+            catalog.EditorAdd(ench);
+            var pool = MakePoolWith((ench, 1f));
+
+            // Act
+            var findings = EnchantmentQuery.CheckCatalogHealth(new[] { ench }, catalog, pool);
+
+            // Assert
+            Assert.IsTrue(findings.Any(f =>
+                f.Severity == EnchantmentQuery.FindingSeverity.Error && f.Message.Contains("combo.que_no_existe")));
+        }
+
+        [Test]
+        public void CheckCatalogHealth_HealthCostWithoutTargetSelf_InComboPlayed_IsAnError()
+        {
+            // Arrange — Vampiro pre-Fix#0053: Health/Subtract en ComboPlayed pega al enemigo.
+            var alReves = MakeEnchantment("ench.al_reves", "Al Revés", EnchantmentCategory.Caos);
+            alReves.EditorAddTrigger(new ExecuteEffectsOnDiceEvent
+            {
+                Event = EnchantmentHookEvent.ComboPlayed,
+                Effects = new List<EffectData>
+                {
+                    new()
+                    {
+                        Effects = new List<IEffect>
+                        {
+                            new EffModifyIntAttribute
+                            {
+                                TargetStat = Rollgeon.Attributes.StatType.Health,
+                                Operation = IntOperation.Subtract,
+                            },
+                        },
+                    },
+                },
+            });
+
+            var vampiro = MakeEnchantment("ench.vampiro_ok", "Vampiro OK", EnchantmentCategory.Caos);
+            vampiro.EditorAddTrigger(new ExecuteEffectsOnDiceEvent
+            {
+                Event = EnchantmentHookEvent.ComboPlayed,
+                Effects = new List<EffectData>
+                {
+                    new()
+                    {
+                        Effects = new List<IEffect>
+                        {
+                            new EffModifyIntAttribute
+                            {
+                                TargetStat = Rollgeon.Attributes.StatType.Health,
+                                Operation = IntOperation.Subtract,
+                                TargetSelf = true,
+                            },
+                        },
+                    },
+                },
+            });
+
+            var catalog = Create<EnchantmentCatalogSO>();
+            catalog.EditorAdd(alReves);
+            catalog.EditorAdd(vampiro);
+            var pool = MakePoolWith((alReves, 1f), (vampiro, 1f));
+
+            // Act
+            var findings = EnchantmentQuery.CheckCatalogHealth(new[] { alReves, vampiro }, catalog, pool);
+
+            // Assert
+            Assert.IsTrue(findings.Any(f =>
+                f.Severity == EnchantmentQuery.FindingSeverity.Error
+                && f.Asset == alReves && f.Message.Contains("TargetSelf")));
+            Assert.IsFalse(findings.Any(f => f.Asset == vampiro && f.Message.Contains("TargetSelf")));
+        }
+
+        [Test]
+        public void CheckCatalogHealth_FaceDeltaInsideComboBonus_IsAnError()
+        {
+            // Arrange — canal viejo ("suma y resta a la vez") vs EffMutateCarrierFace.
+            var viejo = MakeEnchantment("ench.viejo", "Viejo", EnchantmentCategory.Caos);
+            viejo.EditorAddTrigger(new ExecuteEffectsOnDiceEvent
+            {
+                Event = EnchantmentHookEvent.ComboMatched,
+                RequireCarrierParticipates = true,
+                Effects = new List<EffectData>
+                {
+                    new()
+                    {
+                        Effects = new List<IEffect>
+                        {
+                            new EffAddComboBonus { Amount = new Rollgeon.Upgrades.Dice.Readers.ReadCarrierRollDelta() },
+                        },
+                    },
+                },
+            });
+
+            var nuevo = MakeEnchantment("ench.nuevo", "Nuevo", EnchantmentCategory.Caos);
+            nuevo.EditorAddTrigger(new ExecuteEffectsOnDiceEvent
+            {
+                Event = EnchantmentHookEvent.ComboMatched,
+                RequireCarrierParticipates = true,
+                Effects = new List<EffectData>
+                {
+                    new() { Effects = new List<IEffect> { new Rollgeon.Upgrades.Dice.Effects.EffMutateCarrierFace() } },
+                },
+            });
+
+            var catalog = Create<EnchantmentCatalogSO>();
+            catalog.EditorAdd(viejo);
+            catalog.EditorAdd(nuevo);
+            var pool = MakePoolWith((viejo, 1f), (nuevo, 1f));
+
+            // Act
+            var findings = EnchantmentQuery.CheckCatalogHealth(new[] { viejo, nuevo }, catalog, pool);
+
+            // Assert
+            Assert.IsTrue(findings.Any(f =>
+                f.Severity == EnchantmentQuery.FindingSeverity.Error
+                && f.Asset == viejo && f.Message.Contains("EffMutateCarrierFace")));
+            Assert.IsFalse(findings.Any(f => f.Asset == nuevo && f.Severity == EnchantmentQuery.FindingSeverity.Error));
+        }
+
         // ---- localización -----------------------------------------------------------
 
         [Test]

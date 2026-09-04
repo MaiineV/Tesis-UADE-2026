@@ -38,6 +38,13 @@ namespace Rollgeon.Editor.Tools.Enchantment
             public readonly bool UsesComboIds;
 
             /// <summary>
+            /// Cualquier selección jugable, Número Alto incluido (setea
+            /// <c>Filter.Mode = AnyIncludingHigherNumber</c>). Para propiedades del dado
+            /// (Oxidado no suma nunca), no para condiciones de combo.
+            /// </summary>
+            public readonly bool IncludesHigherNumber;
+
+            /// <summary>
             /// Hook de preview: solo admite efectos <c>IComboScratchWriter</c>. Un apply
             /// directo (oro, escudo, curación) acá es farmeable por toggle de hold —
             /// la auditoría lo rechaza (BUG-017).
@@ -46,7 +53,7 @@ namespace Rollgeon.Editor.Tools.Enchantment
 
             internal TriggerOption(
                 string id, string displayName, string help, EnchantmentHookEvent evt,
-                bool usesComboIds = false, bool scratchOnly = false)
+                bool usesComboIds = false, bool scratchOnly = false, bool includesHigherNumber = false)
             {
                 Id = id;
                 DisplayName = displayName;
@@ -54,6 +61,7 @@ namespace Rollgeon.Editor.Tools.Enchantment
                 Event = evt;
                 UsesComboIds = usesComboIds;
                 ScratchOnly = scratchOnly;
+                IncludesHigherNumber = includesHigherNumber;
             }
         }
 
@@ -66,22 +74,30 @@ namespace Rollgeon.Editor.Tools.Enchantment
             // ---- combo (apply) ------------------------------------------------------
             new TriggerOption(
                 "combo.played.any", "Cuando jugás cualquier combo",
-                "El combo se confirmó (ventana pre-daño). Acá van los efectos de apply: oro, escudo, bonos al combo.",
+                "El combo se confirmó (ventana pre-daño). Acá van los efectos de apply: oro, escudo, bonos al combo. Número Alto NO cuenta como combo (matchea cualquier tirada).",
                 EnchantmentHookEvent.ComboPlayed),
             new TriggerOption(
                 "combo.played.ids", "Cuando jugás combos específicos",
                 "Igual que el anterior, pero solo con los combos elegidos. Sin ningún combo elegido no dispara nunca.",
                 EnchantmentHookEvent.ComboPlayed, usesComboIds: true),
+            new TriggerOption(
+                "combo.played.all", "Cuando jugás cualquier tirada (incluido Número Alto)",
+                "Como 'cualquier combo' pero también con Número Alto. Para propiedades del dado que valen en toda jugada (Frágil resuelve su moneda al jugar), no para condiciones de combo.",
+                EnchantmentHookEvent.ComboPlayed, includesHigherNumber: true),
 
             // ---- combo (preview) ----------------------------------------------------
             new TriggerOption(
                 "combo.matched.any", "Cuando un combo matchea (preview)",
-                "Se detectó un combo, antes de confirmarlo. Re-dispara en cada toggle de hold: SOLO scratch-writers (EffAddComboBonus y afines) — un apply directo acá es farmeable (BUG-017).",
+                "Se detectó un combo, antes de confirmarlo. Re-dispara en cada toggle de hold: SOLO scratch-writers (EffAddComboBonus y afines) — un apply directo acá es farmeable (BUG-017). Número Alto NO cuenta como combo.",
                 EnchantmentHookEvent.ComboMatched, scratchOnly: true),
             new TriggerOption(
                 "combo.matched.ids", "Cuando matchean combos específicos (preview)",
                 "Preview restringido a los combos elegidos. Mismas reglas: solo scratch-writers.",
                 EnchantmentHookEvent.ComboMatched, usesComboIds: true, scratchOnly: true),
+            new TriggerOption(
+                "combo.matched.all", "Cuando cualquier tirada matchea, incluido Número Alto (preview)",
+                "Preview de toda selección jugable, Número Alto incluido. Para mutar la cara del dado (EffMutateCarrierFace: Oxidado, Volátil, Enfiestado) — solo scratch-writers.",
+                EnchantmentHookEvent.ComboMatched, scratchOnly: true, includesHigherNumber: true),
 
             // ---- tirada -------------------------------------------------------------
             new TriggerOption(
@@ -118,7 +134,9 @@ namespace Rollgeon.Editor.Tools.Enchantment
 
             trigger.Event = option.Event;
             trigger.Filter ??= new ComboFilter();
-            trigger.Filter.Mode = option.UsesComboIds ? ComboFilterMode.ComboIds : ComboFilterMode.AnyCombo;
+            trigger.Filter.Mode = option.UsesComboIds ? ComboFilterMode.ComboIds
+                : option.IncludesHigherNumber ? ComboFilterMode.AnyIncludingHigherNumber
+                : ComboFilterMode.AnyCombo;
         }
 
         /// <summary>
@@ -135,11 +153,14 @@ namespace Rollgeon.Editor.Tools.Enchantment
                             || trigger.Event == EnchantmentHookEvent.ComboPlayed;
             bool usesIds = isComboHook && trigger.Filter != null
                         && trigger.Filter.Mode == ComboFilterMode.ComboIds;
+            bool includesHigher = isComboHook && trigger.Filter != null
+                        && trigger.Filter.Mode == ComboFilterMode.AnyIncludingHigherNumber;
 
             foreach (var option in All)
             {
                 if (option.Event != trigger.Event) continue;
                 if (isComboHook && option.UsesComboIds != usesIds) continue;
+                if (isComboHook && option.IncludesHigherNumber != includesHigher) continue;
                 return option;
             }
             return null;

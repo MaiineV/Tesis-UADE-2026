@@ -222,6 +222,43 @@ namespace Rollgeon.Upgrades.Dice.Tests
         }
 
         /// <summary>
+        /// Fix#0053: la transformación de la cara del carrier (Oxidado no suma, Volátil
+        /// mitad/doble…) va por <c>EffMutateCarrierFace</c>. Dentro de
+        /// <c>EffAddComboBonus</c> el dado sumaba su cara y un proc la deshacía — el tester lo
+        /// leía como "suma y resta a la vez".
+        /// </summary>
+        [Test]
+        public void EnchantmentAssets_DoNotAuthorFaceDeltasAsComboBonus()
+        {
+            var offenders = new StringBuilder();
+
+            foreach (var guid in AssetDatabase.FindAssets("t:EnchantmentSO"))
+            {
+                var path = AssetDatabase.GUIDToAssetPath(guid);
+                var ench = AssetDatabase.LoadAssetAtPath<EnchantmentSO>(path);
+                if (ench?.Triggers == null) continue;
+
+                foreach (var trigger in ench.Triggers)
+                {
+                    if (!(trigger is Triggers.ExecuteEffectsOnDiceEvent bridge) || bridge.Effects == null) continue;
+                    foreach (var group in bridge.Effects)
+                    {
+                        if (group?.Effects == null) continue;
+                        foreach (var effect in group.Effects)
+                        {
+                            if (effect is Rollgeon.Effects.Concretes.EffAddComboBonus bonus
+                                && bonus.Amount is Readers.ReadCarrierRollDelta)
+                                offenders.AppendLine($"{path}: EffAddComboBonus(ReadCarrierRollDelta) en {bridge.Event}");
+                        }
+                    }
+                }
+            }
+
+            Assert.IsEmpty(offenders.ToString(),
+                "Encantamientos con el canal de cara viejo (usar EffMutateCarrierFace):\n" + offenders);
+        }
+
+        /// <summary>
         /// Espejo del audit BUG-017 para el canal combos: en pasivas, el hook
         /// ComboMatched es preview (re-dispara por toggle de hold) — los efectos de
         /// apply directo (oro, escudo…) van en ComboPlayed; en preview solo writers
