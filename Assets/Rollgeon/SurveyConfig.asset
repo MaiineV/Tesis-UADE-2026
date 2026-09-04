@@ -15,7 +15,7 @@ MonoBehaviour:
   Enabled: 0
   EventId: evento-2026
   TriggerFloorIndex: 0
-  EndpointUrl: 
+  EndpointUrl: https://script.google.com/macros/s/AKfycby8DRWNPx_FU96EDx3t18xAMgg5glXTzbtgnfxpXcilmbvBQlwTsrFoTyChwE1RHPef/exec
   SharedSecret: 
   TimeoutSeconds: 10
   AskEmailForRaffle: 1
