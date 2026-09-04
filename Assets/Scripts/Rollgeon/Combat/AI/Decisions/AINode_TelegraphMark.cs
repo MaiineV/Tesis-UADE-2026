@@ -194,7 +194,24 @@ namespace Rollgeon.Combat.AI.Decisions
             // regla Mewgenics del spec de tooltips.
             threat.Mark(source, tiles, Damage, Kind);
 
+            FaceMarkedArea(context, tiles);
+
             return AIResult.Succeeded;
+        }
+
+        /// <summary>
+        /// Gira hacia el centro de lo recién marcado. Sin esto el jefe se queda con la
+        /// orientación que traía del movimiento anterior durante todo el turno de aviso — como si
+        /// no estuviera apuntando a nada, y recién gira de golpe un turno después, al ejecutar.
+        /// </summary>
+        private static void FaceMarkedArea(AIContext context, HashSet<GridCoord> tiles)
+        {
+            if (context?.Grid == null || context.SelfGuid == Guid.Empty) return;
+            if (!context.Grid.TryGetPosition(context.SelfGuid, out var selfCoord)) return;
+            if (!ServiceLocator.TryGetService<Entities.Visuals.IEntityVisualService>(out var visuals) || visuals == null) return;
+            if (!visuals.TryGetPawn(context.SelfGuid, out var pawn) || pawn == null) return;
+
+            pawn.FaceCoord(selfCoord, LastThreatenedAreaCenter.ComputeCenter(tiles));
         }
 
         /// <summary>

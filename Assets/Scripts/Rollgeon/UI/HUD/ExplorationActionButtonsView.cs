@@ -151,16 +151,21 @@ namespace Rollgeon.UI.HUD
         // (ver ExplorationBehaviorService), así que el botón sobra y se oculta en este
         // HUD. Movement también se oculta: el modo movimiento está SIEMPRE activo en
         // Exploración (click-to-move permanente, auto-armado por
-        // ExplorationBehaviorService), así que el botón ya no hace falta. En combate la
-        // lógica vive en el HUD de combate — éste sólo se muestra en Exploración, así
-        // que el filtro es local.
+        // ExplorationBehaviorService), así que el botón ya no hace falta. Healing se
+        // oculta por regla de diseño (sep 2026): curar es una acción de combate — gasta
+        // el turno y compite con atacar — y curarse gratis entre salas vaciaba esa
+        // decisión. El botón es la única entrada (el hotkey H pasa por acá), así que
+        // ocultarlo cierra el camino entero. En combate la lógica vive en el HUD de
+        // combate — éste sólo se muestra en Exploración, así que el filtro es local.
         private bool IsHiddenInExploration(int buttonIndex, HeroActionBehavior behavior)
         {
             if (behavior == null) return false;
             var slot = (_slots != null && buttonIndex < _slots.Count)
                 ? _slots[buttonIndex]
                 : behavior.Slot;
-            return slot == HeroBehaviorSlot.ForceDoor || slot == HeroBehaviorSlot.Movement;
+            return slot == HeroBehaviorSlot.ForceDoor
+                || slot == HeroBehaviorSlot.Movement
+                || slot == HeroBehaviorSlot.Healing;
         }
 
         private void RefreshInteractable()
@@ -303,6 +308,8 @@ namespace Rollgeon.UI.HUD
                 _hotkeys.Subscribe(GameplayHotkey.Move, OnHotkeyMove);
                 _hotkeys.Subscribe(GameplayHotkey.Attack, OnHotkeyAttack);
                 _hotkeys.Subscribe(GameplayHotkey.ClassSkill, OnHotkeyClassSkill);
+                // Healing también está oculto en exploración (solo se cura en combate),
+                // así que H cae en botón inactivo → no-op.
                 _hotkeys.Subscribe(GameplayHotkey.Heal, OnHotkeyHeal);
                 // Force Door en exploración se dispara por la casilla roja (botón oculto),
                 // así que F cae en botón inactivo → no-op. Se suscribe por consistencia.
@@ -329,7 +336,7 @@ namespace Rollgeon.UI.HUD
         // activo e interactable → mismo camino y gating que un click real. Si está
         // visible pero deshabilitado, responde con el mismo rechazo completo que el
         // mouse (shake + SFX + toast vía ChipButtonVisual.TryRejectPress). Los
-        // botones ocultos (Movement/ForceDoor en exploración) siguen siendo no-op.
+        // botones ocultos (Movement/Healing/ForceDoor en exploración) siguen siendo no-op.
         private void TriggerSlotHotkey(HeroBehaviorSlot slot)
         {
             for (int i = 0; i < _buttons.Count; i++)

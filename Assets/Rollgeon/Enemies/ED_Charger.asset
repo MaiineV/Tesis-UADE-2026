@@ -128,7 +128,7 @@ MonoBehaviour:
       Data: 
     - Name: RequireLineOfSight
       Entry: 5
-      Data: false
+      Data: true
     - Name: 
       Entry: 8
       Data: 
@@ -1038,7 +1038,7 @@ MonoBehaviour:
       Data: 
     - Name: RequireLineOfSight
       Entry: 5
-      Data: false
+      Data: true
     - Name: 
       Entry: 8
       Data: 
@@ -1948,6 +1948,9 @@ MonoBehaviour:
     - Name: ChannelId
       Entry: 6
       Data: 
+    - Name: IgnoreLineOfSight
+      Entry: 5
+      Data: false
     - Name: WindupFeedbackId
       Entry: 1
       Data: anim.enemy.charger.charge
@@ -1955,7 +1958,13 @@ MonoBehaviour:
       Entry: 8
       Data: 
     - Name: Else
+      Entry: 7
+      Data: 102|Rollgeon.Combat.AI.Decisions.AINode_Wait, Rollgeon
+    - Name: EditorNodeId
       Entry: 6
+      Data: 
+    - Name: 
+      Entry: 8
       Data: 
     - Name: 
       Entry: 8
@@ -1989,7 +1998,7 @@ MonoBehaviour:
       Data: 
     - Name: AIDetachedNodes
       Entry: 7
-      Data: 102|System.Collections.Generic.List`1[[Rollgeon.Combat.AI.Decisions.AIDecisionNode,
+      Data: 103|System.Collections.Generic.List`1[[Rollgeon.Combat.AI.Decisions.AIDecisionNode,
         Rollgeon]], mscorlib
     - Name: 
       Entry: 12
@@ -2029,6 +2038,7 @@ MonoBehaviour:
   IsFlying: 0
   IsBoss: 0
   Archetype: 0
+  TooltipType: 
   Personality: 0
   KamikazeIgnoresSurvival: 0
   AuraRadius: 0

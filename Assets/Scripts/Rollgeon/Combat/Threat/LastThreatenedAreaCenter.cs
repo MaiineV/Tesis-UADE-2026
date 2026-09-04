@@ -13,9 +13,12 @@ namespace Rollgeon.Combat.Threat
     /// no encuentra nada.
     /// </summary>
     /// <remarks>
-    /// <see cref="TryGet"/> consume la entrada (se borra al leerla): es un dato de un solo turno,
-    /// de un solo consumidor: dejarlo pisar el turno siguiente filtraría un centro viejo a un VFX
-    /// que dispara sin telegraph pendiente (ej. un ataque de otra fuente sin passar por acá).
+    /// <see cref="TryGet"/> NO consume la entrada — puede haber más de un lector por turno (el
+    /// <c>FaceTarget</c> del nodo de ejecución Y, para el Artillery, el VFX de impacto que dispara
+    /// el mismo windup). Es seguro porque el único escritor (<c>AINode_ExecuteTelegraph</c> /
+    /// <c>AINode_ExecuteCharge</c>) siempre pisa la entrada con <see cref="Set"/> ANTES de que
+    /// cualquiera la lea, cada vez que esa misma fuente cobra un telegraph nuevo — un lector tardío
+    /// nunca puede ver un centro de un ciclo anterior sin que ya se haya sobrescrito.
     /// </remarks>
     public static class LastThreatenedAreaCenter
     {
@@ -43,14 +46,11 @@ namespace Rollgeon.Combat.Threat
             _byOwner[ownerGuid] = center;
         }
 
-        /// <summary>Lee y consume — <c>false</c> si no hay nada guardado para este owner.</summary>
+        /// <summary>Lee sin consumir — <c>false</c> si no hay nada guardado para este owner.</summary>
         public static bool TryGet(Guid ownerGuid, out GridCoord center)
         {
             if (ownerGuid != Guid.Empty && _byOwner.TryGetValue(ownerGuid, out center))
-            {
-                _byOwner.Remove(ownerGuid);
                 return true;
-            }
             center = default;
             return false;
         }

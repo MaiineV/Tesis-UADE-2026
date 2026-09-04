@@ -67,6 +67,10 @@ namespace Rollgeon.Combat.AI.Decisions
                 yield break;
             }
 
+            // Mismo criterio que AINode_ExecuteTelegraph: el FaceTarget de abajo necesita el
+            // centro YA congelado, y TryConsumePending recién sacó la marca del servicio.
+            LastThreatenedAreaCenter.Set(context.SelfGuid, LastThreatenedAreaCenter.ComputeCenter(area.Tiles));
+
             FaceTarget(context);
 
             bool resolved = false;
@@ -171,13 +175,23 @@ namespace Rollgeon.Combat.AI.Decisions
             EventManager.Trigger(EventName.OnThreatenedAreaResolved, context.SelfGuid, hit);
         }
 
+        /// <remarks>
+        /// Gira hacia el centro CONGELADO de la banda marcada, no la posición viva del jugador —
+        /// mismo criterio y mismo motivo que <c>AINode_ExecuteTelegraph.FaceTarget</c>: un whiff
+        /// (esquivó la línea de carga) no debe verse como que el Charger igual te encaró y pegó.
+        /// </remarks>
         private static void FaceTarget(AIContext context)
         {
-            if (context?.Grid == null || context.PlayerGuid == Guid.Empty) return;
+            if (context?.Grid == null || context.SelfGuid == Guid.Empty) return;
             if (!ServiceLocator.TryGetService<Entities.Visuals.IEntityVisualService>(out var visuals) || visuals == null) return;
             if (!visuals.TryGetPawn(context.SelfGuid, out var pawn) || pawn == null) return;
             if (!context.Grid.TryGetPosition(context.SelfGuid, out var from)) return;
-            if (!context.Grid.TryGetPosition(context.PlayerGuid, out var to)) return;
+
+            GridCoord to;
+            if (!LastThreatenedAreaCenter.TryGet(context.SelfGuid, out to)
+                && !context.Grid.TryGetPosition(context.PlayerGuid, out to))
+                return;
+
             pawn.FaceCoord(from, to);
         }
 
