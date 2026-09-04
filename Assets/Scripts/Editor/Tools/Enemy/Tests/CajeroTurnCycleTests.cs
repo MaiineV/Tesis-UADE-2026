@@ -27,8 +27,14 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
 
         private static readonly GridCoord BossTile = new GridCoord(5, 5);
 
+        /// <summary>Manhattan 1 del lado opuesto a <see cref="AwayTile"/>: pegado y fuera del 5×5.</summary>
+        private static readonly GridCoord GluedTileWest = new GridCoord(4, 5);
+
         /// <summary>Manhattan 3: fuera del alcance de los dos golpes.</summary>
         private static readonly GridCoord AwayTile = new GridCoord(8, 5);
+
+        /// <summary>Manhattan 5, el standoff: desde acá es artillero.</summary>
+        private static readonly GridCoord FarTile = new GridCoord(10, 5);
 
         private GridManager _grid;
         private SpyDamagePipeline _pipeline;
@@ -110,9 +116,10 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             gate.Tick(NewContext(0));
             Assert.IsEmpty(Damages(), "Pegó a distancia 3: los dos golpes son de contacto.");
 
-            // Turno 2: vuelve a pegarse. Cobrar la marca es el ataque del turno y falla porque el
+            // Turno 2: vuelve a pegarse, por el otro lado — el 5×5 marcado sobre AwayTile llega hasta
+            // la casilla pegada del este. Cobrar la marca es el ataque del turno y falla porque el
             // jugador ya no está en el área — pero tampoco toca el ciclo.
-            Assert.IsTrue(_grid.Move(_player, GluedTile), "Fixture: el jugador tiene que poder volver.");
+            Assert.IsTrue(_grid.Move(_player, GluedTileWest), "Fixture: el jugador tiene que poder volver.");
             gate.Tick(NewContext(1));
             Assert.IsEmpty(Damages(), "Se salió del área marcada: el cañonazo no le cobra nada.");
 
@@ -140,6 +147,43 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             CollectionAssert.AreEqual(new[] { CajeroAssetBuilder.SlamDamage }, Damages(),
                 "Se quedó parado en el área marcada y no le cobró nada: el turno de caminata vuelve " +
                 "a ser un turno perdido.");
+        }
+
+        /// <summary>Lejos es artillero: el turno que cobra deja la siguiente marca puesta, así que
+        /// kitearlo no lo apaga — cada turno hay un 5×5 del que salirse.</summary>
+        [Test]
+        public void FarAway_HeFiresAndReloadsInTheSameTurn()
+        {
+            var gate = CajeroAssetBuilder.BuildAttackGate();
+            Assert.IsTrue(_grid.Move(_player, FarTile), "Fixture: el jugador tiene que poder irse al standoff.");
+            gate.Tick(NewContext(0));
+
+            gate.Tick(NewContext(1));
+
+            CollectionAssert.AreEqual(new[] { CajeroAssetBuilder.SlamDamage }, Damages(),
+                "Se quedó en el área marcada y no le cobró.");
+            Assert.IsTrue(_threat.TryPeek(_boss, out _),
+                "Disparó y no recargó: el artillero tira una vez y se queda mirando.");
+        }
+
+        /// <summary>Si te acercaste por debajo del standoff cobra lo marcado y no recarga: el turno que
+        /// viene ya es de los golpes de contacto.</summary>
+        [Test]
+        public void CloseIn_HeFiresWithoutReloading()
+        {
+            var gate = CajeroAssetBuilder.BuildAttackGate();
+            Assert.IsTrue(_grid.Move(_player, FarTile), "Fixture: el jugador tiene que poder irse al standoff.");
+            gate.Tick(NewContext(0));
+
+            // A tres del jefe: dentro del 5×5 marcado (corrido hacia adentro contra la pared) y por
+            // debajo del standoff.
+            Assert.IsTrue(_grid.Move(_player, AwayTile), "Fixture: el jugador tiene que poder acercarse.");
+            gate.Tick(NewContext(1));
+
+            CollectionAssert.AreEqual(new[] { CajeroAssetBuilder.SlamDamage }, Damages(),
+                "Entró al área marcada y no le cobró.");
+            Assert.IsFalse(_threat.TryPeek(_boss, out _),
+                "Recargó con el jugador cerca: el cañón le come el turno a los golpes.");
         }
 
         /// <summary>El bug de playtest: contra la pared el cuadrado salía mordido —en una esquina
