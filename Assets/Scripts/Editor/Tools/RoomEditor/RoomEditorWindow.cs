@@ -316,24 +316,11 @@ namespace Rollgeon.Editor.Tools.RoomEditor
             int undoGroup = Undo.GetCurrentGroup();
             Undo.SetCurrentGroupName(WallOccluderOps.UndoLabel);
 
-            int added = 0, updated = 0, skipped = 0;
-            var markers = _target.GetComponentsInChildren<TileMarker>(includeInactive: true);
-            foreach (var m in markers)
-            {
-                if (m == null || m.Type != TileType.Wall) continue;
-                var cell = new Vector3Int(m.Coord.X, m.Layer, m.Coord.Y);
-                var result = WallOccluderOps.EnsureOccluder(m.gameObject, _target, cell);
-                switch (result)
-                {
-                    case WallOccluderOps.BakeResult.Added: added++; break;
-                    case WallOccluderOps.BakeResult.Updated: updated++; break;
-                    case WallOccluderOps.BakeResult.Skipped: skipped++; break;
-                }
-            }
+            var summary = WallOccluderOps.BakeRoom(_target);
 
             Undo.CollapseUndoOperations(undoGroup);
             EditorUtility.SetDirty(_target);
-            Debug.Log($"[WallOccluder] Baked: {added} added, {updated} updated, {skipped} ok.");
+            Debug.Log($"[WallOccluder] Baked — {summary}.");
         }
 
         // ============================ Tab 2 — Info ============================
