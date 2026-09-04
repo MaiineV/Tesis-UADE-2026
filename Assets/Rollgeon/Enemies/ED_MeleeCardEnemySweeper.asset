@@ -93,6 +93,15 @@ MonoBehaviour:
     - Name: ImpactEventKey
       Entry: 1
       Data: hit
+    - Name: IntentLabelKey
+      Entry: 1
+      Data: intent.card_spades.thrust
+    - Name: IntentLabelFallback
+      Entry: 1
+      Data: Estocada Anunciada
+    - Name: RequireSourceInPosition
+      Entry: 5
+      Data: false
     - Name: 
       Entry: 8
       Data: 
@@ -185,8 +194,8 @@ MonoBehaviour:
       Entry: 5
       Data: false
     - Name: WindupFeedbackId
-      Entry: 6
-      Data: 
+      Entry: 1
+      Data: anim.enemy.melee.charge
     - Name: 
       Entry: 8
       Data: 
@@ -272,6 +281,15 @@ MonoBehaviour:
     - Name: ImpactEventKey
       Entry: 1
       Data: hit
+    - Name: IntentLabelKey
+      Entry: 1
+      Data: intent.card_spades.thrust
+    - Name: IntentLabelFallback
+      Entry: 1
+      Data: Estocada Anunciada
+    - Name: RequireSourceInPosition
+      Entry: 5
+      Data: false
     - Name: 
       Entry: 8
       Data: 
@@ -364,8 +382,8 @@ MonoBehaviour:
       Entry: 5
       Data: false
     - Name: WindupFeedbackId
-      Entry: 6
-      Data: 
+      Entry: 1
+      Data: anim.enemy.melee.charge
     - Name: 
       Entry: 8
       Data: 
@@ -516,8 +534,8 @@ MonoBehaviour:
       Entry: 5
       Data: false
     - Name: WindupFeedbackId
-      Entry: 6
-      Data: 
+      Entry: 1
+      Data: anim.enemy.melee.charge
     - Name: 
       Entry: 8
       Data: 

@@ -197,6 +197,9 @@ MonoBehaviour:
     - Name: Alignment
       Entry: 3
       Data: 0
+    - Name: IgnoreLineOfSight
+      Entry: 5
+      Data: false
     - Name: 
       Entry: 8
       Data: 
@@ -258,6 +261,9 @@ MonoBehaviour:
     - Name: Alignment
       Entry: 3
       Data: 0
+    - Name: IgnoreLineOfSight
+      Entry: 5
+      Data: false
     - Name: 
       Entry: 8
       Data: 
@@ -308,7 +314,7 @@ MonoBehaviour:
       Data: false
     - Name: WindupFeedbackId
       Entry: 1
-      Data: anim.enemy.healer.cast
+      Data: anim.enemy.mago.charge
     - Name: 
       Entry: 8
       Data: 
@@ -391,6 +397,7 @@ MonoBehaviour:
   IsFlying: 0
   IsBoss: 0
   Archetype: 0
+  TooltipType: 
   Personality: 0
   KamikazeIgnoresSurvival: 0
   AuraRadius: 0

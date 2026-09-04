@@ -21,8 +21,15 @@ namespace Rollgeon.Combat.Damage
         public float AttackBase;
         /// <summary>bonos_PJ — <c>Attack.ModifiedValue − Attack.Value</c>.</summary>
         public int AttackBonus;
-        /// <summary>Σ caras de los dados contribuyentes.</summary>
+        /// <summary>Σ caras de los dados contribuyentes que cuentan en N (excluye los movidos a M).</summary>
         public int FacesSum;
+        /// <summary>
+        /// Σ caras de los dados contribuyentes movidos a M (Fuente Mágica). NO están en
+        /// <see cref="FacesSum"/>; SÍ están dentro de <see cref="ScratchMultiplierBonus"/>.
+        /// </summary>
+        public int MovedFacesSum;
+        /// <summary>Bag slots de los dados movidos a M (subset de <see cref="Dice"/>). null = ninguno.</summary>
+        public IReadOnlyList<int> DiceMovedToMultiplier;
         /// <summary>Σ BonusComboDamage de los 3 canales de scratch.</summary>
         public int AdditiveBonus;
         /// <summary>Suma de los términos aditivos — float: solo <see cref="AttackBase"/>
@@ -30,8 +37,8 @@ namespace Rollgeon.Combat.Damage
         public float N;
 
         // ── Términos de M ─────────────────────────────────────────────────
-        /// <summary>Σ ComboMultiplierBonus de los 3 canales de scratch. Entra como
-        /// <c>(1 + esto)</c> al producto de M; 0 = neutro.</summary>
+        /// <summary>Σ ComboMultiplierBonus de los 3 canales de scratch + <see cref="MovedFacesSum"/>.
+        /// Entra como <c>(1 + esto)</c> al producto de M; 0 = neutro.</summary>
         public float ScratchMultiplierBonus;
         /// <summary>Producto de ComboDamageMultiplier de los 3 canales de scratch.</summary>
         public float ScratchMultiplier;

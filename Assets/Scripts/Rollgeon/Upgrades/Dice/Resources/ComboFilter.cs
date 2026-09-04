@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Rollgeon.Combos;
 using Sirenix.OdinInspector;
 
 namespace Rollgeon.Upgrades.Dice
@@ -7,8 +8,16 @@ namespace Rollgeon.Upgrades.Dice
     /// <summary>APPEND-ONLY: se serializa el int del enum en los assets.</summary>
     public enum ComboFilterMode
     {
+        /// <summary>Sin filtro autorado. Equivale a <see cref="AnyCombo"/>.</summary>
         None,
+
+        /// <summary>
+        /// Cualquier combo REAL. Número Alto (<c>combo.higher_number</c>) matchea cualquier
+        /// selección no vacía, así que no cuenta como combo para condiciones (decisión GD
+        /// 2026-09-04): "cuando participa en un combo" con Número Alto adentro era "siempre".
+        /// </summary>
         AnyCombo,
+
         ComboIds,
 
         /// <summary>
@@ -17,6 +26,13 @@ namespace Rollgeon.Upgrades.Dice
         /// (<c>combo.higher_number</c>) ese dado ES el combo entero.
         /// </summary>
         ExcludeComboIds,
+
+        /// <summary>
+        /// Cualquier selección jugable, Número Alto incluido. Para mutaciones de cara que son
+        /// una propiedad del dado y no una condición de combo (Oxidado no suma NUNCA, Volátil
+        /// vale mitad/doble en cualquier jugada).
+        /// </summary>
+        AnyIncludingHigherNumber,
     }
 
     /// <summary>
@@ -37,21 +53,29 @@ namespace Rollgeon.Upgrades.Dice
         public bool UsesComboIds
             => Mode == ComboFilterMode.ComboIds || Mode == ComboFilterMode.ExcludeComboIds;
 
+        /// <summary>
+        /// El combo fallback: matchea cualquier selección no vacía y contribuye un solo dado,
+        /// así que como "condición de combo" no dice nada. Solo entra por
+        /// <see cref="ComboFilterMode.AnyIncludingHigherNumber"/> o listado explícito.
+        /// </summary>
+        public static bool IsFallbackCombo(string comboId) => comboId == ComboId.HigherNumber;
+
         public bool Matches(string comboId)
         {
+            if (string.IsNullOrEmpty(comboId)) return false;
+
             switch (Mode)
             {
                 case ComboFilterMode.ComboIds:
-                    return !string.IsNullOrEmpty(comboId)
-                           && ComboIds != null
-                           && ComboIds.Contains(comboId);
+                    return ComboIds != null && ComboIds.Contains(comboId);
                 case ComboFilterMode.ExcludeComboIds:
-                    return !string.IsNullOrEmpty(comboId)
-                           && (ComboIds == null || !ComboIds.Contains(comboId));
-                // None y AnyCombo: cualquier combo válido. None equivale a AnyCombo cuando
-                // el trigger igual está atado al hook de combo.
+                    return !IsFallbackCombo(comboId) && (ComboIds == null || !ComboIds.Contains(comboId));
+                case ComboFilterMode.AnyIncludingHigherNumber:
+                    return true;
+                // None y AnyCombo: cualquier combo real. None equivale a AnyCombo cuando el
+                // trigger igual está atado al hook de combo.
                 default:
-                    return !string.IsNullOrEmpty(comboId);
+                    return !IsFallbackCombo(comboId);
             }
         }
     }

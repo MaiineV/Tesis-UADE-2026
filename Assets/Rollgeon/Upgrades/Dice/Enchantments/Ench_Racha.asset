@@ -73,7 +73,7 @@ MonoBehaviour:
         Rollgeon]], mscorlib
     - Name: 
       Entry: 12
-      Data: 3
+      Data: 4
     - Name: 
       Entry: 7
       Data: 3|Rollgeon.Upgrades.Dice.Triggers.ExecuteEffectsOnDiceEvent, Rollgeon
@@ -242,6 +242,9 @@ MonoBehaviour:
     - Name: 
       Entry: 8
       Data: 
+    - Name: _subtract
+      Entry: 5
+      Data: false
     - Name: 
       Entry: 8
       Data: 
@@ -794,6 +797,192 @@ MonoBehaviour:
       Entry: 8
       Data: 
     - Name: 
+      Entry: 7
+      Data: 42|Rollgeon.Upgrades.Dice.Triggers.ExecuteEffectsOnDiceEvent, Rollgeon
+    - Name: Event
+      Entry: 3
+      Data: 5
+    - Name: Filter
+      Entry: 7
+      Data: 43|Rollgeon.Upgrades.Dice.ComboFilter, Rollgeon
+    - Name: Mode
+      Entry: 3
+      Data: 2
+    - Name: ComboIds
+      Entry: 7
+      Data: 44|System.Collections.Generic.List`1[[System.String, mscorlib]], mscorlib
+    - Name: 
+      Entry: 12
+      Data: 1
+    - Name: 
+      Entry: 1
+      Data: combo.higher_number
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: RequireCarrierParticipates
+      Entry: 5
+      Data: false
+    - Name: Effects
+      Entry: 7
+      Data: 45|System.Collections.Generic.List`1[[Rollgeon.Effects.EffectData, Rollgeon]],
+        mscorlib
+    - Name: 
+      Entry: 12
+      Data: 1
+    - Name: 
+      Entry: 7
+      Data: 46|Rollgeon.Effects.EffectData, Rollgeon
+    - Name: Label
+      Entry: 1
+      Data: Numero Alto corta la racha
+    - Name: PreConditions
+      Entry: 7
+      Data: 47|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
+        Rollgeon]], mscorlib
+    - Name: 
+      Entry: 12
+      Data: 0
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: Effects
+      Entry: 7
+      Data: 48|System.Collections.Generic.List`1[[Rollgeon.Effects.IEffect, Rollgeon]],
+        mscorlib
+    - Name: 
+      Entry: 12
+      Data: 1
+    - Name: 
+      Entry: 7
+      Data: 49|Rollgeon.Upgrades.Dice.Effects.EffSlotCounter, Rollgeon
+    - Name: Selection
+      Entry: 7
+      Data: 50|Rollgeon.Effects.Selection.SelectionSettings, Rollgeon
+    - Name: SlotState
+      Entry: 3
+      Data: 1
+    - Name: Timing
+      Entry: 3
+      Data: 0
+    - Name: EntityFilter
+      Entry: 3
+      Data: 2
+    - Name: IsGlobal
+      Entry: 5
+      Data: false
+    - Name: Range
+      Entry: 3
+      Data: 1
+    - Name: RangeMode
+      Entry: 3
+      Data: 0
+    - Name: RangeFromMovementDie
+      Entry: 5
+      Data: false
+    - Name: TargetMode
+      Entry: 3
+      Data: 0
+    - Name: AoeShape
+      Entry: 3
+      Data: 0
+    - Name: AoeRadius
+      Entry: 3
+      Data: 1
+    - Name: PatternRows
+      Entry: 3
+      Data: 1
+    - Name: PatternCols
+      Entry: 3
+      Data: 1
+    - Name: PatternCenter
+      Entry: 7
+      Data: UnityEngine.Vector2Int, UnityEngine.CoreModule
+    - Name: 
+      Entry: 3
+      Data: 0
+    - Name: 
+      Entry: 3
+      Data: 0
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: PatternFlat
+      Entry: 7
+      Data: 51|System.Boolean[], mscorlib
+    - Name: 
+      Entry: 14
+      Data: 1
+    - Name: 
+      Entry: 5
+      Data: true
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: IsConstantSelectionCount
+      Entry: 5
+      Data: true
+    - Name: SelectionCount
+      Entry: 3
+      Data: 1
+    - Name: SelectionCountReader
+      Entry: 6
+      Data: 
+    - Name: AutoResolve
+      Entry: 5
+      Data: false
+    - Name: AutoAccept
+      Entry: 5
+      Data: true
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: Operation
+      Entry: 3
+      Data: 0
+    - Name: Key
+      Entry: 1
+      Data: racha
+    - Name: Delta
+      Entry: 3
+      Data: 1
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: TargetSelector
+      Entry: 6
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: 
       Entry: 13
       Data: 
     - Name: 
@@ -801,7 +990,7 @@ MonoBehaviour:
       Data: 
     - Name: _capabilities
       Entry: 7
-      Data: 42|System.Collections.Generic.List`1[[Rollgeon.Upgrades.Dice.IEnchantmentCapability,
+      Data: 52|System.Collections.Generic.List`1[[Rollgeon.Upgrades.Dice.IEnchantmentCapability,
         Rollgeon]], mscorlib
     - Name: 
       Entry: 12
@@ -815,16 +1004,17 @@ MonoBehaviour:
   _faceFilter:
     rid: -2
   _triggers:
-  - rid: 7465468535394272163
-  - rid: 7465468535394272164
-  - rid: 7465468535394272165
+  - rid: 7465468544398131283
+  - rid: 7465468544398131284
+  - rid: 7465468544398131285
+  - rid: 7465468544398131286
   _capabilities: []
   references:
     version: 2
     RefIds:
     - rid: -2
       type: {class: , ns: , asm: }
-    - rid: 7465468535394272163
+    - rid: 7465468544398131283
       type: {class: ExecuteEffectsOnDiceEvent, ns: Rollgeon.Upgrades.Dice.Triggers, asm: Rollgeon}
       data:
         Event: 3
@@ -836,10 +1026,10 @@ MonoBehaviour:
         - Label: Effect Group
           PreConditions: []
           Effects:
-          - rid: 7465468535394272166
+          - rid: 7465468544398131287
           TargetSelector:
             rid: -2
-    - rid: 7465468535394272164
+    - rid: 7465468544398131284
       type: {class: ExecuteEffectsOnDiceEvent, ns: Rollgeon.Upgrades.Dice.Triggers, asm: Rollgeon}
       data:
         Event: 5
@@ -850,19 +1040,19 @@ MonoBehaviour:
         Effects:
         - Label: Effect Group
           PreConditions:
-          - rid: 7465468535394272167
+          - rid: 7465468544398131288
           Effects:
-          - rid: 7465468535394272168
+          - rid: 7465468544398131289
           TargetSelector:
             rid: -2
         - Label: Effect Group
           PreConditions:
-          - rid: 7465468535394272169
+          - rid: 7465468544398131290
           Effects:
-          - rid: 7465468535394272170
+          - rid: 7465468544398131291
           TargetSelector:
             rid: -2
-    - rid: 7465468535394272165
+    - rid: 7465468544398131285
       type: {class: ExecuteEffectsOnDiceEvent, ns: Rollgeon.Upgrades.Dice.Triggers, asm: Rollgeon}
       data:
         Event: 6
@@ -874,10 +1064,26 @@ MonoBehaviour:
         - Label: Effect Group
           PreConditions: []
           Effects:
-          - rid: 7465468535394272171
+          - rid: 7465468544398131292
           TargetSelector:
             rid: -2
-    - rid: 7465468535394272166
+    - rid: 7465468544398131286
+      type: {class: ExecuteEffectsOnDiceEvent, ns: Rollgeon.Upgrades.Dice.Triggers, asm: Rollgeon}
+      data:
+        Event: 5
+        Filter:
+          Mode: 2
+          ComboIds:
+          - combo.higher_number
+        RequireCarrierParticipates: 0
+        Effects:
+        - Label: Numero Alto corta la racha
+          PreConditions: []
+          Effects:
+          - rid: 7465468544398131293
+          TargetSelector:
+            rid: -2
+    - rid: 7465468544398131287
       type: {class: EffAddComboBonus, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
       data:
         Selection:
@@ -902,13 +1108,14 @@ MonoBehaviour:
           AutoResolve: 0
           AutoAccept: 1
         _amount:
-          rid: 7465468535394272172
-    - rid: 7465468535394272167
+          rid: 7465468544398131294
+        _subtract: 0
+    - rid: 7465468544398131288
       type: {class: PcCarrierParticipates, ns: Rollgeon.Upgrades.Dice.PreConditions, asm: Rollgeon}
       data:
         _isConstantValue: 1
         Negate: 0
-    - rid: 7465468535394272168
+    - rid: 7465468544398131289
       type: {class: EffSlotCounter, ns: Rollgeon.Upgrades.Dice.Effects, asm: Rollgeon}
       data:
         Selection:
@@ -935,12 +1142,12 @@ MonoBehaviour:
         Operation: 1
         Key: racha
         Delta: 1
-    - rid: 7465468535394272169
+    - rid: 7465468544398131290
       type: {class: PcCarrierParticipates, ns: Rollgeon.Upgrades.Dice.PreConditions, asm: Rollgeon}
       data:
         _isConstantValue: 1
         Negate: 1
-    - rid: 7465468535394272170
+    - rid: 7465468544398131291
       type: {class: EffSlotCounter, ns: Rollgeon.Upgrades.Dice.Effects, asm: Rollgeon}
       data:
         Selection:
@@ -967,7 +1174,7 @@ MonoBehaviour:
         Operation: 0
         Key: racha
         Delta: 1
-    - rid: 7465468535394272171
+    - rid: 7465468544398131292
       type: {class: EffSlotCounter, ns: Rollgeon.Upgrades.Dice.Effects, asm: Rollgeon}
       data:
         Selection:
@@ -994,7 +1201,34 @@ MonoBehaviour:
         Operation: 0
         Key: racha
         Delta: 1
-    - rid: 7465468535394272172
+    - rid: 7465468544398131293
+      type: {class: EffSlotCounter, ns: Rollgeon.Upgrades.Dice.Effects, asm: Rollgeon}
+      data:
+        Selection:
+          SlotState: 1
+          Timing: 0
+          EntityFilter: 2
+          IsGlobal: 0
+          Range: 1
+          RangeMode: 0
+          RangeFromMovementDie: 0
+          TargetMode: 0
+          AoeShape: 0
+          AoeRadius: 1
+          PatternRows: 1
+          PatternCols: 1
+          PatternCenter: {x: 0, y: 0}
+          PatternFlat: 01
+          IsConstantSelectionCount: 1
+          SelectionCount: 1
+          SelectionCountReader:
+            rid: -2
+          AutoResolve: 0
+          AutoAccept: 1
+        Operation: 0
+        Key: racha
+        Delta: 1
+    - rid: 7465468544398131294
       type: {class: ReadSlotCounter, ns: Rollgeon.Upgrades.Dice.Readers, asm: Rollgeon}
       data:
         Key: racha

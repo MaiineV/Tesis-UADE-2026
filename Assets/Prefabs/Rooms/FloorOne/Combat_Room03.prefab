@@ -177,6 +177,7 @@ MonoBehaviour:
   EnemySets:
   - {fileID: 11400000, guid: 74c004a30b6148a44ac284ea910d377a, type: 2}
   - {fileID: 11400000, guid: 2de77bd68f3190f48ae82e94a0141e10, type: 2}
+  - {fileID: 11400000, guid: 67e9b22252f591b4b8eaf6fa644d0d93, type: 2}
   SetTierWeights: []
 --- !u!1 &1243341517869317661
 GameObject:
@@ -552,6 +553,7 @@ Transform:
   - {fileID: 5959015241986234335}
   - {fileID: 5332317161341919376}
   - {fileID: 131045598486880588}
+  - {fileID: 56060425724036810}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &5898699619738018492
@@ -3042,6 +3044,7 @@ MonoBehaviour:
   EnemySpawnPoints:
   - {fileID: 8506748834267399021}
   - {fileID: 4465601511229802734}
+  - {fileID: 56060425724036810}
   RewardSpawnPoints: []
   ObstacleSpawnPoints: []
   DoorSlots:
@@ -3353,6 +3356,55 @@ Transform:
   - {fileID: 7560168069717460715}
   m_Father: {fileID: 1711357143213522343}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &3957351247793627307
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 56060425724036810}
+  - component: {fileID: 7896472292078761943}
+  m_Layer: 0
+  m_Name: SP_03
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &56060425724036810
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3957351247793627307}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0.5, y: 1, z: 0.5}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1711357143213522343}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &7896472292078761943
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3957351247793627307}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 66746566a68b7be45a568b4245dcaadf, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Rollgeon::Rollgeon.Dungeon.Components.SpawnPointConfig
+  EnemySets:
+  - {fileID: 11400000, guid: 51332d7277c9fb44386741043c8f321d, type: 2}
+  - {fileID: 11400000, guid: aa8154a1c110e7f43923d033431fca88, type: 2}
+  - {fileID: 11400000, guid: 17f155b9990d4874e8f38f2eda8a961f, type: 2}
+  SetTierWeights: []
 --- !u!1 &4060596727768410111
 GameObject:
   m_ObjectHideFlags: 0
@@ -3431,6 +3483,7 @@ MonoBehaviour:
   EnemySets:
   - {fileID: 11400000, guid: 17f155b9990d4874e8f38f2eda8a961f, type: 2}
   - {fileID: 11400000, guid: 3804e5abaf481cd4a80e992a3bdc634b, type: 2}
+  - {fileID: 11400000, guid: bcbd303a14158df4da6e09351c62affa, type: 2}
   SetTierWeights: []
 --- !u!1 &4377151963679513011
 GameObject:

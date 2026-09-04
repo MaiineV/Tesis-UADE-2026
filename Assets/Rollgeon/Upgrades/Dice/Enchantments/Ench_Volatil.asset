@@ -84,7 +84,7 @@ MonoBehaviour:
       Data: 4|Rollgeon.Upgrades.Dice.ComboFilter, Rollgeon
     - Name: Mode
       Entry: 3
-      Data: 1
+      Data: 4
     - Name: ComboIds
       Entry: 7
       Data: 5|System.Collections.Generic.List`1[[System.String, mscorlib]], mscorlib
@@ -138,7 +138,7 @@ MonoBehaviour:
       Data: 1
     - Name: 
       Entry: 7
-      Data: 10|Rollgeon.Effects.Concretes.EffAddComboBonus, Rollgeon
+      Data: 10|Rollgeon.Upgrades.Dice.Effects.EffMutateCarrierFace, Rollgeon
     - Name: Selection
       Entry: 7
       Data: 11|Rollgeon.Effects.Selection.SelectionSettings, Rollgeon
@@ -223,7 +223,7 @@ MonoBehaviour:
     - Name: 
       Entry: 8
       Data: 
-    - Name: _amount
+    - Name: _delta
       Entry: 7
       Data: 13|Rollgeon.Upgrades.Dice.Readers.ReadCarrierRollDelta, Rollgeon
     - Name: Op
@@ -278,30 +278,30 @@ MonoBehaviour:
   _faceFilter:
     rid: -2
   _triggers:
-  - rid: 7465468535394271975
+  - rid: 7465468544398131280
   _capabilities: []
   references:
     version: 2
     RefIds:
     - rid: -2
       type: {class: , ns: , asm: }
-    - rid: 7465468535394271975
+    - rid: 7465468544398131280
       type: {class: ExecuteEffectsOnDiceEvent, ns: Rollgeon.Upgrades.Dice.Triggers, asm: Rollgeon}
       data:
         Event: 3
         Filter:
-          Mode: 1
+          Mode: 4
           ComboIds: []
         RequireCarrierParticipates: 1
         Effects:
         - Label: Effect Group
           PreConditions: []
           Effects:
-          - rid: 7465468535394271976
+          - rid: 7465468544398131281
           TargetSelector:
             rid: -2
-    - rid: 7465468535394271976
-      type: {class: EffAddComboBonus, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
+    - rid: 7465468544398131281
+      type: {class: EffMutateCarrierFace, ns: Rollgeon.Upgrades.Dice.Effects, asm: Rollgeon}
       data:
         Selection:
           SlotState: 1
@@ -324,9 +324,9 @@ MonoBehaviour:
             rid: -2
           AutoResolve: 0
           AutoAccept: 1
-        _amount:
-          rid: 7465468535394271977
-    - rid: 7465468535394271977
+        _delta:
+          rid: 7465468544398131282
+    - rid: 7465468544398131282
       type: {class: ReadCarrierRollDelta, ns: Rollgeon.Upgrades.Dice.Readers, asm: Rollgeon}
       data:
         Op: 5

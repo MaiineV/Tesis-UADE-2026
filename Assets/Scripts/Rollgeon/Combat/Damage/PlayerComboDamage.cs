@@ -36,7 +36,10 @@ namespace Rollgeon.Combat.Damage
     /// <c>ComboDamageMultiplier</c> de los 3 canales de scratch y
     /// <c>scratch_multiplier_bonus</c> la suma de sus <c>ComboMultiplierBonus</c> (items
     /// "+X al multiplicador": Piedra Angular, Ayuno, Vértigo… — decisión GD 2026-09-03: el
-    /// aditivo entra sobre el 1 de M, así +2 sin otros factores es ×3).
+    /// aditivo entra sobre el 1 de M, así +2 sin otros factores es ×3) más las caras de los
+    /// dados movidos a M (<c>EnchantmentScratch.DiceMovedToMultiplier</c>, Fuente Mágica),
+    /// que a cambio salen de Σcaras. Con kind Heal, las reglas de curación de la poción
+    /// (<c>IHealingRuleService.PotionHealMultiplier</c>, Ayuno ×0.5) entran como factor de M.
     /// </summary>
     /// <remarks>
     /// Código puro/estático para testear la fórmula aislada. Solo aplica al ataque de combo del
@@ -92,6 +95,7 @@ namespace Rollgeon.Combat.Damage
             float scratchMultiplierBonus = 0f;
             bool block = false;
             List<ScratchContribution> sources = null;
+            List<int> movedDice = null;
 
             var sPassives = ServiceLocator.TryGetService<IComboPassiveService>(out var passives)
                 ? passives?.LastComboScratch : null;
@@ -102,6 +106,7 @@ namespace Rollgeon.Combat.Damage
                 scratchMultiplierBonus += sPassives.ComboMultiplierBonus;
                 block |= sPassives.BlockComboDamage;
                 AppendJournal(ref sources, sPassives);
+                AppendMovedDice(ref movedDice, sPassives);
             }
             var sEnchants = ServiceLocator.TryGetService<IDiceEnchantmentService>(out var enchants)
                 ? enchants?.LastComboScratch : null;
@@ -112,6 +117,7 @@ namespace Rollgeon.Combat.Damage
                 scratchMultiplierBonus += sEnchants.ComboMultiplierBonus;
                 block |= sEnchants.BlockComboDamage;
                 AppendJournal(ref sources, sEnchants);
+                AppendMovedDice(ref movedDice, sEnchants);
             }
             // Canal at-played: bonos inyectados por items/pasivas en la ventana de combo
             // jugado (ComboPlayedPayload). Se lee de LastPlayScratch (persiste más allá de
@@ -127,6 +133,7 @@ namespace Rollgeon.Combat.Damage
                 scratchMultiplierBonus += sPlay.ComboMultiplierBonus;
                 block |= sPlay.BlockComboDamage;
                 AppendJournal(ref sources, sPlay);
+                AppendMovedDice(ref movedDice, sPlay);
             }
 
             // Forzar Puerta: el bonus de items (Pico de Minero, stat ForceDoorRollBonus) entra
@@ -136,9 +143,34 @@ namespace Rollgeon.Combat.Damage
             if (kind == PlayerComboFormulaKind.ForceDoor)
                 bonoCombo += AppendForceDoorItemBonus(sourceId, ref sources);
 
+            // Curación de la poción (acción Curarse): las reglas de items (Ayuno ×0.5) entran
+            // a M como un factor más, journaleadas con su ItemSO para que el desglose muestre
+            // "Ayuno ×0.5" volando a M — la cura real y la animación salen del mismo número.
+            if (kind == PlayerComboFormulaKind.Heal)
+                scratchMultiplier *= AppendPotionHealRules(ref sources);
+
+            // Cara efectiva por dado: los encantamientos que mutan la cara (Oxidado no suma,
+            // Volátil mitad/doble, Enfiestado triple/cero) escriben FaceDeltas por bag slot en
+            // el scratch. Se aplican acá, sobre el término del dado, para que el breakdown
+            // anime al dado valiendo lo que vale y no "+6" seguido de "−6".
+            var effectiveDice = ApplyFaceDeltas(contributingDice, sPassives, sEnchants, sPlay);
+
+            // Dados movidos a M (Fuente Mágica): su cara (ya efectiva) NO entra a Σcaras y SÍ
+            // al bono aditivo de M. Se resuelve acá y no restando en N desde el efecto para
+            // que el desglose muestre el dado volando a M — antes entraba a N y se descontaba
+            // después, y el jugador leía que contaba en los dos (playtest 2026-09-04).
             int facesSum = 0;
-            if (contributingDice != null)
-                for (int i = 0; i < contributingDice.Count; i++) facesSum += contributingDice[i].Face;
+            int movedFacesSum = 0;
+            if (effectiveDice != null)
+            {
+                for (int i = 0; i < effectiveDice.Count; i++)
+                {
+                    var die = effectiveDice[i];
+                    if (movedDice != null && movedDice.Contains(die.BagSlot)) movedFacesSum += die.Face;
+                    else facesSum += die.Face;
+                }
+            }
+            scratchMultiplierBonus += movedFacesSum;
 
             float n = comboBaseDamage + dmgBasePJ + bonosPJ + facesSum + bonoCombo;
             // La palanca de playtest entra en m y no en n para que escale el golpe entero y no sólo
@@ -156,6 +188,8 @@ namespace Rollgeon.Combat.Damage
                 AttackBase = dmgBasePJ,
                 AttackBonus = bonosPJ,
                 FacesSum = facesSum,
+                MovedFacesSum = movedFacesSum,
+                DiceMovedToMultiplier = movedDice,
                 AdditiveBonus = bonoCombo,
                 N = n,
                 ScratchMultiplierBonus = scratchMultiplierBonus,
@@ -164,7 +198,7 @@ namespace Rollgeon.Combat.Damage
                 M = m,
                 Blocked = block,
                 Final = total,
-                Dice = contributingDice,
+                Dice = effectiveDice,
                 Sources = sources,
             };
 
@@ -181,6 +215,38 @@ namespace Rollgeon.Combat.Damage
         /// </summary>
         public static int RoundNxM(float n, float m)
             => Math.Max(0, (int)Math.Round(n * (double)m, MidpointRounding.AwayFromZero));
+
+        /// <summary>
+        /// Cara efectiva de cada dado contribuyente: cara tirada + Σ <c>FaceDeltas</c> de los
+        /// canales de scratch para su bag slot, nunca bajo 0 (un dado no resta daño aunque se
+        /// apilen mutaciones). Devuelve la misma lista cuando ningún canal mutó caras — el caso
+        /// común no aloca. Público para que la UI reproduzca el mismo número que el golpe.
+        /// </summary>
+        public static IReadOnlyList<ContributingDie> ApplyFaceDeltas(
+            IReadOnlyList<ContributingDie> dice,
+            EnchantmentScratch passives, EnchantmentScratch enchants, EnchantmentScratch play)
+        {
+            if (dice == null || dice.Count == 0) return dice;
+            if (!HasFaceDeltas(passives) && !HasFaceDeltas(enchants) && !HasFaceDeltas(play)) return dice;
+
+            var result = new List<ContributingDie>(dice.Count);
+            for (int i = 0; i < dice.Count; i++)
+            {
+                var die = dice[i];
+                int delta = FaceDeltaOf(passives, die.BagSlot)
+                            + FaceDeltaOf(enchants, die.BagSlot)
+                            + FaceDeltaOf(play, die.BagSlot);
+                int face = delta == 0 ? die.Face : Math.Max(0, die.Face + delta);
+                result.Add(new ContributingDie(die.BagSlot, face, die.Type));
+            }
+            return result;
+        }
+
+        private static bool HasFaceDeltas(EnchantmentScratch s)
+            => s?.FaceDeltas != null && s.FaceDeltas.Count > 0;
+
+        private static int FaceDeltaOf(EnchantmentScratch s, int bagSlot)
+            => s != null && bagSlot >= 0 ? s.GetFaceDelta(bagSlot) : 0;
 
         /// <summary>
         /// Suma el stat <see cref="ForceDoorRollBonus"/> del jugador y journalea cada modifier
@@ -251,6 +317,33 @@ namespace Rollgeon.Combat.Damage
             return null;
         }
 
+        /// <summary>
+        /// Multiplica los factores de <see cref="Rollgeon.Combat.Healing.IHealingRuleService"/>
+        /// sobre la curación de la poción y journalea cada uno como fuente
+        /// <see cref="ScratchSourceKind.Item"/> con su ItemSO (icono). 1 sin servicio / sin fuentes.
+        /// </summary>
+        private static float AppendPotionHealRules(ref List<ScratchContribution> sources)
+        {
+            if (!ServiceLocator.TryGetService<Rollgeon.Combat.Healing.IHealingRuleService>(out var rules)
+                || rules == null)
+                return 1f;
+            var perSource = rules.PotionHealMultiplierSources;
+            if (perSource == null || perSource.Count == 0) return 1f;
+
+            ServiceLocator.TryGetService<Rollgeon.Items.IInventoryService>(out var inventory);
+            float product = 1f;
+            foreach (var kv in perSource)
+            {
+                if (kv.Value <= 0f || Math.Abs(kv.Value - 1f) < 1e-4f) continue;
+                product *= kv.Value;
+                sources ??= new List<ScratchContribution>(2);
+                sources.Add(new ScratchContribution(ScratchSourceKind.Item, kv.Key,
+                    inventory?.GetItem(kv.Key), bagSlot: -1, bonusDelta: 0,
+                    multiplierFactor: kv.Value, setBlock: false));
+            }
+            return product;
+        }
+
         // Agrega el journal de un canal al desglose. Aloca solo si alguna fuente aportó.
         private static void AppendJournal(ref List<ScratchContribution> sources, EnchantmentScratch scratch)
         {
@@ -258,6 +351,16 @@ namespace Rollgeon.Combat.Damage
             if (journal == null || journal.Count == 0) return;
             sources ??= new List<ScratchContribution>(journal.Count);
             for (int i = 0; i < journal.Count; i++) sources.Add(journal[i]);
+        }
+
+        // Une los dados movidos a M de un canal. Aloca solo si alguien movió alguno.
+        private static void AppendMovedDice(ref List<int> moved, EnchantmentScratch scratch)
+        {
+            var slots = scratch.DiceMovedToMultiplier;
+            if (slots == null || slots.Count == 0) return;
+            moved ??= new List<int>(slots.Count);
+            for (int i = 0; i < slots.Count; i++)
+                if (!moved.Contains(slots[i])) moved.Add(slots[i]);
         }
     }
 }

@@ -1769,14 +1769,22 @@ namespace Rollgeon.Combat.Handoff
                 keptDiceOriginalIndices, enchants.Bag.Dice, keptCount);
         }
 
-        // Boss 1 (§2): el dado bloqueado se ve pero queda EXCLUIDO del combo. Devuelve una
-        // copia del keep con los índices bloqueados en false, sin tocar el array de la UI.
-        private static bool[] KeepExcludingBlockedDice(bool[] keep, int diceLen)
+        /// <summary>
+        /// Boss 1 (§2) y candados de encantamiento (Sediento sin oro, Vampiro sin vida): el
+        /// dado se ve pero queda EXCLUIDO del combo. Devuelve una copia del keep con esos
+        /// índices en false, sin tocar el array de la UI. Compartido con la preview de
+        /// <c>DiceZoneView</c> para que preview y jugada real excluyan lo mismo.
+        /// </summary>
+        public static bool[] KeepExcludingBlockedDice(bool[] keep, int diceLen)
         {
             var result = CopyKeep(keep, diceLen);
-            if (ServiceLocator.TryGetService<Rollgeon.Combat.DiceBlock.IDiceBlockService>(out var db) && db != null)
-                for (int i = 0; i < result.Length; i++)
-                    if (db.IsBlocked(i)) result[i] = false;
+            ServiceLocator.TryGetService<Rollgeon.Combat.DiceBlock.IDiceBlockService>(out var db);
+            for (int i = 0; i < result.Length; i++)
+            {
+                if (!result[i]) continue;
+                if ((db != null && db.IsBlocked(i)) || DiceSelectionLocks.IsPlayerSlotLocked(i, out _))
+                    result[i] = false;
+            }
             return result;
         }
 

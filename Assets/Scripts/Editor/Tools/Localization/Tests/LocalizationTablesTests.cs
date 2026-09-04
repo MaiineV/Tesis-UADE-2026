@@ -67,6 +67,10 @@ namespace Rollgeon.Editor.Tools.Localization.Tests
             // y orden, sin palabras que traducir.
             Rollgeon.UI.HUD.Status.AttackKindTextKeys.ComboAttack,
             Rollgeon.UI.HUD.Status.AttackKindTextKeys.TitleFormat,
+            // Nombres propios de enemigos del sheet "traduccion enemigos.txt":
+            // Chiplash y Stackpot son marcas, iguales en los dos idiomas.
+            "enemy.skirmisher.name",
+            "enemy.sniper.name",
         };
 
         /// <summary>

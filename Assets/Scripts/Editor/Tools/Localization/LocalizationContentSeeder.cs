@@ -452,8 +452,8 @@ namespace Rollgeon.EditorTools.Localization
                 "If this die rolls its maximum and takes part in a combo, you gain 30 shield.");
 
             Ench("fragil", "Frágil", "Fragile",
-                "En cada tirada, 50% de que este dado no sume daño y 50% de que sume el doble. Sigue contando para formar el combo.",
-                "Each roll, 50% chance this die adds no damage and 50% it adds double. It still counts toward forming the combo.");
+                "Al jugarlo, 50% de que este dado no sume daño y 50% de que sume el doble. Sigue contando para formar el combo.",
+                "When played, 50% chance this die adds no damage and 50% it adds double. It still counts toward forming the combo.");
 
             Ench("gemelo", "Gemelo", "Twin",
                 "Si este dado muestra el mismo número que otro en la tirada, ambos valen x1.5 para el combo.",
@@ -528,8 +528,9 @@ namespace Rollgeon.EditorTools.Localization
                 "If 2 or more dice show the same number in the final roll, this die adds its value to the combo twice.");
 
             Ench("sediento", "Sediento", "Thirsty",
-                "Cada vez que participa en un combo consume 2 de oro y suma +0,2 al multiplicador. Sin oro, el combo no hace daño.",
-                "Each time it joins a combo it consumes 2 gold and adds +0.2 to the multiplier. With no gold, the combo deals no damage.");
+                "Cada vez que participa en un combo consume 2 de oro y suma +0,2 al multiplicador. Sin 2 de oro, el dado no se puede seleccionar.",
+                "Each time it joins a combo it consumes 2 gold and adds +0.2 to the multiplier. Without 2 gold, the die can't be selected.");
+            Content("ench.sediento.lock", "2 oro", "2 gold");
 
             Ench("torpe", "Torpe", "Clumsy",
                 "Obliga a volver a tirar todos los dados en el turno 2 del combate.",
@@ -541,8 +542,9 @@ namespace Rollgeon.EditorTools.Localization
 
             // Feature#0073 — encantamientos del GDD que faltaban en el catálogo.
             Ench("vampiro", "Vampiro", "Vampire",
-                "Cada vez que este dado participa en un combo, perdés 5 de vida y el multiplicador sube +0,3. Con 5 de vida o menos, el dado no suma daño.",
-                "Each time this die takes part in a combo you lose 5 health and the multiplier rises by +0.3. At 5 health or less the die adds no damage.");
+                "Cada vez que este dado participa en un combo, perdés 5 de vida y el multiplicador sube +0,3. Con 5 de vida o menos, el dado no se puede seleccionar.",
+                "Each time this die takes part in a combo you lose 5 health and the multiplier rises by +0.3. At 5 health or less the die can't be selected.");
+            Content("ench.vampiro.lock", "6+ vida", "6+ HP");
 
             Ench("solitario", "Solitario", "Loner",
                 "Si este dado queda fuera del combo que jugás, genera +2 de oro.",
@@ -553,8 +555,8 @@ namespace Rollgeon.EditorTools.Localization
                 "On an odd face this die deals triple damage. On an even face it deals none. It still counts toward forming the combo.");
 
             Ench("racha", "Racha", "Streak",
-                "Por cada combo consecutivo en el que participe en este combate, aporta +3 de daño más (+3, +6, +9…). Se reinicia si queda fuera de un combo.",
-                "For each consecutive combo it takes part in this combat, it adds +3 more damage (+3, +6, +9…). Resets if it's left out of a combo.");
+                "Por cada combo consecutivo en el que participe en este combate, aporta +3 de daño más (+3, +6, +9…). Se reinicia si queda fuera de un combo o si jugás Número Alto.",
+                "For each consecutive combo it takes part in this combat, it adds +3 more damage (+3, +6, +9…). Resets if it's left out of a combo or if you play High Number.");
 
             Ench("ejecutor", "Ejecutor", "Executioner",
                 "Si este dado participa en un combo contra un enemigo con 25% de vida o menos, aporta +12 de daño.",
@@ -1473,10 +1475,13 @@ namespace Rollgeon.EditorTools.Localization
             Content("healerEnemy.desc",
                 "Un espíritu de la casa que remienda a los suyos.",
                 "A house spirit that patches up its own.");
-            Content("CardEnemy01.name", "Enemigo Carta", "Card Enemy");
+            // Renombrado por el sheet "traduccion enemigos.txt" (04/09).
+            Content("CardEnemy01.name", "Guerrero de Corazones", "Heart Warrior");
             Content("CardEnemy01.desc",
-                "Soldado de la casa, cuerpo a cuerpo.",
-                "House soldier; fights up close.");
+                "Un naipe viviente con armadura liviana y una espada corta. Ataca cuerpo a cuerpo " +
+                "con golpes rápidos, persiguiendo al jugador sin descanso.",
+                "A living playing card in light armor wielding a short sword. Attacks in melee with " +
+                "quick strikes, relentlessly chasing the player.");
             Content("ChestMimic01.name", "Mímico", "Mimic");
             Content("ChestMimic01.desc",
                 "Un cofre que muerde.",
@@ -1559,32 +1564,80 @@ namespace Rollgeon.EditorTools.Localization
                 "Un dado gigante de la mano de la Generala.",
                 "A giant die from the Generala's hand.");
 
-            // Bestiario nuevo (salas del 03/09). Frases cortas de hover: dicen lo que
-            // el bicho HACE, y solo mecánicas que el kit realmente tiene.
+            // Bestiario del sheet "traduccion enemigos.txt" (04/09) — textos autorados
+            // por el equipo; NO reescribirlos acá sin actualizar el sheet.
             Boss("enemy.artillery",
-                "Artillería", "Artillery",
-                "Obús de la casa: bombardea de lejos y deja el piso ardiendo donde cae el tiro.",
-                "House howitzer: shells from afar and leaves the floor burning where the shot lands.");
+                "La Tragamonedas Viviente", "The Living Slot",
+                "Una tragamonedas oxidada que se mantiene a distancia y dispara proyectiles al jugador desde lejos.",
+                "A rusted slot machine that stays at range and fires projectiles at the player from afar.");
             Boss("enemy.charger",
-                "Embestidor", "Charger",
-                "Se alinea, marca el pasillo y embiste. No te quedes en su línea.",
-                "Lines up, marks the lane and charges. Don't stand in its path.");
+                "Ojos de Billar", "Billiard Eyes",
+                "Una bola de billar con ojos propios que persigue al jugador rodando a toda velocidad. " +
+                "Si tiene espacio, embiste en línea recta empujándolo lejos de su camino; si ya está " +
+                "a melee, simplemente golpea sin necesidad de embestir.",
+                "A billiard ball with eyes of its own that chases the player, rolling at full speed. " +
+                "Given room, it charges in a straight line, slamming into the player and knocking them " +
+                "back; if already in melee range, it simply strikes without needing to charge.");
             Boss("enemy.guardian",
                 "Guardián", "Guardian",
                 "Protege a los suyos: los aliados cercanos reciben menos daño mientras siga en pie.",
                 "Shields its own: nearby allies take less damage while it stands.");
             Boss("enemy.skirmisher",
-                "Escaramuzador", "Skirmisher",
-                "Tirador inquieto: dispara de lejos y se reacomoda en diagonal para que no lo arrincones.",
-                "Restless shooter: fires from range and slips away diagonally so you can't corner it.");
+                "Chiplash", "Chiplash",
+                "Una ficha de casino de otro color que flota erráticamente. Ataca desde las diagonales " +
+                "y luego se reposiciona rápidamente para volver a golpear desde un nuevo ángulo.",
+                "A different-colored casino chip that hovers erratically. Attacks from the diagonals, " +
+                "then quickly repositions to strike again from a new angle.");
             Boss("enemy.sniper",
-                "Francotirador", "Sniper",
-                "Dispara desde la otra punta de la sala. Cortale la línea de visión o pagá el tiro.",
-                "Fires from across the room. Break its line of sight or pay for the shot.");
+                "Stackpot", "Stackpot",
+                "Una torre de fichas de casino que flota y gira lentamente en el aire. Si el jugador " +
+                "se acerca, se aleja manteniendo distancia, buscando siempre el ángulo perfecto para atacar.",
+                "A tower of casino chips that hovers and spins slowly in the air. If the player gets " +
+                "close, it retreats to keep its distance, always seeking the perfect angle to attack.");
             Boss("CardEnemySweeper",
-                "Carta Barredora", "Sweeper Card",
-                "Soldado de la casa que marca un barrido: su golpe cubre varias casillas de una.",
-                "House soldier that marks a sweep: its blow covers several tiles at once.");
+                "Guerrero de Picas", "Spade Warrior",
+                "Un naipe viviente armado con una lanza larga. Prefiere mantener distancia y " +
+                "telegrafiar sus embestidas antes de golpear.",
+                "A living playing card wielding a long spear. Prefers to keep distance and telegraph " +
+                "its thrusts before striking.");
+
+            // Nombres de ataque del mismo sheet — las cards de próximo turno los levantan
+            // vía el IntentLabelKey autorado en los nodos (installer Author Attack Names).
+            Boss("intent.artillery.coin_drop",
+                "Lluvia de Monedas", "Coin Drop",
+                "Marca una loseta y deja caer una lluvia de monedas pesadas sobre esa zona tras un " +
+                "breve retraso, dañando a quien quede atrapado dentro.",
+                "Marks a tile and rains a shower of heavy coins on that area after a short delay, " +
+                "damaging anyone caught inside.");
+            Boss("intent.charger.charge_roll",
+                "Embiste y Rueda", "Charge and Roll",
+                "Carga en línea recta hacia el jugador, golpeándolo y empujándolo varias losetas en la " +
+                "dirección del impacto. Si el jugador ya está adyacente, ataca directamente sin cargar.",
+                "Charges in a straight line toward the player, hitting them and knocking them back " +
+                "several tiles in the direction of impact. If the player is already adjacent, it " +
+                "attacks directly without charging.");
+            Boss("intent.card_hearts.slash",
+                "Corte Carmesí", "Crimson Slash",
+                "Un tajo veloz con la espada al enemigo adyacente, infligiendo daño moderado.",
+                "A fast sword strike against an adjacent enemy, dealing moderate damage.");
+            Boss("intent.card_spades.thrust",
+                "Estocada Anunciada", "Announced Thrust",
+                "Marca una línea de losetas frente a él y, tras un breve retraso, embiste con la " +
+                "lanza dañando todo lo que quede en esa línea.",
+                "Marks a line of tiles in front of it and, after a short delay, thrusts the spear " +
+                "forward, damaging anything caught in that line.");
+            Boss("intent.sniper.chip_ring",
+                "Anillo de Fichas", "Chip Ring",
+                "Ataca a distancia dentro de un área en forma de diamante alrededor de sí misma, " +
+                "dañando al jugador si queda dentro de esa zona.",
+                "Attacks at range within a diamond-shaped area around itself, damaging the player " +
+                "if caught inside that zone.");
+            Boss("intent.skirmisher.x_slash",
+                "Corte en X", "X Slash",
+                "Dispara un proyectil en diagonal hacia el jugador y permanece en su posición hasta " +
+                "que el jugador se acerca.",
+                "Fires a single diagonal projectile at the player and stays in place until the " +
+                "player gets close.");
 
             // Bosses del pool nuevo + el rodillo de La Bandida. Mismo criterio que los
             // tres de arriba: texto de pergamino de hover, conciso y mecánico.

@@ -1,4 +1,6 @@
+using System.Text.RegularExpressions;
 using NUnit.Framework;
+using Rollgeon.Combos;
 using Rollgeon.Effects.Concretes;
 using Rollgeon.Effects.Readers;
 using Rollgeon.Upgrades;
@@ -43,6 +45,78 @@ namespace Rollgeon.Effects.Tests
             // Assert
             Assert.IsTrue(result);
             Assert.AreEqual(7, scratch.BonusComboDamage);
+        }
+
+        // ---- EffMoveDieToMultiplier (Fuente Mágica) -------------------------------------
+
+        private static EffectContext BuildComboContext(out EnchantmentScratch scratch)
+        {
+            // Bolsa 1-4-2-4-6, holdeados los slots 1, 3 y 4 (4-4-6): trío sobre el subset.
+            var ctx = BuildScratchContext(out scratch);
+            ctx.DiceResult = new[] { 1, 4, 2, 4, 6 };
+            ctx.KeptDice = new[] { 4, 4, 6 };
+            ctx.KeptDiceOriginalIndices = new[] { 1, 3, 4 };
+            ctx.ComboResult = ComboDetectionResult.Match("combo.trio", 10, 3, new[] { 0, 1, 2 });
+            return ctx;
+        }
+
+        [Test]
+        public void EffMoveDieToMultiplier_Highest_MarksTheRealBagSlotOfTheHighestComboDie()
+        {
+            var ctx = BuildComboContext(out var scratch);
+
+            bool result = new EffMoveDieToMultiplier { Pick = ContributingDiePick.Highest }.Apply(ctx);
+
+            Assert.IsTrue(result);
+            CollectionAssert.AreEqual(new[] { 4 }, scratch.DiceMovedToMultiplier);
+            Assert.AreEqual(0, scratch.BonusComboDamage, "no toca N: la fórmula mueve la cara");
+            Assert.AreEqual(0f, scratch.ComboMultiplierBonus, 0.0001f, "no toca M: la fórmula mueve la cara");
+        }
+
+        [Test]
+        public void EffMoveDieToMultiplier_Lowest_MarksTheFirstLowestComboDie()
+        {
+            var ctx = BuildComboContext(out var scratch);
+
+            new EffMoveDieToMultiplier { Pick = ContributingDiePick.Lowest }.Apply(ctx);
+
+            // Empate 4-4: gana el primero del subset (local 0 → slot 1).
+            CollectionAssert.AreEqual(new[] { 1 }, scratch.DiceMovedToMultiplier);
+        }
+
+        [Test]
+        public void EffMoveDieToMultiplier_IgnoresDiceOutsideTheCombo()
+        {
+            // Par de 4 (locales 0 y 1): el 6 es más alto pero no forma el combo.
+            var ctx = BuildComboContext(out var scratch);
+            ctx.ComboResult = ComboDetectionResult.Match("combo.pair", 8, 2, new[] { 0, 1 });
+
+            new EffMoveDieToMultiplier().Apply(ctx);
+
+            CollectionAssert.AreEqual(new[] { 1 }, scratch.DiceMovedToMultiplier);
+        }
+
+        [Test]
+        public void EffMoveDieToMultiplier_WithoutCombo_IsANoOp()
+        {
+            var ctx = BuildScratchContext(out var scratch);
+            ctx.DiceResult = new[] { 4, 4, 6 };
+            ctx.ComboResult = ComboDetectionResult.NoMatch();
+
+            bool result = new EffMoveDieToMultiplier().Apply(ctx);
+
+            Assert.IsTrue(result);
+            Assert.IsNull(scratch.DiceMovedToMultiplier);
+        }
+
+        [Test]
+        public void EffMoveDieToMultiplier_WithoutScratchContext_FailsWithWarning()
+        {
+            LogAssert.Expect(LogType.Warning, new Regex("EffMoveDieToMultiplier"));
+
+            bool result = new EffMoveDieToMultiplier().Apply(new EffectContext());
+
+            Assert.IsFalse(result);
         }
 
         [Test]

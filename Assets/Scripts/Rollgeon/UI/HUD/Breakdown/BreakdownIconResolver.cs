@@ -11,14 +11,21 @@ namespace Rollgeon.UI.HUD.Breakdown
     }
 
     /// <summary>
-    /// Resuelve el sprite de una fuente del journal (<c>ScratchContribution.SourceAsset</c>).
-    /// Hoy solo <c>ItemSO</c> tiene icono autorable (y los 22 items lo tienen vacío);
-    /// <c>EnchantmentSO</c> no tiene sprite — la vista aplica su fallback en ambos casos.
+    /// Resuelve el sprite de una fuente del journal (<c>ScratchContribution.SourceAsset</c>):
+    /// <c>ItemSO.Icon</c> o <c>UpgradeSO.Icon</c> (encantamientos). Null si el asset no tiene
+    /// icono autorado — la vista aplica su fallback.
     /// </summary>
     public static class BreakdownIconResolver
     {
         public static Sprite Resolve(Object sourceAsset)
-            => sourceAsset is Rollgeon.Items.ItemSO item ? item.Icon : null;
+        {
+            switch (sourceAsset)
+            {
+                case Rollgeon.Items.ItemSO item: return item.Icon;
+                case Rollgeon.Upgrades.UpgradeSO upgrade: return upgrade.Icon;
+                default: return null;
+            }
+        }
 
         /// <summary>Familia por tipo del asset (mismo criterio de resolución que el sprite).</summary>
         public static BreakdownProcFamily ResolveFamily(Object sourceAsset)

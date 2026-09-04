@@ -21,6 +21,13 @@ namespace Rollgeon.Combat.AI.Decisions
         [OdinSerialize, SerializeReference]
         public EnemyActionBehavior Behavior;
 
+        [Tooltip("Key de Content del nombre autorado del ataque (ej. 'intent.skirmisher.x_slash'). " +
+                 "Vacío = el genérico 'Golpe' (que el panel pisa con 'Disparo' para Ranged).")]
+        public string IntentLabelKey;
+
+        [Tooltip("Fallback ES del nombre autorado si la key no está en la tabla.")]
+        public string IntentLabelFallback;
+
         public override string NodeName => Behavior != null ? Behavior.BehaviorName : "Behavior";
 
         public override AIResult Tick(AIContext context)
@@ -62,8 +69,11 @@ namespace Rollgeon.Combat.AI.Decisions
                     if (effect is not EffDealDamage damage) continue;
                     if (!damage.TryDescribePreviewDamage(context.SelfGuid, out int amount)) continue;
 
-                    intent = new AIIntent(AIIntentTextKeys.Attack, "Golpe", amount, damage.Kind,
-                                          tiles: TargetCell(context, group));
+                    intent = string.IsNullOrEmpty(IntentLabelKey)
+                        ? new AIIntent(AIIntentTextKeys.Attack, "Golpe", amount, damage.Kind,
+                                       tiles: TargetCell(context, group))
+                        : new AIIntent(IntentLabelKey, IntentLabelFallback, amount, damage.Kind,
+                                       tiles: TargetCell(context, group));
                     return true;
                 }
             }

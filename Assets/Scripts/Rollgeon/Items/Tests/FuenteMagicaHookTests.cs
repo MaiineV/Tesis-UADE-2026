@@ -9,7 +9,6 @@ using Rollgeon.Combos.Play;
 using Rollgeon.Dice;
 using Rollgeon.Effects;
 using Rollgeon.Effects.Concretes;
-using Rollgeon.Effects.Readers;
 using Rollgeon.Heroes;
 using Rollgeon.Player;
 using Rollgeon.Upgrades.Dice;
@@ -18,12 +17,13 @@ using UnityEngine;
 namespace Rollgeon.Items.Tests
 {
     /// <summary>
-    /// Regresión del playtest 2026-09-04 sobre "Fuente Mágica" (el dado más alto del combo
-    /// suma su cara al multiplicador, NO al daño base): el dado seguía sumado en N (Σ caras)
-    /// además de ir a M, y el item disparaba en Número Mayor (<c>combo.higher_number</c>),
-    /// donde ese dado ES el combo entero. Replica la autoría del asset: hook ComboPlayed +
-    /// filtro Exclude + <see cref="EffAddComboMultiplier"/> y <see cref="EffAddComboBonus"/>
-    /// con <c>Subtract</c>, ambos leyendo <see cref="ReadHighestContributingDie"/>.
+    /// Regresión de los playtests 2026-09-04 sobre "Fuente Mágica" (el dado más alto del combo
+    /// suma su cara al multiplicador, NO al daño base): primero el dado seguía sumado en N
+    /// además de ir a M y el item disparaba en Número Mayor (<c>combo.higher_number</c>);
+    /// después el número cerraba pero el desglose mostraba el dado entrando a N y un "−X"
+    /// del item — el jugador leía que contaba en los dos. Replica la autoría del asset: hook
+    /// ComboPlayed + filtro Exclude + <see cref="EffMoveDieToMultiplier"/>, y verifica que la
+    /// fórmula saque la cara de Σcaras y la ponga en M con el dado atribuido al item.
     /// </summary>
     [TestFixture]
     public class FuenteMagicaHookTests
@@ -84,16 +84,7 @@ namespace Rollgeon.Items.Tests
                 },
                 ActionKindFilter = RollActionKind.Attack,
             };
-            hook.Effect.Effects.Add(new EffAddComboMultiplier
-            {
-                AmountReader = new ReadHighestContributingDie(),
-                ReaderScale = 1f,
-            });
-            hook.Effect.Effects.Add(new EffAddComboBonus
-            {
-                Amount = new ReadHighestContributingDie(),
-                Subtract = true,
-            });
+            hook.Effect.Effects.Add(new EffMoveDieToMultiplier { Pick = ContributingDiePick.Highest });
             item.PassiveHooks.Add(hook);
 
             _created.Add(item);
@@ -120,18 +111,42 @@ namespace Rollgeon.Items.Tests
         // ================================================================
 
         [Test]
-        public void test_fuente_magica_trio_moves_highest_die_from_base_to_multiplier()
+        public void test_fuente_magica_trio_marks_highest_die_to_move_to_multiplier()
         {
             // Arrange
             _service.AddItem(NewFuenteMagica());
 
-            // Act — trío 4-4-6: el 6 es el dado más alto del combo.
+            // Act — trío 4-4-6: el 6 (slot 2, mapeo identidad) es el dado más alto del combo.
             var scratch = PlayCombo("combo.trio", new[] { 4, 4, 6 }, new[] { 0, 1, 2 });
 
-            // Assert — +6 a M y −6 a N (la cara ya está en Σcaras, se descuenta una vez).
+            // Assert — solo se marca el slot: la cara la mueve la fórmula, no el efecto.
             Assert.IsNotNull(scratch);
-            Assert.AreEqual(6f, scratch.ComboMultiplierBonus, 0.0001f);
-            Assert.AreEqual(-6, scratch.BonusComboDamage);
+            CollectionAssert.AreEqual(new[] { 2 }, scratch.DiceMovedToMultiplier);
+            Assert.AreEqual(0, scratch.BonusComboDamage);
+            Assert.AreEqual(0f, scratch.ComboMultiplierBonus, 0.0001f);
+        }
+
+        [Test]
+        public void test_fuente_magica_journals_the_moved_die_with_the_item_asset()
+        {
+            // Arrange
+            var item = NewFuenteMagica();
+            _service.AddItem(item);
+
+            // Act
+            var scratch = PlayCombo("combo.trio", new[] { 4, 4, 6 }, new[] { 0, 1, 2 });
+
+            // Assert — la entrada neutra del journal lleva el ItemSO: el desglose le pone el
+            // icono al dado que vuela a M.
+            Assert.IsNotNull(scratch.Journal);
+            Assert.AreEqual(1, scratch.Journal.Count);
+            var entry = scratch.Journal[0];
+            Assert.AreEqual(ScratchSourceKind.Item, entry.Kind);
+            Assert.AreEqual("fuente.magica", entry.SourceId);
+            Assert.AreSame(item, entry.SourceAsset);
+            Assert.AreEqual(2, entry.MovedDieBagSlot);
+            Assert.AreEqual(0, entry.BonusDelta);
+            Assert.AreEqual(0f, entry.MultiplierBonusDelta, 0.0001f);
         }
 
         [Test]
@@ -145,6 +160,7 @@ namespace Rollgeon.Items.Tests
 
             // Assert — el filtro Exclude corta el hook: scratch intacto.
             Assert.IsNotNull(scratch);
+            Assert.IsNull(scratch.DiceMovedToMultiplier);
             Assert.AreEqual(0f, scratch.ComboMultiplierBonus, 0.0001f);
             Assert.AreEqual(0, scratch.BonusComboDamage);
         }
@@ -166,12 +182,59 @@ namespace Rollgeon.Items.Tests
             int total = PlayerComboDamage.Resolve(_playerGuid, comboBaseDamage: 10, contributing,
                 abilityMultiplier: 1f, PlayerComboFormulaKind.Damage, out var breakdown);
 
-            // Assert — N = 10 + (4+4+6) − 6 = 18; M = 1 + 6 = 7; 18 × 7 = 126.
-            Assert.AreEqual(14, breakdown.FacesSum);
-            Assert.AreEqual(-6, breakdown.AdditiveBonus);
+            // Assert — N = 10 + (4+4) = 18 (el 6 nunca entra a N); M = 1 + 6 = 7; 18 × 7 = 126.
+            Assert.AreEqual(8, breakdown.FacesSum);
+            Assert.AreEqual(6, breakdown.MovedFacesSum);
+            CollectionAssert.AreEqual(new[] { 2 }, breakdown.DiceMovedToMultiplier);
+            Assert.AreEqual(0, breakdown.AdditiveBonus);
             Assert.AreEqual(18f, breakdown.N, 0.0001f);
+            Assert.AreEqual(6f, breakdown.ScratchMultiplierBonus, 0.0001f);
             Assert.AreEqual(7f, breakdown.M, 0.0001f);
             Assert.AreEqual(126, total);
+        }
+
+        [Test]
+        public void test_fuente_magica_moves_the_real_bag_slot_when_holds_are_a_subset()
+        {
+            // Arrange — bolsa 1-4-2-4-6, holdeados los slots 1, 3 y 4 (4-4-6): el 6 es el slot 4.
+            _service.AddItem(NewFuenteMagica());
+
+            // Act
+            _play.BeginPlay(new EffectContext
+            {
+                SourceGuid = _playerGuid,
+                ActionKind = RollActionKind.Attack,
+                DiceResult = new[] { 1, 4, 2, 4, 6 },
+                KeptDice = new[] { 4, 4, 6 },
+                KeptDiceOriginalIndices = new[] { 1, 3, 4 },
+                ComboResult = ComboDetectionResult.Match("combo.trio", 10, 3, new[] { 0, 1, 2 }),
+            });
+            var scratch = _play.CurrentPlayScratch;
+            _play.EndPlay();
+
+            // Assert
+            CollectionAssert.AreEqual(new[] { 4 }, scratch.DiceMovedToMultiplier);
+        }
+
+        [Test]
+        public void test_fuente_magica_does_not_fire_for_heal_combos()
+        {
+            // Arrange — ActionKindFilter = Attack: Curarse con trío no mueve nada.
+            _service.AddItem(NewFuenteMagica());
+
+            // Act
+            _play.BeginPlay(new EffectContext
+            {
+                SourceGuid = _playerGuid,
+                ActionKind = RollActionKind.Heal,
+                DiceResult = new[] { 4, 4, 6 },
+                ComboResult = ComboDetectionResult.Match("combo.trio", 10, 3, new[] { 0, 1, 2 }),
+            });
+            var scratch = _play.CurrentPlayScratch;
+            _play.EndPlay();
+
+            // Assert
+            Assert.IsNull(scratch.DiceMovedToMultiplier);
         }
 
         private sealed class StubPlayerService : IPlayerService

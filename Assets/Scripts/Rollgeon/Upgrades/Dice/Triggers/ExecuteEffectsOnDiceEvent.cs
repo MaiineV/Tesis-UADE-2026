@@ -123,19 +123,10 @@ namespace Rollgeon.Upgrades.Dice.Triggers
                         Channel = ScratchChannel.DiceEnchantment,
                     },
                 };
-                // Attributes / OwnerMaxHp: sin esto las PCs genéricas de stats (PcOwnerStatCompare
-                // devuelve true sin Attributes; PcOwnerHpBelow devuelve false sin OwnerMaxHp)
-                // no sirven en el canal dados — Vampiro las necesita para no matar al jugador.
-                Rollgeon.Attributes.AttributesManager attrs = null;
-                global::Patterns.ServiceLocator.TryGetService(out attrs);
-                var preCtx = new PreConditionContext
-                {
-                    OwnerGuid = fx.SourceGuid,
-                    OpponentGuid = fx.TargetGuid,
-                    Effect = fx,
-                    Attributes = attrs,
-                    OwnerMaxHp = Rollgeon.Combat.MaxHpResolver.TryResolve(fx.SourceGuid, out int maxHp) ? maxHp : (int?)null,
-                };
+                // Contexto completo del dueño (Attributes / OwnerMaxHp): sin él las PCs
+                // genéricas de stats no sirven en el canal dados. Compartido con el gate de
+                // selección (DiceSelectionLocks) para que ambos evalúen igual.
+                var preCtx = EnchantmentPreConditionContexts.ForOwner(fx.SourceGuid, fx.TargetGuid, fx);
 
                 data.TryExecute(fx, preCtx);
             }

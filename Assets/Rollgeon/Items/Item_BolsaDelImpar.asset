@@ -33,7 +33,7 @@ MonoBehaviour:
       Data: 1|Rollgeon.Items.PassiveItemHook, Rollgeon
     - Name: Kind
       Entry: 3
-      Data: 0
+      Data: 1
     - Name: TriggerEvent
       Entry: 3
       Data: 19
@@ -186,6 +186,9 @@ MonoBehaviour:
     - Name: Parity
       Entry: 3
       Data: 0
+    - Name: Scope
+      Entry: 3
+      Data: 1
     - Name: PerDieAmount
       Entry: 3
       Data: 3
@@ -268,15 +271,42 @@ MonoBehaviour:
     - Name: 
       Entry: 8
       Data: 
+    - Name: LeastUsedComboBonus
+      Entry: 7
+      Data: 14|Rollgeon.Items.LeastUsedComboBonusDef, Rollgeon
+    - Name: Enabled
+      Entry: 5
+      Data: false
+    - Name: MultiplierBonus
+      Entry: 4
+      Data: 0.5
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: CombatToll
+      Entry: 7
+      Data: 15|Rollgeon.Items.CombatTollDef, Rollgeon
+    - Name: Enabled
+      Entry: 5
+      Data: false
+    - Name: BaseCost
+      Entry: 3
+      Data: 15
+    - Name: CostPerFloor
+      Entry: 3
+      Data: 10
+    - Name: 
+      Entry: 8
+      Data: 
     - Name: OnNegativeBand
       Entry: 7
-      Data: 14|Rollgeon.Effects.EffectData, Rollgeon
+      Data: 16|Rollgeon.Effects.EffectData, Rollgeon
     - Name: Label
       Entry: 1
       Data: Effect Group
     - Name: PreConditions
       Entry: 7
-      Data: 15|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
+      Data: 17|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
         Rollgeon]], mscorlib
     - Name: 
       Entry: 12
@@ -289,7 +319,7 @@ MonoBehaviour:
       Data: 
     - Name: Effects
       Entry: 7
-      Data: 16|System.Collections.Generic.List`1[[Rollgeon.Effects.IEffect, Rollgeon]],
+      Data: 18|System.Collections.Generic.List`1[[Rollgeon.Effects.IEffect, Rollgeon]],
         mscorlib
     - Name: 
       Entry: 12
@@ -308,13 +338,13 @@ MonoBehaviour:
       Data: 
     - Name: OnMixedBand
       Entry: 7
-      Data: 17|Rollgeon.Effects.EffectData, Rollgeon
+      Data: 19|Rollgeon.Effects.EffectData, Rollgeon
     - Name: Label
       Entry: 1
       Data: Effect Group
     - Name: PreConditions
       Entry: 7
-      Data: 18|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
+      Data: 20|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
         Rollgeon]], mscorlib
     - Name: 
       Entry: 12
@@ -327,7 +357,7 @@ MonoBehaviour:
       Data: 
     - Name: Effects
       Entry: 7
-      Data: 19|System.Collections.Generic.List`1[[Rollgeon.Effects.IEffect, Rollgeon]],
+      Data: 21|System.Collections.Generic.List`1[[Rollgeon.Effects.IEffect, Rollgeon]],
         mscorlib
     - Name: 
       Entry: 12
@@ -346,13 +376,13 @@ MonoBehaviour:
       Data: 
     - Name: OnPositiveBand
       Entry: 7
-      Data: 20|Rollgeon.Effects.EffectData, Rollgeon
+      Data: 22|Rollgeon.Effects.EffectData, Rollgeon
     - Name: Label
       Entry: 1
       Data: Effect Group
     - Name: PreConditions
       Entry: 7
-      Data: 21|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
+      Data: 23|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
         Rollgeon]], mscorlib
     - Name: 
       Entry: 12
@@ -365,7 +395,7 @@ MonoBehaviour:
       Data: 
     - Name: Effects
       Entry: 7
-      Data: 22|System.Collections.Generic.List`1[[Rollgeon.Effects.IEffect, Rollgeon]],
+      Data: 24|System.Collections.Generic.List`1[[Rollgeon.Effects.IEffect, Rollgeon]],
         mscorlib
     - Name: 
       Entry: 12
@@ -384,13 +414,13 @@ MonoBehaviour:
       Data: 
     - Name: OnActivate
       Entry: 7
-      Data: 23|Rollgeon.Effects.EffectData, Rollgeon
+      Data: 25|Rollgeon.Effects.EffectData, Rollgeon
     - Name: Label
       Entry: 1
       Data: Effect Group
     - Name: PreConditions
       Entry: 7
-      Data: 24|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
+      Data: 26|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
         Rollgeon]], mscorlib
     - Name: 
       Entry: 12
@@ -403,7 +433,7 @@ MonoBehaviour:
       Data: 
     - Name: Effects
       Entry: 7
-      Data: 25|System.Collections.Generic.List`1[[Rollgeon.Effects.IEffect, Rollgeon]],
+      Data: 27|System.Collections.Generic.List`1[[Rollgeon.Effects.IEffect, Rollgeon]],
         mscorlib
     - Name: 
       Entry: 12
@@ -422,7 +452,7 @@ MonoBehaviour:
       Data: 
   ItemId: bolsa.del.impar
   DisplayName: Bolsa del Impar
-  Description: +3 de oro por cada dado impar en cada tirada, con o sin combo.
+  Description: "+3 de oro por cada dado impar que forme parte del combo que jug\xE1s."
   Icon: {fileID: 1808964844, guid: ee12da05509c7a74686b1e1cc11cbd3e, type: 3}
   Rarity: 0
   FamilyId: 
@@ -433,11 +463,13 @@ MonoBehaviour:
   RollPoolBonus: 0
   LadderSkippedStep: 0
   BlocksPassiveItemHealing: 0
+  PotionHealMultiplier: 1
   ActiveSlotBonus: 0
   EnchantmentCostMultiplier: 1
   CursedEnchantmentWeightMultiplier: 1
   SecondWind: 0
   SecondWindRemainingHp: 1
+  GoldFloor: 0
   UsesActiveSlot: 0
   ActiveDie: 1
   ActiveFamily: 0

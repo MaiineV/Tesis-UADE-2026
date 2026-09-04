@@ -84,7 +84,7 @@ MonoBehaviour:
       Data: 4|Rollgeon.Upgrades.Dice.ComboFilter, Rollgeon
     - Name: Mode
       Entry: 3
-      Data: 1
+      Data: 4
     - Name: ComboIds
       Entry: 7
       Data: 5|System.Collections.Generic.List`1[[System.String, mscorlib]], mscorlib
@@ -138,7 +138,7 @@ MonoBehaviour:
       Data: 1
     - Name: 
       Entry: 7
-      Data: 10|Rollgeon.Effects.Concretes.EffAddComboBonus, Rollgeon
+      Data: 10|Rollgeon.Upgrades.Dice.Effects.EffMutateCarrierFace, Rollgeon
     - Name: Selection
       Entry: 7
       Data: 11|Rollgeon.Effects.Selection.SelectionSettings, Rollgeon
@@ -223,7 +223,7 @@ MonoBehaviour:
     - Name: 
       Entry: 8
       Data: 
-    - Name: _amount
+    - Name: _delta
       Entry: 7
       Data: 13|Rollgeon.Upgrades.Dice.Readers.ReadCarrierRollDelta, Rollgeon
     - Name: Op
@@ -473,31 +473,31 @@ MonoBehaviour:
   _faceFilter:
     rid: -2
   _triggers:
-  - rid: 7465468535394271955
-  - rid: 7465468535394271956
+  - rid: 7465468544398131265
+  - rid: 7465468544398131266
   _capabilities:
-  - rid: 7465468535394271957
+  - rid: 7465468544398131267
   references:
     version: 2
     RefIds:
     - rid: -2
       type: {class: , ns: , asm: }
-    - rid: 7465468535394271955
+    - rid: 7465468544398131265
       type: {class: ExecuteEffectsOnDiceEvent, ns: Rollgeon.Upgrades.Dice.Triggers, asm: Rollgeon}
       data:
         Event: 3
         Filter:
-          Mode: 1
+          Mode: 4
           ComboIds: []
         RequireCarrierParticipates: 1
         Effects:
         - Label: Effect Group
           PreConditions: []
           Effects:
-          - rid: 7465468535394271958
+          - rid: 7465468544398131268
           TargetSelector:
             rid: -2
-    - rid: 7465468535394271956
+    - rid: 7465468544398131266
       type: {class: ExecuteEffectsOnDiceEvent, ns: Rollgeon.Upgrades.Dice.Triggers, asm: Rollgeon}
       data:
         Event: 5
@@ -509,14 +509,14 @@ MonoBehaviour:
         - Label: Effect Group
           PreConditions: []
           Effects:
-          - rid: 7465468535394271959
+          - rid: 7465468544398131269
           TargetSelector:
             rid: -2
-    - rid: 7465468535394271957
+    - rid: 7465468544398131267
       type: {class: CapCursed, ns: Rollgeon.Upgrades.Dice, asm: Rollgeon}
       data: 
-    - rid: 7465468535394271958
-      type: {class: EffAddComboBonus, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
+    - rid: 7465468544398131268
+      type: {class: EffMutateCarrierFace, ns: Rollgeon.Upgrades.Dice.Effects, asm: Rollgeon}
       data:
         Selection:
           SlotState: 1
@@ -539,9 +539,9 @@ MonoBehaviour:
             rid: -2
           AutoResolve: 0
           AutoAccept: 1
-        _amount:
-          rid: 7465468535394271960
-    - rid: 7465468535394271959
+        _delta:
+          rid: 7465468544398131270
+    - rid: 7465468544398131269
       type: {class: EffModifyGold, ns: Rollgeon.Effects.Concretes, asm: Rollgeon}
       data:
         Selection:
@@ -567,13 +567,13 @@ MonoBehaviour:
           AutoAccept: 1
         Operation: 0
         _amount:
-          rid: 7465468535394271961
+          rid: 7465468544398131271
         _failChainIfInsufficient: 1
-    - rid: 7465468535394271960
+    - rid: 7465468544398131270
       type: {class: ReadCarrierRollDelta, ns: Rollgeon.Upgrades.Dice.Readers, asm: Rollgeon}
       data:
         Op: 3
-    - rid: 7465468535394271961
+    - rid: 7465468544398131271
       type: {class: ReadConstantInt, ns: Rollgeon.Effects.Readers, asm: Rollgeon}
       data:
         Value: 2
