@@ -253,7 +253,7 @@ MonoBehaviour:
   DisplayName: Eco Menguante
   Description: "Tu da\xF1o de ataque arranca en x3 al conseguirlo. Cada combo que
     jug\xE1s lo baja 0.2; al llegar a x1 el item se rompe."
-  Icon: {fileID: 1808964844, guid: ee12da05509c7a74686b1e1cc11cbd3e, type: 3}
+  Icon: {fileID: -26662485, guid: 956c96499facb124fb3ffd26bd8ee18e, type: 3}
   Rarity: 2
   FamilyId: 
   VariantIndex: 0
