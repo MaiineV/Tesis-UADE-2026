@@ -35,6 +35,17 @@ namespace Rollgeon.Movement
         bool Move(Guid entity, GridCoord destination);
 
         /// <summary>
+        /// Igual que <see cref="Move"/> pero devuelve el path efectivamente caminado
+        /// (índice 0 = origen, post-filtro de path). <c>null</c> si no se movió. Default
+        /// interface member para que los fakes de tests no cambien; la impl real lo override.
+        /// </summary>
+        bool TryMove(Guid entity, GridCoord destination, out IReadOnlyList<GridCoord> walkedPath)
+        {
+            walkedPath = null;
+            return Move(entity, destination);
+        }
+
+        /// <summary>
         /// Notifica cambios de posición. Args: (entity, from, to, path).
         /// </summary>
         event Action<Guid, GridCoord, GridCoord, IReadOnlyList<GridCoord>> OnEntityMoved;

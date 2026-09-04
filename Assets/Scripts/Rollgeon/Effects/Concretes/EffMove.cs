@@ -31,7 +31,24 @@ namespace Rollgeon.Effects.Concretes
             if (context?.SelectionResult?.FirstSelectedCoord == null) return false;
             if (!ServiceLocator.TryGetService<IMovementService>(out var movement)) return false;
 
-            return movement.Move(context.SourceGuid, context.SelectionResult.FirstSelectedCoord.Value);
+            var destination = context.SelectionResult.FirstSelectedCoord.Value;
+            if (!movement.TryMove(context.SourceGuid, destination, out var path)) return false;
+
+            // Este es el ÚNICO camino de movimiento voluntario (los AI nodes, empujes y
+            // portales llaman Move/CommitPath/Teleport sin pasar por acá): la señal "caminó
+            // N casillas" que consumen los encantamientos del dado de Movimiento sale de acá.
+            if (path != null && path.Count > 1)
+            {
+                TypedEvent<EntityWalkedPayload>.Raise(new EntityWalkedPayload
+                {
+                    EntityGuid = context.SourceGuid,
+                    From = path[0],
+                    To = path[path.Count - 1],
+                    Path = path,
+                    TilesTraversed = path.Count - 1,
+                });
+            }
+            return true;
         }
     }
 }

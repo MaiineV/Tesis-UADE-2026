@@ -126,8 +126,11 @@ namespace Rollgeon.Movement
             return path;
         }
 
-        public bool Move(Guid entity, GridCoord destination)
+        public bool Move(Guid entity, GridCoord destination) => TryMove(entity, destination, out _);
+
+        public bool TryMove(Guid entity, GridCoord destination, out IReadOnlyList<GridCoord> walkedPath)
         {
+            walkedPath = null;
             if (!_grid.TryGetPosition(entity, out var from))
             {
                 Debug.LogWarning($"[MovementService] Move: entidad {entity} no registrada en grid.");
@@ -151,6 +154,7 @@ namespace Rollgeon.Movement
             var target = effective[effective.Count - 1];
             if (!_grid.Move(entity, target)) return false;
 
+            walkedPath = effective;
             OnEntityMoved?.Invoke(entity, from, target, effective);
             return true;
         }

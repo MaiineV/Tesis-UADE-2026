@@ -165,7 +165,7 @@ namespace Rollgeon.Effects.Selection
             // sin poder moverse (GDD: "la velocidad no baja del mínimo").
             int bonus = ResolveMoveRangeBonus(ownerGuid);
             if (die.TryGetActiveRange(ownerGuid, out var rolled)) return Math.Max(1, rolled + bonus);
-            return Math.Max(1, die.CurrentType.MaxFace() + bonus);
+            return Math.Max(1, die.MaxFace + bonus);
         }
 
         // Bonus de MoveRange del owner; degrada a 0 sin AttributesManager o si la

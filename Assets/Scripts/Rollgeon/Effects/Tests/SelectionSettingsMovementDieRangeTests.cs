@@ -196,6 +196,7 @@ namespace Rollgeon.Effects.Tests
             public DiceType Type = DiceType.D4;
 
             public DiceType CurrentType => Type;
+            public int MaxFace => Type.MaxFace();
             public int LastFace => 0;
             public void SetTypeOverride(DiceType? type) { }
             public void Roll(Guid playerGuid, Action<int> onRevealed) { }
