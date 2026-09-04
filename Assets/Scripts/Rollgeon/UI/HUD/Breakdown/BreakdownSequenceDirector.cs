@@ -91,6 +91,14 @@ namespace Rollgeon.UI.HUD.Breakdown
                 _skipButton.onClick.AddListener(HandleSkipPressed);
                 _skipButton.gameObject.SetActive(false);
             }
+            // El total del choque sobrevive al fin de la secuencia (ver EndSequence) y se
+            // apaga recién cuando la fórmula vuelve a pintar algo — un preview nuevo o un
+            // Clear — fuera de la secuencia.
+            if (_breakdownView != null)
+            {
+                _breakdownView.PreviewShown += HideClashIfIdle;
+                _breakdownView.Hidden += HideClashIfIdle;
+            }
             _bound = true;
         }
 
@@ -103,7 +111,13 @@ namespace Rollgeon.UI.HUD.Breakdown
                 _onBreakdown = null;
             }
             if (_skipButton != null) _skipButton.onClick.RemoveListener(HandleSkipPressed);
+            if (_breakdownView != null)
+            {
+                _breakdownView.PreviewShown -= HideClashIfIdle;
+                _breakdownView.Hidden -= HideClashIfIdle;
+            }
             AbortSequence();
+            HideClashLabel();
             _bound = false;
         }
 
@@ -157,8 +171,10 @@ namespace Rollgeon.UI.HUD.Breakdown
                 _spinner.SetVisible(false);
             }
             RestoreCounters();
-            if (_clashRoll.isAlive) _clashRoll.Stop();
-            if (_clashLabel != null) _clashLabel.gameObject.SetActive(false);
+            // El total del choque NO se apaga acá (playtest 2026-09-04): la acción sigue
+            // resolviendo después de la secuencia y el jugador tiene que seguir viendo el
+            // número. Lo apaga HideClashIfIdle cuando la fórmula pinta algo nuevo, o el
+            // abort en teardown.
             ResetThresholdStage();
             ReleaseGate();
         }
@@ -169,6 +185,22 @@ namespace Rollgeon.UI.HUD.Breakdown
             _player.Abort();
             _activeFlight = null;
             EndSequence();
+            HideClashLabel();
+        }
+
+        // Fuera de la secuencia, cualquier repintado del N×M (preview nuevo, Clear) vuelve
+        // obsoleto el total del choque. Durante la secuencia el propio director muestra y
+        // oculta el N×M, así que ahí se ignora.
+        private void HideClashIfIdle()
+        {
+            if (_gateHeld || _player.IsRunning) return;
+            HideClashLabel();
+        }
+
+        private void HideClashLabel()
+        {
+            if (_clashRoll.isAlive) _clashRoll.Stop();
+            if (_clashLabel != null) _clashLabel.gameObject.SetActive(false);
         }
 
         private void ReleaseGate()
