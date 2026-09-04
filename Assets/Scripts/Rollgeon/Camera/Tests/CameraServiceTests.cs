@@ -508,6 +508,84 @@ namespace Rollgeon.GameCamera.Tests
         // inicializada — se cubre en RunBootstrapperTests, el fixture que ya tiene armado
         // el entorno de arranque de run.
 
+        // ------------------------------------------------------------------ //
+        // Paneo entre salas (Feature#0086)                                    //
+        // ------------------------------------------------------------------ //
+
+        // Sin Play Mode el reanclado toma el camino snap: el foco salta al centro nuevo
+        // y OnCameraRoomPanFinished se emite en el acto. El tween real se valida en smoke.
+
+        private Transform ArrangeStaticCameraWithTargetAt(Vector3 position)
+        {
+            _config.FollowPlayer = false;
+            ServiceLocator.AddService<IDungeonService>(new FakeDungeonService(), ServiceScope.Run);
+
+            var targetGO = new GameObject("target");
+            _created.Add(targetGO);
+            targetGO.transform.position = position;
+            _service.SetFollowTarget(targetGO.transform);
+            return targetGO.transform;
+        }
+
+        [Test]
+        public void ApplyPendingReanchor_AfterRoomCrossed_MovesFocusAndFiresRoomPanFinished()
+        {
+            // Arrange
+            var target = ArrangeStaticCameraWithTargetAt(Vector3.zero);
+            Assume.That(_service.StaticFocus, Is.EqualTo(Vector3.zero));
+            int finished = 0;
+            EventManager.Subscribe(EventName.OnCameraRoomPanFinished, _ => finished++);
+
+            target.position = new Vector3(10f, 0f, 10f);
+            EventManager.Trigger(EventName.OnRoomEntered, Guid.NewGuid(), "next");
+            EventManager.Trigger(EventName.OnRoomCrossed, Guid.NewGuid(), Guid.NewGuid());
+            _service.RecenterOnPlayer(instant: true);
+
+            // Act
+            _service.ApplyPendingReanchor();
+
+            // Assert
+            Assert.AreEqual(new Vector3(10f, 0f, 10f), _service.StaticFocus);
+            Assert.AreEqual(1, finished, "El aterrizaje del foco avisa una sola vez.");
+            Assert.IsFalse(_service.IsRoomPanning, "Fuera de Play Mode no hay tween.");
+        }
+
+        [Test]
+        public void ApplyPendingReanchor_WithoutRoomCrossed_MovesFocusSilently()
+        {
+            // Arrange — primera sala del piso / resume: reanclado sin cruce.
+            var target = ArrangeStaticCameraWithTargetAt(Vector3.zero);
+            bool finished = false;
+            EventManager.Subscribe(EventName.OnCameraRoomPanFinished, _ => finished = true);
+
+            target.position = new Vector3(4f, 0f, -4f);
+            _service.RecenterOnPlayer(instant: true);
+
+            // Act
+            _service.ApplyPendingReanchor();
+
+            // Assert
+            Assert.AreEqual(new Vector3(4f, 0f, -4f), _service.StaticFocus);
+            Assert.IsFalse(finished, "Sin cruce no hay sala saliente que liberar.");
+        }
+
+        [Test]
+        public void ApplyPendingReanchor_WithoutPendingRequest_IsNoop()
+        {
+            // Arrange
+            ArrangeStaticCameraWithTargetAt(new Vector3(1f, 0f, 1f));
+            bool finished = false;
+            EventManager.Subscribe(EventName.OnCameraRoomPanFinished, _ => finished = true);
+            EventManager.Trigger(EventName.OnRoomCrossed, Guid.NewGuid(), Guid.NewGuid());
+
+            // Act — nadie pidió reanclar (ni RoomGridLoader ni recenter).
+            _service.ApplyPendingReanchor();
+
+            // Assert
+            Assert.AreEqual(new Vector3(1f, 0f, 1f), _service.StaticFocus);
+            Assert.IsFalse(finished);
+        }
+
         // -----------------------------------------------------------------
         // Stubs
         // -----------------------------------------------------------------

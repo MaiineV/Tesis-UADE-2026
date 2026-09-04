@@ -23,3 +23,6 @@ using System.Runtime.CompilerServices;
 // AllEnemyRangesOverlay.Repaint(order): la selección de quién se pinta se testea contra
 // una lista de guids, sin armar un TurnOrderService real con initiative para cada caso.
 [assembly: InternalsVisibleTo("Rollgeon.Combat.AI.Tests")]
+// CameraService.ApplyPendingReanchor: el reanclado del foco corre en LateUpdate, que
+// EditMode no ejecuta — los tests lo invocan a mano para verificar el paneo entre salas.
+[assembly: InternalsVisibleTo("Rollgeon.Camera.Tests")]

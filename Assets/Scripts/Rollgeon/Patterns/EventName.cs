@@ -268,6 +268,10 @@ namespace Patterns
         OnCameraRecentered,
         /// <summary>args: [float amplitude, float durationSeconds]. Feedback pide un camera shake; el CameraService lo consume (§17.E.10, TODO v8).</summary>
         OnCameraShakeRequested,
+        /// <summary>args: [System.Guid fromInstanceId, System.Guid toInstanceId]. El jugador cruzó una puerta entre dos salas del mismo piso — se emite DESPUÉS de OnRoomEntered, solo en cruces (no al generar el piso ni al resumir un save). La cámara panea y el toast de sala lo consumen (Feature#0086).</summary>
+        OnRoomCrossed,
+        /// <summary>args: [System.Guid roomInstanceId]. El foco de la cámara aterrizó en la sala nueva tras un OnRoomCrossed (fin del paneo o snap). DungeonManager apaga recién ahí la sala saliente (Feature#0086).</summary>
+        OnCameraRoomPanFinished,
 
         // --- Tutorial ------------------------------------------------------------
         /// <summary>args: [Rollgeon.Heroes.HeroBehaviorSlot slot]. El tutorial desbloqueó una acción — los HUDs recomputan estados de botones.</summary>

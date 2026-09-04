@@ -28,6 +28,13 @@ namespace Rollgeon.Dungeon
         RoomInstance CurrentRoomInstance { get; }
 
         /// <summary>
+        /// Sala que el jugador acaba de dejar y que sigue activa mientras la cámara
+        /// panea hacia la nueva (Feature#0086). <c>null</c> fuera de un cruce en vuelo.
+        /// Default para fakes de test que no modelan la transición.
+        /// </summary>
+        RoomInstance LeavingRoomInstance => null;
+
+        /// <summary>
         /// Seed con el que se generó el piso actual. Los sistemas que rollean
         /// contenido por sala (tienda) derivan de acá para que un piso regenerado
         /// desde save (mismo seed) produzca el mismo contenido. Default 0 para

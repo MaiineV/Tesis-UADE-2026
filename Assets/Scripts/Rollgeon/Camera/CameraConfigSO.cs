@@ -86,6 +86,14 @@ namespace Rollgeon.GameCamera
         public float RecenterTweenSeconds = 0.4f;
         public Ease RecenterEase = Ease.InOutQuad;
 
+        [Tooltip("Modo estático: al cruzar una puerta el foco panea del centro de la sala " +
+                 "saliente al de la nueva en estos segundos (0 = snap). Mantener < 0.5 s " +
+                 "para que el cruce no se sienta pesado. No se divide por la velocidad de " +
+                 "juego: es animación, no pacing.")]
+        [MinValue(0f)]
+        public float RoomPanSeconds = 0.35f;
+        public Ease RoomPanEase = Ease.InOutCubic;
+
         // === Wall occlusion ==================================================
         [Title("Wall Occlusion")]
         [ToggleGroup(nameof(EnableWallOcclusion))] public bool EnableWallOcclusion = true;
