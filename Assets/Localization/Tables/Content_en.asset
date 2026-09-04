@@ -2907,6 +2907,92 @@ MonoBehaviour:
     m_Localized: It lands on the marked area, not on where you are.
     m_Metadata:
       m_Items: []
+  - m_Id: 18504181256208384
+    m_Localized: Mobile Bulwark
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18504181335900160
+    m_Localized: Gain 1 shield per tile you walk (max 6 per turn).
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18504181340094464
+    m_Localized: Whirlwind
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18504181340094465
+    m_Localized: When you roll the movement die, every enemy teleports to a random
+      tile and you move +2.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18504181340094466
+    m_Localized: Incendiary
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18504181340094467
+    m_Localized: 'Every tile you walk burns for 2 turns: enemies entering or starting
+      their turn there take 3 damage.'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18504181340094468
+    m_Localized: Toxic Trail
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18504181340094469
+    m_Localized: 'Every tile you walk leaves a toxic trail for 2 turns: the first
+      enemy entering gets poisoned for 2 turns.'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18504181340094470
+    m_Localized: Charge
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18504181340094471
+    m_Localized: Gain +1 base damage per tile you walk until the end of the turn.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18504181340094472
+    m_Localized: Ethereal Step
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18504181340094473
+    m_Localized: You move through units. You cannot end your movement on one.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18504181340094474
+    m_Localized: Thorn Path
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18504181340094475
+    m_Localized: 'Every tile you walk leaves Thorns for 1 turn: the first enemy entering
+      takes 2 damage and stops moving.'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18504181340094476
+    m_Localized: Incendiary Flames
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18504181340094477
+    m_Localized: Burning tile left by the player. Enemies entering or starting their
+      turn here take damage.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18504181340094478
+    m_Localized: Toxic Trail
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18504181340094479
+    m_Localized: Toxic trail left by the player. The first enemy entering gets poisoned.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18504181340094480
+    m_Localized: Path Thorns
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18504181340094481
+    m_Localized: Thorns left by the player. The first enemy entering takes damage
+      and stops moving.
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []
