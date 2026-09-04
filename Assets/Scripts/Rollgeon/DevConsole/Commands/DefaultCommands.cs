@@ -38,6 +38,7 @@ namespace Rollgeon.DevConsole.Commands
             r.Register(new SetDiceCommand());
             r.Register(new SetBagCommand());
             r.Register(new EnchantCommand());
+            r.Register(new MovementDieCommand());
             r.Register(new DiceModeCommand());
             r.Register(new DiceMotionCommand());
             r.Register(new RerollModeCommand());

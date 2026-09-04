@@ -18,6 +18,8 @@ namespace Rollgeon.DevConsole.Commands
         public static readonly IArgProvider Next = new StaticArgProvider("next");
         public static readonly IArgProvider EnchantSub =
             new StaticArgProvider("add", "remove", "list", "random", "roll");
+        public static readonly IArgProvider MoveDieSub =
+            new StaticArgProvider("info", "faces", "add", "remove", "list");
         public static readonly IArgProvider ShopSub = new StaticArgProvider("buy");
         public static readonly IArgProvider DiceModes = new StaticArgProvider("classic", "2d", "3d");
         public static readonly IArgProvider DiceTypes = new StaticArgProvider(Enum.GetNames(typeof(DiceType)));

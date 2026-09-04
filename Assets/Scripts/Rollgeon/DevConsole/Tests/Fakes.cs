@@ -229,6 +229,10 @@ namespace Rollgeon.DevConsole.Tests
             IReadOnlyList<int> diceResult, int comboBaseDamage) => null;
 
         public void InitializeFromBag(DiceBagSO bag) { }
+
+        public int MovementDieMaxFace => DiceType.D6.MaxFace() + Bag.MovementExtraFaces;
+        public int AddMovementDieFaces(int delta) => Bag.AddMovementExtraFaces(delta);
+        public IReadOnlyCollection<int> ComputeMovementDieFaces() => Array.Empty<int>();
     }
 
     /// <summary>Altar de encantamiento con oferta y confirmación predefinidas.</summary>
@@ -243,9 +247,13 @@ namespace Rollgeon.DevConsole.Tests
         public void NotifyAltarActivated(Guid roomInstanceId, string spawnPointId) { }
         public int ResolveCost() => 0;
 
-        public EnchantmentOfferResult RollOffer(Guid roomInstanceId)
+        public EnchantmentTargetSet LastTargetSet;
+
+        public EnchantmentOfferResult RollOffer(Guid roomInstanceId,
+            EnchantmentTargetSet targetSet = EnchantmentTargetSet.CombatDice)
         {
             RollOfferCalls++;
+            LastTargetSet = targetSet;
             if (NextOffer.Success) CurrentOffer = NextOffer.Offer;
             return NextOffer;
         }
