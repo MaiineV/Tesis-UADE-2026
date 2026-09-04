@@ -1,3 +1,4 @@
+using System;
 using Patterns;
 using PrimeTween;
 using Rollgeon.Audio;
@@ -49,6 +50,15 @@ namespace Rollgeon.UI.HUD.Breakdown
 
         public bool IsShowing { get; private set; }
 
+        /// <summary>
+        /// Alguien pidió un preview (nuevo o refrescado). El director lo usa para saber
+        /// que el total del choque que dejó en pantalla ya no corresponde y apagarlo.
+        /// </summary>
+        public event Action PreviewShown;
+
+        /// <summary>Alguien ocultó el N×M (Clear de la fórmula, otro modo). Ídem arriba.</summary>
+        public event Action Hidden;
+
         private void Awake()
         {
             if (_settings == null) return;
@@ -68,6 +78,7 @@ namespace Rollgeon.UI.HUD.Breakdown
                 || !Mathf.Approximately(_counterN.Value, comboBase)
                 || !Mathf.Approximately(_counterM.Value, abilityMultiplier);
             SetVisible(true);
+            PreviewShown?.Invoke();
 
             // Re-match sin cambio de valores (spam de toggles de hold) ⇒ no-op total.
             if (wasShowing && !changed) return;
@@ -149,6 +160,7 @@ namespace Rollgeon.UI.HUD.Breakdown
         {
             StopMotion();
             SetVisible(false);
+            Hidden?.Invoke();
         }
 
         private void SetVisible(bool visible)

@@ -133,6 +133,9 @@ MonoBehaviour:
     - Name: Alignment
       Entry: 3
       Data: 1
+    - Name: IgnoreLineOfSight
+      Entry: 5
+      Data: false
     - Name: 
       Entry: 8
       Data: 
@@ -178,6 +181,9 @@ MonoBehaviour:
     - Name: ChannelId
       Entry: 6
       Data: 
+    - Name: IgnoreLineOfSight
+      Entry: 5
+      Data: false
     - Name: WindupFeedbackId
       Entry: 6
       Data: 
@@ -192,10 +198,13 @@ MonoBehaviour:
       Data: 
     - Name: MaxSteps
       Entry: 7
-      Data: 14|Rollgeon.Combat.AI.Readers.AIConstantInt, Rollgeon
-    - Name: Value
+      Data: 14|Rollgeon.Combat.AI.Readers.AIReadSelfStat, Rollgeon
+    - Name: Stat
       Entry: 3
       Data: 2
+    - Name: UseModified
+      Entry: 5
+      Data: true
     - Name: 
       Entry: 8
       Data: 
@@ -291,6 +300,9 @@ MonoBehaviour:
     - Name: Alignment
       Entry: 3
       Data: 1
+    - Name: IgnoreLineOfSight
+      Entry: 5
+      Data: false
     - Name: 
       Entry: 8
       Data: 
@@ -336,6 +348,9 @@ MonoBehaviour:
     - Name: ChannelId
       Entry: 6
       Data: 
+    - Name: IgnoreLineOfSight
+      Entry: 5
+      Data: false
     - Name: WindupFeedbackId
       Entry: 6
       Data: 
@@ -363,10 +378,13 @@ MonoBehaviour:
       Data: 
     - Name: MaxSteps
       Entry: 7
-      Data: 27|Rollgeon.Combat.AI.Readers.AIConstantInt, Rollgeon
-    - Name: Value
+      Data: 27|Rollgeon.Combat.AI.Readers.AIReadSelfStat, Rollgeon
+    - Name: Stat
       Entry: 3
       Data: 2
+    - Name: UseModified
+      Entry: 5
+      Data: true
     - Name: 
       Entry: 8
       Data: 
@@ -422,6 +440,9 @@ MonoBehaviour:
     - Name: Alignment
       Entry: 3
       Data: 1
+    - Name: IgnoreLineOfSight
+      Entry: 5
+      Data: false
     - Name: 
       Entry: 8
       Data: 
@@ -467,6 +488,9 @@ MonoBehaviour:
     - Name: ChannelId
       Entry: 6
       Data: 
+    - Name: IgnoreLineOfSight
+      Entry: 5
+      Data: false
     - Name: WindupFeedbackId
       Entry: 6
       Data: 
@@ -481,10 +505,13 @@ MonoBehaviour:
       Data: 
     - Name: MaxSteps
       Entry: 7
-      Data: 35|Rollgeon.Combat.AI.Readers.AIConstantInt, Rollgeon
-    - Name: Value
+      Data: 35|Rollgeon.Combat.AI.Readers.AIReadSelfStat, Rollgeon
+    - Name: Stat
       Entry: 3
       Data: 2
+    - Name: UseModified
+      Entry: 5
+      Data: true
     - Name: 
       Entry: 8
       Data: 
@@ -571,6 +598,7 @@ MonoBehaviour:
   IsFlying: 0
   IsBoss: 0
   Archetype: 0
+  TooltipType: 
   Personality: 0
   KamikazeIgnoresSurvival: 0
   AuraRadius: 0

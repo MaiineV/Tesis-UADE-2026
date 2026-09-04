@@ -104,10 +104,13 @@ MonoBehaviour:
       Data: 
     - Name: MaxSteps
       Entry: 7
-      Data: 9|Rollgeon.Combat.AI.Readers.AIConstantInt, Rollgeon
-    - Name: Value
+      Data: 9|Rollgeon.Combat.AI.Readers.AIReadSelfStat, Rollgeon
+    - Name: Stat
       Entry: 3
-      Data: 1
+      Data: 2
+    - Name: UseModified
+      Entry: 5
+      Data: true
     - Name: 
       Entry: 8
       Data: 
@@ -198,10 +201,13 @@ MonoBehaviour:
       Data: 
     - Name: MaxSteps
       Entry: 7
-      Data: 15|Rollgeon.Combat.AI.Readers.AIConstantInt, Rollgeon
-    - Name: Value
+      Data: 15|Rollgeon.Combat.AI.Readers.AIReadSelfStat, Rollgeon
+    - Name: Stat
       Entry: 3
-      Data: 1
+      Data: 2
+    - Name: UseModified
+      Entry: 5
+      Data: true
     - Name: 
       Entry: 8
       Data: 
@@ -263,7 +269,7 @@ MonoBehaviour:
   BaseHealStrength: 5
   BaseSpeed: 3
   MaxEnergy: 3
-  BaseAttackRange: 0
+  BaseAttackRange: 3
   ExtraTiers: []
   VisualPrefab: {fileID: 7126624626522966521, guid: f7ac6f3588c37304eaee7a8d5efdcd43, type: 3}
   MinGoldDrop: 3
@@ -271,6 +277,7 @@ MonoBehaviour:
   IsFlying: 0
   IsBoss: 0
   Archetype: 0
+  TooltipType: 
   Personality: 0
   KamikazeIgnoresSurvival: 0
   AuraRadius: 0

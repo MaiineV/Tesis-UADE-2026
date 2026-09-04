@@ -78,6 +78,9 @@ MonoBehaviour:
     - Name: Kind
       Entry: 3
       Data: 1
+    - Name: IgnoreLineOfSight
+      Entry: 5
+      Data: false
     - Name: AnimFeedbackId
       Entry: 1
       Data: anim.enemy.ranged.attack
@@ -129,10 +132,13 @@ MonoBehaviour:
       Data: 
     - Name: MaxSteps
       Entry: 7
-      Data: 10|Rollgeon.Combat.AI.Readers.AIConstantInt, Rollgeon
-    - Name: Value
+      Data: 10|Rollgeon.Combat.AI.Readers.AIReadSelfStat, Rollgeon
+    - Name: Stat
       Entry: 3
-      Data: 3
+      Data: 2
+    - Name: UseModified
+      Entry: 5
+      Data: true
     - Name: 
       Entry: 8
       Data: 
@@ -187,10 +193,13 @@ MonoBehaviour:
       Data: 
     - Name: MaxSteps
       Entry: 7
-      Data: 16|Rollgeon.Combat.AI.Readers.AIConstantInt, Rollgeon
-    - Name: Value
+      Data: 16|Rollgeon.Combat.AI.Readers.AIReadSelfStat, Rollgeon
+    - Name: Stat
       Entry: 3
-      Data: 3
+      Data: 2
+    - Name: UseModified
+      Entry: 5
+      Data: true
     - Name: 
       Entry: 8
       Data: 
@@ -207,6 +216,9 @@ MonoBehaviour:
       Entry: 8
       Data: 
     - Name: Retreat
+      Entry: 5
+      Data: false
+    - Name: RequireLineOfSight
       Entry: 5
       Data: false
     - Name: StopAdjacent
@@ -281,6 +293,7 @@ MonoBehaviour:
   IsFlying: 1
   IsBoss: 0
   Archetype: 2
+  TooltipType: 
   Personality: 0
   KamikazeIgnoresSurvival: 0
   AuraRadius: 0

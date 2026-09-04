@@ -286,6 +286,12 @@ namespace Rollgeon.EditorTools.Localization
                 "{0} agotó su poder y desapareció.",
                 "{0} ran out of power and is gone.");
 
+            // Toast sobre la pila de oro cuando un item da oro (ItemGoldFeedbackView):
+            // {0} = nombre del item, {1} = oro otorgado.
+            Ui(UiTextKeys.ItemGoldGrantedBody,
+                "{0}: +{1} de oro",
+                "{0}: +{1} gold");
+
             // Toast al tocar un chip de acción no usable (ActionRejectToast):
             // título + motivo concreto resuelto por PlayerActionButtonsView.
             Ui(UiTextKeys.RejectTitle,

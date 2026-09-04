@@ -1104,6 +1104,10 @@ MonoBehaviour:
     m_Localized: The vault takes it
     m_Metadata:
       m_Items: []
+  - m_Id: 18457182589714432
+    m_Localized: '{0}: +{1} gold'
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

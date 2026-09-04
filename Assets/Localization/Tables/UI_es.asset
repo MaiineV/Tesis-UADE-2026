@@ -1113,6 +1113,10 @@ MonoBehaviour:
     m_Localized: Se la lleva la caja
     m_Metadata:
       m_Items: []
+  - m_Id: 18457182589714432
+    m_Localized: '{0}: +{1} de oro'
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

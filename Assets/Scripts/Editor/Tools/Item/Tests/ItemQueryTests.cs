@@ -2,11 +2,13 @@ using System.Collections.Generic;
 using System.Linq;
 using NUnit.Framework;
 using Patterns;
+using Rollgeon.Attributes;
 using Rollgeon.Editor.Tools.Item;
 using Rollgeon.Effects;
 using Rollgeon.Effects.Concretes;
 using Rollgeon.Items;
 using Rollgeon.Shop;
+using Rollgeon.Upgrades.Dice;
 using UnityEngine;
 
 namespace Rollgeon.Editor.Tools.Item.Tests
@@ -340,6 +342,121 @@ namespace Rollgeon.Editor.Tools.Item.Tests
 
             Assert.IsFalse(findings.Any(f => f.Message.Contains("nunca se va a ejecutar")),
                 "'cuando te pegan' está en el catálogo — no puede reportarse como muerto");
+        }
+
+        // ---- Heal that lands on the hook target (Fix#0051) ---------------------------
+
+        /// <summary>
+        /// Las 32 Lágrimas curaban con <c>EffModifyIntAttribute</c> Health/Add en un hook
+        /// ComboPlayed: el <c>TargetGuid</c> de ese hook es el objetivo de la acción, así que al
+        /// atacar se curaba el enemigo. La regla lo marca como error para que no se vuelva a autorar.
+        /// </summary>
+        [Test]
+        public void CheckCatalogHealth_FlagsHealthAddOnComboPlayedHook()
+        {
+            var item = Create<ItemSO>();
+            item.ItemId = "test.heals_target";
+            item.Type = ItemType.Passive;
+            item.PassiveHooks = new List<PassiveItemHook>
+            {
+                new PassiveItemHook
+                {
+                    Kind = PassiveHookKind.ComboPlayed,
+                    ComboFilter = new ComboFilter { Mode = ComboFilterMode.AnyCombo },
+                    Effect = EffectWith(new EffModifyIntAttribute
+                    {
+                        TargetStat = StatType.Health,
+                        Operation = IntOperation.Add,
+                    }),
+                },
+            };
+            var pool = Create<ShopPoolSO>();
+
+            var findings = ItemQuery.CheckCatalogHealth(new[] { item }, pool);
+
+            Assert.IsTrue(findings.Any(f => f.Asset == item
+                                             && f.Severity == ItemQuery.FindingSeverity.Error
+                                             && f.Message.Contains("cura al enemigo")));
+        }
+
+        [Test]
+        public void CheckCatalogHealth_HealthAddOnDamageTakenHook_IsFlagged()
+        {
+            var item = Create<ItemSO>();
+            item.ItemId = "test.heals_attacker";
+            item.Type = ItemType.Passive;
+            item.PassiveHooks = new List<PassiveItemHook>
+            {
+                new PassiveItemHook
+                {
+                    Kind = PassiveHookKind.EventBus,
+                    TriggerEvent = EventName.OnDamageIncoming,
+                    Subject = PassiveHookSubject.Target,
+                    Effect = EffectWith(new EffModifyIntAttribute
+                    {
+                        TargetStat = StatType.Health,
+                        Operation = IntOperation.Add,
+                    }),
+                },
+            };
+            var pool = Create<ShopPoolSO>();
+
+            var findings = ItemQuery.CheckCatalogHealth(new[] { item }, pool);
+
+            Assert.IsTrue(findings.Any(f => f.Asset == item && f.Message.Contains("cura al enemigo")),
+                "con Subject=Target el TargetGuid es el atacante — la cura le cae a él");
+        }
+
+        [Test]
+        public void CheckCatalogHealth_EffHealOnComboPlayedHook_IsNotFlagged()
+        {
+            var item = Create<ItemSO>();
+            item.ItemId = "test.self_heal";
+            item.Type = ItemType.Passive;
+            item.PassiveHooks = new List<PassiveItemHook>
+            {
+                new PassiveItemHook
+                {
+                    Kind = PassiveHookKind.ComboPlayed,
+                    ComboFilter = new ComboFilter { Mode = ComboFilterMode.AnyCombo },
+                    Effect = EffectWith(new EffHeal()),
+                },
+            };
+            var pool = Create<ShopPoolSO>();
+
+            var findings = ItemQuery.CheckCatalogHealth(new[] { item }, pool);
+
+            Assert.IsFalse(findings.Any(f => f.Message.Contains("cura al enemigo")),
+                "EffHeal se auto-cura — es la forma correcta de curar desde un item");
+        }
+
+        /// <summary>Un hook de evento de UNA entidad (el TargetGuid cae al propio jugador) puede
+        /// sumar vida con EffModifyIntAttribute sin riesgo — no hay rival en el contexto.</summary>
+        [Test]
+        public void CheckCatalogHealth_HealthAddOnSingleEntityEventHook_IsNotFlagged()
+        {
+            var item = Create<ItemSO>();
+            item.ItemId = "test.self_bound";
+            item.Type = ItemType.Passive;
+            item.PassiveHooks = new List<PassiveItemHook>
+            {
+                new PassiveItemHook
+                {
+                    Kind = PassiveHookKind.EventBus,
+                    TriggerEvent = EventName.OnGoldChanged,
+                    Subject = PassiveHookSubject.Source,
+                    Effect = EffectWith(new EffModifyIntAttribute
+                    {
+                        TargetStat = StatType.Health,
+                        Operation = IntOperation.Add,
+                    }),
+                },
+            };
+            var pool = Create<ShopPoolSO>();
+
+            var findings = ItemQuery.CheckCatalogHealth(new[] { item }, pool);
+
+            Assert.IsFalse(findings.Any(f => f.Message.Contains("cura al enemigo")));
         }
     }
 }

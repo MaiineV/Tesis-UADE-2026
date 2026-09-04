@@ -1,6 +1,9 @@
 using System.Collections.Generic;
 using System.Linq;
+using Patterns;
+using Rollgeon.Attributes;
 using Rollgeon.Combos;
+using Rollgeon.Effects.Concretes;
 using Rollgeon.Items;
 using Rollgeon.Shop;
 using Rollgeon.Upgrades.Dice;
@@ -153,8 +156,15 @@ namespace Rollgeon.Editor.Tools.Item
                             $"'{label}' tiene un hook sin efectos ni modificadores persistentes.",
                             item));
 
+                    if (HealsTheHookTarget(hook))
+                        findings.Add(new CatalogFinding(
+                            FindingSeverity.Error,
+                            $"'{label}' cura con EffModifyIntAttribute (Health/Add) en un hook cuyo " +
+                            "TargetGuid es el rival: al atacar cura al enemigo. Usar EffHeal (self-heal).",
+                            item));
+
                     if (hook.Kind != PassiveHookKind.ComboPlayed) continue;
-                    if (hook.ComboFilter?.Mode != ComboFilterMode.ComboIds) continue;
+                    if (hook.ComboFilter == null || !hook.ComboFilter.UsesComboIds) continue;
                     if (hook.ComboFilter.ComboIds == null) continue;
 
                     foreach (var comboId in hook.ComboFilter.ComboIds)
@@ -169,6 +179,30 @@ namespace Rollgeon.Editor.Tools.Item
             }
 
             return findings;
+        }
+
+        /// <summary>
+        /// <c>EffModifyIntAttribute</c> Health/Add cura al <c>TargetGuid</c> del contexto antes que
+        /// al jugador. En un hook ComboPlayed ese guid es el objetivo de la acción, y en un evento
+        /// de dos entidades (<c>OnDamageIncoming</c>/<c>OnDamageOutgoing</c>) es "el otro" sea cual
+        /// sea el <c>Subject</c>: las 32 Lágrimas curaban al enemigo al atacar (Fix#0051) y al
+        /// jugador solo al Curarse/Defender. La cura de un item va por <c>EffHeal</c>, que se
+        /// auto-cura y respeta el bloqueo de Ayuno.
+        /// </summary>
+        static bool HealsTheHookTarget(PassiveItemHook hook)
+        {
+            bool targetIsRival = hook.Kind == PassiveHookKind.ComboPlayed
+                                 || (hook.Kind == PassiveHookKind.EventBus
+                                     && hook.Subject != PassiveHookSubject.None
+                                     && (hook.Subject == PassiveHookSubject.Target
+                                         || hook.TriggerEvent == EventName.OnDamageIncoming
+                                         || hook.TriggerEvent == EventName.OnDamageOutgoing));
+            if (!targetIsRival) return false;
+
+            return EnumerateEffects(hook.Effect).Any(eff =>
+                eff is EffModifyIntAttribute mod
+                && mod.TargetStat == StatType.Health
+                && mod.Operation == IntOperation.Add);
         }
     }
 }

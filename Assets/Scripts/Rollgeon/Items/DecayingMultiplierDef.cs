@@ -7,8 +7,8 @@ namespace Rollgeon.Items
     /// <summary>
     /// Bloque de autoría de <see cref="ItemSO"/> para items cuyo multiplicador de daño
     /// arranca alto al adquirirse y DECAE con cada combo jugado en la run, hasta romperse
-    /// (Eco Menguante — decisión GD 2026-09-03: x5.0, −0.2 por combo, se rompe al llegar a
-    /// x1.0). Lo aplica <c>DecayingMultiplierService</c>: multiplica solo ATAQUES, descuenta
+    /// (Eco Menguante — decisión GD 2026-09-03, rebalance playtest 2026-09-04: x3.0, −0.2 por
+    /// combo, se rompe al llegar a x1.0). Lo aplica <c>DecayingMultiplierService</c>: multiplica solo ATAQUES, descuenta
     /// con cualquier combo de combate (ataque/defensa/cura), persiste el contador en el save.
     /// </summary>
     [Serializable, HideReferenceObjectPicker]
@@ -19,8 +19,8 @@ namespace Rollgeon.Items
 
         [ShowIf(nameof(Enabled))]
         [MinValue(0f)]
-        [Tooltip("Multiplicador del primer ataque tras adquirir el item. Eco Menguante: 5.")]
-        public float Start = 5f;
+        [Tooltip("Multiplicador del primer ataque tras adquirir el item. Eco Menguante: 3 (era 5; playtest 2026-09-04).")]
+        public float Start = 3f;
 
         [ShowIf(nameof(Enabled))]
         [MinValue(0f)]

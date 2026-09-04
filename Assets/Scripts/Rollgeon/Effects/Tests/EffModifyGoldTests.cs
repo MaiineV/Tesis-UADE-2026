@@ -1,3 +1,4 @@
+using System;
 using NUnit.Framework;
 using Patterns;
 using Rollgeon.Economy;
@@ -89,6 +90,61 @@ namespace Rollgeon.Effects.Tests
             var result = Build(GoldOperation.Spend, 5).Apply(new EffectContext());
 
             Assert.IsFalse(result);
+        }
+
+        // --- OnItemGoldGranted (toast sobre la pila de oro, Fix#0077) ---------------------
+
+        [Test]
+        public void test_modify_gold_add_from_item_emits_item_gold_granted_with_player_item_and_amount()
+        {
+            // Arrange — el dispatcher de hooks setea SourceItemId (Bolsa del Impar).
+            var player = Guid.NewGuid();
+            var ctx = new EffectContext { SourceGuid = player, SourceItemId = "bolsa.del.impar" };
+            object[] captured = null;
+            EventManager.EventReceiver handler = args => captured = args;
+            EventManager.Subscribe(EventName.OnItemGoldGranted, handler);
+
+            try
+            {
+                // Act
+                Build(GoldOperation.Add, 6).Apply(ctx);
+            }
+            finally
+            {
+                EventManager.UnSubscribe(EventName.OnItemGoldGranted, handler);
+            }
+
+            // Assert
+            Assert.IsNotNull(captured, "Add con SourceItemId debe emitir OnItemGoldGranted.");
+            Assert.AreEqual(3, captured.Length);
+            Assert.AreEqual(player, captured[0]);
+            Assert.AreEqual("bolsa.del.impar", captured[1]);
+            Assert.AreEqual(6, captured[2]);
+            Assert.AreEqual(16, _economy.CurrentGold);
+        }
+
+        [Test]
+        public void test_modify_gold_add_without_item_source_does_not_emit_item_gold_granted()
+        {
+            // Arrange — oro de un behavior/enemigo, no de un item.
+            var ctx = new EffectContext { SourceGuid = Guid.NewGuid() };
+            int calls = 0;
+            EventManager.EventReceiver handler = _ => calls++;
+            EventManager.Subscribe(EventName.OnItemGoldGranted, handler);
+
+            try
+            {
+                // Act
+                Build(GoldOperation.Add, 6).Apply(ctx);
+            }
+            finally
+            {
+                EventManager.UnSubscribe(EventName.OnItemGoldGranted, handler);
+            }
+
+            // Assert
+            Assert.AreEqual(0, calls);
+            Assert.AreEqual(16, _economy.CurrentGold);
         }
 
         private sealed class FakeEconomy : IEconomyService

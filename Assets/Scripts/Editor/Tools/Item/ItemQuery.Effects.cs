@@ -48,20 +48,35 @@ namespace Rollgeon.Editor.Tools.Item
 
         static void CollectEffectTypes(EffectData data, HashSet<Type> into, int depth, HashSet<EffectData> visited)
         {
-            if (data == null || data.Effects == null || depth >= MaxEffectDepth) return;
+            foreach (var eff in EnumerateEffects(data, depth, visited))
+                into.Add(eff.GetType());
+        }
+
+        /// <summary>
+        /// Every concrete <see cref="IEffect"/> reachable from <paramref name="data"/>, descending
+        /// into <see cref="EffChain"/> phases. Shared by the type filter and the catalog health
+        /// rules so both see the same tree.
+        /// </summary>
+        public static IEnumerable<IEffect> EnumerateEffects(EffectData data)
+            => EnumerateEffects(data, 0, new HashSet<EffectData>());
+
+        static IEnumerable<IEffect> EnumerateEffects(EffectData data, int depth, HashSet<EffectData> visited)
+        {
+            if (data == null || data.Effects == null || depth >= MaxEffectDepth) yield break;
             // Guard shared EffectData references — Odin can alias the same instance more than once
             // in a serialized graph; without this a cycle would recurse until the depth cap saves us
             // anyway, but this makes the guard explicit instead of relying on MaxEffectDepth alone.
-            if (!visited.Add(data)) return;
+            if (!visited.Add(data)) yield break;
 
             foreach (var eff in data.Effects)
             {
                 if (eff == null) continue;
-                into.Add(eff.GetType());
+                yield return eff;
 
                 if (eff is EffChain chain && chain.Phases != null)
                     foreach (var phase in chain.Phases)
-                        CollectEffectTypes(phase?.Effects, into, depth + 1, visited);
+                        foreach (var nested in EnumerateEffects(phase?.Effects, depth + 1, visited))
+                            yield return nested;
             }
         }
     }

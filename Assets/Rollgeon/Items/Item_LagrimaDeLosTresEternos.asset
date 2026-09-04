@@ -95,7 +95,7 @@ MonoBehaviour:
       Data: 1
     - Name: 
       Entry: 7
-      Data: 7|Rollgeon.Effects.Concretes.EffModifyIntAttribute, Rollgeon
+      Data: 7|Rollgeon.Effects.Concretes.EffHeal, Rollgeon
     - Name: Selection
       Entry: 7
       Data: 8|Rollgeon.Effects.Selection.SelectionSettings, Rollgeon
@@ -180,13 +180,7 @@ MonoBehaviour:
     - Name: 
       Entry: 8
       Data: 
-    - Name: TargetStat
-      Entry: 3
-      Data: 0
-    - Name: Operation
-      Entry: 3
-      Data: 0
-    - Name: _amountSource
+    - Name: _healSource
       Entry: 3
       Data: 0
     - Name: _baseAmount
@@ -201,7 +195,37 @@ MonoBehaviour:
     - Name: _readerMultiplier
       Entry: 4
       Data: 1
-    - Name: _clampHealthToMax
+    - Name: _isPercentOfMax
+      Entry: 5
+      Data: false
+    - Name: _useBuildDice
+      Entry: 5
+      Data: false
+    - Name: _healThreshold
+      Entry: 3
+      Data: 30
+    - Name: _healScaleFactor
+      Entry: 4
+      Data: 1
+    - Name: _healMaxCap
+      Entry: 3
+      Data: 0
+    - Name: _useDiceRoll
+      Entry: 5
+      Data: false
+    - Name: _diceCount
+      Entry: 3
+      Data: 1
+    - Name: _diceFaces
+      Entry: 3
+      Data: 10
+    - Name: _diceResultMultiplier
+      Entry: 3
+      Data: 1
+    - Name: _sourceTag
+      Entry: 1
+      Data: eff.heal
+    - Name: _selfHealOnNoTarget
       Entry: 5
       Data: true
     - Name: 
@@ -256,45 +280,55 @@ MonoBehaviour:
     - Name: 
       Entry: 8
       Data: 
+    - Name: DecayingMultiplier
+      Entry: 7
+      Data: 12|Rollgeon.Items.DecayingMultiplierDef, Rollgeon
+    - Name: Enabled
+      Entry: 5
+      Data: false
+    - Name: Start
+      Entry: 4
+      Data: 5
+    - Name: DecayPerCombo
+      Entry: 4
+      Data: 0.2
+    - Name: Min
+      Entry: 4
+      Data: 1
+    - Name: BreakAtMin
+      Entry: 5
+      Data: true
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: LeastUsedComboBonus
+      Entry: 7
+      Data: 13|Rollgeon.Items.LeastUsedComboBonusDef, Rollgeon
+    - Name: Enabled
+      Entry: 5
+      Data: false
+    - Name: MultiplierBonus
+      Entry: 4
+      Data: 0.5
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: CombatToll
+      Entry: 7
+      Data: 14|Rollgeon.Items.CombatTollDef, Rollgeon
+    - Name: Enabled
+      Entry: 5
+      Data: false
+    - Name: BaseCost
+      Entry: 3
+      Data: 15
+    - Name: CostPerFloor
+      Entry: 3
+      Data: 10
+    - Name: 
+      Entry: 8
+      Data: 
     - Name: OnNegativeBand
-      Entry: 7
-      Data: 12|Rollgeon.Effects.EffectData, Rollgeon
-    - Name: Label
-      Entry: 1
-      Data: Effect Group
-    - Name: PreConditions
-      Entry: 7
-      Data: 13|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
-        Rollgeon]], mscorlib
-    - Name: 
-      Entry: 12
-      Data: 0
-    - Name: 
-      Entry: 13
-      Data: 
-    - Name: 
-      Entry: 8
-      Data: 
-    - Name: Effects
-      Entry: 7
-      Data: 14|System.Collections.Generic.List`1[[Rollgeon.Effects.IEffect, Rollgeon]],
-        mscorlib
-    - Name: 
-      Entry: 12
-      Data: 0
-    - Name: 
-      Entry: 13
-      Data: 
-    - Name: 
-      Entry: 8
-      Data: 
-    - Name: TargetSelector
-      Entry: 6
-      Data: 
-    - Name: 
-      Entry: 8
-      Data: 
-    - Name: OnMixedBand
       Entry: 7
       Data: 15|Rollgeon.Effects.EffectData, Rollgeon
     - Name: Label
@@ -332,7 +366,7 @@ MonoBehaviour:
     - Name: 
       Entry: 8
       Data: 
-    - Name: OnPositiveBand
+    - Name: OnMixedBand
       Entry: 7
       Data: 18|Rollgeon.Effects.EffectData, Rollgeon
     - Name: Label
@@ -370,7 +404,7 @@ MonoBehaviour:
     - Name: 
       Entry: 8
       Data: 
-    - Name: OnActivate
+    - Name: OnPositiveBand
       Entry: 7
       Data: 21|Rollgeon.Effects.EffectData, Rollgeon
     - Name: Label
@@ -408,6 +442,44 @@ MonoBehaviour:
     - Name: 
       Entry: 8
       Data: 
+    - Name: OnActivate
+      Entry: 7
+      Data: 24|Rollgeon.Effects.EffectData, Rollgeon
+    - Name: Label
+      Entry: 1
+      Data: Effect Group
+    - Name: PreConditions
+      Entry: 7
+      Data: 25|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
+        Rollgeon]], mscorlib
+    - Name: 
+      Entry: 12
+      Data: 0
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: Effects
+      Entry: 7
+      Data: 26|System.Collections.Generic.List`1[[Rollgeon.Effects.IEffect, Rollgeon]],
+        mscorlib
+    - Name: 
+      Entry: 12
+      Data: 0
+    - Name: 
+      Entry: 13
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
+    - Name: TargetSelector
+      Entry: 6
+      Data: 
+    - Name: 
+      Entry: 8
+      Data: 
   ItemId: lagrima.de.los.tres.eternos
   DisplayName: "L\xE1grima de los Tres Eternos"
   Description: +15HP al resolver el combo Trio.
@@ -419,11 +491,14 @@ MonoBehaviour:
   Type: 0
   UniquePerRun: 0
   RollPoolBonus: 0
+  LadderSkippedStep: 0
+  BlocksPassiveItemHealing: 0
   ActiveSlotBonus: 0
   EnchantmentCostMultiplier: 1
   CursedEnchantmentWeightMultiplier: 1
   SecondWind: 0
   SecondWindRemainingHp: 1
+  GoldFloor: 0
   UsesActiveSlot: 0
   ActiveDie: 1
   ActiveFamily: 0
