@@ -185,6 +185,7 @@ namespace Rollgeon.Combat.AI.Decisions
             {
                 if (c == selfCoord) continue;
                 if (!grid.CanPlace(c, selfFp, ignore: selfGuid)) continue;
+                if (TeleportCellFilter.IsStrandedCell(grid, c)) continue;
                 if (skipHarmful && HarmfulTileQuery.IsHarmfulAt(c)) continue;
                 // El techo filtra y el piso sólo empata puntajes, así que un techo por debajo del
                 // piso no deja el sorteo vacío: deja el piso sin alcanzar.

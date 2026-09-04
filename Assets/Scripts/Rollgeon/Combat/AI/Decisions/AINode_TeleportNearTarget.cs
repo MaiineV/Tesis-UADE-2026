@@ -144,6 +144,7 @@ namespace Rollgeon.Combat.AI.Decisions
             {
                 if (c == selfCoord || c == playerCoord) continue;
                 if (!grid.CanPlace(c, selfFp, ignore: selfGuid)) continue;
+                if (TeleportCellFilter.IsStrandedCell(grid, c)) continue;
                 if (skipHarmful && HarmfulTileQuery.IsHarmfulAt(c)) continue;
 
                 int distance = c.Manhattan(playerCoord);
