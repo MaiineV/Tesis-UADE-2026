@@ -32,5 +32,27 @@ namespace Rollgeon.Upgrades.Dice
         /// El service de Phase 4 lo setea desde el <c>BaseComboSO</c> matched.
         /// </summary>
         public string ComboId;
+
+        /// <summary>
+        /// Hook <c>PlayerMoved</c>: casillas recorridas en ESTE movimiento voluntario
+        /// (<c>EntityWalkedPayload.TilesTraversed</c>). 0 en los demás hooks.
+        /// </summary>
+        public int TilesTraversed;
+
+        /// <summary>
+        /// Hook <c>PlayerMoved</c>: casillas recorridas en el turno, este movimiento incluido.
+        /// El service lo resetea al terminar el turno del jugador y al empezar un combate.
+        /// Permite topes "por turno" sin counters (ver <c>ReadTilesTraversed</c>).
+        /// </summary>
+        public int TilesTraversedThisTurn;
+
+        /// <summary>
+        /// Hook <c>PlayerMoved</c>: path caminado (índice 0 = origen, último = destino).
+        /// Null en los demás hooks.
+        /// </summary>
+        public System.Collections.Generic.IReadOnlyList<Rollgeon.Grid.GridCoord> Path;
+
+        /// <summary>Hook <c>MovementDieRolled</c>: cara revelada del dado de Movimiento. 0 en los demás.</summary>
+        public int MovementDieFace;
     }
 }

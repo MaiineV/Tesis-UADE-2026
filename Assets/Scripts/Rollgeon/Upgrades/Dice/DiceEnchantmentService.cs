@@ -48,6 +48,10 @@ namespace Rollgeon.Upgrades.Dice
         private readonly EnchantmentConfigSO _config;
         private bool _subscribed;
         private IReadOnlyList<int> _lastFinalRoll;
+        // Hook PlayerMoved (dado de Movimiento): solo en combate, acumulado por turno del
+        // jugador para que los readers con tope "por turno" no necesiten counters.
+        private bool _inCombat;
+        private int _tilesWalkedThisTurn;
 
         public RuntimeDiceBag Bag { get; private set; }
         public bool IsReady => Bag != null;
@@ -86,8 +90,11 @@ namespace Rollgeon.Upgrades.Dice
             EventManager.Subscribe(EventName.OnDiceRolled, OnDiceRolledHandler);
             EventManager.Subscribe(EventName.OnTurnFinished, OnTurnFinishedHandler);
             EventManager.Subscribe(EventName.OnCombatStart, OnCombatStartHandler);
+            EventManager.Subscribe(EventName.OnCombatEnd, OnCombatEndHandler);
+            EventManager.Subscribe(EventName.OnMovementDieRolled, OnMovementDieRolledHandler);
             TypedEvent<ComboMatchedPayload>.Subscribe(OnComboMatchedHandler);
             TypedEvent<ComboPlayedPayload>.Subscribe(OnComboPlayedHandler);
+            TypedEvent<EntityWalkedPayload>.Subscribe(OnEntityWalkedHandler);
             _subscribed = true;
         }
 
@@ -100,8 +107,11 @@ namespace Rollgeon.Upgrades.Dice
             EventManager.UnSubscribe(EventName.OnDiceRolled, OnDiceRolledHandler);
             EventManager.UnSubscribe(EventName.OnTurnFinished, OnTurnFinishedHandler);
             EventManager.UnSubscribe(EventName.OnCombatStart, OnCombatStartHandler);
+            EventManager.UnSubscribe(EventName.OnCombatEnd, OnCombatEndHandler);
+            EventManager.UnSubscribe(EventName.OnMovementDieRolled, OnMovementDieRolledHandler);
             TypedEvent<ComboMatchedPayload>.Unsubscribe(OnComboMatchedHandler);
             TypedEvent<ComboPlayedPayload>.Unsubscribe(OnComboPlayedHandler);
+            TypedEvent<EntityWalkedPayload>.Unsubscribe(OnEntityWalkedHandler);
             _subscribed = false;
         }
 
@@ -213,12 +223,64 @@ namespace Rollgeon.Upgrades.Dice
                 DiceResult = _lastFinalRoll,
             };
             DispatchTurnFinished(effectCtx);
+            // Después del dispatch: un trigger TurnFinished todavía puede leer el acumulado.
+            _tilesWalkedThisTurn = 0;
+        }
+
+        private void OnCombatEndHandler(params object[] args)
+        {
+            _inCombat = false;
+            _tilesWalkedThisTurn = 0;
+        }
+
+        /// <summary>
+        /// Movimiento voluntario del jugador (EffMove). Solo en combate — el dado de
+        /// Movimiento no existe en exploración — y solo para el dueño del bag.
+        /// </summary>
+        private void OnEntityWalkedHandler(EntityWalkedPayload payload)
+        {
+            if (Bag == null || !_inCombat) return;
+            if (payload.TilesTraversed <= 0) return;
+            if (!ServiceLocator.TryGetService<IPlayerService>(out var ps) || ps == null) return;
+            if (ps.PlayerGuid != payload.EntityGuid) return;
+
+            _tilesWalkedThisTurn += payload.TilesTraversed;
+            var effectCtx = new EffectContext { SourceGuid = payload.EntityGuid };
+            DispatchPlayerMoved(effectCtx, payload.TilesTraversed, _tilesWalkedThisTurn, payload.Path);
+        }
+
+        /// <summary>
+        /// Schema EventName.OnMovementDieRolled: [Guid playerGuid, int face, DiceType]. Dispara
+        /// en el reveal, antes de elegir destino — solo en combate y para el dueño del bag.
+        /// </summary>
+        private void OnMovementDieRolledHandler(params object[] args)
+        {
+            if (Bag == null || !_inCombat) return;
+            if (args == null || args.Length < 2) return;
+            if (!(args[0] is Guid playerGuid) || !(args[1] is int face)) return;
+            if (!ServiceLocator.TryGetService<IPlayerService>(out var ps) || ps == null) return;
+            if (ps.PlayerGuid != playerGuid) return;
+
+            var scratch = new EnchantmentScratch();
+            var ctx = new EnchantmentTriggerContext
+            {
+                Effect = new EffectContext { SourceGuid = playerGuid },
+                Scratch = scratch,
+                MovementDieFace = face,
+            };
+            ForEachEnchantment(ctx, (trigger, c) =>
+            {
+                if (trigger is IOnMovementDieRolledTrigger r) r.OnMovementDieRolled(c);
+            });
+            ApplyScratchSideEffects(scratch);
         }
 
         // Schema EventName.OnCombatStart: args = [Guid roomInstanceId] — sin entity. El
         // source es el jugador (dueño del bag); sin player service no hay a quién atribuir.
         private void OnCombatStartHandler(params object[] args)
         {
+            _inCombat = true;
+            _tilesWalkedThisTurn = 0;
             if (Bag == null) return;
             if (!ServiceLocator.TryGetService<IPlayerService>(out var ps) || ps == null) return;
 
@@ -372,6 +434,26 @@ namespace Rollgeon.Upgrades.Dice
             ApplyScratchSideEffects(scratch);
         }
 
+        private void DispatchPlayerMoved(EffectContext effectCtx, int tiles, int tilesThisTurn,
+            IReadOnlyList<Rollgeon.Grid.GridCoord> path)
+        {
+            if (Bag == null) return;
+            var scratch = new EnchantmentScratch();
+            var ctx = new EnchantmentTriggerContext
+            {
+                Effect = effectCtx,
+                Scratch = scratch,
+                TilesTraversed = tiles,
+                TilesTraversedThisTurn = tilesThisTurn,
+                Path = path,
+            };
+            ForEachEnchantment(ctx, (trigger, c) =>
+            {
+                if (trigger is IOnPlayerMovedTrigger r) r.OnPlayerMoved(c);
+            });
+            ApplyScratchSideEffects(scratch);
+        }
+
         private EnchantmentScratch DispatchComboMatched(EffectContext effectCtx, string comboId)
         {
             var scratch = new EnchantmentScratch();
@@ -393,15 +475,20 @@ namespace Rollgeon.Upgrades.Dice
             EnchantmentTriggerContext ctx,
             Action<IEnchantmentTrigger, EnchantmentTriggerContext> dispatch)
         {
+            // Los 5 dados del bag y después el carril del dado de Movimiento (§6.6): mismo
+            // dispatch, misma atribución al journal (el sentinela negativo no tiene cara).
             int n = Bag.Dice.Count;
-            for (int b = 0; b < n; b++)
+            for (int i = 0; i <= n; i++)
             {
+                int b = i < n ? i : EnchantmentSlotRef.MovementDieSlot;
                 var slots = Bag.GetEnchantments(b);
+                if (slots.Count == 0) continue;
+                var diceType = ResolveDiceType(b);
                 for (int s = 0; s < slots.Count; s++)
                 {
                     var ench = slots[s];
                     if (ench == null) continue;
-                    ctx.Slot = new EnchantmentSlotRef(Bag.Dice[b], b, s);
+                    ctx.Slot = new EnchantmentSlotRef(diceType, b, s);
                     var triggers = ench.Triggers;
                     if (triggers == null) continue;
                     // Snapshot-delta por (dado, encantamiento): atribuye al journal lo que
@@ -435,10 +522,20 @@ namespace Rollgeon.Upgrades.Dice
 
             if (ench == null) return EnchantmentApplyResult.Fail("Enchantment is null.");
             if (Bag == null) return EnchantmentApplyResult.Fail("Runtime bag no inicializado.");
-            if (bagIndex < 0 || bagIndex >= Bag.Dice.Count)
+            if (!Bag.IsValidIndex(bagIndex))
                 return EnchantmentApplyResult.Fail($"Bag index {bagIndex} fuera de rango.");
 
-            var diceType = Bag.Dice[bagIndex];
+            // Regla GDD (único punto de enforcement): Movimiento solo al dado de Movimiento,
+            // y ninguna otra categoría ahí. Cubre altar, DevConsole y tests por igual.
+            var targetSet = EnchantmentTargeting.SetForIndex(bagIndex);
+            if (!EnchantmentTargeting.AppliesTo(ench, targetSet))
+            {
+                return EnchantmentApplyResult.Fail(targetSet == EnchantmentTargetSet.MovementDie
+                    ? $"'{ench.UpgradeId}' no es de Movimiento — solo esos van al dado de Movimiento."
+                    : $"'{ench.UpgradeId}' es de Movimiento — solo aplica al dado de Movimiento.");
+            }
+
+            var diceType = ResolveDiceType(bagIndex);
             if (!ench.IsCompatibleWith(diceType))
                 return EnchantmentApplyResult.Fail(
                     $"Encantamiento '{ench.UpgradeId}' no es compatible con {diceType}.");
@@ -466,7 +563,7 @@ namespace Rollgeon.Upgrades.Dice
             if (assignedIndex < 0)
                 return EnchantmentApplyResult.Fail("AddEnchantment rechazó la operación.");
 
-            var diceType = Bag.Dice[bagIndex];
+            var diceType = ResolveDiceType(bagIndex);
             var slot = new EnchantmentSlotRef(diceType, bagIndex, assignedIndex);
 
             // Dispatch IOnEnchantmentAppliedTrigger
@@ -499,7 +596,7 @@ namespace Rollgeon.Upgrades.Dice
             var existing = Bag.GetEnchantmentAt(bagIndex, enchSlotIndex);
             if (existing == null) return false;
 
-            var diceType = Bag.Dice[bagIndex];
+            var diceType = ResolveDiceType(bagIndex);
             var slot = new EnchantmentSlotRef(diceType, bagIndex, enchSlotIndex);
             Bag.SetEnchantmentAt(bagIndex, enchSlotIndex, null);
             Bag.ClearCountersForSlot(slot);
@@ -513,10 +610,10 @@ namespace Rollgeon.Upgrades.Dice
         public IReadOnlyCollection<int> ComputeAllowedFaces(int bagIndex)
         {
             if (Bag == null) return Array.Empty<int>();
-            if (bagIndex < 0 || bagIndex >= Bag.Dice.Count) return Array.Empty<int>();
+            if (!Bag.IsValidIndex(bagIndex)) return Array.Empty<int>();
 
-            var diceType = Bag.Dice[bagIndex];
-            var faces = SeedFaces(diceType);
+            var diceType = ResolveDiceType(bagIndex);
+            var faces = SeedFaces(bagIndex);
             IReadOnlyCollection<int> current = faces;
             foreach (var ench in Bag.GetEnchantments(bagIndex))
             {
@@ -572,8 +669,8 @@ namespace Rollgeon.Upgrades.Dice
         {
             // Append-only: el nuevo encantamiento se compone sobre TODOS los
             // existentes — nada se reemplaza, así que nada se excluye.
-            var diceType = Bag.Dice[bagIndex];
-            var faces = SeedFaces(diceType);
+            var diceType = ResolveDiceType(bagIndex);
+            var faces = SeedFaces(bagIndex);
             IReadOnlyCollection<int> current = faces;
 
             var slots = Bag.GetEnchantments(bagIndex);
@@ -590,13 +687,59 @@ namespace Rollgeon.Upgrades.Dice
             return current;
         }
 
-        private static HashSet<int> SeedFaces(DiceType type)
+        /// <summary>
+        /// Caras base del dado en <paramref name="bagIndex"/>: <c>1..MaxFace</c>, más las
+        /// caras extra sumadas en la run cuando es el dado de Movimiento (§6.6).
+        /// </summary>
+        private HashSet<int> SeedFaces(int bagIndex)
         {
             var faces = new HashSet<int>();
-            int max = type.MaxFace();
+            int max = ResolveMaxFace(bagIndex);
             for (int f = 1; f <= max; f++) faces.Add(f);
             return faces;
         }
+
+        private int ResolveMaxFace(int bagIndex)
+        {
+            int max = ResolveDiceType(bagIndex).MaxFace();
+            if (RuntimeDiceBag.IsMovementDie(bagIndex) && Bag != null) max += Bag.MovementExtraFaces;
+            return max;
+        }
+
+        /// <summary>
+        /// Tipo del dado en un índice del espacio de <c>BagSlotIndex</c>. El dado de Movimiento
+        /// no vive en el bag: su tipo base lo conoce <see cref="IMovementDieService"/> (clase
+        /// del héroe u override runtime); sin servicio cae al default del SO.
+        /// </summary>
+        private DiceType ResolveDiceType(int bagIndex)
+        {
+            if (RuntimeDiceBag.IsMovementDie(bagIndex)) return ResolveMovementDieType();
+            return Bag.Dice[bagIndex];
+        }
+
+        public static DiceType ResolveMovementDieType()
+        {
+            return ServiceLocator.TryGetService<Rollgeon.Movement.Die.IMovementDieService>(out var die)
+                   && die != null
+                ? die.CurrentType
+                : Rollgeon.Movement.Die.MovementDieSO.DefaultType;
+        }
+
+        // ---- Dado de Movimiento (§6.6) ---------------------------------------------
+
+        public int MovementDieMaxFace => Bag != null
+            ? ResolveMaxFace(EnchantmentSlotRef.MovementDieSlot)
+            : ResolveMovementDieType().MaxFace();
+
+        public int AddMovementDieFaces(int delta)
+        {
+            EnsureInitializedFromPlayer();
+            if (Bag == null) return 0;
+            return Bag.AddMovementExtraFaces(delta);
+        }
+
+        public IReadOnlyCollection<int> ComputeMovementDieFaces()
+            => ComputeAllowedFaces(EnchantmentSlotRef.MovementDieSlot);
 
         private static Guid ResolvePlayerGuid()
         {

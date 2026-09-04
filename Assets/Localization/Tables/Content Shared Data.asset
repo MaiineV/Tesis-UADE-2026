@@ -2815,6 +2815,86 @@ MonoBehaviour:
     m_Key: intent.cashier_slam_due.desc
     m_Metadata:
       m_Items: []
+  - m_Id: 18504181256208384
+    m_Key: ench.baluarte_movil.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18504181335900160
+    m_Key: ench.baluarte_movil.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18504181340094464
+    m_Key: ench.torbellino.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18504181340094465
+    m_Key: ench.torbellino.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18504181340094466
+    m_Key: ench.incendiario.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18504181340094467
+    m_Key: ench.incendiario.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18504181340094468
+    m_Key: ench.rastro_toxico.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18504181340094469
+    m_Key: ench.rastro_toxico.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18504181340094470
+    m_Key: ench.carga.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18504181340094471
+    m_Key: ench.carga.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18504181340094472
+    m_Key: ench.paso_etereo.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18504181340094473
+    m_Key: ench.paso_etereo.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18504181340094474
+    m_Key: ench.sendero_de_espinas.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18504181340094475
+    m_Key: ench.sendero_de_espinas.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18504181340094476
+    m_Key: tile.fire_incendiario.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18504181340094477
+    m_Key: tile.fire_incendiario.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18504181340094478
+    m_Key: tile.poison_rastro.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18504181340094479
+    m_Key: tile.poison_rastro.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18504181340094480
+    m_Key: tile.spikes_sendero.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18504181340094481
+    m_Key: tile.spikes_sendero.desc
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

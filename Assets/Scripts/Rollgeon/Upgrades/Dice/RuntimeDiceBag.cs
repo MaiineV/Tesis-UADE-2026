@@ -39,14 +39,45 @@ namespace Rollgeon.Upgrades.Dice
 
         private readonly DiceType[] _dice;
         private readonly List<EnchantmentSO>[] _enchantments;
+        // Carril del dado de Movimiento (§6.6): misma semántica append + tombstones que
+        // los slots del bag, indexado por EnchantmentSlotRef.MovementDieSlot.
+        private readonly List<EnchantmentSO> _movementEnchantments = new List<EnchantmentSO>();
         private readonly Dictionary<(int bag, int slot, string key), int> _counters
             = new Dictionary<(int bag, int slot, string key), int>();
         private readonly Dictionary<(int bag, string key), int> _dieCounters
             = new Dictionary<(int bag, string key), int>();
         private readonly Func<string, EnchantmentSO> _resolveById;
 
-        /// <summary>Tipos de dado en el bag, en orden de slot.</summary>
+        /// <summary>Tipos de dado en el bag, en orden de slot. NO incluye el dado de Movimiento.</summary>
         public IReadOnlyList<DiceType> Dice => _dice;
+
+        /// <summary>
+        /// Caras extra que el dado de Movimiento sumó en la run (GDD Dice Builder: "un d4 puede
+        /// terminar con 6 caras sin cambiar de tipo"). El tipo base vive en la clase
+        /// (<c>ClassHeroSO.StartingMovementDie</c>); acá solo el delta, que persiste con el bag.
+        /// </summary>
+        public int MovementExtraFaces { get; private set; }
+
+        /// <summary>Suma (o resta) caras al dado de Movimiento. Nunca baja de 0. Devuelve el total.</summary>
+        public int AddMovementExtraFaces(int delta)
+        {
+            MovementExtraFaces = Math.Max(0, MovementExtraFaces + delta);
+            return MovementExtraFaces;
+        }
+
+        /// <summary><c>true</c> si el índice es el carril del dado de Movimiento.</summary>
+        public static bool IsMovementDie(int bagIndex) => bagIndex == EnchantmentSlotRef.MovementDieSlot;
+
+        /// <summary>Índice con lista de encantamientos: un slot del bag o el carril de Movimiento.</summary>
+        public bool IsValidIndex(int bagIndex)
+            => IsMovementDie(bagIndex) || (bagIndex >= 0 && bagIndex < _enchantments.Length);
+
+        private List<EnchantmentSO> ResolveList(int bagIndex)
+        {
+            if (IsMovementDie(bagIndex)) return _movementEnchantments;
+            if (bagIndex < 0 || bagIndex >= _enchantments.Length) return null;
+            return _enchantments[bagIndex];
+        }
 
         /// <param name="resolveById">
         /// Resolver UpgradeId → <see cref="EnchantmentSO"/> para rehidratar un save
@@ -73,15 +104,15 @@ namespace Rollgeon.Upgrades.Dice
         /// </summary>
         public int GetEnchantmentCount(int bagIndex)
         {
-            if (bagIndex < 0 || bagIndex >= _enchantments.Length) return 0;
-            return _enchantments[bagIndex].Count;
+            var list = ResolveList(bagIndex);
+            return list?.Count ?? 0;
         }
 
         /// <summary>Lectura de los encantamientos del dado. Puede contener nulls (tombstones de removes).</summary>
         public IReadOnlyList<EnchantmentSO> GetEnchantments(int bagIndex)
         {
-            if (bagIndex < 0 || bagIndex >= _enchantments.Length) return Array.Empty<EnchantmentSO>();
-            return _enchantments[bagIndex];
+            var list = ResolveList(bagIndex);
+            return list ?? (IReadOnlyList<EnchantmentSO>)Array.Empty<EnchantmentSO>();
         }
 
         /// <summary>
@@ -90,8 +121,8 @@ namespace Rollgeon.Upgrades.Dice
         /// </summary>
         public EnchantmentSO GetEnchantmentAt(int bagIndex, int enchSlotIndex)
         {
-            if (bagIndex < 0 || bagIndex >= _enchantments.Length) return null;
-            var list = _enchantments[bagIndex];
+            var list = ResolveList(bagIndex);
+            if (list == null) return null;
             if (enchSlotIndex < 0 || enchSlotIndex >= list.Count) return null;
             return list[enchSlotIndex];
         }
@@ -105,8 +136,8 @@ namespace Rollgeon.Upgrades.Dice
         public int AddEnchantment(int bagIndex, EnchantmentSO ench)
         {
             if (ench == null) return -1;
-            if (bagIndex < 0 || bagIndex >= _enchantments.Length) return -1;
-            var list = _enchantments[bagIndex];
+            var list = ResolveList(bagIndex);
+            if (list == null) return -1;
             list.Add(ench);
             return list.Count - 1;
         }
@@ -117,8 +148,8 @@ namespace Rollgeon.Upgrades.Dice
         /// </summary>
         public bool SetEnchantmentAt(int bagIndex, int enchSlotIndex, EnchantmentSO ench)
         {
-            if (bagIndex < 0 || bagIndex >= _enchantments.Length) return false;
-            var list = _enchantments[bagIndex];
+            var list = ResolveList(bagIndex);
+            if (list == null) return false;
             if (enchSlotIndex < 0 || enchSlotIndex >= list.Count) return false;
             list[enchSlotIndex] = ench;
             return true;
@@ -204,6 +235,18 @@ namespace Rollgeon.Upgrades.Dice
                     });
                 }
             }
+            snapshot.MovementExtraFaces = MovementExtraFaces;
+            for (int slot = 0; slot < _movementEnchantments.Count; slot++)
+            {
+                var ench = _movementEnchantments[slot];
+                if (ench == null || string.IsNullOrEmpty(ench.UpgradeId)) continue;
+                snapshot.MovementEnchantments.Add(new EnchantmentSlotSnapshot
+                {
+                    BagIndex = EnchantmentSlotRef.MovementDieSlot,
+                    SlotIndex = slot,
+                    EnchantmentId = ench.UpgradeId,
+                });
+            }
             foreach (var kv in _counters)
             {
                 snapshot.Counters.Add(new EnchantmentCounterSnapshot
@@ -230,39 +273,19 @@ namespace Rollgeon.Upgrades.Dice
         {
             for (int i = 0; i < _enchantments.Length; i++)
                 _enchantments[i].Clear();
+            _movementEnchantments.Clear();
+            MovementExtraFaces = 0;
             _counters.Clear();
             _dieCounters.Clear();
 
             if (state is not RuntimeDiceBagSnapshot snapshot) return;
 
-            if (snapshot.Enchantments.Count > 0 && _resolveById == null)
-            {
-                Debug.LogWarning(LogPrefix + "Save con enchantments pero sin resolver " +
-                                 "(EnchantmentCatalogSO ausente) — se descartan.");
-            }
-            else
-            {
-                foreach (var e in snapshot.Enchantments)
-                {
-                    var ench = _resolveById(e.EnchantmentId);
-                    if (ench == null)
-                    {
-                        Debug.LogWarning(LogPrefix + $"Enchantment '{e.EnchantmentId}' del save " +
-                                         "no existe en el catálogo — se descarta.");
-                        continue;
-                    }
-                    if (e.BagIndex < 0 || e.BagIndex >= _enchantments.Length || e.SlotIndex < 0)
-                    {
-                        Debug.LogWarning(LogPrefix + $"Snapshot con índice inválido ({e.BagIndex},{e.SlotIndex}) — se descarta.");
-                        continue;
-                    }
-                    // Padding con tombstones hasta SlotIndex — los counters del save
-                    // apuntan a índices de append, que deben restaurarse idénticos.
-                    var list = _enchantments[e.BagIndex];
-                    while (list.Count <= e.SlotIndex) list.Add(null);
-                    list[e.SlotIndex] = ench;
-                }
-            }
+            MovementExtraFaces = Math.Max(0, snapshot.MovementExtraFaces);
+
+            // Saves anteriores al dado de Movimiento no traen la lista — queda vacía.
+            RestoreEnchantmentSlots(snapshot.Enchantments, movementLane: false);
+            if (snapshot.MovementEnchantments != null)
+                RestoreEnchantmentSlots(snapshot.MovementEnchantments, movementLane: true);
 
             foreach (var c in snapshot.Counters)
             {
@@ -278,6 +301,40 @@ namespace Rollgeon.Upgrades.Dice
                     if (string.IsNullOrEmpty(c.Key)) continue;
                     _dieCounters[(c.BagIndex, c.Key)] = c.Value;
                 }
+            }
+        }
+
+        private void RestoreEnchantmentSlots(List<EnchantmentSlotSnapshot> slots, bool movementLane)
+        {
+            if (slots == null || slots.Count == 0) return;
+            if (_resolveById == null)
+            {
+                Debug.LogWarning(LogPrefix + "Save con enchantments pero sin resolver " +
+                                 "(EnchantmentCatalogSO ausente) — se descartan.");
+                return;
+            }
+
+            foreach (var e in slots)
+            {
+                var ench = _resolveById(e.EnchantmentId);
+                if (ench == null)
+                {
+                    Debug.LogWarning(LogPrefix + $"Enchantment '{e.EnchantmentId}' del save " +
+                                     "no existe en el catálogo — se descarta.");
+                    continue;
+                }
+                // El carril de Movimiento se guarda en su propia lista: el BagIndex del
+                // snapshot es redundante ahí y no se valida contra el bag.
+                var list = movementLane ? _movementEnchantments : ResolveList(e.BagIndex);
+                if (list == null || (!movementLane && IsMovementDie(e.BagIndex)) || e.SlotIndex < 0)
+                {
+                    Debug.LogWarning(LogPrefix + $"Snapshot con índice inválido ({e.BagIndex},{e.SlotIndex}) — se descarta.");
+                    continue;
+                }
+                // Padding con tombstones hasta SlotIndex — los counters del save
+                // apuntan a índices de append, que deben restaurarse idénticos.
+                while (list.Count <= e.SlotIndex) list.Add(null);
+                list[e.SlotIndex] = ench;
             }
         }
 
@@ -300,6 +357,9 @@ namespace Rollgeon.Upgrades.Dice
         public List<EnchantmentSlotSnapshot> Enchantments = new List<EnchantmentSlotSnapshot>();
         public List<EnchantmentCounterSnapshot> Counters = new List<EnchantmentCounterSnapshot>();
         public List<DieCounterSnapshot> DieCounters = new List<DieCounterSnapshot>();
+        // Dado de Movimiento (§6.6) — lista aparte para que saves previos restauren igual.
+        public int MovementExtraFaces;
+        public List<EnchantmentSlotSnapshot> MovementEnchantments = new List<EnchantmentSlotSnapshot>();
     }
 
     [Serializable]

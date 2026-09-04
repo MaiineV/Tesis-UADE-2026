@@ -213,6 +213,18 @@ namespace Rollgeon.Editor.Tools.Enchantment
                             "de cobrarle al jugador (Vampiro, Fix#0053).",
                             ench));
 
+                    // El hook de movimiento voluntario despacha para TODOS los dados, pero solo
+                    // tiene sentido en el dado de Movimiento — un asset de otra categoría con
+                    // PlayerMoved nunca va a ir ahí (EnchantmentTargeting) y dispararía desde
+                    // un dado de combate que "no se mueve".
+                    if (bridge.Event == EnchantmentHookEvent.PlayerMoved
+                        && ench.Category != EnchantmentCategory.Movimiento)
+                        findings.Add(new CatalogFinding(
+                            FindingSeverity.Warning,
+                            $"'{label}' usa el hook PlayerMoved pero no es de categoría Movimiento — " +
+                            "solo los Movimiento van al dado de Movimiento, que es el dueño de ese hook.",
+                            ench));
+
                     if (isComboHook && UsesFaceDeltaAsComboBonus(bridge))
                         findings.Add(new CatalogFinding(
                             FindingSeverity.Error,

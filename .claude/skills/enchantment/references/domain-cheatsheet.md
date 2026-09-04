@@ -37,6 +37,8 @@ Description/Icon` (en `UpgradeSO`), `EditorSetCategory/FaceFilter/AllowedDiceTyp
 | `applied` | EnchantmentApplied | Una vez, al encantar el dado | — |
 | `turn.finished` | TurnFinished | Fin del turno del jugador | — |
 | `combat.started` | CombatStarted | Arranca un combate (sin tirada en el contexto) | Para resetear counters por dado (Racha) |
+| `player.moved` | PlayerMoved | El jugador camino por voluntad propia en combate (`EffMove`) | Solo tiene sentido en categoria `Movimiento` (dado de Movimiento); empujes/portales no cuentan; leer casillas con `ReadTilesTraversed`, el path viene en `ScratchTriggerContext.Path` |
+| `movement.die_rolled` | MovementDieRolled | El dado de Movimiento revelo su cara, ANTES de elegir destino | Solo `Movimiento`; un `+N` a MoveRange aca entra a ese mismo movimiento (Torbellino) |
 
 `Apply`/`Match`/`Describe` espejo de `ItemTriggerCatalog`. `Filter.Mode = None` en un hook de
 combo equivale a `AnyCombo` (asi lo trata el runtime y asi lo matchea el catalogo).
@@ -110,7 +112,7 @@ pero Control).
 | `Recursos` | Generan oro/escudo al usar el dado | dorado #D9A44E |
 | `Ataque` | Daño o multiplicador a partir de una condicion | naranja #E0763D |
 | `Control` | Restringen caras, modifican valores, alteran combos | azul #6E7FD1 |
-| `Movimiento` | Dado de movimiento (GDD; sin soporte runtime aun) | verde #63E063 |
+| `Movimiento` | SOLO el dado de Movimiento (§6.6): la categoria decide el destino (`EnchantmentTargeting`) — el altar los ofrece con el set de Movimiento visible y nunca van a un dado de combate | verde #63E063 |
 
 `Defensa`/`Economia`/`Maldicion` son **legacy** (pre-GDD 2026-09) — no autorar con ellas. El
 enum es APPEND-ONLY: los assets serializan el int.
@@ -165,6 +167,35 @@ el DamagePipeline (el escudo no absorbe un costo). El "no se puede usar sin recu
 
 Patron "cada 3 combos, +50": `EffSlotCounter{Increment}` + `PcSlotCounterCompare{>=3}` gateando
 el bono + `EffSlotCounter{Reset}`.
+
+### Dado de Movimiento: "por cada casilla recorrida" (Feature#0077)
+
+Los encantamientos de categoria `Movimiento` viven en el carril
+`EnchantmentSlotRef.MovementDieSlot` (-2) del `RuntimeDiceBag` — mismo dispatch, counters y
+save que los 5 dados. El hook es **`player.moved`** (solo movimiento voluntario del jugador en
+combate: `EffMove`; empujes, portales y teleports no cuentan) y las casillas se leen con
+**`ReadTilesTraversed { Multiplier, CapPerTurn, CapPerExtraCopy }`**: el tope por turno sale del
+acumulado del contexto (sin counters) y varias copias del mismo encantamiento no duplican el
+grant — solo la primera copia lee y cada copia extra sube el tope. Baluarte movil =
+`EffAddShield.EditorSetReader(new ReadTilesTraversed { CapPerTurn = 6, CapPerExtraCopy = 3 })`.
+El escudo expira solo (`ShieldResetHandler`, al inicio del turno del dueño). Las caras extra del
+dado (`IDiceEnchantmentService.AddMovementDieFaces`, DevConsole `mdie faces <n>`) entran al set
+de caras que los `IFaceFilter` filtran.
+
+Piezas del dado de Movimiento (`Upgrades/Dice/Effects/`), todas con stacking via
+`MovementLaneCopies` (solo la primera copia actua; las extra escalan un parametro):
+- **`EffPlaceTrailTiles { Definition, DurationRounds, ExtraRoundsPerCopy, IncludeDestination }`** —
+  deja una `SpecialTileDefinitionSO` en cada celda ABANDONADA del path (Incendiario /
+  Rastro toxico / Sendero de espinas con `Tile_Fire_Incendiario` / `Tile_Poison_Rastro` /
+  `Tile_Spikes_Sendero`). Las definiciones usan `OwnerAndAlliesImmune` (el jugador no se quema con
+  su rastro) y `EndsMovementOnEnter` (espinas frenan al enemigo). Dano/veneno son fijos por
+  definicion: el stacking solo suma duracion (desvio data-only vs GDD).
+- **`EffAddTemporaryModifier { Stat: Attack|MoveRange, Amount|Reader, DurationTurns, OnlyFirstCopy }`** —
+  modificador `ModifierLifetime.Turns` que muere en el proximo `OnTurnFinished` (Carga: Attack ×
+  `ReadTilesTraversed`; Torbellino: +2 MoveRange en `movement.die_rolled`).
+- **`EffTeleportEnemiesRandomly`** — todos los enemigos a celdas libres alcanzables al azar (Torbellino).
+- **`CapEtherealMovement`** (capability, sin trigger) — Paso etereo: `EtherealMovementPolicy` hace
+  que BFS/A* del jugador atraviesen unidades (nunca como destino; paredes bloquean).
 
 ## API de alta (`Rollgeon.Editor.Tools.Enchantment`)
 

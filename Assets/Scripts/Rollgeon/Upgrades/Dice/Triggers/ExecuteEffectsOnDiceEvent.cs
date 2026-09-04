@@ -33,6 +33,19 @@ namespace Rollgeon.Upgrades.Dice.Triggers
 
         /// <summary>Arrancó un combate. Para resetear counters por dado (Racha).</summary>
         CombatStarted,
+
+        /// <summary>
+        /// El jugador caminó por voluntad propia en combate (EffMove). Empujes, portales y
+        /// deslizamientos NO cuentan. Pensado para el dado de Movimiento — leer casillas con
+        /// <c>ReadTilesTraversed</c>.
+        /// </summary>
+        PlayerMoved,
+
+        /// <summary>
+        /// El dado de Movimiento reveló su cara (cada acción de Mover en combate), antes de
+        /// elegir destino. Para el dado de Movimiento (Torbellino).
+        /// </summary>
+        MovementDieRolled,
     }
 
     /// <summary>
@@ -55,7 +68,7 @@ namespace Rollgeon.Upgrades.Dice.Triggers
     public sealed class ExecuteEffectsOnDiceEvent :
         IOnEnchantmentAppliedTrigger, IOnDiceRolledTrigger, IOnRollResolvedTrigger,
         IOnComboMatchedTrigger, IOnTurnFinishedTrigger, IOnComboPlayedTrigger,
-        IOnCombatStartedTrigger
+        IOnCombatStartedTrigger, IOnPlayerMovedTrigger, IOnMovementDieRolledTrigger
     {
         [Title("Event")]
         [Tooltip("Evento del canal dados que dispara los efectos.")]
@@ -88,6 +101,8 @@ namespace Rollgeon.Upgrades.Dice.Triggers
         public void OnTurnFinished(EnchantmentTriggerContext ctx) => RunIf(EnchantmentHookEvent.TurnFinished, ctx);
         public void OnComboPlayed(EnchantmentTriggerContext ctx) => RunIf(EnchantmentHookEvent.ComboPlayed, ctx);
         public void OnCombatStarted(EnchantmentTriggerContext ctx) => RunIf(EnchantmentHookEvent.CombatStarted, ctx);
+        public void OnPlayerMoved(EnchantmentTriggerContext ctx) => RunIf(EnchantmentHookEvent.PlayerMoved, ctx);
+        public void OnMovementDieRolled(EnchantmentTriggerContext ctx) => RunIf(EnchantmentHookEvent.MovementDieRolled, ctx);
 
         private void RunIf(EnchantmentHookEvent hookEvent, EnchantmentTriggerContext ctx)
         {
@@ -121,6 +136,10 @@ namespace Rollgeon.Upgrades.Dice.Triggers
                         ComboId = ctx.ComboId,
                         Slot = ctx.Slot,
                         Channel = ScratchChannel.DiceEnchantment,
+                        TilesTraversed = ctx.TilesTraversed,
+                        TilesTraversedThisTurn = ctx.TilesTraversedThisTurn,
+                        Path = ctx.Path,
+                        MovementDieFace = ctx.MovementDieFace,
                     },
                 };
                 // Contexto completo del dueño (Attributes / OwnerMaxHp): sin él las PCs

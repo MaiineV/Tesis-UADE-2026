@@ -156,8 +156,9 @@ vos", proponé un default razonable y seguí.
 2. **Categoria GDD** — **obligatoria** (la auditoria rechaza `None` y el alta falla sin ella):
    `Caos` (efecto negativo a cambio de ganancia), `Recursos` (oro/escudo al usar el dado),
    `Ataque` (daño condicionado), `Control` (restringe caras / modifica valores / altera combos),
-   `Movimiento` (dado de movimiento — hoy sin soporte runtime, avisar). Casi siempre se deduce
-   de la idea: confirmala al pasar.
+   `Movimiento` (SOLO el dado de Movimiento: la categoria decide el destino, el altar los ofrece
+   con el set de Movimiento visible; disparador tipico `player.moved` + `ReadTilesTraversed`).
+   Casi siempre se deduce de la idea: confirmala al pasar.
 3. **Cuando se dispara** — ofrecé los `DisplayName` de `EnchantmentTriggerCatalog.All`, no el
    enum crudo. Un encantamiento **sin disparador tambien es valido** si vive de un filtro de
    caras o una capability (ej. Par, Primo, Caras Centrales son solo-filtro).
@@ -259,7 +260,7 @@ return "OK id=" + r.UpgradeId + " path=" + r.AssetPath;
 
 ### Elegir el disparador
 
-`EnchantmentHookEvent` tiene solo 6 miembros y todos funcionan — aca el enemigo no es un enum
+`EnchantmentHookEvent` tiene solo 9 miembros y todos funcionan — aca el enemigo no es un enum
 gigante como en items, es la **semantica**: `ComboMatched` es preview y re-dispara por toggle
 de hold (Paso 2.5). `EnchantmentTriggerCatalog` lleva esa trampa en el dato (`ScratchOnly`):
 

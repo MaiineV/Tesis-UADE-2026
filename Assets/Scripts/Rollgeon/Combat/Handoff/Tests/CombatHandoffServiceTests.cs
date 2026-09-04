@@ -923,6 +923,7 @@ namespace Rollgeon.Combat.Handoff.Tests
             public bool DeferReveal;
 
             public DiceType CurrentType => DiceType.D4;
+            public int MaxFace => 4;
             public int LastFace => NextFace;
             public void SetTypeOverride(DiceType? type) { }
             public void SetPresenter(Rollgeon.Movement.Die.IMovementDiePresenter presenter) { }

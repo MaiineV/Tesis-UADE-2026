@@ -122,6 +122,19 @@ namespace Rollgeon.Editor.Tools.Enchantment
                 "combat.started", "Al empezar un combate",
                 "Arranca una pelea. Para resetear counters por dado que duran 'hasta terminar el combate' (Racha).",
                 EnchantmentHookEvent.CombatStarted),
+
+            // ---- dado de Movimiento (§6.6) -------------------------------------------
+            new TriggerOption(
+                "player.moved", "Cuando te movés voluntariamente (por casilla recorrida)",
+                "Solo Movimiento en combate (EffMove): empujes, portales y deslizamientos NO cuentan. " +
+                "Pensado para encantamientos de categoría Movimiento (van al dado de Movimiento). " +
+                "Las casillas se leen con ReadTilesTraversed (tope por turno opcional).",
+                EnchantmentHookEvent.PlayerMoved),
+            new TriggerOption(
+                "movement.die_rolled", "Al tirar el dado de Movimiento",
+                "El dado de Movimiento reveló su cara (cada acción de Mover en combate), ANTES de elegir " +
+                "destino: un +N a MoveRange acá entra a ese mismo movimiento. Solo para categoría Movimiento.",
+                EnchantmentHookEvent.MovementDieRolled),
         };
 
         /// <summary>

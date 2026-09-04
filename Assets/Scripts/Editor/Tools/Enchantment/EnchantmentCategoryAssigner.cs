@@ -79,8 +79,15 @@ namespace Rollgeon.EditorTools.Enchantment
             ["ench.par"] = EnchantmentCategory.Control,
             ["ench.primo"] = EnchantmentCategory.Control,
 
-            // 🗺️ Movimiento — todavía sin assets (los 7 del GDD apuntan al dado de
-            // movimiento, que no existe como target de encantamiento en el código).
+            // 🗺️ Movimiento — SOLO al dado de Movimiento (EnchantmentTargeting). De los 7 del
+            // GDD hoy existe Baluarte móvil; el resto se suma acá al crearse.
+            ["ench.baluarte_movil"] = EnchantmentCategory.Movimiento,
+            ["ench.torbellino"] = EnchantmentCategory.Movimiento,
+            ["ench.incendiario"] = EnchantmentCategory.Movimiento,
+            ["ench.rastro_toxico"] = EnchantmentCategory.Movimiento,
+            ["ench.carga"] = EnchantmentCategory.Movimiento,
+            ["ench.paso_etereo"] = EnchantmentCategory.Movimiento,
+            ["ench.sendero_de_espinas"] = EnchantmentCategory.Movimiento,
         };
 
         [MenuItem("Rollgeon/Enchantments/Assign Categories")]

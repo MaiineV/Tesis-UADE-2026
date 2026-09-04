@@ -2917,6 +2917,96 @@ MonoBehaviour:
     m_Localized: "Cae en el \xE1rea marcada, no donde est\xE9s."
     m_Metadata:
       m_Items: []
+  - m_Id: 18504181256208384
+    m_Localized: "Baluarte m\xF3vil"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18504181335900160
+    m_Localized: "Por cada casilla que recorr\xE9s, gan\xE1s 1 de escudo (m\xE1x.
+      6 por turno)."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18504181340094464
+    m_Localized: Torbellino
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18504181340094465
+    m_Localized: "Al tirar el dado de Movimiento, todos los enemigos se teletransportan
+      a casillas al azar y te mov\xE9s +2."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18504181340094466
+    m_Localized: Incendiario
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18504181340094467
+    m_Localized: "Cada casilla que recorr\xE9s queda en llamas 2 turnos: los enemigos
+      que entran o empiezan su turno ah\xED reciben 3 de da\xF1o."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18504181340094468
+    m_Localized: "Rastro t\xF3xico"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18504181340094469
+    m_Localized: "Cada casilla que recorr\xE9s deja un rastro t\xF3xico 2 turnos:
+      el primer enemigo que entra queda envenenado 2 turnos."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18504181340094470
+    m_Localized: Carga
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18504181340094471
+    m_Localized: "Por cada casilla que recorr\xE9s, +1 de da\xF1o base hasta el final
+      del turno."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18504181340094472
+    m_Localized: "Paso et\xE9reo"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18504181340094473
+    m_Localized: "Atraves\xE1s unidades al moverte. No pod\xE9s terminar el movimiento
+      sobre una."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18504181340094474
+    m_Localized: Sendero de espinas
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18504181340094475
+    m_Localized: "Cada casilla que recorr\xE9s deja Espinas 1 turno: el primer enemigo
+      que entra recibe 2 de da\xF1o y su movimiento termina."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18504181340094476
+    m_Localized: Llamas de Incendiario
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18504181340094477
+    m_Localized: "Casilla en llamas dejada por el jugador. Los enemigos que entran
+      o empiezan su turno aqu\xED reciben da\xF1o."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18504181340094478
+    m_Localized: "Rastro t\xF3xico"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18504181340094479
+    m_Localized: "Rastro t\xF3xico dejado por el jugador. El primer enemigo que entra
+      queda envenenado."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18504181340094480
+    m_Localized: Espinas del sendero
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18504181340094481
+    m_Localized: "Espinas dejadas por el jugador. El primer enemigo que entra recibe
+      da\xF1o y su movimiento termina."
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

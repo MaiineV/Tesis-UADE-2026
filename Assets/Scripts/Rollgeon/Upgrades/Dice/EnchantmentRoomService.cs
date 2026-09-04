@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Patterns;
+using Rollgeon.Dice;
 using Rollgeon.Dungeon;
 using Rollgeon.Dungeon.Components;
 using Rollgeon.Dungeon.State;
@@ -120,7 +121,8 @@ namespace Rollgeon.Upgrades.Dice
             _currentOffer = null;
         }
 
-        public EnchantmentOfferResult RollOffer(Guid roomInstanceId)
+        public EnchantmentOfferResult RollOffer(Guid roomInstanceId,
+            EnchantmentTargetSet targetSet = EnchantmentTargetSet.CombatDice)
         {
             if (_config == null || _pool == null)
                 return EnchantmentOfferResult.Fail("EnchantmentRoomService no configurado (config / pool null).");
@@ -140,28 +142,40 @@ namespace Rollgeon.Upgrades.Dice
                 return EnchantmentOfferResult.Fail($"Oro insuficiente ({economy.CurrentGold}/{cost}).");
 
             // Candidatos: distintos entre sí y pre-validados por coherencia
-            // contra AL MENOS un dado del bag (palanca-primero: el dado destino
-            // se elige después; la UI marca cuáles son válidos por opción).
+            // contra AL MENOS un dado del set visible (palanca-primero: el dado destino
+            // se elige después; la UI marca cuáles son válidos por opción). El filtro de
+            // categoría va al pool en los DOS sets: sin él, los Movimiento consumirían
+            // intentos en el set de combate y viceversa.
+            bool movementSet = targetSet == EnchantmentTargetSet.MovementDie;
+            IReadOnlyList<DiceType> targetTypes = movementSet
+                ? new[] { DiceEnchantmentService.ResolveMovementDieType() }
+                : bag.Dice;
+            Func<EnchantmentSO, bool> setFilter = e => EnchantmentTargeting.AppliesTo(e, targetSet);
+
             var exclude = new HashSet<EnchantmentSO>();
             var options = new List<EnchantmentSO>(OfferSize);
             int floorDepth = ResolveFloorDepth();
             for (int attempt = 0; attempt < MaxRollAttempts && options.Count < OfferSize; attempt++)
             {
-                var rolled = _pool.Roll(_rng, bag.Dice, floorDepth, exclude);
+                var rolled = _pool.Roll(_rng, targetTypes, floorDepth, exclude, setFilter);
                 if (rolled == null) break;
                 // El pool tiene un fallback que ignora el exclude cuando se agota —
                 // si devuelve algo ya excluido, no quedan candidatos frescos.
                 if (exclude.Contains(rolled)) break;
                 exclude.Add(rolled);
-                if (!IsValidForAnyDie(enchSvc, bag, rolled)) continue;
+                if (!IsValidForAnySlot(enchSvc, bag, rolled, targetSet)) continue;
                 options.Add(rolled);
             }
 
-            EnsureCursedGuarantee(options, exclude, enchSvc, bag, floorDepth);
+            // Moneda Maldita escala malditos de los dados de COMBATE — el carril de
+            // Movimiento es solo-categoría y no participa de la garantía.
+            if (!movementSet) EnsureCursedGuarantee(options, exclude, enchSvc, bag, floorDepth);
 
             if (options.Count == 0)
             {
-                return EnchantmentOfferResult.Fail("Sin candidatos válidos para tus dados — no se cobró el roll.");
+                return EnchantmentOfferResult.Fail(movementSet
+                    ? "Sin encantamientos de Movimiento válidos para tu dado — no se cobró el roll."
+                    : "Sin candidatos válidos para tus dados — no se cobró el roll.");
             }
 
             if (!economy.Spend(cost))
@@ -173,7 +187,7 @@ namespace Rollgeon.Upgrades.Dice
             bag.IncrementDieCounter(RunCounterIndex, AltarRollKey);
             IncrementUsageState(roomInstanceId);
 
-            _currentOffer = new EnchantmentOffer(roomInstanceId, options, cost);
+            _currentOffer = new EnchantmentOffer(roomInstanceId, options, cost, targetSet);
             return EnchantmentOfferResult.Ok(_currentOffer.Value);
         }
 
@@ -185,6 +199,13 @@ namespace Rollgeon.Upgrades.Dice
             var offer = _currentOffer.Value;
             if (optionIndex < 0 || optionIndex >= offer.Options.Count)
                 return EnchantmentRollResult.Fail($"Opción {optionIndex} fuera de rango.");
+
+            // Oferta de Movimiento ⇒ el destino es siempre el dado de Movimiento (GDD: "el
+            // jugador no elige uno de los 5 dados"); de combate ⇒ nunca un sentinela.
+            if (offer.TargetSet == EnchantmentTargetSet.MovementDie)
+                bagIndex = EnchantmentSlotRef.MovementDieSlot;
+            else if (bagIndex < 0)
+                return EnchantmentRollResult.Fail($"Dado {bagIndex} inválido para una oferta de combate.");
 
             if (!ServiceLocator.TryGetService<IDiceEnchantmentService>(out var enchSvc)
                 || enchSvc == null || !enchSvc.IsReady)
@@ -246,6 +267,14 @@ namespace Rollgeon.Upgrades.Dice
                    && svc.ResolveCursedMultiplier() > 1.001f;
         }
 
+        private static bool IsValidForAnySlot(
+            IDiceEnchantmentService enchSvc, RuntimeDiceBag bag, EnchantmentSO ench, EnchantmentTargetSet set)
+        {
+            return set == EnchantmentTargetSet.MovementDie
+                ? enchSvc.ValidateApply(EnchantmentSlotRef.MovementDieSlot, ench).Success
+                : IsValidForAnyDie(enchSvc, bag, ench);
+        }
+
         private static bool IsValidForAnyDie(IDiceEnchantmentService enchSvc, RuntimeDiceBag bag, EnchantmentSO ench)
         {
             for (int i = 0; i < bag.Dice.Count; i++)
@@ -271,8 +300,9 @@ namespace Rollgeon.Upgrades.Dice
         /// Índice sentinela para el die-counter global de la run — el costo
         /// escala por roll TOTAL (la palanca se tira antes de elegir dado), y el
         /// diccionario de counters del bag acepta cualquier índice como key.
+        /// Vive en <see cref="EnchantmentSlotRef"/> junto al sentinela del dado de Movimiento.
         /// </summary>
-        private const int RunCounterIndex = -1;
+        private const int RunCounterIndex = EnchantmentSlotRef.RunCounterIndex;
 
         private EnchantmentOffer? _currentOffer;
 

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Patterns;
 using Rollgeon.Dice;
 using Rollgeon.Player;
+using Rollgeon.Upgrades.Dice;
 using UnityEngine;
 
 namespace Rollgeon.Movement.Die
@@ -52,6 +53,17 @@ namespace Rollgeon.Movement.Die
 
         public int LastFace { get; private set; }
 
+        public int MaxFace
+        {
+            get
+            {
+                if (ServiceLocator.TryGetService<IDiceEnchantmentService>(out var ench)
+                    && ench != null && ench.IsReady)
+                    return ench.MovementDieMaxFace;
+                return CurrentType.MaxFace();
+            }
+        }
+
         public void SetTypeOverride(DiceType? type) => _typeOverride = type;
 
         public void SetPresenter(IMovementDiePresenter presenter) => _presenter = presenter;
@@ -65,7 +77,7 @@ namespace Rollgeon.Movement.Die
             }
 
             var type = CurrentType;
-            int face = _rng.Next(1, type.MaxFace() + 1);
+            int face = PickFace(type);
             int generation = ++_generation;
             _revealPending = true;
 
@@ -131,6 +143,30 @@ namespace Rollgeon.Movement.Die
         {
             ClearActiveRange();
             LastFace = 0;
+        }
+
+        /// <summary>
+        /// Cara tirada. Con el carril de encantamientos del dado listo, elige uniforme entre
+        /// las caras válidas (filtros + caras extra), como <c>EnchantedDiceRoller.PickFromSet</c>;
+        /// sin él, RNG plano sobre el tipo. En ambos casos consume UNA muestra del RNG propio.
+        /// </summary>
+        private int PickFace(DiceType type)
+        {
+            IReadOnlyCollection<int> faces = null;
+            if (ServiceLocator.TryGetService<IDiceEnchantmentService>(out var ench)
+                && ench != null && ench.IsReady)
+                faces = ench.ComputeMovementDieFaces();
+
+            if (faces == null || faces.Count == 0) return _rng.Next(1, type.MaxFace() + 1);
+
+            int idx = _rng.Next(0, faces.Count);
+            int i = 0;
+            foreach (var f in faces)
+            {
+                if (i == idx) return f;
+                i++;
+            }
+            return type.MaxFace();
         }
 
         // Mismo bonus que SelectionSettings.ResolveEffectiveRange suma al rango real:

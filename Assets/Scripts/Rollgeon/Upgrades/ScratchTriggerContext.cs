@@ -36,5 +36,17 @@ namespace Rollgeon.Upgrades
 
         /// <summary>Canal que originó el dispatch.</summary>
         public ScratchChannel Channel;
+
+        /// <summary>Hook <c>PlayerMoved</c>: casillas de este movimiento. 0 en otros hooks.</summary>
+        public int TilesTraversed;
+
+        /// <summary>Hook <c>PlayerMoved</c>: casillas acumuladas en el turno, este movimiento incluido.</summary>
+        public int TilesTraversedThisTurn;
+
+        /// <summary>Hook <c>PlayerMoved</c>: path caminado (índice 0 = origen). Null en otros hooks.</summary>
+        public System.Collections.Generic.IReadOnlyList<Rollgeon.Grid.GridCoord> Path;
+
+        /// <summary>Hook <c>MovementDieRolled</c>: cara revelada del dado de Movimiento. 0 en otros hooks.</summary>
+        public int MovementDieFace;
     }
 }

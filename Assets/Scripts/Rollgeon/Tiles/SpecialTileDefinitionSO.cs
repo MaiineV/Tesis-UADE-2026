@@ -94,6 +94,14 @@ namespace Rollgeon.Tiles
                  "Apagar esto es la 'disposición en contrario' del GDD §15.")]
         public bool OwnerBossImmune = true;
 
+        [Tooltip("El dueño de la casilla y sus aliados no la activan (rastros del dado de Movimiento: " +
+                 "'el jugador y sus aliados no reciben daño por sus propias llamas').")]
+        public bool OwnerAndAlliesImmune;
+
+        [Tooltip("Entrar en la casilla termina el movimiento de la unidad afectada (Sendero de espinas), " +
+                 "igual que el hielo trunca el path. Se evalúa con los mismos filtros de afectación.")]
+        public bool EndsMovementOnEnter;
+
         [Header("Telegraph")]
         [Tooltip("Qué casilla spawnea al vencer la advertencia (solo Category = Telegraph).")]
         public SpecialTileDefinitionSO TelegraphPayload;
