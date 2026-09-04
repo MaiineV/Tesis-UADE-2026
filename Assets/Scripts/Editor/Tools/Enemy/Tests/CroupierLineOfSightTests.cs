@@ -17,6 +17,8 @@ using Rollgeon.Grid;
 using Rollgeon.Heroes;
 using Rollgeon.Movement;
 using Rollgeon.Player;
+using Rollgeon.PreConditions;
+using Rollgeon.PreConditions.Concretes;
 using Rollgeon.Tiles;
 using UnityEditor;
 using UnityEngine;
@@ -134,7 +136,18 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         // =====================================================================
 
         [Test]
-        public void AConeThatRespectsSight_MarksNothingFromBehindTheBlocker()
+        public void AConeThatRespectsSight_LosesTheTilesBehindTheBlocker()
+        {
+            int withSight = TilesMarkedByACone(ignoreLineOfSight: false);
+            _threat.Clear(_boss);
+            int ignoringIt = TilesMarkedByACone(ignoreLineOfSight: true);
+
+            Assert.Less(withSight, ignoringIt,
+                $"El bloqueante tiene que comerse casillas del cono ({withSight} contra {ignoringIt}): " +
+                "eso es lo que le recortaba el fuego al tiempo de quema del turno siguiente.");
+        }
+
+        private int TilesMarkedByACone(bool ignoreLineOfSight)
         {
             var cone = new AINode_TelegraphMark
             {
@@ -143,13 +156,11 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                 Depth = CroupierAssetBuilder.ConeDepth,
                 Damage = 0,
                 Kind = AttackKind.Environmental,
+                IgnoreLineOfSight = ignoreLineOfSight,
             };
 
-            var result = cone.Tick(NewContext(1));
-
-            Assert.AreEqual(AIResult.Failed, result,
-                "Con el gate de visión y un bloqueante en el apex el cono no tiene nada que marcar: " +
-                "esto es lo que dejaba mudo al tiempo de quema del turno siguiente.");
+            cone.Tick(NewContext(1));
+            return _threat.GetPendingTiles(_boss).Count;
         }
 
         [Test]
