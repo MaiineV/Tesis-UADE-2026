@@ -520,11 +520,12 @@ namespace Rollgeon.Editor.Tools.Enemy.AITree
             // --- El Cajero --------------------------------------------------------------
 
             [typeof(AINode_CajeroCoinRain)] =
-                "'Lluvia de monedas': cada EveryNRounds rondas suelta Count monedas (Coin, valor entre " +
-                "MinValue y MaxValue, separadas al menos MinSeparation casillas) repartidas por la sala. " +
-                "Es el reloj de la pelea: juntarlas obliga al jugador a caminar con el jefe persiguiéndolo.\n\n" +
-                "Las monedas nacen permanentes; las vence CoinVault. Su Failed ('todavía no toca tanda') " +
-                "es benigno: va en Selector[CoinRain, Wait].",
+                "'Monedas del golpe': suelta Count monedas (Coin, valor entre MinValue y MaxValue, " +
+                "separadas al menos MinSeparation casillas) repartidas por la sala. Sin reloj propio: " +
+                "va colgado DETRÁS del golpe en un Sequence, así que sólo paga si el golpe conectó. " +
+                "Juntarlas obliga al jugador a caminar con el jefe persiguiéndolo.\n\n" +
+                "Las monedas nacen permanentes; las vence CoinVault. Su Failed ('sala sin casilla " +
+                "libre') es benigno: va en Selector[CoinRain, Wait].",
 
             [typeof(AINode_CajeroCoinVault)] =
                 "'La caja': le pone reloj (LifetimeRounds) a cada moneda del piso y, cuando una se vence " +

@@ -10,19 +10,19 @@ using UnityEngine;
 namespace Rollgeon.Combat.AI.Decisions
 {
     /// <summary>
-    /// La sala suelta plata: <see cref="Count"/> monedas repartidas por la sala cada
-    /// <see cref="EveryNRounds"/> rondas. Es el reloj de la pelea del Cajero — juntarlas obliga al
-    /// jugador a caminar la sala con él persiguiéndolo.
+    /// Las monedas que le saltan al Cajero cuando pega: <see cref="Count"/> repartidas al azar por
+    /// la sala. Es lo que obliga al jugador a caminar la sala con él persiguiéndolo.
     /// </summary>
     /// <remarks>
     /// <para>
-    /// Vive en el árbol del jefe aunque las monedas sean de la sala: es el único tick por ronda que
-    /// hay disponible, y colgarlo de un servicio propio duplicaría el reloj.
+    /// Sin reloj propio: cae cuando el golpe cae, colgado del paso de ataque. Un tick por ronda
+    /// soltaba plata en turnos en los que el jefe no había hecho nada, y el jugador la juntaba
+    /// mientras lo esquivaba.
     /// </para>
     /// <para>
     /// El vencimiento no es de este nodo: cada moneda nace permanente y la expira
     /// <see cref="AINode_CajeroCoinVault"/>, que es el único que puede distinguir una cobrada de
-    /// una vencida. Su Failed (todavía no toca tanda) es benigno y va en
+    /// una vencida. Su Failed (sala sin casilla libre) es benigno y va en
     /// <c>Selector[CoinRain, Wait]</c>.
     /// </para>
     /// </remarks>
@@ -32,13 +32,9 @@ namespace Rollgeon.Combat.AI.Decisions
         [Tooltip("Definición del hazard-moneda. Sin ella el nodo no hace nada.")]
         public HazardDefinitionSO Coin;
 
-        [Tooltip("Monedas por tanda.")]
+        [Tooltip("Monedas que suelta el golpe.")]
         [MinValue(0)]
-        public int Count = 4;
-
-        [Tooltip("Rondas entre tandas. 1 = todas las rondas.")]
-        [MinValue(1)]
-        public int EveryNRounds = 3;
+        public int Count = 3;
 
         [Tooltip("Valor mínimo en oro de una moneda.")]
         [MinValue(0)]
@@ -48,18 +44,12 @@ namespace Rollgeon.Combat.AI.Decisions
         [MinValue(0)]
         public int MaxValue = 9;
 
-        [Tooltip("Distancia Chebyshev mínima entre dos monedas de la misma tanda. 0 = pueden caer " +
+        [Tooltip("Distancia Chebyshev mínima entre dos monedas del mismo golpe. 0 = pueden caer " +
                  "pegadas. Con separación las monedas se leen como puntos a visitar y no como un montón.")]
         [MinValue(0)]
         public int MinSeparation = 2;
 
-        // Estado de pelea. NonSerialized: vive sólo en la copia runtime del árbol, nunca en el
-        // asset, así que una pelea nueva arranca con la primera tanda pendiente.
-        [NonSerialized] private int _nextRound;
-        [NonSerialized] private bool _rained;
-
-        public override string NodeName =>
-            $"Cajero — Monedas de sala ({Count} cada {EveryNRounds} rondas)";
+        public override string NodeName => $"Cajero — Monedas del golpe ({Count} por la sala)";
 
         public override AIResult Tick(AIContext context)
         {
@@ -67,10 +57,6 @@ namespace Rollgeon.Combat.AI.Decisions
 
             var grid = context.Grid;
             if (grid?.Graph == null) return AIResult.Failed;
-
-            // La primera tanda cae en el primer turno del jefe: la pelea abre con plata en el piso
-            // para que la primera decisión del jugador sea si va a buscarla.
-            if (_rained && context.RoundIndex < _nextRound) return AIResult.Failed;
 
             if (!ServiceLocator.TryGetService<IHazardService>(out var hazards) || hazards == null)
             {
@@ -95,13 +81,7 @@ namespace Rollgeon.Combat.AI.Decisions
                 dropped++;
             }
 
-            // El reloj sólo avanza si de verdad cayó algo: una sala sin casilla libre reintenta el
-            // próximo turno en vez de saltarse la tanda entera.
-            if (dropped == 0) return AIResult.Failed;
-
-            _rained = true;
-            _nextRound = context.RoundIndex + EveryNRounds;
-            return AIResult.Succeeded;
+            return dropped == 0 ? AIResult.Failed : AIResult.Succeeded;
         }
 
         private int RollValue(System.Random rng)

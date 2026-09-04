@@ -32,7 +32,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
     {
         private const float PercentTolerance = 0.0001f;
 
-        private const int RootSteps = 5;
+        private const int RootSteps = 4;
 
         /// <summary>Una definición que <b>ya existe en disco</b>. No es la del Cajero a propósito:
         /// <c>Tile_Spikes_Cajero</c> la crea su propio menú, y usarla ataría el test a que se haya
@@ -52,12 +52,12 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         public void Root_HasTheStepsOfTheSheet()
         {
             Assert.AreEqual(RootSteps, _root.Children.Count,
-                "Comisiones → persigue → ataca (mandoble o empujón) → monedas de la sala → caja.");
+                "Comisiones → persigue → ataca (mandoble o empujón, y las monedas del golpe) → caja.");
 
             Assert.IsNotNull(FindNode<AINode_SpawnReinforcements>(), "Faltan las Comisiones del 50%.");
             Assert.IsNotNull(FindNode<AINode_Alternate>(), "Falta el ciclo de los dos golpes.");
             Assert.IsNotNull(FindNode<AINode_CajeroShove>(), "Falta el empujón.");
-            Assert.IsNotNull(FindNode<AINode_CajeroCoinRain>(), "Faltan las monedas de la sala.");
+            Assert.IsNotNull(FindNode<AINode_CajeroCoinRain>(), "Faltan las monedas del golpe.");
             Assert.IsNotNull(FindNode<AINode_CajeroCoinVault>(), "Falta la caja: nada vence las monedas.");
             Assert.IsNotNull(FindNode<AINode_Move>(), "Falta la persecución.");
         }
@@ -99,12 +99,30 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         public void CoinVault_RunsAfterEverythingThatDropsCoins()
         {
             int vaultIdx = IndexOfStepWith<AINode_CajeroCoinVault>();
-            int rainIdx = IndexOfStepWith<AINode_CajeroCoinRain>();
+            int dropIdx = IndexOfStepWith<AINode_CajeroCoinRain>();
             int shoveIdx = IndexOfStepWith<AINode_CajeroShove>();
 
             Assert.Greater(vaultIdx, -1, "No hay caja en el árbol.");
-            Assert.Greater(vaultIdx, rainIdx, "La caja quedó antes de la lluvia de monedas.");
+            Assert.Greater(vaultIdx, dropIdx, "La caja quedó antes de las monedas del mandoble.");
             Assert.Greater(vaultIdx, shoveIdx, "La caja quedó antes del empujón, que también tira monedas.");
+        }
+
+        /// <summary>Las monedas cuelgan del golpe y de nada más: sueltas en la raíz volvían a caer por
+        /// reloj, que es justo lo que se sacó.</summary>
+        [Test]
+        public void Coins_FallFromTheBlow_NotFromAClock()
+        {
+            int dropIdx = IndexOfStepWith<AINode_CajeroCoinRain>();
+            int attackIdx = IndexOfStepWith<AINode_Alternate>();
+
+            Assert.AreEqual(attackIdx, dropIdx,
+                "Las monedas volvieron a ser un paso propio de la raíz: caen tickee lo que tickee el " +
+                "jefe, incluidos los turnos en que no te alcanzó.");
+
+            var drop = FindNode<AINode_CajeroCoinRain>();
+            Assert.IsEmpty(
+                drop.GetType().GetFields().Where(f => f.Name.Contains("EveryN")).ToList(),
+                "Volvió el reloj al nodo: con período propio las monedas dejan de depender del golpe.");
         }
 
         /// <summary>La persecución corre antes del golpe: detrás, el jefe tumba al jugador tres casillas y
@@ -140,7 +158,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         [Test]
         public void EveryChild_IsIsolatedInSelectorWithWaitFallback()
         {
-            // Los cinco tienen un Failed benigno (no cruzó el umbral, el jugador está lejos, ninguna
+            // Los cuatro tienen un Failed benigno (no cruzó el umbral, el jugador está lejos, ninguna
             // moneda venció, ya está pegado): suelto en el Sequence, cualquiera aborta el turno.
             for (int i = 0; i < _root.Children.Count; i++)
             {
@@ -161,7 +179,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
 
             Assert.AreEqual(2, cycle.Children.Count, "Son dos golpes y sólo dos.");
 
-            var first = Unwrap<AINode_RangedShot>(cycle.Children[0]);
+            // El mandoble va dentro de un Sequence con su drop de monedas; el empujón las tira solo.
+            var first = Descendants(cycle.Children[0]).OfType<AINode_RangedShot>().FirstOrDefault();
             var second = Unwrap<AINode_RangedShot>(cycle.Children[1]);
 
             Assert.IsNotNull(first, "El primer tiempo del ciclo no es un golpe.");
@@ -250,6 +269,20 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                 "Apuntar y disparar con el mismo id son dos turnos que se ven iguales.");
         }
 
+        /// <summary>El área quedó anclada donde estabas al marcar: si además caminara, el jugador vería
+        /// al jefe encima suyo y el golpe cayendo en otro lado.</summary>
+        [Test]
+        public void TheTurnHeFires_HeStandsStill()
+        {
+            var gate = ChaseGate();
+
+            Assert.IsInstanceOf<AINode_Wait>(gate.Then,
+                "Con marca pendiente el jefe volvió a caminar: dispara a una casilla y está en otra.");
+            Assert.IsNotNull(Descendants(gate.Else).OfType<AINode_Move>().FirstOrDefault(),
+                "La persecución tiene que seguir corriendo los turnos sin marca — incluido el que " +
+                "marca. Sin eso, kiteando no te alcanza nunca y sus dos golpes pegados no existen.");
+        }
+
         [Test]
         public void HeavyBlow_IsHisFloorDamage_AtContactRange()
         {
@@ -291,7 +324,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                 "con Chebyshev la diagonal entra en rango y 'el lado opuesto al suyo' deja de ser un " +
                 "cardinal exacto.");
 
-            Assert.AreEqual(CajeroAssetBuilder.ChipCount, shove.CoinCount,
+            Assert.AreEqual(CajeroAssetBuilder.CoinsPerHit, shove.CoinCount,
                 "Las monedas del tumbo salen de la ficha, no del default del nodo.");
 
             Assert.AreEqual(BossFeedbackIds.CajeroShoveAnim, shove.AnimFeedbackId,
@@ -319,29 +352,49 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             Assert.Greater(shove.RefundPercent, 0f,
                 "Si no volviera nada, no habría razón para caminar la sala y el jefe sería melee puro.");
 
-            Assert.AreEqual(CajeroAssetBuilder.CoinRainMinSeparation, shove.CoinMinSeparation,
-                "Las dos fuentes de monedas reparten por la sala con el mismo criterio.");
+            Assert.AreEqual(CajeroAssetBuilder.CoinMinSeparation, shove.CoinMinSeparation,
+                "Los dos golpes reparten por la sala con el mismo criterio.");
             Assert.Greater(shove.CoinMinSeparation, 1,
                 "Sin separación las dos monedas pueden caer pegadas, y entonces recuperarlas es un " +
                 "solo viaje: el empujón te cobra dos veces y te devuelve en un desvío.");
         }
 
         [Test]
-        public void CoinRain_UsesTheSheetNumbers()
+        public void CoinDrop_UsesTheSheetNumbers()
         {
-            var rain = FindNode<AINode_CajeroCoinRain>();
+            var drop = FindNode<AINode_CajeroCoinRain>();
 
-            Assert.AreEqual(CajeroAssetBuilder.CoinsPerRain, rain.Count);
-            Assert.AreEqual(CajeroAssetBuilder.CoinRainEveryNRounds, rain.EveryNRounds);
-            Assert.AreEqual(CajeroAssetBuilder.ChipValue, rain.MinValue);
-            Assert.AreEqual(CajeroAssetBuilder.ChipValue, rain.MaxValue);
-            Assert.AreEqual(rain.MinValue, rain.MaxValue,
-                "La moneda de la sala vale fijo: un rango hace que la tanda valga un número que el " +
-                "jugador no puede leer del piso, y no cambia ninguna decisión suya.");
-            Assert.AreEqual(CajeroAssetBuilder.CoinRainMinSeparation, rain.MinSeparation);
-            Assert.Greater(rain.MinSeparation, 1,
+            Assert.AreEqual(CajeroAssetBuilder.CoinsPerHit, drop.Count);
+            Assert.AreEqual(CajeroAssetBuilder.ChipValue, drop.MinValue);
+            Assert.AreEqual(CajeroAssetBuilder.ChipValue, drop.MaxValue);
+            Assert.AreEqual(drop.MinValue, drop.MaxValue,
+                "La moneda del mandoble vale fijo: un rango hace que el montón valga un número que " +
+                "el jugador no puede leer del piso, y no cambia ninguna decisión suya.");
+            Assert.AreEqual(CajeroAssetBuilder.CoinMinSeparation, drop.MinSeparation);
+            Assert.Greater(drop.MinSeparation, 1,
                 "\"Repartidas por la sala\" es media mecánica: cada moneda tiene que ser un punto al " +
-                "que ir, y cuatro pegadas son un solo viaje.");
+                "que ir, y tres pegadas son un solo viaje.");
+        }
+
+        /// <summary>El <c>Sequence</c> corta en el primer Failed, así que el drop tiene que ir DETRÁS del
+        /// golpe: adelante, paga aunque el mandoble no conecte.</summary>
+        [Test]
+        public void TheBlowsCoins_OnlyFallIfTheBlowLands()
+        {
+            var cycle = Alternate();
+            var melee = Descendants(cycle.Children[0]).OfType<AINode_Sequence>().FirstOrDefault();
+
+            Assert.IsNotNull(melee, "El mandoble dejó de arrastrar su drop de monedas.");
+
+            int blowIdx = melee.Children.FindIndex(c => Descendants(c).OfType<AINode_RangedShot>().Any());
+            int dropIdx = melee.Children.FindIndex(c => Descendants(c).OfType<AINode_CajeroCoinRain>().Any());
+
+            Assert.Greater(blowIdx, -1, "No hay mandoble en la rama.");
+            Assert.Greater(dropIdx, blowIdx, "Las monedas caen antes del golpe: pagan aunque no conecte.");
+
+            Assert.IsInstanceOf<AINode_Selector>(melee.Children[dropIdx],
+                "El drop suelto en el Sequence hace fallar al mandoble cuando la sala no tiene " +
+                "casilla libre, y el golpe ya cobró.");
         }
 
         [Test]
@@ -369,7 +422,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                 Assert.AreSame(definition, Descendants(root).OfType<AINode_CajeroShove>().Single().Coin,
                     "El empujón tira monedas de otra definición.");
                 Assert.AreSame(definition, Descendants(root).OfType<AINode_CajeroCoinRain>().Single().Coin,
-                    "La lluvia suelta monedas de otra definición.");
+                    "El mandoble suelta monedas de otra definición.");
                 Assert.AreSame(definition, Descendants(root).OfType<AINode_CajeroCoinVault>().Single().Coin,
                     "La caja vigila otra definición: nada vence y el jefe no se cura nunca.");
             }
@@ -657,7 +710,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             foreach (var latch in latches)
             {
                 Assert.IsEmpty(Descendants(latch).OfType<AINode_CajeroCoinRain>().ToList(),
-                    "La lluvia de monedas es el reloj de la pelea: un Once la apagaría tras la primera tanda.");
+                    "Un Once sobre el drop deja de pagar monedas después del primer mandoble.");
                 Assert.IsEmpty(Descendants(latch).OfType<AINode_CajeroCoinVault>().ToList(),
                     "Un Once sobre la caja deja de vencer monedas después de la primera y el techo de " +
                     "curación nunca se alcanza.");
@@ -1183,14 +1236,28 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
         }
 
         /// <summary>El <c>If</c> que decide si cobra la marca; el de rango cuelga de su <c>Else</c>.</summary>
+        /// <remarks>Desambigua por el <c>Then</c>: el gate que frena la caminata lee la misma
+        /// precondición y va antes en el árbol.</remarks>
         private AINode_If PendingGate()
         {
-            var gate = Descendants(_root).OfType<AINode_If>().FirstOrDefault(
-                g => g.Conditions != null && g.Conditions.OfType<PcOwnerHasPendingTelegraph>().Any());
+            var gate = PendingGates().FirstOrDefault(g => g.Then is AINode_ExecuteTelegraph);
 
             Assert.IsNotNull(gate, "No hay gate de marca pendiente: el cañonazo nunca se cobra.");
             return gate;
         }
+
+        /// <summary>El <c>If</c> que le saca la caminata al turno del disparo.</summary>
+        private AINode_If ChaseGate()
+        {
+            var gate = PendingGates().FirstOrDefault(g => Descendants(g).OfType<AINode_Move>().Any());
+
+            Assert.IsNotNull(gate, "La persecución dejó de estar gateada por la marca pendiente.");
+            return gate;
+        }
+
+        private IEnumerable<AINode_If> PendingGates() =>
+            Descendants(_root).OfType<AINode_If>().Where(
+                g => g.Conditions != null && g.Conditions.OfType<PcOwnerHasPendingTelegraph>().Any());
 
         private AINode_If RangeGate()
         {

@@ -127,7 +127,7 @@ namespace Rollgeon.Combat.AI.Tests
         [Test]
         public void ARainOfCoins_ExpiresOnePerTurn_NotTheWholeBatchInOneBeat()
         {
-            // CajeroAssetBuilder.CoinsPerRain: la tanda que suelta la sala.
+            // Más monedas que las que deja un golpe: el punto es que la caja no vacíe el piso de una.
             const int coinsPerRain = 4;
 
             var node = NewNode();

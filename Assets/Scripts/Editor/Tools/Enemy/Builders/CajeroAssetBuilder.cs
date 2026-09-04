@@ -171,9 +171,9 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         // ---- Las monedas -------------------------------------------------
 
         /// <summary>
-        /// Valor de una moneda de la <b>lluvia</b>, la que suelta la sala. Fijo y no un rango: son
-        /// cuatro por tanda, y que cada una valga distinto no cambia ninguna decisión —sólo hace
-        /// que la tanda valga un número que el jugador no puede leer del piso.
+        /// Valor de una moneda del <b>mandoble</b>. Fijo y no un rango: que cada una valga distinto
+        /// no cambia ninguna decisión —sólo hace que el montón valga un número que el jugador no
+        /// puede leer del piso.
         /// </summary>
         /// <remarks>
         /// Las del empujón no salen de acá: valen <see cref="ShoveRefundPercent"/> de lo que te
@@ -181,14 +181,18 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         /// </remarks>
         public const int ChipValue = 5;
 
-        /// <summary>Monedas que suelta la sala por tanda.</summary>
-        public const int CoinsPerRain = 4;
+        /// <summary>
+        /// Monedas que deja cada golpe que conecta, el mandoble y el empujón por igual.
+        /// </summary>
+        /// <remarks>
+        /// Las monedas cuelgan del golpe y no de un reloj: soltarlas cada N rondas las hacía caer
+        /// en turnos en los que el jefe no había hecho nada, y el jugador las juntaba justo
+        /// mientras lo esquivaba. Ahora la plata sólo aparece si te alcanzó.
+        /// </remarks>
+        public const int CoinsPerHit = 3;
 
-        /// <summary>Rondas entre tandas de la sala.</summary>
-        public const int CoinRainEveryNRounds = 3;
-
-        /// <summary>Distancia Chebyshev mínima entre dos monedas de la misma tanda.</summary>
-        public const int CoinRainMinSeparation = 2;
+        /// <summary>Distancia Chebyshev mínima entre dos monedas del mismo golpe.</summary>
+        public const int CoinMinSeparation = 2;
 
         /// <summary>
         /// Rondas que vive una moneda en el piso.
@@ -200,15 +204,6 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         /// la tanda: el nodo se cobra <b>una por turno</b>.
         /// </remarks>
         public const int ChipDurationRounds = 2;
-
-        /// <summary>
-        /// Monedas que se le caen al jugador en cada empujón, repartidas al azar por la sala.
-        /// </summary>
-        /// <remarks>
-        /// Por la sala y no sobre el tumbo: en el recorrido quedaban a un paso y recuperarlas no
-        /// costaba el desvío que la mecánica cobra. Lejos, ir a buscarlas compite con pegarle.
-        /// </remarks>
-        public const int ChipCount = 2;
 
         /// <summary>Id estable del hazard-ficha: el servicio de hazards keyea por él. Hex válido —
         /// un SourceId que no parsea a Guid loguea error cada vez que se lee.</summary>
@@ -480,13 +475,13 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         // ---- Árbol -------------------------------------------------------
 
         /// <summary>
-        /// Árbol del Cajero. Sequence raíz de 5 hijos:
+        /// Árbol del Cajero. Sequence raíz de 4 hijos:
         /// <list type="number">
         /// <item>Gate de las Comisiones (50% HP) → <c>Once → SpawnReinforcements ×2</c>.</item>
-        /// <item>La persecución.</item>
+        /// <item>La persecución, salvo el turno que dispara.</item>
         /// <item>El ataque: cobra el cañonazo marcado, o <c>Alternate[mandoble, empujón]</c> si te
-        /// tiene pegado, o marca un 3×3 donde estés si camina y no llega.</item>
-        /// <item>Las monedas de la sala, cada <see cref="CoinRainEveryNRounds"/> rondas.</item>
+        /// tiene pegado, o marca un 3×3 donde estés si camina y no llega. Los dos golpes dejan
+        /// <see cref="CoinsPerHit"/> monedas por la sala.</item>
         /// <item>La caja: vence las monedas que nadie levantó, de a una por turno.</item>
         /// </list>
         /// Todo lo que puede devolver Failed va en <c>Selector[acción, Wait]</c>.
@@ -506,8 +501,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         /// en su path coroutine, así que la caja y la lluvia siguen corriendo el turno que camina.
         /// </para>
         /// <para>
-        /// La <b>caja va después del ataque y de la lluvia</b> porque descubre las monedas barriendo
-        /// las instancias vivas: si fuera antes, cada moneda soltada este turno viviría una ronda de
+        /// La <b>caja va después del ataque</b> porque descubre las monedas barriendo las
+        /// instancias vivas: si fuera antes, cada moneda soltada este turno viviría una ronda de
         /// más.
         /// </para>
         /// </remarks>
@@ -519,9 +514,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
                 Children = new List<AIDecisionNode>
                 {
                     WrapFallible(BuildCritterGate(critter)),
-                    WrapFallible(BuildChase()),
+                    WrapFallible(BuildChaseGate()),
                     WrapFallible(BuildAttackGate(chip)),
-                    WrapFallible(BuildCoinRain(chip)),
                     WrapFallible(BuildCoinVault(chip)),
                 },
             };
@@ -603,20 +597,44 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         };
 
         /// <summary>
-        /// Mandoble, empujón, mandoble, empujón.
+        /// Mandoble, empujón, mandoble, empujón. Los dos dejan monedas.
         /// </summary>
         /// <remarks>
+        /// <para>
         /// Alternate y no Random: la alternancia es estricta y el mandoble va primero (el índice
         /// arranca en 0). Cada rama va en su propio <c>Selector[…, Wait]</c> porque el Alternate
         /// propaga el resultado del hijo.
+        /// </para>
+        /// <para>
+        /// El mandoble suelta las suyas con un nodo aparte, colgado detrás en <c>Sequence</c>: el
+        /// <c>Sequence</c> corta en el primer Failed, así que un golpe que no conecta no paga. Las
+        /// del empujón salen de adentro del nodo porque son tu plata y dependen del cobro.
+        /// </para>
         /// </remarks>
         public static AINode_Alternate BuildAttackCycle(HazardDefinitionSO chip = null) =>
             new AINode_Alternate
             {
                 Children = new List<AIDecisionNode>
                 {
-                    WrapFallible(BuildHeavyBlow()),
+                    WrapFallible(BuildHeavyBlowWithCoins(chip)),
                     WrapFallible(BuildShove(chip)),
+                },
+            };
+
+        /// <summary>
+        /// El mandoble y las monedas que le saltan, en ese orden.
+        /// </summary>
+        /// <remarks>
+        /// El drop va en su propio <c>Selector[…, Wait]</c>: una sala sin casilla libre haría fallar
+        /// al <c>Sequence</c> entero y el golpe, que ya cobró, se leería como fallado.
+        /// </remarks>
+        public static AINode_Sequence BuildHeavyBlowWithCoins(HazardDefinitionSO chip = null) =>
+            new AINode_Sequence
+            {
+                Children = new List<AIDecisionNode>
+                {
+                    BuildHeavyBlow(),
+                    WrapFallible(BuildCoinDrop(chip)),
                 },
             };
 
@@ -645,8 +663,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
 
         /// <summary>
         /// El empujón: <see cref="ShoveDamage"/> y <see cref="ShovePushTiles"/> casillas de tumbo,
-        /// con el cobro del <see cref="ShoveTaxPercent"/> y <see cref="ChipCount"/> monedas de esa
-        /// plata tiradas en el camino.
+        /// con el cobro del <see cref="ShoveTaxPercent"/> y <see cref="CoinsPerHit"/> monedas de esa
+        /// plata tiradas por la sala.
         /// </summary>
         public static AINode_CajeroShove BuildShove(HazardDefinitionSO chip = null) =>
             new AINode_CajeroShove
@@ -657,29 +675,28 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
                 Kind = AttackKind.BasicAttack,
                 PushTiles = ShovePushTiles,
                 Coin = chip,
-                CoinCount = ChipCount,
+                CoinCount = CoinsPerHit,
                 TaxPercent = ShoveTaxPercent,
                 TaxMinimum = ShoveTaxMinimum,
                 RefundPercent = ShoveRefundPercent,
 
-                // La misma separación que la lluvia: las dos fuentes reparten por la sala, y dos
-                // monedas pegadas son un solo viaje en cualquiera de las dos.
-                CoinMinSeparation = CoinRainMinSeparation,
+                // La misma separación que las del mandoble: las dos fuentes reparten por la sala, y
+                // dos monedas pegadas son un solo viaje en cualquiera de las dos.
+                CoinMinSeparation = CajeroAssetBuilder.CoinMinSeparation,
                 AnimFeedbackId = BossFeedbackIds.CajeroShoveAnim,
                 ImpactVfxFeedbackId = BossFeedbackIds.CajeroImpactVfx,
                 ImpactFeelFeedbackId = BossFeedbackIds.CajeroImpactFeel,
             };
 
-        /// <summary>Las monedas que suelta la sala, no él.</summary>
-        public static AINode_CajeroCoinRain BuildCoinRain(HazardDefinitionSO chip) =>
+        /// <summary>Las monedas que le saltan al mandoble, repartidas por la sala.</summary>
+        public static AINode_CajeroCoinRain BuildCoinDrop(HazardDefinitionSO chip) =>
             new AINode_CajeroCoinRain
             {
                 Coin = chip,
-                Count = CoinsPerRain,
-                EveryNRounds = CoinRainEveryNRounds,
+                Count = CoinsPerHit,
                 MinValue = ChipValue,
                 MaxValue = ChipValue,
-                MinSeparation = CoinRainMinSeparation,
+                MinSeparation = CoinMinSeparation,
             };
 
         /// <summary>El reloj de las monedas: la que nadie levanta se pierde, y no lo cura.</summary>
@@ -707,6 +724,23 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
             MaxSteps = new AIConstantInt { Value = ChaseSteps },
             DesiredRange = new AIConstantInt { Value = MeleeRange },
             Retreat = false,
+        };
+
+        /// <summary>
+        /// La persecución, salvo el turno en que cobra el cañonazo: ahí se planta y dispara.
+        /// </summary>
+        /// <remarks>
+        /// El área quedó anclada donde estabas parado, así que si además caminara, el jugador vería
+        /// al jefe encima suyo y el golpe cayendo en otro lado. Plantado, el disparo se lee: apuntó
+        /// ahí, se quedó ahí, pegó ahí. Marca sí caminando —si no, kiteando no te alcanza nunca y
+        /// sus dos golpes cuerpo a cuerpo no existen.
+        /// </remarks>
+        public static AINode_If BuildChaseGate() => new AINode_If
+        {
+            TargetSelector = new TargetSelector_Self(),
+            Conditions = new List<BasePreCondition> { new PcOwnerHasPendingTelegraph() },
+            Then = new AINode_Wait(),
+            Else = BuildChase(),
         };
 
         /// <summary>
@@ -806,9 +840,9 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
                 Archetype = EnemyArchetype.Melee,
                 Pattern = AttackPatternKind.ContactAdjacent,
                 Timing = AttackTiming.Instant,
-                Notes = "Mandoble y empujón alternados a distancia 1; fuera de alcance marca un " +
-                        "3×3 sobre el jugador y lo cobra al turno siguiente; lluvia de monedas; " +
-                        "caja fuerte; refuerzos (Comisión).",
+                Notes = "Mandoble y empujón alternados a distancia 1, cada golpe deja monedas " +
+                        "por la sala; fuera de alcance marca un 3×3 sobre el jugador y lo cobra " +
+                        "al turno siguiente, plantado; caja fuerte; refuerzos (Comisión).",
             };
         }
 
@@ -979,10 +1013,9 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
                       $"(ficha: {BaseHP} HP, mandoble {HeavyDamage} y empujón {ShoveDamage} + " +
                       $"{ShovePushTiles} casillas, alcance {MeleeRange}, camina {ChaseSteps}, " +
                       $"cañonazo {SlamDamage} en {2 * SlamRadius + 1}×{2 * SlamRadius + 1}; " +
-                      $"monedas: {CoinsPerRain} cada {CoinRainEveryNRounds} rondas de " +
-                      $"{ChipValue}g + {ChipCount} por empujón con el " +
-                      $"{ShoveRefundPercent:P0} del {ShoveTaxPercent:P0} cobrado " +
-                      $"(mín. {ShoveTaxMinimum}), duran {ChipDurationRounds} rondas, " +
+                      $"monedas: {CoinsPerHit} por golpe — el mandoble de {ChipValue}g, el " +
+                      $"empujón con el {ShoveRefundPercent:P0} del {ShoveTaxPercent:P0} cobrado " +
+                      $"(mín. {ShoveTaxMinimum}); duran {ChipDurationRounds} rondas, " +
                       $"y se vencen de a una sin curarlo; " +
                       $"visual: {NameOf(visual)}, retrato: {NameOf(portrait)}) + {CritterCount} × " +
                       $"'{NameOf(critter)}' ({critter.BaseHP} HP, {critter.BaseAttack} a " +
