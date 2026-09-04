@@ -99,6 +99,59 @@ namespace Rollgeon.Items.Tests
             Assert.IsFalse(_rules.PassiveItemHealingBlocked);
         }
 
+        // ---- PotionHealMultiplier (Ayuno: la poción cura la mitad) ----------------------
+
+        private ItemSO NewPotionScaler(string id, float factor)
+        {
+            var item = ScriptableObject.CreateInstance<ItemSO>();
+            item.ItemId = id;
+            item.DisplayName = id;
+            item.Type = ItemType.Passive;
+            item.PotionHealMultiplier = factor;
+            _created.Add(item);
+            return item;
+        }
+
+        [Test]
+        public void AddItem_WithPotionHealMultiplier_RegistersFactorUnderItsId()
+        {
+            _service.AddItem(NewPotionScaler("ayuno", 0.5f));
+
+            Assert.AreEqual(0.5f, _rules.PotionHealMultiplier, 0.0001f);
+            Assert.AreEqual(0.5f, _rules.PotionHealMultiplierSources["ayuno"], 0.0001f);
+            Assert.IsFalse(_rules.PassiveItemHealingBlocked, "el multiplicador no bloquea curas pasivas");
+        }
+
+        [Test]
+        public void RemoveItem_ReleasesPotionHealMultiplier()
+        {
+            var item = NewPotionScaler("ayuno", 0.5f);
+            _service.AddItem(item);
+
+            _service.RemoveItem(item.ItemId);
+
+            Assert.AreEqual(1f, _rules.PotionHealMultiplier, 0.0001f);
+        }
+
+        [Test]
+        public void Dispose_ReleasesPotionHealMultiplier()
+        {
+            _service.AddItem(NewPotionScaler("ayuno", 0.5f));
+
+            _service.Dispose();
+            _service = null;
+
+            Assert.AreEqual(1f, _rules.PotionHealMultiplier, 0.0001f);
+        }
+
+        [Test]
+        public void ItemWithDefaultPotionHealMultiplier_DoesNotRegister()
+        {
+            _service.AddItem(NewPotionScaler("plain", 1f));
+
+            Assert.AreEqual(0, _rules.PotionHealMultiplierSources.Count);
+        }
+
         private sealed class StubPlayerService : IPlayerService
         {
             public StubPlayerService(Guid guid) { PlayerGuid = guid; }

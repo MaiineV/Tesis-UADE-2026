@@ -6,6 +6,7 @@ using Rollgeon.Attributes;
 using Rollgeon.Attributes.Modifiers;
 using Rollgeon.Attributes.Stats;
 using Rollgeon.Combat.Damage;
+using Rollgeon.Combat.Healing;
 using Rollgeon.Combos.Play;
 using Rollgeon.Dice;
 using Rollgeon.Effects;
@@ -173,6 +174,81 @@ namespace Rollgeon.Combat.Tests
 
             Assert.AreEqual(PlayerComboFormulaKind.Heal, breakdown.Kind);
             Assert.AreEqual(10, breakdown.Final);
+        }
+
+        // ---- Reglas de curación de la poción (Ayuno ×0.5) ---------------------------
+
+        [Test]
+        public void Resolve_PotionHealRules_EnterM_AndAreJournaledWithTheirSource()
+        {
+            // Ayuno: la poción cura la mitad — ×0.5 entra a M y el desglose lo muestra con su id.
+            var rules = new HealingRuleService();
+            rules.Register();
+            rules.AddPotionHealMultiplier("ayuno", 0.5f);
+            try
+            {
+                var dice = DiceOf((DiceType.D6, 4), (DiceType.D6, 4));
+
+                int total = PlayerComboHeal.Resolve(_player, healBase: 10, dice, 1f, out var bd);
+
+                // N = 10 + 8 = 18; M = 0.5 → 9
+                Assert.AreEqual(0.5f, bd.ScratchMultiplier, 0.0001f);
+                Assert.AreEqual(0.5f, bd.M, 0.0001f);
+                Assert.AreEqual(9, total);
+                Assert.IsNotNull(bd.Sources);
+                Assert.AreEqual(1, bd.Sources.Count);
+                Assert.AreEqual(ScratchSourceKind.Item, bd.Sources[0].Kind);
+                Assert.AreEqual("ayuno", bd.Sources[0].SourceId);
+                Assert.AreEqual(0.5f, bd.Sources[0].MultiplierFactor, 0.0001f);
+            }
+            finally
+            {
+                rules.Dispose();
+            }
+        }
+
+        [Test]
+        public void Resolve_PotionHealRules_ComposeWithScratchMultipliers()
+        {
+            var rules = new HealingRuleService();
+            rules.Register();
+            rules.AddPotionHealMultiplier("ayuno", 0.5f);
+            ServiceLocator.AddService<IComboPassiveService>(new FakeComboPassiveService
+            {
+                Scratch = new EnchantmentScratch { ComboDamageMultiplier = 2f },
+            }, ServiceScope.Global);
+            try
+            {
+                // N = 10; M = 2 × 0.5 = 1 → 10
+                Assert.AreEqual(10, PlayerComboHeal.Resolve(_player, 10, null));
+            }
+            finally
+            {
+                rules.Dispose();
+            }
+        }
+
+        [Test]
+        public void Resolve_PotionHealRules_DoNotTouchDamageOrShield()
+        {
+            var rules = new HealingRuleService();
+            rules.Register();
+            rules.AddPotionHealMultiplier("ayuno", 0.5f);
+            try
+            {
+                var dice = DiceOf((DiceType.D6, 4), (DiceType.D6, 4));
+
+                int damage = PlayerComboDamage.Resolve(_player, 10, dice, 1f,
+                    PlayerComboFormulaKind.Damage, out var bd);
+
+                Assert.AreEqual(18, damage);
+                Assert.AreEqual(1f, bd.M, 0.0001f);
+                Assert.IsNull(bd.Sources);
+            }
+            finally
+            {
+                rules.Dispose();
+            }
         }
 
         // Fake mínimo: solo LastComboScratch importa para la fórmula.

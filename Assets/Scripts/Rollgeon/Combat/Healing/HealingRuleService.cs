@@ -9,6 +9,7 @@ namespace Rollgeon.Combat.Healing
     public sealed class HealingRuleService : IHealingRuleService, IPreloadableService, IDisposable
     {
         private readonly HashSet<string> _passiveHealingBlockSources = new();
+        private readonly Dictionary<string, float> _potionHealMultipliers = new();
         private EventManager.EventReceiver _onRunStart;
 
         /// <summary>Antes de InventoryService (60), que registra las reglas al agregar items.</summary>
@@ -17,7 +18,7 @@ namespace Rollgeon.Combat.Healing
         public void Register()
         {
             ServiceLocator.AddService<IHealingRuleService>(this, ServiceScope.Global);
-            _onRunStart = _ => _passiveHealingBlockSources.Clear(); // defensivo: una run nueva arranca sin reglas
+            _onRunStart = _ => ClearRules(); // defensivo: una run nueva arranca sin reglas
             EventManager.Subscribe(EventName.OnRunStart, _onRunStart);
         }
 
@@ -28,7 +29,13 @@ namespace Rollgeon.Combat.Healing
                 EventManager.UnSubscribe(EventName.OnRunStart, _onRunStart);
                 _onRunStart = null;
             }
+            ClearRules();
+        }
+
+        private void ClearRules()
+        {
             _passiveHealingBlockSources.Clear();
+            _potionHealMultipliers.Clear();
         }
 
         // ---- IHealingRuleService -----------------------------------------------
@@ -45,6 +52,30 @@ namespace Rollgeon.Combat.Healing
         {
             if (string.IsNullOrEmpty(sourceId)) return;
             _passiveHealingBlockSources.Remove(sourceId);
+        }
+
+        public float PotionHealMultiplier
+        {
+            get
+            {
+                float product = 1f;
+                foreach (var factor in _potionHealMultipliers.Values) product *= factor;
+                return product;
+            }
+        }
+
+        public IReadOnlyDictionary<string, float> PotionHealMultiplierSources => _potionHealMultipliers;
+
+        public void AddPotionHealMultiplier(string sourceId, float factor)
+        {
+            if (string.IsNullOrEmpty(sourceId) || factor <= 0f) return;
+            _potionHealMultipliers[sourceId] = factor;
+        }
+
+        public void RemovePotionHealMultiplier(string sourceId)
+        {
+            if (string.IsNullOrEmpty(sourceId)) return;
+            _potionHealMultipliers.Remove(sourceId);
         }
     }
 }

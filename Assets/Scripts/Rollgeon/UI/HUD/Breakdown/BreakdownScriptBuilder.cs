@@ -66,11 +66,18 @@ namespace Rollgeon.UI.HUD.Breakdown
                 for (int i = 0; i < ordered.Count; i++)
                 {
                     var die = ordered[i];
+                    // Dado movido a M (Fuente Mágica): vuela al multiplicador como bono
+                    // aditivo, con el icono de la fuente que lo movió — nunca pasa por N.
+                    bool towardM = IsMovedToMultiplier(bd.DiceMovedToMultiplier, die.BagSlot);
+                    var mover = towardM ? FindMover(bd.Sources, die.BagSlot) : null;
                     script.Steps.Add(new BreakdownStep
                     {
                         Kind = BreakdownStepKind.Die,
                         BagSlot = die.BagSlot,
                         Amount = die.Face,
+                        Target = towardM ? BreakdownTarget.AddM : BreakdownTarget.BaseN,
+                        SourceId = mover?.SourceId,
+                        SourceAsset = mover?.SourceAsset,
                     });
                     if (perDie != null && perDie.TryGetValue(die.BagSlot, out var procs))
                     {
@@ -91,6 +98,24 @@ namespace Rollgeon.UI.HUD.Breakdown
 
             script.Reconciled = CheckReconciliation(script);
             return script;
+        }
+
+        private static bool IsMovedToMultiplier(IReadOnlyList<int> moved, int bagSlot)
+        {
+            if (moved == null || bagSlot < 0) return false;
+            for (int i = 0; i < moved.Count; i++)
+                if (moved[i] == bagSlot) return true;
+            return false;
+        }
+
+        // La entrada neutra del journal que marcó el dado (ScratchSnapshot.RecordDelta): trae
+        // la fuente para el icono. Null si el scratch se escribió sin journal.
+        private static ScratchContribution? FindMover(IReadOnlyList<ScratchContribution> sources, int bagSlot)
+        {
+            if (sources == null) return null;
+            for (int i = 0; i < sources.Count; i++)
+                if (sources[i].MovedDieBagSlot == bagSlot) return sources[i];
+            return null;
         }
 
         private static void AddSourceSteps(
