@@ -27,6 +27,7 @@ namespace Rollgeon.Combat.AI
     {
         private const string StandingChannel = "always.now";
         private const string NextChannel = "always.next";
+        private const string ReachChannel = "always.reach";
 
         private static AllEnemyTelegraphsOverlay s_instance;
 
@@ -46,6 +47,9 @@ namespace Rollgeon.Combat.AI
 
         public static Guid NextSource(Guid enemyId)
             => AINode_AuxTelegraph.ChannelGuid(enemyId, NextChannel);
+
+        public static Guid ReachSource(Guid enemyId)
+            => AINode_AuxTelegraph.ChannelGuid(enemyId, ReachChannel);
 
         /// <summary>Lo llama <c>CombatHUDView.BindAll</c>, junto al overlay de ALT.</summary>
         public void Bind()
@@ -94,6 +98,12 @@ namespace Rollgeon.Combat.AI
             var overlay = ThreatTelegraphOverlay.ResolveOrCreate();
             if (overlay == null) return;
 
+            // La casilla actual del jugador: un intent cuyos tiles son SOLO esa casilla
+            // no es un telegraph — es el marcador "te va a pegar a vos" del melee/disparo
+            // genérico, que se mueve con vos. Pintado siempre, dejaba tu propio tile
+            // marcado por cada Guardian de la sala (bug de playtest 04/09).
+            var playerCell = ResolvePlayerCell();
+
             foreach (var id in order)
             {
                 if (!intents.TryRead(id, _standing, _next)) continue;
@@ -101,7 +111,7 @@ namespace Rollgeon.Combat.AI
                 // Todo lo del enemigo Y de sus objetos (las cruces de sus bombas): esta
                 // vista es el paño completo, no el reparto por hover del preview.
                 CollectCells(_standing, _standingCells);
-                CollectCells(_next, _nextCells);
+                CollectCells(_next, _nextCells, skipPlayerTracker: true, playerCell);
 
                 // Mismo dedupe que el preview: la marca congelada le gana a la predicción.
                 _nextCells.ExceptWith(_standingCells);
@@ -117,16 +127,47 @@ namespace Rollgeon.Combat.AI
                     overlay.Show(NextSource(id), _nextCells, ThreatOverlayState.Incoming);
                     any = true;
                 }
+
+                // Sin área comprometida ni anunciada NO se pinta nada: el rango "por si
+                // acaso" de todos los enemigos todo el tiempo era ruido (playtest 04/09)
+                // — el alcance sigue siendo territorio de ALT y del hover individual.
+
                 if (any) _painted.Add(id);
             }
         }
 
-        private static void CollectCells(List<AIIntent> intents, HashSet<GridCoord> into)
+        private static void CollectCells(List<AIIntent> intents, HashSet<GridCoord> into,
+                                         bool skipPlayerTracker = false, GridCoord? playerCell = null)
         {
             into.Clear();
             foreach (var intent in intents)
+            {
+                if (skipPlayerTracker && playerCell.HasValue && TracksPlayerOnly(intent, playerCell.Value))
+                    continue;
                 foreach (var coord in intent.Tiles)
                     into.Add(coord);
+            }
+        }
+
+        // "Solo la casilla del jugador" = marcador de objetivo, no un área comprometida.
+        private static bool TracksPlayerOnly(in AIIntent intent, GridCoord playerCell)
+        {
+            bool anyTile = false;
+            foreach (var coord in intent.Tiles)
+            {
+                anyTile = true;
+                if (coord != playerCell) return false;
+            }
+            return anyTile;
+        }
+
+        private static GridCoord? ResolvePlayerCell()
+        {
+            if (!ServiceLocator.TryGetService<IPlayerService>(out var players) || players == null)
+                return null;
+            if (!ServiceLocator.TryGetService<IGridManager>(out var grid) || grid == null)
+                return null;
+            return grid.TryGetPosition(players.PlayerGuid, out var cell) ? cell : (GridCoord?)null;
         }
 
         private void ClearPainted()
@@ -140,6 +181,7 @@ namespace Rollgeon.Combat.AI
                 {
                     overlay.Clear(StandingSource(id));
                     overlay.Clear(NextSource(id));
+                    overlay.Clear(ReachSource(id));
                 }
             }
             _painted.Clear();
@@ -167,6 +209,7 @@ namespace Rollgeon.Combat.AI
             var overlay = ThreatTelegraphOverlay.ResolveOrCreate();
             overlay?.Clear(StandingSource(guid));
             overlay?.Clear(NextSource(guid));
+            overlay?.Clear(ReachSource(guid));
         }
 
         private void HandleScopeEnded(params object[] args) => ClearPainted();
