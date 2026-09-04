@@ -358,5 +358,69 @@ namespace Rollgeon.Entities.Visuals.Tests
             _service.DespawnAll();
             Assert.IsFalse(_service.TryGetPawn(Guid.NewGuid(), out _));
         }
+
+        // ---- Layers de targeting (PawnLayers) --------------------------------
+
+        [Test]
+        public void SpawnHero_PutsRootAndColliderOnPlayerLayer()
+        {
+            var hero = MakeHero("HeroPrefab");
+            var model = new GameObject("Model");
+            model.transform.SetParent(hero.VisualPrefab.transform);
+            model.AddComponent<CapsuleCollider>();
+
+            var pawn = _service.SpawnHero(Guid.NewGuid(), hero, GridCoord.Zero);
+
+            Assert.AreEqual(PawnLayers.PlayerLayer, pawn.gameObject.layer,
+                "El héroe en Default no se puede excluir del raycast de un ataque: su cuerpo tapa a los enemigos de atrás.");
+            Assert.AreEqual(PawnLayers.PlayerLayer, pawn.GetComponentInChildren<Collider>().gameObject.layer);
+        }
+
+        [Test]
+        public void SpawnEnemy_PutsNestedColliderOnEntityLayer()
+        {
+            var enemy = MakeEnemy("EnemyVisual");
+            var model = new GameObject("Model");
+            model.transform.SetParent(enemy.VisualPrefab.transform);
+            model.AddComponent<BoxCollider>();
+
+            var pawn = _service.SpawnEnemy(Guid.NewGuid(), enemy, new GridCoord(1, 0));
+
+            // La layer se pone en la INSTANCIA clonada; el prefab plantilla queda en Default.
+            var spawnedModel = pawn.transform.Find("Model");
+            Assert.AreEqual(PawnLayers.EntityLayer, pawn.gameObject.layer);
+            Assert.AreEqual(PawnLayers.EntityLayer, spawnedModel.gameObject.layer,
+                "El collider del arte vive en el hijo del modelo: si queda en Default, un movimiento sigue viendo al enemigo.");
+            Assert.AreEqual(0, model.layer, "El prefab plantilla no se toca, solo la instancia.");
+        }
+
+        [Test]
+        public void SpawnProp_PutsRootOnEntityLayer_EvenWithoutCollider()
+        {
+            // El cofre no trae collider: ChestService se lo agrega al root DESPUÉS del spawn,
+            // y ese componente usa la layer que el root tenga en ese momento.
+            var prefab = MakePrefab("ChestVisual");
+
+            var pawn = _service.SpawnProp(Guid.NewGuid(), prefab, new GridCoord(2, 0));
+
+            Assert.AreEqual(PawnLayers.EntityLayer, pawn.gameObject.layer);
+        }
+
+        [Test]
+        public void SpawnEnemy_LeavesWorldUiChildrenUntouched()
+        {
+            const int worldUiLayer = 9;
+            var enemy = MakeEnemy("EnemyVisual");
+            var healthBar = new GameObject("HealthBar");
+            healthBar.transform.SetParent(enemy.VisualPrefab.transform);
+            healthBar.layer = worldUiLayer;
+            healthBar.AddComponent<BoxCollider>();
+
+            var pawn = _service.SpawnEnemy(Guid.NewGuid(), enemy, new GridCoord(1, 0));
+
+            var spawnedBar = pawn.transform.Find("HealthBar");
+            Assert.AreEqual(worldUiLayer, spawnedBar.gameObject.layer,
+                "La barra de HP tiene cámara propia por layer: pisarla la saca de pantalla.");
+        }
     }
 }

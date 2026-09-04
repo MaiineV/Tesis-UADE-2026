@@ -320,6 +320,7 @@ namespace Rollgeon.Items.Tests
             public int CancelCalls { get; private set; }
             public bool IsSelecting { get; private set; }
             public bool CanOverlayHoverPreview => true;
+            public SelectionSettings ActiveSettings => null;
 
             public event Action<TargetSelectionResult> OnSelectionCompleted;
 

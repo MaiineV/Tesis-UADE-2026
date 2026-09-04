@@ -260,6 +260,12 @@ namespace Rollgeon.Entities.Visuals
             if (_byGuid.ContainsKey(guid)) Despawn(guid);
 
             var go = UnityEngine.Object.Instantiate(prefab, _parent);
+
+            // Layer de targeting (Player / Entity) en la instancia, nunca en el prefab: el
+            // raycast de selección la usa para ignorar al héroe en ataques y a todos los
+            // pawns en movimientos. Ver PawnLayers.
+            PawnLayers.Apply(go, kind);
+
             var pawn = go.GetComponent<EntityPawn>();
             if (pawn == null) pawn = go.AddComponent<EntityPawn>();
             pawn.Bind(guid, kind);

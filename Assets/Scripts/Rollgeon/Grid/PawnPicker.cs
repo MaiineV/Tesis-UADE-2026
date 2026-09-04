@@ -19,6 +19,15 @@ namespace Rollgeon.Grid
     /// Los colliders que no son pawn nunca bloquean el pick: sólo cuentan para elegir
     /// entre varios pawns (gana el más cercano a cámara = el que se ve adelante).
     /// </para>
+    /// <para>
+    /// <b>Máscara de layers</b>: los pawns viven en <see cref="PawnLayers"/> (Player /
+    /// Entity) y cada overload con <c>layerMask</c> decide cuáles pueden capturar el rayo.
+    /// Así el pick es contextual a la acción: un movimiento pasa máscara vacía y el click
+    /// sobre el modelo de un enemigo cae al piso que hay debajo; un ataque pasa Entity y el
+    /// cuerpo del héroe deja de tapar a los enemigos de atrás. Las máscaras son <c>int</c>
+    /// y no <see cref="LayerMask"/> a propósito: con un <c>int</c> literal el compilador
+    /// elegiría el overload de <c>float maxDistance</c> si el parámetro fuera el struct.
+    /// </para>
     /// </remarks>
     public static class PawnPicker
     {
@@ -34,7 +43,14 @@ namespace Rollgeon.Grid
         /// no pertenezca a un pawn. False si no hay ninguno.
         /// </summary>
         public static bool TryPickPawn(Ray ray, out EntityPawn pawn, float maxDistance = DefaultMaxDistance)
-            => TryPick(ray, out pawn, maxDistance);
+            => TryPick(ray, out pawn, Physics.DefaultRaycastLayers, maxDistance);
+
+        /// <summary>
+        /// Igual que <see cref="TryPickPawn(Ray, out EntityPawn, float)"/> pero solo los
+        /// colliders dentro de <paramref name="layerMask"/> pueden capturar el rayo.
+        /// </summary>
+        public static bool TryPickPawn(Ray ray, out EntityPawn pawn, int layerMask, float maxDistance = DefaultMaxDistance)
+            => TryPick(ray, out pawn, layerMask, maxDistance);
 
         /// <summary>
         /// Instancia de <typeparamref name="T"/> más cercana a cámara sobre el rayo,
@@ -43,9 +59,19 @@ namespace Rollgeon.Grid
         /// </summary>
         public static bool TryPick<T>(Ray ray, out T component, float maxDistance = DefaultMaxDistance)
             where T : class
+            => TryPick(ray, out component, Physics.DefaultRaycastLayers, maxDistance);
+
+        /// <summary>
+        /// Igual que <see cref="TryPick{T}(Ray, out T, float)"/> restringido a los colliders
+        /// de <paramref name="layerMask"/>. Con máscara vacía no hay query: nada puede ganar.
+        /// </summary>
+        public static bool TryPick<T>(Ray ray, out T component, int layerMask, float maxDistance = DefaultMaxDistance)
+            where T : class
         {
             component = null;
-            int count = Physics.RaycastNonAlloc(ray, Buffer, maxDistance);
+            if (layerMask == 0) return false;
+
+            int count = Physics.RaycastNonAlloc(ray, Buffer, maxDistance, layerMask);
 
             float best = float.MaxValue;
             for (int i = 0; i < count; i++)
@@ -70,6 +96,14 @@ namespace Rollgeon.Grid
         /// Celda bajo el cursor: la del pawn apuntado si el rayo cruza su cuerpo,
         /// si no la del piso. Null si el rayo no cae en la grilla.
         /// </summary>
+        public static GridCoord? ResolveCoord(Ray ray, IGridManager grid, float maxDistance = DefaultMaxDistance)
+            => ResolveCoord(ray, grid, Physics.DefaultRaycastLayers, maxDistance);
+
+        /// <summary>
+        /// Celda bajo el cursor considerando solo los pawns cuyo collider está en
+        /// <paramref name="pawnLayerMask"/>; el resto es transparente y el pick cae al
+        /// piso. Null si el rayo no cae en la grilla.
+        /// </summary>
         /// <remarks>
         /// El fallback intersecta el PLANO del piso, no los colliders de los tiles: el
         /// collider de cada tile es una caja de 1u de alto que sobresale 0.5 sobre el
@@ -79,11 +113,11 @@ namespace Rollgeon.Grid
         /// plano a la altura de <see cref="IGridManager.GridOrigin"/> da la celda
         /// correcta ignorando lo que haya en el medio.
         /// </remarks>
-        public static GridCoord? ResolveCoord(Ray ray, IGridManager grid, float maxDistance = DefaultMaxDistance)
+        public static GridCoord? ResolveCoord(Ray ray, IGridManager grid, int pawnLayerMask, float maxDistance = DefaultMaxDistance)
         {
             if (grid == null) return null;
 
-            if (TryPickPawn(ray, out var pawn, maxDistance)
+            if (TryPickPawn(ray, out var pawn, pawnLayerMask, maxDistance)
                 && grid.TryGetPosition(pawn.EntityGuid, out var pawnCoord))
             {
                 // Footprint multi-celda (Fase C): devolver la celda cubierta más cercana al
