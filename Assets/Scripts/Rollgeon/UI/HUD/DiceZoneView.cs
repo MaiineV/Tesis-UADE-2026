@@ -169,6 +169,8 @@ namespace Rollgeon.UI.HUD
             EventManager.Subscribe(EventName.OnEnchantmentApplied, HandleEnchantmentChanged);
             EventManager.Subscribe(EventName.OnEnchantmentRemoved, HandleEnchantmentChanged);
 
+            BindDieHotkeys();
+
             // Estado inicial: slots apagados hasta que el jugador presione Roll.
             ClearAll();
 
@@ -180,6 +182,7 @@ namespace Rollgeon.UI.HUD
         public void Unbind()
         {
             if (!_bound) return;
+            UnbindDieHotkeys();
             CancelDeferredOutro();
             if (_animator != null)
             {
@@ -203,6 +206,57 @@ namespace Rollgeon.UI.HUD
             _heldStates = null;
             _pendingRerollMask = null;
             _bound = false;
+        }
+
+        // ---- Hotkeys 1-5 -----------------------------------------------------
+
+        // Las teclas 1..5 togglean el hold del dado 1..5, mismo camino que el click
+        // (ToggleHold ya gatea fase, bloqueos y CapPreventHolding). Un array de
+        // handlers y no lambdas inline: Unsubscribe necesita la MISMA referencia.
+        private Rollgeon.Input.IGameplayHotkeyService _hotkeys;
+        private Action<UnityEngine.InputSystem.InputAction.CallbackContext>[] _dieHotkeyHandlers;
+
+        private static readonly Rollgeon.Input.GameplayHotkey[] DieHotkeys =
+        {
+            Rollgeon.Input.GameplayHotkey.SelectDie1,
+            Rollgeon.Input.GameplayHotkey.SelectDie2,
+            Rollgeon.Input.GameplayHotkey.SelectDie3,
+            Rollgeon.Input.GameplayHotkey.SelectDie4,
+            Rollgeon.Input.GameplayHotkey.SelectDie5,
+        };
+
+        private void BindDieHotkeys()
+        {
+            if (!ServiceLocator.TryGetService<Rollgeon.Input.IGameplayHotkeyService>(out _hotkeys)
+                || _hotkeys == null) return;
+
+            _dieHotkeyHandlers = new Action<UnityEngine.InputSystem.InputAction.CallbackContext>[DieHotkeys.Length];
+            for (int i = 0; i < DieHotkeys.Length; i++)
+            {
+                int captured = i;
+                _dieHotkeyHandlers[i] = _ => OnDieHotkey(captured);
+                _hotkeys.Subscribe(DieHotkeys[i], _dieHotkeyHandlers[i]);
+            }
+        }
+
+        private void UnbindDieHotkeys()
+        {
+            if (_hotkeys == null || _dieHotkeyHandlers == null) return;
+            for (int i = 0; i < DieHotkeys.Length; i++)
+                if (_dieHotkeyHandlers[i] != null)
+                    _hotkeys.Unsubscribe(DieHotkeys[i], _dieHotkeyHandlers[i]);
+            _dieHotkeyHandlers = null;
+            _hotkeys = null;
+        }
+
+        private void OnDieHotkey(int index)
+        {
+            // Sin slot resuelto (bag más chica, slot roto) la tecla no hace nada; el
+            // resto de los gates (fase de roll, dado bloqueado, Lento) los aplica
+            // ToggleHold — exactamente los mismos que el click sobre el dado.
+            if (_resolvedSlots == null || index >= _resolvedSlots.Length) return;
+            if (_resolvedSlots[index] == null) return;
+            ToggleHold(index);
         }
 
         // ---- Event handler ---------------------------------------------------
