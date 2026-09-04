@@ -17,9 +17,20 @@ namespace Rollgeon.Entities.Visuals
     /// pawn en <c>GridToWorld(to)</c>. El FP usa teleport — tweens se pueden
     /// layerear después reemplazando <see cref="EntityPawn.SetWorldPosition"/>.
     /// </remarks>
-    public sealed class EntityVisualService : IEntityVisualService, IDisposable
+    public sealed class EntityVisualService : IEntityVisualService, IPawnWalkTracker, IDisposable
     {
         private readonly Dictionary<Guid, EntityPawn> _byGuid = new Dictionary<Guid, EntityPawn>();
+
+        // ---- IPawnWalkTracker: relay por guid de la caminata de cada pawn ----
+
+        public event Action<Guid, GridCoord> OnCellLeft;
+        public event Action<Guid> OnWalkEnded;
+
+        public bool IsWalkingThrough(Guid entity, GridCoord coord)
+            => _byGuid.TryGetValue(entity, out var pawn) && pawn != null && pawn.IsWalkingThrough(coord);
+
+        private void HandlePawnCellLeft(EntityPawn pawn, GridCoord coord) => OnCellLeft?.Invoke(pawn.EntityGuid, coord);
+        private void HandlePawnWalkEnded(EntityPawn pawn) => OnWalkEnded?.Invoke(pawn.EntityGuid);
         private readonly IGridManager _grid;
         private readonly IMovementService _movement;
         private readonly Transform _parent;
@@ -214,16 +225,26 @@ namespace Rollgeon.Entities.Visuals
         {
             if (!_byGuid.TryGetValue(guid, out var pawn)) return;
             _byGuid.Remove(guid);
-            if (pawn != null) DestroyGO(pawn.gameObject);
+            if (pawn != null) ReleasePawn(pawn);
         }
 
         public void DespawnAll()
         {
             foreach (var pawn in _byGuid.Values)
             {
-                if (pawn != null) DestroyGO(pawn.gameObject);
+                if (pawn != null) ReleasePawn(pawn);
             }
             _byGuid.Clear();
+        }
+
+        // Cierra la caminata ANTES de destruir: los visuales diferidos que esperaban a este pawn
+        // se liberan por OnWalkEnded en vez de quedar colgados hasta que la casilla expire.
+        private void ReleasePawn(EntityPawn pawn)
+        {
+            if (pawn.IsMoving) pawn.StopMovement();
+            pawn.OnCellLeft -= HandlePawnCellLeft;
+            pawn.OnWalkEnded -= HandlePawnWalkEnded;
+            DestroyGO(pawn.gameObject);
         }
 
         private static void DestroyGO(GameObject go)
@@ -269,6 +290,8 @@ namespace Rollgeon.Entities.Visuals
             var pawn = go.GetComponent<EntityPawn>();
             if (pawn == null) pawn = go.AddComponent<EntityPawn>();
             pawn.Bind(guid, kind);
+            pawn.OnCellLeft += HandlePawnCellLeft;
+            pawn.OnWalkEnded += HandlePawnWalkEnded;
             pawn.SetFootprint(footprint == default ? Vector2Int.one : footprint);
             pawn.SnapToGrid(_grid, coord);
 
@@ -315,6 +338,10 @@ namespace Rollgeon.Entities.Visuals
             }
 
             pawn.SnapToGrid(_grid, to);
+            // El collider viaja con el transform, pero la escena de físicas lo sincroniza recién
+            // en el próximo step: un raycast de pick en este mismo frame lo encontraría en la
+            // celda vieja (Torbellino teletransporta y el jugador apunta al instante).
+            Physics.SyncTransforms();
         }
 
         private void OnDamageResolved(DamageResolvedPayload payload)
