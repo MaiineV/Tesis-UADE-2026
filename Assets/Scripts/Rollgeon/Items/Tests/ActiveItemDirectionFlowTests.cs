@@ -16,7 +16,7 @@ using UnityEngine;
 namespace Rollgeon.Items.Tests
 {
     /// <summary>
-    /// Targeting por direccion (Feature#0084 §A4): Justa de Justicia / Grapple Claw. Los
+    /// Targeting por direccion (Feature#0085 §A4): Justa de Justicia / Grapple Claw. Los
     /// 4 proxies adyacentes, el underlay de rango, el hover preview y que la cardinal
     /// elegida llegue al efecto via <see cref="ActiveItemRollTriggerContext.Direction"/>.
     /// </summary>

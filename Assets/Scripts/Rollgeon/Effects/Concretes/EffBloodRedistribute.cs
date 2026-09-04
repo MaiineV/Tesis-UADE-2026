@@ -11,7 +11,7 @@ using UnityEngine;
 namespace Rollgeon.Effects.Concretes
 {
     /// <summary>
-    /// Banda negativa de Blood Transfusion — D10 1-3, "Redistribución sanguínea" (Feature#0084).
+    /// Banda negativa de Blood Transfusion — D10 1-3, "Redistribución sanguínea" (Feature#0085).
     /// Suma el HP actual de los enemigos elegibles no-jefe y lo reparte equitativamente, sin
     /// superar sus máximos; con un único elegible no redistribuye — le aplica 1 stack de
     /// Sangrado. Nunca modifica al jugador ni corta la cadena (§ regla "resultado no

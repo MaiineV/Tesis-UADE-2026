@@ -62,7 +62,7 @@ namespace Patterns
         public int IncomingFlatReduction;
 
         /// <summary>
-        /// Clasificación del golpe (<see cref="DamageContext.Kind"/>) — Feature#0084 (Blood D6):
+        /// Clasificación del golpe (<see cref="DamageContext.Kind"/>) — Feature#0085 (Blood D6):
         /// distinguir un combo de Ataque real de daño ambiental/DoT/reacción sin tener que
         /// re-consultar el <c>DamageContext</c> original. Default <c>ComboAttack</c> (0) para
         /// payloads armados a mano en tests viejos que no lo seteaban.
@@ -71,7 +71,7 @@ namespace Patterns
 
         /// <summary>
         /// ComboId que generó el golpe (<see cref="DamageContext.ComboId"/>), o vacío/null si
-        /// no vino de un combo. Feature#0084 (Blood D6): identifica el combo de Ataque que
+        /// no vino de un combo. Feature#0085 (Blood D6): identifica el combo de Ataque que
         /// está esperando para consumir su carga.
         /// </summary>
         public string ComboId;

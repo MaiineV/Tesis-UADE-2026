@@ -8,7 +8,7 @@ using Rollgeon.PreConditions.Concretes;
 namespace Rollgeon.Editor.Tools.Item.ActiveItemBuilders
 {
     /// <summary>
-    /// Llena los 2 grupos de banda de Coin Shield (D4 Binary, Feature#0084 §2). La spec de
+    /// Llena los 2 grupos de banda de Coin Shield (D4 Binary, Feature#0085 §2). La spec de
     /// seed fija <c>BinaryPositiveParity = Even</c> sobre el <see cref="ItemSO"/>: acá solo
     /// se autoran los efectos/precondiciones de <c>OnNegativeBand</c> (impar, global) y
     /// <c>OnPositiveBand</c> (par, self).

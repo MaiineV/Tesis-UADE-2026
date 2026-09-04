@@ -4,7 +4,7 @@ using System.Collections.Generic;
 namespace Rollgeon.Combat.Status
 {
     /// <summary>
-    /// Estado Sangrado (Feature#0084, Blood Transfusion): daño por turno acumulable —
+    /// Estado Sangrado (Feature#0085, Blood Transfusion): daño por turno acumulable —
     /// a diferencia de <see cref="IPoisonService"/> (que REFRESCA), cada aplicación
     /// AGREGA un stack nuevo con su propia duración. Tickea al INICIO del turno del
     /// sangrante, un solo golpe de pipeline por turno con el daño de TODOS los stacks

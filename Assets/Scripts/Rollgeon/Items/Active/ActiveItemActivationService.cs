@@ -394,7 +394,7 @@ namespace Rollgeon.Items.Active
             // uso limitado no se gasta en tiradas que el jugador descarto.
             int roll = ApplyEnchantment(rawRoll, item.ActiveDie.MaxFace());
 
-            // Resolucion completa (Feature#0084): cara, banda, estructura y magnitud —
+            // Resolucion completa (Feature#0085): cara, banda, estructura y magnitud —
             // por item, no por dado: Precision, Control y Binary tienen mecanismo propio.
             var resolution = ActiveItemBands.ResolveRoll(rawRoll, roll, item);
 

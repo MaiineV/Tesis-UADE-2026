@@ -19,7 +19,7 @@ using UnityEngine;
 namespace Rollgeon.Effects.Tests
 {
     /// <summary>
-    /// <see cref="EffBloodDrain"/> (Feature#0084, Blood Transfusion bandas mixta/positiva):
+    /// <see cref="EffBloodDrain"/> (Feature#0085, Blood Transfusion bandas mixta/positiva):
     /// <c>dmg = max(1, floor(A × cara / 10))</c>, <c>A</c> = cara máxima del dado más grande
     /// de la bolsa; la curación es un % del daño REAL (HP perdido, sin contar escudo).
     /// </summary>

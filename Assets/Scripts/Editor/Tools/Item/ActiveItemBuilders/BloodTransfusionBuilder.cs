@@ -7,7 +7,7 @@ using Rollgeon.PreConditions.Concretes;
 namespace Rollgeon.Editor.Tools.Item.ActiveItemBuilders
 {
     /// <summary>
-    /// Llena los 3 grupos de banda de Blood Transfusion (D10, Feature#0084 §1). Los cortes
+    /// Llena los 3 grupos de banda de Blood Transfusion (D10, Feature#0085 §1). Los cortes
     /// custom (<c>NegativeMaxFace = 3</c>, <c>MixedMaxFace = 7</c> — tercios darían 4-6) los
     /// fija la spec de seed sobre el <see cref="ItemSO"/>, no este builder: acá solo se
     /// autoran los efectos/precondiciones de cada grupo.

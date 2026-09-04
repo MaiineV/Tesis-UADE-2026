@@ -12,7 +12,7 @@ namespace Rollgeon.Effects.Tests
 {
     /// <summary>
     /// <see cref="ReadBiggestBagDieMaxFace"/>: cara máxima del dado más grande de la bolsa
-    /// (Feature#0084, Blood Transfusion banda A) — no la cara que salió, el techo del dado.
+    /// (Feature#0085, Blood Transfusion banda A) — no la cara que salió, el techo del dado.
     /// Fallback 6 sin servicio / sin bolsa.
     /// </summary>
     [TestFixture]

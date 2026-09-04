@@ -241,7 +241,7 @@ namespace Rollgeon.UI.Tests
         }
 
         // ------------------------------------------------------------------
-        // Feature#0084 — intensidad por estructura de resolucion
+        // Feature#0085 — intensidad por estructura de resolucion
         // ------------------------------------------------------------------
 
         [Test]

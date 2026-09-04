@@ -20,10 +20,10 @@ namespace Rollgeon.Entities.Traits
         /// <summary>Flag narrativo (solo tiene sentido con Kamikaze): ignora el filtro de supervivencia entero.</summary>
         public readonly bool KamikazeIgnoresSurvival;
 
-        /// <summary>Sin sangre: inelegible como fuente/target de efectos de Sangrado (Feature#0084, Blood Transfusion).</summary>
+        /// <summary>Sin sangre: inelegible como fuente/target de efectos de Sangrado (Feature#0085, Blood Transfusion).</summary>
         public readonly bool Bloodless;
 
-        /// <summary>No se puede desplazar por empuje/atracción/swap (Feature#0084: Grapple Claw, Probability Drive).</summary>
+        /// <summary>No se puede desplazar por empuje/atracción/swap (Feature#0085: Grapple Claw, Probability Drive).</summary>
         public readonly bool Immovable;
 
         /// <summary>

@@ -12,7 +12,7 @@ using UnityEngine;
 namespace Rollgeon.Effects.Concretes
 {
     /// <summary>
-    /// Banda impar de Coin Shield (Feature#0084): otorga escudo al jugador y/o a todos los
+    /// Banda impar de Coin Shield (Feature#0085): otorga escudo al jugador y/o a todos los
     /// enemigos vivos de la sala. El monto se computa UNA sola vez (con el escudo del
     /// jugador al momento de activar, antes de sumarle nada) y se aplica a cada target con
     /// el mismo patrón de escritura que <see cref="EffAddShield"/> (sin cap: no existe).

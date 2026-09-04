@@ -19,7 +19,7 @@ using Rollgeon.Tiles.Forced;
 namespace Rollgeon.Effects.Tests
 {
     /// <summary>
-    /// EffJoustCharge (Feature#0084 §4, D12 Bandas, dirección): carga = Face, daño = Face al
+    /// EffJoustCharge (Feature#0085 §4, D12 Bandas, dirección): carga = Face, daño = Face al
     /// primer enemigo vivo golpeado, empuje según <see cref="JoustPushMode"/> y colisión que
     /// repite daño en la banda positiva.
     /// </summary>

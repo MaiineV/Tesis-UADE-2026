@@ -10,7 +10,7 @@ namespace Rollgeon.PreConditions.Concretes
     /// curso contra <see cref="Value"/>. Lee <c>PreConditionContext.Effect.TriggerContext</c>
     /// (<see cref="ActiveItemRollTriggerContext"/>) — sin ese contexto (fuera de un
     /// dispatch de item activo, o en un arbol de IA) devuelve <c>false</c>: no hay nada
-    /// que comparar, no se puede decir que "pasa" por default. Feature#0084 §A3.
+    /// que comparar, no se puede decir que "pasa" por default. Feature#0085 §A3.
     /// </summary>
     [Serializable, HideReferenceObjectPicker]
     public sealed class PcActiveItemFaceCompare : BasePreCondition, IReadsTriggerEffect

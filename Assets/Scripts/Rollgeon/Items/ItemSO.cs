@@ -218,7 +218,7 @@ namespace Rollgeon.Items
         public ActiveItemParity ControlParity = ActiveItemParity.Even;
 
         [Title("Active — Estructura de resolucion")]
-        [InfoBox("Feature#0084. Define cuantos grupos de efectos tiene el item y como se " +
+        [InfoBox("Feature#0085. Define cuantos grupos de efectos tiene el item y como se " +
                  "calcula la banda/magnitud desde la cara. Bands = el modelo original " +
                  "(3 grupos, tercios o cortes custom). Binary = 2 grupos por paridad " +
                  "(Coin Shield). Gradient/Hierarchy = 1 grupo (OnPositiveBand); la cara " +

@@ -748,7 +748,7 @@ namespace Rollgeon.EditorTools.Localization
                 "Perdés tu próximo turno.",
                 "You lose your next turn.");
 
-            // Sangrado (Feature#0084): a diferencia de Veneno, acumula stacks — el nombre
+            // Sangrado (Feature#0085): a diferencia de Veneno, acumula stacks — el nombre
             // lleva un placeholder {0} para el conteo de stacks vivos (BleedStatusProvider).
             Content("status.bleed.name", "Sangrado ×{0}", "Bleeding ×{0}");
             Content("status.bleed.desc",

@@ -18,7 +18,7 @@ using UnityEngine.TestTools;
 namespace Rollgeon.Items.Tests
 {
     /// <summary>
-    /// Eleccion post-tirada (Feature#0084 §A5, Probability Drive cara 4): se abre
+    /// Eleccion post-tirada (Feature#0085 §A5, Probability Drive cara 4): se abre
     /// DESPUES de <c>OnResolved</c>, gatea <c>CanActivate</c>, y se resuelve por
     /// eleccion, abandono (fin de turno), descarte silencioso (fin de combate) o
     /// directo cuando hay una sola opcion.

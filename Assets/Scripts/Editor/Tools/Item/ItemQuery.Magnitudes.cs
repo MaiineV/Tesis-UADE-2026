@@ -52,7 +52,7 @@ namespace Rollgeon.Editor.Tools.Item
             {
                 CollectMagnitudes(item.OnActivate, into, 0, new HashSet<EffectData>());
 
-                // Feature#0084: mismo motivo que GetEffectTypes — el modelo nuevo dispara desde
+                // Feature#0085: mismo motivo que GetEffectTypes — el modelo nuevo dispara desde
                 // los grupos por banda/estructura, no desde OnActivate.
                 if (item.UsesActiveSlot)
                 {

@@ -13,7 +13,7 @@ using UnityEngine;
 namespace Rollgeon.Editor.Tools.Item
 {
     /// <summary>
-    /// Especificación de un ítem activo del rework (Feature#0084 §A6). A diferencia de
+    /// Especificación de un ítem activo del rework (Feature#0085 §A6). A diferencia de
     /// <see cref="ItemCreationSpec"/> (modelo legacy: un solo <c>OnActivate</c>), declara
     /// dado propio, estructura de resolución y cortes/paridad — <see cref="ActiveItemAuthoring"/>
     /// arma el <see cref="ItemSO"/> completo del modelo nuevo (<c>UsesActiveSlot = true</c>).
@@ -51,7 +51,7 @@ namespace Rollgeon.Editor.Tools.Item
     }
 
     /// <summary>
-    /// Autoría de ítems activos del rework (Feature#0084 §A6, "7 items del doc").
+    /// Autoría de ítems activos del rework (Feature#0085 §A6, "7 items del doc").
     /// </summary>
     /// <remarks>
     /// Existe separado de <see cref="ItemAuthoring"/> porque el modelo nuevo (dado propio +
@@ -125,7 +125,7 @@ namespace Rollgeon.Editor.Tools.Item
             if (shopPool != null)
                 ItemShopPriceBridge.AddToPool(shopPool, item, spec.BasePrice);
 
-            // Nombre idéntico en ES/EN a propósito (Feature#0084: "nombre del doc en los dos
+            // Nombre idéntico en ES/EN a propósito (Feature#0085: "nombre del doc en los dos
             // idiomas, solo se traduce la descripción" — ver IdenticalByDesign en
             // LocalizationTablesTests). La descripción sí lleva textos distintos por idioma.
             ContentLocalizationBridge.UpsertEntryWithUndo(

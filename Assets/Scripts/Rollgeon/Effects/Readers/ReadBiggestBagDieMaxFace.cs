@@ -7,7 +7,7 @@ using Sirenix.OdinInspector;
 namespace Rollgeon.Effects.Readers
 {
     /// <summary>
-    /// Cara máxima del dado MÁS GRANDE de la bolsa del jugador (Feature#0084, Blood
+    /// Cara máxima del dado MÁS GRANDE de la bolsa del jugador (Feature#0085, Blood
     /// Transfusion banda A: "cara máxima del dado más grande de la bolsa"). No es la cara
     /// que salió en la tirada — es el techo teórico del dado con más caras que el jugador
     /// tiene equipado, sin importar el resultado del roll.

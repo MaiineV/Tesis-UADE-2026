@@ -10,7 +10,7 @@ using Object = UnityEngine.Object;
 namespace Rollgeon.Effects.Tests
 {
     /// <summary>
-    /// Cubre el preview de trayectoria por dirección (Diseño A4, Feature#0084 — Justa de
+    /// Cubre el preview de trayectoria por dirección (Diseño A4, Feature#0085 — Justa de
     /// Justicia / Grapple Claw): un request con <see cref="SelectionRequest.HoverPreview"/>
     /// pinta la trayectoria calculada por el efecto activo al hovear un target válido, con
     /// el mismo patrón "ancho" que el preview AoE (ClearAll + repintado completo, ver

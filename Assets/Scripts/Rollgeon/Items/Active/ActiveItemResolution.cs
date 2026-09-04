@@ -1,7 +1,7 @@
 namespace Rollgeon.Items.Active
 {
     /// <summary>
-    /// Estructura de resolucion del dado propio de un item activo. Feature#0084 —
+    /// Estructura de resolucion del dado propio de un item activo. Feature#0085 —
     /// "Ítems Activos Rediseñados". Define cuantos grupos de efectos tiene el item y
     /// como se calcula la banda / magnitud a partir de la cara.
     /// </summary>

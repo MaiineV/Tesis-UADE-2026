@@ -12,7 +12,7 @@ namespace Rollgeon.Combat
         private readonly IShieldPersistenceService _persistence;
 
         /// <param name="persistence">
-        /// Opcional (Feature#0084, Coin Shield): si la entidad tiene la marca de
+        /// Opcional (Feature#0085, Coin Shield): si la entidad tiene la marca de
         /// persistencia activa, este turno SALTEA el reset y la marca se consume — el
         /// escudo vuelve a resetearse normalmente en el siguiente. <c>null</c> = sin
         /// persistencia disponible, comportamiento idéntico al de antes.
@@ -43,7 +43,7 @@ namespace Rollgeon.Combat
             if (args == null || args.Length < 1 || !(args[0] is Guid entityGuid))
                 return;
 
-            // Coin Shield (Feature#0084): la marca de persistencia se consume UNA vez —
+            // Coin Shield (Feature#0085): la marca de persistencia se consume UNA vez —
             // este turno no resetea, el próximo ya no tiene marca y resetea normal.
             if (_persistence?.TryConsume(entityGuid) == true) return;
 

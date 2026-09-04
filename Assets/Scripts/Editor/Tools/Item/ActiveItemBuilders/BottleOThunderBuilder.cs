@@ -9,7 +9,7 @@ using UnityEngine;
 namespace Rollgeon.Editor.Tools.Item.ActiveItemBuilders
 {
     /// <summary>
-    /// Efectos de Bottle'o Thunder (Feature#0084 §7, Jerarquía D4). Un único grupo
+    /// Efectos de Bottle'o Thunder (Feature#0085 §7, Jerarquía D4). Un único grupo
     /// (<c>OnPositiveBand</c>): cadena de aturdimiento hasta la cara del dado, más 2 Charcos
     /// Eléctricos anclados cerca del objetivo primario.
     /// </summary>

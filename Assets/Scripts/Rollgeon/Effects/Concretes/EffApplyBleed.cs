@@ -11,7 +11,7 @@ namespace Rollgeon.Effects.Concretes
 {
     /// <summary>
     /// Agrega stacks de Sangrado a los targets resueltos vía <see cref="IBleedService"/>
-    /// (Feature#0084: Blood Transfusion cuando el pool de sangrado tiene un único elegible).
+    /// (Feature#0085: Blood Transfusion cuando el pool de sangrado tiene un único elegible).
     /// </summary>
     /// <remarks>
     /// Resolución de target = mismo criterio que <see cref="EffGridPush"/>: celdas

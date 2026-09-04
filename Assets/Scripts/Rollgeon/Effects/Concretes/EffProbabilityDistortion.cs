@@ -12,7 +12,7 @@ using UnityEngine;
 namespace Rollgeon.Effects.Concretes
 {
     /// <summary>
-    /// Probability Drive — banda negativa "Distorsión" (Feature#0084, Items_Activos_Redisenados.md
+    /// Probability Drive — banda negativa "Distorsión" (Feature#0085, Items_Activos_Redisenados.md
     /// §5, D4 cara 1). Teletransporte seguro cerca de la casilla central elegida y, después, swap
     /// de posiciones entre dos enemigos movibles del área — sin daño, solo reordena la formación.
     /// </summary>

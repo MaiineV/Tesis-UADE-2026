@@ -6,7 +6,7 @@ using Sirenix.OdinInspector;
 namespace Rollgeon.PreConditions.Concretes
 {
     /// <summary>
-    /// True si <c>OwnerGuid</c> NO tiene una carga de Blood D6 pendiente (Feature#0084:
+    /// True si <c>OwnerGuid</c> NO tiene una carga de Blood D6 pendiente (Feature#0085:
     /// "ningún Blood D6 pendiente" es prerrequisito de activación). Sin servicio registrado:
     /// permisivo (true) — mismo criterio que <c>PcOwnerStatCompare</c>.
     /// </summary>

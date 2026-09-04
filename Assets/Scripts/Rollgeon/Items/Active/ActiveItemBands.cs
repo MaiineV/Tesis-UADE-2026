@@ -6,7 +6,7 @@ namespace Rollgeon.Items.Active
     /// <summary>
     /// Reparte el rango de un dado en las bandas de resultado de un item activo, segun
     /// su <see cref="ActiveItemResolution"/>. GDD "Ítems Activos" §20 (modelo original,
-    /// tercios) y Feature#0084 §A2 (cortes custom, binario, gradiente, jerarquia).
+    /// tercios) y Feature#0085 §A2 (cortes custom, binario, gradiente, jerarquia).
     /// </summary>
     /// <remarks>
     /// <code>
@@ -83,7 +83,7 @@ namespace Rollgeon.Items.Active
             => RangeOf(band, die.MaxFace());
 
         // ==================================================================
-        // Cortes custom (Feature#0084 §A2) — solo estructura Bands
+        // Cortes custom (Feature#0085 §A2) — solo estructura Bands
         // ==================================================================
 
         /// <summary>
@@ -106,7 +106,7 @@ namespace Rollgeon.Items.Active
         }
 
         // ==================================================================
-        // Binario (Feature#0084 §A2) — estructura Binary
+        // Binario (Feature#0085 §A2) — estructura Binary
         // ==================================================================
 
         /// <summary>
@@ -223,7 +223,7 @@ namespace Rollgeon.Items.Active
             => value < 1 ? 1 : (value > faces ? faces : value);
 
         // ==================================================================
-        // Resolucion completa (Feature#0084 §A2)
+        // Resolucion completa (Feature#0085 §A2)
         // ==================================================================
 
         /// <summary>
@@ -256,7 +256,7 @@ namespace Rollgeon.Items.Active
         }
 
         // ==================================================================
-        // Validacion (Feature#0084 §A1)
+        // Validacion (Feature#0085 §A1)
         // ==================================================================
 
         /// <summary>

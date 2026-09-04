@@ -13,7 +13,7 @@ using UnityEngine;
 namespace Rollgeon.Effects.Concretes
 {
     /// <summary>
-    /// Grapple Claw (Feature#0084 — Items_Activos_Redisenados.md §3, D6 Gradiente). Ancla un
+    /// Grapple Claw (Feature#0085 — Items_Activos_Redisenados.md §3, D6 Gradiente). Ancla un
     /// enemigo movible y lo atrae hacia el jugador, o —si el ancla es sólida/inamovible— avanza
     /// al jugador hacia ella. Con cara 1-2 agrega Cadena Inestable: un enemigo movible cercano a
     /// la trayectoria intermedia se arrastra 1 casilla hacia ella.

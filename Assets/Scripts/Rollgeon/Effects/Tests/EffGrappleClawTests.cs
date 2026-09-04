@@ -21,7 +21,7 @@ using UnityEngine;
 namespace Rollgeon.Effects.Tests
 {
     /// <summary>
-    /// EffGrappleClaw (Feature#0084 §3, D6 Gradiente): ancla movible se atrae adyacente al
+    /// EffGrappleClaw (Feature#0085 §3, D6 Gradiente): ancla movible se atrae adyacente al
     /// jugador; ancla sólida/inamovible hace avanzar al jugador cortado antes de una tile
     /// dañina; caras 1-2 agregan Cadena Inestable.
     /// </summary>

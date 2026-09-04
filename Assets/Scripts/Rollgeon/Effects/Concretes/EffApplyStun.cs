@@ -11,7 +11,7 @@ namespace Rollgeon.Effects.Concretes
 {
     /// <summary>
     /// Aturde a los targets resueltos por <c>Turns</c> turnos vía <see cref="IStunService"/>
-    /// (Feature#0084: choques de Justa de Justicia / cadenas de Bottle'o Thunder).
+    /// (Feature#0085: choques de Justa de Justicia / cadenas de Bottle'o Thunder).
     /// </summary>
     /// <remarks>
     /// Resolución de target = mismo criterio que <see cref="EffGridPush"/>: celdas

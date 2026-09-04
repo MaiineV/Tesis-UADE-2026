@@ -10,7 +10,7 @@ using UnityEngine;
 namespace Rollgeon.Effects.Concretes
 {
     /// <summary>
-    /// Probability Drive — banda mixta "Salto probabilístico" (Feature#0084,
+    /// Probability Drive — banda mixta "Salto probabilístico" (Feature#0085,
     /// Items_Activos_Redisenados.md §5, D4 caras 2-3). Teletransporte uniforme entre las
     /// casillas seguras de radio 2-3 alrededor del centro elegido; sin ninguna, degrada a radio
     /// 1 y después a radio 4 antes de rendirse.

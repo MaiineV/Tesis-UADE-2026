@@ -8,7 +8,7 @@ using UnityEditor;
 namespace Rollgeon.Editor.Tools.Item
 {
     /// <summary>
-    /// Las 7 fichas definitivas de <c>Items_Activos_Redisenados.md</c> (Feature#0084) como
+    /// Las 7 fichas definitivas de <c>Items_Activos_Redisenados.md</c> (Feature#0085) como
     /// <see cref="ActiveItemCreationSpec"/>, listas para <see cref="ActiveItemAuthoring.CreateAll"/>.
     /// </summary>
     /// <remarks>
@@ -17,7 +17,7 @@ namespace Rollgeon.Editor.Tools.Item
     /// <see cref="Run"/>, no desde un botón de menú que quedaría muerto en el repo.
     /// <para>
     /// <b>Rareza/precio placeholder.</b> Los 7 items van con <c>Rare</c> / 60 oro — balance real
-    /// queda fuera de alcance de Feature#0084 (ver el plan, "Fuera de alcance").
+    /// queda fuera de alcance de Feature#0085 (ver el plan, "Fuera de alcance").
     /// </para>
     /// <para>
     /// <b><c>BuildEffects</c> delega en <c>ActiveItemBuilders/*</c>.</b> Esta clase fija

@@ -13,7 +13,7 @@ using UnityEngine;
 namespace Rollgeon.Effects.Concretes
 {
     /// <summary>
-    /// Probability Drive — banda positiva "Control improbable" (Feature#0084,
+    /// Probability Drive — banda positiva "Control improbable" (Feature#0085,
     /// Items_Activos_Redisenados.md §5, D4 cara 4). Sortea hasta 3 casillas seguras distintas de
     /// radio 0-4 alrededor del centro y le pide al jugador que elija una (§A5); con 1 sola
     /// opción teletransporta directo, sin abrir la elección.

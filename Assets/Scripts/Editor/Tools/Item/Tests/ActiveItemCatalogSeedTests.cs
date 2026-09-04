@@ -7,7 +7,7 @@ using Rollgeon.Items.Active;
 namespace Rollgeon.Editor.Tools.Item.Tests
 {
     /// <summary>
-    /// Cubre <see cref="ActiveItemCatalogSeed.Specs"/> (Feature#0084 §A6): las 7 fichas del
+    /// Cubre <see cref="ActiveItemCatalogSeed.Specs"/> (Feature#0085 §A6): las 7 fichas del
     /// doc quedan bien tipadas — sin tocar disco, catálogo ni localización (eso es
     /// responsabilidad de <see cref="ActiveItemAuthoringTests"/> / <see cref="ActiveItemCatalogSeed.Run"/>).
     /// </summary>

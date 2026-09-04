@@ -10,7 +10,7 @@ namespace Rollgeon.Items.Active
     /// <c>EffectContext</c> de cada activacion resuelta. Le da a los efectos de banda
     /// acceso a la cara, la banda/magnitud ya resueltas, la direccion elegida (si el
     /// item la pidio) y el punto de entrada para pedir una eleccion post-tirada.
-    /// Feature#0084 — GDD "Ítems Activos Rediseñados" §A3.
+    /// Feature#0085 — GDD "Ítems Activos Rediseñados" §A3.
     /// </summary>
     public sealed class ActiveItemRollTriggerContext : BehaviorContext
     {

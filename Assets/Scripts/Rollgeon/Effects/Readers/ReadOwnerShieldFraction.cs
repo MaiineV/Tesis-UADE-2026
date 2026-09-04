@@ -8,7 +8,7 @@ using UnityEngine;
 namespace Rollgeon.Effects.Readers
 {
     /// <summary>
-    /// <c>E = max(Min, ceil|floor(Fraction × escudo actual del owner))</c> (Feature#0084,
+    /// <c>E = max(Min, ceil|floor(Fraction × escudo actual del owner))</c> (Feature#0085,
     /// Coin Shield banda impar: "E = max(1, ceil(50% del escudo actual del jugador))").
     /// Sin <see cref="AttributesManager"/> registrado: devuelve <see cref="Min"/>.
     /// </summary>

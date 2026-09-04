@@ -11,7 +11,7 @@ using UnityEngine;
 namespace Rollgeon.Editor.Tools.Item.Tests
 {
     /// <summary>
-    /// Cubre <see cref="ActiveItemAuthoring.CreateOrSkip"/> (Feature#0084 §A6): escritura
+    /// Cubre <see cref="ActiveItemAuthoring.CreateOrSkip"/> (Feature#0085 §A6): escritura
     /// completa (asset + catálogo + pool + loc), idempotencia y que una estructura inválida
     /// no bloquea la creación — solo lo avisa en el reporte (el GDD prohíbe "no pasa nada",
     /// no prohíbe crear el item mientras se termina de autorar).

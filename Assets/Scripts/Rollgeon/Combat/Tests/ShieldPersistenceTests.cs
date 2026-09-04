@@ -8,7 +8,7 @@ namespace Rollgeon.Combat.Tests
 {
     /// <summary>
     /// Tests de <see cref="ShieldPersistenceService"/> + el hook en
-    /// <see cref="ShieldResetHandler"/> (Feature#0084, Coin Shield cara par): un escudo
+    /// <see cref="ShieldResetHandler"/> (Feature#0085, Coin Shield cara par): un escudo
     /// marcado sobrevive EXACTAMENTE un <c>OnTurnStarted</c>, y el siguiente ya resetea normal.
     /// </summary>
     [TestFixture]

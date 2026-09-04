@@ -18,7 +18,7 @@ using Rollgeon.Movement;
 namespace Rollgeon.Effects.Tests
 {
     /// <summary>
-    /// Probability Drive (Feature#0084 §5, D4 Bandas cortes 1/3): distorsión (teleport radio 1 +
+    /// Probability Drive (Feature#0085 §5, D4 Bandas cortes 1/3): distorsión (teleport radio 1 +
     /// swap), salto probabilístico (teleport ring 2-3) y control improbable (elección de 3
     /// opciones, o teleport directo con una sola).
     /// </summary>

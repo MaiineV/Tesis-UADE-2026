@@ -14,7 +14,7 @@ using Rollgeon.Grid;
 namespace Rollgeon.Effects.Tests
 {
     /// <summary>
-    /// <see cref="EffAddShieldToAll"/> (Feature#0084, Coin Shield banda impar): el monto se
+    /// <see cref="EffAddShieldToAll"/> (Feature#0085, Coin Shield banda impar): el monto se
     /// computa UNA sola vez y se aplica a jugador + enemigos vivos; entidades sin atributo
     /// Shield se saltean.
     /// </summary>

@@ -456,7 +456,7 @@ namespace Patterns
         /// sobre la pila de oro (ItemGoldFeedbackView).</summary>
         OnItemGoldGranted,
 
-        // --- Combat/Status: Sangrado (Feature#0084) ------------------------------------
+        // --- Combat/Status: Sangrado (Feature#0085) ------------------------------------
         // NOTA: al final absoluto del enum a propósito (ver OnReinforcementSpawned).
         /// <summary>args: [Guid entityGuid, int stacks]. Se agregó (o sumó) un stack de
         /// Sangrado a <c>entityGuid</c> — a diferencia de Veneno, Sangrado ACUMULA stacks
@@ -473,7 +473,7 @@ namespace Patterns
         /// expiró (0 stacks restantes).</summary>
         OnBleedExpired,
 
-        // --- Items: Blood D6 (Feature#0084) ---------------------------------------------
+        // --- Items: Blood D6 (Feature#0085) ---------------------------------------------
         /// <summary>args: [Guid ownerGuid, int face]. El item Blood D6 armó su carga con la
         /// cara <c>face</c> — queda a la espera del próximo combo de Ataque resuelto.</summary>
         OnBloodD6Armed,
@@ -483,7 +483,7 @@ namespace Patterns
         /// repartió entre los receptores.</summary>
         OnBloodD6Consumed,
 
-        // --- Combat: persistencia de escudo (Feature#0084, Coin Shield) -----------------
+        // --- Combat: persistencia de escudo (Feature#0085, Coin Shield) -----------------
         /// <summary>args: [Guid entityGuid]. <c>ShieldPersistenceService</c> marcó a
         /// <c>entityGuid</c> para saltear su próximo reset de escudo por inicio de turno
         /// (<c>ShieldResetHandler.OnTurnStarted</c> lo consume una única vez).</summary>

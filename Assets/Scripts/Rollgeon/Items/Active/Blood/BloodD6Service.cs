@@ -12,7 +12,7 @@ using UnityEngine;
 namespace Rollgeon.Items.Active.Blood
 {
     /// <summary>
-    /// Implementación POCO de <see cref="IBloodD6Service"/> (Feature#0084, Blood D6): arma
+    /// Implementación POCO de <see cref="IBloodD6Service"/> (Feature#0085, Blood D6): arma
     /// un bonus sobre el próximo combo de Ataque válido, lo espera vía
     /// <c>TypedEvent&lt;ComboPlayedPayload&gt;</c> y lo consume vía
     /// <c>TypedEvent&lt;DamageResolvedPayload&gt;</c> — el daño base del combo NUNCA se toca,

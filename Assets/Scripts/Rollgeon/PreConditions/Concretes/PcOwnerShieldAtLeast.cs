@@ -7,7 +7,7 @@ using Sirenix.OdinInspector;
 namespace Rollgeon.PreConditions.Concretes
 {
     /// <summary>
-    /// True si <c>OwnerGuid</c> tiene al menos <see cref="Min"/> de escudo (Feature#0084,
+    /// True si <c>OwnerGuid</c> tiene al menos <see cref="Min"/> de escudo (Feature#0085,
     /// Coin Shield: "no puede usarse con 0 de escudo").
     /// </summary>
     /// <remarks>

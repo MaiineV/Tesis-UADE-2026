@@ -16,7 +16,7 @@ using Rollgeon.PreConditions.Concretes;
 namespace Rollgeon.PreConditions.Tests
 {
     /// <summary>
-    /// <see cref="PcEligibleEnemyExists"/> (Feature#0084, Blood Transfusion): gate sobre
+    /// <see cref="PcEligibleEnemyExists"/> (Feature#0085, Blood Transfusion): gate sobre
     /// <c>CombatantQuery.LiveEnemiesOf</c> + <c>IsEligibleForBlood</c>. Mismo fixture que
     /// <c>CombatantQueryTests</c>.
     /// </summary>

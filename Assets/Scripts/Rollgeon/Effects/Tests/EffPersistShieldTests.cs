@@ -8,7 +8,7 @@ using Rollgeon.Effects.Concretes;
 namespace Rollgeon.Effects.Tests
 {
     /// <summary>
-    /// <see cref="EffPersistShield"/> (Feature#0084, Coin Shield banda par): delega en
+    /// <see cref="EffPersistShield"/> (Feature#0085, Coin Shield banda par): delega en
     /// <see cref="IShieldPersistenceService.PersistThroughNextReset"/>; sin servicio, no-op.
     /// </summary>
     [TestFixture]

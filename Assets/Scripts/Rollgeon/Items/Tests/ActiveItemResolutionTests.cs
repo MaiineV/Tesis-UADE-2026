@@ -7,7 +7,7 @@ using UnityEngine;
 namespace Rollgeon.Items.Tests
 {
     /// <summary>
-    /// Feature#0084 §A1/§A2: cortes custom, binario por paridad, gradiente/jerarquia y
+    /// Feature#0085 §A1/§A2: cortes custom, binario por paridad, gradiente/jerarquia y
     /// que el modelo legacy (tercios, Precision, Control) siga intacto.
     /// </summary>
     [TestFixture]

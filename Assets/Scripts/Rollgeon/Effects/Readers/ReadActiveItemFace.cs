@@ -9,7 +9,7 @@ namespace Rollgeon.Effects.Readers
     /// Lee la cara resuelta (o la magnitud) de la activacion de un item activo en curso
     /// (<see cref="ActiveItemRollTriggerContext"/>). Para "Justa de Justicia": el daño
     /// literal es la cara del D12, autorado como <c>EffDealDamage { FromReader = new
-    /// ReadActiveItemFace() }</c>. Feature#0084 §A3.
+    /// ReadActiveItemFace() }</c>. Feature#0085 §A3.
     /// </summary>
     [Serializable, HideReferenceObjectPicker]
     public sealed class ReadActiveItemFace : EffectIntReader

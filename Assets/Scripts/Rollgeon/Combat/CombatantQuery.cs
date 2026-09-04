@@ -14,7 +14,7 @@ namespace Rollgeon.Combat
 {
     /// <summary>
     /// Filtros compartidos de "quién es un enemigo elegible" para los ítems activos
-    /// rediseñados (Feature#0084). <see cref="IEntityQueryService.GetAllEnemiesOf"/>
+    /// rediseñados (Feature#0085). <see cref="IEntityQueryService.GetAllEnemiesOf"/>
     /// devuelve TODO lo no-jugador — cofres y props de sala incluidos — así que cualquier
     /// consumidor que quiera "enemigos de verdad" necesita las mismas exclusiones que
     /// <c>ClassSkillPushResolver.Classify</c> ya resuelve para el choque del Empuje.

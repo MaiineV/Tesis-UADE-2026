@@ -70,7 +70,7 @@ namespace Rollgeon.Editor.Tools.Localization.Tests
             // Nombre propio de enemigo del sheet: Chiplash es marca, igual en los dos
             // idiomas. (El sniper dejó de ser Stackpot — ahora Bolillero/Bingo Sniper.)
             "enemy.skirmisher.name",
-            // Feature#0084 — Ítems Activos rediseñados: decisión del usuario, "nombre del
+            // Feature#0085 — Ítems Activos rediseñados: decisión del usuario, "nombre del
             // doc en ES y EN, solo se traduce la descripción" (los 7 nombres son términos
             // de juego/marca en inglés, igual que "Combo"/"Jackpot" más arriba).
             "blood.transfusion.name",

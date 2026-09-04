@@ -17,7 +17,7 @@ using Rollgeon.Items.Active;
 namespace Rollgeon.Effects.Tests
 {
     /// <summary>
-    /// EffChainStun (Bottle'o Thunder, Feature#0084 §7, D4 Jerarquía): aturde al primario y
+    /// EffChainStun (Bottle'o Thunder, Feature#0085 §7, D4 Jerarquía): aturde al primario y
     /// encadena hasta <c>Magnitude</c> rebotes — el más cercano no golpeado, dentro de
     /// <see cref="EffChainStun.BounceRange"/> y con línea de visión limpia.
     /// </summary>

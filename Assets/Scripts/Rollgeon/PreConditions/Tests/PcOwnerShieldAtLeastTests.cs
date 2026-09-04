@@ -8,7 +8,7 @@ using Rollgeon.PreConditions.Concretes;
 namespace Rollgeon.PreConditions.Tests
 {
     /// <summary>
-    /// <see cref="PcOwnerShieldAtLeast"/> (Feature#0084, Coin Shield): "no puede usarse con
+    /// <see cref="PcOwnerShieldAtLeast"/> (Feature#0085, Coin Shield): "no puede usarse con
     /// 0 de escudo".
     /// </summary>
     [TestFixture]

@@ -8,7 +8,7 @@ namespace Rollgeon.Combat.Status
 {
     /// <summary>
     /// Implementación POCO de <see cref="IBleedService"/>, espejo estructural de
-    /// <see cref="PoisonService"/> con la diferencia central del GDD (Feature#0084): los
+    /// <see cref="PoisonService"/> con la diferencia central del GDD (Feature#0085): los
     /// stacks se SUMAN en vez de refrescar. Cada stack vive su propia cuenta regresiva.
     /// </summary>
     /// <remarks>

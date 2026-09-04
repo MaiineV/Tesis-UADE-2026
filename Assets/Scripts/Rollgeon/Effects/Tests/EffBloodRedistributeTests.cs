@@ -19,7 +19,7 @@ using Rollgeon.Grid;
 namespace Rollgeon.Effects.Tests
 {
     /// <summary>
-    /// <see cref="EffBloodRedistribute"/> (Feature#0084, Blood Transfusion banda 1-3):
+    /// <see cref="EffBloodRedistribute"/> (Feature#0085, Blood Transfusion banda 1-3):
     /// único elegible → Sangrado; 2+ → reparto equitativo capeado por máximo, resto de a
     /// uno nearest-first.
     /// </summary>

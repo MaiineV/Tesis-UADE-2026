@@ -15,7 +15,7 @@ using Rollgeon.Items.Active.Blood;
 namespace Rollgeon.Items.Tests
 {
     /// <summary>
-    /// <see cref="BloodD6Service"/> (Feature#0084, Blood D6): arma la carga sobre el próximo
+    /// <see cref="BloodD6Service"/> (Feature#0085, Blood D6): arma la carga sobre el próximo
     /// combo de Ataque, la consume al resolverse el daño real (payloads a mano, patrón
     /// <c>ComboPassiveGenericTriggerTests</c>) y reparte el bonus entre el primario y
     /// secundarios con LoS/rango, sin re-disparar la propia carga.

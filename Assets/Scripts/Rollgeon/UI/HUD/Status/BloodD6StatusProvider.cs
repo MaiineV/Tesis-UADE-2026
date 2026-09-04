@@ -7,7 +7,7 @@ using Rollgeon.Localization;
 namespace Rollgeon.UI.HUD.Status
 {
     /// <summary>
-    /// Publica la carga pendiente de Blood D6 (Feature#0084) en la fila de status icons: el
+    /// Publica la carga pendiente de Blood D6 (Feature#0085) en la fila de status icons: el
     /// badge muestra el % de bonus armado. Sin carga pendiente no publica nada.
     /// </summary>
     public sealed class BloodD6StatusProvider : IStatusIconProvider

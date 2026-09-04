@@ -451,7 +451,7 @@ namespace Rollgeon.Items.Tests
         }
 
         // ------------------------------------------------------------------
-        // Feature#0084: trigger context, SourceItemId, PreConditionContext.Effect
+        // Feature#0085: trigger context, SourceItemId, PreConditionContext.Effect
         // ------------------------------------------------------------------
 
         [Test]

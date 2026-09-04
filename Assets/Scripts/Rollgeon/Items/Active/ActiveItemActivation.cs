@@ -32,7 +32,7 @@ namespace Rollgeon.Items.Active
         public readonly bool EffectsSucceeded;
 
         /// <summary>
-        /// Resolucion completa (Feature#0084): cara, banda, estructura y magnitud. Los
+        /// Resolucion completa (Feature#0085): cara, banda, estructura y magnitud. Los
         /// campos <see cref="Roll"/>/<see cref="Band"/> se conservan por compatibilidad —
         /// son <c>Resolution.Face</c>/<c>Resolution.Band</c> desagregados.
         /// </summary>
@@ -202,7 +202,7 @@ namespace Rollgeon.Items.Active
 
         /// <summary>
         /// <c>true</c> mientras un efecto de banda pidio una eleccion post-tirada
-        /// (Feature#0084 §A5, Probability Drive cara 4) y todavia no se resolvio.
+        /// (Feature#0085 §A5, Probability Drive cara 4) y todavia no se resolvio.
         /// <see cref="CanActivate"/> devuelve <see cref="ActiveItemBlock.AwaitingDecision"/>
         /// en este estado — es la misma "ventana abierta" que la del roll pendiente, solo
         /// que ya paso la banda y el efecto espera un tile.

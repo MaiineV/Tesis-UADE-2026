@@ -4,7 +4,7 @@ using Rollgeon.Items;
 namespace Rollgeon.Editor.Tools.Item.ActiveItemBuilders
 {
     /// <summary>
-    /// Efectos de Justa de Justicia (Feature#0084 §4, Bandas D12, dirección). Mismo
+    /// Efectos de Justa de Justicia (Feature#0085 §4, Bandas D12, dirección). Mismo
     /// <see cref="EffJoustCharge"/> en las 3 bandas — solo cambia <see cref="JoustPushMode"/>,
     /// que decide cómo empuja tras el impacto.
     /// </summary>

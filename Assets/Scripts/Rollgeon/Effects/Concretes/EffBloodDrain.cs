@@ -10,7 +10,7 @@ using UnityEngine;
 namespace Rollgeon.Effects.Concretes
 {
     /// <summary>
-    /// Bandas mixta (4-7, 50%) y positiva (8-10, 100%) de Blood Transfusion (Feature#0084):
+    /// Bandas mixta (4-7, 50%) y positiva (8-10, 100%) de Blood Transfusion (Feature#0085):
     /// el enemigo elegible con mayor HP actual recibe <c>max(1, floor(A × cara / 10))</c> de
     /// daño y el jugador se cura por <see cref="HealPct"/> del daño REAL (HP efectivamente
     /// perdido — <c>DamageContext.FinalDamage</c>, sin contar lo absorbido por escudo).

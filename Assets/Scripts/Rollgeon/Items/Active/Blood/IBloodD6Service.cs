@@ -3,7 +3,7 @@ using System;
 namespace Rollgeon.Items.Active.Blood
 {
     /// <summary>
-    /// Carga pendiente de Blood D6 (Feature#0084): arma el bonus del próximo combo de
+    /// Carga pendiente de Blood D6 (Feature#0085): arma el bonus del próximo combo de
     /// Ataque válido de <c>owner</c>. Combat-scoped: <see cref="ClearAll"/> se llama en
     /// <c>OnCombatEnd</c>/<c>OnRunEnd</c>.
     /// </summary>

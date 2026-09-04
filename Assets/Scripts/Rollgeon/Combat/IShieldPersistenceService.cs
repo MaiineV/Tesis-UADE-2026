@@ -3,7 +3,7 @@ using System;
 namespace Rollgeon.Combat
 {
     /// <summary>
-    /// Flag de "este escudo sobrevive al próximo reset" (Feature#0084, Coin Shield cara
+    /// Flag de "este escudo sobrevive al próximo reset" (Feature#0085, Coin Shield cara
     /// par: el jugador salta el reset de <see cref="ShieldResetHandler"/> una única vez).
     /// Combat-scoped: <see cref="ClearAll"/> se llama en <c>OnCombatEnd</c>.
     /// </summary>

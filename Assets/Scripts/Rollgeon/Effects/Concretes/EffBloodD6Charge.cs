@@ -8,7 +8,7 @@ using UnityEngine;
 namespace Rollgeon.Effects.Concretes
 {
     /// <summary>
-    /// Único grupo (Gradient) de Blood D6 (Feature#0084): arma la carga del próximo combo de
+    /// Único grupo (Gradient) de Blood D6 (Feature#0085): arma la carga del próximo combo de
     /// Ataque con <see cref="IBloodD6Service.Arm"/>, usando la cara resuelta del item como
     /// magnitud. Sin <see cref="ActiveItemRollTriggerContext"/> o sin servicio: warning + no-op.
     /// </summary>

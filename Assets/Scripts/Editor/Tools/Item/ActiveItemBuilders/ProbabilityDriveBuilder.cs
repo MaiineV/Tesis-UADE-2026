@@ -5,7 +5,7 @@ using Rollgeon.Items;
 namespace Rollgeon.Editor.Tools.Item.ActiveItemBuilders
 {
     /// <summary>
-    /// Efectos de Probability Drive (Feature#0084 §5, Bandas D4 con cortes 1/3). Una casilla
+    /// Efectos de Probability Drive (Feature#0085 §5, Bandas D4 con cortes 1/3). Una casilla
     /// central se elige ANTES de tirar (<c>SlotState.Empty</c>, rango 8) y cada banda resuelve un
     /// reposicionamiento distinto. La <see cref="SelectionSettings"/> se autoría IDÉNTICA en las
     /// 3 bandas: <c>ActiveItemActivationService.ResolveSelectionSettings</c> solo mira la primera

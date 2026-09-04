@@ -6,7 +6,7 @@ using UnityEngine;
 namespace Rollgeon.PreConditions.Concretes
 {
     /// <summary>
-    /// True si existe al menos un enemigo vivo de <c>OwnerGuid</c> (Feature#0084, Blood
+    /// True si existe al menos un enemigo vivo de <c>OwnerGuid</c> (Feature#0085, Blood
     /// Transfusion): con <see cref="ExcludeBloodless"/> exige que al menos uno NO tenga el
     /// tag Bloodless.
     /// </summary>

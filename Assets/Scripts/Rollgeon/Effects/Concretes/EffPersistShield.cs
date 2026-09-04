@@ -7,7 +7,7 @@ using UnityEngine;
 namespace Rollgeon.Effects.Concretes
 {
     /// <summary>
-    /// Banda par de Coin Shield (Feature#0084): el jugador salta su próximo reset de escudo
+    /// Banda par de Coin Shield (Feature#0085): el jugador salta su próximo reset de escudo
     /// por inicio de turno vía <see cref="IShieldPersistenceService.PersistThroughNextReset"/>.
     /// Sin servicio registrado: warning + no-op (nunca corta la cadena).
     /// </summary>

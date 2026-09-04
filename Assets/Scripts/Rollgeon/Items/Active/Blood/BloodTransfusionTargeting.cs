@@ -6,7 +6,7 @@ using Rollgeon.Grid;
 namespace Rollgeon.Items.Active.Blood
 {
     /// <summary>
-    /// Resuelve el objetivo automático de Blood Transfusion (Feature#0084) en las bandas
+    /// Resuelve el objetivo automático de Blood Transfusion (Feature#0085) en las bandas
     /// mixta y positiva: el enemigo elegible con mayor HP actual; empate → más cercano al
     /// jugador; empate remanente → orden de <see cref="Guid"/> (determinismo de test, sin
     /// significado de diseño).

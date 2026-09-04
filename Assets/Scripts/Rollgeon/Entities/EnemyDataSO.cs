@@ -183,11 +183,11 @@ namespace Rollgeon.Entities
         [Tooltip("Flag narrativo: este kamikaze ignora por completo el filtro de supervivencia del pathing.")]
         public bool KamikazeIgnoresSurvival;
 
-        [Tooltip("Sin sangre: queda afuera del pool de Sangrado/drenaje (Feature#0084, Blood Transfusion) " +
+        [Tooltip("Sin sangre: queda afuera del pool de Sangrado/drenaje (Feature#0085, Blood Transfusion) " +
                  "tanto como fuente como como target.")]
         public bool Bloodless;
 
-        [Tooltip("No se puede desplazar por empuje/atracción/swap (Feature#0084: Grapple Claw, Probability Drive). " +
+        [Tooltip("No se puede desplazar por empuje/atracción/swap (Feature#0085: Grapple Claw, Probability Drive). " +
                  "Los jefes ya son inamovibles por tamaño/regla propia; este flag es para no-jefes fijos.")]
         public bool Immovable;
 

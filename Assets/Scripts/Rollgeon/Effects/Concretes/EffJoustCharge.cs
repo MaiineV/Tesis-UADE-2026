@@ -15,7 +15,7 @@ namespace Rollgeon.Effects.Concretes
 {
     /// <summary>
     /// Cómo responde el empuje tras el impacto de la carga de Justa de Justicia — un valor
-    /// distinto autorado por banda (Feature#0084, Items_Activos_Redisenados.md §4).
+    /// distinto autorado por banda (Feature#0085, Items_Activos_Redisenados.md §4).
     /// </summary>
     public enum JoustPushMode
     {

@@ -7,7 +7,7 @@ using Rollgeon.Localization;
 namespace Rollgeon.UI.HUD.Status
 {
     /// <summary>
-    /// Publica el estado Sangrado (Feature#0084) en la fila de status icons, con la
+    /// Publica el estado Sangrado (Feature#0085) en la fila de status icons, con la
     /// duración del stack más duradero como badge y el conteo de stacks en el nombre
     /// ("Sangrado ×N"). Sin stacks activos no publica nada — el slot no existe.
     /// </summary>

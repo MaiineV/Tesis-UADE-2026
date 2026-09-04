@@ -205,7 +205,7 @@ namespace Rollgeon.UI.HUD
         public static bool HitstopAllowed(ActiveItemBand band) => band == ActiveItemBand.Positive;
 
         // ==================================================================
-        // Feature#0084 — intensidad por estructura de resolucion
+        // Feature#0085 — intensidad por estructura de resolucion
         // ==================================================================
 
         /// <summary>

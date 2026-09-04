@@ -7,7 +7,7 @@ using Rollgeon.PreConditions.Concretes;
 namespace Rollgeon.Editor.Tools.Item.ActiveItemBuilders
 {
     /// <summary>
-    /// Llena el único grupo (Gradient) de Blood D6 (D6, Feature#0084 §6): la cara resuelta
+    /// Llena el único grupo (Gradient) de Blood D6 (D6, Feature#0085 §6): la cara resuelta
     /// arma la carga del próximo combo de Ataque, gateada por <see cref="PcBloodD6Ready"/>
     /// ("ningún Blood D6 pendiente").
     /// </summary>
