@@ -88,5 +88,71 @@ namespace Rollgeon.Upgrades.Dice.Tests
 
             Assert.IsFalse(filter.Matches("combo.trio"));
         }
+
+        // --- ExcludeComboIds (Fuente Mágica: todo combo salvo Número Mayor) --------------
+
+        [Test]
+        public void test_combo_filter_exclude_mode_matches_unlisted_combo()
+        {
+            // Arrange
+            var filter = new ComboFilter
+            {
+                Mode = ComboFilterMode.ExcludeComboIds,
+                ComboIds = new List<string> { "combo.higher_number" },
+            };
+
+            // Act
+            bool matches = filter.Matches("combo.trio");
+
+            // Assert
+            Assert.IsTrue(matches);
+        }
+
+        [Test]
+        public void test_combo_filter_exclude_mode_rejects_listed_combo()
+        {
+            // Arrange
+            var filter = new ComboFilter
+            {
+                Mode = ComboFilterMode.ExcludeComboIds,
+                ComboIds = new List<string> { "combo.higher_number" },
+            };
+
+            // Act
+            bool matches = filter.Matches("combo.higher_number");
+
+            // Assert
+            Assert.IsFalse(matches);
+        }
+
+        [Test]
+        public void test_combo_filter_exclude_mode_rejects_empty_combo()
+        {
+            // Arrange — sin combo no hay nada que excluir ni que disparar.
+            var filter = new ComboFilter
+            {
+                Mode = ComboFilterMode.ExcludeComboIds,
+                ComboIds = new List<string> { "combo.higher_number" },
+            };
+
+            // Act + Assert
+            Assert.IsFalse(filter.Matches(""));
+            Assert.IsFalse(filter.Matches(null));
+        }
+
+        [Test]
+        public void test_combo_filter_exclude_mode_with_empty_list_matches_any_combo()
+        {
+            // Arrange — lista vacía = no se excluye nada, equivale a AnyCombo.
+            var filter = new ComboFilter
+            {
+                Mode = ComboFilterMode.ExcludeComboIds,
+                ComboIds = new List<string>(),
+            };
+
+            // Act + Assert
+            Assert.IsTrue(filter.Matches("combo.trio"));
+            Assert.IsTrue(filter.UsesComboIds);
+        }
     }
 }
