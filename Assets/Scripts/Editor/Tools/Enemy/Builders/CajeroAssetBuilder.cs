@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.IO;
+using Rollgeon.Attributes;
 using Rollgeon.Combat.AI.Decisions;
 using Rollgeon.Combat.AI.Readers;
 using Rollgeon.Combat.AI.Targeting;
@@ -117,9 +118,9 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         public const int MeleeRange = 1;
 
         /// <summary>
-        /// Pasos por turno cuando persigue. Va como constante y no como lectura del stat porque
-        /// <c>AIReadSelfStat</c> devuelve 0 sin <c>AttributesManager</c> (EditMode) y un MaxSteps
-        /// de 0 deja al jefe clavado, sin caer a ningún default.
+        /// Pasos por turno cuando persigue. Constante y no lectura del stat —al revés que la
+        /// Comisión— porque vale lo mismo que su <see cref="BaseSpeed"/> y nada le toca la
+        /// velocidad a un jefe: el reader daría el mismo 4.
         /// </summary>
         public const int ChaseSteps = BaseSpeed;
 
@@ -346,11 +347,11 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         /// <summary>Alcance del disparo.</summary>
         public const int CritterRange = 5;
 
-        /// <summary>Va antes que el jefe (4) en la cola de turnos.</summary>
+        /// <summary>
+        /// Va antes que el jefe (4) en la cola de turnos, y es también lo que vuela por turno: sus
+        /// dos nodos de movimiento leen este stat en vez de traer un número propio.
+        /// </summary>
         public const int CritterSpeed = 5;
-
-        /// <summary>Alcance de vuelo por turno.</summary>
-        public const int CritterMoveSteps = 3;
 
         // ---- Vestuario de la Comisión ------------------------------------
 
@@ -948,12 +949,18 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         };
 
         /// <summary>
-        /// Lo que la separa del jugador cuando se le acerca, con los valores del ranged común
-        /// (3 pasos, distancia 5) — que son los mismos que su alcance y su vuelo por turno.
+        /// Lo que la separa del jugador cuando se le acerca, hasta su propio alcance.
         /// </summary>
+        /// <remarks>
+        /// Vuela lo que dice su stat de velocidad y no un número del builder: el asset lo comparte
+        /// con el barrido que pasó a los enemigos comunes a leer su Speed, y un número acá se lo
+        /// pisaría cada vez que corre el menú. El 0 que devuelve el reader sin
+        /// <c>AttributesManager</c> no la alcanza: nada tickea su árbol en EditMode, y en juego
+        /// <c>TreeDrivenEnemyAI</c> no arranca sin uno.
+        /// </remarks>
         public static AINode_KeepDistance BuildCritterKeepDistance() => new AINode_KeepDistance
         {
-            MaxSteps = new AIConstantInt { Value = CritterMoveSteps },
+            MaxSteps = new AIReadSelfStat { Stat = StatType.Speed, UseModified = true },
             IdealDistance = new AIConstantInt { Value = CritterRange },
         };
 
@@ -963,7 +970,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
         /// </remarks>
         public static AINode_Move BuildCritterApproach() => new AINode_Move
         {
-            MaxSteps = new AIConstantInt { Value = CritterMoveSteps },
+            MaxSteps = new AIReadSelfStat { Stat = StatType.Speed, UseModified = true },
             DesiredRange = new AIConstantInt { Value = CritterRange },
             Retreat = false,
         };

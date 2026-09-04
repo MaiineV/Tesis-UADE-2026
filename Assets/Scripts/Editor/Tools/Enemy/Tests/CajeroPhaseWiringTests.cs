@@ -4,6 +4,7 @@ using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using NUnit.Framework;
+using Rollgeon.Attributes;
 using Rollgeon.Combat.AI.Decisions;
 using Rollgeon.Combat.AI.Readers;
 using Rollgeon.Combat.Pipelines;
@@ -952,8 +953,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
                                    "de 18 de vida que pega 8.");
             Assert.AreEqual(CajeroAssetBuilder.CritterRange, ReadInt(keep.IdealDistance),
                 "Se despega hasta su alcance, que es el mismo 5 del ranged común.");
-            Assert.AreEqual(CajeroAssetBuilder.CritterMoveSteps, ReadInt(keep.MaxSteps),
-                "Los mismos 3 pasos del ranged común.");
+            AssertFliesByItsSpeedStat(keep.MaxSteps,
+                "El despegue dejó de leer su velocidad.");
         }
 
         /// <summary>
@@ -996,7 +997,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             Assert.AreEqual(CajeroAssetBuilder.CritterRange, ReadInt(move.DesiredRange),
                 "Camina hasta el contacto en vez de hasta su alcance: se pone al lado del jugador, " +
                 "donde muere de un golpe, para pegar lo mismo que pegaba de lejos.");
-            Assert.AreEqual(CajeroAssetBuilder.CritterMoveSteps, ReadInt(move.MaxSteps));
+            AssertFliesByItsSpeedStat(move.MaxSteps, "El approach dejó de leer su velocidad.");
         }
 
         [Test]
@@ -1275,6 +1276,21 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             var cycle = Descendants(_root).OfType<AINode_Alternate>().SingleOrDefault();
             Assert.IsNotNull(cycle, "No hay ciclo de ataque en el árbol (o hay más de uno).");
             return cycle;
+        }
+
+        /// <summary>
+        /// La Comisión vuela lo que dice su stat de velocidad, no un número del builder. El asset lo
+        /// comparte con el barrido que pasó a los enemigos comunes a leer su Speed: con un número
+        /// acá, cada corrida del menú se lo pisa.
+        /// </summary>
+        private static void AssertFliesByItsSpeedStat(AIIntReader reader, string because)
+        {
+            var stat = reader as AIReadSelfStat;
+
+            Assert.IsNotNull(stat, because);
+            Assert.AreEqual(StatType.Speed, stat.Stat);
+            Assert.IsTrue(stat.UseModified,
+                "Sin modificadores el stat es el de la ficha y nada la puede acelerar ni frenar.");
         }
 
         private static int ReadInt(AIIntReader reader)
