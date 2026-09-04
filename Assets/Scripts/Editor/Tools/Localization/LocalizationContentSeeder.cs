@@ -452,8 +452,8 @@ namespace Rollgeon.EditorTools.Localization
                 "If this die rolls its maximum and takes part in a combo, you gain 30 shield.");
 
             Ench("fragil", "Frágil", "Fragile",
-                "En cada tirada, 50% de que este dado no sume daño y 50% de que sume el doble. Sigue contando para formar el combo.",
-                "Each roll, 50% chance this die adds no damage and 50% it adds double. It still counts toward forming the combo.");
+                "Al jugarlo, 50% de que este dado no sume daño y 50% de que sume el doble. Sigue contando para formar el combo.",
+                "When played, 50% chance this die adds no damage and 50% it adds double. It still counts toward forming the combo.");
 
             Ench("gemelo", "Gemelo", "Twin",
                 "Si este dado muestra el mismo número que otro en la tirada, ambos valen x1.5 para el combo.",
@@ -528,8 +528,9 @@ namespace Rollgeon.EditorTools.Localization
                 "If 2 or more dice show the same number in the final roll, this die adds its value to the combo twice.");
 
             Ench("sediento", "Sediento", "Thirsty",
-                "Cada vez que participa en un combo consume 2 de oro y suma +0,2 al multiplicador. Sin oro, el combo no hace daño.",
-                "Each time it joins a combo it consumes 2 gold and adds +0.2 to the multiplier. With no gold, the combo deals no damage.");
+                "Cada vez que participa en un combo consume 2 de oro y suma +0,2 al multiplicador. Sin 2 de oro, el dado no se puede seleccionar.",
+                "Each time it joins a combo it consumes 2 gold and adds +0.2 to the multiplier. Without 2 gold, the die can't be selected.");
+            Content("ench.sediento.lock", "2 oro", "2 gold");
 
             Ench("torpe", "Torpe", "Clumsy",
                 "Obliga a volver a tirar todos los dados en el turno 2 del combate.",
@@ -541,8 +542,9 @@ namespace Rollgeon.EditorTools.Localization
 
             // Feature#0073 — encantamientos del GDD que faltaban en el catálogo.
             Ench("vampiro", "Vampiro", "Vampire",
-                "Cada vez que este dado participa en un combo, perdés 5 de vida y el multiplicador sube +0,3. Con 5 de vida o menos, el dado no suma daño.",
-                "Each time this die takes part in a combo you lose 5 health and the multiplier rises by +0.3. At 5 health or less the die adds no damage.");
+                "Cada vez que este dado participa en un combo, perdés 5 de vida y el multiplicador sube +0,3. Con 5 de vida o menos, el dado no se puede seleccionar.",
+                "Each time this die takes part in a combo you lose 5 health and the multiplier rises by +0.3. At 5 health or less the die can't be selected.");
+            Content("ench.vampiro.lock", "6+ vida", "6+ HP");
 
             Ench("solitario", "Solitario", "Loner",
                 "Si este dado queda fuera del combo que jugás, genera +2 de oro.",
@@ -553,8 +555,8 @@ namespace Rollgeon.EditorTools.Localization
                 "On an odd face this die deals triple damage. On an even face it deals none. It still counts toward forming the combo.");
 
             Ench("racha", "Racha", "Streak",
-                "Por cada combo consecutivo en el que participe en este combate, aporta +3 de daño más (+3, +6, +9…). Se reinicia si queda fuera de un combo.",
-                "For each consecutive combo it takes part in this combat, it adds +3 more damage (+3, +6, +9…). Resets if it's left out of a combo.");
+                "Por cada combo consecutivo en el que participe en este combate, aporta +3 de daño más (+3, +6, +9…). Se reinicia si queda fuera de un combo o si jugás Número Alto.",
+                "For each consecutive combo it takes part in this combat, it adds +3 more damage (+3, +6, +9…). Resets if it's left out of a combo or if you play High Number.");
 
             Ench("ejecutor", "Ejecutor", "Executioner",
                 "Si este dado participa en un combo contra un enemigo con 25% de vida o menos, aporta +12 de daño.",

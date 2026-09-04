@@ -339,8 +339,8 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 5531895623711
-    m_Localized: Each roll, 50% chance this die adds no damage and 50% it adds double.
-      It still counts toward forming the combo.
+    m_Localized: When played, 50% chance this die adds no damage and 50% it adds
+      double. It still counts toward forming the combo.
     m_Metadata:
       m_Items: []
   - m_Id: 5531895623712
@@ -499,7 +499,7 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 5531899817997
     m_Localized: Each time it joins a combo it consumes 2 gold and adds +0.2 to the
-      multiplier. With no gold, the combo deals no damage.
+      multiplier. Without 2 gold, the die can't be selected.
     m_Metadata:
       m_Items: []
   - m_Id: 5531899817998
@@ -2733,7 +2733,7 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 18332491591106560
     m_Localized: Each time this die takes part in a combo you lose 5 health and the
-      multiplier rises by +0.3. At 5 health or less the die adds no damage.
+      multiplier rises by +0.3. At 5 health or less the die can't be selected.
     m_Metadata:
       m_Items: []
   - m_Id: 18332491591106561
@@ -2759,7 +2759,8 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 18332491591106566
     m_Localized: "For each consecutive combo it takes part in this combat, it adds
-      +3 more damage (+3, +6, +9\u2026). Resets if it's left out of a combo."
+      +3 more damage (+3, +6, +9\u2026). Resets if it's left out of a combo or if
+      you play High Number."
     m_Metadata:
       m_Items: []
   - m_Id: 18332491591106567
@@ -2796,6 +2797,14 @@ MonoBehaviour:
   - m_Id: 18353400590811136
     m_Localized: When entering a regular combat room you may pay 15 + 10 per floor
       in gold to clear it without fighting. No loot.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18475600874487808
+    m_Localized: 2 gold
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18475600941596672
+    m_Localized: 6+ HP
     m_Metadata:
       m_Items: []
   references:

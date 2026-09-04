@@ -2719,6 +2719,14 @@ MonoBehaviour:
     m_Key: peaje.desc
     m_Metadata:
       m_Items: []
+  - m_Id: 18475600874487808
+    m_Key: ench.sediento.lock
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18475600941596672
+    m_Key: ench.vampiro.lock
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:
