@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Patterns;
+using Rollgeon.Combat.Pipelines;
 using Rollgeon.Combat.Threat;
 using Rollgeon.Grid;
 using Sirenix.OdinInspector;
@@ -41,7 +42,7 @@ namespace Rollgeon.Combat.AI.Decisions
     /// </para>
     /// </remarks>
     [Serializable, HideReferenceObjectPicker]
-    public sealed class AINode_CajeroCoinVault : AIActionNode
+    public sealed class AINode_CajeroCoinVault : AIActionNode, IAIIntentNode
     {
         [Tooltip("Definición del hazard-moneda a vigilar. Tiene que ser la MISMA que sueltan los " +
                  "nodos de monedas, o el nodo no reconoce nada.")]
@@ -79,6 +80,33 @@ namespace Rollgeon.Combat.AI.Decisions
             hazards.Deactivate(coin.InstanceId);
 
             return AIResult.Succeeded;
+        }
+
+        /// <summary>No describe UNA cosa: describe el reloj de cada moneda del piso.</summary>
+        public bool TryDescribeIntent(AIContext context, out AIIntent intent)
+        {
+            intent = default;
+            return false;
+        }
+
+        /// <summary>Una por moneda y dirigida a ella: el hover la encuentra por subject, y el panel del jefe la descarta.</summary>
+        public void DescribeIntents(AIContext context, List<AIIntent> into)
+        {
+            if (context == null || into == null || _clocks == null) return;
+
+            int queued = 0;
+            for (int i = 0; i < _clocks.Count; i++)
+            {
+                // Se cobra una por turno: sin el lugar en la cola, cuatro vencidas dirían lo mismo.
+                int left = _clocks[i].Deadline - context.RoundIndex;
+                if (left <= 0) left = queued++;
+
+                into.Add(new AIIntent(
+                    AIIntentTextKeys.CashierVault, "Se la lleva la caja",
+                    damage: 0, kind: AttackKind.Environmental,
+                    turnsAway: left,
+                    subjectGuid: _clocks[i].InstanceId));
+            }
         }
 
         /// <summary>

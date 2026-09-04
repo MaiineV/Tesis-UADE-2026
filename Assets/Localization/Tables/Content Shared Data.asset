@@ -2719,6 +2719,22 @@ MonoBehaviour:
     m_Key: peaje.desc
     m_Metadata:
       m_Items: []
+  - m_Id: 18436413431148544
+    m_Key: intent.cashier_shove.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18436413485674496
+    m_Key: intent.cashier_shove.desc
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18436413485674497
+    m_Key: intent.cashier_vault.name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18436413485674498
+    m_Key: intent.cashier_vault.desc
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

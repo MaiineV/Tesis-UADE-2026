@@ -586,6 +586,10 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
             Range = MeleeRange,
             Metric = DistanceMetric.Manhattan,
             Kind = AttackKind.BasicAttack,
+
+            // El nodo es el de disparo, pero el golpe es a una casilla: sin esto el panel anuncia un tiro.
+            IntentLabelKey = AIIntentTextKeys.Attack,
+            IntentLabelFallback = "Golpe",
             AnimFeedbackId = BossFeedbackIds.CajeroMeleeAnim,
             ImpactVfxFeedbackId = BossFeedbackIds.CajeroImpactVfx,
             ImpactFeelFeedbackId = BossFeedbackIds.CajeroImpactFeel,
@@ -613,7 +617,7 @@ namespace Rollgeon.Editor.Tools.Enemy.Builders
                 // La misma separación que la lluvia: las dos fuentes reparten por la sala, y dos
                 // monedas pegadas son un solo viaje en cualquiera de las dos.
                 CoinMinSeparation = CoinRainMinSeparation,
-                AnimFeedbackId = BossFeedbackIds.CajeroMeleeAnim,
+                AnimFeedbackId = BossFeedbackIds.CajeroShoveAnim,
                 ImpactVfxFeedbackId = BossFeedbackIds.CajeroImpactVfx,
                 ImpactFeelFeedbackId = BossFeedbackIds.CajeroImpactFeel,
             };

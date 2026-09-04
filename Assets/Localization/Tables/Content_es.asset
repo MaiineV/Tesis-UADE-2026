@@ -951,7 +951,8 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 13919417973649410
-    m_Localized: "Te tira lejos y te saca oro, y parte de esa plata cae al piso. La que no levant\xE1s a tiempo se pierde."
+    m_Localized: "Te tira lejos y te saca oro, y parte de esa plata cae al piso.
+      La que no levant\xE1s a tiempo se pierde."
     m_Metadata:
       m_Items: []
   - m_Id: 13919417973649411
@@ -1477,7 +1478,8 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 17593280027881472
-    m_Localized: "Te tira tres casillas y te cobra oro en cada empuj\xF3n. Lo que dejes vencer en el piso lo perd\xE9s."
+    m_Localized: "Te tira tres casillas y te cobra oro en cada empuj\xF3n. Lo que
+      dejes vencer en el piso lo perd\xE9s."
     m_Metadata:
       m_Items: []
   - m_Id: 17593280027881473
@@ -1693,7 +1695,8 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 17593280044658703
-    m_Localized: "Cobran cada vez que los cruz\xE1s: no se gastan. Duelen bastante m\xE1s que los comunes."
+    m_Localized: "Cobran cada vez que los cruz\xE1s: no se gastan. Duelen bastante
+      m\xE1s que los comunes."
     m_Metadata:
       m_Items: []
   - m_Id: 17593280048852992
@@ -2800,6 +2803,23 @@ MonoBehaviour:
   - m_Id: 18353400590811136
     m_Localized: "Al entrar a una sala de combate normal pod\xE9s pagar 15 + 10 por
       piso de oro para limpiarla sin pelear. Sin bot\xEDn."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18436413431148544
+    m_Localized: "Empuj\xF3n"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18436413485674496
+    m_Localized: Te empuja <b>{1}</b> casillas y te cobra parte del oro que lleves
+      encima.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18436413485674497
+    m_Localized: Se la lleva la caja
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18436413485674498
+    m_Localized: 
     m_Metadata:
       m_Items: []
   references:

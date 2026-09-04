@@ -64,6 +64,12 @@ namespace Rollgeon.Combat.AI.Decisions
         public override string NodeName =>
             $"Cajero — Empujón ({Damage}, {PushTiles} casillas y {TaxPercent:P0} del oro)";
 
+        protected override string DefaultLabelKey => AIIntentTextKeys.CashierShove;
+
+        protected override string DefaultLabelFallback => "Empujón";
+
+        protected override int IntentAmount => PushTiles;
+
         public override AIResult Tick(AIContext context)
         {
             var result = base.Tick(context);
@@ -162,7 +168,7 @@ namespace Rollgeon.Combat.AI.Decisions
                 int share = SplitShare(refund, cells.Count, i);
                 if (share <= 0) continue;
 
-                var instanceId = hazards.Activate(Coin, new[] { cells[i] });
+                var instanceId = hazards.Activate(Coin, new[] { cells[i] }, context.SelfGuid);
                 if (instanceId == Guid.Empty) continue;
 
                 ledger.RegisterChip(instanceId, share, context.SelfGuid);

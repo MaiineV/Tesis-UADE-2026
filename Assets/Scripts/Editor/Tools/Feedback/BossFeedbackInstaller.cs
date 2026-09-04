@@ -105,6 +105,8 @@ namespace Rollgeon.Editor.Tools
             // Cajero — MechaBoss_Animated, el mismo rig que la Bandida.
             yield return Spec.Anim(CajeroMeleeAnim, "Attack_Melee");
             yield return Spec.Anim(CajeroShotAnim, "Attack_Range");
+            // 'Idle_Var' y no 'Attack_Melee': es el otro tiempo del mismo ciclo melee.
+            yield return Spec.Anim(CajeroShoveAnim, "Idle_Var");
             yield return Spec.Vfx(CajeroImpactVfx, MeleeImpactVfxPath);
             yield return Spec.Vfx(CajeroShotImpactVfx, RangedImpactVfxPath);
             yield return Spec.Feel(CajeroImpactFeel, MeleeImpactFeelPath);

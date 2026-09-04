@@ -31,7 +31,8 @@ namespace Rollgeon.Combat.Rooms.Tests
 
         public void Activate(HazardDefinitionSO definition) => Record(definition, null);
 
-        public Guid Activate(HazardDefinitionSO definition, IEnumerable<GridCoord> tiles)
+        public Guid Activate(HazardDefinitionSO definition, IEnumerable<GridCoord> tiles,
+                             Guid ownerGuid = default)
         {
             Record(definition, tiles);
             return Guid.NewGuid();

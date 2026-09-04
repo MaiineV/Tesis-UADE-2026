@@ -1096,6 +1096,14 @@ MonoBehaviour:
     m_Localized: '{0} ran out of power and is gone.'
     m_Metadata:
       m_Items: []
+  - m_Id: 18436415117258752
+    m_Localized: Expiring
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18436415125647360
+    m_Localized: The vault takes it
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

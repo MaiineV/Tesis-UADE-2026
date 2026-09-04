@@ -171,6 +171,71 @@ namespace Rollgeon.Combat.AI.Tests
                 "Alguna moneda quedó en el piso: vencerlas no depende de nada que se agote.");
         }
 
+        // ---- El reloj que el jugador lee en el hover de la moneda -------------------
+
+        [Test]
+        public void ACoinWithTimeLeft_AnnouncesTheTurnsItReallyHas()
+        {
+            var node = NewNode();
+            var coin = DropCoin();
+            node.Tick(NewContext(round: 0));
+
+            var announced = Describe(node, round: 0);
+
+            Assert.AreEqual(1, announced.Count, "Una moneda en el piso, una tarjeta.");
+            Assert.AreEqual(coin, announced[0].SubjectGuid, "La tarjeta va dirigida a la moneda.");
+            Assert.AreEqual(LifetimeRounds, announced[0].TurnsAway);
+        }
+
+        [Test]
+        public void ARainOfCoins_AnnouncesWhenEachOneReallyGoes_NotAllAtZero()
+        {
+            const int coinsPerRain = 4;
+
+            var node = NewNode();
+            for (int i = 0; i < coinsPerRain; i++) DropCoin();
+            node.Tick(NewContext(round: 0)); // Las cuatro con el MISMO vencimiento.
+
+            var announced = Describe(node, LifetimeRounds);
+
+            CollectionAssert.AreEqual(new[] { 0, 1, 2, 3 },
+                announced.Select(i => i.TurnsAway).ToArray(),
+                "Vencen juntas pero se cobra una por turno: cuatro ceros serían tres mentiras.");
+        }
+
+        [Test]
+        public void ACoinThePlayerPickedUp_StopsBeingAnnounced()
+        {
+            var node = NewNode();
+            var picked = DropCoin();
+            var left = DropCoin();
+
+            node.Tick(NewContext(round: 0));
+            _hazards.Pickup(picked);
+            node.Tick(NewContext(round: 0));
+
+            var announced = Describe(node, round: 0);
+
+            Assert.AreEqual(1, announced.Count, "La levantada ya no tiene reloj.");
+            Assert.AreEqual(left, announced[0].SubjectGuid);
+        }
+
+        [Test]
+        public void AVaultThatNeverRan_AnnouncesNothing()
+        {
+            var node = NewNode();
+            DropCoin();
+
+            CollectionAssert.IsEmpty(Describe(node, round: 0));
+        }
+
+        private List<AIIntent> Describe(AINode_CajeroCoinVault node, int round)
+        {
+            var into = new List<AIIntent>();
+            node.DescribeIntents(NewContext(round), into);
+            return into;
+        }
+
         private static AINode_CajeroCoinVault NewNodeWith(HazardDefinitionSO coin) =>
             new AINode_CajeroCoinVault
             {
@@ -240,7 +305,8 @@ namespace Rollgeon.Combat.AI.Tests
 
             public void Activate(HazardDefinitionSO definition) { }
 
-            public Guid Activate(HazardDefinitionSO definition, IEnumerable<GridCoord> tiles)
+            public Guid Activate(HazardDefinitionSO definition, IEnumerable<GridCoord> tiles,
+                                 Guid ownerGuid = default)
             {
                 if (definition == null || tiles == null) return Guid.Empty;
 

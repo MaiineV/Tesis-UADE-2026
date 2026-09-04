@@ -88,7 +88,7 @@ namespace Rollgeon.Combat.AI.Decisions
             int dropped = 0;
             foreach (var coord in tiles)
             {
-                var instanceId = hazards.Activate(Coin, new[] { coord });
+                var instanceId = hazards.Activate(Coin, new[] { coord }, context.SelfGuid);
                 if (instanceId == Guid.Empty) continue;
 
                 ledger.RegisterChip(instanceId, RollValue(rng), context.SelfGuid);

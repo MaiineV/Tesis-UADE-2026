@@ -875,6 +875,14 @@ namespace Rollgeon.EditorTools.Localization
             Content(AIIntentTextKeys.Attack + ".name", "Golpe", "Strike");
             Content(AIIntentTextKeys.Attack + ".desc", string.Empty, string.Empty);
 
+            Content(AIIntentTextKeys.CashierShove + ".name", "Empujón", "Shove");
+            Content(AIIntentTextKeys.CashierShove + ".desc",
+                "Te empuja <b>{1}</b> casillas y te cobra parte del oro que lleves encima.",
+                "Shoves you <b>{1}</b> tiles and takes a cut of the gold you carry.");
+
+            Content(AIIntentTextKeys.CashierVault + ".name", "Se la lleva la caja", "The Vault Takes It");
+            Content(AIIntentTextKeys.CashierVault + ".desc", string.Empty, string.Empty);
+
             Content(AIIntentTextKeys.Leaves + ".name", "Lo que deja", "What It Leaves");
             Content(AIIntentTextKeys.Leaves + ".desc",
                 "Deja fuego: <b>{0}</b> al entrar, <b>{1}</b> por turno, {2} rondas.",
@@ -1012,6 +1020,9 @@ namespace Rollgeon.EditorTools.Localization
             Ui("hazard.panel.type", "Peligro de sala", "Room hazard");
             Ui("hazard.panel.hit", "Golpe", "Hit");
             Ui("hazard.panel.cycle", "Golpea cada {0} rondas", "Strikes every {0} rounds");
+            Ui(Rollgeon.Combat.Threat.HazardTooltipInfo.ClockTicksKey, "Se vence", "Expiring");
+            Ui(Rollgeon.Combat.Threat.HazardTooltipInfo.ClockDueKey,
+                "Se la lleva la caja", "The vault takes it");
 
             // Identidad por hazard. El stun del hielo lo aplica IceStunBinder (Damage 0 en el
             // SO), por eso la frase habla de aturdir sin nombrar números.

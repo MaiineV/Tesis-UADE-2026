@@ -30,6 +30,12 @@ namespace Rollgeon.Combat.AI.Decisions
         public const string BombField = "intent.bomb_field";
         public const string BombBlast = "intent.bomb_blast";
 
+        /// <summary>Key propia: comparte el ciclo melee con el mandoble y con la del disparo las dos fichas se leían igual.</summary>
+        public const string CashierShove = "intent.cashier_shove";
+
+        /// <summary>Lo que le queda a una moneda antes de que la caja se la lleve.</summary>
+        public const string CashierVault = "intent.cashier_vault";
+
         /// <summary>La marca telegrafiada ya congelada, leída por el nodo que la cobra.</summary>
         public const string Telegraph = "intent.telegraph";
 
@@ -42,6 +48,7 @@ namespace Rollgeon.Combat.AI.Decisions
         public static readonly string[] All =
         {
             Ignite, BurnRoom, RangedShot, BombField, BombBlast, Telegraph, Attack, Leaves,
+            CashierShove, CashierVault,
         };
 
         /// <summary>
@@ -67,6 +74,8 @@ namespace Rollgeon.Combat.AI.Decisions
             // marcadas ya se ven en el paño al hoverear.
             Telegraph => string.Empty,
             Attack => string.Empty,
+            CashierShove => "Te empuja <b>{1}</b> casillas y te cobra parte del oro que lleves encima.",
+            CashierVault => string.Empty,
             Leaves => "Deja fuego: <b>{0}</b> al entrar, <b>{1}</b> por turno, {2} rondas.",
             _ => string.Empty,
         };

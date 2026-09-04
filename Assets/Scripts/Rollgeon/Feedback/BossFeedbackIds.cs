@@ -76,6 +76,9 @@ namespace Rollgeon.Feedback
         // ---- El Cajero ----
         public const string CajeroMeleeAnim      = "anim.boss.cajero.melee";
         public const string CajeroShotAnim       = "anim.boss.cajero.shot";
+
+        /// <summary>Gesto propio: con el <c>Attack_Melee</c> del mandoble los dos tiempos del ciclo se veían iguales.</summary>
+        public const string CajeroShoveAnim      = "anim.boss.cajero.shove";
         public const string CajeroImpactVfx      = "vfx.boss.cajero.impact";
         public const string CajeroShotImpactVfx  = "vfx.boss.cajero.shot_impact";
         public const string CajeroImpactFeel     = "feel.boss.cajero.impact";

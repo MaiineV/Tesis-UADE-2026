@@ -93,7 +93,7 @@ namespace Rollgeon.Combat.AI.Decisions
                 if (!TryPickTile(grid, column, playerCoord, used, rng, out var coord)) break;
                 used.Add(coord);
 
-                var instanceId = hazards.Activate(Chip, new[] { coord });
+                var instanceId = hazards.Activate(Chip, new[] { coord }, context.SelfGuid);
                 if (instanceId == Guid.Empty) continue;
 
                 ledger.RegisterChip(instanceId, RollValue(rng, ledger.ChipValueMultiplier), context.SelfGuid);

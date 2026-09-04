@@ -945,7 +945,8 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 13919417973649410
-    m_Localized: "Throws you clear and takes your gold, and some of it lands on the floor. Whatever you don't grab in time is gone."
+    m_Localized: Throws you clear and takes your gold, and some of it lands on the
+      floor. Whatever you don't grab in time is gone.
     m_Metadata:
       m_Items: []
   - m_Id: 13919417973649411
@@ -1455,7 +1456,8 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 17593280027881472
-    m_Localized: "Throws you three tiles and charges you gold on every shove. Whatever you let expire on the floor is lost."
+    m_Localized: Throws you three tiles and charges you gold on every shove. Whatever
+      you let expire on the floor is lost.
     m_Metadata:
       m_Items: []
   - m_Id: 17593280027881473
@@ -1630,7 +1632,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 17593280044658693
-    m_Localized: "Step on it to collect its value. One that expires is lost."
+    m_Localized: Step on it to collect its value. One that expires is lost.
     m_Metadata:
       m_Items: []
   - m_Id: 17593280044658694
@@ -1671,7 +1673,8 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 17593280044658703
-    m_Localized: "They charge every time you cross them - they never wear out. They hurt a fair bit more than the common ones."
+    m_Localized: They charge every time you cross them - they never wear out. They
+      hurt a fair bit more than the common ones.
     m_Metadata:
       m_Items: []
   - m_Id: 17593280048852992
@@ -2793,6 +2796,22 @@ MonoBehaviour:
   - m_Id: 18353400590811136
     m_Localized: When entering a regular combat room you may pay 15 + 10 per floor
       in gold to clear it without fighting. No loot.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18436413431148544
+    m_Localized: Shove
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18436413485674496
+    m_Localized: Shoves you <b>{1}</b> tiles and takes a cut of the gold you carry.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18436413485674497
+    m_Localized: The Vault Takes It
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18436413485674498
+    m_Localized: 
     m_Metadata:
       m_Items: []
   references:

@@ -241,7 +241,8 @@ namespace Rollgeon.Editor.Tools.Enemy.Tests
             Assert.AreEqual(CajeroAssetBuilder.ChipCount, shove.CoinCount,
                 "Las monedas del tumbo salen de la ficha, no del default del nodo.");
 
-            Assert.AreEqual(BossFeedbackIds.CajeroMeleeAnim, shove.AnimFeedbackId);
+            Assert.AreEqual(BossFeedbackIds.CajeroShoveAnim, shove.AnimFeedbackId,
+                "Gesto propio: con el del mandoble los dos tiempos del ciclo se veían iguales.");
             Assert.AreEqual(BossFeedbackIds.CajeroImpactVfx, shove.ImpactVfxFeedbackId);
             Assert.AreEqual(BossFeedbackIds.CajeroImpactFeel, shove.ImpactFeelFeedbackId);
         }
