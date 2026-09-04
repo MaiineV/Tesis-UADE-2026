@@ -102,9 +102,11 @@ namespace Rollgeon.Upgrades.Dice.Triggers
     }
 
     /// <summary>
-    /// El dado de Movimiento reveló su cara (acción de Mover en combate). El contexto trae
-    /// <c>MovementDieFace</c>. Dispara ANTES de elegir el destino: un modificador de
-    /// MoveRange aplicado acá entra al rango de ese mismo movimiento.
+    /// El dado de Movimiento se tiró (acción de Mover en combate): la cara ya está decidida
+    /// (<c>MovementDieFace</c>) pero todavía NO se animó el reveal. Lo despacha
+    /// <c>MovementDieService.Roll</c> vía <c>IDiceEnchantmentService.DispatchMovementDieRolled</c>,
+    /// no el evento <c>OnMovementDieRolled</c> (que sale en el reveal, tarde). Un
+    /// <c>EffAddMovementDieBonus</c> acá suma a la tirada y se ve como chip en el dado.
     /// </summary>
     public interface IOnMovementDieRolledTrigger : IEnchantmentTrigger
     {

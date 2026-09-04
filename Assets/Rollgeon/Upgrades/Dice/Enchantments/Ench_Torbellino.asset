@@ -246,7 +246,7 @@ MonoBehaviour:
       Data: 13|Rollgeon.Effects.EffectData, Rollgeon
     - Name: Label
       Entry: 1
-      Data: 'Torbellino: +2 movimiento'
+      Data: 'Torbellino: +2 a la tirada'
     - Name: PreConditions
       Entry: 7
       Data: 14|System.Collections.Generic.List`1[[Rollgeon.PreConditions.BasePreCondition,
@@ -269,7 +269,7 @@ MonoBehaviour:
       Data: 1
     - Name: 
       Entry: 7
-      Data: 16|Rollgeon.Upgrades.Dice.Effects.EffAddTemporaryModifier, Rollgeon
+      Data: 16|Rollgeon.Upgrades.Dice.Effects.EffAddMovementDieBonus, Rollgeon
     - Name: Selection
       Entry: 7
       Data: 17|Rollgeon.Effects.Selection.SelectionSettings, Rollgeon
@@ -354,18 +354,9 @@ MonoBehaviour:
     - Name: 
       Entry: 8
       Data: 
-    - Name: Stat
-      Entry: 3
-      Data: 1
     - Name: Amount
       Entry: 3
       Data: 2
-    - Name: Reader
-      Entry: 6
-      Data: 
-    - Name: DurationTurns
-      Entry: 3
-      Data: 1
     - Name: OnlyFirstCopy
       Entry: 5
       Data: true
@@ -415,14 +406,14 @@ MonoBehaviour:
   _faceFilter:
     rid: -2
   _triggers:
-  - rid: 7465468545604518447
+  - rid: 7496091045338546390
   _capabilities: []
   references:
     version: 2
     RefIds:
     - rid: -2
       type: {class: , ns: , asm: }
-    - rid: 7465468545604518447
+    - rid: 7496091045338546390
       type: {class: ExecuteEffectsOnDiceEvent, ns: Rollgeon.Upgrades.Dice.Triggers, asm: Rollgeon}
       data:
         Event: 8
@@ -434,16 +425,16 @@ MonoBehaviour:
         - Label: 'Torbellino: teletransportar enemigos'
           PreConditions: []
           Effects:
-          - rid: 7465468545604518455
+          - rid: 7496091045338546391
           TargetSelector:
             rid: -2
-        - Label: 'Torbellino: +2 movimiento'
+        - Label: 'Torbellino: +2 a la tirada'
           PreConditions: []
           Effects:
-          - rid: 7465468545604518456
+          - rid: 7496091045338546392
           TargetSelector:
             rid: -2
-    - rid: 7465468545604518455
+    - rid: 7496091045338546391
       type: {class: EffTeleportEnemiesRandomly, ns: Rollgeon.Upgrades.Dice.Effects, asm: Rollgeon}
       data:
         Selection:
@@ -468,8 +459,8 @@ MonoBehaviour:
           AutoResolve: 0
           AutoAccept: 1
         SearchRange: 64
-    - rid: 7465468545604518456
-      type: {class: EffAddTemporaryModifier, ns: Rollgeon.Upgrades.Dice.Effects, asm: Rollgeon}
+    - rid: 7496091045338546392
+      type: {class: EffAddMovementDieBonus, ns: Rollgeon.Upgrades.Dice.Effects, asm: Rollgeon}
       data:
         Selection:
           SlotState: 1
@@ -492,9 +483,5 @@ MonoBehaviour:
             rid: -2
           AutoResolve: 0
           AutoAccept: 1
-        Stat: 1
         Amount: 2
-        Reader:
-          rid: -2
-        DurationTurns: 1
         OnlyFirstCopy: 1

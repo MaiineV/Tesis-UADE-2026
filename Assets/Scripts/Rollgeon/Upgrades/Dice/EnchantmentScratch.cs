@@ -63,6 +63,14 @@ namespace Rollgeon.Upgrades.Dice
         public int BonusShield;
 
         /// <summary>
+        /// Bono plano sobre la TIRADA del dado de Movimiento (Torbellino "+2"): lo acumula el
+        /// hook <c>MovementDieRolled</c> y <c>MovementDieService</c> lo suma a la cara revelada,
+        /// con chip propio en el dado (patrón Botas). No toca <c>MoveRange</c>: vale solo para
+        /// esa tirada y no se arrastra a un segundo Mover del mismo turno.
+        /// </summary>
+        public int MovementDieBonus;
+
+        /// <summary>
         /// Acumuladores genéricos por recurso (oro / stats) que escriben los triggers
         /// parametrizables vía <see cref="Modify"/>. El <c>EnchantmentScratchApplier</c>
         /// los resuelve sobre los sistemas reales tras el evento. Los campos legacy
@@ -147,6 +155,7 @@ namespace Rollgeon.Upgrades.Dice
             BlockComboDamage = false;
             BonusGold = 0;
             BonusShield = 0;
+            MovementDieBonus = 0;
             _resources.Clear();
             _faceDeltas?.Clear();
             _journal?.Clear();

@@ -57,13 +57,20 @@ namespace Rollgeon.Upgrades.Dice
         /// </summary>
         public readonly int FaceDelta;
 
-        // multiplierBonusDelta, movedDieBagSlot y faceDelta van últimos y opcionales a
-        // propósito: los ctors posicionales de tests y los nombrados de PlayerComboDamage
-        // siguen compilando sin tocarse.
+        /// <summary>
+        /// Aporte al bono de la TIRADA del dado de Movimiento
+        /// (<see cref="EnchantmentScratch.MovementDieBonus"/>). 0 = neutro. Solo lo escribe el hook
+        /// <c>MovementDieRolled</c>; el dado lo muestra como chip con el icono de la fuente.
+        /// </summary>
+        public readonly int MovementDieBonusDelta;
+
+        // multiplierBonusDelta, movedDieBagSlot, faceDelta y movementDieBonusDelta van últimos
+        // y opcionales a propósito: los ctors posicionales de tests y los nombrados de
+        // PlayerComboDamage siguen compilando sin tocarse.
         public ScratchContribution(ScratchSourceKind kind, string sourceId,
             UnityEngine.Object sourceAsset, int bagSlot, int bonusDelta,
             float multiplierFactor, bool setBlock, float multiplierBonusDelta = 0f,
-            int movedDieBagSlot = -1, int faceDelta = 0)
+            int movedDieBagSlot = -1, int faceDelta = 0, int movementDieBonusDelta = 0)
         {
             Kind = kind;
             SourceId = sourceId;
@@ -75,11 +82,13 @@ namespace Rollgeon.Upgrades.Dice
             MultiplierBonusDelta = multiplierBonusDelta;
             MovedDieBagSlot = movedDieBagSlot;
             FaceDelta = faceDelta;
+            MovementDieBonusDelta = movementDieBonusDelta;
         }
 
         public override string ToString()
             => $"{Kind}:{SourceId} (+{BonusDelta}, ×{MultiplierFactor}, +M{MultiplierBonusDelta}" +
                $"{(FaceDelta != 0 ? ", cara" + FaceDelta.ToString("+0;-0") : "")}" +
+               $"{(MovementDieBonusDelta != 0 ? ", mov" + MovementDieBonusDelta.ToString("+0;-0") : "")}" +
                $"{(SetBlock ? ", BLOCK" : "")}{(MovedDieBagSlot >= 0 ? $", slot{MovedDieBagSlot}→M" : "")})";
     }
 
@@ -100,8 +109,11 @@ namespace Rollgeon.Upgrades.Dice
         /// <summary>Delta de cara del slot observado antes de la fuente; 0 si la foto no mira un slot.</summary>
         public readonly int FaceDelta;
 
+        /// <summary>Bono de la tirada del dado de Movimiento antes de la fuente.</summary>
+        public readonly int MovementDieBonus;
+
         private ScratchSnapshot(int bonus, float multiplier, float multiplierBonus, bool block,
-            int movedDice, int faceDelta)
+            int movedDice, int faceDelta, int movementDieBonus)
         {
             Bonus = bonus;
             Multiplier = multiplier;
@@ -109,11 +121,13 @@ namespace Rollgeon.Upgrades.Dice
             Block = block;
             MovedDice = movedDice;
             FaceDelta = faceDelta;
+            MovementDieBonus = movementDieBonus;
         }
 
         public static ScratchSnapshot Of(EnchantmentScratch s)
             => new ScratchSnapshot(s.BonusComboDamage, s.ComboDamageMultiplier,
-                s.ComboMultiplierBonus, s.BlockComboDamage, s.DiceMovedToMultiplier?.Count ?? 0, faceDelta: 0);
+                s.ComboMultiplierBonus, s.BlockComboDamage, s.DiceMovedToMultiplier?.Count ?? 0,
+                faceDelta: 0, s.MovementDieBonus);
 
         /// <summary>
         /// Foto que además mira la cara del dado en <paramref name="bagSlot"/>: la usa el canal
@@ -122,12 +136,15 @@ namespace Rollgeon.Upgrades.Dice
         public static ScratchSnapshot Of(EnchantmentScratch s, int bagSlot)
             => new ScratchSnapshot(s.BonusComboDamage, s.ComboDamageMultiplier,
                 s.ComboMultiplierBonus, s.BlockComboDamage, s.DiceMovedToMultiplier?.Count ?? 0,
-                s.GetFaceDelta(bagSlot));
+                s.GetFaceDelta(bagSlot), s.MovementDieBonus);
 
         public static void RecordDelta(EnchantmentScratch scratch, in ScratchSnapshot before,
             ScratchSourceKind kind, string sourceId, UnityEngine.Object sourceAsset, int bagSlot)
         {
             int bonusDelta = scratch.BonusComboDamage - before.Bonus;
+            // El bono de la tirada de Movimiento se atribuye igual que el resto: el dado arma
+            // el chip "Torbellino +2" desde esta entrada.
+            int movementDieBonusDelta = scratch.MovementDieBonus - before.MovementDieBonus;
             // El multiplicador compone multiplicativamente: el factor de ESTA fuente es el
             // cociente contra el estado previo (guard contra un previo 0 autorado a mano).
             float factor = Math.Abs(before.Multiplier) < 1e-6f
@@ -140,11 +157,12 @@ namespace Rollgeon.Upgrades.Dice
             int faceDelta = bagSlot >= 0 ? scratch.GetFaceDelta(bagSlot) - before.FaceDelta : 0;
 
             bool neutral = bonusDelta == 0 && Math.Abs(factor - 1f) < 1e-4f
-                           && Math.Abs(multBonusDelta) < 1e-4f && !setBlock && faceDelta == 0;
+                           && Math.Abs(multBonusDelta) < 1e-4f && !setBlock && faceDelta == 0
+                           && movementDieBonusDelta == 0;
             if (!neutral)
                 scratch.RecordContribution(new ScratchContribution(
                     kind, sourceId, sourceAsset, bagSlot, bonusDelta, factor, setBlock, multBonusDelta,
-                    faceDelta: faceDelta));
+                    faceDelta: faceDelta, movementDieBonusDelta: movementDieBonusDelta));
 
             // Dados movidos a M por esta fuente: una entrada neutra por dado, para que el
             // desglose le ponga el icono de la fuente al dado que vuela a M.

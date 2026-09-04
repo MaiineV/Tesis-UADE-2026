@@ -9,6 +9,7 @@ using Rollgeon.Dice;
 using Rollgeon.Grid;
 using Rollgeon.Heroes;
 using Rollgeon.Player;
+using Rollgeon.Upgrades.Dice.Effects;
 using Rollgeon.Upgrades.Dice.Filters;
 using Rollgeon.Upgrades.Dice.Triggers;
 using UnityEngine;
@@ -330,18 +331,56 @@ namespace Rollgeon.Upgrades.Dice.Tests
         }
 
         [Test]
-        public void MovementDieRolled_InCombat_DispatchesWithTheFace()
+        public void MovementDieRolled_InCombat_DispatchesWithTheFace_AndReturnsTheScratch()
         {
             var playerGuid = RegisterPlayerAndService();
             var trigger = new RecordingRollTrigger();
             _svc.Apply(Lane, MakeEnchantment("ench.torb", EnchantmentCategory.Movimiento, null, trigger));
 
-            EventManager.Trigger(EventName.OnMovementDieRolled, playerGuid, 5, DiceType.D6); // sin combate
+            Assert.IsNull(_svc.DispatchMovementDieRolled(playerGuid, 5), "sin combate no despacha");
             EventManager.Trigger(EventName.OnCombatStart, Guid.NewGuid());
-            EventManager.Trigger(EventName.OnMovementDieRolled, Guid.NewGuid(), 2, DiceType.D6); // otro guid
+            Assert.IsNull(_svc.DispatchMovementDieRolled(Guid.NewGuid(), 2), "otro guid no es el dueño");
+            var scratch = _svc.DispatchMovementDieRolled(playerGuid, 4);
+
+            Assert.IsNotNull(scratch);
+            CollectionAssert.AreEqual(new[] { 4 }, trigger.Faces);
+        }
+
+        [Test]
+        public void MovementDieRolled_TheRevealEventAloneDoesNotDispatch()
+        {
+            // El evento sale en el reveal, tarde para el bono de la tirada: el hook lo despacha
+            // MovementDieService.Roll vía DispatchMovementDieRolled, no una suscripción al evento.
+            var playerGuid = RegisterPlayerAndService();
+            var trigger = new RecordingRollTrigger();
+            _svc.Apply(Lane, MakeEnchantment("ench.torb", EnchantmentCategory.Movimiento, null, trigger));
+            EventManager.Trigger(EventName.OnCombatStart, Guid.NewGuid());
+
             EventManager.Trigger(EventName.OnMovementDieRolled, playerGuid, 4, DiceType.D6);
 
-            CollectionAssert.AreEqual(new[] { 4 }, trigger.Faces);
+            Assert.IsEmpty(trigger.Faces);
+        }
+
+        [Test]
+        public void MovementDieRolled_BonusEffect_WritesTheScratchAndAttributesTheJournal()
+        {
+            var playerGuid = RegisterPlayerAndService();
+            var bridge = new ExecuteEffectsOnDiceEvent { Event = EnchantmentHookEvent.MovementDieRolled };
+            bridge.Effects.Add(new Rollgeon.Effects.EffectData
+            {
+                Effects = { new EffAddMovementDieBonus { Amount = 2 } },
+            });
+            var ench = MakeEnchantment("ench.torbellino", EnchantmentCategory.Movimiento, null, bridge);
+            _svc.Apply(Lane, ench);
+            EventManager.Trigger(EventName.OnCombatStart, Guid.NewGuid());
+
+            var scratch = _svc.DispatchMovementDieRolled(playerGuid, 3);
+
+            Assert.AreEqual(2, scratch.MovementDieBonus);
+            Assert.AreEqual(1, scratch.Journal.Count);
+            Assert.AreSame(ench, scratch.Journal[0].SourceAsset, "el chip sale del asset del encantamiento");
+            Assert.AreEqual(2, scratch.Journal[0].MovementDieBonusDelta);
+            Assert.AreEqual(Lane, scratch.Journal[0].BagSlot);
         }
 
         [Test]

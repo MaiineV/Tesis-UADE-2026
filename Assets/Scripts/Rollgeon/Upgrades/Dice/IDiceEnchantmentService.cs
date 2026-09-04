@@ -97,5 +97,15 @@ namespace Rollgeon.Upgrades.Dice
         /// face filters de su carril. Vacío sin bag — el roller cae a su RNG plano.
         /// </summary>
         IReadOnlyCollection<int> ComputeMovementDieFaces();
+
+        /// <summary>
+        /// Despacha el hook <c>MovementDieRolled</c> del carril con la cara ya decidida. Lo llama
+        /// <c>MovementDieService.Roll</c> ANTES de animar el reveal: el scratch devuelto trae
+        /// <see cref="EnchantmentScratch.MovementDieBonus"/> (Torbellino +2) y su atribución en el
+        /// journal para que el dado lo muestre como chip y lo sume al rango de ESE movimiento.
+        /// Null fuera de combate, sin bag, o si <paramref name="playerGuid"/> no es el dueño.
+        /// Default para los fakes; la impl real lo override.
+        /// </summary>
+        EnchantmentScratch DispatchMovementDieRolled(Guid playerGuid, int face) => null;
     }
 }

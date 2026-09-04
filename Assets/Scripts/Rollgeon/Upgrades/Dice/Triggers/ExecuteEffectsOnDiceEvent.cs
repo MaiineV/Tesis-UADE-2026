@@ -42,8 +42,9 @@ namespace Rollgeon.Upgrades.Dice.Triggers
         PlayerMoved,
 
         /// <summary>
-        /// El dado de Movimiento reveló su cara (cada acción de Mover en combate), antes de
-        /// elegir destino. Para el dado de Movimiento (Torbellino).
+        /// El dado de Movimiento se tiró (cada acción de Mover en combate): cara decidida,
+        /// reveal todavía sin animar. Para el dado de Movimiento (Torbellino: teleport +
+        /// <c>EffAddMovementDieBonus</c>).
         /// </summary>
         MovementDieRolled,
     }

@@ -91,7 +91,8 @@ namespace Rollgeon.Upgrades.Dice
             EventManager.Subscribe(EventName.OnTurnFinished, OnTurnFinishedHandler);
             EventManager.Subscribe(EventName.OnCombatStart, OnCombatStartHandler);
             EventManager.Subscribe(EventName.OnCombatEnd, OnCombatEndHandler);
-            EventManager.Subscribe(EventName.OnMovementDieRolled, OnMovementDieRolledHandler);
+            // Sin suscripción a OnMovementDieRolled: ese evento sale en el reveal, tarde para el
+            // bono de la tirada — MovementDieService llama DispatchMovementDieRolled al tirar.
             TypedEvent<ComboMatchedPayload>.Subscribe(OnComboMatchedHandler);
             TypedEvent<ComboPlayedPayload>.Subscribe(OnComboPlayedHandler);
             TypedEvent<EntityWalkedPayload>.Subscribe(OnEntityWalkedHandler);
@@ -108,7 +109,6 @@ namespace Rollgeon.Upgrades.Dice
             EventManager.UnSubscribe(EventName.OnTurnFinished, OnTurnFinishedHandler);
             EventManager.UnSubscribe(EventName.OnCombatStart, OnCombatStartHandler);
             EventManager.UnSubscribe(EventName.OnCombatEnd, OnCombatEndHandler);
-            EventManager.UnSubscribe(EventName.OnMovementDieRolled, OnMovementDieRolledHandler);
             TypedEvent<ComboMatchedPayload>.Unsubscribe(OnComboMatchedHandler);
             TypedEvent<ComboPlayedPayload>.Unsubscribe(OnComboPlayedHandler);
             TypedEvent<EntityWalkedPayload>.Unsubscribe(OnEntityWalkedHandler);
@@ -250,16 +250,18 @@ namespace Rollgeon.Upgrades.Dice
         }
 
         /// <summary>
-        /// Schema EventName.OnMovementDieRolled: [Guid playerGuid, int face, DiceType]. Dispara
-        /// en el reveal, antes de elegir destino — solo en combate y para el dueño del bag.
+        /// Hook <c>MovementDieRolled</c>: lo invoca <c>MovementDieService.Roll</c> con la cara ya
+        /// decidida y ANTES de animar el reveal — así el bono de la tirada
+        /// (<see cref="EnchantmentScratch.MovementDieBonus"/>) y su atribución en el journal llegan
+        /// al presenter (chip) y al rango de ESE movimiento. Solo en combate y para el dueño del
+        /// bag; en cualquier otro caso devuelve null sin despachar.
         /// </summary>
-        private void OnMovementDieRolledHandler(params object[] args)
+        public EnchantmentScratch DispatchMovementDieRolled(Guid playerGuid, int face)
         {
-            if (Bag == null || !_inCombat) return;
-            if (args == null || args.Length < 2) return;
-            if (!(args[0] is Guid playerGuid) || !(args[1] is int face)) return;
-            if (!ServiceLocator.TryGetService<IPlayerService>(out var ps) || ps == null) return;
-            if (ps.PlayerGuid != playerGuid) return;
+            if (Bag == null || !_inCombat) return null;
+            if (playerGuid == Guid.Empty) return null;
+            if (!ServiceLocator.TryGetService<IPlayerService>(out var ps) || ps == null) return null;
+            if (ps.PlayerGuid != playerGuid) return null;
 
             var scratch = new EnchantmentScratch();
             var ctx = new EnchantmentTriggerContext
@@ -273,6 +275,7 @@ namespace Rollgeon.Upgrades.Dice
                 if (trigger is IOnMovementDieRolledTrigger r) r.OnMovementDieRolled(c);
             });
             ApplyScratchSideEffects(scratch);
+            return scratch;
         }
 
         // Schema EventName.OnCombatStart: args = [Guid roomInstanceId] — sin entity. El
