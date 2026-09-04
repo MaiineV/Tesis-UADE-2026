@@ -41,6 +41,11 @@ namespace Rollgeon.Combat.AI.Decisions
         [Tooltip("Tipo de ataque del DamageContext.")]
         public AttackKind Kind = AttackKind.BasicAttack;
 
+        [Tooltip("Si true, dispara aunque no vea al jugador \u2014 para tiros que arquean o " +
+                 "atraviesan (mismo campo que AINode_TelegraphMark). Default false: sin l\u00ednea " +
+                 "limpia el nodo falla y el Selector[Shot, Wait] se lo come.")]
+        public bool IgnoreLineOfSight;
+
         [Title("Presentación")]
 #if UNITY_EDITOR
         [ValueDropdown(nameof(GetFeedbackIdsForDropdown))]
@@ -176,8 +181,9 @@ namespace Rollgeon.Combat.AI.Decisions
 
             // Detrás de algo no hay disparo (LOS de proyecto). Acá y no en cada heredero:
             // CajeroShove y CashierRangedShot lo heredan, y TryDescribeIntent lo lee gratis.
-            if (!GridLineOfSight.HasClearLine(context.Grid, selfCoord, playerCoord,
-                                              context.SelfGuid, context.PlayerGuid))
+            if (!IgnoreLineOfSight
+                && !GridLineOfSight.HasClearLine(context.Grid, selfCoord, playerCoord,
+                                                 context.SelfGuid, context.PlayerGuid))
             {
                 return false;
             }
