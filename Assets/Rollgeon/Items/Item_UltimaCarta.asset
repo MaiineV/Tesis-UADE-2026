@@ -459,7 +459,7 @@ MonoBehaviour:
   ItemId: ultima.carta
   DisplayName: "\xDAltima Carta"
   Description: "+30 de da\xF1o si atac\xE1s sin rolls disponibles."
-  Icon: {fileID: 1808964844, guid: ee12da05509c7a74686b1e1cc11cbd3e, type: 3}
+  Icon: {fileID: -858615478, guid: 956c96499facb124fb3ffd26bd8ee18e, type: 3}
   Rarity: 2
   FamilyId: 
   VariantIndex: 0

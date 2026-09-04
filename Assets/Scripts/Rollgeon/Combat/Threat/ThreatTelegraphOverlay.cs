@@ -109,13 +109,21 @@ namespace Rollgeon.Combat.Threat
             Pulse(Time.time);
         }
 
+        /// <summary>
+        /// Multiplicador global del alpha de TODOS los quads. Mientras hay una selección
+        /// de casilla activa (mover, atacar) se baja para que el tinte del tile
+        /// seleccionable — que vive DEBAJO de los quads (YOffset) — se lea por encima
+        /// del telegraph (playtest 04/09). 1 = sin efecto.
+        /// </summary>
+        public static float GlobalDim = 1f;
+
         /// <summary>Escribe el alpha del latido si se movió.</summary>
         /// <returns><c>true</c> si tocó el material.</returns>
         public bool Pulse(float time)
         {
             if (Material == null || Style == null) return false;
 
-            float alpha = Style.AlphaAt(time);
+            float alpha = Style.AlphaAt(time) * Mathf.Clamp01(GlobalDim);
 
             // Comparación exacta a propósito: AlphaAt es determinista, así que un estilo sin latido
             // (PulseSpeed 0) devuelve el mismo float siempre y el grupo deja de escribir del todo.
@@ -610,13 +618,27 @@ namespace Rollgeon.Combat.Threat
     {
         public List<ThreatOverlayMaterialGroup> Groups;
 
+        [Tooltip("Alpha de los quads mientras hay una selección de casilla activa: el " +
+                 "tinte de los tiles seleccionables tiene que leerse por encima del " +
+                 "telegraph. 1 = no atenuar.")]
+        public float DimWhileSelecting = 0.15f;
+
         private void Update()
         {
             if (Groups == null || Groups.Count == 0) return;
+
+            // El tinte de selección vive en el material del TILE, físicamente debajo de
+            // los quads: la única forma de que "gane" es correr a los quads de la pelea.
+            ThreatOverlayMaterialGroup.GlobalDim = IsSelectingTile() ? DimWhileSelecting : 1f;
 
             float time = Time.time;
             for (int i = 0; i < Groups.Count; i++)
                 Groups[i].Pulse(time);
         }
+
+        private static bool IsSelectingTile()
+            => global::Patterns.ServiceLocator.TryGetService<Rollgeon.Effects.Selection.ISelectionController>(
+                   out var selection)
+               && selection != null && selection.IsSelecting;
     }
 }

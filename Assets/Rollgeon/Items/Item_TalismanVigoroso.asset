@@ -182,7 +182,7 @@ MonoBehaviour:
       Data: 0
     - Name: _baseAmount
       Entry: 3
-      Data: 10
+      Data: 15
     - Name: _comboMultiplier
       Entry: 4
       Data: 1
@@ -477,10 +477,10 @@ MonoBehaviour:
     - Name: 
       Entry: 8
       Data: 
-  ItemId: talisman.vigoroso
+  ItemId: talisman.vital
   DisplayName: "Talism\xE1n Vigoroso"
-  Description: Recuperas 10HP al iniciar combate.
-  Icon: {fileID: 1808964844, guid: ee12da05509c7a74686b1e1cc11cbd3e, type: 3}
+  Description: Recuperas 15 HP al iniciar combate.
+  Icon: {fileID: 751192525, guid: 85cf62a570fe3da4baa3611ccbef5c2b, type: 3}
   Rarity: 2
   FamilyId: talisman
   VariantIndex: 1
