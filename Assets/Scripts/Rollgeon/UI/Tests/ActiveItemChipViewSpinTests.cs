@@ -15,8 +15,8 @@ namespace Rollgeon.UI.Tests
     /// El giro de la ficha de ítem activo tiene que ser el del dado, no un contador de
     /// números: la silueta rota con <see cref="DiceAnimChoreographer"/> y el resultado se
     /// revela recién al asentarse. El giro vive en el segmento <b>pendiente</b>
-    /// (<c>OnRollPending</c>): la cara cruda queda sostenida hasta que el jugador acepte
-    /// o re-tire.
+    /// (<c>OnRolled</c>): la cara cruda queda sostenida hasta que llegue la
+    /// resolucion del servicio.
     /// <para>
     /// Regresión: la primera versión ciclaba números durante todo el giro e ignoraba
     /// <c>ShowPreviewFacesDuringSpin</c>, que el proyecto shippea en <c>false</c>. El número
@@ -132,8 +132,8 @@ namespace Rollgeon.UI.Tests
         {
             // Arrange — el bug: la view re-muestreaba la escala de reposo del transform
             // que este mismo componente anima. Cada tirada cortada en pleno pop horneaba
-            // ese pop como nueva base y la ficha crecia por uso, hasta tapar el HUD. Los
-            // rerolls hacen ese corte todo el tiempo: cada uno reinicia el giro.
+            // ese pop como nueva base y la ficha crecia por uso, hasta tapar el HUD.
+            // Activaciones seguidas hacen ese corte: cada una reinicia el giro.
             InvokePrivate(_chip, "Awake");
             var rest = _go.transform.localScale;
 
@@ -141,7 +141,7 @@ namespace Rollgeon.UI.Tests
             // y una resolucion cortada en pleno pop del payoff.
             for (int i = 0; i < 8; i++)
             {
-                InvokePrivate(_chip, "HandleRollPending", NewPending(rerollCount: i));
+                InvokePrivate(_chip, "HandleRolled", NewPending());
                 ApplyFrame(SpinSeconds + 0.001f); // el instante de maxima escala del asentado
             }
             InvokePrivate(_chip, "HandleResolved", NewResult());
@@ -156,16 +156,16 @@ namespace Rollgeon.UI.Tests
         [Test]
         public void test_aNewRoll_returnsToRestBeforeAnimating()
         {
-            // Arrange — una tirada nueva (un reroll) cancela la anterior; si arrancara
+            // Arrange — una tirada nueva cancela la anterior; si arrancara
             // desde el pop en curso, el pop nuevo saldria montado sobre el viejo.
             InvokePrivate(_chip, "Awake");
             var rest = _go.transform.localScale;
-            InvokePrivate(_chip, "HandleRollPending", NewPending(rerollCount: 0));
+            InvokePrivate(_chip, "HandleRolled", NewPending());
             ApplyFrame(SpinSeconds + 0.001f);
             Assert.Greater(_go.transform.localScale.x, rest.x, "el pop tiene que haber ocurrido");
 
             // Act
-            InvokePrivate(_chip, "HandleRollPending", NewPending(rerollCount: 1));
+            InvokePrivate(_chip, "HandleRolled", NewPending());
 
             // Assert
             Assert.AreEqual(rest.x, _go.transform.localScale.x, 0.0001f);
@@ -177,7 +177,7 @@ namespace Rollgeon.UI.Tests
             // Arrange — el payoff va en la resolucion, escalado por banda.
             InvokePrivate(_chip, "Awake");
             var rest = _go.transform.localScale;
-            InvokePrivate(_chip, "HandleRollPending", NewPending(rerollCount: 0));
+            InvokePrivate(_chip, "HandleRolled", NewPending());
             ApplyFrame(SpinSeconds + 5f);
 
             // Act
@@ -189,8 +189,7 @@ namespace Rollgeon.UI.Tests
             Assert.Greater(_go.transform.localScale.x, rest.x, "el pop del payoff");
         }
 
-        private ActiveItemPendingRoll NewPending(int rerollCount)
-            => new ActiveItemPendingRoll(_item, rawRoll: 4, rerollCount: rerollCount);
+        private ActiveItemRoll NewPending() => new ActiveItemRoll(_item, rawRoll: 4);
 
         /// <summary>Resolucion de banda positiva: la de pop mas grande, el peor caso.</summary>
         private ActiveItemActivationResult NewResult()
@@ -206,7 +205,7 @@ namespace Rollgeon.UI.Tests
         /// <summary>Deja la ficha en medio de una tirada pendiente de 4.</summary>
         private void BeginRoll(bool showPreviewFaces)
         {
-            var pending = NewPending(rerollCount: 0);
+            var pending = NewPending();
             AssignPrivate(_chip, "_pending", pending);
             InvokePrivate(_chip, "BuildSpinPlan", pending);
             // BuildSpinPlan levanta el asset del proyecto; el test fija el flag a mano para

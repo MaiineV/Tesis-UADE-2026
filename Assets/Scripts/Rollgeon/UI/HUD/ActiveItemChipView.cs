@@ -55,7 +55,7 @@ namespace Rollgeon.UI.HUD
         private Button _button;
 
         [SerializeField]
-        [Tooltip("Tooltip con el nombre del item y su tabla de bandas.")]
+        [Tooltip("Tooltip con el nombre del item, su descripcion y su tabla de bandas.")]
         private UITooltipTrigger _tooltip;
 
         [Title("Ficha — arte")]
@@ -95,9 +95,9 @@ namespace Rollgeon.UI.HUD
         private IEquippedActiveItemService _equipped;
         private IActiveItemActivationService _activation;
         private bool _bound;
-        // Tirada pendiente de decision (aceptar / re-tirar). _pendingStartedAt < 0 = no hay.
+        // Tirada en curso (el dado gira y asienta la cara cruda). _pendingStartedAt < 0 = no hay.
         private float _pendingStartedAt = -1f;
-        private ActiveItemPendingRoll _pending;
+        private ActiveItemRoll _pending;
         // Animacion de resolucion en curso. _resolveStartedAt < 0 = no hay.
         private float _resolveStartedAt = -1f;
         private ActiveItemActivationResult _lastResult;
@@ -116,17 +116,17 @@ namespace Rollgeon.UI.HUD
         // particulas, hit-stop y texto flotante.
         // ==================================================================
 
-        /// <summary>Arranca el giro de una tirada pendiente (la primera o un reroll).</summary>
-        public event Action<ActiveItemPendingRoll> RollSpinStarted;
+        /// <summary>Arranca el giro de una tirada.</summary>
+        public event Action<ActiveItemRoll> RollSpinStarted;
 
         /// <summary>Un tick del giro (el dado "traquetea").</summary>
         public event Action SpinTicked;
 
-        /// <summary>Se asento la cara cruda y la decision quedo abierta.</summary>
-        public event Action<ActiveItemPendingRoll> RawFaceSettled;
+        /// <summary>Se asento la cara cruda; la resolucion del servicio llega enseguida.</summary>
+        public event Action<ActiveItemRoll> RawFaceSettled;
 
         /// <summary>
-        /// El jugador acepto y la activacion se resolvio — el payoff fuerte va aca.
+        /// La activacion se resolvio (el giro termino) — el payoff fuerte va aca.
         /// Si hubo encantamiento, el destello arranca en este mismo instante
         /// (mirar <see cref="ActiveItemActivationResult.WasEnchanted"/>).
         /// </summary>
@@ -217,8 +217,8 @@ namespace Rollgeon.UI.HUD
                 && ServiceLocator.TryGetService<IActiveItemActivationService>(out _activation)
                 && _activation != null)
             {
-                _activation.OnRollPending -= HandleRollPending;
-                _activation.OnRollPending += HandleRollPending;
+                _activation.OnRolled -= HandleRolled;
+                _activation.OnRolled += HandleRolled;
                 _activation.OnResolved -= HandleResolved;
                 _activation.OnResolved += HandleResolved;
                 _activation.OnSelectionStarted -= HandleRefreshNoArgs;
@@ -235,7 +235,7 @@ namespace Rollgeon.UI.HUD
             if (_equipped != null) _equipped.OnEquippedChanged -= HandleEquippedChanged;
             if (_activation != null)
             {
-                _activation.OnRollPending -= HandleRollPending;
+                _activation.OnRolled -= HandleRolled;
                 _activation.OnResolved -= HandleResolved;
             }
 
@@ -272,7 +272,7 @@ namespace Rollgeon.UI.HUD
             // El service puede descartar la pendiente sin resolverla (el combate se cerro
             // con la decision abierta) — la ficha no se queda pegada esperando un
             // OnResolved que no va a llegar.
-            if (_activation == null || !_activation.IsAwaitingDecision)
+            if (_activation == null || !_activation.IsResolving)
             {
                 EndRollAnimation();
                 return;
@@ -286,7 +286,7 @@ namespace Rollgeon.UI.HUD
         /// que lateral arranca la rotacion y que caras preview cicla. Se precalcula una vez
         /// por tirada para que dos cuadros del mismo instante muestren lo mismo.
         /// </summary>
-        private void BuildSpinPlan(ActiveItemPendingRoll pending)
+        private void BuildSpinPlan(ActiveItemRoll pending)
         {
             var settings = ResolveAnimSettings();
             var t = settings.ToTimings();
@@ -309,7 +309,7 @@ namespace Rollgeon.UI.HUD
 
         /// <summary>
         /// Pinta un cuadro del segmento pendiente: giro y asentado de la cara cruda, que
-        /// queda sostenida mientras el jugador decide si acepta o re-tira.
+        /// queda sostenida hasta que llegue la resolucion del servicio.
         /// </summary>
         private void ApplyPendingFrame(float elapsed)
         {
@@ -360,8 +360,8 @@ namespace Rollgeon.UI.HUD
                 {
                     _rollLabel.text = face.ToString();
                     // Girando va neutro para no anticipar. Asentada, se pinta la banda de
-                    // la cara cruda: es la informacion con la que el jugador decide si
-                    // re-tira. La banda final (post encantamiento) recien se ve al aceptar.
+                    // la cara cruda. La banda final (post encantamiento) recien se ve al
+                    // resolver.
                     _rollLabel.color = phase == ActiveItemRollPhase.Spinning
                         ? Color.white
                         : ColorFor(ActiveItemBands.Resolve(_pending.RawRoll, _pending.Item));
@@ -464,10 +464,10 @@ namespace Rollgeon.UI.HUD
 
             // Armada = esperando que el jugador elija target. Todavia no costo nada y
             // re-clickear cancela, asi que el estado tiene que leerse distinto del reposo.
-            // La ventana de decision (aceptar / re-tirar) usa el mismo tinte: tambien es
-            // un estado intermedio, distinto del reposo y del bloqueado.
+            // El giro del dado usa el mismo tinte: tambien es un estado intermedio,
+            // distinto del reposo y del bloqueado.
             bool arming = _activation != null
-                && (_activation.IsSelecting || _activation.IsAwaitingDecision);
+                && (_activation.IsSelecting || _activation.IsResolving);
             if (_chip != null)
                 _chip.color = arming ? _placeholderTint * _armedTintFactor : _placeholderTint;
 
@@ -515,10 +515,10 @@ namespace Rollgeon.UI.HUD
         private void ApplyUnavailableTint()
         {
             if (_dieIcon == null) return;
-            // AwaitingDecision no es "no usable": la ficha sigue viva (click = re-tirar)
-            // y el Confirm del HUD acepta. Pintarla de rojo diria lo contrario.
+            // Resolving no es "no usable": la activacion esta en curso y la ficha esta
+            // girando. Pintarla de rojo diria que fallo.
             bool usable = _block == ActiveItemBlock.None
-                          || _block == ActiveItemBlock.AwaitingDecision;
+                          || _block == ActiveItemBlock.Resolving;
             if (usable) UnavailableTint.Remove(_dieIcon);
             else UnavailableTint.Apply(_dieIcon);
         }
@@ -535,22 +535,8 @@ namespace Rollgeon.UI.HUD
                 return;
             }
 
-            // Ventana de decision abierta: el click de la ficha re-tira, el mismo gesto
-            // que el boton Reroll de los dados de combate. Aceptar vive en el boton
-            // Confirm del HUD, como en ataque/defensa.
-            if (_activation.IsAwaitingDecision)
-            {
-                if (!_activation.CanRequestReroll)
-                {
-                    ShowReject(LocalizedContent.Ui(UiTextKeys.RejectNoRolls, "Rolls insuficientes."));
-                    return;
-                }
-
-                _activation.RequestReroll();
-                Refresh();
-                return;
-            }
-
+            // Con el dado girando el click no hace nada: no hay re-tirada ni nada que
+            // aceptar, la resolucion llega sola (CanActivate devuelve Resolving).
             var block = _activation.CanActivate();
             if (block != ActiveItemBlock.None)
             {
@@ -564,10 +550,10 @@ namespace Rollgeon.UI.HUD
             Refresh();
         }
 
-        private void HandleRollPending(ActiveItemPendingRoll pending)
+        private void HandleRolled(ActiveItemRoll pending)
         {
-            // El GDD: el dado emerge del item equipado. La tirada queda pendiente: el
-            // giro asienta la cara cruda y la sostiene hasta que el jugador decida.
+            // El GDD: el dado emerge del item equipado. El giro asienta la cara cruda y
+            // la sostiene hasta que el servicio resuelva (mismo SpinSeconds).
             _pending = pending;
             _pendingStartedAt = Time.unscaledTime;
             _resolveStartedAt = -1f;
@@ -575,7 +561,7 @@ namespace Rollgeon.UI.HUD
             _lastSpinTick = 0;
             BuildSpinPlan(pending);
 
-            // Una tirada nueva (o un reroll) cancela la anterior: se vuelve al reposo
+            // Una tirada nueva cancela la anterior: se vuelve al reposo
             // antes de animar. El reposo es el capturado en Awake, nunca el tamaño que
             // dejo el pop previo.
             if (_chip != null) _chip.transform.localScale = _chipRestScale;
@@ -587,7 +573,7 @@ namespace Rollgeon.UI.HUD
 
         private void HandleResolved(ActiveItemActivationResult result)
         {
-            // El jugador acepto: la resolucion corre sobre la cara ya asentada y el slot
+            // Llego la resolucion: corre sobre la cara ya asentada y el slot
             // vuelve al reposo apenas termina de mostrar el resultado.
             _lastResult = result;
             _resolveStartedAt = Time.unscaledTime;
@@ -631,8 +617,10 @@ namespace Rollgeon.UI.HUD
         }
 
         /// <summary>
-        /// Nombre del item y su tabla de bandas. El GDD pide mostrar el reparto del dado
-        /// <b>antes</b> de activar, para que el jugador sepa a que se expone.
+        /// Nombre del item, su descripcion y su tabla de bandas. El GDD pide mostrar el
+        /// reparto del dado <b>antes</b> de activar, para que el jugador sepa a que se
+        /// expone — y la descripcion es lo que le dice QUE hace cada banda (ronda de
+        /// testers 2026-09-04: sin ella la tabla era un "1-4 negativa" sin significado).
         /// </summary>
         private string BuildTooltip()
         {
@@ -644,13 +632,20 @@ namespace Rollgeon.UI.HUD
 
             string name = LocalizedContent.Name(item.ItemId,
                 string.IsNullOrEmpty(item.DisplayName) ? item.ItemId : item.DisplayName);
+            string description = LocalizedContent.Description(item.ItemId, item.Description ?? string.Empty);
+
+            var text = new System.Text.StringBuilder();
+            text.AppendLine($"<b>{name}</b>  ·  d{faces}");
+            if (!string.IsNullOrEmpty(description))
+            {
+                text.AppendLine(description);
+                text.AppendLine();
+            }
 
             // Se listan las caras y no un rango: en Precision y Control las bandas no son
             // contiguas (Control con paridad par sobre D6 da mixta en 2 y en 5), y en
             // Binary/Gradient/Hierarchy directamente no hay 3 bandas fijas — DescribeStructure
             // devuelve las filas reales del item (2 en Binary, 1 en Gradient/Hierarchy).
-            var text = new System.Text.StringBuilder();
-            text.AppendLine($"<b>{name}</b>  ·  d{faces}");
             var rows = ActiveItemBands.DescribeStructure(item);
             for (int i = 0; i < rows.Count; i++)
             {
@@ -667,13 +662,6 @@ namespace Rollgeon.UI.HUD
                 text.AppendLine();
                 string uses = ench.IsLimited ? $"  [{_equipped.EnchantmentUsesLeft} usos]" : string.Empty;
                 text.Append($"<i>{ench.DisplayName}: {ench.DescribeEffect()}</i>{uses}");
-            }
-
-            if (_activation != null && _activation.IsAwaitingDecision)
-            {
-                text.AppendLine();
-                text.Append("<i>" + LocalizedContent.Ui(UiTextKeys.ActiveItemDecideHint,
-                    "Click: re-tirar (-1 Roll) · Confirmar: aceptar") + "</i>");
             }
 
             return text.ToString();
