@@ -483,7 +483,7 @@ MonoBehaviour:
   ItemId: lagrima.de.la.plenitud
   DisplayName: "L\xE1grima de la Plenitud"
   Description: +5HP al resolver el combo Generala.
-  Icon: {fileID: 1808964844, guid: ee12da05509c7a74686b1e1cc11cbd3e, type: 3}
+  Icon: {fileID: -507968150, guid: e81616b36809f1545a3695045c1837eb, type: 3}
   Rarity: 1
   FamilyId: lagrima
   VariantIndex: 29
@@ -505,6 +505,10 @@ MonoBehaviour:
   ActiveFamily: 0
   PrecisionTarget: 1
   ControlParity: 0
+  ActiveResolution: 0
+  NegativeMaxFace: 0
+  MixedMaxFace: 0
+  BinaryPositiveParity: 0
   OnNegativeBand:
     Label: Effect Group
     PreConditions: []
