@@ -36,7 +36,7 @@ MonoBehaviour:
       Data: 0
     - Name: TriggerEvent
       Entry: 3
-      Data: 110
+      Data: 112
     - Name: ComboFilter
       Entry: 7
       Data: 2|Rollgeon.Upgrades.Dice.ComboFilter, Rollgeon
@@ -508,6 +508,10 @@ MonoBehaviour:
   ActiveFamily: 0
   PrecisionTarget: 1
   ControlParity: 0
+  ActiveResolution: 0
+  NegativeMaxFace: 0
+  MixedMaxFace: 0
+  BinaryPositiveParity: 0
   OnNegativeBand:
     Label: Effect Group
     PreConditions: []
