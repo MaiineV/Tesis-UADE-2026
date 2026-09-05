@@ -32,9 +32,10 @@ namespace Rollgeon.Items.Active
         NoValidTarget = 5,
 
         /// <summary>
-        /// Hay una tirada pendiente de decision (aceptar o re-tirar). No se puede abrir
-        /// otra activacion hasta resolverla.
+        /// Hay una activacion en curso: el dado esta girando (la resolucion llega sola al
+        /// asentarse) o un efecto de banda espera una eleccion post-tirada. No se puede
+        /// abrir otra activacion hasta que termine.
         /// </summary>
-        AwaitingDecision = 6,
+        Resolving = 6,
     }
 }

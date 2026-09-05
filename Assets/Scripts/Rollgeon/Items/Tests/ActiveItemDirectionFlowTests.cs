@@ -57,6 +57,7 @@ namespace Rollgeon.Items.Tests
             _equipped = new EquippedActiveItemService(catalog: null);
             _roller = new FakeDieRoller { Next = 6 };
             _service = new ActiveItemActivationService(_equipped, _roller);
+            _service.ResolveScheduler = (seconds, callback) => callback();
 
             FakeDirectionEffect.LastAppliedDirection = null;
             FakeDirectionEffect.LastAppliedOrigin = null;
@@ -132,7 +133,7 @@ namespace Rollgeon.Items.Tests
         }
 
         [Test]
-        public void test_accept_directionReachesTheEffectContext()
+        public void test_resolve_directionReachesTheEffectContext()
         {
             // Arrange
             EquipDirectionItem(out _);
@@ -141,11 +142,38 @@ namespace Rollgeon.Items.Tests
 
             // Act
             _selection.Complete(TargetAt(eastProxy));
-            _service.AcceptRoll();
 
             // Assert
             Assert.AreEqual(Cardinal.East, FakeDirectionEffect.LastAppliedDirection);
             Assert.AreEqual(_origin, FakeDirectionEffect.LastAppliedOrigin);
+        }
+
+        [Test]
+        public void test_direction_isFrozenAtConfirm_evenIfTheOwnerMovesBeforeResolving()
+        {
+            // Arrange — bug de testers: Justa "empujaba raro" si el jugador se movia
+            // entre elegir la direccion y resolver. La cardinal se derivaba al resolver
+            // con el origen NUEVO contra el proxy elegido desde el origen VIEJO.
+            EquipDirectionItem(out _);
+            Action scheduled = null;
+            _service.ResolveScheduler = (seconds, callback) => scheduled = callback;
+            _service.BeginActivation();
+            var eastProxy = Cardinal.East.Step(_origin);
+            _selection.Complete(TargetAt(eastProxy));
+
+            // El jugador se mueve al norte antes de que el dado termine de girar: el
+            // proxy (3,2) queda al sureste de (2,3), ya no "al este".
+            var moved = Cardinal.North.Step(_origin);
+            _grid.Move(_player, moved);
+
+            // Act
+            scheduled();
+
+            // Assert
+            Assert.AreEqual(Cardinal.East, FakeDirectionEffect.LastAppliedDirection,
+                "la cardinal es la que se eligio, congelada al confirmar");
+            Assert.AreEqual(moved, FakeDirectionEffect.LastAppliedOrigin,
+                "el origen si es el actual: la carga arranca desde donde esta el jugador");
         }
 
         // ------------------------------------------------------------------
