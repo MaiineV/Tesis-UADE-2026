@@ -581,7 +581,6 @@ Transform:
   - {fileID: 9150749194869960755}
   - {fileID: 5349936455460041634}
   - {fileID: 1663413830807834439}
-  - {fileID: 8815513286580584135}
   - {fileID: 6408631449998963745}
   - {fileID: 642606584437146015}
   - {fileID: 1099312501948075061}
@@ -592,7 +591,6 @@ Transform:
   - {fileID: 8758021966319818643}
   - {fileID: 6675616261952878096}
   - {fileID: 6410284999792850404}
-  - {fileID: 7632370834059208370}
   - {fileID: 3296839361007773194}
   - {fileID: 4478641278900900115}
   m_Father: {fileID: 0}
@@ -623,6 +621,10 @@ MonoBehaviour:
       Height: -0.00003245473
     - Coord:
         X: 3
+        Y: 3
+      Height: -0.00003245473
+    - Coord:
+        X: 3
         Y: 2
       Height: -0.00003245473
     - Coord:
@@ -688,6 +690,14 @@ MonoBehaviour:
     - Coord:
         X: -2
         Y: 1
+      Height: -0.00003245473
+    - Coord:
+        X: -3
+        Y: -3
+      Height: -0.00003245473
+    - Coord:
+        X: -3
+        Y: -2
       Height: -0.00003245473
     - Coord:
         X: -3
@@ -955,6 +965,14 @@ MonoBehaviour:
       Height: -0.00003245473
     - Coord:
         X: -4
+        Y: -3
+      Height: -0.00003245473
+    - Coord:
+        X: -4
+        Y: -2
+      Height: -0.00003245473
+    - Coord:
+        X: -4
         Y: -1
       Height: -0.00003245473
     - Coord:
@@ -1000,6 +1018,18 @@ MonoBehaviour:
     - Coord:
         X: 2
         Y: 4
+      Height: -0.00003245473
+    - Coord:
+        X: 3
+        Y: 4
+      Height: -0.00003245473
+    - Coord:
+        X: 4
+        Y: 4
+      Height: -0.00003245473
+    - Coord:
+        X: 4
+        Y: 3
       Height: -0.00003245473
     - Coord:
         X: 4
@@ -1126,6 +1156,62 @@ MonoBehaviour:
       Cost: 1
     - From:
         X: 3
+        Y: 3
+      To:
+        X: 3
+        Y: 2
+      Cost: 1
+    - From:
+        X: 3
+        Y: 2
+      To:
+        X: 3
+        Y: 3
+      Cost: 1
+    - From:
+        X: 3
+        Y: 3
+      To:
+        X: 2
+        Y: 3
+      Cost: 1
+    - From:
+        X: 2
+        Y: 3
+      To:
+        X: 3
+        Y: 3
+      Cost: 1
+    - From:
+        X: 3
+        Y: 3
+      To:
+        X: 3
+        Y: 4
+      Cost: 1
+    - From:
+        X: 3
+        Y: 4
+      To:
+        X: 3
+        Y: 3
+      Cost: 1
+    - From:
+        X: 3
+        Y: 3
+      To:
+        X: 4
+        Y: 3
+      Cost: 1
+    - From:
+        X: 4
+        Y: 3
+      To:
+        X: 3
+        Y: 3
+      Cost: 1
+    - From:
+        X: 3
         Y: 2
       To:
         X: 2
@@ -1725,6 +1811,104 @@ MonoBehaviour:
       To:
         X: -2
         Y: 1
+      Cost: 1
+    - From:
+        X: -3
+        Y: -3
+      To:
+        X: -3
+        Y: -2
+      Cost: 1
+    - From:
+        X: -3
+        Y: -2
+      To:
+        X: -3
+        Y: -3
+      Cost: 1
+    - From:
+        X: -3
+        Y: -3
+      To:
+        X: -2
+        Y: -3
+      Cost: 1
+    - From:
+        X: -2
+        Y: -3
+      To:
+        X: -3
+        Y: -3
+      Cost: 1
+    - From:
+        X: -3
+        Y: -3
+      To:
+        X: -3
+        Y: -4
+      Cost: 1
+    - From:
+        X: -3
+        Y: -4
+      To:
+        X: -3
+        Y: -3
+      Cost: 1
+    - From:
+        X: -3
+        Y: -3
+      To:
+        X: -4
+        Y: -3
+      Cost: 1
+    - From:
+        X: -4
+        Y: -3
+      To:
+        X: -3
+        Y: -3
+      Cost: 1
+    - From:
+        X: -3
+        Y: -2
+      To:
+        X: -3
+        Y: -1
+      Cost: 1
+    - From:
+        X: -3
+        Y: -1
+      To:
+        X: -3
+        Y: -2
+      Cost: 1
+    - From:
+        X: -3
+        Y: -2
+      To:
+        X: -2
+        Y: -2
+      Cost: 1
+    - From:
+        X: -2
+        Y: -2
+      To:
+        X: -3
+        Y: -2
+      Cost: 1
+    - From:
+        X: -3
+        Y: -2
+      To:
+        X: -4
+        Y: -2
+      Cost: 1
+    - From:
+        X: -4
+        Y: -2
+      To:
+        X: -3
+        Y: -2
       Cost: 1
     - From:
         X: -3
@@ -2679,6 +2863,20 @@ MonoBehaviour:
         Y: -4
       Cost: 1
     - From:
+        X: -4
+        Y: -4
+      To:
+        X: -4
+        Y: -3
+      Cost: 1
+    - From:
+        X: -4
+        Y: -3
+      To:
+        X: -4
+        Y: -4
+      Cost: 1
+    - From:
         X: -3
         Y: -4
       To:
@@ -3002,6 +3200,20 @@ MonoBehaviour:
       Cost: 1
     - From:
         X: 5
+        Y: 3
+      To:
+        X: 4
+        Y: 3
+      Cost: 1
+    - From:
+        X: 4
+        Y: 3
+      To:
+        X: 5
+        Y: 3
+      Cost: 1
+    - From:
+        X: 5
         Y: 4
       To:
         X: 5
@@ -3016,6 +3228,20 @@ MonoBehaviour:
       Cost: 1
     - From:
         X: 5
+        Y: 4
+      To:
+        X: 4
+        Y: 4
+      Cost: 1
+    - From:
+        X: 4
+        Y: 4
+      To:
+        X: 5
+        Y: 4
+      Cost: 1
+    - From:
+        X: 5
         Y: 5
       To:
         X: 4
@@ -3043,6 +3269,20 @@ MonoBehaviour:
         Y: 5
       Cost: 1
     - From:
+        X: 4
+        Y: 5
+      To:
+        X: 4
+        Y: 4
+      Cost: 1
+    - From:
+        X: 4
+        Y: 4
+      To:
+        X: 4
+        Y: 5
+      Cost: 1
+    - From:
         X: 3
         Y: 5
       To:
@@ -3052,6 +3292,20 @@ MonoBehaviour:
     - From:
         X: 2
         Y: 5
+      To:
+        X: 3
+        Y: 5
+      Cost: 1
+    - From:
+        X: 3
+        Y: 5
+      To:
+        X: 3
+        Y: 4
+      Cost: 1
+    - From:
+        X: 3
+        Y: 4
       To:
         X: 3
         Y: 5
@@ -3253,6 +3507,62 @@ MonoBehaviour:
         Y: -2
       Cost: 1
     - From:
+        X: -5
+        Y: -2
+      To:
+        X: -4
+        Y: -2
+      Cost: 1
+    - From:
+        X: -4
+        Y: -2
+      To:
+        X: -5
+        Y: -2
+      Cost: 1
+    - From:
+        X: -5
+        Y: -3
+      To:
+        X: -4
+        Y: -3
+      Cost: 1
+    - From:
+        X: -4
+        Y: -3
+      To:
+        X: -5
+        Y: -3
+      Cost: 1
+    - From:
+        X: -4
+        Y: -3
+      To:
+        X: -4
+        Y: -2
+      Cost: 1
+    - From:
+        X: -4
+        Y: -2
+      To:
+        X: -4
+        Y: -3
+      Cost: 1
+    - From:
+        X: -4
+        Y: -2
+      To:
+        X: -4
+        Y: -1
+      Cost: 1
+    - From:
+        X: -4
+        Y: -1
+      To:
+        X: -4
+        Y: -2
+      Cost: 1
+    - From:
         X: -4
         Y: -1
       To:
@@ -3405,6 +3715,62 @@ MonoBehaviour:
       To:
         X: 1
         Y: 4
+      Cost: 1
+    - From:
+        X: 2
+        Y: 4
+      To:
+        X: 3
+        Y: 4
+      Cost: 1
+    - From:
+        X: 3
+        Y: 4
+      To:
+        X: 2
+        Y: 4
+      Cost: 1
+    - From:
+        X: 3
+        Y: 4
+      To:
+        X: 4
+        Y: 4
+      Cost: 1
+    - From:
+        X: 4
+        Y: 4
+      To:
+        X: 3
+        Y: 4
+      Cost: 1
+    - From:
+        X: 4
+        Y: 4
+      To:
+        X: 4
+        Y: 3
+      Cost: 1
+    - From:
+        X: 4
+        Y: 3
+      To:
+        X: 4
+        Y: 4
+      Cost: 1
+    - From:
+        X: 4
+        Y: 3
+      To:
+        X: 4
+        Y: 2
+      Cost: 1
+    - From:
+        X: 4
+        Y: 2
+      To:
+        X: 4
+        Y: 3
       Cost: 1
     - From:
         X: 4
@@ -4880,100 +5246,6 @@ MonoBehaviour:
 MeshRenderer:
   m_CorrespondingSourceObject: {fileID: 4004767428155161309, guid: 0e5a917e382118f4cb8da558471272aa, type: 3}
   m_PrefabInstance: {fileID: 12508925095872261}
-  m_PrefabAsset: {fileID: 0}
---- !u!1001 &48874243175261467
-PrefabInstance:
-  m_ObjectHideFlags: 0
-  serializedVersion: 2
-  m_Modification:
-    serializedVersion: 3
-    m_TransformParent: {fileID: 1711357143213522343}
-    m_Modifications:
-    - target: {fileID: 5854900675968158788, guid: 88605bb5aabd20840bd52ee115dd6d9c, type: 3}
-      propertyPath: m_StaticEditorFlags
-      value: 2147483647
-      objectReference: {fileID: 0}
-    - target: {fileID: 8192202552583897446, guid: 88605bb5aabd20840bd52ee115dd6d9c, type: 3}
-      propertyPath: m_Name
-      value: RuletaPisov02
-      objectReference: {fileID: 0}
-    - target: {fileID: 8861778387354491868, guid: 88605bb5aabd20840bd52ee115dd6d9c, type: 3}
-      propertyPath: m_LocalPosition.x
-      value: 4
-      objectReference: {fileID: 0}
-    - target: {fileID: 8861778387354491868, guid: 88605bb5aabd20840bd52ee115dd6d9c, type: 3}
-      propertyPath: m_LocalPosition.y
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 8861778387354491868, guid: 88605bb5aabd20840bd52ee115dd6d9c, type: 3}
-      propertyPath: m_LocalPosition.z
-      value: 4
-      objectReference: {fileID: 0}
-    - target: {fileID: 8861778387354491868, guid: 88605bb5aabd20840bd52ee115dd6d9c, type: 3}
-      propertyPath: m_LocalRotation.w
-      value: -0.7071068
-      objectReference: {fileID: 0}
-    - target: {fileID: 8861778387354491868, guid: 88605bb5aabd20840bd52ee115dd6d9c, type: 3}
-      propertyPath: m_LocalRotation.x
-      value: -0
-      objectReference: {fileID: 0}
-    - target: {fileID: 8861778387354491868, guid: 88605bb5aabd20840bd52ee115dd6d9c, type: 3}
-      propertyPath: m_LocalRotation.y
-      value: 0.7071068
-      objectReference: {fileID: 0}
-    - target: {fileID: 8861778387354491868, guid: 88605bb5aabd20840bd52ee115dd6d9c, type: 3}
-      propertyPath: m_LocalRotation.z
-      value: -0
-      objectReference: {fileID: 0}
-    - target: {fileID: 8861778387354491868, guid: 88605bb5aabd20840bd52ee115dd6d9c, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 8861778387354491868, guid: 88605bb5aabd20840bd52ee115dd6d9c, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 8861778387354491868, guid: 88605bb5aabd20840bd52ee115dd6d9c, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.z
-      value: 0
-      objectReference: {fileID: 0}
-    m_RemovedComponents: []
-    m_RemovedGameObjects: []
-    m_AddedGameObjects: []
-    m_AddedComponents:
-    - targetCorrespondingSourceObject: {fileID: 8192202552583897446, guid: 88605bb5aabd20840bd52ee115dd6d9c, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 7163934304832663570}
-  m_SourcePrefab: {fileID: 100100000, guid: 88605bb5aabd20840bd52ee115dd6d9c, type: 3}
---- !u!1 &8150721530724050045 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 8192202552583897446, guid: 88605bb5aabd20840bd52ee115dd6d9c, type: 3}
-  m_PrefabInstance: {fileID: 48874243175261467}
-  m_PrefabAsset: {fileID: 0}
---- !u!114 &7163934304832663570
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8150721530724050045}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6862515384497d34091ba5713cfb79b7, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Rollgeon::Rollgeon.Grid.TileMarker
-  Coord:
-    X: 4
-    Y: 3
-  Layer: 0
-  Footprint: {x: 2, y: 1, z: 2}
-  FootprintOffset: {x: -1, y: 0, z: 0}
-  Type: 2
-  IsBlocker: 1
---- !u!4 &8815513286580584135 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 8861778387354491868, guid: 88605bb5aabd20840bd52ee115dd6d9c, type: 3}
-  m_PrefabInstance: {fileID: 48874243175261467}
   m_PrefabAsset: {fileID: 0}
 --- !u!1001 &76721452934930054
 PrefabInstance:
@@ -10827,100 +11099,6 @@ PrefabInstance:
 Transform:
   m_CorrespondingSourceObject: {fileID: 897079557085885238, guid: 8f90cda41d089484cb7f0f103ed5b2a9, type: 3}
   m_PrefabInstance: {fileID: 1349391769155531366}
-  m_PrefabAsset: {fileID: 0}
---- !u!1001 &1373875685878742382
-PrefabInstance:
-  m_ObjectHideFlags: 0
-  serializedVersion: 2
-  m_Modification:
-    serializedVersion: 3
-    m_TransformParent: {fileID: 1711357143213522343}
-    m_Modifications:
-    - target: {fileID: 5854900675968158788, guid: 88605bb5aabd20840bd52ee115dd6d9c, type: 3}
-      propertyPath: m_StaticEditorFlags
-      value: 2147483647
-      objectReference: {fileID: 0}
-    - target: {fileID: 8192202552583897446, guid: 88605bb5aabd20840bd52ee115dd6d9c, type: 3}
-      propertyPath: m_Name
-      value: RuletaPisov02
-      objectReference: {fileID: 0}
-    - target: {fileID: 8861778387354491868, guid: 88605bb5aabd20840bd52ee115dd6d9c, type: 3}
-      propertyPath: m_LocalPosition.x
-      value: -3
-      objectReference: {fileID: 0}
-    - target: {fileID: 8861778387354491868, guid: 88605bb5aabd20840bd52ee115dd6d9c, type: 3}
-      propertyPath: m_LocalPosition.y
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 8861778387354491868, guid: 88605bb5aabd20840bd52ee115dd6d9c, type: 3}
-      propertyPath: m_LocalPosition.z
-      value: -2
-      objectReference: {fileID: 0}
-    - target: {fileID: 8861778387354491868, guid: 88605bb5aabd20840bd52ee115dd6d9c, type: 3}
-      propertyPath: m_LocalRotation.w
-      value: -0.7071068
-      objectReference: {fileID: 0}
-    - target: {fileID: 8861778387354491868, guid: 88605bb5aabd20840bd52ee115dd6d9c, type: 3}
-      propertyPath: m_LocalRotation.x
-      value: -0
-      objectReference: {fileID: 0}
-    - target: {fileID: 8861778387354491868, guid: 88605bb5aabd20840bd52ee115dd6d9c, type: 3}
-      propertyPath: m_LocalRotation.y
-      value: 0.7071068
-      objectReference: {fileID: 0}
-    - target: {fileID: 8861778387354491868, guid: 88605bb5aabd20840bd52ee115dd6d9c, type: 3}
-      propertyPath: m_LocalRotation.z
-      value: -0
-      objectReference: {fileID: 0}
-    - target: {fileID: 8861778387354491868, guid: 88605bb5aabd20840bd52ee115dd6d9c, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 8861778387354491868, guid: 88605bb5aabd20840bd52ee115dd6d9c, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 8861778387354491868, guid: 88605bb5aabd20840bd52ee115dd6d9c, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.z
-      value: 0
-      objectReference: {fileID: 0}
-    m_RemovedComponents: []
-    m_RemovedGameObjects: []
-    m_AddedGameObjects: []
-    m_AddedComponents:
-    - targetCorrespondingSourceObject: {fileID: 8192202552583897446, guid: 88605bb5aabd20840bd52ee115dd6d9c, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 1671617224283697500}
-  m_SourcePrefab: {fileID: 100100000, guid: 88605bb5aabd20840bd52ee115dd6d9c, type: 3}
---- !u!1 &7106803879074266120 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 8192202552583897446, guid: 88605bb5aabd20840bd52ee115dd6d9c, type: 3}
-  m_PrefabInstance: {fileID: 1373875685878742382}
-  m_PrefabAsset: {fileID: 0}
---- !u!114 &1671617224283697500
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7106803879074266120}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6862515384497d34091ba5713cfb79b7, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Rollgeon::Rollgeon.Grid.TileMarker
-  Coord:
-    X: -3
-    Y: -3
-  Layer: 0
-  Footprint: {x: 2, y: 1, z: 2}
-  FootprintOffset: {x: -1, y: 0, z: 0}
-  Type: 2
-  IsBlocker: 1
---- !u!4 &7632370834059208370 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 8861778387354491868, guid: 88605bb5aabd20840bd52ee115dd6d9c, type: 3}
-  m_PrefabInstance: {fileID: 1373875685878742382}
   m_PrefabAsset: {fileID: 0}
 --- !u!1001 &1441414034544149242
 PrefabInstance:
