@@ -390,7 +390,7 @@ MonoBehaviour:
   ItemId: guantelete.pesado
   DisplayName: Guantelete Pesado
   Description: "+10 de da\xF1o base, a cambio de -1 en tirada de movimiento"
-  Icon: {fileID: 1808964844, guid: ee12da05509c7a74686b1e1cc11cbd3e, type: 3}
+  Icon: {fileID: -1414218921, guid: 956c96499facb124fb3ffd26bd8ee18e, type: 3}
   Rarity: 1
   FamilyId: 
   VariantIndex: 0
@@ -412,6 +412,10 @@ MonoBehaviour:
   ActiveFamily: 0
   PrecisionTarget: 1
   ControlParity: 0
+  ActiveResolution: 0
+  NegativeMaxFace: 0
+  MixedMaxFace: 0
+  BinaryPositiveParity: 0
   OnNegativeBand:
     Label: Effect Group
     PreConditions: []

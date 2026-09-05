@@ -445,7 +445,7 @@ MonoBehaviour:
       Entry: 8
       Data: 
   ItemId: corona.del.full
-  DisplayName: Corona del Full
+  DisplayName: Corona del Full House
   Description: "+10 de da\xF1o en el combo Full House."
   Icon: {fileID: -1503815972, guid: e81616b36809f1545a3695045c1837eb, type: 3}
   Rarity: 0
