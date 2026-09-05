@@ -1394,8 +1394,8 @@ MonoBehaviour:
       Multiplier: 0
       ManualValue: 0
   VisualPrefab: {fileID: 8816966952657547766, guid: ae9cb5869f87759468c9a62ac0046c2a, type: 3}
-  MinGoldDrop: 7
-  MaxGoldDrop: 10
+  MinGoldDrop: 10
+  MaxGoldDrop: 20
   IsFlying: 0
   IsBoss: 0
   Archetype: 1

@@ -2087,8 +2087,8 @@ MonoBehaviour:
   BaseAttackRange: 5
   ExtraTiers: []
   VisualPrefab: {fileID: 2759895263432739200, guid: 1850e8217fe5ef54b88b2f940c9ba2a4, type: 3}
-  MinGoldDrop: 8
-  MaxGoldDrop: 15
+  MinGoldDrop: 10
+  MaxGoldDrop: 20
   IsFlying: 0
   IsBoss: 0
   Archetype: 0
