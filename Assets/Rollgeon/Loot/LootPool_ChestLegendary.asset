@@ -36,11 +36,11 @@ MonoBehaviour:
     - {fileID: 11400000, guid: e5f9bfede0362cb4e902d7a915acca9d, type: 2}
     - {fileID: 11400000, guid: d6720e6540ff81d499ea1246c2686ae5, type: 2}
     - {fileID: 11400000, guid: 943506d465d427b49804c567ccfc85aa, type: 2}
-    - {fileID: 11400000, guid: 7236af23be34ccb4aa45793b6f86f64a, type: 2}
     - {fileID: 11400000, guid: 3894bd20a9bc00240805a8ee70e9ed4e, type: 2}
     - {fileID: 11400000, guid: 5e4f47b6d510b734883184b0941ed9cd, type: 2}
     - {fileID: 11400000, guid: 0fd7362a600132645b6d304ef5392adc, type: 2}
     - {fileID: 11400000, guid: 96b4c20376cb9ad41a5ca93e0301c30b, type: 2}
+    - {fileID: 11400000, guid: 7236af23be34ccb4aa45793b6f86f64a, type: 2}
     SerializedBytesString: 
     Prefab: {fileID: 0}
     PrefabModificationsReferencedUnityObjects: []
@@ -219,11 +219,11 @@ MonoBehaviour:
   - {fileID: 11400000, guid: e5f9bfede0362cb4e902d7a915acca9d, type: 2}
   - {fileID: 11400000, guid: d6720e6540ff81d499ea1246c2686ae5, type: 2}
   - {fileID: 11400000, guid: 943506d465d427b49804c567ccfc85aa, type: 2}
-  - {fileID: 11400000, guid: 7236af23be34ccb4aa45793b6f86f64a, type: 2}
   - {fileID: 11400000, guid: 3894bd20a9bc00240805a8ee70e9ed4e, type: 2}
   - {fileID: 11400000, guid: 5e4f47b6d510b734883184b0941ed9cd, type: 2}
   - {fileID: 11400000, guid: 0fd7362a600132645b6d304ef5392adc, type: 2}
   - {fileID: 11400000, guid: 96b4c20376cb9ad41a5ca93e0301c30b, type: 2}
+  - {fileID: 11400000, guid: 7236af23be34ccb4aa45793b6f86f64a, type: 2}
   Weights:
     Common: 5
     Uncommon: 20
