@@ -142,7 +142,10 @@ namespace Rollgeon.UI.HUD
             {
                 if (!_bound) return TurnButtonMode.EndTurn;
                 if (_chainPaidRollPending) return TurnButtonMode.Pass;
-                if (IsActionRollActive() || IsActiveItemAwaiting() || _inChain || _rolled)
+                // El item activo no cambia el modo: mientras gira o espera una eleccion
+                // el boton solo se deshabilita (ComputeInteractable) — no hay nada que
+                // aceptar, y parpadear a "Confirmar" medio segundo confundia.
+                if (IsActionRollActive() || _inChain || _rolled)
                     return TurnButtonMode.Confirm;
                 return TurnButtonMode.EndTurn;
             }
@@ -282,6 +285,11 @@ namespace Rollgeon.UI.HUD
 
         private bool ComputeInteractable(TurnButtonMode mode)
         {
+            // Item activo en curso (el dado gira, o un efecto espera que se elija un
+            // tile): el turno no se puede cerrar ni confirmar nada hasta que termine. La
+            // resolucion llega sola; la eleccion §A5 se hace clickeando el tile.
+            if (IsActiveItemAwaiting()) return false;
+
             switch (mode)
             {
                 case TurnButtonMode.Pass:
@@ -289,14 +297,6 @@ namespace Rollgeon.UI.HUD
 
                 case TurnButtonMode.Confirm:
                     if (IsActionRollActive()) return _actionRoll.CanConfirm;
-                    // Eleccion post-tirada (§A5) abierta: se resuelve clickeando un tile,
-                    // no con este boton — deshabilitado hasta que se elija o se abandone
-                    // (fin de turno/combate). Distinto del roll pendiente: ahi Confirm SI
-                    // hace algo (aceptar la cara).
-                    if (_activeItem != null && _activeItem.IsAwaitingChoice) return false;
-                    // Tirada del item activo esperando decision: aceptar siempre se
-                    // puede (no cuesta nada) mientras sea el turno del jugador.
-                    if (IsActiveItemAwaiting()) return _isPlayerTurn;
                     // Mismo gate que tenía PlayerActionButtonsView: sin holds no hay
                     // combo posible y con dados girando el resultado no se reveló.
                     return _isPlayerTurn && _rolled && AnyDieHeld()
@@ -341,11 +341,10 @@ namespace Rollgeon.UI.HUD
         }
 
         // Resolucion perezosa como la del ActionRoll, con una diferencia: este service
-        // no se puede pollear barato en Update (la ventana se abre por evento), asi que
-        // al resolverlo nos colgamos de OnRollPending/OnResolved/OnChoicePending/
-        // OnChoiceResolved para re-gatear. La eleccion post-tirada (§A5) es una segunda
-        // ventana propia, encima de la del roll — ninguna de las dos deja pasar End
-        // Turn/Confirm.
+        // no se puede pollear barato en Update (la tirada se abre por evento), asi que
+        // al resolverlo nos colgamos de OnRolled/OnResolved/OnChoicePending/
+        // OnChoiceResolved para re-gatear. Ni el giro ni la eleccion post-tirada (§A5)
+        // dejan pasar End Turn/Confirm.
         private bool IsActiveItemAwaiting()
         {
             if (_activeItem == null)
@@ -353,21 +352,21 @@ namespace Rollgeon.UI.HUD
                 ServiceLocator.TryGetService(out _activeItem);
                 if (_activeItem != null && !_activeItemHooked)
                 {
-                    _activeItem.OnRollPending += HandleActiveItemPending;
+                    _activeItem.OnRolled += HandleActiveItemPending;
                     _activeItem.OnResolved += HandleActiveItemResolved;
                     _activeItem.OnChoicePending += HandleActiveItemChoiceChanged;
                     _activeItem.OnChoiceResolved += HandleActiveItemChoiceChanged;
                     _activeItemHooked = true;
                 }
             }
-            return _activeItem != null && (_activeItem.IsAwaitingDecision || _activeItem.IsAwaitingChoice);
+            return _activeItem != null && (_activeItem.IsResolving || _activeItem.IsAwaitingChoice);
         }
 
         private void UnhookActiveItem()
         {
             if (_activeItem != null && _activeItemHooked)
             {
-                _activeItem.OnRollPending -= HandleActiveItemPending;
+                _activeItem.OnRolled -= HandleActiveItemPending;
                 _activeItem.OnResolved -= HandleActiveItemResolved;
                 _activeItem.OnChoicePending -= HandleActiveItemChoiceChanged;
                 _activeItem.OnChoiceResolved -= HandleActiveItemChoiceChanged;
@@ -376,7 +375,7 @@ namespace Rollgeon.UI.HUD
             _activeItem = null;
         }
 
-        private void HandleActiveItemPending(Rollgeon.Items.Active.ActiveItemPendingRoll _)
+        private void HandleActiveItemPending(Rollgeon.Items.Active.ActiveItemRoll _)
             => Refresh();
 
         private void HandleActiveItemResolved(Rollgeon.Items.Active.ActiveItemActivationResult _)
@@ -475,6 +474,11 @@ namespace Rollgeon.UI.HUD
 
         private void HandleClick()
         {
+            // Item activo en curso: el boton esta deshabilitado, pero un click que llegue
+            // igual (onClick.Invoke programatico) tampoco puede cerrar el turno ni
+            // confirmar nada con el dado girando o una eleccion abierta.
+            if (IsActiveItemAwaiting()) return;
+
             switch (CurrentMode)
             {
                 case TurnButtonMode.Confirm:
@@ -484,15 +488,6 @@ namespace Rollgeon.UI.HUD
                     if (IsActionRollActive())
                     {
                         _actionRoll.DeclineReroll();
-                        Refresh();
-                        return;
-                    }
-                    // Tirada del item activo esperando decision: Confirm = aceptar la
-                    // cara vigente. Mismo criterio que el ActionRoll — nunca disparar el
-                    // flow de combate con una ventana ajena abierta.
-                    if (IsActiveItemAwaiting())
-                    {
-                        _activeItem.AcceptRoll();
                         Refresh();
                         return;
                     }

@@ -53,7 +53,7 @@ namespace Rollgeon.UI.HUD
         [SerializeField, Optional, Tooltip("Golpe seco al asentarse la cara cruda.")]
         private AudioClip _settleClip;
 
-        [SerializeField, Optional, Tooltip("Stinger al aceptar: volumen y pitch escalan " +
+        [SerializeField, Optional, Tooltip("Stinger al resolver: volumen y pitch escalan " +
                  "con la banda.")]
         private AudioClip _resolveClip;
 
@@ -127,7 +127,7 @@ namespace Rollgeon.UI.HUD
         // Beats
         // ==================================================================
 
-        private void HandleSpinStarted(ActiveItemPendingRoll pending)
+        private void HandleSpinStarted(ActiveItemRoll pending)
         {
             _nextTickAt = 0f;
             PlaySfx(_rattleClip, _sfxVolume * 0.7f, Random.Range(0.95f, 1.05f));
@@ -141,10 +141,10 @@ namespace Rollgeon.UI.HUD
             PlaySfx(_tickClip, _sfxVolume * 0.25f);
         }
 
-        private void HandleRawFaceSettled(ActiveItemPendingRoll pending)
+        private void HandleRawFaceSettled(ActiveItemRoll pending)
         {
             // Neutro a proposito: la banda todavia no se resolvio (el encantamiento corre
-            // al aceptar) y el jugador esta decidiendo — el payoff va en la resolucion.
+            // al resolver) — el payoff va en la resolucion, que llega enseguida.
             PlaySfx(_settleClip, _sfxVolume * 0.6f);
         }
 

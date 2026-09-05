@@ -53,6 +53,7 @@ namespace Rollgeon.Items.Tests
             _equipped = new EquippedActiveItemService(catalog: null);
             _roller = new FakeDieRoller { Next = 6 };
             _service = new ActiveItemActivationService(_equipped, _roller);
+            _service.ResolveScheduler = (seconds, callback) => callback();
 
             FakeChoiceEffect.ChosenCoords.Clear();
             FakeChoiceEffect.AbandonedCount = 0;
@@ -81,7 +82,6 @@ namespace Rollgeon.Items.Tests
 
             // Act
             _service.Confirm(selection: null);
-            _service.AcceptRoll();
 
             // Assert
             Assert.IsTrue(resolvedBeforeChoiceOpened, "OnResolved dispara ANTES de abrir la eleccion");
@@ -101,7 +101,6 @@ namespace Rollgeon.Items.Tests
             // Arrange
             EquipChoiceItem(new[] { new GridCoord(1, 1), new GridCoord(2, 2) });
             _service.Confirm(selection: null);
-            _service.AcceptRoll();
             var picked = new GridCoord(2, 2);
 
             // Act
@@ -119,7 +118,6 @@ namespace Rollgeon.Items.Tests
             // Arrange
             EquipChoiceItem(new[] { new GridCoord(1, 1), new GridCoord(2, 2) });
             _service.Confirm(selection: null);
-            _service.AcceptRoll();
 
             // Act — ESC / click afuera.
             _selection.Complete(new TargetSelectionResult { WasCompleted = false });
@@ -131,15 +129,14 @@ namespace Rollgeon.Items.Tests
         }
 
         [Test]
-        public void test_canActivate_whileChoicePending_reportsAwaitingDecision()
+        public void test_canActivate_whileChoicePending_reportsResolving()
         {
             // Arrange
             EquipChoiceItem(new[] { new GridCoord(1, 1), new GridCoord(2, 2) });
             _service.Confirm(selection: null);
-            _service.AcceptRoll();
 
             // Act + Assert
-            Assert.AreEqual(ActiveItemBlock.AwaitingDecision, _service.CanActivate());
+            Assert.AreEqual(ActiveItemBlock.Resolving, _service.CanActivate());
             Assert.IsFalse(_service.BeginActivation());
             Assert.AreEqual(4, _rolls.Current[_player], "no se cobra un segundo roll mientras se decide");
         }
@@ -152,7 +149,6 @@ namespace Rollgeon.Items.Tests
 
             // Act
             _service.Confirm(selection: null);
-            _service.AcceptRoll();
 
             // Assert
             CollectionAssert.AreEqual(new[] { new GridCoord(1, 1) }, FakeChoiceEffect.ChosenCoords);
@@ -166,7 +162,6 @@ namespace Rollgeon.Items.Tests
             // Arrange
             EquipChoiceItem(new[] { new GridCoord(1, 1), new GridCoord(2, 2) });
             _service.Confirm(selection: null);
-            _service.AcceptRoll();
             bool choiceResolved = false;
             _service.OnChoiceResolved += () => choiceResolved = true;
 
@@ -186,7 +181,6 @@ namespace Rollgeon.Items.Tests
             // Arrange
             EquipChoiceItem(new[] { new GridCoord(1, 1), new GridCoord(2, 2) });
             _service.Confirm(selection: null);
-            _service.AcceptRoll();
             bool choiceResolved = false;
             _service.OnChoiceResolved += () => choiceResolved = true;
 
@@ -209,7 +203,6 @@ namespace Rollgeon.Items.Tests
             // Act
             LogAssert.Expect(LogType.Warning, new Regex("eleccion"));
             _service.Confirm(selection: null);
-            _service.AcceptRoll();
 
             // Assert — solo el primer pedido se abre.
             Assert.AreEqual(1, _selection.BeginCalls);

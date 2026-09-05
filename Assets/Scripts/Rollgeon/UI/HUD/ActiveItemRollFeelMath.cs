@@ -16,8 +16,9 @@ namespace Rollgeon.UI.HUD
         Spinning = 1,
 
         /// <summary>
-        /// Se asento la cara cruda del dado y espera la decision del jugador
-        /// (aceptar o re-tirar). No termina por tiempo: dura lo que dure la decision.
+        /// Se asento la cara cruda del dado y espera la resolucion del servicio (que
+        /// llega en <see cref="ActiveItemRollFeelMath.SpinSeconds"/>; el segmento no
+        /// termina solo por tiempo, lo cierra <c>OnResolved</c>).
         /// </summary>
         Settled = 2,
 
@@ -35,12 +36,12 @@ namespace Rollgeon.UI.HUD
     /// escena.
     /// </summary>
     /// <remarks>
-    /// La tirada vive en <b>dos segmentos</b>, porque entre medio decide el jugador:
+    /// La tirada vive en <b>dos segmentos</b>, porque la resolucion llega por evento:
     /// <list type="number">
-    ///   <item><b>Pendiente</b> (desde <c>OnRollPending</c>): giro y asentado sobre la
-    ///         cara cruda. No vuelve al reposo por tiempo — la ficha sostiene la cara
-    ///         mientras el jugador elige entre aceptar y re-tirar. Un reroll reinicia
-    ///         este segmento.</item>
+    ///   <item><b>Pendiente</b> (desde <c>OnRolled</c>): giro y asentado sobre la cara
+    ///         cruda. No vuelve al reposo por tiempo — la ficha sostiene la cara hasta
+    ///         que el servicio resuelva (agenda la resolucion con este mismo
+    ///         <see cref="SpinSeconds"/>).</item>
     ///   <item><b>Resolucion</b> (desde <c>OnResolved</c>): el destello del encantamiento
     ///         si lo hubo, el hold del resultado final y la vuelta al reposo.</item>
     /// </list>
@@ -51,8 +52,8 @@ namespace Rollgeon.UI.HUD
     ///   <item>El feedback diferencia las tres bandas, y <b>alto no siempre es mejor</b>:
     ///         la intensidad sale de la banda, no del numero.</item>
     /// </list>
-    /// La cara cruda siempre se ve antes que la final: el segmento pendiente la muestra
-    /// todo el tiempo que dure la decision, y recien la resolucion salta a la ajustada —
+    /// La cara cruda siempre se ve antes que la final: el segmento pendiente la asienta
+    /// y recien la resolucion salta a la ajustada —
     /// asi se lee que <i>intervino el encantamiento</i> y no que el dado salio distinto.
     /// </remarks>
     public static class ActiveItemRollFeelMath
@@ -74,13 +75,13 @@ namespace Rollgeon.UI.HUD
         public const float EnchantFlashSeconds = 0.18f;
 
         // ==================================================================
-        // Segmento pendiente (OnRollPending → decision del jugador)
+        // Segmento pendiente (OnRolled → OnResolved)
         // ==================================================================
 
         /// <summary>
-        /// Fase del segmento pendiente segun el tiempo desde <c>OnRollPending</c>. Nunca
+        /// Fase del segmento pendiente segun el tiempo desde <c>OnRolled</c>. Nunca
         /// llega a <see cref="ActiveItemRollPhase.Idle"/>: la cara cruda queda asentada
-        /// hasta que el jugador acepte o re-tire.
+        /// hasta que llegue <c>OnResolved</c>.
         /// </summary>
         public static ActiveItemRollPhase PendingPhaseAt(float elapsed)
         {
@@ -90,8 +91,8 @@ namespace Rollgeon.UI.HUD
 
         /// <summary>
         /// Escala de la ficha en el segmento pendiente: un pop discreto al asentarse la
-        /// cara cruda y vuelta a 1 mientras espera la decision. Discreto a proposito: la
-        /// banda todavia no se resolvio (el encantamiento corre al aceptar), asi que no
+        /// cara cruda y vuelta a 1 mientras espera la resolucion. Discreto a proposito: la
+        /// banda todavia no se resolvio (el encantamiento corre al resolver), asi que no
         /// hay intensidad que comunicar — el payoff va en la resolucion.
         /// </summary>
         public static float PendingScaleAt(float elapsed, float settlePop = 0.12f)

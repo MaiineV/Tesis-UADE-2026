@@ -29,14 +29,36 @@ namespace Rollgeon.Items.Active
         private readonly EventManager.EventReceiver _onCombatEndHandler;
         private readonly EventManager.EventReceiver _onTurnFinishedHandler;
 
-        // Ventana de decision (aceptar / re-tirar). El item y el target se congelan al
-        // confirmar: un equip o un cambio de grilla a mitad de la ventana no la corrompe.
+        // Tirada en curso: el dado ya salio y se cobro, la resolucion esta agendada para
+        // cuando la ficha termine de girar. El item, el target y la direccion se congelan
+        // al confirmar: un equip, un cambio de grilla o un movimiento del jugador a mitad
+        // del giro no la corrompen (la direccion en particular: derivarla al resolver con
+        // el origen nuevo contra el proxy viejo hacia cargar a Justa para cualquier lado).
         private ItemSO _pendingItem;
         private TargetSelectionResult _pendingSelection;
         private Guid _pendingGuid;
         private int _pendingRawRoll;
-        private int _pendingRerolls;
+        private Cardinal? _pendingDirection;
         private bool _hasPending;
+        // Crece por tirada: un callback del scheduler que llega tarde (la pendiente ya se
+        // descarto por fin de combate, o ya se resolvio por fin de turno) no hace nada.
+        private int _pendingToken;
+
+        /// <summary>
+        /// Como se difiere la resolucion: <c>(segundos, callback)</c>. Default (null):
+        /// <c>PrimeTween.Tween.Delay</c> en tiempo unscaled, el mismo reloj que usa la
+        /// ficha para el giro. Seam de tests (publico porque el asmdef de tests no ve
+        /// internals): los EditMode no tienen player loop e inyectan un scheduler
+        /// sincronico o capturan el callback.
+        /// </summary>
+        public Action<float, Action> ResolveScheduler { get; set; }
+
+        /// <summary>
+        /// Cuanto espera la resolucion despues de tirar. Es el giro de la ficha
+        /// (<see cref="Rollgeon.UI.HUD.ActiveItemRollFeelMath.SpinSeconds"/>): el numero
+        /// se asienta y los efectos corren en el mismo instante.
+        /// </summary>
+        public static float ResolveDelaySeconds => Rollgeon.UI.HUD.ActiveItemRollFeelMath.SpinSeconds;
 
         // Ventana de eleccion post-tirada (§A5). Se abre DESPUES de OnResolved, cuando un
         // efecto de banda pidio elegir entre N tiles (Probability Drive cara 4).
@@ -48,12 +70,11 @@ namespace Rollgeon.Items.Active
             _equipped = equipped;
             _roller = roller ?? new ActiveItemDieRoller();
 
-            // Si el combate se cierra con la decision abierta, la tirada se descarta sin
+            // Si el combate se cierra con el dado girando, la tirada se descarta sin
             // correr efectos: OnCombatEnd llega despues del teardown del combate y
             // ejecutar la banda ahi pegaria sobre una sala ya desarmada. El roll pagado
-            // no se devuelve — la regla de "nunca reembolsar" es la misma del reroll de
-            // ataque/defensa. La eleccion pendiente (si la hay) se descarta en silencio:
-            // ya no hay sala donde aplicar OnChosen/OnAbandoned.
+            // no se devuelve — nunca hay reembolso. La eleccion pendiente (si la hay) se
+            // descarta en silencio: ya no hay sala donde aplicar OnChosen/OnAbandoned.
             _onCombatEndHandler = _ =>
             {
                 DiscardPending();
@@ -61,9 +82,10 @@ namespace Rollgeon.Items.Active
             };
             EventManager.Subscribe(EventName.OnCombatEnd, _onCombatEndHandler);
 
-            // Fin del turno del jugador con una eleccion abierta: se abandona (el efecto
-            // ya definio que hacer sin eleccion — normalmente al azar). El roll ya esta
-            // pagado, este es el unico gate que le queda a la ventana.
+            // Fin del turno del jugador con el dado girando: se resuelve en el acto (el
+            // roll ya esta pagado y el HUD deberia haber bloqueado End Turn — esto es el
+            // guard). Con una eleccion abierta: se abandona (el efecto ya definio que
+            // hacer sin eleccion — normalmente al azar).
             _onTurnFinishedHandler = args => HandleTurnFinished(args);
             EventManager.Subscribe(EventName.OnTurnFinished, _onTurnFinishedHandler);
         }
@@ -76,7 +98,7 @@ namespace Rollgeon.Items.Active
         }
 
         public event Action<ActiveItemActivationResult> OnResolved;
-        public event Action<ActiveItemPendingRoll> OnRollPending;
+        public event Action<ActiveItemRoll> OnRolled;
         public event Action OnSelectionStarted;
         public event Action OnSelectionCancelled;
         public event Action OnChoicePending;
@@ -84,13 +106,13 @@ namespace Rollgeon.Items.Active
 
         public bool IsSelecting { get; private set; }
 
-        public bool IsAwaitingDecision => _hasPending;
+        public bool IsResolving => _hasPending;
 
         public bool IsAwaitingChoice => _pendingChoice != null;
 
-        public ActiveItemPendingRoll? Pending => _hasPending
-            ? new ActiveItemPendingRoll(_pendingItem, _pendingRawRoll, _pendingRerolls)
-            : (ActiveItemPendingRoll?)null;
+        public ActiveItemRoll? Pending => _hasPending
+            ? new ActiveItemRoll(_pendingItem, _pendingRawRoll)
+            : (ActiveItemRoll?)null;
 
         // ======================================================================
         // Paso 1: tocar la ficha (gratis) → seleccion o activacion directa
@@ -280,11 +302,10 @@ namespace Rollgeon.Items.Active
 
             if (_equipped == null || !_equipped.HasItem) return ActiveItemBlock.NoItemEquipped;
 
-            // Con una tirada esperando aceptar/re-tirar, o una eleccion post-tirada
-            // esperando un tile, no se abre otra activacion: la ventana se resuelve
-            // primero. Va antes que el chequeo de rolls porque el motivo real del
-            // bloqueo es la decision pendiente, no el pool.
-            if (_hasPending || IsAwaitingChoice) return ActiveItemBlock.AwaitingDecision;
+            // Con el dado girando, o una eleccion post-tirada esperando un tile, no se
+            // abre otra activacion: la que esta en curso termina primero. Va antes que el
+            // chequeo de rolls porque el motivo real del bloqueo es esa, no el pool.
+            if (_hasPending || IsAwaitingChoice) return ActiveItemBlock.Resolving;
 
             var playerGuid = ResolvePlayerGuid();
 
@@ -309,10 +330,10 @@ namespace Rollgeon.Items.Active
         public const int RollCost = 1;
 
         // ======================================================================
-        // Confirmacion (§22): cobrar → tirar → decidir (aceptar / re-tirar)
+        // Confirmacion (§22): cobrar → tirar → resolver solo al asentar el dado
         // ======================================================================
 
-        public ActiveItemPendingRoll? Confirm(TargetSelectionResult selection)
+        public ActiveItemRoll? Confirm(TargetSelectionResult selection)
         {
             var block = CanActivate();
             if (block != ActiveItemBlock.None) return null;
@@ -330,68 +351,47 @@ namespace Rollgeon.Items.Active
                 return null;
             }
 
-            // La tirada queda pendiente de decision: el activo se re-tira como ataque y
-            // defensa, solo que con un dado. Los efectos corren recien en AcceptRoll.
             _pendingItem = item;
             _pendingSelection = selection;
             _pendingGuid = playerGuid;
             _pendingRawRoll = _roller.Roll(item.ActiveDie);
-            _pendingRerolls = 0;
+            _pendingDirection = ResolveDirection(item, playerGuid, selection);
             _hasPending = true;
+            int token = ++_pendingToken;
 
-            var pending = new ActiveItemPendingRoll(item, _pendingRawRoll, 0);
-            OnRollPending?.Invoke(pending);
-            return pending;
+            var roll = new ActiveItemRoll(item, _pendingRawRoll);
+            OnRolled?.Invoke(roll);
+
+            // Los efectos corren cuando la ficha asienta la cara, no en este frame: el
+            // jugador tiene que ver el numero y el efecto juntos. Ningun input interviene.
+            var scheduler = ResolveScheduler
+                ?? ((seconds, callback) => PrimeTween.Tween.Delay(seconds, callback, useUnscaledTime: true));
+            scheduler(Mathf.Max(0f, ResolveDelaySeconds), () => ResolvePending(token));
+
+            return roll;
         }
 
-        public bool CanRequestReroll
-            => _hasPending
-               && ServiceLocator.TryGetService<IRollPoolService>(out IRollPoolService rolls)
-               && rolls != null
-               && rolls.GetCurrent(_pendingGuid) >= RollCost;
-
-        public bool RequestReroll()
+        /// <summary>
+        /// Resuelve la tirada en curso: encantamiento → banda → efectos → <see cref="OnResolved"/>
+        /// → eleccion §A5 si un efecto la pidio. No-op si <paramref name="token"/> no es
+        /// el de la tirada vigente (ya se descarto o ya se resolvio por otra via).
+        /// </summary>
+        private ActiveItemActivationResult? ResolvePending(int token)
         {
-            if (!_hasPending)
-            {
-                Debug.LogWarning(LogPrefix + "RequestReroll sin tirada pendiente — ignorado.");
-                return false;
-            }
-
-            // Mismo contrato que el reroll de combate: cada re-tirada cuesta 1 roll y con
-            // el pool en 0 no pasa nada — la cara vigente queda y la salida es aceptar.
-            // El boton deberia estar apagado via CanRequestReroll; esto es el guard.
-            ServiceLocator.TryGetService<IRollPoolService>(out IRollPoolService rolls);
-            if (rolls == null || !rolls.TrySpendRolls(_pendingGuid, RollCost))
-            {
-                Debug.Log(LogPrefix + "reroll bloqueado — pool vacio. La cara vigente queda.");
-                return false;
-            }
-
-            _pendingRawRoll = _roller.Roll(_pendingItem.ActiveDie);
-            _pendingRerolls++;
-
-            OnRollPending?.Invoke(new ActiveItemPendingRoll(_pendingItem, _pendingRawRoll, _pendingRerolls));
-            return true;
-        }
-
-        public ActiveItemActivationResult? AcceptRoll()
-        {
-            if (!_hasPending) return null;
+            if (!_hasPending || token != _pendingToken) return null;
 
             var item = _pendingItem;
             var selection = _pendingSelection;
             var playerGuid = _pendingGuid;
+            var direction = _pendingDirection;
             int rawRoll = _pendingRawRoll;
 
-            // La ventana se cierra ANTES de correr efectos: si un efecto dispara un
-            // refresh del HUD, este ya no tiene que ver una decision abierta.
+            // Se cierra ANTES de correr efectos: si un efecto dispara un refresh del HUD,
+            // este ya no tiene que ver una tirada en curso.
             DiscardPending();
 
             // §14, orden de operaciones: el encantamiento ajusta el resultado crudo y
-            // RECIEN despues se determina la banda. Al reves, el ajuste no cambiaria
-            // nada. Corre sobre la cara aceptada, no sobre cada reroll intermedio: un
-            // uso limitado no se gasta en tiradas que el jugador descarto.
+            // RECIEN despues se determina la banda. Al reves, el ajuste no cambiaria nada.
             int roll = ApplyEnchantment(rawRoll, item.ActiveDie.MaxFace());
 
             // Resolucion completa (Feature#0085): cara, banda, estructura y magnitud —
@@ -399,7 +399,7 @@ namespace Rollgeon.Items.Active
             var resolution = ActiveItemBands.ResolveRoll(rawRoll, roll, item);
 
             var choiceHost = new ChoiceCollector();
-            var ctx = BuildContext(playerGuid, selection, item, resolution, choiceHost);
+            var ctx = BuildContext(playerGuid, selection, item, resolution, direction, choiceHost);
             var effects = item.GetEffectsFor(resolution);
 
             // El roll ya se cobro: que la cadena de efectos corte no lo devuelve. Lo que
@@ -428,7 +428,25 @@ namespace Rollgeon.Items.Active
             _pendingSelection = null;
             _pendingGuid = Guid.Empty;
             _pendingRawRoll = 0;
-            _pendingRerolls = 0;
+            _pendingDirection = null;
+        }
+
+        /// <summary>
+        /// §A4: si el item resuelve por direccion, la cardinal sale del origen del
+        /// jugador <b>en este instante</b> y el proxy adyacente elegido. Se congela aca
+        /// y no al resolver — ver el comentario de <see cref="_pendingDirection"/>.
+        /// </summary>
+        private static Cardinal? ResolveDirection(ItemSO item, Guid playerGuid, TargetSelectionResult selection)
+        {
+            if (FindDirectionEffect(item) == null) return null;
+            if (selection == null || !selection.FirstSelectedCoord.HasValue) return null;
+            if (!ServiceLocator.TryGetService<IGridManager>(out var grid) || grid == null
+                || !grid.TryGetPosition(playerGuid, out var origin))
+            {
+                return null;
+            }
+
+            return CardinalExtensions.FromDelta(origin, selection.FirstSelectedCoord.Value);
         }
 
         /// <summary>
@@ -548,11 +566,20 @@ namespace Rollgeon.Items.Active
                 controller.OnSelectionCompleted -= HandleChoiceSelectionCompleted;
         }
 
-        /// <summary>Fin de turno con una eleccion abierta: se abandona (§A5).</summary>
+        /// <summary>
+        /// Fin de turno del dueño: con el dado girando se resuelve en el acto; con una
+        /// eleccion abierta se abandona (§A5).
+        /// </summary>
         private void HandleTurnFinished(object[] args)
         {
+            bool hasGuid = args != null && args.Length >= 1 && args[0] is Guid;
+            var finished = hasGuid ? (Guid)args[0] : Guid.Empty;
+
+            if (_hasPending && (!hasGuid || finished == _pendingGuid))
+                ResolvePending(_pendingToken);
+
             if (_pendingChoice == null) return;
-            if (args != null && args.Length >= 1 && args[0] is Guid guid && guid != _choiceOwnerGuid) return;
+            if (hasGuid && finished != _choiceOwnerGuid) return;
 
             var request = _pendingChoice;
             _pendingChoice = null;
@@ -702,7 +729,7 @@ namespace Rollgeon.Items.Active
         }
 
         private static EffectContext BuildContext(Guid playerGuid, TargetSelectionResult selection,
-            ItemSO item, ActiveItemRollResolution resolution, IActiveItemChoiceHost choices)
+            ItemSO item, ActiveItemRollResolution resolution, Cardinal? direction, IActiveItemChoiceHost choices)
         {
             var ctx = new EffectContext
             {
@@ -728,16 +755,9 @@ namespace Rollgeon.Items.Active
                 };
             }
 
-            // §A4: si el item resuelve por direccion, la direccion elegida se deriva del
-            // origen del jugador y el proxy seleccionado — el efecto recomputa la
-            // trayectoria real al resolver (la cara decide la distancia).
-            Cardinal? direction = null;
-            if (hasOrigin && FindDirectionEffect(item) != null
-                && ctx.SelectionResult != null && ctx.SelectionResult.FirstSelectedCoord.HasValue)
-            {
-                direction = CardinalExtensions.FromDelta(origin, ctx.SelectionResult.FirstSelectedCoord.Value);
-            }
-
+            // §A4: la direccion viene congelada desde Confirm; el efecto recomputa la
+            // trayectoria real al resolver desde el origen actual (la cara decide la
+            // distancia).
             ctx.TriggerContext = new ActiveItemRollTriggerContext
             {
                 Item = item,

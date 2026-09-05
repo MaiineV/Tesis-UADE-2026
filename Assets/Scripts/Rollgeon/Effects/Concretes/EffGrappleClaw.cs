@@ -36,7 +36,19 @@ namespace Rollgeon.Effects.Concretes
         /// <summary>RNG del sorteo de Cadena Inestable. Público y no serializado: producción usa
         /// el default, los tests inyectan una seed fija para determinismo.</summary>
         [NonSerialized]
-        public System.Random Rng = new System.Random();
+        private System.Random _rng;
+
+        /// <remarks>
+        /// Propiedad perezosa y no un campo inicializado: Odin instancia los efectos del
+        /// asset sin correr constructores ni inicializadores de campo, asi que un
+        /// <c>= new System.Random()</c> queda en null en runtime (Probability Drive
+        /// tiraba NullReference al resolver — ronda de testers 2026-09-04).
+        /// </remarks>
+        public System.Random Rng
+        {
+            get { return _rng ?? (_rng = new System.Random()); }
+            set { _rng = value; }
+        }
 
         public override string GetEffectName() => "Grapple Claw";
 

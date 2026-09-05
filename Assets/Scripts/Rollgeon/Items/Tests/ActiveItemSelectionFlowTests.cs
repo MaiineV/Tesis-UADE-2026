@@ -62,6 +62,7 @@ namespace Rollgeon.Items.Tests
             _equipped = new EquippedActiveItemService(catalog: null);
             _roller = new FakeDieRoller { Next = 6 };
             _service = new ActiveItemActivationService(_equipped, _roller);
+            _service.ResolveScheduler = (seconds, callback) => callback();
 
             Eff_CaptureTarget.LastCoord = null;
         }
@@ -95,8 +96,8 @@ namespace Rollgeon.Items.Tests
             Assert.IsFalse(_service.IsSelecting, "no queda esperando target");
             Assert.AreEqual(0, _selection.BeginCalls, "no abre el selector");
             Assert.AreEqual(4, _rolls.Current[_player], "cobra en el acto");
-            Assert.IsTrue(_service.IsAwaitingDecision,
-                "la ventana de reroll tambien existe para los items sin seleccion");
+            Assert.IsFalse(_service.IsResolving,
+                "con scheduler sincronico ya resolvio: nada queda pendiente");
         }
 
         [Test]
@@ -226,10 +227,9 @@ namespace Rollgeon.Items.Tests
             _service.BeginActivation();
             var picked = new GridCoord(2, 3);
 
-            // Act — el target queda fijo durante la ventana de decision y viaja a los
-            // efectos al aceptar.
+            // Act — el target queda fijo desde confirmar y viaja a los efectos al
+            // resolver.
             _selection.Complete(TargetAt(picked));
-            _service.AcceptRoll();
 
             // Assert
             Assert.AreEqual(picked, Eff_CaptureTarget.LastCoord);

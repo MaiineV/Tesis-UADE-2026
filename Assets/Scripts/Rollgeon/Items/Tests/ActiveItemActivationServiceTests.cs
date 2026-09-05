@@ -15,8 +15,9 @@ namespace Rollgeon.Items.Tests
 {
     /// <summary>
     /// Gating (§6/§7) y secuencia de activacion (§22) del item activo: tocar es gratis,
-    /// confirmar cobra 1 roll, la tirada va inmediatamente despues y la banda decide que
-    /// efecto corre.
+    /// confirmar cobra 1 roll, la tirada va inmediatamente despues y la resolucion
+    /// (banda → efectos) llega sola cuando la ficha termina de girar — sin re-tirada ni
+    /// confirmacion (ronda de testers 2026-09-04).
     /// </summary>
     [TestFixture]
     public sealed class ActiveItemActivationServiceTests
@@ -44,6 +45,9 @@ namespace Rollgeon.Items.Tests
             _equipped = new EquippedActiveItemService(catalog: null);
             _roller = new FakeDieRoller();
             _service = new ActiveItemActivationService(_equipped, _roller);
+            // Sincronico por defecto: los tests de banda/contexto miran el resultado de
+            // Confirm en la misma llamada. Los del diferido capturan el callback a mano.
+            _service.ResolveScheduler = (seconds, callback) => callback();
 
             Eff_Tag.Log.Clear();
             Eff_CaptureRollContext.Last = null;
@@ -151,7 +155,7 @@ namespace Rollgeon.Items.Tests
         }
 
         // ------------------------------------------------------------------
-        // Confirmacion: cobro, tirada y ventana de decision
+        // Confirmacion: cobro, tirada y resolucion diferida al giro
         // ------------------------------------------------------------------
 
         [Test]
@@ -169,43 +173,73 @@ namespace Rollgeon.Items.Tests
         }
 
         [Test]
-        public void test_confirm_leavesTheRollPendingWithoutRunningEffects()
+        public void test_confirm_rollsAndSchedulesTheResolution_withoutRunningEffectsYet()
         {
-            // Arrange — el activo se re-tira como ataque/defensa: entre la tirada y los
-            // efectos hay una ventana de decision.
+            // Arrange — los efectos corren cuando la ficha asienta la cara, no en el
+            // frame de confirmar: el jugador tiene que ver numero y efecto juntos.
             _equipped.Equip(NewItem("item.a", DiceType.D6));
             _roller.Next = 5;
+            Action scheduled = null;
+            float scheduledSeconds = -1f;
+            _service.ResolveScheduler = (seconds, callback) => { scheduledSeconds = seconds; scheduled = callback; };
 
-            ActiveItemPendingRoll? pendingSeen = null;
+            ActiveItemRoll? rolledSeen = null;
             bool resolved = false;
-            _service.OnRollPending += p => pendingSeen = p;
+            _service.OnRolled += r => rolledSeen = r;
             _service.OnResolved += _ => resolved = true;
 
             // Act
-            var pending = _service.Confirm(selection: null);
+            var roll = _service.Confirm(selection: null);
 
             // Assert
-            Assert.IsNotNull(pending);
-            Assert.AreEqual(5, pending.Value.RawRoll);
-            Assert.AreEqual(0, pending.Value.RerollCount);
-            Assert.IsTrue(_service.IsAwaitingDecision);
-            Assert.IsNotNull(pendingSeen, "el HUD escucha OnRollPending para girar el dado");
-            Assert.IsFalse(resolved, "OnResolved recien al aceptar");
-            CollectionAssert.IsEmpty(Eff_Tag.Log, "los efectos corren recien al aceptar");
+            Assert.IsNotNull(roll);
+            Assert.AreEqual(5, roll.Value.RawRoll);
+            Assert.IsTrue(_service.IsResolving, "entre la tirada y su resolucion el servicio esta ocupado");
+            Assert.IsNotNull(rolledSeen, "el HUD escucha OnRolled para girar el dado");
+            Assert.IsNotNull(scheduled, "la resolucion queda agendada");
+            Assert.AreEqual(ActiveItemActivationService.ResolveDelaySeconds, scheduledSeconds, 0.0001f,
+                "espera exactamente lo que dura el giro de la ficha");
+            Assert.IsFalse(resolved, "OnResolved recien cuando dispare el scheduler");
+            CollectionAssert.IsEmpty(Eff_Tag.Log, "los efectos corren recien al resolver");
+        }
+
+        [Test]
+        public void test_scheduledResolution_runsTheBandEffects_andRaisesOnResolved()
+        {
+            // Arrange
+            _equipped.Equip(NewItem("item.a", DiceType.D6));
+            _roller.Next = 2;
+            Action scheduled = null;
+            _service.ResolveScheduler = (seconds, callback) => scheduled = callback;
+            _service.Confirm(selection: null);
+
+            ActiveItemActivationResult? seen = null;
+            _service.OnResolved += r => seen = r;
+
+            // Act — dispara el scheduler (la ficha termino de girar).
+            scheduled();
+
+            // Assert
+            Assert.IsNotNull(seen);
+            Assert.AreEqual(2, seen.Value.Roll);
+            Assert.AreEqual(ActiveItemBand.Negative, seen.Value.Band);
+            Assert.IsFalse(_service.IsResolving, "resuelta, el servicio queda libre");
+            CollectionAssert.AreEqual(new[] { "neg" }, Eff_Tag.Log);
         }
 
         [TestCase(1, ActiveItemBand.Negative, "neg")]
         [TestCase(3, ActiveItemBand.Mixed, "mix")]
         [TestCase(6, ActiveItemBand.Positive, "pos")]
-        public void test_accept_runsOnlyTheEffectsOfTheRolledBand(int roll, ActiveItemBand band, string tag)
+        public void test_resolve_runsOnlyTheEffectsOfTheRolledBand(int roll, ActiveItemBand band, string tag)
         {
-            // Arrange
+            // Arrange — scheduler sincronico: Confirm resuelve en la misma llamada.
             _equipped.Equip(NewItem("item.a", DiceType.D6));
             _roller.Next = roll;
-            _service.Confirm(selection: null);
+            ActiveItemActivationResult? result = null;
+            _service.OnResolved += r => result = r;
 
             // Act
-            var result = _service.AcceptRoll();
+            _service.Confirm(selection: null);
 
             // Assert
             Assert.IsNotNull(result);
@@ -232,27 +266,6 @@ namespace Rollgeon.Items.Tests
         }
 
         [Test]
-        public void test_accept_raisesOnResolvedWithTheRollAndBand()
-        {
-            // Arrange — el HUD lo usa para mostrar la cara dentro del slot.
-            _equipped.Equip(NewItem("item.a", DiceType.D6));
-            _roller.Next = 2;
-            _service.Confirm(selection: null);
-
-            ActiveItemActivationResult? seen = null;
-            _service.OnResolved += r => seen = r;
-
-            // Act
-            _service.AcceptRoll();
-
-            // Assert
-            Assert.IsNotNull(seen);
-            Assert.AreEqual(2, seen.Value.Roll);
-            Assert.AreEqual(ActiveItemBand.Negative, seen.Value.Band);
-            Assert.IsFalse(_service.IsAwaitingDecision, "la ventana se cierra al aceptar");
-        }
-
-        [Test]
         public void test_activation_canBeRepeatedWhileRollsLast()
         {
             // Arrange — el GDD no pone tope de usos por turno ni por combate.
@@ -262,9 +275,7 @@ namespace Rollgeon.Items.Tests
 
             // Act
             Assert.IsNotNull(_service.Confirm(null));
-            Assert.IsNotNull(_service.AcceptRoll());
             Assert.IsNotNull(_service.Confirm(null));
-            Assert.IsNotNull(_service.AcceptRoll());
 
             // Assert — al tercer intento el pool esta en 0.
             Assert.AreEqual(0, _rolls.Current[_player]);
@@ -272,17 +283,18 @@ namespace Rollgeon.Items.Tests
         }
 
         [Test]
-        public void test_accept_theRollIsSpentEvenIfTheBandEffectsFail()
+        public void test_resolve_theRollIsSpentEvenIfTheBandEffectsFail()
         {
             // Arrange — no hay reembolso: el GDD dice que no existe ventana para uno.
             var item = NewItem("item.a", DiceType.D6);
             item.OnPositiveBand.Effects.Clear();
             item.OnPositiveBand.Effects.Add(new Eff_Fail());
             _roller.Next = 6;
-            _service.Confirm(selection: null);
+            ActiveItemActivationResult? result = null;
+            _service.OnResolved += r => result = r;
 
             // Act
-            var result = _service.AcceptRoll();
+            _service.Confirm(selection: null);
 
             // Assert
             Assert.IsNotNull(result);
@@ -290,164 +302,82 @@ namespace Rollgeon.Items.Tests
             Assert.AreEqual(4, _rolls.Current[_player], "el roll ya se habia cobrado");
         }
 
-        // ------------------------------------------------------------------
-        // Reroll: mismo contrato que el de ataque/defensa, con un solo dado
-        // ------------------------------------------------------------------
-
         [Test]
-        public void test_reroll_spendsOneRollAndReplacesTheFace()
+        public void test_beginActivation_whileResolving_isBlocked()
         {
-            // Arrange — cada tirada (la primera o un reroll) cuesta exactamente 1 roll.
+            // Arrange — con el dado girando no se abre otra activacion.
             _equipped.Equip(NewItem("item.a", DiceType.D6));
-            _roller.Next = 2;
-            _service.Confirm(selection: null);
-            _roller.Next = 5;
-
-            // Act
-            bool ok = _service.RequestReroll();
-
-            // Assert
-            Assert.IsTrue(ok);
-            Assert.AreEqual(3, _rolls.Current[_player], "confirm + reroll = 2 rolls");
-            Assert.AreEqual(5, _service.Pending.Value.RawRoll, "la cara nueva pisa a la vieja");
-            Assert.AreEqual(1, _service.Pending.Value.RerollCount);
-            Assert.IsTrue(_service.IsAwaitingDecision, "sigue pendiente: se puede volver a decidir");
-            CollectionAssert.IsEmpty(Eff_Tag.Log);
-        }
-
-        [Test]
-        public void test_reroll_withEmptyPool_neitherSpendsNorRolls()
-        {
-            // Arrange — pool 0 no cancela lo tirado: la cara vigente queda y la unica
-            // salida es aceptar. Nunca hay reembolso.
-            _equipped.Equip(NewItem("item.a", DiceType.D6));
-            _rolls.Current[_player] = 1;
-            _roller.Next = 2;
-            _service.Confirm(selection: null);
-
-            // Act
-            bool ok = _service.RequestReroll();
-
-            // Assert
-            Assert.IsFalse(ok);
-            Assert.AreEqual(0, _rolls.Current[_player]);
-            Assert.AreEqual(1, _roller.Calls, "el dado no se tira si no se pudo cobrar");
-            Assert.AreEqual(2, _service.Pending.Value.RawRoll, "la cara vigente no cambia");
-            Assert.IsTrue(_service.IsAwaitingDecision);
-        }
-
-        [Test]
-        public void test_reroll_canRepeatWhileRollsLast()
-        {
-            // Arrange — como en combate: se re-tira mientras el pool aguante.
-            _equipped.Equip(NewItem("item.a", DiceType.D6));
-            _rolls.Current[_player] = 3;
-            _roller.Next = 2;
+            _service.ResolveScheduler = (seconds, callback) => { };
             _service.Confirm(selection: null);
 
             // Act + Assert
-            Assert.IsTrue(_service.RequestReroll());
-            Assert.IsTrue(_service.RequestReroll());
-            Assert.AreEqual(0, _rolls.Current[_player]);
-            Assert.IsFalse(_service.RequestReroll(), "el tercero no tiene con que pagarse");
-            Assert.AreEqual(2, _service.Pending.Value.RerollCount);
-        }
-
-        [Test]
-        public void test_reroll_withoutAPendingRoll_isRejected()
-        {
-            // Arrange
-            _equipped.Equip(NewItem("item.a", DiceType.D6));
-
-            // Act + Assert — no explota ni cobra.
-            Assert.IsFalse(_service.RequestReroll());
-            Assert.AreEqual(5, _rolls.Current[_player]);
-        }
-
-        [Test]
-        public void test_canRequestReroll_followsPoolAndPendingState()
-        {
-            // Arrange — es el gate del click de la ficha, read-only.
-            _equipped.Equip(NewItem("item.a", DiceType.D6));
-            _rolls.Current[_player] = 2;
-
-            // Act + Assert
-            Assert.IsFalse(_service.CanRequestReroll, "sin tirada pendiente no hay que re-tirar");
-            _service.Confirm(selection: null);
-            Assert.IsTrue(_service.CanRequestReroll, "pendiente y con pool");
-            _service.RequestReroll();
-            Assert.IsFalse(_service.CanRequestReroll, "el pool quedo en 0");
-        }
-
-        [Test]
-        public void test_accept_afterRerolls_usesTheLastFace()
-        {
-            // Arrange — "debe aceptar el segundo resultado": la cara que resuelve es la
-            // ultima que salio, no la mejor.
-            _equipped.Equip(NewItem("item.a", DiceType.D6));
-            _roller.Next = 6;
-            _service.Confirm(selection: null);
-            _roller.Next = 1;
-            _service.RequestReroll();
-
-            // Act
-            var result = _service.AcceptRoll();
-
-            // Assert
-            Assert.AreEqual(1, result.Value.Roll);
-            Assert.AreEqual(ActiveItemBand.Negative, result.Value.Band);
-            CollectionAssert.AreEqual(new[] { "neg" }, Eff_Tag.Log);
-        }
-
-        [Test]
-        public void test_accept_withoutAPendingRoll_returnsNullAndRunsNothing()
-        {
-            // Arrange
-            _equipped.Equip(NewItem("item.a", DiceType.D6));
-            _service.Confirm(selection: null);
-            _service.AcceptRoll();
-            Eff_Tag.Log.Clear();
-
-            // Act — un segundo accept no re-ejecuta nada.
-            var second = _service.AcceptRoll();
-
-            // Assert
-            Assert.IsNull(second);
-            CollectionAssert.IsEmpty(Eff_Tag.Log);
-        }
-
-        [Test]
-        public void test_beginActivation_whileAwaitingDecision_isBlocked()
-        {
-            // Arrange — la ventana abierta bloquea abrir otra activacion.
-            _equipped.Equip(NewItem("item.a", DiceType.D6));
-            _service.Confirm(selection: null);
-
-            // Act + Assert
-            Assert.AreEqual(ActiveItemBlock.AwaitingDecision, _service.CanActivate());
+            Assert.AreEqual(ActiveItemBlock.Resolving, _service.CanActivate());
             Assert.IsFalse(_service.BeginActivation());
             Assert.AreEqual(4, _rolls.Current[_player], "no se cobro un segundo roll");
         }
 
         [Test]
-        public void test_combatEnd_discardsThePendingRollWithoutRunningEffects()
+        public void test_combatEnd_beforeTheScheduledResolution_discardsItWithoutRunningEffects()
         {
             // Arrange — OnCombatEnd llega despues del teardown del combate: ejecutar la
-            // banda ahi pegaria sobre una sala desarmada. El roll pagado no se devuelve.
+            // banda ahi pegaria sobre una sala desarmada. El roll pagado no se devuelve, y
+            // el callback tardio del scheduler no puede resucitar la tirada.
             _equipped.Equip(NewItem("item.a", DiceType.D6));
             _roller.Next = 6;
+            Action scheduled = null;
+            _service.ResolveScheduler = (seconds, callback) => scheduled = callback;
             _service.Confirm(selection: null);
             bool resolved = false;
             _service.OnResolved += _ => resolved = true;
 
             // Act
             EventManager.Trigger(EventName.OnCombatEnd, Guid.NewGuid());
+            scheduled();
 
             // Assert
-            Assert.IsFalse(_service.IsAwaitingDecision);
+            Assert.IsFalse(_service.IsResolving);
             Assert.IsFalse(resolved);
             CollectionAssert.IsEmpty(Eff_Tag.Log);
             Assert.AreEqual(4, _rolls.Current[_player], "el roll pagado no se reembolsa");
+        }
+
+        [Test]
+        public void test_turnFinished_withTheDieStillSpinning_resolvesImmediately()
+        {
+            // Arrange — el HUD bloquea End Turn mientras gira; si el turno se cierra igual,
+            // lo pagado se resuelve en el acto y el callback tardio ya no hace nada.
+            _equipped.Equip(NewItem("item.a", DiceType.D6));
+            _roller.Next = 6;
+            Action scheduled = null;
+            _service.ResolveScheduler = (seconds, callback) => scheduled = callback;
+            _service.Confirm(selection: null);
+            int resolvedCount = 0;
+            _service.OnResolved += _ => resolvedCount++;
+
+            // Act
+            EventManager.Trigger(EventName.OnTurnFinished, _player);
+            scheduled();
+
+            // Assert
+            Assert.AreEqual(1, resolvedCount, "una sola resolucion: la del fin de turno");
+            CollectionAssert.AreEqual(new[] { "pos" }, Eff_Tag.Log);
+            Assert.IsFalse(_service.IsResolving);
+        }
+
+        [Test]
+        public void test_turnFinished_ofAnotherEntity_doesNotResolveTheRoll()
+        {
+            // Arrange — el fin de turno de un enemigo no es el del dueño de la tirada.
+            _equipped.Equip(NewItem("item.a", DiceType.D6));
+            _service.ResolveScheduler = (seconds, callback) => { };
+            _service.Confirm(selection: null);
+
+            // Act
+            EventManager.Trigger(EventName.OnTurnFinished, Guid.NewGuid());
+
+            // Assert
+            Assert.IsTrue(_service.IsResolving);
+            CollectionAssert.IsEmpty(Eff_Tag.Log);
         }
 
         // ------------------------------------------------------------------
@@ -455,15 +385,14 @@ namespace Rollgeon.Items.Tests
         // ------------------------------------------------------------------
 
         [Test]
-        public void test_accept_effectReceivesActiveItemRollTriggerContext_withFaceBandAndMagnitude()
+        public void test_resolve_effectReceivesActiveItemRollTriggerContext_withFaceBandAndMagnitude()
         {
             // Arrange — Gradient para que Magnitude == Face (Bands/Binary la dejan en 0).
             var item = NewGradientItem("item.gradient", DiceType.D6);
             _roller.Next = 4;
-            _service.Confirm(selection: null);
 
             // Act
-            _service.AcceptRoll();
+            _service.Confirm(selection: null);
 
             // Assert
             Assert.IsNotNull(Eff_CaptureRollContext.Last);
@@ -475,31 +404,29 @@ namespace Rollgeon.Items.Tests
         }
 
         [Test]
-        public void test_accept_setsSourceItemIdOnTheEffectContext()
+        public void test_resolve_setsSourceItemIdOnTheEffectContext()
         {
             // Arrange — roll=1 en D6 Bands cae en negativa: la captura vive ahi.
             var item = NewCaptureItem("item.source", DiceType.D6);
             _roller.Next = 1;
-            _service.Confirm(selection: null);
 
             // Act
-            _service.AcceptRoll();
+            _service.Confirm(selection: null);
 
             // Assert
             Assert.AreEqual("item.source", Eff_CaptureRollContext.LastSourceItemId);
         }
 
         [Test]
-        public void test_accept_populatesPreConditionContextEffect()
+        public void test_resolve_populatesPreConditionContextEffect()
         {
             // Arrange — la precondicion cuelga del grupo que va a correr (positiva, roll=6).
             var item = NewItem("item.precheck", DiceType.D6);
             item.OnPositiveBand.PreConditions.Add(new Pc_CapturePreCtx());
             _roller.Next = 6;
-            _service.Confirm(selection: null);
 
             // Act
-            _service.AcceptRoll();
+            _service.Confirm(selection: null);
 
             // Assert
             Assert.IsNotNull(Pc_CapturePreCtx.LastEffect, "PreConditionContext.Effect tiene que viajar");
@@ -517,10 +444,11 @@ namespace Rollgeon.Items.Tests
                 Value = 6,
             });
             _roller.Next = 6;
-            _service.Confirm(selection: null);
+            ActiveItemActivationResult? result = null;
+            _service.OnResolved += r => result = r;
 
             // Act
-            var result = _service.AcceptRoll();
+            _service.Confirm(selection: null);
 
             // Assert
             Assert.IsTrue(result.Value.EffectsSucceeded);
@@ -538,10 +466,11 @@ namespace Rollgeon.Items.Tests
                 Value = 99,
             });
             _roller.Next = 3; // banda mixta
-            _service.Confirm(selection: null);
+            ActiveItemActivationResult? result = null;
+            _service.OnResolved += r => result = r;
 
             // Act
-            var result = _service.AcceptRoll();
+            _service.Confirm(selection: null);
 
             // Assert — la precondicion no matchea: el grupo no corre, EffectsSucceeded false.
             Assert.IsFalse(result.Value.EffectsSucceeded);

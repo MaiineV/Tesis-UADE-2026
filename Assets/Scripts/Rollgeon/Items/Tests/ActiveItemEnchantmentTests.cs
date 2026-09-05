@@ -45,6 +45,7 @@ namespace Rollgeon.Items.Tests
             _equipped = new EquippedActiveItemService(catalog: null);
             _roller = new FakeDieRoller();
             _service = new ActiveItemActivationService(_equipped, _roller);
+            _service.ResolveScheduler = (seconds, callback) => callback();
         }
 
         [TearDown]
@@ -336,11 +337,18 @@ namespace Rollgeon.Items.Tests
         private void EquipItem(DiceType die) => _equipped.Equip(NewActiveItem("item.test", die));
 
         /// <summary>
-        /// Activacion completa sin reroll: confirma y acepta la cara que salio. El
-        /// encantamiento corre al aceptar, que es lo que estos tests miran.
+        /// Activacion completa: confirma y, con el scheduler sincronico del SetUp, la
+        /// resolucion (donde corre el encantamiento) llega en la misma llamada.
         /// </summary>
         private ActiveItemActivationResult? ConfirmAndAccept()
-            => _service.Confirm(selection: null) != null ? _service.AcceptRoll() : null;
+        {
+            ActiveItemActivationResult? result = null;
+            Action<ActiveItemActivationResult> capture = r => result = r;
+            _service.OnResolved += capture;
+            _service.Confirm(selection: null);
+            _service.OnResolved -= capture;
+            return result;
+        }
 
         private ItemSO NewActiveItem(string id, DiceType die)
         {
