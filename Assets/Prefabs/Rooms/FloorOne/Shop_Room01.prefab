@@ -20743,6 +20743,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1711357143213522343}
     m_Modifications:
+    - target: {fileID: 1775526884401287076, guid: ff7a5cadbe4bbad40b6010242b840a75, type: 3}
+      propertyPath: preQuantizeIntensity
+      value: 10
+      objectReference: {fileID: 0}
     - target: {fileID: 1800765427227475858, guid: ff7a5cadbe4bbad40b6010242b840a75, type: 3}
       propertyPath: m_Name
       value: Point Light-lv1
@@ -20753,7 +20757,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8041273639942093199, guid: ff7a5cadbe4bbad40b6010242b840a75, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 2.55
+      value: 0.82
       objectReference: {fileID: 0}
     - target: {fileID: 8041273639942093199, guid: ff7a5cadbe4bbad40b6010242b840a75, type: 3}
       propertyPath: m_LocalPosition.z

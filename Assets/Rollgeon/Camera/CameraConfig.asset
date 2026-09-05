@@ -315,7 +315,7 @@ MonoBehaviour:
   EnableZoom: 1
   ZoomMin: 5
   ZoomMax: 22
-  DefaultZoom: 9
+  DefaultZoom: 7.5
   ZoomStep: 1.5
   ZoomTweenSeconds: 0.18
   ZoomEase: 6
