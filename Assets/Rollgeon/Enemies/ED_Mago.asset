@@ -401,14 +401,17 @@ MonoBehaviour:
   BaseAttackRange: 5
   ExtraTiers: []
   VisualPrefab: {fileID: 230861153139278095, guid: 3ae585dce061736449bbddef14eadaff, type: 3}
-  MinGoldDrop: 3
-  MaxGoldDrop: 5
+  MinGoldDrop: 8
+  MaxGoldDrop: 12
   IsFlying: 0
   IsBoss: 0
   Archetype: 0
   TooltipType: 
   Personality: 0
   KamikazeIgnoresSurvival: 0
+  Bloodless: 0
+  Immovable: 0
+  StunImmune: 0
   AuraRadius: 0
   AuraFlatReduction: 0
   Footprint: {x: 1, y: 1}

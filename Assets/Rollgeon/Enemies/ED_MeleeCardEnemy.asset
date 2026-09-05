@@ -1394,14 +1394,17 @@ MonoBehaviour:
       Multiplier: 0
       ManualValue: 0
   VisualPrefab: {fileID: 8816966952657547766, guid: ae9cb5869f87759468c9a62ac0046c2a, type: 3}
-  MinGoldDrop: 3
-  MaxGoldDrop: 5
+  MinGoldDrop: 7
+  MaxGoldDrop: 10
   IsFlying: 0
   IsBoss: 0
   Archetype: 1
   TooltipType: 
   Personality: 0
   KamikazeIgnoresSurvival: 0
+  Bloodless: 0
+  Immovable: 0
+  StunImmune: 0
   AuraRadius: 0
   AuraFlatReduction: 0
   Footprint: {x: 1, y: 1}
