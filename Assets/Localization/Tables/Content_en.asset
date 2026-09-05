@@ -502,14 +502,6 @@ MonoBehaviour:
       multiplier. Without 2 gold, the die can't be selected.
     m_Metadata:
       m_Items: []
-  - m_Id: 5531899817998
-    m_Localized: Clumsy
-    m_Metadata:
-      m_Items: []
-  - m_Id: 5531899817999
-    m_Localized: Forces a full reroll on turn 2 of the combat.
-    m_Metadata:
-      m_Items: []
   - m_Id: 5531899818000
     m_Localized: Volatile
     m_Metadata:

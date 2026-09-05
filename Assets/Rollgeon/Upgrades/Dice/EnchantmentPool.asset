@@ -41,7 +41,6 @@ MonoBehaviour:
     - {fileID: 11400000, guid: 62f333bd7b79b6f42a51cc52f8483e01, type: 2}
     - {fileID: 11400000, guid: d33c35546923d1d489bc60585a714c77, type: 2}
     - {fileID: 11400000, guid: cccf52ed4875ce74eb865688a537c7b9, type: 2}
-    - {fileID: 11400000, guid: 087900d38c5f021438d2487e1a1bcebe, type: 2}
     - {fileID: 11400000, guid: 1dd4d477e3fb6f14db806eb8d09d7202, type: 2}
     - {fileID: 11400000, guid: d073c5b549b53e644a3e87900067889c, type: 2}
     - {fileID: 11400000, guid: d7c77930662c7744e8c323484e9a42cd, type: 2}
@@ -73,7 +72,7 @@ MonoBehaviour:
         Rollgeon]], mscorlib
     - Name: 
       Entry: 12
-      Data: 47
+      Data: 46
     - Name: 
       Entry: 7
       Data: 1|Rollgeon.Upgrades.Dice.WeightedEnchantment, Rollgeon
@@ -765,21 +764,6 @@ MonoBehaviour:
       Entry: 8
       Data: 
     - Name: 
-      Entry: 7
-      Data: 47|Rollgeon.Upgrades.Dice.WeightedEnchantment, Rollgeon
-    - Name: Enchantment
-      Entry: 10
-      Data: 45
-    - Name: Weight
-      Entry: 4
-      Data: 1
-    - Name: MinFloorDepth
-      Entry: 3
-      Data: 0
-    - Name: 
-      Entry: 8
-      Data: 
-    - Name: 
       Entry: 13
       Data: 
     - Name: 
@@ -862,9 +846,6 @@ MonoBehaviour:
     Weight: 1
     MinFloorDepth: 0
   - Enchantment: {fileID: 11400000, guid: cccf52ed4875ce74eb865688a537c7b9, type: 2}
-    Weight: 1
-    MinFloorDepth: 0
-  - Enchantment: {fileID: 11400000, guid: 087900d38c5f021438d2487e1a1bcebe, type: 2}
     Weight: 1
     MinFloorDepth: 0
   - Enchantment: {fileID: 11400000, guid: 1dd4d477e3fb6f14db806eb8d09d7202, type: 2}

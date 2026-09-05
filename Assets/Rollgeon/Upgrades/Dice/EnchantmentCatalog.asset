@@ -46,7 +46,6 @@ MonoBehaviour:
     - {fileID: 11400000, guid: de0f0ffa2bd2ab74fb82c1b924d70fec, type: 2}
     - {fileID: 11400000, guid: d073c5b549b53e644a3e87900067889c, type: 2}
     - {fileID: 11400000, guid: 62f333bd7b79b6f42a51cc52f8483e01, type: 2}
-    - {fileID: 11400000, guid: 087900d38c5f021438d2487e1a1bcebe, type: 2}
     - {fileID: 11400000, guid: bc51e8dc5712271498ada74e8a0ca951, type: 2}
     - {fileID: 11400000, guid: 0910661f147f2e24ea2f17a84215b7cf, type: 2}
     - {fileID: 11400000, guid: 474155d10aed41847a43f9be4719263f, type: 2}
@@ -73,7 +72,7 @@ MonoBehaviour:
         Rollgeon]], mscorlib
     - Name: 
       Entry: 12
-      Data: 47
+      Data: 46
     - Name: 
       Entry: 10
       Data: 0
@@ -212,9 +211,6 @@ MonoBehaviour:
     - Name: 
       Entry: 10
       Data: 44
-    - Name: 
-      Entry: 10
-      Data: 45
     - Name: 
       Entry: 13
       Data: 

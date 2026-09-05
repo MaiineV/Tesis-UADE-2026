@@ -471,14 +471,6 @@ MonoBehaviour:
     m_Key: ench.sediento.desc
     m_Metadata:
       m_Items: []
-  - m_Id: 5531899817998
-    m_Key: ench.torpe.name
-    m_Metadata:
-      m_Items: []
-  - m_Id: 5531899817999
-    m_Key: ench.torpe.desc
-    m_Metadata:
-      m_Items: []
   - m_Id: 5531899818000
     m_Key: ench.volatil.name
     m_Metadata:

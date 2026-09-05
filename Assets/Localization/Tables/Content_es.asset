@@ -506,14 +506,6 @@ MonoBehaviour:
       al multiplicador. Sin 2 de oro, el dado no se puede seleccionar.
     m_Metadata:
       m_Items: []
-  - m_Id: 5531899817998
-    m_Localized: Torpe
-    m_Metadata:
-      m_Items: []
-  - m_Id: 5531899817999
-    m_Localized: Obliga a volver a tirar todos los dados en el turno 2 del combate.
-    m_Metadata:
-      m_Items: []
   - m_Id: 5531899818000
     m_Localized: "Vol\xE1til"
     m_Metadata:
