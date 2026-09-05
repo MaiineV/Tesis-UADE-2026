@@ -502,6 +502,10 @@ MonoBehaviour:
   ActiveFamily: 0
   PrecisionTarget: 1
   ControlParity: 0
+  ActiveResolution: 0
+  NegativeMaxFace: 0
+  MixedMaxFace: 0
+  BinaryPositiveParity: 0
   OnNegativeBand:
     Label: Effect Group
     PreConditions: []

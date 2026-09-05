@@ -780,7 +780,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 9716852768735270
-    m_Localized: Recuperas 1 HP al iniciar combate.
+    m_Localized: Recuperas 15 HP al iniciar combate.
     m_Metadata:
       m_Items: []
   - m_Id: 9716852768735271

@@ -568,7 +568,7 @@ MonoBehaviour:
       Data: 1
     - Name: BasePrice
       Entry: 3
-      Data: 60
+      Data: 45
     - Name: MinFloorDepth
       Entry: 3
       Data: 0
@@ -694,7 +694,7 @@ MonoBehaviour:
       Data: 1
     - Name: BasePrice
       Entry: 3
-      Data: 60
+      Data: 35
     - Name: MinFloorDepth
       Entry: 3
       Data: 0
@@ -766,7 +766,7 @@ MonoBehaviour:
       Data: 1
     - Name: BasePrice
       Entry: 3
-      Data: 100
+      Data: 45
     - Name: MinFloorDepth
       Entry: 3
       Data: 0
@@ -784,7 +784,7 @@ MonoBehaviour:
       Data: 1
     - Name: BasePrice
       Entry: 3
-      Data: 100
+      Data: 80
     - Name: MinFloorDepth
       Entry: 3
       Data: 0
@@ -982,7 +982,7 @@ MonoBehaviour:
       Data: 1
     - Name: BasePrice
       Entry: 3
-      Data: 60
+      Data: 30
     - Name: MinFloorDepth
       Entry: 3
       Data: 0
@@ -1000,7 +1000,7 @@ MonoBehaviour:
       Data: 1
     - Name: BasePrice
       Entry: 3
-      Data: 120
+      Data: 50
     - Name: MinFloorDepth
       Entry: 3
       Data: 0
@@ -1396,7 +1396,7 @@ MonoBehaviour:
       Data: 1
     - Name: BasePrice
       Entry: 3
-      Data: 60
+      Data: 30
     - Name: MinFloorDepth
       Entry: 3
       Data: 0
@@ -1648,7 +1648,7 @@ MonoBehaviour:
       Data: 1
     - Name: BasePrice
       Entry: 3
-      Data: 60
+      Data: 30
     - Name: MinFloorDepth
       Entry: 3
       Data: 0
@@ -1666,7 +1666,7 @@ MonoBehaviour:
       Data: 1
     - Name: BasePrice
       Entry: 3
-      Data: 100
+      Data: 40
     - Name: MinFloorDepth
       Entry: 3
       Data: 0
@@ -1684,7 +1684,7 @@ MonoBehaviour:
       Data: 1
     - Name: BasePrice
       Entry: 3
-      Data: 60
+      Data: 40
     - Name: MinFloorDepth
       Entry: 3
       Data: 0
@@ -1702,7 +1702,7 @@ MonoBehaviour:
       Data: 1
     - Name: BasePrice
       Entry: 3
-      Data: 60
+      Data: 40
     - Name: MinFloorDepth
       Entry: 3
       Data: 0
@@ -1720,7 +1720,7 @@ MonoBehaviour:
       Data: 1
     - Name: BasePrice
       Entry: 3
-      Data: 120
+      Data: 60
     - Name: MinFloorDepth
       Entry: 3
       Data: 0
@@ -1792,7 +1792,7 @@ MonoBehaviour:
       Data: 1
     - Name: BasePrice
       Entry: 3
-      Data: 100
+      Data: 50
     - Name: MinFloorDepth
       Entry: 3
       Data: 0
@@ -1927,7 +1927,7 @@ MonoBehaviour:
     MinFloorDepth: 0
   - Item: {fileID: 11400000, guid: 9bcadd117690ff84aab95204d5921b1a, type: 2}
     Weight: 1
-    BasePrice: 60
+    BasePrice: 45
     MinFloorDepth: 0
   - Item: {fileID: 0}
     Weight: 1
@@ -1955,7 +1955,7 @@ MonoBehaviour:
     MinFloorDepth: 0
   - Item: {fileID: 11400000, guid: 8a3a70cb8be14c1498f001944023c68d, type: 2}
     Weight: 1
-    BasePrice: 60
+    BasePrice: 35
     MinFloorDepth: 0
   - Item: {fileID: 11400000, guid: 94bdf62a9dede7348b59e496490671d4, type: 2}
     Weight: 1
@@ -1971,11 +1971,11 @@ MonoBehaviour:
     MinFloorDepth: 0
   - Item: {fileID: 11400000, guid: dc65e440334b804429b17de2122da6eb, type: 2}
     Weight: 1
-    BasePrice: 100
+    BasePrice: 45
     MinFloorDepth: 0
   - Item: {fileID: 11400000, guid: 363d392c10a560f4882967ce1fba5a37, type: 2}
     Weight: 1
-    BasePrice: 100
+    BasePrice: 80
     MinFloorDepth: 0
   - Item: {fileID: 11400000, guid: 1efc0bbfdc3570e4894b5ba4d7869566, type: 2}
     Weight: 1
@@ -2019,11 +2019,11 @@ MonoBehaviour:
     MinFloorDepth: 0
   - Item: {fileID: 11400000, guid: 3894bd20a9bc00240805a8ee70e9ed4e, type: 2}
     Weight: 1
-    BasePrice: 60
+    BasePrice: 30
     MinFloorDepth: 0
   - Item: {fileID: 11400000, guid: 943506d465d427b49804c567ccfc85aa, type: 2}
     Weight: 1
-    BasePrice: 120
+    BasePrice: 50
     MinFloorDepth: 0
   - Item: {fileID: 11400000, guid: 2b39b558962c8a6429cd14dd926414f5, type: 2}
     Weight: 1
@@ -2111,7 +2111,7 @@ MonoBehaviour:
     MinFloorDepth: 0
   - Item: {fileID: 11400000, guid: 7236af23be34ccb4aa45793b6f86f64a, type: 2}
     Weight: 1
-    BasePrice: 60
+    BasePrice: 30
     MinFloorDepth: 0
   - Item: {fileID: 11400000, guid: eee09c2d15f9a564daea10c91259d29f, type: 2}
     Weight: 1
@@ -2167,23 +2167,23 @@ MonoBehaviour:
     MinFloorDepth: 0
   - Item: {fileID: 11400000, guid: 5e4f47b6d510b734883184b0941ed9cd, type: 2}
     Weight: 1
-    BasePrice: 60
+    BasePrice: 30
     MinFloorDepth: 0
   - Item: {fileID: 11400000, guid: eddff759e1861654c9b8289a706d2a73, type: 2}
     Weight: 1
-    BasePrice: 100
+    BasePrice: 40
     MinFloorDepth: 0
   - Item: {fileID: 11400000, guid: 08404cbee5560ae48bfd8a36d9937e03, type: 2}
     Weight: 1
-    BasePrice: 60
+    BasePrice: 40
     MinFloorDepth: 0
   - Item: {fileID: 11400000, guid: cec899e2859e21f40a94617cd20a37b8, type: 2}
     Weight: 1
-    BasePrice: 60
+    BasePrice: 40
     MinFloorDepth: 0
   - Item: {fileID: 11400000, guid: 0fd7362a600132645b6d304ef5392adc, type: 2}
     Weight: 1
-    BasePrice: 120
+    BasePrice: 60
     MinFloorDepth: 0
   - Item: {fileID: 11400000, guid: 32bc730a80c20324d9252d72beb6edec, type: 2}
     Weight: 1
@@ -2199,7 +2199,7 @@ MonoBehaviour:
     MinFloorDepth: 0
   - Item: {fileID: 11400000, guid: a2d3fc3b6ad9d0e41aff2d473ece2705, type: 2}
     Weight: 1
-    BasePrice: 100
+    BasePrice: 50
     MinFloorDepth: 0
   - Item: {fileID: 11400000, guid: d075c4bf7f79e9e4f94ae1336d32ef33, type: 2}
     Weight: 1
