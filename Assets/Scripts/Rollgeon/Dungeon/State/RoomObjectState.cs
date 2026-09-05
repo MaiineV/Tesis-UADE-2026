@@ -115,6 +115,17 @@ namespace Rollgeon.Dungeon.State
     }
 
     /// <summary>
+    /// Usos pagados de la máquina de reroll de la tienda (§17.F.5). Key fija
+    /// <c>"shop_restock"</c> en <c>ObjectStates</c>; el costo del próximo uso sale
+    /// de <c>ShopConfigSO.ResolveRestockCost(Uses)</c>.
+    /// </summary>
+    [Serializable]
+    public class ShopRestockState : RoomObjectState
+    {
+        public int Uses;
+    }
+
+    /// <summary>
     /// Estado del altar de la Sala de Encantamiento (Sistema de Mejoras In-Run).
     /// El altar es re-usable mientras alcance el oro — solo trackeamos
     /// <see cref="TotalUses"/> para analytics/UI. La persistencia real de

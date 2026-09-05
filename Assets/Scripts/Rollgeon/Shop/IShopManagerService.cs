@@ -46,13 +46,23 @@ namespace Rollgeon.Shop
         /// </summary>
         void NotifyItemPurchased(Guid roomInstanceId, string spawnPointId, int pricePaid);
 
-        /// <summary><c>true</c> si el <c>ShopConfigSO</c> activo permite restock y quedan usos.</summary>
+        /// <summary><c>true</c> si el <c>ShopConfigSO</c> activo permite restock y quedan usos
+        /// (<c>MaxRestocks &lt;= 0</c> = infinitos).</summary>
         bool CanRestock(Guid roomInstanceId);
 
+        /// <summary>Costo del PRÓXIMO uso de la máquina — base × mult^usos, la misma
+        /// fórmula compuesta que el reroll del altar de encantamientos.</summary>
+        int GetRestockCost(Guid roomInstanceId);
+
         /// <summary>
-        /// Re-rolea los slots no comprados. No wired en el MVP — log + no-op si
-        /// <c>AllowRestock == false</c>.
+        /// La máquina de reroll (§17.F.5): cobra el oro, re-rolea TODOS los slots —
+        /// incluidos los comprados (Isaac real) — con precios nuevos, persiste el
+        /// stock y los usos en <c>ObjectStates</c>, y anima el recambio de visuales.
+        /// <c>false</c> si no está permitido, no quedan usos o el oro no alcanza.
         /// </summary>
+        bool TryRestock(Guid roomInstanceId);
+
+        /// <summary>Compat: <see cref="TryRestock"/> descartando el resultado.</summary>
         void Restock(Guid roomInstanceId);
 
         /// <summary>

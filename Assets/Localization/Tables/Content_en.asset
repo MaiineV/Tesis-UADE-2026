@@ -1077,7 +1077,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 17294895575560192
-    m_Localized: Recover 10 HP when combat starts.
+    m_Localized: Recover 15 HP when combat starts.
     m_Metadata:
       m_Items: []
   - m_Id: 17296411766124544

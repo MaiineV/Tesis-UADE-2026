@@ -31,7 +31,11 @@ namespace Rollgeon.UI.HUD
 
             var canvas = anchor.GetComponentInParent<Canvas>();
             if (canvas == null) return;
-            var rootCanvas = canvas.rootCanvas;
+            // MISMO root que el tooltip, no el del chip: el overrideSorting de un canvas
+            // anidado solo compite dentro de su root — colgado del root del chip (order 0)
+            // el tooltip (root 60) lo tapaba por más 30020 que tuviera el toast.
+            var rootCanvas = Rollgeon.UI.Tooltips.TooltipController.OverlayRootCanvas;
+            if (rootCanvas == null) rootCanvas = canvas.rootCanvas;
 
             if (_active != null) Object.Destroy(_active);
 

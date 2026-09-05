@@ -16,6 +16,22 @@ namespace Rollgeon.UI.Tooltips
     {
         public static TooltipController Instance { get; private set; }
 
+        /// <summary>
+        /// Root canvas donde vive el tooltip. El toast de rechazo se cuelga de ESTE
+        /// root: un canvas anidado con overrideSorting solo compite dentro de su
+        /// root, así que desde otro root ningún sortingOrder le gana al tooltip.
+        /// </summary>
+        internal static Canvas OverlayRootCanvas
+        {
+            get
+            {
+                var root = Instance != null ? Instance._root : null;
+                if (root == null) return null;
+                var canvas = root.GetComponentInParent<Canvas>();
+                return canvas != null ? canvas.rootCanvas : null;
+            }
+        }
+
         // Por encima de InteractionPromptView (25000): nada debería tapar al tooltip.
         // Internal: StatusHoverBubble se apila un paso por encima del panel.
         internal const int OverlaySortingOrder = 30000;

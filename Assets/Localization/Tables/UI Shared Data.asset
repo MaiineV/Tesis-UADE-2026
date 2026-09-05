@@ -1131,6 +1131,18 @@ MonoBehaviour:
     m_Key: hud.active_item.decide_hint
     m_Metadata:
       m_Items: []
+  - m_Id: 18770936310104064
+    m_Key: shop.restock.prompt
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18770936352047104
+    m_Key: shop.restock.title
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18770936352047105
+    m_Key: shop.restock.desc
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

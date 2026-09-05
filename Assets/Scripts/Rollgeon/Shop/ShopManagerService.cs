@@ -102,13 +102,143 @@ namespace Rollgeon.Shop
             EventManager.Trigger(EventName.OnShopItemPurchased, spawnPointId, entryId, pricePaid);
         }
 
-        public bool CanRestock(Guid roomInstanceId) => ActiveConfig != null && ActiveConfig.AllowRestock;
+        private const string RestockStateKey = "shop_restock";
 
-        public void Restock(Guid roomInstanceId)
+        public bool CanRestock(Guid roomInstanceId)
         {
-            // MVP: no wired. El RestockMachine prop + EffRestockShop quedan para
-            // un follow-up (§17.F.5). Log + no-op para no explotar si alguien invoca.
-            Debug.LogWarning(LogPrefix + "Restock invocado pero el MVP no lo implementa — follow-up §17.F.5.");
+            if (ActiveConfig == null || !ActiveConfig.AllowRestock) return false;
+            if (ActiveConfig.MaxRestocks <= 0) return true;
+            return GetRestockUses(roomInstanceId) < ActiveConfig.MaxRestocks;
+        }
+
+        public int GetRestockCost(Guid roomInstanceId)
+            => ActiveConfig != null
+                ? ActiveConfig.ResolveRestockCost(GetRestockUses(roomInstanceId))
+                : 0;
+
+        public void Restock(Guid roomInstanceId) => TryRestock(roomInstanceId);
+
+        public bool TryRestock(Guid roomInstanceId)
+        {
+            if (!CanRestock(roomInstanceId)) return false;
+            if (!TryGetDungeonService(out var dungeon)
+                || !dungeon.GetAllRoomInstances().TryGetValue(roomInstanceId, out var room))
+                return false;
+
+            int uses = GetRestockUses(roomInstanceId);
+            int cost = ActiveConfig.ResolveRestockCost(uses);
+
+            // Mismo patrón de cobro que el altar: sin economía registrada (tests) el
+            // uso es gratis; con ella, el Spend gatea.
+            if (ServiceLocator.TryGetService<Rollgeon.Economy.IEconomyService>(out var economy)
+                && economy != null && !economy.Spend(cost))
+            {
+                return false;
+            }
+
+            // Usos ANTES de re-rolear: el seed del stock nuevo se saltea con el conteo.
+            uses++;
+            if (!room.ObjectStates.TryGet<ShopRestockState>(RestockStateKey, out var restockState))
+            {
+                restockState = new ShopRestockState { SpawnPointId = RestockStateKey };
+                room.ObjectStates.Set(RestockStateKey, restockState);
+            }
+            restockState.Uses = uses;
+
+            // Teardown animado de lo que quede en los pedestales.
+            if (_slotsByRoom.TryGetValue(roomInstanceId, out var oldSlots))
+            {
+                foreach (var slot in oldSlots)
+                    DespawnVisualAnimated(slot);
+            }
+
+            // Re-roll COMPLETO (Isaac real: los comprados también se rellenan). El rng
+            // se saltea por uso — cada restock da stock distinto, pero un resume
+            // hidrata de los states persistidos y nunca re-rolea.
+            int floorDepth = ServiceLocator.TryGetService<Rollgeon.Run.IRunContextService>(out var runCtx)
+                ? runCtx.FloorIndex
+                : 0;
+            var rng = new System.Random(unchecked(DeriveShopSeed(room) + uses * 7919));
+            var spawnPoints = ResolveRewardSpawnPoints(room);
+            int slotCount = Mathf.Min(spawnPoints.Count, Mathf.Max(1, ActiveConfig.MaxItemSlots));
+
+            var slots = new List<ShopSlot>(slotCount);
+            var rolledInThisShop = new HashSet<IShopRewardEntry>();
+            for (int i = 0; i < slotCount; i++)
+            {
+                var slot = BuildFreshSlot(room, SpawnPointKey(i), rng, floorDepth, rolledInThisShop, guaranteedSlot: false);
+                if (slot == null) continue;
+
+                SpawnPedestalVisual(slot, room, spawnPoints[i]);
+                AnimateDropIn(slot.SpawnedVisual, i);
+                if (slot.Item != null) rolledInThisShop.Add(slot.Item);
+                slots.Add(slot);
+            }
+
+            _slotsByRoom[roomInstanceId] = slots;
+            _initialized.Add(roomInstanceId);
+
+            EventManager.Trigger(EventName.OnShopRestocked, roomInstanceId, cost, uses);
+            return true;
+        }
+
+        private int GetRestockUses(Guid roomInstanceId)
+        {
+            if (!TryGetDungeonService(out var dungeon)) return 0;
+            if (!dungeon.GetAllRoomInstances().TryGetValue(roomInstanceId, out var room)) return 0;
+            return room.ObjectStates.TryGet<ShopRestockState>(RestockStateKey, out var state)
+                ? state.Uses
+                : 0;
+        }
+
+        // Solo el ÍTEM se anima — el pedestal muere en el acto y el nuevo aparece en
+        // la misma pose, así que a la vista queda fijo. El ítem saliente se despega
+        // del pedestal, se encoge y se hunde antes de morir.
+        private static void DespawnVisualAnimated(ShopSlot slot)
+        {
+            var go = slot?.SpawnedVisual;
+            if (go == null) return;
+            slot.SpawnedVisual = null;
+
+            var item = FindItemVisual(go);
+            if (item == null || !Application.isPlaying || Rollgeon.UI.HUD.DiceAnim.DiceUiMotionPrefs.ReducedMotion)
+            {
+                UnityEngine.Object.Destroy(go);
+                return;
+            }
+
+            item.SetParent(go.transform.parent, worldPositionStays: true);
+            UnityEngine.Object.Destroy(go);
+
+            PrimeTween.Tween.Scale(item, Vector3.one * 0.01f, 0.22f, PrimeTween.Ease.InBack);
+            PrimeTween.Tween.LocalPositionY(item, item.localPosition.y - 0.4f, 0.22f,
+                    PrimeTween.Ease.InQuad)
+                .OnComplete(item.gameObject, target => UnityEngine.Object.Destroy(target));
+        }
+
+        // El ítem nuevo "cae" sobre su pedestal con rebote, escalonado por slot — la
+        // otra mitad del recambio. La pose final ya la puso SpawnItemVisualOnTop.
+        private static void AnimateDropIn(GameObject go, int slotIndex)
+        {
+            if (go == null) return;
+            if (!Application.isPlaying || Rollgeon.UI.HUD.DiceAnim.DiceUiMotionPrefs.ReducedMotion) return;
+
+            var item = FindItemVisual(go);
+            if (item == null) return;
+
+            var target = item.localPosition;
+            item.localPosition = target + Vector3.up * 2.5f;
+            PrimeTween.Tween.LocalPosition(item, target, 0.45f, PrimeTween.Ease.OutBounce,
+                startDelay: slotIndex * 0.08f);
+        }
+
+        private static Transform FindItemVisual(GameObject pedestalRoot)
+        {
+            if (pedestalRoot == null) return null;
+            foreach (Transform child in pedestalRoot.transform)
+                if (child != null && child.name.StartsWith("[ShopItemVisual]", StringComparison.Ordinal))
+                    return child;
+            return null;
         }
 
         public void Initialize(RoomInstance room, int floorDepth)
@@ -197,6 +327,32 @@ namespace Rollgeon.Shop
 
             _slotsByRoom[room.InstanceId] = slots;
             _initialized.Add(room.InstanceId);
+
+            SpawnRestockMachine(room);
+        }
+
+        // La máquina de reroll (§17.F.5): una por tienda, en el punto autorado del
+        // layout. Vive dentro del SpawnedPrefab como los pedestales — sin teardown,
+        // el DungeonManager mantiene los prefabs toda la run.
+        private void SpawnRestockMachine(RoomInstance room)
+        {
+            if (ActiveConfig == null || !ActiveConfig.AllowRestock) return;
+            if (ActiveConfig.RestockMachinePrefab == null) return;
+            if (room?.SpawnedPrefab == null) return;
+
+            var layout = room.SpawnedPrefab.GetComponent<RoomLayout>();
+            var point = layout != null ? layout.RestockMachinePoint : null;
+            if (point == null) return;
+
+            var go = UnityEngine.Object.Instantiate(
+                ActiveConfig.RestockMachinePrefab, point.position, point.rotation,
+                room.SpawnedPrefab.transform);
+            go.name = "[RestockMachine]";
+            Rollgeon.Dungeon.Components.PropTileBlocker.Attach(go);
+
+            var interactable = go.GetComponent<RestockMachineInteractable>();
+            if (interactable != null) interactable.Configure(room.InstanceId, this);
+            else Debug.LogError(LogPrefix + "RestockMachinePrefab sin RestockMachineInteractable.");
         }
 
         private int DeriveShopSeed(RoomInstance room)
@@ -238,10 +394,21 @@ namespace Rollgeon.Shop
                 };
             }
 
-            // Primera visita: rolear + persistir. Pasamos los rolled previos como
-            // exclude para evitar duplicados dentro del mismo shop. El slot
-            // garantizado (poción) saltea el roll; sin garantizado cableado (ej.
-            // tutorial) degrada al roll normal.
+            return BuildFreshSlot(room, spawnPointId, rng, floorDepth, rolledInThisShop, guaranteedSlot);
+        }
+
+        /// <summary>
+        /// Rolea un slot NUEVO y persiste su state, pisando el anterior si lo había.
+        /// Camino compartido entre la primera visita y el restock (que fuerza re-roll
+        /// también sobre slots ya comprados — Isaac real).
+        /// </summary>
+        private ShopSlot BuildFreshSlot(
+            RoomInstance room, string spawnPointId, System.Random rng, int floorDepth,
+            IReadOnlyCollection<IShopRewardEntry> rolledInThisShop, bool guaranteedSlot)
+        {
+            // Rolear + persistir. Pasamos los rolled previos como exclude para evitar
+            // duplicados dentro del mismo shop. El slot garantizado (poción) saltea el
+            // roll; sin garantizado cableado (ej. tutorial) degrada al roll normal.
             ShopRollResult rolled;
             if (!guaranteedSlot || !ActivePool.TryGetGuaranteed(out rolled))
             {

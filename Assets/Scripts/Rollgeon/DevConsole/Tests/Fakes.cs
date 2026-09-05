@@ -175,6 +175,8 @@ namespace Rollgeon.DevConsole.Tests
         }
 
         public bool CanRestock(Guid roomInstanceId) => false;
+        public int GetRestockCost(Guid roomInstanceId) => 0;
+        public bool TryRestock(Guid roomInstanceId) => false;
         public void Restock(Guid roomInstanceId) { }
         public void Initialize(RoomInstance room, int floorDepth) { }
         public void SetTutorialOverride(ShopConfigSO config, ShopPoolSO pool) { }

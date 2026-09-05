@@ -214,7 +214,8 @@ namespace Patterns
         OnShopItemTargetChanged,
         /// <summary>args: [string spawnPointId, string rewardId, int pricePaid]</summary>
         OnShopItemPurchased,
-        /// <summary>args: [Guid roomInstanceId, int slotsRestocked]</summary>
+        /// <summary>args: [Guid roomInstanceId, int costPaid, int usesSoFar]. La máquina
+        /// de reroll (§17.F.5) cobró y re-roleó todos los slots.</summary>
         OnShopRestocked,
 
         // --- Status (§20) ------------------------------------------------------

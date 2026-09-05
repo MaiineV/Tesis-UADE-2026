@@ -15,9 +15,11 @@ MonoBehaviour:
   PriceMultiplier: 1
   PriceVariance: 0.1
   MaxItemSlots: 6
-  AllowRestock: 0
+  AllowRestock: 1
   RestockCost: 5
-  MaxRestocks: 1
+  RestockCostMultiplier: 1.5
+  MaxRestocks: 0
+  RestockMachinePrefab: {fileID: 7240088368068982845, guid: 1aa7dce0ab7aac24980a28d903c5aef3, type: 3}
   FirstPurchaseDiscountPercent: 0
   PedestalPrefab: {fileID: 8567412772713499246, guid: bc3caaa25b1ee5245b825f86ced5039c, type: 3}
   ItemVisualLocalOffset: {x: -0.0036427472, y: 1.59, z: -0.13633382}

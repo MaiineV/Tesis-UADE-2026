@@ -1168,6 +1168,18 @@ MonoBehaviour:
     m_Localized: "Click: reroll (-1 Roll) \xB7 Confirm: accept"
     m_Metadata:
       m_Items: []
+  - m_Id: 18770936310104064
+    m_Localized: Reroll shop
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18770936352047104
+    m_Localized: Reroll Machine
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18770936352047105
+    m_Localized: Swaps every shop item for new ones. Each use costs more.
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

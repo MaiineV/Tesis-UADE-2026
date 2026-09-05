@@ -354,6 +354,13 @@ namespace Rollgeon.EditorTools.Localization
                 "Bonus de objetos a tu tirada: +{0}",
                 "Item bonus to your roll: +{0}");
 
+            // La máquina de reroll de la tienda (§17.F.5).
+            Ui("shop.restock.prompt", "Rerollear tienda", "Reroll shop");
+            Ui("shop.restock.title", "Máquina de Reroll", "Reroll Machine");
+            Ui("shop.restock.desc",
+                "Cambia todos los ítems de la tienda por otros nuevos. Cada uso cuesta más.",
+                "Swaps every shop item for new ones. Each use costs more.");
+
             // Tooltip corto de la puerta en combate ({0} = " (Y)" con el hotkey vivo, o vacío).
             Ui("door.forceable.title", "Puerta forzable", "Forceable door");
             Ui("door.forceable.body",
@@ -539,9 +546,7 @@ namespace Rollgeon.EditorTools.Localization
                 "Each time it joins a combo it consumes 2 gold and adds +0.2 to the multiplier. Without 2 gold, the die can't be selected.");
             Content("ench.sediento.lock", "2 oro", "2 gold");
 
-            Ench("torpe", "Torpe", "Clumsy",
-                "Obliga a volver a tirar todos los dados en el turno 2 del combate.",
-                "Forces a full reroll on turn 2 of the combat.");
+            // Ench_Torpe eliminado del juego ("limpieza enchantment", 05/09) — sin keys.
 
             // Fix#0081: misma regla que Oxidado — solo en combos reales.
             Ench("volatil", "Volátil", "Volatile",
@@ -1785,7 +1790,7 @@ namespace Rollgeon.EditorTools.Localization
 
             // Curación / sostén.
             Item("talisman.vigoroso", "Talismán Vigoroso", "Vigorous Talisman",
-                "Recuperas 10HP al iniciar combate.", "Recover 10 HP when combat starts.");
+                "Recuperas 15 HP al iniciar combate.", "Recover 15 HP when combat starts.");
             Item("regeneracion.de.dados", "Regeneración de Dados", "Dice Regeneration",
                 "Recuperas 5HP por cada roll sin utilizar al final del turno.",
                 "Recover 5 HP for each unused roll at the end of your turn.");

@@ -1177,6 +1177,19 @@ MonoBehaviour:
     m_Localized: "Click: re-tirar (-1 Roll) \xB7 Confirmar: aceptar"
     m_Metadata:
       m_Items: []
+  - m_Id: 18770936310104064
+    m_Localized: Rerollear tienda
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18770936352047104
+    m_Localized: "M\xE1quina de Reroll"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 18770936352047105
+    m_Localized: "Cambia todos los \xEDtems de la tienda por otros nuevos. Cada uso
+      cuesta m\xE1s."
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

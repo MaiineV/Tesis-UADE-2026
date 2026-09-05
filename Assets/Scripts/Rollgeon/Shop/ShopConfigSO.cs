@@ -32,14 +32,25 @@ namespace Rollgeon.Shop
                  "Si el prefab tiene más RewardSpawnPoints, se usan los primeros N.")]
         [MinValue(1)] public int MaxItemSlots = 4;
 
-        [Title("Restock (MVP: no wired — follow-up)")]
+        [Title("Restock (máquina de reroll — §17.F.5)")]
         [ToggleLeft] public bool AllowRestock = false;
 
         [ShowIf(nameof(AllowRestock))]
         [MinValue(0)] public int RestockCost = 5;
 
         [ShowIf(nameof(AllowRestock))]
+        [Tooltip("Multiplicador compuesto por uso — mismo cálculo que el reroll del altar " +
+                 "de encantamientos (EnchantmentConfigSO.ResolveCost): costo = base × mult^usos.")]
+        [MinValue(1f)] public float RestockCostMultiplier = 1.5f;
+
+        [ShowIf(nameof(AllowRestock))]
+        [Tooltip("Usos máximos de la máquina por tienda. 0 = infinitos.")]
         [MinValue(0)] public int MaxRestocks = 1;
+
+        [ShowIf(nameof(AllowRestock))]
+        [Tooltip("Prefab de la máquina de reroll (la ruleta). Se instancia en el " +
+                 "RoomLayout.RestockMachinePoint de la sala de tienda. Null = sin máquina.")]
+        public GameObject RestockMachinePrefab;
 
         [Title("Discount (MVP: no wired — follow-up)")]
         [InfoBox("First-purchase discount por shop room — se aplica via HasHadFirstPurchase flag. No wired en el MVP.")]
@@ -61,6 +72,18 @@ namespace Rollgeon.Shop
 
         [Tooltip("Tinte aplicado al DefaultItemVisualPrefab para distinguirlo de un item con visual propio.")]
         public Color DefaultItemVisualTint = new Color(0.55f, 0.75f, 1f, 1f);
+
+        /// <summary>
+        /// Costo del próximo uso de la máquina de reroll tras <paramref name="uses"/>
+        /// usos pagados. Misma fórmula compuesta que el reroll del altar
+        /// (<c>EnchantmentConfigSO.ResolveCost</c>): <c>base × mult^usos</c>.
+        /// </summary>
+        public int ResolveRestockCost(int uses)
+        {
+            if (uses <= 0 || RestockCostMultiplier <= 1f) return RestockCost;
+            float scaled = RestockCost * Mathf.Pow(RestockCostMultiplier, uses);
+            return Mathf.CeilToInt(scaled);
+        }
 
         /// <summary>Resuelve el precio final con multiplicador y varianza.</summary>
         public int ResolvePrice(int basePrice, System.Random rng)

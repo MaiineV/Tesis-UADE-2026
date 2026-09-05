@@ -36,6 +36,10 @@ namespace Rollgeon.Dungeon.Components
 
         public List<Transform> ObstacleSpawnPoints = new List<Transform>();
 
+        [Tooltip("Punto de la máquina de reroll de la tienda (§17.F.5). Solo salas Shop; " +
+                 "null = sin máquina. Lo autora el installer Build Restock Machine.")]
+        public Transform RestockMachinePoint;
+
         [Header("Doors")]
         [Tooltip("4 slots (N/S/E/W). El DungeonManager instancia DoorPrefab si conecta, si no activa WallPlug.")]
         public List<DoorSlotRef> DoorSlots = new List<DoorSlotRef>();
